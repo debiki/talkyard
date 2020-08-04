@@ -380,7 +380,7 @@ var t_en_US: TalkyardTranslations = t = {
     NumOnlForum: " online in this forum",
 
     // Open left-sidebar button title.
-    WatchbBtn: "Your topics",
+    WatchbBtn: "Your topics",  // REMOVE
 
     // Tooltip, shown if mouse-hovering the open-left-sidebar button.
     WatchbToolt: "Your recent topics, joined chats, direct messages",

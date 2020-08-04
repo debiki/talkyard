@@ -28,7 +28,7 @@ Dl = download — change to Dwnl? so rare
 CB = checkbox, e.g. s_SthCB
 Cb = Contextbar
 Cr = create
-Cu = Custom, e.g. CuLns = custom links
+Cu = Custom, e.g. CuNav = custom navigation links
 Nf = notification
 Pf = preference, e.g. NfPfs = notification preferences
 Pw = password, e.g. NewPwI
@@ -216,8 +216,8 @@ SP_SRs          = search page, search results
 SR              = search result
 
 esTB            = topbar (with the breadcrump and login & signup, or user name)
-s_TB_Cs_C       = topbar, ancestor categories, one of them  RENAME:  Tb  not TB.
-s_TB_Cs_C-Dd    = deleted
+s_Tb_Pg_Cs_C    = topbar, page categories, one of them
+s_Tb_Pg_Cs_C-Dd = that category has been deleted
 
 esTs            = page/post tags
 

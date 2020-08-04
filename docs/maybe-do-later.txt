@@ -315,6 +315,8 @@ server / bot.
 [extensions]
 Needs new table: t_extensions
 
+[themes]
+
 [Scala_213]
 Try —> Using
 

@@ -161,7 +161,7 @@ html:not(.es-watchbar-open)
   .container
     width: 100%;
     // This'll be for forum topic layouts 3,4,5 = excerpt on separate line —> needn't be so wide
-    max-width: 1050px;
+    max-width: 1050px;  // [page_max_width]
 
 setContainerMaxWidth($maxWidth)
   .esScrollBtns_fixedBar,
@@ -182,9 +182,9 @@ html.s_PT-7  // forum
 #topbar > .container,
 #dwPosts > .container,
 #dwPosts > div > .container,
-.s_Tb > .container,
+.s_Tb .container,
 .esAdminArea > .container,
-#dwPosts > div > .s_Tb > .container  // try to remove
+#dwPosts > div > .s_Tb .container  // try to remove
   padding-left: 20px;
   padding-right: 20px;
   @media (max-width: 850px)
@@ -201,9 +201,9 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
   #topbar > .container,
   #dwPosts > .container,
   #dwPosts > div > .container,
-  .s_Tb > .container,
+  .s_Tb .container,
   .esAdminArea > .container,
-  #dwPosts > div > .s_Tb > .container  // try to remove
+  #dwPosts > div > .s_Tb .container  // try to remove
     padding-left: 25px;
 
 #dwPosts
@@ -277,6 +277,23 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
   float: none
   // Left align the title.
   margin-left: 0
+
+.dw-forum #dw-t-0
+  // Forum topics page title not so interesting — smaller font, 30px not 33px.
+  h1.dw-p-ttl
+    font-size: 30px;
+
+  // Some space between the forum title and any intro text.
+  margin-bottom: 17px;
+
+  // If no categories to show above, move a bit up — but only if page wide,
+  // else might overlap with MyMenu or get pushed to the right by the open-watchbar button.
+  @media (min-width: 1300px)
+    margin-top: - $moveSectionTitleUpPx;
+  @media (max-width: 1300px - 1px)
+    // ... but don't need any title margin.
+    .dw-p-ttl
+      margin-top: 0;
 
 h1.dw-p-ttl a:not(.icon-edit):not(.dw-forum-intro-show)
   color: $h1Color; // but not link color

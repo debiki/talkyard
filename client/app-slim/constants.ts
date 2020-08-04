@@ -122,14 +122,18 @@ const ImpersonationCookieName = 'esCoImp';
 
 
 // Some CSS and layout related constants. [6PFDS3]
-const UseWideForumLayoutMinWidth = 1000;
-const UseWidePageLayoutMinWidth = 750;
+// Also see: docs/ux-design.adoc
+const UseWideForumLayoutMinWidth = 1000;  // (or 1024 would work too, doesn't matter)
+const UseWidePageLayoutMinWidth = 750;    // (or 768 ok too)
+// Also see: [wide_topbar_min_px]
 const WatchbarWidth = 230;  // dupl in css [7GYK42]
 const ContextbarMinWidth = 270;  // dupl in css [4FK0ZD]
 
+// Server side, Talkyard renders html twice per page — once with html suitable for
+// narrow things,  and once with html suitable for wider things.  React.js wants
+// the exact correct html, othewise hydration fails, causes randomly broken html.
 const ServerSideWindowWidthMobile = 500;
 const ServerSideWindowWidthLaptop = 1200;
-
 
 const OriginRegex = /^https?:\/\/[^/]+/i;  // CLEAN_UP this regex not in use everywhere, some dupl regexs
 

@@ -53,6 +53,27 @@ trait SettingsDao {
     throwBadRequestIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
       "EdE5KP8R2", "Cannot clear the organization name")
 
+    // There're 20 kb db constraints.
+    val maxHtmlLength = 19 * 1000
+
+    def checkLen(name: String, getter: SettingsToSave => Option[Option[String]]) {
+      val anyOptValue = getter(settingsToSave)
+      throwBadRequestIf(anyOptValue.exists(_.exists(_.length > maxHtmlLength)),
+            "TyE406RKTP245", s"Too long: $name")
+    }
+
+    checkLen("headStylesHtml", _.headStylesHtml)
+    checkLen("headScriptsHtml", _.headScriptsHtml)
+    checkLen("startOfBodyHtml)", _.startOfBodyHtml)
+    checkLen("endOfBodyHtml)", _.endOfBodyHtml)
+    checkLen("logoUrlOrHtml", _.logoUrlOrHtml)
+    checkLen("headerHtml", _.headerHtml)
+    checkLen("footerHtml", _.footerHtml)
+
+    throwBadRequestIf(
+          settingsToSave.navConf.exists(_.exists(_.toString().length > maxHtmlLength)),
+          "TyE463KTSH56", "Too long nav conf")
+
     readWriteTransaction { tx =>
       val oldSettings = loadWholeSiteSettings(tx)
 
@@ -110,10 +131,27 @@ trait SettingsDao {
         doneAt = tx.now.toJavaDate,
         browserIdData = byWho.browserIdData))
 
+      // Some settings require clearing all caches (for this site).
+      // We do that, by bumping the site version — this invalidates all cached stuff
+      // for this site.
+      var bumpSiteVersion = false
+
       // If the language was changed, all cached page html in the database needs
       // to be rerendered, so button titles etc are shown in the new langage.
       SECURITY // DoS attack by evil admin: rerendering everything = expensive. SHOULD add rate limits.
-      if (oldSettings.languageCode != newSettings.languageCode) {
+      bumpSiteVersion ||= oldSettings.languageCode != newSettings.languageCode
+
+      // If custom nav conf html got changed, we need to re-render all pages, since
+      // such html is included in server side rendered & cached html.
+      //
+      // However, if  oldSettings.headerHtml  and other custom html fields got changed,
+      // or custom CSS, then, need not re-render — that html and CSS isn't cached,
+      // isn't included in the html_cache_t (page_html3).  [cust_html_not_db_cached]
+      //
+      bumpSiteVersion ||= oldSettings.navConf != newSettings.navConf
+
+
+      if (bumpSiteVersion) {
         tx.bumpSiteVersion()
       }
 

@@ -113,6 +113,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         favicon_url,
         head_styles_html,
         head_scripts_html,
+        start_of_body_html,
         end_of_body_html,
         header_html,
         nav_conf,
@@ -150,7 +151,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -210,6 +211,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.faviconUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.headStylesHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.headScriptsHtml.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.startOfBodyHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.endOfBodyHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.headerHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.navConf.getOrElse(None).orNullJson,
@@ -319,6 +321,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("favicon_url", s.faviconUrl.map(_.trimOrNullVarchar))
     maybeSet("head_styles_html", s.headStylesHtml.map(_.trimOrNullVarchar))
     maybeSet("head_scripts_html", s.headScriptsHtml.map(_.trimOrNullVarchar))
+    maybeSet("start_of_body_html", s.startOfBodyHtml.map(_.trimOrNullVarchar))
     maybeSet("end_of_body_html", s.endOfBodyHtml.map(_.trimOrNullVarchar))
     maybeSet("header_html", s.headerHtml.map(_.trimOrNullVarchar))
     maybeSet("nav_conf", s.navConf.map(_.orNullJson))
@@ -428,6 +431,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       faviconUrl = getOptString(rs, "favicon_url"),
       headStylesHtml = getOptString(rs, "head_styles_html"),
       headScriptsHtml = getOptString(rs, "head_scripts_html"),
+      startOfBodyHtml = getOptString(rs, "start_of_body_html"),
       endOfBodyHtml = getOptString(rs, "end_of_body_html"),
       headerHtml = getOptString(rs, "header_html"),
       navConf = getOptJsObject(rs, "nav_conf"),

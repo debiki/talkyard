@@ -337,7 +337,8 @@ const AdminAppComponent = createReactClass(<any> {
 
     return (
       r.div({ className: 'esAdminArea' },
-        topbar.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
+        topbar.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true,
+            location: this.props.location }),
         r.div({ className: 'container' },
           r.ul({ className: 'dw-main-nav nav nav-pills' },
             dashboardLink,
@@ -2695,12 +2696,19 @@ const CustomizeHtmlPanel = createFactory({
           }
         }),
 
+        Setting2(props, { type: 'textarea', label: "<body> HTML",
+          help: "Tags to insert into the <body> tag, at the top.",
+          getter: (s: Settings) => s.startOfBodyHtml,
+          update: (newSettings: Settings, target) => {
+            newSettings.startOfBodyHtml = target.value;
+          }
+        }),
+
         Setting2(props, { type: 'textarea', label: "</body> HTML",
-          help: "Tags that will be inserted just before " +
-              'the end of the <body> tag.',
+          help: "Tags to insert just before the end of the <body> tag.",
           getter: (s: Settings) => s.endOfBodyHtml,
           update: (newSettings: Settings, target) => {
-            newSettings.endOfBodyHtml= target.value;
+            newSettings.endOfBodyHtml = target.value;
           }
         }),
 

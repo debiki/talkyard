@@ -106,7 +106,7 @@ export const ForumComponent = createReactClass(<any> {
     scrollToWhenCommentsLoaded = lastScrollYByPath[this.props.location.pathname] || 0;
     lastScrollYByPath = {};
     // Dupl code [5KFEWR7]
-    this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
+    this.timerHandle = setInterval(this.checkSizeChangeLayout, 500);
   },
 
   componentWillUnmount: function() {
@@ -274,11 +274,19 @@ export const ForumComponent = createReactClass(<any> {
         Route({ path: rootSlash + RoutePathTop, component: LoadAndListTopics })));
         */
 
+    const navConf: BrowserCode = store.settings.navConf || {};
+
     return (
       r.div({ className: 'container dw-forum' },
+        //------
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
+        // CLEAN_UP REMOVE I think no longer needed.
         r.div({ className: 'dw-page' }),
-        ForumIntroText({ store: store }),
+        //------
+        // For now, feature flag. Later, always?  [dbl_tb_ttl]
+        navConf.topbarBitDownShowTitle && debiki2.page.Title({ store }),
+
+        ForumIntroText({ store }),
         //topsAndCatsHelp,
         childRoutes));
   }

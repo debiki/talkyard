@@ -373,7 +373,7 @@ export const Title = createComponent({
           '(' + (page.pageDeletedAtMs ? t.d.PageDeld : t.d.TitlePendAppr) + ')');
 
     // Insert the title as plain text (don't interpret any html tags — that'd let Mallory mess up
-    // the formatting, even if sanitized).
+    // the formatting, even if sanitized).  [title_plain_txt]
     let titleText = r.span({}, titlePost.unsafeSource);
 
     // Make forum titles link back to the forum default view.

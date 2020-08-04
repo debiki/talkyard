@@ -1542,6 +1542,7 @@ interface Settings extends TopicInterfaceSettings {
   faviconUrl: string;
   headStylesHtml: string;
   headScriptsHtml: string;
+  startOfBodyHtml: string;
   endOfBodyHtml: string;
 
   headerHtml: string;
@@ -1660,14 +1661,27 @@ interface Rect {
 // ----- Extensions, plugins, themes
 
 // Later, part of an extensions system.
-// For now:
+// For now: (too much config! Require cust nav to be on row 1 always? and
+// always show page title, when has scrolled downn. Then can remove most of this.)
 interface BrowserCode {
-  topbarAtTopLogo?: string;
-  topbarAtTopNav?: string;
+  topbarAtTopLogo?: string;   // RENAME to  topbarStaticLogo  or tbStcLgo .
+  topbarAtTopNav?: string;    // tbStcNav
+  // Change to a number?  topbarOneRowMinWidthPx [cust_nav_menu]
+  // or  topbar2RowsWidthPx  tb2RowsMaxWidthPx  or tb2RowsPx
+  topbarAtTopNav2Rows?: boolean;  // tbStcNv2: boolean | string
   topbarAtTopNavLine2?: string;
-  topbarBitDownLogo?: string;
+  // Shows current page title.  SHOULD be to true always, soon. DO_AFTER 2020-08-12
+  topbarBitDownShowTitle?: boolean;
+  topbarBitDownLogo?: string;  // RENAME to topbarFixedLogo  or tbFxdLgo
   topbarBitDownNav?: string;
+  topbarBitDownNav2Rows?: boolean;
   topbarBitDownNavLine2?: string;
+
+  // If page title should be shown on row 2, if has scrolled down, and 2 rows.
+  topbarBitDownTitleRow2?: boolean;
+
+  // Would make the topbar be 2 rows, also if wide screen and not really neede.
+  // topbarAlw2Rows?: boolean;
 }
 
 

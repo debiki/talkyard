@@ -1,5 +1,5 @@
 /*!
- * Copyright (c) 2015-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,17 +22,21 @@ $gotoButtonSidePaddingNarrow = 3px;
 
 $titleOwnLineMaxWidth = 1230px;
 
+$tinyHeight = 420px;
+$shortHeight = 500px;
+$tallHeight = 650px;
+
 html.js:not(.dw-react-started)
-  .esTopbar_ancestors,
+  .s_Tb_Pg_Cs,
   // Avoid flash-of-login-button when already logged in.
-  .esTopbar_right
+  .s_Tb_MyBs
     visibility: hidden;  // display:none not good, because then other elems too close
 
 // Currently doesn't work without js
 html:not(.js)
   .esOpenPagebarBtn,
   .esOpenWatchbarBtn,
-  .esTopbar_right
+  .s_Tb_MyBs
     display: none;
   .esTopbar
     padding: 20px 0 0;
@@ -48,9 +52,9 @@ html:not(.js)
   pointer-events: none;
   background: none !important; // IE11
 
-  .esTopbar_ancestors,
+  .s_Tb_Pg_Cs,
   .esTopbar_custom,
-  .esTopbar_right,
+  .s_Tb_MyBs,
   .dw-topbar-title,
   .esOpenPagebarBtn,
   .esOpenWatchbarBtn
@@ -95,15 +99,19 @@ html:not(.js)
   position: relative;
   margin-top: 11px;
   padding: 12px 12px 9px 9px;
-  &.esOpenWatchbarBtn
-    padding-right: 0;
   z-index: 1;
 .s_Tb-Fxd
   .esOpenPagebarBtn,
   .esOpenWatchbarBtn
-    top: 0;
-    margin-top: 0;
+    margin-top: 7px;
     padding-top: 9px;
+
+
+.esOpenWatchbarBtn
+  // Some distance, so won't look as if is part of any page title
+  margin-right: 8px;
+.esOpenPagebarBtn
+  margin-left: 14px;
 
 
 .s_Tb_Row2
@@ -116,10 +124,50 @@ html:not(.js)
       display: inline-block;
       padding: 9px 10px 11px;
 
+
+// On small screens, show custom nav links, or page title,
+// on the 2nd topbar row *if any*.
+//
+// 1450 needs to be configurable! depends on the custom nav menu contents. [cust_nav_menu]
+@media (max-width: 1450px - 1px)  // [wide_topbar_min_px]
+  // If two rows, then, login and signup buttons, and MyMenu, are on row 2.
+  // Hide those on row 1.
+  .s_Tb-2Rows
+    .s_Tb_Row1
+      .dw-login,
+      .dw-a-tools,  // RENAME to s_Tb_Bs_ToolsB?
+      .s_MMB
+        display: none;
+
+    // Skip: There're 2 rows because there's not enough space — then, looks weird
+    // with any max-width, then there'd be even less space.  [page_max_width].
+    //.container
+    //  max-width: none !important;
+
+  // If we show custom nav links on row 2, then, don't show on row 1 too.
+  .s_Tb-CuNavRow2
+    .s_Tb_Row1 .s_Tb_CuNav
+      display: none;
+
+  // If we show page title, categories, tags on row 2, then hide on row 1.
+  .s_Tb-TtlRow2
+    .s_Tb_Row1 .s_Tb_Pg
+      display: none;
+
+// On wider screens, use just the first topbar row.
+//
+@media (min-width: 1450px)   // [wide_topbar_min_px]
+  .s_Tb_Row2
+    display: none;
+
+
+
 .esOpenWatchbarBtn_text
   font-size: 14px;
   font-style: italic;
-  padding-right: 6px;
+
+  /* How complicated! Just change the title to "Topics"  [open_wb_btn_ttl]
+       instead of "Your topics".  Done.   CLEAN_UP  REMOVE
   // Line-wrap "Your topics" so won't collide with the forum title.
   @media (max-width: 1300px)
     max-width: 40px;
@@ -129,7 +177,9 @@ html:not(.js)
   @media (max-width: $titleOwnLineMaxWidth)
     // The title is on its own line, so no need to word wrap.
     max-width: none;
+  */
   @media (max-width: 600px)
+    // Just show button icon, no space for title.
     display: none;
 
 .esOpenPagebarBtn
@@ -187,8 +237,7 @@ html.es-watchbar-open
   .esOpenWatchbarBtn
     display: none;
 
-.esTopbar_ancestors
-  float: left;
+.s_Tb_Pg_Cs
   font-size: 15px;
   padding-top: 4px;
   position: relative;
@@ -196,7 +245,7 @@ html.es-watchbar-open
   @media (max-width: $narrowLimit)
     left: - $gotoButtonSidePaddingNarrow;
 
-.esTopbar_ancestors
+.s_Tb_Pg_Cs
   > li
     margin: 0;
     list-style-type: none;
@@ -214,7 +263,7 @@ html.es-watchbar-open
       border: none;
       background: none;
 
-.s_TB_Cs_C-Dd
+.s_Tb_Pg_Cs_C-Dd
   crossGray();
 
 .esTopbar_custom
@@ -243,7 +292,7 @@ html.es-watchbar-open
 .s_Tb-Fxd
   .dw-topbar-title
     margin-top: 3px;
-  .esTopbar_ancestors > li
+  .s_Tb_Pg_Cs > li
     margin: 3px 0 0;
   .esTopbar_custom
     margin-top: 0;
@@ -450,13 +499,14 @@ $snoozeIconSize = 28px;
   position: relative;
   z-index: 5;
 
+/* REMOVE this whole block ? CLEAN_UP
 // Place the title on a separate line, if narrow screen, so the open-watchbar btn won't
 // push it to the right.
 html:not(.es-watchbar-open),
 // If screen very narrow, always place title on separate line, so won't jump up/down when
 // opening/closing  the watchbar.
 html.esSidebarsOverlayPage
-  .s_Tb:not(.s_Tb-Fxd)
+  .s_Tb:not(.s_Tb-Fxd):not(.s_Tb-2Rows)
     @media (max-width: $titleOwnLineMaxWidth)
       .dw-topbar-title
         clear: both;
@@ -465,7 +515,7 @@ html.esSidebarsOverlayPage
       .esTopbar_ancestors
         clear: both;
         margin: 0;
-        padding: 0;
+        padding: 0; */
 
 // Old:
 .esTopbar
@@ -479,11 +529,12 @@ html.esSidebarsOverlayPage
       padding-top: 0;
       font-size: 26px;
 
-    .container
+    /* CLEAN_UP REMOVE
+    .container  // but it's *outside* .esTopbar in row 1?  dead code? (dead styles)
       @media (min-width: 800px)
         width: 350px;
       @media (min-width: 1100px)
-        width: 600px;
+        width: 600px;  */
 
   .btn
     &.esTopbar_ancestors_link,
@@ -512,16 +563,16 @@ html.esSidebarsOverlayPage
     &.dw-a-tools
       margin-left: 0;  // now search btn to the left
 
+.s_Tb_Row1
   .s_Tb_CuLogo,
-  .s_Tb_CuLns,
-  .esTopbar_ancestors,
-  .esTopbar_right
+  .s_Tb_CuNav,
+  .s_Tb_Pg_Cs,
+  .s_Tb_MyBs
     margin-top: 15px;
 
-  .esTopbar_right
-    margin-left: auto;  // right alights, in a flexbox
-    //float: right;  // no, now flexbox instead
-
+.s_Tb
+  .s_Tb_MyBs
+    white-space: nowrap;
     .btn
       border-radius: 0;
       border: none;
@@ -534,7 +585,6 @@ html.esSidebarsOverlayPage
       top: 2px;
       cursor: pointer;
 
-
       .icon-settings:before
         position: relative;
         top: 1px;
@@ -542,12 +592,32 @@ html.esSidebarsOverlayPage
         span:before
           font-weight: bold;
 
+.s_Tb_MyBs
+  // Right align the search button and MyMenu — so there's space for a search text
+  // input field.
+  margin-left: auto;  // right aligns, in a flexbox
+.s_Tb_Row2 .s_Tb_CuNav
+  // On any row 2, there's no search input. Then let the custom nav links get all space.
+  flex: 1;
+
+//.s_Tb_Row2 .s_Tb_CuNav
+//  margin-top: 0;  // excl directly instead?
+
+
+
+// When scrolled down
+//==============================
+
 
 .s_Tb-Fxd
   z-index: 1010;
   background: white;
   // shrink -2px so won't overlap #esPageScrollable scrollbar
-  box-shadow: 0 6px 9px -2px rgba(0,0,0,0.14); // shadow size dupl here: [5YKW25]
+  box-shadow: 0 6px 9px -2px rgba(0,0,0,0.15); // shadow size dupl here: [5YKW25]
+  @media (max-height: $tallHeight - 1px)
+    // Now, we've shrunk the topbar a bit — make the shadow stronger so
+    // simpler to see where the topbar ends, now when smaller.
+    box-shadow: 0 6px 9px -2px rgba(0,0,0,0.18);
 
   // Don't let topbar overlap scrollbar — but if window narrow, then probably a mobile, with
   // scrollbars hidden when not scrolling. Then leave margin as is = 0.
@@ -558,9 +628,6 @@ html.esSidebarsOverlayPage
   //   http://stackoverflow.com/questions/986937/how-can-i-get-the-browsers-scrollbar-sizes
   // Edit: Instead checking html.esSidebarsOverlayPage, see below [5FK7RS2]
   margin-right: 14px; // 14px works with FF, $pageScrollbarWidth only 13px.
-
-  .esOpenWatchbarBtn
-    margin-right: 14px; // because now Home –> Category, or forum title, on same line
 
   .esOpenWatchbarBtn_text,
   .esOpenCtxbarBtn_numOnline
@@ -580,10 +647,10 @@ html.esSidebarsOverlayPage
     min-height: auto;
 
     margin: 4px 0;
-    @media (max-height: 550px)
+    @media (max-height: 550px - 1)
       margin: 3px 0;
-    @media (max-height: 420px)
-      margin: 2px 0;
+    @media (max-height: $tinyHeight - 1)
+      margin: 1px 0;
 
     &.esTopbar-extraMargin
       margin: 8px 0 12px;
@@ -595,9 +662,64 @@ html.esSidebarsOverlayPage
       margin: 7px 0 0;
       font-size: 18px;
 
-    .esTopbar_ancestors .btn
+    // If no page title shown, then the categories font can be larger... (smaller_font)
+    .s_Tb_Pg_Cs .btn
       font-size: 14px;
 
+  // ... but if page title shown, then let the page title be larger, cats font smaller.
+
+  $paddingLeftRight = 4px;
+
+  &.s_Tb-Ttl .s_Tb_Pg
+    position: relative;
+    left: - $paddingLeftRight; // so the left padding below won't mess up hz alignment
+    max-width: calc(100% - 330px);  // space for MyMenu, so it won't line wrap
+    @media (max-width: 550px)  // ?
+      // Now MyMenu smaller: username hidden, only icon or "You".
+      max-width: calc(100% - 250px);
+    .s_Tb_Pg_Cs
+      top: 1px;
+      left: 0;
+      position: relative;
+      white-space: nowrap;
+      overflow: hidden;
+    .s_Tb_Pg_Cs .btn
+      font-size: 13px;  // (smaller_font)
+      padding: 4px $paddingLeftRight;
+      min-width: 0;
+      @media (max-height: $shortHeight - 1px)
+        padding: 2px $paddingLeftRight;
+    .s_Tb_Pg_Cs
+      > li:not(:last-child)::after
+        font-size: 14px;  // smaller arrow too, not just font (smaller_font)
+
+  .s_Tb_Pg_Ttl
+    font-size: 16px;
+    padding: 2px $paddingLeftRight 2px;
+    position: relative;
+    top: -4px;
+    pointer-events: auto;
+    font-weight: bold;
+    color: hsl(0 0% 25%);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    @media (max-height: $tallHeight - 1px)
+      // Smaller screen, so smaller font — more space for the actual content.
+      top: -2px;
+      font-size: 15px;
+      // Since smaller text, make font darker, so still looks important, like a title.
+      color: hsl(0deg 0% 23%);
+    @media (max-height: $shortHeight - 1px)
+      font-size: 14px;
+      color: hsl(0deg 0% 20%);
+
+  // If no ancestor categories to show, then, make the title larger.
+  &.s_Tb-NoCs .s_Tb_Pg_Ttl
+    font-size: 18px;
+    margin-top: 10px;  // else 0, top of screen
+
+  .esTopbar
     .dw-login
       margin-top: 0 !important;
 
@@ -610,10 +732,19 @@ html.esSidebarsOverlayPage
       padding-top: $topbarButtonPaddingTop;
       */
 
-    .esTopbar_ancestors,
-    .esTopbar_right
+    .s_Tb_Pg_Cs,
+    .s_Tb_MyBs
       margin-top: 0;
       padding-top: 0;
+
+  // A title with categories takes a bit space — v-align MyMenu button by adding margin.
+  &.s_Tb-Ttl.s_Tb-Cs
+    .s_Tb_MyBs
+      margin-top: 3px;
+      @media (min-height: $shortHeight)
+        margin-top: 6px;
+      @media (min-height: $tallHeight)
+        margin-top: 9px;
 
     .dropdown-toggle
       padding-top: 3px;
@@ -625,13 +756,16 @@ html.esSidebarsOverlayPage .s_Tb-Fxd
   margin-right: 0;
 
 
-// Admin tips
+
+// Admin intro tips
+//==============================
+
 
 .s_AdmTps
   display: flex;
 
   .dw-help
-    margin: 8px 0 17px 0;
+    margin: 8px 0 (17px + $moveSectionTitleUpPx) 0;
     padding-top: 2px;
     color: hsl(0, 0%, 6%);
     background: hsl($yellowTipsHue, 96%, 89%);
@@ -663,10 +797,10 @@ html.esSidebarsOverlayPage .s_Tb-Fxd
 
 
 // Custom title, logo, links
-// ==========================
+//==============================
 
 .s_Tb_CuLogo,
-.s_Tb_CuLns
+.s_Tb_CuNav
   pointer-events: auto;
   display: inline-block;
 

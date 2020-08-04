@@ -129,6 +129,7 @@ trait AllSettings {
 
   def headStylesHtml: String
   def headScriptsHtml: String
+  def startOfBodyHtml: String
   def endOfBodyHtml: String
   def headerHtml: String
   def navConf: JsObject
@@ -249,6 +250,7 @@ trait AllSettings {
     faviconUrl = Some(self.faviconUrl),
     headStylesHtml = Some(self.headStylesHtml),
     headScriptsHtml = Some(self.headScriptsHtml),
+    startOfBodyHtml = Some(self.startOfBodyHtml),
     endOfBodyHtml = Some(self.endOfBodyHtml),
     headerHtml = Some(self.headerHtml),
     navConf = Some(self.navConf),
@@ -368,6 +370,7 @@ object AllSettings {
     val faviconUrl = ""
     val headStylesHtml = ""
     val headScriptsHtml = ""
+    val startOfBodyHtml = ""
     val endOfBodyHtml = ""
     val headerHtml = ""
     val navConf = JsEmptyObj
@@ -488,6 +491,7 @@ case class EffectiveSettings(
   def faviconUrl: String = firstInChain(_.faviconUrl) getOrElse default.faviconUrl
   def headStylesHtml: String = firstInChain(_.headStylesHtml) getOrElse default.headStylesHtml
   def headScriptsHtml: String = firstInChain(_.headScriptsHtml) getOrElse default.headScriptsHtml
+  def startOfBodyHtml: String = firstInChain(_.startOfBodyHtml) getOrElse default.startOfBodyHtml
   def endOfBodyHtml: String = firstInChain(_.endOfBodyHtml) getOrElse default.endOfBodyHtml
   def headerHtml: String = firstInChain(_.headerHtml) getOrElse default.headerHtml
   def navConf: JsObject = firstInChain(_.navConf) getOrElse default.navConf
@@ -720,6 +724,7 @@ object Settings2 {
       "faviconUrl" -> JsStringOrNull(s.faviconUrl),
       "headStylesHtml" -> JsStringOrNull(s.headStylesHtml),
       "headScriptsHtml" -> JsStringOrNull(s.headScriptsHtml),
+      "startOfBodyHtml" -> JsStringOrNull(s.startOfBodyHtml),
       "endOfBodyHtml" -> JsStringOrNull(s.endOfBodyHtml),
       "headerHtml" -> JsStringOrNull(s.headerHtml),
       "navConf" -> s.navConf.getOrElse(JsNull).as[JsValue],
@@ -822,6 +827,7 @@ object Settings2 {
     faviconUrl = anyString(json, "faviconUrl", d.faviconUrl),
     headStylesHtml = anyString(json, "headStylesHtml", d.headStylesHtml),
     headScriptsHtml = anyString(json, "headScriptsHtml", d.headScriptsHtml),
+    startOfBodyHtml = anyString(json, "startOfBodyHtml", d.startOfBodyHtml),
     endOfBodyHtml = anyString(json, "endOfBodyHtml", d.endOfBodyHtml),
     headerHtml = anyString(json, "headerHtml", d.headerHtml),
     navConf = anyJsObj(json, "navConf", d.navConf),

@@ -1,0 +1,41 @@
+
+
+Responsive design [6PFDS3]
+==========================
+
+
+Responsive design breakpoints elsewhere:
+
+Tailwind:
+  >= 640px)   small 'sm'
+  >= 768px)   medium 'md'
+  >= 1024px)  large 'lg'
+  >= 1280px)  extra large 'xl'
+  Can customize:
+    https://tailwindcss.com/docs/responsive-design/#customizing-breakpoints
+
+Bootstrap:
+  .col-sm >= 576px  wide mobile  (approx between 320 and 768)
+      But bad idea! iPhone SE is 568px, so always smaller.
+  .col-md >= 768px  tablet
+  .col-lg >= 992px  laptop  or tablet landscape
+  .col-xl >= 1200px desktop (and many laptops too, 1920 is a frequent laptop width)
+  Can be customized:
+    https://getbootstrap.com/docs/4.0/layout/grid/#variables
+
+480px is a frequent mobile px size too, e.g. iPhone SE
+
+
+Wrist watches all seem to be:  < 300 px  (Aug 2020).
+
+Nice naming ideas:  https://ricostacruz.com/til/css-media-query-breakpoints
+"How should I name them?"
+  — namely by X in X00,
+  rather than "large", "small" etc, what's that anyway:
+  If a small mobile is small or tiny, then, what's a watch? Extra tiny? Super tiny?
+  And when my 14'' laptop is 1920 px = "extra large", then, what about a 30'' monitor?
+  Extra e-e-extra-Extra Large?
+
+  Talykard can use CSS classes  mw7  and mw10  and mw12
+  to mean   min-width 768,  1024,   1280  etc,
+  because designers typically know roughly how much 7NN px or 10NN px is.

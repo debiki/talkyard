@@ -48,17 +48,20 @@ export const TopBar = createComponent({
   mixins: [debiki2.StoreListenerMixin, debiki2.utils.PageScrollMixin],
 
   getInitialState: function() {
+    const store = debiki2.ReactStore.allData();
     return {
-      store: debiki2.ReactStore.allData(),
+      store,
       fixed: false,
       initialOffsetTop: undefined,
       enableGotoTopBtn: false,
       enableGotoEndBtn: true,
+      isWide: this.isPageWide(store),
     };
   },
 
   componentWillUnmount: function() {
     this.isGone = true;
+    clearInterval(this.timerHandle);
   },
 
   componentDidMount: function() {
@@ -77,6 +80,21 @@ export const TopBar = createComponent({
         fixed: rect.top < -FixedTopDist,
       });
     });
+    // Dupl code [5KFEWR7]
+    this.timerHandle = setInterval(this.checkSizeChangeLayout, 500);
+  },
+
+  checkSizeChangeLayout: function() {
+    // Dupl code [5KFEWR7]
+    if (this.isGone) return;
+    const isWide = this.isPageWide(this.state.store);
+    if (isWide !== this.state.isWide) {
+      this.setState({ isWide });
+    }
+  },
+
+  isPageWide: function(store: Store) {
+    return store_getApproxPageWidth(store) >= 1450;  // [wide_topbar_min_px]
   },
 
   getThisRect: function() {
@@ -151,9 +169,10 @@ export const TopBar = createComponent({
     const page: Page = store.currentPage;
     const me: Myself = store.me;
     const pageRole = page.pageRole;
-    const isChat = page_isChat(page.pageRole);
     const isEmbComments = pageRole === PageRole.EmbeddedComments;
+    const isSectionPage = isSection(pageRole);
     const isBitDown = this.state.fixed;
+    const isWide = this.state.isWide;
     const navConf: BrowserCode = store.settings.navConf || {};
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
@@ -163,6 +182,10 @@ export const TopBar = createComponent({
 
     const autoPageType = location_autoPageType(this.props.location);
 
+    // No custom navigation or menus, when in the admin area
+    // — bad if a bug breaks the admin area.
+    const skipCustomCode = autoPageType === AutoPageType.AdminArea;
+
 
     // Sidebars just make newcomers confused, if shown on some About Us page. However, if logged
     // in already, then one likely knows how they work —> then one would instead be confused,
@@ -171,38 +194,67 @@ export const TopBar = createComponent({
 
     // ------- Forum --> Category --> Sub Category
 
-    let ancestorCategories;
-    const shallShowAncestors = settings_showCategories(store.settings, me);
+    let hasTitle = false;
+    let noCatsMaybeTitle = false;
+
+    let TitleCatsTags = () => null;
+    const shallShowAncestors =
+            settings_showCategories(store.settings, me) && !isSectionPage;
     const thereAreAncestors = nonEmpty(page.ancestorsRootFirst);
     const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory);
 
-    if ((isUnlisted || isSection(pageRole)) && !isEmbComments) {
-      // Show no ancestors.
+    const anyUnsafeTitleSource: string | U = page.postsByNr[TitleNr]?.unsafeSource;
+    const showTitleInTopbar = (
+        // Before we've scrolled down, the title is visible in the page contents instead.
+        navConf.topbarBitDownShowTitle &&   // <— temp feature flag, later, always true
+              isBitDown && anyUnsafeTitleSource);
+
+    const PageTitleIfFixed = () => !showTitleInTopbar ? null :
+        r.div({ className: 's_Tb_Pg_Ttl' }, anyUnsafeTitleSource);  // [title_plain_txt]
+
+    if (!showTitleInTopbar && (isUnlisted || isSectionPage) && !isEmbComments) {
+      // Show no ancestor categories.
+      // But should show title, also if unlisted — not impl.
     }
     else if (thereAreAncestors && shallShowAncestors) {
-      ancestorCategories =
-        r.ol({ className: 'esTopbar_ancestors' },
-          page.ancestorsRootFirst.map((ancestor: Ancestor) => {
-            const deletedClass = ancestor.isDeleted ? ' s_TB_Cs_C-Dd' : '';
-            const categoryIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
-            return (
-                r.li({ key: ancestor.categoryId, className: 's_TB_Cs_C' + deletedClass },
-                  Link({ className: categoryIcon + 'esTopbar_ancestors_link btn', to: ancestor.path },
-                    ancestor.title)));
-          }));
+      const anyTitle = PageTitleIfFixed();
+      hasTitle = !!anyTitle;
+      TitleCatsTags = () =>
+          r.div({ className: 's_Tb_Pg' },
+            // RENAME  esTopbar_ancestors  to  s_Tb_Pg_Cs
+            r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
+              page.ancestorsRootFirst.map((ancestor: Ancestor) => {
+                const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
+                const categoryIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
+                const key = ancestor.categoryId;
+                return (
+                    r.li({ key, className: 's_Tb_Pg_Cs_C' + deletedClass },
+                      Link({ className: categoryIcon + 'esTopbar_ancestors_link btn',
+                          to: ancestor.path },
+                        ancestor.title)));
+              })),
+            anyTitle);
     }
-    // Add a Home link 1) if categories hidden (!shallShowAncestors), and 2) for
-    // direct messages, which aren't placed in any category (!thereAreAncestors),
-    // and 3) for embedded comments, if categories disabled, so can still return to
-    // discussion list page.
-    else if (thereAreAncestors || page.pageRole === PageRole.FormalMessage ||
+    else if (
+        // Add a Home link 1) if categories hidden (!shallShowAncestors), and 2) for
+        // direct messages, which aren't placed in any category (!thereAreAncestors),
+        // and 3) for embedded comments, if categories disabled, so can still return to
+        // discussion list page.
+        thereAreAncestors || page.pageRole === PageRole.FormalMessage ||
         page.pageRole === PageRole.PrivateChat || isEmbComments) {
       const mainSiteSection: SiteSection = store_mainSiteSection(store);
       const homePath = mainSiteSection.path;
-      ancestorCategories =
-        r.ol({ className: 'esTopbar_ancestors' },
-          r.li({},
-            Link({ className: 'esTopbar_ancestors_link btn', to: homePath }, t.Home)));
+      const anyTitle = PageTitleIfFixed();
+      const showHomeLink = !isSectionPage; // else, we're "Home" already
+      hasTitle = !!anyTitle;
+      noCatsMaybeTitle = isSectionPage;
+      
+      TitleCatsTags = () =>
+          r.div({ className: 's_Tb_Pg' },
+            showHomeLink && r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
+              r.li({},
+                Link({ className: 'esTopbar_ancestors_link btn', to: homePath }, t.Home))),
+            anyTitle);
     }
     else {
       // This isn't a private-message topic, and still it isn't placed in any section,
@@ -275,7 +327,7 @@ export const TopBar = createComponent({
             // RENAME classes below to: s_MMB_Un (username) and s_MMB_You
             // If screen wide:
             r.span({ className: 'esAvtrName_name' }, me.username || me.fullName),
-            // If screen narrow:
+            // If screen narrow:  [narrow]
             r.span({ className: 'esAvtrName_you' }, t.You),
             talkToMeNotfs,
             talkToOthersNotfs,
@@ -291,13 +343,14 @@ export const TopBar = createComponent({
     const hideLogInAndSignUp = me.isLoggedIn || page_isInfoPage(pageRole) || impersonatingStrangerInfo;
     const hideSignup = store.settings.allowSignup === false;
 
-    const signupButton = hideLogInAndSignUp || hideSignup ? null :
+    const SignupButton = () => hideLogInAndSignUp || hideSignup ? null :
       PrimaryButton({ className: 'dw-login esTopbar_signUp', onClick: this.onSignUpClick },
         r.span({}, t.SignUp));
 
-    const loginButton = hideLogInAndSignUp ? null :
+    const LoginButton = () => hideLogInAndSignUp ? null :
         PrimaryButton({ className: 'dw-login esTopbar_logIn', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, t.LogIn));
+
 
     // ------- Tools button
     // Placed here so it'll be available also when one has scrolled down a bit.
@@ -307,6 +360,7 @@ export const TopBar = createComponent({
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, t.Tools));
 
+
     // ------- Search button
 
     const searchButton =
@@ -314,24 +368,40 @@ export const TopBar = createComponent({
             className: 'esTB_SearchBtn', allowFullWidth: true, closeOnClick: false,
           render: SearchForm });
 
+
     // ------- Forum title
+
+    // The reason for this title-in-topbar was that I wanted the forum title
+    // and MyMenu to be in the same <div>, so the browser prevents them
+    // from overlapping, e.g. by line wrapping.
+    // But currently (Aug 2020) on narrow screens, the forum title & topbar contents
+    // don't look nice / well-aligned anyway.
+    // So, it's better to remove the foum title from here (the topbar) and
+    // instead include in the page & posts below, as done for other normal
+    // topics. (Those topics show ancestor categories in the topbar,
+    // so then there's something there, not just emptiness — then, less need
+    // to move the title up into the topbar.)
+    // Can instead use  position: relative,  top: -NN,  on wider displays,
+    // to move the forum title up into the topbar.
+    // Togethre with max-width: calc(100% - 350px) so always space for MyMenu.
+    // Sth like that.
 
     const siteLogoHtml =
         isBitDown && navConf.topbarBitDownLogo || navConf.topbarAtTopLogo;
 
-    const siteLogoTitle = siteLogoHtml &&
-        // No custom code in the admin area — bad if it breaks.
-        autoPageType !== AutoPageType.AdminArea &&
+    const siteLogoTitle = !skipCustomCode && siteLogoHtml &&
         r.div({
             className: 's_Tb_CuLogo s_Cu',
             dangerouslySetInnerHTML: { __html: siteLogoHtml }});
 
-    let pageTitle;
-    if (!siteLogoTitle && pageRole === PageRole.Forum && !autoPageType) {
+    let pageTitle;  // REMOVE, use instead: [dbl_tb_ttl] with larger font if on forum page.
+    if (!siteLogoTitle && pageRole === PageRole.Forum && !autoPageType
+          && !navConf.topbarBitDownShowTitle) {
       pageTitle =
           r.div({ className: 'dw-topbar-title' },
             debiki2.page.Title({ store, hideButtons: this.state.fixed }));
     }
+
 
     // ------- Custom title & Back to site button
 
@@ -380,23 +450,70 @@ export const TopBar = createComponent({
       extraMargin = true;
     }
 
+
     // ------- Custom navigation
 
-    const custLinksHtml = isBitDown && navConf.topbarBitDownNav || navConf.topbarAtTopNav;
-    const customNavLinks = custLinksHtml &&
+    const custNavRow1Html = !skipCustomCode && (
+            isBitDown && navConf.topbarBitDownNav || navConf.topbarAtTopNav);
+
+    const custNavRow1 = custNavRow1Html &&
         r.div({
-            className: 's_Tb_CuLns s_Cu',
-            dangerouslySetInnerHTML: { __html: custLinksHtml }});
+            className: 's_Tb_CuNav s_Cu',
+            dangerouslySetInnerHTML: { __html: custNavRow1Html }});
 
-    // ------- Buttons and search field
+    // If we've scrolled down, use the ...BitDown... config, if present.
+    // Otherwise use the ...AtTop... config, if present.
+    // If ...NavLine2 configured, use it. Otherwise, if ...Nav2Rows == true,
+    // use ...TopNav.
+    const custNavRow2Html = !skipCustomCode && !isWide && (  // (isWide || topbarAlw2Rows)
+            isBitDown && (
+                  navConf.topbarBitDownNavLine2 ||
+                  navConf.topbarBitDownNav2Rows && navConf.topbarBitDownNav)
+            || (navConf.topbarAtTopNavLine2 ||
+                  navConf.topbarAtTopNav2Rows && navConf.topbarAtTopNav));
 
-    const searchAndButtons =
-        r.div({ className: 'esTopbar_right' },
+    const custNavRow2 = !!custNavRow2Html &&
+        r.div({
+            className: 's_Tb_CuNav s_Cu',
+            dangerouslySetInnerHTML: { __html: custNavRow2Html }});
+
+
+    // ------- Search field and own buttons
+
+    const use2Rows = !skipCustomCode && (
+            custNavRow2 || navConf.topbarBitDownTitleRow2);
+            //  && (isWide || topbarAlw2Rows)  ?
+
+    const searchAndMyButtonsRow1 =
+        r.div({ className: 's_Tb_MyBs' },
           searchButton,  // later:  show input field so can just start typing
-          signupButton,
-          loginButton,
+          SignupButton(),
+          LoginButton(),
+          // We don't know when CSS hides or shows the 2nd row, so better to
+          // include always.
           toolsButton,
           avatarNameDropdown);
+          // No:
+          //(!use2Rows || isWide) && toolsButton,
+          //(!use2Rows || isWide) && avatarNameDropdown);
+
+    const topbarRow2 = use2Rows &&
+        rFragment({},
+          navConf.topbarBitDownTitleRow2 && TitleCatsTags(),
+          custNavRow2,
+          r.div({ className: 's_Tb_MyBs' },
+            // Signup and login buttons needed here, or Reactjs hydration fails.
+            // Include in both row 1 and 2.
+            SignupButton(),
+            LoginButton(),
+            // These buttons won't mess up hydration — they are not rendered server side.
+            // Include in only one of row 1 and 2.
+            toolsButton,
+            avatarNameDropdown));
+            // No:
+            //!isWide && toolsButton,
+            //!isWide && avatarNameDropdown));
+
 
     // ------- Open Contextbar button
 
@@ -444,23 +561,33 @@ export const TopBar = createComponent({
             title: contextbarTipsDetailed },
           contextbarTips, r.span({ className: 'icon-left-open' }));
 
+
     // ------- Open Watchbar button
 
     const openWatchbarButton = hideSidebarBtns ? null :
         Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar,
             title: t.tb.WatchbToolt },
           r.span({ className: 'icon-right-open' }),
-          // An eye icon makes sense? because the first list is "Recently *viewed*".
+
+          // Button title:
+          // 1) An eye icon makes sense? because the first list is "Recently *viewed*".
           // And one kind of uses that whole sidebar to *watch* / get-updated-about topics
           // one is interested in.
           // — no, hmm, someone remembers it from Photoshop and view-layers.
-          // r.span({ className: 'icon-eye' }));
-          /* Old:
-          // Let's call it "Activity"? since highlights topics with new posts.
+          // Don't:  r.span({ className: 'icon-eye' }));
+          // 2) Let's call it "Activity"? since highlights topics with new posts.
           // (Better give it a label, then easier for people to remember what it does.)
-          r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
-          */
-          r.span({ className: 'esOpenWatchbarBtn_text' }, t.tb.WatchbBtn));
+          // r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
+          // No, most topics listed won't have any recent activity.
+          // 3) "Your topics"? Since shows topics one has viewed, or created, or chats
+          // one has joined. But, "Your topics" is too long, on tablets, mobile.
+          // Then, just: "Topics".
+          // 4) Maybe always ues just "Topics" instead. Looks better, and, the topics
+          // usually aren't "owned" by oneself anyway.  [open_wb_btn_ttl]
+          //
+          r.span({ className: 'esOpenWatchbarBtn_text' },
+            t.Topics));  // could:  isWide ? t.tb.WatchbBtn : t.Topics
+
 
     // ------- Admin tips
 
@@ -505,7 +632,7 @@ export const TopBar = createComponent({
               */
 
     const topbarRow1 =
-      r.div({ className: 'esTopbar' + extraMarginClass },
+      r.div({ className: 'esTopbar' + extraMarginClass },  // REMOVE esTopbar divs
         siteLogoTitle,
         r.div({ className: 'esTopbar_custom' },
           customTitle,
@@ -515,15 +642,11 @@ export const TopBar = createComponent({
           anyMaintWorkMessage,
           backToGroups,
           backToSiteButton),
-        pageTitle,
-        customNavLinks,
-        ancestorCategories,
-        searchAndButtons);
-
-    const topbarRow2 = navConf.topbarAtTopNavLine2 &&
-        r.div({
-            className: 's_Tb_CuLns2 s_Cu',
-            dangerouslySetInnerHTML: { __html: navConf.topbarAtTopNavLine2 }});
+        pageTitle,    // [dbl_tb_ttl]
+        // Incl also if custNavRow2 defined — otherwise React's hydration won't work.
+        custNavRow1,
+        TitleCatsTags(),  // [dbl_tb_ttl]
+        searchAndMyButtonsRow1);
 
     let fixItClass = '';
     let placeholderIfFixed;
@@ -542,19 +665,34 @@ export const TopBar = createComponent({
       //styles = { top: this.state.top, left: this.state.left }
     }
 
+    const topbarClases =
+            fixItClass +
+            (hasTitle ? ' s_Tb-Ttl' : '') +
+            (noCatsMaybeTitle ? ' s_Tb-NoCs' : '') +
+            (!noCatsMaybeTitle ? ' s_Tb-Cs' : '') +
+            (use2Rows ? ' s_Tb-2Rows' : '') +
+            (navConf.topbarBitDownTitleRow2 ? ' s_Tb-TtlRow2' : '') +
+            (custNavRow2 ? ' s_Tb-CuNavRow2' : '');
+
     return rFragment({},
       r.div({},
         placeholderIfFixed,
-        r.div({ className: 'esTopbarWrap s_Tb' + fixItClass },  // RENAME to s_Tb, no Wrap
+        r.div({ className: 'esTopbarWrap s_Tb' + topbarClases },  // RENAME to s_Tb, no Wrap
           r.div({ className: 's_Tb_Row1' },
             openWatchbarButton,
             openContextbarButton,
-            r.div({ className: 'container' }, topbarRow1)),
+            r.div({ className: 'container' },
+              topbarRow1)),
           // Sometimes nice with a 2nd row, for nav links, if on mobile.
           // Instead of hamburger menu (which "hides" the nav links).
-          topbarRow2 &&
+          use2Rows &&
             r.div({ className: 's_Tb_Row2' },
-              r.div({ className: 'container' }, topbarRow2)))),
+              r.div({ className: 'container' },
+                r.div({ className: 'esTopbar' + extraMarginClass },  // REMOVE esTopbar divs
+                      // However!  >= 1 site  use it for styling colors.
+                      // So, first add basic theming functionality. Then, have people
+                      // change colors via themes.  *Then* remove .esTopbar. [themes]
+                  topbarRow2))))),
       adminGettingStartedTips);
   }
 });

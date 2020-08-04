@@ -170,7 +170,7 @@ const Page = createComponent({
 
   componentDidMount: function() {
     // A tiny bit dupl code though, perhaps break out... what? a mixin? [5KFEWR7]
-    this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
+    this.timerHandle = setInterval(this.checkSizeChangeLayout, 500);
   },
 
   componentWillUnmount: function() {
