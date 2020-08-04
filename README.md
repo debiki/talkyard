@@ -728,22 +728,15 @@ rather much + won't immediately work with Typescript?
 
 
 
-Old Code
+Old Code and Credits
 -----------------------------
 
-In January 2015 I squashed all old 4300+ commits into one single commit,
-because in the past I did some mistakes, so it feels better to start over again
-from commit number 1. The old commit history is available here:
-https://github.com/debiki/debiki-server-old
+Old code from before January 2015 is available here:
+https://github.com/debiki/debiki-server-old.
+That repo, squashed, is in this repo.
 
-
-
-Credits
------------------------------
-
-I sometimes copy ideas from [Discourse](http://www.discourse.org/), and look at
-its database structure, HTTP requests, and avatar pixel width. Discourse is
-forum software.
+Some features and UX design ideas were inspired by Discourse, forum software,
+see https://meta.discourse.org.
 
 
 
