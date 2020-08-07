@@ -83,6 +83,12 @@ html:not(.s_InIframe).esSidebarsOverlayPage
   overflow-y: auto;
   overflow-x: visible;
 
+  // Without this, if loading more topics in the topic list, Chrome jumps to
+  // the bottom of the page — so one loses one's scroll position and cannot easily
+  // see the start of the additional loaded topics.
+  &.s_NoScrlAncr
+    overflow-anchor: none;
+
 // Enables momentum based scrolling, on iPhone, which is otherwise only enabled for <body>.
 html.ios:not(.s_InIframe) #esPageColumn
   overflow-y: scroll;

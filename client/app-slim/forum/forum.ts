@@ -805,6 +805,16 @@ const LoadAndListTopics = createFactory({
     const categoryId = nextProps.activeCategory.id;
 
     this.isLoading = true;
+
+    // Prevent Chrome from jumping to the bottom of the page, once the new topics
+    // have been loaded.
+    // I think Chrome scroll-anchors the "Load more" button, so, after all new
+    // topics have been loaded, Chrome adjusts the scroll position so "Load more" is
+    // still visible — that is, Chrome scrolls past all newly loaded topics. But
+    // that's wrong; instead, the scroll position is to stay the same, so one
+    // can continue reading at the top of the newly loaded topics.
+    $byId('esPageColumn').classList.add('s_NoScrlAncr');
+
     Server.loadForumTopics(categoryId, orderOffset, (response: LoadTopicsResponse) => { // (4AB2D)
       if (this.isGone) return;
       let topics: any = isNewView ? [] : (this.state.topics || []);
@@ -825,6 +835,10 @@ const LoadAndListTopics = createFactory({
       if (!loadMore) {
         scrollToLastPositionSoon();
       }
+      setTimeout(function() {
+        // Re-enable scroll anchoring.
+        $byId('esPageColumn').classList.remove('s_NoScrlAncr');
+      })
     });
   },
 
