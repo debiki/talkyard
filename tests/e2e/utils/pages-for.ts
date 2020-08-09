@@ -917,19 +917,20 @@ export class TyE2eTestBrowser {
     }
 
 
-    getBoundingClientRect(selector: string): ElemRect {
+    getBoundingClientRect(selector: string, opts: { mustExist?: boolean } = {}): ElemRect | U {
       // Something like this might work too:
       //   const elemId: string = this.#br.findElement('css selector', selector);
       //   this.#br.getElementRect(elemId);  — how get the id?
       // But this already works:
       const result = this.#br.execute(function(selector) {
         var elem = document.querySelector(selector);
-        if (!elem) return null;
+        if (!elem) return undefined;
         var rect = elem.getBoundingClientRect();
         return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
       }, selector);
 
-      dieIf(!result, `Cannot find selector:  ${selector}  [TyE046WKSTH24]`);
+      dieIf(!result && opts.mustExist !== false,
+            `Cannot find selector:  ${selector}  [TyE046WKSTH24]`);
       return result;
     }
 
@@ -1094,14 +1095,26 @@ export class TyE2eTestBrowser {
     // Can be used to wait until a fade-&-scroll-in dialog is done scrolling in, for example.
     //
     waitUntilDoesNotMove(buttonSelector: string, pollInterval?: number) {
-      for (let attemptNr = 1; attemptNr <= 30; ++attemptNr) {
-        const location = this.getBoundingClientRect(buttonSelector);
+      let problem;
+      this.waitUntil(() => {
+        const location = this.getBoundingClientRect(buttonSelector, { mustExist: false });
+        if (!location) {
+          problem = `waitUntilDoesNotMove(..): Elem does not yet exist:  ${buttonSelector}`
+          return false;
+        }
+
         this.#br.pause(pollInterval || 50);
-        const locationLater = this.getBoundingClientRect(buttonSelector);
-        if (location.y === locationLater.y && location.x === locationLater.x)
-          return;
-      }
-      die(`Never stops moving: '${buttonSelector}' [EdE7KFYU0]`);
+
+        const locationLater = this.getBoundingClientRect(buttonSelector, { mustExist: true });
+        if (location.y !== locationLater.y || location.x !== locationLater.x) {
+          problem = `Keeps moving and moving: '${buttonSelector}' [EdE7KFYU0]`;
+          return false;
+        }
+
+        return true;
+      }, {
+        message: problem,
+      });
     }
 
 
