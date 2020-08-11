@@ -25,6 +25,7 @@ Dd = deleted
 Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
 Df = draft
 Dl = download — change to Dwnl? so rare
+Fxd = fixed, Stc = static
 CB = checkbox, e.g. s_SthCB
 Cb = Contextbar
 Cr = create
@@ -33,6 +34,7 @@ Nf = notification
 Pf = preference, e.g. NfPfs = notification preferences
 Pw = password, e.g. NewPwI
 St = status or state
+Stc = static, Fxd = fixed
 R = table row
 U  = user
 FI = file input

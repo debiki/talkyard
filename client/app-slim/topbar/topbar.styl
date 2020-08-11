@@ -563,13 +563,14 @@ html.esSidebarsOverlayPage
     &.dw-a-tools
       margin-left: 0;  // now search btn to the left
 
-.s_Tb_Row1
+.s_Tb-Stc .s_Tb_Row1
   .s_Tb_CuLogo,
   .s_Tb_CuNav,
   .s_Tb_Pg_Cs,
   .s_Tb_MyBs
     margin-top: 15px;
 
+.esTopbar
 .s_Tb
   .s_Tb_MyBs
     white-space: nowrap;
@@ -755,6 +756,10 @@ html.esSidebarsOverlayPage
 html.esSidebarsOverlayPage .s_Tb-Fxd
   margin-right: 0;
 
+
+// Small screen: Hide "Tools" button title, show only icon. A11N: svg image + alt text?
+.dw-a-tools .s_Ttl
+  display: none;
 
 
 // Admin intro tips
