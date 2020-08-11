@@ -1,5 +1,27 @@
 #!/bin/bash
 
+git_lock_file='.git/modules/modules/ed-versions/index.lock'
+
+
+if [ -f $git_lock_file ]; then
+  echo
+  echo "Error: Git lock file exists: $git_lock_file"
+  echo
+  echo "Some Git tool running, or crashed?"
+  exit 1
+fi
+
+
+echo
+echo "Before running this script:"
+echo "   type  git push whatever"
+echo "   and   sudo docker login"
+echo "so you're logged in."
+echo
+echo "Done already?  Then hit enter. Otherise CTRL+C to exit and login."
+echo
+read -s -p ''
+
 # Exit on any error. That's important, so we don't push a tag to Git,
 # although some image wasn't uploaded / tagged properly.
 set -e
