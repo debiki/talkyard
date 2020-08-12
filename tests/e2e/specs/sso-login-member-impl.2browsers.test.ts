@@ -1,6 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
+import * as fs from 'fs';
 import assert = require('assert');
 import tyAssert = require('../utils/ty-assert');
 import server = require('../utils/server');
@@ -9,7 +10,7 @@ import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import c = require('../test-constants');
-import { die, dieIf } from '../utils/log-and-die';
+import { die, dieIf, logMessage } from '../utils/log-and-die';
 
 
 
@@ -33,11 +34,14 @@ let forum: LargeTestForum;
 
 let discussionPageUrl: string;
 
+const loginPageSlug = 'sso-dummy-login.html';
+const loginPageFileSysPath = './target/' + loginPageSlug;
+
 const ssoUrl =
-    'http://localhost:8080/sso-dummy-login.html?returnPath=${talkyardPathQueryEscHash}';
+    `http://localhost:8080/${loginPageSlug}?returnPath=\${talkyardPathQueryEscHash}`;
 
 const ssoUrlVarsReplaced = (path: string): string =>
-    `http://localhost:8080/sso-dummy-login.html?returnPath=${path}`;
+    `http://localhost:8080/${loginPageSlug}?returnPath=${path}`;
 
 const mariasSsoId = 'mariasSsoId';
 const mariasReplyText = "I login as usual, although SSO is being tested.";
@@ -129,6 +133,20 @@ function constructSsoLoginTest(testName: string, variants: SsoLoginTestVariants)
 
   it("... and saves the new settings", () => {
     owensBrowser.adminArea.settings.clickSaveAll();
+  });
+
+  it("Owen creates an external login page", () => {
+    // Chrome? Webdriverio? wants a 200 OK reply, so need to create this dummy page.
+    if (!fs.existsSync(loginPageFileSysPath)) {
+      logMessage(`Creating html page: ${loginPageFileSysPath}`);
+      fs.writeFileSync(loginPageFileSysPath,
+            '<html><body>\n' +
+            "Ty SSO test dummy login page. [8906QKSHM40]\n" +
+            '</body></html>\n');
+    }
+    else {
+      logMessage(`Page already exists: ${loginPageFileSysPath}`);
+    }
   });
 
 
