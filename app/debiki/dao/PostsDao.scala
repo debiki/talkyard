@@ -156,7 +156,7 @@ trait PostsDao {
         "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
 
     val (reviewReasons: Seq[ReviewReason], shallApprove) =
-      throwOrFindReviewPostReasons(page.meta, authorAndLevels, tx)
+      throwOrFindNewPostReviewReasons(page.meta, authorAndLevels, tx)
 
     val approverId =
       if (author.isStaff) {
@@ -220,7 +220,7 @@ trait PostsDao {
     val anyReviewTask = if (reviewReasons.isEmpty) None
     else Some(ReviewTask(
       id = tx.nextReviewTaskId(),
-      reasons = reviewReasons.to[immutable.Seq],
+      reasons = reviewReasons.to[immutable.Seq].distinct,
       createdById = SystemUserId,
       createdAt = now.toJavaDate,
       createdAtRevNr = Some(newPost.currentRevisionNr),
@@ -288,13 +288,13 @@ trait PostsDao {
 
   /** Returns (review-reasons, shall-approve).
     */
-  def throwOrFindReviewPostReasons(pageMeta: PageMeta, author: UserAndLevels,
+  def throwOrFindNewPostReviewReasons(pageMeta: PageMeta, author: UserAndLevels,
         tx: SiteTransaction): (Seq[ReviewReason], Boolean) = {
-    throwOrFindReviewReasonsImpl(author, Some(pageMeta), newPageRole = None, tx)
+    throwOrFindNewPostReviewReasonsImpl(author, Some(pageMeta), newPageRole = None, tx)
   }
 
 
-  def throwOrFindReviewReasonsImpl(author: UserAndLevels, pageMeta: Option[PageMeta],
+  def throwOrFindNewPostReviewReasonsImpl(author: UserAndLevels, pageMeta: Option[PageMeta],
         newPageRole: Option[PageType], tx: SiteTransaction)
         : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
@@ -323,10 +323,20 @@ trait PostsDao {
     }
 
     lazy val reviewTasksRecentFirst =
-      tx.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts, OrderBy.MostRecentFirst)
+          tx.loadReviewTasksAboutUser(
+              // We'll look at the 10 * max-admin-settings last posts — events
+              // older than that, let's forget about here?
+              author.id,
+              limit = MaxNumFirstPosts,  // later: x 10
+              OrderBy.MostRecentFirst)
 
     lazy val reviewTasksOldestFirst =
-      tx.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts, OrderBy.OldestFirst)
+          tx.loadReviewTasksAboutUser(
+              // This is abuot the first MaxNumFirstPosts only, don't load more than that.
+              author.id, limit = MaxNumFirstPosts, OrderBy.OldestFirst)
+
+    BUG // Need to excl okay posts the user deleted henself, and were OK! [cant_appr_deld]
+    val numPending = reviewTasksRecentFirst.count(_.decision.isEmpty)
 
     // COULD add a users3 table status field instead, and update it on write, which says
     // if the user has too many pending comments / edits. Then could thow that status
@@ -344,7 +354,6 @@ trait PostsDao {
       // Later: auto bump threat level to ModerateThreat [DETCTHR], then MessagesDao will do all this
       // automatically.
       val numLoaded = reviewTasksRecentFirst.length
-      val numPending = reviewTasksRecentFirst.count(_.decision.isEmpty)
       val numRejected = reviewTasksRecentFirst.count(_.decision.exists(_.isRejectionBadUser))
       if (numLoaded >= 2 && numRejected > (numLoaded / 2)) // for now
         throwForbidden("EsE7YKG2", "Too many rejected comments or edits or something")
@@ -353,11 +362,14 @@ trait PostsDao {
       return (Nil, true)
     }
 
+    // ----- Too many recent bad posts?
+
     // If too many recent review tasks about maybe-spam are already pending,  [PENDNSPM]
     // or if too many posts got rejected,
     // don't let this not-totally-trusted user post anything more, for now.
     if (author.trustLevel.toInt < TrustLevel.TrustedMember.toInt &&
-        !(author.threatLevel.toInt <= ThreatLevel.SuperSafe.toInt)) {
+        author.threatLevel.toInt > ThreatLevel.SuperSafe.toInt) {
+
       val numMaybeSpam = reviewTasksRecentFirst.count(t =>
         t.reasons.contains(ReviewReason.PostIsSpam) && t.decision.isEmpty)
 
@@ -376,36 +388,75 @@ trait PostsDao {
           some of your posts look like spam, sorry.""")
     }
 
+    // ----- First posts
+
     val settings = loadWholeSiteSettings(tx)
-    val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
+    val maxPostsPendApprBefSetting = math.min(MaxNumFirstPosts, settings.maxPostsPendApprBefore)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
-    var numFirstToNotify = math.min(MaxNumFirstPosts, settings.numFirstPostsToReview)
+    var numFirstToRevwAftr = math.min(MaxNumFirstPosts, settings.numFirstPostsToReview)
+    val maxPostsPendRevwAftr = math.min(MaxNumFirstPosts, settings.maxPostsPendRevwAftr)
+
+    val maxPostsPendApprBefore =
+          if (maxPostsPendApprBefSetting > 0) maxPostsPendApprBefSetting
+          else MaxNumFirstPosts  // better have *some* limit?
 
     // Always have staff review a new guest's first two comments,
     // regardless of site settings. [4JKFWP4]
-    if (author.user.isGuest && (numFirstToApprove + numFirstToNotify) < 2) {
-      numFirstToNotify = 2 - numFirstToApprove
+    if (author.user.isGuest && (numFirstToApprove + numFirstToRevwAftr) < 2) {
+      numFirstToRevwAftr = 2 - numFirstToApprove
     }
 
-    if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
+    if (numFirstToApprove > 0 || numFirstToRevwAftr > 0) {
+      val numFirstPending = reviewTasksOldestFirst.count(_.decision.isEmpty)
       val numApproved = reviewTasksOldestFirst.count(_.decision.exists(_.isFine))
       val numLoaded = reviewTasksOldestFirst.length
 
       if (numApproved < numFirstToApprove) {
         // This user is still under evaluation (is s/he a spammer or not?).
         autoApprove = false
-        if (numLoaded >= numFirstToAllow)
-          throwForbidden("_EsE6YKF2_", o"""You cannot post more posts until a moderator has
+
+        val tooManyPendAppr = numFirstPending >= maxPostsPendApprBefore  // TyT305RKDJ5
+        val tooManyPostedTotal = numLoaded >= MaxNumFirstPosts  ; TESTS_MISSING
+
+        if (tooManyPendAppr || tooManyPostedTotal) {
+          BUG // [cant_appr_deld]  can happen if user deletes hens first posts,
+          // so cannot approve them.
+          val errCode = if (tooManyPendAppr) "_EsE6YKF2_" else "TyE025RSKT_"
+          throwForbidden(errCode, o"""You cannot post more posts until a moderator has
               approved your first posts""")
+        }
       }
 
-      if (numLoaded < math.min(MaxNumFirstPosts, numFirstToApprove + numFirstToNotify)) {
-        reviewReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
+      if (numLoaded < math.min(MaxNumFirstPosts, numFirstToApprove + numFirstToRevwAftr)) {
+        reviewReasons.append(ReviewReason.IsByNewUser)
       }
       else if (!autoApprove) {
-        reviewReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
+        reviewReasons.append(ReviewReason.IsByNewUser)
       }
     }
+
+    // ----- Trust level
+
+    val alwaysReqAppr = author.trustLevel.isAtMost(settings.requireApprovalIfTrustLte)
+    val alwaysReviewAfter = author.trustLevel.isAtMost(settings.reviewAfterIfTrustLte)
+
+    if (alwaysReqAppr) {
+      // Tests: TyT305RKTH205
+      autoApprove = false
+      reviewReasons.append(ReviewReason.IsByLowTrustLevel)
+      if (numPending + 1 > maxPostsPendApprBefore)
+        throwForbidden("TyE3506RKST_", o"""You cannot post more posts until
+              your previous posts have been approved by staff""")
+    }
+
+    if (alwaysReviewAfter) {
+      TESTS_MISSING
+      reviewReasons.append(ReviewReason.IsByLowTrustLevel)
+      if (maxPostsPendRevwAftr > 0 && numPending + 1 > maxPostsPendRevwAftr)
+        throwForbidden("TyE306RKTD5", o"""You cannot post more posts until
+              your first posts have been reviewed by staff""")
+    }
+
 
     // Disable this — also closed pages now get bumped, here: (7BMZW24), if there's a new post.
     // Maybe add back later, if in some cases, a closed page shouldn't get bumped.
@@ -414,6 +465,11 @@ trait PostsDao {
       // Could skip this if the user is trusted.
       reviewReasons.append(ReviewReason.NoBumpPost)
     }*/
+
+    // This whole fn is about new pages or posts.
+    if (reviewReasons.nonEmpty) {
+      reviewReasons.append(ReviewReason.NewPost)
+    }
 
     dieIf(!autoApprove && reviewReasons.isEmpty, "TyE0REVWRSNS")  // [703RK2]
     (reviewReasons, autoApprove)
@@ -447,7 +503,7 @@ trait PostsDao {
         tx.loadPermsOnPages()), "EdEMAY0CHAT")
 
       val (reviewReasons: Seq[ReviewReason], _) =
-        throwOrFindReviewPostReasons(page.meta, authorAndLevels, tx)
+        throwOrFindNewPostReviewReasons(page.meta, authorAndLevels, tx)
 
       if (!page.pageType.isChat)
         throwForbidden("EsE5F0WJ2", s"Page $pageId is not a chat page; cannot insert chat message")
@@ -1964,7 +2020,7 @@ trait PostsDao {
     val pageIdsToRefresh = mutable.Set[PageId]()
     val postsHidden = readWriteTransaction { tx =>
       val user = tx.loadParticipant(userId) getOrDie "EdE6FKW02"
-      if (user.effectiveTrustLevel != TrustLevel.NewMember)
+      if (!user.effectiveTrustLevel.isStrangerOrNewMember)
         return Nil
 
       // Keep small, there's an O(n^2) loop below (6WKUT02).

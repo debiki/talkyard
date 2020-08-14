@@ -103,9 +103,12 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         progress_layout,
         orig_post_reply_btn_title,
         orig_post_votes,
+        appr_before_if_trust_lte,
+        review_after_if_trust_lte,
         num_first_posts_to_review,
         num_first_posts_to_approve,
-        num_first_posts_to_allow,
+        max_posts_pend_appr_before,
+        max_posts_pend_revw_aftr,
         enable_stop_forum_spam,
         enable_akismet,
         akismet_api_key,
@@ -150,9 +153,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
+
     val values = List(
       siteId.asAnyRef,
       NullInt,
@@ -201,9 +205,12 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.progressLayout.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.origPostReplyBtnTitle.getOrElse(None).orNullVarchar,
       editedSettings2.origPostVotes.getOrElse(None).map(_.toInt).orNullInt,
+      editedSettings2.requireApprovalIfTrustLte.getOrElse(None).map(_.toInt).orNullInt,
+      editedSettings2.reviewAfterIfTrustLte.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.numFirstPostsToReview.getOrElse(None).orNullInt,
       editedSettings2.numFirstPostsToApprove.getOrElse(None).orNullInt,
-      editedSettings2.numFirstPostsToAllow.getOrElse(None).orNullInt,
+      editedSettings2.maxPostsPendApprBefore.getOrElse(None).orNullInt,
+      editedSettings2.maxPostsPendRevwAftr.getOrElse(None).orNullInt,
       editedSettings2.enableStopForumSpam.getOrElse(None).orNullBoolean,
       editedSettings2.enableAkismet.getOrElse(None).orNullBoolean,
       editedSettings2.akismetApiKey.getOrElse(None).orNullVarchar,
@@ -311,9 +318,12 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("progress_layout", s.progressLayout.map(_.map(_.toInt).orNullInt))
     maybeSet("orig_post_reply_btn_title", s.origPostReplyBtnTitle.map(_.trimOrNullVarchar))
     maybeSet("orig_post_votes", s.origPostVotes.map(_.map(_.toInt).orNullInt))
+    maybeSet("appr_before_if_trust_lte", s.requireApprovalIfTrustLte.map(_.map(_.toInt).orNullInt))
+    maybeSet("review_after_if_trust_lte", s.reviewAfterIfTrustLte.map(_.map(_.toInt).orNullInt))
     maybeSet("num_first_posts_to_review", s.numFirstPostsToReview.map(_.orNullInt))
     maybeSet("num_first_posts_to_approve", s.numFirstPostsToApprove.map(_.orNullInt))
-    maybeSet("num_first_posts_to_allow", s.numFirstPostsToAllow.map(_.orNullInt))
+    maybeSet("max_posts_pend_appr_before", s.maxPostsPendApprBefore.map(_.orNullInt))
+    maybeSet("max_posts_pend_revw_aftr", s.maxPostsPendRevwAftr.map(_.orNullInt))
     maybeSet("enable_stop_forum_spam", s.enableStopForumSpam.map(_.orNullBoolean))
     maybeSet("enable_akismet", s.enableAkismet.map(_.orNullBoolean))
     maybeSet("akismet_api_key", s.akismetApiKey.map(_.trimOrNullVarchar))
@@ -421,9 +431,12 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       progressLayout = getOptInt(rs, "progress_layout").flatMap(ProgressLayout.fromInt),
       origPostReplyBtnTitle = getOptString(rs, "orig_post_reply_btn_title"),
       origPostVotes = getOptInt(rs, "orig_post_votes").flatMap(OrigPostVotes.fromInt),
+      requireApprovalIfTrustLte = getOptInt(rs, "appr_before_if_trust_lte").flatMap(TrustLevel.fromInt),
+      reviewAfterIfTrustLte = getOptInt(rs, "review_after_if_trust_lte").flatMap(TrustLevel.fromInt),
       numFirstPostsToReview = getOptInt(rs, "num_first_posts_to_review"),
       numFirstPostsToApprove = getOptInt(rs, "num_first_posts_to_approve"),
-      numFirstPostsToAllow = getOptInt(rs, "num_first_posts_to_allow"),
+      maxPostsPendApprBefore = getOptInt(rs, "max_posts_pend_appr_before"),
+      maxPostsPendRevwAftr = getOptInt(rs, "max_posts_pend_revw_aftr"),
       enableStopForumSpam = getOptBool(rs, "enable_stop_forum_spam"),
       enableAkismet = getOptBool(rs, "enable_akismet"),
       akismetApiKey = getOptString(rs, "akismet_api_key"),

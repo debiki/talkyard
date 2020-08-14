@@ -320,7 +320,7 @@ trait ReviewsDao {
   private def perhapsCascadeApproval(userId: UserId, pageIdsToRefresh: mutable.Set[PageId])(
         tx: SiteTransaction): Unit = {
     val settings = loadWholeSiteSettings(tx)
-    val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
+    val numFirstToAllow = math.min(MaxNumFirstPosts, settings.maxPostsPendApprBefore)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
     if (numFirstToAllow > 0 && numFirstToApprove > 0) {
       // Load some more review tasks than just MaxNumFirstPosts, in case the user has

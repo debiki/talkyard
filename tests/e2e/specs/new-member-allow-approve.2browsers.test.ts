@@ -68,7 +68,7 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
     // the last approval "cascades" and auto-approves all 5 posts. Thereafter the new memeber
     // can post how many posts hen wants to (subjected to new user rate limits).
     site.settings.numFirstPostsToApprove = 2;
-    site.settings.numFirstPostsToAllow = 4;
+    site.settings.maxPostsPendApprBefore = 4;
     site.members.push(maja);
     site.members.push(michael);
 

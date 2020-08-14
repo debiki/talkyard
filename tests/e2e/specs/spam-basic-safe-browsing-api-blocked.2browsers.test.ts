@@ -47,7 +47,7 @@ describe("spam test, Google Safe Browsing API  TyTSPSAFEBRAPI", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('safebrapi', { title: forumTitle });
     site.settings.numFirstPostsToReview = 9;
-    site.settings.numFirstPostsToAllow = 9;
+    site.settings.maxPostsPendRevwAftr = 9;
     site.members.push(mallory);
     idAddress = server.importSiteData(site);
   });

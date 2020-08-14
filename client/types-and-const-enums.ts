@@ -326,13 +326,15 @@ const enum SiteStatus {
 
 
 const enum TrustLevel {
-  Stranger = 0,
+  Min = 0,
+  Stranger = Min,
   New = 1,
   Basic = 2,
   FullMember = 3,
   Trusted = 4,
   Regular = 5,
   CoreMember = 6,
+  Max = CoreMember,
 }
 
 

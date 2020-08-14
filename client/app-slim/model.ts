@@ -1487,9 +1487,12 @@ interface Settings extends TopicInterfaceSettings {
   ssoLoginRequiredLogoutUrl: string;
 
   // Moderation
-  numFirstPostsToAllow: number;
-  numFirstPostsToApprove: number;
-  numFirstPostsToReview: number;
+  requireApprovalIfTrustLte: TrustLevel;  // RENAME to apprBeforeIfTrustLte  ?
+  reviewAfterIfTrustLte: TrustLevel;
+  maxPostsPendApprBefore: number;
+  maxPostsPendRevwAftr: number;
+  numFirstPostsToApprove: number;  // RENAME to ..ApprBefr
+  numFirstPostsToReview: number;   // RENAME to ..RewvAftr
   enableStopForumSpam: boolean;
   enableAkismet: boolean;
   akismetApiKey: string;

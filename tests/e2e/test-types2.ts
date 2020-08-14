@@ -179,7 +179,8 @@ interface TestSiteSettings {
   mayPostBeforeEmailVerified?: boolean;
   numFirstPostsToReview?: number;
   numFirstPostsToApprove?: number;
-  numFirstPostsToAllow?: number;
+  maxPostsPendApprBefore?: number;
+  maxPostsPendRevwAftr?: number;
   numFlagsToHidePost?: number;
   numFlagsToBlockNewUser?: number;
   numFlaggersToBlockNewUser?: number;

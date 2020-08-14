@@ -44,7 +44,7 @@ describe("spam test, Akismet false negatives = missed spam  TyT63MKWYT37", () =>
     let site: SiteData = make.forumOwnedByOwen('spamfane', { title: forumTitle });
     site.settings.enableAkismet = true;
     site.settings.numFirstPostsToReview = 9;
-    site.settings.numFirstPostsToAllow = 9;
+    site.settings.maxPostsPendRevwAftr = 9;
     site.members.push(mallory);
     idAddress = server.importSiteData(site);
     countersBefore = server.getTestCounters();

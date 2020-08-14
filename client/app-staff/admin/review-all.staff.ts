@@ -32,6 +32,7 @@ const r = ReactDOMFactories;
 const ReviewReasons = {
   isByThreatUser: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 0),
   isByNewUser: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 1),
+  isByLowTrust: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 2),
   newPost: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 4),
   noBumpPost: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 5),
   edit: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 6),
@@ -191,39 +192,49 @@ const ReviewTask = createComponent({
       what += "has edits waiting for approval, and ";
     }
 
-    let who = "TyE0REVRSN";
-    if (ReviewReasons.isByNewUser(reviewTask)) {
-      who = "a new user";
-      if (ReviewReasons.isByThreatUser(reviewTask)) {
-        who += " who sometimes misbehaves";
-      }
-    }
-    else if (ReviewReasons.isByThreatUser(reviewTask)) {
-      who = "a user who sometimes misbehaves";
+    const isNewUser = ReviewReasons.isByNewUser(reviewTask);
+    const isThreat = ReviewReasons.isByThreatUser(reviewTask);
+    const isLowTrust = ReviewReasons.isByLowTrust(reviewTask);
+
+    let riskyUser: string | U;
+    if (isNewUser || isThreat || isLowTrust) {
+      riskyUser = isNewUser ? "a New user" : "a user";
+      // UX "bug": Trust level might not be low though!
+      // Configurable in requireApprovalIfTrustLte.
+      if (isLowTrust) riskyUser += " with low trust level";
+      if (isThreat) riskyUser += " who sometimes misbehaves";
     }
 
-    if (ReviewReasons.newPost(reviewTask) && who) {
-      whys.push("was posted by " + who);
+    // ----- New post?
+
+    if (ReviewReasons.newPost(reviewTask) && riskyUser) {
+      whys.push("was posted by " + riskyUser);
     }
 
     if (ReviewReasons.noBumpPost(reviewTask)) {
       whys.push("was posted on a closed page, it might have gone unnoticed");
     }
 
-    if (ReviewReasons.edit(reviewTask) && who) {
-      // "... who sometimes misbehaves" appended above already.
-      whys.push("was edited by " + who);
+    // ----- Edits?
+
+    if (ReviewReasons.edit(reviewTask) && riskyUser) {
+      whys.push("was edited by " + riskyUser);
     }
+
     if (ReviewReasons.lateEdit(reviewTask)) {
       whys.push("was edited long after it was created, no one might have noticed");
     }
 
+    // ----- Bad post?
+
     if (ReviewReasons.postFlagged(reviewTask)) {
       whys.push("has been flagged");
     }
+
     if (ReviewReasons.postUnpopular(reviewTask)) {
       whys.push("is unpopular (many downvotes)");
     }
+
     if (ReviewReasons.postIsSpam(reviewTask)) {
       whys.push("seems to be spam");
     }

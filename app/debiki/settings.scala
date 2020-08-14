@@ -117,9 +117,12 @@ trait AllSettings {
   def origPostVotes: OrigPostVotes
   // -----------------------------
 
-  def numFirstPostsToReview: Int
-  def numFirstPostsToApprove: Int
-  def numFirstPostsToAllow: Int
+  def requireApprovalIfTrustLte: TrustLevel
+  def reviewAfterIfTrustLte: TrustLevel
+  def numFirstPostsToReview: Int   ; RENAME // numFirstPostsReviewAfterShown
+  def numFirstPostsToApprove: Int  ; RENAME // numFirstPostsApproveBeforeShown
+  def maxPostsPendApprBefore: Int   // [pend_appr]
+  def maxPostsPendRevwAftr: Int
   def enableStopForumSpam: Boolean
   // sendEmailToStopForumSpam: in the db, not in use: send_email_to_stop_forum_spam
   def enableAkismet: Boolean
@@ -240,9 +243,12 @@ trait AllSettings {
     progressLayout = Some(self.progressLayout),
     origPostReplyBtnTitle = Some(self.origPostReplyBtnTitle),
     origPostVotes = Some(self.origPostVotes),
+    requireApprovalIfTrustLte = Some(self.requireApprovalIfTrustLte),
+    reviewAfterIfTrustLte = Some(self.reviewAfterIfTrustLte),
     numFirstPostsToReview = Some(self.numFirstPostsToReview),
     numFirstPostsToApprove = Some(self.numFirstPostsToApprove),
-    numFirstPostsToAllow = Some(self.numFirstPostsToAllow),
+    maxPostsPendApprBefore = Some(self.maxPostsPendApprBefore),
+    maxPostsPendRevwAftr = Some(self.maxPostsPendRevwAftr),
     enableStopForumSpam = Some(self.enableStopForumSpam),
     enableAkismet = Some(self.enableAkismet),
     akismetApiKey = Some(self.akismetApiKey),
@@ -360,9 +366,12 @@ object AllSettings {
     val progressLayout: ProgressLayout = ProgressLayout.Default
     val origPostReplyBtnTitle: String = ""  // will then use the i18n field
     val origPostVotes: OrigPostVotes = OrigPostVotes.Default
+    val requireApprovalIfTrustLte = TrustLevel.Stranger
+    val reviewAfterIfTrustLte = TrustLevel.Stranger
     val numFirstPostsToReview = 1
     val numFirstPostsToApprove = 0
-    val numFirstPostsToAllow = 0
+    val maxPostsPendApprBefore = 0
+    val maxPostsPendRevwAftr = 0
     val enableStopForumSpam = true
     val enableAkismet = false // later, when more tested:  = globals.config.akismetApiKey.isDefined
     val akismetApiKey: String = if (globals.config.akismetApiKey.isDefined) InConfigFile else ""
@@ -481,9 +490,12 @@ case class EffectiveSettings(
   def progressLayout: ProgressLayout = firstInChain(_.progressLayout) getOrElse default.progressLayout
   def origPostReplyBtnTitle: String = firstInChain(_.origPostReplyBtnTitle) getOrElse default.origPostReplyBtnTitle
   def origPostVotes: OrigPostVotes = firstInChain(_.origPostVotes) getOrElse default.origPostVotes
+  def requireApprovalIfTrustLte: TrustLevel = firstInChain(_.requireApprovalIfTrustLte) getOrElse default.requireApprovalIfTrustLte
+  def reviewAfterIfTrustLte: TrustLevel = firstInChain(_.reviewAfterIfTrustLte) getOrElse default.reviewAfterIfTrustLte
   def numFirstPostsToReview: Int = firstInChain(_.numFirstPostsToReview) getOrElse default.numFirstPostsToReview
   def numFirstPostsToApprove: Int = firstInChain(_.numFirstPostsToApprove) getOrElse default.numFirstPostsToApprove
-  def numFirstPostsToAllow: Int = firstInChain(_.numFirstPostsToAllow) getOrElse default.numFirstPostsToAllow
+  def maxPostsPendApprBefore: Int = firstInChain(_.maxPostsPendApprBefore) getOrElse default.maxPostsPendApprBefore
+  def maxPostsPendRevwAftr: Int = firstInChain(_.maxPostsPendRevwAftr) getOrElse default.maxPostsPendRevwAftr
   def enableStopForumSpam: Boolean = firstInChain(_.enableStopForumSpam) getOrElse default.enableStopForumSpam
   def enableAkismet: Boolean = firstInChain(_.enableAkismet) getOrElse default.enableAkismet
   def akismetApiKey: String = firstInChain(_.akismetApiKey) getOrElse default.akismetApiKey
@@ -714,9 +726,12 @@ object Settings2 {
       "progressLayout" -> JsNumberOrNull(s.progressLayout.map(_.toInt)),
       "origPostReplyBtnTitle" -> JsStringOrNull(s.origPostReplyBtnTitle),
       "origPostVotes" -> JsNumberOrNull(s.origPostVotes.map(_.toInt)),
+      "requireApprovalIfTrustLte" -> JsNumberOrNull(s.requireApprovalIfTrustLte.map(_.toInt)),
+      "reviewAfterIfTrustLte" -> JsNumberOrNull(s.reviewAfterIfTrustLte.map(_.toInt)),
       "numFirstPostsToReview" -> JsNumberOrNull(s.numFirstPostsToReview),
       "numFirstPostsToApprove" -> JsNumberOrNull(s.numFirstPostsToApprove),
-      "numFirstPostsToAllow" -> JsNumberOrNull(s.numFirstPostsToAllow),
+      "maxPostsPendApprBefore" -> JsNumberOrNull(s.maxPostsPendApprBefore),
+      "maxPostsPendRevwAftr" -> JsNumberOrNull(s.maxPostsPendRevwAftr),
       "enableStopForumSpam" -> JsBooleanOrNull(s.enableStopForumSpam),
       "enableAkismet" -> JsBooleanOrNull(s.enableAkismet),
       "akismetApiKey" -> JsStringOrNull(s.akismetApiKey),
@@ -817,9 +832,12 @@ object Settings2 {
     progressLayout = anyInt(json, "progressLayout", d.progressLayout.toInt).map(_.flatMap(ProgressLayout.fromInt)),
     origPostReplyBtnTitle = anyString(json, "origPostReplyBtnTitle", d.origPostReplyBtnTitle),
     origPostVotes = anyInt(json, "origPostVotes", d.origPostVotes.toInt).map(_.flatMap(OrigPostVotes.fromInt)),
+    requireApprovalIfTrustLte = anyInt(json, "requireApprovalIfTrustLte", d.requireApprovalIfTrustLte.toInt).map(_.flatMap(TrustLevel.fromInt)),
+    reviewAfterIfTrustLte = anyInt(json, "reviewAfterIfTrustLte", d.reviewAfterIfTrustLte.toInt).map(_.flatMap(TrustLevel.fromInt)),
     numFirstPostsToReview = anyInt(json, "numFirstPostsToReview", d.numFirstPostsToReview),
     numFirstPostsToApprove = anyInt(json, "numFirstPostsToApprove", d.numFirstPostsToApprove),
-    numFirstPostsToAllow = anyInt(json, "numFirstPostsToAllow", d.numFirstPostsToAllow),
+    maxPostsPendApprBefore = anyInt(json, "maxPostsPendApprBefore", d.maxPostsPendApprBefore),
+    maxPostsPendRevwAftr = anyInt(json, "maxPostsPendRevwAftr", d.maxPostsPendRevwAftr),
     enableStopForumSpam = anyBool(json, "enableStopForumSpam", d.enableStopForumSpam),
     enableAkismet = anyBool(json, "enableAkismet", d.enableAkismet),
     akismetApiKey = anyString(json, "akismetApiKey", d.akismetApiKey),

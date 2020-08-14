@@ -40,7 +40,7 @@ sealed abstract class ReviewReason(val IntVal: Int, val isOnPage: Boolean = true
 // WOULD change this to be like ReviewTaskResolution(value: Int) extends AnyVal & magic bits [L4KDUQF2]
 object ReviewReason {
 
-  // DON'T FORGET to update fromLong(..) below if adding/commenting-in a reason.
+  // *** DON'T FORGET *** to update fromLong(..) below if adding/commenting-in a reason.
 
   /** Always review stuff done by a mild / moderate threat level user. */
   case object IsByThreatUser extends ReviewReason(1 << 0)
@@ -48,7 +48,10 @@ object ReviewReason {
   /** The first/first-few posts by a new user should be reviewed. */
   case object IsByNewUser extends ReviewReason(1 << 1)
 
-  // << 2 and << 3 reserved for other user types. Perhaps IsByGuest?
+  /** The first/first-few posts by a new user should be reviewed. */
+  case object IsByLowTrustLevel extends ReviewReason(1 << 2)
+
+  // and << 3 reserved for ... what?
 
   /** We don't need any NewPage reason, because if the ReviewTask post nr is BodyId,
     * then we know it's for a new page. */
@@ -80,6 +83,7 @@ object ReviewReason {
     val reasons = ArrayBuffer[ReviewReason]()
     if ((value & IsByThreatUser.toInt) != 0) reasons.append(IsByThreatUser)
     if ((value & IsByNewUser.toInt) != 0) reasons.append(IsByNewUser)
+    if ((value & IsByLowTrustLevel.toInt) != 0) reasons.append(IsByLowTrustLevel)
     if ((value & NewPost.toInt) != 0) reasons.append(NewPost)
     if ((value & NoBumpPost.toInt) != 0) reasons.append(NoBumpPost)
     if ((value & Edit.toInt) != 0) reasons.append(Edit)

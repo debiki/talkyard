@@ -843,7 +843,7 @@ case class Guest( // [exp] ok
   def isSuperAdmin: Boolean = false
   override def isBuiltIn: Boolean = super.isBuiltIn
   def suspendedTill: Option[ju.Date] = None
-  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
+  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember ; SHOULD // CHANGE to TrustLevel.Stranger
 
   override def anyName = Some(guestName)
   def usernameOrGuestName: String = guestName
@@ -1260,7 +1260,7 @@ object UnknownParticipant extends Participant {
   override def isOwner: Boolean = false
   override def isModerator: Boolean = false
   override def isSuperAdmin: Boolean = false
-  override def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
+  override def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember ; SHOULD // CHANGE to TrustLevel.Stranger
   override def usernameOrGuestName: String = UnknownUserName
   override def nameOrUsername: String = UnknownUserName
 }
@@ -1383,6 +1383,7 @@ object Group {
   def isBuiltInGroupId(groupId: UserId): Boolean = EveryoneId <= groupId && groupId <= AdminsId
   def isStaffGroupId(groupId: UserId): Boolean = StaffId <= groupId && groupId <= AdminsId
 
+  dieUnless(EveryoneId == TrustLevel.Stranger.toInt + 10, "TyE305KTS3")
   dieUnless(AllMembersId == TrustLevel.NewMember.toInt + 10, "EdE7LPKW20")
   dieUnless(CoreMembersId == TrustLevel.CoreMember.toInt + 10, "EdE7LPKW21")
 }
@@ -1905,7 +1906,7 @@ case class VisitTrust(
   trustLevelInt: Int)
 
 object VisitTrust {
-  val UnknownMember = VisitTrust(0, TrustLevel.NewMember.toInt)
+  val UnknownMember = VisitTrust(0, TrustLevel.NewMember.toInt)  ; SHOULD // CHANGE to TrustLevel.Stranger
 }
 
 

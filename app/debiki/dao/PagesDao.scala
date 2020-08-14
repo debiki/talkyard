@@ -387,7 +387,7 @@ trait PagesDao {
 
   def throwOrFindReviewNewPageReasons(author: UserAndLevels, pageRole: PageType,
         tx: SiteTransaction): (Seq[ReviewReason], Boolean) = {
-    throwOrFindReviewReasonsImpl(author, pageMeta = None, newPageRole = Some(pageRole), tx)
+    throwOrFindNewPostReviewReasonsImpl(author, pageMeta = None, newPageRole = Some(pageRole), tx)
   }
 
 

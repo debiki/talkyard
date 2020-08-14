@@ -26,8 +26,13 @@ sealed abstract class TrustLevel(val IntVal: Int) {
   def isBelow(other: TrustLevel): Boolean =
     toInt < other.toInt
 
+  def isAtMost(level: TrustLevel): Boolean =
+    toInt <= level.toInt
+
   def isAtLeast(level: TrustLevel): Boolean =
     toInt >= level.toInt
+
+  def isStrangerOrNewMember: Boolean = IntVal <= TrustLevel.NewMember.IntVal
 }
 
 
@@ -40,11 +45,12 @@ sealed abstract class TrustLevel(val IntVal: Int) {
   * https://meta.discourse.org/t/a-new-trust-level-the-helpful-member/56894
   */
 object TrustLevel {
+  case object Stranger extends TrustLevel(0)   ; REFACTOR // bump all 1, so won't start at 0
   case object NewMember extends TrustLevel(1)
   case object BasicMember extends TrustLevel(2)
   case object FullMember extends TrustLevel(3)
-  case object TrustedMember extends TrustLevel(4)   // or rename to Trusted?
-  case object RegularMember extends TrustLevel(5)
+  case object TrustedMember extends TrustLevel(4)
+  case object RegularMember extends TrustLevel(5)   ; RENAME // to Trusted Regular
   case object CoreMember extends TrustLevel(6)
 
   // Not real trust levels, but sometimes simpler to remember just one digit, say 7,
@@ -54,6 +60,7 @@ object TrustLevel {
   val AdminDummyLevel = 8
 
   def fromInt(value: Int): Option[TrustLevel] = Some(value match {
+    case TrustLevel.Stranger.IntVal => TrustLevel.Stranger
     case TrustLevel.NewMember.IntVal => TrustLevel.NewMember
     case TrustLevel.BasicMember.IntVal => TrustLevel.BasicMember
     case TrustLevel.FullMember.IntVal => TrustLevel.FullMember
@@ -64,6 +71,7 @@ object TrustLevel {
   })
 
   def fromBuiltInGroupId(groupId: Int): Option[TrustLevel] = Some(groupId match {
+    case Group.EveryoneId => TrustLevel.Stranger
     case Group.AllMembersId => TrustLevel.NewMember
     case Group.BasicMembersId => TrustLevel.BasicMember
     case Group.FullMembersId => TrustLevel.FullMember
@@ -71,10 +79,9 @@ object TrustLevel {
     case Group.RegularMembersId => TrustLevel.RegularMember
     case Group.CoreMembersId => TrustLevel.CoreMember
     case _ =>
-      // Skip: Group.EveryoneId, ModeratorsId, AdminsId, because StrangerDummyLevel and
+      // Skip: Group.ModeratorsId, AdminsId, because StrangerDummyLevel and
       // moderators and admins aren't trust levels. [COREINCLSTAFF]
-      // Instead, strangers have no trust level at all. And a staff members, can have trust
-      // level just Basic or Core Member or whatever.
+      // Staff members can have trust level just Basic or Core Member or whatever.
       return None
   })
 }

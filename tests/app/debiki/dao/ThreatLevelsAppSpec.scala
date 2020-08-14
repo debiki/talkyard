@@ -27,7 +27,7 @@ class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6gp4") {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
           orgFullName = Some(Some("Test Org Name")),
-          numFirstPostsToAllow = Some(Some(0)),
+          maxPostsPendApprBefore = Some(Some(0)),
           numFirstPostsToApprove = Some(Some(0)),
           numFirstPostsToReview = Some(Some(0))), Who.System)
       }

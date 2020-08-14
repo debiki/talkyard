@@ -54,7 +54,8 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
     let site: SiteData = make.forumOwnedByOwen('spamaksm', { title: forumTitle });
     site.settings.enableAkismet = true;
     site.settings.numFirstPostsToReview = 9;
-    site.settings.numFirstPostsToAllow = 9;
+    site.settings.maxPostsPendRevwAftr = 9;
+    site.settings.maxPostsPendApprBefore = 9;
     idAddress = server.importSiteData(site);
   });
 
@@ -163,7 +164,7 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
   });
 
   it("... but gets blocked: max 3 pending maybe-spam posts allowed [TyT029ASL45], " +
-      "even though site.settings.numFirstPostsToAllow is 9", () => {
+      "even though site.settings.maxPostsPendApprBefore & maxPostsPendRevwAftr = 9", () => {
     mallorysBrowser.serverErrorDialog.waitForTooManyPendingMaybeSpamPostsError();
   });
 

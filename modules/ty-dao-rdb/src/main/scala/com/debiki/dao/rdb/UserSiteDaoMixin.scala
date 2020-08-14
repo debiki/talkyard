@@ -454,6 +454,10 @@ trait UserSiteDaoMixin extends SiteTransaction {
         G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
 
     member.effectiveTrustLevel match {
+      case TrustLevel.Stranger =>
+        // Cannot happen — members always >= NewMember. But incl this
+        // anyway — in case will refactor in the future, so can be Stranger.
+        Vector(G.EveryoneId)
       case TrustLevel.NewMember =>
         Vector(G.AllMembersId, G.EveryoneId)
       case TrustLevel.BasicMember =>

@@ -105,9 +105,12 @@ case class EditedSettings(
   progressLayout: Option[ProgressLayout],
   origPostReplyBtnTitle: Option[String],
   origPostVotes: Option[OrigPostVotes],
+  requireApprovalIfTrustLte: Option[TrustLevel],
+  reviewAfterIfTrustLte: Option[TrustLevel],
   numFirstPostsToReview: Option[Int],
   numFirstPostsToApprove: Option[Int],
-  numFirstPostsToAllow: Option[Int],
+  maxPostsPendApprBefore: Option[Int],
+  maxPostsPendRevwAftr: Option[Int],
   enableStopForumSpam: Option[Boolean],
   enableAkismet: Option[Boolean],
   akismetApiKey: Option[String],
@@ -158,19 +161,30 @@ case class EditedSettings(
   regularMemberFlagWeight: Option[Float],
   coreMemberFlagWeight: Option[Float]) {
 
-  numFirstPostsToAllow foreach { num =>
-    require(num >= 0 && num <= MaxNumFirstPosts, "EsE4GUK20")
-  }
-
   numFirstPostsToApprove foreach { num =>
-    require(num >= 0 && num <= MaxNumFirstPosts, "EsE6JK250")
-    numFirstPostsToAllow foreach { numToAllow =>
-      require(numToAllow >= num, "EsE2GHF8")
+    require(0 <= num && num <= MaxNumFirstPosts, "TyE6JK250")
+    if (num >= 1) maxPostsPendApprBefore foreach { maxPend =>
+      // Db constraint: settings3_numfirst_allow_ge_approve.
+      // Maybe instead just >= 1, default maybe 3?
+      require(maxPend >= num, "TyEJ2GHF87")
     }
   }
 
+  maxPostsPendApprBefore foreach { num =>
+    require(0 <= num && num <= MaxNumFirstPosts, "TyE4GUK20M")
+  }
+
   numFirstPostsToReview foreach { num =>
-    require(num >= 0 && num <= MaxNumFirstPosts, "EsE8WK2G3")
+    require(0 <= num && num <= MaxNumFirstPosts, "TyE8WK2G3A")
+    // No, skip, 0 disables:
+    // if (num >= 1) maxPostsPendRevwAftr foreach { maxPend =>
+    //   require(maxPend >= 1, "TyE305RKDJ5")
+    // }
+    // Maybe add constraint >= 1, default maybe 3?
+  }
+
+  maxPostsPendRevwAftr foreach { num =>
+    require(0 <= num && num <= MaxNumFirstPosts, "TyE05RKD245")
   }
 }
 
@@ -226,9 +240,12 @@ object EditedSettings {
     progressLayout = None,
     origPostReplyBtnTitle = None,
     origPostVotes = None,
+    requireApprovalIfTrustLte = None,
+    reviewAfterIfTrustLte = None,
     numFirstPostsToReview = None,
     numFirstPostsToApprove = None,
-    numFirstPostsToAllow = None,
+    maxPostsPendApprBefore = None,
+    maxPostsPendRevwAftr = None,
     enableStopForumSpam = None,
     enableAkismet = None,
     akismetApiKey = None,
@@ -334,9 +351,12 @@ case class SettingsToSave(
   progressLayout: Option[Option[ProgressLayout]] = None,
   origPostReplyBtnTitle: Option[Option[String]] = None,
   origPostVotes: Option[Option[OrigPostVotes]] = None,
+  requireApprovalIfTrustLte: Option[Option[TrustLevel]] = None,
+  reviewAfterIfTrustLte: Option[Option[TrustLevel]] = None,
   numFirstPostsToReview: Option[Option[Int]] = None,
   numFirstPostsToApprove: Option[Option[Int]] = None,
-  numFirstPostsToAllow: Option[Option[Int]] = None,
+  maxPostsPendApprBefore: Option[Option[Int]] = None,
+  maxPostsPendRevwAftr: Option[Option[Int]] = None,
   enableStopForumSpam: Option[Option[Boolean]] = None,
   enableAkismet: Option[Option[Boolean]] = None,
   akismetApiKey: Option[Option[String]] = None,

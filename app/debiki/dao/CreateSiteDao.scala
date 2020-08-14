@@ -69,7 +69,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
     import Group._
 
     val Everyone = Group(
-      EveryoneId, "everyone", Some("Everyone"), createdAt = now) // , grantsTrustLevel = None)
+      EveryoneId, "everyone", Some("Everyone"), createdAt = now) // , grantsTrustLevel = Stranger)
     val New = Group(
       AllMembersId, "all_members", Some("All Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.NewMember))
     val Basic = Group(

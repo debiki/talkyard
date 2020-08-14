@@ -62,7 +62,7 @@ describe("admin-review-cascade-approval  TyT0SKDE24", () => {
 
     const siteData: SiteData2 = forum.siteData;
     siteData.settings.requireVerifiedEmail = false;
-    siteData.settings.numFirstPostsToAllow = 9;
+    siteData.settings.maxPostsPendApprBefore = 9;
     siteData.settings.numFirstPostsToApprove = 1;
 
     siteIdAddress = server.importSiteData(forum.siteData);

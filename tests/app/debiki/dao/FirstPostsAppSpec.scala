@@ -18,6 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki.EdHttp.ResultException
 
 
@@ -45,7 +46,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
           orgFullName = Some(Some("Test Org Name")),
-          numFirstPostsToAllow = Some(Some(1)),
+          maxPostsPendApprBefore = Some(Some(1)),
           numFirstPostsToApprove = Some(Some(1)),
           numFirstPostsToReview = Some(Some(0))), Who.System)
       }
@@ -70,7 +71,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           }.getMessage must include("_EsE6YKF2_")
 
           info("accept one more when allow = 2")
-          dao.saveSiteSettings(SettingsToSave(numFirstPostsToAllow = Some(Some(2))), Who.System)
+          dao.saveSiteSettings(SettingsToSave(maxPostsPendApprBefore = Some(Some(2))), Who.System)
           val secondReplyResult = reply(member.id, "reply_863439_d")
           secondReplyResult.post.isSomeVersionApproved mustBe false
 
@@ -110,14 +111,14 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           info("allow, if approve bumped to 3 (2 + 1 approved by admin & system = 3 in total)")
           dao.saveSiteSettings(SettingsToSave(
             numFirstPostsToApprove = Some(Some(3)),
-            numFirstPostsToAllow = Some(Some(3))), Who.System)
+            maxPostsPendApprBefore = Some(Some(3))), Who.System)
           val fourthReplyResult = reply(member.id, "reply_863439_g")
           fourthReplyResult.post.approvedById mustBe Some(SystemUserId)
           checkNoReviewTask(fourthReplyResult.post)
 
           info("allow but not approve, if Approve & Approve bumped to 5")
           dao.saveSiteSettings(SettingsToSave(
-            numFirstPostsToAllow = Some(Some(5)),
+            maxPostsPendApprBefore = Some(Some(5)),
             numFirstPostsToApprove = Some(Some(5))), Who.System)
           val fifthReplyResult = reply(member.id, "reply_863439_h")
           fifthReplyResult.post.isSomeVersionApproved mustBe false
@@ -135,12 +136,12 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
     new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
-          numFirstPostsToAllow = Some(Some(5)),
+          maxPostsPendApprBefore = Some(Some(5)),
           numFirstPostsToApprove = Some(Some(3)),
           numFirstPostsToReview = Some(Some(0))), Who.System)
       }
 
-      "PostsDao will, with allow = 5, approve = 3:" - {
+      "PostsDao will, with max-pending-approval = 5, approve = 3:  TyT305RKDJ5" - {
         "approve all replies by a new admin" in {
           newAdminAndPage()
           testAdminsRepliesApproved(theAdmin.id, thePageId)
@@ -162,7 +163,6 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           fourthReplyResult.post.isSomeVersionApproved mustBe false
           fifthReplyResult.post.isSomeVersionApproved mustBe false
 
-          // Only the 3 first because Approve + Notify = 3 + 0 = the three first.
           info("review tasks for 1,2,3,4,5")
           checkReviewTaskGenerated(firstReplyResult.post, reviewReasons)
           checkReviewTaskGenerated(secondReplyResult.post, reviewReasons)
@@ -172,7 +172,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
 
           info("then reject")
           intercept[ResultException] {
-            reply(member.id, "reply_77025_f")
+            reply(member.id, "reply_77025_f  to reject")
           }.getMessage must include("_EsE6YKF2_")
 
           info("approve reply no 1")
@@ -180,9 +180,12 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           val firstReply2 = dao.loadPost(thePageId, firstReplyResult.post.nr).get
           firstReply2.approvedById mustBe Some(theAdmin.id)
 
-          info("still reject")
+          info("now one more reply accepted")
+          val sixthReplyResult = reply(member.id, "reply_77025_f")
+
+          info("but only one")
           intercept[ResultException] {
-            reply(member.id, "reply_77025_g")
+            reply(member.id, "reply_77025_g  to reject")
           }.getMessage must include("_EsE6YKF2_")
 
           info("approve reply no 3")
@@ -190,46 +193,63 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           val thirdReply2 = dao.loadPost(thePageId, thirdReplyResult.post.nr).get
           thirdReply2.approvedById mustBe Some(theAdmin.id)
 
-          info("still reject")
+          info("one more reply accepted, again")
+          val seventhReplyResult = reply(member.id, "reply_77025_g")
+
+          info("reject additional replies")
           intercept[ResultException] {
-            reply(member.id, "reply_77025_h")
+            reply(member.id, "reply_77025_h  to reject")
           }.getMessage must include("_EsE6YKF2_")
 
-          info("approve reply no 2 (now 1,2,3 are appproved)...")
+          info("approve reply no 2  — now 1, 2, 3 appproved, all that's needed")
           approve(secondReplyResult.reviewTask.get)
           val secondReply2 = dao.loadPost(thePageId, secondReplyResult.post.nr).get
           secondReply2.approvedById mustBe Some(theAdmin.id)
 
-          info("...and then auto-approve no 4 and 5")
+          info("...and then auto-approve no 4, 5, 6, 7?")
           val fourthReply2 = dao.loadPost(thePageId, fourthReplyResult.post.nr).get
           fourthReply2.approvedById mustBe Some(SystemUserId)
           val fifthReply2 = dao.loadPost(thePageId, fifthReplyResult.post.nr).get
           fifthReply2.approvedById mustBe Some(SystemUserId)
 
-          info("...but no 3 remains approved by admin")
+          val sixthReply2 = dao.loadPost(thePageId, sixthReplyResult.post.nr).get
+          sixthReply2.approvedById mustBe Some(SystemUserId)
+          val seventhReply2 = dao.loadPost(thePageId, seventhReplyResult.post.nr).get
+          seventhReply2.approvedById mustBe Some(SystemUserId)
+
+          info("...but nr 3 remains approved by admin")
           val thirdReply3 = dao.loadPost(thePageId, thirdReplyResult.post.nr).get
           thirdReply3.approvedById mustBe Some(theAdmin.id)
 
           info("allow subsequent replies")
-          val sixthReplyResult = reply(member.id, "reply_77025_i")
-          val seventhReplyResult = reply(member.id, "reply_77025_j")
-          checkNoReviewTask(sixthReplyResult.post)
-          checkNoReviewTask(seventhReplyResult.post)
+          val eighthReplyResult = reply(member.id, "reply_77025_h")
+          val ninethReplyResult = reply(member.id, "reply_77025_i")
+          checkNoReviewTask(eighthReplyResult.post)
+          checkNoReviewTask(ninethReplyResult.post)
 
           info("still allow, after Approve & Allow disabled")
           dao.saveSiteSettings(SettingsToSave(
-            numFirstPostsToAllow = Some(Some(0)),
+            maxPostsPendApprBefore = Some(Some(0)),
             numFirstPostsToApprove = Some(Some(0))), Who.System)
-          val eightReplyResult = reply(member.id, "reply_77025_k")
-          checkNoReviewTask(eightReplyResult.post)
+          val tenthReplyResult = reply(member.id, "reply_77025_j")
+          checkNoReviewTask(tenthReplyResult.post)
+
+          import EditedSettings.MaxNumFirstPosts
+          dieIf(MaxNumFirstPosts != 10, "TyE05RKT55")  // ttt
+          info(s"can post more than MaxNumFirstPosts = $MaxNumFirstPosts posts")
+          val eleventhReplyResult = reply(member.id, "reply_77025_k")
+          val twelthReplyResult = reply(member.id, "reply_77025_l")
+          checkNoReviewTask(eleventhReplyResult.post)
+          checkNoReviewTask(twelthReplyResult.post)
         }
       }
     },
 
+
     new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
-          numFirstPostsToAllow = Some(Some(0)),
+          maxPostsPendApprBefore = Some(Some(0)),
           numFirstPostsToApprove = Some(Some(0)),
           numFirstPostsToReview = Some(Some(2))), Who.System)
       }
@@ -265,7 +285,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
     new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
-          numFirstPostsToAllow = Some(Some(3)),
+          maxPostsPendApprBefore = Some(Some(3)),
           numFirstPostsToApprove = Some(Some(1)),
           numFirstPostsToReview = Some(Some(1))), Who.System)
       }
@@ -313,7 +333,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
     new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
-          numFirstPostsToAllow = Some(Some(2)),
+          maxPostsPendApprBefore = Some(Some(2)),
           numFirstPostsToApprove = Some(Some(1)),
           numFirstPostsToReview = Some(Some(1))), Who.System)
       }
@@ -378,7 +398,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
     new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
-          numFirstPostsToAllow = Some(Some(2)),
+          maxPostsPendApprBefore = Some(Some(2)),
           numFirstPostsToApprove = Some(Some(1)),
           numFirstPostsToReview = Some(Some(1))), Who.System)
       }
@@ -402,6 +422,95 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
                 textAndHtmlMaker.testBody("Page body 4ZM2 c."), member.id, browserIdData, dao,
                 anyCategoryId = Some(categoryId))
           }.getMessage must include("_EsE6YKF2_")
+        }
+      }
+    },
+
+
+    new NestedPostsSuite {
+      override def beforeAll {
+        dao.saveSiteSettings(SettingsToSave(
+                numFirstPostsToApprove = Some(Some(0)),
+                numFirstPostsToReview = Some(Some(0)),
+                maxPostsPendApprBefore = Some(Some(3)),
+                requireApprovalIfTrustLte = Some(Some(TrustLevel.BasicMember))),
+              Who.System)
+      }
+
+      "requireApprovalIfTrustLte" - {
+        "member" - {
+          "staff needs to approve posts by trust level <= Basic Member   TyT305RKTH205" in {
+            newAdminAndPage()
+            val member = createPasswordUser(s"m_20wk46", dao,
+                  trustLevel = TrustLevel.BasicMember)
+
+            info("member posts reply A")
+            val firstReplyResult = reply(member.id, "reply_20wk46_a")
+            info("member posts reply B")
+            val secondReplyResult = reply(member.id, "reply_20wk46_b")
+            info("member posts reply C")
+            val thirdReplyResult = reply(member.id, "reply_20wk46_c")
+            firstReplyResult.post.isSomeVersionApproved mustBe false
+            secondReplyResult.post.isSomeVersionApproved mustBe false
+            thirdReplyResult.post.isSomeVersionApproved mustBe false
+
+            val reviewReasons = Seq(ReviewReason.IsByLowTrustLevel)
+
+            info("generate review tasks for all posts")
+            checkReviewTaskGenerated(firstReplyResult.post, reviewReasons)
+            checkReviewTaskGenerated(secondReplyResult.post, reviewReasons)
+            checkReviewTaskGenerated(thirdReplyResult.post, reviewReasons)
+
+            info("reject reply D — already maxPostsPendApprBefore = 3 pending approval")
+            intercept[ResultException] {
+              reply(member.id, "reply_20wk46_d — should fail")
+            }.getMessage must include("TyE3506RKST_")
+
+            info("approve posts A, B, C")
+            approve(firstReplyResult.reviewTask.get)
+            approve(secondReplyResult.reviewTask.get)
+            approve(thirdReplyResult.reviewTask.get)
+            val firstReply2 = dao.loadPost(thePageId, firstReplyResult.post.nr).get
+            val secondReply2 = dao.loadPost(thePageId, secondReplyResult.post.nr).get
+            val thirdReply2 = dao.loadPost(thePageId, thirdReplyResult.post.nr).get
+            firstReply2.approvedById mustBe Some(theAdmin.id)
+            secondReply2.approvedById mustBe Some(theAdmin.id)
+            thirdReply2.approvedById mustBe Some(theAdmin.id)
+
+            info("can now post reply D. Still requires approval, no longer rejected")
+            val fourthReplyResult = reply(member.id, "reply_20wk46_d")
+            fourthReplyResult.post.isSomeVersionApproved mustBe false
+            checkReviewTaskGenerated(fourthReplyResult.post, reviewReasons)
+
+            info("and reply E, F")
+            val fifthReplyResult = reply(member.id, "reply_20wk46_e")
+            val sixthReplyResult = reply(member.id, "reply_20wk46_f")
+            checkReviewTaskGenerated(fifthReplyResult.post, reviewReasons)
+            checkReviewTaskGenerated(sixthReplyResult.post, reviewReasons)
+
+            info("reject reply G — already 3 posts pending approval, again")
+            intercept[ResultException] {
+              reply(member.id, "reply_20wk46_g")
+            }.getMessage must include("TyE3506RKST_")
+
+            info("change trust level to Full Member")
+            val memberFull = dao.readWriteTransaction { tx =>
+              var m = tx.loadTheUserInclDetails(member.id)
+              m = m.copy(trustLevel = TrustLevel.FullMember)
+              tx.updateUserInclDetails(m)
+              m.briefUser
+            }
+
+            info("now replies accepted, since ok trust level: reply G")
+            val seventhReplyResult = reply(memberFull.id, "reply_20wk46_g")
+            seventhReplyResult.post.isSomeVersionApproved mustBe true
+            checkNoReviewTask(seventhReplyResult.post)
+
+            info("and H")
+            val eigthReplyResult = reply(memberFull.id, "reply_20wk46_h")
+            eigthReplyResult.post.isSomeVersionApproved mustBe true
+            checkNoReviewTask(eigthReplyResult.post)
+          }
         }
       }
     })

@@ -406,6 +406,7 @@ const SuspendDialog = createComponent({
 
 let trustLevelDialog;
 
+// Break out fn, reuse here: [693SKDL406]
 function openTrustLevelDialog(user: UserInclDetails, refreshCallback) {
   if (!trustLevelDialog) {
     trustLevelDialog = ReactDOM.render(MemberTrustLevelDialog(), utils.makeMountNode());

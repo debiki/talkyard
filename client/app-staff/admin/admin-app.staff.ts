@@ -966,11 +966,91 @@ const ModerationSettings = createFactory({
 
     return (
       r.div({},
+
+        r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
+          "Require approval before"),
+
+        r.p({ className: 'col-sm-offset-3 s_A_Ss_Expl'},
+          r.i({}, `"You"`), ` below refers to admins and moderators in this forum.`,
+          r.br(),
+          r.strong({}, `"Hen"`), ` and `, r.strong({}, `"hens"`),
+          ` means "he or she" and "his or her" (new English words).`),
+
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
-          label: "Num first posts to review",
-          help: "How many of a new member's first posts the staff will be notified about " +
-            "so they can review them. The posts will become visible directly, before " +
-            "they've been reviewed. Max " + MaxNumFirstPosts + ".",
+          label: "Require approval of new members' first posts",
+          help: "How many of a new member's first posts will need to be approved " +
+            "by you (admins and moderators) before others can see them. " +
+            "Thereafter, hens (his or her) posts will get published " +
+            "(made visible to others) directly. " +
+            "Set to 0 to disable. Max is " + MaxNumFirstPosts + ".",
+          getter: (s: Settings) => s.numFirstPostsToApprove,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (_.isNaN(num)) num = currentSettings.numFirstPostsToApprove;
+            if (num < 0) num = 0;
+            if (num > MaxNumFirstPosts) num = makeSmall(num);
+            newSettings.numFirstPostsToApprove = num;
+            if (valueOf(s => s.maxPostsPendApprBefore) < num) {
+              newSettings.maxPostsPendApprBefore = num;
+            }
+          },
+        }),
+
+        // Break out Trust Level setting? Dupl code [693SKDL406]
+        Setting2(props, { type: 'number', min: 0, max: TrustLevel.Max,
+          label: "Always require approval trust level",
+          help: r.span({},
+              "Don't publish posts by users with this trust level or below, " +
+              "until you've approved the posts.  From 0 to 6:", r.br(),
+              "0 = Strangers (e.g. anonymous blog commenters), " +
+              "1 = New members, 2 = Basic members, 3 = Full memers, " +
+              "4 = Long time trusted members, 5 = Trusted members who visit often, " +
+              "6 = Core members"),
+          getter: (s: Settings) => s.requireApprovalIfTrustLte,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (_.isNaN(num)) num = currentSettings.requireApprovalIfTrustLte;
+            if (num < 0) num = 0;
+            if (num > TrustLevel.Max) num = TrustLevel.Max;
+            newSettings.requireApprovalIfTrustLte = num;
+            // Make it possible to have at least one post waiting for staff to
+            // approve it — otherwise, cannot post anything.
+            if (valueOf(s => s.maxPostsPendApprBefore) < 1) {
+              newSettings.maxPostsPendApprBefore = 1;
+            }
+          }
+        }),
+
+        Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
+          label: "Max posts pending approval",
+          help: "How many of a member's posts can be waiting for you to approve them. " +
+              "Hen then cannot post more posts, until you've approved hens posts. " +
+              "0 disables",
+          getter: (s: Settings) => s.maxPostsPendApprBefore,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (_.isNaN(num)) num = currentSettings.maxPostsPendApprBefore;
+            if (num < 0) num = 0;
+            if (num > MaxNumFirstPosts) num = makeSmall(num);
+            if (valueOf(s => s.numFirstPostsToApprove) > num) {
+              num = newSettings.numFirstPostsToApprove;
+            }
+            if (_.isNumber(valueOf(s => s.requireApprovalIfTrustLte)) && num < 1) {
+              num = 1;
+            }
+            newSettings.maxPostsPendApprBefore = num;
+          }
+        }),
+
+
+        r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
+          "Review after published"),
+
+        Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
+          label: "Review new members' posts afterwards",
+          help: "How many of a new member's first posts you'll be notified about, " +
+            "so you can review them. The posts get published directly, before " +
+            "review. Max " + MaxNumFirstPosts + ".",
           getter: (s: Settings) => s.numFirstPostsToReview,
           update: (newSettings: Settings, target) => {
             let num = parseInt(target.value);
@@ -981,40 +1061,37 @@ const ModerationSettings = createFactory({
           }
         }),
 
-        Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
-          label: "Num first posts to approve",
-          help: "How many of a new member's first posts need to be approved by staff, " +
-            "before they'll be shown. They'll be hidden, until approved. " +
-            "Set to 0 to disable. Max is " + MaxNumFirstPosts + ".",
-          getter: (s: Settings) => s.numFirstPostsToApprove,
+        // Break out Trust Level setting? Dupl code [693SKDL406]
+        Setting2(props, { type: 'number', min: 0, max: TrustLevel.Max,
+          label: "Always review trust level",
+          help: "You'll always review posts by users with this trust level or below. " +
+              "The posts get published directly.  0 to 6.",
+          getter: (s: Settings) => s.reviewAfterIfTrustLte,
           update: (newSettings: Settings, target) => {
             let num = parseInt(target.value);
-            if (_.isNaN(num)) num = currentSettings.numFirstPostsToApprove;
+            if (_.isNaN(num)) num = currentSettings.reviewAfterIfTrustLte;
             if (num < 0) num = 0;
-            if (num > MaxNumFirstPosts) num = makeSmall(num);
-            newSettings.numFirstPostsToApprove = num;
-            if (valueOf(s => s.numFirstPostsToAllow) < num) {
-              newSettings.numFirstPostsToAllow = num;
-            }
-          },
+            if (num > TrustLevel.Max) num = TrustLevel.Max;
+            newSettings.reviewAfterIfTrustLte = num;
+          }
         }),
 
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
-          label: "Num first posts to allow",
-          help: "How many posts a new member may post, before s/he has to wait with " +
-              "posting anything more, until the first posts have been approved by staff.",
-          getter: (s: Settings) => s.numFirstPostsToAllow,
+          label: "Max posts pending review",
+          help: "How many of a member's posts can be waiting for you to revew them, before " +
+              "hen needs to wait with posting more, until you're done reviewing. " +
+              "0 disables.",
+          getter: (s: Settings) => s.maxPostsPendRevwAftr,
           update: (newSettings: Settings, target) => {
             let num = parseInt(target.value);
-            if (_.isNaN(num)) num = currentSettings.numFirstPostsToAllow;
+            if (_.isNaN(num)) num = currentSettings.maxPostsPendRevwAftr;
             if (num < 0) num = 0;
             if (num > MaxNumFirstPosts) num = makeSmall(num);
-            newSettings.numFirstPostsToAllow = num;
-            if (valueOf(s => s.numFirstPostsToApprove) > num) {
-              newSettings.numFirstPostsToApprove = num;
-            }
-          },
-        })));
+            newSettings.maxPostsPendRevwAftr = num;
+          }
+        }),
+
+        ));
   }
 });
 
