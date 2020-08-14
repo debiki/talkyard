@@ -88,7 +88,7 @@ export function scrollAndFlashPosts(page: Page, posts: Post[]) {
 export function scrollAndFlashPostNr(postNr: PostNr, options: ShowPostOpts) {
   const postElem = $byId('post-' + postNr);
   if (!postElem) {
-    logError('Got no post [EdE7JKWD20]');
+    logError('Got no post [EdE7JKWD20]');  // Happens sometimes, ends up in logBrowserErrors()
     return;
   }
   options = addAnySidebarWidth(options);

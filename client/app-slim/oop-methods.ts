@@ -1227,6 +1227,7 @@ export function topPeriod_toString(period: TopTopicsPeriod): string {
 
 export function trustLevel_toString(trustLevel: TrustLevel): string {
   switch (trustLevel) {
+    case TrustLevel.Stranger: return t.Stranger || "Stranger";  // I18N
     case TrustLevel.New: return t.NewMember;
     case TrustLevel.Basic: return t.BasicMember;
     case TrustLevel.FullMember: return t.FullMember;
@@ -1234,19 +1235,20 @@ export function trustLevel_toString(trustLevel: TrustLevel): string {
     case TrustLevel.Regular: return t.RegularMember;
     case TrustLevel.CoreMember: return t.CoreMember;
     default:
-      // Guests have no trust level.
-      return t.Guest;
+      return `Unknown trust level: ${trustLevel} [TyEUNKTRLVL]`;
   }
 }
 
 export function threatLevel_toString(threatLevel: ThreatLevel): string {
   // (This is for admins, don't translate. [5JKBWS2])
   switch (threatLevel) {
+    case ThreatLevel.SuperSafe: return "Super safe";
+    case ThreatLevel.SeemsSafe: return "Seems safe";
     case ThreatLevel.HopefullySafe: return "Allow";
     case ThreatLevel.MildThreat: return "Review after";
-    case ThreatLevel.ModerateThreat: return "Review before";
+    case ThreatLevel.ModerateThreat: return "Approve before";
     case ThreatLevel.SevereThreat: return "Block completely";
-    default: debiki2.die('EsE5PYK25')
+    default: debiki2.die(`Lvl ${threatLevel} [TyEUNKTHRLVL]`);
   }
 }
 

@@ -108,6 +108,7 @@ interface TalkyardTranslations {
   SignUp: string;
   Solution: string;
   started: string;
+  Stranger?: string;  // MISSING
   Summary: string;
   Submit: string;
   Tag?: string;  // MISSING
@@ -129,7 +130,7 @@ interface TalkyardTranslations {
   you: string;
 
   // Trust levels.
-  Guest: string;
+  Guest: string;  // RENAME to Stranger
   NewMember: string;
   BasicMember: string;
   FullMember: string;
