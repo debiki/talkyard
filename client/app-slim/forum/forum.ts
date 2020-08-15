@@ -278,11 +278,6 @@ export const ForumComponent = createReactClass(<any> {
 
     return (
       r.div({ className: 'container dw-forum' },
-        //------
-        // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
-        // CLEAN_UP REMOVE I think no longer needed.
-        r.div({ className: 'dw-page' }),
-        //------
         // For now, feature flag. Later, always?  [dbl_tb_ttl]
         navConf.topbarBitDownShowTitle && debiki2.page.Title({ store }),
 

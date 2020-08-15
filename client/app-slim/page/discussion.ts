@@ -262,6 +262,7 @@ export const TitleBodyComments = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
+    const me: Myself = store.me;
 
     const anyHelpMessageData = this.makeHelpMessage();
     const anyHelpMessage = anyHelpMessageData
@@ -320,8 +321,29 @@ export const TitleBodyComments = createComponent({
     const helpMessageAboveTitle = helpMessageType === HelpTypePageClosed ? null : anyHelpMessage;
     const helpMessageBelowTitle = helpMessageType === HelpTypePageClosed ? anyHelpMessage : null;
 
+    // For now, feature flag. Later, always, unless unlisted.  [dbl_tb_ttl]
+    const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory); // dupl [305RKSTDH2]
+    const isUnlistedSoHideCats = isUnlisted && !isStaff(me);
+    const showCategories =
+            !isUnlistedSoHideCats && !!(store.settings.navConf || {}).topbarAtTopLogo;
+
+    const categories = showCategories &&
+        // Dupl code [305SKT026]
+        r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
+          page.ancestorsRootFirst.map((ancestor: Ancestor) => {
+            const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
+            const categoryIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
+            const key = ancestor.categoryId;
+            return (
+                r.li({ key, className: 's_Tb_Pg_Cs_C' + deletedClass },
+                  Link({ className: categoryIcon + 'esTopbar_ancestors_link btn',
+                      to: ancestor.path },
+                    ancestor.title)));
+          }));
+
     return (
       r.div({ className: anyAboutCategoryClass },
+        categories,
         helpMessageAboveTitle,
         anyAboutCategoryTitle,
         r.div({ className: 'debiki dw-page', id: 't_PageContent' },

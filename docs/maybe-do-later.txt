@@ -316,6 +316,33 @@ server / bot.
 Needs new table: t_extensions
 
 [themes]
+Wow! Stylus <3  This:
+    $uiHue = _subst_uiHue;
+    $uiColor = _subst_hsl($uiHue 80% 50%);
+    $uiColorAlt2 = _subst_hsl(_subst_uiHue2 70% 40%);
+    body
+      color: $uiColor;
+      foo: 5px + 10
+      foo: 2 ** 8
+    div
+      color: $uiColor;
+      color: $uiColorAlt2;
+      border: 1px solid $uiColor;
+ —> this:
+    body {
+      color: _subst_hsl(_subst_uiHue 80% 50%);
+      foo: 15px;
+      foo: 256;
+    }
+    div {
+      color: _subst_hsl(_subst_uiHue 80% 50%);
+      color: _subst_hsl(_subst_uiHue2 70% 40%);
+      border: 1px solid _subst_hsl(_subst_uiHue 80% 50%);
+    }
+  see:  https://stylus-lang.com/try.html#?code=%24uiHue%20%3D%20_subst_uiHue%3B%0A%24uiColor%20%3D%20_subst_hsl(%24uiHue%2080%25%2050%25)%3B%0A%0A%24uiColorAlt2%20%3D%20_subst_hsl(_subst_uiHue2%2070%25%2040%25)%3B%0A%0Abody%0A%20%20color%3A%20%24uiColor%3B%0A%20%20foo%3A%205px%20%2B%2010%0A%20%20foo%3A%202%20**%208%0A%0Adiv%0A%20%20color%3A%20%24uiColor%3B%0A%20%20color%3A%20%24uiColorAlt2%3B%0A%20%20border%3A%201px%20solid%20%24uiColor%3B
+Then just Scala repl-all-literally, w custom colors & fonts ets, & @media (min-width: ...).
+
+
 
 [Scala_213]
 Try —> Using

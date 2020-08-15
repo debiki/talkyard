@@ -517,7 +517,7 @@ html.esSidebarsOverlayPage
         margin: 0;
         padding: 0; */
 
-// Old:
+
 .esTopbar
   .dw-topbar-title
     float: left; // needed if window narrow
@@ -536,10 +536,9 @@ html.esSidebarsOverlayPage
       @media (min-width: 1100px)
         width: 600px;  */
 
-  .btn
-    &.esTopbar_ancestors_link,
-    &.dw-login,
-    &.dw-a-tools
+.s_Tb_Pg_Cs .btn,
+.s_Tb .btn.dw-login,
+.s_Tb .btn.dw-a-tools
       font-size: 1em;
       &.dw-a-tools
           font-size: 13.5px;
@@ -560,8 +559,9 @@ html.esSidebarsOverlayPage
 
       min-width: 40px;
 
-    &.dw-a-tools
-      margin-left: 0;  // now search btn to the left
+.s_Tb .btn.dw-a-tools
+  font-size: 13.5px;
+  margin-left: 0;  // now search btn to the left
 
 .s_Tb-Stc .s_Tb_Row1
   .s_Tb_CuLogo,
@@ -570,7 +570,6 @@ html.esSidebarsOverlayPage
   .s_Tb_MyBs
     margin-top: 15px;
 
-.esTopbar
 .s_Tb
   .s_Tb_MyBs
     white-space: nowrap;

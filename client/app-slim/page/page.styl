@@ -269,6 +269,11 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
   color: #888;
   crossGray();
 
+
+// Don't need so much space (15px [h1_pad_top]) between categories and title.
+.s_Tb_Pg_Cs + .dw-page h1.dw-p-ttl
+  padding-top: 10px;
+
 // Page title
 #dw-t-0    // the page title post has id 0
   // Don't float title, or body will appear to the right of the title,
@@ -286,14 +291,25 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
   // Some space between the forum title and any intro text.
   margin-bottom: 17px;
 
-  // If no categories to show above, move a bit up — but only if page wide,
-  // else might overlap with MyMenu or get pushed to the right by the open-watchbar button.
-  @media (min-width: 1300px)
+
+// Less whitespace
+//==============================
+
+// There's typically lots of whitespace above the title.
+// So, move the whole page up a bit, almost inside the topbar — looks better.
+// But only if there's lots of space
+//  — otherwise the Open-watchbar button (to the left) will push the
+// page title (or categories breadcrumbs), to the right, so becomes un-aligned
+// with the page text.
+
+@media (min-width: 1300px)
+  .dw-forum.container,
+  .esPage > .container
     margin-top: - $moveSectionTitleUpPx;
-  @media (max-width: 1300px - 1px)
-    // ... but don't need any title margin.
-    .dw-p-ttl
-      margin-top: 0;
+
+  .esPage .s_Tb_Pg_Cs
+    padding-top: 0;  // else sth like 4px
+    margin-top: -3px;  // the categories list is mostly whitespace — remove some above
 
 h1.dw-p-ttl a:not(.icon-edit):not(.dw-forum-intro-show)
   color: $h1Color; // but not link color

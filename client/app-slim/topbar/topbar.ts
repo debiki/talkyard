@@ -53,8 +53,13 @@ export const TopBar = createComponent({
       store,
       fixed: false,
       initialOffsetTop: undefined,
+      /*  CLEAN_UP REMOVE  this is now in  scroll-buttons.ts instead. [scroll_btns_dupl]
+       *  Why didn't I remove this before? Must have been from long ago, when scroll buttons
+       *  were located in the topbar?  rather than at the bottom.
+       *  Seems I just forgot:  a723007c8 "Move scroll buttons to the bottom" 2016-06.
       enableGotoTopBtn: false,
       enableGotoEndBtn: true,
+      */
       isWide: this.isPageWide(store),
     };
   },
@@ -142,14 +147,17 @@ export const TopBar = createComponent({
         this.setState({ fixed: false, top: 0, left: 0 });
       }
     }
+    /*  CLEAN_UP REMOVE  this is now in  scroll-buttons.ts instead. [scroll_btns_dupl]
     const calcCoords = utils.calcScrollIntoViewCoordsInPageColumn;
     this.setState({
       // We cannot scroll above the title anyway, so as long as the upper .dw-page is visible,
       // disable the go-to-page-top button. Also, the upper parts of the page is just whitespace,
       // so ignore it, set marginTop -X.
+      // To make this work on a PageType.Forum / topic list page,
+      // needs to use  .dw-forum  instead?
       enableGotoTopBtn: calcCoords('.dw-page', { marginTop: -10, height: 0 }).needsToScroll,
       enableGotoEndBtn: calcCoords('#dw-the-end').needsToScroll,
-    });
+    }); */
   },
 
   onSignUpClick: function() {
@@ -197,14 +205,18 @@ export const TopBar = createComponent({
     let hasTitle = false;
     let noCatsMaybeTitle = false;
 
+    // For now, feature flag. Later, only if fixed topbar — else, show in page.  [dbl_tb_ttl]
+    const titleCatsShownInPageInstead = !!navConf.topbarAtTopLogo && !isBitDown;
+
     let TitleCatsTags = () => null;
-    const shallShowAncestors =
+    const shallShowAncestors = // not needed:  !titleCatsShownInPageInstead &&
             settings_showCategories(store.settings, me) && !isSectionPage;
     const thereAreAncestors = nonEmpty(page.ancestorsRootFirst);
-    const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory);
+    const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory);  // dupl [305RKSTDH2]
+    const isUnlistedSoHideCats = isUnlisted && !isStaff(me);
 
     const anyUnsafeTitleSource: string | U = page.postsByNr[TitleNr]?.unsafeSource;
-    const showTitleInTopbar = (
+    const showTitleInTopbar = !isUnlistedSoHideCats && (
         // Before we've scrolled down, the title is visible in the page contents instead.
         navConf.topbarBitDownShowTitle &&   // <— temp feature flag, later, always true
               isBitDown && anyUnsafeTitleSource);
@@ -216,12 +228,18 @@ export const TopBar = createComponent({
       // Show no ancestor categories.
       // But should show title, also if unlisted — not impl.
     }
+    else if (titleCatsShownInPageInstead) {
+      // Title shown here:  [dbl_tb_ttl]  in discussion.ts, instead.
+      // Later, this'll always be the case, until scrolls down, then title shown
+      // in fixed topbar.
+    }
     else if (thereAreAncestors && shallShowAncestors) {
       const anyTitle = PageTitleIfFixed();
       hasTitle = !!anyTitle;
       TitleCatsTags = () =>
           r.div({ className: 's_Tb_Pg' },
             // RENAME  esTopbar_ancestors  to  s_Tb_Pg_Cs
+            // Dupl code [305SKT026]
             r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
               page.ancestorsRootFirst.map((ancestor: Ancestor) => {
                 const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
