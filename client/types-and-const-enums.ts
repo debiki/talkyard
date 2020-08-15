@@ -23,7 +23,15 @@
 //
 //   const anyUser: User | U = Server.getUser(...);
 //
+// And this or this — I think "boolean" is so long and distracting:
+//
+//   const shallFeedLion: boolean = countDaysSinceLastZebra();
+//   const shallFeedLion: B = countDaysSinceLastZebra();
+//
 type U = undefined;
+type B = boolean;
+type N = number;
+type S = string;
 
 type SiteData = any;   // [3SD5PB7]
 
