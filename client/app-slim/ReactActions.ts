@@ -574,7 +574,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
         // For now, instead handled in  maybeOpenMessageEditor() in users-page.more.ts [4JABRF0].
         break;
       case FragActionType.ComposeTopic:
-        editor.editNewForumPage(fragAction.categoryId, fragAction.topicType);
+        editor.editNewForumPage(fragAction.category, fragAction.topicType);
         // Don't re-open the editor, if going to another page, and then back.
         history.replaceState({}, '', '#');
         break;
@@ -685,11 +685,14 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
   const topicType = findIntInHashFrag(FragParamTopicType, theHashFrag);
 
   if (theHashFrag.indexOf(FragActionHashComposeTopic) >= 0) {
+    // Example url:  http://site.localhost/#composeTopic&category=slug:ideas
+    // (The editor then uses the default topic type, for that category. [05AKTD5J])
     const categoryId = findIntInHashFrag(FragParamCategoryId, theHashFrag);
+    const categoryRef = !categoryId && findStrInHashFrag(FragParamCategory, theHashFrag);
     return {
       type: FragActionType.ComposeTopic,
       draftNr,
-      categoryId,
+      category: categoryId || categoryRef,
       topicType,
     };
   }
@@ -744,6 +747,28 @@ function findIntInHashFrag(valuePrefix: string, theHash: string): PostNr | undef
   const anyInt = index >= 0 ? parseInt(theHash.substr(index + valuePrefix.length, 999)) : undefined;
   return _.isNaN(anyInt) || anyInt < -TooHighNumber || TooHighNumber < anyInt ?
       undefined : anyInt;
+}
+
+
+function findStrInHashFrag(valuePrefix: string, theHash: string): S | U {
+  const start = theHash.indexOf(valuePrefix);
+  if (start === -1) return undefined;
+  const valueStart = start + valuePrefix.length;
+  const end = indexOfAmpHash(theHash, valueStart);
+  const value = theHash.substr(valueStart, end >= 0 ? end : undefined);
+  return value;
+}
+
+
+// Returns -1 if none of [#&] found.
+//
+function indexOfAmpHash(text: S, start: N): N {
+  // Sometimes Talkyard uses # as a hash frag param separator.
+  const nextHash = text.indexOf('#', start);
+  const nextAmp = text.indexOf('&', start);
+  return nextHash === -1 ? nextAmp : (
+                nextAmp === -1 ? nextHash : (
+                  Math.min(nextAmp, nextHash)));
 }
 
 
@@ -903,7 +928,7 @@ let origPostBeforeEdits: Post | undefined;
 let lastFlashPostNr: PostNr | undefined;
 
 
-export function showEditsPreview(ps: ShowEditsPreviewParams) {
+export function showEditsPreviewInPage(ps: ShowEditsPreviewParams) {
   // @ifdef DEBUG
   dieIf(ps.replyToNr && ps.editingPostNr, 'TyE73KGTD02');
   dieIf(ps.replyToNr && !ps.anyPostType, 'TyE502KGSTJ46');
@@ -911,6 +936,7 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
 
   if (eds.isInEmbeddedEditor) {
     const editorIframeHeightPx = window.innerHeight;
+     // DO_AFTER 2020-09-01 send 'showEditsPreviewInPage' instead.
     sendToCommentsIframe(['showEditsPreview', { ...ps, editorIframeHeightPx }]);
     return;
   }
@@ -949,7 +975,7 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
   // Chat messages don't reply to any particular post — has no parent nr. [CHATPRNT]
   dieIf(ps.replyToNr && isChat, 'TyE7WKJTGJ024');
   // If no page id included, then either 1) we're in the embedded comments editor
-  // — doesn't include any page id when sending the showEditsPreview message to the
+  // — doesn't include any page id when sending the showEditsPreviewInPage message to the
   // main iframe; it doesn't know which page we're looking at. Or 2) we're in
   // a chat — then, currently no page id included. Or 3) if we're in the api
   // section, then there's no page.

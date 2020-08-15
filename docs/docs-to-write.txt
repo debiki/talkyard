@@ -28,6 +28,10 @@ Some work has been done: ImportExportController can import JSON and is used by t
 However, needs to be able to import more "detailed" things, & more types of objs, & also export.
 
 
+URL fragment action API, e.g.:
+http://site.localhost/forum/#composeTopic&category=slug:ideas
+search for  enum FragActionType.
+
 
 How import Disqus comments? How import WordPress comments?
 (1 + 1 person asked)

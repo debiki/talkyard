@@ -626,14 +626,15 @@ function onMessage(event) {
         showEditor(false);
       }
       break;
-    // Maybe remove this one, and use only 'showEditsPreview' instead, renamed to
+    // Maybe remove this one, and use only 'showEditsPreviewInPage' instead, renamed to
     // 'showEditorAndPreview'?
     case 'onEditorOpen':
       assertIsFromEditorToComments();
       showEditor(true);
       sendToComments(event.data);
       break;
-    case 'showEditsPreview':
+    case 'showEditsPreview':  // REMOVE DO_AFTER 2020-09-01 deprecated
+    case 'showEditsPreviewInPage':
       assertIsFromEditorToComments();
       sendToComments(event.data);
       break;

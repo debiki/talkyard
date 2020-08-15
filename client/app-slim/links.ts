@@ -176,7 +176,7 @@ export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr
       // /forum/  or  /sub-community/ instead of  /.
       theLink = origin() + '/-' + locator.pageId + FragActionHashComposeTopic;
       if (draft.topicType) theLink += FragParamTopicType + draft.topicType;
-      if (locator.categoryId) theLink += FragParamCategoryId + locator.categoryId;
+      if (locator.categoryId) theLink += FragParamCategoryId + locator.categoryId;  // [305RKTJ33]
       break;
     case DraftType.DirectMessage:
       theLink = linkToSendMessage(locator.toUserId);

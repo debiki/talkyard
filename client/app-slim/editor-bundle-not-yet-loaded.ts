@@ -45,9 +45,9 @@ export function openToEditPostNr(postNr: PostNr, onDone?: EditsDoneHandler) {
 }
 
 
-export function editNewForumPage(categoryId: CategoryId, role: PageRole) {
+export function editNewForumPage(category: RefOrId, role: PageRole) {
   ensureEditorCreated(editor => {
-    editor.editNewForumPage(categoryId, role);
+    editor.editNewForumPage(category, role);
   });
 }
 

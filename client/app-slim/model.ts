@@ -77,7 +77,7 @@ interface RedirPathProps {
  */
 interface FragAction {
   type: FragActionType;
-  categoryId?: CategoryId;
+  category?: CategoryId | CategoryRef;
   topicType?: PageRole;
   replyType?: PostType;
   postNr?: PostNr;

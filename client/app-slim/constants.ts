@@ -153,7 +153,8 @@ const FragParamCommentNr = '#comment-';
 const FragParamDraftNr = '&draftNr=';
 const FragParamReplyType = '&replyType=';
 const FragParamTopicType = '&topicType=';
-const FragParamCategoryId = '&categoryId=';
+const FragParamCategoryId = '&categoryId=';  // REMOVE  use &category=<number>  instead [305RKTJ33]
+const FragParamCategory = '&category=';
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

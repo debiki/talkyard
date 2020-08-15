@@ -41,6 +41,7 @@ type PostNr = number;
 type DraftNr = number;
 type PageVersion = number;
 type CategoryId = number;
+type CategoryRef = string;
 type SiteId = number;
 type SiteVersion = number;
 type LoginId = String;
@@ -59,6 +60,9 @@ type WhenMs = number;   // Unix time: milliseconds since 1970, needs 8 bytes
 type WhenMins = number; // Unix time: minutes since 1970, needs just 4 bytes
 type ExtId = string;
 type ExtImpId = ExtId; // RENAME to ExtId
+
+type Ref = string;
+type RefOrId = Ref | number;
 
 
 const enum ReviewDecision {

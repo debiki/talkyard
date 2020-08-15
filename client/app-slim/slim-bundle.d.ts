@@ -204,7 +204,7 @@ declare namespace debiki2 {
     // from editor-bundle-not-yet-loaded.ts:
     function toggleWriteReplyToPostNr(postNr: PostNr, inclInReply: boolean, anyPostType?: number);
     function openToEditPostNr(postNr: PostNr, onDone?);
-    function editNewForumPage(categoryId: CategoryId, role: PageRole);
+    function editNewForumPage(category: RefOrId, role: PageRole);
     function openToEditChatTitleAndPurpose();
     function openToWriteChatMessage(text: string, onDone);
     function openToWriteMessage(userId: UserId);
@@ -307,9 +307,10 @@ declare namespace debiki2 {
   function store_getUserOrMissing(store: Store, userId: UserId, errorCode2?: string): BriefUser;
   var store_thisIsMyPage;
 
-  function draftType_toPostType(draftType: DraftType): PostType | undefined;
-  function postType_toDraftType(postType: PostType): DraftType | undefined;
-  function store_findTheDefaultCategory(store: Store): Category | undefined;
+  function draftType_toPostType(draftType: DraftType): PostType | U;
+  function postType_toDraftType(postType: PostType): DraftType | U;
+  function store_findTheDefaultCategory(store: Store): Category | U;
+  function store_findCatByRefOrId(store: Store, ref: RefOrId): Category | U;
   function store_ancestorsCategoriesCurrLast(store: Store, categoryId: CategoryId): Category[];
   function store_findCatsWhereIMayCreateTopics(store: Store): Category[];
   function store_getPostId(store: Store, pageId: PageId, postNr: PostNr): PostId | U;

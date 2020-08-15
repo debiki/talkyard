@@ -765,10 +765,27 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 
 // Also see: store_getCurrOrDefaultCat(store) [GETACTDEFCAT]
 //
-export function store_findTheDefaultCategory(store: Store): Category | undefined {
+export function store_findTheDefaultCategory(store: Store): Category | U {
   return _.find(store.currentCategories, (category: Category) => {
     return category.isDefaultCategory;
   });
+}
+
+
+export function store_findCatByRefOrId(store: Store, refOrId: RefOrId): Category | U {
+  const curCats = store.currentCategories || [];
+  const allCatsHacky = store.allCategoriesHacky || [];
+  const cats: Category[] = [...curCats, ...allCatsHacky];
+
+  if (_.isNumber(refOrId)) {
+    return _.find(cats, c => c.id === refOrId);
+  }
+  else {
+    // @ifdef DEBUG
+    dieIf(refOrId.indexOf('slug:') !== 0, 'Only cat slug refs supported now [TyE35RKTDJ39]')
+    // @endif
+    return _.find(cats, c => 'slug:' + c.slug === refOrId);
+  }
 }
 
 

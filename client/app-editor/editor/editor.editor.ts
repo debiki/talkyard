@@ -574,17 +574,35 @@ export const Editor = createFactory<any, EditorState>({
     });
   },
 
-  editNewForumPage: function(categoryId: number, role: PageRole) {
+  editNewForumPage: function(catRefOrId: RefOrId | U, role: PageRole | U) {
     if (this.alertBadState())
       return;
+
     const state: EditorState = this.state;
-    // Private chat topics shouldn't be placed in any category.
-    dieIf(role === PageRole.PrivateChat && categoryId, 'EsE5KF024');
-    // But other topics should be placed in a category.
-    dieIf(role !== PageRole.PrivateChat && !categoryId, 'EsE8PE2B');
+    const store: Store = state.store;
+
+    let category: Category | U;
+    let categoryId: CategoryId | U;
+    let newPageRole: PageType | U;
+
+    if (role === PageRole.PrivateChat) {
+      // Private chat topics shouldn't be placed in a category.
+      dieIf(catRefOrId, `${catRefOrId} [TyE5KF024]`)
+      newPageRole = role;
+    }
+    else if (_.isNumber(catRefOrId) && role) {
+      categoryId = catRefOrId;
+      newPageRole = role;
+    }
+    else {
+      // Find the category id and/or default topic type.
+      category = store_findCatByRefOrId(store, catRefOrId);
+      dieIf(!category, `No such category: ${catRefOrId} [TyE8PE2B]`);
+      categoryId = category.id;
+      newPageRole = role || category.defaultTopicType;  // [05AKTD5J]
+    }
 
     const text = state.text || '';
-    const store: Store = state.store;
 
     const newState: Partial<EditorState> = {
       anyPostType: null,
@@ -592,7 +610,7 @@ export const Editor = createFactory<any, EditorState>({
       // The current page doens't matter, when creating a new page. [DRAFTS_BUG] set to undefined
       editorsPageId: store.currentPageId,
       newForumTopicCategoryId: categoryId,
-      newPageRole: role,
+      newPageRole,
       text: text,
       showSimilarTopics: true,
       searchResults: null,
@@ -923,7 +941,10 @@ export const Editor = createFactory<any, EditorState>({
     }, () => {
       // Show an in-page preview, unless we're creating a new page.
       const state: EditorState = this.state;
-      if (!state.newPageRole) {
+      if (state.newPageRole || state.newForumTopicCategoryId) {
+        // Then the page doesn't yet exist — cannot show any in-page preview.
+      }
+      else {
         const params: ShowEditsPreviewParams = {
           scrollToPreview,
           safeHtml,
@@ -937,7 +958,7 @@ export const Editor = createFactory<any, EditorState>({
         if (state.editingPostUid) {
           params.editingPostNr = state.editingPostNr;
         }
-        ReactActions.showEditsPreview(params);
+        ReactActions.showEditsPreviewInPage(params);
         // We'll hide the preview, wheh closing the editor, here: (TGLPRVW)
       }
     });
@@ -1029,7 +1050,7 @@ export const Editor = createFactory<any, EditorState>({
     // or Send Message. [NEWTOPIC0CURPAGE]
     const editorsPageId: PageId | U = state.editorsPageId || eds.embeddedPageId;
 
-    const isNewTopic = state.newForumTopicCategoryId;
+    const isNewForumTopic = state.newForumTopicCategoryId;
     const isNewDirectMessage = state.messageToUserIds && state.messageToUserIds.length;
     const isReplying = state.replyToPostNrs?.length;  // CLEAN_UP can remove '?.', never undef? [TyE502KRDL35]
 
@@ -1045,14 +1066,14 @@ export const Editor = createFactory<any, EditorState>({
     // where there's no current page id.
     // For now, then just don't create any draft.  [DRAFTS_BUG]
     // There'll be an incorrect 'Will save draft ...' status message.
-    if (isNewTopic && !editorsPageId)
+    if (isNewForumTopic && !editorsPageId)
       return undefined;
 
     // ---------------------------------------------------------
     // @ifdef DEBUG
     dieIf(!state.replyToPostNrs, '[TyE502KRDL35]');
     // The new draft cannot be for a new topic, and for edits or a reply, at the same time.
-    if (isNewTopic) {
+    if (isNewForumTopic) {
       dieIf(isReplying, '[TyE603956RKTSH]');
       dieIf(anyPostType, '[TyE306KDGR24]');
       dieIf(state.editingPostNr, '[TyE40602TKSJ]');
@@ -1297,7 +1318,7 @@ export const Editor = createFactory<any, EditorState>({
       if (page_isPrivateGroup(state.newPageRole)) {
         this.startPrivateGroupTalk();
       }
-      else if (state.newForumTopicCategoryId) {
+      else if (state.newForumTopicCategoryId) {  // this incl public chats, right
         this.saveNewForumPage();
       }
       else if (_.isNumber(state.editingPostNr)) {
@@ -1975,7 +1996,7 @@ export const Editor = createFactory<any, EditorState>({
     const thereIsAnInPagePreview =
         me_uiPrefs(me).inp !== UiPrefsIninePreviews.Skip &&
         // If we're creating a new page, there's not any place to show an in-page preview.
-        !state.newForumTopicCategoryId;
+        !(state.newForumTopicCategoryId || state.newPageRole);
 
     // Don't show any in-editor preview, if we're showing an in-page preview,
     // and hasn't configured double previews (in editor too).

@@ -572,7 +572,7 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
       const editorElmY = editorElm?.getBoundingClientRect()?.y || 0;
       const scrollToPreview = previewElmY <= editorElmY;
 
-      ReactActions.showEditsPreview({ scrollToPreview, safeHtml, highlightPreview: false });
+      ReactActions.showEditsPreviewInPage({ scrollToPreview, safeHtml, highlightPreview: false });
     });
   },
 

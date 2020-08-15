@@ -135,8 +135,9 @@ function onMessage(event) {
       // This is sent from the embedded editor back to an embedded comments page.
       ReactActions.handleEditResult(eventData);
       break;
-    case 'showEditsPreview':
-      ReactActions.showEditsPreview(eventData);
+    case 'showEditsPreview':  // REMOVE DO_AFTER 2020-09-01 deprecated
+    case 'showEditsPreviewInPage':
+      ReactActions.showEditsPreviewInPage(eventData);
       break;
     case 'scrollToPreview':
       ReactActions.scrollToPreview(eventData);
