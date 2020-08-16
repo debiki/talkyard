@@ -186,7 +186,10 @@ class Nashorn(
     val timeBefore = System.currentTimeMillis()
 
     val htmlOrError = engine.invokeFunction(
-      "renderReactServerSide", reactStoreJsonString, cdnOrigin.getOrElse("")).asInstanceOf[String]
+          "renderReactServerSide", reactStoreJsonString,
+          // CLEAN_UP REMOVE  cdnOrigin not needd here any more?
+          // Instead: theStore.anyCdnOrigin
+          cdnOrigin.getOrElse("")).asInstanceOf[String]
     if (htmlOrError.startsWith(ErrorRenderingReact)) {
       logger.error(s"Error rendering page with React server side [DwE5KGW2]")
       return Bad(htmlOrError)

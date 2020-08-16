@@ -6,7 +6,7 @@
 //------------------------------------------------------------------------------
 
 export function getMainWinStore(): Store {
-  return (<any> window).theStore.embeddedOriginOrEmpty;  // [ONESTORE]
+  return (<any> window).theStore;  // [ONESTORE]
 }
 
 export function makeNoPageData() { die('K42B01'); }
