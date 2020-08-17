@@ -518,7 +518,9 @@ case class SitePatchParser(context: EdContext) {
         // guest_prefs3 db table — which works also if a human returns later and gets
         // a different guest user account but uses the same email address.
         emailNotfPrefs = EmailNotfPrefs.Unspecified,
-        country = readOptString(jsObj, "country").trimNoneIfBlank,
+        about = readOptString(jsObj, "bio"),
+        website = readOptString(jsObj, "websiteUrl"),
+        country = readOptString(jsObj, "location", "country"),
         lockedThreatLevel = readOptInt(jsObj, "lockedThreatLevel").flatMap(ThreatLevel.fromInt)))
     }
     catch {
@@ -670,9 +672,9 @@ case class SitePatchParser(context: EdContext) {
         summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
         summaryEmailIfActive = readOptBool(jsObj, "summaryEmailIfActive"),
         passwordHash = passwordHash,
-        country = readOptString(jsObj, "country"),
-        website = readOptString(jsObj, "website"),
-        about = readOptString(jsObj, "about"),
+        about = readOptString(jsObj, "bio", "about"),
+        website = readOptString(jsObj, "websiteUrl", "website"),
+        country = readOptString(jsObj, "location", "country"),
         seeActivityMinTrustLevel = readOptInt(jsObj, "seeActivityMinTrustLevel").flatMap(TrustLevel.fromInt),
         tinyAvatar = None, // [readlater]
         smallAvatar = None, // [readlater]

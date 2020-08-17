@@ -42,6 +42,34 @@ describe('all links', function() {
 
     site.pagePaths.push({ folder: '/', pageId: forumPage.id, showId: false, slug: '', canonical: true });
 
+
+    // Either extid or browser id.
+    const guestWithExtId: TestGuest = {
+      id: -1001,
+      extId: 'ext guest -1001',
+      fullName: "Test Guest",
+      emailAddress: "e2e-test-guest@x.co",
+      createdAtMs: c.JanOne2020HalfPastFive,
+      isGuest: true,
+      bio: "I'm a test guest, happy to be testing",
+      websiteUrl: "https://guests.website.ex.co",
+      location: "Testyland",
+    }
+    const guestWithBrowserId: TestGuest = {
+      id: -1002,
+      guestBrowserId: 'test_guestBrowserId',
+      fullName: "Tesy Guesy",
+      emailAddress: "e2e-tesy-guesy@x.co",
+      createdAtMs: c.JanOne2020HalfPastFive,
+      isGuest: true,
+      bio: "I'm a more serious guest, so my name is not Test.",
+      websiteUrl: "https://guesys.website.ex.co",
+      location: "Tesy's Realm",
+    }
+    site.guests.push(guestWithExtId);
+    site.guests.push(guestWithBrowserId);
+
+
     site.posts.push(make.post({
       page: forumPage,
       nr: c.TitleNr,

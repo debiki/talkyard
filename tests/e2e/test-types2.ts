@@ -232,7 +232,7 @@ interface SiteMeta {
 }
 
 
-interface Member {
+interface Member {   // see also TestGuest below
   id: number;
   username: string;
   fullName?: string;
@@ -242,6 +242,9 @@ interface Member {
   emailNotfPrefs?: EmailNotfPrefs;
   passwordHash?: string;
   password?: string;
+  bio?: string;
+  websiteUrl?: string;
+  location?: string;
   isOwner?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
@@ -269,13 +272,19 @@ interface MemberToCreate extends Member {
   willNeedToVerifyEmail?: true;
 }
 
-interface TestGuest {  // try to rename to Guest
-  id: number;
+interface TestGuest {  // try to rename to Guest?  See also  Member  above
+  id: UserId;
+  extId?: ExtId;
   fullName: string;
-  createdAtMs: number;
   emailAddress?: string;
-  isGuest: boolean;
-  guestBrowserId: string;
+  // emailNotfPrefs = EmailNotfPrefs.Unspecified
+  createdAtMs: WhenMs;
+  isGuest?: true;
+  guestBrowserId?: string;
+  bio?: string;
+  websiteUrl?: string;
+  location?: string;
+  lockedThreatLevel?: ThreatLevel;
 }
 
 

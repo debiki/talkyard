@@ -24,3 +24,5 @@ alter table settings3 add constraint settings_c_maxpostspendrevwaftr check (
     max_posts_pend_revw_aftr between 0 and 10);
 
 
+alter table users3 drop constraint users_about_guest__c_n;
+

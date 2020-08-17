@@ -287,8 +287,8 @@ const AboutMember = createComponent({
       summaryEmailIntervalMins: summaryEmailIntervalMins,
       summaryEmailIfActive: this.state.summaryEmailIfActive,
       // ------------------------------------------
-      about: firstDefinedOf(this._about, user.about),
-      url: firstDefinedOf(this._url, user.url),
+      about: firstDefinedOf(this._about, user.bio),
+      url: firstDefinedOf(this._url, user.websiteUrl),
     };
     // This won't update the name in the name-login-button component. But will
     // be automatically fixed when I've ported everything to React and use
@@ -422,14 +422,14 @@ const AboutMember = createComponent({
           r.label({ htmlFor: 't_UP_AboutMe' }, t.upp.AboutYou),
           r.textarea({ className: 'form-control', id: 't_UP_Prefs_AboutMeTA',
               onChange: (event) => { this._about = event.target.value },
-              defaultValue: user.about || '' })),
+              defaultValue: user.bio || '' })),
 
         // Later: Verify is really an URL
         isBuiltInUser ? null : r.div({ className: 'form-group' },
-          r.label({ htmlFor: 'url' }, 'URL'),
+          r.label({ htmlFor: 'url' }, 'Website URL'),  // I18N
           r.input({ className: 'form-control', id: 'url',
               onChange: (event) => { this._url = event.target.value },
-              defaultValue: user.url }),
+              defaultValue: user.websiteUrl }),
           r.p({ className: 'help-block' }, t.upp.WebLink)),
 
         // Later: + Location

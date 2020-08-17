@@ -260,7 +260,7 @@ function runAllE2eTests {
     echo
   fi
 
-  $r s/wdio --only all-links $args
+  $r s/wdio --only all-links $args   # RENAME to test-import  ?
   $r s/wdio --only create-site-password-run-admin-intro-tours $args
   $r s/wdio --only create-site-gmail-and-email-notf $args
   $r s/wdio --only create-site-facebook $args

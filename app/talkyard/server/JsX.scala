@@ -207,9 +207,9 @@ object JsX {
       "deactivatedAt" -> JsWhenMsOrNull(user.deactivatedAt),
       "deletedAtMs" -> JsWhenMsOrNull(user.deletedAt),  // REMOVE
       "deletedAt" -> JsWhenMsOrNull(user.deletedAt),
-      "country" -> JsStringOrNull(user.country),
-      "url" -> JsStringOrNull(user.website),
-      "about" -> JsStringOrNull(user.about),
+      "bio" -> JsStringOrNull(user.about),
+      "websiteUrl" -> JsStringOrNull(user.website),
+      "location" -> JsStringOrNull(user.country),
       "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
       "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),

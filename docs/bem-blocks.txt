@@ -12,11 +12,12 @@ s_w-X = wraps an X, i.e., somewhere inside, there's an X. Or "'W'ith a X inside"
 w_X   = wraps X. Always a class, not an id.
 
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
+Ab = about
 Em = email
 B  = button, e.g. ReplyB
 T  = table
-Ttl = title
-Txt = text
+Ttl = title,  no just Tl   RENAME
+Txt = text,   no just Tx   RENAME
 Lk = link
 L  = list
 It = list item

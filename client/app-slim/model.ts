@@ -1128,6 +1128,17 @@ interface Guest extends Participant {
 }
 
 
+interface BioWebsiteLocation {
+  bio?: string;
+  websiteUrl?: string;
+  location?: string;
+}
+
+
+interface GuestDetailed extends Guest, BioWebsiteLocation {
+}
+
+
 interface Member extends Participant, MemberIdName {
   username: string;
   // but fullName is optional
@@ -1154,7 +1165,7 @@ interface GroupStats {
 
 
 /** A member or group, including details. Or a guest; then, there are no details. */
-type ParticipantAnyDetails = MemberInclDetails | Guest;
+type ParticipantAnyDetails = MemberInclDetails | GuestDetailed;
 
 
 interface MemberInclDetails extends Member {
@@ -1173,7 +1184,7 @@ interface GroupInclDetails extends MemberInclDetails, Group {
 }
 
 
-interface UserInclDetails extends MemberInclDetails {
+interface UserInclDetails extends MemberInclDetails, BioWebsiteLocation {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName?: string;
@@ -1181,8 +1192,6 @@ interface UserInclDetails extends MemberInclDetails {
   emailVerifiedAtMs?: WhenMs;
   // mailingListMode: undefined | true;  // default false  — later
   hasPassword?: boolean;
-  about?: string;
-  url: string;
   seeActivityMinTrustLevel?: TrustLevel;
   uiPrefs: UiPrefs;
   isAdmin: boolean;

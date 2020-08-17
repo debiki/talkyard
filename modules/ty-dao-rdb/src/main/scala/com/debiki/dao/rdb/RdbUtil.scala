@@ -219,6 +219,7 @@ object RdbUtil {
       |u.EMAIL_NOTFS u_email_notfs,
       |u.EMAIL_VERIFIED_AT u_email_verified_at,
       |u.PASSWORD_HASH u_password_hash,
+      |u.about u_about,
       |u.COUNTRY u_country,
       |u.WEBSITE u_website,
       |u.avatar_tiny_base_url,
@@ -276,6 +277,8 @@ object RdbUtil {
         guestBrowserId = Option(rs.getString("u_guest_browser_id")),
         email = dn2e(rs.getString("u_guest_email_addr")),
         emailNotfPrefs = emailNotfPrefs,
+        about = getOptString(rs, "u_about"),
+        website = getOptString(rs, "u_website"),
         country = dn2e(rs.getString("u_country")).trimNoneIfEmpty,
         lockedThreatLevel = lockedThreatLevel)
     else if (isGroup)

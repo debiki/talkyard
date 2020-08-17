@@ -381,6 +381,21 @@ const AvatarAboutAndButtons = createComponent({
     const thatIsYou = !isMe ? null :
       r.span({ className: 'esProfile_isYou' }, t.upp.you);
 
+    const bio = !!user.bio &&
+        r.div({ className: 's_UP_Ab_Bio' }, user.bio);
+
+    const websteUrl = !!user.websiteUrl &&
+        r.div({ className: 's_UP_Ab_Webs' },
+          r.span({ className: 's_UP_Ab_Webs_Tl' }, "Website: "), // I18N
+          // Use plain text, not a link — reduces phishing risk.
+          // (Maybe later use clickable links on Full or Trusted member profiles.)
+          r.span({ className: 's_UP_Ab_Webs_Ln' }, user.websiteUrl));
+
+    const location = !!user.location &&
+        r.div({ className: 's_UP_Ab_Loc' },
+          r.span({ className: 's_UP_Ab_Loc_Tl' }, "Location: "),   // I18N
+          r.span({ className: 's_UP_Ab_Loc_Tx' }, user.location));
+
     const avatar = user.avatarMediumHashPath
         ? r.img({ src: linkToUpload(store, user.avatarMediumHashPath) })
         : debiki2.avatar.Avatar({ user: user, origins: store,
@@ -425,7 +440,9 @@ const AvatarAboutAndButtons = createComponent({
           adminButton,
           r.h1({ className: 'esUP_Un' }, user.username, thatIsYou, isAGroup),
           r.h2({ className: 'esUP_FN' }, user.fullName, isWhatInfo),
-          r.div({ className: 's_UP_About' }, user.about),
+          bio,
+          websteUrl,
+          location,
           suspendedInfo,
           deletedInfo)),
         !stats ? null : r.div({ className: 's_UP_Ab_Stats' },

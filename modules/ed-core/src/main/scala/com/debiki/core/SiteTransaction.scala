@@ -377,7 +377,7 @@ trait SiteTransaction {
   def deleteAllUsersIdentities(userId: UserId): Unit
 
   def nextGuestId: UserId
-  def insertGuest(guest: Guest): Unit
+  def insertGuest(guest: Guest): Unit   // should be: GuestDetailed
 
   def nextMemberId: UserId
   def insertMember(user: UserInclDetails): Unit

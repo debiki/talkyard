@@ -557,14 +557,20 @@ trait UserSiteDaoMixin extends SiteTransaction {
         guest_browser_id,
         guest_email_addr,
         email_notfs,
+        about,
+        website,
+        country,
         locked_threat_level)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(siteId.asAnyRef, guest.id.asAnyRef, guest.extId.orNullVarchar,
       guest.createdAt.asTimestamp, guest.guestName.trim,
       guest.guestBrowserId.orNullVarchar,  // absent if importing Disqus user [494AYDNR]
       e2d(guest.email),
       _toFlag(guest.emailNotfPrefs),  // change to Int [7KABKF2]
+      guest.about.trimOrNullVarchar,
+      guest.website.trimOrNullVarchar,
+      guest.country.trimOrNullVarchar,
       guest.lockedThreatLevel.map(_.toInt).orNullInt)
     runUpdateSingleRow(statement, values)
   }
@@ -577,18 +583,14 @@ trait UserSiteDaoMixin extends SiteTransaction {
             SITE_ID, USER_ID, ext_id, sso_id, full_name, USERNAME, CREATED_AT,
             primary_email_addr, EMAIL_NOTFS, EMAIL_VERIFIED_AT, EMAIL_FOR_EVERY_NEW_POST, PASSWORD_HASH,
             IS_APPROVED, APPROVED_AT, APPROVED_BY_ID,
-            COUNTRY, IS_OWNER, IS_ADMIN, IS_MODERATOR,
-            about, see_activity_min_trust_level,
+            IS_OWNER, IS_ADMIN, IS_MODERATOR,
+            about, website, country,
+            see_activity_min_trust_level,
             trust_level, locked_trust_level, threat_level, locked_threat_level,
             deactivated_at, deleted_at)
         values (
-            ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?,
-            ?, ?, ?,
-            ?, ?, ?, ?,
-            ?, ?,
-            ?, ?, ?, ?,
-            ?, ?)
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         List[AnyRef](
           siteId.asAnyRef,
@@ -596,18 +598,29 @@ trait UserSiteDaoMixin extends SiteTransaction {
           user.extId.orNullVarchar,
           user.ssoId.orNullVarchar,
           user.fullName.orNullVarchar,
-          user.username, user.createdAt.asTimestamp, user.primaryEmailAddress.trimNullVarcharIfBlank,
-          _toFlag(user.emailNotfPrefs), o2ts(user.emailVerifiedAt),
+          user.username,
+          user.createdAt.asTimestamp,
+          user.primaryEmailAddress.trimNullVarcharIfBlank,
+          _toFlag(user.emailNotfPrefs),
+          o2ts(user.emailVerifiedAt),
           user.mailingListMode.asTrueOrNull,
           user.passwordHash.orNullVarchar,
-          user.isApproved.orNullBoolean, user.reviewedAt.orNullTimestamp,
+          user.isApproved.orNullBoolean,
+          user.reviewedAt.orNullTimestamp,
           user.reviewedById.orNullInt,
-          user.country.trimOrNullVarchar, user.isOwner.asTrueOrNull, user.isAdmin.asTrueOrNull,
+          user.isOwner.asTrueOrNull,
+          user.isAdmin.asTrueOrNull,
           user.isModerator.asAnyRef,
-          user.about.orNullVarchar, user.seeActivityMinTrustLevel.map(_.toInt).orNullInt,
-          user.trustLevel.toInt.asAnyRef, user.lockedTrustLevel.map(_.toInt).orNullInt,
-          user.threatLevel.toInt.asAnyRef, user.lockedThreatLevel.map(_.toInt).orNullInt,
-          user.deactivatedAt.orNullTimestamp, user.deletedAt.orNullTimestamp))
+          user.about.trimOrNullVarchar,
+          user.website.trimOrNullVarchar,
+          user.country.trimOrNullVarchar,
+          user.seeActivityMinTrustLevel.map(_.toInt).orNullInt,
+          user.trustLevel.toInt.asAnyRef,
+          user.lockedTrustLevel.map(_.toInt).orNullInt,
+          user.threatLevel.toInt.asAnyRef,
+          user.lockedThreatLevel.map(_.toInt).orNullInt,
+          user.deactivatedAt.orNullTimestamp,
+          user.deletedAt.orNullTimestamp))
     }
     catch {
       case ex: js.SQLException =>

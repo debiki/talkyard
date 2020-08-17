@@ -821,7 +821,7 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
   * Guests don't have any trust level, cannot get more than completely-new-user access.
   * However if a guest behaves well, hens *threat level* decreases (not yet implemented).
   */
-case class Guest( // [exp] ok
+case class Guest( // [exp] ok   REFACTOR split into Guest and GuestDetailed
   id: UserId,
   override val extId: Option[ExtId],
   createdAt: When,
@@ -829,7 +829,9 @@ case class Guest( // [exp] ok
   guestBrowserId: Option[String],
   email: String, // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
-  country: Option[String] = None, // COULD rename to Location
+  override val about: Option[String] = None,
+  override val website: Option[String] = None,
+  override val country: Option[String] = None,
   lockedThreatLevel: Option[ThreatLevel] = None) extends Participant with ParticipantInclDetails {
 
   def emailVerifiedAt: Option[ju.Date] = None
@@ -851,7 +853,7 @@ case class Guest( // [exp] ok
 
   def noDetails: Participant = this
 
-  require(isOkayGuestId(id), s"Bad guest id: $id [TyE4GYUK21]")
+  require(isOkayGuestId(id), s"Bad guest id: $id, should be <= $MaxCustomGuestId [TyE4GYUK21]")
   require(guestName == guestName.trim, "Name starts or ends with whitespace [TyE5YGUK3]")
   require(guestName.nonEmpty, "Name is empty [TyEJ4KEPF8]")
   require(Participant.isOkayGuestBrowserdId(guestBrowserId),
@@ -866,6 +868,9 @@ sealed trait ParticipantInclDetails {
   def createdAt: When
   def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
   def noDetails: Participant
+  def about: Option[String] = None    ; RENAME // to bio
+  def website: Option[String] = None  ; RENAME // to websiteUrl
+  def country: Option[String] = None  ; SHOULD // CHANGE to  location somehow, opt incl city
 }
 
 
@@ -916,9 +921,9 @@ case class UserInclDetails( // ok for export
   summaryEmailIntervalMins: Option[Int] = None,
   summaryEmailIfActive: Option[Boolean] = None,
   passwordHash: Option[String] = None,
-  country: Option[String] = None,
-  website: Option[String] = None,
-  about: Option[String] = None,
+  override val about: Option[String] = None,
+  override val website: Option[String] = None,
+  override val country: Option[String] = None,
   seeActivityMinTrustLevel: Option[TrustLevel] = None,
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,

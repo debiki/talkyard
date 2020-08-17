@@ -103,6 +103,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     */
   def loadUserAnyDetails(who: String): Action[Unit] = GetAction { request =>
     import request.{dao, requesterOrUnknown}
+    // First try looking up by `who` as a  numeric user id. If won't work,
+    // lookup by `who` as username instead.
     var (userJson, anyStatsJson, ppt) = Try(who.toInt).toOption match {
       case Some(id) => loadUserJsonAnyDetailsById(id, includeStats = true, request)
       case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
@@ -243,7 +245,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     var userJson = Json.obj(
       "id" -> user.id,
       "fullName" -> user.guestName,
-      "country" -> JsStringOrNull(user.country))
+      "bio" -> JsStringOrNull(user.about),
+      "websiteUrl" -> JsStringOrNull(user.website),
+      "location" -> JsStringOrNull(user.country))
       // += ipSuspendedTill
       // += browserIdCookieSuspendedTill
     if (callerIsStaff) {
@@ -399,9 +403,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         "createdAtDateStr" -> JsString(toIso8601Day(member.createdAt.toJavaDate)),
         "primaryEmailAddress" -> JsString(member.primaryEmailAddress),
         "otherEmailAddresses" -> otherEmailsJson,
-        "country" -> JsStringOrNull(member.country),
-        "website" -> JsStringOrNull(member.website),
-        "about" -> JsStringOrNull(member.about),
+        "bio" -> JsStringOrNull(member.about),
+        "websiteUrl" -> JsStringOrNull(member.website),
+        "location" -> JsStringOrNull(member.country),
         // Incl in Uploads links archieve instead?
         "avatarImageUrl" -> JsStringOrNull(member.mediumAvatar.map(request.cdnOrSiteOrigin + _.url)),
         "trustLevel" -> JsString(member.effectiveTrustLevel.toString),

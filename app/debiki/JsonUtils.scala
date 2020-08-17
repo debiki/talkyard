@@ -82,7 +82,13 @@ object JsonUtils {
     readOptString(json, fieldName) getOrElse throwMissing("EsE7JTB3", fieldName)
 
 
-  def readOptString(json: JsValue, fieldName: String): Option[String] =
+  def readOptString(json: JsValue, fieldName: String, altName: String = ""): Option[String] = {
+    val primaryResult = readOptStringImpl(json, fieldName)
+    if (primaryResult.isDefined || altName.isEmpty) primaryResult
+    else readOptStringImpl(json, altName)
+  }
+
+  private def readOptStringImpl(json: JsValue, fieldName: String): Option[String] =
     (json \ fieldName).validateOpt[String] match {
       case JsSuccess(value, _) => value.map(_.trim)
       case JsError(errors) =>
