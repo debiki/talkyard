@@ -99,7 +99,7 @@ export const TopBar = createComponent({
   },
 
   isPageWide: function(store: Store) {
-    return store_getApproxPageWidth(store) >= 1450;  // [wide_topbar_min_px]
+    return store_getApproxPageWidth(store) >= 1310;  // [wide_topbar_min_px]
   },
 
   getThisRect: function() {
