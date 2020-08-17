@@ -88,7 +88,7 @@ export function scrollAndFlashPosts(page: Page, posts: Post[]) {
 export function scrollAndFlashPostNr(postNr: PostNr, options: ShowPostOpts) {
   const postElem = $byId('post-' + postNr);
   if (!postElem) {
-    logError('Got no post [EdE7JKWD20]');  // Happens sometimes, ends up in logBrowserErrors()
+    // Opened new page, Reactjs component unmounted, post elem gone?
     return;
   }
   options = addAnySidebarWidth(options);
@@ -129,6 +129,7 @@ const highlightOffHandles = new Map();
 
 function flashImpl(head: Element | undefined, body: Element) {
   if (!body) {
+    // Opened new page, Reactjs component unmounted, post elem gone?
     // @ifdef DEBUG
     die('TyE306WKUDR2');
     // @endif

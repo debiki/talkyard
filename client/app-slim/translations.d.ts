@@ -107,6 +107,7 @@ interface TalkyardTranslations {
   ShowPreview: string;
   SignUp: string;
   Solution: string;
+  Staff?: string; // MISSING
   started: string;
   Stranger?: string;  // MISSING
   Summary: string;

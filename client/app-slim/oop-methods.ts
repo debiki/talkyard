@@ -1252,6 +1252,8 @@ export function trustLevel_toString(trustLevel: TrustLevel): string {
     case TrustLevel.Regular: return t.RegularMember;
     case TrustLevel.CoreMember: return t.CoreMember;
     default:
+      if (trustLevel === DummyTrustLevel.Staff) return t.Staff || "Staff";   // I18N
+      if (trustLevel === DummyTrustLevel.Admin) return t.Admin;
       return `Unknown trust level: ${trustLevel} [TyEUNKTRLVL]`;
   }
 }

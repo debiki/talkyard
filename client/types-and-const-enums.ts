@@ -349,6 +349,10 @@ const enum TrustLevel {
   Max = CoreMember,
 }
 
+const enum DummyTrustLevel {
+  Staff = 7,
+  Admin = 8,
+}
 
 const enum ThreatLevel {
   SuperSafe = 1,
