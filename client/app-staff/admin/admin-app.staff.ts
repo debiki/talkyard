@@ -451,26 +451,44 @@ const DashboardPanel = React.createFactory<any>(function(props) {
 
   const ps = admin.prettyStats(dashboardData.siteStats);
 
+  const megabytesDiskUsed =
+        `${prettyNum(ps.fsMb)} MB` + (
+              !ps.fsMaxMb ? '' : ` = ${ps.fsPercentStr}% of ${ps.fsMaxMb} MB`);
+
   return (
     r.div({ class: 's_A_Db' },
-      r.h3({}, "Dashboard"),
-      r.p({}, "Work in progress (June, 2020). For now, disk usage info:"),
+      r.h2({}, "Site size"),
+      r.p({},
+        r.b({}, "Num members: "), r.span({}, dashboardData.siteStats.numParticipants), r.br(),
+        r.b({}, "Num pages: "), r.span({}, dashboardData.siteStats.numPages), r.br(),
+        r.b({}, "Num posts: "), r.span({}, dashboardData.siteStats.numPosts), r.br(),
+        ),
+      //r.pre({}, JSON.stringify(dashboardData.siteStats, undefined, 4)),
+      r.h2({}, "Disk usage"),
 
       // kB = kilobytes, 1000 bytes.  1 KiB (uppercase K) = 1 kibi =1024 bytes.
       // MB = 1000 * 1000 byte. MiB = 1024 * 1024 bytes.
-      r.p({ class: 's_A_Db_Storage' },
+      r.p({ class: 's_A_Db_Storage',
+            // Don't show this — there'll be a fair use policy instead. In practice
+            // should mean unlimited, as long as it's people's discussons, and
+            // not auto generated text like 9999 GB log data.
+            style: { display: 'none' }},
         `Database storage used: `,
         r.code({}, `${prettyNum(ps.dbMb)} MB = ${
                 ps.dbPercentStr}% of ${ps.dbMaxMb} MB`)),
 
       r.p({ class: 's_A_Db_Storage' },
-        `Uploaded files storage used: `,
-        r.code({}, `${prettyNum(ps.fsMb)} MB = ${
-                ps.fsPercentStr}% of ${ps.fsMaxMb} MB`)),
+        r.span({}, `Uploaded files storage used: `),
+        r.code({}, megabytesDiskUsed),
+        r.span({}, ", in " + dashboardData.siteStats.numUploads + " files."),
+        r.br(),
+        r.span({}, "(E.g. images and attachments.)")),
 
+      /* This not relevant — with fair use policy instead.
       r.br(),
       r.p({}, "(We try to over estimate the database storage used, so that " +
           "later when we make the estimates more accurate, the numbers will go down.)"),
+        */
 
       // Later: Render w https://github.com/FormidableLabs/victory  ?
       // Looks nice:

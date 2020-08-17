@@ -1612,6 +1612,22 @@ interface SiteStats {
   dbStorageUsedBytes: number;
   fileStorageLimitBytes: number;
   fileStorageUsedBytes: number;
+  numAuditRows: number;
+  numGuests: number;
+  numIdentities: number;
+  numParticipants: number;
+  numPages: number;
+  numPageParticipants: number;
+  numPosts: number;
+  numPostTextBytes: number;
+  numPostRevisions: number;
+  numPostRevBytes: number;
+  numPostsRead: number;
+  numActions: number;
+  numUploads: number;
+  numUploadBytes: number;
+  numNotfs: number;
+  numEmailsSent: number;
 }
 
 interface AdminPanelProps {
