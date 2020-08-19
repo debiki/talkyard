@@ -92,10 +92,10 @@ log_statement = 'ddl'
 EOF
 
 
-# Help file about how to rsync to slave
+# Help file about how to rsync to standby
 # ------------------------
 
-cat << EOF > $PGDATA/enslave-peer.txt
+cat << EOF > $PGDATA/how-rsync-to-standby.txt
 # Docs:
 # - https://wiki.postgresql.org/wiki/Binary_Replication_Tutorial
 # - https://wiki.postgresql.org/wiki/Streaming_Replication#How_to_Use
@@ -105,7 +105,7 @@ cat << EOF > $PGDATA/enslave-peer.txt
 # 2) Rename recovery.conf.disabled or recovery.done to recovery.conf, on the standby.
 
 # 3) rsync:
-psql postgres postgres -c "SELECT pg_start_backup('rsync to slave ' || now(), true)"
+psql postgres postgres -c "SELECT pg_start_backup('rsync to standby ' || now(), true)"
 rsync -acv $PGDATA/ $PEER_HOST:$PGDATA/ --exclude pg_xlog --exclude postmaster.pid --exclude recovery* --exclude failover_trigger_file --exclude backup_label
 psql postgres postgres -c "SELECT pg_stop_backup()"
 
