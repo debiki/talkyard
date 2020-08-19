@@ -322,6 +322,8 @@ function runAllE2eTests {
   $r s/wdio --only settings-allowed-email-domains.2browsers $args
   $r s/wdio --only settings-toggle-login-required.3browsers $args
   $r s/wdio --only login-required-oauth-signup-login $args
+
+  # Moderation   # RENAME to  modn- ...  instead of  admin- ...
   $r s/wdio --only settings-approve-members.2browsers $args
   $r s/wdio --only admin-user-approve-reject.2browsers $args
   $r s/wdio --only admin-user-staff.2browsers $args
@@ -331,7 +333,10 @@ function runAllE2eTests {
   $r s/wdio --only admin-review-invalidate-for-reply.2browsers $args
   $r s/wdio --only admin-review-invalidate-page-deld.2browsers $args
   $r s/wdio --only admin-review-cascade-approval.2browsers $args
-  $r s/wdio --only mod-review.2browsers $args
+  $r s/wdio --only modn-approve-before.2browsers $args
+  $r s/wdio --only modn-review-after.2browsers $args
+  $r s/wdio --only modn-appr-bef-comb-w-revw-aftr.2browsers $args
+  $r s/wdio --only mod-review.2browsers $args  # RENAME to modn-by-moderator-not-admin
 
   $r s/wdio --only admin-move-hostname.2browsers $args
 

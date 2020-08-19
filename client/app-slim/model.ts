@@ -1508,7 +1508,7 @@ interface Settings extends TopicInterfaceSettings {
   reviewAfterIfTrustLte: TrustLevel;
   maxPostsPendApprBefore: number;
   maxPostsPendRevwAftr: number;
-  numFirstPostsToApprove: number;  // RENAME to ..ApprBefr
+  numFirstPostsToApprove: number;  // RENAME to ..ApprBefr, hmm, or ...ReqAppr ?
   numFirstPostsToReview: number;   // RENAME to ..RewvAftr
   enableStopForumSpam: boolean;
   enableAkismet: boolean;

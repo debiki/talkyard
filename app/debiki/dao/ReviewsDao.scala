@@ -316,10 +316,13 @@ trait ReviewsDao {
   }
 
 
+  CLEAN_UP; REMOVE // this is too complicated, slightly bug prone!
   /** If we have approved all the required first post review tasks caused by userId, then
     * this method auto-approves all remaining first review tasks — because now we trust
     * the user that much.
+    *
     */
+  @deprecated("remove this, too complicated")
   private def perhapsCascadeApproval(userId: UserId, pageIdsToRefresh: mutable.Set[PageId])(
         tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
     val settings = loadWholeSiteSettings(tx)
@@ -357,6 +360,14 @@ trait ReviewsDao {
 
       val numApproved = postIdsApproved.size
       if (numHarmful > 0)
+        return
+
+      // Don't auto approve users with too low trust level.
+      // (Also sometimes causes an e2e test to fail.  TyT305RKDJ26)
+      val user = tx.loadParticipant(userId) getOrElse {
+        return // hard deleted? Weird
+      }
+      if (user.effectiveTrustLevel.isAtMost(settings.requireApprovalIfTrustLte))
         return
 
       val shallApproveRemainingFirstPosts = numApproved >= numFirstToApprove

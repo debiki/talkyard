@@ -151,6 +151,7 @@ export const ReviewAllPanel = createFactory({
 
     const hideComplTasks =
       Input({ type: 'checkbox', checked: this.state.hideComplTasks,
+        className: 'e_HideCompl',
         onChange: (event) => this.setState({ hideComplTasks: event.target.checked }),
         label: "Hide completed review tasks" });
 

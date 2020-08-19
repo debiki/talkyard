@@ -209,7 +209,15 @@ export class TyE2eTestBrowser {
     // Webdriver doesn't show the bad selector in any error message.
     dieIf(!_.isString(selector),
         `Selector is not a string: ${typeAndAsString(selector)}  [TyEE2E506QKSG35]`);
-    return this.#br.$(selector);
+    try {
+      return this.#br.$(selector);
+    }
+    catch (ex) {
+      // Webdriverio oddly enough won't print the bad selector, so won't know
+      // what it is, unless:
+      logError(`Webdriverio browser.$(..) error caused by selector:  "${selector}"`);
+      throw ex;
+    }
   }
 
   $$(selector: string | Function): WebdriverIO.ElementArray {
@@ -450,6 +458,7 @@ export class TyE2eTestBrowser {
     // returned true before timeout.
     //
     waitUntil(fn: () => Boolean, ps: {
+        refreshBetween?: boolean,
         timeoutMs?: number,
         timeoutIsFine?: boolean,
         serverErrorDialogIsFine?: boolean,
@@ -494,7 +503,17 @@ export class TyE2eTestBrowser {
             }
           }
 
-          this.#br.pause(delayMs);
+          if (ps.refreshBetween) {
+            // Good with the same amount of time before and after the refresh,
+            // so the server gets time to do its things, and the browser gets time
+            // to reload & repaint the page.
+            this.#br.pause(delayMs / 2);
+            this.refresh2();
+            this.#br.pause(delayMs / 2);
+          }
+          else {
+            this.#br.pause(delayMs);
+          }
           delayMs = expBackoff(delayMs);
         }
         while (elapsedMs < timeoutMs);
@@ -1480,6 +1499,7 @@ export class TyE2eTestBrowser {
       this.clickNow(selector);
     }
 
+    // DEPRECATED  use waitUntil(...  refreshBetween: true) instead
     refreshUntil(test: () => boolean) {
       while (true) {
         if (test())
@@ -1690,6 +1710,14 @@ export class TyE2eTestBrowser {
       // Requires Selenium or Chromedriver; the devtools protocol ('webtools' service) won't work.
       const remoteFilePath = this.#br.uploadFile(pathToUpload);
       this.$(selector).setValue(remoteFilePath);
+    }
+
+
+    scrollAndSetValue(selector: string, value: string | number,
+        opts: { timeoutMs?: number, okayOccluders?: string, append?: boolean } = {}) {
+      this.scrollIntoViewInPageColumn(selector);
+      this.waitUntilDoesNotMove(selector);
+      this.waitAndSetValue(selector, value, { ...opts, checkAndRetry: true });
     }
 
 
@@ -2598,6 +2626,9 @@ export class TyE2eTestBrowser {
       },
 
       clickLogout: (options: { waitForLoginButton?: boolean } = {}) => {   // RENAME to logout
+        // Sometimes this scrolls to top, small small steps, annoying, [FASTER_E2E_TESTS]
+        // and not needed, right.
+        // Can speed up by calling scrollToTop() — done here: [305RKTJ205].
         this.topbar.openMyMenu();
         this.waitAndClick('#e2eMM_Logout');
         this.waitAndClick('.e_ByeD .btn-primary');
@@ -4450,6 +4481,11 @@ export class TyE2eTestBrowser {
         });
       },
 
+      waitUntilGone: () => {
+        this.waitForGone(this.preview.__inPagePreviewSelector);
+        this.waitForGone(this.preview.__inEditorPreviewSelector);
+      },
+
       waitForExist: (
             selector: string, opts: { where: 'InEditor' | 'InPage', howMany?: number }) => {
         this.preview.__checkPrevw(opts, (prevwSelector: string) => {
@@ -4830,6 +4866,7 @@ export class TyE2eTestBrowser {
       anyCommentSelector: '.dw-p',
       anyReplyButtonSelector: '.dw-a-reply',
       addProgressReplySelector: '.s_OpReB-Prg',
+      previewSelector: '.dw-depth-1 .s_P-Prvw',
 
       waitForReplyButtonAssertCommentsVisible: () => {
         this.waitForVisible(this.topic.anyReplyButtonSelector);
@@ -4846,10 +4883,19 @@ export class TyE2eTestBrowser {
           this.waitForMyDataAdded();
         }
         let numNormal = this.count(this.topic.replySelector);
-        const numUnapproved = this.count(this.topic.replySelector + '.dw-p-unapproved');
+
+        // One's own, pending mod (or maybe if is staff, then can see others').
+        const ownUnapproved = this.count(this.topic.replySelector + ' .dw-p-pending-mod');
+        // Others' unapproved posts.
+        const othersUnapproved = this.count(this.topic.replySelector + '.dw-p-unapproved');
+        // Total.
+        const numUnapproved = othersUnapproved + ownUnapproved;
+
+        const numPreviews = this.count(this.topic.previewSelector);
         const numDeleted = this.count(this.topic.replySelector + '.dw-p-dl');
-        numNormal = numNormal - numUnapproved - numDeleted;
-        return { numNormal, numUnapproved, numDeleted };
+
+        numNormal = numNormal - numPreviews - numUnapproved - numDeleted;
+        return { numNormal, numPreviews, numUnapproved, numDeleted };
       },
 
       assertNumRepliesVisible: (num: number) => {
@@ -5309,13 +5355,12 @@ export class TyE2eTestBrowser {
       },
 
       refreshUntilPostNotPendingApproval: (postNr: PostNr) => {
-        for (let i = 0; i < 15; ++i) {
-          if (this.topic.isPostNotPendingApproval(postNr))
-            return;
-          this.#br.pause(500);
-          this.#br.refresh();
-        }
-        die('EdEKW05Y', `Post nr ${postNr} never gets approved`);
+        this.waitUntil(() => {
+          return this.topic.isPostNotPendingApproval(postNr);
+        }, {
+          refreshBetween: true,
+          message: `Waiting for post nr ${postNr} to get approved`,
+        });
       },
 
       assertPostNotPendingApproval: (postNr: PostNr, ps: { wait?: false } = {}) => {
@@ -6475,6 +6520,37 @@ export class TyE2eTestBrowser {
           }
         },
 
+        moderation: {
+          goHere: (origin?: string, opts: { loginAs? } = {}) => {
+            this.adminArea._goToMaybeLogin(origin, '/-/admin/settings/moderation', opts);
+            this.waitForVisible('.e_NumFstAprBef');
+          },
+
+          setNumFirstToApproveBefore: (n: N) => {
+            this.scrollAndSetValue('.e_NumFstAprBef input', n);
+          },
+
+          setApproveBeforeTrustLevel: (level: N) => {
+            this.scrollAndSetValue('.e_AprBefTrLvl input', level);
+          },
+
+          setMaxNumPendingApproval: (n: N) => {
+            this.scrollAndSetValue('.e_MxPndApr input', n);
+          },
+
+          setNumFirstToReviewAfter: (n: N) => {
+            this.scrollAndSetValue('.e_NumFstRvwAft input', n);
+          },
+
+          setReviewAfterTrustLevel: (level: N) => {
+            this.scrollAndSetValue('.e_RvwAftTrLvl input', level);
+          },
+
+          setMaxNumPendingReview: (n: N) => {
+            this.scrollAndSetValue('.e_MxPndRvw input', n);
+          },
+        },
+
         features: {
           goHere: (origin?: string, opts: { loginAs? } = {}) => {
             this.adminArea._goToMaybeLogin(origin, '/-/admin/settings/features', opts);
@@ -6928,12 +7004,20 @@ export class TyE2eTestBrowser {
           //----
         },
 
+        hideCompletedTasks: () => {
+          this.setCheckbox('.e_HideCompl input', true);
+          this.waitForGone('.e_A_Rvw_Tsk_DoneInfo');
+        },
+
         playTimePastUndo: () => {
           // Make the server and this.#br believe we've waited for the review timeout seconds.
           server.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
           this.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
         },
 
+        // DEPRECATED  CLEAN_UP REFACTOR change to  { pageId?, postNr?, dontCareWhichPost? }
+        // and require  dontCareWhichPost  to be true, or the others.
+        // So won't create flappy tests!
         waitForServerToCarryOutDecisions: (pageId?: PageId, postNr?: PostNr) => {
           // Then wait for the server to actually do something.
           // The UI will reload the task list and auto-update itself [2WBKG7E], when
@@ -7348,6 +7432,18 @@ export class TyE2eTestBrowser {
         this.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyEPWREGSPM_/s);
       },
 
+      waitForFirstPostsNotApproved: () => {
+        this.serverErrorDialog.waitAndAssertTextMatches(/approv.*_EsE6YKF2_/);
+      },
+
+      waitForTooManyPendingApproval: () => {
+        this.serverErrorDialog.waitAndAssertTextMatches(/approv.*TyE2MNYPNDAPR_/);
+      },
+
+      waitForTooManyPendingReview: () => {
+        this.serverErrorDialog.waitAndAssertTextMatches(/review.*TyE2MNYPNDRVW_/);
+      },
+
       waitForTooManyPendingMaybeSpamPostsError: () => {
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
         this.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyENEWMBRSPM_/s);
@@ -7538,6 +7634,7 @@ export class TyE2eTestBrowser {
       },
 
       createAndSaveTopic: (data: { title: string, body: string, type?: PageRole,
+            willBePendingApproval?: boolean,
             matchAfter?: boolean, titleMatchAfter?: string | false,
             bodyMatchAfter?: string | false, resultInError?: boolean }) => {
         this.forumButtons.clickCreateTopic();
@@ -7550,17 +7647,26 @@ export class TyE2eTestBrowser {
       },
 
       saveTopic: (data: { title: string, body: string,
+            willBePendingApproval?: boolean,
             matchAfter?: boolean, titleMatchAfter?: string | false,
             bodyMatchAfter?: string | false, resultInError?: boolean }) => {
         this.rememberCurrentUrl();
         this.editor.save();
         if (!data.resultInError) {
           this.waitForNewUrl();
+          if (data.willBePendingApproval) {
+            this.waitForVisible('.dw-p-ttl .esPendingApproval');
+            this.waitForVisible('.dw-ar-t .esPendingApproval');
+          }
+
+          // Only in the title text, not body text.
+          const titlePend = data.willBePendingApproval ? "(Title pending approval)\n" : '';
+
           if (data.matchAfter !== false && data.titleMatchAfter !== false) {
             // if (data.titleMatchAfter)
             this.assertPageTitleMatches(data.titleMatchAfter || data.title);
             if (!data.titleMatchAfter) {
-              this.topic.assertPostTextIs(c.TitleNr, data.title);
+              this.topic.assertPostTextIs(c.TitleNr, titlePend + data.title);
             }
           }
           if (data.matchAfter !== false && data.bodyMatchAfter !== false) {

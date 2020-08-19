@@ -12,6 +12,7 @@ import lad = require('./utils/log-and-die');
 
 server.initOrExit(settings);
 
+let wasError = false;
 
 
 // --------------------------------------------------------------------
@@ -505,8 +506,13 @@ const config: WebdriverIO.Config = {
   /**
    * Function to be executed after a test (in Mocha/Jasmine).
    */
-  // afterTest: function(test, context, { error, result, duration, passed, retries }) {
-  // },
+  afterTest: function(test, context,
+        result: { error?: any, result?: any, duration: number, passed: boolean,
+                  retries: { limit: number, attempts: number } }) {
+    if (!result.passed) {
+      wasError = true;
+    }
+  },
 
   /**
    * Hook that gets executed after the suite has ended
@@ -533,7 +539,7 @@ const config: WebdriverIO.Config = {
    * @param {Array.<String>} specs List of spec file paths that ran
    */
   after: function (result, capabilities, specs) {
-    if (settings.debugAfterwards || settings.debugEachStep) {
+    if (settings.debugAfterwards || settings.debugEachStep || wasError && settings.debugIfError) {
       console.log("");
       console.log("*** Paused, before exiting test. You can connect a debugger ***");
       global.browser.debug();

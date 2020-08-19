@@ -171,7 +171,7 @@ describe("admin-review-cascade-approval  TyT0SKDE24", () => {
 
   it("The replies appear as unapproved", () => {
     const counts = strangersBrowser.topic.countReplies();
-    assert.deepEq(counts, { numNormal: 0, numUnapproved: 4, numDeleted: 0 });
+    assert.deepEq(counts, { numNormal: 0, numPreviews: 0, numUnapproved: 4, numDeleted: 0 });
   });
 
 
@@ -203,7 +203,7 @@ describe("admin-review-cascade-approval  TyT0SKDE24", () => {
       counts = strangersBrowser.topic.countReplies();
       return counts.numNormal === 2;
     });
-    assert.deepEq(counts, { numNormal: 2, numUnapproved: 2, numDeleted: 0 });
+    assert.deepEq(counts, { numNormal: 2, numPreviews: 0, numUnapproved: 2, numDeleted: 0 });
     // Apparently can take a short while before React has shown the .dw-p (post body),
     // this error happened:
     //     "Text match failure, selector:  #post-2 .dw-p-bd,  No elems match the selector."
@@ -237,7 +237,7 @@ describe("admin-review-cascade-approval  TyT0SKDE24", () => {
       counts = strangersBrowser.topic.countReplies();
       return counts.numNormal === 4;
     });
-    assert.deepEq(counts, { numNormal: 4, numUnapproved: 0, numDeleted: 0 });
+    assert.deepEq(counts, { numNormal: 4, numPreviews: 0, numUnapproved: 0, numDeleted: 0 });
   });
 
   it("... with the correct text contents", () => {

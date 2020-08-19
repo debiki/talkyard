@@ -15,12 +15,6 @@ In-the-middle or at-a-word-end abbreviations: (but not at the start of the selec
 Ab = about
 Em = email
 B  = button, e.g. ReplyB
-T  = table
-Ttl = title,  no just Tl   RENAME
-Txt = text,   no just Tx   RENAME
-Lk = link NO
-Ln = link — of course, like `ln -s ...` in Linux.
-L  = list
 It = list item
 D  = dialog,  e.g. AbtUsrD
 Dd = deleted
@@ -32,6 +26,10 @@ CB = checkbox, e.g. s_SthCB
 Cb = Contextbar
 Cr = create
 Cu = Custom, e.g. CuNav = custom navigation links
+L   = list
+Ln  = link — of course, like `ln -s ...` in Linux.
+Lv  = level
+Mod = moderation
 Nf = notification
 Pf = preference, e.g. NfPfs = notification preferences
 Pw = password, e.g. NewPwI
@@ -46,8 +44,13 @@ P, Pg = page
 Prvw = preview
 Pv = Preview, e.g. LnPv = link preview
 Po = post
+Rs  = risk, e.g. RsLv = risk level
 Snz = Snooze
-Tb = Topbar   RENAME esTopbarWrap to s_Tb
+T   = table
+Ttl = title,  no just Tl   RENAME
+Txt = text,   no just Tx   RENAME
+Tb  = Topbar   RENAME esTopbarWrap to s_Tb
+Tr  = Trust,  eg. TrLv = trust level
 Un = username
 FN = full name
 Wb = Watchbar

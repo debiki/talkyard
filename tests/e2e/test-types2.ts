@@ -47,6 +47,7 @@ interface TestSettings {
   debugEachStep: boolean;
   debugBefore: boolean;
   debugAfterwards: boolean;
+  debugIfError: boolean;
   include3rdPartyDependentTests?: boolean;
   // To test only one. E.g. 'google' (OAuth2) or 'reddit' (oEmbed link previews).
   only3rdParty?: string;
@@ -179,6 +180,8 @@ interface TestSiteSettings {
   emailDomainWhitelist?: string;
   mayComposeBeforeSignup?: boolean;
   mayPostBeforeEmailVerified?: boolean;
+  requireApprovalIfTrustLte?: TrustLevel;  // RENAME to apprBeforeIfTrustLte  ?
+  reviewAfterIfTrustLte?: TrustLevel;
   numFirstPostsToReview?: number;
   numFirstPostsToApprove?: number;
   maxPostsPendApprBefore?: number;
@@ -522,6 +525,7 @@ interface TestPost {  // later: try to unify with Post?
 
 interface NumReplies {
   numNormal: number;
+  numPreviews: number;
   numUnapproved: number;
   numDeleted: number;
 }

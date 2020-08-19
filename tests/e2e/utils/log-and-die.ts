@@ -22,6 +22,10 @@ const api = {
 
   getOrCall,
 
+  // debug log json
+  dj: function(message: string, json: any, indentation?: number) {
+    api.logMessage(`${message} ${JSON.stringify(json, undefined, indentation)}`);
+  },
   logMessage: function (message: StringOrFn) {
     console.log(normalColor(message));
   },

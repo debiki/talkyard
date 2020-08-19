@@ -983,7 +983,7 @@ const ModerationSettings = createFactory({
           ` means "his or her" (new English words).`),
 
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
-          label: "Require approval of new members' first posts",
+          label: "Require approval of new members' first posts", className: 'e_NumFstAprBef',
           help: "How many of a new member's first posts will need to be approved " +
             "by you (admins and moderators) before others can see them. " +
             "Thereafter, hens (his or her) posts will get published " +
@@ -1004,7 +1004,7 @@ const ModerationSettings = createFactory({
 
         // Break out Trust Level setting? Dupl code [693SKDL406]
         Setting2(props, { type: 'number', min: 0, max: TrustLevel.Max,
-          label: "Always require approval trust level",
+          label: "Always require approval trust level", className: 'e_AprBefTrLvl',
           help: r.span({},
               "Don't publish posts by users with this trust level or below, " +
               "until you've approved the posts.  From 0 to 6:", r.br(),
@@ -1028,7 +1028,7 @@ const ModerationSettings = createFactory({
         }),
 
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
-          label: "Max posts pending approval",
+          label: "Max posts pending approval", className: 'e_MxPndApr',
           help: "How many of a member's posts can be waiting for you to approve them. " +
               "Hen then cannot post more posts, until you've approved hens earlier posts.",
           getter: (s: Settings) => s.maxPostsPendApprBefore,
@@ -1060,7 +1060,7 @@ const ModerationSettings = createFactory({
           "when hen notices that hens posts now are published directly."),
 
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
-          label: "Review new members' posts afterwards",
+          label: "Review new members' posts afterwards", className: 'e_NumFstRvwAft',
           help: "How many of a new member's first posts you'll be notified about, " +
             "so you can review them. The posts get published directly, before " +
             "review. Max " + MaxNumFirstPosts + ".",
@@ -1076,7 +1076,7 @@ const ModerationSettings = createFactory({
 
         // Break out Trust Level setting? Dupl code [693SKDL406]
         Setting2(props, { type: 'number', min: 0, max: TrustLevel.Max,
-          label: "Always review trust level",
+          label: "Always review trust level", className: 'e_RvwAftTrLvl',
           help: "You'll always review posts by users with this trust level or below. " +
               "The posts get published directly.  0 to 6.",
           getter: (s: Settings) => s.reviewAfterIfTrustLte,
@@ -1090,7 +1090,7 @@ const ModerationSettings = createFactory({
         }),
 
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
-          label: "Max posts pending review",
+          label: "Max posts pending review", className: 'e_MxPndRvw',
           help: "How many of a member's posts can be waiting for you to revew them, before " +
               "hen needs to wait with posting more, until you're done reviewing. " +
               "0 disables.",

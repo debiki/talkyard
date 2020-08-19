@@ -1,6 +1,10 @@
 All End-to-End tests and where to find them
 ============================================
 
+Test ids: TyTE2E... = end-to-end test, TyTIT... = integration test.
+
+RENAME this file to tests-map.txt
+
 E2e tests take long to run. Therefore, to save time, a single e2e test sometimes tests
 many things. But then it's hard to give it a name that describes everything it does. Instead
 here you'll find a map of all things that are e2e tested, and in which files. A single file
@@ -9,7 +13,6 @@ might be listed at many places in the tree, if it tests different things.
 Webdriver.io writes: (https://webdriver.io/docs/organizingsuites.html)
 
 > In general, try to test a only a single feature per spec file. Try to not have too many or too few tests in one file. (However, there is no golden rule here.)
-
 
 (ABC123) means see-elsewhere-in-this-file = search for ABC123 in this file.
 [ABC123] = search all files everywhere
@@ -569,7 +572,9 @@ chat:
   switch to advanced editor:
           - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
   delete chat message:
-          - admin-review-cascade-approval.2browsers.test.ts  TyT052SKDGJ37
+          - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24.TyT052SKDGJ37
+  messages not merged:
+          - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24.TyT0527X8M302
 
 embedded comments:
   no about page created:  [5WAKR02]
@@ -779,10 +784,21 @@ reviews - [TyT5DKW7U]
     deleted posts ignored,
     remaining get approved:
           - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
-  if trust level below X
-    require approval before,
-    review after before
-          - TESTS_MISSING   but server side: TyT305RKTH205
+  mod new page:
+          - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI
+  mod first posts:
+          - FirstPostsAppSpec.scala  TyTIT205RKDJ4
+          - modn-appr-bef-comb-w-revw-aftr.2browsers.test.ts  TyTE2E05RKD3
+  require approval before, if trust less than:
+          - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI
+          - modn-appr-bef-comb-w-revw-aftr.2browsers.test.ts  TyTE2E05RKD3
+          - server side: TyT305RKTH205
+  review after, if trust less than:
+          - modn-review-after.2browsers.test.ts  TyTE2E402GRM
+          - modn-appr-bef-comb-w-revw-aftr.2browsers.test.ts  TyTE2E05RKD3
+  hide completed review tasks:
+          - modn-review-after.2browsers.test.ts  TyTE2E402GRM.TyT05KD2SM1
+          - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI.TyT05KD2SM1
 
 
 spam: (4BKS0)

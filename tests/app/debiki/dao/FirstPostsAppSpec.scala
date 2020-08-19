@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki.EdHttp.ResultException
 
 
-class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
+class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {  // TyTIT205RKDJ4
 
   val reviewReasons = Seq(ReviewReason.NewPost, ReviewReason.IsByNewUser)
 
@@ -464,7 +464,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
             info("reject reply D — already maxPostsPendApprBefore = 3 pending approval")
             intercept[ResultException] {
               reply(member.id, "reply_20wk46_d — should fail")
-            }.getMessage must include("TyE3506RKST_")
+            }.getMessage must include("TyE2MNYPNDAPR_")
 
             info("approve posts A, B, C")
             approve(firstReplyResult.reviewTask.get)
@@ -491,7 +491,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
             info("reject reply G — already 3 posts pending approval, again")
             intercept[ResultException] {
               reply(member.id, "reply_20wk46_g")
-            }.getMessage must include("TyE3506RKST_")
+            }.getMessage must include("TyE2MNYPNDAPR_")
 
             info("change trust level to Full Member")
             val memberFull = dao.readWriteTransaction { tx =>

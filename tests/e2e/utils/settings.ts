@@ -33,7 +33,9 @@ settings.debugEachStep = args.debugEachStep || args.des;
 settings.debugBefore = args.debugBefore || args.db;
 // dant = debug afterwards, no timeout
 settings.debugAfterwards = args.debugAfter || args.debugAfterwards || args.da || args.dant;
-settings.debug = args.debug || args.d || settings.debugBefore || settings.debugAfterwards;
+settings.debugIfError = args.debugIfError || args.de;
+settings.debug = args.debug || args.d || settings.debugBefore ||
+    settings.debugAfterwards || settings.debugIfError;
 
 // Quick way to disable all browser.debug():
 settings.noDebug = args.nodebug || args.nd;

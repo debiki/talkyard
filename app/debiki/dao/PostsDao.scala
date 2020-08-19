@@ -434,6 +434,10 @@ trait PostsDao {
         }
       }
 
+      // What if  < numFirstToRevwAftr,   [05KHAD6KF52]
+      // then, enqueue for review,
+      SHOULD // and if  > max pending to revw,  throwForbidden.
+
       if (numLoaded < math.min(MaxNumFirstPosts, numFirstToApprove + numFirstToRevwAftr)) {
         reviewReasons.append(ReviewReason.IsByNewUser)
       }
@@ -452,7 +456,7 @@ trait PostsDao {
       autoApprove = false
       reviewReasons.append(ReviewReason.IsByLowTrustLevel)
       if (numPending + 1 > maxPostsPendApprBefore)
-        throwForbidden("TyE3506RKST_", o"""You cannot post more posts until
+        throwForbidden("TyE2MNYPNDAPR_", o"""You cannot post more posts until
               your previous posts have been approved by staff""")
     }
 
@@ -460,8 +464,8 @@ trait PostsDao {
       TESTS_MISSING
       reviewReasons.append(ReviewReason.IsByLowTrustLevel)
       if (maxPostsPendRevwAftr > 0 && numPending + 1 > maxPostsPendRevwAftr)
-        throwForbidden("TyE306RKTD5", o"""You cannot post more posts until
-              your first posts have been reviewed by staff""")
+        throwForbidden("TyE2MNYPNDRVW_", o"""You cannot post more posts until
+              your previous posts have been reviewed by staff""")
     }
 
 
