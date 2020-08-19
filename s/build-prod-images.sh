@@ -112,15 +112,20 @@ fi
 # Derive version number
 # ----------------------
 
-version="`cat version.txt`"
+# WIP means "work in progress" and tells prod servers, e.g. self hosted Talkyard
+# servers, to *not* auto-self-upgrade to this new version. Instead, they'll wait
+# until we've run  s/release-current-wip.sh  — when the current WIP has been
+# tested for a while at canary server(s).
+
+version="$(cat version.txt)-WIP"
 version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala and gulpfile.js [8GKB4W2]
 
-# COULD: verify version nr changed since last time
+# COULD: verify the year in the version number is the current year (calendar versioning)
+# COULD: verify version nr incremented since last time
 # COULD: verify version nr matches vX.YY.ZZ
 # COULD: verify has git-pushed to origin
-# COULD: verify is master branch?
-# COULD ask confirm if major or minor bumped (but not if patch bumped)
-# COULD ask confirm if version nr less than previous nr
+# COULD: verify is rlease branch
+# COULD: verify branch is clean
 
 
 

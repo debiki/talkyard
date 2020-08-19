@@ -26,6 +26,7 @@ read -s -p ''
 # although some image wasn't uploaded / tagged properly.
 set -e
 
+# (Don't use <root>/version.txt — that's the *next* version, not yet released.)
 wip_version_tag=`tail -n1 modules/ed-versions/version-tags.log`
 
 if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
