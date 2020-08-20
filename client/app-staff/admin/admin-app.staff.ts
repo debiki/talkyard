@@ -971,10 +971,16 @@ const ModerationSettings = createFactory({
           "Require approval before"),
 
         r.p({ className: 'col-sm-offset-3 s_A_Ss_Expl'},
+          // "Spammers are somewhat often real humans, who get paid a cent to solve CAPTCHAS " +
+          // "and post spam manually. So, when a new member joins, " +
+          "When a new member joins, it's good if you manually reivew and approve hens " +
+          "first few posts, before the posts get published and others can see them."),
+
+        r.p({ className: 'col-sm-offset-3 s_A_Ss_Expl'},
           r.i({}, `"You"`), ` below refers to admins and moderators in this forum.`,
           r.br(),
-          r.strong({}, `"Hen"`), ` and `, r.strong({}, `"hens"`),
-          ` means "he or she" and "his or her" (new English words).`),
+          r.strong({}, `"Hen"`), ` means "he or she", `, r.strong({}, `"hens"`),
+          ` means "his or her" (new English words).`),
 
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
           label: "Require approval of new members' first posts",
@@ -1024,13 +1030,13 @@ const ModerationSettings = createFactory({
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
           label: "Max posts pending approval",
           help: "How many of a member's posts can be waiting for you to approve them. " +
-              "Hen then cannot post more posts, until you've approved hens posts. " +
-              "0 disables",
+              "Hen then cannot post more posts, until you've approved hens earlier posts.",
           getter: (s: Settings) => s.maxPostsPendApprBefore,
           update: (newSettings: Settings, target) => {
             let num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.maxPostsPendApprBefore;
-            if (num < 0) num = 0;
+            if (num < 0) num = 0;  // 0 disables — but usually cannot type 0,
+                                   // because of the constraints below.
             if (num > MaxNumFirstPosts) num = makeSmall(num);
             if (valueOf(s => s.numFirstPostsToApprove) > num) {
               num = newSettings.numFirstPostsToApprove;
@@ -1045,6 +1051,13 @@ const ModerationSettings = createFactory({
 
         r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
           "Review after published"),
+
+        r.p({ className: 'col-sm-offset-3 s_A_Ss_Expl'},
+          "After you've approved a new member's first few posts, " +
+          "hens subsequent posts get published directly " +
+          "— then, can be good if you review a few of those next posts, " +
+          "just to be sure hen won't start typing weird things, " +
+          "when hen notices that hens posts now are published directly."),
 
         Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
           label: "Review new members' posts afterwards",
