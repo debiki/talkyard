@@ -1978,8 +1978,8 @@ trait PostsDao {
     val newMeta = pageMeta.copy(
       numRepliesVisible = pageMeta.numRepliesVisible + numNewVisibleReplies,
       numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewVisibleOpReplies,
-      lastApprovedReplyAt = newLastApprovedReplyAt,
-      lastApprovedReplyById = newLastApprovedReplyById,
+      lastApprovedReplyAt = newLastApprovedReplyAt orElse pageMeta.lastApprovedReplyAt,
+      lastApprovedReplyById = newLastApprovedReplyById orElse pageMeta.lastApprovedReplyById,
       bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate),
       hiddenAt = newHiddenAt,
       version = pageMeta.version + 1)
