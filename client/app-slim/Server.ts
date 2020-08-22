@@ -968,6 +968,17 @@ export function saveSpecialContent(specialContent: SpecialContent, success: () =
 }
 
 
+export function moderatePostOnPage(post, decision: ReviewDecision,
+          onDone: (storePatch: StorePatch) => void) {
+  const data = {
+    postId: post.uniqueId,
+    postRevNr: post.currRevNr,
+    decision,
+  };
+  postJsonSuccess('/-/moderate-from-page', onDone, data);
+}
+
+
 export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
   get('/-/load-review-tasks', response => handleReviewTasksResponse(response, success));
 }

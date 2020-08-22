@@ -54,7 +54,8 @@ export const NewPasswordInput = createFactory({
     Server.loadJs(eds.assetUrlPrefix + 'zxcvbn.js', () => {
       // Check the password afterwards, in case a fast e2e test has already filled it in.
       this.setState({ zxcvbnLoaded: true }, this.checkPasswordStrength);
-      dieIf(!window['zxcvbn'], "Error loading the password strength script zxcvbn [EsE7YKW2]");
+      dieIf(!window['zxcvbn'],
+            "Error loading the password strength script zxcvbn [TyE0PWSTRSCR]");
     });
   },
 

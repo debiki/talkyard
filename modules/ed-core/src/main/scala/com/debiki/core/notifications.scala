@@ -38,7 +38,7 @@ object Notifications {
 
 
 
-sealed abstract class NotificationType(val IntValue: Int) {
+sealed abstract class NotificationType(val IntValue: Int) {  RENAME // just NotfType, shorter
   def toInt: Int = IntValue
   def isAboutReviewTask = false
 }
@@ -70,8 +70,9 @@ object NotificationType {
   // 202: edits requested
   // 203: post rejected
 
-  // 300-399 Notifications about new posts (that are visible, not hidden waiting for review).
+  // 300-399 Notifications about new posts (that are visible, not hidden waiting for approval).
   case object DirectReply extends NotificationType(301)
+  case object IndirectReply extends NotificationType(306)
   case object Mention extends NotificationType(302)
   // + Quote
   case object Message extends NotificationType(304)
@@ -81,12 +82,18 @@ object NotificationType {
 
   // 400-499 Something interesting happened with an already existing topic or post.
   case object PostTagged extends NotificationType(406)
+  // + PostEdited
   // + TopicProgress
   // + QuestionAnswered
   // + TopicDone
   // + TopicClosed
 
-  // 700: about users?
+  case object OneLikeVote extends NotificationType(501)
+  // What about WrongVote, OffTopic, Unwanted?
+  // Not so interesting? Could cause flame wars?
+
+
+  // > 1000: about users?
   // - New user joined (staff can then send a friendly Hello message)
   // - User joined/left a group one manages
   // - User got auto blocked, posted bad things
@@ -97,10 +104,12 @@ object NotificationType {
   def fromInt(value: Int): Option[NotificationType] = Some(value match {
     case NewPostReviewTask.IntValue => NewPostReviewTask
     case DirectReply.IntValue => DirectReply
+    case IndirectReply.IntValue => IndirectReply
     case Mention.IntValue => Mention
     case Message.IntValue => Message
     case NewPost.IntValue => NewPost
     case PostTagged.IntValue => PostTagged
+    case OneLikeVote.IntValue => OneLikeVote
     case _ => return None
   })
 }
@@ -120,7 +129,10 @@ sealed abstract class Notification {
 
 object Notification {
 
-  /** A reply, @mention, or new post in a topic you're watching.
+  QUICK; CLEAN_UP; RENAME; // to  Notification.AboutPost  not NewPost
+  /** A notification about a post. Could be a reply to you, a @mention of you,
+    * or a new post in a topic you're watching,
+    * or a post of yours got Like voted or tagged.
     */
   case class NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_id
     notfType: NotificationType,
@@ -135,13 +147,6 @@ object Notification {
     override def tyype: NotificationType = notfType
   }
 
-  /*
-  case class Approved extends Notification
-  case class Quote extends Notification
-  case class Edit extends Notification
-  case class LikeVote extends Notification
-  case class WrongVote extends Notification
-  case class OffTopicVote extends Notification */
 }
 
 
@@ -150,10 +155,11 @@ sealed abstract class NotificationToDelete
 
 object NotificationToDelete {
 
-  case class MentionToDelete(
+  case class ToOneMember(
     siteId: SiteId,
     uniquePostId: PostId,
-    toUserId: UserId) extends NotificationToDelete
+    toUserId: UserId,
+    notfType: NotificationType) extends NotificationToDelete
 
   case class NewPostToDelete(
     siteId: SiteId,
@@ -229,6 +235,14 @@ object NotfLevel {
   /** Like Normal, plus highlights the topic in the topic list, if new posts.
     */
   case object Tracking extends NotfLevel(4)  ; RENAME // to Highlight ?
+
+  /** Notified of @mentions and posts in one's sub threads (incl direct replies),
+    * *and* other people's replies to the posts one has replied to oneself
+    * — because replying to something, indicates one is curious? about that
+    * topic (or sub-topic) and then, can be nice to hear other people's
+    * thoughts about that topic too.
+    */
+  // case object Curious extends NotfLevel(4)   // COULD  + bump all >= 4 numbers to += 1
 
   /** Notified of @mentions and posts in one's sub threads (incl direct replies).
     */

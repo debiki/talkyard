@@ -196,6 +196,7 @@ export function unpinPage(success: () => void) {
 export function deletePages(pageIds: PageId[], success: () => void) {
   Server.deletePages(pageIds, () => {
     success();
+    // CLEAN_UP  REFACTOR  use patchTheStore( StorePatch.deletedPageIds )  instead
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.DeletePages,
       pageIds: pageIds,

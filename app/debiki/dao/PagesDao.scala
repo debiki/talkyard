@@ -119,17 +119,13 @@ trait PagesDao {
                 pageRole, pageStatus, anyCategoryId,
                 anyFolder = anyFolder, anySlug = anySlug, showId = showId,
                 title = title, body = bodyTextAndHtml,
-                pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff),
-                tx, staleStuff, discussionIds = discussionIds,
-                embeddingUrl = embeddingUrl, extId = extId)
-
-      val notifications = notfGenerator(tx).generateForNewPost(
-        newPageDao(pagePath.pageId, tx),
-        bodyPost,
-        Some(bodyTextAndHtml),
-        anyReviewTask)
-
-      tx.saveDeleteNotifications(notifications)
+                pinOrder = None,
+                pinWhere = None,
+                byWho,
+                Some(spamRelReqStuff),
+                discussionIds = discussionIds,
+                embeddingUrl = embeddingUrl,
+                extId = extId)(tx, staleStuff)
 
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
 
@@ -145,22 +141,31 @@ trait PagesDao {
 
   /** Returns (PagePath, body-post, any-review-task)
     */
-  def createPageImpl(pageRole: PageType, pageStatus: PageStatus,
+  def createPageImpl(pageRole: PageType,
+      pageStatus: PageStatus,
       anyCategoryId: Option[CategoryId],
-      anyFolder: Option[String], anySlug: Option[String], showId: Boolean,
+      anyFolder: Option[String],
+      anySlug: Option[String],
+      showId: Boolean,
       title: TitleSourceAndHtml,
       body: TextAndHtml,
-      pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
-      byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
-      tx: SiteTransaction,
-      staleStuff: StaleStuff,
+      pinOrder: Option[Int] = None,
+      pinWhere: Option[PinPageWhere] = None,
+      byWho: Who,
+      spamRelReqStuff: Option[SpamRelReqStuff],
       hidePageBody: Boolean = false,
       layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
       discussionIds: Set[AltPageId] = Set.empty,
       embeddingUrl: Option[String] = None,
       extId: Option[String] = None,
-      createAsDeleted: Boolean = false): (PagePathWithId, Post, Option[ReviewTask]) = {
+      skipNotfsAndAuditLog: Boolean = false,
+      createAsDeleted: Boolean = false,
+      )(
+      tx: SiteTx,
+      staleStuff: StaleStuff,
+      ):
+        (PagePathWithId, Post, Option[ReviewTask]) = {
 
     val now = globals.now()
     val authorId = byWho.id
@@ -327,18 +332,6 @@ trait PagesDao {
             requestStuff = spamStuffPageUri))
       }
 
-    val auditLogEntry = AuditLogEntry(
-      siteId = siteId,
-      id = AuditLogEntry.UnassignedId,
-      didWhat = AuditLogEntryType.NewPage,
-      doerId = authorId,
-      doneAt = now.toJavaDate,
-      browserIdData = byWho.browserIdData,
-      pageId = Some(pageId),
-      pageType = Some(pageRole),
-      uniquePostId = Some(bodyPost.id),
-      postNr = Some(bodyPost.nr))
-
     val stats = UserStats(
       authorId,
       lastSeenAt = now,
@@ -395,7 +388,26 @@ trait PagesDao {
 
     anyReviewTask.foreach(tx.upsertReviewTask)
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
-    insertAuditLogEntry(auditLogEntry, tx)
+
+    if (!skipNotfsAndAuditLog) {
+      val notifications = notfGenerator(tx).generateForNewPost(
+            newPageDao(pagePath.pageId, tx), bodyPost,
+            Some(body), anyNewModTask = anyReviewTask)
+
+      tx.saveDeleteNotifications(notifications)
+
+      insertAuditLogEntry(AuditLogEntry(
+            siteId = siteId,
+            id = AuditLogEntry.UnassignedId,
+            didWhat = AuditLogEntryType.NewPage,
+            doerId = authorId,
+            doneAt = now.toJavaDate,
+            browserIdData = byWho.browserIdData,
+            pageId = Some(pageId),
+            pageType = Some(pageRole),
+            uniquePostId = Some(bodyPost.id),
+            postNr = Some(bodyPost.nr)), tx)
+    }
 
     tx.indexPostsSoon(titlePost, bodyPost)
 
@@ -409,8 +421,9 @@ trait PagesDao {
   }
 
 
-  def throwOrFindReviewNewPageReasons(author: UserAndLevels, pageRole: PageType,
-        tx: SiteTransaction): (Seq[ReviewReason], Boolean) = {
+  REFACTOR; MOVE // to ReviewsDao (and rename it to ModerationDao)
+  private def throwOrFindReviewNewPageReasons(author: UserAndLevels, pageRole: PageType,
+        tx: SiteTx): (Seq[ReviewReason], Boolean) = {
     throwOrFindNewPostReviewReasonsImpl(author, pageMeta = None, newPageRole = Some(pageRole), tx)
   }
 
@@ -556,16 +569,21 @@ trait PagesDao {
       // so all topics in the sub community will get deleted.
       // And remove the sub community from the watchbar's Communities section.
       // (And if undeleting the sub community, undelete the root category too.)
-      deletePagesImpl(pageIds, deleterId, browserIdData, doingReviewTask = None,
-            undelete = undelete)(tx, staleStuff)
+      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete
+            )(tx, staleStuff)
     }
     refreshPagesInAnyCache(pageIds.toSet)
   }
 
 
   def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
-        doingReviewTask: Option[ReviewTask], undelete: Boolean = false)(
-        tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
+        undelete: Boolean = false)(
+        tx: SiteTx, staleStuff: StaleStuff): Unit = {
+
+    BUG; SHOULD // delete notfs or mark deleted?  [notfs_bug]  [nice_notfs]
+    // But don't delete any review tasks — good if staff reviews, if a new
+    // member posts something trollish, people react, then hen deletes hens page.
+    // Later, if undeleting, then restore the notfs? [undel_posts]
 
     val deleter = tx.loadTheParticipant(deleterId)
     if (!deleter.isStaff)
@@ -603,16 +621,14 @@ trait PagesDao {
       newMeta = newMeta.copy(numPostsTotal = newMeta.numPostsTotal + 1)
 
       // Invalidate, or re-activate, review tasks whose posts now get deleted / undeleted.
-      // Also done here: [4JKAM7] when deleting posts.
+      // Also done here: [deld_post_mod_tasks] when deleting posts.
       // Actually, maybe better to *not* invalidate review tasks now when the page gets
       // deleted? Can be good to be able to review flagged posts and misbehavior.
       // Example: Mallory creates a topic and says things that make people angry. Then,
       // when some people have replied, he deletes the page? Or maybe a staff or core memeber
       // does, because the whole page is off-topic with angry comments. Now, it'd be silly
       // if all review tasks for the flags casted on Mallory's comments, disappeared.
-      // So don't:   [5RW2GR8]  CLEAN_UP maybe remove doingReviewTask param + fns below, aren't needed?
-      //                          but leave the comment & thoughts above.
-      /*
+      /* So don't:
       if (!undelete) {
         invalidateReviewTasksForPageId(pageId, doingReviewTask,tx)
       }

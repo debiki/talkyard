@@ -85,7 +85,7 @@ export function scrollAndFlashPosts(page: Page, posts: Post[]) {
 }
 
 
-export function scrollAndFlashPostNr(postNr: PostNr, options: ShowPostOpts) {
+export function scrollAndFlashPostNr(postNr: PostNr, options: ShowPostOpts = {}) {
   const postElem = $byId('post-' + postNr);
   if (!postElem) {
     // Opened new page, Reactjs component unmounted, post elem gone?

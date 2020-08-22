@@ -68,6 +68,8 @@ type RefOrId = Ref | number;
 const enum ReviewDecision {
   // 1nnn = Accept.
   Accept = 1001,
+  InteractEdit = 1051,
+  InteractReply = 1052,
   // 3nnn = Request changes.
   // 5nnn = Reject.
   DeletePostOrPage = 5001,
@@ -153,13 +155,15 @@ const enum PageNotfLevel {
 
 const enum NotificationType {
   DirectReply = 301,
+  IndirectReply = 306,
   Mention = 302,  // DirectMention
   // GroupMention =
   // Quote = 3,
   Message = 304,   // rename to DirectMessage
   NewPost = 305,
-  // NewPage =      // Add
+  // NewPage =      // Add  — no? knows, since nr === BodyNr
   PostTagged = 406,
+  OneLikeVote = 501,
 }
 
 

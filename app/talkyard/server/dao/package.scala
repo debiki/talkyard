@@ -19,13 +19,27 @@ package talkyard.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.Globals
 import debiki.dao._
 import scala.collection.mutable
+import scala.collection.immutable
 
 
 package object dao {
 
 
+  /**
+    *
+    * @param pageId
+    * @param memCacheOnly
+    * @param pageModified
+    * @param backlinksStale — if backlinks on this page, back to other pages,
+    *   are stale, e.g. one of those other pages got renamed,
+    *   or moved to a different access restricted category so the
+    *   backlink should disappear.
+    * @param ancestorCategoriesStale
+    * @param ppNamesStale
+    */
   case class StalePage(
     pageId: PageId,
     memCacheOnly: Boolean,
@@ -47,8 +61,24 @@ package object dao {
     */
   class StaleStuff {
     private val _stalePages = mutable.Map[PageId, StalePage]()
+    private val _stalePpIdsMemCacheOnly = mutable.Set[UserId]()
 
-    def nonEmpty: Boolean = _stalePages.nonEmpty
+    def nonEmpty: Boolean =
+      _stalePages.nonEmpty || _stalePpIdsMemCacheOnly.nonEmpty
+
+
+    // ----- Participants
+
+    def staleParticipantIdsInMem: Set[UserId] =
+      _stalePpIdsMemCacheOnly.to[immutable.Set]
+
+    def addParticipantId(ppId: UserId, memCacheOnly: Boolean): Unit = {
+      unimplIf(!memCacheOnly, "TyE036WH7MN24")
+      _stalePpIdsMemCacheOnly.add(ppId)
+    }
+
+
+    // ----- Pages
 
     def stalePages: Iterator[StalePage] = _stalePages.valuesIterator
 
@@ -56,9 +86,13 @@ package object dao {
       // WOULD_OPTIMIZE calc toSet just once, remember (forget if new page added)
       stalePages.filter(!_.memCacheOnly).map(_.pageId).toSet
 
-    def stalePageIdsInMem: Set[PageId] =
+    def stalePageIdsInMem: Set[PageId] = {
       // This includes all stale pages (there's no stale-only-in-database).
-      stalePages.map(_.pageId).toSet
+      val r = stalePages.map(_.pageId).toSet
+      CLEAN_UP  // just use  _stalePages.keys.toSet  instead?  but .keySet has wrong type.
+      dieIf(Globals.isDevOrTest && _stalePages.keys.toSet != r, "TyE056KWTD6")
+      r
+    }
 
     /** Pages that need to be refreshed, not because they themselves got modified,
       * but because something else got modified.
@@ -78,6 +112,8 @@ package object dao {
       *   and the database "knows" the cached html is out-of-date.
       *   Then, pass memCacheOnly = true here (so won't need to write to the db
       *   twice that the cached html is out-of-date).
+      * @param backlinksStale If backlinks on this page, back to other pages
+      *   that link to it, needs to be refreshed.
       */
     def addPageId(pageId: PageId, memCacheOnly: Boolean = false,
             pageModified: Boolean = true, backlinksStale: Boolean = false): Unit = {

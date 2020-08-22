@@ -399,8 +399,8 @@ class LinksAppSpec extends DaoAppSuite {
 
     "Links from deleted *pages* are ignored  TyT7RD3LM5" - {
       "Delete page A".inWriteTx(daoSite1) { (tx, staleStuff) =>
-        daoSite1.deletePagesImpl(Seq(pageA.id), SystemUserId, browserIdData,
-              doingReviewTask = None)(tx, staleStuff)
+        daoSite1.deletePagesImpl(
+              Seq(pageA.id), SystemUserId, browserIdData)(tx, staleStuff)
       }
 
       "Now only pages B, C and D links to Z".inReadTx(daoSite1) { tx =>
@@ -432,8 +432,8 @@ class LinksAppSpec extends DaoAppSuite {
     }
 
     "Undelete page A".inWriteTx(daoSite1) { (tx, staleStuff) =>
-      daoSite1.deletePagesImpl(Seq(pageA.id), SystemUserId, browserIdData,
-            doingReviewTask = None, undelete = true)(tx, staleStuff)
+      daoSite1.deletePagesImpl(
+            Seq(pageA.id), SystemUserId, browserIdData, undelete = true)(tx, staleStuff)
     }
 
     "Undelete category".inWriteTx(daoSite1) { (tx, staleStuff) =>
@@ -467,8 +467,8 @@ class LinksAppSpec extends DaoAppSuite {
     }
 
     "Delete page Z".inWriteTx(daoSite1) { (tx, staleStuff) =>
-      daoSite1.deletePagesImpl(Seq(pageZ.id), SystemUserId, browserIdData,
-            doingReviewTask = None, undelete = true)(tx, staleStuff)
+      daoSite1.deletePagesImpl(
+            Seq(pageZ.id), SystemUserId, browserIdData, undelete = true)(tx, staleStuff)
     }
 
     "Can find links to deleted page Z".inReadTx(daoSite1) { tx =>
@@ -538,7 +538,7 @@ class LinksAppSpec extends DaoAppSuite {
       "Delete reply One".inWriteTx(daoSite1) { (tx, staleStuff) =>
         daoSite1.deletePostImpl(
               pageEReplyOne.pageId, pageEReplyOne.nr, deletedById = SystemUserId,
-              doingReviewTask = None, browserIdData, tx, staleStuff)
+              browserIdData, tx, staleStuff)
       }
 
       "Reply Two links to Q, and Re One too although post deleted".inReadTx(daoSite1) { tx =>
@@ -551,7 +551,7 @@ class LinksAppSpec extends DaoAppSuite {
       "Delete reply Two too".inWriteTx(daoSite1) { (tx, staleStuff) =>
         daoSite1.deletePostImpl(
               pageEReplyTwo.pageId, pageEReplyTwo.nr, deletedById = SystemUserId,
-              doingReviewTask = None, browserIdData, tx, staleStuff)
+              browserIdData, tx, staleStuff)
       }
 
       "Now the posts still link to Q".inReadTx(daoSite1) { tx =>

@@ -76,7 +76,7 @@ trait MessagesDao {
             anyFolder = None, anySlug = None, showId = true,
             title = title, body = body,
             byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff),
-            tx = tx, staleStuff = staleStuff)
+            )(tx, staleStuff)
 
       // If this is a private topic, they'll get notified about all posts,
       // by default, although no notf pref configured here. [PRIVCHATNOTFS]

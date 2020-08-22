@@ -321,24 +321,25 @@ const ReviewTask = createComponent({
       r.span({}, "The page has been deleted. ");
 
     // Skip pageHasBeenDeleted and itHasBeenDeleted — let's review those posts anyway?
-    // So staff get more chances to block bad users early. [5RW2GR8]
+    // So staff get more chances to block bad users early. [deld_post_mod_tasks]
     const isInvalidated = !reviewTask.completedAtMs && reviewTask.invalidatedAtMs;
 
     if (isInvalidated) {
       taskInvalidatedInfo =
           r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' },
             itHasBeenDeleted || "Invalidated [TyM5WKBAX2]");
-            // pageHasBeenDeleted);  [5RW2GR8]
     }
     else if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
-      const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.decidedById];
-      const doneByInfo = !taskDoneBy ? null : r.span({}, " by ", UserName({ user: taskDoneBy, store }));
+      const decider: BriefUser | U = store.usersByIdBrief[reviewTask.decidedById];
+      const byWho = !decider ? null : r.span({}, " by ", UserName({ user: decider, store }));
       let whatWasDone: string;
       switch (reviewTask.decision || this.state.justDecided) {
         case ReviewDecision.Accept: whatWasDone = " Accepted"; break;
+        case ReviewDecision.InteractEdit: whatWasDone = " Seems fine: Edited"; break;
+        case ReviewDecision.InteractReply: whatWasDone = " Seems fine: Replied to"; break;
         case ReviewDecision.DeletePostOrPage: whatWasDone = " Deleted"; break;
       }
-      taskDoneInfo = r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, whatWasDone, doneByInfo);
+      taskDoneInfo = r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, whatWasDone, byWho);
     }
 
     if (reviewTask.invalidatedAtMs) {
@@ -536,16 +537,6 @@ function UndoReviewDecisionButton(props: { justDecidedAtMs?: WhenMs, nowMs: When
     `Undo (${ Math.floor(secondsLeft) })`);
 }
 
-
-// COULD move to some debiki-common.js or debiki-utils.js?
-function escapeHtml(html: string) {
-  // See https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat, rule #1.
-  // However, & < > should be enough, see: org.owasp.encoder.Encode.forHtmlContent().
-  return html
-   .replace(/&/g, "&amp;")
-   .replace(/</g, "&lt;")
-   .replace(/>/g, "&gt;");
-}
 
 
 //------------------------------------------------------------------------------

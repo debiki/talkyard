@@ -106,6 +106,13 @@ const tyAssert: any = {   // : any = works around:
     const ix = text.indexOf(unexpectedSubstring);
     assert.ok(ix === -1,
       message || `This: "${unexpectedSubstring}" is incorrectly included in: "${text}"`);
+  },
+
+  numSubstringsEq: (text: string, substringNoSpecialChars: string, numExpected: N) => {
+    const regex = new RegExp(substringNoSpecialChars, 'gs');
+    const numActual = (text.match(regex) || []).length;
+    tyAssert.eq(numActual, numExpected,
+          `Wrong num matches of:  ${regex}  in:  ${inlineOrDashPara(text)}`);
   }
 };
 

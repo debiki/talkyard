@@ -392,7 +392,9 @@ export const Title = createComponent({
 
     const deletedOrUnapprovedInfo = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' },
-          '(' + (page.pageDeletedAtMs ? t.d.PageDeld : t.d.TitlePendAppr) + ')');
+          page.pageDeletedAtMs
+                  ? t.d.PageDeld
+                  : t.d.PagePendAppr || t.d.TitlePendAppr);
 
     // Insert the title as plain text (don't interpret any html tags — that'd let Mallory mess up
     // the formatting, even if sanitized).  [title_plain_txt]
@@ -614,7 +616,7 @@ const RootPostAndComments = createComponent({
     if (post_isDeleted(rootPost)) postClass += ' s_P-Dd';
     let postBodyClass = 'dw-p-bd';
     if (isBody) {
-      threadClass += ' dw-ar-t';
+      threadClass += ' dw-ar-t' + (rootPost.isApproved ? '' : ' s_PndApr');
       postClass += ' dw-ar-p';
       postBodyClass += ' dw-ar-p-bd';
     }
@@ -629,8 +631,8 @@ const RootPostAndComments = createComponent({
     // @endif
 
     const notYetApprovedMaybeDeletedInfo = rootPost.isApproved ? false :
-        r.div({ className: 'esPendingApproval' },
-          '(' + (page.pageDeletedAtMs ? t.d.PageDeld : t.d.TextPendingApproval) + ')');
+         r.div({ className: 'esPendingApproval' },
+           page.pageDeletedAtMs ? t.d.PageDeld : t.d.TextPendingApproval);
 
     const deletedCross = !page.pageDeletedAtMs ? null :
         r.div({ className: 's_Pg_DdX' });

@@ -112,7 +112,7 @@ export function store_getUsersOnline(store: Store): BriefUser[] {
   const users = [];
   _.forOwn(store.userIdsOnline, (alwaysTrue, userIdString: string) => {
     let userId: UserId = parseInt(userIdString);
-    dieIf(!alwaysTrue, 'EsE7YKW2');
+    dieIf(!alwaysTrue, 'TyE0ALWTRUE');
     const user = store_getUserOrMissing(store, userId, 'EsE5GK0Y');
     if (user) users.push(user);
   });

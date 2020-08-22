@@ -160,9 +160,9 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       dao.readOnlyTransaction { transaction =>
         val pageParts = dao.newPageDao(thePageId, transaction).parts
         pageParts.thePostByNr(postY.nr).parentNr mustBe Some(postX.nr)
-        pageParts.ancestorsOf(postY.nr).map(_.nr) mustBe Seq(postX.nr, BodyNr)
-        pageParts.ancestorsOf(postA.nr).map(_.nr) mustBe Seq(postY.nr, postX.nr, BodyNr)
-        pageParts.ancestorsOf(postC.nr).map(_.nr) mustBe Seq(
+        pageParts.ancestorsParentFirstOf(postY.nr).map(_.nr) mustBe Seq(postX.nr, BodyNr)
+        pageParts.ancestorsParentFirstOf(postA.nr).map(_.nr) mustBe Seq(postY.nr, postX.nr, BodyNr)
+        pageParts.ancestorsParentFirstOf(postC.nr).map(_.nr) mustBe Seq(
           postB.nr, postA.nr, postY.nr, postX.nr, BodyNr)
       }
     }
@@ -273,7 +273,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         postDAfter.parentNr mustBe Some(postCAfter.nr)
         postD2After.parentNr mustBe Some(postCAfter.nr)
 
-        secondPage.parts.ancestorsOf(postD2After.nr).map(_.nr) mustBe Seq(
+        secondPage.parts.ancestorsParentFirstOf(postD2After.nr).map(_.nr) mustBe Seq(
           postCAfter.nr, postBAfter.nr, postAAfter.nr, postOnPageTwo.nr, BodyNr)
 
         secondPage.parts.highestReplyNr getOrDie "EsE6Y8WQ0"

@@ -30,7 +30,9 @@ import scala.collection.mutable.ArrayBuffer
 case class PageStuff(
   pageId: PageId,
   pageMeta: PageMeta,
-  title: String,
+  title: String,  // CLEAN_UP REMOVE
+  approvedTitleSource: Option[String],
+  currTitleSource: Option[String],
   bodyExcerpt: Option[String],
   // Need not cache these urls per server origin? [5JKWBP2]
   bodyImageUrls: immutable.Seq[String],
@@ -38,6 +40,9 @@ case class PageStuff(
   authorUserId: UserId,  // RENAME to just authorId
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId]) extends PageTitleRole {
+
+  def titleMaybeUnapproved: Option[String] =
+    approvedTitleSource orElse currTitleSource
 
   def role: PageType = pageType  // DELETE
   def pageType: PageType = pageMeta.pageType
@@ -152,6 +157,8 @@ trait PageStuffDao {
         pageId,
         pageMeta,
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
+        approvedTitleSource = anyTitle.flatMap(_.approvedSource),
+        currTitleSource = anyTitle.map(_.currentSource),
         bodyExcerpt = anyExcerpt.map(_.text),
         bodyImageUrls = anyExcerpt.map(_.firstImageUrls).getOrElse(Vector.empty),
         popularRepliesImageUrls = popularImageUrls,

@@ -686,9 +686,12 @@ trait CategoriesDao {
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
         title = titleSourceAndHtml, body = bodyTextAndHtml,
         pinOrder = None, pinWhere = None,
-        byWho, spamRelReqStuff = None, tx, staleStuff,
+        byWho, spamRelReqStuff = None,
+        // We'll notify about this whole category, not its about page.
+        skipNotfsAndAuditLog = true,
         // if createDeletedAboutTopic, then TESTS_MISSING [5WAKR02], e2e test won't get created.
-        createAsDeleted = newCategoryData.createDeletedAboutTopic)._1
+        createAsDeleted = newCategoryData.createDeletedAboutTopic,
+        )(tx, staleStuff)._1
 
     if (newCategoryData.shallBeDefaultCategory) {
       setDefaultCategory(category, tx)
@@ -700,7 +703,17 @@ trait CategoriesDao {
     val permsWithCatId = permissions.map(_.copy(onCategoryId = Some(categoryId)))
     val permsWithId = addRemovePermsOnCategory(categoryId, permsWithCatId)(tx)._1
 
-    // COULD create audit log entry
+    if (byWho.isSystem) {
+      // Then this category is being auto generated as part of creating
+      // the site, or adding a sub community. We'll notify about that
+      // high level thing instead, elsewhere.
+      // (See createDefaultCategoriesAndTopics() in ForumDao.)
+    }
+    else {
+      AUDIT_LOG
+      COULD // notify other staff? admins? who wants to know about new cats?
+      //val notfs = notfGenerator(tx).generateForNew Category (...)  [nice_notfs]
+    }
 
     CreateCategoryResult(category, aboutPagePath, permsWithId)
   }

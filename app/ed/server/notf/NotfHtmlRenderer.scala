@@ -23,6 +23,15 @@ import debiki.dao.SiteDao
 import scala.xml.{NodeSeq, Text}
 
 
+case class RenderNotfsResult(
+  html: NodeSeq,
+  newRepliesOrMentions: Boolean,
+  newMessagesToYou: Boolean,
+  newLikeVotes: Boolean,
+  newTopics: Boolean,
+  newPosts: Boolean,
+  newModTasks: Boolean)
+
 /**
  * Generates HTML for email notifications, e.g. "You have a reply" or
  * "Your comment was approved".
@@ -63,32 +72,82 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }
 
 
-  def render(notfs: Seq[Notification]): NodeSeq = {
+  def render(notfs: Seq[Notification]): RenderNotfsResult = {
     require(notfs.nonEmpty, "DwE7KYG3")
-    siteDao.readOnlyTransaction { transaction =>
+    siteDao.readTx { tx =>
       val postIds: Seq[PostId] = notfs flatMap {
         case notf: Notification.NewPost => Some(notf.uniquePostId)
         case _ => None
       }
-      val postsById = transaction.loadPostsByUniqueId(postIds)
+      val postsById = tx.loadPostsByUniqueId(postIds)
       val pageIds = postsById.values.map(_.pageId)
-      val pageStuffById = siteDao.loadPageStuffById(pageIds, transaction)
+      val pageStuffById = siteDao.loadPageStuffById(pageIds, tx)
       val maxNotificationLength = NotifierActor.MaxEmailBodyLength / notfs.length
-      // Later: do support reply-via-email.
-      var result: NodeSeq =
-        <p>(If you want to reply, click the links below -- but don't reply to this email.)</p>
+
+      var newRepliesOrMentions = false
+      var newMessagesToYou = false
+      var newLikeVotes = false
+      var newTopics = false
+      var newPosts = false
+      var newModTasks = false
+
+      var htmlNodes: NodeSeq = NodeSeq.Empty
+
       for (notf <- notfs) {
         val anyHtmlNotf = notf match {
           case newPostNotf: Notification.NewPost =>
             postsById.get(newPostNotf.uniquePostId) map { post =>
-              val pageTitle = pageStuffById.get(post.pageId).map(_.title).getOrElse(
-                "No title [EsM7YKF2]")
-              renderNewPostNotf(newPostNotf, post, pageTitle, maxNotificationLength, transaction)
+              // If title not yet approved, this notf is to staff, about a new
+              // topic for them to approve. It's ok, then, to incl an unapproved title.
+              val anyPageStuff = pageStuffById.get(post.pageId)
+              val pageTitle = anyPageStuff.flatMap(_.titleMaybeUnapproved).getOrElse(
+                    "No title [TyE2S7YKF2]")
+
+              if (notf.tyype == NotificationType.NewPostReviewTask) {
+                newModTasks = true
+              }
+              else if (notf.tyype == NotificationType.Message) {
+                newMessagesToYou = true
+              }
+              else if (notf.tyype == NotificationType.DirectReply
+                    || notf.tyype == NotificationType.Mention) {
+                newRepliesOrMentions = true
+              }
+              else if (notf.tyype == NotificationType.OneLikeVote) {
+                newLikeVotes = true
+              }
+              else if (notf.tyype == NotificationType.NewPost
+                    || notf.tyype == NotificationType.IndirectReply
+                    || notf.tyype == NotificationType.PostTagged) {
+                if (post.isOrigPost) newTopics = true
+                else newPosts = true
+              }
+
+              renderNewPostNotf(newPostNotf, post, pageTitle, maxNotificationLength, tx)
             }
         }
-        anyHtmlNotf.foreach(result ++= _)
+        anyHtmlNotf.foreach(htmlNodes ++= _)
       }
-      result
+
+      if (newRepliesOrMentions || newMessagesToYou || newTopics || newPosts) {
+        // Later: do support reply-via-email.
+        // (People sometimes reply to the email anyway, in spite of the text below.)
+        htmlNodes =
+                <p>To reply, click the links below. But do <b
+                        >not</b> reply to this email.</p> ++
+                htmlNodes
+      }
+      else {
+        // There're only Like votes and mod tasks — nothing to reply to.
+      }
+
+      RenderNotfsResult(htmlNodes,
+            newRepliesOrMentions = newRepliesOrMentions,
+            newMessagesToYou = newMessagesToYou,
+            newLikeVotes = newLikeVotes,
+            newTopics = newTopics,
+            newPosts = newPosts,
+            newModTasks = newModTasks)
     }
   }
 
@@ -148,25 +207,44 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     val ellipsis = (postText.length > maxLenBeforeEscapes) ? "..." | ""
     val html = Text(postText.take(maxLenBeforeEscapes) + ellipsis)
 
-    val (whatHappened, dotOrComma, inPostWrittenBy) = notf.notfType match {
+    val (
+      whatHappened,
+      dotOrComma,
+      inPostWrittenBy,
+      cssE2eTestClass,
+    ) = notf.notfType match {
       case NotificationType.Message =>
-        ("You have been sent a personal message", ",", "from")
+        ("You have been sent a personal message", ",", "from", "e_NfEm_DirMsg")
       case NotificationType.Mention =>
-        ("You have been mentioned", ",", "in a post written by")
+        ("You have been mentioned", ",", "in a post written by", "e_NfEm_Mentn")
       case NotificationType.DirectReply =>
-        ("You have a reply", ",", "written by")
+        ("You have a reply", ",", "written by", "e_NfEm_Re")
+      case NotificationType.IndirectReply =>
+        ("A new reply in a thread by you", ",", "written by", "e_NfEm_IndRe")
       case NotificationType.NewPost =>
         if (post.nr == PageParts.BodyNr)
-          ("A new topic has been started", ",", "by")
+          ("A new topic has been started", ",", "by", "e_NfEm_NwPg")
         else
-          ("A new comment has been posted", ",", "by")
-      case NotificationType.NewPost =>
+          ("A new comment has been posted", ",", "by", "e_NfEm_NwPo")
+      case NotificationType.OneLikeVote =>
+        return {
+          if (post.nr == PageParts.BodyNr)
+            <p class="e_NfEm_PgLikeVt"
+              ><i>{byUserName}</i> likes <a href={url} >your topic</a
+                >: "<i>{pageTitle}</i>".</p>
+          else
+            <p class="e_NfEm_PoLikeVt"
+              ><i>{byUserName}</i> likes <a href={url}>your reply</a
+                >, on page "<i>{pageTitle}</i>".</p>
+        }
+      case NotificationType.PostTagged =>
+        // Skip <blockquote>?
         if (post.nr == PageParts.BodyNr)
           ("A topic has been tagged with a tag you're watching", ".",
-            "The topic was written by")
+            "The topic was written by", "e_NfEm_PgTgd")
         else
           ("A comment has been tagged with a tag you're watching", ".",
-            "The comment was written by")
+            "The comment was written by", "e_NfEm_PoTgd")
       case NotificationType.NewPostReviewTask =>
         val itIsShownOrHidden =
           if (post.isSomeVersionApproved)
@@ -175,10 +253,10 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
             "It's currently hidden"
         val what = (post.nr == PageParts.BodyNr) ? "topic" | "reply"
         (s"A new $what for you to review", ".",
-          s"$itIsShownOrHidden. It was posted by")
+          s"$itIsShownOrHidden. It was posted by", "e_NfEm_ModTsk")
     }
 
-    <p>
+    <p class={cssE2eTestClass}>
       { whatHappened }, <a href={url}>here</a>, on page "<i>{pageTitle}</i>"{dotOrComma}
       { inPostWrittenBy } <i>{byUserName}</i>, on {date}:
     </p>

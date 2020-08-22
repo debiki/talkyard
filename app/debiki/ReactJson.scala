@@ -1113,6 +1113,13 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
+  def makeStorePatchDeletePages(pageIds: Seq[PageId], appVersion: String): JsObject = {
+    Json.obj(
+      "appVersion" -> appVersion,
+      "deletePageIds" -> JsArray(pageIds map JsString))
+  }
+
+
   ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
      tagsByPostId: Map[PostId, Set[String]], users: Iterable[Participant], appVersion: String)(
@@ -1442,9 +1449,12 @@ object JsonMaker {
         userIds.append(notf.byUserId)
         import NotificationType._
         if (notf.seenAt.isEmpty) notf.tyype match {
-          case DirectReply | Mention | Message =>
+          case DirectReply | Mention | Message | OneLikeVote =>
+            UX // Later, give Like votes their own happy looking color? [like_notf_ico]
+            // And if there're no direct replies / messages / mentions, then,
+            // show that color instead of the more urgent direct-reply-blue?
             numTalkToMe += 1
-          case NewPost =>
+          case NewPost | IndirectReply =>
             numTalkToOthers += 1
           case PostTagged =>
             numOther += 1
@@ -1679,7 +1689,11 @@ object JsonMaker {
     tags: Set[TagLabel], howRender: HowRenderPostInPage,
     renderer: RendererWithSettings): JsObject = {
 
-    val (anySanitizedHtml: Option[String], unsafeSource: Option[String], isApproved: Boolean) =
+    val (
+      anySanitizedHtml: Option[String],
+      unsafeSource: Option[String],
+      isApproved: Boolean,
+    ) = {
       if ((post.isBodyHidden || post.isDeleted) && !showHidden) {
         (None, post.approvedSource, post.approvedAt.isDefined)
       }
@@ -1691,6 +1705,7 @@ object JsonMaker {
       else {
         (post.approvedHtmlSanitized, post.approvedSource, post.approvedAt.isDefined)
       }
+    }
 
     // For now, ignore ninja edits of the very first revision, because otherwise if
     // clicking to view the edit history, it'll be empty.
@@ -1734,6 +1749,14 @@ object JsonMaker {
       "tags" -> JsArray(tags.toSeq.map(JsString)))
 
     if (post.isBodyHidden) fields :+= "isBodyHidden" -> JsTrue
+
+    if (!isApproved) {
+      // Then need to know which revision nr we'll approve, if clicking
+      // the Approve button. [in_pg_apr]
+      fields :+= "currRevNr" -> JsNumber(post.currentRevisionNr)
+      // Nice for troubleshooting?
+      fields :+= "approvedRevNr" -> JsNumberOrNull(post.approvedRevisionNr)
+    }
 
     // For now. So can edit the title without extra loading the title post's source. [5S02MR4]
     if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(unsafeSource)

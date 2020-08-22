@@ -102,7 +102,7 @@ describe("settings-approve-members [TyT2HUWX8]", function() {
     owensBrowser.adminArea.users.assertEmailVerified_1_user(michael, true);
   });
 
-  it("... and new users, sees Maria, Michael and himself, Maria's email not verified", function() {
+  it("... and new users, sees Maria, Michael and himself, Maria's email not verified", () => {
     // Maria isn't waiting, instead, it's her turn to verify her email addr.
     owensBrowser.adminArea.users.switchToNew();
     owensBrowser.adminArea.users.assertUserListed(maria);
@@ -113,18 +113,34 @@ describe("settings-approve-members [TyT2HUWX8]", function() {
   });
 
   it("Maria verifies her email", function() {
-    mariasBrowser.go(mariasEmailVerifLink);
+    mariasBrowser.go2(mariasEmailVerifLink);
   });
 
-  it("... and Owen now sees it's been verified", function() {
+  let apprNewMembersUrl: S;
+
+  it("... Owen gets notified that someone waits for approval to join  TyTE2E502AHL4", () => {
+    // Not until now, after the new member has verified hens email addr.
+    const email: EmailSubjectBody = server.waitUntilLastEmailMatches(
+            siteIdAddress.id, owen.emailAddress,
+            ['e_NewMbrToApr', 'wait', 'approv', maria.username, siteIdAddress.origin])
+            .matchedEmail;
+    apprNewMembersUrl = utils.findFirstLinkToUrlIn(
+            siteIdAddress.origin, email.bodyHtmlText);
+  });
+
+  it("... Owen sees the email has been verified", function() {
     owensBrowser.refresh();
     owensBrowser.adminArea.users.assertUserListed(maria);
     owensBrowser.adminArea.users.asserExactlyNumUsers(3);  // maria, michael, owen
     owensBrowser.adminArea.users.assertEmailVerified_1_user(maria, true);
   });
 
+  it("... Owen clicks the link in the notf email", function() {
+    owensBrowser.go2(apprNewMembersUrl);
+    owensBrowser.adminArea.users.waiting.waitUntilLoaded();
+  });
+
   it("... Maria appears in the Waiting list", function() {
-    owensBrowser.adminArea.users.switchToWaiting();
     owensBrowser.adminArea.users.assertUserListed(maria);
     owensBrowser.adminArea.users.assertUserListed(michael);
     owensBrowser.adminArea.users.asserExactlyNumUsers(2);
@@ -139,12 +155,26 @@ describe("settings-approve-members [TyT2HUWX8]", function() {
     mariasBrowser.assertPageHtmlSourceMatches_1('TyM0APPR_');
   });
 
-  it("Owen approves Maria", function() {
+  it("Owen approves Maria's account", function() {
     owensBrowser.adminArea.users.waiting.approveFirstListedUser();
   });
 
-  it("... so Maria can access the site", function() {
-    mariasBrowser.refresh(); // clears the waiting-for-approval message, so login dialog appears
+  let acctApprovedWelcomeLink: S;
+
+  it("... Maria gets an email that her account got approved  TyTE2E05WKF2", function() {
+    const email: EmailSubjectBody = server.waitUntilLastEmailMatches(
+            siteIdAddress.id, maria.emailAddress,
+            ['e_YourAcctAprvd', 'account', 'approved', siteIdAddress.origin]).matchedEmail;
+    acctApprovedWelcomeLink = utils.findFirstLinkToUrlIn(
+            siteIdAddress.origin, email.bodyHtmlText);
+  });
+
+  it("... she clicks the link in the email, gets to the site", function() {
+    // This also clears the waiting-for-approval message, so login dialog appears
+    mariasBrowser.go2(acctApprovedWelcomeLink);
+  });
+
+  it("... now Maria can access the site", function() {
     mariasBrowser.loginDialog.loginWithPassword(maria);
     mariasBrowser.assertPageTitleMatches(forumTitle);
   });

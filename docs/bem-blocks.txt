@@ -8,6 +8,10 @@ t_ = the_Whatever (for ids)
 e_ = end-to-end-test_Whatever (classes only, for stuff to click in End-to-End tests)
 p_ = public api (classes only, not ids)
 
+Big CSS refactoring: s_  —>  c_  for class attr — then, easy to know what's been refactored.
+And  t_  —>  i_  for 'id' attr
+And  e_  —>  t_  for tests
+
 s_w-X = wraps an X, i.e., somewhere inside, there's an X. Or "'W'ith a X inside".
 w_X   = wraps X. Always a class, not an id.
 
@@ -31,7 +35,9 @@ L   = list
 Ln  = link — of course, like `ln -s ...` in Linux.
 Lv  = level
 Mod = moderation
-Nf = notification
+Mnt = mention
+Nf  = notification,  e.g. e_NfEm_NwTp = notification email, about a new topic
+Nw  = new
 Pf = preference, e.g. NfPfs = notification preferences
 Pw = password, e.g. NewPwI
 St = status or state
@@ -45,9 +51,12 @@ P, Pg = page
 Prvw = preview
 Pv = Preview, e.g. LnPv = link preview
 Po = post
+Re  = reply
 Rs  = risk, e.g. RsLv = risk level
 Snz = Snooze
 T   = table
+Tg  = tag
+Tp  = topic
 Ttl = title,  no just Tl   RENAME
 Txt = text,   no just Tx   RENAME
 Tb  = Topbar   RENAME esTopbarWrap to s_Tb
@@ -196,7 +205,8 @@ s_P-Prvw        = post, previewing one's edits
 s_P-Hdn         = post, hidden
 s_P-Dd          = post, deleted
 
-esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
+esPA  <— No!    = post actions (actually located outside the post (esP) there fore esPA not esP_A)
+s_PA  <— yes
 
 s_PT-NN         = page type NN
 s_PL-NN         = page layout NN

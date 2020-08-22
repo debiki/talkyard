@@ -38,19 +38,19 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   override def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =
-    loadPostsOnPageImpl(pageId, postNr = Some(postNr), siteId = None).headOption
+    loadPostsOnPageImpl(pageId, postNr = Some(postNr)).headOption
 
 
-  override def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId]): immutable.Seq[Post] =
-    loadPostsOnPageImpl(pageId, postNr = None, siteId = None)
+  override def loadPostsOnPage(pageId: PageId): immutable.Seq[Post] =
+    loadPostsOnPageImpl(pageId, postNr = None)
 
 
-  def loadPostsOnPageImpl(pageId: PageId, postNr: Option[PostNr], siteId: Option[SiteId])
+  private def loadPostsOnPageImpl(pageId: PageId, postNr: Option[PostNr])
         : immutable.Seq[Post] = {
+    // Similar to:  loadPostsByNrs(_: Iterable[PagePostNr])
     var query = "select * from posts3 where SITE_ID = ? and PAGE_ID = ?"
-    val values = ArrayBuffer[AnyRef](siteId.getOrElse(this.siteId).asAnyRef, pageId)
+    val values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId)
     postNr foreach { id =>
-      // WOULD simplify: remove this block, use loadPosts(Iterable[PagePostId]) instead.
       query += " and post_nr = ?"
       values.append(id.asAnyRef)
     }
@@ -105,6 +105,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post] = {
+    // Similar to: loadPostsOnPageImpl(pageId, postNr)
     if (pagePostNrs.isEmpty)
       return Nil
 

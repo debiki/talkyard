@@ -741,7 +741,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val memberId = (request.body \ "userId").as[UserId]
     val doWhatInt = (request.body \ "doWhat").as[Int]
     val doWhat = EditUserAction.fromInt(doWhatInt).getOrThrowBadArgument("TyE4BKQR28", "doWhat")
-    request.dao.editUser(memberId, doWhat, request.who)
+    request.dao.editUserIfAuZ(memberId, doWhat, request.who)
     Ok
   }
 

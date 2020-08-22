@@ -608,10 +608,10 @@ object RdbUtil {
     val notfType = NotificationType.fromInt(notfTypeInt).getOrDie(
       "EsE6GMUK2", s"Bad notf type: $notfTypeInt")
 
+    import NotificationType._
     notfType match {
-      case NotificationType.NewPostReviewTask |
-           NotificationType.DirectReply | NotificationType.Mention | NotificationType.Message |
-           NotificationType.NewPost | NotificationType.PostTagged =>
+      case NewPostReviewTask | DirectReply | IndirectReply | Mention | Message |
+           NewPost | PostTagged | OneLikeVote =>
         Notification.NewPost(
           id = notfId,
           notfType = notfType,

@@ -59,8 +59,9 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
       insert into notifications3(
         SITE_ID, notf_id, CREATED_AT, NOTF_TYPE,
         UNIQUE_POST_ID, PAGE_ID, ACTION_TYPE, ACTION_SUB_ID,
-        BY_USER_ID, TO_USER_ID)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        BY_USER_ID, TO_USER_ID,
+        email_id, email_status, seen_at)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
 
 
@@ -75,37 +76,41 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         values += NullInt //
         values += postNotf.byUserId.asAnyRef
         values += postNotf.toUserId.asAnyRef
+        values += postNotf.emailId.orNullVarchar
+        values += postNotf.emailStatus.toInt.asAnyRef  // [306RDLA4]
+        values += postNotf.seenAt.orNullTimestamp
     }
 
     db.update(sql, values.toList)
   }
 
 
-  private def deleteNotf(notfToDelete: NotificationToDelete)(implicit connection: js.Connection) {
+  private def deleteNotf(notfToDelete: NotificationToDelete)(connection: js.Connection) {
     import NotificationType._
     val (sql, values: List[AnyRef]) = notfToDelete match {
-      case mentionToDelete: NotificationToDelete.MentionToDelete =>
+      case toDelete: NotificationToDelete.ToOneMember =>
         val sql = s"""
           delete from notifications3
           where SITE_ID = ?
-            and NOTF_TYPE = ${Mention.toInt}
+            and NOTF_TYPE = ?
             and unique_post_id = ?
             and TO_USER_ID = ?"""
-        val values = List(siteId.asAnyRef, mentionToDelete.uniquePostId.asAnyRef,
-          mentionToDelete.toUserId.asAnyRef)
+        val values = List(siteId.asAnyRef, toDelete.notfType.toInt.asAnyRef,
+              toDelete.uniquePostId.asAnyRef, toDelete.toUserId.asAnyRef)
         (sql, values)
       case postToDelete: NotificationToDelete.NewPostToDelete =>
         val sql = s"""
           delete from notifications3
           where SITE_ID = ?
             and NOTF_TYPE in (
-              ${Mention.toInt}, ${DirectReply.toInt}, ${NewPost.toInt})
+              ${Mention.toInt}, ${DirectReply.toInt}, ${IndirectReply.toInt}, ${
+                  NewPost.toInt}, ${PostTagged.toInt}, ${OneLikeVote.toInt})
             and unique_post_id = ?"""
         val values = List(siteId.asAnyRef, postToDelete.uniquePostId.asAnyRef)
         (sql, values)
     }
 
-    db.update(sql, values)
+    db.update(sql, values)(connection)
   }
 
 
@@ -133,14 +138,27 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadNotificationsAboutPost(postId: PostId, notfType: NotificationType): Seq[Notification] = {
+  def loadNotificationsAboutPost(postId: PostId, notfType: NotificationType,
+          toPpId: Option[UserId]): Seq[Notification] = {
     // E2e tested e.g. here: TyT4AWJL208R
-    loadNotificationsAboutPostImpl(postId, notfType, None)
+    loadNotificationsAboutPostImpl(postId, notfType, None, toPpId = toPpId)
   }
 
 
   private def loadNotificationsAboutPostImpl(postId: PostId, minNotfType: NotificationType,
-        maxNotfType: Option[NotificationType]): Seq[Notification] = {
+        maxNotfType: Option[NotificationType], toPpId: Option[UserId])
+        : Seq[Notification] = {
+
+    val values = ArrayBuffer[AnyRef](
+          siteId.asAnyRef, postId.asAnyRef, minNotfType.toInt.asAnyRef)
+
+    maxNotfType.foreach(notfType => values.append(notfType.toInt.asAnyRef))
+
+    val andToWho = toPpId map { id =>
+      values.append(id.asAnyRef)
+      "and to_user_id = ?"
+    } getOrElse ""
+
     val query = s"""
       select
         site_id, notf_id, notf_type, created_at,
@@ -154,10 +172,9 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
           if (maxNotfType.isDefined) "notf_type between ? and ?"
           else "notf_type = ?"
         }
-      """
-    val values =
-      List(siteId.asAnyRef, postId.asAnyRef, minNotfType.toInt.asAnyRef) ::: maxNotfType.toList
-    runQueryFindMany(query, values, rs => {
+        $andToWho """
+
+    runQueryFindMany(query, values.toList, rs => {
       RdbUtil.getNotification(rs)
     })
   }

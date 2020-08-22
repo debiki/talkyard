@@ -23,7 +23,8 @@ import com.debiki.core._
 import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import ed.server.notf.NotifierActor._
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import talkyard.server.TyLogger
@@ -345,20 +346,44 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
     val (siteName, origin) = dao.theSiteNameAndOrigin()
 
-    val contents = NotfHtmlRenderer(dao, anyOrigin).render(notfs)
-    if (contents.isEmpty)
+    val notfRenderResult = NotfHtmlRenderer(dao, anyOrigin).render(notfs)
+    if (notfRenderResult.html.isEmpty)
       return None
 
     // Always use the same subject line, even if only 1 comment, so will end up in the same
     // email thread. Include site name, so simpler for people to find the email.
-    val subject: String =
-      if (notfs.exists(_.tyype == NotificationType.NewPostReviewTask)) {
-        // This might also include auto approved posts, which don't need any review.
-        // Use this title anyway.
-        s"[$siteName] New posts waiting for you to review"
-      }
-      else {
-        s"[$siteName] You have replies to posts of yours"
+    val subject: String = {
+        val newWhat = ArrayBuffer[String]()
+        if (notfRenderResult.newModTasks) {
+          newWhat.append("posts to moderate")
+        }
+        if (notfRenderResult.newMessagesToYou) {
+          newWhat.append("direct messages")
+        }
+        if (notfRenderResult.newRepliesOrMentions) {
+          newWhat.append("replies")
+        }
+        if (notfRenderResult.newLikeVotes) {
+          newWhat.append("Like votes")
+        }
+        if (notfRenderResult.newTopics) {
+          newWhat.append("topics")
+        }
+        if (notfRenderResult.newPosts) {
+          if (newWhat.nonEmpty) newWhat.append("and other ")
+          newWhat.append("posts")
+        }
+        if (newWhat.isEmpty) {
+          newWhat.append("stuff")
+        }
+        val subjText = StringBuilder.newBuilder
+        val (commaSep, andLast) =
+              if (newWhat.length >= 2) newWhat.splitAt(newWhat.length - 1)
+              else (newWhat, ArrayBuffer.empty)
+        subjText ++= s"[$siteName] New "
+        subjText ++= commaSep.mkString("", ", ", "")
+        andLast foreach { subjText ++= ", and " + _ }
+        subjText.toString
       }
 
     val email = Email(EmailType.Notification, createdAt = globals.now(),
@@ -379,7 +404,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     val htmlContent =
       <div>
         <p>Dear {user.usernameOrGuestName},</p>
-        {contents}
+        {notfRenderResult.html}
         <p>
           Kind regards,<br/>
           { makeBoringLink(siteName, url = origin) }

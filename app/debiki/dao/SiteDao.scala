@@ -195,7 +195,15 @@ class SiteDao(
   private def thisSiteCacheKey = siteCacheKey(this.siteId)
 
 
-  def writeTx[R](fn: (SiteTransaction, StaleStuff) => R): R = {
+  def writeTxTryReuse[R](anyTx: Option[(SiteTx, StaleStuff)])(
+          fn: (SiteTx, StaleStuff) => R): R =
+    anyTx match {
+      case Some((tx, staleStuff)) => fn(tx, staleStuff)
+      case None => writeTx(fn)
+    }
+
+
+  def writeTx[R](fn: (SiteTx, StaleStuff) => R): R = {
     writeTx()(fn)
   }
 
@@ -221,6 +229,9 @@ class SiteDao(
 
     // Refresh in-memory cache:  [rm_cache_listeners]
     if (staleStuff.nonEmpty) {
+      staleStuff.staleParticipantIdsInMem foreach { ppId =>
+        removeUserFromMemCache(ppId)
+      }
       staleStuff.stalePageIdsInMem foreach { pageId =>
         refreshPageInMemCache(pageId)
       }
@@ -324,6 +335,14 @@ class SiteDao(
 
 
   // ----- Site
+
+  COULD // return a struct, maybe add more fields to SiteIdOrigins?
+  def theSiteOriginHostname(tx: SiteTx): (Site, String, String) = {
+    val site = tx.loadSite() getOrDie "TyENOSITEINTX"
+    val siteOrigin = globals.theOriginOf(site)
+    val siteHostname = globals.theHostnameOf(site)
+    (site, siteOrigin, siteHostname)
+  }
 
   def theSite(): Site = getSite().getOrDie("DwE5CB50", s"Site $siteId not found")
 
@@ -648,7 +667,7 @@ object SiteDao extends TyLogging {
     // (This can happen for the very first site, with id 1, if it gets accessed after
     // talkyard.defaultSiteId has been set to != 1.)
     if (site.id != globals.defaultSiteId) {
-      val hostname = globals.siteByIdHostname(site.id)
+      val hostname = globals.siteByIdHostnamePort(site.id)  // BUG if custom port incl?
       val canonicalHost = Hostname(hostname, Hostname.RoleCanonical)
       COULD_OPTIMIZE // is :+ faster?
       return site.copy(hostnames = canonicalHost +: site.hostnames)

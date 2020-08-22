@@ -17,7 +17,6 @@
 
 /// <reference path="../staff-prelude.staff.ts" />
 /// <reference path="review-all.staff.ts" />
-/// <reference path="review-posts.staff.ts" />
 /// <reference path="api-panel.staff.ts" />
 /// <reference path="users.staff.ts" />
 /// <reference path="contents-panel.staff.ts" />

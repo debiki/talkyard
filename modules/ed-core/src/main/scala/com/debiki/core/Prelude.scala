@@ -28,7 +28,26 @@ import scala.util.matching.Regex
 import scala.collection.immutable
 
 
-object Prelude {
+object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
+  // things from core package obj?
+  // E.g. export  isProd and dieIf etc, but not setIsProdForever().
+
+  def isProd: Boolean = _isProd
+  def isDevOrTest: Boolean = !isProd
+
+  /** One cannot change from Prod to Dev or Test, or from Dev or Test to Prod,
+    * so we can safely remember isProd, forever.
+    * (However, is-Dev and is-Test might change, depending on what
+    * commands one types in the Scala cli.)
+    */
+  def setIsProdForever(prod: Boolean): Unit = {
+    dieIf(hasSet && prod != _isProd, "TyE502ARKT4")
+    _isProd = prod
+    hasSet = true
+  }
+
+  private var _isProd = true
+  private var hasSet = false
 
 
   // Logs an error in release mode, but throws an AssertionError in debug
@@ -111,10 +130,13 @@ object Prelude {
   def unsupported(what: String, errorCode: String) =
     throw new UOE(s"$what [$errorCode]")
   def unimplemented = throw new UOE("Not implemented")
-  def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)
+  def unimpl(what: String) = unimplemented(what)  // yes
+  def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)  // too long!
   def unimplemented(what: String, errorCode: String) =
     throw new UOE(s"Not implemented: $what [$errorCode]")
-  def unimplementedIf(condition: Boolean, what: String): Unit =
+  def unimplIf(condition: Boolean, what: String): Unit =
+    if (condition) unimplemented(what)
+  def unimplementedIf(condition: Boolean, what: String): Unit =  // too long name CLEAN_UP rename to unimplIf
     if (condition) unimplemented(what)
 
   /** Useful code but currently not in use. Abort, so I'll notice, and test it again before

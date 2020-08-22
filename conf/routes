@@ -95,6 +95,7 @@ POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 GET   /-/load-review-tasks      controllers.ModerationController.loadReviewTasks
 POST  /-/make-review-decision   controllers.ModerationController.makeReviewDecision
 POST  /-/undo-review-decision   controllers.ModerationController.tryUndoReviewDecision
+POST  /-/moderate-from-page     controllers.ModerationController.moderateFromPage
 
 GET   /-/users/                 controllers.UserController.viewUserPage(whatever = "")
 GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)

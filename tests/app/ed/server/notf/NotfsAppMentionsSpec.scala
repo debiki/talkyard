@@ -31,6 +31,8 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
   var owner: User = _
   var ownerWho: Who = _
   var moderator: User = _
+  val numStaffUsers = 2
+
   var member1: User = _
   var member2: User = _
   var member3: User = _
@@ -161,6 +163,26 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
     }
 
+
+    "notifies staff about a new member's first chat messages  TyTIT50267MT" - {
+      // Without this, notification counts would be off with 2. Dupl code (9625676).
+
+      var fisrtChatMessage: Post = null
+      "member1 posts the chat message" in {
+        fisrtChatMessage = chat(member1.id, chatTopicManyJoinedId, "My first message")(dao)
+        expectedTotalNumNotfs += numStaffUsers
+        numStaffUsers mustBe 2  // ttt
+      }
+      "staff gets notified" in {
+        countTotalNumNotfs() mustBe expectedTotalNumNotfs
+      }
+      "and approves it" in {
+        val p = fisrtChatMessage
+        dao.moderatePostInstantly(p.id, p.currentRevisionNr,
+              ReviewDecision.Accept, moderator)
+      }
+    }
+
     "create no mention (in a chat)" - {
       "totally no mention" in {
         chat(member1.id, chatTopicManyJoinedId, "Hello")(dao)
@@ -183,6 +205,31 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         chat(myself.id, chatTopicManyJoinedId, s"Hello @${myself.theUsername}")(dao)
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
       }
+    }
+
+
+    "staff notified about member2's first chat messages" in {
+      // Without this, notification counts would be off with 2. Dupl code (9625676).
+      val firstPost: Post = chat(member2.id, chatTopicManyJoinedId,
+            "member2's first")(dao)
+      expectedTotalNumNotfs += numStaffUsers
+      info("staff notified about member2's first post")
+      countTotalNumNotfs() mustBe expectedTotalNumNotfs
+      info("staff approves")
+      dao.moderatePostInstantly(firstPost.id, firstPost.currentRevisionNr,
+            ReviewDecision.Accept, moderator)
+    }
+
+    "and about member3's first chat messages" in {
+      // Without this, notification counts would be off with 2. Dupl code (9625676).
+      val firstPost: Post = chat(member3.id, chatTopicManyJoinedId,
+            "member3's first")(dao)
+      expectedTotalNumNotfs += numStaffUsers
+      info("staff notified about member3's first post")
+      countTotalNumNotfs() mustBe expectedTotalNumNotfs
+      info("staff approves")
+      dao.moderatePostInstantly(firstPost.id, firstPost.currentRevisionNr,
+        ReviewDecision.Accept, moderator)
     }
 
     "create specific people mentions (in a chat)" - {

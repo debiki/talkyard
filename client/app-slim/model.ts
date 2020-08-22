@@ -103,27 +103,6 @@ const enum FragActionType {
 }
 
 
-interface PostToModerate {
-  pageId: string;
-  pageName: string;
-  id: number;   // rename to nr? CLEAN_UP
-  status: string;
-  type: string;
-  cdati: string;
-  approvedText?: string;
-  unapprovedText?: string;
-  userId: UserId;
-  userDisplayName: string;
-  numEditsToReview?: string;
-  numHandledFlags?: number;
-  numPendingFlags?: number;
-  numPendingEditSuggestions?: number;
-  pendingFlags?: any[];
-  postHiddenAt?: string;  // change to millis
-  postDeletedAt?: string;  // change to millis
-  treeDeletedAt?: string;  // change to millis
-}
-
 
 interface ReviewTask {
   id: number;
@@ -319,6 +298,8 @@ interface Post {
   isPostCollapsed: boolean;
   isTreeClosed: boolean;
   isApproved: boolean;
+  currRevNr?: number;      // only if not approved
+  approvedRevNr?: number;  //
   pinnedPosition: number;
   branchSideways: number;
   likeScore: number;
@@ -1451,6 +1432,7 @@ interface StorePatch extends EditorStorePatch {
   me?: MyselfPatch;
   tagsStuff?: TagsStuff;
 
+  deletePageIds?: PageId[];
   deleteDraft?: DraftDeletor;
 
   // Some pages get created lazily, namely embedded comments pages. They get

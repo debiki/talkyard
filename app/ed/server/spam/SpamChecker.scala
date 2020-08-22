@@ -1040,6 +1040,7 @@ object SpamChecker {
   }
 
   SECURITY; COULD // always check links with Google Safe Browsing API, also for staff?
+  // In case they accidentally unintentionally link to bad sites. Could be conf val.
   def shallCheckSpamFor(participant: Participant): Boolean = {
     if (participant.isStaff) return false
     val hasHighTrustLevel = participant.effectiveTrustLevel.toInt >= TrustLevel.TrustedMember.toInt

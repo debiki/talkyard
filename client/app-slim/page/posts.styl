@@ -341,7 +341,9 @@ h1.dw-p-ttl
 // If there's a pending-approval message just above the title, then add margin above that
 // message, instead of above the title.
 .dw-p-ttl .esPendingApproval
-  margin: 20px 0 0 0;
+  margin: 27px 0 3px 0;
+  font-size: 17px;
+  padding: 11px 17px 9px 11px;
 .esPendingApproval + .dw-p-ttl
   margin-top: 7px;
   padding-top: 0;
@@ -860,10 +862,10 @@ html:not(.mouse) .dw-rr
 
 .dw-p-pending-mod
   margin-bottom: 8px;
-  padding: 4px 0 4px 7px;
+  padding: 5px 0 5px 8px;
   font-style: italic;
   font-weight: bold;
-  background: hsl(0, 100%, 96%);
+  background: hsl($pendingModHue, 100%, 96%);
   color: black;
 
 .dw-p-hd .dw-p-at

@@ -38,7 +38,12 @@ import math.max
 
 case class InsertPostResult(storePatchJson: JsObject, post: Post, reviewTask: Option[ReviewTask])
 
-case class ChangePostStatusResult(answerGotDeleted: Boolean)
+case class ChangePostStatusResult(
+  updatedPost: Option[Post],
+  answerGotDeleted: Boolean)
+
+case class ApprovePostResult(
+  updatedPost: Option[Post])
 
 case class LoadPostsResult(
   posts: immutable.Seq[Post],
@@ -55,8 +60,6 @@ case class LoadPostsResult(
   */
 trait PostsDao {
   self: SiteDao =>
-
-  import context.{globals, nashorn}
 
   // 3 minutes
   val LastChatMessageRecentMs: UnixMillis = 3 * 60 * 1000
@@ -94,8 +97,10 @@ trait PostsDao {
     refreshPageInMemCache(pageId)
 
     val storePatchJson = jsonMaker.makeStorePatch(newPost, author, showHidden = true)
+
+    // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
-      byId = author.id)
+          byId = author.id)
 
     InsertPostResult(storePatchJson, newPost, anyReviewTask)
   }
@@ -103,8 +108,8 @@ trait PostsDao {
 
   def insertReplyImpl(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff,
-        now: When, authorId: UserId, tx: SiteTransaction, staleStuff: StaleStuff,
-        skipNotifications: Boolean = false)
+        now: When, authorId: UserId, tx: SiteTx, staleStuff: StaleStuff,
+        skipNotfsAndAuditLog: Boolean = false)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
@@ -206,7 +211,7 @@ trait PostsDao {
       dieIf(uploadRefs != uplRefs2, "TyE503SKH5", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
-    val auditLogEntry = AuditLogEntry(
+    lazy val auditLogEntry = AuditLogEntry(
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewReply,
@@ -279,30 +284,46 @@ trait PostsDao {
     uploadRefs foreach { uploadRef =>
       tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
     }
-    insertAuditLogEntry(auditLogEntry, tx)
+    if (!skipNotfsAndAuditLog) {
+      insertAuditLogEntry(auditLogEntry, tx)
+    }
     anyReviewTask.foreach(tx.upsertReviewTask)
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
 
+    // If staff has now read and replied to the parent post — then resolve any
+    // mod tasks about the parent post. So they won't need to review this post twice,
+    // on the Moderation page too.
+    TESTS_MISSING  // TyTE2EMRHK35
+    if (author.isStaff) {
+      bugWarnIf(anyReviewTask.isDefined || anySpamCheckTask.isDefined, "TyE05RKD5")
+      replyToPosts foreach { replyToPost =>
+        maybeReviewAcceptPostByInteracting(replyToPost, moderator = author,
+              ReviewDecision.InteractReply)(tx, staleStuff)
+      }
+    }
+
     val notifications =
-      if (skipNotifications) Notifications.None
+      if (skipNotfsAndAuditLog) Notifications.None
       else notfGenerator(tx).generateForNewPost(
-            page, newPost, Some(textAndHtml), anyReviewTask)
+            page, newPost, Some(textAndHtml), anyNewModTask = anyReviewTask)
     tx.saveDeleteNotifications(notifications)
 
     (newPost, author, notifications, anyReviewTask)
   }
 
 
+  REFACTOR; MOVE // to ReviewsDao (and rename it to ModerationDao)
   /** Returns (review-reasons, shall-approve).
     */
-  def throwOrFindNewPostReviewReasons(pageMeta: PageMeta, author: UserAndLevels,
-        tx: SiteTransaction): (Seq[ReviewReason], Boolean) = {
+  private def throwOrFindNewPostReviewReasons(pageMeta: PageMeta, author: UserAndLevels,
+        tx: SiteTx): (Seq[ReviewReason], Boolean) = {
     throwOrFindNewPostReviewReasonsImpl(author, Some(pageMeta), newPageRole = None, tx)
   }
 
 
+  REFACTOR; MOVE // to ReviewsDao (and rename it to ModerationDao) and make private
   def throwOrFindNewPostReviewReasonsImpl(author: UserAndLevels, pageMeta: Option[PageMeta],
-        newPageRole: Option[PageType], tx: SiteTransaction)
+        newPageRole: Option[PageType], tx: SiteTx)
         : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
       return (Nil, true)
@@ -390,7 +411,8 @@ trait PostsDao {
         AllSettings.MaxPendingMaybeSpamPostsNewMember | AllSettings.MaxPendingMaybeSpamPostsFullMember
 
       BUG // How is staff supposed to let the person post again? If all hens posts
-      // have been reviewed — then there're no more posts to approve.
+      // have been reviewed — then there're no more posts to approve. Or some posts
+      // got rejected, then lots of mod tasks got invalidated [2MFFKR0] [apr_deld_post].
       // Instead, [auto_block] the user from posting more? [auto_block]?
       // And staff can unblock the user, if spoken with hen and now seems ok.
 
@@ -417,6 +439,15 @@ trait PostsDao {
     if (author.user.isGuest && (numFirstToApprove + numFirstToRevwAftr) < 2) {
       numFirstToRevwAftr = 2 - numFirstToApprove
     }
+
+    // ( What if there're already approved posts by this user, but without any
+    // mod tasks?  [aprd_posts_wo_mod_tasks]
+    // E.g. because posts by this user were inserted via the API, or because
+    // moderator settings were recently changed.
+    // Would mods then want to start moderating this user, although hen
+    // has been a member for a while & posted topics and replies already?
+    // Maybe sometimes yes, sometimes no.
+    // Currently they will start moderating hen. )
 
     if (numFirstToApprove > 0 || numFirstToRevwAftr > 0) {
       val numFirstPending = reviewTasksOldestFirst.count(_.decision.isEmpty)
@@ -545,25 +576,16 @@ trait PostsDao {
               // get notified about the text in the previous chat message (that text
               // was likely not intended directly for them).  TyT306WKCDE4 [NEXTCHATMSG]
               textAndHtml.usernameMentions.isEmpty =>
+          // No mod task generated. [03RMDl6J]
+          // For now, let's create mod tasks only for *new* messages
+          // (but not appended-to messages).
+          // Should work well enough + won't be too many mod tasks.
           appendToLastChatMessage(
                 lastMessage, textAndHtml, byWho, spamRelReqStuff, tx, staleStuff)
         case _ =>
-          val (post, notfs) = createNewChatMessage(
-                page, textAndHtml, byWho, spamRelReqStuff, tx, staleStuff)
-          // For now, let's create review tasks only for new messages, but not when appending
-          // to the prev message. Should work well enough + won't be too many review tasks.
-          val anyReviewTask = if (reviewReasons.isEmpty) None
-          else Some(ReviewTask(
-            id = tx.nextReviewTaskId(),
-            reasons = reviewReasons.to[immutable.Seq],
-            createdById = SystemUserId,
-            createdAt = tx.now.toJavaDate,
-            createdAtRevNr = Some(post.currentRevisionNr),
-            maybeBadUserId = author.id,
-            postId = Some(post.id),
-            postNr = Some(post.nr)))
-          anyReviewTask.foreach(tx.upsertReviewTask)
-          (post, notfs)
+          // A mod task will (might) get generated.
+          createNewChatMessage(
+                page, textAndHtml, byWho, reviewReasons, spamRelReqStuff)(tx, staleStuff)
       }
 
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
@@ -581,7 +603,8 @@ trait PostsDao {
 
 
   private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, who: Who,
-        spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction, staleStuff: StaleStuff)
+        reviewReasons: Seq[ReviewReason], spamRelReqStuff: SpamRelReqStuff)
+        (tx: SiteTx, staleStuff: StaleStuff)
         : (Post, Notifications) = {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE592MWP2")
@@ -639,9 +662,6 @@ trait PostsDao {
       dieIf(uploadRefs != uplRefs2, "TyE38RDHD4", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
-    SECURITY // COULD: if is new chat user, create review task to look at his/her first
-    // chat messages, but only the first few.
-
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
       else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
@@ -660,6 +680,18 @@ trait PostsDao {
             language = settings.languageCode)),
           who = who,
           requestStuff = spamRelReqStuff))
+
+    val anyModTask =
+          if (reviewReasons.isEmpty) None
+          else Some(ReviewTask(
+                id = tx.nextReviewTaskId(),
+                reasons = reviewReasons.to[immutable.Seq],
+                createdById = SystemUserId,
+                createdAt = tx.now.toJavaDate,
+                createdAtRevNr = Some(newPost.currentRevisionNr),
+                maybeBadUserId = authorId,
+                postId = Some(newPost.id),
+                postNr = Some(newPost.nr)))
 
     val auditLogEntry = AuditLogEntry(
       siteId = siteId,
@@ -695,14 +727,16 @@ trait PostsDao {
     saveDeleteLinks(newPost, textAndHtml, authorId, tx, staleStuff)
 
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
+    anyModTask.foreach(tx.upsertReviewTask)
     insertAuditLogEntry(auditLogEntry, tx)
 
     // generate json? load all page members?
     // send the post + json back to the caller?
     // & publish [pubsub]
 
+    // If anyModTask: TyTIT50267MT
     val notfs = notfGenerator(tx).generateForNewPost(
-      page, newPost, sourceAndHtml = Some(textAndHtml), anyReviewTask = None)
+          page, newPost, sourceAndHtml = Some(textAndHtml), anyNewModTask = anyModTask)
     tx.saveDeleteNotifications(notfs)
 
     (newPost, notfs)
@@ -762,6 +796,9 @@ trait PostsDao {
       currentRevLastEditedAt = Some(tx.now.toJavaDate),
       lastApprovedEditAt = Some(tx.now.toJavaDate),
       lastApprovedEditById = Some(authorId))
+
+    // For now, don't generate any ModTask here.  [03RMDl6J]
+    // (But we do, when starting a new chat message.)
 
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
@@ -875,11 +912,24 @@ trait PostsDao {
 
       val anyNewApprovedById =
         if (postToEdit.tyype == PostType.ChatMessage) {
-          // The system user auto approves all chat messages; always use SystemUserId for chat.
+          // Auto approve chat messages. Always SystemUserId for chat.
           Some(SystemUserId)  // [7YKU24]
         }
         else if (editor.isStaff) {
-          Some(editor.id)
+          if (!postToEdit.isSomeVersionApproved) {
+            // Staff won't approve a not yet approved post, just by editing it.
+            // Instead, they need to click a button to explicitly approve it  [in_pg_apr]
+            // the first time (for that post),  or do via the Moderation page.
+            // (This partly because it'd be *complicated* to both approve and publish
+            // the post, *and* handle edits, at the same time.)
+            TESTS_MISSING // [065AKDLU35]
+            None
+          }
+          else {
+            // Older revision already approved and post already published.
+            // Then, continue approving it.
+            Some(editor.id)
+          }
         }
         else {
           // Let people continue editing a post that has been approved already — unless
@@ -889,6 +939,7 @@ trait PostsDao {
             None  // [TyT7UQKBA2]
           }
           else if (postToEdit.isCurrentVersionApproved) {
+            // Auto approve — let people edit their already approved posts.
             Some(SystemUserId)
           }
           else {
@@ -904,7 +955,8 @@ trait PostsDao {
           newLastApprovedEditById,
           newApprovedSource,
           newApprovedHtmlSanitized,
-          newApprovedAt) =
+          newApprovedAt,
+      ) =
         if (anyNewApprovedById.isDefined)
           (true,
           None,
@@ -1008,7 +1060,15 @@ trait PostsDao {
           AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =    // (7ALGJ2)
-        if (editor.isStaffOrTrustedNotThreat) {
+        if (editor.isStaff) {
+          // Now staff has had a look at the post, even edited it — so resolve
+          // mod tasks about this posts. So won't be asked to review this post again,
+          // on the Moderation page.
+          maybeReviewAcceptPostByInteracting(postToEdit, moderator = editor,
+                ReviewDecision.InteractEdit)(tx, staleStuff)
+          None
+        }
+        else if (editor.isStaffOrTrustedNotThreat) {
           // Don't review late edits by trusted members — trusting them is
           // the point with the >= TrustedMember trust levels. TyTLADEETD01
           None
@@ -1102,9 +1162,8 @@ trait PostsDao {
       // who did the edits, if they "never" appear because the staff didn't notice.
       // val notfs = notfGenerator(tx).generateForReviewTask( ...)
 
-      if (!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved) {
-        unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
-      }
+      dieIf(!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved,
+        "TyE305RK7TP", "Staff cannot approve and publish post via an edit")
 
       if (editedPost.isCurrentVersionApproved) {
         staleStuff.addPageId(editedPost.pageId)
@@ -1234,11 +1293,22 @@ trait PostsDao {
     val pageIdsLinkedAfter = tx.loadPageIdsLinkedFromPage(post.pageId)
 
     // Uncache backlinked pages. [uncache_blns]
-    WOULD_OPTIMIZE // use Guava.symmetricDifference.  But not Scala's  setA.diff.setB.
-    val stalePageIds =
-          (pageIdsLinkedBefore -- pageIdsLinkedAfter) ++
-            (pageIdsLinkedAfter -- pageIdsLinkedBefore)
-    staleStuff.addPageIds(stalePageIds, pageModified = false, backlinksStale = true)
+    if (post.isTitle) {
+      // Then all linked pages need to update their backlinks to this post's page
+      // — to show the new title. But the set of links cannot have changed.
+      bugWarnIf(pageIdsLinkedAfter != pageIdsLinkedBefore,
+            "TyE305RKDJ", o"""s$siteId: Linked pages changed when editing *title*,
+              page id: ${post.pageId}""")
+      staleStuff.addPageIds(
+            pageIdsLinkedBefore, pageModified = false, backlinksStale = true)
+    }
+    else {
+      WOULD_OPTIMIZE // use Guava.symmetricDifference.  But not Scala's  setA.diff.setB.
+      val stalePageIds =
+            (pageIdsLinkedBefore -- pageIdsLinkedAfter) ++
+              (pageIdsLinkedAfter -- pageIdsLinkedBefore)
+      staleStuff.addPageIds(stalePageIds, pageModified = false, backlinksStale = true)
+    }
   }
 
 
@@ -1550,19 +1620,25 @@ trait PostsDao {
         : ChangePostStatusResult = {
     val result = writeTx { (tx, staleStuff) =>
       changePostStatusImpl(postNr, pageId = pageId, action, userId = userId,
-            doingReviewTask = None, tx, staleStuff)
+            tx, staleStuff)
     }
     refreshPageInMemCache(pageId)
     result
   }
 
 
+  /** Deletes, undelete, hides, unhides etc a post, and optionally, its
+    * successors.
+    *
+    * Does not change the status of any ModTask related to this post
+    * — better if such things are done only explicitly via ReviewsDao
+    * and UI buttons? [deld_post_mod_tasks]
+    */
   def changePostStatusImpl(postNr: PostNr, pageId: PageId, action: PostStatusAction,
-        userId: UserId, doingReviewTask: Option[ReviewTask], tx: SiteTransaction,
-        staleStuff: StaleStuff)
+        userId: UserId, tx: SiteTransaction, staleStuff: StaleStuff)
         : ChangePostStatusResult =  {
     import com.debiki.core.{PostStatusAction => PSA}
-    import context.security.{throwNoUnless, throwIndistinguishableNotFound}
+    import context.security.throwIndistinguishableNotFound
 
     val page = newPageDao(pageId, tx)
     if (!page.exists)
@@ -1585,11 +1661,22 @@ trait PostsDao {
         throwForbidden("DwE5JKF7", "You may not modify the whole tree")
     }
 
-    val isChangingDeletePostToDeleteTree =
-      postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
-    if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree) {
-      // Hmm but trying to delete a deleted *page*, does nothing, instead of throwing an error. [5WKQRH2]
-      throwForbidden("DwE5GUK5", "This post has already been deleted")
+    if (postBefore.isDeleted) {
+      val isUnhidingPostBody = action == PSA.UnhidePost
+      val isChangingDeletePostToDeleteTree =
+            postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
+      if (isChangingDeletePostToDeleteTree) {
+        // Fine.
+      }
+      else if (isUnhidingPostBody) {
+        UNTESTED
+        // Fine — maybe staff are approving this post [apr_deld_post], and will
+        // also undelete it or any deleted page.
+      }
+      else {
+        // Hmm but trying to delete a deleted *page*, does nothing, instead of throwing an error. [5WKQRH2]
+        throwForbidden("DwE5GUK5", "This post has already been deleted")
+      }
     }
 
     var numVisibleRepliesGone = 0
@@ -1732,16 +1819,19 @@ trait PostsDao {
     dieIf(postsDeleted.nonEmpty && postsUndeleted.nonEmpty, "TyE2WKBG5")
 
     // Invalidate, or re-activate, review tasks whose posts get deleted / undeleted.
-    // See here: [4JKAM7] for when deleting pages.
+    // See here: [deld_post_mod_tasks] for when deleting pages.
     // Or no? What if Mallory posts and angry comment, then people get upset, reply and flag it?
     // Then Mallory deletes his comment. Now, better if the review tasks for those flags, are
     // still available for the staff, so they can review Mallory's deleted post.
     // So, don't do this for other posts than the one being explicitly reviewed and deleted:
+    // ?? skip this ??  do from  ReviewsDao  instead.
+    DELETE_LATER; DO_AFTER // 2021-01 delete this whole comment & out commented code block.
+    /*
     doingReviewTask foreach { task =>
       val taskPostId = task.postId getOrDie "TyE6KWA2C"
       invalidateReviewTasksForPosts(postsDeleted.filter(_.id == taskPostId), doingReviewTask, tx)
       reactivateReviewTasksForPosts(postsUndeleted.filter(_.id == taskPostId), doingReviewTask, tx)
-    }
+    } */
 
     // If this post is getting deleted because it's spam, then, update any [UPDSPTSK]
     // pending spam check task, so we can send a training sample to any spam check services.
@@ -1772,25 +1862,32 @@ trait PostsDao {
       updatePagePopularity(page.parts, tx)
     }
 
-    staleStuff.addPageId(page.id, memCacheOnly = true)
+    staleStuff.addPageId(page.id, memCacheOnly = true)  // page version bumped above
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
 
     // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
 
     BUG // should sometimes remove forum topic list from mem cache? — hmm, already done, right: [2F5HZM7]
 
-    ChangePostStatusResult(answerGotDeleted = answerGotDeleted)
+    ChangePostStatusResult(
+          updatedPost = Some(postAfter), answerGotDeleted = answerGotDeleted)
   }
 
 
-  def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId,
-          tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
+  def approvePost(pageId: PageId, postNr: PostNr, approverId: UserId,
+          doingModTasks: Seq[ModTask], tx: SiteTx, staleStuff: StaleStuff)
+          : ApprovePostResult = {
 
     val page = newPageDao(pageId, tx)
     val pageMeta = page.meta
     val postBefore = page.parts.thePostByNr(postNr)
-    if (postBefore.isCurrentVersionApproved)
-      throwForbidden("DwE4GYUR2", s"Post nr ${postBefore.nr} already approved")
+    if (postBefore.isCurrentVersionApproved) {
+      // There're races: Posts approved at the same time by different people,
+      // or (a bit weird) by the same person once via the Moderation page with
+      // an undo timeout, and then again directly via the Approve buttons
+      // below the posts. That's all fine.  [mod_post_race]
+      return ApprovePostResult(updatedPost = None)
+    }
 
     val approver = tx.loadTheParticipant(approverId)
 
@@ -1833,13 +1930,24 @@ trait PostsDao {
       bodyHiddenAt = None,
       bodyHiddenById = None,
       bodyHiddenReason = None)
+
     tx.updatePost(postAfter)
     tx.indexPostsSoon(postAfter)
+
+    if (postBefore.isDeleted) {
+      UNTESTED  // [4MT05MKRT]
+      // Can happen e.g. if a moderator approves a post, after someone else
+      // deleted an ancestor post or maybe the post itself.  [apr_deld_post]
+      // Fine, but don't proceed with updating the page.
+      // We do want to index the post though (just above) — admins should be able
+      // to search and find also deleted things.
+      return ApprovePostResult(updatedPost = None)
+    }
+
 
     staleStuff.addPageId(pageId, memCacheOnly = true) // page version bumped below
     saveDeleteLinks(postAfter, sourceAndHtml, postAfter.createdById, tx, staleStuff)
 
-    SHOULD // delete any review tasks.
 
     // ------ The page
 
@@ -1891,7 +1999,7 @@ trait PostsDao {
       }
       else if (isApprovingNewPost) {
         notfGenerator(tx).generateForNewPost(page, postAfter, Some(sourceAndHtml),
-              anyReviewTask = None)
+              anyNewModTask = None, doingModTasks = doingModTasks)
       }
       else {
         notfGenerator(tx).generateForEdits(postBefore, postAfter, Some(sourceAndHtml))
@@ -1899,9 +2007,13 @@ trait PostsDao {
     tx.saveDeleteNotifications(notifications)
 
     refreshPagesInAnyCache(Set[PageId](pageId))  ; REMOVE // <—— no longer needed, staleStuff instead
+
+    ApprovePostResult(
+          updatedPost = Some(postAfter))
   }
 
 
+  @deprecated("remove this, too complicated")
   def autoApprovePendingEarlyPosts(pageId: PageId, posts: Iterable[Post])(
         tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
 
@@ -1962,7 +2074,12 @@ trait PostsDao {
 
       if (!post.isTitle) {
         val notfs = notfGenerator(tx).generateForNewPost(page, postAfter,
-              Some(sourceAndHtml), anyReviewTask = None)
+              Some(sourceAndHtml),
+              anyNewModTask = None,
+              // But approver might get notfd about post! [notfs_bug]
+              // However this whole cascade-approval idea should be deleted.
+              // Then this whole fn, autoApprovePendingEarlyPosts(), gone.
+              doingModTasks = Nil)
         tx.saveDeleteNotifications(notfs)
       }
     }
@@ -2002,19 +2119,23 @@ trait PostsDao {
         browserIdData: BrowserIdData): Unit = {
     writeTx { (tx, staleStuff) =>
       deletePostImpl(pageId, postNr = postNr, deletedById = deletedById,
-            doingReviewTask = None, browserIdData, tx, staleStuff)
+            browserIdData, tx, staleStuff)
     }
     refreshPageInMemCache(pageId)  ; REMOVE // auto do via [staleStuff]
   }
 
 
   def deletePostImpl(pageId: PageId, postNr: PostNr, deletedById: UserId,
-        doingReviewTask: Option[ReviewTask], browserIdData: BrowserIdData,
-        tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
+        browserIdData: BrowserIdData,
+        tx: SiteTx, staleStuff: StaleStuff): ChangePostStatusResult = {
     val result = changePostStatusImpl(pageId = pageId, postNr = postNr,
-      action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
-      doingReviewTask = doingReviewTask,
-      tx = tx, staleStuff = staleStuff)
+          action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
+          tx = tx, staleStuff = staleStuff)
+
+    BUG; SHOULD // delete notfs or mark deleted?  [notfs_bug]  [nice_notfs]
+    // But don't delete any mod tasks — good if staff reviews, if a new member
+    // posts something trollish, people read/reply/react, then hen deletes hens post.
+    // Later, if undeleting, then restore the notfs? [undel_posts]
 
     // The caller needs to: refreshPageInMemCache(pageId) — and should be done just after tx ended.
     // EDIT: That's soon not needed, use [staleStuff] instead and [rm_cache_listeners].  CLEAN_UP
@@ -2026,13 +2147,26 @@ trait PostsDao {
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE2ABKPGN7")
 
-    readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       val post = tx.loadThePost(pageId, postNr = postNr)
       val voter = tx.loadTheParticipant(voterId)
       throwIfMayNotSeePost(post, Some(voter))(tx)
 
       tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
-      updateVoteCounts( post, tx)
+
+      // Don't delete — for now. Because that'd result in many emails
+      // getting sent, if someone toggles a Like on/off.  [toggle_like_email]
+      // Later: Soft delete the like?
+      // Maybe not delete if seen?  [nice_notfs] Annoying if one wants to find
+      // the post, and knows there was a notf but the notf is gone!
+      /*
+      tx.deleteAnyNotification(
+            NotificationToDelete.ToOneMember(
+                siteId = siteId, uniquePostId = post.id, toUserId = post.createdById,
+                notfType = NotificationType.OneLikeVote))
+              */
+
+      updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(newPageDao(pageId, tx).parts, tx)
       addUserStats(UserStats(post.createdById, numLikesReceived = -1, mayBeNegative = true))(tx)
       addUserStats(UserStats(voterId, numLikesGiven = -1, mayBeNegative = true))(tx)
@@ -2051,8 +2185,10 @@ trait PostsDao {
           user: $userIdData, vote type: $voteType""")
       }
       */
+
+      // Page version in db bumped by updatePageAndPostVoteCounts() above.
+      staleStuff.addPageId(pageId, memCacheOnly = true)
     }
-    refreshPageInMemCache(pageId)
   }
 
 
@@ -2060,7 +2196,7 @@ trait PostsDao {
         voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
 
-    readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       val page = newPageDao(pageId, tx)
       val voter = tx.loadTheParticipant(voterId)
       SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController.
@@ -2096,7 +2232,7 @@ trait PostsDao {
           // Upvoting a post shouldn't affect its ancestors, because they're on the
           // path to the interesting post so they are a bit useful/interesting. However
           // do mark all earlier siblings as read since they weren't upvoted (this time).
-          val ancestorNrs = page.parts.ancestorsOf(postNr).map(_.nr)
+          val ancestorNrs = page.parts.ancestorsParentFirstOf(postNr).map(_.nr)
           postNrsRead -- ancestorNrs.toSet
         }
         else {
@@ -2110,15 +2246,41 @@ trait PostsDao {
 
       tx.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
         readFromIp = voterIp)
-      updateVoteCounts(post, tx)
+      updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(page.parts, tx)
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(tx)
       addUserStats(UserStats(voterId, numLikesGiven = 1))(tx)
+
+      if (voterId != SystemUserId && voteType == PostVoteType.Like) {
+        val oldLikeNotfs = tx.loadNotificationsAboutPost(   // [toggle_like_email]
+              postId = post.id, NotificationType.OneLikeVote,
+              toPpId = Some(post.createdById))
+        if (oldLikeNotfs.nonEmpty) {
+          // For now: Don't send more Like notfs about this post — that might be
+          // too noisy? Later, add config values  [nice_notfs], e.g. get notified
+          // about the 2nd Like and then daily, then max weekly or monthly, maybe?
+          // Later:
+          // Gen a notf if the person being replied to (if any), likes this post.
+          // So that Like votes can work as a succinct "Thanks!" end of the discussion,
+          // without any noisy extra "Thanks" posts (just a Like vote + notf).
+        }
+        else {
+          tx.loadParticipant(post.createdById).getOrBugWarn("TyE306RKTD63") { pp =>
+            val notifications = notfGenerator(tx).generateForLikeVote(
+                  post, upvotedPostAuthor = pp, voter = voter,
+                  inCategoryId = page.meta.categoryId)
+            tx.saveDeleteNotifications(notifications)
+          }
+        }
+      }
+
+      // Page version in db updated by updatePageAndPostVoteCounts() above.
+      staleStuff.addPageId(pageId, memCacheOnly = true)
     }
-    refreshPageInMemCache(pageId)
   }
 
 
+  RENAME // all ... IfAuth to IfAuZ (if authorized)
   def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: UserId,
         browserIdData: BrowserIdData): (Post, JsValue) = {
 
@@ -2160,7 +2322,7 @@ trait PostsDao {
       // Don't create cycles.
       TESTS_MISSING // try to create a cycle?
       if (newParentPost.pageId == postToMove.pageId) {
-        val ancestorsOfNewParent = fromPage.parts.ancestorsOf(newParentPost.nr)
+        val ancestorsOfNewParent = fromPage.parts.ancestorsParentFirstOf(newParentPost.nr)
         if (ancestorsOfNewParent.exists(_.id == postToMove.id))
           throwForbidden("EsE7KCCL_", o"""Cannot move a post to after one of its descendants
               — doing that, would create a cycle""")
@@ -2272,7 +2434,8 @@ trait PostsDao {
 
       // Would be good to [save_post_lns_mentions], so wouldn't need to recompute here.
       val notfs = notfGenerator(tx).generateForNewPost(
-        toPage, postAfter, sourceAndHtml = None, anyReviewTask = None, skipMentions = true)
+            toPage, postAfter, sourceAndHtml = None,
+            anyNewModTask = None, skipMentions = true)
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 
       val patch = jsonMaker.makeStorePatch2(postAfter.id, toPage.id,
@@ -2651,7 +2814,7 @@ trait PostsDao {
   }
 
 
-  private def updateVoteCounts(post: Post, tx: SiteTransaction): Unit = {
+  private def updatePageAndPostVoteCounts(post: Post, tx: SiteTransaction): Unit = {
     dieIf(post.nr < PageParts.BodyNr, "TyE4WKAB02")
     val actions = tx.loadActionsDoneToPost(post.pageId, postNr = post.nr)
     val readStats = tx.loadPostsReadStats(post.pageId, Some(post.nr))

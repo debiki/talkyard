@@ -33,7 +33,11 @@ import scala.collection.mutable.ArrayBuffer
   *    So now there are two reasons to review it (but only one review task, so
   *    the staff will just review the post once).)
   */
-sealed abstract class ReviewReason(val IntVal: Int, val isOnPage: Boolean = true) {
+sealed abstract class ReviewReason(
+  val IntVal: Int,
+  val isOnPage: Boolean = true,
+  val isUnpopular: Boolean = false,
+) {
   def toInt = IntVal
 }
 
@@ -65,12 +69,12 @@ object ReviewReason {
   /** Edited long after creation — perhaps user added spam links, hopes no one will notice? */
   case object LateEdit extends ReviewReason(1 << 7)
 
-  case object PostFlagged extends ReviewReason(1 << 8)
+  case object PostFlagged extends ReviewReason(1 << 8, isUnpopular = true)
 
   /** If a post gets Unwanted votes or many Bury or Wrong, but few Likes. */
-  case object PostUnpopular extends ReviewReason(1 << 9)
+  case object PostUnpopular extends ReviewReason(1 << 9, isUnpopular = true)
 
-  case object PostIsSpam extends ReviewReason(1 << 10)
+  case object PostIsSpam extends ReviewReason(1 << 10, isUnpopular = true)
 
   case object UserCreated extends ReviewReason(1 << 20, isOnPage = false)
   case object UserNewAvatar extends ReviewReason(1 << 21, isOnPage = false)

@@ -40,6 +40,9 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.globals
   import context.security.SecureCookie
 
+  // Approving new mebmers:
+  // See   /-/edit-member   controllers.UserController.editMember
+
 
   def redirectToAdminPage(): Action[Unit] = GetAction { _ =>
     Redirect(routes.AdminController.viewAdminPage("").url)

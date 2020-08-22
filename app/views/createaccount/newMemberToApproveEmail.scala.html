@@ -1,0 +1,14 @@
+@(user: com.debiki.core.UserInclDetails, siteOrigin: String)
+
+<p class="e_NewMbrToApr">
+New member waiting for approval:
+<tt>@@@{user.usernameParensFullName}</tt>
+</p>
+
+<p>Go here to review and approve:
+</p>
+
+<p><a href="@siteOrigin/-/admin/users/waiting">@siteOrigin/-/admin/users/waiting</a></p>
+
+<p>Kind regards.</p>
+

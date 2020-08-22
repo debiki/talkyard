@@ -23,13 +23,15 @@ import org.apache.commons.validator.routines.EmailValidator
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
-import com.debiki.core.PageParts.BodyNr
 import play.api.libs.json.JsObject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 
 package object core {
+
+  def isDevOrTest: Boolean = Prelude.isDevOrTest
+  def isProd: Boolean = Prelude.isProd
 
   // "Vector" is so very long, for such a good & please-use-frequently collection.
   type Vec[+A] = scala.collection.immutable.Vector[A]
@@ -87,6 +89,8 @@ package object core {
 
   type NotificationId = Int
 
+  type ModDecision = ReviewDecision
+  type ModTask = ReviewTask // renaming
   type ReviewTaskId = Int
 
   type PermissionId = Int
@@ -360,6 +364,7 @@ package object core {
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
     def isGuest: Boolean = Participant.isGuestId(id)
+    def isSystem: Boolean = id == SystemUserId
   }
 
   object Who {
@@ -1215,6 +1220,7 @@ package object core {
   def AUDIT_LOG = ()      // Should add audit log entry
   def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // Something ought to be renamed.
+  def MOVE = ()
   def QUICK = ()          // Let's do now soon — won't take long.
   def OPTIMIZE = ()
   def SLOW_QUERY = ()

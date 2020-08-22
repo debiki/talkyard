@@ -138,6 +138,11 @@ export default function addApiChatTestSteps(variants: {
     site.settings.ssoUrl = ssoUrl;
     site.settings.enableSso = true;
 
+    // Temp fix this test: Don't create mod tasks, later when member starts
+    // posting via Ty's interface, instead of via the API. [aprd_posts_wo_mod_tasks]
+    site.settings.numFirstPostsToReview = 0;
+    site.settings.numFirstPostsToApprove = 0;
+
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
     server.skipRateLimits(siteId);
@@ -307,10 +312,11 @@ export default function addApiChatTestSteps(variants: {
 
   let prevNumEmailsSent = 0;
 
-  it("But no one else", () => {
+  it("But no one else  (and 1 email sent in total)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.eq(num, prevNumEmailsSent + 1, `Emails sent to: ${addrsByTimeAsc}`);
     prevNumEmailsSent = num;
+    assert.eq(num, 1);  // ttt
   });
 
 
@@ -339,10 +345,11 @@ export default function addApiChatTestSteps(variants: {
     lad.logMessage(`Chuma's notification link: ${chumasNotfLink}`);
   });
 
-  it("But no one else", () => {
+  it("But no one else  (2 emails sent in total)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.eq(num, prevNumEmailsSent + 1, `Emails sent to: ${addrsByTimeAsc}`);
     prevNumEmailsSent = num;
+    assert.eq(num, 2);  // ttt
   });
 
 
@@ -378,10 +385,11 @@ export default function addApiChatTestSteps(variants: {
     lad.logMessage(`Charlies's notification link: ${charliesNotfLink}`);
   });
 
-  it("But no one else gets notified", () => {
+  it("But no one else gets notified  (and 3 emails sent in total)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.eq(num, prevNumEmailsSent + 1, `Emails sent to: ${addrsByTimeAsc}`);
     prevNumEmailsSent = num;
+    assert.eq(num, 3);  // ttt
   });
 
 
@@ -447,6 +455,12 @@ export default function addApiChatTestSteps(variants: {
   // ----- The upserted page works: Can post replies via Ty's interface, not only API
 
   it("Charlie posts a message", () => {
+    // Should this generate a mod task?  [aprd_posts_wo_mod_tasks]
+    // Charlie has gotten his previous messages inserted via the API, no approval
+    // required. But now he posts via Ty's interface — probably this then should *not*
+    // generate any mod task?
+    // But if  numFirstPostsToReview >= 1,  a mod task email notf would get sent to Owen.
+
     charliesBrowser.chat.addChatMessage(
         `This works fine, like ducks digging for bucks to buy daisies`);
   });
@@ -457,10 +471,11 @@ export default function addApiChatTestSteps(variants: {
         [chumaExtUser.username, 'ducks digging for bucks'], browserA);
   });
 
-  it("But no one else", () => {
+  it("But no one else  (4 emails sent in total)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.eq(num, prevNumEmailsSent + 1, `Emails sent to: ${addrsByTimeAsc}`);
     prevNumEmailsSent = num;
+    assert.eq(num, 4);  // ttt
   });
 
 }

@@ -110,6 +110,9 @@ object EmailType {
   case object SiteCreatedSuperAdminNotf extends EmailType(41)
   case object HelpExchangeReminder extends EmailType(31)  // [plugin]? Change to 101? but db constraints
 
+  case object NewMemberToApprove extends EmailType(51)
+  case object YourAccountApproved extends EmailType(52)
+
   def fromInt(value: Int): Option[EmailType] = Some(value match {
     case Notification.IntVal      => Notification
     case ActivitySummary.IntVal   => ActivitySummary

@@ -229,6 +229,7 @@ export const PostActions = createComponent({
     const post: Post = this.props.post;
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
+    const isThisPageDeleted = !!page.pageDeletedAtMs;  // ignore deleted categories
     const isQuestion = page.pageRole === PageRole.Question;
     // (Some dupl code, see Title above and isDone() and isAnswered() in forum.ts [4KEPW2]
     const isAnswered = isQuestion && page.pageAnsweredAtMs;
@@ -440,6 +441,44 @@ export const PostActions = createComponent({
       r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: linkToReviewPage(),
         target: '_blank' }, t.pa.Admin));
 
+    // Instead of this test, should be a post.approvedStatus field. [ApprovedStatus]
+    // And `post.isApproved` below will then be: `post.approvedStatus === PendingApproval`.
+    const isOrigPostAndPageDeleted = post.nr === BodyNr && isThisPageDeleted;
+    // BUG  if deleting page —> mod task completed, then undeleting —>   [undel_posts]
+    //   now  post.isApproved is false (was rejected),  mod task done,
+    //   but mod buttons still visible :-(
+    let approveOrDeleteBtns;  // [in_pg_apr]
+    if (!deletedOrCollapsed && !post.isApproved && isStaff(me)
+          && !isOrigPostAndPageDeleted) {
+      const ModBtn = (decision: ReviewDecision, title: S, clazz: S) => {
+        return Button({ className: 's_PA_ModB ' + clazz, onClick: () => {
+          util.openDefaultStupidDialog({
+            body: title + '?',
+            primaryButtonTitle: t.YesDoThat,
+            secondaryButonTitle: t.Cancel,
+            small: true,
+            onPrimaryClick: () => {
+              // COULD create a ReactActions fn instead that does this:
+              Server.moderatePostOnPage(post, decision, (storePatch: StorePatch) => {
+                ReactActions.patchTheStore(storePatch, () => {
+                  scrollAndFlashPostNr(post.nr);
+                });
+              });
+            },
+          });
+        } }, title);
+      }
+      const spacePage = post.nr === BodyNr ? " page" : '';
+      approveOrDeleteBtns =
+          rFragment({},
+            // English is fine — this is for staff. 0I18N.
+            ModBtn(ReviewDecision.Accept,
+                  "Appprove" + spacePage, 's_PA_ModB-Apr'),
+            ModBtn(ReviewDecision.DeletePostOrPage,
+                  // (Need not repeate the word "page" here.)
+                  "Reject and delete", 's_PA_ModB-Rej'));
+    }
+
     return (
       r.div({ className: 'dw-p-as dw-as esPA', onClick: this.props.onClick },
         replyButton,
@@ -456,7 +495,8 @@ export const PostActions = createComponent({
         numLikesText,
         numUnwantedsText,
         acceptAnswerButton,
-        tagList));
+        tagList,
+        approveOrDeleteBtns));
   }
 });
 
@@ -809,7 +849,8 @@ const MoreDropdownModal = createComponent({
 
     // ----- Tags
 
-    if ((isStaff(me) || isOwnPost) && !store.isEmbedded && settings.enableTags !== false) {
+    if ((isStaff(me) || isOwnPost) && !store.isEmbedded && settings.enableTags !== false
+          && !isPostDeleted) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-plus', onClick: this.openTagsDialog, key: 'ts' },
           t.pa.AddTags));
@@ -831,7 +872,8 @@ const MoreDropdownModal = createComponent({
 
     // Wikified posts no longer looks good, because of the avatar icon to the left.
     // Only the orig post looks ok, therefore: `isPageBody &&`.
-    if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat && isForumSite) {
+    if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat && isForumSite
+          && !isPostDeleted) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users s_PA_WkB', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? t.pa.UnWikify : t.pa.Wikify));
@@ -841,7 +883,7 @@ const MoreDropdownModal = createComponent({
 
     // UX BUG Currently doesn't work in iframes — because the copy-link dialog copies addresses  [6JKD2A]
     // with the embedding site's origin, and when pasting the link, that'll be the wrong origin.
-    if (!isPageBody && isStaff(me) && !store.isEmbedded) {
+    if (!isPageBody && isStaff(me) && !store.isEmbedded && !isPostDeleted) {
       moreLinks.push(
         r.a({ className: 'dw-a s_PA_MvB icon-paper-plane-empty', onClick: this.onMoveClick, key: 'mp' },
           t.Move));
@@ -859,12 +901,13 @@ const MoreDropdownModal = createComponent({
 
     // ----- Mind map branch sideways
 
-    if (!isPageBody && isMindMap && (isStaff(me) || isOwnPost)) {
+    /* Mind mapst disabled [2D_LAYOUT]
+    if (!isPageBody && isMindMap && (isStaff(me) || isOwnPost)) {   && !isPostDeleted
       let sidewaysTitle = post.branchSideways ? "Don't branch sideways" : "→ Branch sideways";
       moreLinks.push(
         r.a({ className: 'dw-a', onClick: this.toggleBranchSideways, key: 'bs' },
           sidewaysTitle));
-    }
+    } */
 
     return moreLinks;
   },

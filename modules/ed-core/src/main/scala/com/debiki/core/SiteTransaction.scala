@@ -73,14 +73,14 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def updateCategoryMarkSectionPageStale(category: Category): Unit
   def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId]
 
-  def loadPost(uniquePostId: PostId): Option[Post]
-  def loadThePost(uniquePostId: PostId): Post =
+  def loadPost(uniquePostId: PostId): Option[Post]   ; RENAME; QUICK // to loadPostById
+  def loadThePost(uniquePostId: PostId): Post =     // RENAME; QUICK // to loadPostById
     loadPost(uniquePostId).getOrElse(throw PostNotFoundByIdException(uniquePostId))
 
-  def loadPost(which: PagePostNr): Option[Post] = loadPost(which.pageId, which.postNr)
-  def loadPost(pageId: PageId, postNr: PostNr): Option[Post]
-  def loadThePost(which: PagePostNr): Post = loadThePost(which.pageId, which.postNr)
-  def loadThePost(pageId: PageId, postNr: PostNr): Post =
+  def loadPost(which: PagePostNr): Option[Post] = loadPost(which.pageId, which.postNr) ; RENAME; QUICK // to loadPostByNr
+  def loadPost(pageId: PageId, postNr: PostNr): Option[Post]                           ; RENAME; QUICK // to loadPostByNr
+  def loadThePost(which: PagePostNr): Post = loadThePost(which.pageId, which.postNr)   ; RENAME; QUICK // to loadThePostByNr
+  def loadThePost(pageId: PageId, postNr: PostNr): Post =                             // RENAME; QUICK // to loadThePostByNr
     loadPost(pageId, postNr).getOrElse(throw PostNotFoundException(pageId, postNr))
 
   /** Also see: [[loadTitlesPreferApproved()]]  */
@@ -95,20 +95,15 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     loadPostsByNrs(Seq(PagePostNr(pageId, PageParts.BodyNr))).headOption
 
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
-  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
-  def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
-  def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
+  def loadPostsOnPage(pageId: PageId): immutable.Seq[Post]
+  def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
+  def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]     ; RENAME; QUICK // to loadPostsByIds
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
 
   def loadAllPosts(): immutable.Seq[Post]
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
   def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
-
-  /*
-  def loadPosts(authorId: Option[UserId], includeTitles: Boolean, includeChatMessages: Boolean,
-        limit: Int, orderBy: OrderBy, onPageId: Option[PageId] = None, onlyUnapproved: Boolean = false): immutable.Seq[Post]
-        */
 
   /** Loads the most Like voted posts, per page.
     * (Excluding posts with Unwanted votes or pending flags, and collapsed/hidden/deleted posts.)
@@ -122,6 +117,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   // Later all these params can be a ListPostsQuery instead.
   // Also, these params:  includeDeleted,  includeHidden.
+  //    includeChatMessages: Boolean,  onlyUnapproved: Boolean,
+  //    onPageId: Option[PageId]
   def loadPostsByQuery(limit: Int, orderBy: OrderBy, byUserId: Option[UserId],
         includeTitlePosts: Boolean, inclUnapprovedPosts: Boolean,
         inclUnlistedPagePosts_unimpl: Boolean): immutable.Seq[Post]
@@ -642,6 +639,10 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def nextNotificationId(): NotificationId
   def saveDeleteNotifications(notifications: Notifications): Unit
+  def deleteAnyNotification(toDelete: NotificationToDelete): Unit = {
+    saveDeleteNotifications(Notifications(toDelete = immutable.Seq(toDelete)))
+  }
+
   def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit
 
   /** To mark all as seen, use notfId None. */
@@ -654,7 +655,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadNotificationsToShowInMyMenu(roleId: RoleId, limit: Int, unseenFirst: Boolean,
     skipDeleted: Boolean, upToWhen: Option[ju.Date] = None): Seq[Notification]
 
-  def loadNotificationsAboutPost(postId: PostId, notfType: NotificationType): Seq[Notification]
+  def loadNotificationsAboutPost(postId: PostId, notfType: NotificationType,
+        toPpId: Option[UserId] = None): Seq[Notification]
   def listUsersNotifiedAboutPost(postId: PostId): Set[UserId]
   /** Useful when writing tests. */
   def countNotificationsPerUser(): Map[UserId, Int]

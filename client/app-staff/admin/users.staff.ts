@@ -17,7 +17,6 @@
 
 /// <reference path="../../../node_modules/moment/moment.d.ts" />
 /// <reference path="../staff-prelude.staff.ts" />
-/// <reference path="review-posts.staff.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.admin {

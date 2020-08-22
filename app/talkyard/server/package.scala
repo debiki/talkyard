@@ -7,6 +7,7 @@ package object server {
 
   val ProdConfFilePath = "/opt/talkyard/conf/play-framework.conf"
 
+  def isDevOrTest: Boolean = Globals.isDevOrTest
 
   // "tysvapp":  "ty" = Talkyard, "sv" = server, "app" = application.
   // (Later, more logging?:  tysvweb = web server logs,
@@ -19,18 +20,19 @@ package object server {
     protected val logger: play.api.Logger = newLogger(getClass)
 
     protected def bugWarnIf(condition: Boolean, errorCode: String,
-          problem: => String = "") {
+          problem: => String = ""): Boolean = {
       bugWarnDieIfThen(condition, errorCode, problem, thenDo = null)
     }
 
     protected def bugWarnDieIfThen(condition: Boolean, errorCode: String,
-          problem: => String = "", thenDo: () => Unit) {
+          problem: => String = "", thenDo: () => Unit): Boolean = {
       if (!condition)
-        return
+        return false
       bugWarn(errorCode, problem)
       if (thenDo ne null) {
         thenDo()
       }
+      true
     }
 
     protected def bugWarn(errorCode: String, problem: => String = "") {
@@ -39,6 +41,16 @@ package object server {
       logger.warn(s"BUG: $message")
     }
 
+
+    implicit class GetOrBugWarn[V](val underlying: Option[V]) {
+      def getOrBugWarn(errorCode: String, message: => String = "")(block: V => Unit): Unit =
+        underlying match {
+          case None =>
+            bugWarn(errorCode, message)
+          case Some(value: V) =>
+            block(value)
+        }
+    }
   }
 
 

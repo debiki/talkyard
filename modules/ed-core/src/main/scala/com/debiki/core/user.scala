@@ -744,17 +744,14 @@ case class User(
 
   def primaryEmailAddress: String = email
 
+  def canReceiveEmail: Boolean =  // dupl (603RU430)
+    primaryEmailAddress.nonEmpty && emailVerifiedAt.isDefined
+
   override def anyName: Option[String] = fullName
   override def anyUsername: Option[String] = username
   def username: Option[String] = Some(theUsername)
   def usernameOrGuestName: String = theUsername
   def usernameHashId: String = s"@$username#$id"
-  def nameOrUsername: String = fullName getOrElse theUsername
-
-  def usernameParensFullName: String = fullName match {
-    case Some(name) => s"$theUsername ($name)"
-    case None => theUsername
-  }
 
   def nameAndUsername: NameAndUsername =
     NameAndUsername(id = id, fullName = fullName.getOrElse(""), username = theUsername)
@@ -785,8 +782,16 @@ case class User(
 
 
 trait MemberMaybeDetails {
+  def theUsername: String
+  def fullName: Option[String]
   def usernameHashId: String
   def primaryEmailAddress: String
+  def nameOrUsername: String = fullName getOrElse theUsername
+
+  def usernameParensFullName: String = fullName match {
+    case Some(name) => s"$theUsername ($name)"
+    case None => theUsername
+  }
 }
 
 
@@ -1004,6 +1009,7 @@ case class UserInclDetails( // ok for export
     isStaff || (
       effectiveTrustLevel.toInt >= trustLevel.toInt && !effectiveThreatLevel.isThreat)
 
+  def theUsername: String = username
   def usernameLowercase: String = username.toLowerCase
   //def canonicalUsername: String = User.makeUsernameCanonical(username)  // [CANONUN]
 
@@ -1012,6 +1018,9 @@ case class UserInclDetails( // ok for export
 
   def extIdAsRef: Option[ParsedRef.ExternalId] = extId.map(ParsedRef.ExternalId)
   def ssoIdAsRef: Option[ParsedRef.SingleSignOnId] = ssoId.map(ParsedRef.SingleSignOnId)
+
+  def canReceiveEmail: Boolean =  // dupl (603RU430)
+    primaryEmailAddress.nonEmpty && emailVerifiedAt.isDefined
 
   def primaryEmailInfo: Option[UserEmailAddress] =
     if (primaryEmailAddress.isEmpty) None
@@ -1306,6 +1315,8 @@ case class Group( // [exp] missing: createdAt, add to MemberInclDetails & Partic
   uiPrefs.flatMap(anyWeirdJsObjField) foreach { problemMessage =>
     die("TyE2AKBS05", s"Group with weird uiPrefs JSON field: $problemMessage")
   }
+
+  def fullName: Option[String] = name
 
   def email: String = ""
   def passwordHash: Option[String] = None

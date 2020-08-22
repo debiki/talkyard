@@ -558,7 +558,7 @@ class PubSubActor(val globals: Globals) extends Actor {
 
     val notfsToSend = message.notifications.toCreate filter { notf =>
       // Don't send review task notifications — they're sent via email only, currently.
-      // UX COULD send an updated num-pending-review-tasks counter, though?
+      // UX COULD send an updated num-pending-review-tasks counter, though? [306DRTL3]
       !notf.tyype.isAboutReviewTask && isWebSocketConnected(message.siteId, notf.toUserId)
     }
 

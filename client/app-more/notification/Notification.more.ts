@@ -27,23 +27,44 @@ const r = ReactDOMFactories;
 
 export const Notification = createComponent({
   render: function() {
-    var notf: Notification = this.props.notification;
-    var byUser = notf.byUser;
-    var byName = byUser.username || byUser.fullName;
-    var textContent = '';
-    var iconClass = '';
-    var toMeClass = ' esNotf-toMe';
-    var seenClass = notf.seen ? ' esNotf-seen' : '';
+    const notf: Notification = this.props.notification;
+    const byUser = notf.byUser;
+    const byName = byUser.username || byUser.fullName;
+    let textContent = '';
+    let iconClass = '';
+    let toMeClass = ' esNotf-toMe';
+    const seenClass = notf.seen ? ' esNotf-seen' : '';
     switch (notf.type) {
-      case NotificationType.DirectReply: iconClass = 'icon-reply'; break;
-      case NotificationType.Mention: iconClass = 'icon-char'; textContent = '@'; break;
-      case NotificationType.Message: iconClass = 'icon-mail-empty'; break;
-      case NotificationType.NewPost: iconClass = 'icon-comment-empty'; toMeClass = ''; break;
-      case NotificationType.PostTagged: iconClass = 'icon-tag'; toMeClass = ''; break;
-      default: die("Unknown notification type [EsE4GUF2]")
+      case NotificationType.DirectReply:
+        iconClass = 'icon-reply';
+        break;
+      case NotificationType.IndirectReply:
+        iconClass = 'icon-reply';
+        toMeClass += ' s_Nf-2Me-Indr';
+        break;
+      case NotificationType.Mention:
+        iconClass = 'icon-char';
+        textContent = '@';
+        break;
+      case NotificationType.Message:
+        iconClass = 'icon-mail-empty';
+        break;
+      case NotificationType.NewPost:
+        iconClass = 'icon-comment-empty';
+        toMeClass = '';
+        break;
+      case NotificationType.PostTagged:
+        iconClass = 'icon-tag';
+        toMeClass = '';
+        break;
+      case NotificationType.OneLikeVote:
+        iconClass = 'icon-heart';
+        break;
+      default:
+        die("Unknown notification type [EsE4GUF2]")
     }
-    var when;
-    var verboseClass = '';
+    let when;
+    let verboseClass = '';
     if (this.props.verbose) {
       when = r.span({}, " — " + moment(notf.createdAtMs).fromNow());
       verboseClass = ' esNotf-vrbs';

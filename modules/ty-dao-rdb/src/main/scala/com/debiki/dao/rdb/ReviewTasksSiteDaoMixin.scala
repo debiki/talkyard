@@ -44,49 +44,6 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
 
 
   override def upsertReviewTask(reviewTask: ReviewTask) {
-    CLEAN_UP // now with Postgres >= 9.5, use its built-in upsert.
-    val updateStatement = """
-      update review_tasks3 set
-        reasons = ?,
-        created_by_id = ?,
-        created_at = ?,
-        created_at_rev_nr = ?,
-        more_reasons_at = ?,
-        completed_at = ?,
-        decided_at_rev_nr = ?,
-        decided_by_id = ?,
-        invalidated_at = ?,
-        decided_at = ?,
-        decision = ?,
-        user_id = ?,
-        page_id = ?,
-        post_id = ?,
-        post_nr = ?
-      where site_id = ? and id = ?
-      """
-    val updateValues = List[AnyRef](
-      ReviewReason.toLong(reviewTask.reasons).asAnyRef,
-      reviewTask.createdById.asAnyRef,
-      reviewTask.createdAt,
-      reviewTask.createdAtRevNr.orNullInt,
-      reviewTask.moreReasonsAt.orNullTimestamp,
-      reviewTask.completedAt.orNullTimestamp,
-      reviewTask.decidedAtRevNr.orNullInt,
-      reviewTask.decidedById.orNullInt,
-      reviewTask.invalidatedAt.orNullTimestamp,
-      reviewTask.decidedAt.orNullTimestamp,
-      reviewTask.decision.map(_.toInt).orNullInt,
-      reviewTask.maybeBadUserId.asAnyRef,
-      reviewTask.pageId.orNullVarchar,
-      reviewTask.postId.orNullInt,
-      reviewTask.postNr.orNullInt,
-      siteId.asAnyRef,
-      reviewTask.id.asAnyRef)
-
-    val found = runUpdateSingleRow(updateStatement, updateValues)
-    if (found)
-      return
-
     val statement = """
       insert into review_tasks3(
         site_id,
@@ -107,7 +64,23 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         post_id,
         post_nr)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      """
+      on conflict (site_id, id) do update set
+        reasons = excluded.reasons,
+        created_by_id = excluded.created_by_id,
+        created_at = excluded.created_at,
+        created_at_rev_nr = excluded.created_at_rev_nr,
+        more_reasons_at = excluded.more_reasons_at,
+        completed_at = excluded.completed_at,
+        decided_at_rev_nr = excluded.decided_at_rev_nr,
+        decided_by_id = excluded.decided_by_id,
+        invalidated_at = excluded.invalidated_at,
+        decided_at = excluded.decided_at,
+        decision = excluded.decision,
+        user_id = excluded.user_id,
+        page_id = excluded.page_id,
+        post_id = excluded.post_id,
+        post_nr = excluded.post_nr  """
+
     val values = List[AnyRef](
       siteId.asAnyRef,
       reviewTask.id.asAnyRef,
@@ -126,6 +99,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
       reviewTask.pageId.orNullVarchar,
       reviewTask.postId.orNullInt,
       reviewTask.postNr.orNullInt)
+
     runUpdateSingleRow(statement, values)
   }
 

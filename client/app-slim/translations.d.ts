@@ -492,7 +492,10 @@ interface TalkyardTranslations {
     PostDeld: string;
     DiscDeld: string;
     PageDeld: string;
+    PagePendAppr?: string;
+    // If only the title edited:
     TitlePendAppr: string;
+    // If the page body, not title, edited:
     TextPendingApproval: string;
 
     TooltipQuestClosedNoAnsw: string;
@@ -542,8 +545,9 @@ interface TalkyardTranslations {
     ManyDisagree: string;
     SomeDisagree: string;
 
-    CmtPendAppr: string;
-    CmtBelowPendAppr: (isYour) => string;
+    PendAppr?: string;    // <— use just this
+    CmtPendAppr: string;  // REMOVE
+    CmtBelowPendAppr: (isYour) => string;  // REMOVE
 
     _and: string;
 

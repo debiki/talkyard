@@ -105,8 +105,10 @@ trait ForumDao {
             PageType.Forum, PageStatus.Published, anyCategoryId = Some(rootCategoryId),
             anyFolder = Some(options.folder), anySlug = Some(""), showId = false,
             title = titleSourceAndHtml, body = introText,
-            byWho = byWho, spamRelReqStuff = None, tx = tx, staleStuff = staleStuff,
-            layout = Some(options.topicListStyle))._1
+            byWho = byWho, spamRelReqStuff = None,
+            layout = Some(options.topicListStyle),
+            // We generate a notf below about this whole new sub forum instead.
+            skipNotfsAndAuditLog = true)(tx, staleStuff)._1
 
       val forumPageId = forumPagePath.pageId
 
@@ -152,6 +154,14 @@ trait ForumDao {
         else None
 
       settings.foreach(tx.upsertSiteSettings)
+
+      // [subcomms] generate notfs to other staff / admins, when
+      // sub sites / sub forums created?
+      // if (!skipNotfsAndAuditLog) {
+        AUDIT_LOG
+        COULD // notify other staff? admins? who wants to know about new cats?
+        //val notfs = notfGenerator(tx).generateForNew Forum ( ...)   [nice_notfs]
+      // }
 
       completeResult
     }
@@ -393,7 +403,7 @@ trait ForumDao {
       pinWhere = Some(PinPageWhere.Globally),
       bySystem,
       spamRelReqStuff = None,
-      tx, staleStuff)
+      skipNotfsAndAuditLog = true)(tx, staleStuff)
 
     if (options.createSampleTopics) {
       def wrap(text: String) =
@@ -411,20 +421,20 @@ trait ForumDao {
         pinWhere = None,
         bySystem,
         spamRelReqStuff = None,
-        tx, staleStuff)._1
+        skipNotfsAndAuditLog = true)(tx, staleStuff)._1
       // ... with a brief discussion.
       insertReplyImpl(wrap(SampleDiscussionReplyOne),
             discussionPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
       insertReplyImpl(wrap(SampleDiscussionReplyTwo),
             discussionPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
       insertReplyImpl(wrap(SampleDiscussionReplyThree),
             discussionPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr + 1),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
 
       /*
       // Create sample problem. — maybe it's enough, with a sample Idea.
@@ -451,28 +461,28 @@ trait ForumDao {
         pinWhere = None,
         bySystem,
         spamRelReqStuff = None,
-        tx, staleStuff)._1
+        skipNotfsAndAuditLog = true)(tx, staleStuff)._1
       // ... with some sample Discussion and Progress replies.
       insertReplyImpl(wrap(SampleIdeaDiscussionReplyOne),
             ideaPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
       insertReplyImpl(wrap(SampleIdeaDiscussionReplyTwo),
             ideaPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
       insertReplyImpl(wrap(SampleIdeaDiscussionReplyThree),
             ideaPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr + 1),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
       insertReplyImpl(wrap(SampleIdeaProgressReplyOne),
             ideaPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr),
             PostType.BottomComment, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
       insertReplyImpl(wrap(SampleIdeaProgressReplyTwo),
             ideaPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr),
             PostType.BottomComment, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
 
       // Create sample question.
       val questionPagePath = createPageImpl(
@@ -485,20 +495,20 @@ trait ForumDao {
         pinWhere = None,
         bySystem,
         spamRelReqStuff = None,
-        tx, staleStuff)._1
+        skipNotfsAndAuditLog = true)(tx, staleStuff)._1
       // ... with two answers and a comment:
       insertReplyImpl(wrap(SampleAnswerText),
             questionPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
       insertReplyImpl(wrap(SampleAnswerCommentText),
             questionPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
       insertReplyImpl(wrap(SampleAnswerText2),
             questionPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr),
             PostType.Normal, bySystem, SystemSpamStuff, globals.now(), SystemUserId,
-            tx, staleStuff, skipNotifications = true)
+            tx, staleStuff, skipNotfsAndAuditLog = true)
     }
 
     // Create staff chat.
@@ -514,7 +524,7 @@ trait ForumDao {
       pinWhere = None,
       bySystem,
       spamRelReqStuff = None,
-      tx, staleStuff)
+      skipNotfsAndAuditLog = true)(tx, staleStuff)
 
     CreateForumResult(null, rootCategoryId = rootCategoryId,
           defaultCategoryId = defaultCategoryId, staffCategoryId = staffCategoryId)

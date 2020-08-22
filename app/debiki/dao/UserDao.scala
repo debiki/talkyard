@@ -176,30 +176,52 @@ trait UserDao {
   }
 
 
-  def editUser(memberId: UserId, doWhat: EditUserAction, byWho: Who): Unit = {
+  def editUserIfAuZ(memberId: UserId, doWhat: EditUserAction, byWho: Who): Unit = {
     // E2e tested here: [5RBKWEF8]
     val now = globals.now()
+    val emailsToSend = ArrayBuffer[Email]()
 
-    readWriteTransaction { tx =>
+    writeTx { (tx, _) =>
       val byMember = tx.loadTheUser(byWho.id)
       val memberBefore = tx.loadTheUserInclDetails(memberId)
 
+      throwForbiddenIf(!byMember.isStaff,
+            "TyENSTFF5026", "Only staff can do this")
+
       throwForbiddenIf(memberBefore.isAdmin && !byMember.isAdmin,
-        "TyENADM0246", "Non-admins cannot reconfigure admins")
+            "TyENADM0246", "Non-admins cannot reconfigure admins")
 
       val memberAfter = copyEditUser(memberBefore, doWhat, byMember, now) getOrIfBad { errorMessage =>
         throwForbidden("TyE4KBRW2", errorMessage)
       }
 
+      lazy val (site, siteOrigin, siteHostname) = theSiteOriginHostname(tx)
+
       // Sometimes need to do some more things. [2BRUI8]
+      import EditUserAction._
       doWhat match {
-        case EditUserAction.SetEmailVerified | EditUserAction.SetEmailUnverified =>
+        case SetEmailVerified | SetEmailUnverified =>
           val userEmailAddrs = tx.loadUserEmailAddresses(memberId)
           val addr = userEmailAddrs.find(_.emailAddress == memberBefore.primaryEmailAddress) getOrDie(
               "TyE2FKJ6W", s"s$siteId: No primary email addr, user id $memberId")
           val addrUpdated = addr.copy(
             verifiedAt = if (doWhat == EditUserAction.SetEmailVerified) Some(now) else None)
           tx.updateUserEmailAddress(addrUpdated)
+
+        case SetApproved if memberAfter.canReceiveEmail =>
+          // Just send an email — no need to create any notification and show in the
+          // new member's notification list, right.  TyTE2E05WKF2
+          emailsToSend.append(Email(
+                EmailType.YourAccountApproved,
+                createdAt = tx.now,
+                sendTo = memberAfter.primaryEmailAddress,
+                toUserId = Some(memberAfter.id),
+                subject = s"[$siteHostname] Account approved",
+                bodyHtmlText = (_) => views.html.createaccount.accountApprovedEmail(
+                      memberAfter,
+                      siteHostname = siteHostname,
+                      siteOrigin = siteOrigin).body))
+
         case _ =>
           // Noop.
       }
@@ -217,6 +239,8 @@ trait UserDao {
       tx.updateUserInclDetails(memberAfter)
       //tx.insertAuditLogEntry(auditLogEntry)
     }
+
+    globals.sendEmails(emailsToSend, siteId)
 
     // Later: If is-admin/moderator is visible somehow next to the user's name/avatar, then need to
     // uncache pages where hens name appears (if admin/moderator status got changed). [5KSIQ24]
@@ -1501,7 +1525,11 @@ trait UserDao {
 
   REFACTOR; CLEAN_UP // Delete, break out fn instead. [4KDPREU2]
   def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date): Unit = {
-    readWriteTransaction { tx =>
+    // This is a new member henself verifying hens own email address.
+    // We'll notify staff, if they now need to approve hens account.
+    val emailsToSend = ArrayBuffer[Email]()
+
+    writeTx { (tx, staleStuff) =>
       var user = tx.loadTheUserInclDetails(userId)
       user = user.copy(emailVerifiedAt = Some(verifiedAt))
       val userEmailAddress = user.primaryEmailInfo getOrDie "EdE4JKA2S"
@@ -1510,8 +1538,30 @@ trait UserDao {
       tx.updateUserEmailAddress(userEmailAddress)
       // Now, when email verified, perhaps time to start sending summary emails.
       tx.reconsiderSendingSummaryEmailsTo(user.id)
+
+      // Notify staff if this new member now is waiting for approval. TyTE2E502AHL4
+      COULD // add individual prefs about these notfs.  [notf_schedule][snooze_schedule]
+      // Need not notify *all* staff members — maybe just one or two. [nice_notfs]
+      val settings = getWholeSiteSettings(Some(tx))
+      if (settings.userMustBeApproved) {
+        val (site, siteOrigin, siteHostname) = theSiteOriginHostname(tx)
+        val allAdmins = tx.loadAdmins()
+        allAdmins.filter(_.canReceiveEmail) foreach { admin =>
+          emailsToSend.append(Email(
+                EmailType.NewMemberToApprove,
+                createdAt = tx.now,
+                sendTo = admin.primaryEmailAddress,
+                toUserId = Some(admin.id),
+                subject = s"[$siteHostname] New member to approve",
+                bodyHtmlText = (_) => views.html.createaccount.newMemberToApproveEmail(
+                    user, siteOrigin = siteOrigin).body))
+        }
+      }
+
+      staleStuff.addParticipantId(userId, memCacheOnly = true)
     }
-    removeUserFromMemCache(userId)
+
+    globals.sendEmails(emailsToSend, siteId)
   }
 
 

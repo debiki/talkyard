@@ -77,6 +77,7 @@ object Globals extends TyLogging {
 
   val CreateSiteHostnameConfValName = "talkyard.createSiteHostname"
 
+  CLEAN_UP; REMOVE //  Now placed in  core  instead -------
   def isProd: Boolean = _isProd
 
   def isDevOrTest: Boolean = !isProd
@@ -88,10 +89,13 @@ object Globals extends TyLogging {
   def setIsProdForever(isIt: Boolean): Unit = {
     dieIf(hasSet && isIt != _isProd, "EdE2PWVU07")
     _isProd = isIt
+    hasSet = true
+    com.debiki.core.Prelude.setIsProdForever(isIt)
   }
 
   private var _isProd = true
   private var hasSet = false
+  // ------------------------------------------------------
 }
 
 
@@ -300,6 +304,13 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
   def sendEmail(email: Email, siteId: SiteId): Unit = {
     state.mailerActorRef ! (email, siteId)
+  }
+
+  def sendEmails(emails: Iterable[Email], siteId: SiteId): Unit = {
+    COULD_OPTIMIZE // send just one message with all emails to send.
+    emails foreach { email =>
+      sendEmail(email, siteId)
+    }
   }
 
   def endToEndTestMailer: ActorRef = state.mailerActorRef
@@ -623,6 +634,12 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   def originOfSiteId(siteId: SiteId): Option[String] =
     systemDao.getSiteById(siteId).flatMap(_.canonicalHostname.map(originOf))
 
+  def theHostnameOf(site: Site): String =
+    site.canonicalHostnameStr getOrElse siteByPubIdHostnamePort(site.pubId)
+
+  def theOriginOf(site: Site): String =
+    originOf(site) getOrElse siteByPubIdOrigin(site.pubId)
+
   def originOf(site: Site): Option[String] = site.canonicalHostname.map(originOf)
   def originOf(host: Hostname): String = originOf(host.hostname)
   def originOf(hostOrHostname: String): String = {
@@ -658,11 +675,20 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
   def SiteByIdHostnamePrefix = "site-"
 
-  def siteByIdOrigin(siteId: SiteId): String =
-    s"$scheme://${siteByIdHostname(siteId)}"
+  def siteByPubIdOrigin(pubId: PubSiteId): String =
+    s"$scheme://${siteByPubIdHostnamePort(pubId)}"
 
-  def siteByIdHostname(siteId: SiteId): String =
+  def siteByIdOrigin(siteId: SiteId): String =
+    s"$scheme://${siteByIdHostnamePort(siteId)}"
+
+  // [Scala_3]  can replace the two below with just one:  `siteId: SiteId | PubSiteId`.
+  // And the two ...By..Origin above too.
+
+  def siteByIdHostnamePort(siteId: SiteId): String =
     s"$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
+
+  def siteByPubIdHostnamePort(pubId: PubSiteId): String =
+    s"$SiteByIdHostnamePrefix$pubId.$baseDomainWithPort"
 
 
   def pubSub: PubSubApi = state.pubSub

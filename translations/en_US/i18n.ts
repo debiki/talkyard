@@ -520,6 +520,7 @@ var t_en_US: TalkyardTranslations = t = {
     PostDeld: "Post deleted",
     DiscDeld: "Discussion deleted",
     PageDeld: "Page deleted",
+    PagePendAppr: "Page pending approval",
     TitlePendAppr: "Title pending approval",
     TextPendingApproval: "Text pending approval",
 
@@ -565,7 +566,8 @@ var t_en_US: TalkyardTranslations = t = {
     ManyDisagree: "Many disagree with this:",
     SomeDisagree: "Some disagree with this:",
 
-    CmtPendAppr: "Comment pending approval, posted ",
+    PendAppr: "Pending approval",
+    CmtPendAppr: "Comment pending approval, posted ",  // REMOVE  too complicated
     CmtBelowPendAppr: (isYour) => (isYour ? "Your" : "The") + " comment below is pending approval.",
 
     _and: " and",

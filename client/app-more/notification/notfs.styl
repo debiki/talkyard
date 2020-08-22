@@ -32,17 +32,26 @@
   .icon-comment-empty:before
     font-weight: bold;
 
+  .icon-heart::before
+    position: relative;
+    top: 3px; // v-aligns inside background
+    vertical-align: middle;
+
   // Make stuff directly to me darker (e.g. direct replies, mentions).
   &.esNotf-toMe
     [class^=icon-],
     [class*= icon-]
-      background: hsl($uiHue, 85%, 47%);
+      background: hsl($uiHue 95% 45%);
 
   // But remove colors if the notf has been seen already
   &.esNotf-seen
     [class^=icon-],
     [class*= icon-]
       background: hsl(0, 0%, 73%);
+
+  // Indirect replies color, let's be in between.
+  .s_Nf-2Me-Indr:not(.esNotf-seen) .icon-reply
+    background: hsl($uiHue 85% 62%);
 
 
 .esNotf

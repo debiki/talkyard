@@ -59,6 +59,11 @@ Rename "indie" to user" and "people" to "members"
 prevent usernames from being displayed in Unicode, if mixed charsets used,
 e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
 
+[more_runtime_assertions]
+Figure out a way to safely add more runtime assertions — although sometimes
+I'll add *incorrect assertions* some of which will *break* and need to
+be disabled.
+
 [authn]
 What about adding U2F login?
 https://github.com/Yubico/java-webauthn-server/ — a Java U2F / WebAuthn lib.
@@ -70,6 +75,21 @@ Let people create accounts without specifying any email address. Like at Reddit.
 [reenable-akismet]:
 For some reason I disabled Akismet (why? when refactoring to save time?). Enable it again.
 
+
+[undel_posts] [62AKDN46] [apr_deld_post] [apr_movd_orig_post]
+Undelete posts, not just pages and categories.
+And make it possible to change from  Rejected —> Approved,
+and Approved —> Rejected,  unless got replies or Like votes already?
+Need an approvalStatus [ApprovedStatus] field?
+ -3 = rejected by staff
+ -2 = rejected by staff, approved by system  (+1 -3 = -2)
+ -1 = auto blocked by system (e.g. spam)
+  0 = undecided
+  1 = auto approed by system
+  2 = approved/reviewed by staff, but initially auto-blocked by system (-1 +3 = 2)
+  3 = approved/reviewed by staff
+Or:  0,1,2 = undec, apr, rej by sys.  4,8,16 by trusted,  core member,  32,64,128 by staff  ?
+   bits 1,2                           3,4                 5,6           7,8
 
 [flat-comments]:
 Change layout of problem type topics to traditional forum flat comments layout.
@@ -316,12 +336,18 @@ LinkedIn likes oEmbed better than OpenGraph:
 (Commercial:  https://embed.ly  +  https://iframely.com,
 iframely = OSS too:  https://github.com/itteco/iframely/tree/master/plugins/domains )
 
-[like-notfs]
+[like-notfs]  [like_vote_notfs]
 Send notifications about getting a Like.
 
 [refactor-notfs]  DONE, except for re-enabling reconnect.
 Remove Nchan. Use Rust + server-sent-events instead.  NO, just Play and WebSocket now.
 
+[notf_schedule][snooze_schedule]
+Individual prefs:
+  Configure when auto-snoozing — e.g. weekends and before & after 0900-1700.
+  Get someone's-waiting-for-approval notfs, if that person has been waiting
+     for > X hours  *and* no other staff mem has reviewed yet.
+  Or optionally if new member joins.
 
 [external-server-js]
 What? Same as [ext_markup_processor] ?

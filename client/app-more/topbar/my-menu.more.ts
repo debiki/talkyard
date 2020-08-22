@@ -198,6 +198,7 @@ export const MyMenuContent = createFactory({
 
 
 function makeNotfIcon(type: string, number: number) {
+  // Dupl code [M396ARTD]
   if (!number) return null;
   const numMax99 = Math.min(99, number);
   const wideClass = number >= 10 ? ' esNotfIcon-wide' : '';
