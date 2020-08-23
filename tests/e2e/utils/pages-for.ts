@@ -1009,13 +1009,17 @@ export class TyE2eTestBrowser {
       }
       else {
         // Elem outside page column (e.g. modal dialog), or there is no page column.
-        this.#br.execute(function(selector) {
+        this.waitForVisible(selector);
+        const problem = this.#br.execute(function(selector) {
           // Not logMessage — we're in the this.#br.
           console.log(`Scrolling into view in window: ${selector}`);
           var elem = document.querySelector(selector);
+          if (!elem)
+            return `No such elem:  ${selector}  [TyE503RKDN]`;
           // Edge and Safari don't suppor 'smooth' though (as of 2019-01).
           elem.scrollIntoView({ behavior: 'smooth' });
         }, selector);
+        logWarningIf(!!problem, `Scroll problem: ${problem}`);
       }
     }
 
@@ -1172,6 +1176,20 @@ export class TyE2eTestBrowser {
       // Sometimes the methods below are missing, weird.  [MISSINGFNS]
       const elem = this.$(selector);
       return elem && elem.isExisting?.() && elem.isDisplayed?.();
+    }
+
+    // Makes it simple to find out which, of many, selectors won't appear,
+    // or won't go away.
+    filterVisible(selectors: string[],
+            opts: { keepVisible?: true, exclVisible?: true } = {}): string[] {
+      dieIf(!!opts.keepVisible === !!opts.exclVisible, 'TyE60RKDNF5');
+      const result = [];
+      for (let s of selectors) {
+        if (this.isVisible(s) === !!opts.keepVisible) {
+          result.push(s);
+        }
+      }
+      return result;
     }
 
 
@@ -1366,6 +1384,8 @@ export class TyE2eTestBrowser {
         else selEl.click();
       }
       catch (ex) {
+        const what = _.isString(selEl) ? `'${selEl}'` : 'elem';
+        logWarning(`Error clicking ${what}: ${ex.toString()}`);
         if (isClickInterceptedException(ex)) {
           // This can happen if server error dialog appeared.
           if (this.serverErrorDialog.isDisplayed()) {
@@ -7023,11 +7043,12 @@ export class TyE2eTestBrowser {
           // The UI will reload the task list and auto-update itself [2WBKG7E], when
           // the review decisions have been carried out server side. Then the buttons
           // tested for below, hide.
-          while (true) {
+          let buttonsNotGone;
+          this.waitUntil(() => {
             this.#br.pause(c.JanitorThreadIntervalMs + 200);
             if (!pageId) {
               if (!this.isVisible('.s_A_Rvw_Tsk_UndoB'))
-                break;
+                return true;
             }
             else {
               // If we have a specific post in mind, then not only the Undo, but also
@@ -7035,19 +7056,25 @@ export class TyE2eTestBrowser {
               // disappear, when the server is done.
               assert(_.isNumber(postNr));
               const pagePostSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
-              const anyButtonsVisible = (
-                this.isVisible(pagePostSelector + ' .s_A_Rvw_Tsk_UndoB') ||
-                this.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_AcptB') ||
-                this.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_RjctB'));
-              if (!anyButtonsVisible)
-                break;
+              const stillVisible = this.filterVisible([
+                      pagePostSelector + ' .s_A_Rvw_Tsk_UndoB',
+                      pagePostSelector + ' .e_A_Rvw_Tsk_AcptB',
+                      pagePostSelector + ' .e_A_Rvw_Tsk_RjctB'],
+                      { keepVisible: true });
+              if (!stillVisible.length)
+                return true;
+
+              buttonsNotGone = `Should disappear: ${JSON.stringify(stillVisible)}`;
             }
             //----
             // Top tab pane unmount bug workaround. [5QKBRQ].  [E2EBUG]
             this.#br.refresh();
             this.adminArea.review.waitUntilLoaded();
             //----
-          }
+          }, {
+            message: () => buttonsNotGone,
+            refreshBetween: true,
+          });
           this.waitUntilLoadingOverlayGone();
         },
 
