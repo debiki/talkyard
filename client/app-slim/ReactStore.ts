@@ -868,6 +868,9 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     debiki2.page.Hacks.processPosts();
     if (!oldVersion && post.authorId === store.me.id && !post.isPreview) {
       // Scroll to and highligt this new / edited post.
+      // BUG (harmless) skip if we just loaded it because we're staff or the author,
+      // and it's deleted so only we can see it
+      // — because that doesn't mean we want to scroll to it and flash it.
       ReactActions.loadAndShowPost(post.nr);
     }
   }, 1);

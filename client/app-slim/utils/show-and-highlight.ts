@@ -128,12 +128,20 @@ export function flashPostElem(postElem: Element) {
 const highlightOffHandles = new Map();
 
 function flashImpl(head: Element | undefined, body: Element) {
-  if (!body) {
+  if (!head) {   //  && !body) {
     // Opened new page, Reactjs component unmounted, post elem gone?
     // @ifdef DEBUG
     die('TyE306WKUDR2');
     // @endif
     return;
+  }  /*
+  else if (!head) {
+    // Fyi: On mind map pages, there're no post headers (except for for the orig post).
+    // But mind maps (& 2d layout) currently disabled!  [2D_LAYOUT]
+  }  */
+  else if (!body) {
+    // Fyi: If post deleted, there's no body — only a post header that
+    // says sth like "Post deleted".
   }
 
   const highlightOnClass = 's_Fx-Flash';
@@ -141,25 +149,38 @@ function flashImpl(head: Element | undefined, body: Element) {
   const allClasses = highlightOnClass + ' ' + highlightOffClass;
   const $h = debiki2.$h;
 
+  const durationSeconds = 4; // dupl constant, also in css [2DKQ7AM]
+                             // doesn't work: parseFloat(head.style.transitionDuration);  (it's "")
+
   // Remove the fade-out class, otherwise cannot highlight again until the
   // flade-out animation has ended.
-  if (head) $h.removeClasses(head, allClasses);
-  $h.removeClasses(body, allClasses);
+  if (head) {
+    $h.removeClasses(head, allClasses);
+    $h.addClasses(head, highlightOnClass);
+  }
+  if (body) {
+    $h.removeClasses(body, allClasses);
+    $h.addClasses(body, highlightOnClass);
+  }
+
+  // Simplified flash, if no body.
+  if (!body) {
+    setTimeout(function() {
+      $h.removeClasses(head, allClasses);
+    }, durationSeconds * 1000);
+    return;
+  }
+
   const oldHighlOffHandle = highlightOffHandles.get(body);
   if (oldHighlOffHandle) {
     clearTimeout(oldHighlOffHandle);
     highlightOffHandles.delete(body);
   }
 
-  // On mind map pages, there're no post headers (except for for the original post).
-  if (head) $h.addClasses(head, highlightOnClass);
-  $h.addClasses(body, highlightOnClass);
   setTimeout(function() {
     if (head) $h.addClasses(head, highlightOffClass);
     $h.addClasses(body, highlightOffClass);
     // At least Chrome returns 'Xs', e.g. '1.5s', regardles of the units in the CSS file.
-    const durationSeconds = 4; // dupl constant, also in css [2DKQ7AM]
-                               // doesn't work: parseFloat(head.style.transitionDuration);  (it's "")
     const highlOffHandle = setTimeout(function() {
       highlightOffHandles.delete(body);
       if (head) $h.removeClasses(head, allClasses);
