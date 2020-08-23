@@ -704,6 +704,9 @@ object Member {
   * @param smallAvatar
   * @param isApproved
   * @param suspendedTill
+  * @param blocked — if got flagged or too many posts rejected and deleted,
+  *  then, gets automatically suspended, cannot post more, until staff has had a look.
+  *  Not implemented though! [auto_block]
   * @param trustLevel
   * @param lockedTrustLevel
   * @param threatLevel
@@ -727,9 +730,10 @@ case class User(
   smallAvatar: Option[UploadRef] = None,
   isApproved: Option[Boolean],
   suspendedTill: Option[ju.Date],
-  trustLevel: TrustLevel = TrustLevel.NewMember,
+  blocked: Int = 0,  // [auto_block] change to Option[BlockedReason] ?
+  trustLevel: TrustLevel = TrustLevel.NewMember,  // RENAME to autoTrustLevel
   lockedTrustLevel: Option[TrustLevel] = None,
-  threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
+  threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,  // RENAME to autoRiskLevel
   lockedThreatLevel: Option[ThreatLevel] = None,
   isAdmin: Boolean = false,
   isOwner: Boolean = false,

@@ -364,6 +364,18 @@ const enum ThreatLevel {
 }
 
 
+const enum BlockedReason {  // [auto_block]
+  // For the blocked person henself:
+  UntoldReason = 1,
+  // Details, available to staff only:
+  MaybeSpammer = 2,
+  ManyPostsFlagged = 4,
+  ManyPostsUnpopular = 8,
+  ManyPostsRejectedByStaff = 16,
+  ManuallyBlockedByStaff = 32,
+}
+
+
 const enum Groups {
   NoUserId = 0,
   EveryoneId = 10,

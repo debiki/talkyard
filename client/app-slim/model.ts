@@ -1214,6 +1214,7 @@ interface UserInclDetails extends MemberInclDetails, BioWebsiteLocation {
   suspendedById?: number;
   suspendedByUsername?: string;
   suspendedReason?: string;
+  blocked?: BlockedReason;
   effectiveTrustLevel: TrustLevel;  // inconsistency: Not used for Myself [5ZKGJA2]
   // Only included if caller is staff:
   trustLevel?: TrustLevel;  // RENAME to autoTrustLevel? so won't use accidenally. Server side too?

@@ -389,6 +389,11 @@ trait PostsDao {
       val maxMaybeSpam = (author.trustLevel.toInt < TrustLevel.FullMember.toInt) ?
         AllSettings.MaxPendingMaybeSpamPostsNewMember | AllSettings.MaxPendingMaybeSpamPostsFullMember
 
+      BUG // How is staff supposed to let the person post again? If all hens posts
+      // have been reviewed — then there're no more posts to approve.
+      // Instead, [auto_block] the user from posting more? [auto_block]?
+      // And staff can unblock the user, if spoken with hen and now seems ok.
+
       if (numMaybeSpam + numBad >= maxMaybeSpam && numBad >= numWasNotSpam)
         throwForbidden("TyENEWMBRSPM_", o"""You cannot post more posts until a moderator
           has reviewed your previous posts.""" + "\n\n" + o"""Our spam detection system thinks
