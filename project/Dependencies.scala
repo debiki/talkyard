@@ -5,6 +5,14 @@ import sbt._
 //
 // So can change version numbers of dependencies here, at just one place.
 
+object ProjectDirectory {
+  val versionFileContents = {
+    // [Scala_213] Using(...) { ... }
+    val source = scala.io.Source.fromFile("version.txt")
+    try source.mkString.trim
+    finally source.close()
+  }
+}
 
 object Dependencies {
 
@@ -29,7 +37,9 @@ object Dependencies {
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"
 
-    val guava = "com.google.guava" % "guava" % "28.1-jre"
+    val guava = "com.google.guava" % "guava" % "28.2-jre"
+
+    val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.5"
     val apacheTika = "org.apache.tika" % "tika-core" % "1.18"    // for username .ext test, sync w core [5AKR20]

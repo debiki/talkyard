@@ -19,7 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.codahale.metrics._
-import nl.grons.metrics.scala.MetricBuilder
+import nl.grons.metrics4.scala.MetricBuilder
 
 
 
@@ -41,7 +41,7 @@ class CacheMetric(val name: String, metrics: MetricBuilder) {
 
 
 class MostMetrics(override val metricRegistry: MetricRegistry)
-  extends nl.grons.metrics.scala.InstrumentedBuilder {
+  extends nl.grons.metrics4.scala.InstrumentedBuilder {
 
   val renderPageCacheMetrics = new CacheMetric("renderedPageCache", metrics)
   val defaultSiteDaoCacheMetric = new CacheMetric("defaultSiteDaoCache", metrics)

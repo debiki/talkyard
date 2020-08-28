@@ -18,14 +18,17 @@ resolvers ++= Seq(
   Resolver.sbtPluginRepo("releases")) // =  https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.1")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.2")
 
 // A refactoring and linting tool for Scala
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.15")
 
 // Dependency tree, https://github.com/jrudolph/sbt-dependency-graph
 // ---------------------------------------------------------------
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
+// dependencyTree
+// dependencyBrowseGraph  / -Tree
+// whatDependsOn  com.nimbusds  nimbus-jose-jwt
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
 
 
 // Makes e.g. Git SHA1 available to the Scala code at runtime.

@@ -28,21 +28,9 @@ ThisBuild / scalaVersion := "2.12.11"
 // scalacOptions in ThisBuild ++= Seq("-deprecation")
 
 
-val versionFileContents = {
-  // [Scala_213] Using(...) { ... }
-  val source = scala.io.Source.fromFile("version.txt")
-  try source.mkString.trim
-  finally source.close()
-}
-
-
 val appName = "talkyard-server"
+val appVersion = ProjectDirectory.versionFileContents
 
-
-val appVersion = {
-  // Change from WIP (work-in-progress) to SNAPSHOT, suitable for the Java/Scala world.
-  versionFileContents.replaceAllLiterally("WIP", "SNAPSHOT")
-}
 
 
 // Code shared between <repo-root>/app/ and <repo-root>/modules/ty-dao-rdb.
@@ -71,7 +59,7 @@ val appDependencies = Seq(
   "com.zaxxer" % "HikariCP" % "3.2.0",                      // newest 2.7 as of 18-07-19
   // We use both an in-the-JVM-memory cache, and Redis:
   caffeine,  // was: "com.github.ben-manes.caffeine" % "caffeine"
-  "com.github.etaty" %% "rediscala" % "1.8.0",              // newest, as of 18-07-17
+  Dependencies.Libs.rediscala,
   // Search engine, in https://mvnrepository.com.
   "org.elasticsearch" % "elasticsearch" % "6.2.4",          // newest 6.2 as of 18-07-17, there's 6.3.
   "org.elasticsearch.client" % "transport" % "6.2.4",       // newest 6.2 as of 18-07-17, there's 6.3.
@@ -91,9 +79,9 @@ val appDependencies = Seq(
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
   // Dependencies.Libs.apacheTika
-  "io.dropwizard.metrics" % "metrics-core" % "3.2.2",
+  "io.dropwizard.metrics" % "metrics-core" % "4.1.12.1",
   "io.jaegertracing" % "jaeger-client" % "0.32.0",
-  "nl.grons" %% "metrics-scala" % "3.5.9_a2.4",
+  "nl.grons" %% "metrics4-scala" % "4.1.9",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"
   // so it won't be included in the JAR), or there's this weird error: """
   //   class file '...guava-13.0.1.jar(.../LocalCache.class)' is broken
@@ -102,7 +90,7 @@ val appDependencies = Seq(
   // See: https://code.google.com/p/guava-libraries/issues/detail?id=776
   // and: https://stackoverflow.com/questions/10007994/
   //              why-do-i-need-jsr305-to-use-guava-in-scala
-  "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
+  "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided",
   // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
   "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
   Dependencies.Libs.scalaTest,
@@ -156,7 +144,7 @@ def mainSettings = List(
     BuildInfoKey.action("dockerTag") {
       // Also in release.sh: [8GKB4W2]
       // .!! returns a String with the command output, but .! returns the exit code.
-      versionFileContents + '-' + "git rev-parse --short HEAD".!!.trim
+      appVersion + '-' + "git rev-parse --short HEAD".!!.trim
     },
     BuildInfoKey.action("gitRevision") {
       "git rev-parse HEAD".!!.trim

@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{CacheMetric, MostMetrics}
-import nl.grons.metrics.scala.Meter
+import nl.grons.metrics4.scala.Meter
 import java.{util => ju}
 import scala.reflect.ClassTag
 import MemCache._
