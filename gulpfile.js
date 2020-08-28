@@ -869,7 +869,7 @@ gulp.task('build_release_dont_clean_before', gulp.series(  // [MKBUNDLS]
     'minifyTranslations',
     'minifyScriptsImpl',
     'compile-stylus',
-    'delete-non-gzipped'));
+    'delete-non-gzipped'));  //  [del_non_min_js]
 
 
 // ========================================================================

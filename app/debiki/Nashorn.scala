@@ -479,16 +479,18 @@ class Nashorn(
         |}
         |""")
 
-    // Use .min when testing, because when running tests for a prod build, the non-.min files
-    // have been deleted already (to make the Docker image smaller).
-    val min = globals.isDev ? "" | ".min"
+    // Sometimes use .min when testing, because in prod builds, the non-.min
+    // files are deleted (so Docker images smaller).  [del_non_min_js]
+    val dotMin =
+          if (globals.isProd || sys.env.get("IS_PROD_TEST").is("true")) ".min"
+          else ""
 
     var javascriptStream: jio.InputStream = null
     try {
       // Add translations, required by the render-page-code later when it runs.
       def addTranslation(langCode: String): Unit = {
         val translScript = loadAssetAsString(
-          s"translations/$langCode/i18n$min.js", isTranslation = true)
+          s"translations/$langCode/i18n$dotMin.js", isTranslation = true)
         scriptBuilder.append(translScript)
       }
 
@@ -503,7 +505,7 @@ class Nashorn(
       addTranslation("sv_SE")  // Swedish
 
       // Add render page code.
-      val rendererScript = loadAssetAsString(s"server-bundle$min.js", isTranslation = false)
+      val rendererScript = loadAssetAsString(s"server-bundle$dotMin.js", isTranslation = false)
       scriptBuilder.append(rendererScript)
     }
     finally {

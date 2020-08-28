@@ -1,5 +1,13 @@
 #!/bin/bash
 
+set_is_prod_test_env_var=''
+
+if [ -n "$IS_PROD_TEST" ]; then
+  echo "IS_PROD_TEST: $IS_PROD_TEST"
+  set_is_prod_test_env_var='-e IS_PROD_TEST=true'
+fi
+
+
 # Go to the project directory (whih is the parent directory).
 script_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd $script_dir
@@ -33,6 +41,7 @@ sudo docker-compose run --rm --service-ports app /opt/typesafe-activator/bin/act
   -Dhttps.protocols=TLSv1.1,TLSv1.2 \
   -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
   -Dconfig.file=/opt/talkyard/app/conf/app-dev.conf \
+  $set_is_prod_test_env_var \
   "$@"
 
 # -J-XX:+HeapDumpOnOutOfMemoryError \

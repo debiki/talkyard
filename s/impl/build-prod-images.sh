@@ -122,7 +122,7 @@ if [ -z "$skip_build" ]; then
   # Build the app server prod image.
   # First run tests though. Do this one at a time, or out-of-memory.
   s/d-cli clean compile
-  s/d-cli test dist
+  IS_PROD_TEST=true s/d-cli test dist
   s/d kill web app
   s/d down
   # This will use the prod package built with 'dist' above.
