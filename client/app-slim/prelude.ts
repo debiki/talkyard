@@ -407,6 +407,52 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
+export function arr_sortAlphaInPlace<V>(vs: V[], strFn: (v: V) => S) {
+  const langCode = 'en';  // for now. Later, add a t.localeCompareLangCode field? I18N  [subcats]
+  // See:  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl#Locale_identification_and_negotiation
+
+  // Creating a collator just once, outside sort(), is > 10x faster, than using
+  // localCompare from inside sort().
+  // https://stackoverflow.com/a/52369951/694469.
+  // Just 200 sub cats might get laggy-slow, on low end mobile devices, if instead
+  // calling str.localeCompare() from inside sort() — sorting 200 elems in that way,
+  // takes 19ms on my core i7 laptop, and that might mean 200 ms on a mobile device?
+  // That would be noticeable.
+  // But takes just 1.3 ms, with a Collator created once outside sort(), as done below
+  // — maybe means 10 - 20 ms on a slow mobile, seems fast enough.
+  // (`strA < strB` style comparison takes just 0.2 ms, but doesn't sort properly.)
+  //
+  // One Ty community has a main cat with 119 sub cats, as of 2020-08. So 100 - 200
+  // sub cats, does happen sometimes.  119 sub cats: localeCompare in sort(): 9 ms,
+  // collator outside: 0.8 ms.  `strA < strB` is just 0.1 ms but doesn't sort properly.
+
+  let collator: Intl.Collator;
+  try {
+    collator = new Intl.Collator(langCode, {
+      // Makes  a = á  and  a = A   (but a != b of course).
+      sensitivity: 'base',
+      ignorePunctuation: true,
+      // Nice for version numbers or book chapters?
+      numeric: true,
+    });
+  }
+  catch (ex) {
+    // Intl.Collator not supported?
+  }
+
+  vs.sort(function(a, b) {
+    const strA = strFn(a) || '';
+    const strB = strFn(b) || '';
+    if (collator) {
+      return collator.compare(strA, strB);
+    }
+    else {
+      return strA.localeCompare(strB);
+    }
+  });
+}
+
+
 export function arr_deleteInPlace<T>(ts: T[], toDelete: T) {  // RENAME arr_delInPl + arr_delCp
   while (true) {
     const ix = ts.indexOf(toDelete);

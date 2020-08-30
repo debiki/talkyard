@@ -1109,6 +1109,8 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
           // (Cannot use `=== anySubCat.parentId` — maybe we haven't selected any sub cat.)
           c.parentId === baseCat.id);
 
+  arr_sortAlphaInPlace(subCats, c => c.name);
+
   const baseCatDropdown = makeCatDropdown(store, '', baseCats, baseCat, false, !subCats.length);
   const anySubCatDropdown = makeCatDropdown(store, baseCat.slug, subCats, anySubCat, true, true);
 
@@ -1494,6 +1496,7 @@ const LoadAndListCategories = createFactory({
 
     const categoryRows = topLevelCats.map((category: Category) => {
       const childCategories = categories.filter(c => c.parentId === category.id);
+      arr_sortAlphaInPlace(childCategories, c => c.name);
       return CategoryRow({ store: this.props.store, location: this.props.location,
           forumPath: this.props.forumPath, category: category, childCategories, siteSection,
           key: category.id });
