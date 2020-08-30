@@ -109,7 +109,7 @@ export function flashPostNrIfThere(nr: PostNr) {
     // It's a draft preview, not a real post. Also find and highlight the draft
     // header, e.g. "Preview, your edits:".
     const draftHeader = $first('.s_T_YourPrvw', elem.parentElement);
-    flashImpl(draftHeader, elem);
+    flashPostImpl(draftHeader, elem);
   }
   else {
     // It's a real post.
@@ -121,24 +121,27 @@ export function flashPostNrIfThere(nr: PostNr) {
 export function flashPostElem(postElem: Element) {
   const head = postElem.querySelector('.dw-p-hd');
   const body = postElem.querySelector('.dw-p-bd');
-  flashImpl(head, body);
+  flashPostImpl(head, body);
 }
 
 
 const highlightOffHandles = new Map();
 
-function flashImpl(head: Element | undefined, body: Element) {
-  if (!head) {   //  && !body) {
+function flashPostImpl(head: Element | undefined, body: Element) {
+  if (!head && !body) {
     // Opened new page, Reactjs component unmounted, post elem gone?
     // @ifdef DEBUG
     die('TyE306WKUDR2');
     // @endif
     return;
-  }  /*
+  }
   else if (!head) {
-    // Fyi: On mind map pages, there're no post headers (except for for the orig post).
-    // But mind maps (& 2d layout) currently disabled!  [2D_LAYOUT]
-  }  */
+    // Fyi: This happens when 1) flashing an in-page edits preview of an
+    // Orig Post — then, the post header is instead just below the page title,
+    // see CSS class 'dw-ar-p-hd'.
+    // And 2) happens on mind map pages — then, there're no post headers (except
+    // for the orig post).  But mind maps [2D_LAYOUT] currently disabled (2020-08).
+  }
   else if (!body) {
     // Fyi: If post deleted, there's no body — only a post header that
     // says sth like "Post deleted".
