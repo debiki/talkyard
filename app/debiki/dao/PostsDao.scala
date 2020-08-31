@@ -2143,12 +2143,16 @@ trait PostsDao {
         "TyE8KWEL24", "The new parent post is in a different page section. " +
           "Use the 'Move to X section' button instead")
 
+      throwForbiddenIf(postToMove.deletedStatus.isDeleted,
+            "TyE50GKJ34", "Post deleted")
+
+      throwForbiddenIf(newParentPost.deletedStatus.isDeleted,
+            "TyE8KFG1J", "New parent post deleted")
+
       dieIf(postToMove.collapsedStatus.isCollapsed, "EsE5KGV4", "Unimpl")
       dieIf(postToMove.closedStatus.isClosed, "EsE9GKY03", "Unimpl")
-      dieIf(postToMove.deletedStatus.isDeleted, "EsE4PKW12", "Unimpl")
       dieIf(newParentPost.collapsedStatus.isCollapsed, "EsE7YKG32", "Unimpl")
       dieIf(newParentPost.closedStatus.isClosed, "EsE2GLK83", "Unimpl")
-      dieIf(newParentPost.deletedStatus.isDeleted, "EsE8KFG1", "Unimpl")
 
       val fromPage = newPageDao(postToMove.pageId, tx)
       val toPage = newPageDao(newParent.pageId, tx)

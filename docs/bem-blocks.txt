@@ -21,6 +21,7 @@ Dd = deleted
 Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
 Df = draft
 Dl = download — change to Dwnl? so rare
+Ed  = edit
 Fxd = fixed, Stc = static
 CB = checkbox, e.g. s_SthCB
 Cb = Contextbar
@@ -51,7 +52,9 @@ Ttl = title,  no just Tl   RENAME
 Txt = text,   no just Tx   RENAME
 Tb  = Topbar   RENAME esTopbarWrap to s_Tb
 Tr  = Trust,  eg. TrLv = trust level
-Un = username
+Un  = username
+Vt  = vote, or Vo?
+Wik = wiki
 FN = full name
 Wb = Watchbar
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
@@ -81,7 +84,7 @@ esA_Ss          = Admin Area, settings
 esA_Ss_S        = Admin Area, a single setting
 esA_Rvw         = Admin Area, Review section
 esA_Rvw_Task    = Admin Area, Review section, a review task — NO, instead...
-s_RT            = Review Task   <—— ... this
+s_RT            = Review Task   <—— ... this    no RENAME to  MT  = mod task
 s_RT_Vts        = Review Task, Votes
 s_A_Us          = Admin area, Users section
 s_A_Us_Inv      = Admin area, Users section, Invites

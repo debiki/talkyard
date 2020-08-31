@@ -348,6 +348,11 @@ Do outside tx.
 [double_tx]  COULD_OPTIMIZE
 Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
 
+COULD_OPTIMIZE
+https://web.dev/content-visibility/
+https://developer.mozilla.org/en-US/docs/Web/CSS/contain
+
+
 [macro-bug]
 Find a better macro lib that won't "destroy" the file if @endif is on the line just above '}'.
 Use the C preprocessor? Didn't find anything else that does what I'm looking for.

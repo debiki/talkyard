@@ -82,3 +82,16 @@ And old columns: `site_id` or `post_id` but now it's `site_id_c` and `post_c` in
 
 Names like `tyCo...` so you can: `grep -r tyCo ./` and find all cookies.
 (Right now it's `dwCo...`, should change to `tyCo`. RENAME )
+
+
+
+### English language
+
+It's "Create new topic", but "generate notifications":
+
+- "Creating" things is something humans do, with a bit creativity. E.g. creating
+  a new discussion topic. Or a chef might *create* a new dish — thereafter hen *makes*
+  that dish every day. https://ell.stackexchange.com/a/76988/52
+
+- "Generating" things is something computers can do, by following various algorithms.
+  E.g. generating notifications about a new topic created by a human.

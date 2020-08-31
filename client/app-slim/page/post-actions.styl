@@ -182,10 +182,9 @@
     padding: 8px 9px 13px 7px;
     font-size: 14px;
 
-  &.dw-a-link:before
-    opacity: 0.8;
+  &.dw-a-link:before,
   &.dw-a-edit:before
-    opacity: 0.7;
+    opacity: 0.8;
   &.dw-a-link,
   &.dw-a-edit
     &:hover:before
@@ -205,6 +204,10 @@
     &.icon-edit:before
       color: hsl(0, 0%, 32%);
       margin-right: 4px;
+
+  &.dw-a-edit.s_PA-EdWik:before
+    // Add some space between icon and "Wiki" text.
+    margin-right: 6px;
 
   &.dw-a-more
     margin-right: 0;

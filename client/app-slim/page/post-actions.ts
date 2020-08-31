@@ -388,11 +388,12 @@ export const PostActions = createComponent({
     const unfinEditsClass = anyEditsDraft ? ' s_UnfinEd' : '';
 
     const wikiSpace = post_isWiki(post) ? "Wiki " : ''; // I18N
+    const wikiClass = post_isWiki(post) ? ' s_PA-EdWik' : ''; // [hydrate_probl]
 
     const mayEdit = store_mayIEditPost(store, post);
     const editButton = !mayEdit || isEditorOpenAlready ? null :
-        r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, title: t.EditV,
-              onClick: this.onEditClick },
+        r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass + wikiClass,
+              title: t.EditV, onClick: this.onEditClick },
           wikiSpace + (
               anyEditsDraft ? t.d.UnfinEdits : ''));  // [UFINEDT]
 
