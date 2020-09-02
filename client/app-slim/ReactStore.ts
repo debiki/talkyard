@@ -814,7 +814,7 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     post.squash = oldVersion.squash;
     post.summarize = oldVersion.summarize;
   }
-  else if (!oldVersion) {
+  else if (!oldVersion && !post.isPreview) {
     // Hmm, subtract instead, if oldVersion and isDeleted(post). Fix later...
     page.numPosts += 1;
     if (post.nr !== TitleNr) {
