@@ -147,13 +147,9 @@ prod_asset_bundle_files:=\
   images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.min.js.gz \
   images/app/assets/server-bundle.min.js \
-  images/app/assets/translations/en_US/i18n.js \
   images/app/assets/translations/en_US/i18n.min.js \
-  images/app/assets/translations/es_CL/i18n.js \
   images/app/assets/translations/es_CL/i18n.min.js \
-  images/app/assets/translations/he_IL/i18n.js \
   images/app/assets/translations/he_IL/i18n.min.js \
-  images/app/assets/translations/pl_PL/i18n.js \
   images/app/assets/translations/pl_PL/i18n.min.js
 
 # Sync this task name w e2e test [MKBUNDLS].
@@ -224,6 +220,8 @@ images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz: \
 	s/d-gulp  compile-stylus
 
 
+# ----- ext-iframe.js
+
 # Skip minify, for now.
 ext_iframe_js: \
         images/web/assets/ext-iframe.min.js \
@@ -240,7 +238,22 @@ images/web/assets/ext-iframe.js.gz: client/ext-iframe.js
 	@gzip -c client/ext-iframe.js > images/web/assets/ext-iframe.js.gz
 
 
-debug_asset_bundles:  debug_asset_bundles_files  ext_iframe_js
+# ----- Translations
+
+# E.g.:  images/app/assets/translations/en_US/i18n.js  etc.
+transl_dev_bundle_files := \
+  ${shell find translations/ -name '*.ts' | sed -nr 's;(.*)\.ts;images/app/assets/\1.js;p'}
+
+$(transl_dev_bundle_files): ${shell find translations/ -name '*.ts'}
+	@echo "Generating translation files: Transpiling .ts to .js"
+	s/d-gulp  buildTranslations
+
+transl_dev_bundles: ${transl_dev_bundle_files}
+
+
+
+debug_asset_bundles:  debug_asset_bundles_files  ext_iframe_js  transl_dev_bundles
+
 
 
 

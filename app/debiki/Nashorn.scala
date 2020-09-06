@@ -539,7 +539,7 @@ class Nashorn(
 
   private def loadAssetAsString(path: String, isTranslation: Boolean): String = {
     def whatFile = if (isTranslation) "Language" else "Script"
-    def gulpTarget = if (isTranslation) "minifyTranslations" else "build"
+    def gulpTarget = if (isTranslation) "transl_dev_bundles" else "build"
     def makeMissingMessage =
         s"$whatFile file not found: $path, 'gulp $gulpTarget' not run or isn't done?"
 
