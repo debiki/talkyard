@@ -449,6 +449,13 @@ html.es-watchbar-open
 
 $snoozeIconSize = 28px;
 
+.s_MMB_Snz
+  // Required for RTL languages, so the Snooze icon sticks together
+  // with the "123h" (hours) text — otherwise the icon and the number "123"
+  // get placed to the right of one's username & avatar, and the time unit
+  // "h" (an RTL letter / word) to the left.
+  display: inline-block;
+
 .s_SnzI
   display: inline-block;
   height: $snoozeIconSize;
