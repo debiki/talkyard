@@ -2134,7 +2134,7 @@ const LanguageSettings = createFactory({
     }, {
       value: 'es_CL', label: "Spanish (Chile)"
     }, {
-      value: 'he_IL', label: "Hebrew — for trying out RTL. Only a few words translated"
+      value: 'he_IL', label: "Hebrew"
     }, {
       value: 'lv_LV', label: "Latvian"
     }, {
