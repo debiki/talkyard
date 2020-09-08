@@ -90,7 +90,7 @@ const majasApiReplyToMichael = {
   ...michaelsReplyToMajasApiTopic,
   extId: 'majasApiReplyToMichael extId',
   parentNr: c.FirstReplyNr,  // that's Michael's post
-  authorRef: `username:maria`,
+  authorRef: `username:maja`,
   body: 'majasApiReplyToMichael hello Michael',
 };
 
@@ -267,9 +267,10 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
     assert.excludes(bodyHtmlText, danger);
   });
 
-  it("No one else got notified", () => {
+  it("No one else got notified (1 email sent in total)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
+    assert.equal(numNotfEmailsSent, 1);  // ttt
   });
 
   it("Michael API upserts a reply to Maja's API created topic", () => {
@@ -289,9 +290,10 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
         [maja.username, michaelsReplyToMajasApiTopic.body], browserA);
   });
 
-  it("But no one else", () => {
+  it("But no one else  (2 emails sent in total)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
+    assert.equal(numNotfEmailsSent, 2);  // ttt
   });
 
 
@@ -316,12 +318,13 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
         browserA).matchedEmail;
   });
 
-  it("... but no one else", () => {
+  it("... but no one else  (3 emails sent in total)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
+    assert.equal(numNotfEmailsSent, 3);  // ttt
   });
 
-  it("Maria API replies to her own UI created page, @mentions Maria", () => {
+  it("Maja API replies to her own UI created page, @mentions Maria", () => {
     upsertResponse = server.apiV0.upsertSimple({
       ...upsSimpleParams,
       data: {
@@ -338,9 +341,10 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
         [maria.username, majasReplyMentionsMaria.body], browserA);
   });
 
-  it("But no one else", () => {
+  it("But no one else  (4 emails sent in total)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
+    assert.equal(numNotfEmailsSent, 4);  // ttt
   });
 
 

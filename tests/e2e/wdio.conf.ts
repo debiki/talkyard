@@ -50,7 +50,8 @@ let browserNameAndOpts: any = {
 
 // If adding chromeOptions when the browserName is 'firefox', then *Chrome* will get used.
 // So don't. Webdriver.io/Selenium bug? (April 29 2018)
-if (browserNameAndOpts.browserName === 'chrome') {
+if (browserNameAndOpts.browserName === 'chrome'
+        || browserNameAndOpts.browserName.toLowerCase() === 'chromium') {
   const opts: any = {
     args: [
       '--disable-notifications',
@@ -509,6 +510,7 @@ const config: WebdriverIO.Config = {
   afterTest: function(test, context,
         result: { error?: any, result?: any, duration: number, passed: boolean,
                   retries: { limit: number, attempts: number } }) {
+    //  Seems isn't called if timeout, weird. So, we also check 'result' below (852RS).
     if (!result.passed) {
       wasError = true;
     }
@@ -518,8 +520,14 @@ const config: WebdriverIO.Config = {
    * Hook that gets executed after the suite has ended
    * @param {Object} suite suite details
    */
-  // afterSuite: function (suite) {
-  // },
+  afterSuite: function (suite) {
+    // The typescript interface is just {} (empty obj), but it looks like:  (852RS)
+    // type: 'afterSuite', error?: { message: string, type: 'AssertionError' | string },
+    // title: string, parent: string, fullTitle: string, pending: B, file: string }
+    if ((suite as any).error) {
+      wasError = true;
+    }
+  },
 
   /**
    * Runs after a WebdriverIO command gets executed
@@ -539,7 +547,10 @@ const config: WebdriverIO.Config = {
    * @param {Array.<String>} specs List of spec file paths that ran
    */
   after: function (result, capabilities, specs) {
-    if (settings.debugAfterwards || settings.debugEachStep || wasError && settings.debugIfError) {
+    // This works right now, when there's just 1 spec per Webdriverio runner.  (852RS)
+    const aTestFailed = result === 1;
+    if (settings.debugAfterwards || settings.debugEachStep
+          || (wasError || aTestFailed) && settings.debugIfError) {
       console.log("");
       console.log("*** Paused, before exiting test. You can connect a debugger ***");
       global.browser.debug();

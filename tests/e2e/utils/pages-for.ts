@@ -4556,6 +4556,10 @@ export class TyE2eTestBrowser {
         return this.isVisible('.dw-cmts-tlbr-summary');
       },
 
+      isLoggedIn: (): boolean => {
+        return this.isVisible('.dw-a-logout');
+      },
+
       clickLogin: () => {
         this.waitAndClick('.esMetabar .dw-a-login');
       },
@@ -7628,6 +7632,16 @@ export class TyE2eTestBrowser {
           name = nameOrObj;
         }
         this.loginDialog.logInAsGuest(name, email);
+      },
+
+      loginIfNeededViaMetabar: (ps: NameAndPassword) => {
+        this.switchToEmbCommentsIframeIfNeeded();
+        this.waitForMyDataAdded();
+        if (!this.metabar.isLoggedIn()) {
+          logMessage(`Need to log in, as @${ps.username
+                } — session id cookie blocked? [TyM306MRKTJ]`);
+          this.complex.loginWithPasswordViaMetabar(ps);
+        }
       },
 
       loginWithPasswordViaMetabar: (ps: NameAndPassword) => {

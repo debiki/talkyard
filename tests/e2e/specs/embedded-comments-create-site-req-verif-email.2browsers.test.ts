@@ -20,12 +20,8 @@ let owen;
 let owensBrowser: TyE2eTestBrowser;
 let maria;
 let mariasBrowser: TyE2eTestBrowser;
-let michael;
-let michaelsBrowser: TyE2eTestBrowser;
-let strangersBrowser: TyE2eTestBrowser;
 
 let data;
-let idAddress: IdAddress;
 let siteId: any;
 
 const mariasCommentText = 'mariasCommentText';
@@ -44,12 +40,9 @@ describe("embedded comments, new site", () => {
     owensBrowser = new TyE2eTestBrowser(browserA);
 
     mariasBrowser = new TyE2eTestBrowser(browserB);
-    michaelsBrowser = mariasBrowser;
-    strangersBrowser = mariasBrowser;
 
     owen = make.memberOwenOwner();
     maria = make.memberMaria();
-    michael = make.memberMichael();
   });
 
 
@@ -70,9 +63,8 @@ describe("embedded comments, new site", () => {
       orgName: "E2E Org Name",
       fullName: 'E2E Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
-      // Prefix the number with 'z' because '..._<number>' is reserved. [7FLA3G0L]
-      username: 'e2e_test_z' + testId,
-      password: 'pub5KFV2FY8C',
+      username: 'owen_owner',
+      password: 'publ-ow020',
     }
   }
 
@@ -195,6 +187,10 @@ ${htmlToPaste}
     owensBrowser.go(data.embeddingUrl);
     owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentText);
+  });
+
+  it("Owen needs to log in? The browsers keep changing how they work", () => {
+    owensBrowser.complex.loginIfNeededViaMetabar(owen);
   });
 
   it("Owen replies to Maria (he's already logged in)", () => {

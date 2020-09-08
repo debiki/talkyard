@@ -270,10 +270,14 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
   });
 
   it("When Owen goes back to the dicussion, he is logged in", () => {
-    owensBrowser.go(pageUrl);
+    owensBrowser.go2(pageUrl);
   });
 
-  it("... and can post a comment", () => {
+  it("... No he's not? The browsers restrict cookies more and more!", () => {
+    owensBrowser.complex.loginIfNeededViaMetabar(owen);
+  });
+
+  it("... Owen can post a comment", () => {
     owensBrowser.complex.replyToEmbeddingBlogPost(owenCanReplyAlreadyLoggedIn);
   });
 

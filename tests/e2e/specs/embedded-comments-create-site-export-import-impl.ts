@@ -379,6 +379,9 @@ function constructEmbCommentsImportTest(testName: string, variants: {
       owensBrowser.go2(embeddingOrigin + embPages.slugs.onlySubscrNotfsPageSlug);
     });
 
+    it("... Owen needs to login?", () => {
+      owensBrowser.complex.loginIfNeededViaMetabar(owen);
+    });
 
     it(`... posts the first reply`, () => {
       owensBrowser.switchToEmbeddedCommentsIrame();

@@ -63,7 +63,6 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
       orgName: "E2E Gatsby",
       fullName: owen.fullName,
       email: owen.emailAddress,
-      // Prefix the number with 'z' because '..._<number>' is reserved. [7FLA3G0L]
       username: owen.username,
       password: owen.password,
     }
@@ -118,9 +117,16 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   // Small steps here — was an e2e bug here before, without scrollToBottom() just below.
 
-  it("... switches to the comments iframe", () => {
+  it("... waits for the comments iframe", () => {
     owensBrowser.waitForEmbeddedCommentsIframe();
+  });
+
+  it("... he srolls to the bottom", () => {
     owensBrowser.scrollToBottom();
+  });
+
+  it("... needs to login??", () => {
+    owensBrowser.complex.loginIfNeededViaMetabar(owen);
   });
 
   it("... clicks Reply to post a comment", () => {

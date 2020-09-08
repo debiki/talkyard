@@ -545,8 +545,15 @@ ${htmlToPaste}
         siteId, year2030AuthorEmail, [mariasReplyThreeToImportedComment], mariasBrowser);
   });
 
+  it("Owen goes to the blog", () => {
+    owensBrowser.go2(data.embeddingUrl + oneReplyPageUrlPath)
+  });
+
+  it("... needs to log in?", () => {
+    owensBrowser.complex.loginIfNeededViaMetabar(owen);
+  });
+
   it("Owen replies to Maria", () => {
-    owensBrowser.go(data.embeddingUrl + oneReplyPageUrlPath)
     owensBrowser.complex.replyToPostNr(
         c.FirstReplyNr + 1, owensReplyToMaria, { isEmbedded: true });
   });

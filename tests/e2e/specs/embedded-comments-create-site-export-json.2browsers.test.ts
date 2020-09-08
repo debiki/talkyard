@@ -138,8 +138,15 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), 1);
   });
 
+  it("Owen goes to the blog", () => {
+    owensBrowser.go2(data.embeddingUrl + embPages.slugs.threeRepliesPageSlug);
+  });
+
+  it("... Owen needs to login?", () => {
+    owensBrowser.complex.loginIfNeededViaMetabar(owen);
+  });
+
   it("Owen flags Michael's reply", () => {
-    owensBrowser.go(data.embeddingUrl + embPages.slugs.threeRepliesPageSlug);
     owensBrowser.topic.refreshUntilPostNrAppears(c.FirstReplyNr, { isEmbedded: true });
     owensBrowser.complex.flagPost(c.FirstReplyNr, 'Inapt');
   });

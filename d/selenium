@@ -7,7 +7,9 @@ dash_debug="-debug"
 browser_name="chrome"
 container_name="tye2ebrowser"
 
-image_version="3.141.59"
+image_version="3.141.59-20200826"
+# docker pull selenium/standalone-chrome:85.0-20200907 — then would need
+# Chromedriver too in another Docker container?
 
 
 for arg in "$@"; do
