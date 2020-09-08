@@ -5395,9 +5395,9 @@ export class TyE2eTestBrowser {
       },
 
       isPostNotPendingApproval: (postNr: PostNr) => {
-        return !this.topic._hasUnapprovedClass(postNr) &&
-            !this.topic._hasPendingModClass(postNr) &&
-            this.topic._isBodyVisible(postNr);
+        return this.topic._isBodyVisible(postNr) &&
+            !this.topic._hasUnapprovedClass(postNr) &&
+            !this.topic._hasPendingModClass(postNr);
       },
 
       // Not needed? Just use  waitAndClick()  instead?

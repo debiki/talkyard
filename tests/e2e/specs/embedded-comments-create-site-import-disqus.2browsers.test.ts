@@ -92,6 +92,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
     owensBrowser.createSite.clickOwnerSignupButton();
     owensBrowser.loginDialog.createPasswordAccount(data, true);
     siteId = owensBrowser.getSiteId();
+    server.skipRateLimits(siteId);
     const email = server.getLastEmailSenTo(siteId, data.email, wdioBrowserA);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);

@@ -320,7 +320,7 @@ describe("modn-approve-before  TyTE2E52RKDHI", () => {
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions(owensPageId, lastReplyNr);
   });
   it("Refresh page", () => {
-    mariasBrowser.refresh2();
+    mariasBrowser.topic.refreshUntilPostNotPendingApproval(lastReplyNr);
     mariasBrowser.waitForMyDataAdded();
     lastApprovedPostNr = lastReplyNr;
   });
