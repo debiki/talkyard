@@ -11,6 +11,10 @@ image_version="3.141.59-20200826"
 # docker pull selenium/standalone-chrome:85.0-20200907 — then would need
 # Chromedriver too in another Docker container?
 
+# A common 14'' laptop resolution is 1920x1200, so this should work
+# both on wide screens and not-too-small-screen laptops:
+WIDTH=1850
+HEIGHT=1100
 
 for arg in "$@"; do
     case $arg in
@@ -70,11 +74,16 @@ echo
 sudo docker kill $container_name
 sudo docker rm -f $container_name
 
+# See: https://github.com/SeleniumHQ/docker-selenium
+# Width, height: https://github.com/SeleniumHQ/docker-selenium#setting-screen-resolution
+#
 sudo docker run -d \
     --name $container_name  \
     --network=host \
     -p 4444:4444 \
     -p 5900:5900 \
+    --env SCREEN_WIDTH=$WIDTH \
+    --env SCREEN_HEIGHT=$HEIGHT \
     --env VNC_NO_PASSWORD=yes_skip \
     -v /dev/shm:/dev/shm  \
     $image_name
@@ -93,7 +102,7 @@ echo "    sudo docker exec -it $container_name sh"
 echo
 
 install_vinagre="sudo apt install vinagre"
-start_vinagre="vinagre 127.0.0.1:5900"
+start_vinagre="vinagre --geometry=${WIDTH}x${HEIGHT} 127.0.0.1:5900"
 
 if [ -z "$dash_debug" ]; then
     echo "The browser is invisible; you cannot connect with VNC."
