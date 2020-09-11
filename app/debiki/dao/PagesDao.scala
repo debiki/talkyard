@@ -470,14 +470,14 @@ trait PagesDao {
 
   def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, userId: UserId,
         browserIdData: BrowserIdData): Option[ju.Date] = {
-    val answeredAt = readWriteTransaction { tx =>
+    val answeredAt = writeTx { (tx, staleStuff) =>
       val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
       if (oldMeta.pageType != PageType.Question)
         throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
 
-      if (!user.isStaff && user.id != oldMeta.authorId)
-        throwForbidden("DwE8JGY3", "Only staff and the topic author can accept an answer")
+      throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
+            "TyE8JGY3", "Only core members and the topic author can accept an answer")
 
       val post = tx.loadThePost(postUniqueId)
       throwBadRequestIf(post.isDeleted, "TyE4BQR20", "That post has been deleted, cannot mark as answer")
@@ -492,17 +492,34 @@ trait PagesDao {
 
       val answeredAt = Some(tx.now.toJavaDate)
       val newMeta = oldMeta.copy(
-        answeredAt = answeredAt,
-        answerPostId = Some(postUniqueId),
-        closedAt = answeredAt,
-        version = oldMeta.version + 1)
+            answeredAt = answeredAt,
+            answerPostId = Some(postUniqueId),
+            closedAt = answeredAt,
+            version = oldMeta.version + 1)
+
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      // (COULD update audit log)
+      staleStuff.addPageId(pageId, memCacheOnly = true)
+
+      AUDIT_LOG
       // (COULD wait 5 minutes (in case the answer gets un-accepted) then send email
       // to the author of the answer)
+
+      // If a trusted member thinks the answer is ok, then, maybe resolving
+      // any review mod tasks for the answer — and the question too.
+      // Test:  modn-from-disc-page-review-after.2browsers  TyTE2E603RKG4.TyTE2E50ARMS
+      if (user.isStaffOrTrustedNotThreat) {
+        maybeReviewAcceptPostByInteracting(post, moderator = user,
+              ReviewDecision.InteractAcceptAnswer)(tx, staleStuff)
+
+        tx.loadOrigPost(pageId).getOrBugWarn("TyE205WKT734") { origPost =>
+          maybeReviewAcceptPostByInteracting(origPost, moderator = user,
+                ReviewDecision.InteractAcceptAnswer)(tx, staleStuff)
+        }
+      }
+
       answeredAt
     }
-    refreshPageInMemCache(pageId)
+
     answeredAt
   }
 
@@ -511,8 +528,8 @@ trait PagesDao {
     readWriteTransaction { tx =>
       val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
-      if (!user.isStaff && user.id != oldMeta.authorId)
-        throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
+      throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
+            "TyE2GKUB4", "Only core members and the topic author can unaccept an answer")
 
       // Dupl line. [4UKP58B]
       val newMeta = oldMeta.copy(answeredAt = None, answerPostId = None, closedAt = None,
@@ -539,8 +556,8 @@ trait PagesDao {
       throwBadRequestIf(!oldMeta.pageType.canClose,
           "DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageType}")
 
-      if (!user.isStaff && user.id != oldMeta.authorId)
-        throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
+      throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
+            "TyE5JPK7", "Only core members and the topic author can close / reopen")
 
       val (newClosedAt: Option[ju.Date], didWhat: String) = oldMeta.closedAt match {
         case None => (Some(now.toJavaDate), "closed")

@@ -338,45 +338,13 @@ function runAllE2eTests {
   $r s/wdio --only modn-appr-bef-comb-w-revw-aftr.2browsers $args
   $r s/wdio --only mod-review.2browsers $args  # RENAME to modn-by-moderator-not-admin
 
+  $r s/wdio --only modn-from-disc-page-appr-befr.2browsers $args
+  $r s/wdio --only modn-from-disc-page-review-after.2browsers $args
 
-  # TESTS_MISSING  [065AKDLU35]
-  #$r s/wdio --only modn-on-page-approve-before.2browsers $args
-  # new member posts new topic. Mons approves on page, Modya approves & rejects from modn page.
-  # new member posts new reply. Mons rejects on page, Modya approves & rejects from modn page.
-  # new member posts new reply. Modya approves from mod page, Mons approves & rejects on page.
-  # new member posts new reply. Modya rejects from mod page, Mons approves & rejects on page.
-
-  #$r s/wdio --only modn-on-page-review-after.2browsers $args  TyTE2EMRHK35
-  # new member posts new topic. Mons replies (review-okays implicitly), Modya approves & rejects from modn page.
-  #                             Mons edits, after replied.
-  # new member posts new reply. Mons edits (review-okays implicitly), Modya approves & rejects from modn page.
-  #                             Mons replies, after edited.
-  # new member posts new reply. Modya approves from mod page, Mons replies & edits.
-  # new member posts new reply. Modya rejects from mod page, Mons replies & edits.
-
+  # TESTS_MISSING
   #$r s/wdio --only modn-appr-deleted-posts.2browsers $args   [apr_deld_post]
-  # Delete posts waiting for approval,  then approve one, undelete.
-  # Reject one — cannot undelete it.
-  # Undo reject, and undelete — then, can approve?
-  # Delete whole page. Undelete page. Then can approve / reject afterwards.
-
   #$r s/wdio --only mod-task-emails-approve-before.2browsers $args
-  # new member posts new topic, mentions Alice and Adam & Memah.
-  #    Alice & Adam get mod task emails: approve-before.
-  #    Alice approves.
-  #    Adam & Memah get @mention notfs — but not Alice.  Bug just fixed  [306RDLA4]
-
   #$r s/wdio --only mod-task-emails-review-after.2browsers $args
-  # new member posts new topic, mentions Alice and Adam & Memah.
-  #    Alice & Adam get mod task emails: review-after.
-  #    Memah get a @mention notfs — directly.
-  #    Alice okays.
-  #    Memah visits reply — sees it.
-  # new member posts reply, mentions Alice and Adam & Memah.
-  #    Alice & Adam get mod task emails: review-after.
-  #    Memah get a @mention notfs — directly.
-  #    Alice deletes.
-  #    Memah visits reply — not found.
 
 
   $r s/wdio --only admin-move-hostname.2browsers $args

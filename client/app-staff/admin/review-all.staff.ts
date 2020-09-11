@@ -337,6 +337,10 @@ const ReviewTask = createComponent({
         case ReviewDecision.Accept: whatWasDone = " Accepted"; break;
         case ReviewDecision.InteractEdit: whatWasDone = " Seems fine: Edited"; break;
         case ReviewDecision.InteractReply: whatWasDone = " Seems fine: Replied to"; break;
+        case ReviewDecision.InteractAcceptAnswer: whatWasDone = " Seems fine: Answer accepted"; break;
+        case ReviewDecision.InteractWikify: whatWasDone = " Seems fine: Wikified"; break;
+        //case ReviewDecision.InteractTopicDoingStatus: whatWasDone = " Seems fine: ... ?"; break;
+        case ReviewDecision.InteractLike: whatWasDone = " Seems fine: Liked"; break;
         case ReviewDecision.DeletePostOrPage: whatWasDone = " Deleted"; break;
       }
       taskDoneInfo = r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, whatWasDone, byWho);

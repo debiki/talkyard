@@ -98,7 +98,8 @@ if (args.dt || args.devtools) {
 // Whatever. Wait 21 seconds by default.)
 let waitforTimeout = args.waitforTimeout || args.wft;
 if (waitforTimeout) waitforTimeout = parseInt(waitforTimeout);
-settings.waitforTimeout = args.noTimeout || args.nt || args.dant ?
+settings.waitforTimeout = args.noTimeout || args.nt || args.dant ||
+        settings.debugEachStep ?
     2147483647 : (waitforTimeout || 21 * 1000);
 
 settings.browserName = 'chrome';

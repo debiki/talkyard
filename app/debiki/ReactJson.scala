@@ -732,7 +732,10 @@ class JsonMaker(dao: SiteDao) {
     val myCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId == requester.id)
     val groupsCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId != requester.id)
 
-    val (pageNotfPrefs: Seq[PageNotfPref], votes, unapprovedPosts, unapprovedAuthors) =
+    val (pageNotfPrefs: Seq[PageNotfPref],
+         votes,
+         unapprovedPosts,
+         unapprovedAuthors) =
       anyPageId map { pageId =>
         COULD_OPTIMIZE // load cat prefs together with page notf prefs here?
         val pageNotfPrefs = tx.loadNotfPrefsForMemberAboutPage(pageId, ownIdAndGroupIds)
@@ -742,13 +745,17 @@ class JsonMaker(dao: SiteDao) {
         val votes = votesJson(requester.id, pageId, tx)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
         val (postsJson, postAuthorsJson) =
-          unapprovedPostsAndAuthorsJson(requester, pageId, unapprovedPostAuthorIds, tx)
+              unapprovedPostsAndAuthorsJson(
+                  requester, pageId, unapprovedPostAuthorIds, tx)
 
         (pageNotfPrefs, votes, postsJson, postAuthorsJson)
       } getOrElse (
           Nil, JsEmptyObj, JsEmptyObj, JsArray())
 
-    val (threatLevel, tourTipsSeenJson, uiPrefsOwnFirstJsonSeq, anyStats) = requester match {
+    val (threatLevel,
+         tourTipsSeenJson,
+         uiPrefsOwnFirstJsonSeq,
+         anyStats) = requester match {
       case member: User =>
         COULD_OPTIMIZE // load stats together with other user fields, in the same db request
         val (requesterInclDetails, anyStats) = tx.loadTheUserInclDetailsAndStatsById(requester.id)

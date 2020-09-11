@@ -1468,7 +1468,7 @@ export const Post = createComponent({
     }
     else if (post_isDeleted(post)) {
       headerElem = r.div({ className: 'dw-p-hd' }, post.isTreeDeleted ? t.d.ThreadDeld : t.d.CmntDeld);
-      extraClasses += ' dw-p-dl';
+      extraClasses += ' s_P-Dd';
     }
     else if (this.props.renderCollapsed &&
         // COULD rename isTreeCollapsed since it's not always a boolean.

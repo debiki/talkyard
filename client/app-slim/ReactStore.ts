@@ -578,14 +578,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   watchbar_markAsRead(store.me.watchbar, store.currentPageId);
 
   // Show the user's own unapproved posts, or all, for admins.
-  _.each(myPageData.unapprovedPosts, (post: Post) => {
-    updatePost(post, store.currentPageId);
-    // COULD_FREE_MEM if other user was logged in before?
-  });
-
-  _.each(myPageData.unapprovedPostAuthors, (author: BriefUser) => {
-    store.usersByIdBrief[author.id] = author;
-  });
+  store_addUnapprovedPosts(store, myPageData);  // TyTE2E603SKD
 
   if (_.isArray(store.topics)) {
     const currentPage: Page = store.currentPage;
@@ -637,6 +630,19 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
 
   debiki2.pubsub.subscribeToServerEvents(store.me);
   store.quickUpdate = false;
+};
+
+
+function store_addUnapprovedPosts(store: Store, myPageData: MyPageData) {
+  // Test:  modn-from-disc-page-approve-before  TyTE2E603RTJ
+  _.each(myPageData.unapprovedPosts, (post: Post) => {
+    updatePost(post, store.currentPageId);
+    // COULD_FREE_MEM if other user was logged in before?
+  });
+
+  _.each(myPageData.unapprovedPostAuthors, (author: BriefUser) => {
+    store.usersByIdBrief[author.id] = author;
+  });
 };
 
 
@@ -1567,7 +1573,7 @@ function patchTheStore(storePatch: StorePatch) {
 
 
 function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: BriefUser[],
-        newMe: Myself | null, history) {
+        updatedMe: Myself | null, history) {
 
   // Upload any current reading progress, before changing page id.
   page.PostsReadTracker.sendAnyRemainingData(() => {}); // not as beacon
@@ -1595,14 +1601,17 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   store.topics = null;
 
   let myData: MyPageData;
-  if (newMe) {
-    store.me.watchbar = newMe.watchbar;
-    myData = newMe.myDataByPageId[newPage.pageId];
+  if (updatedMe) {
+    store.me.watchbar = updatedMe.watchbar;
+    myData = updatedMe.myDataByPageId[newPage.pageId];
     if (myData) {
       store.me.myDataByPageId[newPage.pageId] = myData;
     }
-    addRestrictedCategories(newMe.restrictedCategories, store.currentCategories);
+
+    store_addUnapprovedPosts(store, myData);  // TyTE2E603SKD
+    addRestrictedCategories(updatedMe.restrictedCategories, store.currentCategories);
   }
+
   store.me.myCurrentPageData = myData || makeNoPageData();
 
   // Update <title> tag. Also done from the title editor [30MRVH2].

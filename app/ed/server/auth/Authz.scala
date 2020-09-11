@@ -424,7 +424,7 @@ object Authz {
 
     // Later: return may-not-see also if !published?
     if (isDeleted && !isStaff)
-      return MayWhat.mayNotSee("EdEPAGEDELD")
+      return MayWhat.mayNotSee("TyEPAGEDELD_")
 
     // For now, hardcode may-see the forum page, otherwise only admins would see it.
     if (isForumPage)

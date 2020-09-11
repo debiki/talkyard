@@ -2352,7 +2352,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    assertNotFoundError(ps: { whyNot?: 'CategroyDeleted' } = {}) {
+    assertNotFoundError(ps: { whyNot?: 'CategroyDeleted' | 'PageDeleted' } = {}) {
       for (let i = 0; i < 20; ++i) {
         let source = this.#br.getPageSource();
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
@@ -2369,6 +2369,9 @@ export class TyE2eTestBrowser {
         }
         else if (ps.whyNot === 'CategroyDeleted') {
           okNotFoundReason = /TyECATDELD_/.test(source);
+        }
+        else if (ps.whyNot === 'PageDeleted') {
+          okNotFoundReason = /TyEPAGEDELD_/.test(source);
         }
         tyAssert.ok(okNotFoundReason,
               `Wrong 404 Not Found reason, should have been: ${ps.whyNot
@@ -2903,7 +2906,7 @@ export class TyE2eTestBrowser {
           this.waitUntilDoesNotMove('.e_DelPg');
           this.waitAndClick('.e_DelPg');
           this.waitUntilModalGone();
-          this.waitForVisible('.s_Pg_DdInf');
+          this.topic.waitUntilPageDeleted();
         },
 
         restorePage: () => {
@@ -2911,7 +2914,7 @@ export class TyE2eTestBrowser {
           this.waitUntilDoesNotMove('.e_RstrPg');
           this.waitAndClick('.e_RstrPg');
           this.waitUntilModalGone();
-          this.waitUntilGone('.s_Pg_DdInf');
+          this.topic.waitUntilPageRestored();
         },
       },
     };
@@ -4630,6 +4633,18 @@ export class TyE2eTestBrowser {
 
 
     topic = {
+      waitUntilPageDeleted: () => {
+        this.waitForVisible('.s_Pg_DdInf');
+      },
+
+      waitUntilPageRestored: () => {
+        this.waitUntilGone('.s_Pg_DdInf');
+      },
+
+      isPageDeletedButVisible: (): boolean => {
+        return this.isVisible('.s_Pg_DdInf');
+      },
+
       postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd .dw-p-bd-blk`,
 
       forAllPostIndexNrElem: (fn: (index: number, postNr: PostNr, elem) => void) => {
@@ -4926,7 +4941,7 @@ export class TyE2eTestBrowser {
         const numUnapproved = othersUnapproved + ownUnapproved;
 
         const numPreviews = this.count(this.topic.previewSelector);
-        const numDeleted = this.count(this.topic.replySelector + '.dw-p-dl');
+        const numDeleted = this.count(this.topic.replySelector + '.s_P-Dd');
 
         numNormal = numNormal - numPreviews - numUnapproved - numDeleted;
         return { numNormal, numPreviews, numUnapproved, numDeleted };
@@ -5215,7 +5230,7 @@ export class TyE2eTestBrowser {
         this.waitAndClick('.dw-delete-post-dialog .e_YesDel');
         this.waitUntilGone('.dw-delete-post-dialog');
         this.waitUntilLoadingOverlayGone();
-        this.waitForVisible(`#post-${postNr}.dw-p-dl`);
+        this.topic.waitForPostVisibleAsDeleted(postNr);
       },
 
       canDeletePost: (postNr: PostNr): boolean => {
@@ -5375,6 +5390,31 @@ export class TyE2eTestBrowser {
         // loaded, and is invisible, but the first -Hdn check didn't find it because at that time
         // it hadn't yet been loaded.
         assert(!this.isVisible(`#post-${postNr}.s_P-Hdn`));
+      },
+
+      rejectPostNr: (postNr: PostNr) => {
+        const selector = `#post-${postNr} + .esPA .s_PA_ModB-Rej`;
+        this.waitAndClick(selector);
+        this.stupidDialog.yesIAmSure();
+        if (postNr === c.BodyNr) {
+          // Then currently the page gets deleted instead
+          // — the posts need an [ApprovedStatus] post field.
+          this.topic.waitUntilPageDeleted();
+          return;
+        }
+        this.waitUntilGone(selector);
+        this.topic.waitForPostVisibleAsDeleted(postNr);
+        assert(!this.topic._hasUnapprovedClass(postNr));
+        assert(!this.topic._hasPendingModClass(postNr));
+      },
+
+      approvePostNr: (postNr: PostNr) => {
+        const selector = `#post-${postNr} + .esPA .s_PA_ModB-Apr`;
+        this.waitAndClick(selector);
+        this.stupidDialog.yesIAmSure();
+        this.waitUntilGone(selector);
+        assert(!this.topic._hasUnapprovedClass(postNr));
+        assert(!this.topic._hasPendingModClass(postNr));
       },
 
       assertPostNeedsApprovalBodyVisible: (postNr: PostNr) => {
@@ -6354,6 +6394,11 @@ export class TyE2eTestBrowser {
 
 
     stupidDialog = {
+      yesIAmSure: () => {
+        // It's the same.
+        this.stupidDialog.close();
+      },
+
       clickClose: () => {
         this.waitAndClick('.e_SD_CloseB');
       },
@@ -7101,8 +7146,12 @@ export class TyE2eTestBrowser {
         },
 
         goToPostForTaskIndex: (index: number) => {
-          die("Won't work, opens in new tab [TyE5NA2953");
+          die("Won't work, opens in new tab [TyE5NA2953]");
+          const numTabsBefore = this.numTabs();
           this.topic.clickPostActionButton(`.e_RT-Ix-${index} .s_A_Rvw_Tsk_ViewB`);
+          this.waitForMinBrowserTabs(numTabsBefore + 1);
+          this.swithToOtherTabOrWindow();  // ! but might be the wrong window
+          // Need to find the newly appeared new win id?
           this.topic.waitForLoaded();
         },
 

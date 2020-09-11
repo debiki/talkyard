@@ -293,13 +293,10 @@ trait PostsDao {
     // If staff has now read and replied to the parent post — then resolve any
     // mod tasks about the parent post. So they won't need to review this post twice,
     // on the Moderation page too.
-    TESTS_MISSING  // TyTE2EMRHK35
-    if (author.isStaff) {
-      bugWarnIf(anyReviewTask.isDefined || anySpamCheckTask.isDefined, "TyE05RKD5")
-      replyToPosts foreach { replyToPost =>
-        maybeReviewAcceptPostByInteracting(replyToPost, moderator = author,
-              ReviewDecision.InteractReply)(tx, staleStuff)
-      }
+    // Test:  modn-from-disc-page-review-after  TyTE2E603RKG4
+    replyToPosts foreach { replyToPost =>
+      maybeReviewAcceptPostByInteracting(replyToPost, moderator = author,
+            ReviewDecision.InteractReply)(tx, staleStuff)
     }
 
     val notifications =
@@ -922,7 +919,7 @@ trait PostsDao {
             // the first time (for that post),  or do via the Moderation page.
             // (This partly because it'd be *complicated* to both approve and publish
             // the post, *and* handle edits, at the same time.)
-            TESTS_MISSING // [065AKDLU35]
+            // Test:  modn-from-disc-page-approve-before  TyTE2E603RTJ.TyTE2E407RKS
             None
           }
           else {
@@ -1060,15 +1057,23 @@ trait PostsDao {
           AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =    // (7ALGJ2)
-        if (editor.isStaff) {
-          // Now staff has had a look at the post, even edited it — so resolve
-          // mod tasks about this posts. So won't be asked to review this post again,
+        if (editor.isStaffOrTrustedNotThreat) {
+          // This means staff has had a look at the post, even edited it — so resolve
+          // mod tasks about this posts. So staff won't be asked to review this post,
           // on the Moderation page.
-          maybeReviewAcceptPostByInteracting(postToEdit, moderator = editor,
+          // Test:  modn-from-disc-page-review-after  TyTE2E603RKG4.TyTE2E405R2
+
+          // Mod tasks for new topics are linked to the orig post, not the title post.
+          val postWithModTasks =
+                if (!postToEdit.isTitle) postToEdit
+                else {
+                  // Test: modn-from-disc-page-review-after  TyTE2E603RKG4.TyTE2E042SR4
+                  tx.loadTheOrigPost(postToEdit.pageId)
+                }
+
+          maybeReviewAcceptPostByInteracting(postWithModTasks, moderator = editor,
                 ReviewDecision.InteractEdit)(tx, staleStuff)
-          None
-        }
-        else if (editor.isStaffOrTrustedNotThreat) {
+
           // Don't review late edits by trusted members — trusting them is
           // the point with the >= TrustedMember trust levels. TyTLADEETD01
           None
@@ -1536,7 +1541,7 @@ trait PostsDao {
 
   def changePostType(pageId: PageId, postNr: PostNr, newType: PostType,
         changerId: UserId, browserIdData: BrowserIdData): Unit = {
-    readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       val page = newPageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)
       val Seq(author, changer) = tx.loadTheParticipants(postBefore.createdById, changerId)
@@ -1554,11 +1559,15 @@ trait PostsDao {
           "TyE5KSQ047", "Can only move top level posts from one section to another.")
       }
 
+      var anyModDecision: Option[ModDecision] = None
+
       // Test if the changer is allowed to change the post type in this way.
-      if (changer.isStaff) {
+      if (changer.isStaffOrCoreMember) {
         (postBefore.tyype, postAfter.tyype) match {
           case (before, after) if before == PostType.Normal && after.isWiki =>
             // Fine, staff wikifies post.
+            // And now we can consider this post reviewed and ok, right.
+            anyModDecision = Some(ReviewDecision.InteractWikify)
           case (before, after) if before.isWiki && after == PostType.Normal =>
             // Fine, staff removes wiki status.
           case (before, after) if movesToOtherSection =>
@@ -1605,6 +1614,12 @@ trait PostsDao {
         }
       }
 
+      anyModDecision foreach { decision =>
+        // Test:  modn-from-disc-page-review-after  TyTE2E603RKG4.TYTE2E40IRM5
+        maybeReviewAcceptPostByInteracting(postAfter, moderator = changer,
+              decision)(tx, staleStuff)
+      }
+
       // (Don't reindex)
       tx.updatePost(postAfter)
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = false)
@@ -1612,7 +1627,7 @@ trait PostsDao {
       // COULD generate some notification? E.g. "Your post was made wiki-editable."
     }
 
-    refreshPageInMemCache(pageId)
+    refreshPageInMemCache(pageId)  // [staleStuff]
   }
 
 
@@ -2272,6 +2287,10 @@ trait PostsDao {
             tx.saveDeleteNotifications(notifications)
           }
         }
+
+        // Test:  modn-from-disc-page-review-after  TyTE2E603RKG4.TyTE2E5ART25
+        maybeReviewAcceptPostByInteracting(post, moderator = voter,
+              ReviewDecision.InteractLike)(tx, staleStuff)
       }
 
       // Page version in db updated by updatePageAndPostVoteCounts() above.

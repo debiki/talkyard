@@ -467,7 +467,7 @@ h1.dw-p-ttl
   font-style: italic;
 
 .dw-p-unapproved > .dw-p-hd,
-.dw-p-dl > .dw-p-hd    // RENAME dw-p-dl —> s_P-Dd
+.s_P-Dd > .dw-p-hd
   font-style: italic
   background-color: transparent
 
@@ -477,12 +477,12 @@ h1.dw-p-ttl
 .dw-depth-1 .dw-p-unapproved > .dw-p-hd
   padding: 14px 0 4px;
 
-.dw-p-dl > .dw-p-hd
+.s_P-Dd > .dw-p-hd
   margin-bottom: 8px
 
 // If a deleted comment is shown, then there're non-deleted children, so make some
 // space for the arrow to the non-deleted children.
-.dw-p-dl + .dw-p-as
+.s_P-Dd + .dw-p-as
   min-height: 42px;
 
 .dw-p:not(.dw-p-flat) > .dw-rrs // reply receivers

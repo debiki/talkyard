@@ -90,8 +90,8 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   def moderateFromPage: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     import request.{dao, body}
+    // Tests: modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
 
-    TESTS_MISSING //  [065AKDLU35]
     val postId = (body \ "postId").as[PostId]
     val postRevNr = (body \ "postRevNr").as[Int]
     val decisionInt = (body \ "decision").as[Int]

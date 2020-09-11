@@ -452,7 +452,7 @@ export const PostActions = createComponent({
           && !isOrigPostAndPageDeleted) {
       const ModBtn = (decision: ReviewDecision, title: S, clazz: S) => {
         return Button({ className: 's_PA_ModB ' + clazz, onClick: () => {
-          util.openDefaultStupidDialog({
+          morebundle.openDefaultStupidDialog({
             body: title + '?',
             primaryButtonTitle: t.YesDoThat,
             secondaryButonTitle: t.Cancel,
@@ -870,10 +870,9 @@ const MoreDropdownModal = createComponent({
 
     // ----- Post settings
 
-    // Wikified posts no longer looks good, because of the avatar icon to the left.
-    // Only the orig post looks ok, therefore: `isPageBody &&`.
-    if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat && isForumSite
-          && !isPostDeleted) {
+    // UX BUG: Wikified posts no longer looks good, because of the avatar icon to the left.
+    // Only the orig post looks ok.
+    if ((isStaff(me) || isOwnPost) && !isFlat && isForumSite && !isPostDeleted) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users s_PA_WkB', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? t.pa.UnWikify : t.pa.Wikify));

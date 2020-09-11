@@ -69,15 +69,35 @@ object ReviewDecision {
   // RejectEdits
 
 
+  // 12nn = Accept review-after mod task implicitly, by interacting:
+
+  val FirsInteractAcceptId = 1201
+  val LastInteractAcceptId = 1299
+
   /** If staff edits a new post, but doesn't delete it — let's handle that
     * as accepting it. But remember this was via an edit —
     * that's more informal (maybe even a tiny bit error / mistake prone)
     * than clicking Accept on the Moderation page.
     */
-  case object InteractEdit extends ReviewDecision(1051)
+  case object InteractEdit extends ReviewDecision(1201)
 
-  /** New post accepted by replying and talking with the person. */
-  case object InteractReply extends ReviewDecision(1052)
+  /** New post accepted if replying and talking with the person. */
+  case object InteractReply extends ReviewDecision(1202)
+
+  /** Both question topic and answer posts accepted implicitly, if marking
+    * the answer post as a solution. */
+  case object InteractAcceptAnswer extends ReviewDecision(1205)
+
+  /** New post review-accepted if changing it to a Wiki post. */
+  case object InteractWikify extends ReviewDecision(1207)
+
+  /** Topic accepted implicitly if changing doing-status, e.g. from New to Planned. */
+  // Later.
+  //case object InteractTopicDoingStatus extends ReviewDecision(1221)
+
+  /** New post accepted if Like-voting it. */
+  case object InteractLike extends ReviewDecision(1241)
+  require(InteractLike.IntVal == PostVoteType.Like.IntVal + 1200)
 
 
 
@@ -96,10 +116,14 @@ object ReviewDecision {
 
 
   def fromInt(value: Int): Option[ReviewDecision] = Some(value match {
-    case ReviewDecision.Accept.IntVal => ReviewDecision.Accept
-    case ReviewDecision.InteractEdit.IntVal => ReviewDecision.InteractEdit
-    case ReviewDecision.InteractReply.IntVal => ReviewDecision.InteractReply
-    case ReviewDecision.DeletePostOrPage.IntVal => ReviewDecision.DeletePostOrPage
+    case Accept.IntVal => Accept
+    case InteractEdit.IntVal => InteractEdit
+    case InteractReply.IntVal => InteractReply
+    case InteractAcceptAnswer.IntVal => InteractAcceptAnswer
+    case InteractWikify.IntVal => InteractWikify
+    //case InteractTopicDoingStatus.IntVal => InteractTopicDoingStatus
+    case InteractLike.IntVal => InteractLike
+    case DeletePostOrPage.IntVal => DeletePostOrPage
     case _ => return None
   })
 }

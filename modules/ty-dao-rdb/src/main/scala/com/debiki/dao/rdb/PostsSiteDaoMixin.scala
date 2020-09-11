@@ -176,6 +176,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       select * from posts3
       where site_id = ?
         and page_id = ?
+        and approved_at is null
         and (type is null or type <> ${PostType.CompletedForm.toInt})
       """
 
