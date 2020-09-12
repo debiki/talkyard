@@ -49,7 +49,7 @@ sudo docker pull debiki/talkyard-certgen:$wip_version_tag
 
 echo "Done pulling."
 
-release_version_tag=$( echo "$wip_version_tag" | sed -r -e 's/WIP-[0-9]+-//' )
+release_version_tag=$( echo "$wip_version_tag" | sed -r -e 's/WIP-//' )
 
 echo "Tag with debiki/talkyard-*:$release_version_tag?  Press Enter (or CTRL+C to exit)"
 read -s -p ''
