@@ -545,8 +545,8 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-discussion-id.test $args
   $r s/wdio       --only embedded-comments-discussion-id-old-name $args
   $r s/wdio       --only embedded-comments-guest-login-email-notf-unsbscribe $args
-  $r s/wdio       --only embedded-comments-all-logins $args
-  $r s/wdio       --only embedded-comments-all-logins-old-name $args
+  $r s/wdio       --only emb-com.all-logins.1br $args
+  $r s/wdio       --only emb-com.all-logins-old-name.1br $args
   $r s/wdio --b3c --only embedded-comments-no-cookies-verif-email $args
   $r s/wdio --b3c --only embedded-comments-no-cookies-guest $args
   $r s/wdio --b3c --only embedded-comments-no-cookies-verif-gmail $args
