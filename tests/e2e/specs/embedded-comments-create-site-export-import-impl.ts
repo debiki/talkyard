@@ -171,7 +171,8 @@ function constructEmbCommentsImportTest(testName: string, variants: {
       it("Owen creates a 2nd embedded comments site", () => {
         const newSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
             shortName: 'emb-rst', longName: "Emb Restore Site" });
-        const result: NewSiteResult = owensBrowser.createNewSite(newSiteData);
+        const result: NewSiteResult = owensBrowser.newSite.createNewSite(newSiteData);
+        owensBrowser.newSite.signUpAsOwner(result);
         siteId = result.siteId;
         testId = result.testId;
       });

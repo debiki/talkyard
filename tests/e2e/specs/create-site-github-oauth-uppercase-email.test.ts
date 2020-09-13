@@ -42,9 +42,9 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
     assert(settings.githubUsernameMixedCase.length > c.MaxUsernameLength);
   });
 
-  it('can create a new site as a GitHub user, when not logged in to GitHub', () => {
-    makeForumWithGitHubAdminAccount({ alreadyLoggedIn: false });
-  });
+
+
+  addCreateSiteWithGitHubTestSteps({ alreadyLoggedIn: false });
 
   it('gets the correct username, truncted to MaxUsernameLength = 20, ' +
         'although the email addr local part is longer [6AKBR20Q]', () => {
@@ -60,10 +60,10 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
     browser.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  it('can create a new site as GitHub user, when already logged in to GitHub', () => {
-    // Now we're logged in already, so the GitHub login flow is / might-be slightly different.
-    makeForumWithGitHubAdminAccount({ alreadyLoggedIn: true });
-  });
+
+
+  // Now we're logged in already, so the GitHub login flow can be slightly different.
+  addCreateSiteWithGitHubTestSteps({ alreadyLoggedIn: true });
 
   it("Goes to profile page, views account info", () => {
     browser.topbar.clickGoToProfile();
@@ -81,15 +81,26 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
         settings.githubEmailMixedCase.toLowerCase(), { shallBeVerified: true });
   });
 
-  function makeForumWithGitHubAdminAccount(ps: { alreadyLoggedIn: boolean }) {
-    const data = createTestData({
-      newSiteOwner: NewSiteOwnerType.GitHubAccount,
-      alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+
+  function addCreateSiteWithGitHubTestSteps(ps: { alreadyLoggedIn: boolean }) {
+    const maybe = ps.alreadyLoggedIn ? "already" : "not";
+    let newSiteResult: NewSiteResult;
+
+    it(`can create site as GitHub user, when ${maybe} logged in to GitHub`, () => {
+      const data = createTestData({
+        newSiteOwner: NewSiteOwnerType.GitHubAccount,
+        alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+      });
+      newSiteResult = browser.newSite.createNewSite(data);
     });
-    console.log("Create site:");
-    browser.createNewSite(data);
-    console.log("Create forum:");
-    browser.createSomething.createForum("GitHub Forum Title");
+
+    it('Sign up as owner', () => {
+      browser.newSite.signUpAsOwner(newSiteResult);
+    });
+
+    it('create forum', () => {
+      browser.createSomething.createForum("GitHub Forum Title");
+    });
   }
 
 });

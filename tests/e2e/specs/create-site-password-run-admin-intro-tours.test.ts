@@ -24,15 +24,20 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     browser = new TyE2eTestBrowser(wdioBrowser);
   });
 
-  it('can create a new site as a Password user', () => {
+  let data: NewSiteData | U;
+
+  it('Create site', () => {
     // Something timed out in here, twice. [E2EBUG]
     // Break up into smaller steps then? To find out what.
-    const data = createTestData();
+    data = createTestData();
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
     browser.disableRateLimits();
     browser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
     browser.disableRateLimits();
+  });
+
+  it('Signup as owner with a password account', () => {
     browser.createSite.clickOwnerSignupButton();
     browser.loginDialog.createPasswordAccount(data, true);
     const siteId = browser.getSiteId();
@@ -43,7 +48,9 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     browser.waitAndClick('#e2eContinue');
 
     browser.tour.runToursAlthoughE2eTest();
+  });
 
+  it('create forum', () => {
     browser.createSomething.createForum("Password Forum Title");
   });
 

@@ -24,30 +24,40 @@ describe('create-site-linkedin  @createsite @login @linkedin  TyT402KDTT5Z', () 
     browser = new TyE2eTestBrowser(wdioBrowser);
   });
 
-  it('can create a new site as a LinkedIn user, when not logged in to LinkedIn', () => {
-    makeForumWithLinkedInAdminAccount({ alreadyLoggedIn: false });
-  });
+  addCreateSiteWithLinkedInTestSteps({ alreadyLoggedIn: false });
 
   it('can actually use the LinkedIn admin account to create stuff', () => {
     browser.complex.createAndSaveTopic({ title: "LinkedIn topic title", body: "Body" });
     browser.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  it('can create a new site as LinkedIn user, when already logged in to LinkedIn', () => {
-    // Now we're logged in already, so the LinkedIn login flow is / might-be slightly different.
-    makeForumWithLinkedInAdminAccount({ alreadyLoggedIn: true });
+  // Now we're logged in already, so the LinkedIn login flow can be slightly different.
+  addCreateSiteWithLinkedInTestSteps({ alreadyLoggedIn: true });
+
+  it('Log out from Talkyard', () => {
     browser.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  function makeForumWithLinkedInAdminAccount(ps: { alreadyLoggedIn: boolean }) {
-    const data = createTestData({
-      newSiteOwner: NewSiteOwnerType.LinkedInAccount,
-      alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+
+  function addCreateSiteWithLinkedInTestSteps(ps: { alreadyLoggedIn: boolean }) {
+    const maybe = ps.alreadyLoggedIn ? "already" : "not";
+    let newSiteResult: NewSiteResult;
+
+    it(`can create site as LinkedIn user, when ${maybe} logged in to LinkedIn`, () => {
+      const data = createTestData({
+        newSiteOwner: NewSiteOwnerType.LinkedInAccount,
+        alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+      });
+      newSiteResult = browser.newSite.createNewSite(data);
     });
-    console.log("Create new site:");
-    browser.createNewSite(data);
-    console.log("Create forum:");
-    browser.createSomething.createForum("Linkedin Forum Title");
+
+    it('Sign up as owner', () => {
+      browser.newSite.signUpAsOwner(newSiteResult);
+    });
+
+    it('create forum', () => {
+      browser.createSomething.createForum("Linkedin Forum Title");
+    });
   }
 
 });

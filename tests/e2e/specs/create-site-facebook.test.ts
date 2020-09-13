@@ -25,30 +25,49 @@ describe('create-site-facebook  @createsite @login @facebook  TyT8KA9AW3', () =>
     browser = new TyE2eTestBrowser(wdioBrowser);
   });
 
-  it('can create a new site as a Facebook user, when not logged in to FB', () => {
-    makeForumWithFacebookAdminAccount({ alreadyLoggedIn: false });
-  });
 
-  it('can actually use the FB admin account to create stuff', () => {
+  addCreateSiteWithFacebookTestSteps({ alreadyLoggedIn: false });
+
+  it('Can actually use the FB admin account to create stuff', () => {
     browser.complex.createAndSaveTopic({ title: "Facebook topic title", body: "Body" });
+  });
+
+  it('Logout from Talkyard after', () => {
+    // This logs out from the Talkyard site only, to clear Ty cookies,
+    // so won't affect other tests.
     browser.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  it('can create a new site as Facebook user, when already logged in to FB', () => {
-    // Now we're logged in already, so the Facebook login flow is / might-be slightly different.
-    makeForumWithFacebookAdminAccount({ alreadyLoggedIn: true });
+
+  // Now we're logged in over at Facebook already, so the Facebook login flow
+  // can be slightly different.
+  addCreateSiteWithFacebookTestSteps({ alreadyLoggedIn: true });
+
+  it('Logout after', () => {
     browser.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  function makeForumWithFacebookAdminAccount(ps: { alreadyLoggedIn: boolean }) {
-    const data = createTestData({
-      newSiteOwner: NewSiteOwnerType.FacebookAccount,
-      alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+
+  function addCreateSiteWithFacebookTestSteps(ps: { alreadyLoggedIn: boolean }) {
+    const maybe = ps.alreadyLoggedIn ? "already" : "not";
+    let newSiteResult: NewSiteResult;
+
+    it(`can create site as Facebook user, when ${maybe} logged in to Facebook`, () => {
+      const data = createTestData({
+        newSiteOwner: NewSiteOwnerType.FacebookAccount,
+        alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+      });
+      console.log("Create new site:");
+      newSiteResult = browser.newSite.createNewSite(data);
     });
-    console.log("Create new site:");
-    browser.createNewSite(data);
-    console.log("Create forum:");
-    browser.createSomething.createForum("Facebook Forum Title");
+
+    it('Sign up as owner', () => {
+      browser.newSite.signUpAsOwner(newSiteResult);
+    });
+
+    it('Create forum', () => {
+      browser.createSomething.createForum("Facebook Forum Title");
+    });
   }
 
 });

@@ -17,6 +17,7 @@ const newMembersEmail = 'e2e-test--mia@example.com';
 const newMembersTopicTitle = 'newMembersTopicTitle';
 const newMembersTopicText = 'newMembersTopicText';
 
+
 describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
 
   if (!settings.include3rdPartyDependentTests) {
@@ -28,9 +29,9 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
     browser = new TyE2eTestBrowser(wdioBrowser);
   });
 
-  it('can create a new site as a Gmail user, when not logged in to Gmail', () => {
-    makeForumWithGmailAdminAccount({ alreadyLoggedIn: false });
-  });
+
+  addCreateSiteWithGmailTestSteps({ alreadyLoggedIn: false });
+
 
   it('can actually use the Gmail admin account to create stuff', () => {
     browser.complex.createAndSaveTopic({ title: "Gmail topic title", body: "Body" });
@@ -57,25 +58,40 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
       const siteId = browser.getSiteId();
       server.waitUntilLastEmailMatches(
           siteId, settings.gmailEmail, [newMembersTopicTitle, newMembersTopicText], browser);
+    });
+    it('Logout from Talkyard', () => {
       browser.topbar.clickLogout(); // (6HRWJ3)
     });
   //});
 
-  it('can create a new site as a Gmail user, when already logged in to Gmail', () => {
-    // Now we're logged in already, so the Gmail login flow is / might-be slightly different.
-    makeForumWithGmailAdminAccount({ alreadyLoggedIn: true });
+
+  // Now we're logged in already, so the Gmail login flow can be slightly different.
+  addCreateSiteWithGmailTestSteps({ alreadyLoggedIn: true });
+
+  it('Logout from Talkyard', () => {
     browser.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  function makeForumWithGmailAdminAccount(ps: { alreadyLoggedIn: boolean }) {
-    const data = createTestData({
-      newSiteOwner: NewSiteOwnerType.GmailAccount,
-      alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+
+  function addCreateSiteWithGmailTestSteps(ps: { alreadyLoggedIn: boolean }) {
+    const maybe = ps.alreadyLoggedIn ? "already" : "not";
+    let newSiteResult: NewSiteResult;
+
+    it(`can create site as Gmail user, when ${maybe} logged in to Gmail`, () => {
+      const data = createTestData({
+        newSiteOwner: NewSiteOwnerType.GmailAccount,
+        alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+      });
+      newSiteResult = browser.newSite.createNewSite(data);
     });
-    console.log("Create new site:");
-    browser.createNewSite(data);
-    console.log("Create forum:");
-    browser.createSomething.createForum("Gmail Forum Title");
+
+    it('Sign up as owner', () => {
+      browser.newSite.signUpAsOwner(newSiteResult);
+    });
+
+    it('create forum', () => {
+      browser.createSomething.createForum(`Gmail Forum, ${maybe} logged in`);
+    });
   }
 
 });

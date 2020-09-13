@@ -54,7 +54,8 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
   it('Owen creates an embedded comments site as a Password user  @login @password', () => {
     const newSiteData: NewSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
         shortName: 'emb-exp', longName: "Emb Cmts Exp" });
-    const result = owensBrowser.createNewSite(newSiteData);
+    const result = owensBrowser.newSite.createNewSite(newSiteData);
+    owensBrowser.newSite.signUpAsOwner(result);
     data = result.data;
     siteId = result.siteId;
     talkyardSiteOrigin = result.talkyardSiteOrigin;

@@ -566,81 +566,89 @@ export class TyE2eTestBrowser {
     }
 
 
-    createNewSite(data: NewSiteData): NewSiteResult {
-      // Dupl code [502SKHFSKN53]
-      let url;
-      if (data.siteType === SiteType.Forum) {
-        console.log("Go to create Forum site page ...");
-        url = utils.makeCreateSiteWithFakeIpUrl();
-      }
-      else {
-        console.log("Go to create Embedded Comments site page ...");
-        url = utils.makeCreateEmbeddedSiteWithFakeIpUrl();
-      }
-      this.go2(url);
-      this.disableRateLimits();
+    newSite = {
+      createNewSite: (data: NewSiteData): NewSiteResult => {
+        // Dupl code [502SKHFSKN53]
+        let url;
+        if (data.siteType === SiteType.Forum) {
+          console.log("Go to create Forum site page ...");
+          url = utils.makeCreateSiteWithFakeIpUrl();
+        }
+        else {
+          console.log("Go to create Embedded Comments site page ...");
+          url = utils.makeCreateEmbeddedSiteWithFakeIpUrl();
+        }
+        this.go2(url);
+        this.disableRateLimits();
 
-      console.log("Fill in fields and submit...");
-      this.createSite.fillInFieldsAndSubmit(data);
+        console.log("Fill in fields and submit...");
+        this.createSite.fillInFieldsAndSubmit(data);
 
-      // New site; disable rate limits here too.
-      this.disableRateLimits();
-      const siteId = this.getSiteId();
-      const talkyardSiteOrigin = this.origin();
+        // New site; disable rate limits here too.
+        this.disableRateLimits();
+        const siteId = this.getSiteId();
+        const talkyardSiteOrigin = this.origin();
 
-      console.log("Click sign up as owner ...");
-      this.createSite.clickOwnerSignupButton();
+        return {
+          data,
+          testId: data.testId,
+          siteId,
+          talkyardSiteOrigin,
+        }
+      },
 
-      console.log("... sign up as owner ...");
-      switch (data.newSiteOwner) {
-        case NewSiteOwnerType.OwenOwner:
-          this.loginDialog.createPasswordAccount(data, true);
-          const email = server.getLastEmailSenTo(siteId, data.email, this);
-          const link = utils.findFirstLinkToUrlIn(
-            data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-          this.go(link);
-          this.waitAndClick('#e2eContinue');
-          break;
-        case NewSiteOwnerType.GmailAccount:
-          this.loginDialog.createGmailAccount({
-            email: settings.gmailEmail,
-            password: settings.gmailPassword,
-            username: data.username,
-          }, { shallBecomeOwner: true });
-          break;
-        case NewSiteOwnerType.FacebookAccount:
-          this.loginDialog.createFacebookAccount({
-            email: settings.facebookAdminEmail,
-            password: settings.facebookAdminPassword,
-            username: data.username,
-          }, true);
-          break;
-        case NewSiteOwnerType.GitHubAccount:
-          this.loginDialog.createGitHubAccount({
-              username: settings.githubUsernameMixedCase,
-              password: settings.githubPassword,
+
+      signUpAsOwner: (newSiteResult: NewSiteResult) => {
+        const data = newSiteResult.data;
+        const siteId = newSiteResult.siteId;
+
+        console.log("Click sign up as owner ...");
+        this.createSite.clickOwnerSignupButton();
+
+        console.log("... sign up as owner ...");
+        switch (data.newSiteOwner) {
+          case NewSiteOwnerType.OwenOwner:
+            this.loginDialog.createPasswordAccount(data, true);
+            const email = server.getLastEmailSenTo(siteId, data.email, this);
+            const link = utils.findFirstLinkToUrlIn(
+              data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
+            this.go(link);
+            this.waitAndClick('#e2eContinue');
+            break;
+          case NewSiteOwnerType.GmailAccount:
+            this.loginDialog.createGmailAccount({
+              email: settings.gmailEmail,
+              password: settings.gmailPassword,
+              username: data.username,
+            }, { shallBecomeOwner: true });
+            break;
+          case NewSiteOwnerType.FacebookAccount:
+            this.loginDialog.createFacebookAccount({
+              email: settings.facebookAdminEmail,
+              password: settings.facebookAdminPassword,
+              username: data.username,
+            }, true);
+            break;
+          case NewSiteOwnerType.GitHubAccount:
+            this.loginDialog.createGitHubAccount({
+                username: settings.githubUsernameMixedCase,
+                password: settings.githubPassword,
+                shallBecomeOwner: true,
+                alreadyLoggedInAtGitHub: data.alreadyLoggedInAtIdProvider });
+            break;
+          case NewSiteOwnerType.LinkedInAccount:
+            this.loginDialog.createLinkedInAccount({
+              email: settings.linkedinEmail,
+              password: settings.linkedinPassword,
+              username: data.username,
               shallBecomeOwner: true,
-              alreadyLoggedInAtGitHub: data.alreadyLoggedInAtIdProvider });
-          break;
-        case NewSiteOwnerType.LinkedInAccount:
-          this.loginDialog.createLinkedInAccount({
-            email: settings.linkedinEmail,
-            password: settings.linkedinPassword,
-            username: data.username,
-            shallBecomeOwner: true,
-            alreadyLoggedInAtLinkedIn: data.alreadyLoggedInAtIdProvider,
-          });
-          break;
-        default:
-          die("Unimpl [TyE50KUKTYS25]");
-      }
-
-      return {
-        data,
-        testId: data.testId,
-        siteId,
-        talkyardSiteOrigin,
-      }
+              alreadyLoggedInAtLinkedIn: data.alreadyLoggedInAtIdProvider,
+            });
+            break;
+          default:
+            die("Unimpl [TyE50KUKTYS25]");
+        }
+      },
     }
 
 
