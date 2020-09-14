@@ -1815,14 +1815,19 @@ export const PostBody = createComponent({
     const post: Post = this.props.post;
 
     // @ifdef DEBUG
-    dieIf(!post.isBodyHidden && !post_isDeletedOrCollapsed(post) &&
-        isNullOrUndefined(post.sanitizedHtml) &&
-        isNullOrUndefined(post.unsafeSource), `No text: ${toStr(post)} [TyE35RK3JH5]`);
+    // There should be something to see, unless the post is hidden or not yet
+    // approved. (We do load unapproved posts [show_empty_unapr]
+    // and show "placeholders" indicating that there is a post, and that it's
+    // not yet approved — but not who wrote it or its contents.)
+    dieIf(post.isApproved &&
+          !post.isBodyHidden &&
+          !post_isDeletedOrCollapsed(post) &&
+          isNullOrUndefined(post.sanitizedHtml) &&
+          isNullOrUndefined(post.unsafeSource),
+          `No post.sanitizedHtml or unsafeSource: ${toStr(post)} [TyE35RK3JH5]`);
 
     dieIf(post.isForDraftNr && isNullOrUndefined(post.unsafeSource), 'TyE2KSTH047A');
-
     dieIf(post.isEditing && isNullOrUndefined(post.sanitizedHtml), 'TyE8WT6SR2T');
-
     dieIf(post.summarize && isNullOrUndefined(post.summary), 'TyE75FKDTT035');
     // @endif
 

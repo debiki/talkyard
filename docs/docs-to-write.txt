@@ -32,6 +32,11 @@ URL fragment action API, e.g.:
 http://site.localhost/forum/#composeTopic&category=slug:ideas
 search for  enum FragActionType.
 
+URL fragment params for development:
+/-/admin/settings/site#&showAll   — shows all settings, e.g. site address
+also for embedded comments sites.
+?debugStats=true
+byp
 
 How import Disqus comments? How import WordPress comments?
 (1 + 1 person asked)

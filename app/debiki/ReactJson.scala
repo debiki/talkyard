@@ -219,6 +219,9 @@ class JsonMaker(dao: SiteDao) {
       // In case a page contains both form replies and "normal" comments, don't load any
       // form replies, because they might contain private stuff. (Page type might have
       // been changed to/from Form.) [5GDK02]
+      // Note that we do include unapproved posts. Client side, they're shown
+      // as empty posts with a date but no author, and "not yet approved"
+      // text. [show_empty_unapr]
       post.tyype != PostType.CompletedForm &&
       post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
       !post.deletedStatus.isDeleted || post.isOrigPost || post.isTitle || (
@@ -1714,6 +1717,14 @@ object JsonMaker {
       }
     }
 
+    SHOULD // Don't show who the author is, until post approved (or if is
+    // staff, or own post — then ok to know who the author is).
+    val authorId = post.createdById
+    /* Wait with this — the Unknown User is apparently not available browser side.
+          if (isApproved || includeUnapproved) post.createdById
+          else UnknownUserId
+    */
+
     // For now, ignore ninja edits of the very first revision, because otherwise if
     // clicking to view the edit history, it'll be empty.
     val lastApprovedEditAtNoNinja =
@@ -1726,7 +1737,7 @@ object JsonMaker {
       "parentNr" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostNrs" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
       "postType" -> JsNumber(post.tyype.toInt),
-      "authorId" -> JsNumber(post.createdById),
+      "authorId" -> JsNumber(authorId),
       "createdAtMs" -> JsDateMs(post.createdAt),
       "approvedAtMs" -> JsDateMsOrNull(post.approvedAt),
       "lastApprovedEditAtMs" -> JsDateMsOrNull(lastApprovedEditAtNoNinja),
