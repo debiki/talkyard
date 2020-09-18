@@ -124,6 +124,9 @@ export const PatternInput = createClassAndFactory({
     if (this.props.notRegexFour && this.props.notRegexFour.test(value))
       return this.props.notMessageFour;
 
+    if (this.props.notRegexFive && this.props.notRegexFive.test(value))
+      return this.props.notMessageFive;
+
     if (this.props.lastRegex && !this.props.lastRegex.test(value))
       return this.props.lastMessage;
 
@@ -147,8 +150,8 @@ export const PatternInput = createClassAndFactory({
     let anyError;
     if (this.state.showErrors || this.props.error) {
       anyError = this.findAnyError(this.props.trim ? this.state.value.trim() : this.state.value);
-      if (anyError && _.isString(anyError)) {
-        anyError = r.b({ style: { color: 'red' }}, anyError);
+      if (anyError) {
+        anyError = r.div({ className: 's_PatInp_Err' }, anyError);
       }
     }
     return (

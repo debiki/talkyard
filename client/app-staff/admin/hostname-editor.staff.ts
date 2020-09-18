@@ -101,6 +101,14 @@ const HostnameEditorDialog = createComponent({
           notRegex: /\s/, notMessage: "No spaces please",
           notRegexTwo: /^https?:/, notMessageTwo: "Don't include http://",
           notRegexThree: /[:!@\/\?\#_]/, notMessageThree: "No chars like: : @ / ! ? # _",
+          notRegexFour: /[^.]+\.[^.]+\.talkyard.net$/,
+          notMessageFour: r.div({},
+              "No. Instead of: ",
+              r.kbd({}, "some.thing.talkyard.net"), ", type: ",
+              r.kbd({}, "something.talkyard.net"), ".", r.br(),
+              r.br(),
+              "(HTTPS works only for ", r.kbd({}, "*.talkyard.net"), ", not ",
+              r.kbd({}, "*.*.talkyard.net"), ")"),
           // Later, could allow bare domains, if the user first reads a bit about
           // the problems with bare domains, + hen must type a 3 letter "password" included
           // in that info, to show that hen has really read it?
