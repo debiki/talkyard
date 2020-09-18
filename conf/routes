@@ -229,6 +229,7 @@ GET   /-/load-post-revisions    controllers.EditController.loadPostRevisions(pos
 
 POST  /-/start-private-group-talk controllers.GroupTalkController.sendMessage
 
+GET   /-/may-upload-file        controllers.UploadsController.mayUploadFile(sizeBytes: Int)
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
 POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar(userId: Int)
 POST  /-/remove-avatar          controllers.UploadsController.removeAvatar

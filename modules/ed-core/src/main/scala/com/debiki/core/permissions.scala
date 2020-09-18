@@ -19,6 +19,15 @@ package com.debiki.core
 
 import com.debiki.core.Prelude._
 
+case class PatsDirectPerms(
+  permsOnSite: collection.immutable.Seq[PermsOnSite],
+  permsOnPages: collection.immutable.Seq[PermsOnPages])
+
+
+case class PermsOnSite(
+  forPeopleId: UserId,
+  maxUploadSizeBytes: i32)
+
 
 /** If maySeeOwn is true, then one may see one's own stuff, even if maySee is false.
   */

@@ -463,6 +463,8 @@ package object core {
   val OneMonthInMillis: Long = 365 * MillisPerDay / 12  // divides evenly
   val OneYearInMillis: Long = 365 * MillisPerDay
 
+  val Kibibyte: Int = 1024
+  val Mebibyte: Int = 1024 * 1024
   val Megabyte: Int = 1000 * 1000
   val Megabytes: Int = Megabyte
 

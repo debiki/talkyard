@@ -1817,6 +1817,11 @@ function makeStranger(store: Store): Myself {
     myCurrentPageData: makeNoPageData(),
 
     marksByPostId: {},
+
+    // The server ought to incl this, so the upload-file dialog
+    // says "File too large" correctly. ... Fix some time later. For now:
+    // (hmm or maybe set to 0? Auth required, to upload file [may_unau_upl])
+    maxUploadSizeBytes: Sizes.Mebibyte,
   };
   // There might be some globally pinned chats, which we also want to show in the watchbar.
   if (store.strangersWatchbar) {

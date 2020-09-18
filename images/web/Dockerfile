@@ -243,9 +243,6 @@ RUN \
 RUN rm -fr /tmp/nginx-modules/
 
 
-COPY lua-packages /opt/lua-packages/
-
-
 # Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
 # And gdb, for backtracing core dumps. [NGXCORED]
 RUN apk add --no-cache bash tree curl net-tools gdb \
@@ -258,6 +255,9 @@ RUN rm -fr \
   mime.types.default \
   nginx.conf \
   nginx.conf.default
+
+
+COPY lua-packages /opt/lua-packages/
 
 
 COPY ssl-cert-snakeoil.key /etc/nginx/

@@ -37,23 +37,44 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
   extends EdController(cc, edContext) {
 
   import context.safeActions.ExceptionAction
-  import context.globals.{maxUploadSizeBytes, anyPublicUploadsDir}
-  import Globals.LocalhostUploadsDirConfValName
+  import context.globals.config.uploads.maxBytesLargeFile
+  //import context.globals.anyPublicUploadsDir
+  //import Globals.LocalhostUploadsDirConfValName
 
-  val MaxAvatarUploadSizeBytes: UnixDays =
+  val MaxAvatarUploadSizeBytes: i32 =
     MaxAvatarTinySizeBytes + MaxAvatarSmallSizeBytes + MaxAvatarMediumSizeBytes
 
 
-  def uploadPublicFile: Action[Either[MaxSizeExceeded, MultipartFormData[Files.TemporaryFile]]] =
-        PostFilesAction(RateLimits.UploadFile, maxBytes = maxUploadSizeBytes) { request =>
+  def mayUploadFile(sizeBytes: i32): Action[U] = GetAction { request =>
+    // Tests: upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ESVUPLCK
+    import request.dao
+    val perms = dao.getPermsOnSiteFor(Vector(Group.EveryoneId))
+    // Add 1000 bytes, because the request body includes
+    // a multipart/form-data boundary, can be around 300 bytes.
+    throwForbiddenIf(sizeBytes > perms.maxUploadSizeBytes + 1000,  // [upl_sz_ck]
+          "TyESVUPLSZCK_", s"File too large: ${sizeBytes.toFloat / Mebibyte
+              } MiB; max size is ${perms.maxUploadSizeBytes / Mebibyte} MiB")
+    Ok
+  }
+
+
+  def uploadPublicFile: Action[Either[
+            MaxSizeExceeded, MultipartFormData[Files.TemporaryFile]]] =
+        PostFilesAction(RateLimits.UploadFile, maxBytes = maxBytesLargeFile) { request =>
+    import request.dao
+
+    // This handles many uploaded files.
+    // (For uploading just one file, see: [5039RKJW45])
 
     // COULD disable the file upload dialog for guests. And refuse to receive any data at
     // all (not create any temp file) if not authenticated.
+    //
+    // UX COULD add a conf val, so admins can decide if guests may upload e.g. images?
+    // [may_unau_upl]
+    //
     if (!request.theUser.isAuthenticated)
       throwForbidden("DwE7UMF2", o"""Only authenticated users (but not guests) may upload files.
           Please login via for example Google or Facebook, or create a password account""")
-
-    // [5039RKJW45]
 
     // COULD try to detect if the client cancelled the upload. Currently, if the browser
     // called xhr.abort(), we'll still get to here, and `data` below will be the data
@@ -63,7 +84,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
     val multipartFormData = request.body match {
       case Left(maxExceeded: mvc.MaxSizeExceeded) =>
         throwForbidden("DwE403FTL0", o"""File too large: I got ${maxExceeded.length} bytes,
-            but size limit is $maxUploadSizeBytes bytes""")
+            but size limit is $maxBytesLargeFile bytes""")
       case Right(data) =>
         data
     }
@@ -77,6 +98,18 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
       throwBadRequest("EdE7UYMF3", s"Use the multipart form data key name 'file' please")
 
     val file = files.head
+
+    // This far, in this endpoint, we've verified only that size <= maxBytesLargeFile.
+    // However, the upload limit might be lower, for this user or this site.
+    // We've checked this already [upl_sz_ck] — let's double check, and this
+    // time, there're no form-data boundaries.
+    val perms = dao.getPermsOnSiteFor(Vector(Group.EveryoneId))
+    val maxUploadSizeBytes = perms.maxUploadSizeBytes
+    val maxSizeThisSiteRequesterFileType = maxUploadSizeBytes
+    val forThisFileType = "" // " for this file type"
+    throwForbiddenIf(file.fileSize > maxUploadSizeBytes,
+          "TyESVUPLSZCK2", o"Uploaded file too large, max is: ${
+          maxSizeThisSiteRequesterFileType}$forThisFileType.")
 
     val uploadRef = request.dao.addUploadedFile(
       file.filename, file.ref.file, request.theUserId, request.theBrowserIdData)

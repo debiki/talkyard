@@ -60,8 +60,6 @@ trait UploadsDao {
               }, limit: ${maxBytes / 1000 / 1000}""")
     }
 
-    def maxUploadSizeBytes = globals.maxUploadSizeBytes
-
     val publicUploadsDir = globals.anyPublicUploadsDir getOrElse throwForbidden(
       "DwE5KFY9", "File uploads disabled, config value missing: " +
         Globals.LocalhostUploadsDirConfValName)
@@ -74,7 +72,10 @@ trait UploadsDao {
 
     val origMimeType: String = tika.detect(tempFile.toPath.toAbsolutePath)
     val origSize = tempFile.length
-    if (origSize >= maxUploadSizeBytes)
+
+    // Another extra check — already verified here: [upl_sz_ck] that isn't too large.
+    val maxUploadSizeBytes = globals.config.uploads.maxBytesLargeFile
+    if (origSize > maxUploadSizeBytes)
       throwForbidden("DwE5YFK2", s"File too large, more than $origSize bytes")
 
 

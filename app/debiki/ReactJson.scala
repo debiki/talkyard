@@ -374,7 +374,6 @@ class JsonMaker(dao: SiteDao) {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
-      "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
       "me" -> noUserSpecificData(authzCtx.tooManyPermissions),
@@ -432,7 +431,6 @@ class JsonMaker(dao: SiteDao) {
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
       "me" -> noUserSpecificData(dao.getPermsForEveryone()),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
-      "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(),
       "usersByIdBrief" -> Json.obj(),
       "pageMetaBriefById" -> JsObject(Nil),
@@ -649,6 +647,7 @@ class JsonMaker(dao: SiteDao) {
     }
 
     val permissions = pageRequest.authzContext.tooManyPermissions
+    val permsOnSiteTooMany = dao.getPermsOnSiteFor(Vector(requester.id))
 
     var watchbar: BareWatchbar = dao.getOrCreateWatchbar(requester.id)
     if (pageRequest.pageExists) {
@@ -677,7 +676,7 @@ class JsonMaker(dao: SiteDao) {
 
     dao.readOnlyTransaction { tx =>
       Some(requestersJsonImpl(requester, pageRequest.pageId, watchbarWithTitles,
-            restrTopicsCatsLinks, permissions,
+            restrTopicsCatsLinks, permissions, permsOnSiteTooMany,
             unapprovedPostAuthorIds, myGroupsEveryoneLast, tx))
     }
   }
@@ -690,6 +689,7 @@ class JsonMaker(dao: SiteDao) {
       return JsNull
     }
     val permissions = authzContext.tooManyPermissions
+    val permsOnSiteTooMany = dao.getPermsOnSiteFor(Vector(requester.id))
     val watchbar = dao.getOrCreateWatchbar(requester.id)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val myGroupsEveryoneLast: Seq[Group] =
@@ -698,14 +698,16 @@ class JsonMaker(dao: SiteDao) {
     dao.readOnlyTransaction { tx =>
       requestersJsonImpl(requester, anyPageId = None, watchbarWithTitles,
             RestrTopicsCatsLinks(JsArray(), Nil, Nil, Nil),
-            permissions, unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, tx)
+            permissions, permsOnSiteTooMany,
+            unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, tx)
     }
   }
 
 
   private def requestersJsonImpl(requester: Participant, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrTopicsCatsLinks: RestrTopicsCatsLinks,
-        permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
+        permissions: Seq[PermsOnPages], permsOnSiteTooMany: PermsOnSite,
+        unapprovedPostAuthorIds: Set[UserId],
         myGroupsEveryoneLast: Seq[Group], tx: SiteTransaction): JsObject = {
 
     val restrictedCategories: JsArray = restrTopicsCatsLinks.categoriesJson
@@ -850,7 +852,8 @@ class JsonMaker(dao: SiteDao) {
       "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
       "myGroupIds" -> JsArray(myGroupsEveryoneLast.map(g => JsNumber(g.id))),
       "myDataByPageId" -> ownDataByPageId,
-      "marksByPostId" -> JsObject(Nil))
+      "marksByPostId" -> JsObject(Nil),
+      "maxUploadSizeBytes" -> JsNumber(permsOnSiteTooMany.maxUploadSizeBytes))
 
     if (requester.isAdmin) {
       val siteSettings = tx.loadSiteSettings()
