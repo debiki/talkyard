@@ -109,5 +109,7 @@ describe("sso-admin-extra-login  TyT03WKDTRP50", () => {
     owensBrowser.userProfilePage.assertIsMyProfile();
   });
 
+  // SEC_TESTS_MISSING verify link expires after one hour
+
 });
 

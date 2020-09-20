@@ -1,4 +1,4 @@
-@(siteAddress: String, url: String, member: com.debiki.core.User, expirationTimeInHours: Int)
+@(siteAddress: String, url: String, member: com.debiki.core.User, expiresInMinutes: Int)
 
 @import org.owasp.encoder.Encode
 
@@ -11,7 +11,7 @@ in the talkyard-prod-one repo. The script is useful if email not yet configured.
 To login at <tt>@siteAddress</tt>, as <tt>@@@{member.username}</tt>, please follow
 <a href="@Html(Encode.forUri(url))">
   this link</a>.
-It expires in @{expirationTimeInHours} hours, and works just once.
+It expires in @expiresInMinutes minutes, and works just once.
 </p>
 
 <p>Kind regards.</p>

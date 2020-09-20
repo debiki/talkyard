@@ -123,8 +123,9 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val oneTimeSecret = nextRandomString()
 
     dao.redisCache.saveOneTimeLoginSecret(
-      // Set a long timeout, so the admin has time to open and read the email.
-      oneTimeSecret, admin.id, expireSeconds = Some(MaxResetPasswordEmailAgeInHours * 3600))
+      oneTimeSecret, admin.id, expireSeconds =
+            // Same as for resetting a password, makes sense?
+            Some(MaxResetPasswordEmailAgeMinutes * 60))
 
     sendOneTimeLoginEmail(
         admin, request, emailTitle = "Admin one time login link", secret = oneTimeSecret)
@@ -169,7 +170,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
           siteAddress = request.host,
           url = url,
           member = user,
-          expirationTimeInHours = MaxResetPasswordEmailAgeInHours).body
+          expiresInMinutes = MaxResetPasswordEmailAgeMinutes).body
       })
 
     dao.saveUnsentEmail(email)
