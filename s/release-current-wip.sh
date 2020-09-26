@@ -1,6 +1,7 @@
 #!/bin/bash
 
 git_lock_file='.git/modules/modules/ed-versions/index.lock'
+versions_file='modules/ed-versions/version-tags.log'
 
 
 if [ -f $git_lock_file ]; then
@@ -27,17 +28,62 @@ read -s -p ''
 set -e
 
 # (Don't use <root>/version.txt — that's the *next* version, not yet released.)
-wip_version_tag=`tail -n1 modules/ed-versions/version-tags.log`
+old_versions=$(cat $versions_file)
+wip_version_tag=$(echo "$old_versions" | tail -n1)
+next_version=$(cat version.txt)
 
 if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
   echo "Not a WIP version tag: $wip_version_tag, no '-WIP-'."
   exit 1
 fi
 
+release_version_tag=$( echo "$wip_version_tag" | sed -r -e 's/WIP-//' )
 
-echo "Release WIP version debiki/talkyard-*:$wip_version_tag?  Press Enter (or CTRL+C to exit)"
-read -s -p ''
 
+# Sanity check version numbers
+
+# version.txt should be newer than $wip_version_tag and
+# $release_version_tag.
+
+next_release_wip_sorted=$(echo \
+"$next_version
+$release_version_tag
+$wip_version_tag" | sort -V)
+
+# 'WIP' starts with uppercase, gets sorted before Git revision hashes.
+wip_release_next_expected=\
+"$wip_version_tag
+$release_version_tag
+$next_version"
+
+if [ "$next_release_wip_sorted" != "$wip_release_next_expected" ]; then
+  echo "Error, something is amiss! When sorting versions, I get this:"
+  echo
+  echo "$next_release_wip_sorted"
+  echo
+  echo "But I expected:"
+  echo
+  echo "$wip_release_next_expected"
+  echo
+  exit 1
+fi
+
+
+
+echo "WIP version, canary released: $wip_version_tag"
+echo "WIP once production released: $release_version_tag"
+echo "      (Upcoming next version: $next_version)"
+echo
+# dupl code [bashutils]
+read -p "Release WIP as debiki/talkyard-*:$release_version_tag? [y/n]  " choice
+case "$choice" in
+  y|Y|yes|Yes|YES ) echo "Ok, will do:"; echo ;;
+  n|N|no|No|NO ) echo "Ok, doing nothing, bye."; exit 1;;
+  * ) echo "What? Bye."; exit 1;;
+esac
+
+echo "Step through the below manually once now ..."
+exit 1
 
 echo "Pulling debiki/talkyard-*:$wip_version_tag ..."
 sudo docker pull debiki/talkyard-app:$wip_version_tag
@@ -49,8 +95,7 @@ sudo docker pull debiki/talkyard-certgen:$wip_version_tag
 
 echo "Done pulling."
 
-release_version_tag=$( echo "$wip_version_tag" | sed -r -e 's/WIP-//' )
-
+# Here and below, Enter is enough, no need to confirm y/n again.
 echo "Tag with debiki/talkyard-*:$release_version_tag?  Press Enter (or CTRL+C to exit)"
 read -s -p ''
 
@@ -88,7 +133,7 @@ git checkout master
 git merge --ff-only origin/master
 echo $release_version_tag >> version-tags.log
 git add version-tags.log
-git commit -m "Add $release_version_tag = the prev WIP, release tagged."
+git commit -m "Release $release_version_tag."
 git push origin master
 popd
 
@@ -96,3 +141,4 @@ git tag $release_version_tag $wip_version_tag
 git push origin $release_version_tag
 
 echo "Done. Bye."
+echo

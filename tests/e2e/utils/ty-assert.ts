@@ -108,7 +108,7 @@ const tyAssert: any = {   // : any = works around:
       message || `This: "${unexpectedSubstring}" is incorrectly included in: "${text}"`);
   },
 
-  numSubstringsEq: (text: string, substringNoSpecialChars: string, numExpected: N) => {
+  numSubstringsEq: (text: St, substringNoSpecialChars: St, numExpected: Nr) => {
     const regex = new RegExp(substringNoSpecialChars, 'gs');
     const numActual = (text.match(regex) || []).length;
     tyAssert.eq(numActual, numExpected,

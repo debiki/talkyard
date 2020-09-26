@@ -152,9 +152,9 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
   }
 
 
-  private def renderNewPostNotf(notf: Notification.NewPost, post: Post, pageTitle: String,
-        maxNotificationLength: Int, transaction: SiteTransaction): NodeSeq = {
-    val pageMeta = transaction.loadPageMeta(post.pageId) getOrElse {
+  private def renderNewPostNotf(notf: Notification.NewPost, post: Post, pageTitle: St,
+        maxNotificationLength: i32, tx: SiteTx): NodeSeq = {
+    val pageMeta = tx.loadPageMeta(post.pageId) getOrElse {
       return Nil
     }
 
@@ -172,7 +172,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }
 
     SECURITY ; SHOULD // indicate if is guest's name, so cannot pretend to be any @username.
-    val byUserName = transaction.loadParticipant(notf.byUserId).map(_.usernameOrGuestName) getOrElse
+    val byUserName = tx.loadParticipant(notf.byUserId).map(_.usernameOrGuestName) getOrElse
       "(unknown user name)"
 
     val date = toIso8601Day(post.createdAt)
@@ -206,6 +206,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
     val ellipsis = (postText.length > maxLenBeforeEscapes) ? "..." | ""
     val html = Text(postText.take(maxLenBeforeEscapes) + ellipsis)
+
+    // I18N: Email notifications — lots of stuff here to translate.
 
     val (
       whatHappened,

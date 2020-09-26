@@ -6,7 +6,7 @@ local http = require "resty.http"
 
 local content_length = ngx.var.content_length
 local host = ngx.var.host
-local ip = ngx.var.remote_addr
+local remote_addr = ngx.var.remote_addr
 
 local httpc = http.new()
 
@@ -14,22 +14,13 @@ local httpc = http.new()
 -- in case the JVM collects garbage or sth like that.
 -- COULD: Many minutes read timeout, in dev mode, so time for a human
 -- to step through the Scala app in a debugger.
-httpc:set_timeouts(500, 3000, 3000)
+httpc:set_timeouts(1000, 5000, 5000)
 
 -- There's a connection pool; matching idle connections will get reused.
--- This: httpc:connect("app", 9000)  Lua? Nginx? cannot resolve 'app'.
--- But oddly enough, works fine in  server-locations.conf!
--- But this works:  (31 is 'app', see  INTERNAL_NET_APP_IP in .env)
---
--- However! Are there very early self hosted installs?
--- Without a .env with fixed ip addrs? Then this won't work, and,
--- for now, then let's reply Ok to the request.
--- DO_AFTER 2020-11-01 figure out how to verify if any old self hosted
--- installations lack the fixed ip config? [rej_upl_if_err]
-httpc:connect("172.27.0.31", 9000)
-
--- Someone else had problems with hostname resolution too:
--- https://github.com/openresty/lua-nginx-module/issues/441#issuecomment-65954680
+-- (For this to work, Nginx needs to have been configured with
+-- `resolver dns-server-addr` — see nginx.conf — otherwise there'll be
+-- this error:  'error: no resolver defined to resolve "app"')
+httpc:connect("app", 9000)
 
 -- COULD parse the request body and split at the form-data boundaries,
 -- to find out how large each file is, in case there're many uploads in
@@ -55,20 +46,18 @@ local res, err = httpc:request({
 
 local toFromSize =
         "to: " .. host ..
-        " from: " .. ip ..
+        " from: " .. remote_addr ..
         " size: " .. content_length
 
 if not res then
-    -- ngx.status = 500
-    -- ngx.header.content_type = 'text/plain'
-    -- ngx.say("500 Internal Error\n\n" ..
-    --         "Error finding out if may upload file [TyEUPLCHK]\n\n", err)
+    ngx.status = 500
+    ngx.header.content_type = 'text/plain'
+    ngx.say("500 Internal Error\n\n" ..
+            "Error finding out if may upload file [TyELUAUPLCK]\n\n", err)
     ngx.log(ngx.ERR, "Request failed: /-/may-upload-file, " ..
-            "NOT ejecting upload " .. toFromSize    -- [rej_upl_if_err]
-            " [TyEUPLCHK], error: " .. err)
-            -- ": 500 Internal Error [TyEUPLCHK]: " .. err)
-    -- return ngx.exit(ngx.HTTP_OK)
-    return ngx.exit(ngx.OK)
+            "rejecting upload " .. toFromSize .. " [TyELUAUPLCK]" ..
+            ": 500 Internal Error [TyELUAUPLCK]: " .. err)
+    return ngx.exit(ngx.HTTP_OK)
 end
 
 if res.status ~= 200 then
@@ -76,7 +65,7 @@ if res.status ~= 200 then
     ngx.header.content_type = 'text/plain'
     ngx.say(res:read_body())
     ngx.log(ngx.DEBUG, "Rejecting upload " .. toFromSize ..
-            " [TyMREJUPL], status: " .. res.status)
+            " [TyMLUAREJUPL], status: " .. res.status)
     return ngx.exit(ngx.HTTP_OK)
 end
 

@@ -350,8 +350,16 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     if (notfRenderResult.html.isEmpty)
       return None
 
-    // Always use the same subject line, even if only 1 comment, so will end up in the same
+    // Always use the same subject line, even if only 1 comment, so ends up in the same
     // email thread. Include site name, so simpler for people to find the email.
+    val subject = s"[$siteName] New notifications"   // I18N
+
+    // The following creates different and more specific email titles — but results
+    // in email clients creating many different email threads, making people annoyed
+    // about a noisy email inbox.
+    // Keep this, commented out, anyway — maybe for low traffic sites (like,
+    // a blog with 1 new topic per month), more specific titles can be nice?
+    /*
     val subject: String = {
         val newWhat = ArrayBuffer[String]()
         if (notfRenderResult.newModTasks) {
@@ -384,7 +392,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
         subjText ++= commaSep.mkString("", ", ", "")
         andLast foreach { subjText ++= ", and " + _ }
         subjText.toString
-      }
+      } */
 
     val email = Email(EmailType.Notification, createdAt = globals.now(),
       sendTo = user.email, toUserId = Some(user.id),
