@@ -25,12 +25,18 @@
 	# This LuaJIT GitHub repo is a mirror of: http://luajit.org/git/luajit-2.0.git
 	# We use the mirror instead of the main repo, because someone had problems accessing the
 	# main repo (corporate or country firewall?) but the GitHub mirror worked fine.
-	# I (KajMagnus) asked about the mirror here:
+	# I (KajMagnus) asked if the mirror here is maintained by Mike Pall:
 	# https://www.freelists.org/post/luajit/Sequrity-question-Is-httpsgithubcomLuaJIT-maintained-by-Mike-Pall
+	# and someone there replied:
+	#  > the fast and short answer is yes. however he is busy with other things,
+	#  > so he just appears from time to time to handle issues and pull requests [...]
 	url = https://github.com/LuaJIT/LuaJIT.git
 [submodule "images/web/modules/ngx_devel_kit"]
 	path = images/web/modules/ngx_devel_kit
 	url = https://github.com/simpl/ngx_devel_kit.git
+[submodule "images/web/lua-packages/lua-resty-http"]
+	path = images/web/lua-packages/lua-resty-http
+	url = https://github.com/ledgetech/lua-resty-http.git
 [submodule "images/web/lua-packages/lua-resty-redis"]
 	path = images/web/lua-packages/lua-resty-redis
 	url = https://github.com/openresty/lua-resty-redis.git
