@@ -156,15 +156,15 @@ describe("user-profile-change-password.test.ts  TyT6HJ2RD1", () => {
         siteId, maria.emailAddress, browser);
   });
 
-  it("... falls asleep, and forgets about it, for four days", () => {
-    server.playTimeDays(4);
+  it("... falls asleep, for an hour", () => {
+    server.playTimeHours(1);
   });
 
   it("... then she clicks the 2nd reset-password link", () => {
     mariasBrowser.go(mariasResetPasswordLink);
   });
 
-  it("... but oh no, it has expired", () => {
+  it("... but oh no, No!, it has expired", () => {
     mariasBrowser.waitUntilPageHtmlSourceMatches_1('TyEPWRSTEXP_');
   });
 

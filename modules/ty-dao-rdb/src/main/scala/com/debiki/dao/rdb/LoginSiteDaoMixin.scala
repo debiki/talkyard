@@ -176,8 +176,10 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       case None =>
         throw new QuickMessageException("Email hasn't been sent [TyEPWRST0SNT]")
       case Some(emailSentDate) =>
-        if (emailSentDate.getTime + 36 * OneHourInMillis < loginAttempt.date.getTime)
-          throw new QuickMessageException("Reset password link expired (after 36 hours) [TyEPWRSTEXP_]")
+        val expMins = 30 // [exp_emails_time]
+        if (emailSentDate.getTime + expMins * MillisPerMinute < loginAttempt.date.getTime)
+          throw new QuickMessageException(
+                s"Reset password link expired (after $expMins minutes) [TyEPWRSTEXP_]")
     }
 
     val user = loadUser(email.toUserId.get) getOrElse {

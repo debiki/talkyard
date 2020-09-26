@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.auth
+package ed.server.auth   // RENAME to talkyard.server.authz
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -23,6 +23,7 @@ import debiki.dao.{MemCacheKey, SiteDao}
 import ed.server.auth.MayMaybe.{NoMayNot, NoNotFound, Yes}
 import ed.server.http._
 import scala.collection.immutable
+import scala.collection.immutable.Seq
 
 
 
@@ -258,7 +259,7 @@ trait AuthzSiteDaoMixin {
 
   @deprecated("now", "use getPermsForPeople instead?")
   def getPermsOnPages(categories: immutable.Seq[Category]): immutable.Seq[PermsOnPages] = {
-    getAllPermsOnPages()
+    getAllPermsOnPages().permsOnPages
   }
 
 
@@ -267,9 +268,19 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  // RENAME to getPermsOnPagesFor(...)
   def getPermsForPeople(userIds: Iterable[UserId]): immutable.Seq[PermsOnPages] = {
-    val perms = getAllPermsOnPages()
+    val perms = getAllPermsOnPages().permsOnPages
     perms.filter(p => userIds.exists(_ == p.forPeopleId))
+  }
+
+
+  def getPermsOnSiteFor(userIds: Iterable[UserId]): PermsOnSite = {
+    val perms = getAllPermsOnPages().permsOnSite
+    // perms.filter(p => userIds.exists(_ == p.forPeopleId))
+    // For now:
+    dieIf(perms.size != 1, "TyE305RSKGJ2")
+    perms.head
   }
 
 
@@ -278,12 +289,25 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  private def getAllPermsOnPages(): immutable.Seq[PermsOnPages] = {
+  private def getAllPermsOnPages(): PatsDirectPerms = {
     memCache.lookup(
       allPermsKey,
       orCacheAndReturn = {
         Some(readOnlyTransaction { tx =>
-          tx.loadPermsOnPages()
+          // For now. Later, will load from database, + restrict to <= sth-per-site.
+          val everyonesUploadPerms =
+                PermsOnSite(
+                    forPeopleId = Group.EveryoneId,
+                    maxUploadSizeBytes = {
+                      if (globals.config.uploads.mayUploadLargeFiles(siteId))
+                        globals.config.uploads.maxBytesLargeFile
+                      else
+                        globals.config.uploads.maxBytesSmallFile
+                    })
+
+          PatsDirectPerms(
+                permsOnPages = tx.loadPermsOnPages(),
+                permsOnSite = Vector(everyonesUploadPerms))
         })
       }).get
   }

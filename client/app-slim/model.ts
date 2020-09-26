@@ -441,6 +441,8 @@ interface Myself extends OwnPageNotfPrefs {
 
   // So can avoid showing getting-started-guide for admins — it's not needed, for embedded comments sites.
   isEmbeddedCommentsSite?: boolean;
+
+  maxUploadSizeBytes: Nr;
 }
 
 
@@ -890,7 +892,6 @@ interface Store extends Origins, PartialEditorStoreState {
   userMustBeApproved: boolean;
   settings: SettingsVisibleClientSide;
   hideForumIntro?: boolean;
-  maxUploadSizeBytes: number;
   currentCategories: Category[];
   // For all site sections, loaded lazily, and updated in a hacky way, for now, so have a look,
   // and refactor (?), before using it for anything more.

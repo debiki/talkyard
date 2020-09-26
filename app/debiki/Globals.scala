@@ -600,10 +600,6 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   val anyCreateTestSiteHostname: Option[String] =
     getStringNoneIfBlank("talkyard.createTestSiteHostname")
 
-  val maxUploadSizeBytes: Int =
-    (conf.getOptional[Int]("talkyard.uploads.maxKiloBytesPerFile") orElse
-      conf.getOptional[Int]("talkyard.uploads.maxKiloBytes")).map(_ * 1000).getOrElse(3*1000*1000)
-
   val anyUploadsDir: Option[String] = {
     val value = getStringNoneIfBlank(LocalhostUploadsDirConfValName)
     val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
@@ -1192,6 +1188,9 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   private def getIntOrDefault(confName: String, default: Int): Int =
     conf.getOptional[Int](confName) getOrElse default
 
+  private def getF64OrDefault(confName: St, default: f64): f64 =
+    conf.getOptional[f64](confName) getOrElse default
+
   private def getBoolOrDefault(confName: String, default: Boolean): Boolean =
     conf.getOptional[Boolean](confName) getOrElse default
 
@@ -1216,7 +1215,10 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   private val mayPatchSiteIds: String = "," + getStringOrEmpty("talkyard.mayPatchSiteIds") + ","
   def mayPatchSite(siteId: SiteId): Boolean =
     siteId == FirstSiteId ||                        // <—— people's self hosted installations, fine
-      mayPatchSiteIds.contains("," + siteId + ",")  // <—— talkyard.net — restricted
+      includesSiteId(mayPatchSiteIds, siteId)       // <—— talkyard.net — restricted
+
+  private def includesSiteId(value: St, siteId: SiteId): Bo =
+    value.contains("," + siteId + ",")
 
   val mayImportSite: Boolean = getBoolOrDefault("talkyard.mayImportSite", default = false)
   val maxImportDumpBytes: Int = getIntOrDefault("talkyard.maxImportDumpBytes", default = 50*1000*1000)
@@ -1277,6 +1279,30 @@ class Config(conf: play.api.Configuration) extends TyLogging {
 
     val maxBytesPerWeekStaff: Int =
       getIntOrDefault(p + "maxKiloBytesPerWeekStaff", 999*Megabytes / 1000) * 1000
+
+    private val largeUploadsSiteIds: String =
+        "," + getStringOrEmpty(p + "mayUploadLargeFilesSiteIds") + ","
+    def mayUploadLargeFiles(siteId: SiteId): Bo =
+      siteId == FirstSiteId ||
+        includesSiteId(largeUploadsSiteIds, siteId)
+
+    val maxBytesLargeFile: i32 =
+      conf.getOptional[f64](p + "maxMiBLargeFile").map(mib => (mib * Mebibyte).toInt)
+            .getOrElse(maxUploadSizeBytes) // <— REMOVE change to 10 MiB, default?
+
+    val maxBytesSmallFile: i32 =
+      (getF64OrDefault(p + "maxMiBSmallFile", default = 1) * Mebibyte).toInt
+
+    // Old, remove
+    // 2 values: 1 for whole server, absolute max all sites.
+    // 1 per site.  serverGlobalMaxUploadKb   and siteDefaultMaxUploadKb
+    // Or  maxUploadKbServerGlobal  and  maxUploadKbSiteDefault
+    // And admins can config their site's siteDefaultMaxFileKb
+    //   up to serverGlobalMaxFileKb?
+    private def maxUploadSizeBytes: Int =
+      (conf.getOptional[Int]("talkyard.uploads.maxKiloBytesPerFile") orElse
+        conf.getOptional[Int]("talkyard.uploads.maxKiloBytes")).map(_ * Kibibyte)
+            .getOrElse(3 * Mebibyte)  // or 25 MiB? Nginx: TY_NGX_LIMIT_REQ_BODY_SIZE=25m
   }
 
   object cdn {

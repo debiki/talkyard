@@ -169,26 +169,58 @@ export function hashStringToNumber(string: string): number {  // [4KFBW2]
  * Copyright (c) Sindre Sorhus
  * License: MIT
  * https://github.com/sindresorhus/pretty-bytes
+ *
+ * [ty] Changed to units of 1024 = kibi, and KiB, MiB etc,  not kilo = 1000. /Magnus
+ *
+ * Tests: e2e: upload-images-and-files  TyT50E6KTDU7
  */
 export function prettyBytes(num: number): string {
-  var neg = num < 0;
-  var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  let neg = num < 0;
+  const kibi = 1024;  // kibi means 2^10
+
+  // Decimal, with kilo = 1000:
+  // var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+  // File sizes and memory size is typically specified in kibi = 1024 bytes,
+  // not kilo = 1000 bytes. Eg. MS Win and Linux.  [kibi_fs_ram]  [ty]
+  // Basically zero percent people knows how MiB (mebibyte) is different
+  // from MB (megabyte)? But use MiB anyway, so the Ty developers won't
+  // get confused by file sizes in e2e tests. People who don't know about kibi
+  // will probably just assume that MiB = MB, which is fine, that's how
+  // MS Win & Linux(?) display file sizes anyway.
+  //
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+
   if (neg) {
     num = -num;
   }
   if (num < 1) {
     return (neg ? '-' : '') + num + ' B';
   }
-  var exponent: number = Math.min(Math.floor(Math.log(num) / Math.log(1000)), units.length - 1);
+
+  // However, use log(1000) here, not log(1024). Then,    [ty] [pretty_mebibytes]
+  // for example 0.99 MiB = 1037312 bytes = 1.03 MB (megabytes) becomes
+  // exponent = 2, and below,   1037312 / pow(1024, 2) == 0.99
+  // — so we get back 0.99 MiB, which looks nice?
+  // If instead using log(1024) here, then, exponent becomes 1,
+  // and 1037312 / pow(1024, 1) == 1013, so a 0.99 MiB file appears
+  // as 1013 KiB, which can be confusing:  as if 0.99 MiB grew to 1.013.
+  // But if you stop and think:  1013 KiB < 1 MiB (1024 KiB == 1 MiB).
+  //
+  // Tested here: TyTE2EKILOKIBI
+  //
+  const exponent: number = Math.min(
+          Math.floor(Math.log(num) / Math.log(1000)),  // not 1024, see above
+          units.length - 1);
 
   // This results in """error TS2362: The left-hand side of an arithmetic operation must be
   // of type 'any', 'number' or an enum type."""
-  //var rounded: number = (num / Math.pow(1000, exponent)).toFixed(2) * 1;
-  // Instead:
-  var tmp: any = (num / Math.pow(1000, exponent)).toFixed(2);
-  var rounded = tmp * 1;
+  //var rounded: number = (num / Math.pow(1024, exponent)).toFixed(2) * 1;
+  // Instead:  (and note: kibi, not kilo)  [ty]
+  const tmp: any = (num / Math.pow(kibi, exponent)).toFixed(2);
+  const rounded = tmp * 1;
 
-  var unit = units[exponent];
+  const unit = units[exponent];
   return (neg ? '-' : '') + rounded + ' ' + unit;
 }
 

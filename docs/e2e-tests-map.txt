@@ -626,6 +626,11 @@ uploads -  (7KFC2)
   embedded origin added,  (EMBORG)
   pub site id added:
           - embedded-comments-uploads-origin.test.ts  TyT603RKDJA6
+  upload too large file:
+    browser rejects immediately:
+          - upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ETOOLGUPL
+    server rejects if browser didn't:
+          - upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ESVUPLCK
 
 recent comments:
 

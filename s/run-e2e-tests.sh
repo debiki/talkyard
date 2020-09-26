@@ -262,6 +262,10 @@ function runAllE2eTests {
 
   # Start and exit the manual testing tests, just to verify this works.
   $r s/wdio --only manual.2browsers $args
+  #
+  # To restart, reusing same test site: (not deleting and recreating)
+  #
+  #   s/wdio --only manual.2browsers --dt --da --reuse --localHostname e2e-test-something
 
   $r s/wdio --only all-links $args   # RENAME to test-import  ?
   $r s/wdio --only create-site-password-run-admin-intro-tours $args

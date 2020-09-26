@@ -31,6 +31,7 @@ interface TestSettings {
   host: string;
   scheme: string;
   block3rdPartyCookies?: boolean;
+  reuseOldSite?: boolean;
   deleteOldSite: boolean;
   localHostname?: string; // must start with 'e2e-test-' (see settings.ts)
   testLocalHostnamePrefix: string;

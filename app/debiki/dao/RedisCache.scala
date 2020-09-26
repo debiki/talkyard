@@ -58,12 +58,12 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
 
   def loadWatchbar(userId: UserId): Option[BareWatchbar] = {
     val futureString: Future[Option[ByteString]] = redis.get(watchbarKey(siteId, userId))
-    val anyString: Option[ByteString] =
+    val anyByteString: Option[ByteString] =
       try Await.result(futureString, DefaultTimeout)
       catch {
         case _: TimeoutException => die("TyZ4BKW2F", "Redis timeout")
       }
-    anyString.map(s => BareWatchbar.fromCompactString(s.utf8String))
+    anyByteString.map(s => BareWatchbar.fromCompactString(s.utf8String))
   }
 
 
@@ -160,34 +160,47 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   //-------------
 
   private val LoginSecretOffset = 1000 * 1000
+
+  def saveOneTimeLoginSecret(secretKey: St, userId: UserId,
+          expireSeconds: Opt[i64] = None): U = {
+    val expSecs: i64 = expireSeconds getOrElse SingleSignOnSecretExpireSeconds
+    saveOneTimeSecretKeyVal(secretKey, userId.toString, expSecs)
+  }
+
+  def getOneTimeLoginUserIdDestroySecret(secretKey: St)
+          : UserId Or RemoteRedisClientError = {
+    getAndDestroyOneTimeSecretValue(secretKey).map(_.toInt)
+  }
+
+
+  // One-time secret key and value
+  //-------------
+
   private val UsageCountExpireSeconds = SingleSignOnSecretExpireSeconds * 20
 
-  def saveOneTimeLoginSecret(secretKey: String, userId: UserId, expireSeconds: Option[Long] = None): Unit = {
+  def saveOneTimeSecretKeyVal(secretKey: St, value: St, expSecs: i64): U = {
     val key = ssoUserBySecretKey(siteId, secretKey)
     val usageCountKey = ssoSecretUsageCountBySecretKey(siteId, secretKey)
-    val expSecs: Long = expireSeconds getOrElse SingleSignOnSecretExpireSeconds
-    redis.set(key, userId, exSeconds = Some(expSecs))
+    redis.set(key, value, exSeconds = Some(expSecs))
     redis.set(usageCountKey, LoginSecretOffset, exSeconds = Some(expSecs + UsageCountExpireSeconds))
   }
 
-  def getOneTimeLoginUserIdDestroySecret(secretKey: String)
-        : UserId Or RemoteRedisClientError = {
+  def getAndDestroyOneTimeSecretValue(secretKey: St): St Or RemoteRedisClientError = {
     val key = ssoUserBySecretKey(siteId, secretKey)
     val usageCountKey = ssoSecretUsageCountBySecretKey(siteId, secretKey)
     // Could do this in a transaction? [REDITX]
     val futureString: Future[Option[ByteString]] = redis.get(key)
     redis.del(key)
-    val futureUsageCountLong: Future[Long] = redis.incr(usageCountKey)
-    val anyString: Option[ByteString] =
+    val futureUsageCountLong: Future[i64] = redis.incr(usageCountKey)
+    val anyByteString: Option[ByteString] =
       try Await.result(futureString, DefaultTimeout)
       catch {
         case _: TimeoutException =>
           die("Ty4ABKT20", "Redis timeout, for user id by one-time-login-secret")
       }
-    val result = anyString match {
+    val result = anyByteString match {
       case Some(value) =>
-        val userId: UserId = value.utf8String.toInt
-        Good(userId)
+        Good(value.utf8String)
       case None =>
         try {
           val usageCount = Await.result(futureUsageCountLong, DefaultTimeout).toInt
@@ -232,12 +245,12 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
 
   def getLinkPreviewSafeHtml(url: String): Option[String] = {
     val futureString: Future[Option[ByteString]] = redis.get(linkPreviewKey(siteId, url))
-    val anyString: Option[ByteString] =
+    val anyByteString: Option[ByteString] =
       try Await.result(futureString, DefaultTimeout)
       catch {
         case _: TimeoutException => die("Ty603SRKW7", "Redis timeout")
       }
-    anyString.map(s => s.utf8String)
+    anyByteString.map(s => s.utf8String)
   }
 
 

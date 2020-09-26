@@ -30,8 +30,11 @@
 //
 type U = undefined;
 type B = boolean;
+type Bo = boolean;
 type N = number;
+type Nr = number;
 type S = string;
+type St = string;
 
 type SiteData = any;   // [3SD5PB7]
 
@@ -422,6 +425,14 @@ const enum HostRole {
   Redirect = 2,
   Link = 3,
   Duplicate = 4,
+}
+
+
+const enum Sizes {
+  Kilobyte = 1000,   // kB
+  Kibibyte = 1024,   // KiB
+  Megabyte = 1000 * 1000,  // MB
+  Mebibyte = 1024 * 1024,  // MiB
 }
 
 

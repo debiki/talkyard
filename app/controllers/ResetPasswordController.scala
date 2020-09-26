@@ -137,7 +137,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
           userName = user.theUsername,
           emailId = emailId,
           siteAddress = request.host,
-          expirationTimeInHours = ed.server.MaxResetPasswordEmailAgeInHours,
+          expiresInMinutes = ed.server.MaxResetPasswordEmailAgeMinutes,
           globals = globals).body
       })
     dao.saveUnsentEmail(email)

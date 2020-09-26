@@ -261,6 +261,30 @@ export const Editor = createFactory<any, EditorState>({
     if (!files.length)
       return;
 
+    for (let file of files) {
+      const size = file.size;
+      const store: Store = this.state.store;
+      const me: Myself = store.me;
+      const max = me.maxUploadSizeBytes;
+      if (size > max) {
+        util.openDefaultStupidDialog({
+          dialogClassName: 's_UplErrD',
+          closeButtonTitle: t.Close,
+          body: rFragment({},
+            r.p({},
+              r.b({ className: 'e_FlTooLg' }, `File too large: `),   // I18N
+              r.kbd({}, file.name)),
+            r.p({},
+              `File size: ${prettyBytes(size)}`, r.br(),
+              `Max size: ${prettyBytes(max)}`),
+            r.p({},
+              `Instead, what if you upload to a file hosting server,`, r.br(),
+              `and paste a link? (Unless the file is private)`)),   // I18N
+        });
+        return;
+      }
+    }
+
     dieIf(files.length != 1, 'EsE5GPY82');
     FileAPI.upload({   // a bit dupl code [2UK503]
       url: '/-/upload-public-file',

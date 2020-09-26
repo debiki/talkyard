@@ -35,8 +35,20 @@ describe("some-e2e-test  TyT1234ABC", () => {
       members: ['maria', 'memah', 'michael'],
     });
     assert.refEq(builder.getSite(), forum.siteData);
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+
+    if (settings.reuseOldSite) {
+      // Maybe query the server?
+      site = {
+        id: -1,
+        pubId: '?',
+        origin: 'http://' + settings.localHostname + '.localhost',
+        siteIdOrigin: '?',
+      };
+    }
+    else {
+      site = server.importSiteData(forum.siteData);
+      server.skipRateLimits(site.id);
+    }
   });
 
   it("initialize people", () => {

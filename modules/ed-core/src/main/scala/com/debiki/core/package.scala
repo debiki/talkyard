@@ -30,11 +30,40 @@ import scala.util.{Failure, Success, Try}
 
 package object core {
 
+  // Concise is nice.
+  //
+  // (Details: Frequently used names should be short — it's annoying with
+  // unnecessary line breaks because someone thought typing the whole
+  // word "Boolean" was necessary, is it not?
+  // *And* it's nice when the IDE stops highlighting the types (IntelliJ does,
+  // with 'Int' 'Boolean' etc) as if they were extra important — when instead
+  // they're more like background noise, only interesting when taking
+  // a detailed look at the code. (And it's boring to reconfigure the
+  // color scheme, is it not?))
+
+  type U = Unit
+  type St = String
+  type Bo = Boolean
+  type i8 = Byte // 'I8' is better than 'Byte', so remembers it is signed
+  type i16 = Short
+  type u16 = Char
+  type i32 = Int
+  type i64 = Long
+  type f32 = Float
+  type f64 = Double
+  type ErrMsg = ErrorMessage // = String
+  type Opt[+A] = Option[A]
+
+  type Vec[+A] = scala.collection.immutable.Vector[A]
+  val Vec: Vector.type = scala.collection.immutable.Vector
+
+  type MutArrBuf[A] = scala.collection.mutable.ArrayBuffer[A]
+  val MutArrBuf: ArrayBuffer.type = scala.collection.mutable.ArrayBuffer
+
+
   def isDevOrTest: Boolean = Prelude.isDevOrTest
   def isProd: Boolean = Prelude.isProd
 
-  // "Vector" is so very long, for such a good & please-use-frequently collection.
-  type Vec[+A] = scala.collection.immutable.Vector[A]
 
   type ActionId = Int
 
@@ -434,6 +463,8 @@ package object core {
   val OneMonthInMillis: Long = 365 * MillisPerDay / 12  // divides evenly
   val OneYearInMillis: Long = 365 * MillisPerDay
 
+  val Kibibyte: Int = 1024
+  val Mebibyte: Int = 1024 * 1024
   val Megabyte: Int = 1000 * 1000
   val Megabytes: Int = Megabyte
 
