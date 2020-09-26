@@ -1,34 +1,22 @@
 #!/bin/bash
 
-# If the current version in version.txt is a WIP (work in progress
-# version), this script bumps the WIP version from say WIP-123 to WIP-124.
-
-# Now, 2020, 'WIP' isn't work in progress, it can be the real prod
-# version too.
+# Bump from v0.2020.X to v0.2020.X+1:
 
 set -u  # exit on unset variable
 set -e  # exit on non-zero command exit code
 set -o pipefail  # exit on false | true
 
+old_v=$(cat version.txt)
 
-# Bump version.txt
-# ---------------------
+old_patch_nr=$(  \
+    echo $old_v | sed -nr 's/^v[0-9]+\.[0-9]+\.([0-9]+).*$/\1/p')
 
-current_version_nr=`sed -nr 's/^.*-WIP-([0-9]+)/\1/p' < version.txt`
+next_patch_nr=`printf '%d' $(($old_patch_nr + 1))`
 
-# Skip this, bump the minor version always instead.
-#if [ -n "$current_version_nr" ]; then
-#  # Bump v00.00.00-WIP-100 to v00.00.00-WIP-101
-#  next_version_nr=`printf '%d' $(($current_version_nr + 1))`
-#  new_version=`sed -r "s/^(.*)-WIP-([0-9]+).*\$/\1-WIP-$next_version_nr/" < version.txt`
-#else
+next_v=$(echo $old_v  \
+    | sed -nr "s/^(v[0-9]+\.[0-9]+\.)([0-9]+)(.*)\$/\1${next_patch_nr}\3/p" )
 
-  # Bump v00.00.00 to v00.00.01-WIP-1
-  current_version_nr=`sed -nr 's/^v[0-9]+\.[0-9]+\.([0-9]+)(.*)$/\1/p' < version.txt`
-  next_version_nr=`printf '%d' $(($current_version_nr + 1))`
-  new_version=`sed -nr "s/^(v[0-9]+\.[0-9]+)\.([0-9]+)(.*)\$/\1\.$next_version_nr-WIP-1\3/p" < version.txt`
+echo "$next_v" > version.txt
 
-#fi
-
-echo "$new_version" > version.txt
+echo "Bumped version from $old_v to $next_v."
 

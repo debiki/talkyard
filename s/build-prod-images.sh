@@ -182,6 +182,8 @@ echo ""
 echo "    make  tag-and-push-latest-images  tag=$version_tag"
 echo "    make  push-tag-to-git  tag=$version_tag"
 echo "    s/bump-versions.sh"
+echo "    git add version.txt modules/ed-versions"
+echo "    git commit -m 'Bump version.'"
 echo ""
 
 
