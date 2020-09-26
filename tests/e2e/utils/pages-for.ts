@@ -264,8 +264,8 @@ export class TyE2eTestBrowser {
       return url;
     }
 
-    waitUntilUrlIs(expectedUrl: S) {
-      let urlNow: S;
+    waitUntilUrlIs(expectedUrl: St) {
+      let urlNow: St;
       this.waitUntil(() => {
         urlNow = this.getUrl();
         return urlNow === expectedUrl;
@@ -6612,32 +6612,32 @@ export class TyE2eTestBrowser {
         },
 
         moderation: {
-          goHere: (origin?: string, opts: { loginAs? } = {}) => {
+          goHere: (origin?: St, opts: { loginAs? } = {}) => {
             this.adminArea._goToMaybeLogin(origin, '/-/admin/settings/moderation', opts);
             this.waitForVisible('.e_NumFstAprBef');
           },
 
-          setNumFirstToApproveBefore: (n: N) => {
+          setNumFirstToApproveBefore: (n: Nr) => {
             this.scrollAndSetValue('.e_NumFstAprBef input', n);
           },
 
-          setApproveBeforeTrustLevel: (level: N) => {
+          setApproveBeforeTrustLevel: (level: Nr) => {
             this.scrollAndSetValue('.e_AprBefTrLvl input', level);
           },
 
-          setMaxNumPendingApproval: (n: N) => {
+          setMaxNumPendingApproval: (n: Nr) => {
             this.scrollAndSetValue('.e_MxPndApr input', n);
           },
 
-          setNumFirstToReviewAfter: (n: N) => {
+          setNumFirstToReviewAfter: (n: Nr) => {
             this.scrollAndSetValue('.e_NumFstRvwAft input', n);
           },
 
-          setReviewAfterTrustLevel: (level: N) => {
+          setReviewAfterTrustLevel: (level: Nr) => {
             this.scrollAndSetValue('.e_RvwAftTrLvl input', level);
           },
 
-          setMaxNumPendingReview: (n: N) => {
+          setMaxNumPendingReview: (n: Nr) => {
             this.scrollAndSetValue('.e_MxPndRvw input', n);
           },
         },
