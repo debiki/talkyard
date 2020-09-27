@@ -250,7 +250,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
     val specifiedPagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
       case PagePath.Parsed.Good(path) => path
-      case PagePath.Parsed.Bad(error) => throwBadRequest("DwE0kI3E4", error)
+      case PagePath.Parsed.Bad(error) => throwBadRequest("TyEPAGEPATH", error)
       case PagePath.Parsed.Corrected(newPath) => throwTemporaryRedirect(newPath)
     }
 
