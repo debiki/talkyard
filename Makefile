@@ -498,6 +498,8 @@ push-tag-to-git:
 	@echo "Done. Now, bump the version number:"
 	@echo ""
 	@echo "    s/bump-versions.sh"
+	@echo "    git add version.txt modules/ed-versions"
+	@echo '    git commit -m "Bump version to `cat version.txt`."'
 	@echo ""
 
 
