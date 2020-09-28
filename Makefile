@@ -240,15 +240,22 @@ images/web/assets/ext-iframe.js.gz: client/ext-iframe.js
 
 # ----- Translations
 
+# For Play Framework, the app container.
 # E.g.:  images/app/assets/translations/en_US/i18n.js  etc.
-transl_dev_bundle_files := \
+transl_dev_app_bundle_files := \
   ${shell find translations/ -name '*.ts' | sed -nr 's;(.*)\.ts;images/app/assets/\1.js;p'}
 
-$(transl_dev_bundle_files): ${shell find translations/ -name '*.ts'}
+# For Nginx, the web container — includes the version number, for asset versioning.
+# E.g. images/web/assets/v0.2020.25/translations/en_US/i18n.js
+transl_dev_web_bundle_files := \
+  ${shell find translations/ -name '*.ts' | sed -nr 's;(.*)\.ts;images/web/assets/$(TALKYARD_VERSION)/\1.js;p'}
+
+$(transl_dev_app_bundle_files) $(transl_dev_web_bundle_files): \
+        ${shell find translations/ -name '*.ts'}
 	@echo "Generating translation files: Transpiling .ts to .js"
 	s/d-gulp  buildTranslations
 
-transl_dev_bundles: ${transl_dev_bundle_files}
+transl_dev_bundles: ${transl_dev_web_bundle_files} ${transl_dev_app_bundle_files}
 
 
 
