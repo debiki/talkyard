@@ -74,6 +74,7 @@ echo "WIP version, canary released: $wip_version_tag"
 echo "WIP once production released: $release_version_tag"
 echo "      (Upcoming next version: $next_version)"
 echo
+
 # dupl code [bashutils]
 read -p "Release WIP as debiki/talkyard-*:$release_version_tag? [y/n]  " choice
 case "$choice" in
@@ -82,8 +83,7 @@ case "$choice" in
   * ) echo "What? Bye."; exit 1;;
 esac
 
-echo "Step through the below manually once now ..."
-exit 1
+
 
 echo "Pulling debiki/talkyard-*:$wip_version_tag ..."
 sudo docker pull debiki/talkyard-app:$wip_version_tag
