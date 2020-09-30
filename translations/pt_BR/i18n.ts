@@ -812,7 +812,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     ReasonC: "Motivo: ",
 
     DeactOrDeld: "Foi desativado ou deletado.",
-    isGroup: " (um gruop)",
+    isGroup: " (um grupo)",
     isGuest: " — um usuário convidado, pode ser qualquer pessoa",
     isMod: " – moderador",
     isAdmin: " – administrador",
