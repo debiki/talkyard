@@ -274,7 +274,7 @@ function runAllE2eTests {
   $r s/wdio --only create-site-github-oauth-uppercase-email $args
   $r s/wdio --only create-site-linkedin $args
   $r s/wdio --only create-site-admin-guide.2browsers $args
-  $r s/wdio --only oauth-signup-login $args   # oops, also runs:  login-required-oauth-signup-login
+  $r s/wdio --only oauth-signup-signin $args
   $r s/wdio --only login-expire-idle-after.2browsers $args
 
   $r s/wdio --only forum-sort-and-scroll.2browsers $args
