@@ -125,7 +125,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
     }
 
-    // Restrict num invites sent.
+    // Restrict num invites sent.  [rate_limits]
     // Sending too many emails, could be bad, maybe will get blacklisted by the mail server service.
     // The following, combined with  max 10 requests per day, means max 200 invites per day.
     if (toEmailAddresses.size > 20) {  // sync 20 with test [6ABKR021]
@@ -153,6 +153,8 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     var oldInvitesCached: Option[Seq[Invite]] = None
 
+    val now = dao.now
+
     for (toEmailAddress <- toEmailAddresses) {
       // Is toEmailAddress already a member or already invited?
       var skip = false
@@ -178,7 +180,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         }
       }
       if (!skip) {
-        doSendInvite(toEmailAddress, anyAddToGrup, request) match {
+        doSendInvite(toEmailAddress, anyAddToGrup, now, request) match {
           case Good(invite) =>
             invitesSent.append(invite)
           case Bad(errorMessage) =>
@@ -198,12 +200,13 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def doSendInvite(toEmailAddress: String, addToGroup: Option[Group],
-        request: DebikiRequest[_]): Invite Or ErrorMessage = {
+        now: When, request: DebikiRequest[_]): Invite Or ErrorMessage = {
+
     val invite = Invite(
       secretKey = nextRandomString(),
       emailAddress = toEmailAddress,
       createdById = request.theUserId,
-      createdAt = globals.now().toJavaDate,
+      createdAt = now.toJavaDate,
       addToGroupIds = addToGroup.map(_.id).toSet)
 
     val anyProbablyUsername = request.dao.readOnlyTransaction { tx =>

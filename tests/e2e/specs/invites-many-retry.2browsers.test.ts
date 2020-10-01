@@ -9,9 +9,7 @@ import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
-
-
-
+import { logMessage } from '../utils/log-and-die';
 
 
 const waitForInviteEmail = server.waitAndGetInviteLinkEmailedTo;
@@ -194,19 +192,50 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
     owensBrowser.inviteDialog.cancel();
   });
 
-  it("Now: the invite list lists all invites, in the correct statuses " +
+  it("Now: the invite list lists all invites, correct statuses " +   // [TyT402AKTS406]
       "— but only once per user: addr2Retry just once", () => {
+    // Invites are sorted by time desc, email addr asc.  [inv_sort_odr]
+
+    // Sent last, sorted before addr4:
+    logMessage(`Row 1: ${addr3}`);
     owensBrowser.invitedUsersList.waitAssertInviteRowPresent(1, {
-      email: addr2Retry, accepted: false,
-    });
-    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(2, {
-      email: addr1Accepts, acceptedByUsername: addr1Username,
-    });
-    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(3, {
       email: addr3, accepted: false,
     });
-    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(4, {
+    // Sent last, at the same time as addr3:
+    logMessage(`Row 2: ${addr4}`);
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(2, {
       email: addr4, accepted: false,
+    });
+    // Sent first together with addr1, but then once again:
+    logMessage(`Row 3: ${addr2Retry}`);
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(3, {
+      email: addr2Retry, accepted: false,
+    });
+    // Sent just once in the beginning:
+    logMessage(`Row 4: ${addr1Accepts}  *accepted* but we don't see that yet`);
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(4, {
+      email: addr1Accepts, accepted: false,
+    });
+  });
+
+  it(`After refresh, sorted in the same way, and
+                  now we see addr1 accepted the invite`, () => {
+    owensBrowser.refresh();
+    logMessage(`Row 1: ${addr3}`);
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(1, {
+      email: addr3, accepted: false,
+    });
+    logMessage(`Row 2: ${addr4}`);
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(2, {
+      email: addr4, accepted: false,
+    });
+    logMessage(`Row 3: ${addr2Retry}`);
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(3, {
+      email: addr2Retry, accepted: false,
+    });
+    logMessage(`Row 4: ${addr1Accepts}  *accepted*`);
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(4, {
+      email: addr1Accepts, acceptedByUsername: addr1Username,  // <—— accepted
     });
   });
 
@@ -216,19 +245,20 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
 
   it("Now: the invite list lists *all* invites, incl addr2Retry twice", () => {
     owensBrowser.invitedUsersList.waitAssertInviteRowPresent(1, {
-      email: addr2Retry, accepted: false,
+      email: addr3, accepted: false,
     });
     owensBrowser.invitedUsersList.waitAssertInviteRowPresent(2, {
-      email: addr1Accepts, acceptedByUsername: addr1Username,
+      email: addr4, accepted: false,
     });
     owensBrowser.invitedUsersList.waitAssertInviteRowPresent(3, {
       email: addr2Retry, accepted: false,
     });
     owensBrowser.invitedUsersList.waitAssertInviteRowPresent(4, {
-      email: addr3, accepted: false,
+      email: addr1Accepts, acceptedByUsername: addr1Username,
     });
+    // Sent together with addr1, sorted after:  ('addr2' > 'addr1')
     owensBrowser.invitedUsersList.waitAssertInviteRowPresent(5, {
-      email: addr4, accepted: false,
+      email: addr2Retry, accepted: false,
     });
   });
 
@@ -270,14 +300,14 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
     othersBrowser.topbar.assertMyUsernameMatches(addr2Username);
   });
 
-  it("Owens refreshes, invites will be sorted by time", () => {   // [TyT402AKTS406]
+  it("Owens refreshes, invites will be sorted by time", () => {
     owensBrowser.refresh();
     // Will be:
-    // Inv to addr 4                  index 1
-    // Inv to addr 3 = accepted       index 2
+    // Inv to addr 3 = accepted       index 1
+    // Inv to addr 4                  index 2
     // Inv to addr 2 = accepted       index 3
-    // Inv to addr 2 = invalidated    index 4
-    // Inv to addr 1 = accepted       index 5
+    // Inv to addr 1 = accepted       index 4
+    // Inv to addr 2 = invalidated    index 5
   });
 
   it("Owen hides old invites, shows only pending", () => {
@@ -306,22 +336,22 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
   });
 
   it("... and the old invite to addr2, is now invalidated", () => {
-    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(4, {
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(5, {
       email: addr2Retry, deleted: true,
     });
   });
 
   it("... the invite for addr3 is accepted", () => {
-    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(2, {
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(1, {
       email: addr3, acceptedByUsername: addr3Username,
     });
   });
 
   it("... the other invites, didn't change", () => {
-    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(5, {
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(4, {
       email: addr1Accepts, acceptedByUsername: addr1Username,
     });
-    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(1, {
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(2, {
       email: addr4, accepted: false,
     });
   });
