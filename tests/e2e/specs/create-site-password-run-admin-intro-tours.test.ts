@@ -109,7 +109,11 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     browser.go('/');
   });
 
-  it("the forum works: can edit forum title", () => {
+  it("closes the contextbar — otherwise sometimes overlaps the title", () => {
+    browser.contextbar.close();
+  });
+
+  it("the forum works: Owen can edit forum title", () => {
     // --- Edit title
     browser.pageTitle.clickEdit();
     browser.pageTitle.editTitle("Pwd Frm Edtd");
