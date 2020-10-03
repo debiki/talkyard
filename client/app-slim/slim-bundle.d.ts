@@ -238,6 +238,7 @@ declare namespace debiki2 {
   var ReactStore: any;
 
   var findDOMNode: any;
+  function randomNumSt(): St;
   var die: any;
   var dieIf: any;
   var scrollToBottom: any;

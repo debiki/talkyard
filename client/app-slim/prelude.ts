@@ -300,6 +300,23 @@ export function hasErrorCode(request: HttpRequest, statusCode: string) {
 }
 
 
+/// Returns a string with many-enough crypto-random digits.
+///
+export function randomNumSt(): St {   // [js_rand_val]
+  const array = new Uint32Array(3);
+  window.crypto.getRandomValues(array);
+  let st = '';
+  for (let i = 0; i < array.length; i++) {
+    const n = array[i];
+    st += ('00000000' + n).slice(-8);
+  }
+  // @ifdef DEBUG
+  dieIf(st.length !== 24, 'TyE205RKEKDM24');
+  // @endif
+  return st;
+}
+
+
 export function toId(x: number | { id: number } | { uniqueId: number }): number {
   if (_.isNumber(x)) return <number> x;
   const nr = x['id'];
