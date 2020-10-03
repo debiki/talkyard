@@ -76,7 +76,8 @@ trait UploadsDao {
     // Another extra check — already verified here: [upl_sz_ck] that isn't too large.
     val maxUploadSizeBytes = globals.config.uploads.maxBytesLargeFile
     if (origSize > maxUploadSizeBytes)
-      throwForbidden("DwE5YFK2", s"File too large, more than $origSize bytes")
+      throwForbidden("TyEUPL2LG", s"Uploaded file too large: $origSize bytes, max is ${
+            maxUploadSizeBytes} bytes")
 
 
     var tempCompressedFile: Option[jio.File] = None
@@ -138,8 +139,9 @@ trait UploadsDao {
     val mimeType: String = tika.detect(optimizedFile)
     val sizeBytes = {
       val sizeAsLong = optimizedFile.length
-      if (sizeAsLong >= maxUploadSizeBytes) {
-        throwForbidden("DwE5YFK2", s"Optimized file too large, more than $maxUploadSizeBytes bytes")
+      if (sizeAsLong > maxUploadSizeBytes) {
+        throwForbidden("TyEOPTZUPL2LG", s"Optimized file too large: ${sizeAsLong
+              } bytes, max is $maxUploadSizeBytes bytes")
       }
       sizeAsLong.toInt
     }

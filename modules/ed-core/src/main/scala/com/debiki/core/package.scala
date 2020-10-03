@@ -464,9 +464,23 @@ package object core {
   val OneYearInMillis: Long = 365 * MillisPerDay
 
   val Kibibyte: Int = 1024
+  val KibibyteI64: i64 = 1024L
   val Mebibyte: Int = 1024 * 1024
+  val MebibyteI64: i64 = 1024L * 1024L
   val Megabyte: Int = 1000 * 1000
   val Megabytes: Int = Megabyte
+
+  def i64ToMinMaxI32(num: i64): i32 = {
+    if (num > Int.MaxValue) Int.MaxValue
+    else if (num < Int.MinValue) Int.MinValue
+    else num.toInt
+  }
+
+  def f64ToMinMaxI32(f: f64): i32 = {
+    if (f > Int.MaxValue) Int.MaxValue
+    else if (f < Int.MinValue) Int.MinValue
+    else f.toInt
+  }
 
   def MaxTestSiteId: SiteId = Site.MaxTestSiteId
   def FirstSiteId: SiteId = Site.FirstSiteId
