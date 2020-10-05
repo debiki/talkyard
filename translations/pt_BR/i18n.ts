@@ -304,7 +304,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     IconExplanation: "Explicação do ícone:",
     ExplGenDisc: "Uma discussão geral.",
     ExplQuestion: "Uma pergunta sem resposta aceita.",
-    ExplAnswer: "Uma pergunta sem resposta aceita.",
+    ExplAnswer: "Uma pergunta com resposta aceita.",
     ExplIdea: "Uma ideia / sugestão.",
     ExplProblem: "Um problema.",
     ExplPlanned: "Algo que estamos planejando fazer ou consertar.",
