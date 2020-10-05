@@ -1,0 +1,436 @@
+version: '3.7'
+
+networks:
+  internal_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${INTERNAL_NET_SUBNET}
+
+services:
+  web:
+    build: images/web/
+    image: ${DOCKER_REPOSITORY}/talkyard-web
+    # so can specify core dump path [NGXCORED]
+    #privileged: true
+    volumes:
+      # Mount the Lua and JS and CSS scripts, rather than relying on Docker's COPY,
+      # so Nginx can auto reload them after edits, without rebuilding the image.
+      # (The files are COPY:d too, so will work in Prod.)
+      - ./images/web/ed-lua/:/opt/talkyard/lua/:ro
+      - ./images/web/assets/:/opt/talkyard/assets/:ro   # [NGXSTC]
+      - ./images/web/ty-media/:/opt/talkyard/ty-media/:ro
+      - ./volumes/uploads/:/opt/talkyard/uploads/:ro
+      - ./volumes/letsencrypt/:/etc/letsencrypt/:ro
+      - ./volumes/nginx-logs/:/var/log/nginx/
+      - ./volumes/nginx-core-dumps/:/tmp/cores/
+    ports:
+      - '80:80'
+      - '443:443'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_WEB_IP}
+    depends_on:
+      - app
+      #- cache [NCHANREDIS]
+    environment:
+      TY_NGX_ERR_LOG_LEVEL: 'debug'
+      #TY_NGX_LIMIT_REQ_BODY_SIZE: "5m"
+      CDN_PULL_KEY: "public"
+      # This is dev mode; tell the browser to refresh its cache each request. [2WBKP46]
+      TY_MAX_AGE_YEAR: "no-cache"
+      TY_MAX_AGE_MONTH: "no-cache"
+      TY_MAX_AGE_WEEK: "no-cache"
+      TY_MAX_AGE_DAY: "no-cache"
+
+  app:
+    build:
+      context: images/app/
+      dockerfile: Dockerfile.dev
+    # (Image ${DOCKER_REPOSITORY}/talkyard-app is for production, and gets created by
+    # ./docker/build-app-prod.sh.)
+    image: ${DOCKER_REPOSITORY}/talkyard-app-dev
+    stdin_open: true  # otherwise Play exits
+    tty: true  # colored logs
+    volumes:
+      - ./:/opt/talkyard/app/
+      - ./volumes/uploads/:/opt/talkyard/uploads/
+      - ./volumes/app-logs/:/var/log/talkyard/
+      # So assets get refreshed on restart, in dev mode, without rebuilding image. [APPJSPATH]
+      - ./images/app/assets/:/opt/talkyard/app/assets/:ro
+      - ./version.txt:/opt/talkyard/app/version.txt:ro
+      # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
+      # This is for Linux:  (https://get-coursier.io/docs/cache.html#default-location)
+      - ./vendors/jars/cache/:/home/owner/.cache/
+      - ./vendors/jars/coursier/:/home/owner/.coursier/
+      - ./vendors/jars/ivy2/:/home/owner/.ivy2/
+      - ./vendors/jars/sbt/:/home/owner/.sbt/
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_APP_IP}
+    ports:
+      # Let's expose these, for debugging and troubleshooting.
+      - '9000:9000' # Play's HTTP listen port.
+      - '9999:9999' # Java debugger port
+      - '3333:3333' # JMX
+    depends_on:
+      - cache
+      - rdb
+      - search
+      - fakemail
+    environment:
+      PLAY_HEAP_MEMORY_MB: 2800
+      HOSTNAME: "localhost"
+      CREATE_SITE_HOSTNAME: "localhost"
+      BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
+      E2E_TEST_PASSWORD: "public"
+      FORBIDDEN_PASSWORD: "public"
+
+      # ----- Tracing
+      # See: https://github.com/jaegertracing/legacy-client-java/blob/master/jaeger-core/README.md
+      #         #configuration-via-environment
+
+      # Or "probabilistic", param 0.0 ... 1.0, or "ratelimiting" with param = num samples per second.
+      # or "remote" (the default), asks the Jaeger agent how to sample.
+      JAEGER_SAMPLER_TYPE: "const"
+      JAEGER_SAMPLER_PARAM: "1"
+      # Or 6831? 6832? will be renamed to JAEGER_CONFIG_MANAGER_HOST_PORT
+      # https://github.com/jaegertracing/jaeger-client-go/issues/282
+      #JAEGER_SAMPLER_MANAGER_HOST_PORT: "tracer:5778"
+
+      # Either configure Jaeger agent host and port:
+      # JAEGER_AGENT_HOST
+      # JAEGER_AGENT_PORT
+      # Or connect directly to the Jaeger connector: (optionally with authentication info)
+      JAEGER_ENDPOINT: "http://tracer:14268/api/traces"
+      # JAEGER_USER: ""
+      # JAEGER_PASSWORD: ""
+      # JAEGER_AUTH_TOKEN: ""
+
+  cache:
+    build: images/cache/
+    image: ${DOCKER_REPOSITORY}/talkyard-cache
+    volumes:
+      - ./volumes/cache-data/:/data/
+    # Expose, so can troubleshoot-query Redis.
+    ports:
+      - '6379:6379'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_CACHE_IP}
+    sysctls:
+      net.core.somaxconn: 511
+
+  search:
+    build: images/search/
+    image: ${DOCKER_REPOSITORY}/talkyard-search
+    # If too low, the 'search' container will suddenly exit with code 137. No error message
+    # will get logged — instead it just exits, suddenly. Why? OOM-killed? In Docker? Hmm.
+    #mem_limit: 800M
+    volumes:
+      - ./volumes/search-data/:/usr/share/elasticsearch/data/
+      - ./volumes/search-logs/:/usr/share/elasticsearch/logs/
+    ports:
+      # Expose, for troubleshooting.
+      - '9200:9200'
+      - '9300:9300'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_SEARCH_IP}
+    environment:
+      ES_JAVA_OPTS: '-Xms384m -Xmx384m'
+
+  rdb:
+    build: images/rdb/
+    image: ${DOCKER_REPOSITORY}/talkyard-rdb
+    volumes:
+      - ./volumes/rdb-data/:/var/lib/postgresql/data/
+      - ./volumes/rdb-logs/:/var/log/postgresql/
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_RDB_IP}
+    environment:
+      POSTGRES_PASSWORD: 'public'
+      PEER_HOST: 'rdb2'
+      PEER_PORT: '5432'
+      PEER_PASSWORD: 'public2'
+      CREATE_TEST_USER: 'yes'
+
+  # An extra database, so you can experiment with Postgres replication and failover.
+  # You don't need to start it.
+  #rdb2:
+  #  mem_limit: 30M
+  #  build: images/rdb/
+  #  volumes:
+  #    - ./volumes/rdb2-data/:/var/lib/postgresql/data/
+  #    - ./volumes/rdb2-logs/:/var/log/postgresql/
+  #  networks:
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_RDB2_IP}
+  #  environment:
+  #    POSTGRES_PASSWORD: 'public2'
+  #    PEER_HOST: 'rdb'
+  #    PEER_PORT: '5432'
+  #    PEER_PASSWORD: 'public'
+
+  test:
+    build: images/gulp/
+    image: ${DOCKER_REPOSITORY}/talkyard-test
+    volumes:
+      - ./:/opt/talkyard/server/
+    ports:
+      # This is for debugging tests running in Node.js in this container, and started
+      # via `node --debug-brk --inspect=9229`. [8EA02R4]
+      - '9229:9229'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_TEST_IP}
+    # So can send HTTP request to the web container. See tests/security/settings.ts [7PKW4R2]
+    depends_on:
+      - web
+    # Don't want this container to start at all by default.
+    command: 'exit 0'
+
+  # Dummy SMTP server, for testing.
+  fakemail:
+    build: images/fakemail/mailslurper
+    image: ${DOCKER_REPOSITORY}/fakemail
+    volumes:
+      - ./images/fakemail/mailslurper-config.json:/config.json
+      - ./images/fakemail/fakemail-publ-test-self-signed.key:/smtp-server.key
+      - ./images/app/fakemail-publ-test-self-signed.crt:/smtp-server.crt  # yes, in app-dev [26UKWD2]
+    ports:
+     - '8025:8025'  # smtp, '80' + 25 (25 = old standard port, 587 = new for STARTTLS)
+     - '8026:8026'  # admin interface,  '80' + 25 + 1
+     - '8027:8027'  # service port = api requests or what? '80' + 25 + 2
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_FAKEMAIL_IP}
+
+  # Jaeger Tracing. Access at http://localhost:16686.
+  # Not currently in use.
+  #tracer:
+  #  image: jaegertracing/all-in-one:1.7
+  #  ports:               # Component. What. (https://www.jaegertracing.io/docs/1.6/getting-started/)
+  #    #- '5775:5775/udp' # Agent. accept zipkin.thrift over compact thrift protocol
+  #    - '6831:6831/udp'  # Agent. accept jaeger.thrift over compact thrift protocol
+  #    - '6832:6832/udp'  # Agent. accept jaeger.thrift over binary thrift protocol
+  #    - '5778:5778'      # Agent. serve configs
+  #    - '16686:16686'    # Query. Web interface + find traces.
+  #    - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
+  #    #- '9411:9411'     # Collector. Zipkin compatible endpoint
+  #  networks:
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_TRACER_IP}
+
+  # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
+  # instead it just transpiles Typescript and Stylus.
+  gulp:
+    build: images/gulp/
+    image: ${DOCKER_REPOSITORY}/talkyard-gulp
+    tty: true  # colored logs
+    volumes:
+      - ./:/opt/talkyard/server/   # [NODEHOME]
+    command: ['yarn install && gulp watch']
+
+
+  # KeyCloak, for testing OpenID Connect (OIDC) authentication.
+  #
+  # Nice, read?:
+  #    https://news.ycombinator.com/item?id=22871180
+  #
+  # (What about auto testing OpenLDAP, ORY Kratos, FreeIPA?
+  # Do they support OIDC? ORY Kratos does.
+  # Keycloak sort of corresponds to all ORY products in one piece of software,
+  # plus management interface and login. )
+  #
+  # ##### Start Kecloak
+  # Comment in the Keycloak container below.
+  # Start it; type:  s/d up -d keycloak
+  # Go here: http://localhost:8113/auth/admin — you should see a login page.
+  #
+  # ##### Create a realm
+  # Login as 'admin', password 'pub-admin' (see KEYCLOAK_PASSWORD below).
+  # Mouse hover on "Master" in the upper left corner, then click "Add realm".
+  # Create this realm:  'ty_test_realm'
+  #
+  # ##### Create a user to OIDC login with:
+  # Click Users to the left,
+  #   click Add User to the right,
+  #   type username: 'tykc',  (for Takyard-Keycloak)
+  #   click Save.
+  # Click Credentials at the top,
+  #   set password: 'pub-tykc',
+  #   click 'On' next to Temporary to toggle to Off, so the password becomes permanent,
+  #   click  Set Password.
+  #
+  # Test login here: http://localhost:8113/auth/realms/ty_test_realm/account
+  # (Use a different browser or Ctrl+N or Ctrl+P open an incognito window.)
+  #
+  # #### Create an OIDC app for Talkyard:
+  # Back in Keycloak, as admin in the Talkyard test realm:
+  # Click 'Clients' to the left, then click Create to the right.
+  # Type client id: 'ty_test_client'
+  # Protocol: 'openid-connect' (default)
+  # Click Save. Thereafter,
+  # Access Type: Change from 'public' 'confidential' ('public' is for mobile apps
+  # and single page apps — they have no OIDC client app API secret)
+  # Keep the 'Standard' flow = 'code' flow enabled.
+  # Do not enable 'Implicit' flow — it's not so secure.
+  #
+  # ##### See if works
+  # KeyCloack has this OpenID Connect demo login app you can try now,
+  # if you want to:  https://www.keycloak.org/app/.
+  #
+  # ##### Create a test Talkyard site
+  # Run in a shell:
+  #    s/wdio --only manual.2browsers --da --dt --localHostname e2e-test-kc-oidc
+  # This creates a Talkyard test site, address e2e-test-kc-oidc.localhost,
+  # and logs you in as site admin "owen_owner" in one browser, and member "memah"
+  # in another browser.
+  # (--da means "debug after" — pauses Webdriverio, instead of closing the browsers.
+  #  --dt means use the DevTools protocol, so you won't need Selenium.)
+  #
+  # Look at the Talkyard test site address in the browser address bar, should be:
+  #   http://e2e-test-kc-oidc.localhost
+  #
+  # ##### Connect Keycloak with Talkyard
+  # Change Keycloak's Root URL to point to your Talkyard test site,
+  # plus, append:  '/-/authn/oidc/keycloak_test_alias', should be:
+  #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias
+  # Set the Redirect URI to the above + '/callback',
+  # will look like:
+  #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias/callback
+  #
+  # Click Save.
+  # Since you selected 'confidential' above, a tab 'Credentials' will appear
+  # at the top.
+  # Go there and copy the client secret.
+  #
+  # #### Configure Talkyard
+  # In owen_owner's browser, go to the Admin Area, /-/admin/settings/login, and
+  # copy-paste the below OIDC login provider configuration — but replace
+  # THE_SECRET_YOU_COPIED with the secret you copied. (The hostname here
+  # is not 'localhost' but 'keycloak', because that's the container's address
+  # from inside Ty's Docker network.)
+  #
+  #  {
+  #  "id": 1,
+  #  "protocol": "oidc",
+  #  "alias": "keycloak_test_alias",
+  #  "displayName": "Keycloak Test",
+  #  "description": "OpenID Connect login test at keycloak.localhost:8113",
+  #  "enabled": true,
+  #  "trustVerifiedEmail": true,
+  #  "linkAccountNoLogin": false,
+  #  "guiOrder": 1,
+  #  "syncMode": 1,
+  #  "idpAuthorizationUrl":
+  #    "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/auth",
+  #  "idpAccessTokenUrl":
+  #    "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/token",
+  #  "idpUserInfoUrl":
+  #    "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/userinfo",
+  #  "idpLogoutUrl": null,
+  #  "idpClientId": "ty_test_client",
+  #  "idpClientSecret": "THE_SECRET_YOU_COPIED",
+  #  "idpIssuer": "http://keycloak.localhost:8113/auth/realms/ty_test_realm",
+  #  "idpScopes": "openid"
+  # }
+  #
+  # Click Save.
+  #
+  # Then, in a differnt browser where you're not logged in to Talkyard,
+  # go to:
+  #   talkyard-origin/-/authn/oidc/keycloak_test_alias
+  #
+  # This should redirect your browser to:
+  #   http://localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/
+  #          auth?response_type=code&client_id=ty_test_client&...
+  #
+  # Type username and password from above:  'tykc'  'pub-tykc'.
+  #
+  # From the docs, https://www.keycloak.org/getting-started/getting-started-docker:
+  #     docker run -p 8113:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin \
+  #         quay.io/keycloak/keycloak:10.0.0
+  #     + -e DB_VENDOR=h2  is a good idea, see below.
+  #
+  # For auto tests, can import a previously exported realm:
+  #   -e KEYCLOAK_IMPORT=/tmp/example-realm.json -v /tmp/example-realm.json:/tmp/example-realm.json
+  # See:
+  #   https://github.com/keycloak/keycloak-containers/blob/master/server/README.md#importing-a-realm
+  #
+  # The container name is 'keycloak.localhost', because the browser
+  # resolves that to 127.0.0.1, which reaches Keycloak on port 8113 (exposed
+  # on the host's network)  and *Also* works from inside the Docker network:
+  # keycloak.loaclhost there resolves to ${INTERNAL_NET_KEYCLOAK_IP}
+  # well at least Chrome, and FF with some extra config (see
+  #  /home/user/styd/d9/docs/wildcard-dot-localhost.md)
+  keycloak.localhost:
+    build: images/keycloak/
+    #image: quay.io/keycloak/keycloak:10.0.0
+    #command: -Djboss.http.port=80
+    # -Djboss.http.port=8113
+    ports:
+      - '8113:8113'  # 113 = same as ip addr, last byte. Sth else often listens on 8080
+    environment:
+      # Without 'h2', KeyCloak uses internal heuristics that sometimes wants a non-existing
+      # MySQL database, blocks for a minute, logs a 3066 lines long error message and exits.
+      #DB_VENDOR: 'h2'
+      # BUT see below! ...
+
+      # rdb container instead:  docker run -d --name postgres --net keycloak-network -e POSTGRES_DB=keycloak -e POSTGRES_USER=keycloak -e POSTGRES_PASSWORD=public postgres
+      # docker run --name keycloak --net keycloak-network jboss/keycloak -e DB_USER=keycloak -e DB_PASSWORD=password
+
+      KEYCLOAK_USER: 'admin'
+      KEYCLOAK_PASSWORD: 'pub-admin'
+      KEYCLOAK_HTTP_PORT: '8113'
+      KEYCLOAK_HTTPS_PORT: '8553'
+      KEYCLOAK_IMPORT: '/tmp/ty_test_realm.keycloak-export.json'
+
+      # ... exp-imp needs pgsql?
+      # $ docker-compose exec rdb psql postgres postgres  -c "create user keycloak with password 'public';"
+      # CREATE ROLE
+      # $ docker-compose exec rdb psql postgres postgres  -c 'create database keycloak owner keycloak;' 
+      # CREATE DATABASE
+      DB_VENDOR: 'postgres'
+      DB_ADDR: 'rdb'
+      DB_USER: 'keycloak'
+      DB_PASSWORD: 'public'
+    volumes:
+      # For exporting realms.
+      - ./volumes/keycloak-tmp/:/tmp/
+      # An already exported test realm.
+      - ./tests/e2e/resources/ty_test_realm.keycloak-export.json:/tmp/ty_test_realm.keycloak-export.json
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_KEYCLOAK_IP}
+
+    # kc exp like so:
+
+    # docker-compose exec  keycloak.localhost  /opt/jboss/keycloak/bin/standalone.sh -Djboss.socket.binding.port-offset=100 -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile  -Dkeycloak.migration.realmName=ty_realm  -Dkeycloak.migration.usersExportStrategy=REALM_FILE  -Dkeycloak.migration.file=/tmp/ty_realm.keycloak-export.json 
+
+    # but kc bug, NPE if realm doesn't exist: (FATAL below)
+    # 15:55:44,599 INFO  [org.hibernate.type.BasicTypeRegistry] (ServerService Thread Pool -- 60) HHH000270: Type registration [java.util.UUID] overrides previous : org.hibernate.type.UUIDBinaryType@33545aee
+    # 15:55:44,606 INFO  [org.hibernate.envers.boot.internal.EnversServiceImpl] (ServerService Thread Pool -- 60) Envers integration enabled? : true
+    # 15:55:45,265 INFO  [org.hibernate.orm.beans] (ServerService Thread Pool -- 60) HHH10005002: No explicit CDI BeanManager reference was passed to Hibernate, but CDI is available on the Hibernate ClassLoader.
+    # 15:55:45,343 INFO  [org.hibernate.validator.internal.util.Version] (ServerService Thread Pool -- 60) HV000001: Hibernate Validator 6.0.18.Final
+    # 15:55:46,877 INFO  [org.hibernate.hql.internal.QueryTranslatorFactoryInitiator] (ServerService Thread Pool -- 60) HHH000397: Using ASTQueryTranslatorFactory
+    # 15:55:47,862 INFO  [org.keycloak.services] (ServerService Thread Pool -- 60) KC-SERVICES0034: Export of realm 'ty_realm' requested.
+    # 15:55:47,862 INFO  [org.keycloak.exportimport.singlefile.SingleFileExportProvider] (ServerService Thread Pool -- 60) Exporting realm 'ty_realm' into file /tmp/ty_realm.keycloak-export.json
+    # 15:55:47,884 FATAL [org.keycloak.services] (ServerService Thread Pool -- 60) java.lang.NullPointerException
+
+    # Works: (need to terminate Keycloak with Ctrl+C)
+    # docker-compose exec  keycloak.localhost  /opt/jboss/keycloak/bin/standalone.sh -Djboss.socket.binding.port-offset=100 -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile  -Dkeycloak.migration.realmName=ty_test_realm  -Dkeycloak.migration.usersExportStrategy=REALM_FILE  -Dkeycloak.migration.file=/tmp/ty_test_realm.keycloak-export.json
+
+  # Would like to remove, but is incl in talkyard-prod-one's Compose file already,
+  # and would cause errors, if removed here, and people then upgrade? (because new version
+  # couldn't be downloaded). Remove, when releasing the next major talkyard-prod-one version
+  # and peopl have upgraded?
+  certgen:
+    build: images/certgen/
+    image: ${DOCKER_REPOSITORY}/talkyard-certgen
+    # Only want to build (but not run) this container, in dev/test mode.
+    command: 'echo'
+
+# vim: et ts=2 sw=2
