@@ -512,10 +512,10 @@ var t_pt_BR: TalkyardTranslations = t = {
     ThisPageDeleted: "Esta página foi deletada",
     CatDeldPageToo: "Categoria deletada; esta página foi deletada também",
 
-    ThreadDeld: "Thread deleted",   // MISSING
-    CmntDeld: "Comment deleted",    // MISSING
-    PostDeld: "Post deleted",       // MISSING
-    DiscDeld: "Discussion deleted", // MISSING
+    ThreadDeld: "Tópico deletado",
+    CmntDeld: "Comentário deletado",
+    PostDeld: "Post deletado",
+    DiscDeld: "Discussão deletada",
     PageDeld: "Página deletada",
     TitlePendAppr: "Titulo pendente de aprovação",
     TextPendingApproval: "Texto pendente de aprovação",
@@ -526,21 +526,21 @@ var t_pt_BR: TalkyardTranslations = t = {
     TooltipQuestSolved: "Isto é uma pergunta respondida",
     TooltipQuestUnsolved: "Isto é uma pergunta não respondida",
 
-    StatusDone: "Done",  // MISSING
+    StatusDone: "Concluído",
     TooltipProblFixed: "Isto foi consertado",
     TooltipDone: "Isto foi concluído",
 
-    StatusStarted: "Started",  // MISSING
+    StatusStarted: "Iniciado",
     TooltipFixing: "No momento estamos consertando isto",
     TooltipImplementing: "No momento estamos implementando isto",
 
-    StatusPlanned: "Planned",  // MISSING
+    StatusPlanned: "Planejado",
     TooltipProblPlanned: "Estamos planejando consertar isto",
     TooltipIdeaPlanned: "Estamos planejando implementar isto",
 
-    StatusNew: "New",  // MISSING
-    StatusNewDtl: "New topic, under discussion",  // MISSING
-    TooltipUnsProbl: "Isto é um problema não resolvido",
+    StatusNew: "Novo",
+    StatusNewDtl: "Novo tópico, em discussão",
+    TooltipUnsProbl: "Isso é um problema sem solução",
     TooltipIdea: "Isto é uma ideia",
 
     TooltipPersMsg: "Mensagem pessoal",
@@ -637,7 +637,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     ClickUnaccept: "Clique para desafazer a aceitação desta resposta",
     PostAccepted: "Este post foi aceitado como resposta",
 
-    NumLikes: (num: number) => num === 1 ? "1 Curte" : num + " Curtem",
+    NumLikes: (num: number) => num === 1 ? "1 Curtiu" : num + " Curtiram",
     NumDisagree: (num: number) => num === 1 ? "1 Discorda" : `${num} Discordam`,
     NumBury: (num: number) => num === 1 ? `1 Enterra` : `${num} Enterras`,
     NumUnwanted: (num: number) => num === 1 ? "1 Indesejado" : `${num} Indesejados`,
