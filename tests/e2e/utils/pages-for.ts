@@ -3485,6 +3485,13 @@ export class TyE2eTestBrowser {
         this.waitAndSetValue('.auth-form-body #password', ps.password);
         this.#br.pause(340); // so less risk GitHub think this is a computer?
 
+        // GitHub might ask if we want cookies — yes we do.
+        const cookieYesSelector =
+                '.js-main-cookie-banner .js-cookie-consent-accept-all';
+        if (this.isExisting(cookieYesSelector)) {
+          this.waitAndClick(cookieYesSelector);
+        }
+
         logMessage("Submitting GitHub login form ...");
         this.waitAndClick('.auth-form-body input[type="submit"]');
         while (true) {
@@ -3558,6 +3565,12 @@ export class TyE2eTestBrowser {
             logMessage("didn't find #email, tab closed? already logged in? [EdM5PKWT0]");
           }
           this.#br.pause(300);
+        }
+
+        // Facebook asks if we want cookies — yes we do.
+        const cookieYesSelector = '[data-testid="cookie-policy-banner-accept"]';
+        if (this.isExisting(cookieYesSelector)) {
+          this.waitAndClick(cookieYesSelector);
         }
 
         logMessage("typing Facebook user's email and password...");
