@@ -65,6 +65,10 @@ describe("Page type question", () => {
     mariasTopicUrl = mariasBrowser.getUrl();
   });
 
+  it("... a help text explains how the Question topic type works", () => {
+    assert.ok(mariasBrowser.topicTypeExpl.isTopicTypeExplVisible());
+  });
+
   it("Michael logs in", () => {
     michaelsBrowser.go(mariasTopicUrl);
     michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);

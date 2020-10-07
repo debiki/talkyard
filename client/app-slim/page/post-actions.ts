@@ -70,12 +70,16 @@ export const NoCommentsPageActions = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
+    const page: Page = store.currentPage;
     const post: Post = this.props.post;
 
     if (!post.isApproved && !post.sanitizedHtml)
       return null;
 
-    if (!me.isAdmin)
+    // Staff may edit Info Pages — other not-a-discussion pages are only
+    // editable by admins.  This will be configurable, later. [infopage_perms]
+    const isInfoPageMayEdit = page.pageRole === PageRole.WebPage && isStaff(me);
+    if (!isInfoPageMayEdit && !me.isAdmin)
       return null;
 
     // Dupl code [305RKTDJ2]

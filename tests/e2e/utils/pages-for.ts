@@ -4405,6 +4405,19 @@ export class TyE2eTestBrowser {
         return this.waitAndGetValue('.editor-area textarea');
       },
 
+      openTopicTypeDropdown: () => {
+        this.waitAndClick('.esTopicType_dropdown');
+      },
+
+      closeTopicTypeDropdown: () => {
+        this.waitAndClick('.esDropModal_CloseB');
+      },
+
+      canClickShowMoreTopicTypes: (): Bo => {
+        this.waitForDisplayed('#te_DiscO');
+        return this.isVisible('.esPageRole_showMore');
+      },
+
       setTopicType: (type: PageRole) => {
         let optionId = null;
         let needsClickMore = false;
@@ -4419,7 +4432,7 @@ export class TyE2eTestBrowser {
           case c.TestPageRole.WebPage: optionId = '#e2eTTD_WebPageO'; needsClickMore = true; break;
           default: die('Test unimpl [EsE4WK0UP]');
         }
-        this.waitAndClick('.esTopicType_dropdown');
+        this.editor.openTopicTypeDropdown();
         if (needsClickMore) {
           this.waitAndClick('.esPageRole_showMore');
         }
@@ -4650,6 +4663,14 @@ export class TyE2eTestBrowser {
         this.waitAndClick('.dw-notf-level');
         this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
+    };
+
+
+    topicTypeExpl = {
+      isTopicTypeExplVisible: (): Bo => {
+        this.waitForDisplayed('.dw-p-ttl');
+        return this.isVisible('.s_Pg_TtlExpl');
+      }
     };
 
 

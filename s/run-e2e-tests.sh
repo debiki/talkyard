@@ -426,6 +426,7 @@ function runAllE2eTests {
   $r s/wdio --only page-type-idea-statuses-comments $args
   $r s/wdio --only page-type-problem-statuses $args
   $r s/wdio --only page-type-question-closed.2browsers $args
+  $r s/wdio --only page-type-info-page $args
 
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args
