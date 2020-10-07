@@ -173,23 +173,23 @@ services:
   #    PEER_PORT: '5432'
   #    PEER_PASSWORD: 'public'
 
-  test:
-    build: images/gulp/
-    image: ${DOCKER_REPOSITORY}/talkyard-test
-    volumes:
-      - ./:/opt/talkyard/server/
-    ports:
-      # This is for debugging tests running in Node.js in this container, and started
-      # via `node --debug-brk --inspect=9229`. [8EA02R4]
-      - '9229:9229'
-    networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_TEST_IP}
-    # So can send HTTP request to the web container. See tests/security/settings.ts [7PKW4R2]
-    depends_on:
-      - web
-    # Don't want this container to start at all by default.
-    command: 'exit 0'
+  #test:
+  #  build: images/gulp/
+  #  image: ${DOCKER_REPOSITORY}/talkyard-test
+  #  volumes:
+  #    - ./:/opt/talkyard/server/
+  #  ports:
+  #    # This is for debugging tests running in Node.js in this container, and started
+  #    # via `node --debug-brk --inspect=9229`. [8EA02R4]
+  #    - '9229:9229'
+  #  networks:
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_TEST_IP}
+  #  # So can send HTTP request to the web container. See tests/security/settings.ts [7PKW4R2]
+  #  depends_on:
+  #    - web
+  #  # Don't want this container to start at all by default.
+  #  command: 'exit 0'
 
   # Dummy SMTP server, for testing.
   fakemail:

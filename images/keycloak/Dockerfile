@@ -12,4 +12,6 @@ CMD ["-b", "0.0.0.0", "-Djboss.http.port=8113"]
 
 # The entrypoint is:
 # ENTRYPOINT [ "/opt/jboss/tools/docker-entrypoint.sh" ]
-# so that's why setting CMD to just  "-b .. -D..." above, works.
+# so that's why setting CMD to just  "-b .. -D..." above, works
+# (that is, the entrypoint already calls the docker-entrypoint.sh script
+# — need not do from here).
