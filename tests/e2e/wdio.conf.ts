@@ -658,11 +658,12 @@ const maybeInvisible = settings.headless ? ' invisible' : '';
 const browserName = config.capabilities[0].browserName;
 
 // onlyAndSpec won't work with files from stdin unfortunately. (USESTNGS)
+// 2br and 3br is how many browsers the tests need — 2 or 3 browsers, default 1.
 const onlyAndSpec = (settings.only || '') + ((settings as any).spec || '');
 const needsNumBrowsers =
-    onlyAndSpec.indexOf('3browsers') >= 0 || settings.numBrowsers >= 3
+    onlyAndSpec.indexOf('3br') >= 0 || settings.numBrowsers >= 3
         ? 3
-        : (onlyAndSpec.indexOf('2browsers') >= 0 || settings.numBrowsers === 2
+        : (onlyAndSpec.indexOf('2br') >= 0 || settings.numBrowsers === 2
             ? 2
             : 1);
 

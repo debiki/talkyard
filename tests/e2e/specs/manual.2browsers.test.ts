@@ -37,6 +37,9 @@ describe("some-e2e-test  TyT1234ABC", () => {
     assert.refEq(builder.getSite(), forum.siteData);
 
     if (settings.reuseOldSite) {
+      lad.dieIf(!settings.localHostname,
+              `Don't know which site to reuse, when --localHostname
+              not specified [TyE9395RKST4]`);
       // Maybe query the server?
       site = {
         id: -1,

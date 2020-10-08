@@ -534,6 +534,10 @@ function runAllE2eTests {
   # Embedded comments
   # ------------
 
+  # For testing manually. Just verify the test starts properly.
+  # For now, not "manual" (with 'l' at the end) — that'd start manual.2browsers too  o.O
+  $r s/wdio       --only embcom.manua.2br $args
+
   # Also see navigation-as-* above.
   $r s/wdio       --only embedded-comments-navigation-as-guest $args
 

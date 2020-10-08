@@ -152,11 +152,17 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
   it(`Creates an embedding page`, () => {
     /*
     const dir = 'target';
-    fs.writeFileSync(`${dir}/page-a-slug`, makeHtml('b3c-aaa', '#500'));
-    fs.writeFileSync(`${dir}/page-b-slug}`, makeHtml('b3c-bbb', '#040'));
+    fs.writeFileSync(`${dir}/page-a-slug.html`, makeHtml('aaa', '#500'));
+    fs.writeFileSync(`${dir}/page-b-slug.html`, makeHtml('bbb', '#040'));
     function makeHtml(pageName: string, bgColor: string): string {
       return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
     }
+  });
+  it("Maria opens embedding page aaa", () => {
+    maria_brB.go(embeddingOrigin + '/page-a-slug.html');
+  });
+  it("... logs in", () => {
+    maria_brB.complex.loginIfNeededViaMetabar(maria);
     */
   });
 

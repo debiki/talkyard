@@ -30,10 +30,6 @@ settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
 settings.reuseOldSite = settings.reuseOldSite || args.reuse;
-if (settings.reuseOldSite && !settings.localHostname) {
-  die(`Don't know which site to reuse, when --localHostname
-          not specified [TyE9395RKST4]`);
-}
 
 settings.debugEachStep = args.debugEachStep || args.des;
 settings.debugBefore = args.debugBefore || args.db;
