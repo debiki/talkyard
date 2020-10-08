@@ -211,6 +211,14 @@ const enum CategoriesLayout {
 }
 
 
+const enum CategoryDepth {
+  RootCatDepth = 0,
+  BaseCatDepth = 1,
+  SubCatDepth = 2,
+  SubSubCatDepth = 3,
+}
+
+
 const enum TopicLayout {
   Default = 0,  // then, depends on topic type. E.g. question-answers —> threaded discussion.
   ThreadedDiscussion = 1001,

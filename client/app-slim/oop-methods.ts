@@ -1097,6 +1097,77 @@ export function category_iconClass(category: Category | CategoryId, store: Store
 }
 
 
+export function categories_sortTree(categories: Category[]): CatsTree {
+  const catsById: { [id: number]: CatsTreeCat } = {};
+  const rootCats: CatsTreeCat[] = [];
+  const baseCats: CatsTreeCat[] = [];
+
+  for (let c of categories) {
+    // We'll add isX and subCats fields, so copy the cat.
+    const catCopy: CatsTreeCat = { ...c };
+    const isRootCat = !c.parentId ||   // <— yes
+            c.parentId === c.id;       // <— not needed?
+    if (isRootCat) {
+      catCopy.isRootCat = true;
+      rootCats.push(catCopy);
+    }
+    catsById[c.id] = catCopy;
+  }
+
+  _.forEach(catsById, (thisCat: CatsTreeCat, id: St) => {
+    const parentCat = catsById[thisCat.parentId];
+    let isBaseCat;
+    let isSubCat;
+    // let isSubSubCat; // maybe later
+    if (parentCat) {
+      parentCat.subCats = parentCat.subCats || [];
+      parentCat.subCats.push(thisCat);
+      isBaseCat = parentCat.isRootCat;
+      if (!isBaseCat) {
+        const grandpaCat = catsById[parentCat.parentId];
+        // This: !grandpaCat happens if root cats not incl by the server.
+        isSubCat = !grandpaCat || grandpaCat.isRootCat;
+      }
+    }
+    else {
+      // This happens if root cats not included by the server
+      // (it currently never includes root cats?).
+      isBaseCat = true;
+    }
+
+    // @ifdef DEBUG
+    // Cats have to be *something*.
+    dieIf(!thisCat.isRootCat && !isBaseCat && !isSubCat, 'TyE052RMDM3');
+    // @endif
+
+    if (isBaseCat) {
+      thisCat.isBaseCat = true;
+      baseCats.push(thisCat);
+    }
+    else if (isSubCat) {
+      thisCat.isSubCat = true;
+    }
+  });
+
+  // Sort base cats by position, and sub & sub-sub cats by name.  [sort_cats]
+  // Later, this'll be configurable — e.g. sorting by popularity or
+  // weekly new topics.
+  baseCats.sort((a, b) => a.position - b.position);
+  _.forEach(catsById, (cat: CatsTreeCat, id: St) => {
+    if (cat.isRootCat && cat.subCats) {
+      // These sub cats are base cats.
+      cat.subCats.sort((a, b) => a.position - b.position);
+    }
+    else if (cat.subCats) {
+      arr_sortAlphaInPlace(cat.subCats, c => c.name);
+    }
+  });
+
+  return { rootCats, baseCats, catsById };
+}
+
+
+
 // Page
 //----------------------------------
 

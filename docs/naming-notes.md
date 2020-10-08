@@ -5,14 +5,26 @@ Talkyard Naming Notes
 the real Talkyard code — instead, it tests the test code. (There's no `tttt`)
 
 
+### People
+
+A "Participant" is anyone with an account at the relevant Talkyard site,
+that is: guests (anonymous users), groups, users incl bots.
+A "member" is a group or a user (but not a guest — they don't have real accounts).
+
+"Participant" is abbreviated by "Pat". (Not "pp" or "pps" — should change
+all "pp" to "pat".) For example, `pats_t` is the database table with all users,
+groups, guests  (well, will be — as of today that table is named `users3`).
+
+
 ### Categories
 
 Each forum:
 
-Root category —> Main categories —> Sub categories —> (Sub sub categories? or not?)
+Root category —> Base categories —> Sub categories —> Sub sub categories.
 
-A main category is called "Main", not "Top", because "top" could be
-incorrectly interpreted as "popular".
+A base category is called "Base", not "Top", because "top" could be
+incorrectly interpreted as "popular". And not "Main" because that sounds
+like one primary thing among a group of peers.
 
 Root categories are Talkyard internal things — end users never see them;
 they never see the phrase "Root category".
