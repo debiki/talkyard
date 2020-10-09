@@ -37,7 +37,6 @@
 const r = ReactDOMFactories;
 const ModalDropdownButton = utils.ModalDropdownButton;
 const ExplainingListItem = util.ExplainingListItem;
-type ExplainingTitleText = util.ExplainingTitleText;
 const HelpMessageBox = help.HelpMessageBox;
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
