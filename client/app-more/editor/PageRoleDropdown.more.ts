@@ -95,36 +95,32 @@ export var PageRoleDropdown = createComponent({
         title: PageRole_Discussion_IconString,
         text: t.pt.DiscussionExpl });
 
-    // HACK bjj... wants only Discussion & MindMap. Later, COULD add a show-only-these-
-    // topic-types category & site setting, instead of hardcoding one site settings here.
-    const isBjjNotStaff = eds.siteId === 12 && !isStaff(me);
-
-    const questionOption = isBjjNotStaff ? null :
+    const questionOption =
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_QuestionO',
         activeEventKey: pageRole, eventKey: PageRole.Question,
         title: PageRole_Question_IconString,
         text: r.span({}, t.pt.QuestionExpl) });
 
-    const problemOption = isBjjNotStaff ? null :
+    const problemOption =
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_ProblemO',
         activeEventKey: pageRole, eventKey: PageRole.Problem,
         title: PageRole_Problem_IconString,
         text: t.pt.ProblExpl });
 
-    const ideaOption = isBjjNotStaff ? null :
+    const ideaOption =
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_IdeaO',
         activeEventKey: pageRole, eventKey: PageRole.Idea,
         title: PageRole_Idea_IconString,
         text: t.pt.IdeaExpl });
 
-    const chatOption = !canChangeToChat ? null :
-      user_isGuest(me) || isBjjNotStaff || settings.enableChat === false ? null :
+    const chatOption = !canChangeToChat ||
+      user_isGuest(me) || settings.enableChat === false ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
         activeEventKey: pageRole, eventKey: PageRole.OpenChat,
         title: PageRole_OpenChat_IconString,
         text: t.pt.ChatExpl });
 
-    const privateChatOption = !canChangeToChat ? null :
+    const privateChatOption = !canChangeToChat ||
       !isStaff(me) || props.hideStaffOnly || settings.enableChat === false ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_PrivChatO',
         activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
@@ -138,25 +134,39 @@ export var PageRoleDropdown = createComponent({
         title: PageRole_MindMap_IconString,
         text: "Comments laid out in a mind map tree." }); */
 
+
+    // ----- Staff only
+
     const showMore = !isStaff(me) || props.hideStaffOnly || showAllOptions ? null :
       ExplainingListItem({ onClick: this.showAllOptions,
         title: r.span({ className: 'esPageRole_showMore' }, t.MoreDots) });
 
-    const staffOnlyDivider = !isStaff(me) || props.hideStaffOnly ? null :
+
+    let staffOnlyDivider;
+    let infoPageOption;
+
+    if (isStaff(me) && !props.hideStaffOnly) {
+      staffOnlyDivider =
         r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
 
+      // Later, will be a PermsOnPage permission field "Create and edit Info Pages"?
+      // Then, admins can change to admins-only or core members etc (even per
+      // category if they want).
+      // And, also: "Reply on Info Pages"  [infopage_perms] ?
+      infoPageOption =
+        ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_WebPageO',
+          activeEventKey: pageRole, eventKey: PageRole.WebPage,
+          title: "Info page",
+          text: "An official looking page, without replies or author name." });
+    }
+
+    // ----- Admin only
+
     let adminOnlyDivider;
-    let webPageOption;
     let formOption;
     let customHtmlPageOption;
     if (me.isAdmin && showAllOptions) {
       adminOnlyDivider = r.div({ className: 'esDropModal_header' }, "Only for admins:");
-
-      webPageOption =
-        ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_WebPageO',
-          activeEventKey: pageRole, eventKey: PageRole.WebPage,
-          title: "Info page",
-          text: "A page without comments and author name." });
 
       formOption =  // [6JK8WHI3]
         ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_FormO',
@@ -189,12 +199,12 @@ export var PageRoleDropdown = createComponent({
 
           staffOnlyDivider,
           privateChatOption,
+          infoPageOption,
 
           showMore,
 
           adminOnlyDivider,
           formOption,
-          webPageOption,
           customHtmlPageOption));
 
     return (

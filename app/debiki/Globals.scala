@@ -1287,11 +1287,11 @@ class Config(conf: play.api.Configuration) extends TyLogging {
         includesSiteId(largeUploadsSiteIds, siteId)
 
     val maxBytesLargeFile: i32 =
-      conf.getOptional[f64](p + "maxMiBLargeFile").map(mib => (mib * Mebibyte).toInt)
-            .getOrElse(maxUploadSizeBytes) // <— REMOVE change to 10 MiB, default?
+      i64ToMinMaxI32(conf.getOptional[f64](p + "maxMiBLargeFile").map(mib => (mib * MebibyteI64).toLong)
+            .getOrElse(maxUploadSizeBytes)) // <— REMOVE change to 10 MiB, default?
 
     val maxBytesSmallFile: i32 =
-      (getF64OrDefault(p + "maxMiBSmallFile", default = 1) * Mebibyte).toInt
+      f64ToMinMaxI32(getF64OrDefault(p + "maxMiBSmallFile", default = 1) * MebibyteI64)
 
     // Old, remove
     // 2 values: 1 for whole server, absolute max all sites.
@@ -1299,10 +1299,10 @@ class Config(conf: play.api.Configuration) extends TyLogging {
     // Or  maxUploadKbServerGlobal  and  maxUploadKbSiteDefault
     // And admins can config their site's siteDefaultMaxFileKb
     //   up to serverGlobalMaxFileKb?
-    private def maxUploadSizeBytes: Int =
-      (conf.getOptional[Int]("talkyard.uploads.maxKiloBytesPerFile") orElse
-        conf.getOptional[Int]("talkyard.uploads.maxKiloBytes")).map(_ * Kibibyte)
-            .getOrElse(3 * Mebibyte)  // or 25 MiB? Nginx: TY_NGX_LIMIT_REQ_BODY_SIZE=25m
+    private def maxUploadSizeBytes: i64 =
+      (conf.getOptional[i64]("talkyard.uploads.maxKiloBytesPerFile") orElse
+        conf.getOptional[i64]("talkyard.uploads.maxKiloBytes")).map(_ * KibibyteI64)
+            .getOrElse(3 * MebibyteI64)  // or 25 MiB? Nginx: TY_NGX_LIMIT_REQ_BODY_SIZE=25m
   }
 
   object cdn {

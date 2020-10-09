@@ -538,22 +538,41 @@ const NotfPrefsTab = createFactory({
     // many sub categories, collapse/open them.)
 
     const categories: Category[] = membersPrefs.categoriesMaySee;
+    const catsTree = categories_sortTree(categories);
+
+    const makeCatNotfPrefs = (category: CatsTreeCat, depth: Nr) => {
+      if (depth > CategoryDepth.SubSubCatDepth) {
+        // @ifdef DEBUG
+        die("Sub sub sub cats not supported. Category cycle? [TyE4056MWK3]");
+        // @endif
+        return false;
+      }
+
+      const target: PageNotfPrefTarget = { pagesInCategoryId: category.id };
+      const effPref = pageNotfPrefTarget_findEffPref(target, store, membersPrefs);
+      const isUsingInheritedLevel = !effPref.notfLevel;
+      const inheritedWhy = !isUsingInheritedLevel ? null :
+          makeWhyNotfLvlInheritedExpl(effPref, ppsById);
+
+      let subCatPrefs;
+      if (category.subCats) {
+        subCatPrefs = r.ol({ className: 's_UP_Prfs_Ntfs_Cs_C_SubCs'},
+            category.subCats.map(c => makeCatNotfPrefs(c, depth + 1)));
+      }
+
+      return r.li({ key: category.id, className: 's_UP_Prfs_Ntfs_Cs_C e_CId-' + category.id },
+        r.span({ className: 's_UP_Prfs_Ntfs_Cs_C_Name' }, category.name + ':'),
+        notfs.PageNotfPrefButton({ store, target, ppsById, ownPrefs: membersPrefs,
+            saveFn: (notfLevel: PageNotfLevel) => {
+              saveAndReload(target, notfLevel);
+            }}),
+        r.span({}, inheritedWhy),
+        subCatPrefs);
+    };
+
     const perCategoryNotfLevels =
         r.ul({},
-          categories.map((category: Category) => {
-            const target: PageNotfPrefTarget = { pagesInCategoryId: category.id };
-            const effPref = pageNotfPrefTarget_findEffPref(target, store, membersPrefs);
-            const isUsingInheritedLevel = !effPref.notfLevel;
-            const inheritedWhy = !isUsingInheritedLevel ? null :
-                makeWhyNotfLvlInheritedExpl(effPref, ppsById);
-            return r.li({ key: category.id, className: 's_UP_Prfs_Ntfs_Cs_C e_CId-' + category.id },
-              r.span({ className: 's_UP_Prfs_Ntfs_Cs_C_Name' }, category.name + ':'),
-              notfs.PageNotfPrefButton({ store, target, ppsById, ownPrefs: membersPrefs,
-                  saveFn: (notfLevel: PageNotfLevel) => {
-                    saveAndReload(target, notfLevel);
-                  }}),
-              r.span({}, inheritedWhy))
-          }));
+          catsTree.baseCats.map(c => makeCatNotfPrefs(c, CategoryDepth.BaseCatDepth)));
 
     const what = member.isGroup ? "group" : "user";
     const categoriesMayNotSee: Category[] = membersPrefs.categoriesMayNotSee;

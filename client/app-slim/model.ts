@@ -522,6 +522,7 @@ interface ReadingProgress {
 }
 
 
+// MOVE to section "UI Widgets" below?
 interface HelpMessage {
   id: string;  // leave out —> cannot close.  RENAME to closeId insetad? and remove alwaysShow?
   version: number;
@@ -537,6 +538,7 @@ interface HelpMessage {
 }
 
 
+// MOVE to section "UI Widgets" below?
 interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   dialogClassName?: string;
   body?: any;
@@ -558,7 +560,7 @@ interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
 }
 
 
-
+// MOVE the tour stuff to just above "UI Widgets" section below?
 type TourId = string;
 type TourTipsSeen = TourId[];
 
@@ -906,7 +908,7 @@ interface Store extends Origins, PartialEditorStoreState {
   isImpersonating?: boolean;
   isViewingAs?: boolean;
   rootPostId: number;
-  usersByIdBrief: { [userId: number]: Participant };  // = PpsById
+  usersByIdBrief: { [userId: number]: Participant };  // = PatsById
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
 
   isEditorOpen?: boolean;  // default: false
@@ -1102,7 +1104,7 @@ interface Participant {   // Guest or Member, and Member = group or user
   isGone?: boolean;
 }
 
-type PpsById = { [ppId: number]: Participant };
+type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
 
 
 interface Guest extends Participant {
@@ -1605,7 +1607,51 @@ interface ApiSecret {
 
 
 
-// ----- Admin Area
+
+// =========================================================================
+//  UI Widgets
+// =========================================================================
+
+
+/// For rendering category trees.
+interface CatsTree {
+  rootCats: CatsTreeCat[];
+  baseCats: CatsTreeCat[];
+  catsById: { [id: number]: CatsTreeCat };
+}
+interface CatsTreeCat extends Category {
+  isRootCat?: Bo;
+  isBaseCat?: Bo;
+  isSubCat?: Bo;
+  // isSubSubCat?: Bo; — later
+  subCats?: CatsTreeCat[];
+}
+
+
+interface ExplainingTitleText {
+  iconUrl?: string;
+  title: string;
+  text: any;
+  key?: any;
+  subStuff?: any;
+}
+
+interface ExplainingListItemProps extends ExplainingTitleText {
+  id?: St;
+  className?: St;
+  onClick?: any;
+  onSelect?: (item: ExplainingTitleText) => void;
+  eventKey?: any;
+  active?;
+  activeEventKey?;
+
+}
+
+
+// =========================================================================
+//  Admin Area
+// =========================================================================
+
 
 interface AdminDashboard {
   siteStats: SiteStats;
@@ -1646,7 +1692,10 @@ interface AdminPanelProps {
 }
 
 
-// ----- Super Admin
+
+// =========================================================================
+//  Super Admin
+// =========================================================================
 
 
 interface SuperAdminStuff {
@@ -1678,7 +1727,10 @@ interface Rect {
 
 
 
-// ----- Extensions, plugins, themes
+// =========================================================================
+//  Extensions, plugins, themes
+// =========================================================================
+
 
 // Later, part of an extensions system.
 // For now: (too much config! Require cust nav to be on row 1 always? and
@@ -1706,7 +1758,9 @@ interface BrowserCode {
 
 
 
-// ----- Server requests and responses
+// =========================================================================
+//  Server requests and responses
+// =========================================================================
 
 
 type OnDone = (() => void);
@@ -1875,7 +1929,10 @@ interface IframeOffsetWinSize {
 }
 
 
-// ----- Service worker messages  [sw]
+
+// =========================================================================
+//  Service worker messages  [sw]
+// =========================================================================
 
 
 const enum SwDo {  // Service worker, do: ....
@@ -1957,7 +2014,11 @@ interface MyVersionIsMessageFromSw extends MessageFromServiceWorker {
 }
 
 
-// ----- External things whose @types won't work
+
+
+// =========================================================================
+//  External things whose @types won't work
+// =========================================================================
 
 // Why won't work? Maybe because isn't using AMD / ES6 modules.
 
@@ -1990,7 +2051,9 @@ interface RouteHistory {
 
 
 
-// ----- Public API  [PUB_API]
+// =========================================================================
+//  Public API  [PUB_API]
+// =========================================================================
 
 // This is used both by Talkyard's client side code, and by Talkyard admins who
 // add LaTeX or code highlighting script tags.  (So cannot be placed in

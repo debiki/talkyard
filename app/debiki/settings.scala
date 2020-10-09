@@ -638,12 +638,11 @@ object EffectiveSettings {
     okSources.toSeq
   }
 
-  def isEmailAddressAllowed(address: String, allowListText: String, blockListText: String)
-        : Boolean = {
-    def canBeDomain(line: String) = line.nonEmpty && line.headOption.isNot('#')
-    val whiteDomainsIterator = allowListText.lines.map(_.trim).filter(canBeDomain)
-    val blackDomainsIterator = blockListText.lines.map(_.trim).filter(canBeDomain)
-    def addrEndsWith(domain: String) =
+  def isEmailAddressAllowed(address: St, allowListText: St, blockListText: St): Bo = {
+    def canBeDomain(line: St) = line.nonEmpty && line.headOption.isNot('#')
+    val allowedDomains = allowListText.lines.map(_.trim).filter(canBeDomain)
+    val blockedDomains = blockListText.lines.map(_.trim).filter(canBeDomain)
+    def addrEndsWith(domain: St) =
       if (domain.contains("@") && domain.head != '@') {
         // Is an email address, not a domain. Fine — let people specify full addresses. And
         // then require an exact match, so another.jane.doe@ex.com won't match jane.doe@ex.com.
@@ -660,14 +659,14 @@ object EffectiveSettings {
         // So, don't:  address.endsWith(s".$domain") ||  instead, only:
         address.endsWith(s"@$domain")
       }
-    for (blackDomain <- blackDomainsIterator) {
-      if (addrEndsWith(blackDomain))
+    for (blockedDomain <- blockedDomains) {
+      if (addrEndsWith(blockedDomain))
         return false
     }
-    if (whiteDomainsIterator.isEmpty)
+    if (allowedDomains.isEmpty)
       return true
-    for (whiteDomain <- whiteDomainsIterator) {
-      if (addrEndsWith(whiteDomain))
+    for (allowedDomain <- allowedDomains) {
+      if (addrEndsWith(allowedDomain))
         return true
     }
     false

@@ -768,11 +768,19 @@ export function loadEditorAndMoreBundles(callback?) {
 }
 
 
-export function loadMoreScriptsBundle(callback?) {
+export function loadMoreScriptsBundle(callback?: () => void): Promise<void> {
+  if (debiki.internal._showCreateUserDialog && !moreScriptsPromise) {
+    // This means more-bundle was included in a <script> tag,
+    // because _showCreateUserDialog() is in more-bundle.
+    // Don't load more-bundle again — seems that'd clear e.g. `let loginDialog`
+    // in namespace debiki2.login,  so the handle to any already
+    // open login dialog would disappear — we couldn't close it.
+    moreScriptsPromise = Promise.resolve();
+  }
   if (moreScriptsPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
-    !callback || setTimeout(() => moreScriptsPromise.then(callback), 0);
+    if (callback) setTimeout(() => moreScriptsPromise.then(callback), 0);
     return moreScriptsPromise;
   }
   moreScriptsPromise = new Promise(function(resolve, reject) {
@@ -809,7 +817,11 @@ export function load2dScriptsBundleStart2dStuff() {  // [2D_LAYOUT]
 } */
 
 
-export function loadStaffScriptsBundle(callback) {
+export function loadStaffScriptsBundle(callback): Promise<void> {
+  if (debiki2.admin && !staffScriptsPromise) {
+    // This means staff-bundle was included in a <script> tag.
+    staffScriptsPromise = Promise.resolve();
+  }
   if (staffScriptsPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.

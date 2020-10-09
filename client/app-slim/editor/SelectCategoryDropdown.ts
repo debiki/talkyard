@@ -40,6 +40,7 @@ export const SelectCategoryDropdown = createClassAndFactory({
   getInitialState: function() {
     return {
       open: false,
+      expandedCats: {},
     };
   },
 
@@ -52,7 +53,7 @@ export const SelectCategoryDropdown = createClassAndFactory({
   },
 
   close: function() {
-    this.setState({ open: false });
+    this.setState({ open: false, expandedCats: {} });
   },
 
   onCategorySelected: function(listItem) {
@@ -63,14 +64,18 @@ export const SelectCategoryDropdown = createClassAndFactory({
   render: function() {
     const props = this.props;
     const store: Store = props.store;
-    const categories: Category[] | undefined = props.categories || store.currentCategories;
+    const categories: Category[] | U = props.categories || store.currentCategories;
+    const expandedCats: { [id: string]: Bo } = this.state.expandedCats;
+
+    // UX add a text input to fuzzy-filter on category names, like Skim (rustlang) does.
 
     // UX COULD let user click a checkbox, to show categories from all site sections, even if by
     // default showing only categories from any current site section. [subcomms]
-    const categoriesToList: Category[] = categories.length ? categories : store.allCategoriesHacky;
+    const catsToList: Category[] =
+            categories.length ? categories : store.allCategoriesHacky;
 
     const selectedCategory: Category =
-      _.find(categoriesToList, c => c.id === props.selectedCategoryId);
+      _.find(catsToList, c => c.id === props.selectedCategoryId);
 
     dieIf(!selectedCategory && props.selectedCategoryId, "Selected category missing [EdE5YFK24]");
     const categoryName = selectedCategory ? selectedCategory.name : t.scd.SelCat + '...';
@@ -79,18 +84,50 @@ export const SelectCategoryDropdown = createClassAndFactory({
       Button({ onClick: this.open, ref: 'dropdownButton' },
         categoryName + ' ', r.span({ className: 'caret' }));
 
-    const categoryListItems = categoriesToList.map((category: Category) => {
-      return ExplainingListItem({ onSelect: this.onCategorySelected,
-        activeEventKey: props.selectedCategoryId, eventKey: category.id, key: category.id,
-        title: category.name, text: category.description });
-    });
+    const catsTree = categories_sortTree(catsToList);
+
+    const makeCatListItem = (category: CatsTreeCat, depth: Nr) => {
+      if (depth > CategoryDepth.SubSubCatDepth) {
+        // @ifdef DEBUG
+        die("Sub sub sub cats not supported. Category cycle? [TyE4056MWK2]");
+        // @endif
+        return false;
+      }
+
+      let subStuff;
+      if (category.subCats) {
+        const numSubCats = category.subCats.length;
+        const isExpanded = numSubCats <= 2 || expandedCats[category.id];
+        subStuff = r.div({},
+            isExpanded ? null :
+                Button({ onClick: () => {
+                  const newExpCats = { ...expandedCats };
+                  newExpCats[category.id] = true;
+                  this.setState({ expandedCats: newExpCats });
+                } }, `Show ${numSubCats} sub categories ...`),  // I18N
+            !isExpanded ? null :
+                r.ol({},
+                  category.subCats.map(c => makeCatListItem(c, depth + 1))));
+      }
+
+      const listItemProps: ExplainingListItemProps = {
+              onSelect: this.onCategorySelected,
+              activeEventKey: props.selectedCategoryId, eventKey: category.id,
+              key: category.id, title: category.name, text: category.description,
+              subStuff };
+
+      return ExplainingListItem(listItemProps);
+    }
+
+    const catListItems = catsTree.baseCats.map(c =>
+              makeCatListItem(c, CategoryDepth.BaseCatDepth));
 
     const dropdownModal =
       DropdownModal({ show: this.state.open, onHide: this.close, showCloseButton: true,
           atRect: this.state.buttonRect, windowWidth: this.state.windowWidth },
         r.div({ className: 'esDropModal_header' }, t.scd.SelCat + ':'),
         r.ul({},
-          categoryListItems));
+          catListItems));
 
     return (
       rFragment({},

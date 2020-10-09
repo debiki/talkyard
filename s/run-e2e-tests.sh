@@ -274,7 +274,7 @@ function runAllE2eTests {
   $r s/wdio --only create-site-github-oauth-uppercase-email $args
   $r s/wdio --only create-site-linkedin $args
   $r s/wdio --only create-site-admin-guide.2browsers $args
-  $r s/wdio --only oauth-signup-login $args   # oops, also runs:  login-required-oauth-signup-login
+  $r s/wdio --only oauth-signup-signin $args
   $r s/wdio --only login-expire-idle-after.2browsers $args
 
   $r s/wdio --only forum-sort-and-scroll.2browsers $args
@@ -426,6 +426,7 @@ function runAllE2eTests {
   $r s/wdio --only page-type-idea-statuses-comments $args
   $r s/wdio --only page-type-problem-statuses $args
   $r s/wdio --only page-type-question-closed.2browsers $args
+  $r s/wdio --only page-type-info-page $args
 
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args
@@ -533,6 +534,10 @@ function runAllE2eTests {
 
   # Embedded comments
   # ------------
+
+  # For testing manually. Just verify the test starts properly.
+  # For now, not "manual" (with 'l' at the end) — that'd start manual.2browsers too  o.O
+  $r s/wdio       --only embcom.manua.2br $args
 
   # Also see navigation-as-* above.
   $r s/wdio       --only embedded-comments-navigation-as-guest $args

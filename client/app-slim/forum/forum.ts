@@ -1109,7 +1109,7 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
           // (Cannot use `=== anySubCat.parentId` — maybe we haven't selected any sub cat.)
           c.parentId === baseCat.id);
 
-  arr_sortAlphaInPlace(subCats, c => c.name);
+  arr_sortAlphaInPlace(subCats, c => c.name);  // [sort_cats]
 
   const baseCatDropdown = makeCatDropdown(store, '', baseCats, baseCat, false, !subCats.length);
   const anySubCatDropdown = makeCatDropdown(store, baseCat.slug, subCats, anySubCat, true, true);

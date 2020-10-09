@@ -150,7 +150,11 @@ const InvitedUsersPanel = createFactory<any>({
     // Instead open the dialog here, in the admin area.
     users.openInviteDialog((invites: Invite[]) => {
       if (this.isGone) return;
-      this.setState({ invites: [...this.state.invites, ...invites] });
+      // Invites sent at the same time, are sorted by email address. [inv_sort_odr]
+      const invitesSorted = [...invites];
+      invitesSorted.sort((a, b) =>
+              a.invitedEmailAddress.localeCompare(b.invitedEmailAddress));
+      this.setState({ invites: [...invites, ...this.state.invites] });
     });
   },
 

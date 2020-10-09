@@ -59,6 +59,10 @@ Rename "indie" to user" and "people" to "members"
 prevent usernames from being displayed in Unicode, if mixed charsets used,
 e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
 
+[rate_limits]
+Configurable rate limits.
+
+
 [more_runtime_assertions]
 Figure out a way to safely add more runtime assertions — although sometimes
 I'll add *incorrect assertions* some of which will *break* and need to

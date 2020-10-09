@@ -146,8 +146,8 @@ trait UserSiteDaoMixin extends SiteTransaction {
       select $InviteSelectListItems
       from invites3
       where site_id = ? $andTest
-      order by created_at desc
-      """
+      order by created_at desc, email_address """ //  [inv_sort_odr]
+
     runQueryFindMany(query, values.toList, rs => {
       getInvite(rs)
     })

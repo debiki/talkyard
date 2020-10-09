@@ -34,41 +34,36 @@
 const r = ReactDOMFactories;
 
 
-export interface ExplainingTitleText {
-  onClick?: any;
-  eventKey?: any;
-  iconUrl?: string;
-  title: string;
-  text: any;
-  key?: any;
-}
-
-
 // COULD change to pure fn
 export var ExplainingListItem = createComponent({
   displayName: 'ExplainingListItem',
 
   onClick: function(event) {
+    const props: ExplainingListItemProps = this.props;
     event.preventDefault();
-    if (this.props.onClick) {
-      this.props.onClick(event);
+    if (props.onClick) {
+      props.onClick(event);
     }
-    if (this.props.onSelect) {
-      this.props.onSelect(this.props);  // = calls onSelect(props: ExplainingTitleText)
+    if (props.onSelect) {
+      props.onSelect(props);  // = calls onSelect(props: ExplainingTitleText)
     }
   },
 
   render: function() {
+    const props: ExplainingListItemProps = this.props;
     const entry: ExplainingTitleText = this.props;
     const activeClass =
-        this.props.active || _.isUndefined(this.props.active) && (
-          this.props.onSelect && this.props.activeEventKey === this.props.eventKey) ?
+        props.active || _.isUndefined(props.active) && (
+          props.onSelect && props.activeEventKey === props.eventKey) ?
         ' active' : '';
+    const subStuff = !entry.subStuff ? null :
+            r.div({ className: 'esExplDrp_entry_sub' }, entry.subStuff);
     return (
       r.li({ className: 'esExplDrp_entry' + activeClass },
-        r.a({ onClick: this.onClick, id: this.props.id, className: this.props.className },
+        r.a({ onClick: this.onClick, id: props.id, className: props.className },
           r.div({ className: 'esExplDrp_entry_title' }, entry.title),
-          r.div({ className: 'esExplDrp_entry_expl' }, entry.text))));
+          r.div({ className: 'esExplDrp_entry_expl' }, entry.text)),
+        subStuff));
   },
 });
 
