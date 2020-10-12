@@ -1,7 +1,6 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import * as fs from 'fs';
 import assert = require('assert');
 import tyAssert = require('../utils/ty-assert');
 import server = require('../utils/server');
@@ -33,7 +32,7 @@ let forum: LargeTestForum;
 let discussionPageUrl: string;
 
 const loginPageSlug = 'sso-dummy-login.html';
-const loginPageFileSysPath = './target/' + loginPageSlug;
+const afterLogoutPageSlug = 'after-logout-page.html';
 
 const ssoUrl =
     `http://localhost:8080/${loginPageSlug}?returnPath=\${talkyardPathQueryEscHash}`;
@@ -66,6 +65,10 @@ function constructSsoLoginTest(testName: string, variants: SsoLoginTestVariants)
 
   dieIf(variants.approvalRequired,
       "Not impl: variants.approvalRequired [TyE305KDKSHT20]")  // see (unimpl3904643)
+
+  // Maybe the param should be a Bo instead.
+  dieIf(variants.ssoLoginRequiredLogoutUrl && variants.ssoLoginRequiredLogoutUrl !=
+            "http://localhost:8080/" + afterLogoutPageSlug, "TyE602MKSRM2");
 
   it("import a site", () => {
     const builder = buildSite();
@@ -131,18 +134,16 @@ function constructSsoLoginTest(testName: string, variants: SsoLoginTestVariants)
     owen_brA.adminArea.settings.clickSaveAll();
   });
 
-  it("Owen creates an external login page", () => {
+  it("Owen creates an external login page, and after-logout page", () => {
     // Chrome? Webdriverio? wants a 200 OK reply, so need to create this dummy page.
-    if (!fs.existsSync(loginPageFileSysPath)) {
-      logMessage(`Creating html page: ${loginPageFileSysPath}`);
-      fs.writeFileSync(loginPageFileSysPath,
+    utils.createPageInHtmlDirUnlessExists(loginPageSlug,
             '<html><body>\n' +
-            "Ty SSO test dummy login page. [8906QKSHM40]\n" +
+            "SSO Login Ty test page. [8906QKSHM40]\n" +
             '</body></html>\n');
-    }
-    else {
-      logMessage(`Page already exists: ${loginPageFileSysPath}`);
-    }
+    utils.createPageInHtmlDirUnlessExists(afterLogoutPageSlug,
+            '<html><body>\n' +
+            "After Logout Ty SSO test page. [AFT_LGO_TST_537503_]\n" +
+            '</body></html>\n');
   });
 
 
@@ -340,16 +341,55 @@ function addOneExtUserTests(variants: SsoLoginTestVariants, getApiSecret: () => 
   });
 
 
-  it(`${extUserDispName} logs out`, () => {
+
+  it(`${extUserDispName} logs out, when at: /-/username/...`, () => {
     user_brB.rememberCurrentUrl();
     user_brB.topbar.clickLogout({ waitForLoginButton: !variants.loginRequired });
   });
 
   if (variants.ssoLoginRequiredLogoutUrl) {
+
+
+    // ----- Test SSO Logout URLs  TyTE2ELGOURL
+
+
+    // 1) This was when logging out from /-/username/../..:
+
     it("... and gets sent to the  ssoLoginRequiredLogoutUrl  page ", () => {
       user_brB.waitForNewOrigin();
-      assert.equal(user_brB.getUrl(), variants.ssoLoginRequiredLogoutUrl);
+      tyAssert.eq(user_brB.getUrl(), variants.ssoLoginRequiredLogoutUrl);
+      tyAssert.includes(user_brB.getPageSource(), 'AFT_LGO_TST_537503_');
     });
+
+    // 2) Now try logging out from a discussion page:
+
+    it("Logs in again: A remote server generates a login secret ...", () => {
+      oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({
+            origin: siteIdAddress.origin, apiRequesterId: c.SysbotUserId,
+            apiSecret: getApiSecret(), externalUser: externalUser,
+            fail: !!expectedErrorCode });
+    });
+
+    it(`... ${extUserDispName} uses the secret to login`, () => {
+      user_brB.rememberCurrentUrl();
+      user_brB.apiV0.loginWithSecret({
+              origin: siteIdAddress.origin, oneTimeSecret: oneTimeLoginSecret,
+              thenGoTo: discussionPageUrl });
+      user_brB.waitForNewUrl();
+    });
+
+    it(`${extUserDispName} logs out, when on a discussion page`, () => {
+      user_brB.rememberCurrentUrl();
+      user_brB.topbar.clickLogout({ waitForLoginButton: !variants.loginRequired });
+    });
+
+    it("... and again gets sent to the  ssoLoginRequiredLogoutUrl  page ", () => {
+      user_brB.waitForNewOrigin();
+      tyAssert.eq(user_brB.getUrl(), variants.ssoLoginRequiredLogoutUrl);
+      tyAssert.includes(user_brB.getPageSource(), 'AFT_LGO_TST_537503_');
+    });
+
+
   }
   else if (variants.loginRequired) {
     it("... and the SSO login button appears", () => {

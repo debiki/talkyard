@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import * as assert from './ty-assert';
+import * as fs from 'fs';
 import { logMessage, logUnusual, dieIf } from './log-and-die';
 import settings = require('./settings');
 import c = require('../test-constants');
@@ -166,6 +167,17 @@ ${ htmlToPaste ? htmlToPaste : `
     }
 
     return resultHtmlStr;
+  },
+
+
+  createPageInHtmlDirUnlessExists(pageSlug: St, html: St) {
+    const fileSysPath = './target/' + pageSlug;
+    if (fs.existsSync(fileSysPath)) {
+      logMessage(`Page already exists: ${fileSysPath}`);
+      return;
+    }
+    logMessage(`Creating html page: ${fileSysPath}`);
+    fs.writeFileSync(fileSysPath, html);
   },
 
 

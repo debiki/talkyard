@@ -276,6 +276,7 @@ export class TyE2eTestBrowser {
 
     /** @deprecated */
     getSource = () => this.#br.getPageSource();  // backw compat
+    getPageSource = () => this.#br.getPageSource();
 
     host(): string {
       const origin = this.origin();

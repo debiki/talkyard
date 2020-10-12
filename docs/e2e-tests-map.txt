@@ -123,6 +123,8 @@ single-sign-on:  (3093533)
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
   one-time login secret abuse:
           - sso-one-time-key-errors.2browsers.test.ts  TyT5025BDUJQP4R
+  logout url:
+          - sso-login-required-w-logout-url.2browsers  TyTE2ESSOLGOURL.TyTE2ELGOURL
   unusual names:
           - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT603KTMM653
   email conflict:
