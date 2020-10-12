@@ -1329,17 +1329,27 @@ export function trustLevel_toString(trustLevel: TrustLevel): string {
   }
 }
 
-export function threatLevel_toString(threatLevel: ThreatLevel): string {
+/// Returns [title, sub title].
+///
+export function threatLevel_toString(threatLevel: ThreatLevel): [St, St] {
   // (This is for admins, don't translate. [5JKBWS2])
   switch (threatLevel) {
-    case ThreatLevel.SuperSafe: return "Super safe";
-    case ThreatLevel.SeemsSafe: return "Seems safe";
-    case ThreatLevel.HopefullySafe: return "Allow";
-    case ThreatLevel.MildThreat: return "Review after";
-    case ThreatLevel.ModerateThreat: return "Approve before";
-    case ThreatLevel.SevereThreat: return "Block completely";
+    case ThreatLevel.SuperSafe: return ["Super safe", ''];
+    case ThreatLevel.SeemsSafe: return ["Seems safe", ''];
+    case ThreatLevel.HopefullySafe: return ["Default", ''];
+    case ThreatLevel.MildThreat: return ["Mild", "mods notified of new posts"];
+    case ThreatLevel.ModerateThreat: return ["Moderate", "posts hidden until approved"];
+    case ThreatLevel.SevereThreat: return ["Block Completely", ''];
     default: debiki2.die(`Lvl ${threatLevel} [TyEUNKTHRLVL]`);
   }
+}
+
+/// Returns `$bold-title ($brief-explanation)`.
+///
+export function threatLevel_toElem(threatLevel: ThreatLevel) {
+  const [title, subTitle] = threatLevel_toString(threatLevel);
+  const boldTitle = r.b({ className: `s_TrtLvTl e_TrtLv-${threatLevel}` }, title);
+  return subTitle ? rFr({}, boldTitle, ` (${subTitle})`) : boldTitle;
 }
 
 

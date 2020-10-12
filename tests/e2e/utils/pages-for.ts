@@ -3869,13 +3869,16 @@ export class TyE2eTestBrowser {
       // Also see this.assertWholePageHidden().
       assertPageHidden: () => {
         this.pageTitle.waitForVisible();
-        assert(this.isVisible('.dw-p-ttl .icon-eye-off'));
+        assert(this.pageTitle.__isEyeOffVisible());
       },
 
       assertPageNotHidden: () => {
         this.pageTitle.waitForVisible();
-        assert(!this.isVisible('.dw-p-ttl .icon-eye-off'));
+        assert(!this.pageTitle.__isEyeOffVisible());
       },
+
+      __isEyeOffVisible: (): Bo => this.isVisible('.dw-p-ttl .icon-eye-off'),
+
 
       __changePageButtonSelector: '.dw-p-ttl .dw-clickable',
 
@@ -6802,6 +6805,11 @@ export class TyE2eTestBrowser {
         setEmailNotVerifiedButtonSelector: '.e_SetEmNotVerifB',
         sendEmVerEmButtonSelector: '.s_SendEmVerifEmB',
 
+        viewUser: (username: St) => {
+          this.go2('/-/admin/users/id/' + username);
+          this.adminArea.user.waitForLoaded();
+        },
+
         waitForLoaded: () => {
           this.waitForVisible('.esA_Us_U_Rows');
         },
@@ -6908,16 +6916,25 @@ export class TyE2eTestBrowser {
           this.waitForVisible('.e_Suspend');
         },
 
+        markAsNoThreat: () => {
+          this.waitAndClick('.e_ThreatLvlB');
+          this.waitAndClick('.e_HopfSafB');
+          this.waitForVisible('.e_ThreatLvlIsLkd');
+          this.waitForDisplayed('.e_TrtLv-3'); // HopefullySafe
+        },
+
         markAsMildThreat: () => {
           this.waitAndClick('.e_ThreatLvlB');
           this.waitAndClick('.e_MildThreatB');
           this.waitForVisible('.e_ThreatLvlIsLkd');
+          this.waitForDisplayed('.e_TrtLv-4'); // MildThreat
         },
 
         markAsModerateThreat: () => {
           this.waitAndClick('.e_ThreatLvlB');
           this.waitAndClick('.e_ModerateThreatB');
           this.waitForVisible('.e_ThreatLvlIsLkd');
+          this.waitForDisplayed('.e_TrtLv-5'); // ModerateThreat
         },
 
         unlockThreatLevel: () => {

@@ -310,7 +310,8 @@ declare namespace debiki2 {
   var isWikiPost;
   var isStaff;
   function user_isTrustMinNotThreat(me: UserInclDetails | Myself, trustLevel: TrustLevel): boolean;
-  var threatLevel_toString;
+  //function threatLevel_toString(threatLevel: ThreatLevel): [St, St];
+  function threatLevel_toElem(threatLevel: ThreatLevel);
   var isGuest;
   var user_isGuest;
   function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean;

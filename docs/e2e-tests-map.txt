@@ -816,6 +816,8 @@ review after:
           - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI
           - modn-appr-bef-comb-w-revw-aftr.2browsers.test.ts  TyTE2E05RKD3
           - server side: TyT305RKTH205
+  require approval before, because flagged:
+          - flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK.TyTE2EFLAGTRTMOD
   review after, if trust less than:
           - modn-review-after.2browsers.test.ts  TyTE2E402GRM
           - modn-appr-bef-comb-w-revw-aftr.2browsers.test.ts  TyTE2E05RKD3
@@ -856,6 +858,11 @@ review after:
     #    Alice deletes.
     #    Memah visits reply — not found.
 
+flags:
+  auto threat level, moderate:
+          - flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK
+  lock threat level:
+          - flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK.TyTE2ETHRLVDEF
 
 spam: (4BKS0)
           - spam-basic-local.2browsers.test.ts  TyT530KRM1R

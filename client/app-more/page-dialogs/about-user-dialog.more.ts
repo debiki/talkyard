@@ -348,9 +348,9 @@ const AboutGuest = createComponent({
       blockedInfo =
         r.p({ className: 'dw-guest-blocked' },
           text, r.br(),
-          "IP block level: " + threatLevel_toString(blocks.ipBlock.threatLevel), r.br(),
-          "Guest id cookie block level: " +
-              threatLevel_toString(blocks.browserBlock.threatLevel), r.br());
+          "IP threat level: ", threatLevel_toElem(blocks.ipBlock.threatLevel), r.br(),
+          "Guest id cookie threat level: ",
+              threatLevel_toElem(blocks.browserBlock.threatLevel), r.br());
     }
 
     const anyCannotBeContactedMessage = guest.isEmailUnknown

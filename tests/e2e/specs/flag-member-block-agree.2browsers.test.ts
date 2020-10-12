@@ -25,7 +25,7 @@ let maria;
 let mariasBrowser: TyE2eTestBrowser;
 let michael;
 let michaelsBrowser: TyE2eTestBrowser;
-let mallory;
+let mallory: Member;
 let mallorysBrowser: TyE2eTestBrowser;
 let guest;
 let guestsBrowser: TyE2eTestBrowser;
@@ -47,8 +47,14 @@ let topics = {
   oldTopicUrl: 'old_page',
 };
 
+const mallorysReplyPendAppr = 'mallorysReplyPendAppr';
+const mallorysTopicTitlePendAppr = 'mallorysTopicTitlePendAppr';
+const mallorysTopicBodyPendAppr = 'mallorysTopicBodyPendAppr';
 
-describe("spam test, no external services:", () => {
+const mallorysTopicTitleAutoAppr = 'mallorysTopicTitleAutoAppr';
+const mallorysTopicBodyAutoAppr = 'mallorysTopicBodyAutoAppr';
+
+describe("flag-member-block-agree.2browsers.test.ts  TyTE2EFLGMEMBLK", () => {
 
   it("initialize people", () => {
     everyone = new TyE2eTestBrowser(wdioBrowser);
@@ -374,26 +380,54 @@ describe("spam test, no external services:", () => {
   // Mallory considered a threat
   // -------------------------------------
 
-  it("Now, when Mallory posts more comments, they get queued for review", () => {
+  it("Now, when Mallory posts a new topic", () => {
+    mallorysBrowser.go2('/');
+    mallorysBrowser.complex.createAndSaveTopic({
+            title: mallorysTopicTitlePendAppr,
+            body: mallorysTopicBodyPendAppr,
+            willBePendingApproval: true });
   });
 
-  it(".. until he's created too many pending-review comments, then he gets blocked", () => {
+  it("... it gets hidden, pending review  TyTE2EFLAGTRTMOD", () => {
+    mallorysBrowser.pageTitle.assertPageHidden();
   });
 
-  it("... and cannot post more comments", () => {
+  it(".. TESTS_MISSING until he has too many posts pending review — then, he gets blocked", () => {
   });
 
-  it("... and cannot create more topics", () => {
+  it("... TESTS_MISSING and cannot post more comments", () => {
+  });
+
+  it("... TESTS_MISSING and cannot create more topics", () => {
   });
 
 
   // Strangers
   // -------------------------------------
 
-  it("A stranger won't see Mallory's old replies and topics", () => {
+  it("TESTS_MISSING A stranger won't see Mallory's old replies and topics", () => {
   });
 
-  it("... and not the new ones pending review", () => {
+  it("... TESTS_MISSING and not the new ones pending review", () => {
+  });
+
+
+  // Clearing threat level
+  // -------------------------------------
+
+  it("But Owen sets Mallory's threat level to Default  TyTE2ETHRLVDEF", () => {
+    owensBrowser.adminArea.user.viewUser(mallory.username);
+    owensBrowser.adminArea.user.markAsNoThreat();
+  });
+
+  it("Now when Mallory post new topics", () => {
+    mallorysBrowser.go2('/');
+    mallorysBrowser.complex.createAndSaveTopic({
+            title: mallorysTopicTitleAutoAppr, body: mallorysTopicBodyAutoAppr });
+  });
+
+  it("... they get shown directly again", () => {
+    mallorysBrowser.pageTitle.assertPageNotHidden();
   });
 
 });
