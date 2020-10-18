@@ -854,11 +854,24 @@ export class TyE2eTestBrowser {
     }
 
 
-    // Could rename to isInTalkyardIframe.
-    // NO, use this.#isWhere instead — just remember in which frame we are, instead of polling. ?
-    isInIframe(): boolean {
-      if (this.#isWhere === IsWhere.UnknownIframe)
-        return true;
+    isInIframe(): Bo {
+      switch (this.#isWhere) {
+        case IsWhere.EmbCommentsIframe:
+        case IsWhere.EmbEditorIframe:
+        case IsWhere.UnknownIframe:
+          return true;
+        default:
+          // Old code below — but there's a race :- (
+          // Use  refresh2() and go2() to avoid — then, #isWhere gets
+          // updated properly.
+      }
+
+      // E2EBUG: Race. If clicking logout, then, the page reloads,
+      // and eds.isInIframe is undefiend — it can seem as if we're not in an iframe,
+      // even if we are. Causing switchToAnyParentFrame() to *not*
+      // switch to the parent frame.
+      logWarningIf(!this.#isWhere,
+            `E2EBUG: Use go2() and refresh2() to avoid isInIframe() race [TyM03SMSQ3]`);
 
       return this.#br.execute(function() {
         return window['eds'] && window['eds'].isInIframe;
@@ -4662,7 +4675,6 @@ export class TyE2eTestBrowser {
         // Is there a race? Any iframe might reload, after logout. Better re-enter it?
         // Otherwise the wait-for .esMetabar below can fail.
         if (wasInIframe) {
-          this.switchToAnyParentFrame();
           this.switchToEmbeddedCommentsIrame();
         }
         this.waitForVisible('.esMetabar');

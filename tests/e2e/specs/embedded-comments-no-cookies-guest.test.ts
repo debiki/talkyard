@@ -69,7 +69,7 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
   // ----- Signup as member, post with unverified email
 
   it("Maria opens embedding page aaa", () => {
-    mariasBrowser.go(embeddingOrigin + '/' + pageAaaSlug);
+    mariasBrowser.go2(embeddingOrigin + '/' + pageAaaSlug);
   });
 
   it("She submits a reply", () => {
@@ -94,7 +94,7 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
   });
 
   it("After page refresh, she's still logged in — because session saved in storage", () => {
-    guestsBrowser.refresh();
+    guestsBrowser.refresh2();
     guestsBrowser.switchToEmbeddedCommentsIrame();
     assert.equal(mariasBrowser.metabar.getMyUsernameInclAt(), '@maria');
   });
@@ -104,7 +104,7 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
   });
 
   it("After page refresh, she's still logged out", () => {
-    mariasBrowser.refresh();
+    mariasBrowser.refresh2();
     mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });
 
@@ -134,18 +134,19 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
     guestsBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, guestCommentOne);
   });
 
-  it("After page refresh, she's still logged in, because session saved in storage", () => {
-    guestsBrowser.refresh();
+  it(`After page refresh, Graeddelina is still logged in,
+          because session saved in storage`, () => {
+    guestsBrowser.refresh2();
     guestsBrowser.switchToEmbeddedCommentsIrame();
-    assert.equal(mariasBrowser.metabar.getMyFullName(), graeddelinaGuest);
+    assert.equal(guestsBrowser.metabar.getMyFullName(), graeddelinaGuest);
   });
 
-  it("She logs out", () => {
-    mariasBrowser.metabar.clickLogout();
+  it("Graeddelina logs out", () => {
+    guestsBrowser.metabar.clickLogout();
   });
 
-  it("After page refresh, she's still logged out", () => {
-    guestsBrowser.refresh();
+  it("After page refresh, Graeddelina is still logged out", () => {
+    guestsBrowser.refresh2();
     guestsBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });
 
