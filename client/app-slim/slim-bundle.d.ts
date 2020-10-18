@@ -460,8 +460,12 @@ declare namespace debiki2 {
   var MenuItemLink;
   var MenuItemsMany;
   var MenuItemDivider;
+
+  function UserNameLink(props: {
+    user: BriefUser, store: Store, onClick?: Ay, avoidFullName?: Bo });
   function UserName(props: {
-    user: BriefUser, store: Store, makeLink?: boolean, onClick?: any, avoidFullName?: boolean });
+    user: BriefUser, store: Store, makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo });
+
   var FacebookLogoImage;
 
   // More stuff, place where?

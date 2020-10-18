@@ -30,21 +30,22 @@ const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;
 
 
-let aboutUserDialog;
+let aboutPatDialog;
 
 
-export function getAboutUserDialog() {
-  if (!aboutUserDialog) {
-    aboutUserDialog = ReactDOM.render(AboutUserDialog(), utils.makeMountNode());
+export function getAboutUserDialog() { // RENAME QUICK to getAboutPatDialog
+  if (!aboutPatDialog) {
+    aboutPatDialog = ReactDOM.render(AboutPatDialog(), utils.makeMountNode());
   }
-  return aboutUserDialog;
+  return aboutPatDialog;
 }
 
 
-interface AboutUserDialogState {
+
+interface AboutPatDialogState {
   store?: Store;
   isOpen?: boolean;
-  user?: UserDetailsStatsGroups;
+  user?: BriefUser | UserDetailsStatsGroups;
   groupsMaySee?: Group[];
   post?: Post;
   blocks?: any;
@@ -54,10 +55,10 @@ interface AboutUserDialogState {
 }
 
 
-const AboutUserDialog = createComponent({
+const AboutPatDialog = createComponent({
   displayName: 'AboutUserDialog',
 
-  getInitialState: function(): AboutUserDialogState {
+  getInitialState: function(): AboutPatDialogState {
     return {
       store: ReactStore.allData(),
     };
@@ -70,22 +71,21 @@ const AboutUserDialog = createComponent({
   // SECURITY (minor) SHOULD make openForPostAt and openForUser(IdOrUsername) work in the same
   // way, so can block a guest regardless of how one clicks hen's name.  [5JKURQ0]
   openForPostAt: function(post: Post, at) {
-    this._openAndLoadUser({ user: null, post: post }, post.authorId, at);
+    this._openAndLoadPat({ user: null, post: post }, post.authorId, at);
   },
 
   openForUserIdOrUsername: function(idOrUsername: number | string, at, extraInfo?: string) {
-    this._openAndLoadUser({ user: null, post: null, extraInfo }, idOrUsername, at);
+    this._openAndLoadPat({ user: null, post: null, extraInfo }, idOrUsername, at);
   },
 
   openForUser: function(user: BriefUser, at, extraInfo?: string) {
-    // Some code below thinks this is a CompleteUser but a BriefUser is all that's needed.
-    this._openAndLoadUser({ user: user, post: null, extraInfo }, user.id, at);
+    this._openAndLoadPat({ user: user, post: null, extraInfo }, user.id, at);
   },
 
-  _openAndLoadUser: function(newState: AboutUserDialogState, idOrUsername: number | string, at) {
+  _openAndLoadPat: function(newState: AboutPatDialogState, idOrUsername: number | string, at) {
     const atRect = cloneRect(at.getBoundingClientRect());
     atRect.left -= 90; // makes the dialog a bit more centered
-    const newState2: AboutUserDialogState = {
+    const newState2: AboutPatDialogState = {
       isOpen: true,
       blocks: {},
       atRect: atRect,
@@ -93,11 +93,11 @@ const AboutUserDialog = createComponent({
       ...newState,
     };
     this.setState(newState2);
-    this.loadUser(idOrUsername);
+    this.loadPat(idOrUsername);
   },
 
   close: function() {
-    const nextState: AboutUserDialogState = {
+    const nextState: AboutPatDialogState = {
       isOpen: false,
       user: null,
       post: null,
@@ -108,15 +108,15 @@ const AboutUserDialog = createComponent({
   },
 
   reload: function() {
-    this.loadUser(this.state.user.id);
+    this.loadPat(this.state.user.id);
     this.setState({ user: null, blocks: {} });
   },
 
-  loadUser: function(idOrUsername: number | string) {
+  loadPat: function(idOrUsername: Nr | St) {
     Server.loadUserAnyDetails(idOrUsername,
           (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => {
       if (this.isGone) return;
-      const nextState: AboutUserDialogState = {
+      const nextState: AboutPatDialogState = {
         user,
         groupsMaySee,
       };
@@ -150,12 +150,12 @@ const AboutUserDialog = createComponent({
   },
 
   render: function () {
-    const state: AboutUserDialogState = this.state;
+    const state: AboutPatDialogState = this.state;
     let content;
 
     if (state.isOpen) {
-      const user: UserInclDetails = state.user;
-      const childProps = _.assign({
+      const user: Guest | BriefUser | UserDetailsStatsGroups = state.user;
+      const childProps: AboutGuestProps | AboutUserProps = _.assign({
         store: state.store,
         reload: this.reload,
         post: state.post,
@@ -189,6 +189,20 @@ const AboutUserDialog = createComponent({
 });
 
 
+
+
+interface AboutUserProps {
+  store: Store;
+  //reload; — only for guests
+  //post; — only for guests
+  user: BriefUser | UserDetailsStatsGroups;
+  groupsMaySee: Group[];
+  extraInfo;
+  // blocks; — only for guests
+  close;
+}
+
+
 const AboutUser = createComponent({
   displayName: 'AboutUser',
 
@@ -197,7 +211,8 @@ const AboutUser = createComponent({
   },
 
   removeFromPage: function() {
-    const user: UserInclDetails = this.props.user;
+    const props: AboutUserProps = this.props;
+    const user = props.user;
     Server.removeUsersFromPage([user.id], () => {
 
       // [redux] send a page-members patch [5FKE0WY2]
@@ -205,15 +220,22 @@ const AboutUser = createComponent({
           "Currently you need to refresh the page (hit F5) now, to see this change." })
 
       if (this.isGone) return;
-      this.props.close();
+      props.close();
     });
   },
 
   render: function() {
-    const store: Store = this.props.store;
+    const props: AboutUserProps = this.props;
+    const store: Store = props.store;
     const page: Page = store.currentPage;
-    const user: UserDetailsStatsGroups = this.props.user;
-    const groupsMaySee: Group[] = this.props.groupsMaySee;
+    const user: BriefUser | UserDetailsStatsGroups = props.user;
+
+    // We might not yet have loaded details about the user.
+    const userDetailed: UserDetailsStatsGroups | U =
+            (user as UserDetailsStatsGroups).groupIdsMaySee &&
+                user as UserDetailsStatsGroups;
+
+    const groupsMaySee: Group[] = props.groupsMaySee;
     const me: Myself = store.me;
     const userIsMe = user.id === me.id;
 
@@ -228,9 +250,10 @@ const AboutUser = createComponent({
     const isGoneInfo = !user_isGone(user) ? null :
       r.p({}, t.aud.IsDeld);
 
-    const afterClick = this.props.close;
+    const afterClick = props.close;
 
-    const sendMessageButton = !store_maySendDirectMessageTo(store, user) ? null :
+    const sendMessageButton =
+            !userDetailed || !store_maySendDirectMessageTo(store, userDetailed) ? null :
         PrimaryLinkButton({ href: linkToSendMessage(user.id), id: 'e2eUD_MessageB', afterClick,
             target: '_blank' },
           t.SendMsg);
@@ -255,10 +278,10 @@ const AboutUser = createComponent({
       : null;
 
     const extraInfoNewline =
-        this.props.extraInfo ? r.div({ className: 's_UD_ExtrInf' }, this.props.extraInfo) : null;
+        props.extraInfo ? r.div({ className: 's_UD_ExtrInf' }, props.extraInfo) : null;
 
-    const groupList = GroupList(
-        user, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group',  // COULD rename css class
+    const groupList = userDetailed && GroupList(
+        userDetailed, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group',  // COULD rename css class
         // `false`: Use r.a() not a Link() because we're not inside a React Router.
         // UX COULD place all dialog roots inside the router elem, so Link() will work?
         false);
@@ -279,12 +302,26 @@ const AboutUser = createComponent({
           isStaffInfo,
           isGoneInfo),
         r.div({ className: 's_UD_BelwAv' },  // "below avatar"
-          AnyUserEmail(user, me),
+          userDetailed && AnyUserEmail(userDetailed, me),
           r.div({ className: 's_UP_Gs' },
             t.GroupsC, groupList))
         ));
   }
 });
+
+
+
+
+interface AboutGuestProps {
+  store: Store;
+  reload;
+  post;
+  user: Guest;
+  //groupsMaySee: Group[];  — only for users (not guests)
+  // extraInfo;
+  blocks;
+  close;
+}
 
 
 const AboutGuest = createComponent({
@@ -294,8 +331,13 @@ const AboutGuest = createComponent({
     return { isBlockGuestModalOpen: false };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   unblockGuest: function() {
     Server.unblockGuest(this.props.post.uniqueId, () => {
+      if (this.isGone) return;
       this.props.reload();
     });
   },
@@ -309,11 +351,12 @@ const AboutGuest = createComponent({
   },
 
   render: function() {
-    const store: Store = this.props.store;
+    const props: AboutGuestProps = this.props;
+    const store: Store = props.store;
     const me: Myself = store.me;
-    const guest: Guest = this.props.user;
-    const blocks: Blocks = this.props.blocks;
-    const post: Post = this.props.post;
+    const guest: Guest = props.user;
+    const blocks: Blocks = props.blocks;
+    const post: Post = props.post;
     const postId = post ? post.uniqueId : null;
 
     let blockButton;
@@ -331,8 +374,9 @@ const AboutGuest = createComponent({
             Button({ title: "Prevent this guest from posting more comments",
                 onClick: this.openBlockGuestModal }, "Block or surveil");
       }
-      blockModal = BlockGuestDialog({ postId: postId, reload: this.props.reload,
-          show: this.state.isBlockGuestModalOpen, close: this.closeBlockGuestModal });
+      blockModal = BlockGuestDialog({ postId: postId, reload: props.reload,
+          show: this.state.isBlockGuestModalOpen, close: this.closeBlockGuestModal,
+          } as BlockGuestDialogProps);
     }
 
     // Skip i18n; this is for staff.
@@ -373,10 +417,24 @@ const AboutGuest = createComponent({
 });
 
 
+
+interface BlockGuestDialogProps {
+  postId: PostId;
+  reload;
+  show: Bo;
+  close;
+}
+
+
 const BlockGuestDialog = createComponent({
   displayName: 'BlockGuestDialog',
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   setThreatLevel: function(threatLevel: ThreatLevel) {
+    const props: BlockGuestDialogProps = this.props;
     // Too many conf values = just bad.
     const numDays = 0; // hardcoded server side instead
     /*
@@ -390,17 +448,19 @@ const BlockGuestDialog = createComponent({
       alert("At most 255 characters please");
       return;
     }*/
-    Server.blockGuest(this.props.postId, numDays, threatLevel, () => {
-      this.props.close();
-      this.props.reload();
+    Server.blockGuest(props.postId, numDays, threatLevel, () => {
+      if (this.isGone) return;
+      props.close();
+      props.reload();
     });
   },
 
   render: function() {
     // Skip i18n; this is for staff.
+    const props: BlockGuestDialogProps = this.props;
 
     return (
-      Modal({ show: this.props.show, onHide: this.props.close },
+      Modal({ show: props.show, onHide: props.close },
         ModalHeader({}, ModalTitle({}, "Block or surveil guest")),
         ModalBody({},
           r.div({ className: 'form-group' },
@@ -429,9 +489,10 @@ const BlockGuestDialog = createComponent({
               help: "This will be visible to everyone. Keep it short.", ref: 'reasonInput' })),
              */ ),
       ModalFooter({},
-          Button({ onClick: this.props.close }, "Cancel"))));
+          Button({ onClick: props.close }, "Cancel"))));
   }
 });
+
 
 
 function AnyUserEmail(user: { email?: string }, me: Myself) {

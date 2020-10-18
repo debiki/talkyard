@@ -249,8 +249,14 @@ export function MenuItemDivider() {
 }
 
 
+export function UserNameLink(props: {
+        user: BriefUser, store: Store, onClick?: Ay, avoidFullName?: Bo }) {
+  return UserName({ ...props, makeLink: true });
+}
+
+
 export function UserName(props: {
-    user: BriefUser, store: Store, makeLink?: boolean, onClick?: any, avoidFullName?: boolean }) {
+    user: BriefUser, store: Store, makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo }) {
 
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
   const store: Store = props.store;

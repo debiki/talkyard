@@ -1091,7 +1091,7 @@ interface MemberIdName {
 
 type BriefUser = Participant;  // old name, CLEAN_UP RENAME all occurrences to Participant
 
-interface Participant {   // Guest or Member, and Member = group or user
+interface Participant {   // Guest or Member, and Member = group or user   RENAME to Pat
   id: UserId;
   fullName?: string;
   username?: string;
