@@ -389,6 +389,7 @@ function runAllE2eTests {
   $r s/wdio --only notfs-prefs-inherit-group.2browsers $args
   $r s/wdio --only notf-prefs-custom-groups.2browsers $args
   $r s/wdio --only notf-prefs-private-groups.2browsers $args
+  $r s/wdio --only notf-prefs-pages-replied-to.2br $args
 
   $r s/wdio --only notfs-page-gone.2browsers $args
   # Later:

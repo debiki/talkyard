@@ -519,6 +519,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     }
   }
 
+  def loadPageRepliers(pageId: PageId, usersOnly: Bo): Seq[User]
+
   def loadParticipantsAsMap(userIds: Iterable[UserId]): Map[UserId, Participant]
 
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User] = {
@@ -624,6 +626,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadPageNotfPrefsOnSite(): Seq[PageNotfPref]
   def loadNotfPrefsForMemberAboutPage(pageId: PageId, memberIds: Seq[MemberId]): Seq[PageNotfPref]
   def loadNotfPrefsForMemberAboutCatsTagsSite(memberIds: Seq[MemberId]): Seq[PageNotfPref]
+  def loadNotfPrefsAboutPagesRepliedTo(memberIds: Seq[MemberId]): Seq[PageNotfPref]
+
 
   def saveUnsentEmail(email: Email): Unit
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit

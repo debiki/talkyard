@@ -115,13 +115,15 @@ trait PostsDao {
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
 
     val authorAndLevels = loadUserAndLevels(byWho, tx)
-    val author = authorAndLevels.user
     val page = newPageDao(pageId, tx)
     val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad  { missingPostNr =>
       throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
     }
 
-    dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, tx.loadGroupIdsMemberIdFirst(author),
+    val author = authorAndLevels.user
+    val authorAndGroupIds = tx.loadGroupIdsMemberIdFirst(author)
+
+    dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, authorAndGroupIds,
       postType, page.meta, replyToPosts, tx.loadAnyPrivateGroupTalkMembers(page.meta),
       tx.loadCategoryPathRootLast(page.meta.categoryId),
       tx.loadPermsOnPages()), "EdEMAY0RE")
@@ -304,6 +306,24 @@ trait PostsDao {
       else notfGenerator(tx).generateForNewPost(
             page, newPost, Some(textAndHtml), anyNewModTask = anyReviewTask)
     tx.saveDeleteNotifications(notifications)
+
+    // Could save the poster's topics-replied-to notf pref as  [interact_notf_pref]
+    // notf pref for this topic — then, it'd be remembered, also if pat
+    // changes the topics-replied-to notf pref later on.
+    // But right now instead the notf pref is calculated in NotificationGenerator
+    // instead, and if the poster changes hens notf prefs, that'll affect
+    // all old topic where hen has replied, too.
+    /*
+    val ownPageNotfPrefs = tx.loadNotfPrefsForMemberAboutPage(pageId, authorAndGroupIds)
+    val interactedNotfPrefs = tx.loadNotfPrefsAboutPagesInteractedWith(authorAndGroupIds)
+    ... derive prefs, looking at own and groups ...
+    val oldPostsByAuthor = page.parts.postByAuthorId(authorId)
+    if (oldPostsByAuthor.isEmpty) {
+      savePageNotfPref(PageNotfPref(
+            peopleId = authorId,
+            NotfLevel.WatchingAll,
+            pageId = Some(pageId)), byWho = Who.System)
+    } */
 
     (newPost, author, notifications, anyReviewTask)
   }

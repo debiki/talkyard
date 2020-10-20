@@ -1166,9 +1166,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val body = request.body
     val memberId = (body \ "memberId").as[MemberId]
     val anyPageIdMaybeEmptyPage = (body \ "pageId").asOpt[PageId]
+    val pagesPatCreated = (body \ "pagesPatCreated").asOpt[Bo]
+    val pagesPatRepliedTo = (body \ "pagesPatRepliedTo").asOpt[Bo]
     val pagesInCategoryId = (body \ "pagesInCategoryId").asOpt[CategoryId]
-    val wholeSite = (body \ "wholeSite").asOpt[Boolean]
-    val newNotfLevelInt = (body \ "notfLevel").asOpt[Int]
+    val wholeSite = (body \ "wholeSite").asOpt[Bo]
+    val newNotfLevelInt = (body \ "notfLevel").asOpt[i32]
     val newNotfLevel = newNotfLevelInt.flatMap(NotfLevel.fromInt)
 
     // If is a not-yet-created embedded comments page:
@@ -1186,6 +1188,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(participant.isAdmin && !requester.isAdmin, "TyE5P2AQ04",
       "May not change admin user's notf prefs")
 
+    throwForbiddenIf(pagesPatCreated is true, "TyE052RMSKF", "unimpl: pagesPatCreated")
 
     // If this is for a not yet created embedded comments page, then lazy-create it here.
     // (Sometimes people subscribe to comments for embedded blog comments discussions,
@@ -1208,11 +1211,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
 
     val newPref = Try(
-      PageNotfPref(
-        memberId, pageId = anyPageId, wholeSite = wholeSite.getOrElse(false),
-        pagesInCategoryId = pagesInCategoryId,
-        notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
-          .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
+          PageNotfPref(
+                memberId,
+                pageId = anyPageId,
+                pagesPatRepliedTo = pagesPatRepliedTo.getOrElse(false),
+                //pagesPatCreated = pagesPatCreated.getOrElse(false),
+                pagesInCategoryId = pagesInCategoryId,
+                wholeSite = wholeSite.getOrElse(false),
+                notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
+            .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
 
     if (newNotfLevel.isDefined) {
       dao.savePageNotfPref(newPref, request.who)

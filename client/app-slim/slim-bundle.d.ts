@@ -168,6 +168,7 @@ declare namespace debiki2 {
 
   namespace notfs {
     function PageNotfPrefButton(props: {
+        className?: St,
         target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs,
         ppsById?: { [ppId: number]: Participant },
         saveFn?: (notfLevel: PageNotfLevel) => void });

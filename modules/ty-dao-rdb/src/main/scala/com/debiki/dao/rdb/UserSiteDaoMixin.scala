@@ -709,6 +709,22 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
+  def loadPageRepliers(pageId: PageId, usersOnly: Bo): Seq[User] = {
+    unimplIf(!usersOnly, "Must be usersOnly [TyE7AMT05MRKT]")
+    val sql = s"""
+          select distinct $UserSelectListItemsNoGuests
+          from posts3 p inner join users3 u
+            on p.site_id = u.site_id
+            and p.created_by_id = u.user_id
+            and not u.is_group
+            and u.user_id >= $LowestTalkToMemberId
+          where p.site_id = ? and p.page_id = ?
+          """
+    val values = List(siteId.asAnyRef, pageId.asAnyRef)
+    runQueryFindMany(sql, values, getUser)
+  }
+
+
   // See also:  listUsernamesOnPage(pageId): Seq[NameAndUsername]
   //
   def loadUsersWithUsernamePrefix(usernamePrefix: String,

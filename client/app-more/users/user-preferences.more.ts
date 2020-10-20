@@ -504,8 +504,47 @@ const NotfPrefsTab = createFactory({
           " instead,"),
         " and configure notifications for the All Members group.");
 
-    const forWho = isMe ? '' : rFragment({},
-        `, ${t.upp.forWho} `, r.b({}, member.username));
+
+    // ----- Whole site
+
+    const forWho = isMe ? '' :
+        rFr({}, `, ${t.upp.forWho} `, r.b({}, member.username));
+
+    const notfPrefsWholeSite =
+        r.div({},
+          r.span({}, t.upp.DefNotfsSiteWide, forWho, ':'),
+          notfs.PageNotfPrefButton({ target: { wholeSite: true }, store,
+              className: 'e_SiteNfLvB',
+              ownPrefs: membersPrefs, ppsById,
+              saveFn: (notfLevel: PageNotfLevel) =>
+                saveAndReload({ wholeSite: true }, notfLevel) }));
+
+
+    // ----- Topics replied to
+
+    const youHave = isMe ? "you have" :   // I18N
+        rFr({}, r.b({}, member.username), " has");
+
+    // Show as admin help text?
+    // A good default is to configure All Members to get notified about
+    // Every Post in a topic where one has replied — otherwise people sometimes
+    // get surprised when they thought they replied to someone, but that person
+    // in fact wasn't notified and never replied back.
+    // And large communities with big 100 comments long discussions,
+    // like at HackerNews, might want to change this default, so people get
+    // notified only about replies in sub threads they started themselves.
+
+    const notfPrefForTopicsRepliedIn =
+        r.div({},
+          r.span({}, `Default notifications for topics `, youHave, ` replied in:`),
+          notfs.PageNotfPrefButton({ target: { pagesPatRepliedTo: true }, store,
+              className: 'e_ReToNfLvB',
+              ownPrefs: membersPrefs, ppsById,
+              saveFn: (notfLevel: PageNotfLevel) =>
+                saveAndReload({ pagesPatRepliedTo: true }, notfLevel) }));
+
+
+    // ----- Categories
 
     // Why list all categories, and notf levels per category?
     //
@@ -592,14 +631,13 @@ const NotfPrefsTab = createFactory({
     return (
       r.div({ className: 's_UP_Prfs_Ntfs' },
 
-        r.p({}, t.upp.DefNotfsSiteWide, forWho, ':'),
+        notfPrefsWholeSite,
 
-        notfs.PageNotfPrefButton({ target: { wholeSite: true }, store, ownPrefs: membersPrefs, ppsById,
-            saveFn: (notfLevel: PageNotfLevel) =>
-              saveAndReload({ wholeSite: true }, notfLevel) }),
+        r.br(),
+        notfPrefForTopicsRepliedIn,
 
         r.h3({}, t.Categories),
-        r.p({}, "You can configure notifications, per category:"),
+        r.p({}, "You can configure notifications, per category:"),  // I18N
 
         perCategoryNotfLevels,
 
@@ -608,7 +646,8 @@ const NotfPrefsTab = createFactory({
         // @ifdef DEBUG
         r.br(),
         r.br(),
-        r.pre({}, "(In debug builds only) membersPrefs:\n" + JSON.stringify(membersPrefs, undefined, 2)),
+        r.pre({}, "(In debug builds only) membersPrefs:\n" +
+            JSON.stringify(membersPrefs, undefined, 2)),
         // @endif
         null,
         ));

@@ -6322,9 +6322,19 @@ export class TyE2eTestBrowser {
           },
 
           setSiteNotfLevel: (notfLevel: PageNotfLevel) => {  // RENAME to setNotfLevelForWholeSite?
-            // The site notfs btn is the topmost one.
-            this.waitAndClickFirst('.dw-notf-level');
+            this.userProfilePage.preferences.notfs.setNotfLevelForWholeSite(notfLevel);
+          },
+
+          setNotfLevelForWholeSite: (notfLevel: PageNotfLevel) => {
+            this.waitAndClickFirst('.e_SiteNfLvB');
             this.notfLevelDropdown.clickNotfLevel(notfLevel);
+            this.waitForDisplayed(`.e_SiteNfLvB.s_NfLv-${notfLevel}`);
+          },
+
+          setNotfLevelForTopicsRepliedTo: (notfLevel: PageNotfLevel) => {
+            this.waitAndClickFirst('.e_ReToNfLvB');
+            this.notfLevelDropdown.clickNotfLevel(notfLevel);
+            this.waitForDisplayed(`.e_ReToNfLvB.s_NfLv-${notfLevel}`);
           },
 
           setNotfLevelForCategoryId: (categoryId: CategoryId, notfLevel: PageNotfLevel) => {

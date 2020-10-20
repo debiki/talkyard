@@ -160,43 +160,138 @@ function pageNotfPref_hasSameTarget(self: PageNotfPref, other: PageNotfPref): bo
 }
 
 
+
+/// Calculates what notifications the server would send — the logic here
+/// should match the logic in  NotificationGenerator.scala.
+///
 export function pageNotfPrefTarget_findEffPref(
+      target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs)
+      : EffPageNotfPref {
+
+  const prelResult: EffPageNotfPref =
+          _findEffPref_skipInteractionPrefs(target, store, ownPrefs);
+
+  let result = prelResult;
+
+  // ----- Pages-replied-to notf prefs?
+
+  // Tests:  notf-prefs-pages-replied-to.2br  TyTE2E402SM53
+
+  // If this is about a page pat has replied to, then, set the notf level
+  // to any  pagesPatRepliedTo notf pref  — but only if it's higher;
+  // it'd be weird to send *fewer* notfs about a page, just because
+  // pat showed interest in the page by replying to someone there.
+
+  // BUG, harmless: This won't work if pat has replied, but deleted hens reply,
+  // or if the page is really large so the server didn't include all replies.
+  // But should work for any not-yet-approved replies: one can see one's
+  // unapproved replies (and edit them).
+  // The real fix would be to include a `MyPageData.iHaveReplied` field server side?
+  // Like so: ownPrefs.myDataByPageId[target.pageId].iHaveReplied ?
+  const anyReplyByPat =
+          _.find(store.pagesById[target.pageId]?.postsByNr,   // [On1]
+              (p: Post) => p.authorId === store.me.id);
+
+  // If pat has configured a notf level for this specific page,
+  // then, that overrides any default notf pref for pages-replied-to.
+  const hasNotfPrefDirectlyOnPage = !!result.myPref?.pageId;
+
+  const isNotfPrefsConfPage = !!target.pagesPatRepliedTo;
+
+  if (anyReplyByPat && !hasNotfPrefDirectlyOnPage || isNotfPrefsConfPage) {
+    const ownLvl: PageNotfLevel | U = result.notfLevel;
+    const inhLvl: PageNotfLevel | U = result.inheritedNotfPref?.notfLevel;
+
+    const ownReplPref: PageNotfPref | U = _.find(ownPrefs.myCatsTagsSiteNotfPrefs,
+              p => p.pagesPatRepliedTo);
+    const groupReplPref: PageNotfPref | U = maxPref(ownPrefs.groupsCatsTagsSiteNotfPrefs,
+              p => p.pagesPatRepliedTo);
+
+    if (ownReplPref) {
+      const otherOwnLvlIsHigherOrEq = ownLvl && ownLvl >= ownReplPref.notfLevel;
+      // But show own pref, not group's pref, if same level — so one sees
+      // in the UI that one's changes have effect:  use  >  not  >=
+      const inhGroupLvlIsHigher = inhLvl && inhLvl > ownReplPref.notfLevel;
+      if (otherOwnLvlIsHigherOrEq || inhGroupLvlIsHigher) {
+        // Noop, don't lower the notf level.
+      }
+      else {
+        // Pat has replied on the page, and has configured this notf level for
+        // has-replied-to pages:
+        result.myPref = ownReplPref;
+        result.notfLevel = ownReplPref.notfLevel;
+      }
+    }
+
+    if (groupReplPref) {
+      if (inhLvl && inhLvl >= groupReplPref.notfLevel) {
+        // Noop, don't lower the notf level.
+      }
+      else {
+        // Pat has replied on the page, and inherits this higher notf level
+        // from a group hen is in:
+        result.inheritedNotfPref = groupReplPref;
+      }
+    }
+  }
+
+  // Default fallback.
+  result.inheritedNotfPref = result.inheritedNotfPref || {
+    notfLevel: PageNotfLevel.Normal,
+    memberId: Groups.EveryoneId,
+  };
+
+  return result;
+}
+
+
+
+function _findEffPref_skipInteractionPrefs(
       target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs): EffPageNotfPref {
   // @ifdef DEBUG
   dieIf(oneIfDef(target.pageId) + oneIfDef(target.pagesInCategoryId) +
-      oneIfDef(target.wholeSite) !== 1, 'TyE6SKDW207');
+      oneIfDef(target.wholeSite) + oneIfDef(target.pagesPatCreated) +
+      oneIfDef(target.pagesPatRepliedTo) !== 1, 'TyE6SKDW207');
   dieIf(!ownPrefs.id, 'TyE305HD2');
   // @endif
 
   const result: EffPageNotfPref = { ...target, forMemberId: ownPrefs.id };
 
-  // Check for notf prefs for this page.
+
+  // ----- Notf prefs on page?
+
   const myPageData: MyPageData | undefined =
       ownPrefs.myDataByPageId && ownPrefs.myDataByPageId[target.pageId];
   if (myPageData) {
     if (myPageData.myPageNotfPref) {
+      result.myPref = myPageData.myPageNotfPref;
       result.notfLevel = myPageData.myPageNotfPref.notfLevel;
       // Continue below to find out if we're also inheriting a notf level
       // from a category or group. (If so, then it's not in use — since we've
       // now found a notf level explicitly for this page, on the line above).
     }
 
-    const maxGroupsPref = maxPref(myPageData.groupsPageNotfPrefs);
+    const maxGroupsPref: PageNotfPref | U = maxPref(myPageData.groupsPageNotfPrefs);
     if (maxGroupsPref) {
       result.inheritedNotfPref = maxGroupsPref;
       return result;
     }
   }
 
-  // Check for notf prefs for a category, or, if the target is a page, for the category it is in.
-  const page: Page | undefined = store.pagesById[target.pageId];
+
+  // ----- Notf prefs on category?
+
+  // Check for notf prefs for a category, or,
+  // if the target is a page, for the category it is in.
+
+  const page: Page | U = store.pagesById[target.pageId];
   const categoryId = page ? page.categoryId : target.pagesInCategoryId;
   if (categoryId) {
-    const myPref = _.find(ownPrefs.myCatsTagsSiteNotfPrefs,
+    const myPref: PageNotfPref | U = _.find(ownPrefs.myCatsTagsSiteNotfPrefs,
         (p: PageNotfPref) => p.pagesInCategoryId == categoryId);
     const groupsPrefs = _.filter(ownPrefs.groupsCatsTagsSiteNotfPrefs,
         (p: PageNotfPref) => p.pagesInCategoryId == categoryId);
-    const maxGroupsPref = maxPref(groupsPrefs);
+    const maxGroupsPref: PageNotfPref | U = maxPref(groupsPrefs);
 
     if (target.pageId) {
       // When the target is a page, and we find a notf pref for a *category*, then
@@ -210,9 +305,16 @@ export function pageNotfPrefTarget_findEffPref(
       // If, however, the target is itself a category, then, if we have our own notf level
       // for this category, it's not inherited — it's explicitly for this category.
       if (myPref) {
+        // @ifdef DEBUG
+        // Note that this is for *categories* so we didn't run the  "Notf prefs on page"
+        // if block higher up.
+        dieIf(result.notfLevel, 'TyE305RDKM24');
+        // @endif
+        result.myPref = myPref;
         result.notfLevel = myPref.notfLevel;
       }
-      // Maybe inheriting from a group? (And has no effect, if myPref.notLevel defined.)
+      // Maybe inheriting from a group? (And has no effect, if myPref.notLevel
+      // already defined.)
       if (maxGroupsPref) {
         result.inheritedNotfPref = maxGroupsPref;
         return result;
@@ -224,7 +326,7 @@ export function pageNotfPrefTarget_findEffPref(
   {
     const myPref = _.find(ownPrefs.myCatsTagsSiteNotfPrefs, (p: PageNotfPref) => p.wholeSite);
     const groupsPrefs = _.filter(ownPrefs.groupsCatsTagsSiteNotfPrefs, p => p.wholeSite);
-    const maxGroupsPref = maxPref(groupsPrefs);
+    const maxGroupsPref: PageNotfPref | U = maxPref(groupsPrefs);
     if (!target.wholeSite) {
       result.inheritedNotfPref = myPref || maxGroupsPref;
       if (result.inheritedNotfPref)
@@ -232,6 +334,7 @@ export function pageNotfPrefTarget_findEffPref(
     }
     else {
       if (myPref) {
+        result.myPref = myPref;
         result.notfLevel = myPref.notfLevel;
       }
       if (maxGroupsPref) {
@@ -241,17 +344,18 @@ export function pageNotfPrefTarget_findEffPref(
     }
   }
 
-  // Default fallback.
-  result.inheritedNotfPref = { notfLevel: PageNotfLevel.Normal, memberId: Groups.EveryoneId };
   return result;
 }
 
 
-function maxPref(prefs: PageNotfPref[]): PageNotfPref | undefined {  // [CHATTYPREFS]
-  let maxPref;
+function maxPref(prefs: PageNotfPref[], filterFn?: (p: PageNotfPref) => Bo)  // [CHATTYPREFS]
+        : PageNotfPref | U {
+  let maxPref: PageNotfPref | U;
   _.each(prefs, p => {
+    const isWrong = filterFn && !filterFn(p);
+    if (isWrong) return;
     // @ifdef DEBUG
-    dieIf(!pageNotfPref_hasSameTarget(prefs[0], p), 'TyE2ABKS0648');
+    dieIf(maxPref && !pageNotfPref_hasSameTarget(maxPref, p), 'TyE2ABKS0648');
     // @endif
     if (!maxPref || p.notfLevel > maxPref.notfLevel) {
       maxPref = p;
@@ -261,11 +365,15 @@ function maxPref(prefs: PageNotfPref[]): PageNotfPref | undefined {  // [CHATTYP
 }
 
 
-export function notfPref_title(notfPref: EffPageNotfPref): string {
-  const level =
-      notfPref.notfLevel ||
+export function notfPref_level(notfPref: EffPageNotfPref): PageNotfLevel {
+  return notfPref.notfLevel ||
       notfPref.inheritedNotfPref && notfPref.inheritedNotfPref.notfLevel ||
       PageNotfLevel.Normal;
+}
+
+
+export function notfPref_title(notfPref: EffPageNotfPref): St {
+  const level = notfPref_level(notfPref);
   switch (level) {
     case PageNotfLevel.EveryPostAllEdits: return 'EveryPostAllEdits unimpl';
     case PageNotfLevel.EveryPost: return t.nl.EveryPost;
@@ -297,6 +405,10 @@ export function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPr
       else if (effPref.pagesInCategoryId) descr = t.nl.EveryPostInCat;
       //if (???) return t.nl.EveryPostInTopicsWithTag;
       else if (effPref.wholeSite) descr = t.nl.EveryPostWholeSite;
+      else if (effPref.pagesPatCreated)
+          descr = "You'll be notified of replies on pages you've created."; // I18N
+      else if (effPref.pagesPatRepliedTo)
+          descr = "You'll be notified of replies on pages where you've replied yourself."; // I18N
       break;
     case PageNotfLevel.TopicProgress:
       descr = 'TopicProgress unimpl';

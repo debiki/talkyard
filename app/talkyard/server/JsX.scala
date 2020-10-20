@@ -739,10 +739,12 @@ object JsX {
 
 
   def JsPageNotfPref(notfPref: PageNotfPref): JsObject = {
-    Json.obj(  // PageNotfPref
+    Json.obj(  // ts PageNotfPref
       "memberId" -> notfPref.peopleId,
       "notfLevel" -> notfPref.notfLevel.toInt,
       "pageId" -> notfPref.pageId,
+      "pagesPatCreated" -> notfPref.pagesPatCreated,
+      "pagesPatRepliedTo" -> notfPref.pagesPatRepliedTo,
       "pagesInCategoryId" -> notfPref.pagesInCategoryId,
       "wholeSite" -> notfPref.wholeSite)
   }

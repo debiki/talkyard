@@ -925,13 +925,15 @@ case class SitePatchParser(context: EdContext) {
       val notfLevel = NotfLevel.fromInt(notfLevelInt) getOrElse {
         return Bad(s"Not a notf level: $notfLevelInt")
       }
-      Good(PageNotfPref(
+      Good(PageNotfPref(  // JsPageNotfPref, ts PageNotfPref
         peopleId = readInt(jsObj, "memberId"),
         notfLevel = notfLevel,
         pageId = readOptString(jsObj, "pageId"),
+        pagesPatCreated = readOptBool(jsObj, "pagesPatCreated") is true,
+        pagesPatRepliedTo = readOptBool(jsObj, "pagesPatRepliedTo") is true,
         pagesInCategoryId = readOptInt(jsObj, "pagesInCategoryId"),
         //pagesWithTagLabelId: Option[TagLabelId] = None, — later
-        wholeSite = readOptBool(jsObj, "wholeSite").getOrElse(false)))
+        wholeSite = readOptBool(jsObj, "wholeSite") is true))
     }
     catch {
       case ex: IllegalArgumentException =>

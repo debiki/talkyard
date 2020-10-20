@@ -24,19 +24,24 @@
 
 
 export function PageNotfPrefButton(props: {
-      target: PageNotfPrefTarget, store: Store,
+      target: PageNotfPrefTarget, store: Store, className?: St,
       ownPrefs: OwnPageNotfPrefs,  // RENAME to membersPrefs
       ppsById?: PpsById,
       saveFn?: (notfLevel: PageNotfLevel) => void }) {
-  const effPref = pageNotfPrefTarget_findEffPref(props.target, props.store, props.ownPrefs);
+  const effPref = pageNotfPrefTarget_findEffPref(
+          props.target, props.store, props.ownPrefs);
+  const level = notfPref_level(effPref);
+  // RENAME dw-notf-level to s_NfLv
+  const className = `dw-notf-level s_NfLv-${level} ${props.className || ''}`;
   return (
-      Button({ className: 'dw-notf-level', onClick: event => {
-        const rect = cloneEventTargetRect(event);
-        Server.loadMoreScriptsBundle(() => {
-          notfs['openNotfPrefDropdown'](rect, props);
-        });
-      }},
-      notfPref_title(effPref), ' ', r.span({ className: 'caret' })));
+      Button({ className, onClick: event => {
+          const rect = cloneEventTargetRect(event);
+          Server.loadMoreScriptsBundle(() => {
+            notfs['openNotfPrefDropdown'](rect, props);
+          });
+        }},
+        notfPref_title(effPref), ' ', r.span({ className: 'caret' })
+      ));
 }
 
 

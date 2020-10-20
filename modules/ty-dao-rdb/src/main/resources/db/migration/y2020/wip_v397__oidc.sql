@@ -257,3 +257,33 @@ alter index dw1_idsoid_email rename to idtys_i_g_email;
 
 -- OpenID 1.0 gone since long
 drop index dw1_idsoid_tnt_email__u;
+
+
+
+-- New notf prefs
+
+alter table page_notf_prefs3 add column pages_pat_created bool;
+alter table page_notf_prefs3 add column pages_pat_replied_to bool;
+
+alter table page_notf_prefs3 add constraint
+    pagenotfprefs_c_pagespatcreated_true check (pages_pat_created);
+
+alter table page_notf_prefs3 add constraint
+    pagenotfprefs_c_pagespatrepliedto_true check (pages_pat_replied_to);
+
+create unique index pagenotfprefs_u_pagespatcreated_patid
+    on page_notf_prefs3 (site_id, pages_pat_created, people_id);
+
+create unique index pagenotfprefs_u_pagespatrepliedto_patid
+    on page_notf_prefs3 (site_id, pages_pat_replied_to, people_id);
+
+alter table page_notf_prefs3 drop constraint pagenotfprefs_c_for_sth;
+alter table page_notf_prefs3 add constraint pagenotfprefs_c_for_sth check(
+    num_nonnulls(
+            page_id,
+            pages_pat_created,
+            pages_pat_replied_to,
+            pages_in_category_id,
+            pages_in_whole_site)
+        = 1);
+

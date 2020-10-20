@@ -38,6 +38,18 @@ export function openNotfPrefDropdown(atRect, props: {
 }
 
 
+interface NotfsLevelDropdownState {
+  isOpen: Bo;
+  store: Store;
+  target?: PageNotfPrefTarget;
+  atX?: Nr;
+  atY?: Nr;
+  ownPrefs?: OwnPageNotfPrefs;
+  ppsById?: PpsById;
+  saveFn?: (newLevel: PageNotfLevel) => void;
+}
+
+
 // some dupl code [6KUW24]
 const NotfsLevelDropdownModal = createComponent({
   displayName: 'NotfsLevelDropdownModal',
@@ -45,53 +57,57 @@ const NotfsLevelDropdownModal = createComponent({
   mixins: [StoreListenerMixin],
 
   getInitialState: function () {
-    return {
+    const state: NotfsLevelDropdownState = {
       isOpen: false,
       store: debiki2.ReactStore.allData(),
-    };
+    }
+    return state;
   },
 
   onChange: function() {
-    this.setState({ store: debiki2.ReactStore.allData() });
+    this.setState({ store: debiki2.ReactStore.allData() } as NotfsLevelDropdownState);
   },
 
   // dupl code [6KUW24]
   openAtFor: function(rect, props: {
-      target: PageNotfPrefTarget, ownPrefs: OwnPageNotfPrefs, ppsById?: PpsById,
-      saveFn?: (newLevel: PageNotfLevel) => void }) {
-    this.setState({
+          target: PageNotfPrefTarget, ownPrefs: OwnPageNotfPrefs, ppsById?: PpsById,
+          saveFn?: (newLevel: PageNotfLevel) => void }) {
+    const state: Partial<NotfsLevelDropdownState> = {
       ...props,
       isOpen: true,
       atX: rect.left,
       atY: rect.bottom,
-    });
+    };
+    this.setState(state);
   },
 
   close: function() {
-    this.setState({
+    const state: Partial<NotfsLevelDropdownState> = {
       isOpen: false,
       target: undefined,
       ownPrefs: undefined,
       ppsById: undefined,
       saveFn: undefined,
-    });
+    };
+    this.setState(state);
   },
 
   saveNotfLevel: function(notfLevel) {
-    if (this.state.saveFn) {
-      this.state.saveFn(notfLevel);
+    const state: NotfsLevelDropdownState = this.state;
+    if (state.saveFn) {
+      state.saveFn(notfLevel);
     }
     else {
-      const ownPrefs: OwnPageNotfPrefs = this.state.ownPrefs;
-      const target: PageNotfPrefTarget = this.state.target;
+      const ownPrefs: OwnPageNotfPrefs = state.ownPrefs;
+      const target: PageNotfPrefTarget = state.target;
       Server.savePageNotfPrefUpdStoreIfSelf(ownPrefs.id, target, notfLevel);
     }
     this.close();
   },
 
   render: function() {
-    const state = this.state;
-    const store: Store = this.state.store;
+    const state: NotfsLevelDropdownState = this.state;
+    const store: Store = state.store;
     let everyPostListItem;
     let newTopicsListItem;
     let normalListItem;
@@ -99,12 +115,12 @@ const NotfsLevelDropdownModal = createComponent({
     let mutedListItem;
 
     if (state.isOpen) {
-      const target: PageNotfPrefTarget = this.state.target;
-      const ownPrefs: OwnPageNotfPrefs = this.state.ownPrefs;
+      const target: PageNotfPrefTarget = state.target;
+      const ownPrefs: OwnPageNotfPrefs = state.ownPrefs;
       const effPref: EffPageNotfPref = pageNotfPrefTarget_findEffPref(target, store, ownPrefs);
       const inheritedLevel = effPref.inheritedNotfPref && effPref.inheritedNotfPref.notfLevel;
       const effLevel: PageNotfLevel = effPref.notfLevel || inheritedLevel;
-      const isForPage = !!target.pageId;
+      const isForPage = !!target.pageId || target.pagesPatRepliedTo;
       const ppsById: PpsById = state.ppsById || store.usersByIdBrief;
 
       // @ifdef DEBUG

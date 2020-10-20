@@ -373,7 +373,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
     }
 
     def checkDidntOverwritePageAndCatsPrefs(siteNotfLevel: Option[NotfLevel]) {
-      dao.readOnlyTransaction { tx =>
+      dao.readTx { tx =>
         tx.loadPageNotfLevels(userOne.id, pageIdOne, None) mustBe PageNotfLevels(
           forPage = Some(Hushed),
           forWholeSite = siteNotfLevel)
@@ -407,6 +407,79 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
       "... not for the wrong user" in {
         dao.readOnlyTransaction { tx =>
           tx.loadPageNotfLevels(userTwo.id /* wrong */, pageIdThree, None) mustBe PageNotfLevels()
+        }
+      }
+
+      "didn't overwrite any other notf prefs" in {
+        checkDidntOverwritePageAndCatsPrefs(siteNotfLevel = Some(WatchingAll))
+      }
+    }
+
+
+    // ----- One's own new topics
+
+
+    "can config notf prefs, one's own new topics" - {
+      var pref: PageNotfPref = null
+
+      "insert notf prefs, for one's own new topics" in {
+        dao.writeTx { (tx, _) =>
+          pref = PageNotfPref(userOne.id, pagesPatCreated = true, notfLevel = EveryPostAllEdits)
+          tx.upsertPageNotfPref(pref)
+        }
+      }
+
+      "find again" in {
+        dao.readTx { tx =>
+          TESTS_MISSING // here and below. But there're e2e tests:
+          //   notf-prefs-pages-replied-to.2br  TyTE2E402SM53
+
+          //tx.loadPageNotfLevels(userOne.id, pageIdThree, None) mustBe PageNotfLevels(
+          //  forPage = None,
+          //  forCategory = None,
+          //  forWholeSite = Some(Muted))
+          //tx.loadPageNotfPrefsOnSite().toSet mustBe Set(ownersSitePref, pref)
+        }
+      }
+
+      "... not for the wrong user" in {
+        dao.readTx { tx =>
+          //tx.loadPageNotfLevels(userTwo.id /* wrong */, pageIdThree, None) mustBe PageNotfLevels()
+        }
+      }
+
+      "didn't overwrite any other notf prefs" in {
+        checkDidntOverwritePageAndCatsPrefs(siteNotfLevel = Some(WatchingAll))
+      }
+    }
+
+
+    // ----- Pages one has replied to
+
+
+    "can config notf prefs for pages one has replied to" - {
+      var pref: PageNotfPref = null
+
+      "insert notf prefs, for pages one has replied to" in {
+        dao.writeTx { (tx, _) =>
+          pref = PageNotfPref(userOne.id, pagesPatRepliedTo = true, notfLevel = TopicSolved)
+          tx.upsertPageNotfPref(pref)
+        }
+      }
+
+      "find again" in {
+        dao.readTx { tx =>
+          //tx.loadPageNotfLevels(userOne.id, pageIdThree, None) mustBe PageNotfLevels(
+          //  forPage = None,
+          //  forCategory = None,
+          //  forWholeSite = Some(Muted))
+          //tx.loadPageNotfPrefsOnSite().toSet mustBe Set(ownersSitePref, pref)
+        }
+      }
+
+      "... not for the wrong user" in {
+        dao.readTx { tx =>
+          //tx.loadPageNotfLevels(userTwo.id /* wrong */, pageIdThree, None) mustBe PageNotfLevels()
         }
       }
 

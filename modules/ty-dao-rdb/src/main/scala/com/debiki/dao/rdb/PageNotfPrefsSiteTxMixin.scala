@@ -40,6 +40,10 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
       "pages_in_category_id" -> notfPref.pagesInCategoryId.get.asAnyRef
     else if (notfPref.wholeSite)
       "pages_in_whole_site" -> true.asAnyRef
+    else if (notfPref.pagesPatCreated)
+      "pages_pat_created" -> true.asAnyRef
+    else if (notfPref.pagesPatRepliedTo)
+      "pages_pat_replied_to" -> true.asAnyRef
     else
       die("TyE2ABK057")
 
@@ -63,10 +67,12 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
         people_id,
         notf_level,
         page_id,
-        pages_in_whole_site,
-        pages_in_category_id)
+        pages_pat_created,
+        pages_pat_replied_to,
+        pages_in_category_id,
+        pages_in_whole_site)
         -- pages_with_tag_label_id,
-      values (?, ?, ?, ?, ?, ?)
+      values (?, ?, ?, ?, ?, ?, ?, ?)
       -- There can be only one on-conflict clause.
       on conflict (site_id, $thingColumnName, people_id)
       do update set
@@ -74,13 +80,15 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
       """
 
     val values = List(
-      siteId.asAnyRef,
-      notfPref.peopleId.asAnyRef,
-      notfPref.notfLevel.toInt.asAnyRef,
-      notfPref.pageId.orNullVarchar,
-      // pages_in_whole_site needs to be null, if isn't true, because of a unique constraint.
-      if (notfPref.wholeSite) true.asAnyRef else NullBoolean,
-      notfPref.pagesInCategoryId.orNullInt)
+          siteId.asAnyRef,
+          notfPref.peopleId.asAnyRef,
+          notfPref.notfLevel.toInt.asAnyRef,
+          notfPref.pageId.orNullVarchar,
+          // Should be null or true, because of unique constraints.
+          if (notfPref.pagesPatCreated) true.asAnyRef else NullBoolean,
+          if (notfPref.pagesPatRepliedTo) true.asAnyRef else NullBoolean,
+          notfPref.pagesInCategoryId.orNullInt,
+          if (notfPref.wholeSite) true.asAnyRef else NullBoolean)
 
     runUpdateSingleRow(insertStatement, values)
   }
@@ -180,17 +188,26 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
     loadContentNotfPrefsForMemberImpl(pageId = Some(pageId), memberIds)
   }
 
+  def loadNotfPrefsAboutPagesRepliedTo(memberIds: Seq[MemberId]): Seq[PageNotfPref] = {
+    loadContentNotfPrefsForMemberImpl(pageId = None, memberIds, pagesRepliedTo = true)
+  }
 
-  private def loadContentNotfPrefsForMemberImpl(pageId: Option[PageId], memberIds: Seq[MemberId])
+  private def loadContentNotfPrefsForMemberImpl(
+        pageId: Opt[PageId], memberIds: Seq[MemberId], pagesRepliedTo: Bo = false)
         : Seq[PageNotfPref] = {
     if (memberIds.isEmpty)
       return Nil
 
-    val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
+    dieIf(pageId.isDefined & pagesRepliedTo, "TyE306RMTSKD2")
+
+    val values = MutArrBuf[AnyRef](siteId.asAnyRef)
     values.appendAll(memberIds.map(_.asAnyRef))
     val andPageIdClause = pageId match {
       case None =>
-        "and page_id is null"
+        if (pagesRepliedTo)
+          "and pages_pat_replied_to"  // unimpl:  pages_pat_created
+        else
+          "and page_id is null"
       case Some(id) =>
         values.append(id)
         "and page_id = ?"
@@ -207,11 +224,13 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
 
   private def readNotfPref(rs: js.ResultSet): PageNotfPref = {
     PageNotfPref(
-      peopleId = getInt(rs, "people_id"),
-      notfLevel = NotfLevel.fromInt(getInt(rs, "notf_level")).getOrElse(NotfLevel.Normal),
-      pageId = getOptString(rs, "page_id"),
-      wholeSite = getOptBool(rs, "pages_in_whole_site").getOrElse(false),
-      pagesInCategoryId = getOptInt(rs, "pages_in_category_id"))
+          peopleId = getInt(rs, "people_id"),
+          notfLevel = NotfLevel.fromInt(getInt(rs, "notf_level")).getOrElse(NotfLevel.Normal),
+          pageId = getOptString(rs, "page_id"),
+          pagesPatCreated = getOptBool(rs, "pages_pat_created").getOrElse(false),
+          pagesPatRepliedTo = getOptBool(rs, "pages_pat_replied_to").getOrElse(false),
+          pagesInCategoryId = getOptInt(rs, "pages_in_category_id"),
+          wholeSite = getOptBool(rs, "pages_in_whole_site").getOrElse(false))
   }
 
 }

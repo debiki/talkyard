@@ -182,6 +182,7 @@ profile page, a group:
           - group-profile-change-things.2browsers.test.ts  TyT5MS5TWV0
   notf prefs for groups:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
+          - notf-prefs-pages-replied-to.2br.test.ts  TyTE2E402SM53
 
   add/remove group members:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
@@ -970,6 +971,9 @@ restart server -
 
 notfs,
 notifications:
+  about direct replies:
+          - notf-prefs-pages-replied-to.2br.test.ts  TyTE2E402SM53.TyTE2E60923RMT
+          - ... plus many many many other tests ...
   about mod tasks:   — see (502M7)
   about direct messages:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
@@ -991,6 +995,8 @@ notifications:
           - notfs-mark-seen-as-seen  TyT2AKBR0T
   about topics one may not see:
           - notf-prefs-private-groups.2browsers.test.ts   TyT406WMDKG26
+  about replies in topics where one has replied:
+          - notf-prefs-pages-replied-to.2br.test.ts  TyTE2E402SM53
   new topics:
           - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
           - ... more, which?

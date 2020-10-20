@@ -478,8 +478,10 @@ type PermsOnPageNoIdOrPp = Omit<PermsOnPage, 'id' | 'forPeopleId'>
 
 interface PageNotfPrefTarget {
   pageId?: PageId;
+  pagesPatCreated?: true;
+  pagesPatRepliedTo?: true;
   pagesInCategoryId?: CategoryId;
-  wholeSite?: boolean;
+  wholeSite?: true;
 }
 
 
@@ -491,6 +493,7 @@ interface EffPageNotfPref extends PageNotfPrefTarget {
   // Defined, if the member has specified a notf level directly for the PageNotfPrefTarget.
   // If undefined, `inheritedNotfPref` instead determines the notf level.
   notfLevel?: PageNotfLevel;
+  myPref?: PageNotfPref;
 
   // Notf prefs are inherited structure wise: pages inherit from sub categories, and
   // sub categories from main categories. And people wise: members inherit from the groups
