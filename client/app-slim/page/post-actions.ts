@@ -445,6 +445,7 @@ export const PostActions = createComponent({
       r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: linkToReviewPage(),
         target: '_blank' }, t.pa.Admin));
 
+    // BUG? approveOrDeleteBtns won't appear for embedded comments?
     // Instead of this test, should be a post.approvedStatus field. [ApprovedStatus]
     // And `post.isApproved` below will then be: `post.approvedStatus === PendingApproval`.
     const isOrigPostAndPageDeleted = post.nr === BodyNr && isThisPageDeleted;
@@ -477,7 +478,7 @@ export const PostActions = createComponent({
           rFragment({},
             // English is fine — this is for staff. 0I18N.
             ModBtn(ReviewDecision.Accept,
-                  "Appprove" + spacePage, 's_PA_ModB-Apr'),
+                  "Approve" + spacePage, 's_PA_ModB-Apr'),
             ModBtn(ReviewDecision.DeletePostOrPage,
                   // (Need not repeate the word "page" here.)
                   "Reject and delete", 's_PA_ModB-Rej'));

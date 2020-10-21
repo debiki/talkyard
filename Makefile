@@ -176,47 +176,47 @@ debug_asset_bundles_files: \
 
 images/app/assets/server-bundle.js: \
        $(shell find client/server/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
-	@echo "Regenerating $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileServerTypescriptConcatJavascript
 
 images/web/assets/talkyard-comments.js.gz: \
        $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
-	@echo "Regenerating $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileBlogCommentsTypescript-concatScripts
 
 images/web/assets/talkyard-service-worker.js.gz: \
        $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
-	@echo "Regenerating $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSwTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
        $(shell find client/app-editor/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
-	@echo "Regenerating $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileEditorTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
        $(shell find client/app-more/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
-	@echo "Regenerating $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileMoreTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
        $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
-	@echo "Regenerating $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSlimTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz: \
        $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
-	@echo "Regenerating $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileStaffTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz: \
        node_modules/zxcvbn/dist/zxcvbn.js
-	@echo "Bundling $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  bundleZxcvbn
 
 images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz: \
        $(shell  find client/  -type f  \(  -name '*.styl'  -o  -name '*.css'  \)  )
-	@echo "Regenerating $@"
+	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compile-stylus
 
 
