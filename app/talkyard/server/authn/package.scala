@@ -68,7 +68,7 @@ package object authn {
     // For now:
     // userid: null, first_name, last_name, country, city, company, job_function: '',
     // job_title: '', email
-    // Later, use mapping in:  idp_user_info_fields_map_c
+    // Later, use mapping in:  oidc_user_info_fields_map_c
 
     if (isDevOrTest) {
       System.out.println(s"ZZQQ parseCustomUserInfo, idp: ${idp.protoAlias}: \n\n${

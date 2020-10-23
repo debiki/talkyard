@@ -379,7 +379,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // Is it ok to reveal that this provider exists? Otherwise could be really
     // confusing to troubleshoot this.  There could be another setting:
     // hide: Bo  or  hideIfDisabled: Bo,  if we should hide that it even exists?
-    throwForbiddenIf(!idp.enabled_c, "TyEIDPDISBLD",
+    throwForbiddenIf(!idp.enabled, "TyEIDPDISBLD",
           s"Identity provider ${idp.protoAlias} is disabled")
 
     val origin =
@@ -492,8 +492,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     def wrong(what: St) =
           s"Wrong $what: $protocol/$providerAlias, should be: ${idp.protoAlias}"
-    throwForbiddenIf(protocol != idp.protocol_c, "TyEREDIRBACKPROTO", wrong("protocol"))
-    throwForbiddenIf(providerAlias != idp.alias_c, "TyEREDIRBACKALIAS", wrong("provider"))
+    throwForbiddenIf(protocol != idp.protocol, "TyEREDIRBACKPROTO", wrong("protocol"))
+    throwForbiddenIf(providerAlias != idp.alias, "TyEREDIRBACKALIAS", wrong("provider"))
 
     val origin =
           if (Globals.isProd || redirBackRequest.isDevTestToLocalhost) {
@@ -680,7 +680,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // — otherwise, if just OAuth2, then it's IDP specific.
 
     def requestUserInfo(accessToken: sj_OAuth2AccessToken, idToken: Opt[OidcIdToken]) {
-      val userInfoRequest = new sj_OAuthRequest(sj_Verb.GET, idp.idp_user_info_url_c)
+      val userInfoRequest = new sj_OAuthRequest(sj_Verb.GET, idp.oidcUserInfoUrl)
       authnService.signRequest(accessToken, userInfoRequest)
 
       authnService.execute(userInfoRequest, new sj_OAuthAsyncReqCallback[sj_Response] {
@@ -770,7 +770,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                     "TyEUSRINFJSONPARSE", s"Malformed JSON from IDP userinfo endpoint")
           }
 
-    var oauthDetails: OpenAuthDetails = (idp.protocol_c match {
+    var oauthDetails: OpenAuthDetails = (idp.protocol match {
       case ProtoNameOidc => parseOidcUserInfo(json, idp)
       case ProtoNameOAuth2 => parseCustomUserInfo(json, idp)
       case bad => die("TyE5F5RKS56", s"Bad auth protocol: $bad")
@@ -1917,27 +1917,27 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // included in ScribeJava already.
     val idp = IdentityProvider(
           confFileIdpId = Some(providerAlias),
-          protocol_c = ProtoNameOAuth2,
-          alias_c = providerAlias,
-          enabled_c = true,
-          display_name_c = Some(providerAlias),
-          description_c = None,
-          admin_comments_c = None,
-          trust_verified_email_c = false, // but yes, if Gmail or GitHub  [gmail_verifd]
-          link_account_no_login_c = false,
-          gui_order_c = None,
-          sync_mode_c = 1, // ImportOnFirstLogin
-          idp_authorization_url_c = "dummy_TyESRIBEJAVA01",
-          idp_access_token_url_c =  "dummy_TyESRIBEJAVA02",
-          idp_user_info_url_c = "dummy_TyESRIBEJAVA03",
-          idp_user_info_fields_map_c = None,
-          idp_logout_url_c = None,
-          idp_client_id_c = s.clientID,
-          idp_client_secret_c = s.clientSecret,
-          idp_issuer_c = None,
-          auth_req_scope_c = s.scope,
-          auth_req_hosted_domain_c = None,
-          userinfo_req_send_user_ip_c = None)
+          protocol = ProtoNameOAuth2,
+          alias = providerAlias,
+          enabled = true,
+          displayName = Some(providerAlias),
+          description = None,
+          adminComments = None,
+          trustVerifiedEmail = false, // but yes, if Gmail or GitHub  [gmail_verifd]
+          linkAccountNoLogin = false,
+          guiOrder = None,
+          syncMode = 1, // ImportOnFirstLogin
+          oauAuthorizationUrl = "dummy_TyESRIBEJAVA01",
+          oauAccessTokenUrl =  "dummy_TyESRIBEJAVA02",
+          oidcUserInfoUrl = "dummy_TyESRIBEJAVA03",
+          oidcUserInfoFieldsMap = None,
+          oidcLogoutUrl = None,
+          oauClientId = s.clientID,
+          oauClientSecret = s.clientSecret,
+          oauIssuer = None,
+          oauAuthReqScope = s.scope,
+          oauAuthReqHostedDomain = None,
+          oidcUserinfoReqSendUserIp = None)
 
     idp
   }

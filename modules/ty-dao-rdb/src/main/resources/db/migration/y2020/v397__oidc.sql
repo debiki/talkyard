@@ -1,5 +1,5 @@
-alter table settings3 add column enable_custom_idps boolean;
-alter table settings3 add column use_only_custom_idps boolean;
+alter table settings3 add column enable_custom_idps bool;
+alter table settings3 add column use_only_custom_idps bool;
 
 -- If using only per site custom idps, then, custom idps must be enabled.
 alter table settings3 add constraint settings_c_enable_use_only_custom_idps check (
@@ -49,30 +49,29 @@ create table idps_t(
   sync_mode_c int not null,
   oidc_config_url varchar,
   oidc_config_fetched_at timestamp,
-  idp_config_edited_at timestamp,
-  idp_config_json_c jsonb,
-  idp_authorization_url_c varchar not null,
-  idp_access_token_url_c varchar not null,
-  idp_access_token_auth_method_c varchar,
-  idp_user_info_url_c varchar not null,
-  idp_user_info_fields_map_c jsonb,
-  idp_logout_url_c varchar,
-  idp_client_id_c varchar not null,
-  idp_client_secret_c varchar not null,
-  idp_issuer_c varchar,
-  auth_req_scope_c varchar,
-  auth_req_claims jsonb,
-  auth_req_claims_locales varchar,
-  auth_req_ui_locales varchar,
-  auth_req_display varchar,
-  auth_req_prompt varchar,
-  auth_req_max_age int,
-  -- auth_req_id_token_hint: Opt[St],  — no.
-  auth_req_hosted_domain_c varchar,
+  oidc_config_json_c jsonb,
+  oau_authorization_url_c varchar not null,
+  oau_auth_req_scope_c varchar,
+  oau_auth_req_claims jsonb,
+  oau_auth_req_claims_locales varchar,
+  oau_auth_req_ui_locales varchar,
+  oau_auth_req_display varchar,
+  oau_auth_req_prompt varchar,
+  oau_auth_req_max_age int,
+  -- oau_auth_req_id_token_hint: Opt[St],  — no.
+  oau_auth_req_hosted_domain_c varchar,
   -- See https://developers.google.com/identity/protocols/oauth2/openid-connect
-  auth_req_access_type varchar, -- 'online' or 'offline'
-  auth_req_include_granted_scopes bool,
-  userinfo_req_send_user_ip_c bool,
+  oau_auth_req_access_type varchar, -- 'online' or 'offline'
+  oau_auth_req_include_granted_scopes bool,
+  oau_access_token_url_c varchar not null,
+  oau_access_token_auth_method_c varchar,
+  oau_client_id_c varchar not null,
+  oau_client_secret_c varchar not null,
+  oau_issuer_c varchar,
+  oidc_user_info_url_c varchar not null,
+  oidc_user_info_fields_map_c jsonb,
+  oidc_userinfo_req_send_user_ip_c bool,
+  oidc_logout_url_c varchar,
 
   constraint idps_p_id primary key (site_id_c, idp_id_c),
 
@@ -81,7 +80,7 @@ create table idps_t(
       references sites3 (id) deferrable,
 
   constraint idps_c_id_gtz check (idp_id_c > 0),
-  constraint idps_c_protocol check (protocol_c in ('oidc', 'oauth1', 'oauth2')),
+  constraint idps_c_protocol check (protocol_c in ('oidc', 'oauth2')),
   constraint idps_c_syncmode check (sync_mode_c between 1 and 10),
   constraint idps_c_alias_chars check (alias_c ~ '^[a-z0-9_-]+$'),
   constraint idps_c_alias_len check (length(alias_c) between 1 and 50),
@@ -101,63 +100,63 @@ create table idps_t(
   constraint idps_c_oidcconfigurl_len check (
       length(oidc_config_url) between 1 and 500),
 
-  constraint idps_c_idpconfigjson_len check (
-      pg_column_size(idp_config_json_c) between 1 and 11000),
+  constraint idps_c_oidcconfigjson_len check (
+      pg_column_size(oidc_config_json_c) between 1 and 11000),
 
-  constraint idps_c_idpauthorizationurl_len check (
-      length(idp_authorization_url_c) between 1 and 500),
+  constraint idps_c_oauauthorizationurl_len check (
+      length(oau_authorization_url_c) between 1 and 500),
 
-  constraint idps_c_idpaccesstokenurl_len check (
-      length(idp_access_token_url_c) between 1 and 500),
+  constraint idps_c_oauauthreqscope_len check (
+      length(oau_auth_req_scope_c) between 1 and 200),
 
-  constraint idps_c_idpaccesstokenauthmethod_in check (
-      idp_access_token_auth_method_c in (
+  constraint idps_c_oauauthreqclaims_len check (
+      pg_column_size(oau_auth_req_claims) between 1 and 200),
+
+  constraint idps_c_oauauthreqclaimslocales_len check (
+      length(oau_auth_req_claims_locales) between 1 and 200),
+
+  constraint idps_c_oauauthrequilocales_len check (
+      length(oau_auth_req_ui_locales) between 1 and 200),
+
+  constraint idps_c_oauauthreqdisplay_in check (
+      oau_auth_req_display in ('page', 'popup', 'touch', 'wap')),
+
+  constraint idps_c_oauauthreqprompt_in check (
+      oau_auth_req_prompt in ('none', 'login', 'consent', 'select_account')),
+
+  constraint idps_c_oauauthreqmaxage_gtz check (
+      oau_auth_req_max_age > 0),
+
+  constraint idps_c_oauauthreqhosteddomain_len check (
+      length(oau_auth_req_hosted_domain_c) between 1 and 200),
+
+  constraint idps_c_oauauthreqaccesstype_in check (
+      oau_auth_req_access_type in ('online', 'offline')),
+
+  constraint idps_c_oauaccesstokenurl_len check (
+      length(oau_access_token_url_c) between 1 and 500),
+
+  constraint idps_c_oauaccesstokenauthmethod_in check (
+      oau_access_token_auth_method_c in (
           'client_secret_basic', 'client_secret_post')),
 
-  constraint idps_c_idpuserinfourl_len check (
-      length(idp_user_info_url_c) between 1 and 500),
+  constraint idps_c_oauclientid_len check (
+      length(oau_client_id_c) between 1 and 200),
 
-  constraint idps_c_idpuserinfofieldsmap_len check (
-      pg_column_size(idp_user_info_fields_map_c) between 1 and 3000),
+  constraint idps_c_oauclientsecret_len check (
+      length(oau_client_secret_c) between 1 and 200),
 
-  constraint idps_c_idplogouturl_len check (
-      length(idp_logout_url_c) between 1 and 500),
+  constraint idps_c_oauissuer_len check (
+      length(oau_issuer_c) between 1 and 200),
 
-  constraint idps_c_idpclientid_len check (
-      length(idp_client_id_c) between 1 and 200),
+  constraint idps_c_oidcuserinfourl_len check (
+      length(oidc_user_info_url_c) between 1 and 500),
 
-  constraint idps_c_idpclientsecret_len check (
-      length(idp_client_secret_c) between 1 and 200),
+  constraint idps_c_oidcuserinfofieldsmap_len check (
+      pg_column_size(oidc_user_info_fields_map_c) between 1 and 3000),
 
-  constraint idps_c_idpissuer_len check (
-      length(idp_issuer_c) between 1 and 200),
-
-  constraint idps_c_authreqscope_len check (
-      length(auth_req_scope_c) between 1 and 200),
-
-  constraint idps_c_authreqclaims_len check (
-      pg_column_size(auth_req_claims) between 1 and 200),
-
-  constraint idps_c_authreqclaimslocales_len check (
-      length(auth_req_claims_locales) between 1 and 200),
-
-  constraint idps_c_authrequilocales_len check (
-      length(auth_req_ui_locales) between 1 and 200),
-
-  constraint idps_c_authreqdisplay_in check (
-      auth_req_display in ('page', 'popup', 'touch', 'wap')),
-
-  constraint idps_c_authreqprompt_in check (
-      auth_req_prompt in ('none', 'login', 'consent', 'select_account')),
-
-  constraint idps_c_authreqmaxage_len check (
-      auth_req_max_age >= 1),
-
-  constraint idps_c_authreqhosteddomain_len check (
-      length(auth_req_hosted_domain_c) between 1 and 200),
-
-  constraint idps_c_authreqaccesstype_in check (
-      auth_req_access_type in ('online', 'offline'))
+  constraint idps_c_oidclogouturl_len check (
+      length(oidc_logout_url_c) between 1 and 500)
 );
 
 
@@ -200,7 +199,7 @@ alter table identities3 add constraint idtys_c_idpsiteid_eq_siteid check (
 
 
 alter table identities3 add constraint idtys_c_brokenidpsth check (
-    length(broken_idp_sth_c) between 1 and 500);
+    length(broken_idp_sth_c) between 1 and 1000);
 
 alter table identities3 add constraint idtys_c_oidcidtokenstr check (
     length(oidc_id_token_str) between 1 and 7000);
@@ -216,6 +215,15 @@ alter table identities3 add constraint idtys_c_idpuserjson_len check (
 
 alter table identities3 add constraint idtys_c_idpusername check (
     length(idp_username_c) between 1 and 200);
+
+
+-- Not needed; will match 0 rows. Do anyway, so num_nonnulls(..) = 1 below
+-- is guaranteed to work, in case of any old broken row anywhere.
+update identities3
+    set oid_claimed_id = null
+    where
+      oid_claimed_id is not null and
+      conf_file_idp_id_c is not null;
 
 
 update identities3

@@ -144,7 +144,7 @@ trait SettingsDao {
                           // site:   [idp_site_id_c]
                           idp.idpSiteId == oau.openAuthDetails.idpSiteId)
                 // The admin uses this IDP — but is it enabled?
-                anyIdp.exists(_.enabled_c)
+                anyIdp.exists(_.enabled)
             }
           case _ =>
             false

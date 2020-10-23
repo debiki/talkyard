@@ -65,7 +65,7 @@ $_$;
 
 
 ------------------------------------------------------------------------
-comment on column  idps_t.idp_access_token_auth_method_c  is $_$
+comment on column  idps_t.oau_access_token_auth_method_c  is $_$
 
 How the Talkyard server authenticates with the ID provider, when
 sending the auth code to get the OAuth2 access token.
@@ -80,6 +80,17 @@ see https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication,
 Also see: https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest
 > ... Client, then it MUST authenticate to the Token Endpoint using
 > the authentication method registered for its client_id ...
+$_$;
+
+
+------------------------------------------------------------------------
+comment on column  idps_t.oidc_user_info_fields_map_c  is $_$
+
+How to convert custom OAuth2 user json fields to standard OIDC user info fields
+— so Talkyard can work together with custom OAuth2 implementations,
+as long as the authn flow is similar to OIDC, except for in the last
+user info step: the OAuth2 user info endpoint can return its own
+non-standard json.
 $_$;
 
 

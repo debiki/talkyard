@@ -104,7 +104,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   def upsertOidcConfig: Action[JsValue] = AdminPostJsonAction(maxBytes = 10000) {
           request: JsonPostRequest =>
-    // Db length constraint: idps_c_idpconfigjson_len.
+
     import request.{dao, body, siteId}
     val idpsJsonArr = body.asOpt[JsArray].getOrThrowBadRequest(
           "TyE406WKTDW2", "I want a json array with IDP configs")
@@ -125,7 +125,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   private def loadOidcConfigImpl(request: DebikiRequest[_], inclSecret: Bo): p_Result = {
     val idps = request.dao.readTx(_.loadAllIdentityProviders())
-          .sortBy(idp => idp.gui_order_c getOrElse (
+          .sortBy(idp => idp.guiOrder getOrElse (
                 idp.idpId.getOrElse(0) + 1000 * 1000))
     val json = JsArray(idps map JsX.JsIdentityProviderSecretConf)
     OkSafeJson(json)

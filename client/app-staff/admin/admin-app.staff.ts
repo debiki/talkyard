@@ -831,7 +831,7 @@ const LoginAndSignupSettings = createFactory({
                     r.span({ className: 's_CuIdpsL_It_Name' },
                       name + ': '),
                     r.span({  className: 's_CuIdpsL_It_Host' },
-                      url_getHost(idp.idpAuthorizationUrl)),
+                      url_getHost(idp.oauAuthorizationUrl)),
                     ' ',
                     r.span({  className: 's_CuIdpsL_It_ProtoAlias' },
                       protoAlias)),

@@ -65,50 +65,50 @@ class AuthOidcAppSpec extends DaoAppSuite {     RENAME // to IdentityProviderApp
   lazy val oidcProvider = IdentityProvider(
         idpSiteId = Some(daoSite1.siteId),
         idpId = Some(1),
-        protocol_c = "oidc",
-        alias_c = "odic_alias_site_1",
-        enabled_c = true,
-        display_name_c = Some("OIDC Displ Name"),
-        description_c = Some("description_c"),
-        admin_comments_c = None,
-        trust_verified_email_c = true,
-        link_account_no_login_c = false,
-        gui_order_c = None,
-        sync_mode_c = 1,  // for now, always 1 = ImportOnFirstLogin, later, also: SyncOnAllLogins
-        idp_authorization_url_c = "op_authorization_url_c",
-        idp_access_token_url_c = "op_access_token_url_c",
-        idp_user_info_url_c = "op_user_info_url_c",
-        idp_logout_url_c = None,
-        idp_client_id_c = "op_client_id_c",
-        idp_client_secret_c = "op_client_secret_c",
-        idp_issuer_c = Some("op_issuer_c"),
-        auth_req_scope_c = Some("openid auth_req_scope_c"),
-        auth_req_hosted_domain_c = Some("auth_req_hosted_domain_c"),
-        userinfo_req_send_user_ip_c = None)
+        protocol = "oidc",
+        alias = "odic_alias_site_1",
+        enabled = true,
+        displayName = Some("OIDC Displ Name"),
+        description = Some("description_c"),
+        adminComments = None,
+        trustVerifiedEmail = true,
+        linkAccountNoLogin = false,
+        guiOrder = None,
+        syncMode = 1,  // for now, always 1 = ImportOnFirstLogin, later, also: SyncOnAllLogins
+        oauAuthorizationUrl = "op_authorization_url_c",
+        oauAuthReqScope = Some("openid oau_auth_req_scope_c"),
+        oauAuthReqHostedDomain = Some("oau_auth_req_hosted_domain_c"),
+        oauAccessTokenUrl = "op_access_token_url_c",
+        oauClientId = "op_client_id_c",
+        oauClientSecret = "op_client_secret_c",
+        oauIssuer = Some("op_issuer_c"),
+        oidcUserInfoUrl = "op_user_info_url_c",
+        oidcUserinfoReqSendUserIp = None,
+        oidcLogoutUrl = None)
 
   lazy val oidcProviderEdited = IdentityProvider(
         idpSiteId = oidcProvider.idpSiteId,
         idpId = oidcProvider.idpId,
-        protocol_c = "oauth2",
-        alias_c = oidcProvider.alias_c + "_edited",
-        enabled_c = !oidcProvider.enabled_c,
-        display_name_c = oidcProvider.display_name_c.map(_ + " Edited"),
-        description_c = oidcProvider.description_c.map(_ + " Edited"),
-        admin_comments_c = Some("Some comments"),
-        trust_verified_email_c = !oidcProvider.trust_verified_email_c,
-        link_account_no_login_c = !oidcProvider.link_account_no_login_c,
-        gui_order_c = Some(123),
-        sync_mode_c = 2,
-        idp_authorization_url_c = oidcProvider.idp_authorization_url_c + "_edited",
-        idp_access_token_url_c = oidcProvider.idp_access_token_url_c + "_edited",
-        idp_user_info_url_c = oidcProvider.idp_user_info_url_c + "_edited",
-        idp_logout_url_c = Some("idp_logout_url_c"),
-        idp_client_id_c = oidcProvider.idp_client_id_c + "_edited",
-        idp_client_secret_c = oidcProvider.idp_client_secret_c + "_edited",
-        idp_issuer_c = oidcProvider.idp_issuer_c.map(_ + "_edited"),
-        auth_req_scope_c = oidcProvider.auth_req_scope_c.map(_ + "_edited"),
-        auth_req_hosted_domain_c = oidcProvider.auth_req_hosted_domain_c.map(_ + "_edited"),
-        userinfo_req_send_user_ip_c = Some(true))
+        protocol = "oauth2",
+        alias = oidcProvider.alias + "_edited",
+        enabled = !oidcProvider.enabled,
+        displayName = oidcProvider.displayName.map(_ + " Edited"),
+        description = oidcProvider.description.map(_ + " Edited"),
+        adminComments = Some("Some comments"),
+        trustVerifiedEmail = !oidcProvider.trustVerifiedEmail,
+        linkAccountNoLogin = !oidcProvider.linkAccountNoLogin,
+        guiOrder = Some(123),
+        syncMode = 2,
+        oauAuthorizationUrl = oidcProvider.oauAuthorizationUrl + "_edited",
+        oauAuthReqScope = oidcProvider.oauAuthReqScope.map(_ + "_edited"),
+        oauAuthReqHostedDomain = oidcProvider.oauAuthReqHostedDomain.map(_ + "_edited"),
+        oauAccessTokenUrl = oidcProvider.oauAccessTokenUrl + "_edited",
+        oauClientId = oidcProvider.oauClientId + "_edited",
+        oauClientSecret = oidcProvider.oauClientSecret + "_edited",
+        oauIssuer = oidcProvider.oauIssuer.map(_ + "_edited"),
+        oidcUserInfoUrl = oidcProvider.oidcUserInfoUrl + "_edited",
+        oidcUserinfoReqSendUserIp = Some(true),
+        oidcLogoutUrl = Some("oidc_logout_url_c"))
 
 
   "insert, find, update, find AuthN providers" - {
@@ -120,7 +120,7 @@ class AuthOidcAppSpec extends DaoAppSuite {     RENAME // to IdentityProviderApp
 
     "read back" in {
       daoSite1.readTx { tx =>
-        val x = tx.loadIdentityProviderByAlias(oidcProvider.protocol_c, oidcProvider.alias_c)
+        val x = tx.loadIdentityProviderByAlias(oidcProvider.protocol, oidcProvider.alias)
         x.get mustBe oidcProvider
       }
     }
@@ -135,14 +135,14 @@ class AuthOidcAppSpec extends DaoAppSuite {     RENAME // to IdentityProviderApp
       daoSite1.readTx { tx =>
         // The original one is gone.
         tx.loadIdentityProviderByAlias(
-              oidcProvider.protocol_c, oidcProvider.alias_c) mustBe None
+              oidcProvider.protocol, oidcProvider.alias) mustBe None
 
         // New:
         tx.loadAllIdentityProviders() mustBe Seq(oidcProviderEdited)
 
         // New:
         tx.loadIdentityProviderByAlias(
-              oidcProviderEdited.protocol_c, oidcProviderEdited.alias_c
+              oidcProviderEdited.protocol, oidcProviderEdited.alias
               ) mustBe Some(oidcProviderEdited)
       }
     }

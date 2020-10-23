@@ -816,12 +816,12 @@ object JsX {
     Json.obj(
       // "id" — no. Might leak info about how many providers have been configured.
       // (Maybe there are some inactive, for example.)
-      "protocol" -> idp.protocol_c,
-      "alias" -> idp.alias_c,
-      "enabled" -> idp.enabled_c,
-      "displayName" -> JsStringOrNull(idp.display_name_c),
-      "description" -> JsStringOrNull(idp.description_c),
-      "guiOrder" -> JsNumberOrNull(idp.gui_order_c))
+      "protocol" -> idp.protocol,
+      "alias" -> idp.alias,
+      "enabled" -> idp.enabled,
+      "displayName" -> JsStringOrNull(idp.displayName),
+      "description" -> JsStringOrNull(idp.description),
+      "guiOrder" -> JsNumberOrNull(idp.guiOrder))
   }
 
 
@@ -829,22 +829,22 @@ object JsX {
     val pubFields = JsIdentityProviderPubFields(idp)
     pubFields ++ Json.obj(
         "confFileIdpId" -> JsStringOrNull(idp.confFileIdpId),
-        "siteId" -> JsI32OrNull(idp.idpSiteId),
+        "idpSiteId" -> JsI32OrNull(idp.idpSiteId),
         "idpId" -> JsI32OrNull(idp.idpId),
-        "trustVerifiedEmail" -> idp.trust_verified_email_c,
-        "linkAccountNoLogin" -> idp.link_account_no_login_c,
-        "syncMode" -> idp.sync_mode_c,
-        "idpAuthorizationUrl" -> idp.idp_authorization_url_c,
-        "idpAccessTokenUrl" -> idp.idp_access_token_url_c,
-        "idpUserInfoUrl" -> idp.idp_user_info_url_c,
-        "idpUserInfoFieldsMap" -> idp.idp_user_info_fields_map_c,
-        "idpLogoutUrl" -> JsStringOrNull(idp.idp_logout_url_c),
-        "idpClientId" -> idp.idp_client_id_c,
-        "idpClientSecret" -> idp.idp_client_secret_c,
-        "idpIssuer" -> JsStringOrNull(idp.idp_issuer_c),
-        "authReqScope" -> JsStringOrNull(idp.auth_req_scope_c),
-        "authReqHostedDomain" -> JsStringOrNull(idp.auth_req_hosted_domain_c),
-        "userinfoReqSendUserIp" -> JsBoolOrNull(idp.userinfo_req_send_user_ip_c))
+        "trustVerifiedEmail" -> idp.trustVerifiedEmail,
+        "linkAccountNoLogin" -> idp.linkAccountNoLogin,
+        "syncMode" -> idp.syncMode,
+        "oauAuthorizationUrl" -> idp.oauAuthorizationUrl,
+        "oauAuthReqScope" -> JsStringOrNull(idp.oauAuthReqScope),
+        "oauAuthReqHostedDomain" -> JsStringOrNull(idp.oauAuthReqHostedDomain),
+        "oauAccessTokenUrl" -> idp.oauAccessTokenUrl,
+        "oauClientId" -> idp.oauClientId,
+        "oauClientSecret" -> idp.oauClientSecret,
+        "oauIssuer" -> JsStringOrNull(idp.oauIssuer),
+        "oidcUserInfoUrl" -> idp.oidcUserInfoUrl,
+        "oidcUserInfoFieldsMap" -> idp.oidcUserInfoFieldsMap,
+        "oidcUserinfoReqSendUserIp" -> JsBoolOrNull(idp.oidcUserinfoReqSendUserIp),
+        "oidcLogoutUrl" -> JsStringOrNull(idp.oidcLogoutUrl))
   }
 
 }

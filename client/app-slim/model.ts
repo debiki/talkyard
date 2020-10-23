@@ -1640,23 +1640,24 @@ interface IdentityProviderPubFields {
 
 
 interface IdentityProviderSecretConf extends IdentityProviderPubFields {
-  id: Nr;
+  idpSiteId: SiteId;
+  idpId: Nr;
   enabled: Bo;
   adminComments?: St;
   trustVerifiedEmail: Bo;
   linkAccountNoLogin: Bo;
   syncMode: Nr;
-  idpAuthorizationUrl: St;
-  idpAccessTokenUrl: St;
-  idpUserInfoUrl: St;
-  idpUserInfoFieldsMap?: { [field: string]: string },
-  idpLogoutUrl?: St;
-  idpClientId: St;
-  idpClientSecret: St;
-  idpIssuer?: St;
-  idpScopes?: St;
-  idpHostedDomain?: St;
-  idpSendUserIp?: Bo;
+  oauAuthorizationUrl: St;
+  oauAuthReqScope: St;
+  oauAuthReqHostedDomain?: St;
+  oauAccessTokenUrl: St;
+  oauClientId: St;
+  oauClientSecret: St;
+  oauIssuer?: St;
+  oidcUserInfoUrl: St;
+  oidcUserInfoFieldsMap?: { [field: string]: string },
+  oidcUserinfoReqSendUserIp?: Bo;
+  oidcLogoutUrl?: St;
 }
 
 

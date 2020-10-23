@@ -62,7 +62,7 @@ trait AuthnSiteDaoMixin {
 
   def getIdentityProviderByAlias(protocol: St, alias: St): Opt[IdentityProvider] = {
     getIdentityProviders(onlyEnabled = false) find { idp =>
-      idp.protocol_c == protocol && idp.alias_c == alias
+      idp.protocol == protocol && idp.alias == alias
     }
   }
 
@@ -94,7 +94,7 @@ trait AuthnSiteDaoMixin {
           orCacheAndReturn = Some {
             readOnlyTransaction(_.loadAllIdentityProviders())
           }).get
-    if (onlyEnabled) idps.filter(_.enabled_c)
+    if (onlyEnabled) idps.filter(_.enabled)
     else idps
   }
 
@@ -128,7 +128,7 @@ trait AuthnSiteDaoMixin {
   def getScribeJavaAuthnService(origin: St, idp: IdentityProvider, mayCreate: Bo = true)
           : sj_OAuth20Service Or ErrMsg = {
 
-    val redirBackUrl = origin + s"/-/authn/${idp.protocol_c}/${idp.alias_c}/redirback"
+    val redirBackUrl = origin + s"/-/authn/${idp.protocol}/${idp.alias}/redirback"
 
     // For now: Just one IDP. (If >= 2 used at the same time, one would get
     // uncached, login would fail.)
@@ -139,7 +139,7 @@ trait AuthnSiteDaoMixin {
             // until the very end of the authn flow, when they return non-standard
             // user info json. So, using OIDC here works fine (as of now)
             // — we just need to read the right user info json fields, later,
-            // with the help of idp_user_info_fields_map_c.
+            // with the help of oidc_user_info_fields_map_c.
             if (idp.isOpenIdConnect || idp.isPerSite)
               Good(createScribeJavaOidcService(idp, redirBackUrl))
             else
@@ -153,10 +153,10 @@ trait AuthnSiteDaoMixin {
     // It's the right IDP, same config settings?
     // (The redirBackUrl includes both the protocol and IDP alias, and the
     // client id and secret are very unique too.)
-    if (idp.auth_req_scope_c.isSomethingButNot(service.getDefaultScope)
+    if (idp.oauAuthReqScope.isSomethingButNot(service.getDefaultScope)
         || service.getCallback != redirBackUrl
-        || service.getApiKey != idp.idp_client_id_c
-        || service.getApiSecret != idp.idp_client_secret_c) {
+        || service.getApiKey != idp.oauClientId
+        || service.getApiSecret != idp.oauClientSecret) {
       // It's the wrong. An admin recently changed OIDC settings?
       // Remove the old, create a new.
       uncacheScribeJavaAuthnServices(Seq(idp))
@@ -175,9 +175,9 @@ trait AuthnSiteDaoMixin {
   private def createScribeJavaOidcService(idp: IdentityProvider, redirBackUri: St)
           : sj_OAuth20Service = {
     dieIf(!idp.isOpenIdConnect, "TyE305MARKP23")
-    new sj_ServiceBuilder(idp.idp_client_id_c)
-          .apiSecret(idp.idp_client_secret_c)
-          .defaultScope(idp.auth_req_scope_c getOrElse "openid")
+    new sj_ServiceBuilder(idp.oauClientId)
+          .apiSecret(idp.oauClientSecret)
+          .defaultScope(idp.oauAuthReqScope getOrElse "openid")
           .callback(redirBackUri)
           .debug()
           .build(TyOidcScribeJavaApi20(idp))
@@ -191,7 +191,7 @@ trait AuthnSiteDaoMixin {
     val SDIA = ServerDefIdpAliases
     import com.github.scribejava.{apis => a}
 
-    val (idpApi: sj_DefaultApi20, idpDefaultScopes: St) = idp.alias_c match {
+    val (idpApi: sj_DefaultApi20, idpDefaultScopes: St) = idp.alias match {
       case SDIA.Google => (a.GoogleApi20.instance(), "profile email")
       case SDIA.GitHub => (a.GitHubApi.instance(), "read:user,user:email")
       case SDIA.Facebook => (a.FacebookApi.instance(), "email")
@@ -202,9 +202,9 @@ trait AuthnSiteDaoMixin {
               s"Identity Provider (IDP) not yet supported: ${idp.protoAlias}")
     }
 
-    val service = new sj_ServiceBuilder(idp.idp_client_id_c)
-          .apiSecret(idp.idp_client_secret_c)
-          .defaultScope(idp.auth_req_scope_c getOrElse idpDefaultScopes)
+    val service = new sj_ServiceBuilder(idp.oauClientId)
+          .apiSecret(idp.oauClientSecret)
+          .defaultScope(idp.oauAuthReqScope getOrElse idpDefaultScopes)
           .callback(redirBackUri)
           .debug()
           // ?? .httpClientConfig(clientConfig)

@@ -486,7 +486,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val idpName = customIdp.map(_.nameOrAlias).getOrElse(
                 details.confFileIdpId.get)
           val idpUsername = details.username
-          val idpAuthUrl = customIdp.map(_.idp_authorization_url_c)
+          val idpAuthUrl = customIdp.map(_.oauAuthorizationUrl)
           (idpName, idpAuthUrl, idpUsername, Some(details.idpUserId), details.email)
         case oid: IdentityOpenId =>
           val details = oid.openIdDetails

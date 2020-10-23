@@ -30,10 +30,10 @@ private case class TyOidcScribeJavaApi20(idp: IdentityProvider) extends sj_Defau
 
   // e.g.:  "http://keycloak:8080" + "/auth/realms/" + realm
   override def getAccessTokenEndpoint: St =
-    idp.idp_access_token_url_c
+    idp.oauAccessTokenUrl
 
   override def getAuthorizationBaseUrl: St =
-    idp.idp_authorization_url_c
+    idp.oauAuthorizationUrl
 
   override def getAccessTokenExtractor: sj_TokenExtractor[sj_OAuth2AccessToken] =
     sj_OpenIdJsonTokenExtractor.instance
@@ -46,7 +46,7 @@ private case class TyOidcScribeJavaApi20(idp: IdentityProvider) extends sj_Defau
     // 'client_secret_basic', uses a Basic Auth HTTP header — that's better,
     // then, not in the post data, so is the default.
     /*
-    if (idp.idp_access_token_auth_method_c == "client_secret_post")
+    if (idp.oauAccessTokenAuthMethod is "client_secret_post")
       sj_RequestBodyAuthenticationScheme.instance()
     else */
     sj_HttpBasicAuthenticationScheme.instance()
