@@ -71,7 +71,6 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             user_id_c,
             user_id_orig_c,
             conf_file_idp_id_c,
-            idp_site_id_c,
             idp_id_c,
             idp_user_id_c,
             idp_user_json_c,
@@ -79,12 +78,10 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             FIRST_NAME, LAST_NAME, FULL_NAME, EMAIL, AVATAR_URL,
             AUTH_METHOD)
         values (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
 
     val ds = identity.openAuthDetails
     val method = "OAuth" ; CLEAN_UP ; REMOVE // this column
-
-    unimplIf(ds.idpSiteId isSomethingButNot siteId, "TyE204MWKTD2")
 
     val values = List[AnyRef](
           siteId.asAnyRef,
@@ -92,7 +89,6 @@ trait AuthnSiteTxMixin extends SiteTransaction {
           identity.userId.asAnyRef,
           identity.userId.asAnyRef,
           ds.confFileIdpId.trimOrNullVarchar,
-          ds.idpSiteId.orNullInt,
           ds.idpId.orNullInt,
           ds.idpUserId,
           ds.userInfoJson.orNullJson,
@@ -118,8 +114,6 @@ trait AuthnSiteTxMixin extends SiteTransaction {
           where idty_id_c = ? and site_id = ?"""
 
     val ds = identity.openAuthDetails
-
-    unimplIf(ds.idpSiteId isSomethingButNot siteId, "TyE204MWKTD3")
 
     val values = List[AnyRef](
           identity.userId.asAnyRef,
@@ -174,10 +168,9 @@ trait AuthnSiteTxMixin extends SiteTransaction {
         // ix: idtys_u_conffileidpid_idpusrid
         "i.conf_file_idp_id_c = ?"
       case None =>
-        values.append(openAuthKey.idpSiteId.getOrDie("TyE305MRKT2").asAnyRef)
         values.append(openAuthKey.idpId.getOrDie("TyE705MRK41").asAnyRef)
-        // ix: idtys_u_idpsiteid_idpid_idpuserid
-        "( i.idp_site_id_c = ?  and  i.idp_id_c = ? )"
+        // ix: idtys_u_idpid_idpuserid
+        "i.idp_id_c = ?"
     }
 
     val query = s"""
@@ -195,10 +188,8 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             "TyE5WKB2A1", s"Bad class: ${classNameOf(identity)}")
       val idty = identity.asInstanceOf[OpenAuthIdentity]
       dieIf(idty.openAuthDetails.confFileIdpId != openAuthKey.confFileIdpId, "TyE2KWB01")
-      dieIf(idty.openAuthDetails.idpSiteId != openAuthKey.idpSiteId, "TyE2KW503G")
       dieIf(idty.openAuthDetails.idpId != openAuthKey.idpId, "TyE2KW503R")
       dieIf(idty.openAuthDetails.idpUserId != openAuthKey.idpUserId, "TyE2KWB02")
-      unimplIf(idty.openAuthDetails.idpSiteId isSomethingButNot siteId, "TyE2KW40ST7")
       idty
     })
   }
@@ -208,7 +199,6 @@ trait AuthnSiteTxMixin extends SiteTransaction {
      |idty_id_c,
      |user_id_c,
      |conf_file_idp_id_c,
-     |idp_site_id_c,
      |idp_id_c,
      |idp_user_id_c,
      |idp_user_json_c,  -- for now, for debugging
@@ -235,7 +225,6 @@ trait AuthnSiteTxMixin extends SiteTransaction {
     val email = Option(rs.getString("i_email"))
     val anyClaimedOpenId = Option(rs.getString("OID_CLAIMED_ID"))
     val anyConfFileIdpId = getOptString(rs, "conf_file_idp_id_c")
-    val anyIdpSiteId = getOptInt(rs, "idp_site_id_c")
     val anyIdpId = getOptInt(rs, "idp_id_c")
 
     val identityInDb = {
@@ -260,7 +249,6 @@ trait AuthnSiteTxMixin extends SiteTransaction {
           userId = userId,
           openAuthDetails = OpenAuthDetails(
             confFileIdpId = anyConfFileIdpId,
-            idpSiteId = anyIdpSiteId,
             idpId = anyIdpId,
             idpUserId = getOptString(rs, "idp_user_id_c").getOrElse(""),
             username = getOptString(rs, "idp_username_c"),
@@ -278,7 +266,7 @@ trait AuthnSiteTxMixin extends SiteTransaction {
   }
 
 
-  def upsertIdentityProvider(identityProvider: IdentityProvider): AnyProblem = {
+  def upsertIdentityProvider(idp: IdentityProvider): AnyProblem = {
     val sql = """
           insert into idps_t(
             site_id_c,
@@ -331,33 +319,31 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             oidc_userinfo_req_send_user_ip_c = excluded.oidc_userinfo_req_send_user_ip_c,
             oidc_logout_url_c = excluded.oidc_logout_url_c  """
 
-    val p = identityProvider
-
     val values = List[AnyRef](
           siteId.asAnyRef,
-          p.idpId.getOrDie("TyEIDP0CUST2802").asAnyRef,
-          p.protocol,
-          p.alias,
-          p.enabled.asAnyRef,
-          p.displayName.orNullVarchar,
-          p.description.orNullVarchar,
-          p.adminComments.orNullVarchar,
-          p.trustVerifiedEmail.asAnyRef,
-          p.linkAccountNoLogin.asAnyRef,
-          p.guiOrder.orNullInt,
-          p.syncMode.asAnyRef,
-          p.oauAuthorizationUrl,
-          p.oauAuthReqScope.orNullVarchar,
-          p.oauAuthReqHostedDomain.orNullVarchar,
-          p.oauAccessTokenUrl,
-          p.oauAccessTokenAuthMethod.orNullVarchar,
-          p.oauClientId,
-          p.oauClientSecret,
-          p.oauIssuer.orNullVarchar,
-          p.oidcUserInfoUrl,
-          p.oidcUserInfoFieldsMap.orNullJson,
-          p.oidcUserinfoReqSendUserIp.orNullBoolean,
-          p.oidcLogoutUrl.orNullVarchar)
+          idp.idpId.getOrDie("TyEIDP0CUST2802").asAnyRef,
+          idp.protocol,
+          idp.alias,
+          idp.enabled.asAnyRef,
+          idp.displayName.orNullVarchar,
+          idp.description.orNullVarchar,
+          idp.adminComments.orNullVarchar,
+          idp.trustVerifiedEmail.asAnyRef,
+          idp.linkAccountNoLogin.asAnyRef,
+          idp.guiOrder.orNullInt,
+          idp.syncMode.asAnyRef,
+          idp.oauAuthorizationUrl,
+          idp.oauAuthReqScope.orNullVarchar,
+          idp.oauAuthReqHostedDomain.orNullVarchar,
+          idp.oauAccessTokenUrl,
+          idp.oauAccessTokenAuthMethod.orNullVarchar,
+          idp.oauClientId,
+          idp.oauClientSecret,
+          idp.oauIssuer.orNullVarchar,
+          idp.oidcUserInfoUrl,
+          idp.oidcUserInfoFieldsMap.orNullJson,
+          idp.oidcUserinfoReqSendUserIp.orNullBoolean,
+          idp.oidcLogoutUrl.orNullVarchar)
 
     runUpdateExactlyOneRow(sql, values)
 
@@ -402,8 +388,9 @@ trait AuthnSiteTxMixin extends SiteTransaction {
 
 
   private def readIdentityProvider(rs: js.ResultSet): IdentityProvider = {
+    val rsSiteId = getInt(rs, "site_id_c")
+    dieIf(rsSiteId != siteId, "TyE4056MAKST2")
     IdentityProvider(
-          idpSiteId = Some(siteId),
           idpId = Some(getInt(rs, "idp_id_c")),
           protocol = rs.getString("protocol_c"),
           alias = rs.getString("alias_c"),

@@ -126,23 +126,30 @@ trait SettingsDao {
       if (turnsOff(_.enableVkLogin)) throwIfLogsInWith(providers.oauth2.VKProvider.ID)
       if (turnsOff(_.enableInstagramLogin)) throwIfLogsInWith(providers.oauth2.InstagramProvider.ID)
 
-      // Don't restrict login to only custom OIDC, before knows it works:
+      // Don't restrict login to only custom OIDC, unless custom IDPs enabled:
       if (turnsOn(_.useOnlyCustomIdps)) {
+        // Enabled?
+        // There's a db constraint: settings_c_enable_use_only_custom_idps  [onl_cust_idp]
+        throwBadRequestIf(!newSettings.enableCustomIdps,
+              "TyE305MRSKD3", "Cannot use only custom IDPs, when custom IDPs not enabled")
+
+        // Admin can login?
+        // Check that the current admin can login via a currently enabled IDP,
+        // so hen won't lock henself out.
+        TESTS_MISSING
         val (admin: User, adminsIdentities: Seq[Identity]) =
               adminsAndIdentities.find(_._1.id == byWho.id) getOrDie "TyE5MGRT4"
         dieIf(admin.id != byWho.id, "TyE36KRST743")
-
         val siteIdps = tx.loadAllIdentityProviders()
         val adminsEnabledIdentity = adminsIdentities find {
           case oau: OpenAuthIdentity =>
             oau.openAuthDetails.idpId match {
-              case None => false
+              case None =>
+                // Then this is probably a server global IDP — not
+                // a custom IDP for this site only.
+                false
               case Some(adminsIdpId: IdpId) =>
-                val anyIdp = siteIdps.find(idp =>
-                      idp.idpId.is(adminsIdpId) &&
-                          // If `idp` is a server global IDP from another
-                          // site:   [idp_site_id_c]
-                          idp.idpSiteId == oau.openAuthDetails.idpSiteId)
+                val anyIdp = siteIdps.find(_.idpId.is(adminsIdpId))
                 // The admin uses this IDP — but is it enabled?
                 anyIdp.exists(_.enabled)
             }

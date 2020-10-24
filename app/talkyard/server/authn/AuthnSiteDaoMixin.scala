@@ -68,9 +68,10 @@ trait AuthnSiteDaoMixin {
 
 
   def getIdentityProviderById(id: IdpId): Opt[IdentityProvider] = {
+    // Later: lookup server global idps too — but then this fn needs  [srv_glb_idp]
+    // more than just an id?
     getIdentityProviders(onlyEnabled = false).find { idp =>
-      // Later: siteId would be a param?  [idp_site_id_c]
-      idp.idpSiteId.is(siteId) && idp.idpId.is(id)
+      idp.idpId.is(id)
     }
   }
 

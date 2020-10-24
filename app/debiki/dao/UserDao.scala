@@ -657,6 +657,8 @@ trait UserDao {
 
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): Guest = {
+    val settings = getWholeSiteSettings()
+    dieIf(!settings.canLoginAsGuest, "TyE052MAKD3", "Guest login not enabled")
     val user = readWriteTransaction { tx =>
       val guest = tx.loginAsGuest(loginAttempt).guest
       // We don't know if this guest user is being created now, or if it already exists
@@ -680,6 +682,11 @@ trait UserDao {
     // + prevent submitting username, client side.
 
     val settings = getWholeSiteSettings()
+    dieIf(loginAttempt.isInstanceOf[PasswordLoginAttempt] &&
+        !settings.canLoginWithPassword, "TyE0PWDLGI602")
+    dieIf(loginAttempt.isInstanceOf[OpenAuthLoginAttempt] && settings.enableSso,
+        "TyESSO0OAU02")
+
     val loginGrant = readWriteTransaction { tx =>
       val loginGrant: MemberLoginGrant =
             tx.tryLoginAsMember(loginAttempt, requireVerifiedEmail =

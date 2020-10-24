@@ -779,7 +779,7 @@ const LoginAndSignupSettings = createFactory({
 
         enableTySso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: rFragment({},
-              "Your OIDC", r.br(), "or OAuth2"),
+              "Custom OIDC", r.br(), "or OAuth2"),
           className: 'e_A_Ss_S-OidcCB',
           help: "Log in via your custom OpenID Connect (OIDC) or OAuth2 " +
               "Identity Provider (IDP), " +
@@ -796,11 +796,52 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
+        enableTySso || !allowSignup || !this.state.idps?.length ? null : rFr({},
+          r.label({ className: 'col-sm-3 control-label' },
+            "Configure OIDC or OAuth2:"),
+          r.div({ className: 's_A_Ss_S s_A_Ss_S-CuIdpsL col-sm-offset-3'},
+            enableCustomIdps ? null :
+                r.p({},
+                  r.b({}, "Disabled"), " — you need to check the ",
+                  r.b({}, "OIDC or OAuth2"), " checkbox above"),
+            r.ol({ className: ' s_CuIdpsL' +
+                        (enableCustomIdps ? '' : ' s_CuIdpsL-Dis') },
+              this.state.idps?.map((idp: IdentityProviderSecretConf) => {
+                const name = idp.displayName || idp.alias || "No name [TyE702RSG5]";
+                const protoAlias = `${idp.protocol}/${idp.alias}`;
+                const testLoginUrl = location.origin  + UrlPaths.AuthnRoot +
+                        protoAlias + '?returnToUrl=/&nonce=dummyTestLogin'
+                return r.li({ className: 's_CuIdpsL_It' },
+                  r.div({},
+                    r.span({ className: 's_CuIdpsL_It_Name' },
+                      name + ': '),
+                    r.span({  className: 's_CuIdpsL_It_Host' },
+                      url_getHost(idp.oauAuthorizationUrl)),
+                    ' ',
+                    r.span({  className: 's_CuIdpsL_It_ProtoAlias' },
+                      protoAlias)),
+                  r.div({ className: 's_CuIdpsL_It_TstLn' },
+                    "Login test link: ", r.code({},
+                        r.a({ className: 's_CuIdpsL_It_TstLn_Ln', href: testLoginUrl },
+                          testLoginUrl)),
+                    r.br(),
+                    "You can open an incognito window (Ctrl+Shift+N in Chrome), " +
+                    "and paste that link, and try to login"));
+                })),
+            r.pre({},
+              JSON.stringify(this.state.idps, undefined, 2)),
+            )),
+
+        enableTySso || !allowSignup || !enableCustomIdps || this.state.showOidcConfig ? null :
+            Button({ onClick: () => this.setState({ showOidcConfig: true }),
+                  className: 'col-sm-offset-3' },
+              "Configure Identity Providers (IDPs) ..."),
+
         enableTySso || !allowSignup || !enableCustomIdps ? null : Setting2(props, {
           type: 'checkbox',
-          label: rFragment({}, r.b({}, "Only"), " your OIDC or OAuth2"),
+          label: rFr({}, r.b({}, "Only"), " your OIDC or OAuth2"),
           className: 'e_A_Ss_S-OnlyOidcCB',
-          help: rFragment({},
+          help: rFr({},
               "Disables all ways to sign up, " +
               "except for your custom OIDC or OAuth2 Identity Providers (IDPs). ",
               r.i({}, "(If you've enabled exactly one custom IDP, " +
@@ -817,39 +858,6 @@ const LoginAndSignupSettings = createFactory({
             newSettings.useOnlyCustomIdps = target.checked;
           }
         }),
-
-        enableTySso || !allowSignup || !this.state.idps?.length ? null :
-          r.div({ className: 's_A_Ss_S s_A_Ss_S-CuIdpsL col-sm-offset-3'},
-            r.p({}, "Your OIDC or OAuth2: ",
-                    r.b({}, enableCustomIdps ? '' : "*** disabled ***")),
-            r.ol({ className: ' s_CuIdpsL' },
-              this.state.idps?.map((idp: IdentityProviderSecretConf) => {
-                const name = idp.displayName || idp.alias || "No name [TyE702RSG5]";
-                const protoAlias = `${idp.protocol}/${idp.alias}`;
-                return r.li({ className: 's_CuIdpsL_It' },
-                  r.div({},
-                    r.span({ className: 's_CuIdpsL_It_Name' },
-                      name + ': '),
-                    r.span({  className: 's_CuIdpsL_It_Host' },
-                      url_getHost(idp.oauAuthorizationUrl)),
-                    ' ',
-                    r.span({  className: 's_CuIdpsL_It_ProtoAlias' },
-                      protoAlias)),
-                  r.div({ className: 's_CuIdpsL_It_TstLn' },
-                    "Login test link: ",
-                    r.code({}, location.origin + UrlPaths.AuthnRoot + protoAlias),
-                    r.br(),
-                    "You can open an incognito window (Ctrl+Shift+N in Chrome), " +
-                    "and paste that link, and try to login"));
-                })),
-            r.pre({},
-              JSON.stringify(this.state.idps, undefined, 2)),
-            ),
-
-        enableTySso || !allowSignup || !enableCustomIdps || this.state.showOidcConfig ? null :
-            Button({ onClick: () => this.setState({ showOidcConfig: true }),
-                  className: 'col-sm-offset-3' },
-              "Configure Identity Providers (IDPs) ..."),
 
         // CLEAN_UP REFACTOR use Setting2 instead, the  anyChildren param.
         enableTySso || !allowSignup || !enableCustomIdps || !this.state.showOidcConfig ? null :

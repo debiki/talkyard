@@ -285,6 +285,15 @@ export const LoginDialogContent = createClassAndFactory({
     // makeSsoUrl() would need to be available server side too.
     // Dupl code? [SSOINSTAREDIR]
     const ssoUrl = makeSsoUrl(store, location.toString());
+
+    // Sleeping BUG won't work if in /-/login-popup opened from here: [23095RKTS3],
+    // because then that'll become the returnToUrl, so we'll
+    // return to /-/login-popup after login, and then that page shows
+    // an error about returnToUrl or nonce missing.
+    // Solution: If there's a returnToUrl query param already — reuse it.
+    //logD(`LoginDialog.componentDidMount: Constructed ssoUrl: ${ssoUrl}`);
+    //logD(`location.toString() was: ${location.toString()}`);
+
     let shallRedir;
     if (settings.effectiveSsoLoginRequiredLogoutUrl) {
       // @ifdef DEBUG
@@ -434,11 +443,24 @@ export const LoginDialogContent = createClassAndFactory({
     let content;
 
     const anySsoUrl = makeSsoUrl(store, location.toString());
+
+    // Sleeping BUG see [23095RKTS3].
+    //logD(`LoginDialog.render: Constructed anySsoUrl: ${anySsoUrl}`);
+    //logD(`location.toString() was: ${location.toString()}`);
+
     if (anySsoUrl) {
+      // Maybe incl username and id in __html_encoded_volatile_json__ ?
+      // Not always done in login window.
+      const hasSid = getSetCookie('dwCoSid');
+      const loggedInButMayNotAccess = !hasSid ? null : r.p({},
+        "You're logged in but seems you cannot access this part of the site " +  // I18N
+        "(if it exists). " +
+        "Can you login as a user with higher permissions?")
       content =
           r.div({ style: { textAlign: 'center' }},
             ExtLinkButton({ href: anySsoUrl, className: 's_LD_SsoB btn-primary' },
-              t.LogIn));
+              t.LogIn),
+            loggedInButMayNotAccess);
     }
     else {
       content = rFragment({},

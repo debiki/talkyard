@@ -1625,8 +1625,7 @@ class OidcIdToken(val idTokenStr: St) {
 // Merge with ExternalSocialProfile into ... ExtIdpUser? IdentityFromIdp? IdpIdentity?  Or just ExtIdentity or ExtIdpIdentity or Identity?
 /**
   * @param confFileIdpId — from old Silhouette config. Will migrate to authn site IDPs?
-  * @param idpSiteId — if IDP is configured at another site (an authn site) [idp_site_id_c]
-  * @param idpId
+  * @param idpId — for new db table & ScribeJava based config.
   * @param idpUserId
   * @param username
   * @param firstName
@@ -1640,7 +1639,6 @@ class OidcIdToken(val idTokenStr: St) {
   */
 case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
   confFileIdpId: Opt[ConfFileIdpId] = None,
-  idpSiteId: Opt[SiteId] = None,
   idpId: Opt[IdpId] = None,
   idpUserId: St,
   username: Opt[St] = None,
@@ -1655,8 +1653,6 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
 
   require(confFileIdpId.forall(_.trim.nonEmpty), "TyE395RKTE2")
   require(confFileIdpId.isDefined != idpId.isDefined, "TyE205KRDJ2M")
-  require(idpSiteId.isDefined == idpId.isDefined, "TyE05MG256M")
-  require(idpSiteId.isNot(0), "TyE05MG2567")
   require(idpId.forall(_ >= 1), "TyE395RKTE3")
   require(idpUserId.nonEmpty, "TyE507Q5K42")
   require(email.isDefined || isEmailVerifiedByIdp.isNot(true), "TyE6JKRGL24")
@@ -1664,15 +1660,13 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
   def providerIdAndKey: OpenAuthProviderIdKey =
     OpenAuthProviderIdKey(
           confFileIdpId = confFileIdpId,
-          idpSiteId = idpSiteId,
           idpId = idpId,
           idpUserId = idpUserId)
 
   def isPerSite: Bo = idpId.isDefined
   def isFromConfFile: Bo = confFileIdpId.isDefined
 
-  def prettyIdpId: St = IdentityProvider.prettyId(
-        confFileIdpId, idpSiteId = idpSiteId, idpId = idpId)
+  def prettyIdpId: St = IdentityProvider.prettyId(confFileIdpId, idpId = idpId)
 
   def displayNameOrEmpty: String = {
     fullName.orElse({
@@ -1694,12 +1688,10 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
 
 case class OpenAuthProviderIdKey(
   confFileIdpId: Opt[ConfFileIdpId],
-  idpSiteId: Opt[SiteId],
   idpId: Opt[IdpId],
   idpUserId: St) {
 
   require(confFileIdpId.isDefined != idpId.isDefined, "TyE305MKTFJ4")
-  require(idpSiteId.isDefined == idpId.isDefined, "TyE05MG2560")
   require(idpUserId.nonEmpty, "TyE39M5RK4TK2")
 }
 

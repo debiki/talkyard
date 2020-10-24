@@ -417,13 +417,7 @@ case class SettingsToSave(
   require(languageCode.forall(_.forall(_.isAToZUnderscoreOnly)), "Weird lang code [TyE2WKBYF]")
   require(languageCode.forall(_.forall(_.length < 10)), "Too long language code [TyE2WKBP5]")
 
-  // There's also a db constraint: settings_c_enable_use_only_custom_idps.
-  useOnlyCustomIdps foreach { onlyCustom: Opt[Bo] =>
-    if (onlyCustom is true) {
-      require(enableCustomIdps.exists(_ is true),
-            "Cannot use only custom IDPs, when IDPs not enabled [TyE3054RSMD]")
-    }
-  }
+  // useOnlyCustomIdps and enableCustomIdps: See SettingsDao, [onl_cust_idp].
 
   if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly)) &&
       contentLicense.isDefined) {

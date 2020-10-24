@@ -44,6 +44,9 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
 
   def showResetPasswordPage: Action[Unit] = GetActionAllowAnyone { request =>
+    import request.dao
+    throwForbiddenIf(!dao.getWholeSiteSettings().canLoginWithPassword,
+          "TyE0PWDLGI210", "Password login disabled")
     Ok(views.html.resetpassword.specifyEmailAddress(
       SiteTpi(request), xsrfToken = request.xsrfToken.value))
   }
@@ -52,10 +55,14 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   def handleResetPasswordForm: Action[JsonOrFormDataBody] =
         JsonOrFormDataPostAction(RateLimits.ResetPassword,
         maxBytes = 200, allowAnyone = true) { request =>
+    import request.dao
     val emailOrUsername = request.body.getOrThrowBadReq("email") // WOULD rename 'email' param
     val anyUser = request.dao.loadMemberByEmailOrUsername(emailOrUsername)
     val isEmailAddress = emailOrUsername contains "@"
     val siteId = request.dao.siteId
+
+    throwForbiddenIf(!dao.getWholeSiteSettings().canLoginWithPassword,
+          "TyE0PWDLGI602", "Password login disabled")
 
     SECURITY; COULD // rate limit # pwd reset emails sent to the same address, per day.
     // (Currently only rate limiting ip addr, see above.)
@@ -97,6 +104,9 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
         request =>
     import request.{dao, siteId, theRequester => requester}
     val forUserId = (request.body \ "toUserId").as[UserId]
+
+    throwForbiddenIf(!dao.getWholeSiteSettings().canLoginWithPassword,
+          "TyE0PWDLGI402", "Password login disabled")
 
     throwForbiddenIf(requester.id != forUserId && !requester.isStaff,
       "TyE305MRKT2", "Cannot reset password for other people")
@@ -186,10 +196,15 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
   private def loginByEmailOrThrow(resetPasswordEmailId: String, request: ApiRequest[_],
         mayLoginAgain: Boolean): MemberLoginGrant = {
+
+    import request.dao
+    throwForbiddenIf(!dao.getWholeSiteSettings().canLoginWithPassword,
+          "TyE0PWDLGI285", "Password login disabled")
+
     val loginAttempt = EmailLoginAttempt(
       ip = request.ip, date = globals.now().toJavaDate, emailId = resetPasswordEmailId,
       mayLoginAgain = mayLoginAgain)
-    val loginGrant = request.dao.tryLoginAsMember(loginAttempt) getOrIfBad { problem =>
+    val loginGrant = dao.tryLoginAsMember(loginAttempt) getOrIfBad { problem =>
       // For now. Later, anyException will disappear.
       if (problem.anyException.isEmpty) {
         // Currently "cannot" happen. [6036KEJ5]

@@ -401,6 +401,9 @@ const AboutMember = createComponent({
                 className: 'btn s_UP_Prefs_ChangeEmailB' }, t.ChangeDots)),
           r.p({ className: 'help-block' }, t.upp.NotShown)),
 
+        // [oidc_missing] SHOULD hide this, if SSO or only-custom-IDP since then
+        // there's no pwd login anyway.
+        //
         // UX COULD later incl this change-pwd also on the Account tab, it fits better there maybe?
         // However people might not think about looking there? So incl both here and there?
         isBuiltInUser ? null : r.div({ className: 'form-group' },    // + also on  Account tab.

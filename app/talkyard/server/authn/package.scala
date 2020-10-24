@@ -48,7 +48,6 @@ package object authn {
 
     Good(OpenAuthDetails(
           confFileIdpId = idp.confFileIdpId,
-          idpSiteId = idp.idpSiteId,
           idpId = idp.idpId,
           idpUserId = claims.sub,
           username = claims.preferred_username,
@@ -56,7 +55,9 @@ package object authn {
           lastName = claims.family_name,
           fullName = anyName,
           email = claims.email,
-          isEmailVerifiedByIdp = Some(claims.email_verified),
+          isEmailVerifiedByIdp = Some(claims.email_verified &&
+              // Or do this check elsewhere instead? But then easy to forget?
+              idp.trustVerifiedEmail),
           avatarUrl = claims.picture,
           userInfoJson = Some(jsObj)))
   }
@@ -78,6 +79,7 @@ package object authn {
     val jsObj = asJsObject(jsVal, what = "IDP user info")
 
     val email = parseSt(jsObj, "email")
+    val emailVerified = false // for now
     val userIdAtProvider = email  // for now
     // Might become empty, if the email is empty or invalid, say, just "@ex.co".
     val username = email.takeWhile(_ != '@').trimNoneIfEmpty
@@ -87,7 +89,6 @@ package object authn {
 
     Good(OpenAuthDetails(
           confFileIdpId = idp.confFileIdpId,
-          idpSiteId = idp.idpSiteId,
           idpId = idp.idpId,
           idpUserId = userIdAtProvider,
           username = username,
@@ -95,7 +96,7 @@ package object authn {
           lastName = lastName,
           fullName = firstSpaceLast.trimNoneIfEmpty,
           email = Some(email),
-          isEmailVerifiedByIdp = Some(false),
+          isEmailVerifiedByIdp = Some(emailVerified && idp.trustVerifiedEmail),
           avatarUrl = None,
           userInfoJson = Some(jsObj)))
   }

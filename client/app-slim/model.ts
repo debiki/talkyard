@@ -1640,7 +1640,6 @@ interface IdentityProviderPubFields {
 
 
 interface IdentityProviderSecretConf extends IdentityProviderPubFields {
-  idpSiteId: SiteId;
   idpId: Nr;
   enabled: Bo;
   adminComments?: St;

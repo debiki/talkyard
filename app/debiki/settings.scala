@@ -564,6 +564,9 @@ case class EffectiveSettings(
 
   def loginRequired: Boolean = userMustBeAuthenticated || userMustBeApproved // [2KZMQ5] and then remove, use only userMustBeAuthenticated but rename to mustLoginToRead
 
+  def canLoginWithPassword: Bo = !useOnlyCustomIdps && !enableSso
+  def canLoginAsGuest: Bo = isGuestLoginAllowed
+
   def effectiveSsoLoginRequiredLogoutUrl: Option[String] = { // [350RKDDF5]
     COULD // do this also if usingCustomIdpSso
     if (enableSso && userMustBeAuthenticated && ssoLoginRequiredLogoutUrl.nonEmpty)
@@ -590,7 +593,7 @@ case class EffectiveSettings(
     allowEmbeddingFromBetter.find(!_.contains("localhost")) orElse
       allowEmbeddingFromBetter.headOption
 
-  def isGuestLoginAllowed: Boolean =
+  def isGuestLoginAllowed: Boolean =  // RENAME to canLoginAsGuest
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved &&
       !inviteOnly && allowSignup && !enableSso && !useOnlyCustomIdps
 

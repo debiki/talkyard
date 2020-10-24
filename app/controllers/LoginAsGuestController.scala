@@ -40,6 +40,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
 
   def loginGuest: Action[JsValue] = AsyncPostJsonAction(
         RateLimits.Login, maxBytes = 1000, avoidCookies = true) { request =>
+    import request.dao
 
     val json = request.body.as[JsObject]
     val name = (json \ "name").as[String].trim
@@ -48,7 +49,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
     val maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
 
-    val settings = request.dao.getWholeSiteSettings()
+    val settings = dao.getWholeSiteSettings()
 
     throwForbiddenIf(settings.enableSso,
           "TyESSO0GST", "Guest login disabled, when SSO enabled")
@@ -91,7 +92,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
         email = email,
         guestBrowserId = theBrowserId)
 
-      val guestUser = request.dao.loginAsGuest(loginAttempt)
+      val guestUser = dao.loginAsGuest(loginAttempt)
 
       val (sid, _, sidAndXsrfCookies) =
         security.createSessionIdAndXsrfToken(request.siteId, guestUser.id)

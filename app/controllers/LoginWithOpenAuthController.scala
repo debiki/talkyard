@@ -230,10 +230,14 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
 
-  def authnStart(protocol: St, providerAlias: St, returnToUrl: St,
-          nonce: St, authViaAuthnOrigin: Opt[Bo], selectAccountAtIdp: Opt[Bo])
+  def authnStart(protocol: St, providerAlias: St, returnToUrl: St, nonce: St,
+          authViaAuthnOrigin: Opt[Bo], selectAccountAtIdp: Opt[Bo])
           : Action[U] = AsyncGetActionIsLogin { request =>
     import request.dao
+
+    val settings = dao.getWholeSiteSettings()
+    throwForbiddenIf(settings.enableSso, "TyESSO0OAU01",
+          "Single Sign-On API enabled at this site — then, custom IDPs disabled")
 
     SECURITY // actually do the below, browser side [br_authn_nonce].
     // Once done logging in, the browser will look for this value in the url.
@@ -273,12 +277,17 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // But the IDP has been configured to send authentication data to another
         // Talkyard site — namely the authn origin site: anyLoginOrigin.get. We'll
         // redirect to that site and do the authentication "for real" from there.
+        throwForbidden("TyE2095RMKFM2", "Untested")
         saveAuthnStateRedirToAuthnOrigin(authnState)
       }
       else {
         // This IDP is for this site — it's been configured to redirect the user
         // back to a Redirection URI here (rather than to an authn origin site),
         // after login at the IDP.
+        throwForbiddenIf(!settings.enableCustomIdps, "TyE0CUSTIDPS",
+              "Custom IDPs not enabled at this site.\n\n" +
+              o"""In the Admin Area, the 'Custom OIDC or OAuth2' checkbox
+                needs to be checked.""")
         authnStartImpl(authnState, request)
       }
     }
@@ -379,7 +388,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // Is it ok to reveal that this provider exists? Otherwise could be really
     // confusing to troubleshoot this.  There could be another setting:
     // hide: Bo  or  hideIfDisabled: Bo,  if we should hide that it even exists?
-    throwForbiddenIf(!idp.enabled, "TyEIDPDISBLD",
+    throwForbiddenIf(!idp.enabled, "TyEIDPDISBLD01",
           s"Identity provider ${idp.protoAlias} is disabled")
 
     val origin =
@@ -410,7 +419,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // More custom params to configure the authn page over at the IDP.
     if (authnState.selectAccountAtIdp) {
       // Might work only for OIDC, not plain OAuth2.
-      moreParams.put("prompt", "select_account")
+      // Doesn't have any effect with Keycloak + OIDC either, weird.
+      // Adding "login" just makes Keycloak ask the user to login again,
+      // but if hen then chooses a different account, Keycloak shows an error
+      // about already being logged in in the original account. Weird.
+      // Is it a Keycloak bug maybe?
+      moreParams.put("prompt", "select_account") // + " login"?
     }
 
     val authorizationUrl = authnService.createAuthorizationUrlBuilder()
@@ -489,6 +503,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             Time elapsed: $minutesOld minutes.""")
 
     val idp: IdentityProvider = getIdentityProvider(authnState, dao)
+    throwForbiddenIf(!idp.enabled, "TyEIDPDISBLD02",
+          s"Identity provider ${idp.protoAlias} was just disabled")
 
     def wrong(what: St) =
           s"Wrong $what: $protocol/$providerAlias, should be: ${idp.protoAlias}"
@@ -1156,6 +1172,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         anyCustomIdp: Opt[IdentityProvider] = None): p_Result = {
 
     import request.{dao, siteId}
+
     val siteSettings = dao.getWholeSiteSettings()
 
     throwForbiddenIf(siteSettings.enableSso,
@@ -1752,10 +1769,16 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       }
       catch {
         case _: DbDao.DuplicateUsername =>
+          // If also same email address:
+          SHOULD // instead ask if link IDP identity to this account  [oidc_missing]
           throwForbidden(
               "DwE6D3G8", "Username already taken, please try again with another username")
         case _: DbDao.DuplicateUserEmail =>
-          // BUG SHOULD support many users per email address, if mayPostBeforeEmailVerified.
+          // If different username, but same email:
+          SHOULD // support many users per email address, if mayPostBeforeEmailVerified.
+          // Or:
+          SHOULD // ask if link IDP identity to this account  [oidc_missing]
+                // and use the username from this account instead.
           if (emailVerifiedAt.isDefined) {
             // The user has been authenticated, so it's okay to tell him/her about the email address.
             throwForbidden(

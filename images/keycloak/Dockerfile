@@ -1,3 +1,5 @@
+# SHOULD change to:  jboss/keycloak ?  [oidc_missing]
+# Repo:  https://github.com/keycloak/keycloak-containers/tree/11.0.2
 FROM quay.io/keycloak/keycloak:11.0.0
 
 EXPOSE 8113

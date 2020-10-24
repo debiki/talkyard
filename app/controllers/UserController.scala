@@ -375,17 +375,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val details: OpenAuthDetails = oauthId.openAuthDetails
           Json.obj(
             // UX SHOULD replace the IDP ids with IDP name, e.g. "Gmail" or "Facebook"?
-            "providerId" -> details.confFileIdpId,  // REMOVE
             "confFileIdpId" -> JsStringOrNull(details.confFileIdpId),
-            "idpSiteId" -> JsI32OrNull(details.idpSiteId),
             "idpId" -> JsI32OrNull(details.idpId),
-            "providerKey" -> details.idpUserId,  // REMOVE
             "idpUserId" -> details.idpUserId,
             "username" -> JsStringOrNull(details.username),
             "firstName" -> JsStringOrNull(details.firstName),
             "lastName" -> JsStringOrNull(details.lastName),
             "fullName" -> JsStringOrNull(details.fullName),
             "emailAddress" -> JsStringOrNull(details.email),
+            "isEmailVerifiedByIdp" -> JsBoolOrNull(details.isEmailVerifiedByIdp),
+            "userInfoJson" -> JsObjOrNull(details.userInfoJson),
             "avatarUrl" -> JsStringOrNull(details.avatarUrl))
         case openidId: IdentityOpenId =>
           val details: OpenIdDetails = openidId.openIdDetails
@@ -508,6 +507,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
         "loginType" -> "LocalPwd",
         "provider" -> "Password",
+        "idpUsername" -> memberInclDetails.username,
         "idpEmailAddr" -> memberInclDetails.primaryEmailAddress)
     }
 

@@ -11,21 +11,16 @@ object IdentityProvider {
   val ProtoNameOidc = "oidc"
   val ProtoNameOAuth2 = "oauth2"
 
-  def prettyId(confFileIdpId: Opt[ConfFileIdpId], idpSiteId: Opt[SiteId],
-          idpId: Opt[IdpId]): St = {
+  def prettyId(confFileIdpId: Opt[ConfFileIdpId], idpId: Opt[IdpId]): St = {
     confFileIdpId.map(s"confFileIdpId: " + _).getOrElse(
-          s"idpSiteId: ${idpSiteId getOrDie "TyE3056MDKR4"
-              }, idpId: ${idpId getOrDie "TyE306WK245"}")
+          s"idpId: ${idpId getOrDie "TyE306WK245"}")
   }
 }
 
 
 /**
   * @param confFileIdpId — if loaded from the old Silhouette config.
-  * @param idpSiteId — typically the current site (the one the end user wants to
-  *   login to and join the discussion) but can also be a server global
-  *   authn site, with e.g. shared Gmail or Facebook OIDC or OAuth2 config.
-  * @param idpId — the IDP at idpSiteId. Then, confFileIdpId.isEmpty.
+  * @param idpId — a per site IDP kept in idps_t. Then, confFileIdpId.isEmpty.
   * @param protocol
   * @param alias
   * @param enabled
@@ -56,7 +51,6 @@ object IdentityProvider {
   */
 case class IdentityProvider(
   confFileIdpId: Opt[ConfFileIdpId] = None,
-  idpSiteId: Opt[SiteId] = None,
   idpId: Opt[IdpId] = None,
   protocol: St,
   alias: St,
@@ -94,7 +88,6 @@ case class IdentityProvider(
   require(confFileIdpId.forall(_.trim.nonEmpty), "TyE395RK40M")
   require(idpId.forall(_ >= 1), "TyE395R39W3")
   require(idpId.isDefined != confFileIdpId.isDefined, "TyE602MRDJ2M")
-  require(idpId.isDefined == idpSiteId.isDefined, "TyE602MRDJ22")
 
   // OIDC requires 'openid' scope, which we'll include by default — but if the site
   // admins have explicitly specified the scope, it must include 'openid'.
@@ -115,8 +108,7 @@ case class IdentityProvider(
 
   def protoAlias: St = s"$protocol/$alias"
   def nameOrAlias: St = displayName getOrElse protoAlias
-  def prettyId: St = IdentityProvider.prettyId(
-        confFileIdpId, idpSiteId = idpSiteId, idpId = idpId)
+  def prettyId: St = IdentityProvider.prettyId(confFileIdpId, idpId = idpId)
 
 
   def isOAuth2NotOidc: Bo = protocol == ProtoNameOAuth2

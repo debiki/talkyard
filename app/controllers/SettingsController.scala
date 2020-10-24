@@ -105,12 +105,12 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
   def upsertOidcConfig: Action[JsValue] = AdminPostJsonAction(maxBytes = 10000) {
           request: JsonPostRequest =>
 
-    import request.{dao, body, siteId}
+    import request.{dao, body}
     val idpsJsonArr = body.asOpt[JsArray].getOrThrowBadRequest(
           "TyE406WKTDW2", "I want a json array with IDP configs")
     val parser = SitePatchParser(context)
     val idps: Seq[IdentityProvider] = idpsJsonArr.value map { idpJson =>
-      parser.parseIdentityProviderorBad(idpJson, siteId) getOrIfBad { problem =>
+      parser.parseIdentityProviderorBad(idpJson) getOrIfBad { problem =>
         throwBadRequest("TyEBADIDPJSN", s"Bad IDP json: $problem")
       }
     }

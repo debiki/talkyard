@@ -80,6 +80,17 @@ That's how e.g. StackOverflow does this:
   http://stackoverflow.com/questions/6487418/
        how-to-handle-multiple-openids-for-the-same-user
 
+[oidc_missing]:  some more nice OIDC things.
+
+[srv_glb_idp]
+Link to server global idp:
+  * @param idpSiteId — None, unless is from a server global
+  *   authn site, with e.g. shared Gmail or Facebook OIDC or OAuth2 config,
+  *   and that authn site id is different from the current site id.
+Aha!? I'll just add is_server_global_c and guid_c fields to idp_t,
+and change idtys_t.conf_file_idp_id_c to lookup IDPs both via conf file,
+and idps_t.guid_c. And rename conf_file_idp_id_c to glob_idp_guid.
+
 
 
 [no-email]:

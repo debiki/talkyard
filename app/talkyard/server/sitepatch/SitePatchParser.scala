@@ -492,8 +492,7 @@ case class SitePatchParser(context: EdContext) {
   }
 
 
-  def parseIdentityProviderorBad(jsValue: JsValue, siteId: SiteId)
-          : IdentityProvider Or ErrMsg  = {
+  def parseIdentityProviderorBad(jsValue: JsValue): IdentityProvider Or ErrMsg  = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -501,16 +500,10 @@ case class SitePatchParser(context: EdContext) {
     }
 
     try {
-      val idpId = readOptInt(jsObj, "idpId")
-      val idpSiteId = readOptInt(jsObj, "siteId")
-
-      // Linking to an IDP at another site is not yet supported.  [idp_site_id_c]
-      dieIf(idpSiteId.isSomethingButNot(siteId), "TyE3205MKT5B",
-            s"json idp site id: $idpSiteId but this site id: $siteId")
+      val idpId = readOptInt(jsObj, "id")
 
       Good(IdentityProvider(
             confFileIdpId = readOptString(jsObj, "confFileIdpId"),
-            idpSiteId = idpSiteId,
             idpId = idpId,
             protocol = readString(jsObj, "protocol"),
             alias = readString(jsObj, "alias"),
@@ -519,20 +512,20 @@ case class SitePatchParser(context: EdContext) {
             description = readOptString(jsObj, "description"),
             adminComments = readOptString(jsObj, "adminComments"),
             trustVerifiedEmail = readBoolean(jsObj, "trustVerifiedEmail"),
-            linkAccountNoLogin = readBoolean(jsObj, "linkAccountNoLogin"),
+            linkAccountNoLogin = parseBo(jsObj, "linkAccountNoLogin", default = false),
             guiOrder = readOptInt(jsObj, "guiOrder"),
             syncMode = readInt(jsObj, "syncMode"),
-            oauAuthorizationUrl = readString(jsObj, "idpAuthorizationUrl"),
-            oauAuthReqScope = readOptString(jsObj, "authReqScope"),
-            oauAuthReqHostedDomain = readOptString(jsObj, "authReqHostedDomain"),
-            oauAccessTokenUrl = readString(jsObj, "idpAccessTokenUrl"),
-            oauClientId = readString(jsObj, "idpClientId"),
-            oauClientSecret = readString(jsObj, "idpClientSecret"),
-            oauIssuer = readOptString(jsObj, "idpIssuer"),
-            oidcUserInfoUrl = readString(jsObj, "idpUserInfoUrl"),
-            oidcUserInfoFieldsMap = parseOptJsObject(jsObj, "idpUserInfoFieldsMap"),
-            oidcUserinfoReqSendUserIp = readOptBool(jsObj, "userinfoReqSendUserIp"),
-            oidcLogoutUrl = readOptString(jsObj, "idpLogoutUrl")))
+            oauAuthorizationUrl = readString(jsObj, "oauAuthorizationUrl"),
+            oauAuthReqScope = readOptString(jsObj, "oauAuthReqScope"),
+            oauAuthReqHostedDomain = readOptString(jsObj, "oauAuthReqHostedDomain"),
+            oauAccessTokenUrl = readString(jsObj, "oauAccessTokenUrl"),
+            oauClientId = readString(jsObj, "oauClientId"),
+            oauClientSecret = readString(jsObj, "oauClientSecret"),
+            oauIssuer = readOptString(jsObj, "oauIssuer"),
+            oidcUserInfoUrl = readString(jsObj, "oidcUserInfoUrl"),
+            oidcUserInfoFieldsMap = parseOptJsObject(jsObj, "oidcUserInfoFieldsMap"),
+            oidcUserinfoReqSendUserIp = readOptBool(jsObj, "oidcUserinfoReqSendUserIp"),
+            oidcLogoutUrl = readOptString(jsObj, "oidcLogoutUrl")))
     }
     catch {
       case ex: IllegalArgumentException =>
@@ -598,7 +591,6 @@ case class SitePatchParser(context: EdContext) {
       }
       val oauDetails = OpenAuthDetails(
             confFileIdpId = parseOptSt(jsObj, "confFileIdpId", "providerId"),
-            idpSiteId = readOptInt(jsObj, "idpSiteId"),
             idpId = readOptInt(jsObj, "idpId"),
             idpUserId = parseSt(jsObj, "idpUserId", altName = "providerKey"),
             username = readOptString(jsObj, "username"),

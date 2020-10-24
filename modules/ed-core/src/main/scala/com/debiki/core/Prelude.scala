@@ -604,11 +604,12 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
       }
   }
 
-  implicit class RichOption[T](underlying: Option[T]) {
-    def oneIfDefined: Int = if (underlying.isDefined) 1 else 0
-    def is(value: T): Boolean = underlying.contains(value)
-    def isNot(value: T): Boolean = !underlying.contains(value)
-    def isSomethingButNot(value: T): Boolean = underlying.isDefined && !underlying.contains(value)
+  implicit class RichOption[T](underlying: Opt[T]) {
+    def oneIfDefined: i32 = if (underlying.isDefined) 1 else 0
+    def is(value: T): Bo = underlying.contains(value)
+    def isNot(value: T): Bo = !underlying.contains(value)
+    def isSomethingButNot(value: T): Bo = underlying.isDefined && !underlying.contains(value)
+    def isOrEmpty(value: T): Bo = underlying.isEmpty || underlying.contains(value)
   }
 
   implicit class RichOptionEq[T <: AnyRef](underlying: Option[T]) {

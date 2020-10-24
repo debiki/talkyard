@@ -338,7 +338,6 @@ object JsX {
           "userId" -> oauIdty.userId,
           "providerId" -> JsStringOrNull(details.confFileIdpId), // REMOVE
           "confFileIdpId" -> JsStringOrNull(details.confFileIdpId),
-          "idpSiteId" -> JsI32OrNull(details.idpSiteId),
           "idpId" -> JsI32OrNull(details.idpId),
           "providerKey" -> details.idpUserId,  // REMOVE
           "idpUserId" -> details.idpUserId,
@@ -433,6 +432,12 @@ object JsX {
 
 
   val JsEmptyObj = JsObject(Nil)
+
+  def JsObjOrNull(obj: Opt[JsObject]): JsValue =
+    obj getOrElse JsNull
+
+  def JsArrOrNull(arr: Opt[JsArray]): JsValue =
+    arr getOrElse JsNull
 
 
   def JsPageMeta(pageMeta: PageMeta): JsObject = {  // Typescript interface PageMeta
@@ -829,8 +834,7 @@ object JsX {
     val pubFields = JsIdentityProviderPubFields(idp)
     pubFields ++ Json.obj(
         "confFileIdpId" -> JsStringOrNull(idp.confFileIdpId),
-        "idpSiteId" -> JsI32OrNull(idp.idpSiteId),
-        "idpId" -> JsI32OrNull(idp.idpId),
+        "id" -> JsI32OrNull(idp.idpId),
         "trustVerifiedEmail" -> idp.trustVerifiedEmail,
         "linkAccountNoLogin" -> idp.linkAccountNoLogin,
         "syncMode" -> idp.syncMode,

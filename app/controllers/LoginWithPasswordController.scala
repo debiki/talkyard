@@ -89,6 +89,14 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     def deny(debugCode: String) = throwForbidden(
       "_TyE403BPWD" + (if (globals.isProd) "" else s"-$debugCode"), "Bad username or password")
 
+    // Someone might open a password login dialog, and submit a bit later
+    // just after an admin has disabled password login. (A race.)
+    val settings = dao.getWholeSiteSettings()
+    throwForbiddenIf(settings.useOnlyCustomIdps, "TyEOAU0PW",
+          "Password login disabled — login via custom IDP instead")
+    throwForbiddenIf(settings.enableSso, "TyESSO0PWD01",
+          "Password login disabled — Talkyard Single Sign-On API in use")
+
     // WOULD have `tryLogin` return a LoginResult and stop using exceptions!
     val loginGrant: MemberLoginGrant = dao.tryLoginAsMember(loginAttempt) getOrIfBad { problem =>
       // For now. Later, anyException will disappear.

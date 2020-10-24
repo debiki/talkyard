@@ -18,6 +18,7 @@ w_X   = wraps X. Always a class, not an id.
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
 Ab = about
 Em = email
+Ena = enabled, Dis = disabled
 B  = button, e.g. ReplyB
 It = list item
 CUD = create user dialog
@@ -26,6 +27,7 @@ Dd = deleted
 Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
 Df = draft
 Dl = download — change to Dwnl? so rare
+Dis = disabled, Ena = enabled
 Ed  = edit
 Edr = editor
 Fxd = fixed, Stc = static

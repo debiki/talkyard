@@ -177,7 +177,6 @@ alter table identities3 rename column securesocial_provider_id to conf_file_idp_
 alter table identities3 rename column securesocial_user_id to idp_user_id_c;
 
 alter table identities3 add column broken_idp_sth_c varchar;
-alter table identities3 add column idp_site_id_c int;
 alter table identities3 add column idp_id_c int;
 alter table identities3 add column oidc_id_token_str varchar;
 alter table identities3 add column oidc_id_token_json jsonb;
@@ -185,17 +184,10 @@ alter table identities3 add column idp_user_json_c jsonb;
 alter table identities3 add column idp_username_c varchar;
 
 
--- fk ix: idtys_i_g_idpsiteid_idpid
+-- fk ix: idtys_u_idpid_idpuserid
 alter table identities3 add constraint idtys_r_idps
-    foreign key (idp_site_id_c, idp_id_c)
+    foreign key (site_id, idp_id_c)
     references idps_t (site_id_c, idp_id_c) deferrable;
-
-alter table identities3 add constraint idtys_c_idpsite_and_idpid check (
-    (idp_site_id_c is null) = (idp_id_c is null));
-
--- For now: All idps are site local. Will drop this later.
-alter table identities3 add constraint idtys_c_idpsiteid_eq_siteid check (
-    idp_site_id_c = site_id);
 
 
 alter table identities3 add constraint idtys_c_brokenidpsth check (
@@ -245,11 +237,8 @@ alter table identities3 add constraint idtys_c_one_type check (
 
 
 
-create index idtys_i_g_idpsiteid_idpid on identities3 (idp_site_id_c, idp_id_c)
-    where idp_id_c is not null;
-
-create unique index idtys_u_idpsiteid_idpid_idpuserid
-    on identities3 (site_id, idp_site_id_c, idp_id_c, idp_user_id_c)
+create unique index idtys_u_idpid_idpuserid
+    on identities3 (site_id, idp_id_c, idp_user_id_c)
     where idp_id_c is not null;
 
 drop index dw1_ids_securesocial;

@@ -7,6 +7,10 @@ version: '3.7'
 #       -f images/keycloak/docker-compose-keycloak.yml \
 #       up -d
 #
+# There's a help script that does the `docker-compose -f .. -f ..` part:
+#
+#   d/tykc  up -d
+#
 
 services:
 
@@ -20,9 +24,18 @@ services:
   # Keycloak sort of corresponds to all ORY products in one piece of software,
   # plus management interface and login. )
   #
+  #
   # ##### Start Kecloak
-  # Do:  s/d -f ... -f ... up -d  — see above, at the top of this file.
+  #
+  # Like so:  d/tykc up -d
+  #
   # Then go here: http://localhost:8113/auth/admin — you should see a login page.
+  #
+  #
+  # ---- DONE ALREADY ------------
+  #
+  # The following has been done already — when Keycloak starts,
+  # it auto imports the below realm and test users; see KEYCLOAK_IMPORT: ... below.
   #
   # ##### Create a realm
   # Login as 'admin', password 'pub-admin' (see KEYCLOAK_PASSWORD below).
@@ -32,15 +45,47 @@ services:
   # ##### Create a user to OIDC login with:
   # Click Users to the left,
   #   click Add User to the right,
-  #   type username: 'kc1u'
-  # means:
-  #   "keycloak user 1, email unverified",
-  #   "keycloak user 2, email verified".
+  #   type username: 'kc1u', email 'kc1u@example.com'
+  #   leave email verified off.
   # Click Save.
   # Click Credentials at the top,
-  #   set password: 'pub-kc1u',
+  #   set password: just 'pub', for all users.
   #   click 'On' next to Temporary to toggle to Off, so the password becomes permanent,
   #   click  Set Password.
+  # And add users:
+  #   kc2u_finalana  first name: "Fi Na", last: "La Na"
+  #   kc3v  kc3v@example.com  (no name)
+  #   kc4v_fimelame  kc4v@example.com  name "Fi Me", last: "La Me"
+  #   kc5n  *without* any email or name
+  #   kc6n_boek, no email,  name "Bo", last: "Ek".
+  #   kc7uw with a werid unverified email and name:
+  #     """Fu-Ny? Na!--.?#/\<>{}[]me "'`"""
+  #     ""","'`Mo.re— fuNy.~la 汉语; st nåäö me"""
+  #     kc7uw_fu-ny.na.me@und_dash-dot.example.com
+  #   kc8vw  with another werid verified email and name:
+  #
+  # ----- Out of date! Most / all usernames & emails here and above are.
+  # Hmm, different users, same emails — and sometimes verified, sometimes not:
+  # (20d[uv]  = duplicated email, unverified / verified)
+  #
+  #   kc20du_one    email kc20d@x.co   unverified email creates account...
+  #   kc20du_two    email kc20d@x.co   unverif links, works
+  #   kc20du_three  email kc20d@x.co   unverif links, fails
+  #   kc20dv_four   email kc20d@x.co   verified email links, works
+  #
+  #   kc21dv_one    email kc21d@x.co   verified email creates account
+  #   kc21dv_two    email kc21d@x.co   verif links, works
+  #   kc21du_three  email kc21d@x.co   unverif links, fails
+  #   kc21du_four   email kc21d@x.co   unverif links, works
+  # -----
+  #
+  # Also add user 'kc2v' (note: 'v' not 'u') but with email *verified*,
+  #   and address: kc2v@example.com, pwd 'pub-kc2v'
+  # User 'kc3v_finalana' with verified email kc3v@example.com, pwd 'pub-kc3v',
+  #   and first name: "Fi Na" and last name "La Na".
+  # ('kc1u' and 'kc2v' means:
+  #   "keycloak user 1, email unverified",
+  #   "keycloak user 2, email verified".)
   #
   # And can create:  kc2v pub-kc2v kc2v@x.co  "keycloak user 2, email verified".
   #
@@ -62,22 +107,15 @@ services:
   # KeyCloack has this OpenID Connect demo login app you can try now,
   # if you want to:  https://www.keycloak.org/app/.
   #
-  # ##### Create a test Talkyard site
-  # Run in a shell:
-  #    s/wdio --only manual.2browsers --da --dt --localHostname e2e-test-kc-oidc
-  # This creates a Talkyard test site, address e2e-test-kc-oidc.localhost,
-  # and logs you in as site admin "owen_owner" in one browser, and member "memah"
-  # in another browser.
-  # (--da means "debug after" — pauses Webdriverio, instead of closing the browsers.
-  #  --dt means use the DevTools protocol, so you won't need Selenium.)
-  #
-  # Look at the Talkyard test site address in the browser address bar, should be:
-  #   http://e2e-test-kc-oidc.localhost
   #
   # ##### Connect Keycloak with Talkyard
-  # Change Keycloak's Root URL to point to your Talkyard test site,
+  #
+  # We'll configure OIDC for a Talkyard site at:  e2e-test-kc-oidc.localhost
+  # (we'll create such a site, below).
+  # Change Keycloak's Root URL to point to the Talkyard site,
   # plus, append:  '/-/authn/oidc/keycloak_test_alias', should be:
   #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias
+  #
   # Set the Redirect URI to the above + '/redirback',
   # will look like:
   #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias/redirback
@@ -85,11 +123,35 @@ services:
   # Click Save.
   # Since you selected 'confidential' above, a tab 'Credentials' will appear
   # at the top.
-  # Go there and copy the client secret.
+  # Go there and look at the client secret for 4.7 seconds — you'll need to
+  # copy-paste it later, in the JSON config, the THE_SECRET_YOU_COPIED placeholder.
+  #
+  # ---- /END DONE ALREADY -------
+  #
+  #
+  # ##### Create a test Talkyard site
+  #
+  # Run in a shell, either this, if you want to *reuse* a site you've
+  # created before already:
+  #
+  #    s/wdio --only manual.2browsers --da --dt --localHostname e2e-test-kc-oidc --reuse
+  #
+  # Or this, to create a new site, delete any old:
+  #
+  #    s/wdio --only manual.2browsers --da --dt --localHostname e2e-test-kc-oidc
+  #
+  # This creates a Talkyard test site, for manual testing,
+  # address:  http://e2e-test-kc-oidc.localhost,
+  # and logs you in as site admin "owen_owner" in one browser, and member "memah"
+  # in another browser.
+  # (--da means "debug after" — pauses Webdriverio, instead of closing the browsers.
+  #  --dt means use the DevTools protocol, so you won't need Selenium.)
+  #
   #
   # #### Configure Talkyard
+  #
   # In owen_owner's browser, go to the Admin Area, /-/admin/settings/login, and
-  # copy-paste the below OIDC login provider configuration — but replace
+  # copy-paste the below OIDC provider configuration — and replace
   # THE_SECRET_YOU_COPIED with the secret you copied. (The hostname here
   # is not 'localhost' but 'keycloak.localhost', because that's the container's
   # name in docker-compose, and becomes its hostname in Ty's Docker network.)
@@ -102,20 +164,14 @@ services:
   #  "description": "OpenID Connect login test at keycloak.localhost:8113",
   #  "enabled": true,
   #  "trustVerifiedEmail": true,
-  #  "linkAccountNoLogin": false,
-  #  "guiOrder": 1,
   #  "syncMode": 1,
-  #  "idpAuthorizationUrl":
-  #    "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/auth",
-  #  "idpAccessTokenUrl":
-  #    "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/token",
-  #  "idpUserInfoUrl":
-  #    "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/userinfo",
-  #  "idpLogoutUrl": null,
-  #  "idpClientId": "ty_test_client",
-  #  "idpClientSecret": "THE_SECRET_YOU_COPIED",
-  #  "idpIssuer": "http://keycloak.localhost:8113/auth/realms/ty_test_realm",
-  #  "authReqScope": "openid"
+  #  "oauAuthorizationUrl": "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/auth",
+  #  "oauAuthReqScope": "openid",
+  #  "oauAccessTokenUrl": "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/token",
+  #  "oauClientId": "ty_test_client",
+  #  "oauClientSecret": "THE_SECRET_YOU_COPIED",
+  #  "oauIssuer": "http://keycloak.localhost:8113/auth/realms/ty_test_realm",
+  #  "oidcUserInfoUrl": "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/userinfo"
   # }
   #
   # Click Save.
@@ -133,6 +189,7 @@ services:
   #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias/redirback
   # and Talkyard will continue from there, logging you in via OIDC.
   #
+  #
   # ***
   #
   # From the docs, https://www.keycloak.org/getting-started/getting-started-docker:
@@ -140,7 +197,9 @@ services:
   #         quay.io/keycloak/keycloak:10.0.0
   #     + -e DB_VENDOR=h2  is a good idea, see below.
   #
-  # For auto tests, can import a previously exported realm:
+  # More docs: https://hub.docker.com/r/jboss/keycloak/
+  #
+  # For auto tests, we import a previously exported realm:
   #   -e KEYCLOAK_IMPORT=/tmp/example-realm.json -v /tmp/example-realm.json:/tmp/example-realm.json
   # See:
   #   https://github.com/keycloak/keycloak-containers/blob/master/server/README.md#importing-a-realm
@@ -174,22 +233,19 @@ services:
       KEYCLOAK_PASSWORD: 'pub-admin'
       KEYCLOAK_HTTP_PORT: '8113'
       KEYCLOAK_HTTPS_PORT: '8553'
-      KEYCLOAK_IMPORT: '/tmp/ty_test_realm.keycloak-export.json'
+      KEYCLOAK_IMPORT: '/realms/ty_test_realm.json'
 
-      # ... exp-imp needs pgsql?
-      # $ docker-compose exec rdb psql postgres postgres  -c "create user keycloak with password 'public';"
-      # CREATE ROLE
-      # $ docker-compose exec rdb psql postgres postgres  -c 'create database keycloak owner keycloak;' 
-      # CREATE DATABASE
+      # ... exp-imp needs pgsql? [ty_kc_db]
+      # This db user created here: <repo>/images/rdb/docker-entrypoint-initdb.d/init.sh
       DB_VENDOR: 'postgres'
       DB_ADDR: 'rdb'
-      DB_USER: 'keycloak'
+      DB_USER: 'keycloak_test'
+      DB_DATABASE: 'keycloak_test'
       DB_PASSWORD: 'public'
     volumes:
-      # For exporting realms.
-      - ./volumes/keycloak-tmp/:/tmp/
-      # An already exported test realm.
-      - ./tests/e2e/resources/ty_test_realm.keycloak-export.json:/tmp/ty_test_realm.keycloak-export.json
+      # For exporting and importing realms, plus some already exported realms:
+      - ./volumes/keycloak-realms/:/realms/
+      - ./tests/e2e/resources/keycloak-realms/ty_test_realm.json:/realms/ty_test_realm.json
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_KEYCLOAK_IP}
