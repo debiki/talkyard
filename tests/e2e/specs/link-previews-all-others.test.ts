@@ -64,6 +64,8 @@ let providersToTest: ProvidersMap = {
 
   // giphy:  TESTS_MISSING
 
+  /*  Now FB and Instagram requires people to get an access key for
+     OEmbed-linking to them,  disable for now:  [fb_insta_dis]
   instagram: {
     name: "Instagram",
     inSandboxedIframe: true,
@@ -74,7 +76,7 @@ let providersToTest: ProvidersMap = {
     linkTwoExpectedPrevwText: "Instagram post not found",
     // No ?utm
     linkInReply: 'https://www.instagram.com/p/CBCJGUZDVT_/',
-  },
+  },  */
 
   reddit: {
     name: "Reddit",

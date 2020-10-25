@@ -215,8 +215,12 @@ abstract class OEmbedLinkPrevwRendrEng(
 
       val result: String Or LinkPreviewProblem = {
         if (problem.nonEmpty) {
+          SECURITY; COULD // log provider error response in server logs only?
+          // Make visible to site/server admins only?
+          val respBody = response.body
           Bad(LinkPreviewProblem(
-                problem, unsafeUrl = unsafeUrl, errorCode = "TyELNPVRSP"))
+                unsafeProblem = problem + s"\n$provdrOrUnk says: " + respBody,
+                unsafeUrl = unsafeUrl, errorCode = "TyELNPVRSP"))
         }
         else {
           SECURITY; QUOTA // incl in quota? num preview links * X  [lnpv_quota]
