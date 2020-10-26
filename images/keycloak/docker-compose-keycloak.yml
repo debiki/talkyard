@@ -245,7 +245,7 @@ services:
     volumes:
       # For exporting and importing realms, plus some already exported realms:
       - ./volumes/keycloak-realms/:/realms/
-      - ./tests/e2e/resources/keycloak-realms/ty_test_realm.json:/realms/ty_test_realm.json
+      - ./modules/ty-test-media/keycloak-realms/ty_test_realm.json:/realms/ty_test_realm.json
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_KEYCLOAK_IP}
