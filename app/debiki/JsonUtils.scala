@@ -18,8 +18,9 @@
 package debiki
 
 import com.debiki.core.Prelude._
-import com.debiki.core.{ParsedRef, When, WhenDay}
+import com.debiki.core.{Bo, ErrMsg, Opt, ParsedRef, St, i32, i64, When, WhenDay}
 import java.{util => ju}
+import org.scalactic.{Bad, Or}
 import play.api.libs.json._
 
 
@@ -35,20 +36,37 @@ object JsonUtils {
   // If we see any unix time greater than this, we'll assume it's in millis, otherwise, seconds.
   private val UnixMillisSomeDayIn1973 = 100000000000L  // [MINMILLIS]
 
+  def tryParseGoodBad[R](block: => R Or ErrMsg): R Or ErrMsg = {
+    try block
+    catch {
+      case ex: BadJsonException =>
+        Bad(ex.getMessage)
+    }
+  }
 
-  def readJsObject(json: JsValue, fieldName: String): JsObject =
+  def asJsObject(json: JsValue, what: St): JsObject =
+    json match {
+      case o: JsObject => o
+      case _ => throwBadJson("TyE0JSOBJ", s"$what is not a JsObject")
+    }
+
+  def readJsObject(json: JsValue, fieldName: St): JsObject =
     readOptJsObject(json, fieldName).getOrElse(throwMissing("EsE1FY90", fieldName))
 
-  def readOptJsObject(json: JsValue, fieldName: String): Option[JsObject] =
+  def parseOptJsObject(json: JsValue, fieldName: St): Opt[JsObject] =
+    readOptJsObject(json, fieldName)
+
+  def readOptJsObject(json: JsValue, fieldName: St): Opt[JsObject] =
     (json \ fieldName).toOption map {
       case o: JsObject => o
+      case JsNull => return None
       case bad =>
         throwBadJson(
           "EsE2YMP7", s"'$fieldName' is not a JsObject, but a ${classNameOf(bad)}")
     }
 
   // Add a 2nd fn, or a param: all elems be of the same type? See below: [PARSEJSARR]
-  def readJsArray(json: JsValue, fieldName: String, optional: Boolean = false): JsArray = {
+  def readJsArray(json: JsValue, fieldName: St, optional: Bo = false): JsArray = {
     val array = (json \ fieldName).toOption getOrElse {
       if (optional) return JsArray()
       throwMissing("TyE0JSFIELD", fieldName)
@@ -78,11 +96,17 @@ object JsonUtils {
   } */
 
 
+  def parseSt(json: JsValue, fieldName: St, altName: St = ""): St =
+    parseOptSt(json, fieldName, altName) getOrElse throwMissing("TyE5S204RTE", fieldName)
+
   def readString(json: JsValue, fieldName: String): String =
     readOptString(json, fieldName) getOrElse throwMissing("EsE7JTB3", fieldName)
 
 
-  def readOptString(json: JsValue, fieldName: String, altName: String = ""): Option[String] = {
+  def parseOptSt(json: JsValue, fieldName: St, altName: St = ""): Opt[St] =
+    readOptString(json, fieldName, altName)
+
+  def readOptString(json: JsValue, fieldName: St, altName: St = ""): Opt[St] = {
     val primaryResult = readOptStringImpl(json, fieldName)
     if (primaryResult.isDefined || altName.isEmpty) primaryResult
     else readOptStringImpl(json, altName)
@@ -168,6 +192,9 @@ object JsonUtils {
     readOptLong(json, fieldName) getOrElse throwMissing("EsE6Y8FW2", fieldName)
 
 
+  def parseOptLong(json: JsValue, fieldName: St): Opt[i64] =
+    readOptLong(json, fieldName)
+
   def readOptLong(json: JsValue, fieldName: String): Option[Long] =
     (json \ fieldName).validateOpt[Long] match {
       case JsSuccess(value, _) => value
@@ -177,9 +204,15 @@ object JsonUtils {
     }
 
 
+  def parseBo(json: JsValue, fieldName: St, default: Bo): Bo =
+    readOptBool(json, fieldName) getOrElse default
+
   def readBoolean(json: JsValue, fieldName: String): Boolean =
     readOptBool(json, fieldName) getOrElse throwMissing("EsE4GUY8", fieldName)
 
+
+  def parseOptBo(json: JsValue, fieldName: St): Opt[Bo] =
+    readOptBool(json, fieldName)
 
   def readOptBool(json: JsValue, fieldName: String): Option[Boolean] =
     (json \ fieldName).validateOpt[Boolean] match {

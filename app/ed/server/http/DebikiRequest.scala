@@ -171,6 +171,10 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   /** The scheme, host and port specified in the request. */
   def origin: String = s"$scheme://$host"
 
+  def isDevTestToLocalhost: Bo = Globals.isDevOrTest && (
+    host == "localhost" || host.startsWith("localhost:") ||
+      host.contains(".localhost:") || host.endsWith(".localhost"))
+
   def cdnOrSiteOrigin: String =
     globals.anyCdnOrigin.getOrElse(globals.schemeColonSlashSlash + host)
 

@@ -304,9 +304,17 @@ class LinkPreviewRenderer(
     new TelegramPrevwRendrEng(globals),
     new TikTokPrevwRendrEng(globals, siteId, mayHttpFetch),
     new TwitterPrevwRendrEng(globals, siteId, mayHttpFetch),
+
+    // After 2020-10-24, Facebook requires an API access key to link to Facebook
+    // via OEmbed. Short of time, will need to disable Facebook   [fb_insta_dis]
+    // for now then:  (incl Instagram)
+    // See https://developers.facebook.com/docs/plugins/oembed
+    // and https://developers.facebook.com/docs/instagram/oembed
+    /*
     new FacebookPostPrevwRendrEng(globals, siteId, mayHttpFetch),
     new FacebookVideoPrevwRendrEng(globals, siteId, mayHttpFetch),
     new InstagramPrevwRendrEng(globals, siteId, mayHttpFetch),
+    */
     new RedditPrevwRendrEng(globals, siteId, mayHttpFetch),
     )
 

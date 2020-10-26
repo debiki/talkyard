@@ -27,6 +27,20 @@ import scala.collection.{immutable, mutable}
 import scala.util.matching.Regex
 
 
+case class PageNotfPrefAndWhy(
+  why: St,
+  notfPref: PageNotfPref,
+) {
+  def peopleId: UserId = notfPref.peopleId
+  def notfLevel: NotfLevel = notfPref.notfLevel
+  def pageId: Opt[PageId] = notfPref.pageId
+  def pagesPatCreated: Bo = notfPref.pagesPatCreated
+  def pagesPatRepliedTo: Bo = notfPref.pagesPatRepliedTo
+  def pagesInCategoryId: Opt[CategoryId] = notfPref.pagesInCategoryId
+  def wholeSite: Bo = notfPref.wholeSite
+}
+
+
 
 /** Finds out what notifications to send when e.g. a new post is created.
   * Also finds out what not-yet-sent notifications to delete if a post is deleted, or if
@@ -218,7 +232,7 @@ case class NotificationGenerator(
 
 
   private def addWatchingSomethingNotfs(page: Page, newPost: Post,
-        pageMemberIds: Set[UserId]): Unit = {
+          pageMemberIds: Set[UserId]): U = {
 
     val isEmbDiscFirstReply =
           page.pageType == PageType.EmbeddedComments &&
@@ -277,24 +291,94 @@ case class NotificationGenerator(
 
     val memberIdsHandled = mutable.HashSet[UserId]()
 
-    // ----- Page
+    def addWhy(notfPrefs: Seq[PageNotfPref], why: St): Seq[PageNotfPrefAndWhy] =
+          notfPrefs.map(PageNotfPrefAndWhy(why, _))
 
-    val notfPrefsOnPage = tx.loadPageNotfPrefsOnPage(page.id)
+
+    // ----- Page subscribers
+
+    val notfPrefsOnPage = addWhy(
+          tx.loadPageNotfPrefsOnPage(page.id),
+          why = "You have subscribed to this topic")
+
+    // ----- Page members
 
     // Add default NotfLevel.WatchingAll for private topic members [PRIVCHATNOTFS]
     // — unless they've configured another notf pref.
     // (This wouldn't be needed if [page_pps_t] instead.)
-    val privTopicPrefsOnPage =
-      if (!page.meta.pageType.isPrivateGroupTalk) Nil
+    val privTopicPrefsOnPage: Set[PageNotfPrefAndWhy] =
+      if (!page.meta.pageType.isPrivateGroupTalk) Set.empty
       else pageMemberIds flatMap { id: UserId =>
         if (notfPrefsOnPage.exists(_.peopleId == id)) None  // [On2]
-        else Some(PageNotfPref(
-          peopleId = id,
-          NotfLevel.WatchingAll,
-          pageId = Some(page.id)))
+        else Some(PageNotfPrefAndWhy(
+                why = "You're a member of this topic",
+                PageNotfPref(
+                      peopleId = id,
+                      NotfLevel.WatchingAll,
+                      pageId = Some(page.id))))
       }
 
-    val allPrefsOnPage = notfPrefsOnPage ++ privTopicPrefsOnPage
+    // ----- Page repliers
+
+    // Tests:  notf-prefs-pages-replied-to.2br  TyTE2E402SM53
+
+    // People who have replied on the page, can get notifications about subsequent
+    // replies by others, anywhere on that page.
+
+    // If the default notf pref for pages one has replied to, is >= minNotfLevel,
+    // and one hasn't configured the notf level for this specific page,
+    // then add a PageNotfPref so this poster gets notified.
+    //
+    val pageRepliersPrefsOnPage: Set[PageNotfPrefAndWhy] = {  // [interact_notf_pref]
+      if (page.meta.pageType.isChat) {
+        // Chats tend to be chatty? Maybe better let the pages_pat_replied_to
+        // setting skip chats. And not impossible it'd be bad for performance
+        // to notify / email hundreds of people in a chat "all the time"?
+        Set.empty
+      }
+      else {
+        val repliers: Seq[User] = tx.loadPageRepliers(newPost.pageId, usersOnly = true)
+        repliers flatMap { replier: User =>
+          COULD_OPTIMIZE // load this for all repliers in just one db request.
+          val replierAndGroupIds = tx.loadGroupIdsMemberIdFirst(replier)
+
+          val ownPageNotfPref = notfPrefsOnPage.find(_.peopleId == replier.id) // [On2]
+          if (ownPageNotfPref.isDefined) {
+            // The replier has manually configured the notf level for this page
+            // — then, ignore any interacted-with default notf pref.
+            None
+          }
+          else {
+            COULD_OPTIMIZE // load this in just one request, not one per replier.
+            val replToPrefs = tx.loadNotfPrefsAboutPagesRepliedTo(replierAndGroupIds)
+
+            val (ownPrefs, groupPrefs) = replToPrefs.partition(_.peopleId == replier.id)
+            val anyPref: Opt[PageNotfPref] =
+                  ownPrefs.find({ prf =>
+                    // This (the user's own prefs) overrides any group notf prefs.
+                    prf.pagesPatRepliedTo
+                  }).orElse {
+                    groupPrefs.find({ prf =>
+                      prf.pagesPatRepliedTo && prf.notfLevel.toInt >= minNotfLevel.toInt
+                    })
+                  }
+            anyPref.filter(_.notfLevel.toInt >= minNotfLevel.toInt)
+                  .map(notfPref =>
+                        PageNotfPrefAndWhy(
+                          why = "You have replied in this topic",
+                          PageNotfPref(
+                              peopleId = replier.id,
+                              notfLevel = notfPref.notfLevel,
+                              pageId = Some(page.id))))
+          }
+        }
+      }.toSet
+    }
+
+    val allPrefsOnPage =
+          notfPrefsOnPage ++
+          privTopicPrefsOnPage ++
+          pageRepliersPrefsOnPage
 
     makeNewPostSubscrNotfFor(
           allPrefsOnPage, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
@@ -310,7 +394,8 @@ case class NotificationGenerator(
 
     val notfPrefsOnCategory = page.categoryId.map(tx.loadPageNotfPrefsOnCategory) getOrElse Nil
     makeNewPostSubscrNotfFor(
-          notfPrefsOnCategory, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
+          addWhy(notfPrefsOnCategory, "You've subscribed to category"),
+          newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
 
     // ----- Grandparent category? [subcats]
 
@@ -318,13 +403,15 @@ case class NotificationGenerator(
 
     // notPrefsOnTags = ... (later)
     //makeNewPostSubscrNotfFor(
-    //     notPrefsOnTags, NotificationType.PostTagged, newPost, isEmbCommFirstReply ...)
+    //     addWhy(notPrefsOnTags, "why"),
+    //     NotificationType.PostTagged, newPost, isEmbCommFirstReply ...)
 
     // ----- Whole site
 
     val notfPrefsOnSite = tx.loadPageNotfPrefsOnSite()
     makeNewPostSubscrNotfFor(
-          notfPrefsOnSite, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
+          addWhy(notfPrefsOnSite, "You've subscribed to the whole site"),
+          newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
   }
 
 
@@ -490,16 +577,17 @@ case class NotificationGenerator(
     * subscribed to 1) a *page*. Or those who have subscribed to pages in 2) a *category*.
     * Or to 3) pages tagged with some certain tag(s). Or 4) *the whole site*.
     */
-  private def makeNewPostSubscrNotfFor(notfPrefs: Seq[PageNotfPref], newPost: Post,
-        isEmbDiscFirstReply: Boolean, minNotfLevel: NotfLevel,
-        memberIdsHandled: mutable.Set[UserId]): Unit = {
+  private def makeNewPostSubscrNotfFor(
+        notfPrefs: Seq[PageNotfPrefAndWhy], newPost: Post,
+        isEmbDiscFirstReply: Bo, minNotfLevel: NotfLevel,
+        memberIdsHandled: mutable.Set[UserId]): U = {
 
     val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
 
     // Sync w [2069RSK25].  Test: [2069RSK25-B]
     val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF2"
-    def maySeePost(ppt: Participant): Boolean = {
+    def maySeePost(ppt: Participant): Bo = {
       val (maySee, whyNot) = dao.maySeePost(
           newPost, Some(ppt), maySeeUnlistedPages = true)(tx)
       maySee.may
@@ -508,7 +596,7 @@ case class NotificationGenerator(
     // Individual users' preferences override group preferences, on the same
     // specificity level (prefs per page,  or per category,  or whole site).
     for {
-      notfPref: PageNotfPref <- notfPrefs
+      notfPref: PageNotfPrefAndWhy <- notfPrefs
       member <- membersById.get(notfPref.peopleId)
       maySee = maySeePost(member)
       if maySee
@@ -526,7 +614,7 @@ case class NotificationGenerator(
     memberIdsHandled ++= memberIdsHandlingNow
 
     for {
-      notfPref: PageNotfPref <- notfPrefs
+      notfPref: PageNotfPrefAndWhy <- notfPrefs
       maybeGroup <- membersById.get(notfPref.peopleId)
       if maybeGroup.isGroup
       group = maybeGroup
@@ -549,7 +637,7 @@ case class NotificationGenerator(
       maybeMakeNotfs(member, notfPref)
     }
 
-    def maybeMakeNotfs(member: Participant, notfPref: PageNotfPref): Unit = {
+    def maybeMakeNotfs(member: Participant, notfPref: PageNotfPrefAndWhy): U = {
       // If the member has already been considered, at a more specific content structure specificity,
       // then skip it here. For example, if it has configured a per page notf pref, then, skip it,
       // when considering categories and tags — because per page prefs are more specific.
@@ -581,6 +669,7 @@ case class NotificationGenerator(
         NotificationType.NewPost,
         id = bumpAndGetNextNotfId(),
         createdAt = newPost.createdAt,
+        generatedWhy = notfPref.why,
         uniquePostId = newPost.id,
         byUserId = newPost.createdById,
         toUserId = member.id,

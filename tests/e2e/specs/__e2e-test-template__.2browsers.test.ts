@@ -27,6 +27,8 @@ let regina: Member;
 let regina_brB: TyE2eTestBrowser;
 let maria: Member;
 let maria_brB: TyE2eTestBrowser;
+let memah: Member;
+let memah_brB: TyE2eTestBrowser;
 let michael: Member;
 let michael_brB: TyE2eTestBrowser;
 let mallory: Member;
@@ -34,10 +36,10 @@ let mallory_brB: TyE2eTestBrowser;
 let stranger_brB: TyE2eTestBrowser;
 
 let site: IdAddress;
-
 let forum: TwoPagesTestForum;  // or EmptyTestForum or LargeTestForum
 
-let discussionPageUrl: string;
+let michaelsTopicUrl: St;
+let mariasTopicUrl: St;
 
 const apiSecret: TestApiSecret = {
   nr: 1,
@@ -120,6 +122,8 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     regina_brB = richBrowserB;
     maria = forum.members.maria;
     maria_brB = richBrowserB;
+    memah = forum.members.memah;
+    memah_brB = richBrowserB;
     michael = forum.members.michael;
     michael_brB = richBrowserB;
     mallory = forum.members.mallory;
@@ -132,7 +136,8 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
   it(`import site`, () => {
     site = server.importSiteData(forum.siteData);
     server.skipRateLimits(site.id);
-    discussionPageUrl = site.origin + '/' + forum.topics.byMichaelCategoryA.slug;
+    michaelsTopicUrl = site.origin + '/' + forum.topics.byMichaelCategoryA.slug;
+    mariasTopicUrl = site.origin + '/' + forum.topics.byMariaCategoryA.slug;
   });
 
 
@@ -143,7 +148,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
 
   it(`Maria logs in`, () => {
-    maria_brB.go2(site.origin + '/' + forum.topics.byMichaelCategoryA.slug);
+    maria_brB.go2(michaelsTopicUrl);
     maria_brB.complex.loginWithPasswordViaTopbar(maria);
   });
 

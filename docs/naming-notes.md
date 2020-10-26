@@ -9,11 +9,17 @@ the real Talkyard code — instead, it tests the test code. (There's no `tttt`)
 
 A "Participant" is anyone with an account at the relevant Talkyard site,
 that is: guests (anonymous users), groups, users incl bots.
-A "member" is a group or a user (but not a guest — they don't have real accounts).
+A "member" is a group or a user — but not a guest; they don't have real accounts.
 
 "Participant" is abbreviated by "Pat". (Not "pp" or "pps" — should change
 all "pp" to "pat".) For example, `pats_t` is the database table with all users,
 groups, guests  (well, will be — as of today that table is named `users3`).
+
+"Hen" means "he or she", "hens" means "his or her" (these are new English words).
+
+So, all across the source code, you'll find things like:
+*"If pat deletes hens reply, ..."*, which means:
+*"If the user deletes his or her reply, ..."*, but is shorter.
 
 
 ### Categories
@@ -43,8 +49,9 @@ Also, now you can just type: `link_url_c` without explaining that
 it's a database column — the other Ty devs willl know,
 since ends with `_c`. And can find it instantly in the database docs.
 
-"Participant" is abbreviated with "pp", or "..._by". E.g. `links_t.to_pp_id_c` means
-a link to the participant with the id in the `to_pp_id_c` column.
+"Participant" is abbreviated with "pp" [NO "pat" instead! 2020-09],
+or "..._by". E.g. `links_t.to_pp_id_c` [NO! shall be `to_pat_id_c` instead] means
+a link to the participant with the id in the `to_pat_id_c` column.
 Or e.g. `written_by_id_c`.
 
 Constraints and indexes: (`tablename_x_...` nicely aligns the names if you

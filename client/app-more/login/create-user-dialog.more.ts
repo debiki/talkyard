@@ -81,15 +81,6 @@ function getAddressVerificationEmailSentDialog() {
 }
 
 
-interface CreateUserParams {
-  username: string;
-  fullName: string;
-  email: string;
-  authDataCacheKey?: string;
-  anyReturnToUrl?: string;
-  preventClose?: true;
-}
-
 interface CreateUserPostData extends CreateUserParams {
   username: string;
   fullName: string;
@@ -105,8 +96,14 @@ interface CreateUserPostData extends CreateUserParams {
  * the redirect should happen only if an email address verification email is sent,
  * and via a link in that email.
  */
-debiki.internal.showCreateUserDialog = function(params: CreateUserParams) {
-  getCreateUserDialog().open(params);
+debiki.internal._showCreateUserDialog = function(params: CreateUserParams) {
+  const loginDialog = login.getLoginDialog();
+  const [anyAfterLoginCallback, anyReturnToUrl] = loginDialog.getDoAfter();
+  // In case any login dialog is still open: (this resets the after-login-callback
+  // copied above, and return-to-url)
+  loginDialog.close();
+  getCreateUserDialog().open(
+        params, anyAfterLoginCallback, anyReturnToUrl || params.anyReturnToUrl);
 };
 
 
@@ -117,16 +114,14 @@ const CreateUserDialog = createClassAndFactory({
     return { isOpen: false, params: undefined, store: {} };
   },
 
-  open: function(params: CreateUserParams) {
-    const loginDialog = login.getLoginDialog();
+  open: function(params: CreateUserParams, afterLoginCallback, anyReturnToUrl) {
     this.setState({
       isOpen: true,
       params,
-      afterLoginCallback: loginDialog.getAfterLoginCallback(),
+      afterLoginCallback, // maybe incl in CreateUserParams?
+      anyReturnToUrl,     //
       store: ReactStore.allData(),
     });
-    // In case any login dialog is still open: (this resets the after-login-callback copied above)
-    loginDialog.close();
   },
 
   close: function() {
@@ -140,10 +135,11 @@ const CreateUserDialog = createClassAndFactory({
 
     let content;
     if (this.state.isOpen) {
-      const childProps = {
-        ...this.state.params,
+      const childProps: CreateUserDialogContentProps = {
+        ...params,
         store,
         afterLoginCallback: this.state.afterLoginCallback,
+        anyReturnToUrl: this.state.anyReturnToUrl,
         closeDialog: this.close,
       };
       if (store.siteStatus === SiteStatus.NoAdmin) {
@@ -161,35 +157,96 @@ const CreateUserDialog = createClassAndFactory({
 });
 
 
+interface CreateUserDialogContentState {
+  okayStatuses;
+  userData;
+  badNonceBack?: true | 'YesButIgnore';
+}
+
+
 export var CreateUserDialogContent = createClassAndFactory({
   displayName: 'CreateUserDialogContent',
 
   getInitialState: function() {
+    const props: CreateUserDialogContentProps = this.props;
     // @ifdef DEBUG
-    dieIf(this.props.isForGuest && this.props.isForPasswordUser, 'TyE7UKWQ1');
-    dieIf(this.props.isForGuest && this.props.providerId, 'TyE7UKWQ2');
-    dieIf(this.props.isForPasswordUser && this.props.providerId, 'TyE7UKWQ3');
+    dieIf(props.isForGuest && props.isForPasswordUser, 'TyE7UKWQ1');
+    const forGuestOrPwd = props.isForGuest || props.isForPasswordUser;
+    dieIf(forGuestOrPwd && props.idpName, 'TyE7UKWQ2');
+    dieIf(forGuestOrPwd && props.idpHasVerifiedEmail, 'TyE7UKWQ4');
     // @endif
 
     // Avoid the Create User button being disabled because username-too-long.
-    const usernameNotTooLong = (this.props.username || '').substr(0, MaxUsernameLength);
+    const usernameNotTooLong = (props.username || '').substr(0, MaxUsernameLength);
 
-    return {
+    const state: CreateUserDialogContentState = {
       okayStatuses: {
         // Full name / alias / display name, is required, for guests.
-        fullName: !this.props.isForGuest,
-        // providerId always missing in emb cmts openauth popup?
-        email: this.props.providerId && !!this.props.email,
+        fullName: !props.isForGuest,
+        email: props.idpHasVerifiedEmail && !!props.email,
         // Guests have no username or password.
-        username: this.props.isForGuest || usernameNotTooLong.length >= 3, // [6KKAQDD0]
-        password: !this.props.isForPasswordUser,
+        username: props.isForGuest || usernameNotTooLong.length >= 3, // [6KKAQDD0]
+        password: !props.isForPasswordUser,
       },
       userData: {
-        fullName: this.props.fullName,
-        email: this.props.email,
+        fullName: props.fullName,
+        email: props.email,
         username: usernameNotTooLong,
       },
     };
+    return state;
+  },
+
+  onComponentDidMount: function() {
+    this.checkNonce();
+  },
+
+  checkNonce: function() {
+    // Check the authn nonce sent back from the server — to prevent  [br_authn_nonce]
+    // "account fixation attacks" or werid things.
+    const props: CreateUserDialogContentProps = this.props;
+    const savedNonce = login.getAuthnNonce();
+    const nonceBackFromServer = props.origNonceBack;
+    if (!nonceBackFromServer || nonceBackFromServer === savedNonce) {
+      // All fine (or not yet impl).
+      return;
+    }
+
+    // UNTESTED
+
+    logE(`Wrong authn nonce back from server: '${nonceBackFromServer
+            }', should be: '${savedNonce}' [TyEAUTNONCE]`);
+
+    this.setState({ badNonceBack: true } as CreateUserDialogContentState);
+
+    util.openDefaultStupidDialog({
+      primaryButtonTitle: t.Cancel,  // cancel is the recommended action
+      secondaryButonTitle: t.LogIn,  // login is btn nr 2, the secondary action
+      onCloseOk: (btnNr: Nr) => {
+        if (btnNr === 2) {
+          this.setState(
+                { badNonceBack: 'YesButIgnore' } as CreateUserDialogContentState);
+        }
+        else {
+          setTimeout(function() {
+            util.openDefaultStupidDialog({
+              body: `Ok. Never mind.`  // I18N
+            });
+          }, 1);
+        }
+      },
+      body: rFr({},
+        r.p({},
+          r.b({}, `Something is weird`)),   // I18N
+        r.p({},
+          `Did you try to login? If not, click Cancel.`),
+        r.p({},
+          r.i({}, `Especially`), ` if you just clicked a link ` +
+          `you got from someone else, e.g. via a chat app, or in an email.`),
+        r.p({},
+          r.code({}, `Local storage nonce: '${savedNonce}',`, r.br(),
+                `but from server: '${nonceBackFromServer}'`))),
+    });
   },
 
   updateValueOk: function(what, value, isOk) {
@@ -212,18 +269,19 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   doCreateUser: function() {
-    const returnToUrl = this.props.anyReturnToUrl;
+    const props: CreateUserDialogContentProps = this.props;
+    const returnToUrl: St | U = props.anyReturnToUrl;
     const postData: CreateUserPostData = { ...this.state.userData, returnToUrl };
-    waitUntilAcceptsTerms(this.props.store, this.props.loginReason === LoginReason.BecomeAdmin, () => {
-      if (this.props.authDataCacheKey) { // [4WHKTP06]
-        postData.authDataCacheKey = this.props.authDataCacheKey;
+    waitUntilAcceptsTerms(props.store, props.loginReason === LoginReason.BecomeAdmin, () => {
+      if (props.authDataCacheKey) { // [4WHKTP06]
+        postData.authDataCacheKey = props.authDataCacheKey;
         Server.createOauthUser(postData, this.handleCreateUserResponse, this.handleErrorResponse);
       }
-      else if (this.props.isForPasswordUser) {
+      else if (props.isForPasswordUser) {
         postData.password = this.refs.password.getValue();
         Server.createPasswordUser(postData, this.handleCreateUserResponse, this.handleErrorResponse);
       }
-      else if (this.props.isForGuest) {
+      else if (props.isForGuest) {
         Server.loginAsGuest(
             postData.fullName, postData.email, this.handleCreateUserResponse, this.handleErrorResponse);
       }
@@ -233,8 +291,9 @@ export var CreateUserDialogContent = createClassAndFactory({
     });
   },
 
-  handleCreateUserResponse: function(response: GuestLoginResponse) {
-    const anyReturnToUrl: string | U = this.props.anyReturnToUrl;
+  handleCreateUserResponse: function(response: AuthnResponse) {
+    const props: CreateUserDialogContentProps = this.props;
+    const anyReturnToUrl: St | U = props.anyReturnToUrl;
     if (!response.userCreatedAndLoggedIn) {
       dieIf(response.emailVerifiedAndLoggedIn, 'EdE2TSBZ2');
       ReactActions.newUserAccountCreated();
@@ -243,22 +302,17 @@ export var CreateUserDialogContent = createClassAndFactory({
       // directly without reading the message about checking their email inbox. Then
       // they don't know what to do, and are stuck.
       // (Probably this email verif step needs to be totally removed. [SIMPLNEWSITE]
-      const mayCloseDialog = this.props.loginReason !== LoginReason.BecomeAdmin;
-      getAddressVerificationEmailSentDialog().sayVerifEmailSent(mayCloseDialog);
+      const mayCloseDialog = props.loginReason !== LoginReason.BecomeAdmin;
+      getAddressVerificationEmailSentDialog().sayVerifEmailSent(mayCloseDialog); // [new_user_verif_eml]
     }
-    else if (anyReturnToUrl && !eds.isInLoginPopup &&
-        anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
+    else if (props.afterLoginCallback || (
+          anyReturnToUrl && !eds.isInLoginPopup &&
+          anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1)) {
       const returnToUrl = anyReturnToUrl.replace(/__dwHash__/, '#');
       const currentUrl = window.location.toString();
-      // old comment: /*
-      // Previously, only:
-      //   if (returnToUrl === currentUrl) ...
-      // but was never used?
-      // Now, instead, for Usability Testing Exchange [plugin]: (and perhaps better, always?)
-      // (afterLoginCallback = always called after signup if logged in, and the return-to-url
-      // is included in the continue-link via the email.)  */
-      if (returnToUrl === currentUrl || this.props.afterLoginCallback) {
-        const afterLoginCallback = this.props.afterLoginCallback; // gets nulled when dialogs closed
+      const alreadyAtReturnToUrl = returnToUrl === currentUrl;
+      if (alreadyAtReturnToUrl || props.afterLoginCallback) {
+        const afterLoginCallback = props.afterLoginCallback; // gets nulled when dialogs closed
         debiki2.ReactActions.loadMyself(() => {
           if (afterLoginCallback) {
             afterLoginCallback();
@@ -275,7 +329,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         // to a login-required site, instead of navigating to the returnToUrl.
         // That doesn't work (weird errors, e.g. the dwCoReturnToSiteXsrfToken cookie missing,
         // if reloading). Postpone reload(), so Chrome will handle assign() first.
-        setTimeout(window.location.reload, 1);
+        setTimeout(window.location.reload, 1);   // [win_loc_rld]
       }
     }
     else {
@@ -284,11 +338,11 @@ export var CreateUserDialogContent = createClassAndFactory({
       login.continueAfterLogin();
 
       // If we're in a login popup, close it & let focus return to the main window.
-      if (eds.isInLoginPopup) {
+      if (win_isLoginPopup()) {
         close();
       }
     }
-    this.props.closeDialog('CloseAllLoginDialogs');
+    props.closeDialog('CloseAllLoginDialogs');
   },
 
   handleErrorResponse: function(failedRequest: HttpRequest) {
@@ -303,14 +357,19 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   render: function() {
-    const props = this.props;
+    const props: CreateUserDialogContentProps = this.props;
     const store: Store = props.store;
-    const state = this.state;
+    const state: CreateUserDialogContentState = this.state;
     const hasEmailAddressAlready = props.email && props.email.length;
     const isForGuest = this.props.isForGuest;
 
-    const emailHelp = props.providerId && hasEmailAddressAlready ?
-        t.cud.EmailVerifBy_1 + props.providerId + t.cud.EmailVerifBy_2 : null;
+    // Don't proceed with creating an account, if something is fishy.
+    if (state.badNonceBack === true) {
+      return r.div({}, "Bad nonce back [TyENONCEBK]")
+    }
+
+    const emailHelp = props.idpHasVerifiedEmail && hasEmailAddressAlready ?
+        t.cud.EmailVerifBy_1 + props.idpName + t.cud.EmailVerifBy_2 : null;
 
     // Undefined —> use the default, which is True.  ... but for now, always require email [0KPS2J]
     const emailOptional = false; // store.settings.requireVerifiedEmail === false;
@@ -349,7 +408,8 @@ export var CreateUserDialogContent = createClassAndFactory({
     const orCreateAccountMaybe = !isForGuest ? null :
         r.div({ className: 's_LD_OrCreateAccount' },
           t.cud.OrCreateAcct_1,
-          r.a({ className: 's_LD_CreateAccount', onClick: this.props.switchBetweenGuestAndPassword },
+          r.a({ className: 's_LD_CreateAccount',
+                onClick: props.switchBetweenGuestAndPassword },
             t.cud.OrCreateAcct_2),
           t.cud.OrCreateAcct_3,
           r.code({}, t.cud.OrCreateAcct_4),
@@ -359,7 +419,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     // People wouldn't find that text & button anyway? & in embedded comments, if guest
     // login is enabled, it's the default way to signup anyway, no need to switch. [8UKBTQ2]
      /* const orLoginAsGuestMaybe
-          = isForGuest || this.props.loginReason === LoginReason.LoginToChat ? null :
+          = isForGuest || props.loginReason === LoginReason.LoginToChat ? null :
         r.div({},  ... switch to guest login text & button ...); */
 
     const disableSubmit = _.includes(_.values(this.state.okayStatuses), false);

@@ -492,6 +492,49 @@ case class SitePatchParser(context: EdContext) {
   }
 
 
+  def parseIdentityProviderorBad(jsValue: JsValue): IdentityProvider Or ErrMsg  = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"IdentityProvider json is not an object, but a: " + classNameOf(bad))
+    }
+
+    try {
+      val idpId = readOptInt(jsObj, "id")
+
+      Good(IdentityProvider(
+            confFileIdpId = readOptString(jsObj, "confFileIdpId"),
+            idpId = idpId,
+            protocol = readString(jsObj, "protocol"),
+            alias = readString(jsObj, "alias"),
+            enabled = readBoolean(jsObj, "enabled"),
+            displayName = readOptString(jsObj, "displayName"),
+            description = readOptString(jsObj, "description"),
+            adminComments = readOptString(jsObj, "adminComments"),
+            trustVerifiedEmail = readBoolean(jsObj, "trustVerifiedEmail"),
+            linkAccountNoLogin = parseBo(jsObj, "linkAccountNoLogin", default = false),
+            guiOrder = readOptInt(jsObj, "guiOrder"),
+            syncMode = readInt(jsObj, "syncMode"),
+            oauAuthorizationUrl = readString(jsObj, "oauAuthorizationUrl"),
+            oauAuthReqScope = readOptString(jsObj, "oauAuthReqScope"),
+            oauAuthReqHostedDomain = readOptString(jsObj, "oauAuthReqHostedDomain"),
+            oauAccessTokenUrl = readString(jsObj, "oauAccessTokenUrl"),
+            oauAccessTokenAuthMethod = readOptString(jsObj, "oauAccessTokenAuthMethod"),
+            oauClientId = readString(jsObj, "oauClientId"),
+            oauClientSecret = readString(jsObj, "oauClientSecret"),
+            oauIssuer = readOptString(jsObj, "oauIssuer"),
+            oidcUserInfoUrl = readString(jsObj, "oidcUserInfoUrl"),
+            oidcUserInfoFieldsMap = parseOptJsObject(jsObj, "oidcUserInfoFieldsMap"),
+            oidcUserinfoReqSendUserIp = readOptBool(jsObj, "oidcUserinfoReqSendUserIp"),
+            oidcLogoutUrl = readOptString(jsObj, "oidcLogoutUrl")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for IdentityProvider: ${ex.getMessage}")
+    }
+  }
+
+
   def readGuestOrBad(jsValue: JsValue, guestEmailPrefs: Map[String, EmailNotfPrefs], isE2eTest: Boolean)
         : Guest Or ErrorMessage = {
     val jsObj = jsValue match {
@@ -548,13 +591,18 @@ case class SitePatchParser(context: EdContext) {
         return Bad("Only OpenAuth identities supported right now [TyE06@T32]")
       }
       val oauDetails = OpenAuthDetails(
-        providerId = readString(jsObj, "providerId"),
-        providerKey = readString(jsObj, "providerKey"),
-        firstName = readOptString(jsObj, "firstName"),
-        lastName = readOptString(jsObj, "lastName"),
-        fullName = readOptString(jsObj, "fullName"),
-        email = readOptString(jsObj, "email"),  // RENAME to emailAddr?
-        avatarUrl = readOptString(jsObj, "avatarUrl"))
+            confFileIdpId = parseOptSt(jsObj, "confFileIdpId", "providerId"),
+            idpId = readOptInt(jsObj, "idpId"),
+            idpUserId = parseSt(jsObj, "idpUserId", altName = "providerKey"),
+            username = readOptString(jsObj, "username"),
+            firstName = readOptString(jsObj, "firstName"),
+            lastName = readOptString(jsObj, "lastName"),
+            fullName = readOptString(jsObj, "fullName"),
+            email = readOptString(jsObj, "email"),  // RENAME to emailAddr?
+            isEmailVerifiedByIdp = parseOptBo(jsObj, "isEmailVerifiedByIdp"),
+            avatarUrl = readOptString(jsObj, "avatarUrl"),
+            userInfoJson = None,  // for now
+            oidcIdToken = None)   // for now
       val identity = OpenAuthIdentity(
         id = identityId,
         userId = readInt(jsObj, "userId"),
@@ -870,13 +918,15 @@ case class SitePatchParser(context: EdContext) {
       val notfLevel = NotfLevel.fromInt(notfLevelInt) getOrElse {
         return Bad(s"Not a notf level: $notfLevelInt")
       }
-      Good(PageNotfPref(
+      Good(PageNotfPref(  // JsPageNotfPref, ts PageNotfPref
         peopleId = readInt(jsObj, "memberId"),
         notfLevel = notfLevel,
         pageId = readOptString(jsObj, "pageId"),
+        pagesPatCreated = readOptBool(jsObj, "pagesPatCreated") is true,
+        pagesPatRepliedTo = readOptBool(jsObj, "pagesPatRepliedTo") is true,
         pagesInCategoryId = readOptInt(jsObj, "pagesInCategoryId"),
         //pagesWithTagLabelId: Option[TagLabelId] = None, — later
-        wholeSite = readOptBool(jsObj, "wholeSite").getOrElse(false)))
+        wholeSite = readOptBool(jsObj, "wholeSite") is true))
     }
     catch {
       case ex: IllegalArgumentException =>

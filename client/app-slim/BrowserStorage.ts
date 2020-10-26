@@ -24,8 +24,9 @@
    namespace debiki2.BrowserStorage {
 //------------------------------------------------------------------------------
 
-let theStorage;
-let tempObjStorage;
+let theStorage: Storage | U;
+let whichStorage: WhichStorage | U;
+let tempObjStorage: Ay | U;
 
 
 // Who knows which storage the browser lets us use?
@@ -35,7 +36,7 @@ let tempObjStorage;
 // browser tabs are open — some tabs share the same sessionStorage, other
 // tabs have their own. Makes me confused.
 //
-function withBrowserStorage(fn: (storage: Storage) => void) {
+function withBrowserStorage(fn: (storage: Storage, whichStorage: WhichStorage) => Vo) {
   function doesItWork(storage: Storage): boolean {
     const testKey = 'tytest';
     const testValue = 'true';
@@ -55,6 +56,7 @@ function withBrowserStorage(fn: (storage: Storage) => void) {
 
     if (localStorageWorks) {
       theStorage = localStorage;
+      whichStorage = WhichStorage.LocalStorage;
     }
     else {
       let sessionStorageWorks;
@@ -63,11 +65,12 @@ function withBrowserStorage(fn: (storage: Storage) => void) {
 
       if (sessionStorageWorks) {
         theStorage = sessionStorage;
+        whichStorage = WhichStorage.SessionStorage;
       }
       else {
         // Dupl code [OBJSTRG].  UNTESTED?
         tempObjStorage = {};
-        theStorage = {
+        const pageVarStorage: Storage = {
           key: function(index: number): string | null {
             return Object.keys(tempObjStorage)[index];
           },
@@ -80,7 +83,9 @@ function withBrowserStorage(fn: (storage: Storage) => void) {
           removeItem: function(key: string) {
             delete tempObjStorage[key];
           },
-        }
+        } as Storage;
+        theStorage = pageVarStorage;
+        whichStorage = WhichStorage.PageVar;
       }
     }
   }
@@ -88,7 +93,7 @@ function withBrowserStorage(fn: (storage: Storage) => void) {
   // Wrap in try-catch in case browser privacy settings now later on
   // suddenly prevent access.
   try {
-    fn(theStorage);
+    fn(theStorage, whichStorage);
   }
   catch (ex) {
     logAndDebugDie(`Error doing sth w browser storage [TyEBRWSTR]`, ex);
@@ -96,11 +101,11 @@ function withBrowserStorage(fn: (storage: Storage) => void) {
 }
 
 
-export function get(key: any): any | undefined {
+export function get(key: St): Ay | U {
   const keyStr = stableStringifySkipNulls(key, true);
-  let valueStr;
+  let valueStr: St | Nu | U;
   withBrowserStorage(s => valueStr = s.getItem(keyStr));
-  let value: any | undefined;
+  let value: Ay | U;
   if (valueStr) {
     try {
       value = JSON.parse(valueStr);
@@ -108,7 +113,7 @@ export function get(key: any): any | undefined {
     catch (ex) {
       // This is "impossible". Someone placed sth weird in the storage?
       // Talkyard doesn't have any code that can do that?
-      // Maybe delete this entry?
+      // Maybe delete this storage key-value?
       // @ifdef DEBUG
       logAndDebugDie(`Error parsing browser storage value for key '${key}' [TyESTRREAD]`, ex);
       // @endif
@@ -119,21 +124,28 @@ export function get(key: any): any | undefined {
 }
 
 
-export function set(key: any, value: any): any {
+/// Returns true iff the key-val could be stored in a storage that lasts across
+/// page reload. False means the storage is a temp js var, lost on reload.
+///
+export function set(key: St, value: Ay): Bo {
   const valueStr = JSON.stringify(value);
   const keyStr = stableStringifySkipNulls(key, true);
-  withBrowserStorage(s => s.setItem(keyStr, valueStr));
+  let whichStorage: WhichStorage | U;
+  withBrowserStorage(function(s, w) {
+    s.setItem(keyStr, valueStr);
+    whichStorage = w;
+  });
+  return whichStorage !== WhichStorage.PageVar;
 }
 
 
-export function remove(key: any): any {
+export function remove(key: St): Vo {
   const keyStr = stableStringifySkipNulls(key, true);
   withBrowserStorage(s => s.removeItem(keyStr));
 }
 
 
-export function forEachDraft(pageId: PageId,
-      fn: (draft: Draft, keyStr: string) => void) {
+export function forEachDraft(pageId: PageId, fn: (draft: Draft, keyStr: St) => Vo) {
   withBrowserStorage(function(storage: Storage) {
     for (let i = 0; true; i++) {
       const keyStr = storage.key(i);

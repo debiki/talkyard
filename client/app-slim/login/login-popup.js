@@ -52,9 +52,15 @@ d.i.createLoginPopup = function(url) {
     if (darkCover) {
       darkCover.style.visibility = 'hidden';
     }
+
     if (d.i.handleLoginResponse !== null) {
-      d.i.handleLoginResponse({status: 'LoginFailed'});
+      d.i.handleLoginResponse = null;
+      console.debug('User closed the login popup window?');
+      // (If instead the user colsed the main window, but kept this login popup
+      // window open, see:  [authn_win_gone].)
+      // d.i.handleLoginResponse({status: 'LoginFailed'});  [J0935RKSDM]
     }
+
     if (waitCallback !== null) {
       window.clearInterval(waitCallback);
       waitCallback = null;
@@ -66,11 +72,11 @@ d.i.createLoginPopup = function(url) {
   // Or from a login popup window, in login-if-needed.ts.
   // COULD RENAME to handleLoginPopupResult?
   //
-  // And in the past, when OpenID was used, from the return_to page,  ...
-  // **Old comment?: OpenID no longer in use:**
-  // """... or by `loginAndContinue`
-  // in debiki-login-dialog.ls in a login popup window, see [509KEF31]. """
   d.i.handleLoginResponse = function(result /* : LoginPopupLoginResponse */) {
+    // SECURITY SHOULD compare result.origNonceBack (if any) with  [br_authn_nonce]
+    // our local storage nonce.
+    // If mismatch, then, delete any session id cookie and ignore result.weakSessionId,
+    // show a warning dialog?
     try {
       // Sometimes we've remembered any weakSessionId already, namely if
       // we sent a create-new-user ajax request from the login popup — then we got back
@@ -88,20 +94,13 @@ d.i.createLoginPopup = function(url) {
 
     d.i.handleLoginResponse = null;
     var errorMsg;
-    if (/openid\.mode=cancel/.test(result.queryString)) {
-      // This seems to happen if the user clicked No Thanks in some
-      // login dialog; when I click "No thanks", Google says:
-      // "openid.mode=cancel&
-      //  openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
-      errorMsg = 'You cancelled the login process? [error DwE89GwJm43]';
-    } else if (result.status === 'LoginFailed') {
+    if (result.status === 'LoginFailed') {  // can remove this block?  [J0935RKSDM]
       console.debug('User closed popup window?');
       return;
     } else if (result.status !== 'LoginOk') {
       errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
     } else {
       // Login OK.
-      // (Find queryString example at the end of this file.)
       debiki2.login.continueAfterLogin();
       return;
     }
@@ -116,31 +115,6 @@ d.i.createLoginPopup = function(url) {
 
   return windowName;
 };
-
-
-// {{{ The result.queryString in handleLoginResponse() is e.g. for OpenID:
-// openid.ns=http://specs.openid.net/auth/2.0
-// openid.mode=id_res
-// openid.op_endpoint=https://www.google.com/accounts/o8/ud
-// openid.response_nonce=2011-04-10T20:14:19Zwq0i...
-// openid.return_to=http://10.42.43.10:8080/openid/response
-// openid.assoc_handle=AOQobUdh75yi...
-// openid.signed=op_endpoint,claimed_id,identity,return_to,
-//    response_nonce,assoc_handle,ns.ext1,ext1.mode,ext1.type.first,
-//    ext1.value.first,ext1.type.email,ext1.value.email,
-//    ext1.type.country,ext1.value.country
-// openid.sig=jlCF7WrP...
-// openid.identity=https://www.google.com/accounts/o8/id?id=AItOaw...
-// openid.claimed_id=https://www.google.com/accounts/o8/id?id=AItO...
-// openid.ns.ext1=http://openid.net/srv/ax/1.0
-// openid.ext1.mode=fetch_response
-// openid.ext1.type.first=http://axschema.org/namePerson/first
-// openid.ext1.value.first=Kaj+Magnus
-// openid.ext1.type.email=http://axschema.org/contact/email
-// openid.ext1.value.email=someone@example.com
-// openid.ext1.type.country=http://axschema.org/contact/country/home
-// openid.ext1.value.country=SE
-// }}}
 
 
 })();

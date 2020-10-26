@@ -43,6 +43,18 @@ How import Disqus comments? How import WordPress comments?
 Ans: Not yet possible. Planning to support.
 
 
+Sessions
+Talkyard app server session
+  - Normal session
+  Later:
+  - Weak session, for Talkyard in embedded iframes
+  - Extra-Auth session, for doing things like changing password or email
+IDP broker session, e.g. Keycloak cookie or Auth0 session.
+IDP session, e.g. Gmail session cookie, or Keycloak if acts as an IDP not a broker.
+
+Related:
+  https://auth0.com/docs/sessions-and-cookies
+
 
 
 Can admin view direct messages?

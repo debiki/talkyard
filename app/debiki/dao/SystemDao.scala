@@ -159,7 +159,9 @@ class SystemDao(
       // Keep this in sync with createSite(). (5DWSR42)
 
       siteTx.upsertSiteSettings(SettingsToSave(
-        orgFullName = Some(Some("Unnamed Organization"))))
+            orgFullName = Some(Some("Unnamed Organization")),
+            // Some integration tests require guest login:
+            allowGuestLogin = if (globals.isOrWasTest) Some(Some(true)) else None))
 
       // Don't insert any site host — instead, we use the ed.hostname config value.
 
@@ -410,7 +412,7 @@ class SystemDao(
     }
     catch {
       case ex @ DbDao.SiteAlreadyExistsException(site, details) =>
-        logger.error(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
+        logger.warn(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
            details: $details""")
         throw ex
     } } }

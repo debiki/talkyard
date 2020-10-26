@@ -604,11 +604,12 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
       }
   }
 
-  implicit class RichOption[T](underlying: Option[T]) {
-    def oneIfDefined: Int = if (underlying.isDefined) 1 else 0
-    def is(value: T): Boolean = underlying.contains(value)
-    def isNot(value: T): Boolean = !underlying.contains(value)
-    def isSomethingButNot(value: T): Boolean = underlying.isDefined && !underlying.contains(value)
+  implicit class RichOption[T](underlying: Opt[T]) {
+    def oneIfDefined: i32 = if (underlying.isDefined) 1 else 0
+    def is(value: T): Bo = underlying.contains(value)
+    def isNot(value: T): Bo = !underlying.contains(value)
+    def isSomethingButNot(value: T): Bo = underlying.isDefined && !underlying.contains(value)
+    def isOrEmpty(value: T): Bo = underlying.isEmpty || underlying.contains(value)
   }
 
   implicit class RichOptionEq[T <: AnyRef](underlying: Option[T]) {
@@ -721,11 +722,20 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
       else Some(trimmed)
     }
 
+    def noneIfEmpty: Opt[St] = {
+      if (underlying.isEmpty) None
+      else Some(underlying)
+    }
+
     def isAToZUnderscoreOnly: Boolean =
       AToZUnderscoreRegex.pattern.matcher(underlying).matches
 
     def isOkVariableName: Boolean =
       VariableNameRegex.pattern.matcher(underlying).matches
+
+    def obviouslyBadUrl: Bo =
+      underlying.exists(c => " \n\t\r\"'<>".contains(c)) || underlying.isEmpty
+
   }
 
   def charIsAzNumOrUnderscore(c: Char): Boolean =

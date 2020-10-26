@@ -31,6 +31,7 @@ declare const stringifyQueryString: (s: any) => string;
 
 
 const rFragment = reactCreateFactory(React.Fragment);
+const rFr = rFragment;
 
 // Don't <reference>, causes lots of TS errors.
 declare const Bliss: any;
@@ -206,14 +207,38 @@ export function isBlogCommentsSite(): boolean {
 }
 
 
-export function isCommunitySite(): boolean {
+export function isCommunitySite(): Bo {  // RENAME to isForumSite
   return !isBlogCommentsSite();
 }
 
-
+// RENAME to win_isEmbSthIframe()  QUICK
 export function isInSomeEmbCommentsIframe(): boolean {
   return eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor;
 }
+
+
+export function win_isLoginPopup(): Bo {
+  let result = eds.isInLoginPopup;
+
+  // If we're in a login popup, and got rediected back from an
+  // OAuth provider, then eds.isInLoginPopup is false. Instead,
+  // the window name is 'TyLoginPopup'.
+  //
+  // (The popup window apparently keeps its name, also when going to the
+  // Identity Provider (IDP) and logging in there, and getting redirected back.)
+  //
+  result = result || window.name === 'TyLoginPopup';
+
+  // @ifdef DEBUG
+  // We never place a login popup in an iframe (no reason to do that). If we're in
+  // an iframe, then, instead, this is an embedded editor, embedded blog comments,
+  // or an embedded forum or embedded-something. — Not a login popup.
+  dieIf(result && eds.isInIframe, 'TyE305RKEDM2');
+  // @endif
+
+  return result;
+}
+
 
 /**
  * Finds the main embedded comments window, where the per page temporary xsrf token
@@ -222,20 +247,13 @@ export function isInSomeEmbCommentsIframe(): boolean {
  * are made from the editor iframe and login popup wins too, not just the main
  * comments win.
  */
-export function getMainWin(): MainWin {
+export function getMainWin(): MainWin {  // QUICK RENAME to win_getMainWin()
   // Maybe there're no iframes and we're already in the main win?
   // (window.opener might still be defined though — could be an embedded
   // comments iframe, in another browser tab. So if we were to continue below,
   // we could find the main win from the *wrong* browser tab with the wrong
   // React store. )
-  if (!eds.isInIframe && !eds.isInLoginPopup &&
-        // If we're in a login popup, and got rediected back from an
-        // OAuth provider, then eds.isInLoginPopup is false, but
-        // the window name will be 'TyLoginPopup' — then, we need to continue
-        // below to find the real main win (since we're in a popup).
-        // (The window apparently keeps its name, also when going to the OAuth
-        // provider and logging in there, and getting redirected back.)
-        window.name !== 'TyLoginPopup') {
+  if (!eds.isInIframe && !win_isLoginPopup()) {
     return window as MainWin;
   }
 
@@ -297,6 +315,23 @@ dieIf(!isServerSide() && !findDOMNode, 'EsE6UMGY2');
 
 export function hasErrorCode(request: HttpRequest, statusCode: string) {
   return request.responseText && request.responseText.indexOf(statusCode) !== -1;
+}
+
+
+/// Returns a string with many-enough crypto-random digits.
+///
+export function randomNumSt(): St {   // [js_rand_val]
+  const array = new Uint32Array(3);
+  window.crypto.getRandomValues(array);
+  let st = '';
+  for (let i = 0; i < array.length; i++) {
+    const n = array[i];
+    st += ('00000000' + n).slice(-8);
+  }
+  // @ifdef DEBUG
+  dieIf(st.length !== 24, 'TyE205RKEKDM24');
+  // @endif
+  return st;
 }
 
 
@@ -404,6 +439,16 @@ export function deleteById(itemsWithId: any[], idToDelete) {
       break;
     }
   }
+}
+
+
+export function url_getHost(url: St): St {
+  // @ifdef DEBUG
+  dieIf(!url, 'TyE305RKSG');
+  // @endif
+  if (!url) return '';
+  const parts = url.split('/');
+  return parts && parts.length >= 3 ? parts[2] : '';
 }
 
 

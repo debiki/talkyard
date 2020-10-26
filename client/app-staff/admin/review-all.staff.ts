@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
+const UserNameLink = debiki2.UserNameLink;
 
 
 /** The review reasons are a 64 bit bitflag. See this Scala file for their meanings:
@@ -312,7 +313,8 @@ const ReviewTask = createComponent({
 
     const deletedBy = !post.deletedById ? null : store_getUserOrMissing(store, post.deletedById);
     const itHasBeenDeleted = !post.deletedAtMs ? null :
-      r.span({}, "It was deleted by ", UserName({ store, user: deletedBy, avoidFullName: true }), ". ");
+        r.span({}, "It was deleted by ",
+            UserNameLink({ store, user: deletedBy, avoidFullName: true }), ". ");
 
     // (Currently, name of anyone who deleted the page, isn't available: deletedById not saved
     // in page meta. Only in audit log. Hmm.)
@@ -331,7 +333,8 @@ const ReviewTask = createComponent({
     }
     else if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
       const decider: BriefUser | U = store.usersByIdBrief[reviewTask.decidedById];
-      const byWho = !decider ? null : r.span({}, " by ", UserName({ user: decider, store }));
+      const byWho = !decider ? null :
+              r.span({}, " by ", UserNameLink({ user: decider, store }));
       let whatWasDone: string;
       switch (reviewTask.decision || this.state.justDecided) {
         case ReviewDecision.Accept: whatWasDone = " Accepted"; break;
@@ -403,14 +406,14 @@ const ReviewTask = createComponent({
     const author = store_getUserOrMissing(store, post.createdById);
     const writtenByInfo =
         r.div({ className: 's_RT_WrittenBy' },
-          "Written by: ", UserName({ user: author, store }));
+          "Written by: ", UserNameLink({ user: author, store }));
 
     const lastApprovedEditBy = !post.lastApprovedEditById ? null :
         store_getUserOrMissing(store, post.lastApprovedEditById);
 
     const lastApprovedEditInfo = !lastApprovedEditBy ? null :
         r.div({ className: 's_RT_LastAprEditBy' },
-          "Last approved edit by: ", UserName({ user: lastApprovedEditBy, store }));
+          "Last approved edit by: ", UserNameLink({ user: lastApprovedEditBy, store }));
 
     // Minor BUG: This duplicates all flags for this post, for each review task. But
     // there's one review task per flag.
@@ -435,7 +438,7 @@ const ReviewTask = createComponent({
               const flagDummyId = `${flag.flaggedAt}|${flag.flaggerId}`; // [2PKRW08]
               return (
                 r.li({ className: 's_RT_Flags_Flag' + oldFlagClass, key: flagDummyId },
-                  UserName({ user: flagger, store }),
+                  UserNameLink({ user: flagger, store }),
                   " reason: ",
                   reason,
                   ", on ",

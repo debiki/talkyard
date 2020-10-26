@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2017, 2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,9 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
+import com.github.scribejava.core.oauth.{OAuth20Service => sj_OAuth20Service}
+import com.github.scribejava.core.model.{OAuth2AccessToken => sj_OAuth2AccessToken, OAuth2AccessTokenErrorResponse => sj_OAuth2AccessTokenErrorResponse, OAuthAsyncRequestCallback => sj_OAuthAsyncReqCallback, OAuthRequest => sj_OAuthRequest, Response => sj_Response, Verb => sj_Verb}
+import com.github.scribejava.apis.openid.{OpenIdOAuth2AccessToken => sj_OpenIdOAuth2AccessToken}
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -29,32 +32,112 @@ import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
 import ed.server.spam.SpamChecker
 import debiki._
+import debiki.dao.SiteDao
 import debiki.EdHttp._
+import talkyard.server._
 import ed.server._
 import ed.server.http._
 import ed.server.security.EdSecurity
-import javax.inject.Inject
+import IdentityProvider.{ProtoNameOidc, ProtoNameOAuth2}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.Configuration
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
+import talkyard.server.authn.{parseCustomUserInfo, parseOidcUserInfo}
 import talkyard.server.{ProdConfFilePath, TyLogging}
 
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration._
+import scala.util.{Failure, Success}
+import java.io.{IOException => j_IOException}
+import java.util.concurrent.{ExecutionException => j_ExecutionException}
+import java.util.concurrent.atomic.{AtomicInteger => j_AtomicInteger}
+import java.util.concurrent.TimeUnit.{MINUTES => j_MINUTES}
+import javax.inject.Inject
 
 
-/** OpenAuth 1 and 2 login, provided by Silhouette, e.g. for Google, Facebook and Twitter.
+/**
   *
-  * This class is a bit complicated, because it supports logging in at site X
-  * via another site, say login.domain.com. This is needed because Debiki is a multitenant
-  * system, but OAuth providers allow one to login only via *one* single domain. That
-  * single domain is login.domain.com, and if you want to login at site X this class
-  * redirects you to login.domain.com, then logs you in at the OAuth provider from
-  * login.domain.com, and redirects you back to X with a session id and an XSRF token.
+  * @param authnSiteId — so cannot use a nonce cache key at the wrong site.
+  * @param origSiteId
+  * @param returnToUrl
+  * @param browserNonce
+  * @param createdAt
+  * @param stateString — The OAuth2 'state' query param sent to the IDP's auth endpoint.
+  * @param oauth2StateUseCount — The OAuth2 state an be used once only. We show a
+  *  friendly troubleshooting message if used more than once.
+  * @param extIdentity Data about the user's account at the Identity Provider (IDP).
+  * @param matchingTyUser — any existing Talkyard user with the same email addr as
+  *  the extIdentity's email addr.
+  * @param nextStep — so a nonce cache key cannot be used for the wrong thing.
+  */
+private case class OngoingAuthnState(
+  authnXsrfToken: St,
+  authnSiteId: SiteId,
+  origSiteId: SiteId,
+  continueAtAuthnSiteNonce: Opt[St] = None,
+  continueAtOrigSiteNonce: Opt[St] = None,
+  protocol: St,
+  providerAlias: St,
+  isInLoginPopup: Bo,
+  mayCreateUser: Bo,
+  returnToUrl: St,
+  browserNonce: St,
+  createdAt: When,
+  stateString: St,
+  oauth2StateUseCount: j_AtomicInteger,
+  selectAccountAtIdp: Bo = false,
+  lastStepAt: When,
+  nextStep: St,
+  extIdentity: Opt[OpenAuthDetails] = None,
+  matchingTyUser: Opt[User] = None) {
+
+  require(continueAtAuthnSiteNonce.isDefined == continueAtOrigSiteNonce.isDefined,
+        "TyE63MREJMP45")
+  require(continueAtAuthnSiteNonce.isEmpty ||
+        continueAtAuthnSiteNonce != continueAtOrigSiteNonce, "TyE305MWK24")
+
+  def usesServerGlobalIdp: Bo = continueAtAuthnSiteNonce.isDefined
+  def usesSiteCustomIdp: Bo = !usesServerGlobalIdp
+
+  def protoAlias: St = s"$protocol/$providerAlias"
+
+}
+
+
+
+/** OAuth2 or OIDC authentication, e.g. for Google, Facebook and Twitter, Keycloak.
+  *
+  * This class is a bit complicated, because it supports logging in at forum-X
+  * via another site hosted by the same Talkyard server — an "Authentication Site",
+  * say authn.domain.com. This is needed because Talkyard is multitenant, but
+  * OAuth2 providers let one log in only via a specific Redirect URI (or a few)
+  * at one domain only — and it's "impossibly complicated" to configure
+  * OAuth2 clients app for Talkyard SaaS site admins in general.
+  * — So, we need a way to enable OAuth2 login for common Identity Providers that
+  * people expect to just work, e.g. Gmail, FB, Twitter, without the site admins
+  * having to create their own OAuth2 client apps.
+  * Therefore:
+  * If you want to login at forum-X.example.com, Talkyard can (if the site
+  * admins want) redirect you to the Talkyard server's authn.domain.com,
+  * then logs you in from there, over at an IDP whose Redirect URI is
+  * to authn.domain.com.
+  * This OAuth2 IDP client app gets configured by a *server* admin — which
+  * are technical people, can do things like configuring DNS and email services
+  * — and OAuth2 apps.
+  * After login at the IDP via authn.domain.com, Talkyard redirects you back to
+  * forum-X with an identity from the IDP, and you get logged in at forum-X
+  * with that identity (say, Gmail account or FB profile).
+  * (That identity gets cached server side by Talkyard, when you're at
+  * the authn site, and gets retrieved when you're redirected back to Forum-X,
+  * by looking at a nonce in the URL.  "Nonce" means: a secret
+  * 'N'umber used just 'Once'.)
   */
 class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) with TyLogging {
+
+  REFACTOR // MOVE this file to package talkyard.server.authn
+  RENAME // to  AuthnWithExtIdp
 
   import context.globals
   import context.security._
@@ -83,43 +166,764 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   def conf: Configuration = globals.rawConf
 
-  private val cache = caffeine.cache.Caffeine.newBuilder()
-    .maximumSize(20*1000) // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M? [ADJMEMUSG]
+
+  // Remembers ongoing authentication attempts.
+  private val authnStateCache = caffeine.cache.Caffeine.newBuilder()
+    .maximumSize(5*1000) // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M? [ADJMEMUSG]
     // Don't expire too quickly — the user needs time to choose & typ a username.
     // SECURITY COULD expire sooner (say 10 seconds) if just logging in, because then
     // the user need not think or type anything.
     // The user might want to review the Terms of Use, so wait for an hour, here. [4WHKTP06]
     // BUG SHOULD use Redis, so the key won't disappear after server restart.
-    .expireAfterWrite(65, java.util.concurrent.TimeUnit.MINUTES)
-    .build().asInstanceOf[caffeine.cache.Cache[String, OpenAuthDetails]]
+    // Cmp w GitHub: An authn code in an email from GitHub was valid for 1 hour,
+    // today 2020-10-16.
+    .expireAfterWrite(65, j_MINUTES)
+    .build().asInstanceOf[caffeine.cache.Cache[St, OngoingAuthnState]]
 
 
-  def startAuthentication(provider: String, returnToUrl: String): Action[Unit] =
-        AsyncGetActionIsLogin { request =>
-    startAuthenticationImpl(provider, returnToUrl, request)
+  // Some steps happen without the human doing anything — shouldn't take moree
+  // than one or a few seconds, e.g. an auto redirect to the authn site.
+  val AFewSeconds: i64 = if (Globals.isDevOrTest) 25 else 25
+
+
+
+  private def getAuthnStateOrThrow(nonce: St, thisStep: St,
+          authnSiteId: SiteId = NoSiteId, origSiteId: SiteId = NoSiteId,
+          keepStateInCache: Bo = false, maxAgeSeconds: Opt[i64] = None)
+          : OngoingAuthnState = {
+
+    throwForbiddenIf(nonce.isEmpty, "TyEEMPTYNONCE", s"Empty nonce, step: $thisStep")
+
+    val authnState = authnStateCache.getIfPresent(nonce)
+    throwForbiddenIf(authnState eq null, "TyE0AUTSTATE",
+          s"No authn state for step: $thisStep, nonce: $nonce")
+
+    maxAgeSeconds foreach { maxSecs: i64 =>
+      val elapsed = globals.now().seconds - authnState.lastStepAt.seconds
+      throwForbiddenIf(elapsed > maxSecs, "TyEAUTSLOW",
+            s"Too many seconds elapsed: $elapsed s, max is: $maxSecs s")
+    }
+
+    // Don't reuse a "Number to use Once" — would mess up security, e.g. replay attacks.
+    if (!keepStateInCache) {
+      authnStateCache.invalidate(nonce)
+    }
+
+    // Ensure we're accessing the correct site, say, forum-X.com, but not
+    // the-wrong-forum-Y.elsewhere.org hosted by the same server:
+
+    if (authnState.authnSiteId != NoSiteId)  // backw compat w Silhouette
+      throwForbiddenIf(authnSiteId != NoSiteId && authnSiteId != authnState.authnSiteId,
+          "TyEAUTBADAUTSITE", s"At the wrong authn site id: $authnSiteId, should be: ${
+              authnState.authnSiteId}")
+
+    if (authnState.origSiteId != NoSiteId)  // backw compat w Silhouette
+      throwForbiddenIf(origSiteId != NoSiteId && origSiteId != authnState.origSiteId,
+          "TyEAUTBADORGSITE", s"At the wrong orig site id: $origSiteId, should be: ${
+              authnState.origSiteId}")
+
+    throwForbiddenIf(authnState.nextStep != thisStep,
+          "TyEAUTSTEP", s"Bad step: ${authnState.nextStep}, expected: $thisStep")
+
+    authnState
   }
 
 
-  private def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
-        : Future[Result] = {
+
+  def authnStart(protocol: St, providerAlias: St, returnToUrl: St, nonce: St,
+          authViaAuthnOrigin: Opt[Bo], selectAccountAtIdp: Opt[Bo])
+          : Action[U] = AsyncGetActionIsLogin { request =>
+    import request.dao
+
+    val settings = dao.getWholeSiteSettings()
+    throwForbiddenIf(settings.enableSso, "TyESSO0OAU01",
+          "Single Sign-On API enabled at this site — then, custom IDPs disabled")
+
+    SECURITY // actually do the below, browser side [br_authn_nonce].
+    // Once done logging in, the browser will look for this value in the url.
+    // If it's missing, that could mean a login xsrf attack is happening
+    // — then, better reject the login session (which might be an attacker
+    // initiated session, not the end user's own session).
+    throwBadReqIfLowEntropy(nonce, paramName = "nonce", "TyENONCEENTROPY")
+    throwBadParamIf(returnToUrl.obviouslyBadUrl, "TyE502MSKG", "returnToUrl", returnToUrl)
+
+    val isInLoginPopup = request.rawQueryString.contains("isInLoginPopup")
+    val mayCreateUser = !request.rawQueryString.contains("mayNotCreateUser")
+
+    val (authnXsrfToken, authnXsrfCookie) = makeAuthnXsrfToken(request.underlying)
+
+    val authnState = OngoingAuthnState(
+          authnXsrfToken = authnXsrfToken,
+          authnSiteId = dao.siteId,
+          origSiteId = dao.siteId,
+          protocol = protocol,
+          providerAlias = providerAlias,
+          isInLoginPopup = isInLoginPopup,
+          mayCreateUser = mayCreateUser,
+          returnToUrl = returnToUrl,
+          browserNonce = nonce,
+          createdAt = globals.now(),
+          stateString = nextRandomString(),
+          oauth2StateUseCount = new j_AtomicInteger(0),
+          selectAccountAtIdp = selectAccountAtIdp is true,
+          lastStepAt = globals.now(),
+          nextStep = "redir_back")
+
+    val futureResponse = {
+      if (authViaAuthnOrigin.is(true) &&
+            globals.anyLoginOrigin.isSomethingButNot(originOf(request))) {
+        // We're trying to login via a server global IDP, shared by many / all sites
+        // hosted by this server — e.g. standard Facebook or Gmail login.
+        // But the IDP has been configured to send authentication data to another
+        // Talkyard site — namely the authn origin site: anyLoginOrigin.get. We'll
+        // redirect to that site and do the authentication "for real" from there.
+        throwForbidden("TyE2095RMKFM2", "Untested")
+        saveAuthnStateRedirToAuthnOrigin(authnState)
+      }
+      else {
+        // This IDP is for this site — it's been configured to redirect the user
+        // back to a Redirection URI here (rather than to an authn origin site),
+        // after login at the IDP.
+        throwForbiddenIf(!settings.enableCustomIdps, "TyE0CUSTIDPS",
+              "Custom IDPs not enabled at this site.\n\n" +
+              o"""In the Admin Area, the 'Custom OIDC or OAuth2' checkbox
+                needs to be checked.""")
+        authnStartImpl(authnState, request)
+      }
+    }
+
+    futureResponse.map(_.withCookies(authnXsrfCookie))
+  }
+
+
+
+  private def saveAuthnStateRedirToAuthnOrigin(authnStateNoNonce: OngoingAuthnState)
+        : Future[p_Result] = {
+
+    // Create two secret nonces:
+
+    // One so we can continue at the authn origin, after having redirected
+    // to there.
+    val continueAtAuthnOriginNonce = nextRandomString()
+
+    // And one so we can continue here at this site, and look up the authn state,
+    // when done authenticating over at the authn origin site,
+    // and having been redirected back to this site (this site is the "interesting"
+    // site — with the forum/blog-comments/whatever we're logging in to).
+    // Not really needed — but nice for debugging?
+    val continueAtOrigSiteNonce = nextRandomString()
+
+    val authnState = authnStateNoNonce.copy(
+          continueAtAuthnSiteNonce = Some(continueAtAuthnOriginNonce),
+          continueAtOrigSiteNonce = Some(continueAtOrigSiteNonce),
+          nextStep = "at_authn_origin")
+
+    val continueAtAuthnOriginUrl =
+          globals.anyLoginOrigin.getOrDie("TyE305MRKTDE2") +
+            routes.LoginWithOpenAuthController.continueAtAuthnOrigin(
+                  secretNonce = continueAtAuthnOriginNonce)
+
+    authnStateCache.put(continueAtAuthnOriginNonce, authnState)
+
+    authnStateCache.put(continueAtOrigSiteNonce, authnState.copy(
+          nextStep = "org_site_start_state"))
+
+    Future.successful(p_Results.Redirect(
+          continueAtAuthnOriginUrl, status = p_Status.SEE_OTHER))
+  }
+
+
+
+  def continueAtAuthnOrigin(secretNonce: St): Action[U] = AsyncGetActionIsLogin {
+        request =>
+    import request.dao
+
+    throwForbiddenIf(globals.anyLoginOrigin isNot request.origin, "TyEWRONGAUTORG",
+          s"This site: ${request.origin}, is not the authn origin — that's: ${
+            globals.anyLoginOrigin}")
+
+    val authnStateWrongSiteId = getAuthnStateOrThrow(
+          secretNonce, "at_authn_origin",
+              maxAgeSeconds = Some(AFewSeconds)) // or "isInstantRedirect = true" ?
+
+    // Change the authn site id from the original site id to the current site id.
+    // We're authenticating via this site — the authn site — in order to login
+    // at another site — the original site, authnState.origSiteId.
+    val authnState = authnStateWrongSiteId.copy(
+          authnSiteId = dao.siteId,
+          lastStepAt = globals.now(),
+          nextStep = "redir_back")
+
+    dieIf(authnState.continueAtAuthnSiteNonce.isNot(secretNonce), "TyE305MAKTM2")
+
+    // Skip this — not impossible that the authn origin site is accessible
+    // via many hostnames, e.g. if currently moving to a new hostname. Then,
+    // after redirecting to the authn origin, we might still be at the same site,
+    // site id == authn site id. However, we'll check authnState.origSiteId later
+    // when back at the orig site.
+    //dieIf(authnState.authnSiteId == authnState.origSiteId, ..)
+
+    authnStartImpl(authnState, request)
+  }
+
+
+
+  private def authnStartImpl(authnState: OngoingAuthnState, request: GetRequest)
+        : Future[p_Result] = {
+    import request.{dao, siteId}
+
+    authnState.protocol match {
+      case ProtoNameOidc | ProtoNameOAuth2 => // Fine
+      case _ => throwBadReq("TyEBADPROTO", "Bad protocol: Only OIDC and OAuth2 supported")
+    }
+
+    dieIf(authnState.nextStep != "redir_back", "TyE405MRKG24")
+    dieIf(authnState.authnSiteId != siteId, "TyEAUTSITEID001",
+          s"Wrong authn site: $siteId, should be: ${authnState.authnSiteId}")
+
+    authnStateCache.put(authnState.stateString, authnState)
+
+    val idp: IdentityProvider = getIdentityProvider(authnState, dao)
+
+    // Is it ok to reveal that this provider exists? Otherwise could be really
+    // confusing to troubleshoot this.  There could be another setting:
+    // hide: Bo  or  hideIfDisabled: Bo,  if we should hide that it even exists?
+    throwForbiddenIf(!idp.enabled, "TyEIDPDISBLD01",
+          s"Identity provider ${idp.protoAlias} is disabled")
+
+    val origin =
+          if (Globals.isProd || request.isDevTestToLocalhost) {
+            request.origin
+          }
+          else {
+            // We're testing authn against an external IDP, and via /etc/hosts
+            // we pretending its Ty site runs on localhost, so the redir-back url
+            // works although it's to a not-localhost domain?
+            // Then, pretend we use https — the OAuth2 redirect uri typically is https.
+            request.origin.replaceAllLiterally("http:", "https:")  // [local_aut_test]
+          }
+
+    val authnService: sj_OAuth20Service =
+          dao.getScribeJavaAuthnService(origin, idp) getOrIfBad { errMsg =>
+      throwForbidden("TyEGETIDPSVC01",
+            s"s$siteId: Cannot get ScribeJava service for IDP ${idp.protoAlias
+                }: $errMsg")
+    }
+
+    // OIDC nonce.
+    // If this is OIDC, the nonce will be sent back to us in the access and id token
+    // response, see: [oidc_nonce_back].
+    val moreParams = new java.util.HashMap[St, St]()
+    moreParams.put("nonce", authnState.browserNonce)
+
+    // More custom params to configure the authn page over at the IDP.
+    if (authnState.selectAccountAtIdp) {
+      // Might work only for OIDC, not plain OAuth2.
+      // Doesn't have any effect with Keycloak + OIDC either, weird.
+      // Adding "login" just makes Keycloak ask the user to login again,
+      // but if hen then chooses a different account, Keycloak shows an error
+      // about already being logged in in the original account. Weird.
+      // Is it a Keycloak bug maybe?
+      moreParams.put("prompt", "select_account") // + " login"?
+    }
+
+    val authorizationUrl = authnService.createAuthorizationUrlBuilder()
+          .state(authnState.stateString)
+          .additionalParams(moreParams)
+          .build()
+
+    // Redirect the browser to the OAuth2 auth endpoint; the user is to login over there.
+    Future.successful(p_Results.Redirect(authorizationUrl, status = p_Status.SEE_OTHER))
+  }
+
+
+  /** This is the OAuth2 Redirect URL endpoint:
+    * After the user has authenticated henself over at the IDP (Identity Provider),
+    * the IDP redirects hens browser back to Talkyard, to this "redirect-back" =
+    * "redirBack" fn.
+    *
+    * Note that the IDP might be malicious. So, need rate limits, for example.
+    * And the end user might be someone clicking an attacker provided link
+    * (e.g. login xsrf attacks), or other weird things.
+    *
+    * @param state — specified by Ty. For preventing xsrf attacks.
+    * @param session_state — if the IDP, say, Keycloak, supports
+    *  session management (like, logout?), it'll include a &session_state=...
+    *  query param. Talkyard can then include this param in all subsequent
+    *  requests to the IDP, so that the IDP knows which user Talkyard has
+    *  in mind, from the IDP's point of view. And (?) if Ty tells the IDP that
+    *  the user has logged out, then the IDP can log the user out from other
+    *  services (other than Ty) managed by the IDP too  ?  or how does it work.
+    * @param code — the authorization code: a temporary code to send
+    *  to the OAuth2 IDP in the access token request, to get an access token.
+    * @return Redirects the browser to some Talkyard page, or possibly
+    *  embedding website with Ty embedded comments / an embedded Ty forum,
+    *  or a create-new-Talkyard-account Talkyard page, or to a [link IDP identity
+    *  to an existing Ty account] page.
+    */
+  def authnRedirBack(protocol: St, providerAlias: St,
+          state: St, session_state: Option[St], code: St): Action[U]
+          = AsyncGetActionIsLoginRateLimited { redirBackRequest =>
+
+    import redirBackRequest.{dao, siteId}
+
+    logger.debug(i"""
+          |s$siteId: Req to OAuth2 redirect uri:
+          |  State: $state
+          |  Code: $code
+          |  Session state: $session_state""")
+
+    val authnState = getAuthnStateOrThrow(state, "redir_back", authnSiteId = siteId,
+          // Keep the authn state — instead, we increment a useCount below,
+          // and if > 1, we show a user friendly error message.
+          // This is nice to do here at the redirect uri endpoint in particular,
+          // in case the end user reloads the page in the browser or sth like that.
+          keepStateInCache = true)
+
+    // This checked by getAuthnStateOrThrow() already:
+    dieIf(authnState.authnSiteId != siteId, "TyEAUTSITEID002",
+          s"Wrong authn site: $siteId, should be: ${authnState.authnSiteId}")
+
+    logger.debug(s"s$siteId: Authn state: $authnState\n")
+    dieIf(authnState.stateString != state, "TyE3M06KD24")
+
+    val useCount = authnState.oauth2StateUseCount.incrementAndGet()
+    throwForbiddenIf(useCount >= 2, "TyEOAUSTATEUSED",
+          s"Trying to use one-time OAuth2 redirect-back-URI $useCount times")
+
+    // Give the user some minutes to login — maybe hen wants to read some
+    // Terms of Use or Privacy Policy.
+    // If too slow, show a somewhat user friendly please-try-again message.
+    // (Or use getAuthnStateOrThrow(... maxAgeSeconds= ...) instead?
+    // But it's more developer friendly to show any useCount >= 2 error first?)
+    val minutesOld = globals.now().minutesSince(authnState.createdAt)
+    val maxMins = 15
+    throwForbiddenIf(minutesOld > maxMins, "TyEOAUSTATESLOW",
+          o"""You need to login within $maxMins minutes. Try again, a bit faster?
+            Time elapsed: $minutesOld minutes.""")
+
+    val idp: IdentityProvider = getIdentityProvider(authnState, dao)
+    throwForbiddenIf(!idp.enabled, "TyEIDPDISBLD02",
+          s"Identity provider ${idp.protoAlias} was just disabled")
+
+    def wrong(what: St) =
+          s"Wrong $what: $protocol/$providerAlias, should be: ${idp.protoAlias}"
+    throwForbiddenIf(protocol != idp.protocol, "TyEREDIRBACKPROTO", wrong("protocol"))
+    throwForbiddenIf(providerAlias != idp.alias, "TyEREDIRBACKALIAS", wrong("provider"))
+
+    val origin =
+          if (Globals.isProd || redirBackRequest.isDevTestToLocalhost) {
+            redirBackRequest.origin
+          }
+          else {
+            // We're localhost-testing authn against a real remote IDP? Pretend https.
+            redirBackRequest.origin.replaceAllLiterally(  // [local_aut_test]
+                  "http:", "https:")
+          }
+
+    // ----- Access token request
+
+    // We got back `code`, a temporary authorization code, from the IDP's auth server,
+    // via the query string in the browser, when it got redirected back to Ty
+    // (i.e. back to the Redirect URI, /-/authn/:proto/:provider/redirback).
+    // All we can do with this temp code, is to send it to the auth server,
+    // to get an access token — plus an ID token if this is OIDC.
+    // We'll use the access token to retrieve user info from the auth server
+    // — in a per IDP custom way, if OAuth2; and from a standardized user-info
+    // endpoint, if OIDC.
+    //
+    // The security reasons for this "extra" temp code step, are:
+    //
+    // 1) The redirect back URL is seen by the browser / end-user-app, and
+    // possibly intermediate infrastructure, when the browser is redirected back
+    // to the Ty server.
+    // So, the URL might get intercepted by an attacker — then, we don't want
+    // the end user's name, email etc, and access token, in the redirect-back URI.
+    // Instead, we get just the one time random `code`, which we'll use to fetch
+    // the user info via a backchannel request to the IDP, and this backchannel
+    // request cannot get intercepted by the above-mentioned attacker.
+    //
+    // 2) The IDP wants to authenticate the Talkyard server, so the IDP knows it
+    // won't send the access tokens to an untrusted server. We'll include an IDP
+    // client id and client secret, when we send `code` to the IDP auth server
+    // to get the access token. (This is a request directly from Ty to the IDP,
+    // so the browser won't see the client id and secret.)
+    //
+    // See https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest
+    // and https://www.oauth.com/oauth2-servers/access-tokens/authorization-code-request/
+
+    val authnService: sj_OAuth20Service = dao.getScribeJavaAuthnService(origin, idp)
+          .getOrIfBad { errMsg =>
+      // This ought to have worked? We got one just recently. Maybe a site admin
+      // reconfigured something somehow? Or a bug?
+      throwInternalError("TyEGETIDPSVC02",
+            s"s$siteId: Cannot get ScribeJava service for IDP ${idp.protoAlias
+                }: $errMsg")
+    }
+
+    val idAndAccessTokenPromise =
+          Promise[(sj_OAuth2AccessToken, Opt[OidcIdToken])]()
+
+    authnService.getAccessToken(code, new sj_OAuthAsyncReqCallback[sj_OAuth2AccessToken] {
+      override def onCompleted(accessToken: sj_OAuth2AccessToken): U = {
+        // TyOidcScribeJavaApi20 uses OpenIdJsonTokenExtractor.instance
+        // as access token extractor; therefore, we can downcast to
+        // OpenIdOAuth2AccessToken.
+        val scribeJavaOidcTokens: Opt[sj_OpenIdOAuth2AccessToken] = accessToken match {
+          case t: sj_OpenIdOAuth2AccessToken => Some(t)
+          case notOidcToken =>
+            dieIf(idp.isOpenIdConnect, "TyE3M05ATJ4",
+                  s"Bad token class: ${classNameOf(notOidcToken)}")
+            None
+        }
+
+        // If this is OAuth2 not OIDC, there's no OIDC id_token.
+        val anyOidcIdToken: Opt[OidcIdToken] = scribeJavaOidcTokens flatMap { sjTokens =>
+          val idTokenStr: St = sjTokens.getOpenIdToken
+          if (idTokenStr eq null) {
+            if (idp.isOpenIdConnect) {
+              idAndAccessTokenPromise.failure(ResultException(BadGatewayResult(
+                    "TyEACSTKN0OIDTKN",
+                    s"s$siteId: Token response from OIDC provider lacks id_token, IDP: ${
+                        idp.protoAlias}")))
+              return
+            }
+            // An OAuth2-not-OIDC provider that still uses sj_OpenIdOAuth2AccessToken
+            // and didn't send us and id_token? Weird, but is okay?
+            None
+          }
+          else {
+            Some(new OidcIdToken(idTokenStr))
+          }
+        }
+
+        anyOidcIdToken foreach { idToken =>
+          SECURITY; SHOULD // compare any ID token nonce with
+          // authnState.browserNonce, maybe encrypted or hashed:  [br_authn_nonce]
+          //
+          // Use which Java lib for parsing? https://jwt.io/
+          // maybe: https://github.com/auth0/java-jwt
+          // or: https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-jwt ?
+          //
+          // The nonce [oidc_nonce_back] we sent as an URL query param in the IDP auth
+          // request must be included by the IDP in the id token — so we'll know
+          // the id token really belongs to the initial auth request we sent to
+          // the IDP (by redirecting the browser to the IDP).
+          //
+          // Why a nonce?:
+          //
+          // The nonce can 1) prevent replay attacks: If an attacker somehow sees the
+          // redirect URI request back to Ty, and tries to replay it? — then, the nonce
+          // has been used already, won't work twice. However, that's already
+          // prevented thanks to the OAuth2 state param — and indeed,
+          // the nonce is optional when using OIDC code flow.
+          // But anyway, cannot hurt to check the nonce too and double-prevent
+          // reply attacks.
+          //
+          // And 2) maybe some IDPs have many servers, and thanks to the nonce we can
+          // know that it's less likely that there are security problems with the IDP,
+          // because the IDP's auth req endpoint server and its token endpoint server
+          // have spoken with each other: the auth req server has sent the nonce to
+          // the token server, which now sent it back here. Which is less likely to
+          // have worked properly, if one of the IDP's servers has been compromised?)
+          //
+          // And 3) We can send it back to the browser — it's nice to check,
+          // browser side, that the session that got created, is based on the nonce
+          // sent in the initial  /-/authn/../..?..&nonce=..  request to the Ty server,
+
+          // Docs:  https://openid.net/specs/openid-connect-basic-1_0.html#IDToken
+          // nonce:  case-sensitive string
+          //    OPTIONAL. String value used to associate a Client session with
+          //    an ID Token, and to mitigate replay attacks.
+          //    The value is passed through unmodified from the Authentication Request
+          //    to the ID Token. The Client MUST verify that the nonce Claim Value
+          //    is equal to the value of the nonce parameter sent in the
+          //    Authentication Request. If present in the Authentication Request,
+          //    Authorization Servers MUST include a nonce Claim in the ID Token
+          //    with the Claim Value being the nonce value sent in the
+          //    Authentication Request.
+        }
+
+        idAndAccessTokenPromise.success((accessToken, anyOidcIdToken))
+      }
+
+      override def onThrowable(t: Throwable): U = {
+        // The access token request failed somehow.
+        idAndAccessTokenPromise.failure(t)
+      }
+    })
+
+    val userInfoPromise = Promise[(sj_Response, Opt[OidcIdToken])]()
+
+    idAndAccessTokenPromise.future.onComplete({
+      case Failure(throwable: Throwable) =>
+        val errorResponseException = throwable match {
+          case ex: ResultException =>
+            ex
+          case ex @ (_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
+            // We didn't even get a response!
+            ResultException(InternalErrorResult("TyEACSTKNREQ",
+                  s"Error requesting access token: ${ex.toString}"))
+          case ex: sj_OAuth2AccessTokenErrorResponse =>
+            // We got an Error response.
+            ResultException(ForbiddenResult("TyEACSTKNRSP",
+                  s"Error response from access token endpoint: ${ex.toString}"))
+          case ex: Exception =>
+            ResultException(InternalErrorResult("TyEACSTKNUNK",
+                  s"Unknown error requesting access token: ${ex.toString}"))
+        }
+        // Pass our error response on to userInfoPromise — it replies to the browser.
+        userInfoPromise.failure(errorResponseException)
+
+      case Success((tokens: sj_OAuth2AccessToken, anyIdToken: Opt[OidcIdToken])) =>
+        // Continue below.
+        requestUserInfo(tokens, anyIdToken)
+    })
+
+
+    // ----- User info request
+
+    // Now we have the access token (hopefully), and with it we can do
+    // anything we requested (and that the user agreed to) in the  &scope=...
+    // parameter in the initial browser auth redirect to the IDP auth server.
+    //
+    // All we want to do, though, is to fetch some user info data.
+    // So, we'll call the user info endpoint.  And we'll include the access
+    // token, so the auth server knows we are indeed allowed to access the
+    // user-info data.
+    //
+    // The user-info endpoint and response is standardized if we're using OIDC
+    // — otherwise, if just OAuth2, then it's IDP specific.
+
+    def requestUserInfo(accessToken: sj_OAuth2AccessToken, idToken: Opt[OidcIdToken]) {
+      val userInfoRequest = new sj_OAuthRequest(sj_Verb.GET, idp.oidcUserInfoUrl)
+      authnService.signRequest(accessToken, userInfoRequest)
+
+      authnService.execute(userInfoRequest, new sj_OAuthAsyncReqCallback[sj_Response] {
+        override def onCompleted(response: sj_Response): U = {
+          userInfoPromise.success((response, idToken))
+        }
+        override def onThrowable(t: Throwable): U = {
+          userInfoPromise.failure(t)
+        }
+      })
+    }
+
+    val futureResponseToBrowser = userInfoPromise.future.transform {
+      case Failure(throwable: Throwable) =>
+        val errorResponse = throwable match {
+          case ResultException(response) =>
+            // This happens if the access token request failed previously, above.
+            Success(response)
+          case ex@(_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
+            Success(InternalErrorResult(
+                  "TyEUSRINFREQ", s"Error requesting user info: ${ex.toString}"))
+          case ex =>
+            Success(InternalErrorResult(
+                  "TyEUSRINFUNK", s"Unknown error requesting user info: ${ex.toString}"))
+        }
+        errorResponse
+
+      case Success((userInfoResponse: sj_Response, anyIdToken: Opt[OidcIdToken])) =>
+        val responseToBrowser = handleUserInfoResponse(
+              redirBackRequest, idp, userInfoResponse, anyIdToken, authnState)
+        Success(responseToBrowser)
+    }
+
+    futureResponseToBrowser
+  }
+
+
+
+  private def handleUserInfoResponse(redirBackRequest: GetRequest, idp: IdentityProvider,
+          userInfoResponse: sj_Response, anyIdToken: Opt[OidcIdToken],
+          authnState: OngoingAuthnState): p_Result = {
+
+    import redirBackRequest.siteId
+    val httpStatusCode = userInfoResponse.getCode
+    val body = userInfoResponse.getBody
+
+    // Already checked in authnRedirBack().
+    dieIf(authnState.authnSiteId != siteId, "TyEAUTSITEID003",
+          s"Wrong authn site: $siteId, should be: ${authnState.authnSiteId}")
+    dieIf(authnState.nextStep != "redir_back", "TyEAUTSITEID004",
+          s"Wrong step: ${authnState.nextStep}")
+
+    if (httpStatusCode < 200 || 299 < httpStatusCode) {
+      val randVal = nextRandomString()
+      val errCode = "TyEUSRINFRSP"
+      logger.warn(i"""s$siteId: Bad OIDC/OAuth2 userinfo response [$errCode],
+          |Log message random id: '$randVal'
+          |IDP: ${idp.protoAlias}, id: ${idp.prettyId}
+          |Browser redirback request URL: ${redirBackRequest.uri}
+          |IDP response status code: $httpStatusCode  (bad, not 2XX)
+          |IDP response body: -----------------------
+          |$body
+          |--------------------------------------
+          |""")
+      val errMsg = s"Unexpected status code: ${httpStatusCode
+                      }, details in the server logs, search for '$randVal'"
+      val upstreamError = 500 <= httpStatusCode && httpStatusCode <= 599
+      return (
+          if (upstreamError) BadGatewayResult(errCode, errMsg)
+          else InternalErrorResult(errCode, errMsg))
+    }
+
+    // db max len: idtys_c_idpuserjson_len <= 7000 [sync_app_rdb_constrs]
+    val maxUserRespLen = 6*1000
+    if (body.length > maxUserRespLen) {
+      // This is a weird IDP!?
+      return BadGatewayResult(
+            "TyEUSRINF2LONG", o"""Too long userinfo JSON from IDP: ${body.length
+                  } chars, max is: $maxUserRespLen""")
+    }
+
+    val json =
+          try Json.parse(body)
+          catch {
+            case _: Exception =>
+              return BadGatewayResult(
+                    "TyEUSRINFJSONPARSE", s"Malformed JSON from IDP userinfo endpoint")
+          }
+
+    var oauthDetails: OpenAuthDetails = (idp.protocol match {
+      case ProtoNameOidc => parseOidcUserInfo(json, idp)
+      case ProtoNameOAuth2 => parseCustomUserInfo(json, idp)
+      case bad => die("TyE5F5RKS56", s"Bad auth protocol: $bad")
+    }) getOrIfBad { errMsg =>
+      return BadGatewayResult("TyEUSRINFJSONUSE",
+            s"Got invalid user json from IDP: ${errMsg}")
+    }
+
+    Validation.ifBadEmail(oauthDetails.email, siteId = siteId, problem => {
+      return BadGatewayResult("TyEUSRINFJSONEML",
+            s"Got an invalid email address from IDP: ${problem.message}")
+    })
+
+    anyIdToken foreach { idToken: OidcIdToken =>
+      oauthDetails = oauthDetails.copy(oidcIdToken = Some(idToken))
+    }
+
+    val authnStateWithIdentity = authnState.copy(extIdentity = Some(oauthDetails))
+
+    authnStateWithIdentity.continueAtOrigSiteNonce match {
+      case Some(origSiteNonce) =>
+        // We're currently at the authn site, having authenticated at the IDP here
+        // at this site, on behalf of another site — now we need to redirect
+        // back to that other site, the original site.
+        // Already checked above, but why not again:
+        dieIf(authnStateWithIdentity.authnSiteId != siteId, "TyE305K24")
+
+        val nextSecretNonce = nextRandomString()
+        authnStateCache.put(nextSecretNonce, authnStateWithIdentity.copy(
+              lastStepAt = globals.now(),
+              nextStep = "finish_at_orig"))
+
+        val continueAtOrigSiteUrl =
+              routes.LoginWithOpenAuthController.finishAtOrigSite(nextSecretNonce)
+
+        p_Results.Redirect(continueAtOrigSiteUrl, status = p_Status.SEE_OTHER)
+
+      case None =>
+        // We're at the correct site already — didn't need to redirect to any
+        // authn origin, and now won't need to redirect back.
+        tryLoginOrShowCreateUserDialog(
+              redirBackRequest, authnStateWithIdentity, anyCustomIdp = Some(idp))
+    }
+  }
+
+
+
+  def finishAtOrigSite(secretNonce: St): Action[U] = GetActionIsLogin {
+        finishAtOrigSiteRequest: GetRequest =>
+
+    import finishAtOrigSiteRequest.{dao, siteId}
+
+    throwForbiddenIf(globals.anyLoginOrigin.isEmpty,
+          "TyE0AUTORIG", "There's no authn origin site")
+
+    val currState = getAuthnStateOrThrow(secretNonce, "finish_at_orig",
+          origSiteId = siteId,
+          maxAgeSeconds = Some(AFewSeconds)) // or "isInstantRedirect = true" ?
+
+    // We don't actually need the start authn state for anything —
+    // all we need is in currState. But we can look for maybe-bugs:
+
+    // The orig state might be old, if the user stopped at the IDP
+    // and e.g. read some ToU or Privacy Policy — so skip maxAgeSeconds.
+    val startStateNonce = currState.continueAtOrigSiteNonce getOrDie "TyE305MRKR2"
+    val startState = getAuthnStateOrThrow(startStateNonce, "org_site_start_state",
+          origSiteId = siteId)
+
+    // Check that we're back at the original site with the same authn state
+    // as when we started — just that now we also have an identity,
+    // which we got from the external Identity Provider, when authenticating
+    // over there, via our authn origin.
+    dieIf(startState.continueAtAuthnSiteNonce.isEmpty, "TyE5J40MSDK3")
+    dieIf(startState.continueAtAuthnSiteNonce != currState.continueAtAuthnSiteNonce,
+          "TyE052MRKJY2")
+    dieIf(startState.continueAtOrigSiteNonce.isNot(startStateNonce), "TyE5J40MSDK3")
+    dieIf(startState.stateString != currState.stateString, "TyE052MRKJY4")
+    dieIf(startState.protocol != currState.protocol, "TyE052MRKJY5")
+    dieIf(startState.providerAlias != currState.providerAlias, "TyE052MRKJY6")
+    dieIf(startState.returnToUrl != currState.returnToUrl, "TyE052MRKJY7")
+    dieIf(startState.browserNonce != currState.browserNonce, "TyE052MRKJY8")
+    dieIf(startState.extIdentity.isDefined, "TyE052MRKJY9")
+    dieIf(currState.extIdentity.isEmpty, "TyE052MRKJYA")
+
+    val idp: IdentityProvider = getIdentityProvider(currState, dao)
+
+    tryLoginOrShowCreateUserDialog(
+          finishAtOrigSiteRequest, currState, anyCustomIdp = Some(idp))
+  }
+
+
+
+  def authnLogout(): Action[U] = AsyncGetActionIsLogin { request: GetRequest =>
+    Future.successful(NotImplementedResult("TyEOIDCLGO", "Not implemented"))
+    // TODO backchannel logout from  /-/logout ?
+  }
+
+
+
+
+  // ======================================================================
+  //   Old, with Silhouette   =============================================
+  // ======================================================================
+
+
+  def startAuthentication(providerName: St, returnToUrl: Opt[St]): Action[U] =
+        AsyncGetActionIsLogin { request =>
+    startAuthenticationImpl(providerName, returnToUrl.trimNoneIfBlank, request)
+  }
+
+
+  private def startAuthenticationImpl(providerName: St, returnToUrl: Opt[St],
+        request: GetRequest): Future[Result] = {
 
     globals.loginOriginConfigErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
 
-    var futureResult = startOrFinishAuthenticationWithSilhouette(provider, request)
-    if (returnToUrl.nonEmpty) {
+    var futureResult = startOrFinishAuthenticationWithSilhouette(providerName, request)
+    if (returnToUrl.isDefined) {
       futureResult = futureResult map { result =>
         result.withCookies(
-          SecureCookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
+          // CLEAN_UP use OAuth2 state instead? skip the cookie.
+          // That's how the new OIDC code (above) works instead, already.
+          // Can save the returnToUrl in mem cache, also if redirs to login origin?
+          SecureCookie(name = ReturnToUrlCookieName,
+                value = returnToUrl.get, httpOnly = false))
       }
     }
+
     if (request.rawQueryString.contains("isInLoginPopup")) {
       futureResult = futureResult map { result =>
         result.withCookies(
           SecureCookie(name = IsInLoginPopupCookieName, value = "true", httpOnly = false))
       }
     }
+
     if (request.rawQueryString.contains("mayNotCreateUser")) {
       futureResult = futureResult map { result =>
         result.withCookies(
@@ -130,8 +934,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def finishAuthentication(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
-    startOrFinishAuthenticationWithSilhouette(provider, request)
+  def finishAuthentication(providerName: String): Action[Unit] =
+        AsyncGetActionIsLogin { request =>
+    startOrFinishAuthenticationWithSilhouette(providerName, request)
   }
 
 
@@ -152,6 +957,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     throwForbiddenIf(settings.enableSso,
       "TyESSO0OAUTH", "OpenAuth authentication disabled, because SSO enabled")
+    throwForbiddenIf(settings.useOnlyCustomIdps,
+      "TyECUIDPDEFOAU", o"""Default OpenAuth authentication disabled,
+        when using only site custom IDP""")
 
     if (globals.anyLoginOrigin isSomethingButNot originOf(request)) {
       // OAuth providers have been configured to send authentication data to another
@@ -208,7 +1016,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // We're finishing authentication.
         val futureProfile: Future[SocialProfile] = provider.retrieveProfile(authInfo)
         futureProfile flatMap { profile: SocialProfile =>   // TalkyardSocialProfile?  (TYSOCPROF)
-          handleAuthenticationData(request, profile)
+          Future.successful(
+                handleAuthenticationData(request, profile))
         }
     } recoverWith {
       case ex: Exception =>
@@ -238,7 +1047,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def handleAuthenticationData(request: GetRequest, profile: SocialProfile)
-        : Future[Result] = {
+        : Result = {
+    import request.{dao, siteId}
     logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
 
     val (anyReturnToSiteOrigin: Option[String], anyReturnToSiteXsrfToken: Option[String]) =
@@ -262,19 +1072,18 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         |anyReturnToUrl = $anyReturnToUrl"""
       // Delete the cookies, so if the user tries again, there'll be only one cookie and things
       // will work properly.
-      return Future.successful(
-        Forbidden(errorMessage).discardingCookies(
+      return Forbidden(errorMessage).discardingCookies(
           DiscardingSecureCookie(ReturnToSiteOriginTokenCookieName),
-          DiscardingSecureCookie(ReturnToUrlCookieName)))
+          DiscardingSecureCookie(ReturnToUrlCookieName))
     }
 
     REFACTOR; CLEAN_UP // stop using CommonSocialProfile. Use ExternalSocialProfile instead,  (TYSOCPROF)
     // it has useful things like username, about user text, etc.
-    val oauthDetails = profile match {
+    var oauthDetails = profile match {
       case p: CommonSocialProfile =>
         OpenAuthDetails(
-          providerId = p.loginInfo.providerID,
-          providerKey = p.loginInfo.providerKey,
+          confFileIdpId = Some(p.loginInfo.providerID),
+          idpUserId = p.loginInfo.providerKey,
           username = None, // not incl in CommonSocialProfile
           firstName = p.firstName,
           lastName = p.lastName,
@@ -283,8 +1092,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           avatarUrl = p.avatarURL)
       case p: ExternalSocialProfile =>
         OpenAuthDetails(
-          providerId = p.providerId,
-          providerKey = p.providerUserId,
+          confFileIdpId = Some(p.providerId),
+          idpUserId = p.providerUserId,
           username = p.username,
           firstName = p.firstName,
           lastName = p.lastName,
@@ -293,61 +1102,119 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           avatarUrl = p.avatarUrl)
     }
 
+    // Don't know about Facebook and GitHub. Twitter has no emails at all.
+    // We currently use only verified email addresses, from GitHub. [7KRBGQ20]
+    // Gmail addresses have been verified by Google.  [gmail_verifd]
+    // Facebook? Who knows what they do.
+    // LinkedIn: Don't know if the email has been verified; exclude LinkedIn here.
+    if ((oauthDetails.confFileIdpId.is(GoogleProvider.ID) &&
+            oauthDetails.email.exists(_ endsWith "@gmail.com"))
+        || oauthDetails.confFileIdpId.is(GitHubProvider.ID)) {
+      oauthDetails = oauthDetails.copy(isEmailVerifiedByIdp = Some(true))
+      COULD // include  [known_verified_email_domains]  too.
+    }
+
+    val authnState = OngoingAuthnState(
+          authnXsrfToken = "",
+          authnSiteId = siteId,  // for now, will delete all this later anyway
+          origSiteId = NoSiteId, // we don't know
+          protocol = ProtoNameOAuth2,
+          providerAlias = "dummy",
+          // ----
+          // isInLoginPopup, mayCreateUser and returnToUrl values are from cookies,
+          // and are missing here, if we're at the authn origin — then we'll
+          // get them in continueAtOriginalSite() instead, see "finish_at_orig__silhouette".
+          isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty,
+          mayCreateUser = !request.cookies.get(MayCreateUserCookieName).map(
+                _.value).contains("false"),
+          returnToUrl = anyReturnToUrl.getOrElse(""),
+          // ----
+          browserNonce = "",  // empty —> browser code skips check  [br_authn_nonce]
+          createdAt = When.Genesis,
+          stateString = "",
+          oauth2StateUseCount = new j_AtomicInteger(1),
+          extIdentity = Some(oauthDetails),
+          lastStepAt = globals.now(),
+          nextStep = "")  // filled in later
+
     val result = anyReturnToSiteOrigin match {
       case Some(originalSiteOrigin) =>
         val xsrfToken = anyReturnToSiteXsrfToken getOrDie "DwE0F4C2"
-        val oauthDetailsCacheKey = nextRandomString()
-        SHOULD // use Redis instead, so logins won't fail because the app server was restarted.
-        cache.put(oauthDetailsCacheKey, oauthDetails)
+        val cacheKey = nextRandomString()
+        authnStateCache.put(cacheKey, authnState.copy(nextStep = "finish_at_orig__silhouette"))
         val continueAtOriginalSiteUrl =
           originalSiteOrigin + routes.LoginWithOpenAuthController.continueAtOriginalSite(
-            oauthDetailsCacheKey, xsrfToken)
+                cacheKey, xsrfToken)
         Redirect(continueAtOriginalSiteUrl)
           .discardingCookies(DiscardingSecureCookie(ReturnToSiteOriginTokenCookieName))
+
       case None =>
-        tryLoginOrShowCreateUserDialog(request, anyOauthDetails = Some(oauthDetails))
+        tryLoginOrShowCreateUserDialog(request, authnState)
     }
 
-    Future.successful(result)
+    result
   }
 
 
-  private def tryLoginOrShowCreateUserDialog(
-        request: GetRequest, oauthDetailsCacheKey: Option[String] = None,
-        anyOauthDetails: Option[OpenAuthDetails] = None): Result = {
 
-    val dao = request.dao
+
+  // ======================================================================
+  //   After authn at IDP
+  // ======================================================================
+
+
+  // ------ Login, link accounts, or create new user:
+
+
+  private def tryLoginOrShowCreateUserDialog(
+        request: GetRequest,
+        authnState: OngoingAuthnState,
+        anyCustomIdp: Opt[IdentityProvider] = None): p_Result = {
+
+    import request.{dao, siteId}
+
     val siteSettings = dao.getWholeSiteSettings()
 
     throwForbiddenIf(siteSettings.enableSso,
-      "TyESSO0OAUTHLGI", "OpenAuth login disabled, because SSO enabled")
+          "TyESSO0OAUTHLGI", "OpenAuth login disabled, because SSO enabled")
+    throwForbiddenIf(siteSettings.useOnlyCustomIdps && anyCustomIdp.isEmpty,
+          "TyECUIDPOAULGI",
+          s"Server default authentication with ${authnState.protoAlias
+              } is disabled — using only site custom IDP")
+    dieIf(anyCustomIdp.exists(!_.isPerSite), "TyE305MRK24B",
+          s"Not site custom IDP: ${anyCustomIdp.map(_.protoAlias)}")
 
-    def cacheKey = oauthDetailsCacheKey.getOrDie("DwE90RW215")
-    val oauthDetails: OpenAuthDetails =
-      anyOauthDetails.getOrElse(Option(cache.getIfPresent(cacheKey)) match {
-        case None => throwForbidden("DwE76fE50", "OAuth cache value not found")
-        case Some(value) =>
-          // Remove to prevent another login with the same key, in case it gets leaked,
-          // e.g. via a log file.
-          // (Hmm, we remove the OpenAuthDetails entry here, and then add it back again here: (406BM5).
-          // Maybe could avoid removing it here. Still, good to do here, so it gets
-          // deleted for all code paths below that throws a client error back to the browser.)
-          cache.invalidate(cacheKey)
-          value.asInstanceOf[OpenAuthDetails]
-      })
+    val oauthDetails: OpenAuthDetails = authnState.extIdentity.getOrThrowForbidden(
+          "TyE305MRKGM2", "No cached ext identity")
+
+    throwForbiddenIf(authnState.origSiteId != NoSiteId &&
+              authnState.origSiteId != siteId, "TyEORGSITEID004",
+          s"Wrong orig site: $siteId, should be: ${authnState.origSiteId}")
+
+    if (anyCustomIdp.isEmpty) {
+      // Old Silhouette code — skip the below check then.
+      // Done in continueAtOriginalSite().
+    }
+    else {
+      checkAuthnXsrfToken(authnState.authnXsrfToken, request)
+    }
 
     val loginAttempt = OpenAuthLoginAttempt(
       ip = request.ip, date = globals.now().toJavaDate, oauthDetails)
 
-    val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
-    val mayCreateNewUser = !mayCreateNewUserCookie.map(_.value).contains("false")
+    val mayCreateNewUser = authnState.mayCreateUser && {
+      // This not needed? Already incl in authnState for all code paths, right.
+      val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
+      !mayCreateNewUserCookie.map(_.value).contains("false")
+    }
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
     //var showsCreateUserDialog = false
 
     val result = dao.tryLoginAsMember(loginAttempt) match {
       case Good(loginGrant) =>
-        createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user)
+        createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user,
+              authnState = authnState)
       case Bad(problem) =>
         // For now. Later, anyException will disappear.
         if (problem.anyException.isEmpty) {
@@ -356,123 +1223,102 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             "TyEUNEXEXC", s"Error logging in: ${problem.message}")
         }
         else problem.anyException.get match {
-        // (Fix indentation below later.)
-        case DbDao.IdentityNotFoundException =>
-          // Let's check if the user already exists, and if so, create an OpenAuth identity
-          // and connect it to the user.
-          // Details: The user might exist, although no identity was found, if the user
-          // has already 1) signed up as an email + password user, or 2) accepted an invitation
-          // (when the user clicks the invitation link in the invite email, a user entry
-          // is created automatically, without the user having to login). Or 3) signed up
-          // via e.g. a Twitter account and specified a Google email address like
-          // user@whatever.com (but not gmail.com) and then later attempts to log in
-          // via this Google email address instead of via Twitter.
-          // Or perhaps 4) signed up via a Facebook account that uses a Google address
-          // like user@whatever.com (but not gmail.com).
+          case DbDao.IdentityNotFoundException =>
+            // Let's check if the user already exists, and if so, create a IDP identity
+            // and link it to the user.
+            // Details: The user might exist, although no identity was found, if
+            // the user has already 1) signed up as an email + password user,
+            // or 2) accepted an invitation (when the user clicks the invitation
+            // link in the invite email, a user account is created automatically,
+            // without the user having to login).
+            // Or 3) signed up via an external IDP identity, say, Twitter or FB,
+            // that uses a, say, Google email address, like user@some.gsuite.domain
+            // or gmail.com, and now later attempts to log in via the Google
+            // email address instead of via Twitter or FB  — that is,
+            // mixes [identities from different IDPs] that use the same
+            // email address.
 
-          // Save canonical email? [canonical-email]
+            // Save canonical email? [canonical-email]
 
-          oauthDetails.email.flatMap(dao.loadMemberByEmailOrUsername) match {
-            case Some(user) =>
-              if (providerHasVerifiedEmail(oauthDetails)) {
-                val loginGrant = dao.createIdentityConnectToUserAndLogin(user, oauthDetails)
-                createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user)
-              }
-              else {
-                // There is no reliable way of knowing that the current user is really
-                // the same one as the old user in the database? We don't know if the
-                // OpenAuth provider has verified the email address.
-                // What we can do, is to:
-                // A) instruct the user to 1) login as the user in the database
-                // (say, via Twitter, in case 3 above). And then 2) click
-                // an Add-OpenAuth/OpenID-account button, and then login again in the
-                // way s/he attempted to do right now. Then, since the user is logged
-                // in at both providers (e.g. both Twitter and Google, in case 3 above)
-                // we can safely connect this new OpenAuth identity to the user account
-                // already in the database. This is how StackOverflow does it.
-                //  See: http://stackoverflow.com/questions/6487418/
-                //                  how-to-handle-multiple-openids-for-the-same-user
-                // Or B) Perhaps we can ask the user to login as the Twitter user directly?
-                // From here, when already logged in with the oauthDetails.
-                // (Instead of first logging in via Google then Twitter).
-                // Or C) Or we could just send an email address verification email?
-                // But then we'd reveal the existense of the Twitter account. And what if
-                // the user clicks the confirmation link in the email account without really
-                // understanding what s/he is doing? I think A) is safer.
-                // Anyway, for now, simply:
-                // (Use "user" for the provider's account, and "account" for the account in
-                // this server)
-                val emailAddress = oauthDetails.email.getOrDie("EsE2FPK8")
-                throwForbidden("DwE7KGE32", "\n"+o"""You already have an account with email address
-                  $emailAddress, and your ${oauthDetails.providerId} user has the same
-                  email address. Since you already have an account here, please don't login via
-                  ${oauthDetails.providerId} —
-                  instead login using your original login method, e.g. ${
-                    someProvidersExcept(oauthDetails.providerId)},
-                  or username and password. — I hope you remember which one.""" +
-                  "\n\n" +
-                  o"""The reason I do not currently let you login via the
-                  ${oauthDetails.providerId} user with email $emailAddress
-                  is that I don't know if ${oauthDetails.providerId}
-                  has verified that the email address is really yours — because if it is not,
-                  then you would get access to someone else's account, if I did let you login.""" +
-                  "\n\n")
-                // If the user does *not* own the email address, s/he would be able to
-                // impersonate another user, when his/her new account gets associated with
-                // the old one just because they both claim to use the same email address.
-              }
-            case None =>
-              if (!siteSettings.allowSignup) {
-                throwForbidden("TyE0SIGNUP02A", "Creation of new accounts is disabled")
-              }
-              else if (!siteSettings.isEmailAddressAllowed(oauthDetails.emailLowercasedOrEmpty)) {
-                throwForbidden(
-                  "TyEBADEMLDMN_-OAUTH_", "You cannot sign up using that email address")
-              }
-              else if (mayCreateNewUser) {
+            // (Could ask if the user wants to continue using the email
+            // address and preferred username etc, from the IDP.
+            // Or if hen wants to, say, use a different email address.
+            // But no one has asked about such a feature, so skip for now.)
+
+            // Maybe always verify any email addr provided by the IDP,  [email_privacy]
+            // before loading member by username or email addr?
+            // So an attacker cannot figure out if there's already an account
+            // with the email hen specified — unless it's the attacker's own email.
+            // Currently one has to use the email from the IDP anyway,
+            // if it's been verified by the IDP.  [use_idp_email]
+
+            BUG // loadMemberByEmailOrUsername() won't load any secondary  [2nd_email]
+            // email addresses that has been verified — still, such an address
+            // causes a unique key error, later when upserting the new user
+            // (if its verified email addr is the same addr),
+            // the db constraint: useremails_email_verified_u.
+            oauthDetails.email.flatMap(dao.loadMemberByEmailOrUsername) match {
+              case Some(user) =>
+                val nextAuthnState = authnState.copy(matchingTyUser = Some(user))
+                if (oauthDetails.isEmailVerifiedByIdp isNot true) {
+                  verifyEmailAddrThenAskIfLinkIdentityToUser(nextAuthnState, request)
+                }
+                else {
+                  askIfLinkIdentityToUser(nextAuthnState, request)
+                }
+              case None =>
+                // Create new account?
+
+                throwForbiddenIf(!siteSettings.allowSignup,
+                    "TyE0SIGNUP02A", "Creation of new accounts is disabled")
+
+                // Better let IDPs check email domains themselves, if they want to?
+                // Dupl check [alwd_eml_doms]
+                throwForbiddenIf(!oauthDetails.isPerSite &&
+                      !siteSettings.isEmailAddressAllowed(
+                          oauthDetails.emailLowercasedOrEmpty),
+                      "TyEBADEMLDMN_-OAUTH_", o"""You cannot sign up with this email
+                          address: '${oauthDetails.emailLowercasedOrEmpty}'""")
+
+                UX; COULD // show a nice error dialog instead.
+                UX; COULD // show identity provider name.
+                throwForbiddenIf(!mayCreateNewUser, "DwE5FK9R2",
+                      o"""Access denied. You don't have an account at this site
+                      via that identity provider. And you may not
+                      create a new account to access this resource.""")
+
                 //showsCreateUserDialog = true
-                showCreateUserDialog(request, oauthDetails)
-              }
-              else {
-                // COULD show a nice error dialog instead.
-                throwForbidden("DwE5FK9R2", o"""Access denied. You don't have an account
-                    at this site with ${oauthDetails.providerId} login. And you may not
-                    create a new account to access this resource.""")
-              }
-          }
-        case ex: QuickMessageException =>
-          logger.warn(s"Deprecated exception [TyEQMSGEX03]", ex)
-          throwForbidden("TyEQMSGEX03", ex.getMessage)
+                showCreateUserDialog(request, authnState)
+            }
+
+          case ex: QuickMessageException =>
+            logger.warn(s"Deprecated exception [TyEQMSGEX03]", ex)
+            throwForbidden("TyEQMSGEX03", ex.getMessage)
+
+          case ex: Exception =>
+            logger.error(s"Unexpected exception [TyEQMSGEX04]", ex)
+            throwInternalError("TyEQMSGEX03", ex.getMessage)
         }
     }
 
-    // COULD avoid deleting cookeis if we have now logged in (which we haven't, if
+    // COULD avoid deleting cookies if we have now logged in (which we haven't, if
     // the create-user dialog is shown: showsCreateUserDialog == true). Otherwise,
     // accidentally reloading the page, results in weird errors, like the xsrf token
     // missing. But supporting page reload here requires fairly many mini fixes,
-    // and maybe is mariginally worse for security? since then someone else,
-    // e.g. an "evil" tech support person, can ask for and resuse the url?
+    // and maybe is marginally worse for security? since then someone else,
+    // e.g. an "evil" tech support person, can ask for and reuse the url?
     result.discardingCookies(CookiesToDiscardAfterLogin: _*)
   }
 
 
-  private def someProvidersExcept(providerId: String) =
-    Seq(GoogleProvider.ID, FacebookProvider.ID, TwitterProvider.ID, GitHubProvider.ID,
-      LinkedInProvider.ID)
-      .filterNot(_ equalsIgnoreCase providerId).mkString(", ")
+
+  // ------ Login directly
 
 
-  private def providerHasVerifiedEmail(oauthDetails: OpenAuthDetails) = {
-    // Don't know about Facebook and GitHub. Twitter has no emails at all. So for now:
-    // (I'm fairly sure Google knows that each Gmail address is owned by the correct user.)
-    oauthDetails.providerId == GoogleProvider.ID &&
-      oauthDetails.email.exists(_ endsWith "@gmail.com")
-    // + known all-email-addrs-have-been-verified email domains from site settings?
-  }
+  private def createCookiesAndFinishLogin(
+        request: DebikiRequest[_], siteId: SiteId, member: User,
+        authnState: OngoingAuthnState): Result = {
 
-
-  private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, member: User)
-        : Result = {
     request.dao.pubSub.userIsActive(request.siteId, member, request.theBrowserIdData)
     val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, member.id)
 
@@ -487,10 +1333,17 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val response =
       if (isAjax(request.underlying)) {
-        // We've shown but closed an OAuth provider login popup, and now we're
-        // handling a create-user Ajax request from a certain showCreateUserDialog()
-        // Javascript dialog. It already knows about any pending redirects.
-        OkSafeJson(Json.obj(
+        // We're handling a create-user Ajax request from a showCreateUserDialog()
+        // client side dialog. It already knows about any pending redirects.
+        // See: handleCreateUserResponse() in client/app-more/.
+        // (If getting logged in directly, `request` wouldn't be Ajax — instead,
+        // it'd be a load-whole-html-page GET request, after having gotten
+        // redirected back from the IDP.)
+        //
+        OkSafeJson(Json.obj(  // ts: AuthnResponse
+          // Remove `origNonceBack` from here? Already checked before showing
+          // the create user dialog:  create-user-dialog.more.ts  [br_authn_nonce].
+          "origNonceBack" -> JsString(authnState.browserNonce),
           "userCreatedAndLoggedIn" -> JsTrue,
           "emailVerifiedAndLoggedIn" -> JsBoolean(member.emailVerifiedAt.isDefined),
           // In case we're in a login popup for [an embedded <iframe> with cookies disabled],
@@ -508,32 +1361,35 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         maybeCannotUseCookies ||=
           request.cookies.get(AvoidCookiesCookieName).map(_.value) is EdSecurity.Avoid
 
-        val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty
-        def loginPopupCallback: Result =
+        def loginPopupCallback: p_Result =
           Ok(views.html.login.loginPopupCallback(
-            weakSessionId = weakSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
+                origNonceBack = authnState.browserNonce,
+                weakSessionId = weakSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
 
-        request.cookies.get(ReturnToUrlCookieName) match {  // [49R6BRD2]
-          case Some(returnToUrlCookie) =>
-            if (returnToUrlCookie.value.startsWith(
-                LoginWithPasswordController.RedirectFromVerificationEmailOnly)) {
-              // We are to redirect only from new account email address verification
-              // emails, not from here.
-              loginPopupCallback
-            }
-            else if (isInLoginPopup) {
-              // Javascript in the popup will call handleLoginResponse() which calls
-              // continueAfterLogin().
-              loginPopupCallback
-            }
-            else {
-              // Currently only happens in the create site wizard (right?), and this redirects to
-              // the next step in the wizard.
-              Redirect(returnToUrlCookie.value)
-            }
-          case None =>
-            // We're logging in an existing user in a popup window.
-            loginPopupCallback
+        val returnToUrl: St = authnState.returnToUrl  // [49R6BRD2]
+        if (returnToUrl.startsWith(
+              LoginWithPasswordController.RedirectFromVerificationEmailOnly)) {
+          // We are to redirect only from new account email address verification
+          // emails, not from here.
+
+          // But if we're in a login window, there's no window.opener, so
+          // window.opener.debiki.internal.handleLoginResponse(..) would fail,
+          // here: [login_cont_in_opnr], right?
+          // Hmm but this bug-warn fails (!), although everything works fine.
+          //bugWarnIf(!authnState.isInLoginPopup, "TyEWINOPNR5",
+          //      s"s$siteId: In login win w/o opener? But redir-from-email-only: $member")
+
+          loginPopupCallback
+        }
+        else if (authnState.isInLoginPopup) {
+          // Javascript in the popup will call handleLoginResponse() which calls
+          // continueAfterLogin().
+          loginPopupCallback
+        }
+        else {
+          // Currently only happens in the create site wizard (right?), and this
+          // redirects to the next step in the wizard.
+          Redirect(returnToUrl)   // + origNonceBack
         }
       }
 
@@ -541,42 +1397,235 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def showCreateUserDialog(request: GetRequest, oauthDetails: OpenAuthDetails): Result = {
-    // Re-insert the  OpenAuthDetails, we just removed it (406BM5). A bit double work?
-    val cacheKey = nextRandomString()
-    cache.put(cacheKey, oauthDetails)
+
+  // ------ Link accounts
+
+
+  private def verifyEmailAddrThenAskIfLinkIdentityToUser(
+          authnState: OngoingAuthnState, request: GetRequest): p_Result = {
+    import request.{dao, siteId}
+
+    val identity = authnState.extIdentity getOrDie "TyE5R7KG01"
+    val user = authnState.matchingTyUser getOrDie "TyE305KG02"
+
+    val emailToVerify = identity.email.getOrDie(
+          "TyE40BKSRT53", s"s$siteId: No email: $identity")
+
+    // But what about secondary addresses?  [2nd_email]
+    dieIf(emailToVerify != user.primaryEmailAddress, "TyE39TKRSTRS20")
+
+    val expMins = MaxEmailSecretLinkAgeMinutes
+    val secretNonce = nextRandomString()
+    authnStateCache.put(secretNonce, authnState.copy(nextStep = "ask_if_link"))
+
+    COULD // use Redis instead
+    //dao.redisCache.saveOneTimeSecretKeyVal(
+    //      emailVerifSecret,  ...serialize-to-json..., expSecs = expMins * 60)
+
+    val subject = "Verify your email address" // I18N
+    val emailVerifUrl =
+          originOf(request) +
+          controllers.routes.LoginWithOpenAuthController.verifyEmailAskIfLinkAccounts(
+              secretNonce).url
+    val email = Email(
+          EmailType.LinkAccounts,
+          createdAt = globals.now(),
+          sendTo = user.primaryEmailAddress,
+          toUserId = Some(user.id),
+          subject = s"[${dao.theSiteName()}] $subject",
+          bodyHtmlText = _ => {
+            views.html.login.verifyYourEmailAddrEmail(
+                  name = user.nameOrUsername,
+                  siteAddr = request.host,
+                  emailVerifUrl = emailVerifUrl).body
+          })
+    dao.saveUnsentEmail(email)
+    globals.sendEmail(email, dao.siteId)
+
+    // + origNonceBack, would be good to check the nonce browser side,   [br_authn_nonce]
+    // before sending the email?
+
+    Ok(views.html.login.verifyYourEmailAddr(
+          tpi = SiteTpi(request),
+          subject = subject,
+          emailToVerify = emailToVerify,
+          expMins = expMins))
+  }
+
+
+  def verifyEmailAskIfLinkAccounts(secretNonce: St): Action[U] =
+          GetActionAllowAnyoneRateLimited(RateLimits.LinkExtIdentity) { request =>
+
+    // Now we know the email addr belongs to the current end user
+    // — so it's ok to link hens external IDP identity to the existing
+    // Talkyard user account with the same email.
+    // But we don't yet have any Talkyard account for the end user (we have
+    // not yet linked the end user's identity to the Ty account) so we cannot
+    // currently save in the database that the email has been verified.
+
+    val authnState = getAuthnStateOrThrow(secretNonce, "ask_if_link",
+          origSiteId = request.siteId)
+    askIfLinkIdentityToUser(authnState, request)
+  }
+
+
+  private def askIfLinkIdentityToUser(authnState: OngoingAuthnState,
+          request: ApiRequest[_]): Result = {
+    import request.dao
+
+    val user = authnState.matchingTyUser getOrDie "TyE05MR202"
+    val userInclDetails = dao.loadTheUserInclDetailsById(user.id)
+
+    val identity = authnState.extIdentity getOrDie "TyE6MSK201"
+    val idpName = dao.getIdentityProviderNameFor(identity)
+          .getOrThrowForbidden("TyEIDPGONE3905", "Identity provider was just deleted?")
+
+    val linkSecret = nextRandomString()
+    authnStateCache.put(linkSecret, authnState.copy(
+          lastStepAt = globals.now(),
+          nextStep = "ans_link_q"))
+
+    // `identity`s email has been verified. But:
+    // Note that it's safest if the old account also has verified
+    // the email address! So we know it's the same person.
+    // Otherwise someone, Mallory, could sign up with
+    // another person's, Vic's, email address, not verify it
+    // (couldn't — not Mallory's addr) and then, when Vic later signs up,
+    // Vic's IDP identity would get linked to Mallory's old account
+    // — and Mallory could thereafter login as Vic!
+    // That'd be an "Account fixation attack"? [act_fx_atk]
+    // Reminds of session fixation (it's not a session though, but an
+    // account, that the attacker has prepared).
+    //
+    // That's why we incl oldEmailVerified = ...  below.
+    //
+    Ok(views.html.login.askIfLinkAccounts(
+          tpi = SiteTpi(request),
+          origNonceBack = authnState.browserNonce,
+          oldEmailAddr = user.primaryEmailAddress,
+          oldEmailVerified = user.emailVerified,
+          oldUsername = user.theUsername,
+          createdOnDate = toIso8601Day(userInclDetails.createdAt.toJavaDate),
+          newIdentityNameOrEmailOrId = identity.nameOrUsername.orElse(
+                identity.email).getOrElse(identity.idpUserId),
+          idpName = idpName,
+          linkSecret = linkSecret))
+  }
+
+
+  def answerLinkAccounts: Action[JsonOrFormDataBody] = JsonOrFormDataPostAction(
+        RateLimits.LinkExtIdentity, maxBytes = 200, allowAnyone = true,
+        skipXsrfCheck = true, // the linkSecret input is enough
+        ) { request =>
+    import request.{dao, siteId}
+
+    val choiceStr = request.body.getOrThrowBadReq("choice")
+    val shallLink = choiceStr match {
+      case "YesLn" => true
+      case "NoCancel" => false
+      case bad => throwBadParam("TyE305RKFDJ3", "choice", bad)
+    }
+
+    val linkSecret = request.body.getOrThrowBadReq("linkSecret")
+    val authnState = getAuthnStateOrThrow(linkSecret, "ans_link_q", origSiteId = siteId)
+
+    val matchingTyUser = authnState.matchingTyUser getOrDie "TyE004MKP202"
+    val extIdentity = authnState.extIdentity getOrDie "TyE6M9MXK201"
+
+    val tryLoginAgainUrl =
+          originOf(request) +
+          controllers.routes.LoginWithOpenAuthController.authnStart(
+              protocol = authnState.protocol,
+              providerAlias = authnState.providerAlias,
+              returnToUrl = authnState.returnToUrl,
+              nonce = authnState.browserNonce,
+              authViaAuthnOrigin = authnState.continueAtAuthnSiteNonce.map(_ => true),
+              // If the user didn't want to link hens IDP identity to the Ty user,
+              // then, tell the IDP to let the user choose a different identity,
+              // over at the IDP, so won't get the link-to-this-identity-to-that-user
+              // question again.
+              selectAccountAtIdp = Some(!shallLink)).url
+
+    val idpName = dao.getIdentityProviderNameFor(extIdentity) getOrThrowForbidden(
+          "TyEIDPGONE", s"IDP gone: ${extIdentity.prettyIdpId}")
+
+    if (!shallLink) {
+      // Send the user back to the IDP authn page, where hen can login
+      // using a different IDP account or maybe create a new account.
+      // What else is there to do?
+      Ok(views.html.login.accountsNotLinkedPleaseLoginAgain(
+            tpi = SiteTpi(request),
+            origNonceBack = authnState.browserNonce,
+            tryLoginAgainUrl = tryLoginAgainUrl,
+            idpName = idpName))
+    }
+    else {
+      // Don't login — it's better to ask hen to try again, so hen will notice
+      // immediately if won't work, rather than some time later, when hen
+      // has forgotten that hen (tried to) link the accounts, and cannot provide
+      // the support staff with any meaningful info other than "it not work"?
+      // (Also, could logging in here enable xsrf login attacks?)
+
+      dao.saveIdentityLinkToUser(extIdentity, matchingTyUser)
+
+      Ok(views.html.login.accountsLinkedPleaseLoginAgain(
+            tpi = SiteTpi(request),
+            origNonceBack = authnState.browserNonce,
+            tryLoginAgainUrl = tryLoginAgainUrl,
+            idpName = idpName))
+    }
+  }
+
+
+
+  // ------ Create new user
+
+
+  private def showCreateUserDialog(request: GetRequest, authnState: OngoingAuthnState)
+          : Result = {
+    import request.dao
+    val oauthDetails: OpenAuthDetails = authnState.extIdentity getOrDie "TyE503MRKGGM"
+    val idpName = dao.getIdentityProviderNameFor(oauthDetails)
+          .getOrThrowForbidden("TyEIDPGONE3907", "Identity provider just deleted?")
+
+    val nextNonce = nextRandomString()
+    authnStateCache.put(nextNonce, authnState.copy(nextStep = "create_user"))
 
     val anyIsInLoginWindowCookieValue = request.cookies.get(IsInLoginWindowCookieName).map(_.value)
-    val anyReturnToUrlCookieValue = request.cookies.get(ReturnToUrlCookieName).map(_.value)
 
     val result = if (anyIsInLoginWindowCookieValue.isDefined) {
       // Continue running in the login window, by returning a complete HTML page that
       // shows a create-user dialog. (( This happens if 1) we're in a create
-      // site wizard, then there's a dedicated login step in a login window, or 2)
+     // site wizard, then there's a dedicated login step in a login window, or 2)
       // we're logging in to the admin pages, or 3) when logging in to a login required site,
       // or 4) we're visiting an embedded comments
       // site and attempted to login, then a login popup window opens (better than
       // showing a login dialog somewhere inside the iframe). ))
       Ok(views.html.login.showCreateUserDialog(
         SiteTpi(request),
+        origNonceBack = authnState.browserNonce,
+        idpName = idpName,
+        idpHasVerifiedEmail = oauthDetails.isEmailVerifiedByIdp.is(true),
         serverAddress = s"//${request.host}",
         newUserUsername = oauthDetails.username getOrElse "",
         newUserFullName = oauthDetails.displayNameOrEmpty,
         newUserEmail = oauthDetails.emailLowercasedOrEmpty,
-        authDataCacheKey = cacheKey,
-        anyContinueToUrl = anyReturnToUrlCookieValue))
+        authDataCacheKey = nextNonce,
+        anyContinueToUrl = Some(authnState.returnToUrl)))
     }
     else {
       // The request is from an OAuth provider login popup. Run some Javascript in the
       // popup that continues execution in the main window (the popup's window.opener)
-      // and closes the popup.
+      // and closes the popup.  [2ABKW24T]
       Ok(views.html.login.closePopupShowCreateUserDialog(
-        providerId = oauthDetails.providerId,
+        origNonceBack = authnState.browserNonce,
+        idpName = idpName,
+        idpHasVerifiedEmail = oauthDetails.isEmailVerifiedByIdp.is(true),
         newUserUsername = oauthDetails.username getOrElse "",
         newUserFullName = oauthDetails.displayNameOrEmpty,
         newUserEmail = oauthDetails.emailLowercasedOrEmpty,
-        authDataCacheKey = cacheKey,
-        anyContinueToUrl = anyReturnToUrlCookieValue))
+        authDataCacheKey = nextNonce,
+        anyContinueToUrl = Some(authnState.returnToUrl)))
     }
 
     result.discardingCookies(
@@ -591,62 +1640,64 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // LoginWithPasswordController, + login-dialog.ts [5PY8FD2]
         allowAnyone = true) { request: JsonPostRequest =>
 
-    val body = request.body
-    val dao = request.dao
+    // A bit dupl code. [2FKD05]
+    import request.{body, dao, siteId}
 
     val siteSettings = dao.getWholeSiteSettings()
 
     throwForbiddenIf(siteSettings.enableSso,
       "TyESSO0OAUTHNWUSR", "OpenAuth user creation disabled, because SSO enabled")
-
+    // ... But `useOnlyCustomIdps` is fine — here's where we create users
+    // via custom IDPs.
     throwForbiddenIf(!siteSettings.allowSignup,
       "TyE0SIGNUP04", "OpenAuth user creation disabled, because new signups not allowed")
 
     val fullName = (body \ "fullName").asOptStringNoneIfBlank
-    val emailAddress = (body \ "email").as[String].trim
-    val username = (body \ "username").as[String].trim
-    val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
+    val emailAddress = (body \ "email").as[St].trim
+    val username = (body \ "username").as[St].trim
+    // val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]  CLEAN_UP REMOVE client side
+    val secretNonce = (body \ "authDataCacheKey").asOpt[St]
+          .getOrThrowBadRequest("TyE08GM6", "Authn state secret nonce missing")
 
-    throwForbiddenIf(!siteSettings.isEmailAddressAllowed(emailAddress),
-      "TyEBADEMLDMN_-OAUTHB", "You cannot sign up using that email address")
-
-    val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse
-      throwBadReq("DwE08GM6", "Auth data cache key missing")
-    val oauthDetails = Option(cache.getIfPresent(oauthDetailsCacheKey)) match {
-      case Some(details: OpenAuthDetails) =>
-        // Don't remove the cache key here — maybe the user specified a username that's
-        // in use already. Then hen needs to be able to submit again (using the same key).
-        details
-      case None =>
+    // Don't invalidate the nonce here — keep the authn state in the cache,
+    // until we're done with this create-user dialog, so one can retry,
+    // e.g. if typing a username that is in use already.
+    // (We're done already with the authn over at the IDP and should be ok
+    // to reuse the same nonce here — direct client-server communication,
+    // nothing else involved.)
+    val authnState = getAuthnStateOrThrow(
+          secretNonce, "create_user", origSiteId = siteId, keepStateInCache = true)
+    /* UX: A more user friendly message? Like:
         throwForbidden("DwE50VC4", o"""Bad auth data cache key — this happens if you wait
              rather long (many minutes) with submitting the dialog.
              Or if the server was just restarted. Please try to sign up again.""")
-      case _ =>
-        die("TyE2GVM0")
-    }
+    */
 
-    val emailVerifiedAt = oauthDetails.email match {
-      case Some(e) if e.toLowerCase != emailAddress =>
-        throwForbidden("DwE523FU2", o"""When signing up, currently you cannot change your email address
-          from the one you use at ${oauthDetails.providerId}, namely: ${oauthDetails.email}""")
-      case Some(e) =>
-        // Twitter provides no email, or I don't know if any email has been verified.
-        // We currently use only verified email addresses, from GitHub. [7KRBGQ20]
-        // Google and Facebook emails have been verified though.
-        // LinkedIn: Don't know if the email has been verified, so exclude LinkedIn here.
-        if (oauthDetails.providerId == GoogleProvider.ID ||
-            oauthDetails.providerId == GitHubProvider.ID ||
-            oauthDetails.providerId == FacebookProvider.ID) {
-          Some(request.ctime)
-        }
-        else {
-          None
-        }
-      case None =>
+    val oauthDetails = authnState.extIdentity getOrDie "TyE305MRKDM2"
+
+    val emailVerifiedAt = oauthDetails.email flatMap { emailFromIdp =>
+      // [use_idp_email]
+      throwForbiddenIf(emailFromIdp.toLowerCase != emailAddress, "TyE523FU2",
+            o"""When signing up, currently you cannot change your email address
+            from the one you use at ${oauthDetails.confFileIdpId}, namely: ${
+            oauthDetails.email}""")
+
+      if (oauthDetails.isEmailVerifiedByIdp is true) {
+        // However we don't know how long ago the IDP verified the email.
+        Some(request.ctime)
+      }
+      else {
         None
+      }
     }
 
-    // Some dupl code. [2FKD05]
+    // IDPs can check email domains themselves.  Dupl check [alwd_eml_doms]
+    throwForbiddenIf(!oauthDetails.isPerSite &&
+          !siteSettings.isEmailAddressAllowed(emailAddress),
+          "TyEBADEMLDMN_-OAUTHB", "You cannot sign up using that email address")
+
+    // More dupl code. [2FKD05]
+
     if (!siteSettings.requireVerifiedEmail && emailAddress.isEmpty) {
       // Fine.
     }
@@ -688,30 +1739,46 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         }
 
       val result = try {
-        val loginGrant = dao.createIdentityUserAndLogin(userData, request.theBrowserIdData)
-        val newMember = loginGrant.user
+        val (identity, userInclDetails) = dao.saveIdentityCreateUser(
+              userData, request.theBrowserIdData)
+
+        val newMember = userInclDetails.briefUser
+        val loginGrant = MemberLoginGrant(
+              Some(identity), newMember, isNewIdentity = true, isNewMember = true)
+
         dieIf(newMember.emailVerifiedAt != emailVerifiedAt, "EdE2WEP03")
         if (emailAddress.nonEmpty && emailVerifiedAt.isEmpty) {
-          TESTS_MISSING // no e2e tests for this
+          TESTS_MISSING
           val email = LoginWithPasswordController.createEmailAddrVerifEmailLogDontSend(
-              newMember, anyReturnToUrl, request.host, request.dao)
+              newMember, Some(authnState.returnToUrl), request.host, request.dao)
           globals.sendEmail(email, dao.siteId)
         }
+
         if (emailVerifiedAt.isDefined || siteSettings.mayPostBeforeEmailVerified) {
-          createCookiesAndFinishLogin(request, request.siteId, loginGrant.user)
+          createCookiesAndFinishLogin(request, request.siteId, loginGrant.user,
+                authnState)
         }
         else {
-          OkSafeJson(Json.obj(
+          // This'll show a "Verify your email address — check your email inbox"
+          // message or sth like that. [new_user_verif_eml]
+          OkSafeJson(Json.obj(  // ts: AuthnResponse
+            "origNonceBack" -> authnState.browserNonce,
             "userCreatedAndLoggedIn" -> JsFalse,
             "emailVerifiedAndLoggedIn" -> JsFalse))
         }
       }
       catch {
         case _: DbDao.DuplicateUsername =>
+          // If also same email address:
+          SHOULD // instead ask if link IDP identity to this account  [oidc_missing]
           throwForbidden(
               "DwE6D3G8", "Username already taken, please try again with another username")
         case _: DbDao.DuplicateUserEmail =>
-          // BUG SHOULD support many users per email address, if mayPostBeforeEmailVerified.
+          // If different username, but same email:
+          SHOULD // support many users per email address, if mayPostBeforeEmailVerified.
+          // Or:
+          SHOULD // ask if link IDP identity to this account  [oidc_missing]
+                // and use the username from this account instead.
           if (emailVerifiedAt.isDefined) {
             // The user has been authenticated, so it's okay to tell him/her about the email address.
             throwForbidden(
@@ -720,40 +1787,58 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // Don't indicate that there is already an account with this email.
           LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
             request.dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
-          OkSafeJson(Json.obj(
+          OkSafeJson(Json.obj(  // ts: AuthnResponse
+            "origNonceBack" -> authnState.browserNonce,
             "userCreatedAndLoggedIn" -> JsFalse,
             "emailVerifiedAndLoggedIn" -> JsFalse))
       }
 
-      // Everything went fine. Won't need to submit the dialog again, so remove the cache key.
-      cache.invalidate(oauthDetailsCacheKey)
+      // Done creating user account. Won't need to submit the dialog again,
+      // so forget the authn state.
+      authnStateCache.invalidate(secretNonce)
 
       result.discardingCookies(CookiesToDiscardAfterLogin: _*)
     }
   }
 
 
-  /** Redirects to and logs in via anyLoginOrigin; then redirects back to this site, with
-    * a session id and xsrf token included in the GET request.
-    */
-  private def loginViaLoginOrigin(providerName: String, request: RequestHeader): Future[Result] = {
+
+  // Old: Silhouette:
+
+  // ------ Login via Login Origin
+
+
+  def makeAuthnXsrfToken(request: RequestHeader): (St, Cookie) = {
     // Parallel logins? Is the same user logging in in two browser tabs, at the same time?
     // People sometimes do, for some reason, and if that won't work, they sometimes contact
     // the Talkyard developers and ask what's wrong. Only to avoid these support requests,
     // let's make parallel login work, by including xsrf tokens from all such ongoing logins,
     // in the cookie value. [PRLGIN]
     val anyCookie = request.cookies.get(ReturnToThisSiteXsrfTokenCookieName)
-    val oldTokens: Option[String] = anyCookie.map(_.value)
+    val oldTokens: Opt[St] = anyCookie.map(_.value)
 
     val newXsrfToken = nextRandomString()
     val newCookieValue = newXsrfToken + Separator + oldTokens.getOrElse("")
+
+    val xsrfCookie = SecureCookie(name = ReturnToThisSiteXsrfTokenCookieName,
+          value = newCookieValue, maxAgeSeconds = Some(LoginTimeoutMins * 60),
+          httpOnly = false)
+
+    (newXsrfToken, xsrfCookie)
+  }
+
+
+  /** Redirects to and logs in via anyLoginOrigin; then redirects back to this site, with
+    * a session id and xsrf token included in the GET request.
+    */
+  private def loginViaLoginOrigin(providerName: St, request: RequestHeader)
+        : Future[Result] = {
+    val (newXsrfToken, xsrfCookie) = makeAuthnXsrfToken(request)
     val loginEndpoint =
       globals.anyLoginOrigin.getOrDie("TyE830bF1") +
         routes.LoginWithOpenAuthController.loginAtLoginOriginThenReturnToOriginalSite(
           providerName, returnToOrigin = originOf(request), newXsrfToken)
-    Future.successful(Redirect(loginEndpoint).withCookies(
-      SecureCookie(name = ReturnToThisSiteXsrfTokenCookieName, value = newCookieValue,
-        maxAgeSeconds = Some(LoginTimeoutMins * 60), httpOnly = false)))
+    Future.successful(Redirect(loginEndpoint).withCookies(xsrfCookie))
   }
 
 
@@ -763,15 +1848,17 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     * The request origin must be the anyLoginOrigin, because that's the origin that the
     * OAuth 1 and 2 providers supposedly have been configured to use.
     */
-  def loginAtLoginOriginThenReturnToOriginalSite(provider: String, returnToOrigin: String,
-        xsrfToken: String): Action[Unit] = AsyncGetActionIsLogin { request =>
+  def loginAtLoginOriginThenReturnToOriginalSite(providerName: String,
+          returnToOrigin: String, xsrfToken: String): Action[Unit] =
+        AsyncGetActionIsLogin { request =>
+
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
     if (globals.anyLoginOrigin isNot originOf(request))
       throwForbidden(
         "DwE50U2", s"You need to login via the login origin, which is: `${globals.anyLoginOrigin}'")
 
-    val futureResponse = startOrFinishAuthenticationWithSilhouette(provider, request)
+    val futureResponse = startOrFinishAuthenticationWithSilhouette(providerName, request)
     futureResponse map { response =>
       response.withCookies(
         SecureCookie(name = ReturnToSiteOriginTokenCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
@@ -780,9 +1867,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String): Action[Unit] =
-        GetActionIsLogin { request =>
-    // oauthDetailsCacheKey might be a chache key Mallory generated, when starting a login
+  def checkAuthnXsrfToken(xsrfToken: St, request: GetRequest): U = {
+    dieIf(xsrfToken.isEmpty, "TyE305MRG245")
+    // oauthDetailsCacheKey might be a cache key Mallory generated, when starting a login
     // flow on his laptop — and now he might have made the current requester click a link
     // with that cache key, in the url. So, we also check an xsrf token here.
     val anyXsrfTokenInSession = request.cookies.get(ReturnToThisSiteXsrfTokenCookieName)
@@ -793,19 +1880,91 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // Silhouette stores and overwrites a Silhouette xsrf token in a single cookie.
         // Keep this anyway — maybe Silhouette fixes that issue, and then this Talkyard code here
         // already works properly.
-        val tokens = xsrfCookie.value.split(Separator)
+        val tokens: Seq[St] = xsrfCookie.value.split(Separator)
         val okToken = tokens.contains(xsrfToken)
         throwForbiddenIf(!okToken,
-          "TyEOAUXSRFTKN", o"""Bad XSRF token, not included in the
-              $ReturnToThisSiteXsrfTokenCookieName cookie""")
+              "TyEOAUXSRFTKN", o"""Bad XSRF token, not included in the
+                  $ReturnToThisSiteXsrfTokenCookieName cookie""")
       case None =>
         throwForbidden("TyE0OAUXSRFCO", s"No $ReturnToThisSiteXsrfTokenCookieName xsrf cookie",
-            o"""You need to login over at Google or Facebook, within $LoginTimeoutMins minutes,
-            once you've started logging in / signing up. Feel free to try again.""")
+            o"""You need to finish logging in within $LoginTimeoutMins minutes,
+                once you've started logging in.  Feel free to try again.""")
     }
-    tryLoginOrShowCreateUserDialog(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
+  }
+
+
+  def continueAtOriginalSite(oauthDetailsCacheKey: St, xsrfToken: St): Action[U] =
+        GetActionIsLogin { request =>
+
+    checkAuthnXsrfToken(xsrfToken, request)
+
+    var authnState = getAuthnStateOrThrow(oauthDetailsCacheKey, "finish_at_orig__silhouette")
+    authnState = authnState.copy(
+          isInLoginPopup =
+              request.cookies.get(IsInLoginPopupCookieName).nonEmpty,
+          mayCreateUser =
+              !request.cookies.get(MayCreateUserCookieName).map(_.value).contains("false"),
+          returnToUrl =
+              request.cookies.get(ReturnToUrlCookieName).map(_.value) getOrElse "")
+
+    tryLoginOrShowCreateUserDialog(request, authnState)
       .discardingCookies(DiscardingSecureCookie(ReturnToThisSiteXsrfTokenCookieName))
   }
+
+
+  def getIdentityProvider(authnState: OngoingAuthnState, dao: SiteDao)
+          : IdentityProvider = {
+    import authnState.{protocol, providerAlias}
+
+    if (authnState.usesSiteCustomIdp) {
+      return dao.getIdentityProviderByAlias(protocol, providerAlias).getOrThrowForbidden(
+            "TyE0SITEIDP", s"No such site custom IDP: ${authnState.protoAlias}")
+    }
+
+    // Currently all server global IDPs happen to use OAuth2.
+    throwForbiddenIf(protocol != ProtoNameOAuth2, "TyE0SRVDEFIDP01",
+          s"No such server default IDP: ${authnState.protoAlias}")
+
+    // Use the Silhouette config — until done migrating all sites, incl
+    // other people's self hosted sites.
+    import talkyard.server.authn.{ServerDefIdpAliases => SDIA}
+    val s: OAuth2Settings = providerAlias match {
+      case SDIA.Google => googleProvider().settings
+      case SDIA.GitHub => githubProvider().settings
+      case _ =>
+        throwForbidden("TyE0SRVDEFIDP02", s"IDP not yet supported via ScribeJava: ${
+              authnState.protoAlias}")
+    }
+
+    // The dummy_TyE... below aren't needed — the correct endpoints are
+    // included in ScribeJava already.
+    val idp = IdentityProvider(
+          confFileIdpId = Some(providerAlias),
+          protocol = ProtoNameOAuth2,
+          alias = providerAlias,
+          enabled = true,
+          displayName = Some(providerAlias),
+          description = None,
+          adminComments = None,
+          trustVerifiedEmail = false, // but yes, if Gmail or GitHub  [gmail_verifd]
+          linkAccountNoLogin = false,
+          guiOrder = None,
+          syncMode = 1, // ImportOnFirstLogin
+          oauAuthorizationUrl = "dummy_TyESRIBEJAVA01",
+          oauAccessTokenUrl =  "dummy_TyESRIBEJAVA02",
+          oidcUserInfoUrl = "dummy_TyESRIBEJAVA03",
+          oidcUserInfoFieldsMap = None,
+          oidcLogoutUrl = None,
+          oauClientId = s.clientID,
+          oauClientSecret = s.clientSecret,
+          oauIssuer = None,
+          oauAuthReqScope = s.scope,
+          oauAuthReqHostedDomain = None,
+          oidcUserinfoReqSendUserIp = None)
+
+    idp
+  }
+
 
 
   private val HttpLayer =
@@ -821,7 +1980,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private def csrfStateItemHandler = new silhouette.impl.providers.state.CsrfStateItemHandler(
     silhouette.impl.providers.state.CsrfStateSettings(
       cookieName = AuthStateCookieName, cookiePath = "/", cookieDomain = None,
-      secureCookie = globals.secure, httpOnlyCookie = true, expirationTime = 5 minutes),
+      secureCookie = globals.secure, httpOnlyCookie = true, expirationTime = 5.minutes),
     new silhouette.impl.util.SecureRandomIDGenerator(),
     authStuffSigner)
 
@@ -899,7 +2058,7 @@ object Gender {
 }
 
 
-case class ExternalSocialProfile(
+case class ExternalSocialProfile(   // RENAME to ExternalIdentity? It's from an Identity Provider (IDP)
   providerId: String,
   providerUserId: String,
   username: Option[String],

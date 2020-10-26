@@ -38,6 +38,7 @@ describe(`${testName}  TyT406MRTJW2`, () => {
 
   // This loads the /-/login-oauth-continue endpoint full screen, instead of in a
   // popup — which triggers slightly different code paths.
+  // (Because login is required to access the site:  userMustBeAuthenticated is true.)
 
   it("Can sign up with Gmail @login @gmail @google", () => {
     browser.go(idAddress.origin);

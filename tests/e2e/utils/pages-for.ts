@@ -276,6 +276,7 @@ export class TyE2eTestBrowser {
 
     /** @deprecated */
     getSource = () => this.#br.getPageSource();  // backw compat
+    getPageSource = () => this.#br.getPageSource();
 
     host(): string {
       const origin = this.origin();
@@ -627,7 +628,7 @@ export class TyE2eTestBrowser {
               email: settings.facebookAdminEmail,
               password: settings.facebookAdminPassword,
               username: data.username,
-            }, true);
+            }, { shallBecomeOwner: true });
             break;
           case NewSiteOwnerType.GitHubAccount:
             this.loginDialog.createGitHubAccount({
@@ -853,11 +854,24 @@ export class TyE2eTestBrowser {
     }
 
 
-    // Could rename to isInTalkyardIframe.
-    // NO, use this.#isWhere instead — just remember in which frame we are, instead of polling. ?
-    isInIframe(): boolean {
-      if (this.#isWhere === IsWhere.UnknownIframe)
-        return true;
+    isInIframe(): Bo {
+      switch (this.#isWhere) {
+        case IsWhere.EmbCommentsIframe:
+        case IsWhere.EmbEditorIframe:
+        case IsWhere.UnknownIframe:
+          return true;
+        default:
+          // Old code below — but there's a race :- (
+          // Use  refresh2() and go2() to avoid — then, #isWhere gets
+          // updated properly.
+      }
+
+      // E2EBUG: Race. If clicking logout, then, the page reloads,
+      // and eds.isInIframe is undefiend — it can seem as if we're not in an iframe,
+      // even if we are. Causing switchToAnyParentFrame() to *not*
+      // switch to the parent frame.
+      logWarningIf(!this.#isWhere,
+            `E2EBUG: Use go2() and refresh2() to avoid isInIframe() race [TyM03SMSQ3]`);
 
       return this.#br.execute(function() {
         return window['eds'] && window['eds'].isInIframe;
@@ -2051,7 +2065,8 @@ export class TyE2eTestBrowser {
     // n starts on 1 not 0.
     // Also see:  assertNthClassIncludes
     assertNthTextMatches(selector: string, n: number,
-          stringOrRegex: string | RegExp, stringOrRegex2?: string | RegExp) {
+          stringOrRegex: string | RegExp, stringOrRegex2?: string | RegExp,
+          ps?: { caseless?: Bo }) {
       const regex = getRegExpOrDie(stringOrRegex);
       const regex2 = getAnyRegExpOrDie(stringOrRegex2);
 
@@ -2059,7 +2074,10 @@ export class TyE2eTestBrowser {
       const items = this.$$(selector);
       assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
 
-      const text = items[n - 1].getText();
+      let text = items[n - 1].getText();
+      if (ps?.caseless) {
+        text = text.toLowerCase();
+      }
 
       // Could reformat, make simpler to read [E2EEASYREAD].
       assert(regex.test(text), '\n' +
@@ -3320,7 +3338,9 @@ export class TyE2eTestBrowser {
 
       createGmailAccount: (data: { email: string, password: string, username: string },
             ps: { isInPopupAlready?: true, shallBecomeOwner?: boolean,
-                anyWelcomeDialog?: string, isInFullScreenLogin?: boolean } = {}) => {
+                anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
+                isInFullScreenLogin?: boolean } = {}) => {
+
         this.loginDialog.loginWithGmail(
               data, ps.isInPopupAlready, { isInFullScreenLogin: ps.isInFullScreenLogin });
         // This should be the first time we login with Gmail at this site, so we'll be asked
@@ -3332,10 +3352,12 @@ export class TyE2eTestBrowser {
         this.loginDialog.clickSubmit();
         logMessage("accepting terms ...");
         this.loginDialog.acceptTerms(ps.shallBecomeOwner);
+
         if (ps.anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
           logMessage("waiting for and clicking ok in welcome dialog...");
           this.loginDialog.waitAndClickOkInWelcomeDialog();
         }
+
         if (ps.isInPopupAlready) {
           // Then the whole popup will close, now. Don't wait for any dialogs in it to
           // close — that'd result in a 'window was already closed' error.
@@ -3448,7 +3470,8 @@ export class TyE2eTestBrowser {
 
 
       createGitHubAccount: (ps: { username: string, password: string, shallBecomeOwner: boolean,
-            anyWelcomeDialog?, alreadyLoggedInAtGitHub: boolean }) => {
+            anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
+            alreadyLoggedInAtGitHub: boolean }) => {
 
         // This should fill in email (usually) and username (definitely).
         this.loginDialog.logInWithGitHub(ps);
@@ -3521,23 +3544,38 @@ export class TyE2eTestBrowser {
       },
 
 
-      createFacebookAccount: (data: {
-            email: string, password: string, username: string },
-            shallBecomeOwner?: boolean, anyWelcomeDialog?) => {
-        this.loginDialog.loginWithFacebook(data);
-        // This should be the first time we login with Facebook at this site, so we'll be asked
-        // to choose a username.
+      createFacebookAccount: (
+            user: { email: St, password: St, username: St },
+            ps: {
+              shallBecomeOwner?: Bo,
+              mustVerifyEmail?: Bo,
+              //anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
+            } = {}) => {
+
+        this.loginDialog.loginWithFacebook(user);
+
+        // This should be the first time we login with Facebook at this site,
+        // so we'll be asked to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("typing Facebook user's new username...");
-        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
+        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', user.username);
         this.loginDialog.clickSubmit();
-        this.loginDialog.acceptTerms(shallBecomeOwner);
-        if (anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
-          this.loginDialog.waitAndClickOkInWelcomeDialog();
+        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
+
+        // (Optionally, could verify a "Welcome" or "Verify your email addr"
+        // dialog pops up.)
+
+        // Talkyard doesn't assume that FB verifies people's email addresses.
+        // Need to click an email verif link:  (unless the site settings
+        // don't require verified emails)
+        if (ps.mustVerifyEmail !== false) {
+          const siteId = this.getSiteId();
+          const link = server.getLastVerifyEmailAddressLinkEmailedTo(
+                  siteId, user.email, this.#br);
+          this.go2(link);
+          this.waitAndClick('#e2eContinue');
         }
-        this.waitUntilModalGone();
-        this.waitUntilLoadingOverlayGone();
       },
 
       loginWithFacebook: (data: {
@@ -3844,13 +3882,16 @@ export class TyE2eTestBrowser {
       // Also see this.assertWholePageHidden().
       assertPageHidden: () => {
         this.pageTitle.waitForVisible();
-        assert(this.isVisible('.dw-p-ttl .icon-eye-off'));
+        assert(this.pageTitle.__isEyeOffVisible());
       },
 
       assertPageNotHidden: () => {
         this.pageTitle.waitForVisible();
-        assert(!this.isVisible('.dw-p-ttl .icon-eye-off'));
+        assert(!this.pageTitle.__isEyeOffVisible());
       },
+
+      __isEyeOffVisible: (): Bo => this.isVisible('.dw-p-ttl .icon-eye-off'),
+
 
       __changePageButtonSelector: '.dw-p-ttl .dw-clickable',
 
@@ -4634,7 +4675,6 @@ export class TyE2eTestBrowser {
         // Is there a race? Any iframe might reload, after logout. Better re-enter it?
         // Otherwise the wait-for .esMetabar below can fail.
         if (wasInIframe) {
-          this.switchToAnyParentFrame();
           this.switchToEmbeddedCommentsIrame();
         }
         this.waitForVisible('.esMetabar');
@@ -6282,9 +6322,19 @@ export class TyE2eTestBrowser {
           },
 
           setSiteNotfLevel: (notfLevel: PageNotfLevel) => {  // RENAME to setNotfLevelForWholeSite?
-            // The site notfs btn is the topmost one.
-            this.waitAndClickFirst('.dw-notf-level');
+            this.userProfilePage.preferences.notfs.setNotfLevelForWholeSite(notfLevel);
+          },
+
+          setNotfLevelForWholeSite: (notfLevel: PageNotfLevel) => {
+            this.waitAndClickFirst('.e_SiteNfLvB');
             this.notfLevelDropdown.clickNotfLevel(notfLevel);
+            this.waitForDisplayed(`.e_SiteNfLvB.s_NfLv-${notfLevel}`);
+          },
+
+          setNotfLevelForTopicsRepliedTo: (notfLevel: PageNotfLevel) => {
+            this.waitAndClickFirst('.e_ReToNfLvB');
+            this.notfLevelDropdown.clickNotfLevel(notfLevel);
+            this.waitForDisplayed(`.e_ReToNfLvB.s_NfLv-${notfLevel}`);
           },
 
           setNotfLevelForCategoryId: (categoryId: CategoryId, notfLevel: PageNotfLevel) => {
@@ -6321,11 +6371,21 @@ export class TyE2eTestBrowser {
             this.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
           },
 
-          waitAndAssertLoginMethodId: (ps: { providerName: string, id: string }) => {
-            const actualName = this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_How');
-            assert.equal(actualName.toLowerCase(), ps.providerName.toLowerCase());
-            const actualId = this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Id');
-            assert.equal(actualId, ps.id);  // don't convert to lowercase
+          waitAndAssertLoginMethod: (ps: { providerName: St, username?: St,
+                    emailAddr?: St, index?: Nr }) => {
+            const howSel = '.s_UP_EmLg_LgL_It_How';
+            this.waitForDisplayed(howSel);
+            this.assertNthTextMatches(howSel, ps.index || 1,
+                    ps.providerName.toLowerCase(), undefined, { caseless: true });
+
+            if (ps.username || ps.emailAddr) {
+              dieIf(!!ps.index, 'unimpl TyE530RKTMD');
+              const actualUsername = this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Un');
+              const actualEmail = this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Em');
+              // Don't convert to lowercase:
+              tyAssert.eq(actualUsername, ps.username);
+              tyAssert.eq(actualEmail, ps.emailAddr);
+            }
           },
 
           addEmailAddress: (address) => {
@@ -6767,6 +6827,11 @@ export class TyE2eTestBrowser {
         setEmailNotVerifiedButtonSelector: '.e_SetEmNotVerifB',
         sendEmVerEmButtonSelector: '.s_SendEmVerifEmB',
 
+        viewUser: (username: St) => {
+          this.go2('/-/admin/users/id/' + username);
+          this.adminArea.user.waitForLoaded();
+        },
+
         waitForLoaded: () => {
           this.waitForVisible('.esA_Us_U_Rows');
         },
@@ -6873,16 +6938,25 @@ export class TyE2eTestBrowser {
           this.waitForVisible('.e_Suspend');
         },
 
+        markAsNoThreat: () => {
+          this.waitAndClick('.e_ThreatLvlB');
+          this.waitAndClick('.e_HopfSafB');
+          this.waitForVisible('.e_ThreatLvlIsLkd');
+          this.waitForDisplayed('.e_TrtLv-3'); // HopefullySafe
+        },
+
         markAsMildThreat: () => {
           this.waitAndClick('.e_ThreatLvlB');
           this.waitAndClick('.e_MildThreatB');
           this.waitForVisible('.e_ThreatLvlIsLkd');
+          this.waitForDisplayed('.e_TrtLv-4'); // MildThreat
         },
 
         markAsModerateThreat: () => {
           this.waitAndClick('.e_ThreatLvlB');
           this.waitAndClick('.e_ModerateThreatB');
           this.waitForVisible('.e_ThreatLvlIsLkd');
+          this.waitForDisplayed('.e_TrtLv-5'); // ModerateThreat
         },
 
         unlockThreatLevel: () => {

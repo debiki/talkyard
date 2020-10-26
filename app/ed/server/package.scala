@@ -31,6 +31,7 @@ package object server {
   // email servers use SMTPS (SMTP in TLS), or who the admins there are
   // — so expire secret links somewhat soon.
   val MaxResetPasswordEmailAgeMinutes = 30   // [exp_emails_time]
+  val MaxEmailSecretLinkAgeMinutes: i32 = MaxResetPasswordEmailAgeMinutes  // better name?
 
 
   /** @param html Html for the whole page.

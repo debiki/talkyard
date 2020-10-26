@@ -392,12 +392,16 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadInvitesCreatedBy(createdById: UserId): immutable.Seq[Invite]
   def loadAllInvites(limit: Int): immutable.Seq[Invite]
 
+  def upsertIdentityProvider(identityProvider: IdentityProvider): AnyProblem
+  def deleteIdentityProviderById(idpId: IdpId): Bo
+  def loadIdentityProviderByAlias(protocol: St, alias: St): Opt[IdentityProvider]
+  def loadAllIdentityProviders(): Seq[IdentityProvider]
+
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity): Unit
   def loadIdentities(userId: UserId): immutable.Seq[Identity]
   def loadAllIdentities(): immutable.Seq[Identity]
   def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
-  def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
   def deleteAllUsersIdentities(userId: UserId): Unit
 
   def nextGuestId: UserId
@@ -515,6 +519,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     }
   }
 
+  def loadPageRepliers(pageId: PageId, usersOnly: Bo): Seq[User]
+
   def loadParticipantsAsMap(userIds: Iterable[UserId]): Map[UserId, Participant]
 
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User] = {
@@ -620,6 +626,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadPageNotfPrefsOnSite(): Seq[PageNotfPref]
   def loadNotfPrefsForMemberAboutPage(pageId: PageId, memberIds: Seq[MemberId]): Seq[PageNotfPref]
   def loadNotfPrefsForMemberAboutCatsTagsSite(memberIds: Seq[MemberId]): Seq[PageNotfPref]
+  def loadNotfPrefsAboutPagesRepliedTo(memberIds: Seq[MemberId]): Seq[PageNotfPref]
+
 
   def saveUnsentEmail(email: Email): Unit
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit

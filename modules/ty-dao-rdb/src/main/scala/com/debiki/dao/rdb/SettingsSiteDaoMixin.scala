@@ -64,6 +64,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         expire_idle_after_mins,
         invite_only,
         allow_signup,
+        enable_custom_idps,
+        use_only_custom_idps,
         allow_local_signup,
         allow_guest_login,
         enable_google_login,
@@ -154,7 +156,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
 
     val values = List(
@@ -166,6 +168,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.expireIdleAfterMins.getOrElse(None).orNullInt,
       editedSettings2.inviteOnly.getOrElse(None).orNullBoolean,
       editedSettings2.allowSignup.getOrElse(None).orNullBoolean,
+      editedSettings2.enableCustomIdps.getOrElse(None).orNullBoolean,
+      editedSettings2.useOnlyCustomIdps.getOrElse(None).orNullBoolean,
       editedSettings2.allowLocalSignup.getOrElse(None).orNullBoolean,
       editedSettings2.allowGuestLogin.getOrElse(None).orNullBoolean,
       editedSettings2.enableGoogleLogin.getOrElse(None).orNullBoolean,
@@ -279,6 +283,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("expire_idle_after_mins", s.expireIdleAfterMins.map(_.orNullInt))
     maybeSet("invite_only", s.inviteOnly.map(_.orNullBoolean))
     maybeSet("allow_signup", s.allowSignup.map(_.orNullBoolean))
+    maybeSet("enable_custom_idps", s.enableCustomIdps.map(_.orNullBoolean))
+    maybeSet("use_only_custom_idps", s.useOnlyCustomIdps.map(_.orNullBoolean))
     maybeSet("allow_local_signup", s.allowLocalSignup.map(_.orNullBoolean))
     maybeSet("allow_guest_login", s.allowGuestLogin.map(_.orNullBoolean))
     maybeSet("enable_google_login", s.enableGoogleLogin.map(_.orNullBoolean))
@@ -391,6 +397,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       expireIdleAfterMins = getOptInt(rs, "expire_idle_after_mins"),
       inviteOnly = getOptBoolean(rs, "invite_only"),
       allowSignup = getOptBoolean(rs, "allow_signup"),
+      enableCustomIdps = getOptBoolean(rs, "enable_custom_idps"),
+      useOnlyCustomIdps = getOptBoolean(rs, "use_only_custom_idps"),
       allowLocalSignup = getOptBoolean(rs, "allow_local_signup"),
       allowGuestLogin = getOptBoolean(rs, "allow_guest_login"),
       enableGoogleLogin = getOptBoolean(rs, "enable_google_login"),

@@ -401,6 +401,9 @@ const AboutMember = createComponent({
                 className: 'btn s_UP_Prefs_ChangeEmailB' }, t.ChangeDots)),
           r.p({ className: 'help-block' }, t.upp.NotShown)),
 
+        // [oidc_missing] SHOULD hide this, if SSO or only-custom-IDP since then
+        // there's no pwd login anyway.
+        //
         // UX COULD later incl this change-pwd also on the Account tab, it fits better there maybe?
         // However people might not think about looking there? So incl both here and there?
         isBuiltInUser ? null : r.div({ className: 'form-group' },    // + also on  Account tab.
@@ -504,8 +507,47 @@ const NotfPrefsTab = createFactory({
           " instead,"),
         " and configure notifications for the All Members group.");
 
-    const forWho = isMe ? '' : rFragment({},
-        `, ${t.upp.forWho} `, r.b({}, member.username));
+
+    // ----- Whole site
+
+    const forWho = isMe ? '' :
+        rFr({}, `, ${t.upp.forWho} `, r.b({}, member.username));
+
+    const notfPrefsWholeSite =
+        r.div({},
+          r.span({}, t.upp.DefNotfsSiteWide, forWho, ':'),
+          notfs.PageNotfPrefButton({ target: { wholeSite: true }, store,
+              className: 'e_SiteNfLvB',
+              ownPrefs: membersPrefs, ppsById,
+              saveFn: (notfLevel: PageNotfLevel) =>
+                saveAndReload({ wholeSite: true }, notfLevel) }));
+
+
+    // ----- Topics replied to
+
+    const youHave = isMe ? "you have" :   // I18N
+        rFr({}, r.b({}, member.username), " has");
+
+    // Show as admin help text?
+    // A good default is to configure All Members to get notified about
+    // Every Post in a topic where one has replied — otherwise people sometimes
+    // get surprised when they thought they replied to someone, but that person
+    // in fact wasn't notified and never replied back.
+    // And large communities with big 100 comments long discussions,
+    // like at HackerNews, might want to change this default, so people get
+    // notified only about replies in sub threads they started themselves.
+
+    const notfPrefForTopicsRepliedIn =
+        r.div({},
+          r.span({}, `Default notifications for topics `, youHave, ` replied in:`),
+          notfs.PageNotfPrefButton({ target: { pagesPatRepliedTo: true }, store,
+              className: 'e_ReToNfLvB',
+              ownPrefs: membersPrefs, ppsById,
+              saveFn: (notfLevel: PageNotfLevel) =>
+                saveAndReload({ pagesPatRepliedTo: true }, notfLevel) }));
+
+
+    // ----- Categories
 
     // Why list all categories, and notf levels per category?
     //
@@ -592,14 +634,13 @@ const NotfPrefsTab = createFactory({
     return (
       r.div({ className: 's_UP_Prfs_Ntfs' },
 
-        r.p({}, t.upp.DefNotfsSiteWide, forWho, ':'),
+        notfPrefsWholeSite,
 
-        notfs.PageNotfPrefButton({ target: { wholeSite: true }, store, ownPrefs: membersPrefs, ppsById,
-            saveFn: (notfLevel: PageNotfLevel) =>
-              saveAndReload({ wholeSite: true }, notfLevel) }),
+        r.br(),
+        notfPrefForTopicsRepliedIn,
 
         r.h3({}, t.Categories),
-        r.p({}, "You can configure notifications, per category:"),
+        r.p({}, "You can configure notifications, per category:"),  // I18N
 
         perCategoryNotfLevels,
 
@@ -608,7 +649,8 @@ const NotfPrefsTab = createFactory({
         // @ifdef DEBUG
         r.br(),
         r.br(),
-        r.pre({}, "(In debug builds only) membersPrefs:\n" + JSON.stringify(membersPrefs, undefined, 2)),
+        r.pre({}, "(In debug builds only) membersPrefs:\n" +
+            JSON.stringify(membersPrefs, undefined, 2)),
         // @endif
         null,
         ));
@@ -863,12 +905,12 @@ const AccountTab = createFactory<any, any>({
     if (!this.state.emailAddresses)
       return r.p({}, t.Loading);
 
-    const emailAddrs: UserEmailAddress[] = this.state.emailAddresses;
-    const loginMethods: UserLoginMethods[] = this.state.loginMethods;
+    const emailAddrs: UserAccountEmailAddr[] = this.state.emailAddresses;
+    const loginMethods: UserAccountLoginMethod[] = this.state.loginMethods;
 
     const emailAddressesList =
       r.ul({ className: 's_UP_EmLg_EmL' },
-        emailAddrs.map((addr) => {
+        emailAddrs.map((addr: UserAccountEmailAddr) => {
           let status = '';
           let isVerified = false;
 
@@ -881,8 +923,8 @@ const AccountTab = createFactory<any, any>({
           }
 
           let isLoginMethod = false;
-          _.each(loginMethods, (method: UserLoginMethods) => {
-            if (method.email === addr.emailAddress) {
+          _.each(loginMethods, (method: UserAccountLoginMethod) => {
+            if (method.idpEmailAddr === addr.emailAddress) {
               isLoginMethod = true;
               status += t.upp.ForLoginWithDot(method.provider);
             }
@@ -940,13 +982,23 @@ const AccountTab = createFactory<any, any>({
     const loginsList =
       r.ul({ className: 's_UP_EmLg_LgL' },
         loginMethods.map((method: UserAccountLoginMethod) => {
-          const withExternalId = !method.externalId || !isStaff(me) ? null :
-              r.span({}, " external id: ", method.externalId);
-          return r.li({ className: 's_UP_EmLg_LgL_It', key: `${method.provider}:${method.email}` },
+          const maybeIdpUserId = !method.idpUserId || !me.isAdmin ? null :
+                rFr({}, r.br(), "IDP user id: ", r.code({}, method.idpUserId));
+
+          const maybeIdpAuthUrl = !method.idpAuthUrl || !me.isAdmin ? null :
+                rFr({}, r.br(), "IDP auth url: ", r.code({}, method.idpAuthUrl));
+
+          const comma = method.idpUsername && method.idpEmailAddr ? ', ' : '';
+
+          return r.li({ className: 's_UP_EmLg_LgL_It',
+                      key: `${method.provider}:${method.idpUserId}` },
             r.span({ className: 's_UP_EmLg_LgL_It_How' }, method.provider),
             t.upp.commaAs,
-            r.span({ className: 's_UP_EmLg_LgL_It_Id' }, method.email),
-            withExternalId)
+            r.span({ className: 's_UP_EmLg_LgL_It_Un' }, method.idpUsername),
+            comma,
+            r.span({ className: 's_UP_EmLg_LgL_It_Em' }, method.idpEmailAddr),
+            maybeIdpUserId,
+            maybeIdpAuthUrl)
             // r.div({}, Button({}, "Remove")))  — fix later
         }));
 

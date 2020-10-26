@@ -68,7 +68,7 @@ describe("emb cmts no cookies unverif gmail   TyT6224BKA253", () => {
   });
 
   it("Gmanne, a Gmail user, opens embedding page ggg", () => {
-    gmannesBrowser.go(embeddingOrigin + '/' + pageGggSlug);
+    gmannesBrowser.go2(embeddingOrigin + '/' + pageGggSlug);
   });
 
   it("He clicks Reply", () => {
@@ -97,7 +97,7 @@ describe("emb cmts no cookies unverif gmail   TyT6224BKA253", () => {
   });
 
   it("After page refresh, Gmanne remains logged in — session saved in storage", () => {
-    gmannesBrowser.refresh();
+    gmannesBrowser.refresh2();
     gmannesBrowser.switchToEmbeddedCommentsIrame();
     assert.equal(gmannesBrowser.metabar.getMyUsernameInclAt(), '@gmanne');
   });
@@ -106,16 +106,16 @@ describe("emb cmts no cookies unverif gmail   TyT6224BKA253", () => {
     gmannesBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, gmailCommentOne);
   });
 
-  it("He logs out", () => {
+  it("Gmanne logs out", () => {
     gmannesBrowser.metabar.clickLogout();
   });
 
-  it("... after page refresh, he is still logged out", () => {
-    gmannesBrowser.refresh();
+  it("... after page refresh, Gmanne is still logged out", () => {
+    gmannesBrowser.refresh2();
     gmannesBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });
 
-  it("He clicks Reply to post a 2rd comment", () => {
+  it("Gmanne clicks Reply to post a 2rd comment", () => {
     gmannesBrowser.switchToEmbeddedCommentsIrame();
     gmannesBrowser.topic.clickReplyToEmbeddingBlogPost();
   });

@@ -189,6 +189,29 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             val isOk = LoginWithSecretController.isAllowedRedirectUrl(
               url, request.origin, request.siteSettings.allowEmbeddingFromBetter, globals.secure)
 
+/* BUG just above: spaces not '+' encoded
+
+    {"eventTime":"2020-10-04T21:03:10.913Z",
+    "message":"Replying internal error to:
+       GET //ty.ex.co/-/v0/login-with-secret
+          ?oneTimeSecret=pc2...mb
+          &thenGoTo=%2F-%2Fsearch%3Fq%3Dmono%20mode%20connect [DwE500EXC]
+       \njava.net.URISyntaxException: Illegal character in query at index 16:
+           /-/search?q=mono mode connect
+       \n\tat java.net.URI$Parser.fail(URI.java:2848)
+       \n\tat java.net.URI$Parser.checkChars(URI.java:3021)
+       ...
+       \n\tat java.net.URI.<init>(URI.java:588)
+       \n\tat controllers.LoginWithSecretController$.isAllowedRedirectUrl(ApiV0Controller.scala:453)
+       \n\tat controllers.ApiV0Controller.$anonfun$getFromApi$8(ApiV0Controller.scala:190)
+       ...
+       \n\tat ed.server.http.PlainApiActions$$anon$1.runBlockIfAuthOk(PlainApiActions.scala:573)
+       ...
+       \n\tat java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:157)
+       \n","severity":"ERROR","serviceContext":{"service":"talkyard-app","version":"v0.2020.24"},"context":{"reportLocation":{"filePath":"SafeActions.scala","lineNumber":213,"functionName":"ed$server$http$SafeActions$$internalError","className":"ed.server.http.SafeActions"}}}
+
+       */
+
             // Later, but for now only in dev & test:  (also see: [306SKTGR43])
             throwForbiddenIf(!globals.isProd && !isOk,
               "TyEEXTREDIR1", o"""Bad thenGoTo url: '$url' — it's to a different server
@@ -293,7 +316,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
           username = (body \ "username").asOptStringNoneIfBlank,
           fullName = (body \ "fullName").asOptStringNoneIfBlank,
           avatarUrl = (body \ "avatarUrl").asOptStringNoneIfBlank,
-          aboutUser = (body \ "aboutUser").asOptStringNoneIfBlank,
+          aboutUser = (body \ "aboutUser").asOptStringNoneIfBlank,  // RENAME to 'bio', right
           isAdmin = (body \ "isAdmin").asOpt[Boolean].getOrElse(false),
           isModerator = (body \ "isModerator").asOpt[Boolean].getOrElse(false))) getOrIfFailure { ex =>
             throwBadRequest("TyEBADEXTUSR", ex.getMessage)

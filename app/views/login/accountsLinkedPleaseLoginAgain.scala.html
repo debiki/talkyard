@@ -1,0 +1,27 @@
+@(tpi: debiki.SiteTpi, origNonceBack: String, tryLoginAgainUrl: String, idpName: String)
+
+@css = @{("""
+""")}
+
+@* SECURITY SHOULD compare origNonceBack with the local storage nonce, and
+ generate a new nonce and use in loginUrlNewNonce below.  [br_authn_nonce]
+*@
+@tryAgainUrlNewNonce = @{
+  tryLoginAgainUrl
+}
+
+@views.html.createsite.main(tpi, css = css) {
+
+<h1>Done: Accounts linked.</h1>
+<br>
+
+<p>
+ Log in again over at @idpName, please — this time, should work directly:
+</p>
+
+<p>
+  <a href="@tryAgainUrlNewNonce" class="btn btn-primary">Login again</a>
+</p>
+
+}
+

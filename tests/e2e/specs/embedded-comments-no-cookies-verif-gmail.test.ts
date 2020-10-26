@@ -67,7 +67,7 @@ describe("emb cmts no cookies verif gmail   TyT795KB61368", () => {
   // ----- Sign up and post
 
   it("Gmanne, a Gmail user, opens embedding page ggg", () => {
-    gmannesBrowser.go(embeddingOrigin + '/' + pageGggSlug);
+    gmannesBrowser.go2(embeddingOrigin + '/' + pageGggSlug);
   });
 
   it("He clicks Reply", () => {
@@ -99,7 +99,7 @@ describe("emb cmts no cookies verif gmail   TyT795KB61368", () => {
   });
 
   it("After page refresh, Gmanne remains logged in — session saved in storage", () => {
-    gmannesBrowser.refresh();
+    gmannesBrowser.refresh2();
     gmannesBrowser.switchToEmbeddedCommentsIrame();
     assert.equal(gmannesBrowser.metabar.getMyUsernameInclAt(), '@gmanne');
   });
@@ -109,7 +109,7 @@ describe("emb cmts no cookies verif gmail   TyT795KB61368", () => {
   });
 
   it("After page refresh, he's still logged out", () => {
-    gmannesBrowser.refresh();
+    gmannesBrowser.refresh2();
     gmannesBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });
 

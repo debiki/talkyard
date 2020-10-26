@@ -173,23 +173,23 @@ services:
   #    PEER_PORT: '5432'
   #    PEER_PASSWORD: 'public'
 
-  test:
-    build: images/gulp/
-    image: ${DOCKER_REPOSITORY}/talkyard-test
-    volumes:
-      - ./:/opt/talkyard/server/
-    ports:
-      # This is for debugging tests running in Node.js in this container, and started
-      # via `node --debug-brk --inspect=9229`. [8EA02R4]
-      - '9229:9229'
-    networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_TEST_IP}
-    # So can send HTTP request to the web container. See tests/security/settings.ts [7PKW4R2]
-    depends_on:
-      - web
-    # Don't want this container to start at all by default.
-    command: 'exit 0'
+  #test:
+  #  build: images/gulp/
+  #  image: ${DOCKER_REPOSITORY}/talkyard-test
+  #  volumes:
+  #    - ./:/opt/talkyard/server/
+  #  ports:
+  #    # This is for debugging tests running in Node.js in this container, and started
+  #    # via `node --debug-brk --inspect=9229`. [8EA02R4]
+  #    - '9229:9229'
+  #  networks:
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_TEST_IP}
+  #  # So can send HTTP request to the web container. See tests/security/settings.ts [7PKW4R2]
+  #  depends_on:
+  #    - web
+  #  # Don't want this container to start at all by default.
+  #  command: 'exit 0'
 
   # Dummy SMTP server, for testing.
   fakemail:
@@ -208,19 +208,20 @@ services:
         ipv4_address: ${INTERNAL_NET_FAKEMAIL_IP}
 
   # Jaeger Tracing. Access at http://localhost:16686.
-  tracer:
-    image: jaegertracing/all-in-one:1.7
-    ports:               # Component. What. (https://www.jaegertracing.io/docs/1.6/getting-started/)
-      #- '5775:5775/udp' # Agent. accept zipkin.thrift over compact thrift protocol
-      - '6831:6831/udp'  # Agent. accept jaeger.thrift over compact thrift protocol
-      - '6832:6832/udp'  # Agent. accept jaeger.thrift over binary thrift protocol
-      - '5778:5778'      # Agent. serve configs
-      - '16686:16686'    # Query. Web interface + find traces.
-      - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
-      #- '9411:9411'     # Collector. Zipkin compatible endpoint
-    networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_TRACER_IP}
+  # Not currently in use.
+  #tracer:
+  #  image: jaegertracing/all-in-one:1.7
+  #  ports:               # Component. What. (https://www.jaegertracing.io/docs/1.6/getting-started/)
+  #    #- '5775:5775/udp' # Agent. accept zipkin.thrift over compact thrift protocol
+  #    - '6831:6831/udp'  # Agent. accept jaeger.thrift over compact thrift protocol
+  #    - '6832:6832/udp'  # Agent. accept jaeger.thrift over binary thrift protocol
+  #    - '5778:5778'      # Agent. serve configs
+  #    - '16686:16686'    # Query. Web interface + find traces.
+  #    - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
+  #    #- '9411:9411'     # Collector. Zipkin compatible endpoint
+  #  networks:
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_TRACER_IP}
 
   # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
   # instead it just transpiles Typescript and Stylus.
@@ -231,6 +232,7 @@ services:
     volumes:
       - ./:/opt/talkyard/server/   # [NODEHOME]
     command: ['yarn install && gulp watch']
+
 
   # Would like to remove, but is incl in talkyard-prod-one's Compose file already,
   # and would cause errors, if removed here, and people then upgrade? (because new version

@@ -102,7 +102,7 @@ let waitforTimeout = args.waitforTimeout || args.wft;
 if (waitforTimeout) waitforTimeout = parseInt(waitforTimeout);
 settings.waitforTimeout = args.noTimeout || args.nt || args.dant ||
         settings.debugEachStep ?
-    2147483647 : (waitforTimeout || 21 * 1000);
+    2147483647 : (waitforTimeout || 27 * 1000);
 
 settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';

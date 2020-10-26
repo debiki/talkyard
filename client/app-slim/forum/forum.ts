@@ -380,7 +380,7 @@ const ForumButtons = createComponent({
     }
   },
 
-  setTopicFilter: function(entry: ExplainingTitleText) {
+  setTopicFilter: function(entry: ExplainingTitleTextSelected) {
     const newQuery: any = { ...this.props.queryParams };
     if (entry.eventKey === FilterShowAll) {
       delete newQuery.filter;

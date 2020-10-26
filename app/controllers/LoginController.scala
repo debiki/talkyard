@@ -86,7 +86,8 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   private val EmbCommentsModeStr = 16.toString  // [8UKBR2AD5]
 
-  /** For showing a login dialog inside a popup window. Used when logging in in an iframe [2ABKW24T],
+  /** For showing a login dialog inside a popup window. Used when   [2ABKW24T]
+    * 1) logging in in an iframe,
     * because it's not user friendly to open a modal login dialog inside
     * the iframe — only the iframe content would be overlaid by the modal dialog, but
     * the rest of the page (outside the iframe) would be active & clickable as usual,
@@ -96,6 +97,11 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * scrolls out of view, and all one sees are comments behind a non-clickable
     * background. — Would need to disable scroll on the embedd*ing* page? That'd be
     * a bit error prone?
+    *
+    * And used when 2) logging in via OAuth2 or OIDC — then, it's nice to
+    * jump to the external IDP's login page in a popup window, so whatever one
+    * is doing in the main window (e.g. having expanded / collapsed threads,
+    * maybe started composing a reply) won't disappear.
     */
   def showLoginPopup(mode: String, returnToUrl: String): Action[Unit] =
         GetActionAllowAnyoneRateLimited(

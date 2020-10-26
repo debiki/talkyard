@@ -15,16 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, serverAddress: String, newUserUsername: String, newUserFullName: String, newUserEmail: String, authDataCacheKey: String, anyContinueToUrl: Option[String])
+@* TODO RENAME to showCreateUserDialogInThisWindow.scala.html    *@
 
-@* After OpenAuth or OpenID login authentication has been completed in this login (popup) window,
- * we here continue by showing a create user dialog. This is 1) for embedded comments pages —
- * then, login and user creation always happens in a login popup window (this window).
+@(tpi: debiki.SiteTpi, serverAddress: String,
+    origNonceBack: String, idpName: String, idpHasVerifiedEmail: Boolean,
+    newUserUsername: String, newUserFullName: String, newUserEmail: String,
+    authDataCacheKey: String, anyContinueToUrl: Option[String])
+
+@* After authentication at an Identity Provider (IDP) in this popup window,
+ * we show a create user dialog, in this same popup window.
+ * This is 1) for embedded comments pages — then, login and user creation always
+ * happens in a login popup window (this window), because wouldn't work well
+ * to show a create user dialog in Talkyard's iframe on the blog page.
  * And 2) for logging in in the whole main window, to e.g. the admin area, or if the
  * site requires login.
  *
- * So don't call window.close() here. But in closePopupShowCreateUserDialog.scala.html we do the
- * same things, except that we also call window.close(), and continue in the opener instead.
+ * So don't call window.close() here. But in closePopupShowCreateUserDialog.scala.html
+ * we do the same things and *also* call window.close(),
+ * and continue in the opener instead, by showing the create-user dialog, there.
  *@
 
 @continueToUrlOrEmpty = @{
@@ -34,8 +42,10 @@
 @popupMain(tpi, serverAddress) {@* COULD RENAME popupMain to loginDialogMain (might not be a popup) *@
   <!-- views/login/showCreateUserDialog.scala.html -->
   <script>
-    debiki.internal.showCreateUserDialog({
-      @* Why no providerId here? But in closePopupShowCreateUserDialog.scala.html *@
+    debiki2.morebundle.showCreateUserDialog({
+      origNonceBack: '@origNonceBack',
+      idpName: '@idpName',
+      idpHasVerifiedEmail: @idpHasVerifiedEmail,
       username: '@newUserUsername',
       fullName: '@newUserFullName',
       email: '@newUserEmail',

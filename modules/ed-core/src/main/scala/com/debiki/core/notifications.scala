@@ -137,7 +137,8 @@ object Notification {
   case class NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_id
     notfType: NotificationType,
     id: NotificationId,
-    createdAt: ju.Date,
+    createdAt: ju.Date,     // RENAME to generatedAt
+    generatedWhy: St = "",  // later: save in db, incl expl about why notfd in email
     uniquePostId: PostId,
     byUserId: UserId,
     toUserId: UserId,
@@ -283,25 +284,41 @@ object NotfLevel {
   * RENAME pageId to forPageId, and pagesInCategoryId to forCategoryId, and
   * wholeSite to forWholeSite. Hmm.)
   *
+  * (Maybe rename to NotfPrefAboutPosts  ?
+  * There'll also be NotfPrefAboutPats — e.g. new member joined the community,
+  * or someone became a Trusted Member, or added a user badge or whatever.)
+  *
   * @param peopleId — the group or individual these settings concern.
   * @param notfLevel
   * @param pageId — if these notification settings are for a single page only.
+  * @param pagesPatCreated — default notf level for pages created by pat.
+  * @param pagesPatRepliedTo — default notf level for pages where pat posted a reply.
+  *  Can be overridden by pat by specifying per page notf levels.
   * @param pagesInCategoryId — the settings apply to all pages in this category.
   * @param wholeSite — the group's or member's default settings for pages across the whole site
   */
 case class PageNotfPref(
   peopleId: UserId,  // RENAME to memberId, + db column.  [pps]
   notfLevel: NotfLevel,
-  pageId: Option[PageId] = None,
-  pagesInCategoryId: Option[CategoryId] = None,
-  //pagesWithTagLabelId: Option[TagLabelId] = None, — later
-  wholeSite: Boolean = false) {
+  // notfViaEmail: Opt[NotfViaEmailLevel],    ??
+  // notfViaEmailDelayMins: e.g. 60, sends email notfs once per hour at most?
+  // notfViaMobilePush: Opt[NotfViaMobilePushLevel],    ??
+  // notfViaMobilePushDelayMins: e.g. 0,  sends mobile push notfs directly
+  pageId: Opt[PageId] = None,
+  pagesPatCreated: Bo = false,
+  pagesPatRepliedTo: Bo = false,
+  pagesInCategoryId: Opt[CategoryId] = None,
+  //pagesWithTagLabelId: Opt[TagLabelId] = None, — later
+  wholeSite: Bo = false) {
 
-  require(pageId.isDefined.toZeroOne + pagesInCategoryId.isDefined.toZeroOne +
-    wholeSite.toZeroOne == 1, "TyE2BKP053")
+  private def zeroOneSum =
+        pageId.isDefined.toZeroOne + pagesInCategoryId.isDefined.toZeroOne +
+        wholeSite.toZeroOne + pagesPatCreated.toZeroOne + pagesPatRepliedTo.toZeroOne
+  require(zeroOneSum == 1, s"toZeroOne == $zeroOneSum != 1: $this [TyENOTPREFTGTS]")
 
-  if (pageId.isDefined) {
-    require(notfLevel != NotfLevel.WatchingFirst)
+  if (pageId.isDefined || pagesPatCreated || pagesPatRepliedTo) {
+    require(notfLevel != NotfLevel.WatchingFirst,
+          s"Bad notf pref: WatchingFirst but page already exists: $this [TyE295KDM2]")
   }
 }
 

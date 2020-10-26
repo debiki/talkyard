@@ -60,11 +60,12 @@ package object dao {
     * Mutable. Not thread safe.
     */
   class StaleStuff {
+    private var _allPagesStale = false
     private val _stalePages = mutable.Map[PageId, StalePage]()
     private val _stalePpIdsMemCacheOnly = mutable.Set[UserId]()
 
     def nonEmpty: Boolean =
-      _stalePages.nonEmpty || _stalePpIdsMemCacheOnly.nonEmpty
+      _allPagesStale || _stalePages.nonEmpty || _stalePpIdsMemCacheOnly.nonEmpty
 
 
     // ----- Participants
@@ -93,6 +94,12 @@ package object dao {
       dieIf(Globals.isDevOrTest && _stalePages.keys.toSet != r, "TyE056KWTD6")
       r
     }
+
+    def addAllPages(): U =
+      _allPagesStale = true
+
+    def areAllPagesStale: Bo = _allPagesStale
+
 
     /** Pages that need to be refreshed, not because they themselves got modified,
       * but because something else got modified.

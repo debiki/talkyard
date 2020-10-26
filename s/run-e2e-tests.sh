@@ -246,6 +246,22 @@ if [ ! -d modules/gatsby-starter-blog-ed-comments-0.4.4/public/ ]; then
 fi
 #------------------------------------------------------------
 
+http_server_port=''
+http_server_pid=''
+
+function start_http_server {
+  port="$1"
+  http_server_port=$(netstat -nl | grep ":$port.*LISTEN")
+  http_server_pid=''
+  if [ -z "$http_server_port" ]; then
+    echo "Starting a http server for embedded comments html pages..."
+    ./node_modules/.bin/http-server "-p$port" target/ &
+    # Field 2 is the process id.
+    http_server_pid=$(jobs -l | grep "p$port" | awk '{ printf $2; }')
+  fi
+  # else: the user has probably started the server henself already, do nothing.
+}
+
 
 args=$@
 site_nr=0
@@ -389,6 +405,7 @@ function runAllE2eTests {
   $r s/wdio --only notfs-prefs-inherit-group.2browsers $args
   $r s/wdio --only notf-prefs-custom-groups.2browsers $args
   $r s/wdio --only notf-prefs-private-groups.2browsers $args
+  $r s/wdio --only notf-prefs-pages-replied-to.2br $args
 
   $r s/wdio --only notfs-page-gone.2browsers $args
   # Later:
@@ -482,6 +499,12 @@ function runAllE2eTests {
   $r s/wdio --only utx-all-logins $args
 
 
+  #------------------------------------------------------------
+  # Start a http server, for the embedding html pages,
+  # and the -w-logout-url test.
+  start_http_server 8080
+
+
   # Single Sign-On
   # ------------
 
@@ -504,19 +527,6 @@ function runAllE2eTests {
   $r s/wdio --only api-w-sso-upsert-pages.2browsers $args
   $r s/wdio --only api-private-chat-two-pps-sso-extid.2browsers $args
   $r s/wdio --only api-private-chat-two-pps-list-use-usernames.2browsers $args
-
-
-  #------------------------------------------------------------
-  # Start a http server, for the embedding html pages, if needed.
-  server_port_8080=$(netstat -nl | grep ':8080.*LISTEN')
-  server_port_8080_pid=''
-  if [ -z "$server_port_8080" ]; then
-    echo "Starting a http server for embedded comments html pages..."
-    ./node_modules/.bin/http-server -p8080 target/ &
-    # Field 2 is the process id.
-    server_port_8080_pid=$(jobs -l | grep p8080 | awk '{ printf $2; }')
-  fi
-  # else: the user has probably started the server henself already, do nothing.
 
 
   # API: CORS
@@ -579,9 +589,10 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-restore-overwrite-site-new-domain.2browsers $args
 
 
-  if [ -n "$server_port_8080_pid" ]; then
-    kill $server_port_8080_pid
-    echo "Stopped the http server for the embedded comments."
+  if [ -n "$http_server_pid" ]; then
+    kill $http_server_pid
+    echo "Stopped the http server for the embedded comments, pid $http_server_pid."
+    http_server_pid=''
   fi
   #------------------------------------------------------------
 

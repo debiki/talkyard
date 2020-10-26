@@ -41,7 +41,7 @@ const htmlElem = document.getElementsByTagName('html')[0];
 declare const EventEmitter3; // don't know why, but the TypeScript defs doesn't work.
 export const ReactStore = new EventEmitter3();
 
-export function getMainWinStore(): Store {
+export function getMainWinStore(): Store {  // RENAME QUICK to win_getMainWinStore()
   const mainWin = getMainWin();
   return mainWin.debiki2.ReactStore.allData();
 }

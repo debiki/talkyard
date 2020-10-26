@@ -106,7 +106,10 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // If SSO enabled, people should be invited to the external SSO page instead. (4RBKA20).
     val settings = dao.getWholeSiteSettings()
     throwForbiddenIf(settings.enableSso,
-      "TyESSOINV", "Cannot invite people, when Single Sing-On enabled")
+          "TyESSOINV", "Cannot invite people, when Single Sing-On enabled")
+
+    throwForbiddenIf(settings.useOnlyCustomIdps,
+          "TyECUIDPINV", "Cannot invite people, when using only site custom IDP")
 
     val toEmailAddresses = toEmailAddressesRaw.map(_.trim.dropRightWhile(",;" contains _)) filter { addr =>
       // Skip comment lines. People might save their send-invites-to lists in a file with

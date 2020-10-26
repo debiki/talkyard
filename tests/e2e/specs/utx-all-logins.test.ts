@@ -216,7 +216,7 @@ describe("usability testing exchange, all logins:", () => {
     });
 
     it("login with Facebook", () => {
-      browser.loginDialog.createFacebookAccount(fbUser, undefined, 'THERE_WILL_BE_NO_WELCOME_DIALOG');
+      browser.loginDialog.createFacebookAccount(fbUser, { mustVerifyEmail: false });
       browser.disableRateLimits();
     });
 

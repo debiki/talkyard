@@ -333,11 +333,14 @@ object JsX {
       case oauIdty: OpenAuthIdentity =>
         val details = oauIdty.openAuthDetails
         Json.obj(
-          "identityType" -> "OAuth",
+          "identityType" -> "OAuth", // REMOVE
           "identityId" -> oauIdty.id,
           "userId" -> oauIdty.userId,
-          "providerId" -> details.providerId,
-          "providerKey" -> details.providerKey,
+          "providerId" -> JsStringOrNull(details.confFileIdpId), // REMOVE
+          "confFileIdpId" -> JsStringOrNull(details.confFileIdpId),
+          "idpId" -> JsI32OrNull(details.idpId),
+          "providerKey" -> details.idpUserId,  // REMOVE
+          "idpUserId" -> details.idpUserId,
           "firstName" -> JsStringOrNull(details.firstName),
           "lastName" -> JsStringOrNull(details.lastName),
           "fullName" -> JsStringOrNull(details.fullName),
@@ -429,6 +432,12 @@ object JsX {
 
 
   val JsEmptyObj = JsObject(Nil)
+
+  def JsObjOrNull(obj: Opt[JsObject]): JsValue =
+    obj getOrElse JsNull
+
+  def JsArrOrNull(arr: Opt[JsArray]): JsValue =
+    arr getOrElse JsNull
 
 
   def JsPageMeta(pageMeta: PageMeta): JsObject = {  // Typescript interface PageMeta
@@ -633,10 +642,16 @@ object JsX {
   def readJsString(json: JsObject, field: String): String =
     JsonUtils.readString(json, field)
 
-  def JsBooleanOrNull(value: Option[Boolean]): JsValue =
+  def JsBooleanOrNull(value: Option[Boolean]): JsValue =  // RENAME to JsBoolOrNull
+    JsBoolOrNull(value)
+
+  def JsBoolOrNull(value: Option[Boolean]): JsValue =
     value.map(JsBoolean).getOrElse(JsNull)
 
-  def JsNumberOrNull(value: Option[Int]): JsValue =
+  def JsNumberOrNull(value: Option[Int]): JsValue =  // RENAME to JsNumOrNull
+    JsI32OrNull(value)
+
+  def JsI32OrNull(value: Opt[i32]): JsValue =  // Scala 3: union types:  i32 | i64  ?
     value.map(JsNumber(_)).getOrElse(JsNull)
 
   def JsLongOrNull(value: Option[Long]): JsValue =
@@ -729,10 +744,12 @@ object JsX {
 
 
   def JsPageNotfPref(notfPref: PageNotfPref): JsObject = {
-    Json.obj(  // PageNotfPref
+    Json.obj(  // ts PageNotfPref
       "memberId" -> notfPref.peopleId,
       "notfLevel" -> notfPref.notfLevel.toInt,
       "pageId" -> notfPref.pageId,
+      "pagesPatCreated" -> notfPref.pagesPatCreated,
+      "pagesPatRepliedTo" -> notfPref.pagesPatRepliedTo,
       "pagesInCategoryId" -> notfPref.pagesInCategoryId,
       "wholeSite" -> notfPref.wholeSite)
   }
@@ -794,6 +811,45 @@ object JsX {
       "pageId" -> JsStringOrNull(reviewTask.pageId),
       "postId" -> JsNumberOrNull(reviewTask.postId),
       "postNr" -> JsNumberOrNull(reviewTask.postNr))
+  }
+
+
+  /** Public login info, for this Identity Provider (IDP) — does Not include
+    * the OIDC client id or secret.
+    */
+  def JsIdentityProviderPubFields(idp: IdentityProvider): JsObject = {
+    Json.obj(
+      // "id" — no. Might leak info about how many providers have been configured.
+      // (Maybe there are some inactive, for example.)
+      "protocol" -> idp.protocol,
+      "alias" -> idp.alias,
+      "enabled" -> idp.enabled,
+      "displayName" -> JsStringOrNull(idp.displayName),
+      "description" -> JsStringOrNull(idp.description),
+      "guiOrder" -> JsNumberOrNull(idp.guiOrder))
+  }
+
+
+  def JsIdentityProviderSecretConf(idp: IdentityProvider): JsObject = {
+    val pubFields = JsIdentityProviderPubFields(idp)
+    pubFields ++ Json.obj(
+        "confFileIdpId" -> JsStringOrNull(idp.confFileIdpId),
+        "id" -> JsI32OrNull(idp.idpId),
+        "trustVerifiedEmail" -> idp.trustVerifiedEmail,
+        "linkAccountNoLogin" -> idp.linkAccountNoLogin,
+        "syncMode" -> idp.syncMode,
+        "oauAuthorizationUrl" -> idp.oauAuthorizationUrl,
+        "oauAuthReqScope" -> JsStringOrNull(idp.oauAuthReqScope),
+        "oauAuthReqHostedDomain" -> JsStringOrNull(idp.oauAuthReqHostedDomain),
+        "oauAccessTokenUrl" -> idp.oauAccessTokenUrl,
+        "oauAccessTokenAuthMethod" -> JsStringOrNull(idp.oauAccessTokenAuthMethod),
+        "oauClientId" -> idp.oauClientId,
+        "oauClientSecret" -> idp.oauClientSecret,
+        "oauIssuer" -> JsStringOrNull(idp.oauIssuer),
+        "oidcUserInfoUrl" -> idp.oidcUserInfoUrl,
+        "oidcUserInfoFieldsMap" -> JsObjOrNull(idp.oidcUserInfoFieldsMap),
+        "oidcUserinfoReqSendUserIp" -> JsBoolOrNull(idp.oidcUserinfoReqSendUserIp),
+        "oidcLogoutUrl" -> JsStringOrNull(idp.oidcLogoutUrl))
   }
 
 }

@@ -100,7 +100,10 @@ class FacebookPostPrevwRendrEng(globals: Globals, siteId: SiteId, mayHttpFetch: 
   def providerName = Some("Facebook")
   def widgetName = "post"
   def providerLnPvCssClassName = "s_LnPv-FbPost"
-  def providerEndpoint = "https://www.facebook.com/plugins/post/oembed.json"
+
+  // Was, until 2020-10-24: "https://www.facebook.com/plugins/post/oembed.json"
+  def providerEndpoint = "https://graph.facebook.com/v8.0/oembed_post"
+
   // override def sandboxInIframe = false
   override def handles(url: String): Boolean = FacebookPostPrevwRendrEng.handles(url)
 }
@@ -168,7 +171,10 @@ class FacebookVideoPrevwRendrEng(globals: Globals, siteId: SiteId, mayHttpFetch:
   def providerName = Some("Facebook")
   def widgetName = "video"
   def providerLnPvCssClassName = "s_LnPv-FbVideo"
-  def providerEndpoint = "https://www.facebook.com/plugins/video/oembed.json"
+
+  // Was, until 2020-10-24: "https://www.facebook.com/plugins/video/oembed.json"
+  def providerEndpoint = "https://graph.facebook.com/v8.0/oembed_video"
+
   override def handles(url: String): Boolean = FacebookVideoPrevwRendrEng.handles(url)
 }
 
@@ -181,7 +187,9 @@ object InstagramPrevwRendrEng {
 
   // Instagram URL scheme, from https://oembed.com:
   //
-  //  API:  https://api.instagram.com/oembed  (only json)
+  // Docs: https://developers.facebook.com/docs/instagram/oembed#oembed
+  //
+  //  API:  https://graph.facebook.com/v8.0/instagram_oembed
   //
   // > http://instagram.com/*/p/*,
   // > http://www.instagram.com/*/p/*,
@@ -215,7 +223,11 @@ class InstagramPrevwRendrEng(globals: Globals, siteId: SiteId, mayHttpFetch: Boo
   def providerName = Some("Instagram")
   def widgetName = "post"
   def providerLnPvCssClassName = "s_LnPv-Instagram"
-  def providerEndpoint = "https://api.instagram.com/oembed"
+
+  // Was: "https://api.instagram.com/oembed"
+  // but apparently FB recently (2020-10-24, today is 2020-10-25) changed to:
+  def providerEndpoint = "https://graph.facebook.com/v8.0/instagram_oembed"
+
   override def regex: Regex = InstagramPrevwRendrEng.regex
 }
 

@@ -68,12 +68,17 @@ trait AuthzSiteDaoMixin {
     * in the future in some cases strangers may not see all users.
     */
   def mayStrangerProbablySeeUrlPathUseCache(urlPath: String): Boolean = {
+    // Tests:  sso-login-required-w-logout-url.2browsers  TyTE2ESSOLGOURL.TyTE2ELGOURL
+
     if (urlPath.startsWith("/-/admin"))
       return false
 
-    // Probably /-/user/some-username, which one may normally access.
-    if (urlPath.startsWith("/-/"))
-      return true
+    // Probably /-/user/some-username — which one may normally access,
+    // unless the site requires login to read.
+    if (urlPath.startsWith("/-/")) {
+      val settings = getWholeSiteSettings()
+      return !settings.userMustBeAuthenticated
+    }
 
     val specifiedPath = PagePath.fromUrlPath(siteId, urlPath) match {
       case PagePath.Parsed.Good(path) => path

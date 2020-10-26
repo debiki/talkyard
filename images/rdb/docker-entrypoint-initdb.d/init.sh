@@ -19,14 +19,23 @@ create user repl replication login connection limit 1 encrypted password '$POSTG
 EOF
 
 
-# Create a test user, talkyard_test
+# Create test users: talkyard_test,  keycloak_test
 # ------------------------
 
 if [ -n "$CREATE_TEST_USER" ]; then
+  # For running Talkyard's integration tests.
   psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
   create user talkyard_test password 'public';
   create database talkyard_test;
   grant all privileges on database talkyard_test to talkyard_test;
+EOF
+
+  # For testing OIDC login via Keycloak — seems importing a Keycloak realm
+  # won't work with the h2 database; needs sth like Postgres. [ty_kc_db]
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
+  create user keycloak_test password 'public';
+  create database keycloak_test owner keycloak_test;
+  grant all privileges on database keycloak_test to keycloak_test;
 EOF
 fi
 

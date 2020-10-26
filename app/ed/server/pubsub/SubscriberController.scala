@@ -140,7 +140,8 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     val (sessionId, xsrfOk, newCookies) =
           security.checkSidAndXsrfToken(
                 request, anyRequestBody = None, siteId = site.id,
-                expireIdleAfterMins = expireIdleAfterMins, maySetCookies = false)
+                expireIdleAfterMins = expireIdleAfterMins, maySetCookies = false,
+                skipXsrfCheck = false)
 
     // Needs to have a cookie already. [WSXSRF]
     dieIf(newCookies.nonEmpty, "TyE503RKDJL2")

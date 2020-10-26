@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import make = require('../utils/make');
@@ -101,7 +101,7 @@ describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
 
   it("... so Mallory cannot set Maria's address as his primary", () => {
     mallorysBrowser.refresh();
-    assert(!mallorysBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
+    assert.not(mallorysBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
   });
 
   it("Mallory removes Maria's address", () => {
@@ -137,12 +137,12 @@ describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
 
   it("Maria cannot set the new email as her primary, because not verified", () => {
     mariasBrowser.refresh();
-    assert(!mariasBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
+    assert.not(mariasBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
   });
 
   it("Mallory also cannot", () => {
     mallorysBrowser.refresh();
-    assert(!mallorysBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
+    assert.not(mallorysBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
   });
 
   it("Maria clicks the email verif link", () => {
@@ -152,12 +152,12 @@ describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
   });
 
   it("... now she can set the new address as her primary", () => {
-    assert(mariasBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
+    assert.ok(mariasBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
   });
 
   it("Mallory still cannot set the email to his primary", () => {
     mallorysBrowser.refresh();
-    assert(!mallorysBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
+    assert.not(mallorysBrowser.userProfilePage.preferences.emailsLogins.canMakeOtherEmailPrimary());
   });
 
   it("Maria sets the new email as her primary", () => {
@@ -182,8 +182,8 @@ describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
 
   it("... not to her old address", () => {
     const email = server.getLastEmailSenTo(siteId, maria.emailAddress, wdioBrowserA);
-    assert(email.bodyHtmlText.search("To finish adding") > 0); // [B4FR20L_]
-    assert(email.bodyHtmlText.search(michalesSecondReply) === -1);
+    assert.ok(email.bodyHtmlText.search("To finish adding") > 0); // [B4FR20L_]
+    assert.ok(email.bodyHtmlText.search(michalesSecondReply) === -1);
   });
 
   let mariasEmailsUrl;
@@ -213,21 +213,21 @@ describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
   });
 
   it("But she cannot delete the only remaining address", () => {
-    assert(!mariasBrowser.userProfilePage.preferences.emailsLogins.canRemoveEmailAddress());
+    assert.not(mariasBrowser.userProfilePage.preferences.emailsLogins.canRemoveEmailAddress());
     // Test after refresh too.
     mariasBrowser.refresh();
-    assert(!mariasBrowser.userProfilePage.preferences.emailsLogins.canRemoveEmailAddress());
+    assert.not(mariasBrowser.userProfilePage.preferences.emailsLogins.canRemoveEmailAddress());
   });
 
   it("... it's her new address", () => {
     const address = mariasBrowser.userProfilePage.preferences.emailsLogins.getEmailAddress();
-    assert(address === mariasAddress2);
+    assert.eq(address, mariasAddress2);
   });
 
   it("... and it's listed as her login method", () => {
     const text = mariasBrowser.getText('.s_UP_EmLg_LgL');
-    assert(text.search("Password") >= 0);
-    assert(text.search(mariasAddress2) > 0);
+    assert.includes(text, 'Password');
+    assert.includes(text, mariasAddress2);
   });
 
 });

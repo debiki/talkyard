@@ -14,7 +14,10 @@ declare function createReactClass<P, S = {}>(spec: React.ComponentSpec<P, S>):
     React.ClassicComponentClass<P>;
 
 declare function reactCreateFactory(x);
-declare const rFragment: any;
+
+// React.Fragment
+declare const rFragment: any;  // soo long! CLEAN_UP REMOVE
+declare const rFr: any;      // better
 
 declare function doNextFrameOrNow(x);
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string | null;
@@ -113,9 +116,14 @@ declare namespace ed {
 
 declare namespace debiki2 {
 
+  // Log error, warning, message, debug, trace.
+  function logE(message: string, ex?);
+  function logW(message: string, ex?);
   function logM(message: string, ex?);
   function logD(message: string, ex?);
+  function logT(message: string, ex?);
 
+  function win_isLoginPopup(): Bo;
   function getMainWin(): MainWin;
   function getMainWinStore(): Store;
   function win_canUseCookies(win: MainWin): boolean;
@@ -155,9 +163,12 @@ declare namespace debiki2 {
 
   function replaceById(itemsWithId: any[], replacement);
   function deleteById(itemsWithId: any[], id);
+  function url_getHost(url: St): St;
+  function arr_sortAlphaInPlace<V>(vs: V[], strFn: (v: V) => St);
 
   namespace notfs {
     function PageNotfPrefButton(props: {
+        className?: St,
         target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs,
         ppsById?: { [ppId: number]: Participant },
         saveFn?: (notfLevel: PageNotfLevel) => void });
@@ -222,7 +233,9 @@ declare namespace debiki2 {
     function openLoginDialogToSignUp(purpose);
     function openLoginDialog(purpose);
 
-    function makeSsoUrl(store: Store, returnToUrl: string): string;
+    function makeSsoUrl(store: Store, returnToUrl: St, forTySsoTest?: true): St;
+    function getOrCreateAuthnNonce(): [St, Bo];
+    function getAuthnNonce(): St;
   }
 
   function reactGetRefRect(ref): Rect;
@@ -238,6 +251,7 @@ declare namespace debiki2 {
   var ReactStore: any;
 
   var findDOMNode: any;
+  function randomNumSt(): St;
   var die: any;
   var dieIf: any;
   var scrollToBottom: any;
@@ -297,7 +311,8 @@ declare namespace debiki2 {
   var isWikiPost;
   var isStaff;
   function user_isTrustMinNotThreat(me: UserInclDetails | Myself, trustLevel: TrustLevel): boolean;
-  var threatLevel_toString;
+  //function threatLevel_toString(threatLevel: ThreatLevel): [St, St];
+  function threatLevel_toElem(threatLevel: ThreatLevel);
   var isGuest;
   var user_isGuest;
   function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean;
@@ -446,8 +461,12 @@ declare namespace debiki2 {
   var MenuItemLink;
   var MenuItemsMany;
   var MenuItemDivider;
+
+  function UserNameLink(props: {
+    user: BriefUser, store: Store, onClick?: Ay, avoidFullName?: Bo });
   function UserName(props: {
-    user: BriefUser, store: Store, makeLink?: boolean, onClick?: any, avoidFullName?: boolean });
+    user: BriefUser, store: Store, makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo });
+
   var FacebookLogoImage;
 
   // More stuff, place where?

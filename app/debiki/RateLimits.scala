@@ -380,23 +380,29 @@ object RateLimits {
   }
 
 
-  object ChangePassword extends RateLimits {
-    val key = "ChPw"
-    val what = "changed your password too many times"
-    def maxPerFifteenSeconds = 3
-    def maxPerFifteenMinutes = 10
-    def maxPerDay = 30
+  abstract class ChangeAccountRateLimits extends RateLimits {
+    def maxPerFifteenSeconds: Int = 5
+    def maxPerFifteenMinutes: Int = 15
+    def maxPerDay: Int = 45
     def maxPerDayNewUser: Int = Unlimited
   }
 
 
-  object AddEmailLogin extends RateLimits {
+  object ChangePassword extends ChangeAccountRateLimits {
+    val key = "ChPw"
+    val what = "changed your password too many times"
+  }
+
+
+  object AddEmailLogin extends ChangeAccountRateLimits {
     val key = "EmLg"
     val what = "added an email address or login method too many times"
-    def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes = 10
-    def maxPerDay = 20
-    def maxPerDayNewUser: Int = Unlimited
+  }
+
+
+  object LinkExtIdentity extends ChangeAccountRateLimits {
+    val key = "LnId"
+    val what = "linked an external identity to an account"
   }
 
 

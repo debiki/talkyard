@@ -1,0 +1,271 @@
+version: '3.7'
+
+# Use like so, from the Talkyard repo base dir:
+#
+#   docker-compose \
+#       -f docker-compose.yml \
+#       -f images/keycloak/docker-compose-keycloak.yml \
+#       up -d
+#
+# There's a help script that does the `docker-compose -f .. -f ..` part:
+#
+#   d/tykc  up -d
+#
+
+services:
+
+  # KeyCloak, for testing OpenID Connect (OIDC) authentication.
+  #
+  # Nice, read?:
+  #    https://news.ycombinator.com/item?id=22871180
+  #
+  # (What about auto testing OpenLDAP, ORY Kratos, FreeIPA?
+  # Do they support OIDC? ORY Kratos does.
+  # Keycloak sort of corresponds to all ORY products in one piece of software,
+  # plus management interface and login. )
+  #
+  #
+  # ##### Start Kecloak
+  #
+  # Like so:  d/tykc up -d
+  #
+  # Then go here: http://localhost:8113/auth/admin — you should see a login page.
+  #
+  #
+  # ---- DONE ALREADY ------------
+  #
+  # The following has been done already — when Keycloak starts,
+  # it auto imports the below realm and test users; see KEYCLOAK_IMPORT: ... below.
+  #
+  # ##### Create a realm
+  # Login as 'admin', password 'pub-admin' (see KEYCLOAK_PASSWORD below).
+  # Mouse hover on "Master" in the upper left corner, then click "Add realm".
+  # Create this realm:  'ty_test_realm'
+  #
+  # ##### Create a user to OIDC login with:
+  # Click Users to the left,
+  #   click Add User to the right,
+  #   type username: 'kc1u', email 'kc1u@example.com'
+  #   leave email verified off.
+  # Click Save.
+  # Click Credentials at the top,
+  #   set password: just 'pub', for all users.
+  #   click 'On' next to Temporary to toggle to Off, so the password becomes permanent,
+  #   click  Set Password.
+  # And add users:
+  #   kc2u_finalana  first name: "Fi Na", last: "La Na"
+  #   kc3v  kc3v@example.com  (no name)
+  #   kc4v_fimelame  kc4v@example.com  name "Fi Me", last: "La Me"
+  #   kc5n  *without* any email or name
+  #   kc6n_boek, no email,  name "Bo", last: "Ek".
+  #   kc7uw with a werid unverified email and name:
+  #     """Fu-Ny? Na!--.?#/\<>{}[]me "'`"""
+  #     ""","'`Mo.re— fuNy.~la 汉语; st nåäö me"""
+  #     kc7uw_fu-ny.na.me@und_dash-dot.example.com
+  #   kc8vw  with another werid verified email and name:
+  #
+  # ----- Out of date! Most / all usernames & emails here and above are.
+  # Hmm, different users, same emails — and sometimes verified, sometimes not:
+  # (20d[uv]  = duplicated email, unverified / verified)
+  #
+  #   kc20du_one    email kc20d@x.co   unverified email creates account...
+  #   kc20du_two    email kc20d@x.co   unverif links, works
+  #   kc20du_three  email kc20d@x.co   unverif links, fails
+  #   kc20dv_four   email kc20d@x.co   verified email links, works
+  #
+  #   kc21dv_one    email kc21d@x.co   verified email creates account
+  #   kc21dv_two    email kc21d@x.co   verif links, works
+  #   kc21du_three  email kc21d@x.co   unverif links, fails
+  #   kc21du_four   email kc21d@x.co   unverif links, works
+  # -----
+  #
+  # Also add user 'kc2v' (note: 'v' not 'u') but with email *verified*,
+  #   and address: kc2v@example.com, pwd 'pub-kc2v'
+  # User 'kc3v_finalana' with verified email kc3v@example.com, pwd 'pub-kc3v',
+  #   and first name: "Fi Na" and last name "La Na".
+  # ('kc1u' and 'kc2v' means:
+  #   "keycloak user 1, email unverified",
+  #   "keycloak user 2, email verified".)
+  #
+  # And can create:  kc2v pub-kc2v kc2v@x.co  "keycloak user 2, email verified".
+  #
+  # Test login here: http://localhost:8113/auth/realms/ty_test_realm/account
+  # (Use a different browser or Ctrl+N or Ctrl+P open an incognito window.)
+  #
+  # #### Create an OIDC app for Talkyard:
+  # Back in Keycloak, as admin in the Talkyard test realm:
+  # Click 'Clients' to the left, then click Create to the right.
+  # Type client id: 'ty_test_client'
+  # Protocol: 'openid-connect' (default)
+  # Click Save. Thereafter,
+  # Access Type: Change from 'public' to 'confidential' ('public' is for mobile apps
+  # and single page apps — they have no OIDC client app API secret)
+  # Keep the 'Standard' flow = 'code' flow enabled.
+  # Do not enable 'Implicit' flow — it's not so secure.
+  #
+  # ##### See if works
+  # KeyCloack has this OpenID Connect demo login app you can try now,
+  # if you want to:  https://www.keycloak.org/app/.
+  #
+  #
+  # ##### Connect Keycloak with Talkyard
+  #
+  # We'll configure OIDC for a Talkyard site at:  e2e-test-kc-oidc.localhost
+  # (we'll create such a site, below).
+  # Change Keycloak's Root URL to point to the Talkyard site,
+  # plus, append:  '/-/authn/oidc/keycloak_test_alias', should be:
+  #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias
+  #
+  # Set the Redirect URI to the above + '/redirback',
+  # will look like:
+  #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias/redirback
+  #
+  # Click Save.
+  # Since you selected 'confidential' above, a tab 'Credentials' will appear
+  # at the top.
+  # Go there and look at the client secret for 4.7 seconds — you'll need to
+  # copy-paste it later, in the JSON config, the THE_SECRET_YOU_COPIED placeholder.
+  #
+  # ---- /END DONE ALREADY -------
+  #
+  #
+  # ##### Create a test Talkyard site
+  #
+  # Run in a shell, either this, if you want to *reuse* a site you've
+  # created before already:
+  #
+  #    s/wdio --only manual.2browsers --da --dt --localHostname e2e-test-kc-oidc --reuse
+  #
+  # Or this, to create a new site, delete any old:
+  #
+  #    s/wdio --only manual.2browsers --da --dt --localHostname e2e-test-kc-oidc
+  #
+  # This creates a Talkyard test site, for manual testing,
+  # address:  http://e2e-test-kc-oidc.localhost,
+  # and logs you in as site admin "owen_owner" in one browser, and member "memah"
+  # in another browser.
+  # (--da means "debug after" — pauses Webdriverio, instead of closing the browsers.
+  #  --dt means use the DevTools protocol, so you won't need Selenium.)
+  #
+  #
+  # #### Configure Talkyard
+  #
+  # In owen_owner's browser, go to the Admin Area, /-/admin/settings/login, and
+  # copy-paste the below OIDC provider configuration — and replace
+  # THE_SECRET_YOU_COPIED with the secret you copied. (The hostname here
+  # is not 'localhost' but 'keycloak.localhost', because that's the container's
+  # name in docker-compose, and becomes its hostname in Ty's Docker network.)
+  #
+  #  {
+  #  "id": 1,
+  #  "protocol": "oidc",
+  #  "alias": "keycloak_test_alias",
+  #  "displayName": "Keycloak Test",
+  #  "description": "OpenID Connect login test at keycloak.localhost:8113",
+  #  "enabled": true,
+  #  "trustVerifiedEmail": true,
+  #  "syncMode": 1,
+  #  "oauAuthorizationUrl": "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/auth",
+  #  "oauAuthReqScope": "openid",
+  #  "oauAccessTokenUrl": "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/token",
+  #  "oauClientId": "ty_test_client",
+  #  "oauClientSecret": "THE_SECRET_YOU_COPIED",
+  #  "oauIssuer": "http://keycloak.localhost:8113/auth/realms/ty_test_realm",
+  #  "oidcUserInfoUrl": "http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/userinfo"
+  # }
+  #
+  # Click Save.
+  #
+  # Then, in a differnt browser where you're not logged in to Talkyard,
+  # start the OIDC login flow by going to this URL at theTalkyard site:
+  #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias
+  #
+  # This should redirect your browser to:
+  #   http://keycloak.localhost:8113/auth/realms/ty_test_realm/protocol/openid-connect/
+  #          auth?response_type=code&client_id=ty_test_client&...
+  #
+  # Type username and password from above:  'kc1u'  'pub-kc1u'.
+  # Hit enter, and Keycloakd should redirect the browser to:
+  #   http://e2e-test-kc-oidc.localhost/-/authn/oidc/keycloak_test_alias/redirback
+  # and Talkyard will continue from there, logging you in via OIDC.
+  #
+  #
+  # ***
+  #
+  # From the docs, https://www.keycloak.org/getting-started/getting-started-docker:
+  #     docker run -p 8113:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin \
+  #         quay.io/keycloak/keycloak:10.0.0
+  #     + -e DB_VENDOR=h2  is a good idea, see below.
+  #
+  # More docs: https://hub.docker.com/r/jboss/keycloak/
+  #
+  # For auto tests, we import a previously exported realm:
+  #   -e KEYCLOAK_IMPORT=/tmp/example-realm.json -v /tmp/example-realm.json:/tmp/example-realm.json
+  # See:
+  #   https://github.com/keycloak/keycloak-containers/blob/master/server/README.md#importing-a-realm
+  #
+  # ***
+  #
+  # The container name is 'keycloak.localhost', because the browser
+  # resolves that to 127.0.0.1, which reaches Keycloak on port 8113 (exposed
+  # on the host's network) well at least Chrome, and FF with some extra config
+  # (see /home/user/styd/d9/docs/wildcard-dot-localhost.md)
+  # *and* this works from inside the Docker network too: keycloak.loaclhost then
+  # resolves to ${INTERNAL_NET_KEYCLOAK_IP}
+  #
+  keycloak.localhost:
+    build: images/keycloak/
+    #image: quay.io/keycloak/keycloak:10.0.0
+    #command: -Djboss.http.port=80
+    # -Djboss.http.port=8113
+    ports:
+      - '8113:8113'  # 113 = same as ip addr, last byte. Sth else often listens on 8080
+    environment:
+      # Without 'h2', KeyCloak uses internal heuristics that sometimes wants a non-existing
+      # MySQL database, blocks for a minute, logs a 3066 lines long error message and exits.
+      #DB_VENDOR: 'h2'
+      # BUT see below! ...
+
+      # rdb container instead:  docker run -d --name postgres --net keycloak-network -e POSTGRES_DB=keycloak -e POSTGRES_USER=keycloak -e POSTGRES_PASSWORD=public postgres
+      # docker run --name keycloak --net keycloak-network jboss/keycloak -e DB_USER=keycloak -e DB_PASSWORD=password
+
+      KEYCLOAK_USER: 'admin'
+      KEYCLOAK_PASSWORD: 'pub-admin'
+      KEYCLOAK_HTTP_PORT: '8113'
+      KEYCLOAK_HTTPS_PORT: '8553'
+      KEYCLOAK_IMPORT: '/realms/ty_test_realm.json'
+
+      # ... exp-imp needs pgsql? [ty_kc_db]
+      # This db user created here: <repo>/images/rdb/docker-entrypoint-initdb.d/init.sh
+      DB_VENDOR: 'postgres'
+      DB_ADDR: 'rdb'
+      DB_USER: 'keycloak_test'
+      DB_DATABASE: 'keycloak_test'
+      DB_PASSWORD: 'public'
+    volumes:
+      # For exporting and importing realms, plus some already exported realms:
+      - ./volumes/keycloak-realms/:/realms/
+      - ./modules/ty-test-media/keycloak-realms/ty_test_realm.json:/realms/ty_test_realm.json
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_KEYCLOAK_IP}
+
+    # kc exp like so:
+
+    # docker-compose exec  keycloak.localhost  /opt/jboss/keycloak/bin/standalone.sh -Djboss.socket.binding.port-offset=100 -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile  -Dkeycloak.migration.realmName=ty_realm  -Dkeycloak.migration.usersExportStrategy=REALM_FILE  -Dkeycloak.migration.file=/tmp/ty_realm.keycloak-export.json 
+
+    # but kc bug, NPE if realm doesn't exist: (FATAL below)
+    # 15:55:44,599 INFO  [org.hibernate.type.BasicTypeRegistry] (ServerService Thread Pool -- 60) HHH000270: Type registration [java.util.UUID] overrides previous : org.hibernate.type.UUIDBinaryType@33545aee
+    # 15:55:44,606 INFO  [org.hibernate.envers.boot.internal.EnversServiceImpl] (ServerService Thread Pool -- 60) Envers integration enabled? : true
+    # 15:55:45,265 INFO  [org.hibernate.orm.beans] (ServerService Thread Pool -- 60) HHH10005002: No explicit CDI BeanManager reference was passed to Hibernate, but CDI is available on the Hibernate ClassLoader.
+    # 15:55:45,343 INFO  [org.hibernate.validator.internal.util.Version] (ServerService Thread Pool -- 60) HV000001: Hibernate Validator 6.0.18.Final
+    # 15:55:46,877 INFO  [org.hibernate.hql.internal.QueryTranslatorFactoryInitiator] (ServerService Thread Pool -- 60) HHH000397: Using ASTQueryTranslatorFactory
+    # 15:55:47,862 INFO  [org.keycloak.services] (ServerService Thread Pool -- 60) KC-SERVICES0034: Export of realm 'ty_realm' requested.
+    # 15:55:47,862 INFO  [org.keycloak.exportimport.singlefile.SingleFileExportProvider] (ServerService Thread Pool -- 60) Exporting realm 'ty_realm' into file /tmp/ty_realm.keycloak-export.json
+    # 15:55:47,884 FATAL [org.keycloak.services] (ServerService Thread Pool -- 60) java.lang.NullPointerException
+
+    # Works: (need to terminate Keycloak with Ctrl+C)
+    # docker-compose exec  keycloak.localhost  /opt/jboss/keycloak/bin/standalone.sh -Djboss.socket.binding.port-offset=100 -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile  -Dkeycloak.migration.realmName=ty_test_realm  -Dkeycloak.migration.usersExportStrategy=REALM_FILE  -Dkeycloak.migration.file=/tmp/ty_test_realm.keycloak-export.json
+
+
+# vim: et ts=2 sw=2

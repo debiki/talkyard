@@ -374,12 +374,17 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         case oauthId: OpenAuthIdentity =>
           val details: OpenAuthDetails = oauthId.openAuthDetails
           Json.obj(
-            "providerId" -> details.providerId,
-            "providerKey" -> details.providerKey,
+            // UX SHOULD replace the IDP ids with IDP name, e.g. "Gmail" or "Facebook"?
+            "confFileIdpId" -> JsStringOrNull(details.confFileIdpId),
+            "idpId" -> JsI32OrNull(details.idpId),
+            "idpUserId" -> details.idpUserId,
+            "username" -> JsStringOrNull(details.username),
             "firstName" -> JsStringOrNull(details.firstName),
             "lastName" -> JsStringOrNull(details.lastName),
             "fullName" -> JsStringOrNull(details.fullName),
             "emailAddress" -> JsStringOrNull(details.email),
+            "isEmailVerifiedByIdp" -> JsBoolOrNull(details.isEmailVerifiedByIdp),
+            "userInfoJson" -> JsObjOrNull(details.userInfoJson),
             "avatarUrl" -> JsStringOrNull(details.avatarUrl))
         case openidId: IdentityOpenId =>
           val details: OpenIdDetails = openidId.openIdDetails
@@ -469,36 +474,50 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     })
 
     var loginMethodsJson = JsArray(identities map { identity: Identity =>
-      val (provider, email) = identity match {
+      val (idpName: St,
+           idpAuthUrl: Opt[St],
+           idpUsername: Opt[St],
+           idpUserId: Opt[St],
+           emailAddr: Opt[St]) = identity match {
         case oa: OpenAuthIdentity =>
           val details = oa.openAuthDetails
-          (details.providerId, details.email)
+          val customIdp = details.idpId flatMap dao.getIdentityProviderById
+          val idpName = customIdp.map(_.nameOrAlias).getOrElse(
+                details.confFileIdpId.get)
+          val idpUsername = details.username
+          val idpAuthUrl = customIdp.map(_.oauAuthorizationUrl)
+          (idpName, idpAuthUrl, idpUsername, Some(details.idpUserId), details.email)
         case oid: IdentityOpenId =>
           val details = oid.openIdDetails
-          (details.oidEndpoint, details.email)
+          (details.oidEndpoint, None, None, Some(details.oidClaimedId), details.email)
         case x =>
-          (classNameOf(x), None)
+          (classNameOf(x), None, None, None, None)
       }
       Json.obj(  // Typescript: UserAccountLoginMethod
         // COULD instead use: JsIdentity  ?
         "loginType" -> classNameOf(identity),
-        "provider" -> provider,
-        "email" -> JsStringOrNull(email))
+        "provider" -> idpName,
+        "idpAuthUrl" -> idpAuthUrl,
+        "idpUsername" -> idpUsername,
+        "idpUserId" -> idpUserId,
+        "idpEmailAddr" -> JsStringOrNull(emailAddr))
     })
 
     if (memberInclDetails.passwordHash.isDefined) {
       loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
-        "loginType" -> "Local",
-        "provider" -> "password",
-        "email" -> memberInclDetails.primaryEmailAddress)
+        "loginType" -> "LocalPwd",
+        "provider" -> "Password",
+        "idpUsername" -> memberInclDetails.username,
+        "idpEmailAddr" -> memberInclDetails.primaryEmailAddress)
     }
 
     if (memberInclDetails.ssoId.isDefined) {
+      // Tests: sso-login-member  TyT5HNATS20P.TyTE2ESSOLGIMS
       loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
-        "loginType" -> "Single Sign-On",
-        "provider" -> "external",
-        "email" -> memberInclDetails.primaryEmailAddress,
-        "externalId" -> JsStringOrNull(memberInclDetails.ssoId))
+        "loginType" -> "TySsoApi",
+        "provider" -> "Talkyard Single Sign-On API",
+        "idpEmailAddr" -> memberInclDetails.primaryEmailAddress,
+        "idpUserId" -> JsStringOrNull(memberInclDetails.ssoId))
     }
 
     OkSafeJson(Json.obj(  // UserAccountResponse
@@ -1147,9 +1166,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val body = request.body
     val memberId = (body \ "memberId").as[MemberId]
     val anyPageIdMaybeEmptyPage = (body \ "pageId").asOpt[PageId]
+    val pagesPatCreated = (body \ "pagesPatCreated").asOpt[Bo]
+    val pagesPatRepliedTo = (body \ "pagesPatRepliedTo").asOpt[Bo]
     val pagesInCategoryId = (body \ "pagesInCategoryId").asOpt[CategoryId]
-    val wholeSite = (body \ "wholeSite").asOpt[Boolean]
-    val newNotfLevelInt = (body \ "notfLevel").asOpt[Int]
+    val wholeSite = (body \ "wholeSite").asOpt[Bo]
+    val newNotfLevelInt = (body \ "notfLevel").asOpt[i32]
     val newNotfLevel = newNotfLevelInt.flatMap(NotfLevel.fromInt)
 
     // If is a not-yet-created embedded comments page:
@@ -1167,6 +1188,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(participant.isAdmin && !requester.isAdmin, "TyE5P2AQ04",
       "May not change admin user's notf prefs")
 
+    throwForbiddenIf(pagesPatCreated is true, "TyE052RMSKF", "unimpl: pagesPatCreated")
 
     // If this is for a not yet created embedded comments page, then lazy-create it here.
     // (Sometimes people subscribe to comments for embedded blog comments discussions,
@@ -1189,11 +1211,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
 
     val newPref = Try(
-      PageNotfPref(
-        memberId, pageId = anyPageId, wholeSite = wholeSite.getOrElse(false),
-        pagesInCategoryId = pagesInCategoryId,
-        notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
-          .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
+          PageNotfPref(
+                memberId,
+                pageId = anyPageId,
+                pagesPatRepliedTo = pagesPatRepliedTo.getOrElse(false),
+                //pagesPatCreated = pagesPatCreated.getOrElse(false),
+                pagesInCategoryId = pagesInCategoryId,
+                wholeSite = wholeSite.getOrElse(false),
+                notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
+            .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
 
     if (newNotfLevel.isDefined) {
       dao.savePageNotfPref(newPref, request.who)

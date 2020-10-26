@@ -125,14 +125,14 @@ export function user_isStaffOrCoreMember(user: Myself | UserInclDetails): boolea
 }
 
 
-export function isTalkToMeNotification(notf: Notification): B {
+export function isTalkToMeNotification(notf: Notification): Bo {
   return notf.type === NotificationType.DirectReply ||
           notf.type === NotificationType.Mention ||
           notf.type === NotificationType.Message ||
           notf.type === NotificationType.OneLikeVote;  // for now  [like_notf_ico]
 }
 
-export function isTalkToOthersNotification(notf: Notification): B {
+export function isTalkToOthersNotification(notf: Notification): Bo {
   return notf.type === NotificationType.NewPost ||
           notf.type === NotificationType.IndirectReply;
 }

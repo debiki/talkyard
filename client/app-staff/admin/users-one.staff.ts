@@ -299,10 +299,10 @@ export const UserProfileAdminView = createFactory({
     const threatLevelText = user.isGroup ? null : (
         user.lockedThreatLevel
         ? r.span({ className: 'e_ThreatLvlIsLkd' },
-            "Locked at: " + threatLevel_toString(user.lockedThreatLevel) +
-            ", would otherwise have been: " + threatLevel_toString(user.threatLevel))
+            "Locked at: ", threatLevel_toElem(user.lockedThreatLevel), '.', r.br(),
+            "Would otherwise have been: ", threatLevel_toElem(user.threatLevel))
         : r.span({ className: 'e_ThreatLvlNotLkd' },
-            threatLevel_toString(user.threatLevel)));
+            threatLevel_toElem(user.threatLevel)));
 
     const threatButton = user.isGroup ? null :
         Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser),
@@ -528,30 +528,37 @@ const MemberThreatLevelDialog = createComponent({
     const user: UserInclDetails = this.state.user;
 
     const currentThreatLevelText = r.p({}, user.lockedThreatLevel
-      ? "Threat level locked at: " + threatLevel_toString(user.lockedThreatLevel) +
-          ", would otherwise have been: " + threatLevel_toString(user.threatLevel)
-      : "Current threat level: " + threatLevel_toString(user.threatLevel));
+      ? rFr({},
+          "Threat level locked at: ", threatLevel_toElem(user.lockedThreatLevel),
+          '.', r.br(),
+          "Would otherwise have been: ", threatLevel_toElem(user.threatLevel))
+      : rFr({},
+          "Current threat level: ", threatLevel_toElem(user.threatLevel)));
+
+    const mkBtn = (level: ThreatLevel | Nu, className: St, help: St, title?: St) =>
+        rFr({},
+          Button({ onClick: () => this.lockThreatLevelAt(level),
+              className: `${className} e_ThrLv-${level}` },
+            title || threatLevel_toElem(level)),
+          r.div({ className: 'help-block' },
+            help));
 
     const actionContent = user.lockedThreatLevel
         ? r.div({},
-            Button({ onClick: () => this.lockThreatLevelAt(null), className: 'e_UnlockThreatB' },
-              "Unlock"),
-            r.div({ className: 'help-block' },
-              "Clears the manually assigned threat level."))
+            mkBtn(null, 'e_UnlockThreatB',
+              "Clears the manually assigned threat level.",
+              "Unlock"))
         : r.div({},
-            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.MildThreat),
-                className: 'e_MildThreatB' },
-              "Mild threat"),
-            r.div({ className: 'help-block' },
-              "Marks this user as a mild threat, which means all comments s/he post " +
-              "will be added to the review list. But they'll be shown directly to other " +
-              "users."),
-            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.ModerateThreat),
-                className: 'e_ModerateThreatB' },
-              "Moderate threat"),
-            r.div({ className: 'help-block' },
-              "Marks this user as a moderate threat, which means that all comments " +
-              "s/he post won't be visible until they've been approved by the staff."));
+            // Tests: flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK.TyTE2ETHRLVDEF
+            mkBtn(ThreatLevel.HopefullySafe, 'e_HopfSafB',
+              "The default level — has no effect; doesn't do anything special."),
+            mkBtn(ThreatLevel.MildThreat, 'e_MildThreatB',
+              "Marks this user as a mild threat, which means that new posts " +
+              "by him/her get added to the review list. " +
+              "But they'll be visible directly for other members."),
+            mkBtn(ThreatLevel.ModerateThreat, 'e_ModerateThreatB',
+              "Marks this user as a moderate threat, which means that new posts " +
+              "by him/her get hidden until approved by staff."));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },

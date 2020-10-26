@@ -17,11 +17,8 @@
 
 
 
-#dw-lgi-guest,
-#dw-lgi-pswd,
-#dw-lgi-create-password-user,
-#dw-lgi-more
-  display: block
+// CLEAN_UP  can REMOVE some classes from here.  Were used in the past
+// with OpenID 1.0.
 
 #dw-lgi [class*="icon-"]
   margin-right: 5px
@@ -29,10 +26,6 @@
 
 #dw-lgi .icon-facebook
   margin-right: 0px
-
-#dw-lgi-guest,
-#dw-lgi-pswd
-  margin-bottom: 0.5em
 
 #dw-lgi .btn
   background-color: hsl(0, 0%, 97%)
@@ -50,73 +43,16 @@
 #dw-lgi-other-sites
   text-align: center
 
-.dw-lgi-openid
-  padding: 0 30px 0 0
-  margin-right: 45px
-  height: 105px
-  width: 125px
-  position: absolute
-  left: 0 // or IE 7 places it far to the right
-
 .dw-a-login
   margin-left: 10px
 
-.dw-u-name,
 .dw-a-login,
 .dw-a-logout
   cursor: pointer
 
-#dw-lgi-pswd .dw-reset-pswd
-  display: block
-  margin-top: 10px
-
-// ---
-// This hides/shows "Login to Post Comment" / "Login to Submit" messages
-// depending on what the user is doing.
-body .dw-login-to-auth,
-body .dw-login-to-submit,
-body .dw-login-to-post-comment,
-body .dw-login-to-create-topic,
-body .dw-login-to-login
-  display: none
-
-body.dw-login-to-auth .dw-login-to-auth,
-body.dw-login-to-submit .dw-login-to-submit,
-body.dw-login-to-post-comment .dw-login-to-post-comment,
-body.dw-login-to-create-topic .dw-login-to-create-topic,
-body.dw-login-to-login .dw-login-to-login,
-body.dw-login-as-admin .dw-login-to-login,
-body.dw-login-become-admin .dw-login-to-login
-  display: inline
-// ---
-
-body.dw-login-to-auth,
-body.dw-login-become-admin,
-body.dw-login-as-admin
-  #dw-lgi-twitter,  // twitter has no email
-  #dw-lgi-guest     // guests have no password
-    display: none
-
-body.dw-login-become-admin
-  #dw-lgi-pswd      // no user has been created so far
-    display: none
-
 // Hide password field when creating user in via OAuth or OpenID.
 .dw-fs .form-group.password
   display: none
-
-
-// Hide Google and Yahoo login buttons in OpenID dialog; they're available via direct links
-// instead, from the main login dialog.
-.google.openid_large_btn,
-.google_profile.openid_small_btn,
-.yahoo.openid_large_btn
-  display: none
-
-// Avoid float drop: remove pointless margin.
-#openid_form
-  margin-right: 0
-  padding-right: 0
 
 
 

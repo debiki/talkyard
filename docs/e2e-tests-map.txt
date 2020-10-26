@@ -104,6 +104,10 @@ login -
           - settings-toggle-login-required.3browsers.test.ts  TyT4GKBW20
   login-required site, with openauth:
           - login-required-oauth-signup-login.test.ts  TyT406MRTJW2
+  login directly to admin area
+    with oidc,
+    with server default oauth2:
+          - TESTS_MISSING?  TyTE2E503RK24
 
 sso,
 single-sign-on:  (3093533)
@@ -113,12 +117,14 @@ single-sign-on:  (3093533)
           - sso-login-required  TyT7KSD20RG42
           - sso-approval-required  TyT502RKDJH3
           - sso-login-and-approval-required  TyT503KRTTR204BR
-          - sso-admin-extra-login.test.ts  TyT03WKDTRP50
+          - sso-admin-extra-login.test.ts / admin one-time login  TyT03WKDTRP50
           - sso-all-ways-to-login.2browsers.test.ts  TyT7FKRTTSR024
           - sso-access-denied-login.2browsers.test.ts  TyT4AKT02DKJ41
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
   one-time login secret abuse:
           - sso-one-time-key-errors.2browsers.test.ts  TyT5025BDUJQP4R
+  logout url:
+          - sso-login-required-w-logout-url.2browsers  TyTE2ESSOLGOURL.TyTE2ELGOURL
   unusual names:
           - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT603KTMM653
   email conflict:
@@ -176,6 +182,7 @@ profile page, a group:
           - group-profile-change-things.2browsers.test.ts  TyT5MS5TWV0
   notf prefs for groups:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
+          - notf-prefs-pages-replied-to.2br.test.ts  TyTE2E402SM53
 
   add/remove group members:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
@@ -810,6 +817,8 @@ review after:
           - modn-approve-before.2browsers.test.ts  TyTE2E52RKDHI
           - modn-appr-bef-comb-w-revw-aftr.2browsers.test.ts  TyTE2E05RKD3
           - server side: TyT305RKTH205
+  require approval before, because flagged:
+          - flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK.TyTE2EFLAGTRTMOD
   review after, if trust less than:
           - modn-review-after.2browsers.test.ts  TyTE2E402GRM
           - modn-appr-bef-comb-w-revw-aftr.2browsers.test.ts  TyTE2E05RKD3
@@ -850,6 +859,11 @@ review after:
     #    Alice deletes.
     #    Memah visits reply — not found.
 
+flags:
+  auto threat level, moderate:
+          - flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK
+  lock threat level:
+          - flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK.TyTE2ETHRLVDEF
 
 spam: (4BKS0)
           - spam-basic-local.2browsers.test.ts  TyT530KRM1R
@@ -957,6 +971,9 @@ restart server -
 
 notfs,
 notifications:
+  about direct replies:
+          - notf-prefs-pages-replied-to.2br.test.ts  TyTE2E402SM53.TyTE2E60923RMT
+          - ... plus many many many other tests ...
   about mod tasks:   — see (502M7)
   about direct messages:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
@@ -978,6 +995,8 @@ notifications:
           - notfs-mark-seen-as-seen  TyT2AKBR0T
   about topics one may not see:
           - notf-prefs-private-groups.2browsers.test.ts   TyT406WMDKG26
+  about replies in topics where one has replied:
+          - notf-prefs-pages-replied-to.2br.test.ts  TyTE2E402SM53
   new topics:
           - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
           - ... more, which?

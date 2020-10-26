@@ -916,7 +916,7 @@ interface TalkyardTranslations {
     CreateAcconut: string;
     ContinueWithDots: string;
     SignUp: string;
-    LogIn: string;
+    LogIn: string;  // REMOVE?  There's t.LogIn already
     LogInWithPwd: string;
     CreateAdmAcct: string;
     AuthRequired: string;
