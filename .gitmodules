@@ -5,6 +5,9 @@
 [submodule "images/web/ty-media"]
 	path = images/web/ty-media
 	url = https://github.com/debiki/talkyard-media.git
+[submodule "modules/ty-test-media"]
+	path = modules/ty-test-media
+	url = https://github.com/debiki/ty-test-media
 [submodule "modules/ty-cla"]
 	path = modules/ty-cla
 	url = https://github.com/debiki/ty-cla.git
