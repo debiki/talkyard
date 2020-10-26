@@ -47,7 +47,7 @@
         ],
         "no-internal-module": true,
         "no-trailing-whitespace": [true, "ignore-comments", "ignore-jsdoc"],
-        "no-null-keyword": true,
+        "no-null-keyword": false,
         "prefer-const": true,
         "jsdoc-format": true
     }
