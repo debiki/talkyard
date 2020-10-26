@@ -124,7 +124,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 
   private def loadOidcConfigImpl(request: DebikiRequest[_], inclSecret: Bo): p_Result = {
-    val idps = request.dao.readTx(_.loadAllIdentityProviders())
+    val idps = request.dao.getIdentityProviders(onlyEnabled = false)
           .sortBy(idp => idp.guiOrder getOrElse (
                 idp.idpId.getOrElse(0) + 1000 * 1000))
     val json = JsArray(idps map JsX.JsIdentityProviderSecretConf)

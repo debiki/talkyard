@@ -82,6 +82,14 @@ That's how e.g. StackOverflow does this:
 
 [oidc_missing]:  some more nice OIDC things.
 
+[scribejava_oauth2]
+A way for a site admin to tell Talkyard which built-in ScribeJava IDP
+hen wants to use — how do that?
+Maybe ScribeJava Java class names, like: "GoogleApi20" or "LinkedInApi20"?
+Here're the APIs:
+  https://github.com/scribejava/scribejava/tree/master/scribejava-apis/src/main/java/com/github/scribejava/apis
+
+
 [srv_glb_idp]
 Link to server global idp:
   * @param idpSiteId — None, unless is from a server global

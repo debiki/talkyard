@@ -519,6 +519,7 @@ case class SitePatchParser(context: EdContext) {
             oauAuthReqScope = readOptString(jsObj, "oauAuthReqScope"),
             oauAuthReqHostedDomain = readOptString(jsObj, "oauAuthReqHostedDomain"),
             oauAccessTokenUrl = readString(jsObj, "oauAccessTokenUrl"),
+            oauAccessTokenAuthMethod = readOptString(jsObj, "oauAccessTokenAuthMethod"),
             oauClientId = readString(jsObj, "oauClientId"),
             oauClientSecret = readString(jsObj, "oauClientSecret"),
             oauIssuer = readOptString(jsObj, "oauIssuer"),

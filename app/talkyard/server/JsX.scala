@@ -842,11 +842,12 @@ object JsX {
         "oauAuthReqScope" -> JsStringOrNull(idp.oauAuthReqScope),
         "oauAuthReqHostedDomain" -> JsStringOrNull(idp.oauAuthReqHostedDomain),
         "oauAccessTokenUrl" -> idp.oauAccessTokenUrl,
+        "oauAccessTokenAuthMethod" -> JsStringOrNull(idp.oauAccessTokenAuthMethod),
         "oauClientId" -> idp.oauClientId,
         "oauClientSecret" -> idp.oauClientSecret,
         "oauIssuer" -> JsStringOrNull(idp.oauIssuer),
         "oidcUserInfoUrl" -> idp.oidcUserInfoUrl,
-        "oidcUserInfoFieldsMap" -> idp.oidcUserInfoFieldsMap,
+        "oidcUserInfoFieldsMap" -> JsObjOrNull(idp.oidcUserInfoFieldsMap),
         "oidcUserinfoReqSendUserIp" -> JsBoolOrNull(idp.oidcUserinfoReqSendUserIp),
         "oidcLogoutUrl" -> JsStringOrNull(idp.oidcLogoutUrl))
   }

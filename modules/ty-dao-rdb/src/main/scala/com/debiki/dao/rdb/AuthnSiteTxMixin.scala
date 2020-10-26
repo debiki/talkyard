@@ -391,6 +391,7 @@ trait AuthnSiteTxMixin extends SiteTransaction {
     val rsSiteId = getInt(rs, "site_id_c")
     dieIf(rsSiteId != siteId, "TyE4056MAKST2")
     IdentityProvider(
+          confFileIdpId = None,
           idpId = Some(getInt(rs, "idp_id_c")),
           protocol = rs.getString("protocol_c"),
           alias = rs.getString("alias_c"),
@@ -406,10 +407,12 @@ trait AuthnSiteTxMixin extends SiteTransaction {
           oauAuthReqScope = getOptString(rs, "oau_auth_req_scope_c"),
           oauAuthReqHostedDomain = getOptString(rs, "oau_auth_req_hosted_domain_c"),
           oauAccessTokenUrl = rs.getString("oau_access_token_url_c"),
+          oauAccessTokenAuthMethod = getOptString(rs, "oau_access_token_auth_method_c"),
           oauClientId = rs.getString("oau_client_id_c"),
           oauClientSecret = rs.getString("oau_client_secret_c"),
           oauIssuer = getOptString(rs, "oau_issuer_c"),
           oidcUserInfoUrl = rs.getString("oidc_user_info_url_c"),
+          oidcUserInfoFieldsMap = getOptJsObject(rs, "oidc_user_info_fields_map_c"),
           oidcUserinfoReqSendUserIp = getOptBool(rs, "oidc_userinfo_req_send_user_ip_c"),
           oidcLogoutUrl = getOptString(rs, "oidc_logout_url_c"))
   }

@@ -18,6 +18,7 @@
 package talkyard.server.authn
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import com.github.scribejava.core.builder.api.{DefaultApi20 => sj_DefaultApi20}
 import com.github.scribejava.core.extractors.{TokenExtractor => sj_TokenExtractor}
 import com.github.scribejava.core.model.{OAuth2AccessToken => sj_OAuth2AccessToken}
@@ -45,11 +46,11 @@ private case class TyOidcScribeJavaApi20(idp: IdentityProvider) extends sj_Defau
     // in a form-data encoded request body. Whilst the other,
     // 'client_secret_basic', uses a Basic Auth HTTP header — that's better,
     // then, not in the post data, so is the default.
-    /*
+
     if (idp.oauAccessTokenAuthMethod is "client_secret_post")
       sj_RequestBodyAuthenticationScheme.instance()
-    else */
-    sj_HttpBasicAuthenticationScheme.instance()
+    else
+      sj_HttpBasicAuthenticationScheme.instance()
 
     // There's also:
     // - client_secret_jwt  relies on HMAC SHA,

@@ -23,6 +23,7 @@ import debiki.dao.{MemCacheKey, SiteDao}
 import com.github.scribejava.core.oauth.{OAuth20Service => sj_OAuth20Service}
 import com.github.scribejava.core.builder.{ServiceBuilder => sj_ServiceBuilder}
 import com.github.scribejava.core.builder.api.{DefaultApi20 => sj_DefaultApi20}
+import com.github.scribejava.core.oauth2.clientauthentication.{RequestBodyAuthenticationScheme => sj_RequestBodyAuthenticationScheme}
 import org.scalactic.{Good, Bad, Or}
 
 
@@ -154,12 +155,39 @@ trait AuthnSiteDaoMixin {
     // It's the right IDP, same config settings?
     // (The redirBackUrl includes both the protocol and IDP alias, and the
     // client id and secret are very unique too.)
+
+    def correctAccessTokenAuthMethod: Bo =
+          (service.getApi.getClientAuthentication ==
+                sj_RequestBodyAuthenticationScheme.instance()
+          ) == idp.oauAccessTokenAuthMethod.is("client_secret_post")
+
+    def correctOAuth2Config: Bo = service.getApi match {
+      case oauApi: sj_DefaultApi20 =>
+        // Or maybe do these checks only for TyOidcScribeJavaApi20?
+        // And assume ScribeJava's built-in config for "well known" OAuth2
+        // IDPs (e.g. Google, FB) is correct? Otherwise site admins would
+        // need to configure OAuth2 auth and access token urls, although
+        // ScribeJava later would use its own built-in urls anyway?
+        // Then need a way for a site admin to tell Talkyard which
+        // built-in ScribeJava IDP hen wants to use? [scribejava_oauth2]
+        val apiAuthUrlInclQuerySt = oauApi.getAuthorizationUrl(
+              "", "", "", "", "", new java.util.HashMap())
+        (apiAuthUrlInclQuerySt.startsWith(idp.oauAuthorizationUrl + '?')
+              && oauApi.getAccessTokenEndpoint == idp.oauAccessTokenUrl)
+      case weirdApi =>
+        // Only OAuth2 and OIDC supported.
+        bugWarn("TyE3B5MA05MR", s"Weird API: ${classNameOf(weirdApi)}")
+        false
+    }
+
     if (idp.oauAuthReqScope.isSomethingButNot(service.getDefaultScope)
         || service.getCallback != redirBackUrl
         || service.getApiKey != idp.oauClientId
-        || service.getApiSecret != idp.oauClientSecret) {
+        || service.getApiSecret != idp.oauClientSecret
+        || !correctAccessTokenAuthMethod
+        || !correctOAuth2Config) {
       // It's the wrong. An admin recently changed OIDC settings?
-      // Remove the old, create a new.
+      // Remove old, create new.
       uncacheScribeJavaAuthnServices(Seq(idp))
 
       // No eternal recursion.
@@ -175,7 +203,6 @@ trait AuthnSiteDaoMixin {
 
   private def createScribeJavaOidcService(idp: IdentityProvider, redirBackUri: St)
           : sj_OAuth20Service = {
-    dieIf(!idp.isOpenIdConnect, "TyE305MARKP23")
     new sj_ServiceBuilder(idp.oauClientId)
           .apiSecret(idp.oauClientSecret)
           .defaultScope(idp.oauAuthReqScope getOrElse "openid")

@@ -50,22 +50,23 @@ object JsonUtils {
       case _ => throwBadJson("TyE0JSOBJ", s"$what is not a JsObject")
     }
 
-  def readJsObject(json: JsValue, fieldName: String): JsObject =
+  def readJsObject(json: JsValue, fieldName: St): JsObject =
     readOptJsObject(json, fieldName).getOrElse(throwMissing("EsE1FY90", fieldName))
 
   def parseOptJsObject(json: JsValue, fieldName: St): Opt[JsObject] =
     readOptJsObject(json, fieldName)
 
-  def readOptJsObject(json: JsValue, fieldName: String): Option[JsObject] =
+  def readOptJsObject(json: JsValue, fieldName: St): Opt[JsObject] =
     (json \ fieldName).toOption map {
       case o: JsObject => o
+      case JsNull => return None
       case bad =>
         throwBadJson(
           "EsE2YMP7", s"'$fieldName' is not a JsObject, but a ${classNameOf(bad)}")
     }
 
   // Add a 2nd fn, or a param: all elems be of the same type? See below: [PARSEJSARR]
-  def readJsArray(json: JsValue, fieldName: String, optional: Boolean = false): JsArray = {
+  def readJsArray(json: JsValue, fieldName: St, optional: Bo = false): JsArray = {
     val array = (json \ fieldName).toOption getOrElse {
       if (optional) return JsArray()
       throwMissing("TyE0JSFIELD", fieldName)
