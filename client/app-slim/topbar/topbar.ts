@@ -26,6 +26,7 @@
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../login/login-if-needed.ts" />
+/// <reference path="../page/cats-or-home-link.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
@@ -35,11 +36,29 @@
 
 const FixedTopDist = 8;
 
+// Shadow size (the '+ X') dupl here: [topb_shdw], 6px + 9px diffusion ~= 10px?
+// No, skip this — otherwise, when switching from static to fixed, the page
+// would jump downwards with this amount.
+const TopbarShadow = 0;  // 10;
 
-export function getTopbarHeightInclShadow(): number {
-  const topbarElem = $first('.s_Tb-Fxd');
-  return !topbarElem ? 0 :
-      topbarElem.offsetHeight + 4; // shadow size (the '+ X') dupl here: [5YKW25]
+
+export function getTopbarHeightInclShadow(): Nr {
+  const topbarElem = $first('.s_Tb');
+  return !topbarElem ? 0 : topbarElem.offsetHeight + TopbarShadow;
+}
+
+
+interface TopbarState {
+  store: Store;
+  fixed: Bo;
+  initialOffsetTop?: Nr;
+  // The browser window minus the topicbar and contextbar.
+  pageWidth: Nr;
+  // If the username is wide, there's less space for buttons and custom
+  // nav links, in the topbar.
+  curName: St;
+  nameWidth: Nr;
+  placeholderHeightPx?: St;
 }
 
 
@@ -49,19 +68,14 @@ export const TopBar = createComponent({
 
   getInitialState: function() {
     const store = debiki2.ReactStore.allData();
-    return {
+    const state: TopbarState = {
       store,
       fixed: false,
-      initialOffsetTop: undefined,
-      /*  CLEAN_UP REMOVE  this is now in  scroll-buttons.ts instead. [scroll_btns_dupl]
-       *  Why didn't I remove this before? Must have been from long ago, when scroll buttons
-       *  were located in the topbar?  rather than at the bottom.
-       *  Seems I just forgot:  a723007c8 "Move scroll buttons to the bottom" 2016-06.
-      enableGotoTopBtn: false,
-      enableGotoEndBtn: true,
-      */
-      isWide: this.isPageWide(store),
+      curName: '',  //  not logged in, when rendering server side
+      nameWidth: 0, //
+      pageWidth: store_getApproxPageWidth(store),
     };
+    return state;
   },
 
   componentWillUnmount: function() {
@@ -76,7 +90,7 @@ export const TopBar = createComponent({
       // *not* be position = fixed, initially. And can do:
       //    getPageScrollableRect().top - this-rect.top
       // later? — This layout reflow takes about 15 ms (core i7 laptop), that's about 5% of
-      // the total time spent scripting & rendering before the first paint.
+      // the total time spent scripting and rendering before the first paint.
       if (this.isGone) return;
       const rect = this.getThisRect();
       const pageTop = getPageScrollableRect().top;
@@ -90,16 +104,69 @@ export const TopBar = createComponent({
   },
 
   checkSizeChangeLayout: function() {
-    // Dupl code [5KFEWR7]
+    // Dupl code [5KFEWR7]  — now no longer dupl, now this is different (& better?)
     if (this.isGone) return;
-    const isWide = this.isPageWide(this.state.store);
-    if (isWide !== this.state.isWide) {
-      this.setState({ isWide });
-    }
-  },
+    const state: TopbarState = this.state;
+    const store = state.store;
+    const pageWidthNow = store_getApproxPageWidth(store);
+    const oldWidth = state.pageWidth;
 
-  isPageWide: function(store: Store) {
-    return store_getApproxPageWidth(store) >= 1310;  // [wide_topbar_min_px]
+    // Don't rerender unless 1) the page width changed in a noticeable way,
+    // say, > 30 px, and > 10%.
+    const signedWidthChange = pageWidthNow - oldWidth;
+    const absChange = Math.abs(signedWidthChange);
+    const changedALot = absChange > 30 && (absChange / Math.max(oldWidth, 1)) > 0.1;
+
+    // Or 2) if there's a custom navigation menu, on two rows, in narrow layout,
+    // and now the window got wider (or narrower) so should switch from two to
+    // one row layout (or from one to two) — that is, if the available topbar
+    // width crossed the navConf.tb1Rw breakpoint.
+    const navConf: BrowserCode = store.settings.navConf || {};
+    const justOneRowBefore = !navConf.tb1Rw || navConf.tb1Rw <= oldWidth;
+    const justOneRowAfter = !navConf.tb1Rw || navConf.tb1Rw <= pageWidthNow;
+    const numRowsChanged = justOneRowBefore !== justOneRowAfter;
+
+    // Or 3) if we logged in / out: then, a username dis/appeared, changing
+    // how much space is left for buttons and custom nav links, so
+    // we might need to change the layout from one to two rows.
+    const curName = store.me?.username || '';
+    const nameChanged = curName !== state.curName;
+    let nameWidth = state.nameWidth;
+    if (nameChanged) {
+      // We only do if name actually changed — can otherwise trigger layout reflow?
+      // UX COULD:  subtr width of  .s_Tb_MyBs  instead?
+      // And, not only if name changed — but if notf icons dis/appeared.
+      let nameElem = $first('.esAvtrName_name');
+      let width: Nr | U = nameElem?.getBoundingClientRect()?.width;
+      if (!width) {
+        // Look in row 2 — name shown there, if 2 rows layout.
+        nameElem = $first('.s_Tb-Rw2 .esAvtrName_name');
+        width = nameElem?.getBoundingClientRect()?.width || 0;
+      }
+      nameWidth = width;
+    }
+
+    if (changedALot || numRowsChanged || nameChanged) {
+      const newState: Partial<TopbarState> = {
+        pageWidth: pageWidthNow,
+        curName,
+        nameWidth,
+      };
+
+      // If more/fewer rows, and fixed layout, need to resize the placeholder, so the
+      // topbar won't occlude the page if scrolling almost all the way up.
+      // But wait for a moment, so the browser is done rerendering and we can get
+      // the new topbar size.
+      if (numRowsChanged && state.fixed) {
+        setTimeout(() => {
+          if (this.isGone) return;
+          const placeholderHeightPx = getTopbarHeightInclShadow();
+          this.setState({ placeholderHeightPx });
+        }, 1);
+      }
+
+      this.setState(newState);
+    }
   },
 
   getThisRect: function() {
@@ -109,55 +176,45 @@ export const TopBar = createComponent({
   onChange: function() {
     this.setState({
       store: debiki2.ReactStore.allData()
-    });
+    } as TopbarState);
     // If the watchbar was opened or closed, we need to rerender with new left: offset.
     this.onScroll();
   },
 
   onScroll: function() {
-    if (!_.isNumber(this.state.initialOffsetTop))
+    const state: TopbarState = this.state;
+    if (!_.isNumber(state.initialOffsetTop))
       return;
 
-    const store: Store = this.state.store;
+    const store: Store = state.store;
     const pageRect = getPageScrollableRect();
     let pageLeft = pageRect.left;
     if (store.isWatchbarOpen && !store.shallSidebarsOverlayPage) {
       pageLeft -= WatchbarWidth;
     }
     const pageTop = pageRect.top;
-    const newTop = -pageTop - this.state.initialOffsetTop;
+    const newTop = -pageTop - state.initialOffsetTop;
     this.setState({ top: newTop, left: -pageLeft }); // CLEAN_UP `top` not used. What about `left`?
-    if (!this.state.fixed) {
-      if (-pageTop > this.state.initialOffsetTop + FixedTopDist || pageLeft < -40) {
+    if (!state.fixed) {
+      if (-pageTop > state.initialOffsetTop + FixedTopDist || pageLeft < -40) {
         const rect = this.getThisRect();
         this.setState({
           fixed: true,
           // Update the height here, not in componentDidMount, because the height might change
           // if the window is made wider/smaller, after mount.
-          placeholderHeightPx: rect.height + 'px',
-        });
+          placeholderHeightPx: (rect.height + TopbarShadow) + 'px',
+        } as TopbarState);
       }
     }
     else if (pageLeft < -20) {
-      // We've scrolled fairly much to the right, so stay fixed.
+      // We've scrolled fairly much to the right, so stay fixed.  [2D_LAYOUT]
     }
     else {
       // Add +X otherwise sometimes the fixed state won't vanish although back at top of page.
-      if (-pageTop < this.state.initialOffsetTop + 5) {
+      if (-pageTop < state.initialOffsetTop + 5) {
         this.setState({ fixed: false, top: 0, left: 0 });
       }
     }
-    /*  CLEAN_UP REMOVE  this is now in  scroll-buttons.ts instead. [scroll_btns_dupl]
-    const calcCoords = utils.calcScrollIntoViewCoordsInPageColumn;
-    this.setState({
-      // We cannot scroll above the title anyway, so as long as the upper .dw-page is visible,
-      // disable the go-to-page-top button. Also, the upper parts of the page is just whitespace,
-      // so ignore it, set marginTop -X.
-      // To make this work on a PageType.Forum / topic list page,
-      // needs to use  .dw-forum  instead?
-      enableGotoTopBtn: calcCoords('.dw-page', { marginTop: -10, height: 0 }).needsToScroll,
-      enableGotoEndBtn: calcCoords('#dw-the-end').needsToScroll,
-    }); */
   },
 
   onSignUpClick: function() {
@@ -173,19 +230,23 @@ export const TopBar = createComponent({
   },
 
   render: function() {
-    const store: Store = this.state.store;
+    const state: TopbarState = this.state;
+    const store: Store = state.store;
     const page: Page = store.currentPage;
     const me: Myself = store.me;
     const pageRole = page.pageRole;
     const isEmbComments = pageRole === PageRole.EmbeddedComments;
     const isSectionPage = isSection(pageRole);
-    const isBitDown = this.state.fixed;
-    const isWide = this.state.isWide;
+    const isBitDown = state.fixed;
+    const availableWidth = Math.max(state.pageWidth - state.nameWidth, 0);
     const navConf: BrowserCode = store.settings.navConf || {};
+
+    // [wide_topbar_min_px]
+    const justOneRow = !navConf.tb1Rw || navConf.tb1Rw <= availableWidth;
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
-    if (pageRole === PageRole.CustomHtmlPage && (!this.state.fixed || !me || !me.isLoggedIn))
+    if (pageRole === PageRole.CustomHtmlPage && (!state.fixed || !me || !me.isLoggedIn))
       return r.div();
 
     const autoPageType = location_autoPageType(this.props.location);
@@ -200,89 +261,34 @@ export const TopBar = createComponent({
     // if the open-sidebars buttons were suddenly gone?
     const hideSidebarBtns = page_isInfoPage(pageRole) && !me.isLoggedIn;
 
-    // ------- Forum --> Category --> Sub Category
+    // ------- Page title and categories
 
-    let hasTitle = false;
+    // When we've scrolled down, so the in-page title (rather than in-topbar page title)
+    // and category breadcrumbs are no longer visible (they've scrolled up and away),
+    // we show the page title in the topbar. And categories too, unless topic unlisted.
+    // (So pat sees what topic the page is about, if leaves and returns "much later".)
+
+    let CatsAndTitle = () => null;
+
     let noCatsMaybeTitle = false;
 
-    // For now, feature flag. Later, only if fixed topbar — else, show in page.  [dbl_tb_ttl]
-    const titleCatsShownInPageInstead = !!navConf.topbarAtTopLogo && !isBitDown;
+    // Before we've scrolled down, the title and categories are visible
+    // in the page contents instead.
+    const catsOrHomeLink: Ay | Nl = !isBitDown ? false :
+            debiki2.page.CatsOrHomeLink(page, store, /* forTopbar = */ true);
 
-    let TitleCatsTags = () => null;
-    const shallShowAncestors = // not needed:  !titleCatsShownInPageInstead &&
-            settings_showCategories(store.settings, me) && !isSectionPage;
-    const thereAreAncestors = nonEmpty(page.ancestorsRootFirst);
-    const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory);  // dupl [305RKSTDH2]
-    const isUnlistedSoHideCats = isUnlisted && !isStaff(me);
+    const anyUnsafeTitleSource: St | U = page.postsByNr[TitleNr]?.unsafeSource;
+    const showTitle = isBitDown && anyUnsafeTitleSource;
 
-    const anyUnsafeTitleSource: string | U = page.postsByNr[TitleNr]?.unsafeSource;
-    const showTitleInTopbar = !isUnlistedSoHideCats && (
-        // Before we've scrolled down, the title is visible in the page contents instead.
-        navConf.topbarBitDownShowTitle &&   // <— temp feature flag, later, always true
-              isBitDown && anyUnsafeTitleSource);
-
-    const PageTitleIfFixed = () => !showTitleInTopbar ? null :
-        r.div({ className: 's_Tb_Pg_Ttl' }, anyUnsafeTitleSource);  // [title_plain_txt]
-
-    // A new category permission: SeeUnlistedTopics? For now:  [staff_can_see]
-    const showAlthoughUnlisted = isStaff(me);
-
-    if (!showTitleInTopbar // <—— BUG remove?  incorrectly cancels isUnlisted
-            && ((isUnlisted && !showAlthoughUnlisted) || isSectionPage)
-            && !isEmbComments) {
-      // Show no ancestor categories.
-      // But should show title, also if unlisted — not impl.
-    }
-    else if (titleCatsShownInPageInstead) {
-      // Title shown here:  [dbl_tb_ttl]  in discussion.ts, instead.
-      // Later, this'll always be the case, until scrolls down, then title shown
-      // in fixed topbar.
-    }
-    else if (thereAreAncestors && shallShowAncestors) {
-      const anyTitle = PageTitleIfFixed();
-      hasTitle = !!anyTitle;
-      TitleCatsTags = () =>
-          r.div({ className: 's_Tb_Pg' },
-            // RENAME  esTopbar_ancestors  to  s_Tb_Pg_Cs
-            // Dupl code [305SKT026]
-            r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
-              page.ancestorsRootFirst.map((ancestor: Ancestor) => {
-                const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
-                const categoryIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
-                const key = ancestor.categoryId;
-                return (
-                    r.li({ key, className: 's_Tb_Pg_Cs_C' + deletedClass },
-                      Link({ className: categoryIcon + 'esTopbar_ancestors_link btn',
-                          to: ancestor.path },
-                        ancestor.title)));
-              })),
-            anyTitle);
-    }
-    else if (
-        // Add a Home link 1) if categories hidden (!shallShowAncestors), and 2) for
-        // direct messages, which aren't placed in any category (!thereAreAncestors),
-        // and 3) for embedded comments, if categories disabled, so can still return to
-        // discussion list page.
-        thereAreAncestors || page.pageRole === PageRole.FormalMessage ||
-        page.pageRole === PageRole.PrivateChat || isEmbComments) {
-      const mainSiteSection: SiteSection = store_mainSiteSection(store);
-      const homePath = mainSiteSection.path;
-      const anyTitle = PageTitleIfFixed();
-      const showHomeLink = !isSectionPage; // else, we're "Home" already
-      hasTitle = !!anyTitle;
+    if (catsOrHomeLink || showTitle) {
+      const anyTitle = !showTitle ? null :
+          r.div({ className: 's_Tb_Pg_Ttl' },  // [title_plain_txt]
+            anyUnsafeTitleSource);
       noCatsMaybeTitle = isSectionPage;
-      
-      TitleCatsTags = () =>
+      CatsAndTitle = () =>
           r.div({ className: 's_Tb_Pg' },
-            showHomeLink && r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
-              r.li({},
-                Link({ className: 'esTopbar_ancestors_link btn', to: homePath }, t.Home))),
+            catsOrHomeLink,
             anyTitle);
-    }
-    else {
-      // This isn't a private-message topic, and still it isn't placed in any section,
-      // — probably an old page, from before I added all pages to some section.
-      // Nowhere to home-link to, so don't show.
     }
 
 
@@ -376,7 +382,7 @@ export const TopBar = createComponent({
 
 
     // ------- Tools button
-    // Placed here so it'll be available also when one has scrolled down a bit.
+    // Placed in the topbar, so available also when one has scrolled down a bit.
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
     const toolsButton = !isStaff(me) || !store_shallShowPageToolsButton(store) ? null :
@@ -393,22 +399,7 @@ export const TopBar = createComponent({
           render: SearchForm });
 
 
-    // ------- Forum title
-
-    // The reason for this title-in-topbar was that I wanted the forum title
-    // and MyMenu to be in the same <div>, so the browser prevents them
-    // from overlapping, e.g. by line wrapping.
-    // But currently (Aug 2020) on narrow screens, the forum title & topbar contents
-    // don't look nice / well-aligned anyway.
-    // So, it's better to remove the foum title from here (the topbar) and
-    // instead include in the page & posts below, as done for other normal
-    // topics. (Those topics show ancestor categories in the topbar,
-    // so then there's something there, not just emptiness — then, less need
-    // to move the title up into the topbar.)
-    // Can instead use  position: relative,  top: -NN,  on wider displays,
-    // to move the forum title up into the topbar.
-    // Togethre with max-width: calc(100% - 350px) so always space for MyMenu.
-    // Sth like that.
+    // ------- Custom site logo
 
     const siteLogoHtml =
         isBitDown && navConf.topbarBitDownLogo || navConf.topbarAtTopLogo;
@@ -417,14 +408,6 @@ export const TopBar = createComponent({
         r.div({
             className: 's_Tb_CuLogo s_Cu',
             dangerouslySetInnerHTML: { __html: siteLogoHtml }});
-
-    let pageTitle;  // REMOVE, use instead: [dbl_tb_ttl] with larger font if on forum page.
-    if (!siteLogoTitle && pageRole === PageRole.Forum && !autoPageType
-          && !navConf.topbarBitDownShowTitle) {
-      pageTitle =
-          r.div({ className: 'dw-topbar-title' },
-            debiki2.page.Title({ store, hideButtons: this.state.fixed }));
-    }
 
 
     // ------- Custom title & Back to site button
@@ -463,11 +446,6 @@ export const TopBar = createComponent({
       customTitle = r.h1({ className: 'esTopbar_custom_title' }, customTitle);
     }
 
-    // @ifdef DEBUG
-    // Either we're on a page with a title, or we're in some API section.
-    dieIf(pageTitle && customTitle, 'TyE06RKTD6');
-    // @endif
-
     if (this.props.showBackToSite || backToSiteButton) {
       backToSiteButton = LinkUnstyled({ className: 's_Tb_Ln s_Tb_Ln-Bck btn icon-reply',
           href: linkBackToSite() }, backToSiteButton || t.tb.BackFromAdm);
@@ -482,14 +460,14 @@ export const TopBar = createComponent({
 
     const custNavRow1 = custNavRow1Html &&
         r.div({
-            className: 's_Tb_CuNav s_Cu',
+            className: 's_Tb_CuNv s_Tb_CuNav s_Cu', // RENAME CLEAN_UP CuNav —> CuNv
             dangerouslySetInnerHTML: { __html: custNavRow1Html }});
 
     // If we've scrolled down, use the ...BitDown... config, if present.
     // Otherwise use the ...AtTop... config, if present.
     // If ...NavLine2 configured, use it. Otherwise, if ...Nav2Rows == true,
     // use ...TopNav.
-    const custNavRow2Html = !skipCustomCode && !isWide && (  // (isWide || topbarAlw2Rows)
+    const custNavRow2Html = !skipCustomCode && !justOneRow && (  // (justOneRow || topbarAlw2Rows)
             isBitDown && (
                   navConf.topbarBitDownNavLine2 ||
                   navConf.topbarBitDownNav2Rows && navConf.topbarBitDownNav)
@@ -498,15 +476,15 @@ export const TopBar = createComponent({
 
     const custNavRow2 = !!custNavRow2Html &&
         r.div({
-            className: 's_Tb_CuNav s_Cu',
+            className: 's_Tb_CuNv s_Tb_CuNav s_Cu',
             dangerouslySetInnerHTML: { __html: custNavRow2Html }});
 
 
     // ------- Search field and own buttons
 
-    const use2Rows = !skipCustomCode && (
+    const use2Rows = !skipCustomCode && !justOneRow && (
             custNavRow2 || navConf.topbarBitDownTitleRow2);
-            //  && (isWide || topbarAlw2Rows)  ?
+            //  && (justOneRow || topbarAlw2Rows)  ?
 
     const searchAndMyButtonsRow1 =
         r.div({ className: 's_Tb_MyBs' },
@@ -518,12 +496,12 @@ export const TopBar = createComponent({
           toolsButton,
           avatarNameDropdown);
           // No:
-          //(!use2Rows || isWide) && toolsButton,
-          //(!use2Rows || isWide) && avatarNameDropdown);
+          //(!use2Rows || justOneRow) && toolsButton,
+          //(!use2Rows || justOneRow) && avatarNameDropdown);
 
     const topbarRow2 = use2Rows &&
         rFragment({},
-          navConf.topbarBitDownTitleRow2 && TitleCatsTags(),
+          navConf.topbarBitDownTitleRow2 && CatsAndTitle(),
           custNavRow2,
           r.div({ className: 's_Tb_MyBs' },
             // Signup and login buttons needed here, or Reactjs hydration fails.
@@ -535,8 +513,8 @@ export const TopBar = createComponent({
             toolsButton,
             avatarNameDropdown));
             // No:
-            //!isWide && toolsButton,
-            //!isWide && avatarNameDropdown));
+            //!justOneRow && toolsButton,
+            //!justOneRow && avatarNameDropdown));
 
 
     // ------- Open Contextbar button
@@ -610,11 +588,12 @@ export const TopBar = createComponent({
           // usually aren't "owned" by oneself anyway.  [open_wb_btn_ttl]
           //
           r.span({ className: 'esOpenWatchbarBtn_text' },
-            t.Topics));  // could:  isWide ? t.tb.WatchbBtn : t.Topics
+            t.Topics));  // could:  justOneRow ? t.tb.WatchbBtn : t.Topics
 
 
     // ------- Admin tips
 
+    // HACK? CLEAN_UP MOVE to ...   forum.ts of course   === PageRole.Forum on next line.
     const showAdminTips = page.pageRole === PageRole.Forum && me.isAdmin &&
         store.settings.enableForum !== false;
 
@@ -666,15 +645,14 @@ export const TopBar = createComponent({
           anyMaintWorkMessage,
           backToGroups,
           backToSiteButton),
-        pageTitle,    // [dbl_tb_ttl]
         // Incl also if custNavRow2 defined — otherwise React's hydration won't work.
         custNavRow1,
-        TitleCatsTags(),  // [dbl_tb_ttl]
+        CatsAndTitle(),
         searchAndMyButtonsRow1);
 
     let fixItClass = ' s_Tb-Stc';  // static
     let placeholderIfFixed;
-    if (this.state.fixed) {
+    if (state.fixed) {
       fixItClass = ' dw-fixed-topbar-wrap s_Tb-Fxd';  // RENAME to s_Tb-Fxd
       // (This placeholder is actually totally needed, otherwise in some cases it'd be
       // impossible to scroll down — because when the topbar gets removed from the flow
@@ -684,25 +662,39 @@ export const TopBar = createComponent({
       // and the bottom of the page gets pushed down again — the effect is that, in this
       // rare case, it's impossible to scroll down (without this placeholder). )
       placeholderIfFixed =
-          r.div({ style: { height: this.state.placeholderHeightPx, width: '10px' } });
+          r.div({ style: { height: state.placeholderHeightPx, width: '10px' } });
       // No, use position: fixed instead. CLEAN_UP 2016-10: remove `styles` + this.state.top & left
       //styles = { top: this.state.top, left: this.state.left }
     }
 
+    // Just so can style via `s_TbW + .other-class ...`
+    const topbarWrapClases = 's_TbW ' + (state.fixed ? 's_TbW-Fxd' : 's_TbW-Stc');
+
     const topbarClases =
             fixItClass +
-            (hasTitle ? ' s_Tb-Ttl' : '') +
+            (showTitle ? ' s_Tb-Ttl' : '') +
             (noCatsMaybeTitle ? ' s_Tb-NoCs' : '') +
             (!noCatsMaybeTitle ? ' s_Tb-Cs' : '') +
-            (use2Rows ? ' s_Tb-2Rows' : '') +
-            (navConf.topbarBitDownTitleRow2 ? ' s_Tb-TtlRow2' : '') +
-            (custNavRow2 ? ' s_Tb-CuNavRow2' : '');
+            (use2Rows ? ' s_Tb-2Rws s_Tb-2Rows' : ' s_Tb-1Rw') +  // CLEAN_UP RENAME 2Rows to 2Rws
+            (navConf.topbarBitDownTitleRow2 ? ' s_Tb-TlRw2' : '') +
+            (custNavRow2 ? ' s_Tb-CuNvRw2 s_Tb-CuNavRow2' : '') +
+            // s_Tb-LtSm means "less than small", -LtLg means "less than large".
+            // s_Tb-Sm means "width greater or equal to small screens",
+            // a mobile-first breakpoints mindset, like Tailwind CSS.
+            (navConf.tbSm && availableWidth < navConf.tbSm  ? ' s_Tb-LtSm' : '') +
+            (navConf.tbSm && navConf.tbSm <= availableWidth ? ' s_Tb-Sm'   : '') +
+            (navConf.tbMd && availableWidth < navConf.tbMd  ? ' s_Tb-LtMd' : '') +
+            (navConf.tbMd && navConf.tbMd <= availableWidth ? ' s_Tb-Md'   : '') +
+            (navConf.tbLg && availableWidth < navConf.tbLg  ? ' s_Tb-LtLg' : '') +
+            (navConf.tbLg && navConf.tbLg <= availableWidth ? ' s_Tb-Lg'   : '') +
+            (navConf.tbXl && availableWidth < navConf.tbXl  ? ' s_Tb-LtXl' : '') +
+            (navConf.tbXl && navConf.tbXl <= availableWidth ? ' s_Tb-Xl'   : '');
 
     return rFragment({},
-      r.div({},
+      r.div({ className: topbarWrapClases },
         placeholderIfFixed,
         r.div({ className: 'esTopbarWrap s_Tb' + topbarClases },  // RENAME to s_Tb, no Wrap
-          r.div({ className: 's_Tb_Row1' },
+          r.div({ className: 's_Tb_Rw1 s_Tb_Row1' },
             openWatchbarButton,
             openContextbarButton,
             r.div({ className: 'container' },
@@ -710,7 +702,7 @@ export const TopBar = createComponent({
           // Sometimes nice with a 2nd row, for nav links, if on mobile.
           // Instead of hamburger menu (which "hides" the nav links).
           use2Rows &&
-            r.div({ className: 's_Tb_Row2' },
+            r.div({ className: 's_Tb_Rw2 s_Tb_Row2' },
               r.div({ className: 'container' },
                 r.div({ className: 'esTopbar' + extraMarginClass },  // REMOVE esTopbar divs
                       // However!  >= 1 site  use it for styling colors.

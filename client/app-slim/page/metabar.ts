@@ -35,6 +35,8 @@ const ExplainingListItem = util.ExplainingListItem;
 /**
  * Shows meta information about the page: created by, when, num replies,
  * message members (if is a private message page), summarize replies button, etc.
+ *
+ * RENAME to Pagebar?  "Meta" is too unspecific?  or PageMetaBar?
  */
 export var Metabar = createComponent({
   displayName: 'Metabar',

@@ -277,9 +277,7 @@ export const ForumComponent = createReactClass(<any> {
 
     return (
       r.div({ className: 'container dw-forum' },
-        // For now, feature flag. Later, always?  [dbl_tb_ttl]
-        navConf.topbarBitDownShowTitle && debiki2.page.Title({ store }),
-
+        debiki2.page.Title({ store }),
         ForumIntroText({ store }),
         //topsAndCatsHelp,
         childRoutes));

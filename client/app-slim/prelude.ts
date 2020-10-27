@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../reactjs-types.ts" />
 /// <reference path="server-vars.d.ts" />
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
@@ -44,12 +45,30 @@ declare function smoothScroll(elem: Element, x: number, y: number,
 // Defined in client/third-party/get-set-cookie.js.
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
 
+
 // backw compat, later, do once per file instead (don't want a global 'r').
-const r = ReactDOMFactories;
+//
+// ReactDOMFactories looks like:
+//
+// var ReactDOMFactories = {
+//   a: createDOMFactory('a'),
+//   abbr: ...
+//
+// function createDOMFactory(type) {
+//   var factory = React.createElement.bind(null, type);
+//   factory.type = type; // makes:  `<Foo />.type === Foo`  work
+//   return factory;
+//  };
+//
+// and React.createElement(type: keyof ReactHTML, props, ...children) returns:
+//   DetailedReactHTMLElement<P, T>
+//
+const r: { [elmName: string]: (props?: any, ...children) => RElm } = ReactDOMFactories;
+
 
 // Let this be a function, not a variable, so it can be used directly.
 // (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
-function reactCreateFactory(type) {
+function reactCreateFactory(type): (props?: any, ...children) => RElm {
   // Deprecated, causes warning, from React >= 16.13.0:
   // `return React['createFactory'](x);`
   // See: https://reactjs.org/blog/2020/02/26/react-v16.13.0.html#deprecating-reactcreatefactory

@@ -884,7 +884,11 @@ interface Origins {
 
 
 interface Store extends Origins, PartialEditorStoreState {
-  widthLayout: WidthLayout;
+  // Need to use the same layout settings as the server, on the first
+  // render, when reusing (hydrating) html from the server.
+  isHydrating?: Bo;
+  widthLayout: WidthLayout; // RENAME to serverPageLayout, default mobile?
+
   isEmbedded: boolean;
   appVersion: string;
   siteStatus: SiteStatus;
@@ -1790,18 +1794,46 @@ interface Rect {
 // =========================================================================
 
 
-// Later, part of an extensions system.
+// Later, part of an extensions system.  DONT USE, rethink all this.
 // For now: (too much config! Require cust nav to be on row 1 always? and
 // always show page title, when has scrolled downn. Then can remove most of this.)
 interface BrowserCode {
-  topbarAtTopLogo?: string;   // RENAME to  topbarStaticLogo  or tbStcLgo .
+  // When, in pixels, the topbar is wide enough to fit in just one row,
+  // in case using 2 rows on small screens.
+  // When the topbar uses just one row, it has this class: s_Tb-1Rw
+  // If using two rows, it has class: s_Tb-2Rws
+  tb1Rw?: Nr;
+
+  // When wide enough, in pixels, to add class s_Tb-Sm  (small width).
+  // Otherwise class s_Tb-LtSm added (topbar less than small width).
+  tbSm?: Nr;
+
+  // When wide enough, in pixels, to add class s_Tb-Md  (medium width).
+  tbMd?: Nr;
+
+  // When wide enough, in pixels, to add class s_Tb-Lg  (large).
+  tbLg?: Nr;
+
+  // When wide enough, in pixels, to add class s_Tb-Xl  (extra large).
+  tbXl?: Nr;
+
+  // Topbar, when position: static, pat hasn't scrolled down.
+  tbStc?: {
+    logo?: St;
+    nav?: St;
+    nav2?: St;
+  };
+  // Topbar, when position: fixed at the top of the screen, pat has scrolled down.
+  tbFxd?: {
+    logo?: St;
+    nav?: St;
+    nav2?: St;
+    tlRw2?: Bo;
+  };
+  topbarAtTopLogo?: string;   // RENAME to  topbarStaticLogo  or tbStcLogo .
   topbarAtTopNav?: string;    // tbStcNav
-  // Change to a number?  topbarOneRowMinWidthPx [cust_nav_menu]
-  // or  topbar2RowsWidthPx  tb2RowsMaxWidthPx  or tb2RowsPx
   topbarAtTopNav2Rows?: boolean;  // tbStcNv2: boolean | string
   topbarAtTopNavLine2?: string;
-  // Shows current page title.  SHOULD be to true always, soon. DO_AFTER 2020-08-12
-  topbarBitDownShowTitle?: boolean;
   topbarBitDownLogo?: string;  // RENAME to topbarFixedLogo  or tbFxdLgo
   topbarBitDownNav?: string;
   topbarBitDownNav2Rows?: boolean;

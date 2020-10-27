@@ -235,11 +235,12 @@ export function renderPageServerSideToString() {
     // elements and a somewhat broken page.
     return ReactDOMServer.renderToString(
         Router({ location: path },
-          rFragment({},
+          rFr({},
             Route({ render: debiki2.topbar.TopBar }),
+            forumRoute,
             null, // would be ScrollButtons, and its render() returns null initially
             null, // would be ExtReactRootNavComponent, and its render() returns null
-            forumRoute)));
+            )));
   }
   else if (store.isEmbedded && page.pageRole === PageRole.EmbeddedComments) {
     // Then we don't include any top bar or scroll buttons [1FBZQ4]
@@ -250,11 +251,12 @@ export function renderPageServerSideToString() {
     // Sync with client side rendering code. [7UKTWR]
     return ReactDOMServer.renderToString(
         Router({},
-          rFragment({},
+          rFr({},
             Route({ render: debiki2.topbar.TopBar }),
+            Page({ store }),
             null, // would be ScrollButtons, and its render() returns null initially
             null, // would be ExtReactRootNavComponent, and its render() returns null
-            Page({ store }))));
+            )));
   }
 }
 
