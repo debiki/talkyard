@@ -104,3 +104,24 @@ those Git submodules can be squashed or sth like that, making them small again
 — without affecting the history in the main repo (it'd just be updated to point to
 the squashed stuff).
 
+
+
+=== "Join" or "Sign Up" button title
+
+What should the join community button title be?  `[join_or_signup]`
+
+"Join", "Sign Up", "Create Account", "Register"?
+_
+- Not "Register" — sounds like the tax agency.
+- Not "Create Account" — that's too long, causes UX trickiness on 400 px wide phones.
+- Not "Sign up" because non-native English speakers sometimes don't know the
+  difference between "Sign Up" and "Sign In", or "Sign Up" and "Log In".
+  (See e.g.: https://ell.stackexchange.com/questions/24384/what-is-the-difference-among-sign-up-sign-in-and-log-in )
+
+But "Join" is simple to understand? And short and friendly? So "Join" it'll be.
+
+Don't use "Sign in" for the login button title either, because can get confused
+with "Sign up", and also, is 1 letter longer than "Log in".
+Facebook uses "Log in" so "everyone" should be used to this.
+
+So: "Join" and "Log in" and "Log out", in Talkyard.
