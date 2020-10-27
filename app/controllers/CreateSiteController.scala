@@ -187,7 +187,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       catch {
         case DbDao.SiteAlreadyExistsException(site, details) =>
           throwForbidden("TyE4ZKTP02", o"""A site with that name or id has already been created,
-              details: $details""")
+              details: $details""")  // INFO_LOG
         case _: DbDao.TooManySitesCreatedByYouException =>
           throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
         case DbDao.TooManySitesCreatedInTotalException =>

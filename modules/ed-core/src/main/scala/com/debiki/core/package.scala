@@ -1297,6 +1297,7 @@ package object core {
   def SHOULD = ()         // Fix before release, unless short of time, or it's too boring.
   def COULD = ()          // Could do this, but not important right now, can wait a year or two.
   def ANNOYING = ()       // Something annoying that would be good to fix, not important though
+  def INFO_LOG = ()       // Somehow change log message severity to Info only.
   def SHOULD_LOG_STH = () // If an info/debug message ought to be logged here.
   def AUDIT_LOG = ()      // Should add audit log entry
   def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
