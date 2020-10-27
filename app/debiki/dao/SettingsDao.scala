@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp.throwBadRequest
 import debiki.EdHttp.throwBadRequestIf
+import play.api.libs.json.JsObject
 
 
 /** Loads and saves settings for the whole website, a section of the website (e.g.
@@ -47,32 +48,47 @@ trait SettingsDao {
   }
 
 
-  def saveSiteSettings(settingsToSave: SettingsToSave, byWho: Who): Unit = {
+  def saveSiteSettings(settingsToSave: SettingsToSave, byWho: Who): U = {
     // COULD test here that settings are valid? No inconsistencies?
 
     throwBadRequestIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
       "EdE5KP8R2", "Cannot clear the organization name")
 
-    // There're 20 kb db constraints.
-    val maxHtmlLength = 19 * 1000
+    // There're 50 kb db constraints, but 50 is a bit much? Let's say 30.
+    // One community has two detailed 10 kb SVG logos — one for wide, one
+    // for mobile — so they need 20 kb  (or to move logos to separate files).
+    val k = 1000
+    val defMaxLength = 30 * k
 
-    def checkLen(name: String, getter: SettingsToSave => Option[Option[String]]) {
+    def checkLen(name: St, getter: SettingsToSave => Opt[Opt[St]], max: i32 = -1) {
       val anyOptValue = getter(settingsToSave)
-      throwBadRequestIf(anyOptValue.exists(_.exists(_.length > maxHtmlLength)),
+      val maxLen = if (max > 0) max else defMaxLength
+      throwBadRequestIf(anyOptValue.exists(_.exists(_.length > maxLen)),
             "TyE406RKTP245", s"Too long: $name")
     }
 
-    checkLen("headStylesHtml", _.headStylesHtml)
-    checkLen("headScriptsHtml", _.headScriptsHtml)
-    checkLen("startOfBodyHtml)", _.startOfBodyHtml)
-    checkLen("endOfBodyHtml)", _.endOfBodyHtml)
-    checkLen("logoUrlOrHtml", _.logoUrlOrHtml)
-    checkLen("headerHtml", _.headerHtml)
-    checkLen("footerHtml", _.footerHtml)
+    def checkJsonLen(name: St, getter: SettingsToSave => Opt[Opt[JsObject]]) {
+      val anyOptVal = getter(settingsToSave)
+      throwBadRequestIf(anyOptVal.exists(_.exists(_.toString.length > defMaxLength)),
+            "TyE50MRTQJ2", s"Too long: $name")
+    }
 
-    throwBadRequestIf(
-          settingsToSave.navConf.exists(_.exists(_.toString().length > maxHtmlLength)),
-          "TyE463KTSH56", "Too long nav conf")
+    // Database: settings_c_featureflags_len: 1 — 10k.
+    checkLen("featureFlags", _.featureFlags, max = 9 * k)
+
+    // Db: 1 — 50k,settings_c_headstyleshtml_len and settings_c_headscriptshtml_len.
+    // But 50k a bit much for this? 20k enough?
+    checkLen("headStylesHtml", _.headStylesHtml, max = 20 * k)
+    checkLen("headScriptsHtml", _.headScriptsHtml, max = 20 * k)
+
+    // These are 1 — 50k in the database:
+    checkLen("startOfBodyHtml)", _.startOfBodyHtml) // settings_c_startofbodyhtml_len
+    checkLen("endOfBodyHtml)", _.endOfBodyHtml)     // settings_c_endofbodyhtml_len
+    checkLen("logoUrlOrHtml", _.logoUrlOrHtml)      // settings_c_logourlorhtml_len
+    checkLen("headerHtml", _.headerHtml)            // settings_c_headerhtml_len
+    checkLen("footerHtml", _.footerHtml)            // settings_c_footerhtml_len
+    checkLen("socialLinksHtml", _.socialLinksHtml)  // settings_c_sociallinkshtml_len
+    checkJsonLen("navConf", _.navConf)              // settings_c_navconf_len
 
     readWriteTransaction { tx =>
       val oldSettings = loadWholeSiteSettings(tx)
@@ -91,14 +107,14 @@ trait SettingsDao {
       lazy val adminsAndIdentities: Seq[(User, Seq[Identity])] =
         admins.map(admin => admin -> tx.loadIdentities(admin.id))
 
-      def turnsOff(getEnabled: EffectiveSettings => Boolean) =
+      def turnsOff(getEnabled: EffectiveSettings => Bo): Bo =
         !getEnabled(newSettings) && getEnabled(oldSettings)
 
-      def turnsOn(getEnabled: EffectiveSettings => Boolean) =
+      def turnsOn(getEnabled: EffectiveSettings => Bo): Bo =
         getEnabled(newSettings) && !getEnabled(oldSettings)
 
       // Prevent admins from accidentally locking themselves or other admins out.
-      def throwIfLogsInWith(loginMethodName: String): Unit = {
+      def throwIfLogsInWith(loginMethodName: St): U = {
         val loginMethodLowercase = loginMethodName.toLowerCase
         for {
           (admin, identities) <- adminsAndIdentities
