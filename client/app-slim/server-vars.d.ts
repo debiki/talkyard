@@ -46,7 +46,8 @@ interface ServerVars {
   loadGlobalStaffScript: boolean;
   loadGlobalAllScript: boolean;
 
-  minMaxJs: boolean;
+  // "js" or "min.js"  (but not ".js" or ".min.js").
+  minMaxJs: St;
 
   // This field exists, but don't declare it, shouldn't be used at any more places. Use origin()
   // in links.ts instead.
