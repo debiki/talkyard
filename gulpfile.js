@@ -211,6 +211,7 @@ var thisIsAConcatenationMessage =
   ' */\n';
 
 
+// Sync w Makefile.  [sw_js_files]
 var swJsFiles = [
   'target/client/ty-sw-typescript.js'];
 
@@ -228,6 +229,8 @@ var swJsFiles = [
 // - Testing that fallbacks to locally served files work is boring.
 // - Plus I read in comments in some blog that some countries actually sometimes
 //   block Google's CDN.
+//
+// Sync w Makefile.  [slim_js_files]
 var slimJsFiles = [
       // Place React first so we can replace it at index 0,1,2,3 with the optimized min.js versions.
       'node_modules/react/umd/react.development.js',
@@ -257,6 +260,7 @@ var slimJsFiles = [
       'target/client/slim-typescript.js',
       'client/app-slim/start-stuff.js'];
 
+// Sync with Makefile [more_js_files].
 var moreJsFiles = [
       'node_modules/react-bootstrap/dist/react-bootstrap.js',
       'node_modules/classnames/index.js',                               // needed by react-select
@@ -278,6 +282,7 @@ var _2dJsFiles = [   // temporarily broken,  [SLIMTYPE]  [2D_LAYOUT]
 var staffJsFiles = [
       'target/client/staff-typescript.js'];
 
+// Sync w Makefile [edr_js_files]
 var editorJsFiles = [
       // We use two different sanitizers, in case there's a security bug in one of them. [5FKEW2]
       // Find the code that "combines" them here: googleCajaSanitizeHtml [6FKP40]
@@ -303,6 +308,7 @@ var jqueryJsFiles = [
 // For both touch devices and desktops.
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
 // see client/embedded-comments/readme.txt.)
+// Sync w Makefile [embcmts_js_files]
 var embeddedJsFiles = [
       'client/embedded-comments/parent-header.js',
       'client/third-party/bliss.shy.js',
@@ -389,6 +395,7 @@ gulp.task('buildTranslations', gulp.series('cleanTranslations', 'compileTranslat
 var serverTypescriptProject = typeScript.createProject("client/server/tsconfig.json");
 
 
+// Sync w Makefile.  [srv_js_files]
 var serverJavascriptSrc = [
     // Two different sanitizers. [5FKEW2]
     // Needs to be first. There's some missing ';' at the start of the script bug?
