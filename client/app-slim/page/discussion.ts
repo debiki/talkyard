@@ -715,6 +715,10 @@ const RootPostAndComments = createComponent({
               r.ol({},
                 internalBacklinks.map((topic: Topic) =>
                   r.li({ key: topic.pageId },
+                    // UX "BUG", SHOULD: For access restricted topics, show e.g.
+                    // a padlock or a private message symbol, instead of a link icon
+                    // — Otherwise ppl can get nervous, when they think "everyone"
+                    // can see such access restricted links.  [staff_can_see]
                     Link({ to: topic.url, className: 's_InLns_Ln icon-link' },
                       topic.title))
               )));
