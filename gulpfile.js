@@ -128,8 +128,6 @@ function updateVersionVars() {
 updateVersionVars();
 
 
-const now = new Date();
-
 // Updates the mtime and atime of a generated bundle — otherwise Gulp uses some
 // older mtmie/atime from some source file, only updates the ctime of the
 // generated bundle. And then tools like GNU Make would always rebuild.
@@ -137,6 +135,7 @@ const now = new Date();
 // See: https://github.com/gulp-community/gulp-less/issues/301#issuecomment-420780708
 //
 const updateAtimeAndMtime = function() {
+  const now = new Date();
   return through2.obj(function(file, enc, cb) {
     // Don't know why `file` or `file.stat` is undefined sometimes.
     if (file && file.stat) {
