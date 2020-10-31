@@ -59,8 +59,8 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     * carried out, by JanitorActor.executePendingReviewTasks, after a short
     * undo-decision timeout.
     */
-  def makeReviewDecisionIfAuthz(taskId: ReviewTaskId, requester: Who, anyRevNr: Option[Int],
-        decision: ReviewDecision): Unit = {
+  def makeReviewDecisionIfAuthz(taskId: ReviewTaskId, requester: Who, anyRevNr: Opt[i32],
+        decision: ReviewDecision): U = {
     writeTx { (tx, _) =>
       val task = tx.loadReviewTask(taskId) getOrElse throwNotFound(
             "EsE7YMKR25", s"Review task not found, id $taskId")
@@ -104,7 +104,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
 
 
-  def tryUndoReviewDecisionIfAuthz(reviewTaskId: ReviewTaskId, requester: Who): Boolean = {
+  def tryUndoReviewDecisionIfAuthz(reviewTaskId: ReviewTaskId, requester: Who): Bo = {
     writeTx { (tx, _) =>
       val task = tx.loadReviewTask(reviewTaskId) getOrElse throwNotFound(
             "TyE48YM4X7", s"Review task not found, id $reviewTaskId")
@@ -155,14 +155,11 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
 
 
-  def carryOutReviewDecision(taskId: ReviewTaskId): Unit = {
-    val pageIdsToRefresh = mutable.Set[PageId]()  ; REMOVE ; CLEAN_UP // use [staleStuff]
-
+  def carryOutReviewDecision(taskId: ReviewTaskId): U = {
     writeTx { (tx, staleStuff) =>
       val anyTask = tx.loadReviewTask(taskId)
       // Not found here is a server bug — we're not handling an end user request.
       val task = anyTask.getOrDie("EsE8YM42", s"s$siteId: Review task $taskId not found")
-      task.pageId.map(pageIdsToRefresh.add)
 
       if (task.gotInvalidated) {
         // This can happen if many users flag a post, and one or different moderators click Delete,
@@ -194,10 +191,9 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
           logger.warn(s"s$siteId: Review task $taskId: Post ${task.postId} gone, why? [TyE5KQIBQ2]")
           return
         }
-      doModTaskNow(post, Seq(task), decision, decidedById = decidedById
-              )(tx, staleStuff, pageIdsToRefresh)
 
-      refreshPagesInAnyCache(pageIdsToRefresh)
+      doModTaskNow(post, Seq(task), decision, decidedById = decidedById
+              )(tx, staleStuff)
     }
   }
 
@@ -251,8 +247,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
             "This post has already been moderated, mod task already decided")
 
       doModTaskNow(post, tasksToDecide, decision, decidedById = moderator.id
-            )(tx, staleStuff,
-              mutable.Set.empty) // REMOVE use [staleStuff] instead
+            )(tx, staleStuff)
     }
 
     modResult
@@ -272,7 +267,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     *                  but won't work until [Scala_3].
     */
   def maybeReviewAcceptPostByInteracting(post: Post, moderator: Participant,
-          decision: ReviewDecision)(tx: SiteTx, staleStuff: StaleStuff): Unit = {
+          decision: ReviewDecision)(tx: SiteTx, staleStuff: StaleStuff): U = {
 
     // Tests:
     // modn-from-disc-page-review-after.2browsers.test.ts  TyTE2E603RKG4
@@ -320,8 +315,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
           task.createdAtRevNr.exists(_ > post.currentRevisionNr))
 
     doModTaskNow(post, tasksToAccept, decision, decidedById = moderator.id
-          )(tx, staleStuff,
-                mutable.Set.empty) // REMOVE use [staleStuff] instead
+          )(tx, staleStuff)
 
     // Don't return the now review-accepted post. (025AKDL)
   }
@@ -330,9 +324,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
   private def doModTaskNow(post: Post, modTasks: Seq[ModTask],
           decision: ModDecision, decidedById: UserId)
-          (tx: SiteTx, staleStuff: StaleStuff,
-              pageIdsToRefresh: mutable.Set[PageId])
-          : ModResult = {
+          (tx: SiteTx, staleStuff: StaleStuff): ModResult = {
 
     modTasks foreach { t =>
       dieIf(t.doneOrGone, "TyE50WKDL45", s"Mod task done or gone: $t")
@@ -350,29 +342,29 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
       // can be fine, e.g. if the post got moved to a different page.
     }
 
-        if (post.deletedAt.isDefined) {
-          // Fine, continue.
-          // Currently review tasks don't get invalidated, when posts and pages
-          // get deleted. (2KYF5A)  Then continue and update the mod task anyway.
-          // Otherwise could be some forever un-doable mod tasks! [apr_deld_post]
-        }
+    if (post.deletedAt.isDefined) {
+      // Fine, continue.
+      // Currently review tasks don't get invalidated, when posts and pages
+      // get deleted. (2KYF5A)  Then continue and update the mod task anyway.
+      // Otherwise could be some forever un-doable mod tasks! [apr_deld_post]
+    }
 
-        // We're in a background thread and have forgotten the browser id data.
-        // Could to load it from an earlier audit log entry, ... but maybe it's been deleted?
-        // Edit: But now this also gets called from moderatePostInstantly()
-        // and maybeReviewAcceptPostByInteracting().
-        // Oh well, not important. For now:
-        val browserIdData = BrowserIdData.Forgotten
+    // We're in a background thread and have forgotten the browser id data.
+    // Could to load it from an earlier audit log entry, ... but maybe it's been deleted?
+    // Edit: But now this also gets called from moderatePostInstantly()
+    // and maybeReviewAcceptPostByInteracting().
+    // Oh well, not important. For now:
+    val browserIdData = BrowserIdData.Forgotten
 
     import ReviewDecision._
 
     val result: ModResult = decision match {
           case Accept if !post.isCurrentVersionApproved =>
-            approveAndPublishPost(post, decidedById = decidedById, tasksToAccept = modTasks,
-                  pageIdsToRefresh)(tx, staleStuff)
+            approveAndPublishPost(post, decidedById = decidedById,
+                  tasksToAccept = modTasks)(tx, staleStuff)
           case Accept | InteractEdit | InteractReply |
                 InteractAcceptAnswer | InteractWikify | InteractLike =>
-            reviewAccceptPost(post, tasksToAccept = modTasks, decision,
+            reviewAcceptPost(post, tasksToAccept = modTasks, decision,
                   decidedById = decidedById)(tx, staleStuff)
           case DeletePostOrPage =>
             rejectAndDeletePost(post, decidedById = decidedById, modTasks,
@@ -389,7 +381,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
 
 
-  private def reviewAccceptPost(post: Post, tasksToAccept: Seq[ModTask],
+  private def reviewAcceptPost(post: Post, tasksToAccept: Seq[ModTask],
           decision: ModDecision, decidedById: UserId)
           (tx: SiteTx, staleStuff: StaleStuff): ModResult = {
 
@@ -404,22 +396,23 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     }
 
     val updatedPost =
-              // The System user has apparently approved the post already.
-              // However, it might have been hidden a tiny bit later, after some  external services
-              // said it's spam. Now, though, we know it's apparently not spam, so show it.
-              if (post.isBodyHidden) {
-                // SPAM RACE COULD unhide only if rev nr that got hidden <=
-                // rev that was reviewed. [6GKC3U]
+          // The System user has apparently approved the post already.
+          // However, it might have been hidden a tiny bit later, after some
+          // external services said it's spam. Now, though, we know it's
+          // apparently not spam, so show it.
+          if (post.isBodyHidden) {
+            // SPAM RACE COULD unhide only if rev nr that got hidden <=
+            // rev that was reviewed. [6GKC3U]
 
-                UX; TESTS_MISSING; BUG // ? will this un-hide the whole page if needed?
+            UX; TESTS_MISSING; BUG // ? will this un-hide the whole page if needed?
 
-                changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
-                      PostStatusAction.UnhidePost, userId = decidedById,
-                      tx, staleStuff).updatedPost
-              }
-              else {
-                None
-              }
+            changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
+                  PostStatusAction.UnhidePost, userId = decidedById,
+                  tx, staleStuff).updatedPost
+          }
+          else {
+            None
+          }
 
     ModResult(
           updatedPosts = updatedPost.toSeq,
@@ -427,7 +420,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
   }
 
 
-  private def isPageModTask(post: Post, modTasks: Seq[ModTask]): Boolean = {
+  private def isPageModTask(post: Post, modTasks: Seq[ModTask]): Bo = {
     BUG // need to know if the moderator's intention is to delete the whole page,
     // and which page — or just the post.
     // Need a new  ModDecision type. [apr_movd_orig_post]
@@ -438,9 +431,10 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     // now, this shouldn't delete the page the post got moved to,
     // just because the mod tasks were initially about a new page.
 
-    val taskIsForBothTitleAndBody = modTasks.exists(_.isForBothTitleAndBody)
-    dieIf(isDevOrTest && modTasks.exists(
-          _.isForBothTitleAndBody != taskIsForBothTitleAndBody), "TyE603AKDHHW26")
+    // Previously, only looked at modTasks but that's a bug, [revw_task_pgid]
+    // ... = modTasks.exists(_.isForBothTitleAndBody)
+    // Now look at post.isOrigPost .
+    val taskIsForBothTitleAndBody = post.isOrigPost
 
     // Won't work if 1) System auto approves a post, and 2) later notices
     // it's spam (after having asked external services) and adds a mod task
@@ -459,7 +453,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
 
   private def approveAndPublishPost(post: Post, decidedById: UserId,
-        tasksToAccept: Seq[ModTask], pageIdsToRefresh: mutable.Set[PageId])
+        tasksToAccept: Seq[ModTask])
         (tx: SiteTx, staleStuff: StaleStuff): ModResult = {
 
     dieIf(tasksToAccept.isEmpty, "TyE306RKTD5")
@@ -471,29 +465,29 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
     }
 
     val updatedTitle =
-              if (taskIsForBothTitleAndBody) {
-                // This is for a new page. Approve the *title* here, and the *body* just below.
+          if (taskIsForBothTitleAndBody) {
+            // This is for a new page. Approve the *title* here, and the *body* just below.
 
-                // Maybe skip this check? In case a post gets broken out to a new page,
-                // or merged into an existing page, then, the post nr
-                // might be that of a reply, rather than the BodyNr.
-                dieIfAny(tasksToAccept, (t: ReviewTask) => t.postNr.isNot(PageParts.BodyNr),
-                      "TyE306RKDH3" )
+            // Maybe skip this check? In case a post gets broken out to a new page,
+            // or merged into an existing page, then, the post nr
+            // might be that of a reply, rather than the BodyNr.
+            dieIfAny(tasksToAccept, (t: ReviewTask) => t.postNr.isNot(PageParts.BodyNr),
+                  "TyE306RKDH3" )
 
-                approvePost(post.pageId, PageParts.TitleNr, approverId = decidedById,
-                      doingModTasks = tasksToAccept, tx, staleStuff).updatedPost
-              }
-              else {
-                // Then need not approve any title.
-                None
-              }
+            approvePost(post.pageId, PageParts.TitleNr, approverId = decidedById,
+                  doingModTasks = tasksToAccept, tx, staleStuff).updatedPost
+          }
+          else {
+            // Then need not approve any title.
+            None
+          }
 
     val updatedBody =
           approvePost(post.pageId, post.nr, approverId = decidedById,
                 doingModTasks = tasksToAccept, tx, staleStuff).updatedPost
 
     if (!post.isDeleted) {
-      perhapsCascadeApproval(post.createdById, pageIdsToRefresh)(tx, staleStuff)
+      perhapsCascadeApproval(post)(tx, staleStuff)
     }
 
     ModResult(
@@ -671,15 +665,16 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
   }
 
 
-  CLEAN_UP; REMOVE // this is too complicated, slightly bug prone!
+  CLEAN_UP; REMOVE // this is too complicated, slightly bug prone! — yes [revw_task_pgid]
   /** If we have approved all the required first post review tasks caused by userId, then
     * this method auto-approves all remaining first review tasks — because now we trust
     * the user that much.
     *
     */
   @deprecated("remove this, too complicated") // more nice to approve by interacting? [appr_by_interact]
-  private def perhapsCascadeApproval(userId: UserId, pageIdsToRefresh: mutable.Set[PageId])(
-        tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
+  private def perhapsCascadeApproval(authorOfPost: Post)(
+          tx: SiteTx, staleStuff: StaleStuff): U = {
+    val userId: UserId = authorOfPost.createdById
     val settings = loadWholeSiteSettings(tx)
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.maxPostsPendApprBefore)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
@@ -731,10 +726,21 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
         val titlesToApprove = mutable.HashSet[PageId]()
         val postIdsToApprove = pendingTasks flatMap { task =>
           if (task.postNr.contains(PageParts.BodyNr)) {
-            titlesToApprove += task.pageId getOrDie "EdE2WK0L6"
+            // Was this, but that's a bug: [revw_task_pgid]
+            // titlesToApprove += task.pageId getOrDie "EdE2WK0L6"
+            // because sometimes page id missing, although is for a page's orig post,
+            // Instead, for now:  (planning to delete all of perhapsCascadeApproval()
+            // anyway)
+            for {
+              pId <- task.postId
+              post <- tx.loadPost(pId)
+            } {
+              titlesToApprove += post.pageId
+            }
           }
           task.postId
         }
+
         val postsToApprove = tx.loadPostsByUniqueId(postIdsToApprove).values
         val titlePostsToApprove = titlesToApprove.flatMap(tx.loadTitle)
         val tooManyPostsToApprove = postsToApprove ++ titlePostsToApprove
@@ -744,7 +750,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
         val allPostsToApprove = tooManyPostsToApprove.filter(!_.isSomeVersionApproved)
 
         for ((pageId, posts) <- allPostsToApprove.groupBy(_.pageId)) {
-          pageIdsToRefresh += pageId
+          staleStuff.addPageId(pageId, memCacheOnly = true)
           autoApprovePendingEarlyPosts(pageId, posts)(tx, staleStuff)
         }
       }

@@ -20,14 +20,14 @@ let everyonesBrowsers;
 let staffsBrowser: TyE2eTestBrowser;
 let othersBrowser: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser: TyE2eTestBrowser;
+let owen_brA: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser: TyE2eTestBrowser;
+let maria_brB: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser: TyE2eTestBrowser;
+let michael_brB: TyE2eTestBrowser;
 let mallory: Member;
-let mallorysBrowser: TyE2eTestBrowser;
-let strangersBrowser: TyE2eTestBrowser;
+let mallory_brB: TyE2eTestBrowser;
+let stranger_brB: TyE2eTestBrowser;
 
 
 let siteIdAddress: IdAddress;
@@ -75,119 +75,119 @@ describe("mod-review  TyT5WB2R0", () => {
     othersBrowser = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
-    owensBrowser = staffsBrowser;
+    owen_brA = staffsBrowser;
 
     maria = forum.members.maria;
-    mariasBrowser = othersBrowser;
+    maria_brB = othersBrowser;
     michael = forum.members.michael;
-    michaelsBrowser = othersBrowser;
+    michael_brB = othersBrowser;
     mallory = forum.members.mallory;
-    mallorysBrowser = othersBrowser;
-    strangersBrowser = othersBrowser;
+    mallory_brB = othersBrowser;
+    stranger_brB = othersBrowser;
   });
 
   it("Mallory has posted 2 spammy replies. He now sends a spammy message to Michael", () => {
-    mallorysBrowser.go(discussionPageUrl);
-    mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
-    mallorysBrowser.complex.sendMessageToPageAuthor(mallorysMessageTitle, mallorysMessageText);
-    directMessageUrl = mallorysBrowser.getUrl();
+    mallory_brB.go(discussionPageUrl);
+    mallory_brB.complex.loginWithPasswordViaTopbar(mallory);
+    mallory_brB.complex.sendMessageToPageAuthor(mallorysMessageTitle, mallorysMessageText);
+    directMessageUrl = mallory_brB.getUrl();
   });
 
   it("Michael flags two angry replies by Mallory", () => {
-    mallorysBrowser.go(discussionPageUrl);
-    mallorysBrowser.topbar.clickLogout();
-    michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
-    michaelsBrowser.complex.flagPost(angryReplyOneNr, 'Inapt');
-    michaelsBrowser.complex.flagPost(angryReplyTwoNr, 'Inapt');
+    mallory_brB.go(discussionPageUrl);
+    mallory_brB.topbar.clickLogout();
+    michael_brB.complex.loginWithPasswordViaTopbar(michael);
+    michael_brB.complex.flagPost(angryReplyOneNr, 'Inapt');
+    michael_brB.complex.flagPost(angryReplyTwoNr, 'Inapt');
   });
 
   it("... and the direct message", () => {
-    michaelsBrowser.topbar.openNotfToMe();
-    michaelsBrowser.complex.flagPost(c.BodyNr, 'Inapt');
+    michael_brB.topbar.openNotfToMe();
+    michael_brB.complex.flagPost(c.BodyNr, 'Inapt');
   });
 
   it("Maria logs in, sees no review tasks, she isn't a staff member", () => {
-    michaelsBrowser.topbar.clickLogout();
-    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    mariasBrowser.topbar.waitForMyMenuVisible();
-    assert(!mariasBrowser.topbar.isNeedsReviewUrgentVisible());
-    assert(!mariasBrowser.topbar.isNeedsReviewOtherVisible());
+    michael_brB.topbar.clickLogout();
+    maria_brB.complex.loginWithPasswordViaTopbar(maria);
+    maria_brB.topbar.waitForMyMenuVisible();
+    assert(!maria_brB.topbar.isNeedsReviewUrgentVisible());
+    assert(!maria_brB.topbar.isNeedsReviewOtherVisible());
   });
 
   it("Owen arrives, sees there're 3 high priority things to review", () => {
-    owensBrowser.go(siteIdAddress.origin);
-    owensBrowser.complex.loginWithPasswordViaTopbar(owen);
-    owensBrowser.topbar.waitForNumPendingUrgentReviews(3);
-    assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
+    owen_brA.go(siteIdAddress.origin);
+    owen_brA.complex.loginWithPasswordViaTopbar(owen);
+    owen_brA.topbar.waitForNumPendingUrgentReviews(3);
+    assert(!owen_brA.topbar.isNeedsReviewOtherVisible());
   });
 
   it("Owen grants Moderator to Maria", () => {
-    owensBrowser.adminArea.goToUser(forum.members.maria);
-    owensBrowser.adminArea.user.grantModerator();
+    owen_brA.adminArea.goToUser(forum.members.maria);
+    owen_brA.adminArea.user.grantModerator();
   });
 
   it("Maria now sees the review tasks", () => {
-    mariasBrowser.refresh();
-    mariasBrowser.topbar.waitForNumPendingUrgentReviews(3);
-    assert(!mariasBrowser.topbar.isNeedsReviewOtherVisible());
+    maria_brB.refresh();
+    maria_brB.topbar.waitForNumPendingUrgentReviews(3);
+    assert(!maria_brB.topbar.isNeedsReviewOtherVisible());
   });
 
   it("She cannot access the direct message (only admins can)  TyT6KRBEQ2", () => {
-    mariasBrowser.go(directMessageUrl);
-    mariasBrowser.assertMayNotSeePage();
+    maria_brB.go(directMessageUrl);
+    maria_brB.assertMayNotSeePage();
   });
 
   it("She goes to the Review page", () => {
-    mariasBrowser.back();
-    mariasBrowser.topbar.myMenu.goToAdminReview();
+    maria_brB.back();
+    maria_brB.topbar.myMenu.goToAdminReview();
   });
 
   it("... and sees only the Users, Groups and Review tabs", () => {
-    mariasBrowser.adminArea.waitAssertVisible();
-    assert(mariasBrowser.adminArea.isReviewTabVisible());
-    assert(mariasBrowser.adminArea.isUsersTabVisible());
-    assert.equal(mariasBrowser.adminArea.numTabsVisible(), 2);
+    maria_brB.adminArea.waitAssertVisible();
+    assert(maria_brB.adminArea.isReviewTabVisible());
+    assert(maria_brB.adminArea.isUsersTabVisible());
+    assert.equal(maria_brB.adminArea.numTabsVisible(), 2);
   });
 
   it("There's a review task for each one of Mallory's replies One and Two", () => {
-    const count = mariasBrowser.adminArea.review.countReviewTasksFor;
+    const count = maria_brB.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 1);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 1);
   });
 
   it("... but she cannot see Mallory's flagged direct message  TyT6KRBEQ2", () => {
-    const num = mariasBrowser.adminArea.review.countThingsToReview();
+    const num = maria_brB.adminArea.review.countThingsToReview();
     assert(num === 2, `Found ${num} things to review`);
   });
 
   it("Maria reject-delete's Mallory's reply nr 2  TyT4WKBDTQ", () => {
     // Post 2 flagged last, so is at the top.
-    mariasBrowser.adminArea.review.rejectDeleteTaskIndex(1);
+    maria_brB.adminArea.review.rejectDeleteTaskIndex(1);
   });
 
   it("... the server carries out Maria's decision", () => {
-    mariasBrowser.adminArea.review.playTimePastUndo();
-    mariasBrowser.adminArea.review.waitForServerToCarryOutDecisions(
+    maria_brB.adminArea.review.playTimePastUndo();
+    maria_brB.adminArea.review.waitForServerToCarryOutDecisions(
         forum.topics.byMichaelCategoryA.id, angryReplyTwoNr);
   });
 
   it("... then the review tasks for post 2 disappear", () => {
-    const count = mariasBrowser.adminArea.review.countReviewTasksFor;
+    const count = maria_brB.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: false }) === 1);
   });
 
   it("... the other task isn't affected", () => {
-    const count = mariasBrowser.adminArea.review.countReviewTasksFor;
+    const count = maria_brB.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 1);
-    const num = mariasBrowser.adminArea.review.countThingsToReview();       // = 2
+    const num = maria_brB.adminArea.review.countThingsToReview();       // = 2
     //const num = mariasBrowser.adminArea.review.countReviewTasksWaiting(); // = 1 <— better? later.
     assert(num === 2, `Found ${num} things to review`);
   });
 
   it("Owen sees all review tasks, incl direct message", () => {
-    owensBrowser.adminArea.goToReview();
-    const count = owensBrowser.adminArea.review.countReviewTasksFor;
+    owen_brA.adminArea.goToReview();
+    const count = owen_brA.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 1);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: false }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 0);
@@ -197,28 +197,42 @@ describe("mod-review  TyT5WB2R0", () => {
   });
 
   it("Owen rejects Mallory's private message", () => {
-    owensBrowser.adminArea.review.rejectDeleteTaskIndex(1);  // task 1 is for the direct message
+    owen_brA.adminArea.review.rejectDeleteTaskIndex(1);  // task 1 is for the direct message
   });
 
   it("... the server carries out Owen's decision", () => {
-    owensBrowser.adminArea.review.playTimePastUndo();
-    owensBrowser.adminArea.review.waitForServerToCarryOutDecisions(
+    owen_brA.adminArea.review.playTimePastUndo();
+    owen_brA.adminArea.review.waitForServerToCarryOutDecisions(
         forum.topics.byMichaelCategoryA.id, angryReplyTwoNr);
   });
 
   it("Thereafter, Michael sees spammy post Two is gone", () => {
-    mariasBrowser.topbar.clickLogout();
-    michaelsBrowser.go(discussionPageUrl);
-    michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
-    michaelsBrowser.topic.waitForLoaded();
-    michaelsBrowser.topic.waitUntilPostTextMatches(angryReplyOneNr, angryReplyOne);
+    maria_brB.topbar.clickLogout();
+    michael_brB.go(discussionPageUrl);
+    michael_brB.complex.loginWithPasswordViaTopbar(michael);
+    michael_brB.topic.waitForLoaded();
+    michael_brB.topic.waitUntilPostTextMatches(angryReplyOneNr, angryReplyOne);
     // Post nr Two got rejected-deleted.
-    assert(!michaelsBrowser.topic.isPostNrVisible(angryReplyTwoNr));
+    assert(!michael_brB.topic.isPostNrVisible(angryReplyTwoNr));
   });
 
-  it("... and Mallory's priv message got deleted", () => {
-    michaelsBrowser.go(directMessageUrl);
-    michaelsBrowser.topic.waitForPostVisibleAsDeleted(c.BodyNr);  // (4WBKSD21)
+  it("... and Mallory's priv message got deleted: Michael cannot see it", () => {
+    michael_brB.go(directMessageUrl);
+    michael_brB.assertNotFoundError({ whyNot: 'PageDeleted' }); // (4WBKSD21)
+  });
+
+  it("... owen can see it, and that it's been deleted", () => {
+    owen_brA.go(directMessageUrl);
+    owen_brA.topic.waitUntilPageDeleted();
+  });
+
+  it("Owen thinks Michael wants $90 after all, and undeletes the page", () => {
+    owen_brA.topbar.pageTools.restorePage();
+  });
+
+  it("Now Michael sees it again", () => {
+    michael_brB.refresh2();
+    michael_brB.topic.assertPostTextIs(c.TitleNr, mallorysMessageTitle, { wait: true });
   });
 
 });

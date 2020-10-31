@@ -4923,8 +4923,10 @@ export class TyE2eTestBrowser {
         this.assertTextMatches(this.topic.postBodySelector(postNr), text, 'regex')
       },
 
-      assertPostTextIs: (postNr: PostNr, text: string) => {
-        this.assertTextMatches(this.topic.postBodySelector(postNr), text, 'exact')
+      assertPostTextIs: (postNr: PostNr, text: St, ps: { wait?: Bo } = {}) => {
+        const s = this.topic.postBodySelector(postNr);
+        if (ps.wait) this.waitForVisibleText(s);
+        this.assertTextMatches(s, text, 'exact')
       },
 
       getPostText: (postNr: PostNr): string => {

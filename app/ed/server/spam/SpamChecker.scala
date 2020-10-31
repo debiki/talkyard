@@ -369,7 +369,7 @@ class SpamChecker(
     Future.sequence(spamTestFutures) map { results: Vector[SpamCheckResult] =>
       val spamFoundResults = results.collect { case r: SpamCheckResult.SpamFound => r }
 
-      SHOULD // insert into audit log (or some spam log?), gather stats
+      SHOULD; INFO_LOG; AUDIT_LOG // insert into audit log (or some spam log?), gather stats
       // Auto blocking happens here: [PENDNSPM].
 
       if (spamFoundResults.nonEmpty) {
