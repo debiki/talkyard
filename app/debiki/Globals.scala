@@ -248,7 +248,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   }
 
   // Could rename to "rendererVersion".
-  val applicationVersion = "0.00.70"  // later, read from some build config file
+  val applicationVersion = "0.00.73"  // later, read from some build config file
 
   def applicationSecret: String = _appSecret
 

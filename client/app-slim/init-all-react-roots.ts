@@ -41,7 +41,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
   if (adminAppElem) {
     ReactDOM.render(
         Router({},
-          rFragment({},
+          rFr({},
             // (The admin app already includes the topbar.)
             admin.staffRoutes(),
             // Make LinkButton work also in the admin app:
@@ -104,6 +104,12 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
 
   const renderOrHydrate = ReactDOM[reactRenderMethodName];
 
+  const store: Store = ReactStore.allData();
+
+  // So we'll reuse the server's width and layout setting.  [1st_rndr_hydr]
+  // (Set to true also if isn't)
+  store.isHydrating = true;
+
   if (location.pathname === '/-/embedded-comments') {
     // No router needed; cannot jump between topics in the emb comments iframe. [1FBZQ4]
     // Topbar and scroll buttons also not needed.
@@ -126,7 +132,6 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
       Route({ path: ApiUrlPathPrefix, component: MoreScriptsRoutesComponent })];
 
     // Routes for the forum, or maybe many forums (if there're different sub communities).
-    const store: Store = ReactStore.allData();
     for (let i = 0; i < store.siteSections.length; ++i) {
       const section: SiteSection = store.siteSections[i];
       if (section.pageRole === PageRole.Forum) {
@@ -151,13 +156,16 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
     // Sync with server side rendering code [7UKTWR].
     renderOrHydrate(
         Router({},
-          rFragment({},
+          rFr({},
             Route({ render: debiki2.topbar.TopBar }),
+            Switch({ children: sectionsAndPages })),
             isEmbCmts ? null : debiki2.page.ScrollButtons(),
-            isEmbCmts ? null : Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }),
-            Switch({ children: sectionsAndPages }))),
+            isEmbCmts ? null : Route({
+                  component: debiki2.page.Hacks.ExtReactRootNavComponent })),
       pageElem);
   }
+
+  store.isHydrating = false;
 }
 
 

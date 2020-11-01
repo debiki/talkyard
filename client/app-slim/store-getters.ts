@@ -248,7 +248,7 @@ export function store_canPinPage(store: Store) {
 // reflows needed), and simpler too (a lot less code, in total).
 //
 export function store_getApproxPageWidth(store: Store) {   // [6KP024]
-  if (isServerSide())
+  if (isServerSide() || store.isHydrating)
     return store.widthLayout === WidthLayout.Medium ?
         ServerSideWindowWidthLaptop : ServerSideWindowWidthMobile;
 

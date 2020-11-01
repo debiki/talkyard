@@ -104,7 +104,7 @@ var t_en_US: TalkyardTranslations = t = {
   Search: "Search",
   SendMsg: "Send Message",
   ShowPreview: "Show preview",  // MISSING
-  SignUp: "Sign Up",
+  SignUp: "Join",  // don't change to "Sign Up" [join_or_signup]
   Solution: "Solution",
   started: "started",
   Summary: "Summary",
@@ -1070,7 +1070,7 @@ var t_en_US: TalkyardTranslations = t = {
 
     CreateAcconut: "Create account",
     ContinueWithDots: "Continue with ...",
-    SignUp: "Sign up",
+    SignUp: "Join",
     LogIn: "Log in",
     LogInWithPwd: "Log in with Password",
     CreateAdmAcct: "Create admin account:",
@@ -1087,7 +1087,7 @@ var t_en_US: TalkyardTranslations = t = {
 
     NewUserQ: "New user? ",
     SignUpInstead_1: "",
-    SignUpInstead_2: "Sign up",
+    SignUpInstead_2: "Create account", // (this is a button)
     SignUpInstead_3: " instead",
 
     OrCreateAcctHere: "Or create account:",

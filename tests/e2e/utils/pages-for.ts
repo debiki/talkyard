@@ -2638,9 +2638,14 @@ export class TyE2eTestBrowser {
         }
       },
 
-      clickAncestor: (categoryName: string) => {
+      clickAncestor: (categoryName: St) => {
         this.repeatUntilAtNewUrl(() => {
-          this.waitForThenClickText('.esTopbar_ancestors_link', categoryName);
+          // Prefer licking a link in the topbar, if present, because if the topbar
+          // is position: fixed at the top of the page, then a link in the page itself
+          // can be occluded by the topbar.
+          const ancLn = ' .esTopbar_ancestors_link';
+          const where = this.isVisible('.s_Tb ' + ancLn) ? '.s_Tb' : '.esPage';
+          this.waitForThenClickText(where + ancLn, categoryName);
         });
       },
 
@@ -4923,8 +4928,10 @@ export class TyE2eTestBrowser {
         this.assertTextMatches(this.topic.postBodySelector(postNr), text, 'regex')
       },
 
-      assertPostTextIs: (postNr: PostNr, text: string) => {
-        this.assertTextMatches(this.topic.postBodySelector(postNr), text, 'exact')
+      assertPostTextIs: (postNr: PostNr, text: St, ps: { wait?: Bo } = {}) => {
+        const s = this.topic.postBodySelector(postNr);
+        if (ps.wait) this.waitForVisibleText(s);
+        this.assertTextMatches(s, text, 'exact')
       },
 
       getPostText: (postNr: PostNr): string => {

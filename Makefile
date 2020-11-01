@@ -174,33 +174,109 @@ debug_asset_bundles_files: \
 
 
 
+# Most files in client/app-slim are softlinked from client/server/*,
+# so regenerate bundle also if any app-slim file changes. Plus some
+# specific third-party and node_modules files.
+#
+# Sync with gulpfile.ts [srv_js_files]  — if this list gets out of sync,
+# Prod builds will still work fine since they clean and rebuild-all,
+# but Dev builds might get a messed up server side bundle, causing React.js
+# hydration errors, making "impossible" things happen and break in the browser.
+#
+# It's annoying to have too keep things in sync between here and gulpfile.js
+# — what are some better alternatives?
+#
+# Doesn't work:  $(shell find client/{app-slim,server}/   — so 2 lines instead.
+#
 images/app/assets/server-bundle.js: \
-       $(shell find client/server/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+       $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       $(shell find client/server/   -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       modules/sanitize-html/dist/sanitize-html.min.js \
+       client/third-party/html-css-sanitizer-bundle.js \
+       node_modules/react/umd/react.production.min.js \
+       node_modules/react-dom/umd/react-dom-server.browser.production.min.js \
+       node_modules/react-dom-factories/index.js \
+       node_modules/create-react-class/create-react-class.min.js \
+       node_modules/react-router-dom/umd/react-router-dom.min.js \
+       client/third-party/tiny-querystring.umd.js \
+       node_modules/markdown-it/dist/markdown-it.min.js \
+       client/third-party/lodash-custom.js \
+       client/third-party/non-angular-slugify.js \
+       client/app-editor/editor/mentions-markdown-it-plugin.js \
+       client/app-editor/editor/onebox-markdown-it-plugin.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileServerTypescriptConcatJavascript
 
+# Sync w gulpfile.js [embcmts_js_files]
 images/web/assets/talkyard-comments.js.gz: \
-       $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+       $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/third-party/bliss.shy.js \
+       client/third-party/smoothscroll-tiny.js \
+       client/app-slim/utils/calcScrollRectIntoViewCoords.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileBlogCommentsTypescript-concatScripts
 
+# Sync w gulpfile.js. [sw_js_files]
 images/web/assets/talkyard-service-worker.js.gz: \
        $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSwTypescript-concatScripts
 
+# Sync w gulpfile.js. [edr_js_files]
 images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
-       $(shell find client/app-editor/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+       $(shell find client/app-editor/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       modules/sanitize-html/dist/sanitize-html.js \
+       client/third-party/html-css-sanitizer-bundle.js \
+       node_modules/markdown-it/dist/markdown-it.js \
+       node_modules/blacklist/dist/blacklist.js \
+       node_modules/fileapi/dist/FileAPI.html5.js \
+       node_modules/@webscopeio/react-textarea-autocomplete/umd/rta.min.js \
+       client/third-party/diff_match_patch.js \
+       client/third-party/non-angular-slugify.js \
+       client/app-editor/editor/mentions-markdown-it-plugin.js \
+       client/app-editor/editor/onebox-markdown-it-plugin.js \
+       target/client/editor-typescript.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileEditorTypescript-concatScripts
 
+# Sync with gulpfile.ts [more_js_files].
 images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
-       $(shell find client/app-more/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+       $(shell find client/app-more/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       node_modules/react-bootstrap/dist/react-bootstrap.js \
+       node_modules/classnames/index.js \
+       node_modules/react-input-autosize/dist/react-input-autosize.js \
+       node_modules/react-select/dist/react-select.js \
+       node_modules/moment/min/moment.min.js \
+       target/client/more-typescript.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileMoreTypescript-concatScripts
 
+# Sync with gulpfile.ts [slim_js_files].
 images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
-       $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+       $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       node_modules/react/umd/react.development.js \
+       node_modules/react-dom/umd/react-dom.development.js \
+       node_modules/prop-types/prop-types.js \
+       node_modules/create-react-class/create-react-class.js \
+       node_modules/react-router-dom/umd/react-router-dom.js \
+       node_modules/react-dom-factories/index.js \
+       client/app-slim/utils/calcScrollRectIntoViewCoords.js \
+       client/third-party/smoothscroll-tiny.js \
+       client/third-party/bliss.shy.js \
+       client/app-slim/util/stupid-lightbox.js \
+       node_modules/keymaster/keymaster.js \
+       client/third-party/rename-key-to-keymaster.js \
+       client/third-party/lodash-custom.js \
+       node_modules/eventemitter3/umd/eventemitter3.min.js \
+       client/third-party/tiny-querystring.umd.js \
+       client/third-party/gifffer/gifffer.js \
+       client/third-party/get-set-cookie.js \
+       client/app-slim/utils/util.js \
+       client/app-slim/utils/util-browser.js \
+       client/third-party/popuplib.js \
+       client/app-slim/login/login-popup.js \
+       target/client/slim-typescript.js \
+       client/app-slim/start-stuff.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSlimTypescript-concatScripts
 

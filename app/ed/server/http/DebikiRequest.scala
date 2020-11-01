@@ -205,7 +205,10 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     * — that wouldn't be future compatible? New devices might be default broken, would need
     * to constantly update the regex?
     */
-  def isMobile: Boolean = {
+  def isMobile: Bo = {
+    val qs = request.rawQueryString
+    if (qs.contains("&laptop&")) return false
+    if (qs.contains("&mobile&")) return true
     val ua = request.headers.get("User-Agent") getOrElse {
       // Only hackers at their laptops do weird things like removing this header?
       return false

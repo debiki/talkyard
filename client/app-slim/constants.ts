@@ -139,12 +139,25 @@ const UseWidePageLayoutMinWidth = 750;    // (or 768 ok too)
 const WatchbarWidth = 230;  // dupl in css [7GYK42]
 const ContextbarMinWidth = 270;  // dupl in css [4FK0ZD]
 
+
 // Server side, Talkyard renders html twice per page — once with html suitable for
 // narrow things,  and once with html suitable for wider things.  React.js wants
 // the exact correct html, othewise hydration fails, causes randomly broken html.
+// So, browser side, the initial rendering typescript code should pretend the page
+// width is either ServerSideWindowWidthMobile wide or ServerSideWindowWidthLaptop
+// — see store.isHydrating = true  [1st_rndr_hydr]
+//
 const ServerSideWindowWidthMobile = 500;
-const ServerSideWindowWidthLaptop = 1200;
-// ---------------------------------------------------------------
+
+// 1920 x 1080 is a common resoltion, down to 14'' laptops, more and more popular.
+// But looking at: https://gs.statcounter.com/#resolution-ww-monthly-201507-202006,
+// 1366 x 768 is still the most common laptop resolution — about 21% vs 19% for 1920.
+// There's also 1600 x 900 for budget 17'' laptops — maybe 1600px would be better,
+// then, than 1920 but let's pick 1366.
+// Nice (although old): https://ux.stackexchange.com/a/16610  — 1366 makes sense.
+//
+const ServerSideWindowWidthLaptop = 1366;
+
 
 const OriginRegex = /^https?:\/\/[^/]+/i;  // CLEAN_UP this regex not in use everywhere, some dupl regexs
 

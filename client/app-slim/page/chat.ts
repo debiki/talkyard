@@ -23,6 +23,7 @@
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="discussion.ts" />
+/// <reference path="cats-or-home-link.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 /// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
@@ -51,12 +52,14 @@ export const ChatMessages = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     const isChatMember = _.some(store.currentPage.pageMemberIds, id => id === store.me.id);
     const editorOrJoinButton = isChatMember
         ? ChatMessageEditor({ store: store, scrollDownToViewNewMessage: this.scrollDown })
         : JoinChatButton({});
     return (
       r.div({ className: 'esChatPage dw-page', id: 't_PageContent' },
+        CatsOrHomeLink(page, store),
         TitleAndLastChatMessages({ store: store, ref: 'titleAndMessages' }),
         FixedAtBottom({ ref: 'fixedAtBottom' },
           editorOrJoinButton)));

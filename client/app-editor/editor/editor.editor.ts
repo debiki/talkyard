@@ -243,8 +243,8 @@ export const Editor = createFactory<any, EditorState>({
       FileAPI.getDropFiles(event, (files: File[]) => {
         if (files.length > 1) {
           // This'll log a warning server side, I think I want that (want to know how
-          // often this happens)
-          die(t.e.UploadMaxOneFile + " [TyM5JYW2]");
+          // often this happens)   [edit: should be info log msg, not warning]
+          die(t.e.UploadMaxOneFile + " [TyM5JYW2]");  // INFO_LOG
         }
         this.uploadFiles(files);
       });

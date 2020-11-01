@@ -114,7 +114,7 @@ html:not(.js)
   margin-left: 14px;
 
 
-.s_Tb_Row2
+.s_Tb_Rw2
   ul, ol
     display: flex;
   li
@@ -128,12 +128,10 @@ html:not(.js)
 // On small screens, show custom nav links, or page title,
 // on the 2nd topbar row *if any*.
 //
-// 1450 needs to be configurable! depends on the custom nav menu contents. [cust_nav_menu]
-@media (max-width: 1310px - 1px)  // [wide_topbar_min_px]
-  // If two rows, then, login and signup buttons, and MyMenu, are on row 2.
-  // Hide those on row 1.
-  .s_Tb-2Rows
-    .s_Tb_Row1
+// If two rows, then, login and signup buttons, and MyMenu, are on row 2.
+// Hide those on row 1.
+.s_Tb-2Rws
+  .s_Tb_Rw1
       .dw-login,
       .dw-a-tools,  // RENAME to s_Tb_Bs_ToolsB?
       .s_MMB
@@ -145,21 +143,14 @@ html:not(.js)
     //  max-width: none !important;
 
   // If we show custom nav links on row 2, then, don't show on row 1 too.
-  .s_Tb-CuNavRow2
-    .s_Tb_Row1 .s_Tb_CuNav
+  &.s_Tb-CuNvRw2
+    .s_Tb_Rw1 .s_Tb_CuNv
       display: none;
 
   // If we show page title, categories, tags on row 2, then hide on row 1.
-  .s_Tb-TtlRow2
-    .s_Tb_Row1 .s_Tb_Pg
+  &.s_Tb-TlRw2
+    .s_Tb_Rw1 .s_Tb_Pg
       display: none;
-
-// On wider screens, use just the first topbar row.
-//
-@media (min-width: 1310px)   // [wide_topbar_min_px]
-  .s_Tb_Row2
-    display: none;
-
 
 
 .esOpenWatchbarBtn_text
@@ -570,9 +561,9 @@ html.esSidebarsOverlayPage
   font-size: 13.5px;
   margin-left: 0;  // now search btn to the left
 
-.s_Tb-Stc .s_Tb_Row1
+.s_Tb-Stc .s_Tb_Rw1
   .s_Tb_CuLogo,
-  .s_Tb_CuNav,
+  .s_Tb_CuNv,
   .s_Tb_Pg_Cs,
   .s_Tb_MyBs
     margin-top: 15px;
@@ -603,11 +594,11 @@ html.esSidebarsOverlayPage
   // Right align the search button and MyMenu — so there's space for a search text
   // input field.
   margin-left: auto;  // right aligns, in a flexbox
-.s_Tb_Row2 .s_Tb_CuNav
+.s_Tb_Rw2 .s_Tb_CuNv
   // On any row 2, there's no search input. Then let the custom nav links get all space.
   flex: 1;
 
-//.s_Tb_Row2 .s_Tb_CuNav
+//.s_Tb_Rw2 .s_Tb_CuNv
 //  margin-top: 0;  // excl directly instead?
 
 
@@ -620,7 +611,7 @@ html.esSidebarsOverlayPage
   z-index: 1010;
   background: white;
   // shrink -2px so won't overlap #esPageScrollable scrollbar
-  box-shadow: 0 6px 9px -2px rgba(0,0,0,0.15); // shadow size dupl here: [5YKW25]
+  box-shadow: 0 6px 9px -2px rgba(0,0,0,0.15); // shadow size dupl here: [topb_shdw]
   @media (max-height: $tallHeight - 1px)
     // Now, we've shrunk the topbar a bit — make the shadow stronger so
     // simpler to see where the topbar ends, now when smaller.
@@ -680,10 +671,15 @@ html.esSidebarsOverlayPage
   &.s_Tb-Ttl .s_Tb_Pg
     position: relative;
     left: - $paddingLeftRight; // so the left padding below won't mess up hz alignment
-    max-width: calc(100% - 330px);  // space for MyMenu, so it won't line wrap
-    @media (max-width: 550px)  // ?
-      // Now MyMenu smaller: username hidden, only icon or "You".
-      max-width: calc(100% - 250px);
+
+    // Let the page title use as much free space as it needs, but if
+    // there's too little space, then, shrink, so there's room for
+    // the username menu  — apparently overflow: hidden makes a flex item
+    // shrink if needed:
+    // (If you want to test manually: [TyT692SKBDWJ74] — really long title)
+    flex: 1;
+    overflow: hidden;
+
     .s_Tb_Pg_Cs
       top: 1px;
       left: 0;
@@ -811,7 +807,7 @@ html.esSidebarsOverlayPage .s_Tb-Fxd
 //==============================
 
 .s_Tb_CuLogo,
-.s_Tb_CuNav
+.s_Tb_CuNv
   pointer-events: auto;
   display: inline-block;
 

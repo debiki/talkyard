@@ -2919,6 +2919,8 @@ object PostsDao {
   def createOrAmendOldReviewTask(createdById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
         tx: SiteTransaction): ReviewTask = {
     val pendingTask = tx.loadUndecidedPostReviewTask(post.id, taskCreatedById = createdById)
+    // At other places, we incl a page id, if post.isOrigPost,
+    // doesn't matter? Previously there was a bug though: [revw_task_pgid].
     val newTask = ReviewTask(
       id = pendingTask.map(_.id).getOrElse(tx.nextReviewTaskId()),
       reasons = reasons,

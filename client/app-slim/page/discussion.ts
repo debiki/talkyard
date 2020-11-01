@@ -28,6 +28,7 @@
 /// <reference path="../widgets.ts" />
 /// <reference path="../page-dialogs/open-share-popup.ts" />
 /// <reference path="../login/login-if-needed.ts" />
+/// <reference path="cats-or-home-link.ts" />
 /// <reference path="post-actions.ts" />
 /// <reference path="chat.ts" />
 /// <reference path="social-buttons.ts" />
@@ -274,29 +275,32 @@ export const TitleBodyComments = createComponent({
     if (page.pageRole === PageRole.About) {
       const ancestors = page.ancestorsRootFirst;
       const parentCategory = _.last(ancestors);
-      const categoryTitle = parentCategory.title;
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' },
-            "Edit the description of the ", r.strong({}, parentCategory.title), " category:");
+            "Edit the description of the ",
+            r.strong({}, parentCategory.title), " category:");
     }
 
-    let anyTitle = null;
-    let pageRole: PageRole = page.pageRole;
-    if (pageRole === PageRole.CustomHtmlPage ||
-        pageRole === PageRole.About || // excl cat descr topics [4AKBR02]
+    const pageRole: PageRole = page.pageRole;
+
+    // Sometimes, hide title and categories, show only replies / comments:
+    // 1) Show no title or categories on custom html pages, typically a homepage or
+    // landing page — such pages typically have their own custom navigation and title.
+    // 2) Embedded comment pages: Show comments only — no title or orig post needed,
+    // because there's a blog post above instead. Unless we're looking at the comments
+    // page directly over at the Talkyard site (!store.isEmbedded). [5UKWSP4]
+    // 3) Show no title if we're showing a reply, not the orig post, as the root post.
+    // 4) Category description pages, for editing category descriptions,
+    // have auto gen titles (`anyAboutCategoryTitle` here). [4AKBR02]
+    const skipCats = (
+        pageRole === PageRole.CustomHtmlPage ||
         (pageRole === PageRole.EmbeddedComments && store.isEmbedded) ||
-        store.rootPostId !== BodyNr) {
-      // Show no title for the homepage — it should have its own custom HTML with
-      // a title and other things.
-      // Embedded comment pages: Show comments only (no title or orig post needed,
-      // because there's a blog post instead). Unless we're viewing the comments page
-      // directly over at the Talkyard site (!store.isEmbedde). [5UKWSP4]
-      // And show no title if we're showing a comment not the article as the root post.
-    }
-    else {
-      anyTitle = Title({ store });
-    }
+        store.rootPostId !== BodyNr);
+    const skipTitle = skipCats || pageRole === PageRole.About;
+
+    const anyTitle = skipTitle ? null : Title({ store });
+    const catsOrHomeLink = skipCats ? null : CatsOrHomeLink(page, store);
 
     let anyPostHeader = null;
     //let anySocialLinks = null;
@@ -321,29 +325,9 @@ export const TitleBodyComments = createComponent({
     const helpMessageAboveTitle = helpMessageType === HelpTypePageClosed ? null : anyHelpMessage;
     const helpMessageBelowTitle = helpMessageType === HelpTypePageClosed ? anyHelpMessage : null;
 
-    // For now, feature flag. Later, always, unless unlisted.  [dbl_tb_ttl]
-    const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory); // dupl [305RKSTDH2]
-    const isUnlistedSoHideCats = isUnlisted && !isStaff(me);
-    const showCategories =
-            !isUnlistedSoHideCats && !!(store.settings.navConf || {}).topbarAtTopLogo;
-
-    const categories = showCategories &&
-        // Dupl code [305SKT026]
-        r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
-          page.ancestorsRootFirst.map((ancestor: Ancestor) => {
-            const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
-            const categoryIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
-            const key = ancestor.categoryId;
-            return (
-                r.li({ key, className: 's_Tb_Pg_Cs_C' + deletedClass },
-                  Link({ className: categoryIcon + 'esTopbar_ancestors_link btn',
-                      to: ancestor.path },
-                    ancestor.title)));
-          }));
-
     return (
       r.div({ className: anyAboutCategoryClass },
-        categories,
+        catsOrHomeLink,
         helpMessageAboveTitle,
         anyAboutCategoryTitle,
         r.div({ className: 'debiki dw-page', id: 't_PageContent' },
@@ -354,6 +338,7 @@ export const TitleBodyComments = createComponent({
           RootPostAndComments({ store }))));
   },
 });
+
 
 
 export const Title = createComponent({
@@ -406,7 +391,7 @@ export const Title = createComponent({
     }
 
     let anyShowForumInroBtn;
-    if (!this.props.hideButtons && page.pageRole === PageRole.Forum && store.hideForumIntro) {
+    if (page.pageRole === PageRole.Forum && store.hideForumIntro) {
       const introPost = page.postsByNr[BodyNr];
       if (introPost && !introPost.isBodyHidden) {
         // Don't show button too early — doing that would make server side and client side
@@ -420,7 +405,7 @@ export const Title = createComponent({
     }
 
     let anyEditTitleBtn;
-    if (!this.props.hideButtons && isStaffOrMyPage) {
+    if (isStaffOrMyPage) {
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', id: 'e2eEditTitle', onClick: this.editTitle });
     }
@@ -715,6 +700,10 @@ const RootPostAndComments = createComponent({
               r.ol({},
                 internalBacklinks.map((topic: Topic) =>
                   r.li({ key: topic.pageId },
+                    // UX "BUG", SHOULD: For access restricted topics, show e.g.
+                    // a padlock or a private message symbol, instead of a link icon
+                    // — Otherwise ppl can get nervous, when they think "everyone"
+                    // can see such access restricted links.  [staff_can_see]
                     Link({ to: topic.url, className: 's_InLns_Ln icon-link' },
                       topic.title))
               )));

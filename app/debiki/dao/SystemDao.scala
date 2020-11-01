@@ -510,8 +510,11 @@ class SystemDao(
     * @param spamCheckResults — Results from different external spam check services.
     *
     * COULD REFACTOR move to SpamSiteDao, since now uses only a per site tx.
+    *
+    * [PENDNSPM]
     */
-  def handleSpamCheckResults(spamCheckTaskNoResults: SpamCheckTask, spamCheckResults: SpamCheckResults): Unit = {
+  def handleSpamCheckResults(spamCheckTaskNoResults: SpamCheckTask,
+          spamCheckResults: SpamCheckResults): U = {
     val postToSpamCheck= spamCheckTaskNoResults.postToSpamCheck getOrElse {
       // Currently registration spam is checked directly when registering;
       // we don't save anything to the database, and shouldn't find anything here later.
