@@ -1,9 +1,9 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
+import * as fs from 'fs';
 import assert = require('../utils/ty-assert');
 import { execFileSync } from 'child_process';
-// import fs = require('fs');  EMBCMTS
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
@@ -37,11 +37,15 @@ describe("upload-images-and-files  TyT50E6KTDU7", () => {
   it("Generate files to upload", () => {
     // execFileSync throws an exception, if the file returns a
     // non zero exit code.
-    execFileSync('../../s/gen-big-file-if-not-exists.sh', ['0.001']);
-    execFileSync('../../s/gen-big-file-if-not-exists.sh', ['0.002']);
-    execFileSync('../../s/gen-big-file-if-not-exists.sh', ['0.99']);
-    execFileSync('../../s/gen-big-file-if-not-exists.sh', ['4']);
-    execFileSync('../../s/gen-big-file-if-not-exists.sh', ['5']);
+    let scriptPath = 's/gen-big-file-if-not-exists.sh';
+    if (!fs.existsSync(scriptPath)) {  // CLEAN_UP REMOVE once gone [rm_run_e2e_tests_sh]
+      scriptPath = '../../s/gen-big-file-if-not-exists.sh';
+    }
+    execFileSync(scriptPath, ['0.001']);
+    execFileSync(scriptPath, ['0.002']);
+    execFileSync(scriptPath, ['0.99']);
+    execFileSync(scriptPath, ['4']);
+    execFileSync(scriptPath, ['5']);
   });
 
 

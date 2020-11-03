@@ -3,11 +3,39 @@
 #   $@  The file name of the target of the rule
 
 
+# This needs:  apt install inotify-tools
+# Background?:
+#	@(echo "bg cmd" ; (echo "bg_cmd exited, status: $$?")) &  backsl
+# But then continues running also after other foreground target completed.
+#
+# Supposedly works on Mac:
+#   brew install fswatch
+# and instead of the inotifywait line:
+#   fswatch -1 .
+# or?:  Nodejs nodemon?
+# see: https://stackoverflow.com/a/23734495
+#
+# Listening to modify, delete, move, create seems better than  close_write?
+# close_write doesn't necessarily mean the file was modified.
+#
+# Have inotifywait exit after a few seconds, because otherwise it tends to stay
+# alive forever, after the parent 'while true; do ...' has
+# exited.
+# Hmm! But then  make  runs again and logs annoying messages. Skip: --timeout 3
+#
+watch: watch-debug_asset_bundles
+watch-debug_asset_bundles:
+	while true; do \
+	  make debug_asset_bundles ;\
+	  inotifywait -q -r -e modify -e create -e delete -e move \
+	        client package.json ;\
+	done
+
 # E.g.  make watch what=target
-watch:
+watch-what:
 	while true; do \
 	  make $(what); \
-	  inotifywait -qre close_write . ; \
+	  inotifywait -qre close_write . ;\
 	done
 
 .PHONY: \
@@ -24,7 +52,9 @@ watch:
   debug_asset_bundles_files \
   git-subm-init-upd \
   node_modules \
-  play-cli
+  play-cli \
+  watch \
+  watch-debug_asset_bundles
 
 .DEFAULT_GOAL := print_help
 
@@ -207,6 +237,7 @@ images/app/assets/server-bundle.js: \
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileServerTypescriptConcatJavascript
 
+
 # Sync w gulpfile.js [embcmts_js_files]
 images/web/assets/talkyard-comments.js.gz: \
        $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
@@ -216,11 +247,13 @@ images/web/assets/talkyard-comments.js.gz: \
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileBlogCommentsTypescript-concatScripts
 
+
 # Sync w gulpfile.js. [sw_js_files]
 images/web/assets/talkyard-service-worker.js.gz: \
        $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSwTypescript-concatScripts
+
 
 # Sync w gulpfile.js. [edr_js_files]
 images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
@@ -234,10 +267,10 @@ images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
        client/third-party/diff_match_patch.js \
        client/third-party/non-angular-slugify.js \
        client/app-editor/editor/mentions-markdown-it-plugin.js \
-       client/app-editor/editor/onebox-markdown-it-plugin.js \
-       target/client/editor-typescript.js
+       client/app-editor/editor/onebox-markdown-it-plugin.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileEditorTypescript-concatScripts
+
 
 # Sync with gulpfile.ts [more_js_files].
 images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
@@ -246,8 +279,7 @@ images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
        node_modules/classnames/index.js \
        node_modules/react-input-autosize/dist/react-input-autosize.js \
        node_modules/react-select/dist/react-select.js \
-       node_modules/moment/min/moment.min.js \
-       target/client/more-typescript.js
+       node_modules/moment/min/moment.min.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileMoreTypescript-concatScripts
 
@@ -275,7 +307,6 @@ images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
        client/app-slim/utils/util-browser.js \
        client/third-party/popuplib.js \
        client/app-slim/login/login-popup.js \
-       target/client/slim-typescript.js \
        client/app-slim/start-stuff.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSlimTypescript-concatScripts
@@ -462,14 +493,14 @@ rebuild-restart-web:
 	s/d kill web ; s/d rm -f web ; s/d build web ; s/d up -d web ; s/d-logsf0
 
 
-rebuild-gulp:
-	s/d kill gulp ; s/d rm -f gulp ; s/d build gulp
+rebuild-nodejs:
+	s/d kill nodejs ; s/d rm -f nodejs ; s/d build nodejs
 
-rebuild-restart-gulp: rebuild-gulp
-	 s/d up -d gulp ; s/d-logsf0 gulp
-
-restart-gulp:
-	s/d kill gulp ; s/d start gulp ; s/d-logsf0
+#rebuild-restart-nodejs: rebuild-nodejs
+#	 s/d up -d nodejs ; s/d-logsf0 nodejs
+#
+#restart-nodejs:
+#	s/d kill nodejs ; s/d start nodejs ; s/d-logsf0
 
 
 restart-app:  debug_asset_bundles
@@ -497,7 +528,7 @@ down: dead
 
 dead:
 	@# Kill the ones who are slow to stop.
-	s/d kill app search gulp ; s/d stop
+	s/d kill app search ; s/d stop
 
 
 

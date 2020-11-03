@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# CLEAN_UP REMOVE  do  `s/tyd restart`  instead
 # Restart gulp too, because not until restarted will it notice if client/third-party/
 # Javascript has been modified.
 # And restart Nginx too (the 'web' container), so it'll notice if config changed.

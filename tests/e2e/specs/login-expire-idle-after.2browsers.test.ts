@@ -105,7 +105,8 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
   });
 
   it("Maria logs in again", () => {
-    mariasBrowser.refresh();
+    mariasBrowser.refresh2();
+    // 2020-11-06: This timed out a few times [E2EBUG]
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
@@ -134,7 +135,7 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
   });
 
   it("Owen logs in again", () => {
-    owensBrowser.refresh();
+    owensBrowser.refresh2();
     owensBrowser.loginDialog.loginWithPassword(owen);
   });
 

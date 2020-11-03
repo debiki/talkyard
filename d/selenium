@@ -3,13 +3,24 @@
 # See  ../s/selenium-start  for how to debug.
 
 
+# Git repo & docs: https://github.com/SeleniumHQ/docker-selenium
+#
 dash_debug="-debug"
 browser_name="chrome"
 container_name="tye2ebrowser"
 
-image_version="3.141.59-20200826"
-# docker pull selenium/standalone-chrome:85.0-20200907 — then would need
+# !! Update Chromedriver and FF driver in wdio.conf.ts too. [upd_chromedriver_ffdriver]
+image_version="4.0.0-alpha-7-prerelease-20201009" # 3.141.59-20201010"
+
+# Is 3.5.x and 4.0.0 Selenium Grid? Selenium Server? versions?
+#  https://www.selenium.dev/downloads/
+# It's "Selenium" version:
+# https://selenium-release.storage.googleapis.com/index.html
+
+# not the same as:  selenium/standalone-chrome:86.0-20201009 — then would need
 # Chromedriver too in another Docker container?
+# This one?:  selenium/standalone-chrome:86.0-chromedriver-86.0-20201009
+
 
 # A common 14'' laptop resolution is 1920x1200, so this should work
 # both on wide screens and not-too-small-screen laptops:
@@ -39,11 +50,15 @@ for arg in "$@"; do
         ;;
         f|ff|firefox)
         echo "I will use Firefox."
+        echo "NO bye!"  # fix, to do later
+        exit 1
         browser_name="firefox"
         shift
         ;;
         i|invisible)
         echo "The browser will be invisible (headless)."
+        echo "NO bye!"  # fix, to do later
+        exit 1
         dash_debug=""
         shift
         ;;
@@ -58,7 +73,9 @@ done
 
 
 # E.g.: selenium/standalone-chrome-debug
-image_name="selenium/standalone-${browser_name}${dash_debug}:${image_version}"
+#image_name="selenium/standalone-${browser_name}${dash_debug}:${image_version}"
+image_name="selenium/standalone-chrome:4.0.0-alpha-7-prerelease-20201009"
+# docker run -d -p 4444:4444 -v /dev/shm:/dev/shm selenium/standalone-chrome:4.0.0-alpha-7-prerelease-20201009
 
 # The names are like:
 #   selenium/standalone-firefox-debug:3.141.59

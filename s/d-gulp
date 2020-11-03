@@ -1,1 +1,1 @@
-sudo docker-compose run --rm gulp gulp $@
+sudo docker-compose run --rm nodejs gulp $@

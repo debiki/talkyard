@@ -22,6 +22,11 @@ let settings: Partial<TestSettings> = {
 const args: any = minimist(process.argv.slice(2));
 _.extend(settings, args);
 
+if (settings.randomLocalHostname) {
+  dieIf(!!settings.localHostname, "Both randomLocalHostname and localHostname defined");
+  settings.localHostname = `e2e-test-${Date.now().toString().substr(4)}`;
+}
+
 if (settings.localHostname && !settings.localHostname.startsWith('e2e-test-')) {
   die("localHostname doesn't start with 'e2e-test-'");
 }
@@ -30,6 +35,8 @@ settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
 settings.reuseOldSite = settings.reuseOldSite || args.reuse;
+
+settings.specFileRetries = args.retry;
 
 settings.debugEachStep = args.debugEachStep || args.des;
 settings.debugBefore = args.debugBefore || args.db;

@@ -6,6 +6,11 @@
 #  for x in 1 2 ; do  time  s/run-e2e-tests.sh --3 --secretsPath=../debiki-site-www.debiki.com/conf/e2e-secrets.json && break  ; done
 
 
+# Delete this whole file — run tests via `s/tyd e2e ...` instead.  [rm_run_e2e_tests_sh]
+echo "This script, run-e2e-tests.sh is DEPRECATED, but still in use."
+echo "Soon, will use instead:  s/tyd e2e ..."
+
+
 if [ `id -u` -eq 0 ]; then
   echo "You are root. Don't run the E2E tests as root please."
   exit 1
