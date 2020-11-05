@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@* TODO RENAME to showCreateUserDialogInOpenerCloseThisWin.scala.html    *@
-
 @(origNonceBack: String, idpName: String, idpHasVerifiedEmail: Boolean,
     newUserUsername: String, newUserFullName: String, newUserEmail: String,
     authDataCacheKey: String, anyContinueToUrl: Option[String])
@@ -26,8 +24,8 @@
  * main page where e.g. a forum topic and all replies are shown).
  *
  * Not for embedded comments logins, because then we'll continue running inside
- * the popup (see showCreateUserDialog.scala.html)  — would be tricky, UX wise,
- * to try to show a create-user dialog in Talkyard's iframe.
+ * the popup, see showCreateUserDialogInThisWin.scala.html  — would be tricky,
+ * UX wise, to try to show a create-user dialog in Talkyard's iframe.
  *@
 
 @continueToUrlOrEmpty = @{
@@ -37,7 +35,7 @@
 <!DOCTYPE html>
 <html>
 <body>
-<!-- views/login/closePopupShowCreateUserDialog.scala.html -->
+<!-- views/authn/showCreateUserDialogInOpenerCloseCurWin.scala.html -->
 <script type='text/javascript'>
     window.opener.debiki2.morebundle.showCreateUserDialog({
       origNonceBack: '@origNonceBack',

@@ -59,9 +59,9 @@ object SiteTpi {
   */
 class SiteTpi protected (
   val debikiRequest: DebikiRequest[_],
-  val json: Option[String] = None,
-  pageTitleUnsafe: Option[String] = None,
-  isAdminArea: Boolean = false) {
+  val json: Opt[St] = None,
+  pageTitleUnsafe: Opt[St] = None,
+  val isAdminArea: Bo = false) {
 
   def globals: Globals = debikiRequest.context.globals
 

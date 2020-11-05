@@ -22,15 +22,19 @@
 <head>
   <meta name="viewport" content="width=device-width">
   <meta charset="utf-8"/>
-  <link rel="stylesheet" href="@tpi.mediaUrl("fontello/css/fontello-embedded.css")"/>@* [NGXMEDIA] *@
-  <link rel="stylesheet" href="@tpi.assetUrl(s"styles-bundle.${tpi.minMaxCss}")"/>
+  @tpi.debikiStyles
+  @if(!tpi.isAdminArea) @{
+   // But don't load these, when logging in to the Admin Area — then, if there's
+   // a problem, maybe we couldn't login to fix it.
+   tpi.stylesheetBundle("styles.css")
+  }
   @tpi.debikiScriptsInHead(isInLoginWindow = true, isInLoginPopup = isInLoginPopup)
   <script src="@tpi.assetUrl(s"translations/${tpi.languageCode}/i18n.${tpi.minMaxJs}")"></script>
   <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
   <script src="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")"></script>
 </head>
 <body>
-  <!-- views/login/popupMain.scala.html -->
+  <!-- views/authn/authnPageHtmlDoc.scala.html -->
   @content
 </body>
 </html>

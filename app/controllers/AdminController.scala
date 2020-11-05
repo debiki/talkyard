@@ -53,8 +53,8 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
     dieIfAssetsMissingIfDevTest()
 
     if (!apiReq.user.exists(_.isStaff)) {
-      Future.successful(Ok(views.html.login.loginPopup(
-        SiteTpi(apiReq),
+      Future.successful(Ok(views.html.authn.authnPage(
+        SiteTpi(apiReq, isAdminArea = true),
         mode = "LoginToAdministrate",
         serverAddress = s"//${apiReq.host}",
         returnToUrl = apiReq.uri)) as HTML)
@@ -93,7 +93,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def showAdminOneTimeLoginPage: Action[Unit] = GetActionAllowAnyone { request =>
     Ok(views.html.adminlogin.adminLoginPage(
-      SiteTpi(request),
+      SiteTpi(request, isAdminArea = true),
       xsrfToken = request.xsrfToken.value,
       isDefaultSite = request.isDefaultSite))
   }

@@ -213,7 +213,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     // If page not found, or access not allowed, show the same login dialog, so the user
     // won't know if the page exists or not.
     def makeLoginDialog(exception: ResultException): Result = {
-      NotFound(views.html.login.loginPopup(
+      NotFound(views.html.authn.authnPage(
         SiteTpi(request),
         mode = "LoginBecauseNotFound",
         // error =  result.body
@@ -266,7 +266,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         // could redirect here directly to the SSO url. However, then we'd need
         // a certain makeSsoUrl() here too — but it's in Javascript only.
         // So instead we do any such redirect in Javascript. [COULDSSOREDIR]
-        return Future.successful(Ok(views.html.login.loginPopup(
+        return Future.successful(Ok(views.html.authn.authnPage(
           SiteTpi(request),
           mode = "LoginToAuthenticate",
           serverAddress = s"//${request.host}",

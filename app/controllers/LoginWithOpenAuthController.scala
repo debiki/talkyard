@@ -80,7 +80,7 @@ private case class OngoingAuthnState(
   protocol: St,
   providerAlias: St,
   isInLoginPopup: Bo,
-  mayCreateUser: Bo,
+  mayCreateUser: Bo,  // RENAME to isAdminArea, client side too, 'mayNotCreateUser' there
   returnToUrl: St,
   browserNonce: St,
   createdAt: When,
@@ -102,6 +102,7 @@ private case class OngoingAuthnState(
 
   def protoAlias: St = s"$protocol/$providerAlias"
 
+  def isAdminArea: Bo = !mayCreateUser  // remove later, see above
 }
 
 
@@ -1361,8 +1362,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         maybeCannotUseCookies ||=
           request.cookies.get(AvoidCookiesCookieName).map(_.value) is EdSecurity.Avoid
 
-        def loginPopupCallback: p_Result =
-          Ok(views.html.login.loginPopupCallback(
+        def handleResultInWinOpener: p_Result =
+          Ok(views.html.authn.sendAuthnResultToOpenerCloseCurWin(
                 origNonceBack = authnState.browserNonce,
                 weakSessionId = weakSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
 
@@ -1379,12 +1380,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           //bugWarnIf(!authnState.isInLoginPopup, "TyEWINOPNR5",
           //      s"s$siteId: In login win w/o opener? But redir-from-email-only: $member")
 
-          loginPopupCallback
+          handleResultInWinOpener
         }
         else if (authnState.isInLoginPopup) {
           // Javascript in the popup will call handleLoginResponse() which calls
           // continueAfterLogin().
-          loginPopupCallback
+          handleResultInWinOpener
         }
         else {
           // Currently only happens in the create site wizard (right?), and this
@@ -1446,7 +1447,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // before sending the email?
 
     Ok(views.html.login.verifyYourEmailAddr(
-          tpi = SiteTpi(request),
+          tpi = SiteTpi(request,
+                // Not yet translated, no RTL support, so pretend is adm area —> English
+                isAdminArea = true),
           subject = subject,
           emailToVerify = emailToVerify,
           expMins = expMins))
@@ -1500,7 +1503,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // That's why we incl oldEmailVerified = ...  below.
     //
     Ok(views.html.login.askIfLinkAccounts(
-          tpi = SiteTpi(request),
+          tpi = SiteTpi(request,
+                // Not yet translated, no RTL support, so pretend is adm area —> English
+                isAdminArea = true),
           origNonceBack = authnState.browserNonce,
           oldEmailAddr = user.primaryEmailAddress,
           oldEmailVerified = user.emailVerified,
@@ -1554,7 +1559,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // using a different IDP account or maybe create a new account.
       // What else is there to do?
       Ok(views.html.login.accountsNotLinkedPleaseLoginAgain(
-            tpi = SiteTpi(request),
+            tpi = SiteTpi(request,
+                // Not yet translated, no RTL support, so pretend is adm area —> English
+                isAdminArea = true),
             origNonceBack = authnState.browserNonce,
             tryLoginAgainUrl = tryLoginAgainUrl,
             idpName = idpName))
@@ -1569,7 +1576,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       dao.saveIdentityLinkToUser(extIdentity, matchingTyUser)
 
       Ok(views.html.login.accountsLinkedPleaseLoginAgain(
-            tpi = SiteTpi(request),
+            tpi = SiteTpi(request,
+                // Not yet translated, no RTL support, so pretend is adm area —> English
+                isAdminArea = true),
             origNonceBack = authnState.browserNonce,
             tryLoginAgainUrl = tryLoginAgainUrl,
             idpName = idpName))
@@ -1595,14 +1604,14 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val result = if (anyIsInLoginWindowCookieValue.isDefined) {
       // Continue running in the login window, by returning a complete HTML page that
-      // shows a create-user dialog. (( This happens if 1) we're in a create
-     // site wizard, then there's a dedicated login step in a login window, or 2)
-      // we're logging in to the admin pages, or 3) when logging in to a login required site,
-      // or 4) we're visiting an embedded comments
+      // shows a create-user dialog. (This happens if 1) we're in a create site
+      // wizard, then there's a dedicated login step in a login window,
+      // or 2) we're logging in to the admin pages, or 3) when logging in to a
+      // login required site, or 4) we're visiting an embedded comments
       // site and attempted to login, then a login popup window opens (better than
       // showing a login dialog somewhere inside the iframe). ))
-      Ok(views.html.login.showCreateUserDialog(
-        SiteTpi(request),
+      Ok(views.html.authn.showCreateUserDialogInThisWin(
+        SiteTpi(request, isAdminArea = authnState.isAdminArea),
         origNonceBack = authnState.browserNonce,
         idpName = idpName,
         idpHasVerifiedEmail = oauthDetails.isEmailVerifiedByIdp.is(true),
@@ -1617,7 +1626,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // The request is from an OAuth provider login popup. Run some Javascript in the
       // popup that continues execution in the main window (the popup's window.opener)
       // and closes the popup.  [2ABKW24T]
-      Ok(views.html.login.closePopupShowCreateUserDialog(
+      Ok(views.html.authn.showCreateUserDialogInOpenerCloseCurWin(
         origNonceBack = authnState.browserNonce,
         idpName = idpName,
         idpHasVerifiedEmail = oauthDetails.isEmailVerifiedByIdp.is(true),
