@@ -19,6 +19,9 @@ Add a black hanglock next to things one can see, because of one's extra
 access permissions? E.g. editing category settings, or backlinks from
 access restricted topics.
 
+[admin_log]
+Make site specific errors visible to site admins — so no need
+to have Linux root access.
 
 [immutable]
 Make all js objs "light weight immutable", via Typescript's 'readonly' properties:
