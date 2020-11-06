@@ -532,7 +532,7 @@ function runAllE2eTests {
   # API: CORS
   # ------------
 
-  # $r s/wdio --only api-search-cors.2browsers $args
+  # $r s/wdio --only api-search-cors.UNIMPL.2br
 
 
   # Embedded forum
