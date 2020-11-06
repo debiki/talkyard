@@ -49,6 +49,15 @@ trait AllSettings {
 
   def allowLocalSignup: Boolean  // RENAME? to  enableLocalSignup. Allow/deny for authz instead?
   def allowGuestLogin: Boolean   // RENAME  to  enableGuestLogin.
+
+
+  // This is a bit annoying — one field and table column per IDP? [oh_so_many_idps]
+  // So many columns! Look how many IDPs ScribeJava supports, almost 100?
+  //   https://github.com/scribejava/scribejava/tree/master/scribejava-apis/src/main/java/com/github/scribejava/apis
+  // What's a more concise way to remember if a site wants to use a specific
+  // server global IDP or not?
+  // Maybe a JSON obj with ScribeJava Java class names (see the link above)
+  // as fields, like: { GoogleApi20: enable, LinkedInApi20: disable }  ?
   def enableGoogleLogin: Boolean
   def enableFacebookLogin: Boolean
   def enableTwitterLogin: Boolean
@@ -57,6 +66,8 @@ trait AllSettings {
   def enableLinkedInLogin: Boolean
   def enableVkLogin: Boolean
   def enableInstagramLogin: Boolean
+
+
   def requireVerifiedEmail: Boolean
   def emailDomainBlacklist: String
   def emailDomainWhitelist: String

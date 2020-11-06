@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
 import com.github.scribejava.core.oauth.{OAuth20Service => sj_OAuth20Service}
+import com.github.scribejava.core.builder.api.{DefaultApi20 => sj_DefaultApi20}
 import com.github.scribejava.core.model.{OAuth2AccessToken => sj_OAuth2AccessToken, OAuth2AccessTokenErrorResponse => sj_OAuth2AccessTokenErrorResponse, OAuthAsyncRequestCallback => sj_OAuthAsyncReqCallback, OAuthRequest => sj_OAuthRequest, Response => sj_Response, Verb => sj_Verb}
 import com.github.scribejava.apis.openid.{OpenIdOAuth2AccessToken => sj_OpenIdOAuth2AccessToken}
 import com.mohiva.play.silhouette
@@ -58,9 +59,13 @@ import javax.inject.Inject
 
 /**
   *
-  * @param authnSiteId — so cannot use a nonce cache key at the wrong site.
-  * @param origSiteId
-  * @param returnToUrl
+  * @param authnViaSiteId — If authn via a server global IDP, we do that from
+  *   a dedicated authn origin site. Need to remember which site,
+  *   so one cannot use a nonce cache key at the wrong site.
+  * @param loginToSiteId — The site pat wants to login to (or first create
+  *  an account at, and then login to), after having authenticated
+  *  against an IDP, possibly via a different Ty site (the authn origin site).
+  * @param returnToUrl — Where to redirect pat after login.
   * @param browserNonce
   * @param createdAt
   * @param stateString — The OAuth2 'state' query param sent to the IDP's auth endpoint.
@@ -73,8 +78,9 @@ import javax.inject.Inject
   */
 private case class OngoingAuthnState(
   authnXsrfToken: St,
-  authnSiteId: SiteId,
-  origSiteId: SiteId,
+  authnViaSiteId: SiteId,
+  loginToSiteId: SiteId,
+  loginToSiteOrigin: St,
   continueAtAuthnSiteNonce: Opt[St] = None,
   continueAtOrigSiteNonce: Opt[St] = None,
   protocol: St,
@@ -189,7 +195,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def getAuthnStateOrThrow(nonce: St, thisStep: St,
-          authnSiteId: SiteId = NoSiteId, origSiteId: SiteId = NoSiteId,
+          authnViaSiteId: SiteId = NoSiteId, loginToSiteId: SiteId = NoSiteId,
+          loginToSiteOrigin: St = "",
           keepStateInCache: Bo = false, maxAgeSeconds: Opt[i64] = None)
           : OngoingAuthnState = {
 
@@ -213,15 +220,21 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // Ensure we're accessing the correct site, say, forum-X.com, but not
     // the-wrong-forum-Y.elsewhere.org hosted by the same server:
 
-    if (authnState.authnSiteId != NoSiteId)  // backw compat w Silhouette
-      throwForbiddenIf(authnSiteId != NoSiteId && authnSiteId != authnState.authnSiteId,
-          "TyEAUTBADAUTSITE", s"At the wrong authn site id: $authnSiteId, should be: ${
-              authnState.authnSiteId}")
+    if (authnState.authnViaSiteId != NoSiteId)  // backw compat w Silhouette
+      throwForbiddenIf(authnViaSiteId != NoSiteId && authnViaSiteId != authnState.authnViaSiteId,
+          "TyEAUTBADAUTSITE", s"At the wrong authn site id: $authnViaSiteId, should be: ${
+              authnState.authnViaSiteId}")
 
-    if (authnState.origSiteId != NoSiteId)  // backw compat w Silhouette
-      throwForbiddenIf(origSiteId != NoSiteId && origSiteId != authnState.origSiteId,
-          "TyEAUTBADORGSITE", s"At the wrong orig site id: $origSiteId, should be: ${
-              authnState.origSiteId}")
+    if (authnState.loginToSiteId != NoSiteId)  // backw compat w Silhouette
+      throwForbiddenIf(loginToSiteId != NoSiteId && loginToSiteId != authnState.loginToSiteId,
+          "TyEAUTLOGI2SITEID", s"Wrong loginToSiteId: $loginToSiteId, should be: ${
+              authnState.loginToSiteId}")
+
+    if (authnState.loginToSiteOrigin.nonEmpty)  // backw compat w Silhouette
+      throwForbiddenIf(loginToSiteOrigin.nonEmpty &&
+              loginToSiteOrigin != authnState.loginToSiteOrigin,
+          "TyEAUTLOGI2SITEORG", s"Wrong loginToSiteOrigin: ${loginToSiteOrigin
+              }, should be: ${authnState.loginToSiteOrigin}")
 
     throwForbiddenIf(authnState.nextStep != thisStep,
           "TyEAUTSTEP", s"Bad step: ${authnState.nextStep}, expected: $thisStep")
@@ -233,7 +246,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   def authnStart(protocol: St, providerAlias: St, returnToUrl: St, nonce: St,
           authViaAuthnOrigin: Opt[Bo], selectAccountAtIdp: Opt[Bo])
-          : Action[U] = AsyncGetActionIsLogin { request =>
+          : Action[U] = AsyncGetActionIsLoginRateLimited { request =>
     import request.dao
 
     val settings = dao.getWholeSiteSettings()
@@ -255,8 +268,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val authnState = OngoingAuthnState(
           authnXsrfToken = authnXsrfToken,
-          authnSiteId = dao.siteId,
-          origSiteId = dao.siteId,
+          authnViaSiteId = dao.siteId,
+          loginToSiteId = dao.siteId,
+          loginToSiteOrigin = request.origin,
           protocol = protocol,
           providerAlias = providerAlias,
           isInLoginPopup = isInLoginPopup,
@@ -264,7 +278,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           returnToUrl = returnToUrl,
           browserNonce = nonce,
           createdAt = globals.now(),
-          stateString = nextRandomString(),
+          stateString = nextRandomString() + (
+                // Only for now, until done migrating to ScribeJava. [migr_to_scribejava]
+                "_scribejava_"),
           oauth2StateUseCount = new j_AtomicInteger(0),
           selectAccountAtIdp = selectAccountAtIdp is true,
           lastStepAt = globals.now(),
@@ -273,12 +289,24 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val futureResponse = {
       if (authViaAuthnOrigin.is(true) &&
             globals.anyLoginOrigin.isSomethingButNot(originOf(request))) {
-        // We're trying to login via a server global IDP, shared by many / all sites
-        // hosted by this server — e.g. standard Facebook or Gmail login.
-        // But the IDP has been configured to send authentication data to another
-        // Talkyard site — namely the authn origin site: anyLoginOrigin.get. We'll
-        // redirect to that site and do the authentication "for real" from there.
-        throwForbidden("TyE2095RMKFM2", "Untested")
+        // We're trying to login via a server global IDP, shared by many sites
+        // hosted on this server — e.g. Facebook or Gmail login, customized
+        // once by a superadmin, to use by all sites (so no need to
+        // configure many times).
+        // The IDP has been configured to send authentication data to another
+        // Talkyard site — namely the authn origin site: globals.anyLoginOrigin.
+        // We'll redirect pat to that site and authenticate from there.
+        //
+        // First check that the server global IDP that pat tries to login with,
+        // is enabled at *this* site  (that there's a server global IDP,
+        // doesn't mean that this site wants to use it).  [glob_idp_enb_1]
+        //
+        throwForbiddenIf(settings.useOnlyCustomIdps, "TyE0SITECUSIDP",
+              s"useOnlyCustomIdps enabled, cannot use any server global IDP")
+        getServerGlobalIdentityProvider(authnState, dao).ifBad(problem =>
+              throwForbidden(s"Cannot login via ${authnState.protoAlias
+                    }: $problem [TyEGETGLOBIDP01]"))
+
         saveAuthnStateRedirToAuthnOrigin(authnState)
       }
       else {
@@ -324,8 +352,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             routes.LoginWithOpenAuthController.continueAtAuthnOrigin(
                   secretNonce = continueAtAuthnOriginNonce)
 
+    // The real next step.
     authnStateCache.put(continueAtAuthnOriginNonce, authnState)
 
+    // Not really needed. Nice though for double checking, or debugging?
     authnStateCache.put(continueAtOrigSiteNonce, authnState.copy(
           nextStep = "org_site_start_state"))
 
@@ -345,14 +375,19 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val authnStateWrongSiteId = getAuthnStateOrThrow(
           secretNonce, "at_authn_origin",
-              maxAgeSeconds = Some(AFewSeconds)) // or "isInstantRedirect = true" ?
+          maxAgeSeconds = Some(AFewSeconds)) // or "isInstantRedirect = true" ?
 
     // Change the authn site id from the original site id to the current site id.
     // We're authenticating via this site — the authn site — in order to login
-    // at another site — the original site, authnState.origSiteId.
+    // at another site — the original site, authnState.loginToSiteId.
     val authnState = authnStateWrongSiteId.copy(
-          authnSiteId = dao.siteId,
+          authnViaSiteId = dao.siteId,
           lastStepAt = globals.now(),
+          // The next step:
+          // We'll redirect the browser to the IDP for pat to authn over there;
+          // thereafter, the IDP redirects the browser back to this
+          // Talkyard server's OAuth2 redirection URI — so, getting redirected
+          // back, is the next HTTP request to this server:
           nextStep = "redir_back")
 
     dieIf(authnState.continueAtAuthnSiteNonce.isNot(secretNonce), "TyE305MAKTM2")
@@ -360,15 +395,19 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // Skip this — not impossible that the authn origin site is accessible
     // via many hostnames, e.g. if currently moving to a new hostname. Then,
     // after redirecting to the authn origin, we might still be at the same site,
-    // site id == authn site id. However, we'll check authnState.origSiteId later
+    // site id == authn site id. However, we'll check authnState.loginToSiteId later
     // when back at the orig site.
-    //dieIf(authnState.authnSiteId == authnState.origSiteId, ..)
+    //dieIf(authnState.authnViaSiteId == authnState.loginToSiteId, ..)
 
     authnStartImpl(authnState, request)
   }
 
 
 
+  /** Redirects the browser to the IDP's authorization URL, for pat to auth there.
+    * Once pat has auth'd at the IDP, the IDP will redirect the browser back to
+    * this Ty server's OAuth2 redirection URI.
+    */
   private def authnStartImpl(authnState: OngoingAuthnState, request: GetRequest)
         : Future[p_Result] = {
     import request.{dao, siteId}
@@ -379,8 +418,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
     dieIf(authnState.nextStep != "redir_back", "TyE405MRKG24")
-    dieIf(authnState.authnSiteId != siteId, "TyEAUTSITEID001",
-          s"Wrong authn site: $siteId, should be: ${authnState.authnSiteId}")
+    dieIf(authnState.authnViaSiteId != siteId, "TyEAUTSITEID001",
+          s"Wrong authn site: $siteId, should be: ${authnState.authnViaSiteId}")
 
     authnStateCache.put(authnState.stateString, authnState)
 
@@ -465,6 +504,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   def authnRedirBack(protocol: St, providerAlias: St,
           state: St, session_state: Option[St], code: St): Action[U]
           = AsyncGetActionIsLoginRateLimited { redirBackRequest =>
+    authnRedirBackImpl(protocol, providerAlias = providerAlias, state = state,
+          session_state = session_state, code = code, redirBackRequest)
+  }
+
+  private def authnRedirBackImpl(protocol: St, providerAlias: St,
+          state: St, session_state: Option[St], code: St, redirBackRequest: GetRequest)
+          : Future[p_Result] = {
 
     import redirBackRequest.{dao, siteId}
 
@@ -474,7 +520,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           |  Code: $code
           |  Session state: $session_state""")
 
-    val authnState = getAuthnStateOrThrow(state, "redir_back", authnSiteId = siteId,
+    val authnState = getAuthnStateOrThrow(state, "redir_back", authnViaSiteId = siteId,
           // Keep the authn state — instead, we increment a useCount below,
           // and if > 1, we show a user friendly error message.
           // This is nice to do here at the redirect uri endpoint in particular,
@@ -482,8 +528,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           keepStateInCache = true)
 
     // This checked by getAuthnStateOrThrow() already:
-    dieIf(authnState.authnSiteId != siteId, "TyEAUTSITEID002",
-          s"Wrong authn site: $siteId, should be: ${authnState.authnSiteId}")
+    dieIf(authnState.authnViaSiteId != siteId, "TyEAUTSITEID002",
+          s"Wrong authn site: $siteId, should be: ${authnState.authnViaSiteId}")
 
     logger.debug(s"s$siteId: Authn state: $authnState\n")
     dieIf(authnState.stateString != state, "TyE3M06KD24")
@@ -503,6 +549,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           o"""You need to login within $maxMins minutes. Try again, a bit faster?
             Time elapsed: $minutesOld minutes.""")
 
+    // [glob_idp_enb_2]
     val idp: IdentityProvider = getIdentityProvider(authnState, dao)
     throwForbiddenIf(!idp.enabled, "TyEIDPDISBLD02",
           s"Identity provider ${idp.protoAlias} was just disabled")
@@ -599,6 +646,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         }
 
         anyOidcIdToken foreach { idToken =>
+          // 1)
           SECURITY; SHOULD // compare any ID token nonce with
           // authnState.browserNonce, maybe encrypted or hashed:  [br_authn_nonce]
           //
@@ -643,6 +691,18 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           //    Authorization Servers MUST include a nonce Claim in the ID Token
           //    with the Claim Value being the nonce value sent in the
           //    Authentication Request.
+
+          // 2) Could validate the ID token, but, as Google says: [Ty's comments
+          // in brackets]
+          // > Normally, it is critical that you validate an ID token before you
+          // > use it, but since you are communicating directly with Google [or some
+          // > other IDP] over an intermediary-free HTTPS channel and using
+          // > your client secret to authenticate yourself to Google, you can be
+          // > confident that the token you receive really comes from Google
+          // > and is valid
+          // See: https://developers.google.com/identity/protocols/oauth2/openid-connect#obtainuserinfo
+          // (However if getting the ID token from an intermediary, it must be
+          // validated.)
         }
 
         idAndAccessTokenPromise.success((accessToken, anyOidcIdToken))
@@ -658,12 +718,25 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     idAndAccessTokenPromise.future.onComplete({
       case Failure(throwable: Throwable) =>
+        // Change to info, and show in site admin logs only instead?  [admin_log]
+        val oauth2Api: sj_DefaultApi20 = authnService.getApi
+        logger.warn(s"Error requesting access token from: ${
+              oauth2Api.getAccessTokenEndpoint}  [TyEACSTKNREQ1]", throwable)
+
         val errorResponseException = throwable match {
           case ex: ResultException =>
             ex
+          case _: java.net.NoRouteToHostException =>
+            // Don't include the server address — could be an organization private thing,
+            // and reveal e.g. what software they use.
+            SECURITY; COULD // later remove ex.toString from all errors responses
+            // below, and show ex.toString only in an admin-only log.
+            ResultException(BadGatewayResult("TyEACSTKNHST",
+                  o"""Error requesting OAuth2 access token:
+                      Cannot connect to the IDP's access token server"""))
           case ex @ (_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
             // We didn't even get a response!
-            ResultException(InternalErrorResult("TyEACSTKNREQ",
+            ResultException(InternalErrorResult("TyEACSTKNREQ2",
                   s"Error requesting access token: ${ex.toString}"))
           case ex: sj_OAuth2AccessTokenErrorResponse =>
             // We got an Error response.
@@ -737,7 +810,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def handleUserInfoResponse(redirBackRequest: GetRequest, idp: IdentityProvider,
-          userInfoResponse: sj_Response, anyIdToken: Opt[OidcIdToken],
+          userInfoResponse: sj_Response, anyOidcIdToken: Opt[OidcIdToken],
           authnState: OngoingAuthnState): p_Result = {
 
     import redirBackRequest.siteId
@@ -745,8 +818,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val body = userInfoResponse.getBody
 
     // Already checked in authnRedirBack().
-    dieIf(authnState.authnSiteId != siteId, "TyEAUTSITEID003",
-          s"Wrong authn site: $siteId, should be: ${authnState.authnSiteId}")
+    dieIf(authnState.authnViaSiteId != siteId, "TyEAUTSITEID003",
+          s"Wrong authn site: $siteId, should be: ${authnState.authnViaSiteId}")
     dieIf(authnState.nextStep != "redir_back", "TyEAUTSITEID004",
           s"Wrong step: ${authnState.nextStep}")
 
@@ -788,9 +861,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           }
 
     var oauthDetails: OpenAuthDetails = (idp.protocol match {
-      case ProtoNameOidc => parseOidcUserInfo(json, idp)
-      case ProtoNameOAuth2 => parseCustomUserInfo(json, idp)
-      case bad => die("TyE5F5RKS56", s"Bad auth protocol: $bad")
+      // Some providers, e.g. Google, uses OIDC user info also for OAuth2 [goog_oidc]
+      case ProtoNameOidc | ProtoNameOAuth2 if anyOidcIdToken.isDefined =>
+        parseOidcUserInfo(json, idp)
+      case ProtoNameOAuth2 =>
+        parseCustomUserInfo(json, idp)
+      case bad =>
+        die("TyE5F5RKS56", s"Bad auth protocol: $bad")
     }) getOrIfBad { errMsg =>
       return BadGatewayResult("TyEUSRINFJSONUSE",
             s"Got invalid user json from IDP: ${errMsg}")
@@ -801,7 +878,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             s"Got an invalid email address from IDP: ${problem.message}")
     })
 
-    anyIdToken foreach { idToken: OidcIdToken =>
+    anyOidcIdToken foreach { idToken: OidcIdToken =>
       oauthDetails = oauthDetails.copy(oidcIdToken = Some(idToken))
     }
 
@@ -811,19 +888,20 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       case Some(origSiteNonce) =>
         // We're currently at the authn site, having authenticated at the IDP here
         // at this site, on behalf of another site — now we need to redirect
-        // back to that other site, the original site.
+        // back to that other site, the login-to site.
         // Already checked above, but why not again:
-        dieIf(authnStateWithIdentity.authnSiteId != siteId, "TyE305K24")
+        dieIf(authnStateWithIdentity.authnViaSiteId != siteId, "TyE305K24")
 
         val nextSecretNonce = nextRandomString()
         authnStateCache.put(nextSecretNonce, authnStateWithIdentity.copy(
               lastStepAt = globals.now(),
               nextStep = "finish_at_orig"))
 
-        val continueAtOrigSiteUrl =
-              routes.LoginWithOpenAuthController.finishAtOrigSite(nextSecretNonce)
+        val continueAtLoginToSiteUrl =
+              authnStateWithIdentity.loginToSiteOrigin +
+                  routes.LoginWithOpenAuthController.finishAtOrigSite(nextSecretNonce)
 
-        p_Results.Redirect(continueAtOrigSiteUrl, status = p_Status.SEE_OTHER)
+        p_Results.Redirect(continueAtLoginToSiteUrl, status = p_Status.SEE_OTHER)
 
       case None =>
         // We're at the correct site already — didn't need to redirect to any
@@ -844,7 +922,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           "TyE0AUTORIG", "There's no authn origin site")
 
     val currState = getAuthnStateOrThrow(secretNonce, "finish_at_orig",
-          origSiteId = siteId,
+          loginToSiteId = siteId,
+          loginToSiteOrigin = finishAtOrigSiteRequest.origin,
           maxAgeSeconds = Some(AFewSeconds)) // or "isInstantRedirect = true" ?
 
     // We don't actually need the start authn state for anything —
@@ -854,7 +933,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // and e.g. read some ToU or Privacy Policy — so skip maxAgeSeconds.
     val startStateNonce = currState.continueAtOrigSiteNonce getOrDie "TyE305MRKR2"
     val startState = getAuthnStateOrThrow(startStateNonce, "org_site_start_state",
-          origSiteId = siteId)
+          loginToSiteId = siteId,
+          loginToSiteOrigin = finishAtOrigSiteRequest.origin)
 
     // Check that we're back at the original site with the same authn state
     // as when we started — just that now we also have an identity,
@@ -935,9 +1015,23 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def finishAuthentication(providerName: String): Action[Unit] =
-        AsyncGetActionIsLogin { request =>
-    startOrFinishAuthenticationWithSilhouette(providerName, request)
+  def finishAuthentication(providerName: St): Action[U] = AsyncGetActionIsLogin { request =>
+    import controllers.Utils.ValidationImplicits._ // getFirst
+
+    // Maybe we're migrating to ScribeJava? And use this endpoint only for
+    // backwards compatibility, so all admins won't need to update their
+    // OAuth2 redirection URIs right now. Then, jump to the ScribeJava code instead.
+    val anyState = request.queryString.getFirst("state")
+    if (anyState.exists(_.endsWith("_scribejava_"))) {   // [migr_to_scribejava]
+      val anyCode = request.queryString.getFirst("code")
+      val anySessionState = request.queryString.getFirst("session_state")
+      authnRedirBackImpl(ProtoNameOAuth2, providerAlias = providerName,
+            state = anyState.get, session_state = anySessionState, code = anyCode.getOrElse(""),
+            request)
+    }
+    else {
+      startOrFinishAuthenticationWithSilhouette(providerName, request)
+    }
   }
 
 
@@ -1103,7 +1197,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           avatarUrl = p.avatarUrl)
     }
 
-    // Don't know about Facebook and GitHub. Twitter has no emails at all.
+    // Don't know about Facebook. Twitter has no emails at all.
     // We currently use only verified email addresses, from GitHub. [7KRBGQ20]
     // Gmail addresses have been verified by Google.  [gmail_verifd]
     // Facebook? Who knows what they do.
@@ -1117,8 +1211,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val authnState = OngoingAuthnState(
           authnXsrfToken = "",
-          authnSiteId = siteId,  // for now, will delete all this later anyway
-          origSiteId = NoSiteId, // we don't know
+          authnViaSiteId = siteId,  // for now, will delete all this later anyway
+          loginToSiteId = NoSiteId, // we don't know
+          loginToSiteOrigin = "",   // don't know
           protocol = ProtoNameOAuth2,
           providerAlias = "dummy",
           // ----
@@ -1178,19 +1273,22 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     throwForbiddenIf(siteSettings.enableSso,
           "TyESSO0OAUTHLGI", "OpenAuth login disabled, because SSO enabled")
-    throwForbiddenIf(siteSettings.useOnlyCustomIdps && anyCustomIdp.isEmpty,
-          "TyECUIDPOAULGI",
-          s"Server default authentication with ${authnState.protoAlias
-              } is disabled — using only site custom IDP")
-    dieIf(anyCustomIdp.exists(!_.isPerSite), "TyE305MRK24B",
-          s"Not site custom IDP: ${anyCustomIdp.map(_.protoAlias)}")
+
+    if (siteSettings.useOnlyCustomIdps) {
+      throwForbiddenIf(anyCustomIdp.isEmpty,
+            "TyECUIDPOAULGI",
+            s"Server default authentication with ${authnState.protoAlias
+                } is disabled — using only site custom IDP")
+      throwForbiddenIf(anyCustomIdp.exists(!_.isSiteCustom), "TyE305MRK24B",
+            s"Not a site custom IDP: ${anyCustomIdp.map(_.protoAlias)}")
+    }
 
     val oauthDetails: OpenAuthDetails = authnState.extIdentity.getOrThrowForbidden(
           "TyE305MRKGM2", "No cached ext identity")
 
-    throwForbiddenIf(authnState.origSiteId != NoSiteId &&
-              authnState.origSiteId != siteId, "TyEORGSITEID004",
-          s"Wrong orig site: $siteId, should be: ${authnState.origSiteId}")
+    throwForbiddenIf(authnState.loginToSiteId != NoSiteId &&
+              authnState.loginToSiteId != siteId, "TyEORGSITEID004",
+          s"Logging in to wrong site: $siteId, should be: ${authnState.loginToSiteId}")
 
     if (anyCustomIdp.isEmpty) {
       // Old Silhouette code — skip the below check then.
@@ -1273,9 +1371,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                 throwForbiddenIf(!siteSettings.allowSignup,
                     "TyE0SIGNUP02A", "Creation of new accounts is disabled")
 
-                // Better let IDPs check email domains themselves, if they want to?
+                // Better let a site specific IDP check email domains itself?
                 // Dupl check [alwd_eml_doms]
-                throwForbiddenIf(!oauthDetails.isPerSite &&
+                throwForbiddenIf(!oauthDetails.isSiteCustomIdp &&
                       !siteSettings.isEmailAddressAllowed(
                           oauthDetails.emailLowercasedOrEmpty),
                       "TyEBADEMLDMN_-OAUTH_", o"""You cannot sign up with this email
@@ -1467,7 +1565,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // currently save in the database that the email has been verified.
 
     val authnState = getAuthnStateOrThrow(secretNonce, "ask_if_link",
-          origSiteId = request.siteId)
+          loginToSiteId = request.siteId)
     askIfLinkIdentityToUser(authnState, request)
   }
 
@@ -1532,7 +1630,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
     val linkSecret = request.body.getOrThrowBadReq("linkSecret")
-    val authnState = getAuthnStateOrThrow(linkSecret, "ans_link_q", origSiteId = siteId)
+    val authnState = getAuthnStateOrThrow(linkSecret, "ans_link_q", loginToSiteId = siteId)
 
     val matchingTyUser = authnState.matchingTyUser getOrDie "TyE004MKP202"
     val extIdentity = authnState.extIdentity getOrDie "TyE6M9MXK201"
@@ -1675,7 +1773,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // to reuse the same nonce here — direct client-server communication,
     // nothing else involved.)
     val authnState = getAuthnStateOrThrow(
-          secretNonce, "create_user", origSiteId = siteId, keepStateInCache = true)
+          secretNonce, "create_user", loginToSiteId = siteId, keepStateInCache = true)
     /* UX: A more user friendly message? Like:
         throwForbidden("DwE50VC4", o"""Bad auth data cache key — this happens if you wait
              rather long (many minutes) with submitting the dialog.
@@ -1701,7 +1799,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
     // IDPs can check email domains themselves.  Dupl check [alwd_eml_doms]
-    throwForbiddenIf(!oauthDetails.isPerSite &&
+    throwForbiddenIf(!oauthDetails.isSiteCustomIdp &&
           !siteSettings.isEmailAddressAllowed(emailAddress),
           "TyEBADEMLDMN_-OAUTHB", "You cannot sign up using that email address")
 
@@ -1923,45 +2021,86 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   def getIdentityProvider(authnState: OngoingAuthnState, dao: SiteDao)
           : IdentityProvider = {
-    import authnState.{protocol, providerAlias}
-
+    import authnState.{protocol, providerAlias, protoAlias}
     if (authnState.usesSiteCustomIdp) {
-      return dao.getIdentityProviderByAlias(protocol, providerAlias).getOrThrowForbidden(
-            "TyE0SITEIDP", s"No such site custom IDP: ${authnState.protoAlias}")
+      dao.getSiteCustomIdentityProviderByAlias(protocol, providerAlias)
+                .getOrThrowForbidden(
+                    "TyE0SITEIDP", s"No such site custom IDP: $protoAlias")
     }
+    else {
+      getServerGlobalIdentityProvider(authnState, dao).getOrIfBad(problem =>
+            throwForbidden("TyEGETGLOBIDP02", problem))
+    }
+  }
+
+
+  private def getServerGlobalIdentityProvider(authnState: OngoingAuthnState, dao: SiteDao)
+          : IdentityProvider Or ErrMsg = {
+    import authnState.{protocol, providerAlias, protoAlias}
 
     // Currently all server global IDPs happen to use OAuth2.
     throwForbiddenIf(protocol != ProtoNameOAuth2, "TyE0SRVDEFIDP01",
-          s"No such server default IDP: ${authnState.protoAlias}")
+          s"No such server default IDP: $protoAlias")
+
+    // We'll check in the site settings if the server global IDP that pat wants
+    // to login with, is actually enabled [ck_glob_idp_enb].
+    // First, here: [glob_idp_enb_1], we check if the IDP is enabled
+    // at the login-to site.  Then, here: [glob_idp_enb_2], we check if it's
+    // enabled at the authn-via site.
+    val siteSettings = dao.getWholeSiteSettings()
 
     // Use the Silhouette config — until done migrating all sites, incl
     // other people's self hosted sites.
     import talkyard.server.authn.{ServerDefIdpAliases => SDIA}
+    var trustVerifiedEmailAddr = false
+    var userInfoUrl: St = ""
     val s: OAuth2Settings = providerAlias match {
-      case SDIA.Google => googleProvider().settings
-      case SDIA.GitHub => githubProvider().settings
+      case SDIA.Facebook =>
+        if (!siteSettings.enableFacebookLogin) return Bad("Facebook login not enabled")
+        userInfoUrl = "https://graph.facebook.com/v3.2/me"  // oidc? or custom oauth2?
+        facebookProvider().settings
+      case SDIA.Google =>
+        // Any better way to find out if enabled, than having a separate settings
+        // field per IDP? There can be a hundred!? [oh_so_many_idps]
+        if (!siteSettings.enableGoogleLogin) return Bad("Google login not enabled")
+        // Google's OAuth2 impl returns user info in OIDC format. [goog_oidc]
+        userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo"
+        trustVerifiedEmailAddr = true // [gmail_verifd]
+        googleProvider().settings
+      case SDIA.GitHub =>
+        if (!siteSettings.enableGitHubLogin) return Bad("GitHub login not enabled")
+        // To do:
+        // trustVerifiedEmailAddr = true // [gmail_verifd]
+        // But first need to "copy" the custom Silhouette GitHub impl?
+        // See: CustomGitHubProfileParser, CustomGitHubProvider below.
+        githubProvider().settings
+      case SDIA.LinkedIn =>
+        if (!siteSettings.enableLinkedInLogin) return Bad("LinkedIn login not enabled")
+        linkedinProvider().settings
       case _ =>
-        throwForbidden("TyE0SRVDEFIDP02", s"IDP not yet supported via ScribeJava: ${
-              authnState.protoAlias}")
+        return Bad(s"IDP not yet impl with ScribeJava: $protoAlias  [TyEGLOBIDPUNSUP]")
     }
 
     // The dummy_TyE... below aren't needed — the correct endpoints are
     // included in ScribeJava already.
     val idp = IdentityProvider(
           confFileIdpId = Some(providerAlias),
-          protocol = ProtoNameOAuth2,
+          protocol = protocol,
           alias = providerAlias,
           enabled = true,
           displayName = Some(providerAlias),
           description = None,
           adminComments = None,
-          trustVerifiedEmail = false, // but yes, if Gmail or GitHub  [gmail_verifd]
+          trustVerifiedEmail = trustVerifiedEmailAddr,
           linkAccountNoLogin = false,
           guiOrder = None,
           syncMode = 1, // ImportOnFirstLogin
           oauAuthorizationUrl = "dummy_TyESRIBEJAVA01",
           oauAccessTokenUrl =  "dummy_TyESRIBEJAVA02",
-          oidcUserInfoUrl = "dummy_TyESRIBEJAVA03",
+          oidcUserInfoUrl =
+                if (userInfoUrl.nonEmpty) userInfoUrl
+                else s.apiURL.getOrThrowForbidden(
+                      "TyE402MSR4Y", s"No user info URL configured for $protoAlias"),
           oidcUserInfoFieldsMap = None,
           oidcLogoutUrl = None,
           oauClientId = s.clientID,
@@ -1971,7 +2110,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           oauAuthReqHostedDomain = None,
           oidcUserinfoReqSendUserIp = None)
 
-    idp
+    Good(idp)
   }
 
 

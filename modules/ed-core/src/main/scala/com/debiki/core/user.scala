@@ -1638,7 +1638,7 @@ class OidcIdToken(val idTokenStr: St) {
   * @param oidcIdToken
   */
 case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
-  confFileIdpId: Opt[ConfFileIdpId] = None,
+  confFileIdpId: Opt[ConfFileIdpId] = None,  // RENAME QUICK to serverGlobalIdpId
   idpId: Opt[IdpId] = None,
   idpUserId: St,
   username: Opt[St] = None,
@@ -1663,8 +1663,8 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
           idpId = idpId,
           idpUserId = idpUserId)
 
-  def isPerSite: Bo = idpId.isDefined
-  def isFromConfFile: Bo = confFileIdpId.isDefined
+  def isSiteCustomIdp: Bo = idpId.isDefined
+  def isServerGlobalIdp: Bo = confFileIdpId.isDefined
 
   def prettyIdpId: St = IdentityProvider.prettyId(confFileIdpId, idpId = idpId)
 

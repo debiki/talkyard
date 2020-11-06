@@ -156,7 +156,7 @@ trait SettingsDao {
         val (admin: User, adminsIdentities: Seq[Identity]) =
               adminsAndIdentities.find(_._1.id == byWho.id) getOrDie "TyE5MGRT4"
         dieIf(admin.id != byWho.id, "TyE36KRST743")
-        val siteIdps = tx.loadAllIdentityProviders()
+        val siteIdps = tx.loadAllSiteCustomIdentityProviders()
         val adminsEnabledIdentity = adminsIdentities find {
           case oau: OpenAuthIdentity =>
             oau.openAuthDetails.idpId match {

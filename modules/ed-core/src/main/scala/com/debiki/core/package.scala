@@ -1181,6 +1181,7 @@ package object core {
 
 
   implicit class GetOrBadMap[G, B](val underlying: Or[G, B]) {
+    def ifBad(fn: B => Nothing): U = underlying.badMap(fn)
     def getOrIfBad(fn: B => Nothing): G = underlying.badMap(fn).get
     def getOrDie(errorCode: String): G =
       underlying.badMap(problem => die(errorCode, s"Bad.getOrDie: $problem")).get

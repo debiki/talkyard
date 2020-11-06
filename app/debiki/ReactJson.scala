@@ -100,7 +100,7 @@ class JsonMaker(dao: SiteDao) {
     val globals = pageReq.context.globals
     val site = dao.theSite()
     val siteSettings = dao.getWholeSiteSettings()
-    val idps = dao.getIdentityProviders(onlyEnabled = true)
+    val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && globals.becomeFirstSiteOwnerEmail.isEmpty
     val everyonesPerms = dao.getPermsForEveryone()
@@ -355,7 +355,7 @@ class JsonMaker(dao: SiteDao) {
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault))
 
     val site = dao.theSite()
-    val idps = dao.getIdentityProviders(onlyEnabled = true)
+    val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
 
     val jsonObj = Json.obj(
       "dbgSrc" -> "PgToJ",
@@ -416,7 +416,7 @@ class JsonMaker(dao: SiteDao) {
     val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
     val site = dao.theSite()
-    val idps = dao.getIdentityProviders(onlyEnabled = true)
+    val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
     var result = Json.obj(
       "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,

@@ -114,8 +114,8 @@ case class IdentityProvider(
   def isOAuth2NotOidc: Bo = protocol == ProtoNameOAuth2
   def isOpenIdConnect: Bo = protocol == ProtoNameOidc
 
-  def isPerSite: Bo = idpId.isDefined
-  def isFromConfFile: Bo = confFileIdpId.isDefined
+  def isSiteCustom: Bo = idpId.isDefined
+  def isServerGlobal: Bo = confFileIdpId.isDefined
 
 }
 

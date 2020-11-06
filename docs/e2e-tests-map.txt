@@ -108,6 +108,12 @@ login -
     with oidc,
     with server default oauth2:
           - TESTS_MISSING?  TyTE2E503RK24
+  oidc:
+    sign up witk Keycloak:
+    log in with Keycloak:
+  link identity to user:
+    server global idp, e.g. Gmail:   TESTS_MISSING
+    site custom idp, e.g. Keycloak:
 
 sso,
 single-sign-on:  (3093533)

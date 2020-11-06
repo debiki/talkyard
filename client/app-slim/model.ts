@@ -996,6 +996,10 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
   watchbarStartsOpen?: boolean;         // default: true
   showSocialButtons?: boolean;          // default: undefined —> false
   facebookAppId?: string;               // default: undefined —> no FB insight statistics
+
+  // Temp, feature flag.
+  // ffTryScribeJava?: Bo — server side only.
+  ffUseScribeJava?: Bo;
 }
 
 
