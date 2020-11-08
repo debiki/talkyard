@@ -371,12 +371,21 @@ class EdSecurity(globals: Globals) {
 
         (sessionIdStatus, xsrfOk, anyNewXsrfCookie)
       }
+      else if (request.method != "POST") {
+        // Sometimes people do `curl -I http://...` which sends a HEAD
+        // request — but only GET and POST, sometimes OPTIONS,
+        // are allowed.  It's nice, though, if in the X-Error-Code response
+        // header there's an easy to read error code, so the cURL user
+        // won't need to visit Ty's support forum and ask what's happening.
+        // Hence the below unusually long "TyE_..." error codes with underscores:
+        val details = s"Request method not allowed: ${request.method}"
+        throwForbiddenIf(request.method == "HEAD",
+              "TyE_REQUEST_METHOD__HEAD__NOT_ALLOWED", details)
+        throwForbidden( "TyE_REQUEST_METHOD_NOT_ALLOWED", details)
+      }
       else {
         // Reject this request if the XSRF token is invalid,
         // or if the SID is corrupt (but not if simply absent).
-
-        if (request.method != "POST")
-          throwForbidden("TyEBADREQMTD", s"Bad request method: ${request.method}")
 
         // There must be an xsrf token in a certain header, or in a certain
         // input in any POST:ed form data. Check the header first, in case
