@@ -543,7 +543,7 @@ const ExtIdpAuthnBtn = createClassAndFactory({
       // Try-catch not needed, but anyway.
       try {
         const store: Store = ReactStore.allData();
-        viaAuthnOrigin = store.settings.ffUseScribeJava;
+        viaAuthnOrigin = site_isFeatFlagOn(store, 'ffUseScribeJava');
         const mainWin = getMainWin();
         viaAuthnOrigin ||= mainWin.location.hash.indexOf('&tryScribeJava&') >= 0;
       }

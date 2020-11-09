@@ -32,6 +32,8 @@ Dl = download — change to Dwnl? so rare
 Dis = disabled, Ena = enabled
 Ed  = edit
 Edr = editor
+Feat = feature
+Flg = flag
 Fxd = fixed, Stc = static
 Gst = guest
 Gt  = greater than, Lt = less than

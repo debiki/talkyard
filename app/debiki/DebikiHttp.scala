@@ -363,7 +363,8 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
 
 
   implicit class RichJsLookupResult(val underlying: JsLookupResult) {
-    def asOptStringNoneIfBlank: Option[String] = underlying.asOpt[String].map(_.trim) match {
+    def asTrimmedSt: St = underlying.asOpt[St].map(_.trim) getOrElse ""
+    def asOptStringNoneIfBlank: Opt[St] = underlying.asOpt[St].map(_.trim) match {
       case Some("") => None
       case x => x
     }

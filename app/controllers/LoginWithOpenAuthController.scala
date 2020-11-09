@@ -307,6 +307,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
               throwForbidden(s"Cannot login via ${authnState.protoAlias
                     }: $problem [TyEGETGLOBIDP01]"))
 
+        val site = request.site
+        throwForbiddenIf(
+              !site.featureFlags.contains("ffTryScribeJava") &&
+              !site.featureFlags.contains("ffUseScribeJava"),
+              "TyE0FFSCRJVA", s"Add feature flag ffTryScribeJava or ffUseScribeJava")
+
         saveAuthnStateRedirToAuthnOrigin(authnState)
       }
       else {

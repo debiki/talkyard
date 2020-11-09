@@ -59,10 +59,11 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
       val siteId = (jsObj \ "id").as[SiteId]
       val newStatusInt = (jsObj \ "status").as[Int]
       val newNotes = (jsObj \ "superStaffNotes").asOptStringNoneIfBlank
+      val featureFlags = (jsObj \ "featureFlags").asTrimmedSt
       val newStatus = SiteStatus.fromInt(newStatusInt) getOrElse {
         throwBadRequest("EsE402KU2", s"Bad status: $newStatusInt")
       }
-      SuperAdminSitePatch(siteId, newStatus, newNotes)
+      SuperAdminSitePatch(siteId, newStatus, newNotes, featureFlags = featureFlags)
     })
     globals.systemDao.updateSites(patches)
     listSitesImpl()
@@ -93,6 +94,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
       "canonicalHostname" -> JsStringOrNull(site.canonicalHostname.map(_.hostname)),
       "name" -> site.name,
       "superStaffNotes" -> JsStringOrNull(site.superStaffNotes),
+      "featureFlags" -> JsString(site.featureFlags),
       "createdAtMs" -> site.createdAt.toUnixMillis,
       "stats" -> JsSiteStats(site.stats),
       "staffUsers" -> JsArray(staff.map { staffUser =>

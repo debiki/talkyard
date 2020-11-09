@@ -75,8 +75,14 @@ object Site {
 /**
   * @param hostname — doesn't include any port number.
   */
-case class SiteBrief(id: SiteId, pubId: PubSiteId, hostname: Option[String], status: SiteStatus) {
-  def isTestSite: Boolean = id <= Site.MaxTestSiteId
+case class SiteBrief(
+  id: SiteId,
+  pubId: PubSiteId,
+  hostname: Opt[St],
+  status: SiteStatus,
+  featureFlags: St,
+) {
+  def isTestSite: Bo = id <= Site.MaxTestSiteId
 }
 
 
@@ -93,7 +99,8 @@ sealed abstract class SiteStatus(val IntValue: Int) {
 case class SuperAdminSitePatch(
   siteId: SiteId,
   newStatus: SiteStatus,
-  newNotes: Option[String])
+  newNotes: Opt[St],
+  featureFlags: St)
 
 
 object SiteStatus {
@@ -185,10 +192,11 @@ trait SiteIdHostnames {
 }
 
 
-case class Site(
+case class Site(  // Remove? Use SiteBrief or SiteDetailed instead?
   id: SiteId,
   pubId: PubSiteId,
   status: SiteStatus,
+  featureFlags: St,
   name: String,
   createdAt: When,
   creatorIp: String,
@@ -200,12 +208,13 @@ case class Site(
   def canonicalHostname: Option[Hostname] = hostnames.find(_.role == Hostname.RoleCanonical)
   def canonicalHostnameStr: Option[String] = canonicalHostname.map(_.hostname)
 
-  def allHostnames: Seq[String] = hostnames.map(_.hostname)
+  def allHostnames: Seq[St] = hostnames.map(_.hostname)
 
-  def isTestSite: Boolean = id <= MaxTestSiteId
+  def isTestSite: Bo = id <= MaxTestSiteId
 
-  def brief =
-    SiteBrief(id, pubId, canonicalHostname.map(_.hostname), status)
+  def brief: SiteBrief =
+    SiteBrief(id, pubId, canonicalHostname.map(_.hostname), status,
+          featureFlags = featureFlags)
 }
 
 
@@ -226,6 +235,7 @@ case class SiteInclDetails(  // [exp] ok use
   stats: ResourceUse,
   // Don't incl in json exports — it's for super staff only.
   superStaffNotes: Option[String] = None,
+  featureFlags: St = "",  // incl or not in exports? Right now, no.
 ) {
 
   def canonicalHostname: Option[HostnameInclDetails] =
