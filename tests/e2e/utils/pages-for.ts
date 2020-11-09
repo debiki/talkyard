@@ -1235,7 +1235,7 @@ export class TyE2eTestBrowser {
       this.waitForVisible(selector, ps);
     }
 
-    waitForVisible(selector: string, ps: { timeoutMs?: number } = {}) {  // RENAME to waitForDisplayed() above
+    waitForVisible(selector: string, ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}) {  // RENAME to waitForDisplayed() above
       this.waitUntil(() => this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
@@ -4000,8 +4000,8 @@ export class TyE2eTestBrowser {
         this.waitAndGetElemWithText(selector, name);
       },
 
-      waitForTopics: () => {
-        this.waitForVisible('.e2eF_T', { timeoutMs: 1000 });
+      waitForTopics: (ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}) => {
+        this.waitForVisible('.e2eF_T', ps);  // was timeoutMs: 1000 why?
       },
 
       waitForTopicVisible: (title: string) => {

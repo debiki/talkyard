@@ -362,8 +362,14 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
   },
 
   componentDidMount: function() {
+    // Sync delay w e2e test. Dupl code. [upd_ed_pv_delay]
     this.updatePreviewSoon = _.debounce(this.updatePreviewNow, 333);
-    this.saveDraftSoon = _.debounce(this.saveDraftNow, 2022);
+
+    this.saveDraftSoon = _.debounce(() => {
+      if (this.isGone) return;
+      this.saveDraftNow();  // [7AKBJ42]
+    }, 2022);
+
     window.addEventListener('unload', this.saveDraftUseBeacon);
 
     // Load editor scripts — but why??? skip? (WAITWJS) and any draft text.
@@ -398,6 +404,7 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
 
   componentWillUnmount: function() {
     this.isGone = true;
+    logD("ChatMessageEditor: componentWillUnmount")
     window.removeEventListener('unload', this.saveDraftUseBeacon);
     this.saveDraftNow();
   },
@@ -458,12 +465,14 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
     // If empty. Delete any old draft.  BUG [DRAFTS_BUG] preview doesn't get deleted properly
     if (!text) {
       if (oldDraft) {
-        console.debug(`Deleting draft${withBeacon}...`);
+        logD(`Deleting draft${withBeacon}...`);
         this.setState({ draftStatus: DraftStatus.Deleting });
         this.isSavingDraft = true;
         Server.deleteDrafts([oldDraft.draftNr], useBeacon || (() => {
+          // DUPL CODE, bad, here & above [UPSDFTDUPLCD]
           this.isSavingDraft = false;
-          console.debug("...Deleted draft.");
+          logD("...Deleted draft.");
+          if (this.isGone) return;
           this.setState({
             draft: null,
             draftStatus: DraftStatus.Deleted,
@@ -478,11 +487,13 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
       draftStatus: DraftStatus.SavingSmall,
     });
 
-    console.debug(`Saving draft${withBeacon}: ${JSON.stringify(draftToSave)}`);
+    logD(`Saving draft${withBeacon}: ${JSON.stringify(draftToSave)}`);
     this.isSavingDraft = true;
     Server.upsertDraft(draftToSave, useBeacon || ((draftWithNr: Draft) => {
+      // DUPL CODE, bad, here & above [UPSDFTDUPLCD]
+      logD("...Saved draft.");
+      if (this.isGone) return;
       this.isSavingDraft = false;
-      console.debug("...Saved draft.");
       this.setState({
         draft: draftWithNr,
         draftStatus: DraftStatus.SavedServerSide,
@@ -492,6 +503,8 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
     // Dupl code [4ABKR2JZ7]
+    logW(`... Error saving draft, status: ${errorStatusCode}`);
+    if (this.isGone) return;
     this.isSavingDraft = false;
     this.setState({
       draftStatus: DraftStatus.CannotSave,
@@ -620,6 +633,7 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
     const state = this.state;
     editor.openToWriteChatMessage(state.text, state.draft, state.draftStatus,
           (wasSaved, text, draft, draftStatus) => {
+      if (this.isGone) return;
       // Now the advanced editor has been closed.
       this.setState({
         advancedEditorInstead: false,

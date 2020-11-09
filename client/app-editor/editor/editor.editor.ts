@@ -141,7 +141,7 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   UNSAFE_componentWillMount: function() {
-    // Sync delay w e2e test. [upd_ed_pv_delay]
+    // Sync delay w e2e test. Dupl code. [upd_ed_pv_delay]
     this.updatePreviewSoon = _.debounce(this.updatePreviewNow, 333);
 
     this.saveDraftSoon = _.debounce(() => {
@@ -180,7 +180,7 @@ export const Editor = createFactory<any, EditorState>({
 
   componentWillUnmount: function() {
     this.isGone = true;
-    console.debug("Editor: componentWillUnmount");
+    logD("Editor: componentWillUnmount");
     window.removeEventListener('unload', this.saveDraftUseBeacon);
     this.saveDraftNow();
   },
@@ -356,7 +356,7 @@ export const Editor = createFactory<any, EditorState>({
       this.state.uploadFileXhr.abort();
     }
     else {
-      console.warn("Cannot cancel upload: No this.state.uploadFileXhr [DwE8UMW2]");
+      logW("Cannot cancel upload: No this.state.uploadFileXhr [DwE8UMW2]");
     }
   },
 
@@ -463,7 +463,7 @@ export const Editor = createFactory<any, EditorState>({
       // Happened in embedded comments iframe because of a bug. Fixed now, but keep this
       // anyway, in case there're other such iframe + iframe sync bugs?
       // @ifdef DEBUG
-      console.warn("Discussion button and editor reply-list out of sync: " +
+      logW("Discussion button and editor reply-list out of sync: " +
           "inclInReply && index >= 0  [TyE5UKJWVDQ2]");
       debugger;
       // @endif
@@ -517,7 +517,7 @@ export const Editor = createFactory<any, EditorState>({
       catch (ex) {
         // Oh well.
         if (!this.loggedCloneError) {
-          console.warn("Couldn't clone Partial<Store> from main iframe [TyECLONSTOR]", ex);
+          logW("Couldn't clone Partial<Store> from main iframe [TyECLONSTOR]", ex);
           // @ifdef DEBUG
           debugger;
           // @endif
@@ -765,7 +765,7 @@ export const Editor = createFactory<any, EditorState>({
 
     const setDraftAndGuidelines = (anyDraft?, anyGuidelines?) => {
       const draft = anyDraft || BrowserStorage.get(draftLocator);
-      console.debug("Setting draft and guidelines: !!anyDraft: " + !!anyDraft +
+      logD("Setting draft and guidelines: !!anyDraft: " + !!anyDraft +
           " !!draft: " + !!draft +
           " !!anyGuidelines: " + !!anyGuidelines);
       const newState: Partial<EditorState> = {
@@ -812,10 +812,10 @@ export const Editor = createFactory<any, EditorState>({
       return;
     }
 
-    console.debug("Loading draft and guidelines...");
+    logD("Loading draft and guidelines...");
     Server.loadDraftAndGuidelines(draftLocator, writingWhat, categoryId, pageType,
         (guidelinesSafeHtml: string | U, draft?: Draft) => {
-      console.debug("Done loading draft and guidelines.");
+      logD("Done loading draft and guidelines.");
       const state: EditorState = this.state;
       if (this.isGone || !state.visible)
         return;
@@ -1056,7 +1056,7 @@ export const Editor = createFactory<any, EditorState>({
       // We'll continue editing in the simple inline editor, and it'll save the draft —
       // don't save here too; that could result in dupl drafts [TyT270424]. Also, no
       // can-continue-editing tips needed, because we're just switching to the simple inline editor.
-      this.clearAndClose();
+      this.clearAndCloseFineIfGone();
     }
     else {
       this.saveDraftClearAndClose();
@@ -1180,7 +1180,7 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   saveDraftUseBeacon: function() {
-    console.debug("saveDraftUseBeacon");
+    logD("saveDraftUseBeacon");
     this.saveDraftNow(undefined, UseBeacon);
   },
 
@@ -1193,7 +1193,7 @@ export const Editor = createFactory<any, EditorState>({
     // If we're closing the page, do try saving anyway, using becaon, because the current non-beacon
     // request will probably be aborted by the browser (since, if beacon, the page is getting unloaded).
     if (this.isSavingDraft && !useBeacon) {
-      console.debug("isSavingDraft already.");
+      logD("isSavingDraft already.");
       return;
     }
 
@@ -1202,7 +1202,7 @@ export const Editor = createFactory<any, EditorState>({
     const draftStatus: DraftStatus = state.draftStatus;
 
     if (!draftOldOrEmpty || draftStatus <= DraftStatus.NeedNotSave) {
-      console.debug("Need not save draft, because: !!draftOldOrEmpty: " +
+      logD("Need not save draft, because: !!draftOldOrEmpty: " +
           !!draftOldOrEmpty + " draftStatus: " + draftStatus);
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor(oldDraft);
@@ -1222,7 +1222,7 @@ export const Editor = createFactory<any, EditorState>({
     // Delete any old draft, if text empty.
     if (!text && !title) {
       if (oldDraft) {
-        console.debug("Deleting draft...");
+        logD("Deleting draft...");
         this.setState({
           // When closing editor, after having deleted all text, it's rather uninteresting
           // that the draft gets deleted — don't show a modal dialog about that.
@@ -1241,8 +1241,9 @@ export const Editor = createFactory<any, EditorState>({
         ReactActions.deleteDraft(
             state.editorsPageId,  // why needed? Won't delete a new topic draft? [DRAFTS_BUG]
             oldDraft, deleteDraftPost, useBeacon || (() => {
+          // DUPL CODE, bad, here & above [UPSDFTDUPLCD]
           this.isSavingDraft = false;
-          console.debug("...Deleted draft.");
+          logD("...Deleted draft.");
 
           // Could patch the store: delete the draft — so won't reappear
           // if [offline-first] and navigates back to this page.
@@ -1274,7 +1275,7 @@ export const Editor = createFactory<any, EditorState>({
     const saveInBrowser =
         !store.me.isLoggedIn || isEmbeddedNotYetCreatedPage(state);
 
-    console.debug(`Saving draft: ${JSON.stringify(draftToSave)}, ` + (
+    logD(`Saving draft: ${JSON.stringify(draftToSave)}, ` + (
         saveInBrowser ? "temp in browser" : "server side"));
 
     if (saveInBrowser) {
@@ -1296,8 +1297,9 @@ export const Editor = createFactory<any, EditorState>({
 
     this.isSavingDraft = true;
     Server.upsertDraft(draftToSave, useBeacon || ((draftWithNr: Draft) => {
+      // DUPL CODE, bad, here & above [UPSDFTDUPLCD]
+      logD("...Saved draft.");
       this.isSavingDraft = false;
-      console.debug("...Saved draft.");
 
       const state: EditorState = this.state;
       if (this.isGone || !state.visible)
@@ -1316,6 +1318,8 @@ export const Editor = createFactory<any, EditorState>({
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
     // Dupl code [4ABKR2JZ7]
+    logW(`... Error saving draft, status: ${errorStatusCode}`);
+    if (this.isGone) return;
     this.isSavingDraft = false;
     this.setState({
       draftStatus: DraftStatus.CannotSave,
@@ -1371,7 +1375,7 @@ export const Editor = createFactory<any, EditorState>({
       //   "Go back and view the now edited post? It's on another page;
       //   you have navigated away frome it, to here""
       this.callOnDoneCallback(true);
-      this.clearAndClose(); // [6027TKWAPJ5]
+      this.clearAndCloseFineIfGone(); // [6027TKWAPJ5]
     });
   },
 
@@ -1383,7 +1387,7 @@ export const Editor = createFactory<any, EditorState>({
       // BUG (harmless) poor UX: See [JMPBCK] aboe.
       // Also, if we've navigaated away, seems any draft won't get deleted.
       this.callOnDoneCallback(true);
-      this.clearAndClose();
+      this.clearAndCloseFineIfGone();
     });
   },
 
@@ -1402,7 +1406,7 @@ export const Editor = createFactory<any, EditorState>({
     Server.createPage(data, (newPageId: string) => {
       // Could, but not needed, since assign() below:
       //   this.callOnDoneCallback(true);
-      this.clearAndClose();
+      this.clearAndCloseFineIfGone();
       window.location.assign('/-' + newPageId);
     });
   },
@@ -1411,7 +1415,7 @@ export const Editor = createFactory<any, EditorState>({
     const state: EditorState = this.state;
     ReactActions.insertChatMessage(state.text, state.draft, () => {
       this.callOnDoneCallback(true);
-      this.clearAndClose();
+      this.clearAndCloseFineIfGone();
     });
   },
 
@@ -1423,7 +1427,7 @@ export const Editor = createFactory<any, EditorState>({
         state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
       // Could, but not needed, since assign() below:
       //   this.callOnDoneCallback(true);
-      this.clearAndClose();
+      this.clearAndCloseFineIfGone();
       window.location.assign('/-' + pageId);
     });
   },
@@ -1517,10 +1521,11 @@ export const Editor = createFactory<any, EditorState>({
 
   saveDraftClearAndClose: function() {
     this.saveDraftNow(
-        (upToDateDraft?: Draft) => this.clearAndClose({ keepDraft: true, upToDateDraft }));
+        (upToDateDraft?: Draft) =>
+          this.clearAndCloseFineIfGone({ keepDraft: true, upToDateDraft }));
   },
 
-  clearAndClose: function(ps: { keepDraft?: true, upToDateDraft?: Draft } = {}) {
+  clearAndCloseFineIfGone: function(ps: { keepDraft?: true, upToDateDraft?: Draft } = {}) {
     const state: EditorState = this.state;
     const anyDraft: Draft = ps.upToDateDraft || state.draft;
 
@@ -1863,7 +1868,7 @@ export const Editor = createFactory<any, EditorState>({
               }
               catch (ex) {
                 if (!this.loggedStoreCloneWarning) {
-                  console.warn("Error getting author name from main iframe store clone", ex);
+                  logW("Error getting author name from main iframe store clone", ex);
                   debugger;
                   this.loggedStoreCloneWarning = true;
                 }
