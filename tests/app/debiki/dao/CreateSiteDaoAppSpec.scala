@@ -135,12 +135,12 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
         tx.updateSites(Seq(SuperAdminSitePatch(
               sitePubId1000.id, SiteStatus.HiddenUnlessAdmin,
               newNotes = Some("notes_notes"),
-              featureFlags = Some("ffTestFlagOne ffTestFlag2"))))
+              featureFlags = "ffTestFlagOne ffTestFlag2")))
       }
       globals.systemDao.dangerous_readWriteTransaction { tx =>
         val site = tx.loadSiteInclDetailsById(sitePubId1000.id).get
         site.superStaffNotes mustBe Some("notes_notes")
-        site.featureFlags mustBe Some("ffTestFlagOne ffTestFlag2")
+        site.featureFlags mustBe "ffTestFlagOne ffTestFlag2"
         site.status mustBe SiteStatus.HiddenUnlessAdmin
       }
     }
