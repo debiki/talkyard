@@ -299,16 +299,19 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
    * Strips "http(s)://server:port" from an URL. Returns None if "htt(s)://server"
    * was absent, or if there was nothing after the origin.
    */
-  def stripOrigin(url: String): Option[String] = url match {
+  def stripOrigin(url: St): Opt[St] = url match {
     case StripOriginRegex(_, _, path) => Option(path)
     case _ => None
   }
 
-  def stripSchemeSlashSlash(url: String): String =
+  def startsWithHttpOrHttps(url: St): Bo =
+    url.startsWith("https://") || url.startsWith("http://")
+
+  def stripSchemeSlashSlash(url: St): St =
     url.replaceFirst("https://", "").replaceFirst("http://", "")
 
   /** Returns '/' if there's no url path or the url is weird. */
-  def extractUrlPath(url: String) =
+  def extractUrlPath(url: St): St =
     stripOrigin(url).getOrElse("/").takeWhile(c => c != '#' && c != '&');
 
   // This should match too much, if something is wrong/weird, rather than too little

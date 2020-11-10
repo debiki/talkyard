@@ -623,7 +623,7 @@ trait CategoriesDao {
       // which other topics link to a topic. And if one of those linking topics
       // becomes access-restricted, then, the linked topic needs to be uncached
       // and rerendered, so the link disappears.  [cats_clear_cache]
-      emptyCache()
+      clearDatabaseCacheAndMemCache()
     }
     else {
       // Since this category was edited:

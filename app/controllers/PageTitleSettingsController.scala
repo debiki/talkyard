@@ -235,7 +235,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       // If is pinned globally, and we changed topic type to/from chat, then this page will/no-longer
       // be pinned in the watchbar. Then need to rerender the watchbar, affects all pages. [0GPHSR4]
       // Also: [ZBK2F4E]
-      request.dao.emptyCache()
+      request.dao.clearDatabaseCacheAndMemCache()
     }
     else {
       // Refresh cache, plus any forum page if this page is a forum topic.

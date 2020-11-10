@@ -1047,7 +1047,7 @@ case class SitePatcher(globals: debiki.Globals) {
     // If any changes, just empty the whole cache (for this site). It's too complicated to
     // figure out precisely which parts of the caches to invalidate.
     if (wroteToDatabase) {
-      dao.emptyCache()
+      dao.clearDatabaseCacheAndMemCache()
     }
 
     // Categories and pages is what the current Talkyard API consumers need. As of November 2019.

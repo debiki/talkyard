@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "ES2017",
+        "outDir": "../target/s-tyd",
+        "baseUrl": ".",
+        "paths": {
+            "*": [ "./*" ],
+            "src/*": ["./*"]
+        },
+        "types": [
+            "node",
+            //"@wdio/cli",
+            "ansi-colors",
+            "assert",
+            "core-js",
+            "lodash"]
+    },
+    "include": [
+    ]
+}

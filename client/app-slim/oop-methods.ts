@@ -650,6 +650,16 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 
 
 
+// Site
+//----------------------------------
+
+
+export function site_isFeatFlagOn(site: { siteFeatureFlags?: St }, featureFlag: St): Bo {
+  return _.includes(site.siteFeatureFlags, featureFlag);
+}
+
+
+
 // Store
 //----------------------------------
 

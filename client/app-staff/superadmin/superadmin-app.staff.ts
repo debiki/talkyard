@@ -120,7 +120,7 @@ const DashboardPanel = createFactory({
         r.div({ className: 's_SA_Filter' },
           r.div({}, "Filter hostnames, staff names, emails: (at least 2 chars)"),
           r.input({
-            tabindex: 1,
+            tabIndex: 1,
             value: this.state.filter,
             onChange: (event) => this.setState({
               filter: event.target.value.toLowerCase(),
@@ -153,8 +153,10 @@ const SiteTableRow = createComponent({
   displayName: 'SiteTableRow',
 
   getInitialState: function() {
+    const site: SASite = this.props.site;
     return {
-      newNotes: this.props.site.superStaffNotes,
+      newNotes: site.superStaffNotes,
+      newFeatureFlags: site.featureFlags,
     };
   },
 
@@ -164,9 +166,10 @@ const SiteTableRow = createComponent({
     Server.updateSites([site]);
   },
 
-  saveNotes: function() {
+  saveNotesAndFlags: function() {
     const site: SASite = _.clone(this.props.site);
     site.superStaffNotes = this.state.newNotes;
+    site.featureFlags = this.state.newFeatureFlags;
     Server.updateSites([site]);
   },
 
@@ -233,18 +236,29 @@ const SiteTableRow = createComponent({
           r.textarea({ className: 's_SA_S_Notes_Txt' + notesClass,
             onChange: (event) =>
                 this.setState({ newNotes: event.target.value }),
-            defaultValue: site.superStaffNotes || '' }),
-          this.state.newNotes === site.superStaffNotes ? null :
-            PrimaryButton({ className: 's_SA_S_Notes_SaveB', onClick: this.saveNotes },
-              "Save"));
+            defaultValue: site.superStaffNotes || '' }));
 
     // kB = kilobytes, 1000 bytes.  1 KiB (uppercase K) = 1 kibi =1024 bytes.
     // MB = 1000 * 1000 byte. MiB = 1024 * 1024 bytes.
     const ps = admin.prettyStats(site.stats);
-    const quota = r.div({ class: 's_SA_S_Storage'},
+    const quota = r.div({ className: 's_SA_S_Storage'},
         `db: ${ps.dbMb.toPrecision(2)} MB = ${ps.dbPercentStr}% of ${ps.dbMaxMb} MB`, r.br(),
         `fs: ${ps.fsMb.toPrecision(2)} MB = ${ps.fsPercentStr}% of ${ps.fsMaxMb} MB`
         );
+
+    const featureFlags =
+        r.div({},
+          r.input({ className: 's_SA_S_FeatFlgs',
+              onChange: (event) =>
+                  this.setState({ newFeatureFlags: event.target.value }),
+              defaultValue: site.featureFlags }));
+
+    const saveBtn = (
+            this.state.newNotes === site.superStaffNotes
+              && this.state.newFeatureFlags === site.featureFlags) ? null :
+        PrimaryButton({ className: 's_SA_S_Notes_SaveB',
+            onClick: this.saveNotesAndFlags },
+          "Save");
 
     return (
       r.tr({},
@@ -257,7 +271,8 @@ const SiteTableRow = createComponent({
           deleteButton,
           undeleteButton,
           purgeButton,
-          quota),
+          quota,
+          featureFlags),
         r.td({},
           r.div({},
             r.a({ href: '//' + canonHostname }, canonHostname),
@@ -265,7 +280,8 @@ const SiteTableRow = createComponent({
             createdAtStr),
           anyOldHostnames,
           staffUsers,
-          notes)));
+          notes,
+          saveBtn)));
   }
 });
 

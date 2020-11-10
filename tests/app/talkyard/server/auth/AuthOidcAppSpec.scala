@@ -136,7 +136,7 @@ class AuthOidcAppSpec extends DaoAppSuite {     RENAME // to IdentityProviderApp
               oidcProvider.protocol, oidcProvider.alias) mustBe None
 
         // New:
-        tx.loadAllIdentityProviders() mustBe Seq(oidcProviderEdited)
+        tx.loadAllSiteCustomIdentityProviders() mustBe Seq(oidcProviderEdited)
 
         // New:
         tx.loadIdentityProviderByAlias(
@@ -148,7 +148,7 @@ class AuthOidcAppSpec extends DaoAppSuite {     RENAME // to IdentityProviderApp
     "delete" in {
       daoSite1.writeTx { (tx, _) =>
         tx.deleteIdentityProviderById(oidcProviderEdited.idpId.get)
-        tx.loadAllIdentityProviders() mustBe Nil
+        tx.loadAllSiteCustomIdentityProviders() mustBe Nil
       }
     }
 
@@ -160,7 +160,7 @@ class AuthOidcAppSpec extends DaoAppSuite {     RENAME // to IdentityProviderApp
 
     "find it again" in {
       daoSite1.readTx { tx =>
-        tx.loadAllIdentityProviders() mustBe Seq(oidcProviderEdited)
+        tx.loadAllSiteCustomIdentityProviders() mustBe Seq(oidcProviderEdited)
       }
     }
   }

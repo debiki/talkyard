@@ -173,6 +173,9 @@ services:
   #    PEER_PORT: '5432'
   #    PEER_PASSWORD: 'public'
 
+  # Remove this? Instead,  s/d run --rm -p '9229:9229' nodejs   .. ?
+  # But how specify ipv4_address via `s/d run`?
+  #
   #test:
   #  build: images/gulp/
   #  image: ${DOCKER_REPOSITORY}/talkyard-test
@@ -223,15 +226,19 @@ services:
   #    internal_net:
   #      ipv4_address: ${INTERNAL_NET_TRACER_IP}
 
-  # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
-  # instead it just transpiles Typescript and Stylus.
-  gulp:
+  # The same as the 'test' container, except that 'nodejs' won't start the rest of
+  # the stack, instead it just transpiles Typescript and Stylus.
+  nodejs:
+    # RENAME dir from gulp to nodejs
     build: images/gulp/
+    # RENAME img from -gulp to -nodejs
     image: ${DOCKER_REPOSITORY}/talkyard-gulp
     tty: true  # colored logs
     volumes:
       - ./:/opt/talkyard/server/   # [NODEHOME]
-    command: ['yarn install && gulp watch']
+    #command: ['yarn install && gulp watch']
+    # But 'exit 0' won't work — not an executable file,
+    command: ['echo']
 
 
   # Would like to remove, but is incl in talkyard-prod-one's Compose file already,

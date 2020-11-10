@@ -31,6 +31,12 @@ import server = require('./server');
 import utils = require('../utils/utils');
 import c = require('../test-constants');
 
+// Required with  transpileOnly: true,
+// but without, this error:
+//     utils/pages-for.ts(33,26): error TS2306:
+//        File 'tests/e2e/test-types.ts' is not a module.
+//import IsWhere = require('../test-types');
+
 
 //  RENAME  this file to ty-e2e-test-browser.ts but wait a bit,
 //           I'll want to code review the wdio v4 —> v6 upgr first?
@@ -1229,7 +1235,7 @@ export class TyE2eTestBrowser {
       this.waitForVisible(selector, ps);
     }
 
-    waitForVisible(selector: string, ps: { timeoutMs?: number } = {}) {  // RENAME to waitForDisplayed() above
+    waitForVisible(selector: string, ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}) {  // RENAME to waitForDisplayed() above
       this.waitUntil(() => this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
@@ -3994,8 +4000,8 @@ export class TyE2eTestBrowser {
         this.waitAndGetElemWithText(selector, name);
       },
 
-      waitForTopics: () => {
-        this.waitForVisible('.e2eF_T', { timeoutMs: 1000 });
+      waitForTopics: (ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}) => {
+        this.waitForVisible('.e2eF_T', ps);  // was timeoutMs: 1000 why?
       },
 
       waitForTopicVisible: (title: string) => {

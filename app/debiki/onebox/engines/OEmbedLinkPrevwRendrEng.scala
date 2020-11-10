@@ -215,11 +215,15 @@ abstract class OEmbedLinkPrevwRendrEng(
 
       val result: String Or LinkPreviewProblem = {
         if (problem.nonEmpty) {
-          SECURITY; COULD // log provider error response in server logs only?
-          // Make visible to site/server admins only?
-          val respBody = response.body
-          Bad(LinkPreviewProblem(
-                unsafeProblem = problem + s"\n$provdrOrUnk says: " + respBody,
+          // Make the response.body visible to site/server admins? [admin_log]
+          // But don't include in the reply — e.g. Reddit returned a 38k large
+          // <html> doc, for a broken Reddit link — would waste space in Ty's
+          // database, and 38k <htmL> as plain text could confuse people?
+          // Log level Info, since probably not a problem with Ty but with the
+          // link preview provider?
+          logger.info(s"Link preview error: " + problem + s"\n$provdrOrUnk says: "
+              + response.body)
+          Bad(LinkPreviewProblem(unsafeProblem = problem,
                 unsafeUrl = unsafeUrl, errorCode = "TyELNPVRSP"))
         }
         else {

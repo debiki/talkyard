@@ -100,7 +100,7 @@ class JsonMaker(dao: SiteDao) {
     val globals = pageReq.context.globals
     val site = dao.theSite()
     val siteSettings = dao.getWholeSiteSettings()
-    val idps = dao.getIdentityProviders(onlyEnabled = true)
+    val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && globals.becomeFirstSiteOwnerEmail.isEmpty
     val everyonesPerms = dao.getPermsForEveryone()
@@ -129,6 +129,7 @@ class JsonMaker(dao: SiteDao) {
       "siteId" -> JsNumber(site.id),  // LATER remove in Prod mode [5UKFBQW2]
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
+      "siteFeatureFlags" -> JsString(site.featureFlags),
       "siteOwnerTermsUrl" -> JsStringOrNull(globals.siteOwnerTermsUrl),
       "siteOwnerPrivacyUrl" -> JsStringOrNull(globals.siteOwnerPrivacyUrl),
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
@@ -355,7 +356,7 @@ class JsonMaker(dao: SiteDao) {
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault))
 
     val site = dao.theSite()
-    val idps = dao.getIdentityProviders(onlyEnabled = true)
+    val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
 
     val jsonObj = Json.obj(
       "dbgSrc" -> "PgToJ",
@@ -372,6 +373,7 @@ class JsonMaker(dao: SiteDao) {
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
+      "siteFeatureFlags" -> JsString(site.featureFlags),
       // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
@@ -416,7 +418,7 @@ class JsonMaker(dao: SiteDao) {
     val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
     val site = dao.theSite()
-    val idps = dao.getIdentityProviders(onlyEnabled = true)
+    val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
     var result = Json.obj(
       "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
@@ -428,6 +430,7 @@ class JsonMaker(dao: SiteDao) {
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
+      "siteFeatureFlags" -> JsString(site.featureFlags),
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),

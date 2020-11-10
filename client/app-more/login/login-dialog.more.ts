@@ -537,10 +537,26 @@ const ExtIdpAuthnBtn = createClassAndFactory({
     const mayNotCreateUser =
             props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
 
+    // A bit weird, just now when migrating to ScribeJava.
+    let viaAuthnOrigin = false;
+    if (!props.idp) {
+      // Try-catch not needed, but anyway.
+      try {
+        const store: Store = ReactStore.allData();
+        viaAuthnOrigin = site_isFeatFlagOn(store, 'ffUseScribeJava');
+        const mainWin = getMainWin();
+        viaAuthnOrigin ||= mainWin.location.hash.indexOf('&tryScribeJava&') >= 0;
+      }
+      catch (ex) {
+      }
+    }
+
     const idp: IdentityProviderPubFields | U = props.idp;
     const urlPath = idp
         ? `/-/authn/${idp.protocol}/${idp.alias}`                // new & nice
-        : `/-/login-openauth/${props.provider.toLowerCase()}`;   // old, try to remove
+        : (viaAuthnOrigin
+          ? `/-/authn/oauth2/${props.provider.toLowerCase()}`     // always this instead?
+          : `/-/login-openauth/${props.provider.toLowerCase()}`); // old, try to remove
 
     const urlPathAndQuery = urlPath +
         '?' + mayNotCreateUser +
@@ -551,6 +567,7 @@ const ExtIdpAuthnBtn = createClassAndFactory({
         // it'll then instead return a html page that runs some javascript that updates our
         // window.opener, and then closes this popup. [49R6BRD2]
         (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
+        (viaAuthnOrigin ? 'authViaAuthnOrigin=true&' : '') +
         `returnToUrl=${props.anyReturnToUrl || ''}`;
 
     const url = origin() + urlPathAndQuery;

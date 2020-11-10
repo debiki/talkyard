@@ -15,7 +15,7 @@ fi  # / SKIP
 
 
 find specs/ -type f  \
-    | egrep -v '[23]browsers'  \
+    | egrep -v '[23]br'  \
     | egrep -v 'embedded-|UNIMPL|-impl\.|imp-exp-imp-exp-site'  \
     | sort \
     | ../../node_modules/.bin/wdio  wdio.conf.js  --parallel 3
@@ -23,13 +23,13 @@ find specs/ -type f  \
     # | grep 'navigation-as' \
 
 find specs/ -type f  \
-    | egrep '2browsers'  \
+    | egrep '2br'  \
     | egrep -v 'embedded-|UNIMPL|-impl\.'  \
     | sort \
     | ../../node_modules/.bin/wdio  wdio.conf.js  --2browsers
 
 find specs/ -type f  \
-    | egrep '3browsers'  \
+    | egrep '3br'  \
     | egrep -v 'embedded-|UNIMPL|-impl\.'  \
     | sort \
     | ../../node_modules/.bin/wdio  wdio.conf.js  --3browsers
@@ -45,7 +45,7 @@ find specs/ -type f  \
     | egrep -v 'gatsby'  \
     | egrep -v 'no-cookies'  \
     | egrep -v 'embedded-forum'  \
-    | egrep -v '[23]browsers|UNIMPL|-impl\.'  \
+    | egrep -v '[23]br|UNIMPL|-impl\.'  \
     | sort \
     | ../../node_modules/.bin/wdio  wdio.conf.js  --static-server-8080
 
@@ -55,14 +55,14 @@ find specs/ -type f  \
     | egrep 'embedded-'  \
     | egrep 'no-cookies'  \
     | egrep -v 'embedded-forum'  \
-    | egrep -v '[23]browsers|UNIMPL|-impl\.'  \
+    | egrep -v '[23]br|UNIMPL|-impl\.'  \
     | sort \
     | ../../node_modules/.bin/wdio  wdio.conf.js  --static-server-8080  --b3c
 
 # Two browsers tests. (There are none without cookies.)
 rm -f ./target/emb-comments-site-dump.json  # for the export-import tests
 find specs/ -type f  \
-    | egrep '2browsers'  \
+    | egrep '2br'  \
     | egrep 'embedded-'  \
     | egrep -v 'UNIMPL|-impl\.'  \
     | sort \

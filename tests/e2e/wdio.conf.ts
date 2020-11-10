@@ -30,11 +30,13 @@ let wasError = false;
 // So cannot look at the file names, to determine which capabilities we need.
 // Instead, we need to use the command line args, i.e. `settings` (USESTNGS).
 
-let specs = ['./specs/**/*.ts'];
+const specsPathPrefix = settings.isInProjBaseDir ? './tests/e2e' : '.';
+
+let specs = [`${specsPathPrefix}/specs/**/*.ts`];
 
 // This now not needed? wdio v6 has  --spec
 if (settings.only) {
-  specs = [`./specs/**/*${settings.only}*.ts`];
+  specs = [`${specsPathPrefix}/specs/**/*${settings.only}*.ts`];
 }
 
 
@@ -44,7 +46,16 @@ if (settings.only) {
 // --------------------------------------------------------------------
 
 
-let browserNameAndOpts: any = {
+interface BrowserNameAndOpts {
+  browserName: string;
+  acceptInsecureCerts?: boolean;
+  'goog:chromeOptions'?: any;
+  browserVersion?: string;
+  platformName?: string;
+  'sauce:options'?: any;
+}
+
+let browserNameAndOpts: BrowserNameAndOpts = {
   browserName: settings.browserName,
 };
 
@@ -52,7 +63,7 @@ let browserNameAndOpts: any = {
 // So don't. Webdriver.io/Selenium bug? (April 29 2018)
 if (browserNameAndOpts.browserName === 'chrome'
         || browserNameAndOpts.browserName.toLowerCase() === 'chromium') {
-  const opts: any = {
+  const opts = {
     args: [
       '--disable-notifications',
 
@@ -74,7 +85,7 @@ if (browserNameAndOpts.browserName === 'chrome'
       //'profile.password_manager_enabled': false,
       //credentials_enable_service: false,
       //password_manager_enabled: false,
-    },
+    } as any,
     //profile: {
     //  password_manager_enabled: false
     //},
@@ -138,6 +149,24 @@ else {
 }
 
 
+
+// --------------------------------------------------------------------
+// Browser drivers
+// --------------------------------------------------------------------
+
+// Recent Chromedriver versions list:
+// https://sites.google.com/a/chromium.org/chromedriver/downloads
+// (linked from: https://github.com/SeleniumHQ/selenium/wiki/ChromeDriver )
+
+// Also upgrade Selenium. [upd_chromedriver_ffdriver]
+const chromeDriverVersion = '86.0.4240.22';  // later:  87.0.4280.20
+
+// Minimum Firefox version >= 60
+const firefoxDriverVersion = '0.26.0';
+
+
+
+
 // --------------------------------------------------------------------
 // The config
 // --------------------------------------------------------------------
@@ -164,7 +193,7 @@ const config: WebdriverIO.Config = {
   specs,
 
   exclude: [
-    'specs/**/*__e2e-test-template__*.ts',
+    specsPathPrefix + '/specs/**/*__e2e-test-template__*.ts',
   ],
 
 
@@ -190,7 +219,7 @@ const config: WebdriverIO.Config = {
   // https://docs.saucelabs.com/reference/platforms-configurator
 
   capabilities: [
-    browserNameAndOpts
+    browserNameAndOpts as any
     // For Firefox to work, you need to make http://wildcard.localhost addresses work
     // (where 'wildcard' can be anything).
     // See: <../../../docs/wildcard-dot-localhost.md>.
@@ -265,21 +294,20 @@ const config: WebdriverIO.Config = {
   // Does use a Docker container with Chrome — so, can be invisible.
   //
   services: [
-    settings.useChromedriver ? 'chromedriver' : (
-      settings.useDevtoolsProtocol ? 'devtools' : (
-        ['selenium-standalone', {
+    settings.useChromedriver ? 'chromedriver' : (    // if script flag:  --cd
+      settings.useDevtoolsProtocol ? 'devtools' : (  // if script flag:  --dt
+        ['selenium-standalone', {                    // else the default
         logPath: 'logs',
         installArgs: {
           drivers: {
-            chrome: { version: '83.0.4103.39' },
-            // Minimum Firefox version >= 60
-            firefox: { version: '0.26.0' }
+            chrome: { version: chromeDriverVersion },
+            firefox: { version: firefoxDriverVersion }
           }
         },
         args: {
           drivers: {
-            chrome: { version: '83.0.4103.39' },
-            firefox: { version: '0.26.0' }
+            chrome: { version: chromeDriverVersion },
+            firefox: { version: firefoxDriverVersion }
           }
         }}])),
 
@@ -316,10 +344,13 @@ const config: WebdriverIO.Config = {
   framework: 'mocha',
 
   // The number of times to retry the entire specfile when it fails as a whole
-  // specFileRetries: 1,
+  specFileRetries: settings.specFileRetries,
 
   // Whether or not retried specfiles should be retried immediately or deferred to the end of the queue
-  // specFileRetriesDeferred: false,
+  // specFileRetriesDeferred: true, — the default
+
+  // Delay in seconds between the spec file retry attempts
+  specFileRetriesDelay: 1,  // default: 0
 
   // Test reporter for stdout.
   // The only one supported by default is 'dot'
@@ -616,10 +647,11 @@ const config: WebdriverIO.Config = {
 
 if (settings.staticServer8080) {
   // https://webdriver.io/docs/static-server-service.html
+  console.log(`\n\nCWD: ${process.cwd()}\n`);
   const server: WebdriverIO.ServiceEntry = ['static-server', {
     port: 8080,  // note: eighty-eighy
     folders: [
-      { path: './target/', mount: '/' }],
+      { path: 'target/', mount: '/' }],
   }];
   console.log(`I'll start a static server:  ${JSON.stringify(server)}`)
   config.services.push(server);
@@ -627,10 +659,11 @@ if (settings.staticServer8080) {
 
 if (settings.staticServerGatsbyNew8000) {
   // TODO use port 8081 instead of colliding with 8000, so can run in prallel.
+  console.log(`\n\nCWD: ${process.cwd()}\n`);
   const server: WebdriverIO.ServiceEntry = ['static-server', {
     port: 8000, // eight thousand
     folders: [
-      { path: '../../modules/gatsby-starter-blog/public/', mount: '/' }],
+      { path: 'modules/gatsby-starter-blog/public/', mount: '/' }],
   }];
   console.log(`I'll start a static server for Gatsby:  ${JSON.stringify(server)}`)
   config.services.push(server);
@@ -638,10 +671,11 @@ if (settings.staticServerGatsbyNew8000) {
 
 if (settings.staticServerGatsbyOld8000) {
   // TODO use port 8082 instead of colliding with 8000
+  console.log(`\n\nCWD: ${process.cwd()}\n`);
   const server: WebdriverIO.ServiceEntry = ['static-server', {
     port: 8000, // eight thousand
     folders: [
-      { path: '../../modules/gatsby-starter-blog-ed-comments-0.4.4/public/', mount: '/' }],
+      { path: 'modules/gatsby-starter-blog-ed-comments-0.4.4/public/', mount: '/' }],
   }];
   console.log(`I'll start a static server for Gatsby, old:  ${JSON.stringify(server)}`)
   config.services.push(server);

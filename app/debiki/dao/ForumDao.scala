@@ -167,7 +167,7 @@ trait ForumDao {
     }
 
     // So settings get refreshed (might have been changed above.)
-    emptyCache()
+    clearDatabaseCacheAndMemCache()
 
     Some(result)
   }

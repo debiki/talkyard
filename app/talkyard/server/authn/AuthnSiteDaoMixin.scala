@@ -36,7 +36,7 @@ trait AuthnSiteDaoMixin {
   // ----- Identity Providers
 
 
-  def upsertIdentityProviders(idps: Seq[IdentityProvider]): AnyProblem = {
+  def upsertSiteCustomIdentityProviders(idps: Seq[IdentityProvider]): AnyProblem = {
     writeTx { (tx, staleStuff) =>
       idps foreach { idp =>
         tx.upsertIdentityProvider(idp) ifProblem { problem =>
@@ -55,23 +55,24 @@ trait AuthnSiteDaoMixin {
 
     // Later: Uncache only those that actually got changed.
     uncacheScribeJavaAuthnServices(idps)
-    uncacheIdentityProviders(idps)
+    uncacheSiteCustomIdentityProviders(idps)
 
     Fine
   }
 
 
-  def getIdentityProviderByAlias(protocol: St, alias: St): Opt[IdentityProvider] = {
-    getIdentityProviders(onlyEnabled = false) find { idp =>
+  def getSiteCustomIdentityProviderByAlias(protocol: St, alias: St)
+        : Opt[IdentityProvider] = {
+    getSiteCustomIdentityProviders(onlyEnabled = false) find { idp =>
       idp.protocol == protocol && idp.alias == alias
     }
   }
 
 
-  def getIdentityProviderById(id: IdpId): Opt[IdentityProvider] = {
+  def getSiteCustomIdentityProviderById(id: IdpId): Opt[IdentityProvider] = {
     // Later: lookup server global idps too — but then this fn needs  [srv_glb_idp]
     // more than just an id?
-    getIdentityProviders(onlyEnabled = false).find { idp =>
+    getSiteCustomIdentityProviders(onlyEnabled = false).find { idp =>
       idp.idpId.is(id)
     }
   }
@@ -81,7 +82,7 @@ trait AuthnSiteDaoMixin {
     identity.idpId match {
       case Some(id) =>
         // Race: Could be missing, if an admin removed the IDP just now.
-        getIdentityProviderById(id).map(_.nameOrAlias)
+        getSiteCustomIdentityProviderById(id).map(_.nameOrAlias)
       case None =>
         // Use the IDs defined by Silhouette, e.g. "google" or "facebook" lowercase :-|
         identity.confFileIdpId
@@ -89,24 +90,23 @@ trait AuthnSiteDaoMixin {
   }
 
 
-  COULD // rename to sth like getPerSiteIdps ?
-  def getIdentityProviders(onlyEnabled: Bo): Seq[IdentityProvider] = {
+  def getSiteCustomIdentityProviders(onlyEnabled: Bo): Seq[IdentityProvider] = {
     val idps = memCache.lookup(
           idpsCacheKey,
           orCacheAndReturn = Some {
-            readOnlyTransaction(_.loadAllIdentityProviders())
+            readOnlyTransaction(_.loadAllSiteCustomIdentityProviders())
           }).get
     if (onlyEnabled) idps.filter(_.enabled)
     else idps
   }
 
 
-  def loadAllIdentityProviders(): Seq[IdentityProvider] = {
-    readOnlyTransaction(_.loadAllIdentityProviders())
+  def loadAllSiteCustomIdentityProviders(): Seq[IdentityProvider] = {
+    readOnlyTransaction(_.loadAllSiteCustomIdentityProviders())
   }
 
 
-  def uncacheIdentityProviders(idps: Seq[IdentityProvider]): U = {
+  def uncacheSiteCustomIdentityProviders(idps: Seq[IdentityProvider]): U = {
     memCache.remove(idpsCacheKey)
   }
 
@@ -130,7 +130,19 @@ trait AuthnSiteDaoMixin {
   def getScribeJavaAuthnService(origin: St, idp: IdentityProvider, mayCreate: Bo = true)
           : sj_OAuth20Service Or ErrMsg = {
 
-    val redirBackUrl = origin + s"/-/authn/${idp.protocol}/${idp.alias}/redirback"
+    val redirBackUrl =
+          if (idp.isOpenIdConnect || idp.isSiteCustom) {
+            // New and nice.
+            origin + s"/-/authn/${idp.protocol}/${idp.alias}/redirback"
+          }
+          else {
+            // Old, backw compat with urls when Silhouette was in use.
+            // Some day, remove this — but then need everyone to upd
+            // their redir back urls, over at the IDPs.
+            // How know if they've done that or not already??
+            // Maybe look at server installation date somehow?
+            origin + s"/-/login-auth-callback/${idp.alias}"
+          }
 
     // For now: Just one IDP. (If >= 2 used at the same time, one would get
     // uncached, login would fail.)
@@ -142,7 +154,7 @@ trait AuthnSiteDaoMixin {
             // user info json. So, using OIDC here works fine (as of now)
             // — we just need to read the right user info json fields, later,
             // with the help of oidc_user_info_fields_map_c.
-            if (idp.isOpenIdConnect || idp.isPerSite)
+            if (idp.isOpenIdConnect || idp.isSiteCustom)
               Good(createScribeJavaOidcService(idp, redirBackUrl))
             else
               tryCreateScribeJavaOAuth2Service(idp, redirBackUrl)
@@ -162,18 +174,19 @@ trait AuthnSiteDaoMixin {
           ) == idp.oauAccessTokenAuthMethod.is("client_secret_post")
 
     def correctOAuth2Config: Bo = service.getApi match {
-      case oauApi: sj_DefaultApi20 =>
-        // Or maybe do these checks only for TyOidcScribeJavaApi20?
-        // And assume ScribeJava's built-in config for "well known" OAuth2
-        // IDPs (e.g. Google, FB) is correct? Otherwise site admins would
-        // need to configure OAuth2 auth and access token urls, although
-        // ScribeJava later would use its own built-in urls anyway?
+      case oidcApi: TyOidcScribeJavaApi20 =>
         // Then need a way for a site admin to tell Talkyard which
-        // built-in ScribeJava IDP hen wants to use? [scribejava_oauth2]
-        val apiAuthUrlInclQuerySt = oauApi.getAuthorizationUrl(
+        // built-in ScribeJava IDP hen wants to use? [oh_so_many_idps]
+        val apiAuthUrlInclQuerySt = oidcApi.getAuthorizationUrl(
               "", "", "", "", "", new java.util.HashMap())
         (apiAuthUrlInclQuerySt.startsWith(idp.oauAuthorizationUrl + '?')
-              && oauApi.getAccessTokenEndpoint == idp.oauAccessTokenUrl)
+              && oidcApi.getAccessTokenEndpoint == idp.oauAccessTokenUrl)
+      case _: sj_DefaultApi20 =>
+        // This is a ScribeJava built-in IDP, e.g. Gmail or FB, with the correct
+        // auth url hardcoded in ScribeJava.  We've verified that it's
+        // enabled [ck_glob_idp_enb].  We won't need idp.oauAuthorizationUrl
+        // — in fact we've set it to "dummy_..." something.
+        true
       case weirdApi =>
         // Only OAuth2 and OIDC supported.
         bugWarn("TyE3B5MA05MR", s"Weird API: ${classNameOf(weirdApi)}")
@@ -224,7 +237,7 @@ trait AuthnSiteDaoMixin {
       case SDIA.GitHub => (a.GitHubApi.instance(), "read:user,user:email")
       case SDIA.Facebook => (a.FacebookApi.instance(), "email")
       //case SDIA.Twitter => ...
-      case SDIA.LinkedIn => (a.FacebookApi.instance(), "r_liteprofile r_emailaddress")
+      case SDIA.LinkedIn => (a.LinkedInApi20.instance(), "r_liteprofile r_emailaddress")
       case _ =>
         return Bad(
               s"Identity Provider (IDP) not yet supported: ${idp.protoAlias}")

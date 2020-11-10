@@ -370,7 +370,7 @@ trait AuthnSiteTxMixin extends SiteTransaction {
   }
 
 
-  def loadAllIdentityProviders(): Seq[IdentityProvider] = {
+  def loadAllSiteCustomIdentityProviders(): Seq[IdentityProvider] = {
     // Later: How know which IDPs to load from any authn site?
     // Maybe could be a link column?  idty_id_c
     // Can load via this index:  idtys_u_idpsiteid_idpid_idpuserid

@@ -299,20 +299,12 @@ class SiteDao(
     // New:  [rm_cache_listeners]
   }
 
-  def refreshPagesInAnyCache(pageIds: collection.Set[PageId]): Unit = {
+  def refreshPagesInMemCache(pageIds: collection.Set[PageId]): U = {
     pageIds.foreach(refreshPageInMemCache)
   }
 
-  def emptyCache(): Unit = {
+  def clearDatabaseCacheAndMemCache(): U = {
     readWriteTransaction(_.bumpSiteVersion())
-    memCache.clearThisSite()
-  }
-
-  def emptyDatabaseCache(tx: SiteTransaction): Unit = {
-    tx.bumpSiteVersion()
-  }
-
-  def emptyInMemoryCache(): Unit = {
     memCache.clearThisSite()
   }
 

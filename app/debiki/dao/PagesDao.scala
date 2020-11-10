@@ -460,7 +460,7 @@ trait PagesDao {
 
     if (newMeta.isChatPinnedGlobally != oldMeta.isChatPinnedGlobally) {
       // When a chat gets un/pinned globally, need rerender watchbar, affects all pages. [0GPHSR4]
-      emptyCache()
+      clearDatabaseCacheAndMemCache()
     }
     else {
       refreshPageInMemCache(pageId)
@@ -589,7 +589,7 @@ trait PagesDao {
       deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete
             )(tx, staleStuff)
     }
-    refreshPagesInAnyCache(pageIds.toSet)
+    refreshPagesInMemCache(pageIds.toSet)
   }
 
 

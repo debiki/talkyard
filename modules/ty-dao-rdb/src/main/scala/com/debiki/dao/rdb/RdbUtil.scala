@@ -106,6 +106,7 @@ object RdbUtil {
           name = rs.getString("name"),
           createdAt = getWhen(rs, "ctime"),
           creatorIp = getString(rs, "creator_ip"),
+          featureFlags = getOptString(rs, "feature_flags_c").getOrElse(""),
           hostnames = hostnames.map(_.noDetails).toVector)
   }
 
@@ -123,6 +124,7 @@ object RdbUtil {
           creatorEmailAddress = getOptString(rs, "creator_email_address"),
           version = rs.getInt("version"),
           superStaffNotes = getOptString(rs, "super_staff_notes"),
+          featureFlags = getOptString(rs, "feature_flags_c").getOrElse(""),
           status = SiteStatus.fromInt(rs.getInt("status")).getOrElse(SiteStatus.Deleted),
           hostnames = hostnames,
           stats = stats)

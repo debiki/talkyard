@@ -21,6 +21,7 @@ Em  = email
 Ena = enabled, Dis = disabled
 B   = button, e.g. ReplyB
 It  = list item
+Cmt = comment
 Col = column, Rw or Row = row
 CUD = create user dialog
 D  = dialog,  e.g. AbtUsrD
@@ -31,16 +32,20 @@ Dl = download — change to Dwnl? so rare
 Dis = disabled, Ena = enabled
 Ed  = edit
 Edr = editor
+Feat = feature
+Flg = flag
 Fxd = fixed, Stc = static
 Gst = guest
 Gt  = greater than, Lt = less than
 Hi  = high
 Hz  = horizontal, also Vl: vertical
+Ifr = iframe
 CB = checkbox, e.g. s_SthCB
 Cb = Contextbar
 Cr = create
 Cu = Custom, e.g. CuNav = custom navigation links
 L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list
+Ld  = load, Ldng = loading
 LD  = Log in Dialog, RENAME to LiD
 LiD = Log in Dialog
 Lg  = large (screen), also: Sm, Md Xl
@@ -97,6 +102,7 @@ Tx  = text (tx = transaction is only server side)
 Un  = username
 Vl  = vertical, also: Hz: horizontal
 Vt  = vote, NO Vo instead,  Vt could be Vertical
+W   = wrap, wrapper: a div that's wrapped around the main something
 Wik = wiki
 Xl  = extra large (screen), also: Lg, Sm, Md
 FN = full name

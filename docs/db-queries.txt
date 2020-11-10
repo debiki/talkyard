@@ -1,4 +1,9 @@
 
+-- Current e2e test drafts:
+select * from drafts3
+where site_id = (select min(id) from sites3)
+order by created_at desc;
+
 
 -- See cached page html:
 select

@@ -115,7 +115,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
       }
     }
 
-    dao.upsertIdentityProviders(idps) ifProblem { problem =>
+    dao.upsertSiteCustomIdentityProviders(idps) ifProblem { problem =>
       throwBadReq("TyEIDPCONF", problem.message)
     }
 
@@ -124,7 +124,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 
   private def loadOidcConfigImpl(request: DebikiRequest[_], inclSecret: Bo): p_Result = {
-    val idps = request.dao.getIdentityProviders(onlyEnabled = false)
+    val idps = request.dao.getSiteCustomIdentityProviders(onlyEnabled = false)
           .sortBy(idp => idp.guiOrder getOrElse (
                 idp.idpId.getOrElse(0) + 1000 * 1000))
     val json = JsArray(idps map JsX.JsIdentityProviderSecretConf)

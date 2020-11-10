@@ -2041,7 +2041,7 @@ trait PostsDao {
       }
     tx.saveDeleteNotifications(notifications)
 
-    refreshPagesInAnyCache(Set[PageId](pageId))  ; REMOVE // <—— no longer needed, staleStuff instead
+    refreshPagesInMemCache(Set[PageId](pageId))  ; REMOVE // <—— no longer needed, staleStuff instead
 
     ApprovePostResult(
           updatedPost = Some(postAfter))

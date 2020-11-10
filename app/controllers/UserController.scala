@@ -481,7 +481,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
            emailAddr: Opt[St]) = identity match {
         case oa: OpenAuthIdentity =>
           val details = oa.openAuthDetails
-          val customIdp = details.idpId flatMap dao.getIdentityProviderById
+          val customIdp = details.idpId flatMap dao.getSiteCustomIdentityProviderById
           val idpName = customIdp.map(_.nameOrAlias).getOrElse(
                 details.confFileIdpId.get)
           val idpUsername = details.username

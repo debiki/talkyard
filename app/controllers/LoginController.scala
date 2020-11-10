@@ -45,6 +45,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (badNextUrl)
       throwForbidden("EsE5YK02", s"Bad next URL: $path")
 
+    var toAdminArea = true
     val loginReason =
       if (as.contains(AsSuperadmin)) {
         "LoginToAdministrate"  // later: LoginReason.SuperAdminArea   xx
@@ -56,6 +57,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
         "LoginToAdministrate"  // COULD add LoginReason.StaffOnly
       }
       else if (as.contains("member")) {
+        toAdminArea = false
         throwNotImplemented("EsE5ES20", "Not impl: ?as=member")
       }
       else if (path.startsWith("/-/admin/")) {
@@ -70,14 +72,15 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
         // The loginPopup template doesn't include any React store JSON and this results
         // in a JS exception in ReactStore.isGuestLoginAllowed() when accessing
         // store.settings.allowGuestLogin.  [5KUP02]
+        toAdminArea = false
         throwNotImplemented("EsE4KU67", "Logging in via /-/login to view pages or users")
       }
 
     COULD // find out if already logged in with enough perms, then go to `path` directly instead.
 
     dieIfAssetsMissingIfDevTest()
-    Ok(views.html.login.loginPopup(
-      SiteTpi(apiReq),
+    Ok(views.html.authn.authnPage(
+      SiteTpi(apiReq, isAdminArea = toAdminArea),
       mode = loginReason,
       serverAddress = s"//${apiReq.host}",  // try to remove
       returnToUrl = apiReq.origin + path)) as HTML
@@ -103,10 +106,10 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * is doing in the main window (e.g. having expanded / collapsed threads,
     * maybe started composing a reply) won't disappear.
     */
-  def showLoginPopup(mode: String, returnToUrl: String): Action[Unit] =
+  def showLoginPopup(mode: St, returnToUrl: St): Action[U] =
         GetActionAllowAnyoneRateLimited(
           RateLimits.NoRateLimits, avoidCookies = mode == EmbCommentsModeStr) { request =>
-    Ok(views.html.login.loginPopup(
+    Ok(views.html.authn.authnPage(
       SiteTpi(request),
       mode = mode,
       serverAddress = s"//${request.host}",  // try to remove
@@ -118,12 +121,12 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Clears login related cookies and OpenID and OpenAuth stuff, unsubscribes
     * from any event channel.
     */
-  def logout(currentUrlPath: Option[String]): Action[Unit] = GetActionAllowAnyone { request =>
+  def logout(currentUrlPath: Opt[St]): Action[U] = GetActionAllowAnyone { request =>
     doLogout(request, redirectIfMayNotSeeUrlPath = currentUrlPath)
   }
 
 
-  def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Option[String]): Result = {
+  def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Opt[St]): Result = {
     import request.{dao, requester}
 
     requester foreach { theRequester =>

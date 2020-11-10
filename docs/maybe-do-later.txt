@@ -19,6 +19,9 @@ Add a black hanglock next to things one can see, because of one's extra
 access permissions? E.g. editing category settings, or backlinks from
 access restricted topics.
 
+[admin_log]
+Make site specific errors visible to site admins — so no need
+to have Linux root access.
 
 [immutable]
 Make all js objs "light weight immutable", via Typescript's 'readonly' properties:
@@ -82,12 +85,6 @@ That's how e.g. StackOverflow does this:
 
 [oidc_missing]:  some more nice OIDC things.
 
-[scribejava_oauth2]
-A way for a site admin to tell Talkyard which built-in ScribeJava IDP
-hen wants to use — how do that?
-Maybe ScribeJava Java class names, like: "GoogleApi20" or "LinkedInApi20"?
-Here're the APIs:
-  https://github.com/scribejava/scribejava/tree/master/scribejava-apis/src/main/java/com/github/scribejava/apis
 
 
 [srv_glb_idp]
@@ -98,6 +95,7 @@ Link to server global idp:
 Aha!? I'll just add is_server_global_c and guid_c fields to idp_t,
 and change idtys_t.conf_file_idp_id_c to lookup IDPs both via conf file,
 and idps_t.guid_c. And rename conf_file_idp_id_c to glob_idp_guid.
+Migrate to ScribeJava, [migr_to_scribejava]
 
 
 

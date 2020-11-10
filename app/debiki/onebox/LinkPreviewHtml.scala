@@ -27,11 +27,12 @@ import debiki.TextAndHtml.safeEncodeForHtml
 object LinkPreviewHtml {
 
 
-  def safeAside(safeHtml: String, extraLnPvCssClasses: String,
-        unsafeUrl: String, unsafeProviderName: Option[String],
-        addViewAtLink: Boolean): String = {
+  def safeAside(safeHtml: St, extraLnPvCssClasses: St,
+        unsafeUrl: St, unsafeProviderName: Opt[St],
+        addViewAtLink: Bo): St = {
 
     require(safeEncodeForHtml(extraLnPvCssClasses) == extraLnPvCssClasses, "TyE06RKTDH2")
+    require(startsWithHttpOrHttps(unsafeUrl), "TyELNPVHTTP01")
 
     // 'noopener' stops [reverse_tabnabbing], prevents the new browser tab from
     // redirecting the current browser tab to, say, a phishing site.
@@ -48,15 +49,18 @@ object LinkPreviewHtml {
       }{ if (!addViewAtLink) xml.Null else {
         <div class="s_LnPv_ViewAt"
           ><a href={unsafeUrl} target="_blank" rel={relAttrs}>{
-            "View at " + unsafeProviderName.getOrElse(unsafeUrl)  // I18N
-            } <span class="icon-link-ext"></span></a
+            unsafeProviderName match {
+              case Some(name) => s"View on $name"  // e.g. View on YouTube      I18N
+              case None => s"View at $unsafeUrl"   // e.g. View at https://...  I18N
+            }} <span class="icon-link-ext"></span></a
         ></div>
     }}</aside>.toString
   }
 
 
-  def safeProblem(unsafeProblem: String, unsafeUrl: String, errorCode: String): String = {
+  def safeProblem(unsafeProblem: St, unsafeUrl: St, errorCode: St): St = {
     require(safeEncodeForHtml(errorCode) == errorCode, "TyE906MRTD25")
+    require(startsWithHttpOrHttps(unsafeUrl), "TyELNPVHTTP02")
 
     val safeProblem = TextAndHtml.safeEncodeForHtmlContentOnly(unsafeProblem)
     val safeUrl = safeEncodeForHtml(unsafeUrl)
@@ -73,7 +77,7 @@ object LinkPreviewHtml {
   }
 
 
-  def sandboxedIframe(unsafeHtml: String): String = {
+  def sandboxedIframe(unsafeHtml: St): St = {
 
     // Iframe sandbox permissions. [IFRMSNDBX]
     val permissions = (
@@ -152,6 +156,6 @@ object LinkPreviewHtml {
         |<script src="/-/assets/ext-iframe$min.js"></script>
         """
 
-  private def min = Globals.isDevOrTest ? "" | ".min"
+  private def min: St = Globals.isDevOrTest ? "" | ".min"
 
 }

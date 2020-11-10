@@ -45,7 +45,9 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
             // (The admin app already includes the topbar.)
             admin.staffRoutes(),
             // Make LinkButton work also in the admin app:
-            Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }))),
+            Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }),
+            // KeyboardShortcuts(),
+            )),
       adminAppElem);
     return;
   }
@@ -61,6 +63,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
 
   // /-/tags/*
   // adminPage.scala.html, appId = "theTagsApp"
+  // No! This should be part of  MoreScriptsRoutesComponent.
   const tagsAppElem = document.getElementById('theTagsApp');
   if (tagsAppElem) {
     ReactDOM.render(
@@ -161,7 +164,9 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
             Switch({ children: sectionsAndPages })),
             isEmbCmts ? null : debiki2.page.ScrollButtons(),
             isEmbCmts ? null : Route({
-                  component: debiki2.page.Hacks.ExtReactRootNavComponent })),
+                  component: debiki2.page.Hacks.ExtReactRootNavComponent }),
+            // KeyboardShortcuts(),
+            ),
       pageElem);
   }
 
@@ -169,6 +174,9 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
 }
 
 
+/// User and group profile pages, and search resutls page,
+/// edit tags, list tags pages.
+///
 const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBTP0]
   displayName: 'MoreScriptsRoutesComponent',
 

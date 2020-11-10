@@ -14,11 +14,11 @@ package object authn {
   object ServerDefIdpAliases {
     import com.mohiva.play.silhouette.impl.providers.{oauth2 => si_oauth2}
 
-    val Google = "google"
-    val GitHub = "github"
     val Facebook = "facebook"
-    //val Twitter = "twitter"
+    val GitHub = "github"
+    val Google = "google"
     val LinkedIn = "linkedin"
+    //val Twitter = "twitter"
 
     // Should be same ids as Silhouette, so migration to ScribeJava will be simpler:
     assert(si_oauth2.GoogleProvider.ID == Google)

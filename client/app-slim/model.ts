@@ -891,10 +891,14 @@ interface Store extends Origins, PartialEditorStoreState {
 
   isEmbedded: boolean;
   appVersion: string;
+
+  // Maybe move these to a Site interface?
   siteStatus: SiteStatus;
+  siteFeatureFlags?: St;
   siteOwnerTermsUrl?: string;
   siteOwnerPrivacyUrl?: string;
   isFirstSiteAdminEmailMissing?: boolean;
+
   // Only used when creating the site, to show messages for embedded comments.
   makeEmbeddedCommentsSite?: boolean;
   userMustBeAuthenticated: boolean;
@@ -1777,6 +1781,7 @@ interface SASite {
   staffUsers: UserInclDetails[];
   stats: SiteStats;
   superStaffNotes?: string;
+  featureFlags: St;
 }
 
 

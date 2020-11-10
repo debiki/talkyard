@@ -15,32 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@* TODO RENAME to showCreateUserDialogInThisWindow.scala.html    *@
-
 @(tpi: debiki.SiteTpi, serverAddress: String,
     origNonceBack: String, idpName: String, idpHasVerifiedEmail: Boolean,
     newUserUsername: String, newUserFullName: String, newUserEmail: String,
     authDataCacheKey: String, anyContinueToUrl: Option[String])
 
-@* After authentication at an Identity Provider (IDP) in this popup window,
- * we show a create user dialog, in this same popup window.
+@* After authentication at an Identity Provider (IDP) in this window,
+ * we show a create user dialog, in this same window.
  * This is 1) for embedded comments pages — then, login and user creation always
  * happens in a login popup window (this window), because wouldn't work well
  * to show a create user dialog in Talkyard's iframe on the blog page.
  * And 2) for logging in in the whole main window, to e.g. the admin area, or if the
- * site requires login.
+ * site requires login — then, this happens in the main win itself (no login popup).
  *
- * So don't call window.close() here. But in closePopupShowCreateUserDialog.scala.html
- * we do the same things and *also* call window.close(),
- * and continue in the opener instead, by showing the create-user dialog, there.
+ * So don't call window.close() here. But in
+ * showCreateUserDialogInOpenerCloseCurWin.scala.html, we do the same things
+ * and *also* call window.close(), and continue in the opener instead,
+ * by showing the create-user dialog, there.
  *@
 
 @continueToUrlOrEmpty = @{
   anyContinueToUrl getOrElse ""
 }
 
-@popupMain(tpi, serverAddress) {@* COULD RENAME popupMain to loginDialogMain (might not be a popup) *@
-  <!-- views/login/showCreateUserDialog.scala.html -->
+@authnPageHtmlDoc(tpi, serverAddress) {
+  <!-- views/authn/showCreateUserDialogInThisWin.scala.html -->
   <script>
     debiki2.morebundle.showCreateUserDialog({
       origNonceBack: '@origNonceBack',

@@ -731,12 +731,14 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val site = systemDao.getSiteById(defaultSiteId).getOrDie(
           "EdEDEFSITEID", o"""There's no site with id $defaultSiteId, which is the configured
             default site id (config value: $DefaultSiteIdConfValName)""")
-        SiteBrief(defaultSiteId, site.pubId, Some(hostname), site.status)
+        SiteBrief(defaultSiteId, site.pubId, Some(hostname), site.status,
+              featureFlags = site.featureFlags)
       }
       else {
         // Lazy-create the very first site, with id 1, if doesn't yet exist.
         val firstSite = systemDao.getOrCreateFirstSite()
-        SiteBrief(FirstSiteId, firstSite.pubId, Some(hostname), firstSite.status)
+        SiteBrief(FirstSiteId, firstSite.pubId, Some(hostname), firstSite.status,
+              featureFlags = firstSite.featureFlags)
       }
     }
 
@@ -1232,6 +1234,7 @@ class Config(conf: play.api.Configuration) extends TyLogging {
     // Maybe just 15 seconds would be better? Let's wait with that.
     default = if (Globals.isProd) 30 else 30 * 60).toLong
 
+  // Or use sites_t.feature_flags_c for the superadmin site instead?
   val featureFlags: Map[String, FeatureOnOff] = {
     val flagsMultiLineString = conf.getOptional[String]("talkyard.featureFlags").noneIfBlank
     Map.empty  // for now

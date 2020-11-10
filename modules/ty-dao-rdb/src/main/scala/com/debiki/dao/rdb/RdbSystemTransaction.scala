@@ -291,7 +291,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
   }
 
 
-  private def loadSitesImpl(siteIds: Seq[SiteId] = Nil, all: Boolean = false): Seq[Site] = {
+  private def loadSitesImpl(siteIds: Seq[SiteId] = Nil, all: Bo = false): Seq[Site] = {
     if (siteIds.isEmpty && !all)
       return Nil
 
@@ -306,9 +306,17 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
           siteIds.toList.map(_.asAnyRef))
 
     var sitesQuery = s"""
-      select id, publ_id, status, name, ctime, creator_ip, creator_email_address
+      select
+          id,
+          publ_id,
+          status,
+          name,
+          feature_flags_c,
+          ctime,
+          creator_ip,
+          creator_email_address
       from sites3
-          $whereIdsIn
+      $whereIdsIn
       """
 
     runQueryFindMany(sitesQuery, values, rs => {
@@ -326,7 +334,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
     val query = "select * from sites3"
     runQueryFindMany(query, Nil, rs => {
       val siteId = rs.getInt("id")
-      var hosts = hostsBySiteId(siteId)
+      val hosts = hostsBySiteId(siteId)
       getSiteInclDetails(rs, hosts)
     })
   }
@@ -343,14 +351,19 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
 
   def updateSites(sites: Seq[SuperAdminSitePatch]) {
     val statement = s"""
-       update sites3 set status = ?, super_staff_notes = ? where id = ?
+       update sites3 set
+           status = ?,
+           super_staff_notes = ?,
+           feature_flags_c = ?
+       where id = ?
        """
     for (patch <- sites) {
       val siteId = patch.siteId
       val values = List(
-        patch.newStatus.toInt.asAnyRef,
-        patch.newNotes.orNullVarchar,
-        siteId.asAnyRef)
+            patch.newStatus.toInt.asAnyRef,
+            patch.newNotes.trimOrNullVarchar,
+            patch.featureFlags.trimNullVarcharIfBlank,
+            siteId.asAnyRef)
       val num = runUpdate(statement, values)
       dieIf(num != 1, "EsE24KF90", s"s$siteId: num = $num when changing site status")
     }
