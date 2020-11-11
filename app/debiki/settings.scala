@@ -56,7 +56,9 @@ trait AllSettings {
   //   https://github.com/scribejava/scribejava/tree/master/scribejava-apis/src/main/java/com/github/scribejava/apis
   // What's a more concise way to remember if a site wants to use a specific
   // server global IDP or not?
-  // Maybe a JSON obj with ScribeJava Java class names (see the link above)
+  // Probably a JSON obj with the WellKnownIdpImpl name
+  // as fields, like: { google: true, linkedin: false }  ?
+  // Or ScribeJava impl class name? (see the link above)
   // as fields, like: { GoogleApi20: enable, LinkedInApi20: disable }  ?
   def enableGoogleLogin: Boolean
   def enableFacebookLogin: Boolean

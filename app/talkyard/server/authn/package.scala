@@ -1,6 +1,7 @@
 package talkyard.server
 
-import com.debiki.core.Prelude.stringToRichString
+import com.debiki.core._
+import com.debiki.core.Prelude._
 import com.debiki.core.{ErrMsg, GetOrBadMap, IdentityProvider, OpenAuthDetails}
 import debiki.JsonUtils._
 import org.scalactic.{Bad, Good, Or}
@@ -28,6 +29,7 @@ package object authn {
     assert(si_oauth2.LinkedInProvider.ID == LinkedIn)
 
   }
+
 
   def parseOidcUserInfo(jsVal: JsValue, idp: IdentityProvider)
         : OpenAuthDetails Or ErrMsg = {
@@ -65,14 +67,28 @@ package object authn {
 
   def parseCustomUserInfo(jsVal: JsValue, idp: IdentityProvider)
         : OpenAuthDetails Or ErrMsg = tryParseGoodBad {
+    idp.wellKnownIdpImpl match {
+      case None =>
+        // For now.
+        parseCustomUserInfoFieldsMap(jsVal, idp)
+      case Some(idpImpl: WellKnownIdpImpl) =>
+        // Hardcoded parsing of JSON from Facebook, LinkedIn and other
+        // well-known OAuth2 providres.
+        parseWellKnownIdpUserJson(jsVal, idp)
+    }
+  }
+
+
+  def parseCustomUserInfoFieldsMap(jsVal: JsValue, idp: IdentityProvider)
+        : OpenAuthDetails Or ErrMsg = tryParseGoodBad {
 
     // For now:
     // userid: null, first_name, last_name, country, city, company, job_function: '',
     // job_title: '', email
     // Later, use mapping in:  oidc_user_info_fields_map_c
 
-    if (isDevOrTest) {
-      System.out.println(s"ZZQQ parseCustomUserInfo, idp: ${idp.protoAlias}: \n\n${
+    if (talkyard.server.isDevOrTest) {
+      System.out.println(s"parseCustomUserInfo, idp: ${idp.protoAlias}: \n\n${
               play.api.libs.json.Json.prettyPrint(jsVal)}\n\n")
     }
 
@@ -93,12 +109,89 @@ package object authn {
           idpUserId = userIdAtProvider,
           username = username,
           firstName = firstName,
+          middleName = None,
           lastName = lastName,
           fullName = firstSpaceLast.trimNoneIfEmpty,
           email = Some(email),
           isEmailVerifiedByIdp = Some(emailVerified && idp.trustVerifiedEmail),
           avatarUrl = None,
           userInfoJson = Some(jsObj)))
+  }
+
+
+  def parseWellKnownIdpUserJson(jsVal: JsValue, idp: IdentityProvider)
+          : OpenAuthDetails Or ErrMsg = tryParseGoodBad {
+
+    val wellKnownImpl = idp.wellKnownIdpImpl getOrDie "TyE4D96MAKT2"
+    val jsObj = asJsObject(jsVal, what = "IDP user info")
+
+    val id = parseSt(jsObj, "id")
+    val anyUsername = parseOptSt(jsObj, "username")
+    val anyEmailAddr = parseOptSt(jsObj, "email")
+    val anyFirstName = parseOptSt(jsObj, "given_name", altName = "first_name")
+    val anyMiddleName = parseOptSt(jsObj, "middle_name")
+    val anyLastName = parseOptSt(jsObj, "family_name", altName = "last_name")
+    val anyFullName = parseOptSt(jsObj, "name")
+
+    val idpSaysEmailIsVerifed = None // IDP specific
+    val emailVerified = Some(false)
+    // Later: idpSaysEmailIsVerifed.is(true) && idp.trustVerifiedEmail
+
+    val genericIdty = OpenAuthDetails(
+          confFileIdpId = idp.confFileIdpId,
+          idpId = idp.idpId,
+          idpUserId = id,
+          username = anyUsername,
+          firstName = anyFirstName,
+          middleName = anyMiddleName,
+          lastName = anyLastName,
+          fullName = anyFullName,  // firstSpaceLast.trimNoneIfEmpty,
+          email = anyEmailAddr,
+          isEmailVerifiedByIdp = emailVerified,
+          avatarUrl = None,
+          userInfoJson = Some(jsObj))
+
+    var result = genericIdty
+
+    wellKnownImpl match {
+      case WellKnownIdpImpl.Facebook =>
+        // FB Graph API, user info requests:
+        // https://developers.facebook.com/docs/graph-api/reference/user
+        // and here we specify the fields Ty wants: [fb_oauth_user_fields].
+        // Email verified or not? Probably @tfbnw.net email addresses can be
+        // trusted? But let's assume not, for now.
+        // Example response, FB's Graph API v9.0, November 2020:
+        //   {
+        //     "id": "111222333444555",
+        //     "email": "facebook_aabbccdd_user@tfbnw.net",
+        //     "name": "Firstname Lastname",
+        //     "first_name": "Firstname",
+        //     "last_name": "Lastname",
+        //     "picture": {
+        //       "data": {
+        //         "height": 50,
+        //         "is_silhouette": true,
+        //         "url": "https://scontent-arn2-1.xx.fbcdn.net/../../../p50x50/...",
+        //         "width": 50  }}}
+        val pictureUrl = (jsObj \ "picture" \ "data" \ "url").asOpt[St]
+        result = result.copy(avatarUrl = pictureUrl)
+
+      case WellKnownIdpImpl.GitHub =>
+
+      case WellKnownIdpImpl.Google =>
+        // Google uses OIDC user info fields, and we'll use the OIDC  [goog_oidc]
+        // parser for Google. So this should be dead code.
+        return Bad("Error: Google stopped being an OIDC provider? [TyEGOOG0OIDC]")
+
+      case WellKnownIdpImpl.LinkedIn =>
+
+      case WellKnownIdpImpl.Twitter =>
+
+      case bad =>
+        die(s"Unknown 'well-known' IDP impl: $bad  [TyEUNKIDPIMPL]")
+    }
+
+    Good(result)
   }
 
 }

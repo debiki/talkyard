@@ -32,7 +32,7 @@ POST  /-/login-password-create-user controllers.LoginWithPasswordController.hand
 GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.confirmEmailAddressAndLogin(confirmationEmailId, returnToUrl)
 # also: /-/v0/sso-login via ApiV0Controller
 
-GET   /-/authn/:protocol/:providerAlias           controllers.LoginWithOpenAuthController.authnStart(protocol, providerAlias, returnToUrl, nonce, authViaAuthnOrigin: Option[Boolean], selectAccountAtIdp: Option[Boolean])
+GET   /-/authn/:protocol/:providerAlias           controllers.LoginWithOpenAuthController.authnStart(protocol, providerAlias, returnToUrl, nonce, useServerGlobalIdp: Option[Boolean], selectAccountAtIdp: Option[Boolean])
 GET   /-/authn/continue-at-authn-origin           controllers.LoginWithOpenAuthController.continueAtAuthnOrigin(secretNonce)
 GET   /-/authn/:protocol/:providerAlias/redirback controllers.LoginWithOpenAuthController.authnRedirBack(protocol, providerAlias, state, session_state: Option[String], code)
 GET   /-/authn/finish-at-orig-site                controllers.LoginWithOpenAuthController.finishAtOrigSite(secretNonce)

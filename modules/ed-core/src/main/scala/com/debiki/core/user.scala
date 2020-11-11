@@ -1643,6 +1643,7 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
   idpUserId: St,
   username: Opt[St] = None,
   firstName: Opt[St] = None,
+  middleName: Opt[St] = None,
   lastName: Opt[St] = None,
   fullName: Opt[St] = None,
   email: Opt[St] = None,

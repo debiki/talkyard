@@ -58,7 +58,8 @@ import javax.inject.Inject
 
 
 /**
-  *
+  * @param useServerGlobalIdp — Then we'll look up the IDP among the server global
+  *   IDPs, ignoring this site's custom IDPs if any.
   * @param authnViaSiteId — If authn via a server global IDP, we do that from
   *   a dedicated authn origin site. Need to remember which site,
   *   so one cannot use a nonce cache key at the wrong site.
@@ -77,6 +78,7 @@ import javax.inject.Inject
   * @param nextStep — so a nonce cache key cannot be used for the wrong thing.
   */
 private case class OngoingAuthnState(
+  useServerGlobalIdp: Bo,
   authnXsrfToken: St,
   authnViaSiteId: SiteId,
   loginToSiteId: SiteId,
@@ -98,13 +100,19 @@ private case class OngoingAuthnState(
   extIdentity: Opt[OpenAuthDetails] = None,
   matchingTyUser: Opt[User] = None) {
 
+  // If redirecting to the authn site, we must be using a server global IDP.
+  require(continueAtAuthnSiteNonce.isEmpty || useServerGlobalIdp,
+        "TyE20KADM25A5")
+  // If going to the authn site, we must also plan to go back to the
+  // login site, afterwards.
   require(continueAtAuthnSiteNonce.isDefined == continueAtOrigSiteNonce.isDefined,
         "TyE63MREJMP45")
+  // Don't accidentally bug-reuse the same nonce.
   require(continueAtAuthnSiteNonce.isEmpty ||
         continueAtAuthnSiteNonce != continueAtOrigSiteNonce, "TyE305MWK24")
 
-  def usesServerGlobalIdp: Bo = continueAtAuthnSiteNonce.isDefined
-  def usesSiteCustomIdp: Bo = !usesServerGlobalIdp
+  def usesServerGlobalIdp: Bo = useServerGlobalIdp
+  def usesSiteCustomIdp: Bo = !useServerGlobalIdp
 
   def protoAlias: St = s"$protocol/$providerAlias"
 
@@ -245,7 +253,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   def authnStart(protocol: St, providerAlias: St, returnToUrl: St, nonce: St,
-          authViaAuthnOrigin: Opt[Bo], selectAccountAtIdp: Opt[Bo])
+          useServerGlobalIdp: Opt[Bo], selectAccountAtIdp: Opt[Bo])
           : Action[U] = AsyncGetActionIsLoginRateLimited { request =>
     import request.dao
 
@@ -263,10 +271,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val isInLoginPopup = request.rawQueryString.contains("isInLoginPopup")
     val mayCreateUser = !request.rawQueryString.contains("mayNotCreateUser")
+    val useServerGlobalIdpBo: Bo = useServerGlobalIdp is true
 
     val (authnXsrfToken, authnXsrfCookie) = makeAuthnXsrfToken(request.underlying)
 
     val authnState = OngoingAuthnState(
+          useServerGlobalIdp = useServerGlobalIdpBo,
           authnXsrfToken = authnXsrfToken,
           authnViaSiteId = dao.siteId,
           loginToSiteId = dao.siteId,
@@ -286,41 +296,49 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           lastStepAt = globals.now(),
           nextStep = "redir_back")
 
-    val futureResponse = {
-      if (authViaAuthnOrigin.is(true) &&
-            globals.anyLoginOrigin.isSomethingButNot(originOf(request))) {
-        // We're trying to login via a server global IDP, shared by many sites
-        // hosted on this server — e.g. Facebook or Gmail login, customized
-        // once by a superadmin, to use by all sites (so no need to
-        // configure many times).
-        // The IDP has been configured to send authentication data to another
-        // Talkyard site — namely the authn origin site: globals.anyLoginOrigin.
-        // We'll redirect pat to that site and authenticate from there.
-        //
-        // First check that the server global IDP that pat tries to login with,
-        // is enabled at *this* site  (that there's a server global IDP,
-        // doesn't mean that this site wants to use it).  [glob_idp_enb_1]
-        //
-        throwForbiddenIf(settings.useOnlyCustomIdps, "TyE0SITECUSIDP",
-              s"useOnlyCustomIdps enabled, cannot use any server global IDP")
-        getServerGlobalIdentityProvider(authnState, dao).ifBad(problem =>
-              throwForbidden(s"Cannot login via ${authnState.protoAlias
-                    }: $problem [TyEGETGLOBIDP01]"))
+    if (useServerGlobalIdpBo) {
+      // We're trying to login via a server global IDP, shared by many sites
+      // hosted on this server — e.g. Facebook or Gmail login, customized
+      // once by a superadmin, and then available to all sites hosted by this server
+      // (so no need to configure once per individual site).
 
-        val site = request.site
-        throwForbiddenIf(
+      // But cannot do that, if login is only via this-site-custom-IDPs.
+      throwForbiddenIf(settings.useOnlyCustomIdps, "TyE0SITECUSIDP",
+            s"useOnlyCustomIdps enabled, then cannot use a server global IDP")
+
+      // Verify that the server global IDP that pat tries to login with,
+      // is enabled at *this* site  (that there's a server global IDP,
+      // doesn't mean that this site wants to use it).  [glob_idp_enb_1]
+      getServerGlobalIdentityProvider(authnState, dao).ifBad(problem =>
+            throwForbidden(s"Cannot login via ${authnState.protoAlias
+                  }: $problem [TyEGETGLOBIDP01]"))
+
+      val site = request.site
+      throwForbiddenIf(
               !site.featureFlags.contains("ffTryScribeJava") &&
               !site.featureFlags.contains("ffUseScribeJava"),
               "TyE0FFSCRJVA", s"Add feature flag ffTryScribeJava or ffUseScribeJava")
+    }
 
+    def globalIdpAuthnOriginIsOtherSite: Bo =
+      globals.anyLoginOrigin.isSomethingButNot(originOf(request))
+
+    val futureResponse = {
+      if (useServerGlobalIdpBo && globalIdpAuthnOriginIsOtherSite) {
+        // The server global IDP has been configured to send authentication data
+        // to another Ty site — namely the authn origin site: globals.anyLoginOrigin.
+        // Redirect pat to that site, to authenticate from there.
         saveAuthnStateRedirToAuthnOrigin(authnState)
       }
       else {
-        // This IDP is for this site — it's been configured to redirect the user
-        // back to a Redirection URI here (rather than to an authn origin site),
-        // after login at the IDP.
-        throwForbiddenIf(!settings.enableCustomIdps, "TyE0CUSTIDPS",
-              "Custom IDPs not enabled at this site.\n\n" +
+        // The IDP pat is logging in with, should have been configured to redirect
+        // pat back to a Redirection URI here (rather than to an authn origin site),
+        // after login over at the IDP.
+        // (The IDP might be this-site-custom, or server global, i.e. shared with
+        // other sites, who then redirect users to this site for authn here,
+        // and then they get sent back to those other site.)
+        throwForbiddenIf(!useServerGlobalIdpBo && !settings.enableCustomIdps,
+              "TyE0CUSTIDPS", "Custom IDPs not enabled at this site.\n\n" +
               o"""In the Admin Area, the 'Custom OIDC or OAuth2' checkbox
                 needs to be checked.""")
         authnStartImpl(authnState, request)
@@ -1216,6 +1234,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
     val authnState = OngoingAuthnState(
+          // Silhouette always uses the old site global IDPs from play-framework.conf.
+          useServerGlobalIdp = true,
           authnXsrfToken = "",
           authnViaSiteId = siteId,  // for now, will delete all this later anyway
           loginToSiteId = NoSiteId, // we don't know
@@ -1648,7 +1668,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
               providerAlias = authnState.providerAlias,
               returnToUrl = authnState.returnToUrl,
               nonce = authnState.browserNonce,
-              authViaAuthnOrigin = authnState.continueAtAuthnSiteNonce.map(_ => true),
+              useServerGlobalIdp =
+                    if (authnState.useServerGlobalIdp) Some(true) else None,
               // If the user didn't want to link hens IDP identity to the Ty user,
               // then, tell the IDP to let the user choose a different identity,
               // over at the IDP, so won't get the link-to-this-identity-to-that-user
@@ -2047,6 +2068,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // Currently all server global IDPs happen to use OAuth2.
     throwForbiddenIf(protocol != ProtoNameOAuth2, "TyE0SRVDEFIDP01",
           s"No such server default IDP: $protoAlias")
+    dieIf(!authnState.usesServerGlobalIdp, "TyE305MRAKTD35")
 
     // We'll check in the site settings if the server global IDP that pat wants
     // to login with, is actually enabled [ck_glob_idp_enb].
@@ -2060,12 +2082,41 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     import talkyard.server.authn.{ServerDefIdpAliases => SDIA}
     var trustVerifiedEmailAddr = false
     var userInfoUrl: St = ""
-    val s: OAuth2Settings = providerAlias match {
-      case SDIA.Facebook =>
+
+    val providerImpl = WellKnownIdpImpl.fromName(protocol, providerAlias)
+          .getOrDie("TyE3056MRKT2")
+    dieIf(providerImpl.name != providerAlias, "TyE306MRKTD")  // for now
+
+    val s: OAuth2Settings = providerImpl match {
+      case WellKnownIdpImpl.Facebook =>
         if (!siteSettings.enableFacebookLogin) return Bad("Facebook login not enabled")
-        userInfoUrl = "https://graph.facebook.com/v3.2/me"  // oidc? or custom oauth2?
+        // FB Graph API docs aobut this endpoint:
+        // https://developers.facebook.com/docs/graph-api/reference/user
+        // v9.0 is the latest version, as of 2020-11-12.
+        // - There was previously a 'username' field, but it's deprecated since v2.0.
+        // - 'profile_pic' requires a Page access token — else, FB replies Error 403
+        //   and a FB specific code 210.
+        // - What's 'picture'? Maybe same as some 'picture.type(some-size)'  ?
+        // - What about 'link'?
+        userInfoUrl = "https://graph.facebook.com/v9.0/me" +  // [fb_oauth_user_fields]
+              "?fields=" +
+                  "id,email,name,first_name,middle_name,last_name,gender," +
+                  // 50x50 px, how large is 'medium' and 'large'?
+                  "picture.type(small)" +
+              // Tell Facebook to use HTTPS for pictures — so no mixed contents warnings.
+              "&return_ssl_resources=1"
         facebookProvider().settings
-      case SDIA.Google =>
+
+      case WellKnownIdpImpl.GitHub =>
+        if (!siteSettings.enableGitHubLogin) return Bad("GitHub login not enabled")
+        // To do:
+        // trustVerifiedEmailAddr = true // [gmail_verifd]
+        // But first need to "copy" the custom Silhouette GitHub impl?
+        // See: CustomGitHubProfileParser, CustomGitHubProvider below.
+        return Bad("GitHub authn not impl via ScribeJava [TyEAUTGHBSCRJVA]")
+        //githubProvider().settings
+
+      case WellKnownIdpImpl.Google =>
         // Any better way to find out if enabled, than having a separate settings
         // field per IDP? There can be a hundred!? [oh_so_many_idps]
         if (!siteSettings.enableGoogleLogin) return Bad("Google login not enabled")
@@ -2073,16 +2124,17 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo"
         trustVerifiedEmailAddr = true // [gmail_verifd]
         googleProvider().settings
-      case SDIA.GitHub =>
-        if (!siteSettings.enableGitHubLogin) return Bad("GitHub login not enabled")
-        // To do:
-        // trustVerifiedEmailAddr = true // [gmail_verifd]
-        // But first need to "copy" the custom Silhouette GitHub impl?
-        // See: CustomGitHubProfileParser, CustomGitHubProvider below.
-        githubProvider().settings
-      case SDIA.LinkedIn =>
+
+      case WellKnownIdpImpl.LinkedIn =>
         if (!siteSettings.enableLinkedInLogin) return Bad("LinkedIn login not enabled")
         linkedinProvider().settings
+
+      case WellKnownIdpImpl.Twitter =>
+        if (!siteSettings.enableTwitterLogin) return Bad("Twitter login not enabled")
+        return Bad("Twitter authn not impl via ScribeJava [TyEAUTTWTSCRJVA]")
+        // Won't work — Twitter uses OAuth1, but Ty only supports OAuth2 via ScribeJava:
+        // twitterProvider().settings
+
       case _ =>
         return Bad(s"IDP not yet impl with ScribeJava: $protoAlias  [TyEGLOBIDPUNSUP]")
     }
@@ -2093,6 +2145,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           confFileIdpId = Some(providerAlias),
           protocol = protocol,
           alias = providerAlias,
+          wellKnownIdpImpl = Some(providerImpl),
           enabled = true,
           displayName = Some(providerAlias),
           description = None,

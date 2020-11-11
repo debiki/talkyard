@@ -530,6 +530,7 @@ const ExtIdpAuthnBtn = createClassAndFactory({
   displayName: 'ExtIdpAuthnButton',
   onClick: function() {
     const props: ExtIdpAuthnBtnProps = this.props;
+    const providerLowercase = props.provider.toLowerCase();
     // Any new user wouldn't be granted access to the admin page, so don't allow
     // creation of  new users from here.
     // (This parameter tells the server to set a certain cookie. Setting it here
@@ -538,14 +539,17 @@ const ExtIdpAuthnBtn = createClassAndFactory({
             props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
 
     // A bit weird, just now when migrating to ScribeJava.
-    let viaAuthnOrigin = false;
+    let useServerGlobalIdp = false;
     if (!props.idp) {
       // Try-catch not needed, but anyway.
       try {
         const store: Store = ReactStore.allData();
-        viaAuthnOrigin = site_isFeatFlagOn(store, 'ffUseScribeJava');
+        useServerGlobalIdp = site_isFeatFlagOn(store, 'ffUseScribeJava');
         const mainWin = getMainWin();
-        viaAuthnOrigin ||= mainWin.location.hash.indexOf('&tryScribeJava&') >= 0;
+        useServerGlobalIdp ||= mainWin.location.hash.indexOf('&tryScribeJava&') >= 0;
+        // Only FB and Google via ScribeJava right now:
+        useServerGlobalIdp &&= providerLowercase === 'google' ||
+                providerLowercase === 'facebook';
       }
       catch (ex) {
       }
@@ -554,9 +558,9 @@ const ExtIdpAuthnBtn = createClassAndFactory({
     const idp: IdentityProviderPubFields | U = props.idp;
     const urlPath = idp
         ? `/-/authn/${idp.protocol}/${idp.alias}`                // new & nice
-        : (viaAuthnOrigin
-          ? `/-/authn/oauth2/${props.provider.toLowerCase()}`     // always this instead?
-          : `/-/login-openauth/${props.provider.toLowerCase()}`); // old, try to remove
+        : (useServerGlobalIdp
+          ? `/-/authn/oauth2/${providerLowercase}`     // always this instead?
+          : `/-/login-openauth/${providerLowercase}`); // old, try to remove
 
     const urlPathAndQuery = urlPath +
         '?' + mayNotCreateUser +
@@ -567,7 +571,7 @@ const ExtIdpAuthnBtn = createClassAndFactory({
         // it'll then instead return a html page that runs some javascript that updates our
         // window.opener, and then closes this popup. [49R6BRD2]
         (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
-        (viaAuthnOrigin ? 'authViaAuthnOrigin=true&' : '') +
+        (useServerGlobalIdp ? 'useServerGlobalIdp=true&' : '') +
         `returnToUrl=${props.anyReturnToUrl || ''}`;
 
     const url = origin() + urlPathAndQuery;

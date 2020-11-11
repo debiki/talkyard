@@ -6,6 +6,27 @@ import play.api.libs.json.JsObject
 
 
 
+sealed abstract class WellKnownIdpImpl(val Name: St) { def name: St = Name }
+object WellKnownIdpImpl {
+  case object Facebook extends WellKnownIdpImpl("facebook")
+  case object GitHub extends WellKnownIdpImpl("github")
+  case object Google extends WellKnownIdpImpl("google")
+  case object LinkedIn extends WellKnownIdpImpl("linkedin")
+  case object Twitter extends WellKnownIdpImpl("twitter")
+
+  def fromName(protocol: St, name: St): Opt[WellKnownIdpImpl] = {
+    unimplIf(protocol != "oauth2", "TyE8B05MRKJT")
+    Some(name match {
+      case Facebook.Name => Facebook
+      case GitHub.Name => GitHub
+      case Google.Name => Google
+      case LinkedIn.Name => LinkedIn
+      case Twitter.Name => Twitter
+    })
+  }
+}
+
+
 object IdentityProvider {
   // Lowercase, so works in url paths (typically lowercase)
   val ProtoNameOidc = "oidc"
@@ -23,6 +44,7 @@ object IdentityProvider {
   * @param idpId — a per site IDP kept in idps_t. Then, confFileIdpId.isEmpty.
   * @param protocol
   * @param alias
+  * @param wellKnownIdpImpl — which built-in ScribeJava provider impl to use.
   * @param enabled
   * @param displayName
   * @param description
@@ -54,6 +76,7 @@ case class IdentityProvider(
   idpId: Opt[IdpId] = None,
   protocol: St,
   alias: St,
+  wellKnownIdpImpl: Opt[WellKnownIdpImpl] = None,
   enabled: Bo,
   displayName: Opt[St],
   description: Opt[St],
@@ -101,6 +124,10 @@ case class IdentityProvider(
   require(oauAccessTokenAuthMethod.isEmpty ||
         oauAccessTokenAuthMethod.is("client_secret_basic") ||
         oauAccessTokenAuthMethod.is("client_secret_post"), "TyE305RKT2A3")
+
+  // One cannot add custom fields mapping for well known OAuth2 providers,
+  // e.g. Facebook — there's nothing to customize, already decided by that IDP.
+  require(wellKnownIdpImpl.isEmpty || oidcUserInfoFieldsMap.isEmpty, "yE6503MARKTD4")
 
   // For now:
   require(oidcUserInfoFieldsMap.isEmpty, "TyE295RKTP")
