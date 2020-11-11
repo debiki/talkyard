@@ -74,8 +74,8 @@ function postJson(urlPath: string, requestData: RequestData) {
 
   addAnyNoCookieHeaders(headers);
 
-  // DO_AFTER 2021-01-01: Use the native fetch() [FETCHEX]
-  // IE11 needs a shim: https://github.com/github/fetch
+  // DO_AFTER 2021-01-01: Use the native fetch() [FETCHEX] and remove Bliss.fetch.
+  // IE11 needs a shim: https://github.com/github/fetch  — but IE11 doesn't work anyway.
 
   Bliss.fetch(url, {
     method: 'POST',
@@ -391,7 +391,7 @@ function corsPost(ps) {
 // ---------------------------------------------------------------
 
 
-export function uploadFiles(endpoint: string, files: any[], onDone, onError) {
+export function uploadFiles(endpoint: string, files: any[], onDone, onError) {  // [FETCHEX]
   dieIf(files.length !== 1,  `${files.length} files [TyE06WKTDN23]`);
   const headers = {};
   headers[XsrfTokenHeaderName] = getSetCookie('XSRF-TOKEN');

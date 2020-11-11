@@ -6,6 +6,8 @@
 //
 type RElm = JSX.Element;
 
+// Also: type HElm = HTMLElement;
+
 
 // JSX.ElementClass in node_modules/@types/react/index.d.ts:
 //

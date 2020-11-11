@@ -290,7 +290,7 @@ var editorJsFiles = [
       'node_modules/markdown-it/dist/markdown-it.js',
       'node_modules/blacklist/dist/blacklist.js',  // needed by what?
       'node_modules/fileapi/dist/FileAPI.html5.js', // don't use the Flash version (w/o '.html5')
-      'node_modules/@webscopeio/react-textarea-autocomplete/umd/rta.min.js',
+      'node_modules/@webscopeio/react-textarea-autocomplete/dist/react-textarea-autocomplete.umd.min.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',
       'client/app-editor/editor/mentions-markdown-it-plugin.js',
