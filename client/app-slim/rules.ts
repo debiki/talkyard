@@ -40,7 +40,7 @@ export function page_isChat(pageRole: PageRole): boolean {
 
 // Hmm now there's a Discussion topic type (= page role), then page_isDiscussion is an a
 // bit confusing name?
-export function page_isDiscussion(pageRole: PageRole): boolean {
+export function page_isDiscussion(pageRole: PageRole | Z): BoZ {
   return pageRole && !isSection(pageRole) &&
       pageRole !== PageRole.Form &&
       pageRole !== PageRole.SpecialContent &&
@@ -92,33 +92,36 @@ export function store_maySendInvites(store: Store, user: Myself | UserInclDetail
   return mayIndeed();
 }
 
-
-export function user_isMember(user: UserInclDetails | BriefUser | Myself): boolean {
-  return user.id > MaxGuestId;
+export function pat_isMember(pat: UserInclDetails | Me | Pat | PatId): Bo {
+  if (!pat) return false;
+  const patId: PatId = _.isObject(pat) ? (pat as Pat).id : pat
+  return patId > MaxGuestId;
 }
+export const user_isMember = pat_isMember;  // CLEAN_UP REMOVE QUICK SMALLER_BUNDLE
 
 export function isGuest(user) {  // try to remove
   return user_isGuest(user);
 }
 
-export function user_isGuest(user: UserInclDetails | Myself | BriefUser) {
+export function pat_isGuest(user: UserInclDetails | Myself | BriefUser) {
   return user.id <= MaxGuestId;
 }
+export const user_isGuest = pat_isGuest;  // CLEAN_UP REMOVE QUICK SMALLER_BUNDLE  remove isGuest() and isMember() too
 
 export function userId_isGuest(userId: UserId) {
   return userId <= MaxGuestId;
 }
 
-export function isMember(user: Myself | UserInclDetails): boolean {
-  if (!user) return false;
-  var member = user.id >= MinMemberId;
-  //dieIf(isGuest(user) && member, 'EsE7YKU2');
-  return member;
-}
+// Old name  CLEAN_UP REMOVE
+export const isMember = pat_isMember;
 
-export function isStaff(user: Myself | BriefUser | UserInclDetails) {
+
+export function pat_isStaff(user: Me | Pat): Bo {
   return user.isAdmin || user.isModerator;
 }
+
+// Old name  CLEAN_UP REMOVE
+export const isStaff: (user: Me | Pat) => Bo = pat_isStaff;
 
 export function user_isStaffOrCoreMember(user: Myself | UserInclDetails): boolean {
   return isStaff(user) || user_trustLevel(user) >= TrustLevel.CoreMember;

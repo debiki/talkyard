@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../prelude.ts" />
+/// <reference path="../widgets.ts" />
+/// <reference path="../utils/react-utils.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.pagedialogs {
@@ -143,24 +146,14 @@ const ServerErrorDialog = createComponent({
 
     message = this.state.dialogMessagePrefix + message;
 
-    // React-Bootstrap migth not yet have been loaded, so Modal, ModalBody etc components might
-    // not yet be available, and we'll have to create all modal dialog elems ourselves here
-    // manually.
-    return (
-      r.div({ className: 's_SED_Wrap' },
-        r.div({ className: 'modal-backdrop fade in', style: { opacity: 0.5 } }),
-        r.div({ role: 'dialog', className: 'fade in modal',
-              style: { display: 'block' }},
-          r.div({ className: 'modal-dialog dw-server-error' },
-            r.div({ className: 'modal-content', role: 'document' },
-              r.div({ className: 'modal-header' },
-                r.h4({ className: 's_SED_Ttl modal-title' }, title)),
-              r.div({ className: 'modal-body' },
-                r.div({ className: 's_SED_Msg' }, message)),
-              r.div({ className: 'modal-footer' },
-                this.state.mayClose === false ? null :
+    return InstaDiag({
+            diagClassName: 'dw-server-error',
+            title,
+            titleClassName: 's_SED_Ttl',
+            body: r.div({ className: 's_SED_Msg' }, message),
+            footer: this.state.mayClose === false ? null :
                   PrimaryButton({ onClick: this.close, className: 'e_SED_CloseB' },
-                    t.Close)))))));
+                    t.Close) });
   }
 });
 

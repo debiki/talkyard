@@ -41,6 +41,19 @@ type Nr = number;
 type S = string;  // REMOVE
 type St = string;
 
+// Nullish and falsy values.
+type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}
+
+// Statements like:  return anyObj && anyObj.field === 123;
+//              or:  return anyObj && trueOrFalse(1, 2, 3, anyObj);
+// can return null, undefined, '' or 0, if anyObj is any of those values,
+// or can return a boolean. So, boolean or falsy:
+type BoZ = Bo | Z;
+
+type HElm = HTMLElement;
+type Elm = Element;
+// Also: type RElm = JSX.Element (React.js element).
+
 type SiteData = any;   // [3SD5PB7]
 
 type PageId = string;
@@ -52,15 +65,18 @@ type CategoryId = number;
 type CategoryRef = string;
 type SiteId = number;
 type SiteVersion = number;
-type LoginId = String;
-type UserId = number;
-type PeopleId = UserId;
+type LoginId = string;
+type UserId = number;     // RENAME to PatId
+type PatId = UserId;
+type PatName = St;
+type Username = St;
+type PeopleId = UserId;   // REMOVE
 type PermissionId = number;
 type NotificationId = number;
 type ReviewTaskId = number;
-type IdentityId = String;
-type IpAddress = String;
-type EmailId = String;
+type IdentityId = string;
+type IpAddress = string;
+type EmailId = string;
 type AuditLogEntryId = number;
 type TagLabel = string;
 type ApiSecretNr = number;
@@ -76,6 +92,19 @@ type RefOrId = Ref | number;
 const enum UrlPaths {
   AdminLogin = '/-/admin-login',
   AuthnRoot = '/-/authn/',
+  Groups = '/-/groups/'
+}
+
+
+const enum QueryParams {
+  TopicFilter = 'filter',
+}
+
+
+const enum TopicFilters {
+  ShowAll = 'ShowAll',
+  ShowWaiting = 'ShowWaiting',
+  ShowDeleted = 'ShowDeleted',
 }
 
 

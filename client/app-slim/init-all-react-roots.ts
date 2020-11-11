@@ -46,7 +46,6 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
             admin.staffRoutes(),
             // Make LinkButton work also in the admin app:
             Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }),
-            // KeyboardShortcuts(),
             )),
       adminAppElem);
     return;
@@ -165,7 +164,6 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
             isEmbCmts ? null : debiki2.page.ScrollButtons(),
             isEmbCmts ? null : Route({
                   component: debiki2.page.Hacks.ExtReactRootNavComponent }),
-            // KeyboardShortcuts(),
             ),
       pageElem);
   }

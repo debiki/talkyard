@@ -17,7 +17,7 @@
 
 // In this file: Constructs links, e.g. to a user's profile page.
 //
-// Usage example: MenuItemLink({ to: linkToUserProfilePage(user) }, "View your profile")
+// Usage example: MenuItemLink({ to: linkToPatsProfile(user) }, "View your profile")
 
 
 /// <reference path="prelude.ts"/>
@@ -81,10 +81,11 @@ export function linkToAdminPageAdvancedSettings(differentHostname?: string): str
 export function linkToUserInAdminArea(user: Myself | Participant | UserId): string {
   // If Myself specified, should be logged in and thus have username or id. (2UBASP5)
   // @ifdef DEBUG
+  dieIf(!user, 'TyE4KPWQT6');
   dieIf(_.isObject(user) && !(<any> user).id, 'TyE4KPWQT5');
   // @endif
   const userId = _.isObject(user) ? (<any> user).id : user;
-  return origin() + '/-/admin/users/id/' + userId;
+  return linkToStaffUsersPage() + 'id/' + userId;
 }
 
 export function linkToEmbeddedDiscussions(): string {
@@ -100,39 +101,54 @@ export function linkToStaffInvitePage(): string {
   return origin() + '/-/admin/users/invited';
 }
 
+export function linkToStaffUsersPage(): St {
+  return origin() + '/-/admin/users/';
+}
+
 export function linkToGroups(): string {
   return origin() + '/-/groups/';
 }
 
 
-export function linkToUserProfilePage(user: Myself | Participant | UserId | string): string {
-  return origin() + pathTo(user);
+// RENAME to linkToPatsProfile, and remove that fn
+export function linkToUserProfilePage(who: Who): St {
+  return origin() + pathTo(who);
 }
 
-export function pathTo(user: Participant | Myself | UserId | string): string {
-  // If Myself specified, should be logged in and thus have username or id. (2UBASP5)
-  // @ifdef DEBUG
-  dieIf(_.isObject(user) && !(<any> user).username && !(<any> user).id, 'TyE7UKWQT2');
-  // @endif
-  let rootPath;
-  let idOrUsername;
-  if (_.isObject(user)) {
-    idOrUsername = (<Participant | Myself> user).username || (<Participant | Myself> user).id;
-    rootPath = (<Participant> user).isGroup ? GroupsRoot : UsersRoot;
+// RENAME to pathToProfile ?
+export function pathTo(who: Who): St {
+    // @ifdef DEBUG
+    dieIf(!who, 'TyE7UKWQT2');
+    // @endif
+  let rootPath: St;
+  let idOrUsername: PatId | St;
+  if (_.isObject(who)) {
+    const patOrStore: Pat | Me | Store = who;
+    const pat: Me | Pat = (patOrStore as Store).me || (patOrStore as Me | Pat);
+    // Guests have no username — instead, use their participant id.
+    idOrUsername = pat.username || pat.id;
+    // If Me specified, should be logged in and thus have username or id. (2UBASP5)
+    // @ifdef DEBUG
+    dieIf(!idOrUsername, 'TyE7UKWQT3');
+    // @endif
+    rootPath = pat.isGroup ? GroupsRoot : UsersRoot;
   }
   else {
-    idOrUsername = user;
+    idOrUsername = who;
     rootPath = UsersRoot;  // will get redirected to GroupsRoot, if is group
   }
+
   if (_.isString(idOrUsername)) {
     idOrUsername = idOrUsername.toLowerCase();
   }
   return rootPath + idOrUsername;
 }
 
-export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {
-  return linkToUserProfilePage(userIdOrUsername) + '/notifications';
+export function linkToUsersNotfs(who: Who): St {
+  return linkToUserProfilePage(who) + '/notifications';
 }
+
+// CLEAN_UP  change to  who: Who  for alll user link fns -----
 
 export function linkToMembersNotfPrefs(userIdOrUsername: UserId | string): string {
   return linkToUserProfilePage(userIdOrUsername) + '/preferences/notifications';
@@ -154,11 +170,16 @@ export function linkToMyDraftsEtc(store: Store): string {
   return linkToMyProfilePage(store) + '/drafts-etc';
 }
 
-export function linkToMyProfilePage(store: Store): string {
-  // Guests have no username — instead, use their participant id.
-  return linkToUserProfilePage(store.me.username || store.me.id);
+export function linkToMyProfilePage(store: Store): string {   // REMOVE use linkToPatsProfile instead
+  return linkToPatsProfile(store);
 }
 
+// REMOVE use linkToUserProfilePage instead, but renamed to this name:
+export function linkToPatsProfile(patOrStore: Me | Pat | Store): St {
+  return linkToUserProfilePage(patOrStore);
+}
+
+// --- / CLEAN_UP  --------------------------------------------
 
 export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr): string {
   const locator = draft.forWhat;

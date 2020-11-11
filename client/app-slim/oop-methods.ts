@@ -373,14 +373,18 @@ export function notfPref_level(notfPref: EffPageNotfPref): PageNotfLevel {
 
 
 export function notfPref_title(notfPref: EffPageNotfPref): St {
-  const level = notfPref_level(notfPref);
+  return notfLevel_title(notfPref_level(notfPref), !!notfPref.pageId);
+}
+
+
+export function notfLevel_title(level: PageNotfLevel, isOnPage: Bo): St {
   switch (level) {
     case PageNotfLevel.EveryPostAllEdits: return 'EveryPostAllEdits unimpl';
     case PageNotfLevel.EveryPost: return t.nl.EveryPost;
     case PageNotfLevel.TopicProgress: return 'TopicProgress unimpl';
     case PageNotfLevel.TopicSolved: return 'TopicSolved unimpl';
     case PageNotfLevel.NewTopics: // [2ABK05R8]
-      if (notfPref.pageId) return t.nl.Normal;
+      if (isOnPage) return t.nl.Normal;
       else return t.nl.NewTopics;
     case PageNotfLevel.Tracking: return t.nl.Tracking;
     case PageNotfLevel.Normal: return t.nl.Normal;
@@ -1296,6 +1300,10 @@ export function categories_sortTree(categories: Category[]): CatsTree {
 
 export function page_isClosedNotDone(page: Page): boolean {
   return page.pageClosedAtMs && !page.pageAnswerPostUniqueId && !page.pageDoneAtMs
+}
+
+export function page_isOpen(page: Page): Bo {
+  return !page.pageClosedAtMs && !page.pageAnswerPostUniqueId && !page.pageDoneAtMs
 }
 
 export function page_hasDoingStatus(page: Page): boolean {

@@ -35,6 +35,8 @@ let dialogSetState: (_: [any]) => void;
 
 export function openSnoozeDialog(me: Myself) {
   if (!dialog) {
+debugger;
+    // ??? does render() return null here? and we're creating many dlgs?
     dialog = ReactDOM.render(SnoozeDialog(), utils.makeMountNode());  // or [use_portal] ?
   }
   dialogSetState([me]);
