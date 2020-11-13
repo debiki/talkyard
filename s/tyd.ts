@@ -20,11 +20,11 @@ completion.on('mainCmd', ({ reply }) => {
         'u', 'watchup',
         'ps',
         'k', 'kill',
-        'r', 'restart',
+        'r', 'restart', 'ra',
         'down',
         'recreate',
         'rebuild',
-        'l', 'logslive', 'logsrecentlive', 'logsold',
+        'l', 'logslive', 'lr', 'logsrecentlive', 'logsold',
         'e', 'e2e',
         'cleane2elogs',
         'dbcli',
@@ -187,7 +187,7 @@ function tailLogsThenExit() {
 }
 
 
-if (mainCmd === 'logsrecentlive') {
+if (mainCmd === 'lr' || mainCmd === 'logsrecentlive') {
   spawnInForeground('docker-compose logs -f --tail 555');
   process.exit(0);
 }
@@ -263,8 +263,15 @@ if (mainCmd === 'u' || mainCmd === 'watchup') {
 }
 
 
+if (mainCmd === 'ra') {
+  restartContainers('app');
+}
 if (mainCmd === 'r' || mainCmd === 'restart') {
-  const cs = allSubCmds;  // which containers, e.g.  'app'
+  restartContainers(allSubCmds); // e.g. 'web app'
+}
+
+function restartContainers(containers: St) {
+  const cs = containers;
   spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d start ${cs}`]);
   tailLogsThenExit();
 }
