@@ -1524,8 +1524,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitUntilGone(what: string, ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}) {   // RENAME to waitUntilCannotSee ?
-      this.waitUntil(() => {
+    waitUntilGone(what: St, ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}): Bo {   // RENAME to waitUntilCannotSee ?
+      const isGone = this.waitUntil(() => {
         try {
           const elem = this.$(what);
           const gone = !elem || !elem.isExisting() || !elem.isDisplayed();
@@ -1549,6 +1549,9 @@ export class TyE2eTestBrowser {
         const resultsByBrowser = this.isVisible(what);
         const values = allBrowserValues(resultsByBrowser);
         return _.every(values, x => !x ); */
+
+      // If ps.timeoutIsFine, `what` might not be gone.
+      return isGone;
     }
 
     focus(selector: string, opts?: { maybeMoves?: true,
@@ -4407,7 +4410,10 @@ export class TyE2eTestBrowser {
         const submitSelector = '#e2eAddUsD_SubmitB';
         utils.tryManyTimes(`Submit members`, 2, () => {
           this.waitAndClick(submitSelector);
-          this.waitUntilGone(submitSelector, { timeoutMs: 2000, timeoutIsFine: true });
+          const isGone = this.waitUntilGone(submitSelector, {
+                  timeoutMs: 2000, timeoutIsFine: true });
+          if (!isGone)
+            throw `Not yet gone: ${submitSelector}`;
         });
         // Later: this.#br.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
