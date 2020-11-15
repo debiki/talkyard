@@ -1,0 +1,46 @@
+version: '3.7'
+
+# Use like so, from the Talkyard repo base dir:
+#
+#   docker-compose \
+#       -f docker-compose.yml \
+#       -f images/mattermost/docker-compose-mattermost.yml \
+#       up -d
+#
+# There's a help script that does the `docker-compose -f .. -f ..` part:
+# To do:
+#   s/tyd mm u   # up -d
+#   s/tyd mm k   # kill
+#   s/tyd mm d   # down
+#
+# Container shell:  (repl docker w docker-compose)
+#
+#    docker exec -ti mattermost-preview /bin/bash
+#
+# (From the docs:
+#  https://docs.mattermost.com/install/docker-local-machine.html?highlight=docker
+#
+#  docker run --name mattermost-preview -d --publish 8065:8065  \
+#     --add-host dockerhost:127.0.0.1  \
+#     mattermost/mattermost-preview
+#  )
+
+services:
+  mattermost.localhost:
+    image: mattermost/mattermost-preview
+    ports:
+      - '8065:8065'
+    extra_hosts:
+      - 'dockerhost:127.0.0.1'
+    #environment:
+    #  AAA: 'bbb'
+    #volumes:
+    #  - ./vvv/:/vvv/
+    #  - ./fff.json:/fff.json
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_MATTERMOST_IP}
+
+
+
+# vim: et ts=2 sw=2
