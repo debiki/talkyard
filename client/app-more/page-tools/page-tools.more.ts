@@ -200,12 +200,11 @@ const PinPageDialog = createComponent({
 
 // REFACTOR CLEAN_UP could break out the beelow dialog to separate file
 
-let pageIdsUrlsDiagElm;
 let setPageIdsUrlsDiagPageId;
 
 export function openPageIdsUrlsDialog(pageId: PageId) {
-  if (!pageIdsUrlsDiagElm) {
-    pageIdsUrlsDiagElm = ReactDOM.render(React.createFactory(PageIdsUrlsDiag)(), utils.makeMountNode());
+  if (!setPageIdsUrlsDiagPageId) {
+    ReactDOM.render(React.createFactory(PageIdsUrlsDiag)(), utils.makeMountNode());
   }
   setPageIdsUrlsDiagPageId(pageId);
 }

@@ -145,14 +145,14 @@ function lazyDialogMaker() {
 }  */
 
 
-let createGroupDialog;  // REFACTOR use lazyDialogMaker above instead of this
+//let createGroupDialog;  // REFACTOR use lazyDialogMaker above instead of this
 
 type NewGroupCallback = (_: Group) => void;
 let pub_setOnCreatedCallback: (_: [NewGroupCallback]) => void;
 
 function showCreateGroupDialog(onCreated: NewGroupCallback) {
-  if (!createGroupDialog) {
-    createGroupDialog = ReactDOM.render(CreateGroupDialog(), debiki2.utils.makeMountNode());
+  if (!pub_setOnCreatedCallback) {
+    ReactDOM.render(CreateGroupDialog(), debiki2.utils.makeMountNode());
   }
   pub_setOnCreatedCallback([onCreated]);
 }
