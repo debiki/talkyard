@@ -564,7 +564,7 @@ trait UserDao {
     */
   def saveIdentityLinkToUser(oauthDetails: OpenAuthDetails, user: User): Identity = {
     require(user.email.nonEmpty, "DwE3KEF7")
-    require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
+    require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")  // <——  oops
     require(user.isAuthenticated, "DwE4KEF8")
     readWriteTransaction { tx =>
       val identityId = tx.nextIdentityId
