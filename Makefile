@@ -26,9 +26,9 @@
 watch: watch-debug_asset_bundles
 watch-debug_asset_bundles:
 	while true; do \
-	  make debug_asset_bundles ;\
 	  inotifywait -q -r -e modify -e create -e delete -e move \
 	        client package.json ;\
+	  make debug_asset_bundles ;\
 	done
 
 # E.g.  make watch what=target

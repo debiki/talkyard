@@ -17,7 +17,8 @@ const completion = omelette('tyd <mainCmd>')
 completion.on('mainCmd', ({ reply }) => {
   reply([
         'h', 'help',
-        'u', 'watchup',
+        'u', 'up', //'watchup',
+        'w', 'watch',
         'ps',
         'k', 'kill',
         'r', 'restart', 'ra',
@@ -43,22 +44,17 @@ completion.init();
 
 // Maybe later: https://github.com/denoland/deno, nice!: function Deno.watchFs
 
-// Commands to support?:
-//
-//   this:  s/tyd yarn add glob
-//   does:  s/d run --rm nodejs yarn add glob
-//
-//   this:  s/tyd playcli
-//   starts the SBT REPL for Ty's Play Framework app server
-//
-//   this:  s/tyd e2e all
-//   runs all end-to-end tests
-//
-//   this:  s/tyd e2e idpauth
-//   runs all end-to-end tests for auth at external IDP (e.g. Keycloak or Gmail)
+//   this:  s/tyd e2e extaut
+//   runs all end-to-end tests for auth at external IDP (e.g. FB or Gmail)
 //
 // Test traits:
-//  1br, 2br, 3br,  b3c  mgt   idpauth  extreq-goog-fb-lin-githb-gitlb-twtr
+//  1br, 2br, 3br,  b3c  mtime  extaut extln  odic  embcom  embfor
+//
+// Ex:
+// signup-w-goog.1br.extaut.ts
+// signup-w-linkedin.1br.extaut.ts
+// link-previews-twitter.1br.extln.ts
+
 
 type ExitCode = Nr | Nl;
 
@@ -113,8 +109,9 @@ const mainCmd = commands[0];
 dieIf(!mainCmd, `No main command? '${process.argv.join(' ')}' TyE52SKDM7`)
 dieIf(mainCmd !== process.argv[2], `Weird main command: '${mainCmd}' TyE52SKDM5`)
 
-const mainSubCmd = commands[1];
-const allSubCmds = commands.slice(1);
+const mainSubCmd: St = commands[1];
+const allSubCmds: St[] = commands.slice(1);
+const allSubCmdsSt: St = allSubCmds.join(' ');
 let mainCmdIsOk: U | true;
 
 function stringifyOpts(opts: { [k: string]: any }): St {
@@ -147,7 +144,7 @@ if (mainCmd === 'h' || mainCmd === 'help') {
 
 
 if (mainCmd === 'nodejs') {
-  spawnInForeground('docker-compose run --rm nodejs ' + allSubCmds.join(' '));
+  spawnInForeground('docker-compose run --rm nodejs ' + subCmdsAndOpts.join(' '));
   process.exit(0);
 }
 
@@ -199,14 +196,20 @@ if (mainCmd === 'logsold') {
 }
 
 
-if (mainCmd === 'justwatch') {
+if (mainCmd === 'w' || mainCmd === 'watch') {
   spawnInForeground('make watch');
   process.exit(0);
 }
 
 
-if (mainCmd === 'u' || mainCmd === 'watchup') {
+if (mainCmd === 'u' || mainCmd === 'up') {
   mainCmdIsOk = true;
+
+  // If only starting some specific containers, skip Yarn and Make.
+  if (mainSubCmd) {
+    spawnInForeground(`docker-compose up -d ${allSubCmdsSt}`);
+    tailLogsThenExit();
+  }
 
   // First, update assets bundles once in the foreground — it's annoying
   // if instead that's done while the server is starting, because then the server
@@ -219,7 +222,17 @@ if (mainCmd === 'u' || mainCmd === 'watchup') {
   // — that process would exit, if `up -d` hasn't yet started any containers.
   spawnInForeground('docker-compose up -d');
 
+  // Just this:
+  spawnInForeground('docker-compose logs -f --tail 0');
+  // ... instead of the below,
+
+  // ... Skip this, because 'make watch' and assets rebuild problems
+  // can get hidden by app server log messages.
+  // Better use two different shell terminals, split screen,
+  // one for building assets, another for app & web server logs.
+  // And, slightly complicated with a background process and terminating it later.
   // Now time to start rebuilding asset bundles in the background, when needed.
+  /*
   const rebuildAssetsCmd = 'make watch';
   const watchChildProcess = spawnInBackground(rebuildAssetsCmd);
 
@@ -259,7 +272,8 @@ if (mainCmd === 'u' || mainCmd === 'watchup') {
   watchExitedPromise.finally(function() {
     logMessage(`Bye. Server maybe still running.`);
     process.exit(0);
-  })
+  });
+  */
 }
 
 
@@ -267,18 +281,28 @@ if (mainCmd === 'ra') {
   restartContainers('app');
 }
 if (mainCmd === 'r' || mainCmd === 'restart') {
-  restartContainers(allSubCmds); // e.g. 'web app'
+  restartContainers(allSubCmdsSt); // e.g. 'web app'
 }
 
 function restartContainers(containers: St) {
-  const cs = containers;
-  spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d start ${cs}`]);
+  const cs = (containers || '').trim();
+  logMessage(cs ? `Stopping containers: ${cs}...` : `Stopping all containers...`);
+  spawnInForeground('sh', ['-c', `s/d kill ${cs}`]);
+
+  // If restarting the web/app, probably we want up-to-date assets?
+  if (!containers || containers.includes('web') || containers.includes('app')) {
+    logMessage(`Rebuilding assets if needed ...`);
+    spawnInForeground('make debug_asset_bundles');
+  }
+
+  logMessage(`Starting containers...`);
+  spawnInForeground('sh', ['-c', `s/d start ${cs}`]);
   tailLogsThenExit();
 }
 
 
 if (mainCmd === 'recreate') {
-  const cs = allSubCmds;  // which containers, e.g.  'app'
+  const cs = allSubCmdsSt;  // which containers, e.g.  'web app'
   spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d rm -f ${cs}; s/d up -d ${cs}`]);
   tailLogsThenExit();
 }
@@ -374,10 +398,16 @@ for (let pattern of allSubCmds) {
 }
 
 
-console.log(`Specs patterns:  ${allSubCmds.join(' ')}`);
+console.log(`Specs patterns:  ${allSubCmdsSt}`);
 console.log(`Specs matching:\n - ${allMatchingSpecs.join('\n - ')}`);
 
 
+// If we're run
+// Let wdio handle signals — until it exits.
+// But maybe exit directly on SIGINT if running >= 2 specs? Then probably not debugging.
+process.on('SIGINT', function() {
+  logMessage(`Caught SIGINT.`);
+});
 
 // Can look at node_modules/@wdio/cli/build/launcher.js  to see
 // ex of how handle async errs?

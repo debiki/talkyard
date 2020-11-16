@@ -57,7 +57,7 @@ interface TestSettings {
   grep: string;
   only: string;
   isInProjBaseDir?: boolean;
-  browserName: 'firefox' | 'chrome';
+  browserName: 'firefox' | 'chrome'; // won't work: Chromium, chromium
   gmailEmail?: string;
   gmailPassword?: string;
   githubUsernameMixedCase?: string;
