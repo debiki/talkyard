@@ -512,9 +512,6 @@ async function runE2eTests(): Promise<ExitCode> {
   //    
   //    dd
 
-  const repeatEachTestNrTimes = opts.repeat || 1;
-  delete opts.repeat;
-
   const optsStr = stringifyOpts(opts) + ' --isInProjBaseDir';
 
   async function runWdioInForeground(specs: St[], wdioArgs: St): Promise<Nr> {
@@ -561,6 +558,9 @@ async function runE2eTests(): Promise<ExitCode> {
   const skipEmbAndAlways = ['!emb-com', '!embcom', '!embedded-', ...skipAlways]
   const skip2And3Browsers = ['!.2br', '!.3br'];
 
+
+  // ----- 1 browser
+
   let next: St[] | St[][] = [...skip2And3Browsers, ...skipEmbAndAlways];
 
   await withSpecsMatching(next, async (specs: St[]): Promise<ExitCode> => {
@@ -571,18 +571,31 @@ async function runE2eTests(): Promise<ExitCode> {
   });
 
 
-  next = ['.2br', ...skipEmbAndAlways];
+  // ----- 2 browsers
 
+  // This tests needs a static file server.
   // Should rename this test: incl ss8080 in the name? (static server port 8080)
-  await withSpecsMatching(['sso-login-required-w-logout-url'], (): 'Skip' => {
+  await withSpecsMatching(['sso-login-required-w-logout-url.2br'], (): 'Skip' => {
     startStaticFileServer(8080, 'target/');
     return 'Skip';
   });
+
+  // Tests that don't modify time can run in parallel.
+  next = ['.2br', '!.mtime', '!__e2e-test-template__', ...skipEmbAndAlways];
 
   await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
     return runWdioInForeground(specs, '--2browsers');
   });
 
+  // But tests that do modify time cannot run in parallel (on the same server).
+  next = ['.2br', '.mtime', ...skipEmbAndAlways];
+
+  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+    return runWdioInForeground(specs, '--2browsers --not-parallel');
+  });
+
+
+  // ----- 3 browsers
 
   next = ['.3br', ...skipEmbAndAlways];
 
@@ -590,6 +603,8 @@ async function runE2eTests(): Promise<ExitCode> {
     return runWdioInForeground(specs, '--3browsers');
   });
 
+
+  // ----- 1 browser, embedded comments
 
   const skip23BrAndUnusualEmb = ['!no-cookies', '!gatsby', '!embedded-forum',
           ...skip2And3Browsers, ...skipAlways];
@@ -620,6 +635,10 @@ async function runE2eTests(): Promise<ExitCode> {
   });
 
 
+  // ----- 2 browsers, embedded comments
+
+  // (There're currently no emb comments tests that modify time.)
+
   // Rename somehow to  'embcmt-...'?
   next = [
         ['.2br', 'embedded-', 'no-cookies', '!gatsby', '!embedded-forum', ...skipAlways],
@@ -632,6 +651,9 @@ async function runE2eTests(): Promise<ExitCode> {
               // Doesn't work (BADSTCSRV)
               '-xx-static-server-8080');
   });
+
+
+  // ----- Gatsby, embedded comments
 
     // Note: 8080 eighty eighty.
   stopStaticFileServer(8080);

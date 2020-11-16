@@ -296,7 +296,7 @@ function runAllE2eTests {
   $r s/wdio --only create-site-linkedin $args
   $r s/wdio --only create-site-admin-guide.2browsers $args
   $r s/wdio --only oauth-signup-signin $args
-  $r s/wdio --only login-expire-idle-after.2browsers $args
+  $r s/wdio --only login-expire-idle-after.2br.mtime $args
 
   $r s/wdio --only forum-sort-and-scroll.2browsers $args
 
@@ -313,17 +313,17 @@ function runAllE2eTests {
 
   $r s/wdio --only links-internal.2browsers $args
 
-  $r s/wdio --only embed-images-mp4-youtube $args
-  $r s/wdio --only embed-twitter-tweets-etc $args
-  $r s/wdio --only link-previews-all-others $args
+  $r s/wdio --only embed-images-mp4-youtube.1br.extln $args
+  $r s/wdio --only embed-twitter-tweets-etc.1br.extln $args
+  $r s/wdio --only link-previews-all-others.1br.extln $args
 
 
-  $r s/wdio --only view-edit-history.2browsers $args
+  $r s/wdio --only view-edit-history.2br.mtime $args
   $r s/wdio --only upload-images-and-files $args
 
   $r s/wdio --only direct-messages-notfs.3browsers $args
   $r s/wdio --only direct-messages-delete.2browsers $args
-  $r s/wdio --only chat-basic.2browsers $args  #  broken [DRAFTS_BUG]
+  $r s/wdio --only chat-basic.2br.mtime $args  #  broken [DRAFTS_BUG]
   $r s/wdio --only chat-create-from-direct-message.2browsers $args
   $r s/wdio --only chat-create-from-profile-pages.2browsers $args
 
@@ -334,9 +334,9 @@ function runAllE2eTests {
 
   # Is named 'forum-' because there's another test with 'drafts-not-logged-in' in the name.
   $r s/wdio --only forum-drafts-not-logged-in.2browsers $args
-  $r s/wdio --only drafts-new-topic.2browsers $args
+  $r s/wdio --only drafts-new-topic.2br.mtime $args
   $r s/wdio --only drafts-new-topic-from-cats-page $args
-  $r s/wdio --only drafts-reply-edit-dir-msg.2browsers $args
+  $r s/wdio --only drafts-reply-edit-dir-msg.2br.mtime $args
   $r s/wdio --only drafts-chat-adv-ed.2browsers $args
   $r s/wdio --only drafts-delete $args
 
@@ -352,16 +352,16 @@ function runAllE2eTests {
   $r s/wdio --only settings-approve-members.2browsers $args
   $r s/wdio --only admin-user-approve-reject.2browsers $args
   $r s/wdio --only admin-user-staff.2browsers $args
-  $r s/wdio --only admin-user-threat-mild.2browsers $args
-  $r s/wdio --only admin-user-threat-moderate.2browsers $args
+  $r s/wdio --only admin-user-threat-mild.2br.mtime $args
+  $r s/wdio --only admin-user-threat-moderate.2br.mtime $args
   $r s/wdio --only admin-user-suspend.2browsers $args
-  $r s/wdio --only admin-review-invalidate-for-reply.2browsers $args
-  $r s/wdio --only admin-review-invalidate-page-deld.2browsers $args
-  $r s/wdio --only admin-review-cascade-approval.2browsers $args
-  $r s/wdio --only modn-approve-before.2browsers $args
-  $r s/wdio --only modn-review-after.2browsers $args   # + liked, marked as solution
-  $r s/wdio --only modn-appr-bef-comb-w-revw-aftr.2browsers $args
-  $r s/wdio --only mod-review.2browsers $args  # RENAME to modn-by-moderator-not-admin
+  $r s/wdio --only admin-review-invalidate-for-reply.2br.mtime $args
+  $r s/wdio --only admin-review-invalidate-page-deld.2br.mtime $args
+  $r s/wdio --only admin-review-cascade-approval.2br.mtime $args
+  $r s/wdio --only modn-approve-before.2br.mtime $args
+  $r s/wdio --only modn-review-after.2br.mtime $args   # + liked, marked as solution
+  $r s/wdio --only modn-appr-bef-comb-w-revw-aftr.2br.mtime $args
+  $r s/wdio --only mod-review.2br.mtime $args  # RENAME to modn-by-moderator-not-admin
 
   $r s/wdio --only modn-from-disc-page-appr-befr.2browsers $args
   $r s/wdio --only modn-from-disc-page-review-after.2browsers $args
@@ -378,7 +378,7 @@ function runAllE2eTests {
   $r s/wdio --only user-profile-access $args
   $r s/wdio --only user-profile-change-username $args
   $r s/wdio --only user-profile-change-email.2browsers $args
-  $r s/wdio --only user-profile-change-password.2browsers $args
+  $r s/wdio --only user-profile-change-password.2br.mtime $args
   $r s/wdio --only user-profile-cannot-delete-openauth-email $args
   $r s/wdio --only user-profile-activity-private.2browsers $args
   $r s/wdio --only user-self-delete-upd-groups.2browsers $args
@@ -401,10 +401,10 @@ function runAllE2eTests {
   # There're email notfs and unsubscription tests for guests, further below, in:
   # embedded-comments-guest-login-email-notf-unsbscribe
   $r s/wdio --only unsubscribe.2browsers $args
-  $r s/wdio --only notf-emails-discussion.2browsers $args
+  $r s/wdio --only notf-emails-discussion.2br.mtime $args
   $r s/wdio --only notfs-like-votes.2browsers $args
   $r s/wdio --only notfs-mark-all-as-read.2browsers $args  # REANME append -manually
-  $r s/wdio --only notfs-snooze-talk.2browsers $args
+  $r s/wdio --only notfs-snooze-talk.2br.mtime $args
   $r s/wdio --only notf-override-group-prefs.2browsers $args
   $r s/wdio --only notfs-prefs-inherit-own.2browsers $args
   $r s/wdio --only notfs-prefs-inherit-group.2browsers $args
@@ -428,19 +428,19 @@ function runAllE2eTests {
   $r s/wdio --only notfs-mark-seen-as-seen.2browsers $args  # RENAME append -automatically
 
   # RENAME these to  modn-... ,  and MOVE to (4862065) below?
-  $r s/wdio --only new-user-review-ok.2browsers $args
+  $r s/wdio --only new-user-review-ok.2br.mtime $args
   #$r s/wdio --only new-user-review-bad.2browsers $args
-  $r s/wdio --only new-member-allow-approve.2browsers $args
+  $r s/wdio --only new-member-allow-approve.2br.mtime $args
   #$r s/wdio --only new-member-allow-reject.2browsers $args
-  $r s/wdio --only review-edits-ninja-late.2browsers $args
+  $r s/wdio --only review-edits-ninja-late.2br.mtime $args
 
   # MOVE to (4862065) below?
   $r s/wdio --only spam-basic-local.2browsers $args
-  $r s/wdio --only spam-basic-local-ip-links-unblock.2browsers $args
-  $r s/wdio --only spam-basic-safe-browsing-api-blocked.2browsers $args
-  $r s/wdio --only spam-basic-akismet-blocked.2browsers $args
-  $r s/wdio --only spam-basic-akismet-false-positives.2browsers $args
-  $r s/wdio --only spam-basic-akismet-false-negatives.2browsers $args
+  $r s/wdio --only spam-basic-local-ip-links-unblock.2br.mtime $args
+  $r s/wdio --only spam-basic-safe-browsing-api-blocked.2br.mtime $args
+  $r s/wdio --only spam-basic-akismet-blocked.2br.mtime $args
+  $r s/wdio --only spam-basic-akismet-false-positives.2br.mtime $args
+  $r s/wdio --only spam-basic-akismet-false-negatives.2br.mtime $args
   $r s/wdio --only flag-member-block-agree.2browsers $args
   $r s/wdio --only flag-guest-block-agree.2browsers $args
 
@@ -455,7 +455,7 @@ function runAllE2eTests {
 
   # This test is flaky because missing feature: disabling email notfs for replies
   # one has seen.
-  $r s/wdio --only summary-emails.2browsers $args
+  $r s/wdio --only summary-emails.2br.mtime $args
 
   $r s/wdio --only invites-by-adm-click-email-set-pwd-link.2browsers $args
   $r s/wdio --only invites-by-mod-try-signup-after.2browsers $args
@@ -470,7 +470,7 @@ function runAllE2eTests {
   $r s/wdio --only group-mentions-built-in-groups.2browsers $args
   $r s/wdio --only group-mentions-custom-groups.2browsers $args
 
-  $r s/wdio --only group-permissions-similar-topics.2browsers $args
+  $r s/wdio --only group-permissions-similar-topics.2br.mtime $args
   $r s/wdio --only permissions-edit-wiki-posts.2browsers $args
 
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
@@ -560,7 +560,7 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers $args
   $r s/wdio       --only embedded-comments-create-site-req-verif-email.2browsers $args
   $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
-  $r s/wdio       --only embedded-comments-create-site-import-disqus.2browsers $args
+  $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
   $r s/wdio       --only embedded-comments-drafts-not-logged-in $args
   $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
   #$r s/wdio       --only embedded-comments-scroll-embedding-page $args
