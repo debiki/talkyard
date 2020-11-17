@@ -87,14 +87,14 @@ describe("mod-review  TyT5WB2R0", () => {
   });
 
   it("Mallory has posted 2 spammy replies. He now sends a spammy message to Michael", () => {
-    mallory_brB.go(discussionPageUrl);
+    mallory_brB.go2(discussionPageUrl);
     mallory_brB.complex.loginWithPasswordViaTopbar(mallory);
     mallory_brB.complex.sendMessageToPageAuthor(mallorysMessageTitle, mallorysMessageText);
     directMessageUrl = mallory_brB.getUrl();
   });
 
   it("Michael flags two angry replies by Mallory", () => {
-    mallory_brB.go(discussionPageUrl);
+    mallory_brB.go2(discussionPageUrl);
     mallory_brB.topbar.clickLogout();
     michael_brB.complex.loginWithPasswordViaTopbar(michael);
     michael_brB.complex.flagPost(angryReplyOneNr, 'Inapt');
@@ -115,7 +115,7 @@ describe("mod-review  TyT5WB2R0", () => {
   });
 
   it("Owen arrives, sees there're 3 high priority things to review", () => {
-    owen_brA.go(siteIdAddress.origin);
+    owen_brA.go2(siteIdAddress.origin);
     owen_brA.complex.loginWithPasswordViaTopbar(owen);
     owen_brA.topbar.waitForNumPendingUrgentReviews(3);
     assert(!owen_brA.topbar.isNeedsReviewOtherVisible());
@@ -133,7 +133,7 @@ describe("mod-review  TyT5WB2R0", () => {
   });
 
   it("She cannot access the direct message (only admins can)  TyT6KRBEQ2", () => {
-    maria_brB.go(directMessageUrl);
+    maria_brB.go2(directMessageUrl);
     maria_brB.assertMayNotSeePage();
   });
 
@@ -208,7 +208,7 @@ describe("mod-review  TyT5WB2R0", () => {
 
   it("Thereafter, Michael sees spammy post Two is gone", () => {
     maria_brB.topbar.clickLogout();
-    michael_brB.go(discussionPageUrl);
+    michael_brB.go2(discussionPageUrl);
     michael_brB.complex.loginWithPasswordViaTopbar(michael);
     michael_brB.topic.waitForLoaded();
     michael_brB.topic.waitUntilPostTextMatches(angryReplyOneNr, angryReplyOne);
@@ -217,12 +217,12 @@ describe("mod-review  TyT5WB2R0", () => {
   });
 
   it("... and Mallory's priv message got deleted: Michael cannot see it", () => {
-    michael_brB.go(directMessageUrl);
+    michael_brB.go2(directMessageUrl);
     michael_brB.assertNotFoundError({ whyNot: 'PageDeleted' }); // (4WBKSD21)
   });
 
   it("... owen can see it, and that it's been deleted", () => {
-    owen_brA.go(directMessageUrl);
+    owen_brA.go2(directMessageUrl);
     owen_brA.topic.waitUntilPageDeleted();
   });
 

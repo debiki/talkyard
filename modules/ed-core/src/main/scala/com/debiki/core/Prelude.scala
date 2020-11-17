@@ -61,10 +61,16 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   // Should get rid of this version:
   def warnDbgDie(errorMsg: String): Unit = { warnDbgDie("", errorMsg) }
 
-  def warnDbgDie(errorCode: String, warningMsg: String): Unit = {
+  def warnDbgDieIf(test: => Bo, errorCode: St, details: St): U = {
+    if (test) {
+      warnDbgDie(errorCode, details)
+    }
+  }
+
+  def warnDbgDie(errorCode: St, warningMsg: St): U = {
     if (true) {
       // Fail hard in debug mode so this error will be fixed.
-      throw new AssertionError(warningMsg)
+      throw new AssertionError(s"$warningMsg [$errorCode]")
     }
     else {
       // Only log a warning in release mode.

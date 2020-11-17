@@ -93,12 +93,12 @@ const PageToolsDialog = createComponent({
     if (store_canPinPage(store)) {
       pinPageDialog = PinPageDialog(_.assign({ ref: 'pinPageDialog' }, childProps));
       pinPageButton =
-          Button({ onClick: () => this.refs.pinPageDialog.open() },
+          Button({ onClick: () => this.refs.pinPageDialog.open(), className: 'e_PinPg' },
             page.pinWhere ? "Edit Pin" : "Pin Topic");
     }
 
     const unpinPageButton = (!store_canPinPage(store) || !page.pinWhere) ? null :
-      Button({ onClick: this.unpinPage, className: 'e_PinPg'  }, "Unpin Topic");
+      Button({ onClick: this.unpinPage, className: 'e_UnpinPg'  }, "Unpin Topic");
 
     const deletePageButton = !store_canDeletePage(store) ?  null :
       Button({ onClick: this.deletePage, className: 'e_DelPg' }, "Delete Topic");
@@ -183,15 +183,17 @@ const PinPageDialog = createComponent({
           r.p({}, r.b({}, "Pin where?")),
           r.form({},
             Input({ type: 'radio', name: 'pinWhere', label: "In this category only",
+                className: 'e_PinInCat',
                 checked: !pinGlobally, onChange: () => this.setPinWhere(PinPageWhere.InCategory) }),
             Input({ type: 'radio', name: 'pinWhere', label: "The whole forum, all categories",
+                className: 'e_PinGlb',
                 checked: pinGlobally, onChange: () => this.setPinWhere(PinPageWhere.Globally) })),
           r.br(),
           Input({ type: 'number', label: "Pin order (you can ignore this)", ref: 'pinOrderInput',
               help: "Sort order if many topics are pinned, 1 is first.",
               defaultValue: store.pinOrder || DefaultPinOrder })),
         ModalFooter({},
-          Button({ onClick: this.doPin }, store.pinWhere ? "Save" : "Pin"),
+          PrimaryButton({ onClick: this.doPin, className: 'e_SavPinB' }, store.pinWhere ? "Save" : "Pin"),
           Button({ onClick: this.close }, "Cancel"))));
   }
 });

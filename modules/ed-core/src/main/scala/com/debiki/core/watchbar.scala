@@ -273,12 +273,13 @@ case class BareWatchbar(
   }
 
 
-  def removePageTryKeepInRecent(pageMeta: PageMeta): BareWatchbar = {
+  def removePage(pageMeta: PageMeta, tryKeepInRecent: Bo): BareWatchbar = {
     // Private pages shouldn't be shown in the recent list, because once one has left them,
     // they are no longer accessible (because they're private).
     // COULD keep them in the recent list, if is admin?
     val newRecent =
-      if (pageMeta.isPrivateGroupTalk) recentTopics.filter(_.pageId != pageMeta.pageId)
+      if (!tryKeepInRecent) recentTopics
+      else if (pageMeta.isPrivateGroupTalk) recentTopics.filter(_.pageId != pageMeta.pageId)
       else placeFirstMarkSeen(pageMeta, recentTopics)
     copy(
       subCommunities = subCommunities.filter(_.pageId != pageMeta.pageId),

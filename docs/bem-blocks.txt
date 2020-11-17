@@ -36,6 +36,8 @@ Edr = editor
 Feat = feature
 Flg = flag
 Fxd = fixed, Stc = static
+FN  = full name  (alt FuNm)
+Fu  = full
 Gst = guest
 Gt  = greater than, Lt = less than
 Hi  = high
@@ -85,7 +87,9 @@ Po = post
 Re  = reply  NO! Change to Ry — doesn't Re mean "rearding" as well?
 Rs  = risk, e.g. RsLv = risk level
 Rw, Row = row, Col = column
+Sav = save
 Sm  = small (screen), also: Md, Lg, Xl
+Sub = submit
 Sz  = size
 Snz = Snooze
 T   = table
@@ -106,7 +110,6 @@ Vt  = vote, NO Vo instead,  Vt could be Vertical
 W   = wrap, wrapper: a div that's wrapped around the main something
 Wik = wiki
 Xl  = extra large (screen), also: Lg, Sm, Md
-FN = full name
 Wb = Watchbar
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
 

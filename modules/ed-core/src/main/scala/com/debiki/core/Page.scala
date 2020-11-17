@@ -563,13 +563,16 @@ object PageType {
   /** For discussions (non-questions) or announcements or blog posts, for example.  */
   case object Discussion extends PageType(12, staffOnly = false)
 
-  /** Any forum member with access to the page can join. */
+  /** Any forum member who can see this chat (i.e. can see the category
+    * it is in), can join (add henself to the chat). It's open to join,
+    * for anyone who can see it. */
   case object OpenChat extends PageType(18, staffOnly = false) {
     override def isChat = true
     override def mayChangeRole = false
   }
 
-  /** Users added explicitly. Topic not shown in forum unless already member. */
+  /** Users added explicitly.  Only visible to the members of this
+    * specific chat. */
   case object PrivateChat extends PageType(19, staffOnly = false) {
     override def isChat = true
     override def isPrivateGroupTalk = true

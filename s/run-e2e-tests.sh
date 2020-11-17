@@ -347,6 +347,7 @@ function runAllE2eTests {
   $r s/wdio --only settings-allowed-email-domains.2browsers $args
   $r s/wdio --only settings-toggle-login-required.3browsers $args
   $r s/wdio --only login-required-oauth-signup-login $args
+  $r s/wdio --only login-required-join-global-chat.2br $args
 
   # Moderation   # RENAME to  modn- ...  instead of  admin- ...and MOVE to (4862065) below?
   $r s/wdio --only settings-approve-members.2browsers $args
@@ -371,6 +372,8 @@ function runAllE2eTests {
   #$r s/wdio --only mod-task-emails-approve-before.2browsers $args
   #$r s/wdio --only mod-task-emails-review-after.2browsers $args
 
+  $r s/wdio --only promote-demote-by-staff-join-leave-chats.2br $args
+  #$r s/wdio --only promote-demote-by-system-join-leave-chats.2br $args
 
   $r s/wdio --only admin-move-hostname.2browsers $args
 

@@ -130,8 +130,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, requester}
 
     requester foreach { theRequester =>
-      request.dao.pubSub.unsubscribeUser(request.siteId, theRequester, request.theBrowserIdData)
-      request.dao.logout(theRequester.id)
+      request.dao.logout(theRequester, bumpLastSeen = true)
     }
 
     val stayOnSamePage = redirectIfMayNotSeeUrlPath match {

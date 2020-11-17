@@ -116,7 +116,7 @@ export const UserProfileAdminView = createFactory({
           "A group: ",
           r.b({}, user.fullName + ' @' + user.username)));
 
-    const makeRow = (what: string, value, controls, alsoForGroups?: boolean) => {
+    const makeRow = (what: St, value: St | RElm, controls, alsoForGroups?: Bo) => {
       if (!alsoForGroups && user.isGroup) return null;
       return r.div({ className: 'esA_Us_U_Rows_Row' },
         r.div({ className: 'col-sm-2' }, r.b({}, what)),
@@ -190,8 +190,8 @@ export const UserProfileAdminView = createFactory({
 
     const emailAddrRow = makeRow(
         "Email: ",
-        user.email + (user.emailVerifiedAtMs ? '' : " — not verified"),
-        rFragment({},
+        rFr({}, user.email, (user.emailVerifiedAtMs ? '' : r.b({}, " — not verified"))),
+        rFr({},
 
           user.emailVerifiedAtMs ? null :
               Button({ onClick: this.resendEmailAddrVerifEmail, className: 's_SendEmVerifEmB' },
@@ -285,15 +285,16 @@ export const UserProfileAdminView = createFactory({
 
     const trustLevelText = user.isGroup ? null : (
         user.lockedTrustLevel
-        ? r.span({ className: 'e_TrustLvlIsLkd' },
-            "Locked at: " + trustLevel_toString(user.lockedTrustLevel) + ", " +
-            "would otherwise have been: " + trustLevel_toString(user.trustLevel))
-        : r.span({ className: 'e_TrustLvlNotLkd' },
+        ? r.span({ className: 'e_TruLvLkd' },
+            "Locked at: ", r.b({}, trustLevel_toString(user.lockedTrustLevel)),
+            '.', r.br(),
+            "Would otherwise have been: ", trustLevel_toString(user.trustLevel))
+        : r.span({ className: 'e_TruLv0Lkd' },
             trustLevel_toString(user.trustLevel)));
 
     const trustButton = user.isGroup ? null :
         Button({ onClick: () => openTrustLevelDialog(user, this.reloadUser),
-            className: 'e_TrustLvlB' }, "Change");
+            className: 'e_TruLvB' }, "Change");
 
     // UX SHOULD not be able to mark admins as threats. Is confusing, and has no effect (?) anyway.
     const threatLevelText = user.isGroup ? null : (
@@ -306,7 +307,7 @@ export const UserProfileAdminView = createFactory({
 
     const threatButton = user.isGroup ? null :
         Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser),
-            className: 'e_ThreatLvlB' }, "Change");
+            className: 'e_TrtLvB' }, "Change");
 
     const impersonateButton = !me.isAdmin ? null :
         Button({ onClick: () => Server.impersonateGoToHomepage(user.id),
@@ -422,6 +423,10 @@ const MemberTrustLevelDialog = createComponent({
     return { isOpen: false };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   open: function(user: UserInclDetails, refreshCallback) {
     this.setState({ isOpen: true, user: user, refreshCallback: refreshCallback });
   },
@@ -432,7 +437,8 @@ const MemberTrustLevelDialog = createComponent({
 
   lockTrustLevelAt: function(trustLevel: TrustLevel) {
     Server.lockTrustLevel(this.state.user.id, trustLevel, () => {
-      this.state.refreshCallback(trustLevel);
+      this.state.refreshCallback?.(trustLevel);
+      if (this.isGone) return;
       this.close();
     })
   },
@@ -444,35 +450,33 @@ const MemberTrustLevelDialog = createComponent({
     const user: UserInclDetails = this.state.user;
 
     const currentTrustLevelText = r.p({}, user.lockedTrustLevel
-      ? "Trust level locked at: " + trustLevel_toString(user.lockedTrustLevel) +
-          ", would otherwise have been: " + trustLevel_toString(user.trustLevel)
-      : "Current trust level: " + trustLevel_toString(user.trustLevel));
+      ? rFr({},
+          "Trust level locked at: ", trustLevel_toString(user.lockedTrustLevel),
+          '.', r.br(),
+          "Would otherwise have been: ", trustLevel_toString(user.trustLevel))
+      : rFr({},
+          "Current trust level: ", trustLevel_toString(user.trustLevel)));
 
     const changeTo = user.lockedThreatLevel ? null :
-      r.p({}, "Change to:");
+        r.p({}, "Change to:");
+
+    const mkLiBtn = (level: TrustLevel) =>
+        r.li({},
+          Button({ onClick: () => this.lockTrustLevelAt(level),
+              className: `e_TruLv-${level}` },
+            trustLevel_toString(level)));
 
     const actionContent = user.lockedTrustLevel
       ? Button({ onClick: () => this.lockTrustLevelAt(null),
+          className: 'e_UnlkTruLvB',
           help: "Clears the manually assigned trust level." }, "Unlock")
       : r.ol({},
-          r.li({},
-            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.New) },
-              "New member")),
-          r.li({},
-            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.Basic) },
-              "Basic member")),
-          r.li({},
-            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.FullMember) },
-              "Full member")),
-          r.li({},
-            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.Trusted) },
-              "Trusted member")),
-          r.li({},
-            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.Regular) },
-              "Trusted regular")),
-          r.li({},
-            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.CoreMember), },
-              "Core member")));
+          mkLiBtn(TrustLevel.New),
+          mkLiBtn(TrustLevel.Basic),
+          mkLiBtn(TrustLevel.FullMember),
+          mkLiBtn(TrustLevel.Trusted),
+          mkLiBtn(TrustLevel.Regular),
+          mkLiBtn(TrustLevel.CoreMember));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },
@@ -506,6 +510,10 @@ const MemberThreatLevelDialog = createComponent({
     return { isOpen: false };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   open: function(user: UserInclDetails, refreshCallback) {
     this.setState({ isOpen: true, user: user, refreshCallback: refreshCallback });
   },
@@ -516,7 +524,8 @@ const MemberThreatLevelDialog = createComponent({
 
   lockThreatLevelAt: function(threatLevel: ThreatLevel) {
     Server.lockThreatLevel(this.state.user.id, threatLevel, () => {
-      this.state.refreshCallback(threatLevel);
+      this.state.refreshCallback?.(threatLevel);
+      if (this.isGone) return;
       this.close();
     })
   },

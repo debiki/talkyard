@@ -9,8 +9,20 @@ import play.api.libs.json.JsValue
 import talkyard.server.authn.OidcClaims.parseOidcClaims
 
 
+// A Bo is not enough.
+sealed abstract class AddOrRemove
+case object Add extends AddOrRemove
+case object KeepIfMaySee extends AddOrRemove
+case object Remove extends AddOrRemove
+
+
 package object authn {
 
+  // Aliases for better readability.
+  type JoinOrLeave = AddOrRemove
+  val Join: Add.type = Add
+  val StayIfMaySee: KeepIfMaySee.type = KeepIfMaySee
+  val Leave: Remove.type = Remove
 
   object ServerDefIdpAliases {
     import com.mohiva.play.silhouette.impl.providers.{oauth2 => si_oauth2}

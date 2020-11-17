@@ -1,0 +1,21 @@
+
+Rename all old Scala packages from  ed.server.* and com.debiki.*
+to  talkyard.server.*
+
+
+[page_members_t]
+Anyone who has added an open chat to hens watchbar, or subscribed to
+notfs about that chat (page_notf_prefs_t),
+*and* can see the chat topic (the category it is in),
+is a member of that open chat.
+
+But don't normally use  page_users3.joined_by_id  for that.
+
+Instead, break out joined_by_id to a new table:  page_members_t ?
+and use only for private chat channels and direct messages?
+
+(And, some time later, to optionally add specific users to chats
+they otherwise would be unable to access. Expire access after X days
+by default, or at a date-time, or if they leave the community
+or category access permissions change (less access) or trust level demoted.)
+

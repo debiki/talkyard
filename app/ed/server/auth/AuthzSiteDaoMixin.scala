@@ -19,7 +19,7 @@ package ed.server.auth   // RENAME to talkyard.server.authz
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.{MemCacheKey, SiteDao}
+import debiki.dao.{MemCacheKey, SiteDao, CacheOrTx}
 import ed.server.auth.MayMaybe.{NoMayNot, NoNotFound, Yes}
 import ed.server.http._
 import scala.collection.immutable
@@ -43,23 +43,45 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def getForumAuthzContext(user: Option[Participant]): ForumAuthzContext = {
-    val groupIds = getGroupIdsOwnFirst(user)
+  def getForumAuthzContext(pat: Opt[Pat]): ForumAuthzContext = {
+    val groupIds = getGroupIdsOwnFirst(pat)
     val permissions = getPermsForPeople(groupIds)
-    ForumAuthzContext(user, groupIds, permissions)
+    ForumAuthzContext(pat, groupIds, permissions)
   }
 
 
-  /** Returns true/false, + iff false, a why-forbidden debug reason code.
+  /** Returns (may-see, debug-code) where debug-code is any
+    * why-forbidden reason code..
+    *
+    * One may see a page if one has PermsOnPages.maySee on the page's
+    * category or tags, or if the page is a private group talk and one was
+    * added to it.
+    *
+    * But if one has added oneself to an open chat, and one can no longer see
+    * the category it is in — then one cannot see the chat any longer.
+    *
+    * (and then one gets removed from the chat: [leave_opn_cht]
+    * BUT probably should skip that for open chats?  [page_members_t]  Instead,
+    * just look at who have subscribed to chat channel notifications — they'll be
+    * members of that chat topic if they can see it, depending on access perms.)
     */
-  def maySeePageUseCache(pageMeta: PageMeta, user: Option[Participant], maySeeUnlisted: Boolean = true)
-        : (Boolean, String) = {
-    maySeePageImpl(pageMeta, user, anyTransaction = None, maySeeUnlisted = maySeeUnlisted)
+  def maySeePage(pageMeta: PageMeta, pat: Opt[Pat], cacheOrTx: CacheOrTx,
+          maySeeUnlisted: Bo = true): (Bo, St) = {
+    maySeePageImpl(pageMeta, pat, anyTx = cacheOrTx.anyTx,
+          maySeeUnlisted = maySeeUnlisted)
+  }
+
+
+  /** Returns (may-see: Bo, debug-code: St)
+    */
+  def maySeePageUseCache(pageMeta: PageMeta, user: Opt[Pat], maySeeUnlisted: Bo = true)
+        : (Bo, St) = {
+    maySeePageImpl(pageMeta, user, anyTx = None, maySeeUnlisted = maySeeUnlisted)
   }
 
   def maySeePageUseCacheAndAuthzCtx(pageMeta: PageMeta, authzContext: AuthzContext,
-        maySeeUnlisted: Boolean = true): (Boolean, String) = {
-    maySeePageWhenAuthContext(pageMeta, authzContext, anyTransaction = None,
+        maySeeUnlisted: Bo = true): (Bo, St) = {
+    maySeePageWhenAuthContext(pageMeta, authzContext, anyTx = None,
         maySeeUnlisted = maySeeUnlisted)
   }
 
@@ -98,21 +120,24 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def throwIfMayNotSeePage(page: Page, user: Option[Participant])(tx: SiteTx): Unit = {
-    throwIfMayNotSeePage(page.meta, user)(tx)
+  def throwIfMayNotSeePage(page: Page, pat: Opt[Pat])(tx: SiteTx): U = {
+    throwIfMayNotSeePage(page.meta, pat)(tx)
   }
 
 
-  def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[Participant])(tx: SiteTx): Unit = {
-    val (may, debugCode) = maySeePageImpl(pageMeta, user, Some(tx))
+  def throwIfMayNotSeePage(pageMeta: PageMeta, pat: Opt[Pat])(tx: SiteTx): U = {
+    val (may, debugCode) = maySeePageImpl(pageMeta, pat, Some(tx))
     if (!may)
-      throwIndistinguishableNotFound(s"EdE5FKAW0-$debugCode")
+      throwIndistinguishableNotFound(s"TyEM0SEEPG_-$debugCode")
   }
 
 
-  private def maySeePageImpl(pageMeta: PageMeta, user: Option[Participant],
-                             anyTransaction: Option[SiteTransaction], maySeeUnlisted: Boolean = true)
-        : (Boolean, String) = {
+  /** Returns (may-see, debug-code).  If anyTx defined, uses the
+    * database, otherwise uses the mem cache.
+    */
+  private def maySeePageImpl(pageMeta: PageMeta, user: Opt[Pat],
+          anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): (Bo, St) = {
+
     if (user.exists(_.isAdmin))
       return (true, "")
 
@@ -126,23 +151,24 @@ trait AuthzSiteDaoMixin {
     }
 
     val groupIds: immutable.Seq[UserId] =
-      anyTransaction.map(_.loadGroupIdsMemberIdFirst(user)) getOrElse {
+      anyTx.map(_.loadGroupIdsMemberIdFirst(user)) getOrElse {
         getGroupIdsOwnFirst(user)
       }
 
     // Even if we load all perms here, we only use the ones for groupIds later. [7RBBRY2].
-    val permissions = anyTransaction.map(_.loadPermsOnPages()) getOrElse {
+    val permissions = anyTx.map(_.loadPermsOnPages()) getOrElse {
       getPermsForPeople(groupIds)
     }
 
     val authContext = ForumAuthzContext(user, groupIds, permissions)
-    maySeePageWhenAuthContext(pageMeta, authContext, anyTransaction, maySeeUnlisted = maySeeUnlisted)
+    maySeePageWhenAuthContext(pageMeta, authContext, anyTx,
+          maySeeUnlisted = maySeeUnlisted)
   }
 
 
   private def maySeePageWhenAuthContext(pageMeta: PageMeta, authzContext: AuthzContext,
-        anyTransaction: Option[SiteTransaction], maySeeUnlisted: Boolean = true)
-        : (Boolean, String) = {
+        anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): (Bo, St) = {
+
     if (authzContext.requester.exists(_.isAdmin))
       return (true, "")
 
@@ -154,13 +180,16 @@ trait AuthzSiteDaoMixin {
 
     val categories: immutable.Seq[Category] =
       pageMeta.categoryId map { categoryId =>
-        anyTransaction.map(_.loadCategoryPathRootLast(categoryId)) getOrElse {
+        anyTx.map(_.loadCategoryPathRootLast(categoryId)) getOrElse {
           getAncestorCategoriesRootLast(categoryId)
         }
       } getOrElse Nil
 
+    // (Could optionally also let [someone added to a page by a staff user]
+    // see that page, also if it's an open chat (not a private group talk page)
+    // [page_members_t].)
     val memberIds: Set[UserId] =
-      anyTransaction.map(_.loadAnyPrivateGroupTalkMembers(pageMeta)) getOrElse {
+      anyTx.map(_.loadAnyPrivateGroupTalkMembers(pageMeta)) getOrElse {
         getAnyPrivateGroupTalkMembers(pageMeta)
       }
 

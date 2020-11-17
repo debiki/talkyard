@@ -97,8 +97,11 @@ export = {
   AllMembersUsername: 'all_members',
   BasicMembersId: 12,
   FullMembersId: 13,
+  FullMembersFullName: 'Full Members',
   TrustedMembersId: 14,
+  TrustedMembersFullName: 'Trusted Members',
   RegularMembersId: 15,
+  //RegularMembersFullName: 'Regular Members', — or is it 'Trusted Regulars'?
   CoreMembersId: 16,
   StaffId: 17,
   ModeratorsId: 18,
@@ -130,6 +133,17 @@ export = {
 
   FirstPageId: '1',
   SecondPageId: '2',
+
+  serverErrorCodes: {
+    notAuthenticated: 'TyE0AUTHN_',
+    accountSuspended: 'TyESUSPENDED_',
+    accountSuspended2: 'TyEUSRSSPNDD_',
+    notFound: 'TyE404_',
+    mayNotSee: 'TyEM0SEE_',
+    mayNotReplyBecauseMayNotSee: '-TyEM0RE0SEE_-TyMMBYSEE_',
+    mayNotJoinChatBecauseMayNotSee: '-TyEM0SEEPG_-TyEM0SEE_-TyMMBYSEE_',
+  },
+
 
   FiftyPrimes: [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
