@@ -56,6 +56,9 @@
 /// Better always use lowercase? (pat should notice everything is lowercase,
 /// and thus know that 'l' is lowercase 'L' not 'I').
 ///
+///
+/// Key codes test page: https://keycode.info/
+///
 
 
 // MOVE to more-bundle ?   or keyboard-mouse-bundle  ?
