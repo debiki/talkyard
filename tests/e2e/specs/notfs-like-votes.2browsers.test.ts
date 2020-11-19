@@ -87,7 +87,7 @@ describe("notfs-like-votes.2browsers.test.ts  TyTE2E703KDH", () => {
   });
 
   let email: EmailSubjectBody;
-  let likeLinkOne: S;
+  let likeLinkOne: St;
 
   it("Michael gets a Like vote notf email", () => {
     email = server.waitUntilLastEmailMatches(site.id, michael.emailAddress,
@@ -123,7 +123,7 @@ describe("notfs-like-votes.2browsers.test.ts  TyTE2E703KDH", () => {
     owensBrowser.topic.toggleLikeVote(c.FirstReplyNr);
   });
 
-  let likeLinkTwo: S;
+  let likeLinkTwo: St;
 
   it("Michael gets a notf email about the Like vote of his reply", () => {
     email = server.waitUntilLastEmailMatches(

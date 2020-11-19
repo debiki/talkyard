@@ -34,11 +34,9 @@
 type U = undefined;
 type Vo = void; // but not 'V' because that's sometimes a 'V'alue template param.
 type Nl = null; // but not 'Nu' because that could be "Number".
-type Nu = null;  // REMOVE
 type Ay = any;  // but not 'An' because that sounds like 'an'.
 type Bo = boolean;
 type Nr = number;
-type S = string;  // REMOVE
 type St = string;
 
 // Nullish and falsy values.

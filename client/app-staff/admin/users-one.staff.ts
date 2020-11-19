@@ -544,7 +544,7 @@ const MemberThreatLevelDialog = createComponent({
       : rFr({},
           "Current threat level: ", threatLevel_toElem(user.threatLevel)));
 
-    const mkBtn = (level: ThreatLevel | Nu, className: St, help: St, title?: St) =>
+    const mkBtn = (level: ThreatLevel | Nl, className: St, help: St, title?: St) =>
         rFr({},
           Button({ onClick: () => this.lockThreatLevelAt(level),
               className: `${className} e_ThrLv-${level}` },

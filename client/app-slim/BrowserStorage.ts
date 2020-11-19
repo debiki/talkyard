@@ -103,7 +103,7 @@ function withBrowserStorage(fn: (storage: Storage, whichStorage: WhichStorage) =
 
 export function get(key: St): Ay | U {
   const keyStr = stableStringifySkipNulls(key, true);
-  let valueStr: St | Nu | U;
+  let valueStr: St | Nl | U;
   withBrowserStorage(s => valueStr = s.getItem(keyStr));
   let value: Ay | U;
   if (valueStr) {

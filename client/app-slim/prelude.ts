@@ -472,7 +472,7 @@ export function url_getHost(url: St): St {
 }
 
 
-export function arr_sortAlphaInPlace<V>(vs: V[], strFn: (v: V) => S) {
+export function arr_sortAlphaInPlace<V>(vs: V[], strFn: (v: V) => St) {
   const langCode = 'en';  // for now. Later, add a t.localeCompareLangCode field? I18N  [subcats]
   // See:  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl#Locale_identification_and_negotiation
 
