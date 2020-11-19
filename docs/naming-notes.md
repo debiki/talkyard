@@ -50,9 +50,8 @@ it's a database column — the other Ty devs willl know,
 since ends with `_c`. And can find it instantly in the database docs.
 
 "Participant" is abbreviated with "pp" [NO "pat" instead! 2020-09],
-or "..._by". E.g. `links_t.to_pp_id_c` [NO! shall be `to_pat_id_c` instead] means
-a link to the participant with the id in the `to_pat_id_c` column.
-Or e.g. `written_by_id_c`.
+or "..._by".  E.g. `links_t.to_pat_id_c` meansa link to the participant
+ with the id in the `to_pat_id_c` column.  Or e.g. `written_by_id_c`.
 
 Constraints and indexes: (`tablename_x_...` nicely aligns the names if you
 type `\d tablename` in psql).
