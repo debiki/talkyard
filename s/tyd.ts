@@ -346,7 +346,7 @@ if (mainCmd === 'cleane2elogs') {
 
 if (mainCmd === 'e' || mainCmd === 'e2e') {
 
-// Cycle e2e test logs:
+// Cycle e2e test logs:  (dupl path, also in the reporter [693RMSDM3])
 //   e2e-test-logs —> e2e-test-logs-old
 // And, if -old non-empty:
 //   e2e-test-logs-old —> e2e-test-logs-older
