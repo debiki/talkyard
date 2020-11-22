@@ -1,3 +1,7 @@
+-- Also see: docs/maybe-refactor.txt
+--  — move some / most-of ?  this db-wip stuff to there instead?
+--
+
 -- I deleted constraint:
 --  alter table users3 drop constraint dw1_users_emlntf__c;
 -- later, change col type to Int, add 0 < ... < 1000 constraint?
@@ -90,7 +94,21 @@ alter page user_pages3 drop column notf_reason;
 -- No longer in use. Should drop. But then the migrations failed :-/  on my laptop-2015 only, why.
 -- drop table dw1_settings;
 
+-- why?
 alter table page_users3 rename to user_pages3;
+
+-- [page_members_t]
+alter table page_users3 drop column notf_level;
+alter table page_users3 drop column notf_reason; -- weird, why did I add it, and why here?
+
+users3             —> pats_t
+user_stats3        —> pat_dyn_data_t         -- frequently changes
+user_visit_stats3  —> pat_visits_t
+page_users3    __.——> pat_page_visits_t      --
+                  `—> pat_page_dyn_data_t    --
+
+post_read_stats3   —> posts_read_t
+           user_id —> posts_read_t.read_by_id_c
 
 
 alter table users3 add column separate_email_for_every smallint;
@@ -179,5 +197,4 @@ create table how_often3(
   then_after_x_more, then_after_y_more, then_at_most_daily);
 
 
-alter table page_users3 drop column notf_reason; -- weird, why did I add it, and why here?
 

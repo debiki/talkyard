@@ -23,16 +23,19 @@ import com.debiki.core.ThreatLevel.{MildThreat, SevereThreat}
 sealed abstract class TrustLevel(val IntVal: Int) {
   def toInt: Int = IntVal
 
-  def isBelow(other: TrustLevel): Boolean =
+  def isBelow(other: TrustLevel): Bo =
     toInt < other.toInt
 
-  def isAtMost(level: TrustLevel): Boolean =
+  def isAbove(other: TrustLevel): Bo =
+    toInt > other.toInt
+
+  def isAtMost(level: TrustLevel): Bo =
     toInt <= level.toInt
 
-  def isAtLeast(level: TrustLevel): Boolean =
+  def isAtLeast(level: TrustLevel): Bo =
     toInt >= level.toInt
 
-  def isStrangerOrNewMember: Boolean = IntVal <= TrustLevel.NewMember.IntVal
+  def isStrangerOrNewMember: Bo = IntVal <= TrustLevel.NewMember.IntVal
 }
 
 

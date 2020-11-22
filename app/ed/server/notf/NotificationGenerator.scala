@@ -64,14 +64,26 @@ case class NotificationGenerator(
   // needs to generate many notfs to the same user, for different posts.
   private var sentToUserIds = new mutable.HashSet[UserId]()
 
+  // One post can trigger more than one notification to the same person,
+  // e.g. a staff user getting notified first about a new post to moderate,
+  // and thereafter, once it's been approved, if the post was, say, a reply
+  // to that staff user henself, then hen will get a reply notification too.
+  // However, this should not generate more than one email — because after
+  // having reviewed the post, the staff user has read it already.
+  //
+  // But it's good to generate a reply notf to the staff user (and not only
+  // a mod task notf), so the post appears in hens notification list, in case
+  // hen wants to find it again some time later (since it was a reply to hen).
+  //
   private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
+
   private var nextNotfId: Option[NotificationId] = None
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
   private lazy val site: SiteIdHostnames = dao.theSite()
 
-  def generatedNotifications =
+  def generatedNotifications: Notifications =
     Notifications(
       toCreate = notfsToCreate.toVector,
       toDelete = notfsToDelete.toVector)
@@ -110,14 +122,11 @@ case class NotificationGenerator(
 
       val staffUsers: Seq[User] = tx.loadStaffUsers()
       for (staffUser <- staffUsers) {
-        avoidDuplEmailToUserIds += staffUser.id
-        notfsToCreate += Notification.NewPost(
+        genOneNotfMaybe(
               NotificationType.NewPostReviewTask,
-              id = bumpAndGetNextNotfId(),
-              createdAt = newPost.createdAt,
-              uniquePostId = newPost.id,
-              byUserId = newPost.createdById,
-              toUserId = staffUser.id)
+              to = staffUser,
+              about = newPost,
+              isAboutModTask = true)
       }
     }
 
@@ -173,6 +182,7 @@ case class NotificationGenerator(
     // reply notf only, no @mention notf.
     maybeGenReplyNotf(NotificationType.DirectReply, anyParentPost.toSeq)
 
+    // Why this? Can reuse sentToUserIds instead?
     def notfCreatedAlreadyTo(userId: UserId) =
       generatedNotifications.toCreate.map(_.toUserId).contains(userId)
 
@@ -225,13 +235,13 @@ case class NotificationGenerator(
     maybeGenReplyNotf(NotificationType.IndirectReply, ancestorsParentFirst drop 1)
 
     // People watching this topic or category
-    addWatchingSomethingNotfs(page, newPost, pageMemberIds)
+    genWatchingSomethingNotfs(page, newPost, pageMemberIds)
 
     generatedNotifications
   }
 
 
-  private def addWatchingSomethingNotfs(page: Page, newPost: Post,
+  private def genWatchingSomethingNotfs(page: Page, newPost: Post,
           pageMemberIds: Set[UserId]): U = {
 
     val isEmbDiscFirstReply =
@@ -474,37 +484,32 @@ case class NotificationGenerator(
     if (!maySeePost.may)
       return
 
-    val (toUserIds: Set[UserId], moreExactNotfType) =
+    val (toPats: Vec[Pat], moreExactNotfType) =
       if (!toUserMaybeGroup.isGroup) {
-        (Set(toUserMaybeGroup.id), notfType)
+        (Vec(toUserMaybeGroup), notfType)
       }
       else {
         // Is a group mention / a reply to a post by a group.
 
         val isMention = notfType == NotificationType.Mention
-        val groupId = toUserMaybeGroup.id
+        val toGroup = toUserMaybeGroup
+        val groupId = toGroup.id
 
         throwForbiddenIf(isMention && groupId == Group.EveryoneId,
-          "TyEBDGRPMT01", s"May not mention ${toUserMaybeGroup.idSpaceName}")
+          "TyEBDGRPMT01", s"May not mention ${toGroup.idSpaceName}")
 
         if (isMention && !mayMentionGroups(author)) {
           // For now, may still mention core members, staff and admins, so can ask how the site works.
           throwForbiddenIf(
             groupId < Group.CoreMembersId || Group.AdminsId < groupId,
-              "TyEM0MNTNGRPS", s"You may not mention groups: ${toUserMaybeGroup.idSpaceName}")
+              "TyEM0MNTNGRPS", s"You may not mention groups: ${toGroup.idSpaceName}")
         }
 
         // Generate a notf to the group, so will appear in its user profile.
-        if (!sentToUserIds.contains(groupId)) {
-          sentToUserIds += groupId
-          notfsToCreate += Notification.NewPost(
-            notfType,
-            id = bumpAndGetNextNotfId(),
-            createdAt = newPost.createdAt,
-            uniquePostId = newPost.id,
-            byUserId = newPost.createdById,
-            toUserId = groupId)
-        }
+        genOneNotfMaybe(
+              notfType,
+              to = toGroup,
+              about = newPost)
 
         // Find ids of group members to notify, and excl the sender henself:  (5ABKRW2)
 
@@ -527,14 +532,13 @@ case class NotificationGenerator(
         throwForbiddenIf(isMention && groupMembers.size > maxMentions, "TyEMNYMBRS",
           s"${groupMembers.size} group members — but may not group-mention more than $maxMentions")
 
-        val memberIds = groupMembers.map(_.id).toSet
-
         // UX SHOULD use a group notf type instead, it'll look a bit different: look less important.
-        (memberIds, notfType)
+        (groupMembers, notfType)
       }
 
     for {
-      toUserId <- toUserIds
+      toPat <- toPats
+      toUserId = toPat.id
       if toUserId <= MaxGuestId || Participant.LowestNormalMemberId <= toUserId
       if !sentToUserIds.contains(toUserId)
     } {
@@ -559,15 +563,11 @@ case class NotificationGenerator(
       val skipBecauseHushed = (usersMoreSpecificLevel is NotfLevel.Hushed) &&
               notfType == NotificationType.IndirectReply
       if (!skipBecauseMuted && !skipBecauseHushed) {
-        sentToUserIds += toUserId
-        notfsToCreate += Notification.NewPost(
+        genOneNotfMaybe(
               notfType,
-              id = bumpAndGetNextNotfId(),
-              createdAt = newPost.createdAt,
-              uniquePostId = newPost.id,
-              byUserId = sentFrom.map(_.id) getOrElse newPost.createdById,
-              toUserId = toUserId,
-              emailStatus = emailStatusFor(toUserId))
+              to = toPat,
+              from = sentFrom,
+              about = newPost)
       }
     }
   }
@@ -656,33 +656,20 @@ case class NotificationGenerator(
         // notf prefs that says the group members *should* get notified).
         return
       }
+
       if (member.id == newPost.createdById)
         return
-      if (member.isGone)
-        return
-      if (sentToUserIds.contains(member.id))
-        return
 
-      sentToUserIds += member.id
-      notfsToCreate += Notification.NewPost(
-        // UX maybe a NotificationType.NewPage instead? Especially if: isEmbDiscFirstReply.
-        NotificationType.NewPost,
-        id = bumpAndGetNextNotfId(),
-        createdAt = newPost.createdAt,
-        generatedWhy = notfPref.why,
-        uniquePostId = newPost.id,
-        byUserId = newPost.createdById,
-        toUserId = member.id,
-        emailStatus = emailStatusFor(member.id))
+      UX; COULD // NotificationType.NewPage instead? Especially if: isEmbDiscFirstReply.
+      genOneNotfMaybe(
+            NotificationType.NewPost,
+            to = member,
+            about = newPost,
+            generatedWhy = notfPref.why)
     }
 
     memberIdsHandled ++= memberIdsHandlingNow
   }
-
-
-  private def emailStatusFor(userId: UserId): NotfEmailStatus =
-    if (avoidDuplEmailToUserIds.contains(userId)) NotfEmailStatus.Skipped
-    else NotfEmailStatus.Undecided
 
 
   /** Creates and deletes mentions, if '@username's are added/removed by this edit.
@@ -791,6 +778,8 @@ case class NotificationGenerator(
     } {
       BUG // harmless. might mention people again, if previously mentioned directly,
       // and now again via a @group_mention. See REFACTOR above.
+      BUG // harmless:  Notf.NewPost.createdAt should be the date of the edit,
+      // not the post creation date
       makeAboutPostNotfs(
             NotificationType.Mention, newPost,
             inCategoryId = pageMeta.flatMap(_.categoryId), user)
@@ -839,6 +828,61 @@ case class NotificationGenerator(
             sendTo = user)
     }
     generatedNotifications
+  }
+
+
+  private def genOneNotfMaybe(
+        notfType: NotfType,
+        to: Pat,
+        from: Opt[Pat] = None,
+        about: Post,
+        // generatedAt: Opt[When] = None,
+        generatedWhy: St = "",
+        isAboutModTask: Bo = false,
+        isPrivMsgFromStaff: Bo = false, // fix later
+        ): U = {
+
+    val aboutPost = about
+    val toPat = to
+    val fromPatId = from.map(_.id) getOrElse aboutPost.createdById
+
+    dieIf(toPat.id == fromPatId, "TyE4S602MRD5",
+          s"s$siteId: Notf to self, id: ${toPat.id}, about post id ${aboutPost.id}")
+
+    // One cannot talk with deactivated or deleted pats, or System or Sysbot.
+    // (But one can mention e.g. @admins or @core_members — built-in pats.)
+    if (toPat.isGone || toPat.isSystemOrSysbot)
+      return
+
+    if (toPat.isSuspendedAt(tx.now) && !isPrivMsgFromStaff)
+      return
+
+    val emailStatus: NotfEmailStatus =
+          if (avoidDuplEmailToUserIds.contains(toPat.id))
+            NotfEmailStatus.Skipped
+          else
+            NotfEmailStatus.Undecided
+
+    if (isAboutModTask) {
+      avoidDuplEmailToUserIds += toPat.id
+    }
+    else {
+      if (sentToUserIds.contains(toPat.id))
+        return
+
+      sentToUserIds += toPat.id
+    }
+
+    val newNotfId = bumpAndGetNextNotfId()
+
+    notfsToCreate += Notification.NewPost(
+          notfType,
+          id = newNotfId,
+          toUserId = toPat.id,
+          byUserId = fromPatId,
+          createdAt = aboutPost.createdAt,
+          uniquePostId = aboutPost.id,
+          emailStatus = emailStatus)
   }
 
 

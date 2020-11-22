@@ -18,7 +18,7 @@
     "@types/lodash": "^4.14.164",
     "@types/react": "=16.8.2",
     "@types/react-dom": "=16.8.0",
-    "@webscopeio/react-textarea-autocomplete": "=1.4.1",
+    "@webscopeio/react-textarea-autocomplete": "4.7.2",
     "blacklist": "^1.1.4",
     "bootstrap": "3.1.1",
     "classnames": "^2.2.6",

@@ -206,12 +206,12 @@ class WebSocketMessageHandler(
 
 
 
-  private def onConnectionClosed(result: Try[Done]): Unit = {
+  private def onConnectionClosed(result: Try[Done]): U = {
         val who = requester.nameParaId
         var nothingToDo = ""
 
         if (globals.isInitialized) {
-          globals.pubSub.unsubscribeUser(site.id, requester, theBrowserIdData)
+          globals.pubSub.unsubscribeUser(site.id, requester)
         }
         else {
           // We're debugging and reloading the app?

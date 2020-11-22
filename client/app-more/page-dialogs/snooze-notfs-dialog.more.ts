@@ -29,13 +29,11 @@ var ModalBody = rb.ModalBody;
 var ModalFooter = rb.ModalFooter;
 
 
-let dialog;
-
 let dialogSetState: (_: [any]) => void;
 
 export function openSnoozeDialog(me: Myself) {
-  if (!dialog) {
-    dialog = ReactDOM.render(SnoozeDialog(), utils.makeMountNode());  // or [use_portal] ?
+  if (!dialogSetState) {
+    ReactDOM.render(SnoozeDialog(), utils.makeMountNode());  // or [use_portal] ?
   }
   dialogSetState([me]);
 }

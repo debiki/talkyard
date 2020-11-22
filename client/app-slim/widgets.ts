@@ -155,7 +155,7 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       // @endif
 
       const href = newProps.href;
-      const linksToAdminArea = href && href.indexOf('/-/admin/') === 0; // dupl (5JKSW20)
+      const linksToAdminArea = href && href.indexOf('/-/admin/') === 0; // dupl [5JKSW20]
       isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
 
       if (!isExternal) {
@@ -223,7 +223,7 @@ export function MenuItemLink(props, ...children) {
 
   // If we're in the admin area, use <a href> because then the destinations are in another
   // single-page-app. And if we're in the forum app, use Link, for instant
-  // within-the-SPA navigation.  A bit dupl, see (5JKSW20)
+  // within-the-SPA navigation.  A bit dupl, see [5JKSW20]
   const linksToAdminArea = props.to.indexOf('/-/admin/') === 0;
   const isExternal = props.to.indexOf('//') >= 0;  // e.g. https://  or  //hostname/...
   const useSinglePageAppLink = !isExternal && eds.isInAdminArea === linksToAdminArea;
@@ -358,6 +358,38 @@ export function UserName(props: {
   // Later: If including is-admin/moderator info, need to uncache pages where name shown. [5KSIQ24]
 
   return linkFn(newProps, namePartOne, namePartTwo);
+}
+
+
+export interface InstaDiagProps {
+  diagClassName?: St;
+  titleClassName?: St;
+  title?: RElm | St;
+  body: RElm | St;
+  footer?: RElm | St;
+}
+
+
+
+/// A modal dialog that pops up instantly. Works also before React-Bootstrap loaded.
+///
+/// React-Bootsrap's Modal, ModalBody etc components might not yet be available,
+/// so we create all elems ourselves here manually.
+///
+export function InstaDiag(ps: InstaDiagProps): RElm {
+  return r.div({ className: 's_InstaDgW' },
+      r.div({ className: 'modal-backdrop fade in', style: { opacity: 0.5 } }),
+      r.div({ role: 'dialog', className: 'fade in modal',
+            style: { display: 'block' }},
+        r.div({ className: 'modal-dialog dw-server-error ' + (ps.diagClassName || '') },
+          r.div({ className: 'modal-content', role: 'document' },
+            !ps.title ? null : r.div({ className: 'modal-header' },
+              r.h4({ className: 'modal-title ' + (ps.titleClassName || '') },
+                ps.title)),
+            r.div({ className: 'modal-body' },
+              ps.body,
+            !ps.footer ? null : r.div({ className: 'modal-footer' },
+              ps.footer))))));
 }
 
 

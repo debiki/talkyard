@@ -1689,6 +1689,10 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   // Restart the reading progress tracker, now when on a new page.
   page.PostsReadTracker.reset();
 
+  // Not impossible that pat is currently typing a keyboard shortcut? Better
+  // cancel any such ongoing shortcut, in case it won't work on the new page.
+  KeyboardShortcuts.resetAndCloseDialog();
+
   // Update any top header links so the hereaafter active one (if any) gets highlighted/underlined.
   debiki2.utils.highlightActiveLinkInHeader();
 

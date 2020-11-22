@@ -26,9 +26,9 @@
 watch: watch-debug_asset_bundles
 watch-debug_asset_bundles:
 	while true; do \
-	  make debug_asset_bundles ;\
 	  inotifywait -q -r -e modify -e create -e delete -e move \
 	        client package.json ;\
+	  make debug_asset_bundles ;\
 	done
 
 # E.g.  make watch what=target
@@ -263,7 +263,7 @@ images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
        node_modules/markdown-it/dist/markdown-it.js \
        node_modules/blacklist/dist/blacklist.js \
        node_modules/fileapi/dist/FileAPI.html5.js \
-       node_modules/@webscopeio/react-textarea-autocomplete/umd/rta.min.js \
+       node_modules/@webscopeio/react-textarea-autocomplete/dist/react-textarea-autocomplete.umd.min.js \
        client/third-party/diff_match_patch.js \
        client/third-party/non-angular-slugify.js \
        client/app-editor/editor/mentions-markdown-it-plugin.js \

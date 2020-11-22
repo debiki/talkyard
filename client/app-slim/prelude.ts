@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../types-and-const-enums.ts" />
 /// <reference path="../reactjs-types.ts" />
 /// <reference path="server-vars.d.ts" />
 /// <reference path="model.ts" />
@@ -471,7 +472,7 @@ export function url_getHost(url: St): St {
 }
 
 
-export function arr_sortAlphaInPlace<V>(vs: V[], strFn: (v: V) => S) {
+export function arr_sortAlphaInPlace<V>(vs: V[], strFn: (v: V) => St) {
   const langCode = 'en';  // for now. Later, add a t.localeCompareLangCode field? I18N  [subcats]
   // See:  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl#Locale_identification_and_negotiation
 
@@ -584,12 +585,12 @@ export function $bySelector(selector: string, elem?): NodeListOf<Element> {   //
   return (elem || document).querySelectorAll(selector);
 }
 
-export function $first(selector: string, elem?): HTMLElement {
+export function $first(selector: string, elem?): HElm | Nl {
   const elems = (elem || document).querySelectorAll(selector);
-  return <HTMLElement> (elems.length ? elems[0] : null);
+  return <HElm> (elems.length ? elems[0] : null);
 }
 
-export function $byId(elemId: string): HTMLElement {
+export function $byId(elemId: string): HElm | Nl {
   // @ifdef DEBUG
   dieIf(/#\., /.test(elemId), 'EdE2KWWE45');
   // @endif

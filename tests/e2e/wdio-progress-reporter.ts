@@ -1,6 +1,11 @@
 import WDIOReporter from '@wdio/reporter'
 import * as ansiColors from 'ansi-colors';
 import * as fs from 'fs';
+
+// cannot import why not
+//import { dieIf } from 'utils/log-and-die.ts';
+
+
 //import WDIOReporter from '@wdio/reporter';
 //import { default as ansiColors } from 'ansi-colors';
 
@@ -13,11 +18,18 @@ function logProgrBold(message: string) {
   console.log(ansiColors.bold.whiteBright(message));
 }
 
+function logProgrBoldNormal(boldMsg: St, normalMsg: St) {
+  console.log(ansiColors.bold.whiteBright(boldMsg) + ansiColors.whiteBright(normalMsg));
+}
+
 
 function nowString(): string {
   return (new Date()).toISOString();
 }
 
+
+// Dupl path, also in s/tyd.ts. [693RMSDM3]
+const logFileDir = 'target/e2e-test-logs/';
 
 
 // Prints the current test name, so if a test hangs, one sees which test
@@ -26,23 +38,24 @@ function nowString(): string {
 //
 class TyWdioReporter extends WDIOReporter {
     #options: WDIOReporter.Options;
-    #logFilePath: string | U;
+    #logFilePath: St | U;
+    #logFileSuffix: St | U;
+    #specFilePath: St | U;
+    #specFileName: St | U;
 
     constructor(options: WDIOReporter.Options) {
       super(options)
       this.#options = options;
 
-      const directory = 'target/e2e-test-logs/';
-      if (!fs.existsSync(directory)) {
-        fs.mkdirSync(directory, { recursive: true, mode: 0o777 });
+      if (!fs.existsSync(logFileDir)) {
+        fs.mkdirSync(logFileDir, { recursive: true, mode: 0o777 });
       }
 
       // Unique file name, so won't overwrite. (Don't want to try to find
       // any reliable Nodejs atomic-file-append lib. How would I know that
       // it actually works? (doesn't sometimes overwrite and lose test results))
       const randNrStr = Math.random().toString().substr(2, 15);  // substr drops '0.'
-      const fileName = `ty-e2e-log-${Date.now()}-${randNrStr}.txt`;
-      this.#logFilePath = directory + fileName;
+      this.#logFileSuffix = `ty-e2e-log-${Date.now()}-${randNrStr}.txt`;
     }
 
     reporterName = 'TyWdioReporter';
@@ -58,7 +71,17 @@ class TyWdioReporter extends WDIOReporter {
 
     #failedTests: WDIOReporter.Test[] = [];
 
-    onRunnerStart() {
+    onRunnerStart(runner) {
+      // Is there always just 1 elem in the array? Then why is it an array?
+      // https://github.com/webdriverio/webdriverio/blob/master/packages/wdio-reporter/README.md#onrunnerstart
+      //dieIf(!runner.specs.length, 'TyE60AMG2GY', `Got no specs`);
+      //dieIf(runner.specs.length >= 2, 'TyE60AMG2GX', `Got many specs: ${
+      //      JSON.stringify(runner.specs.length)}`);
+
+      this.#specFilePath = runner.specs[0];
+      this.#specFileName = this.#specFilePath.replace(/.*\//, '');  // greedy by default
+      this.#logFilePath = `${logFileDir}${this.#specFileName}--${this.#logFileSuffix}`
+
       // See: https://github.com/webdriverio/webdriverio/blob/master/packages/wdio-reporter/README.md
       const arg: any = arguments[0];
       const cid: string = arg.cid;
@@ -75,7 +98,7 @@ class TyWdioReporter extends WDIOReporter {
       this.#thisFileStartMs = Date.now();
     }
 
-    onRunnerEnd() {
+    onRunnerEnd(runner) {
       //this.printToFile();
       //this.printToConsole();
     }
@@ -171,8 +194,8 @@ class TyWdioReporter extends WDIOReporter {
       console.log('parentUid: ' + suite.parentUid +  '   uid: ' + suite.uid); *  /
       */
       this.#suiteStartMs = Date.now();
-      //console.log(`${suite.cid}: ■■■ Spec start: ${suite.fullTitle}, ${nowString()}`);
-      logProgrBold(`Suite start: "${suite.fullTitle}", ${nowString()}`);
+      logProgrBoldNormal(`Suite start: ${this.#specFileName}: "${suite.fullTitle}"`,
+            ` ${nowString()}`);
     }
 
     onSuiteEnd(suite: WDIOReporter.Suite) {
@@ -183,7 +206,8 @@ class TyWdioReporter extends WDIOReporter {
       //if (suite.title !== suite.parent) return;
       const endMs = Date.now();
       const durSecs = Math.round((endMs - this.#suiteStartMs) / 1000);
-      logProgrBold(`Suite ended after ${durSecs} seconds: "${suite.title}", ${nowString()}`);
+      logProgrBoldNormal(`Suite ended: ${this.#specFileName}: "${suite.fullTitle}"`,
+            ` ${nowString()} took ${durSecs}s`);
     }
 
     onTestStart(test: WDIOReporter.Test) {
@@ -208,17 +232,19 @@ class TyWdioReporter extends WDIOReporter {
       this.#numTestsFailed += 1;
       const endMs = Date.now();
       const durSecs = Math.round((endMs - this.#suiteStartMs) / 1000);
-      logProgrBold(``);
-      logProgrBold(`FAILED after ${durSecs}s: "${test.title}", ${nowString()} [TyEE2EFAIL]`);
-      //console.log(`Stack traces:\n${test.error.stack}`);
-      logProgr(`Stack trace:\n${test.error.stack}`);
-      logProgr(``);
+      const failedFileAndTest = `FAILED: ${this.#specFileName}: ${test.title}`;
+      logProgrBoldNormal('\n' + failedFileAndTest + `  [TyEE2EFAIL] `,
+            `${nowString()} took ${durSecs}s\n`);
+            // Hmm already printed by wdio:
+            //`Stack trace:\n` +
+            //`${test.error.stack}\n`);
 
       // For now, instead of printToFile() above:    [WDIOREPTRBUG]
-      let text = `----- FAILED:  ${test.fullTitle}\n`;
+      let text = failedFileAndTest + `\n`;
       for (let error of test.errors) {
         text += `${error.stack}\n`;
       }
+      text += `\n==============================================================\n`
       fs.writeFileSync(this.#logFilePath, text + '\n');
     }
 

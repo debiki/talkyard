@@ -123,6 +123,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     userUrl = None,
     userTrustLevel = user.map(_.effectiveTrustLevel))
 
+  @deprecated("now", "use theRequester instead")
   def theUser: Participant = user_!
   @deprecated("now", "use theRequesterId instead")
   def theUserId: UserId = theUser.id

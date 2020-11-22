@@ -124,16 +124,27 @@ package object core {
 
   type LoginId = String
 
-  type ParticipantId = Int
-  type GuestId = ParticipantId
-  type MemberId = ParticipantId
-  type UserId = ParticipantId
-  type GroupId = ParticipantId
+  type Pat = Participant
+  val Pat: Participant.type = Participant
+
+  type PatId = Int
+  type ParticipantId = Int  ; RENAME // to PatId
+  type GuestId = PatId
+  type MemberId = PatId   ; RENAME // to MembId
+  type MembId = PatId
+  type UserId = PatId
+  type GroupId = PatId
+
+  type Username = St
+  type FullName = St
 
   // Use MemberId instead.
   type RoleId = UserId   ; CLEAN_UP ; REMOVE
 
-  type NotificationId = Int
+  type NotfType = NotificationType
+  val NotfType: NotificationType.type = NotificationType
+  type NotificationId = Int  ; RENAME // to NotfId
+  type NotfId = Int
 
   type ModDecision = ReviewDecision
   type ModTask = ReviewTask // renaming
@@ -232,6 +243,7 @@ package object core {
 
   type IpAddress = String
 
+  type EmailAdr = String
   type EmailId = String
 
   type AuditLogEntryId = Int

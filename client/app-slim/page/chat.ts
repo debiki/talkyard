@@ -622,9 +622,7 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
       };
       this.setState(newState);
       this.props.scrollDownToViewNewMessage();
-      // no such fn: this.refs.textarea.focus();
-      // instead, for now:
-      $first('.rta textarea').focus();
+      this.textareaElm?.focus();
     });
   },
 
@@ -682,12 +680,15 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
     return (
       r.div({ className: 'esC_Edtr' },
         // The @mentions username autocomplete might overflow the textarea. [J7UKFBW]
-        ReactTextareaAutocomplete({ className: 'esC_Edtr_textarea', ref: 'textarea',
+        ReactTextareaAutocomplete({ className: 'esC_Edtr_textarea',
           value: anyDraftLoaded ? state.text : t.e.LoadingDraftDots,
           onChange: this.onTextEdited,
           onKeyPress: this.onKeyPressOrKeyDown,
           onKeyDown: this.onKeyPressOrKeyDown,
-          closeOnClickOutside: true,
+          innerRef: (e: HTMLTextAreaElement) => {
+            this.textareaElm = e;
+            e && e.focus();
+          },
           placeholder: t.c.TypeHere,
           disabled: disabled,
           rows: state.rows,

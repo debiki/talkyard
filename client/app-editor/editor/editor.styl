@@ -7,6 +7,8 @@ $spacyYMinHeight = 400px;
 // Without this, height = auto, and won't be full size, in Firefox (but fine in Chrome, weird).
 .DW.DW .rta__textarea
   height: 100%;
+  // Default is 1em, that's too large.
+  font-size: 14px;
 
 .dw-embedded-editor
   #debiki-editor-controller
@@ -399,6 +401,31 @@ $scrollPreviewButtonPaddingTop = 6px;
     color: $errorColor;
     background: $errorBackground;
 
+
+
+// React-textarea-autocomplete problems / bugs:   [rta_overfl_top_bgfx]
+// boundariesElement doesn't seem to work,
+// so instead, if rta tries to place itself at the win/something top, then:
+.rta__autocomplete--top
+  position: relative !important;
+  // There's some controls and widgets above, so top can be a bit < 0:
+  top: -50px !important;
+// And RTA can place itself at left: -900 so everything is off-screen,
+// if there's some rather wide elem, or not sure what it does:
+// Apparently it tries to place at right win edge, and if won't work,
+// it just left aligns althoguh everything then off-screen.
+// Maybe don't use rta — because these problems solved already in Ty's
+// dropdown-modal. Just add a markdown-it plugin that pops up a
+// username selector if typing '@...'  ?  Maybe no need for any extra
+// component like rta.
+.rta__autocomplete
+  max-width: 340px;
+
+.rta__entity
+  font-size: 14px;
+  padding: 5px 0 5px 5px !important;
+html.mouse .rta__entity
+  padding: 3px 0 3px 5px !important;
 
 
 // Compact buttons if narrow screen, so won't wrap to 2nd line.

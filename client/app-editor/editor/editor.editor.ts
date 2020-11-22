@@ -27,7 +27,17 @@ let FileAPI;
 
 let theEditor: any;
 
-export const ReactTextareaAutocomplete = reactCreateFactory(window['ReactTextareaAutocomplete']);
+// rta supports multichar triggers (v3.1.1), and can use a custom
+// component instead of a <textarea> (v4.2.0).
+// Oh it's actually a bit problematic:   [rta_overfl_top_bgfx]  — places the
+// username autocomplete off-screen somewhat easily.
+//
+// Switch to ProseMirror instead + CommmonMark plugin:
+//   https://prosemirror.net/examples/markdown/
+// and listen for '@...' and then pop up Ty's DropdownModal but not-modal-mode.
+//
+export const ReactTextareaAutocomplete =
+        reactCreateFactory(window['ReactTextareaAutocomplete']);
 
 
 export function getOrCreateEditor(success) {
@@ -43,28 +53,50 @@ export function getOrCreateEditor(success) {
 }
 
 
+
 export const listUsernamesTrigger = {
+
+  // Mentions.
   '@': {
-    dataProvider: token =>
+    dataProvider: (charsTyped: St) =>
+      // BUG? A race? replies from the server arrives out of order,  [rta_too_many_pats]
+      // causing rta to list many users although pat just typed someone's exact name?
+      // Pretty harmless — mostly annoying in E2E tests?
       new Promise(function (resolve, reject) {
         const pageId = ReactStore.getPageId();
         if (!pageId || pageId === EmptyPageId) {
           // This is an embedded comments discussion, but there are no comments, so the
           // discussion has not yet been lazy-created. So search among users, for now.
           // UX maybe one *always* wants to search among all users? Unless if is chat channel?
-          Server.listAllUsernames(token, resolve);
+          Server.listAllUsernames(charsTyped, resolve);
         }
         else {
           // One probably wants to mention someone participating in the current discussion = page?
           // So search among those users only.
-          Server.listUsernames(token, pageId, resolve);
+          Server.listUsernames(charsTyped, pageId, resolve);
         }
       }),
     component: ({ entity: { id, username, fullName }}) =>
       r.div({}, `${username} (${fullName})`),
     output: (item, trigger) => '@' + item.username
-  }
+  },
+
+  // Emojis. List: https://unicode.org/emoji/charts/full-emoji-list.html
+  // but what's the name of each emoji?  Different apps make up their own names?
+  // The official names like "Slightly smiling face" are too long, right.
+  // Or use those long names, + fuzzy search? Instead of prefix search?
+  // Could use for shortcuts too. [fuzzy_select]
+  ':': {
+    dataProvider: (charsTyped: St) => [
+      // Why won't this Unicode char render properly? Not supported in Debian 9?
+      //{ name: 'smile', char: '🙂' },  // &#x1F642;  Slightly smiling face
+      { name: 'zmile', char: '🙂' },    // just testing — if typing  ':z...'
+    ].filter(it => it.name.startsWith(charsTyped)),
+    component: ({ entity: { name, char } }) => r.div({}, name + ': ' + char),
+    output: (item, trigger) => item.char,
+  },
 };
+
 
 
 interface EditorState {
@@ -83,6 +115,7 @@ interface EditorState {
   newPageRole?: PageType;
   editingPostRevisionNr?: number;
   text: string;
+  caretPos: Nr;
   title: string;
   showTitleErrors?: boolean;
   showTextErrors?: boolean;
@@ -95,6 +128,7 @@ interface EditorState {
   showGuidelinesInModal?: boolean;
   backdropOpacity: 0,
   isUploadingFile: boolean;
+  uploadCancelled?: Bo;
   fileUploadProgress: number;
   uploadFileXhr?: any;
   showSimilarTopics?: boolean;
@@ -106,6 +140,7 @@ interface EditorState {
   splitHorizontally?: boolean;
 }
 
+
 interface Guidelines {
   writingWhat: WritingWhat,
   categoryId: CategoryId;
@@ -113,6 +148,7 @@ interface Guidelines {
   safeHtml: string;
   hidden: boolean;
 }
+
 
 
 export const Editor = createFactory<any, EditorState>({
@@ -124,6 +160,7 @@ export const Editor = createFactory<any, EditorState>({
       store: debiki2.ReactStore.allData(),
       visible: false,
       text: '',
+      caretPos: 0,
       title: '',
       draftStatus: DraftStatus.NotLoaded,
       safePreviewHtml: '',
@@ -159,6 +196,12 @@ export const Editor = createFactory<any, EditorState>({
     this.initUploadFileStuff();
     this.perhapsShowGuidelineModal();
     window.addEventListener('unload', this.saveDraftUseBeacon);
+
+    // Let's process Ctrl+V and paste events to upload file events, regargless of
+    // what's in focus? And instead show a tips if pat focuses the obviously wrong
+    // thing?  E.g. tries to paste an image in the search field?  See this.onPaste().
+    window.addEventListener('paste', this.onPaste, false);
+
     // Don't scroll the main discussion area, when scrolling inside the editor.
     /* Oops this breaks scrolling in the editor and preview.
     $(this.refs.editor).on('scroll touchmove mousewheel', function(event) {
@@ -168,12 +211,14 @@ export const Editor = createFactory<any, EditorState>({
     }); */
   },
 
-  componentDidUpdate: function(prevProps, prevState) {
+  componentDidUpdate: function(prevProps, prevState: EditorState) {
+    const state: EditorState = this.state;
     this.perhapsShowGuidelineModal();
-    if (!prevState.visible && this.state.visible) {
+    if (!prevState.visible && state.visible) {
       this.makeSpaceAtBottomForEditor();
     }
-    if (talkyard.postElemPostProcessor && prevState.safePreviewHtml !== this.state.safePreviewHtml) {
+    if (talkyard.postElemPostProcessor &&
+          prevState.safePreviewHtml !== state.safePreviewHtml) {
       talkyard.postElemPostProcessor('t_E_Preview');
     }
   },
@@ -182,14 +227,12 @@ export const Editor = createFactory<any, EditorState>({
     this.isGone = true;
     logD("Editor: componentWillUnmount");
     window.removeEventListener('unload', this.saveDraftUseBeacon);
+    window.removeEventListener('paste', this.onPaste);
     this.saveDraftNow();
   },
 
   focusInputFields: function() {
-    let elemToFocus = findDOMNode(this.refs.titleInput);
-    if (!elemToFocus && this.refs.rtaTextarea) {
-      elemToFocus = findDOMNode(this.refs.rtaTextarea.textareaRef);
-    }
+    let elemToFocus = this.titleElm || this.textareaElm;
     if (elemToFocus) {
       elemToFocus.focus();
     }
@@ -221,6 +264,74 @@ export const Editor = createFactory<any, EditorState>({
     this.refs.uploadFileInput.click();
   },
 
+  onPaste: function(event: ClipboardEvent) {
+    // Note! This works only (?) if right clicking an image in the browser,
+    // and selecting Copy Image, and pasting into the editor, but...
+    //
+    // Does *not* work, though, if Ctrl+C-copying an image *file* from one's
+    // Operating System's file browser (at least not Debian Linux?),
+    // and then pasting,
+    // or via Bash doing sth like:  `cat image.jpg | xsel -b`
+    // to command-line place an image file in the OS clipboard.
+    // However, if the OS file browser is open, then one might as well
+    // drag-n-drop the file, so this editor's 'drop' handler uploads the image.
+
+    // (Minor note: In addition to event.clipboardData below, there's
+    // event.dataTransfer, at least in FF and Chrome 10 years ago,
+    // e.g.: https://bugs.chromium.org/p/chromium/issues/detail?id=31037,
+    // but I cannot find it mentioned in any more recent resources,
+    // and I don't see it in Chrome 86 Dev Tools — only clipboardData.
+    // Seems it was the same as the clipboardData field.)
+
+    // (Minor note: There's also Navigator.clipboard,
+    // but no reason to use it for anything here?
+    // https://www.w3.org/TR/clipboard-apis/#async-clipboard-api )
+
+    const clipb: DataTransfer | Nl = event.clipboardData;
+    const files: FileList | Z = clipb && clipb.files;
+
+    // COULD: If event.target is the obviosly wrong thing, e.g. the search
+    // box input field, then, ignore this paste event?  Maybe show
+    // a tips about clicking in the editor to focus it, before pasting?
+    // But for now:
+    if (files?.length) {
+      // Don't let the browser paste any image into some contenteditable thing.
+      event.preventDefault();
+      // Save server side and <img src=...> or <a href=...> link to it.
+      this.uploadAnyFiles(files);
+    }
+
+    // There's also DataTransfer.items — not supported yet though, in Safari,
+    // as of Safari 14 and iOS Safari 14, November 2020.
+    //
+    // If right click copying a file in the browser, apparently `items` then
+    // at least sometimes has two entries:
+    // - A 'text/html' entry, with the file as base64, like:
+    //    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    //    <img src="data:image/jpeg;base64,/9j/4AAQSkZ.........6KOTP/Z"
+    //         alt="Red panda sleeping"/>
+    // - And a File entry, which can be uploaded to the server.
+    //
+    // If using items instead:  (but that's more complicated. See e.g.
+    // https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/getAsString and
+    // https://stackoverflow.com/questions/6333814/
+    //     how-does-the-paste-image-from-clipboard-functionality-work-in-gmail-and-google-c
+    /*
+    for (let i = 0; i < clipb.items.length; ++i) {
+      const item = clipb.items[i];
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        this.uploadAnyFiles([files]);
+        // There's a FileReader, can e.g. load the file as a data url:
+        const reader = new FileReader();
+        reader.onload = (event: ProgressEvent<FileReader>) => {
+          console.log(event.target.result);
+        }
+        reader.readAsDataURL(file);
+      }
+    } */
+  },
+
   // We never un-initialize this, instead we reuse the same editor instance always once created.
   initUploadFileStuff: function() {
     if (!this.refs.uploadFileInput)
@@ -239,27 +350,29 @@ export const Editor = createFactory<any, EditorState>({
 
     FileAPI.event.on(document, 'drop', (event: Event) => {
       event.preventDefault();
-      if (this.isGone || !this.state.visible) return;
+      const state: EditorState = this.state;
+      if (this.isGone || !state.visible) return;
       FileAPI.getDropFiles(event, (files: File[]) => {
-        if (files.length > 1) {
-          // This'll log a warning server side, I think I want that (want to know how
-          // often this happens)   [edit: should be info log msg, not warning]
-          die(t.e.UploadMaxOneFile + " [TyM5JYW2]");  // INFO_LOG
-        }
-        this.uploadFiles(files);
+        this.uploadAnyFiles(files);
       });
     });
 
     const inputElem = this.refs.uploadFileInput;
     FileAPI.event.on(inputElem, 'change', (event) => {
       const files = FileAPI.getFiles(event);
-      this.uploadFiles(files);
+      this.uploadAnyFiles(files);
     });
   },
 
-  uploadFiles: function(files: File[]) {
-    if (!files.length)
+  uploadAnyFiles: function(files: File[]) {
+    if (!files || !files.length)
       return;
+
+    if (files.length >= 2) {
+      // This'll log a warning server side, I think I want that (want to know how
+      // often this happens)   [edit: should be info log msg, not warning]
+      die(t.e.UploadMaxOneFile + " [TyM5JYW2]");  // INFO_LOG
+    }
 
     for (let file of files) {
       const size = file.size;
@@ -285,6 +398,12 @@ export const Editor = createFactory<any, EditorState>({
       }
     }
 
+    // DO_AFTER 2021-01-01: Replace with Fetch API?  [2UK503] [FETCHEX]
+    // Ex; https://flaviocopes.com/file-upload-using-ajax/
+    //
+    // And support pasting images directly into the chat message editor too?
+    // Makes sense now with the in-page message preview.
+    //
     dieIf(files.length != 1, 'EsE5GPY82');
     FileAPI.upload({   // a bit dupl code [2UK503]
       url: '/-/upload-public-file',
@@ -293,7 +412,8 @@ export const Editor = createFactory<any, EditorState>({
       // This is per file.
       fileprogress: (event, file, xhr, options) => {
         if (this.isGone) return;
-        if (!this.state.isUploadingFile) {
+        const state: EditorState = this.state;
+        if (!state.isUploadingFile) {
           this.setState({ isUploadingFile: true });
           pagedialogs.getProgressBarDialog().open(t.UploadingDots, () => {
             xhr.abort("Intentionally cancelled [EsM3GU05]");
@@ -309,12 +429,13 @@ export const Editor = createFactory<any, EditorState>({
       // This is when all files have been uploaded — but we're uploading just one.
       complete: (error, xhr) => {
         pagedialogs.getProgressBarDialog().close();
+        const state: EditorState = this.state;
         if (!this.isGone) this.setState({
           isUploadingFile: false,
           uploadCancelled: false
         });
         if (error) {
-          if (!this.state.uploadCancelled) {
+          if (!state.uploadCancelled) {
             pagedialogs.getServerErrorDialog().open(xhr);
           }
           return;
@@ -322,45 +443,61 @@ export const Editor = createFactory<any, EditorState>({
         if (this.isGone) return;
         const fileUrlPath = JSON.parse(xhr.response);
         dieIf(!_.isString(fileUrlPath), 'DwE06MF22');
-        dieIf(!_.isString(this.state.text), 'EsE5FYZ2');
+        dieIf(!_.isString(state.text), 'EsE5FYZ2');
         const file = xhr.files[0];
         const linkHtml = this.makeUploadLink(file, fileUrlPath);
-        const perhapsNewline = this.state.text.endsWith('\n') ? '' : '\n';
-        this.setState({
-          text: this.state.text + perhapsNewline + '\n' +
+        // This: this.rta.getCaretPosition()  might not always work, e.g. if pat
+        // just minimized the editor or switched to full screen preview?
+        const caretPos = state.caretPos;
+        const textBefore = state.text.substr(0, caretPos);
+        const textAfter = state.text.substr(caretPos);
+        const perhapsNewline = textBefore.endsWith('\n') ? '' : '\n';
+
+        const uploadedFileHtml = perhapsNewline + '\n' +
             // (There's a sanitizer for this — for everything in the editor.)
             "<!-- Uploaded file name:  " + file.name + "  -->\n" +
-            linkHtml,
+            linkHtml +
+            '\n\n';
+
+        // Place the caret on the blank line just after the html (but not
+        // 2 lines below — so, -1  not -2).
+        const newCaretPos = textBefore.length + uploadedFileHtml.length - 1;
+
+        this.setState({
+          text: textBefore + uploadedFileHtml + textAfter,
+          caretPos: newCaretPos,
           draftStatus: DraftStatus.ShouldSave,
         }, () => {
+          if (this.rta && !this.isGone) {
+            this.rta.setCaretPosition(newCaretPos);
+            // Seems rta generates a onCaretPositionChange itself before
+            // setCaretPosition() above — and seems that setCaretPosition()
+            // does *not* trigger any new onCaretPositionChange event, so,
+            // we need to update the caret position manually here?
+            this.setState({ caretPos: newCaretPos });
+          }
+
+          // The following is fine also if this.isGone.
           this.saveDraftSoon();
-          // Scroll down so people will see the new line we just appended.
-          scrollToBottom(this.refs.rtaTextarea.textareaRef);
+          // UX: It'd be nice if the uploaded thing could scroll into view,
+          // in the preview?
           this.updatePreviewSoon();
-          // This happens to early — maybe a onebox can take long to load?
-          // Or the preview takes a while to update. — So wait for a while.
-          setTimeout(() => {
-            if (this.isGone) return;
-            // Maybe no preview because of UI prefs.
-            if (this.refs.preview) {
-              scrollToBottom(this.refs.preview);
-            }
-          }, 900);
         });
       },
     });
   },
 
   cancelUpload: function() {
-    if (this.state.uploadFileXhr) {
-      this.state.uploadFileXhr.abort();
+    const state: EditorState = this.state;
+    if (state.uploadFileXhr) {
+      state.uploadFileXhr.abort();
     }
     else {
       logW("Cannot cancel upload: No this.state.uploadFileXhr [DwE8UMW2]");
     }
   },
 
-  showUploadProgress: function(percent) {
+  showUploadProgress: function(percent: Nr) {
     if (percent === 0) {
       pagedialogs.getProgressBarDialog().open(t.UploadingDots, this.cancelUpload);
     }
@@ -382,8 +519,8 @@ export const Editor = createFactory<any, EditorState>({
     });
   },
 
-  makeUploadLink: function(file, url) {
-    // The relative path is like '/-/uploads/public/a/b/c...zwq.suffix' = safe,
+  makeUploadLink: function(file: File, url: St) {
+    // The relative path is like '/-/u/1/a/bc/def...zwq.suffix' = safe,
     // and we got it from the server.
     dieIf(!url.match(/^[0-9a-z/\.-]+$/),
         "Bad image relative path: " + url + " [DwE8PUMW2]");
@@ -414,13 +551,14 @@ export const Editor = createFactory<any, EditorState>({
     return link;
   },
 
-  toggleWriteReplyToPostNr: function(postNr: PostNr, inclInReply: boolean,
+  toggleWriteReplyToPostNr: function(postNr: PostNr, inclInReply: Bo,
         anyPostType?: PostType) {
     if (this.alertBadState('WriteReply'))
       return;
 
-    const store: Store = this.state.store;
-    let postNrs = this.state.replyToPostNrs;
+    const state: EditorState = this.state;
+    const store: Store = state.store;
+    let postNrs = state.replyToPostNrs;
 
     if (inclInReply && postNrs.length) {
       // This means we've started replying to a post, and then clicked Reply
@@ -439,7 +577,7 @@ export const Editor = createFactory<any, EditorState>({
     // No multireplies — disabled.
     dieIf(postNrs.length >= 2, 'TyE35KKGJRT0');
 
-    if (this.state.editorsPageId !== store.currentPageId && postNrs.length) {
+    if (state.editorsPageId !== store.currentPageId && postNrs.length) {
       // The post nrs on this different page, won't match the ones in postNrs.
       // So ignore this.
       // UX COULD disable the reply buttons? Also see (5445522) just above.  — Done.
@@ -484,7 +622,7 @@ export const Editor = createFactory<any, EditorState>({
 
     // Don't change post type from flat to something else.
     let postType = anyPostType;
-    if (postNrs.length >= 2 && this.state.anyPostType === PostType.Flat) {
+    if (postNrs.length >= 2 && state.anyPostType === PostType.Flat) {
       postType = PostType.Flat;
     }
 
@@ -532,7 +670,7 @@ export const Editor = createFactory<any, EditorState>({
       editorsCategories: store.currentCategories,
       editorsPageId: store.currentPageId || eds.embeddedPageId,
       replyToPostNrs: postNrs,
-      text: this.state.text || makeDefaultReplyText(store, postNrs),
+      text: state.text || makeDefaultReplyText(store, postNrs),
     };
     this.showEditor(newState);
 
@@ -878,7 +1016,8 @@ export const Editor = createFactory<any, EditorState>({
 
   onTitleEdited: function(event) {
     const title = event.target.value;
-    this._handleEditsImpl(title, this.state.text);
+    const state: EditorState = this.state;
+    this._handleEditsImpl(title, state.text);
   },
 
   isTitleOk: function() {
@@ -891,10 +1030,11 @@ export const Editor = createFactory<any, EditorState>({
 
   onTextEdited: function(event) {
     const text = event.target.value;
-    this._handleEditsImpl(this.state.title, text);
+    const state: EditorState = this.state;
+    this._handleEditsImpl(state.title, text);
   },
 
-  _handleEditsImpl: function(title: string | undefined, text: string | undefined) {
+  _handleEditsImpl: function(title: St | U, text: St | U) {
     const state: EditorState = this.state;
 
     // A bit dupl code [7WKABF2]
@@ -964,6 +1104,7 @@ export const Editor = createFactory<any, EditorState>({
       // here: [DRAFTPRVW]. But would need to sanitize server side (!).
       safePreviewHtml: safeHtml,
     }, () => {
+      if (this.isGone) return;
       // Show an in-page preview, unless we're creating a new page.
       const state: EditorState = this.state;
       if (state.newPageRole || state.newForumTopicCategoryId) {
@@ -993,8 +1134,8 @@ export const Editor = createFactory<any, EditorState>({
     if (!this.refs.editor)
       return;
 
-    const store: Store = this.state.store;
     const state: EditorState = this.state;
+    const store: Store = state.store;
     let settings: SettingsVisibleClientSide = store.settings;
     if (settings.enableSimilarTopics === false)
       return;
@@ -1343,6 +1484,7 @@ export const Editor = createFactory<any, EditorState>({
     // to may-NOT-compose-before-logged-in, and then the user clicks Post Reply. Then,
     // #dummy below might get used, but won't work.
     debiki2.login.loginIfNeededReturnToAnchor(loginToWhat, '#dummy-TyE2PBBYL0', () => {
+      // Continue also if this.isGone — so we'll finis saving.
       const state: EditorState = this.state;
       if (page_isPrivateGroup(state.newPageRole)) {
         this.startPrivateGroupTalk();
@@ -1485,7 +1627,8 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   toggleMinimized: function() {
-    const nextShowMini = !this.state.showMinimized;
+    const state: EditorState = this.state;
+    const nextShowMini = !state.showMinimized;
     if (eds.isInEmbeddedEditor) {
       window.parent.postMessage(JSON.stringify(['minimizeEditor', nextShowMini]), eds.embeddingOrigin);
     }
@@ -1592,44 +1735,46 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   callOnDoneCallback: function(saved: boolean) {
-    const onDone: EditsDoneHandler = this.state.onDone;
+    const state: EditorState = this.state;
+    const onDone: EditsDoneHandler = state.onDone;
     if (onDone) {
       onDone(
-          saved, this.state.text,
+          saved, state.text,
           // If the text in the editor was saved (i.e. submitted, not draft-saved), we don't
           // need the draft any longer.
-          saved ? null : this.state.draft,
-          saved ? DraftStatus.NothingHappened : this.state.draftStatus);
+          saved ? null : state.draft,
+          saved ? DraftStatus.NothingHappened : state.draftStatus);
     }
   },
 
   showEditHistory: function() {
-    dieIf(!this.state.editingPostNr || !this.state.editingPostUid, 'EdE5UGMY2');
-    debiki2.edithistory.getEditHistoryDialog().open(this.state.editingPostUid);
+    const state: EditorState = this.state;
+    dieIf(!state.editingPostNr || !state.editingPostUid, 'EdE5UGMY2');
+    debiki2.edithistory.getEditHistoryDialog().open(state.editingPostUid);
   },
 
   makeTextBold: function() {
-    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exBold, '**');
+    const newText = wrapSelectedText(this.textareaElm, t.e.exBold, '**');
     this.setState({ text: newText }, this.updatePreviewSoon);
   },
 
   makeTextItalic: function() {
-    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exEmph, '*');
+    const newText = wrapSelectedText(this.textareaElm, t.e.exEmph, '*');
     this.setState({ text: newText }, this.updatePreviewSoon);
   },
 
   markupAsCode: function() {
-    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exPre, '`');
+    const newText = wrapSelectedText(this.textareaElm, t.e.exPre, '`');
     this.setState({ text: newText }, this.updatePreviewSoon);
   },
 
   quoteText: function() {
-    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exQuoted, '> ', null, '\n\n');
+    const newText = wrapSelectedText(this.textareaElm, t.e.exQuoted, '> ', null, '\n\n');
     this.setState({ text: newText }, this.updatePreviewSoon);
   },
 
   addHeading: function() {
-    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.ExHeading, '### ', null, '\n\n');
+    const newText = wrapSelectedText(this.textareaElm, t.e.ExHeading, '### ', null, '\n\n');
     this.setState({ text: newText }, this.updatePreviewSoon);
   },
 
@@ -1727,7 +1872,8 @@ export const Editor = createFactory<any, EditorState>({
       const titleErrorClass = state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
-              type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
+              type: 'text', ref: (e: HElm) => this.titleElm = e,
+              tabIndex: 1, onChange: this.onTitleEdited,
               value: state.title, disabled: !anyDraftLoaded,
               placeholder: t.e.TitlePlaceholder,
               onKeyPress: this.onKeyPressOrKeyDown,
@@ -2002,22 +2148,50 @@ export const Editor = createFactory<any, EditorState>({
         r.button({ onClick: this.addHeading, title: t.e.HeadingBtnTooltip,
             className: 'esEdtr_txtBtn' }, 'H'));
 
+    // React-textarea-autocomplete docs:
+    //   https://github.com/webscopeio/react-textarea-autocomplete
+
     const textErrorClass = state.showTextErrors && !this.isTextOk() ? ' esError' : '';
     const textarea =
         !anyDraftLoaded ? r.pre({ className: 'e_LdDft' }, t.e.LoadingDraftDots) :
           ReactTextareaAutocomplete({
             className: 'editor form-control esEdtr_textarea' +  textErrorClass,
-            ref: 'rtaTextarea',
+            ref: rta => { this.rta = rta; },
+            innerRef: (e: HTMLTextAreaElement) => {
+              this.textareaElm = e;
+              // The cursor starts at 0, in a newly appearing <textarea>?
+              this.setState({ caretPos: 0 });
+              // Don't focus — maybe should focus the topic title <input>
+              // instead (if any).
+            },
+            onCaretPositionChange: (caretPos: Nr) => {
+              if (state.caretPos !== caretPos) {
+                this.setState({ caretPos });
+              }
+            },
+
+            // Inside what elem to place the autocomplete popup — defaults to <body>
+            // but that means the popup can overflow above the win top.
+            // Doesn't work:
+            // boundariesElement: '.s_E-E',  // also doesn't work:  this.refs.editor,
+            // Instead, custom CSS: [rta_overfl_top_bgfx]
+            // Or could:
+            // rtaListElm.style.top = (rtaListElm.offsetTop - rect.y) + 'px';
+            // But when? There're no appropriate events to listen for?
+
+            movePopupAsYouType: true,
             value: state.text,
             onChange: this.onTextEdited,
-            onKeyPress: this.onKeyPressOrKeyDown,
-            onKeyDown: this.onKeyPressOrKeyDown,
-            closeOnClickOutside: true,
+            onKeyPress: this.onKeyPressOrKeyDown,  // ? maybe bind to textarea instead?
+            onKeyDown: this.onKeyPressOrKeyDown,   // ?
             tabIndex: 1,
             placeholder: t.e.TypeHerePlaceholder,
             loadingComponent: () => r.span({}, t.Loading),
+
             // Currently the server says Forbidden unless one is logged in, when listing usernames.
             // UX COULD list usernames of users already loaded & visible anyway, if not logged in?
+            // BUT emojis, nice also if not yet logged in. So pass an is-logged-in
+            // getter-fn to a trigger constructor instead?
             trigger: me.isLoggedIn ? listUsernamesTrigger : {} });
 
 
@@ -2126,7 +2300,7 @@ export const Editor = createFactory<any, EditorState>({
                r.div({ className: 'preview-area', style: previewStyles },
                 previewTitle,
                 previewHelp,
-                r.div({ className: 'preview', id: 't_E_Preview', ref: 'preview',
+                r.div({ className: 'preview', id: 't_E_Preview',
                     dangerouslySetInnerHTML: { __html: state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
               PrimaryButton({ onClick: this.onSaveClick, tabIndex: 1, className: 'e_E_SaveB' },
@@ -2174,8 +2348,8 @@ function page_isUsabilityTesting(pageType: PageRole): boolean {  // [plugin]
 }
 
 
-function wrapSelectedText(textarea, content: string, wrap: string, wrapAfter?: string,
-      newlines?: string) {
+function wrapSelectedText(textarea: HTMLTextAreaElement, content: St,
+      wrap: St, wrapAfter?: St, newlines?: St) {
   const startIndex = textarea.selectionStart;
   const endIndex = textarea.selectionEnd;
   const selectedText = textarea.value.substring(startIndex, endIndex);

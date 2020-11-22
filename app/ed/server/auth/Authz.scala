@@ -166,7 +166,7 @@ object Authz {
       categoriesRootLast, tooManyPermissions, maySeeUnlisted = maySeeUnlisted)
 
     if (mayWhat.maySee isNot true)
-      return NoNotFound(s"EdEM0SEE-${mayWhat.debugCode}")
+      return NoNotFound(s"TyEM0SEE_-${mayWhat.debugCode}")
 
     Yes
   }
@@ -197,7 +197,7 @@ object Authz {
       Some(privateGroupTalkMemberIds), inCategoriesRootLast, tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
-      return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
+      return NoNotFound(s"TyEM0RE0SEE_-${mayWhat.debugCode}")
 
     if (pageMeta.pageType == PageType.MindMap) {
       // Mind maps could easily get messed up by people posting new stuff to the mind map, so,
@@ -240,14 +240,14 @@ object Authz {
     tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     if (post.isDeleted)
-      return NoNotFound("EdEM0EDPOSTDELD")
+      return NoNotFound("TyEM0EDPOSTDELD")
 
     val user = userAndLevels.user
     val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
       Some(privateGroupTalkMemberIds), inCategoriesRootLast, tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
-      return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
+      return NoNotFound(s"TyEM0ED0SEE-${mayWhat.debugCode}")
 
     val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
     if (isOwnPost) {
@@ -256,7 +256,7 @@ object Authz {
     }
     else if (pageMeta.pageType == PageType.MindMap) {  // [0JUK2WA5]
       if (!mayWhat.mayEditPage)
-        return NoMayNot("EdEM0ED0YOURMINDM", "You may not edit other people's mind maps")
+        return NoMayNot("TyEM0ED0YOURMINDM", "You may not edit other people's mind maps")
     }
     else if (post.isWiki && mayWhat.mayEditWiki && !post.isTitle) {
       // Fine, may edit.  But exclude titles, for now. Otherwise, could be
@@ -541,7 +541,7 @@ case class MayWhat(
 
 object MayWhat {
 
-  val MayPerhapsSee: MayWhat = MayWhat.mayNotSee("EdMMBYSEE").copy(maySee = None)
+  val MayPerhapsSee: MayWhat = MayWhat.mayNotSee("TyMMBYSEE_").copy(maySee = None)
 
   val MayEverything: MayWhat = MayWhat(mayEditPage = true, mayEditComment = true,
     mayEditWiki = true, mayEditOwn = true,

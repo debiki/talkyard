@@ -1,3 +1,6 @@
+.s_InstaDgW
+  z-index: 999999999;
+  position: relative;
 
 .s_OnlAdmTxt
   margin-left: 5px;
@@ -25,3 +28,15 @@
   border: 2px solid hsl(0, 0%, 93%);
   border-top: none;
 
+
+
+// Effects (Fx)
+
+
+// This instead of dearly missed <blink>, it not work, it gone?
+.s_Fx-Blink
+  animation: KfBlink 0.5s step-end infinite alternate;
+
+@keyframes KfBlink
+  50%  { opacity: 0; }
+  100% { opacity: 1; }

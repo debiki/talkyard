@@ -106,28 +106,28 @@ class PubSubApi(private val actorRef: ActorRef) {
     futureReply.asInstanceOf[Future[AnyProblem]]
   }
 
-  def userSubscribed(who: UserConnected): Unit = {
+  def userSubscribed(who: UserConnected): U = {
     actorRef ! who
   }
 
-  def unsubscribeUser(siteId: SiteId, user: Participant, browserIdData: BrowserIdData): Unit = {
-    actorRef ! DisconnectUser(siteId, user, browserIdData)
+  def unsubscribeUser(siteId: SiteId, pat: Pat): U = {
+    actorRef ! DisconnectUser(siteId, pat)
   }
 
-  def userWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId]): Unit = {
+  def userWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId]): U = {
     actorRef ! UserWatchesPages(siteId, userId, pageIds)
   }
 
-  def userIsActive(siteId: SiteId, user: Participant, browserIdData: BrowserIdData): Unit = {
+  def userIsActive(siteId: SiteId, user: Pat, browserIdData: BrowserIdData): U = {
     actorRef ! UserIsActive(siteId, user, browserIdData)
   }
 
   /** Assumes user byId knows about this already; won't publish to him/her. */
-  def publish(message: Message, byId: UserId): Unit = {
+  def publish(message: Message, byId: UserId): U = {
     actorRef ! PublishMessage(message, byId)
   }
 
-  def closeWebSocketConnections(): Unit = {
+  def closeWebSocketConnections(): U = {
     actorRef ! CloseWebSocketConnections
   }
 
@@ -147,7 +147,7 @@ class PubSubApi(private val actorRef: ActorRef) {
 
 class StrangerCounterApi(private val actorRef: ActorRef) {
 
-  def strangerSeen(siteId: SiteId, browserIdData: BrowserIdData): Unit = {
+  def strangerSeen(siteId: SiteId, browserIdData: BrowserIdData): U = {
     actorRef ! StrangerSeen(siteId, browserIdData)
   }
 }
@@ -161,17 +161,17 @@ private case class UserWatchesPages(
   siteId: SiteId, userId: UserId, pageIds: Set[PageId])
 
 private case class UserIsActive(
-  siteId: SiteId, user: Participant, browserIdData: BrowserIdData)
+  siteId: SiteId, user: Pat, browserIdData: BrowserIdData)
 
 case class UserConnected(
   siteId: SiteId,
-  user: Participant,
+  user: Pat,
   browserIdData: BrowserIdData,
   watchedPageIds: Set[PageId],
   wsOut: SourceQueueWithComplete[JsValue])
 
 private case class DisconnectUser(
-  siteId: SiteId, user: Participant, browserIdData: BrowserIdData)
+  siteId: SiteId, pat: Pat)
 
 private case object DeleteInactiveSubscriptions
 
@@ -191,7 +191,7 @@ private case object CloseWebSocketConnections
   * Plus the WebSocket send-messages channel.
   */
 case class WebSocketClient(
-  user: Participant,
+  user: Pat,
   firstConnectedAt: When,
   connectedAt: When,
   humanActiveAt: When,
@@ -206,7 +206,7 @@ case class WebSocketClient(
         watches: [${watchingPageIds.mkString(", ")}]"""
 
   def toStringPadded: String =
-    user.anyUsername.getOrElse("").padTo(Participant.MaxUsernameLength, ' ') +
+    user.anyUsername.getOrElse("").padTo(Pat.MaxUsernameLength, ' ') +
       " #" + user.id.toString.padTo(5, ' ') + ' ' + o"""
         first connected: ${toIso8601T(firstConnectedAt.toJavaDate)},
         connected: ${toIso8601T(connectedAt.toJavaDate)},
@@ -356,7 +356,7 @@ class PubSubActor(val globals: Globals) extends Actor {
       // caches are empty, so it'll seem as if the user just connected (even though
       // the human might be away — can be just a browser tab that was left open).
 
-    case DisconnectUser(siteId, user, _ /*browserIdData*/) =>
+    case DisconnectUser(siteId, user) =>
       val watchedPageIds = disconnect(siteId, user)
       updateWatcherIdsByPageId(
             siteId, user.id, oldPageIds = watchedPageIds, newPageIds = Set.empty)

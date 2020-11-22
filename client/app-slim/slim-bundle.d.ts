@@ -313,8 +313,10 @@ declare namespace debiki2 {
   function user_isTrustMinNotThreat(me: UserInclDetails | Myself, trustLevel: TrustLevel): boolean;
   //function threatLevel_toString(threatLevel: ThreatLevel): [St, St];
   function threatLevel_toElem(threatLevel: ThreatLevel);
+  function pat_isMember(pat: UserInclDetails | Me | Pat | PatId): Bo;
   var isGuest;
-  var user_isGuest;
+  function pat_isGuest(pat: UserInclDetails | Me | Pat): Bo;
+  function user_isGuest(pat: UserInclDetails | Me | Pat): Bo;
   function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean;
   var page_isGroupTalk;
 
@@ -375,7 +377,7 @@ declare namespace debiki2 {
   function linkToUserInAdminArea(userId: UserId): string;
   function linkToUserProfilePage(idOrUsername: Myself | Participant | UserId | string): string;
   function pathTo(user: Participant | Myself | UserId | string): string;
-  function linkToUsersNotfs(userIdOrUsername: UserId | string): string;
+  function linkToUsersNotfs(who: Who): string;
   function linkToMembersNotfPrefs(userIdOrUsername: UserId | string): string;
   function linkToSendMessage(userIdOrUsername: UserId | string): string;
   function linkToInvitesFromUser(userId: UserId): string;

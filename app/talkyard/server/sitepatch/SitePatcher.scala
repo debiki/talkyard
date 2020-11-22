@@ -1235,7 +1235,7 @@ case class SitePatcher(globals: debiki.Globals) {
         }
         else {
           tx.insertMember(user) // [UPSMEMBRNOW]
-          newDao.joinGloballyPinnedChats(user.briefUser, tx)
+          newDao.joinPinnedGlobalChats(user, tx)
         }
       }
 

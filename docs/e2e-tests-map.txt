@@ -224,7 +224,8 @@ groups:
 security:
   access denied,
   not found page, 404:
-            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
+          - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   api list restriceted category:
             - api-list-query-for-topics.test.ts  TyT502RKDJ46
   api search restricted categories and private topics:
@@ -233,13 +234,20 @@ security:
             - api-list-query-for-topics.test.ts  TyT69WKTEJG4
             - api-search-full-text.test.ts       TyT69WKTEJG4
   join page one may not see:
-            - TyT502RKTJF4  SEC_TEST_MISSING
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK.TyT502RKTJF4
   add to watchbar a page one may not see:
-            -  TyT602KRGJG SEC_TESTS_MISSING
+          -  TyT602KRGJG SEC_TESTS_MISSING
   edit wiki topics permission:
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46.TyTWIKIPRMS
   misc security: SEC_TEST_MISSING
 
+suspended users:
+  gets no email notfs,
+  websocket gets disconnected,
+  cannot access login-required site:
+          - login-required-join-global-chat.2br  TyTE2E603MAT53
+  suspended user cannot access private chat:
+          - SEC_TEST_MISSING
 
 invites -
   before accepts:
@@ -357,7 +365,8 @@ categories -
     can undelete:
     backlinks from topics inside disappear:
           - links-internal.2browsers.test.ts  TyTINTLNS54824.TyTDELCATBLNS
-  permissions: see (1QRY7)
+  permissions:   see (1QRY7)  no? tag gone?
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   upsert categories:  (upscats)
 
 permissions -
@@ -384,7 +393,9 @@ topics -
     change type:
     change url:
   pin -
-    globally:
+    globally:  (6KWQ2)
+          - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
     in category:
   close -
     close:  page-type-question-closed.2browsers.test.ts
@@ -568,8 +579,13 @@ direct messages:
 chat:
   create channel:  chat.2browsers.test.ts  (4FE2)
     two users chat:         ==
+          - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   add/remove member:  private-chat.3browsers.test.ts
   join/leave channel:       ==
+    self join, auto leave:
+          - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   private chat:             ==
           - private-chat.3browsers.test.ts  TyT2ABKR045
     not searchable:
@@ -646,6 +662,8 @@ uploads -  (7KFC2)
           - upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ETOOLGUPL
     server rejects if browser didn't:
           - upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ESVUPLCK
+  paste images and files from clipboard:
+    placed at cursor:
 
 recent comments:
 
@@ -665,6 +683,9 @@ watchbar -
   recent list:
   chat list:
   page highlighted:
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+  chats appear / disappear when trust level changes:
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
 
 track reading progress:
   posts not/in viewport:
@@ -672,6 +693,7 @@ track reading progress:
   live updates of notifications seen:
           - notfs-mark-seen-as-seen  TyT2AKBR0T
   promote:
+          - TESTS_MISSING  TyTE2E603RM8J
 
 live updates -  (4FE2)
   forum latest topic list:
@@ -700,6 +722,7 @@ site settings:
     login required:
           - settings-toggle-login-required.3browsers.test.ts  TyT4GKBW20
           - login-required-oauth-signup-login.test.ts  TyT406MRTJW2
+          - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
           - admin-user-approve-reject.2browsers.test.ts  TyT5KHEWQ2
     invites only:
     approve members:
@@ -737,19 +760,22 @@ intro tours:
           - embedded-comments-create-site-req-verif-email.2browsers.test.ts [Ty7ABKR024]
   restart tour:  [TyT2ABKRT05]
 
-admin -
+admin:
   new admin intro tours:
-    - create-site-password-run-admin-intro-tours  TyT7BAWFPK9
+          - create-site-password-run-admin-intro-tours  TyT7BAWFPK9
   user page:  [5RBKWEF8]
-    - admin-user-approve-reject.2browsers.test.ts  [TyT5KHEWQ2]
-    - admin-user-staff.2browsers.test.ts  [TyT2GKFI594]
-    - admin-user-suspend.2browsers.test.ts  [TyT5GKQSG2]
-    - admin-user-threat-mild.2browsers.test.ts  [TyT2WKBG4Z]
-    - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
+          - admin-user-approve-reject.2browsers.test.ts  [TyT5KHEWQ2]
+          - admin-user-staff.2browsers.test.ts  [TyT2GKFI594]
+          - admin-user-suspend.2browsers.test.ts  [TyT5GKQSG2]
+    change threat level:
+          - admin-user-threat-mild.2browsers.test.ts  [TyT2WKBG4Z]
+          - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
+    change trust level:
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   cannot bad-click break an admin, e.g. unverifying hens email or unapproving, rejecting:
-    - (missing) [5AEWBN0]
+          - (missing) [5AEWBN0]
   members tab:
-    - really many members:
+    really many members:
           - many-users-mention-list-join-group.2browsers.test.ts   TESTS_MISSING  TyT60295KTDT
 
 moderation,
@@ -985,7 +1011,7 @@ notifications:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
           - direct-messages-delete.2browsers.test.ts  TyT603KDTP74
   about public chat messages:
-          ?
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK  # hmm but only looks at email
   about private chat messages:
           - private-chat.3browsers.test.ts  TyT2ABKR045
   about like votes:
@@ -1031,6 +1057,9 @@ live notifications -
   new page, added to:
           - chat-create-from-direct-message  TyTPAGENOTF
           - chat-create-from-profile-pages.2browsers.test.ts  TyT306RAKN2 TyTPAGENOTF
+  misc chat:
+          - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
 
 notf prefs inherited:
   one's own, from site, to cat, to topic:
@@ -1060,10 +1089,11 @@ email notifications:  (5ABKR024)
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
     email notf link:
           - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
-  new private chat messages:
+  private chat messages:
           - private-chat.3browsers.test.ts  TyT2ABKR045
-  mention:
+  mentions:
           - notf-emails-discussion.2browsers.test.ts   TyT4FKA2EQ02
+          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   watching:
   not until after email verified:
           - unsubscribe.2browsers.test.ts  [TyT2ABKR04]

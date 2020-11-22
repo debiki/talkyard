@@ -168,27 +168,27 @@ trait AuthnSiteDaoMixin {
     // (The redirBackUrl includes both the protocol and IDP alias, and the
     // client id and secret are very unique too.)
 
-    def correctAccessTokenAuthMethod: Bo =
-          (service.getApi.getClientAuthentication ==
-                sj_RequestBodyAuthenticationScheme.instance()
-          ) == idp.oauAccessTokenAuthMethod.is("client_secret_post")
 
-    def correctOAuth2Config: Bo = service.getApi match {
+    def hasCorrectOAuth2Config: Bo = service.getApi match {
       case oidcApi: TyOidcScribeJavaApi20 =>
-        // Then need a way for a site admin to tell Talkyard which
-        // built-in ScribeJava IDP hen wants to use? [oh_so_many_idps]
         val apiAuthUrlInclQuerySt = oidcApi.getAuthorizationUrl(
               "", "", "", "", "", new java.util.HashMap())
-        (apiAuthUrlInclQuerySt.startsWith(idp.oauAuthorizationUrl + '?')
-              && oidcApi.getAccessTokenEndpoint == idp.oauAccessTokenUrl)
+        val sameAuthUrl = (
+              apiAuthUrlInclQuerySt.startsWith(idp.oauAuthorizationUrl + '?')
+                  && oidcApi.getAccessTokenEndpoint == idp.oauAccessTokenUrl)
+        val sameTokenAuthMethod = (
+              service.getApi.getClientAuthentication ==
+                    sj_RequestBodyAuthenticationScheme.instance()
+                ) == idp.oauAccessTokenAuthMethod.is("client_secret_post")
+        sameAuthUrl && sameTokenAuthMethod
       case _: sj_DefaultApi20 =>
         // This is a ScribeJava built-in IDP, e.g. Gmail or FB, with the correct
-        // auth url hardcoded in ScribeJava.  We've verified that it's
-        // enabled [ck_glob_idp_enb].  We won't need idp.oauAuthorizationUrl
-        // — in fact we've set it to "dummy_..." something.
+        // auth config hardcoded in ScribeJava.  We've verified that this IDP
+        // enabled [ck_glob_idp_enb].
         true
       case weirdApi =>
         // Only OAuth2 and OIDC supported.
+        // Twitter uses OAuth1 though :- (
         bugWarn("TyE3B5MA05MR", s"Weird API: ${classNameOf(weirdApi)}")
         false
     }
@@ -197,8 +197,7 @@ trait AuthnSiteDaoMixin {
         || service.getCallback != redirBackUrl
         || service.getApiKey != idp.oauClientId
         || service.getApiSecret != idp.oauClientSecret
-        || !correctAccessTokenAuthMethod
-        || !correctOAuth2Config) {
+        || !hasCorrectOAuth2Config) {
       // It's the wrong. An admin recently changed OIDC settings?
       // Remove old, create new.
       uncacheScribeJavaAuthnServices(Seq(idp))
@@ -227,20 +226,36 @@ trait AuthnSiteDaoMixin {
 
   private def tryCreateScribeJavaOAuth2Service(idp: IdentityProvider, redirBackUri: St)
           : sj_OAuth20Service Or ErrMsg = {
+    import com.github.scribejava.{apis => sj}
+    import idp.protoAlias
+
     dieIf(!idp.isOAuth2NotOidc, "TyE305MARKP24")
 
-    val SDIA = ServerDefIdpAliases
-    import com.github.scribejava.{apis => a}
+    val wellKnownIdpImpl = idp.wellKnownIdpImpl getOrElse {
+      return Bad(s"No well known IDP impl specified for $protoAlias [TyE602MRKD6]")
+    }
 
-    val (idpApi: sj_DefaultApi20, idpDefaultScopes: St) = idp.alias match {
-      case SDIA.Google => (a.GoogleApi20.instance(), "profile email")
-      case SDIA.GitHub => (a.GitHubApi.instance(), "read:user,user:email")
-      case SDIA.Facebook => (a.FacebookApi.instance(), "email")
-      //case SDIA.Twitter => ...
-      case SDIA.LinkedIn => (a.LinkedInApi20.instance(), "r_liteprofile r_emailaddress")
+    val (idpApi: sj_DefaultApi20, idpDefaultScopes: St) = wellKnownIdpImpl match {
+      case WellKnownIdpImpl.Facebook =>
+        // Facebook Graph user fields documented here:  [fb_oauth_user_fields]
+        // https://developers.facebook.com/docs/graph-api/reference/user
+        (sj.FacebookApi.instance(), "email picture profile_pic")  // picture?
+
+      case WellKnownIdpImpl.GitHub =>
+        (sj.GitHubApi.instance(), "read:user,user:email")
+
+      case WellKnownIdpImpl.Google =>
+        (sj.GoogleApi20.instance(), "profile email")
+
+      case WellKnownIdpImpl.LinkedIn =>
+        (sj.LinkedInApi20.instance(), "r_liteprofile r_emailaddress")
+
+      case WellKnownIdpImpl.Twitter =>
+        return Bad(s"Twitter authn not yet impl via ScribeJava")
+
       case _ =>
-        return Bad(
-              s"Identity Provider (IDP) not yet supported: ${idp.protoAlias}")
+        return Bad(s"Identity Provider (IDP) not yet supported: ${
+              wellKnownIdpImpl.name}, $protoAlias [TyE0IDPIMPL]")
     }
 
     val service = new sj_ServiceBuilder(idp.oauClientId)

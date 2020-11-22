@@ -32,12 +32,11 @@ export const BackupPanel = React.createFactory<AdminPanelProps>(
 });
 
 
-var importBackupDiagElm;
-var setImportBackupDiagOpen;
+let setImportBackupDiagOpen;
 
 export function openBackupDialog() {
-  if (!importBackupDiagElm) {
-    importBackupDiagElm = ReactDOM.render(ImportBackupDiag(), utils.makeMountNode());
+  if (!setImportBackupDiagOpen) {
+    ReactDOM.render(ImportBackupDiag(), utils.makeMountNode());
   }
   setImportBackupDiagOpen(true);
 }

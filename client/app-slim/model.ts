@@ -390,7 +390,9 @@ interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
 }
 
 
-interface Myself extends OwnPageNotfPrefs {
+// Extend Pat, set id to a new StrangerId if not logged in?
+type Me = Myself
+interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
   dbgSrc?: string;
   id?: UserId;
   isGroup?: boolean; // currently always undefined (i.e. false)
@@ -1100,9 +1102,13 @@ interface MemberIdName {
 }
 
 
-type BriefUser = Participant;  // old name, CLEAN_UP RENAME all occurrences to Participant
+// Store means  Store.me: Me,  i.e. the current user.
+type Who = Pat | Me | Store | PatId | Username;
 
-interface Participant {   // Guest or Member, and Member = group or user   RENAME to Pat
+type BriefUser = Pat;    // CLEAN_UP RENAME to Pat
+type Participant = Pat;  // RENAME to Pat
+
+interface Pat {   // Guest or Member, and Member = group or user
   id: UserId;
   fullName?: string;
   username?: string;
@@ -1264,6 +1270,7 @@ interface UiPrefs {
   inp?: UiPrefsIninePreviews;
   fbs?: UiPrefsForumButtons;
   xls?: UiPrefsExternaLInks;
+  kbd?: UiPrefsKeyboardShortcuts;
 }
 
 const enum UiPrefsIninePreviews {
@@ -1283,6 +1290,11 @@ const enum UiPrefsForumButtons {
 const enum UiPrefsExternaLInks {
   OpenInSameTab = 1,
   OpenInNewTab = 2,
+}
+
+const enum UiPrefsKeyboardShortcuts {
+  Off = 0,
+  On = 1,
 }
 
 
@@ -1354,7 +1366,7 @@ interface UserStats {
 interface UsersHere {
   users: Participant[];
   areChatChannelMembers: boolean;
-  areTopicContributors: boolean;
+  areTopicContributors: BoZ;
   numOnline: number;
   iAmHere: boolean;
   onlyMeOnline: boolean;

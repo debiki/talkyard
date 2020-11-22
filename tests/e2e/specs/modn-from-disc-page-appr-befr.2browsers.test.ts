@@ -99,8 +99,8 @@ describe(`modn-from-disc-page-approve-before  TyTE2E603RTJ`, () => {
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
-  let topicOneUrl: S;
-  let topicTwoUrl: S;
+  let topicOneUrl: St;
+  let topicTwoUrl: St;
 
   it(`... posts a new topic`, () => {
     mariasBrowser.complex.createAndSaveTopic({

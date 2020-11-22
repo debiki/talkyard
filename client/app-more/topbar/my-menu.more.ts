@@ -59,6 +59,7 @@ export const MyMenuContent = createFactory({
     let menuContent;
     const store: Store = this.props.store;
     const me: Myself = store.me;
+    const isMember = debiki2.pat_isMember(me);
 
     // ------- Staff link, notfs, help
 
@@ -86,11 +87,12 @@ export const MyMenuContent = createFactory({
 
     const notfsDivider = me.notifications.length ? MenuItemDivider() : null;
     const showMarkAsReadButton = me.numTalkToOthersNotfs + me.numTalkToMeNotfs >= 1;
-    const viewAllNotfsOrClear =
+    const viewAllNotfsOrClear = !isMember ? null :
         MenuItemsMany({ className: 's_MM_NotfsBs' },
-          LinkUnstyled({ to: linkToUsersNotfs(me.username) }, t.mm.MoreNotfs),
+          LinkUnstyled({ to: linkToUsersNotfs(me) }, t.mm.MoreNotfs),
           showMarkAsReadButton &&
-              LinkUnstyled({ onClick: this.markNotfsRead, className: 'e_DismNotfs' }, t.mm.DismNotfs),
+              LinkUnstyled({ onClick: this.markNotfsRead, className: 'e_DismNotfs' },
+                t.mm.DismNotfs),
           SnoozeBtn());
     // Nice to have a View All button at the bottom of the notifications list too, if it's long,
     // especially on mobile so won't need to scroll up.

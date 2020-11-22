@@ -588,74 +588,76 @@ case object Participant {
 // Member = User Or Group
 // trait Someone = Guest or User  = just 1 person (or bot), not a group.
 // Abbreviate 'ppts' and 'ppt' in db constr names.
-sealed trait Participant {
+sealed trait Participant {    RENAME // to Pat, already started, in core/package.ts
 
-  def id: UserId
-  def email: String  // COULD rename to emailAddr
+  def id: PatId
+  def email: EmailAdr  // COULD rename to emailAddr
   def emailNotfPrefs: EmailNotfPrefs
-  def tinyAvatar: Option[UploadRef]
-  def smallAvatar: Option[UploadRef]
-  def suspendedTill: Option[ju.Date]
-  def isAdmin: Boolean
-  def isOwner: Boolean
-  def isModerator: Boolean
-  def isSuperAdmin: Boolean
-  def isDeactivated: Boolean = false
-  def isDeleted: Boolean = false
+  def tinyAvatar: Opt[UploadRef]
+  def smallAvatar: Opt[UploadRef]
+  def suspendedTill: Opt[ju.Date]
+  def isAdmin: Bo
+  def isOwner: Bo
+  def isModerator: Bo
+  def isSuperAdmin: Bo
+  def isDeactivated: Bo = false
+  def isDeleted: Bo = false
 
-  def isAuthenticated: Boolean = isRoleId(id)
-  def isApprovedOrStaff: Boolean = false
-  def isSystemUser: Boolean = id == SystemUserId
-  def isStaff: Boolean = isAdmin || isModerator || isSystemUser
-  def isHuman: Boolean = id >= LowestTalkToMemberId || id <= MaxGuestId
-  def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
-  def isGone: Boolean = isDeactivated || isDeleted
+  def isAuthenticated: Bo = isRoleId(id)
+  def isApprovedOrStaff: Bo = false
+  def isSystemUser: Bo = id == SystemUserId
+  def isSystemOrSysbot: Bo = id == SystemUserId || id == SysbotUserId
+  def isStaff: Bo = isAdmin || isModerator || isSystemUser
+  def isHuman: Bo = id >= LowestTalkToMemberId || id <= MaxGuestId
+  def isBuiltIn: Bo = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
+  def isGone: Bo = isDeactivated || isDeleted
 
-  def isStaffOrCoreMember: Boolean =  // but what about threat level?
+  def isStaffOrCoreMember: Bo =  // but what about threat level?
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.CoreMember.toInt
 
-  def isStaffOrTrustedNotThreat: Boolean =
+  def isStaffOrTrustedNotThreat: Bo =
     isStaffOrMinTrustNotThreat(TrustLevel.TrustedMember)
 
-  def isStaffOrFullMember: Boolean =
+  def isStaffOrFullMember: Bo =
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.FullMember.toInt
 
   /** Guests have no trust level, so default = false */
   def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel) = false
 
-  def isMember: Boolean = Participant.isMember(id)
-  def isGuest: Boolean = Participant.isGuestId(id)
-  def isGroup: Boolean = false
-  def anyMemberId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
+  def isMember: Bo = Participant.isMember(id)
+  def isGuest: Bo = Participant.isGuestId(id)
+  def isGroup: Bo = false
+  def anyMemberId: Opt[MembId] = if (isRoleId(id)) Some(id) else None
 
-  def accountType: String = if (isGuest) "guest" else if (isGroup) "group" else "user"
+  def accountType: St = if (isGuest) "guest" else if (isGroup) "group" else "user"
 
-  def isSuspendedAt(when: ju.Date): Boolean =
+  def isSuspendedAt(when: When): Bo = isSuspendedAt(when.toJavaDate)
+  def isSuspendedAt(when: ju.Date): Bo =
     Participant.isSuspendedAt(when, suspendedTill = suspendedTill)
 
   def effectiveTrustLevel: TrustLevel
-  def canPromoteToBasicMember: Boolean = false
-  def canPromoteToFullMember: Boolean = false
+  def canPromoteToBasicMember: Bo = false
+  def canPromoteToFullMember: Bo = false
 
   /** A member's full name, or guest's guest name. */
-  def anyName: Option[String] = None
+  def anyName: Opt[St] = None
 
   /** Only for members, not guests. */
-  def anyUsername: Option[String] = None
+  def anyUsername: Opt[St] = None
 
-  def usernameOrGuestName: String
-  def usernameSpaceOtherName: String =
+  def usernameOrGuestName: St
+  def usernameSpaceOtherName: St =
     (anyUsername.getOrElse("") + " " + anyName.getOrElse("")).trim
 
-  def nameOrUsername: String
+  def nameOrUsername: St
 
-  def idSpaceName: String =
+  def idSpaceName: St =
     anyUsername.map(un => s"$id @$un") getOrElse s"$id '$usernameOrGuestName'"
 
-  def nameParaId: String =
+  def nameParaId: St =
     anyUsername.map(un => s"@$un (id $id)") getOrElse s"'$usernameOrGuestName' (id $id)"
 
-  def nameHashId: String =
+  def nameHashId: St =
     anyUsername.map(un => s"@$un #$id") getOrElse s"'$usernameOrGuestName' #$id"
 
   def toMemberOrThrow: Member = {
@@ -1643,6 +1645,7 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
   idpUserId: St,
   username: Opt[St] = None,
   firstName: Opt[St] = None,
+  middleName: Opt[St] = None,
   lastName: Opt[St] = None,
   fullName: Opt[St] = None,
   email: Opt[St] = None,

@@ -17,14 +17,15 @@ const completion = omelette('tyd <mainCmd>')
 completion.on('mainCmd', ({ reply }) => {
   reply([
         'h', 'help',
-        'u', 'watchup',
+        'u', 'up', //'watchup',
+        'w', 'watch',
         'ps',
         'k', 'kill',
-        'r', 'restart',
+        'r', 'restart', 'ra',
         'down',
         'recreate',
         'rebuild',
-        'l', 'logslive', 'logsrecentlive', 'logsold',
+        'l', 'logslive', 'lr', 'logsrecentlive', 'logsold',
         'e', 'e2e',
         'cleane2elogs',
         'dbcli',
@@ -43,22 +44,17 @@ completion.init();
 
 // Maybe later: https://github.com/denoland/deno, nice!: function Deno.watchFs
 
-// Commands to support?:
-//
-//   this:  s/tyd yarn add glob
-//   does:  s/d run --rm nodejs yarn add glob
-//
-//   this:  s/tyd playcli
-//   starts the SBT REPL for Ty's Play Framework app server
-//
-//   this:  s/tyd e2e all
-//   runs all end-to-end tests
-//
-//   this:  s/tyd e2e idpauth
-//   runs all end-to-end tests for auth at external IDP (e.g. Keycloak or Gmail)
+//   this:  s/tyd e2e extaut
+//   runs all end-to-end tests for auth at external IDP (e.g. FB or Gmail)
 //
 // Test traits:
-//  1br, 2br, 3br,  b3c  mgt   idpauth  extreq-goog-fb-lin-githb-gitlb-twtr
+//  1br, 2br, 3br,  b3c  mtime  extaut extln  odic  embcom  embfor
+//
+// Ex:
+// signup-w-goog.1br.extaut.ts
+// signup-w-linkedin.1br.extaut.ts
+// link-previews-twitter.1br.extln.ts
+
 
 type ExitCode = Nr | Nl;
 
@@ -113,8 +109,9 @@ const mainCmd = commands[0];
 dieIf(!mainCmd, `No main command? '${process.argv.join(' ')}' TyE52SKDM7`)
 dieIf(mainCmd !== process.argv[2], `Weird main command: '${mainCmd}' TyE52SKDM5`)
 
-const mainSubCmd = commands[1];
-const allSubCmds = commands.slice(1);
+const mainSubCmd: St = commands[1];
+const allSubCmds: St[] = commands.slice(1);
+const allSubCmdsSt: St = allSubCmds.join(' ');
 let mainCmdIsOk: U | true;
 
 function stringifyOpts(opts: { [k: string]: any }): St {
@@ -147,7 +144,7 @@ if (mainCmd === 'h' || mainCmd === 'help') {
 
 
 if (mainCmd === 'nodejs') {
-  spawnInForeground('docker-compose run --rm nodejs ' + allSubCmds.join(' '));
+  spawnInForeground('docker-compose run --rm nodejs ' + subCmdsAndOpts.join(' '));
   process.exit(0);
 }
 
@@ -187,7 +184,7 @@ function tailLogsThenExit() {
 }
 
 
-if (mainCmd === 'logsrecentlive') {
+if (mainCmd === 'lr' || mainCmd === 'logsrecentlive') {
   spawnInForeground('docker-compose logs -f --tail 555');
   process.exit(0);
 }
@@ -199,14 +196,20 @@ if (mainCmd === 'logsold') {
 }
 
 
-if (mainCmd === 'justwatch') {
+if (mainCmd === 'w' || mainCmd === 'watch') {
   spawnInForeground('make watch');
   process.exit(0);
 }
 
 
-if (mainCmd === 'u' || mainCmd === 'watchup') {
+if (mainCmd === 'u' || mainCmd === 'up') {
   mainCmdIsOk = true;
+
+  // If only starting some specific containers, skip Yarn and Make.
+  if (mainSubCmd) {
+    spawnInForeground(`docker-compose up -d ${allSubCmdsSt}`);
+    tailLogsThenExit();
+  }
 
   // First, update assets bundles once in the foreground — it's annoying
   // if instead that's done while the server is starting, because then the server
@@ -219,7 +222,17 @@ if (mainCmd === 'u' || mainCmd === 'watchup') {
   // — that process would exit, if `up -d` hasn't yet started any containers.
   spawnInForeground('docker-compose up -d');
 
+  // Just this:
+  spawnInForeground('docker-compose logs -f --tail 0');
+  // ... instead of the below,
+
+  // ... Skip this, because 'make watch' and assets rebuild problems
+  // can get hidden by app server log messages.
+  // Better use two different shell terminals, split screen,
+  // one for building assets, another for app & web server logs.
+  // And, slightly complicated with a background process and terminating it later.
   // Now time to start rebuilding asset bundles in the background, when needed.
+  /*
   const rebuildAssetsCmd = 'make watch';
   const watchChildProcess = spawnInBackground(rebuildAssetsCmd);
 
@@ -259,19 +272,37 @@ if (mainCmd === 'u' || mainCmd === 'watchup') {
   watchExitedPromise.finally(function() {
     logMessage(`Bye. Server maybe still running.`);
     process.exit(0);
-  })
+  });
+  */
 }
 
 
+if (mainCmd === 'ra') {
+  restartContainers('app');
+}
 if (mainCmd === 'r' || mainCmd === 'restart') {
-  const cs = allSubCmds;  // which containers, e.g.  'app'
-  spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d start ${cs}`]);
+  restartContainers(allSubCmdsSt); // e.g. 'web app'
+}
+
+function restartContainers(containers: St) {
+  const cs = (containers || '').trim();
+  logMessage(cs ? `Stopping containers: ${cs}...` : `Stopping all containers...`);
+  spawnInForeground('sh', ['-c', `s/d kill ${cs}`]);
+
+  // If restarting the web/app, probably we want up-to-date assets?
+  if (!containers || containers.includes('web') || containers.includes('app')) {
+    logMessage(`Rebuilding assets if needed ...`);
+    spawnInForeground('make debug_asset_bundles');
+  }
+
+  logMessage(`Starting containers...`);
+  spawnInForeground('sh', ['-c', `s/d start ${cs}`]);
   tailLogsThenExit();
 }
 
 
 if (mainCmd === 'recreate') {
-  const cs = allSubCmds;  // which containers, e.g.  'app'
+  const cs = allSubCmdsSt;  // which containers, e.g.  'web app'
   spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d rm -f ${cs}; s/d up -d ${cs}`]);
   tailLogsThenExit();
 }
@@ -315,7 +346,7 @@ if (mainCmd === 'cleane2elogs') {
 
 if (mainCmd === 'e' || mainCmd === 'e2e') {
 
-// Cycle e2e test logs:
+// Cycle e2e test logs:  (dupl path, also in the reporter [693RMSDM3])
 //   e2e-test-logs —> e2e-test-logs-old
 // And, if -old non-empty:
 //   e2e-test-logs-old —> e2e-test-logs-older
@@ -367,10 +398,16 @@ for (let pattern of allSubCmds) {
 }
 
 
-console.log(`Specs patterns:  ${allSubCmds.join(' ')}`);
+console.log(`Specs patterns:  ${allSubCmdsSt}`);
 console.log(`Specs matching:\n - ${allMatchingSpecs.join('\n - ')}`);
 
 
+// If we're run
+// Let wdio handle signals — until it exits.
+// But maybe exit directly on SIGINT if running >= 2 specs? Then probably not debugging.
+process.on('SIGINT', function() {
+  logMessage(`Caught SIGINT.`);
+});
 
 // Can look at node_modules/@wdio/cli/build/launcher.js  to see
 // ex of how handle async errs?
@@ -475,9 +512,6 @@ async function runE2eTests(): Promise<ExitCode> {
   //    
   //    dd
 
-  const repeatEachTestNrTimes = opts.repeat || 1;
-  delete opts.repeat;
-
   const optsStr = stringifyOpts(opts) + ' --isInProjBaseDir';
 
   async function runWdioInForeground(specs: St[], wdioArgs: St): Promise<Nr> {
@@ -524,6 +558,9 @@ async function runE2eTests(): Promise<ExitCode> {
   const skipEmbAndAlways = ['!emb-com', '!embcom', '!embedded-', ...skipAlways]
   const skip2And3Browsers = ['!.2br', '!.3br'];
 
+
+  // ----- 1 browser
+
   let next: St[] | St[][] = [...skip2And3Browsers, ...skipEmbAndAlways];
 
   await withSpecsMatching(next, async (specs: St[]): Promise<ExitCode> => {
@@ -534,18 +571,31 @@ async function runE2eTests(): Promise<ExitCode> {
   });
 
 
-  next = ['.2br', ...skipEmbAndAlways];
+  // ----- 2 browsers
 
+  // This tests needs a static file server.
   // Should rename this test: incl ss8080 in the name? (static server port 8080)
-  await withSpecsMatching(['sso-login-required-w-logout-url'], (): 'Skip' => {
+  await withSpecsMatching(['sso-login-required-w-logout-url.2br'], (): 'Skip' => {
     startStaticFileServer(8080, 'target/');
     return 'Skip';
   });
+
+  // Tests that don't modify time can run in parallel.
+  next = ['.2br', '!.mtime', '!__e2e-test-template__', ...skipEmbAndAlways];
 
   await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
     return runWdioInForeground(specs, '--2browsers');
   });
 
+  // But tests that do modify time cannot run in parallel (on the same server).
+  next = ['.2br', '.mtime', ...skipEmbAndAlways];
+
+  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+    return runWdioInForeground(specs, '--2browsers --not-parallel');
+  });
+
+
+  // ----- 3 browsers
 
   next = ['.3br', ...skipEmbAndAlways];
 
@@ -553,6 +603,8 @@ async function runE2eTests(): Promise<ExitCode> {
     return runWdioInForeground(specs, '--3browsers');
   });
 
+
+  // ----- 1 browser, embedded comments
 
   const skip23BrAndUnusualEmb = ['!no-cookies', '!gatsby', '!embedded-forum',
           ...skip2And3Browsers, ...skipAlways];
@@ -583,6 +635,10 @@ async function runE2eTests(): Promise<ExitCode> {
   });
 
 
+  // ----- 2 browsers, embedded comments
+
+  // (There're currently no emb comments tests that modify time.)
+
   // Rename somehow to  'embcmt-...'?
   next = [
         ['.2br', 'embedded-', 'no-cookies', '!gatsby', '!embedded-forum', ...skipAlways],
@@ -595,6 +651,9 @@ async function runE2eTests(): Promise<ExitCode> {
               // Doesn't work (BADSTCSRV)
               '-xx-static-server-8080');
   });
+
+
+  // ----- Gatsby, embedded comments
 
     // Note: 8080 eighty eighty.
   stopStaticFileServer(8080);

@@ -39,6 +39,26 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 
 
+/** If the Dao should use the mem cache, or load things from the database.
+  * It's more clear what this means than just Opt[SiteTx]?
+  */
+sealed abstract class CacheOrTx {
+  def anyTx: Opt[SiteTx]
+  // def staleStuff: Opt[StaleStuff]  // later
+}
+
+object CacheOrTx {
+  def apply(anyTx: Opt[SiteTx]): CacheOrTx =   // REMOVE
+    anyTx.map(UseTx) getOrElse UseCache
+
+  def apply2(anyTx: Opt[(SiteTx, StaleStuff)]): CacheOrTx =
+    anyTx.map(txAndStaleStuff => UseTx(txAndStaleStuff._1)) getOrElse UseCache
+}
+
+case class UseTx(tx: SiteTx) extends CacheOrTx { def anyTx: Opt[SiteTx] = Some(tx) }
+case object UseCache extends CacheOrTx { def anyTx: Opt[SiteTx] = None}
+
+
 
 class SiteDaoFactory (
   private val context: EdContext,

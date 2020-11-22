@@ -56,6 +56,10 @@ settings.only3rdParty = args.only3rdParty || args.o3;
 const parallelStr = args.parallel || args.p;
 if (parallelStr) settings.parallel = parseInt(parallelStr);
 
+// But some tests cannot run in parallel — e.g. if they modify time.
+const notParallelStr = args.notParallel || args['0p'];
+if (notParallelStr) delete settings.parallel;
+
 if (args.v || args.verbose || args.t || args.trace) {
   settings.logLevel = 'trace';
 }
@@ -109,7 +113,11 @@ let waitforTimeout = args.waitforTimeout || args.wft;
 if (waitforTimeout) waitforTimeout = parseInt(waitforTimeout);
 settings.waitforTimeout = args.noTimeout || args.nt || args.dant ||
         settings.debugEachStep ?
-    2147483647 : (waitforTimeout || 27 * 1000);
+    2147483647 : (waitforTimeout || (
+      // Wait longer, in case many tests running at the same time,
+      // on a slow core i5 laptop.
+      settings.parallel && settings.parallel >= 2 ?
+          42 : 27) * 1000);
 
 settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';

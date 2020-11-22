@@ -36,23 +36,46 @@
  *
  * ...But still a bit needed, for any non-React links in the custom-html-top-header.
  */
-export function navigateTo(path: string): boolean {
-  return doNavigate(path);
+export function navigateTo(path: St): Vo {
+  doNavigate(path);
 }
 
-let doNavigate: (string) => boolean = function() {
-  return false;
+let doNavigate: (url: St) => Vo = function(url: St) {
+  location.assign(url);
 };
 
 export const ExtReactRootNavComponent = createReactClass({
   displayName: 'ExtReactRootNavComponent',
 
   UNSAFE_componentWillMount: function() {
-    doNavigate = (path: string) => {
-      if (this.props.location.pathname !== path) {
-        this.props.history.push(path);
-        return true;
+    doNavigate = (url: string) => {
+      // this.props.location is made available by ReactRouter — we should be
+      // wrapped in a Router(..., Routes( ... )) component.
+      const loc = this.props.location;
+      const localPath = url_asLocalAbsPath(url, loc);
+      if (!localPath) {
+        // External link.
+        window.location.assign(url);
+        return;
       }
+
+      // Already at the desired url?
+      if (loc.pathname === localPath)
+        return;
+
+      const linksToAdminArea = localPath.indexOf('/-/admin/') === 0; // dupl [5JKSW20]
+      const canSinglePageAppNavigate = eds.isInAdminArea === linksToAdminArea;
+
+      if (!canSinglePageAppNavigate) {
+        window.location.assign(url);
+        return;
+      }
+
+      // We can single-page-navigate without any page reload.
+      this.props.history.push(localPath);
+
+      // (Now, ReactRouter will mount new routes and components — and they'll
+      // typically fetch json from the server.)
     }
   },
 
@@ -62,38 +85,56 @@ export const ExtReactRootNavComponent = createReactClass({
 });
 
 
+/// Changes a url to a server local url path, if the url is to the
+/// same origin.  If cannot do this, returns false.
+///
+function url_asLocalAbsPath(url: St, loc: { origin: St, hostname: St }): St | false {
+  // Is it a path, no origin or hostname?
+  const slashSlashIx = url.indexOf('//');
+  let isPathMaybeQuery = slashSlashIx === -1;
+  if (!isPathMaybeQuery) {
+    // Ignore any url in any query string or hash fragment.
+    const queryIx = url.indexOf('?');
+    const hashIx = url.indexOf('#');
+    isPathMaybeQuery = (queryIx !== -1 && queryIx < slashSlashIx) ||
+                       (hashIx !== -1 && hashIx < slashSlashIx);
+  }
+
+  if (isPathMaybeQuery) {
+    // It's already an absolute url path, like '/some/page'?
+    if (url[0] === '/')
+      return url;
+
+    // A relative link, like 'some/page', weird. Don't try SPA navigation.
+    return false;
+  }
+
+  // Something like 'https://this.server.com/page/path'?  Keep '/page/path' only.
+  if (url.indexOf(loc.origin) === 0)
+    return url.substr(loc.origin.length)
+
+  // Something like '//this.server.com/page/path'?  Keep '/page/path' only.
+  if (url.indexOf(`//${loc.hostname}/`) === 0)
+    return url.substr(loc.hostname.length + 2);
+
+  // External link.
+  return false;
+}
+
+
 export function reactRouterLinkifyTopHeaderLinks() {
   Bliss.delegate(document.body, 'click', '.esPageHeader a[href]', function(event) {
     const elem = <HTMLLinkElement> event.target;
     if (!elem || !elem.href || !elem.href.length) return;
     // Try internal single-page-app navigation, if it's a link to a page here on the same site.
-    const href = elem.href;
-    let newUrlPath;
-    if (href.indexOf('//') === -1) {
-      if (href[0] === '/') {
-        // And absolute url path, like '/some/page'.
-        newUrlPath = href;
-      }
-      else {
-        // A relative link, like 'some/page', weird. Don't try SPA navigation.
-        return;
-      }
-    }
-    else if (href.indexOf(location.origin) === 0) {
-      // Something like 'https://this.server.com/page/path' — keep '/page/path' only.
-      newUrlPath = href.substr(location.origin.length)
-    }
-    else if (href.indexOf(`//${location.hostname}/`) === 0) {
-      // Something like '//this.server.com/page/path' — keep '/page/path' only.
-      newUrlPath = href.substr(location.hostname.length + 2);
-    }
-    else {
-      // External link.
+    const asLocalPath: St | false = url_asLocalAbsPath(elem.href, location);
+    if (!asLocalPath) {
+      // External link — let the browser handle this.
       return;
     }
     event.preventDefault();
     event.stopPropagation();
-    navigateTo(newUrlPath)
+    doNavigate(asLocalPath)
   });
 }
 

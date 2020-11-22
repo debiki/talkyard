@@ -25,7 +25,7 @@ import ed.server.http._
 import javax.inject.Inject
 import org.scalactic.{Bad, Good, Or}
 import play.api._
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Result => p_Result}
 import redis.RedisClient
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -134,8 +134,8 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
   }
 
 
-  private def impersonateImpl(anyUserId: Option[UserId], viewAsOnly: Boolean,
-        request: DebikiRequest[_]) = {
+  private def impersonateImpl(anyUserId: Opt[PatId], viewAsOnly: Bo,
+        request: DebikiRequest[_]): p_Result = {
 
     // To view as another user, the session id should be amended so it includes info like:
     // "We originally logged in as Nnn and now we're viewing as Nnn2." And pages should be shown
@@ -154,10 +154,11 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
     val impCookie = makeImpersonationCookie(request.siteId, viewAsOnly, request.theUserId)
     val newCookies = impCookie :: sidAndXsrfCookies
 
-    request.dao.pubSub.unsubscribeUser(request.siteId, request.theUser, request.theBrowserIdData)
-    // Let's not subscribe to events for the user we'll be viewing the site as. Doing that
-    // wouldn't be the purpose of view-site-as.
-    BUG ; SHOULD // resubscribe hen though.
+    request.dao.pubSub.unsubscribeUser(request.siteId, request.theRequester)
+
+    // But don't subscribe to events for the user we'll be viewing the site as. Real
+    // time events isn't the purpose of view-site-as.  The client should resubscribe
+    // the requester to hens *own* notfs, once done impersonating, though.
 
     Ok.withCookies(newCookies: _*).discardingCookies(logoutCookie: _*)
   }
