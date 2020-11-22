@@ -455,7 +455,7 @@ export const PostActions = createComponent({
     let approveOrDeleteBtns;  // [in_pg_apr]
     if (!deletedOrCollapsed && !post.isApproved && isStaff(me)
           && !isOrigPostAndPageDeleted) {
-      const ModBtn = (decision: ReviewDecision, title: S, clazz: S) => {
+      const ModBtn = (decision: ReviewDecision, title: St, clazz: St) => {
         return Button({ className: 's_PA_ModB ' + clazz, onClick: () => {
           morebundle.openDefaultStupidDialog({
             body: title + '?',

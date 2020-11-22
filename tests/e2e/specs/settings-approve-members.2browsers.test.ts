@@ -116,7 +116,7 @@ describe("settings-approve-members [TyT2HUWX8]", function() {
     mariasBrowser.go2(mariasEmailVerifLink);
   });
 
-  let apprNewMembersUrl: S;
+  let apprNewMembersUrl: St;
 
   it("... Owen gets notified that someone waits for approval to join  TyTE2E502AHL4", () => {
     // Not until now, after the new member has verified hens email addr.
@@ -159,7 +159,7 @@ describe("settings-approve-members [TyT2HUWX8]", function() {
     owensBrowser.adminArea.users.waiting.approveFirstListedUser();
   });
 
-  let acctApprovedWelcomeLink: S;
+  let acctApprovedWelcomeLink: St;
 
   it("... Maria gets an email that her account got approved  TyTE2E05WKF2", function() {
     const email: EmailSubjectBody = server.waitUntilLastEmailMatches(

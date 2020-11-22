@@ -7387,7 +7387,7 @@ export class TyE2eTestBrowser {
 
         hideCompletedTasks: () => {
           this.setCheckbox('.e_HideCompl input', true);
-          this.waitForGone('.e_A_Rvw_Tsk_DoneInfo');
+          this.waitForGone('.e_TskDoneGone');
         },
 
         playTimePastUndo: () => {

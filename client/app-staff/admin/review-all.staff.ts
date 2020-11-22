@@ -165,6 +165,13 @@ export const ReviewAllPanel = createFactory({
 });
 
 
+interface ReviewTaskState {
+  justDecidedAtMs?: Nr;
+  justDecided?;
+
+}
+
+
 // For now. Don't want to rerender.
 const safeHtmlByMarkdownSource = {};
 
@@ -287,6 +294,7 @@ const ReviewTask = createComponent({
   render: function() {
     const reviewTask: ReviewTask = this.props.reviewTask;
     const store: Store = this.props.store;
+    const state: ReviewTaskState = this.state;
 
     const whatAndWhys: any[] = this.formatWhatAndWhys();
     const what: string = whatAndWhys[0];
@@ -325,18 +333,19 @@ const ReviewTask = createComponent({
     // Skip pageHasBeenDeleted and itHasBeenDeleted — let's review those posts anyway?
     // So staff get more chances to block bad users early. [deld_post_mod_tasks]
     const isInvalidated = !reviewTask.completedAtMs && reviewTask.invalidatedAtMs;
+    const doneOrGoneClass = reviewTask_doneOrGone(reviewTask) ? 'e_TskDoneGone' : '';
 
     if (isInvalidated) {
       taskInvalidatedInfo =
-          r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' },
+          r.span({ className: doneOrGoneClass },
             itHasBeenDeleted || "Invalidated [TyM5WKBAX2]");
     }
-    else if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
+    else if (state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
       const decider: BriefUser | U = store.usersByIdBrief[reviewTask.decidedById];
       const byWho = !decider ? null :
               r.span({}, " by ", UserNameLink({ user: decider, store }));
-      let whatWasDone: string;
-      switch (reviewTask.decision || this.state.justDecided) {
+      let whatWasDone: St;
+      switch (reviewTask.decision || state.justDecided) {
         case ReviewDecision.Accept: whatWasDone = " Accepted"; break;
         case ReviewDecision.InteractEdit: whatWasDone = " Seems fine: Edited"; break;
         case ReviewDecision.InteractReply: whatWasDone = " Seems fine: Replied to"; break;
@@ -346,7 +355,7 @@ const ReviewTask = createComponent({
         case ReviewDecision.InteractLike: whatWasDone = " Seems fine: Liked"; break;
         case ReviewDecision.DeletePostOrPage: whatWasDone = " Deleted"; break;
       }
-      taskDoneInfo = r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, whatWasDone, byWho);
+      taskDoneInfo = r.span({ className: doneOrGoneClass }, whatWasDone, byWho);
     }
 
     if (reviewTask.invalidatedAtMs) {
@@ -359,13 +368,13 @@ const ReviewTask = createComponent({
       gotUndoneInfo = r.span({ className }, this.state.couldBeUndone ?
         " Undone." : " Could NOT be undone: Changes already made");
     }*/
-    else if (!reviewTask.completedAtMs && (this.state.justDecidedAtMs || reviewTask.decidedAtMs)) {
+    else if (!reviewTask.completedAtMs && (state.justDecidedAtMs || reviewTask.decidedAtMs)) {
       undoDecisionButton =
-          UndoReviewDecisionButton({ justDecidedAtMs: this.state.justDecidedAtMs,
+          UndoReviewDecisionButton({ justDecidedAtMs: state.justDecidedAtMs,
               reviewTask, nowMs: this.props.nowMs, undoReviewDecision: this.undoReviewDecision });
     }
 
-    if (reviewTask.completedAtMs || reviewTask.decidedAtMs || this.state.justDecidedAtMs
+    if (reviewTask.completedAtMs || reviewTask.decidedAtMs || state.justDecidedAtMs
           || isInvalidated) {
       // Show no decision buttons. (But maybe an Undo button, see above.)
     }

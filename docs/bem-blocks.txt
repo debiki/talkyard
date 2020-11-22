@@ -101,6 +101,7 @@ Tg  = tag
 Tp  = topic
 Trt = threat
 Tru = trust
+Tsk = task
 Ttl = title,  no just Tl   RENAME
 Txt = text,   no just Tx   RENAME
 Tr  = Trust,  eg. TrLv = trust level NO change to Tru & Trt
