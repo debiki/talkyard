@@ -1270,6 +1270,7 @@ interface UiPrefs {
   inp?: UiPrefsIninePreviews;
   fbs?: UiPrefsForumButtons;
   xls?: UiPrefsExternaLInks;
+  kbd?: UiPrefsKeyboardShortcuts;
 }
 
 const enum UiPrefsIninePreviews {
@@ -1289,6 +1290,11 @@ const enum UiPrefsForumButtons {
 const enum UiPrefsExternaLInks {
   OpenInSameTab = 1,
   OpenInNewTab = 2,
+}
+
+const enum UiPrefsKeyboardShortcuts {
+  Off = 0,
+  On = 1,
 }
 
 

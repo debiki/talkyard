@@ -311,12 +311,12 @@ function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
           descr('', "view ", 'm',"y ", 'd',"rafts"),
           goTo(linkToMyDraftsEtc(store))],
 
-      unimpl && isMember &&
+      !unimpl && isMember &&
       ['mr',
           descr('', "view ",  'r',"eplies to me"),
           () => {}], // goTo(...)],
 
-      unimpl && isMember &&
+      !unimpl && isMember &&
       ['mb',
           descr('', "view ", 'm',"y ", 'b',"ookmarks"),
           () => {}], // goTo(...)],
@@ -498,6 +498,12 @@ function canBeShortcutKey(key: St): Bo {
 
 
 function onKeyUp(event: KeyboardEvent) {
+  const store: Store = getMainWinStore();
+
+  const uiPrefs = me_uiPrefs(store.me);
+  if (uiPrefs.kbd !== UiPrefsKeyboardShortcuts.On)
+    return;
+
   const key: St = event.key;
   //logD(`onKeyUp: ${key}`);
 
@@ -541,7 +547,6 @@ function onKeyUp(event: KeyboardEvent) {
       // And hopefully pat understands that since Shift and Ctrl opens,
       // those same buttons also close the dialog?
       const tryStayOpen = true;
-      const store: Store = getMainWinStore();
       const allShortcuts = makeMyShortcuts(store, '');
       const shortcutsToShow = findMatchingShortcuts(allShortcuts, '');
       updateDialog({ isOpen: true, tryStayOpen, keysTyped: '', shortcutsToShow });
@@ -556,6 +561,12 @@ function onKeyUp(event: KeyboardEvent) {
 
 
 function onKeyDown(event: KeyboardEvent) {
+  const store: Store = getMainWinStore();
+
+  const uiPrefs = me_uiPrefs(store.me);
+  if (uiPrefs.kbd !== UiPrefsKeyboardShortcuts.On)
+    return;
+
   const key: St = event.key;
   const otherKeyAlreadyDown = curKeyDown;
   curKeyDown = key;
@@ -636,7 +647,6 @@ function onKeyDown(event: KeyboardEvent) {
     keysTyped += key;
   }
 
-  const store: Store = getMainWinStore();
   const allShortcuts: ShortcFnInfoZ[] = makeMyShortcuts(store, keysTyped);
   const matchingShortcutsAndInfo: ShortcFnInfo[] = findMatchingShortcuts(
           allShortcuts, keysTyped);
@@ -721,7 +731,8 @@ const KeyboardShortcutsDialog = React.createFactory<{}>(function() {
   }
 
   const title = (state.keysTyped
-      ? rFr({}, `Typing shortcut: `, r.b({}, state.keysTyped))
+      ? rFr({}, `Typing shortcut: `, r.b({}, state.keysTyped),
+          r.span({ className: 's_Fx-Blink' }, '_'))
           // Why <blink>_</blink> won't work o.O  to simulate a type-more cursor?
           // Browsers bring <blink> back
       : `Keyboard shortcuts:`);

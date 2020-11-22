@@ -662,6 +662,8 @@ uploads -  (7KFC2)
           - upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ETOOLGUPL
     server rejects if browser didn't:
           - upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ESVUPLCK
+  paste images and files from clipboard:
+    placed at cursor:
 
 recent comments:
 

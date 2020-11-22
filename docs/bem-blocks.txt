@@ -35,6 +35,7 @@ Ed  = edit
 Edr = editor
 Feat = feature
 Flg = flag
+Fx  = Effect (standard abbr)
 Fxd = fixed, Stc = static
 FN  = full name  (alt FuNm)
 Fu  = full
