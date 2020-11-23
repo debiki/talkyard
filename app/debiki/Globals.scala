@@ -1235,9 +1235,8 @@ class Config(conf: play.api.Configuration) extends TyLogging {
     default = if (Globals.isProd) 30 else 30 * 60).toLong
 
   // Or use sites_t.feature_flags_c for the superadmin site instead?
-  val featureFlags: Map[String, FeatureOnOff] = {
-    val flagsMultiLineString = conf.getOptional[String]("talkyard.featureFlags").noneIfBlank
-    Map.empty  // for now
+  val featureFlags: St = { // Map[String, FeatureOnOff] = {
+    conf.getOptional[St]("talkyard.featureFlags") getOrElse ""
   }
 
   val isTestDisableRateLimits: Boolean = {

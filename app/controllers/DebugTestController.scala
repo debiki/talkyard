@@ -70,7 +70,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  SECURITY; COULD // allow only if a Ops team password header? is included? For now, superadmins only.
+  // Could allow only if a Ops team password header? is included? For now, superadmins only.
   def showMetrics: Action[Unit] = SuperAdminGetAction { _ =>
     val osMXBean = ManagementFactory.getOperatingSystemMXBean
     val systemLoad = osMXBean.getSystemLoadAverage
@@ -121,6 +121,17 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
       .append("\nscala version: ").append(BuildInfo.scalaVersion)
       .append("\nsbt version: ").append(BuildInfo.sbtVersion)
     Ok(infoTextBuilder.toString) as TEXT
+  }
+
+
+  def showFlags: Action[U] = AdminGetAction { req =>
+    val globals = req.context.globals
+    val respBuilder = StringBuilder.newBuilder
+          .append("\n")
+          .append("\nSite feature flags: ").append(req.dao.theSite().featureFlags)
+          .append("\nServer feature flags: ").append(globals.config.featureFlags)
+          .append("\n")
+    Ok(respBuilder.toString) as TEXT
   }
 
 

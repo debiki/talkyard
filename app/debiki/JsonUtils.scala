@@ -50,6 +50,15 @@ object JsonUtils {
       case _ => throwBadJson("TyE0JSOBJ", s"$what is not a JsObject")
     }
 
+  def asJsArray(json: JsValue, what: St): Seq[JsValue] =
+    json match {
+      case a: JsArray => a.value
+      case _ => throwBadJson("TyE0JSARR", s"$what is not a JsArray")
+    }
+
+  def parseJsObject(json: JsValue, fieldName: St): JsObject =
+    readJsObject(json, fieldName)
+
   def readJsObject(json: JsValue, fieldName: St): JsObject =
     readOptJsObject(json, fieldName).getOrElse(throwMissing("EsE1FY90", fieldName))
 
@@ -64,6 +73,9 @@ object JsonUtils {
         throwBadJson(
           "EsE2YMP7", s"'$fieldName' is not a JsObject, but a ${classNameOf(bad)}")
     }
+
+  def parseJsArray(json: JsValue, fieldName: St, optional: Bo = false): Seq[JsValue] =
+    readJsArray(json, fieldName, optional).value
 
   // Add a 2nd fn, or a param: all elems be of the same type? See below: [PARSEJSARR]
   def readJsArray(json: JsValue, fieldName: St, optional: Bo = false): JsArray = {
@@ -94,6 +106,20 @@ object JsonUtils {
       }
     case _ => Nil
   } */
+
+  def parseStOrNrAsSt(json: JsValue, fieldName: St, altName: St = ""): St =
+    parseStOrNrAsOptSt(json, fieldName, altName) getOrElse throwMissing(
+          "TyE60RMP25R", fieldName)
+
+  def parseStOrNrAsOptSt(json: JsValue, fieldName: St, altName: St = ""): Opt[St] =
+    (json \ fieldName).asOpt[JsValue].orElse((json \ altName).asOpt[JsValue]) map {
+      case n: JsNumber => n.value.toString
+      case s: JsString => s.value
+      case bad =>
+        throwBadJson("TyE503MRG",
+            s"'$fieldName' is not a string or number, it is a: ${classNameOf(bad)}")
+    }
+
 
 
   def parseSt(json: JsValue, fieldName: St, altName: St = ""): St =

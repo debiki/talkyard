@@ -637,12 +637,15 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  private def loadMemberByPrimaryEmailOrUsernameImpl(emailOrUsername: String, maybeEmail: Boolean)
-        : Option[Member] = {
-    val values = ArrayBuffer[AnyRef](siteId.asAnyRef, emailOrUsername)
+  private def loadMemberByPrimaryEmailOrUsernameImpl(emailOrUsername: St, maybeEmail: Bo)
+        : Opt[Member] = {
+    val values = MutArrBuf[AnyRef](siteId.asAnyRef, emailOrUsername)
     val emailEqOr = if (!maybeEmail) "" else {
       values.append(emailOrUsername)
-      "u.primary_email_addr = ? or"
+      // Talkyard already converts email to lowercase before storing in the database,
+      // (see db fn email_seems_ok())
+      // — so do a case insensitive comparison here. Also see [email_casing].
+      "u.primary_email_addr = lower(?) or"
     }
 
     // [UNPUNCT]

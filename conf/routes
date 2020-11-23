@@ -297,6 +297,7 @@ POST /-/play-time               controllers.DebugTestController.playTime
 POST /-/log-browser-errors      controllers.DebugTestController.logBrowserErrors
 GET  /-/metrics                 controllers.DebugTestController.showMetrics
 GET  /-/build-info              controllers.DebugTestController.showBuildInfo
+GET  /-/feature-flags           controllers.DebugTestController.showFlags
 GET  /-/test-counters           controllers.DebugTestController.getE2eTestCounters
 GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugTestController.pingApiAction

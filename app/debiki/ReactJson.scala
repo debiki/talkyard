@@ -130,6 +130,7 @@ class JsonMaker(dao: SiteDao) {
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteFeatureFlags" -> JsString(site.featureFlags),
+      "serverFeatureFlags" -> JsString(globals.config.featureFlags),
       "siteOwnerTermsUrl" -> JsStringOrNull(globals.siteOwnerTermsUrl),
       "siteOwnerPrivacyUrl" -> JsStringOrNull(globals.siteOwnerPrivacyUrl),
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
@@ -374,6 +375,7 @@ class JsonMaker(dao: SiteDao) {
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteFeatureFlags" -> JsString(site.featureFlags),
+      "serverFeatureFlags" -> JsString(globals.config.featureFlags),
       // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
@@ -431,6 +433,7 @@ class JsonMaker(dao: SiteDao) {
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteFeatureFlags" -> JsString(site.featureFlags),
+      "serverFeatureFlags" -> JsString(globals.config.featureFlags),
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),

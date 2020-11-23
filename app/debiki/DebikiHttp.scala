@@ -114,11 +114,12 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
   private lazy val materializerActorSystem = ActorSystem("materializerActorSystem")
   private lazy val theMaterializer = ActorMaterializer()(materializerActorSystem)
 
-  /**
+  /** RespEx means Response Exception.
+    *
    * Thrown on error, caught in Global.onError, which returns the wrapped
    * result to the browser.
    */
-  case class ResultException(result: Result) extends QuickException {
+  case class ResultException(result: Result) extends QuickException { RENAME; // to RespEx?
     override def toString = s"Status ${result.header.status}: $bodyToString"
     override def getMessage: String = toString
 
@@ -139,8 +140,14 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
     }
   }
 
+  type RespEx = ResultException
+  val RespEx: ResultException.type = ResultException
+
+  type Resp = play.api.mvc.Result
+  val Resp: play.api.mvc.Result.type = play.api.mvc.Result
+
   def throwTemporaryRedirect(url: String) =
-    throw ResultException(R.Redirect(url))
+    throw RespEx(R.Redirect(url))
 
   /** Sets a Cache-Control max-age = 1 week, so that permanent redirects can be undone. [7KEW2Z]
     * Otherwise browsers might cache them forever.
@@ -150,7 +157,7 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
     * have cache an A —> B redirect response.
     */
   def throwPermanentRedirect(url: String) =
-    throw ResultException(R.Redirect(url).withHeaders(
+    throw RespEx(R.Redirect(url).withHeaders(
       p.http.HeaderNames.CACHE_CONTROL -> ("public, max-age=" + 3600 * 24 * 3)))
     // Test that the above cache control headers work, before I redirect permanently,
     // otherwise browsers might cache the redirect *forever*, can never be undone.

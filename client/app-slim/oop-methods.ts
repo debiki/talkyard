@@ -658,8 +658,9 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 //----------------------------------
 
 
-export function site_isFeatFlagOn(site: { siteFeatureFlags?: St }, featureFlag: St): Bo {
-  return _.includes(site.siteFeatureFlags, featureFlag);
+export function store_isFeatFlagOn(store: Store, featureFlag: St): Bo {
+  return _.includes(store.siteFeatureFlags, featureFlag) ||
+         _.includes(store.serverFeatureFlags, featureFlag);
 }
 
 

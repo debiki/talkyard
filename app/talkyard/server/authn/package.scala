@@ -3,10 +3,16 @@ package talkyard.server
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.{ErrMsg, GetOrBadMap, IdentityProvider, OpenAuthDetails}
+import com.github.scribejava.core.oauth.{OAuthService => sj_OAuthService}
+import com.github.scribejava.core.model.{OAuthAsyncRequestCallback => sj_OAuthAsyncReqCallback, OAuthRequest => sj_OAuthRequest, Response => sj_Response}
+import debiki.EdHttp.{InternalErrorResult, BadGatewayResult}
 import debiki.JsonUtils._
+import java.io.{IOException => j_IOException}
+import java.util.concurrent.{ExecutionException => j_ExecutionException}
 import org.scalactic.{Bad, Good, Or}
-import play.api.libs.json.JsValue
+import play.api.libs.json.{Json, JsValue}
 import talkyard.server.authn.OidcClaims.parseOidcClaims
+
 
 
 // A Bo is not enough.
@@ -16,7 +22,7 @@ case object KeepIfMaySee extends AddOrRemove
 case object Remove extends AddOrRemove
 
 
-package object authn {
+package object authn extends TyLogging {
 
   // Aliases for better readability.
   type JoinOrLeave = AddOrRemove
@@ -86,7 +92,7 @@ package object authn {
       case Some(idpImpl: WellKnownIdpImpl) =>
         // Hardcoded parsing of JSON from Facebook, LinkedIn and other
         // well-known OAuth2 providres.
-        parseWellKnownIdpUserJson(jsVal, idp)
+        WellKnownIdps.parseUserJson(jsVal, idp)
     }
   }
 
@@ -131,79 +137,82 @@ package object authn {
   }
 
 
-  def parseWellKnownIdpUserJson(jsVal: JsValue, idp: IdentityProvider)
-          : OpenAuthDetails Or ErrMsg = tryParseGoodBad {
 
-    val wellKnownImpl = idp.wellKnownIdpImpl getOrDie "TyE4D96MAKT2"
-    val jsObj = asJsObject(jsVal, what = "IDP user info")
+  def doAuthnServiceRequest(forWhat: St, idp: IdentityProvider, siteId: SiteId,
+          authnService: sj_OAuthService, request: sj_OAuthRequest,
+          onError: p_Result => U, onOk: JsValue => U): U = {
 
-    val id = parseSt(jsObj, "id")
-    val anyUsername = parseOptSt(jsObj, "username")
-    val anyEmailAddr = parseOptSt(jsObj, "email")
-    val anyFirstName = parseOptSt(jsObj, "given_name", altName = "first_name")
-    val anyMiddleName = parseOptSt(jsObj, "middle_name")
-    val anyLastName = parseOptSt(jsObj, "family_name", altName = "last_name")
-    val anyFullName = parseOptSt(jsObj, "name")
+    authnService.execute(request, new sj_OAuthAsyncReqCallback[sj_Response] {
+      override def onThrowable(t: Throwable): U = {
+        val errorResponse: p_Result = t match {
+          case ex@(_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
+            InternalErrorResult(
+                  "TyEAUTSVCREQ", s"Error fetching $forWhat: ${ex.toString}")
+          case ex =>
+            InternalErrorResult(
+                  "TyEAUTSVCUNK", s"Unknown error fetching $forWhat: ${ex.toString}")
+        }
+        onError(errorResponse)
+      }
 
-    val idpSaysEmailIsVerifed = None // IDP specific
-    val emailVerified = Some(false)
-    // Later: idpSaysEmailIsVerifed.is(true) && idp.trustVerifiedEmail
+      override def onCompleted(response: sj_Response): U = {
+        val httpStatusCode = response.getCode
+        val body = response.getBody
+        lazy val randVal = nextRandomString()
 
-    val genericIdty = OpenAuthDetails(
-          confFileIdpId = idp.confFileIdpId,
-          idpId = idp.idpId,
-          idpUserId = id,
-          username = anyUsername,
-          firstName = anyFirstName,
-          middleName = anyMiddleName,
-          lastName = anyLastName,
-          fullName = anyFullName,  // firstSpaceLast.trimNoneIfEmpty,
-          email = anyEmailAddr,
-          isEmailVerifiedByIdp = emailVerified,
-          avatarUrl = None,
-          userInfoJson = Some(jsObj))
+        ADMIN_LOG // could log  more consistently below, & so admins can see?
 
-    var result = genericIdty
+        if (httpStatusCode < 200 || 299 < httpStatusCode) {
+          val errCode = "TyEAUTSVCRSP"
+          logger.warn(i"""s$siteId: Bad OIDC/OAuth2 authn service response [$errCode],
+              |when fetching $forWhat:
+              |Log message random id: '$randVal'
+              |IDP: ${idp.protoAlias}, id: ${idp.prettyId}
+              |Request URL: ${request.getCompleteUrl}
+              |Request headers: ${request.getHeaders}
+              |Response status code: $httpStatusCode  (bad, not 2XX)
+              |Response body: -----------------------
+              |$body
+              |--------------------------------------
+              |""")
+          val errMsg = s"Error response from IDP when fetching $forWhat, status code: ${
+                httpStatusCode}, details in the server logs, search for '$randVal'"
+          val upstreamError = 500 <= httpStatusCode && httpStatusCode <= 599
+          onError(
+                if (upstreamError) BadGatewayResult(errCode, errMsg)
+                else InternalErrorResult(errCode, errMsg))
+          return
+        }
 
-    wellKnownImpl match {
-      case WellKnownIdpImpl.Facebook =>
-        // FB Graph API, user info requests:
-        // https://developers.facebook.com/docs/graph-api/reference/user
-        // and here we specify the fields Ty wants: [fb_oauth_user_fields].
-        // Email verified or not? Probably @tfbnw.net email addresses can be
-        // trusted? But let's assume not, for now.
-        // Example response, FB's Graph API v9.0, November 2020:
-        //   {
-        //     "id": "111222333444555",
-        //     "email": "facebook_aabbccdd_user@tfbnw.net",
-        //     "name": "Firstname Lastname",
-        //     "first_name": "Firstname",
-        //     "last_name": "Lastname",
-        //     "picture": {
-        //       "data": {
-        //         "height": 50,
-        //         "is_silhouette": true,
-        //         "url": "https://scontent-arn2-1.xx.fbcdn.net/../../../p50x50/...",
-        //         "width": 50  }}}
-        val pictureUrl = (jsObj \ "picture" \ "data" \ "url").asOpt[St]
-        result = result.copy(avatarUrl = pictureUrl)
+        // db max len: idtys_c_idpuserjson_len <= 7000 [sync_app_rdb_constrs]
+        val maxUserRespLen = 6*1000
+        if (body.length > maxUserRespLen) {
+          // This is a weird IDP!?
+          onError(BadGatewayResult(
+                "TyEAUTSVC2LONG", o"""Too much JSON from IDP: ${body.length
+                      } chars, max is: $maxUserRespLen"""))
+          return
+        }
 
-      case WellKnownIdpImpl.GitHub =>
+        // LinkedIn sends back just nothing, unless there's a 'x-li-format: json' header.
+        if (body.isEmpty) {
+          onError(BadGatewayResult(
+                "TyEAUTSVC0JSON", s"Empty response body from IDP"))
+          return
+        }
 
-      case WellKnownIdpImpl.Google =>
-        // Google uses OIDC user info fields, and we'll use the OIDC  [goog_oidc]
-        // parser for Google. So this should be dead code.
-        return Bad("Error: Google stopped being an OIDC provider? [TyEGOOG0OIDC]")
+        val jsValue =
+              try Json.parse(body)
+              catch {
+                case _: Exception =>
+                  onError(BadGatewayResult("TyEAUTSVCJSONPARSE",
+                        s"Malformed JSON from IDP"))
+                  return
+              }
 
-      case WellKnownIdpImpl.LinkedIn =>
-
-      case WellKnownIdpImpl.Twitter =>
-
-      case bad =>
-        die(s"Unknown 'well-known' IDP impl: $bad  [TyEUNKIDPIMPL]")
-    }
-
-    Good(result)
+        onOk(jsValue)
+      }
+    })
   }
 
 }

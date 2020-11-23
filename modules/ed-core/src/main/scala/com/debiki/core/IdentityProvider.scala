@@ -137,6 +137,7 @@ case class IdentityProvider(
   def nameOrAlias: St = displayName getOrElse protoAlias
   def prettyId: St = IdentityProvider.prettyId(confFileIdpId, idpId = idpId)
 
+  val theId: St = idpId.map(_.toString).orElse(confFileIdpId).getOrDie("TyE0ATMTD36")
 
   def isOAuth2NotOidc: Bo = protocol == ProtoNameOAuth2
   def isOpenIdConnect: Bo = protocol == ProtoNameOidc

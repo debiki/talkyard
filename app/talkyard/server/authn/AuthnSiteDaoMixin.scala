@@ -122,8 +122,9 @@ trait AuthnSiteDaoMixin {
 
 
   def uncacheScribeJavaAuthnServices(idpsToUncache: Seq[IdentityProvider]): U = {
-    // Later: Uncache only idpsToUncache (both by id, and by protocol + alias).
-    memCache.remove(scribeJavaAuthnServicesKey)
+    idpsToUncache foreach { idp =>
+      memCache.remove(scribeJavaAuthnServicesKey(idp))
+    }
   }
 
 
@@ -144,10 +145,8 @@ trait AuthnSiteDaoMixin {
             origin + s"/-/login-auth-callback/${idp.alias}"
           }
 
-    // For now: Just one IDP. (If >= 2 used at the same time, one would get
-    // uncached, login would fail.)
     val service = memCache.lookup(
-          scribeJavaAuthnServicesKey,
+          scribeJavaAuthnServicesKey(idp),
           orCacheAndReturn = Some {
             // As of 2020-10, all per site custom OAuth2 IDPs behave like OIDC,
             // until the very end of the authn flow, when they return non-standard
@@ -164,10 +163,10 @@ trait AuthnSiteDaoMixin {
             return Bad(errMsg)
           }
 
-    // It's the right IDP, same config settings?
+    // Check if is the same IDP config settings:
+
     // (The redirBackUrl includes both the protocol and IDP alias, and the
     // client id and secret are very unique too.)
-
 
     def hasCorrectOAuth2Config: Bo = service.getApi match {
       case oidcApi: TyOidcScribeJavaApi20 =>
@@ -198,7 +197,7 @@ trait AuthnSiteDaoMixin {
         || service.getApiKey != idp.oauClientId
         || service.getApiSecret != idp.oauClientSecret
         || !hasCorrectOAuth2Config) {
-      // It's the wrong. An admin recently changed OIDC settings?
+      // Different config. An admin recently reconfigured the IDP?
       // Remove old, create new.
       uncacheScribeJavaAuthnServices(Seq(idp))
 
@@ -270,6 +269,7 @@ trait AuthnSiteDaoMixin {
   }
 
 
-  private val scribeJavaAuthnServicesKey: MemCacheKey = MemCacheKey(siteId, "AzN")
+  private def scribeJavaAuthnServicesKey(idp: IdentityProvider): MemCacheKey =
+    MemCacheKey(siteId, idp.theId + "|AzN")
 
 }

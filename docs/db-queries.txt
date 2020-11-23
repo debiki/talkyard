@@ -21,6 +21,15 @@ select
  from page_html3 where site_id = 3 and page_id = '72';
 
 
+-- View identities w usernames, emails:
+select * from identities3 i left join users3 u
+  on i.site_id = u.site_id and i.user_id_c = u.user_id
+  where i.conf_file_idp_id_c = 'twitter'
+    and i.site_id >= 1
+    and u.primary_email_addr is null
+  order by i.site_id;
+
+
 -- View notifications:
 select n.*,
   (select username from users3 u where u.site_id = n.site_id and u.user_id = n.by_user_id) as by_username,

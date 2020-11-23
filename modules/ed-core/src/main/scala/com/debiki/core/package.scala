@@ -51,6 +51,7 @@ package object core {
   type i64 = Long
   type f32 = Float
   type f64 = Double
+  type Ex = Exception
 
   /* Wait, causes too many "it is imported twice" errors:
   type Good[+G] = org.scalactic.Good[G]
@@ -1311,6 +1312,7 @@ package object core {
   def COULD = ()          // Could do this, but not important right now, can wait a year or two.
   def ANNOYING = ()       // Something annoying that would be good to fix, not important though
   def INFO_LOG = ()       // Somehow change log message severity to Info only.
+  def ADMIN_LOG = ()      // Info log for site admins — e.g. custom OIDC conf problems.
   def SHOULD_LOG_STH = () // If an info/debug message ought to be logged here.
   def AUDIT_LOG = ()      // Should add audit log entry
   def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
