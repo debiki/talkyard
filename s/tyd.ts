@@ -28,8 +28,8 @@ completion.on('mainCmd', ({ reply }) => {
         'l', 'logslive', 'lr', 'logsrecentlive', 'logsold',
         'e', 'e2e',
         'cleane2elogs',
-        'dbcli',
-        'playcli',
+        'cd', 'clidb',
+        'ca', 'cliapp',
         'nodejs',
         'yarn',
         ]);
@@ -155,13 +155,13 @@ if (mainCmd === 'yarn') {
 }
 
 
-if (mainCmd === 'dbcli') {
+if (mainCmd === 'cd' || mainCmd === 'clidb') {
   spawnInForeground('make db-cli');
   process.exit(0);
 }
 
 
-if (mainCmd === 'playcli') {
+if (mainCmd === 'ca' || mainCmd === 'cliapp') {
   spawnInForeground('make dead');
   spawnInForeground('s/d-cli');
   process.exit(0);

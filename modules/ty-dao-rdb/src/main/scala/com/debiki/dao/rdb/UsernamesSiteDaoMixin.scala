@@ -68,8 +68,12 @@ trait UsernamesSiteDaoMixin extends SiteTransaction {
         and user_id = ?
       """
     val values = List(usage.inUseTo.orNullTimestamp, usage.firstMentionAt.orNullTimestamp,
-      siteId.asAnyRef, usage.usernameLowercase, usage.inUseFrom.asTimestamp, usage.userId.asAnyRef)
-    runUpdateExactlyOneRow(statement, values)
+          siteId.asAnyRef, usage.usernameLowercase, usage.inUseFrom.asTimestamp,
+          usage.userId.asAnyRef)
+
+    // Some really old accounts (from y2015) have no usernames3 entry,
+    // so <= 1 rather than ==1.
+    runUpdateSingleRow(statement, values)
   }
 
 
