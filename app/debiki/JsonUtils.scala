@@ -18,7 +18,7 @@
 package debiki
 
 import com.debiki.core.Prelude._
-import com.debiki.core.{Bo, ErrMsg, Opt, ParsedRef, St, i32, i64, When, WhenDay}
+import com.debiki.core._
 import java.{util => ju}
 import org.scalactic.{Bad, Or}
 import play.api.libs.json._
@@ -166,6 +166,10 @@ object JsonUtils {
   }
 
 
+  def parseF32(json: JsValue, field: St, alt: St = "", default: Opt[f32] = None): f32 =
+    readFloat(json, field, alt, default)
+
+
   def readFloat(json: JsValue, fieldName: String, altName: String = "", default: Option[Float] = None): Float =
     readOptFloat(json, fieldName, altName = altName).orElse(default)
       .getOrElse(throwMissing("TyE06KA2P2", fieldName))
@@ -197,10 +201,18 @@ object JsonUtils {
   }
 
 
+  def parseI32(json: JsValue, field: St, alt: St = "", default: Opt[i32] = None): i32 =
+    readInt(json, field, alt, default)
+
+
   def readInt(json: JsValue, fieldName: String, altName: String = "",
         default: Option[Int] = None): Int =
     readOptInt(json, fieldName).orElse(readOptInt(json, altName)).orElse(default)
       .getOrElse(throwMissing("EsE5KPU3", fieldName))
+
+
+  def parseOptI32(json: JsValue, field: St, altField: St = ""): Opt[i32] =
+     readOptInt(json, field, altField)
 
 
   def readOptInt(json: JsValue, fieldName: String, altName: String = ""): Option[Int] = {

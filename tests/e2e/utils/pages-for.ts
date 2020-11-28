@@ -202,7 +202,7 @@ function isWindowClosedException(ex): boolean {
 function isBadElemException(ex): boolean {
   // Webdriver says one of these: (what's the difference?)
   const StaleElem1 = 'Request encountered a stale element';
-  const StaleElem2 = 'stale element reference: element is not attached to the page document'
+  const StaleElem2 = 'stale element reference: ';
   // Puppeteer instead says:
   const CannotFindId = 'Cannot find context with specified id';
   const exStr = ex.toString();
@@ -4639,10 +4639,12 @@ export class TyE2eTestBrowser {
         this.waitUntilModalGone();
       },
 
-      uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: string) => {
+      uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: St,
+            ps: { waitForBadExtErr?: Bo, waitForTooLargeErr?: Bo } = {}) => {
         //this.waitAndClick('.e_UplB');
         // There'll be a file <input> not interactable error, unless we change
         // its size to sth larger than 0 x 0.
+        this.waitForExist('.e_EdUplFI');
         this.#br.execute(function() {
           var elem = document.querySelector('.e_EdUplFI');
           // Use ['style'] because this:  elem.style  causes a compilation error.
@@ -4650,6 +4652,14 @@ export class TyE2eTestBrowser {
           elem['style'].height = '20px';
         });
         this.waitAndSelectFile('.e_EdUplFI', whichDir, fileName);
+        if (ps.waitForBadExtErr) {
+          this.waitForVisibleText('.s_UplErrD .s_UplErrD_UplNm');
+          this.stupidDialog.close();
+        }
+        if (ps.waitForTooLargeErr) {
+          this.waitForVisibleText('.s_UplErrD .e_FlTooLg');
+          this.stupidDialog.close();
+        }
       },
 
       cancelNoHelp: () => {  // REMOVE just use cancel() now, help dialog removed
@@ -6146,6 +6156,11 @@ export class TyE2eTestBrowser {
         this.waitUntilLoadingOverlayGone();
       },
 
+      openPermissionsFor: (who: string | UserId, origin?: string) => {
+        this.go((origin || '') + `/-/users/${who}/permissions`);
+        this.waitUntilLoadingOverlayGone();
+      },
+
       goToActivity: () => {
         this.waitAndClick('.e_UP_ActivityB');
         this.waitForVisible('.s_UP_Act_List');
@@ -7428,7 +7443,7 @@ export class TyE2eTestBrowser {
               buttonsNotGone = `Should disappear: ${JSON.stringify(stillVisible)}`;
             }
             //----
-            // Top tab pane unmount bug workaround. [5QKBRQ].  [E2EBUG]
+            // Top tab pane unmount bug workaround. [5QKBRQ].  [E2EBUG]  DO_AFTER 2021-02-01 REMOVE?  + other "unmount bug workaround" elsewhere.
             this.#br.refresh();
             this.adminArea.review.waitUntilLoaded();
             //----
@@ -8297,6 +8312,11 @@ export class TyE2eTestBrowser {
     //   #sendSummaryEmails is checked: false      this.#br, no real mouse interactions possible)
     // So need to loop, ... until it stops undoing the click? Really weird.
     //
+    // Update 2020-11-28:  Seems the problem was that for fractions of a second,
+    // the UI still showed the previous user profile & settings, when switching
+    // to a new user — before the new one had been loaded. [pat_prof_fields]
+    // DO_AFTER 2021-03-01 REMOVE all weird stuff here.
+    //
     this.waitForVisible(selector);
     let bugRetry = 0;
     const maxBugRetry = 2;
@@ -8313,23 +8333,29 @@ export class TyE2eTestBrowser {
       // Somehow once this function exited with isChecked !== isRequired. Race condition?
       // Let's find out:
       let isChecked = this.$(selector).isSelected();
+      let was = isChecked;
       logMessage(selector + ' is checked: ' + isChecked);
       this.#br.pause(300);
       isChecked = this.$(selector).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger;
       this.#br.pause(400);
       isChecked = this.$(selector).isSelected();
       /* maybe works better now? (many months later)
       logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger;
       this.#br.pause(500);
-      isChecked = this.#br.isSelected(selector);
+      isChecked = this.$(selector).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger;
       this.#br.pause(600);
-      isChecked = this.#br.isSelected(selector);
+      isChecked = this.$(selector).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger;
       this.#br.pause(700);
-      isChecked = this.#br.isSelected(selector);
-      logMessage(selector + ' is checked: ' + isChecked); */
+      isChecked = this.$(selector).isSelected();
+      logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger; */
       if (isChecked === checked)
         break;
       logUnusual("Checkbox refuses to change state. Clicking it again.");

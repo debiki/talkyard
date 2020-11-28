@@ -134,6 +134,9 @@ export = {
   FirstPageId: '1',
   SecondPageId: '2',
 
+  SortOrderBestFirst: 1,
+  SortOrderOldestFirst: 3,
+
   serverErrorCodes: {
     notAuthenticated: 'TyE0AUTHN_',
     accountSuspended: 'TyESUSPENDED_',

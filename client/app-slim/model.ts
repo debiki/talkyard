@@ -444,12 +444,19 @@ interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
   // So can avoid showing getting-started-guide for admins — it's not needed, for embedded comments sites.
   isEmbeddedCommentsSite?: boolean;
 
-  maxUploadSizeBytes: Nr;
+
+  effMaxUplBytes: Nr;
+  effAlwUplExts: St[];
 }
 
 
 type MyselfPatch = Partial<Myself>;
 
+
+interface GroupPerms {
+  maxUploadBytes?: Nr;
+  allowedUplExts?: St;
+}
 
 
 interface PermsOnPage {
@@ -1014,11 +1021,17 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
 interface TopicInterfaceSettings {
   discussionLayout?: DiscussionLayout;  // default: threaded
   discPostNesting?: NestingDepth;       // default: infinite nesting depth
-  discPostSortOrder?: PostSortOrder;    // default: best first
+  discPostSortOrder?: PostSortOrder;    // default: oldest first
 
   progressLayout?: ProgressLayout;      // default: Visible
+
+  // Currently for embedded comments: (later, per page type?)
   origPostReplyBtnTitle?: string;       // default: t.AddComment
   origPostVotes?: OrigPostVotes;
+
+  // Embedded comments:
+  embComNesting?: NestingDepth;         // default: infinite nesting depth
+  embComSortOrder?: PostSortOrder;      // default: best first
 }
 
 
@@ -1190,18 +1203,24 @@ interface MemberInclDetails extends Member {
 }
 
 
-interface GroupInclDetails extends MemberInclDetails, Group {
+type GroupInclDetails = GroupVb;
+interface GroupVb extends MemberInclDetails, Group, GroupPerms {
   isGroup: true;
   //"createdAtEpoch" -> JsWhen(group.createdAt),
 }
 
-
-interface UserInclDetails extends MemberInclDetails, BioWebsiteLocation {
+type UserInclDetails = PatVb; // old name, remove
+// Split into PatVb, PatVbStaff, PaVbAdmin — with fields only staff/admins may see?
+// ("Thin" and "Fat"? Maybe "PatFatStaff" isn't the best interface name
+// "PatVbStaff" better?)
+/// A Participant including verbose details, for the pat profile pages.
+interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName?: string;
   email: string;
   emailVerifiedAtMs?: WhenMs;
+  emailNotfPrefs: EmailNotfPrefs,
   // mailingListMode: undefined | true;  // default false  — later
   hasPassword?: boolean;
   seeActivityMinTrustLevel?: TrustLevel;
@@ -1229,7 +1248,7 @@ interface UserInclDetails extends MemberInclDetails, BioWebsiteLocation {
   deletedAt?: number;
 }
 
-interface UserInclDetailsWithStats extends UserInclDetails {
+interface UserInclDetailsWithStats extends PatVb {
   // Mabye some old accounts lack stats?
   anyUserStats?: UserStats;
 }

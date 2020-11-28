@@ -57,7 +57,7 @@ const NoDraftNr = 0;
 const MaxVirtPostNr = -1000 * 1000;
 const MinRealPostNr = TitleNr;
 
-// COULD_OPTIMIZE SMALLER_BUNDLE MOVE to  const enum ParticipantIds or ParpIds or PpIds?
+// COULD_OPTIMIZE SMALLER_BUNDLE MOVE to  const enum PatIds or Pats?
 const NoUserId = 0;
 const SystemUserId = 1;
 const SysbotUserId = 2;

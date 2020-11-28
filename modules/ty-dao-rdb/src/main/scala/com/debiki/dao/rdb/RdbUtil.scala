@@ -197,7 +197,9 @@ object RdbUtil {
       avatar_tiny_hash_path,
       avatar_small_base_url,
       avatar_small_hash_path,
-      ui_prefs
+      ui_prefs,
+      max_upload_bytes_c,
+      allowed_upload_extensions_c
       """
 
 
@@ -229,6 +231,8 @@ object RdbUtil {
       |u.avatar_small_base_url,
       |u.avatar_small_hash_path,
       |u.ui_prefs, ${"" /* WOULD exclude here, if had time to micro optimize */}
+      |u.max_upload_bytes_c,${""          /* would excl  */}
+      |u.allowed_upload_extensions_c,${"" /* would excl  */}
       |u.is_owner u_is_owner,
       |u.is_admin u_is_admin,
       |u.is_moderator u_is_moderator,
@@ -283,7 +287,10 @@ object RdbUtil {
         website = getOptString(rs, "u_website"),
         country = dn2e(rs.getString("u_country")).trimNoneIfEmpty,
         lockedThreatLevel = lockedThreatLevel)
-    else if (isGroup)
+    else if (isGroup) {
+      val perms = PatPerms.create(ifBad = Die,
+            maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
+            allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
       Group(
         id = userId,
         extId = extImpId,
@@ -293,9 +300,11 @@ object RdbUtil {
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
         uiPrefs = getOptJsObject(rs, "ui_prefs"),
+        perms = perms,
         summaryEmailIntervalMins = None,
         summaryEmailIfActive = None,
         grantsTrustLevel = None) // later:  grants_trust_level)
+    }
     else User(
       id = userId,
       fullName = name,
@@ -321,6 +330,9 @@ object RdbUtil {
 
 
   def getGroup(rs: js.ResultSet): Group = {
+    val perms = PatPerms.create(ifBad = Die,
+          maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
+          allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
     Group(
       id = rs.getInt("user_id"),
       extId = getOptString(rs, "ext_id"),
@@ -330,13 +342,15 @@ object RdbUtil {
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),
       smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path"),
       uiPrefs = getOptJsObject(rs, "ui_prefs"),
+      perms = perms,
       summaryEmailIntervalMins = getOptInt(rs, "summary_email_interval_mins"),
       summaryEmailIfActive = getOptBool(rs, "summary_email_if_active"),
       grantsTrustLevel = None) // later: getOptInt(rs, "grants_trust_level").flatMap(TrustLevel.fromInt))
   }
 
 
-  val CompleteUserSelectListItemsNoUserId = i"""
+  // (But not groups only fields.)
+  val CompleteUserSelectListItemsNoUserId: St = i"""
     |ext_id,
     |is_group,
     |created_at,
@@ -381,8 +395,11 @@ object RdbUtil {
     |locked_threat_level
     """
 
-  val CompleteUserSelectListItemsWithUserId =
-    s"user_id, $CompleteUserSelectListItemsNoUserId"
+  // Also used for groups. (Could rename to sth like MemberVbCols ?)
+  val CompleteUserSelectListItemsWithUserId: St =
+    s"user_id, $CompleteUserSelectListItemsNoUserId, " +
+    "max_upload_bytes_c, " +
+    "allowed_upload_extensions_c"
 
 
   def getParticipantInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet): ParticipantInclDetails = {

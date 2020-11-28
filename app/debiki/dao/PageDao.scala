@@ -131,12 +131,13 @@ case class PagePartsDao(
   }
 
   def postsOrderNesting: PostsOrderNesting = {
-    // For now, changing the sort order, is for embedded comments only [POSTSORDR].
+    // Later, will use discPostSortOrder for embedded comments too, [POSTSORDR].
+    // but will then lookup emb comments settings by page type.
     val sortOrder =
       if (pageMeta.pageType == PageType.EmbeddedComments)
-        settings.discPostSortOrder
+        settings.embComSortOrder
       else
-        PostSortOrder.Default
+        settings.discPostSortOrder
     PostsOrderNesting(sortOrder, settings.discPostNesting)
   }
 

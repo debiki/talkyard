@@ -214,10 +214,4 @@ To debug in node.js:
 //browser.elements('body')  // <— apparently this is makes refresh break  (if everyone === browser)
 ```
 
-### Decisions
-
-Webdriver.io is used because:
-  1. It supports Multiremote, i.e. running many browsers at the same time in the same test, useful to test e.g. the chat system.
-  2. It has synchronous commands: console.log(browser.getTitle()) instead of browser.getTitle().then(title => console.log(...)).
-  3. it is under active development.
 

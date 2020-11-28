@@ -1445,9 +1445,15 @@ export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: PageNotfLevel)
 } */
 
 
-export function saveAboutUserPrefs(prefs, isGroup: boolean, success: () => void) {
+export function saveAboutPatPrefs(prefs, isGroup: Bo, onOk: (_: PatVb) => Vo) {
+  // CLEAN_UP merge into the same endpoint:  save-about-prefs
   const url = isGroup ? '/-/save-about-group-prefs' : '/-/save-about-member-prefs';
-  postJsonSuccess(url, success, prefs);
+  postJsonSuccess(url, onOk, prefs);
+}
+
+
+export function savePatPerms(patId: PatId, perms: GroupPerms, onOk: () => Vo) {
+  postJsonSuccess('/-/save-pat-perms', onOk, { patId, ...perms });
 }
 
 

@@ -103,6 +103,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         disc_post_nesting,
         disc_post_sort_order,
         progress_layout,
+        emb_com_sort_order_c,
+        emb_com_nesting_c,
         orig_post_reply_btn_title,
         orig_post_votes,
         appr_before_if_trust_lte,
@@ -156,7 +158,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
 
     val values = List(
@@ -207,6 +209,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.discPostNesting.getOrElse(None).orNullInt,
       editedSettings2.discPostSortOrder.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.progressLayout.getOrElse(None).map(_.toInt).orNullInt,
+      editedSettings2.embComSortOrder.getOrElse(None).map(_.toInt).orNullInt,
+      editedSettings2.embComNesting.getOrElse(None).orNullInt,
       editedSettings2.origPostReplyBtnTitle.getOrElse(None).orNullVarchar,
       editedSettings2.origPostVotes.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.requireApprovalIfTrustLte.getOrElse(None).map(_.toInt).orNullInt,
@@ -322,6 +326,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("disc_post_nesting", s.discPostNesting.map(_.orNullInt))
     maybeSet("disc_post_sort_order", s.discPostSortOrder.map(_.map(_.toInt).orNullInt))
     maybeSet("progress_layout", s.progressLayout.map(_.map(_.toInt).orNullInt))
+    maybeSet("emb_com_sort_order_c", s.embComSortOrder.map(_.map(_.toInt).orNullInt))
+    maybeSet("emb_com_nesting_c", s.embComNesting.map(_.orNullInt))
     maybeSet("orig_post_reply_btn_title", s.origPostReplyBtnTitle.map(_.trimOrNullVarchar))
     maybeSet("orig_post_votes", s.origPostVotes.map(_.map(_.toInt).orNullInt))
     maybeSet("appr_before_if_trust_lte", s.requireApprovalIfTrustLte.map(_.map(_.toInt).orNullInt))
@@ -437,6 +443,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       discPostNesting = getOptInt(rs, "disc_post_nesting"),
       discPostSortOrder = getOptInt(rs, "disc_post_sort_order").flatMap(PostSortOrder.fromInt),
       progressLayout = getOptInt(rs, "progress_layout").flatMap(ProgressLayout.fromInt),
+      embComSortOrder = getOptInt(rs, "emb_com_sort_order_c").flatMap(PostSortOrder.fromInt),
+      embComNesting = getOptInt(rs, "emb_com_nesting_c"),
       origPostReplyBtnTitle = getOptString(rs, "orig_post_reply_btn_title"),
       origPostVotes = getOptInt(rs, "orig_post_votes").flatMap(OrigPostVotes.fromInt),
       requireApprovalIfTrustLte = getOptInt(rs, "appr_before_if_trust_lte").flatMap(TrustLevel.fromInt),

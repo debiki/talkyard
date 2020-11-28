@@ -65,6 +65,10 @@ e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
 [rate_limits]
 Configurable rate limits.
 
+[server_limits] [site_limits]
+If admins try to configure too "high" values, e.g. 1 TB upload size,
+need a way for them to know they're above the server or site limits,
+e.g. the Nginx client_max_body_size.
 
 [more_runtime_assertions]
 Figure out a way to safely add more runtime assertions — although sometimes

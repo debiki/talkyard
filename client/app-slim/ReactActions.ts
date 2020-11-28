@@ -1083,9 +1083,10 @@ export function scrollToPreview(ps: {
     marginBottom: 30 + editorHeight,
     onDone: ps.highlightPreview === false ? null : function() {
       const elem = findPreviewPost();
-      // @ifdef DEBUG
-      dieIf(!elem, 'TyE6002PKRDT53');
-      // @endif
+      if (!elem) {
+        // We might just have navigated to a different page, fine.
+        return;
+      }
       flashPostElem(elem);
     },
   });

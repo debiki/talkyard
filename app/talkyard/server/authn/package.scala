@@ -22,7 +22,9 @@ case object KeepIfMaySee extends AddOrRemove
 case object Remove extends AddOrRemove
 
 
-package object authn extends TyLogging {
+package object authn {
+
+  private val logger: p_Logger = TyLogger("talkyard.server.authn")
 
   // Aliases for better readability.
   type JoinOrLeave = AddOrRemove

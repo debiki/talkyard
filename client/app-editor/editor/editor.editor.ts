@@ -375,10 +375,37 @@ export const Editor = createFactory<any, EditorState>({
     }
 
     for (let file of files) {
-      const size = file.size;
       const store: Store = this.state.store;
       const me: Myself = store.me;
-      const max = me.maxUploadSizeBytes;
+
+      // '**' can mean all allowed, for backw compat with old sites
+      // that don't expect any upload file type restrictions.
+      // ('*' would be files with no suffix (no dot) at all,
+      // and '*.*' would be whatever with just one dot?
+      // and '**.*' would be whatever with >= 1 dot?)
+      if (!_.includes(me.effAlwUplExts, '**')) {
+        const dotParts = file.name.split('.');
+        const ext = dotParts.length >= 2 ? dotParts[dotParts.length - 1] : '';
+        const isOk = _.includes(me.effAlwUplExts, ext);
+        if (!isOk) {
+          util.openDefaultStupidDialog({
+            dialogClassName: 's_UplErrD e_BadUplExt',
+            closeButtonTitle: t.Close,
+            body: !me.effAlwUplExts.length
+              ? r.p({}, `You cannot upload images or files`)  // I18N
+              : rFr({},
+                  r.p({},
+                    r.b({}, `Not an allowed file type: `),
+                    r.kbd({ className: 's_UplErrD_UplNm' }, ext)),
+                  r.p({},
+                    `These are allowed: `, r.kbd({}, me.effAlwUplExts))),
+          });
+          return;
+        }
+      }
+
+      const size = file.size;
+      const max = me.effMaxUplBytes;
       if (size > max) {
         util.openDefaultStupidDialog({
           dialogClassName: 's_UplErrD',
@@ -386,7 +413,7 @@ export const Editor = createFactory<any, EditorState>({
           body: rFragment({},
             r.p({},
               r.b({ className: 'e_FlTooLg' }, `File too large: `),   // I18N
-              r.kbd({}, file.name)),
+              r.kbd({ className: 's_UplErrD_UplNm' }, file.name)),
             r.p({},
               `File size: ${prettyBytes(size)}`, r.br(),
               `Max size: ${prettyBytes(max)}`),
@@ -2134,9 +2161,10 @@ export const Editor = createFactory<any, EditorState>({
         r.button({ onClick: this.selectAndUploadFile, title: t.e.UploadBtnTooltip,
             className: 'esEdtr_txtBtn e_UplB' },
           r.span({ className: 'icon-upload' })),
-        r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
-          className: 'e_EdUplFI',
-          ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
+        !me.effAlwUplExts.length ? null :
+          r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
+            className: 'e_EdUplFI',
+            ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
         r.button({ onClick: this.makeTextBold, title: t.e.BoldBtnTooltip,
             className: 'esEdtr_txtBtn' }, 'B'),
         r.button({ onClick: this.makeTextItalic, title: t.e.EmBtnTooltip,

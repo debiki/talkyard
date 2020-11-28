@@ -839,7 +839,6 @@ object Post {
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
 
-  // def fromJson(json: JsValue) = Protocols.jsonToPost(json)
 
 
   /** Sorts posts so e.g. interesting ones appear first, and deleted ones last.
@@ -849,28 +848,34 @@ object Post {
     */
   def sortPosts(posts: immutable.Seq[Post], sortOrder: PostSortOrder)
         : immutable.Seq[Post] = {
-    var sortFn: (Post, Post) => Boolean = sortPostsBestFirstFn
-    if (sortOrder == PostSortOrder.NewestFirst) {
+
+    // The default is oldest first, see decisions.adoc  [why_sort_by_time].
+    var sortFn: (Post, Post) => Bo = sortPostsOldestFirst
+
+    if (sortOrder == PostSortOrder.BestFirst) {
+      sortFn = sortPostsBestFirstFn
+    }
+    else if (sortOrder == PostSortOrder.NewestFirst) {
       sortFn = sortPostsNewestFirst
     }
-    else if (sortOrder == PostSortOrder.OldestFirst) {
-      sortFn = sortPostsOldestFirst
-    }
     else {
-      // Keep default, best first.
+      // Keep the default, oldest first.
     }
+
     posts.sortWith(sortFn)
   }
 
-  private def sortPostsNewestFirst(postA: Post, postB: Post): Boolean = {
+
+  private def sortPostsNewestFirst(postA: Post, postB: Post): Bo = {
     !postApprovedOrCreatedBefore(postA, postB)
   }
 
-  private def sortPostsOldestFirst(postA: Post, postB: Post): Boolean = {
+  private def sortPostsOldestFirst(postA: Post, postB: Post): Bo = {
     postApprovedOrCreatedBefore(postA, postB)
   }
 
-  private def sortPostsBestFirstFn(postA: Post, postB: Post): Boolean = {
+
+  private def sortPostsBestFirstFn(postA: Post, postB: Post): Bo = {
     /* From app/debiki/HtmlSerializer.scala:
     if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
       // 1 means place first, 2 means place first but one, and so on.

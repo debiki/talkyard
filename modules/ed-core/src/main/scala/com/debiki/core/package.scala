@@ -60,6 +60,7 @@ package object core {
   type Bad[+B] = org.scalactic.Bad[B]
   val Bad = org.scalactic.Bad
    */
+  type ErrCode = String
   type ErrMsg = ErrorMessage // = String
 
   type Opt[+A] = Option[A]
@@ -77,6 +78,12 @@ package object core {
 
   type MutArrBuf[A] = mutable.ArrayBuffer[A]
   val MutArrBuf: mutable.ArrayBuffer.type = mutable.ArrayBuffer
+
+  type MutHashSet[A] = mutable.HashSet[A]
+  val MutHashSet: mutable.HashSet.type = mutable.HashSet
+
+  type MutHashMap[K, V] = mutable.HashMap[K, V]
+  val MutHashMap: mutable.HashMap.type = mutable.HashMap
 
 
   def isDevOrTest: Bo = Prelude.isDevOrTest
@@ -705,12 +712,17 @@ package object core {
   object PostsOrderNesting {
     val InfiniteNesting: NestingDepth = -1  // sync with Typescript
 
-    val Default = PostsOrderNesting(PostSortOrder.Default, InfiniteNesting)
+    val Default: PostsOrderNesting =
+      PostsOrderNesting(PostSortOrder.Default, InfiniteNesting)
+
+    val DefaultForEmbComs: PostsOrderNesting =
+      PostsOrderNesting(PostSortOrder.DefaultForEmbComs, InfiniteNesting)
+
   }
 
   // ----- PostsSortOrder
 
-  sealed abstract class PostSortOrder(val IntVal: Int, val isByTime: Boolean) {
+  sealed abstract class PostSortOrder(val IntVal: Int, val isByTime: Bo) {
     def toInt: Int = IntVal
   }
 
@@ -719,6 +731,8 @@ package object core {
     case object BestFirst extends PostSortOrder(1, false)
     case object NewestFirst extends PostSortOrder(2, true)
     case object OldestFirst extends PostSortOrder(3, true)
+
+    val DefaultForEmbComs: PostSortOrder = BestFirst
 
     // Maybe: Random?
     // How would Random work, combined with performance and caching? Pick

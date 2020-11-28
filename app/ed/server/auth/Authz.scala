@@ -99,6 +99,30 @@ case class PageAuthzContext(
 object Authz {
 
 
+  def deriveEffPatPerms(groupsAnyOrder: Iterable[Group],
+          permsOnSite: PermsOnSite): EffPatPerms = {
+
+    // Right now.
+    dieIf(permsOnSite.forPeopleId != Group.EveryoneId, "TyE305MRTK",
+          s"permsOnSite not for Everyone: $permsOnSite")
+
+    var maxUpl: Opt[i32] = Some(0)
+    val uplExts = MutHashSet[St]()
+    for (group <- groupsAnyOrder) {
+      val perms = group.perms
+      maxUpl = maxOfAnyInt32(maxUpl, perms.maxUploadBytes)
+      uplExts ++= perms.allowedUplExtensionsAsSet
+    }
+
+    maxUpl = minOfAnyInt32(maxUpl, Some(permsOnSite.maxUploadSizeBytes))
+
+    EffPatPerms(
+          maxUploadSizeBytes = maxUpl.get,
+          allowedUploadExtensions = uplExts.toSet)
+  }
+
+
+
   def mayCreatePage(
     userAndLevels: UserAndLevels,
     groupIds: immutable.Seq[GroupId],

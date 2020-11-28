@@ -251,4 +251,15 @@ object Validation {  RENAME // to Check, so:  Check.ifBadEmail( ...)  — looks 
 
     None
   }
+
+
+  // Sync with pats_t.pats_c_alloweduploadexts_alnum.  (users3 not yet renamed)
+  private val ValidFileExtRefex: Regex = """^[a-z0-9 _.*-]*$""".r
+
+  def ifBadFileExtCommaList(exts: St, siteId: SiteId, fn: Problem => U): U = {
+    val isOk = ValidFileExtRefex.pattern.matcher(exts).matches
+    if (!isOk) {
+      fn(Problem(s"Bad file extension list: $exts", siteId))
+    }
+  }
 }

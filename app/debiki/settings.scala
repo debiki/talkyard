@@ -130,10 +130,13 @@ trait AllSettings {
 
   // ----- Topics — hmm these could / should? be per topic type:
   def discussionLayout: DiscussionLayout
-  def discPostNesting: Int
   def discPostSortOrder: PostSortOrder
+  def discPostNesting: NestingDepth
   def progressLayout: ProgressLayout
-  def origPostReplyBtnTitle: String
+  def embComSortOrder: PostSortOrder  // later, could add a topic type field instead
+  def embComNesting: NestingDepth
+  // These are for embedded comments actually, COULD rename:
+  def origPostReplyBtnTitle: St
   def origPostVotes: OrigPostVotes
   // -----------------------------
 
@@ -260,9 +263,11 @@ trait AllSettings {
     showAuthorHow = Some(self.showAuthorHow),
     watchbarStartsOpen = Some(self.watchbarStartsOpen),
     discussionLayout = Some(self.discussionLayout),
-    discPostNesting = Some(self.discPostNesting),
     discPostSortOrder = Some(self.discPostSortOrder),
+    discPostNesting = Some(self.discPostNesting),
     progressLayout = Some(self.progressLayout),
+    embComSortOrder = Some(self.embComSortOrder),
+    embComNesting = Some(self.embComNesting),
     origPostReplyBtnTitle = Some(self.origPostReplyBtnTitle),
     origPostVotes = Some(self.origPostVotes),
     requireApprovalIfTrustLte = Some(self.requireApprovalIfTrustLte),
@@ -385,9 +390,11 @@ object AllSettings {
     val showAuthorHow: ShowAuthorHow = ShowAuthorHow.FullNameThenUsername
     val watchbarStartsOpen = true
     val discussionLayout: DiscussionLayout = DiscussionLayout.Default
-    val discPostNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
     val discPostSortOrder: PostSortOrder = PostSortOrder.Default
+    val discPostNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
     val progressLayout: ProgressLayout = ProgressLayout.Default
+    val embComSortOrder: PostSortOrder = PostSortOrder.DefaultForEmbComs
+    val embComNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
     val origPostReplyBtnTitle: String = ""  // will then use the i18n field
     val origPostVotes: OrigPostVotes = OrigPostVotes.Default
     val requireApprovalIfTrustLte = TrustLevel.Stranger
@@ -511,9 +518,11 @@ case class EffectiveSettings(
   def showAuthorHow: ShowAuthorHow = firstInChain(_.showAuthorHow) getOrElse default.showAuthorHow
   def watchbarStartsOpen: Boolean = firstInChain(_.watchbarStartsOpen) getOrElse default.watchbarStartsOpen
   def discussionLayout: DiscussionLayout = firstInChain(_.discussionLayout) getOrElse default.discussionLayout
-  def discPostNesting: Int =  firstInChain(_.discPostNesting) getOrElse default.discPostNesting
   def discPostSortOrder: PostSortOrder = firstInChain(_.discPostSortOrder) getOrElse default.discPostSortOrder
+  def discPostNesting: NestingDepth =  firstInChain(_.discPostNesting) getOrElse default.discPostNesting
   def progressLayout: ProgressLayout = firstInChain(_.progressLayout) getOrElse default.progressLayout
+  def embComSortOrder: PostSortOrder = firstInChain(_.embComSortOrder) getOrElse default.embComSortOrder
+  def embComNesting: NestingDepth = firstInChain(_.embComNesting) getOrElse default.embComNesting
   def origPostReplyBtnTitle: String = firstInChain(_.origPostReplyBtnTitle) getOrElse default.origPostReplyBtnTitle
   def origPostVotes: OrigPostVotes = firstInChain(_.origPostVotes) getOrElse default.origPostVotes
   def requireApprovalIfTrustLte: TrustLevel = firstInChain(_.requireApprovalIfTrustLte) getOrElse default.requireApprovalIfTrustLte
@@ -759,6 +768,8 @@ object Settings2 {
       "discPostNesting" -> JsNumberOrNull(s.discPostNesting),
       "discPostSortOrder" -> JsNumberOrNull(s.discPostSortOrder.map(_.toInt)),
       "progressLayout" -> JsNumberOrNull(s.progressLayout.map(_.toInt)),
+      "embComSortOrder" -> JsNumberOrNull(s.embComSortOrder.map(_.toInt)),
+      "embComNesting" -> JsNumberOrNull(s.embComNesting),
       "origPostReplyBtnTitle" -> JsStringOrNull(s.origPostReplyBtnTitle),
       "origPostVotes" -> JsNumberOrNull(s.origPostVotes.map(_.toInt)),
       "requireApprovalIfTrustLte" -> JsNumberOrNull(s.requireApprovalIfTrustLte.map(_.toInt)),
@@ -867,6 +878,8 @@ object Settings2 {
     discPostNesting = anyInt(json, "discPostNesting", d.discPostNesting),
     discPostSortOrder = anyInt(json, "discPostSortOrder", d.discPostSortOrder.toInt).map(_.flatMap(PostSortOrder.fromInt)),
     progressLayout = anyInt(json, "progressLayout", d.progressLayout.toInt).map(_.flatMap(ProgressLayout.fromInt)),
+    embComSortOrder = anyInt(json, "embComSortOrder", d.embComSortOrder.toInt).map(_.flatMap(PostSortOrder.fromInt)),
+    embComNesting = anyInt(json, "embComNesting", d.embComNesting),
     origPostReplyBtnTitle = anyString(json, "origPostReplyBtnTitle", d.origPostReplyBtnTitle),
     origPostVotes = anyInt(json, "origPostVotes", d.origPostVotes.toInt).map(_.flatMap(OrigPostVotes.fromInt)),
     requireApprovalIfTrustLte = anyInt(json, "requireApprovalIfTrustLte", d.requireApprovalIfTrustLte.toInt).map(_.flatMap(TrustLevel.fromInt)),

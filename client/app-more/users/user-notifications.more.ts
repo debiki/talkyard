@@ -83,13 +83,16 @@ export const UserNotifications = createFactory({
     if (!this.state.notfs)
       return r.p({}, t.Loading);
 
-    const notfPrefsShortcut =
+    const user: UserInclDetails = this.props.user;
+    const isGuest = user.id <= Pats.MaxGuestId;
+
+    // (Guests cannot config notfs.)
+    const notfPrefsShortcut = isGuest ? null :
         r.p({ className: 's_UP_Nfs_PfsL' },
           "Go to ",
           Link({ to: './preferences/notifications' }, "Preferences → Notifications"),
           " to edit settings, e.g. to subscribe to categories.");
 
-    const user: UserInclDetails = this.props.user;
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const isMe = user.id === me.id;

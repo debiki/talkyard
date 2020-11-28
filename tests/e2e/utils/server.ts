@@ -407,10 +407,21 @@ function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string
 }
 
 
+function waitUntilLastEmailIsActSumAndMatches(siteId: SiteId, emailAddress: string,
+        textOrTextsToMatch: string | string[]): EmailMatchResult {
+  return waitUntilLastEmailMatches(siteId, emailAddress, textOrTextsToMatch,
+          { isActivitySummary: true });
+}
+
+
 function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
-        textOrTextsToMatch: string | string[], browser?): EmailMatchResult {
-  const textsToMatch: string[] =
+        textOrTextsToMatch: string | string[], opts?: { isActivitySummary?: Bo } | any)
+        : EmailMatchResult {
+  let textsToMatch: string[] =
       _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
+  if (opts?.isActivitySummary) {
+    textsToMatch = [...textsToMatch, 'e_ActSumEm'];
+  }
   const startMs = Date.now();
   let hasDebugLoggedLastEmail = false;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
@@ -611,6 +622,7 @@ export = {
   getAnyUnsubscriptionLinkEmailedTo,
   waitForUnsubscriptionLinkEmailedTo,
   waitUntilLastEmailMatches,
+  waitUntilLastEmailIsActSumAndMatches,
   lastEmailMatches,
   assertLastEmailMatches,
   apiV0: {

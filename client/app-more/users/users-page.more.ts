@@ -70,21 +70,27 @@ const UserPageComponent = createReactClass(<any> {
 
   getInitialState: function() {
     this.hasAutoOpenedEditorFor = {};
+    const store = debiki2.ReactStore.allData();
     return {
-      store: debiki2.ReactStore.allData(),
-      myId: null,
+      store,
+      myId: store.me.id,
       user: null,
     };
   },
 
   onChange: function() {
-    let myOldId = this.state.myId;
-    let store: Store = debiki2.ReactStore.allData();
+    const myOldId = this.state.myId;
+    const store: Store = debiki2.ReactStore.allData();
+    const iAmSbdElse = myOldId !== store.me.id;
     this.setState({
       store: store,
       myId: store.me.id,
+      // If we've logged in as admin or the pat henself, the config pat prefs
+      // code assumes we have access to pat's private fields. [pat_prof_fields]
+      // So, until reloaded with those fields included, don't show any pat at all.
+      user: iAmSbdElse ? null : this.state.user,
     });
-    if (myOldId !== store.me.id) {
+    if (iAmSbdElse) {
       // Now we might have access to more/less data about the user, so refresh.
       this.loadUserAnyDetails();
     }
@@ -111,7 +117,7 @@ const UserPageComponent = createReactClass(<any> {
     this.isGone = true;
   },
 
-  loadUserAnyDetails: function(redirectToCorrectUsername) {
+  loadUserAnyDetails: function(redirectToCorrectUsername?: false) {
     const location: RouteLocation = this.props.location;
     const params = this.props.match.params;
     const usernameOrId: string | number = params.usernameOrId;
@@ -122,7 +128,16 @@ const UserPageComponent = createReactClass(<any> {
     const shallComposeMessage =
       this.props.location.hash.indexOf(FragActionHashComposeMessage) >= 0;
 
+    // We might be showing the wrong user currently, causing e2e tests to
+    // see the wrong UI state for fractions of a second, and toggle, say,
+    // a checkbox in the wrong way.
+    // Set pat to null until new pat fetched, so the e2e tests will have to
+    // wait until the new UI state for the correct user appears.
+    this.setState({ user: null });
+
     Server.loadUserAnyDetails(usernameOrId,
+          // CLEAN_UP don't merge objs server side and pick apart here
+          // — just send them as separate fields from the start. [load_pat_stats_grps]
           (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => {
       const stats: UserStats | undefined = user.anyUserStats;
       this.nowLoading = null;
@@ -150,10 +165,18 @@ const UserPageComponent = createReactClass(<any> {
         this.maybeOpenMessageEditor(user.id);
       }
     }, () => {
-      if (this.isGone) return;
-      // Error. We might not be allowed to see this user, so null it even if it was shown before.
-      this.setState({ user: null });
+      // Error. We might not be allowed to see the user — we've set state.user
+      // to null above already. So, need not:
+      //if (this.isGone) return;
+      //this.setState({ user: null });
     });
+  },
+
+  updatePat: function(pat: PatVb) {
+    // Keep groupIdsMaySee (but not  anyUserStats), although maybe shouldn't
+    // incl at all?   [load_pat_stats_grps]
+    const oldUser = this.state.user;
+    this.setState({ user: { ...pat, groupIdsMaySee: oldUser.groupIdsMaySee } });
   },
 
   maybeOpenMessageEditor: function(userId: number) {  // [4JABRF0]
@@ -209,6 +232,10 @@ const UserPageComponent = createReactClass(<any> {
     const invitesNavItem = !showPrivateStuff || !store_maySendInvites(store, user).value ? null :
       LiNavLink({ to: linkStart + 'invites', className: 'e_InvTabB' }, t.upp.Invites);
 
+    const patPermsNavItem = !user.isGroup || !imStaff ? null :
+        LiNavLink({ to: linkStart + 'permissions', className: 'e_PermsTabB' },
+          "Permissions"); // I18N
+
     const childProps = {
       store: store,
       me: me, // CLEAN_UP try to remove, incl already in `store`
@@ -217,6 +244,7 @@ const UserPageComponent = createReactClass(<any> {
       match: this.props.match,
       stats: this.state.stats,
       reloadUser: this.loadUserAnyDetails,
+      updatePat: this.updatePat,
     };
 
     const u = (user.isGroup ? GroupsRoot : UsersRoot) + ':usernameOrId/';
@@ -232,7 +260,8 @@ const UserPageComponent = createReactClass(<any> {
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
       Route({ path: u + 'drafts-etc', render: () => UserDrafts(childProps) }),
       Route({ path: u + 'preferences', render: (ps) => UserPreferences({ ...childProps, ...ps }) }),
-      Route({ path: u + 'invites', render: () => UserInvites(childProps) }));
+      Route({ path: u + 'invites', render: () => UserInvites(childProps) }),
+      Route({ path: u + 'permissions', render: (ps) => PatPerms({ ...childProps, ...ps }) }));
 
     return (
       r.div({ className: 'container esUP' },
@@ -243,7 +272,8 @@ const UserPageComponent = createReactClass(<any> {
           notificationsNavItem,
           draftsEtcNavItem,
           invitesNavItem,
-          preferencesNavItem),
+          preferencesNavItem,
+          patPermsNavItem),
         childRoutes));
   }
 });

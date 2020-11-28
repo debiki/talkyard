@@ -153,7 +153,7 @@ case class SitePatchParser(context: EdContext) {
           readJsArray(bodyJson, "guests", optional = true),
           readOptJsObject(bodyJson, "guestEmailPrefs"),
           readJsArray(bodyJson, "groups", optional = true),
-          readJsArray(bodyJson, "groupPps", optional = true),
+          readJsArray(bodyJson, "groupPps", optional = true),  // RENAME to "groupPats"
           readJsArray(bodyJson, "members", optional = true),   // RENAME to "users"
           readJsArray(bodyJson, "ppStats", optional = true),
           readJsArray(bodyJson, "ppVisitStats", optional = true),
@@ -1519,6 +1519,8 @@ case class SitePatchParser(context: EdContext) {
         return Bad(s"Not a json object, but a: " + classNameOf(bad))
     }
 
+    // Dupl code [dupl_parse_perms_on_pgs],
+    // break out fn, place next to  readPatPerms  ?
     try {
       Good(PermsOnPages(
         id = readInt(jsObj, "id"),

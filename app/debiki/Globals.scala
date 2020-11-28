@@ -248,7 +248,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   }
 
   // Could rename to "rendererVersion".
-  val applicationVersion = "0.00.73"  // later, read from some build config file
+  val applicationVersion = "0.00.74"  // later, read from some build config file
 
   def applicationSecret: String = _appSecret
 
@@ -1269,6 +1269,12 @@ class Config(conf: play.api.Configuration) extends TyLogging {
     private val p = "talkyard.uploads."
     // COULD make this configurable dynamically, per site, in the admin area, per site, too.
     // The limits below, would then be a hard max, for each site, regardless of admin area settings.
+    //
+    // Hmm, no, instead, this can be a per group setting,  [more_pat_perms]
+    // configurable via: /-/groups/groupname.
+    // There's a whole site setting too, and that's the max-for-everyone setting.
+    // Also allowed upload types will be a per user/group setting, in addition
+    // to a site wide restriction.
 
     val maxBytesPerDayMember: Int =
       getIntOrDefault(p + "maxKiloBytesPerDayMember", 10*Megabytes / 1000) * 1000

@@ -17,6 +17,7 @@ w_X   = wraps X. Always a class, not an id.
 
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
 Ab  = about
+Alw = allow(ed)
 Em  = email
 Ena = enabled, Dis = disabled
 B   = button, e.g. ReplyB
@@ -33,9 +34,10 @@ Dl = download — change to Dwnl? so rare
 Dis = disabled, Ena = enabled
 Ed  = edit
 Edr = editor
+Eff = effective, but Fx = effect
 Feat = feature
 Flg = flag
-Fx  = Effect (standard abbr)
+Fx  = Effect (standard abbr), but Eff = effective
 Fxd = fixed, Stc = static
 FN  = full name  (alt FuNm)
 Fu  = full
@@ -80,6 +82,7 @@ U  = user
 FI = file input
 G  = group  ? or Gp?
 Pat = participant
+Prm = permission, e.g.: 's_PP_PrmsTb' = profile page, permissions tab
 Pp = participant  NO change to Pat
 P, Pg = page
 Prvw = preview
@@ -95,7 +98,7 @@ Sz  = size
 Snz = Snooze
 T   = table
 Tab = tab
-Tb  = Topbar   RENAME esTopbarWrap to s_Tb
+Tb  = Topbar, or Tab (when at the end)   RENAME esTopbarWrap to s_Tb
 Tl  = title
 Tg  = tag
 Tp  = topic
@@ -107,6 +110,8 @@ Txt = text,   no just Tx   RENAME
 Tr  = Trust,  eg. TrLv = trust level NO change to Tru & Trt
 Tx  = text (tx = transaction is only server side)
 Un  = username
+Upl = upload
+Vb  = verbose, instead of Fat (and Thin) data?
 Vl  = vertical, also: Hz: horizontal
 Vt  = vote, NO Vo instead,  Vt could be Vertical
 W   = wrap, wrapper: a div that's wrapped around the main something
@@ -219,7 +224,8 @@ Nrw             = narrow
 s_UD            = About user dialog
 s_UD_ExtrInf    = Extra info about the user, e.g. s/he is a Frequent Poster in a topic, or topic starter.
 
-s_UP            = A user's public profile page  RENAME to  s_PPP = participant's profile page?
+s_PP  --yes--   = Profile page, or Participant's page
+s_UP  --no--    = A user's public profile page  RENAME to  s_PP = profile page or pat's page, since groups and gusets too, not just users.
 s_UP_Ab         = The about part (the top of the profile page)
 s_UP_EmLg       = Emails and logins
 esUP_Un         = Username  COULD rename t s_UP_Ab_UN

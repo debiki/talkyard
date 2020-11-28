@@ -81,15 +81,25 @@ object PageParts {
 case class PreLoadedPageParts(
   override val pageMeta: PageMeta,
   allPosts: immutable.Seq[Post],
-  override val origPostReplyBtnTitle: Option[String] = None,
+  override val origPostReplyBtnTitle: Opt[St] = None,
   override val origPostVotes: OrigPostVotes = OrigPostVotes.Default,
-  override val postsOrderNesting: PostsOrderNesting = PostsOrderNesting.Default)
+  anyPostOrderNesting: Option[PostsOrderNesting] = None,
+  )
   extends PageParts {
 
   require(pageMeta.pageId != NoPageId || allPosts.isEmpty, "TyE3J05WKDT5")
 
   def pageId: PageId = pageMeta.pageId
-  def exists: Boolean = pageMeta.pageId != NoPageId
+  def exists: Bo = pageMeta.pageId != NoPageId
+
+  override def postsOrderNesting: PostsOrderNesting =
+    anyPostOrderNesting getOrElse {
+      if (pageMeta.pageType == PageType.EmbeddedComments)
+        PostsOrderNesting.DefaultForEmbComs
+      else
+        PostsOrderNesting.Default
+    }
+
 }
 
 

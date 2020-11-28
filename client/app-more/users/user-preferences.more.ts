@@ -59,6 +59,7 @@ export const UserPreferences = createFactory({
       user, // CLEAN_UP remove — use `member` instead, because can be a group
       member: user,
       reloadUser: this.props.reloadUser,
+      updatePat: this.props.updatePat,
       emailsLoginsPath,
     };
 
@@ -124,7 +125,7 @@ export const AboutTab = createFactory({
     }
 
     const preferences = isGuest(user)
-        ? AboutGuest({ guest: user })
+        ? AboutGuest({ guest: user, updatePat: this.props.updatePat })
         : AboutMember(this.props);
 
     return (
@@ -155,8 +156,10 @@ const AboutGuest = createComponent({
       name: firstDefinedOf(this._fullName, guest.fullName),
     };
     if (!prefs.name) return;
-    Server.saveGuest(prefs, () => {
+    // Dupl code [save_pat_pref].
+    Server.saveGuest(prefs, (r: { patNoStatsNoGroupIds: PatVb }) => {
       if (this.isGone) return;
+      this.props.updatePat(r.patNoStatsNoGroupIds);
       this.setState({ savingStatus: 'Saved' });
     });
     this.setState({ savingStatus: 'Saving' });
@@ -184,8 +187,11 @@ const AboutGuest = createComponent({
 
         r.div({ className: 'form-group' },
           r.label({}, t.EmailAddress),
-          r.div({}, r.samp({}, guest.email)),
-          r.p({ className: 'help-block' }, t.upp.NotShownCannotChange)),
+          !guest.email
+            ? r.div({}, "None")   // I18N upp.NoEmail field?
+            : rFr({},
+                r.div({}, r.samp({}, guest.email)),
+                r.p({ className: 'help-block' }, t.upp.NotShownCannotChange))),
 
         InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: t.Save }),
         savingInfo));
@@ -202,8 +208,12 @@ const AboutMember = createComponent({
     return {
       fullName: user.fullName,
       username: user.username,
+      // These fields included only if the current user is admin or the member henself.
+      // [pat_prof_fields]
+      emailPref: user.emailNotfPrefs,
       sendSummaryEmails:
-          !!user.summaryEmailIntervalMins && user.summaryEmailIntervalMins !== DisableSummaryEmails,
+          !!user.summaryEmailIntervalMins &&
+              user.summaryEmailIntervalMins !== DisableSummaryEmails,
       summaryEmailIntervalMins: user.summaryEmailIntervalMins,
       summaryEmailIfActive: user.summaryEmailIfActive,
     };
@@ -281,25 +291,29 @@ const AboutMember = createComponent({
       fullName: this.state.fullName,
       username: this.state.username,
       emailAddress: firstDefinedOf(this._email, user.email),
+      // shouldn't be here: [REFACTORNOTFS] -------
+      emailPref: this.state.emailPref,
       // BUG SHOULD not save these, if the user didn't change them and they're still the
       // default values.
-      // shouldn't be here: [REFACTORNOTFS] -------
       summaryEmailIntervalMins: summaryEmailIntervalMins,
       summaryEmailIfActive: this.state.summaryEmailIfActive,
       // ------------------------------------------
       about: firstDefinedOf(this._about, user.bio),
       url: firstDefinedOf(this._url, user.websiteUrl),
     };
-    // This won't update the name in the name-login-button component. But will
-    // be automatically fixed when I've ported everything to React and use
-    // some global React state instead of cookies to remember the user name.
-    Server.saveAboutUserPrefs(prefs, user.isGroup, () => {
+    // UX BUG minor: Won't update one's name in the name-login-button component.
+    // Dupl code [save_pat_pref].
+    Server.saveAboutPatPrefs(prefs, user.isGroup, (r: { patNoStatsNoGroupIds: PatVb }) => {
       if (this.isGone) return;
       this.setState({
         savingStatus: 'Saved',
         showUsernameInput: false,
       });
-      this.props.reloadUser(false);
+      this.props.updatePat(r.patNoStatsNoGroupIds);
+      setTimeout(() => {
+        if (this.isGone) return;
+        this.setState({ savingStatus: '' });
+      }, 2000);
     });
     this.setState({ savingStatus: 'Saving' });
   },
@@ -312,7 +326,8 @@ const AboutMember = createComponent({
 
     // These ids = hardcoded users & groups, e.g. System and Everyone.
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
-    const isSystemUser = user.id === SystemUserId;
+    const isBuiltInOrGroup = isBuiltInUser || user.isGroup;
+    const isSystemUser = pat_isSys(user);
 
     // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
@@ -341,6 +356,8 @@ const AboutMember = createComponent({
               t.upp.MayChangeFewTimes) });
     }
 
+    const patPlusChanges = { ...user, emailNotfPrefs: this.state.emailPref };
+
     const sendSummaryEmails = this.state.sendSummaryEmails;
 
     // Only show setting-is-inherited-from-some-group info for admins, for now, so people
@@ -361,8 +378,8 @@ const AboutMember = createComponent({
         ? t.upp.AlsoIfTheyVisit
         : t.upp.AlsoIfIVisit;
 
-    // Summary emails can be configured for groups (in particular, the Everyone group = default settings).
-    // But not for the System user.
+    // Summary emails can be configured for groups (in particular,
+    // the Everyone group = default settings).  But not for the System user.
     const activitySummaryStuff = isSystemUser ? null :
       r.div({ className: 'form-group', style: { margin: '22px 0 25px' } },
         r.label({}, t.upp.ActivitySummaryEmails),  // more like a mini title
@@ -393,20 +410,35 @@ const AboutMember = createComponent({
 
         usernameStuff,
 
-        isBuiltInUser ? null : r.div({ className: 'form-group' },
-          r.label({}, t.EmailAddress),
-          r.div({},
-            r.samp({}, user.email),
-            NavLink({ to: this.props.emailsLoginsPath,
-                className: 'btn s_UP_Prefs_ChangeEmailB' }, t.ChangeDots)),
-          r.p({ className: 'help-block' }, t.upp.NotShown)),
+        isBuiltInOrGroup ? null : rFr({},
+          r.div({ className: 'form-group' },
+            r.label({}, t.EmailAddress),
+            r.div({},
+              r.samp({}, user.email),
+              NavLink({ to: this.props.emailsLoginsPath,
+                  className: 'btn s_UP_Prefs_ChangeEmailB' }, t.ChangeDots)),
+            r.p({ className: 'help-block' }, t.upp.NotShown)),
+          r.div({ className: 'form-group' },
+            r.label({}, "Get emails: "),  // I18N
+            Button({ className: 's_UP_Ab_EmPfB', onClick: (event: MouseEvent) => {
+                // TESTS_MISSING  TyTE2E693RTMPG
+                const atRect = cloneEventTargetRect(event);
+                notification.openEmailNotfPrefs({ atRect,
+                    pat: patPlusChanges,
+                    saveFn: (emailPref: EmailNotfPrefs) => {
+                      this.setState({ emailPref });
+                    } });
+              }},
+              emailPref_title(patPlusChanges.emailNotfPrefs), ' ',
+                    r.span({ className: 'caret' }))),
+          ),
 
         // [oidc_missing] SHOULD hide this, if SSO or only-custom-IDP since then
         // there's no pwd login anyway.
         //
         // UX COULD later incl this change-pwd also on the Account tab, it fits better there maybe?
         // However people might not think about looking there? So incl both here and there?
-        isBuiltInUser ? null : r.div({ className: 'form-group' },    // + also on  Account tab.
+        isBuiltInOrGroup ? null : r.div({ className: 'form-group' },    // + also on  Account tab.
           r.label({}, t.pwd.PasswordC),
           r.span({}, ' ' + (user.hasPassword ? t.Yes : t.upp.PwdNone) + '.'),
           r.a({
@@ -421,14 +453,15 @@ const AboutMember = createComponent({
 
         activitySummaryStuff,
 
-        isBuiltInUser ? null : r.div({ className: 'form-group' },
+        // (Bio not yet saved server side, for groups.)
+        isBuiltInOrGroup ? null : r.div({ className: 'form-group' },
           r.label({ htmlFor: 't_UP_AboutMe' }, t.upp.AboutYou),
           r.textarea({ className: 'form-control', id: 't_UP_Prefs_AboutMeTA',
               onChange: (event) => { this._about = event.target.value },
               defaultValue: user.bio || '' })),
 
         // Later: Verify is really an URL
-        isBuiltInUser ? null : r.div({ className: 'form-group' },
+        isBuiltInOrGroup ? null : r.div({ className: 'form-group' },
           r.label({ htmlFor: 'url' }, 'Website URL'),  // I18N
           r.input({ className: 'form-control', id: 'url',
               onChange: (event) => { this._url = event.target.value },
@@ -695,12 +728,13 @@ const PrivacyPrefsTab = createFactory({
       userId: user.id,
       seeActivityMinTrustLevel: seeActivityMinTrustLevel,
     };
-    Server.saveMemberPrivacyPrefs(prefs, () => {
+    // Dupl code [save_pat_pref].
+    Server.saveMemberPrivacyPrefs(prefs, (r: { patNoStatsNoGroupIds: PatVb }) => {
       if (this.isGone) return;
       this.setState({
         savingStatus: 'Saved',
       });
-      this.props.reloadUser(false);
+      this.props.updatePat(r.patNoStatsNoGroupIds);
     });
     this.setState({ savingStatus: 'Saving' });
   },
