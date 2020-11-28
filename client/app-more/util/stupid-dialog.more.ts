@@ -99,7 +99,9 @@ export const StupidDialog = createComponent({
     const body = ModalBody({ className: 'clearfix' },
       r.div({ style: { marginBottom: '2em' }}, stuff.body),
       r.div({ style: { float: 'right' }},
-        preventClose ? null : PrimaryButton({ onClick: makeCloseFn(1), className: 'e_SD_CloseB' },
+        preventClose ? null :
+          PrimaryButton({ onClick: makeCloseFn(1), className: 'e_SD_CloseB',
+              ref: (e: HElm | Nl) => e && e.focus() },
           // About "Okay" button title: I18N COULD use English, if in admin area / staff-only
           // functionality — that's supposed to be English only.
           stuff.closeButtonTitle || stuff.primaryButtonTitle || t.Okay),

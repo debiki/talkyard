@@ -50,6 +50,12 @@ export function event_isCmdShiftClick(event): boolean {
 }
 
 
+export function event_canBeKeyTarget(event: KeyboardEvent): Bo {
+  const anyTagName: St | Nl = (event.target as Elm | Nl)?.tagName;
+  return anyTagName === 'INPUT' || anyTagName === 'TEXTAREA' || anyTagName === 'SELECT';
+}
+
+
 export function urlPath_isToPageId(urlPath: string, pageId: PageId): boolean {
   const idPathRegex = new RegExp(`^.*/-${pageId}(/.*)?$`);  // [2WBG49]
   return idPathRegex.test(urlPath);
