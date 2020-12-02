@@ -290,10 +290,10 @@ function runAllE2eTests {
 
   $r s/wdio --only all-links $args   # RENAME to test-import  ?
   $r s/wdio --only create-site-password-run-admin-intro-tours $args
-  $r s/wdio --only create-site-gmail-and-email-notf $args
-  $r s/wdio --only create-site-facebook $args
-  $r s/wdio --only create-site-github-oauth-uppercase-email $args
-  $r s/wdio --only create-site-linkedin $args
+  $r s/wdio --only create-site-gmail-and-email-notf.1br.extidp $args
+  $r s/wdio --only create-site-facebook.1br.extidp $args
+  $r s/wdio --only create-site-github-uppercase-email.1br.extidp $args
+  $r s/wdio --only create-site-linkedin.1br.extidp $args
   $r s/wdio --only create-site-admin-guide.2browsers $args
   $r s/wdio --only oauth-signup-signin $args
   $r s/wdio --only login-expire-idle-after.2br.mtime $args
@@ -346,7 +346,7 @@ function runAllE2eTests {
 
   $r s/wdio --only settings-allowed-email-domains.2browsers $args
   $r s/wdio --only settings-toggle-login-required.3browsers $args
-  $r s/wdio --only login-required-oauth-signup-login $args
+  $r s/wdio --only login-required-ext-signup-login.1br.extidp $args
   $r s/wdio --only login-required-join-global-chat.2br $args
 
   # Moderation   # RENAME to  modn- ...  instead of  admin- ...and MOVE to (4862065) below?
@@ -382,7 +382,7 @@ function runAllE2eTests {
   $r s/wdio --only user-profile-change-username $args
   $r s/wdio --only user-profile-change-email.2browsers $args
   $r s/wdio --only user-profile-change-password.2br.mtime $args
-  $r s/wdio --only user-profile-cannot-delete-openauth-email $args
+  $r s/wdio --only user-profile-cannot-delete-idp-email.1br.extidp $args
   $r s/wdio --only user-profile-activity-private.2browsers $args
   $r s/wdio --only user-self-delete-upd-groups.2browsers $args
 
@@ -504,7 +504,7 @@ function runAllE2eTests {
   # Usability Testing Exchange
   # ------------
 
-  $r s/wdio --only utx-all-logins $args
+  $r s/wdio --only utx-all-logins.1br.extidp $args
 
 
   #------------------------------------------------------------
@@ -546,8 +546,8 @@ function runAllE2eTests {
   # Embedded forum
   # ------------
 
-  #$r s/wdio --b3c  --only embedded-forum-no-cookies-login $args
-  #$r s/wdio --b3c  --only embedded-forum-no-cookies-sso-login $args
+  #$r s/wdio --b3c  --only embforum.b3c.login.1br  $args
+  #$r s/wdio --b3c  --only embforum.b3c.sso-login.1br $args
 
 
   # Embedded comments
@@ -572,12 +572,12 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-discussion-id.test $args
   $r s/wdio       --only embedded-comments-discussion-id-old-name $args
   $r s/wdio       --only embedded-comments-guest-login-email-notf-unsbscribe $args
-  $r s/wdio       --only emb-com.all-logins.1br $args
-  $r s/wdio       --only emb-com.all-logins-old-name.1br $args
-  $r s/wdio --b3c --only embedded-comments-no-cookies-verif-email $args
-  $r s/wdio --b3c --only embedded-comments-no-cookies-guest $args
-  $r s/wdio --b3c --only embedded-comments-no-cookies-verif-gmail $args
-  $r s/wdio --b3c --only embedded-comments-no-cookies-unverif-gmail $args
+  $r s/wdio       --only embcom.all-idp-logins.1br.extidp $args
+  $r s/wdio       --only embcom.all-idp-logins-old-name.1br.extidp $args
+  $r s/wdio --b3c --only embcom.b3c.verif-email.1br.test.ts $args
+  $r s/wdio --b3c --only embcom.b3c.guest.1br.test.ts $args
+  $r s/wdio --b3c --only embcom.b3c.verif-gmail.1br.extidp $args
+  $r s/wdio --b3c --only embcom.b3c.unverif-gmail.1br.extidp $args
   $r s/wdio       --only embedded-comments-edit-and-vote.test $args
   $r s/wdio       --only embedded-comments-edit-and-vote-old-name $args
   $r s/wdio       --only embedded-comments-vote-first $args

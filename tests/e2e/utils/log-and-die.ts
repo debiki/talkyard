@@ -64,11 +64,14 @@ const api = {
       api.logError(message, ex);
     }
   },
-  logError: function (message: string, ex?: any) {
+  logErrorNoTrace: function (message: string, ex?: any) {
     const m = errorColor(message);
     // Avoid printing 'undefined' if ex is undefined.
     if (_.isUndefined(ex)) console.error(m);
     else console.error(m, ex);
+  },
+  logError: function (message: string, ex?: any) {
+    api.logErrorNoTrace(message, ex);
     console.trace();
   },
   logServerRequest: function(message: string) {
