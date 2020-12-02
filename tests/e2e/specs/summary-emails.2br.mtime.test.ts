@@ -56,7 +56,11 @@ let topicFiveMariaMonthUrl: string;
 const lastTopicMichael = "lastTopicMichael";
 let lastTopicMichaelUrl: string;
 
-describe("summary emails", () => {
+const waitForActSumEmail = server.waitUntilLastEmailIsActSumAndMatches;
+
+
+
+describe("summary-emails.2br.mtime  TyTE2E06AJG256", () => {
 
   it("initialize people", () => {
     everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
@@ -78,13 +82,19 @@ describe("summary emails", () => {
   });
 
   it("import a site", () => {
-    const site: SiteData = make.forumOwnedByOwen('sumariz', { title: forumTitle });
+    const site: SiteData2 = make.forumOwnedByOwen('sumariz', { title: forumTitle });
     site.groups.push(everyoneGroup);
     site.members.push(modya);
     site.members.push(mons);
     site.members.push(maria);
     // But skip Michael — he'll sign up and create an account, so can verify default settings = ok.
     site.members.push(trillian);
+
+    // Disable notifications, or notf email counts will be off
+    // (since Owen would get emails).
+    site.settings.numFirstPostsToApprove = 0;
+    site.settings.numFirstPostsToReview = 0;
+
     idAddress = server.importSiteData(site);
     siteId = idAddress.id;
   });
@@ -96,7 +106,7 @@ describe("summary emails", () => {
   });
 
   it("Trillian logs in", () => {
-    trilliansBrowser.go(idAddress.origin);
+    trilliansBrowser.go2(idAddress.origin);
     trilliansBrowser.disableRateLimits();
     trilliansBrowser.assertPageTitleMatches(forumTitle);
     trilliansBrowser.complex.loginWithPasswordViaTopbar(trillian);
@@ -112,10 +122,10 @@ describe("summary emails", () => {
   });
 
   it("everyone gets a summary email, except for Michael (email not verified)", () => {
-    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, topicOneEveryoneUrl);
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl);
-    server.waitUntilLastEmailMatches(siteId, mons.emailAddress, topicOneEveryoneUrl);
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, owen.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, modya.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, mons.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, maria.emailAddress, topicOneEveryoneUrl);
   });
 
   it("Michael gets an addr verif email, clicks the verif link", () => {
@@ -157,9 +167,9 @@ describe("summary emails", () => {
 
   it("... after a day, only Owen, Mons and Michael get a summary email with the new topic", () => {
     server.playTimeHours(24 + 1);
-    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, topicTwoToSomeUrl);
-    server.waitUntilLastEmailMatches(siteId, mons.emailAddress, topicTwoToSomeUrl);
-    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, owen.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, mons.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, michael.emailAddress, topicTwoToSomeUrl);
   });
 
   it("... Modya and Maria didn't get a new summary email", () => {
@@ -168,8 +178,8 @@ describe("summary emails", () => {
     assertLastEmailDoesNotMatch(modya.emailAddress, topicTwoToSomeUrl);
     assertLastEmailDoesNotMatch(maria.emailAddress, topicTwoToSomeUrl);
     // Slow & safe test:
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl);
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, modya.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, maria.emailAddress, topicOneEveryoneUrl);
   });
 
   function assertLastEmailDoesNotMatch(emailAddress, text) {
@@ -201,18 +211,18 @@ describe("summary emails", () => {
     server.waitUntilLastEmailMatches(siteId, owen.emailAddress, topicThreeToOwenUrl);
   });
 
-  it("... but not anyone else", () => {
+  it("... but no one else than Owen", () => {
     // Quick fail-fast but not so accurate tests:
     assertLastEmailDoesNotMatch(modya.emailAddress, topicThreeToOwen);
     assertLastEmailDoesNotMatch(maria.emailAddress, topicThreeToOwen);
     assertLastEmailDoesNotMatch(mons.emailAddress, topicThreeToOwen);
     assertLastEmailDoesNotMatch(michael.emailAddress, topicThreeToOwen);
     // Still topic one:
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl);
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, modya.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, maria.emailAddress, topicOneEveryoneUrl);
     // Still topic two:
-    server.waitUntilLastEmailMatches(siteId, mons.emailAddress, topicTwoToSomeUrl);
-    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, mons.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, michael.emailAddress, topicTwoToSomeUrl);
   });
 
   it("Owen disables summary emails (testing that toggling on/off works)", () => {
@@ -236,22 +246,22 @@ describe("summary emails", () => {
 
   it("Maria gets a summary email", () => {
     server.playTimeDays(7 + 1);
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicFourToMariaUrl);
+    waitForActSumEmail(siteId, maria.emailAddress, topicFourToMariaUrl);
   });
 
-  it("... but not anyone else", () => {
+  it("... but no one else than Maria", () => {
     // Quick fail-fast but not so accurate tests:
     assertLastEmailDoesNotMatch(modya.emailAddress, topicFourToMariaUrl);
     assertLastEmailDoesNotMatch(mons.emailAddress, topicFourToMariaUrl);
     assertLastEmailDoesNotMatch(michael.emailAddress, topicFourToMariaUrl);
     assertLastEmailDoesNotMatch(owen.emailAddress, topicFourToMariaUrl);
     // Still topic one:
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, modya.emailAddress, topicOneEveryoneUrl);
     // Still topic two:
-    server.waitUntilLastEmailMatches(siteId, mons.emailAddress, topicTwoToSomeUrl);
-    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, mons.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, michael.emailAddress, topicTwoToSomeUrl);
     // Still topic three:
-    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, topicThreeToOwenUrl);
+    waitForActSumEmail(siteId, owen.emailAddress, topicThreeToOwenUrl);
   });
 
   it("Maria clicks Unsubscribe and changes summary email interval to one month", () => {
@@ -298,19 +308,19 @@ describe("summary emails", () => {
   it("... two weeks elapses, no one gets any summary email", () => {
     server.playTimeDays(14 + 1);
     // Still topic one:
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, modya.emailAddress, topicOneEveryoneUrl);
     // Still topic two:
-    server.waitUntilLastEmailMatches(siteId, mons.emailAddress, topicTwoToSomeUrl);
-    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, mons.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, michael.emailAddress, topicTwoToSomeUrl);
     // Still topic three:
-    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, topicThreeToOwenUrl);
+    waitForActSumEmail(siteId, owen.emailAddress, topicThreeToOwenUrl);
     // Still topic four: (not five)
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicFourToMariaUrl);
+    waitForActSumEmail(siteId, maria.emailAddress, topicFourToMariaUrl);
   });
 
   it("... a month elapses, Maria gets a summary email", () => {
     server.playTimeDays(31 + 1 - 14 - 1);
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicFiveMariaMonthUrl);
+    waitForActSumEmail(siteId, maria.emailAddress, topicFiveMariaMonthUrl);
   });
 
   it("Maria totally unsubscribes: goes to the unsub page", () => {
@@ -346,13 +356,14 @@ describe("summary emails", () => {
 
   it("Trillian posts 'lastTopicMichael'", () => {
     trilliansBrowser.go(idAddress.origin);
-    trilliansBrowser.complex.createAndSaveTopic({ title: lastTopicMichael, body: lastTopicMichael });
+    trilliansBrowser.complex.createAndSaveTopic({
+          title: lastTopicMichael, body: lastTopicMichael });
     lastTopicMichaelUrl = trilliansBrowser.getUrl();
   });
 
   it("... a week elapses, Michael gets a summary email", () => {
     server.playTimeDays(7 + 1);
-    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, lastTopicMichaelUrl);
+    waitForActSumEmail(siteId, michael.emailAddress, lastTopicMichaelUrl);
   });
 
   it("... two months elapses, but no one gets any more summary emails", () => {
@@ -360,15 +371,15 @@ describe("summary emails", () => {
     // Also wait for a short while, so the server gets time to send the wrong stuff.
     wdioBrowser.pause(2100);  // COULD do some remote request to the server, and ask, instead.
     // Still topic one:
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl);
+    waitForActSumEmail(siteId, modya.emailAddress, topicOneEveryoneUrl);
     // Still topic two:
-    server.waitUntilLastEmailMatches(siteId, mons.emailAddress, topicTwoToSomeUrl);
+    waitForActSumEmail(siteId, mons.emailAddress, topicTwoToSomeUrl);
     // Still topic three:
-    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, topicThreeToOwenUrl);
+    waitForActSumEmail(siteId, owen.emailAddress, topicThreeToOwenUrl);
     // Topic five:
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicFiveMariaMonthUrl);
+    waitForActSumEmail(siteId, maria.emailAddress, topicFiveMariaMonthUrl);
     // The very last one:
-    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, lastTopicMichaelUrl);
+    waitForActSumEmail(siteId, michael.emailAddress, lastTopicMichaelUrl);
   });
 
 });

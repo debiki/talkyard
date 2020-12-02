@@ -203,7 +203,7 @@ trait SummaryEmailsDao {
       subject = subject, bodyHtmlText = (emailId: String) => "?")
 
     val contents = {
-      <div>
+      <div class="e_ActSumEm">
         <p>Dear {member.username},</p>
         <p>Recent activity at {siteName}:</p>
         <h3>Some new topics:</h3>

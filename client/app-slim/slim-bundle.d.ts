@@ -2,6 +2,7 @@
 /// <reference path="server-vars.d.ts" />
 /// <reference path="model.ts" />
 /// <reference path="translations.d.ts" />
+/// <reference path="../reactjs-types.ts" />
 
 declare const t: TalkyardTranslations;
 
@@ -297,6 +298,7 @@ declare namespace debiki2 {
   function isNullOrUndefined(x): boolean;
   function isDefined2(x): boolean;  // = !_.isUndefined
   function nonEmpty(x): boolean;
+  function isNumGeZ(value: St): Bo;
   function isDigitsOnly(maybeDigits: string): boolean;
   function prettyNum(num: number): number;
   function isBlank(x: string): boolean;
@@ -317,6 +319,8 @@ declare namespace debiki2 {
   var isGuest;
   function pat_isGuest(pat: UserInclDetails | Me | Pat): Bo;
   function user_isGuest(pat: UserInclDetails | Me | Pat): Bo;
+  function pat_isSys(pat: Pat): Bo;
+  function pat_isStaff(pat: Me | Pat): Bo;
   function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean;
   var page_isGroupTalk;
 
@@ -353,7 +357,7 @@ declare namespace debiki2 {
   function store_maySendInvites(store: Store, user: Myself | UserInclDetails): MayMayNot;
   var isMember;
   var userId_isGuest;
-  function site_isFeatFlagOn(site: { siteFeatureFlags?: St }, featureFlag: St): Bo;
+  function store_isFeatFlagOn(store: Store, featureFlag: St): Bo;
   function store_isNoPage(store: Store): boolean;
   function store_isPageDeleted(store: Store): boolean;
   function store_canDeletePage(store: Store): boolean;
@@ -420,6 +424,9 @@ declare namespace debiki2 {
   function notfPref_title(notfPref: EffPageNotfPref): string;
   function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPref, ppsById: PpsById): any;
   function makeWhyNotfLvlInheritedExpl(effPref: EffPageNotfPref, ppsById: PpsById);
+
+  function emailPref_title(emailNotfPref: EmailNotfPrefs): RElm | St;
+  function emailPref_descr(emailNotfPref: EmailNotfPrefs): RElm | St;
 
   namespace edithistory {
 

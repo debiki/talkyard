@@ -42,6 +42,21 @@ class QuickMessageException(val message: String)
 }
 
 
+class NotFoundEx(message: ErrMsg) extends QuickException {
+  override def getMessage: St = message
+}
+
+
+class BadRequestEx(message: ErrMsg) extends QuickException {
+  override def getMessage: St = message
+}
+
+
+class ForbiddenEx(message: ErrMsg) extends QuickException {
+  override def getMessage: St = message
+}
+
+
 class DebikiException(val errorCode: String, val details: String)
   extends QuickException {
 

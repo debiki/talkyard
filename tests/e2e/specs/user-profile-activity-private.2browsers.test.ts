@@ -87,11 +87,14 @@ describe("user profile access:", () => {
   // ----- Hide activity for strangers
 
 
-  it("Maria hides her activity for strangers", () => {
+  it("Maria goes to her privacy tab", () => {
     mariasBrowser.userProfilePage.openActivityFor(maria.username, idAddress.origin);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
     mariasBrowser.userProfilePage.goToPreferences();
     mariasBrowser.userProfilePage.preferences.switchToPrivacy();
+  });
+
+  it("... hides her activity for strangers", () => {
     mariasBrowser.userProfilePage.preferences.privacy.setHideActivityForStrangers(true);
     mariasBrowser.userProfilePage.preferences.privacy.savePrivacySettings();
   });

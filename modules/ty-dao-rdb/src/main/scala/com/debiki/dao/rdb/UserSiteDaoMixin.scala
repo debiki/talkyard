@@ -342,8 +342,10 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         summary_email_if_active,
         -- grants_trust_level,  — later
         ui_prefs,
+        max_upload_bytes_c,
+        allowed_upload_extensions_c,
         is_group)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, true)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true)
       """
     val values = List(
       siteId.asAnyRef,
@@ -355,7 +357,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       group.summaryEmailIntervalMins.orNullInt,
       group.summaryEmailIfActive.orNullBoolean,
       //group.grantsTrustLevel.map(_.toInt).orNullInt,
-      group.uiPrefs.orNullJson)
+      group.uiPrefs.orNullJson,
+      group.perms.maxUploadBytes.orNullInt,
+      group.perms.allowedUplExts.orNullVarchar)
     runUpdateExactlyOneRow(sql, values)
   }
 
@@ -389,7 +393,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         summary_email_interval_mins = ?,
         summary_email_if_active = ?,
         -- grants_trust_level = ?,  — later
-        ui_prefs = ?
+        ui_prefs = ?,
+        max_upload_bytes_c = ?,
+        allowed_upload_extensions_c = ?
       where site_id = ?
         and user_id = ?
       """
@@ -402,6 +408,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       group.summaryEmailIfActive.orNullBoolean,
       //group.grantsTrustLevel.map(_.toInt).orNullInt,
       group.uiPrefs.orNullJson,
+      group.perms.maxUploadBytes.orNullInt,
+      group.perms.allowedUplExts.orNullVarchar,
       siteId.asAnyRef,
       group.id.asAnyRef)
 
@@ -637,12 +645,15 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  private def loadMemberByPrimaryEmailOrUsernameImpl(emailOrUsername: String, maybeEmail: Boolean)
-        : Option[Member] = {
-    val values = ArrayBuffer[AnyRef](siteId.asAnyRef, emailOrUsername)
+  private def loadMemberByPrimaryEmailOrUsernameImpl(emailOrUsername: St, maybeEmail: Bo)
+        : Opt[Member] = {
+    val values = MutArrBuf[AnyRef](siteId.asAnyRef, emailOrUsername)
     val emailEqOr = if (!maybeEmail) "" else {
       values.append(emailOrUsername)
-      "u.primary_email_addr = ? or"
+      // Talkyard already converts email to lowercase before storing in the database,
+      // (see db fn email_seems_ok())
+      // — so do a case insensitive comparison here. Also see [email_casing].
+      "u.primary_email_addr = lower(?) or"
     }
 
     // [UNPUNCT]

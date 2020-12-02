@@ -277,7 +277,7 @@ trait PostsDao {
         origPostReplyBtnTitle = page.parts.origPostReplyBtnTitle,
         origPostVotes = page.parts.origPostVotes,
         // Should be the same — the page type didn't change (we're just adding a reply).
-        postsOrderNesting = page.parts.postsOrderNesting)
+        anyPostOrderNesting = Some(page.parts.postsOrderNesting))
       updatePagePopularity(pagePartsInclNewPost, tx)
 
       staleStuff.addPageId(pageId)

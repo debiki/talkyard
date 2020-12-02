@@ -24,7 +24,7 @@ httpc:connect("app", 9000)
 
 -- COULD parse the request body and split at the form-data boundaries,
 -- to find out how large each file is, in case there're many uploads in
--- the same request.
+-- the same request.  And to check mime types and file extensions [pre_chk_upl_ext].
 -- See: https://www.gakhov.com/articles/
 --          implementing-api-based-fileserver-with-nginx-and-lua.html
 -- COULD calculate Sha256 hashes of these individual files, and ask the

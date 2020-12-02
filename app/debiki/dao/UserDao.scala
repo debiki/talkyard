@@ -1796,7 +1796,7 @@ trait UserDao {
   }
 
 
-  def saveMemberPrivacyPrefs(preferences: MemberPrivacyPrefs, byWho: Who): Unit = {
+  def saveMemberPrivacyPrefs(preferences: MemberPrivacyPrefs, byWho: Who): MemberInclDetails = {
     editMemberThrowUnlessSelfStaff(preferences.userId, byWho, "TyE4AKT2W", "edit privacy prefs") { tx =>
       val memberBefore = tx.loadTheUserInclDetails(preferences.userId)  // [7FKFA20]
       val memberAfter = memberBefore.copyWithNewPrivacyPrefs(preferences)
@@ -1808,14 +1808,15 @@ trait UserDao {
   }
 
 
-  def saveAboutMemberPrefs(preferences: AboutUserPrefs, byWho: Who): Unit = {
+  def saveAboutMemberPrefs(preferences: AboutUserPrefs, byWho: Who): MemberInclDetails = {
     // Similar to saveAboutGroupPrefs below. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
     var clearMemCacheAfterTx = false
 
-    editMemberThrowUnlessSelfStaff2(preferences.userId, byWho, "TyE2WK7G4", "configure about prefs") {
-        (tx, _, me) =>
+    val membAft = editMemberThrowUnlessSelfStaff2(
+          preferences.userId, byWho, "TyE2WK7G4", "configure about prefs") {
+              (tx, _, me) =>
 
       val user = tx.loadTheUserInclDetails(preferences.userId)  // [7FKFA20]
 
@@ -1866,6 +1867,8 @@ trait UserDao {
       memCache.clearThisSite()
     }
     removeUserFromMemCache(preferences.userId)
+
+    membAft
   }
 
 
@@ -1957,8 +1960,20 @@ trait UserDao {
   }
 
 
+  def savePatPerms(patId: PatId, perms: PatPerms, byWho: Who): U = {
+    editMemberThrowUnlessSelfStaff2(patId, byWho, "TyE3ASHW6703", "edit pat perms") {
+        (tx, memberInclDetails, _) =>
+      val groupBef: Group = memberInclDetails.asGroupOr(ThrowForbidden)
+      val groupAft = groupBef.copy(perms = perms)
+      tx.updateMemberInclDetails(groupAft)
+    }
+    removeUserFromMemCache(patId)
+    memCache.remove(allGroupsKey)
+  }
+
+
   def saveUiPrefs(memberId: UserId, prefs: JsObject, byWho: Who): Unit = {
-    editMemberThrowUnlessSelfStaff2(memberId, byWho, "TyE3ASHW67", "change UI prefs") {
+    editMemberThrowUnlessSelfStaff2(memberId, byWho, "TyE3ASHWB67", "change UI prefs") {
         (tx, memberInclDetails, _) =>
       tx.updateMemberInclDetails(memberInclDetails.copyTrait(uiPrefs = Some(prefs)))
     }
@@ -2234,8 +2249,8 @@ trait UserDao {
   }
 
 
-  private def editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: String,
-        mayNotWhat: String)(block: SiteTransaction => R): R = {
+  private def editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: St,
+        mayNotWhat: St)(block: SiteTx => U): MemberInclDetails = {
     editMemberThrowUnlessSelfStaff2[R](userId, byWho, errorCode, mayNotWhat) { (tx, _, _) =>
       block(tx)
     }
@@ -2250,8 +2265,9 @@ trait UserDao {
     *
     * block = (tx, member-to-edit, me) => side effects...  .
     */
-  private def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: String,
-        mayNotWhat: String)(block: (SiteTransaction, MemberInclDetails, User) => R): R = {
+  private def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: St,
+        mayNotWhat: St)(block: (SiteTransaction, MemberInclDetails, User) => U)
+        : MemberInclDetails = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
 
@@ -2271,9 +2287,11 @@ trait UserDao {
       // Would be more usable; sometimes loaded anyway [7FKFA20]
       val member = tx.loadTheMemberInclDetails(userId)
       throwForbiddenIf(member.isAdmin && !me.isAdmin,
-          errorCode + "-ISADM", s"May not $mayNotWhat for admins")
+          errorCode + "-ISADM", s"May not $mayNotWhat for admins") // [mod_0_conf_adm]
 
       block(tx, member, me)
+
+      tx.loadTheMemberInclDetails(userId)
     }
   }
 

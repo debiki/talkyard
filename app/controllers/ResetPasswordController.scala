@@ -111,7 +111,12 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     throwForbiddenIf(requester.id != forUserId && !requester.isStaff,
       "TyE305MRKT2", "Cannot reset password for other people")
 
-    val member = dao.loadTheUserInclDetailsById(forUserId)
+    val member =
+          try dao.loadTheUserInclDetailsById(forUserId)
+          catch {
+            case _: GotAGroupException =>
+              throwForbidden("TyE50AMWG5", s"User $forUserId a group not a user")
+          }
 
     throwForbiddenIf(member.isAdmin && !requester.isAdmin,
       "TyE607MAST2", "Cannot reset password for admins")

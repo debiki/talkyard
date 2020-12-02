@@ -544,14 +544,19 @@ const ExtIdpAuthnBtn = createClassAndFactory({
       // Try-catch not needed, but anyway.
       try {
         const store: Store = ReactStore.allData();
-        useServerGlobalIdp = site_isFeatFlagOn(store, 'ffUseScribeJava');
-        const mainWin = getMainWin();
-        useServerGlobalIdp ||= mainWin.location.hash.indexOf('&tryScribeJava&') >= 0;
-        // Only FB and Google via ScribeJava right now:
+        useServerGlobalIdp =
+              debiki2.store_isFeatFlagOn(store, 'ffUseScribeJava') ||
+              getMainWin().location.hash.indexOf('&tryScribeJava&') >= 0;
+        useServerGlobalIdp &&= !debiki2.store_isFeatFlagOn(store, 'ffNotScribeJava');
+        // Twitter (OAuth1) doesn't yet work via ScribeJava; only these do (OAuth2):
         useServerGlobalIdp &&= providerLowercase === 'google' ||
-                providerLowercase === 'facebook';
+                providerLowercase === 'facebook' ||
+                providerLowercase === 'github' ||
+                providerLowercase === 'linkedin' ;
       }
       catch (ex) {
+        logD(`Srv glob idp err [TyE406MRKD2]`, ex);
+        useServerGlobalIdp = false;
       }
     }
 

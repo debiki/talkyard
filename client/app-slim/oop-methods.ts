@@ -50,6 +50,12 @@ export function event_isCmdShiftClick(event): boolean {
 }
 
 
+export function event_canBeKeyTarget(event: KeyboardEvent): Bo {
+  const anyTagName: St | Nl = (event.target as Elm | Nl)?.tagName;
+  return anyTagName === 'INPUT' || anyTagName === 'TEXTAREA' || anyTagName === 'SELECT';
+}
+
+
 export function urlPath_isToPageId(urlPath: string, pageId: PageId): boolean {
   const idPathRegex = new RegExp(`^.*/-${pageId}(/.*)?$`);  // [2WBG49]
   return idPathRegex.test(urlPath);
@@ -499,6 +505,44 @@ export function makeWhyNotfLvlInheritedExpl(effPref: EffPageNotfPref, ppsById: P
   return inheritedOrDefault + fromUserName + forWholeSite + onCategory;
 }
 
+
+export function emailPref_title(emailNotfPref: EmailNotfPrefs): St {
+  switch (emailNotfPref) {
+    case EmailNotfPrefs.ReceiveAlways: return "Always";
+    case EmailNotfPrefs.Unspecified: // the default is then Receive
+    case EmailNotfPrefs.Receive: return "About unread";
+    case EmailNotfPrefs.DirectMessagesFromStaff: return "Direct messages from staff";
+    case EmailNotfPrefs.DontReceive: return "No";
+  }
+  // @ifdef DEBUG
+  die(`Bad email notf pref: ${emailNotfPref} [TyE2AKS6RMY1]`);
+  // @endif
+  return "TyE7G5MA24";
+}
+
+
+export function emailPref_descr(emailNotfPref: EmailNotfPrefs): RElm | St {
+  switch (emailNotfPref) {
+    case EmailNotfPrefs.ReceiveAlways:
+      return "Get emailed about mentions and replies etc, " +
+            "also if you're here and have seen them already";
+    case EmailNotfPrefs.Unspecified: // the default is then Receive
+    case EmailNotfPrefs.Receive:
+      return "Get emailed about mentions and replies etc " +
+        "that you haven't read";
+    case EmailNotfPrefs.DirectMessagesFromStaff:
+      // Don't need to repeat "to you" here again.
+      return "Only get emailed about direct messages from staff";
+    case EmailNotfPrefs.DontReceive:
+      return "Don't send emails to you (only about account security)";
+  }
+  // @ifdef DEBUG
+  die('TyE2AKS6RMY2');
+  // @endif
+  return 'TyE7B5AMF4';
+}
+
+
 export function post_isWiki(post: Post): boolean {
   // Skip PostType.StaffWiki, using the permission system instead. [NOSTAFFWIKI]
   return post.postType === PostType.CommunityWiki;
@@ -658,8 +702,9 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 //----------------------------------
 
 
-export function site_isFeatFlagOn(site: { siteFeatureFlags?: St }, featureFlag: St): Bo {
-  return _.includes(site.siteFeatureFlags, featureFlag);
+export function store_isFeatFlagOn(store: Store, featureFlag: St): Bo {
+  return _.includes(store.siteFeatureFlags, featureFlag) ||
+         _.includes(store.serverFeatureFlags, featureFlag);
 }
 
 

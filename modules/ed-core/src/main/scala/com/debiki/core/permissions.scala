@@ -19,6 +19,57 @@ package com.debiki.core
 
 import com.debiki.core.Prelude._
 
+
+
+case class EffPatPerms(
+  maxUploadSizeBytes: i32,
+  allowedUploadExtensions: Set[St])
+
+
+
+/** Permissions across the whole site granted to a group.
+  *
+  * Can move more perms to here  [more_pat_perms].
+  */
+case class PatPerms (
+  maxUploadBytes: Opt[i32],
+  allowedUplExts: Opt[St],
+)(usingPatPermsCreate: Bo) {
+
+  // Maybe cache?
+  def allowedUplExtensionsAsSet: Set[St] =
+    allowedUplExts.map(_.split(" ").flatMap(_.trimNoneIfEmpty).toSet[St])
+          .getOrElse(Set.empty)
+}
+
+
+object PatPerms {  REFACTOR // add ifBad: Complain  to "all" case classes  instead?
+  def empty: PatPerms = create(ifBad = Die)
+
+  def create(ifBad: DieOrComplain,
+        maxUploadBytes: Opt[i32] = None,
+        allowedUplExts: Opt[St] = None): PatPerms = {
+
+    allowedUplExts foreach { exts =>
+      val max = 1500
+      dieOrComplainIf(exts.length > max, s"Too long extensions list, ${exts.length
+            } chars, max: $max [TyE3056RMD27]", ifBad)
+      Validation.ifBadFileExtCommaList(exts, NoSiteId, _ => dieOrComplain(
+            s"Bad file exts list: $exts [TyE306MS4A]", ifBad))
+    }
+
+    maxUploadBytes foreach { maxBytes =>   // [server_limits]
+      dieOrComplainIf(maxBytes < 0, s"Max bytes negative: $maxBytes [TyE3056RMD24]",
+          ifBad)
+    }
+
+    PatPerms(maxUploadBytes = maxUploadBytes,
+          allowedUplExts = allowedUplExts.noneIfBlank,
+          )(usingPatPermsCreate = true)
+  }
+}
+
+
 case class PatsDirectPerms(
   permsOnSite: collection.immutable.Seq[PermsOnSite],
   permsOnPages: collection.immutable.Seq[PermsOnPages])

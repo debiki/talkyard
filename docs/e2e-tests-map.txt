@@ -111,9 +111,15 @@ login -
   oidc:
     sign up witk Keycloak:
     log in with Keycloak:
+  ScribeJava:
+    login with 2 IDPs in parallel, say, Gmail, GitHub:  TESTS_MISSING
   link identity to user:
     server global idp, e.g. Gmail:   TESTS_MISSING
     site custom idp, e.g. Keycloak:
+  link OAuth2 identity to other OAuth2 identity:  TESTS_MISSING
+    different email casing:  TESTS_MISSING
+  link password acct to OAuth2 identity:  TESTS_MISSING
+
 
 sso,
 single-sign-on:  (3093533)
@@ -179,7 +185,13 @@ profile page, user:
           - user-profile-change-email.test.ts  TyT305MHPJ25
   add gmail addr:
 
-  self delete, gdpr:
+  rename guest:
+          - TESTS_MISSING
+  delete pat:
+    delete guest:
+    delete user:
+    delete group:
+    self delete, gdpr:
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
 
 
@@ -293,6 +305,10 @@ emails -
     via user profile page:
   add email address, send verification email:
             - user-profile-change-email.test.ts  TyT305MHPJ25
+  activity summary emails:
+          - summary-emails.2br.mtime  TyTE2E06AJG256
+    new members' topics excluded until reviewed by staff:
+          - TESTS_MISSING
 
 getting started guide -
   guide present:
@@ -526,6 +542,14 @@ discussion -
       B2
       B3  -- check indentation depth
   live updates:  (4FE2)
+
+  nesting depth of replies:
+
+  sort order of replies:
+    best first:
+          - votes-and-best-first.test.ts
+    oldest first:
+    newest first:
 
 large pages,
 really large:
@@ -1060,6 +1084,8 @@ live notifications -
   misc chat:
           - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+  disconnected from chat, if removed from chat:
+          - SEC_TESTS_MISSING  TyT6P03MRKD
 
 notf prefs inherited:
   one's own, from site, to cat, to topic:
@@ -1072,6 +1098,8 @@ notf prefs inherited:
           - notf-prefs-custom-groups.2browsers.test.ts   TyT05NMSS4
 
 email notifications:  (5ABKR024)
+  change between Always / Unread / Only from staff / No / Never:
+          - TESTS_MISSING   TyTE2E693RTMPG
   to staff when new member waiting to get approved to join the site:
           - settings-approve-members.2browsers.test.ts  TyT2HUWX8.TyTE2E502AHL4
   to new members when membership approved:

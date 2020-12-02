@@ -885,7 +885,13 @@ sealed trait ParticipantInclDetails {
   def about: Option[String] = None    ; RENAME // to bio
   def website: Option[String] = None  ; RENAME // to websiteUrl
   def country: Option[String] = None  ; SHOULD // CHANGE to  location somehow, opt incl city
+
+  def asGroupOr(doWhat: DieOrComplain): Group = this match {
+    case g: Group => g
+    case _ => dieOrComplain("Not a group [TyE6502MRA6]", doWhat)
+  }
 }
+
 
 
 sealed trait MemberInclDetails extends ParticipantInclDetails {
@@ -1081,6 +1087,7 @@ case class UserInclDetails( // ok for export
     fullName = fullName,
     username = username,
     emailAddress = primaryEmailAddress,
+    emailPref = emailNotfPrefs,
     summaryEmailIntervalMins = summaryEmailIntervalMins,
     summaryEmailIfActive = summaryEmailIfActive,
     about = about,
@@ -1096,6 +1103,7 @@ case class UserInclDetails( // ok for export
       fullName = preferences.fullName,
       username = preferences.username,
       primaryEmailAddress = newEmailAddress,
+      emailNotfPrefs = preferences.emailPref,
       summaryEmailIntervalMins = preferences.summaryEmailIntervalMins,
       summaryEmailIfActive = preferences.summaryEmailIfActive,
       about = preferences.about,
@@ -1199,6 +1207,7 @@ case class AboutUserPrefs(
   fullName: Option[String],
   username: String,
   emailAddress: String,
+  emailPref: EmailNotfPrefs,               //
   summaryEmailIntervalMins: Option[Int],   // REFACTOR break out to EmailPrefs [REFACTORNOTFS]
   summaryEmailIfActive: Option[Boolean],   //
   about: Option[String],
@@ -1296,6 +1305,8 @@ case class GroupAndStats(group: Group, stats: Option[GroupStats])
 
 /** Groups have a username but no trust level. Members have username and trust level.
   * A group can, however, auto-grant trust level 'grantsTrustLevel' to all its members.
+  *
+  * Groups can have permissions, e.g. max file upload size.
   */
 case class Group( // [exp] missing: createdAt, add to MemberInclDetails & ParticipantInclDetails?
   id: UserId,
@@ -1306,10 +1317,12 @@ case class Group( // [exp] missing: createdAt, add to MemberInclDetails & Partic
   // emailAddr: String  <— if adding later, don't forget to update this: [306KWUSSJ24]
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
-  summaryEmailIntervalMins: Option[Int] = None,
-  summaryEmailIfActive: Option[Boolean] = None,
+  summaryEmailIntervalMins: Option[Int] = None,  // REFACTOR break out to EmailPrefs [REFACTORNOTFS] -----
+  summaryEmailIfActive: Option[Boolean] = None,  //
   grantsTrustLevel: Option[TrustLevel] = None,
-  uiPrefs: Option[JsObject] = None)
+  uiPrefs: Option[JsObject] = None,
+  perms: PatPerms = PatPerms.empty,
+)
   extends Member with MemberInclDetails {  // COULD split into two? One without, one with details
 
   require(id >= Group.EveryoneId, "TyE4J5RKH24")

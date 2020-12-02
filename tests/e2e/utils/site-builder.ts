@@ -30,7 +30,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
   const api = {
     theSite: site,
 
-    getSite: function(): SiteData {
+    getSite: function(): SiteData2 {
       return site;
     },
 

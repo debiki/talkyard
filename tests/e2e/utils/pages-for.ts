@@ -19,7 +19,8 @@ import * as tyAssert from '../utils/ty-assert';
 
 // ... Use die() and dieIf(), though, if an e2e test is broken
 // (rather than Talkyard itself).
-import { getOrCall, die, dieIf, logUnusual, logDebug, logError, logErrorIf,
+import { getOrCall, die, dieIf, logUnusual, logDebug,
+    logError, logErrorNoTrace, logErrorIf,
     logWarning, logWarningIf,
     logException, logMessage, logMessageIf, logBoring,
     logServerRequest, printBoringToStdout } from './log-and-die';
@@ -75,6 +76,7 @@ function makeTimeoutMs(suggestedTimeoutMs?: number): number {
 }
 
 
+type WElm = WebdriverIO.Element;
 type ElemRect = { x: number, y: number, width: number, height: number };
 
 
@@ -90,6 +92,7 @@ interface WaitPs {   // ps = params
   timeoutMs?: Nr;
   timeoutIsFine?: Bo;
   serverErrorDialogIsFine?: Bo;
+  winClosedIsFine?: Bo;
   message?: StringOrFn;
 }
 
@@ -184,6 +187,24 @@ function allBrowserValues(result) {
 }
 
 
+function tryOrIfWinCloses<R>(toTry: () => R, ifWinCloses: R | U): R {
+  try {
+    return toTry();
+  }
+  catch (ex) {
+    if (!isWindowClosedException(ex)) {
+      throw ex;
+    }
+    if (_.isUndefined(ifWinCloses)) {
+      logErrorNoTrace(`Win closed [TyMWINCLSD04]`);
+      throw ex;
+    }
+    logUnusual(`Win closed, returning: ${ifWinCloses}  [TyMWINCLSD03]`);
+    return ifWinCloses;
+  }
+}
+
+
 function isWindowClosedException(ex): boolean {
   // (Don't check for "no such window" — that might mean something else,
   // e.g. the window never existed at all.)
@@ -202,7 +223,7 @@ function isWindowClosedException(ex): boolean {
 function isBadElemException(ex): boolean {
   // Webdriver says one of these: (what's the difference?)
   const StaleElem1 = 'Request encountered a stale element';
-  const StaleElem2 = 'stale element reference: element is not attached to the page document'
+  const StaleElem2 = 'stale element reference: ';
   // Puppeteer instead says:
   const CannotFindId = 'Cannot find context with specified id';
   const exStr = ex.toString();
@@ -248,17 +269,24 @@ export class TyE2eTestBrowser {
 
   // The global $ might be for the wrong this.#br somehow, so:
 
-  $(selector: string | Function | object): WebdriverIO.Element {
+  $(selector: St | Function | object): WElm {
     // Webdriver doesn't show the bad selector in any error message.
     dieIf(!_.isString(selector),
-        `Selector is not a string: ${typeAndAsString(selector)}  [TyEE2E506QKSG35]`);
+          `Selector is not a string: ${typeAndAsString(selector)}  [TyEE2E506QKSG35]`);
     try {
       return this.#br.$(selector);
     }
     catch (ex) {
-      // Webdriverio oddly enough won't print the bad selector, so won't know
-      // what it is, unless:
-      logError(`Webdriverio browser.$(..) error caused by selector:  "${selector}"`);
+      if (isWindowClosedException(ex)) {
+        // This might be fine — happens when interacting with ext IDPS: their
+        // login popups close a bit unpredictably. So don't log an error.
+        logUnusual(`Window closed when looking for: ${selector}`)
+      }
+      else {
+        // Webdriverio oddly enough won't print the bad selector, so won't know
+        // what it is, unless:
+        logError(`Webdriverio browser.$(..) error caused by selector:  "${selector}"`);
+      }
       throw ex;
     }
   }
@@ -564,14 +592,15 @@ export class TyE2eTestBrowser {
       const timeoutMs = makeTimeoutMs(ps.timeoutMs);
       const startMs = Date.now();
       let loggedAnything = false;
-      let loggedErrorAlready = false;
+      let loggedError = false;
+      const getMsg = () => getOrCall(ps.message) || "Waiting for something";
 
       try {
         do {
           const done = fn();
           if (done) {
             if (loggedAnything) {
-              logMessage(`Done: ${ getOrCall(ps.message) || "Waiting for something." }`);
+              logMessage(`Done: ${getMsg()}`);
             }
             return true;
           }
@@ -579,8 +608,7 @@ export class TyE2eTestBrowser {
           elapsedMs = Date.now() - startMs;
           if (elapsedMs > AnnoyinglyLongMs) {
             loggedAnything = true;
-            logMessage(`${elapsedMs} ms elapsed: ${
-                getOrCall(ps.message) || "Wait until what?" } ...`);
+            logMessage(`${elapsedMs} ms elapsed: ${getMsg()} ...`);
           }
 
           // Any unrecoverable error dialog? E.g. the server replied Error to a request.
@@ -592,7 +620,7 @@ export class TyE2eTestBrowser {
           const waitingForServerError = () => getOrCall(ps.message)?.indexOf('s_SED_Msg') >= 0;
           if (elapsedMs > 500 && !waitingForServerError() && !ps.serverErrorDialogIsFine) {
             if (this.serverErrorDialog.isDisplayed()) {
-              loggedErrorAlready = true;
+              loggedError = true;
               this.serverErrorDialog.failTestAndShowDialogText();
             }
           }
@@ -613,17 +641,27 @@ export class TyE2eTestBrowser {
         while (elapsedMs < timeoutMs);
       }
       catch (ex) {
-        logErrorIf(!loggedErrorAlready, `Error in this.waitUntil(): [TyEE2EWAIT]\n`, ex);
+        if (isWindowClosedException(ex)) {
+          if (ps.winClosedIsFine) {
+            logUnusual(`Win closed, thas's fine:  ${getMsg()}`);
+            return false;
+          }
+          logError(`Win closed:  ${getMsg()}`);
+        }
+        else {
+          logErrorIf(!loggedError,
+                `Error in this.waitUntil() when:  ${getMsg()}  [TyEE2EWAIT]\n`, ex);
+        }
+
         throw ex;
       }
 
       if (ps.timeoutIsFine === true) {
-        const what = getOrCall(ps.message) ||  "Something";
-        logUnusual(`Timed out, but that's fine:  ${what}`);
+        logUnusual(`Timed out, that's fine:  ${getMsg()}`);
       }
       else {
-        tyAssert.fail(
-            `this.waitUntil() timeout after ${elapsedMs} millis  [TyEE2ETIMEOUT]`);
+        tyAssert.fail(`this.waitUntil() timeout after ${elapsedMs} ms:  ${
+              getMsg()}  [TyEE2ETIMEOUT]`);
       }
 
       return false;
@@ -1276,22 +1314,34 @@ export class TyE2eTestBrowser {
     }
 
 
-    count(selector: string): number { return this.$$(selector).length }
+    count(selector: St): Nr {
+      return tryOrIfWinCloses(() => this.$$(selector).length, undefined);
+    }
 
 
-    isExisting(selector: string): boolean { return this.$(selector).isExisting() }
+    isExisting(selector: St): Bo {
+      return tryOrIfWinCloses(() => this.$(selector).isExisting(), undefined);
+    }
 
-    isEnabled(selector: string): boolean {
-      const elem = this.$(selector);
+
+    isEnabled(selector: St): Bo {
+      const elem: WElm = this.$(selector);
       // Sometimes these methods are missing, why?  [MISSINGFNS]
-      return elem && elem.isExisting?.() && elem.isDisplayed?.() && elem.isEnabled?.();
+      const enabled = elem?.isExisting?.() && elem.isDisplayed?.() && elem.isEnabled?.();
+      return !!enabled;
     }
 
-    isVisible(selector: string): boolean {
-      // Sometimes the methods below are missing, weird.  [MISSINGFNS]
-      const elem = this.$(selector);
-      return elem && elem.isExisting?.() && elem.isDisplayed?.();
+
+    isVisible(selector: St): Bo {
+      // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
+      // Maybe if win closed so elem gone?
+
+      const elem: WElm = this.$(selector);
+      // Skip isExisting()?
+      const displayed = elem?.isExisting?.() && elem.isDisplayed?.();
+      return !!displayed;
     }
+
 
     // Makes it simple to find out which, of many, selectors won't appear,
     // or won't go away.
@@ -1320,9 +1370,10 @@ export class TyE2eTestBrowser {
     }
 
 
+    // DEPRECATED use waitUntilGone  instead?
     waitForNotVisible(selector: string, timeoutMillis?: number) {
       for (let elapsed = 0; elapsed < timeoutMillis || true ; elapsed += PollMs) {
-        if (!this.$(selector).isDisplayed())
+        if (!this.isVisible(selector))
           return;
         this.#br.pause(PollMs);
       }
@@ -1385,7 +1436,12 @@ export class TyE2eTestBrowser {
         catch (ex) {
           if (isBadElemException(ex)) {
             // Fine, maybe it didn't appear yet?
+            logUnusual(`Bad element exception when waiting for:  ${
+                  selector} — retrying ...`);
             return false;
+          }
+          if (isWindowClosedException(ex)) {
+            logErrorNoTrace(`Window closed when waiting for:  ${selector}`);
           }
           throw ex;
         }
@@ -1593,7 +1649,7 @@ export class TyE2eTestBrowser {
         this.waitForMyDataAdded();
         this.#br.pause(delay);
         //logMessage(`waitAndClickLinkToNewPage ${selector} testing:`);
-        if (this.isVisible(selector) && this.isEnabled(selector)) {
+        if (this.isEnabled(selector)) {
           //logMessage(`waitAndClickLinkToNewPage ${selector} —> FOUND and ENABLED`);
           // count += 1;
           // if (count >= 6)
@@ -1624,8 +1680,14 @@ export class TyE2eTestBrowser {
             logMessage(`Seems is gone:  ${what}  — continuing ...`);
             return true;
           }
-          logWarning(`Exception when waiting for:  ${what}  to disappear [TyE3062784]:\n` +
-              ` ${ex.toString()}\n`);
+          if (isWindowClosedException(ex)) {
+            logWarning(`Window closed when waiting for: ${what
+                  } to disappear [TyE5F2AM63R]`);
+          }
+          else {
+            logWarning(`Exception when waiting for:  ${what}  to disappear [TyE3062784]:\n` +
+                ` ${ex.toString()}\n`);
+          }
           throw ex;
         }
       }, {
@@ -3206,7 +3268,20 @@ export class TyE2eTestBrowser {
     };
 
 
+    createUserDialog = {
+      isVisible: () => {
+        return this.isVisible('.esCreateUser');
+      },
+
+      // Most other fns in loginDialog below,  move to here?
+    };
+
+
     loginDialog = {
+      isVisible: () => {
+        return this.isVisible('.dw-login-modal') && this.isVisible('.esLD');
+      },
+
       refreshUntilFullScreen: () => {
         let startMs = Date.now();
         let dialogShown = false;
@@ -3216,7 +3291,7 @@ export class TyE2eTestBrowser {
           // Give the page enough time to load:
           lap += 1;
           this.#br.pause(200 * Math.pow(1.5, lap));
-          dialogShown = this.isVisible('.dw-login-modal') && this.isVisible('.esLD');
+          dialogShown = this.loginDialog.isVisible();
           if (dialogShown)
             break;
         }
@@ -3768,7 +3843,12 @@ export class TyE2eTestBrowser {
         const yesBtn = 'button[name="__CONFIRM__"]';
         this.waitUntil(() => {
           if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            logMessage(`Didn't get any "Would you like to continue?" question.`);
+            logMessage(`Popup closed, got no "Would you like to continue?" question.`);
+            return true;
+          }
+          if (this.createUserDialog.isVisible()) {
+            logMessage(`Continuing at Talkyard, same window as Facebook login`);
+            logWarningIf(!isInPopupAlready, `But this is the wrong win?`);
             return true;
           }
           try {
@@ -3780,6 +3860,7 @@ export class TyE2eTestBrowser {
           }
         }, {
           message: `Waiting for any FB "Continue?" question`,
+          winClosedIsFine: true,  // FB popup can close itself
         });
 
         if (!isInPopupAlready) {
@@ -4639,10 +4720,12 @@ export class TyE2eTestBrowser {
         this.waitUntilModalGone();
       },
 
-      uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: string) => {
+      uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: St,
+            ps: { waitForBadExtErr?: Bo, waitForTooLargeErr?: Bo } = {}) => {
         //this.waitAndClick('.e_UplB');
         // There'll be a file <input> not interactable error, unless we change
         // its size to sth larger than 0 x 0.
+        this.waitForExist('.e_EdUplFI');
         this.#br.execute(function() {
           var elem = document.querySelector('.e_EdUplFI');
           // Use ['style'] because this:  elem.style  causes a compilation error.
@@ -4650,13 +4733,22 @@ export class TyE2eTestBrowser {
           elem['style'].height = '20px';
         });
         this.waitAndSelectFile('.e_EdUplFI', whichDir, fileName);
+        if (ps.waitForBadExtErr) {
+          this.waitForVisibleText('.s_UplErrD .s_UplErrD_UplNm');
+          this.stupidDialog.close();
+        }
+        if (ps.waitForTooLargeErr) {
+          this.waitForVisibleText('.s_UplErrD .e_FlTooLg');
+          this.stupidDialog.close();
+        }
       },
 
       cancelNoHelp: () => {  // REMOVE just use cancel() now, help dialog removed
         const buttonSelector = '#debiki-editor-controller .e_EdCancelB';
         this.waitAndClick(buttonSelector);
         // waitForGone won't work — the editor just gets display:none but is still there.
-        this.waitForNotVisible(buttonSelector);
+        logWarning(`Trying  this.waitUntilGone(buttonSelector)  although won't work?`);
+        this.waitUntilGone(buttonSelector);  // waitForNotVisible
       },
 
       cancel: () => {
@@ -5284,7 +5376,7 @@ export class TyE2eTestBrowser {
 
       canEditPostNr: (postNr: number): boolean => {
         const selector = `#post-${postNr} + .esPA .dw-a-edit`;
-        return this.isVisible(selector) && this.isEnabled(selector);
+        return this.isEnabled(selector);
       },
 
       clickEditOrigPost: () => {
@@ -6143,6 +6235,11 @@ export class TyE2eTestBrowser {
 
       openPreferencesFor: (who: string | UserId, origin?: string) => {
         this.go((origin || '') + `/-/users/${who}/preferences`);
+        this.waitUntilLoadingOverlayGone();
+      },
+
+      openPermissionsFor: (who: string | UserId, origin?: string) => {
+        this.go((origin || '') + `/-/users/${who}/permissions`);
         this.waitUntilLoadingOverlayGone();
       },
 
@@ -7428,7 +7525,7 @@ export class TyE2eTestBrowser {
               buttonsNotGone = `Should disappear: ${JSON.stringify(stillVisible)}`;
             }
             //----
-            // Top tab pane unmount bug workaround. [5QKBRQ].  [E2EBUG]
+            // Top tab pane unmount bug workaround. [5QKBRQ].  [E2EBUG]  DO_AFTER 2021-02-01 REMOVE?  + other "unmount bug workaround" elsewhere.
             this.#br.refresh();
             this.adminArea.review.waitUntilLoaded();
             //----
@@ -8297,6 +8394,11 @@ export class TyE2eTestBrowser {
     //   #sendSummaryEmails is checked: false      this.#br, no real mouse interactions possible)
     // So need to loop, ... until it stops undoing the click? Really weird.
     //
+    // Update 2020-11-28:  Seems the problem was that for fractions of a second,
+    // the UI still showed the previous user profile & settings, when switching
+    // to a new user — before the new one had been loaded. [pat_prof_fields]
+    // DO_AFTER 2021-03-01 REMOVE all weird stuff here.
+    //
     this.waitForVisible(selector);
     let bugRetry = 0;
     const maxBugRetry = 2;
@@ -8313,23 +8415,29 @@ export class TyE2eTestBrowser {
       // Somehow once this function exited with isChecked !== isRequired. Race condition?
       // Let's find out:
       let isChecked = this.$(selector).isSelected();
+      let was = isChecked;
       logMessage(selector + ' is checked: ' + isChecked);
       this.#br.pause(300);
       isChecked = this.$(selector).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger;
       this.#br.pause(400);
       isChecked = this.$(selector).isSelected();
       /* maybe works better now? (many months later)
       logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger;
       this.#br.pause(500);
-      isChecked = this.#br.isSelected(selector);
+      isChecked = this.$(selector).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger;
       this.#br.pause(600);
-      isChecked = this.#br.isSelected(selector);
+      isChecked = this.$(selector).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger;
       this.#br.pause(700);
-      isChecked = this.#br.isSelected(selector);
-      logMessage(selector + ' is checked: ' + isChecked); */
+      isChecked = this.$(selector).isSelected();
+      logMessage(selector + ' is checked: ' + isChecked);
+      if (was !== isChecked) debugger; */
       if (isChecked === checked)
         break;
       logUnusual("Checkbox refuses to change state. Clicking it again.");

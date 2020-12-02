@@ -18,7 +18,7 @@
 package debiki
 
 import com.debiki.core.Prelude._
-import com.debiki.core.{Bo, ErrMsg, Opt, ParsedRef, St, i32, i64, When, WhenDay}
+import com.debiki.core._
 import java.{util => ju}
 import org.scalactic.{Bad, Or}
 import play.api.libs.json._
@@ -50,6 +50,15 @@ object JsonUtils {
       case _ => throwBadJson("TyE0JSOBJ", s"$what is not a JsObject")
     }
 
+  def asJsArray(json: JsValue, what: St): Seq[JsValue] =
+    json match {
+      case a: JsArray => a.value
+      case _ => throwBadJson("TyE0JSARR", s"$what is not a JsArray")
+    }
+
+  def parseJsObject(json: JsValue, fieldName: St): JsObject =
+    readJsObject(json, fieldName)
+
   def readJsObject(json: JsValue, fieldName: St): JsObject =
     readOptJsObject(json, fieldName).getOrElse(throwMissing("EsE1FY90", fieldName))
 
@@ -64,6 +73,9 @@ object JsonUtils {
         throwBadJson(
           "EsE2YMP7", s"'$fieldName' is not a JsObject, but a ${classNameOf(bad)}")
     }
+
+  def parseJsArray(json: JsValue, fieldName: St, optional: Bo = false): Seq[JsValue] =
+    readJsArray(json, fieldName, optional).value
 
   // Add a 2nd fn, or a param: all elems be of the same type? See below: [PARSEJSARR]
   def readJsArray(json: JsValue, fieldName: St, optional: Bo = false): JsArray = {
@@ -94,6 +106,20 @@ object JsonUtils {
       }
     case _ => Nil
   } */
+
+  def parseStOrNrAsSt(json: JsValue, fieldName: St, altName: St = ""): St =
+    parseStOrNrAsOptSt(json, fieldName, altName) getOrElse throwMissing(
+          "TyE60RMP25R", fieldName)
+
+  def parseStOrNrAsOptSt(json: JsValue, fieldName: St, altName: St = ""): Opt[St] =
+    (json \ fieldName).asOpt[JsValue].orElse((json \ altName).asOpt[JsValue]) map {
+      case n: JsNumber => n.value.toString
+      case s: JsString => s.value
+      case bad =>
+        throwBadJson("TyE503MRG",
+            s"'$fieldName' is not a string or number, it is a: ${classNameOf(bad)}")
+    }
+
 
 
   def parseSt(json: JsValue, fieldName: St, altName: St = ""): St =
@@ -140,6 +166,10 @@ object JsonUtils {
   }
 
 
+  def parseF32(json: JsValue, field: St, alt: St = "", default: Opt[f32] = None): f32 =
+    readFloat(json, field, alt, default)
+
+
   def readFloat(json: JsValue, fieldName: String, altName: String = "", default: Option[Float] = None): Float =
     readOptFloat(json, fieldName, altName = altName).orElse(default)
       .getOrElse(throwMissing("TyE06KA2P2", fieldName))
@@ -171,10 +201,18 @@ object JsonUtils {
   }
 
 
+  def parseI32(json: JsValue, field: St, alt: St = "", default: Opt[i32] = None): i32 =
+    readInt(json, field, alt, default)
+
+
   def readInt(json: JsValue, fieldName: String, altName: String = "",
         default: Option[Int] = None): Int =
     readOptInt(json, fieldName).orElse(readOptInt(json, altName)).orElse(default)
       .getOrElse(throwMissing("EsE5KPU3", fieldName))
+
+
+  def parseOptI32(json: JsValue, field: St, altField: St = ""): Opt[i32] =
+     readOptInt(json, field, altField)
 
 
   def readOptInt(json: JsValue, fieldName: String, altName: String = ""): Option[Int] = {

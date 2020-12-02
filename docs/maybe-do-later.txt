@@ -65,6 +65,10 @@ e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
 [rate_limits]
 Configurable rate limits.
 
+[server_limits] [site_limits]
+If admins try to configure too "high" values, e.g. 1 TB upload size,
+need a way for them to know they're above the server or site limits,
+e.g. the Nginx client_max_body_size.
 
 [more_runtime_assertions]
 Figure out a way to safely add more runtime assertions — although sometimes
@@ -251,6 +255,33 @@ later, the community adds Gmail OpenAuth, and the same person signs in
 with Google, and Google sends the addr via OpenAuth *with* dots, and this would
 result in two different accounts for the same person, and confusion ("Where are
 all my old posts?").
+
+[gmail_dot_dash_friendly]
+Gmail ignores '-' and '.' in email addersses — Talkyard could do that too
+for @gmail.com addresses. However maybe leave "+..." as is, since people add
+that "magic suffix" intentionally.
+
+[email_casing]
+Talkyard already converts email to lowercase  before storing in the database.
+However theoretically this is a small security risk,
+in that if there is any email provider somewhere that treats
+emails as case sensitive, then, people using that provider,
+could try to hijack Ty accounts owned by other people using that same
+dangerous email provider.  But any such email provider is unsafe
+already because people who write emails, don't type casing properly
+anyway (how is anyone supposed to remember to type "Jane.doe@..."
+instead of "Jane.Doe@...") and would send emails to the wrong recipient
+"all the time", so using such an email provider is a dangerous idea in
+the first place?
+SECURITY; COULD  send verification emails to any email addresses with
+different casing, so all addresses involved get to confirm
+that they're the same real life person.
+https://stackoverflow.com/questions/9807909/are-email-addresses-case-sensitive
+Discourse has case *in*sensitive emails:
+https://meta.discourse.org/t/create-account-email-address-check-should-be-case-insensitive/15576/9
+> This problem is fixed. Email is not case sensitive anymore!
+Maybe skip this forever and move to decisions.adoc instead?
+
 
 [one-db-writer]
 Prevent all PostgreSQL serialization errors, by doing all writes from a single actor, and

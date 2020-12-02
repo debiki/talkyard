@@ -128,6 +128,12 @@ export function user_isStaffOrCoreMember(user: Myself | UserInclDetails): boolea
 }
 
 
+export function pat_isSys(pat: Pat): Bo {
+  // BUGs elsewhere:  look for SysbotUserId too not just SystemUserId.  NEXT QUICK
+  return pat.id === SystemUserId || pat.id === SysbotUserId;
+}
+
+
 export function isTalkToMeNotification(notf: Notification): Bo {
   return notf.type === NotificationType.DirectReply ||
           notf.type === NotificationType.Mention ||

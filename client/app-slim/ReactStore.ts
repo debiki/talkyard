@@ -840,11 +840,17 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   // In case this is a new post, update its parent's child id list.
   const parentPost = page.postsByNr[post.parentNr];
   if (parentPost) {
-    const alreadyAChild = _.find(parentPost.childNrsSorted, nr => nr === post.nr);
+    const childNrsSorted = parentPost.childNrsSorted;
+    const alreadyAChild = _.find(childNrsSorted, nr => nr === post.nr);
     if (!alreadyAChild) {
-      parentPost.childNrsSorted.unshift(post.nr);
+      if (page.discPostSortOrder === PostSortOrder.NewestFirst) {
+        childNrsSorted.unshift(post.nr);
+      }
+      else {
+        childNrsSorted.push(post.nr);
+      }
       sortPostNrsInPlace(
-          parentPost.childNrsSorted, page.postsByNr, page.discPostSortOrder);
+            childNrsSorted, page.postsByNr, page.discPostSortOrder);
     }
   }
 
@@ -1150,13 +1156,13 @@ function findParentlessReplyIds(postsByNr): number[] {
 function sortPostNrsInPlace(postNrs: PostNr[], postsByNr: { [nr: number]: Post },
       postSortOrder: PostSortOrder | U) {
   switch (postSortOrder || PostSortOrder.Default) {
-    case PostSortOrder.NewestFirst: // fall through
-    case PostSortOrder.OldestFirst:
-      const oldestFirst = postSortOrder === PostSortOrder.OldestFirst;
-      sortPostNrsInPlaceByTime(postNrs, postsByNr, oldestFirst);
+    case PostSortOrder.BestFirst:
+      sortPostNrsInPlaceBestFirst(postNrs, postsByNr);
       break;
     default:
-      sortPostNrsInPlaceBestFirst(postNrs, postsByNr);
+      // By time, oldest first, is the default sort order. [POSTSORDR] [why_sort_by_time]
+      const oldestFirst = postSortOrder !== PostSortOrder.NewestFirst;
+      sortPostNrsInPlaceByTime(postNrs, postsByNr, oldestFirst);
   }
 }
 
@@ -1822,10 +1828,9 @@ function makeStranger(store: Store): Myself {
 
     marksByPostId: {},
 
-    // The server ought to incl this, so the upload-file dialog
-    // says "File too large" correctly. ... Fix some time later. For now:
-    // (hmm or maybe set to 0? Auth required, to upload file [may_unau_upl])
-    maxUploadSizeBytes: Sizes.Mebibyte,
+    // Currently guests may not upload files. [may_unau_upl]
+    effMaxUplBytes: 0,
+    effAlwUplExts: [],
   };
   // There might be some globally pinned chats, which we also want to show in the watchbar.
   if (store.strangersWatchbar) {

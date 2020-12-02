@@ -20,12 +20,15 @@ package talkyard.server
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.JsonUtils
+import debiki.JsonUtils._
+import debiki.EdHttp._
 import java.{util => ju}
 
 import com.debiki.core.Notification.NewPost
 import play.api.libs.json._
 
 import scala.collection.immutable
+import scala.util.matching.Regex
 
 
 
@@ -354,7 +357,7 @@ object JsX {
   }
 
 
-  def JsGroup(group: Group): JsObject = {
+  def JsGroup(group: Group): JsObject = {   // dupl code [B28JG4] also in UserController
     var json = Json.obj(
       "id" -> group.id,
       "username" -> group.theUsername,
@@ -364,7 +367,7 @@ object JsX {
     group.tinyAvatar foreach { uploadRef =>
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
-    group.isDeleted
+    group.isDeleted  // what?
     json
   }
 
@@ -385,11 +388,26 @@ object JsX {
     json += "createdAt" -> JsWhenMs(group.createdAt)
     // "tinyAvatar"
     // "smallAvatar"
+    // Dupl code: [B28JG4]
     json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
     json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
     json += "grantsTrustLevel" -> JsNumberOrNull(group.grantsTrustLevel.map(_.toInt))
     json += "uiPrefs" -> group.uiPrefs.getOrElse(JsNull)
+    val perms = group.perms
+    json += "maxUploadBytes" -> JsNumberOrNull(perms.maxUploadBytes)
+    json += "allowedUplExts" -> JsStringOrNull(perms.allowedUplExts)
     json
+  }
+
+
+
+  def parsePatPerms(jsVal: JsValue, siteId: SiteId): PatPerms = {
+    val jsob = asJsObject(jsVal, "pat perms")
+    val anyMaxUplBytes = parseOptI32(jsob, "maxUploadBytes")
+    val anyExts = parseOptSt(jsob, "allowedUplExts")
+    PatPerms.create(ifBad = ThrowBadReq,
+          maxUploadBytes = anyMaxUplBytes,
+          allowedUplExts = anyExts)
   }
 
 
@@ -402,6 +420,7 @@ object JsX {
       "isAdder" -> groupPp.isAdder,
       "isBouncer" -> groupPp.isBouncer)
   }
+
 
   def JsMemberEmailAddress(member: UserEmailAddress): JsObject = {
     Json.obj(

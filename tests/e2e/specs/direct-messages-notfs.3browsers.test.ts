@@ -119,7 +119,6 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
   });
 
   it("Maria sees the reply", () => {
-    // This fails (times out) if Nchan messed up internally, because of an Nginx worker thread crash.
     maria.topic.waitForPostAssertTextMatches(c.FirstReplyNr, owensAnswer);
   });
 

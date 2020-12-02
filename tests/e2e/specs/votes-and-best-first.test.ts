@@ -66,7 +66,9 @@ describe("votes and best first", () => {
 
   it("import a site", () => {
     forum = buildSite().addLargeForum({ title: "Votes Forum" });
-    const siteData: SiteData = forum.siteData;
+    const siteData: SiteData2 = forum.siteData as SiteData2;
+
+    siteData.settings.discPostSortOrder = c.SortOrderBestFirst;
 
     // Add AA, BB, CC, XX, YY, ZZ, but not in that order, instead, an a bit random
     // order: AA, BB, CC reversed and inserted in between the others. Then, when

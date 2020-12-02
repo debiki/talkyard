@@ -418,7 +418,9 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadUserInclDetails(userId: UserId): Option[UserInclDetails] =
     loadMemberInclDetailsById(userId) map {
       case user: UserInclDetails => user
-      case group: Group => throw GotAGroupException(group.id)
+      case group: Group =>
+        REFACTOR // instead:  Member.asUserOr(ThrowBadReq)
+        throw GotAGroupException(group.id)
     }
 
   def loadGroup(groupId: UserId): Option[Group] =

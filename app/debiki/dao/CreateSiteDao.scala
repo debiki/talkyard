@@ -18,6 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 
 
 
@@ -68,10 +69,18 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   def makeDefaultGroups(now: When): Vector[Group] = {
     import Group._
 
+    // Don't let anonymous blog commenters upload anything, not even images,
+    // by default.
     val Everyone = Group(
       EveryoneId, "everyone", Some("Everyone"), createdAt = now) // , grantsTrustLevel = Stranger)
+
+    // But people who create a real account can upload images.
     val New = Group(
-      AllMembersId, "all_members", Some("All Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.NewMember))
+      AllMembersId, "all_members", Some("All Members"), createdAt = now, // , grantsTrustLevel = Some(TrustLevel.NewMember))
+      perms = PatPerms.create(ifBad = Die,
+            maxUploadBytes = Some(1 * Mebibyte),
+            allowedUplExts = Some("jpeg jpg png gif")))
+
     val Basic = Group(
       BasicMembersId, "basic_members", Some("Basic Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.BasicMember))
     val Full = Group(

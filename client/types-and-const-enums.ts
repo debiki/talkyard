@@ -216,6 +216,8 @@ const enum NotificationType {
 const enum EmailNotfPrefs {
   ReceiveAlways = 5,
   Receive = 1,
+  DirectMessagesFromStaff = 6,
+  // OnlyAboutAccount =
   DontReceive = 2,
   ForbiddenForever = 3,
   Unspecified = 4,
@@ -434,7 +436,11 @@ const enum BlockedReason {  // [auto_block]
 }
 
 
-const enum Groups {
+const enum Pats {
+  MaxGuestId = -2,
+}
+
+const enum Groups {   // QUICK RENAME to Pats or PatIds?
   NoUserId = 0,
   EveryoneId = 10,
   AllMembersId = 11,

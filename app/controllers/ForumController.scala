@@ -172,6 +172,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
         throwBadRequest("EdE6UWK02", o"""A permission's onCategoryId = $onCategoryId is different
           from the category's id = $categoryId""")
 
+      CLEAN_UP  // Dupl code [dupl_parse_perms_on_pgs]
       throwForbiddenIf(onCategoryId.isEmpty, "EdE6PJ0S2", "No onCategoryId specified")
       val newPerm = PermsOnPages(
         id = (permsJsObj \ "id").as[PermissionId],

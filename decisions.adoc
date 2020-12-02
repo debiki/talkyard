@@ -17,6 +17,19 @@ and see if there're related thoughts and previous decisions here, already.
 
 
 
+== Long ago
+
+Use Webdriver.io for end-to-end tests because:
+
+- It supports Multiremote, i.e. running many browsers at the same time
+  in the same test, useful for testing e.g. the chat system.
+- It has synchronous commands: console.log(browser.getTitle()) instead
+  of browser.getTitle().then(title => console.log(title)) (or `async await`
+  everywhere?).
+- It is under active development (even more nowadays 2020-11).
+
+
+
 == Year 2020
 
 
@@ -125,3 +138,22 @@ with "Sign up", and also, is 1 letter longer than "Log in".
 Facebook uses "Log in" so "everyone" should be used to this.
 
 So: "Join" and "Log in" and "Log out", in Talkyard.
+
+
+
+=== Sort posts by time, by default  [why_sort_by_time]
+
+Talkyard used to (before 2020-11-25) sort replies by most-popular-first.
+However I think this was confusing, in that most of the time, people don't
+upvote others' replies — so most of the time, replies are in effect sorted
+by time only, ...
+
+... Except for sometimes, someone clicks Like, causing the thereafter
+upvoted post, to berak the seemingly by-time sort order. Making things look
+a bit random?
+
+Instead, there can be a one-click button "Show Popular Replies" or
+"Show best answers", to sort best-first.
+
+There's a per site config value to change the sort order — maybe per
+category or topic one day? Topic type? Q&A = best-first, others by time?

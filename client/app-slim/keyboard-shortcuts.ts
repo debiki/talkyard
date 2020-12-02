@@ -33,6 +33,8 @@
 /// Shift opens the shortcuts dialog and shows all shortcuts
 /// — this make the shortcuts even more discoverable? People sometimes
 /// click Shift by accident. Then they'll discover Ty's shortcuts?
+/// But not Ctrl! That'd make the dialog pop up too often by mistake, e.g.
+/// if Ctrl+Tab to switch tab but one then changes one's mind and releases Ctrl.
 ///
 /// It needs to be simple to cancel any shortcut being typed.  Don't want
 /// people getting stuck in "shortcut mode", like people can get stuck in Vim
@@ -137,8 +139,8 @@ interface ShortcutDiagState {
 }
 
 
-let skipNextShiftCtrlUp: Bo | U;
-let shiftOrCtrlDown: Bo | U;
+let skipNextShiftUp: Bo | U;
+let isShiftDown: Bo | U;
 let curKeyDown = ''; // could be a Set, but this'll do for now
 let curState: ShortcutDiagState = { isOpen: false, keysTyped: '', shortcutsToShow: [] };
 let dialogSetState: ((state: ShortcutDiagState) => Vo) | U;
@@ -481,35 +483,42 @@ function anyOtherDialogOpen(): Bo {
 
 
 
-function isShiftCtrl(key: St): Bo {
-  return key === 'Shift';  // no, don't use Control:  || key === 'Control';
-                           // makes the dialog pop up too often by mistake
+function isShift(key: St): Bo {
+  return key === 'Shift';
 }
 
+
+function isAltOrCtrl(key: St): Bo {
+  return key === 'Control' || key === 'Alt';
+}
 
 
 function canBeShortcutKey(key: St): Bo {
   // All shortcuts are [a-z0-9]+ at least for now.
   const isAlnum = ('a' <= key && key <= 'z') || ('0' <= key && key <= '9');
   const isBackspace = key === 'Backspace'
-  return isAlnum || isBackspace || isShiftCtrl(key);
+  return isAlnum || isBackspace || isShift(key);
 }
 
 
 
 function onKeyUp(event: KeyboardEvent) {
+  const key: St = event.key;
+
+  if (isAltOrCtrl(key))
+    return;
+
   const store: Store = getMainWinStore();
 
   const uiPrefs = me_uiPrefs(store.me);
   if (uiPrefs.kbd !== UiPrefsKeyboardShortcuts.On)
     return;
 
-  const key: St = event.key;
   //logD(`onKeyUp: ${key}`);
 
   if (!curKeyDown) {
-    // Pat pressed Ctrl+Tab or Ctrl+W (close tab) in another tab, and now released
-    // Ctrl in this tab? So there's a key-up but no key-down event? — Ignore.
+    // Pat pressed Ctrl+Shift+Tab or something in another tab, and now released
+    // Shift in this tab? So there's a key-up but no key-down event? — Ignore.
     return;
   }
 
@@ -529,11 +538,11 @@ function onKeyUp(event: KeyboardEvent) {
   // the key — because otherwise the dialog would appear briefly, if typing
   // e.g. Shift+Tab to tab around.
   //
-  if (isShiftCtrl(key)) {
+  if (isShift(key)) {
     if (curState.isOpen) {
       resetAndCloseDialog();
     }
-    else if (skipNextShiftCtrlUp) {
+    else if (skipNextShiftUp) {
       // Don't open dialog. Otherwise, if pressing Shift+Tab and releasing Tab
       // before Shift  (or Ctrl+R, and realeasing R then Ctrl),
       // that'd open the dialog briefly  (until page done reloading).
@@ -552,9 +561,13 @@ function onKeyUp(event: KeyboardEvent) {
       updateDialog({ isOpen: true, tryStayOpen, keysTyped: '', shortcutsToShow });
     }
 
-    // (Ignore both Shift and Ctrl being pressed at the same time, for now.)
-    shiftOrCtrlDown = false;
-    skipNextShiftCtrlUp = false;
+    isShiftDown = false;
+    skipNextShiftUp = false;
+  }
+
+  // Skip shortcuts if typing text.
+  if (event_canBeKeyTarget(event)) {
+    resetAndCloseDialog();
   }
 }
 
@@ -574,8 +587,8 @@ function onKeyDown(event: KeyboardEvent) {
   //logD(`onKeyDown: ${key}`);
 
   // Handled in onKeyUp() instead.
-  if (isShiftCtrl(key)) {
-    shiftOrCtrlDown = true;
+  if (isShift(key)) {
+    isShiftDown = true;
     // Must not click Shift or Ctrl together with the shortcut keys.
     if (otherKeyAlreadyDown) {
       resetAndCloseDialog();
@@ -585,7 +598,7 @@ function onKeyDown(event: KeyboardEvent) {
 
   // Ctrl, Alt, Shift are never part of shortcuts.
   if (event.ctrlKey || event.altKey || event.shiftKey) {
-    skipNextShiftCtrlUp ||= shiftOrCtrlDown;
+    skipNextShiftUp ||= isShiftDown;
     resetAndCloseDialog();
     return;
   }
@@ -600,7 +613,7 @@ function onKeyDown(event: KeyboardEvent) {
 
   if (!canBeShortcutKey(event.key)) {
     // So Ctrl+R or Ctrl+T etc won't open the dialog, when one releases Ctrl.
-    skipNextShiftCtrlUp ||= shiftOrCtrlDown;
+    skipNextShiftUp ||= isShiftDown;
     resetAndCloseDialog();
     return;
   }
@@ -617,9 +630,7 @@ function onKeyDown(event: KeyboardEvent) {
   }
 
   // If pat is typing text or selecting something, skip shortcuts.
-  // (Maybe break out fn  event_canBeKeyTarget(event) ?)
-  const anyTagName: St | Nl = (event.target as Elm | Nl)?.tagName;
-  if (anyTagName === 'INPUT' || anyTagName === 'TEXTAREA' || anyTagName === 'SELECT') {
+  if (event_canBeKeyTarget(event)) {
     resetAndCloseDialog();
     return;
   }
@@ -743,7 +754,7 @@ const KeyboardShortcutsDialog = React.createFactory<{}>(function() {
     diagClassName: 'c_KbdD',
     title,
     body: rFr({},
-        r.p({}, r.code({}, "Escape"), ',', r.code({}, "Space"),
+        r.p({}, r.code({}, "Escape"), ',', r.code({}, "Space"), ',', r.code({}, "Shift"),
             orMovingTheMouse + " cancels."),
         r.ul({ className: 's_KbdD_ShortcutsL' },
           state.shortcutsToShow.map(PrettyShortcut))),

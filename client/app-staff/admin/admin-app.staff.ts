@@ -2801,10 +2801,35 @@ const CustomizeBasicPanel = createFactory({
 
         // ---- Discussion and Progress sections
 
-        !enableForum ? null : rFragment({},
+        !enableForum ? null : rFr({},
 
           r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl e_DscPrgSct'},
             "Discussion and Progress topic sections"),
+
+          // Later, break out this to a separate settings3 table row,
+          // for PageType != EmeddedComments ?  [PAGETYPESETTNG]  [POSTSORDR]
+          Setting2(props, { type: 'number', min: 1, max: 3,
+            className: 'e_FrmSrtOdr',
+            label: "Sort order of replies",
+            help: rFr({},
+              "How should replies be ordered? One of these numbers:",
+              r.br(),
+              "0: The default: Oldest First, same as 3.",
+              r.br(),
+              "1: Best (popular) first.",
+              r.br(),
+              "2: Newest first.",
+              r.br(),
+              "3: Oldest first."
+              ),
+            getter: (s: Settings) => s.discPostSortOrder,
+            update: (newSettings: Settings, target) => {
+              let num = parseInt(target.value);
+              if (num < 0) num = 0;
+              if (num > 3) num = 3;
+              newSettings.discPostSortOrder = num;
+            }
+          }),
 
           r.p({ className: 'col-sm-offset-3' },
             "Talkyard's topics can have two sections: " +
@@ -2909,7 +2934,7 @@ const CustomizeBasicPanel = createFactory({
           help: rFragment({},
             "How should blog comments be ordered? One of these numbers:",
             r.br(),
-            "0: The default, currently means Best First (same as 1).",
+            "0: The default, Popular First (same as 1).",
             r.br(),
             "1: Best (popular) first.",
             r.br(),
@@ -2917,12 +2942,12 @@ const CustomizeBasicPanel = createFactory({
             r.br(),
             "3: Oldest first."
             ),
-          getter: (s: Settings) => s.discPostSortOrder,
+          getter: (s: Settings) => s.embComSortOrder,
           update: (newSettings: Settings, target) => {
             let num = parseInt(target.value);
             if (num < 0) num = 0;
             if (num > 3) num = 3;
-            newSettings.discPostSortOrder = num;
+            newSettings.embComSortOrder = num;
           }
         }),
       ));

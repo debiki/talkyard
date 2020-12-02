@@ -41,6 +41,7 @@ export const GroupMembers = React.createFactory<GroupMembersProps>(function(prop
 
   const [membersNullOrFalse, setMembers] = React.useState<Participant[] | null | false>(null);
 
+  // Break out hook? [my_cur_id]
   React.useEffect(() => {
     myId.current = me.id;
     listAndSetMembers();

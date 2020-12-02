@@ -160,6 +160,36 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   def throwNoSuchElem(errorCode: String, message: => String) =
     throw new NoSuchElementException(s"$message [$errorCode]")
 
+
+
+  sealed abstract class DieOrComplain  // or rename to "ComplainHow" or "Angry"?
+  object Die extends DieOrComplain
+  object ThrowNotFound extends DieOrComplain
+  object ThrowBadReq extends DieOrComplain
+  object ThrowForbidden extends DieOrComplain
+
+  // When parsing user provided data from a HTTP request, we should throw a
+  // Bad Request exception, if the data is bad.  However not when doing
+  // server internal things — then, die() or some-logger.warn() instead.
+  //
+  def dieOrComplain(errMsg: ErrMsg, doWhat: DieOrComplain): Nothing = {
+    doWhat match {
+      case Die => die(errorCode = null, errMsg)  // err code should be incl in errMsg
+      case ThrowNotFound => throw new NotFoundEx(errMsg)
+      case ThrowBadReq => throw new BadRequestEx(errMsg)
+      case ThrowForbidden => throw new ForbiddenEx(errMsg)
+      case _ =>
+        die("TyE602MKTDG", s"Invalid doWhat: $doWhat")
+    }
+  }
+
+  def dieOrComplainIf(test: Bo, errMsg: => ErrMsg, ifBad: DieOrComplain): U = {
+    if (!test) return
+    dieOrComplain(errMsg = errMsg, doWhat = ifBad)
+  }
+
+
+
   def die(errorCode: String, problem: => String = null, cause: => Throwable = null): Nothing = {
     // Don't throw AssertionError — that makes things like Akka's actor system shutdown
     // and the server becomes a zombie server (half dead).
@@ -173,8 +203,14 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
 
-  def formatErrorMessage(errorCode: String, details: String) =
+  def formatErrorMessage(errorCode: St, details: St) = {
+    if (errorCode ne null) {
       (if ((details eq null) || details.isEmpty) "" else details + " ") + s"[$errorCode]"
+    }
+    else {
+      details  // then this should include an err code already
+    }
+  }
 
   def dieIf(condition: Boolean, errorCode: String, problem: => Any = null): Unit =
     if (condition) die(errorCode, if (problem != null) problem.toString else null)
@@ -455,11 +491,32 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
 
   def anyMaxDate(a: Option[ju.Date], b: Option[ju.Date]): Option[ju.Date] = {
-    if (a.isEmpty && b.isEmpty) None
-    else if (a.isEmpty) b
+    if (a.isEmpty) b
     else if (b.isEmpty) a
     else if (a.get.getTime < b.get.getTime) b
-    else a
+    else a  // greater or equal
+  }
+
+  def maxOfAnyInt32(a: Opt[i32], b: Opt[i32]): Opt[i32] = {
+    _minOrMaxOfAnyInt32(a, b, min = false)
+  }
+
+  def minOfAnyInt32(a: Opt[i32], b: Opt[i32]): Opt[i32] = {
+    _minOrMaxOfAnyInt32(a, b, min = true)
+  }
+
+  private def _minOrMaxOfAnyInt32(a: Opt[i32], b: Opt[i32], min: Bo): Opt[i32] = {
+    if (a.isEmpty) b
+    else if (b.isEmpty) a
+    else if (a.get < b.get) { if (min) a else b }
+    else if (a.get > b.get) { if (min) b else a }
+    else a  // both same
+  }
+
+  def orMaskOfAnyInt32(a: Opt[i32], b: Opt[i32]): Opt[i32] = {
+    if (a.isEmpty) b
+    else if (b.isEmpty) a
+    else Some(a.get | b.get)
   }
 
 

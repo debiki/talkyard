@@ -28,8 +28,8 @@ completion.on('mainCmd', ({ reply }) => {
         'l', 'logslive', 'lr', 'logsrecentlive', 'logsold',
         'e', 'e2e',
         'cleane2elogs',
-        'dbcli',
-        'playcli',
+        'cd', 'clidb',
+        'ca', 'cliapp',
         'nodejs',
         'yarn',
         ]);
@@ -155,13 +155,13 @@ if (mainCmd === 'yarn') {
 }
 
 
-if (mainCmd === 'dbcli') {
+if (mainCmd === 'cd' || mainCmd === 'clidb') {
   spawnInForeground('make db-cli');
   process.exit(0);
 }
 
 
-if (mainCmd === 'playcli') {
+if (mainCmd === 'ca' || mainCmd === 'cliapp') {
   spawnInForeground('make dead');
   spawnInForeground('s/d-cli');
   process.exit(0);
@@ -555,7 +555,7 @@ async function runE2eTests(): Promise<ExitCode> {
 
 
   const skipAlways = ['!UNIMPL', '!-impl.', '!imp-exp-imp-exp-site'];
-  const skipEmbAndAlways = ['!emb-com', '!embcom', '!embedded-', ...skipAlways]
+  const skipEmbAndAlways = ['!embcom', '!embedded-', '!embforum.', ...skipAlways]
   const skip2And3Browsers = ['!.2br', '!.3br'];
 
 
@@ -606,12 +606,11 @@ async function runE2eTests(): Promise<ExitCode> {
 
   // ----- 1 browser, embedded comments
 
-  const skip23BrAndUnusualEmb = ['!no-cookies', '!gatsby', '!embedded-forum',
+  const skip23BrAndUnusualEmb = ['!b3c.', '!gatsby', '!embforum.',
           ...skip2And3Browsers, ...skipAlways];
   // Accidentally different file names.
   next = [['embedded-', ...skip23BrAndUnusualEmb],
-          ['embcom.', ...skip23BrAndUnusualEmb],
-          ['emb-com.', ...skip23BrAndUnusualEmb]];
+          ['embcom.', ...skip23BrAndUnusualEmb]];
 
   await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
     // Note: 8080 eighty eighty.
@@ -624,8 +623,7 @@ async function runE2eTests(): Promise<ExitCode> {
   });
 
 
-  next = [['embedded-', 'no-cookies', '!gatsby', '!embedded-forum',
-          ...skip2And3Browsers, ...skipAlways]];
+  next = [['embcom.', '.b3c.', '.1br.', ...skipAlways]];
 
   await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
     startStaticFileServer(8080, 'target/');
@@ -641,8 +639,8 @@ async function runE2eTests(): Promise<ExitCode> {
 
   // Rename somehow to  'embcmt-...'?
   next = [
-        ['.2br', 'embedded-', 'no-cookies', '!gatsby', '!embedded-forum', ...skipAlways],
-        ['.2br', 'embcom', ...skipAlways],
+        ['.2br', 'embedded-', '!.b3c.', ...skipAlways],
+        ['.2br', 'embcom', '!.b3c.', ...skipAlways],
         ];
 
   await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {

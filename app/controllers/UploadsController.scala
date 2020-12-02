@@ -23,6 +23,7 @@ import debiki._
 import debiki.EdHttp._
 import debiki.dao.UploadsDao._
 import ed.server.{EdContext, EdController}
+import ed.server.http.ApiRequest
 import java.{io => jio}
 import javax.inject.Inject
 import play.api._
@@ -45,17 +46,64 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
     MaxAvatarTinySizeBytes + MaxAvatarSmallSizeBytes + MaxAvatarMediumSizeBytes
 
 
+
   def mayUploadFile(sizeBytes: i32): Action[U] = GetAction { request =>
     // Tests: upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ESVUPLCK
-    import request.dao
-    val perms = dao.getPermsOnSiteFor(Vector(Group.EveryoneId))
-    // Add 1000 bytes, because the request body includes
-    // a multipart/form-data boundary, can be around 300 bytes.
-    throwForbiddenIf(sizeBytes > perms.maxUploadSizeBytes + 1000,  // [upl_sz_ck]
-          "TyESVUPLSZCK_", s"File too large: ${sizeBytes.toFloat / Mebibyte
-              } MiB; max size is ${perms.maxUploadSizeBytes / Mebibyte} MiB")
+
+    // We won't get to here at all, if the request body is larger than our
+    // Ngnix conf val TY_NGX_LIMIT_REQ_BODY_SIZE(_UPLOADS),
+    // see images/web/Dockerfile.
+
+    // Add 1000 bytes, because the request body includes a multipart/form-data
+    // boundary, can be around 300 bytes.
+    COULD // check the file extension / mime type here — but then would need to
+    // parse the form-data in Nginx + Lua?  [pre_chk_upl_ext]
+    _throwForbiddenMaybe(anyFileName = None,
+          sizeBytes = sizeBytes + 1000, request)
     Ok
   }
+
+
+
+  private def _throwForbiddenMaybe(anyFileName: Opt[St], sizeBytes: i64,
+          request: ApiRequest[_]): U = {
+    import request.dao
+
+    // COULD disable the file upload dialog for guests. And refuse to receive any data at
+    // all (not create any temp file) if not authenticated.  [may_unau_upl]
+    if (!request.theUser.isAuthenticated)
+      throwForbidden("TyE0ANONUPL", o"""Please create an account — only authenticated
+            users (but not guests) may upload files.""")
+
+    val perms: EffPatPerms =
+          dao.deriveEffPatPerms(request.authzContext.groupIdsEveryoneLast)
+
+    // Check size.
+    val maxUploadSizeBytes = perms.maxUploadSizeBytes
+    throwForbiddenIf(sizeBytes > maxUploadSizeBytes,  // [upl_sz_ck]
+          "TyESVUPLSZCK_", s"File too large: ${sizeBytes.toFloat / Mebibyte
+              } MiB; max size is ${maxUploadSizeBytes.toFloat / Mebibyte} MiB")
+
+    // Check file type.
+
+    // For now, just look at the extension — maybe later look at mime type too.
+    // Then need to make mime type configurable too.
+
+    if (perms.allowedUploadExtensions contains  "**")
+      return
+
+    val fileName = anyFileName getOrElse {
+      return
+    }
+    // Check the last dot part, i.e. the real extension, against the
+    // allowedUploadExtensions allowlist:
+    SECURITY // Later: Check any other dot "." separated parts against a blocklist?
+    val fileExt = fileName.takeRightWhile(_ != '.')
+    val isOk = perms.allowedUploadExtensions contains fileExt
+    throwForbiddenIf(!isOk, "TyE503RMT2",
+          s"Not an allowed file extension: '$fileExt' in file name: '$fileName'")
+  }
+
 
 
   def uploadPublicFile: Action[Either[
@@ -65,16 +113,6 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
 
     // This handles many uploaded files.
     // (For uploading just one file, see: [5039RKJW45])
-
-    // COULD disable the file upload dialog for guests. And refuse to receive any data at
-    // all (not create any temp file) if not authenticated.
-    //
-    // UX COULD add a conf val, so admins can decide if guests may upload e.g. images?
-    // [may_unau_upl]
-    //
-    if (!request.theUser.isAuthenticated)
-      throwForbidden("DwE7UMF2", o"""Only authenticated users (but not guests) may upload files.
-          Please login via for example Google or Facebook, or create a password account""")
 
     // COULD try to detect if the client cancelled the upload. Currently, if the browser
     // called xhr.abort(), we'll still get to here, and `data` below will be the data
@@ -103,15 +141,10 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
     // However, the upload limit might be lower, for this user or this site.
     // We've checked this already [upl_sz_ck] — let's double check, and this
     // time, there're no form-data boundaries.
-    val perms = dao.getPermsOnSiteFor(Vector(Group.EveryoneId))
-    val maxUploadSizeBytes = perms.maxUploadSizeBytes
-    val maxSizeThisSiteRequesterFileType = maxUploadSizeBytes
-    val forThisFileType = "" // " for this file type"
-    throwForbiddenIf(file.fileSize > maxUploadSizeBytes,
-          "TyESVUPLSZCK2", o"Uploaded file too large, max is: ${
-          maxSizeThisSiteRequesterFileType}$forThisFileType.")
 
-    val uploadRef = request.dao.addUploadedFile(
+    _throwForbiddenMaybe(Some(file.filename), sizeBytes = file.fileSize, request)
+
+    val uploadRef = dao.addUploadedFile(
       file.filename, file.ref.file, request.theUserId, request.theBrowserIdData)
 
     // Delete the temporary file. (It will be gone already, if we couldn't optimize it,

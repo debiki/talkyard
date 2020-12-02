@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao._
 import ed.server.auth.ForumAuthzContext
+import ed.server.auth.Authz
 import ed.server.http._
 import java.{lang => jl, util => ju}
 import org.jsoup.Jsoup
@@ -103,6 +104,7 @@ class JsonMaker(dao: SiteDao) {
     val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && globals.becomeFirstSiteOwnerEmail.isEmpty
+    val everyoneGroup = dao.getTheGroup(Group.EveryoneId)
     val everyonesPerms = dao.getPermsForEveryone()
     val pageId = pageReq.thePageId
 
@@ -130,6 +132,7 @@ class JsonMaker(dao: SiteDao) {
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteFeatureFlags" -> JsString(site.featureFlags),
+      "serverFeatureFlags" -> JsString(globals.config.featureFlags),
       "siteOwnerTermsUrl" -> JsStringOrNull(globals.siteOwnerTermsUrl),
       "siteOwnerPrivacyUrl" -> JsStringOrNull(globals.siteOwnerPrivacyUrl),
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
@@ -139,7 +142,7 @@ class JsonMaker(dao: SiteDao) {
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
       "publicCategories" -> JsArray(),
       "topics" -> JsNull,
-      "me" -> noUserSpecificData(everyonesPerms),
+      "me" -> noUserSpecificData(everyonesPerms, everyoneGroup),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "pageMetaBriefById" -> JsObject(Nil),
@@ -178,6 +181,7 @@ class JsonMaker(dao: SiteDao) {
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and the requester must be a stranger (user = None):
     val authzCtx = dao.getForumPublicAuthzContext()
+    val everyoneGroup = dao.getTheGroup(Group.EveryoneId)
     def globals = dao.globals
 
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
@@ -325,6 +329,9 @@ class JsonMaker(dao: SiteDao) {
       "discPostSortOrder" -> JsNumber(page.parts.postsOrderNesting.sortOrder.toInt),
       "discPostNesting" -> JsNumber(page.parts.postsOrderNesting.nestingDepth),
       "progressLayout" -> JsNumber(siteSettings.progressLayout.toInt),
+      // Not needed, discPostSortOrder and discPostNesting in use:
+      // "embComSortOrder" -> ..
+      // "embComNesting" -> ..
       "origPostVotes" -> JsNumber(page.parts.origPostVotes.toInt),
       "origPostReplyBtnTitle" -> JsStringOrNull(page.parts.origPostReplyBtnTitle),
       // -------------------------------------------------
@@ -374,13 +381,14 @@ class JsonMaker(dao: SiteDao) {
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteFeatureFlags" -> JsString(site.featureFlags),
+      "serverFeatureFlags" -> JsString(globals.config.featureFlags),
       // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
-      "me" -> noUserSpecificData(authzCtx.tooManyPermissions),
+      "me" -> noUserSpecificData(authzCtx.tooManyPermissions, everyoneGroup),
       "rootPostId" -> JsNumber(renderParams.thePageRoot),
       "usersByIdBrief" -> usersByIdJson,
       "pageMetaBriefById" -> JsObject(Nil),
@@ -415,9 +423,9 @@ class JsonMaker(dao: SiteDao) {
   def makeSpecialPageJson(request: DebikiRequest[_]): JsObject = {
     require(request.dao == dao, "TyE4JKTWQ0")
     val globals = request.context.globals
-    val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
     val site = dao.theSite()
+    val everyoneGroup = dao.getTheGroup(Group.EveryoneId)
     val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
     var result = Json.obj(
       "dbgSrc" -> "SpecPgJ",
@@ -431,11 +439,12 @@ class JsonMaker(dao: SiteDao) {
       "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteFeatureFlags" -> JsString(site.featureFlags),
+      "serverFeatureFlags" -> JsString(globals.config.featureFlags),
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
-      "me" -> noUserSpecificData(dao.getPermsForEveryone()),
+      "me" -> noUserSpecificData(dao.getPermsForEveryone(), everyoneGroup),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "siteSections" -> makeSiteSectionsJson(),
       "usersByIdBrief" -> Json.obj(),
@@ -624,8 +633,10 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def noUserSpecificData(everyonesPerms: Seq[PermsOnPages]): JsObject = {
-    require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "EdE2WBG08")
+  def noUserSpecificData(everyonesPerms: Seq[PermsOnPages], everyone: Group): JsObject = {
+    require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "TyE52WBG08")
+    require(everyone.id == Group.EveryoneId, "TyE2WBG09")
+    val perms = everyone.perms
 
     // Somewhat dupl code. (2WB4G7)
     Json.obj(
@@ -639,7 +650,9 @@ class JsonMaker(dao: SiteDao) {
       "closedHelpMessages" -> JsObject(Nil),
       "tourTipsSeen" -> JsArray(),
       "uiPrefsOwnFirst" -> JsArray(),
-      "permsOnPages" -> permsOnPagesToJson(everyonesPerms, excludeEveryone = false))
+      "permsOnPages" -> permsOnPagesToJson(everyonesPerms, excludeEveryone = false),
+      "effMaxUplBytes" -> JsNumber(perms.maxUploadBytes.getOrElse(0).toInt),
+      "effAlwUplExts" -> JsArray(perms.allowedUplExtensionsAsSet.toSeq.map(JsString)))
   }
 
 
@@ -653,7 +666,7 @@ class JsonMaker(dao: SiteDao) {
     }
 
     val permissions = pageRequest.authzContext.tooManyPermissions
-    val permsOnSiteTooMany = dao.getPermsOnSiteFor(Vector(requester.id))
+    val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()
 
     var watchbar: BareWatchbar = dao.getOrCreateWatchbar(requester.id)
     if (pageRequest.pageExists) {
@@ -695,7 +708,7 @@ class JsonMaker(dao: SiteDao) {
       return JsNull
     }
     val permissions = authzContext.tooManyPermissions
-    val permsOnSiteTooMany = dao.getPermsOnSiteFor(Vector(requester.id))
+    val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()
     val watchbar = dao.getOrCreateWatchbar(requester.id)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val myGroupsEveryoneLast: Seq[Group] =
@@ -762,6 +775,9 @@ class JsonMaker(dao: SiteDao) {
         (pageNotfPrefs, votes, postsJson, postAuthorsJson)
       } getOrElse (
           Nil, JsEmptyObj, JsEmptyObj, JsArray())
+
+    COULD_OPTIMIZE // cache this?
+    val effPerms = Authz.deriveEffPatPerms(myGroupsEveryoneLast, permsOnSiteTooMany)
 
     val (threatLevel,
          tourTipsSeenJson,
@@ -844,6 +860,11 @@ class JsonMaker(dao: SiteDao) {
 
       "watchbar" -> watchbar.toJsonWithTitles,
 
+      // Inherited from ancestor groups — not one's own settings,
+      // there fore starts with "eff" as in "effective".
+      "effMaxUplBytes" -> JsNumber(effPerms.maxUploadSizeBytes),
+      "effAlwUplExts" -> JsArray(effPerms.allowedUploadExtensions.toSeq.map(JsString)),
+
       // The Everyone group's permissions are included in the generic no-user json already;
       // don't include it here again. [8JUYW4B]
       "permsOnPages" -> permsOnPagesToJson(permissions, excludeEveryone = true),
@@ -858,8 +879,7 @@ class JsonMaker(dao: SiteDao) {
       "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
       "myGroupIds" -> JsArray(myGroupsEveryoneLast.map(g => JsNumber(g.id))),
       "myDataByPageId" -> ownDataByPageId,
-      "marksByPostId" -> JsObject(Nil),
-      "maxUploadSizeBytes" -> JsNumber(permsOnSiteTooMany.maxUploadSizeBytes))
+      "marksByPostId" -> JsObject(Nil))
 
     if (requester.isAdmin) {
       val siteSettings = tx.loadSiteSettings()
@@ -1312,6 +1332,10 @@ object JsonMaker {
       json += "discPostSortOrder" -> JsNumber(settings.discPostSortOrder.toInt)
     if (settings.progressLayout != D.progressLayout)
       json += "progressLayout" -> JsNumber(settings.progressLayout.toInt)
+    if (settings.embComSortOrder != D.embComSortOrder)
+      json += "embComSortOrder" -> JsNumber(settings.embComSortOrder.toInt)
+    if (settings.embComNesting != D.embComNesting)
+      json += "embComNesting" -> JsNumber(settings.embComNesting)
     if (settings.origPostReplyBtnTitle != D.origPostReplyBtnTitle)
       json += "origPostReplyBtnTitle" -> JsString(settings.origPostReplyBtnTitle)
     if (settings.origPostVotes != D.origPostVotes)

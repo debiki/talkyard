@@ -38,6 +38,13 @@ trait AuthzSiteDaoMixin {
   import context.security.throwIndistinguishableNotFound
 
 
+  def deriveEffPatPerms(groupIdsAnyOrder: Iterable[GroupId]): EffPatPerms = {
+    val groups = groupIdsAnyOrder map getTheGroup
+    val permsOnSite = getPermsOnSiteForEveryone()
+    Authz.deriveEffPatPerms(groups, permsOnSite)
+  }
+
+
   def getForumPublicAuthzContext(): ForumAuthzContext = {
     getForumAuthzContext(None)
   }
@@ -309,7 +316,9 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def getPermsOnSiteFor(userIds: Iterable[UserId]): PermsOnSite = {
+  @deprecated("now", "config site wide perms per group instead")  // [more_pat_perms]
+  def getPermsOnSiteForEveryone(): PermsOnSite = {
+    // Config such perms per group insetad.  Old:  userIds: Iterable[UserId]
     val perms = getAllPermsOnPages().permsOnSite
     // perms.filter(p => userIds.exists(_ == p.forPeopleId))
     // For now:
@@ -328,7 +337,7 @@ trait AuthzSiteDaoMixin {
       allPermsKey,
       orCacheAndReturn = {
         Some(readOnlyTransaction { tx =>
-          // For now. Later, will load from database, + restrict to <= sth-per-site.
+          // Deprecated, nowadays per group instead.  [more_pat_perms]
           val everyonesUploadPerms =
                 PermsOnSite(
                     forPeopleId = Group.EveryoneId,

@@ -196,6 +196,15 @@ interface TestSiteSettings {
   enableApi?: boolean;
   ssoUrl?: string;
   enableSso?: boolean;
+
+  discussionLayout?: Nr;
+  discPostNesting?: Nr;
+  discPostSortOrder?: Nr;
+  progressLayout?: Nr;
+  origPostReplyBtnTitle?: St;
+  origPostVotes?: Nr;
+  embComNesting?: Nr;
+  embComSortOrder?: Nr;
 }
 
 

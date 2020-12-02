@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
-import com.github.scribejava.core.oauth.{OAuth20Service => sj_OAuth20Service}
+import com.github.scribejava.core.oauth.{OAuth20Service => sj_OAuth20Service, OAuthService => sj_OAuthService}
 import com.github.scribejava.core.builder.api.{DefaultApi20 => sj_DefaultApi20}
 import com.github.scribejava.core.model.{OAuth2AccessToken => sj_OAuth2AccessToken, OAuth2AccessTokenErrorResponse => sj_OAuth2AccessTokenErrorResponse, OAuthAsyncRequestCallback => sj_OAuthAsyncReqCallback, OAuthRequest => sj_OAuthRequest, Response => sj_Response, Verb => sj_Verb}
 import com.github.scribejava.apis.openid.{OpenIdOAuth2AccessToken => sj_OpenIdOAuth2AccessToken}
@@ -35,6 +35,7 @@ import ed.server.spam.SpamChecker
 import debiki._
 import debiki.dao.SiteDao
 import debiki.EdHttp._
+import debiki.JsonUtils._
 import talkyard.server._
 import ed.server._
 import ed.server.http._
@@ -44,12 +45,11 @@ import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.Configuration
-import talkyard.server.authn.{parseCustomUserInfo, parseOidcUserInfo}
+import talkyard.server.authn.{parseCustomUserInfo, parseOidcUserInfo, doAuthnServiceRequest, WellKnownIdps}
 import talkyard.server.{ProdConfFilePath, TyLogging}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
 import java.io.{IOException => j_IOException}
 import java.util.concurrent.{ExecutionException => j_ExecutionException}
 import java.util.concurrent.atomic.{AtomicInteger => j_AtomicInteger}
@@ -306,18 +306,18 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       throwForbiddenIf(settings.useOnlyCustomIdps, "TyE0SITECUSIDP",
             s"useOnlyCustomIdps enabled, then cannot use a server global IDP")
 
+      val site = request.site
+      throwForbiddenIf(
+              site.featureFlags.contains("ffNotScribeJava") ||
+              globals.config.featureFlags.contains("ffNotScribeJava"),
+              "TyE0FFSCRJVA2", s"Remove feature flag ffNotScribeJava")
+
       // Verify that the server global IDP that pat tries to login with,
       // is enabled at *this* site  (that there's a server global IDP,
       // doesn't mean that this site wants to use it).  [glob_idp_enb_1]
       getServerGlobalIdentityProvider(authnState, dao).ifBad(problem =>
             throwForbidden(s"Cannot login via ${authnState.protoAlias
                   }: $problem [TyEGETGLOBIDP01]"))
-
-      val site = request.site
-      throwForbiddenIf(
-              !site.featureFlags.contains("ffTryScribeJava") &&
-              !site.featureFlags.contains("ffUseScribeJava"),
-              "TyE0FFSCRJVA", s"Add feature flag ffTryScribeJava or ffUseScribeJava")
     }
 
     def globalIdpAuthnOriginIsOtherSite: Bo =
@@ -501,6 +501,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
+
   /** This is the OAuth2 Redirect URL endpoint:
     * After the user has authenticated henself over at the IDP (Identity Provider),
     * the IDP redirects hens browser back to Talkyard, to this "redirect-back" =
@@ -531,6 +532,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     authnRedirBackImpl(protocol, providerAlias = providerAlias, state = state,
           session_state = session_state, code = code, redirBackRequest)
   }
+
 
   private def authnRedirBackImpl(protocol: St, providerAlias: St,
           state: St, session_state: Option[St], code: St, redirBackRequest: GetRequest)
@@ -593,6 +595,16 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                   "http:", "https:")
           }
 
+
+    // ----- The response
+
+    // We'll resolve this response-to-the-browser promise if there's an error,
+    // or when we've gotten enough data about the user from the IDP and have
+    // constructed and cached an identity.
+    //
+    val responseToBrowserPromise = Promise[p_Result]()
+
+
     // ----- Access token request
 
     // We got back `code`, a temporary authorization code, from the IDP's auth server,
@@ -633,10 +645,41 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                 }: $errMsg")
     }
 
-    val idAndAccessTokenPromise =
-          Promise[(sj_OAuth2AccessToken, Opt[OidcIdToken])]()
 
     authnService.getAccessToken(code, new sj_OAuthAsyncReqCallback[sj_OAuth2AccessToken] {
+      override def onThrowable(throwable: Throwable): U = {
+        // The access token request failed somehow.
+
+        // Change to info, and show in site admin logs only instead?  [admin_log]
+        val oauth2Api: sj_DefaultApi20 = authnService.getApi
+        logger.warn(s"Error requesting access token from: ${
+              oauth2Api.getAccessTokenEndpoint}  [TyEACSTKNREQ1]", throwable)
+
+        val errorRespEx: RespEx = throwable match {
+          case _: java.net.NoRouteToHostException =>
+            // Don't include the server address — could be an organization private thing,
+            // and reveal e.g. what software they use.
+            SECURITY; COULD // later remove ex.toString from all errors responses
+            // below, and show ex.toString only in an admin-only log.
+            RespEx(BadGatewayResult("TyEACSTKNHST",
+                  o"""Error requesting OAuth2 access token:
+                      Cannot connect to the IDP's access token server"""))
+          case ex @ (_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
+            // We didn't even get a response!
+            RespEx(InternalErrorResult("TyEACSTKNREQ2",
+                  s"Error requesting access token: ${ex.toString}"))
+          case ex: sj_OAuth2AccessTokenErrorResponse =>
+            // We got an Error response.
+            RespEx(ForbiddenResult("TyEACSTKNRSP",
+                  s"Error response from access token endpoint: ${ex.toString}"))
+          case ex: Exception =>
+            RespEx(InternalErrorResult("TyEACSTKNUNK",
+                  s"Unknown error requesting access token: ${ex.toString}"))
+        }
+
+        responseToBrowserPromise.failure(errorRespEx)
+      }
+
       override def onCompleted(accessToken: sj_OAuth2AccessToken): U = {
         // TyOidcScribeJavaApi20 uses OpenIdJsonTokenExtractor.instance
         // as access token extractor; therefore, we can downcast to
@@ -654,7 +697,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           val idTokenStr: St = sjTokens.getOpenIdToken
           if (idTokenStr eq null) {
             if (idp.isOpenIdConnect) {
-              idAndAccessTokenPromise.failure(ResultException(BadGatewayResult(
+              responseToBrowserPromise.failure(RespEx(BadGatewayResult(
                     "TyEACSTKN0OIDTKN",
                     s"s$siteId: Token response from OIDC provider lacks id_token, IDP: ${
                         idp.protoAlias}")))
@@ -729,53 +772,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // validated.)
         }
 
-        idAndAccessTokenPromise.success((accessToken, anyOidcIdToken))
+        requestUserInfo(accessToken, anyOidcIdToken)
       }
-
-      override def onThrowable(t: Throwable): U = {
-        // The access token request failed somehow.
-        idAndAccessTokenPromise.failure(t)
-      }
-    })
-
-    val userInfoPromise = Promise[(sj_Response, Opt[OidcIdToken])]()
-
-    idAndAccessTokenPromise.future.onComplete({
-      case Failure(throwable: Throwable) =>
-        // Change to info, and show in site admin logs only instead?  [admin_log]
-        val oauth2Api: sj_DefaultApi20 = authnService.getApi
-        logger.warn(s"Error requesting access token from: ${
-              oauth2Api.getAccessTokenEndpoint}  [TyEACSTKNREQ1]", throwable)
-
-        val errorResponseException = throwable match {
-          case ex: ResultException =>
-            ex
-          case _: java.net.NoRouteToHostException =>
-            // Don't include the server address — could be an organization private thing,
-            // and reveal e.g. what software they use.
-            SECURITY; COULD // later remove ex.toString from all errors responses
-            // below, and show ex.toString only in an admin-only log.
-            ResultException(BadGatewayResult("TyEACSTKNHST",
-                  o"""Error requesting OAuth2 access token:
-                      Cannot connect to the IDP's access token server"""))
-          case ex @ (_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
-            // We didn't even get a response!
-            ResultException(InternalErrorResult("TyEACSTKNREQ2",
-                  s"Error requesting access token: ${ex.toString}"))
-          case ex: sj_OAuth2AccessTokenErrorResponse =>
-            // We got an Error response.
-            ResultException(ForbiddenResult("TyEACSTKNRSP",
-                  s"Error response from access token endpoint: ${ex.toString}"))
-          case ex: Exception =>
-            ResultException(InternalErrorResult("TyEACSTKNUNK",
-                  s"Unknown error requesting access token: ${ex.toString}"))
-        }
-        // Pass our error response on to userInfoPromise — it replies to the browser.
-        userInfoPromise.failure(errorResponseException)
-
-      case Success((tokens: sj_OAuth2AccessToken, anyIdToken: Opt[OidcIdToken])) =>
-        // Continue below.
-        requestUserInfo(tokens, anyIdToken)
     })
 
 
@@ -793,96 +791,54 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // The user-info endpoint and response is standardized if we're using OIDC
     // — otherwise, if just OAuth2, then it's IDP specific.
 
-    def requestUserInfo(accessToken: sj_OAuth2AccessToken, idToken: Opt[OidcIdToken]) {
+    def requestUserInfo(accessToken: sj_OAuth2AccessToken, anyIdToken: Opt[OidcIdToken]) {
       val userInfoRequest = new sj_OAuthRequest(sj_Verb.GET, idp.oidcUserInfoUrl)
+
+      // Some OAuth2 IDPs want extra headers — when it's not OIDC, it's non-standard.
+      idp.wellKnownIdpImpl foreach {
+        case WellKnownIdpImpl.LinkedIn =>
+          userInfoRequest.addHeader("x-li-format", "json")
+          userInfoRequest.addHeader("Accept-Language", "en-US") // I18N use the site lang?
+        case _ =>
+          // No extra headers needed.
+      }
+
       authnService.signRequest(accessToken, userInfoRequest)
 
-      authnService.execute(userInfoRequest, new sj_OAuthAsyncReqCallback[sj_Response] {
-        override def onCompleted(response: sj_Response): U = {
-          userInfoPromise.success((response, idToken))
-        }
-        override def onThrowable(t: Throwable): U = {
-          userInfoPromise.failure(t)
-        }
-      })
+      doAuthnServiceRequest("user info", idp, siteId,
+            authnService, userInfoRequest,
+            (errorResponse: p_Result) => {
+              responseToBrowserPromise.failure(RespEx(errorResponse))
+            },
+            (json: JsValue) => {
+              handleUserInfoJson(
+                    redirBackRequest, idp, json, siteId, anyIdToken, authnState,
+                    authnService, accessToken, responseToBrowserPromise)
+            })
     }
 
-    val futureResponseToBrowser = userInfoPromise.future.transform {
-      case Failure(throwable: Throwable) =>
-        val errorResponse = throwable match {
-          case ResultException(response) =>
-            // This happens if the access token request failed previously, above.
-            Success(response)
-          case ex@(_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
-            Success(InternalErrorResult(
-                  "TyEUSRINFREQ", s"Error requesting user info: ${ex.toString}"))
-          case ex =>
-            Success(InternalErrorResult(
-                  "TyEUSRINFUNK", s"Unknown error requesting user info: ${ex.toString}"))
-        }
-        errorResponse
-
-      case Success((userInfoResponse: sj_Response, anyIdToken: Opt[OidcIdToken])) =>
-        val responseToBrowser = handleUserInfoResponse(
-              redirBackRequest, idp, userInfoResponse, anyIdToken, authnState)
-        Success(responseToBrowser)
-    }
-
-    futureResponseToBrowser
+    responseToBrowserPromise.future
   }
 
 
 
-  private def handleUserInfoResponse(redirBackRequest: GetRequest, idp: IdentityProvider,
-          userInfoResponse: sj_Response, anyOidcIdToken: Opt[OidcIdToken],
-          authnState: OngoingAuthnState): p_Result = {
+  private def handleUserInfoJson(redirBackRequest: GetRequest, idp: IdentityProvider,
+          userInfJsVal: JsValue, siteId: SiteId, anyOidcIdToken: Opt[OidcIdToken],
+          authnState: OngoingAuthnState, authnService: sj_OAuth20Service,
+          accessToken: sj_OAuth2AccessToken, responseToBrowserPromise: Promise[p_Result])
+          : U = {
 
-    import redirBackRequest.siteId
-    val httpStatusCode = userInfoResponse.getCode
-    val body = userInfoResponse.getBody
+    val json = userInfJsVal.asOpt[JsObject] getOrElse {
+      responseToBrowserPromise.failure(RespEx(BadGatewayResult("TyEUSRJSN0OBJ",
+            s"IDP user json is not an obj")))
+      return
+    }
 
     // Already checked in authnRedirBack().
     dieIf(authnState.authnViaSiteId != siteId, "TyEAUTSITEID003",
           s"Wrong authn site: $siteId, should be: ${authnState.authnViaSiteId}")
     dieIf(authnState.nextStep != "redir_back", "TyEAUTSITEID004",
           s"Wrong step: ${authnState.nextStep}")
-
-    if (httpStatusCode < 200 || 299 < httpStatusCode) {
-      val randVal = nextRandomString()
-      val errCode = "TyEUSRINFRSP"
-      logger.warn(i"""s$siteId: Bad OIDC/OAuth2 userinfo response [$errCode],
-          |Log message random id: '$randVal'
-          |IDP: ${idp.protoAlias}, id: ${idp.prettyId}
-          |Browser redirback request URL: ${redirBackRequest.uri}
-          |IDP response status code: $httpStatusCode  (bad, not 2XX)
-          |IDP response body: -----------------------
-          |$body
-          |--------------------------------------
-          |""")
-      val errMsg = s"Unexpected status code: ${httpStatusCode
-                      }, details in the server logs, search for '$randVal'"
-      val upstreamError = 500 <= httpStatusCode && httpStatusCode <= 599
-      return (
-          if (upstreamError) BadGatewayResult(errCode, errMsg)
-          else InternalErrorResult(errCode, errMsg))
-    }
-
-    // db max len: idtys_c_idpuserjson_len <= 7000 [sync_app_rdb_constrs]
-    val maxUserRespLen = 6*1000
-    if (body.length > maxUserRespLen) {
-      // This is a weird IDP!?
-      return BadGatewayResult(
-            "TyEUSRINF2LONG", o"""Too long userinfo JSON from IDP: ${body.length
-                  } chars, max is: $maxUserRespLen""")
-    }
-
-    val json =
-          try Json.parse(body)
-          catch {
-            case _: Exception =>
-              return BadGatewayResult(
-                    "TyEUSRINFJSONPARSE", s"Malformed JSON from IDP userinfo endpoint")
-          }
 
     var oauthDetails: OpenAuthDetails = (idp.protocol match {
       // Some providers, e.g. Google, uses OIDC user info also for OAuth2 [goog_oidc]
@@ -893,28 +849,58 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       case bad =>
         die("TyE5F5RKS56", s"Bad auth protocol: $bad")
     }) getOrIfBad { errMsg =>
-      return BadGatewayResult("TyEUSRINFJSONUSE",
-            s"Got invalid user json from IDP: ${errMsg}")
+      responseToBrowserPromise.failure(RespEx(BadGatewayResult("TyEUSRINFJSONUSE",
+            s"Got invalid user json from IDP: ${errMsg}")))
+      return
     }
-
-    Validation.ifBadEmail(oauthDetails.email, siteId = siteId, problem => {
-      return BadGatewayResult("TyEUSRINFJSONEML",
-            s"Got an invalid email address from IDP: ${problem.message}")
-    })
 
     anyOidcIdToken foreach { idToken: OidcIdToken =>
       oauthDetails = oauthDetails.copy(oidcIdToken = Some(idToken))
     }
 
+
+    if (idp.wellKnownIdpImpl.isDefined) {
+      // Fetch any missing profile info.  [oauth2_extra_req]
+      // E.g. for LinkedIn and GitHub, need to fetch the verified email address (if any).
+      WellKnownIdps.fetchAnyMissingUserInfo(oauthDetails, idp, siteId = siteId,
+            authnService, accessToken,
+            onError = (errorResponse: p_Result) => {
+              responseToBrowserPromise.failure(RespEx(errorResponse))
+            },
+            onOk = (allDetails: OpenAuthDetails) => {
+              constructRedirBackResponseToBrowser(
+                    redirBackRequest, idp, authnState, allDetails,
+                    responseToBrowserPromise)
+            })
+    }
+    else {
+      constructRedirBackResponseToBrowser(
+            redirBackRequest, idp, authnState, oauthDetails, responseToBrowserPromise)
+    }
+  }
+
+
+
+  private def constructRedirBackResponseToBrowser(redirBackRequest: GetRequest,
+          idp: IdentityProvider, authnState: OngoingAuthnState,
+          oauthDetails: OpenAuthDetails, responseToBrowserPromise: Promise[p_Result])
+          : U = {
+
+    val siteId = authnState.authnViaSiteId
+    Validation.ifBadEmail(oauthDetails.email, siteId = siteId, problem => {
+      responseToBrowserPromise.failure(ResultException(
+            BadGatewayResult("TyEUSRINFJSONEML",
+                s"Got an invalid email address from IDP: ${problem.message}")))
+      return
+    })
+
     val authnStateWithIdentity = authnState.copy(extIdentity = Some(oauthDetails))
 
-    authnStateWithIdentity.continueAtOrigSiteNonce match {
+    val response: p_Result = authnStateWithIdentity.continueAtOrigSiteNonce match {
       case Some(origSiteNonce) =>
         // We're currently at the authn site, having authenticated at the IDP here
         // at this site, on behalf of another site — now we need to redirect
         // back to that other site, the login-to site.
-        // Already checked above, but why not again:
-        dieIf(authnStateWithIdentity.authnViaSiteId != siteId, "TyE305K24")
 
         val nextSecretNonce = nextRandomString()
         authnStateCache.put(nextSecretNonce, authnStateWithIdentity.copy(
@@ -933,6 +919,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         tryLoginOrShowCreateUserDialog(
               redirBackRequest, authnStateWithIdentity, anyCustomIdp = Some(idp))
     }
+
+    responseToBrowserPromise.success(response)
   }
 
 
@@ -2109,12 +2097,24 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
       case WellKnownIdpImpl.GitHub =>
         if (!siteSettings.enableGitHubLogin) return Bad("GitHub login not enabled")
-        // To do:
-        // trustVerifiedEmailAddr = true // [gmail_verifd]
-        // But first need to "copy" the custom Silhouette GitHub impl?
-        // See: CustomGitHubProfileParser, CustomGitHubProvider below.
-        return Bad("GitHub authn not impl via ScribeJava [TyEAUTGHBSCRJVA]")
-        //githubProvider().settings
+        // We fetch a verified email addr (if any) in an OAuth2 extra request.
+        trustVerifiedEmailAddr = true // [gmail_verifd]
+        val s = githubProvider().settings
+        var url = s.apiURL getOrElse "https://api.github.com/user" // keep configurable
+        url = url.trim()
+        // Old uri param, nowadays Basic Auth header instead.
+        val accessTokenQueryParam = "?access_token=%s"
+        if (url.contains(accessTokenQueryParam)) {
+          url = url.replaceAllLiterally(accessTokenQueryParam, "")
+          /*
+          if (!warnedAboutOldAuth) {
+            warnedAboutOldAuth = true
+            logger.warn(o"""Deprecated GitHub auth conf: Remove "$accessTokenQueryParam" from
+                the  github.apiURL  config value, in  $ProdConfFilePath  [TyMGHBAUTDPR].""")
+          }*/
+        }
+        userInfoUrl = url
+        s
 
       case WellKnownIdpImpl.Google =>
         // Any better way to find out if enabled, than having a separate settings
@@ -2126,7 +2126,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         googleProvider().settings
 
       case WellKnownIdpImpl.LinkedIn =>
+        // ScribeJava + LinkedIn example:
+        // https://github.com/scribejava/scribejava/blob/master/scribejava-apis/src/test/java/com/github/scribejava/apis/examples/LinkedIn20Example.java
         if (!siteSettings.enableLinkedInLogin) return Bad("LinkedIn login not enabled")
+        userInfoUrl = "https://api.linkedin.com/v2/me"
         linkedinProvider().settings
 
       case WellKnownIdpImpl.Twitter =>
@@ -2375,6 +2378,8 @@ class CustomGitHubProfileParser(
           (None, None)
         }
         else {
+          // Delete this dupl [old_github_code] soon, hopefully DO_AFTER 2021-01-01  REMOVE
+
           val bodyAsJson = Json.parse(bodyAsText)
           val emailObjs: Seq[JsValue] = bodyAsJson.asInstanceOf[JsArray].value
           val emails: Seq[ExternalEmailAddr] = emailObjs.map({ emailObjUntyped: JsValue =>
@@ -2566,6 +2571,8 @@ class LinkedInProfileParserApiV2(
       "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))" +
       "&oauth2_access_token=" + oauth2AuthInfo.accessToken
     val linkedinRequest: ws.WSRequest = wsClient.url(emailRequestUrl)
+
+    // Delete this dupl [old_linkedin_code] later / soon. hopefully DO_AFTER 2021-01-01  REMOVE
 
     linkedinRequest.get().map({ response: ws.WSResponse =>
       // LinkedIn's response is (as of 2019-04) like:

@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.{MinUsernameLength, isGuestId}
 import debiki._
+import debiki.JsonUtils._
 import debiki.dao.{LoadPostsResult, ReadMoreResult, SiteDao}
 import debiki.EdHttp._
 import ed.server.http._
@@ -34,7 +35,9 @@ import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
+import talkyard.server.JsX
 import talkyard.server.JsX._
+import talkyard.server.p_Result
 import talkyard.server.TyLogging
 
 
@@ -105,8 +108,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, requesterOrUnknown}
     // First try looking up by `who` as a  numeric user id. If won't work,
     // lookup by `who` as username instead.
+
+    CLEAN_UP // make reusable   [load_pat_stats_grps]
+    // Don't incl  anyUserStats  inside the member json?
+    // Don't incl  groupIdsMaySee ?
+
     var (userJson, anyStatsJson, ppt) = Try(who.toInt).toOption match {
-      case Some(id) => loadUserJsonAnyDetailsById(id, includeStats = true, request)
+      case Some(id) => loadPatJsonAnyDetailsById(id, includeStats = true, request)
       case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
         who, includeStats = true, request)
     }
@@ -128,15 +136,17 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   // A tiny bit dupl code [5YK02F4]
-  private def loadUserJsonAnyDetailsById(userId: UserId, includeStats: Boolean,
-        request: DebikiRequest[_]): (JsObject, JsValue, Participant) = {
+  // Returns (pat-json, pat-stats-json, Pat)
+  //
+  private def loadPatJsonAnyDetailsById(userId: UserId, includeStats: Bo,
+        request: DebikiRequest[_]): (JsObject, JsValue, Pat) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.exists(_.id == userId)
     val isStaffOrSelf = callerIsStaff || callerIsUserHerself
     request.dao.readOnlyTransaction { tx =>
       val stats = includeStats ? tx.loadUserStats(userId) | None
-      val (pptJson, ppt) =
+      val (pptJson, pat) =
         if (Participant.isRoleId(userId)) {
           val memberOrGroup = tx.loadTheMemberInclDetails(userId)
           val groups = tx.loadGroups(memberOrGroup)
@@ -156,8 +166,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
             callerIsAdmin = callerIsAdmin)
           (json, guest)
         }
-      dieIf(ppt.id != userId, "TyE36WKDJ03")
-      (pptJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), ppt.noDetails)
+      dieIf(pat.id != userId, "TyE36WKDJ03")
+      (pptJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), pat.noDetails)
     }
   }
 
@@ -222,9 +232,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def jsonForGroupInclDetails(group: Group, callerIsAdmin: Boolean,
-      callerIsStaff: Boolean = false): JsObject = {
-    var json = Json.obj(   //  [B28JG4]
+  private def jsonForGroupInclDetails(group: Group, callerIsAdmin: Bo,
+        callerIsStaff: Bo = false): JsObject = {
+    var json = Json.obj(   // hmm a bit dupl code [B28JG4]  also in JsGroup
       "id" -> group.id,
       "isGroup" -> JsTrue,
       //"createdAtEpoch" -> JsWhen(group.createdAt),
@@ -234,6 +244,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
       json += "uiPrefs" -> group.uiPrefs.getOrElse(JsEmptyObj)
+      val perms = group.perms
+      json += "maxUploadBytes" -> JsNumberOrNull(perms.maxUploadBytes)
+      json += "allowedUplExts" -> JsStringOrNull(perms.allowedUplExts)
     }
     json
   }
@@ -962,7 +975,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()
-        dao.jsonMaker.noUserSpecificData(everyonesPerms)
+        val everyoneGroup = request.dao.getTheGroup(Group.EveryoneId)
+        dao.jsonMaker.noUserSpecificData(everyonesPerms, everyoneGroup)
       }
 
     json
@@ -1367,7 +1381,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val prefs = aboutMemberPrefsFromJson(request.body)
     throwUnlessMayEditPrefs(prefs.userId, request.theRequester)
     request.dao.saveAboutMemberPrefs(prefs, request.who)
-    Ok
+
+    // Try to reuse: [load_pat_stats_grps]
+    val (patJson, _, _) = loadPatJsonAnyDetailsById(
+          prefs.userId, includeStats = false, request)
+    OkSafeJson(Json.obj("patNoStatsNoGroupIds" -> patJson))
   }
 
 
@@ -1378,7 +1396,24 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (!requester.isAdmin)
       throwForbidden("EdE5PYKW0", "Only admins may change group prefs, right now")
     dao.saveAboutGroupPrefs(prefs, request.who)
-    Ok
+
+    // Try to reuse: [load_pat_stats_grps]
+    val (patJson, _, _) = loadPatJsonAnyDetailsById(
+          prefs.groupId, includeStats = false, request)
+    OkSafeJson(Json.obj("patNoStatsNoGroupIds" -> patJson))
+  }
+
+
+  def savePatPerms: Action[JsValue] = AdminPostJsonAction2(RateLimits.ConfigUser,
+        maxBytes = 1000) { request =>
+    import request.{body, dao, siteId}
+    val patId = parseI32(body, "patId")
+    val perms: PatPerms = JsX.parsePatPerms(body, siteId)
+    dao.savePatPerms(patId, perms, request.who)
+
+    // Try to reuse: [load_pat_stats_grps]
+    val (patJson, _, _) = loadPatJsonAnyDetailsById(patId, includeStats = false, request)
+    OkSafeJson(Json.obj("patNoStatsNoGroupIds" -> patJson))
   }
 
 
@@ -1443,14 +1478,20 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def saveMemberPrivacyPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
         maxBytes = 100) { request =>
-    val prefs = memberPrivacyPrefsFromJson(request.body)
+    val prefs: MemberPrivacyPrefs = memberPrivacyPrefsFromJson(request.body)
     throwUnlessMayEditPrefs(prefs.userId, request.theRequester)
     request.dao.saveMemberPrivacyPrefs(prefs, request.who)
-    Ok
+
+    // Try to reuse: [load_pat_stats_grps]
+    val (patJson, _, _) = loadPatJsonAnyDetailsById(
+          prefs.userId, includeStats = false, request)
+    OkSafeJson(Json.obj("patNoStatsNoGroupIds" -> patJson))
   }
 
 
   private def throwUnlessMayEditPrefs(userId: UserId, requester: Participant): Unit = {
+    // There's a check elsewhere  [mod_0_conf_adm] that mods cannot
+    // change admins' preferences.
     val staffOrSelf = requester.isStaff || requester.id == userId
     throwForbiddenIf(!staffOrSelf, "TyE5KKQSFW0", "May not edit other people's preferences")
     throwForbiddenIf(userId < LowestTalkToMemberId,
@@ -1470,7 +1511,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         throwForbidden("DwE5KQP4", o"""There is another guest with the exact same name
             and other data. Please change the name, e.g. append "2".""")
     }
-    Ok
+
+    // Try to reuse: [load_pat_stats_grps]
+    val (patJson, _, _) = loadPatJsonAnyDetailsById(
+          guestId, includeStats = false, request)
+    OkSafeJson(Json.obj("patNoStatsNoGroupIds" -> patJson))
   }
 
 
@@ -1494,8 +1539,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwBadReq("TyE44KUY0", s"Bad username: $errorMessage")
     }
 
-    SECURITY // add checks for other lengts too, to avoid database constraint exceptions.
+    SECURITY; ANNOYING // add checks for other lengths, to avoid database constraint exceptions.
               // See if I've added all db constraints also.
+              // And return 400 Bad Req if weird json instead of Internal Error
+              // — use parseSt, parseOptInt32(json, "fieldName") etc.
     // Create getStringMaxLen and getOptStringMaxLen helpers?
     val about = (json \ "about").asOpt[String].trimNoneIfBlank
     if (about.exists(_.length > 1500))
@@ -1507,6 +1554,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       username = username,
       emailAddress = (json \ "emailAddress").as[String],
       // This one shouldn't be here: [REFACTORNOTFS] -----------
+      emailPref = EmailNotfPrefs.fromInt(parseI32(json, "emailPref"))
+            .getOrElse(throwBadReq("TyE5AWF603MRD", "Bade emailPref")),
       summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
       summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean],
       // ----------------------------------------------------

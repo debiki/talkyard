@@ -324,7 +324,7 @@ function renderPageInBrowser() {
     // Plus add collapse-thread buttons, for tall threads.
     debiki2.page.Hacks.processPosts();
     debiki2.page.PostsReadTracker.start();
-    if (_.includes(store.siteFeatureFlags, 'ffShortcuts')) {
+    if (!_.includes(store.siteFeatureFlags, 'ffNotShortcuts')) {
       debiki2.KeyboardShortcuts.start();
     }
 
