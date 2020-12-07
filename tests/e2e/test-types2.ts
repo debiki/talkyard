@@ -28,7 +28,8 @@ interface TestSettings {
   useDevtoolsProtocol?: boolean;
   parallel?: number;
   prod: boolean;
-  secure: boolean;
+  https: Bo;  // alias for 'secure'; toggles 'secure' on
+  secure: Bo;
   host: string;
   scheme: string;
   block3rdPartyCookies?: boolean;
