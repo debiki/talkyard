@@ -377,11 +377,11 @@ export interface InstaDiagProps {
 /// so we create all elems ourselves here manually.
 ///
 export function InstaDiag(ps: InstaDiagProps): RElm {
-  return r.div({ className: 's_InstaDgW' },
+  return r.div({ className: 's_InstaDgW ' + (ps.diagClassName || '') },
       r.div({ className: 'modal-backdrop fade in', style: { opacity: 0.5 } }),
       r.div({ role: 'dialog', className: 'fade in modal',
             style: { display: 'block' }},
-        r.div({ className: 'modal-dialog dw-server-error ' + (ps.diagClassName || '') },
+        r.div({ className: 'modal-dialog' },
           r.div({ className: 'modal-content', role: 'document' },
             !ps.title ? null : r.div({ className: 'modal-header' },
               r.h4({ className: 'modal-title ' + (ps.titleClassName || '') },
