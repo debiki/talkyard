@@ -268,6 +268,7 @@ interface LoginDialogContentProps {
 /**
  * This is a separate component because on embedded discussion pages, it's placed directly
  * in a popup window with no modal dialog around.
+ * RENAME to AuthnDlg and file too?
  */
 export const LoginDialogContent = createClassAndFactory({
   displayName: 'LoginDialogContent',
@@ -358,6 +359,15 @@ export const LoginDialogContent = createClassAndFactory({
             t.ld.CreateAdmAcct));
             // UX SHOULD add back, for first site: "Use the email address you specified in the config file."));
 
+    // When testing on localhost, it can be confusing if cookies get discarded,
+    // because of accidentally using http, not https.
+    const shouldUseHttps = eds.secure;
+    const usesHttpsAlready = location.protocol === 'https:';
+    const notHttpsErr = !shouldUseHttps || usesHttpsAlready ? null :
+        r.p({ className: 's_NotHttpsErr' },
+          "Error: Not HTTPS. ",
+          LinkButton({ href: location.href.replace(/^http:/, 'https:') },
+            "Reload as HTTPS"));
 
     const notFound = loginReason === 'LoginBecauseNotFound';
     const notFoundInstructions = !notFound ? null :
@@ -507,6 +517,7 @@ export const LoginDialogContent = createClassAndFactory({
 
     return (
       r.div({ className: 'esLD' },
+        notHttpsErr,
         notFoundInstructions,
         content));
   }

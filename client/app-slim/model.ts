@@ -1684,6 +1684,7 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
   enabled: Bo;
   adminComments?: St;
   trustVerifiedEmail: Bo;
+  emailVerifiedDomains?: St;
   linkAccountNoLogin: Bo;
   syncMode: Nr;
   oauAuthorizationUrl: St;

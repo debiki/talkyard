@@ -1535,6 +1535,8 @@ case class OpenAuthLoginAttempt(
 
 /** A user might have many identities, e.g. an OpenAuth Google identity and
   * a Twitter identity.
+  *
+  * Try to remove?  UserIdentity (currently "OpenAuthIdentity" below) should be enough.
   */
 sealed abstract class Identity {
 
@@ -1616,7 +1618,7 @@ case class OpenIdDetails(   // RENAME  to OldOpenId10Details? Or inline in
  * @param userId pats_t foreign key.
  * @param openAuthDetails
  */
-case class OpenAuthIdentity(
+case class OpenAuthIdentity(   // RENAME to  UserIdentity?
   id: IdentityId,  // CLEAN_UP change from String to Int
   override val userId: UserId,
   openAuthDetails: OpenAuthDetails) extends Identity {
@@ -1639,31 +1641,86 @@ class OidcIdToken(val idTokenStr: St) {
 
 // Merge with ExternalSocialProfile into ... ExtIdpUser? IdentityFromIdp? IdpIdentity?  Or just ExtIdentity or ExtIdpIdentity or Identity?
 /**
+  * OIDC standard claims:
+  *   https://openid.net/specs/openid-connect-basic-1_0.html#StandardClaims
+  *
   * @param confFileIdpId — from old Silhouette config. Will migrate to authn site IDPs?
   * @param idpId — for new db table & ScribeJava based config.
-  * @param idpUserId
-  * @param username
+  * @param idpUserId — for OIDC, this is the 'sub' claim. For OAuth2-not-OIDC,
+  *   it's something IDP specific.
+  * @param idpRealmId — some providers, namely Azure AD, exposes a static tenant
+  *   id — the Azure tenant id — which we here call Realm, since OIDC calls these
+  *   things Realms. Useful when combined with idpRealmUserId.
+  *   In Azure, this is the 'tid' claim (tenant id), and for personal
+  *   accounts, it is: Oidc.AzurePersonalAccountTenantId.
+  * @param idpRealmUserId — a per realm (e.g. Azure tenant) and user stable
+  *   identifier — stays the same also if the OIDC client (Talkyard) gets a new
+  *   client id and secret. Can be useful if integrating with other apps that connect
+  *   to the same realm (the same Azure AD tenant), since then Talkyard and that
+  *   other app know they're talking about the same user.  (However, Talkyard and
+  *   the other app would see different OIDC 'sub' (subject) user identifiers.)
+  *   If the same real life human connects to the same Talkyard server
+  *   but via *a different realm* (logs in to Talkyard via a different Azure AD
+  *   tenant), then idpRealmUserId would be different.
+  *   In Azure AD, this is the 'oid' claim.
+  * @param issuer — The OIDC 'iss' claim, i.e. the organization that sent us
+  *   the user info / id_token.
+  *   For Azure AD: Is based on the security token service and the Azure AD tenant
+  *   the user authenticated against, and, Ty can use use the GUID portion
+  *   of the claim to restrict the set of tenants that can sign in
+  *   (not yet implemented or requested by anyone though).
+  *   Azure AD consumer user accounts have id  Oidc.AzurePersonalAccountTenantId.
+  *   The whole Azure AD 2.0 issuer format is:
+  *   https://login.microsoftonline.com/1234abcd-1234-1234-1234-123456abcdef/v2.0 .
+  * @param username — the preferred username. Can be whatever, e.g. an email
+  *   address (in Azure AD) or a seemingly unique username *but* that in fact
+  *   might not be unique. And can be something else, the next login.
+  * @param nickname
   * @param firstName
   * @param lastName
   * @param fullName
   * @param email
-  * @param isEmailVerifiedByIdp
+  * @param isEmailVerifiedByIdp — the 'email_verified' claim. Azure AD doesn't
+  *   include it, instead Azure has a 'verified_primary_email' claim but who
+  *   knows if it's been verified or if it's just the name? The Azure docs is
+  *   a bit unclear? [azure_claims_docs]
+  *   https://docs.microsoft.com/en-us/azure/active-directory/develop/id-tokens
   * @param avatarUrl
+  * @param isRealmGuest — in Azure, true iff the person is a realm (tenant) guest,
+  *   but not an actual organization member.
   * @param userInfoJson
   * @param oidcIdToken
   */
-case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
+case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine    RENAME to IdpUserInfo — typically is data from an IDP's OIDC userinfo endpoint (or id_token).  Started already, defined: type IdpUserInfo.
   confFileIdpId: Opt[ConfFileIdpId] = None,  // RENAME QUICK to serverGlobalIdpId
   idpId: Opt[IdpId] = None,
   idpUserId: St,
-  username: Opt[St] = None,
+  idpRealmId: Opt[St] = None,
+  idpRealmUserId: Opt[St] = None,
+  issuer: Opt[St] = None,
+  username: Opt[St] = None,  // RENAME to preferredUsername?
+  nickname: Opt[St] = None,
   firstName: Opt[St] = None,
   middleName: Opt[St] = None,
   lastName: Opt[St] = None,
   fullName: Opt[St] = None,
   email: Opt[St] = None,
   isEmailVerifiedByIdp: Opt[Bo] = None,
+  phoneNumber: Opt[St] = None,
+  isPhoneNumberVerifiedByIdp: Opt[Bo] = None,
+  profileUrl: Opt[St] = None,
+  websiteUrl: Opt[St] = None,
+  // Rename to pictureUrl? OIDC calls it 'picture_url'.
   avatarUrl: Opt[St] = None,
+  gender: Opt[St] = None,
+  birthdate: Opt[St] = None,
+  timeZoneInfo: Opt[St] = None,
+  country: Opt[St] = None,
+  locale: Opt[St] = None,
+  //roles: Seq[St] = Nil, — later. Azure.
+  isRealmGuest: Opt[Bo] = None,
+  lastUpdatedAtIdpAtSec: Opt[i64] = None,
+  idToken: Opt[St] = None,
   userInfoJson: Opt[JsObject] = None,
   oidcIdToken: Opt[OidcIdToken] = None) {
 
@@ -1699,7 +1756,17 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
 
   // Mixed case email addresses not allowed, for security reasons. See db fn email_seems_ok.
   def emailLowercasedOrEmpty: String = email.map(_.toLowerCase) getOrElse ""
+
 }
+
+
+
+object Oidc {
+  val AzurePersonalAccountTenantId = "9188040d-6c67-4c5b-b112-36a304b66dad"
+  val AzureIssuerPrefix = "https://login.microsoftonline.com/"
+  val AzureTenantGuestAccountType = 1
+}
+
 
 
 case class OpenAuthProviderIdKey(

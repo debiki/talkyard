@@ -167,6 +167,7 @@ package object core {
   type ConfFileIdpId = St
   type IdpId = i32
 
+  type IdpUserInfo = OpenAuthDetails  // renaming
 
   sealed abstract class MarkupLang
   object MarkupLang {
@@ -306,6 +307,11 @@ package object core {
 
   RENAME // to ErrMsgCode
   case class ErrorMessageCode(message: ErrorMessage, code: String)
+
+
+  // Renaming to Check.
+  val Check: Validation.type = Validation
+
 
   /** Where to start rendering a page. The specified post and all its successors
     * will be included in the resulting page. If None, then all top level posts are

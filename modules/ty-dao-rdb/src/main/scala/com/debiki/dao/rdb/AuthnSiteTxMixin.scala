@@ -65,69 +65,141 @@ trait AuthnSiteTxMixin extends SiteTransaction {
 
   private def insertOpenAuthIdentity(identity: OpenAuthIdentity) {
     val sql = """
-        insert into identities3(
+        insert into identities3 (
             site_id,
             idty_id_c,
+            inserted_at_c,
             user_id_c,
             user_id_orig_c,
             conf_file_idp_id_c,
             idp_id_c,
             idp_user_id_c,
-            idp_user_json_c,
-            idp_username_c,
-            FIRST_NAME, LAST_NAME, FULL_NAME, EMAIL, AVATAR_URL,
-            AUTH_METHOD)
+            idp_realm_id_c,
+            idp_realm_user_id_c,
+            issuer_c,
+            pref_username_c,
+            nickname_c,
+            first_name_c,
+            middle_name_c,
+            last_name_c,
+            full_name_c,
+            email_adr_c,
+            is_email_verified_by_idp_c,
+            phone_nr_c,
+            is_phone_nr_verified_by_idp_c,
+            profile_url_c,
+            website_url_c,
+            picture_url_c,
+            gender_c,
+            birthdate_c,
+            time_zone_info_c,
+            country_c,
+            locale_c,
+            is_realm_guest_c,
+            last_updated_at_idp_at_sec_c,
+            idp_user_json_c)
         values (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
 
     val ds = identity.openAuthDetails
-    val method = "OAuth" ; CLEAN_UP ; REMOVE // this column
 
     val values = List[AnyRef](
           siteId.asAnyRef,
           identity.id.toInt.asAnyRef,
+          now.asTimestamp,
           identity.userId.asAnyRef,
           identity.userId.asAnyRef,
           ds.confFileIdpId.trimOrNullVarchar,
           ds.idpId.orNullInt,
           ds.idpUserId,
-          ds.userInfoJson.orNullJson,
+          ds.idpRealmId.orNullVarchar,
+          ds.idpRealmUserId.orNullVarchar,
+          ds.issuer.orNullVarchar,
           ds.username.orNullVarchar,
+          ds.nickname.orNullVarchar,
           ds.firstName.orNullVarchar,
+          ds.middleName.orNullVarchar,
           ds.lastName.orNullVarchar,
           ds.fullName.orNullVarchar,
           ds.email.orNullVarchar,
+          ds.isEmailVerifiedByIdp.orNullBoolean,
+          ds.phoneNumber.orNullVarchar,
+          ds.isPhoneNumberVerifiedByIdp.orNullBoolean,
+          ds.profileUrl.orNullVarchar,
+          ds.websiteUrl.orNullVarchar,
           ds.avatarUrl.orNullVarchar,
-          method)
+          ds.gender.orNullVarchar,
+          ds.birthdate.orNullVarchar,
+          ds.timeZoneInfo.orNullVarchar,
+          ds.country.orNullVarchar,
+          ds.locale.orNullVarchar,
+          ds.isRealmGuest.orNullBoolean,
+          ds.lastUpdatedAtIdpAtSec.orNullI64,
+          ds.userInfoJson.orNullJson)
 
     runUpdate(sql, values)
   }
 
 
   private[rdb] def updateOpenAuthIdentity(identity: OpenAuthIdentity) {
-    val sql = """
+    val sqlStmt = """
           update identities3 set
             user_id_c = ?,
-            idp_user_json_c = ?,
-            idp_username_c = ?,
-            FIRST_NAME = ?, LAST_NAME = ?, FULL_NAME = ?, EMAIL = ?, AVATAR_URL = ?
+            issuer_c = ?,
+            pref_username_c = ?,
+            nickname_c = ?,
+            first_name_c = ?,
+            middle_name_c = ?,
+            last_name_c = ?,
+            full_name_c = ?,
+            email_adr_c = ?,
+            is_email_verified_by_idp_c = ?,
+            phone_nr_c = ?,
+            is_phone_nr_verified_by_idp_c = ?,
+            profile_url_c = ?,
+            website_url_c = ?,
+            picture_url_c = ?,
+            gender_c = ?,
+            birthdate_c = ?,
+            time_zone_info_c = ?,
+            country_c = ?,
+            locale_c = ?,
+            is_realm_guest_c = ?,
+            last_updated_at_idp_at_sec_c = ?,
+            idp_user_json_c = ?
           where idty_id_c = ? and site_id = ?"""
 
     val ds = identity.openAuthDetails
 
     val values = List[AnyRef](
           identity.userId.asAnyRef,
-          ds.userInfoJson.orNullJson,
+          ds.issuer.orNullVarchar,
           ds.username.orNullVarchar,
+          ds.nickname.orNullVarchar,
           ds.firstName.orNullVarchar,
+          ds.middleName.orNullVarchar,
           ds.lastName.orNullVarchar,
           ds.fullName.orNullVarchar,
           ds.email.orNullVarchar,
+          ds.isEmailVerifiedByIdp.orNullBoolean,
+          ds.phoneNumber.orNullVarchar,
+          ds.isPhoneNumberVerifiedByIdp.orNullBoolean,
+          ds.profileUrl.orNullVarchar,
+          ds.websiteUrl.orNullVarchar,
           ds.avatarUrl.orNullVarchar,
+          ds.gender.orNullVarchar,
+          ds.birthdate.orNullVarchar,
+          ds.timeZoneInfo.orNullVarchar,
+          ds.country.orNullVarchar,
+          ds.locale.orNullVarchar,
+          ds.isRealmGuest.orNullBoolean,
+          ds.lastUpdatedAtIdpAtSec.orNullI64,
+          ds.userInfoJson.orNullJson,
           identity.id.toInt.asAnyRef,
           siteId.asAnyRef)
 
-    runUpdate(sql, values)
+    runUpdate(sqlStmt, values)
   }
 
 
@@ -145,12 +217,12 @@ trait AuthnSiteTxMixin extends SiteTransaction {
     val values = ArrayBuffer(siteId.asAnyRef)
     val andIdEq = userId.map(id => {
       values.append(id.asAnyRef)
-      "and i.user_id_c = ?"
+      "and user_id_c = ?"
     }) getOrElse ""
     val query = s"""
         select $IdentitySelectListItems
-        from identities3 i
-        where i.site_id = ? $andIdEq"""
+        from identities3
+        where site_id = ? $andIdEq"""
     runQueryFindMany(query, values.toList, rs => {
       val identity = readIdentity(rs)
       dieIf(userId.exists(_ != identity.userId), "TyE2WKBGE5")
@@ -166,19 +238,19 @@ trait AuthnSiteTxMixin extends SiteTransaction {
       case Some(confFileIdpId) =>
         values.append(confFileIdpId)
         // ix: idtys_u_conffileidpid_idpusrid
-        "i.conf_file_idp_id_c = ?"
+        "conf_file_idp_id_c = ?"
       case None =>
         values.append(openAuthKey.idpId.getOrDie("TyE705MRK41").asAnyRef)
         // ix: idtys_u_idpid_idpuserid
-        "i.idp_id_c = ?"
+        "idp_id_c = ?"
     }
 
     val query = s"""
         select $IdentitySelectListItems
-        from identities3 i
-        where i.site_id = ?
+        from identities3
+        where site_id = ?
           and $idpIdIsWhat
-          and i.idp_user_id_c = ? """
+          and idp_user_id_c = ? """
 
     values.append(openAuthKey.idpUserId)
 
@@ -195,7 +267,8 @@ trait AuthnSiteTxMixin extends SiteTransaction {
   }
 
 
-  private val IdentitySelectListItems = i"""
+  COULD_OPTIMIZE // don't need all columns
+  private val IdentitySelectListItems = "*"    /* i"""
      |idty_id_c,
      |user_id_c,
      |conf_file_idp_id_c,
@@ -207,22 +280,21 @@ trait AuthnSiteTxMixin extends SiteTransaction {
      |oid_realm,
      |oid_endpoint,
      |oid_version,
-     |auth_method,
      |idp_username_c,
-     |first_name i_first_name,
-     |last_name i_last_name,
-     |full_name i_full_name,
-     |email i_email,
-     |country i_country,
-     |avatar_url i_avatar_url
-   """
+     |first_name_c,
+     |last_name_c,
+     |full_name_c,
+     |email_adr_c,
+     |country_c,
+     |picture_url_c
+     |""" */
 
 
-  def readIdentity(rs: js.ResultSet): Identity = {
+  private def readIdentity(rs: js.ResultSet): Identity = {
     val identityId = rs.getInt("idty_id_c").toString
     val userId = rs.getInt("user_id_c")
 
-    val email = Option(rs.getString("i_email"))
+    val email = Option(rs.getString("email_adr_c"))
     val anyClaimedOpenId = Option(rs.getString("OID_CLAIMED_ID"))
     val anyConfFileIdpId = getOptString(rs, "conf_file_idp_id_c")
     val anyIdpId = getOptInt(rs, "idp_id_c")
@@ -239,9 +311,9 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             oidRealm = rs.getString("OID_REALM"),
             oidClaimedId = anyClaimedOpenId.get,
             oidOpLocalId = rs.getString("OID_OP_LOCAL_ID"),
-            firstName = rs.getString("i_first_name"),
+            firstName = rs.getString("first_name_c"),
             email = email,
-            country = rs.getString("i_country")))
+            country = rs.getString("country_c")))
       }
       else if (anyConfFileIdpId.isDefined || anyIdpId.isDefined) {
         OpenAuthIdentity(
@@ -251,12 +323,27 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             confFileIdpId = anyConfFileIdpId,
             idpId = anyIdpId,
             idpUserId = getOptString(rs, "idp_user_id_c").getOrElse(""),
-            username = getOptString(rs, "idp_username_c"),
-            firstName = getOptString(rs, "i_first_name"),
-            lastName = getOptString(rs, "i_last_name"),
-            fullName = getOptString(rs, "i_full_name"),
+            issuer = getOptString(rs, "issuer_c"),
+            username = getOptString(rs, "pref_username_c"),
+            nickname = getOptString(rs, "nickname_c"),
+            firstName = getOptString(rs, "first_name_c"),
+            middleName = getOptString(rs, "middle_name_c"),
+            lastName = getOptString(rs, "last_name_c"),
+            fullName = getOptString(rs, "full_name_c"),
             email = email,
-            avatarUrl = getOptString(rs, "i_avatar_url")))
+            isEmailVerifiedByIdp = getOptBo(rs, "is_email_verified_by_idp_c"),
+            phoneNumber = getOptString(rs, "phone_nr_c"),
+            isPhoneNumberVerifiedByIdp = getOptBo(rs, "is_phone_nr_verified_by_idp_c"),
+            profileUrl = getOptString(rs, "profile_url_c"),
+            websiteUrl = getOptString(rs, "website_url_c"),
+            avatarUrl = getOptString(rs, "picture_url_c"),
+            gender = getOptString(rs, "gender_c"),
+            birthdate = getOptString(rs, "birthdate_c"),
+            timeZoneInfo = getOptString(rs, "time_zone_info_c"),
+            locale = getOptString(rs, "locale_c"),
+            country = getOptString(rs, "country_c"),
+            isRealmGuest = getOptBo(rs, "is_realm_guest_c"),
+            lastUpdatedAtIdpAtSec = getOptI64(rs, "last_updated_at_idp_at_sec_c")))
       }
       else {
         die("TyE77GJ2", s"s$siteId: Unknown identity type, id: $identityId, user: $userId")
@@ -278,11 +365,13 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             description_c,
             admin_comments_c,
             trust_verified_email_c,
+            email_verified_domains_c,
             link_account_no_login_c,
             gui_order_c,
             sync_mode_c,
             oau_authorization_url_c,
             oau_auth_req_scope_c,
+            oau_auth_req_claims_c,
             oau_auth_req_hosted_domain_c,
             oau_access_token_url_c,
             oau_access_token_auth_method_c,
@@ -294,7 +383,8 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             oidc_userinfo_req_send_user_ip_c,
             oidc_logout_url_c)
           values (
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+              ?, ?, ?, ?, ?, ?, ?)
           on conflict (site_id_c, idp_id_c) do update set
             protocol_c = excluded.protocol_c,
             alias_c = excluded.alias_c,
@@ -303,11 +393,13 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             description_c = excluded.description_c,
             admin_comments_c = excluded.admin_comments_c,
             trust_verified_email_c = excluded.trust_verified_email_c,
+            email_verified_domains_c = excluded.email_verified_domains_c,
             link_account_no_login_c = excluded.link_account_no_login_c,
             gui_order_c = excluded.gui_order_c,
             sync_mode_c = excluded.sync_mode_c,
             oau_authorization_url_c = excluded.oau_authorization_url_c,
             oau_auth_req_scope_c = excluded.oau_auth_req_scope_c,
+            oau_auth_req_claims_c = excluded.oau_auth_req_claims_c,
             oau_auth_req_hosted_domain_c = excluded.oau_auth_req_hosted_domain_c,
             oau_access_token_url_c = excluded.oau_access_token_url_c,
             oau_access_token_auth_method_c = excluded.oau_access_token_auth_method_c,
@@ -329,11 +421,13 @@ trait AuthnSiteTxMixin extends SiteTransaction {
           idp.description.orNullVarchar,
           idp.adminComments.orNullVarchar,
           idp.trustVerifiedEmail.asAnyRef,
+          idp.emailVerifiedDomains.orNullVarchar,
           idp.linkAccountNoLogin.asAnyRef,
           idp.guiOrder.orNullInt,
           idp.syncMode.asAnyRef,
           idp.oauAuthorizationUrl,
           idp.oauAuthReqScope.orNullVarchar,
+          idp.oauAuthReqClaims.orNullJson,
           idp.oauAuthReqHostedDomain.orNullVarchar,
           idp.oauAccessTokenUrl,
           idp.oauAccessTokenAuthMethod.orNullVarchar,
@@ -400,11 +494,13 @@ trait AuthnSiteTxMixin extends SiteTransaction {
           description = getOptString(rs, "description_c"),
           adminComments = getOptString(rs, "admin_comments_c"),
           trustVerifiedEmail = getBool(rs, "trust_verified_email_c"),
+          emailVerifiedDomains = getOptString(rs, "email_verified_domains_c"),
           linkAccountNoLogin = getBool(rs, "link_account_no_login_c"),
           guiOrder = getOptInt(rs, "gui_order_c"),
           syncMode = rs.getInt("sync_mode_c"),  //  int not null,
           oauAuthorizationUrl = rs.getString("oau_authorization_url_c"),
           oauAuthReqScope = getOptString(rs, "oau_auth_req_scope_c"),
+          oauAuthReqClaims = getOptJsObject(rs, "oau_auth_req_claims_c"),
           oauAuthReqHostedDomain = getOptString(rs, "oau_auth_req_hosted_domain_c"),
           oauAccessTokenUrl = rs.getString("oau_access_token_url_c"),
           oauAccessTokenAuthMethod = getOptString(rs, "oau_access_token_auth_method_c"),

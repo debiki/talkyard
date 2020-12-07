@@ -59,6 +59,8 @@ object Validation {  RENAME // to Check, so:  Check.ifBadEmail( ...)  — looks 
     }
   }
 
+  def isObviouslyBadEmail(email: String): Bo =
+    checkEmail(email).isBad
 
   @deprecated // use ifBadEmail() instead — then cannot forget to check any return val
   def checkEmail(email: String): String Or ErrorMessage = {

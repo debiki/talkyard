@@ -619,13 +619,14 @@ case class EffectiveSettings(
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved &&
       !inviteOnly && allowSignup && !enableSso && !useOnlyCustomIdps
 
-  def isEmailAddressAllowed(address: String): Boolean = {
+  def isEmailAddressAllowed(address: St): Bo = {
     // With SSO, the remote SSO system determines what's allowed and
     // what's not.  [alwd_eml_doms]
     val enableSsoOrOnlyCustIdps = enableSso || useOnlyCustomIdps
     if (enableSsoOrOnlyCustIdps) true
     else EffectiveSettings.isEmailAddressAllowed(
-      address, allowListText = emailDomainWhitelist, blockListText = emailDomainBlacklist)
+          address, allowListText = emailDomainWhitelist,
+          blockListText = emailDomainBlacklist, allowByDefault = true)
   }
 
   /** Finds any invalid setting value, or invalid settings configurations. */
@@ -681,11 +682,14 @@ object EffectiveSettings {
     okSources.toSeq
   }
 
-  def isEmailAddressAllowed(address: St, allowListText: St, blockListText: St): Bo = {
-    def canBeDomain(line: St) = line.nonEmpty && line.headOption.isNot('#')
+  def isEmailAddressAllowed(address: St, allowListText: St, blockListText: St,
+        allowByDefault: Bo): Bo = {
+
+    def canBeDomain(line: St): Bo = line.nonEmpty && line.headOption.isNot('#')
     val allowedDomains = allowListText.lines.map(_.trim).filter(canBeDomain)
     val blockedDomains = blockListText.lines.map(_.trim).filter(canBeDomain)
-    def addrEndsWith(domain: St) =
+
+    def addrEndsWith(domain: St): Bo = {
       if (domain.contains("@") && domain.head != '@') {
         // Is an email address, not a domain. Fine — let people specify full addresses. And
         // then require an exact match, so another.jane.doe@ex.com won't match jane.doe@ex.com.
@@ -699,19 +703,25 @@ object EffectiveSettings {
         // Match only on domain boundaries = '.'. E.g.  let hacker.bad.com match bad.com,
         // but don't let  someone.goodbad.com match bad.com.
         // For now, don't allow sub domains — maybe somehow that could be a security risk
-        // So, don't:  address.endsWith(s".$domain") ||  instead, only:
+        // So, don't:  address.endsWith(s".$domain") || endsWith(s"@$domain")
+        // Instead, only:
         address.endsWith(s"@$domain")
       }
+    }
+
     for (blockedDomain <- blockedDomains) {
       if (addrEndsWith(blockedDomain))
         return false
     }
+
     if (allowedDomains.isEmpty)
-      return true
+      return allowByDefault
+
     for (allowedDomain <- allowedDomains) {
       if (addrEndsWith(allowedDomain))
         return true
     }
+
     false
   }
 }

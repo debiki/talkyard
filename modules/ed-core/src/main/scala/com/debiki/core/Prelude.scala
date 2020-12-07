@@ -793,6 +793,8 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
       else Some(underlying)
     }
 
+    REFACTOR // move all these to Check instead?
+
     def isAToZUnderscoreOnly: Boolean =
       AToZUnderscoreRegex.pattern.matcher(underlying).matches
 

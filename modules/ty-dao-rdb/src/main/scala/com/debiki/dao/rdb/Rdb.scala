@@ -44,6 +44,7 @@ object Rdb {
   val NullBoolean = Null(js.Types.BOOLEAN)
   val NullSmallInt = Null(js.Types.SMALLINT)
   val NullInt = Null(js.Types.INTEGER)
+  val NullI64 = Null(js.Types.BIGINT)
   val NullDouble = Null(js.Types.DOUBLE)
   val NullFloat = Null(js.Types.FLOAT)
   val NullTimestamp = Null(js.Types.TIMESTAMP)
@@ -57,6 +58,10 @@ object Rdb {
   implicit class StringOptionPimpedWithNullVarchar(opt: Option[String]) {
     def orNullVarchar = opt.getOrElse(NullVarchar)
     def trimOrNullVarchar = opt.trimNoneIfBlank.getOrElse(NullVarchar)
+  }
+
+  implicit class PimpOptionWithNullInt64(opt: Opt[i64]) {
+    def orNullI64: AnyRef = opt.map(_.asAnyRef).getOrElse(NullI64)
   }
 
   implicit class PimpOptionWithNullInt(opt: Option[Int]) {
@@ -185,8 +190,12 @@ object Rdb {
   def tOrNull(bool: Boolean) = if (bool) "T" else NullVarchar
 
   def getResultSetLongOption(rs: js.ResultSet, column: String): Option[Long] = {
+    getOptI64(rs, column)
+  }
+
+  def getOptI64(rs: js.ResultSet, column: St): Opt[i64] = {
     // rs.getLong() returns 0 instead of null.
-    var value = rs.getLong(column)
+    val value = rs.getLong(column)
     if (rs.wasNull) None
     else Some(value)
   }
@@ -235,6 +244,10 @@ object Rdb {
     val value = rs.getBoolean(column)
     dieIf(rs.wasNull, "TyECOLBOLISNL", s"Column boolean value is null: $column")
     value
+  }
+
+  def getOptBo(rs: js.ResultSet, column: St): Opt[Bo] = {
+    getOptBool(rs, column)
   }
 
   def getOptBool(rs: js.ResultSet, column: String): Option[Boolean] = {
