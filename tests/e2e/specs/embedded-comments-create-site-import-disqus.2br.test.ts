@@ -40,6 +40,11 @@ const owensReplyToSandra = 'owensReplyToSandra';
 
 const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
 
+// Change dir from  [repo-root]/tests/e2e/  to repo root, if needed.
+const toTalkyardScript =
+        (settings.isInProjBaseDir ? './' : '../../') +
+        'to-talkyard/dist/to-talkyard/src/to-talkyard.js';
+
 // dupl code! [5GKWXT20]
 
 describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () => {
@@ -460,7 +465,7 @@ ${htmlToPaste}
 
   function convertDisqusFileToTalkyardFile(src: string, dst: string) {
     execSync(
-        'nodejs ../../to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
+        `nodejs ${toTalkyardScript} ` +
           `--disqusXmlExportFile=${src} ` +
           `--writeTo=${dst}`);
   }
@@ -475,7 +480,7 @@ ${htmlToPaste}
 
   function postCommentsToTalkyard(filePath: string) {
     const cmd =
-        'nodejs ../../to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
+        `nodejs ${toTalkyardScript} ` +
           `--talkyardJsonPatchFile=${filePath} ` +
           `--sysbotApiSecret=${apiSecret} ` +
           `--sendTo=${talkyardSiteOrigin}`

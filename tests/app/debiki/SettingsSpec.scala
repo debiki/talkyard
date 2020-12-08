@@ -20,6 +20,7 @@ package debiki
 
 
 import org.scalatest._
+import com.debiki.core._
 import com.debiki.core.Prelude._
 
 
@@ -97,7 +98,9 @@ class SettingsSpec extends FreeSpec with MustMatchers {
 
   "EffectiveSettings.isEmailAddressAllowed can" - {
 
-    import EffectiveSettings.isEmailAddressAllowed
+    def isEmailAddressAllowed(addr: St, allowListText: St, blockListText: St): Bo =
+      EffectiveSettings.isEmailAddressAllowed(
+            addr, allowListText, blockListText, allowByDefault = true)
 
     val evilOrg = "evil.org"
     val okayOrg = "okay.org"
