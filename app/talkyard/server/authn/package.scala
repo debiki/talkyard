@@ -148,6 +148,11 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
     val seemsLikeAzure = issuer.exists(_ startsWith Oidc.AzureIssuerPrefix)
     val slAz = seemsLikeAzure
 
+    val email = parseJwtClaimAsSt(jwt, "email")
+    val emailVerifiedClaim = parseJwtClaimAsBo(jwt, "email_verified")
+    val isEmailVerified = isEmailAddrVerified(
+          email, idpSaysEmailVerified = emailVerifiedClaim, idp)
+
     Good(OpenAuthDetails(
           confFileIdpId = idp.confFileIdpId,
           idpId = idp.idpId,
@@ -161,8 +166,8 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
           middleName = parseJwtClaimAsSt(jwt, "middle_name"),
           lastName = parseJwtClaimAsSt(jwt, "family_name"),
           fullName = parseJwtClaimAsSt(jwt, "name"),
-          email = parseJwtClaimAsSt(jwt, "email"),
-          isEmailVerifiedByIdp = parseJwtClaimAsBo(jwt, "email_verified"),
+          email = email,
+          isEmailVerifiedByIdp = Some(isEmailVerified),
           phoneNumber = parseJwtClaimAsSt(jwt, "phone_number"),
           isPhoneNumberVerifiedByIdp = parseJwtClaimAsBo(jwt, "phone_number_verified"),
           profileUrl = parseJwtClaimAsSt(jwt, "profile"),

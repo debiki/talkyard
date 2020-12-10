@@ -44,7 +44,7 @@ describe("some-e2e-test  TyT1234ABC", () => {
       site = {
         id: -1,
         pubId: '?',
-        origin: 'http://' + settings.localHostname + '.localhost',
+        origin: settings.proto2Slash + settings.localHostname + '.localhost',
         siteIdOrigin: '?',
       };
     }

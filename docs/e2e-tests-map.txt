@@ -61,7 +61,7 @@ create account -
   username aready in use:
   reserved username:
 
-login -
+authn:
   single sign-on: (3093533)
   guest:  # copy-edit unsubscribe.2browsers.test.ts + use signUpLogInAs_Real_Guest
           - embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
@@ -108,9 +108,14 @@ login -
     with oidc,
     with server default oauth2:
           - TESTS_MISSING?  TyTE2E503RK24
-  oidc:
-    sign up witk Keycloak:
-    log in with Keycloak:
+
+oauth2,
+oidc,
+ext idps:
+  keycloak:
+    sign up, log in with Keycloak,
+      get verification email iff !email_verified:
+          - TESTS_MISSING
   ScribeJava:
     login with 2 IDPs in parallel, say, Gmail, GitHub:  TESTS_MISSING
   link identity to user:
@@ -119,6 +124,13 @@ login -
   link OAuth2 identity to other OAuth2 identity:  TESTS_MISSING
     different email casing:  TESTS_MISSING
   link password acct to OAuth2 identity:  TESTS_MISSING
+  azure:
+    sign up, log in with email not/verified domain,
+      get verification email iff needed:
+          - TESTS_MISSING
+    link to existing account: (if migrating to Azure SSO)
+          - TESTS_MISSING
+
 
 
 sso,

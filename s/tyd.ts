@@ -5,6 +5,7 @@ import * as glob from 'glob';
 import { die, dieIf, logMessage, logMessageIf, logDebug, logError, logErrorIf, logUnusual
             } from '../tests/e2e/utils/log-and-die';
 import { ChildProcess, spawn as _spawnAsync, spawnSync as _spawnSync } from 'child_process';
+import { argv } from 'process';
 
 // Bash, Zsh, Fish shell command line completion:
 // ----------------------------------------------
@@ -378,6 +379,12 @@ spawnInForeground(`mkdir ${e2eLogsDirOld}`);
 //  E2E Tests  (move to other file?)
 // -----------------------------------------------------------------------
 
+const useHttps = argv.includes('--secure') || argv.includes('--https');
+
+if (useHttps) {
+  logMessage(`Will use HTTPS, because --secure flag. Disabling HTTPS certificate checks`);
+  process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = '0';
+}
 
 //const e2eSpecsPattern = `tests/e2e/specs/${subCmd ? `*${subCmd}*.ts` : '*.ts'}`;
 //const allMatchingSpecs_old = glob.sync(e2eSpecsPattern, {});

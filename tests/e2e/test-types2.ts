@@ -32,6 +32,7 @@ interface TestSettings {
   secure: Bo;
   host: string;
   scheme: string;
+  proto2Slash: St;
   block3rdPartyCookies?: boolean;
   reuseOldSite?: boolean;
   deleteOldSite: boolean;

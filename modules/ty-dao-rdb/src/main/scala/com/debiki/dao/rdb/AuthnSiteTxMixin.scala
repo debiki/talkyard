@@ -143,9 +143,24 @@ trait AuthnSiteTxMixin extends SiteTransaction {
 
 
   private[rdb] def updateOpenAuthIdentity(identity: OpenAuthIdentity) {
+    // About idpId, idpUserId:
+    // They should have been used when looking up this user identity
+    // — and should never need to get changed.
+    // Maybe should fail with an error, if they're different?
+    //
+    // These: idpRealmId, idpRealmUserId
+    // They also shouldn't change. Unless the OIDC settings get changed completely:
+    // new client id, or new OIDC realm, e.g. connects to a different Azure AD or
+    // Keycloak realm.
+
     val sqlStmt = """
           update identities3 set
             user_id_c = ?,
+            conf_file_idp_id_c = ?,
+            idp_id_c = ?,
+            idp_user_id_c = ?,
+            idp_realm_id_c = ?,
+            idp_realm_user_id_c = ?,
             issuer_c = ?,
             pref_username_c = ?,
             nickname_c = ?,
@@ -174,6 +189,11 @@ trait AuthnSiteTxMixin extends SiteTransaction {
 
     val values = List[AnyRef](
           identity.userId.asAnyRef,
+          ds.confFileIdpId.orNullVarchar,
+          ds.idpId.orNullInt,
+          ds.idpUserId,
+          ds.idpRealmId.orNullVarchar,
+          ds.idpRealmUserId.orNullVarchar,
           ds.issuer.orNullVarchar,
           ds.username.orNullVarchar,
           ds.nickname.orNullVarchar,
@@ -323,6 +343,8 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             confFileIdpId = anyConfFileIdpId,
             idpId = anyIdpId,
             idpUserId = getOptString(rs, "idp_user_id_c").getOrElse(""),
+            idpRealmId = getOptString(rs, "idp_realm_id_c"),
+            idpRealmUserId = getOptString(rs, "idp_realm_user_id_c"),
             issuer = getOptString(rs, "issuer_c"),
             username = getOptString(rs, "pref_username_c"),
             nickname = getOptString(rs, "nickname_c"),
@@ -340,8 +362,8 @@ trait AuthnSiteTxMixin extends SiteTransaction {
             gender = getOptString(rs, "gender_c"),
             birthdate = getOptString(rs, "birthdate_c"),
             timeZoneInfo = getOptString(rs, "time_zone_info_c"),
-            locale = getOptString(rs, "locale_c"),
             country = getOptString(rs, "country_c"),
+            locale = getOptString(rs, "locale_c"),
             isRealmGuest = getOptBo(rs, "is_realm_guest_c"),
             lastUpdatedAtIdpAtSec = getOptI64(rs, "last_updated_at_idp_at_sec_c")))
       }

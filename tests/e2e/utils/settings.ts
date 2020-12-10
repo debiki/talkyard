@@ -33,6 +33,7 @@ if (settings.localHostname && !settings.localHostname.startsWith('e2e-test-')) {
 settings.secure = settings.secure || settings.https;
 settings.scheme = settings.secure ? 'https' : 'http';  // [E2EHTTPS]
 settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
+settings.proto2Slash = settings.scheme + '://';
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
 settings.reuseOldSite = settings.reuseOldSite || args.reuse;
