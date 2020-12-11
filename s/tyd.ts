@@ -33,6 +33,7 @@ completion.on('mainCmd', ({ reply }) => {
         'ca', 'cliapp',
         'nodejs',
         'yarn',
+        'gulp',
         ]);
 });
 
@@ -152,6 +153,12 @@ if (mainCmd === 'nodejs') {
 
 if (mainCmd === 'yarn') {
   spawnInForeground('docker-compose run --rm nodejs yarn ' + subCmdsAndOpts.join(' '));
+  process.exit(0);
+}
+
+
+if (mainCmd === 'gulp') {
+  spawnInForeground('docker-compose run --rm nodejs gulp ' + subCmdsAndOpts.join(' '));
   process.exit(0);
 }
 
@@ -305,6 +312,18 @@ function restartContainers(containers: St) {
 if (mainCmd === 'recreate') {
   const cs = allSubCmdsSt;  // which containers, e.g.  'web app'
   spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d rm -f ${cs}; s/d up -d ${cs}`]);
+  tailLogsThenExit();
+}
+
+
+if (mainCmd === 'rebuild') {
+  const cs = allSubCmdsSt;  // which containers, e.g.  'web app'
+  logMessage(`\n**Removing: ${cs} **`)
+  spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d rm -f ${cs}`]);
+  logMessage(`\n**Building: ${cs} **`)
+  spawnInForeground('sh', ['-c', `s/d build ${cs}`]);
+  logMessage(`\n**Starting: ${cs} **`)
+  spawnInForeground('sh', ['-c', `s/d up -d ${cs}`]);
   tailLogsThenExit();
 }
 
