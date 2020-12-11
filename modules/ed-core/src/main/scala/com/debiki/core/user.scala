@@ -1688,8 +1688,8 @@ class OidcIdToken(val idTokenStr: St) {
   * @param avatarUrl
   * @param isRealmGuest — in Azure, true iff the person is a realm (tenant) guest,
   *   but not an actual organization member.
+  * @param idToken
   * @param userInfoJson
-  * @param oidcIdToken
   */
 case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine    RENAME to IdpUserInfo — typically is data from an IDP's OIDC userinfo endpoint (or id_token).  Started already, defined: type IdpUserInfo.
   confFileIdpId: Opt[ConfFileIdpId] = None,  // RENAME QUICK to serverGlobalIdpId
@@ -1721,14 +1721,14 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine 
   isRealmGuest: Opt[Bo] = None,
   lastUpdatedAtIdpAtSec: Opt[i64] = None,
   idToken: Opt[St] = None,
-  userInfoJson: Opt[JsObject] = None,
-  oidcIdToken: Opt[OidcIdToken] = None) {
+  userInfoJson: Opt[JsObject] = None) {
 
   require(confFileIdpId.forall(_.trim.nonEmpty), "TyE395RKTE2")
   require(confFileIdpId.isDefined != idpId.isDefined, "TyE205KRDJ2M")
   require(idpId.forall(_ >= 1), "TyE395RKTE3")
   require(idpUserId.nonEmpty, "TyE507Q5K42")
   require(email.isDefined || isEmailVerifiedByIdp.isNot(true), "TyE6JKRGL24")
+  require(phoneNumber.isDefined || isPhoneNumberVerifiedByIdp.isNot(true), "TyE6JKRGL25")
 
   def providerIdAndKey: OpenAuthProviderIdKey =
     OpenAuthProviderIdKey(

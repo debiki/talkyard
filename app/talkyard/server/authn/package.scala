@@ -344,8 +344,9 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
       return false
 
     if (idpSaysEmailVerified.isDefined) {
-      dieIf(!idp.trustVerifiedEmail, "TyE4TG03MA24")
-      return idpSaysEmailVerified.get
+      val isVerified = idpSaysEmailVerified.get
+      dieIf(!idp.trustVerifiedEmail && isVerified, "TyE4TG03MA24")
+      return isVerified
     }
 
     debiki.EffectiveSettings.isEmailAddressAllowed(  // RENAME this fn to what?

@@ -603,8 +603,8 @@ case class SitePatchParser(context: EdContext) {
             email = readOptString(jsObj, "email"),  // RENAME to emailAddr?
             isEmailVerifiedByIdp = parseOptBo(jsObj, "isEmailVerifiedByIdp"),
             avatarUrl = readOptString(jsObj, "avatarUrl"),
-            userInfoJson = None,  // for now
-            oidcIdToken = None)   // for now
+            idToken = None,       // for now
+            userInfoJson = None)  // for now
       val identity = OpenAuthIdentity(
         id = identityId,
         userId = readInt(jsObj, "userId"),

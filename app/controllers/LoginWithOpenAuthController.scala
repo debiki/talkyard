@@ -846,14 +846,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // > will eliminate one to two network requests
 
           parseOidcIdToken(decodedJwt, idp) match {
-            case Good(idtyNoIdToken: OpenAuthDetails) =>
-              val userInfo = idtyNoIdToken.copy(oidcIdToken = Some(idToken))
-
+            case Good(userInfo: OpenAuthDetails) =>
               // If we have all we need already, skip the userinfo request
               // — Azure AD doesn't include any info in the userinfo response
               // that's not already included in the id_token.
               // (Read here about when an id_token must be verified: [when_chk_id_tkn].)
-              val seemsLikeAzure = idtyNoIdToken.idpRealmUserId.isDefined ||  // for now
+              val seemsLikeAzure = userInfo.idpRealmUserId.isDefined ||  // for now
                     idp.wellKnownIdpImpl.is(WellKnownIdpImpl.Azure)    // later
               if (seemsLikeAzure) {
                 // Reply here already ...
@@ -964,9 +962,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
     anyOidcIdToken foreach { idToken: OidcIdToken =>
-      userInfo = userInfo.copy(oidcIdToken = Some(idToken))
+      userInfo = userInfo.copy(idToken = Some(idToken.idTokenStr))
     }
-
 
     if (idp.wellKnownIdpImpl.isDefined) {
       // Fetch any missing profile info.  [oauth2_extra_req]

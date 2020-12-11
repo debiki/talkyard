@@ -107,7 +107,7 @@ alter table identities3 rename oidc_id_token_json to oidc_id_token_json_c;
 
 alter table identities3 add column is_email_verified_by_idp_c bool;
 alter table identities3 add constraint idtys_c_emailadr_emailverified_null
-    check ((email_adr_c is not null) or (is_email_verified_by_idp_c is null));
+    check ((email_adr_c is not null) or (not is_email_verified_by_idp_c));
 
 alter table identities3 add column nickname_c varchar;
 alter table identities3 add constraint idtys_c_nickname_len
@@ -123,7 +123,7 @@ alter table identities3 add constraint idtys_c_phonenr_len
 
 alter table identities3 add column is_phone_nr_verified_by_idp_c bool;
 alter table identities3 add constraint idtys_c_phonenr_phonenrverified_null
-    check ((phone_nr_c is not null) or (is_phone_nr_verified_by_idp_c is null));
+    check ((phone_nr_c is not null) or (not is_phone_nr_verified_by_idp_c));
 
 alter table identities3 add column profile_url_c varchar;
 alter table identities3 add constraint idtys_c_profileurl_len
