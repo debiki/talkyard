@@ -31,6 +31,31 @@ function die_if_in_script {
 # COULD: Check is in project root, & is git repository, & no outstanding changes.
 # COULD: Check all required ports open: 80, 443, 900, 9443, 9999, 3333
 
+# Disk full?
+#
+# This: 'df .' prints sth like:
+# >  Filesystem     1K-blocks     Used Available Use% Mounted on
+# >  /dev/xvdb       35935776 29687256   6232136  83% /home
+#
+disk_almost_full=$( df . | tail -n1 | awk '{ print $5 }' \
+    | sed -n 's/9[3-9]%/DISK_ALMOST_FULL/p' )
+if [ -n "$disk_almost_full" ]; then
+  echo
+  echo "Disk almost full,  'df .' reports:"
+  echo
+  df .
+  echo
+  echo "More than 93% in use, and ElasticSearch will stop working, if >= 95%."
+  echo "It'll log errors like: \"flood stage disk watermark [95%] exceeded"
+  echo "[...] all indices on this node will marked read-only\"."
+  echo "And the build will fail."
+  echo
+  echo "Free up some disk, please."
+  echo
+  die_if_in_script
+fi
+
+# Other things going on that could mess up the build?
 if [ -n "`jobs`" ]; then
   echo 'Other jobs running:'
   jobs
