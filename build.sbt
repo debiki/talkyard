@@ -109,7 +109,8 @@ val main = (project in file("."))
     edCore % "test->test;compile->compile",
     tyDaoRdb)
   .aggregate(
-    edCore)
+    edCore,
+    tyDaoRdb)
 
 
 def mainSettings = List(
