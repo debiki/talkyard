@@ -851,14 +851,17 @@ object JsX {
 
   def JsIdentityProviderSecretConf(idp: IdentityProvider): JsObject = {
     val pubFields = JsIdentityProviderPubFields(idp)
+    val oauAuthReqClaimsJsVal: JsValue = idp.oauAuthReqClaims.getOrElse(JsNull)
     pubFields ++ Json.obj(
         "confFileIdpId" -> JsStringOrNull(idp.confFileIdpId),
         "id" -> JsI32OrNull(idp.idpId),
         "trustVerifiedEmail" -> idp.trustVerifiedEmail,
+        "emailVerifiedDomains" -> JsStringOrNull(idp.emailVerifiedDomains),
         "linkAccountNoLogin" -> idp.linkAccountNoLogin,
         "syncMode" -> idp.syncMode,
         "oauAuthorizationUrl" -> idp.oauAuthorizationUrl,
         "oauAuthReqScope" -> JsStringOrNull(idp.oauAuthReqScope),
+        "oauAuthReqClaims" -> oauAuthReqClaimsJsVal,
         "oauAuthReqHostedDomain" -> JsStringOrNull(idp.oauAuthReqHostedDomain),
         "oauAccessTokenUrl" -> idp.oauAccessTokenUrl,
         "oauAccessTokenAuthMethod" -> JsStringOrNull(idp.oauAccessTokenAuthMethod),

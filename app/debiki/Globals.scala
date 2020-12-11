@@ -444,6 +444,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         scope = getStringNoneIfBlank("silhouette.github.scope"))
     }
 
+    // rm
     val gitlabOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitLab(confValName: String) = getConfValOrThrowDisabled(confValName, "GitLab")
       OAuth2Settings(
@@ -472,6 +473,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         scope = getStringNoneIfBlank("silhouette.linkedin.scope"))
     }
 
+    // rm
     val vkOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getVk(confValName: String) = getConfValOrThrowDisabled(confValName, "VK")
       OAuth2Settings(
@@ -483,6 +485,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         scope = getStringNoneIfBlank("silhouette.vk.scope"))
     }
 
+    // rm
     val instagramOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getInstagram(confValName: String) = getConfValOrThrowDisabled(confValName, "Instagram")
       OAuth2Settings(

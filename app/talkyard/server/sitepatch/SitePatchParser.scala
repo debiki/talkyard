@@ -492,7 +492,7 @@ case class SitePatchParser(context: EdContext) {
   }
 
 
-  def parseIdentityProviderorBad(jsValue: JsValue): IdentityProvider Or ErrMsg  = {
+  def parseIdentityProviderOrBad(jsValue: JsValue): IdentityProvider Or ErrMsg  = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -512,11 +512,13 @@ case class SitePatchParser(context: EdContext) {
             description = readOptString(jsObj, "description"),
             adminComments = readOptString(jsObj, "adminComments"),
             trustVerifiedEmail = readBoolean(jsObj, "trustVerifiedEmail"),
+            emailVerifiedDomains = parseOptSt(jsObj, "emailVerifiedDomains"),
             linkAccountNoLogin = parseBo(jsObj, "linkAccountNoLogin", default = false),
             guiOrder = readOptInt(jsObj, "guiOrder"),
             syncMode = readInt(jsObj, "syncMode"),
             oauAuthorizationUrl = readString(jsObj, "oauAuthorizationUrl"),
             oauAuthReqScope = readOptString(jsObj, "oauAuthReqScope"),
+            oauAuthReqClaims = parseOptJsObject(jsObj, "oauAuthReqClaims"),
             oauAuthReqHostedDomain = readOptString(jsObj, "oauAuthReqHostedDomain"),
             oauAccessTokenUrl = readString(jsObj, "oauAccessTokenUrl"),
             oauAccessTokenAuthMethod = readOptString(jsObj, "oauAccessTokenAuthMethod"),
@@ -601,8 +603,8 @@ case class SitePatchParser(context: EdContext) {
             email = readOptString(jsObj, "email"),  // RENAME to emailAddr?
             isEmailVerifiedByIdp = parseOptBo(jsObj, "isEmailVerifiedByIdp"),
             avatarUrl = readOptString(jsObj, "avatarUrl"),
-            userInfoJson = None,  // for now
-            oidcIdToken = None)   // for now
+            idToken = None,       // for now
+            userInfoJson = None)  // for now
       val identity = OpenAuthIdentity(
         id = identityId,
         userId = readInt(jsObj, "userId"),

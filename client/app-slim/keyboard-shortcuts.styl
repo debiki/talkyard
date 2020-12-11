@@ -1,4 +1,12 @@
 
+// We'll show the whole shortcuts dialog after this long
+// — so, if one forgets the next keys in the shortcut sequence,
+// one get to see what they are.
+// People type about 190 or 200 chars per minute — so, they'll type
+// a 3 letter shortcut within a second, and won't see the full
+// size dialog. (Whilst professional typists are almost 2x faster.)
+$showFullDelay = 1.8s
+
 .c_KbdD .modal-title
   font-weight: normal;
   b
@@ -6,6 +14,47 @@
     font-size: 115%;
     letter-spacing: 1px;
     margin-left: 0.5ex;
+
+.c_KbdD-Mini .modal-backdrop
+  animation: KfFadeInShortcutsBackdrop $showFullDelay ease-in-out;
+
+@keyframes KfFadeInShortcutsBackdrop
+  // Just fade in a little bit, in the beginning.
+  0%   { opacity: 0.1; }
+  67%  { opacity: 0.1; }
+  // Now fade in for real.
+  100% { opacity: 0.5; }
+
+
+.c_KbdD-Mini .modal-content
+  // So no white background before .modal-body done fading in.
+  background: none;
+  border: none;
+  box-shadow: none;
+
+.c_KbdD-Mini .modal-header
+  background-color: #fff;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.8);
+  border-radius: 6px;
+  // So no weird 'dent' in the dialog between the .modal-header and .modal-body.
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+
+// This fades in the full size dialog, after a short while.
+.c_KbdD-Mini .modal-body
+  background-color: #fff;
+  border-radius: 6px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  animation: KfFadeInShortcutsDetails $showFullDelay ease-in-out;
+
+
+@keyframes KfFadeInShortcutsDetails
+  // Cannot animate display: none, but  hidden and absolute
+  // has the same effect, in this case.
+  0%   { opacity: 0; visibility: hidden;  position: absolute;  }
+  67%  { opacity: 0; visibility: visible; position: static;    }
+  100% { opacity: 1; }
 
 
 .s_KbdD_ShortcutsL li

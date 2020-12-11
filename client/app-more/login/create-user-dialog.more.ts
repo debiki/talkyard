@@ -164,6 +164,16 @@ interface CreateUserDialogContentState {
 }
 
 
+function tidyUpPreferredUsername(prefUsername: St): St {
+  let prefUn = prefUsername || '';
+  prefUn = prefUn.replace(/[@\s.,~'`"^$<>(){}\[\]\\-]+/g, '_');
+  prefUn = prefUn.replace(/^_+/, '');
+  prefUn = prefUn.substr(0, MaxUsernameLength);
+  prefUn = prefUn.replace(/_+$/, '');
+  return prefUn;
+}
+
+
 export var CreateUserDialogContent = createClassAndFactory({
   displayName: 'CreateUserDialogContent',
 
@@ -176,8 +186,10 @@ export var CreateUserDialogContent = createClassAndFactory({
     dieIf(forGuestOrPwd && props.idpHasVerifiedEmail, 'TyE7UKWQ4');
     // @endif
 
-    // Avoid the Create User button being disabled because username-too-long.
-    const usernameNotTooLong = (props.username || '').substr(0, MaxUsernameLength);
+    // Avoid the Create User button being disabled because username-too-long
+    // or includes '@' (some OIDC IDPs, namely Azure AD, send an email addr as
+    // preferred username).
+    const usernameNotTooLong = tidyUpPreferredUsername(props.username);
 
     const state: CreateUserDialogContentState = {
       okayStatuses: {

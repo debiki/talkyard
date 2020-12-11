@@ -11,6 +11,11 @@ package object server {
 
   type p_Logger = play.api.Logger
 
+  type j_NoRouteToHostException = java.net.NoRouteToHostException
+  type j_IOException = java.io.IOException
+  type j_ExecutionException = java.util.concurrent.ExecutionException
+
+
   val ProdConfFilePath = "/opt/talkyard/conf/play-framework.conf"
 
   def isDevOrTest: Boolean = Globals.isDevOrTest

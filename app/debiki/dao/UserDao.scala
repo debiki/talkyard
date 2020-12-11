@@ -681,8 +681,8 @@ trait UserDao {
       guest
     }
     memCache.put(
-      key(user.id),
-      MemCacheValueIgnoreVersion(user))
+          patKey(user.id),
+          MemCacheValueIgnoreVersion(user))
     user
   }
 
@@ -732,8 +732,8 @@ trait UserDao {
     // Don't save any site cache version, because user specific data doesn't change
     // when site specific data changes.
     memCache.put(
-      key(loginGrant.user.id),
-      MemCacheValueIgnoreVersion(loginGrant.user))
+          patKey(loginGrant.user.id),
+          MemCacheValueIgnoreVersion(loginGrant.user))
 
     Good(loginGrant)
   }
@@ -770,7 +770,7 @@ trait UserDao {
     val usersFound = ArrayBuffer[Participant]()
     val missingIds = ArrayBuffer[UserId]()
     userIds foreach { id =>
-      memCache.lookup[Participant](key(id)) match {
+      memCache.lookup[Participant](patKey(id)) match {
         case Some(user) => usersFound.append(user)
         case None => missingIds.append(id)
       }
@@ -894,7 +894,7 @@ trait UserDao {
 
   def getParticipant(userId: UserId): Option[Participant] = {
     memCache.lookup[Participant](
-      key(userId),
+      patKey(userId),
       orCacheAndReturn = {
         readOnlyTransaction { tx =>
           tx.loadParticipant(userId)
@@ -2297,10 +2297,10 @@ trait UserDao {
 
 
   def removeUserFromMemCache(userId: UserId): Unit = {
-    memCache.remove(key(userId))
+    memCache.remove(patKey(userId))
   }
 
-  private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|PptById") ; RENAME // to pptKey?
+  private def patKey(userId: UserId) = MemCacheKey(siteId, s"$userId|PptById")
 
   // Which: 'u' = users only, 'g' = groups only, 'm' = members — both groups and users.
   private def membersByPrefixKey(prefix: String, which: String) =

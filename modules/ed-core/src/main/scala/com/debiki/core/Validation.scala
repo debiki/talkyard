@@ -59,10 +59,15 @@ object Validation {  RENAME // to Check, so:  Check.ifBadEmail( ...)  — looks 
     }
   }
 
+  def isObviouslyBadEmail(email: String): Bo =
+    checkEmail(email).isBad
 
   @deprecated // use ifBadEmail() instead — then cannot forget to check any return val
   def checkEmail(email: String): String Or ErrorMessage = {
-    if (!email.isEmpty && EmailOkCharsRegex.unapplySeq(email).isEmpty)
+    if (email.isEmpty)
+      return Bad("No email address, length 0")
+
+    if (EmailOkCharsRegex.unapplySeq(email).isEmpty)
       return Bad("Invalid email address [TyE35M0ABT4]")
 
     val numAt = email.count(_ == '@')

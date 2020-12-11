@@ -49,10 +49,14 @@ val appDependencies = Seq(
   // Gzip filter.
   play.sbt.Play.autoImport.filters,
   Dependencies.Play.json,
-  // OpenAuth and OpenID etc Authentication.
+
+  // OAuth2 and OIDC authentication.
   Dependencies.Libs.scribeJava,
+  Dependencies.Libs.auth0JavaJwt,
+  // Deprecated:
   "com.mohiva" %% "play-silhouette" % "7.0.0",
   "com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
+
   // PostgreSQL JDBC client driver
   // see: https://mvnrepository.com/artifact/org.postgresql/postgresql/
   Dependencies.Libs.postgresqlJbcdClient,
@@ -105,7 +109,8 @@ val main = (project in file("."))
     edCore % "test->test;compile->compile",
     tyDaoRdb)
   .aggregate(
-    edCore)
+    edCore,
+    tyDaoRdb)
 
 
 def mainSettings = List(

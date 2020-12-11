@@ -46,7 +46,13 @@ object Dependencies {
 
     val jsoup = "org.jsoup" % "jsoup" % "1.13.1"   // newest as of 2020-06
 
-    // OAuth lib, also works for OIDC (OpenID Connect).
+
+    // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
+    // ScribeJava is listed by Microsoft as compatible with Azure,
+    // as of 2020-12-06 — so it's a somewhat well known lib.
+    // (MS tested ScribeJava v3.2, most recent is v8.0.0, oh well.)
+    // https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-v2-libraries#compatible-client-libraries
+    //
     // VENDOR_THIS — it'd be good to Maven-build via Makefile?
     // 7.0.0 won't work: it depends on:
     //   com.fasterxml.jackson.core:jackson-databind:2.11.2
@@ -56,6 +62,31 @@ object Dependencies {
     //  """...JsonMappingException: Scala module 2.10.3 requires
     //     Jackson Databind version..."""
     val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"
+
+
+    // Decoding JWT:s
+    //
+    // Use which lib? Here's a list: https://jwt.io
+    // - There's: https://github.com/jwtk/jjwt by Okta but not easy to find in
+    //   the very long readme how to just decode a JWT one got straight
+    //   from a trusted server?
+    // - And: https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-jwt
+    //   but seems not-so-easy to use and partly depends on Vertx?
+    //   https://vertx.io/docs/apidocs/io/vertx/ext/auth/jwt/JWTAuth.html
+    //   — very brief Javadoc, and wants a io.vertx.core.Vertx sometimes.
+    // - Quarkus (a new Java web framework, on GraalVM) uses  quarkus-oidc,
+    //   https://github.com/quarkusio/quarkus-quickstarts
+    //   https://github.com/quarkusio/quarkus/blob/cc08b76c58dba74d8a6216cc8f09b09ab7f2fd08/extensions/oidc/runtime/pom.xml
+    //   <artifactId>quarkus-oidc</artifactId>
+    //   which uses this jwt lib I never saw mentioned anywhere:
+    //    https://github.com/smallrye/smallrye-jwt/network/dependents?package_id=UGFja2FnZS0zNDIxNDY3MzA%3D
+    //    https://smallrye.io   they mention Quarkus and "Thorntail" and "Open liberty"
+    //    Not that much activity: https://groups.google.com/g/smallrye
+    //
+    // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
+    // Repo: https://github.com/auth0/java-jwt
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.11.0"
+
 
     // Not v 3.1.2?
     val scalactic = "org.scalactic" %% "scalactic" % "3.1.1"

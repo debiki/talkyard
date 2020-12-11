@@ -91,7 +91,8 @@ trait EmailAddressesSiteDaoMixin extends SiteTransaction {
     val query = s"""
       select email_address, added_at, verified_at
       from user_emails3
-       where site_id = ? and user_id = ?
+      where site_id = ? and user_id = ?
+      order by email_address  -- ix: pk
       """
     runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef), rs => {
       UserEmailAddress(
@@ -108,6 +109,7 @@ trait EmailAddressesSiteDaoMixin extends SiteTransaction {
       select user_id, email_address, added_at, verified_at
       from user_emails3
       where site_id = ?
+      order by site_id, user_id, email_address  -- ix: pk
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {
       UserEmailAddress(

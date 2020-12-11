@@ -110,7 +110,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
           "TyE406WKTDW2", "I want a json array with IDP configs")
     val parser = SitePatchParser(context)
     val idps: Seq[IdentityProvider] = idpsJsonArr.value map { idpJson =>
-      parser.parseIdentityProviderorBad(idpJson) getOrIfBad { problem =>
+      parser.parseIdentityProviderOrBad(idpJson) getOrIfBad { problem =>
         throwBadRequest("TyEBADIDPJSN", s"Bad IDP json: $problem")
       }
     }

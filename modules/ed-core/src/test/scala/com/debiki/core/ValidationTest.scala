@@ -176,6 +176,31 @@ class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
   }
 
 
+  "Validation can check emails" - {
+    "allow normal email addresses" in {
+      Check.isObviouslyBadEmail("sample@examle.com") mustBe false
+      Check.isObviouslyBadEmail("dots.and-dash+plus~tilde@ex.co") mustBe false
+      Check.isObviouslyBadEmail("MixedCase@ex.co") mustBe false
+      Check.isObviouslyBadEmail("und_er_score@x.co") mustBe false
+    }
+
+    "disallow obviously bad addresses" in {
+      Check.isObviouslyBadEmail("") mustBe true
+      Check.isObviouslyBadEmail("  ") mustBe true
+      Check.isObviouslyBadEmail("not@trimmed.com  ") mustBe true
+      Check.isObviouslyBadEmail("  not@trimmed.com") mustBe true
+      Check.isObviouslyBadEmail("space  mail@x.co") mustBe true
+      Check.isObviouslyBadEmail("tabs\there@x.co") mustBe true
+      Check.isObviouslyBadEmail("newline\nhere@x.co") mustBe true
+      Check.isObviouslyBadEmail("return\rhere@x.co") mustBe true
+      Check.isObviouslyBadEmail("no-at") mustBe true
+      Check.isObviouslyBadEmail("@starts.with.at.com") mustBe true
+      Check.isObviouslyBadEmail("ends-with-at@") mustBe true
+      Check.isObviouslyBadEmail("two@at@x.co") mustBe true
+    }
+  }
+
+
   "Validation can check slugs" - {
     import Validation.findCategorySlugProblem
 

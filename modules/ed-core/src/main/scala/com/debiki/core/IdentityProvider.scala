@@ -8,6 +8,7 @@ import play.api.libs.json.JsObject
 
 sealed abstract class WellKnownIdpImpl(val Name: St) { def name: St = Name }
 object WellKnownIdpImpl {
+  case object Azure extends WellKnownIdpImpl("azure")
   case object Facebook extends WellKnownIdpImpl("facebook")
   case object GitHub extends WellKnownIdpImpl("github")
   case object Google extends WellKnownIdpImpl("google")
@@ -15,13 +16,16 @@ object WellKnownIdpImpl {
   case object Twitter extends WellKnownIdpImpl("twitter")
 
   def fromName(protocol: St, name: St): Opt[WellKnownIdpImpl] = {
-    unimplIf(protocol != "oauth2", "TyE8B05MRKJT")
+    unimplIf(name != Twitter.name && protocol != ProtoNameOAuth2, "TyE8B05MRKJT")
+    unimplIf(name == Twitter.name && protocol != ProtoNameOAuth10a, "TyE5X02RSMD4")
+
     Some(name match {
       case Facebook.Name => Facebook
       case GitHub.Name => GitHub
       case Google.Name => Google
       case LinkedIn.Name => LinkedIn
       case Twitter.Name => Twitter
+      case _ => return None
     })
   }
 }
@@ -31,6 +35,7 @@ object IdentityProvider {
   // Lowercase, so works in url paths (typically lowercase)
   val ProtoNameOidc = "oidc"
   val ProtoNameOAuth2 = "oauth2"
+  val ProtoNameOAuth10a = "oauth10a"
 
   def prettyId(confFileIdpId: Opt[ConfFileIdpId], idpId: Opt[IdpId]): St = {
     confFileIdpId.map(s"confFileIdpId: " + _).getOrElse(
@@ -50,6 +55,11 @@ object IdentityProvider {
   * @param description
   * @param adminComments
   * @param trustVerifiedEmail
+  * @param emailVerifiedDomains — An optional list of email domains whose email
+  *  addresses are known to have been verified — e.g. employee-name@company.com,
+  *  only for the company's employees. Background: Azure AD doesn't send
+  *  'email_verified: true' (as of 2020-12), so, need another way to know if
+  *  an email addr has been verified or not.
   * @param linkAccountNoLogin
   * @param guiOrder
   * @param syncMode — for now, always 1 = ImportOnFirstLogin,
@@ -82,6 +92,7 @@ case class IdentityProvider(
   description: Opt[St],
   adminComments: Opt[St],
   trustVerifiedEmail: Bo,
+  emailVerifiedDomains: Opt[St],
   linkAccountNoLogin: Bo,
   guiOrder: Opt[i32],
   syncMode: i32,

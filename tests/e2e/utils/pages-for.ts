@@ -7961,7 +7961,7 @@ export class TyE2eTestBrowser {
 
       close: () => {
         this.waitAndClick('.e_SED_CloseB');
-        this.waitUntilGone('.modal-dialog.dw-server-error');
+        this.waitUntilGone('.dw-server-error .modal-dialog');
       }
     };
 

@@ -5,6 +5,7 @@ import * as glob from 'glob';
 import { die, dieIf, logMessage, logMessageIf, logDebug, logError, logErrorIf, logUnusual
             } from '../tests/e2e/utils/log-and-die';
 import { ChildProcess, spawn as _spawnAsync, spawnSync as _spawnSync } from 'child_process';
+import { argv } from 'process';
 
 // Bash, Zsh, Fish shell command line completion:
 // ----------------------------------------------
@@ -32,6 +33,7 @@ completion.on('mainCmd', ({ reply }) => {
         'ca', 'cliapp',
         'nodejs',
         'yarn',
+        'gulp',
         ]);
 });
 
@@ -151,6 +153,12 @@ if (mainCmd === 'nodejs') {
 
 if (mainCmd === 'yarn') {
   spawnInForeground('docker-compose run --rm nodejs yarn ' + subCmdsAndOpts.join(' '));
+  process.exit(0);
+}
+
+
+if (mainCmd === 'gulp') {
+  spawnInForeground('docker-compose run --rm nodejs gulp ' + subCmdsAndOpts.join(' '));
   process.exit(0);
 }
 
@@ -308,6 +316,18 @@ if (mainCmd === 'recreate') {
 }
 
 
+if (mainCmd === 'rebuild') {
+  const cs = allSubCmdsSt;  // which containers, e.g.  'web app'
+  logMessage(`\n**Removing: ${cs} **`)
+  spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d rm -f ${cs}`]);
+  logMessage(`\n**Building: ${cs} **`)
+  spawnInForeground('sh', ['-c', `s/d build ${cs}`]);
+  logMessage(`\n**Starting: ${cs} **`)
+  spawnInForeground('sh', ['-c', `s/d up -d ${cs}`]);
+  tailLogsThenExit();
+}
+
+
 if (mainCmd === 'ka' || (mainCmd === 'kill' && mainSubCmd == 'app')) {
   spawnInForeground('s/d kill app');
   process.exit(0);
@@ -378,6 +398,12 @@ spawnInForeground(`mkdir ${e2eLogsDirOld}`);
 //  E2E Tests  (move to other file?)
 // -----------------------------------------------------------------------
 
+const useHttps = argv.includes('--secure') || argv.includes('--https');
+
+if (useHttps) {
+  logMessage(`Will use HTTPS, because --secure flag. Disabling HTTPS certificate checks`);
+  process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = '0';
+}
 
 //const e2eSpecsPattern = `tests/e2e/specs/${subCmd ? `*${subCmd}*.ts` : '*.ts'}`;
 //const allMatchingSpecs_old = glob.sync(e2eSpecsPattern, {});

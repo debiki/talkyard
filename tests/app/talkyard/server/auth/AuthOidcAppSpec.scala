@@ -71,6 +71,7 @@ class AuthOidcAppSpec extends DaoAppSuite {     RENAME // to IdentityProviderApp
         description = Some("description_c"),
         adminComments = None,
         trustVerifiedEmail = true,
+        emailVerifiedDomains = None,
         linkAccountNoLogin = false,
         guiOrder = None,
         syncMode = 1,  // for now, always 1 = ImportOnFirstLogin, later, also: SyncOnAllLogins
@@ -94,6 +95,7 @@ class AuthOidcAppSpec extends DaoAppSuite {     RENAME // to IdentityProviderApp
         description = oidcProvider.description.map(_ + " Edited"),
         adminComments = Some("Some comments"),
         trustVerifiedEmail = !oidcProvider.trustVerifiedEmail,
+        emailVerifiedDomains = Some("example.com"),
         linkAccountNoLogin = !oidcProvider.linkAccountNoLogin,
         guiOrder = Some(123),
         syncMode = 2,

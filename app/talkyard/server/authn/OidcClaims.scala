@@ -6,7 +6,9 @@ import org.scalactic.{Good, Or}
 import play.api.libs.json.{JsObject, JsValue}
 
 
-/**
+/** Maybe not really needed? Could store the claims directly in
+  * class IdpUserInfo instead?
+  *
   * OIDC standard fields:
   * https://openid.net/specs/openid-connect-core-1_0.html#Claims
   *
@@ -23,7 +25,8 @@ import play.api.libs.json.{JsObject, JsValue}
   * @param website — URL to user's web page or blog.
   * @param email — Preferred email address. Might not be unique.
   * @param email_verified — If the IDP some time in the past somehow has verified
-      that the user controlled the email address.
+      that the user controlled the email address. Some IDPs won't include
+      this claim, e.g. Azure AD.
   * @param gender — "female" or "male" or something else.
   * @param birthdate — YYYY (date omitted) or YYYY-MM-DD.
      Year 0000 means the year was omitted.
@@ -40,7 +43,7 @@ import play.api.libs.json.{JsObject, JsValue}
   * @param address — Preferred postal address, JSON [RFC4627]
   * @param updated_at  — Unix time seconds since user info last updated.
   */
-case class OidcClaims(
+case class OidcClaims(   // REMOVE  no longer needed. But keep the docs, above — where?
   sub: St,
   name: Opt[St],
   given_name: Opt[St],
@@ -52,19 +55,19 @@ case class OidcClaims(
   picture: Opt[St],
   website: Opt[St],
   email: Opt[St],
-  email_verified: Bo,
+  email_verified: Opt[Bo],
   gender: Opt[St],
   birthdate: Opt[St],
   zoneinfo: Opt[St],
   locale: Opt[St],
   phone_number: Opt[St],
-  phone_number_verified: Bo,
+  phone_number_verified: Opt[Bo],
   address: Opt[JsObject],
   updated_at: Opt[i64])
 
 
 
-object OidcClaims {
+object OidcClaims {   // REMOVE  no longer needed
 
   def parseOidcClaims(json: JsValue): OidcClaims Or ErrMsg = tryParseGoodBad {
     Good(OidcClaims(
@@ -79,13 +82,13 @@ object OidcClaims {
           picture = parseOptSt(json, "picture"),
           website = parseOptSt(json, "website"),
           email = parseOptSt(json, "email"),
-          email_verified = parseBo(json, "email_verified", default = false),
+          email_verified = parseOptBo(json, "email_verified"),
           gender = parseOptSt(json, "gender"),
           birthdate = parseOptSt(json, "birthdate"),
           zoneinfo = parseOptSt(json, "zoneinfo"),
           locale = parseOptSt(json, "locale"),
           phone_number = parseOptSt(json, "phone_number"),
-          phone_number_verified = parseBo(json, "phone_number_verified", default = false),
+          phone_number_verified = parseOptBo(json, "phone_number_verified"),
           address = parseOptJsObject(json, "address"),
           updated_at = parseOptLong(json, "updated_at")))
   }

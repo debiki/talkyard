@@ -17,6 +17,9 @@
 
 package controllers
 
+import com.auth0.jwt.{JWT => a0_JWT}
+import com.auth0.jwt.interfaces.{Claim => a0_Claim, DecodedJWT => a0_DecodedJWT}
+import com.auth0.jwt.exceptions.{JWTDecodeException => a0_JWTDecodeException}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
@@ -40,12 +43,12 @@ import talkyard.server._
 import ed.server._
 import ed.server.http._
 import ed.server.security.EdSecurity
-import IdentityProvider.{ProtoNameOidc, ProtoNameOAuth2}
+import IdentityProvider.{ProtoNameOidc, ProtoNameOAuth2, ProtoNameOAuth10a}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.Configuration
-import talkyard.server.authn.{parseCustomUserInfo, parseOidcUserInfo, doAuthnServiceRequest, WellKnownIdps}
+import talkyard.server.authn.{parseCustomUserInfo, parseOidcIdToken, parseOidcUserInfo, doAuthnServiceRequest, WellKnownIdps}
 import talkyard.server.{ProdConfFilePath, TyLogging}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -491,6 +494,21 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       moreParams.put("prompt", "select_account") // + " login"?
     }
 
+
+    idp.oauAuthReqClaims foreach { reqClaims: JsObject =>
+      moreParams.put("claims", reqClaims.toString)
+    }
+
+    UX; COULD // improve the login flow slightly, for Azure AD, with these params:
+    // https://docs.microsoft.com/sv-se/azure/active-directory/develop/v2-oauth2-auth-code-flow
+    // - login_hint — auto suggest username, if we already know what
+    //   the name is, having seen it previously in preferred_username
+    //   (could remember for a while in a cookie?).
+    // - domain_hint=consumers  or  =organizations  — the user previously logged in as
+    //   a consumer, if the Azure AD tenant id was Oidc.AzurePersonalAccountTenantId.
+    //   Then can auto suggest logging in as a consumer this time too (B2C not B2B).
+
+
     val authorizationUrl = authnService.createAuthorizationUrlBuilder()
           .state(authnState.stateString)
           .additionalParams(moreParams)
@@ -701,7 +719,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                     "TyEACSTKN0OIDTKN",
                     s"s$siteId: Token response from OIDC provider lacks id_token, IDP: ${
                         idp.protoAlias}")))
-              return
+              return ()
             }
             // An OAuth2-not-OIDC provider that still uses sj_OpenIdOAuth2AccessToken
             // and didn't send us and id_token? Weird, but is okay?
@@ -712,21 +730,45 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           }
         }
 
-        anyOidcIdToken foreach { idToken =>
-          // 1)
-          SECURITY; SHOULD // compare any ID token nonce with
-          // authnState.browserNonce, maybe encrypted or hashed:  [br_authn_nonce]
+        val anyUserInfo: Opt[IdpUserInfo] = anyOidcIdToken flatMap { idToken =>
+
+          // Decode online:
+          // https://jwt.ms/#id_token=the_id_token  (only do for dummy test tokens!)
+
+
+          // ----- Validate id_token
+
+          // Could validate the ID token, but, as Google says:  [when_chk_id_tkn]
+          // (Ty's comments in [ ] brackets.)
           //
-          // Use which Java lib for parsing? https://jwt.io/
-          // maybe: https://github.com/auth0/java-jwt
-          // or: https://github.com/vert-x3/vertx-auth/tree/master/vertx-auth-jwt ?
+          // > Normally, it is critical that you validate an ID token before you
+          // > use it, but since you are communicating directly with Google [or some
+          // > other IDP] over an intermediary-free HTTPS channel and using
+          // > your client secret to authenticate yourself to Google, you can be
+          // > confident that the token you receive really comes from Google
+          // > and is valid
+          // See: https://developers.google.com/identity/protocols/oauth2/openid-connect#obtainuserinfo
+          //
+          // However if getting the ID token from an (untrusted) intermediary,
+          // it must be validated.
+          //
+          // Here's Microsoft's docs about how to validate the id_token:
+          // https://docs.microsoft.com/en-us/azure/active-directory/develop/access-tokens#validating-tokens
+          // And then also:
+          // https://docs.microsoft.com/en-us/azure/active-directory/develop/id-tokens#validating-an-id_token
+
+
+          // ----- Check id_token nonce
+
+          // Compare ID token nonce with authnState.browserNonce:
+          // (maybe later we'll have encrypted it or hashed it)  [br_authn_nonce]
           //
           // The nonce [oidc_nonce_back] we sent as an URL query param in the IDP auth
           // request must be included by the IDP in the id token — so we'll know
           // the id token really belongs to the initial auth request we sent to
           // the IDP (by redirecting the browser to the IDP).
           //
-          // Why a nonce?:
+          // Why a nonce?: 1, 2, 3 + docs:
           //
           // The nonce can 1) prevent replay attacks: If an attacker somehow sees the
           // redirect URI request back to Ty, and tries to replay it? — then, the nonce
@@ -741,12 +783,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // because the IDP's auth req endpoint server and its token endpoint server
           // have spoken with each other: the auth req server has sent the nonce to
           // the token server, which now sent it back here. Which is less likely to
-          // have worked properly, if one of the IDP's servers has been compromised?)
+          // have worked properly, if one of the IDP's servers has been compromised
+          // or we connected to the wrong token server somehow?
           //
           // And 3) We can send it back to the browser — it's nice to check,
           // browser side, that the session that got created, is based on the nonce
           // sent in the initial  /-/authn/../..?..&nonce=..  request to the Ty server,
-
+          //
           // Docs:  https://openid.net/specs/openid-connect-basic-1_0.html#IDToken
           // nonce:  case-sensitive string
           //    OPTIONAL. String value used to associate a Client session with
@@ -759,20 +802,75 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           //    with the Claim Value being the nonce value sent in the
           //    Authentication Request.
 
-          // 2) Could validate the ID token, but, as Google says: [Ty's comments
-          // in brackets]
-          // > Normally, it is critical that you validate an ID token before you
-          // > use it, but since you are communicating directly with Google [or some
-          // > other IDP] over an intermediary-free HTTPS channel and using
-          // > your client secret to authenticate yourself to Google, you can be
-          // > confident that the token you receive really comes from Google
-          // > and is valid
-          // See: https://developers.google.com/identity/protocols/oauth2/openid-connect#obtainuserinfo
-          // (However if getting the ID token from an intermediary, it must be
-          // validated.)
+          val idTokenSt = idToken.idTokenStr
+          val decodedJwt: a0_DecodedJWT = {
+            try a0_JWT.decode(idTokenSt)
+            catch {
+              case ex: a0_JWTDecodeException =>
+                val errCode = "TyEIDTKNBADJWT"
+                val msg = s"Malformed OIDC id_token, IDP: ${idp.protoAlias}"
+                responseToBrowserPromise.failure(RespEx(BadGatewayResult(errCode, msg)))
+                logger.warn(s"s$siteId: $msg [$errCode], id_token: '$idTokenSt'", ex)
+                return ()
+            }
+          }
+
+          val nonceMaybeNullClaim: a0_Claim = decodedJwt.getClaim("nonce")
+          if (nonceMaybeNullClaim.isNull) {
+            val errCode = "TyEIDTKN0NONCE"
+            val msg = s"No OIDC id_token nonce, IDP: ${idp.protoAlias}"
+            responseToBrowserPromise.failure(RespEx(BadGatewayResult(errCode, msg)))
+            logger.warn(s"s$siteId: $msg [$errCode], id_token: '$idTokenSt'")
+            return ()
+          }
+
+          val nonceOrNull = nonceMaybeNullClaim.asString   // [Scala_3] type:  St | null
+          if ((nonceOrNull eq null) || nonceOrNull != authnState.browserNonce) {
+            val errCode = "TyEIDTKNBADNONCE"
+            val msg = s"Wrong OIDC id_token nonce, IDP: ${idp.protoAlias}"
+            responseToBrowserPromise.failure(RespEx(BadGatewayResult(errCode, msg)))
+            logger.warn(s"s$siteId: $msg, the nonce: $nonceOrNull [${errCode
+                  }], id_token: '$idTokenSt'")
+            return ()
+          }
+
+
+          // ----- Get id_token claims
+
+          // Some IDPs, e.g. Azure AD, send all info in the id_token, and there's
+          // no need to query the userinfo endpoint — in fact, Microsoft recommends
+          // not calling the userinfo endpoint:
+          // https://docs.microsoft.com/en-us/azure/active-directory/develop/userinfo#consider-use-an-id-token-instead
+          // > we suggest that you use that ID token to get information about the user
+          // > instead of calling the UserInfo endpoint. Using the ID token
+          // > will eliminate one to two network requests
+
+          parseOidcIdToken(decodedJwt, idp) match {
+            case Good(userInfo: OpenAuthDetails) =>
+              // If we have all we need already, skip the userinfo request
+              // — Azure AD doesn't include any info in the userinfo response
+              // that's not already included in the id_token.
+              // (Read here about when an id_token must be verified: [when_chk_id_tkn].)
+              val seemsLikeAzure = userInfo.idpRealmUserId.isDefined ||  // for now
+                    idp.wellKnownIdpImpl.is(WellKnownIdpImpl.Azure)    // later
+              if (seemsLikeAzure) {
+                // Reply here already ...
+                constructRedirBackResponseToBrowser(redirBackRequest, idp, authnState,
+                      userInfo, responseToBrowserPromise)
+                // ... and skip requestUserInfo() below.
+                return ()
+              }
+              // Else: Fill in more info, by calling the userinfo endpoint, below.
+              Some(userInfo)
+
+            case Bad(errMsg) =>
+              // Try the userinfo endpoint instead then? (just below)
+              logger.warn(s"$siteId: id_token problem: $errMsg [TyEIDTKNWEIRID]")
+              None
+          }
         }
 
-        requestUserInfo(accessToken, anyOidcIdToken)
+        requestUserInfo(accessToken, anyOidcIdToken, anyUserInfo)
       }
     })
 
@@ -791,7 +889,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // The user-info endpoint and response is standardized if we're using OIDC
     // — otherwise, if just OAuth2, then it's IDP specific.
 
-    def requestUserInfo(accessToken: sj_OAuth2AccessToken, anyIdToken: Opt[OidcIdToken]) {
+    def requestUserInfo(accessToken: sj_OAuth2AccessToken, anyIdToken: Opt[OidcIdToken],
+          anyUserInfo: Opt[IdpUserInfo]) {
       val userInfoRequest = new sj_OAuthRequest(sj_Verb.GET, idp.oidcUserInfoUrl)
 
       // Some OAuth2 IDPs want extra headers — when it's not OIDC, it's non-standard.
@@ -812,8 +911,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             },
             (json: JsValue) => {
               handleUserInfoJson(
-                    redirBackRequest, idp, json, siteId, anyIdToken, authnState,
-                    authnService, accessToken, responseToBrowserPromise)
+                    redirBackRequest, idp, json, siteId, anyUserInfo,
+                    anyIdToken, authnState, authnService, accessToken,
+                    responseToBrowserPromise)
             })
     }
 
@@ -823,10 +923,14 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def handleUserInfoJson(redirBackRequest: GetRequest, idp: IdentityProvider,
-          userInfJsVal: JsValue, siteId: SiteId, anyOidcIdToken: Opt[OidcIdToken],
+          userInfJsVal: JsValue, siteId: SiteId, userInfoFromIdToken: Opt[IdpUserInfo],
+          anyOidcIdToken: Opt[OidcIdToken],
           authnState: OngoingAuthnState, authnService: sj_OAuth20Service,
           accessToken: sj_OAuth2AccessToken, responseToBrowserPromise: Promise[p_Result])
           : U = {
+
+    logger.debug(s"s$siteId: Got user info from ${idp.protoAlias}:  ${
+          userInfJsVal.toString}")
 
     val json = userInfJsVal.asOpt[JsObject] getOrElse {
       responseToBrowserPromise.failure(RespEx(BadGatewayResult("TyEUSRJSN0OBJ",
@@ -840,7 +944,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     dieIf(authnState.nextStep != "redir_back", "TyEAUTSITEID004",
           s"Wrong step: ${authnState.nextStep}")
 
-    var oauthDetails: OpenAuthDetails = (idp.protocol match {
+    SHOULD // keep  userInfoFromIdToken,  and add more info to it,
+    // rather than forgetting the info we have already from id_token
+
+    var userInfo: IdpUserInfo = (idp.protocol match {
       // Some providers, e.g. Google, uses OIDC user info also for OAuth2 [goog_oidc]
       case ProtoNameOidc | ProtoNameOAuth2 if anyOidcIdToken.isDefined =>
         parseOidcUserInfo(json, idp)
@@ -855,14 +962,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
     anyOidcIdToken foreach { idToken: OidcIdToken =>
-      oauthDetails = oauthDetails.copy(oidcIdToken = Some(idToken))
+      userInfo = userInfo.copy(idToken = Some(idToken.idTokenStr))
     }
-
 
     if (idp.wellKnownIdpImpl.isDefined) {
       // Fetch any missing profile info.  [oauth2_extra_req]
       // E.g. for LinkedIn and GitHub, need to fetch the verified email address (if any).
-      WellKnownIdps.fetchAnyMissingUserInfo(oauthDetails, idp, siteId = siteId,
+      WellKnownIdps.fetchAnyMissingUserInfo(userInfo, idp, siteId = siteId,
             authnService, accessToken,
             onError = (errorResponse: p_Result) => {
               responseToBrowserPromise.failure(RespEx(errorResponse))
@@ -875,7 +981,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
     else {
       constructRedirBackResponseToBrowser(
-            redirBackRequest, idp, authnState, oauthDetails, responseToBrowserPromise)
+            redirBackRequest, idp, authnState, userInfo, responseToBrowserPromise)
     }
   }
 
@@ -1068,6 +1174,14 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       "TyECUIDPDEFOAU", o"""Default OpenAuth authentication disabled,
         when using only site custom IDP""")
 
+    // This'll break Twitter authn, until they support OAuth2.
+    throwForbiddenIf(globals.config.featureFlags.contains("ffSilhouetteOff"),
+           "TyEOLDAUTHNOFF",
+           o"""Login with $providerName disabled for now. Can you please login
+              via email address instead? — Click 'Did you forget your password?'
+              in the login dialog.  Or email:  ${
+              globals.securityComplaintsEmailAddress} for help""")
+
     if (globals.anyLoginOrigin isSomethingButNot originOf(request)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
@@ -1124,7 +1238,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         val futureProfile: Future[SocialProfile] = provider.retrieveProfile(authInfo)
         futureProfile flatMap { profile: SocialProfile =>   // TalkyardSocialProfile?  (TYSOCPROF)
           Future.successful(
-                handleAuthenticationData(request, profile))
+                handleAuthenticationData(request, profile, providerName))
         }
     } recoverWith {
       case ex: Exception =>
@@ -1153,8 +1267,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def handleAuthenticationData(request: GetRequest, profile: SocialProfile)
-        : Result = {
+  private def handleAuthenticationData(request: GetRequest, profile: SocialProfile,
+        providerName: St): Result = {
     import request.{dao, siteId}
     logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
 
@@ -1228,8 +1342,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           authnViaSiteId = siteId,  // for now, will delete all this later anyway
           loginToSiteId = NoSiteId, // we don't know
           loginToSiteOrigin = "",   // don't know
-          protocol = ProtoNameOAuth2,
-          providerAlias = "dummy",
+          protocol =
+                if (providerName == TwitterProvider.ID) ProtoNameOAuth10a
+                else ProtoNameOAuth2,
+          providerAlias = providerName,
           // ----
           // isInLoginPopup, mayCreateUser and returnToUrl values are from cookies,
           // and are missing here, if we're at the authn origin — then we'll
@@ -1329,6 +1445,18 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user,
               authnState = authnState)
       case Bad(problem) =>
+        if (authnState.usesServerGlobalIdp) {
+          // Is it Twitter? No more Twitter accounts allowed, or linking a Twitter
+          // account to any existing account.  Twitter uses OAuth 1.0a which Talkyard
+          // won't support once done migrating from Silhouette to ScribeJava.
+          // Instead, let's wait for Twitter to start supporting OAuth2.
+          if (authnState.providerAlias == TwitterProvider.ID) {
+            throwForbiddenIf(globals.config.featureFlags.contains("ffTwitterSignUpOff"),
+                  "TyE0TWITTERACCTS", o"""You cannot sign up via Twitter,
+                  until Twitter supports OAuth2. Might take years, sorry.""")
+          }
+        }
+
         // For now. Later, anyException will disappear.
         if (problem.anyException.isEmpty) {
           // This currently "cannot" happen. [6036KEJ5]
@@ -2154,6 +2282,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           description = None,
           adminComments = None,
           trustVerifiedEmail = trustVerifiedEmailAddr,
+          // Maybe set to "gmail.com" for Google? [gmail_verifd]
+          emailVerifiedDomains = None,
           linkAccountNoLogin = false,
           guiOrder = None,
           syncMode = 1, // ImportOnFirstLogin

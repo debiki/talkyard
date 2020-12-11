@@ -466,7 +466,7 @@ function onMouseMaybeReset(event: MouseEvent) {
 
   // Don't close if clicking or moving the mouse inside the shortcuts dialog.
   // Maybe pat wants to select and copy text, e.g. a shortcut description?
-  const dialogElm: HElm | Z = curState.isOpen && $first('.c_KbdD');
+  const dialogElm: HElm | Z = curState.isOpen && $first('.c_KbdD-Mini .modal-dialog');
   const targetElm: Elm | Z = event.target as Elm;
   if (dialogElm && dialogElm.contains(targetElm))
     return;
@@ -488,8 +488,22 @@ function isShift(key: St): Bo {
 }
 
 
-function isAltOrCtrl(key: St): Bo {
-  return key === 'Control' || key === 'Alt';
+function isModifierNotShift(key: St): Bo {
+  return (
+      key === 'Alt' ||
+      key === 'AltGraph' ||
+      key === 'CapsLock' ||
+      key === 'Control' ||
+      key === 'Fn' ||
+      key === 'FnLock' ||
+      key === 'Hyper' ||   // only on the old Space Cadet keyboard?
+      key === 'Meta' ||    // Windows logo key or Mac command key
+      key === 'NumLock' ||
+      key === 'ScrollLock' ||
+      // (Skip 'Shift'.)
+      key === 'Super' ||  // the Windows key or Mac command key
+      key === 'Symbol' ||
+      key === 'SymbolLock');
 }
 
 
@@ -505,7 +519,7 @@ function canBeShortcutKey(key: St): Bo {
 function onKeyUp(event: KeyboardEvent) {
   const key: St = event.key;
 
-  if (isAltOrCtrl(key))
+  if (isModifierNotShift(key))
     return;
 
   const store: Store = getMainWinStore();
@@ -524,6 +538,13 @@ function onKeyUp(event: KeyboardEvent) {
 
   if (curKeyDown === key) {
     curKeyDown = '';
+  }
+
+  // If typing some other command, don't interpret that as a shortcut.
+  // Break out fn? (35FM7906RT)
+  if (event.ctrlKey || event.altKey || event.metaKey) {  // not event.shiftKey
+    resetAndCloseDialog();
+    return;
   }
 
   if (!canBeShortcutKey(key)) {
@@ -582,7 +603,10 @@ function onKeyDown(event: KeyboardEvent) {
 
   const key: St = event.key;
   const otherKeyAlreadyDown = curKeyDown;
-  curKeyDown = key;
+
+  if (!isModifierNotShift(key)) {
+    curKeyDown = key;
+  }
 
   //logD(`onKeyDown: ${key}`);
 
@@ -596,8 +620,10 @@ function onKeyDown(event: KeyboardEvent) {
     return;
   }
 
-  // Ctrl, Alt, Shift are never part of shortcuts.
-  if (event.ctrlKey || event.altKey || event.shiftKey) {
+  // If typing some other command, don't interpret that as a shortcut.
+  // Ctrl, Alt, Shift, Meta are never part of shortcuts.
+  // Break out fn? (35FM7906RT)
+  if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) {
     skipNextShiftUp ||= isShiftDown;
     resetAndCloseDialog();
     return;
@@ -724,8 +750,6 @@ const KeyboardShortcutsDialog = React.createFactory<{}>(function() {
   if (!state || !state.isOpen)
     return r.div({});
 
-  const firstKey = state.keysTyped[0];
-
   const boldKeysTyped = r.b({ className: 's_KbdD_KeysTyped' }, state.keysTyped);
   const numKeysTyped = state.keysTyped.length;
 
@@ -750,8 +774,14 @@ const KeyboardShortcutsDialog = React.createFactory<{}>(function() {
 
   const orMovingTheMouse = state.tryStayOpen ? '' : ", or moving the mouse,";
 
+  // If opening via Shift, show the full dialog directly.
+  // But if starting typing a shortcut — then it's annoying to see the whole
+  // dialog appearing suddenly; it's a bit large. Instead, show just the keys typed,
+  // until after about a second; after that, the whole dialog will fade in.
+  const fullOrMini = state.tryStayOpen ? 'c_KbdD-Full' : 'c_KbdD-Mini';
+
   return InstaDiag({
-    diagClassName: 'c_KbdD',
+    diagClassName: 'c_KbdD ' + fullOrMini,
     title,
     body: rFr({},
         r.p({}, r.code({}, "Escape"), ',', r.code({}, "Space"), ',', r.code({}, "Shift"),
