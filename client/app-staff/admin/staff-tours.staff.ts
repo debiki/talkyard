@@ -130,7 +130,7 @@ export const staffTours: StaffTours = {
       placeHow: PlaceHow.Below,
       highlightOffsetY: -12,
     }, {
-      title: rFragment({}, "Click ", r.i({}, "Review")),
+      title: rFragment({}, "Click ", r.i({}, "Moderation")),
       text: '',
       placeAt: '.e_RvwB',
       placeHow: PlaceHow.Below,
