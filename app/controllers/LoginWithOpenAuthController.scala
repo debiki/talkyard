@@ -1712,7 +1712,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def askIfLinkIdentityToUser(authnState: OngoingAuthnState,
+  private def askIfLinkIdentityToUser(authnState: OngoingAuthnState,   // [ask_ln_acts]
           request: ApiRequest[_]): Result = {
     import request.dao
 
