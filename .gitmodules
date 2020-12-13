@@ -99,17 +99,33 @@
 #       https://github.com/debiki/ty-vendors.git \
 #       images/web/openresty
 #
+# Maybe different platforms (Debian 9 or 10 or Ubuntu 20.04 or maybe
+# MS and Cygwin somehow?) will sometimes download or generate slightly
+# different files?  So maybe this approach with vendored deps in submodules,
+# will need some tweaking somehow. — Code get compiled and built
+# in containers, but *not* Webdriverio test suite; it runs directly
+# on the host OS (so any node-gyp built stuff then depends on the host OS).
 
+
+# The browser and e2e tests.
+[submodule "node_modules"]
+	path = node_modules
+	url = https://github.com/debiki/ty-vendors.git
+	branch = ty-node_modules
+
+# App server: Scala, JARs.
 [submodule "vendors/jars"]
 	path = vendors/jars
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-jars
 
+# OpenResty.
 [submodule "images/web/openresty"]
 	path = images/web/openresty
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-openresty
 
+# Fonts.
 # This is a separate npm repo with woff2 font files, so they can be
 # Dockerfile COPY:ied into the 'web' image.
 [submodule "images/web/node_modules"]

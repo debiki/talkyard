@@ -38,6 +38,7 @@ Gruntfile.js
 .gitattributes
 .editorconfig
 .*ignore
+!./node_modules/.gitignore
 .eslintrc
 .jshintrc
 .flowconfig
