@@ -157,3 +157,12 @@ Instead, there can be a one-click button "Show Popular Replies" or
 
 There's a per site config value to change the sort order — maybe per
 category or topic one day? Topic type? Q&A = best-first, others by time?
+
+
+
+=== Don't use shared CDN
+
+It's pointless: Chrome >= v86 partitions the cache by URL, and Safari too,
+so there're no performance benefits — instead, slightly slower, because
+of a TLS handshake. The previous browser behaviour enabled cross-site tracking,
+checking if the user had visited certain sites etc.

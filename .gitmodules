@@ -76,7 +76,8 @@
 	path = modules/talkyard-prod-swarm
 	url = https://github.com/debiki/talkyard-prod-swarm.git
 
-# ----- Vendors
+
+# ----- Vendored dependencies
 
 # Vendored code is in the ty-vendors repo, but in different branches
 # — and each branch is checked out as a separate submodule, where it's needed,
@@ -108,3 +109,10 @@
 	path = images/web/openresty
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-openresty
+
+# This is a separate npm repo with woff2 font files, so they can be
+# Dockerfile COPY:ied into the 'web' image.
+[submodule "images/web/node_modules"]
+	path = images/web/node_modules
+	url = https://github.com/debiki/ty-vendors.git
+	branch = ty-images-web-node_modules

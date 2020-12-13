@@ -365,8 +365,19 @@ $(transl_dev_app_bundle_files) $(transl_dev_web_bundle_files): \
 transl_dev_bundles: ${transl_dev_web_bundle_files} ${transl_dev_app_bundle_files}
 
 
+# ----- Fonts
 
-debug_asset_bundles:  debug_asset_bundles_files  ext_iframe_js  transl_dev_bundles
+# Sync 'open-sans-v1' with gulpfile.js and images/web/Dockerfile. [sync_fonts]
+
+fonts: images/web/fonts/open-sans-v1/open-sans.min.css.gz
+
+images/web/fonts/open-sans-v1/open-sans.min.css.gz:
+	@echo "\nRegenerating: $@ ..."
+	s/d-gulp  bundleFonts
+
+
+
+debug_asset_bundles:  debug_asset_bundles_files  fonts  ext_iframe_js  transl_dev_bundles
 
 
 

@@ -267,6 +267,9 @@ class SiteTpi protected (
   def mediaUrlPrefix: String =
     s"$cdnOrServerOrigin/-/media/"   // sync with Nginx [NGXSTC]
 
+  def fontUrl(fileName: St): St =
+    s"$cdnOrServerOrigin/-/fonts/$fileName"   // sync w Nginx [NGXSTC]
+
   def uploadsUrlPrefix: String =
     cdnOrServerOrigin + ed.server.UploadsUrlBasePath + pubSiteId + '/'
 

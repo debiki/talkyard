@@ -55,6 +55,8 @@ images/app/assets/
 !images/app/assets/.gitkeep
 images/web/assets/
 !images/web/assets/.gitkeep
+images/web/fonts/
+!images/web/fonts/.gitkeep
 
 # The Makefile copies a file to here. [ACTVTRJAR]
 images/app/typesafe-activator/

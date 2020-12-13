@@ -110,9 +110,11 @@ let preprocessProdContext;
 const webDest = 'images/web/assets';
 let webDestVersioned;
 let webDestTranslations;
+
+const webDestFonts = `images/web/fonts`;
+
 const serverDest = 'images/app/assets';
 let serverDestTranslations;
-
 
 function updateVersionVars() {
   version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
@@ -707,9 +709,11 @@ gulp.task('compile-stylus', () => {
 
   const makeFileList = (rtl) => {
     const files = [
+        // --- These first three get replaced, if RTL --------
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
+        // ---------------------------------------------------
         'client/third-party/stupid-lightbox.css',
         'client/app-slim/theme.styl',
         'client/app-slim/third-party.styl',
@@ -739,6 +743,47 @@ gulp.task('compile-stylus', () => {
       makeStyleStream(''),
       makeStyleStream('.rtl'));
 });
+
+
+
+// This is in its own bundle, so can do assets versioning separately,
+// and [the urls to the woff2 files in the 300.css etc] will still work.
+// ('v1' below is the version.)
+//
+gulp.task('bundleFonts', () => {
+  const stylusOpts = {
+    linenos: true,
+  };
+
+  // Change to only 300 and 700, skip 400 and 600?
+  // Sync -v1 and font sizes with Makefile and Dockerfile woff2 file list. [sync_fonts]
+  const fontDir = webDestFonts + '/open-sans-v1';
+  const fontFiles = [
+        'images/web/node_modules/fontsource-open-sans/300.css',
+        'images/web/node_modules/fontsource-open-sans/400.css',
+        'images/web/node_modules/fontsource-open-sans/600.css'];
+
+  const stream = gulp.src(fontFiles)
+      .pipe(plumber())
+      .pipe(stylus(stylusOpts))
+      .pipe(concat(`open-sans.css`))
+      .pipe(updateAtimeAndMtime())
+      // Generate non-minified files:
+      .pipe(save('111'))
+        .pipe(gzip({ gzipOptions }))
+        .pipe(gulp.dest(fontDir))
+      .pipe(save.restore('111'))
+      // Generate minified files:
+      .pipe(cleanCSS())
+      .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
+      .pipe(rename({ extname: '.min.css' }))
+      // We need uncompressed files too [UNCOMPRAST].
+      .pipe(gulp.dest(fontDir))
+      .pipe(gzip({ gzipOptions }))
+      .pipe(gulp.dest(fontDir));
+  return stream;
+});
+
 
 
 function logChangeFn(fileType) {
@@ -858,6 +903,8 @@ gulp.task('clean', gulp.series('cleanTranslations', () => {
   return g_del([
           `${webDest}/*`,
           `!${webDest}/.gitkeep`,
+          `${webDestFonts}/*`,
+          `!${webDestFonts}/.gitkeep`,
           `${serverDest}/*`,
           `!${serverDest}/.gitkeep`])
       .then(function(deletedPaths) {

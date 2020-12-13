@@ -213,6 +213,36 @@ ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/
 
 
 
+# Fonts
+# ===================================
+#
+# Barely ever changes. (Is about 1.6 M and takes some seconds to copy,
+# so nice to copy before other smaller things further below.)
+#
+# Generate the list of font files to copy like so:
+#   cd images/web/  # this dir
+#   ls -1 node_modules/fontsource-open-sans/files/open-sans-????*-{300,400,600}*.woff*
+# (Is there no way to change the dir in the host file system?)
+
+COPY fonts /opt/talkyard/fonts
+
+# This shell like expansion not work:  ...{300,400,600}...
+# Instead:
+COPY \
+    # This: '????*' excludes the "-all-" bundles.
+    # Sync font sizes with gulpfile.js css file list. [sync_fonts]
+    node_modules/fontsource-open-sans/files/open-sans-????*-300-*.woff* \
+    node_modules/fontsource-open-sans/files/open-sans-????*-400-*.woff* \
+    node_modules/fontsource-open-sans/files/open-sans-????*-600-*.woff* \
+    # Sync 'open-sans-v1' with Makefile and gulpfile.js. [sync_fonts]
+    /opt/talkyard/fonts/open-sans-v1/files/
+
+
+
+# Nginx and Lua files
+# ===================================
+
+
 # Remove default files, they're very confusing, if ogging in to Nginx
 # and looking at /etc/nginx/:
 RUN cd /etc/nginx && \
@@ -233,7 +263,6 @@ RUN cd /etc/nginx && \
    && echo 'alias ....="cd ../../.."' >> ~/.bashrc \
    && echo 'alias .....="cd ../../../.."' >> ~/.bashrc \
    && echo
-
 
 
 COPY lua-packages/lua-resty-http /opt/lua-packages/lua-resty-http
@@ -273,6 +302,12 @@ COPY server-locations.conf /etc/nginx/server.conf.template
 COPY server-locations.conf /etc/nginx/server-locations.conf.template
 COPY nginx.conf           /etc/nginx/nginx.conf.template
 
+
+
+# Env vars
+# ===================================
+
+
 COPY run-envsubst.sh  /etc/nginx/run-envsubst.sh
 RUN  chmod ugo+x      /etc/nginx/run-envsubst.sh
 # Sync with variables in  run-envsubst.sh  and  docker-compose-no-limits.yml  [0KW2UY3].
@@ -301,10 +336,18 @@ ENV \
     TY_MAX_AGE_WEEK="max-age=604800, s-maxage=604800, public" \
     TY_MAX_AGE_DAY="max-age=86400, s-maxage=86400, public"
 
+
+
+# Scripts and styles
+# ===================================
+#
 # Frequently edited, so do last.
+
 COPY ty-media /opt/talkyard/ty-media
 COPY ed-lua   /opt/talkyard/lua/
 COPY assets   /opt/talkyard/assets
+
+
 
 EXPOSE 80 443
 
