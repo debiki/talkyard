@@ -1,7 +1,10 @@
 # Selenium drivers
-!node_modules/selenium-standalone/.selenium/
+# What? This has somehow disappeared, 2020-12-13. Running via Docker now anyway.
+# ------
+#!node_modules/selenium-standalone/.selenium/
 # Will keep e.g.:
 # node_modules/selenium-standalone/.selenium/chromedriver/2.25-x64-chromedriver
+# ------
 
 # test directories
 __tests__
@@ -10,8 +13,9 @@ tests
 powered-test
 
 # asset directories
-docs
-doc
+# Let's keep docs — nice to have, if offline? [yarnclean_keep_docs]
+#docs
+#doc
 website
 images
 assets
@@ -44,4 +48,6 @@ Gruntfile.js
 
 # misc
 *.gz
-*.md
+
+# Let's keep docs — nice to have, if offline? [yarnclean_keep_docs]
+#*.md
