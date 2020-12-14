@@ -112,18 +112,21 @@
 	path = node_modules
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-node_modules
+	shallow = true
 
 # App server: Scala, JARs.
 [submodule "vendors/jars"]
 	path = vendors/jars
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-jars
+	shallow = true
 
 # OpenResty.
 [submodule "images/web/openresty"]
 	path = images/web/openresty
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-openresty
+	shallow = true
 
 # Fonts.
 # This is a separate npm repo with woff2 font files, so they can be
@@ -132,3 +135,4 @@
 	path = images/web/node_modules
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-images-web-node_modules
+	shallow = true
