@@ -30,17 +30,16 @@
 /// are shown in a pop up dialog. This makes the shortcuts discoverable,
 /// and no need to remember them by heart (except for maybe the first letter)
 ///
-/// Shift opens the shortcuts dialog and shows all shortcuts
-/// — this make the shortcuts even more discoverable? People sometimes
-/// click Shift by accident. Then they'll discover Ty's shortcuts?
-/// But not Ctrl! That'd make the dialog pop up too often by mistake, e.g.
-/// if Ctrl+Tab to switch tab but one then changes one's mind and releases Ctrl.
+/// '?' opens the shortcuts dialog and shows all shortcuts.
+/// Also Shift + Shift (should this be optional?). But not Shift just once or Ctrl
+/// — because then the shortcuts dialog accidentally opens annoyingly often,
+/// so people get annoyed.
 ///
 /// It needs to be simple to cancel any shortcut being typed.  Don't want
 /// people getting stuck in "shortcut mode", like people can get stuck in Vim
 /// or Ex.  Therefore, doing anything at all except for typing the next key
 /// (or Backspace to undo the last key), cancels any ongoing shortcut sequence
-/// and closes the dialog.
+/// and closes the dialog — unless opened by pressing '?' or Shift + Shift.
 /// E.g. moving the mouse, closes the dialog (unless the pointer is inside the dialog).
 /// Or hitting Space, Alt, Shift, Berserk Mode, Tab, whatever, or scrolling.
 ///
@@ -140,11 +139,15 @@ interface ShortcutDiagState {
 
 
 let skipNextShiftUp: Bo | U;
+let justSoloClickedShift: Bo | U;
 let isShiftDown: Bo | U;
 let curKeyDown = ''; // could be a Set, but this'll do for now
 let curState: ShortcutDiagState = { isOpen: false, keysTyped: '', shortcutsToShow: [] };
 let dialogSetState: ((state: ShortcutDiagState) => Vo) | U;
 
+// The question mark button opens the dialog, but is otherwise ignored.
+// "'?'" is not so easy to search for; hence this constant.
+const QuestionMark = '?';
 
 
 function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
@@ -422,11 +425,12 @@ export function start() {
   logD(`Starting shortcuts [TyMSHORTCSON]`);
   addEventListener('keydown', onKeyDown, false);
   addEventListener('keyup', onKeyUp, false);
+  // Mobile browsers typically generate a 'click' event for a tap (without moving).
   addEventListener('click', onMouseMaybeReset, false);
   addEventListener('mousemove', onMouseMaybeReset, false);
-  addEventListener('scroll', resetAndCloseDialog, false);
+  addEventListener('scroll', onMouseMaybeReset, false);
   addEventListener('touchmove', resetAndCloseDialog, false);
-  addEventListener('mousewheel', resetAndCloseDialog, false);
+  addEventListener('mousewheel', onMouseMaybeReset, false);
 
   //addEventListener('focus', resetAndCloseDialog, false);
   //addEventListener('blur', resetAndCloseDialog, false);
@@ -459,14 +463,17 @@ function onMouseMaybeReset(event: MouseEvent) {
   if (!curState.isOpen)
     return;
 
-  if (curState.tryStayOpen && event.type === 'mousemove') {
-    // Then don't close on mouse move events.
+  // If opened via QuestionMark, don't close if scrolling or moving the mouse
+  // — but do close if clicking outside the dialog.
+  if (curState.tryStayOpen && event.type !== 'click') {
     return;
   }
 
   // Don't close if clicking or moving the mouse inside the shortcuts dialog.
   // Maybe pat wants to select and copy text, e.g. a shortcut description?
-  const dialogElm: HElm | Z = curState.isOpen && $first('.c_KbdD-Mini .modal-dialog');
+  const dialogElm: HElm | Z = curState.isOpen && (
+        $first('.c_KbdD-Mini .modal-dialog') ||
+        $first('.c_KbdD-Full .modal-dialog'));
   const targetElm: Elm | Z = event.target as Elm;
   if (dialogElm && dialogElm.contains(targetElm))
     return;
@@ -481,11 +488,6 @@ function anyOtherDialogOpen(): Bo {
   return !curState.isOpen && !!$first('.modal');
 }
 
-
-
-function isShift(key: St): Bo {
-  return key === 'Shift';
-}
 
 
 function isModifierNotShift(key: St): Bo {
@@ -510,8 +512,7 @@ function isModifierNotShift(key: St): Bo {
 function canBeShortcutKey(key: St): Bo {
   // All shortcuts are [a-z0-9]+ at least for now.
   const isAlnum = ('a' <= key && key <= 'z') || ('0' <= key && key <= '9');
-  const isBackspace = key === 'Backspace'
-  return isAlnum || isBackspace || isShift(key);
+  return isAlnum || key === 'Backspace' || key === QuestionMark || key === 'Shift';
 }
 
 
@@ -552,14 +553,20 @@ function onKeyUp(event: KeyboardEvent) {
     return;
   }
 
-  // In Talkyard, Shift opens the shortcuts dialog (or closes and cancels),
+  // In Talkyard, QuestionMark — and Shift + Shift optionally? —
+  // opens the shortcuts dialog (or closes and cancels),
   // but is not part of the shortcuts.
   //
   // However, on Shift, don't open the shortcut dialog until pat releases
   // the key — because otherwise the dialog would appear briefly, if typing
   // e.g. Shift+Tab to tab around.
   //
-  if (isShift(key)) {
+
+  let isTypingText = event_canBeKeyTarget(event) &&
+        // If dialog open, then it receives keypresses. [shtct_diag_focus]
+        !curState.isOpen;
+
+  if (key === 'Shift') {
     if (curState.isOpen) {
       resetAndCloseDialog();
     }
@@ -571,14 +578,23 @@ function onKeyUp(event: KeyboardEvent) {
     else if (anyOtherDialogOpen()) {
       // Don't open the shortcuts dialog on top of another dialog.
     }
+    else if (!justSoloClickedShift) {
+      // Pat just clicked Shift once, no other key (skipNextShiftUp above is false).
+      // That single Shift click couldn't have added any new character, so:
+      isTypingText = false;
+      // We'll open the dialog, if the next key is Shift again:
+      justSoloClickedShift = true;
+    }
     else {
-      // If opening explicitly via Shift or Ctrl, then, don't close if using
-      // the mouse — maybe pat wants to copy text?
-      // And hopefully pat understands that since Shift and Ctrl opens,
-      // those same buttons also close the dialog?
+      // Shift + Shift — then open the dialog. And, don't close if using
+      // the mouse — maybe pat wants to scroll or copy text?
       const tryStayOpen = true;
       const allShortcuts = makeMyShortcuts(store, '');
       const shortcutsToShow = findMatchingShortcuts(allShortcuts, '');
+      justSoloClickedShift = false;
+      // If was typing (say, in a <textarea> or <input>), skipNextShiftUp above
+      // would have been true.
+      isTypingText = false;
       updateDialog({ isOpen: true, tryStayOpen, keysTyped: '', shortcutsToShow });
     }
 
@@ -587,7 +603,7 @@ function onKeyUp(event: KeyboardEvent) {
   }
 
   // Skip shortcuts if typing text.
-  if (event_canBeKeyTarget(event)) {
+  if (isTypingText) {
     resetAndCloseDialog();
   }
 }
@@ -609,9 +625,10 @@ function onKeyDown(event: KeyboardEvent) {
   }
 
   //logD(`onKeyDown: ${key}`);
+  const isShift = key === 'Shift';
 
   // Handled in onKeyUp() instead.
-  if (isShift(key)) {
+  if (isShift) {
     isShiftDown = true;
     // Must not click Shift or Ctrl together with the shortcut keys.
     if (otherKeyAlreadyDown) {
@@ -619,12 +636,20 @@ function onKeyDown(event: KeyboardEvent) {
     }
     return;
   }
+  else {
+    justSoloClickedShift = false;
+  }
 
-  // If typing some other command, don't interpret that as a shortcut.
-  // Ctrl, Alt, Shift, Meta are never part of shortcuts.
+  // If typing some other command, e.g. Ctrl+Tab to switch browser tab,
+  // don't interpret that as a shortcut.
+  // Ctrl, Alt, Meta are never part of shortcuts. Shift, though, can open
+  // the shortcuts dialog.
   // Break out fn? (35FM7906RT)
-  if (event.ctrlKey || event.altKey || event.shiftKey || event.metaKey) {
+  if (event.ctrlKey || event.altKey || event.metaKey
+      // Clicking the QuestionMark key typically requires holding down Shift.
+      || (event.shiftKey && key !== QuestionMark)) {
     skipNextShiftUp ||= isShiftDown;
+    justSoloClickedShift = false;
     resetAndCloseDialog();
     return;
   }
@@ -637,8 +662,14 @@ function onKeyDown(event: KeyboardEvent) {
     // If is the wrong key, we'll close the dialog and return, just below.
   }
 
-  if (!canBeShortcutKey(event.key)) {
+  const closingViaQuestionMark = key === QuestionMark && curState.isOpen;
+
+  if (!canBeShortcutKey(event.key) || closingViaQuestionMark) {
     // So Ctrl+R or Ctrl+T etc won't open the dialog, when one releases Ctrl.
+    // Or when releasing Shift after having clicked '?' (which requires holding
+    // down Shift).)
+    // BUG 'Escape' closes the shortcut dialog — but e.g. the editor too,
+    // if it's open (and one opened the shortcut dialog via Shift Shift).
     skipNextShiftUp ||= isShiftDown;
     resetAndCloseDialog();
     return;
@@ -646,17 +677,22 @@ function onKeyDown(event: KeyboardEvent) {
 
   // Don't open the dialog, if another dialog open already.
   //
-  // But what if the shortcut dialog is open already, and then a fetch() request
-  // finishes loading, causing another dialog to appear?
-  // Then let's close the shortcut dialog? (We already did preventDefault() above.)
+  // If the shortcut dialog is already open, though, stay open.
+  // (Not impossible that a fetch() request finishes loading, causing
+  // another dialog to appear in the background? Not sure then what to do
+  // — maybe better to leave the shortcuts dialog open.)
   //
-  if (anyOtherDialogOpen()) {
+  if (anyOtherDialogOpen() && !curState.isOpen) {
     resetAndCloseDialog();
     return;
   }
 
-  // If pat is typing text or selecting something, skip shortcuts.
-  if (event_canBeKeyTarget(event)) {
+  // If pat is typing text or selecting an <option> or something, skip shortcuts.
+  // However, don't skipNextShiftUp — because Shift + Shift is a way to open
+  // the shortcuts dialog, also when typing.
+  // And if the dialog is open already, do continue looking for a shortcut
+  // key sequence (we already did event.preventDefault() above). [shtct_diag_focus]
+  if (event_canBeKeyTarget(event) && !curState.isOpen) {
     resetAndCloseDialog();
     return;
   }
@@ -675,6 +711,9 @@ function onKeyDown(event: KeyboardEvent) {
       resetAndCloseDialog();
       return;
     }
+  }
+  else if (key === QuestionMark && !keysTyped) {
+    // Proceed below with opening the dialog (the only effect of this keypress).
   }
   else {
     // @ifdef DEBUG
@@ -718,8 +757,9 @@ function onKeyDown(event: KeyboardEvent) {
   // then list all shortcuts and info texts.
   const whatToShow = keysTyped ? matchingShortcutsAndInfo : allShortcuts;
 
-  updateDialog({ isOpen: true, tryStayOpen: curState.tryStayOpen,
-        keysTyped, shortcutsToShow: whatToShow });
+  const tryStayOpen = curState.tryStayOpen || key === QuestionMark;
+
+  updateDialog({ isOpen: true, tryStayOpen, keysTyped, shortcutsToShow: whatToShow });
 }
 
 
