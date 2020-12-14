@@ -129,6 +129,8 @@ class SiteTpi protected (
   def currentVersionString = ""
   def cachedVersionString = ""
 
+  def noPolyfillDotIo: Bo =
+    globals.config.featureFlags.contains("ffNoPolyfillDotIo")
 
   def debikiHtmlTagClasses: String = {
     // Sync with js [4JXW5I2].

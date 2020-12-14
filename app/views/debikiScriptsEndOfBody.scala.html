@@ -1,5 +1,5 @@
 @**
- * Copyright (c) 2013-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2013-2017, 2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,10 +16,21 @@
  *@
 
 @(tpi: debiki.SiteTpi, startupCode: String, loadStaffBundle: Boolean)
+
 @* SECURITY try removing polyfill.io — it's a supply chain attack security risk.
-DO_AFTER 2020-01-01?: remove. Maybe use SauceLabs to find out if no-polyfill causes
-problems for IE11? old iOS and Android versions? *@
+Now soon mostly gone (feature flag) — only old browser will download a polyfill.
+*@
+@if(tpi.noPolyfillDotIo) {
+<script>{
+var w = window;
+if (!(w.fetch && w.Promise && [].includes && Object.assign && w.Map))
+  document.write('<script src="https://cdn.polyfill.io/v2/polyfill.@{tpi.minMaxJs
+        }?features=default,fetch"></sc' + 'ript>');
+}</script>
+} else {
 <script src="https://cdn.polyfill.io/v2/polyfill.@{tpi.minMaxJs}"></script>
+}
+
 <script src="@tpi.assetUrl(s"translations/${tpi.languageCode}/i18n.${tpi.minMaxJs}")"></script>
 <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
 @* If in the admin area or about user section, then load more scripts directly, [5WKE24]
@@ -36,11 +47,21 @@ but pre*load* requests do get cancelled, see:
  https://medium.com/reloading/preload-prefetch-and-priorities-in-chrome-776165961bbf *@
 <link rel="prefetch" href="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")" as="script">
 }
-<link rel="prefetch" href="@tpi.assetUrl(s"editor-bundle.${tpi.minMaxJs}")" as="script">
 
-@if(loadStaffBundle) {
+@* Prefetch the editor-bundle. But it's currently needed by the staff-bundle [7PKEW24]
+(for rendering posts on the moderation page) — so load it directly, if we're
+loading the staff-bundle.
+*@
+@if(!loadStaffBundle) {
+@* Or don't prefetch it. Most people only read, won't write anything — let's
+save some server bandwidth and mobile phone batteries?
+<link rel="prefetch" href="@tpi.assetUrl(s"editor-bundle.${tpi.minMaxJs}")" as="script">
+*@
+} else {
+<script src="@tpi.assetUrl(s"editor-bundle.${tpi.minMaxJs}")"></script>
 <script src="@tpi.assetUrl(s"staff-bundle.${tpi.minMaxJs}")"></script>
 }
+
 <script>
 @startupCode
 </script>

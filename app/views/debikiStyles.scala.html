@@ -24,8 +24,13 @@
 this font size. (Other fonts can have slightly larger or smaller letters.)
 Google's Roboto maybe looks nice too?  Previously used Bree Serif.
 
-Later, preload regular & bold?
-Sth like: <link rel="preload" href=" ... .woff2" as="font" type="font/woff2" crossorigin>
+Preload regular, italic and bold. But maybe skip, if a non-latin language?
+However currently somewhat many texts haven't been translated yet, so need
+en_US letters anyway.
+Sync with font weights [sync_fonts] so we're preloading the correct files.
 *@
+<link rel="preload" href="@tpi.fontUrl("open-sans-v1/files/open-sans-latin-400-normal.woff2")" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="@tpi.fontUrl("open-sans-v1/files/open-sans-latin-600-normal.woff2")" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="@tpi.fontUrl("open-sans-v1/files/open-sans-latin-400-italic.woff2")" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="@tpi.fontUrl(s"open-sans-v1/open-sans.${tpi.minMaxCss}")"/>
 
