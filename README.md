@@ -313,8 +313,8 @@ how to use docker-compose already.
 
         make up
 
-
-    And have a coffee; `make up` takes a while: Git submodules and Node.js packages will get downloaded,
+    And have a coffee; `make up` takes a while: About 1.5 GB Git submodules
+    with Nodejs packages, JVM JARs and OpenResty source code will get downloaded,
     Typescript, Stylus and Scala code gets compiled and packaged, Docker images get built.
     You can tail the log messages, by typing `make tail`,
     or `sudo s/d logs -f`.  (s/d means "scripts" and "docker-compose")
