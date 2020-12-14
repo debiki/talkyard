@@ -19,6 +19,8 @@ completion.on('mainCmd', ({ reply }) => {
   reply([
         'h', 'help',
         'u', 'up', //'watchup',
+        'runl', // 'recreate-up-no-limits'  — not impl though. See
+                // docker-compose-no-limits.yml.
         'w', 'watch',
         'ps',
         'k', 'kill', 'ka', 'kw',

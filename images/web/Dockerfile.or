@@ -267,6 +267,37 @@ RUN cd /etc/nginx && \
 
 COPY lua-packages/lua-resty-http /opt/lua-packages/lua-resty-http
 
+# Later, also:  fffonion/lua-resty-acme  — auto-LetsEncrypt certs.
+# Can install without OpenResty opm? This copy-files approach?:
+#
+# > If you do not have opm ...
+# https://github.com/jxskiss/ssl-cert-server#installation
+#
+# > If you're using opm [...] Otherwise copy openidc.lua somewhere
+# > in your lua_package_path
+# https://github.com/zmartzone/lua-resty-openidc#installation
+#
+# Or add OPM as described here:
+# https://github.com/openresty/docker-openresty#opm
+#
+# Also, maybe need to use a specific OpenSSL version?
+# > OpenResty's OpenSSL library version must be compatible with your
+# > opm and LuaRocks packages' version.
+# https://github.com/openresty/docker-openresty#tips--pitfalls
+# But apparently we use an ok version already?
+#   $ d/c exec web bash
+#   # apk update
+#   # apk info openssl-dev
+#   ...
+#   openssl-dev-1.1.1i-r0 webpage:
+#   https://www.openssl.org/
+#   openssl-dev-1.1.1i-r0 installed size:
+#   1634304
+# 1.1.1i is the lates version as of 2020-12, https://www.openssl.org:
+# > 08-Dec-2020
+# > OpenSSL 1.1.1i is now available
+#
+
 
 COPY ssl-cert-snakeoil.key /etc/nginx/
 COPY ssl-cert-snakeoil.pem /etc/nginx/
