@@ -1,4 +1,4 @@
 #!/bin/bash
 
-sudo s/d run --rm gulp yarn
+sudo s/d run --rm nodejs yarn
 
