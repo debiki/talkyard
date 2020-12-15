@@ -253,9 +253,10 @@ trait CategoriesDao {
   }
 
 
-  private def makeSectCatStuffs(rootCategory: Category, includeDeleted: Boolean,
+  private def makeSectCatStuffs(rootCategory: Category, includeDeleted: Bo,
         authzCtx: ForumAuthzContext): SectionCategories = {
-    COULD_OPTIMIZE // why not cache this? Or this (9038303)? Doesn't include recent topics,
+    COULD_OPTIMIZE // why not cache this? Or this [cache_cats_stuff]?
+    // Doesn't include recent topics,
     // so should be fine? With whole server feature flag, in case of bugs.
     // But first find out if this actually takes time. Usually no db access anyway.
 
@@ -276,7 +277,7 @@ trait CategoriesDao {
     * Maybe activity statistics later?
     */
   private def makeCatStuff(category: Category): CategoryStuff = {
-    COULD_OPTIMIZE // cache this or that: (9038303)?
+    COULD_OPTIMIZE // cache this or that: [cache_cats_stuff]?
     val anyAboutPageId = getAboutCategoryPageId(category.id)
     val anyAboutPageStuff = getPageStuffById(anyAboutPageId).values.headOption
     val excerpt = anyAboutPageStuff.flatMap(_.bodyExcerpt) getOrElse ""

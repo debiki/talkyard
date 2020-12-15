@@ -68,8 +68,10 @@ case class PagePathAndMeta(
 
   def id: PageId = meta.pageId
   def pageId: PageId = meta.pageId
-  def categoryId: Option[CategoryId] = meta.categoryId
+  def pathSt: St = path.value
+  def categoryId: Opt[CategoryId] = meta.categoryId
   def pageType: PageType = meta.pageType
+  def deletedAt: Opt[j_Date] = meta.deletedAt
 
   requireMetaMatchesPaths(this)
 }

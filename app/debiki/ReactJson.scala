@@ -479,29 +479,35 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeSiteSectionsJson(): JsValue = {
+  private def makeSiteSectionsJson(): JsValue = {
+    COULD_OPTIMIZE // get root CategoryStuff instead,
+    // with an 'isSectionPageDeleted' field?   [cache_cats_stuff]
     SECURITY; COULD // not show any hidden/private site sections. Currently harmless though:
     // there can be only 1 section and it always has the same id. (unless adds more manually via SQL)
-    SECURITY; SHOULD // not show any section, if not logged in, and login-required-to-read.
-    /* later, something like:
+    SECURITY; COULD // not show any section, if not logged in, and login-required-to-read.
+    // Not that important though — just numbers, except for the url path, which can
+    // include some info, but currently it's '/' (site index page).
+
+    /* later, something like:  (but need requester too)
     val settings = dao.getWholeSiteSettings()
     if (settings.userMustBeAuthenticated)
       return JsArray() */
 
     val rootCats = dao.getRootCategories()
-    val jsonObjs = for {
-      rootCat <- rootCats
+    val sectionJsonObjs: Seq[JsObject] = rootCats flatMap { rootCat: Category =>
       // (We're not in a transaction, the page might be gone.)
-      metaAndPath <- dao.getPagePathAndMeta(rootCat.sectionPageId)
-    } yield {
-      Json.obj(  // Typescript: SiteSection
-        "pageId" -> metaAndPath.pageId,
-        "path" -> metaAndPath.path.value,
-        "pageRole" -> metaAndPath.pageType.toInt,
-        "defaultCategoryId" -> JsNumberOrNull(rootCat.defaultSubCatId),
-        "rootCategoryId" -> rootCat.id)
+      dao.getPagePathAndMeta(rootCat.sectionPageId) flatMap { page =>
+        if (page.deletedAt.isDefined) None
+        else Some(
+              Json.obj(  // ts: SiteSection
+                "pageId" -> page.pageId,
+                "path" -> page.pathSt,
+                "pageRole" -> page.pageType.toInt,
+                "defaultCategoryId" -> JsNumberOrNull(rootCat.defaultSubCatId),
+                "rootCategoryId" -> rootCat.id))
+      }
     }
-    JsArray(jsonObjs)
+    JsArray(sectionJsonObjs)
   }
 
 

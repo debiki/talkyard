@@ -71,9 +71,30 @@ export const PageWithStateComponent = createReactClass(<any> {
 
   makeState: function() {
     const store: Store = ReactStore.allData();
+
     // Is undef if on an embedded comments page (then, no router).
     const location = this.props.location;
-    const isMaybeWrongPage = location && location.pathname !== store.currentPage.pagePath.value;
+    if (!location)
+      return { store };
+
+    const curPage: Page = store.currentPage;
+    const curPagePath: St = curPage.pagePath.value;
+    let isMaybeWrongPage = location.pathname !== curPagePath;
+
+    // We can get to here, if curPage is a *deleted* site section page  [subcomms]
+    // (e.g. a deleted forum) — because then it wouldn't be included in
+    // store.siteSections (since deleted), instead it'd be handled as an
+    // ordinary page. However there might be a url path suffix like RoutePathLatest
+    // or RoutePathNew, and then it'd seem as if curPage didn't match the current URL,
+    // and we'd show just a blank page — instead of a deleted page.
+    // Which can be confusing. Instead, show the deleted page.
+    const isSectionPage = isSection(curPage);
+    if (isSectionPage && location.pathname.startsWith(curPagePath)) {
+      // (Maybe check if curPagePath + RoutePathLatest or RoutePathNew etc
+      // becomes pathname?)
+      isMaybeWrongPage = false;
+    }
+
     return { store, isMaybeWrongPage };
   },
 

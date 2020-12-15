@@ -30,6 +30,9 @@ import scala.util.{Failure, Success, Try}
 
 package object core {
 
+  type j_Date = java.util.Date
+
+
   // Concise is nice.
   //
   // (Details: Frequently used names should be short — it's annoying with

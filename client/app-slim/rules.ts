@@ -54,7 +54,8 @@ export function isPageWithComments(pageRole: PageRole): boolean {
   return page_isDiscussion(pageRole) && pageRole !== PageRole.FormalMessage;
 }
 
-export function isSection(pageRole: PageRole): boolean { // RENAME to page_isSection
+export function isSection(page: Page | PageRole): Bo { // RENAME to page_isSection
+  const pageRole = _.isObject(page) ? page.pageRole : page;
   return pageRole === PageRole.Forum || pageRole === PageRole.Blog;
 }
 
