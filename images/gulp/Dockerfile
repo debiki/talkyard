@@ -12,7 +12,7 @@
 # Dockerfiles:
 #   https://hub.docker.com/_/node/
 #   https://github.com/nodejs/docker-node/blob/master/10/buster-slim/
-FROM node:13.12.0-buster-slim
+FROM node:14.15.1-buster-slim
 
 
 # The Node.js Dockerfile creates a user 'node' with id 1000.
