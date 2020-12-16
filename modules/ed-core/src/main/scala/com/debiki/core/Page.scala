@@ -337,11 +337,13 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   def copyWithNewVersion: PageMeta = copy(version = version + 1)
 
 
-  def copyWithNewRole(newRole: PageType): PageMeta = {
+  def copyWithNewRole(newType: PageType): PageMeta = {
     var newClosedAt = closedAt
-    val (newAnsweredAt, newAnswerPostUniqueId) = newRole match {
-      case PageType.Question => (answeredAt, answerPostId)
+    val (newSolvedAt, newSolutionPostId) = newType match {
+      case p if p.canBeSolved =>
+        (answeredAt, answerPostId)
       case _ =>
+        // Clear answeredAt etc — the new page type doesn't understand such things.
         if (answeredAt.isDefined) {
           // Reopen it since changing type.
           newClosedAt = None
@@ -349,9 +351,11 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
         (None, None)
     }
 
-    val (newPlannedAt, newStartedAt, newDoneAt) = newRole match {
+    val (newPlannedAt, newStartedAt, newDoneAt) = newType match {
       case PageType.Problem | PageType.Idea =>
         // These page types understand planned/started/done, so keep them unchanged.
+        (plannedAt, startedAt, doneAt)
+      case t if t.canBeSolved && newSolvedAt.isDefined =>
         (plannedAt, startedAt, doneAt)
       case _ =>
         // Other page types cannot be in planned/started/done statuses, so clear those fields.
@@ -364,14 +368,13 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
         (None, None, None)
     }
 
-    copy(
-      pageType = newRole,
-      answeredAt = newAnsweredAt,
-      answerPostId = newAnswerPostUniqueId,
-      plannedAt = newPlannedAt,
-      startedAt = newStartedAt,
-      doneAt = newDoneAt,
-      closedAt = newClosedAt)
+    copy(pageType = newType,
+          answeredAt = newSolvedAt,
+          answerPostId = newSolutionPostId,
+          plannedAt = newPlannedAt,
+          startedAt = newStartedAt,
+          doneAt = newDoneAt,
+          closedAt = newClosedAt)
   }
 
   def copyWithNewDoingStatus(newDoingStatus: PageDoingStatus, when: When): PageMeta = {
@@ -470,6 +473,8 @@ sealed abstract class PageType(
 
   def canClose: Boolean = !isSection
 
+  def canBeSolved: Bo = false
+
   def canHaveReplies = true
 
   // Sync with JS [6KUW204]
@@ -535,15 +540,19 @@ object PageType {
 
   /** A question is considered answered when the author (or the staff) has marked some
     * reply as being the answer to the question. */
-  case object Question extends PageType(10, staffOnly = false)
+  case object Question extends PageType(10, staffOnly = false) {
+    override def canBeSolved = true
+  }
 
   /** Something that is broken and should be fixed. Can change status to Planned and Done. */
   case object Problem extends PageType(14, staffOnly = false) {
+    override def canBeSolved = true
     override def hasDoingStatus = true
   }
 
   /** An idea about something to do, or a feature request. Can change status to Planned and Done. */
   case object Idea extends PageType(15, staffOnly = false) {
+    override def canBeSolved = true
     override def hasDoingStatus = true
   }
 

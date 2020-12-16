@@ -403,8 +403,11 @@ declare namespace debiki2 {
   var anyForbiddenPassword;
 
   function isSection(pageRole: PageRole): boolean;
-  function page_isClosedNotDone(page: Page): boolean;
-  function page_hasDoingStatus(page: Page): boolean;
+  function page_isClosedUnfinished(page: Page): Bo;
+  function page_isDone(page: Page | Topic): Bo;
+  function page_canBeDone(page: Page | Topic): Bo;
+  function page_isSolved(page: Page | Topic): Bo;
+  function page_canBeSolved(page: Page | Topic): Bo;
   function page_canChangeCategory(page: Page): boolean;
   function page_mostRecentPostNr(page: Page): number;
 

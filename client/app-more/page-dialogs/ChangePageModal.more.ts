@@ -104,8 +104,12 @@ const ChangePageDialog = createComponent({
 
     if (state.isOpen) {
       const page: Page = state.page;
+      // Ideas and Problems can be solved [tpc_typ_solv], and then
+      // pat cannot change their doing status, unless un-selecting
+      // the solution post.
       const canChangeDoingStatus = isOwnOrStaff &&
-          page_hasDoingStatus(page) && !page_isClosedNotDone(page);
+          page_canBeDone(page) && !page_isClosedUnfinished(page) &&
+          !debiki2.page_isSolved(page);
       const canChangeCategory = isOwnOrStaff && settings.showCategories !== false &&
           store.currentCategories.length;
       const canChangePageType = isOwnOrStaff && page_mayChangeRole(page.pageRole) &&

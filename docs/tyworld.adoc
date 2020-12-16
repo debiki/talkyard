@@ -1,0 +1,18 @@
+
+= The Talkyard World
+
+Domain model.
+
+
+
+== Topic types
+
+Questions can be answered / solved.
+
+Ideas and Problems can be solved too: a reply selected as
+e.g. a problem solution.  `[tpc_typ_solv]`
+Or they can have their doing status
+toggled from planned, doing, to done, without any particular
+reply selected as a solution. — And if the topic got done in any
+of these ways, pat cannot change its doing status
+  

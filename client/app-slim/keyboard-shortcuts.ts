@@ -230,7 +230,7 @@ function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
           descr('c',"hange topic: ", 'cl',"ose it"),
           () => {}],
 
-      !unimpl && isPageAuthorOrStaff && page_isClosedNotDone(curPage) &&
+      !unimpl && isPageAuthorOrStaff && page_isClosedUnfinished(curPage) &&
       ['cre',
           descr('c',"hange topic: ", 're',"open it"),
           () => {}],

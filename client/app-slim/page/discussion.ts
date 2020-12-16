@@ -130,7 +130,12 @@ export const TitleBodyComments = createComponent({
     }
 
     if (page.pageRole === PageRole.Problem) {
-      if (page.pageDoneAtMs) {
+      let doneOrSolved = t.done;
+      if (page.pageAnsweredAtMs) {
+        doneOrSolved = "solved";  // I18N
+        props4 = activeProps;
+      }
+      else if (page.pageDoneAtMs) {
         props4 = activeProps;
       }
       else if (page.pageStartedAtMs) {
@@ -146,11 +151,16 @@ export const TitleBodyComments = createComponent({
           r.li(props1, problemIcon, '= ' + t.pds.aProblem),
           r.li(props2, plannedIcon, '= ' + t.pds.planToFix),
           r.li(props3, startedIcon, '= ' + t.started),
-          r.li(props4, doneIcon, '= ' + t.done)) };
+          r.li(props4, doneIcon, '= ' + doneOrSolved)) };
     }
 
     if (page.pageRole === PageRole.Idea) {
-      if (page.pageDoneAtMs) {
+      let doneOrSolved = t.done;
+      if (page.pageAnsweredAtMs) {
+        doneOrSolved = "solved";  // I18N
+        props4 = activeProps;
+      }
+      else if (page.pageDoneAtMs) {
         props4 = activeProps;
       }
       else if (page.pageStartedAtMs) {
@@ -166,7 +176,7 @@ export const TitleBodyComments = createComponent({
           r.li(props1, ideaIcon, '= ' + t.pds.anIdea),
           r.li(props2, plannedIcon, '= ' + t.pds.planToDo),
           r.li(props3, startedIcon, '= ' + t.started),
-          r.li(props4, doneIcon, '= ' + t.done)) };
+          r.li(props4, doneIcon, '= ' + doneOrSolved)) };
     }
 
     if (page.pageRole === PageRole.UsabilityTesting) {  // [plugin]
@@ -424,16 +434,22 @@ export const Title = createComponent({
       let tooltip = '';
       let iconClass = '';
       let iconTooltip = '';
-      // (Some dupl code, see PostActions below and isDone() and isAnswered() in forum.ts [4KEPW2]
-      if (page_isClosedNotDone(page)) {
+      if (page_isClosedUnfinished(page)) {
         iconClass = 'icon-block';
         tooltip = makePageClosedTooltipText(page.pageRole) + '\n';
       }
-      else if (page.pageRole === PageRole.Question) {
-        iconClass = page.pageAnsweredAtMs ? 'icon-ok-circled' : 'icon-help-circled';
-        tooltip = makeQuestionTooltipText(page.pageAnsweredAtMs) + ".\n";
+      else if (page_isSolved(page)) {
+        tooltip = t.d.TooltipQuestSolved + ".\n";
+        iconClass = page_getSolvedIcon(page);
       }
-      else if (page_hasDoingStatus(page)) {
+      else if (page.pageRole === PageRole.Question) {
+        // @ifdef DEBUG
+        dieIf(page.pageAnsweredAtMs, 'TyE305MRKT');
+        // @endif
+        iconClass = 'icon-help-circled';
+        tooltip = t.d.TooltipQuestUnsolved + ".\n";
+      }
+      else if (page_canBeDone(page)) {
         iconTooltip = t.cpd.ClickToChange;
         // (Some dupl code, see [5KEFEW2] in forum.ts.
         if (page.pageRole === PageRole.Problem || page.pageRole === PageRole.Idea) {
@@ -667,9 +683,10 @@ const RootPostAndComments = createComponent({
     }
 
     let solvedBy;
-    if (page.pageRole === PageRole.Question && page.pageAnsweredAtMs) {
+    if (page_isSolved(page)) {
       // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
-      solvedBy = r.a({ className: 'dw-solved-by icon-ok-circled',
+      const solvedIcon = page_getSolvedIcon(page);
+      solvedBy = r.a({ className: 'dw-solved-by ' + solvedIcon,
           href: '#post-' + page.pageAnswerPostNr,
           onMouseEnter: () => ReactActions.highlightPost(page.pageAnswerPostNr, true),
           onMouseLeave: () => ReactActions.highlightPost(page.pageAnswerPostNr, false),
@@ -1876,12 +1893,6 @@ export function makePageClosedTooltipText(pageRole: PageRole) {
     default:
       return t.d.TooltipTopicClosed;
   }
-}
-
-
-// Could move elsewhere? Where?
-export function makeQuestionTooltipText(isAnswered) {
-  return isAnswered ? t.d.TooltipQuestSolved : t.d.TooltipQuestUnsolved;
 }
 
 
