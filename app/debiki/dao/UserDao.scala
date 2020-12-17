@@ -582,7 +582,18 @@ trait UserDao {
     require(user.email.nonEmpty, "DwE3KEF7")
     // We get to here via askIfLinkIdentityToUser()  [ask_ln_acts]  and
     // all code paths should require that the email addr has been verified.
-    require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
+    // Edit: But this is the user in the db — hens email need not have been verified.
+    // Instead, we've verified the email addr of the there person logging in now,
+    // (the `userInfo` user) and hen has said already that it's ok to link to
+    // the existing user account (to `user`), here:
+    //   Ok(views.html.login.askIfLinkAccounts(
+    //    ...
+    //    oldEmailVerified = user.emailVerified
+    //    ...)
+    TESTS_MISSING  // TyTE2ELN2UNVER
+    // So, don't:
+    // require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
+
     require(user.isAuthenticated, "DwE4KEF8")
     readWriteTransaction { tx =>
       val identityId = tx.nextIdentityId
