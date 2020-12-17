@@ -231,22 +231,33 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     *
     * RENAME to fetchLinkPreview, & client side too
     */
-  def onebox(url: String): Action[Unit] = AsyncGetActionRateLimited(
+  def fetchLinkPreview(url: St): Action[U] = AsyncGetActionRateLimited(
         RateLimits.FetchLinkPreview) { request =>
     import edContext.globals
     import request.{siteId, requesterOrUnknown}
 
     val inline = false  // later, query param
 
+    throwBadRequestIf(url.isEmpty, "TyELNPVEMPTYURL",
+          "Weird URL: Empty string")
+
+    throwBadRequestIf(!url.isTrimmedNonEmpty, "TyELNPVSPACEURL",
+          "Weird URL: Starts or ends with spaces")
+
+    // link_previews_t.link_url_c is max 500 ...
+    throwBadReqIf(url.length >= LinkPreviewRenderer.MaxUrlLength,
+          "TyELNPVURLLEN", "URL too long")
+
+    // ... hmm, but Check.MaxUrlLength is actually just 400, currently. Oh well.
+    val uri = Validation.parseUri(url, allowQuery = true) getOrIfBad { _ =>
+      throwBadRequest("TyELNPVBADURL", "Weird URL")
+    }
+
     val renderer = new LinkPreviewRenderer(
           globals, siteId = siteId, mayHttpFetch = true,
           requesterId = requesterOrUnknown.id)
 
-    // link_previews_t.link_url_c is max 500.
-    throwForbiddenIf(url.length >= LinkPreviewRenderer.MaxUrlLength,
-          "TyELNPVURLLEN", "URL too long")
-
-    val response = renderer.fetchRenderSanitize(url, inline).transform(
+    val response = renderer.fetchRenderSanitize(uri, inline = inline).transform(
           html => Ok(html),
           throwable => throwable match {
             case ex: DebikiException =>

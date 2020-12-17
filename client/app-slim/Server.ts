@@ -1628,19 +1628,23 @@ export function deleteDrafts(draftNrs: DraftNr[], onOk: (() => void) | UseBeacon
 
 const cachedOneboxHtml = {};
 
-export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => void) {
+export function loadOneboxSafeHtml(url: St, onOk: (safeHtml: St) => Vo) {
+  // People often accidentally append spaces, so trim spaces.
+  // But where's a good palce to trim spaces? The caller or here? Here, for now.
+  url = url.trim();
+
   const cachedHtml = cachedOneboxHtml[url];
   if (cachedHtml) {
-    setTimeout(() => success(cachedHtml), 0);
+    setTimeout(() => onOk(cachedHtml), 0);
     return;
   }
   const encodedUrl = encodeURIComponent(url);
-  get('/-/onebox?url=' + encodedUrl, (response: string) => {
+  get('/-/fetch-link-preview?url=' + encodedUrl, (response: St) => {
     cachedOneboxHtml[url] = response;
-    success(response);
+    onOk(response);
   }, function() {
     // Pass null to tell the editor to show no onebox (it should show the link instead).
-    success(null);
+    onOk(null);
     // It'd be annoying if error dialogs popped up, whilst typing.
     return IgnoreThisError;
   }, {

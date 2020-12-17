@@ -248,8 +248,7 @@ class InternalLinkPrevwRendrEng(globals: Globals, siteId: SiteId) // TESTS_MISSI
   override def addViewAtLink = false
 
 
-  override def handles(url: String): Boolean = {
-    val uri = new java.net.URI(url)
+  override def handles(uri: j_URI): Bo = {
     val domainOrAddress: String = uri.getHost  // can be null, fine
 
     // If no hostname, then it's a local link (right?).
