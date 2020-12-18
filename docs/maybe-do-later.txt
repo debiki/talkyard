@@ -65,6 +65,8 @@ e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
 ZAProxy auto scan.
 https://docs.gitlab.com/ee/user/application_security/dast/index.html
 
+[repr_builds]
+Reproducible builds.
 
 [rate_limits]
 Configurable rate limits.
@@ -323,7 +325,8 @@ A user's first few whispers to non-staff: Maybe should never be shown, until rev
 
 [see_who_notfd]
 When composing a message, see who will get notified — e.g. if mentioning a group,
-or editing a message, can be unclar if a newly added @username gets notifdied or not.
+or editing a message, can be unclar if a newly edit-added @username gets notified or not
+(they do get notified).
 
 [tiny-dialog]
 Find (or create?) a tiny modal dialog React class that can be included in slim-bundle.js,
