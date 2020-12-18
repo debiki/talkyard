@@ -782,7 +782,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
       else other
     }
 
-    def trimNoneIfEmpty: Option[String] = {
+    def trimNoneIfEmpty: Option[String] = {   RENAME // to noneIfBlank?
       val trimmed = underlying.trim
       if (trimmed.isEmpty) None
       else Some(trimmed)
