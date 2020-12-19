@@ -121,6 +121,8 @@ ext idps:
   link identity to user:
     server global idp, e.g. Gmail:   TESTS_MISSING
     site custom idp, e.g. Keycloak:
+  link identity to user with unverified email addr:
+          - TESTS_MISSING  TyTE2ELN2UNVER
   link OAuth2 identity to other OAuth2 identity:  TESTS_MISSING
     different email casing:  TESTS_MISSING
   link password acct to OAuth2 identity:  TESTS_MISSING

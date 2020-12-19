@@ -1343,18 +1343,84 @@ export function categories_sortTree(categories: Category[]): CatsTree {
 //----------------------------------
 
 
-export function page_isClosedNotDone(page: Page): boolean {
-  return page.pageClosedAtMs && !page.pageAnswerPostUniqueId && !page.pageDoneAtMs
+export function page_isClosedUnfinished(page: Page | Topic): Bo {
+  return page_isClosed(page) && !page_isSolved(page) && !page_isDone(page);
 }
 
-export function page_isOpen(page: Page): Bo {
-  return !page.pageClosedAtMs && !page.pageAnswerPostUniqueId && !page.pageDoneAtMs
+
+export function page_isOpen(page: Page | Topic): Bo {
+  const isClosed = page_isClosed(page);
+  const doneOrSolved =  page_isSolved(page) || page_isDone(page);
+  // @ifdef DEBUG
+  // If done or solved, must also be closed.
+  dieIf(!isClosed && doneOrSolved, 'TyE305MRKT2');
+  // @endif
+  return !isClosed && !doneOrSolved;
 }
 
-export function page_hasDoingStatus(page: Page): boolean {
+export function page_isClosed(page: Page | Topic): Bo {
+  const closedAt = (page as Page).pageClosedAtMs || (page as Topic).closedAtMs;
+  return !!closedAt;
+}
+
+
+export function page_isDone(page: Page | Topic): Bo {
+  // If doneAt, but !page_canBeDone, then, the topic type was changed
+  // to e.g. a Question, after the page doing status had been changed to Done
+  // already. And Ty remembers the doing status, in case we'll change
+  // the topic type back again — then, the doing status becomes active again.
+  const doneAt = (page as Page).pageDoneAtMs || (page as Topic).doneAtMs;
+  return doneAt && page_canBeDone(page);
+}
+
+
+export function page_canBeDone(page: Page | Topic): Bo {
   const pageType = page.pageRole;
   return pageType === PageRole.Problem || pageType === PageRole.Idea ||
-        pageType === PageRole.ToDo || pageType === PageRole.UsabilityTesting;
+        pageType === PageRole.ToDo ||
+        pageType === PageRole.UsabilityTesting;  // [plugin]
+}
+
+
+export function page_isSolved(page: Page | Topic): Bo {
+  const solvedAt = (page as Page).pageAnsweredAtMs || (page as Topic).answeredAtMs;
+  return solvedAt && page_canBeSolved(page);
+}
+
+
+export function page_canBeSolved(page: Page | Topic): Bo {
+  // tyworld.adoc: [tpc_typ_solv]
+  return (page.pageRole === PageRole.Question
+        || page.pageRole === PageRole.Idea
+        || page.pageRole === PageRole.Problem);
+}
+
+
+export function page_getUnsolvedIcon(page: Page): St {
+  switch (page.pageRole) {
+    case PageRole.Question:
+      return 'icon-ok-circled-empty';
+    case PageRole.Problem:
+      // Later: iconClass = 'icon-warning-checked';  ?
+      // For now, fall through.
+    case PageRole.Idea:
+    default:
+      return 'icon-check-empty';
+  }
+}
+
+
+export function page_getSolvedIcon(page: Page): St {
+  switch (page.pageRole) {
+    case PageRole.Question:
+      return 'icon-ok-circled c_Solved';
+    case PageRole.Problem:
+      // Later: iconClass = 'icon-warning-unchecked';  ?
+      // For now, fall through.
+    case PageRole.Idea:
+    default:
+      return 'icon-check c_Solved';
+  }
 }
 
 

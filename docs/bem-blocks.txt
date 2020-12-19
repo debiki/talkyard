@@ -101,7 +101,7 @@ Tab = tab
 Tb  = Topbar, or Tab (when at the end)   RENAME esTopbarWrap to s_Tb
 Tl  = title
 Tg  = tag
-Tp  = topic
+Tp, Tpc = topic
 Trt = threat
 Tru = trust
 Tsk = task
@@ -109,6 +109,7 @@ Ttl = title,  no just Tl   RENAME
 Txt = text,   no just Tx   RENAME
 Tr  = Trust,  eg. TrLv = trust level NO change to Tru & Trt
 Tx  = text (tx = transaction is only server side)
+Typ = type
 Un  = username
 Upl = upload
 Vb  = verbose, instead of Fat (and Thin) data?

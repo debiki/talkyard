@@ -183,7 +183,7 @@ prod_asset_bundle_files:=\
   images/app/assets/translations/pl_PL/i18n.min.js
 
 # Sync this task name w e2e test [MKBUNDLS].
-prod_asset_bundles: node_modules debug_asset_bundles $(prod_asset_bundle_files)
+prod_asset_bundles: debug_asset_bundles $(prod_asset_bundle_files)
 
 $(prod_asset_bundle_files): $@
 	s/d-gulp build_release_dont_clean_before
@@ -332,8 +332,8 @@ images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz: \
 # Skip minify, for now.
 ext_iframe_js: \
         images/web/assets/ext-iframe.min.js \
-				images/web/assets/ext-iframe.min.js.gz \
-				images/web/assets/ext-iframe.js.gz
+        images/web/assets/ext-iframe.min.js.gz \
+        images/web/assets/ext-iframe.js.gz
 
 images/web/assets/ext-iframe.min.js: client/ext-iframe.js
 	@cp      client/ext-iframe.js   images/web/assets/ext-iframe.min.js
@@ -365,8 +365,24 @@ $(transl_dev_app_bundle_files) $(transl_dev_web_bundle_files): \
 transl_dev_bundles: ${transl_dev_web_bundle_files} ${transl_dev_app_bundle_files}
 
 
+# ----- Fonts
 
-debug_asset_bundles:  debug_asset_bundles_files  ext_iframe_js  transl_dev_bundles
+# Sync 'open-sans-v1' with gulpfile.js and images/web/Dockerfile. [sync_fonts]
+
+fonts: images/web/fonts/open-sans-v1/open-sans.min.css.gz
+
+images/web/fonts/open-sans-v1/open-sans.min.css.gz:
+	@echo "\nRegenerating: $@ ..."
+	s/d-gulp  bundleFonts
+
+
+
+debug_asset_bundles: \
+        node_modules \
+        debug_asset_bundles_files  \
+        fonts \
+        ext_iframe_js \
+        transl_dev_bundles
 
 
 

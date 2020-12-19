@@ -234,12 +234,7 @@ export const PostActions = createComponent({
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
     const isThisPageDeleted = !!page.pageDeletedAtMs;  // ignore deleted categories
-    const isQuestion = page.pageRole === PageRole.Question;
-    // (Some dupl code, see Title above and isDone() and isAnswered() in forum.ts [4KEPW2]
-    const isAnswered = isQuestion && page.pageAnsweredAtMs;
-    const isDone = page.pageDoneAtMs && (page.pageRole === PageRole.Problem ||
-      page.pageRole === PageRole.Idea || page.pageRole === PageRole.ToDo ||
-      page.pageRole === PageRole.UsabilityTesting);  // [plugin]
+    const canBeSolved = page_canBeSolved(page);
     const isEmbeddedComments = page.pageRole === PageRole.EmbeddedComments;
 
     const me: Myself = store.me;
@@ -280,19 +275,22 @@ export const PostActions = createComponent({
       // Show no accept-as-answer button.
       // (But if is edits preview? Then it's ok click Accept, whilst editing.)
     }
-    else if (isStaffOrOwnPage && isQuestion && !page.pageAnsweredAtMs && !page.pageClosedAtMs &&
-        !isPageBody && post.isApproved) {
-      acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled-empty',
+    else if (isStaffOrOwnPage && canBeSolved && !page.pageAnsweredAtMs &&
+        !page.pageClosedAtMs && !isPageBody && post.isApproved) {
+      const icon = page_getUnsolvedIcon(page);
+      acceptAnswerButton = r.a({ className: `dw-a dw-a-solve ${icon}`,
           onClick: this.onAcceptAnswerClick, title: t.pa.AcceptBtnExpl }, t.pa.SolutionQ);
     }
-    else if (isQuestion && post.uniqueId === page.pageAnswerPostUniqueId) {
+    else if (canBeSolved && post.uniqueId === page.pageAnswerPostUniqueId) {
       // (Do this even if !post.isApproved.)
       const solutionTooltip = isStaffOrOwnPage
           ? t.pa.ClickUnaccept
           : t.pa.PostAccepted;
       const elemType = isStaffOrOwnPage ? 'a' : 'span';
       const unsolveClass = isStaffOrOwnPage ? ' dw-a-unsolve' : '';
-      acceptAnswerButton = r[elemType]({ className: 'dw-a dw-a-solved icon-ok-circled' + unsolveClass,
+      const solvedIcon = page_getSolvedIcon(page);
+      const className = `dw-a dw-a-solved ${solvedIcon} ${unsolveClass}`;
+      acceptAnswerButton = r[elemType]({ className,
           onClick: isStaffOrOwnPage ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
         t.Solution);
     }

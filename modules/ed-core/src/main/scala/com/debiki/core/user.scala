@@ -1748,6 +1748,25 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine 
     }).orElse(firstName).orElse(lastName) getOrElse ""
   }
 
+  def anyUsernameNameEmail: Opt[St] = {
+    val sb = StringBuilder.newBuilder
+    val dispName = displayNameOrEmpty
+    if (username.isDefined) {
+      sb.append("@").append(username.get)
+      if (dispName.nonEmpty || email.nonEmpty) sb.append(" ")
+    }
+    if (dispName.nonEmpty) {
+      sb.append(dispName)
+      if (email.nonEmpty) sb.append(" ")
+    }
+    if (email.nonEmpty) {
+      sb.append(email)
+      if (isEmailVerifiedByIdp isNot true) sb.append(" (unverified)")
+    }
+    sb.toString.trimNoneIfEmpty
+  }
+
+
   def nameOrUsername: Opt[St] = {
     val n = displayNameOrEmpty
     if (n.nonEmpty) Some(n)

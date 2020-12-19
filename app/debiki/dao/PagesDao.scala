@@ -473,7 +473,7 @@ trait PagesDao {
     val answeredAt = writeTx { (tx, staleStuff) =>
       val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
-      if (oldMeta.pageType != PageType.Question)
+      if (!oldMeta.pageType.canBeSolved)
         throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
 
       throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,

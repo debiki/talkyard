@@ -120,6 +120,16 @@ private case class OngoingAuthnState(
   def protoAlias: St = s"$protocol/$providerAlias"
 
   def isAdminArea: Bo = !mayCreateUser  // remove later, see above
+
+  def toLogString: St = {
+    val who: Opt[St] = extIdentity flatMap { userInfo: IdpUserInfo =>
+      userInfo.anyUsernameNameEmail
+    }
+    val dbUsernameId = matchingTyUser.map(_.usernameHashId)
+    val dbUserEmail = matchingTyUser.map(_.primaryEmailAddress)
+    s"$protoAlias: next: $nextStep, ext idty: ${who getOrElse "unknown"
+          }, db usr: $dbUsernameId, db usr email: $dbUserEmail"
+  }
 }
 
 
@@ -1708,11 +1718,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val authnState = getAuthnStateOrThrow(secretNonce, "ask_if_link",
           loginToSiteId = request.siteId)
+    logger.info(s"Email verified, nonce: $secretNonce, who: ${authnState.toLogString}")
     askIfLinkIdentityToUser(authnState, request)
   }
 
 
-  private def askIfLinkIdentityToUser(authnState: OngoingAuthnState,
+  private def askIfLinkIdentityToUser(authnState: OngoingAuthnState,   // [ask_ln_acts]
           request: ApiRequest[_]): Result = {
     import request.dao
 

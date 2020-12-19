@@ -1353,7 +1353,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
-    SECURITY // Later: shouldn't list authors of hidden / deleted / whisper posts.
+    SECURITY // Later: skip authors of hidden / deleted / whisper posts.  [whispers]
+    // Or if some time in the future there will be "hidden" accounts  [hdn_acts]
+    // — someone who don't want strangers and new members to see hens profile —
+    // then, would need to exclude those accounts here.
+
     throwNoUnless(Authz.maySeePage(
       pageMeta, request.user, dao.getGroupIdsOwnFirst(request.user),
       dao.getAnyPrivateGroupTalkMembers(pageMeta), categoriesRootLast,

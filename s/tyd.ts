@@ -19,9 +19,11 @@ completion.on('mainCmd', ({ reply }) => {
   reply([
         'h', 'help',
         'u', 'up', //'watchup',
+        'runl', // 'recreate-up-no-limits'  — not impl though. See
+                // docker-compose-no-limits.yml.
         'w', 'watch',
         'ps',
-        'k', 'kill',
+        'k', 'kill', 'ka', 'kw',
         'r', 'restart', 'ra',
         'down',
         'recreate',
@@ -138,6 +140,8 @@ logDebug(`commands: ${commands.join(' ')}`);
 logDebug(`    opts: ${JSON.stringify(opts)}`);
 logDebug(`opts str: ${stringifyOpts(opts)}`);
 
+const yarnOfflineSt = opts.offline || opts.o ? '--offline' : '';
+
 
 if (mainCmd === 'h' || mainCmd === 'help') {
   logMessage(`You help me or I help you?`);
@@ -152,6 +156,7 @@ if (mainCmd === 'nodejs') {
 
 
 if (mainCmd === 'yarn') {
+  // Maybe  --no-bin-links?  [x_plat_offl_builds]
   spawnInForeground('docker-compose run --rm nodejs yarn ' + subCmdsAndOpts.join(' '));
   process.exit(0);
 }
@@ -204,6 +209,13 @@ if (mainCmd === 'logsold') {
 }
 
 
+if (mainCmd === 'tw' || mainCmd === 'transpilewatch') {
+  spawnInForeground(`make debug_asset_bundles`);
+  spawnInForeground('make watch');
+  process.exit(0);
+}
+
+
 if (mainCmd === 'w' || mainCmd === 'watch') {
   spawnInForeground('make watch');
   process.exit(0);
@@ -223,7 +235,8 @@ if (mainCmd === 'u' || mainCmd === 'up') {
   // if instead that's done while the server is starting, because then the server
   // might decide to stop and restart just to pick up any soon newly built bundles?
   // (Also, log messages from make and the app server get mixed up with each other.)
-  spawnInForeground('docker-compose run --rm nodejs yarn install');
+  // Maybe  --no-bin-links?  [x_plat_offl_builds]
+  spawnInForeground(`docker-compose run --rm nodejs yarn install ${yarnOfflineSt}`);
   spawnInForeground('make debug_asset_bundles');
 
   // Run `up -d` in foreground, so we won't start the `logs -f` process too soon
@@ -317,11 +330,23 @@ if (mainCmd === 'recreate') {
 
 
 if (mainCmd === 'rebuild') {
+  rebuild();
+}
+
+function rebuild() {
   const cs = allSubCmdsSt;  // which containers, e.g.  'web app'
   logMessage(`\n**Removing: ${cs} **`)
   spawnInForeground('sh', ['-c', `s/d kill ${cs}; s/d rm -f ${cs}`]);
   logMessage(`\n**Building: ${cs} **`)
   spawnInForeground('sh', ['-c', `s/d build ${cs}`]);
+  logMessage(`\n**Done rebuilding: ${cs}. Bye.**`)
+  process.exit(0)
+}
+
+
+if (mainCmd === 'rs' || mainCmd === 'rebuildrestart') {
+  const cs = allSubCmdsSt;  // which containers
+  rebuild();
   logMessage(`\n**Starting: ${cs} **`)
   spawnInForeground('sh', ['-c', `s/d up -d ${cs}`]);
   tailLogsThenExit();

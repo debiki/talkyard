@@ -30,6 +30,11 @@ import scala.util.{Failure, Success, Try}
 
 package object core {
 
+  type j_Date = java.util.Date
+  type j_URISyntaxException = java.net.URISyntaxException
+  type j_URI = java.net.URI
+
+
   // Concise is nice.
   //
   // (Details: Frequently used names should be short — it's annoying with

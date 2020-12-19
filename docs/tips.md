@@ -24,6 +24,19 @@ How to push images to a local repo, to test in Vagrant: see [testing-images-in-v
 
 ### ElasticSearch stuff:
 
+If the disk is >= 95% full, ElasticSearch enters read-only mode (or read-delete-only).
+Once you've freed up disk, you need to tell ElasticSearch about this:
+
+```
+curl -XPUT -H "Content-Type: application/json" \
+    http://localhost:9200/_all/_settings \
+    -d '{"index.blocks.read_only_allow_delete": null}'
+```
+
+Thereafter ElasticSearch should start working again. Docs:
+https://www.elastic.co/guide/en/elasticsearch/reference/6.2/disk-allocator.html
+
+
 List indexes:  
 http://localhost:9200/_aliases
 

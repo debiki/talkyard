@@ -108,6 +108,9 @@ Four reasons:
   that break downloading some dependencies.
   But accessing Git seems to have worked for everyone.
 - Continuous Integration. Then good if can build offline?
+- Reproducible builds (also requires using a specific OS? Which should be
+  mostly fine, since things get built in Docker containers with a specific
+  OS and version — but will need to specify the exact image hash?) [repr_builds]
 - Working offline. If the wifi stops working and your phone too (no tethering).
 
 Place the vendored stuff in Git submodules.
@@ -157,3 +160,20 @@ Instead, there can be a one-click button "Show Popular Replies" or
 
 There's a per site config value to change the sort order — maybe per
 category or topic one day? Topic type? Q&A = best-first, others by time?
+
+
+
+=== Don't use shared CDN
+
+It's pointless: Chrome >= v86 partitions the cache by URL, and Safari too,
+so there're no performance benefits — instead, slightly slower, because
+of a TLS handshake. The previous browser behaviour enabled cross-site tracking,
+checking if the user had visited certain sites etc.
+
+
+
+=== Git submodules, not subtrees
+
+Talkyard already uses somewhat many submodules — and then, if starting
+to use subtrees too, "everyone" would have to learn two different things:
+both submodules and subtrees.

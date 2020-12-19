@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki.onebox   // RENAME to talkyard.server.linkpreviews.LinkPreviewRenderer
+package debiki.onebox   // RENAME QUICK to talkyard.server.linkpreviews.LinkPreviewRenderer
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -86,7 +86,8 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
 
   def extraLnPvCssClasses: String
 
-  def handles(url: String): Boolean = regex matches url
+  def handles(uri: j_URI): Bo = handles(uri.toString)
+  def handles(url: St): Bo = regex matches url
 
   /** If an engine needs to include an iframe or any "uexpected thing",
     * then it'll have to sanitize everything itself, because
@@ -318,7 +319,8 @@ class LinkPreviewRenderer(
     new RedditPrevwRendrEng(globals, siteId, mayHttpFetch),
     )
 
-  def fetchRenderSanitize(url: String, inline: Boolean): Future[String] = {
+  def fetchRenderSanitize(uri: j_URI, inline: Bo): Future[St] = {
+    val url = uri.toString
     require(url.length <= MaxUrlLength, s"Too long url: $url TyE53RKTKDJ5")
     unimplementedIf(inline, "TyE50KSRDH7")
 
@@ -332,7 +334,7 @@ class LinkPreviewRenderer(
     }
 
     for (engine <- engines) {
-      if (engine.handles(url)) {
+      if (engine.handles(uri)) {
         val args = new RenderPreviewParams(
               siteId = siteId,
               unsafeUrl = url,
@@ -360,15 +362,15 @@ class LinkPreviewRenderer(
   }
 
 
-  def fetchRenderSanitizeInstantly(url: String, inline: Boolean): RenderPreviewResult = {
+  def fetchRenderSanitizeInstantly(uri: j_URI, inline: Bo): RenderPreviewResult = {
     // Don't throw, this might be in a background thread.
 
-    if (url.length > MaxUrlLength)
+    if (uri.toString.length > MaxUrlLength)
       return RenderPreviewResult.NoPreview
 
     def placeholder = PlaceholderPrefix + nextRandomString()
 
-    val futureSafeHtml = fetchRenderSanitize(url, inline)
+    val futureSafeHtml = fetchRenderSanitize(uri, inline = inline)
     if (futureSafeHtml.isCompleted)
       return futureSafeHtml.value.get match {
         case Success(safeHtml) => RenderPreviewResult.Done(safeHtml, placeholder)
@@ -416,11 +418,18 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
            soft-restarts the server in development mode. [DwE4KEPF72]</p>"""
     }
 
-    linkPreviewRenderer.fetchRenderSanitizeInstantly(unsafeUrl, inline = inline) match {
+    UX; COULD // target="_blank" — maybe site conf val? [site_conf_vals]
+    // Then don't forget  noopener
+    def noPreviewHtmlSt: St = s"""<a href="$safeUrl" rel="nofollow">$safeUrl</a>"""
+
+    val unsafeUri =
+          Validation.parseUri(unsafeUrl, allowQuery = true) getOrIfBad { _ =>
+            return noPreviewHtmlSt
+          }
+
+    linkPreviewRenderer.fetchRenderSanitizeInstantly(unsafeUri, inline = inline) match {
       case RenderPreviewResult.NoPreview =>
-        UX; COULD // target="_blank" — maybe site conf val? [site_conf_vals]
-        // Then don't forget  noopener
-        s"""<a href="$safeUrl" rel="nofollow">$safeUrl</a>"""
+        noPreviewHtmlSt
       case donePreview: RenderPreviewResult.Done =>
         donePreviews.append(donePreview)
         // Return a placeholder because `doneOnebox.html` might be an iframe which would

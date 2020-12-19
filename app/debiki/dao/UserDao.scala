@@ -572,15 +572,32 @@ trait UserDao {
     * later on try to login via e.g. a Gmail account with the same email address.
     * Then we want to create a Gmail OpenAuth identity and connect it to the user
     * in the database.
+    *
+    * But this is only allowed if pat has verified hens email addr for the
+    * new identity, so one cannot link one's external identity to someone else's
+    * user account.
   REFACTOR; MOVE // to AuthnSiteDaoMixin.scala
     */
-  def saveIdentityLinkToUser(oauthDetails: OpenAuthDetails, user: User): Identity = {
+  def saveIdentityLinkToUser(userInfo: IdpUserInfo, user: User): Identity = {
     require(user.email.nonEmpty, "DwE3KEF7")
-    require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
+    // We get to here via askIfLinkIdentityToUser()  [ask_ln_acts]  and
+    // all code paths should require that the email addr has been verified.
+    // Edit: But this is the user in the db — hens email need not have been verified.
+    // Instead, we've verified the email addr of the there person logging in now,
+    // (the `userInfo` user) and hen has said already that it's ok to link to
+    // the existing user account (to `user`), here:
+    //   Ok(views.html.login.askIfLinkAccounts(
+    //    ...
+    //    oldEmailVerified = user.emailVerified
+    //    ...)
+    TESTS_MISSING  // TyTE2ELN2UNVER
+    // So, don't:
+    // require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
+
     require(user.isAuthenticated, "DwE4KEF8")
     readWriteTransaction { tx =>
       val identityId = tx.nextIdentityId
-      val identity = OpenAuthIdentity(id = identityId, userId = user.id, oauthDetails)
+      val identity = OpenAuthIdentity(id = identityId, userId = user.id, userInfo)
       tx.insertIdentity(identity)
       addUserStats(UserStats(user.id, lastSeenAt = tx.now))(tx)
       AUDIT_LOG

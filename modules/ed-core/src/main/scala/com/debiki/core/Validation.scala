@@ -227,34 +227,44 @@ object Validation {  RENAME // to Check, so:  Check.ifBadEmail( ...)  — looks 
   }
 
 
+
   val MaxUrlLength: Int = 400
 
-  def findUrlProblem(url: String, allowQuery: Boolean, allowHash: Boolean = false)
-        : Option[ErrorMessage] = {  // [05970KF5]
-    if (url.isEmpty) return Some("Empty url [TyE502FTHL42]")
-    if (url.length > MaxUrlLength) return Some(
+  def findUrlProblem(url: St, allowQuery: Bo, allowHash: Bo = false)
+        : Opt[ErrMsg] = {  // [05970KF5]
+    parseUri(url, allowQuery = allowQuery, allowHash = allowHash).swap.toOption
+  }
+
+
+  def parseUri(url: St, allowQuery: Bo, allowHash: Bo = false)
+        : j_URI Or ErrMsg = {  // [05970KF5]
+    if (url.isEmpty) return Bad("Empty url [TyE502FTHL42]")
+    if (url.length > MaxUrlLength) return Bad(
       s"Too long url, longer than $MaxUrlLength chars: '$url' [TyE2RTJW40T]")
 
     val isHttpUrl = url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//")
     val isPath = url.startsWith("/") && !isHttpUrl
 
     if (!isHttpUrl && !isPath)
-      return Some(s"Not a 'http(s)://...' or '//host/path' or '/a/path' URL: '$url' [TyE6RKBA28]")
+      return Bad(s"Not a 'http(s)://...' or '//host/path' or '/a/path' URL: '$url' [TyE6RKBA28]")
 
-    try {
+    val jUri = try {
       val jUri = new java.net.URI(url)
+
       if (!allowQuery && jUri.getQuery != null)
-        return Some(s"URL contains query string, it should not: '$url' [TyE406MRKS2]")
+        return Bad(s"URL contains query string, it should not: '$url' [TyE406MRKS2]")
 
       if (!allowHash && jUri.getRawFragment != null)
-        return Some(s"URL contains hash, it should not: '$url' [TyE7MKCHRTBC2]")
+        return Bad(s"URL contains hash, it should not: '$url' [TyE7MKCHRTBC2]")
+
+      jUri
     }
     catch {
-      case ex: Exception =>
-        return Some(s"Bad URL, error: ${ex.toString}, the url: '$url' [TyE40GMRKVG4]")
+      case ex: j_URISyntaxException =>
+        return Bad(s"Bad URL, error: ${ex.toString}, the url: '$url' [TyE40GMRKVG4]")
     }
 
-    None
+    Good(jUri)
   }
 
 

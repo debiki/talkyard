@@ -1620,13 +1620,13 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
   let tooltip;
   let showIcons = settings_showTopicTypes(settings, me);
 
-  if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
+  if (page_isClosedUnfinished(topic)) {
     tooltip = page.makePageClosedTooltipText(topic.pageRole);
     const closedIcon = r.span({ className: 'icon-block' });
     title = r.span({}, closedIcon, title);
   }
   else if (topic.pageRole === PageRole.Question) {
-    tooltip = page.makeQuestionTooltipText(topic.answeredAtMs);
+    tooltip = topic.answeredAtMs ? t.d.TooltipQuestSolved : t.d.TooltipQuestUnsolved;
     let questionIconClass;
     if (topic.answeredAtMs) {
       questionIconClass = 'icon-ok';
@@ -1781,20 +1781,6 @@ function createTopicBtnTitle(category: Category) {
     return pageType === PageRole.CustomHtmlPage || pageType === PageRole.WebPage;
   }
   return title;
-}
-
-
-// Some dupl code, see  [4KEPW2].
-function isDone(topic: Topic): boolean {
-  return topic.doneAtMs && (topic.pageRole === PageRole.Problem ||
-      topic.pageRole === PageRole.Idea || topic.pageRole === PageRole.ToDo ||
-        topic.pageRole === PageRole.UsabilityTesting);  // [plugin]
-}
-
-
-// Some dupl code, see  [4KEPW2].
-function isAnswered(topic: Topic): boolean {
-  return topic.answeredAtMs && topic.pageRole === PageRole.Question;
 }
 
 

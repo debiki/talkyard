@@ -129,6 +129,8 @@ class SiteTpi protected (
   def currentVersionString = ""
   def cachedVersionString = ""
 
+  def noPolyfillDotIo: Bo =
+    globals.config.featureFlags.contains("ffNoPolyfillDotIo")
 
   def debikiHtmlTagClasses: String = {
     // Sync with js [4JXW5I2].
@@ -266,6 +268,9 @@ class SiteTpi protected (
   // images etc there, to change the URL. Only needed every few years? anyway.)
   def mediaUrlPrefix: String =
     s"$cdnOrServerOrigin/-/media/"   // sync with Nginx [NGXSTC]
+
+  def fontUrl(fileName: St): St =
+    s"$cdnOrServerOrigin/-/fonts/$fileName"   // sync w Nginx [NGXSTC]
 
   def uploadsUrlPrefix: String =
     cdnOrServerOrigin + ed.server.UploadsUrlBasePath + pubSiteId + '/'

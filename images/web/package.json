@@ -1,0 +1,7 @@
+{
+  "name": "ty-web-static-assets",
+  "private": true,
+  "dependencies": {
+    "fontsource-open-sans": "^3.1.5"
+  }
+}

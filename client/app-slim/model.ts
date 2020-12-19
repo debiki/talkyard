@@ -663,7 +663,7 @@ interface Topic {
   lastReplyAtMs: number;
   numOrigPostReplies: number;
   numOrigPostLikes: number;
-  answeredAtMs?: number;
+  answeredAtMs?: number;  // RENAME to solvedAtMs
   answerPostUniqueId?: number;
   plannedAtMs?: number;
   startedAtMs?: number;
@@ -783,11 +783,11 @@ interface Page
   // And a Published status enum: PersonalPageDraft/SharedPageDraft/Published.
   // "PageDraft" so different from drafts for chat message, replies, posts drafts, which
   // live only inside the editor — but not saved as real topics.
-  pageAnsweredAtMs?: number;
-  pageAnswerPostUniqueId?: number;
-  pageAnswerPostNr?: number;
-  pagePlannedAtMs?: number;
-  pageStartedAtMs?: number;
+  pageAnsweredAtMs?: number;  // RENAME to solvedAtMs, or, no, use PageDoingStatus instead? see just above.
+  pageAnswerPostUniqueId?: number; // RENAME to solutionPostId
+  pageAnswerPostNr?: number;  // RENAME to solutionPostNr
+  pagePlannedAtMs?: number;   // RENAME to plannedAt
+  pageStartedAtMs?: number;   // ... and the others below
   pageDoneAtMs?: number;
   pageClosedAtMs?: number;
   pageLockedAtMs?: number;

@@ -783,7 +783,7 @@ export function loadMoreScriptsBundle(callback?: () => Vo): Promise<Vo> {
     if (callback) setTimeout(() => moreScriptsPromise.then(callback), 0);
     return moreScriptsPromise;
   }
-  moreScriptsPromise = new Promise(function(resolve, reject) {
+  moreScriptsPromise = new Promise<Vo>(function(resolve, reject) {
     // Also: [7PLBF20]
     loadJs(eds.assetUrlPrefix + 'more-bundle.' + eds.minMaxJs, function() {
       resolve();
@@ -817,7 +817,7 @@ export function load2dScriptsBundleStart2dStuff() {  // [2D_LAYOUT]
 } */
 
 
-export function loadStaffScriptsBundle(callback): Promise<void> {
+export function loadStaffScriptsBundle(callback): Promise<Vo> {
   if (debiki2.admin && !staffScriptsPromise) {
     // This means staff-bundle was included in a <script> tag.
     staffScriptsPromise = Promise.resolve();
@@ -828,7 +828,7 @@ export function loadStaffScriptsBundle(callback): Promise<void> {
     setTimeout(() => staffScriptsPromise.then(callback), 0);
     return staffScriptsPromise;
   }
-  staffScriptsPromise = new Promise(function(resolve, reject) {
+  staffScriptsPromise = new Promise<Vo>(function(resolve, reject) {
     // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
     // previews of CommonMark comments [7PKEW24]). This'll load them both.
     loadEditorAndMoreBundles(() => {
@@ -845,7 +845,7 @@ export function loadStaffScriptsBundle(callback): Promise<void> {
 }
 
 
-export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
+export function loadEditorAndMoreBundlesGetDeferred(): Promise<Vo> {
   if (editorScriptsPromise)
     return editorScriptsPromise;
 
@@ -865,7 +865,7 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
 
   const timeoutHandle = showWaitForRequestOverlay(true);
   // But don't resolve the editorScriptsPromise until everything has been loaded.
-  editorScriptsPromise = new Promise(function(resolve, reject) {
+  editorScriptsPromise = new Promise<Vo>(function(resolve, reject) {
     moreScriptsLoaded.then(function() {
       editorLoaded.then(function() {
         removeWaitForRequestOverlay(timeoutHandle);
@@ -1628,19 +1628,23 @@ export function deleteDrafts(draftNrs: DraftNr[], onOk: (() => void) | UseBeacon
 
 const cachedOneboxHtml = {};
 
-export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => void) {
+export function loadOneboxSafeHtml(url: St, onOk: (safeHtml: St) => Vo) {
+  // People often accidentally append spaces, so trim spaces.
+  // But where's a good palce to trim spaces? The caller or here? Here, for now.
+  url = url.trim();
+
   const cachedHtml = cachedOneboxHtml[url];
   if (cachedHtml) {
-    setTimeout(() => success(cachedHtml), 0);
+    setTimeout(() => onOk(cachedHtml), 0);
     return;
   }
   const encodedUrl = encodeURIComponent(url);
-  get('/-/onebox?url=' + encodedUrl, (response: string) => {
+  get('/-/fetch-link-preview?url=' + encodedUrl, (response: St) => {
     cachedOneboxHtml[url] = response;
-    success(response);
+    onOk(response);
   }, function() {
     // Pass null to tell the editor to show no onebox (it should show the link instead).
-    success(null);
+    onOk(null);
     // It'd be annoying if error dialogs popped up, whilst typing.
     return IgnoreThisError;
   }, {

@@ -398,7 +398,7 @@ export const Editor = createFactory<any, EditorState>({
                     r.b({}, `Not an allowed file type: `),
                     r.kbd({ className: 's_UplErrD_UplNm' }, ext)),
                   r.p({},
-                    `These are allowed: `, r.kbd({}, me.effAlwUplExts))),
+                    `These are allowed: `, r.kbd({}, me.effAlwUplExts.join(' ')))),
           });
           return;
         }

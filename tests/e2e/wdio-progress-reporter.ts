@@ -1,6 +1,10 @@
-import WDIOReporter from '@wdio/reporter'
+import WDIOReporter from '@wdio/reporter';
+import { WDIOReporterOptions, SuiteStats, HookStats, TestStats, RunnerStats
+      } from '@wdio/reporter';
 import * as ansiColors from 'ansi-colors';
 import * as fs from 'fs';
+
+type TestStatsState = 'pending' | 'passed' | 'skipped' | 'failed';
 
 // cannot import why not
 //import { dieIf } from 'utils/log-and-die.ts';
@@ -37,13 +41,13 @@ const logFileDir = 'target/e2e-test-logs/';
 // process and it'll never get the chance to tell you which test hanged).
 //
 class TyWdioReporter extends WDIOReporter {
-    #options: WDIOReporter.Options;
+    #options: WDIOReporterOptions;
     #logFilePath: St | U;
     #logFileSuffix: St | U;
     #specFilePath: St | U;
     #specFileName: St | U;
 
-    constructor(options: WDIOReporter.Options) {
+    constructor(options: WDIOReporterOptions) {
       super(options)
       this.#options = options;
 
@@ -65,11 +69,11 @@ class TyWdioReporter extends WDIOReporter {
     #numSpecs = 0;
     #thisFileStartMs: number;
     #suiteStartMs: number;
-    #suites: WDIOReporter.Suite[] = [];
+    #suites: SuiteStats[] = [];
     #numTestsFailed = 0;
     #numTestsOk = 0;
 
-    #failedTests: WDIOReporter.Test[] = [];
+    #failedTests: TestStats[] = [];
 
     onRunnerStart(runner) {
       // Is there always just 1 elem in the array? Then why is it an array?
@@ -119,7 +123,7 @@ class TyWdioReporter extends WDIOReporter {
 
       for (let suite of this.#suites) {
         let ok = true;
-        let test: WDIOReporter.Test;
+        let test: TestStats;
         for (test of suite['tests']) {
           if (test.state === 'failed') {
             ok = false;
@@ -151,8 +155,8 @@ class TyWdioReporter extends WDIOReporter {
       for (let suite of this.#suites) {
         text += `SUITE: ${suite.title}\n`;
         let ok = true;
-        let test: WDIOReporter.Test;
-        let worstState: WDIOReporter.TestState | U = undefined;
+        let test: TestStats;
+        let worstState:  TestStatsState | U;
         for (test of suite['tests']) {
           // State is:  'passed' | 'pending' | 'failed' | 'skipped'
           if (test.state === 'failed') {
@@ -181,7 +185,7 @@ class TyWdioReporter extends WDIOReporter {
       fs.writeFileSync(this.#logFilePath, text);
     }
 
-    onSuiteStart(suite: WDIOReporter.Suite) {
+    onSuiteStart(suite: SuiteStats) {
       /*
       // Don't log this, for nested suites (a  describe(){...} inside a test file).
       // if (suite.parentUid !== suite.uid) return;  — is the same, also for nested suites.
@@ -198,7 +202,7 @@ class TyWdioReporter extends WDIOReporter {
             ` ${nowString()}`);
     }
 
-    onSuiteEnd(suite: WDIOReporter.Suite) {
+    onSuiteEnd(suite: SuiteStats) {
       //[WDIOREPTRBUG] wdio bug? this is always the same suite, and: "type": "suite:start"
       // but this is on-End?
       // console.log(`\n\nSUITE END:\n${JSON.stringify(suite, undefined, 2)}\n`);
@@ -210,24 +214,24 @@ class TyWdioReporter extends WDIOReporter {
             ` ${nowString()} took ${durSecs}s`);
     }
 
-    onTestStart(test: WDIOReporter.Test) {
+    onTestStart(test: TestStats) {
       logProgr(`${test.title}`);
     }
 
-    onTestEnd(test: WDIOReporter.Test) {
+    onTestEnd(test: TestStats) {
     }
 
-    onHookStart(test: WDIOReporter.Hook) {
+    onHookStart(test: HookStats) {
     }
 
-    onHookEnd(test: WDIOReporter.Hook) {
+    onHookEnd(test: HookStats) {
     }
 
-    onTestPass(test: WDIOReporter.Test) {
+    onTestPass(test: TestStats) {
       this.#numTestsOk += 1;
     }
 
-    onTestFail(test: WDIOReporter.Test) {
+    onTestFail(test: TestStats) {
       this.#failedTests.push(test);
       this.#numTestsFailed += 1;
       const endMs = Date.now();
@@ -248,7 +252,7 @@ class TyWdioReporter extends WDIOReporter {
       fs.writeFileSync(this.#logFilePath, text + '\n');
     }
 
-    onTestSkip(test: WDIOReporter.Test) {
+    onTestSkip(test: TestStats) {
       logProgr(`SKIPPING: ${test.title}`);
     }
 };
