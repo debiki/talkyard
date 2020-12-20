@@ -136,3 +136,11 @@
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-images-web-node_modules
 	shallow = true
+
+# Scala Build Tool.
+# For building the app server (Play Framework) from inside the 'app' Docker image.
+[submodule "images/app/sbt"]
+	path = images/app/sbt
+	url = https://github.com/debiki/ty-vendors.git
+	branch = ty-images-app-sbt-1.4.5
+	shallow = true
