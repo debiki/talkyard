@@ -16,7 +16,7 @@
  *@
 
 @(tpi: debiki.SiteTpi)
-
+@* COULD_OPTIMIZE fontello-embedded is a render blocking resource — instead, just link to the woff/2 instead, and preload. *@
 <link rel="stylesheet" href="@tpi.mediaUrl("fontello/css/fontello-embedded.css")"/>@* [NGXMEDIA] *@
 <link rel="stylesheet" href="@tpi.assetUrl(s"styles-bundle${tpi.dotRtl}.${tpi.minMaxCss}")"/>
 

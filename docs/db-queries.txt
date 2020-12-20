@@ -24,10 +24,23 @@ select
 -- View identities w usernames, emails:
 select * from identities3 i left join users3 u
   on i.site_id = u.site_id and i.user_id_c = u.user_id
+  left join user_stats3 us
+  on i.site_id = us.site_id and i.user_id_c = us.user_id
   where i.conf_file_idp_id_c = 'twitter'
     and i.site_id >= 1
     and u.primary_email_addr is null
   order by i.site_id;
+
+
+-- View identities w usernames, emails, stats:
+select * from identities3 i left join users3 u
+on i.site_id = u.site_id and i.user_id_c = u.user_id
+left join user_stats3 us
+on i.site_id = us.site_id and i.user_id_c = us.user_id
+where i.conf_file_idp_id_c = 'twitter'
+and i.site_id >= 1
+order by us.last_seen_at desc;
+
 
 
 -- View notifications:
