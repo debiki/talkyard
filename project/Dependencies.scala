@@ -1,5 +1,8 @@
 import sbt._
 
+// Find dependencies to upgrade: In the sbt shell, run:  dependencyUpdates
+// Show deps tree: Run:  dependencyTree
+
 // The objects here are made available in all build.sbt files,
 // that is,  <root>/.build.sbt  and  modules/{ty-core,ty-dao-rdb}/build.sbt.
 //
@@ -17,7 +20,7 @@ object ProjectDirectory {
 object Dependencies {
 
   object Play {
-    val json = "com.typesafe.play" %% "play-json" % "2.8.1"
+    val json = "com.typesafe.play" %% "play-json" % "2.9.1"
   }
 
   object Libs {
@@ -42,7 +45,10 @@ object Dependencies {
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.5"
-    val apacheTika = "org.apache.tika" % "tika-core" % "1.18"    // for username .ext test, sync w core [5AKR20]
+
+    // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
+    // extra checks in module ty-core. [5AKR20]
+    val apacheTika = "org.apache.tika" % "tika-core" % "1.25"
 
     val jsoup = "org.jsoup" % "jsoup" % "1.13.1"   // newest as of 2020-06
 
@@ -89,8 +95,8 @@ object Dependencies {
 
 
     // Not v 3.1.2?
-    val scalactic = "org.scalactic" %% "scalactic" % "3.1.1"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.1.1" % "test"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.1.4"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.1.4" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.

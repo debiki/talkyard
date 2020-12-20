@@ -6,11 +6,11 @@ dependencyOverrides in Compile ++= {
     Seq.empty
   } else {
     Seq(
-      "com.fasterxml.jackson.core" % "jackson-annotations" % "2.10.1",
-      "com.fasterxml.jackson.core" % "jackson-core" % "2.10.1",
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.1",
-      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.10.1",
-      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.10.1",
+      "com.fasterxml.jackson.core" % "jackson-annotations" % "2.10.5",
+      "com.fasterxml.jackson.core" % "jackson-core" % "2.10.5",
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.5",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.10.5",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.10.5",
       "com.google.code.findbugs" % "jsr305" % "3.0.2",
       "com.google.errorprone" % "error_prone_annotations" % "2.3.4",
       "com.google.guava" % "failureaccess" % "1.0.1",
@@ -19,8 +19,8 @@ dependencyOverrides in Compile ++= {
       "com.google.j2objc" % "j2objc-annotations" % "1.3",
       "com.lambdaworks" % "scrypt" % "1.4.0",
       "com.sun.mail" % "javax.mail" % "1.5.6",
-      "com.typesafe.play" % "play-functional_2.12" % "2.8.1",
-      "com.typesafe.play" % "play-json_2.12" % "2.8.1",
+      "com.typesafe.play" % "play-functional_2.12" % "2.9.1",
+      "com.typesafe.play" % "play-json_2.12" % "2.9.1",
       "commons-beanutils" % "commons-beanutils" % "1.9.2",
       "commons-codec" % "commons-codec" % "1.11",
       "commons-collections" % "commons-collections" % "3.2.2",
@@ -28,16 +28,15 @@ dependencyOverrides in Compile ++= {
       "commons-logging" % "commons-logging" % "1.2",
       "commons-validator" % "commons-validator" % "1.6",
       "javax.activation" % "activation" % "1.1",
-      "joda-time" % "joda-time" % "2.10.5",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "1.18",
+      "org.apache.tika" % "tika-core" % "1.25",
       "org.checkerframework" % "checker-qual" % "2.10.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.1",
       "org.postgresql" % "postgresql" % "42.2.4",
-      "org.scalactic" % "scalactic_2.12" % "3.1.1"
+      "org.scalactic" % "scalactic_2.12" % "3.1.4"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH a507dbbfbe0363daed706078ca0cd6e1f4b0673a
+// LIBRARY_DEPENDENCIES_HASH 2056bf0426842c0ed550c65656133a7b75913fbd

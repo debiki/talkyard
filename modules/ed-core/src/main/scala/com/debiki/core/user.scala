@@ -546,10 +546,13 @@ case object Participant {
       val tika = new org.apache.tika.Tika()
       val mimeType: String = tika.detect(usernameOkCharsLen)
       // Tika doesn't detect ".woff", weird? Maybe remove in Tika 1.9? [5AKR20]
-      if (mimeType != "application/octet-stream" || usernameOkCharsLen.endsWith(".woff")) {
+      if (mimeType != "application/octet-stream"
+          || usernameOkCharsLen.endsWith(".woff")
+          || usernameOkCharsLen.endsWith(".woff2")) {
         // Then replace all dots with underscore.
         // (They cannot be at the start or end, because of dropWhile and dropRightWhile above.)
-        usernameOkCharsLen = ReplSpecialsWithUnderscoreRegex.replaceAllIn(usernameOkCharsLen, "_")
+        usernameOkCharsLen =
+              ReplSpecialsWithUnderscoreRegex.replaceAllIn(usernameOkCharsLen, "_")
       }
     }
 
