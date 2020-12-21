@@ -376,6 +376,9 @@ package object core {
     def plusMinutes(moreMinutes: Long) = new When(this.millis + moreMinutes * 60 * 1000)
 
     override def toString: String = unixMillis.toString + "ms"
+    def toIso8601Day: St = Prelude.toIso8601Day(millis)
+    def toIso8601T: St = Prelude.toIso8601T(millis)
+    def toIso8601NoT: St = Prelude.toIso8601NoT(millis)
   }
 
   object When {

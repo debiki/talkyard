@@ -50,6 +50,7 @@ trait SystemTransaction {
 
   def loadAllSitesInclDetails(): immutable.Seq[SiteInclDetails]
   def loadSiteInclDetailsById(siteId: SiteId): Option[SiteInclDetails]
+  def loadSitesDeletedNotPurged(): ImmSeq[SiteInclDetails]
 
   def loadSitesByIds(tenantIds: Seq[SiteId]): Seq[Site]
 

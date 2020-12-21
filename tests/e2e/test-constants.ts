@@ -108,7 +108,7 @@ export = {
   AdminsId: 19,
   DefaultDefaultCategoryId: 3,
   ReviewDecisionUndoTimoutSeconds: 12, // sync with Scala and React component [2PUKQB0]
-  JanitorThreadIntervalMs: 100,  // [2YPBJ6L]
+  JanitorThreadIntervalMs: 250,  // [2YPBJ6L]
   MagicTimeoutPollMs: 500,  // [4GKB93RA]
 
   // Including this in the hostname, tells the server to add a 3 seconds fake latency.

@@ -340,6 +340,26 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
   }
 
 
+  def loadSitesDeletedNotPurged(): ImmSeq[SiteInclDetails] = {
+    val query = s"select * from sites3 where status = ${SiteStatus.Deleted.toInt}"
+    loadSitesAndHosts(query, values = Nil)
+  }
+
+
+  private def loadSitesAndHosts(query: St, values: List[AnyRef])
+        : ImmSeq[SiteInclDetails] = {
+    val sitesNoHosts: ImmSeq[SiteInclDetails] = runQueryFindMany(
+          query, values, rs => {
+      getSiteInclDetails(rs, hostnames = Nil)
+    })
+    val hostsBySiteId = loadHosts(sitesNoHosts.map(_.id))
+    val sitesWithHosts = sitesNoHosts map { site =>
+      site.copy(hostnames = hostsBySiteId.getOrElse(site.id, Nil))
+    }
+    sitesWithHosts
+  }
+
+
   def loadSiteInclDetailsById(siteId: SiteId): Option[SiteInclDetails] = {
     val hosts = loadHosts(Seq(siteId)).values.headOption.getOrElse(Nil)
     val query = "select * from sites3 where id = ?"
