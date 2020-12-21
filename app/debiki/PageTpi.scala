@@ -129,6 +129,9 @@ class SiteTpi protected (
   def currentVersionString = ""
   def cachedVersionString = ""
 
+  def neverPolyfillDotIo: Bo =
+    globals.config.featureFlags.contains("ffNeverPolyfillDotIo")
+
   def noPolyfillDotIo: Bo =
     globals.config.featureFlags.contains("ffNoPolyfillDotIo")
 

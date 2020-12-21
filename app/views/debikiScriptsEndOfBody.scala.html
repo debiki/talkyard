@@ -20,7 +20,8 @@
 @* SECURITY try removing polyfill.io — it's a supply chain attack security risk.
 Now soon mostly gone (feature flag) — only old browser will download a polyfill.
 *@
-@if(tpi.noPolyfillDotIo) {
+@if(tpi.neverPolyfillDotIo) {
+} else if(tpi.noPolyfillDotIo) {
 <script>{
 var w = window;
 if (!(w.fetch && w.Promise && [].includes && Object.assign && w.Map))
