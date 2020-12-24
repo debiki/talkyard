@@ -1,8 +1,8 @@
 /// <reference path="../test-types2.ts"/>
 
-import _ = require('lodash');
-import minimist = require('minimist');
-import logAndDie = require('./log-and-die');
+import * as _ from 'lodash';
+import * as minimist from 'minimist';
+import * as logAndDie from './log-and-die';
 const unusualColor = logAndDie.unusualColor;
 const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 const logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
@@ -191,4 +191,4 @@ if (interesting) {
 }
 
 
-export = <TestSettings> settings;
+export default <TestSettings> settings;
