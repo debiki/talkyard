@@ -1,13 +1,14 @@
 // This file sends requests to the server we're testing. Doesn't start any server.
 
-/// <reference path="../test-types2.ts"/>
+/// <reference path="../e2e/test-types2.ts"/>
 
 import _ = require('lodash');
 import assert = require('assert');
-import tyAssert = require('./ty-assert');
-import utils = require('./utils');
-import c = require('../test-constants');
-import { logMessage, logWarning, logError, logServerRequest, die, dieIf } from './log-and-die';
+import tyAssert = require('../e2e/utils/ty-assert');
+import utils = require('../e2e/utils/utils');
+import c = require('../e2e/test-constants');
+import { logMessage, logWarning, logError, logServerRequest, die, dieIf
+    } from '../e2e/utils/log-and-die';
 
 // Didn't find any Typescript defs.
 declare function require(path: string): any;
@@ -23,21 +24,23 @@ let settings: TestSettings;
 ///
 function initOrExit(theSettings) {
   settings = theSettings;
+  dieIf(!settings.mainSiteOrigin, `No mainSiteOrigin in settings:\n${
+    JSON.stringify(settings, undefined, 2)}\n`);
   let response;
   try {
     response = syncRequest('GET', settings.mainSiteOrigin);
   }
   catch (ex) {
-    logError(`Error talking with:  ${settings.mainSiteOrigin}\n` +
-        `Is the server not running?  [TyEE2ESRVOFF]\n\n`, ex);
-    process.exit(1);
+    die(`Error talking with:  ${settings.mainSiteOrigin}\n` +
+        `Is the server not running?  [TyEE2ESRVOFF]\nCaught exception:\n`, ex);
+    //process.exit(1);
   }
 
   if (response.statusCode !== 200) {
     logError(`Error response from:  ${settings.mainSiteOrigin}  ` +
         `when requesting xsrf token and cookies [TyEE2ESRVSTS]\n`);
-    logError(showResponse(response));
-    process.exit(1);
+    die(showResponse(response));
+    //process.exit(1);
   }
 
   let cookieString = '';
@@ -56,11 +59,11 @@ function initOrExit(theSettings) {
   });
 
   if (!xsrfToken) {
-    logError(
+    die(
         `Got no xsrf token from:  ${settings.mainSiteOrigin}   [TyEE2ESRVXSRF]\n` +
         `Cookie headers:\n` +
         `    ${JSON.stringify(cookies)}\n`);
-    process.exit(1);
+    //process.exit(1);
   }
 
   xsrfTokenAndCookies = [xsrfToken, cookieString];
@@ -220,6 +223,15 @@ function importRealSiteData(siteData: SiteData2): IdAddress {
   dieIf(!idAddr.id, "No site id in import-site response [TyE4STJ2]",
       showResponseBodyJson(idAddr));
   return idAddr;
+}
+
+
+function importSiteOrDieExit(siteData: SiteData): IdAddress {
+  return importTestSiteData(siteData);
+  try { return importTestSiteData(siteData); }
+  catch (ex) {
+    process.exit(1);
+  }
 }
 
 
@@ -595,10 +607,11 @@ function listUsers(ps: { origin: string, usernamePrefix: string }): ListUsersApi
 
 // ----- Export functions
 
-export = {
+export default {
   initOrExit: initOrExit,
   importRealSiteData,
   importSiteData: importTestSiteData,
+  importSiteOrDieExit: importSiteOrDieExit,
   deleteOldTestSite,
   skipRateLimits,
   playTimeSeconds,
