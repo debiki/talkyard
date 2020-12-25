@@ -2,6 +2,8 @@ import * as _ from 'lodash';
 import * as assert from 'assert';
 import { dieIf } from './log-and-die';
 
+// (Also see: https://www.npmjs.com/package/power-assert )
+
 interface TyAssert {
   // Implement later
 }

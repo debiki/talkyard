@@ -3,6 +3,7 @@
 import * as _ from 'lodash';
 import * as minimist from 'minimist';
 import * as logAndDie from './log-and-die';
+import { logDebugIf } from './log-and-die';
 const unusualColor = logAndDie.unusualColor;
 const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 const logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
@@ -19,7 +20,15 @@ let settings: Partial<TestSettings> = {
 
 // ---- Analyze arguments
 
-const args: any = minimist(process.argv.slice(2));
+// Jest disallows to it unknown command line opts, so then we use an env
+// var instead: all opts concatenated in a string, space separated.
+const argvFromEnvSt: St | U = process.env.TY_ENV_ARGV_ST;
+// BUG, harmless: split()s also inside "space quote".
+const argvFromEnv: St[] | U = argvFromEnvSt?.split(' ');
+logDebugIf(!!argvFromEnvSt, `env.TY_ENV_ARGV_ST: ${argvFromEnvSt}`);
+
+
+const args: minimist.ParsedArgs = minimist(argvFromEnv || process.argv.slice(2));
 _.extend(settings, args);
 
 if (settings.randomLocalHostname) {
