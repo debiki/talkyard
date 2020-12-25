@@ -139,8 +139,9 @@ interface ShortcutDiagState {
 
 
 let skipNextShiftUp: Bo | U;
-let justSoloClickedShift: Bo | U;
-let isShiftDown: Bo | U;
+let soloClickedShiftAtMs: Nr = 0;
+// In MS Win, the default mouse double click is 500 ms.
+const MaxDoubleClickShiftDelayMs = 450;
 let curKeyDown = ''; // could be a Set, but this'll do for now
 let curState: ShortcutDiagState = { isOpen: false, keysTyped: '', shortcutsToShow: [] };
 let dialogSetState: ((state: ShortcutDiagState) => Vo) | U;
@@ -393,8 +394,7 @@ function descr(key1: St, text1: St, k2?: St, t2?: St, k3?: St, t3?: St): RElm {
 
 function sayWhatHappened(whatHappened: St | RElm): () => Vo {
   return function() {
-    util.openDefaultStupidDialog({
-      //dialogClassName: 's_UplErrD',
+    morebundle.openDefaultStupidDialog({
       closeButtonTitle: t.Okay,
       body: whatHappened,
     });
@@ -578,27 +578,27 @@ function onKeyUp(event: KeyboardEvent) {
     else if (anyOtherDialogOpen()) {
       // Don't open the shortcuts dialog on top of another dialog.
     }
-    else if (!justSoloClickedShift) {
-      // Pat just clicked Shift once, no other key (skipNextShiftUp above is false).
-      // That single Shift click couldn't have added any new character, so:
+    else if (Date.now() > soloClickedShiftAtMs + MaxDoubleClickShiftDelayMs) {
+      // Pat just clicked Shift once (or twice, but too slowly, no double click),
+      // no other key (skipNextShiftUp above is false).
+      // That Shift click couldn't have added any new character, so:
       isTypingText = false;
       // We'll open the dialog, if the next key is Shift again:
-      justSoloClickedShift = true;
+      soloClickedShiftAtMs = Date.now();
     }
     else {
-      // Shift + Shift — then open the dialog. And, don't close if using
+      // Double clicked Shift — then open the dialog. And, don't close if using
       // the mouse — maybe pat wants to scroll or copy text?
       const tryStayOpen = true;
       const allShortcuts = makeMyShortcuts(store, '');
       const shortcutsToShow = findMatchingShortcuts(allShortcuts, '');
-      justSoloClickedShift = false;
+      soloClickedShiftAtMs = 0;
       // If was typing (say, in a <textarea> or <input>), skipNextShiftUp above
       // would have been true.
       isTypingText = false;
       updateDialog({ isOpen: true, tryStayOpen, keysTyped: '', shortcutsToShow });
     }
 
-    isShiftDown = false;
     skipNextShiftUp = false;
   }
 
@@ -614,7 +614,7 @@ function onKeyDown(event: KeyboardEvent) {
   const store: Store = getMainWinStore();
 
   const uiPrefs = me_uiPrefs(store.me);
-  if (uiPrefs.kbd !== UiPrefsKeyboardShortcuts.On)
+  if (!uiPrefs.kbd)
     return;
 
   const key: St = event.key;
@@ -629,15 +629,17 @@ function onKeyDown(event: KeyboardEvent) {
 
   // Handled in onKeyUp() instead.
   if (isShift) {
-    isShiftDown = true;
     // Must not click Shift or Ctrl together with the shortcut keys.
     if (otherKeyAlreadyDown) {
       resetAndCloseDialog();
     }
+    if (uiPrefs == UiPrefsKeyboardShortcuts.OnButNoDoubleShift) {
+      skipNextShiftUp = true;
+    }
     return;
   }
   else {
-    justSoloClickedShift = false;
+    soloClickedShiftAtMs = 0;
   }
 
   // If typing some other command, e.g. Ctrl+Tab to switch browser tab,
@@ -648,10 +650,15 @@ function onKeyDown(event: KeyboardEvent) {
   if (event.ctrlKey || event.altKey || event.metaKey
       // Clicking the QuestionMark key typically requires holding down Shift.
       || (event.shiftKey && key !== QuestionMark)) {
-    skipNextShiftUp ||= isShiftDown;
-    justSoloClickedShift = false;
+    skipNextShiftUp ||= event.shiftKey;
+    soloClickedShiftAtMs = 0;
     resetAndCloseDialog();
     return;
+  }
+
+  if (key === QuestionMark && event.shiftKey) {
+    // Skip the next Shift-up — because pat held down Shift just to type '?'.
+    skipNextShiftUp = true;
   }
 
   // If shortcut dialog open, skip the browser's default key event. Otherwise
@@ -670,7 +677,7 @@ function onKeyDown(event: KeyboardEvent) {
     // down Shift).)
     // BUG 'Escape' closes the shortcut dialog — but e.g. the editor too,
     // if it's open (and one opened the shortcut dialog via Shift Shift).
-    skipNextShiftUp ||= isShiftDown;
+    skipNextShiftUp ||= event.shiftKey;
     resetAndCloseDialog();
     return;
   }
