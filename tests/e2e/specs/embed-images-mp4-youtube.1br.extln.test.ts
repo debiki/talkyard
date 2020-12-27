@@ -20,28 +20,35 @@ let maria;
 let mariasBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
-let forumTitle = "Editor Onebox Forum";
-let oneboxTopicTitle = "Onebox Topic Title";
+const forumTitle = "Editor Link Preview Forum";
+const oneboxTopicTitle = "Link Preview Topic Title";
 
-let dotOneboxClass = '.onebox';
+const dotOneboxClass = '.s_LnPv';
 
-// Currently Onebox links must be HTTPS if the server uses HTTPS —  [E2EHTTPS]
-// because then http gets changed to https. [1BXHTTPS]
-// Let's use some http links too though, unless the server uses https.
-let imageJpgUrl = 'https://www.example.com/image.jpg';
-let imagePngUrl = `${settings.scheme}://www.example.com/image.png`;  // http, sometimes
-let imageGifUrl = `${settings.scheme}://www.example.com/image.gif`;  //
-let videoMp4Url = 'https://www.example.com/video.mp4';
-let videoYouTubeIdInvalid = 'https://www.youtube.com/watch?v=DAR27FWzyZY';
-let videoYouTubeId = 'DAR27FWzyZY';
-let videoYouTubeUrl = `https://www.youtube.com/watch?v=${videoYouTubeId}`;
-let videoYouTubeUrlInvalidId = `https://www.youtube.com/watch?v=${videoYouTubeIdInvalid}`;
-let imageJpgOnebox = `aside.onebox.s_LnPv-Img a[href="${imageJpgUrl}"] img[src="${imageJpgUrl}"]`;
-let imagePngOnebox = `aside.onebox.s_LnPv-Img a[href="${imagePngUrl}"] img[src="${imagePngUrl}"]`;
-let imageGifOnebox = `aside.onebox.s_LnPv-Img a[href="${imageGifUrl}"] img[src="${imageGifUrl}"]`;
-let videoMp4Onebox = `aside.onebox.s_LnPv-Video video[src="${videoMp4Url}"]`;
-let videoYouTubeOnebox =
-    `aside.onebox.s_LnPv-YouTube iframe[src^="https://www.youtube.com/embed/${videoYouTubeId}"]`;
+// Test links:
+
+// The server should change this link to https, if the server uses https.
+// [no_insec_emb] [E2EHTTPS]
+const slashImageJpgUrl = '//www.example.com/image.jpg';
+const httpImageJpgUrl = `http:${slashImageJpgUrl}`;
+const imageJpgUrl = `${settings.scheme}:${slashImageJpgUrl}`;
+
+// Let's use some more http links, unless the server uses https. [E2EHTTPS]
+const imagePngUrl = `${settings.scheme}://www.example.com/image.png`;  // http, sometimes
+const imageGifUrl = `${settings.scheme}://www.example.com/image.gif`;  //
+
+const videoMp4Url = 'https://www.example.com/video.mp4';
+const videoYouTubeIdInvalid = 'https://www.youtube.com/watch?v=DAR27FWzyZY';
+const videoYouTubeId = 'DAR27FWzyZY';
+const videoYouTubeUrl = `https://www.youtube.com/watch?v=${videoYouTubeId}`;
+const videoYouTubeUrlInvalidId = `https://www.youtube.com/watch?v=${videoYouTubeIdInvalid}`;
+const imageJpgOnebox = `aside.s_LnPv.s_LnPv-Img a[href="${imageJpgUrl}"] img[src="${imageJpgUrl}"]`;
+const imagePngOnebox = `aside.s_LnPv.s_LnPv-Img a[href="${imagePngUrl}"] img[src="${imagePngUrl}"]`;
+const imageGifOnebox = `aside.s_LnPv.s_LnPv-Img a[href="${imageGifUrl}"] img[src="${imageGifUrl}"]`;
+const videoMp4Onebox = `aside.s_LnPv.s_LnPv-Video video[src="${videoMp4Url}"]`;
+const videoYouTubeOnebox =
+    `aside.s_LnPv.s_LnPv-YouTube iframe[src^="https://www.youtube.com/embed/${videoYouTubeId}"]`;
+
 
 const inPagePreviewSelector = '.s_P-Prvw ';
 const inEditorPreviewSelector = '#debiki-editor-controller .preview ';
@@ -53,7 +60,7 @@ const inEditorPreviewSelector = '#debiki-editor-controller .preview ';
 // verify does resize & show?
 
 
-describe("editor onebox:", () => {
+describe("link-previews-images-mp4-youtube.1br.extln  TyTE2E2G3MAWKT4", () => {
 
   it("initialize people", () => {
     browser = new TyE2eTestBrowser(wdioBrowser);
@@ -65,7 +72,7 @@ describe("editor onebox:", () => {
   });
 
   it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('editor-onebox', { title: forumTitle });
+    let site: SiteData = make.forumOwnedByOwen('edr-ln-pv', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
     site.members.push(maria);
@@ -84,17 +91,21 @@ describe("editor onebox:", () => {
 
   it("Owen types a title and an image url", () => {
     owensBrowser.editor.editTitle(oneboxTopicTitle);
-    owensBrowser.editor.editText(imageJpgUrl);
+    assert.ok(httpImageJpgUrl.startsWith('http://'))
+    owensBrowser.editor.editText(httpImageJpgUrl);  // will change to https
   });
 
-  it("The image url gets converted to a .onebox tag", () => {
-    // Something in here timed out once. So do in two steps, simpler to troubleshoot. First: ...
+  it("The image url gets converted to a .s_LnPv tag", () => {
     owensBrowser.preview.waitForExist(dotOneboxClass, { where: 'InEditor' });
     owensBrowser.waitForExist(inEditorPreviewSelector + dotOneboxClass);  // CLEAN_UP remove
   });
 
   it("... with an a[href=...] and img[src=...]", () => {
-    // ...Then:
+    // httpImageJpgUrl should have gotten changed to https, iff the server uses https:
+    if (settings.scheme === 'https:') {
+      assert.ok(imageJpgOnebox.includes('https:'));
+      assert.ok(!imageJpgOnebox.includes('http:'));
+    }
     owensBrowser.preview.waitForExist(imageJpgOnebox, { where: 'InEditor' });
     owensBrowser.waitForExist(inEditorPreviewSelector + imageJpgOnebox);  // CLEAN_UP remove
   });
@@ -106,7 +117,7 @@ describe("editor onebox:", () => {
     owensBrowser.assertPageTitleMatches(oneboxTopicTitle);
   });
 
-  it("... and sees the onebox <img> tag", () => {
+  it("... and sees the link preview <img> tag", () => {
     owensBrowser.waitForExist('.esOrigPost ' + dotOneboxClass);
     owensBrowser.waitForExist('.esOrigPost ' + imageJpgOnebox);
   });
@@ -116,7 +127,7 @@ describe("editor onebox:", () => {
     owensBrowser.editor.editText(videoMp4Url, { checkAndRetry: true });
   });
 
-  it("It appears as a onebox <video> tag in the preview", () => {
+  it("It appears as a link preview <video> tag in the preview", () => {
     owensBrowser.preview.waitForExist(dotOneboxClass, { where: 'InPage' });
     owensBrowser.waitForExist(inPagePreviewSelector + dotOneboxClass);  // CLEAN_UP remove
 
@@ -124,7 +135,7 @@ describe("editor onebox:", () => {
     owensBrowser.waitForExist(inPagePreviewSelector + videoMp4Onebox);  // CLEAN_UP remove
   });
 
-  it("Owen saves the edits, sees both the onebox <img> and the <video> tags", () => {
+  it("Owen saves the edits, sees both the preview <img> and the <video> tags", () => {
     owensBrowser.editor.save();
     owensBrowser.waitForExist('.esOrigPost ' + videoMp4Onebox);
   });
@@ -136,7 +147,7 @@ describe("editor onebox:", () => {
     mariasBrowser.disableRateLimits();
   });
 
-  it("She can also post image urls, which get converted to onebox <img> tags", () => {
+  it("She can also post image urls, which get converted to preview <img> tags", () => {
     mariasBrowser.complex.replyToOrigPost(imageJpgUrl);
     mariasBrowser.topic.waitUntilPostHtmlMatches(2, /\.jpg/);
     mariasBrowser.topic.assertPostNrContains(2, dotOneboxClass);
@@ -151,14 +162,14 @@ describe("editor onebox:", () => {
     mariasBrowser.topic.assertPostNrContains(3, `a[href="${weirdUrl}"]`);
   });
 
-  it("A media url inside a text paragraph is converted to a link, not a onebox", () => {
+  it("A media url inside a text paragraph is converted to a plain link", () => {
     mariasBrowser.complex.replyToOrigPost('zzz ' + imageJpgUrl + ' qqq');
     mariasBrowser.topic.waitUntilPostTextMatches(4, 'zzz .* qqq');
     mariasBrowser.topic.assertPostNrNotContains(4, dotOneboxClass);
     mariasBrowser.topic.assertPostNrContains(4, `a[href="${imageJpgUrl}"]`);
   });
 
-  it("A onebox can be inserted between two text paragraphs", () => {
+  it("A link preview can be inserted between two text paragraphs", () => {
     mariasBrowser.complex.replyToOrigPost("Paragraph one.\n\n" + imageJpgUrl + "\n\nPara two.");
     mariasBrowser.topic.waitUntilPostTextMatches(5, "Paragraph one");
     mariasBrowser.topic.assertPostTextMatches(5, "Para two");
@@ -171,14 +182,14 @@ describe("editor onebox:", () => {
     // This happens to be 5 x 2 links, = 10, < max which is 11 [TyT603RTDJ43].
     // (Each link preview has a widget link, and also a "View at ..." clickable link.)
     mariasBrowser.complex.replyToOrigPost(
-        imageJpgUrl + '\n\n' +
-        imagePngUrl + '\n\n' +
-        imageGifUrl + '\n\n' +
-        videoMp4Url + '\n\n' +
-        videoYouTubeUrl);
-    mariasBrowser.topic.waitUntilPostHtmlMatches(6, /\.jpg/);
-    mariasBrowser.topic.assertPostNrContains(6, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(6, imageJpgOnebox);
+        httpImageJpgUrl + '\n\n' + // <— should get changed to https -.
+        imagePngUrl + '\n\n' +     //                                 |
+        imageGifUrl + '\n\n' +     //                                 |
+        videoMp4Url + '\n\n' +     //                                 |
+        videoYouTubeUrl);          //                                 |
+    mariasBrowser.topic.waitUntilPostHtmlMatches(6, /\.jpg/);    //   |
+    mariasBrowser.topic.assertPostNrContains(6, dotOneboxClass); //   |
+    mariasBrowser.topic.assertPostNrContains(6, imageJpgOnebox); // <-'  here
     mariasBrowser.topic.assertPostNrContains(6, imagePngOnebox);
     mariasBrowser.topic.assertPostNrContains(6, imageGifOnebox);
     mariasBrowser.topic.assertPostNrContains(6, videoMp4Onebox);

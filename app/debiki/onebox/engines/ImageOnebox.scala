@@ -22,6 +22,7 @@
 
 package debiki.onebox.engines
 
+import com.debiki.core._
 import debiki.Globals
 import debiki.onebox._
 import debiki.TextAndHtml
@@ -41,7 +42,8 @@ class ImagePrevwRendrEng(globals: Globals)
   override val alreadySanitized = true
   override val addViewAtLink = false
 
-  def renderInstantly(unsafeUrl: String): Good[String] = {
+  def renderInstantly(unsafeUri: j_URI): Good[St] = {
+    val unsafeUrl = unsafeUri.toString
     // Fix Dropbox image links.
     val betterUrl =
           if (unsafeUrl startsWith "https://www.dropbox.com/")

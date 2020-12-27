@@ -303,8 +303,8 @@ class Nashorn(
   }
 
 
-  def sanitizeHtmlReuseEngine(text: String, followLinks: Boolean,
-        javascriptEngine: Option[js.Invocable]): String = {
+  private def sanitizeHtmlReuseEngine(text: St, followLinks: Bo,
+        javascriptEngine: Opt[js.Invocable]): St = {
     if (isTestSoDisableScripts)
       return "Scripts disabled [EsM44GY0]"
     def sanitizeWith(engine: js.Invocable): String = {

@@ -22,6 +22,15 @@ Free up disk space, by deleting old images:
 How to push images to a local repo, to test in Vagrant: see [testing-images-in-vagrant.md](./testing-images-in-vagrant.md).
 
 
+### Redis
+
+Empty the db: (or `FLUSHALL` to empty all dbs — but Ty uses just one)
+
+```
+$ d/c exec cache redis-cli
+> FLUSHDB
+```
+
 ### ElasticSearch stuff:
 
 If the disk is >= 95% full, ElasticSearch enters read-only mode (or read-delete-only).

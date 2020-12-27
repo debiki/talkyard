@@ -8,6 +8,7 @@ declare function require(...whatever: any[]): any;
 
 import _ = require('lodash');
 import c = require('../test-constants');
+import { dieIf } from './log-and-die';
 
 
 function makeSiteOwnedByOwenBuilder() {
@@ -271,11 +272,11 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
     },
 
 
-    addTwoPagesForum: function(opts: { title: string, introText?: string,
+    addTwoCatsForum: function(opts: { title: string, introText?: string,
           members?: WellKnownMemberUsername[], categoryExtId?: string,
-          categoryPerms?: 'FullMembersMayEditWiki' })
-          : TwoPagesTestForum {
-      const forum: TwoPagesTestForum = <TwoPagesTestForum> api.addEmptyForum(opts);
+          categoryPerms?: 'FullMembersMayEditWiki' }): TwoCatsTestForum {
+
+      const forum: TwoCatsTestForum = <TwoCatsTestForum> api.addEmptyForum(opts);
       const forumPage: PageJustAdded = forum.forumPage;
 
       forum.categories.staffOnlyCategory = api.addCategoryWithAboutPage(forumPage, {
@@ -286,23 +287,14 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         aboutPageText: "Staff only category description.",
       });
 
-      // A "Specific Category".
-      const specificCategoryId = 4;
-      forum.categories.specificCategory = api.addCategoryWithAboutPage(forumPage, {
-        id: specificCategoryId,
-        extId: opts.categoryExtId,
-        parentCategoryId: forumPage.categoryId,
-        name: "Specific Category",
-        slug: 'specific-category',
-        aboutPageText: "The Specific Category description.",
-      });
-
-      // ---- Permissions on categories
-
       const morePerms = !!opts.categoryPerms;
 
       // Staff only:
-      const staffPermsId = morePerms ? 4 : 3; // 1 & 2 = for the default category
+      // If 'FullMembersMayEditWiki', Category A has 3 perms:
+      // 1) for Everyone, 2) for Full-members-to-edit-wiki, and 3) for Staff.
+      // Then, the next availabe perm id is 3 + 1 = 4  (+ 1 is the root cat).
+      // REFACTOR use fn findNextPermId() instead? [refctr_nxt_prmid]
+      const staffPermsId = morePerms ? 4 : 3;
       site.permsOnPages.push({
         id: staffPermsId,
         forPeopleId: c.StaffId,
@@ -319,11 +311,42 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         maySeeOwn: true,
       });
 
-      // The specific category:
+      return forum;
+    },
+
+
+    addTwoPagesForum: function(opts: { title: string, introText?: string,
+          members?: WellKnownMemberUsername[], categoryExtId?: string,
+          categoryPerms?: 'FullMembersMayEditWiki' })
+          : TwoPagesTestForum {
+
+      const forum: TwoPagesTestForum = <TwoPagesTestForum> api.addTwoCatsForum(opts);
+      const forumPage: PageJustAdded = forum.forumPage;
+
+      // ---- A "Specific Category"
+
+      // id: 4, because 1 = root, 2 = default category A, 3 = staff cat.
+      const specificCategoryId = 4;
+      forum.categories.specificCategory = api.addCategoryWithAboutPage(forumPage, {
+        id: specificCategoryId,
+        extId: opts.categoryExtId,
+        parentCategoryId: forumPage.categoryId,
+        name: "Specific Category",
+        slug: 'specific-category',
+        aboutPageText: "The Specific Category description.",
+      });
+
+      // REFACTOR use fn findNextPermId() instead? [refctr_nxt_prmid]
+      const morePerms = !!opts.categoryPerms;
+      const staffPermsId = morePerms ? 4 : 3; // 1 & 2 = for the default category
+
       api.addDefaultCatPerms(site, specificCategoryId, staffPermsId + 1,
               opts.categoryPerms);
 
       // ---- Two pages
+
+      dieIf(!forum.members.michael, "Add member Michael, he's a page author [TyE503MQS]");
+      dieIf(!forum.members.maria, "Add member Maria, she's a page author [TyE503MQ7]");
 
       forum.topics.byMariaCategoryA = api.addPage({
         dbgSrc: 'LgFrmTstTpcs',

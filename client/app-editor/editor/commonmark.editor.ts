@@ -24,8 +24,15 @@
 const d = { i: debiki.internal, u: debiki.v0.util };
 
 
+export interface SanitizeOpts {
+  allowClassAndIdAttr?: Bo;
+  allowDataAttr?: Bo;
+}
+
+
 // Converts markdown to sanitized html.
-export function markdownToSafeHtml(markdownSrc, hostAndPort?, sanitizerOptions?): string {
+export function markdownToSafeHtml(markdownSrc: St, hostAndPort?: St,
+        sanitizerOptions?: SanitizeOpts): St {
   const htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
   const htmlTextSafe = sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
   return htmlTextSafe;
@@ -51,8 +58,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
  * options.allowClassAndIdAttr = true/false
  * options.allowDataAttribs = true/false
  */
-export function sanitizeHtml(htmlTextUnsafe, options) {
-  options = options || {};
+export function sanitizeHtml(htmlTextUnsafe, options: SanitizeOpts = {}) {
   const htmlTextSafe = d.i.googleCajaSanitizeHtml(
       htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;

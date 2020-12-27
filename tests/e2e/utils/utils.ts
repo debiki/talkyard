@@ -80,6 +80,34 @@ const utils = {
     return matches ? matches[1] : undefined;
   },
 
+
+  __brokenPreview: '.s_LnPv-Err',
+  __intLinkProvider: { name: 'Int', inSandboxedIframe: false } as LinkPreviewProvider,
+
+  makePreviewOkSelector: (provider: LinkPreviewProvider | 'InternalLink',
+          opts: { url?: St } = {}) => {
+    return utils.__makePreviewSelImpl(provider, { ...opts, broken: false });
+  },
+
+  makePreviewBrokenSelector: (provider: LinkPreviewProvider | 'InternalLink',
+          opts: { url?: St } = {}) => {
+    return utils.__makePreviewSelImpl(provider, { ...opts, broken: true });
+  },
+
+  __makePreviewSelImpl: (provider: LinkPreviewProvider | 'InternalLink',
+          opts: { url?: St, broken?: Bo } = {}) => {
+    if (provider === 'InternalLink') provider = utils.__intLinkProvider;
+    const colonNotPara = opts.broken ? '' : ':not(';
+    const endPara      = opts.broken ? '' : ')';
+    let sel = `.s_LnPv-${provider.lnPvClassSuffix || provider.name}${
+          colonNotPara}${
+            utils.__brokenPreview}${
+          endPara}`;
+    if (opts.url) sel += ` a[href="${opts.url}"]`;
+    return sel;
+  },
+
+
   ssoLogin: (ps: { member: Member, ssoId, browser,
         origin: string, server, apiSecret: string, apiRequesterId?: UserId,
         thenGoTo: string }) => {

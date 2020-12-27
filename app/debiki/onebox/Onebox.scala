@@ -58,17 +58,23 @@ object RenderPreviewResult {
 
 class RenderPreviewParams(
   val siteId: SiteId,
-  val unsafeUrl: String,
-  val inline: Boolean,
+  val fromPageId: PageId,
+  val unsafeUri: j_URI,
+  val inline: Bo,
   val requesterId: UserId,
-  val mayHttpFetch: Boolean,
-  val loadPreviewFromDb: String => Option[LinkPreview],
-  val savePreviewInDb: LinkPreview => Unit)
+  val mayHttpFetch: Bo,
+  val loadPreviewFromDb: St => Opt[LinkPreview],
+  val savePreviewInDb: LinkPreview => U) {
+
+  def unsafeUrl: St = unsafeUri.toString
+}
 
 
 
 case class LinkPreviewProblem(
-  unsafeProblem: String, unsafeUrl: String, errorCode: String)
+  unsafeProblem: St,
+  unsafeUrl: St,
+  errorCode: St)
 
 
 
@@ -104,6 +110,8 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
     */
   protected def addViewAtLink = true
 
+  protected def cachePreview = true
+
   // (?:...) is a non-capturing group.  (for local dev search: /-/u/ below.)
   private def makeUploadsLinkRegexStr(q: Char) = s"=$q" +
         """(?:(?:(?:https?:)?//[^/]+)?/-/(?:u|uploads/public)/)([a-zA-Z0-9/\._-]+)""" + q
@@ -121,7 +129,7 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
     // CDN or no CDN? Then shouldn't point the links to our CDN. Harmless today, 2020-07.
     BUG; FIX_AFTER // 2021-01 Skip links with different pub site id or origin. [cdn_nls]
 
-    SEC_TESTS_MISSING // Better keep single / double quote style — otherwise, look:
+    SEC_TESTS_MISSING; NEXT // Better keep single / double quote style — otherwise, look:
     //    <div attr=" ='upl-url' > <script>alert(1)</script>">
     // would become:
     //    <div attr=" ="upl-url" > <script>alert(1)</script>">
@@ -137,14 +145,17 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
     // ----- Any cached preview?
 
     // This prevents pg storage DoS.  [ln_pv_netw_err]
-    COULD_OPTIMIZE // As Redis key, use a url hash, so shorter?
-    val redisCache = new RedisCache(urlAndFns.siteId, globals.redisClient, globals.now)
-    redisCache.getLinkPreviewSafeHtml(urlAndFns.unsafeUrl) foreach { safeHtml =>
-      SHOULD // if preview broken *and* if (urlAndFns.mayHttpFetch):
-      // retry, although cache entry still here.
-      // E.g. was netw err,
-      // but at most X times per minute? Otherwise return the cached broken html.
-      return Future.successful(safeHtml)
+    val anyRedisCache = if (!cachePreview) None else Some {
+      COULD_OPTIMIZE // As Redis key, use a url hash, so shorter?
+      val redisCache = new RedisCache(urlAndFns.siteId, globals.redisClient, globals.now)
+      redisCache.getLinkPreviewSafeHtml(urlAndFns.unsafeUrl) foreach { safeHtml =>
+        SHOULD // if preview broken *and* if (urlAndFns.mayHttpFetch):
+        // retry, although cache entry still here.
+        // E.g. was netw err,
+        // but at most X times per minute? Otherwise return the cached broken html.
+        return Future.successful(safeHtml)
+      }
+      redisCache
     }
 
     // ----- Http fetch preview
@@ -198,13 +209,15 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
                   safeHtml}</pre>.toString
       }
 
-      SECURITY; SHOULD // do with Jsoup, from TextAndHtml.sanitizeRelaxed, [cdn_nls]
+      SECURITY; SHOULD; NEXT // do with Jsoup, from TextAndHtml.sanitizeRelaxed, [cdn_nls]
       // or a  fix-links  fn if sanitized already.
-
-      // Don't link to any HTTP resources from safe HTTPS pages, e.g. don't link  [1BXHTTPS]
-      // to <img src="http://...">, change to https instead even if the image then breaks.
-      // COULD leave <a href=...> HTTP links as is so they won't break. And also leave
-      // plain text as is. But for now, this is safe and simple and stupid: (?)
+      // So won't affect 'http' in a code block for example.
+      //
+      // Don't link to insecure HTTP resources from safe HTTPS pages,  [no_insec_emb]
+      // e.g. don't link to <img src="http://...">. Change to https instead — even if
+      // the image/whatever then breaks; security is more important, plus, browsers
+      // show security warnings if there are insecure http resources in an
+      // https-secure page.
       if (globals.secure) {
         safeHtml = safeHtml.replaceAllLiterally("http:", "https:")
       }
@@ -218,7 +231,9 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
             unsafeUrl = urlAndFns.unsafeUrl, unsafeProviderName = providerName,
             addViewAtLink = addViewAtLink)
 
-      redisCache.putLinkPreviewSafeHtml(urlAndFns.unsafeUrl, safeHtml)
+      anyRedisCache.foreach(
+            _.putLinkPreviewSafeHtml(urlAndFns.unsafeUrl, safeHtml))
+
       safeHtml
     }
 
@@ -263,10 +278,10 @@ abstract class InstantLinkPrevwRendrEng(globals: Globals)
 
   protected final def loadAndRender(urlAndFns: RenderPreviewParams)
         : Future[String Or LinkPreviewProblem] = {
-    Future.successful(renderInstantly(urlAndFns.unsafeUrl))
+    Future.successful(renderInstantly(urlAndFns.unsafeUri))
   }
 
-  protected def renderInstantly(unsafeUrl: String): String Or LinkPreviewProblem
+  protected def renderInstantly(unsafeUri: j_URI): St Or LinkPreviewProblem
 }
 
 
@@ -337,7 +352,8 @@ class LinkPreviewRenderer(
       if (engine.handles(uri)) {
         val args = new RenderPreviewParams(
               siteId = siteId,
-              unsafeUrl = url,
+              fromPageId = NoPageId, // later  [ln_pv_az]
+              unsafeUri = uri,
               inline = inline,
               requesterId = requesterId,
               mayHttpFetch = mayHttpFetch,
@@ -422,10 +438,11 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
     // Then don't forget  noopener
     def noPreviewHtmlSt: St = s"""<a href="$safeUrl" rel="nofollow">$safeUrl</a>"""
 
-    val unsafeUri =
-          Validation.parseUri(unsafeUrl, allowQuery = true) getOrIfBad { _ =>
-            return noPreviewHtmlSt
-          }
+    // Allow hash frag, so can #post-123 link to specific posts. [int_ln_hash]
+    val unsafeUri = Validation.parseUri(unsafeUrl, allowQuery = true, allowHash = true)
+          .getOrIfBad { _ =>
+      return noPreviewHtmlSt
+    }
 
     linkPreviewRenderer.fetchRenderSanitizeInstantly(unsafeUri, inline = inline) match {
       case RenderPreviewResult.NoPreview =>

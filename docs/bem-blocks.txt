@@ -311,7 +311,6 @@ s_C_M_B-Dl      = chat message delete button
 esSA            = super admin
 
 esPw            = password
-esOb            = onebox
 
 esTTD           = Topic type dropdown
 

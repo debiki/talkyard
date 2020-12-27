@@ -55,7 +55,8 @@ trait PagePathMetaDao {
   }
 
 
-  def getPagePathForUrlPath(urlPath: String): Option[PagePathWithId] = {
+  def getPostPathForUrlPath(path: St, hash: St): Opt[PostPathWithIdNr] = {
+    val urlPath = path
     if (urlPath eq null) {
       // Some Java APIs use null.
       dieIf(Globals.isDevOrTest, "TyE53RSKUTD6")
@@ -70,7 +71,22 @@ trait PagePathMetaDao {
       case PagePath.Parsed.Good(maybeOkPath) =>
         // There's a db constraint, pgpths_page_r_pages, so if the page path
         // exists, the page does too.
-        checkPagePath2(maybeOkPath)
+        checkPagePath2(maybeOkPath) map { pagePath: PagePathWithId =>
+          val postNr =
+                if (!hash.startsWith(PostHashPrefixNoHash)) BodyNr
+                else {
+                  val postNrStMore = hash.drop(PostHashPrefixNoHash.length)
+                  val postNrSt = postNrStMore.takeWhile(charIsNum)
+                  val nr = postNrSt.toIntOption getOrElse {
+                    dieIf(Globals.isDevOrTest, "TyE406MRKS")
+                    BodyNr
+                  }
+                  if (nr < BodyNr)
+                    return None
+                  nr
+                }
+          pagePath.toPostPath(postNr = postNr)
+        }
       case _: PagePath.Parsed.Bad =>
         None
       case _: PagePath.Parsed.Corrected =>

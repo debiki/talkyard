@@ -61,15 +61,21 @@ case class PageStuff(
 
 
 
-trait PageStuffDao {
-  self: SiteDao =>
-
+object PageStuffDao {
   // The whole excerpt is shown immediately; nothing happens on click.
   val ExcerptLength = 250
 
   // Most text initially hidden, only first line shown. On click, everything shown — so
   // include fairly many chars.
   val StartLength = 250
+}
+
+
+
+trait PageStuffDao {
+  self: SiteDao =>
+
+  import PageStuffDao._
 
   memCache.onPageSaved { sitePageId =>
     memCache.remove(cacheKey(sitePageId))
@@ -150,6 +156,7 @@ trait PageStuffDao {
             (Category.DescriptionExcerptLength, true)  // <— instead of [502RKDJWF5]
           else
             (pageMeta.isPinned ? ExcerptLength | StartLength, pageMeta.isPinned)
+        // Also for replies, see: [post_excerpts].
         JsonMaker.htmlToExcerpt(html, length, firstParagraphOnly)
       })
 

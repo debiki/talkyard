@@ -19,8 +19,10 @@ package debiki.onebox.engines   // RENAME to  talkyard.server.linkpreview
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, TextAndHtml}
+import debiki.{Globals, TextAndHtml, JsonMaker}
+import debiki.dao.{PageStuffDao, UseCache}
 import debiki.onebox.{InstantLinkPrevwRendrEng, LinkPreviewProblem}
+import ed.server.auth.MaySeeOrWhyNot.{YesMaySee, NopeNoSuchPage, NopeNoPostWithThatNr}
 import org.scalactic.{Bad, Good, Or}
 import scala.util.matching.Regex
 
@@ -247,6 +249,12 @@ class InternalLinkPrevwRendrEng(globals: Globals, siteId: SiteId) // TESTS_MISSI
   override def alreadySanitized = true
   override def addViewAtLink = false
 
+  // Don't cache internal link previews — because maybe the linked page gets
+  // renamed or moved to a different category, and then it'd be weird if, when
+  // linking to it, its old name and category was "stuck" in the cache.
+  // (External things, though, like a YouTube video or Twitter tweet, don't
+  // change so often — more okay to cache?)
+  override def cachePreview = false
 
   override def handles(uri: j_URI): Bo = {
     val domainOrAddress: String = uri.getHost  // can be null, fine
@@ -263,38 +271,111 @@ class InternalLinkPrevwRendrEng(globals: Globals, siteId: SiteId) // TESTS_MISSI
   }
 
 
-  protected def renderInstantly(unsafeUrl: String): Good[String] = {
-    COULD_OPTIMIZE // have handles(url) above pass back the URI and pass on to this fn,
-    // so ned not parse the url again? — Don't use any state, better stay thread safe.
-    val uri = new java.net.URI(unsafeUrl)
+  protected def renderInstantly(unsafeUri: j_URI): St Or LinkPreviewProblem = {
+    val unsafeUrl = unsafeUri.toString
 
-    val urlPath = uri.getPathEmptyNotNull
+    val unsafeUrlPath: St = unsafeUri.getPathEmptyNotNull
+    val unsafeHashFrag: St = unsafeUri.getHashFragEmptyNotNull
 
     // If the link is broken, let's use the link url as the visible text — that's
     // a [good enough hint for the person looking at the edits preview] that
     // the link doesn't work? (when a linked page preview won't appear)
     var unsafeTitle = unsafeUrl
     var unsafeExcerpt = ""
+    var pageFound = false
+    var postFound = false
+    var postNr = NoPostNr
+    var maySeePage = false
+    var maySeePost = false
+    var mayNotSeeDbgCode = ""
 
     val dao = globals.siteDao(siteId)
-    dao.getPagePathForUrlPath(urlPath) match {
+    dao.getPostPathForUrlPath(path = unsafeUrlPath, hash = unsafeHashFrag) match {
       case None =>
-      case Some(pagePath) =>
-        dao.getOnePageStuffById(pagePath.pageId) match {
+        () // Leave postFound = false.
+
+      case Some(postPath: PostPathWithIdNr) =>
+        postNr = postPath.postNr
+
+        val (maySeeOrWhyNot, dbgCode) = dao.maySeePostUseCache(   // [ln_pv_az]
+              pageId = postPath.pageId, postNr = postPath.postNr, user = None)
+
+        maySeePost = maySeeOrWhyNot == YesMaySee
+        maySeePage = maySeePost // for now
+        mayNotSeeDbgCode = dbgCode
+        pageFound = maySeeOrWhyNot != NopeNoSuchPage
+
+        if (maySeePost) dao.getOnePageStuffById(postPath.pageId) match {
           case None =>
+            // Suddenly gone? Fine, we're not in a db tx.
+            pageFound = false
           case Some(pageStuff) =>
             unsafeTitle = pageStuff.title
+            val anyLinkedReply =
+                  if (postPath.postNr == BodyNr) {
+                    // Linking to the page — which we've found already: `pageStuff`.
+                    postFound = true
+                    None
+                  }
+                  else {
+                    // Linking to a reply.
+                    COULD_OPTIMIZE // makes any sense to cache this?
+                    val anyPost = dao.loadPostByPageIdNr(
+                          pageId = postPath.pageId, postNr = postPath.postNr)
+                    postFound = anyPost.isDefined
+                    anyPost
+                  }
+
             val inline = false  // for now
-            if (!inline) {
+            if (inline) {
+              // Show title only.
+            }
+            else if (anyLinkedReply.isDefined) {
+              val replyPost = anyLinkedReply.get
+              replyPost.approvedHtmlSanitized foreach { html =>
+                // This also for orig posts, see: [post_excerpts].
+                val excerptAndImgs = JsonMaker.htmlToExcerpt(html,
+                      length = PageStuffDao.StartLength, firstParagraphOnly = false)
+                unsafeExcerpt = excerptAndImgs.text
+              }
+              // Else, if not yet approved?
+              // Then, for now, show only page title? So, leave unsafeExcerpt empty.
+            }
+            else {
               unsafeExcerpt = pageStuff.bodyExcerpt.getOrElse("").trim
             }
         }
     }
 
+    if (!pageFound || !postFound || !maySeePage || !maySeePost) {
+      var errCode = "TyMLNPG404"
+      val errMsg =
+            if (!pageFound || !maySeePage) "Not found:"   // I18N
+            else s"Post $postNr not found:"
+
+      if (Globals.isDevOrTest) {
+        if (!pageFound) errCode += "-PG404"
+        else {
+          // Could be may-not-see *page* combined with *post* not found.
+          if (!maySeePage) errCode += "-M0SEEPG"
+          if (!postFound) errCode += "-PO404"
+          else if (!maySeePost) errCode += "-M0SEEPO"
+        }
+        if (mayNotSeeDbgCode.nonEmpty) {
+          errCode += "-" + mayNotSeeDbgCode
+        }
+      }
+
+      return Bad(LinkPreviewProblem(
+            unsafeProblem = errMsg,
+            unsafeUrl = unsafeUrl,
+            errorCode = errCode))
+    }
+
     val safeUrlAttr = TextAndHtml.safeEncodeForHtmlAttrOnly(unsafeUrl)
     val safeTitle = TextAndHtml.safeEncodeForHtmlContentOnly(unsafeTitle)
     val safeLink = s"""<a href="$safeUrlAttr">$safeTitle</a>"""
-    var safePreview: String =
+    var safePreview: St =
           if (unsafeExcerpt.isEmpty) {
             // This is either an inline link inside a paragraph — then just
             // show the title. Or a link to a page that apparently is empty,
@@ -384,7 +465,8 @@ class TelegramPrevwRendrEng(globals: Globals) extends InstantLinkPrevwRendrEng(g
   override def alreadySanitized = true
 
 
-  def renderInstantly(unsafeUrl: String): String Or LinkPreviewProblem = {
+  def renderInstantly(unsafeUri: j_URI): St Or LinkPreviewProblem = {
+    val unsafeUrl: St = unsafeUri.toString
     val messageId = (regex findGroupIn unsafeUrl) getOrElse {
       return Bad(LinkPreviewProblem(
             "Couldn't find message id in Telegram link",

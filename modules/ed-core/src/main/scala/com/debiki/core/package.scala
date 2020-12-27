@@ -110,6 +110,11 @@ package object core {
   val BodyNr: PostNr = PageParts.BodyNr
   val FirstReplyNr: PostNr = PageParts.FirstReplyNr
 
+  val PostHashPrefixNoHash   = "post-"
+  val PostHashPrefixWithHash = "#post-"
+  val CommentHashPrefixNoHash   = "comment-"
+  val CommentHashPrefixWithHash = "#comment-"
+
   type PostRevNr = Int
 
   REFACTOR // change page id to Int (not String) — is always an Int anyway,

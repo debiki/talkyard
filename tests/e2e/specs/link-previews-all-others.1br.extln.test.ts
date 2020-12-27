@@ -20,11 +20,8 @@ let mariasBrowser: TyE2eTestBrowser;
 let idAddress: IdAddress;
 let forumTitle = "Link Previews Forum";
 
-interface LinkPreviewProvider {
-  name: string;
-  inSandboxedIframe: boolean;  // default true
-  lnPvClassSuffix?: string;
 
+interface LinkPreviewProvider2 extends LinkPreviewProvider {
   linkInTopic: string;
   linkInTopicExpectedPreviewText: string;
 
@@ -39,7 +36,8 @@ interface LinkPreviewProvider {
   linkInReplyTwoExpectedPreviewText?: string;  // later?
 }
 
-type ProvidersMap = { [name: string]: LinkPreviewProvider };
+
+type ProvidersMap = { [name: string]: LinkPreviewProvider2 };
 
 // NOTE:  To troubleshoot just one, add:  --only3rdParty provider-name  (or --o3) to the
 // wdio command line, e.g.:  --o3 reddit
@@ -143,15 +141,6 @@ if (settings.only3rdParty) {
 }
 
 
-const brokenPreview = '.s_LnPv-Err';
-
-const makePreviewOkSelector = (provider: LinkPreviewProvider) =>
-  `.s_LnPv-${provider.lnPvClassSuffix || provider.name}:not(${brokenPreview})`;
-
-const makePreviewBrokenSelector = (provider: LinkPreviewProvider) =>
-  `.s_LnPv-${provider.lnPvClassSuffix || provider.name}${brokenPreview}`;
-
-
 describe("'All other' link previews  TyT550RMHJ25", () => {
 
   it("initialize people", () => {
@@ -176,9 +165,9 @@ describe("'All other' link previews  TyT550RMHJ25", () => {
   _.each(providersToTest, addTestsForOneProvider);
 
 
-  function addTestsForOneProvider(provider: LinkPreviewProvider) {
-    const previewOkSelector = makePreviewOkSelector(provider);
-    const previewBrokenSelector = makePreviewBrokenSelector(provider);
+  function addTestsForOneProvider(provider: LinkPreviewProvider2) {
+    const previewOkSelector = utils.makePreviewOkSelector(provider);
+    const previewBrokenSelector = utils.makePreviewBrokenSelector(provider);
 
     it(`\n\n*** Testing ${provider.name} ***\n\n` +
           `Owen goes to the topic list page`, () => {

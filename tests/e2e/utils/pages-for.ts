@@ -2813,6 +2813,8 @@ export class TyE2eTestBrowser {
         }
       },
 
+      // MOVE to topic = ... ? because now in the topic by default
+      // Next to: waitUntilParentCatIs(catName)
       clickAncestor: (categoryName: St) => {
         this.repeatUntilAtNewUrl(() => {
           // Prefer licking a link in the topbar, if present, because if the topbar
@@ -5030,6 +5032,28 @@ export class TyE2eTestBrowser {
         assert(this.topic._isOrigPostBodyVisible());
       },
 
+      getCurCategoryName: (): St => {
+        return this.waitAndGetVisibleText(this.topic.__getCurCatNameSelector());
+      },
+
+      movePageToOtherCategory: (catName: St) => {
+        this.topic.openChangePageDialog();
+        this.waitAndClick('.s_ChPgD .e_SelCatB');
+        this.waitAndClickSelectorWithText('.e_CatLs .esExplDrp_entry_title', catName)
+        this.topic.waitUntilParentCatIs(catName);
+      },
+
+      waitUntilParentCatIs: (catName: St) => {
+        const sel = this.topic.__getCurCatNameSelector();
+        this.waitUntilTextIs(sel, catName);
+      },
+
+      __getCurCatNameSelector: (): St => {
+        const ancLn = ' .esTopbar_ancestors_link';
+        const where = this.isVisible('.s_Tb ' + ancLn) ? '.s_Tb' : '.esPage';
+        return where + ' .s_Tb_Pg_Cs_C:last-child ' + ancLn;
+      },
+
       isPostNrDescendantOf: (postNr: PostNr, maybeParentNr: PostNr) => {
         this.switchToEmbCommentsIframeIfNeeded();
         return this.isVisible(
@@ -5601,19 +5625,19 @@ export class TyE2eTestBrowser {
 
       openChangePageDialog: () => {
         this.waitAndClick('.dw-a-change');
-        this.topic.waitUntilChangePageDialogOpen();   // CROK
+        this.topic.waitUntilChangePageDialogOpen();
       },
 
       __changePageDialogSelector: '.s_ChPgD .esDropModal_content',
 
       // Could break out to  changePageDialog: { ... } obj.
       waitUntilChangePageDialogOpen: () => {
-        this.waitForVisible(this.topic.__changePageDialogSelector);  // CROK
+        this.waitForVisible(this.topic.__changePageDialogSelector);
         this.waitForDisplayed('.modal-backdrop');
       },
 
       isChangePageDialogOpen: () => {
-        return this.isVisible(this.topic.__changePageDialogSelector);  // CROK
+        return this.isVisible(this.topic.__changePageDialogSelector);
       },
 
       waitUntilChangePageDialogGone: () => {
@@ -8165,10 +8189,10 @@ export class TyE2eTestBrowser {
         this.complex.saveTopic(data);
       },
 
-      saveTopic: (data: { title: string, body: string, type?: PageRole,
-            willBePendingApproval?: boolean,
-            matchAfter?: boolean, titleMatchAfter?: string | false,
-            bodyMatchAfter?: string | false, resultInError?: boolean }) => {
+      saveTopic: (data: { title: St, body?: St, type?: PageRole,
+            willBePendingApproval?: Bo,
+            matchAfter?: Bo, titleMatchAfter?: St | false,
+            bodyMatchAfter?: St | false, resultInError?: Bo }) => {
         this.rememberCurrentUrl();
         this.editor.save();
         if (!data.resultInError) {
@@ -8188,7 +8212,11 @@ export class TyE2eTestBrowser {
               this.topic.assertPostTextIs(c.TitleNr, titlePend + data.title);
             }
           }
-          if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
+
+          if (!data.body && !data.bodyMatchAfter) {
+            // Noop. Nothing to compare the new topic Orig Post with.
+          }
+          else if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
             if (data.type === c.TestPageRole.OpenChat) {
               // Then there's no page body, insetad:
               this.chat.waitAndAssertPurposeIs(data.body);

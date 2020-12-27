@@ -167,7 +167,7 @@ class SiteDao(
   def newPageDao(pageId: PageId, tx: SiteTransaction): PageDao =
     PageDao(pageId, loadWholeSiteSettings(tx), tx)
 
-  REFACTOR // Change textAndHtmlMaker to maketextAndHtmlMaker(pageType: PageType)
+  REFACTOR // Change textAndHtmlMaker to maketextAndHtmlMaker(pageType: PageType)  Edit: Also incl page id  [ln_pv_az]
   // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,
   // so won't need to always use makePostRenderSettings() below before
   // using textAndHtmlMaker?

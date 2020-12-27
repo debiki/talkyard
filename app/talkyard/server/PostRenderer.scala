@@ -56,7 +56,7 @@ class PostRenderer(private val nashorn: Nashorn) {
     val isBody = post.nr == PageParts.BodyNr
     val followLinks = isBody && settings.pageRole.shallFollowLinks
     if (post.nr == PageParts.TitleNr) {
-      sanitizeHtml(post.currentSource, followLinks)
+      nashorn.sanitizeHtml(post.currentSource, followLinks)
     }
     else if (post.tyype == PostType.CompletedForm) {
       CompletedFormRenderer.renderJsonToSafeHtml(post.currentSource) getMakeGood { errorMessage =>
@@ -74,17 +74,6 @@ class PostRenderer(private val nashorn: Nashorn) {
           followLinks = followLinks)
       renderResult.safeHtml
     }
-  }
-
-
-  def sanitizeHtml(text: String, followLinks: Boolean): String = {
-    nashorn.sanitizeHtml(text, followLinks)
-  }
-
-
-
-  def slugifyTitle(title: String): String = {
-    nashorn.slugifyTitle(title)
   }
 
 }

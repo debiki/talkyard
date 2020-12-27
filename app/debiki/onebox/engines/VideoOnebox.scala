@@ -42,8 +42,9 @@ class VideoPrevwRendrEng(globals: Globals)
 
   override def alreadySanitized = true
 
-  def renderInstantly(unsafeUrl: String): Good[String] = {
-    val safeUrl = safeEncodeForHtml(unsafeUrl)
+  def renderInstantly(unsafeUri: j_URI): Good[St] = {
+    val unsafeUrl = unsafeUri.toString
+    val safeUrl: St = safeEncodeForHtml(unsafeUrl)
     Good(o"""
      <video width='100%' height='100%' controls src='$safeUrl'>
        <a href='$safeUrl' target='_blank' rel='nofollow noopener'>$safeUrl</a>

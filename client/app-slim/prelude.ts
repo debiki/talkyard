@@ -404,18 +404,18 @@ export function nonEmpty(x): boolean {
 }
 
 
-export function isDefined2(x): boolean {
+export function isDefined2(x): boolean {   // RENAME to isDef & add isUndef
   return !_.isUndefined(x);
 }
 
 
-// Ooops bad name, shouldn't include null  CLEAN_UP rename to isPresent/isSomething/isSth/hasValue?
-export function isDefined(x): boolean {  // rename to isNotNullOrUndefined(x), or:: notNullOrUndef
+// Ooops bad name
+export function isDefined(x): boolean {  // NEXT RENAME to notNullOrUndef
   return !isNullOrUndefined(x);
 }
 
 
-export function isNullOrUndefined(x): boolean {   // RENAME to isNullOrUndef/isAbsent/lacksValue?
+export function isNullOrUndefined(x): boolean {   // RENAME to isNullOrUndef
   return _.isNull(x) || _.isUndefined(x);
 }
 

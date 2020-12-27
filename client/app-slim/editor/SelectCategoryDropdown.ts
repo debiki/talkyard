@@ -33,15 +33,27 @@ const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
 
+export interface SelectCategoryDropdownProps {
+  store: Store;
+  categories?: Category[];
+  selectedCategoryId: CategoryId;
+  onCategorySelected: (categoryId: CategoryId) => Vo;
+}
+
+interface SelectCategoryDropdownState {
+  open?: Bo;
+  windowWidth?: Nr;
+  buttonRect?: Rect;
+  expandedCats: { [catId: string]: Bo };
+}
 
 export const SelectCategoryDropdown = createClassAndFactory({
   displayName: 'SelectCategoryDropdown',
 
   getInitialState: function() {
     return {
-      open: false,
       expandedCats: {},
-    };
+    } as SelectCategoryDropdownState;
   },
 
   open: function() {
@@ -49,23 +61,25 @@ export const SelectCategoryDropdown = createClassAndFactory({
       open: true,
       windowWidth: window.innerWidth,
       buttonRect: reactGetRefRect(this.refs.dropdownButton),
-    });
+    } as SelectCategoryDropdownState);
   },
 
   close: function() {
-    this.setState({ open: false, expandedCats: {} });
+    this.setState({ open: false, expandedCats: {} } as SelectCategoryDropdownState);
   },
 
   onCategorySelected: function(listItem) {
-    this.props.onCategorySelected(listItem.eventKey);
+    const props: SelectCategoryDropdownProps = this.props;
+    props.onCategorySelected(listItem.eventKey);
     this.close();
   },
 
   render: function() {
-    const props = this.props;
+    const props: SelectCategoryDropdownProps = this.props;
+    const state: SelectCategoryDropdownState = this.state;
     const store: Store = props.store;
     const categories: Category[] | U = props.categories || store.currentCategories;
-    const expandedCats: { [id: string]: Bo } = this.state.expandedCats;
+    const expandedCats: { [catId: string]: Bo } = state.expandedCats;
 
     // UX add a text input to fuzzy-filter on category names, like Skim (rustlang) does.
 
@@ -81,7 +95,7 @@ export const SelectCategoryDropdown = createClassAndFactory({
     const categoryName = selectedCategory ? selectedCategory.name : t.scd.SelCat + '...';
 
     const dropdownButton =
-      Button({ onClick: this.open, ref: 'dropdownButton' },
+      Button({ onClick: this.open, ref: 'dropdownButton', className: 'e_SelCatB' },
         categoryName + ' ', r.span({ className: 'caret' }));
 
     const catsTree = categories_sortTree(catsToList);
@@ -123,14 +137,14 @@ export const SelectCategoryDropdown = createClassAndFactory({
               makeCatListItem(c, CategoryDepth.BaseCatDepth));
 
     const dropdownModal =
-      DropdownModal({ show: this.state.open, onHide: this.close, showCloseButton: true,
-          atRect: this.state.buttonRect, windowWidth: this.state.windowWidth },
+      DropdownModal({ show: state.open, onHide: this.close, showCloseButton: true,
+          atRect: state.buttonRect, windowWidth: state.windowWidth },
         r.div({ className: 'esDropModal_header' }, t.scd.SelCat + ':'),
-        r.ul({},
+        r.ul({ className: 'e_CatLs' },
           catListItems));
 
     return (
-      rFragment({},
+      rFr({},
         dropdownButton,
         dropdownModal));
   }
