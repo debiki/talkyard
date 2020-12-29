@@ -36,7 +36,8 @@ let specs = [`${specsPathPrefix}/specs/**/*.ts`];
 
 // This now not needed? wdio v6 has  --spec
 if (settings.only) {
-  specs = [`${specsPathPrefix}/specs/**/*${settings.only}*.ts`];
+  const globTs = settings.only.endsWith('.test.ts') ? '' : '*.ts';
+  specs = [`${specsPathPrefix}/specs/**/*${settings.only}${globTs}`];
 }
 
 

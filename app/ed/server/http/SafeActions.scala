@@ -90,6 +90,15 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
 
     def invokeBlock[A](requestNoTracing: Request[A], block: Request[A] => Future[Result])
           : Future[Result] = {
+      if (Globals.isDevOrTest && globals.secure) {
+        val isHttp = requestNoTracing.headers.get("X-Forwarded-Proto") is "http"
+        if (isHttp) {
+          return Future.successful(ForbiddenResult("TyE0HTTPS",
+              o"""This dev-test server uses https but the request is over http.
+              Likely this would make something fail, e.g. a test."""))
+        }
+      }
+
       val tracerSpan = {
         val path = requestNoTracing.path
         val traceOpName =
