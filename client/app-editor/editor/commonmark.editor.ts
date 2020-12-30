@@ -40,9 +40,10 @@ export function markdownToSafeHtml(markdownSrc: St, hostAndPort?: St,
 
 
 function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
+  // Dupl code server side: [9G03MSRMW2].
   const md = window['markdownit']({ html: true, linkify: true, breaks: true });
   md.use(d.i.MentionsMarkdownItPlugin());
-  md.use(d.i.oneboxMarkdownItPlugin);
+  md.use(d.i.LinkPreviewMarkdownItPlugin);
   // COULD: Client side, don't CDNify links — only do that server side, when the text that
   // references the upload, has been saved. This prevents uploads from getting sent
   // to the CDN, before one knows for sure that they will actually be used.

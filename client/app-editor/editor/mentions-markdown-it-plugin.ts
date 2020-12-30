@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,10 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-(function() {
 
 
-nodejsUtilInherits = function(constructor, superConstructor) {
+const nodejsUtilInherits = function(constructor, superConstructor) {
   constructor.super_ = superConstructor;
   constructor.prototype = Object.create(superConstructor.prototype, {
     constructor: {
@@ -36,7 +35,7 @@ nodejsUtilInherits(MentionsMarkdownItPlugin, Function);
 
 
 function MentionsMarkdownItPlugin() {
-  var plugin = function(md, options) {
+  const plugin: any = function(md, options) {
     plugin.options = options;
     plugin.init(md);
   };
@@ -111,5 +110,4 @@ MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
 debiki.internal.MentionsMarkdownItPlugin = MentionsMarkdownItPlugin;
 
 
-})();
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

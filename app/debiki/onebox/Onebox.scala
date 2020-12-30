@@ -307,7 +307,7 @@ class LinkPreviewRenderer(
 
   import LinkPreviewRenderer._
 
-  private val PlaceholderPrefix = "onebox-"
+  private val PlaceholderPrefix = "c_LnPv-"
   private val NoEngineException = new DebikiException("DwE3KEF7", "No matching preview engine")
 
   COULD_OPTIMIZE // These are, or can be made thread safe — no need to recreate all the time.
@@ -420,13 +420,14 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
   /** Called from javascript running server side in Nashorn.  [js_scala_interop]
     */
   def renderAndSanitizeOnebox(unsafeUrl: String): String = {
-    lazy val safeUrl = org.owasp.encoder.Encode.forHtml(unsafeUrl)
+    lazy val safeUrlInAtr = org.owasp.encoder.Encode.forHtmlAttribute(unsafeUrl)
+    lazy val safeUrlInTag = org.owasp.encoder.Encode.forHtmlContent(unsafeUrl)
     val inline = false // for now
 
     if (!globals.isInitialized) {
       // Also see the comment for Nashorn.startCreatingRenderEngines()
       return o"""<p style="color: red; outline: 2px solid orange; padding: 1px 5px;">
-           Broken onebox for: <a>$safeUrl</a>. Nashorn called out to Scala code
+           Broken link preview for: <a>$safeUrlInTag</a>. Nashorn called out to Scala code
            that uses old stale class files and apparently the wrong classloader (?)
            so singletons are created a second time when inside Nashorn and everything
            is broken. To fix this, restart the server (CTRL+D + run), and edit and save
@@ -436,17 +437,19 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
 
     UX; COULD // target="_blank" — maybe site conf val? [site_conf_vals]
     // Then don't forget  noopener
-    def noPreviewHtmlSt: St = s"""<a href="$safeUrl" rel="nofollow">$safeUrl</a>"""
+    // Sync w browser side code [0PVLN].
+    def noPreviewHtmlSt(classAtrVal: St = ""): St =
+      s"""<p><a href="$safeUrlInAtr" rel="nofollow"$classAtrVal>$safeUrlInTag</a></p>"""
 
     // Allow hash frag, so can #post-123 link to specific posts. [int_ln_hash]
     val unsafeUri = Validation.parseUri(unsafeUrl, allowQuery = true, allowHash = true)
           .getOrIfBad { _ =>
-      return noPreviewHtmlSt
+      return noPreviewHtmlSt()
     }
 
     linkPreviewRenderer.fetchRenderSanitizeInstantly(unsafeUri, inline = inline) match {
       case RenderPreviewResult.NoPreview =>
-        noPreviewHtmlSt
+        noPreviewHtmlSt()
       case donePreview: RenderPreviewResult.Done =>
         donePreviews.append(donePreview)
         // Return a placeholder because `doneOnebox.html` might be an iframe which would
@@ -457,9 +460,7 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
         // We cannot http fetch from external servers from here. That should have been
         // done already, and the results saved in link_previews_t.
         logger.warn(s"No cached preview for: '$unsafeUrl' [TyE306KUT5]")
-        i"""
-          |<!-- No cached preview -->
-          |<a href="$safeUrl" rel="nofollow" class="s_LnPvErr">$safeUrl</a>"""
+        noPreviewHtmlSt(" class=\"s_LnPvErr-NotCached\"")
     }
   }
 

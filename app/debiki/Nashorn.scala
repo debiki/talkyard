@@ -293,8 +293,8 @@ class Nashorn(
       (safeHtml, mentions.toSet)
     })
 
-    val safeHtmlWithOneboxes = prevwRenderer.replacePlaceholders(safeHtmlNoPreviews)
-    RenderCommonmarkResult(safeHtmlWithOneboxes, mentions)
+    val safeHtmlWithLinkPreviews = prevwRenderer.replacePlaceholders(safeHtmlNoPreviews)
+    RenderCommonmarkResult(safeHtmlWithLinkPreviews, mentions)
   }
 
 
@@ -596,35 +596,37 @@ object Nashorn {
   private val RenderAndSanitizeCommonMark = i"""
     |var md;
     |try {
+    |  // Dupl code browser side: [9G03MSRMW2].
     |  md = markdownit({ html: true, linkify: true, breaks: true });
     |  md.use(debiki.internal.MentionsMarkdownItPlugin());
-    |  md.use(debiki.internal.oneboxMarkdownItPlugin);
+    |  md.use(debiki.internal.LinkPreviewMarkdownItPlugin);
     |  ed.editor.CdnLinkifyer.replaceLinks(md);
     |}
     |catch (e) {
-    |  console.error("Error creating CommonMark renderer: [DwE5kFEM9]");
+    |  console.error("Error creating CommonMark renderer: [TyECMARKRENDR]");
     |  printStackTrace(e);
     |}
     |
     |// Returns [html, mentions] if ok, else a string with an error message
     |// and exception stack trace.
     |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
-    |       instantOneboxRenderer, uploadsUrlPrefixCommonmark) {
+    |       instantLinkPreviewRenderer, uploadsUrlPrefixCommonmark) {
     |  var exceptionAsString;
     |  try {
     |    theStore = null; // Fail fast. Don't use here, might not have been inited.
     |    eds.uploadsUrlPrefixCommonmark = uploadsUrlPrefixCommonmark;  // [7AKBQ2]
-    |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
+    |    debiki.internal.serverSideLinkPreviewRenderer = instantLinkPreviewRenderer;
     |    debiki.mentionsServerHelp = [];
     |    var unsafeHtml = md.render(source);
     |    var mentionsThisTime = debiki.mentionsServerHelp;
     |    delete debiki.mentionsServerHelp;
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
-    |    var html = googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
-    |    // Simplify detection of incorrectly using these without initialzing again:
+    |    var html = googleCajaSanitizeHtml(
+    |          unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
+    |    // Fail fast — simplify detection of reusing without reinitialzing:
     |    eds.uploadsUrlPrefixCommonmark = 'TyE4GKFWB0';
-    |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = 'TyE56JKW20';
+    |    debiki.internal.serverSideLinkPreviewRenderer = 'TyE56JKW20';
     |    return [html, mentionsThisTime];
     |  }
     |  catch (e) {

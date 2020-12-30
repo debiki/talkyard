@@ -232,8 +232,8 @@ images/app/assets/server-bundle.js: \
        node_modules/markdown-it/dist/markdown-it.min.js \
        client/third-party/lodash-custom.js \
        client/third-party/non-angular-slugify.js \
-       client/app-editor/editor/mentions-markdown-it-plugin.js \
-       client/app-editor/editor/onebox-markdown-it-plugin.js
+       client/app-editor/editor/mentions-markdown-it-plugin.ts \
+       client/app-editor/editor/link-previews-markdown-it-plugin.editor.ts
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileServerTypescriptConcatJavascript
 
@@ -265,9 +265,7 @@ images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
        node_modules/fileapi/dist/FileAPI.html5.js \
        node_modules/@webscopeio/react-textarea-autocomplete/dist/react-textarea-autocomplete.umd.min.js \
        client/third-party/diff_match_patch.js \
-       client/third-party/non-angular-slugify.js \
-       client/app-editor/editor/mentions-markdown-it-plugin.js \
-       client/app-editor/editor/onebox-markdown-it-plugin.js
+       client/third-party/non-angular-slugify.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileEditorTypescript-concatScripts
 

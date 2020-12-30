@@ -57,7 +57,7 @@ LiD = Log in Dialog
 Lg  = large (screen), also: Sm, Md Xl
 Ls  = list
 Lt  = less than, Gt = greater than
-Ln  = link — like `ln -s ...` in Linux.
+Ln  = link — like `ln -s ...` in Linux. E.g. LnPv = Link Preview.
 Lo  = low
 Lv  = level
 Mr  = member  (or Mbr?)  Us = user, Mr = member, Gp = group, Gs = guest
