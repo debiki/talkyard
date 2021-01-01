@@ -1120,7 +1120,7 @@ var t_en_US: TalkyardTranslations = t = {
   },
 
 
-  // Help message dialog
+  // Help message dialog (as in "Tips", not "Private message").
   help: {
     YouCanShowAgain_1: "You can show help messages again, if you are logged in, by " +
         "clicking your name and then ",
