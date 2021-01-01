@@ -13,7 +13,13 @@
                 "node_modules/*",
                 "src/types/*"
             ]
-        }
+        },
+        "types": [
+            "node",
+            "assert",
+            "core-js",
+            "lodash"]
+
     },
     "include": [
         "src/**/*"
