@@ -499,10 +499,12 @@ class Nashorn(
       addTranslation("es_CL")  // Spanish, Chile
       addTranslation("he_IL")  // Hebrew
       addTranslation("lv_LV")  // Latvian
+      addTranslation("nl_NL")  // Dutch
       addTranslation("pl_PL")  // Polish
       addTranslation("pt_BR")  // Portuguese, Brazilian
       addTranslation("ru_RU")  // Russian
       addTranslation("sv_SE")  // Swedish
+      addTranslation("uk_UA")  // Ukrainian
 
       // Add render page code.
       val rendererScript = loadAssetAsString(s"server-bundle$dotMin.js", isTranslation = false)

@@ -2306,6 +2306,8 @@ const LanguageSettings = createFactory({
     }, {
       value: 'lv_LV', label: "Latvian"
     }, {
+      value: 'nl_NL', label: "Dutch"
+    }, {
       value: 'pl_PL', label: "Polish"
     }, {
       value: 'pt_BR', label: "Portuguese (Brazilian)"
@@ -2313,6 +2315,8 @@ const LanguageSettings = createFactory({
       value: 'ru_RU', label: "Russian"
     }, {
       value: 'sv_SE', label: "Swedish"
+    }, {
+      value: 'uk_UA', label: "Ukrainian"
     }];
 
     const selectedLangCode = firstDefinedOf(editedSettings.languageCode, currentSettings.languageCode);
