@@ -1,3 +1,7 @@
+# Nice ignore-what list:
+# https://github.com/github/gitignore/tree/master/Global
+# e.g.: [...]/Global/VisualStudioCode.gitignore
+
 logs/
 scratch.txt
 scratch.json
@@ -13,14 +17,27 @@ tmp
 .idea/
 .idea_modules/
 
+.bsp/sbt.json
 .bloop/
 .metals/
+# Auto generated. Should be ignored — Metals ignores it itself:
+# https://github.com/scalameta/metals/blob/main/.gitignore
+project/metals.sbt
 
 # Docker volume contents:
 volumes/
 # The npm-gulp Docker container creates some cache dirs in its home dir:
 !volumes/gulp-home/.gitkeep
 
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+# Local History for Visual Studio Code
+.history/
 
 # Ensime (Scala langage server)
 .ensime
