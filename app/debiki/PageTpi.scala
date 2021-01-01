@@ -275,18 +275,19 @@ class SiteTpi protected (
   def fontUrl(fileName: St): St =
     s"$cdnOrServerOrigin/-/fonts/$fileName"   // sync w Nginx [NGXSTC]
 
-  def uploadsUrlPrefix: String =
+  def uploadsUrlPrefix: St =
     cdnOrServerOrigin + ed.server.UploadsUrlBasePath + pubSiteId + '/'
 
   /** Even if there's no CDN, we use the full server address so works also in
     * embedded comments iframes.
     */
-  def cdnOrServerOrigin: String =
-    globals.anyCdnOrigin.getOrElse(globals.schemeColonSlashSlash + serverAddress)
+  def cdnOrServerOrigin: St =
+    globals.cdnOrSiteOrigin(serverAddress)
 
-  def cdnOrigin: Option[String] =
+  def cdnOrigin: Opt[St] =
     globals.anyCdnOrigin
 
+  RENAME // to siteAdr
   def serverAddress: String = debikiRequest.request.host
 
 }

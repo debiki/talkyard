@@ -1,6 +1,15 @@
 End-to-End tests Readme
 ===================
 
+To do: Document variations, `my.conf`: `
+
+```
+talkyard.secure=true    RENAME to talkyard.https ?
+talkyard.secure=false
+talkyard.cdn.origin="https://site-1.localhost"
+#talkyard.cdn.origin="..."  (commented out)
+```
+
 We use Webdriver.io and write the tests in Typescript. API for v4 (haven't upgraded to v5): http://v4.webdriver.io/api.html
 
 To run the e2e tests, you currently need Java 8 and Node.js, not just Docker-Compose:

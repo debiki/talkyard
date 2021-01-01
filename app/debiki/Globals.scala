@@ -539,6 +539,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
       }
     })
 
+  def cdnOrSiteOrigin(siteHost: St): St =
+    anyCdnOrigin.getOrElse(schemeColonSlashSlash + siteHost)
 
   val scheme: String = if (secure) "https" else "http"
   def schemeColonSlashSlash: String = scheme + "://"

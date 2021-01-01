@@ -556,8 +556,10 @@ interface EditHistoryEntry {
 interface IdAddress {
   id: SiteId;
   pubId: string;
-  origin?: string; // e.g. kittens-forum.example.com
-  siteIdOrigin: string; // e.g. site-123.example.com
+  origin?: string;      // e.g. https://kittens-forum.example.com
+  siteIdOrigin: string; // e.g. https://site-123.example.com
+  cdnOriginOrEmpty: St; // e.g. https://test-cdn.example.com  or ''
+  cdnOrSiteOrigin?: St; // e.g. https://test-cdn.example.com or https://kittens.ex.co
 }
 
 
