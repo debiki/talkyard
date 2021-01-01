@@ -42,7 +42,7 @@ object LinkPreviewHtml {
     // rel=nofollow also added here: [rel_nofollow].
     val relAttrs = "nofollow noopener ugc"
 
-    <aside class={s"onebox s_LnPv $extraLnPvCssClasses clearfix"}>{
+    <aside class={s"s_LnPv $extraLnPvCssClasses clearfix"}>{
         // The html should have been sanitized already (that's why the param
         // name is *safe*Html).
         scala.xml.Unparsed(safeHtml)

@@ -64,7 +64,6 @@ services:
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       # This is for Linux:  (https://get-coursier.io/docs/cache.html#default-location)
       - ./vendors/jars/cache/:/home/owner/.cache/
-      - ./vendors/jars/coursier/:/home/owner/.coursier/
       - ./vendors/jars/ivy2/:/home/owner/.ivy2/
       - ./vendors/jars/sbt/:/home/owner/.sbt/
     networks:

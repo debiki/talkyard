@@ -220,14 +220,17 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
         siteData, browserIdData, anySiteToOverwrite = overwriteSite, isTest = isTest)
     }
 
-    val anyHostname = newSite.canonicalHostname.map(
-      h => globals.schemeColonSlashSlash + h.hostname)
+    val anySiteCanonHost = newSite.canonicalHostnameStr
+    val anySiteOrigin = anySiteCanonHost.map(globals.schemeColonSlashSlash + _)
 
     Ok(Json.obj(
       "id" -> newSite.id,
       "pubId" -> newSite.pubId,
-      "origin" -> JsStringOrNull(anyHostname),
-      "siteIdOrigin" -> globals.siteByIdOrigin(newSite.id))) as JSON
+      "origin" -> JsStringOrNull(anySiteOrigin),
+      "siteIdOrigin" -> globals.siteByIdOrigin(newSite.id),
+      "cdnOriginOrEmpty" -> JsString(globals.anyCdnOrigin getOrElse ""),
+      "cdnOrSiteOrigin" -> JsStringOrNull(globals.anyCdnOrigin orElse anySiteOrigin)
+      )) as JSON
   }
 
 

@@ -229,6 +229,8 @@ case class SiteInclDetails(  // [exp] ok use
   createdAt: When,
   createdFromIp: Option[IpAddress],    // REMOVE move to audit log
   creatorEmailAddress: Option[String], // REMOVE move to audit log
+  deletedAt: Opt[When] = None,
+  purgedAt: Opt[When] = None,
   nextPageId: Int,
   hostnames: immutable.Seq[HostnameInclDetails],
   version: Int,  // >= 1,
@@ -238,8 +240,17 @@ case class SiteInclDetails(  // [exp] ok use
   featureFlags: St = "",  // incl or not in exports? Right now, no.
 ) {
 
+  /* Later — first need to create columns, and initialize. [enb_req_ltr]
+  require(deletedAt.isDefined == status.isDeleted,
+        s"Bad site deleted status: $this [TyE306MRS]")
+  require(purgedAt.isDefined == (status == SiteStatus.Purged),
+        s"Bad site purged status: $this [TyE306MR6]")
+   */
+
   def canonicalHostname: Option[HostnameInclDetails] =
     hostnames.find(_.role == Hostname.RoleCanonical)
+
+  def canonicalHostnameSt: Opt[St] = canonicalHostname.map(_.hostname)
 
   def copyWithNewCanonicalHostname(hostname: String, addedAt: When, redirectOld: Boolean)
         : SiteInclDetails = {
@@ -275,6 +286,17 @@ case class SiteInclDetails(  // [exp] ok use
   def numAuditRows: Int = stats.numAuditRows
   def numUploads: Int = stats.numUploads
   def numUploadBytes: Long = stats.numUploadBytes
+
+  def toLogSt: St = {
+    o"""site $id: hostname $canonicalHostnameSt,
+        $numParticipants pats,
+        $numPages pages,
+        $numPosts posts,
+        $numEmailsSent emails sent,
+        created on ${createdAt.toIso8601Day},
+        deleted on ${deletedAt.map(_.toIso8601Day)},
+        purged on ${purgedAt.map(_.toIso8601Day)}"""
+  }
 }
 
 

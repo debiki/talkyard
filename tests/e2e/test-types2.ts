@@ -556,8 +556,10 @@ interface EditHistoryEntry {
 interface IdAddress {
   id: SiteId;
   pubId: string;
-  origin?: string; // e.g. kittens-forum.example.com
-  siteIdOrigin: string; // e.g. site-123.example.com
+  origin?: string;      // e.g. https://kittens-forum.example.com
+  siteIdOrigin: string; // e.g. https://site-123.example.com
+  cdnOriginOrEmpty: St; // e.g. https://test-cdn.example.com  or ''
+  cdnOrSiteOrigin?: St; // e.g. https://test-cdn.example.com or https://kittens.ex.co
 }
 
 
@@ -596,7 +598,20 @@ interface EmptyTestForum {
 }
 
 
-interface TwoPagesTestForum extends EmptyTestForum {
+interface TwoCatsTestForum extends EmptyTestForum {
+  topics: {
+    aboutCategoryA: { title: string };
+    aboutStaffOnlyCategory: { title: string };
+  };
+  categories: {
+    rootCategory: { id: number },
+    categoryA: CategoryJustAdded;
+    staffOnlyCategory: CategoryJustAdded;
+  };
+}
+
+
+interface TwoPagesTestForum extends TwoCatsTestForum {
   topics: {
     byMariaCategoryA: PageJustAdded;
     byMichaelCategoryA: PageJustAdded;
@@ -653,6 +668,13 @@ interface ExternalUser {   // sync with Scala [7KBA24Y]
   aboutUser?: string;
   isAdmin?: boolean;
   isModerator?: boolean;
+}
+
+
+interface LinkPreviewProvider {
+  name: St;
+  inSandboxedIframe: Bo;  // default true
+  lnPvClassSuffix?: St;
 }
 
 

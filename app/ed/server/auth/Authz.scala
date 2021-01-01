@@ -176,7 +176,6 @@ object Authz {
   }
 
 
-  SECURITY // not important for the moment, but should be a maySeePost also?
   def maySeePage(
     pageMeta: PageMeta,
     user: Option[Participant],
@@ -201,6 +200,13 @@ object Authz {
     checkPermsOnPages(authzCtx.requester, authzCtx.groupIdsUserIdFirst,
       pageMeta = None, pageMembers = None, categoriesRootLast, authzCtx.tooManyPermissions,
       maySeeUnlisted = false)
+  }
+
+
+  def maySeePost(): MayMaybe = {
+    // Later. For now, can use ed.server.auth.AuthzSiteDaoMixin
+    // maySeePostUseCache.
+    unimpl("maySeePost TyE28456rMP")
   }
 
 
@@ -590,7 +596,8 @@ object MaySeeOrWhyNot {
   /** One may not see the post or page, or even know if it exists or not. */
   case object NopeUnspecified extends MaySeeOrWhyNot(2)
 
-  case object NopeNoPostWithThatNr extends MaySeeOrWhyNot(3)
+  case object NopeNoSuchPage extends MaySeeOrWhyNot(5)
+  case object NopeNoPostWithThatNr extends MaySeeOrWhyNot(3)  // RENAME NopeNoSuchPost
   case object NopePostDeleted extends MaySeeOrWhyNot(4)
 }
 

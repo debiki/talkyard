@@ -644,6 +644,14 @@ class SystemDao(
     }
   }
 
+  def purgeOldDeletedSites(): U = {
+    dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
+      val sites = tx.loadSitesDeletedNotPurged()
+      logger.debug(s"Could purge some of these deleted sites: ${sites.map(_.toLogSt)}")
+      // also:  [enb_req_ltr]
+    }
+  }
+
   def executePendingReviewTasks(): Unit =  {
     val taskIdsBySite: Map[SiteId, immutable.Seq[ReviewTaskId]] = readOnlyTransaction { tx =>
       tx.loadReviewTaskIdsToExecute()

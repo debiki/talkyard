@@ -1,0 +1,1 @@
+../../app-editor/editor/mentions-markdown-it-plugin.ts

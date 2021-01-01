@@ -38,6 +38,15 @@ case class PagePathWithId(  // better than PagePath? Has no site id, and always 
   def value: String = toOld(9999999 /* dummy site id, won't be used */).value
 
   def copyNoId = PagePathNoId(folder, showId, slug = pageSlug)
+
+  def toPostPath(postNr: PostNr): PostPathWithIdNr =
+    PostPathWithIdNr(
+      folder = folder,
+      pageId = pageId,
+      showId = showId,
+      pageSlug = pageSlug,
+      postNr = postNr,
+      canonical = canonical)
 }
 
 
@@ -53,6 +62,22 @@ case class PagePathNoId(  // better than PagePath? Has no site id, and never a p
   folder: String,
   showId: Boolean,
   slug: String)
+
+
+/** Typically the page id is real (the page exists),
+  * but the post might not exist (no post on pageId with nr postNr).
+  */
+case class PostPathWithIdNr(
+  folder: St,
+  pageId: PageId,
+  showId: Bo,
+  pageSlug: St,
+  postNr: PostNr,
+  canonical: Bo) {
+
+  require(postNr >= BodyNr, s"Bad post nr: $postNr, page id: $pageId [TyE7M05MRT]")
+}
+
 
 
 /**

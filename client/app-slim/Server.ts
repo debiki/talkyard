@@ -1626,24 +1626,30 @@ export function deleteDrafts(draftNrs: DraftNr[], onOk: (() => void) | UseBeacon
 }
 
 
-const cachedOneboxHtml = {};
+const cachedLinkPreviewHtml = {};
 
-export function loadOneboxSafeHtml(url: St, onOk: (safeHtml: St) => Vo) {
+export function loadOneboxSafeHtml(url: St, /* later: curPageId: PageId, */
+        onOk: (safeHtml: St) => Vo) {
+  const curPageId = '123'; // whatever, for now
   // People often accidentally append spaces, so trim spaces.
   // But where's a good palce to trim spaces? The caller or here? Here, for now.
   url = url.trim();
 
-  const cachedHtml = cachedOneboxHtml[url];
-  if (cachedHtml) {
+  const cachedHtml = cachedLinkPreviewHtml[url];
+  if (isDefined2(cachedHtml)) {
     setTimeout(() => onOk(cachedHtml), 0);
     return;
   }
   const encodedUrl = encodeURIComponent(url);
-  get('/-/fetch-link-preview?url=' + encodedUrl, (response: St) => {
-    cachedOneboxHtml[url] = response;
-    onOk(response);
+  get(`/-/fetch-link-preview?url=${encodedUrl}&curPageId=${curPageId}`,
+        (previewHtml: St) => {
+    // Later: Return '' instead if no preview available? So won't be lots of
+    // annoying 40X "failed" requests in the dev tools console.
+    cachedLinkPreviewHtml[url] = previewHtml;
+    onOk(previewHtml);
   }, function() {
-    // Pass null to tell the editor to show no onebox (it should show the link instead).
+    cachedLinkPreviewHtml[url] = null;
+    // Pass null to tell the editor to show no link preview (and just show a plain link).
     onOk(null);
     // It'd be annoying if error dialogs popped up, whilst typing.
     return IgnoreThisError;

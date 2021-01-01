@@ -81,7 +81,8 @@ function spawnInBackground(cmdMaybeArgs: St, anyArgs?: St[]): ChildProcess { // 
 }
 
 
-function spawnInForeground(cmdMaybeArgs: St, anyArgs?: St[]): ExitCode {
+function spawnInForeground(cmdMaybeArgs: St, anyArgs?: St[], env?: NodeJS.ProcessEnv)
+        : ExitCode {
   let cmd = cmdMaybeArgs;
   let args = anyArgs;
 
@@ -91,10 +92,14 @@ function spawnInForeground(cmdMaybeArgs: St, anyArgs?: St[]): ExitCode {
     args = cmdAndArgs.slice(1);
   }
 
-  console.log(`\nSPAWN FG:  ${cmd} ${args.join(' ')}\n`);
+  // For now:
+  const envSt = !env ? '' : ('TY_ENV_ARGV_ST="' + env.TY_ENV_ARGV_ST + '"  ');
+  console.log(`\nSPAWN FG:\n` +
+        `  ${envSt}${cmd} ${args.join(' ')}\n`);
+
   // stdio 'inherit' makes the child process write directly to our stdout,
   // so colored output and CTRL+C works.
-  const result = _spawnSync(cmd, args, { stdio: 'inherit' });
+  const result = _spawnSync(cmd, args, { env, stdio: 'inherit' });
   return result.status;
 }
 
@@ -389,6 +394,51 @@ if (mainCmd === 'cleane2elogs') {
 }
 
 
+// -----------------------------------------------------------------------
+//  E2E and API tests
+// -----------------------------------------------------------------------
+
+const useHttps = argv.includes('--secure') || argv.includes('--https');
+
+if (useHttps) {
+  logMessage(`Will use HTTPS, because --secure flag. Disabling HTTPS certificate checks`);
+  process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = '0';
+}
+
+
+// -----------------------------------------------------------------------
+//  API and Typescript/Reactjs unit tests
+// -----------------------------------------------------------------------
+
+// We use Jest, but Jest doesn't like custom command line flags — it says
+// 'Unrecognized option "the_option_name"' and exits.
+// Instead, we'll pass Ty command line options to Ty's test suite code,
+// via an env var — this, Jest won't notice.
+
+
+if (mainCmd === 'tapi' || mainCmd === 'testapi') {
+  const jestTestEnv: NodeJS.ProcessEnv = {
+    // slice(2) drops 's/tyd testapi'.
+    'TY_ENV_ARGV_ST': process.argv.slice(2).join(' '),  // use json instead
+  };
+
+  // (Another approach could be sth like:
+  // process.env.__CONFIG = JSON.stringify(...)
+  // require('jest-cli/bin/jest');
+  // process.argv = ['node', 'jest', '--config', 'tests/api/jest.config.ts']
+  // — but won't work, if we switch to Deno instead, for this s/tyd.ts script?)
+
+  spawnInForeground('./node_modules/.bin/jest',
+        ['--config', 'tests/api/jest.config.ts'], jestTestEnv);
+
+  process.exit(1);
+}
+
+// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
+
+
+
 if (mainCmd === 'e' || mainCmd === 'e2e') {
 
 // Cycle e2e test logs:  (dupl path, also in the reporter [693RMSDM3])
@@ -422,13 +472,6 @@ spawnInForeground(`mkdir ${e2eLogsDirOld}`);
 // -----------------------------------------------------------------------
 //  E2E Tests  (move to other file?)
 // -----------------------------------------------------------------------
-
-const useHttps = argv.includes('--secure') || argv.includes('--https');
-
-if (useHttps) {
-  logMessage(`Will use HTTPS, because --secure flag. Disabling HTTPS certificate checks`);
-  process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = '0';
-}
 
 //const e2eSpecsPattern = `tests/e2e/specs/${subCmd ? `*${subCmd}*.ts` : '*.ts'}`;
 //const allMatchingSpecs_old = glob.sync(e2eSpecsPattern, {});

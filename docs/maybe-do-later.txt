@@ -535,6 +535,10 @@ Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
 [Scala_213]
 Try —> Using
 
+[Scala_3]
+Migration guide: https://github.com/scalacenter/scala-3-migration-guide
+
+
 [site_statistics]
 ex data to incl: https://docs.mattermost.com/administration/statistics.html
    https://github.com/mattermost/mattermost-server/blob/master/app/analytics.go

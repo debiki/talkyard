@@ -18,6 +18,25 @@ To add a new language:
 
 3. When done translating, the Talkyard developers (but not you, the translator) need to: [5JUKQR2]
 
+    1. Is the translation file in UTF-8 and Linux file endings?
+
+        You can check like so: `file -i i18n.ts` —
+        you should see: `text/plain; charset=utf-8`.
+
+        If not: Hopefully you can see the charset name in the output from `file -i`
+        — but if you see this: `charset=unknown-8bit` (i.e. *unknown*)
+        then you can ask s/he who sent you the file,
+        or you can try to guess — for example European languages often use
+        `windows-1250` or `-1252`.
+
+        You can convert from whatever to utf-8, and change to Linux line endings:
+
+        ```bash
+        iconv  -f WINDOWS-1250  -t UTF-8 \
+             i18n.charset-win-1250-maybe.ts -o i18n.ts
+        sed -i.backup 's/\r$//' i18n.ts
+        ```
+
     1. Update `app/debiki/Nashorn.scala` so the language file gets included in the
         server side Javascript bundle.
 

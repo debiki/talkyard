@@ -1,3 +1,7 @@
+# Nice ignore-what list:
+# https://github.com/github/gitignore/tree/master/Global
+# e.g.: [...]/Global/VisualStudioCode.gitignore
+
 logs/
 scratch.txt
 scratch.json
@@ -12,22 +16,28 @@ tmp
 .history
 .idea/
 .idea_modules/
-RUNNING_PID
-downloads/
 
+.bsp/sbt.json
 .bloop/
 .metals/
+# Auto generated. Should be ignored — Metals ignores it itself:
+# https://github.com/scalameta/metals/blob/main/.gitignore
+project/metals.sbt
 
 # Docker volume contents:
 volumes/
 # The npm-gulp Docker container creates some cache dirs in its home dir:
 !volumes/gulp-home/.gitkeep
 
-
-
-# TypeScript: grunt-ts cache, and HTML files compiled to .ts by grunt-ts.
-.tscache/
-client/forum/html/*.ts
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+# Local History for Visual Studio Code
+.history/
 
 # Ensime (Scala langage server)
 .ensime
@@ -43,10 +53,6 @@ ensime-langserver.log
 # Ignore core dump file.
 /core
 
-# Ignore softlinks to the Play installation directory, e.g. scripts/play-2.1.sh,
-# and scripts that shouldn't be checked in.
-scripts/activator-1.*
-
 node_modules/
 
 
@@ -57,9 +63,6 @@ images/web/assets/
 !images/web/assets/.gitkeep
 images/web/fonts/
 !images/web/fonts/.gitkeep
-
-# The Makefile copies a file to here. [ACTVTRJAR]
-images/app/typesafe-activator/
 
 
 # When running Chrome browser tests, ChromeDriver generates this file and it
@@ -72,7 +75,7 @@ tests/e2e-failures.txt
 e2e.log
 .selenium.pid
 
-conf/prod-password.conf
+
 # One's local dev-test config.
 conf/my.conf
 # Play's auto generated self signed cert.

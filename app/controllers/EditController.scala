@@ -228,10 +228,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     *   https://publish.twitter.com/oembed?url=the_url
     * and gets back Twitter tweet json that shows how to embed the tweet,
     * then creates and returns sanitized onebox html.
-    *
-    * RENAME to fetchLinkPreview, & client side too
     */
-  def fetchLinkPreview(url: St): Action[U] = AsyncGetActionRateLimited(
+  def fetchLinkPreview(url: St, curPageId: PageId): Action[U] = AsyncGetActionRateLimited(
         RateLimits.FetchLinkPreview) { request =>
     import edContext.globals
     import request.{siteId, requesterOrUnknown}
@@ -249,9 +247,19 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
           "TyELNPVURLLEN", "URL too long")
 
     // ... hmm, but Check.MaxUrlLength is actually just 400, currently. Oh well.
-    val uri = Validation.parseUri(url, allowQuery = true) getOrIfBad { _ =>
+    // Allow hash frag, so can #post-123 link to specific posts. [int_ln_hash]
+    val uri = Validation.parseUri(url, allowQuery = true, allowHash = true)
+          .getOrIfBad { _ =>
       throwBadRequest("TyELNPVBADURL", "Weird URL")
     }
+
+    // Access control of link previews of internal pages  [ln_pv_az]  (which
+    // might be access restricted, and sometimes shouldn't be link-preview:able)
+    // is done in InternalLinkPrevwRendrEng  — it's better to do there,
+    // so gets done in the same way, both when 1) fetching
+    // a link preview to show in the editor preview, and when 2) saving the
+    // text and then later the server tries to render a link preview,
+    // possibly as part of a rerender / reindex-things background job.
 
     val renderer = new LinkPreviewRenderer(
           globals, siteId = siteId, mayHttpFetch = true,

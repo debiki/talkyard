@@ -110,6 +110,11 @@ package object core {
   val BodyNr: PostNr = PageParts.BodyNr
   val FirstReplyNr: PostNr = PageParts.FirstReplyNr
 
+  val PostHashPrefixNoHash   = "post-"
+  val PostHashPrefixWithHash = "#post-"
+  val CommentHashPrefixNoHash   = "comment-"
+  val CommentHashPrefixWithHash = "#comment-"
+
   type PostRevNr = Int
 
   REFACTOR // change page id to Int (not String) — is always an Int anyway,
@@ -376,6 +381,9 @@ package object core {
     def plusMinutes(moreMinutes: Long) = new When(this.millis + moreMinutes * 60 * 1000)
 
     override def toString: String = unixMillis.toString + "ms"
+    def toIso8601Day: St = Prelude.toIso8601Day(millis)
+    def toIso8601T: St = Prelude.toIso8601T(millis)
+    def toIso8601NoT: St = Prelude.toIso8601NoT(millis)
   }
 
   object When {

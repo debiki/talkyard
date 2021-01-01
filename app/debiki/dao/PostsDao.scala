@@ -1248,8 +1248,8 @@ trait PostsDao {
     *
     * staleStuff must include post.pageId already.
     */
-  def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerId: UserId,
-          tx: SiteTx, staleStuff: StaleStuff, skipBugWarn: Boolean = false): Unit = {
+  def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerId: PatId,
+          tx: SiteTx, staleStuff: StaleStuff, skipBugWarn: Bo = false): U = {
     // Some e2e tests: backlinks-basic.2browsers.test.ts  TyTINTLNS54824
 
     // Let's always add the page id to staleStuff before, just so that
@@ -1287,19 +1287,21 @@ trait PostsDao {
     val linksBefore: Seq[Link] = tx.loadLinksFromPost(post.id)
 
     val linkUrlsAfter = sourceAndHtml.internalLinks
-    val newLinkUrls: Set[String] = linkUrlsAfter.filterNot(linkUrl =>
+    val newLinkUrls: Set[St] = linkUrlsAfter.filterNot(linkUrl =>
           linksBefore.exists(_.linkUrl == linkUrl))
 
-    val newLinks = newLinkUrls flatMap { linkUrl: String =>
+    val newLinks = newLinkUrls flatMap { linkUrl: St =>
       val uri = new java.net.URI(linkUrl)
-      val urlPath = uri.getPathEmptyNotNull
-      val anyPagePath: Option[PagePathWithId] = getPagePathForUrlPath(urlPath)
+      val urlPath: St = uri.getPathEmptyNotNull
+      val hashFrag: St = uri.getHashFragEmptyNotNull
+      val anyPostPath: Opt[PostPathWithIdNr] =
+            getPostPathForUrlPath(path = urlPath, hash = hashFrag)
       // This might result in many links from a page to another — but these
       // links will all have different url paths, e.g.:  [many_lns_same_page]
       //   - /-1234/link-by-id
       //   - /-1234/by-id-but-old-page-slug
       //   - /id-less-path-to-same-page
-      anyPagePath map { path: PagePathWithId =>
+      anyPostPath map { path: PostPathWithIdNr =>
         Link(fromPostId = post.id,
               linkUrl = linkUrl,
               addedAt = approvedAt,

@@ -10,14 +10,12 @@ import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
-let browser: TyE2eTestBrowser;
 
 let everyonesBrowsers;
-let maria;
+let maria: Member;
 let mariasBrowser: TyE2eTestBrowser;
 
-let idAddress: IdAddress;
-let siteId: any;
+let site: IdAddress;
 
 
 const uplImgLink = (origin: string, sitePubId: string) =>
@@ -67,16 +65,16 @@ describe("emb cmts uploads origin  TyT603RKDJA6", () => {
   });
 
   it("import a site", () => {
-    const site: SiteData = make.forumOwnedByOwen('embuplorg', { title: "Emb Cmts Upl Orig Test" });
-    site.meta.localHostname = localHostname;
-    site.settings.allowEmbeddingFrom = embeddingOrigin;
-    site.settings.requireVerifiedEmail = false;
-    site.settings.mayComposeBeforeSignup = true;
-    site.settings.mayPostBeforeEmailVerified = true;
-    site.settings.allowGuestLogin = true;
-    site.members.push(maria);
-    idAddress = server.importSiteData(site);
-    siteId = idAddress.id;
+    const siteToUpl: SiteData = make.forumOwnedByOwen(
+            'embuplorg', { title: "Emb Cmts Upl Orig Test" });
+    siteToUpl.meta.localHostname = localHostname;
+    siteToUpl.settings.allowEmbeddingFrom = embeddingOrigin;
+    siteToUpl.settings.requireVerifiedEmail = false;
+    siteToUpl.settings.mayComposeBeforeSignup = true;
+    siteToUpl.settings.mayPostBeforeEmailVerified = true;
+    siteToUpl.settings.allowGuestLogin = true;
+    siteToUpl.members.push(maria);
+    site = server.importSiteData(siteToUpl);
   });
 
   it("create an embedding pages ddd", () => {
@@ -103,15 +101,16 @@ describe("emb cmts uploads origin  TyT603RKDJA6", () => {
 
   let correctLinksRegexStr: string;
 
-  it("... that get prefixed with the Talkyard server origin, in the preview", () => {
+  it(`... which, in the preview, get prefixed w any CDN, or the Ty site origin`, () => {
     correctLinksRegexStr =
-      'src="' + uplImgLink(idAddress.origin, idAddress.pubId) + '".*' +
+      'src="' + uplImgLink(site.cdnOrSiteOrigin, site.pubId) + '".*' +
       'src="' + extImgLink + '".*' +
-      'href="' + uplFileLinkOne(idAddress.origin, idAddress.pubId) + '".*' +
-      'href="' + uplFileLinkTwo(idAddress.origin, idAddress.pubId) + '".*' +
+      'href="' + uplFileLinkOne(site.cdnOrSiteOrigin, site.pubId) + '".*' +
+      'href="' + uplFileLinkTwo(site.cdnOrSiteOrigin, site.pubId) + '".*' +
       'href="' + extFileLink + '".*' +
       'href="' + extFile2Link + '"';
-    mariasBrowser.preview.waitUntilPreviewHtmlMatches(correctLinksRegexStr, { where: 'InPage' });
+    mariasBrowser.preview.waitUntilPreviewHtmlMatches(
+          correctLinksRegexStr, { where: 'InPage' });
   });
 
 
@@ -164,7 +163,7 @@ describe("emb cmts uploads origin  TyT603RKDJA6", () => {
   // ----- Add image, directly via Talkyards server
 
   it("Maria goes to the Talkard server, the topics list", () => {
-    mariasBrowser.go2(idAddress.origin);
+    mariasBrowser.go2(site.origin);
   });
 
   it("She posts a new topic, with the same links", () => {
@@ -177,12 +176,14 @@ describe("emb cmts uploads origin  TyT603RKDJA6", () => {
 
   let correctLinksRegexStrNoOrigin: string;
 
-  it("The links don't get prefixed with the Talkyard server origin — not needed, not embedded", () => {
+  it(`The links don't get prefixed with the Talkyard site origin
+          — not needed; relative URLs work fine, since not embedded in an iframe.
+          However, if we use a CDN, they'll point to the CDN`, () => {
     correctLinksRegexStrNoOrigin =
-        'src="' + uplImgLink('', idAddress.pubId) + '".*' +
+        'src="' + uplImgLink(site.cdnOriginOrEmpty, site.pubId) + '".*' +
         'src="' + extImgLink + '".*' +
-        'href="' + uplFileLinkOne('', idAddress.pubId) + '".*' +
-        'href="' + uplFileLinkTwo('', idAddress.pubId) + '".*' +
+        'href="' + uplFileLinkOne(site.cdnOriginOrEmpty, site.pubId) + '".*' +
+        'href="' + uplFileLinkTwo(site.cdnOriginOrEmpty, site.pubId) + '".*' +
         'href="' + extFileLink + '".*' +
         'href="' + extFile2Link + '"';
     mariasBrowser.topic.waitUntilPostHtmlMatches(c.BodyNr, correctLinksRegexStrNoOrigin);

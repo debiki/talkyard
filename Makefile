@@ -232,8 +232,8 @@ images/app/assets/server-bundle.js: \
        node_modules/markdown-it/dist/markdown-it.min.js \
        client/third-party/lodash-custom.js \
        client/third-party/non-angular-slugify.js \
-       client/app-editor/editor/mentions-markdown-it-plugin.js \
-       client/app-editor/editor/onebox-markdown-it-plugin.js
+       client/app-editor/editor/mentions-markdown-it-plugin.ts \
+       client/app-editor/editor/link-previews-markdown-it-plugin.editor.ts
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileServerTypescriptConcatJavascript
 
@@ -265,9 +265,7 @@ images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
        node_modules/fileapi/dist/FileAPI.html5.js \
        node_modules/@webscopeio/react-textarea-autocomplete/dist/react-textarea-autocomplete.umd.min.js \
        client/third-party/diff_match_patch.js \
-       client/third-party/non-angular-slugify.js \
-       client/app-editor/editor/mentions-markdown-it-plugin.js \
-       client/app-editor/editor/onebox-markdown-it-plugin.js
+       client/third-party/non-angular-slugify.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileEditorTypescript-concatScripts
 
@@ -431,14 +429,7 @@ pristine: clean
 	@echo "    rm -fr .ensime"
 	@echo "    rm -fr .ensime_cache/"
 	@echo
-	@echo "    rm -fr node_modules/"
 	@echo "    rm -fr modules/*/node_modules/"
-	@echo
-	@echo "    rm -fr images/app/typesafe-activator"
-	@echo
-	@echo "  No, old, now in vendors/jars/:"
-	@echo "    rm -fr ~/.ivy2"
-	@echo "    rm -fr ~/.sbt"
 	@echo
 	@echo
 
@@ -452,22 +443,16 @@ build:
 	@echo "   make prod-images"
 
 
-# Copy to inside the Docker build context, so Docker can access it. [ACTVTRJAR]
-# Use rsync so will update any old but different files with the same name.
-_copy_typesafe_activator:
-	@rsync --delete --recursive vendors/jars/typesafe-activator images/app/
-
-
-dev-images:  debug_asset_bundles  _copy_typesafe_activator
+dev-images:  debug_asset_bundles
 	s/d build
 
 
 # Starts an SBT shell where you can run unit tests by typing 'test'.
-play-cli: debug_asset_bundles _copy_typesafe_activator dead-app
+play-cli: debug_asset_bundles dead-app
 	s/d-cli
 
 # Starts but uses prod assets bundles.
-play-cli-prod: prod_asset_bundles _copy_typesafe_activator dead-app
+play-cli-prod: prod_asset_bundles dead-app
 	IS_PROD_TEST=true s/d-cli
 
 
@@ -481,7 +466,7 @@ db-cli:
 	  s/d-psql "$$db_user" "$$db_user"
 
 
-up: debug_asset_bundles _copy_typesafe_activator
+up: debug_asset_bundles
 	s/d up -d
 	@echo
 	@echo "Started. Now, tailing logs..."
@@ -522,10 +507,10 @@ rebuild-nodejs:
 restart-app:  debug_asset_bundles
 	s/d kill app ; s/d start app ; s/d-logsf0
 
-recreate-app:  _copy_typesafe_activator  debug_asset_bundles
+recreate-app:  debug_asset_bundles
 	s/d kill app ; s/d rm -f app ; s/d up -d app ; s/d-logsf0
 
-rebuild-app:  _copy_typesafe_activator  debug_asset_bundles
+rebuild-app:  debug_asset_bundles
 	s/d kill app ; s/d rm -f app ; s/d build app
 
 rebuild-restart-app:  rebuild-app
@@ -558,7 +543,7 @@ _kill_old_prod_build_project:
 	s/d -pedt down
 
 
-prod-images:  _kill_old_prod_build_project  _copy_typesafe_activator
+prod-images:  _kill_old_prod_build_project
 	@# This cleans and builds prod_asset_bundles. [PRODBNDLS]
 	s/build-prod-images.sh
 

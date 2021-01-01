@@ -239,18 +239,17 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  private def maySeePostImpl(pageId: PageId, postNr: PostNr, ppt: Option[Participant],
-                             anyPost: Option[Post], anyPageMeta: Option[PageMeta] = None,
-                             maySeeUnlistedPages: Boolean = true, anyTx: Option[SiteTransaction])
-        : (MaySeeOrWhyNot, String) = {
+  private def maySeePostImpl(pageId: PageId, postNr: PostNr, ppt: Opt[Pat],
+        anyPost: Opt[Post], anyPageMeta: Opt[PageMeta] = None,
+        maySeeUnlistedPages: Bo = true, anyTx: Opt[SiteTx])
+        : (MaySeeOrWhyNot, St) = {
 
     require(anyPageMeta.isDefined ^ (pageId ne null), "EdE25KWU24")
     require(anyPost.isDefined == (postNr == PageParts.NoNr), "TyE3DJ8A0")
 
     val pageMeta = anyPageMeta getOrElse {
       anyTx.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
-        // Apparently the page was just deleted.
-        return (MaySeeOrWhyNot.NopeUnspecified, "5KFUP2R0-Page-Not-Found")
+        return (MaySeeOrWhyNot.NopeNoSuchPage, "5KFUP2R0-Page-Not-Found")
       }
     }
 

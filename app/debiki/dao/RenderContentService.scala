@@ -304,8 +304,10 @@ class RenderContentActor(
             // These queries are a bit slow [rerndr_qry], so find many pages at once.
             val max = 50
             val nextIds = globals.systemDao.loadPageIdsToRerender(max)
-            val howMany = nextIds.length + (if (nextIds.length >= max) "+" else "")
-            logger.debug(s"Found $howMany pages to rerender: $nextIds [TyMBGRFIND]")
+            if (nextIds.nonEmpty) {
+              val howMany = nextIds.length + (if (nextIds.length >= max) "+" else "")
+              logger.debug(s"Found $howMany pages to rerender: $nextIds [TyMBGRFIND]")
+            }
             (nextIds, now)
           }
 

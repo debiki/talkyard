@@ -4847,6 +4847,7 @@ if (typeof window !== 'undefined') {
  */
 function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     allowDataAttr, followLinks) {
+
   // Configure the sanitizer.
   // 1. html-sanitizer.js's function sanitizeAttribs by default allows
   // only the http/https/mailto URI schemes, and relative URLs
@@ -4857,30 +4858,25 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
   // SECURITY write tests for HTML sanitization, for both article and comments.
   // 2. sanitizeAttribs by default allows all id and class attributes.
   // We don't want anyone to be able to use the .dw-* classes/ids though,
-  // so filter them out. Allow `debiki-' though, that's the public CSS API.
+  // so filter them out.
+
   function uriPolicy(url) {
     return url;
   }
-  function classAndIdPolicy(token) {
-    if (!allowClassAndIdAttr) {
-      // Hack [6Q8KEF2]. Not sure how to fix this. Perhaps add a function that allows
-      // other modules to register okay id and class patterns?
-      // For now, allow onebox placeholder ids and loading indicator:
-      // (see editor/-onebox-markdown-it-plugin.js)
-      if (token === 'icon icon-loading') { // class
-        return token;
-      }
-      if (/^onebox-\w+$/.test(token)) { // id
-        return token;
-      }
-      return '';
-    }
 
-    // Google's Like button class matches a forbidden pattern below (namely [a-z]?-).
-    if (token === 'g-plusone')
+  function classAndIdPolicy(token) {
+    // For now, always allow these link preview related classes:
+    // A link-preview-loading spinning icon, and link preview placeholders.
+    // See: link-previews-markdown-it-plugin.ts  [6Q8KEF2].
+    if (token === 'icon icon-loading')
+      return token;
+    if (/^c_LnPv-\w+$/.test(token))
       return token;
 
-    // These are for ED's own classes and ids.
+    if (!allowClassAndIdAttr)
+      return '';
+
+    // These are for Ty's own classes and ids.
     if (/^dw-/.test(token)) return '';  // old
     if (/^ed-/.test(token)) return '';   // old
     if ('esMention' === token) return token; // mentions = ok
@@ -4891,6 +4887,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
                                               // but allow p_, for "Public API".
     return token;
   }
+
   function dataPolicy(attrName, value) {
     return allowDataAttr ? value : null;
   }

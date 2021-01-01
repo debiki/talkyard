@@ -41,28 +41,23 @@ class YouTubePrevwRendrEng(globals: Globals) extends InstantLinkPrevwRendrEng(gl
 
   def providerLnPvCssClassName = "s_LnPv-YouTube"
 
-  /** Do not use java.net.URL because it might try to do a reverse lookup of the hostname
-    * (its operator equals).
-    */
-  private var javaUri: jn.URI = _
-
   override val alreadySanitized = true
 
-  def renderInstantly(safeUrl: String): String Or LinkPreviewProblem = {
-    javaUri = new jn.URI(safeUrl)
-    findVideoId(javaUri) match {
+  def renderInstantly(unsafeUri: j_URI): St Or LinkPreviewProblem = {
+    val unsafeUrl = unsafeUri.toString
+    findVideoId(unsafeUri) match {
       case Some(unsafeVideoId) =>
         // Double check id.
         if (unsafeVideoId.exists(""":/?&=;,.()[]{}"'\""" contains _)) {
           return Bad(LinkPreviewProblem(
                 "Bad YouTube video ID, cannot create preview",
-                unsafeUrl = safeUrl, errorCode = "TyEYOUTBID_"))
+                unsafeUrl = unsafeUrl, errorCode = "TyEYOUTBID_"))
         }
 
-        val unsafeParams = findParams(javaUri) getOrElse {
+        val unsafeParams = findParams(unsafeUri) getOrElse {
           return Bad(LinkPreviewProblem(
                 "Bad YouTube video URL, cannot create preview",
-                unsafeUrl = safeUrl, errorCode = "TyEYOUTBPS"))
+                unsafeUrl = unsafeUrl, errorCode = "TyEYOUTBPS"))
         }
 
         SECURITY; SHOULD // also include the origin parameter to the URL [yt_ln_pv_orig],
@@ -94,7 +89,7 @@ class YouTubePrevwRendrEng(globals: Globals) extends InstantLinkPrevwRendrEng(gl
         // No, instead use oEmbed.
         Bad(LinkPreviewProblem(
               "Cannot currently onebox this YouTube URL",
-              unsafeUrl = safeUrl, errorCode = "TyEYOUTB0ID"))
+              unsafeUrl = unsafeUrl, errorCode = "TyEYOUTB0ID"))
     }
   }
 
@@ -116,9 +111,9 @@ object YouTubePrevwRendrEng {
     * - http://youtu.be/112233abc
     * - https://www.youtube.com/embed/112233abc
     */
-  def findVideoId(javaUri: jn.URI): Option[String] = {
+  def findVideoId(javaUri: jn.URI): Opt[St] = {
     val path = javaUri.getPathEmptyNotNull
-    if (javaUri.getHost endsWith "youtu.be") {
+    if (javaUri.getHost == "youtu.be") {
       // The url is like: http://youtu.be/112233abc
       SlashVideoIdRegex findGroupIn path
     }
@@ -126,9 +121,9 @@ object YouTubePrevwRendrEng {
       // The url is like: https://www.youtube.com/embed/112233abc
       SlashEmbedSlashVideoIdRegex findGroupIn path
     }
-    else if (javaUri.getQuery.nonEmpty) {
+    else if (javaUri.getQueryEmptyNotNull.nonEmpty) {
       // The url is like: https://www.youtube.com/watch?v=112233abc
-      QueryStringVideoIdRegex findGroupIn javaUri.getQuery
+      QueryStringVideoIdRegex findGroupIn javaUri.getQueryEmptyNotNull
     }
     else {
       None
@@ -137,7 +132,10 @@ object YouTubePrevwRendrEng {
 
 
   private def findParams(javaUri: jn.URI): Option[String] = {
-    var result = "" /*
+    var result = ""
+    /*
+    // Use: javaUri.getQueryEmptyNotNull  ?
+    // Play Fmw must have some url query string parser?
     val params: ju.List[org.apache.http.NameValuePair] =
       try org.apache.http.client.utils.URLEncodedUtils.parse(javaUri, "UTF8")
       catch {

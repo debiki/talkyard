@@ -398,6 +398,8 @@ categories -
   permissions:   see (1QRY7)  no? tag gone?
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   upsert categories:  (upscats)
+  move topic to new category:
+          - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
 
 permissions -
   category -
@@ -516,11 +518,11 @@ mentions:
           - many-users-mention-list-join-group.2browsers.test.ts  TyT2602SKJJ356
 
 
-onebox,  # deprecated name
 link previews:
   editor maximized, split, noraml,
   innline-in-page,
   in-editor:
+          - link-previews-images-mp4-youtube.1br.extln  TyTE2E2G3MAWKT4
           - embed-twitter-tweets-etc.test.ts  TyT0JSM8PF68   RENAME to link-preview-twitter?
   auto-size sandboxed iframe:
           - TESTS_MISSING  TyT037MKAH24
@@ -531,10 +533,19 @@ link previews:
   internal block quote preview,
   internal inline title preview:
           - TESTS_MISSING  TyTINTLNPRVW
+  to page/post one may not see:
+    restricted category:
+          - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837
+    private message:
+    private chat:
+    whisper post:
+    deleted post:
 
 backlinks,
 internal links:
           - links-internal.2browsers.test.ts  TyTINTLNS54824
+          - link-previews-internal-may-see.2br  TyTE2ELNPVIN7252.TyT606SRTR3
+          - link-previews-internal-not-see-cat.2br TyTE2ELNPVIN4837.TyT60T6SRTR3
 
 discussion -
   users on page:

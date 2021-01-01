@@ -295,8 +295,6 @@ var editorJsFiles = [
       'node_modules/@webscopeio/react-textarea-autocomplete/dist/react-textarea-autocomplete.umd.min.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',
-      'client/app-editor/editor/mentions-markdown-it-plugin.js',
-      'client/app-editor/editor/onebox-markdown-it-plugin.js',
       'target/client/editor-typescript.js'];
 
 /* For 2d layout horizontal scrolling, now disabled. [2D_LAYOUT]
@@ -410,9 +408,7 @@ var serverJavascriptSrc = [
     'client/third-party/tiny-querystring.umd.js',
     'node_modules/markdown-it/dist/markdown-it.min.js',
     'client/third-party/lodash-custom.js',
-    'client/third-party/non-angular-slugify.js',
-    'client/app-editor/editor/mentions-markdown-it-plugin.js',
-    'client/app-editor/editor/onebox-markdown-it-plugin.js'];
+    'client/third-party/non-angular-slugify.js'];
 
 // This one also concatenates Javascript, so it's different from the other
 // 'compile(Sth)Typescript' functions — so let's append 'ConcatJavascript' to the name.
@@ -922,6 +918,7 @@ gulp.task('build_release_dont_clean_before', gulp.series(  // [MKBUNDLS]
     'minifyTranslations',
     'minifyScriptsImpl',
     'compile-stylus',
+    'bundleFonts',
     'delete-non-gzipped'));  //  [del_non_min_js]
 
 

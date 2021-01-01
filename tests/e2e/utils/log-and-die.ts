@@ -13,6 +13,7 @@ const unusualColor = ansiColors.black.bgGreen;
 const serverRequestColor = ansiColors.bold.cyan;
 const serverResponseColor = ansiColors.bold.blue;
 
+
 function getOrCall<V>(valueOrFn: U | V | (() => V)): U | V {
   return _.isFunction(valueOrFn) ? valueOrFn() : valueOrFn;
 }
@@ -35,8 +36,16 @@ const api = {
   logBoring: function (message: StringOrFn) {
     console.log(boringColor(getOrCall(message)));
   },
+  logDebugIf: function (test: Bo, msg: StringOrFn) {
+    if (test) api.logDebug(msg);
+  },
   logDebug: function (message: StringOrFn) {
-    const args = [...arguments];
+    // Compilation error, `arguments` is not a real array:
+    // const args = [...arguments];
+    const args = [];
+    for (let i = 0; i < arguments.length; ++i) {
+      args[i] = arguments[i];
+    }
     args[0] = debugColor(getOrCall(message));
     console.log.apply(console, args);
   },
@@ -95,7 +104,7 @@ const api = {
   },
   dieAndExitIf: function(test: boolean, message: string, details?: string) {
     if (test) {
-      api.logError(`\n\n${message}${details ? '\n' + details : ''}\n` +
+      api.logErrorNoTrace(`\n\n${message}${details ? '\n' + details : ''}\n` +
           `Exiting process, error status 1. Bye.\n`);
       console.trace();
       process.exit(1);

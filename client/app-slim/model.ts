@@ -1315,6 +1315,14 @@ const enum UiPrefsExternaLInks {
 const enum UiPrefsKeyboardShortcuts {
   Off = 0,
   On = 1,
+
+  // Some people don't like Shift+Shift as a shortcut, look e.g. at this
+  // long issue about disabling Shift+Shift:
+  // > it's really annoying
+  // https://youtrack.jetbrains.com/issue/IDEA-161094?_ga=2.55737643.1871123538.1608914152-691578293.1607148698
+  // Not sure if, at that time, Shift+Shift had to be double clicked (typed) or not;
+  // today (2020-12) seems needs to be < 500ms between.
+  OnButNoDoubleShift = 2,
 }
 
 

@@ -918,19 +918,32 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   val CollapseSpacesRegex: Regex = """\s\s*""".r
 
 
-  implicit class RichJavaUri(val underlying: java.net.URI) extends AnyVal {
-    def getHostOrNone: Option[String] = {
+  implicit class RichJavaUri(val underlying: j_URI) extends AnyVal {
+    def getHostOrNone: Opt[St] = {
       val h = underlying.getHost
       if (h eq null) None
       else Some(h)
     }
 
-    def getPathEmptyNotNull: String = {
+    def getPathEmptyNotNull: St = {
       // Java's getPath() can return null, don't know how to reproduce that though.
+      // Edit: an origin without any url path, then, getPath returns null?
       val path = underlying.getPath
       if (path eq null) "" else path
     }
+
+    def getQueryEmptyNotNull: St = {
+      val queryString = underlying.getQuery
+      if (queryString eq null) "" else queryString
+    }
+
+    def getHashFragEmptyNotNull: St = {
+      // Java's getFragment() can return null.
+      val hashFrag = underlying.getFragment
+      if (hashFrag eq null) "" else hashFrag
+    }
   }
+
 
   implicit class RichLinkedHashMap[K, V](val underlying: mutable.LinkedHashMap[K, V])
       extends AnyVal {

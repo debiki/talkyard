@@ -24,8 +24,15 @@
 const d = { i: debiki.internal, u: debiki.v0.util };
 
 
+export interface SanitizeOpts {
+  allowClassAndIdAttr?: Bo;
+  allowDataAttr?: Bo;
+}
+
+
 // Converts markdown to sanitized html.
-export function markdownToSafeHtml(markdownSrc, hostAndPort?, sanitizerOptions?): string {
+export function markdownToSafeHtml(markdownSrc: St, hostAndPort?: St,
+        sanitizerOptions?: SanitizeOpts): St {
   const htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
   const htmlTextSafe = sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
   return htmlTextSafe;
@@ -33,9 +40,10 @@ export function markdownToSafeHtml(markdownSrc, hostAndPort?, sanitizerOptions?)
 
 
 function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
+  // Dupl code server side: [9G03MSRMW2].
   const md = window['markdownit']({ html: true, linkify: true, breaks: true });
   md.use(d.i.MentionsMarkdownItPlugin());
-  md.use(d.i.oneboxMarkdownItPlugin);
+  md.use(d.i.LinkPreviewMarkdownItPlugin);
   // COULD: Client side, don't CDNify links — only do that server side, when the text that
   // references the upload, has been saved. This prevents uploads from getting sent
   // to the CDN, before one knows for sure that they will actually be used.
@@ -51,8 +59,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
  * options.allowClassAndIdAttr = true/false
  * options.allowDataAttribs = true/false
  */
-export function sanitizeHtml(htmlTextUnsafe, options) {
-  options = options || {};
+export function sanitizeHtml(htmlTextUnsafe, options: SanitizeOpts = {}) {
   const htmlTextSafe = d.i.googleCajaSanitizeHtml(
       htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;

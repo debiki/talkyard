@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (C) 2015, 2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,12 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-(function() {
-
 // NEXT seems ok simple to create an IntLnRndr for internal link titles?
-// And [[wiki style]] links and later #[tags]?
+// And [[wiki style]] links and later #[tags]?  Check out TiddlyWiki?
 
-var pluginId = 'LnPvRndr';  // means LinkPreviewRenderer
+
+const pluginId = 'LnPvRndr';  // means LinkPreviewRenderer
 
 
 /**
@@ -28,13 +27,13 @@ var pluginId = 'LnPvRndr';  // means LinkPreviewRenderer
  * or a Wikipedia article excerpt, depending on the link.
  * Differs from Discourse's onebox in that links have to be in separate paragraphs.
  */
-debiki.internal.oneboxMarkdownItPlugin = function(md) {
-  md.block.ruler.before('paragraph', pluginId, parseOnebox);
-  md.renderer.rules[pluginId] = renderOnebox;
+debiki.internal.LinkPreviewMarkdownItPlugin = function(md) {
+  md.block.ruler.before('paragraph', pluginId, tryParseLink);
+  md.renderer.rules[pluginId] = renderLinkPreview;
 };
 
 
-function parseOnebox(state, startLineIndex, endLineIndex, whatIsThis) {
+function tryParseLink(state, startLineIndex, endLineIndex, whatIsThis) {
   var startLine = state.getLines(startLineIndex, startLineIndex + 1, state.blkIndent, false);
 
   // Ooops! cancels if 1st line not the link.
@@ -70,32 +69,43 @@ function parseOnebox(state, startLineIndex, endLineIndex, whatIsThis) {
 }
 
 
-function renderOnebox(tokens, index, options, env, renderer) {
+function renderLinkPreview(tokens, index, options, env, renderer_unused) {
   var token = tokens[index];
-  var oneboxHtml;
-  var renderer = debiki.internal.oneboxMarkdownItPlugin.instantRenderer;
-  if (renderer) {
-    // We're running server side then? In case the string is a Nashorn ConsString,
+  var previewHtml;
+  var serverRenderer = debiki.internal.serverSideLinkPreviewRenderer;
+  if (serverRenderer) {
+    // We're server side. In case the string is a Nashorn ConsString,
     // which won't work now when calling back out to Scala/Java code:
     var linkAsJavaString = String(token.link);
-    oneboxHtml = renderer.renderAndSanitizeOnebox(linkAsJavaString); // [js_scala_interop]
+    previewHtml =
+          serverRenderer.renderAndSanitizeOnebox(linkAsJavaString); // [js_scala_interop]
   }
   else {
-    var randomClass = 'onebox-' + Math.random().toString(36).slice(2);  // [js_rand_val]
+    var randomClass = 'c_LnPv-' + Math.random().toString(36).slice(2);  // [js_rand_val]
     debiki2.Server.loadOneboxSafeHtml(token.link, function(safeHtml) {
+      const Bliss: Ay = window['Bliss'];
+
       function makeReplacement() {
+        let repl;
         if (safeHtml) {
-          return debiki2.$h.parseHtml(safeHtml)[0];
+          repl = debiki2.$h.parseHtml(safeHtml)[0];
         }
-        // The link couldn't be oneboxed. Show a plain <a href=...> link instead.
-        // (rel=nofollow gets added here: [rel_nofollow] for other not-a-onebox-attempt links.)
-        return Bliss.create('a', {
-          href: token.link,
-          // target: _blank — don't add! without also adding noopener on the next line:
-          rel: 'nofollow',   // + ' noopener' — for [reverse_tabnabbing].
-          text: token.link,
-         });
+        else {
+          // No link preview available; show a plain <a href=...> link instead.
+          // (rel=nofollow gets added here: [rel_nofollow] for no-preview-attempted
+          // links.)
+          // Sync w server side code [0PVLN].
+          const link = Bliss.create('a', {
+            href: token.link,
+            // target: _blank — don't add! without also adding noopener on the next line:
+            rel: 'nofollow',   // + ' noopener' — for [reverse_tabnabbing].
+            text: token.link,
+          });
+          repl = Bliss.create('p', { around: link });
+        }
+        return repl;
       }
+
       var placeholders = debiki2.$all('.' + randomClass);
       // The placeholders might have disappeared, if the editor was closed or the
       // text deleted, for example.
@@ -106,12 +116,12 @@ function renderOnebox(tokens, index, options, env, renderer) {
     });
     var safeLink = debiki2.editor.sanitizeHtml(token.link);
     // The sanitizer must allow the id and class, see [6Q8KEF2] in
-    // client/third-party/html-css-sanitizer-bundle.js for the current quick hack.
-    oneboxHtml  ='<div class="' + randomClass + '" class="icon icon-loading"><a>' + safeLink + '</a></div>';
+    // client/third-party/html-css-sanitizer-bundle.js.
+    previewHtml =
+          `<p class="${randomClass}"><a class="icon icon-loading">${safeLink}</a></p>`;
   }
-  return oneboxHtml;
+  return previewHtml;
 }
 
 
-})();
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
