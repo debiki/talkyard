@@ -60,6 +60,7 @@ describe(`embcom.manual.2br.test.ts  TyTE2EEMBCOMMAN`, () => {
         pubId: '?',
         origin: 'http://' + localHostname + '.localhost',
         siteIdOrigin: '?',
+        cdnOriginOrEmpty: '',
       };
     }
     else {
