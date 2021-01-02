@@ -2,6 +2,10 @@ License text copyright © 2017 MariaDB Corporation Ab, All Rights Reserved. "Bus
 
 Terms
 
+Change Date: 2026-01-01
+Change License: GNU General Public License v2.0 or later
+Additional Use Grant: None. (Later, will be a use in production grant for up to 3? months after installation date.)
+
 The Licensor hereby grants you the right to copy, modify, create derivative works, redistribute, and make non-production use of the Licensed Work. The Licensor may make an Additional Use Grant, above, permitting limited production use.
 
 Effective on the Change Date, or the fourth anniversary of the first publicly available distribution of a specific version of the Licensed Work under this License, whichever comes first, the Licensor hereby grants you rights under the terms of the Change License, and the rights granted in the paragraph above terminate.
@@ -31,5 +35,13 @@ In consideration of the right to use this License's text and the "Business Sourc
 
 Notice
 
-The Business Source License (this document, or the "License") is not an Open Source license. However, the Licensed Work will eventually be made available under an Open Source License, as stated in this License.
+- The Business Source License (this document, or the "License") is not an Open Source license. However, the Licensed Work will eventually be made available under an Open Source License, as stated in this License.
 
+- License text available here: https://spdx.org/licenses/BUSL-1.1.html
+  and here: https://mariadb.com/bsl11/.
+
+- Here's a license FAQ: https://mariadb.com/bsl-faq-mariadb/.
+
+- After the above-mentioned change date, you can *not* redistribute Talkyard under GPLv2
+  — because Talkyard includes Apache2 software and Apache2 is incompatible with GPLv2.
+  You can, however, after the change date, redistribute Talkyard under GPLv3 or later.
