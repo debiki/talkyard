@@ -752,8 +752,8 @@ gulp.task('bundleFonts', () => {
   };
 
   // Change to only 300 and 700, skip 400 and 600?
-  // Sync -v1 and font sizes with Makefile and Dockerfile woff2 file list. [sync_fonts]
-  const fontDir = webDestFonts + '/open-sans-v1';
+  // Sync -vN and font sizes with Makefile and Dockerfile woff2 file list. [sync_fonts]
+  const fontDir = webDestFonts + '/open-sans-v2';
   const fontFiles = [
         'images/web/node_modules/fontsource-open-sans/300.css',
         'images/web/node_modules/fontsource-open-sans/400.css',

@@ -367,9 +367,9 @@ transl_dev_bundles: ${transl_dev_web_bundle_files} ${transl_dev_app_bundle_files
 
 # Sync 'open-sans-v1' with gulpfile.js and images/web/Dockerfile. [sync_fonts]
 
-fonts: images/web/fonts/open-sans-v1/open-sans.min.css.gz
+fonts: images/web/fonts/open-sans-v2/open-sans.min.css.gz
 
-images/web/fonts/open-sans-v1/open-sans.min.css.gz:
+images/web/fonts/open-sans-v2/open-sans.min.css.gz:
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  bundleFonts
 
