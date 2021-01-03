@@ -26,6 +26,8 @@ import ed.server.auth.Authz
 import ed.server.http._
 import java.{lang => jl, util => ju}
 import org.jsoup.Jsoup
+import org.jsoup.nodes.{Element => jsoup_Element}
+import org.jsoup.nodes.{Attribute => jsoup_Attribute}
 import play.api.libs.json._
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -1386,11 +1388,12 @@ object JsonMaker {
     var includesTitleTag = false
     var includesDescription = false
 
-    import scala.collection.JavaConversions._
+    import scala.collection.JavaConverters._
 
-    val anyTitleTag: Option[org.jsoup.nodes.Element] = head.getElementsByTag("title").headOption
+    val anyTitleTag: Opt[jsoup_Element] =
+          head.getElementsByTag("title").asScala.headOption
     anyTitleTag foreach { titleTag =>
-      for (attribute: org.jsoup.nodes.Attribute <- titleTag.attributes()) {
+      for (attribute: jsoup_Attribute <- titleTag.attributes().asScala) {
         titleTag.removeAttr(attribute.getKey)
       }
       resultBuilder append titleTag.toString append "\n"
@@ -1399,11 +1402,11 @@ object JsonMaker {
 
     // Could break out fn, these 3 blocks are similar:
 
-    val metaTags: ju.ArrayList[org.jsoup.nodes.Element] = head.getElementsByTag("meta")
-    for (metaTag: org.jsoup.nodes.Element <- metaTags) {
+    val metaTags: MutBuf[jsoup_Element] = head.getElementsByTag("meta").asScala
+    for (metaTag: jsoup_Element <- metaTags) {
       // Remove all attrs except for name, content, and proptype (used by Facebook Open Graph).
-      val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = metaTag.attributes()
-      for (attribute: org.jsoup.nodes.Attribute <- attributes) {
+      val attributes: Iterable[jsoup_Attribute] = metaTag.attributes().asScala
+      for (attribute: jsoup_Attribute <- attributes) {
         attribute.getKey match {
           case "property" | "content" => // fine
           case "name" => // fine
@@ -1415,10 +1418,10 @@ object JsonMaker {
       resultBuilder append metaTag.toString append "\n"
     }
 
-    val linkTags: ju.ArrayList[org.jsoup.nodes.Element] = head.getElementsByTag("link")
-    for (linkTag: org.jsoup.nodes.Element <- linkTags) {
-      val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = linkTag.attributes()
-      for (attribute: org.jsoup.nodes.Attribute <- attributes) {
+    val linkTags: MutBuf[jsoup_Element] = head.getElementsByTag("link").asScala
+    for (linkTag: jsoup_Element <- linkTags) {
+      val attributes: Iterable[jsoup_Attribute] = linkTag.attributes().asScala
+      for (attribute: jsoup_Attribute <- attributes) {
         attribute.getKey match {
           case "rel" | "href" => // fine
           case notAllowedAttr => linkTag.removeAttr(notAllowedAttr)
@@ -1429,12 +1432,12 @@ object JsonMaker {
 
     // Only allow  type="application/ld+json"  which is some structured data description of the
     // website.
-    val scriptTags: ju.ArrayList[org.jsoup.nodes.Element] = head.getElementsByTag("script")
-    for (scriptTag: org.jsoup.nodes.Element <- scriptTags) {
-      val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = scriptTag.attributes()
+    val scriptTags: MutBuf[jsoup_Element] = head.getElementsByTag("script").asScala
+    for (scriptTag: jsoup_Element <- scriptTags) {
+      val attributes: jl.Iterable[jsoup_Attribute] = scriptTag.attributes()
       var foundLdJson = false
       var foundAnythingElse = false
-      for (attribute: org.jsoup.nodes.Attribute <- attributes) {
+      for (attribute: jsoup_Attribute <- attributes.asScala) {
         attribute.getKey match {
           case "type" =>
             if (attribute.getValue == "application/ld+json") foundLdJson = true
@@ -1993,8 +1996,8 @@ object JsonMaker {
 
     val imageElems: org.jsoup.select.Elements = jsoupDoc.select("img[src]")
     var imageUrls = Vector[String]()
-    import collection.JavaConversions._
-    for (elem <- imageElems) {
+    import collection.JavaConverters._
+    for (elem <- imageElems.asScala) {
       imageUrls :+= elem.attr("src")
     }
     imageUrls

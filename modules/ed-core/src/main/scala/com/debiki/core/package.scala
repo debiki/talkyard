@@ -81,6 +81,7 @@ package object core {
   type ImmSeq[+A] = immutable.Seq[A]
   val ImmSeq: immutable.Seq.type = immutable.Seq
 
+  type MutBuf[A] = mutable.Buffer[A]
   type MutArrBuf[A] = mutable.ArrayBuffer[A]
   val MutArrBuf: mutable.ArrayBuffer.type = mutable.ArrayBuffer
 
