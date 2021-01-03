@@ -36,7 +36,7 @@ let mallory_brB: TyE2eTestBrowser;
 let stranger_brB: TyE2eTestBrowser;
 
 let site: IdAddress;
-let forum: TwoPagesTestForum;  // or EmptyTestForum or LargeTestForum
+let forum: TwoCatsTestForum;  // or TwoPagesTestForum or EmptyTestForum or LargeTestForum
 
 let michaelsTopicUrl: St;
 let mariasTopicUrl: St;
@@ -56,7 +56,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
   it(`construct site`, () => {
     const builder = buildSite();
-    forum = builder.addTwoPagesForum({  // or addEmptyForum or addLargeForum
+    forum = builder.addTwoCatsForum({ // or addTwoPagesForum, addEmptyForum, addLargeForum
       title: "Some E2E Test",
       members: undefined, // default = everyone
         // ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory']

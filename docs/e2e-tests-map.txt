@@ -266,6 +266,9 @@ security:
   edit wiki topics permission:
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46.TyTWIKIPRMS
   misc security: SEC_TEST_MISSING
+  xss:
+          - coed tag: [e2e_xss] — but at other places too, didn't tag at the time
+            search for "<script>" or "javascript:" to find?
 
 suspended users:
   gets no email notfs,
@@ -540,6 +543,15 @@ link previews:
     private chat:
     whisper post:
     deleted post:
+  changed to https if server uses https:   # [E2EHTTPS]
+          - link-previews-http-to-https.1br.test.ts  TyTE2ELNPVHTTPS
+          - embedded-comments-uploads-origin.test.ts  TyT603RKDJA6.TyT6930MRDN4
+            # both tests emb coms, and not emb
+    for embedded comments: (HTTP2S)
+  changed to any CDN:
+          - embedded-comments-uploads-origin.test.ts  TyT603RKDJA6
+          - TESTS_MISSING: CDN w/o emb coms.
+          (Not tested here: upload-images-and-files  TyT50E6KTDU7 )
 
 backlinks,
 internal links:
@@ -694,6 +706,7 @@ embedded comments:
           - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59.TyT063AKDGW60
 
 
+upload links,
 uploads -  (7KFC2)
   upload posts with pics:
           - upload-images-and-files.test.ts  TyT50E6KTDU7
@@ -703,6 +716,8 @@ uploads -  (7KFC2)
           - TESTS_MISSING  embedded-comments-create-site-export-json.2browsers.test.ts  [402KGS4RQ]
   upload video:
   upload pdf, tar.gz:
+  changed to https if server uses https:  (HTTP2S)  # [E2EHTTPS]
+          - embedded-comments-uploads-origin.test.ts  TyT603RKDJA6.TyT6930MRDN4
   embedded origin added,  (EMBORG)
   pub site id added:
           - embedded-comments-uploads-origin.test.ts  TyT603RKDJA6

@@ -315,6 +315,7 @@ function runAllE2eTests {
 
   $r s/wdio --only link-previews-internal-may-see.2br $args
   $r s/wdio --only link-previews-internal-not-see-cat.2br $args
+  $r s/wdio --only link-previews-http-to-https.1br $args
   $r s/wdio --only embed-images-mp4-youtube.1br.extln $args
   $r s/wdio --only embed-twitter-tweets-etc.1br.extln $args
   $r s/wdio --only link-previews-all-others.1br.extln $args
