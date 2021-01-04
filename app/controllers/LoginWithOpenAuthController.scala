@@ -1612,6 +1612,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         maybeCannotUseCookies ||=
           request.cookies.get(AvoidCookiesCookieName).map(_.value) is EdSecurity.Avoid
 
+        CSP_MISSING
         def handleResultInWinOpener: p_Result =
           Ok(views.html.authn.sendAuthnResultToOpenerCloseCurWin(
                 origNonceBack = authnState.browserNonce,
@@ -1696,6 +1697,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // + origNonceBack, would be good to check the nonce browser side,   [br_authn_nonce]
     // before sending the email?
 
+    CSP_MISSING
     Ok(views.html.login.verifyYourEmailAddr(
           tpi = SiteTpi(request,
                 // Not yet translated, no RTL support, so pretend is adm area —> English
@@ -1753,6 +1755,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     //
     // That's why we incl oldEmailVerified = ...  below.
     //
+    CSP_MISSING
     Ok(views.html.login.askIfLinkAccounts(
           tpi = SiteTpi(request,
                 // Not yet translated, no RTL support, so pretend is adm area —> English
@@ -1810,6 +1813,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // Send the user back to the IDP authn page, where hen can login
       // using a different IDP account or maybe create a new account.
       // What else is there to do?
+      CSP_MISSING
       Ok(views.html.login.accountsNotLinkedPleaseLoginAgain(
             tpi = SiteTpi(request,
                 // Not yet translated, no RTL support, so pretend is adm area —> English
@@ -1827,6 +1831,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
       dao.saveIdentityLinkToUser(extIdentity, matchingTyUser)
 
+      CSP_MISSING
       Ok(views.html.login.accountsLinkedPleaseLoginAgain(
             tpi = SiteTpi(request,
                 // Not yet translated, no RTL support, so pretend is adm area —> English
@@ -1862,6 +1867,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // login required site, or 4) we're visiting an embedded comments
       // site and attempted to login, then a login popup window opens (better than
       // showing a login dialog somewhere inside the iframe). ))
+      CSP_MISSING
       Ok(views.html.authn.showCreateUserDialogInThisWin(
         SiteTpi(request, isAdminArea = authnState.isAdminArea),
         origNonceBack = authnState.browserNonce,
@@ -1878,6 +1884,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // The request is from an OAuth provider login popup. Run some Javascript in the
       // popup that continues execution in the main window (the popup's window.opener)
       // and closes the popup.  [2ABKW24T]
+      CSP_MISSING
       Ok(views.html.authn.showCreateUserDialogInOpenerCloseCurWin(
         origNonceBack = authnState.browserNonce,
         idpName = idpName,

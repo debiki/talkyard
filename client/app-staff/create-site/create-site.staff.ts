@@ -260,6 +260,9 @@ const LocalHostnameInput = createClassAndFactory({
     // -some-version-for-which-the-docs-works.
     const testSitePrefix = // dupl code [5UKF03]
         location.pathname.indexOf('create-test-site') !== -1 ? 'test--' : '';
+    // @ifdef DEBUG
+    dieIf(!eds.baseDomain, 'No base domain [TyE5295RM]');
+    // @endif
     return (
       r.div({ className: 'form-group' + (anyError ? ' has-error' : ''), style: this.props.style },
         r.label({ htmlFor: 'dwLocalHostname' }, this.props.label),

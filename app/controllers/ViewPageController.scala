@@ -213,6 +213,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     // If page not found, or access not allowed, show the same login dialog, so the user
     // won't know if the page exists or not.
     def makeLoginDialog(exception: ResultException): Result = {
+      CSP_MISSING
       NotFound(views.html.authn.authnPage(
         SiteTpi(request),
         mode = "LoginBecauseNotFound",
@@ -266,6 +267,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         // could redirect here directly to the SSO url. However, then we'd need
         // a certain makeSsoUrl() here too — but it's in Javascript only.
         // So instead we do any such redirect in Javascript. [COULDSSOREDIR]
+        CSP_MISSING
         return Future.successful(Ok(views.html.authn.authnPage(
           SiteTpi(request),
           mode = "LoginToAuthenticate",
@@ -368,11 +370,12 @@ object ViewPageController {
     "\"__html_encoded_volatile_json__\""
 
   val ContSecPolHeaderName = "Content-Security-Policy"
-  val XContSecPolHeaderName = s"X-$ContSecPolHeaderName"
+  val objectSrcNonePolicy = "object-src 'none'; "
   val frameAncestorsSpace = "frame-ancestors "
   val frameAncestorsNone = s"$frameAncestorsSpace'none'"
 
 
+  RENAME // to addVolatileJsonAndContentSecurityPolicy
   def addVolatileJsonAndPreventClickjacking(renderedPage: RenderedPage, request: PageRequest[_],
         embeddingUrl: Option[String] = None,
         skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
@@ -383,6 +386,7 @@ object ViewPageController {
   }
 
 
+  RENAME // to addVolatileJsonAndContentSecurityPolicy
   def addVolatileJsonAndPreventClickjacking2(pageHtmlNoVolData: String,
         unapprovedPostAuthorIds: Set[UserId], request: DebikiRequest[_],
         embeddingUrl: Option[String] = None,
@@ -434,12 +438,12 @@ object ViewPageController {
     SECURITY // should one check for more weird chars? If evil admin attacks hens own site?
     // "':/*" are ok, because one may include protocol and/or port, in CSP frame-ancestors,
     // and "'self'", and wildcar '*'.
-    def allowEmbeddingIsWeird = allowEmbeddingFrom.exists("\r\t\n,;?&#\"\\" contains _)
+    def allowEmbeddingIsWeird: Bo = allowEmbeddingFrom.exists("\r\t\n,;?&#\"\\" contains _)
+
+    val framePolicy: St = {  // reindent later
     if (allowEmbeddingFrom.isEmpty || allowEmbeddingIsWeird) {
-      response = response.withHeaders(
-          "X-Frame-Options" -> "DENY",  // For old browsers.
-          ContSecPolHeaderName -> frameAncestorsNone,
-          XContSecPolHeaderName -> frameAncestorsNone) // IE11
+      response = response.withHeaders("X-Frame-Options" -> "DENY")  // for old browsers
+      frameAncestorsNone
     }
     else {
       // People sometimes try out the blog comments, on localhost; let them do that,
@@ -456,20 +460,56 @@ object ViewPageController {
         // also be https"""
         " http://localhost:* https://localhost:*"
       }
-      val framePolicy = frameAncestorsSpace + allowEmbeddingFrom + allowIfLocalhost
-      SECURITY; COULD // +=
-      //  "; object-src 'none'; script-src 'self' https://cdn.polyfill.io"
-      // See: https://csp-evaluator.withgoogle.com/
-      // Need to add a feature flag, so can disable if accidentally breaks sth.
-      // Also, how backw compat is this? with older browsers? Ask at SO?
-      response = response.withHeaders(
-          ContSecPolHeaderName -> framePolicy,  // [7ACKRQ20]
-          XContSecPolHeaderName -> framePolicy) // IE11
       // Also update: [4GUYQC0]
+      frameAncestorsSpace + allowEmbeddingFrom + allowIfLocalhost
     }
+    }
+
+    val globals = request.context.globals
+    val featureFlags = globals.config.featureFlags
+
+    val scriptSrcPolicy: St =
+          if (!featureFlags.contains("ffUseScriptSrcSelfCsp")) ""
+          else {
+            var okOrigins = ""
+            if (!featureFlags.contains("ffNoPolyfillDotIo")) {
+              okOrigins += "https://cdn.polyfill.io "
+            }
+            globals.anyCdnOrigin foreach { cdnOrigin =>
+              okOrigins += cdnOrigin
+            }
+            s"script-src 'self' $okOrigins; "
+          }
+
+    // Maybe need:
+    // style-src    — inline styles supposedly blocked by default.
+    // https://content-security-policy.com/examples/allow-inline-style
+    // > When you enable CSP, it will block inline styles
+    // e.g.: <div style="..."> or <style>...</style>
+
+    SECURITY; SHOULD // use an even more strict policy:  default-src 'none';
+    // and then 'self' and any CDN for some of:
+    //    script-src  connect-src  img-src  style-src  base-uri  form-action
+
+    // Could add a Report-top attr, to get to know about violations:
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/report-to
+    // Sends violation info via POST & JSON to specified uri.
+    val objSrcPolicy =
+          if (featureFlags contains "ffNoObjSrcCsp") ""
+          else objectSrcNonePolicy
+
+    // You can check the CSP with: https://csp-evaluator.withgoogle.com/
+    val contSecPolicy = objSrcPolicy + scriptSrcPolicy + framePolicy
+
+    response = response.withHeaders(
+          ContSecPolHeaderName -> contSecPolicy)  // [7ACKRQ20]
+
+    // IE11 supports only "X-Content-Security-Policy" and the "sandbox" value,
+    // but we shouldn't use it here (it's like <iframe sandbox=...>).
 
     Future.successful(response as play.api.http.ContentTypes.HTML)
   }
+
 
   def makeEmptyPageRequest(request: DebikiRequest[Unit], pageId: PageId, showId: Boolean,
         pageRole: PageType, now: When): PageGetRequest = {

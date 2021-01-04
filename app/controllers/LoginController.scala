@@ -79,6 +79,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     COULD // find out if already logged in with enough perms, then go to `path` directly instead.
 
     dieIfAssetsMissingIfDevTest()
+    CSP_MISSING
     Ok(views.html.authn.authnPage(
       SiteTpi(apiReq, isAdminArea = toAdminArea),
       mode = loginReason,
@@ -109,6 +110,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def showLoginPopup(mode: St, returnToUrl: St): Action[U] =
         GetActionAllowAnyoneRateLimited(
           RateLimits.NoRateLimits, avoidCookies = mode == EmbCommentsModeStr) { request =>
+    CSP_MISSING
     Ok(views.html.authn.authnPage(
       SiteTpi(request),
       mode = mode,

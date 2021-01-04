@@ -15,11 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, startupCode: String, loadStaffBundle: Boolean)
+
+@(tpi: debiki.SiteTpi, loadStaffBundle: Boolean)
 
 @* SECURITY try removing polyfill.io — it's a supply chain attack security risk.
 Now soon mostly gone (feature flag) — only old browser will download a polyfill.
 *@
+@* [script_src_self] *@
 @if(tpi.noPolyfillDotIo) {
 } else if(tpi.avoidPolyfillDotIo) {
 <script>{
@@ -62,7 +64,3 @@ save some server bandwidth and mobile phone batteries?
 <script src="@tpi.assetUrl(s"editor-bundle.${tpi.minMaxJs}")"></script>
 <script src="@tpi.assetUrl(s"staff-bundle.${tpi.minMaxJs}")"></script>
 }
-
-<script>
-@startupCode
-</script>

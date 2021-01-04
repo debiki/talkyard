@@ -155,7 +155,7 @@ class PlainApiActions(
       // logout or login, so people can login and read (OpenAuth login is GET only).
       def logoutPath: String = controllers.routes.LoginController.logout(None).url
       def loginPasswordPath: String = controllers.routes.LoginWithPasswordController.login().url
-      if (globals.mainWorkUntilSecs.isDefined && request.method == "POST"
+      if (globals.maintWorkUntilSecs.isDefined && request.method == "POST"
           && request.path != logoutPath
           && request.path != loginPasswordPath) {
         throwServiceUnavailable("TyMMAINTWORK", o"""The server is under maintenance:

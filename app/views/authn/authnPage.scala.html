@@ -23,7 +23,7 @@
   @if(debugMessage.nonEmpty) {
   <pre style="font-size: 14px; margin: 5px; display: inline-block; z-index: 9999; position: relative;">@debugMessage</pre>
   }
-  <script>
+  <script>@* [script_src_self] *@
   debiki2.login.getLoginDialog().openToSignUp('@mode', '@returnToUrl', null @* callback *@,
       true @*preventClose*@ );
   </script>

@@ -72,6 +72,7 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
 
 
   def showForm(emailId: EmailId): Action[Unit] = ExceptionAction(cc.parsers.empty) { request =>
+    CSP_MISSING
     Ok(views.html.unsubscribePage(emailId, doWhat(request), nextPage(request)))
   }
 
@@ -107,6 +108,7 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
 
 
   def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
+    CSP_MISSING
     Ok(views.html.unsubscribe.youHaveBeenUnsubscribed().body) as HTML
   }
 

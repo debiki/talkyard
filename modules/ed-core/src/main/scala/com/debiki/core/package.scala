@@ -1336,6 +1336,7 @@ package object core {
   // [weakness] means an issues not yet handled, might lead to a 'vulnerability'
   // that an attacker / 'threat actor' can 'exploit'.
   def SECURITY = ()       // Some security issue, not necessarily so very important
+  def CSP_MISSING = ()    // Content-Security-Policy missing on this page / route
 
   def SELF_DOS = ()
   def ASTROTURFING = ()   // Someone creates many accounts and pretends to be many people

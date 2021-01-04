@@ -730,6 +730,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val needsToLogin = requester.isEmpty && dao.getWholeSiteSettings().loginRequired
 
     val emailsPath = requester.isDefined ? "/preferences/account" | ""  // [4JKT28TS]
+    CSP_MISSING
     Ok(views.html.emailVerified(
         SiteTpi(request),
         userProfileUrl = s"/-/users/${member.username}$emailsPath",

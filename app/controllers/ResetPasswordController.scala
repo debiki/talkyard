@@ -47,6 +47,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     import request.dao
     throwForbiddenIf(!dao.getWholeSiteSettings().canLoginWithPassword,
           "TyE0PWDLGI210", "Password login disabled")
+    CSP_MISSING
     Ok(views.html.resetpassword.specifyEmailAddress(
       SiteTpi(request), xsrfToken = request.xsrfToken.value))
   }
@@ -161,6 +162,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
 
   def showEmailSentPage(isEmailAddress: String): Action[Unit] = GetActionAllowAnyone { request =>
+    CSP_MISSING
     Ok(views.html.resetpassword.emailSent(SiteTpi(request), isEmailAddress == "true"))
   }
 
@@ -172,6 +174,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     val loginGrant = loginByEmailOrThrow(resetPasswordEmailId, request,
       // So the request to handleNewPasswordForm() below works:
       mayLoginAgain = true)
+    CSP_MISSING
     Ok(views.html.resetpassword.chooseNewPassword(
       SiteTpi(request),
       user = loginGrant.user,
@@ -194,8 +197,9 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     request.dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
     val newSessionCookies = sidAndXsrfCookies
+    CSP_MISSING
     Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))
-      .withCookies(newSessionCookies: _*)
+          .withCookies(newSessionCookies: _*)
   }
 
 

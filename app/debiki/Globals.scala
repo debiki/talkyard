@@ -337,7 +337,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     * Should be set to the Unix second when one thinks the maintenance will be done,
     * or to 1 if one isn't sure. A change requires a Play app server restart to get picked up.
     */
-  val mainWorkUntilSecs: Option[Long] = conf.getOptional[Long]("talkyard.maintenanceUntilUnixSeconds")
+  val maintWorkUntilSecs: Option[Long] = conf.getOptional[Long]("talkyard.maintenanceUntilUnixSeconds")
 
   /* Add configurable support email address?  [CONFADDRS]
   val supportEmailAddress: Option[String] =

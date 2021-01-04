@@ -53,6 +53,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
     dieIfAssetsMissingIfDevTest()
 
     if (!apiReq.user.exists(_.isStaff)) {
+      CSP_MISSING
       Future.successful(Ok(views.html.authn.authnPage(
         SiteTpi(apiReq, isAdminArea = true),
         mode = "LoginToAdministrate",
@@ -92,6 +93,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def showAdminOneTimeLoginPage: Action[Unit] = GetActionAllowAnyone { request =>
+    CSP_MISSING
     Ok(views.html.adminlogin.adminLoginPage(
       SiteTpi(request, isAdminArea = true),
       xsrfToken = request.xsrfToken.value,

@@ -73,6 +73,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       }
     }
 
+    CSP_MISSING
     Ok(views.html.createsite.createSitePage(isTestBool, SiteTpi(request)).body) as HTML
   }
 

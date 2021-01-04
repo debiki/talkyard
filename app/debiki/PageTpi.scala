@@ -148,32 +148,93 @@ class SiteTpi protected (
   def xsrfToken: String = debikiRequest.xsrfToken.value
 
 
-  def debikiStyles = xml.Unparsed(views.html.debikiStyles(this).body)
+  def debikiStyles: xml.Unparsed =
+    xml.Unparsed(views.html.debikiStyles(this).body)
 
   CLEAN_UP // isAdminApp not needed? already has isAdminArea.
-  def debikiScriptsInHead(isInLoginWindow: Boolean = false, isInLoginPopup: Boolean = false,
-        isAdminApp: Boolean = false) = xml.Unparsed(
-    views.html.debikiScriptsHead(
-      this, // Could remove all params below, use 'this' instead in the template.
-      siteId = siteId,
-      reactStoreSafeJsonString = reactStoreSafeJsonString,
-      isInLoginWindow = isInLoginWindow,
-      isInLoginPopup = isInLoginPopup,
-      isAdminApp = isAdminApp,
-      minMaxJs = minMaxJs,
-      minMaxCss = minMaxCss).body)
+  def debikiScriptsInHead(
+        isCreateSitePage: Bo = false,
+        isInLoginWindow: Bo = false,
+        isInLoginPopup: Bo = false,
+        isAdminApp: Bo = false,
+        isInEmbeddedEditor: Bo = false,
+        anyEmbeddedPageId: Opt[PageId] = None,
+        resetPasswordPageData: Option[(User, EmailId)] = None,
+        ): xml.Unparsed = {
 
-  def debikiScriptsEndOfBody(loadStaffBundle: Boolean = false): Unparsed =
-    debikiScriptsEndOfBodyCustomStartupCode(
-      "debiki.internal.renderPageInBrowser();", loadStaffBundle = loadStaffBundle)
+    import play.api.libs.json.{Json, JsString, JsNumber}
+    import talkyard.server.JsX.{JsStringOrNull, JsLongOrNull, JsNumberOrNull}
 
-  def debikiScriptsEndOfBodyNoStartupCode =
-    debikiScriptsEndOfBodyCustomStartupCode("")
+    val doWhat = {
+      if (isInEmbeddedEditor) "Noop"
+      else if (resetPasswordPageData.isDefined) "ResetPwd"
+      else "StartPage"
+    }
 
-  def debikiScriptsEndOfBodyCustomStartupCode(startupCode: String,
-        loadStaffBundle: Boolean = false) = xml.Unparsed(
-    views.html.debikiScriptsEndOfBody(
-      this, startupCode = startupCode, loadStaffBundle = loadStaffBundle).body)
+    var safeStaticJson = Json.obj(
+          "doWhat" -> doWhat,
+          "siteId" -> siteId,
+          "currentVersion" -> currentVersionString,
+          "cachedVersion" -> cachedVersionString,
+          "wantsServiceWorker" -> globals.config.useServiceWorker,
+          "secure" -> globals.secure,
+          "isDev" -> globals.isDev,
+
+          "testNowMs" -> JsLongOrNull(anyTestNowMs),   // or undef
+          "minMaxJs" -> minMaxJs,
+          "debugOrigin" -> s"$httpsColonOrEmpty//$serverAddress", // [INLTAGORIG]
+          "cdnOriginOrEmpty" -> JsString(cdnOrigin.getOrElse("")),
+          "cdnOrServerOrigin" -> cdnOrServerOrigin, // for admin page embedded comments code
+          "isInLoginWindow" -> isInLoginWindow, // @isInLoginWindowBoolStr,
+          "isInLoginPopup" -> isInLoginPopup,  // @isInLoginPopupBoolStr,
+          "isInAdminArea" -> isAdminApp, // @{ if (isAdminApp) "true" else "false" },
+          "isInEmbeddedEditor" -> isInEmbeddedEditor,
+          "isRtl" -> isRtlLanguage, // @{ if (tpi.isRtlLanguage) "true" else "false" },
+
+          "embeddingOrigin" -> JsStringOrNull(anyEmbeddingOrigin), //  @Html(embeddingOriginOrUndefined),
+          "embeddingUrl" -> JsStringOrNull(anyEmbeddingUrl),  //  @Html(embeddingUrlOrUndefined),
+          "embeddedPageId" -> JsStringOrNull(anyEmbeddedPageId),
+          "embeddedPageAltId" -> JsStringOrNull(anyDiscussionId), // @Html(discussionIdOrUndefined),
+          "lazyCreatePageInCatId" -> JsNumberOrNull(lazyCreatePageInCatId), //@Html(lazyCreatePageInCatId),
+
+          "assetUrlPrefix" -> assetUrlPrefix,
+          "uploadsUrlPrefixCommonmark" -> uploadsUrlPrefix,
+          "isTestSite" -> site.isTestSite,  // .toString },
+          "loadGlobalAdminScript" -> globals.loadGlobalAdminScript, // .toString },
+          "loadGlobalStaffScript" -> globals.loadGlobalStaffScript, // .toString },
+          "mainWorkUntilSecs" -> {
+            // Extra line to avoid weird compil err.
+            val s: Long = globals.maintWorkUntilSecs.getOrElse(0L)
+            JsNumber(s)
+          })
+
+    if (isCreateSitePage) {
+      safeStaticJson += "baseDomain" -> JsString(globals.baseDomainNoPort)
+    }
+
+    resetPasswordPageData foreach { patAndEmailId =>
+      val pat = patAndEmailId._1
+      val anyResetPasswordEmailId = patAndEmailId._2
+      safeStaticJson += "newPasswordData" -> Json.obj(  // ts: NewPasswordData
+        "fullName" -> JsString(pat.fullName.getOrElse("")),
+        "username" -> JsString(pat.theUsername),
+        "email" -> JsString(pat.email),
+        "minLength" -> JsNumber(globals.minPasswordLengthAllSites),
+        "resetPasswordEmailId" -> JsString(anyResetPasswordEmailId))
+    }
+
+    xml.Unparsed(views.html.debikiScriptsHead(
+          tpi = this,
+          safeStaticJsonSt = safeStaticJson.toString,
+          reactStoreSafeJsonString = reactStoreSafeJsonString).body)
+  }
+
+
+  def scriptBundlesEndOfBody(loadStaffBundle: Bo = false): xml.Unparsed =
+    xml.Unparsed(
+          views.html.debikiScriptsEndOfBody(
+              this, loadStaffBundle = loadStaffBundle).body)
+
 
   /** Resources starting with '//' should be prefixed with this, so they'll be fetched via https,
     * even if there is a {{{<base href='http://...>}}} tag (i.e. not https).
@@ -243,6 +304,7 @@ class SiteTpi protected (
     }
   }
 
+  RENAME // to anySiteCustomScriptsBundle
   def anyScriptsBundle(): xml.NodeSeq = {
     val version = debikiRequest.dao.getAssetBundleVersion("scripts", "js") getOrElse {
       return <span></span>

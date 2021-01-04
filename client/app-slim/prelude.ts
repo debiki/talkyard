@@ -17,7 +17,7 @@
 
 /// <reference path="../types-and-const-enums.ts" />
 /// <reference path="../reactjs-types.ts" />
-/// <reference path="server-vars.d.ts" />
+/// <reference path="server-vars.ts" />
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 /// <reference path="translations.d.ts" />

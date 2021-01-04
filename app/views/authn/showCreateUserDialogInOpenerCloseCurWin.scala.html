@@ -17,7 +17,8 @@
 
 @(origNonceBack: String, idpName: String, idpHasVerifiedEmail: Boolean,
     newUserUsername: String, newUserFullName: String, newUserEmail: String,
-    authDataCacheKey: String, anyContinueToUrl: Option[String])
+    authDataCacheKey: String, anyContinueToUrl: Option[String],
+    winOpenerParamsJsonSt: String = "")
 
 @* Closes the Identity Provider authentication popup window, and opens a
  * create user dialog in the window.opener instead (which should be the
@@ -36,6 +37,13 @@
 <html>
 <body>
 <!-- views/authn/showCreateUserDialogInOpenerCloseCurWin.scala.html -->
+@* [script_src_self] *@
+@* 
+<script id="winOpenerParams" type="application/json">
+@Html(Encode.forHtmlContent(winOpenerParamsJsonSt))
+</script>
+<script type='text/javascript' src='call-win-opener-and-close.js'></script>
+*@
 <script type='text/javascript'>
     window.opener.debiki2.morebundle.showCreateUserDialog({
       origNonceBack: '@origNonceBack',

@@ -357,6 +357,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         (sidAndXsrfCookies, anyReturnToUrl)
       }
 
+    CSP_MISSING
     Ok(views.html.createaccount.welcomePage(SiteTpi(request), anyReturnToUrl))
       .withCookies(newCookies: _*)
   }

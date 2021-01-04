@@ -1,7 +1,5 @@
 /// <reference path="model.ts" />
 
-declare const talkyard: TalkyardApi;
-
 
 interface PageSession  {
   xsrfTokenIfNoCookies: string | undefined;
@@ -19,12 +17,8 @@ interface PageSession  {
   //
   // ADD_TO_DOCS
   //
-  weakSessionId: string | undefined;
+  weakSessionId?: St;
 }
-
-// REMOVE? shouldn't access, if in emb cmts editor or login popup,
-// instead, should use getMainWin().typs.
-declare const typs: PageSession;
 
 interface __MainWinInterface extends Window {
   typs: PageSession;
@@ -36,6 +30,7 @@ type MainWin = __MainWinInterface & typeof globalThis;
 // These variables are initialized in a certain <head><script>.  [5JWKA27]
 
 interface ServerVars {
+  doWhat: 'Noop' | 'StartPage' | 'ResetPwd';
   pubSiteId: string;
   siteId: SiteId;  // only in Dev mode  — repl w isFirstSite: boolean?
   secure: boolean;
@@ -56,6 +51,7 @@ interface ServerVars {
   cdnOriginOrEmpty: string;
   cdnOrServerOrigin: string;
   assetUrlPrefix: string;
+  debugOrigin: St;
 
   // To be used only when rendering commonmark to html. (But when running React,
   // the store Origin fields should be used instead. There is, hovewer,
@@ -92,12 +88,18 @@ interface ServerVars {
   // When creating new site.
   baseDomain?: string;
 
+  newPasswordData?: NewPasswordData;
+
   // Is non-zero, if the server is read-only, because of maintenance work. The value
   // is the Unix second when the maintenance work is believed to be done, or 1 if unspecified.
   mainWorkUntilSecs?: number;
 }
 
-declare const eds: ServerVars;  // RENAME to tys  ?  And is there any way to make all fields 'const' ?
 
-// Old:
-declare const debiki: any;
+interface NewPasswordData {
+  fullName: St;
+  username: St;
+  email: St;
+  minLength: Nr;
+  resetPasswordEmailId: St;
+}

@@ -62,6 +62,8 @@ Rename "indie" to user" and "people" to "members"
 prevent usernames from being displayed in Unicode, if mixed charsets used,
 e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
 
+Add CSP to all page types / routes: CSP_MISSING, [script_src_self].
+
 ZAProxy auto scan.
 https://docs.gitlab.com/ee/user/application_security/dast/index.html
 

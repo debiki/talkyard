@@ -1,5 +1,5 @@
 
-/// <reference path="server-vars.d.ts" />
+/// <reference path="server-vars.ts" />
 /// <reference path="model.ts" />
 /// <reference path="translations.d.ts" />
 /// <reference path="../reactjs-types.ts" />

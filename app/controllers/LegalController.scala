@@ -17,6 +17,7 @@
 
 package controllers
 
+import com.debiki.core.CSP_MISSING
 import debiki._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
@@ -37,6 +38,7 @@ class LegalController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val customToU = request.siteSettings.termsOfUseUrl
     if (customToU.isEmpty) {
       // Use default terms-of-use page.
+      CSP_MISSING
       Ok(views.html.legal.termsOfUse(SiteTpi(request)).body) as HTML
     }
     else {
@@ -51,6 +53,7 @@ class LegalController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def viewPrivacyPolicyPage() = GetActionAllowAnyone { request =>
     val customPrivacy = request.siteSettings.privacyUrl
     if (customPrivacy.isEmpty) {
+      CSP_MISSING
       Ok(views.html.legal.privacyPolicy(SiteTpi(request)).body) as HTML
     }
     else {
