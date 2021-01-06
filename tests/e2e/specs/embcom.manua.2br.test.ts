@@ -58,7 +58,7 @@ describe(`embcom.manual.2br.test.ts  TyTE2EEMBCOMMAN`, () => {
       site = {
         id: -1,
         pubId: '?',
-        origin: 'http://' + localHostname + '.localhost',
+        origin: settings.proto2Slash + localHostname + '.localhost',
         siteIdOrigin: '?',
         cdnOriginOrEmpty: '',
       };

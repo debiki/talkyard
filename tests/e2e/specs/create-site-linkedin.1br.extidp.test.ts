@@ -20,6 +20,10 @@ describe('create-site-linkedin  @createsite @login @linkedin  TyT402KDTT5Z', () 
     return;
   }
 
+  if (settings.secure) {
+    die("LinkedIn authn e2e test creds currently use http [TyE8020756PM3]");
+  }
+
   it('initialize', () => {
     browser = new TyE2eTestBrowser(wdioBrowser);
   });
