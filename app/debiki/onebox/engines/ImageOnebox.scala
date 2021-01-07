@@ -42,8 +42,8 @@ class ImagePrevwRendrEng(globals: Globals)
   override val alreadySanitized = true
   override val addViewAtLink = false
 
-  def renderInstantly(unsafeUri: j_URI): Good[St] = {
-    val unsafeUrl = unsafeUri.toString
+  def renderInstantly(linkToRender: RenderPreviewParams): Good[St] = {
+    val unsafeUrl = linkToRender.unsafeUrl
     // Fix Dropbox image links.
     val betterUrl =
           if (unsafeUrl startsWith "https://www.dropbox.com/")

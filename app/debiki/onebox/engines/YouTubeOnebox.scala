@@ -43,7 +43,8 @@ class YouTubePrevwRendrEng(globals: Globals) extends InstantLinkPrevwRendrEng(gl
 
   override val alreadySanitized = true
 
-  def renderInstantly(unsafeUri: j_URI): St Or LinkPreviewProblem = {
+  def renderInstantly(linkToRender: RenderPreviewParams): St Or LinkPreviewProblem = {
+    val unsafeUri = linkToRender.unsafeUri
     val unsafeUrl = unsafeUri.toString
     findVideoId(unsafeUri) match {
       case Some(unsafeVideoId) =>

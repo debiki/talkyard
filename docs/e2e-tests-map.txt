@@ -533,9 +533,7 @@ link previews:
           - TESTS_MISSING
   misc providers:
           - link-previews-all-others.test.ts  TyT550RMHJ25
-  internal block quote preview,
-  internal inline title preview:
-          - TESTS_MISSING  TyTINTLNPRVW
+  internal links:  # (687295)
   to page/post one may not see:
     restricted category:
           - link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837
@@ -554,10 +552,13 @@ link previews:
           (Not tested here: upload-images-and-files  TyT50E6KTDU7 )
 
 backlinks,
-internal links:
+internal links:  # (687295)
+  blockquote:
           - links-internal.2browsers.test.ts  TyTINTLNS54824
           - link-previews-internal-may-see.2br  TyTE2ELNPVIN7252.TyT606SRTR3
           - link-previews-internal-not-see-cat.2br TyTE2ELNPVIN4837.TyT60T6SRTR3
+  inline, just title:
+          - TESTS_MISSING
 
 discussion -
   users on page:

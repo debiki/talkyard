@@ -8249,17 +8249,27 @@ export class TyE2eTestBrowser {
         this.assertPageTitleMatches(newTitle);
       },
 
-      editPageBody: (newText: string, opts: { append?: boolean } = {}) => {
+      editPageBody: (newText: string, opts: { append?: Bo, textAfterIs?: St,
+              textAfterMatches?: St } = {}) => {
         this.topic.clickEditOrigPost();
         this.editor.editText(newText, opts);
         this.editor.save();
-        if (opts.append) {
+        if (opts.textAfterMatches || opts.textAfterIs) {
+          if (opts.textAfterMatches) {
+            this.topic.waitUntilPostTextMatches(c.BodyNr, opts.textAfterMatches);
+          }
+          if (opts.textAfterIs) {
+            this.topic.waitUntilPostTextIs(c.BodyNr, opts.textAfterIs);
+            this.topic.assertPostTextIs(c.BodyNr, newText);  // why this too?
+          }
+        }
+        else if (opts.append) {
           this.topic.waitUntilPostTextMatches(c.BodyNr, newText);  // includes!
           this.assertPageBodyMatches(newText);  // includes!
         }
         else {
           this.topic.waitUntilPostTextIs(c.BodyNr, newText);
-          this.topic.assertPostTextIs(c.BodyNr, newText);
+          this.topic.assertPostTextIs(c.BodyNr, newText);  // why this too?
         }
       },
 

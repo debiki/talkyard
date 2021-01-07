@@ -44,8 +44,8 @@ class GiphyPrevwRendrEng(globals: Globals)
   override val alreadySanitized = true
 
 
-  def renderInstantly(unsafeUri: j_URI): St Or LinkPreviewProblem = {
-    val unsafeUrl = unsafeUri.toString
+  def renderInstantly(linkToRender: RenderPreviewParams): St Or LinkPreviewProblem = {
+    val unsafeUrl = linkToRender.unsafeUrl
     val unsafeId = findIdRegex.findGroupIn(unsafeUrl) getOrElse {
       return Bad(LinkPreviewProblem(
             "Cannot find Giphy video id in URL", unsafeUrl = unsafeUrl, "TyEGIPHYURL"))

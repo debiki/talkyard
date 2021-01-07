@@ -1,6 +1,6 @@
 // RENAME this file to link-previews.styl
 
-.s_LnPv
+.s_LnPv-Blk
   padding: 24px 24px 9px;
   margin: 15px 0 20px 2px;  // margin-left leaves space for the drop-shadow
   //background: hsl(0, 0%, 94.5%);
@@ -19,15 +19,15 @@
 // Make it simpler to see where one link preview ends and the next start,
 // if there're many after each other, by adding more margin.
 // But not internal link preview — they have no box-shadow so need less space.
-.s_LnPv:not(.s_LnPv-Int) + .s_LnPv
+.s_LnPv-Blk:not(.s_LnPv-Int) + .s_LnPv-Blk
   margin-top: 27px;
 
-.dw-id2 .s_LnPv
+.dw-id2 .s_LnPv-Blk
   // Less padding, maybe column more narrow?
   padding-left: 18px;
   padding-right: 18px;
 
-.s_LnPv iframe
+.s_LnPv-Blk iframe
   margin: 0 auto;
   display: block;
   width: calc(100% - 40px);
@@ -48,7 +48,7 @@
   margin: 9px auto 5px;
   text-align: center;
 
-.s_LnPv-Int
+.s_LnPv-Blk.s_LnPv-Int
   padding: 15px 16px 17px;
   margin-bottom: 16px;
   // Make *internal* link previews look different — good to know they're to the same
@@ -68,7 +68,7 @@
     // Darker color, since light gray background.
     color: hsl(0, 0%, 11%);
 
-.s_LnPv-oEmb.s_LnPv_ViewAt
+.s_LnPv-oEmb .s_LnPv_ViewAt
   margin: 7px auto 7px;  // already 10px extra margin-top: [oemb_extr_height]
 
 

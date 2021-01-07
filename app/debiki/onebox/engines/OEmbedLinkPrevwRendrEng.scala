@@ -107,10 +107,12 @@ abstract class OEmbedLinkPrevwRendrEng(
   override def sandboxInIframe = true
 
 
-  def loadAndRender(params: RenderPreviewParams): Future[String Or LinkPreviewProblem] = {
-    val unsafeUrl: String = params.unsafeUrl
+  def loadAndRender(params: RenderPreviewParams)
+        : Future[PreviewTitleHtml Or LinkPreviewProblem] = {
 
-    def provdrOrUnk = providerName getOrElse "oEmbed provider"  // I18N
+    val unsafeUrl: St = params.unsafeUrl
+
+    def provdrOrUnk: St = providerName getOrElse "oEmbed provider"  // I18N
     def providerWidget = s"$provdrOrUnk $widgetName"
 
     // This'll look like e.g. "Twitter tweet not found: ... url ...".  I18N
@@ -151,7 +153,7 @@ abstract class OEmbedLinkPrevwRendrEng(
                   noHtmlInOEmbed, unsafeUrl = unsafeUrl, errorCode = "TyELNPV0HTML"))
       }
 
-      return FutGood(unsafeHtml)
+      return FutGood(PreviewTitleHtml(maybeUnsafeHtml = unsafeHtml))
     }
 
 
@@ -213,7 +215,7 @@ abstract class OEmbedLinkPrevwRendrEng(
         problem = noHtmlInOEmbed
       }
 
-      val result: String Or LinkPreviewProblem = {
+      val result: PreviewTitleHtml Or LinkPreviewProblem = {
         if (problem.nonEmpty) {
           // Make the response.body visible to site/server admins? [admin_log]
           // But don't include in the reply — e.g. Reddit returned a 38k large
@@ -239,7 +241,8 @@ abstract class OEmbedLinkPrevwRendrEng(
                 contentJson = unsafeJsObj)
           params.savePreviewInDb(preview)
 
-          Good(anyUnsafeHtml getOrDie "TyE6986SK")
+          Good(PreviewTitleHtml(
+                maybeUnsafeHtml = anyUnsafeHtml getOrDie "TyE6986SK"))
         }
       }
 

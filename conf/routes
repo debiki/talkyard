@@ -229,7 +229,7 @@ GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidel
 GET   /-/load-draft-and-text    controllers.EditController.loadDraftAndText(pageId, postNr: Int)
 POST  /-/edit                   controllers.EditController.edit
 POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTitleSaveSettings
-GET   /-/fetch-link-preview     controllers.EditController.fetchLinkPreview(url, curPageId)
+GET   /-/fetch-link-preview     controllers.EditController.fetchLinkPreview(url, curPageId, inline: Boolean)
 POST  /-/change-post-type       controllers.EditController.changePostType
 POST  /-/edit-post-settings     controllers.EditController.editPostSettings
 POST  /-/delete-post            controllers.EditController.deletePost

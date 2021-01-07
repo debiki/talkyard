@@ -4,7 +4,7 @@
         "removeComments": false,
         "lib": ["es5", "es2015", "dom"],
         // react-dom needed to compile, but isn't actually used, server side.
-        "types": ["react", "react-dom", "lodash", "core-js"],
+        "types": ["react", "react-dom", "lodash", "core-js", "markdown-it"],
         "outFile": "server-bundle.js",
         "sourceMap": true,
         "inlineSources": true  // include source code in mapping file

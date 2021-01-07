@@ -2062,6 +2062,24 @@ interface PageNotfPrefsResponse extends OwnPageNotfPrefs {
 }
 
 
+/// Any title might not be available — then, safeTitleCont is "" (empty);
+/// there'd be only safeHtml.
+interface LinkPreviewResp {
+  safeTitleCont: St;
+  classAtr: St;
+  safeHtml: St;
+  errCode?: St;
+}
+
+
+/// If no title, then cannot render any inline link preview — because
+/// the title is what we'd show.
+interface InlineLinkPreview {
+  safeTitleCont: St;
+  classAtr: St;
+}
+
+
 interface IframeOffsetWinSize {
   top: number;
   height: number;

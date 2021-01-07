@@ -3,7 +3,8 @@
         "target": "ES5",
         "removeComments": false,
         "lib": ["es5", "es2015", "dom"],
-        "types": ["react", "react-dom", "lodash", "core-js"],
+        "types": ["react", "react-dom", "lodash", "core-js", "markdown-it"],
+                  // highlight.js, linkify-it, mdurl
         "outFile": "editor-typescript.js",
         "sourceMap": true,
         "inlineSources": true  // include source code in mapping file
