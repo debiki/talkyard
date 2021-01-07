@@ -407,7 +407,7 @@ Building your own images
 Do this: (`make` is GNU Make)
 
 ```
-vi version.txt    # type a new vesion number
+vi version.txt    # type a new version number
 vi .env           # change DOCKER_REPOSITORY to your own repository
 make prod-images  # this runs tests and builds production images
 make tag-and-push-latest-images tag=...  # pushes images to your repo
@@ -624,7 +624,7 @@ And copy-paste it to where the related code is.
 Log messages, and plain text messages sent back to the browser, start with `TyM` if it's
 an info message, and `TyE` if it's an error. Like, `"Started. [TyMSTARTED]"` (a log message).
 
-These messsage codes helps you instantly find the relevat source code, if there's
+These message codes helps you instantly find the relevat source code, if there's
 an error message anywhere. Otherwise, it can be terribly annoying,
 when the browser says "Not found", and you have no idea where that message comes from.
 For example, Nginx didn't find a location handler? Or a user is missing? Or a page? Or a post?
@@ -669,7 +669,7 @@ other unrelated "table_name" e.g. "pages" search hits.
 
 It's nice to have these one letter object types: `_u`, `_i`, `_c` because then they're
 more full text searchable — e.g. find all usages of any (unique) indexes on a certain
-table, accross the whole code base. And you soon learn to recognize what they mean so you know
+table, across the whole code base. And you soon learn to recognize what they mean so you know
 what type of thing it is, without having to think or find out. Having them directly
 after the table name (without the '3' suffix) makes things nicely aligned & easy to scan,
 when typing `\d some_table_name` in the psql client.
@@ -722,7 +722,7 @@ We're building & using a smaller version of Lodash, like so:
 
 - For security reasons, we checkin only the resulting `.js` file (but not the `.min.js`) file
 into source control (so that you can read the source code and see what it does).
-- There are some Gulp plugins that builds Lodash but one seems abandonend (gulp-lodash-builder)
+- There are some Gulp plugins that builds Lodash but one seems abandoned (gulp-lodash-builder)
 and the other (gulp-lodash-custom) analyzes all .js files, I guess that'd slow down the build
 rather much + won't immediately work with Typescript?
 
