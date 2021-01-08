@@ -4723,7 +4723,8 @@ export class TyE2eTestBrowser {
       },
 
       uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: St,
-            ps: { waitForBadExtErr?: Bo, waitForTooLargeErr?: Bo } = {}) => {
+            ps: { waitForBadExtErr?: Bo, waitForTooLargeErr?: Bo, allFine?: false } = {}
+            ) => {
         //this.waitAndClick('.e_UplB');
         // There'll be a file <input> not interactable error, unless we change
         // its size to sth larger than 0 x 0.
@@ -4736,12 +4737,20 @@ export class TyE2eTestBrowser {
         });
         this.waitAndSelectFile('.e_EdUplFI', whichDir, fileName);
         if (ps.waitForBadExtErr) {
-          this.waitForVisibleText('.s_UplErrD .s_UplErrD_UplNm');
+          // If there's no extension, then waitForExist(), not waitForVisibleText().
+          const sel = '.s_UplErrD .s_UplErrD_UplNm';
+          const lastIx = fileName.lastIndexOf('.')
+          0 <= lastIx && lastIx <= fileName.length - 2
+                ? this.waitForVisibleText(sel)
+                : this.waitForExist(sel);
           this.stupidDialog.close();
         }
-        if (ps.waitForTooLargeErr) {
+        else if (ps.waitForTooLargeErr) {
           this.waitForVisibleText('.s_UplErrD .e_FlTooLg');
           this.stupidDialog.close();
+        }
+        else if (ps.allFine !== false) {
+          tyAssert.not(this.isVisible('.s_UplErrD'), `Unexpected file upload error`);
         }
       },
 

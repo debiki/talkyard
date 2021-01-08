@@ -64,7 +64,7 @@ trait UploadsDao {
       "DwE5KFY9", "File uploads disabled, config value missing: " +
         Globals.LocalhostUploadsDirConfValName)
 
-    val uploadedDotSuffix = '.' + checkAndGetFileSuffix(uploadedFileName)
+    val uploadedDotSuffix = '.' + checkAndGetFileSuffixLowercase(uploadedFileName)
 
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8. Instead, use Tika.
     // (This detects mime type based on actual document content, not just the suffix.) dupl [7YKW23]
@@ -418,7 +418,16 @@ object UploadsDao {
   }
 
 
-  def checkAndGetFileSuffix(fileName: String): String = {
+  def checkAndGetFileSuffixLowercase(fileNameMixedCase: St): St = {
+    val fileName: St = fileNameMixedCase.toLowerCase
+
+    REMOVE // this whole fn? Just get the file extension, lowercase, e.g.:
+    //   if (exists '.') takeRightWhile(...).toLowerCase?
+    // Because now the allowed file extensions is per group configurable, [ck_upl_ftp].
+    // However! The file extensions lists below are nice
+    // — can move them to the group permissions config page, and add
+    // shortcut buttons for allowing all types of images, or videos, sound, etc?
+
     // For now, require exactly 1 dot. Later: don't store the suffix at all?
     // Instead, derive it based on the mime type. Could use Apache Tika.
     // See: http://stackoverflow.com/questions/13650372/
@@ -443,7 +452,7 @@ object UploadsDao {
       return suffix
 
     if (!fileName.exists(_ == '.'))
-      throwForbidden("DwE6UPM5", "The file has no suffix")
+      throwForbidden("DwE6UPM5", "The file has no suffix")  // [upl_ext_req]
 
     if (suffix.length > MaxSuffixLength)
       throwBadRequest("DwE7F3P5", o"""File has too long suffix: '$fileName'
