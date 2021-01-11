@@ -297,6 +297,17 @@ class InternalLinkPrevwRendrEng(globals: Globals, siteId: SiteId) // TESTS_MISSI
       case Some(postPath: PostPathWithIdNr) =>
         postNr = postPath.postNr
 
+        // AuthZ
+        //
+        // For now: Only create internal link previews, if Everyone (pat = None)
+        // may see the linked page.
+        // Otherwise an attacker could type urls to various page ids and post nrs
+        // and get to see parts of private discussions — via link previews.
+        //
+        // Later: Load groups and permissions for the linking page (where the
+        // link preview is to appear), and iff everyone who can see that page,
+        // can also see the linked page, generate a link preview.
+        //
         val (maySeeOrWhyNot, dbgCode) = dao.maySeePostUseCache(   // [ln_pv_az]
               pageId = postPath.pageId, postNr = postPath.postNr, user = None)
 
