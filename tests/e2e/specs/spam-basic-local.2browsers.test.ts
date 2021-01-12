@@ -89,7 +89,7 @@ describe("spam test, no external services  TyT530KRM1R", () => {
     mallorysBrowser.forumButtons.clickCreateTopic();
     mallorysBrowser.editor.editTitle(topicTitleOne);
     mallorysBrowser.editor.editText(tooManyLinks);
-    mallorysBrowser.editor.save();
+    mallorysBrowser.editor.clickSave();
     mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/links.*EdE4KFY2_/);
     mallorysBrowser.serverErrorDialog.close();
   });

@@ -41,6 +41,8 @@ case class PageStuff(
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId]) extends PageTitleRole {
 
+  def pageVersion: PageVersion = pageMeta.version
+
   def titleMaybeUnapproved: Option[String] =
     approvedTitleSource orElse currTitleSource
 
@@ -90,18 +92,27 @@ trait PageStuffDao {
 
   RENAME // to getPageStuffsById
   def getPageStuffById(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
+    getPageStuffsByIdVersion(pageIds.map(id => PageIdVersion(id, NoVersion)))
+  }
+
+
+  def getPageStuffsByIdVersion(pageIdVersions: Iterable[PageIdVersion])
+        : Map[PageId, PageStuff] = {
     // Somewhat dupl code [5KWE02], PagePathMetaDao.getPageMetasAsMap() and UserDao are similar.
     // Break out helper function getManyById[K, V](keys) ?
 
     var pageStuffById = Map[PageId, PageStuff]()
     val idsNotCached = ArrayBuffer[PageId]()
 
-    // Look up in cache.
-    for (pageId <- pageIds) {
+    // Look up in cache — but ignore any out-of-date entries (in case there's a race).
+    for (idVersion <- pageIdVersions) {
+      import idVersion.pageId
       val anyStuff = memCache.lookup[PageStuff](cacheKey(pageId))
       anyStuff match {
-        case Some(stuff) => pageStuffById += pageId -> stuff
-        case None => idsNotCached.append(pageId)
+        case Some(stuff) if idVersion.version <= stuff.pageVersion =>
+          pageStuffById += pageId -> stuff
+        case None =>
+          idsNotCached.append(pageId)
       }
     }
 

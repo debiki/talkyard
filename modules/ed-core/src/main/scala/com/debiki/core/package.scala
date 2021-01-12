@@ -125,7 +125,8 @@ package object core {
   // ... But this should be a string.
   type AltPageId = String
 
-  type PageVersion = Int
+  type PageVersion = Int  // [Scala_3] opaque type ... And so many more here!
+  val NoVersion: PageVersion = 0
 
   type CategoryId = Int
   val NoCategoryId = 0

@@ -290,7 +290,9 @@ class JsonMaker(dao: SiteDao) {
           includeDescendantCategories = true,
           authzCtx,
           limit = ForumController.NumTopicsToList)
-        val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
+        RACE // got an 1 version old page stuff. So, now looking up by id *and version*,
+        // instead.
+        val pageStuffById = dao.getPageStuffsByIdVersion(topics.map(_.idAndVersion))
         topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
         JsArray(topics.map(controllers.ForumController.topicToJson(_, pageStuffById)))
       }
