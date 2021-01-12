@@ -45,7 +45,7 @@ export const NameLoginBtns = createComponent({
   },
 
   onLoginClick: function() {
-    login.loginIfNeededReturnToAnchor(this.props.purpose || 'LoginToLogin', '');
+    login.loginIfNeededReturnToAnchor(this.props.purpose || LoginReason.LoginToLogin, '');
   },
 
   onLogoutClick: function() {

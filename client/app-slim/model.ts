@@ -1277,7 +1277,7 @@ interface CreateUserDialogContentProps extends CreateUserParams {
   store: Store;
   afterLoginCallback?;
   closeDialog: (_?: St) => Vo;
-  loginReason?;
+  loginReason?: LoginReason;
   isForGuest?: Bo;
   isForPasswordUser?: Bo;
 
@@ -1342,15 +1342,24 @@ const enum EditMemberAction {
 }
 
 
+// Sync w Scala: LoginReason.
 const enum LoginReason {
-  SignUp = 13,
+  LoginToEdit = 9,
   LoginToChat = 10,
   LoginToLike = 11,
-  BecomeAdmin = 12, // COULD rename to BecomeOwner
+  BecomeOwner = 12,
+  SignUp = 13,
   TryToAccessNotFoundPage = 14,
   SubmitEditorText = 15,
   PostEmbeddedComment = 16,  // dupl [8UKBR2AD5]
   PostProgressPost = 17,
+  PostReply = 18,     // was: 'LoginToComment'
+  CreateTopic = 19,   // was: 'LoginToCreateTopic'
+  LoginToLogin = 20,  // was: 'LoginToLogin' RENAME to ClickedLoginBtn
+  LoginBecauseNotFound = 21,
+  AuthnRequiredToRead = 22,  // was: 'LoginToAuthenticate'
+  NeedToBeAdmin = 23, // was: 'LoginAsAdmin'
+  LoginToAdministrate = 24,
 }
 
 

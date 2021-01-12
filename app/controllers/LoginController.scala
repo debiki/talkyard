@@ -26,6 +26,7 @@ import javax.inject.Inject
 import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
 import talkyard.server.TyLogging
+import talkyard.server.authn.LoginReason
 
 
 /** Logs in and out.
@@ -46,26 +47,26 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwForbidden("EsE5YK02", s"Bad next URL: $path")
 
     var toAdminArea = true
-    val loginReason =
+    val loginReason: LoginReason =
       if (as.contains(AsSuperadmin)) {
-        "LoginToAdministrate"  // later: LoginReason.SuperAdminArea   xx
+        LoginReason.LoginToAdministrate  // later: LoginReason.SuperAdminArea   xx
       }
       else if (as.contains(AsAdmin)) {
-        "LoginToAdministrate"
+        LoginReason.LoginToAdministrate
       }
       else if (as.contains(AsStaff)) {
-        "LoginToAdministrate"  // COULD add LoginReason.StaffOnly
+        LoginReason.LoginToAdministrate  // COULD add LoginReason.StaffOnly
       }
       else if (as.contains("member")) {
         toAdminArea = false
         throwNotImplemented("EsE5ES20", "Not impl: ?as=member")
       }
       else if (path.startsWith("/-/admin/")) {
-        "LoginToAdministrate"
+        LoginReason.LoginToAdministrate
       }
       else if (path.startsWith("/-/superadmin/")) {
         COULD // check if is superadmin site id, if not, throw forbidden
-        "LoginToAdministrate"  // later: LoginReason.SuperAdminArea   xx
+        LoginReason.LoginToAdministrate  // later: LoginReason.SuperAdminArea   xx
       }
       else { // incl if (path.startsWith("/-/users/")) {
         // Old comment, isGuestLoginAllowed() is deleted now:
@@ -82,7 +83,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     CSP_MISSING
     Ok(views.html.authn.authnPage(
       SiteTpi(apiReq, isAdminArea = toAdminArea),
-      mode = loginReason,
+      loginReasonInt = loginReason.toInt,
       serverAddress = s"//${apiReq.host}",  // try to remove
       returnToUrl = apiReq.origin + path)) as HTML
   }
@@ -107,13 +108,13 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * is doing in the main window (e.g. having expanded / collapsed threads,
     * maybe started composing a reply) won't disappear.
     */
-  def showLoginPopup(mode: St, returnToUrl: St): Action[U] =
+  def showLoginPopup(mode: Int, returnToUrl: St): Action[U] =
         GetActionAllowAnyoneRateLimited(
           RateLimits.NoRateLimits, avoidCookies = mode == EmbCommentsModeStr) { request =>
     CSP_MISSING
     Ok(views.html.authn.authnPage(
       SiteTpi(request),
-      mode = mode,
+      loginReasonInt = mode,
       serverAddress = s"//${request.host}",  // try to remove
       returnToUrl = returnToUrl,
       isInLoginPopup = true)) as HTML

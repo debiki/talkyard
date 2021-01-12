@@ -35,16 +35,6 @@ const ModalTitle = rb.ModalTitle;
 const FullNameInput = util.FullNameInput;
 const EmailInput = util.EmailInput;
 
-/* All login reasons? — no, there're more now, right.
-  'LoginBecomeAdmin'
-  'LoginAsAdmin'
-  'LoginToAuthenticate'
-  'LoginToSubmit'
-  'LoginToComment'
-  LoginReason.PostEmbeddedComment
-  'LoginToLogin'
-  'LoginToCreateTopic'
-*/
 
 let loginDialog;
 
@@ -85,21 +75,24 @@ const LoginDialog = createClassAndFactory({
     }
   },
 
-  openToLogIn: function(loginReason: LoginReason | string,
+  openToLogIn: function(loginReason: LoginReason,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
     this.open(false, loginReason, anyReturnToUrl, callback, preventClose);
   },
 
   // Called from Scala template.
-  openToSignUp: function(loginReason: LoginReason | string,
+  openToSignUp: function(loginReason: LoginReason,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
     // CLEAN_UP replace openToLogIn and openToSignUp with just one open(loginReason, ..) that
     // decides if to log in or sig up? For now:
-    const reallySignup = loginReason !== 'LoginToAdministrate';
+    const reallySignup =
+            loginReason !== LoginReason.LoginToAdministrate &&
+            loginReason !== LoginReason.LoginToLogin;
+            // Hmm some enum vals missing .. Not important.
     this.open(reallySignup, loginReason, anyReturnToUrl, callback, preventClose);
   },
 
-  open: function(isSignUp: boolean, loginReason: LoginReason | string,
+  open: function(isSignUp: boolean, loginReason: LoginReason,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
 
     dieIf(isInSomeEmbCommentsIframe(), 'Login dialog in some emb cmnts iframe [EdE5KER2]');
@@ -153,8 +146,8 @@ const LoginDialog = createClassAndFactory({
         loginReason,
         afterLoginCallback: callback,
         anyReturnToUrl,
-        preventClose: preventClose || loginReason === 'LoginToAuthenticate' ||
-            loginReason === 'LoginToAdministrate',
+        preventClose: preventClose || loginReason === LoginReason.AuthnRequiredToRead ||
+            loginReason === LoginReason.LoginToAdministrate,
         isLoggedIn: !!getSetCookie('dwCoSid'),
       });
   },
@@ -210,9 +203,10 @@ const LoginDialog = createClassAndFactory({
     const state = this.state;
     const fade = state.childDialog ? ' dw-modal-fade' : '';
 
+    /*
     let title;
     switch (state.loginReason) {
-      case 'LoginToAuthenticate':
+      case LoginReason.AuthnRequiredToRead:
         title = t.ld.AuthRequired;
         break;
       case LoginReason.LoginToLike:
@@ -220,7 +214,7 @@ const LoginDialog = createClassAndFactory({
         break;
       default:
         title = this.state.isSignUp ? t.ld.CreateAcconut : t.ld.LogIn;
-    }
+    } */
 
     const content = LoginDialogContent({
         isSignUp: state.isSignUp, isForGuest: state.isForGuest, loginReason: state.loginReason,
@@ -232,7 +226,7 @@ const LoginDialog = createClassAndFactory({
         store: state.store });
 
     /* UX SHOULD show this close [x] in 'content' instead, so can be closed easily.
-    var modalHeader = state.loginReason === LoginReason.BecomeAdmin
+    var modalHeader = state.loginReason === LoginReason.BecomeOwner
       ? null // then there's an instruction text, that's enough
       : ModalHeader({ closeButton: !state.preventClose },
           ModalTitle({ id: 'e2eLoginDialogTitle' }, title));
@@ -253,7 +247,7 @@ const LoginDialog = createClassAndFactory({
 
 interface LoginDialogContentProps {
   store: Store;
-  loginReason;
+  loginReason: LoginReason;
   anyReturnToUrl?: St;
   isSignUp: Bo;
   isLoggedIn: Bo;
@@ -351,7 +345,7 @@ export const LoginDialogContent = createClassAndFactory({
       };
     };
 
-    const isForFirstOwner = loginReason === LoginReason.BecomeAdmin;
+    const isForFirstOwner = loginReason === LoginReason.BecomeOwner;
     const becomeOwnerInstructions = !isForFirstOwner ? null :
         r.div({ className: 'esLoginDlg_becomeAdminInstr' },
           r.p({},
@@ -369,7 +363,7 @@ export const LoginDialogContent = createClassAndFactory({
           LinkButton({ href: location.href.replace(/^http:/, 'https:') },
             "Reload as HTTPS"));
 
-    const notFound = loginReason === 'LoginBecauseNotFound';
+    const notFound = loginReason === LoginReason.LoginBecauseNotFound;
     const notFoundInstructions = !notFound ? null :
         r.div({ className: 'esLoginDlg_becomeAdminInstr' },
           r.h1({ className: 's_LD_NotFound_Title' }, t.ld.NotFoundOrPrivate),
@@ -697,11 +691,10 @@ const PasswordLoginDialogContent = createClassAndFactory({
 /**
  * Text to append to the login button so it reads e.g. "Log in to write a comment".
  */
-function loginToWhat(loginReason: string): string {
+function loginToWhat(loginReason: LoginReason): St {
   switch (loginReason) {
-    case 'LoginToSubmit': return t.ld.LogInToSubmit;
-    case 'LoginToComment': return t.ld.LogInToComment;
-    case 'LoginToCreateTopic': return t.ld.LogInToCreateTopic;
+    case LoginReason.PostReply: return t.ld.LogInToComment;
+    case LoginReason.CreateTopic: return t.ld.LogInToCreateTopic;
     default: return t.ld.LogIn;
   }
 }

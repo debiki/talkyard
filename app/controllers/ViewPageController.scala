@@ -32,6 +32,7 @@ import ViewPageController._
 import debiki.dao.UsersOnlineStuff
 import ed.server.auth.MaySeeOrWhyNot
 import ed.server.security.EdSecurity
+import talkyard.server.authn.LoginReason
 
 
 
@@ -216,7 +217,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       CSP_MISSING
       NotFound(views.html.authn.authnPage(
         SiteTpi(request),
-        mode = "LoginBecauseNotFound",
+        loginReasonInt = LoginReason.LoginBecauseNotFound.toInt,
         // error =  result.body
         serverAddress = s"//${request.host}",
         returnToUrl = request.uri,
@@ -270,7 +271,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         CSP_MISSING
         return Future.successful(Ok(views.html.authn.authnPage(
           SiteTpi(request),
-          mode = "LoginToAuthenticate",
+          loginReasonInt = LoginReason.AuthnRequiredToRead.toInt,
           serverAddress = s"//${request.host}",
           returnToUrl = request.uri)) as HTML)
       }

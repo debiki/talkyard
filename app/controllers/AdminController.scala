@@ -29,6 +29,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, ControllerComponents, Result}
 import scala.concurrent.Future
 import talkyard.server.JsX
+import talkyard.server.authn.LoginReason
 
 
 
@@ -56,7 +57,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
       CSP_MISSING
       Future.successful(Ok(views.html.authn.authnPage(
         SiteTpi(apiReq, isAdminArea = true),
-        mode = "LoginToAdministrate",
+        loginReasonInt = LoginReason.LoginToAdministrate.toInt,
         serverAddress = s"//${apiReq.host}",
         returnToUrl = apiReq.uri)) as HTML)
     }

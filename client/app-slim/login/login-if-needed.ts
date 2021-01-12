@@ -52,7 +52,7 @@ export let anyContinueAfterLoginCallback = null;
 
 
 export function loginIfNeededReturnToPost(
-      loginReason: LoginReason | string, postNr: PostNr, success: () => void,
+      loginReason: LoginReason, postNr: PostNr, success: () => void,
       willCompose?: boolean) {
   // If posting a progress post, then, after login, scroll to the bottom, so one
   // can click that button again — it's at the bottom.
@@ -69,7 +69,7 @@ export function loginIfNeededReturnToPost(
 
 
 export function loginIfNeededReturnToAnchor(
-      loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean) {
+      loginReason: LoginReason, anchor: string, success?: () => void, willCompose?: boolean) {
   const returnToUrl = makeReturnToPageHashForVerifEmail(anchor);
   success = success || function() {};
   const store: Store = ReactStore.allData();
@@ -98,26 +98,26 @@ export function loginIfNeededReturnToAnchor(
 
 // Later, merge with loginIfNeededReturnToAnchor() above, and rename to loginIfNeeded, and use only
 // that fn always — then will work also in iframe (will open popup).
-export function loginIfNeeded(loginReason, returnToUrl: string, onDone?: () => void,
-     willCompose?: boolean) {
+export function loginIfNeeded(loginReason: LoginReason, returnToUrl: St, onOk?: () => Vo,
+     willCompose?: Bo) {
   if (ReactStore.getMe().isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
-    if (onDone) onDone();
+    if (onOk) onOk();
   }
   else {
-    goToSsoPageOrElse(returnToUrl, loginReason, onDone, function() {
+    goToSsoPageOrElse(returnToUrl, loginReason, onOk, function() {
       Server.loadMoreScriptsBundle(() => {
         // People with an account, are typically logged in already, and won't get to here often.
         // Instead, most people here, are new users, so show the signup dialog.
         // (Why won't this result in a compil err? (5BKRF020))
         debiki2.login.getLoginDialog().openToSignUp(
-              loginReason, returnToUrl, onDone || function() {});
+              loginReason, returnToUrl, onOk || function() {});
       });
     });
   }
 }
 
 
-export function openLoginDialogToSignUp(purpose) {
+export function openLoginDialogToSignUp(purpose: LoginReason) {
   goToSsoPageOrElse(location.toString(), purpose, null, function() {
     Server.loadMoreScriptsBundle(() => {
       debiki2.login.getLoginDialog().openToSignUp(purpose);
@@ -126,7 +126,7 @@ export function openLoginDialogToSignUp(purpose) {
 }
 
 
-export function openLoginDialog(purpose) {
+export function openLoginDialog(purpose: LoginReason) {
   goToSsoPageOrElse(location.toString(), purpose, null, function() {
     Server.loadMoreScriptsBundle(() => {
       debiki2.login.getLoginDialog().openToLogIn(purpose);
@@ -135,7 +135,7 @@ export function openLoginDialog(purpose) {
 }
 
 
-function goToSsoPageOrElse(returnToUrl: St, toDoWhat: LoginReason | St | U,
+function goToSsoPageOrElse(returnToUrl: St, toDoWhat: LoginReason | U,
         doAfterLogin: () => void | U, orElse: () => void) {
   // Dupl code? [SSOINSTAREDIR]
   const store: Store = ReactStore.allData();

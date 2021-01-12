@@ -97,7 +97,7 @@ interface CreateUserPostData extends CreateUserParams {
  * and via a link in that email.
  */
 debiki.internal._showCreateUserDialog = function(params: CreateUserParams) {
-  const loginDialog = login.getLoginDialog();
+  const loginDialog = debiki2.login.getLoginDialog();
   const [anyAfterLoginCallback, anyReturnToUrl] = loginDialog.getDoAfter();
   // In case any login dialog is still open: (this resets the after-login-callback
   // copied above, and return-to-url)
@@ -143,7 +143,7 @@ const CreateUserDialog = createClassAndFactory({
         closeDialog: this.close,
       };
       if (store.siteStatus === SiteStatus.NoAdmin) {
-        childProps.loginReason = LoginReason.BecomeAdmin;
+        childProps.loginReason = LoginReason.BecomeOwner;
       }
       content = CreateUserDialogContent(childProps);
     }
@@ -284,7 +284,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     const props: CreateUserDialogContentProps = this.props;
     const returnToUrl: St | U = props.anyReturnToUrl;
     const postData: CreateUserPostData = { ...this.state.userData, returnToUrl };
-    waitUntilAcceptsTerms(props.store, props.loginReason === LoginReason.BecomeAdmin, () => {
+    waitUntilAcceptsTerms(props.store, props.loginReason === LoginReason.BecomeOwner, () => {
       if (props.authDataCacheKey) { // [4WHKTP06]
         postData.authDataCacheKey = props.authDataCacheKey;
         Server.createOauthUser(postData, this.handleCreateUserResponse, this.handleErrorResponse);
@@ -314,7 +314,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       // directly without reading the message about checking their email inbox. Then
       // they don't know what to do, and are stuck.
       // (Probably this email verif step needs to be totally removed. [SIMPLNEWSITE]
-      const mayCloseDialog = props.loginReason !== LoginReason.BecomeAdmin;
+      const mayCloseDialog = props.loginReason !== LoginReason.BecomeOwner;
       getAddressVerificationEmailSentDialog().sayVerifEmailSent(mayCloseDialog); // [new_user_verif_eml]
     }
     else if (props.afterLoginCallback || (

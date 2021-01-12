@@ -105,7 +105,7 @@ const SignUpAsAdmin = createComponent({
     // later on verifying their email address.
     const loginBtn =
         PrimaryButton({ id: 't_OwnerSignupB', disabled: !!anyEmailProblem,
-            onClick: () => login.getLoginDialog().openToSignUp(LoginReason.BecomeAdmin) },
+            onClick: () => debiki2.login.getLoginDialog().openToSignUp(LoginReason.BecomeOwner) },
           "Continue");
 
     // If this is a self hosted server, one needs to login with the email in the
@@ -167,7 +167,8 @@ const LoginToCreateSomething = createComponent({
         r.p({}, "If you haven't done this already: Please click the link in the " +
             "email address verification email I have sent you."),
         r.br(),
-        reactelements.NameLoginBtns({ title: "Login", purpose: 'LoginAsAdmin' }),
+        reactelements.NameLoginBtns({
+              title: "Login", purpose: LoginReason.NeedToBeAdmin }),
         sendEmailAgainButton));
   }
 });

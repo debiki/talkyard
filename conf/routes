@@ -20,7 +20,7 @@
 #   https://groups.google.com/forum/?fromgroups=#!topic/play-framework/cVqBvywCs4k
 
 GET   /-/login                  controllers.LoginController.showLoginPage(as: Option[String], to: Option[String])
-GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode, returnToUrl)
+GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode: Int, returnToUrl)
 GET   /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
 POST  /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
 POST  /-/resend-owner-email-addr-verif-email controllers.LoginController.resendSiteOwnerAddrVerifEmail
@@ -366,7 +366,7 @@ OPTIONS  /*whatever             controllers.ApiV0Controller.getFromApi(whatever)
 
 # ----- PWA
 
-#GET   /manifest.webmanifest     controllers.Application.mobileAppWebmanifest
+#GET   /talkyard.webmanifest     controllers.Application.mobileAppWebmanifest
 
 
 # ----- View pages/posts

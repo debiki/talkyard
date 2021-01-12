@@ -197,7 +197,7 @@ export const PostActions = createComponent({
     }
 
     const loginToWhat = page.pageRole === PageRole.EmbeddedComments ?
-        LoginReason.PostEmbeddedComment : 'LoginToComment';
+        LoginReason.PostEmbeddedComment : LoginReason.PostReply;
 
     login.loginIfNeededReturnToPost(loginToWhat, post.nr, () => {
       if (this.isGone) return;

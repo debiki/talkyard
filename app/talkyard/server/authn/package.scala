@@ -25,6 +25,14 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
 
   private val logger: p_Logger = TyLogger("talkyard.server.authn")
 
+  // Sync w ts: LoginReason (but no need to repeat all enum values.)
+  sealed abstract class LoginReason(val IntVal: i32) { def toInt: i32 = IntVal }
+  object LoginReason {
+    case object LoginBecauseNotFound extends LoginReason(21)
+    case object AuthnRequiredToRead extends LoginReason(22)
+    case object LoginToAdministrate extends LoginReason(24)
+  }
+
   // Aliases for better readability.
   type JoinOrLeave = AddOrRemove
   val Join: Add.type = Add

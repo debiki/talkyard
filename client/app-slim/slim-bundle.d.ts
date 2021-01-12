@@ -199,7 +199,7 @@ declare namespace debiki2 {
 
   namespace topbar {
     function getTopbarHeightInclShadow(): number;
-    const TopBar: any;
+    function TopBar(props): RElm; // TopbarProps
   }
 
   namespace sidebar {
@@ -227,9 +227,9 @@ declare namespace debiki2 {
     var anyContinueAfterLoginCallback;
     function continueAfterLogin(anyReturnToUrl?: string);
     function loginIfNeededReturnToAnchor(
-        loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean);
+        loginReason: LoginReason, anchor: St, success?: () => Vo, willCompose?: Bo);
     function loginIfNeededReturnToPost(
-        loginReason: LoginReason | string, postNr: PostNr, success?: () => void, willCompose?: boolean);
+        loginReason: LoginReason, postNr: PostNr, success?: () => Vo, willCompose?: Bo);
 
     function loginIfNeeded(loginReason, returnToUrl: string, onDone?: () => void);
     function openLoginDialogToSignUp(purpose);
