@@ -178,8 +178,9 @@ ReactDispatcher.register(function(payload) {
         publicCategories: action.publicCategories,
         restrictedCategories: action.restrictedCategories,
       });
-      // COULD sort perms somehow, how? And remove dupls? [4JKT2W1]
-      store.me.permsOnPages = store.me.permsOnPages.concat(action.myNewPermissions);
+
+      store.me.permsOnPages =
+            perms_addNew(store.me.permsOnPages, action.myNewPermissions);
 
       // If creating a new cat, remember it, so can highlight it in the category list:
       store.newCategorySlug = action.newCategorySlug;
@@ -562,13 +563,12 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     $h.addClasses(htmlElem, 'dw-is-authenticated');
   }
 
-  // Add Everyone's permissions to newMe's permissions (Everyone's permissions aren't included
-  // in the per-user data). [8JUYW4B]
-  // COULD sort perms somehow, how? [4JKT2W1]
+  // Add Everyone's permissions to newMe's permissions (Everyone's permissions aren't
+  // included in the per-user data). [8JUYW4B]
   const oldMe: Myself = store.me;
-  const everyonesPerms =
-      _.filter(oldMe.permsOnPages, (p: PermsOnPage) => p.forPeopleId === Groups.EveryoneId);
-  newMe.permsOnPages = everyonesPerms.concat(newMe.permsOnPages);
+  const everyonesPerms = _.filter(oldMe.permsOnPages,
+          (p: PermsOnPage) => p.forPeopleId === Groups.EveryoneId);
+  newMe.permsOnPages = perms_addNew(everyonesPerms, newMe.permsOnPages);
 
   store.user = newMe; // try to remove the .user field, use .me instead
   store.me = newMe;

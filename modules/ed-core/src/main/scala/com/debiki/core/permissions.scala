@@ -136,11 +136,12 @@ case class PermsOnPages(  // [exp] ok use. Missing, fine: may_see_private_flagge
   /** Tells if this permission neither grants nor revokes any rights — if it doesn't, it might
     * as well be deleted.
     */
-  def isEverythingUndefined: Boolean =
+  def hasNoEffect: Bo =
     mayEditPage.isEmpty && mayEditComment.isEmpty && mayEditWiki.isEmpty && mayEditOwn.isEmpty &&
     mayDeletePage.isEmpty && mayDeleteComment.isEmpty && mayCreatePage.isEmpty &&
     mayPostComment.isEmpty && maySee.isEmpty && maySeeOwn.isEmpty
 
+  def hasSomeEffect: Bo = !hasNoEffect
 }
 
 

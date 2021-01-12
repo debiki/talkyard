@@ -188,7 +188,8 @@ declare namespace debiki2 {
   }
 
   namespace util {
-    var ExplainingListItem;
+    // var ExplainingListItem;
+    function ExplainingListItem(props: ExplainingListItemProps): RElm;
   }
 
   namespace help {

@@ -1734,7 +1734,7 @@ interface CatsTreeCat extends Category {
 interface ExplainingTitleText {
   iconUrl?: St;
   title: St;
-  text: any;
+  text?: any;
   key?: any;
   subStuff?: any;
 }
@@ -1749,9 +1749,9 @@ interface ExplainingListItemProps extends ExplainingTitleText {
   onClick?: any;
   onSelect?: (item: ExplainingTitleText) => void;
   eventKey?: any;
-  active?;
+  active?: Bo;
   activeEventKey?;
-
+  disabled?: Bo;
 }
 
 
