@@ -3281,7 +3281,7 @@ export class TyE2eTestBrowser {
 
     loginDialog = {
       isVisible: () => {
-        return this.isVisible('.dw-login-modal') && this.isVisible('.esLD');
+        return this.isVisible('.dw-login-modal') && this.isVisible('.c_AuD');
       },
 
       refreshUntilFullScreen: () => {
@@ -3303,7 +3303,7 @@ export class TyE2eTestBrowser {
 
       waitAssertFullScreen: () => {
         this.waitForVisible('.dw-login-modal');
-        this.waitForVisible('.esLD');
+        this.waitForVisible('.c_AuD');
         // Forum not shown.
         assert(!this.isVisible('.dw-forum'));
         assert(!this.isVisible('.dw-forum-actionbar'));
@@ -3341,8 +3341,8 @@ export class TyE2eTestBrowser {
 
         // Switch from the guest login form to the create-real-account form, if needed.
         this.waitForVisible('#e2eFullName');
-        if (this.isVisible('.s_LD_CreateAccount')) {
-          this.waitAndClick('.s_LD_CreateAccount');
+        if (this.isVisible('.c_AuD_2SgU')) {
+          this.waitAndClick('.c_AuD_2SgU .c_AuD_SwitchB');
           this.waitForVisible('#e2ePassword');
         }
 
@@ -3530,7 +3530,7 @@ export class TyE2eTestBrowser {
       },
 
       clickCreateAccountInstead: () => {
-        this.waitAndClick('.esLD_Switch_L');
+        this.waitAndClick('.c_AuD_2SgU .c_AuD_SwitchB');
         this.waitForVisible('.esCreateUser');
         this.waitForVisible('#e2eUsername');
         this.waitForVisible('#e2ePassword');
@@ -3540,7 +3540,7 @@ export class TyE2eTestBrowser {
         // Switch to login form, if we're currently showing the signup form.
         while (true) {
           if (this.isVisible('.esCreateUser')) {
-            this.waitAndClick('.esLD_Switch_L');
+            this.waitAndClick('.c_AuD_2LgI .c_AuD_SwitchB');
             // Don't waitForVisible('.dw-reset-pswd') — that can hang forever (weird?).
           }
           else if (this.isVisible('.dw-reset-pswd')) {

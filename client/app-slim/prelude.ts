@@ -110,6 +110,14 @@ export function toStr(x: any, indentation: number = 2): string {
 // x endif
 
 
+/// Lowercases the 1st char.
+///
+export function firstToLower(text: St, doIt: Bo = true): St {
+  if (!doIt || !text) return text;
+  const firstButLowercase = text[0].toLowerCase();
+  return firstButLowercase + text.substr(1);
+}
+
 // If in an embedded comments iframe.
 export let iframeOffsetWinSize: IframeOffsetWinSize | undefined;
 

@@ -1276,12 +1276,10 @@ interface CreateUserParams {
 interface CreateUserDialogContentProps extends CreateUserParams {
   store: Store;
   afterLoginCallback?;
-  closeDialog: (_?: St) => Vo;
+  closeDialog: (_?: 'CloseAllLoginDialogs') => Vo;
   loginReason?: LoginReason;
   isForGuest?: Bo;
   isForPasswordUser?: Bo;
-
-  switchBetweenGuestAndPassword?: () => Vo;
 }
 
 

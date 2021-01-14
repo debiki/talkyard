@@ -47,22 +47,40 @@ export function getLoginDialog() {   // also called from Scala template
 }
 
 
+/// One can click buttons to switch the authn dialog to a login dialog ('2LgI'),
+/// a "just type your name" guest ('2Gst') login dialog (not always enabled),
+/// or a create-account Sign Up dialog ('2SgU').
+///
+type SwitchAuthnDialogTo = '2LgI' | '2Gst' | '2SgU';
+
+
+interface LoginDialogState {
+  store: Store;
+  isOpen?: Bo;
+  preventClose?: Bo;
+  isSignUp?: Bo;
+  isForGuest?: Bo;
+  loginReason?: LoginReason;
+  anyReturnToUrl?: St;
+  afterLoginCallback?;
+  childDialog?;
+  isLoggedIn?: Bo;
+}
+
+
 const LoginDialog = createClassAndFactory({
   displayName: 'LoginDialog',
   mixins: [debiki2.StoreListenerMixin],
 
-  getInitialState: function () {
+  getInitialState: function (): LoginDialogState {
     return {
-      isOpen: false,
-      childDialog: null,
-      logInOrSignUp: null,  // CLEAN_UP REMOVE
       store: debiki2.ReactStore.allData(),
     };
   },
 
   onChange: function() {
     const newStore: Store = debiki2.ReactStore.allData();
-    this.setState({ store: newStore });
+    this.setState({ store: newStore } as LoginDialogState);
     const loggedInUser = newStore.me;
     if (loggedInUser) {
       // Might have just logged in in another tab. Then cancel any login happening in this tab.
@@ -71,7 +89,7 @@ const LoginDialog = createClassAndFactory({
       this.setState({
         isOpen: false,
         childDialog: null
-      });
+      } as LoginDialogState);
     }
   },
 
@@ -96,7 +114,8 @@ const LoginDialog = createClassAndFactory({
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
 
     dieIf(isInSomeEmbCommentsIframe(), 'Login dialog in some emb cmnts iframe [EdE5KER2]');
-    const store: Store = this.state.store;
+    const state: LoginDialogState = this.state;
+    const store: Store = state.store;
 
     // The login reason might be a stringified number from the url, so try to convert to enum.
     // Some login reasons are enums, others are strings. CLEAN_UP: Change the strings to enums.
@@ -135,7 +154,7 @@ const LoginDialog = createClassAndFactory({
       isSignUp = false;
 
     // When logging in to an embedded comments discussion, if guest login is enabled,
-    // then assume that's what most people want to use. [8UKBTQ2]
+    // then assume that's what most people want to use.
     const isForGuest = isSignUp && loginReason === LoginReason.PostEmbeddedComment &&
         store.settings.allowGuestLogin;
 
@@ -152,19 +171,24 @@ const LoginDialog = createClassAndFactory({
       });
   },
 
+
   /// Returns: [anyAfterLoginCallback, anyReturnToUrl]
   getDoAfter: function(): [() => U | U, St | U] {
-    return [this.state.afterLoginCallback, this.state.anyReturnToUrl];
+    const state: LoginDialogState = this.state;
+    return [state.afterLoginCallback, state.anyReturnToUrl];
   },
 
-  switchBetweenLoginAndSignUp: function() {
-    // Don't switch back to guest login, after a "sign up instead" click
-    // — that'd be confusing? Guest login is no real signup.
-    this.setState({ isSignUp: !this.state.isSignUp, isForGuest: false });
-  },
 
-  switchBetweenGuestAndPassword: function() {
-    this.setState({ isForGuest: !this.state.isForGuest });
+  switchDialog: function(toWhat: SwitchAuthnDialogTo) {
+    const state: LoginDialogState = this.state;
+    // @ifdef DEBUG
+    dieIf(toWhat === '2Gst' && state.isForGuest, 'TyE602MRKD3');
+    dieIf(toWhat === '2LgI' && !state.isSignUp, 'TyE602MRKD4');
+    dieIf(toWhat === '2SgU' && state.isSignUp && !state.isForGuest, 'TyE602MRKD5');
+    // @endif
+    // Guest "login" creates a new account, so it's actually a sign up thing.
+    const isSignUp = toWhat === '2SgU' || toWhat === '2Gst';
+    this.setState({ isSignUp, isForGuest: toWhat === '2Gst' });
   },
 
   /**
@@ -200,7 +224,7 @@ const LoginDialog = createClassAndFactory({
   },
 
   render: function () {
-    const state = this.state;
+    const state: LoginDialogState = this.state;
     const fade = state.childDialog ? ' dw-modal-fade' : '';
 
     /*
@@ -217,13 +241,18 @@ const LoginDialog = createClassAndFactory({
     } */
 
     const content = LoginDialogContent({
-        isSignUp: state.isSignUp, isForGuest: state.isForGuest, loginReason: state.loginReason,
-        anyReturnToUrl: state.anyReturnToUrl, afterLoginCallback: state.afterLoginCallback,
+        isSignUp: state.isSignUp,
+        isForGuest: state.isForGuest,
+        allowGuestLogin: state.store.settings.allowGuestLogin,
+        loginReason: state.loginReason,
+        anyReturnToUrl: state.anyReturnToUrl,
+        afterLoginCallback: state.afterLoginCallback,
         setChildDialog: this.setChildDialog,
-        childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn,
-        switchBetweenLoginAndSignUp: this.switchBetweenLoginAndSignUp,
-        switchBetweenGuestAndPassword: this.switchBetweenGuestAndPassword,
-        store: state.store });
+        childDialog: state.childDialog,
+        closeDialog: this.close,
+        isLoggedIn: state.isLoggedIn,
+        switchDialog: this.switchDialog,
+        store: state.store } as LoginDialogContentProps);
 
     /* UX SHOULD show this close [x] in 'content' instead, so can be closed easily.
     var modalHeader = state.loginReason === LoginReason.BecomeOwner
@@ -252,10 +281,10 @@ interface LoginDialogContentProps {
   isSignUp: Bo;
   isLoggedIn: Bo;
   isForGuest: Bo;
-  close;
-  closeDialog;
+  allowGuestLogin?: Bo;
+  closeDialog: (_?: 'CloseAllLoginDialogs') => Vo;
   setChildDialog;
-  switchBetweenLoginAndSignUp;
+  switchDialog: (toWhat: SwitchAuthnDialogTo) => Vo;
 }
 
 
@@ -318,17 +347,20 @@ export const LoginDialogContent = createClassAndFactory({
     const store: Store = props.store;
     const loginReason = props.loginReason;
     const isSignUp = props.isSignUp;
+    const isLogin = !isSignUp;
     const settings: SettingsVisibleClientSide = store.settings;
 
     const closeChildDialog = (closeAll) => {
       props.setChildDialog(null);
       if (closeAll === 'CloseAllLoginDialogs') {
-        props.close();
+        props.closeDialog();
       }
     };
 
     const childDialogProps = _.clone(props);
-    childDialogProps.closeDialog = closeChildDialog;  // CLEAN_UP can REMOVE?
+
+    // So can close, once authenticated (e.g. after user account created).
+    childDialogProps.closeDialog = closeChildDialog;
 
     const [nonce, lastsAcrossReload] = login.getOrCreateAuthnNonce();
 
@@ -373,30 +405,59 @@ export const LoginDialogContent = createClassAndFactory({
             t.ld.ElseGoToHome_1, r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
               t.ld.ElseGoToHome_2)));
 
-    const loginForm = isSignUp ? null :
+    const loginDlg = isSignUp ? null :
         PasswordLoginDialogContent(childDialogProps);
 
-    const isForGuest = props.isForGuest;
-    const isForPasswordUser = !isForGuest;
-    const createUserForm = !isSignUp || settings.allowLocalSignup === false ? null :
+    const isGuestSignUp = props.isForGuest;
+
+    const signupOrGuestDlg = isLogin || settings.allowLocalSignup === false ? null :
         CreateUserDialogContent({
-            ...childDialogProps, isForPasswordUser, isForGuest
+            ...childDialogProps,
+            isForPasswordUser: !isGuestSignUp,  // <—— remove? Don't need ...
+            isForGuest: isGuestSignUp,          //     ... both
           } as CreateUserDialogContentProps);
 
-    let switchToOtherDialogInstead;
+    let switchToLoginOrGuestDlg: RElm | U;
+    let switchToSignupOrGuestDlg: RElm | U;
+
+    const switchDiag = function(toWhat: SwitchAuthnDialogTo) {
+      return () => props.switchDialog(toWhat);
+    }
+
+    const createAccountInstead = () =>
+        r.i({ className: 'c_AuD_2SgU' },
+          t.ld.SignUpInstead_1,
+          r.a({ className: 'c_AuD_SwitchB', onClick: switchDiag('2SgU') },
+            t.ld.SignUpInstead_2),
+          t.ld.SignUpInstead_3);
+
+    const orLoginInstead = (isTextBefore?: Bo) =>
+        r.i({ className: 'c_AuD_2LgI' },
+          debiki2.firstToLower(t.ld.OrLogIn_1, isTextBefore),
+          r.a({ className: 'c_AuD_SwitchB', onClick: switchDiag('2LgI') },
+            t.ld.OrLogIn_2),
+          t.ld.OrLogIn_3);
+
+    const orJustTypeName = () => !props.allowGuestLogin || isGuestSignUp ? null :
+        r.i({ className: 'c_AuD_2Gst' },
+          t.ld.OrTypeName_1,
+          r.a({ className: 'c_AuD_SwitchB', onClick: switchDiag('2Gst') },
+            t.ld.OrTypeName_2),
+          t.ld.OrTypeName_3)
+
     if (isForFirstOwner) {
       // Don't show any switch-between-login-and-signup buttons.
     }
-    else if (isSignUp) {
+    else if (isSignUp && !isGuestSignUp) {
+      // We're in the Create Account (aka Sign Up) dialog.
+      // Show "Log in instead, or just type your name" dialog switch buttons.
       // If no signup fields above, center align the "Or log in instead" text, else looks weird.
       const style = settings.allowLocalSignup === false ? { textAlign: 'center' } : null;
-      switchToOtherDialogInstead =
-        r.div({ className: 'form-group esLD_Switch', style },
-          "(", r.i({}, t.ld.AlreadyHaveAcctQ,
-            t.ld.LogInInstead_1,
-            r.a({ className: 'esLD_Switch_L', onClick: props.switchBetweenLoginAndSignUp },
-              t.ld.LogInInstead_2),
-            t.ld.LogInInstead_3), " )");
+      switchToLoginOrGuestDlg =
+          r.div({ className: 'form-group c_AuD_Switch', style }, '(',
+            orLoginInstead(),
+            orJustTypeName(),
+            ')');
     }
     else if (store.siteStatus > SiteStatus.Active) {
       // Right now, don't allow creation of new accounts, for deactivated sites. Later, though,
@@ -404,19 +465,22 @@ export const LoginDialogContent = createClassAndFactory({
       // BUG currently no store data is included on /-/login, so even if siteStatus > Active,
       // the "Create account" link inserted below (in `else`) will be added, nevertheless.
     }
-    else if (settings.allowSignup === false) {
-      // Then don't show any switch-to-signup button.
-    }
     else {
-      // The login dialog opens not only via the Log In button, but also if one clicks
-      // e.g. Create Topic. So it's important to be able to switch to sign-up.
-      switchToOtherDialogInstead =
-        r.div({ className: 'form-group esLD_Switch' },
-          "(", r.i({}, t.ld.NewUserQ,
-          t.ld.SignUpInstead_1,
-          r.a({ className: 'esLD_Switch_L', onClick: props.switchBetweenLoginAndSignUp },
-            t.ld.SignUpInstead_2),
-          t.ld.SignUpInstead_3), " )");
+      // We're in the Log In dialog, or the "just type your name" guest login.
+      // Show "Or Create Account instead, or just type your name" dialog switchers.
+      // @ifdef DEBUG
+      // DO_AFTER 2021-03-01  remove the (..||..) below.
+      dieIf(!(isLogin || isGuestSignUp), 'TyE37MRHW20');
+      // @endif
+      const createAcct = settings.allowSignup !== false && (isLogin || isGuestSignUp) ?
+              createAccountInstead() : null;
+      const isTextBefore = !!createAcct;
+
+      switchToSignupOrGuestDlg =
+          r.div({ className: 'form-group c_AuD_Switch' },
+            createAcct,
+            isSignUp ? orLoginInstead(isTextBefore) : null,
+            orJustTypeName());
     }
 
     const ss = store.settings;
@@ -498,19 +562,27 @@ export const LoginDialogContent = createClassAndFactory({
           r.p({ id: 'dw-lgi-or-login-using' },
             anyOpenAuth
               ? (isSignUp
-                  ? (isForGuest ? t.ld.OrTypeName : t.ld.OrCreateAcctHere)
+                  ? (isGuestSignUp ? t.ld.OrTypeName : t.ld.OrCreateAcctHere)
                   : t.ld.OrLogIn)
               : (isSignUp
-                  ? (isForGuest ? t.ld.YourNameQ : t.ld.SignUp)
+                  ? (isGuestSignUp ? t.ld.YourNameQ : t.ld.SignUp)
                   : t.ld.LogIn))),
 
-        switchToOtherDialogInstead,
-        loginForm,
-        createUserForm);
+        // Either:
+        switchToLoginOrGuestDlg,
+        signupOrGuestDlg,
+
+        // Or:
+        // (place the "or Create Account" button below the username and password
+        // inputs — because that's just two fields, so one somewhat easily sees
+        // the Create Account button below.)
+        loginDlg,
+        switchToSignupOrGuestDlg,
+        );
     }
 
     return (
-      r.div({ className: 'esLD' },
+      r.div({ className: 'c_AuD' },
         notHttpsErr,
         notFoundInstructions,
         content));

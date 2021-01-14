@@ -145,6 +145,9 @@ const CreateUserDialog = createClassAndFactory({
       if (store.siteStatus === SiteStatus.NoAdmin) {
         childProps.loginReason = LoginReason.BecomeOwner;
       }
+      // @ifdef DEBUG
+      dieIf(childProps.isForGuest, 'TyE2603MRJ85');
+      // @endif
       content = CreateUserDialogContent(childProps);
     }
 
@@ -416,24 +419,6 @@ export var CreateUserDialogContent = createClassAndFactory({
         id: 'e2eFullName', defaultValue: props.fullName, tabIndex: 1,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
-    // Show an "Or create a real account with username and password" button.
-    const orCreateAccountMaybe = !isForGuest ? null :
-        r.div({ className: 's_LD_OrCreateAccount' },
-          t.cud.OrCreateAcct_1,
-          r.a({ className: 's_LD_CreateAccount',
-                onClick: props.switchBetweenGuestAndPassword },
-            t.cud.OrCreateAcct_2),
-          t.cud.OrCreateAcct_3,
-          r.code({}, t.cud.OrCreateAcct_4),
-          t.cud.OrCreateAcct_5);
-
-    // For now, skip making it possible to change from create-account to login-as-guest.
-    // People wouldn't find that text & button anyway? & in embedded comments, if guest
-    // login is enabled, it's the default way to signup anyway, no need to switch. [8UKBTQ2]
-     /* const orLoginAsGuestMaybe
-          = isForGuest || props.loginReason === LoginReason.LoginToChat ? null :
-        r.div({},  ... switch to guest login text & button ...); */
-
     const disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
 
     return (
@@ -446,8 +431,6 @@ export var CreateUserDialogContent = createClassAndFactory({
         // the full-name-input was a password verification field.
         !isForGuest ? fullNameInput : null,
         passwordInputMaybe,
-        orCreateAccountMaybe,
-        //orLoginAsGuestMaybe,
         PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
             tabIndex: 2 }, isForGuest ? t.Submit : t.cud.CreateAccount)));
   }

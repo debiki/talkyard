@@ -12,7 +12,7 @@
   font-size: 18px;
   text-decoration: underline;
   font-weight: bold;
-  color: hsl(207,100%,42%);
+  color: hsl($uiHue,100%,42%);
 
 .esLoginDlg_becomeAdminInstr
   margin: 25px 5px;
@@ -29,28 +29,32 @@
     opacity: 0.4;
     transition: opacity 0.7s linear;
 
-.dw-login-modal
-  max-width: 520px; // else like 600, too wide
-
 
 // On small screens, like iPhone 5 and login popup windows, make the dialog full-screen.
-@media (max-width: 590px) // $veryNarrowLimit)
+@media (max-width: $modalDialogBreakpoint - 1)
   .dw-login-modal
     margin: 0;
-    width: 100%;
-    height: 100%;
+    padding: 0;
+    width: 100%;  // can remove? or are there  position: fixed (used below) iOS bugs?
+    height: 100%; //
     max-width: none;
     max-height: none;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
     .modal-content
       border: none !important;
       border-radius: 0;
       height: 100%;
     .modal-body
-      // Place dialog title closer to top of window, & make narrower to avoid unneded horizontal scroll.
+      // Reduce padding so gets closer to top of window, and so there's more
+      // horizontal space for the ext IDP authn buttons (e.g. Continue with Google).
       padding: 8px 5px;
 
 
-.esLD
+.c_AuD
   padding-top: 4px;
 
   #dw-lgi-other-sites
@@ -62,7 +66,8 @@
     width: 19em;
 
   $width = 323px;
-  .esLD_Switch
+  .c_AuD_Switch
+    font-style: italic;
     max-width: $width;
     margin: 17px auto;
     &:last-child
@@ -146,25 +151,33 @@
     &:hover
       opacity: 0.85; // would be better if could make them darker on hover, instead of brighter
 
-.esLD_Switch_L
+.c_AuD_SwitchB
   font-weight: bold;
+  background: hsl($uiHue 80% 55%);
+  color: white;
+  padding: 0px 3px 2px 5px;
+  margin: 0 3px 0 2px;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.35);
+  min-width: 60px;
+  display: inline-block;
+  text-align: center;
+  &:hover
+    color: white;
+    text-decoration: none;
+    background: hsl($uiHue 100% 65%);
+
+.c_AuD_2SgU .c_AuD_SwitchB   // switch to Create Account button
+  padding-right: 5px;
+
+.c_AuD_2LgI .c_AuD_SwitchB   // switch to Log In
+  // Make the "Log in" text a bit wider — it's otherwise short, compared to
+  // "just type a name". Hmm but this might not make sense in some languages
+  // other than English, where "Log in" is longer. Oh well.
   letter-spacing: 0.5px;
   word-spacing: 1px;
-  padding: 0 1px 0 2px;
-  color: hsl(207, 100%, 45%);
 
-.s_LD_OrCreateAccount
-  margin: 25px 0 8px;
-  font-style: italic;
-
-.s_LD_CreateAccount
-  display: inline-block;
-  background: hsl(207, 80%, 56%);
-  color: white;
-  font-weight: bold;
-  padding: 3px 6px 4px;
-  margin: 0 5px 6px 4px;
-  box-shadow: 3px 3px 3px rgba(0,0,0,0.29);
+.c_AuD_2Gst .c_AuD_SwitchB   // switch to Guest login ("just type a name")
+  margin-right: 5px;
 
 .s_LD_LoginB
   font-weight: bold;

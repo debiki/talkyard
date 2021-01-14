@@ -134,6 +134,7 @@ declare namespace debiki2 {
 
   let iframeOffsetWinSize;
 
+  function firstToLower(text: St, doIt?: Bo): St;
   function oneIfDef(x: any): number;
 
   function $first(selector: string): HTMLElement;
