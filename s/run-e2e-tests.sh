@@ -310,13 +310,14 @@ function runAllE2eTests {
 
   $r s/wdio --only votes-and-best-first $args
 
-  # RENAME to internal-backlinks.2br? (but not link-previews)
+  # RENAME to internal-inline-link-previews-and-backlinks.2br?
   $r s/wdio --only links-internal.2browsers $args
 
   $r s/wdio --only link-previews-internal-may-see.2br $args
   $r s/wdio --only link-previews-internal-not-see-cat.2br $args
-  $r s/wdio --only embed-images-mp4-youtube.1br.extln $args
-  $r s/wdio --only embed-twitter-tweets-etc.1br.extln $args
+  $r s/wdio --only link-previews-http-to-https.1br $args
+  $r s/wdio --only link-previews-images-mp4-youtube.1br.extln $args
+  $r s/wdio --only link-previews-twitter-max-editor.1br.extln $args
   $r s/wdio --only link-previews-all-others.1br.extln $args
 
 

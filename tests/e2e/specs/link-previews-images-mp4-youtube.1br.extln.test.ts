@@ -10,6 +10,7 @@ import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
+import * as tyAssert from '../utils/ty-assert';
 
 let browser: TyE2eTestBrowser;
 
@@ -31,6 +32,7 @@ const dotOneboxClass = '.s_LnPv';
 // [no_insec_emb] [E2EHTTPS]
 const slashImageJpgUrl = '//www.example.com/image.jpg';
 const httpImageJpgUrl = `http:${slashImageJpgUrl}`;
+const httpsImageJpgUrl = `https:${slashImageJpgUrl}`;
 const imageJpgUrl = `${settings.scheme}:${slashImageJpgUrl}`;
 
 // Let's use some more http links, unless the server uses https. [E2EHTTPS]
@@ -48,6 +50,34 @@ const imageGifOnebox = `aside.s_LnPv.s_LnPv-Img a[href="${imageGifUrl}"] img[src
 const videoMp4Onebox = `aside.s_LnPv.s_LnPv-Video video[src="${videoMp4Url}"]`;
 const videoYouTubeOnebox =
     `aside.s_LnPv.s_LnPv-YouTube iframe[src^="https://www.youtube.com/embed/${videoYouTubeId}"]`;
+
+
+// Don't change http: outside any links:
+const httpButNotALinkSource = `
+Don't change http: in plain text, e.g.: http://not_a_link, or in code blocks,
+or in the wrong attributes:
+
+\`\`\`
+http://url-in-code-block.ex.co/img.jpg?q=http://sth.ex.co
+\`\`\`
+
+<a name="http://wrong-attr.ex.co/img.jpg" href="#">http://wrong.ex.co</a>
+
+But yes, do change real links:
+
+<a href="${httpImageJpgUrl}">text</a>
+
+${httpImageJpgUrl}
+`;
+
+const httpButNotALinkRegexs = [
+      'http: in plain text',
+      'http://not_a_link,',
+      'http://url-in-code-block.ex.co/img.jpg?q=http://sth.ex.co',
+      'name="http://wrong-attr.ex.co/img.jpg"',
+      '>http://wrong.ex.co</a>'];
+      // However, httpImageJpgUrl gets changed to: imageJpgUrl   [E2EHTTPS]
+
 
 
 const inPagePreviewSelector = '.s_P-Prvw ';
@@ -148,64 +178,88 @@ describe("link-previews-images-mp4-youtube.1br.extln  TyTE2E2G3MAWKT4", () => {
   });
 
   it("She can also post image urls, which get converted to preview <img> tags", () => {
+    const nr = c.FirstReplyNr;
     mariasBrowser.complex.replyToOrigPost(imageJpgUrl);
-    mariasBrowser.topic.waitUntilPostHtmlMatches(2, /\.jpg/);
-    mariasBrowser.topic.assertPostNrContains(2, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(2, imageJpgOnebox);
+    mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /\.jpg/);
+    mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
+  });
+
+  it(`Links get changed to https: if the server uses https:
+       — but http: outside any links, is left as is`, () => {
+    const nr = 3;
+    tyAssert.eq(nr, c.FirstReplyNr + 1);
+    mariasBrowser.complex.replyToOrigPost(httpButNotALinkSource);
+    mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /Don't change http/);
+    const postHtml = mariasBrowser.topic.getPostHtml(nr);
+    httpButNotALinkRegexs.forEach(substrWithHttp => {
+      tyAssert.includes(postHtml, substrWithHttp);
+    });
+    // This was a real link:
+    mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
+    tyAssert.includes(postHtml, settings.secure ? httpsImageJpgUrl : httpImageJpgUrl);
+    tyAssert.excludes(postHtml, settings.secure ? httpImageJpgUrl : httpsImageJpgUrl);
   });
 
   it("But unknown links won't get converted to oneboxes", () => {
+    const nr = 4;
     const weirdUrl = 'https://www.example.com/what.is.this.weirdweird';
     mariasBrowser.complex.replyToOrigPost(weirdUrl);
-    mariasBrowser.topic.waitUntilPostTextMatches(3, 'weirdweird');
-    mariasBrowser.topic.assertPostNrNotContains(3, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(3, `a[href="${weirdUrl}"]`);
+    mariasBrowser.topic.waitUntilPostTextMatches(nr, 'weirdweird');
+    mariasBrowser.topic.assertPostNrNotContains(nr, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(nr, `a[href="${weirdUrl}"]`);
   });
 
   it("A media url inside a text paragraph is converted to a plain link", () => {
+    const nr = 5;
     mariasBrowser.complex.replyToOrigPost('zzz ' + imageJpgUrl + ' qqq');
-    mariasBrowser.topic.waitUntilPostTextMatches(4, 'zzz .* qqq');
-    mariasBrowser.topic.assertPostNrNotContains(4, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(4, `a[href="${imageJpgUrl}"]`);
+    mariasBrowser.topic.waitUntilPostTextMatches(nr, 'zzz .* qqq');
+    mariasBrowser.topic.assertPostNrNotContains(nr, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(nr, `a[href="${imageJpgUrl}"]`);
   });
 
   it("A link preview can be inserted between two text paragraphs", () => {
+    const nr = 6;
     mariasBrowser.complex.replyToOrigPost("Paragraph one.\n\n" + imageJpgUrl + "\n\nPara two.");
-    mariasBrowser.topic.waitUntilPostTextMatches(5, "Paragraph one");
-    mariasBrowser.topic.assertPostTextMatches(5, "Para two");
+    mariasBrowser.topic.waitUntilPostTextMatches(nr, "Paragraph one");
+    mariasBrowser.topic.assertPostTextMatches(nr, "Para two");
     // Failed once.
-    mariasBrowser.topic.assertPostNrContains(5, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(5, imageJpgOnebox);
+    mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
   });
 
+  const nr7 = 7;
+
   it("Jpg, png, gif, mp4 link previews work fine", () => {
+    const nr = nr7;
     // This happens to be 5 x 2 links, = 10, < max which is 11 [TyT603RTDJ43].
     // (Each link preview has a widget link, and also a "View at ..." clickable link.)
     mariasBrowser.complex.replyToOrigPost(
         httpImageJpgUrl + '\n\n' + // <— should get changed to https -.
-        imagePngUrl + '\n\n' +     //                                 |
-        imageGifUrl + '\n\n' +     //                                 |
-        videoMp4Url + '\n\n' +     //                                 |
-        videoYouTubeUrl);          //                                 |
-    mariasBrowser.topic.waitUntilPostHtmlMatches(6, /\.jpg/);    //   |
-    mariasBrowser.topic.assertPostNrContains(6, dotOneboxClass); //   |
-    mariasBrowser.topic.assertPostNrContains(6, imageJpgOnebox); // <-'  here
-    mariasBrowser.topic.assertPostNrContains(6, imagePngOnebox);
-    mariasBrowser.topic.assertPostNrContains(6, imageGifOnebox);
-    mariasBrowser.topic.assertPostNrContains(6, videoMp4Onebox);
+        imagePngUrl + '\n\n' +     //                                  |
+        imageGifUrl + '\n\n' +     //                                  |
+        videoMp4Url + '\n\n' +     //                                  |
+        videoYouTubeUrl);          //                                  |
+    mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /\.jpg/);    //   |
+    mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass); //   |
+    mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox); // <-'  here
+    mariasBrowser.topic.assertPostNrContains(nr, imagePngOnebox);
+    mariasBrowser.topic.assertPostNrContains(nr, imageGifOnebox);
+    mariasBrowser.topic.assertPostNrContains(nr, videoMp4Onebox);
   });
 
   it("... and YouTube links too", () => {
-    mariasBrowser.topic.assertPostNrContains(6, videoYouTubeOnebox);
+    mariasBrowser.topic.assertPostNrContains(nr7, videoYouTubeOnebox);
   });
 
   it("The server survives an invalid YouTube video id", () => {
+    const nr = 8;
     // Reply to the previous post because we've now scrolled down so the orig post isn't visible.
     mariasBrowser.complex.replyToPostNr(6, videoYouTubeUrlInvalidId + '\n\n\nPlain text.');
-    mariasBrowser.topic.waitUntilPostTextMatches(7, "Plain text");
-    mariasBrowser.topic.assertPostNrContains(7, '.s_LnPv-Err');
-    mariasBrowser.topic.assertPostNrContains(7, `a[href="${videoYouTubeUrlInvalidId}"]`);
-    mariasBrowser.topic.assertPostTextMatches(7, 'TyEYOUTBID_');
+    mariasBrowser.topic.waitUntilPostTextMatches(nr, "Plain text");
+    mariasBrowser.topic.assertPostNrContains(nr, '.s_LnPv-Err');
+    mariasBrowser.topic.assertPostNrContains(nr, `a[href="${videoYouTubeUrlInvalidId}"]`);
+    mariasBrowser.topic.assertPostTextMatches(nr, 'TyEYOUTBID_');
   });
 
 });

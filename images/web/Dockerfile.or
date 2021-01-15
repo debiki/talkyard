@@ -297,8 +297,8 @@ COPY \
     node_modules/fontsource-open-sans/files/open-sans-????*-300-*.woff* \
     node_modules/fontsource-open-sans/files/open-sans-????*-400-*.woff* \
     node_modules/fontsource-open-sans/files/open-sans-????*-600-*.woff* \
-    # Sync 'open-sans-v1' with Makefile and gulpfile.js. [sync_fonts]
-    /opt/talkyard/fonts/open-sans-v1/files/
+    # Sync 'open-sans-vN' with Makefile and gulpfile.js. [sync_fonts]
+    /opt/talkyard/fonts/open-sans-v2/files/
 
 
 

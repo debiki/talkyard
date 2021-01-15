@@ -1,0 +1,1 @@
+debiki.startStuff();

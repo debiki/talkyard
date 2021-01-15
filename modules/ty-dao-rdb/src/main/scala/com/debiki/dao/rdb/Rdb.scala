@@ -449,6 +449,46 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
   }
 
 
+  /** If sequential scans are allowed, Postgres sometimes takes whole table locks,
+    * when not needed — e.g. when 2 different transactions update 2 different
+    * sites (one each). And this can cause serialization failures,  [PGSERZERR]
+    * this error text:
+    *
+    *   ERROR:  could not serialize access due to read/write dependencies among transactions
+    *   DETAIL:  Reason code: Canceled on identification as a pivot,
+    *            during conflict out checking.
+    *   HINT:  The transaction might succeed if retried.
+    *
+    * Maybe enable_seqscan could be a config value — but when a site is huge, indexes
+    * are "always" needed anyway, so, allowing seq scans would just optimize for the
+    * case when the database is small? which should be fast enough in any case?
+    *
+    * See:
+    *
+    *   """A sequential scan will always necessitate a relation-level predicate lock.
+    *     This can result in an increased rate of serialization failures"""
+    *   https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE
+    *
+    *   https://stackoverflow.com/q/42288808/694469
+    *
+    *   https://stackoverflow.com/questions/12837708/
+    *        predicate-locking-in-postgresql-9-2-1-with-serializable-isolation
+    *
+    * This should be combined with retrying failed transactions (not yet
+    * implemented) — they have SQLSTATE '40001'.
+    *
+    *   """[apps that use Serializable isolation level should]  have a generalized way
+    *     of handling serialization failures (which always return with a SQLSTATE
+    *     value of '40001'), because it will be very hard to predict exactly which
+    *     transactions might contribute to the read/write dependencies and need
+    *     to be rolled back to prevent serialization anomalies"""
+    *   https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE
+    */
+  private def disableSequentialScan(connection: js.Connection): Unit = {
+    update("set enable_seqscan = off")(connection)
+  }
+
+
   def query[T](sql: String, binds: List[AnyRef],
                resultSetHandler: js.ResultSet => T)
               (implicit conn: js.Connection): T = {
@@ -650,8 +690,11 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
   }
 
   def getConnection(readOnly: Boolean, mustBeSerializable: Boolean): js.Connection = {
-    if (readOnly) readOnlyDataSource.getConnection()
-    else readWriteDataSource.getConnection()
+    val connection =
+          if (readOnly) readOnlyDataSource.getConnection()
+          else readWriteDataSource.getConnection()
+    disableSequentialScan(connection)
+    connection
   }
 
   def closeConnection(connection: js.Connection) {

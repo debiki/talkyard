@@ -279,8 +279,8 @@ export function showForumIntro(visible: boolean) {
 }
 
 
-export function editPostWithNr(postNr: number) {
-  login.loginIfNeededReturnToPost('LoginToEdit', postNr, () => {
+export function editPostWithNr(postNr: PostNr) {
+  login.loginIfNeededReturnToPost(LoginReason.LoginToEdit, postNr, () => {
     if (eds.isInEmbeddedCommentsIframe) {
       sendToEditorIframe(['editorEditPost', postNr]);
     }

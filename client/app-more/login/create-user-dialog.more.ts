@@ -97,7 +97,7 @@ interface CreateUserPostData extends CreateUserParams {
  * and via a link in that email.
  */
 debiki.internal._showCreateUserDialog = function(params: CreateUserParams) {
-  const loginDialog = login.getLoginDialog();
+  const loginDialog = debiki2.login.getLoginDialog();
   const [anyAfterLoginCallback, anyReturnToUrl] = loginDialog.getDoAfter();
   // In case any login dialog is still open: (this resets the after-login-callback
   // copied above, and return-to-url)
@@ -143,8 +143,11 @@ const CreateUserDialog = createClassAndFactory({
         closeDialog: this.close,
       };
       if (store.siteStatus === SiteStatus.NoAdmin) {
-        childProps.loginReason = LoginReason.BecomeAdmin;
+        childProps.loginReason = LoginReason.BecomeOwner;
       }
+      // @ifdef DEBUG
+      dieIf(childProps.isForGuest, 'TyE2603MRJ85');
+      // @endif
       content = CreateUserDialogContent(childProps);
     }
 
@@ -284,7 +287,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     const props: CreateUserDialogContentProps = this.props;
     const returnToUrl: St | U = props.anyReturnToUrl;
     const postData: CreateUserPostData = { ...this.state.userData, returnToUrl };
-    waitUntilAcceptsTerms(props.store, props.loginReason === LoginReason.BecomeAdmin, () => {
+    waitUntilAcceptsTerms(props.store, props.loginReason === LoginReason.BecomeOwner, () => {
       if (props.authDataCacheKey) { // [4WHKTP06]
         postData.authDataCacheKey = props.authDataCacheKey;
         Server.createOauthUser(postData, this.handleCreateUserResponse, this.handleErrorResponse);
@@ -314,7 +317,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       // directly without reading the message about checking their email inbox. Then
       // they don't know what to do, and are stuck.
       // (Probably this email verif step needs to be totally removed. [SIMPLNEWSITE]
-      const mayCloseDialog = props.loginReason !== LoginReason.BecomeAdmin;
+      const mayCloseDialog = props.loginReason !== LoginReason.BecomeOwner;
       getAddressVerificationEmailSentDialog().sayVerifEmailSent(mayCloseDialog); // [new_user_verif_eml]
     }
     else if (props.afterLoginCallback || (
@@ -416,24 +419,6 @@ export var CreateUserDialogContent = createClassAndFactory({
         id: 'e2eFullName', defaultValue: props.fullName, tabIndex: 1,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
-    // Show an "Or create a real account with username and password" button.
-    const orCreateAccountMaybe = !isForGuest ? null :
-        r.div({ className: 's_LD_OrCreateAccount' },
-          t.cud.OrCreateAcct_1,
-          r.a({ className: 's_LD_CreateAccount',
-                onClick: props.switchBetweenGuestAndPassword },
-            t.cud.OrCreateAcct_2),
-          t.cud.OrCreateAcct_3,
-          r.code({}, t.cud.OrCreateAcct_4),
-          t.cud.OrCreateAcct_5);
-
-    // For now, skip making it possible to change from create-account to login-as-guest.
-    // People wouldn't find that text & button anyway? & in embedded comments, if guest
-    // login is enabled, it's the default way to signup anyway, no need to switch. [8UKBTQ2]
-     /* const orLoginAsGuestMaybe
-          = isForGuest || props.loginReason === LoginReason.LoginToChat ? null :
-        r.div({},  ... switch to guest login text & button ...); */
-
     const disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
 
     return (
@@ -446,8 +431,6 @@ export var CreateUserDialogContent = createClassAndFactory({
         // the full-name-input was a password verification field.
         !isForGuest ? fullNameInput : null,
         passwordInputMaybe,
-        orCreateAccountMaybe,
-        //orLoginAsGuestMaybe,
         PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
             tabIndex: 2 }, isForGuest ? t.Submit : t.cud.CreateAccount)));
   }

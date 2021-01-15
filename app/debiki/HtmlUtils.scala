@@ -17,12 +17,6 @@
 
 package debiki
 
-import com.debiki.core._
-//import com.twitter.ostrich.stats.Stats
-import java.{util => ju, io => jio}
-import scala.collection.JavaConversions._
-import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
-import Prelude._
 
 
 object HtmlUtils {

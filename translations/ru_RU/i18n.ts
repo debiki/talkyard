@@ -991,11 +991,11 @@ var t_ru_RU: TalkyardTranslations = t = {
     FullNameC: "Полное имя:",
     optName: "по желанию",
 
-    OrCreateAcct_1: "Или ",
-    OrCreateAcct_2: "завести аккаунт",
-    OrCreateAcct_3: " с участием ",
-    OrCreateAcct_4: "@username",
-    OrCreateAcct_5: " & пароль",
+    //OrCreateAcct_1: "Или ",
+    //OrCreateAcct_2: "завести аккаунт",
+    //OrCreateAcct_3: " с участием ",
+    //OrCreateAcct_4: "@username",
+    //OrCreateAcct_5: " & пароль",
 
     DoneLoggedIn: "Аккаунт создан. Вы вошли.",  // COULD say if verif email sent too?
     AlmostDone:
@@ -1074,15 +1074,20 @@ var t_ru_RU: TalkyardTranslations = t = {
     LogInToComment: "Войдите, чтобы оставить комментарий",
     LogInToCreateTopic: "Войдите, чтобы создать тему",
 
-    AlreadyHaveAcctQ: "У вас есть аккаунт? ",  // MISSING changed "Already have...?" to "You have...?"
-    LogInInstead_1: "",
-    LogInInstead_2: "Войти",   // "Log in" (this is a button)
-    LogInInstead_3: " вместо", // "instead"
+    //AlreadyHaveAcctQ: "У вас есть аккаунт? ",  // MISSING changed "Already have...?" to "You have...?"
+    OrLogIn_1: "",
+    OrLogIn_2: "Войти",   // "Log in" (this is a button)
+    OrLogIn_3: " вместо", // "instead"
 
-    NewUserQ: "Новый пользователь? ",
+    //NewUserQ: "Новый пользователь? ",
     SignUpInstead_1: "",
     SignUpInstead_2: "Зарегистрироваться",
     SignUpInstead_3: " вместо",
+
+    // MAYBE x3:
+    OrTypeName_1: ", или просто ",
+    OrTypeName_2: "введите свое имя",   // is a button
+    OrTypeName_3: "",
 
     OrCreateAcctHere: "Или создать аккаунт:",
     OrTypeName: "Или введите свое имя:",

@@ -38,9 +38,13 @@ $sideSpace = 20px;
     @media (max-width: 500px)
       padding-right: 0; // the DropModal has padding-right itself already [5YKF20]
 
-  &:hover
+  &:hover&:not(.c_Dis)
     background: hsl($uiHue, 100%, 97%);
     border: 2px solid hsl($uiHue, 100%, 78%);
+
+  &.c_Dis a
+    opacity: 0.5;
+    cursor: default;
 
 .esExplDrp_entry.active
   $bgColor = hsl($uiHue, 95%, 92%);

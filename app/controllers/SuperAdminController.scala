@@ -41,6 +41,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
   def superAdminApp(clientRoute: String): Action[Unit] = SuperAdminGetAction { apiReq =>
     _root_.controllers.dieIfAssetsMissingIfDevTest()
     val siteTpi = SiteTpi(apiReq)
+    CSP_MISSING
     val pageBody = views.html.adminPage(siteTpi, appId = "theSuperAdminApp").body
     Ok(pageBody) as HTML
   }

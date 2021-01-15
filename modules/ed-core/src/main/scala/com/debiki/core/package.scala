@@ -81,6 +81,7 @@ package object core {
   type ImmSeq[+A] = immutable.Seq[A]
   val ImmSeq: immutable.Seq.type = immutable.Seq
 
+  type MutBuf[A] = mutable.Buffer[A]
   type MutArrBuf[A] = mutable.ArrayBuffer[A]
   val MutArrBuf: mutable.ArrayBuffer.type = mutable.ArrayBuffer
 
@@ -124,7 +125,8 @@ package object core {
   // ... But this should be a string.
   type AltPageId = String
 
-  type PageVersion = Int
+  type PageVersion = Int  // [Scala_3] opaque type ... And so many more here!
+  val NoVersion: PageVersion = 0
 
   type CategoryId = Int
   val NoCategoryId = 0
@@ -172,6 +174,7 @@ package object core {
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
 
+  type SysTx = SystemTransaction
   type SiteTx = SiteTransaction  // renaming it, wip
 
   type ConfFileIdpId = St
@@ -1334,6 +1337,7 @@ package object core {
   // [weakness] means an issues not yet handled, might lead to a 'vulnerability'
   // that an attacker / 'threat actor' can 'exploit'.
   def SECURITY = ()       // Some security issue, not necessarily so very important
+  def CSP_MISSING = ()    // Content-Security-Policy missing on this page / route
 
   def SELF_DOS = ()
   def ASTROTURFING = ()   // Someone creates many accounts and pretends to be many people

@@ -61,6 +61,7 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
     val site = globals.lookupSiteOrThrow(request)
     val dao = globals.siteDao(site.id)
     val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE5JGKW0", "Bad email id")
+    CSP_MISSING
     Ok(views.html.summaryemails.unsubFromSummariesPage(emailId, emailAddress = email.sentTo))
   }
 
@@ -105,6 +106,7 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
 
 
   def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
+    CSP_MISSING
     Ok(views.html.summaryemails.unsubFromSummariesDonePage())
   }
 

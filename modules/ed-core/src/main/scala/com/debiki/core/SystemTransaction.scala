@@ -20,7 +20,9 @@ package com.debiki.core
 import scala.collection.immutable
 
 
-trait SystemTransaction {
+trait SystemTransaction {  RENAME // to SysTx, started already
+  def allSitesWriteLocked: Bo
+
   def commit(): Unit
   def rollback(): Unit
 

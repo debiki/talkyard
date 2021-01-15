@@ -25,6 +25,10 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
     return;
   }
 
+  if (settings.secure) {
+    die("GitHub authn e2e test creds currently use http [TyE8020756SRM]");
+  }
+
   it('initialize', () => {
     browser = new TyE2eTestBrowser(wdioBrowser);
   });

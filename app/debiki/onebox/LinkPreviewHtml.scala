@@ -27,7 +27,7 @@ import debiki.TextAndHtml.safeEncodeForHtml
 object LinkPreviewHtml {
 
 
-  def safeAside(safeHtml: St, extraLnPvCssClasses: St,
+  def wrapInSafeAside(safeHtml: St, extraLnPvCssClasses: St,
         unsafeUrl: St, unsafeProviderName: Opt[St],
         addViewAtLink: Bo): St = {
 
@@ -42,7 +42,7 @@ object LinkPreviewHtml {
     // rel=nofollow also added here: [rel_nofollow].
     val relAttrs = "nofollow noopener ugc"
 
-    <aside class={s"s_LnPv $extraLnPvCssClasses clearfix"}>{
+    <aside class={s"s_LnPv s_LnPv-Blk $extraLnPvCssClasses clearfix"}>{
         // The html should have been sanitized already (that's why the param
         // name is *safe*Html).
         scala.xml.Unparsed(safeHtml)

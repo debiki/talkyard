@@ -68,6 +68,7 @@ case class PagePathAndMeta(
 
   def id: PageId = meta.pageId
   def pageId: PageId = meta.pageId
+  def idAndVersion: PageIdVersion = meta.idVersion
   def pathSt: St = path.value
   def categoryId: Opt[CategoryId] = meta.categoryId
   def pageType: PageType = meta.pageType
@@ -331,7 +332,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
     lastApprovedReplyById.foreach(ids += _)
   }
 
-  def idVersion = PageIdVersion(pageId, version = version)
+  def idVersion: PageIdVersion = PageIdVersion(pageId, version = version)
 
 
   def copyWithNewVersion: PageMeta = copy(version = version + 1)

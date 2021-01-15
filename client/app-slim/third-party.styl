@@ -287,6 +287,11 @@ input, textarea {
 .modal-backdrop
   z-index: 1050;
 
+// Make dialogs slightly wider.
+@media (min-width: $modalDialogBreakpoint)
+  .modal-dialog
+    width: 630px;  // else 600, Bootstrap's default
+
 // Scrollbars appear sometimes although not needed, in the editor dialog, when full screen,
 // and opening the category dropdown. (Sep 2016)
 .modal.fade.in

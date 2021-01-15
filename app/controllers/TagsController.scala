@@ -39,6 +39,7 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def tagsApp(clientRoute: String): Action[Unit] = GetAction { apiReq =>
     _root_.controllers.dieIfAssetsMissingIfDevTest()
     val siteTpi = SiteTpi(apiReq)
+    CSP_MISSING
     val pageBody = views.html.adminPage(siteTpi, appId = "theTagsApp").body
     Ok(pageBody) as HTML
   }

@@ -1,3 +1,10 @@
+//  To run this script: Install Nodejs and Yarn,
+//  then:  yard build
+//  then, in Ty's base dir:
+//      nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js --help
+//
+
+
 /// <reference path="to-talkyard.d.ts" />
 
 /*
@@ -54,6 +61,46 @@ function throwTooManyParamsIfDefined(value: string | undefined) {
   }
 }
 
+function logAndExit(msg: string, exitCode: Nr = 1): void {
+  console.log(msg);
+  process.exit(exitCode);
+}
+
+
+function logAndExitIf(test: boolean, msg: string): void {
+  if (test) logAndExit(msg);
+}
+
+
+logAndExitIf(args.help || args.h, `
+Usage:
+
+  First convert the Disqus (or WordPress, later) export file
+  to Talkyard JSON format:
+
+      nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js \\
+          --disqusXmlExportFile path/to/file.xml \\
+          --writeTo disqus-to-talkyard.typatch.json
+
+  Then, at your Talkyard site, go to the Admin Area, the Settings | Features tab,
+  and enable the API, click Save. Now an API tab appears — go there and generate
+  an API secret; copy it.
+
+  Thereafter you can import the JSON file:  (and change the --sendTo server
+  address to your Talkyard site's address)
+
+      nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js \\
+          --talkyardJsonPatchFile disqus-to-talkyard.typatch.json  \\
+          --sendTo https://your-talkyard-site.example.com  \\
+          --sysbotApiSecret 'THE_SECRET_YOU_COPIED'
+
+  Back in the browser, go to https://your-talkyard-site.example.com
+  and see if your imported topics have appeared.
+
+  Afterwards, delete the API secret.
+  \n`);
+
+
 if (_.isString(wordpressXmlFilePath)) {
   throwTooManyParamsIfDefined(disqusXmlFilePath);
   throwTooManyParamsIfDefined(jsonDumpFilePath);
@@ -70,9 +117,9 @@ else if (_.isString(jsonDumpFilePath)) {
   talkyardSiteData = JSON.parse(jsonString);
 }
 else {
-  throw (
+  logAndExit(
     "No export file or json dump specified, one of:\n" +
-    "  --wordpressCoreXmlExportFile=...\n" +
+ // "  --wordpressCoreXmlExportFile=...\n" +  // later
     "  --disqusXmlExportFile=...\n" +
     "  --talkyardJsonPatchFile=...");
 }
@@ -81,18 +128,17 @@ const writeToPath: string | undefined = args.writeTo;
 const sendToOrigin: string | undefined = args.sendTo;
 const sysbotApiSecret: string | undefined = args.sysbotApiSecret;
 
-if (!_.isString(writeToPath) && !_.isString(sendToOrigin))
-  throw "Missing: --writeTo=... or --sendTo=...";
+logAndExitIf(!_.isString(writeToPath) && !_.isString(sendToOrigin),
+      "Missing: --writeTo=... or --sendTo=...");
 
+logAndExitIf(_.isString(sendToOrigin) && !_.isString(sysbotApiSecret),
+      "Missing: --sysbotApiSecret=..., required together with --sendTo=...");
 
-if (_.isString(sendToOrigin) && !_.isString(sysbotApiSecret))
-  die("Missing: --sysbotApiSecret=..., required together with --sendTo=...");
+logAndExitIf(primaryOrigin && !primaryOrigin.startsWith('http'),
+      "The --primaryOrigin should be like http(s)://server.address");
 
-if (primaryOrigin && !primaryOrigin.startsWith('http'))
-  die("The --primaryOrigin should be like http(s)://server.address");
-
-if (primaryOrigin && _.filter(primaryOrigin, c => c === '/').length >= 3)
-  die("The --primaryOrigin should not include any URL path, only http(s)://host.");
+logAndExitIf(primaryOrigin && _.filter(primaryOrigin, c => c === '/').length >= 3,
+      "The --primaryOrigin should not include any URL path, only http(s)://host.");
 
 
 if (!talkyardSiteData) {

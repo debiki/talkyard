@@ -56,11 +56,14 @@ export var ExplainingListItem = createComponent({
         props.active || _.isUndefined(props.active) && (
           props.onSelect && props.activeEventKey === props.eventKey) ?
         ' active' : '';
+    const disabledClass = props.disabled ? ' c_Dis' : '';
     const subStuff = !entry.subStuff ? null :
             r.div({ className: 'esExplDrp_entry_sub' }, entry.subStuff);
+    const onClick = props.disabled ? undefined : this.onClick;
+
     return (
-      r.li({ className: 'esExplDrp_entry' + activeClass },
-        r.a({ onClick: this.onClick, id: props.id, className: props.className },
+      r.li({ className: 'esExplDrp_entry' + activeClass + disabledClass},
+        r.a({ onClick, id: props.id, className: props.className },
           r.div({ className: 'esExplDrp_entry_title' }, entry.title),
           r.div({ className: 'esExplDrp_entry_expl' }, entry.text)),
         subStuff));

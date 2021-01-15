@@ -25,10 +25,20 @@
 
 const r = ReactDOMFactories;
 
+interface Props extends NewPasswordData {
+  xsrfToken: St;
+}
+
+interface State {
+  passwordOk: Bo;
+}
+
 
 export function renderNewPasswordPage(secretKey: string) {
-  const props = window['newPasswordData'];
-  props.xsrfToken = getSetCookie('XSRF-TOKEN');
+  const props: Props = {
+    ...eds.newPasswordData,
+    xsrfToken: getSetCookie('XSRF-TOKEN'),
+  };
   ReactDOM.render(NewPasswordPage(props),
       document.getElementById('dw-react-new-password'));
 }
@@ -36,16 +46,19 @@ export function renderNewPasswordPage(secretKey: string) {
 
 const NewPasswordPage = createClassAndFactory({
   getInitialState: function() {
-    return { passwordOk: false };
+    return { passwordOk: false } as State;
   },
 
-  setPasswordOk: function(passwordOk: boolean) {
-    this.setState({ passwordOk: passwordOk });
+  setPasswordOk: function(passwordOk: Bo) {
+    this.setState({ passwordOk } as State);
   },
 
   render: function () {
+    const props: Props = this.props;
+    const state: State = this.state;
+
     let oldPasswordInput;
-    if (!this.props.resetPasswordEmailId) {
+    if (!props.resetPasswordEmailId) {
       oldPasswordInput = r.p({}, '__ old pwd here, unimplemented [DwE4KGE30] __');
       // label for="oldPassword">Enter your current password:</label>  // I18N
       // input type="password" id="oldPassword" name="oldPassword" value="" class="form-control">
@@ -56,12 +69,12 @@ const NewPasswordPage = createClassAndFactory({
 
     return (
       r.form({ method: 'POST' },
-        Input({ type: 'hidden', name: 'dw-fi-xsrf', value: this.props.xsrfToken }),
-        Input({ type: 'hidden', name: 'emailId', value: this.props.resetPasswordEmailId }),
+        Input({ type: 'hidden', name: 'dw-fi-xsrf', value: props.xsrfToken }),
+        Input({ type: 'hidden', name: 'emailId', value: props.resetPasswordEmailId }),
         oldPasswordInput,
-        NewPasswordInput({ newPasswordData: this.props, minLength: this.props.minLength,
+        NewPasswordInput({ newPasswordData: props, minLength: props.minLength,
             setPasswordOk: this.setPasswordOk }),
-        InputTypeSubmit({ disabled: !this.state.passwordOk, value: t.Submit,
+        InputTypeSubmit({ disabled: !state.passwordOk, value: t.Submit,
             className: 'e_SbmNewPwB' })));
   }
 });

@@ -23,10 +23,7 @@
 <head>
 @tpi.debikiMeta
 @tpi.debikiStyles
-@tpi.debikiScriptsInHead()
-<script>
-eds.baseDomain = '@{ tpi.globals.baseDomainNoPort }';
-</script>
+@tpi.debikiScriptsInHead(isCreateSitePage = true)
 </head>
 <body style="overflow: auto">
 <!-- createSitePage.scala.html -->
@@ -45,6 +42,6 @@ eds.baseDomain = '@{ tpi.globals.baseDomainNoPort }';
   <div id="dw-react-create-site"></div>
 </div>
 
-@tpi.debikiScriptsEndOfBody(loadStaffBundle = true)
+@tpi.scriptBundlesEndOfBody(loadStaffBundle = true)
 </body>
 </html>

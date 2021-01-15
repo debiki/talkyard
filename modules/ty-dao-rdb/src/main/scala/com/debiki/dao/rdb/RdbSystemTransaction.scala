@@ -29,8 +29,13 @@ import RdbUtil._
 
 
 
-class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
+class RdbSystemTransaction(
+  val daoFactory: RdbDaoFactory,
+  val now: When,
+  val allSitesWriteLocked: Bo,
+  )
   extends SystemTransaction with CreateSiteSystemDaoMixin {
+
 
   def db: Rdb = daoFactory.db
 
@@ -60,7 +65,8 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
 
   def createTheOneAndOnlyConnection(readOnly: Boolean) {
     require(_theOneAndOnlyConnection.isEmpty, "DwE8PKW2")
-    _theOneAndOnlyConnection = Some(db.getConnection(readOnly, mustBeSerializable = true))
+    _theOneAndOnlyConnection = Some(
+          db.getConnection(readOnly, mustBeSerializable = true))
   }
 
 

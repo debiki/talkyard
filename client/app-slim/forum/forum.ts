@@ -421,7 +421,7 @@ const ForumButtons = createComponent({
 
   createTopic: function(category: Category) {
     const anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
-    login.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
+    login.loginIfNeeded(LoginReason.CreateTopic, anyReturnToUrl, () => {
       if (this.isGone) return;
       const newTopicTypes = category.newTopicTypes || [];
       if (newTopicTypes.length === 0) {

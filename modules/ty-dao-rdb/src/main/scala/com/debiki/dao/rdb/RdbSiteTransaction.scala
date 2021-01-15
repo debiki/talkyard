@@ -66,10 +66,13 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
   def db: Rdb = daoFactory.db
 
-  /** Lets us call SystemTransaction functions, in the same transaction.
+  /** Lets us call SystemTransaction functions, in the same transaction. ...
     */
   lazy val asSystem: RdbSystemTransaction = {
-    val transaction = new RdbSystemTransaction(daoFactory, now)
+    val transaction = new RdbSystemTransaction(
+          // ... but we won't accidentally call fns that assume we have
+          // a whole db write lock?
+          daoFactory, now, allSitesWriteLocked = false)
     transaction.setTheOneAndOnlyConnection(theOneAndOnlyConnection)
     transaction
   }
@@ -105,8 +108,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   // COULD move to new superclass?
   def createTheOneAndOnlyConnection(readOnly: Boolean, mustBeSerializable: Boolean) {
     require(_theOneAndOnlyConnection.isEmpty)
-    _theOneAndOnlyConnection = Some(db.getConnection(
-      readOnly = readOnly, mustBeSerializable = mustBeSerializable))
+    _theOneAndOnlyConnection = Some(
+          db.getConnection(readOnly = readOnly, mustBeSerializable = mustBeSerializable))
   }
 
   // COULD move to new superclass?

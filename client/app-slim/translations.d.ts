@@ -863,12 +863,6 @@ interface TalkyardTranslations {
     FullNameC: string;
     optName: string;
 
-    OrCreateAcct_1: string,
-    OrCreateAcct_2: string,
-    OrCreateAcct_3: string,
-    OrCreateAcct_4: string,
-    OrCreateAcct_5: string,
-
     DoneLoggedIn: string;
     AlmostDone: string;
   },
@@ -925,15 +919,17 @@ interface TalkyardTranslations {
     LogInToComment: string;
     LogInToCreateTopic: string;
 
-    AlreadyHaveAcctQ: string;
-    LogInInstead_1: string;
-    LogInInstead_2: string;
-    LogInInstead_3: string;
+    OrLogIn_1: string;
+    OrLogIn_2: string;
+    OrLogIn_3: string;
 
-    NewUserQ: string;
     SignUpInstead_1: string;
     SignUpInstead_2: string;
     SignUpInstead_3: string;
+
+    OrTypeName_1: string;
+    OrTypeName_2: string;
+    OrTypeName_3: string;
 
     OrCreateAcctHere: string;
     OrTypeName: string;

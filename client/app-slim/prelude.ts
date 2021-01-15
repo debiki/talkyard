@@ -17,7 +17,7 @@
 
 /// <reference path="../types-and-const-enums.ts" />
 /// <reference path="../reactjs-types.ts" />
-/// <reference path="server-vars.d.ts" />
+/// <reference path="server-vars.ts" />
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 /// <reference path="translations.d.ts" />
@@ -109,6 +109,14 @@ export function toStr(x: any, indentation: number = 2): string {
 }
 // x endif
 
+
+/// Lowercases the 1st char.
+///
+export function firstToLower(text: St, doIt: Bo = true): St {
+  if (!doIt || !text) return text;
+  const firstButLowercase = text[0].toLowerCase();
+  return firstButLowercase + text.substr(1);
+}
 
 // If in an embedded comments iframe.
 export let iframeOffsetWinSize: IframeOffsetWinSize | undefined;

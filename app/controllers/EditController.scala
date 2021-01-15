@@ -229,12 +229,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * and gets back Twitter tweet json that shows how to embed the tweet,
     * then creates and returns sanitized onebox html.
     */
-  def fetchLinkPreview(url: St, curPageId: PageId): Action[U] = AsyncGetActionRateLimited(
-        RateLimits.FetchLinkPreview) { request =>
+  def fetchLinkPreview(url: St, curPageId: PageId, inline: Bo): Action[U] =
+        AsyncGetActionRateLimited(RateLimits.FetchLinkPreview) { request =>
     import edContext.globals
     import request.{siteId, requesterOrUnknown}
-
-    val inline = false  // later, query param
 
     throwBadRequestIf(url.isEmpty, "TyELNPVEMPTYURL",
           "Weird URL: Empty string")
@@ -266,13 +264,20 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
           requesterId = requesterOrUnknown.id)
 
     val response = renderer.fetchRenderSanitize(uri, inline = inline).transform(
-          html => Ok(html),
+          result => {
+            val jsob = Json.obj(  // ts: LinkPreviewResp
+                "safeTitleCont" -> JsString(result.safeTitleCont.getOrElse("")),
+                "classAtr" -> result.classAtr,
+                "safeHtml" -> result.safeHtml,
+                "errCode" -> JsStringOrNull(result.errCode))
+             OkSafeJson(jsob)
+          },
           throwable => throwable match {
             case ex: DebikiException =>
-              ResultException(BadReqResult(
+              RespEx(BadReqResult(
                     "TyELNKPVWEXC", s"Cannot preview that link: ${ex.getMessage}"))
             case _ =>
-              ResultException(BadReqResult(
+              RespEx(BadReqResult(
                     "TyELNKPVWUNK", "Cannot preview that link"))
           })(execCtx)
 

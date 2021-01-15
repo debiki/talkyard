@@ -701,7 +701,9 @@ trait CategoriesDao {
     permissions foreach { p =>
       dieIf(p.onCategoryId != newCategoryData.anyId, "EdE7UKW02")
     }
-    val permsWithCatId = permissions.map(_.copy(onCategoryId = Some(categoryId)))
+
+    val effPerms = permissions.filter(_.hasSomeEffect)
+    val permsWithCatId = effPerms.map(_.copy(onCategoryId = Some(categoryId)))
     val permsWithId = addRemovePermsOnCategory(categoryId, permsWithCatId)(tx)._1
 
     if (byWho.isSystem) {
@@ -772,6 +774,7 @@ trait CategoriesDao {
     val oldPermissionsById: mutable.Map[PermissionId, PermsOnPages] =
       tx.loadPermsOnCategory(categoryId).map(p => (p.id, p))(collection.breakOut)
     var wasChangesMade = false
+
     permissions foreach { permission =>
       var alreadyExists = false
       if (permission.id >= PermissionAlreadyExistsMinId) {
@@ -779,23 +782,29 @@ trait CategoriesDao {
           alreadyExists = true
           if (oldPerm != permission) {
             wasChangesMade = true
-            if (permission.isEverythingUndefined) {
+            if (permission.hasNoEffect) {
               // latent BUG: not incl info about this deleted perm in the fn result [0YKAG25L]
               tx.deletePermsOnPages(Seq(permission.id))
             }
             else {
+              // If in the user interface we added perms for the same group twice,
+              // that'd violate permsonpages_on_cat_u — but the UI doesn't allow that.
+              COULD // be nice to return 403 Forbidden instead of Internal Error
+              // if that somehow still happened.
               tx.updatePermsOnPages(permission)
               permsWithIds.append(permission)
             }
           }
         }
       }
-      if (!alreadyExists) {
+
+      if (!alreadyExists && permission.hasSomeEffect) {
         wasChangesMade = true
         val permWithId = tx.insertPermsOnPages(permission)
         permsWithIds.append(permWithId)
       }
     }
+
     // latent BUG: not incl info about these deleted perms in the fn result [0YKAG25L]
     tx.deletePermsOnPages(oldPermissionsById.keys)
     wasChangesMade ||= oldPermissionsById.nonEmpty

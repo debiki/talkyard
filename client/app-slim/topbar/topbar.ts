@@ -48,6 +48,16 @@ export function getTopbarHeightInclShadow(): Nr {
 }
 
 
+interface TopbarProps {
+  purpose?: LoginReason;
+  location: { pathname: string };
+  extraMargin?: Bo;
+  customTitle?: St;
+  backToSiteButtonTitle?: St;
+  showBackToSite?: Bo;
+}
+
+
 interface TopbarState {
   store: Store;
   fixed: Bo;
@@ -218,11 +228,13 @@ export const TopBar = createComponent({
   },
 
   onSignUpClick: function() {
-    login.openLoginDialogToSignUp(this.props.purpose || 'LoginToLogin');
+    const props: TopbarProps = this.props;
+    login.openLoginDialogToSignUp(props.purpose || LoginReason.SignUp);
   },
 
   onLoginClick: function() {
-    login.openLoginDialog(this.props.purpose || 'LoginToLogin');
+    const props: TopbarProps = this.props;
+    login.openLoginDialog(props.purpose || LoginReason.LoginToLogin);
   },
 
   showTools: function() {
@@ -230,6 +242,7 @@ export const TopBar = createComponent({
   },
 
   render: function() {
+    const props: TopbarProps = this.props;
     const state: TopbarState = this.state;
     const store: Store = state.store;
     const page: Page = store.currentPage;
@@ -249,7 +262,7 @@ export const TopBar = createComponent({
     if (pageRole === PageRole.CustomHtmlPage && (!state.fixed || !me || !me.isLoggedIn))
       return r.div();
 
-    const autoPageType = location_autoPageType(this.props.location);
+    const autoPageType = location_autoPageType(props.location);
 
     // No custom navigation or menus, when in the admin area
     // — bad if a bug breaks the admin area.
@@ -413,9 +426,9 @@ export const TopBar = createComponent({
     // ------- Custom title & Back to site button
 
     // CLEAN_UP remove the props? Use if(path.search..) also for the admin area?
-    let extraMargin = this.props.extraMargin;
-    let customTitle = this.props.customTitle;
-    let backToSiteButton = this.props.backToSiteButtonTitle;
+    let extraMargin = props.extraMargin;
+    let customTitle: St | U | RElm = props.customTitle;
+    let backToSiteButton = props.backToSiteButtonTitle;
 
     const backToGroups = autoPageType !== AutoPageType.GroupProfilePage ? null :
             LinkUnstyled({ to: GroupsRoot,
@@ -446,7 +459,7 @@ export const TopBar = createComponent({
       customTitle = r.h1({ className: 'esTopbar_custom_title' }, customTitle);
     }
 
-    if (this.props.showBackToSite || backToSiteButton) {
+    if (props.showBackToSite || backToSiteButton) {
       backToSiteButton = LinkUnstyled({ className: 's_Tb_Ln s_Tb_Ln-Bck btn icon-reply',
           href: linkBackToSite() }, backToSiteButton || t.tb.BackFromAdm);
       extraMargin = true;

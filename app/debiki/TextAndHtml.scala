@@ -226,12 +226,17 @@ object TextAndHtml {
     Jsoup.clean(unsafeHtml, "", whitelist, compactJsoupOutputSettings).trim()
   }
 
-  private def compactJsoupOutputSettings: org.jsoup.nodes.Document.OutputSettings =
+  def compactJsoupOutputSettings: org.jsoup.nodes.Document.OutputSettings =
     new org.jsoup.nodes.Document.OutputSettings().indentAmount(0).prettyPrint(false)
 }
 
 
-object TextAndHtmlMaker {
+case class JsoupLinkElems(
+  hrefAttrElems: mutable.Buffer[org.jsoup.nodes.Element],
+  srcAttrElems: mutable.Buffer[org.jsoup.nodes.Element])
+
+
+object TextAndHtmlMaker {   MOVE // to just  TextAndHtml
 
   val Ipv4AddressRegex: Regex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
 
@@ -243,14 +248,9 @@ object TextAndHtmlMaker {
 
     val document = org.jsoup.Jsoup.parse(html)
 
-    // There're  <a hre=...>, and also <area href=...> (that's a clickable map, its
-    // contents defined by href links.)
-    val hrefAttrElems: org.jsoup.select.Elements = document.select("[href]")
-
-    // There're  <img> <video> <iframe> etc elems with src=...  links.
-    val srcAttrElems: org.jsoup.select.Elements = document.select("[src]")
-
-    import scala.collection.JavaConversions._
+    val JsoupLinkElems(
+          hrefAttrElems,
+          srcAttrElems) = jsoupFindLinks(document)
 
     for (elem: org.jsoup.nodes.Element <- hrefAttrElems) {
       addUrl(elem.attr("href"))
@@ -270,6 +270,19 @@ object TextAndHtmlMaker {
     result.toVector
   }
 
+  def jsoupFindLinks(doc: org.jsoup.nodes.Document): JsoupLinkElems = {
+    // There're  <a hre=...>, and also <area href=...> (that's a clickable map, its
+    // contents defined by href links.)
+    val hrefAttrElems: org.jsoup.select.Elements = doc.select("[href]")
+
+    // There're  <img> <video> <iframe> etc elems with src=...  links.
+    val srcAttrElems: org.jsoup.select.Elements = doc.select("[src]")
+
+    import scala.collection.JavaConverters._
+    JsoupLinkElems(
+          hrefAttrElems = hrefAttrElems.asScala,
+          srcAttrElems = srcAttrElems.asScala)
+  }
 }
 
 

@@ -990,11 +990,11 @@ var t_sv_SE: TalkyardTranslations = t = {
     FullNameC: "Full name:",
     optName: "optional",
 
-    OrCreateAcct_1: "Or ",
-    OrCreateAcct_2: "create an account",
-    OrCreateAcct_3: " with ",
-    OrCreateAcct_4: "@username",
-    OrCreateAcct_5: " & password",
+    //OrCreateAcct_1: "Or ",
+    //OrCreateAcct_2: "create an account",
+    //OrCreateAcct_3: " with ",
+    //OrCreateAcct_4: "@username",
+    //OrCreateAcct_5: " & password",
 
     DoneLoggedIn: "Account created. You have been logged in.",  // COULD say if verif email sent too?
     AlmostDone:
@@ -1073,15 +1073,19 @@ var t_sv_SE: TalkyardTranslations = t = {
     LogInToComment: "Log in to write a comment",
     LogInToCreateTopic: "Log in to create topic",
 
-    AlreadyHaveAcctQ: "Already have an account? ",
-    LogInInstead_1: "",
-    LogInInstead_2: "Log in",   // "Log in" (this is a button)
-    LogInInstead_3: " instead", // "instead"
+    //AlreadyHaveAcctQ: "Already have an account? ",
+    OrLogIn_1: "Eller ",
+    OrLogIn_2: "Logga in",   // "Log in" (this is a button)
+    OrLogIn_3: " istället",  // "instead"
 
-    NewUserQ: "New user? ",
-    SignUpInstead_1: "",
-    SignUpInstead_2: "Sign up",
-    SignUpInstead_3: " instead",
+    //NewUserQ: "New user? ",
+    SignUpInstead_1: "Eller ",
+    SignUpInstead_2: "Skapa konto",
+    SignUpInstead_3: " istället",
+
+    OrTypeName_1: ", eller bara ",
+    OrTypeName_2: "skriv ditt namn",   // is a button
+    OrTypeName_3: "",
 
     OrCreateAcctHere: "Or create account:",
     OrTypeName: "Or type your name:",

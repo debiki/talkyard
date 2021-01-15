@@ -84,17 +84,19 @@ const utils = {
   __brokenPreview: '.s_LnPv-Err',
   __intLinkProvider: { name: 'Int', inSandboxedIframe: false } as LinkPreviewProvider,
 
+  // REMOVE use makeLinkPreviewSelector(..) instead.
   makePreviewOkSelector: (provider: LinkPreviewProvider | 'InternalLink',
           opts: { url?: St } = {}) => {
-    return utils.__makePreviewSelImpl(provider, { ...opts, broken: false });
+    return utils.makeLinkPreviewSelector(provider, { ...opts, broken: false });
   },
 
+  // REMOVE use makeLinkPreviewSelector(..) instead.
   makePreviewBrokenSelector: (provider: LinkPreviewProvider | 'InternalLink',
           opts: { url?: St } = {}) => {
-    return utils.__makePreviewSelImpl(provider, { ...opts, broken: true });
+    return utils.makeLinkPreviewSelector(provider, { ...opts, broken: true });
   },
 
-  __makePreviewSelImpl: (provider: LinkPreviewProvider | 'InternalLink',
+  makeLinkPreviewSelector: (provider: LinkPreviewProvider | 'InternalLink',
           opts: { url?: St, broken?: Bo } = {}) => {
     if (provider === 'InternalLink') provider = utils.__intLinkProvider;
     const colonNotPara = opts.broken ? '' : ':not(';

@@ -99,6 +99,12 @@ describe("upload-images-and-files  TyT50E6KTDU7", () => {
     maria_brB.editor.uploadFile('TestMediaDir', 'otters-looking.jpeg');
   });
 
+  it("... and a red panda, with many dots in the file name", () => {
+    maria_brB.editor.editText("Is it dangerous?\n", { append: true });
+    maria_brB.editor.uploadFile(
+        'TestMediaDir', 'red-panda-resting.wow.so.tired.jpeg');
+  });
+
   it("... saves the topic", () => {
     maria_brB.editor.saveWaitForNewPage();
   });
@@ -112,13 +118,20 @@ describe("upload-images-and-files  TyT50E6KTDU7", () => {
     maria_brB.topic.clickReplyToOrigPost();
   });
 
-  it("... and uploads a red panda, with many dots in the file name", () => {
-    maria_brB.editor.editText("Is it dangerous?\n\n");
+  it(`She uploads an uppercase .JPG pic — mobile phones tend to use uppercase`, () => {
+    maria_brB.editor.editText("Panda lives here? Red house?");
     maria_brB.editor.uploadFile(
-        'TestMediaDir', 'red-panda-resting.wow.so.tired.jpeg');
+          'TestMediaDir', 'MOBILE_PHONE.JPG');
   });
 
-  it("Maria tries to upload a doc Word document, but cannot", () => {
+  it("... '.JPG' extension got converted to lowrecase '.jpg'", () => {
+    const text = maria_brB.editor.getText();
+    assert.includes(text, '<!-- Uploaded file name:  MOBILE_PHONE.JPG  -->');
+    assert.matches(text,
+          /<img src="\/-\/u\/[0-9]\/[a-z0-9]\/[a-z0-9]{2}\/[a-z0-9]+.jpg">/);
+  });
+
+  it("Maria tries to upload a .doc Word document, but cannot", () => {
     maria_brB.editor.uploadFile(
           'TestMediaDir', 'fakeword.doc', { waitForBadExtErr: true });
   });
@@ -151,6 +164,12 @@ describe("upload-images-and-files  TyT50E6KTDU7", () => {
           { waitForBadExtErr: true });
   });
 
+  it("... and not files with no extension", () => {
+    maria_brB.editor.uploadFile(
+          'TestMediaDir', 'file-without-dot-ext',
+          { waitForBadExtErr: true });
+  });
+
 
   it("... until Owen allows anything", () => {
     owen_brA.waitAndSetValue('.s_PP_PrmsTb_UplExts textarea', "**");
@@ -165,15 +184,41 @@ describe("upload-images-and-files  TyT50E6KTDU7", () => {
           'TestMediaDir', 'word-doc.very-x-files.TOP.SECRET.docx');
   });
 
-  it("... she posts the reply", () => {
+  /* No, won't work. Maybe better wait? Or what mime-type should the
+     server use, when people download the file?
+     Currently the server says No, here: [upl_ext_req].
+  it("... and files with no extensions", () => {
+    maria_brB.editor.uploadFile('TestMediaDir', 'file-without-dot-ext');
+  });  */
+
+  it("Maria posts the reply", () => {
     maria_brB.editor.save();
   });
 
-  it("TESTS_MISSING: Veriy uploaded images look ok: Visual regression tests", () => {
-    // Use  https://webdriver.io/blog/2019/05/18/visual-regression-for-v5.html
+  it("TESTS_MISSING Links to the uploaded files appear", () => {
   });
 
-  it("TESTS_MISSING: Files with no suffix — currently not allowed, hmm", () => {
+  let html;
+
+  it("File uploaded as .JPG is instead lowrecase .jpg", () => {
+    html = maria_brB.topic.getPostHtml(c.FirstReplyNr);
+    assert.includes(html, '.jpg"');
+    assert.excludes(html, '.JPG"');
+    assert.includes(html, '.docx"');
+    assert.excludes(html, '.DOCX"');
+  });
+
+  it("... the links are url hash paths", () => {
+    // Test just one, for now.
+    assert.matches(html,
+          // Won't work, if any CDN url prefix:
+          // /<img src="\/-\/u\/[0-9]\/[a-z0-9]\/[a-z0-9]{2}\/[a-z0-9]+.jpg">/);
+          // Instead, for now:
+          /\/[0-9]\/[a-z0-9]\/[a-z0-9]{2}\/[a-z0-9]+.jpg">/);
+  });
+
+  it("TESTS_MISSING: Uploaded images look ok: Visual regression tests", () => {
+    // Use  https://webdriver.io/blog/2019/05/18/visual-regression-for-v5.html
   });
 
 
@@ -190,7 +235,7 @@ describe("upload-images-and-files  TyT50E6KTDU7", () => {
   });
 
   it("... tries to upload a too large file: 4 MiB", () => {
-    maria_brB.editor.uploadFile('TargetDir', zerosFileFourMebibyte);
+    maria_brB.editor.uploadFile('TargetDir', zerosFileFourMebibyte, { allFine: false });
   });
 
   it("... there's an upload-files problem", () => {

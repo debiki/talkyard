@@ -18,6 +18,7 @@ w_X   = wraps X. Always a class, not an id.
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
 Ab  = about
 Alw = allow(ed)
+AuD = authentication dialog (create account / log in / just type a name)
 Em  = email
 Ena = enabled, Dis = disabled
 B   = button, e.g. ReplyB
@@ -52,8 +53,7 @@ Cr = create
 Cu = Custom, e.g. CuNav = custom navigation links
 L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list
 Ld  = load, Ldng = loading
-LD  = Log in Dialog, RENAME to LiD
-LiD = Log in Dialog
+LD  = Log in Dialog, RENAME to AuD = Authn Dialog
 Lg  = large (screen), also: Sm, Md Xl
 Ls  = list
 Lt  = less than, Gt = greater than
@@ -205,7 +205,7 @@ esH             = help
 
 s_InvD          = invites dialog
 
-esLD            = login/signup dialog
+c_AuD           = authn (login/signup) dialog
 
 s_MB            = topic metabar (just below the Orig Post, before all replies)  RENAME: Mb not MB
 

@@ -196,6 +196,7 @@ debug_asset_bundles_files: \
   images/web/assets/talkyard-comments.js.gz \
   images/web/assets/talkyard-service-worker.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/head-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz \
@@ -270,6 +271,13 @@ images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
 	s/d-gulp  compileEditorTypescript-concatScripts
 
 
+# Sync w gulpfile.js. [head_js_files]
+images/web/assets/$(TALKYARD_VERSION)/head-bundle.js.gz: \
+       $(shell find client/app-head/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+	@echo "\nRegenerating: $@ ..."
+	s/d-gulp  compileHeadTypescript-concatScripts
+
+
 # Sync with gulpfile.ts [more_js_files].
 images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
        $(shell find client/app-more/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
@@ -281,6 +289,7 @@ images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileMoreTypescript-concatScripts
 
+
 # Sync with gulpfile.ts [slim_js_files].
 images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
        $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
@@ -290,10 +299,8 @@ images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
        node_modules/create-react-class/create-react-class.js \
        node_modules/react-router-dom/umd/react-router-dom.js \
        node_modules/react-dom-factories/index.js \
-       client/app-slim/utils/calcScrollRectIntoViewCoords.js \
        client/third-party/smoothscroll-tiny.js \
        client/third-party/bliss.shy.js \
-       client/app-slim/util/stupid-lightbox.js \
        node_modules/keymaster/keymaster.js \
        client/third-party/rename-key-to-keymaster.js \
        client/third-party/lodash-custom.js \
@@ -301,11 +308,7 @@ images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
        client/third-party/tiny-querystring.umd.js \
        client/third-party/gifffer/gifffer.js \
        client/third-party/get-set-cookie.js \
-       client/app-slim/utils/util.js \
-       client/app-slim/utils/util-browser.js \
-       client/third-party/popuplib.js \
-       client/app-slim/login/login-popup.js \
-       client/app-slim/start-stuff.js
+       client/third-party/popuplib.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSlimTypescript-concatScripts
 
@@ -367,9 +370,9 @@ transl_dev_bundles: ${transl_dev_web_bundle_files} ${transl_dev_app_bundle_files
 
 # Sync 'open-sans-v1' with gulpfile.js and images/web/Dockerfile. [sync_fonts]
 
-fonts: images/web/fonts/open-sans-v1/open-sans.min.css.gz
+fonts: images/web/fonts/open-sans-v2/open-sans.min.css.gz
 
-images/web/fonts/open-sans-v1/open-sans.min.css.gz:
+images/web/fonts/open-sans-v2/open-sans.min.css.gz:
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  bundleFonts
 
@@ -546,6 +549,11 @@ _kill_old_prod_build_project:
 prod-images:  _kill_old_prod_build_project
 	@# This cleans and builds prod_asset_bundles. [PRODBNDLS]
 	s/build-prod-images.sh
+
+
+prod-images-only-e2e-tests:  _kill_old_prod_build_project
+	@# This runs the e2e tests only.
+	s/build-prod-images.sh --skip-build
 
 
 tag-and-push-latest-images:  \

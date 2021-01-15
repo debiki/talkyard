@@ -1276,12 +1276,10 @@ interface CreateUserParams {
 interface CreateUserDialogContentProps extends CreateUserParams {
   store: Store;
   afterLoginCallback?;
-  closeDialog: (_?: St) => Vo;
-  loginReason?;
+  closeDialog: (_?: 'CloseAllLoginDialogs') => Vo;
+  loginReason?: LoginReason;
   isForGuest?: Bo;
   isForPasswordUser?: Bo;
-
-  switchBetweenGuestAndPassword?: () => Vo;
 }
 
 
@@ -1342,15 +1340,24 @@ const enum EditMemberAction {
 }
 
 
+// Sync w Scala: LoginReason.
 const enum LoginReason {
-  SignUp = 13,
+  LoginToEdit = 9,
   LoginToChat = 10,
   LoginToLike = 11,
-  BecomeAdmin = 12, // COULD rename to BecomeOwner
+  BecomeOwner = 12,
+  SignUp = 13,
   TryToAccessNotFoundPage = 14,
   SubmitEditorText = 15,
   PostEmbeddedComment = 16,  // dupl [8UKBR2AD5]
   PostProgressPost = 17,
+  PostReply = 18,     // was: 'LoginToComment'
+  CreateTopic = 19,   // was: 'LoginToCreateTopic'
+  LoginToLogin = 20,  // was: 'LoginToLogin' RENAME to ClickedLoginBtn
+  LoginBecauseNotFound = 21,
+  AuthnRequiredToRead = 22,  // was: 'LoginToAuthenticate'
+  NeedToBeAdmin = 23, // was: 'LoginAsAdmin'
+  LoginToAdministrate = 24,
 }
 
 
@@ -1734,7 +1741,7 @@ interface CatsTreeCat extends Category {
 interface ExplainingTitleText {
   iconUrl?: St;
   title: St;
-  text: any;
+  text?: any;
   key?: any;
   subStuff?: any;
 }
@@ -1749,9 +1756,9 @@ interface ExplainingListItemProps extends ExplainingTitleText {
   onClick?: any;
   onSelect?: (item: ExplainingTitleText) => void;
   eventKey?: any;
-  active?;
+  active?: Bo;
   activeEventKey?;
-
+  disabled?: Bo;
 }
 
 
@@ -2059,6 +2066,24 @@ interface PageNotfPrefsResponse extends OwnPageNotfPrefs {
   groups: Group[];
 
   // Later: Category names too, so can display their names (not only group names).
+}
+
+
+/// Any title might not be available — then, safeTitleCont is "" (empty);
+/// there'd be only safeHtml.
+interface LinkPreviewResp {
+  safeTitleCont: St;
+  classAtr: St;
+  safeHtml: St;
+  errCode?: St;
+}
+
+
+/// If no title, then cannot render any inline link preview — because
+/// the title is what we'd show.
+interface InlineLinkPreview {
+  safeTitleCont: St;
+  classAtr: St;
 }
 
 

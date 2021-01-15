@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-(function() {
+
+debiki.startStuff = function() {
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 
@@ -25,7 +26,6 @@ if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
   debiki2.startIframeMessages();
 }
 
-var allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
@@ -37,15 +37,16 @@ debiki2.rememberBackUrl();
 debiki2.utils.highlightActiveLinkInHeader();
 
 // Replace gifs with static images that won't play until clicked.
-Gifffer();
+window['Gifffer']();
 
 // Show large images on click.
-StupidLightbox.start('.dw-p-bd', '.giffferated, .no-lightbox');
+window['StupidLightbox'].start('.dw-p-bd', '.giffferated, .no-lightbox');
 
 
 // Open about-user dialog if one clicks a @username mention (instead of navigating away to
 // the about-user page).
-debiki2.ifEventOnNotThen('click', 'a.esMention', '', function(linkElem, event) {
+debiki2.ifEventOnNotThen('click', 'a.esMention', '',
+        function(linkElem: HTMLAnchorElement, event: MouseEvent) {
   event.preventDefault();
   var username = linkElem.href.replace(/^.*\/-\/users\//, '');
   debiki2.morebundle.openAboutUserDialog(username, linkElem);
@@ -67,5 +68,21 @@ debiki2.dieIf(location.port && eds.debugOrigin.indexOf(':' + location.port) === 
   "But you're accessing the server via " + location.host + ". [EsE7YGK2]");
 
 
-})();
+  switch (eds.doWhat) {
+    case 'StartPage':
+      d.i.renderPageInBrowser();
+      break;
+    case 'ResetPwd':
+      debiki2.Server.loadMoreScriptsBundle(function() {
+        debiki2.login['renderNewPasswordPage']();
+      });
+      break;
+    case 'Noop':
+      break;
+    default:
+      debiki2.die(`Bad doWhat: ${eds.doWhat} [TyE503RSMT]`);
+  }
+
+}
+
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

@@ -506,7 +506,10 @@ const CategorySecurity = createClassAndFactory({
 function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, forGroup: Group,
       allGroups: Group[], updatePermissions) {
 
-  const selectGroupDropdown = SelectGroupDropdown({ groups: allGroups, selectedGroup: forGroup,
+  const groupIdsInUse: PatId[] = allPerms.map(p => p.forPeopleId);
+
+  const selectGroupDropdown = SelectGroupDropdown({ groups: allGroups,
+      selectedGroup: forGroup, groupIdsInUse,
       onSelect: (peopleId: PeopleId) => {
         const allPerms2: PermsOnPage[] = allPerms.slice(); // clones
         const thisPerm2: PermsOnPage = { ...thisPerm, forPeopleId: peopleId };
@@ -608,35 +611,54 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
 }
 
 
+interface SelectGroupDropdownProps {
+  groups: Group[];
+  selectedGroup?: Group;
+  groupIdsInUse: PatId[];
+  onSelect;
+}
+
+
+interface SelectGroupDropdownState {
+  open?: Bo;
+  windowWidth?: Nr;
+  buttonRect?: Rect;
+}
+
+
 const SelectGroupDropdown = createClassAndFactory({
   displayName: 'SelectGroupDropdown',
 
   getInitialState: function() {
-    return { open: false };
+    return {};
   },
 
   open: function() {
-    this.setState({
+    const newState: SelectGroupDropdownState = {
       open: true,
       windowWidth: window.innerWidth,
       buttonRect: reactGetRefRect(this.refs.btn),
-    });
+    };
+    this.setState(newState);
   },
 
   close: function() {
-    this.setState({ open: false });
+    const newState: SelectGroupDropdownState = { open: false };
+    this.setState(newState);
   },
 
   onSelect: function(listItem) {
-    this.props.onSelect(listItem.eventKey);
+    const props: SelectGroupDropdownProps = this.props;
+    props.onSelect(listItem.eventKey);
     this.close();
   },
 
   render: function() {
-    const props = this.props;
-    const state = this.state;
+    const props: SelectGroupDropdownProps = this.props;
+    const state: SelectGroupDropdownState = this.state;
     const groupsUnsorted: Group[] = props.groups;
-    const selectedGroup: Group = props.selectedGroup;
+    const selectedGroup: Group | U = props.selectedGroup;
+    const selectedGroupId: PatId = selectedGroup ? selectedGroup.id : NoId;
 
     // The 'selectedGroup' should be in 'groups'.
     // @ifdef DEBUG
@@ -663,18 +685,20 @@ const SelectGroupDropdown = createClassAndFactory({
     const groupsSorted = _.sortBy(groupsUnsorted, g => g.id);
 
     const listItems = groupsSorted.map((group: Group) => {
+      const canSelect = group.id === selectedGroupId ||
+              props.groupIdsInUse.indexOf(group.id) === -1;
       return ExplainingListItem({ onSelect: this.onSelect,
-        activeEventKey: selectedGroup ? selectedGroup.id : NoId, eventKey: group.id, key: group.id,
-        title: nameOf(group) });
+        activeEventKey: selectedGroupId, eventKey: group.id, key: group.id,
+        title: nameOf(group), disabled: !canSelect });
     });
 
     listItems.unshift(ExplainingListItem({ onSelect: this.onSelect,
-        activeEventKey: selectedGroup ? selectedGroup.id : NoId, eventKey: NoId, key: NoId,
+        activeEventKey: selectedGroupId, eventKey: NoId, key: NoId,
         title: "Select group ..." }));
 
     const dropdownModal =
       DropdownModal({ show: state.open, onHide: this.close, showCloseButton: true,
-          atRect: this.state.buttonRect, windowWidth: this.state.windowWidth },
+          atRect: state.buttonRect, windowWidth: state.windowWidth },
         r.ul({},
           listItems));
 

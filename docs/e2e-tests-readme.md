@@ -1,7 +1,7 @@
 End-to-End tests Readme
 ===================
 
-To do: Document variations, `my.conf`: `
+To do: Document variations, `my.conf`: `E2ECDN`, `E2EHTTPS`
 
 ```
 talkyard.secure=true    RENAME to talkyard.https ?

@@ -367,6 +367,10 @@ describe("modn-review-after  TyTE2E402GRM", () => {
           numDeleted: 0 });
   });
 
+  it(`Owen refreshes the page`, () => {
+    owensBrowser.refresh2(); // [E2EBUG]  why this needed? Only sometimes.
+  });
+
   it("Nothing more to review for Owen", () => {
     owensBrowser.adminArea.review.hideCompletedTasks();
     assert.eq(owensBrowser.adminArea.review.countThingsToReview(), numToModerate);

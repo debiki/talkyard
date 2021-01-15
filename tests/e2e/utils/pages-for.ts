@@ -3281,7 +3281,7 @@ export class TyE2eTestBrowser {
 
     loginDialog = {
       isVisible: () => {
-        return this.isVisible('.dw-login-modal') && this.isVisible('.esLD');
+        return this.isVisible('.dw-login-modal') && this.isVisible('.c_AuD');
       },
 
       refreshUntilFullScreen: () => {
@@ -3303,7 +3303,7 @@ export class TyE2eTestBrowser {
 
       waitAssertFullScreen: () => {
         this.waitForVisible('.dw-login-modal');
-        this.waitForVisible('.esLD');
+        this.waitForVisible('.c_AuD');
         // Forum not shown.
         assert(!this.isVisible('.dw-forum'));
         assert(!this.isVisible('.dw-forum-actionbar'));
@@ -3341,8 +3341,8 @@ export class TyE2eTestBrowser {
 
         // Switch from the guest login form to the create-real-account form, if needed.
         this.waitForVisible('#e2eFullName');
-        if (this.isVisible('.s_LD_CreateAccount')) {
-          this.waitAndClick('.s_LD_CreateAccount');
+        if (this.isVisible('.c_AuD_2SgU')) {
+          this.waitAndClick('.c_AuD_2SgU .c_AuD_SwitchB');
           this.waitForVisible('#e2ePassword');
         }
 
@@ -3530,7 +3530,7 @@ export class TyE2eTestBrowser {
       },
 
       clickCreateAccountInstead: () => {
-        this.waitAndClick('.esLD_Switch_L');
+        this.waitAndClick('.c_AuD_2SgU .c_AuD_SwitchB');
         this.waitForVisible('.esCreateUser');
         this.waitForVisible('#e2eUsername');
         this.waitForVisible('#e2ePassword');
@@ -3540,7 +3540,7 @@ export class TyE2eTestBrowser {
         // Switch to login form, if we're currently showing the signup form.
         while (true) {
           if (this.isVisible('.esCreateUser')) {
-            this.waitAndClick('.esLD_Switch_L');
+            this.waitAndClick('.c_AuD_2LgI .c_AuD_SwitchB');
             // Don't waitForVisible('.dw-reset-pswd') — that can hang forever (weird?).
           }
           else if (this.isVisible('.dw-reset-pswd')) {
@@ -4723,7 +4723,8 @@ export class TyE2eTestBrowser {
       },
 
       uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: St,
-            ps: { waitForBadExtErr?: Bo, waitForTooLargeErr?: Bo } = {}) => {
+            ps: { waitForBadExtErr?: Bo, waitForTooLargeErr?: Bo, allFine?: false } = {}
+            ) => {
         //this.waitAndClick('.e_UplB');
         // There'll be a file <input> not interactable error, unless we change
         // its size to sth larger than 0 x 0.
@@ -4736,12 +4737,20 @@ export class TyE2eTestBrowser {
         });
         this.waitAndSelectFile('.e_EdUplFI', whichDir, fileName);
         if (ps.waitForBadExtErr) {
-          this.waitForVisibleText('.s_UplErrD .s_UplErrD_UplNm');
+          // If there's no extension, then waitForExist(), not waitForVisibleText().
+          const sel = '.s_UplErrD .s_UplErrD_UplNm';
+          const lastIx = fileName.lastIndexOf('.')
+          0 <= lastIx && lastIx <= fileName.length - 2
+                ? this.waitForVisibleText(sel)
+                : this.waitForExist(sel);
           this.stupidDialog.close();
         }
-        if (ps.waitForTooLargeErr) {
+        else if (ps.waitForTooLargeErr) {
           this.waitForVisibleText('.s_UplErrD .e_FlTooLg');
           this.stupidDialog.close();
+        }
+        else if (ps.allFine !== false) {
+          tyAssert.not(this.isVisible('.s_UplErrD'), `Unexpected file upload error`);
         }
       },
 
@@ -8240,17 +8249,27 @@ export class TyE2eTestBrowser {
         this.assertPageTitleMatches(newTitle);
       },
 
-      editPageBody: (newText: string, opts: { append?: boolean } = {}) => {
+      editPageBody: (newText: string, opts: { append?: Bo, textAfterIs?: St,
+              textAfterMatches?: St } = {}) => {
         this.topic.clickEditOrigPost();
         this.editor.editText(newText, opts);
         this.editor.save();
-        if (opts.append) {
+        if (opts.textAfterMatches || opts.textAfterIs) {
+          if (opts.textAfterMatches) {
+            this.topic.waitUntilPostTextMatches(c.BodyNr, opts.textAfterMatches);
+          }
+          if (opts.textAfterIs) {
+            this.topic.waitUntilPostTextIs(c.BodyNr, opts.textAfterIs);
+            this.topic.assertPostTextIs(c.BodyNr, newText);  // why this too?
+          }
+        }
+        else if (opts.append) {
           this.topic.waitUntilPostTextMatches(c.BodyNr, newText);  // includes!
           this.assertPageBodyMatches(newText);  // includes!
         }
         else {
           this.topic.waitUntilPostTextIs(c.BodyNr, newText);
-          this.topic.assertPostTextIs(c.BodyNr, newText);
+          this.topic.assertPostTextIs(c.BodyNr, newText);  // why this too?
         }
       },
 

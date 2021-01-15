@@ -1,5 +1,5 @@
 
-/// <reference path="server-vars.d.ts" />
+/// <reference path="server-vars.ts" />
 /// <reference path="model.ts" />
 /// <reference path="translations.d.ts" />
 /// <reference path="../reactjs-types.ts" />
@@ -134,6 +134,7 @@ declare namespace debiki2 {
 
   let iframeOffsetWinSize;
 
+  function firstToLower(text: St, doIt?: Bo): St;
   function oneIfDef(x: any): number;
 
   function $first(selector: string): HTMLElement;
@@ -188,7 +189,8 @@ declare namespace debiki2 {
   }
 
   namespace util {
-    var ExplainingListItem;
+    // var ExplainingListItem;
+    function ExplainingListItem(props: ExplainingListItemProps): RElm;
   }
 
   namespace help {
@@ -198,7 +200,7 @@ declare namespace debiki2 {
 
   namespace topbar {
     function getTopbarHeightInclShadow(): number;
-    const TopBar: any;
+    function TopBar(props): RElm; // TopbarProps
   }
 
   namespace sidebar {
@@ -226,9 +228,9 @@ declare namespace debiki2 {
     var anyContinueAfterLoginCallback;
     function continueAfterLogin(anyReturnToUrl?: string);
     function loginIfNeededReturnToAnchor(
-        loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean);
+        loginReason: LoginReason, anchor: St, success?: () => Vo, willCompose?: Bo);
     function loginIfNeededReturnToPost(
-        loginReason: LoginReason | string, postNr: PostNr, success?: () => void, willCompose?: boolean);
+        loginReason: LoginReason, postNr: PostNr, success?: () => Vo, willCompose?: Bo);
 
     function loginIfNeeded(loginReason, returnToUrl: string, onDone?: () => void);
     function openLoginDialogToSignUp(purpose);

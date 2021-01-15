@@ -86,7 +86,8 @@ trait LinksSiteTxMixin extends SiteTransaction {
     val query = s"""
           select * from link_previews_t
           where site_id_c = ?
-            and link_url_c = ?  """
+            and link_url_c = ?
+          order by site_id_c, link_url_c, fetched_from_url_c  -- ix: pk  """
     val values = List(siteId.asAnyRef, linkUrl)
     runQueryFindMany(query, values, rs => {
       parseLinkPreview(rs)
@@ -169,6 +170,7 @@ trait LinksSiteTxMixin extends SiteTransaction {
           select * from links_t
           where site_id_c = ?
             and from_post_id_c = ?
+          order by site_id_c, from_post_id_c, link_url_c  -- ix: pk
           """
     val values = List(siteId.asAnyRef, postId.asAnyRef)
     runQueryFindMany(query, values, rs => {
@@ -179,6 +181,7 @@ trait LinksSiteTxMixin extends SiteTransaction {
 
   override def loadLinksToPage(pageId: PageId): Seq[Link] = {
     val query = s"""
+        select * from (
           -- Post to page links.
           select * from links_t
           where site_id_c = ?
@@ -190,8 +193,9 @@ trait LinksSiteTxMixin extends SiteTransaction {
             and po.unique_post_id = ls.to_post_id_c
           where po.site_id = ?
             and po.page_id = ?
+          ) as lns
           order by
-            from_post_id_c, link_url_c """
+            lns.from_post_id_c, lns.link_url_c """
     val values = List(siteId.asAnyRef, pageId, siteId.asAnyRef, pageId)
     runQueryFindMany(query, values, rs => {
       parseLink(rs)

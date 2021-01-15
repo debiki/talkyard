@@ -36,8 +36,8 @@ const apiSecret: TestApiSecret = {
 };
 
 
-
-describe("internal links, backlinks   TyTINTLNS54824", () => {   // RENAME this file to  backlinks-basic.2browsers.test.ts
+// RENAME this file to  internal-inline-link-previews-and-backlinks.2br?
+describe("internal links, backlinks   TyTINTLNS54824", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -109,26 +109,41 @@ describe("internal links, backlinks   TyTINTLNS54824", () => {   // RENAME this 
   // ------ Simple backlinks
 
   const michelsTopicUrl = () => `${site.origin}/${forum.topics.byMichaelCategoryA.slug}`;
+  const michelsTopicTitle = () => forum.topics.byMichaelCategoryA.title;
   const mariasTopicUrl = () => `${site.origin}/${forum.topics.byMariaCategoryA.slug}`;
+  const mariasTopicTitle = () => forum.topics.byMariaCategoryA.title;
 
   // We'll edit and then delete topic A.
   let topicAUrl: string;
   let topicAId: string;
+
   const topicA_title = 'topicA_title';
+
   const topicA_body_link2MiTpc_link2MaTpc = () =>
       `topicA_body_link2MiTpc_link2MaTpc ${michelsTopicUrl()} ${mariasTopicUrl()}`;
-  const topicA_body_link2MiTpc = () =>
+  const topicA_body_link2MiTpc_link2MaTpc_withPreviews = (): St =>
+      `topicA_body_link2MiTpc_link2MaTpc ${michelsTopicTitle()} ${mariasTopicTitle()}`;
+
+  const topicA_body_link2MiTpc = (): St =>
       `topicA_body_link2MiTpc ${michelsTopicUrl()}`;
+  const topicA_body_link2MiTpc_withPreviews = (): St =>
+      `topicA_body_link2MiTpc ${michelsTopicTitle()}`;
+
   const topicA_body_noLinks = `topicA_body_noLinks`;
 
-  const topicAReply_link2MaTpc = () => `topicAReply_link2MaTpc ${mariasTopicUrl()}`;
+  const topicAReply_link2MaTpc = () =>
+        `topicAReply_link2MaTpc ${mariasTopicUrl()}`;
+  const topicAReply_link2MaTpc_withPreviews = () =>
+        `topicAReply_link2MaTpc ${mariasTopicTitle()}`;
+
 
   // Topic B will disappear when we delete its whole category.
   let topicBUrl: string;
   let topicBId: string;
   const topicB_title = 'topicB_title';
   const topicB_body_link2MiTpc = () => `topicB_body_link2MiTpc ${michelsTopicUrl()}`;
-  const topicB_body_noLink = `topicB_body_noLink`;
+  const topicB_body_link2MiTpc_withPreviews = () =>
+          `topicB_body_link2MiTpc ${michelsTopicTitle()}`;
 
 
   it("Memah posts a topic A that links to Michael's and Maria's pages", () => {
@@ -138,6 +153,11 @@ describe("internal links, backlinks   TyTINTLNS54824", () => {   // RENAME this 
           bodyMatchAfter: 'topicA_body_link2MiTpc_link2MaTpc' });
     topicAUrl = memahsBrowser.getUrl();
     topicAId = '2';  // how know?
+  });
+
+  it("... inline link previews appear", () => {
+    memahsBrowser.topic.waitUntilPostTextIs(c.BodyNr,
+          topicA_body_link2MiTpc_link2MaTpc_withPreviews());
   });
 
   it("Owen goes to Memah's new topic", () => {
@@ -200,7 +220,13 @@ describe("internal links, backlinks   TyTINTLNS54824", () => {   // RENAME this 
 
   it("Memah deletes the link to Maria's topic", () => {
     // But keeps the link to Michael's topic.
-    memahsBrowser.complex.editPageBody(topicA_body_link2MiTpc());
+    memahsBrowser.complex.editPageBody(topicA_body_link2MiTpc(),
+          { textAfterMatches: 'topicA_body_link2MiTpc' });
+  });
+
+  it("... now there's only one inline link preview — to Michael's topic", () => {
+    memahsBrowser.topic.waitUntilPostTextIs(c.BodyNr,
+          topicA_body_link2MiTpc_withPreviews());
   });
 
   it("Owen refreshes Maria's page until the backlink is gone", () => {
@@ -227,6 +253,11 @@ describe("internal links, backlinks   TyTINTLNS54824", () => {   // RENAME this 
 
   it("Memah links to Maria's page again, via a reply", () => {
     memahsBrowser.complex.replyToOrigPost(topicAReply_link2MaTpc());
+  });
+
+  it("... a block link preview appears", () => {
+    const text = memahsBrowser.topic.getPostText(c.FirstReplyNr);
+    assert.includes(text, topicAReply_link2MaTpc_withPreviews());
   });
 
   it("Owen goes there", () => {
@@ -277,9 +308,16 @@ describe("internal links, backlinks   TyTINTLNS54824", () => {   // RENAME this 
 
   it("... posts a topic B that links to Michael's page", () => {
     memahsBrowser.complex.createAndSaveTopic({
-          title: topicB_title, body: topicB_body_link2MiTpc() });
+          title: topicB_title, body: topicB_body_link2MiTpc(),
+          bodyMatchAfter: 'topicB_body_link2MiTpc' });
     topicBUrl = memahsBrowser.getUrl();
-    topicBId = '3';  // how know?
+    topicBId = memahsBrowser.getPageId();
+    assert.eq(topicBId, '3');
+  });
+
+  it("... a link preview appears", () => {
+    const text = memahsBrowser.topic.getPostText(c.BodyNr);
+    assert.eq(text, topicB_body_link2MiTpc_withPreviews())
   });
 
   it("Owen refreshes Micheal's page", () => {
@@ -357,7 +395,11 @@ describe("internal links, backlinks   TyTINTLNS54824", () => {   // RENAME this 
   const owensTopicId = '4'; // how know?
   const owensTopicTitle = 'owensTopicTitle';
   const owensTopic_link2MiTpc = () => `owensTopic_link2MiTpc ${michelsTopicUrl()}`;
+  const owensTopic_link2MiTpc_previews = () =>
+          `owensTopic_link2MiTpc ${michelsTopicTitle()}`;
   const owensReply_link2MaTpc = () => `owensReply_link2MaTpc ${mariasTopicUrl()}`;
+  const owensReply_link2MaTpc_previews = () =>
+          `owensReply_link2MaTpc ${mariasTopicTitle()}`;
 
   it("Owen wants his own backlinks!  He goes to the staff cateory", () => {
     owensBrowser.forumTopicList.goHere({
@@ -366,7 +408,8 @@ describe("internal links, backlinks   TyTINTLNS54824", () => {   // RENAME this 
 
   it("... posts a staff-only topic with a link to Michael's page", () => {
     owensBrowser.complex.createAndSaveTopic({
-          title: owensTopicTitle, body: owensTopic_link2MiTpc() })
+          title: owensTopicTitle, body: owensTopic_link2MiTpc(),
+          bodyMatchAfter: 'owensTopic_link2MiTpc' });
   });
 
   it("... and a reply linking to Maria's page", () => {

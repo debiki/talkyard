@@ -381,12 +381,13 @@ export const Editor = createFactory<any, EditorState>({
       // '**' can mean all allowed, for backw compat with old sites
       // that don't expect any upload file type restrictions.
       // ('*' would be files with no suffix (no dot) at all,
-      // and '*.*' would be whatever with just one dot?
+      // and '*.*' would be whatever with just one dot?  [tyglobs]
       // and '**.*' would be whatever with >= 1 dot?)
       if (!_.includes(me.effAlwUplExts, '**')) {
         const dotParts = file.name.split('.');
         const ext = dotParts.length >= 2 ? dotParts[dotParts.length - 1] : '';
-        const isOk = _.includes(me.effAlwUplExts, ext);
+        const extLowercase = ext.toLowerCase();
+        const isOk = _.includes(me.effAlwUplExts, extLowercase);
         if (!isOk) {
           util.openDefaultStupidDialog({
             dialogClassName: 's_UplErrD e_BadUplExt',

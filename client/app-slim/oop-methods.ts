@@ -1208,6 +1208,41 @@ export function store_makeDeletePostPatch(post: Post): StorePatch {
 //----------------------------------
 
 
+/// Joins oldPerms and newPerms. Any new perm replaces any old
+/// perm for the same thing (e.g. category) and group (participant).
+///
+export function perms_addNew(oldPerms: PermsOnPage[], newPerms: PermsOnPage[])
+        : PermsOnPage[] {
+  const result = [...newPerms];
+  for (let old of oldPerms) {
+    const dupl = _.find(result, newerPerm => perm_samePatAndThing(old, newerPerm));
+    if (!dupl) {
+      result.push(old);
+    }
+  }
+  // COULD delete perms with all !may....
+  // Currently the server sorts by permission id, ascending  [SORTCATPERMS]
+  // — let's do here to.
+  result.sort((a, b) => a.id - b.id);
+  return result;
+}
+
+
+function perm_samePatAndThing(a: PermsOnPage, b: PermsOnPage): Bo {
+  // @ifdef DEBUG
+  dieIf(a.onWholeSite === null || a.onCategoryId === null ||
+        a.onPageId === null || a.onPostId === null ||
+        b.onWholeSite === null || b.onCategoryId === null ||
+        b.onPageId === null || b.onPostId === null, 'TyE602MRSKDP34');
+  // @endif
+  return (a.forPeopleId === b.forPeopleId
+          && a.onWholeSite  === b.onWholeSite
+          && a.onCategoryId === b.onCategoryId
+          && a.onPageId     === b.onPageId
+          && a.onPostId     === b.onPostId);
+}
+
+
 export function perms_join(pA: PermsOnPage, pB?: PermsOnPageNoIdOrPp): PermsOnPageNoIdOrPp {
   if (!pB) return pA;
   return {

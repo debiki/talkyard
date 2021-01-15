@@ -1,0 +1,1 @@
+../app-slim/server-vars.ts

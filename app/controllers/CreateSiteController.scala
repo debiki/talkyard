@@ -73,6 +73,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       }
     }
 
+    CSP_MISSING
     Ok(views.html.createsite.createSitePage(isTestBool, SiteTpi(request)).body) as HTML
   }
 
@@ -142,8 +143,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     val goToUrl: String =
       try {
-        // Not dangerous: We'll use a new site id.
-        globals.systemDao.dangerous_readWriteTransaction { sysTx =>
+        COULD_OPTIMIZE // maybe can skip lock?
+        globals.systemDao.writeTxLockAllSites { sysTx =>
           globals.systemDao.createAdditionalSite(
             anySiteId = None,
             pubId = Site.newPubId(),
@@ -207,8 +208,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
         request =>
     val localHostname = (request.body \ "localHostname").as[String]
     throwForbiddenUnless(Hostname.isE2eTestHostname(localHostname), "EdE7UKFW2", "Not a test site")
-    request.dao.readWriteTransaction { tx =>
-      tx.asSystem.deleteAnyHostname(localHostname)
+    request.systemDao.writeTxLockAllSites { tx =>
+      tx.deleteAnyHostname(localHostname)
     }
     Ok
   }

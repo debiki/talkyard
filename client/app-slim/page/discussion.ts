@@ -586,12 +586,12 @@ const RootPostAndComments = createComponent({
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
 
-    const loginToWhat =
+    const loginToWhat: LoginReason =
         postType === PostType.BottomComment
           ? LoginReason.PostProgressPost
           : (page.pageRole === PageRole.EmbeddedComments
               ? LoginReason.PostEmbeddedComment
-              : 'LoginToComment');
+              : LoginReason.PostReply);
 
     login.loginIfNeededReturnToPost(loginToWhat, BodyNr, () => {    // SSO E2E TESTS_MISSSING
       if (this.isGone) return;

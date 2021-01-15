@@ -84,10 +84,12 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
           "TyESVUPLSZCK_", s"File too large: ${sizeBytes.toFloat / Mebibyte
               } MiB; max size is ${maxUploadSizeBytes.toFloat / Mebibyte} MiB")
 
-    // Check file type.
+    // Check file type.  [ck_upl_ftp]
 
     // For now, just look at the extension — maybe later look at mime type too.
     // Then need to make mime type configurable too.
+    // '** matches alnum and punctuation.  "*" would match alnum only — that is,
+    // '*' would allow files with no '.ext' dot-extension.  [tyglobs]
 
     if (perms.allowedUploadExtensions contains  "**")
       return
@@ -99,7 +101,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
     // allowedUploadExtensions allowlist:
     SECURITY // Later: Check any other dot "." separated parts against a blocklist?
     val fileExt = fileName.takeRightWhile(_ != '.')
-    val isOk = perms.allowedUploadExtensions contains fileExt
+    val isOk = perms.allowedUploadExtensions contains fileExt.toLowerCase
     throwForbiddenIf(!isOk, "TyE503RMT2",
           s"Not an allowed file extension: '$fileExt' in file name: '$fileName'")
   }

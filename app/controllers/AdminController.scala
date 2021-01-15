@@ -29,6 +29,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, ControllerComponents, Result}
 import scala.concurrent.Future
 import talkyard.server.JsX
+import talkyard.server.authn.LoginReason
 
 
 
@@ -53,9 +54,10 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
     dieIfAssetsMissingIfDevTest()
 
     if (!apiReq.user.exists(_.isStaff)) {
+      CSP_MISSING
       Future.successful(Ok(views.html.authn.authnPage(
         SiteTpi(apiReq, isAdminArea = true),
-        mode = "LoginToAdministrate",
+        loginReasonInt = LoginReason.LoginToAdministrate.toInt,
         serverAddress = s"//${apiReq.host}",
         returnToUrl = apiReq.uri)) as HTML)
     }
@@ -92,6 +94,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def showAdminOneTimeLoginPage: Action[Unit] = GetActionAllowAnyone { request =>
+    CSP_MISSING
     Ok(views.html.adminlogin.adminLoginPage(
       SiteTpi(request, isAdminArea = true),
       xsrfToken = request.xsrfToken.value,
