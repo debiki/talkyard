@@ -26,6 +26,7 @@ services:
       - ./volumes/letsencrypt/:/etc/letsencrypt/:ro
       - ./volumes/nginx-logs/:/var/log/nginx/
       - ./volumes/nginx-core-dumps/:/tmp/cores/
+      - ./volumes/nginx-tmp-rw:/tmp/rw/
     ports:
       - '80:80'
       - '443:443'
@@ -244,8 +245,7 @@ services:
 
   # Would like to remove, but is incl in talkyard-prod-one's Compose file already,
   # and would cause errors, if removed here, and people then upgrade? (because new version
-  # couldn't be downloaded). Remove, when releasing the next major talkyard-prod-one version
-  # and peopl have upgraded?
+  # couldn't be downloaded). Remove in Ty v1  [ty_v1].
   certgen:
     build: images/certgen/
     image: ${DOCKER_REPOSITORY}/talkyard-certgen

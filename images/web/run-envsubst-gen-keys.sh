@@ -3,6 +3,7 @@
 # Replace variable placeholders, like in 'limit_rate_after ${ED_NGX_LIMIT_RATE_AFTER}',
 # with OS environment variable values.
 # Don't forget to add default values in the Dockerfile. [0KW2UY3]
+# RENAME from ED_* to TY_*  [ty_v1]
 
 vars='
   \${TY_NGX_ERR_LOG_LEVEL}
@@ -31,7 +32,7 @@ envsubst "$vars" < /etc/nginx/http-limits.conf.template       > /etc/nginx/http-
 envsubst "$vars" < /etc/nginx/server-limits.conf.template     > /etc/nginx/server-limits.conf
 envsubst "$vars" < /etc/nginx/server-locations.conf.template  > /etc/nginx/server-locations.conf
 
-# Old, can remove? See comments in Dockerfile.
+# Old, can remove? See comments in Dockerfile.  [ty_v1]
 envsubst "$vars" < /etc/nginx/vhost.conf.template  > /etc/nginx/vhost.conf
 envsubst "$vars" < /etc/nginx/server.conf.template > /etc/nginx/server.conf
 
@@ -57,12 +58,14 @@ fallback_cert_path_pem="$fallback_cert_path.pem"
 
 if [ ! -f $fallback_cert_path_pem ]; then
   echo
-  echo "Generating a startup fallback self signed cert,"
+  echo "Generating a fallback self signed cert,"
   echo "  storing in: $fallback_cert_path_key"
   echo "         and: $fallback_cert_path_pem ..."
   echo
-  openssl req -newkey rsa:2048 -nodes \
+  # -subj makes this non-interactive.
+  # -days maybe doesn't matter — is self signed anyway.
+  openssl req -newkey rsa:4096 -nodes -x509 -days 365 \
+      -subj '/C=AQ/ST=Penguin Plains/L=Penguin Palace/O=Aviation Research/CN=temp-cert.example.com' \
       -keyout $fallback_cert_path_key \
-      -x509 -days 365 \
       -out $fallback_cert_path_pem
 fi

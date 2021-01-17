@@ -39,6 +39,10 @@ RUN apk add --no-cache \
         geoip \
         libgcc \
         #libxslt \
+        # OpenSSL needed for generating LetsEncrypt private key.
+        openssl \
+        # opm (OpenResty package manager) uses Perl.
+        perl \
         zlib
 
 
@@ -302,7 +306,64 @@ COPY \
 
 
 
-# Nginx and Lua files
+# Install Lua packages
+# ===================================
+
+
+# Auto HTTPS
+# ```````````````````````````````````
+
+# Could use opm, Openresty Package Manager:
+#   RUN opm install fffonion/lua-resty-acme
+# I did that, and then copied the files that then got installed (I found out which,
+# by running  tree  before and after, and then  diffing) to:
+# ./openresty-pkgs/usr-local-openresty-site — and now we can just COPY them to inside
+# the image, no need to run 'opm install ...' or do any outgoing netw requests.
+# However, can do that anyway from time to time, to upgrade lua-resty-acme and
+# dependencies.
+
+# (Or can use --cwd:  (but why? 'opm install ...' is equally simple, isn't it)
+# `while read dep; do opm --cwd get "$dep"; done < requirements.opm`
+# https://github.com/un-def/tinystash#lua-packages )
+
+COPY openresty-pkgs/usr-local-openresty-site  /usr/local/openresty/site
+
+# (Maybe need to use a specific OpenSSL version?
+# > OpenResty's OpenSSL library version must be compatible with your
+# > opm and LuaRocks packages' version.
+# https://github.com/openresty/docker-openresty#tips--pitfalls
+# But apparently we use an ok version already?
+#   $ d/c exec web bash
+#   # apk update
+#   # apk info openssl-dev
+#   ...
+#   openssl-dev-1.1.1i-r0 webpage:
+#   https://www.openssl.org/
+#   openssl-dev-1.1.1i-r0 installed size:
+#   1634304
+#
+# 1.1.1i is the latest version as of 2020-12, https://www.openssl.org:
+# > 08-Dec-2020
+# > OpenSSL 1.1.1i is now available
+#
+# The Alpine build file here:  https://github.com/openresty/docker-openresty
+# patches to 1.1.1f, and between f and i, you can see here:
+# https://www.openssl.org/news/openssl-1.1.1-notes.html  that there's just
+# small fixes / changes, looks backw compat. )
+
+
+# Other Lua pkgs
+# ```````````````````````````````````
+
+COPY \
+    lua-packages/lua-resty-http \
+    lua-packages/inspect.lua \
+    \
+    /opt/lua-packages/
+
+
+
+# Nginx config
 # ===================================
 
 
@@ -325,53 +386,6 @@ RUN cd /etc/nginx && \
    && echo 'alias .....="cd ../../../.."' >> ~/.bashrc \
    && echo
 
-
-COPY lua-packages/lua-resty-http /opt/lua-packages/lua-resty-http
-
-# Later, also:  fffonion/lua-resty-acme  — auto-LetsEncrypt certs. [ty_v1]
-# With opm:  opm install fffonion/lua-resty-acme
-# Edit: turns out  opm  is already installed?!, nice:
-# ll /usr/local/openresty/bin  —> opm, resty, openresty etc.
-# Old: -----------
-# Can install without OpenResty opm? This copy-files approach?:
-#
-# > If you do not have opm ...
-# https://github.com/jxskiss/ssl-cert-server#installation
-#
-# > If you're using opm [...] Otherwise copy openidc.lua somewhere
-# > in your lua_package_path
-# https://github.com/zmartzone/lua-resty-openidc#installation
-#
-# Or add OPM as described here:
-# https://github.com/openresty/docker-openresty#opm
-# ----------------
-#
-# And add a private key, see:
-# ./gen-def-cert-letsencrypt-key.sh
-#
-# Also, maybe need to use a specific OpenSSL version?
-# > OpenResty's OpenSSL library version must be compatible with your
-# > opm and LuaRocks packages' version.
-# https://github.com/openresty/docker-openresty#tips--pitfalls
-# But apparently we use an ok version already?
-#   $ d/c exec web bash
-#   # apk update
-#   # apk info openssl-dev
-#   ...
-#   openssl-dev-1.1.1i-r0 webpage:
-#   https://www.openssl.org/
-#   openssl-dev-1.1.1i-r0 installed size:
-#   1634304
-#
-# 1.1.1i is the latest version as of 2020-12, https://www.openssl.org:
-# > 08-Dec-2020
-# > OpenSSL 1.1.1i is now available
-#
-# The Alpine build file here:  https://github.com/openresty/docker-openresty
-# patches to 1.1.1f, and between f and i, you can see here:
-# https://www.openssl.org/news/openssl-1.1.1-notes.html  that there's just
-# small fixes / changes, looks backw compat.
-#
 
 
 COPY ssl-cert-snakeoil.key /etc/nginx/
@@ -399,7 +413,7 @@ COPY http-redirect-to-https.conf /etc/nginx/
 
 COPY server-limits.conf   /etc/nginx/server-limits.conf.template
 
-# old, remove once I've edited edm & edc
+# old, remove once I've edited edm & edc   [vy_v1] + search for "old" everywhere here
 COPY server-locations.conf /etc/nginx/vhost.conf.template
 
 # old, too, remove, when?
@@ -414,10 +428,10 @@ COPY nginx.conf           /etc/nginx/nginx.conf.template
 # ===================================
 
 
-COPY run-envsubst.sh  /etc/nginx/run-envsubst.sh
-RUN  chmod ugo+x      /etc/nginx/run-envsubst.sh
+COPY run-envsubst-gen-keys.sh /etc/nginx/run-envsubst-gen-keys.sh
+RUN  chmod ugo+x              /etc/nginx/run-envsubst-gen-keys.sh
 
-# Sync with variables in  run-envsubst.sh  and  docker-compose-no-limits.yml  [0KW2UY3].
+# Sync w vars in  run-envsubst-gen-keys.sh  and  docker-compose-no-limits.yml  [0KW2UY3].
 # CLEAN_UP change prefix to TY_  [ty_v1]
 #
 # ED_NGX_LIMIT_CONN_PER_IP=60 is a lot? But maybe some people connect from
@@ -471,7 +485,7 @@ EXPOSE 80 443
 #  && sysctl -w fs.suid_dumpable=2 \
 #  && sysctl -p \
 #  && echo "/tmp/cores/core.%e.%p" > /proc/sys/kernel/core_pattern \
-#  && /etc/nginx/run-envsubst.sh \
+#  && /etc/nginx/run-envsubst-gen-keys.sh \
 #  && nginx-debug
 
 
