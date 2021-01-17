@@ -94,6 +94,10 @@ Also better not use Python or Ruby for server code.
 SECURITY [to_ty_risky] to-talkyard is a bit risky: nodejs code that parses user defined data.
 Use a different lang? Run in sandbox?
 
+Edit, half a year (?) later: Turns out there's a "Nodejs done right", namely Deno,
+by he who created Nodejs actually.  Ty might use Deno for scripting (instead
+of js or bash).
+
 
 
 === Vendor everything
@@ -177,3 +181,79 @@ checking if the user had visited certain sites etc.
 Talkyard already uses somewhat many submodules — and then, if starting
 to use subtrees too, "everyone" would have to learn two different things:
 both submodules and subtrees.
+
+
+
+== Year 2021
+
+
+
+=== Use lua-resty-acme for automatic HTTPS
+
+There's also `lua-resty-auto-ssl` but it has a dependency on Dehydrated, a Bash
+script — whilst `lua-resty-acme` is Lua only: simpler to install and
+to understand the code. It's actively developed by Kong which Ty a bit depends on
+indirectly anyway because they sometimes contribute to OpenResty.
+See: https://github.com/fffonion/lua-resty-acme/issues/5
+
+
+
+=== Use Snowpack; skip Webpack and Parcel
+
+Procrastinating isn't too bad — now, thanks to having done nothing for years
+(just Typescript and concatenated files with Gulpjs), suddenly Snowpack has appeared,
+and looks better than Webpack, Parcel and Browserify. (Rollup? Snowpack uses Rollup.)
+
+https://news.ycombinator.com/item?id=24908729
+
+Svelte chooses Snowpack:
+https://news.ycombinator.com/item?id=24911742
+https://news.ycombinator.com/item?id=24909118
+
+Snowpack 2.0 and 3.0:
+https://news.ycombinator.com/item?id=23331099
+https://www.snowpack.dev/posts/2020-12-03-snowpack-3-release-candidate
+
+
+
+=== It's ok to continue using ElasticSearch
+
+Elastic recently (2021-01) announced they'll change from Apache2 to
+Server Side Public License (SSPL):
+
+https://www.elastic.co/blog/licensing-change
+https://news.ycombinator.com/item?id=25776657
+
+However they dual-license under both SSPL and the Elastic License — the latter
+allows using ElasticSearch the way Talkyard does it: all Basic features are
+available at no cost, when using ES via object code (not source code) and when
+the primary purpose is *not* ElasticSearch itself. In Ty's case, the primary
+purpose with Ty is not ES, but discussions between humans. From the license:
+
+> You agree not to: ... (iv) use Elastic Software Object Code for
+> providing ... software-as-a-service, ... where obtaining access
+> to the Elastic Software or the features and functions of the Elastic Software
+> is a primary reason or substantial motivation for users of the SaaS Offering
+> to access and/or use the SaaS Offering ...
+
+Also, it seems only Elastic may distribute the ES object code:
+
+> You agree not to: (iii) ... distribute, sublicense, ... Elastic Software
+> Object Code,
+
+That's fine — with Talkyard, people download the ElasticSearch Docker image
+themselves (via Docker-Compose) from Elastic's own servers — see
+images/search/Dockerfile.
+
+The Elastic License:
+https://github.com/elastic/elasticsearch/blob/master/licenses/ELASTIC-LICENSE.txt
+
+(FYI: Talkyards' source code integrating with ElasticSearch (via its REST API) is
+about 750 lines? See `app/talkyard/server/search/`. Whilst Ty's whole code base
+is about 160 000 lines? (as of 2021-01), I don't remember exactly
+— anyway, the directly related to ElasticSearch code in Talkyard
+should be < 0.5%? of everything.  This can make it easy to understand,
+also for outsiders, that the primary benefit with Talkyard really is not
+ElasticSearch. Also, that should be about how much code would need to change, if
+replacing ElasticSearch with, say PostgreSQL's search or some of the upcoming
+alternatives in Rust or Golang.)
