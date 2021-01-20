@@ -596,5 +596,16 @@ save the rebuilt post.
 Offline builds on various Linux distros, not just Debian 10?
 
 
-[ty_v1] Things to fix before Ty v0.X —> v1.0.
- 
+[ty_v1] Things to fix before Ty stack version 1: 0.20YY.NR —> version 1.20YY.NR
+
+
+[bash2deno][ty_v1]
+Port scripts from Bash to Deno.
+
+
+[release_channels][ty_v1] [mv_2_adm_docs]
+Kubernetes has release channels:
+  Rapid, Regular (the default), Stable — looks nice
+  (details: https://cloud.google.com/kubernetes-engine/docs/concepts/release-channels).
+
+
