@@ -130,10 +130,15 @@
 	branch = ty-openresty
 	shallow = true
 
-# Lua packages.
+# OpenResty Lua packages.
 [submodule "images/web/lua-packages/inspect.lua"]
 	path = images/web/lua-packages/inspect.lua
 	url = https://github.com/kikito/inspect.lua.git
+
+[submodule "images/web/openresty-pkgs"]
+	path = images/web/openresty-pkgs
+	url = https://github.com/debiki/ty-vendors.git
+	branch = ty-images-web-openresty-pkgs
 
 # Fonts.
 # This is a separate npm repo with woff2 font files, so they can be
