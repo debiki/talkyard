@@ -474,4 +474,5 @@ EXPOSE 80 443
 #  && /etc/nginx/run-envsubst.sh \
 #  && nginx-debug
 
-CMD /etc/nginx/run-envsubst.sh && nginx
+
+CMD /etc/nginx/run-envsubst-gen-keys.sh && nginx
