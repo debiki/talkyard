@@ -130,6 +130,11 @@
 	branch = ty-openresty
 	shallow = true
 
+# Lua packages.
+[submodule "images/web/lua-packages/inspect.lua"]
+	path = images/web/lua-packages/inspect.lua
+	url = https://github.com/kikito/inspect.lua.git
+
 # Fonts.
 # This is a separate npm repo with woff2 font files, so they can be
 # Dockerfile COPY:ied into the 'web' image.
