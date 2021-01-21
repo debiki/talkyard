@@ -36,3 +36,33 @@ envsubst "$vars" < /etc/nginx/vhost.conf.template  > /etc/nginx/vhost.conf
 envsubst "$vars" < /etc/nginx/server.conf.template > /etc/nginx/server.conf
 
 
+# Generate a LetsEncrypt account key; otherwise LetsEncrypt might rate limit
+# this server a bit much.  Used in nginx.conf (search for 'account_key_path').
+account_key_path='/etc/nginx/acme-account.key'
+
+if [ ! -f $account_key_path ]; then
+  echo
+  echo "Generating a LetsEncrypt account key,"
+  echo "  storing in: $account_key_path ..."
+  echo
+  openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096  \
+      -out  $account_key_path
+fi
+
+# Nginx won't start without a cert if TLS enabled, so generate a self signed
+# cert. It'll get used only temporarily, until we have a LetsEncrypt cert.
+fallback_cert_path='/etc/nginx/https-cert-self-signed-fallback'
+fallback_cert_path_key="$fallback_cert_path.key"
+fallback_cert_path_pem="$fallback_cert_path.pem"
+
+if [ ! -f $fallback_cert_path_pem ]; then
+  echo
+  echo "Generating a startup fallback self signed cert,"
+  echo "  storing in: $fallback_cert_path_key"
+  echo "         and: $fallback_cert_path_pem ..."
+  echo
+  openssl req -newkey rsa:2048 -nodes \
+      -keyout $fallback_cert_path_key \
+      -x509 -days 365 \
+      -out $fallback_cert_path_pem
+fi
