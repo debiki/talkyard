@@ -84,7 +84,9 @@
 # e.g. OpenResty at images/web/openresty, so accessible to the
 # images/web/Dockerfile.
 # But why not different submodules, instead of branches? Because creating
-# different submodules is boring, right. Creating a new branch is quicker.
+# different submodules is boring, right. And having "too many" submodule repos
+# to maintain, is also boring (e.g. if relocating all repos, then many to move).
+# Creating a new branch is quicker – and long term tiny time saver (?).
 #
 # To fetch only the current branch from the remote repo, do this:
 #
@@ -127,6 +129,16 @@
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-openresty
 	shallow = true
+
+# OpenResty Lua packages.
+[submodule "images/web/lua-packages/inspect.lua"]
+	path = images/web/lua-packages/inspect.lua
+	url = https://github.com/kikito/inspect.lua.git
+
+[submodule "images/web/openresty-pkgs"]
+	path = images/web/openresty-pkgs
+	url = https://github.com/debiki/ty-vendors.git
+	branch = ty-images-web-openresty-pkgs
 
 # Fonts.
 # This is a separate npm repo with woff2 font files, so they can be

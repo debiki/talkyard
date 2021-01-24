@@ -1,0 +1,11 @@
+
+
+== Writing Lua code
+
+Debugging: Use inspect(), like so:
+
+```
+local inspect = require 'inspect'
+log(ngx_INFO, "Something: ", inspect(a_map_for_example))
+```
+

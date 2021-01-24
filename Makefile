@@ -110,7 +110,13 @@ print_help:
 
 
 DOCKER_REPOSITORY := \
-  $(shell sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env)
+  $(shell sed -nr 's/^DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env)
+
+# All new builds go into the -dev channel first, and might later get promoted to
+# the -rapid, -regular and -stable channels.
+# (Currently there's only -dev and -regular though.)
+DEV_RELEASE_CHANNEL := tyse-v0-dev
+DEV_RELEASE_CHANNEL_SUFFIX := -dev
 
 TALKYARD_VERSION := \
   $(shell cat version.txt)
@@ -595,27 +601,52 @@ _print_push_git_tag_command:
 	@echo ""
 
 
+# [bash2deno]
 push-tag-to-git:
-	@$(call die_unless_tag_specified, Push) ;\
-	
 	@echo
-	@echo "Publishing version tag $(tag) to GitHub..."
+	@echo "Publishing to GitHub, version tag: $(tag)"
+	@echo "     release channel (Git branch): $(DEV_RELEASE_CHANNEL)..."
+	@echo
+
+	@$(call die_unless_tag_specified, Push)
 	 
+	@# Do Not push to master — doing that would include this version in tyse-v0-regular.
+	@# Exit on any error, so won't push something broken to the versions repo.
+	@#
 	@set -e  ;\
 	cd modules/ed-versions/  ;\
 	git fetch  ;\
-	git checkout master  ;\
-	git merge --ff-only origin/master  ;\
+	git checkout --track origin/$(DEV_RELEASE_CHANNEL)  ;\
+	git merge --ff-only origin/$(DEV_RELEASE_CHANNEL)  ;\
 	echo $(tag) >> version-tags.log  ;\
 	git add version-tags.log  ;\
-	git commit -m "Add $(tag)."  ;\
-	git push origin master
+	git commit -m "Add $(tag), channel $(DEV_RELEASE_CHANNEL)."  ;\
+	git push origin $(DEV_RELEASE_CHANNEL)
+
+	@# Later, this message instead:
+	@# git commit -m "Release tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)."
 	
+	@# Note that this version might not be included in all release channels.
+	@# Example: If this new version includes some not-well-tested things — then,
+	@# we'd want to push it only to tyse-v0-dev, fix bugs, and later, push a more
+	@# well tested version to tyse-v0-regular.
+	@#
+	@# It's nice to see directly in the main repo, in which channels a certain
+	@# Ty version (Git revision) has been included?  So let's incl the channel
+	@# name in the version tag.  Then, a version (Git revision) that got incl in
+	@# many channels, gets one tag per channel, e.g. both
+	@# tyse-v0.2021.04-abc123def-dev  and  tyse-v0.2021.04-abc123def-regular,  i.e.
+	@# same version nr and Git revision hash, but different -dev/-regular suffix.
+	@#
 	@echo ""
-	@echo "Tagging the current Git revision with $(tag) ..."
-	
+	@echo "Tagging main repo with: tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX) ..."
+
+	@git tag tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)
+
+	@# Backw compat — can skip, right.
 	@git tag $(tag)
-	@git push origin $(tag)
+
+	@git push origin $(tag) tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)
 	
 	@echo ""
 	@echo "Done. Now, bump the version number:"

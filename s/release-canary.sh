@@ -133,13 +133,26 @@ git fetch
 git checkout master
 git merge --ff-only origin/master
 echo $release_version_tag >> version-tags.log
+release_version_tag_w_ed_chan="tyse-$release_version_tag-regular"
 git add version-tags.log
-git commit -m "Release $release_version_tag."
-git push origin master
+git commit -m "Release $release_version_tag_w_ed_chan."
+git branch -f tyse-v0-regular
+# 'master' is for backw compat. Don't incl in v1. [ty_v1]
+git push origin master tyse-v0-regular
 popd
 
-git tag $release_version_tag $wip_version_tag
-git push origin $release_version_tag
+# Future tag name:
+# Need to include release channel in the Git tag, otherwise we'd try to push the
+# same tag to different branches, e.g. push  tyse-v0.2021.04-abc123def
+# to both the tyse-v0-dev and tyse-v0-regular branches.  But now we push
+# tyse-v0.2021.04-abc123def-dev  and  tyse-v0.2021.04-abc123def-regular
+# instead — two different tags.
+git tag $release_version_tag_w_ed_chan $wip_version_tag
 
-echo "Done. Bye."
+# Legacy tag name: (don't incl in v1) [ty_v1]
+git tag $release_version_tag $wip_version_tag
+
+git push origin $release_version_tag $release_version_tag_w_ed_chan
+
+echo "Done, released $release_version_tag_w_ed_chan. Bye."
 echo

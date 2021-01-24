@@ -68,16 +68,21 @@ fi
 # Push to which Docker repository?
 # ----------------------
 
-REPO=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
+REPO=`sed -nr 's/^DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 
 # # The registry is running?
 # nc my.example.com 80 < /dev/null
 #
 # if [ $?  is error status 1,  or if   -z "$REPO" ]; then
-#   echo
-#   echo "To which Docker repository do you want to push?"
-#   echo "Edit the file .env in this directory, and specify a repository."
-#   echo
+if [ -z "$REPO" ]; then
+  echo
+  echo "DOCKER_REPOSITORY line missing in .env file?"
+  echo
+  echo "To which Docker repository do you want to push?"
+  echo "Edit the file .env in this directory, and specify a repository, e.g.:"
+  echo
+  echo "    DOCKER_REPOSITORY=debiki"
+  echo
 #   echo "You can start a test Docker registry at localhost:5000 like so:"
 #   echo
 #   echo "  sudo docker run -d -p 5000:5000 --name myregistry registry:2"
@@ -85,8 +90,8 @@ REPO=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 #   echo "See docs/testing-images-in-vagrant.md, and"
 #   echo "https://docs.docker.com/registry/deploying/ for details."
 #   echo
-#   die_if_in_script
-# fi
+  die_if_in_script
+fi
 
 
 
@@ -158,11 +163,17 @@ version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala and g
 # ----------------------
 
 echo
-echo "About to build version:  $version_tag   (see version.txt),"
-echo "for pushing to Docker repository:  $REPO  (see .env)."
+echo "I'll build Talkyard version:  $version_tag   (see version.txt),"
+echo "    and push to Docker repo:  $REPO    (see .env),"
+echo "            release channel:  tyse-v0-dev  (always)"
 echo
-echo "Press Enter to continue, or CTRL+C to exit"
-read -s -p ''
+# dupl code [bashutils]
+read -p "Continue [y/n]?  " choice
+case "$choice" in
+  y|Y|yes|Yes|YES ) echo "Ok, continuing."; echo ;;
+  n|N|no|No|NO ) echo "Bye then. Doing nothing."; exit 1;;
+  * ) echo "What? Bye."; exit 1;;
+esac
 
 
 

@@ -1,4 +1,4 @@
-local http = require "resty.http"
+local http = require "lua-resty-http/lib/resty.http"
 -- Docs: https://github.com/ledgetech/lua-resty-http
 
 -- Tests: upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ESVUPLCK

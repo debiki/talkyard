@@ -1,4 +1,4 @@
-local util = require 'util'
+local util = require 'lua-limit-bandwidth/util'
 
 local ip = ngx.var.remote_addr
 local server_name = ngx.var.server_name

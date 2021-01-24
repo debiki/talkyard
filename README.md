@@ -15,8 +15,8 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-Forum software, brings together the main features from StackOverflow, Discourse, Slack,
-HackerNews/Reddit, Disqus.
+A community discussion platform — brings together the main features from
+StackOverflow, Slack, Discourse, Reddit/HackerNews, and Disqus blog comments.
 
 <!--
 Create a place to talk,
@@ -489,7 +489,7 @@ Technology
 -----------------------------
 
 - Client: React.js, TypeScript, Webdriver.io.
-- Server: Scala and Play Framework. Nginx, Nchan, some Lua. React.js in Java's Nashorn Javascript engine.
+- Server: Scala and Play Framework. OpenResty, some Lua. React.js in Java's Nashorn Javascript engine.
 - Databases: PostgreSQL, Redis, ElasticSearch.
 
 
@@ -535,10 +535,9 @@ This project looks like so:
      | +-web/          <-- For building the 'web' Docker image, runs Nginx
      | | +-Dockerfile
      | | +-assets/     <-- Typescript and Stylus compiled to JS and CSS
-     | | +-modules/    <-- Nginx modules
-     | |   +-nchan/    <-- WebSocket and PubSub for Nginx (a Git submodule)
-     | |   +-luajit/   <-- Lua
-     | |   ...
+     | | +-modules/    <-- Nginx (OpenResty) and Lua modules
+     | | +-openresty/  <-- OpenResty source code (we build from soruce)
+     | | ...
      | |
      | +-gulp/         <-- An image that runs Node.js and bundles JS and CSS
      | |
@@ -728,66 +727,30 @@ rather much + won't immediately work with Typescript?
 
 
 
-Old Code and Credits
+Old Code
 -----------------------------
 
 Old code from before January 2015 is available here:
 https://github.com/debiki/debiki-server-old.
 That repo, squashed, is in this repo.
 
-Some features and UX design ideas were inspired by Discourse, forum software,
-see https://meta.discourse.org.
-
 
 
 License
 -----------------------------
 
-- AGPLv3 or later, see below.
-- And dual licensed under AGPLv3 and GPLv3 or later,
-  from 2026-01-01 00:00:01 UTC and onwards.
-- I (KajMagnus) bump the above becomes-dual-licensed date, with one year,
-  each year — for the most recent version of Talkyard.
-  Meaning, the most recent version of Talkyard, becomes GPLv3 or later,
-  always 5 years into the future (as long as I bump the date regularly).
+Copyright (c) 2010-2021 Kaj Magnus Lindberg and contributors.
 
-AGPLv3 or later:
-
-```
-Copyright (c) 2010-2020  Kaj Magnus Lindberg and Debiki AB
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
+Talkyard is multi licensed under 1) AGPLv3 or later, see LICENSE.txt, and
+2) Business Source License v1.1, with change license GPLv2 or later, and
+change date 2026-01-01 (we bump the change date yearly,
+so it's between 4 and 5 years into the future) — see LICENSE-BUSLv1.1.txt.
+And 3) possibly other licenses.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
+above-mentioned licence texts for more details.
 
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-```
-
-Plus GPLv3 or later, from 2026-01-01 and onwards:
-
-```
-Copyright (c) 2010-2020  Kaj Magnus Lindberg and Debiki AB
-
-This program is free software: from 2026-01-01 00:00:01 UTC and
-onwards, you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation, either version 3
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
-```
 
 vim: list et ts=2 sw=2 tw=0 fo=r
