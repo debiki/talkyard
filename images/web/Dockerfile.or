@@ -311,7 +311,7 @@ COPY \
 
 
 # Auto HTTPS
-# ```````````````````````````````````
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Could use opm, Openresty Package Manager:
 #   RUN opm install fffonion/lua-resty-acme
@@ -353,13 +353,14 @@ COPY openresty-pkgs/usr-local-openresty-site  /usr/local/openresty/site
 
 
 # Other Lua pkgs
-# ```````````````````````````````````
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-COPY \
-    lua-packages/lua-resty-http \
-    lua-packages/inspect.lua \
-    \
-    /opt/lua-packages/
+# If trying to ./copy/a/directory, Docker instead copies its contents,
+# that is:  ./copy/a/directory/*,  so to copy many directories, need to COPY
+# them one at a time:
+COPY lua-packages/lua-resty-http  /opt/lua-packages/lua-resty-http
+COPY lua-packages/inspect.lua     /opt/lua-packages/inspect.lua
+
 
 
 

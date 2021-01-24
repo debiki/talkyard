@@ -55,11 +55,13 @@ for arg in "$@"; do
     #;
     --skip-e2e-tests)
     echo "Will skip E2E tests, because of --skip-e2e-tests."
+    echo
     skip_e2e_tests=yes
     shift
     ;;
     --skip-build)
     echo "Will skip build, because of --skip-build."
+    echo
     skip_build=yes
     shift
     ;;
