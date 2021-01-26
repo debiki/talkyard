@@ -4870,7 +4870,9 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     // See: link-previews-markdown-it-plugin.ts  [6Q8KEF2].
     if (token === 'icon icon-loading')
       return token;
-    if (/^c_LnPv-\w+$/.test(token))
+    if (/^c_LnPv-[\w-]+$/.test(token))
+      return token;
+    if (/^c_LnPvNone(-[\w-]+)?$/.test(token))
       return token;
 
     if (!allowClassAndIdAttr)

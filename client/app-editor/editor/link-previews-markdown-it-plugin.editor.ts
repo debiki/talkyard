@@ -244,9 +244,11 @@ function renderLinkPreviewBlock(tokens: BlockLinkPreviewToken[], index: Nr,
           // No link preview available; show a plain <a href=...> link instead.
           // (rel=nofollow gets added here: [rel_nofollow] for no-preview-attempted
           // links.)
-          // Sync w server side code [0PVLN].
+          // Sync w server side code [0PVLN] [brkn_int_ln_pv].
+          const clazz = 'c_LnPvNone' + (!preview?.errCode ? '' : '-' + preview.errCode);
           const link = Bliss.create('a', {
             href: token.link,
+            class: clazz,
             // target: _blank — don't add! without also adding noopener on the next line:
             rel: 'nofollow',   // + ' noopener' — for [reverse_tabnabbing].
             text: token.link,

@@ -124,10 +124,9 @@ describe(`link-previews-internal-may-see.2br  TyTE2ELNPVIN7252`, () => {
   });
 
 
-  it(`... a 3rd link preview appears — it's Not-Found broken`, () => {
+  it(`... a 3rd link preview appears — as a normal link: Post not found`, () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink',
-            { url: owensRe2Url_willDelete() });
-    // TESTS_MISSING: Could check error code: TyMLNPG404-PO404
+            { url: owensRe2Url_willDelete(), errCode: 'TyMLNPG404-M0SEEPG-PO404' });
     maria_brB.preview.waitForExist(sel, { where: 'InEditor' });
   });
 
@@ -147,6 +146,13 @@ describe(`link-previews-internal-may-see.2br  TyTE2ELNPVIN7252`, () => {
   it(`... and 1 broken`, () => {
     const previewBrokenSelector = utils.makePreviewBrokenSelector('InternalLink');
     maria_brB.topic.waitForExistsInPost(c.BodyNr, previewBrokenSelector, { howMany: 1 });
+  });
+
+
+  it(`... the broken link url and error code (if debug build) is correct`, () => {
+    const sel = utils.makePreviewBrokenSelector('InternalLink',
+            { url: owensRe2Url_willDelete(), errCode: 'TyMLNPG404-M0SEEPG-PO404' });
+    maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 1 });
   });
 
 

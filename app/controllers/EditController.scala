@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.onebox.{PreviewResult, LinkPreviewProblem}
 import ed.server.http._
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
@@ -31,6 +32,7 @@ import EditController._
 import debiki.onebox.LinkPreviewRenderer
 import scala.concurrent.ExecutionContext
 import talkyard.server.JsX.{JsDraft, JsDraftOrNull, JsStringOrNull}
+import org.scalactic.{Good, Or, Bad}
 
 
 /** Edits pages and posts.
@@ -264,7 +266,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
           requesterId = requesterOrUnknown.id)
 
     val response = renderer.fetchRenderSanitize(uri, inline = inline).transform(
-          result => {
+          (resultOrProb: PreviewResult Or LinkPreviewProblem) => {
+            val result: PreviewResult = resultOrProb getMakeGood { problem =>
+              PreviewResult(errCode = Some(problem.errorCode), safeHtml = "")
+            }
             val jsob = Json.obj(  // ts: LinkPreviewResp
                 "safeTitleCont" -> JsString(result.safeTitleCont.getOrElse("")),
                 "classAtr" -> result.classAtr,
