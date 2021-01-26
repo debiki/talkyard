@@ -597,6 +597,9 @@ Offline builds on various Linux distros, not just Debian 10?
 
 
 [ty_v1] Things to fix before Ty stack version 1: 0.20YY.NR —> version 1.20YY.NR
+Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
+so can use other tech than only Play Fmw, without the file name getting misleading.
+(There're HOCON file format parsers in rust and js too, not only Scala.)
 
 
 [bash2deno][ty_v1]
