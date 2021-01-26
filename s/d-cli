@@ -24,6 +24,10 @@ cd ..
 if [ -z "$PLAY_HEAP_MEMORY_MB" ]; then
   PLAY_HEAP_MEMORY_MB=`grep 'PLAY_HEAP_MEMORY_MB:' docker-compose.yml | egrep -o '[0-9]+'`
 fi
+# ... or instead ...
+# Let's use more memory — running tests needs a lot, but only 2800 by default
+# in docker-compose.yml
+PLAY_HEAP_MEMORY_MB=5120
 
 # Set Java's user.home to /home/owner so sbt and Ivy will cache downloads there. [SBTHOME]
 # Actually not needed in this case? because gets set in the entrypoint.sh. Do anyway, won't hurt.
