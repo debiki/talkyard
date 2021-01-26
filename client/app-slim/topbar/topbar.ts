@@ -799,15 +799,20 @@ const SearchForm = createComponent({
     const searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;
     const afterClick = this.props.closeDropdown;
     return (
-        r.form({ className: 'esTB_SearchD', ref: 'form',
+        r.form({ className: 'c_SchD', ref: 'form',
             method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
           (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: t.s.TxtToFind,  // [TYPEERROR]
               ref: 'input', name: 'q',
               value: this.state.queryInputText, onChange: this.onQueryChange }),
-          PrimaryLinkButton({ href: searchUrl, className: 'e_SearchB', afterClick }, t.Search),
-          r.div({},
-            r.a({ className: 'esTB_SearchD_AdvL', href: searchUrlAdvanced },
-              t.AdvSearch))));
+          PrimaryLinkButton({ href: searchUrl, tabIndex: '2',
+              className: 'e_SchB', afterClick },
+            t.Search),
+          r.div({ className: 'c_SchD_X' },
+            // UX: These should activate on Space, not just Enter? [sch_b_space]
+            r.a({ className: 'c_SchD_X_B', href: searchUrl, target: '_blank',
+                  tabIndex: '3' }, "Search in new tab"),  // I18N
+            r.a({ className: 'c_SchD_X_B', href: searchUrlAdvanced,
+                  tabIndex: '4' }, t.AdvSearch))));
   }
 });
 
