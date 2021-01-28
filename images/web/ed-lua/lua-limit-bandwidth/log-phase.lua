@@ -1,5 +1,10 @@
 local util = require 'lua-limit-bandwidth/util'
 
+local Module = {}
+
+-- CLEAN_UP: Intent.
+function Module.incr_used_bw()
+
 local ip = ngx.var.remote_addr
 local server_name = ngx.var.server_name
 local bytes_sent = ngx.var.bytes_sent
@@ -34,3 +39,6 @@ util.set_used_bw(ngx.shared.bw_by_server, 'total', '_all_servers_', new_used_tot
 -- + or the comment about expire times in util.lua
 -- Or use Redis + expiration times?
 
+end
+
+return Module

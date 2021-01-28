@@ -99,6 +99,7 @@ export const OnlyAdminsSee =
       " (only admins can see)");
 
 
+// UX: Click on space? If 'btn'?  [sch_b_space]
 export const PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export const Button: any = makeWidget(r.button, ' btn btn-default');
 export const PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');

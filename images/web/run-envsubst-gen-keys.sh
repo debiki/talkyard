@@ -6,7 +6,8 @@
 # RENAME from ED_* to TY_*  [ty_v1]
 
 vars='
-  \${TY_NGX_ERR_LOG_LEVEL}
+  \${TY_NGX_ERROR_LOG}
+  \${TY_NGX_ACCESS_LOG}
   \${ED_NGX_LIMIT_CONN_PER_IP}
   \${ED_NGX_LIMIT_CONN_PER_SERVER}
   \${ED_NGX_LIMIT_REQ_PER_IP}
@@ -25,7 +26,17 @@ vars='
 # Or use instead: https://github.com/a8m/envsubst
 # so can place default values in the placeholders instead, not
 # everything here.
-TY_NGX_ERR_LOG_LEVEL="${TY_NGX_ERR_LOG_LEVEL:-warn}" \
+
+# https://stackoverflow.com/questions/22541333/have-nginx-access-log-and-error-log-log-to-stdout-and-stderr-of-master-process
+# To log errors to stdout, log level 'notice':
+#   TY_NGX_ERROR_LOG="/dev/stdout notice"
+#
+# To log requests to stdout, and buffer messages:
+#   TY_NGX_ACCESS_LOG="/dev/stdout main buffer=64K flush=5m"
+#
+TY_NGX_ERROR_LOG="${TY_NGX_ERROR_LOG:-/var/log/nginx/error.log notice}"  \
+TY_NGX_ACCESS_LOG="${TY_NGX_ACCESS_LOG:-/var/log/nginx/access.log tyalogfmt}"  \
+  \
   envsubst "$vars" < /etc/nginx/nginx.conf.template           > /etc/nginx/nginx.conf
 
 envsubst "$vars" < /etc/nginx/http-limits.conf.template       > /etc/nginx/http-limits.conf

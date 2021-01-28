@@ -386,7 +386,8 @@ class InternalLinkPrevwRendrEng(globals: Globals, siteId: SiteId)
       return Bad(LinkPreviewProblem(
             unsafeProblem = errMsg,
             unsafeUrl = unsafeUrl,
-            errorCode = errCode))
+            errorCode = errCode,
+            isInternalLinkNotFoundOrMayNotSee = true))
     }
 
     val safeUrlAttr = TextAndHtml.safeEncodeForHtmlAttrOnly(unsafeUrl)

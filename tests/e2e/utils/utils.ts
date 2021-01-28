@@ -92,12 +92,27 @@ const utils = {
 
   // REMOVE use makeLinkPreviewSelector(..) instead.
   makePreviewBrokenSelector: (provider: LinkPreviewProvider | 'InternalLink',
-          opts: { url?: St } = {}) => {
+          opts: { url?: St, errCode?: St } = {}) => {
     return utils.makeLinkPreviewSelector(provider, { ...opts, broken: true });
   },
 
   makeLinkPreviewSelector: (provider: LinkPreviewProvider | 'InternalLink',
-          opts: { url?: St, broken?: Bo } = {}) => {
+          opts: { url?: St, broken?: Bo, errCode?: St } = {}) => {
+
+    // Internal broken links renders as normal links, in case some people
+    // may actually see the linked page — maybe it's access restricted. Then
+    // it'd be weird with a "Not found" error text.  [brkn_int_ln_pv]
+    if (provider === 'InternalLink' && opts.broken) {
+      // The error code might be longer than opts.errCode — so don't require
+      // a full match.
+      const dashErrCode = !opts.errCode ? '' : '-' + opts.errCode;
+      let sel = `a[class^="c_LnPvNone${dashErrCode}"]`;
+      if (opts.url) {
+        sel += `[href="${opts.url}"]`;
+      }
+      return sel;
+    }
+
     if (provider === 'InternalLink') provider = utils.__intLinkProvider;
     const colonNotPara = opts.broken ? '' : ':not(';
     const endPara      = opts.broken ? '' : ')';

@@ -111,9 +111,9 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
 
 
   it(`... a broken! link preview appears, in the new topic preview`, () => {
-    const sel = utils.makePreviewBrokenSelector('InternalLink', { url: owensStaffPageUrl });
-    // TESTS_MISSING: Could check error code:
-    // TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN
+    const sel = utils.makePreviewBrokenSelector('InternalLink', {
+            url: owensStaffPageUrl,
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
     maria_brB.preview.waitForExist(sel, { where: 'InEditor' });
   });
 
@@ -124,8 +124,9 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
 
 
   it(`... a 2nd link preview appears — it's Not-Found broken too`, () => {
-    const sel = utils.makePreviewBrokenSelector('InternalLink', { url: owensReplyUrl() });
-    // TESTS_MISSING: Could check error code: TyMLNPG404-M0SEEPG
+    const sel = utils.makePreviewBrokenSelector('InternalLink', {
+            url: owensReplyUrl(),
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
     maria_brB.preview.waitForExist(sel, { where: 'InEditor' });
   });
 
@@ -139,6 +140,19 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   it(`In the new topic, there're 2 broken internal link previews`, () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink');
     maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 2 });
+  });
+
+
+  it(`... with the correct urls and invisible error codes`, () => {
+    let sel = utils.makePreviewBrokenSelector('InternalLink', {
+            url: owensStaffPageUrl,
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
+    maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 1 });
+
+    sel = utils.makePreviewBrokenSelector('InternalLink', {
+            url: owensReplyUrl(),
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
+    maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 1 });
   });
 
 
@@ -189,8 +203,15 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   });
 
 
-  it(`... but the page is again for staff only; the previews are broken`, () => {
+  it(`... but the the preview links are broken`, () => {
     const sel = utils.makePreviewBrokenSelector('InternalLink');
+    maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 2 });
+  });
+
+
+  it(`... because the page is again for staff only`, () => {
+    const sel = utils.makePreviewBrokenSelector('InternalLink', {
+            errCode: 'TyMLNPG404-M0SEEPG-PO404-TyEM0SEE_-TyMMBYSEE_-ABX94WN' });
     maria_brB.topic.waitForExistsInPost(c.BodyNr, sel, { howMany: 2 });
   });
 

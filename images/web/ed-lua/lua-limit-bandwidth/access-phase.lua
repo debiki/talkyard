@@ -1,4 +1,10 @@
+local cdn_pull_key = os.getenv("CDN_PULL_KEY")
 local util = require 'lua-limit-bandwidth/util'
+
+local Module = {}
+
+-- CLEAN_UP: Indent.
+function Module.slow_down_maybe()
 
 local ip = ngx.var.remote_addr
 local server_name = ngx.var.server_name
@@ -87,3 +93,6 @@ if forbiddenMessage then
     return ngx.exit(ngx.HTTP_OK)
 end
 
+end
+
+return Module

@@ -58,17 +58,25 @@ object LinkPreviewHtml {
   }
 
 
-  def safeProblem(unsafeProblem: St, unsafeUrl: St, errorCode: St): St = {
-    require(safeEncodeForHtml(errorCode) == errorCode, "TyE906MRTD25")
+  def safeProblem(problem: LinkPreviewProblem, unsafeUrl: St): St = {
     require(startsWithHttpOrHttps(unsafeUrl), "TyELNPVHTTP02")
 
-    val safeProblem = TextAndHtml.safeEncodeForHtmlContentOnly(unsafeProblem)
+    val safeProblem = TextAndHtml.safeEncodeForHtmlContentOnly(problem.unsafeProblem)
     val safeUrl = safeEncodeForHtml(unsafeUrl)
     val safeLinkTag =
           s"""<a href="$safeUrl" class="s_LnPv_L s_LnPv_L-Err" """ +
               s"""target="_blank" rel="nofollow noopener">""" +
               s"""$safeUrl <span class="icon-link-ext"></span></a>"""
-    val errInBrackets = if (errorCode.isEmpty) "" else s" <code>[$errorCode]</code>"
+
+    val errInBrackets: St = {
+      import problem.errorCode
+      if (errorCode.isEmpty) ""
+      else {
+        require(safeEncodeForHtml(errorCode) == errorCode, "TyE906MRTD25")
+        s""" <code>[$errorCode]</code>"""
+      }
+    }
+
     val safeHtml =
           s"""<div>$safeProblem $safeLinkTag$errInBrackets</div>"""
 

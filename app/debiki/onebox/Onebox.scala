@@ -41,7 +41,7 @@ object RenderPreviewResult {
 
   /** The URL is not to a trusted site, or the HTTP request failed, or whatever went wrong.
     */
-  case object NoPreview extends RenderPreviewResult
+  case class NoPreview(errCode: St = "") extends RenderPreviewResult
 
   /** If a preview was cached already (in link_previews_t),
     * or no external HTTP request needed.
@@ -50,7 +50,8 @@ object RenderPreviewResult {
 
   /** If we sent a HTTP request to download a preview, e.g. an oEmbed request.
     */
-  case class Loading(futureSafeHtml: Future[PreviewResult], placeholder: String)
+  case class Loading(futureSafeHtml: Future[PreviewResult Or LinkPreviewProblem],
+        placeholder: String)
     extends RenderPreviewResult
 }
 
@@ -82,12 +83,6 @@ case class PreviewResult(
 }
 
 
-object PreviewResult {
-  val Nothing: PreviewResult = PreviewResult(safeHtml = "")
-  def error(errCode: St): PreviewResult = Nothing.copy(errCode = Some(errCode))
-}
-
-
 /**
 *
 * @param safeTitleCont — cannot be used in an attribute value though.
@@ -103,8 +98,9 @@ case class PreviewTitleHtml(
 
 case class LinkPreviewProblem(
   unsafeProblem: St,
-  unsafeUrl: St,
-  errorCode: St)
+  unsafeUrl: St, // remove? only inited, but then never used
+  errorCode: St,
+  isInternalLinkNotFoundOrMayNotSee: Bo = false)
 
 
 
@@ -243,7 +239,8 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
   protected def cachePreview = true
 
 
-  final def fetchRenderSanitize(urlAndFns: RenderPreviewParams): Future[PreviewResult] = {
+  final def fetchRenderSanitize(urlAndFns: RenderPreviewParams)
+        : Future[PreviewResult Or LinkPreviewProblem] = {
 
     // ----- Any cached preview?
 
@@ -258,7 +255,7 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
         // retry, although cache entry still here.
         // E.g. was netw err,
         // but at most X times per minute? Otherwise return the cached broken html.
-        return Future.successful(PreviewResult(safeHtml = safeHtml))
+        return Future.successful(Good(PreviewResult(safeHtml = safeHtml)))
       }
       redisCache
     }
@@ -273,7 +270,7 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
     // ----- Sanitize
 
     def sanitizeAndWrap(previewOrProblem: PreviewTitleHtml Or LinkPreviewProblem)
-          : PreviewResult = {
+          : PreviewResult Or LinkPreviewProblem = {
 
       // <aside> class:    s_LnPv (-Err)    means Link Preview (Error)
       // <aside><a> class: s_LnPv_L (-Err)  means the actual <a href=..> link
@@ -282,9 +279,18 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
 
       val safeHtmlMaybeBadLinks = previewOrProblem match {
         case Bad(problem) =>
+          // Internal link? Then just return the problem; this will make it render
+          // as a plain link, without showing any error — it'd be confusing,
+          // if linking from a public topic to an access restricted topic,
+          // and there was a "Not found: ..." error, although the link works
+          // for those with access.  [brkn_int_ln_pv]
+          if (problem.isInternalLinkNotFoundOrMayNotSee) {
+            return Bad(problem)
+          }
+          // A bit weird to sometimes return Bad, above, but Good(broken-preview-html)
+          // below. Oh well.
           anyErrCode = Some(problem.errorCode)
-          LinkPreviewHtml.safeProblem(unsafeProblem = problem.unsafeProblem,
-                unsafeUrl = urlAndFns.unsafeUrl, errorCode = problem.errorCode)
+          LinkPreviewHtml.safeProblem(problem, unsafeUrl = urlAndFns.unsafeUrl)
         case Good(previewTitleHtml) =>
           import previewTitleHtml.maybeUnsafeHtml
           followLinksSkipNoopener = previewTitleHtml.followLinksSkipNoopener
@@ -330,11 +336,11 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
       anyRedisCache.foreach(
             _.putLinkPreviewSafeHtml(urlAndFns.unsafeUrl, safeHtmlWrapped))
 
-      PreviewResult(
+      Good(PreviewResult(
             safeTitleCont = previewOrProblem.toOption.flatMap(_.safeTitleCont),
             classAtr = inlineClasses,
             safeHtml = safeHtmlWrapped,
-            errCode = anyErrCode)
+            errCode = anyErrCode))
     }
 
     // Use if-isCompleted to get an instant result, if possible — Future.map()
@@ -442,7 +448,8 @@ class LinkPreviewRenderer(
     new RedditPrevwRendrEng(globals, siteId, mayHttpFetch),
     )
 
-  def fetchRenderSanitize(uri: j_URI, inline: Bo): Future[PreviewResult] = {
+  def fetchRenderSanitize(uri: j_URI, inline: Bo)
+        : Future[PreviewResult Or LinkPreviewProblem] = {
     val url = uri.toString
     require(url.length <= MaxUrlLength, s"Too long url: $url TyE53RKTKDJ5")
 
@@ -489,18 +496,28 @@ class LinkPreviewRenderer(
     // Don't throw, this might be in a background thread.
 
     if (uri.toString.length > MaxUrlLength)
-      return RenderPreviewResult.NoPreview
+      return RenderPreviewResult.NoPreview()
 
     def placeholder: St = PlaceholderPrefix + nextRandomString()
 
-    val result: Future[PreviewResult] = fetchRenderSanitize(uri, inline = inline)
-    if (result.isCompleted)
-      return result.value.get match {
-        case Success(safeHtml) => RenderPreviewResult.Done(safeHtml, placeholder)
-        case Failure(throwable) => RenderPreviewResult.NoPreview
+    val futureResult: Future[PreviewResult Or LinkPreviewProblem] =
+          fetchRenderSanitize(uri, inline = inline)
+
+    if (futureResult.isCompleted)
+      return futureResult.value.get match {
+        case Success(result) =>
+          result match {
+            case Bad(problem) =>
+              // [brkn_int_ln_pv]
+              RenderPreviewResult.NoPreview(errCode = problem.errorCode)
+            case Good(preview) =>
+              RenderPreviewResult.Done(preview, placeholder)
+          }
+        case Failure(throwable) =>
+          RenderPreviewResult.NoPreview()
       }
 
-    RenderPreviewResult.Loading(result, placeholder)
+    RenderPreviewResult.Loading(futureResult, placeholder)
   }
 
 }
@@ -536,19 +553,21 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
 
     val result = linkPreviewRenderer.fetchRenderSanitizeInstantly(
           unsafeUri, inline = true) match {
-      case RenderPreviewResult.NoPreview =>
+      case RenderPreviewResult.NoPreview(errCode) =>
         // Fine.
-        PreviewResult.Nothing
+        PreviewResult(safeHtml = "", errCode = errCode.noneIfEmpty)
       case donePreview: RenderPreviewResult.Done =>
         donePreview.result
       case _: RenderPreviewResult.Loading =>
-        PreviewResult.error(errCode = "TyELNPV0CACH1")
+        PreviewResult(safeHtml = "", errCode = Some("TyELNPV0CACH1"))
     }
 
+    // TESTS_MISSING: Could incl a class="c_LnPvNone-$errCode" and in
+    // the e2e tests verify we got the correct error code.  [brkn_int_ln_pv]
+    // Not needed here:  safeHtml.
     val resultSt = Json.obj(  // ts: InlineLinkPreview
           "safeTitleCont" -> JsString(result.safeTitleCont.getOrElse("")),
           "classAtr" -> JsString(result.classAtr)).toString
-          // Not needed here:  safeHtml, errCode
 
     resultSt
   }
@@ -582,8 +601,14 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
     }
 
     linkPreviewRenderer.fetchRenderSanitizeInstantly(unsafeUri, inline = false) match {
-      case RenderPreviewResult.NoPreview =>
-        noPreviewHtmlSt()
+      case RenderPreviewResult.NoPreview(errCode) =>
+        // Incl any error code in a class="...", for the e2e testss.  [brkn_int_ln_pv]
+        var cssClass = "c_LnPvNone"
+        if (errCode.nonEmpty) cssClass += s"-$errCode"
+        require(cssClass == safeEncodeForHtml(cssClass), "TyE52RAMDJ72")
+        // This: s"...\"$var\"" results in a weird "value $ is not a member of String"
+        // compilation error. So `+` instead.
+        noPreviewHtmlSt(" class=\"" + cssClass + "\"")
       case donePreview: RenderPreviewResult.Done =>
         donePreviews.append(donePreview)
         // Return a placeholder because `doneOnebox.html` might be an iframe which would

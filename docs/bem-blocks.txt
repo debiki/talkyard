@@ -92,6 +92,7 @@ Re  = reply  NO! Change to Ry — doesn't Re mean "rearding" as well?
 Rs  = risk, e.g. RsLv = risk level
 Rw, Row = row, Col = column
 Sav = save
+Sch = Search
 Sm  = small (screen), also: Md, Lg, Xl
 Sub = submit
 Sz  = size
@@ -117,6 +118,7 @@ Vl  = vertical, also: Hz: horizontal
 Vt  = vote, NO Vo instead,  Vt could be Vertical
 W   = wrap, wrapper: a div that's wrapped around the main something
 Wik = wiki
+X   = extra
 Xl  = extra large (screen), also: Lg, Sm, Md
 Wb = Watchbar
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
@@ -283,6 +285,7 @@ SD              = stupid dialog
 
 SED             = server error dialog
 
+SchD            = search dialog
 (SERP)          = search engine result page -- no, instead, use SRP (not SERP)
 (SRP)           = search result page -- no, instead, use SP
 SP              = search page

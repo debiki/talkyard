@@ -2949,8 +2949,8 @@ export class TyE2eTestBrowser {
         // But this causes a "RuntimeError" in Webdriver.io v4:
         // this.#br.keys(phrase);
         // This works though (although won't test if has focus):
-        this.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
-        this.waitAndClick('.e_SearchB');
+        this.waitAndSetValue('.c_SchD input[name="q"]', phrase);
+        this.waitAndClick('.e_SchB');
         this.searchResultsPage.waitForResults(phrase);
       },
 
