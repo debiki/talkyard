@@ -104,8 +104,8 @@ const utils = {
     // it'd be weird with a "Not found" error text.  [brkn_int_ln_pv]
     if (provider === 'InternalLink' && opts.broken) {
       // The error code might be longer than opts.errCode — so don't require
-      // a full match.
-      const dashErrCode = !opts.errCode ? '' : '-' + opts.errCode;
+      // a full match.  It's not incl in prod builds.
+      const dashErrCode = !opts.errCode || settings.prod ? '' : '-' + opts.errCode;
       let sel = `a[class^="c_LnPvNone${dashErrCode}"]`;
       if (opts.url) {
         sel += `[href="${opts.url}"]`;
