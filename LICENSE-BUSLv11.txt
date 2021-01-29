@@ -4,7 +4,8 @@ Terms
 
 Change Date: 2026-01-01
 Change License: GNU General Public License v2.0 or later
-Additional Use Grant: None. (Later, will be a use in production grant for up to 3? months after installation date.)
+Additional Use Grant: You can use Talkyard in production for up to 4 months (123 days)
+after the day when your organization first installed Talkyard.
 
 The Licensor hereby grants you the right to copy, modify, create derivative works, redistribute, and make non-production use of the Licensed Work. The Licensor may make an Additional Use Grant, above, permitting limited production use.
 
