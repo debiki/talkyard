@@ -76,6 +76,7 @@ if [ ! -f $account_key_path ]; then
   echo
   openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096  \
       -out  $account_key_path
+  chmod o+r $account_key_path
 fi
 
 # Nginx won't start without a cert if TLS enabled, so generate a self signed

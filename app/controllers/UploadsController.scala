@@ -47,7 +47,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
 
 
 
-  def mayUploadFile(sizeBytes: i32): Action[U] = GetAction { request =>
+  def intReq_mayUploadFile(sizeBytes: i32): Action[U] = GetAction { request =>
     // Tests: upload-images-and-files.test.ts  TyT50E6KTDU7.TyTE2ESVUPLCK
 
     // We won't get to here at all, if the request body is larger than our

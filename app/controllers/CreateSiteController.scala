@@ -48,6 +48,14 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   private val MinLocalHostnameLength = 6
 
 
+  def intReq_hostnameShouldHaveCert: Action[U] = GetAction { req: GetRequest =>
+    val site = req.dao.getSite()
+    // 200 OK means "Yes, generate a cert". Anything else means "No don't".
+    val shouldHaveCert = site.exists(_.status != SiteStatus.Purged)
+    if (shouldHaveCert) Ok else NotFound
+  }
+
+
   def showPage(isTest: String): Action[Unit] = GetAction { request: GetRequest =>
     val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
     throwIfMayNotCreateSite(request, isTestBool)

@@ -16,9 +16,10 @@ services:
     # so can specify core dump path [NGXCORED]
     #privileged: true
     volumes:
-      # Mount the Lua and JS and CSS scripts, rather than relying on Docker's COPY,
+      # Mount the config, scripts and styles, rather than relying on Docker's COPY,
       # so Nginx can auto reload them after edits, without rebuilding the image.
       # (The files are COPY:d too, so will work in Prod.)
+      - ./images/web/sites-enabled-manual/:/etc/nginx/sites-enabled-manual/:ro
       - ./images/web/ed-lua/:/opt/talkyard/lua/:ro
       - ./images/web/assets/:/opt/talkyard/assets/:ro   # [NGXSTC]
       - ./images/web/ty-media/:/opt/talkyard/ty-media/:ro
@@ -35,7 +36,7 @@ services:
         ipv4_address: ${INTERNAL_NET_WEB_IP}
     depends_on:
       - app
-      #- cache
+      - cache
     environment:
       # When debugging, it's nice to see everything if typing docker-compose logs.
       LOG_TO_STDOUT_STDERR: '1'
