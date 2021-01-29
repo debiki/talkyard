@@ -6,8 +6,10 @@
 # RENAME from ED_* to TY_*  [ty_v1]
 
 vars='
-  \${TY_NGX_ERROR_LOG}
-  \${TY_NGX_ACCESS_LOG}
+  \${TY_NGX_ACCESS_LOG_PATH}
+  \${TY_NGX_ACCESS_LOG_CONFIG}
+  \${TY_NGX_ERROR_LOG_PATH}
+  \${TY_NGX_ERROR_LOG_LEVEL}
   \${ED_NGX_LIMIT_CONN_PER_IP}
   \${ED_NGX_LIMIT_CONN_PER_SERVER}
   \${ED_NGX_LIMIT_REQ_PER_IP}
@@ -27,6 +29,19 @@ vars='
 # so can place default values in the placeholders instead, not
 # everything here.
 
+
+if [ -n "$LOG_TO_STDOUT_STDERR" ]; then
+  TY_NGX_ACCESS_LOG_PATH=/dev/stdout
+  TY_NGX_ERROR_LOG_PATH=/dev/stderr
+else
+  # It'd be pointless to change this — it's inside the container. Instead,
+  # one could mount different files or directory on the host OS.
+  TY_NGX_ACCESS_LOG_PATH=/var/log/nginx/access.log
+  TY_NGX_ERROR_LOG_PATH=/var/log/nginx/error.log
+fi
+
+
+# [ty_alogfmt]
 # https://stackoverflow.com/questions/22541333/have-nginx-access-log-and-error-log-log-to-stdout-and-stderr-of-master-process
 # To log errors to stdout, log level 'notice':
 #   TY_NGX_ERROR_LOG="/dev/stdout notice"
@@ -34,8 +49,10 @@ vars='
 # To log requests to stdout, and buffer messages:
 #   TY_NGX_ACCESS_LOG="/dev/stdout main buffer=64K flush=5m"
 #
-TY_NGX_ERROR_LOG="${TY_NGX_ERROR_LOG:-/var/log/nginx/error.log notice}"  \
-TY_NGX_ACCESS_LOG="${TY_NGX_ACCESS_LOG:-/var/log/nginx/access.log tyalogfmt}"  \
+TY_NGX_ACCESS_LOG_PATH=${TY_NGX_ACCESS_LOG_PATH}  \
+TY_NGX_ACCESS_LOG_CONFIG="${TY_NGX_ACCESS_LOG_CONFIG:-tyalogfmt}"  \
+TY_NGX_ERROR_LOG_PATH=${TY_NGX_ERROR_LOG_PATH}  \
+TY_NGX_ERROR_LOG_LEVEL="${TY_NGX_ERROR_LOG_LEVEL:-info}"  \
   \
   envsubst "$vars" < /etc/nginx/nginx.conf.template           > /etc/nginx/nginx.conf
 

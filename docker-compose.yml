@@ -37,7 +37,10 @@ services:
       - app
       #- cache
     environment:
-      TY_NGX_ERR_LOG_LEVEL: 'debug'
+      # When debugging, it's nice to see everything if typing docker-compose logs.
+      LOG_TO_STDOUT_STDERR: '1'
+      TY_NGX_ERROR_LOG_LEVEL: 'debug'
+      #TY_NGX_ACCESS_LOG_CONFIG: 'tyalogfmt'
       #TY_NGX_LIMIT_REQ_BODY_SIZE: "5m"
       CDN_PULL_KEY: "public"
       # This is dev mode; tell the browser to refresh its cache each request. [2WBKP46]
