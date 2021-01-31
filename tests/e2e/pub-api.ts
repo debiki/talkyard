@@ -29,6 +29,7 @@ type ApiErrorResponse = { error: any; };
 type ParticipantId = string;
 
 type MemberRef = string;
+type PageRef = string;
 type CategoryRef = string;
 type TagRef = string;
 type BadgeRef = string;
@@ -116,6 +117,7 @@ interface LookWhere {
   emailAddresses?: boolean;
 
   // Find members in these groups.
+  // E.g.  { inGroups: ['username:some_group', 'patid:223344'] }   or 'groupid:...'  ?
   inGroups?: MemberRef[];
 
   // Find members with these badges.
@@ -140,7 +142,12 @@ interface LookWhere {
   // If you want to search only, say, pages of type Article and Question.
   pageTypes?: PageType[];
 
+  // Find these pages, or posts or participants in these pages.
+  // E.g.  { inPages: 'pageid:112233' }  ?
+  inPages?: PageRef[];
+
   // Find pages in these categories.
+  // E.g.  { inPages: 'catid:112233' }  ?
   inCategories?: CategoryRef[];
 
   // Pages with these tags.
@@ -154,8 +161,11 @@ interface LookWhere {
 // What you get back
 // -------------------------
 
-type ThingFound = PageFound | PageListed | PostListed
-                  | ParticipantFound | TagFound | CategoryFound;
+type ThingFound = PageOptFields
+                | PageFound
+                | PageListed  // hmm, incl in  PageOptFields  above
+                | PostListed
+                | ParticipantFound | TagFound | CategoryFound;
 
 
 
@@ -189,8 +199,20 @@ interface GroupFound extends MemberFound {
 }
 
 
+interface PageOptFields {
+  pageId?: PageId;
+  title?: St;
+  // Prefix with the origin (included in the response) to get the full URL.
+  urlPath?: St;
+  excerpt?: St;
+  author?: ParticipantFound;
+  categoriesMainFirst?: CategoryFound[];
+  numRepliesVisible?: Nr;
+}
 
-interface PageFoundOrListed {
+
+// Rename to PageWithDefaultFieilds ?
+interface PageFoundOrListed extends PageOptFields {
   pageId: PageId;
   title: string;
   // Prefix with the origin (included in the response) to get the full URL.
@@ -247,6 +269,56 @@ interface CategoryFound {
 
 
 
+// A  Get Query request
+// -------------------------
+
+// When you know precisely what you want, you can use a Get Query, to look up
+// directly by id / url / username / something. For each lookup key you specify,
+// you'll get back exactly one thing, or null.
+//
+// But if you don't know the exact ids / something, e.g. you have a username
+// *prefix* only, then instead use a List Query, to list all participants with
+// matching usernames — now, you might get back 0, 1 or many matching things.
+//
+// Tech details: Looks up by database primary key. So you know you'll get 1 or 0.
+// That's why the getWhat and ids (e.g. `getPages: [page-id-one, two, three]`)
+// are one single same key-value. — Compare with ListQuery, which has two separate
+// fields: findWhat: ... and lookWhere: .... E.g. findWhat: 'Posts' and
+// lookWhere: category-ids, to find recent posts in those categories.
+//
+interface GetQueryApiRequest {
+  getQuery: GetPagesQuery;
+  pretty?: Bo;
+}
+
+interface GetPagesQuery {
+  getPages: PageRef[];
+  fields: { numRepliesVisible: true };
+}
+
+interface GetQueryResults<T extends ThingFound> {
+  origin: St;
+  thingsFound?: T[];
+}
+
+// Examples:
+//
+// Get blog post comment counts:
+//
+//  /-/v0/get {
+//    getQuery: {
+//      getPages: ['emburl:https://blog/blog-post', 'emburl:https://blog/another'],
+//      fields: { numRepliesVisible: true },
+//    }
+//  }
+//
+// Could return this — assuming the first blog post, /blog-post, wasn't found:
+//
+//   [null, { numRepliesVisible: 123 }]
+//
+
+
+
 // A  List Query request
 // -------------------------
 
@@ -254,6 +326,10 @@ interface CategoryFound {
 // List Queries are comparatively fast — they lookup things directly, via indexes in
 // the PostgreSQL database.  However they cannot do full text search — for that,
 // you need a Search Query.
+//
+// Tech details: Looks up by database index typically other than the primary key index.
+// The index might be on table B, although you're finding things in table A.
+// E.g. you might list the most recent posts (topics and replies) in a category.
 //
 interface ListQueryApiRequest {
   // Either:
@@ -313,6 +389,9 @@ type ListResultsScrollCursor = Unimplemented;
 // A  Search Query request
 // -------------------------
 
+// Finds things via the full text search / faceted serarch database —
+// that is, ElasticSearch (currently), not PostgreSQL.
+//
 
 interface SearchQueryApiRequest {
   // Either:

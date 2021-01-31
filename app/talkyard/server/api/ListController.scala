@@ -58,12 +58,19 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val lookWhere = (listQueryJson \ "lookWhere").asOpt[JsObject]
 
+    val lookInWhichPages: Seq[Ref] =
+      if (lookWhere.isEmpty) Nil
+      else (lookWhere.get \ "inPages").asOpt[Seq[Ref]] getOrElse Nil
+
     val lookInWhichCategories: Seq[Ref] =
       if (lookWhere.isEmpty) Nil
       else (lookWhere.get \ "inCategories").asOpt[Seq[Ref]] getOrElse Nil
 
     throwUnimplementedIf(lookInWhichCategories.size >= 2,
       "TyE205KDT53", "Currently at most one lookWhere.inCategories can be specified")
+
+    throwUnimplementedIf(lookInWhichCategories.nonEmpty && lookInWhichPages.nonEmpty,
+      "TyE205KDT55", "Currently cannot search pages and categories at the same time")
 
     val anyCategoryRef = lookInWhichCategories.headOption
 
@@ -80,18 +87,24 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
     }
 
-    val catOrRootCat = anyCategory getOrElse {
-      val rootCats = dao.getRootCategories()
-      throwUnimplementedIf(rootCats.length >= 2, "TyE0450WKTD")  // [subcats]
-      rootCats.headOption getOrElse {
-        return nothingFound
-      }
-    }
-
     val authzCtx = dao.getForumAuthzContext(requester)
 
     findWhat match {
-      case Pages =>
+      case Pages if lookInWhichPages.nonEmpty =>
+
+        val topics = lookInWhichPages.flatMap(dao.getPagePathAndMeta)
+        ThingsFoundJson.makePagesFoundListResponse(topics, dao, pretty)
+
+      case Pages if lookInWhichPages.isEmpty =>
+
+        val catOrRootCat = anyCategory getOrElse {
+          val rootCats = dao.getRootCategories()
+          throwUnimplementedIf(rootCats.length >= 2, "TyE0450WKTD")  // [subcats]
+          rootCats.headOption getOrElse {
+            return nothingFound
+          }
+        }
+
         val pageQuery = PageQuery(
               // Score and bump time, if nothing else specified. [TyT025WKRGJ]
               PageOrderOffset.ByScoreAndBumpTime(offset = None, TopTopicsPeriod.Week),
