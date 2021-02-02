@@ -616,7 +616,7 @@ push-tag-to-git:
 	@set -e  ;\
 	cd modules/ed-versions/  ;\
 	git fetch  ;\
-	git checkout --track origin/$(DEV_RELEASE_CHANNEL)  ;\
+	git checkout -B $(DEV_RELEASE_CHANNEL) --track origin/$(DEV_RELEASE_CHANNEL)  ;\
 	git merge --ff-only origin/$(DEV_RELEASE_CHANNEL)  ;\
 	echo $(tag) >> version-tags.log  ;\
 	git add version-tags.log  ;\
@@ -643,10 +643,7 @@ push-tag-to-git:
 
 	@git tag tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)
 
-	@# Backw compat — can skip, right.
-	@git tag $(tag)
-
-	@git push origin $(tag) tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)
+	@git push origin tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)
 	
 	@echo ""
 	@echo "Done. Now, bump the version number:"

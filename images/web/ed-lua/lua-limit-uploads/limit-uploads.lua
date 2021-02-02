@@ -40,7 +40,7 @@ httpc:connect("app", 9000)
 --          how-do-i-use-sha256-on-a-filebinary-file-such-as-images-in-javascript
 --
 local res, err = httpc:request({
-    path = "/-/may-upload-file",
+    path = "/-/_int_req/may-upload-file",
     query = "sizeBytes=" .. content_length,
     headers = {
         ["Host"] = host,  -- [ngx_host_hdr]
