@@ -600,6 +600,20 @@ Offline builds on various Linux distros, not just Debian 10?
 Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
 so can use other tech than only Play Fmw, without the file name getting misleading.
 (There're HOCON file format parsers in rust and js too, not only Scala.)
+/opt/talkyard/
+    env-vars —> .env
+    docker-compose.yml
+    conf/
+        talkyard-app.conf
+        nginx-server-blocks.conf
+        acme-account.key
+    old/
+        old-versions/
+          v1.2021.05/
+            env-vars
+            docker-compose.yml
+            backup-archives-paths.txt
+
 
 
 [bash2deno][ty_v1]

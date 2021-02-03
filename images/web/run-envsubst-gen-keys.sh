@@ -30,7 +30,11 @@ vars='
 # everything here.
 
 
-if [ -n "$LOG_TO_STDOUT_STDERR" ]; then
+if [ -n "$LOG_TO_STDOUT" ]; then
+  # (Related: https://stackoverflow.com/questions/22541333/have-nginx-access-log-and-error-log-log-to-stdout-and-stderr-of-master-process )
+  TY_NGX_ACCESS_LOG_PATH=/dev/stdout
+  TY_NGX_ERROR_LOG_PATH=/dev/stdout
+elif [ -n "$LOG_TO_STDOUT_AND_STDERR" ]; then
   TY_NGX_ACCESS_LOG_PATH=/dev/stdout
   TY_NGX_ERROR_LOG_PATH=/dev/stderr
 else
@@ -42,13 +46,6 @@ fi
 
 
 # [ty_alogfmt]
-# https://stackoverflow.com/questions/22541333/have-nginx-access-log-and-error-log-log-to-stdout-and-stderr-of-master-process
-# To log errors to stdout, log level 'notice':
-#   TY_NGX_ERROR_LOG="/dev/stdout notice"
-#
-# To log requests to stdout, and buffer messages:
-#   TY_NGX_ACCESS_LOG="/dev/stdout main buffer=64K flush=5m"
-#
 TY_NGX_ACCESS_LOG_PATH=${TY_NGX_ACCESS_LOG_PATH}  \
 TY_NGX_ACCESS_LOG_CONFIG="${TY_NGX_ACCESS_LOG_CONFIG:-tyalogfmt}"  \
 TY_NGX_ERROR_LOG_PATH=${TY_NGX_ERROR_LOG_PATH}  \
@@ -67,9 +64,12 @@ envsubst "$vars" < /etc/nginx/server.conf.template > /etc/nginx/server.conf
 
 # Generate a LetsEncrypt account key; otherwise LetsEncrypt might rate limit
 # this server a bit much.  Used in nginx.conf (search for 'account_key_path').
+# The talkyard-prod-one Git repo includes an empty acme-account.key, so that
+# that path can be mounted as a file via Docker-Compose. So we need to generate
+# a new key, if the key file doesn't exist — or is empty.
 account_key_path='/etc/nginx/acme-account.key'
-
-if [ ! -f $account_key_path ]; then
+# -f = file exists, -s = size > 0, i.e. file not empty  (need to combined both, right).
+if [[ ! -f $account_key_path || ! -s $account_key_path ]; then
   echo
   echo "Generating a LetsEncrypt account key,"
   echo "  storing in: $account_key_path ..."
