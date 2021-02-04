@@ -155,9 +155,21 @@ services:
     volumes:
       - ./volumes/rdb-data/:/var/lib/postgresql/data/
       - ./volumes/rdb-logs/:/var/log/postgresql/
+      # Can live reload the config like so:  ([ty_v1] document this where?)
+      #    # bash-4.4# su - postgres   # as root in the container
+      #    $ pg_ctl reload -D /var/lib/postgresql/data/
+      # or: SELECT pg_reload_conf();
+      - ./modules/ed-prod-one-test/conf/rdb/:/var/lib/postgresql/conf/
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_RDB_IP}
+    # Log to stderr, not to /var/log/postgresql/:  (log_destination is stderr by default)
+    # (see https://github.com/sameersbn/docker-postgresql/blob/master/docker-compose.yml)
+    # [ty_v1] do automatically if  LOG_TO_STDOUT_STDERR=1  in .env,
+    # maybe would need to edit:  (clone repo, incl in images/rdb/)
+    #   https://github.com/sameersbn/docker-postgresql/blob/master/entrypoint.sh
+    # Also change from Ubuntu to Debian instead.
+    command: '--logging_collector=off --log_connections=yes'
     environment:
       POSTGRES_PASSWORD: 'public'
       PEER_HOST: 'rdb2'
