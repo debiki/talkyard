@@ -257,3 +257,44 @@ also for outsiders, that the primary benefit with Talkyard really is not
 ElasticSearch. Also, that should be about how much code would need to change, if
 replacing ElasticSearch with, say PostgreSQL's search or some of the upcoming
 alternatives in Rust or Golang.)
+
+
+=== Use Deno. Avoid Bash scripts
+
+Bash scripts should be forbidden. I'm getting more and more upset at various scripts,
+e.g. this PostgreSQL related snippet from
+https://github.com/sameersbn/docker-postgresql/blob/master/entrypoint.sh[here]:
+
+----
+if [[ ${1:0:1} = '-' ]]; then
+  ...
+  set --
+----
+
+What does `${1:0:1}` do, what can I search for, to find out?
+I search for "bash bracket colon one zero"? ... 10 frustrating minutes later,
+I find something at https://askubuntu.com/a/682130[AskUbuntu]:
+
+> ${var:pos} means that the variable var is expanded, starting from offset pos.
+> ${var:pos:len} means that the variable var is expanded,
+> starting from offset pos with length len.
+
+
+And what does `set --` do? Fortunately `help set` shows this — but still,
+the above Bash code is utterly unreadable without jumping to a web browser
+and start searching & browsing the Internet, even if you've been coding
+for 10+ years and written somewhat much Bash code yourself already.
+
+Use Deno instead of Bash. Why Deno:
+
+- Can code in Typescript, which Ty uses already (no new language to learn).
+- More secure: Doesn't allow file system or network access, by default.
+- Easy to install (just a single binary, can incl in the vendors Git submodule).
+- Popular, large community, many libs if needed.
+- Couldn't find anything else anyway. Ruby? No. Python or Nim? That'd be
+  new languages to learn. (And lacks Deno's security features?)
+- Maybe Lua? Ty uses Lua (Nginx plugins). But tiny community and few libs,
+  lacks the Deno security features — could maybe implement oneself, but
+  seems a bit complicated?: https://stackoverflow.com/questions/20715652/how-to-wrap-the-io-functions-in-lua-to-prevent-the-user-from-leaving-x-directory[how-to-wrap-the-io-functions-in-lua-to-prevent-the-user-from-leaving-x-directory].
+  So, Deno then.
+

@@ -626,3 +626,11 @@ Kubernetes has release channels:
   (details: https://cloud.google.com/kubernetes-engine/docs/concepts/release-channels).
 
 
+[todoc]
+Write docs — search for `[todoc`, find e.g. `[todoc_certs]`.
+About how to write docs:
+- https://documentation.divio.com:
+      Four kinds: tutorials, how-to guides, technical reference and explanation
+      Related discussion: https://news.ycombinator.com/item?id=26002656
+- https://v3.vuejs.org/guide/contributing/writing-guide.html:
+      Vuejs writing guide

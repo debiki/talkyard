@@ -24,7 +24,25 @@ How to push images to a local repo, to test in Vagrant: see [testing-images-in-v
 
 ### Redis
 
+List LetsEncrypt certs: `[todoc_certs]` (find prefixes in:
+images/web/openresty-pkgs/usr-local-openresty-site/lualib/resty/acme/autossl.lua)
+
+```
+# cd /opt/talkyard
+# docker-compose exec cache redis-cli
+> KEYS update_lock:*
+> KEYS domain:*
+> KEYS account_key:*
+
+> GET domain:rsa:forum.example.com
+```
+
+
 Empty the db: (or `FLUSHALL` to empty all dbs — but Ty uses just one)
+
+Don't do in Prod — the LetsEncrypt certs are kept in Redis.
+[ty_v1] A 2nd Redis instance for certs?
+(Better than using different dbs in the same Redis process)
 
 ```
 $ d/c exec cache redis-cli

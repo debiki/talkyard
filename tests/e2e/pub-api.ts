@@ -1,5 +1,5 @@
 
-// Public API Typescript types. [PUB_API]
+// Public API Typescript types. [PUB_API]  [todoc_api]
 //
 // These shouldn't be used by the Talkyard client itself — because if
 // the Ty client were to use the public stable API, there'd be a
