@@ -597,9 +597,51 @@ Offline builds on various Linux distros, not just Debian 10?
 
 
 [ty_v1] Things to fix before Ty stack version 1: 0.20YY.NR —> version 1.20YY.NR
-Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
+
+? Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
 so can use other tech than only Play Fmw, without the file name getting misleading.
 (There're HOCON file format parsers in rust and js too, not only Scala.)
+
+/opt/talkyard/
+    .git/
+    env-vars —> .env
+        # in env-vars file:
+        CURRENT_VERSION=...
+        PINNED_VERSION=...
+    docker-compose.yml —> versions/docker-compose.yml
+
+    version/
+        .git/
+        docker-compose.yml
+
+    conf/
+        app/
+            play-framework.conf
+        web/
+            nginx-server-blocks.conf
+        acme/
+            acme-account.key   [ty_v1] generate on the host instead so can be :ro?
+        rdb/
+            postgresql.conf
+        ...
+    volumes/
+        app/
+        cache/
+        rdb/
+        ...
+    docs/
+    old/
+        versions/
+            v1.2021.05/
+              env-vars
+              docker-compose.yml
+              backup-archives-paths.txt
+
+/opt/talkyard-backups/
+    archives/
+        ...
+
+
 
 
 [bash2deno][ty_v1]
@@ -612,3 +654,11 @@ Kubernetes has release channels:
   (details: https://cloud.google.com/kubernetes-engine/docs/concepts/release-channels).
 
 
+[todoc]
+Write docs — search for `[todoc`, find e.g. `[todoc_certs]`.
+About how to write docs:
+- https://documentation.divio.com:
+      Four kinds: tutorials, how-to guides, technical reference and explanation
+      Related discussion: https://news.ycombinator.com/item?id=26002656
+- https://v3.vuejs.org/guide/contributing/writing-guide.html:
+      Vuejs writing guide

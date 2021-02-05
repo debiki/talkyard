@@ -1,8 +1,17 @@
 #!/bin/bash
+
 # After the PostgreSQL Docker entrypoint has called initdb to create
 # the postgres user and database, it runs .sh and .sql files in
-# docker-entrypoint-initdb.d/, i.e. this file.
+# docker-entrypoint-initdb.d/, i.e. this file — but only if the data directory
+# is empty on container startup; any pre-existing database is left untouched.
 # See: https://github.com/docker-library/docs/tree/master/postgres#how-to-extend-this-image
+
+
+# [ty_v1] Maybe store db files in .../data/pgdata/ ?, see:
+# https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
+#   -e PGDATA=/var/lib/postgresql/data/pgdata \
+#   -v /custom/mount:/var/lib/postgresql/data \
+# (Also reinvestigate if better using the official images? e.g.: postgres:13.1)
 
 set -e
 
@@ -49,59 +58,21 @@ sed -i '/host all all 0.0.0.0/i \
 host replication repl 0.0.0.0/0 md5' $PGDATA/pg_hba.conf
 
 
-# Streaming replication and logging
+# Config file
 # ------------------------
 
+# This makes: /var/lib/postgresql/data/postgresql.conf
+# include:    /var/lib/postgresql/conf/postgresql.conf  (note: conf/ not data/)
+# which is:   (ty-prod-one-git-repo)/conf/rdb/postgresql.conf
+
+mv $PGDATA/postgresql.conf $PGDATA/postgresql.conf.orig
+
 cat << EOF >> $PGDATA/postgresql.conf
-
-#======================================================================
-# EDITED SETTINGS
-#======================================================================
-
-# Enable streaming replication from this server
-#--------------------------
-
-wal_level = hot_standby
-
-# Each is 16 MB, this means almost 1 GB in total.
-wal_keep_segments = 60
-
-# More than 1 in case a connection gets orphaned until wal_sender_timeout
-max_wal_senders = 4
-
-# Not needed; we keep & copy WAL segments in pg_xlog instead.
-# archive_mode = on
-# archive_command = ...
-
-hot_standby = on
-
-# Logging
-#--------------------------
-
-logging_collector = on
-
-# Don't use the default, /var/lib/postgresql/data/pg_log/, because then when mounting
-# the logs at /var/log/postgresql on the *host* (so that standard Postgres monitoring
-# tools will find the logs), Postgres will refuse to create the database, because
-# data/ wouldn't be empty — pg_log/ would be inside.
-log_directory = '/var/log/postgresql/'
-
-log_rotation_age = 1d     # defualt = 1d
-log_rotation_size = 50MB  # default = 10MB
-
-# Logs statements running at least this number of milliseconds.
-log_min_duration_statement = 2000
-
-# %m = timestamp with milliseconds, %c = session id, %x = transaction id.
-log_line_prefix = '%m session-%c tx-%x: '
-
-# Log all data definition statements, such as CREATE, ALTER, and DROP.
-log_statement = 'ddl'
-
+include '/var/lib/postgresql/conf/postgresql.conf'
 EOF
 
 
-# Help file about how to rsync to standby
+# Help file about how to rsync to standby  [ty_v1] move to (ty-prod-one)/docs/
 # ------------------------
 
 cat << EOF > $PGDATA/how-rsync-to-standby.txt
@@ -128,6 +99,14 @@ EOF
 # Configure streaming replication *to* this server
 # ------------------------
 # But don't enable it.
+
+# [ty_v1] Postgres v12+: recovery.conf is gone
+# now recovery params are in postgresql.conf instead, ignored until in recovery mode.
+# standby_mode param deleted.
+# Instead, files  recovery.signal  and  standby.signal clarifies what pg should do.
+#
+# So, move this config to (ty-prod-one)/conf/rdb/postgresql.conf,
+# w/o standby_mode, and maybe some fields commented out?
 
 cat << EOF >> $PGDATA/recovery.conf.disabled
 # See https://wiki.postgresql.org/wiki/Streaming_Replication, step 10.

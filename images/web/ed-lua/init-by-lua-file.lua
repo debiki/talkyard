@@ -35,7 +35,7 @@ require("resty.acme.autossl").init({
     -- enabled_challenge_handlers = { 'http-01', 'tls-alpn-01' },
 
     -- LetsEncrypt''s rate limits are higher, if one specifies an account key.
-    account_key_path = "/etc/nginx/acme-account.key",
+    account_key_path = '/etc/nginx/acme/acme-account.key',
 
     -- SHOULD be configurable, default empty.
     -- ${YOUR_SECURITY_EMAIL_ADDR}  in  .env  ?
@@ -44,10 +44,41 @@ require("resty.acme.autossl").init({
     domain_whitelist_callback = function(domain)
         ngx.log(ngx.DEBUG, "Checking if should gen cert for: " .. domain
               .. " [TyMGENCRTCK]")
+
+        -- This might work for avoiding trying to get certs for IP addrs
+        -- (which isn't possible, just causes some pointless netw traffic).
+        -- But how generate a request with an IP addr as hostname?
+        -- Surprisinly, none of this worked: (where 1.2.3.4 is the server's ip addr)
+        --  curl -k -v -v                    'https://1.2.3.4/test'
+        --  curl -k -v -v -H 'Host: 1.2.3.4' 'https://1.2.3.4/test'
+        --  curl -k -v -v -H 'Host: 1.2.3.4' 'https://talkyard.io/test'
+        --  curl -k -v -v -H 'Host: 1.2.3.4' 'https://funny.co/test' \
+        --                                --resolve 'funny.co:443:1.2.3.4'
+        --
+        -- local ipv4Parts = { domain:match("^(%d+)%.(%d+)%.(%d+)%.(%d+)$") }
+        -- if #ipv4Parts == 4 then
+        --   ngx.log(ngx.INFO, "Checkinp if is IP addr: " .. domain
+        --         .. " [TyMGENCRTMBYIP]")
+        --   local isIp = true
+        --   for _, v in pairs(ipv4Parts) do
+        --     if tonumber(v) > 255 then
+        --       isIp = false
+        --     end
+        --   end
+        --   if isIp then
+        --     ngx.log(ngx.INFO, "Should not gen cert for IP addr: " .. domain
+        --           .. " [TyMGENCRTNOIP4]")
+        --     return false
+        --   end
+        -- end
+        -- Could also check if is IPv6, seee:
+        -- https://stackoverflow.com/a/16643628
+
         local http = require('resty.http')
         local httpc = http.new()
         httpc:set_timeouts(1000, 5000, 5000)
         httpc:connect('app', 9000)
+
         local res, err = httpc:request({
             path = '/-/_int_req/hostname-should-have-cert',
             headers = {
@@ -55,15 +86,18 @@ require("resty.acme.autossl").init({
                 ['Host'] = domain,
             },
         })
+
         if not res then
             ngx.log(ngx.INFO, "Error checking if should gen cert for: " .. domain
                   .. ", err: " .. err .. " [TyMGENCRTERR]")
             return false
         end
+
         if res.status ~= 200 then
             ngx.log(ngx.INFO, "Should not gen cert for: " .. domain .. " [TyMGENCRTNO]")
             return false
         end
+
         ngx.log(ngx.INFO, "Should gen cert for: " .. domain .. " [TyMGENCRTYES]")
         return true
     end,
