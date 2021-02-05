@@ -597,22 +597,50 @@ Offline builds on various Linux distros, not just Debian 10?
 
 
 [ty_v1] Things to fix before Ty stack version 1: 0.20YY.NR —> version 1.20YY.NR
-Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
+
+? Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
 so can use other tech than only Play Fmw, without the file name getting misleading.
 (There're HOCON file format parsers in rust and js too, not only Scala.)
+
 /opt/talkyard/
+    .git/
     env-vars —> .env
-    docker-compose.yml
+        # in env-vars file:
+        CURRENT_VERSION=...
+        PINNED_VERSION=...
+    docker-compose.yml —> versions/docker-compose.yml
+
+    version/
+        .git/
+        docker-compose.yml
+
     conf/
-        talkyard-app.conf
-        nginx-server-blocks.conf
-        acme-account.key
+        app/
+            play-framework.conf
+        web/
+            nginx-server-blocks.conf
+        acme/
+            acme-account.key   [ty_v1] generate on the host instead so can be :ro?
+        rdb/
+            postgresql.conf
+        ...
+    volumes/
+        app/
+        cache/
+        rdb/
+        ...
+    docs/
     old/
-        old-versions/
-          v1.2021.05/
-            env-vars
-            docker-compose.yml
-            backup-archives-paths.txt
+        versions/
+            v1.2021.05/
+              env-vars
+              docker-compose.yml
+              backup-archives-paths.txt
+
+/opt/talkyard-backups/
+    archives/
+        ...
+
 
 
 

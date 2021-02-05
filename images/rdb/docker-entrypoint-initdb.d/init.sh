@@ -7,7 +7,7 @@
 # See: https://github.com/docker-library/docs/tree/master/postgres#how-to-extend-this-image
 
 
-# [ty_v1] Store db files in pgdata, see:
+# [ty_v1] Maybe store db files in .../data/pgdata/ ?, see:
 # https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
 #   -e PGDATA=/var/lib/postgresql/data/pgdata \
 #   -v /custom/mount:/var/lib/postgresql/data \

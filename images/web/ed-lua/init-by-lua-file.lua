@@ -35,7 +35,7 @@ require("resty.acme.autossl").init({
     -- enabled_challenge_handlers = { 'http-01', 'tls-alpn-01' },
 
     -- LetsEncrypt''s rate limits are higher, if one specifies an account key.
-    account_key_path = "/etc/nginx/acme-account.key",
+    account_key_path = '/etc/nginx/acme/acme-account.key',
 
     -- SHOULD be configurable, default empty.
     -- ${YOUR_SECURITY_EMAIL_ADDR}  in  .env  ?

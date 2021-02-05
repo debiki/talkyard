@@ -30,13 +30,15 @@ vars='
 # everything here.
 
 
-if [ -n "$LOG_TO_STDOUT" ]; then
+if [ -n "$TY_LOG_TO_STDOUT_STDERR" ]; then
   # (Related: https://stackoverflow.com/questions/22541333/have-nginx-access-log-and-error-log-log-to-stdout-and-stderr-of-master-process )
   TY_NGX_ACCESS_LOG_PATH=/dev/stdout
+  ## stderr won't work — nothing gets logged at all, why not?
+  ## However Postgres logs everything to stderr (if logging_collector=off)
+  ## and those messages do appear!
+  # TY_NGX_ERROR_LOG_PATH=/dev/stderr
+  ## Oh well, lets just use stdout instead:
   TY_NGX_ERROR_LOG_PATH=/dev/stdout
-elif [ -n "$LOG_TO_STDOUT_AND_STDERR" ]; then
-  TY_NGX_ACCESS_LOG_PATH=/dev/stdout
-  TY_NGX_ERROR_LOG_PATH=/dev/stderr
 else
   # It'd be pointless to change this — it's inside the container. Instead,
   # one could mount different files or directory on the host OS.
@@ -62,14 +64,10 @@ envsubst "$vars" < /etc/nginx/vhost.conf.template  > /etc/nginx/vhost.conf
 envsubst "$vars" < /etc/nginx/server.conf.template > /etc/nginx/server.conf
 
 
-# Generate a LetsEncrypt account key; otherwise LetsEncrypt might rate limit
-# this server a bit much.  Used in nginx.conf (search for 'account_key_path').
-# The talkyard-prod-one Git repo includes an empty acme-account.key, so that
-# that path can be mounted as a file via Docker-Compose. So we need to generate
-# a new key, if the key file doesn't exist — or is empty.
-account_key_path='/etc/nginx/acme-account.key'
-# -f = file exists, -s = size > 0, i.e. file not empty  (need to combined both, right).
-if [[ ! -f $account_key_path || ! -s $account_key_path ]; then
+# Generate a LetsEncrypt account key; otherwise LetsEncrypt might rate limit this
+# server a bit much.  Used in init-by-lua-file.lua (search for 'account_key_path').
+account_key_path='/etc/nginx/acme/acme-account.key'
+if [ ! -f $account_key_path ]; then
   echo
   echo "Generating a LetsEncrypt account key,"
   echo "  storing in: $account_key_path ..."
@@ -81,6 +79,7 @@ fi
 
 # Nginx won't start without a cert if TLS enabled, so generate a self signed
 # cert. It'll get used only temporarily, until we have a LetsEncrypt cert.
+# (Not much point in remembering these? Will disappear when container deleted.)
 fallback_cert_path='/etc/nginx/https-cert-self-signed-fallback'
 fallback_cert_path_key="$fallback_cert_path.key"
 fallback_cert_path_pem="$fallback_cert_path.pem"
