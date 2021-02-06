@@ -66,10 +66,11 @@ envsubst "$vars" < /etc/nginx/server.conf.template > /etc/nginx/server.conf
 
 # Generate a LetsEncrypt account key; otherwise LetsEncrypt might rate limit this
 # server a bit much.  Used in init-by-lua-file.lua (search for 'account_key_path').
+mkdir -p /etc/nginx/acme/
 account_key_path='/etc/nginx/acme/acme-account.key'
 if [ ! -f $account_key_path ]; then
   echo
-  echo "Generating a LetsEncrypt account key,"
+  echo "Generating a LetsEncrypt ACME account key,"
   echo "  storing in: $account_key_path ..."
   echo
   openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096  \
