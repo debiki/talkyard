@@ -210,9 +210,13 @@ package object core {
     case class SingleSignOnId(value: String) extends ParsedRef(true)
     case class TalkyardId(value: String) extends ParsedRef
     case class Username(value: String) extends ParsedRef(true)
+
+    // Maybe trait PageLookupId { def lookupId: St }  —>  "diid:..." or "https://..." ?
+    case class DiscussionId(diid: St) extends ParsedRef
+    case class EmbeddingUrl(url: St) extends ParsedRef
   }
 
-  def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrorMessage = {
+  def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrMsg = {
     val returnBadIfDisallowParticipant = () =>
       if (!allowParticipantRef)
         return Bad("Refs to participants not allowed here, got: " + ref)
@@ -240,6 +244,14 @@ package object core {
       val username = ref drop "username:".length
       returnBadIfContainsAt(username)
       Good(ParsedRef.Username(username))
+    }
+    else if (ref startsWith "diid:") {
+      val discId = ref drop "diid:".length
+      Good(ParsedRef.DiscussionId(discId))
+    }
+    else if (ref startsWith "emburl:") {
+      val url = ref drop "emburl:".length
+      Good(ParsedRef.EmbeddingUrl(url))
     }
     else {
       var refDots = ref.takeWhile(_ != ':') take 14
@@ -1374,11 +1386,13 @@ package object core {
                           // causing deadlocks / rollbacks / delays.
   def HACK = ()           // Quick crazy fix, probably should be redone later in a better way.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
-  def DO_AFTER = ()       // Something that should be done after a certain date.
+  def DO_AFTER = ()       // Sth that should be done after (not before) a certain date.
+  def REMINDER = ()       // Sth to get reminded about at (or after) a certain date.
   def FIX_AFTER = ()      // Bug to fix after a certain date.
   def REMOVE = ()
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.
+  def DEPRECATED = ()     // Consider removing some time later
   def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions
   def UNPOLITE = ()       // Vuln that lets a user be unpolite to someone else
   def FAIR = ()           // Something to fix, to make all sites share resources in a fair way.

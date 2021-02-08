@@ -128,8 +128,7 @@ function postJson(urlPath: string, requestData: RequestData) {
 
 /* The real native fetch(), usage example:  [FETCHEX]
 
-function sendFetchRequest(channelId: string, onDone: (response) => void,
-      onError: ErrorStatusHandler) {
+function sendFetchRequest(onOk: (response) => void, onError: ErrorStatusHandler) {
 
   const anyAbortController = ('AbortController' in self) ? new AbortController() : undefined;
 
@@ -152,7 +151,7 @@ function sendFetchRequest(channelId: string, onDone: (response) => void,
       console.trace(`Request response headers, status 200 OK`);
       response.json().then(function(json) {
         console.debug(`Response json [TyMSWLPRRESP]: ` + JSON.stringify(json));
-        onDone(json);
+        onOk(json);
       }).catch(function(error) {
         console.warn(`Request failed: got headers, status 200, ` +
             `but no json [TyESWLP0JSN]`);

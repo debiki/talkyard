@@ -542,6 +542,8 @@ Try —> Using
 [Scala_3]
 Migration guide: https://github.com/scalacenter/scala-3-migration-guide
 
+Typescript in the future?: [opaque_type]
+
 
 [site_statistics]
 ex data to incl: https://docs.mattermost.com/administration/statistics.html

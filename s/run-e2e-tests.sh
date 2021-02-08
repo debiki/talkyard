@@ -496,6 +496,7 @@ function runAllE2eTests {
 
   $r s/wdio --only api-search-full-text $args
   $r s/wdio --only api-list-query-for-topics-popular-first $args
+  $r s/wdio --only api-list-query-for-topics-recent-etc-first $args
   $r s/wdio --only api-list-query-for-posts $args
 
   # wip:
@@ -599,6 +600,7 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-restore-overwrite-site-same-domain.2browsers $args
   $r s/wdio       --only embedded-comments-restore-overwrite-site-new-domain.2browsers $args
 
+  $r s/wdio       --only embcom.comment-counts.2br.cors $args
 
   if [ -n "$http_server_pid" ]; then
     kill $http_server_pid

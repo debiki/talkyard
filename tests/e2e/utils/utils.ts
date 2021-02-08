@@ -215,6 +215,88 @@ ${ htmlToPaste ? htmlToPaste : `
   },
 
 
+  makeBlogPostIndexPageHtml(ps: { localHostname?: St, urlA: St, urlB: St, urlC: St,
+          urlD: St, urlE: St, urlF: St, urlG: St,
+          urlH: 'NoHref', urlI: 'NoLinkTag' }): St {
+    // For now:
+    const tyServerOrigin = `${settings.scheme}://${ps.localHostname}.localhost`;
+    const html = `
+        <html>
+        <head>
+        <title>Embedded comments E2E test</title>
+        <style>a { color: white }</style>
+        </head>
+        <body style="background: #000; color: #bbb; font-family: monospace;">
+        <p>Embedded comments E2E test page, for showing comment counts. [7J3RKHULWF4]<p>
+
+        <script>talkyardServerUrl='${tyServerOrigin}';</script>
+        <script async defer src='${tyServerOrigin}/-/talkyard-comments.js'></script>
+
+        <h2>Test blog posts list</h2>
+        <ol>${''
+          /* Trying with a bit different HTML structure below, in each <li>
+                  — everything should work fine  */}
+          <li>
+            <a href="${ps.urlA}">
+              A:
+              <span class="ty_NumCmts"></span> comments,
+              <span class="ty_NumOpLikeVotes"></span> likes, href: ${ps.urlA}<br>
+            </a>
+          </li>
+          <li>
+            <a href="${ps.urlB}">
+              <span>B: </span>
+              <span class="ty_NumCmts"></span> comments,
+              <span class="ty_NumOpLikeVotes"></span> likes, href: ${ps.urlB}<br>
+            </a>
+          </li>
+          <li>
+            <a href="${ps.urlC}">C: </a>
+            <a href="${ps.urlC}#comments-section" class="ty_NumCmts"></a> comments,
+            <a href="${ps.urlC}#comments-section" class="ty_NumOpLikeVotes"></a> likes,
+            href: ${ps.urlC}#comments-section
+          </li>
+          <li>
+            ${''/*
+            // Weird html structure: An enclosing elem with a href. (Cannot place
+            // an <a> in an <a> so it'll be a div.href  not an  a.href)  */}
+            <div href="http://wrong-url.example.com">
+              <a href="${ps.urlD}">D: <span class="ty_NumCmts"></span></a> comments,
+              <a href="${ps.urlD}"><span class="ty_NumOpLikeVotes"></span></a> likes,
+              url: ${ps.urlD}
+            </div>
+          </li>
+          <li>
+            <a href="${ps.urlE}">E:
+              <i><b><i><b><i class="ty_NumCmts"> comments
+              </i></b></i></b></i>
+            </a>, url: ${ps.urlE}, deeply nested comments count.
+          </li>
+          <li>
+             F: <a href="${ps.urlF}" class="ty_NumCmts"></a> at url ${ps.urlF}
+          </li>
+          <li>
+            <a href="${ps.urlG}" class="ty_NumCmts"></a>
+            <span>, at urlG: ${ps.urlG}</span>
+          </li>
+          <li>
+            <span>urlH: NoHref — the <a> tag has no href attr: </span>
+            <a class="ty_NumCmts"></a>
+          </li>
+          <li>
+            <span>urlI: NoLinkTag — there's no <a> tag </span>
+            <span class="ty_NumCmts"></span>
+          </li>
+        </ol>
+        <p>/End of page.</p>
+        </body>
+        </html>`;
+
+    assert.eq(html.match(/ty_NumCmts/g).length, 9);  // ttt
+    return html;
+  },
+
+
   createPageInHtmlDirUnlessExists(pageSlug: St, html: St) {
     const fileSysPath = './target/' + pageSlug;
     if (fs.existsSync(fileSysPath)) {

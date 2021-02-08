@@ -44,6 +44,9 @@ const enum IsWhere {
   EmbEditorIframe = 5,
   EmbLast = 5,
 
+  // E.g. a blog post index page, with <a href=...> to blog posts with emb comments.
+  EmbeddedPagesListPage = 6,
+
   // If switching to e.g. a link preview embedded iframe.
   UnknownIframe = 9,
 

@@ -397,9 +397,10 @@ export class TyE2eTestBrowser {
 
     // Change all refresh() to refresh2, then remove '2' from name.
     // (Would need to add  waitForPageType: false  anywhere? Don't think so?)
-    refresh2() {
+    refresh2(ps: { isWhere?: IsWhere.EmbeddedPagesListPage } = {}) {
       this.#br.refresh();
-      this.__updateIsWhere();
+      if (ps.isWhere) this.#isWhere = ps.isWhere;
+      else this.__updateIsWhere();
     }
 
     back() {
@@ -458,7 +459,7 @@ export class TyE2eTestBrowser {
     }
 
     go2(url: string, opts: { useRateLimits?: boolean, waitForPageType?: false,
-          isExternalPage?: true } = {}) {
+          isExternalPage?: true, willBeWhere?: IsWhere } = {}) {
 
       let shallDisableRateLimits = false;
 
@@ -510,7 +511,10 @@ export class TyE2eTestBrowser {
       }
 
       // Wait for some Talkyard thing to appear, so we'll know what type of page this is.
-      if (opts.isExternalPage) {
+      if (opts.willBeWhere) {
+        this.#isWhere = opts.willBeWhere;
+      }
+      else if (opts.isExternalPage) {  // CLEAN_UP  use opts.willBeWhere instead
         this.#isWhere = IsWhere.External;
       }
       else if (opts.waitForPageType === false) {
@@ -1358,11 +1362,11 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitForDisplayed(selector: string, ps: { timeoutMs?: number } = {}) {
+    waitForDisplayed(selector: string, ps: WaitPs = {}) {
       this.waitForVisible(selector, ps);
     }
 
-    waitForVisible(selector: string, ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}) {  // RENAME to waitForDisplayed() above
+    waitForVisible(selector: string, ps: WaitPs = {}) {  // RENAME to waitForDisplayed() above
       this.waitUntil(() => this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
@@ -1603,6 +1607,7 @@ export class TyE2eTestBrowser {
         this.waitForVisible(selector, { timeoutMs: opts.timeoutMs });
         this.waitForEnabled(selector, { timeoutMs: opts.timeoutMs });
         if (opts.mayScroll !== false) {
+          // fix sleeping? bugs: [E2EBUG] set maybeMoves to true if did actually scroll
           this.scrollIntoViewInPageColumn(selector);
         }
         if (opts.maybeMoves) {
@@ -7037,11 +7042,19 @@ export class TyE2eTestBrowser {
           },
 
           setEnableApi: (enabled: boolean) => {
-            //this.waitAndClick('#te_EnblApi', { maybeMoves: true });
+            // ---- Can remove, right
             this.scrollIntoViewInPageColumn('#te_EnblApi');
             this.waitUntilDoesNotMove('#te_EnblApi');
+            // ----------------------
             this.setCheckbox('#te_EnblApi', enabled);
-            //this.waitAndClick('#te_EnblApi');
+          },
+
+          setEnableCors: (enabled: Bo) => {
+            this.setCheckbox('.e_EnbCors input', enabled);
+          },
+
+          setCorsOrigins: (text: St) => {
+            this.waitAndSetValue('.e_CorsFrm textarea', text);
           },
         },
 
@@ -8423,7 +8436,7 @@ export class TyE2eTestBrowser {
     }
 
 
-  setCheckbox(selector: string, checked: boolean) {
+  setCheckbox(selector: string, checked: boolean, opts: WaitAndClickPs = {}) {
     dieIf(_.isUndefined(checked), "setCheckbox: Pass true or false  [TyE036WKDP45]");
     // Sometimes, clicking this checkbox has no effect. Perhaps a sidebar appeared, which
     // caused the checkbox to move? so the click missed? Therefore, try many times.
@@ -8444,9 +8457,9 @@ export class TyE2eTestBrowser {
     // Update 2020-11-28:  Seems the problem was that for fractions of a second,
     // the UI still showed the previous user profile & settings, when switching
     // to a new user — before the new one had been loaded. [pat_prof_fields]
-    // DO_AFTER 2021-03-01 REMOVE all weird stuff here.
+    // DO_AFTER 2021-03-01 REMOVE all weird stuff here (i.e. "Somehow once ... " below).
     //
-    this.waitForVisible(selector);
+    this.waitForVisible(selector, opts);
     let bugRetry = 0;
     const maxBugRetry = 2;
     for (; bugRetry <= maxBugRetry; ++bugRetry) {
@@ -8456,7 +8469,7 @@ export class TyE2eTestBrowser {
         logMessage(selector + ' is checked: ' + isChecked);
         if (isChecked === checked)
           break;
-        this.waitAndClick(selector);
+        this.waitAndClick(selector, opts);
         logMessage(selector + ' **click**');
       }
       // Somehow once this function exited with isChecked !== isRequired. Race condition?

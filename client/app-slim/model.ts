@@ -1905,10 +1905,12 @@ interface BrowserCode {
 //  Server requests and responses
 // =========================================================================
 
+type ErrCode = St;  // [opaque_type]
 
 type OnDone = (() => void);
 type OnDoneOrBeacon = OnDone | UseBeacon;
-type ErrorStatusHandler = (errorStatusCode?: number) => void;
+// Rename to RespErrHandler, which gets a RespErr { httpStatusCode, errCode, errMsg } ?
+type ErrorStatusHandler = (httpStatusCode?: Nr, errCode?: ErrCode) => Vo;
 type ErrorDetailsStatusHandler = (
         errorStatusCode: number | U, errorStatusText: string | U, details?) => void;
 
