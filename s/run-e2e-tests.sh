@@ -495,7 +495,7 @@ function runAllE2eTests {
   $r s/wdio --only api-upsert-posts.2browsers $args
 
   $r s/wdio --only api-search-full-text $args
-  $r s/wdio --only api-list-query-for-topics $args
+  $r s/wdio --only api-list-query-for-topics-popular-first $args
   $r s/wdio --only api-list-query-for-posts $args
 
   # wip:
