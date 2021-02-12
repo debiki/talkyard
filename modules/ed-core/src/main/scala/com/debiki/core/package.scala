@@ -85,9 +85,13 @@ package object core {
   type MutArrBuf[A] = mutable.ArrayBuffer[A]
   val MutArrBuf: mutable.ArrayBuffer.type = mutable.ArrayBuffer
 
+  type ColSet[A] = collection.Set[A]
+
+  type MutSet[A] = mutable.Set[A]
   type MutHashSet[A] = mutable.HashSet[A]
   val MutHashSet: mutable.HashSet.type = mutable.HashSet
 
+  type MutMap[K, V] = mutable.Map[K, V]
   type MutHashMap[K, V] = mutable.HashMap[K, V]
   val MutHashMap: mutable.HashMap.type = mutable.HashMap
 
@@ -128,7 +132,9 @@ package object core {
   type PageVersion = Int  // [Scala_3] opaque type ... And so many more here!
   val NoVersion: PageVersion = 0
 
-  type CategoryId = Int
+  type CategoryId = Int   // too long!
+  type CatId = CategoryId // better
+  type Cat = Category     // better
   val NoCategoryId = 0
 
   // The Discourse help forum currently has 28 categories so 100 is a lot.

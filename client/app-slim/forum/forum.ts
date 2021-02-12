@@ -1079,7 +1079,7 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
   const me: Myself = store.me;
   const activeCategory: Category = props.activeCategory;
 
-  const catsActiveLast = store_ancestorsCategoriesCurrLast(store, activeCategory.id);
+  const catsActiveLast = store_ancestorCatsCurLast(store, activeCategory.id);
 
   // catsActiveLast is empty, if we haven't selected any category. Then, currently,
   // activeCategory is a dummy category for the whole site section. (What about

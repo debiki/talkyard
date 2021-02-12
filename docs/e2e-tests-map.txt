@@ -37,6 +37,8 @@ full text search:
   private chat,
   restricted category:
             - api-search-full-text.test.ts  TyT60KTSJ35J
+  sub cat in restricted category:
+            - TESTS_MISSING
 
 create site & forum -
   create:  create-site-all-logins
@@ -408,6 +410,13 @@ categories -
   move topic to new category:
           - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
           - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS.TyTMVPG2CAT
+
+  sub categories:
+    create,
+    move base cat to other cat so becomes sub cat,
+    move sub cat to other base cat:
+          - CategoriesDaoAppSpec.scala
+          - TESTS_MISSING: UX tests   [TyTE2E305TMP24Z]
 
 permissions -
   category -

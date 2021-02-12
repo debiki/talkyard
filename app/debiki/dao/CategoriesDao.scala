@@ -23,7 +23,7 @@ import debiki.EdHttp._
 import debiki.{TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml}
 import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
-import org.scalactic.{ErrorMessage, Or}
+import org.scalactic.{Good, ErrorMessage, Or, Bad}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
@@ -143,6 +143,28 @@ case class CategoryToSave(
 }
 
 
+object CategoryToSave {
+  def initFrom(cat: Cat, makeDefault: Bo = false): CategoryToSave = {
+    CategoryToSave(
+          sectionPageId = cat.sectionPageId,
+          parentId = cat.parentId getOrDie "TyE406RKT3",
+          name = cat.name,
+          slug = cat.slug,
+          position = cat.position,
+          newTopicTypes = cat.newTopicTypes,
+          shallBeDefaultCategory = makeDefault,
+          unlistCategory = cat.unlistCategory,
+          unlistTopics = cat.unlistTopics,
+          includeInSummaries = cat.includeInSummaries,
+          description = cat.description getOrDie "TyE7P03SJ35",
+          createDeletedAboutTopic = false,
+          extId = cat.extImpId,
+          anyId = Some(cat.id))
+  }
+}
+
+
+
 case class CreateCategoryResult(
   category: Category,
   pagePath: PagePathWithId,
@@ -205,7 +227,12 @@ trait CategoriesDao {
 
 
   def getAllCategories(): Vector[Category] = {
-    getAndRememberCategories()._1.values.toVector
+    getCatsById().values.toVector
+  }
+
+
+  def getCatsById(): Map[CatId, Cat] = {
+    getAndRememberCategories()._1
   }
 
 
@@ -405,19 +432,16 @@ trait CategoriesDao {
   }
 
 
-  def getAncestorCategoriesRootLast(categoryId: CategoryId): Vector[Category] = {
-    val categoriesById = getAndRememberCategories()._1
-    val categories = ArrayBuffer[Category]()
-    var current = categoriesById.get(categoryId)
-    var lapNr = 0
-    while (current.isDefined) {
-      dieIf(lapNr > categoriesById.size,
-        "TyECATLOOP", s"s$siteId: Category ancestors loop involving category id $categoryId")
-      lapNr += 1
-      categories.append(current.get)
-      current = current.get.parentId flatMap categoriesById.get
-    }
-    categories.toVector
+  CLEAN_UP // remove default val for inclSelfFirst
+  def getAncestorCategoriesRootLast(categoryId: CategoryId, inclSelfFirst: Bo = true,
+          anyTx: Opt[SiteTx] = None)
+          : Vec[Category] = {
+    val catsById =
+            anyTx.map(_.loadCategoryMap()) getOrElse
+            getAndRememberCategories()._1
+
+    CatAlgs.getAncestorCatsRootLast(categoryId, catsById, inclSelfFirst = inclSelfFirst)
+          .getOrIfBad(errMsg => die("TyECATLOOP", s"s$siteId: $errMsg"))
   }
 
 
@@ -585,45 +609,66 @@ trait CategoriesDao {
   }
 
 
-  def editCategory(editCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
+  def editCategory(editsToDo: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
         who: Who): Category = {
-    val (oldCategory, editedCategory, permissionsChanged) = readWriteTransaction { tx =>
-      val categoryId = editCategoryData.anyId getOrDie "DwE7KPE0"
-      val oldCategory = tx.loadCategory(categoryId).getOrElse(throwNotFound(
-        "DwE5FRA2", s"Category not found, id: $categoryId"))
-      // Currently cannot change parent category because then topic counts will be wrong.
-      // Could just remove all counts, barely matters? [NCATTOPS]
-      require(oldCategory.parentId.contains(editCategoryData.parentId), "DwE903SW2")
-      val editedCategory = oldCategory.copy(
-        extImpId = editCategoryData.extId,
-        name = editCategoryData.name,
-        slug = editCategoryData.slug,
-        position = editCategoryData.position,
-        newTopicTypes = editCategoryData.newTopicTypes,
-        unlistCategory = editCategoryData.unlistCategory,
-        unlistTopics = editCategoryData.unlistTopics,
-        includeInSummaries = editCategoryData.includeInSummaries,
-        updatedAt = tx.now.toJavaDate)
+    val (catBef, catAft, permissionsChanged) = readWriteTransaction { tx =>
+      val catId = editsToDo.anyId getOrDie "DwE7KPE0"
+      val catBef = tx.loadCategory(catId).getOrElse(throwNotFound(
+        "DwE5FRA2", s"Category not found, id: $catId"))
 
-      if (editCategoryData.shallBeDefaultCategory) {
-        setDefaultCategory(editedCategory, tx)
+      BUG // Harmless: If changing parent category, the topic counts will be wrong.
+      // Could just remove all counts, barely matters? [NCATTOPS]  [subcats]
+
+      val catAft = catBef.copy(
+            extImpId = editsToDo.extId,
+            parentId = Some(editsToDo.parentId),
+            sectionPageId = editsToDo.sectionPageId,
+            name = editsToDo.name,
+            slug = editsToDo.slug,
+            position = editsToDo.position,
+            newTopicTypes = editsToDo.newTopicTypes,
+            unlistCategory = editsToDo.unlistCategory,
+            unlistTopics = editsToDo.unlistTopics,
+            includeInSummaries = editsToDo.includeInSummaries,
+            updatedAt = tx.now.toJavaDate)
+
+      // This won't detect if the whole tree gets too deep because a sub tree gets
+      // moved — we'll check that just below, in findAnyCatsTreeProblem()  [.7M27J525]
+      val ancCats = getAndCheckAncestorCatsThrowIfProblem(catAft, tx)
+
+      if (editsToDo.shallBeDefaultCategory) {
+        setDefaultCat(catAft, ancCats, tx)
       }
 
-      tx.updateCategoryMarkSectionPageStale(editedCategory)
+      tx.updateCategoryMarkSectionPageStale(catAft)
 
-      val permissionsChanged = addRemovePermsOnCategory(categoryId, permissions)(tx)._2
-      (oldCategory, editedCategory, permissionsChanged)
-      // COULD create audit log entry
+      // Check if any sub tree to deep. [.7M27J525]
+      val catMapAft = tx.loadCategoryMap()
+      CatAlgs.findCatsTreeProblem(catMapAft, startWith = Some(catAft)) ifProblem { p =>
+        throwForbidden("TyEBADCATS02", s"$siteId: Categories problem: ${p.message}")
+      }
+
+      AUDIT_LOG // fix later
+
+      val permissionsChanged = addRemovePermsOnCategory(catId, permissions)(tx)._2
+      (catBef, catAft, permissionsChanged)
     }
 
-    if (oldCategory.name != editedCategory.name || permissionsChanged) {
-      // All pages in this category need to be regenerated, because the category name is
-      // included on the pages. Or if permissions edited: hard to know which pages are affected,
+    val nameChanged = catBef.name != catAft.name
+    val ancestorCatsChanged = catBef.parentId != catAft.parentId
+    TESTS_MISSING // Move cat to other cat [TyTE2E305TMP24Z]
+
+    if (nameChanged || ancestorCatsChanged || permissionsChanged) {
+      // All pages in this category need to be regenerated, because its name and
+      // the names of its ancestor categories are included on the pages.
+      //
+      // Or if permissions edited: Hard to know precisely which pages are affected,
       // so just empty the whole cache. — Not only pages in `editedCategory` are
-      // affected — but also pages *linked from* those pages, since Talkyard shows
+      // affected, but also pages *linked from* those pages, since Talkyard shows
       // which other topics link to a topic. And if one of those linking topics
       // becomes access-restricted, then, the linked topic needs to be uncached
       // and rerendered, so the link disappears.  [cats_clear_cache]
+      //
       clearDatabaseCacheAndMemCache()
     }
     else {
@@ -633,10 +678,10 @@ trait CategoriesDao {
 
     // Do this even if we just emptied the cache above, because then the forum page
     // will be regenerated earlier.
-    refreshPageInMemCache(oldCategory.sectionPageId)
-    refreshPageInMemCache(editedCategory.sectionPageId)
+    refreshPageInMemCache(catBef.sectionPageId)
+    refreshPageInMemCache(catAft.sectionPageId)
 
-    editedCategory
+    catAft
   }
 
 
@@ -655,8 +700,8 @@ trait CategoriesDao {
   }
 
 
-  def createCategoryImpl(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
-        byWho: Who)(tx: SiteTransaction, staleStuff: StaleStuff): CreateCategoryResult = {
+  def createCategoryImpl(newCategoryData: CategoryToSave, permissions: ImmSeq[PermsOnPages],
+        byWho: Who)(tx: SiteTx, staleStuff: StaleStuff): CreateCategoryResult = {
 
     val categoryId = tx.nextCategoryId()  // [4GKWSR1]
     newCategoryData.anyId foreach { id =>
@@ -677,6 +722,8 @@ trait CategoriesDao {
       "EdE7LKG2", s"Too many categories, > $MaxCategories") // see [B0GKWU52]
 
     val category = newCategoryData.makeCategory(categoryId, tx.now.toJavaDate)
+    val ancCats = getAndCheckAncestorCatsThrowIfProblem(category, tx)  // [.920946]
+
     tx.insertCategoryMarkSectionPageStale(category)
 
     val titleSourceAndHtml = newCategoryData.makeAboutTopicTitle()
@@ -695,7 +742,7 @@ trait CategoriesDao {
         )(tx, staleStuff)._1
 
     if (newCategoryData.shallBeDefaultCategory) {
-      setDefaultCategory(category, tx)
+      setDefaultCat(category, ancCats, tx)
     }
 
     permissions foreach { p =>
@@ -718,7 +765,53 @@ trait CategoriesDao {
       //val notfs = notfGenerator(tx).generateForNew Category (...)  [nice_notfs]
     }
 
+    // Not needed — checked above [.920946], but anyway.
+    val catMap = tx.loadCategoryMap()
+    CatAlgs.findCatsTreeProblem(catMap, startWith = Some(category)) ifProblem { p =>
+      throwForbidden("TyEBADCATS01", s"$siteId: Categories problem: ${p.message}")
+    }
+
     CreateCategoryResult(category, aboutPagePath, permsWithId)
+  }
+
+
+  private def getAndCheckAncestorCatsThrowIfProblem(cat: Cat, tx: SiteTx): Vec[Cat] = {
+    // Check for cycles, if we're moving the cat to another parent cat.
+    val ancestorCats: Vec[Cat] = getAncestorCategoriesRootLast(
+          cat.parentId.getOrDie("TyE503MRKDG47"), inclSelfFirst = true, Some(tx))
+
+    // Cycle?
+    // (Do the cycle test first, so know it works — later when allowing sub sub cats.)
+    ancestorCats.find(_.id == cat.id) foreach { c: Cat =>
+      throwForbidden("TyECATCYCL03_",
+            s"""Cannot make category ${c.idName}" a sub cat of its descendants""")
+    }
+
+    // Sub-sub cat?
+    // Base cats has 1 ancestor: the root cat. Sub cats have 2, sub sub cats have 3.
+    throwForbiddenIf(ancestorCats.length > CatAlgs.MaxCatAncestors,
+          "TyECATDEPTH3A_", "Sub sub categories not yet supported")
+
+    // Wrong site section?
+    ancestorCats.find(_.sectionPageId != cat.sectionPageId) foreach { c: Cat =>
+      throwForbidden("TyECATSECT05_",
+            s"""Category ${cat.idName} cannot be in site section ${
+            cat.sectionPageId}, that'd be different from ancestor
+            cat ${c.idName} which is in site section ${c.sectionPageId}""")
+    }
+
+    // Bad section page? [ck_cat_sect_pg]
+    def cannotPlace =
+      s"Cannot place category ${cat.idName} in site section page: ${cat.sectionPageId}"
+    val sectPage = tx.loadPageMeta(cat.sectionPageId) getOrElse {
+      throwForbidden("TyESECTPG0FND", cannotPlace + " — page does not exist")
+    }
+    throwForbiddenIf(!sectPage.pageType.isSection,
+          "TyESECTPG0SECT", cannotPlace + " — it's not a section page")
+    throwForbiddenIf(sectPage.isDeleted,
+          "TyESECTPGDLD", cannotPlace + " — it's been deleted")
+
+    ancestorCats
   }
 
 
@@ -754,13 +847,14 @@ trait CategoriesDao {
   }
 
 
-  private def setDefaultCategory(category: Category, tx: SiteTransaction): Unit = {
-    val rootCategoryId = category.parentId getOrDie "EsE2PK8O4"
-    val rootCategory = tx.loadCategory(rootCategoryId) getOrDie "EsE5KG02"
+  private def setDefaultCat(category: Cat, ancCatsRootLast: Vec[Cat], tx: SiteTx): U = {
+    dieIf(ancCatsRootLast.headOption.map(_.id) != category.parentId, "TyE50RJ45")
+    val rootCategory = ancCatsRootLast.lastOption getOrDie "EsE2PK8O4"
     if (rootCategory.defaultSubCatId.contains(category.id))
       return
     val rootWithNewDefault = rootCategory.copy(defaultSubCatId = Some(category.id))
-    // (The section page will be marked as stale anyway, doesn't matter if we do it here too.)
+    // (The section page will be marked as stale anyway;
+    // doesn't matter if we do it here too.)
     tx.updateCategoryMarkSectionPageStale(rootWithNewDefault)
   }
 
@@ -837,6 +931,80 @@ object CategoriesDao {
     |
     |By clicking the <span class="icon-edit"></span> Edit button just below.
     |"""
+
+}
+
+
+
+object CatAlgs {
+
+  /* The root cat, base cats and sub cats. But sub sub cats not yet supported. */
+  val MaxCatTreeDepth: i32 = 3
+  val MaxCatAncestors: i32 = MaxCatTreeDepth - 1
+
+  def findCatsTreeProblem(catsById: Map[CatId, Cat], startWith: Opt[Cat] = None)
+          : AnyProblem = {
+    // Just for better error messages.
+    startWith.foreach { cat =>
+      getAncestorCatsRootLast(cat.id, catsById, inclSelfFirst = false) ifBad { errMsg =>
+        return Problem(errMsg, siteId = NoSiteId)
+      }
+    }
+
+    // This is simple, and faster than fast enough (as of 2021-02).
+    for (cat <- catsById.values) {
+      getAncestorCatsRootLast(cat.id, catsById, inclSelfFirst = false) match {
+        case Bad(errMsg) =>
+          // A cycle.
+          return Problem(errMsg, siteId = NoSiteId)
+
+        case Good(ancCats) =>
+          // Any cycle? — Cannot happen, getAncCatsRootLast() would have returned Bad.
+          val catAsOwnAncestor = ancCats.find(c => c.id == cat.id)
+          dieIf(catAsOwnAncestor.isDefined, o"""Category cycle: Category ${
+                cat.idName} would be its own ancestor [TyECATCYCL07_]""")
+
+          // Different sections?
+          val wrongSectionCat = ancCats.find(c => c.sectionPageId != cat.sectionPageId)
+          wrongSectionCat foreach { ancCat =>
+            return Problem(o"""Category ${ancCat.idName} is an ancestor of
+                 category ${cat.idName} but they're in different site sections:
+                 ${ancCat.sectionPageId} and ${cat.sectionPageId}, respectively.
+                 However, since they are in the same category tree,
+                 they must be in the same site section. [TyECATSECT08_]""",
+                 siteId = NoSiteId)
+          }
+
+          // Too deep?
+          if (ancCats.length > MaxCatAncestors)
+            return Problem(o"""Sub sub cats not supported: Category ${cat.idName},
+                 has > $MaxCatAncestors ancestors [TyECATDEPTH3B_]""", siteId = NoSiteId)
+      }
+    }
+
+    Fine
+  }
+
+
+  def getAncestorCatsRootLast(categoryId: CatId, catsById: Map[CatId, Cat],
+          inclSelfFirst: Bo = true): Vec[Cat] Or ErrMsg = {
+    val categories = ArrayBuffer[Cat]()
+    val startCat = catsById.get(categoryId)
+    var current = startCat
+    if (!inclSelfFirst) {
+      current = current.flatMap(c => c.parentId flatMap catsById.get)
+    }
+    var lapNr = 0
+    while (current.isDefined) {
+      if (lapNr > catsById.size)
+        return Bad(s"Category ancestors cycle involving category ${
+              startCat.get.idName} [TyECATCYCL03_]")
+      lapNr += 1
+      categories.append(current.get)
+      current = current.get.parentId flatMap catsById.get
+    }
+    Good(categories.toVector)
+  }
 
 }
 

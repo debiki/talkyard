@@ -17,8 +17,10 @@ w_X   = wraps X. Always a class, not an id.
 
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
 Ab  = about
+Aft = after
 Alw = allow(ed)
 AuD = authentication dialog (create account / log in / just type a name)
+Bef = before
 Em  = email
 Ena = enabled, Dis = disabled
 B   = button, e.g. ReplyB
@@ -82,6 +84,7 @@ U  = user
 FI = file input
 G  = group  ? or Gp?
 Pat = participant
+Perm,
 Prm = permission, e.g.: 's_PP_PrmsTb' = profile page, permissions tab
 Pp = participant  NO change to Pat
 P, Pg = page

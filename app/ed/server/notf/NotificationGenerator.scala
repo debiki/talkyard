@@ -390,8 +390,11 @@ case class NotificationGenerator(
           privTopicPrefsOnPage ++
           pageRepliersPrefsOnPage
 
+    val wantSilencePatIds = MutHashSet[PatId]()
+
     makeNewPostSubscrNotfFor(
-          allPrefsOnPage, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
+          allPrefsOnPage, newPost, isEmbDiscFirstReply, minNotfLevel,
+          memberIdsHandled, wantSilencePatIds)
 
     // If private page, skip cat & whole site notf prefs
     // — only page members and people (like moderators) who explicitly follow
@@ -400,28 +403,35 @@ case class NotificationGenerator(
     if (page.meta.pageType.isPrivateGroupTalk)
       return
 
-    // ----- Parent category
+    // ----- Ancestor categories [subcats]
 
-    val notfPrefsOnCategory = page.categoryId.map(tx.loadPageNotfPrefsOnCategory) getOrElse Nil
-    makeNewPostSubscrNotfFor(
-          addWhy(notfPrefsOnCategory, "You've subscribed to category"),
-          newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
-
-    // ----- Grandparent category? [subcats]
+    val ancCats = tx.loadCategoryPathRootLast(page.categoryId, inclSelfFirst = true)
+    for (ancCat <- ancCats ; if !ancCat.isRoot) {
+      val notfPrefsOnCategory: Seq[PageNotfPref] = tx.loadPageNotfPrefsOnCategory(ancCat.id)
+      makeNewPostSubscrNotfFor(
+            addWhy(notfPrefsOnCategory,
+                  s"You're subscribed to category '${ancCat.name}'"),
+            newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled,
+            wantSilencePatIds)
+    }
 
     // ----- Tags
 
     // notPrefsOnTags = ... (later)
     //makeNewPostSubscrNotfFor(
     //     addWhy(notPrefsOnTags, "why"),
-    //     NotificationType.PostTagged, newPost, isEmbCommFirstReply ...)
+    //     NotificationType.PostTagged, newPost, isEmbCommFirstReply,
+    //     // Categories are more specific than tags, so if a category is muted,
+    //     // then, still don't gen any notfs because of subscribed to any tag.
+    //     wantSilencePatIds, ...)
 
     // ----- Whole site
 
     val notfPrefsOnSite = tx.loadPageNotfPrefsOnSite()
     makeNewPostSubscrNotfFor(
           addWhy(notfPrefsOnSite, "You've subscribed to the whole site"),
-          newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
+          newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled,
+          wantSilencePatIds)
   }
 
 
@@ -580,10 +590,11 @@ case class NotificationGenerator(
   private def makeNewPostSubscrNotfFor(
         notfPrefs: Seq[PageNotfPrefAndWhy], newPost: Post,
         isEmbDiscFirstReply: Bo, minNotfLevel: NotfLevel,
-        memberIdsHandled: mutable.Set[UserId]): U = {
+        memberIdsHandled: MutSet[PatId], wantSilencePatIds: MutSet[PatId]): U = {
 
     val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
+    val wantSilenceHereafterPatIds = mutable.HashSet[MemberId]()
 
     // Sync w [2069RSK25].  Test: [2069RSK25-B]
     val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF2"
@@ -598,6 +609,7 @@ case class NotificationGenerator(
     for {
       notfPref: PageNotfPrefAndWhy <- notfPrefs
       member <- membersById.get(notfPref.peopleId)
+      if !wantSilencePatIds.contains(member.id)
       maySee = maySeePost(member)
       if maySee
     } {
@@ -611,7 +623,7 @@ case class NotificationGenerator(
       maybeMakeNotfs(member, notfPref)
     }
 
-    memberIdsHandled ++= memberIdsHandlingNow
+    memberIdsHandled ++= memberIdsHandlingNow  // was updated by maybeMakeNotfs()
 
     for {
       notfPref: PageNotfPrefAndWhy <- notfPrefs
@@ -633,6 +645,7 @@ case class NotificationGenerator(
       // So skip this: [5AKTG7374]
       //   memberMaySee = maySeePost(member)
       //   if groupMaySee || memberMaySee
+      if !wantSilencePatIds.contains(member.id)
     } {
       maybeMakeNotfs(member, notfPref)
     }
@@ -651,9 +664,19 @@ case class NotificationGenerator(
       memberIdsHandlingNow += member.id
 
       if (notfPref.notfLevel.toInt < minNotfLevel.toInt) {
-        // Example: A group has Muted a category. And this is a new comment, posted on a page
-        // in that category, that `member` won't get notified about (unless there're other
-        // notf prefs that says the group members *should* get notified).
+        // Remember that `member` doesn't want notifications for less specific
+        // things, content structure wise.
+        // Example 1: Member Memah has muted sub category S, but she's a member
+        // of a group who gets notifications about Every Post in the parent
+        // category P.  Now, someone posts a reply in a topic in sub cat S — then,
+        // Memah should normally get a notification, since she is in that group
+        // (which gets notified about Every Post in P, which includes S).
+        // But sub category S is more specific than parent category P,
+        // and here we remember that, later when handling notification prefs
+        // for parent cat P and the group, Memah should Not get notified
+        // (she wants silence).
+        TESTS_MISSING
+        wantSilenceHereafterPatIds.add(member.id)
         return
       }
 
@@ -669,6 +692,7 @@ case class NotificationGenerator(
     }
 
     memberIdsHandled ++= memberIdsHandlingNow
+    wantSilencePatIds ++= wantSilenceHereafterPatIds
   }
 
 

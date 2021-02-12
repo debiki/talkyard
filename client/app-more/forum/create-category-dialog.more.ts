@@ -33,6 +33,7 @@ const ModalFooter = rb.ModalFooter;
 const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 const PageRoleDropdown = editor.PageRoleDropdown;
+const SelectCategoryDropdown = editor.SelectCategoryDropdown;
 const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
@@ -73,6 +74,15 @@ const EditCategoryDialog = createClassAndFactory({
       isCreating: !categoryId,
       onSaved,
     });
+
+    // @ifdef DEBUG
+    // The current page is the forum contents index page — and its parent
+    // category is the forum root category, although we're currently viewing
+    // topics from one specific category (namely the one we're about to edit).
+    dieIf(store.currentPage.ancestorsRootFirst[0].categoryId
+            !== store.currentPage.categoryId, 'TyE502MSKJL57');
+    // @endif
+
     if (categoryId) {
       Server.loadCategory(categoryId, (response: LoadCategoryResponse) => {
         const category: CategoryPatch = response.category;
@@ -103,7 +113,7 @@ const EditCategoryDialog = createClassAndFactory({
         const newCategory: CategoryPatch = {
           id: categoryId,
           extId: '',
-          parentId: ReactStore.getCategoryId(), // CLEAN_UP remove that fn, use instead: store.currentPage.categoryId
+          parentId: store.currentPage.categoryId,
           sectionPageId: store.currentPageId,
           name: '',
           slug: '',
@@ -322,6 +332,21 @@ const CategorySettings = createClassAndFactory({
         r.span({ className: 'help-block' },
           "New topics in this category will be of this type, by default."));
 
+    // Try out sub cats at Ty.io.
+    const parentCatDropdown = !(eds.isTestSite || eds.siteId === 3) ? null :
+        r.div({ className: 'form-group' },
+          r.label({ className: 'control-label', style: { display: 'block' }}, "Parent category"),
+          SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category', store: store,
+              categories: store.currentCategories,
+              selectedCategoryId: category.parentId,
+              catAbsentMeansNone: true,
+              onlyBaseCats: true,
+              onCategorySelected: (newParentCatId: CategoryId) =>
+                this.props.updateCategory({ parentId: newParentCatId })
+              }),
+        r.span({ className: 'help-block' },
+          "If you want this category to be a sub category."));
+
     const isDefaultInput =
       Input({ type: 'checkbox', label: "Set as default category", id: 'e2eSetDefCat',
         checked: category.isDefaultCategory, onChange: this.onIsDefaultChanged,
@@ -429,6 +454,7 @@ const CategorySettings = createClassAndFactory({
             nameInput,
             editDescriptionLink,
             defaultTopicTypeInput,
+            parentCatDropdown,
             isDefaultInput,
             slugInput,
             positionInput,

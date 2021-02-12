@@ -328,6 +328,21 @@ class DaoAppSuite(
   }
 
 
+  def editCategory(cat: Cat, permissions: ImmSeq[PermsOnPages],
+          browserIdData: BrowserIdData, dao: SiteDao,
+          newParentId: Opt[CatId] = None,
+          newSectPageId: Opt[PageId] = None): Cat = {
+    var catToSave = CategoryToSave.initFrom(cat)
+    newParentId map { parCatId =>
+      catToSave = catToSave.copy(parentId = parCatId)
+    }
+    newSectPageId map { sectPageId =>
+      catToSave = catToSave.copy(sectionPageId = sectPageId)
+    }
+    dao.editCategory(catToSave, permissions, who = Who.System)
+  }
+
+
   REMOVE; CLEAN_UP // use createPage2 instead, and rename it to createPage().
   def createPage(pageRole: PageType, titleTextAndHtml: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,

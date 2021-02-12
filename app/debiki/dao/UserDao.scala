@@ -1092,6 +1092,7 @@ trait UserDao {
       newMembers.find(_.isGroup) foreach { group =>
         // Currently trust level groups are already nested in each other — but let's
         // wait with allowing nesting custom groups in each other. [NESTDGRPS]
+        // [ck_grp_ckl]
         throwForbidden("TyEGRINGR", s"Cannot add groups to groups. Is a group: ${group.nameParaId}")
       }
       newMembers.find(_.isGuest) foreach { guest =>

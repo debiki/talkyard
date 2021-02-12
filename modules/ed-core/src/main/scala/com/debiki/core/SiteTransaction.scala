@@ -64,10 +64,14 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadCategory(categoryId: CategoryId): Option[Category]
   def loadCategoryMap(): Map[CategoryId, Category]
-  def loadCategoryPathRootLast(anyCategoryId: Option[CategoryId]): immutable.Seq[Category] = {
-    loadCategoryPathRootLast(anyCategoryId.getOrElse({ return Nil }))
+
+  RENAME // to loadAncestorCatsRootLast?
+  def loadCategoryPathRootLast(anyCatId: Opt[CatId], inclSelfFirst: Bo): ImmSeq[Cat] = {
+    loadCategoryPathRootLast(
+          anyCatId.getOrElse({ return Nil }), inclSelfFirst = inclSelfFirst)
   }
-  def loadCategoryPathRootLast(categoryId: CategoryId): immutable.Seq[Category]
+  def loadCategoryPathRootLast(categoryId: CatId, inclSelfFirst: Bo): ImmSeq[Cat]
+
   def nextCategoryId(): Int
   def insertCategoryMarkSectionPageStale(category: Category): Unit
   def updateCategoryMarkSectionPageStale(category: Category): Unit

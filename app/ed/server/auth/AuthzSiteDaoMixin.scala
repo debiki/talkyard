@@ -187,7 +187,7 @@ trait AuthzSiteDaoMixin {
 
     val categories: immutable.Seq[Category] =
       pageMeta.categoryId map { categoryId =>
-        anyTx.map(_.loadCategoryPathRootLast(categoryId)) getOrElse {
+        anyTx.map(_.loadCategoryPathRootLast(categoryId, inclSelfFirst = true)) getOrElse {
           getAncestorCategoriesRootLast(categoryId)
         }
       } getOrElse Nil

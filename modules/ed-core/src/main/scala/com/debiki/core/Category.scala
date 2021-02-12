@@ -62,7 +62,7 @@ object IncludeInSummaries {
   * @param frozenAt
   * @param deletedAt
   */
-case class Category(  // [exp] ok use
+case class Category(  // [exp] ok use   too long name! use Cat instead
   id: CategoryId,
   extImpId: Option[ExtId] = None,  // RENAME to extId
   sectionPageId: PageId,
@@ -110,6 +110,7 @@ case class Category(  // [exp] ok use
   def isFrozen: Boolean = frozenAt.isDefined
   def isDeleted: Boolean = deletedAt.isDefined
 
+  def idName: St = s"""$id "$name""""
 }
 
 

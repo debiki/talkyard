@@ -762,11 +762,6 @@ ReactStore.getCategories = function() {
 };
 
 
-ReactStore.getCategoryId = function(): number {
-  return store.currentPage.categoryId;
-};
-
-
 ReactStore.emitChange = function() {
   this.emit(ChangeEvent);
 };

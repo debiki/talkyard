@@ -19,6 +19,7 @@ package talkyard.server.sitepatch
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
+import debiki.dao.CatAlgs
 import debiki.EdHttp._
 import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PageDao, PagePartsDao, SettingsDao, SiteDao}
@@ -693,6 +694,9 @@ case class SitePatcher(globals: debiki.Globals) {
           s"creating $numNewCats new categories, would result in more than $MaxCategories " +
           "categories (the upper limit as of now).")
 
+      // This var is just for better error messages.
+      var anyFirstUpsCat: Opt[Cat] = None
+
       // Upsert categories.
       siteData.categories foreach { catWithTempId: Category =>
         val realId = remappedCategoryTempId(catWithTempId.id)
@@ -766,7 +770,7 @@ case class SitePatcher(globals: debiki.Globals) {
               old category in the database uses section page ${catInDb.sectionPageId}""")
 
             BUG // harmless: Moving a sub cat to another cat, messes up the topic counts
-            // for the old and new parent cats. [NCATTOPS] Maybe remove category topic
+            // for the old and new parent cats. [NCATTOPS] [subcats] Maybe remove category topic
             // counts? Only remember current approx topic per day/week/etc?
 
             TESTS_MISSING // move cat to new parent cat, with 1) same sect id (ok) and
@@ -810,13 +814,11 @@ case class SitePatcher(globals: debiki.Globals) {
         }
 
         upsertedCategories.append(catWithRealIds)
+
+        if (anyFirstUpsCat.isEmpty) {
+          anyFirstUpsCat = Some(catWithRealIds)
+        }
       }
-
-      SECURITY; SHOULD // Verify all cats in a site section, has the same site section page id.
-      TESTS_MISSING // try to create cats with wrong section ids.
-
-      SECURITY; SHOULD // Check for category cycles; if any found, abort.
-      TESTS_MISSING // try to create a category cycle?
 
 
       // ----- Permissions
@@ -1041,6 +1043,14 @@ case class SitePatcher(globals: debiki.Globals) {
         tx.saveDeleteNotifications(notfGenerator.generatedNotifications)
       }
 
+
+      // ----- Consistency checks
+
+      // E.g. detect cycles.
+
+      doSiteConsistencyChecks(tx, anyCatToStartWith = anyFirstUpsCat)
+
+
       sectionPagePaths
     }
 
@@ -1153,8 +1163,6 @@ case class SitePatcher(globals: debiki.Globals) {
       CLEAN_UP // weird to create a SiteDao here — better use the site
       // transaction started just below, 'tx', instead.
       val newDao = globals.siteDao(theNewSite.id)
-
-      SECURITY; SHOULD // check for post cycles and category cycles.
 
       val tx = sysTx.siteTransaction(theNewSite.id)
 
@@ -1348,6 +1356,13 @@ case class SitePatcher(globals: debiki.Globals) {
         tx.upsertReviewTask(reviewTask)
       }
 
+
+      // ----- Consistency checks
+
+      // E.g. detect cycles.
+
+      doSiteConsistencyChecks(tx)
+
       theNewSite
     }
 
@@ -1359,6 +1374,32 @@ case class SitePatcher(globals: debiki.Globals) {
     newSiteDao.redisCache.clearThisSite()
 
     newSite
+  }
+
+
+
+  def doSiteConsistencyChecks(tx: SiteTx, anyCatToStartWith: Opt[Cat] = None): U = {
+    // Move this to separate file?
+    COULD_OPTIMIZE // Add params so won't need to check the whole site always
+    // — maybe just inserted a new post.
+
+    // Check for category cycles and max tree depth:
+    // This tested in  CategoriesDaoAppSpec  but not specifically for SitePatcher.
+    val catsByIdAfter = tx.loadCategoryMap()
+    CatAlgs.findCatsTreeProblem(catsByIdAfter, startWith = anyCatToStartWith)
+          .ifProblem { p =>
+      throwForbidden("TyEBADCATS08", "Categories problem: " + p.message)
+    }
+
+    SECURITY; SHOULD // check cat section pages too, see: [ck_cat_sect_pg]
+    SECURITY; SHOULD // check for post cycles [ck_po_ckl]
+    SECURITY; SHOULD // check for group cycles [ck_grp_ckl]
+
+    TESTS_MISSING // try to create cats with wrong section ids
+    TESTS_MISSING // try to create a category cycle
+    TESTS_MISSING // try to create a post cycle
+    TESTS_MISSING // try to create a user-groups cycle
+
   }
 
 }

@@ -37,6 +37,8 @@ export interface SelectCategoryDropdownProps {
   store: Store;
   categories?: Category[];
   selectedCategoryId: CategoryId;
+  catAbsentMeansNone?: Bo;
+  onlyBaseCats?: Bo;
   onCategorySelected: (categoryId: CategoryId) => Vo;
 }
 
@@ -85,14 +87,21 @@ export const SelectCategoryDropdown = createClassAndFactory({
 
     // UX COULD let user click a checkbox, to show categories from all site sections, even if by
     // default showing only categories from any current site section. [subcomms]
-    const catsToList: Category[] =
+    const catsToListTooMany: Category[] =
             categories.length ? categories : store.allCategoriesHacky;
+
+    // [subcats] Fix later: if onlyBaseCats, excl sub sub cats.
+    const catsToList = props.onlyBaseCats ? catsToListTooMany : catsToListTooMany;
 
     const selectedCategory: Category =
       _.find(catsToList, c => c.id === props.selectedCategoryId);
 
-    dieIf(!selectedCategory && props.selectedCategoryId, "Selected category missing [EdE5YFK24]");
-    const categoryName = selectedCategory ? selectedCategory.name : t.scd.SelCat + '...';
+    if (!selectedCategory) {
+      dieIf(!props.catAbsentMeansNone && props.selectedCategoryId,
+            "Selected category missing [TyE5YFK24]");
+    }
+    const categoryName = selectedCategory ? selectedCategory.name : (
+            props.catAbsentMeansNone ? "None" : t.scd.SelCat + '...');  // I18N
 
     const dropdownButton =
       Button({ onClick: this.open, ref: 'dropdownButton', className: 'e_SelCatB' },
