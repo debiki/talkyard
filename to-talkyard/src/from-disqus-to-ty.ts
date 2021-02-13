@@ -11,6 +11,14 @@ import c from '../../tests/e2e/test-constants';
 import { URL } from 'url';
 
 
+interface DisqusToTyParams {
+  verbose?: Bo;
+  primaryOrigin?: St;
+  skipLocalhostAndNonStandardPortComments?: Bo;
+  convertHttpToHttps?: Bo;
+}
+
+
 /**
  * Categories are for "advanced" bloggers who split their blog comments in
  * different blog topic categories? Skip for now. Maybe some time later,
@@ -141,6 +149,7 @@ const DisqusAuthorSuffix = ':ath';
 const DisqusExtIdSuffix = ':dsq';
 
 
+let d2tyParams: DisqusToTyParams | U;
 let verbose: boolean | undefined;
 let primaryOrigin: string | undefined;
 let errors = false;
@@ -153,10 +162,50 @@ function logVerbose(message: string) {
   logMessage(message);
 }
 
+let lastWasSameLineDot = false;
+
+
+
+// Later. If wants to skip some test addresses, e.g. "https://staging.blog.example.com".
+// Could be specified via script cmd param.
+const originsToSkip: { [origin: string]: Bo } = {
+};
+
+
+// Funny URL —> real URL query param name, or regex URL extractor.
+// Background:
+// Not often but sometimes people post comments via Google Translate. Then,
+// the blog post address from Disqus is 'https://translate.googleusercontent ...'
+// but the real blog post address is in a 'u' query param ('u' for URL?).
+// Example URL:
+//     https://translate.googleusercontent.com/translate_c
+//         ?depth=1&hl=de&prev=search&rurl=translate.google.de&sl=en&sp=nmt4
+//         &u=https://real-blog-addr.example.com/some-blog-post/
+//         &usg=B7LRMEs...PHfa0rj
+const originsToEditRegexs: { [origin: string]: St | RegExp } = {
+  'https://translate.googleusercontent.com': 'u',   // or?:  /^.*\&u=(https?:[^&]+).*$/
+  // ? 'https://webcache.googleusercontent.com'
+};
+
+
+// Nice to see after the import.
+const numCommentsPerOrigin: { [origin: string]: Nr } = {};
+const statsByPageId: { [pageId: string]: StatsByPageId } = {};
+const urlsSkippedNoComments: St[] = [];
+
+
+interface StatsByPageId {
+  numComments: Nr;
+  urls: { [url: string]: Nr };
+}
+
 
 parser.onopentag = function (tag: SaxTag) {
   logVerbose(`onopentag '${tag.name}': ${JSON.stringify(tag)}`);
-  if (!verbose) process.stdout.write('.');
+  if (!verbose) {
+    process.stdout.write('.');
+    lastWasSameLineDot = true;
+  }
 
   depth += 1;
   parentTagNameDebug = curTagName || parentTagNameDebug;
@@ -395,8 +444,10 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
     // Disqus creates threads also for blog posts with no comments; don't import those.
     // Instead, let Talkyard lazy-creates pages when needed.
-    if (!thread.comments.length)
+    if (!thread.comments.length) {
+      urlsSkippedNoComments.push(thread.link);
       return;
+    }
 
 
     // ----- Discussion start date
@@ -431,24 +482,140 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     });
 
 
+    // ----- The URL
+
+    // Sometimes ignore the whole page. Sometimes change the URL — e.g.
+    // extract the real URL if someone loaded & commented on a blog post
+    // via Google Translate.
+
+    const urlObjMaybeFunny = new URL(thread.link);
+    const funnyUrlRemapper = originsToEditRegexs[urlObjMaybeFunny.origin];
+    let notFunnyUrl: St = thread.link;
+
+    if (funnyUrlRemapper) {
+      if (lastWasSameLineDot) {  // just for now
+        process.stdout.write('\n');
+        lastWasSameLineDot = false;
+      }
+      let betterUrl: St | Nl | U;
+      const isQueryParamName = _.isString(funnyUrlRemapper);
+      if (isQueryParamName) {
+        betterUrl = urlObjMaybeFunny.searchParams.get(funnyUrlRemapper as St);
+      }
+      else {
+        die(`Hmm, regex remapping unimpl:  ${thread.link}`);
+        // betterUrl = ...
+      }
+      console.log(`Remapping URL: ${thread.link}`);
+      console.log(`      to this: ${betterUrl}`);
+      if (!betterUrl) {
+        console.log(` — that's not an URL though. Skipping that "URL".`);
+        return;
+      }
+      notFunnyUrl = betterUrl;
+    }
+
+    const urlInclOriginMaybeHttp = notFunnyUrl;
+    const urlInclOrigin = d2tyParams.convertHttpToHttps
+            ? urlInclOriginMaybeHttp.replace(/^http:/, 'https:')
+            : urlInclOriginMaybeHttp;
+
+    const urlObj = new URL(urlInclOrigin);
+    const urlOrigin = urlObj.origin;
+    const urlPath = urlObj.pathname;
+    const urlOriginAndPath = urlOrigin + urlPath;
+
+
+    if (!!originsToSkip[urlOrigin]) {
+      if (lastWasSameLineDot) {  // just for now
+        process.stdout.write('\n');
+        lastWasSameLineDot = false;
+      }
+      console.log(`Skipping URL: ${urlInclOrigin}`);
+      console.log(`    because ignoring origin: ${urlOrigin}`);
+      return;
+    }
+
+    // Skip non-standard ports — they were for testing only, typically.
+    if (d2tyParams.skipLocalhostAndNonStandardPortComments) {
+      const port: St = urlObj.port;
+      if (port) {
+        if (port === '80' && urlObj.protocol === 'http') {
+          // Fine.
+        }
+        else if (port === '443' && urlObj.protocol === 'https') {
+          // Fine.
+        }
+        else {
+          console.log(`Skipping URL: ${urlInclOrigin}`);
+          console.log(`    because ignoring non-standard port: ${urlObj.port}`);
+          return;
+        }
+      }
+      if (urlObj.hostname === 'localhost') {
+        console.log(`Skipping URL: ${urlInclOrigin}`);
+        console.log(`    because it's localhost`);
+        return;
+      }
+    }
+
+
     // ----- Page
 
     // Create a Talkyard EmbeddedComments discussion page for this Disqus
     // thread, i.e. blog post with comments.
 
-    const pageId: PageId = '' + nextPageId;
-    nextPageId += 1;
-
-    const urlInclOrigin = thread.link;
-    const urlObj = new URL(urlInclOrigin);
-    const urlPath = urlObj.pathname;
 
     // Old, so complicated:
     // The url might be just an origin: https://ex.co, with no trailing slash '/'.
     // urlInclOrigin.replace(/https?:\/\/[^/?&#]+\/?/, '/')  // dupl [305MBKR52]
     //   .replace(/[#?].*$/, '');
 
-    const tyPage: PageDumpV0 = {
+    // Find the canonical embedding page URL.
+    //
+    // Disqus creates different threads for the same page, if the query string
+    // is different, e.g.:
+    // - https://someblog/blog-post-slug/?ref=example.com
+    // - https://someblog/blog-post-slug/?utm_name=something
+    // - https://someblog/blog-post-slug/?from=somewhere&amp;isfeature=0
+    // Then almost alays, the URL path (or origin + path) uniqueley
+    // identifies the blog post. So ignore the query string.
+    //
+    // COULD add a to-talkyard command line flag for this?
+    // --ignoreQueryStringWhenComparingUrls  ?  [more_2ty_cmd_prms]
+    //
+    // And two identical URL path but with / without a trailing slash, are typically
+    // also the same blog post.  Query param for that too?
+    // (Currently Ty looks at them as being different, though, just like Disqus does.)
+    // --add/removeTrailingSlashWhenComparingUrls  ?  [more_2ty_cmd_prms]
+    //
+    // Maybe also:   [more_2ty_cmd_prms]
+    // --changeOriginsTo https://current-blog-address.example.com
+    // --skipOrigins staging.example.com,test.example.com
+    // --changeOriginFromTo from.ex.com,to.ex.com
+    //
+    const canoEmbPageUrl = urlOriginAndPath;  // or: thread.link  [ign_q_st]
+
+    const pageIdToReuse: PageId | U = tySiteData.pageIdsByAltIds[canoEmbPageUrl];
+    const pageToReuse: PageDumpV0 | U = _.find(tySiteData.pages,
+            (p: PageDumpV0) => p.id === pageIdToReuse);
+
+    if (pageToReuse) {
+      console.log(`\nReusing page ${pageToReuse.id
+            }, ext id: ${pageToReuse.extImpId
+            }, for Disqus thread: "${threadDisqusId
+            }",\nwith url: ${thread.link
+            },\nbecause same canonical embedding page URL: ${   // [ign_q_st]
+                  canoEmbPageUrl}`);
+    }
+
+    const pageId: PageId = pageToReuse?.id || (function() {
+      const id = '' + nextPageId;
+      nextPageId += 1;
+      return id;
+    })();
+
+    const tyPage: PageDumpV0 = pageToReuse || {
       dbgSrc: 'ToTy',
       id: pageId,
       extImpId: threadDisqusId + DisqusThreadSuffix + DisqusExtIdSuffix,
@@ -458,7 +625,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       updatedAt: pageCreatedAt,
       publishedAt: pageCreatedAt,
       categoryId: categoryImpId,
-      embeddingPageUrl: thread.link,
+      embeddingPageUrl: canoEmbPageUrl,
       authorId: c.SystemUserId,
     };
 
@@ -476,39 +643,63 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     // Disqus doesn't have any title or body post, so we generate our own
     // title and body post.
 
-    const tyTitle: PostDumpV0 = {
-      id: nextPostId,
-      extImpId: threadDisqusId + DisqusThreadSuffix + DisqusTitleSuffix + DisqusExtIdSuffix,
-      pageId: tyPage.id,
-      nr: c.TitleNr,
-      postType: PostType.Normal,
-      createdAt: pageCreatedAt,
-      createdById: c.SystemUserId,
-      currRevById: c.SystemUserId,
-      currRevStartedAt: pageCreatedAt,
-      currRevNr: 1,
-      approvedSource: "Comments for " + thread.title,
-      approvedAt: pageCreatedAt,
-      approvedById: c.SystemUserId,
-      approvedRevNr: 1,
-    };
+    let tyTitle: PostDumpV0;
+    let tyBody: PostDumpV0;
 
-    nextPostId += 1;
+    if (pageToReuse) {
+      // We've already generated a title and page body.
+    }
+    else {
+      tyTitle = {
+        id: nextPostId,
+        extImpId: threadDisqusId + DisqusThreadSuffix + DisqusTitleSuffix +
+              DisqusExtIdSuffix,
+        pageId: tyPage.id,
+        nr: c.TitleNr,
+        postType: PostType.Normal,
+        createdAt: pageCreatedAt,
+        createdById: c.SystemUserId,
+        currRevById: c.SystemUserId,
+        currRevStartedAt: pageCreatedAt,
+        currRevNr: 1,
+        approvedSource: "Comments for " + thread.title,
+        approvedAt: pageCreatedAt,
+        approvedById: c.SystemUserId,
+        approvedRevNr: 1,
+      };
 
-    const tyBody: PostDumpV0 = {
-      ...tyTitle,
-      id: nextPostId,
-      extImpId: threadDisqusId + DisqusThreadSuffix + DisqusBodySuffix + DisqusExtIdSuffix,
-      nr: c.BodyNr,
-      approvedSource: `Comments for <a href="${thread.link}">${thread.link}</a>`,
-    };
+      nextPostId += 1;
 
-    nextPostId += 1;
+      tyBody = {
+        ...tyTitle,
+        id: nextPostId,
+        extImpId: threadDisqusId + DisqusThreadSuffix + DisqusBodySuffix +
+              DisqusExtIdSuffix,
+        nr: c.BodyNr,
+        approvedSource: `Comments for <a href="${canoEmbPageUrl}">${canoEmbPageUrl}</a>`,
+      };
+
+      nextPostId += 1;
+    }
 
 
     // ----- Comments and authors
 
+    // Either:
     let nextPostNr = c.LowestTempImpId;
+
+    // Or: If we've added comments to the current page already (can happen if
+    // comments were added via Disqus at different URLs, to the in fact same page),
+    // find the highest post nr used this far, and continue from there.
+    if (pageToReuse) {
+      const otherCommentsMaybeSamePage: PostDumpV0[] = tySiteData.posts;
+      for (const p of otherCommentsMaybeSamePage) {
+        if (p.pageId === tyPage.id && nextPostNr <= p.nr) {
+          nextPostNr = p.nr + 1;
+        }
+      }
+    }
+
     const tyComments: PostDumpV0[] = [];
 
     thread.comments.forEach((comment: DisqusComment) => {
@@ -614,6 +805,23 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       nextPostId += 1;
       nextPostNr += 1;
 
+      // Update stats.
+      {
+        let stats: StatsByPageId = statsByPageId[tyPage.id];
+        if (!stats) {
+          stats = { numComments: 0, urls: {} };
+          statsByPageId[tyPage.id] = stats;
+        }
+        stats.numComments += 1;
+        const urlChanged = canoEmbPageUrl !== thread.link;
+        const statsKey = canoEmbPageUrl + (urlChanged ? `  was: ${thread.link}` : '');
+        const numCmtsCurUrl = stats.urls[statsKey] || 0;
+        stats.urls[statsKey] = numCmtsCurUrl + 1;
+
+        const numCmtsThisOrigin = numCommentsPerOrigin[urlOrigin] || 0;
+        numCommentsPerOrigin[urlOrigin] = numCmtsThisOrigin + 1;
+      }
+
       tyComments.push(tyPost);
     });
 
@@ -647,21 +855,27 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     logVerbose(`Adding discussion at: '${urlInclOrigin}', url path '${urlPath}', ` +
         `with ${thread.comments.length} comments, ` +
         `to Talkyard page with temp imp id ${tyPage.id} ...`);
-    if (!verbose)
+    if (!verbose) {
       process.stdout.write('.');
+      lastWasSameLineDot = true;
+    }
 
-    tySiteData.pages.push(tyPage);
-    tySiteData.pagePaths.push(tyPagePath);
+    if (!pageToReuse) {
+      tySiteData.pages.push(tyPage);
+      tySiteData.pagePaths.push(tyPagePath);
+    }
+    // Else: We've done that already.
 
 
     // Map discussion id to page:  [docs-3035KSSD2]
     //
     // ("Thread" id, in Disqus terminology.)
-    // These ids can be a bit weird, e.g. include spaces. They were generated
-    // by maybe WordPress, or Ghost, or whatever else, [52TKRG40]
-    // and inserted into Disqus — and now imported from Disqus to Talkyard.
+    // These ids can be a bit weird, e.g. include spaces. They might have been
+    // generated by WordPress, or Ghost, or whatever else, [52TKRG40]
+    // and later imported into Disqus — and now imported from Disqus to Talkyard.
     // Prefix with 'diid:' so the ids get their own namespace, and won't
-    // be mistaken for urls (which Talkyard stores in the same db table).
+    // be mistaken for embedding URLs and URL paths (which Talkyard stores
+    // in the same db table).
 
     if (thread.idTag) {
       tySiteData.pageIdsByAltIds['diid:' + thread.idTag] = tyPage.id;
@@ -671,15 +885,20 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     // Map full URL to page:
 
     // This cannot happen? Disqus never maps the same full URL to different threads.
-    const duplPageIdByUrlInclOrig = tySiteData.pageIdsByAltIds[urlInclOrigin];
-    dieIf(duplPageIdByUrlInclOrig,
-        `Full URL ${urlInclOrigin} maps to both tyPage.id ${duplPageIdByUrlInclOrig} ` +
-        `and ${tyPage.id} [ToTyEDUPLURL]`);
+    const pageIdByUrlInclOrig = tySiteData.pageIdsByAltIds[urlInclOrigin];
+    dieIf(pageIdByUrlInclOrig && pageIdByUrlInclOrig !== tyPage.id,
+        `Full URL ${urlInclOrigin} maps to both tyPage.id ${pageIdByUrlInclOrig} ` +
+        `and ${tyPage.id} [ToTyEDUPLURL]\n\n` +
+        `Disqus thread:\n${JSON.stringify(thread, undefined, 4)}\n\n` +
+        `First dupl page:\n${JSON.stringify(
+              _.find(tySiteData.pages, p => p.id === pageIdByUrlInclOrig),
+                                            undefined, 4)}\n\n` +
+        `Second dupl page:\n${JSON.stringify(tyPage, undefined, 4)}\n\n`);
 
     tySiteData.pageIdsByAltIds[urlInclOrigin] = tyPage.id;
 
 
-    // Map URL path to page too.
+    // Map URL path to page too:
 
     // So comments are found, also if the blog moves to a new domain. [TyT205AKST35]
 
@@ -698,14 +917,20 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     // to the same page. Maybe there could be an embedded discussions pages
     // list that helps with identfying these problems? (shows dupl / similar urls
     // for separate pages that should *probably* be the same?)
-    const duplPageIdByUrlPath = tySiteData.pageIdsByAltIds[urlPath];
+    //
+    // Cmd param: --changeOriginFromTo from.ex.com,to.ex.com   ?  [more_2ty_cmd_prms]
+    //
+    const pageIdByUrlPath: PageId | U = tySiteData.pageIdsByAltIds[urlPath];
     let skipPath = false;
-    if (duplPageIdByUrlPath) {
+    if (pageIdByUrlPath && pageIdByUrlPath !== tyPage.id) {
       if (primaryOrigin) {
-        skipPath = !urlInclOrigin.startsWith(primaryOrigin + '/') &&
-            urlInclOrigin != primaryOrigin;
+        // Overwrite the existing map entry, iff this is the primary origin.
+        const notPrimary = !urlInclOrigin.startsWith(primaryOrigin + '/') &&
+                urlInclOrigin != primaryOrigin;
+        skipPath = notPrimary;
       }
       else {
+        // Log error, show other URLS with same path, but different origins.
         const otherSimilarUrls = _.filter(
             _.keys(tySiteData.pageIdsByAltIds), url => {
               if (!url.startsWith('http:') && !url.startsWith('https:'))
@@ -716,49 +941,77 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
               return urlObj.pathname === urlPath;
             });
         // TESTS_MISSING
-        die(`URL path '${urlPath}' maps to both tyPage.id ${duplPageIdByUrlPath} ` +
-            `and ${tyPage.id}. Your Disqus XML file includes blog posts ` +
+        die(`URL path '${urlPath}' maps to both tyPage.id ${pageIdByUrlPath} ` +
+            `and ${tyPage.id}. Maybe 1) your Disqus XML file includes blog posts ` +
             `from different domains, but with the same URL path? ` +
-            `I'm looking at this URL: '${urlInclOrigin}', ` +
-            `and previous similar urls I've seen are: ${JSON.stringify(otherSimilarUrls)} —` +
+            `Or 2) Disqus has saved comments for this specific blog post, but used ` +
+            `different URLs and different Disqus thread (blog post) ids? ` +
+            `I'm looking at this URL: '${urlInclOrigin}'` +
+            (urlInclOrigin === thread.link ? ', ' :
+                  ` (originally: '${thread.link}', was remapped), `) +
+            `and previous similar urls I've seen are: ${
+                  JSON.stringify(otherSimilarUrls)} —` +
             `note that they end with the same URL path. ` +
             `To solve this, add --primaryOrigin https://one.of.your.blog.addresses, ` +
             `to the command line options, and then I'll use the Disqus comments ` +
             `from that origin, whenever the same URL path maps to ` +
             `different discussions from different domains. [ToTyEDUPLPATH]`);
+            // Or just remap other old origins to the current origin?  [more_2ty_cmd_prms]
       }
     }
     if (!skipPath) {
       tySiteData.pageIdsByAltIds[urlPath] = tyPage.id;
     }
 
-    tySiteData.posts.push(tyTitle);
-    tySiteData.posts.push(tyBody);
-    tyComments.forEach(c => tySiteData.posts.push(c));
+    // Unless we've already added the title & body (many Disqus threads for the
+    // same blog post), do now.
+    dieIf(!!tyTitle === !!pageToReuse, 'TyE503RKGJ2');
+    dieIf(!!tyBody === !!pageToReuse, 'TyE503RKGJ3');
+    if (!pageToReuse) {
+      tySiteData.posts.push(tyTitle);
+      tySiteData.posts.push(tyBody);
+    }
 
-    // A dummy category that maps the category import id to [the category
-    // in the database with ext id 'embedded_comments'].
-    tySiteData.categories.push({
-      id: categoryImpId,
-      extId: 'embedded_comments',
-    });
+    // We shouldn't be doing this at all, if no comments for this page (Disqus thread).
+    dieIf(!tyComments.length, 'TyE503RKGJ4');
+    tyComments.forEach(c => tySiteData.posts.push(c));
   });
 
   _.values(guestsByImpId).forEach(g => tySiteData.guests.push(g));
+
+  // A dummy category that maps the category import id to [the category
+  // in the database with ext id 'embedded_comments'].
+  tySiteData.categories.push({
+    id: categoryImpId,
+    extId: 'embedded_comments',
+  });
 
   return tySiteData;
 }
 
 
-export default function(fileText: string,
-      ps: { verbose?: boolean, primaryOrigin?: string }): [SiteData, boolean] {
+export default function(fileText: string, ps: DisqusToTyParams): [SiteData, boolean] {
+  d2tyParams = ps;
   verbose = ps.verbose;
   primaryOrigin = ps.primaryOrigin;
+
   console.log("Parsing ...");
   parser.write(fileText).close(); // this updates threadsByDisqusId
+
   console.log("\nDone parsing. Converting to Talkyard JSON ...");
   const site = buildTalkyardSite(threadsByDisqusId);
+
   console.log("\nDone converting to Talkyard.");
+
+  console.log(`\n\nURLs skipped, no comments:\n\n${
+        JSON.stringify(urlsSkippedNoComments, undefined, 4)}`);
+
+  console.log(`\n\nStats by page id:\n\n${
+        JSON.stringify(statsByPageId, undefined, 4)}`);
+
+  console.log(`\n\nStats by origin:\n\n${
+        JSON.stringify(numCommentsPerOrigin, undefined, 4)}`);
+
   return [site, errors];
 }
 

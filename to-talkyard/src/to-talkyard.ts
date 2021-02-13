@@ -7,6 +7,10 @@
 
 /// <reference path="to-talkyard.d.ts" />
 
+// Add an ignore query string flag?   [ign_q_st]  [more_2ty_cmd_prms]
+
+
+
 /*
 Usage:
 
@@ -80,7 +84,9 @@ Usage:
 
       nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js \\
           --disqusXmlExportFile path/to/file.xml \\
-          --writeTo disqus-to-talkyard.typatch.json
+          --writeTo disqus-to-talkyard.typatch.json \\
+          --skipLocalhostAndNonStandardPortComments \\
+          --convertHttpToHttps
 
   Then, at your Talkyard site, go to the Admin Area, the Settings | Features tab,
   and enable the API, click Save. Now an API tab appears — go there and generate
@@ -140,6 +146,10 @@ logAndExitIf(primaryOrigin && !primaryOrigin.startsWith('http'),
 logAndExitIf(primaryOrigin && _.filter(primaryOrigin, c => c === '/').length >= 3,
       "The --primaryOrigin should not include any URL path, only http(s)://host.");
 
+const skipLocalhostAndNonStandardPortComments =
+        !!args.skipLocalhostAndNonStandardPortComments;
+const convertHttpToHttps =
+        !!args.convertHttpToHttps;
 
 if (!talkyardSiteData) {
   dieIf(!xmlFilePath, 'TyE356MKTR1');
@@ -155,10 +165,15 @@ if (!talkyardSiteData) {
 
   switch (fileFormat) {
     case WordPressFormat:
-      [talkyardSiteData, errors] = fromWordPressToTalkyard(fileText, { verbose });
+      [talkyardSiteData, errors] = fromWordPressToTalkyard(fileText, {
+            verbose });
       break;
     case DisqusFormat:
-      [talkyardSiteData, errors] = fromDisqusToTalkyard(fileText, { verbose, primaryOrigin });
+      [talkyardSiteData, errors] = fromDisqusToTalkyard(fileText, {
+            verbose,
+            primaryOrigin,
+            skipLocalhostAndNonStandardPortComments,
+            convertHttpToHttps });
       break;
     default:
       die('ToTyE305MKF');
