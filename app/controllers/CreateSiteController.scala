@@ -139,6 +139,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       throwForbidden("DwE7KEP36", "Too long organization name: more than 100 characters")
 
     val hostname = s"$localHostname.${globals.baseDomainNoPort}"
+    val newSiteOrigin = globals.originOf(hostname)
 
     throwForbiddenIf(isTestSiteOkayToDelete && !Hostname.isE2eTestHostname(localHostname),
       "TyE502TKUTDY2", o"""Not a test site hostname: '$localHostname',
@@ -169,8 +170,6 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
             anySysTx = Some(sysTx))
         }
 
-        val newSiteOrigin = globals.originOf(hostname)
-
         if (!isTestSiteOkayToDelete) {
           val now = globals.now()
           globals.config.superAdmin.emailAddresses foreach { superAdminEmailAddress =>
@@ -195,8 +194,30 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       }
       catch {
         case DbDao.SiteAlreadyExistsException(site, details) =>
-          throwForbidden("TyE4ZKTP02", o"""A site with that name or id has already been created,
-              details: $details""")  // INFO_LOG
+          // Sometimes people in some way submit the create site dialog twice,
+          // e.g. for their own blog. So it's good to include a link
+          // (here in plain text) to any already existing site — then they can
+          // go there and login.
+          val isEmbCmts = anyEmbeddingSiteAddress.isDefined
+          throwForbidden("TyE4ZKTP02",    // INFO_LOG
+              "There is already a Talkyard site with that address.\n" +
+              "\n" +
+              (isEmbCmts ? (
+                    "Is it for your blog? Go there and log in:\n" +
+                    "\n" +
+                    s"    $newSiteOrigin\n" +
+                    "\n" +
+                    "\n" +
+                    "\nOr try ") | "Try ") +
+              "again, but with a different site address?\n" +
+              (!isEmbCmts ? (
+                    "\n" +
+                    "\n" +
+                    s"Or go to that site and log in:\n" +
+                    s"\n" +
+                    s"  $newSiteOrigin   (if you created it)\n") | "") +
+              s"\n\n\n" +
+              s"Details: $details")
         case _: DbDao.TooManySitesCreatedByYouException =>
           throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
         case DbDao.TooManySitesCreatedInTotalException =>
