@@ -2302,6 +2302,8 @@ const LanguageSettings = createFactory({
     }, {
       value: 'es_CL', label: "Spanish (Chile)"
     }, {
+      value: 'de_DE', label: "German"
+    }, {
       value: 'he_IL', label: "Hebrew"
     }, {
       value: 'lv_LV', label: "Latvian"

@@ -50,7 +50,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadCategoryPathRootLast(categoryId: CategoryId): immutable.Seq[Category] = {
+  def loadCategoryPathRootLast(categoryId: CatId, inclSelfFirst: Bo): ImmSeq[Cat] = {
+    unimplIf(!inclSelfFirst, "TyE3J06MRFK2")
     val categoriesById = loadCategoryMap()
     val ancestors = ArrayBuffer[Category]()
     var nextCategory = categoriesById.get(categoryId)

@@ -28,6 +28,7 @@ import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents, Result}
 import talkyard.server.JsX
+import debiki.JsonUtils._
 
 
 /** The ListQuery API, see: (project root)/tests/e2e/pub-api.ts
@@ -38,7 +39,7 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def listThingsPubApi(): Action[JsValue] = PostJsonAction(  // [PUB_API]
-          RateLimits.ReadsFromDb, maxBytes = 200) { request: JsonPostRequest =>
+          RateLimits.ReadsFromDb, maxBytes = 2000) { request: JsonPostRequest =>
     listThingsPubApiImpl(request)
   }
 
@@ -46,15 +47,16 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def listThingsPubApiImpl(request: JsonPostRequest): Result = {
     import request.{body, dao, requester}
 
-    val pretty = (body \ "pretty").asOpt[Boolean].getOrElse(false)
+    val pretty = (body \ "pretty").asOpt[Bo].getOrElse(false)
     val listQueryJson = (body \ "listQuery").as[JsObject]
 
-    val findWhat = (listQueryJson \ "findWhat").as[String]
+    val listWhat = (listQueryJson \ "listWhat").asOpt[St].getOrElse(
+          (listQueryJson \ "findWhat").as[St])  ; DEPRECATED
     val Pages = "Pages"
     val Posts = "Posts"
 
-    throwUnimplementedIf(findWhat != Pages && findWhat != Posts,
-      "TyE3056KTM7", "'findWhat' must be 'Pages' or 'Posts' right now")
+    throwUnimplementedIf(listWhat != Pages && listWhat != Posts,
+      "TyE3056KTM7", "'listWhat' must be 'Pages' or 'Posts' right now")
 
     val lookWhere = (listQueryJson \ "lookWhere").asOpt[JsObject]
 
@@ -66,6 +68,40 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "TyE205KDT53", "Currently at most one lookWhere.inCategories can be specified")
 
     val anyCategoryRef = lookInWhichCategories.headOption
+
+    val anyFilter = (listQueryJson \ "filter").asOpt[JsObject]
+
+    throwUnimplementedIf(anyFilter.isDefined && listWhat == Posts,
+          "TyE603MRD4", "No filters implemented for posts")
+
+    val (
+      isAuthorWaitingFilter: Opt[Bo],
+      isOpenFilter: Opt[Bo],
+      pageTypeFilter: Set[PageType]) =
+          anyFilter match {
+            case None => (None, None, Set.empty)
+            case Some(jsFilter) =>
+              val isAuthorWaiting = parseOptBo(jsFilter, "isAuthorWaiting")
+              val isOpen = parseOptBo(jsFilter, "isOpen")
+
+              // Break out fn later, place where?
+              // Maybe:  TyJson.parsePageTypes(json): Set[PageTyp] ?
+              val pageTypesAr = parseOptJsObject(jsFilter, "pageType") map { jsOb =>
+                parseJsArray(jsOb, "_in") flatMap {
+                  case play.api.libs.json.JsString(typeSt) => Some(typeSt)
+                  case _ => None
+                }
+              } getOrElse Nil
+              var pageTypes = Set[PageType]()
+              // Typescript type: PageTypeSt
+              if (pageTypesAr.contains("Question")) pageTypes += PageType.Question
+              if (pageTypesAr.contains("Problem")) pageTypes += PageType.Problem
+              if (pageTypesAr.contains("Idea")) pageTypes += PageType.Idea
+              if (pageTypesAr.contains("Discussion")) pageTypes += PageType.Discussion
+
+              (isAuthorWaiting, isOpen, pageTypes)
+          }
+
 
     def nothingFound = ThingsFoundJson.makePagesFoundListResponse(Nil, dao, pretty)
 
@@ -80,17 +116,17 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
     }
 
-    val catOrRootCat = anyCategory getOrElse {
+    lazy val catOrRootCat = anyCategory getOrElse {
       val rootCats = dao.getRootCategories()
-      throwUnimplementedIf(rootCats.length >= 2, "TyE0450WKTD")  // [subcats]
+      throwUnimplementedIf(rootCats.length >= 2, "TyE0450WKTD")  // [subcomms]
       rootCats.headOption getOrElse {
         return nothingFound
       }
     }
 
-    val authzCtx = dao.getForumAuthzContext(requester)
+    lazy val authzCtx = dao.getForumAuthzContext(requester)
 
-    findWhat match {
+    listWhat match {
       case Pages =>
         val pageQuery = PageQuery(
               // Score and bump time, if nothing else specified. [TyT025WKRGJ]
@@ -98,8 +134,24 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
               PageFilter(PageFilterType.AllTopics, includeDeleted = false),
               includeAboutCategoryPages = false)
 
-        val topics = dao.listMaySeeTopicsInclPinned(catOrRootCat.id, pageQuery,
-              includeDescendantCategories = true, authzCtx, limit = 12)
+        // Just for now: get some more topics, if we're filtering, so less
+        // likely we'll get 0 back.
+        SHOULD; UX; REMINDER // 2021-03-15 Move limit to API param + SQL query.
+        val limit = (isAuthorWaitingFilter.isDefined
+              || isOpenFilter.isDefined || pageTypeFilter.nonEmpty) ? 22 | 12
+
+        var topics = dao.listMaySeeTopicsInclPinned(catOrRootCat.id, pageQuery,
+              includeDescendantCategories = true, authzCtx, limit = limit)
+
+        // For simplicity, just this for now:
+        topics = topics filter { topic =>
+          if (isOpenFilter.isSomethingButNot(topic.meta.isOpen)) false
+          // else if (isAuthorWaitingFilter.isSomethingButNot(
+          //       topic.meta.isAuthorWaiting)) false
+          else if (pageTypeFilter.nonEmpty
+                && !pageTypeFilter.contains(topic.pageType)) false
+          else true
+        }
 
         ThingsFoundJson.makePagesFoundListResponse(topics, dao, pretty)
 
@@ -119,7 +171,7 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
         PostsListFoundJson.makePostsListFoundResponse(result, dao, pretty)
 
       case _ =>
-        die("TyE502AKTUDT5", s"findWhat: $findWhat")
+        die("TyE502AKTUDT5", s"listWhat: $listWhat")
     }
   }
 

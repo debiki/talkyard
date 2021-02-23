@@ -16,7 +16,10 @@ To add a new language:
    and you can edit and save your new translation
    (and still see the English version to the left).
 
-3. When done translating, the Talkyard developers (but not you, the translator) need to: [5JUKQR2]
+3. Open a GitHub pull request to https://github.com/debiki/ty-cla (or send us
+   the translation via email or something, that's also ok, although we prefer GitHub).
+
+4. When done translating, the Talkyard developers (but not you, the translator) need to: [5JUKQR2]
 
     1. Is the translation file in UTF-8 and Linux file endings?
 
@@ -37,11 +40,21 @@ To add a new language:
         sed -i.backup 's/\r$//' i18n.ts
         ```
 
-    1. Update `app/debiki/Nashorn.scala` so the language file gets included in the
-        server side Javascript bundle.
+    2. Edit files:
 
-    2. Update `client/app/admin/admin-app.staff.ts`: add the language
-        to the select-language dropdown.
+        - Edit `app/debiki/Nashorn.scala` so the language file gets included in the
+          server side Javascript bundle.
+
+        - Edit `client/app/admin/admin-app.staff.ts`: add the language
+          to the select-language dropdown.
+
+        - Edit `Makefile`: add the language to the `prod_asset_bundle_files` list.
+
+    2. Build the translation bundles, for now: (although this builds other stuff too)
+
+       ```
+       make prod_asset_bundles
+       ```
 
     3. Have a look in Google Translate that the translated texts looks okay.
        By creating a Talkyard site in the new language, and then, in the browser dev console:

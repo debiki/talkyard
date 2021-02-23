@@ -125,7 +125,7 @@ trait PostsDao {
 
     dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, authorAndGroupIds,
       postType, page.meta, replyToPosts, tx.loadAnyPrivateGroupTalkMembers(page.meta),
-      tx.loadCategoryPathRootLast(page.meta.categoryId),
+      tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
       tx.loadPermsOnPages()), "EdEMAY0RE")
 
     if (page.pageType.isChat)
@@ -156,9 +156,15 @@ trait PostsDao {
         }
         anyParent
       }
+
     if (anyParent.exists(_.deletedStatus.isDeleted))
       throwForbidden(
         "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
+
+    // Check for cycles?
+    // Not needed. The new reply gets a new post nr and post id, and will have
+    // no descendants. So it cannot create a cycle. (However, if *importing* posts,
+    // then in a corrupt import file the posts on a page might form cycles. [ck_po_ckl])
 
     val (reviewReasons: Seq[ReviewReason], shallApprove) =
       throwOrFindNewPostReviewReasons(page.meta, authorAndLevels, tx)
@@ -563,7 +569,7 @@ trait PostsDao {
 
       dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, tx.loadGroupIdsMemberIdFirst(author),
         PostType.ChatMessage, page.meta, Nil, tx.loadAnyPrivateGroupTalkMembers(page.meta),
-        tx.loadCategoryPathRootLast(page.meta.categoryId),
+        tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
         tx.loadPermsOnPages()), "EdEMAY0CHAT")
 
       val (reviewReasons: Seq[ReviewReason], _) =
@@ -898,7 +904,7 @@ trait PostsDao {
       dieOrThrowNoUnless(Authz.mayEditPost(
         editorAndLevels, tx.loadGroupIdsMemberIdFirst(editor),
         postToEdit, page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
-        inCategoriesRootLast = tx.loadCategoryPathRootLast(page.meta.categoryId),
+        inCategoriesRootLast = tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
         tooManyPermissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
 
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
@@ -2342,6 +2348,9 @@ trait PostsDao {
       val newParentPost = tx.loadPost(newParent) getOrElse throwForbidden(
         "EsE7YKG42_", "New parent post not found")
 
+      throwForbiddenIf(postToMove.id == newParentPost.id,
+            "TyE7SRJ2MG_", "A post cannot be its own parent post")
+
       throwForbiddenIf(!newParentPost.isOrigPost && newParentPost.tyype != postToMove.tyype,
         "TyE8KWEL24", "The new parent post is in a different page section. " +
           "Use the 'Move to X section' button instead")
@@ -2361,12 +2370,14 @@ trait PostsDao {
       val toPage = newPageDao(newParent.pageId, tx)
 
       // Don't create cycles.
-      TESTS_MISSING // try to create a cycle?
+      TESTS_MISSING // try to create a cycle?  tested here?: [TyTMOVEPOST692]
       if (newParentPost.pageId == postToMove.pageId) {
         val ancestorsOfNewParent = fromPage.parts.ancestorsParentFirstOf(newParentPost.nr)
         if (ancestorsOfNewParent.exists(_.id == postToMove.id))
           throwForbidden("EsE7KCCL_", o"""Cannot move a post to after one of its descendants
-              — doing that, would create a cycle""")
+                — doing that, would create a cycle""")
+        // Note that moving the post to one of its ancestors (instead of descendants),
+        // cannot create a cycle.
       }
 
       val moveTreeAuditEntry = AuditLogEntry(
@@ -2529,7 +2540,7 @@ trait PostsDao {
       val flagger = tx.loadTheUser(flaggerId)
       val postBefore = tx.loadThePost(pageId, postNr)
       val pageMeta = tx.loadThePageMeta(pageId)
-      val categories = tx.loadCategoryPathRootLast(pageMeta.categoryId)
+      val categories = tx.loadCategoryPathRootLast(pageMeta.categoryId, inclSelfFirst = true)
       val settings = loadWholeSiteSettings(tx)
 
       dieOrThrowNoUnless(Authz.mayFlagPost(

@@ -37,6 +37,8 @@ full text search:
   private chat,
   restricted category:
             - api-search-full-text.test.ts  TyT60KTSJ35J
+  sub cat in restricted category:
+            - TESTS_MISSING
 
 create site & forum -
   create:  create-site-all-logins
@@ -252,8 +254,10 @@ security:
   not found page, 404:
           - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+  api get topics in restr cat:
+          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
   api list restriceted category:
-            - api-list-query-for-topics.test.ts  TyT502RKDJ46
+            - api-list-query-for-topics-popular-first.test.ts  TyT603AKSL25.TyT502RKDJ46
   api search restricted categories and private topics:
             - api-search-full-text.test.ts  TyT60KTSJ35J
   add group to category security settings:
@@ -269,6 +273,8 @@ security:
   xss:
           - coed tag: [e2e_xss] — but at other places too, didn't tag at the time
             search for "<script>" or "javascript:" to find?
+  cors:
+          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
 
 suspended users:
   gets no email notfs,
@@ -403,6 +409,14 @@ categories -
   upsert categories:  (upscats)
   move topic to new category:
           - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
+          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS.TyTMVPG2CAT
+
+  sub categories:
+    create,
+    move base cat to other cat so becomes sub cat,
+    move sub cat to other base cat:
+          - CategoriesDaoAppSpec.scala
+          - TESTS_MISSING: UX tests   [TyTE2E305TMP24Z]
 
 permissions -
   category -
@@ -705,6 +719,8 @@ embedded comments:
           - embedded-comments-cat-refs-and-disc-ids.2browsers.test.ts  TyT603WDL46
   notf about new discusion:
           - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59.TyT063AKDGW60
+  comment counts:
+          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
 
 
 upload links,
@@ -1233,7 +1249,9 @@ api:
   list usernames:
           - TyT05RKVJF68
   list topics:
-            - api-list-query-for-topics.test.ts  TyT603AKSL25
+            - api-list-query-for-topics-popular-first.test.ts  TyT603AKSL25
+    filters:
+            - api-list-query-for-topics-recent-etc-first.test.ts  TyT5MRA8RJ7
   list posts:
             - api-list-query-for-posts.test.ts  TyT503RKDGF
   list restricted stuff via api secret:
@@ -1241,6 +1259,8 @@ api:
   search,
   full text search:
             - api-search-full-text.test.ts   TyT70ADNEFTD36
+  get api:
+          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
   atom feed:
             - TESTS_MISSING
   rss feed: No, there're only Atom feeds.

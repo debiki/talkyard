@@ -614,10 +614,12 @@ interface StaffTours {
 
 
 
-interface Category {
+type Category = Cat; // Too long name!
+
+interface Cat {
   id: CategoryId;
-  parentId?: CategoryId;
-  sectionPageId?: any; // only when saving to server?
+  parentId?: CategoryId;  // RENAME to parCatId? simpler to grep and [concice_is_nice].
+  sectionPageId?: any; // only when saving to server?   // RENAME to ixPgId? (index page id)
   name: string;
   slug: string;
   defaultTopicType: PageRole;
@@ -915,11 +917,11 @@ interface Store extends Origins, PartialEditorStoreState {
   userMustBeApproved: boolean;
   settings: SettingsVisibleClientSide;
   hideForumIntro?: boolean;
-  currentCategories: Category[];
+  currentCategories: Category[];   // RENAME [concice_is_nice] curCats
   // For all site sections, loaded lazily, and updated in a hacky way, for now, so have a look,
   // and refactor (?), before using it for anything more.
   allCategoriesHacky?: Category[];
-  publicCategories: Category[];
+  publicCategories: Category[];   // RENAME [concice_is_nice] pubCats
   newCategorySlug: string; // for temporarily highlighting a newly created category
   topics?: Topic[];
   user: Myself; // try to remove, use 'me' instead:
@@ -1905,10 +1907,12 @@ interface BrowserCode {
 //  Server requests and responses
 // =========================================================================
 
+type ErrCode = St;  // [opaque_type]
 
 type OnDone = (() => void);
 type OnDoneOrBeacon = OnDone | UseBeacon;
-type ErrorStatusHandler = (errorStatusCode?: number) => void;
+// Rename to RespErrHandler, which gets a RespErr { httpStatusCode, errCode, errMsg } ?
+type ErrorStatusHandler = (httpStatusCode?: Nr, errCode?: ErrCode) => Vo;
 type ErrorDetailsStatusHandler = (
         errorStatusCode: number | U, errorStatusText: string | U, details?) => void;
 

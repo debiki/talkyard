@@ -764,6 +764,29 @@ export function store_mayICreateTopics(store: Store, category: Category | U): bo
   }
   else {
     // May we create topics in this specific category?
+
+    // @ifdef DEBUG
+    // Start with root cat.
+    // Test a bit, before enabling sub cats for everyone. [0GMK2WAL] [subcats]
+    // Should it be possible for admins to grant permissions on a sub cat,
+    // also if those same permissions are missing from the base cat?
+    // (Currently can revoke, but not grant, UX wise.)
+    const ancCatsRootFirst: Cat[] = store_ancestorCatsCurLast(store, category.id);
+    for (const cat of ancCatsRootFirst) {
+      me.permsOnPages.forEach((p: PermsOnPage) => {
+        if (p.onCategoryId === cat.id) {
+          if (isDef(p.mayCreatePage)) {
+            // TESTS_MISSING: Disallow mayCreatePage in sub cat.
+            // TESTS_MISSING: Member creates apage from sub cat that was just moved
+            // to staff-only cat, by admin — but the member hadn't refreshed the page.
+            may = p.mayCreatePage;
+          }
+        }
+      });
+    }
+    // @endif
+
+    // Old, before sub cats:  [subcats]
     while (currentCategory) {
       me.permsOnPages.forEach((p: PermsOnPage) => {
         if (p.onCategoryId === currentCategory.id) {
@@ -772,8 +795,6 @@ export function store_mayICreateTopics(store: Store, category: Category | U): bo
           }
         }
       });
-      // Latent BUG: should check cats starting at root, but here we start with the "childmost" cat.
-      // Fix, before enabling child cats. [0GMK2WAL]
       currentCategory = _.find(store.currentCategories, c => c.id === currentCategory.parentId);
     }
   }
@@ -960,8 +981,7 @@ export function store_findCatByRefOrId(store: Store, refOrId: RefOrId): Category
 }
 
 
-export function store_ancestorsCategoriesCurrLast(
-      store: Store, categoryId: CategoryId): Category[] {
+export function store_ancestorCatsCurLast(store: Store, categoryId: CatId): Cat[] {
   const ancestors = [];
   const cats: Category[] = store.currentCategories;
   let nextCatId = categoryId;

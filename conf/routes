@@ -349,6 +349,7 @@ GET   /-/list-api-secrets       controllers.ApiSecretsController.listApiSecrets
 POST  /-/create-api-secret      controllers.ApiSecretsController.createApiSecret
 POST  /-/delete-api-secrets     controllers.ApiSecretsController.deleteApiSecrets
 
+POST  /-/v0/get                 talkyard.server.api.GetController.getThingsPubApi
 POST  /-/v0/list                talkyard.server.api.ListController.listThingsPubApi
 
 GET   /-/v0/list-users          controllers.UserController.listMembersPubApi(usernamePrefix, usersOnly: Boolean = true)

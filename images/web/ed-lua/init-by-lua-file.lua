@@ -42,7 +42,7 @@ require("resty.acme.autossl").init({
     account_email = "security@talkyard.io",
 
     domain_whitelist_callback = function(domain)
-        ngx.log(ngx.DEBUG, "Checking if should gen cert for: " .. domain
+        ngx.log(ngx.DEBUG, "Checking if should have cert: " .. domain
               .. " [TyMGENCRTCK]")
 
         -- This might work for avoiding trying to get certs for IP addrs
@@ -66,7 +66,7 @@ require("resty.acme.autossl").init({
         --     end
         --   end
         --   if isIp then
-        --     ngx.log(ngx.INFO, "Should not gen cert for IP addr: " .. domain
+        --     ngx.log(ngx.INFO, "Should not have cert, is IP addr: " .. domain
         --           .. " [TyMGENCRTNOIP4]")
         --     return false
         --   end
@@ -88,17 +88,17 @@ require("resty.acme.autossl").init({
         })
 
         if not res then
-            ngx.log(ngx.INFO, "Error checking if should gen cert for: " .. domain
+            ngx.log(ngx.WARN, "Error checking if should have cert: " .. domain
                   .. ", err: " .. err .. " [TyMGENCRTERR]")
             return false
         end
 
         if res.status ~= 200 then
-            ngx.log(ngx.INFO, "Should not gen cert for: " .. domain .. " [TyMGENCRTNO]")
+            ngx.log(ngx.INFO, "Should not have cert: " .. domain .. " [TyMGENCRTNO]")
             return false
         end
 
-        ngx.log(ngx.INFO, "Should gen cert for: " .. domain .. " [TyMGENCRTYES]")
+        ngx.log(ngx.INFO, "Should have cert: " .. domain .. " [TyMGENCRTYES]")
         return true
     end,
 

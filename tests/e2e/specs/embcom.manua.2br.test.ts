@@ -87,12 +87,12 @@ describe(`embcom.manual.2br.test.ts  TyTE2EEMBCOMMAN`, () => {
   });
 
 
-  it("Maria opens embedding page aaa", () => {
+  it(`Maria opens embedding page aaa`, () => {
     maria_brB.go2(embeddingOrigin + '/page-a-slug.html');
   });
 
 
-  it("... logs in", () => {
+  it(`... logs in`, () => {
     maria_brB.complex.loginIfNeededViaMetabar(maria);
   });
 

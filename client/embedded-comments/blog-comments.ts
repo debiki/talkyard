@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014, 2017-2019 Kaj Magnus Lindberg
+ * Copyright (c) 2013-2014, 2017-2021 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,6 +18,9 @@
  // TODO: if iframe not loaded within X seconds,
  // then show error, mention needs to upd  Allow embedding from:  ____
  // — how know if not loaded? Set timeout, wait for iframe-inited messge.
+
+/// <reference path="comments-count.ts" />
+
 
 declare const debiki: any | undefined;
 declare const Bliss: any | undefined;
@@ -107,6 +110,9 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
 if (insecureSomethingErrMsg) {
   debugLog(insecureSomethingErrMsg);
 }
+
+
+tyns.fetchAndFillInCommentCounts(serverOrigin);
 
 
 var oneTimeLoginSecret;
@@ -244,7 +250,7 @@ function loadCommentsCreateEditor() {
   commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments',
-    className: 'p_CmtsIfr',
+    className: 'p_CmtsIfr ty_CmtsIfr',   // DEPRECATE old name p_CmtsIfr
     // A title attr, for better accessibility. See: https://www.w3.org/TR/WCAG20-TECHS/H64.html
     title: discussionTitle || "Comments",
     src: commentsIframeUrl,

@@ -52,6 +52,29 @@ services:
       TY_MAX_AGE_MONTH: "no-cache"
       TY_MAX_AGE_WEEK: "no-cache"
       TY_MAX_AGE_DAY: "no-cache"
+    # Try this out during development for a while,
+    # see: https://stackoverflow.com/questions/43467670/which-capabilities-can-i-drop-in-a-docker-nginx-container
+    # DO_AFTER 2021-03-1 reply and say if worked, accept answer.
+    # When cap_drop is ALL, it gets processed before cap_add, see:
+    # https://stackoverflow.com/a/63219871
+    # and:
+    # https://github.com/moby/moby/blob/1c39b1c44c973f18f39bd684c6aba57bb96510fe/oci/caps/utils.go#L120
+    cap_drop:
+      - ALL
+    cap_add:
+      # Without CHOWN:
+      # nginx: [emerg] chown("/opt/nginx/proxy-cache", 100) failed (1: Operation not permitted)
+      - CHOWN
+      # To bypass file read, write, and execute permission checks:
+      # (DAC means "discretionary access control", and DAC_OVERRIDE)
+      # Without DAC_OVERRIDE:
+      # nginx: [emerg] mkdir() "/var/cache/nginx/client_temp" failed (13: Permission denied)
+      - DAC_OVERRIDE
+      # To change the group and user id of a process: (so Nginx won't need to run as root)
+      - SETGID
+      - SETUID
+      # To bind to lower ports. Maybe listen on 8080 instead, and map port 80:8080?
+      - NET_BIND_SERVICE
 
   app:
     build:

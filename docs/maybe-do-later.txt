@@ -173,7 +173,7 @@ discovery of pages & people by iterating through all ids in the url.
 [custom-groups]
 Search for that tag.
 
-[subcomms] ([site_sections] [sub_coms])
+[subcomms]
 Improve sub communities, e.g. selecting a category across all sub communities,
 not only the current one.
 
@@ -541,6 +541,8 @@ Try —> Using
 
 [Scala_3]
 Migration guide: https://github.com/scalacenter/scala-3-migration-guide
+
+Typescript in the future?: [opaque_type]
 
 
 [site_statistics]

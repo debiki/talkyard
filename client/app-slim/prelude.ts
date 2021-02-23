@@ -412,8 +412,16 @@ export function nonEmpty(x): boolean {
 }
 
 
-export function isDefined2(x): boolean {   // RENAME to isDef & add isUndef
-  return !_.isUndefined(x);
+
+
+export function isDefined2(x): boolean {   // RENAME to isDef
+  return isDef(x);
+}
+export function isDef(x): Bo {
+  return !isUndef(x);
+}
+export function isUndef(x): Bo {
+  return _.isUndefined(x);
 }
 
 

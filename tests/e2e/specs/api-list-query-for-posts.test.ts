@@ -113,7 +113,7 @@ describe("api-list-query-for-posts.test.ts  TyT503RKDGF", () => {
     return server.apiV0.listQuery<PostListed>({
       origin: siteIdAddress.origin,
       listQuery: {
-        findWhat: 'Posts',
+        listWhat: 'Posts',
       },
       sortOrder: 'NewestFirst',
     }, {
@@ -273,7 +273,7 @@ describe("api-list-query-for-posts.test.ts  TyT503RKDGF", () => {
   });
 
 
-  it("Maria lists pages again", () => {
+  it("Maria lists posts again", () => {
     response = listPosts();
     posts = response.thingsFound;
   });

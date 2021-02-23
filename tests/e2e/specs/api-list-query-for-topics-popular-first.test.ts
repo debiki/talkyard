@@ -143,7 +143,7 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
     response = server.apiV0.listQuery<PageListed>({
       origin: siteIdAddress.origin,
       listQuery: {
-        findWhat: 'Pages',
+        listWhat: 'Pages',
         lookWhere: { inCategories: [`extid:${specificCatExtId}`] },
       },
     }) as ListQueryResults<PageListed>;
@@ -215,7 +215,7 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
     response = server.apiV0.listQuery<PageListed>({
       origin: siteIdAddress.origin,
       listQuery: {
-        findWhat: 'Pages',
+        listWhat: 'Pages',
         lookWhere: { inCategories: [`extid:${specificCatExtId}`] },
       },
     }) as ListQueryResults<PageListed>;
@@ -248,7 +248,7 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
     return server.apiV0.listQuery<PageListed>({
       origin: siteIdAddress.origin,
       listQuery: {
-        findWhat: 'Pages',
+        listWhat: 'Pages',
         lookWhere: { inCategories: [`extid:${staffCatExtId}`] },
       },
     }) as ListQueryResults<PageListed>;

@@ -5,14 +5,93 @@ Domain model.
 
 
 
-== Topic types
+== Three kinds of pages
+
+Index pages a.k.a. site section pages: Currently only of type Forum,
+to list forum topics. Later, maybe Wiki main pages too, or Blog post index pages.
+
+Description pages: Meta pages that describes categories and tags and their purposes.
+
+Topic pages: The actual contents in the community. E.g. ideas, questions,
+open-ended discussions. Or articles or documentation. — The things end users
+visit the community for.
+
+Index pages and description pages are just there to help the end users
+find the actual topic pages.
+
+Source code wise, each page has a `PageType` field with values like
+Forum or Blog — if it's an index page. Or Question, Idea, Discussion etc
+— if it's a (discussion) topic page.
+
+
+=== Index pages
+
+(A.k.a. site section pages.)
+There's just one index page type, currently, namely forum topi list pages.
+Later there'll be a Wiki section page type too? Or even a Blog
+section page type but probably static HTML blogs are better — or Ty could
+have an API for exporting a blog section page to static HTML or CommonMark,
+then discussing via embedded comments. Similar to exporting from, say,
+WordPress to static HTML.
+
+Maybe optional per user feed page(s) in the future.
+
+
+=== Description pages
+
+When in a forum category, click Edit Category, then Edit Description
+to see the category description page.
+
+Or about user texts (bios), or tag descriptions.
+
+
+=== Topic pages
+
+E.g. questions, ideas, problems, discussions, documentation articles.
 
 Questions can be answered / solved.
 
 Ideas and Problems can be solved too: a reply selected as
 e.g. a problem solution.  `[tpc_typ_solv]`
 Or they can have their doing status
-toggled from planned, doing, to done, without any particular
-reply selected as a solution. — And if the topic got done in any
-of these ways, pat cannot change its doing status
-  
+toggled from discussing (triage) to planned, doing, done — without any particular
+reply selected as a solution.
+
+There're three kinds of topic types: Outside-In, Inside-Out, and Discussions:
+
+==== Outside-In
+
+Pepole outside the organization make feature requests, report problems,
+post questions to the organization and each other. These types:
+
+- Questions: How do I do this?
+- Problems (bug reports): This seems broken, can you fix?
+- Ideas, e.g. feature requests.
+
+(If you use Ty for internal support, the ones posting Outside-In
+topics would be your co-workers, not customers.)
+
+==== Inside-Out
+
+The organization writes something, and publishes for their
+audience to read. E.g. a company publishes a blog article, or help docs,
+or an announcement, for their customers and users to read. These types:
+
+- Announcements (for existing customers about new features)
+- Documentation (for existing customers about how to use already existing features)
+- Articles (e.g. blog articles for attracting new customers)
+
+==== Discussions
+
+People both in and outside the organization discuss something. These types:
+
+- Discussion: open-ended discussion, typically there's no single best answer.
+- Embedded comments, e.g. discussing a blog posts.
+- Link pages: For just posting a link and discussing it, like at Reddit or HackerNews.
+  Slightly makes Talkyard work like a news aggregator.
+
+
+
+== Topic statuses
+
+

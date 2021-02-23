@@ -259,7 +259,7 @@ replacing ElasticSearch with, say PostgreSQL's search or some of the upcoming
 alternatives in Rust or Golang.)
 
 
-=== Use Deno. Avoid Bash scripts
+=== Avoid Bash scripts. Use Deno
 
 Bash scripts should be forbidden. I'm getting more and more upset at various scripts,
 e.g. this PostgreSQL related snippet from
@@ -298,3 +298,86 @@ Use Deno instead of Bash. Why Deno:
   seems a bit complicated?: https://stackoverflow.com/questions/20715652/how-to-wrap-the-io-functions-in-lua-to-prevent-the-user-from-leaving-x-directory[how-to-wrap-the-io-functions-in-lua-to-prevent-the-user-from-leaving-x-directory].
   So, Deno then.
 
+
+=== Pub API: Avoid GraqhQL. Use custom REST + JSON
+
+GraphQL looks nice, I start thinking, now when working with
+Ty's Search, List and Get APIs. However GraphQL doesn't seem to bring any
+particular benefits to Ty, as of now, 2021-02.
+
+GraphQL pros:
+
+* Well thought through query language, see e.g.:
+  https://dgraph.io/docs/graphql/schema/search/ — but Ty already
+  has its own ok REST API with get/list/search and filters: [api_json_query].
+  Supporting via GraphQL too would be dupl work, right.
+
+* Maybe simpler to use for people who know GraphQL already.
+  But not many are familiar with GraphQL? — No one has ever asked about GraphQL.
+
+* Subscriptions seems nice?
+
+(A supposed GraphQL benefit / REST + JSON drawback from
+https://www.howtographql.com/basics/1-graphql-is-the-better-rest/[howtographql.com]:
+_"With REST, you have to make three requests to different endpoints to fetch_
+_the required data. You’re also overfetching since the endpoints return_
+_additional information that’s not needed"_
+— But one can create a REST api that looks at some request params and
+then includes all that's needed, and only what's needed / not-much-more,
+in a single response.)
+
+GraphQL cons:
+
+* DoS attack risk? Clients could construct GraphQL queries that ask for
+  lots of things and lists of nested things, missing the caches,
+  causing lots of database queries. Slightly complicated code would be
+  needed to ensure the clients are well behaved — and lots of
+  test code, for that code. — In the same way, custom ElasticSearch queries
+  or custom regular expressions, would also be risky.
+
+* Runtime bug risk: Wiring the schema definition to Java/Scala code and
+  SQL queries is not type safe — look at e.g.:
+  https://www.graphql-java.com/tutorials/getting-started-with-spring-boot/#datafetchers
+  `dataFetchingEnvironment.getArgument("id")`  — the compiler won't check `"id"`.
+  Or is this Scala lib type safe, compile time code gen?
+  *"automatically derives GraphQL schemas from your data types"*, and:
+  https://ghostdogpr.github.io/caliban/docs/#a-simple-example.
+
+* More things to learn — there's a lot to read over at https://graphql.org, plus
+  learning the particilar Java/Scala lib to implement GraphQL server side.
+
+* What Java/Scala lib to use? There're 5 to choose among: https://graphql.org/code/
+  Takes a while to evaluate all of them, pick the one that's best for Ty.
+
+* Duplicated work: Would need to create a GraphQL schema, in addition to
+  having Ty's domain model in Typescript already.
+
+* Even more libs and complicated tooling: Would probably eventually want to auto
+  generate Typescript interfaces, from the GraphQL schema?
+
+Is it even worse that what one could have thought?
+https://www.prisma.io/blog/the-problems-of-schema-first-graphql-development-x1mn4cb0tyl3
+
+> a myriad of [GraphQL] tools have been released that are trying to improve
+    the workflows around SDL-first development
+
+> [challenging ot keep] schema definition is in sync with the resolvers at all times
+
+> split into files (instead of one big schema file)
+
+> reuse files
+
+
+People switching to code-first? https://github.com/graphql-rust/juniper,
+https://blog.logrocket.com/code-first-vs-schema-first-development-graphql/
+
+Also, now there's another similar graph query language, DQL:
+https://dgraph.io/docs//query-language/graphql-fundamentals/
+> Dgraph Query Language, DQL, (previously named GraphQL+-) is based on GraphQL
+
+So, for now, use Talkyard's Get, List and Search APIs, but not GraphQL.
+At least wait until Scala 3 and the Scala 3 macro system — probably
+the existing / any-future Scala GraphQL libs will make use of them in
+some nice more-type-safe ways.
+Or maybe shouldn't even be in the Scala app, maybe instead a separate server in Rust,
+optionally reading from a read-only replica rdb.

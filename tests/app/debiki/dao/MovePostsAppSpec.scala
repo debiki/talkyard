@@ -110,7 +110,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       }.getMessage must include("EsE7YKG42_")
     }
 
-    "won't create cycles" in {
+    "won't create cycles" in {   // [TyTMOVEPOST692]
       val thePageId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Title"),
         textAndHtmlMaker.testBody("body"), SystemUserId, browserIdData, dao)
       val postA = reply(theModerator.id, thePageId, "A")(dao)
@@ -118,6 +118,11 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       val postC = reply(theModerator.id, thePageId, "C", parentNr = Some(postB.nr))(dao)
       val postC2 = reply(theModerator.id, thePageId, "C2", parentNr = Some(postB.nr))(dao)
       val postD = reply(theModerator.id, thePageId, "D", parentNr = Some(postC.nr))(dao)
+
+      info("won't create A —> A")
+      intercept[ResultException] {
+        dao.movePostIfAuth(postA.pagePostId, postA.pagePostNr, theModerator.id, browserIdData)
+      }.getMessage must include("TyE7SRJ2MG_")
 
       info("won't create A —> B —> A")
       intercept[ResultException] {

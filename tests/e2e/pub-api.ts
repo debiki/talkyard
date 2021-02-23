@@ -12,6 +12,26 @@
 // client (located in <root>/client/) cannot access it.
 
 
+// Dependent types, nice, see:
+// https://www.javiercasas.com/articles/typescript-dependent-types
+// section "A first touch of Dependent Types in Typescript".
+// — Ty uses this to create an easy to remember, and type safe API,
+// even works with VSCode's autocomplete.
+//
+// For example listQuery:s for different things: pages, posts, participants,
+// have the same fields: { listWhat: ..., lookWhere: ..., ..., inclFields: ... }
+// and thanks to the 'listWhat' type discriminator field,
+// the other fields can be type safe, so if you specify e.g. a *page* field
+// in inclFields, when asking for a *participant* — there'd be a compile time error.
+//
+// This is called Discriminated Unions or Tagged Unions:
+// Only one type, of some specific types, can be in use at any one time,
+// and a tag field (getWhat, listWhat, findWhat) decides which one is in use.
+// https://en.wikipedia.org/wiki/Tagged_union
+
+
+/// <reference path="./../../client/types-and-const-enums.ts" />
+
 // Old, deprecated?
 interface ListUsersApiResponse {
   // RENAME to thingsFound?
@@ -22,18 +42,39 @@ interface ListUsersApiResponse {
 // Misc types
 // -------------------------
 
+interface MaybePrettyApiRequest {
+  pretty?: Bo;
+}
+
+
 type ApiResponse<R> = ApiErrorResponse | R;
 
-type ApiErrorResponse = { error: any; };
+interface ApiErrorResponse {
+  error: ResponseError;
+}
+
+interface ResponseError extends ErrCodeMsg {
+  httpStatusCode?: Nr;
+}
+
+interface ErrCodeMsg {
+  errCode?: St;
+  errMsg?: St;
+}
+
 
 type ParticipantId = string;
 
 type MemberRef = string;
+type GuestRef = string;
+type PatRef = MemberRef | GuestRef;
+type PageRef = string;
 type CategoryRef = string;
 type TagRef = string;
 type BadgeRef = string;
 
 type SortOrder = 'PopularFirst' | 'ActiveFirst' | 'NewestFirst';
+type PageTypeSt = 'Question' | 'Problem' | 'Idea' | 'Discussion';
 
 type Unimplemented = undefined;
 
@@ -75,11 +116,11 @@ type FindWhat =
 
   'Posts' |
 
-  // Users and groups (not guests).
+  // Users and groups (not guests).  (Shorthand for 'Pats' + is-member-not-guest filter?)
   'Members' |
 
   // Users, groups, guests.
-  'Participants' |
+  'Pats' |
 
   // Maybe you don't remember if you invited someone, and want to find
   // any invite with the relevant email address.
@@ -116,6 +157,7 @@ interface LookWhere {
   emailAddresses?: boolean;
 
   // Find members in these groups.
+  // E.g.  { inGroups: ['username:some_group', 'patid:223344'] }   or 'groupid:...'  ?
   inGroups?: MemberRef[];
 
   // Find members with these badges.
@@ -140,7 +182,12 @@ interface LookWhere {
   // If you want to search only, say, pages of type Article and Question.
   pageTypes?: PageType[];
 
+  // List posts or participants in these pages.
+  // E.g.  { inPages: 'pageid:112233' }  ?
+  inPages?: PageRef[];
+
   // Find pages in these categories.
+  // E.g.  { inCategories: 'catid:112233' }  ?
   inCategories?: CategoryRef[];
 
   // Pages with these tags.
@@ -154,8 +201,11 @@ interface LookWhere {
 // What you get back
 // -------------------------
 
-type ThingFound = PageFound | PageListed | PostListed
-                  | ParticipantFound | TagFound | CategoryFound;
+type ThingFound = PageOptFields
+                | PageFound
+                | PageListed  // hmm, incl in  PageOptFields  above
+                | PostListed
+                | ParticipantFound | TagFound | CategoryFound;
 
 
 
@@ -189,8 +239,21 @@ interface GroupFound extends MemberFound {
 }
 
 
+interface PageOptFields {
+  pageId?: PageId;
+  title?: St;
+  // Prefix with the origin (included in the response) to get the full URL.
+  urlPath?: St;
+  excerpt?: St;
+  author?: ParticipantFound;
+  categoriesMainFirst?: CategoryFound[];
+  numOpLikeVotes?: Nr;
+  numTotRepliesVisible?: Nr;
+}
 
-interface PageFoundOrListed {
+
+// Rename to PageDef(ault)Fields ?
+interface PageFoundOrListed extends PageOptFields {
   pageId: PageId;
   title: string;
   // Prefix with the origin (included in the response) to get the full URL.
@@ -247,6 +310,128 @@ interface CategoryFound {
 
 
 
+// A  Get Query request
+// -------------------------
+
+// When you know precisely what you want, you can use a Get Query, to look up
+// directly by id / url / username / something. For each lookup key you specify,
+// you'll get back exactly one thing, or null.
+//
+// But if you don't know the exact ids / something, e.g. you have a username
+// *prefix* only, then you can use a List Query instead, to list all participants
+// with matching usernames — now, you might get back 0, 1 or many matching things.
+//
+// Tech details: Looks up by database primary key. So you know you'll get 1 or 0.
+// That's why the getWhat and ids (e.g. `getPages: [page-id-one, two, three]`)
+// are one single same key-value. — Compare with ListQuery, which has two separate
+// fields: listWhat: ... and lookWhere: .... E.g. listWhat: 'Posts' and
+// lookWhere: category-ids, to find recent posts in those categories.
+//
+
+interface GetQueryApiRequest extends MaybePrettyApiRequest {
+  getQuery: GetPagesQuery | GetPatsQuery;
+  pretty?: Bo;
+}
+
+
+interface GetQuery {
+  getWhat: FindWhat;
+  getRefs: Ref[];
+  inclFields: Object;
+}
+
+
+interface GetPagesQuery extends GetQuery {
+  getWhat: 'Pages',
+  getRefs: PageRef[];
+  inclFields: {
+    // Only the orig post:
+    //numOpRepliesVisible?: Bo;
+    numOpLikeVotes?: Bo;
+
+    // Whole page:
+    numTotRepliesVisible?: Bo;
+    //numTotLikeVotesVisible?: Bo;
+  };
+}
+
+
+interface GetPatsQuery extends GetQuery {   // not impl
+  getWhat: 'Pats',
+  getRefs: PatRef[];
+  inclFields: {
+    fullName?: Bo;
+    username?: Bo;
+    isGuest?: Bo;
+  };
+}
+
+
+
+
+type GetQueryApiResponse<T extends ThingFound> = ApiResponse<GetQueryResults<T>>;
+
+interface GetQueryResults<T extends ThingFound> {
+  origin: St;
+
+  // One item for each getRefs[] item, in the same order.
+  thingsOrErrs: (T | ErrCodeMsg | null)[];
+}
+
+// Examples:
+//
+// Get blog post comment counts:
+//
+//  /-/v0/get {
+//    getQuery: {
+//      getWhat: 'Pages',
+//      getRefs: [
+//        'emburl:https://blog/a-blog-post',
+//        'emburl:https://blog/another',
+//        'emburl:https://blog/a-third',
+//      ],
+//      inclFields: {
+//        numOpLikeVotes: true,
+//        numTotRepliesVisible: true,
+//
+//        // // Maybe later: Nested fields:
+//        // author: {
+//        //   fullName: true,
+//        //   username: true,
+//        //   smallAvatarUrl: true,
+//        // }
+//        // // Or sth like:
+//        // whichPosts: { opAndNumTopReplies: 10 }
+//        // inclPostAuthors: true,
+//        // whichAuthorFields: { fullName: true, username: true }
+//      },
+//    }
+//  }
+//
+// Sample response, assuming /a-blog-post  couldn't be found:
+//
+//   {
+//     origin: "https://example.com",
+//     thingsOrErrs: [
+//       { error: { errCode: 'TyEPGNF', errMsg: ...,  } },
+//       { numOpLikeVotes: 11, numTotRepliesVisible: 22 },
+//       { numOpLikeVotes: 33, numTotRepliesVisible: 44 },
+//     ],
+//   }
+//
+// Or total request failure, no results back:
+//
+// {
+//   error: {
+//     httpStatusCode: NNN,
+//     errCode: "TyEMMMMMM",
+//     errMsg: "...",
+//   }
+// }
+//
+
+
+
 // A  List Query request
 // -------------------------
 
@@ -254,6 +439,10 @@ interface CategoryFound {
 // List Queries are comparatively fast — they lookup things directly, via indexes in
 // the PostgreSQL database.  However they cannot do full text search — for that,
 // you need a Search Query.
+//
+// Tech details: Looks up by database index, often not the primary key.
+// The index might be on table B, although you're finding things in table A.
+// E.g. you might list the most recent topics in a category.
 //
 interface ListQueryApiRequest {
   // Either:
@@ -263,16 +452,49 @@ interface ListQueryApiRequest {
   // Or:
   continueAtScrollCursor?: ListResultsScrollCursor;
 
-  limit?: number;
-  pretty?: boolean;
+  limit?: Nr;
+  pretty?: Bo;
 }
 
 interface ListQuery {
+  // Query type discriminator.
+  // To find different types of things, e.g. a participant or tag or category
+  // — something, but you don't remember precisely what —
+  // then use a BatchQuery composed of many ListQuery:s ?
+  listWhat: FindWhat;
+
   // E.g. username prefix.
-  exactPrefix?: string;
-  findWhat: FindWhat,
+  exactPrefix?: St;
   lookWhere?: LookWhere;
+  filter?: QueryFilter;
 }
+
+
+type QueryFilter = PageFilter;  // for now
+
+
+interface ListPagesQuery extends ListQuery {
+  listWhat: 'Pages';
+  lookWhere?: { inCategories: CategoryRef[] };
+  filter?: PageFilter;
+}
+
+
+interface PageFilter {
+  isDeleted?: Bo;  // default: false
+  isOpen?: Bo;
+  isAuthorWaiting?: Bo;
+  pageType?: { _in: PageTypeSt[] };
+}
+
+// interface PatFilter {
+//   isStaff?: Bo;
+//   isMember?: Bo;
+//   memberSinceMins?: { _ge: 60*24*31*3 }    // at least 3 months
+//   trustLevel: { _ge?: Nr, _le?: Nr, ... }  // at least, at most
+//   trustLevel: 4;   // exact
+// }
+
 
 type ListQueryApiResponse<T extends ThingFound> = ApiResponse<ListQueryResults<T>>;
 
@@ -292,27 +514,110 @@ type ListResultsScrollCursor = Unimplemented;
 //  /-/v0/list  {
 //    listQuery: {
 //      exactPrefix: 'jane_d',
-//      findWhat: 'Members',
+//      listWhat: 'Members',
 //      lookWhere: { usernames: true },
+//
+//      // Later:
+//      // inclFields: { fullName: true, username: true }
 //    }
 //  }
+//
+//
+//  /-/v0/list  {
+//    listQuery: {
+//      listWhat: 'Pats'
+//      exactPrefix: 'jane_d',   // can use db index
+//      lookWhere: { usernames: true },
+//      inclFields: {
+//        fullName: true,
+//        username: true,
+//      }
+//      filter: {   // Filters<PatFilters>, [api_json_query]
+//        isStaff: false,
+//        something: { _isDef: true },         // field is defined (not absent or null)
+//        sthelse:   { _isDef: false },        // field is absent or null
+//        sthelse2:  { _ge: 100, _le: 200 } ,  // between 100 and 200 (inclusive)
+//        sthelse3:  { _in: [1, 3, 5] },       // value is one of 1, 3 or 5.
+//        livedIn:   { _contains: ['Alaska', 'Australia'] },
+//
+//        username:  { _regex: /.*kitten.*/ }, // cannot use db index, since starts
+//                                             // with: '.*'; needs to be a filter
+//        _not: {
+//          username:  { _regex: /.*cruel.*/ },
+//          eats: 'birds'
+//        },
+//
+//        // Fuzzy match, per language values, here English and Swedish:
+//        fullName:  { _fuzzyMatch: 'kitty', _langs: ['en', 'sv'] },
+//
+//
+//        sth:  { _count: 8 },                 // exactly 8 something
+//        sth:  { _count: { _ge: 10, _lt: 20 } // 10 - 19 something
+//
+//        _or: [
+//          { memberSinceMins: { _ge: 60*24*7 } },  // at least one week
+//          { trustLevel: { _ge: 3 } }]             // at least full member
+//      }
+//    }
+//  }
+//
+// type OptOrFilter<T> = { _or?: OptOrFilter<T>[] };
+// type Filter<T> = T | { _or: Filters<T>[] }
+//
+//
 //
 // List popular pages in a category:
 //
 //  /-/v0/list  {
 //    listQuery: {
-//      findWhat: 'Pages',
+//      listWhat: 'Pages',
 //      lookWhere: { inCategories: [categoryA, catB, catC] },
+//      filter: {
+//        isOpen: true,
+//        pageType: { _in: ['Question', 'Problem'] },
+//        // or, later, excl types?:
+//        pageType: { _notIn: ['Question', 'Problem'] },
+//
+//        // No: onlyWaiting: true  — because, waiting for *what*?
+//        // maybe for the OP author to reply with more info?
+//        // then not interesting to see it in the Waiting list?
+//        pageStatus: ['!Closed', '!Postponed'],
+//
+//        pageStatus: [{
+//          // Probably won't do like this:
+//          waitingForReplyBy: ...
+//          waiting: { forReply: { notBy: 'Author' }}}
+//          waiting: { forReplyBy: '!OP-Author' },
+//          waiting: { forTopicDone: { 'pageid:1234' }}
+//          waiting: { forTag: 'tagid:...' }
+//
+//          waiting: true,
+//          not: { waiting: { forReplyBy: 'username:someone' }},
+//          }]
+//      },
+//      asWho: ['username:all_members'],
+//      // Later, like getQuery?:
+//      //inclFields: {
+//      //  numRepliesVisible: true,
+//      //},
 //    }
 //    sortOrder: 'PopularFirst',
 //    limit: 5,
 //  }
+//
+// Response ex:
+//
+//   { origin: "https://example.com", thingsFound: [...]  }
+//
 
 
 
 // A  Search Query request
 // -------------------------
 
+// Finds things via the full text search / faceted serarch database —
+// that is, ElasticSearch (currently), not PostgreSQL.
+//
 
 interface SearchQueryApiRequest {
   // Either:
@@ -369,12 +674,17 @@ type SearchResultsScrollCursor = Unimplemented;
 //    }
 //  }
 //
-// Find a user:
+// Response ex:
+//
+//   { origin: "https://example.com", thingsFound: [...]  }
+//
+//
+// Find a user: (participant)
 //
 //  /-/v0/search  {
 //    searchQuery: {
 //      freetext: 'jane',
-//      findWhat: 'Members',
+//      findWhat: 'Pats',
 //      lookWhere: { usernames: true, fullNames: true }
 //    }
 //  }
@@ -382,6 +692,7 @@ type SearchResultsScrollCursor = Unimplemented;
 // This compound query finds posts about how to climb a tree, written by someone
 // with "Doe" in their name:
 //
+// No!:
 //  /-/v0/search  {
 //    searchQuery: [{
 //      freetext: 'doe',
@@ -390,6 +701,20 @@ type SearchResultsScrollCursor = Unimplemented;
 //      freetext: 'trees',
 //      findWhat: 'Pages',
 //    }]
+//  }
+//
+// Instead?  No, neither this:
+//  /-/v0/search  {
+//    searchQuery: {
+//      findWhat: 'Posts',
+//      matchAll: [{
+//        freetext: 'doe',
+//        lookWhere:  pat names
+//      }, {
+//        freetext: 'trees',
+//        lookWhere:  post texts
+//      }]
+//    }
 //  }
 //
 // The above is useful, if you remember that, say, someone with a name like "Doe"
@@ -416,6 +741,65 @@ type SearchResultsScrollCursor = Unimplemented;
 //      lookWhere: { pageText: true, writtenBy: 'username:jane_doe' },
 //    }
 //  }
+//
+
+
+
+// Batch search/list/get requests?
+// -------------------------
+
+// Should Not implement this, unless clearly needed.
+// Still, good to think about in advance, so as not to paint oneself into a corner?
+//
+//   /-/v0/batch(-search)?(-list)?(-get)?  {
+//     batchQueries: [
+//       getQuery: {
+//         getWhat: 'Pages',
+//         getRefs: [
+//           'emburl:https://blog/a-blog-post':
+//           'emburl:https://blog/another',
+//           'emburl:https://blog/a-third',
+//         ],
+//         inclFields: {
+//           numRepliesVisible: true,
+//           numOrigPostLikeVotes: true,
+//         },
+//       },
+//       getQuery: {
+//         getWhat: 'Pages',
+//         getRefs: [ ... ],
+//         inclFields: {
+//           someOtherField: true,
+//         },
+//       },
+//       listQuery: {
+//         listWhat: 'Members',
+//         exactPrefix: 'jane_d',
+//         lookWhere: { usernames: true },
+//       },
+//       listQuery: {
+//         listWhat: 'Pages',
+//         lookWhere: { inCategories: [catB, catC] },
+//       },
+//       searchQuery: {
+//         findWhat: 'Posts',
+//         freetext: "how to feed an anteater that has climbed a tall tree",
+//       },
+//     ],
+//   }
+//
+// Response could be:
+//
+//   {
+//     origin: "https://example.com",
+//     batchQueriesResults: [
+//       { getResults: ... },
+//       { getResults: ... },
+//       { listResults: ... },
+//       { listResults: ... },
+//       { searchResults: ... },
+//     ],
+//   }
 //
 
 

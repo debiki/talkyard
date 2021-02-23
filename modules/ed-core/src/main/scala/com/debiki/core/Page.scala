@@ -303,6 +303,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 
   def isPinned: Boolean = pinOrder.isDefined
   def isClosed: Boolean = closedAt.isDefined
+  def isOpen: Bo = !isClosed
   def isVisible: Boolean = hiddenAt.isEmpty && deletedAt.isEmpty
   def isHidden: Boolean = hiddenAt.isDefined
   def isDeleted: Boolean = deletedAt.isDefined
@@ -317,11 +318,15 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
     if (publishedAt.isDefined) PageStatus.Published
     else PageStatus.Draft
 
+  // Change to Opt[PageDoingStatus]
   def doingStatus: PageDoingStatus = {
+    // if (pageType.cannotDo) None   // index pages, articles & docs w replies disabled?
     if (doneAt.isDefined) PageDoingStatus.Done
     else if (startedAt.isDefined) PageDoingStatus.Started
     else if (plannedAt.isDefined) PageDoingStatus.Planned
-    else PageDoingStatus.Discussing
+    else PageDoingStatus.Discussing  // no, instead:
+    // else if (numRepliesTotal > 0 || anything-else?) PageDoingStatus.Discussing
+    // else PageDoingStatus.New
   }
 
   def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
@@ -778,16 +783,70 @@ object PageStatus {  // RENAME to PagePublStatus — because there's also e.g. p
 }
 
 
+// Humans can be waiting, whilst work tasks (things) can be pending?
+//
+// type FuzzyBo = Yes, YesProbably, YesMaybe, NoMaybe, NoProbably, No.  Or [0, 1]  ?
+// Page.isAuthorWaitingForReplySaysSystem: FuzzyBo
+// Page.isAuthorWaitingForReplySaysHuman: FuzzyBo
+// Page.isAuthorWaitingForReplySaysBot: FuzzyBo
+// Page.isPendingAuthorReplySaysSystem: FuzzyBo
+// Page.isPendingAuthorReplySaysHuman: FuzzyBo
+// Page.isPendingAuthorReplySaysBot: FuzzyBo
+//    shown as: "Waiting for you to reply"  if is the author,
+//    and: "Pending author reply" if is "support staff".
+//
+// Page.isPendingOtherSaysBot: FuzzyBo   <— Custom workflow bots can update
+//
+//
+// def authorWaitingForReply: Bo
+// def pendingAuthorReply: Bo
+// def pendingOther: Bo
+// def seemsAbandonedByAuthor: Bo
+//
+// pagePriority: PagePriority = i32:
+// Avoid: -150  (-100 ... -199)
+// Attic:  150  ( 100 ...  199)
+// Drawer: 250  ( 200 ...  299)
+// ImportantLater:  350 (300 .. 399)
+// ImportantSooner: 450 (400 .. 499)
+// ImportantUrgent: 550 (500 .. 599)
+
+// taskSizeMins: i32  // e.g.  64 * 24 * 7
+
+
+// Not a Doing status: Something can be both started and postponed, at the same time.
+// Page.postponedTil: Opt[When]   // page_t.postponed_til_c
+//
+// // Won't get any notifications about this topic until after some date-time
+// // — and then, any old notifications (from the snooze period) gets activated
+// // together in one "after snooze" notf set.
+// Page.snoozeForWhoTil: Seq[(PatId, When)]   //  snooze_t
+//
+// // Gets a reminder notification / email about this page at a certain date-time.
+// Page.remindWhoWhen: Seq[(PatId, When, Reminder)]   //  reminders_t
+
+
 // Sync with Typescript [5KBF02].
 sealed abstract class PageDoingStatus(val IntVal: Int) { def toInt: Int = IntVal }
 object PageDoingStatus {
+
+  // No one has read the page, or at least not replied.
+  // After the first reply —> status auto changes to Discussing?
+  //case object New extends PageDoingStatus(1)  e.g. pending moderator approval
+
+  // Discussing is Open or Triage statuses in other systems.
   case object Discussing extends PageDoingStatus(1) { override def toString = "New" }
+
   case object Planned extends PageDoingStatus(2)
+
   case object Started extends PageDoingStatus(3)
+
   case object Done extends PageDoingStatus(4)
-  // PostponedTil = *not* a Doing status. Something can be both Started,
-  // and also postponed, at the same time. So add a separate
-  // PageMeta.postponedTil field, to indicate sth has been postponed.
+
+  // In software, things not always available, until next version released
+  // — although technically done/fixed already. Or would this be this better off as
+  // tags and custom workflows? Yes probably, so skip, at least for now;
+  //case object Available extends PageDoingStatus(5)  ?
 
   def fromInt(value: Int): Option[PageDoingStatus] = Some(value match {
     case PageDoingStatus.Discussing.IntVal => Discussing
