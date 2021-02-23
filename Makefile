@@ -170,6 +170,8 @@ prod_asset_bundle_files:=\
   images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/es_CL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/es_CL/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/lv_LV/i18n.js.gz \
@@ -185,6 +187,7 @@ prod_asset_bundle_files:=\
   images/app/assets/server-bundle.min.js \
   images/app/assets/translations/en_US/i18n.min.js \
   images/app/assets/translations/es_CL/i18n.min.js \
+  images/app/assets/translations/de_DE/i18n.min.js \
   images/app/assets/translations/he_IL/i18n.min.js \
   images/app/assets/translations/pl_PL/i18n.min.js
 

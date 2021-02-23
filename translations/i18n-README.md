@@ -40,11 +40,21 @@ To add a new language:
         sed -i.backup 's/\r$//' i18n.ts
         ```
 
-    1. Update `app/debiki/Nashorn.scala` so the language file gets included in the
-        server side Javascript bundle.
+    2. Edit files:
 
-    2. Update `client/app/admin/admin-app.staff.ts`: add the language
-        to the select-language dropdown.
+        - Edit `app/debiki/Nashorn.scala` so the language file gets included in the
+          server side Javascript bundle.
+
+        - Edit `client/app/admin/admin-app.staff.ts`: add the language
+          to the select-language dropdown.
+
+        - Edit `Makefile`: add the language to the `prod_asset_bundle_files` list.
+
+    2. Build the translation bundles, for now: (although this builds other stuff too)
+
+       ```
+       make prod_asset_bundles
+       ```
 
     3. Have a look in Google Translate that the translated texts looks okay.
        By creating a Talkyard site in the new language, and then, in the browser dev console:
