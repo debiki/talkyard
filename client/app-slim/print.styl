@@ -1,0 +1,44 @@
+// https://www.talkyard.io/-497/issues-with-media-print-stylesheet
+
+
+@media print
+
+  // This, from Bootsrap, makes avatars look weird:
+  // a[href]::after { content: " (" attr(href) ")"; }
+  // Remove that, for avatars and the post header:
+  .dw-p-hd a[href]:after,
+  a.esAvtr[href]:after
+    content: none !important;
+
+  // When showing the actual link URLs, use smaller text — the URL is rarely interesting?
+  // (Size 75% will be readable? Ty's post text font size is 14px.)
+  a[href]:after
+    font-size: 75%;
+    font-family: monospace;
+    // Monospace is a bit wide:
+    letter-spacing: -0.1px;
+
+  //.edAvtr
+  //  border: 1px solid hsl(0deg 0% 70%);
+  //  border-radius: 50%;
+  //.edAvtr img
+  //  display: none;
+
+  // Buttons cannot be clicked, on paper. Or at least clicking has no effect.
+  button,
+  .s_OpReB,
+  .dw-hide
+    visibility: hidden;
+    visibility: hidden;
+
+  .dw-a
+    display: none;
+    visibility: hidden;
+
+  .dw-a.dw-vote-count
+    display: block;
+    visibility: visible;
+
+  .s_T-Prvw,
+  .dw-page-notf-level
+    display: none;
