@@ -56,15 +56,20 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
   def updateSites(): Action[JsValue] = SuperAdminPostJsonAction(maxBytes = 10*1000) {
           request =>
     val jsObjs = request.body.as[Seq[JsObject]]
+    import debiki.JsonUtils._
     val patches: Seq[SuperAdminSitePatch] = jsObjs.map(jsObj => {
       val siteId = (jsObj \ "id").as[SiteId]
       val newStatusInt = (jsObj \ "status").as[Int]
       val newNotes = (jsObj \ "superStaffNotes").asOptStringNoneIfBlank
       val featureFlags = (jsObj \ "featureFlags").asTrimmedSt
+      val maxRdbStorageMiB: Opt[i32] = parseOptI32(jsObj, "maxRdbStorageMiB")
+      val maxFileStorageMiB: Opt[i32] = parseOptI32(jsObj, "maxFileStorageMiB")
       val newStatus = SiteStatus.fromInt(newStatusInt) getOrElse {
         throwBadRequest("EsE402KU2", s"Bad status: $newStatusInt")
       }
-      SuperAdminSitePatch(siteId, newStatus, newNotes, featureFlags = featureFlags)
+      SuperAdminSitePatch(siteId, newStatus, newNotes, featureFlags = featureFlags,
+            newMaxRdbStorageMiB = maxRdbStorageMiB,
+            newMaxFileStorageMiB = maxFileStorageMiB)
     })
     globals.systemDao.updateSites(patches)
     listSitesImpl()

@@ -40,6 +40,8 @@ case class SitePatcher(globals: debiki.Globals) {
   def upsertIntoExistingSite(siteId: SiteId, siteData: SitePatch, browserIdData: BrowserIdData)
         : SitePatch = {
 
+    AUDIT_LOG // & stdout too
+
     // Tested e.g. here:
     // - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
     // - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75

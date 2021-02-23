@@ -1832,6 +1832,8 @@ interface SASite {
   stats: SiteStats;
   superStaffNotes?: string;
   featureFlags: St;
+  maxRdbStorageMiB: Nr;
+  maxFileStorageMiB: Nr;
 }
 
 

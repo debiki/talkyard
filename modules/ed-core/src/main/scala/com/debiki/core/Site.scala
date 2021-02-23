@@ -100,7 +100,9 @@ case class SuperAdminSitePatch(
   siteId: SiteId,
   newStatus: SiteStatus,
   newNotes: Opt[St],
-  featureFlags: St)
+  featureFlags: St,
+  newMaxRdbStorageMiB: Opt[i32],
+  newMaxFileStorageMiB: Opt[i32])
 
 
 object SiteStatus {

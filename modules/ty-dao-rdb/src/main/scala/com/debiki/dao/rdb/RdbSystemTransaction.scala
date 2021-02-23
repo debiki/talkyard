@@ -376,23 +376,33 @@ class RdbSystemTransaction(
 
 
   def updateSites(sites: Seq[SuperAdminSitePatch]) {
+    sites foreach updateSiteImpl
+  }
+
+
+  def updateSiteImpl(patch: SuperAdminSitePatch) {
+    val values = MutArrBuf[AnyRef]()
     val statement = s"""
        update sites3 set
+           ${
+           if (patch.newMaxRdbStorageMiB.isEmpty) "" else {
+             values.append(patch.newMaxRdbStorageMiB.get.asAnyRef)
+             "quota_limit_mbs = ?,"
+           }}
            status = ?,
            super_staff_notes = ?,
            feature_flags_c = ?
        where id = ?
        """
-    for (patch <- sites) {
-      val siteId = patch.siteId
-      val values = List(
-            patch.newStatus.toInt.asAnyRef,
-            patch.newNotes.trimOrNullVarchar,
-            patch.featureFlags.trimNullVarcharIfBlank,
-            siteId.asAnyRef)
-      val num = runUpdate(statement, values)
-      dieIf(num != 1, "EsE24KF90", s"s$siteId: num = $num when changing site status")
-    }
+
+    val siteId = patch.siteId
+    values.append(
+          patch.newStatus.toInt.asAnyRef,
+          patch.newNotes.trimOrNullVarchar,
+          patch.featureFlags.trimNullVarcharIfBlank,
+          siteId.asAnyRef)
+    val num = runUpdate(statement, values.toList)
+    dieIf(num != 1, "EsE24KF90", s"s$siteId: num = $num when changing site status")
   }
 
 
