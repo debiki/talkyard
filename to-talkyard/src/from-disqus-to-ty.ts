@@ -92,6 +92,7 @@ interface DisqusComment {
   disqusCommentId?: string;
   // <parent dsq:id="...">
   disqusParentCommentId?: string;
+  // Can be absent; then, isDeleted has been true.
   message?: string;
   createdAtIsoString?: string;
   // Weird: In Disqus XSD, this author elem isn't required. But with no comment
@@ -120,6 +121,7 @@ interface DisqusComment {
  */
 interface DisqusAuthor {
   email?: string;
+  // Was once absent, just  <name />. Then isAnonymous was true.
   name?: string;
   isAnonymous?: boolean;
   username?: string;
@@ -419,6 +421,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
   let nextPageId  =  c.LowestTempImpId;
   let nextPostId  =  c.LowestTempImpId;
   let nextGuestId = -c.LowestTempImpId;
+  let nextUnnamedNameNr = 1;
   const categoryImpId = c.LowestTempImpId;
 
   const tySiteData: any = {
@@ -432,6 +435,12 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     categories: [],
     permsOnPages: [],
   };
+
+  function nextUnnamedName() {
+    nextUnnamedNameNr += 1;
+    // Use underscore, so can grep and find. The exact name barely matters anyway.
+    return `No_Name_${nextUnnamedNameNr - 1}`;
+  }
 
   // Even if the Disqus user has a real username account, we'll insert
   // it into Talkyard as a guest. Too complicated to find out if
@@ -756,7 +765,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
         extImpId: guestExtId,  // PRIVACY SHOULD GDPR delete, if deleting user — contains name [03KRP5N2]
         // Use the earliest known post date, as the user's created-at date.
         createdAt: Math.min(anyDuplGuestCreatedAt || Infinity, commentCreatedAt),
-        fullName: disqAuthor.name,
+        fullName: (disqAuthor.name || '').trim() || nextUnnamedName(),
         emailAddress: disqAuthor.email,
         // guestBrowserId — there is no such thing in the Disqus xml dump. [494AYDNR]
         //postedFromIp: post.ipAddr
@@ -779,7 +788,16 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
         currRevById: guest.id,
         currRevStartedAt: commentCreatedAt,
         currRevNr: 1,
-        approvedSource: comment.message,
+        // Talkyard doesn't allow empty posts — but in Disqus, apparently if
+        // a comment got deleted, comment.message is absent. So let's add
+        // a placeholder text, which (probably) won't be visible anyway since
+        // the post is (probably) deleted.
+        approvedSource: (comment.message || '').trim() || (
+              comment.isSpam
+                  ? (comment.isDeleted ? 'Imported_Disqus_comment_deleted_spam'
+                                       : 'Imported_Disqus_comment_spam')
+                  : (comment.isDeleted ? 'Imported_Disqus_comment_deleted'
+                                       : 'Imported_Disqus_comment_empty')),
         approvedAt: commentCreatedAt,
         approvedById: c.SystemUserId,
         approvedRevNr: 1,
