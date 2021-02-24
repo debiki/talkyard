@@ -109,7 +109,7 @@ services:
       - cache
       - rdb
       - search
-      - fakemail
+      #- fakemail
     environment:
       PLAY_HEAP_MEMORY_MB: 2800
       HOSTNAME: "localhost"
@@ -239,20 +239,20 @@ services:
   #  command: 'exit 0'
 
   # Dummy SMTP server, for testing.
-  fakemail:
-    build: images/fakemail/mailslurper
-    image: ${DOCKER_REPOSITORY}/fakemail
-    volumes:
-      - ./images/fakemail/mailslurper-config.json:/config.json
-      - ./images/fakemail/fakemail-publ-test-self-signed.key:/smtp-server.key
-      - ./images/app/fakemail-publ-test-self-signed.crt:/smtp-server.crt  # yes, in app-dev [26UKWD2]
-    ports:
-     - '8025:8025'  # smtp, '80' + 25 (25 = old standard port, 587 = new for STARTTLS)
-     - '8026:8026'  # admin interface,  '80' + 25 + 1
-     - '8027:8027'  # service port = api requests or what? '80' + 25 + 2
-    networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_FAKEMAIL_IP}
+  #  fakemail:
+  #    build: images/fakemail/mailslurper
+  #    image: ${DOCKER_REPOSITORY}/fakemail
+  #    volumes:
+  #      - ./images/fakemail/mailslurper-config.json:/config.json
+  #      - ./images/fakemail/fakemail-publ-test-self-signed.key:/smtp-server.key
+  #      - ./images/app/fakemail-publ-test-self-signed.crt:/smtp-server.crt  # yes, in app-dev [26UKWD2]
+  #    ports:
+  #     - '8025:8025'  # smtp, '80' + 25 (25 = old standard port, 587 = new for STARTTLS)
+  #     - '8026:8026'  # admin interface,  '80' + 25 + 1
+  #     - '8027:8027'  # service port = api requests or what? '80' + 25 + 2
+  #    networks:
+  #      internal_net:
+  #        ipv4_address: ${INTERNAL_NET_FAKEMAIL_IP}
 
   # Jaeger Tracing. Access at http://localhost:16686.
   # Not currently in use.
