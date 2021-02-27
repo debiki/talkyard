@@ -8,9 +8,9 @@
 [submodule "modules/ty-test-media"]
 	path = modules/ty-test-media
 	url = https://github.com/debiki/ty-test-media
-[submodule "modules/ty-cla"]
-	path = modules/ty-cla
-	url = https://github.com/debiki/ty-cla.git
+[submodule "modules/ty-translations"]
+	path = modules/ty-translations
+	url = https://github.com/debiki/ty-translations.git
 [submodule "modules/google-diff-match-patch"]
 	path = modules/google-diff-match-patch
 	url = https://github.com/google/diff-match-patch.git
