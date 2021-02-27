@@ -231,7 +231,7 @@ accidentally re-implement something that's almost done already — people
 might be working in their own work-in-progress topic branches that you
 don't know about. -->
 
-How to translate to a new language: [i18n-README](translations/i18n-README.md) (step 1 and 2 only). — Open any translations pull request to the translations repo: https://github.com/debiki/ty-cla (not to https://github.com/debiki/talkyard).
+How to translate to a new language: [i18n-README](translations/i18n-README.md) (step 1 and 2 only). — Open any translations pull request to the ty-translations repo: https://github.com/debiki/ty-translations.
 
 You need to agree to [this Contributor License Agreement](./docs/CLA-v2.txt). You do that by
 reading it (there's a human friendly intro) and appending a single line

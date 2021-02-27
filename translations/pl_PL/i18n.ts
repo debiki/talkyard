@@ -1,1 +1,0 @@
-../../modules/ty-cla/translations/pl_PL/i18n.ts

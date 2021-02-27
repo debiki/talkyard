@@ -16,7 +16,7 @@ To add a new language:
    and you can edit and save your new translation
    (and still see the English version to the left).
 
-3. Open a GitHub pull request to https://github.com/debiki/ty-cla (or send us
+3. Open a GitHub pull request to https://github.com/debiki/ty-translations (or send us
    the translation via email or something, that's also ok, although we prefer GitHub).
 
 4. When done translating, the Talkyard developers (but not you, the translator) need to: [5JUKQR2]
