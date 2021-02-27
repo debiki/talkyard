@@ -109,7 +109,7 @@ const ApiSecretItem = createComponent({
         r.p({},
           "cURL example: (note: includes the secret; don't send to anyone)"),
         r.pre({ style: { whiteSpace: 'pre-line' }},
-          `curl --user tyid=2:${secret.secretKey} ${location.origin}/-/v0/ ...`)),
+          `curl --user tyid=2:${secret.secretKey} ${location.origin}/-/v0/ping`)),
       closeButtonTitle: "Close",
     });
   },
