@@ -124,6 +124,11 @@ def mainSettings = List(
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
   scalaSource in Test := { (baseDirectory in Test)(_ / "tests" / "app") }.value,
 
+  // This compiles language specific email templates in:
+  // talkyard.server.emails.transl.nn_NN.
+  sourceDirectories in (Compile, TwirlKeys.compileTemplates) :=
+        Seq({ (baseDirectory in Compile)(_ / "app") }.value),
+
   // Silhouette needs com.atlassian.jwt:jwt-core and jwt-api, but there's a problem:
   // """the problem is that the jwt-lib is hosted on bintray.com and then mirrored to
   // the typesafe.com repository. It seems that the typesafe repository uses a redirect

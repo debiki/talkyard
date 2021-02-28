@@ -48,6 +48,9 @@ To add a new language:
         - Edit `client/app/admin/admin-app.staff.ts`: add the language
           to the select-language dropdown.
 
+        - Edit `app/talkyard/server/emails/Emails.scala`, if any emails
+          were translated.
+
         - Edit `Makefile`: add the language to the `prod_asset_bundle_files` list.
 
     2. Build the translation bundles, for now: (although this builds other stuff too)
