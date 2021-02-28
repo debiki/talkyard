@@ -85,6 +85,7 @@ export const UsersActivity = createFactory<any, any>({
 
 
 function isHiddenForMe(me: Myself, user: UserInclDetails): boolean[] {
+  // There's also a server side check: [THRACTIPRV].
   const isStaffOrSelf = isStaff(me) || user.id === me.id;
   const hiddenForMe = user.seeActivityMinTrustLevel > me.trustLevel && !isStaffOrSelf;
   return [isStaffOrSelf, hiddenForMe];

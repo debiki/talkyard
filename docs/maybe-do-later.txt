@@ -60,6 +60,11 @@ Rename User to Participant and User to Member.  Participant = Guest or Member, M
 Rename variables named like "member" to "user", "memberOrGroup" to "member", "user" to "participant"
 Rename "indie" to user" and "people" to "members"
 
+[unlist_users]  Unlisted / less-visible / "hidden"? users?
+So cannot see / list users unless has access to the same categories, or is in
+the same group(s) or high enough trust level or sth like that?
+
+
 [security]
 prevent usernames from being displayed in Unicode, if mixed charsets used,
 e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
