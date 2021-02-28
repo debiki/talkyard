@@ -1466,6 +1466,12 @@ export function page_getUnsolvedIcon(page: Page): St {
 
 
 export function page_getSolvedIcon(page: Page): St {
+  // Actually, use the same icon for both solutions to problems,  [ans_solved_icon]
+  // and answers to questions — it's not that interesting if originally
+  // the topic was phrased as a question, or problem? What matters
+  // is that it's been handled, done, right.
+  return 'icon-ok-circled c_Solved';
+  /*
   switch (page.pageRole) {
     case PageRole.Question:
       return 'icon-ok-circled c_Solved';
@@ -1475,7 +1481,7 @@ export function page_getSolvedIcon(page: Page): St {
     case PageRole.Idea:
     default:
       return 'icon-check c_Solved';
-  }
+  }*/
 }
 
 
