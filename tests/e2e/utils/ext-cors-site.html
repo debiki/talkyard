@@ -39,8 +39,7 @@ function corsFetch(ps) {
     referrer: 'no-referrer',
     // Don't follow redirects.
     redirect: 'error',
-    headers: {
-    },
+    headers: ps.headers || {},
   };
 
   if (method === 'POST') {

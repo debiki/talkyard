@@ -102,6 +102,7 @@ const ApiSecretItem = createComponent({
   displayName: 'ApiSecretItem',
 
   showSecret: function(secret: ApiSecret) {
+    const userIdAndSecret = `tyid=2:${secret.secretKey}`;
     util.openDefaultStupidDialog({
       body: rFragment({},
         r.p({},
@@ -109,7 +110,15 @@ const ApiSecretItem = createComponent({
         r.p({},
           "cURL example: (note: includes the secret; don't send to anyone)"),
         r.pre({ style: { whiteSpace: 'pre-line' }},
-          `curl --user tyid=2:${secret.secretKey} ${location.origin}/-/v0/ping`)),
+          `curl --user ${userIdAndSecret} ${location.origin}/-/v0/ping`),
+        r.p({},
+          "This: ", r.code({}, 'tyid=2:..'), " means user 2, which is Sysbot, " +
+          "a built-in user that can be used for API requests."),
+        r.p({},
+          "Here's Sysbot and the secret value, in a Basic Auth HTTP header, " +
+          "base 64 encoded: (don't send to anyone!)"),
+        r.pre({},
+          `Authorization: ${btoa(userIdAndSecret)}`)),
       closeButtonTitle: "Close",
     });
   },
