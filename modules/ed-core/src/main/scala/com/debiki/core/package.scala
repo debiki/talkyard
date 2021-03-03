@@ -148,6 +148,8 @@ package object core {
 
   type SiteVersion = Int
 
+  type LangCode = St  // [Scala_3] opaque type
+
   type LoginId = String
 
   type Pat = Participant

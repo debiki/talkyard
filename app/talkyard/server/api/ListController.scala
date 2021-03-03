@@ -102,6 +102,23 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
               (isAuthorWaiting, isOpen, pageTypes)
           }
 
+    // Later: Maybe reuse ListPagesQueryParser, break out FormInpReader to
+    // trait ParamsParser?  [pg_sort_ord]
+    val pageSortOrder = parseOptSt(listQueryJson, "sortOrder").getOrElse("") match {
+      case "ActiveFirst" =>   // internal name: "ByBumpedAtDesc"
+        PageOrderOffset.ByBumpTime(offset = None)
+      case "NewestFirst" =>   // internal name: "ByCreatedAtDesc"
+        PageOrderOffset.ByCreatedAt(offset = None)
+      //case "ByOpLikesDesc" =>
+      //  PageOrderOffset.ByLikesAndBumpTime(offset = None)
+      //case "ByTotLikesDesc" =>
+      //  PageOrderOffset.ByLikesAndBumpTime(offset = None)
+      case "PopularFirst" | _ =>  // internal name: "ByScoreDescThenBumpedAtDesc" ?
+        // Score and bump time, if nothing else specified. [TyT025WKRGJ]
+        PageOrderOffset.ByScoreAndBumpTime(offset = None, TopTopicsPeriod.Week)
+    }
+
+    //val limit = parseOptI32(listQueryJson, "limit")
 
     def nothingFound = ThingsFoundJson.makePagesFoundListResponse(Nil, dao, pretty)
 
@@ -128,17 +145,15 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     listWhat match {
       case Pages =>
-        val pageQuery = PageQuery(
-              // Score and bump time, if nothing else specified. [TyT025WKRGJ]
-              PageOrderOffset.ByScoreAndBumpTime(offset = None, TopTopicsPeriod.Week),
+        val pageQuery = PageQuery(pageSortOrder,
               PageFilter(PageFilterType.AllTopics, includeDeleted = false),
               includeAboutCategoryPages = false)
 
         // Just for now: get some more topics, if we're filtering, so less
         // likely we'll get 0 back.
-        SHOULD; UX; REMINDER // 2021-03-15 Move limit to API param + SQL query.
+        SHOULD; UX; REMINDER // 2021-05-01 Move limit to API param + SQL query.
         val limit = (isAuthorWaitingFilter.isDefined
-              || isOpenFilter.isDefined || pageTypeFilter.nonEmpty) ? 22 | 12
+              || isOpenFilter.isDefined || pageTypeFilter.nonEmpty) ? 62 | 18
 
         var topics = dao.listMaySeeTopicsInclPinned(catOrRootCat.id, pageQuery,
               includeDescendantCategories = true, authzCtx, limit = limit)

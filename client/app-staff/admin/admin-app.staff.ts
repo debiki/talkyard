@@ -1463,11 +1463,17 @@ const FeatureSettings = createFactory({
         !isApiEnabled ? null :
               TipsLink({ to: linkToAdminApi() }, "Jump to API settings page ..."),
 
-        // Move these CORS settings to the API tab, later.
-        !isApiEnabled ? null : Setting2(props, {
+        // Maybe let people enable CORS without enabling API secrets?
+        // In case they'd need to access public data only.
+        Setting2(props, {
           type: 'checkbox', className: 'e_EnbCors',
           label: "Enable Cross-Origin Resource Sharing (CORS)",
-          help: "Lets other websites of yours, send API requests to this Talkyard site.",
+          help: rFr({},
+            "Lets other websites of yours send API requests to this Talkyard site. ",
+            (isApiEnabled ? '' : rFr({},
+                "Currently ", r.b({}, "you need to enalbe the API"), " (above)"))),
+          // Dont' hide completely — then people asks for help about how to enable it.
+          disabled: !isApiEnabled,
           getter: (s: Settings) => s.enableCors,
           update: (newSettings: Settings, target) => {
             newSettings.enableCors = target.checked;

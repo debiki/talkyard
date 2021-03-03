@@ -364,7 +364,7 @@ gulp.task('cleanTranslations', () => {
       });
 });
 
-// Transpiles translations/(language-code)/i18n.ts to one-js-file-per-source-file
+// Transpiles ty-translations/ui/(language-code)/i18n.ts to one-js-file-per-source-file
 // in public/res/translations/... .
 gulp.task('compileTranslations', () => {
   const stream = gulp.src(['translations/**/*.ts'])

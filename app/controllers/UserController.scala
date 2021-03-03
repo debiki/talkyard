@@ -437,9 +437,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def throwForbiddenIfActivityPrivate(userId: UserId, requester: Option[Participant], dao: SiteDao): Unit = {
+  private def throwForbiddenIfActivityPrivate(
+          userId: UserId, requester: Opt[Pat], dao: SiteDao): U = {
+    // Also browser side [THRACTIPRV]
+    // Related idea: [unlist_users].
     throwForbiddenIf(!maySeeActivity(userId, requester, dao),
-      "TyE4JKKQX3", "Not allowed to list activity for this user")
+          "TyE4JKKQX3", "Not allowed to list activity for this user")
   }
 
 

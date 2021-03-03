@@ -62,6 +62,7 @@ object Rdb {
 
   implicit class PimpOptionWithNullInt64(opt: Opt[i64]) {
     def orNullI64: AnyRef = opt.map(_.asAnyRef).getOrElse(NullI64)
+    def orNullIn64: AnyRef = orNullI64
   }
 
   implicit class PimpOptionWithNullInt(opt: Option[Int]) {

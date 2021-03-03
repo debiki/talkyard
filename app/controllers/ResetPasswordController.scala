@@ -71,7 +71,16 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
     anyUser match {
       case Some(user) =>
-        dieIf(user.email != emailOrUsername && user.theUsername != emailOrUsername, "DwE0F21")
+        // This (TyE0F21J4). failed once — must have been mismatched case comparison?
+        // The database lookup is lowercase (better do in db, maybe different
+        // to-lowercase algorithm?).
+        // So compare lowercase too (emailOrUnLower), + incl values in message.
+        val emailOrUnLower = emailOrUsername.toLowerCase
+        dieIf(user.email != emailOrUsername && user.theUsername != emailOrUsername &&
+              user.email.toLowerCase != emailOrUnLower &&
+              user.theUsername.toLowerCase != emailOrUnLower,
+              "TyE0F21J4", o"""s$siteId: Specified email or username: '$emailOrUsername',
+              actual: '${user.email}' and '${user.username}', user id ${user.id}""")
         var isCreating = false
         if (user.passwordHash.isDefined) {
           logger.info(s"s$siteId: Sending password reset email ${toWho(user)} [TyM2AKEG5]")
@@ -82,15 +91,21 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
         }
         sendChangePasswordEmailTo(user, request, isCreating = isCreating)
       case None =>
-        logger.info(o"""s$siteId: Not sending password reset email to non-existing
-             user or email address: $emailOrUsername""")
         if (isEmailAddress) {
           // Don't tell the user that this email address doesn't exist; that'd be a
           // security issue. Just show the email sent page.
+          logger.info(o"""s$siteId: Not sending password reset email to non-existing
+               email address: $emailOrUsername""")
         }
         else {
           // Usernames are publicly visible.
-          throwForbidden("DwE4KFE03", "There is no user with that username")
+          // Unless user is unlisted?  [unlist_users]  Not impl.
+          val settings = dao.getWholeSiteSettings()
+          val notify = !settings.userMustBeAuthenticated
+          logger.info(o"""s$siteId: Not sending password reset email to non-existing
+               username: $emailOrUsername, and notifying=$notify hen about it""")
+          throwForbiddenIf(notify, "DwE4KFE03",
+                "There is no user with that username")
         }
     }
 

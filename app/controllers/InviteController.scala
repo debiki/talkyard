@@ -204,6 +204,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   private def doSendInvite(toEmailAddress: String, addToGroup: Option[Group],
         now: When, request: DebikiRequest[_]): Invite Or ErrorMessage = {
+    import request.dao
 
     val invite = Invite(
       secretKey = nextRandomString(),
@@ -212,7 +213,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       createdAt = now.toJavaDate,
       addToGroupIds = addToGroup.map(_.id).toSet)
 
-    val anyProbablyUsername = request.dao.readOnlyTransaction { tx =>
+    val anyProbablyUsername = dao.readTx { tx =>
       Participant.makeOkayUsername(
         invite.emailAddress.takeWhile(_ != '@'), allowDotDash = false,  // [CANONUN]
         tx.isUsernameInUse)
@@ -225,12 +226,17 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     UX; COULD // incl any add-to-group name? Nice to know "You'll be added to the
     // Students-2019 group" for example?
-    val email = makeInvitationEmail(invite, inviterName = request.theMember.usernameParensFullName,
-      probablyUsername = probablyUsername, siteHostname = request.host)
+    val settings = dao.getWholeSiteSettings()
+    val email = makeInvitationEmail(
+          invite,
+          inviterName = request.theMember.usernameParensFullName,
+          probablyUsername = probablyUsername,
+          siteHostname = request.host,
+          langCode = settings.languageCode)
 
     UX // would be nice if the inviter got a message if the email couldn't be sent.
     globals.sendEmail(email, request.siteId)
-    request.dao.insertInvite(invite)
+    dao.insertInvite(invite)
 
     Good(invite)
   }
@@ -240,24 +246,28 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   // This logs in via a GET request. [GETLOGIN]
   //
   def acceptInvite(secretKey: String): Action[Unit] = GetActionIsLogin { request =>
+    import request.dao
     // Below, we accept invites already sent, even if SSO now enabled. (Makes sense? Or not?
     // Or config option?) However, rejected here: (4RBKA20).
 
-    val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(
+    val (newUser, invite, alreadyAccepted) = dao.acceptInviteCreateUser(
       secretKey, request.theBrowserIdData)
 
-    request.dao.pubSub.userIsActive(request.siteId, newUser.briefUser, request.theBrowserIdData)
+    dao.pubSub.userIsActive(request.siteId, newUser.briefUser, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, newUser.id)
     val newSessionCookies = sidAndXsrfCookies
 
     if (!alreadyAccepted) {
       // Could try to ensure this happens also if the server crashes here? [retry-after-crash]
-      val welcomeEmail = makeWelcomeSetPasswordEmail(newUser, request.host)
-      request.dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
+      val settings = dao.getWholeSiteSettings()
+      val welcomeEmail = makeWelcomeSetPasswordEmail(newUser, request.host,
+            langCode = settings.languageCode)
+      dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
       globals.sendEmail(welcomeEmail, request.siteId)
 
-      val inviter = request.dao.getParticipant(invite.createdById) getOrDie "DwE4KDEP0"
-      val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(request.host, newUser, inviter)
+      val inviter = dao.getParticipant(invite.createdById) getOrDie "DwE4KDEP0"
+      val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(
+            request.host, newUser, inviter, langCode = settings.languageCode)
       globals.sendEmail(inviteAcceptedEmail, request.siteId)
       // COULD create a notification instead / too.
     }
@@ -315,12 +325,13 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def makeInvitationEmail(invite: Invite, inviterName: String,
-        probablyUsername: String, siteHostname: String): Email = {
+  import talkyard.server.emails.Emails
 
-    val emailBody = views.html.invite.inviteEmail(
-      inviterName = inviterName, siteHostname = siteHostname,
-      probablyUsername = probablyUsername, secretKey = invite.secretKey, globals).body
+  private def makeInvitationEmail(invite: Invite, inviterName: String,
+          probablyUsername: String, siteHostname: String, langCode: St): Email = {
+    val emailBody: St = Emails.inLanguage(langCode).inviteEmail(
+          inviterName = inviterName, siteHostname = siteHostname,
+          probablyUsername = probablyUsername, secretKey = invite.secretKey, globals)
     Email(
       EmailType.Invite,
       createdAt = globals.now(),
@@ -331,28 +342,30 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def makeWelcomeSetPasswordEmail(newUser: UserInclDetails, siteHostname: String) = {
+  private def makeWelcomeSetPasswordEmail(newUser: UserInclDetails, siteHostname: St,
+          langCode: St) = {
     Email(
       EmailType.InvitePassword,
       createdAt = globals.now(),
       sendTo = newUser.primaryEmailAddress,
       toUserId = Some(newUser.id),
       subject = s"[$siteHostname] Welcome! Account created",
-      bodyHtmlText = (emailId) => views.html.invite.welcomeSetPasswordEmail(
-      siteHostname = siteHostname, emailId = emailId, newUser.username, globals).body)
+      bodyHtmlText = (emailId) => Emails.inLanguage(langCode).welcomeSetPasswordEmail(
+      siteHostname = siteHostname, emailId = emailId, newUser.username, globals))
   }
 
 
-  def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: UserInclDetails, inviter: Participant)
-        : Email = {
+  private def makeYourInviteWasAcceptedEmail(
+          siteHostname: St, newUser: UserInclDetails, inviter: Participant,
+          langCode: LangCode): Email = {
     Email(
       EmailType.InviteAccepted,
       createdAt = globals.now(),
       sendTo = inviter.email,
       toUserId = Some(inviter.id),
       subject = s"[$siteHostname] Your invitation for ${newUser.primaryEmailAddress} to join was accepted",
-      bodyHtmlText = (_) => views.html.invite.inviteAcceptedEmail(
-        siteHostname = siteHostname, invitedEmailAddress = newUser.primaryEmailAddress).body)
+      bodyHtmlText = (_) => Emails.inLanguage(langCode).inviteAcceptedEmail(
+        siteHostname = siteHostname, invitedEmailAddress = newUser.primaryEmailAddress))
   }
 }
 

@@ -1662,6 +1662,16 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
         : t.ft.TitleDone;
       iconClass = 'icon-check';
     }
+    else if (topic.pageRole === PageRole.Problem && topic.answerPostUniqueId) {
+      // A problem with a solution post — similar to a question plus answer.
+      // UX COULD use a "Problem solved" tooltip text instead of "Question ...".
+      tooltip = t.d.TooltipQuestSolved;
+      // Use the same icon as for Question topics with an answer selected
+      // — in most cases, Problem topics with a solution accepted,
+      // might as well have been posted as questions + answers; using different
+      // icons just adds extra clutter & "brain noise"? [ans_solved_icon]
+      iconClass = 'icon-ok';
+    }
     else if (!showIcons) {
       // Then don't show icons, unless done/fixed.
     }

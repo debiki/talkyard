@@ -232,25 +232,48 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
       "DwE2KTES7", "No sort-order-offset specified")
 
 
-  /** If listing topics, the page query tells which topics to find. (E.g. for the forum topic list.)
+  /** If listing topics, the page query tells which topics to find.  [pg_sort_ord]
+    * (E.g. for the forum topic list.)
     */
   def parsePageQuery(): Option[PageQuery] = {
-    val sortOrderStr = queryString.getFirst("sortOrder") getOrElse { return None }
-    def anyDateOffset = queryString.getLong("olderThan") map (new ju.Date(_))
+    val orderOffset = ListPagesQueryParser.parseOrderOffset(queryString) getOrElse {
+      return None
+    }
+    val pageFilter = parsePageFilter()
 
+    Some(PageQuery(orderOffset, pageFilter,
+      // Later: Let user preferences override, if is staff. [8WK4SD7]
+      includeAboutCategoryPages = siteSettings.showCategories))
+  }
+
+
+  def parsePageFilter(): PageFilter = {
+    val filterParamSt = queryString.getFirst("filter")
+    ListPagesQueryParser.parsePageFilter(filterParamSt, includeDeleted = isStaff)
+  }
+
+}
+
+
+
+object ListPagesQueryParser {
+
+  def parseOrderOffset(params: FormInpReader): Opt[PageOrderOffset] = {
+    val sortOrderStr = params.getFirst("sortOrder") getOrElse { return None }
+    def anyDateOffset: Opt[ju.Date] = params.getLong("olderThan") map (new ju.Date(_))
     val orderOffset: PageOrderOffset = sortOrderStr match {
       case "ByBumpTime" =>
         PageOrderOffset.ByBumpTime(anyDateOffset)
       case "ByCreatedAt" =>
         PageOrderOffset.ByCreatedAt(anyDateOffset)
       case "ByScore" =>
-        val scoreStr = queryString.getFirst("maxScore")
-        val periodStr = queryString.getFirst("period")
+        val scoreStr = params.getFirst("maxScore")
+        val periodStr = params.getFirst("period")
         val period = periodStr.flatMap(TopTopicsPeriod.fromIntString) getOrElse TopTopicsPeriod.Month
         val score = scoreStr.map(_.toFloatOrThrow("EdE28FKSD3", "Score is not a number"))
         PageOrderOffset.ByScoreAndBumpTime(offset = score, period)
       case "ByLikes" =>
-        def anyNumOffset = queryString.getInt("num") // CLEAN_UP rename 'num' to 'maxLikes'
+        def anyNumOffset = params.getInt("num") // CLEAN_UP rename 'num' to 'maxLikes'
         (anyNumOffset, anyDateOffset) match {
           case (Some(num), Some(date)) =>
             PageOrderOffset.ByLikesAndBumpTime(Some(num, date))
@@ -261,17 +284,12 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
         }
       case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
     }
-
-    val pageFilter = parsePageFilter()
-
-    Some(PageQuery(orderOffset, pageFilter,
-      // Later: Let user preferences override, if is staff. [8WK4SD7]
-      includeAboutCategoryPages = siteSettings.showCategories))
+    Some(orderOffset)
   }
 
 
-  def parsePageFilter(): PageFilter =
-    queryString.getFirst("filter") match {
+  def parsePageFilter(filterParamSt: Opt[St], includeDeleted: Bo): PageFilter =
+    filterParamSt match {
       case None | Some("ShowAll") =>
         PageFilter(PageFilterType.AllTopics, includeDeleted = false)
       case Some("ShowWaiting") =>
@@ -281,7 +299,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
         // but that'd break the end-to-end-tests [4UKDWT20]. The list-deleted-topics option is
         // hidden for non-staff people anyway, in the UI. [2UFKBJ73]
         // Or maybe set incl-deleted = true anyway, and let people list their own deleted topics?
-        PageFilter(PageFilterType.AllTopics, includeDeleted = isStaff)
+        PageFilter(PageFilterType.AllTopics, includeDeleted = includeDeleted)
       case Some(x) =>
         throwBadRequest("DwE5KGP8", s"Bad topic filter: $x")
     }

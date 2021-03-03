@@ -153,7 +153,7 @@ node_modules/.bin/gulp: git-subm-init-upd
 	s/yarn
 
 # BUG RISK sync with Gulp so won't accidentally forget to (re)build? [GZPATHS]
-# Sync with the languages in the /translations/ dir. [5JUKQR2]
+# Sync with the languages in module ty-translations. [5JUKQR2]
 #  public/res/2d-bundle.min.js.gz // [SLIMTYPE]
 prod_asset_bundle_files:=\
   images/web/assets/talkyard-comments.min.js.gz \
@@ -360,15 +360,17 @@ images/web/assets/ext-iframe.js.gz: client/ext-iframe.js
 # For Play Framework, the app container.
 # E.g.:  images/app/assets/translations/en_US/i18n.js  etc.
 transl_dev_app_bundle_files := \
-  ${shell find translations/ -name '*.ts' | sed -nr 's;(.*)\.ts;images/app/assets/\1.js;p'}
+  ${shell find translations/ -name '*.ts'  \
+              | sed -nr 's;(.*)\.ts;images/app/assets/\1.js;p' }
 
 # For Nginx, the web container — includes the version number, for asset versioning.
 # E.g. images/web/assets/v0.2020.25/translations/en_US/i18n.js
 transl_dev_web_bundle_files := \
-  ${shell find translations/ -name '*.ts' | sed -nr 's;(.*)\.ts;images/web/assets/$(TALKYARD_VERSION)/\1.js;p'}
+  ${shell find translations/ -name '*.ts'  \
+              | sed -nr 's;(.*)\.ts;images/web/assets/$(TALKYARD_VERSION)/\1.js;p' }
 
 $(transl_dev_app_bundle_files) $(transl_dev_web_bundle_files): \
-        ${shell find translations/ -name '*.ts'}
+        ${shell find translations/ -name '*.ts' }
 	@echo "Generating translation files: Transpiling .ts to .js"
 	s/d-gulp  buildTranslations
 

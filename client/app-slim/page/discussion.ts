@@ -130,9 +130,11 @@ export const TitleBodyComments = createComponent({
     }
 
     if (page.pageRole === PageRole.Problem) {
-      let doneOrSolved = t.done;
+      let doneOrSolvedText = t.done;
+      let doneOrSolvedIcon = doneIcon;
       if (page.pageAnsweredAtMs) {
-        doneOrSolved = "solved";  // I18N
+        doneOrSolvedText = "solved";  // I18N
+        doneOrSolvedIcon = solvedIcon;  // [ans_solved_icon]
         props4 = activeProps;
       }
       else if (page.pageDoneAtMs) {
@@ -151,7 +153,7 @@ export const TitleBodyComments = createComponent({
           r.li(props1, problemIcon, '= ' + t.pds.aProblem),
           r.li(props2, plannedIcon, '= ' + t.pds.planToFix),
           r.li(props3, startedIcon, '= ' + t.started),
-          r.li(props4, doneIcon, '= ' + doneOrSolved)) };
+          r.li(props4, doneOrSolvedIcon, '= ' + doneOrSolvedText)) };
     }
 
     if (page.pageRole === PageRole.Idea) {
@@ -1685,7 +1687,7 @@ export const PostHeader = createComponent({
 
     const linkFn = abbreviate ? 'span' : 'a';
 
-    const anySolutionIcon = page.pageRole === PageRole.Question &&
+    const anySolutionIcon = page_canBeSolved(page) &&
         post.uniqueId === page.pageAnswerPostUniqueId
       ? r.span({ className: 'esH_solution icon-ok-circled', title: t.Solution })
       : null;

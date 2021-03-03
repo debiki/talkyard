@@ -381,3 +381,26 @@ the existing / any-future Scala GraphQL libs will make use of them in
 some nice more-type-safe ways.
 Or maybe shouldn't even be in the Scala app, maybe instead a separate server in Rust,
 optionally reading from a read-only replica rdb.
+
+
+=== Use WebAssembly for plugins
+
+WebAssembly is "future compatible": If (parts of) the Talkyard app server ever
+gets rewritten in another language, say, Rust, plugins written in WebAssembly
+can be called from that new language too.
+But if the plugins were instead in Java or Scala,
+they couldn't easily be used from the new code.
+
+Browsers can run WebAssembly.
+Deno can run WebAssembly natively: https://deno.land/manual/getting_started/webassembly.
+GraalVM (JVM) can also run WebAssembly.
+And Rust and Bash: https://docs.wasmtime.dev/lang.html.
+There's a Scala interpreter: https://github.com/satabin/swam.
+
+Also: No GC, small code size.
+
+Rust and Typescript, well, AssemblyScript,
+can be compiled to WebAssembly:
+https://rustwasm.github.io and https://github.com/AssemblyScript/assemblyscript.
+(But not Scala: https://github.com/scala-js/scala-js/issues/1747)
+

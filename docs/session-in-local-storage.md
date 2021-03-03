@@ -15,7 +15,7 @@ Here it is (the reply):
 https://dev.to/jondubois/comment/373l,
 
 here's a copy (from 2019-12-06),
-  Copyright Jonathan Gros-Dubois:  ../modules/ty-cla/docs/session-in-local-storage.md
+  Copyright Jonathan Gros-Dubois:  ../modules/ty-translations/docs/session-in-local-storage.md
 
 Another reply about this, also by Jonathan Gros-Dubois:
 https://dev.to/jondubois/comment/3749
