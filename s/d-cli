@@ -33,7 +33,10 @@ fi
 
 # Set Java's user.home to /home/owner so sbt and Ivy will cache downloads there. [SBTHOME]
 # Actually not needed in this case? because gets set in the entrypoint.sh. Do anyway, won't hurt.
-sudo docker-compose run --rm --service-ports $set_is_prod_test_env_var app \
+# Pass PLAY_HEAP_MEMORY_MB to both Play Framework in the Docker container via the env var,
+# and to SBT via --mem.
+sudo PLAY_HEAP_MEMORY_MB=$PLAY_HEAP_MEMORY_MB \
+  docker-compose run --rm --service-ports $set_is_prod_test_env_var app \
   /opt/sbt/bin/sbt \
   --mem $PLAY_HEAP_MEMORY_MB \
   -jvm-debug 9999 \

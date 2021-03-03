@@ -3826,8 +3826,10 @@ export class TyE2eTestBrowser {
           this.#br.pause(300);
         }
 
-        // Facebook asks if we want cookies — yes we do.
-        const cookieYesSelector = '[data-testid="cookie-policy-banner-accept"]';
+        // Facebook asks if we want cookies — yes we do. And Facebook sometimes
+        // renames the ok-cookies button.
+        //const cookieYesSelector = '[data-testid="cookie-policy-banner-accept"]';
+        const cookieYesSelector = '[data-testid="cookie-policy-dialog-accept-button"]';
         if (this.isExisting(cookieYesSelector)) {
           this.waitAndClick(cookieYesSelector);
         }

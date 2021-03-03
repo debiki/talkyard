@@ -526,7 +526,7 @@ function fullTextSearch<T extends ThingFound>(ps: { origin: string, queryText: s
 
 
 function listQuery<T extends ThingFound>(
-      ps: { origin: string, listQuery: ListQuery, sortOrder?: SortOrder },
+      ps: { origin: string, listQuery: ListQuery, sortOrder?: PageSortOrder },
       postPs: { fail?: boolean, apiRequesterId?: UserId, apiSecret?: string } = {})
       : ListQueryResults<T> | string {
   const url = ps.origin + '/-/v0/list';
