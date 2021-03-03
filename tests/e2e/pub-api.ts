@@ -73,7 +73,7 @@ type CategoryRef = string;
 type TagRef = string;
 type BadgeRef = string;
 
-type SortOrder = 'PopularFirst' | 'ActiveFirst' | 'NewestFirst';
+type PageSortOrder = 'PopularFirst' | 'ActiveFirst' | 'NewestFirst';
 type PageTypeSt = 'Question' | 'Problem' | 'Idea' | 'Discussion';
 
 type Unimplemented = undefined;
@@ -447,7 +447,6 @@ interface GetQueryResults<T extends ThingFound> {
 interface ListQueryApiRequest {
   // Either:
   listQuery?: ListQuery;
-  sortOrder?: SortOrder;
 
   // Or:
   continueAtScrollCursor?: ListResultsScrollCursor;
@@ -467,6 +466,8 @@ interface ListQuery {
   exactPrefix?: St;
   lookWhere?: LookWhere;
   filter?: QueryFilter;
+  sortOrder?;
+  limit?: Nr;
 }
 
 
@@ -477,6 +478,7 @@ interface ListPagesQuery extends ListQuery {
   listWhat: 'Pages';
   lookWhere?: { inCategories: CategoryRef[] };
   filter?: PageFilter;
+  sortOrder?: PageSortOrder;
 }
 
 
@@ -600,9 +602,9 @@ type ListResultsScrollCursor = Unimplemented;
 //      //inclFields: {
 //      //  numRepliesVisible: true,
 //      //},
+//      sortOrder: 'PopularFirst',
+//      limit: 5,
 //    }
-//    sortOrder: 'PopularFirst',
-//    limit: 5,
 //  }
 //
 // Response ex:
@@ -751,48 +753,60 @@ type SearchResultsScrollCursor = Unimplemented;
 // Should Not implement this, unless clearly needed.
 // Still, good to think about in advance, so as not to paint oneself into a corner?
 //
-//   /-/v0/batch(-search)?(-list)?(-get)?  {
-//     batchQueries: [
-//       getQuery: {
-//         getWhat: 'Pages',
-//         getRefs: [
-//           'emburl:https://blog/a-blog-post':
-//           'emburl:https://blog/another',
-//           'emburl:https://blog/a-third',
-//         ],
-//         inclFields: {
-//           numRepliesVisible: true,
-//           numOrigPostLikeVotes: true,
+//   /-/v0/batch-query {
+//     batchQuery: {
+//       // Maybe sth like:
+//       //perQueryLimit: NN,
+//       //this: mergeResultsHow:  ... ?? ..,
+//       //or?: perQuerySortOrder:
+//       //     totalSortOrder:
+//
+//       queryList: [
+//         getQuery: {
+//           getWhat: 'Pages',
+//           getRefs: [
+//             'emburl:https://blog/a-blog-post':
+//             'emburl:https://blog/another',
+//             'emburl:https://blog/a-third',
+//           ],
+//           inclFields: {
+//             numRepliesVisible: true,
+//             numOrigPostLikeVotes: true,
+//           },
 //         },
-//       },
-//       getQuery: {
-//         getWhat: 'Pages',
-//         getRefs: [ ... ],
-//         inclFields: {
-//           someOtherField: true,
+//
+//         getQuery: {
+//           getWhat: 'Pages',
+//           getRefs: [ ... ],
+//           inclFields: {
+//             someOtherField: true,
+//           },
 //         },
-//       },
-//       listQuery: {
-//         listWhat: 'Members',
-//         exactPrefix: 'jane_d',
-//         lookWhere: { usernames: true },
-//       },
-//       listQuery: {
-//         listWhat: 'Pages',
-//         lookWhere: { inCategories: [catB, catC] },
-//       },
-//       searchQuery: {
-//         findWhat: 'Posts',
-//         freetext: "how to feed an anteater that has climbed a tall tree",
-//       },
-//     ],
+//
+//         listQuery: {
+//           listWhat: 'Members',
+//           exactPrefix: 'jane_d',
+//           lookWhere: { usernames: true },
+//         },
+//
+//         listQuery: {
+//           listWhat: 'Pages',
+//           lookWhere: { inCategories: [catB, catC] },
+//         },
+//
+//         searchQuery: {
+//           findWhat: 'Posts',
+//           freetext: "how to feed an anteater that has climbed a tall tree",
+//         },
+//       ],
+//     },
 //   }
 //
 // Response could be:
 //
 //   {
 //     origin: "https://example.com",
-//     batchQueriesResults: [
+//     batchQueryResults: [
 //       { getResults: ... },
 //       { getResults: ... },
 //       { listResults: ... },
