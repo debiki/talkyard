@@ -1,8 +1,10 @@
 #!/bin/bash
 
 git_lock_file='.git/modules/modules/ed-versions/index.lock'
-versions_file='modules/ed-versions/version-tags.log'
+versions_file='version-tags.log'
 
+promote_from_chan='tyse-v0-dev'
+promote_to_chan='tyse-v0-regular'
 
 if [ -f $git_lock_file ]; then
   echo
@@ -28,8 +30,13 @@ read -s -p ''
 set -e
 
 # (Don't use <root>/version.txt — that's the *next* version, not yet released.)
-old_versions=$(cat $versions_file)
-wip_version_tag=$(echo "$old_versions" | tail -n1)
+pushd .
+cd relchans/$promote_from_chan
+  git fetch origin $promote_from_chan
+  git merge --ff-only origin/$promote_from_chan
+  old_versions=$(cat $versions_file)
+  wip_version_tag=$(echo "$old_versions" | tail -n1)
+popd
 next_version=$(cat version.txt)
 
 if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
@@ -38,6 +45,7 @@ if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
 fi
 
 release_version_tag=$( echo "$wip_version_tag" | sed -r -e 's/WIP-//' )
+
 
 
 # Sanity check version numbers
@@ -71,9 +79,13 @@ fi
 
 
 
-echo "WIP version, canary released: $wip_version_tag"
-echo "WIP once production released: $release_version_tag"
-echo "      (Upcoming next version: $next_version)"
+echo "Promote latest version from: $promote_from_chan"
+echo "                         to: $promote_to_chan ?  [y/n] — yes always, currently"
+echo
+
+echo "Latest version, to promote: $wip_version_tag   (in $promote_from_chan)"
+echo "             Once promoted: $release_version_tag   (in $promote_to_chan)"
+echo "    (Upcoming next version: $next_version)"
 echo
 
 # dupl code [bashutils]
@@ -128,32 +140,29 @@ read -s -p ''
 echo "Publishing version tag $release_version_tag to GitHub..."
 
 pushd .
-cd modules/ed-versions/
-git fetch
-git checkout master
-git merge --ff-only origin/master
-echo $release_version_tag >> version-tags.log
-# The tag: edition (tyse), version and channel (regular).
-release_version_tag_w_ed_chan="tyse-$release_version_tag-regular"
-git add version-tags.log
-git commit -m "Release $release_version_tag_w_ed_chan."
-git branch -f tyse-v0-regular
-# 'master' is for backw compat. Don't incl in v1. [ty_v1]
-git push origin master tyse-v0-regular
+cd relchans/$promote_to_chan
+  git fetch origin $promote_to_chan
+  git merge --ff-only origin/$promote_to_chan
+  echo $release_version_tag >> $versions_file
+  # The tag: edition (tyse), version and channel (regular).
+  release_version_tag_w_ed_chan="tyse-$release_version_tag-regular"
+  git add $versions_file
+  git commit -m "Release $release_version_tag_w_ed_chan."
+  git branch -f master
+  # 'master' is for backw compat. Don't incl in v1. [ty_v1]
+  echo "DO THIS:"
+  echo git push origin master $promote_to_chan
 popd
 
 # Future tag name:
 # Need to include release channel in the Git tag, otherwise we'd try to push the
 # same tag to different branches, e.g. push  tyse-v0.2021.04-abc123def
-# to both the tyse-v0-dev and tyse-v0-regular branches — but then the last push
+# to both the $promote_from_chan and $promote_to_chan branches — but then the last push
 # would overwrite the first.  Instead, we push two different tags:
 # tyse-v0.2021.04-abc123def-dev  and  tyse-v0.2021.04-abc123def-regular.
-git tag $release_version_tag_w_ed_chan $wip_version_tag
+echo git tag $release_version_tag_w_ed_chan tyse-$wip_version_tag-dev
 
-# Legacy tag name: (don't incl in v1) [ty_v1]
-git tag $release_version_tag $wip_version_tag
+echo git push origin $release_version_tag_w_ed_chan
 
-git push origin $release_version_tag $release_version_tag_w_ed_chan
-
-echo "Done, released $release_version_tag_w_ed_chan. Bye."
+echo echo "Done, released $release_version_tag_w_ed_chan. Bye."
 echo
