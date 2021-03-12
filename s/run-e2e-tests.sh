@@ -331,8 +331,7 @@ function runAllE2eTests {
   $r s/wdio --only chat-create-from-profile-pages.2browsers $args
 
   $r s/wdio --only categories-basic.3browsers $args
-  $r s/wdio --only categories-delete.2br $args
-  #$r s/wdio --only category-permissions.2br $args
+  # There're more category tests below. [.more_cat_tests]
 
   $r s/wdio --only private-chat.3browsers $args
 
@@ -479,6 +478,10 @@ function runAllE2eTests {
 
   $r s/wdio --only group-permissions-similar-topics.2br.mtime $args
   $r s/wdio --only permissions-edit-wiki-posts.2browsers $args
+
+  # Do after the search and access permission tests above.  [.more_cat_tests]
+  $r s/wdio --only categories-delete.2br $args
+  $r s/wdio --only category-permissions.2br $args
 
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 

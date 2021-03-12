@@ -2558,7 +2558,9 @@ export class TyE2eTestBrowser {
     }
 
 
-    assertNotFoundError(ps: { whyNot?: 'CategroyDeleted' | 'PageDeleted' } = {}) {
+    assertNotFoundError(ps: {
+            whyNot?: 'CategroyDeleted' | 'MayNotCreateTopicsOrSeeCat' |
+                'MayNotSeeCat' | 'PageDeleted' } = {}) {
       for (let i = 0; i < 20; ++i) {
         let source = this.#br.getPageSource();
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
@@ -2575,6 +2577,12 @@ export class TyE2eTestBrowser {
         }
         else if (ps.whyNot === 'CategroyDeleted') {
           okNotFoundReason = /TyECATDELD_/.test(source);
+        }
+        else if (ps.whyNot === 'MayNotCreateTopicsOrSeeCat') {
+          okNotFoundReason = /-TyEM0CR0SEE_-TyMMBYSEE_/.test(source);
+        }
+        else if (ps.whyNot === 'MayNotSeeCat') {
+          okNotFoundReason = /-TyEM0SEE_-TyMMBYSEE_/.test(source);
         }
         else if (ps.whyNot === 'PageDeleted') {
           okNotFoundReason = /TyEPAGEDELD_/.test(source);
@@ -4229,8 +4237,8 @@ export class TyE2eTestBrowser {
       clickEditCategory: () => die('TyE59273',
             "Use forumButtons.clickEditCategory() instead"),
 
-      waitForCategoryName: (name: string, ps: { isSubCategory?: true } = {}) => {
-        const selector = ps.isSubCategory ? '.s_F_Ts_Cat_Ttl-SubCat' : '.s_F_Ts_Cat_Ttl';
+      waitForCategoryName: (name: string, ps: { isSubCat?: true } = {}) => {
+        const selector = ps.isSubCat ? '.s_F_Ts_Cat_Ttl-SubCat' : '.s_F_Ts_Cat_Ttl';
         this.waitAndGetElemWithText(selector, name);
       },
 
@@ -4333,13 +4341,19 @@ export class TyE2eTestBrowser {
       categoryNameSelector: '.esForum_cats_cat .forum-title',
       subCategoryNameSelector: '.s_F_Cs_C_ChildCs_C',
 
-      goHere: (origin?: string) => {
+      goHere: (origin?: string, opts: { shouldSeeAnyCats?: Bo } = {}) => {
         this.go((origin || '') + '/categories');
-        this.forumCategoryList.waitForCategories();
+        this.forumCategoryList.waitForCategories(opts.shouldSeeAnyCats !== false);
       },
 
-      waitForCategories: () => {
-        this.waitForVisible('.s_F_Cs');
+      waitForCategories: (shouldSeeAnyCats: Bo = true) => {
+        if (shouldSeeAnyCats) {
+          this.waitForVisible('.s_F_Cs');
+        }
+        else {
+          this.waitForExist('.s_F_Cs');
+          this.waitForAtMost(0, this.forumCategoryList.categoryNameSelector);
+        }
       },
 
       waitForNumCategoriesVisible: (num: number) => {
@@ -4392,6 +4406,7 @@ export class TyE2eTestBrowser {
         this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
 
+      // MOVE to forumTopicList?
       assertCategoryNotFoundOrMayNotAccess: () => {
         this.assertAnyTextMatches('.dw-forum', '_TyE0CAT');
       }
@@ -4415,6 +4430,12 @@ export class TyE2eTestBrowser {
           this.waitAndClick('#te_ShowExtId');
           this.waitAndSetValue('#te_CatExtId', data.extId);
         }
+      },
+
+      setParentCategory: (catName: St) => {
+        this.waitAndClick('.s_CD .e_SelCatB');
+        this.waitAndClickSelectorWithText('.e_CatLs .esExplDrp_entry_title', catName)
+        this.waitUntilTextIs('.s_CD .e_SelCatB', catName);
       },
 
       submit: () => {
@@ -4452,6 +4473,13 @@ export class TyE2eTestBrowser {
       deleteCategory: () => {
         this.waitAndClick('.s_CD_DelB');
         // Dismiss "Category deleted" message.
+        this.stupidDialog.clickClose();
+        this.categoryDialog.cancel();
+      },
+
+      undeleteCategory: () => {
+        this.waitAndClick('.s_CD_UndelB');
+        // Dismiss "Done, category undeleted" message.
         this.stupidDialog.clickClose();
         this.categoryDialog.cancel();
       },

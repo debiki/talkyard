@@ -189,7 +189,8 @@ const EditCategoryDialog = createClassAndFactory({
 
   deleteCategory: function() {
     const category: Category = this.state.category;
-    dieIf(category.isDefaultCategory, "This is the default category, cannot delete it [TyEDELDFCAT]");
+    dieIf(category.isDefaultCategory,
+          "This is the default category, cannot delete it [TyEDELDFCAT]");
     ReactActions.deleteCategory(this.state.categoryId, () => {
       const deletedCategory = { ...this.state.category, isDeleted: true  };
       this.setState({ category: deletedCategory });
@@ -443,10 +444,13 @@ const CategorySettings = createClassAndFactory({
             Button({ onClick: this.props.undeleteCategory, className: 's_CD_UndelB' }, "Undelete"));
     }
     else {
+      const isDef = category.isDefaultCategory;
       anyDeleteButton =
         r.div({ className: 's_CD_Btns'},
-          Button({ onClick: this.props.deleteCategory, className: 'icon-trash s_CD_DelB' },
-            "Delete category"));
+          Button({ onClick: this.props.deleteCategory, className: 'icon-trash s_CD_DelB',
+              disabled: isDef },
+            "Delete category"),   // 0I18N
+          isDef ? r.span({ className: 'e_0Del' }, " — cannot, is default") : null);
     }
 
     return r.div({},
@@ -510,6 +514,9 @@ const CategorySecurity = createClassAndFactory({
   },
 
   render: function() {
+    // If this is a base category, it could be nice if there was a way to get an
+    // overview of all sub cat permissions.  [propagate_cat_perms]
+
     // Sorted by permission id server side [SORTCATPERMS].
     const permissions: PermsOnPage[] = this.props.permissions;
     if (!permissions)

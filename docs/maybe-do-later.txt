@@ -31,10 +31,25 @@ https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
 (React wants immutable.)
 
 [subcats]
-Implement sub categories.
+DONE: Implement sub categories.
+
+[propagate_cat_perms]
+It'd be nice if there was a way to get an overview of sub cat permissions,
+when looking at a base cat. And if one could propagate the base category's
+permissions to all/some sub cats.
+Also make this work for the root cat? So one can get an overview of permission
+settings for *all* base cats and sub cats in the whole forum — a cat permissions
+table-tree, somehow.
+
+[may_not_perms]
+Currently permissions are additive. Maybe, though, in some cases it'd be good
+with "negative" permissions — e.g. a group that may Not something.
+Then, everyone in that group, would be forbidden from doing that something,
+regardless of how they inherited permissions from other groups.
+
 
 [sw] [sse]
-Service worker. Server sent events.
+DONE: Service worker.  No, skip, using Websocket instead of:  Server sent events.
 
 [offline-first]
 Things to think about, if making Ty work offline.
@@ -336,6 +351,9 @@ A user's first few whispers to non-staff: Maybe should never be shown, until rev
 When composing a message, see who will get notified — e.g. if mentioning a group,
 or editing a message, can be unclar if a newly edit-added @username gets notified or not
 (they do get notified).
+
+[power_admin]
+Various fancy admin features, disabled by default.
 
 [tiny-dialog]
 Find (or create?) a tiny modal dialog React class that can be included in slim-bundle.js,

@@ -80,33 +80,50 @@ case class PermsOnSite(
   maxUploadSizeBytes: i32)
 
 
+object PermsOnPages {
+
+  /** If any permission says No, then, no, not allowed. Otherwise, if any
+    * permission says Yes, then, yes, allowed.
+    */
+  def merge(a: Opt[Bo], b: Opt[Bo]): Opt[Bo] = {
+    // This:
+    if (b.is(false)) b
+    else a orElse b
+    // ... is the same as:
+    // if (a.is(false) || b.is(false)) Some(false)
+    // else if (a.is(true) || b.is(true)) Some(true)
+    // else None
+  }
+}
+
+
 /** If maySeeOwn is true, then one may see one's own stuff, even if maySee is false.
   */
 case class PermsOnPages(  // [exp] ok use. Missing, fine: may_see_private_flagged
   id: PermissionId,
-  forPeopleId: UserId,
-  onWholeSite: Option[Boolean] = None,
-  onCategoryId: Option[Int] = None,
-  onPageId: Option[PageId] = None,
-  onPostId: Option[PostId] = None,
-  onTagId: Option[TagLabelId] = None,
-  mayEditPage: Option[Boolean] = None,
-  mayEditComment: Option[Boolean] = None,
-  mayEditWiki: Option[Boolean] = None,
-  mayEditOwn: Option[Boolean] = None,
-  mayDeletePage: Option[Boolean] = None,
-  mayDeleteComment: Option[Boolean] = None,
-  mayCreatePage: Option[Boolean] = None,
-  mayPostComment: Option[Boolean] = None,
-  maySee: Option[Boolean] = None,
-  maySeeOwn: Option[Boolean] = None) {
+  forPeopleId: PatId,
+  onWholeSite: Opt[Bo] = None,
+  onCategoryId: Opt[CatId] = None,
+  onPageId: Opt[PageId] = None,
+  onPostId: Opt[PostId] = None,
+  onTagId: Opt[TagLabelId] = None,
+  mayEditPage: Opt[Bo] = None,
+  mayEditComment: Opt[Bo] = None,
+  mayEditWiki: Opt[Bo] = None,
+  mayEditOwn: Opt[Bo] = None,
+  mayDeletePage: Opt[Bo] = None,
+  mayDeleteComment: Opt[Bo] = None,
+  mayCreatePage: Opt[Bo] = None,
+  mayPostComment: Opt[Bo] = None,
+  maySee: Opt[Bo] = None,
+  maySeeOwn: Opt[Bo] = None) {
 
   // maySeeIfEmbeddedAlthoughLoginRequired  [emb_login_req]
   //  — for embedded comments categories, when site Login Required to Read enabled.
 
-  // Can be nice for staff — and which other people? — to see unlisted categories
+  // Can be nice for staff — and which other people? — to see unlisted categories
   // and topics:
-  // maySeeUnlistedTopics  ?
+  // maySeeUnlistedTopics  ?   [maySeeUnlisted]
 
   // Later, perhaps:
   // pin/unpin

@@ -200,7 +200,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
           : EmptyTestForum {
       const members = opts.members ||
               ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory'];
-      const forum = {
+      const forum: Partial<EmptyTestForum> = {
         siteData: site,
         forumPage: <PageToMake> undefined,
         members: {
@@ -220,7 +220,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         },
         guests: {
         },
-        topics: <any> {},
+        topics: {},
         categories: <any> {},
       };
 
@@ -255,11 +255,12 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         introText: opts.introText,
       });
 
-      forum.categories.rootCategory = { id: rootCategoryId };
+      forum.categories.rootCat = forum.categories.rootCategory = { id: rootCategoryId };
 
       // ---- Categories
 
-      forum.categories.categoryA = api.addCategoryWithAboutPage(forumPage, {
+      forum.categories.catA =
+            forum.categories.categoryA = api.addCategoryWithAboutPage(forumPage, {
         id: defaultCategoryId,
         parentCategoryId: rootCategoryId,
         name: "CategoryA",
@@ -268,7 +269,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       });
       api.addDefaultCatPerms(site, forum.categories.categoryA.id, 1, opts.categoryPerms);
 
-      return forum;
+      return forum as EmptyTestForum;
     },
 
 
@@ -279,7 +280,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       const forum: TwoCatsTestForum = <TwoCatsTestForum> api.addEmptyForum(opts);
       const forumPage: PageJustAdded = forum.forumPage;
 
-      forum.categories.staffOnlyCategory = api.addCategoryWithAboutPage(forumPage, {
+      forum.categories.staffCat =
+            forum.categories.staffOnlyCategory = api.addCategoryWithAboutPage(forumPage, {
         id: 3,  // 1 = root, 2 = default category A, 3 = this, staff
         parentCategoryId: forumPage.categoryId,
         name: "Staff Only",
@@ -315,6 +317,34 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
     },
 
 
+    addCatABForum: function(opts: { title: St, introText?: St,
+          members?: WellKnownMemberUsername[], categoryAExtId?: St,
+          categoryPerms?: 'FullMembersMayEditWiki' }): CatABTestForum {
+
+      const forum: CatABTestForum = api.addTwoCatsForum(opts) as CatABTestForum;
+      const forumPage: PageJustAdded = forum.forumPage;
+
+      // If 'FullMembersMayEditWiki', Category A has 3 perms:
+      // 1) for Everyone, 2) for Full-members-to-edit-wiki, and 3) for Staff.
+      // Then, the next availabe perm id is 3 + 1 = 4  (+ 1 is the root cat).
+      // REFACTOR use fn findNextPermId() instead? [refctr_nxt_prmid]
+      const morePerms = !!opts.categoryPerms;
+      const startPermsId = (morePerms ? 4 : 3) + 1;   // +1  is for the staff cat
+
+      forum.categories.catB = api.addCategoryWithAboutPage(forumPage, {
+        id: 4,  // 1 = root, 2 = category A, 3 = staff, 4 = this
+        parentCategoryId: forumPage.categoryId,
+        name: "CatB",
+        slug: 'cat-b',
+        aboutPageText: "Category B description.",
+      });
+      api.addDefaultCatPerms(site, forum.categories.catB.id,
+            startPermsId, opts.categoryPerms);
+
+      return forum;
+    },
+
+
     addTwoPagesForum: function(opts: { title: string, introText?: string,
           members?: WellKnownMemberUsername[], categoryExtId?: string,
           categoryPerms?: 'FullMembersMayEditWiki' })
@@ -327,7 +357,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
 
       // id: 4, because 1 = root, 2 = default category A, 3 = staff cat.
       const specificCategoryId = 4;
-      forum.categories.specificCategory = api.addCategoryWithAboutPage(forumPage, {
+      forum.categories.specificCat =
+            forum.categories.specificCategory = api.addCategoryWithAboutPage(forumPage, {
         id: specificCategoryId,
         extId: opts.categoryExtId,
         parentCategoryId: forumPage.categoryId,
@@ -348,7 +379,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       dieIf(!forum.members.michael, "Add member Michael, he's a page author [TyE503MQS]");
       dieIf(!forum.members.maria, "Add member Maria, she's a page author [TyE503MQ7]");
 
-      forum.topics.byMariaCategoryA = api.addPage({
+      forum.topics.byMariaCatA = forum.topics.byMariaCategoryA = api.addPage({
         dbgSrc: 'LgFrmTstTpcs',
         id: 'byMariaCategoryA',
         folder: '/',
@@ -361,7 +392,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         authorId: forum.members.maria.id,
       });
 
-      forum.topics.byMichaelCategoryA = api.addPage({
+      forum.topics.byMichaelCatA = forum.topics.byMichaelCategoryA = api.addPage({
         dbgSrc: 'LgFrmTstTpcs',
         id: 'byMichaelCategoryA',
         folder: '/',
@@ -388,7 +419,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       const unlistedCategoryId = 5;
       const deletedCategoryId = 6;
 
-      forum.categories.categoryB = api.addCategoryWithAboutPage(forumPage, {
+      forum.categories.catB =
+            forum.categories.categoryB = api.addCategoryWithAboutPage(forumPage, {
         id: categoryBId,
         parentCategoryId: forumPage.categoryId,
         name: "CategoryB",
@@ -396,7 +428,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         aboutPageText: "Category B description.",
       });
 
-      forum.categories.staffOnlyCategory = api.addCategoryWithAboutPage(forumPage, {
+      forum.categories.staffCat =
+            forum.categories.staffOnlyCategory = api.addCategoryWithAboutPage(forumPage, {
         id: staffOnlyCategoryId,
         parentCategoryId: forumPage.categoryId,
         name: "Staff Only",
@@ -404,7 +437,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         aboutPageText: "Staff only category description.",
       });
 
-      forum.categories.unlistedCategory = api.addCategoryWithAboutPage(forumPage, {
+      forum.categories.unlistedCat =
+            forum.categories.unlistedCategory = api.addCategoryWithAboutPage(forumPage, {
         id: unlistedCategoryId,
         parentCategoryId: forumPage.categoryId,
         name: "Unlisted Cat",
@@ -413,7 +447,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         unlistCategory: true,
       });
 
-      forum.categories.deletedCategory = api.addCategoryWithAboutPage(forumPage, {
+      forum.categories.deletedCat =
+            forum.categories.deletedCategory = api.addCategoryWithAboutPage(forumPage, {
         id: deletedCategoryId,
         parentCategoryId: forumPage.categoryId,
         name: "Deleted Category",
@@ -447,10 +482,15 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
 
       // ---- Pages
 
+      forum.topics.aboutCatA =
       forum.topics.aboutCategoryA = { title: 'About category CategoryA' };
+      forum.topics.aboutCatB =
       forum.topics.aboutCategoryB = { title: 'About category CategoryB' };
+      forum.topics.aboutUnlistedCat =
       forum.topics.aboutUnlistedCategory = { title: 'About category Unlisted Cat' };
-      forum.topics.aboutStaffOnlyCategory = { title: 'About category Staff Only' };
+      forum.topics.aboutStaffCat = { title: 'About category Staff Only' };
+      forum.topics.aboutStaffOnlyCategory = forum.topics.aboutStaffCat;
+      forum.topics.aboutDeletedCat =
       forum.topics.aboutDeletedCategory = { title: 'About category Deleted Category' };
 
       forum.topics.byMariaCategoryA = api.addPage({

@@ -1,138 +1,295 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import c = require('../test-constants');
+import assert = require('../utils/ty-assert');
+// import fs = require('fs');  EMBCMTS
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
+import { buildSite } from '../utils/site-builder';
+import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
 import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
+import lad = require('../utils/log-and-die');
+import c = require('../test-constants');
+
+
+let richBrowserA: TyE2eTestBrowser;
+let richBrowserB: TyE2eTestBrowser;
+let owen: Member;
+let owen_brA: TyE2eTestBrowser;
+let maria: Member;
+let maria_brB: TyE2eTestBrowser;
+let michael: Member;
+let michael_brB: TyE2eTestBrowser;
+
+let site: IdAddress;
+let forum: CatABTestForum;
+
+const searchWord = 'searchWord';
+
+let topicCatAUrl: St;
+const topicCatATitle = 'topicCatATitle ' + searchWord;
+const topicCatABody = 'topicCatABody';
+
+let topicCatBUrl: St;
+const topicCatBTitle = 'topicCatBTitle ' + searchWord;
+const topicCatBBody= 'topicCatBBody';
 
 
 
+describe(`categories-delete.2br   TyTE2ECATDEL01`, () => {
 
+  it(`construct site`, () => {
+    const builder = buildSite();
+    forum = builder.addCatABForum({
+      title: "Some E2E Test",
+      members: undefined,
+    });
 
-var everyone;
-var owen;
-var maria;
+    richBrowserA = new TyE2eTestBrowser(wdioBrowserA);
+    richBrowserB = new TyE2eTestBrowser(wdioBrowserB);
 
-var idAddress;
-let categoryToDeleteId = 3;
-let categoryToDeleteName = "To-Delete";
-let categoryToDeleteSlug = "to-delete";
+    owen = forum.members.owen;
+    owen_brA = richBrowserA;
 
-describe("categories", () => {
+    maria = forum.members.maria;
+    maria_brB = richBrowserB;
+    michael = forum.members.michael;
+    michael_brB = richBrowserB;
 
-  it("initialize people", () => {
-    everyone = browser;
-    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
-    maria = _.assign(new TyE2eTestBrowser(browserB), make.memberMaria());
+    assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('categories');
-    let category = make.categoryWithIdFor(categoryToDeleteId, make.findForumPage(site.pages));
-    category.name = categoryToDeleteName;
-    category.slug = categoryToDeleteSlug;
-    site.categories.push(category);
-    site.pages.push(make.page({
-      id: 'page_one',
-      role: c.TestPageRole.Discussion,
-      authorId: owen.id,
-    }));
-    site.pagePaths.push(make.pagePath('page_one', '/', true));
-    site.members.push(make.memberModeratorMons());
-    site.members.push(make.memberMaria());
-    idAddress = server.importSiteData(site);
+  it(`import site`, () => {
+    site = server.importSiteData(forum.siteData);
+    server.skipRateLimits(site.id);
   });
 
-  it("A stranger sees page_one in the topic list", () => {
-    // TESTS_MISSING
+
+
+  // ----- Create topics   (dupl code [03RGM234])
+
+
+  it(`Maria goes to Cat A`, () => {
+    maria_brB.forumTopicList.goHere({
+          origin: site.origin, categorySlug: forum.categories.catA.slug });
+    maria_brB.complex.loginWithPasswordViaTopbar(maria);
   });
 
-  it("... and can access page_one", () => {
-
+  it(`... posts a topic`, () => {
+    maria_brB.complex.createAndSaveTopic({ title: topicCatATitle, body: topicCatABody });
+    topicCatAUrl = maria_brB.getUrl();
   });
 
-  it("Maria logs in, sees the page in the topic list", () => {
-
+  it(`Maria goes to Cat B`, () => {
+    maria_brB.forumTopicList.goHere({ categorySlug: forum.categories.catB.slug });
   });
 
-  it("... and she can access it too", () => {
-
+  it(`... posts another topic`, () => {
+    maria_brB.complex.createAndSaveTopic({
+          title: topicCatBTitle, body: topicCatBBody });
+    topicCatBUrl = maria_brB.getUrl();
   });
 
-  it("... and search and find that page", () => {
+  it(`Maria leaves, Michael arrives`, () => {
+    maria_brB.topbar.clickLogout();
+    michael_brB.complex.loginWithPasswordViaTopbar(michael);
   });
 
-  it("Owen logs in, views categories", () => {
-    owen.go(idAddress.origin);
-    owen.topbar.clickLogin();
-    owen.loginDialog.loginWithPassword(owen);
-    owen.forumButtons.clickViewCategories();
-    owen.waitForAtLeast(2, '.esForum_cats_cat .forum-title');
-    owen.assertTextMatches('.esForum_cats_cat .forum-title', [/Uncategorized/, /default/]);
-    owen.assertTextMatches('.esForum_cats_cat .forum-title', categoryToDeleteName);
+
+
+  // ----- Can access everything before
+
+
+  it(`Michael sees the page   ttt`, () => {
+    michael_brB.refresh2();
+    michael_brB.assertPageTitleMatches(topicCatBTitle);
   });
 
-  it("Owen deletes the To-Delete category", () => {
+  it(`... he sees the category too, in the category tree  ttt`, () => {
+    michael_brB.forumCategoryList.goHere();
+    // We won't delete cat A.
+    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(
+          forum.categories.catA.name));
+    // But we'll delete cat B (later).
+    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(  // [.111VIS]
+          forum.categories.catB.name));
+    assert.eq(michael_brB.forumCategoryList.numCategoriesVisible(), 2);
   });
 
-  it("Maria can no longer access the page in the deleted category", () => {
+  it(`... he searches for the page ...`, () => {
+    michael_brB.goToSearchPage(searchWord);
   });
 
-  it("... and she no longer sees the category in the category tree", () => {
+  it(`... finds it, and the other page too   ttt`, () => {
+    michael_brB.searchResultsPage.waitForAssertNumPagesFound(searchWord, 2)
+    michael_brB.searchResultsPage.assertResultPageTitlePresent(topicCatATitle);
+    michael_brB.searchResultsPage.assertResultPageTitlePresent(topicCatBTitle);
   });
 
-  it("... and cannot access the category topic list", () => {
+  it(`... sees the topic in the Cat B topics list   ttt`, () => {
+    michael_brB.forumTopicList.goHere({ categorySlug: forum.categories.catB.slug });
+    michael_brB.forumTopicList.waitForTopicVisible(topicCatBTitle);
   });
 
-  it("... and cannot search-and-find the page in the deleted category", () => {
+
+
+  // ----- Delete category
+
+
+  it(`Owen goes to Cat A`, () => {
+    owen_brA.forumTopicList.goHere({
+          origin: site.origin, categorySlug: forum.categories.catA.slug });
+    owen_brA.complex.loginWithPasswordViaTopbar(owen);
   });
 
-  it("Maria leaves, a stranger arrives", () => {
+  it(`Owen wants to delete Cat A`, () => {
+    owen_brA.forumButtons.clickEditCategory();
   });
 
-  it("The stranger also cannot longer access the page in the deleted category", () => {
+  it(`... won't work — it's the default category`, () => {
+    owen_brA.waitForVisible('.e_0Del');
   });
 
-  it("... and doesn't see the category in the category tree", () => {
+  it(`Oh well. Owen goes to Cat B instead`, () => {
+    owen_brA.categoryDialog.cancel();
+    owen_brA.forumTopicList.goHere({ categorySlug: forum.categories.catB.slug });
   });
 
-  it("... and cannot access the category topic list", () => {
+  it(`... deletes Cat B`, () => {
+    owen_brA.forumButtons.clickEditCategory();
+    owen_brA.categoryDialog.deleteCategory();
   });
 
-  it("... and cannot search-and-find the page in the deleted category", () => {
+
+
+  // ----- Cannot access topics
+
+
+  it(`Michael attempts to post a new topic in Cat B`, () => {
+    michael_brB.complex.createAndSaveTopic({
+          title: "Won't Work", body: "Some text.", resultInError: true });
   });
 
-  it("Owen undeletes the category", () => {
+  it(`... won't work — category deleted`, () => {
+    michael_brB.assertNotFoundError({ whyNot: 'CategroyDeleted' });
   });
 
-  it("Now the stranger sees the page in the topic list, again", () => {
+  it(`He can no longer list topics in the category`, () => {
+    michael_brB.refresh2();
   });
 
-  it("... and can search-and-find it, again", () => {
+  it(`... there's a "Category not found" error`, () => {
+    michael_brB.forumCategoryList.assertCategoryNotFoundOrMayNotAccess();
   });
 
-  it("... and can access it, again", () => {
+  it(`... he doesn't see the category in the category tree`, () => {
+    michael_brB.forumCategoryList.goHere();
+    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(
+          forum.categories.catA.name));
+    // Deleted:
+    assert.not(michael_brB.forumCategoryList.isCategoryVisible(  // [.111VIS]
+          forum.categories.catB.name));
+    assert.eq(michael_brB.forumCategoryList.numCategoriesVisible(), 1);
   });
 
-  it("Maria returns", () => {
+  it(`He jumps directly to Maria's topic`, () => {
+    michael_brB.go2(topicCatBUrl);
   });
 
-  it("... and sees the category in the category tree, and the page too, again", () => {
+  it(`... but cannot access it`, () => {
+    michael_brB.assertNotFoundError({ whyNot: 'CategroyDeleted' });
   });
 
-  it("... and can access the category topic list", () => {
+  it(`He cannot search-and-find the page in the deleted category`, () => {
+    michael_brB.goToSearchPage(searchWord);
   });
 
-  it("... and she can search-and-find it, too", () => {
-
+  it(`... he finds only Maria's page in Cat A`, () => {
+    michael_brB.searchResultsPage.waitForAssertNumPagesFound(searchWord, 1)
+    michael_brB.searchResultsPage.assertResultPageTitlePresent(topicCatATitle);
   });
 
-  it("... and can access it, again, too", () => {
+  it(`He can access Maria's topic in Cat A though`, () => {
+    michael_brB.go2(topicCatAUrl);
+    michael_brB.assertPageTitleMatches(topicCatATitle);
+  });
+
+  it(`... and see topics in Cat A  (none from Cat B)`, () => {
+    michael_brB.topbar.clickHome();
+    michael_brB.forumTopicList.waitForTopicVisible(topicCatATitle);
+    michael_brB.forumTopicList.assertNumVisible(1);  // not topicCatBTitle
+  });
+
+  it(`... and he can post a topic in Cat A  (it's the default cat)`, () => {
+    michael_brB.complex.createAndSaveTopic({ title: "Will Work", body: "Some text." });
+  });
+
+
+
+  // ----- Admin access deleted category?
+
+
+  /* Hmm currently the deleted cat isn't listed here:
+  it(`Owen can see the deleted category?`, () => {
+    owen_brA.forumCategoryList.goHere();
+    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(
+          forum.categories.catA.name));
+    // Deleted, but Owen is admin:
+    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(  // [.111VIS]
+          forum.categories.catB.name));
+  });
+
+  it(`... he opens it`, () => {
+    owen_brA.forumCategoryList.openCategory(forum.categories.catB.name);
+  }); */
+
+
+
+  // ----- Undelete category
+
+
+  it(`Owen undeletes the deleted category`, () => {
+    owen_brA.forumButtons.clickEditCategory();
+    owen_brA.categoryDialog.undeleteCategory();
+  });
+
+
+
+  // ----- Can access topics again
+
+
+  it(`Now Michael sees the category in the categories list, again`, () => {
+    michael_brB.topbar.clickHome();
+    michael_brB.forumButtons.clickViewCategories();
+    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(
+          forum.categories.catA.name));
+    // It's back:
+    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(  // [.111VIS]
+          forum.categories.catB.name));
+    assert.eq(michael_brB.forumCategoryList.numCategoriesVisible(), 2);
+  });
+
+  it(`... and can open the category`, () => {
+    michael_brB.forumCategoryList.openCategory(forum.categories.catB.name);
+  });
+
+  it(`... see the topics inside`, () => {
+    michael_brB.forumTopicList.waitForTopicVisible(topicCatBTitle);
+  });
+
+  it(`... access the topics`, () => {
+    michael_brB.forumTopicList.navToTopic(topicCatBTitle);
+    michael_brB.assertPageTitleMatches(topicCatBTitle);
+  });
+
+  it(`... and can search-and-find it, again`, () => {
+    michael_brB.goToSearchPage(searchWord);
+  });
+
+  it(`... finds it, and the other page too`, () => {
+    michael_brB.searchResultsPage.waitForAssertNumPagesFound(searchWord, 2)
+    michael_brB.searchResultsPage.assertResultPageTitlePresent(topicCatATitle);
+    michael_brB.searchResultsPage.assertResultPageTitlePresent(topicCatBTitle); // here
   });
 
 });

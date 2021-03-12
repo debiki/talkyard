@@ -373,13 +373,13 @@ trait CategoriesDao {
     val filteredPages = pagesInclForbidden filter { page =>
       val categories = getAncestorCategoriesRootLast(page.categoryId)
       val may = ed.server.auth.Authz.maySeePage(
-        page.meta,
-        user = authzCtx.requester,
-        groupIds = authzCtx.groupIdsUserIdFirst,
-        pageMembers = getAnyPrivateGroupTalkMembers(page.meta),
-        categoriesRootLast = categories,
-        tooManyPermissions = authzCtx.tooManyPermissions,
-        maySeeUnlisted = false) // pageQuery.pageFilter.includesUnlisted
+            page.meta,
+            user = authzCtx.requester,
+            groupIds = authzCtx.groupIdsUserIdFirst,
+            pageMembers = getAnyPrivateGroupTalkMembers(page.meta),
+            catsRootLast = categories,
+            tooManyPermissions = authzCtx.tooManyPermissions,
+            maySeeUnlisted = false) // pageQuery.pageFilter.includesUnlisted
       may == MayMaybe.Yes
     }
 
@@ -512,10 +512,10 @@ trait CategoriesDao {
   }
 
 
-  private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      includeDeleted: Boolean,
-      inclCatsWithTopicsUnlisted: Boolean,
-      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]): Unit = {
+  private def appendMaySeeCategoriesInTree(rootCategoryId: CatId, includeRoot: Bo,
+      includeDeleted: Bo,
+      inclCatsWithTopicsUnlisted: Bo,
+      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]): U = {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
@@ -527,13 +527,13 @@ trait CategoriesDao {
       return
     })
 
-    val categories = getAncestorCategoriesRootLast(rootCategoryId)
+    val catsRootLast = getAncestorCategoriesRootLast(rootCategoryId)
 
     // May we see this category?
     // (Could skip checking the ancestors again, when we've recursed into a child category.)
     // (Skip the root category in this check; cannot set permissions on it. [0YWKG21])
-    if (!categories.head.isRoot) {
-      val may = Authz.maySeeCategory(authzCtx, categories)
+    if (!catsRootLast.head.isRoot) {
+      val may = Authz.maySeeCategory(authzCtx, catsRootLast = catsRootLast)
       if (may.maySee isNot true)
         return
     }
@@ -541,7 +541,7 @@ trait CategoriesDao {
     if (!includeDeleted && startCategory.isDeleted)
       return
 
-    COULD // add a seeUnlisted permission? If in a cat, a certain group should see unlisted topics.
+    COULD // add a [maySeeUnlisted] permission? If in a cat, a certain group should see unlisted topics.
     val onlyForStaff = startCategory.unlistCategory || startCategory.isDeleted  // [5JKWT42]
     if (onlyForStaff && !authzCtx.isStaff)
       return

@@ -591,8 +591,11 @@ interface EmptyTestForum {
   };
   guests: {
   };
+  topics: {};
   categories: {
+    rootCat: { id: Nr },
     rootCategory: { id: number },
+    catA: CategoryJustAdded;
     categoryA: CategoryJustAdded;
   };
 }
@@ -601,11 +604,33 @@ interface EmptyTestForum {
 interface TwoCatsTestForum extends EmptyTestForum {
   topics: {
     aboutCategoryA: { title: string };
+    aboutStaffCat: { title: St };
     aboutStaffOnlyCategory: { title: string };
   };
   categories: {
+    rootCat: { id: Nr },
     rootCategory: { id: number },
+    catA: CategoryJustAdded;
     categoryA: CategoryJustAdded;
+    staffCat: CategoryJustAdded;
+    staffOnlyCategory: CategoryJustAdded;
+  };
+}
+
+
+interface CatABTestForum extends TwoCatsTestForum {
+  topics: {
+    aboutCategoryA: { title: string };
+    aboutStaffCat: { title: St };
+    aboutStaffOnlyCategory: { title: string };
+  };
+  categories: {
+    rootCat: { id: Nr },
+    rootCategory: { id: number },
+    catA: CategoryJustAdded;
+    categoryA: CategoryJustAdded;
+    catB: CategoryJustAdded;
+    staffCat: CategoryJustAdded;
     staffOnlyCategory: CategoryJustAdded;
   };
 }
@@ -613,15 +638,23 @@ interface TwoCatsTestForum extends EmptyTestForum {
 
 interface TwoPagesTestForum extends TwoCatsTestForum {
   topics: {
+    byMariaCatA: PageJustAdded;
     byMariaCategoryA: PageJustAdded;
+    byMichaelCatA: PageJustAdded;
     byMichaelCategoryA: PageJustAdded;
+    aboutCatA: { title: string };
     aboutCategoryA: { title: string };
+    aboutStaffCat: { title: string };
     aboutStaffOnlyCategory: { title: string };
   };
   categories: {
+    rootCat: { id: Nr },
     rootCategory: { id: number },
+    catA: CategoryJustAdded;
     categoryA: CategoryJustAdded;
+    staffCat: CategoryJustAdded;
     staffOnlyCategory: CategoryJustAdded;
+    specificCat: CategoryJustAdded;
     specificCategory: CategoryJustAdded;
   };
 }
@@ -637,18 +670,29 @@ interface LargeTestForum extends EmptyTestForum {
     byMariaUnlistedCat: PageJustAdded;
     byMariaDeletedCat: PageJustAdded;
     byMichaelCategoryA: PageJustAdded;
+    aboutCatA: { title: St };
     aboutCategoryA: { title: string };
+    aboutCatB: { title: St };
     aboutCategoryB: { title: string };
+    aboutUnlistedCat: { title: St };
     aboutUnlistedCategory: { title: string };
+    aboutStaffCat: { title: St };
     aboutStaffOnlyCategory: { title: string };
+    aboutDeletedCat: { title: St };
     aboutDeletedCategory: { title: string };
   };
   categories: {
+    rootCat: { id: Nr },
     rootCategory: { id: number },
+    catA: CategoryJustAdded;
     categoryA: CategoryJustAdded;
+    catB: CategoryJustAdded;
     categoryB: CategoryJustAdded;
+    staffCat: CategoryJustAdded;
     staffOnlyCategory: CategoryJustAdded;
+    unlistedCat: CategoryJustAdded;
     unlistedCategory: CategoryJustAdded;
+    deletedCat: CategoryJustAdded;
     deletedCategory: CategoryJustAdded;
   };
 }

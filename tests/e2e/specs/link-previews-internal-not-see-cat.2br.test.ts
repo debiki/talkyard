@@ -216,7 +216,7 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   });
 
 
-  it(`Maria clicks the link to Owen's page`, () => {
+  it(`Maria clicks the link to Owen's staff-only page`, () => {
     const sel = utils.makePreviewOkSelector('InternalLink', { url: owensReplyUrl() });
     maria_brB.repeatUntilAtNewUrl(() => {
       maria_brB.waitAndClick(sel);
@@ -224,10 +224,14 @@ describe(`link-previews-internal-not-see-cat.2br  TyTE2ELNPVIN4837`, () => {
   });
 
 
-  it(`... she gets a page not found error, because accesss denied`, () => {
+  it(`... she gets a page not found error, because accesss denied  TyT0ACSPG043`, () => {
+    // Remove:
     maria_brB.notFoundDialog.waitAndAssertErrorMatches(
           'TyE404_', '-TyEM0SEE_-TyMMBYSEE_')
+    // Instead, only this: (it's the same)
+    maria_brB.assertNotFoundError({ whyNot: 'MayNotSeeCat' });
   });
 
+  // TESTS_MISSING  Link to access-denied *sub category*.  TyTE2ELNSUBCAT
 });
 

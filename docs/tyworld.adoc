@@ -95,3 +95,29 @@ People both in and outside the organization discuss something. These types:
 == Topic statuses
 
 
+
+
+== Categories and permissions
+
+
+=== Sub category permissions
+
+If moving a publicly visible category S to another category B, so that S becomes
+a sub category of B, then, in Talkyard, category S won't be any more visible than B.
+Anything else would be unexpected: People (incl I) assume that if base category B
+is access restricted, then sub cats in B, are, they too.  `[see_sub_cat]`
+
+(Later, maybe maybe there could be a "power admin" feature to optionally allow access
+to sub categories, although the base category is access restricted. [power_admin]
+Let's say an organizaiton creates a category for a project, and invites external
+collaborators to post questions and ideas in a sub category — but the org people
+don't want the external people to see the base category.  But the people in the org
+still think it's nice to have everything-related-to-the-project in the same category.
+Or maybe this'd be better implemented as sub sub cats?
+Proj Base Cat: { Proj Private: ...Private sub-sub cats, Proj Ext: ...pub sub-sub cats })
+
+Only may-Not-see is inherited in the category tree — other cat perms, e.g.
+may-post-topics, are not inherited; instead, are configured per category.
+Maybe it'd be nice if may-edit-wiki permissions got inherited?  Or if, when adding
+a sub category, or editing the base category perms, one could apply the base
+category settings to the sub cats  `[propagate_cat_perms]`  (instead of inheriting).

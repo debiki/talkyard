@@ -129,7 +129,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       pageMeta, requester,
       dao.getGroupIdsOwnFirst(requester),
       dao.getAnyPrivateGroupTalkMembers(pageMeta),
-      categoriesRootLast,
+      catsRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdE2QVBF06")
 

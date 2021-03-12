@@ -97,7 +97,7 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
                   user = authzCtx.requester,
                   groupIds = authzCtx.groupIdsUserIdFirst,
                   pageMembers = Set.empty, // getAnyPrivateGroupTalkMembers(page.meta),
-                  categoriesRootLast = categories,
+                  catsRootLast = categories,
                   tooManyPermissions = authzCtx.tooManyPermissions,
                   // Embedded discussion topics are typically unlisted.
                   maySeeUnlisted = true)
