@@ -331,7 +331,8 @@ function runAllE2eTests {
   $r s/wdio --only chat-create-from-profile-pages.2browsers $args
 
   $r s/wdio --only categories-basic.3browsers $args
-  #$r s/wdio --only categories-delete.2browsers $args
+  $r s/wdio --only categories-delete.2br $args
+  #$r s/wdio --only category-permissions.2br $args
 
   $r s/wdio --only private-chat.3browsers $args
 
