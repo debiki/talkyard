@@ -4,7 +4,7 @@ git_lock_file='.git/modules/modules/ed-versions/index.lock'
 versions_file='version-tags.log'
 
 promote_from_chan='tyse-v0-dev'
-promote_to_chan='tyse-v0-regular'
+promote_to_chan='tyse-v0-regular'   #  [.must_be_dev_regular]
 
 if [ -f $git_lock_file ]; then
   echo
@@ -143,23 +143,30 @@ pushd .
 cd relchans/$promote_to_chan
   git fetch origin $promote_to_chan
   git merge --ff-only origin/$promote_to_chan
-  echo $release_version_tag >> $versions_file
-  # The tag: edition (tyse), version and channel (regular).
+  echo "$release_version_tag" >> $versions_file
+  # The tag: edition (tyse), version and channel (regular).  [.must_be_dev_regular]
   release_version_tag_w_ed_chan="tyse-$release_version_tag-regular"
   git add $versions_file
   git commit -m "Release $release_version_tag_w_ed_chan."
-  git branch -f master
+  echo
+  echo "DO THIS in relchans/$promote_to_chan/:"
+  echo git push origin $promote_to_chan
   # 'master' is for backw compat. Don't incl in v1. [ty_v1]
-  echo "DO THIS:"
-  echo git push origin master $promote_to_chan
+  if [ "$promote_to_chan" = 'tyse-v0-regular' ]; then
+    git branch -f master
+    echo git push origin master
+  fi
 popd
 
+echo
+echo "AND THIS in ./:"
 # Future tag name:
 # Need to include release channel in the Git tag, otherwise we'd try to push the
 # same tag to different branches, e.g. push  tyse-v0.2021.04-abc123def
 # to both the $promote_from_chan and $promote_to_chan branches — but then the last push
 # would overwrite the first.  Instead, we push two different tags:
 # tyse-v0.2021.04-abc123def-dev  and  tyse-v0.2021.04-abc123def-regular.
+# [.must_be_dev_regular]
 echo git tag $release_version_tag_w_ed_chan tyse-$wip_version_tag-dev
 
 echo git push origin $release_version_tag_w_ed_chan
