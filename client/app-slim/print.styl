@@ -24,16 +24,17 @@
   //.edAvtr img
   //  display: none;
 
-  // Buttons cannot be clicked, on paper. Or at least clicking has no effect.
+  // Buttons cannot be clicked, on paper. Or at least clicking has no effect
+  // (unless you also say the magic word).
+  #e_ViewCatsB,
   button,
   .s_OpReB,
-  .dw-hide
-    visibility: hidden;
+  .dw-hide,
+  .esForumIntro_btns
     visibility: hidden;
 
   .dw-a
     display: none;
-    visibility: hidden;
 
   .dw-a.dw-vote-count
     display: block;
@@ -41,4 +42,8 @@
 
   .s_T-Prvw,
   .dw-page-notf-level
+    display: none;
+
+  // The login / username menu button.
+  .s_Tb_MyBs
     display: none;
