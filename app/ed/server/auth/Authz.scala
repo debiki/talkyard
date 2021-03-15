@@ -77,18 +77,18 @@ case class ForumAuthzContext(
 case class CategoryAuthzContext(
   requester: Option[User],
   permissions: immutable.Seq[PermsOnPages],
-  categoriesRootLast: immutable.Seq[Category]) extends AuthzContext
+  catsRootLast: immutable.Seq[Category]) extends AuthzContext
 
 case class PageAuthzContext(
   requester: Option[User],
   permissions: immutable.Seq[PermsOnPages],
-  categoriesRootLast: immutable.Seq[Category],
+  catsRootLast: immutable.Seq[Category],
   pageMeta: PageMeta,
   pageMembers: Option[Set[UserId]]) extends AuthzContext {
 
   require(!pageMeta.pageRole.isPrivateGroupTalk || pageMembers.isDefined, "EdE6LPK2A0")
-  require(pageMeta.categoryId.isDefined == categoriesRootLast.nonEmpty, "EdE0WYK15")
-  require(!pageMeta.categoryId.exists(_ != categoriesRootLast.head.id), "EdE3GPJU0")
+  require(pageMeta.categoryId.isDefined == catsRootLast.nonEmpty, "EdE0WYK15")
+  require(!pageMeta.categoryId.exists(_ != catsRootLast.head.id), "EdE3GPJU0")
 } */
 
 
@@ -136,8 +136,9 @@ object Authz {
 
     val user = userAndLevels.user
 
-    val mayWhat = checkPermsOnPages(Some(user), groupIds, pageMeta = None, pageMembers = None,
-      inCategoriesRootLast, tooManyPermissions)
+    val mayWhat = checkPermsOnPages(
+          Some(user), groupIds, pageMeta = None, pageMembers = None,
+          catsRootLast = inCategoriesRootLast, tooManyPermissions)
 
     def isPrivate = pageRole.isPrivateGroupTalk && groupIds.nonEmpty &&
       inCategoriesRootLast.isEmpty
@@ -146,7 +147,7 @@ object Authz {
       // Ok, may see.
     }
     else if (mayWhat.maySee isNot true) {
-      return NoNotFound(s"EdEM0CR0SEE-${mayWhat.debugCode}")
+      return NoNotFound(s"TyEM0CR0SEE_-${mayWhat.debugCode}")
     }
 
     if (!mayWhat.mayCreatePage && !isPrivate)
@@ -178,15 +179,17 @@ object Authz {
 
   def maySeePage(
     pageMeta: PageMeta,
-    user: Option[Participant],
+    user: Opt[Pat],
     groupIds: immutable.Seq[GroupId],
     pageMembers: Set[UserId],
-    categoriesRootLast: immutable.Seq[Category],
+    catsRootLast: immutable.Seq[Cat],
     tooManyPermissions: immutable.Seq[PermsOnPages],
-    maySeeUnlisted: Boolean = true): MayMaybe = {
+    maySeeUnlisted: Bo = true): MayMaybe = {
 
-    val mayWhat = checkPermsOnPages(user, groupIds, Some(pageMeta), Some(pageMembers),
-      categoriesRootLast, tooManyPermissions, maySeeUnlisted = maySeeUnlisted)
+    val mayWhat = checkPermsOnPages(
+          user, groupIds, Some(pageMeta), Some(pageMembers),
+          catsRootLast = catsRootLast, tooManyPermissions,
+          maySeeUnlisted = maySeeUnlisted)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0SEE_-${mayWhat.debugCode}")
@@ -195,11 +198,11 @@ object Authz {
   }
 
 
-  def maySeeCategory(authzCtx: AuthzContext, categoriesRootLast: immutable.Seq[Category])
+  def maySeeCategory(authzCtx: AuthzContext, catsRootLast: immutable.Seq[Category])
         : MayWhat = {
     checkPermsOnPages(authzCtx.requester, authzCtx.groupIdsUserIdFirst,
-      pageMeta = None, pageMembers = None, categoriesRootLast, authzCtx.tooManyPermissions,
-      maySeeUnlisted = false)
+          pageMeta = None, pageMembers = None, catsRootLast = catsRootLast,
+          authzCtx.tooManyPermissions, maySeeUnlisted = false)
   }
 
 
@@ -223,8 +226,10 @@ object Authz {
     val user = userAndLevels.user
 
     SHOULD // be check-perms-on pageid + postnr, not just page
-    val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
-      Some(privateGroupTalkMemberIds), inCategoriesRootLast, tooManyPermissions)
+    val mayWhat = checkPermsOnPages(
+          Some(user), groupIds, Some(pageMeta),
+          Some(privateGroupTalkMemberIds), catsRootLast = inCategoriesRootLast,
+          tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0RE0SEE_-${mayWhat.debugCode}")
@@ -273,8 +278,10 @@ object Authz {
       return NoNotFound("TyEM0EDPOSTDELD")
 
     val user = userAndLevels.user
-    val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
-      Some(privateGroupTalkMemberIds), inCategoriesRootLast, tooManyPermissions)
+    val mayWhat = checkPermsOnPages(
+          Some(user), groupIds, Some(pageMeta),
+          Some(privateGroupTalkMemberIds), catsRootLast = inCategoriesRootLast,
+          tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0ED0SEE-${mayWhat.debugCode}")
@@ -332,8 +339,10 @@ object Authz {
       return NoMayNot(s"EdEM0FLGISTHRT", "You may not flag stuff, sorry")
 
     SHOULD // be maySeePost pageid, postnr, not just page
-    val mayWhat = checkPermsOnPages(Some(member), groupIds, Some(pageMeta),
-      Some(privateGroupTalkMemberIds), inCategoriesRootLast, tooManyPermissions)
+    val mayWhat = checkPermsOnPages(
+          Some(member), groupIds, Some(pageMeta),
+          Some(privateGroupTalkMemberIds), catsRootLast = inCategoriesRootLast,
+          tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound("EdEM0FLG0SEE")
@@ -351,8 +360,9 @@ object Authz {
 
     val user = userAndLevels.user
 
-    val mayWhat = checkPermsOnPages(user, groupIds, Some(pageMeta), None, inCategoriesRootLast,
-      tooManyPermissions)
+    val mayWhat = checkPermsOnPages(
+          user, groupIds, Some(pageMeta), None, catsRootLast = inCategoriesRootLast,
+          tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound("EdEM0FRM0SEE")
@@ -383,17 +393,17 @@ object Authz {
     * as Some(false), so don't-know-if-may-see = may-Not-see.
     */
   private def checkPermsOnPages(
-    user: Option[Participant],
+    user: Opt[Pat],
     groupIds: immutable.Seq[GroupId],
-    pageMeta: Option[PageMeta],
-    pageMembers: Option[Set[UserId]],
-    categoriesRootLast: immutable.Seq[Category],
+    pageMeta: Opt[PageMeta],
+    pageMembers: Opt[Set[UserId]],
+    catsRootLast: immutable.Seq[Category],
     tooManyPermissions: immutable.Seq[PermsOnPages],
-    maySeeUnlisted: Boolean = true): MayWhat = {
+    maySeeUnlisted: Bo = true): MayWhat = {
 
     // Admins, but not moderators, have access to everything.
-    // Why? Might sometimes be good with a place for members to bring up problems
-    // with weird behaving moderators, where those mods cannot read and edit & delete
+    // Why not mods? Can be good with a place for members to bring up problems
+    // with misbehaving mods, where those mods cannot read and edit & delete
     // the discussions. [mods_not_all_perms]
     if (user.exists(_.isAdmin))
       return MayEverything
@@ -404,14 +414,19 @@ object Authz {
     // For now, don't let people see pages outside any category. Hmm...?
     // (<= 1 not 0: don't count the root category, no pages should be placed directly in them.)
     /* Enable this later, need to migrate test cases first.
-    if (categoriesRootLast.length <= 1 && !pageRole.exists(_.isPrivateGroupTalk))
+    if (catsRootLast.length <= 1 && !pageRole.exists(_.isPrivateGroupTalk))
       return MayWhat.mayNotSee("EdMNOCATS")
     */
 
-    var mayWhat = MayPerhapsSee
+    var mayWhatForPage = MayPerhapsSee
+    var isPageMember = false
+
+
+    // ----- Check page
 
     pageMeta foreach { meta =>
-      categoriesRootLast.headOption foreach { parentCategory =>
+      // The parent category must be the same in the page meta, as in catsRootLast.
+      catsRootLast.headOption foreach { parentCategory =>
         dieIf(!meta.categoryId.contains(parentCategory.id), "EdE5PBSW2")
       }
 
@@ -424,7 +439,9 @@ object Authz {
 
       // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
       if (meta.pageType == PageType.MindMap && (isOwnPage || isStaff))
-        mayWhat = mayWhat.copy(mayEditPage = true, debugCode = "EdMEDOWNMINDM")
+        mayWhatForPage = mayWhatForPage.copy(
+              mayEditPage = true,
+              debugCode = "EdMEDOWNMINDM")
 
       // Only page participants may see things like private chats. [PRIVCHATNOTFS]
       if (meta.pageType.isPrivateGroupTalk) {
@@ -439,9 +456,18 @@ object Authz {
         if (!thePageMembers.contains(theUser.id))
           return MayWhat.mayNotSee("EdE0SEE0PAGEMBR")
 
-        mayWhat = mayWhat.copyWithMaySeeAndReply(debugCode = "EdMMMEMBR")
+        isPageMember = true
+        mayWhatForPage = mayWhatForPage.copy(
+            mayPostComment = true,
+            maySee = Some(true),
+            debugCode = "EdMMMEMBR")
       }
     }
+
+
+    // ----- Check whole site
+
+    var mayWhatForSite = MayPerhapsSee
 
     val relevantPermissions = tooManyPermissions filter { permission =>  // [7RBBRY2]
       groupIds.contains(permission.forPeopleId)
@@ -449,19 +475,28 @@ object Authz {
 
     // We'll start with no permissions, at the top category, and loop through all categories
     // down to the category in which the page is placed, and add/remove permissions along the way.
+    // Move these pageMeta checks to 'Check page' above?
     val isForumPage = pageMeta.exists(_.pageType == PageType.Forum)
-    var isDeleted = pageMeta.exists(_.isDeleted)
+    var isPageOrCatDeleted = pageMeta.exists(_.isDeleted)
 
     // Later: return may-not-see also if !published?
-    if (isDeleted && !isStaff)
+    if (isPageOrCatDeleted && !isStaff)
       return MayWhat.mayNotSee("TyEPAGEDELD_")
 
     // For now, hardcode may-see the forum page, otherwise only admins would see it.
-    if (isForumPage)
-      mayWhat = mayWhat.copy(maySee = Some(true), debugCode = "EdMMSEEFORUM")
+    if (isForumPage) {
+      mayWhatForSite = mayWhatForSite.copy(
+            maySee = Some(true),
+            debugCode = "EdMMSEEFORUM")
+    }
 
-    for (p <- relevantPermissions; if p.onWholeSite.is(true))
-      mayWhat = mayWhat.addRemovePermissions(p, "EdMMSITEPERM")
+    val relPermsWholeSite = relevantPermissions.filter(_.onWholeSite.is(true))
+    for (p <- relPermsWholeSite) {
+      // Random order? So better add permissions only (not remove).  [2LG5F04W]
+      mayWhatForSite = mayWhatForSite.addPermissions(p, "EdMMSITEPERM")
+    }
+
+    var mayWhat = mayWhatForPage.mergeYes(mayWhatForSite, "TyMMMSSEMGD")
 
     // Hmm. !maySee here? Could happen if maySee is set to false for Everyone, but true for
     // trust-level >= 1. That'd mean only people who have signed up already, may see this website.
@@ -471,16 +506,29 @@ object Authz {
         return mayWhat
     }
 
+
+    // ----- Check categories
+
     // Skip the root category, cannot set permissions on it. [0YWKG21]
-    if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.reverseIterator.drop(1)) {
-      // What if one permission says Some(yes) and another says Some(no), then, may or may not?
-      // Currently there's either Some(yes) or None, only, though. Some(no) = not impl [2LG5F04W]
-      for (p <- relevantPermissions; if p.onCategoryId.is(category.id)) {
-        mayWhat = mayWhat.addRemovePermissions(p, "EdMCATLOOP")
+    val catsRootFirst = catsRootLast.reverseIterator
+    val catsBaseFirst = catsRootFirst.drop(1)
+    var anyCatMayWhat: Opt[MayWhat] = None
+
+    for (category <- catsBaseFirst) {
+      // Start with a fresh MayWhat here — if pat doesn't somehow have
+      // a permission to see this exact category, hen cannot see it, and none
+      // of its sub categories (if any).  [see_sub_cat]
+      var mayWhatThisCat = MayPerhapsSee
+
+      // What if one permission says Some(yes), another says Some(no), then, may, or not?
+      // Currently only Some(yes) or None.  Some(no) not impl [2LG5F04W]
+      val relPermsThisCat = relevantPermissions.filter(_.onCategoryId.is(category.id))
+      for (p <- relPermsThisCat) {
+        mayWhatThisCat = mayWhatThisCat.addPermissions(p, "EdMMSEEADDCATPERM")
       }
 
       if (category.isDeleted) {
-        isDeleted = true
+        isPageOrCatDeleted = true
         if (!isStaff)
           return MayWhat.mayNotSee("TyECATDELD_")
       }
@@ -489,21 +537,34 @@ object Authz {
       // sometimes not listed.)
       // [BACKW_COMPAT_PERMS] should remove !isStaff but first need to update some e2e tests.
       if (!isStaff && !maySeeUnlisted && category.unlistCategory)
-        return MayWhat.mayNotSee("EdE6WKQ0-Unlisted")
+        return MayWhat.mayNotSee("TyE6WKC0-Unlisted")
 
-      // Abort if we may not see this category, or if we don't know.
-      if (mayWhat.maySee isNot true) {
+      // Abort if we may not see this category — also if maySee is None;
+      // that'd mean no permissions have been granted to pat on this category,
+      // then, pat may not see it, or any sub cat.  [see_sub_cat]
+      if (mayWhatThisCat.maySee isNot true) {
         // But maySeeOwn=true has precedence over maySee=false.
-        if (isOwnPage && mayWhat.maySeeOwn) {
+        if (isOwnPage && mayWhatThisCat.maySeeOwn) {
           // Fine, continue.
         }
         else
-          return mayWhat
+          return mayWhatThisCat
       }
+      anyCatMayWhat = Some(mayWhatThisCat)
     }
 
-    // Do this first here, so the is-deleted changes won't get overwritten in later loop laps above.
-    if (isDeleted) {
+    // Only merge with the permissions set directly on the category the page is in.
+    // This means it's possible to let people post topics in a sub cat,
+    // although they may not post topics in the base cat.
+    // (However if they cannot *see* the base cat, then they cannot access any
+    // sub cat at all [see_sub_cat].
+    anyCatMayWhat foreach { catMayWhat =>
+      mayWhat = mayWhat.mergeYes(catMayWhat, "TyMMSEEMRGCATPRM")
+    }
+
+    // Do first here, so is-deleted mayWhat fields won't get overwritten
+    // in the cat loop above.
+    if (isPageOrCatDeleted) {
       mayWhat = mayWhat.copyAsDeleted
     }
 
@@ -515,46 +576,92 @@ object Authz {
 
 /**
   * If maySeeOwn=true, then one may see one's own stuff, even if maySee=false.
+  * If maySeePagesOneIsMembOf=true, then one may see pages one has been added to,
+  *      even if maySee=false.
+  * if mayListUnlistedCat, one get to see a list of topics in the category,
+  *      also if the category is unlisted.
+  * if mayListUnlistedPages, one get to list pages that are otherwise unlisted.
+  *
+  * if maySeeSubCatsThatAllow, then, even if pat may not see this cat,
+  * hen can still se sub cats that are configured to let pat see them.
+  * And maybe reply and create topics in such sub cats,  [see_sub_cat]
+  * depending on their permission settings.
+  * But by default, if pat cannot see the base cat, then pat cannot see any sub cat,
+  * regardless of how the sub cats have been configured.
+  * Because it'd be unexpected if an admin moved a Cat C into a Staff-Only cat,
+  * and then topics in Cat C stayed publicly visible. Better by default "inherit"
+  * the base cat's more restrictive cannot-be-seen behavior.
+  * Don't implement  maySeeSubCatsThatAllow  unless really needed!
   */
 case class MayWhat(
-  mayEditPage: Boolean = false,
-  mayEditComment: Boolean = false,
-  mayEditWiki: Boolean = false,
-  mayEditOwn: Boolean = false,
-  mayDeletePage: Boolean = false,
-  mayDeleteComment: Boolean = false,
-  mayCreatePage: Boolean = false,
-  mayPostComment: Boolean = false,
-  maySee: Option[Boolean] = None,
-  maySeeOwn: Boolean = false,
-  debugCode: String = "") {
+  mayEditPage: Bo = false,
+  mayEditComment: Bo = false,
+  mayEditWiki: Bo = false,
+  mayEditOwn: Bo = false,
+  mayDeletePage: Bo = false,
+  mayDeleteComment: Bo = false,
+  mayCreatePage: Bo = false,
+  mayPostComment: Bo = false,
+  maySee: Opt[Bo] = None,
+  maySeeOwn: Bo = false,
+  // maySeePagesOneIsMembOf: Bo = false
+  // mayListUnlistedCat
+  // mayListUnlistedPages   [maySeeUnlisted]
+  // maySeeSubCatsThatAllow
+  debugCode: St = "") {
 
   require(maySee.isNot(false) || (!mayEditPage && !mayEditComment && !mayEditWiki &&
-      !mayDeletePage && !mayDeleteComment && !mayCreatePage && !mayPostComment), "EdE2WKB5FD")
+        !mayDeletePage && !mayDeleteComment && !mayCreatePage && !mayPostComment),
+        "TyE2WKB5FD")
 
-  def addRemovePermissions(permissions: PermsOnPages, debugCode: String) = MayWhat(
-    mayEditPage = permissions.mayEditPage.getOrElse(mayEditPage),
-    mayEditComment = permissions.mayEditComment.getOrElse(mayEditComment),
-    mayEditWiki = permissions.mayEditWiki.getOrElse(mayEditWiki),
-    mayEditOwn = permissions.mayEditOwn.getOrElse(mayEditOwn),
-    mayDeletePage = permissions.mayDeletePage.getOrElse(mayDeletePage),
-    mayDeleteComment = permissions.mayDeleteComment.getOrElse(mayDeleteComment),
-    mayCreatePage = permissions.mayCreatePage.getOrElse(mayCreatePage),
-    mayPostComment = permissions.mayPostComment.getOrElse(mayPostComment),
-    maySee = permissions.maySee.orElse(maySee),
-    maySeeOwn = permissions.maySeeOwn.getOrElse(maySeeOwn),
-    debugCode)
+  def addPermissions(perms: PermsOnPages, debugCode: St): MayWhat = {
+    // Currently there's only:  None  or  Some(true)  but no Some(false),  [2LG5F04W]
+    // so we're *adding* permissions, only  — the getOrElse below cannot
+    // change the maySomething to false.
+    // Later: If any permission is Some(false), then, that has precedence
+    // over everything else (except for being admin)  ?  [may_not_perms]
+    dieIf(com.debiki.core.isDevOrTest && (
+          perms.mayEditPage.is(false) ||
+          perms.mayEditComment.is(false) ||
+          perms.mayEditWiki.is(false) ||
+          perms.mayEditOwn.is(false) ||
+          perms.mayDeletePage.is(false) ||
+          perms.mayDeleteComment.is(false) ||
+          perms.mayCreatePage.is(false) ||
+          perms.mayPostComment.is(false) ||
+          perms.maySee.is(false) ||
+          perms.maySeeOwn.is(false)), "TyE502MSKP5", s"Weird perms: $perms")
 
-  def copyWithMaySeeAndReply(debugCode: String): MayWhat = copy(
-    mayPostComment = true,
-    maySee = Some(true),
-    debugCode = debugCode)
+    MayWhat(
+          mayEditPage = perms.mayEditPage.getOrElse(mayEditPage),
+          mayEditComment = perms.mayEditComment.getOrElse(mayEditComment),
+          mayEditWiki = perms.mayEditWiki.getOrElse(mayEditWiki),
+          mayEditOwn = perms.mayEditOwn.getOrElse(mayEditOwn),
+          mayDeletePage = perms.mayDeletePage.getOrElse(mayDeletePage),
+          mayDeleteComment = perms.mayDeleteComment.getOrElse(mayDeleteComment),
+          mayCreatePage = perms.mayCreatePage.getOrElse(mayCreatePage),
+          mayPostComment = perms.mayPostComment.getOrElse(mayPostComment),
+          maySee = perms.maySee.orElse(maySee),
+          maySeeOwn = perms.maySeeOwn.getOrElse(maySeeOwn),
+          debugCode = s"${this.debugCode}-$debugCode")
+    }
 
-  def copyWithMaySeeReplyEdit(debugCode: String): MayWhat = copy(
-    mayEditPage = true,
-    mayPostComment = true,
-    maySee = Some(true),
-    debugCode = debugCode)
+  def mergeYes(other: MayWhat, debugCode: St): MayWhat = {
+    // Currently all perms are additive: Yes or absent (implicit No).  [may_not_perms]
+    MayWhat(
+          mayEditPage = other.mayEditPage || mayEditPage,
+          mayEditComment = other.mayEditComment || mayEditComment,
+          mayEditWiki = other.mayEditWiki || mayEditWiki,
+          mayEditOwn = other.mayEditOwn || mayEditOwn,
+          mayDeletePage = other.mayDeletePage || mayDeletePage,
+          mayDeleteComment = other.mayDeleteComment || mayDeleteComment,
+          mayCreatePage = other.mayCreatePage || mayCreatePage,
+          mayPostComment = other.mayPostComment || mayPostComment,
+          maySee = PermsOnPages.merge(other.maySee, maySee),
+          maySeeOwn = other.maySeeOwn || maySeeOwn,
+          debugCode = s"${this.debugCode}-${other.debugCode}-$debugCode")
+  }
+
 
   /** Copies this MayWhat to permissions = those for a deleted page (mostly may-do-nothing).
     **/
@@ -578,7 +685,7 @@ object MayWhat {
     mayDeletePage = true, mayDeleteComment = true, mayCreatePage = true,
     mayPostComment = true, maySee = Some(true), maySeeOwn = true, "EdMMALL")
 
-  def mayNotSee(debugCode: String) = MayWhat(
+  def mayNotSee(debugCode: St): MayWhat = MayWhat(
     mayEditPage = false, mayEditComment = false, mayEditWiki = false, mayEditOwn = false,
     mayDeletePage = false, mayDeleteComment = false, mayCreatePage = false,
     mayPostComment = false, maySee = Some(false), maySeeOwn = false, debugCode)

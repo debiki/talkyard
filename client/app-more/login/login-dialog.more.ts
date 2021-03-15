@@ -558,7 +558,7 @@ export const LoginDialogContent = createClassAndFactory({
             // OpenID 1.0 since long gone, so skip:  icon-yahoo Yahoo!
             )),
 
-        isSignUp && !allowLocalSignup ? null : (
+        isForFirstOwner || isSignUp && !allowLocalSignup ? null : (
           r.p({ id: 'dw-lgi-or-login-using' },
             anyOpenAuth
               ? (isSignUp

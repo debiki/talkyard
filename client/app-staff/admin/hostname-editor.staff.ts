@@ -80,6 +80,20 @@ const HostnameEditorDialog = createComponent({
             "You need to add a CNAME entry to your domain name server that points to ",
             // Make the talkyard.net domain & the @talkyard.io email addr below configurable? [CONFADDRS]
             r.b({}, r.samp({}, "c1.talkyard.net"))),
+          /*r.li({}, r.small({},
+            "(Remember to append a dot ", r.samp({}, '.'), " when you add the " +
+            "CNAME entry. Otherwise your name server will append ", r.i({}, "your"),
+            " domain name, resulting in something like: ",
+            r.samp({}, "c1.talkyard.net.your-domain.com"), ")")),  */
+          r.li({},
+            "Check if the CNAME works: On ", r.b({}, "Mac and Linux: "),
+            r.code({}, ' dig forum.your-domain.com ANY +short '),
+            ". You can install Dig like so: ", r.code({}, " brew install bind "), " or ",
+            r.code({}, " sudo apt install dnsutils "), ". On ", r.b({}, "Windows:"),
+            " You can do something like: ",
+            r.code({}, ' nslookup forum.your-domain.com '), '.', r.br(),
+            "Note that if you do a mistake, it can take hours until a fix takes " +
+            "effect, if some name servers have cached the mistake."),
           r.li({},
             "Don't delete the old CNAME — leave it as is. Later, you can click a certain ",
             r.b({}, "Redirect old addresses"),  // dupl button name [5KFU2R0]
@@ -87,7 +101,8 @@ const HostnameEditorDialog = createComponent({
           r.li({},
             "But before you redirect to the new address, email ", r.b({}, "support@talkyard.io"),
             " and say that you need a Let'sEncrypt https cert for your new custom domain " +
-            "(this hasn't been automated yet).")),
+            "(this hasn't been automated yet)."),
+            ),
         r.p({}, "If you use ", r.b({}, "CloudFlare"),
           ", either 1) configure CloudFlare to send the traffic directly to " +
           "Talkyard, bypassing CloudFlare, or 2) use Full SSL or Full SSL (Strict). " +
@@ -113,7 +128,8 @@ const HostnameEditorDialog = createComponent({
           // the problems with bare domains, + hen must type a 3 letter "password" included
           // in that info, to show that hen has really read it?
           // COULD BUG harmless: Need to tweak this regex, for just 'localhost' to work, in dev mode?
-          regexFour: /^[^\.]+\.([^\.]+\.[^\.]+.*|localhost(\..*)?)?$/, messageFour: "Bare domains not allowed",
+          regexFour: /^[^\.]+\.([^\.]+\.[^\.]+.*|localhost(\..*)?)?$/,
+              messageFour: "Bare domains not allowed — prefix with 'www.' ?",
           lastRegex: /^(.+\.)*[^\.]+\.[^\.]{2,}$/, lastMessage: "Should look like: forum.example.com",
           error: this.state.error, onChangeValueOk: this.onHostnameChanged }));
 

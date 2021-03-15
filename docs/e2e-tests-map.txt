@@ -30,15 +30,17 @@ full text search:
     found by admins:
             navigation-as-admin.test.ts  TyT7WAAR2J4 TyT85WABR0
     not found by non-staff:
-            - api-search-full-text.test.ts  TyT60KTSJ35J
+          - api-search-full-text.test.ts  TyT60KTSJ35J
   custom groups private pages not found:
-            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
+          - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
   direct message,
   private chat,
   restricted category:
-            - api-search-full-text.test.ts  TyT60KTSJ35J
-  sub cat in restricted category:
-            - TESTS_MISSING
+          - api-search-full-text.test.ts  TyT60KTSJ35J
+  sub cat in access restricted base category:
+          - category-permissions.2br   TyTE2ECATPREMS01
+  deleted cat:
+          - categories-delete.2br   TyTE2ECATDEL01
 
 create site & forum -
   create:  create-site-all-logins
@@ -395,7 +397,8 @@ categories -
   edit slug —> old name redirects to new:
           - api-upsert-categories.2browsers.test.ts  TyT503KRDH24  (not impl)
   unlist:
-  delete -
+  delete:
+          - categories-delete.2br   TyTE2ECATDEL01
     gets marked as deleted for staff:
     hidden for non-staff:
     topics hidden unless staff:
@@ -406,6 +409,10 @@ categories -
           - links-internal.2browsers.test.ts  TyTINTLNS54824.TyTDELCATBLNS
   permissions:   see (1QRY7)  no? tag gone?
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+          - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+    sub cats:
+          - category-permissions.2br   TyTE2ECATPREMS01
+          - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
   upsert categories:  (upscats)
   move topic to new category:
           - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
@@ -413,10 +420,15 @@ categories -
 
   sub categories:
     create,
-    move base cat to other cat so becomes sub cat,
+    move base cat to other cat so becomes sub cat:
+          - CategoriesDaoAppSpec.scala
+          - category-permissions.2br   TyTE2ECATPREMS01
     move sub cat to other base cat:
           - CategoriesDaoAppSpec.scala
           - TESTS_MISSING: UX tests   [TyTE2E305TMP24Z]
+    permissions:
+          - category-permissions.2br   TyTE2ECATPREMS01
+          - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
 
 permissions -
   category -

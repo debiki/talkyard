@@ -201,7 +201,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     owensBrowser.go(siteIdAddress.origin + upsertedCategory.urlPaths.activeTopics);
   });
   it("... sees the category name", () => {
-    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCategory: true });
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCat: true });
   });
   it("... sees an empty category topic list", () => {
     owensBrowser.forumTopicList.waitUntilKnowsIsEmpty();
@@ -212,7 +212,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     owensBrowser.go(siteIdAddress.origin + upsertedCategory.urlPaths.newTopics);
   });
   it("... and, again, sees the category name", () => {
-    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCategory: true });
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCat: true });
   });
   it("... and, again, sees an empty category topic list", () => {
     owensBrowser.forumTopicList.waitUntilKnowsIsEmpty();
@@ -223,7 +223,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     owensBrowser.go(siteIdAddress.origin + upsertedCategory.urlPaths.topTopics);
   });
   it("... here too, sees the category name", () => {
-    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCategory: true });
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCat: true });
   });
   it("... here too, sees an empty category topic list", () => {
     owensBrowser.forumTopicList.waitUntilKnowsIsEmpty();
@@ -353,7 +353,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     owensBrowser.go(siteIdAddress.origin + upsertedCategory.urlPaths.activeTopics);
   });
   it("... and sees the category name, and empty topic list", () => {
-    owensBrowser.forumTopicList.waitForCategoryName(UpsCatTwoEditedName, { isSubCategory: true });
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatTwoEditedName, { isSubCat: true });
     owensBrowser.forumTopicList.waitUntilKnowsIsEmpty();
   });
 

@@ -97,7 +97,9 @@ Rw, Row = row, Col = column
 Sav = save
 Sch = Search
 Sm  = small (screen), also: Md, Lg, Xl
-Sub = submit
+Sub = "sub" as in "sub category"
+Sub = submit NO, CLEAN_UP, insetad:
+Sbm = submit
 Sz  = size
 Snz = Snooze
 T   = table

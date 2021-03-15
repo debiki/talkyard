@@ -265,7 +265,7 @@ On Linux, you can:
 sudo -i
 curl -fsSL https://get.docker.com -o install-docker.sh
 sh install-docker.sh
-curl -L https://github.com/docker/compose/releases/download/1.23.2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+curl -L "https://github.com/docker/compose/releases/download/1.28.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version  # should print "docker-compose version ... build ..."
 ```
@@ -308,13 +308,13 @@ how to use docker-compose already.
 
        git clone https://github.com/debiki/talkyard.git talkyard
        cd talkyard
-       apt install make jq
+       apt install make jq inotify-tools
 
- 1. Start Talkyard:
+ 1. Start Talkyard: (`s/tyd` is a Talkyard development helper script)
 
-        make up
+        s/tyd up
 
-    And have a coffee; `make up` takes a while: About 1.5 GB Git submodules
+    And have a coffee — this takes a while: About 1.5 GB Git submodules
     with Nodejs packages, JVM JARs and OpenResty source code will get downloaded,
     Typescript, Stylus and Scala code gets compiled and packaged, Docker images get built.
     You can tail the log messages, by typing `make tail`,
@@ -381,11 +381,16 @@ Editing source code
 
 To edit Typescript code (in `client/app-*/`) you can use VSCode.
 
-If you edit some code and reload the page in the browser, your changes will
-appear automatically: there's a Docker container, named Gulp, with Node.js
-installed, which recompile Typescript and Stylus CSS. —
-If you edit Typescript, wait five seconds before you reload the page in
-the browser, otherwise the Typescript code might not yet have been transpiled.
+To automatically recompile code you've edited, so the changes appear in your
+browser after reload, do this:
+
+```
+s/tyd tw   # 'tw' means "transpile" and "watch"
+```
+
+But wait five seconds, after you've edited any Typescript code, before you reload the page in
+the browser — otherwise the Typescript code might not yet have been transpiled.
+(Details: There's a Docker container with Node.js installed, which recompile Typescript and Stylus CSS.)
 
 ### Scala
 
@@ -398,7 +403,7 @@ There's a container, named *app*, which runs the Play Framework application serv
 and looks for changes to Scala files, recompiles and reloads.
 
 Unfortunately, if you keep editing and reloading Scala files many many times, then eventually
-Play Framework runs out of memory. Restart it like so: `make restart-app`.
+Play Framework runs out of memory. Restart it like so: `s/tyd ra` ('ra' means "restart app").
 
 
 
