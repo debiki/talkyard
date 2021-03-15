@@ -4438,6 +4438,11 @@ export class TyE2eTestBrowser {
         this.waitUntilTextIs('.s_CD .e_SelCatB', catName);
       },
 
+      clearParentCategory: () => {
+        this.waitAndClick('.s_CD_0SubCat');
+        this.waitUntilTextIs('.s_CD .e_SelCatB', "None");
+      },
+
       submit: () => {
         // ---- Some scroll-to-Save-button problem. So do a bit double scrolling.
         this.scrollIntoViewInPageColumn('#e2eSaveCatB')

@@ -272,7 +272,7 @@ describe(`category-permissions.2br   TyTE2ECATPREMS01`, () => {
 
 
 
-  // ----- Cannot access any topics
+  // ----- Cannot access any topics    [.2220ACS]
 
 
   addCanAccessTestSteps({ canAccessCatA: false, canAccessCatB: false,
@@ -280,15 +280,56 @@ describe(`category-permissions.2br   TyTE2ECATPREMS01`, () => {
 
 
 
-  // TESTS_MISSING, extra cat perms tests — or maybe better in a 2nd spec?:
-  // ?? move B away from A, can access B not A ??
-  // ?? move B back to A, can not access
+  // ----- Change cat B back to a base cat   [TyTE2ECLRSUBCAT]
+
+  // Then, can access B, since it's only the previous parent cat, A, that we
+  // may not see. But now B got moved away from A.
+
+
+  it(`Owen edits Cat B`, () => {
+    owen_brA.forumTopicList.goHere({ categorySlug: fcats.catB.slug });
+    owen_brA.forumButtons.clickEditCategory();
+  });
+
+  it(`... makes Cat B a base cat again`, () => {
+    owen_brA.categoryDialog.clearParentCategory();
+    owen_brA.categoryDialog.submit();
+  });
+
+
+  addCanAccessTestSteps({ canAccessCatA: false, canAccessCatB: true,
+        catBIsSubCat: false });
+
+
+
+  // ----- Makes B a sub cat again
+
+
+  it(`Owen changes B back to a sub cat of A`, () => {
+    owen_brA.forumButtons.clickEditCategory();
+    owen_brA.categoryDialog.setParentCategory(fcats.catA.name);
+    owen_brA.categoryDialog.submit();
+  });
+
+  it(`Now Owen sees:  Cat A —> Cat B`, () => {
+    owen_brA.forumTopicList.waitForCategoryName(fcats.catA.name);
+    owen_brA.forumTopicList.waitForCategoryName(fcats.catB.name, { isSubCat: true });
+  });
+
+
+  // (This is doing [.2220ACS] again — maybe speed this test up by just doing
+  // one quick access test instead.)
+  //
+  addCanAccessTestSteps({ canAccessCatA: false, canAccessCatB: false,
+        catBIsSubCat: true });
+
 
 
   // ----- Allow access again
 
 
-  it(`Owen allows access again`, () => {
+  it(`Owen allows access again (to cat A, incl sub cat B)`, () => {
+    owen_brA.forumTopicList.goHere({ categorySlug: fcats.catA.slug });
     owen_brA.forumButtons.clickEditCategory();
     owen_brA.categoryDialog.openSecurityTab();
     owen_brA.categoryDialog.securityTab.addGroup(c.EveryoneFullName);

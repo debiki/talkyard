@@ -53,6 +53,24 @@ export function getEditCategoryDialog(success: (dialog) => void) {
 }
 
 
+interface EditCatDiagState {
+  store?: Store;
+  isOpen: Bo;
+  isLoading?: Bo;
+  isCreatingCat?: Bo,
+  isSaving?: Bo;
+  onSaved?;
+  defaultTopicType: PageRole;
+  categoryId?: CategoryId;
+  originalSlug?: St;                // CLEAN_UP remove, ...
+  category?: CategoryPatch;
+  catBefEdits?: CategoryPatch;      // <— use this instead
+  permissions?: PermsOnPage[];
+  groups?;
+  canChangeDefault?: Bo;
+}
+
+
 const EditCategoryDialog = createClassAndFactory({
   displayName: 'EditCategoryDialog',
 
@@ -60,7 +78,11 @@ const EditCategoryDialog = createClassAndFactory({
     return {
       isOpen: false,
       defaultTopicType: PageRole.Discussion,
-    };
+    } as EditCatDiagState;
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   open: function(categoryId: number, onSaved: (r: SaveCategoryResponse) => void) {
@@ -71,9 +93,9 @@ const EditCategoryDialog = createClassAndFactory({
       isOpen: true,
       isLoading: !!categoryId,
       isSaving: false,
-      isCreating: !categoryId,
+      isCreatingCat: !categoryId,
       onSaved,
-    });
+    } as EditCatDiagState);
 
     // @ifdef DEBUG
     // The current page is the forum contents index page — and its parent
@@ -85,6 +107,7 @@ const EditCategoryDialog = createClassAndFactory({
 
     if (categoryId) {
       Server.loadCategory(categoryId, (response: LoadCategoryResponse) => {
+        if (this.isGone) return;
         const category: CategoryPatch = response.category;
         // @ifdef DEBUG
         dieIf(category.id !== categoryId, 'TyE502KJDT02');
@@ -98,18 +121,20 @@ const EditCategoryDialog = createClassAndFactory({
 
         this.setState({
           isLoading: false,
-          isCreatingNewCategory: false,
-          originalSlug: category.slug,
+          isCreatingCat: false,
+          originalSlug: category.slug,   // CLEAN_UP remove
+          catBefEdits: { ...category },
           category,
           permissions: response.permissions,
           groups: response.groups,
           canChangeDefault: !category.isDefaultCategory || false,
-        });
+        } as EditCatDiagState);
       });
     }
     else {
       const categoryId = -1; // then the server will give it a >= 1 id  [4GKWSR1]
       Server.loadGroups((groups: Group[]) => {
+        if (this.isGone) return;
         const newCategory: CategoryPatch = {
           id: categoryId,
           extId: '',
@@ -126,7 +151,7 @@ const EditCategoryDialog = createClassAndFactory({
           includeInSummaries: IncludeInSummaries.Default,
         };
         this.setState({
-          isCreatingNewCategory: true,
+          isCreatingCat: true,
           canChangeDefault: true,
           category: newCategory,
           groups: groups,
@@ -134,7 +159,7 @@ const EditCategoryDialog = createClassAndFactory({
             defaultPermsOnPages(-11, Groups.EveryoneId, categoryId, false),
             defaultPermsOnPages(-12, Groups.FullMembersId, categoryId, false),
             defaultPermsOnPages(-13, Groups.StaffId, categoryId, true)],
-        });
+        } as EditCatDiagState);
       });
     }
   },
@@ -142,18 +167,20 @@ const EditCategoryDialog = createClassAndFactory({
   close: function() {
     this.setState({
       category: undefined,
+      catBefEdits: undefined,
       isOpen: false,
       isSaving: false,
       isLoading: false,
-      isCreating: undefined,
+      isCreatingCat: false,
       store: null,
       onSaved: null,
-    });
+    } as EditCatDiagState);
   },
 
   save: function() {
     this.setState({ isSaving: true });
     const stateCat: Category = this.state.category;
+
     function falseToUndef(permissions: PermsOnPage[]) {
       const ps = _.clone(permissions);
       _.each(ps, (p: PermsOnPage) => {
@@ -177,22 +204,26 @@ const EditCategoryDialog = createClassAndFactory({
     //const isChangingSlug = this.state.originalSlug !== category.slug;
     ReactActions.saveCategory(stateCat, falseToUndef(this.state.permissions),
           (response: SaveCategoryResponse) => {
-      if (this.state.onSaved) {
-        this.state.onSaved(response);
+      const state: EditCatDiagState = this.state;
+      if (state.onSaved) {
+        state.onSaved(response);
       }
+      if (this.isGone) return;
       this.close();
     }, () => {
       // If error.
-      this.setState({ isSaving: false });
+      this.setState({ isSaving: false } as EditCatDiagState);
     });
   },
 
   deleteCategory: function() {
-    const category: Category = this.state.category;
+    const state: EditCatDiagState = this.state;
+    const category: Category = state.category;
     dieIf(category.isDefaultCategory,
           "This is the default category, cannot delete it [TyEDELDFCAT]");
-    ReactActions.deleteCategory(this.state.categoryId, () => {
-      const deletedCategory = { ...this.state.category, isDeleted: true  };
+    ReactActions.deleteCategory(state.categoryId, () => {
+      if (this.isGone) return;
+      const deletedCategory = { ...state.category, isDeleted: true  };
       this.setState({ category: deletedCategory });
       util.openDefaultStupidDialog({
         body: "Category deleted. You can undo, by clicking Undelete.",
@@ -202,8 +233,11 @@ const EditCategoryDialog = createClassAndFactory({
   },
 
   undeleteCategory: function() {
-    ReactActions.undeleteCategory(this.state.categoryId, () => {
-      const restoredCategory = { ...this.state.category, isDeleted: false };
+    const state: EditCatDiagState = this.state;
+    ReactActions.undeleteCategory(state.categoryId, () => {
+      if (this.isGone) return;
+      const state: EditCatDiagState = this.state;
+      const restoredCategory = { ...state.category, isDeleted: false };
       this.setState({ category: restoredCategory });
       util.openDefaultStupidDialog({
         body: "Done, category undeleted. It is back again.",
@@ -213,8 +247,9 @@ const EditCategoryDialog = createClassAndFactory({
   },
 
   updateCategory: function(updatedCategory) {
+    const state: EditCatDiagState = this.state;
     this.setState({
-      category: { ...this.state.category, ...updatedCategory }
+      category: { ...state.category, ...updatedCategory }
     });
   },
 
@@ -223,26 +258,28 @@ const EditCategoryDialog = createClassAndFactory({
   },
 
   render: function() {
-    const body = !this.state.isOpen ? null : (this.state.isLoading
+    const state: EditCatDiagState = this.state;
+    const body = !state.isOpen ? null : (state.isLoading
       ? r.div({}, "Loading...")
       : rb.Tabs({ defaultActiveKey: 1, id: 't_CD_Tabs' },
           rb.Tab({ eventKey: 1, title: "Settings", className: 's_CD_Tabs_Stn' },
-            CategorySettings({ ...this.state, updateCategory: this.updateCategory,
+            CatSettings({ ...state, updateCategory: this.updateCategory,
                 deleteCategory: this.deleteCategory, undeleteCategory: this.undeleteCategory })),
           rb.Tab({ eventKey: 2, title: "Security", className: 's_CD_Tabs_Sec' },
-            CategorySecurity({ ...this.state, updatePermissions: this.updatePermissions }))));
+            CatSecurity({ ...state, updatePermissions: this.updatePermissions }))));
 
-    const saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
-    const dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";
+    const saveButtonTitle = state.isCreatingCat ? "Create Category" : "Save Edits";
+    const dialogTitle = state.isCreatingCat ? saveButtonTitle :
+            rFr({}, "Edit Category: ", r.i({}, state.catBefEdits?.name));
 
-    const perms: PermsOnPage[] = this.state.permissions || [];
+    const perms: PermsOnPage[] = state.permissions || [];
     const uninitedPerm = _.find(perms, (p: PermsOnPage) =>  {
       return p.forPeopleId < Groups.EveryoneId;
     });
 
     const canSave = !uninitedPerm;
 
-    const saveCancel = !this.state.isOpen ? null : (this.state.isSaving
+    const saveCancel = !state.isOpen ? null : (state.isSaving
       ? r.div({}, "Saving...")
       : r.div({},
         PrimaryButton({ onClick: this.save, id: 'e2eSaveCatB', disabled: !canSave },
@@ -250,7 +287,8 @@ const EditCategoryDialog = createClassAndFactory({
         Button({ onClick: this.close, className: 'e_CancelCatB' }, "Cancel")));
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esCatDlg s_CD' },
+      Modal({ show: state.isOpen, onHide: this.close,
+          dialogClassName: 'esCatDlg s_CD' },
         ModalHeader({}, ModalTitle({}, dialogTitle)),
         ModalBody({}, body),
         ModalFooter({}, saveCancel)));
@@ -259,15 +297,15 @@ const EditCategoryDialog = createClassAndFactory({
 
 
 
-const CategorySettings = createClassAndFactory({
-  displayName: 'CategorySettings',
+const CatSettings = createClassAndFactory({
+  displayName: 'CatSettings',
 
   onNameChanged: function(event) {
     const editedName = event.target.value;
     const editedFields: any = { name: editedName };
     // If this is a new category, it's okay to change the slug. Otherwise, avoid changing it,
     // because it'd break external links to the category.
-    if (this.props.isCreating) {
+    if (this.props.isCreatingCat) {
       editedFields.slug = window['debikiSlugify'](editedName);
     }
     this.props.updateCategory(editedFields);
@@ -304,7 +342,7 @@ const CategorySettings = createClassAndFactory({
   render: function () {
     const store: Store = this.props.store;
     const settings: SettingsVisibleClientSide = store.settings;
-    const page: Page = store.currentPage;
+    const sectPage: Page = store.currentPage;
     const category: CategoryPatch = this.props.category;
     if (!category)
       return null;
@@ -314,7 +352,7 @@ const CategorySettings = createClassAndFactory({
             value: category.name, onChange: this.onNameChanged,
             help: "Keep it short, only one word, if possible." });
 
-    const editDescriptionLink = this.props.isCreatingNewCategory ? null :
+    const editDescriptionLink = this.props.isCreatingCat ? null :
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label' }, "Description"),
         r.div({},
@@ -325,28 +363,37 @@ const CategorySettings = createClassAndFactory({
 
     const defaultTopicTypeInput =
       r.div({ className: 'form-group' },
-        r.label({ className: 'control-label', style: { display: 'block' }}, "Default topic type"),
-        PageRoleDropdown({ store: store, pageRole: category.defaultTopicType,
+        r.label({ className: 'control-label', style: { display: 'block' }},
+          "Default topic type"),
+        PageRoleDropdown({ store, pageRole: category.defaultTopicType,
           complicated: store.settings.showExperimental, hideStaffOnly: true,
           onSelect: this.setDefaultTopicType,
           title: 'Topic type', className: 'esEdtr_titleEtc_pageRole', pullLeft: true }),
         r.span({ className: 'help-block' },
           "New topics in this category will be of this type, by default."));
 
-    // Try out sub cats at Ty.io.
-    const parentCatDropdown = !(eds.isTestSite || eds.siteId === 3) ? null :
+    const rootCatId = sectPage.categoryId;
+    const parentCatDropdown =
         r.div({ className: 'form-group' },
-          r.label({ className: 'control-label', style: { display: 'block' }}, "Parent category"),
-          SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category', store: store,
+          r.label({ className: 'control-label', style: { display: 'block' }},
+            "Parent category"),
+          SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category', store,
               categories: store.currentCategories,
               selectedCategoryId: category.parentId,
+              // Root cats aren't incl in the json, so if this is a base cat, then,
+              // its parent cat, i.e. a root cat, is absent.  [incl_root_cat]
               catAbsentMeansNone: true,
               onlyBaseCats: true,
               onCategorySelected: (newParentCatId: CategoryId) =>
                 this.props.updateCategory({ parentId: newParentCatId })
               }),
-        r.span({ className: 'help-block' },
-          "If you want this category to be a sub category."));
+          // Is there a better text and symbol, than a "Clear" button?
+          category.parentId === rootCatId ? null : Button({
+              className: 's_CD_0SubCat', onClick: () => {
+            this.props.updateCategory({ parentId: rootCatId });
+          }}, "Clear"),  // [TyTE2ECLRSUBCAT]
+          r.span({ className: 'help-block' },
+            "If you want this category to be a sub category."));
 
     const isDefaultInput =
       Input({ type: 'checkbox', label: "Set as default category", id: 'e2eSetDefCat',
@@ -364,7 +411,7 @@ const CategorySettings = createClassAndFactory({
               help: r.div({ className: 'esCatDlg_slug_help' },
                 "Included in the computer address (URL) to this category. The address " +
                 "would be: ",
-                r.samp({}, location.origin + page.pagePath.value + RoutePathLatest + '/',
+                r.samp({}, location.origin + sectPage.pagePath.value + RoutePathLatest + '/',
                   r.span({ className: 'esCatDlg_slug_help_addr_slug' }, category.slug))) }));
 
     let sortPositionText = "Click to set sort position";
@@ -434,7 +481,7 @@ const CategorySettings = createClassAndFactory({
 
     let anyUndeleteInfoAndButton;
     let anyDeleteButton;
-    if (this.props.isCreatingNewCategory) {
+    if (this.props.isCreatingCat) {
       // Then cannot delete it yet.
     }
     else if (category.isDeleted) {
@@ -497,8 +544,8 @@ function defaultPermsOnPages(newPermId: PermissionId, forWhoId: PeopleId,
 
 
 
-const CategorySecurity = createClassAndFactory({
-  displayName: 'CategorySecurity',
+const CatSecurity = createClassAndFactory({
+  displayName: 'CatSecurity',
 
   addPermission: function() {
     const category: Category = this.props.category;

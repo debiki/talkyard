@@ -39,7 +39,7 @@ when looking at a base cat. And if one could propagate the base category's
 permissions to all/some sub cats.
 Also make this work for the root cat? So one can get an overview of permission
 settings for *all* base cats and sub cats in the whole forum — a cat permissions
-table-tree, somehow.
+table-tree, somehow. [incl_root_cat]
 
 [may_not_perms]
 Currently permissions are additive. Maybe, though, in some cases it'd be good

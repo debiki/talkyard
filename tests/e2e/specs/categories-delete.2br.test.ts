@@ -261,11 +261,12 @@ describe(`categories-delete.2br   TyTE2ECATDEL01`, () => {
   it(`Now Michael sees the category in the categories list, again`, () => {
     michael_brB.topbar.clickHome();
     michael_brB.forumButtons.clickViewCategories();
-    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(
-          forum.categories.catA.name));
+    michael_brB.forumCategoryList.waitForCategories();
+    assert.eq(michael_brB.forumCategoryList.isCategoryVisible(
+          forum.categories.catA.name), true);
     // It's back:
-    assert.ok(michael_brB.forumCategoryList.isCategoryVisible(  // [.111VIS]
-          forum.categories.catB.name));
+    assert.eq(michael_brB.forumCategoryList.isCategoryVisible(  // [.111VIS]
+          forum.categories.catB.name), true);
     assert.eq(michael_brB.forumCategoryList.numCategoriesVisible(), 2);
   });
 
