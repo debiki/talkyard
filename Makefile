@@ -116,7 +116,7 @@ DOCKER_REPOSITORY := \
 # the -rapid, -regular and -stable channels.
 # (Currently there's only -dev and -regular though.)
 DEV_RELEASE_CHANNEL := tyse-v0-dev
-DEV_RELEASE_CHANNEL_SUFFIX := -dev
+DEV_RELEASE_CHANNEL_SUFFIX := dev
 
 TALKYARD_VERSION := \
   $(shell cat version.txt)
@@ -618,18 +618,19 @@ push-tag-to-git:
 	@# Do Not push to master — doing that would include this version in tyse-v0-regular.
 	@# Exit on any error, so won't push something broken to the versions repo.
 	@#
+	@# Old: git checkout -B $(DEV_RELEASE_CHANNEL) --track origin/$(DEV_RELEASE_CHANNEL)
+	@#
 	@set -e  ;\
-	cd modules/ed-versions/  ;\
-	git fetch  ;\
-	git checkout -B $(DEV_RELEASE_CHANNEL) --track origin/$(DEV_RELEASE_CHANNEL)  ;\
+	cd relchans/$(DEV_RELEASE_CHANNEL)/  ;\
+	git fetch origin $(DEV_RELEASE_CHANNEL)  ;\
 	git merge --ff-only origin/$(DEV_RELEASE_CHANNEL)  ;\
 	echo $(tag) >> version-tags.log  ;\
 	git add version-tags.log  ;\
-	git commit -m "Add $(tag), channel $(DEV_RELEASE_CHANNEL)."  ;\
+	git commit -m "Release $(tag), channel $(DEV_RELEASE_CHANNEL)."  ;\
 	git push origin $(DEV_RELEASE_CHANNEL)
 
 	@# Later, this message instead:
-	@# git commit -m "Release tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)."
+	@# git commit -m "Release tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)."
 	
 	@# Note that this version might not be included in all release channels.
 	@# Example: If this new version includes some not-well-tested things — then,
@@ -644,17 +645,20 @@ push-tag-to-git:
 	@# same version nr and Git revision hash, but different -dev/-regular suffix.
 	@#
 	@echo ""
-	@echo "Tagging main repo with: tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX) ..."
+	@echo "Tagging main repo with: tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX) ..."
 
-	@git tag tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)
+	@echo
+	@echo  "DO THIS:"
+	@echo
+	@echo  git tag tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
 
-	@git push origin tyse-$(tag)$(DEV_RELEASE_CHANNEL_SUFFIX)
+	@echo  git push origin tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
 	
 	@echo ""
 	@echo "Done. Now, bump the version number:"
 	@echo ""
 	@echo "    s/bump-versions.sh"
-	@echo "    git add version.txt modules/ed-versions"
+	@echo "    git add version.txt relchans/tyse-v0-dev"
 	@echo '    git commit -m "Bump version to `cat version.txt`."'
 	@echo ""
 
