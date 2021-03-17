@@ -2150,6 +2150,8 @@ export function createTagType(newTagType: TagType, onOk: (newWithId: TagType) =>
 }
 
 
+/// Lists tags, for auto complete, when tagging sth.
+///
 export function listTagTypes(forWhat: ThingType, prefix: St,
         onOk: (resp: { allTagTypes: TagType[] }) => Vo) {
   const forWhatParam = !forWhat ? '' : `forWhat=${forWhat}&`;
@@ -2158,14 +2160,25 @@ export function listTagTypes(forWhat: ThingType, prefix: St,
 }
 
 
+/// For the tags app — so can show e.g. tag usage stats, per tag.
+///
 export function loadTagsAndStats(onOk?: () => Vo) {
   getAndPatchStore('/-/load-tags-and-stats', onOk);
 }
 
 
+/// For loading both tags and cats — so can selecet both tags and cats, on the
+/// search page, to restrict where to search.
+///
+export function loadCatsAndTagsPatchStore(onOk?: () => Vo) {
+  get('/-/load-cats-and-tags', r => ReactActions.patchTheStore(r, onOk));
+}
+
+
+/* Broken, after tags got reimplemented.
 export function loadMyTagNotfLevels() {
   getAndPatchStore('/-/load-my-tag-notf-levels');
-}
+} */
 
 
 export function addRemoveTags(ps: { add: Tag[], remove: Tag[] }, onOk: () => Vo) {

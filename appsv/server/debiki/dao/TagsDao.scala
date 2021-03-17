@@ -84,17 +84,17 @@ trait TagsDao {
   this: SiteDao =>
 
 
-  def getTagTypes(tagTypeIds: Set[TagTypeId]): Seq[TagType] = {
+  def getTagTypes(tagTypeIds: Set[TagTypeId]): ImmSeq[TagType] = {
     getAllTagTypesSeq().filter(tt => tagTypeIds.contains(tt.id))
   }
 
 
-  def getTagTypesSeq(forWhat: Opt[i32], tagNamePrefix: Opt[St]): Seq[TagType] = {
+  def getTagTypesSeq(forWhat: Opt[i32], tagNamePrefix: Opt[St]): ImmSeq[TagType] = {
     getAllTagTypesSeq()  // for now
   }
 
 
-  def getAllTagTypesSeq(): Seq[TagType] = {
+  def getAllTagTypesSeq(): ImmSeq[TagType] = {
     val tagTypes = memCache.lookup[ImmSeq[TagType]](
           mkAllTagTypesKey,
           orCacheAndReturn = Some {
@@ -173,11 +173,6 @@ trait TagsDao {
   @deprecated("Now", "")
   def loadAllTagsAsSet(): Set[TagLabel] =
     readOnlyTransaction(_.loadAllTagsAsSet())
-
-
-  @deprecated("Now", "")
-  def loadTagsAndStats(): Seq[TagAndStats] =
-    readOnlyTransaction(_.loadTagsAndStats())
 
 
   @deprecated("Now", "")

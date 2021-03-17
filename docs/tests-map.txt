@@ -43,6 +43,12 @@ full text search:
           - categories-delete.2br   TyTE2ECATDEL01
   from external backend server:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
+  advanced search:
+    only with specific tags,
+    only in specific category:
+            - TESTS_MISSING
+  username fuzzy search:
+            - TESTS_MISSING  and not implemented
 
 create site & forum -
   via api: [.create_site_via_api]

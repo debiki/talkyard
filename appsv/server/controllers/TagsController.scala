@@ -33,7 +33,7 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   import context.globals
 
-  def redirect: Action[Unit] = GetAction { apiReq =>
+  def redirect: Action[Unit] = GetAction { _ =>
     Redirect(routes.TagsController.tagsApp("").url)
   }
 
@@ -79,10 +79,6 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
           tx.loadTagTypeStats())
     }
 
-    /*
-    val tagsAndStats = request.dao.loadTagsAndStats()
-    val isStaff = request.isStaff
-     */
     val json = JsonMaker.makeStorePatch(Json.obj(
       "allTagTypes" -> JsArray(tagTypes map JsX.JsTagType),
       "allTagTypeStatsById" ->
@@ -103,17 +99,24 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  @deprecated
-  def loadMyTagNotfLevels: Action[Unit] = GetAction { request =>
-    throwUnimpl("TyE406MRE2")
+  // Break out to [CatsAndTagsController]?
+  def loadCatsAndTags: Action[U] = GetActionRateLimited(RateLimits.ReadsFromCache) { req =>
+    val catsJsArr = ForumController.loadCatsJsArrayMaySee(req)
+    val tagTypes = req.dao.getTagTypesSeq(forWhat = None, tagNamePrefix = None)
+    val json = JsonMaker.makeCatsAndTagsPatch(catsJsArr, tagTypes, globals.applicationVersion)
+    OkSafeJson(json)
+  }
+
+
+  /* Broken, after tags got reimplemented.
+  def loadMyTagNotfLevels: Action[Unit] = GetActionRateLimited() { request =>
     val notfLevelsByTagLabel = request.dao.loadTagNotfLevels(request.theUserId, request.who)
-    OkSafeJson(JsonMaker.makeStorePatch(
-      // Old json!
-      Json.obj("tagsStuff" -> Json.obj(
+    OkSafeJson(JsonMaker.makeCatsAndTagsPatch(catsJsArr = ...,
+      // Long ago, won't work now:
       "myTagNotfLevels" -> JsObject(notfLevelsByTagLabel.toSeq.map({ labelAndLevel =>
         labelAndLevel._1 -> JsNumber(labelAndLevel._2.toInt)
-      })))), globals.applicationVersion))
-  }
+      })),, globals.applicationVersion))
+  } */
 
 
   @deprecated

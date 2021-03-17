@@ -298,21 +298,11 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
+  // Break out to [CatsAndTagsController]?
   def listCategoriesAllSections(): Action[Unit] = GetActionRateLimited() { request =>
     // Tested here: TyT5WKB2QR0
-    import request.{dao, requester}
-    val authzCtx = dao.getForumAuthzContext(requester)
-    val sectCats: Seq[SectionCategories] =
-      request.dao.listMaySeeCategoryStuffAllSections(includeDeleted = false, authzCtx)
-    val rootCats = sectCats.map(_.rootCategory)
-    val catsNotRoot = sectCats.flatMap(_.catStuffsExclRoot)
-    val json = JsArray(catsNotRoot.map({ catStuff: CategoryStuff =>
-      val category = catStuff.category
-      val rootCat = rootCats.find(_.sectionPageId == category.sectionPageId).getOrDie(
-        "TyE305RMGH5", s"No root cat with matching sect page id, for category $category")
-      categoryToJson(catStuff, rootCat, recentTopics = Nil, pageStuffById = Map.empty)
-    }))
-    OkSafeJson(json)
+    val jsArr = loadCatsJsArrayMaySee(request)
+    OkSafeJson(jsArr)
   }
 
 
@@ -360,6 +350,23 @@ object ForumController {
 
   /** Keep synced with client/forum/list-topics/ListTopicsController.NumNewTopicsPerRequest. */
   val NumTopicsToList = 40
+
+
+  def loadCatsJsArrayMaySee(request: GetRequest): JsArray = {
+    import request.{dao, requester}
+    val authzCtx = dao.getForumAuthzContext(requester)
+    val sectCats: Seq[SectionCategories] =
+          request.dao.listMaySeeCategoryStuffAllSections(includeDeleted = false, authzCtx)
+    val rootCats = sectCats.map(_.rootCategory)
+    val catsNotRoot = sectCats.flatMap(_.catStuffsExclRoot)
+    val jsArr = JsArray(catsNotRoot.map({ catStuff: CategoryStuff =>
+      val category = catStuff.category
+      val rootCat = rootCats.find(_.sectionPageId == category.sectionPageId).getOrDie(
+        "TyE305RMGH5", s"No root cat with matching sect page id, for category $category")
+      categoryToJson(catStuff, rootCat, recentTopics = Nil, pageStuffById = Map.empty)
+    }))
+    jsArr
+  }
 
 
   private def categoryToJson(categoryStuff: CategoryStuff, rootCategory: Category,  // [JsObj]

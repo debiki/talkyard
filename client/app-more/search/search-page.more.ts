@@ -59,8 +59,6 @@ var SearchPageContentComponent = createReactClass(<any> {
   getInitialState: function() {
     const store = debiki2.ReactStore.allData();
     return {
-      searchResults: null,
-      isSearching: false,
       store,
       me: store.me,  // remove 'me' [8GKB3QA]
     };
@@ -71,12 +69,12 @@ var SearchPageContentComponent = createReactClass(<any> {
     this.setState({ store, me: store.me });  // remove 'me' [8GKB3QA]
   },
 
-  UNSAFE_componentWillMount: function() {
+  componentDidMount: function() {
     const urlQueryParams = parseQueryString(this.props.location.search);
     this.searchUseUrlQuery(urlQueryParams);
     if (urlQueryParams.advanced) {
       this.tagsLoaded = true;
-      Server.listTagTypes();
+      Server.loadCatsAndTagsPatchStore();  // [search_page_cats_tags]
     }
   },
 
@@ -160,7 +158,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     else {
       if (!this.tagsLoaded) {
         this.tagsLoaded = true;
-        Server.listTagTypes();
+        Server.loadCatsAndTagsPatchStore();
       }
       queryStringObj.advanced = 'true';
     }
@@ -202,16 +200,16 @@ var SearchPageContentComponent = createReactClass(<any> {
     // Check the render method of `SearchPageContentComponent`."""
 
     const store: Store = this.state.store;
-    const query: SearchQuery = this.state.query;
-    const searchResults: SearchResults = this.state.searchResults;
+    const query: SearchQuery | U = this.state.query;
+    const searchResults: SearchResults | U = this.state.searchResults;
 
     const urlQueryParams = parseQueryString(this.props.location.search);
     const isAdvancedOpen = !!urlQueryParams.advanced;
     const advancedSearch =
       Expandable({ header: "Advanced Search", onHeaderClick: this.toggleAdvanced,
           openButtonId: 'e_SP_AdvB', className: 's_SP_Adv', isOpen: isAdvancedOpen },
-        !isAdvancedOpen ? null :
-          AdvancedSearchPanel({ store: store, query: query,
+        !query || !isAdvancedOpen ? null :
+          AdvancedSearchPanel({ store, query,
             onTagsSelectionChange: this.onTagsSelectionChange,
             onNotTagsSelectionChange: this.onNotTagsSelectionChange,
             onCategoriesSelectionChange: this.onCategoriesSelectionChange }));
@@ -244,7 +242,7 @@ var SearchPageContentComponent = createReactClass(<any> {
           r.div({},
             "Search: ",
             (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: "Text to search for",   // [TYPEERROR]
-                value: query.rawQuery,
+                value: query ? query.rawQuery : '',
                 className: 's_SP_QueryTI', onChange: this.onQueryTextEdited }),
             PrimaryButton({ value: "Search", className: 's_SP_SearchB',
                 onClick: () => this.searchAndUpdateUrl() },

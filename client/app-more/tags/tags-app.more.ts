@@ -77,6 +77,8 @@ const AllTagsPanel = createFactory({
     // Or maybe:
     // Server.listTagTypes({ forThings: ThingType.Pats + ThingType.Posts, inclStats: true });
     Server.loadTagsAndStats(() => this.setState({ doneLoading: true }));
+    // We might need to load cats too? E.g. if some tags can be used in only specific cats.
+
     // Later: (no longer works, tags just got reimplemented)
     //Server.loadMyTagNotfLevels();
   },
