@@ -1952,12 +1952,13 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
   else if (topic.pageRole === PageRole.Problem || topic.pageRole === PageRole.Idea) {
     // (Previously some dupl code, see [5KEFEW2] in discussion.ts.
     if (topic.doneAtMs) {
+      // Problems get fixed, ideas get done / implemented.
       tooltip = topic.pageRole === PageRole.Problem
         ? t.ft.TitleFixed
         : t.ft.TitleDone;
       iconClass = 'icon-check';
     }
-    else if (topic.pageRole === PageRole.Problem && topic.answerPostUniqueId) {
+    else if (page_isSolved(topic)) {
       // A problem with a solution post — similar to a question plus answer.
       // UX COULD use a "Problem solved" tooltip text instead of "Question ...".
       tooltip = t.d.TooltipQuestSolved;
