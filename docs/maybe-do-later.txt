@@ -9,6 +9,11 @@ Instead of this file, maybe use a combination of:
  (- https://git-scm.com/docs/git-notes? )
  (- https://github.com/google/git-appraise )
 
+[dynamic_max_limits]
+SHOULD NEXT: Make these limits configurable at runtime, and trigger superadmin notifications
+when exceeded 50%, so can review and bump. And warnings if exceeds 75%, 90%.
+
+
 [ty_themes]
 Primary button colors, secondary, background, arrows, fonts,
 and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
