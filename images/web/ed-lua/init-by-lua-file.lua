@@ -77,9 +77,15 @@ require("resty.acme.autossl").init({
         local http = require('resty.http')
         local httpc = http.new()
         httpc:set_timeouts(1000, 5000, 5000)
-        httpc:connect('app', 9000)
+        local con_ok, con_err = httpc:connect('app', 9000)
+        if not con_ok then
+            ngx.log(ngx.WARN, "Cannot connect to 'app', so cannot check " ..
+                  "if should have cert: " .. domain ..
+                  ", err: " .. con_err .. " [TyMGENCRTERR]")
+            return false
+        end
 
-        local res, err = httpc:request({
+        local req_res, req_err = httpc:request({
             path = '/-/_int_req/hostname-should-have-cert',
             headers = {
                 -- ['X-Request-Id'] = ngx.var.request_id,  — cannot access here
@@ -87,13 +93,13 @@ require("resty.acme.autossl").init({
             },
         })
 
-        if not res then
+        if not req_res then
             ngx.log(ngx.WARN, "Error checking if should have cert: " .. domain
-                  .. ", err: " .. err .. " [TyMGENCRTERR]")
+                  .. ", err: " .. req_err .. " [TyMGENCRTERR]")
             return false
         end
 
-        if res.status ~= 200 then
+        if req_res.status ~= 200 then
             ngx.log(ngx.INFO, "Should not have cert: " .. domain .. " [TyMGENCRTNO]")
             return false
         end
