@@ -89,6 +89,16 @@ the same group(s) or high enough trust level or sth like that?
 prevent usernames from being displayed in Unicode, if mixed charsets used,
 e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
 
+Switch to firewalld.
+
+use gVisor / runsc or Firecracker.
+See: https://fly.io/blog/sandboxing-and-workload-isolation/
+
+Optionally encrypt off-site backups? Maybe:  https://github.com/borgbackup/borg
+    (plus instructions to copy the backup encryption key!)
+    Seems ppl like it:  https://news.ycombinator.com/item?id=21642364  "the holy grail"
+      rsync.net
+
 Add CSP to all page types / routes: CSP_MISSING, [script_src_self].
 
 ZAProxy auto scan.
@@ -627,6 +637,17 @@ Offline builds on various Linux distros, not just Debian 10?
 
 
 [ty_v1] Things to fix before Ty stack version 1: 0.20YY.NR —> version 1.20YY.NR
+
+s/typ.ts script: Check mem before upgrading, warn if too little? balloon.txt file?
+
+Use firewalld instead of ufw  [firewalld_not_ufw]
+    - recommended by the Debian wiki: https://wiki.debian.org/DebianFirewall
+    - better than ufw; ufw won't block exposed Docker ports,
+      see:  https://github.com/chaifeng/ufw-docker
+  Sth like:
+  firewall-cmd --zone=public --permanent --add-service=http
+  firewall-cmd --zone=public --permanent --add-service=https
+
 
 ? Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
 so can use other tech than only Play Fmw, without the file name getting misleading.
