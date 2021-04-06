@@ -120,6 +120,9 @@ object RdbUtil {
           name = rs.getString("name"),
           createdAt = getWhen(rs, "ctime"),
           createdFromIp = getOptString(rs, "creator_ip"),
+          deletedAt = getOptWhen(rs, "deleted_at_c"),
+          autoPurgeAt = getOptWhen(rs, "auto_purge_at_c"),
+          purgedAt = getOptWhen(rs, "purged_at_c"),
           nextPageId = rs.getInt("next_page_id"),
           creatorEmailAddress = getOptString(rs, "creator_email_address"),
           version = rs.getInt("version"),
@@ -127,13 +130,17 @@ object RdbUtil {
           featureFlags = getOptString(rs, "feature_flags_c").getOrElse(""),
           status = SiteStatus.fromInt(rs.getInt("status")).getOrElse(SiteStatus.Deleted),
           hostnames = hostnames,
-          stats = stats)
+          stats = stats,
+          readLimitsMultiplier = getOptFloat(rs, "read_lims_mult_c"),
+          logLimitsMultiplier = getOptFloat(rs, "log_lims_mult_c"),
+          createLimitsMultiplier = getOptFloat(rs, "create_lims_mult_c"))
   }
 
 
   def getSiteStats(rs: js.ResultSet): ResourceUse = {
     ResourceUse(
-          quotaLimitMbs = getOptInt(rs, "quota_limit_mbs"),
+          quotaLimitMbs = getOptInt(rs, "rdb_quota_mibs_c"),
+          fileSysQuotaMiBs = getOptInt(rs, "file_quota_mibs_c"),
           numAuditRows = rs.getInt("num_audit_rows"),
           numGuests = rs.getInt("num_guests"),
           numIdentities = rs.getInt("num_identities"),
@@ -799,6 +806,7 @@ object RdbUtil {
     case "R" => Hostname.RoleRedirect
     case "L" => Hostname.RoleLink
     case "D" => Hostname.RoleDuplicate
+    case "X" => Hostname.RoleDeleted
   }
 
 

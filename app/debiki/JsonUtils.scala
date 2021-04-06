@@ -175,6 +175,9 @@ object JsonUtils {
       .getOrElse(throwMissing("TyE06KA2P2", fieldName))
 
 
+  def parseOptFloat32(json: JsValue, fieldName: String, altName: String = ""): Opt[f32] =
+    readOptFloat(json, fieldName, altName = altName)
+
   def readOptFloat(json: JsValue, fieldName: String, altName: String = ""): Option[Float] = {
     readOptDouble(json, fieldName).orElse(readOptDouble(json, altName)) map { valAsDouble =>
       if (valAsDouble > Float.MaxValue)
@@ -188,6 +191,11 @@ object JsonUtils {
 
   def readDouble(json: JsValue, fieldName: String, altName: String = "",
         default: Option[Double] = None): Double =
+    parseFloat64(json, fieldName = fieldName, altName = altName, default = default)
+
+
+  def parseFloat64(json: JsValue, fieldName: St, altName: St = "",
+        default: Opt[f64] = None): f64 =
     readOptDouble(json, fieldName).orElse(readOptDouble(json, altName)).orElse(default)
       .getOrElse(throwMissing("TyE078RVF3", fieldName))
 
@@ -199,6 +207,10 @@ object JsonUtils {
         throwBadJson("TyE603RMDJV", s"'$fieldName' is not a Double: " + errors.toString())
     }
   }
+
+
+  def parseInt32(json: JsValue, field: St, alt: St = "", default: Opt[i32] = None): i32 =
+    readInt(json, fieldName = field, altName = alt, default = default)
 
 
   def parseI32(json: JsValue, field: St, alt: St = "", default: Opt[i32] = None): i32 =
@@ -215,6 +227,10 @@ object JsonUtils {
      readOptInt(json, field, altField)
 
 
+  def parseOptInt32(json: JsValue, field: St, altField: St = ""): Opt[i32] =
+     readOptInt(json, fieldName = field, altName = altField)
+
+
   def readOptInt(json: JsValue, fieldName: String, altName: String = ""): Option[Int] = {
     readOptLong(json, fieldName).orElse(readOptLong(json, altName)) map { valueAsLong =>
       if (valueAsLong > Int.MaxValue)
@@ -229,9 +245,11 @@ object JsonUtils {
   def readLong(json: JsValue, fieldName: String): Long =
     readOptLong(json, fieldName) getOrElse throwMissing("EsE6Y8FW2", fieldName)
 
-
   def parseOptLong(json: JsValue, fieldName: St): Opt[i64] =
     readOptLong(json, fieldName)
+
+  def parseOptInt64(json: JsValue, fieldName: St): Opt[i64] =
+    readOptLong(json, fieldName = fieldName)
 
   def readOptLong(json: JsValue, fieldName: String): Option[Long] =
     (json \ fieldName).validateOpt[Long] match {

@@ -92,8 +92,10 @@ object JsX {
   def JsSiteStats(stats: ResourceUse): JsObject = {
     Json.obj(
           "dbStorageLimitBytes" -> stats.databaseStorageLimitBytes,
+          "rdbQuotaMiBs" -> stats.rdbQuotaMiBs,
           "dbStorageUsedBytes" -> stats.estimatedDbBytesUsed,
           "fileStorageLimitBytes" -> stats.fileStorageLimitBytes,
+          "fileQuotaMiBs" -> stats.fileQuotaMiBs,
           "fileStorageUsedBytes" -> stats.fileStorageUsedBytes,
           "numAuditRows" -> stats.numAuditRows,
           "numGuests" -> stats.numGuests,
@@ -676,7 +678,10 @@ object JsX {
   def JsLongOrNull(value: Option[Long]): JsValue =   // RENAME to JsNum64OrNull ?
     value.map(JsNumber(_)).getOrElse(JsNull)
 
-  def JsFloatOrNull(value: Option[Float]): JsValue =
+  def JsFloatOrNull(value: Option[Float]): JsValue =   // RENAME to JsFloat32OrNull
+    value.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull)
+
+  def JsFloat64OrNull(value: Opt[f64]): JsValue =
     value.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull)
 
   def readJsLong(json: JsObject, field: String): Long =

@@ -87,12 +87,17 @@ case class SiteBrief(
 
 
 
-sealed abstract class SiteStatus(val IntValue: Int) {
-  def toInt: Int = IntValue
-  def mayAddAdmins: Boolean
-  def mayAddModerators: Boolean
-  def mayAddUsers: Boolean
-  def isDeleted: Boolean = false
+sealed abstract class SiteStatus(val IntValue: i32) {
+  def toInt: i32 = IntValue
+  def mayAddAdmins: Bo = IntValue < SiteStatus.DeletedStatusId
+  def mayAddModerators: Bo = IntValue < SiteStatus.DeletedStatusId
+  def mayAddUsers: Bo = IntValue < SiteStatus.DeletedStatusId
+  def isDeleted: Bo = IntValue >= SiteStatus.DeletedStatusId
+  def isPurged: Bo = IntValue >= SiteStatus.PurgedStatusId
+
+  def isMoreDeletedThan(other: SiteStatus): Bo =
+    isDeleted && IntValue > other.IntValue
+
 }
 
 
@@ -100,26 +105,29 @@ case class SuperAdminSitePatch(
   siteId: SiteId,
   newStatus: SiteStatus,
   newNotes: Opt[St],
+  rdbQuotaMiBs: Opt[i32],
+  fileQuotaMiBs: Opt[i32],
+  readLimitsMultiplier: Opt[f32],
+  logLimitsMultiplier: Opt[f32],
+  createLimitsMultiplier: Opt[f32],
   featureFlags: St)
 
 
 object SiteStatus {
 
+  val DeletedStatusId = 6
+  val PurgedStatusId = 7
+
   /** No site admin has been created.
     */
   case object NoAdmin extends SiteStatus(1) {
-    def mayAddAdmins = true
-    def mayAddModerators = false
-    def mayAddUsers = false
+    override def mayAddModerators = false
+    override def mayAddUsers = false
   }
 
   /** "Normal" status. The site is in active use.
     */
-  case object Active extends SiteStatus(2) {
-    def mayAddAdmins = true
-    def mayAddModerators = true
-    def mayAddUsers = true
-  }
+  case object Active extends SiteStatus(2)
 
   /** No content can be added, but content can be deleted, by staff, if it's reported as
     * offensive, for example. And more staff can be added, to help deleting any bad content.
@@ -130,42 +138,30 @@ object SiteStatus {
     * staff can delete things.
     */
   case object ReadAndCleanOnly extends SiteStatus(3) {
-    def mayAddAdmins = true
-    def mayAddModerators = true
-    def mayAddUsers = false
+    override def mayAddUsers = false
   }
 
   case object HiddenUnlessStaff extends SiteStatus(4) {
-    def mayAddAdmins = true
-    def mayAddModerators = true
-    def mayAddUsers = false
+    override def mayAddUsers = false
   }
 
   case object HiddenUnlessAdmin extends SiteStatus(5) {
-    def mayAddAdmins = true
-    def mayAddModerators = false
-    def mayAddUsers = false
+    override def mayAddModerators = false
+    override def mayAddUsers = false
   }
 
   /** Can be undeleted. Only visible to superadmins — others see 404 Not Found,
     * just as if the site had never been created.
     */
-  case object Deleted extends SiteStatus(6) {
-    def mayAddAdmins = false
-    def mayAddModerators = false
-    def mayAddUsers = false
-    override def isDeleted = true
-  }
+  case object Deleted extends SiteStatus(DeletedStatusId)
+  require(DeletedStatusId == 6)
 
-  /** All contents has been erased from disk, except for a sites table entry.
-    * Cannot be undeleted.
+  /** All contents have been erased from disk, except for a sites table entry
+    * and soft deleted hostnames.  Cannot be undeleted.
     */
-  case object Purged extends SiteStatus(7) {
-    def mayAddAdmins = false
-    def mayAddModerators = false
-    def mayAddUsers = false
-    override def isDeleted = true
-  }
+  case object Purged extends SiteStatus(PurgedStatusId)
+  require(PurgedStatusId == 7)
+
 
   def fromInt(value: Int): Option[SiteStatus] = Some(value match {
     case SiteStatus.NoAdmin.IntValue => SiteStatus.NoAdmin
@@ -230,6 +226,7 @@ case class SiteInclDetails(  // [exp] ok use
   createdFromIp: Option[IpAddress],    // REMOVE move to audit log
   creatorEmailAddress: Option[String], // REMOVE move to audit log
   deletedAt: Opt[When] = None,
+  autoPurgeAt: Opt[When] = None,
   purgedAt: Opt[When] = None,
   nextPageId: Int,
   hostnames: immutable.Seq[HostnameInclDetails],
@@ -238,14 +235,20 @@ case class SiteInclDetails(  // [exp] ok use
   // Don't incl in json exports — it's for super staff only.
   superStaffNotes: Option[String] = None,
   featureFlags: St = "",  // incl or not in exports? Right now, no.
+  readLimitsMultiplier: Opt[f32] = None,
+  logLimitsMultiplier: Opt[f32] = None,
+  createLimitsMultiplier: Opt[f32] = None,
 ) {
 
-  /* Later — first need to create columns, and initialize. [enb_req_ltr]
   require(deletedAt.isDefined == status.isDeleted,
         s"Bad site deleted status: $this [TyE306MRS]")
-  require(purgedAt.isDefined == (status == SiteStatus.Purged),
+  require(autoPurgeAt.isEmpty || (status.toInt >= SiteStatus.Deleted.toInt),
+        s"Bad site auto purge status: $this [TyE306MR7]")
+  require(purgedAt.isDefined == (status.toInt >= SiteStatus.Purged.toInt),
         s"Bad site purged status: $this [TyE306MR6]")
-   */
+  require(purgedAt.isEmpty ||
+          deletedAt.getOrDie("TyE50RMP24").millis <= purgedAt.get.millis,
+        s"Bad auto purge millis: $this [TyE306MR8]")
 
   def canonicalHostname: Option[HostnameInclDetails] =
     hostnames.find(_.role == Hostname.RoleCanonical)
@@ -265,6 +268,9 @@ case class SiteInclDetails(  // [exp] ok use
     val newCanon = HostnameInclDetails(hostname, Hostname.RoleCanonical, addedAt = addedAt)
     copy(hostnames = newCanon +: oldNoCanon)
   }
+
+  def isDeleted: Bo = status.isDeleted
+  def isPurged: Bo = status.isPurged
 
   def quotaLimitMbs: Option[Int] = stats.quotaLimitMbs
 
@@ -286,6 +292,9 @@ case class SiteInclDetails(  // [exp] ok use
   def numAuditRows: Int = stats.numAuditRows
   def numUploads: Int = stats.numUploads
   def numUploadBytes: Long = stats.numUploadBytes
+
+  def toLogStBrief: St =
+    o"""$id $canonicalHostnameSt"""
 
   def toLogSt: St = {
     o"""site $id: hostname $canonicalHostnameSt,
@@ -310,6 +319,7 @@ object Hostname {
   case object RoleRedirect extends Role(2)
   case object RoleLink extends Role(3)
   case object RoleDuplicate extends Role(4)
+  case object RoleDeleted extends Role(5)
 
   case object Role {
     def fromInt(value: Int): Option[Role] = Some(value match {
@@ -317,6 +327,7 @@ object Hostname {
       case RoleRedirect.IntVal => RoleRedirect
       case RoleLink.IntVal => RoleLink
       case RoleDuplicate.IntVal => RoleDuplicate
+      case RoleDeleted.IntVal => RoleDeleted
       case _ => return None
     })
   }
@@ -345,8 +356,8 @@ object Hostname {
 case class Hostname(
   hostname: String,
   role: Hostname.Role) {
-  require(!hostname.contains("\""), "TyE6FK20R")
-  require(!hostname.contains("'"), "TyE8FSW24")
+  require(!hostname.contains("\""), s"""Bad hostname, incl '"': '$hostname' TyE6FK20R""")
+  require(!hostname.contains("'"), s"""Bad hostname, incl "'": "$hostname" TyE8FSW24""")
 }
 
 

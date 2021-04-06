@@ -694,6 +694,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       select host, canonical, ctime
       from hosts3
       where site_id = ?
+        and canonical <> 'X'
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {
       HostnameInclDetails(
@@ -749,6 +750,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       case Hostname.RoleDuplicate => "D"
       case Hostname.RoleRedirect => "R"
       case Hostname.RoleLink => "L"
+      case Hostname.RoleDeleted => "X"
     }
     val statement = s"""
       update hosts3 set canonical = ?

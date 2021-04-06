@@ -25,6 +25,7 @@ import debiki.EdHttp.throwForbidden
 import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.{ForgetEndToEndTestEmails, Globals}
+import debiki.EdHttp.{throwNotFound, throwBadReqIf, throwForbiddenIf}
 import ed.server.spam.ClearCheckingSpamNowCache
 import java.util.concurrent.TimeUnit
 import play.api.libs.json.JsObject
@@ -155,25 +156,46 @@ class SystemDao(
     readOnlyTransaction(_.loadSitesByIds(Seq(siteId)).headOption)
 
 
-  def updateSites(sites: Seq[SuperAdminSitePatch]): Unit = {
+  def updateSites(sites: Seq[SuperAdminSitePatch]): U = {
     val sitesToClear = mutable.Set[SiteId]()
     for (patch <- sites) {
-      val anySiteInDb = loadSite(patch.siteId)
-      val needToRefresh = anySiteInDb.forall(siteInDb =>
-            siteInDb.status != patch.newStatus ||
+      val anySiteInDb = loadSiteInclDetailsById(patch.siteId)
+      val needToRefresh = anySiteInDb forall { siteInDb =>
+        throwForbiddenIf(siteInDb.isPurged && !patch.newStatus.isPurged,
+              "TyE503MREG2R5", s"Site already purged, cannot undo")
+        throwForbiddenIf(patch.siteId == globals.defaultSiteId &&
+              patch.newStatus.isMoreDeletedThan(siteInDb.status),
+              "TyEJ406RFMG24", s"Cannot delete or purge the default site")
+        siteInDb.status != patch.newStatus ||
             // Maybe not always necessary, but for now:
-            siteInDb.featureFlags != patch.featureFlags)
+            siteInDb.featureFlags != patch.featureFlags
+      }
       if (needToRefresh) {
         sitesToClear.add(patch.siteId)
       }
     }
     COULD_OPTIMIZE // clearDatabaseCacheAndMemCache() does:
     // `readWriteTransaction(_.bumpSiteVersion())`, but could instead pass
-    // a param `bumpSiteVersion = true` to updateSites(), so won't need
+    // a param `bumpSiteVersion = true` to updateSite(), so won't need
     // two separate transactions.
-    writeTxLockAllSites(_.updateSites(sites))
+    for (site <- sites) {
+      writeTxLockAllSites(
+            _.updateSite(site))
+    }
     for (siteId <- sitesToClear) {
       globals.siteDao(siteId).clearDatabaseCacheAndMemCache()
+    }
+  }
+
+
+  def schedulePurgeSite(siteId: SiteId, afterDays: Opt[f32]): U = {
+    writeTxLockAllSites { tx =>
+      val site = tx.loadSitesByIds(Seq(siteId)).headOption getOrElse {
+        throwNotFound("TyE50RMPJ3", s"No such site: $siteId")
+      }
+      throwBadReqIf(site.status != SiteStatus.Deleted, "TyE50RMGI3",
+            s"Site status not Deleted: $siteId, hostname: ${site.canonicalHostnameStr}")
+      tx.schedulePurgeSite(siteId = siteId, afterDays = afterDays)
     }
   }
 
@@ -243,13 +265,13 @@ class SystemDao(
     logger.info(s"Deleting sites: $siteIdsToDelete")  ; AUDIT_LOG
 
     globals.systemDao.writeTxLockManySites(siteIdsToDelete) { sysTx =>
-      deleteSites(siteIdsToDelete, sysTx)
+      deleteSites(siteIdsToDelete, sysTx, mayDeleteRealSite = false, keepHostname = false)
     }
   }
 
 
-  def deleteSites(siteIdsToDelete: Set[SiteId], sysTx: SystemTransaction,
-        mayDeleteRealSite: Boolean = false): Unit = {
+  def deleteSites(siteIdsToDelete: Set[SiteId], sysTx: SysTx,
+        mayDeleteRealSite: Bo, keepHostname: Bo): U = {
 
     val deletedHostnames = mutable.Set[String]()
 
@@ -260,7 +282,8 @@ class SystemDao(
       deletedHostnames ++= site.map(_.hostnames.map(_.hostname)) getOrElse Nil
 
       val gotDeleted =
-        sysTx.deleteSiteById(siteId, mayDeleteRealSite)
+            sysTx.deleteSiteById(siteId, mayDeleteRealSite = mayDeleteRealSite,
+                keepHostname = keepHostname)
 
       dieIf(!gotDeleted,
         "TyE2ABK493U4", o"""Could not delete site $siteId, this site: $site
@@ -583,11 +606,11 @@ class SystemDao(
       siteTx.updateSpamCheckTaskForPostWithResults(spamCheckTaskWithResults)
 
       if (spamFoundResults.isEmpty)
-        return
+        return ()
 
       val postBefore = siteTx.loadPost(postToSpamCheck.postId) getOrElse {
         // It was hard deleted?
-        return
+        return ()
       }
 
       val postAfter = postBefore.copy(
@@ -674,10 +697,25 @@ class SystemDao(
   }
 
   def purgeOldDeletedSites(): U = {
-    writeTxLockAllSites { tx =>
-      val sites = tx.loadSitesDeletedNotPurged()
-      logger.debug(s"Could purge some of these deleted sites: ${sites.map(_.toLogSt)}")
-      // also:  [enb_req_ltr]
+    val now = globals.now()
+
+    val sites = readTx { tx =>
+      tx.loadSitesToMaybePurge()
+    }
+
+    for (site <- sites; purgeWhen <- site.autoPurgeAt) {
+      val isOldEnough = purgeWhen.isBefore(now)
+      if (!isOldEnough) {
+        logger.debug(s"Not purging deleted site ${site.toLogStBrief} until ${
+              purgeWhen.toIso8601NoT}")
+      }
+      else {
+        logger.info(s"Purging deleted site: ${site.toLogSt}")
+        val siteIdSet = Set(site.id)
+        writeTxLockManySites(siteIdSet) { sysTx =>
+          deleteSites(siteIdSet, sysTx, mayDeleteRealSite = true, keepHostname = true)
+        }
+      }
     }
   }
 

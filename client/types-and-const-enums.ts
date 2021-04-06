@@ -48,6 +48,12 @@ type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}
 // or can return a boolean. So, boolean or falsy:
 type BoZ = Bo | Z;
 
+type NUV = null | undefined | void;
+
+type StV = St | NUV;    // 'V' for void-ish things, but not 0 or false
+type NrV = Nr | NUV;    // A number or void-ish — but not '' or false
+
+
 type HElm = HTMLElement;
 type Elm = Element;
 // Also: type RElm = JSX.Element (React.js element).

@@ -20,6 +20,7 @@ package controllers
 import com.debiki.core._
 import debiki.SiteTpi
 import debiki.EdHttp._
+import debiki.JsonUtils._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.{api => p}
@@ -61,12 +62,43 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
       val newStatusInt = (jsObj \ "status").as[Int]
       val newNotes = (jsObj \ "superStaffNotes").asOptStringNoneIfBlank
       val featureFlags = (jsObj \ "featureFlags").asTrimmedSt
+      val rdbQuotaMiBs = parseOptInt32(jsObj, "rdbQuotaMiBs")
+      val fileQuotaMiBs = parseOptInt32(jsObj, "fileQuotaMiBs")
+      val readLimitsMultiplier = parseOptFloat32(jsObj, "readLimsMult")
+      val logLimitsMultiplier = parseOptFloat32(jsObj, "logLimsMult")
+      val createLimitsMultiplier = parseOptFloat32(jsObj, "createLimsMult")
       val newStatus = SiteStatus.fromInt(newStatusInt) getOrElse {
         throwBadRequest("EsE402KU2", s"Bad status: $newStatusInt")
       }
-      SuperAdminSitePatch(siteId, newStatus, newNotes, featureFlags = featureFlags)
+      SuperAdminSitePatch(
+            siteId = siteId,
+            newStatus,
+            newNotes = newNotes,
+            rdbQuotaMiBs = rdbQuotaMiBs,
+            fileQuotaMiBs = fileQuotaMiBs,
+            readLimitsMultiplier = readLimitsMultiplier,
+            logLimitsMultiplier = logLimitsMultiplier,
+            createLimitsMultiplier = createLimitsMultiplier,
+            featureFlags = featureFlags)
     })
     globals.systemDao.updateSites(patches)
+    listSitesImpl()
+  }
+
+
+  def schedulePurgeSites(): Action[JsValue] = SuperAdminPostJsonAction(maxBytes = 1000) {
+          request =>
+    val jsObjs = request.body.as[Seq[JsObject]]
+
+    val siteIdDays: Seq[(SiteId, Opt[f32])] = jsObjs.map(jsObj => {
+      val siteId = parseInt32(jsObj, "siteId")
+      val purgeAfterDays = parseOptFloat32(jsObj, "purgeAfterDays")
+      (siteId, purgeAfterDays)
+    })
+
+    for ((siteId: SiteId, days) <- siteIdDays) {
+      globals.systemDao.schedulePurgeSite(siteId = siteId, afterDays = days)
+    }
     listSitesImpl()
   }
 
@@ -81,6 +113,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
       "superadmin" -> Json.obj(
         "firstSiteHostname" -> JsStringOrNull(globals.defaultSiteHostname),
         "baseDomain" -> globals.baseDomainWithPort,
+        "autoPurgeDelayDays" -> JsFloat64OrNull(globals.config.autoPurgeDelayDays),
         "sites" -> sitesNewFirst.map(site => siteToJson(
                       site, staffBySiteId.getOrElse(site.id, Nil))))))
   }
@@ -96,7 +129,13 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
       "name" -> site.name,
       "superStaffNotes" -> JsStringOrNull(site.superStaffNotes),
       "featureFlags" -> JsString(site.featureFlags),
-      "createdAtMs" -> site.createdAt.toUnixMillis,
+      "createdAtMs" -> site.createdAt.millis,
+      "deletedAtMs" -> JsWhenMsOrNull(site.deletedAt),
+      "autoPurgeAtMs" -> JsWhenMsOrNull(site.autoPurgeAt),
+      "purgedAtMs" -> JsWhenMsOrNull(site.purgedAt),
+      "readLimsMult" -> JsFloatOrNull(site.readLimitsMultiplier),
+      "logLimsMult" -> JsFloatOrNull(site.logLimitsMultiplier),
+      "createLimsMult" -> JsFloatOrNull(site.createLimitsMultiplier),
       "stats" -> JsSiteStats(site.stats),
       "staffUsers" -> JsArray(staff.map { staffUser =>
         JsUserInclDetails(

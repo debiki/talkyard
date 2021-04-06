@@ -149,15 +149,36 @@ const DashboardPanel = createFactory({
 });
 
 
+interface SiteTableRowState {
+  // Could wrap in SASitePatch object ----
+  rdbQuotaMiBs: Nr | Nl;
+  fileQuotaMiBs: Nr | Nl;
+  readLimsMult: Nr | Nl;
+  logLimsMult: Nr | Nl;
+  createLimsMult: Nr | Nl;
+  newNotes: St;
+  newFeatureFlags: St;
+  // -------------------------------------
+  purgeAfterDaysInpVal: NrV;
+}
+
+
 const SiteTableRow = createComponent({
   displayName: 'SiteTableRow',
 
   getInitialState: function() {
     const site: SASite = this.props.site;
+    const stuff: SuperAdminStuff = this.props.superAdminStuff;
     return {
-      newNotes: site.superStaffNotes,
+      rdbQuotaMiBs: site.stats.rdbQuotaMiBs,
+      fileQuotaMiBs: site.stats.fileQuotaMiBs,
+      readLimsMult: site.readLimsMult,
+      logLimsMult: site.logLimsMult,
+      createLimsMult: site.createLimsMult,
+      newNotes: site.superStaffNotes || '',
       newFeatureFlags: site.featureFlags,
-    };
+      purgeAfterDaysInpVal: stuff.autoPurgeDelayDays,
+    } as SiteTableRowState;
   },
 
   changeStatus: function(newStatus: SiteStatus) {
@@ -168,19 +189,25 @@ const SiteTableRow = createComponent({
 
   saveNotesAndFlags: function() {
     const site: SASite = _.clone(this.props.site);
-    site.superStaffNotes = this.state.newNotes;
-    site.featureFlags = this.state.newFeatureFlags;
+    const state: SiteTableRowState = this.state;
+    site.rdbQuotaMiBs = state.rdbQuotaMiBs;
+    site.fileQuotaMiBs = state.fileQuotaMiBs;
+    site.readLimsMult = state.readLimsMult;
+    site.logLimsMult = state.logLimsMult;
+    site.createLimsMult = state.createLimsMult;
+    site.superStaffNotes = state.newNotes;
+    site.featureFlags = state.newFeatureFlags;
     Server.updateSites([site]);
   },
 
   render: function() {
     const stuff: SuperAdminStuff = this.props.superAdminStuff;
     const site: SASite = this.props.site;
+    const state: SiteTableRowState = this.state;
 
-    const makeButton = (className: string, title: string, newStatus: SiteStatus,
-            opts: { disabled?: boolean } = {}) =>
-      Button({ ...opts, className: className + ' s_SA_StatusB',
-          onClick: () => opts.disabled ? undefined : this.changeStatus(newStatus) },
+    const makeButton = (className: St, title: St, newStatus: SiteStatus) =>
+      Button({ className: className + ' s_SA_StatusB',
+          onClick: () => this.changeStatus(newStatus) },
         title);
 
     const hideButton = site.status > SiteStatus.Active ? null :
@@ -192,11 +219,39 @@ const SiteTableRow = createComponent({
     const deleteButton = site.status !== SiteStatus.HiddenUnlessStaff ? null :
         makeButton('', "Delete (can undo)", SiteStatus.Deleted);
 
+    const wasDeletedAt = !site.deletedAtMs ? null :
+        r.div({}, "Was deleted at ", whenMsToIsoDate(site.deletedAtMs));
+
     const undeleteButton = site.status !== SiteStatus.Deleted ? null :
         makeButton('', "Undelete", SiteStatus.HiddenUnlessStaff);
 
-    const purgeButton = site.status !== SiteStatus.Deleted ? null :
-        makeButton('', "Purge (can NOT undo)", SiteStatus.Purged, { disabled: true });
+    const autoPurgeAtMs: Nr | Nl =
+        site.status === SiteStatus.Deleted ? site.autoPurgeAtMs : null;
+
+    const willAutoPurgeAt = !isNum(autoPurgeAtMs) ? null :
+        r.div({}, "Will auto purge at ", whenMsToIsoDate(autoPurgeAtMs));
+
+    const scheduleOrCancelPurge = site.status !== SiteStatus.Deleted ? null : (
+        willAutoPurgeAt
+          ? Button({ className: ' s_SA_StatusB',
+                onClick: () => Server.schedulePurge({
+                    purgeAfterDays: null, siteId: site.id }) },
+                "Cancel purge")
+          : r.div({},
+              "Purge after ",
+              r.input({ type: 'number', value: state.purgeAfterDaysInpVal,
+                  onChange: (event) => this.setState({
+                      purgeAfterDaysInpVal: parseFloat(event.target.value),
+                    } as SiteTableRowState) }),
+              " days ",
+              Button({ className: ' s_SA_StatusB',
+                  disabled: !isNum(state.purgeAfterDaysInpVal),
+                  onClick: () => Server.schedulePurge({
+                      purgeAfterDays: state.purgeAfterDaysInpVal, siteId: site.id }) },
+                  "Schedule")));
+
+    const wasPurgedAt = !site.purgedAtMs ? null :
+        r.div({}, "Was purged at ", whenMsToIsoDate(site.purgedAtMs));
 
     let canonHostname = site.canonicalHostname;
     if (!canonHostname && site.id === FirstSiteId) {
@@ -235,27 +290,62 @@ const SiteTableRow = createComponent({
         r.div({},
           r.textarea({ className: 's_SA_S_Notes_Txt' + notesClass,
             onChange: (event) =>
-                this.setState({ newNotes: event.target.value }),
-            defaultValue: site.superStaffNotes || '' }));
+                this.setState({ newNotes: event.target.value, } as SiteTableRowState),
+            defaultValue: state.newNotes }));
 
-    // kB = kilobytes, 1000 bytes.  1 KiB (uppercase K) = 1 kibi =1024 bytes.
+    // kB = kilobytes, 1000 bytes.  1 KiB (uppercase K) = 1 kibi = 1024 bytes.
     // MB = 1000 * 1000 byte. MiB = 1024 * 1024 bytes.
+    const MiB = Sizes.Mebibyte;
     const ps = admin.prettyStats(site.stats);
     const quota = r.div({ className: 's_SA_S_Storage'},
-        `db: ${ps.dbMb.toPrecision(2)} MB = ${ps.dbPercentStr}% of ${ps.dbMaxMb} MB`, r.br(),
-        `fs: ${ps.fsMb.toPrecision(2)} MB = ${ps.fsPercentStr}% of ${ps.fsMaxMb} MB`
+        `db: ${ps.dbMb.toPrecision(2)} MiB = ${ps.dbPercentStr}% of ${ps.dbMaxMb} MiB`,
+        r.input({ className: 's_SA_S_Quota', type: 'number',
+            onChange: (event) => this.setState({
+              rdbQuotaMiBs: asNumOrNull(event.target.value),
+            } as SiteTableRowState),
+            defaultValue: site.stats.rdbQuotaMiBs }),
+        r.br(),
+        `fs: ${ps.fsMb.toPrecision(2)} MiB = ${ps.fsPercentStr}% of ${ps.fsMaxMb} MiB`,
+        r.input({ className: 's_SA_S_Quota', type: 'number',
+            onChange: (event) => this.setState({
+              fileQuotaMiBs: asNumOrNull(event.target.value),
+            } as SiteTableRowState),
+            defaultValue: site.stats.fileQuotaMiBs }),
+        );
+
+    const limitsMultipliers = r.div({ className: 's_SA_S_LimsMults' },
+        "Rd: ",
+        r.input({ className: 's_SA_S_LimsMults_It', type: 'number',
+            onChange: (event) => this.setState({
+                readLimsMult: asNumOrNull(event.target.value) } as SiteTableRowState),
+            defaultValue: site.readLimsMult }),
+        "Lg: ",
+        r.input({ className: 's_SA_S_LimsMults_It', type: 'number',
+            onChange: (event) => this.setState({
+                logLimsMult: asNumOrNull(event.target.value) } as SiteTableRowState),
+            defaultValue: site.logLimsMult }),
+        "Cr: ",
+        r.input({ className: 's_SA_S_LimsMults_It', type: 'number',
+            onChange: (event) => this.setState({
+                createLimsMult: asNumOrNull(event.target.value) } as SiteTableRowState),
+            defaultValue: site.createLimsMult }),
         );
 
     const featureFlags =
         r.div({},
           r.input({ className: 's_SA_S_FeatFlgs',
-              onChange: (event) =>
-                  this.setState({ newFeatureFlags: event.target.value }),
+              onChange: (event) => this.setState({
+                  newFeatureFlags: event.target.value } as SiteTableRowState),
               defaultValue: site.featureFlags }));
 
     const saveBtn = (
-            this.state.newNotes === site.superStaffNotes
-              && this.state.newFeatureFlags === site.featureFlags) ? null :
+            state.rdbQuotaMiBs === site.stats.rdbQuotaMiBs
+              && state.fileQuotaMiBs === site.stats.fileQuotaMiBs
+              && state.readLimsMult === site.readLimsMult
+              && state.logLimsMult === site.logLimsMult
+              && state.createLimsMult === site.createLimsMult
+              && state.newNotes === (site.superStaffNotes || '')
+              && state.newFeatureFlags === site.featureFlags) ? null :
         PrimaryButton({ className: 's_SA_S_Notes_SaveB',
             onClick: this.saveNotesAndFlags },
           "Save");
@@ -269,9 +359,13 @@ const SiteTableRow = createComponent({
           hideButton,
           reactivateButton,
           deleteButton,
+          wasDeletedAt,
           undeleteButton,
-          purgeButton,
+          willAutoPurgeAt,
+          scheduleOrCancelPurge,
+          wasPurgedAt,
           quota,
+          limitsMultipliers,
           featureFlags),
         r.td({},
           r.div({},

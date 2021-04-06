@@ -2228,16 +2228,23 @@ export function loadOnlineUsers() {
 
 
 export function listSites() {
-  get('/-/list-sites', (patch) => {
+  get('/-/sa/list-sites', (patch) => {
     ReactActions.patchTheStore(patch);
   });
 }
 
 
 export function updateSites(sites: SASite[]) {
-  postJsonSuccess('/-/update-sites', (patch) => {
+  postJsonSuccess('/-/sa/update-sites', (patch) => {
     ReactActions.patchTheStore(patch);
   }, sites);
+}
+
+
+export function schedulePurge(ps: { purgeAfterDays: Nr, siteId: SiteId }) {
+  postJsonSuccess('/-/sa/schedule-purge-sites', (patch) => {
+    ReactActions.patchTheStore(patch);
+  }, [ps]);
 }
 
 

@@ -51,9 +51,7 @@ rename table alt_page_ids3 to discussion_keys;
 alter table settings3 drop column embedded_comments_category_id;
   -- add per category embedding origins instead. And use extid 'embedded_comments' category.
 
-drop table category_notf_levels3;
 drop table tag_notf_levels3;
-drop table dw1_settings;
 
 Don't use timestamp — Change all timestam to timestamptz, or maybe i64 integer? millis since 1970?
 Compatible with client side time repr.
@@ -91,8 +89,7 @@ alter page user_pages3 drop column notf_reason;
 
 -- It's empty anyway. But wait until re-impl tags.
 -- drop table tag_notf_levels3;
--- No longer in use. Should drop. But then the migrations failed :-/  on my laptop-2015 only, why.
--- drop table dw1_settings;
+
 
 -- why?
 alter table page_users3 rename to user_pages3;

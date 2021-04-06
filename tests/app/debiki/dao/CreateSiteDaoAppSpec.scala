@@ -132,16 +132,30 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
     "update and read back" in {
       globals.systemDao.writeTxLockAllSites { tx =>
-        tx.updateSites(Seq(SuperAdminSitePatch(
-              sitePubId1000.id, SiteStatus.HiddenUnlessAdmin,
+        tx.updateSite(SuperAdminSitePatch(
+              sitePubId1000.id,
+              SiteStatus.HiddenUnlessAdmin,
+              rdbQuotaMiBs = Some(111),
+              fileQuotaMiBs = Some(222),
+              readLimitsMultiplier = Some(3.3f),
+              logLimitsMultiplier = Some(2.2f),
+              createLimitsMultiplier = Some(1.1f),
               newNotes = Some("notes_notes"),
-              featureFlags = "ffTestFlagOne ffTestFlag2")))
+              featureFlags = "ffTestFlagOne ffTestFlag2"))
       }
+
       globals.systemDao.writeTxLockAllSites { tx =>
         val site = tx.loadSiteInclDetailsById(sitePubId1000.id).get
+        site.id mustBe sitePubId1000.id
+        site.pubId mustBe "pubid1000"
+        site.status mustBe SiteStatus.HiddenUnlessAdmin
+        site.stats.rdbQuotaMiBs mustBe Some(111)
+        site.stats.fileQuotaMiBs mustBe Some(222)
+        site.readLimitsMultiplier mustBe Some(3.3f)
+        site.logLimitsMultiplier mustBe Some(2.2f)
+        site.createLimitsMultiplier mustBe Some(1.1f)
         site.superStaffNotes mustBe Some("notes_notes")
         site.featureFlags mustBe "ffTestFlagOne ffTestFlag2"
-        site.status mustBe SiteStatus.HiddenUnlessAdmin
       }
     }
 

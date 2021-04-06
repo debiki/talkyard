@@ -795,6 +795,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
             throwPermanentRedirect(originOf(result.canonicalHost.hostname) + pathAndQuery)
           case Hostname.RoleLink =>
             die("DwE2KFW7", "Not implemented: <link rel='canonical'>")
+          case Hostname.RoleDeleted =>
+            die("TyEMAT752", s"Shouldn't have loaded deleted hostname: $result")
           case _ =>
             die("DwE20SE4")
         }
@@ -1219,6 +1221,11 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   val sameSiteNone: Boolean = getBoolOrDefault("talkyard.sameSiteNone", default = false)
   val sameSiteLax: Boolean = getBoolOrDefault("talkyard.sameSiteLax", default = false)
 
+  val autoPurgeDelayDays: Opt[f64] =
+    conf.getOptional[f64]("talkyard.autoPurgeDelayDays")
+
+
+  CLEAN_UP; REMOVE // use  ffMayPatchSite  instead
   private val mayPatchSiteIds: String = "," + getStringOrEmpty("talkyard.mayPatchSiteIds") + ","
   def mayPatchSite(siteId: SiteId): Boolean =
     siteId == FirstSiteId ||                        // <—— people's self hosted installations, fine
@@ -1300,11 +1307,11 @@ class Config(conf: play.api.Configuration) extends TyLogging {
         includesSiteId(largeUploadsSiteIds, siteId)
 
     val maxBytesLargeFile: i32 =
-      i64ToMinMaxI32(conf.getOptional[f64](p + "maxMiBLargeFile").map(mib => (mib * MebibyteI64).toLong)
+      i64ToMinMaxI32(conf.getOptional[f64](p + "maxMiBLargeFile").map(mib => (mib * Mebibyte64).toLong)
             .getOrElse(maxUploadSizeBytes)) // <— REMOVE change to 10 MiB, default?
 
     val maxBytesSmallFile: i32 =
-      f64ToMinMaxI32(getF64OrDefault(p + "maxMiBSmallFile", default = 1) * MebibyteI64)
+      f64ToMinMaxI32(getF64OrDefault(p + "maxMiBSmallFile", default = 1) * Mebibyte64)
 
     // Old, remove
     // 2 values: 1 for whole server, absolute max all sites.
@@ -1314,8 +1321,8 @@ class Config(conf: play.api.Configuration) extends TyLogging {
     //   up to serverGlobalMaxFileKb?
     private def maxUploadSizeBytes: i64 =
       (conf.getOptional[i64]("talkyard.uploads.maxKiloBytesPerFile") orElse
-        conf.getOptional[i64]("talkyard.uploads.maxKiloBytes")).map(_ * KibibyteI64)
-            .getOrElse(3 * MebibyteI64)  // or 25 MiB? Nginx: TY_NGX_LIMIT_REQ_BODY_SIZE=25m
+        conf.getOptional[i64]("talkyard.uploads.maxKiloBytes")).map(_ * Kibibyte64)
+            .getOrElse(3 * Mebibyte64)  // or 25 MiB? Nginx: TY_NGX_LIMIT_REQ_BODY_SIZE=25m
   }
 
   object cdn {

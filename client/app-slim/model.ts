@@ -1774,9 +1774,11 @@ interface AdminDashboard {
 }
 
 interface SiteStats {
-  dbStorageLimitBytes: number;
+  dbStorageLimitBytes?: number;  // REMOVE
+  rdbQuotaMiBs: Nr | Nl;         // CLEAN_UP [.6093456]
   dbStorageUsedBytes: number;
-  fileStorageLimitBytes: number;
+  fileStorageLimitBytes: number;  // REMOVE
+  fileQuotaMiBs: Nr | Nl;         // CLEAN_UP [.6093456]
   fileStorageUsedBytes: number;
   numAuditRows: number;
   numGuests: number;
@@ -1817,6 +1819,7 @@ interface AdminPanelProps {
 interface SuperAdminStuff {
   firstSiteHostname?: string;
   baseDomain: string;
+  autoPurgeDelayDays?: Nr;
   sites: SASite[];
 }
 
@@ -1827,10 +1830,20 @@ interface SASite {
   name: string;
   hostnames: string[];
   canonicalHostname: string;
-  createdAtMs: number;
+  createdAtMs: Nr;
+  deletedAtMs?: Nr;
+  autoPurgeAtMs?: Nr;
+  purgedAtMs?: Nr;
   staffUsers: UserInclDetails[];
   stats: SiteStats;
   superStaffNotes?: string;
+  // CLEAN_UP use also for display not only when saving. Remove from SiteStats [.6093456]
+  rdbQuotaMiBs?: Nr;
+  fileQuotaMiBs?: Nr;
+  // --------------------
+  readLimsMult: Nr | Nl;
+  logLimsMult: Nr | Nl;
+  createLimsMult: Nr | Nl;
   featureFlags: St;
 }
 
