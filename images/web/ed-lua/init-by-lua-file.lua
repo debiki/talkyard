@@ -99,7 +99,12 @@ require("resty.acme.autossl").init({
             return false
         end
 
-        if req_res.status ~= 200 then
+        -- 2XX is an ok response, and 30X are various redirects. We need to
+        -- generate certs also for redirect responses, otherwise the browser shows
+        -- a cert warning, instead of following the redirect, if a site got moved
+        -- to another domain.
+        local status = req_res.status
+        if status < 200 or 308 < status then
             ngx.log(ngx.INFO, "Should not have cert: " .. domain .. " [TyMGENCRTNO]")
             return false
         end
