@@ -15,11 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, useGoogleAnalytics: Boolean = true)(content: Html)
+@(tpi: debiki.SiteTpi, useGoogleAnalytics: Boolean = true, noindex: Boolean = false)(content: Html)
 
 <!DOCTYPE html>
 <html class="@tpi.debikiHtmlTagClasses">
 <head>
+@if(noindex) {
+<meta name="robots" content="noindex">
+}
 @tpi.debikiMeta
 @if(tpi.anyEmbeddingUrl.nonEmpty) {
 <base href="@{tpi.anyEmbeddingUrl.get}" target="_parent">

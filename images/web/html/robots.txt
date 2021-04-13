@@ -3,3 +3,10 @@ Disallow: /-/
 # Googlebot needs the CSS files to know that Talkyard is mobile friendly.
 # Probably good to let it access Javascript too?
 Allow: /-/assets/
+# Googlebot needs to access these pages, to find the  [noindex_tag]
+# <meta name="robots" content="noindex"> tag and understand that these pages are
+# *not* to be indexed. However, relying on Disallow here in robots.txt (instead of
+# a meta-noindex tag) doesn't work — Googlebot might index them *anyway* if they're
+# linked to, from outside.
+Allow: /-/users/
+Allow: /-/groups/
