@@ -156,6 +156,11 @@ html:not(.es-watchbar-open)
 // Page width & padding
 //==============================
 
+// We focus the page column, on page load, so the Page Down etc keys work
+// — but it doesn't look nice with a :focus outline around the page.
+#esPageColumn:focus
+  outline: none;
+
 .esScrollBtns_fixedBar,
 #esPageColumn
   .container
