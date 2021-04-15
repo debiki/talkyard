@@ -1031,6 +1031,8 @@ interface TopicInterfaceSettings {
   origPostReplyBtnTitle?: string;       // default: t.AddComment
   origPostVotes?: OrigPostVotes;
 
+  enableDisagreeVote?: Bo;              // default: true
+
   // Embedded comments:
   embComNesting?: NestingDepth;         // default: infinite nesting depth
   embComSortOrder?: PostSortOrder;      // default: best first

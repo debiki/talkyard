@@ -87,6 +87,40 @@ alter page user_pages3 drop column notf_reason;
 ------------
 
 
+pats_t
+pat_groups_t
+
+#pat_sets_meta_t   — or maybe just reuse  pat_groups_t
+#  pat_set_id_c
+#  pat_set_name_c
+#
+#pat_sets_t
+#  pat_set_id_c
+#  pat_id_c
+
+cont_sets_meta_t
+  cont_set_id_c
+  cont_set_name_c
+
+cont_sets_t
+  cont_set_id_c
+  whole_site_c   bool
+  page_types_c   i64
+  cat_id_c
+  page_id_c
+  written_by_id_c   — can be a group
+
+site_settings_t
+
+cont_settings_t
+  cont_set_id_c
+  pats_id_c
+  vote_types_enabled_c    i32   — can depent on both pat, cat
+
+
+
+------------
+
 -- It's empty anyway. But wait until re-impl tags.
 -- drop table tag_notf_levels3;
 

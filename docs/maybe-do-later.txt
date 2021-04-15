@@ -396,9 +396,18 @@ depending on which custom group one is in.  Need clear caches after?
 That is, both: emptyCacheImpl(tx)  and  memCache.clearSingleSite(siteId).
 
 [group-feats]
-Add group visibility settings. And who-may-join feautre, and Join/Leave group buttons.
-+ other features, look at Discourse.
+Add group visibility settings, e.g. no one (incl members in the group) can see
+members in the group — except for some specific groups, e.g. staff.
+And who-may-join feautre, and Join/Leave group buttons.
 Don't let one self-join groups that grants a trust level higher than one's current level.
+
+[cont_settings_t]
+Per group and content set settings.
+Might need more fine grained settings — per pages-in-category/tag/written-by-authors,
+*for* various groups of people. Then,
+pats_t, pat_groups_t,  cont(ent)_sets_t and cont_sets_meta_t
+and cont_settings_t  can all be useful?  See [cont_settings_t] in db-wip.sql.
+
 
 [message-managers]
 A way to message only the managers in a group, rather than everyone in the group?

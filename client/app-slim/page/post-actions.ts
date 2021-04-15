@@ -318,10 +318,15 @@ export const PostActions = createComponent({
               }},
             t.ChangeV + ' ...');
 
-    // Votes can be disabled for blog posts only, right now: [POSTSORDR]
+    // Votes can be disabled for blog posts only, right now, [POSTSORDR]
+    // except for the Disagree vote which can be disabled everywhere.
     const isEmbOrigPost = isEmbeddedComments && isPageBody;
     const useDownvotes = !isEmbOrigPost || page.origPostVotes === OrigPostVotes.AllVotes;
     const useLikeVote  = !isEmbOrigPost || page.origPostVotes !== OrigPostVotes.NoVotes;
+    const isDisagreeEnabled = page_voteTypeEnabled(page, post, PostVoteType.Disagree);
+
+    // If isn't staff, then the only "downvote" is the Disagree vote.
+    const canDownvote = useDownvotes && (isDisagreeEnabled || isStaff(me));
 
     let numLikesText;
     if (post.numLikeVotes && useLikeVote) {
@@ -331,7 +336,7 @@ export const PostActions = createComponent({
     }
 
     let numWrongsText;
-    if (post.numWrongVotes && useDownvotes) {
+    if (post.numWrongVotes && useDownvotes && isDisagreeEnabled) {
       numWrongsText = r.a({ className: 'dw-a dw-vote-count',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Disagree, event.target) },
           t.pa.NumDisagree(post.numWrongVotes));
@@ -361,7 +366,8 @@ export const PostActions = createComponent({
         // edit preview post [EDPVWPST] with the real post.
         !isEditingThisPost) {
       const myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
-      const myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
+      const myWrongVote = isDisagreeEnabled && votes.indexOf('VoteWrong') !== -1 ?
+              ' dw-my-vote' : '';
       const myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
       const myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
       const myOtherVotes = myWrongVote || myBuryVote || myUnwantedVote ? ' dw-my-vote' : '';
@@ -372,7 +378,7 @@ export const PostActions = createComponent({
       // disabled that originally — doesn't look so aesthetically nice at least,
       // without some CSS tweaks.
       // Enable when fixing [DBLINHERIT]?  [OPDOWNV]
-      downvotesDropdown = isPageBody || !useDownvotes ? null :
+      downvotesDropdown = isPageBody || !canDownvote ? null :
           r.span({ className: 'dropdown navbar-right', title: t.pa.MoreVotes,
               onClick: this.openMoreVotesDropdown },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));
@@ -581,11 +587,14 @@ const MoreVotesDropdownModal = createComponent({
     const isStaffOrCoreMember: boolean =
         isStaff(me) || me.trustLevel >= TrustLevel.CoreMember;
 
+    const isDisagreeEnabled = page_voteTypeEnabled(
+            store.currentPage, post, PostVoteType.Disagree);
+
     const myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
     const myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
     const myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
 
-    const wrongVoteButton =
+    const wrongVoteButton = !isDisagreeEnabled ? null :
       ExplainingListItem({
         title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, t.pa.Disagree),
         text: r.span({}, t.pa.DisagreeExpl),

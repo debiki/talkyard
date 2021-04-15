@@ -133,6 +133,8 @@ abstract class PageParts {
 
   def origPostReplyBtnTitle: Option[String]
 
+  def enableDisagreeVote: Bo = true
+
   private lazy val childrenSortedByParentNr: collection.Map[PostNr, immutable.Seq[Post]] = {
     // COULD find out how to specify the capacity?
     val childMap = mutable.HashMap[PostNr, Vector[Post]]()

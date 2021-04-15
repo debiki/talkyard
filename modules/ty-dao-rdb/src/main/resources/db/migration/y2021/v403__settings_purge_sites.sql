@@ -88,3 +88,6 @@ alter table hosts3 add constraint hosts_c_role_in check (
 update perms_on_pages3 set may_create_page = null
     where not may_create_page;
 
+
+alter table settings3 add column enable_disagree_vote_c bool;
+

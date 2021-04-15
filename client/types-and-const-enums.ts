@@ -38,6 +38,8 @@ type Ay = any;  // but not 'An' because that sounds like 'an'.
 type Bo = boolean;
 type Nr = number;
 type St = string;
+type Bitfield = Nr;  // in Javascript, only 53? bits, the rest is for the exponent [make_opaque_type]
+
 
 // Nullish and falsy values.
 type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}

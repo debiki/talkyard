@@ -829,6 +829,11 @@ package object core {
   }
 
 
+  // ----- Vote types
+
+  //type VoteTypesEnabled = hmm
+
+
   // ----- ShowAuthorHow
 
   sealed abstract class ShowAuthorHow(val IntVal: Int) {
@@ -1387,6 +1392,7 @@ package object core {
   def EDIT_INDEX = ()     // Database index could be simplified. Or investigate if it's getting used?
   def AVOID_RERENDER = ()
   def SMALLER_BUNDLE = ()
+  def SAVE_BANDWIDTH = ()
   def ANTI_REACT = ()     // Things done in weird ways from React.js point of view
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def COULD_FREE_MEM = () // Browser side, can set null sth to free mem, but then maybe harder to debug.

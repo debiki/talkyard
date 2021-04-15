@@ -672,7 +672,9 @@ object JsX {
   def JsNumberOrNull(value: Option[Int]): JsValue =  // RENAME to JsNum32OrNull
     JsI32OrNull(value)
 
-  def JsI32OrNull(value: Opt[i32]): JsValue =  // Scala 3: union types:  i32 | i64  ?
+  def JsI32OrNull(value: Opt[i32]): JsValue = JsInt32OrNull(value)
+
+  def JsInt32OrNull(value: Opt[i32]): JsValue =  // Scala 3: union types:  i32 | i64  ?
     value.map(JsNumber(_)).getOrElse(JsNull)
 
   def JsLongOrNull(value: Option[Long]): JsValue =   // RENAME to JsNum64OrNull ?
