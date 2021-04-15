@@ -13,6 +13,8 @@ Instead of this file, maybe use a combination of:
 SHOULD NEXT: Make these limits configurable at runtime, and trigger superadmin notifications
 when exceeded 50%, so can review and bump. And warnings if exceeds 75%, 90%.
 
+[first_last_apr_at]
+Fix sort order bug: Add Post.firstApprovedAt.
 
 [ty_themes]
 Primary button colors, secondary, background, arrows, fonts,

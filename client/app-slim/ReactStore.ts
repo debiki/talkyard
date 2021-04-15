@@ -1175,7 +1175,7 @@ function sortPostNrsInPlaceByTime(postNrs: PostNr[], postsByNr: { [nr: number]: 
       return -1;
     if (!postAOrB)
       return +1;
-    return postApprovedOrCreatedBefore(postAOrB, postBOrA);
+    return postAppearedBefore(postAOrB, postBOrA);
   });
 }
 
@@ -1221,7 +1221,7 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
       if (onlyOneIsPreview)
         return postA.isPreview ? +1 : -1;
       else
-        return postApprovedOrCreatedBefore(postA, postB)
+        return postAppearedBefore(postA, postB)
     }
 
     // Show any preview post first, directly below the post it replies to — then,
@@ -1302,17 +1302,20 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     else
       return 0; // cannot happen though  */
     // Better to use approvedAt:
-    return postApprovedOrCreatedBefore(postA, postB);
+    return postAppearedBefore(postA, postB);
   });
 }
 
 
-function postApprovedOrCreatedBefore(postA: Post, postB: Post): number {
+function postAppearedBefore(postA: Post, postB: Post): number {
   // Sync w Scala [5BKZQF02]
+  // BUG  [first_last_apr_at]  use 'nr' only, to sort by date, for now.
+  /*
   const postAApprAt = postA.approvedAtMs || Infinity;
   const postBApprAt = postB.approvedAtMs || Infinity;
   if (postAApprAt < postBApprAt) return -1;
   if (postAApprAt > postBApprAt) return +1;
+  */
   return postA.nr < postB.nr ? -1 : +1;
 }
 
