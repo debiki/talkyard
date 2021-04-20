@@ -1550,15 +1550,16 @@ export function loadTopicsByUser(userId: UserId,
 }
 
 
-export function listAllUsernames(prefix: string, doneCallback: (usernames: BriefUser) => void) {
+export function listAllUsernames(prefix: St, onOk: (usernames: BriefUser[]) => Vo) {
   const url = '/-/list-all-users?usernamePrefix='+ prefix;
-  get(url, doneCallback);
+  get(url, onOk);
 }
 
 
-export function listUsernames(prefix: string, pageId: PageId, success: (usernames: BriefUser) => void) {
-  let url = `/-/list-usernames?pageId=${pageId}&prefix=${prefix}`;
-  get(url, success);
+export function listUsernames(prefix: St, pageId: PageId,
+      onOk: (usernames: BriefUser[]) => Vo) {
+  const url = `/-/list-usernames?pageId=${pageId}&prefix=${prefix}`;
+  get(url, onOk);
 }
 
 

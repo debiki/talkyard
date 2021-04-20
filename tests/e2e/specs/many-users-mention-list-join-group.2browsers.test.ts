@@ -229,7 +229,7 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
     mariasBrowser.editor.editText(` and @Minion_Mina103`, { append: true });
   });
 
-  it("... there's only one such minion", () => {   // [rta_too_many_pats]  [E2EBUG]
+  it("... there's only one such minion", () => {
     mariasBrowser.waitForAtMost(1, '.rta__entity');
     assert.eq(mariasBrowser.count('.rta__entity'), 1);
   });

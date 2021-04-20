@@ -53,29 +53,41 @@ export function getOrCreateEditor(success) {
 }
 
 
+// Helps with handling '@username...' responses from the server in the right order.
+let listUsernamesCount = 0;
 
 export const listUsernamesTrigger = {
 
   // Mentions.
   '@': {
-    dataProvider: (charsTyped: St) =>
-      // BUG? A race? replies from the server arrives out of order,  [rta_too_many_pats]
-      // causing rta to list many users although pat just typed someone's exact name?
-      // Pretty harmless — mostly annoying in E2E tests?
-      new Promise(function (resolve, reject) {
+    dataProvider: (charsTyped: St) => {
+      listUsernamesCount += 1;
+      const curCount = listUsernamesCount;
+      return new Promise(function (resolve, reject) {
         const pageId = ReactStore.getPageId();
         if (!pageId || pageId === EmptyPageId) {
           // This is an embedded comments discussion, but there are no comments, so the
           // discussion has not yet been lazy-created. So search among users, for now.
           // UX maybe one *always* wants to search among all users? Unless if is chat channel?
-          Server.listAllUsernames(charsTyped, resolve);
+          Server.listAllUsernames(charsTyped, handleOrRejectUsernames);
         }
         else {
           // One probably wants to mention someone participating in the current discussion = page?
           // So search among those users only.
-          Server.listUsernames(charsTyped, pageId, resolve);
+          Server.listUsernames(charsTyped, pageId, handleOrRejectUsernames);
         }
-      }),
+        function handleOrRejectUsernames(usernames: BriefUser[]) {
+          if (listUsernamesCount > curCount) {
+            // This response is stale, from an old request. Wait for the
+            // most recent request to get a response instead.
+            reject();
+          }
+          else {
+            resolve(usernames);
+          }
+        }
+      })
+    },
     component: ({ entity: { id, username, fullName }}) =>
       r.div({}, `${username} (${fullName})`),
     output: (item, trigger) => '@' + item.username
