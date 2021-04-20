@@ -239,7 +239,8 @@ const SiteTableRow = createComponent({
                 "Cancel purge")
           : r.div({},
               "Purge after ",
-              r.input({ type: 'number', value: state.purgeAfterDaysInpVal,
+              r.input({ type: 'number', min: '0', step: 'any',
+                  value: state.purgeAfterDaysInpVal,
                   onChange: (event) => this.setState({
                       purgeAfterDaysInpVal: parseFloat(event.target.value),
                     } as SiteTableRowState) }),
@@ -299,35 +300,35 @@ const SiteTableRow = createComponent({
     const ps = admin.prettyStats(site.stats);
     const quota = r.div({ className: 's_SA_S_Storage'},
         `db: ${ps.dbMb.toPrecision(2)} MiB = ${ps.dbPercentStr}% of ${ps.dbMaxMb} MiB`,
-        r.input({ className: 's_SA_S_Quota', type: 'number',
+        r.input({ className: 's_SA_S_Quota', type: 'number', min: '0', step: '1',
             onChange: (event) => this.setState({
-              rdbQuotaMiBs: asNumOrNull(event.target.value),
+              rdbQuotaMiBs: asIntOrNull(event.target.value),
             } as SiteTableRowState),
             defaultValue: site.stats.rdbQuotaMiBs }),
         r.br(),
         `fs: ${ps.fsMb.toPrecision(2)} MiB = ${ps.fsPercentStr}% of ${ps.fsMaxMb} MiB`,
-        r.input({ className: 's_SA_S_Quota', type: 'number',
+        r.input({ className: 's_SA_S_Quota', type: 'number', min: '0', step: '1',
             onChange: (event) => this.setState({
-              fileQuotaMiBs: asNumOrNull(event.target.value),
+              fileQuotaMiBs: asIntOrNull(event.target.value),
             } as SiteTableRowState),
             defaultValue: site.stats.fileQuotaMiBs }),
         );
 
     const limitsMultipliers = r.div({ className: 's_SA_S_LimsMults' },
         "Rd: ",
-        r.input({ className: 's_SA_S_LimsMults_It', type: 'number',
+        r.input({ className: 's_SA_S_LimsMults_It', type: 'number', min: '0', step: '0.5',
             onChange: (event) => this.setState({
-                readLimsMult: asNumOrNull(event.target.value) } as SiteTableRowState),
+                readLimsMult: asFloatOrNull(event.target.value) } as SiteTableRowState),
             defaultValue: site.readLimsMult }),
         "Lg: ",
-        r.input({ className: 's_SA_S_LimsMults_It', type: 'number',
+        r.input({ className: 's_SA_S_LimsMults_It', type: 'number', min: '0', step: '0.5',
             onChange: (event) => this.setState({
-                logLimsMult: asNumOrNull(event.target.value) } as SiteTableRowState),
+                logLimsMult: asFloatOrNull(event.target.value) } as SiteTableRowState),
             defaultValue: site.logLimsMult }),
         "Cr: ",
-        r.input({ className: 's_SA_S_LimsMults_It', type: 'number',
+        r.input({ className: 's_SA_S_LimsMults_It', type: 'number', min: '0', step: '0.5',
             onChange: (event) => this.setState({
-                createLimsMult: asNumOrNull(event.target.value) } as SiteTableRowState),
+                createLimsMult: asFloatOrNull(event.target.value) } as SiteTableRowState),
             defaultValue: site.createLimsMult }),
         );
 

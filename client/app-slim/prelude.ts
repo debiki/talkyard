@@ -431,11 +431,23 @@ export function isNum(x): Bo {
   return _.isNumber(x);
 }
 
-export function asNumOrNull(v: StV): Nr | Nl {
-  if (!v) return null;
-  const nr = parseInt(v);
-  return isNaN(nr) ? null : nr;
+export function asIntOrNull(v: StV): Nr | Nl {
+  return asNumOrNull(false, v);
 }
+
+export function asFloatOrNull(v: StV): Nr | Nl {
+  return asNumOrNull(true, v);
+}
+
+function asNumOrNull(toFloat: Bo, v: StV): Nr | Nl {
+  if (!v) return null;
+  if (!numRegex.test(v)) return null;
+  const nr = toFloat ? parseFloat(v) : parseInt(v);
+  return isNaN(nr) || !isFinite(nr) ? null : nr;
+}
+
+const numRegex = /^ *[+-]? *\d+(\.\d*)? *$/;
+
 
 // Ooops bad name  RENAME to isVal
 export function isDefined(x): boolean {
