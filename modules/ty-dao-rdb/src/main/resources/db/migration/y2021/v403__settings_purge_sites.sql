@@ -10,8 +10,8 @@ create domain i32_gz_d as int constraint i32gz_c_gz check (value > 0);
 create domain i32_gez_d as int constraint i32gez_c_gez check (value >= 0);
 
 create domain i64_d as bigint;
-create domain i64_gz_d as bigint constraint i64_c_gz check (value > 0);
-create domain i64_gez_d as bigint constraint i64_c_gez check (value >= 0);
+create domain i64_gz_d as bigint constraint i64gz_c_gz check (value > 0);
+create domain i64_gez_d as bigint constraint i64gez_c_gez check (value >= 0);
 
 create domain f32_d as real;
 create domain f32_gz_d as real constraint f32gz_c_gz check (value > 0);
@@ -21,7 +21,7 @@ create domain f64_d as double precision;
 create domain f64_gz_d as double precision constraint f64gz_c_gz check (value > 0);
 create domain f64_gez_d as double precision constraint f64gez_c_gez check (value >= 0);
 
-create domain trust_level_or_staff_d as int
+create domain trust_level_or_staff_d as i16_d
     constraint trustlevelstaff_c_0_8 check (value between 0 and 8);
 
 
@@ -57,17 +57,15 @@ update sites3 set deleted_at_c = now_utc() where status = 6;
 update sites3 set file_quota_mibs_c = rdb_quota_mibs_c;
 
 
-alter table sites3 drop constraint sites_status__c_in;
-alter table sites3 add constraint sites_c_status check (
-    status between 1 and 7);
+alter table sites3 rename constraint sites_status__c_in to sites_c_status;
 
-alter table sites3 add constraint sites_c_deleted_status check (
+alter table sites3 add constraint sites_c_deletedat_status check (
     (deleted_at_c is not null) = (status >= 6));
 
-alter table sites3 add constraint sites_c_autopurge_at check (
+alter table sites3 add constraint sites_c_autopurgeat_status check (
     (auto_purge_at_c is null) or (status >= 6));
 
-alter table sites3 add constraint sites_c_purged_at check (
+alter table sites3 add constraint sites_c_purgedat_status check (
     (purged_at_c is not null) = (status >= 7));
 
 
