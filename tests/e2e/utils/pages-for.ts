@@ -2045,9 +2045,11 @@ export class TyE2eTestBrowser {
       this.waitForThenClickText(selector, regex);
     }
 
-    waitForThenClickText(selector: string, regex: string | RegExp) {   // RENAME to waitAndClickSelectorWithText (above)
+    waitForThenClickText(selector: St, regex: St | RegExp,
+            opts: { tryNumTimes?: Nr } = {}) {   // RENAME to waitAndClickSelectorWithText (above)
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
-      utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, 3, () => {
+      const numTries = opts.tryNumTimes || 3;
+      utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, numTries, () => {
         const elem = this.waitAndGetElemWithText(selector, regex);
         this.clickNow(elem);
       });
@@ -2833,9 +2835,19 @@ export class TyE2eTestBrowser {
           // Prefer licking a link in the topbar, if present, because if the topbar
           // is position: fixed at the top of the page, then a link in the page itself
           // can be occluded by the topbar.
-          const ancLn = ' .esTopbar_ancestors_link';
-          const where = this.isVisible('.s_Tb ' + ancLn) ? '.s_Tb' : '.esPage';
-          this.waitForThenClickText(where + ancLn, categoryName);
+          //
+          // However, sometimes the topbar appears just after we've checked if
+          // it's there. And then it can steal the clicks. So, try this twice.
+          // (This can happen, if posting a reply, and then immediately trying to
+          // click Home — because once the reply appears, Ty scrolls down
+          // so it gets into view — but then the topbar might appear, just after
+          // we've checked if it's there.)
+          //
+          utils.tryManyTimes("Clicking ancestor link", 2, () => {
+            const ancLn = ' .esTopbar_ancestors_link';
+            const where = this.isVisible('.s_Tb ' + ancLn) ? '.s_Tb' : '.esPage';
+            this.waitForThenClickText(where + ancLn, categoryName, { tryNumTimes: 2 });
+          });
         });
       },
 

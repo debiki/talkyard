@@ -438,7 +438,7 @@ ${ htmlToPaste ? htmlToPaste : `
   },
 
 
-  tryManyTimes: function<R>(what, maxNumTimes, fn: () => R) {
+  tryManyTimes: function<R>(what, maxNumTimes, fn: () => R): R {
     for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {
       try {
         return fn();
