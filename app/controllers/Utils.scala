@@ -82,7 +82,9 @@ object Utils extends Results with http.ContentTypes {
    */
   def OkSafeJson(json: JsValue, pretty: Boolean = false): Result = {
     val jsonString = if (pretty) Json.prettyPrint(json) else Json.stringify(json)
-    val prefix = if (json.isInstanceOf[JsObject]) "" else SafeJsonPrefix
+    // Would excluding the prefix be a maybe breaking API change?
+    // Better post about this in the forum first.
+    val prefix = SafeJsonPrefix // if (json.isInstanceOf[JsObject]) "" else SafeJsonPrefix
     Ok(prefix + jsonString) as JSON
   }
 
