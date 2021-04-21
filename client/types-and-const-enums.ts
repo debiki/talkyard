@@ -38,6 +38,8 @@ type Ay = any;  // but not 'An' because that sounds like 'an'.
 type Bo = boolean;
 type Nr = number;
 type St = string;
+type Bitfield = Nr;  // in Javascript, only 53? bits, the rest is for the exponent [make_opaque_type]
+
 
 // Nullish and falsy values.
 type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}
@@ -47,6 +49,12 @@ type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}
 // can return null, undefined, '' or 0, if anyObj is any of those values,
 // or can return a boolean. So, boolean or falsy:
 type BoZ = Bo | Z;
+
+type NUV = null | undefined | void;
+
+type StV = St | NUV;    // 'V' for void-ish things, but not 0 or false
+type NrV = Nr | NUV;    // A number or void-ish — but not '' or false
+
 
 type HElm = HTMLElement;
 type Elm = Element;

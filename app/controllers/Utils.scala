@@ -22,7 +22,7 @@ import debiki.EdHttp._
 import ed.server.liftweb
 import java.{lang => jl}
 import play.api._
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{Json, JsValue, JsObject}
 import play.api.mvc._
 
 
@@ -50,7 +50,7 @@ object Utils extends Results with http.ContentTypes {
 
 
   /** Gatling doesn't understand this prefix */
-  private val safeJsonPrefix = {
+  private val SafeJsonPrefix = {
     // safePrefix =
     ")]}',\n"  // [5LKW02D4]
     /* This doesn't work in Play 2.8, and currently isn't needed anyay.  [PLAY28]
@@ -68,20 +68,22 @@ object Utils extends Results with http.ContentTypes {
   /**
    * Prefixes the JSON string with characters that prevents the JSON
    * from being parsed as Javascript from a <script> tag.
-   * This supposedly thwarts a JSON vulnerability that allows third
-   * party websites to turn your JSON resource URL into JSONP
-   * request under some conditions, see:
-   *   "JSON Vulnerability Protection", here:
-   *      http://docs.angularjs.org/api/ng.$http
-   *   and:
-   *     http://haacked.com/archive/2008/11/20/
-   *        anatomy-of-a-subtle-json-vulnerability.aspx
-   * Debiki's Javascript strips the ")]}'," prefix  [5LKW02D4]
+   * That attack works only if the returned data is an array: "[ ... ]",
+   * because it redefines the array constructor so the returned array can get
+   * executed as a js statement (if it's top level, not nested in an obj),
+   * making it possible for hostile websites to steal people's data via JSONP.
+   * But prefixing the returned json with the below prefix, breaks such attacks.
+   * See:
+   *   - JSON Vulnerability Protection
+   *     https://docs.angularjs.org/api/ng/service/$http#json-vulnerability-protection
+   *   - http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx
+   * Ty's Javascript strips the ")]}'," prefix  [5LKW02D4]
    * before parsing the JSON.
    */
   def OkSafeJson(json: JsValue, pretty: Boolean = false): Result = {
     val jsonString = if (pretty) Json.prettyPrint(json) else Json.stringify(json)
-    Ok(safeJsonPrefix + jsonString) as JSON
+    val prefix = if (json.isInstanceOf[JsObject]) "" else SafeJsonPrefix
+    Ok(prefix + jsonString) as JSON
   }
 
   /** Pretty prints by default, nice when troubleshooting. And doesn't incl the

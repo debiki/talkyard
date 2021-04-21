@@ -1550,15 +1550,16 @@ export function loadTopicsByUser(userId: UserId,
 }
 
 
-export function listAllUsernames(prefix: string, doneCallback: (usernames: BriefUser) => void) {
+export function listAllUsernames(prefix: St, onOk: (usernames: BriefUser[]) => Vo) {
   const url = '/-/list-all-users?usernamePrefix='+ prefix;
-  get(url, doneCallback);
+  get(url, onOk);
 }
 
 
-export function listUsernames(prefix: string, pageId: PageId, success: (usernames: BriefUser) => void) {
-  let url = `/-/list-usernames?pageId=${pageId}&prefix=${prefix}`;
-  get(url, success);
+export function listUsernames(prefix: St, pageId: PageId,
+      onOk: (usernames: BriefUser[]) => Vo) {
+  const url = `/-/list-usernames?pageId=${pageId}&prefix=${prefix}`;
+  get(url, onOk);
 }
 
 
@@ -2228,16 +2229,23 @@ export function loadOnlineUsers() {
 
 
 export function listSites() {
-  get('/-/list-sites', (patch) => {
+  get('/-/sa/list-sites', (patch) => {
     ReactActions.patchTheStore(patch);
   });
 }
 
 
 export function updateSites(sites: SASite[]) {
-  postJsonSuccess('/-/update-sites', (patch) => {
+  postJsonSuccess('/-/sa/update-sites', (patch) => {
     ReactActions.patchTheStore(patch);
   }, sites);
+}
+
+
+export function schedulePurge(ps: { purgeAfterDays: Nr, siteId: SiteId }) {
+  postJsonSuccess('/-/sa/schedule-purge-sites', (patch) => {
+    ReactActions.patchTheStore(patch);
+  }, [ps]);
 }
 
 

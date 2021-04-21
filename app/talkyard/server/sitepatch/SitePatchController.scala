@@ -75,7 +75,9 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
         && !request.isDefaultSite
         // For multi site servers: Either a magic password, or an allow-patch conf val.
         && !security.hasOkForbiddenPassword(request)
-        && !globals.config.mayPatchSite(request.siteId),
+        && !(
+            request.site.featureFlags.contains("ffMayPatchSite")
+            || globals.config.mayPatchSite(request.siteId)),  // <—— will remove
       errCode,
       if (message ne null) message
       else "Not allowed. Ask for help at https://www.talkyard.io/forum/")

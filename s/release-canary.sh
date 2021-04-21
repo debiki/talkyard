@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# BUG this module no longer in use:
 git_lock_file='.git/modules/modules/ed-versions/index.lock'
 versions_file='version-tags.log'
 
@@ -150,6 +151,7 @@ cd relchans/$promote_to_chan
   git commit -m "Release $release_version_tag_w_ed_chan."
   echo
   echo "DO THIS in relchans/$promote_to_chan/:"
+  echo git branch -f $promote_to_chan
   echo git push origin $promote_to_chan
   # 'master' is for backw compat. Don't incl in v1. [ty_v1]
   if [ "$promote_to_chan" = 'tyse-v0-regular' ]; then

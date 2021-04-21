@@ -19,8 +19,11 @@
 
 
 @* GDPR: User profile page urls can include @usernames, which can be personal data.
-So disable Google Analytics, so the url and username won't be sent to Google. *@
-@wrapper(tpi, useGoogleAnalytics = false) {
+So disable Google Analytics, so the url and username won't be sent to Google.
+Also, tell Googlebot to not index these pages — maybe some people don't want
+their usernames / names to be easily searchable.  [noindex_tag]
+*@
+@wrapper(tpi, useGoogleAnalytics = false, noindex = true) {
   <!-- users.scala.html -->
 
   @* A React component will be mounted here. CLEAN_UP remove this file *@

@@ -29,17 +29,18 @@ export function reviewTask_doneOrGone(reviewTask: ReviewTask): boolean {
 
 
 export interface PrettyDiskStats {
-  dbMb: number;
-  dbMaxMb?: number;
-  dbPercentStr?: string;
-  fsMb: number;
-  fsMaxMb?: number;
-  fsPercentStr?: string;
+  dbMb: Nr;
+  dbMaxMb?: Nr;
+  dbPercentStr?: St;
+  fsMb: Nr;
+  fsMaxMb?: Nr;
+  fsPercentStr?: St;
 }
 
 
 export function prettyStats(stats: SiteStats): PrettyDiskStats {
-  const Mega = 1000 * 1000;
+  //const Mega = 1000 * 1000;
+  const Mega = Sizes.Mebibyte;
 
   const dbMb = stats.dbStorageUsedBytes / Mega;
   const dbMaxMb = stats.dbStorageLimitBytes && stats.dbStorageLimitBytes / Mega;

@@ -107,6 +107,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         emb_com_nesting_c,
         orig_post_reply_btn_title,
         orig_post_votes,
+        enable_disagree_vote_c,
         appr_before_if_trust_lte,
         review_after_if_trust_lte,
         num_first_posts_to_review,
@@ -157,7 +158,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
 
@@ -213,6 +214,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.embComNesting.getOrElse(None).orNullInt,
       editedSettings2.origPostReplyBtnTitle.getOrElse(None).orNullVarchar,
       editedSettings2.origPostVotes.getOrElse(None).map(_.toInt).orNullInt,
+      editedSettings2.enableDisagreeVote.getOrElse(None).orNullBo,
       editedSettings2.requireApprovalIfTrustLte.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.reviewAfterIfTrustLte.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.numFirstPostsToReview.getOrElse(None).orNullInt,
@@ -330,6 +332,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("emb_com_nesting_c", s.embComNesting.map(_.orNullInt))
     maybeSet("orig_post_reply_btn_title", s.origPostReplyBtnTitle.map(_.trimOrNullVarchar))
     maybeSet("orig_post_votes", s.origPostVotes.map(_.map(_.toInt).orNullInt))
+    maybeSet("enable_disagree_vote_c", s.enableDisagreeVote.map(_.orNullBo))
     maybeSet("appr_before_if_trust_lte", s.requireApprovalIfTrustLte.map(_.map(_.toInt).orNullInt))
     maybeSet("review_after_if_trust_lte", s.reviewAfterIfTrustLte.map(_.map(_.toInt).orNullInt))
     maybeSet("num_first_posts_to_review", s.numFirstPostsToReview.map(_.orNullInt))
@@ -447,6 +450,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       embComNesting = getOptInt(rs, "emb_com_nesting_c"),
       origPostReplyBtnTitle = getOptString(rs, "orig_post_reply_btn_title"),
       origPostVotes = getOptInt(rs, "orig_post_votes").flatMap(OrigPostVotes.fromInt),
+      enableDisagreeVote = getOptBo(rs, "enable_disagree_vote_c"),
       requireApprovalIfTrustLte = getOptInt(rs, "appr_before_if_trust_lte").flatMap(TrustLevel.fromInt),
       reviewAfterIfTrustLte = getOptInt(rs, "review_after_if_trust_lte").flatMap(TrustLevel.fromInt),
       numFirstPostsToReview = getOptInt(rs, "num_first_posts_to_review"),

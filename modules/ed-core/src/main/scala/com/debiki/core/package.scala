@@ -561,12 +561,14 @@ package object core {
   val OneMonthInMillis: Long = 365 * MillisPerDay / 12  // divides evenly
   val OneYearInMillis: Long = 365 * MillisPerDay
 
-  val Kibibyte: Int = 1024
-  val KibibyteI64: i64 = 1024L
-  val Mebibyte: Int = 1024 * 1024
-  val MebibyteI64: i64 = 1024L * 1024L
-  val Megabyte: Int = 1000 * 1000
-  val Megabytes: Int = Megabyte
+  val Kibibyte: Int = 1024   // REMOVE
+  val Kibibyte32: i32 = 1024
+  val Kibibyte64: i64 = 1024L
+  val Mebibyte: Int = 1024 * 1024   // REMOVE
+  val Mebibyte32: i32 = 1024 * 1024
+  val Mebibyte64: i64 = 1024L * 1024L
+  val Megabyte: Int = 1000 * 1000    // REMOVE, need 32 or 64 suffix
+  val Megabytes: Int = Megabyte      // REMOVE
 
   def i64ToMinMaxI32(num: i64): i32 = {
     if (num > Int.MaxValue) Int.MaxValue
@@ -825,6 +827,11 @@ package object core {
       case _ => return None
     })
   }
+
+
+  // ----- Vote types
+
+  //type VoteTypesEnabled = hmm
 
 
   // ----- ShowAuthorHow
@@ -1385,6 +1392,7 @@ package object core {
   def EDIT_INDEX = ()     // Database index could be simplified. Or investigate if it's getting used?
   def AVOID_RERENDER = ()
   def SMALLER_BUNDLE = ()
+  def SAVE_BANDWIDTH = ()
   def ANTI_REACT = ()     // Things done in weird ways from React.js point of view
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def COULD_FREE_MEM = () // Browser side, can set null sth to free mem, but then maybe harder to debug.

@@ -128,7 +128,8 @@ trait AllSettings {
   def showAuthorHow: ShowAuthorHow
   def watchbarStartsOpen: Boolean
 
-  // ----- Topics — hmm these could / should? be per topic type:
+  // ----- Topics — hmm these could / should? be per topic type,
+  // or per category —  see cont_sets_t  in  db-refactor.txt.
   def discussionLayout: DiscussionLayout
   def discPostSortOrder: PostSortOrder
   def discPostNesting: NestingDepth
@@ -138,6 +139,7 @@ trait AllSettings {
   // These are for embedded comments actually, COULD rename:
   def origPostReplyBtnTitle: St
   def origPostVotes: OrigPostVotes
+  def enableDisagreeVote: Bo
   // -----------------------------
 
   def requireApprovalIfTrustLte: TrustLevel
@@ -270,6 +272,7 @@ trait AllSettings {
     embComNesting = Some(self.embComNesting),
     origPostReplyBtnTitle = Some(self.origPostReplyBtnTitle),
     origPostVotes = Some(self.origPostVotes),
+    enableDisagreeVote = Some(self.enableDisagreeVote),
     requireApprovalIfTrustLte = Some(self.requireApprovalIfTrustLte),
     reviewAfterIfTrustLte = Some(self.reviewAfterIfTrustLte),
     numFirstPostsToReview = Some(self.numFirstPostsToReview),
@@ -397,6 +400,7 @@ object AllSettings {
     val embComNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
     val origPostReplyBtnTitle: String = ""  // will then use the i18n field
     val origPostVotes: OrigPostVotes = OrigPostVotes.Default
+    val enableDisagreeVote: Bo = true
     val requireApprovalIfTrustLte = TrustLevel.Stranger
     val reviewAfterIfTrustLte = TrustLevel.Stranger
     val numFirstPostsToReview = 1
@@ -525,6 +529,7 @@ case class EffectiveSettings(
   def embComNesting: NestingDepth = firstInChain(_.embComNesting) getOrElse default.embComNesting
   def origPostReplyBtnTitle: String = firstInChain(_.origPostReplyBtnTitle) getOrElse default.origPostReplyBtnTitle
   def origPostVotes: OrigPostVotes = firstInChain(_.origPostVotes) getOrElse default.origPostVotes
+  def enableDisagreeVote: Bo = firstInChain(_.enableDisagreeVote) getOrElse default.enableDisagreeVote
   def requireApprovalIfTrustLte: TrustLevel = firstInChain(_.requireApprovalIfTrustLte) getOrElse default.requireApprovalIfTrustLte
   def reviewAfterIfTrustLte: TrustLevel = firstInChain(_.reviewAfterIfTrustLte) getOrElse default.reviewAfterIfTrustLte
   def numFirstPostsToReview: Int = firstInChain(_.numFirstPostsToReview) getOrElse default.numFirstPostsToReview
@@ -782,6 +787,7 @@ object Settings2 {
       "embComNesting" -> JsNumberOrNull(s.embComNesting),
       "origPostReplyBtnTitle" -> JsStringOrNull(s.origPostReplyBtnTitle),
       "origPostVotes" -> JsNumberOrNull(s.origPostVotes.map(_.toInt)),
+      "enableDisagreeVote" -> JsBoolOrNull(s.enableDisagreeVote),
       "requireApprovalIfTrustLte" -> JsNumberOrNull(s.requireApprovalIfTrustLte.map(_.toInt)),
       "reviewAfterIfTrustLte" -> JsNumberOrNull(s.reviewAfterIfTrustLte.map(_.toInt)),
       "numFirstPostsToReview" -> JsNumberOrNull(s.numFirstPostsToReview),
@@ -892,6 +898,7 @@ object Settings2 {
     embComNesting = anyInt(json, "embComNesting", d.embComNesting),
     origPostReplyBtnTitle = anyString(json, "origPostReplyBtnTitle", d.origPostReplyBtnTitle),
     origPostVotes = anyInt(json, "origPostVotes", d.origPostVotes.toInt).map(_.flatMap(OrigPostVotes.fromInt)),
+    enableDisagreeVote = anyBool(json, "enableDisagreeVote", d.enableDisagreeVote),
     requireApprovalIfTrustLte = anyInt(json, "requireApprovalIfTrustLte", d.requireApprovalIfTrustLte.toInt).map(_.flatMap(TrustLevel.fromInt)),
     reviewAfterIfTrustLte = anyInt(json, "reviewAfterIfTrustLte", d.reviewAfterIfTrustLte.toInt).map(_.flatMap(TrustLevel.fromInt)),
     numFirstPostsToReview = anyInt(json, "numFirstPostsToReview", d.numFirstPostsToReview),
@@ -976,15 +983,29 @@ object Settings2 {
         throwBadRequest("EsE5J4K02", s"'$field' is not a JsBoolean, but a ${classNameOf(bad)}")
     }
 
-  private def anyInt(json: JsValue, field: String, default: Int): Option[Option[Int]] =
+  private def anyInt(json: JsValue, field: St, default: i32): Opt[Opt[i32]] = {
+    anyInt64(json, field, default.toLong) map { anyVal64 =>
+      anyVal64 map { val64 =>
+        CLEAN_UP; DO_AFTER // 2021-09-01: Always do dieIf, .. or throwForbidden instead?
+        // Originally, was just  .toInt  no min/max check.
+        if (Globals.isDevOrTest) {
+          dieIf(val64 < Integer.MIN_VALUE, "TyE603RMSDL6", val64)
+          dieIf(val64 > Integer.MAX_VALUE, "TyE603RMSDL7", val64)
+        }
+        val64.toInt
+      }
+    }
+  }
+
+  private def anyInt64(json: JsValue, field: St, default: i64): Opt[Opt[i64]] =
     (json \ field).toOption.map {
       case n: JsNumber =>
-        val value = n.value.toInt
+        val value = n.value.toLong
         if (value == default) None else Some(value)
       case JsNull =>
         None
       case bad =>
-        throwBadRequest("EsE5J4K02", s"'$field' is not a JsNumber, but a ${classNameOf(bad)}")
+        throwBadRequest("TyE5J4K025", s"'$field' is not a JsNumber, but a ${classNameOf(bad)}")
     }
 
   private def anyFloat(json: JsValue, field: String, default: Float): Option[Option[Float]] =

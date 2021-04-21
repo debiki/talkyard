@@ -298,8 +298,12 @@ declare namespace debiki2 {
   function firstDefinedOf(x, y, z?): any;
   function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V };
   function isNullOrUndefined(x): boolean;
+  function isVal(x): Bo;
   function isDefined2(x): boolean;  // = !_.isUndefined
   function nonEmpty(x): boolean;
+  function isNum(value): Bo;
+  function asIntOrNull(v: StV): Nr | Nl;
+  function asFloatOrNull(v: StV): Nr | Nl;
   function isNumGeZ(value: St): Bo;
   function isDigitsOnly(maybeDigits: string): boolean;
   function prettyNum(num: number): number;

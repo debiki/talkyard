@@ -427,6 +427,15 @@ object RateLimits {
   }
 
 
+  // CreateCategory
+  // But not until after > 50 cats?
+  // Or maybe proportionally to num topics?
+  // Example:  10 000 topics —>  <= 5% * 10 000 = 500 cats?
+
+  // CreateTag
+  // But not until after > 50 tags?
+
+
   /** Discourse does this, as of February 2015:
     *
     * rate limit create topic: 15

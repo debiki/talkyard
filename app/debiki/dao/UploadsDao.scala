@@ -54,7 +54,10 @@ trait UploadsDao {
     // Over quota? [fs_quota]
     val siteStats = loadResourceUsage()
     siteStats.fileStorageLimitBytes foreach { maxBytes =>
-      throwForbiddenIf(siteStats.fileStorageUsedBytes > maxBytes,
+      // We don't know how large the file will be, after compression, if any.
+      // But at least 1 byte. So add 1 byte — this makes file quota 0 MiB prevent
+      // any files from getting uploaded (but otherwise, 1 file could get uploaded).
+      throwForbiddenIf(siteStats.fileStorageUsedBytes + 1 > maxBytes,
           "TyEUPLDQUOTA", o"""Over quota: Too much disk used by uploaded files.
               MBs used: ${siteStats.numUploadBytes / 1000 / 1000
               }, limit: ${maxBytes / 1000 / 1000}""")

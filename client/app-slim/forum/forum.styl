@@ -18,6 +18,19 @@
 
 $isWideMinWidth = 900px;
 
+// Long category and topic titles should word break and line wrap,
+// so overflow-x hidden shouldn't have any effect.
+//
+// (If, in some rare cases, there are *really* long unbreakable words
+// — then it's better that the end of those words, disappear off
+// screen, rather than causing horizontal scroll?  [avoid_hz_scroll]
+// But this shouldn't happen, because  overflow-wrap: break-all
+// (currently using:  word-break: break-word;  for Safari backw compat though)
+// breaks long words if needed.)
+//
+.dw-forum
+  overflow-x: hidden;
+
 
 .s_F_Ts_T_Con-Para
   display: block;
@@ -753,8 +766,11 @@ $minOwnIconColumnDisplWidth = 900px;
 
 .s_F_Cs_C_ChildCs
   margin: 8px 0 -1px;
-  display: flex;
-  flex-wrap: wrap;
+  // Why did I use flex-wrap here? At least, doesn't work well on
+  // narrow screens — causes the cats to line up in small horizontal
+  // word wrapped squares.
+  // display: flex;
+  // flex-wrap: wrap;
 
 .s_F_Cs_C_ChildCs li
   flex: 1;
@@ -765,7 +781,11 @@ $minOwnIconColumnDisplWidth = 900px;
 .DW .s_F_Cs_C_ChildCs_C
   font-weight: bold;
   font-size: 16px;  // 14 is a bit small
-  white-space: nowrap;
+  // white-space: nowrap;  — Why? No. Can make sub cats with long names
+  // push the right table column, off screen, on mobile phones.
+  // Instead:   [avoid_hz_scroll]
+  word-break: break-word;  // no not needed? because on .esPage  already
+
   // Move closer to list item disc.
   position: relative;
   left: -4px;
@@ -798,6 +818,8 @@ $minOwnIconColumnDisplWidth = 900px;
   .topic-title
     color: hsl(0, 0%, 25%);
     font-size: 15px;
+    @media (max-width 767px)
+      font-size: 14px;  // [avoid_hz_scroll]
 
     [class^="icon-"]:before, [class*=" icon-"]:before
       margin: 0 4px 0 0;
@@ -846,21 +868,50 @@ $minOwnIconColumnDisplWidth = 900px;
     color: $color;
 
 
-.forum-table > tbody > tr > td {
+$less_forum_padding_width = 680px;
+
+@media (max-width $less_forum_padding_width)
+  .forum-table
+    th, td
+      &:first-child
+        padding-left: 0 !important;
+
+.forum-table > tbody > tr > td
   padding: 15px 20px 16px 8px; /* 8x paddin-left aligns w/ row header */
-}
+  @media (max-width $less_forum_padding_width)
+    padding-right: 2px;  // 2 + 8 = 10, ok
+
+
 
 .forum-table .forum-title-wrap
   font-size: 19px;
   line-height: 1;  // else hard to vertical-align with any icon to the left
+
+  // The cat name in 19px would take up *lots* of space
+  // on a 400 wide screen. [avoid_hz_scroll]
+  @media (min-width 940px) and (max-width: 1023px)
+    font-size: 18px;
+  @media (min-width 640px) and (max-width: 939px)
+    font-size: 17px;
+  @media (min-width 440px) and (max-width 639px)
+    font-size: 16px;
+  @media (max-width 439px)
+    font-size: 15px;
+
   margin: $catTitleMarginTop 10px 9px 0;
+  min-width: 100px; // or hard to read, if word-wrap splits onto many lines
   .forum-title
     font-weight: bold;
     color: hsl(0, 0%, 23%);
+    // Prevent long words in a category name from pushing the
+    // topics list to the right off-screen. [avoid_hz_scroll]
+    word-break: break-word; // Later: overflow-wrap: anywhere;  when supported by Safari
+    line-height: 125%;
 
-.DW.DW .forum-table td {
+
+.DW.DW .forum-table td
   background: none; /* cancel Twitter Bootstrap */
-}
+
 
 .forum-table .topic-table-excerpt tbody,
 .forum-table .topic-table-excerpt td {
@@ -868,9 +919,18 @@ $minOwnIconColumnDisplWidth = 900px;
   padding-left: 0; /* or wouldn't align with parent table header */
 }
 
-.forum-table .topic-table-excerpt {
+.forum-table .topic-table-excerpt
   margin-bottom: 10px;
-}
+  // Don't let long words make the table wider than a phone. [avoid_hz_scroll]
+  // But avoid, if screen a bit wide — then the browser word-breaks more nicely.
+  @media (min-width 480px)
+    // Breaks only if actually needed.
+    word-break: break-word;
+  @media (max-width 479px)
+    // Starts a word on a line although it won't fit, and happily line-breaks it
+    // — good on mobiles, to use more of the available space.
+    word-break: break-all;
+
 
 .forum-table .topic-table-excerpt .topic-details
   font-size: 12px;

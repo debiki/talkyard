@@ -1,3 +1,5 @@
+-- Oops, see:
+-- y2018/db-wip.sql
 
 ?? settings3.many_sections  —> enable_sub_sites
 

@@ -13,6 +13,8 @@ Instead of this file, maybe use a combination of:
 SHOULD NEXT: Make these limits configurable at runtime, and trigger superadmin notifications
 when exceeded 50%, so can review and bump. And warnings if exceeds 75%, 90%.
 
+[first_last_apr_at]
+Fix sort order bug: Add Post.firstApprovedAt.
 
 [ty_themes]
 Primary button colors, secondary, background, arrows, fonts,
@@ -88,6 +90,16 @@ the same group(s) or high enough trust level or sth like that?
 [security]
 prevent usernames from being displayed in Unicode, if mixed charsets used,
 e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
+
+Switch to firewalld.
+
+use gVisor / runsc or Firecracker.
+See: https://fly.io/blog/sandboxing-and-workload-isolation/
+
+Optionally encrypt off-site backups? Maybe:  https://github.com/borgbackup/borg
+    (plus instructions to copy the backup encryption key!)
+    Seems ppl like it:  https://news.ycombinator.com/item?id=21642364  "the holy grail"
+      rsync.net
 
 Add CSP to all page types / routes: CSP_MISSING, [script_src_self].
 
@@ -384,9 +396,18 @@ depending on which custom group one is in.  Need clear caches after?
 That is, both: emptyCacheImpl(tx)  and  memCache.clearSingleSite(siteId).
 
 [group-feats]
-Add group visibility settings. And who-may-join feautre, and Join/Leave group buttons.
-+ other features, look at Discourse.
+Add group visibility settings, e.g. no one (incl members in the group) can see
+members in the group — except for some specific groups, e.g. staff.
+And who-may-join feautre, and Join/Leave group buttons.
 Don't let one self-join groups that grants a trust level higher than one's current level.
+
+[cont_settings_t]
+Per group and content set settings.
+Might need more fine grained settings — per pages-in-category/tag/written-by-authors,
+*for* various groups of people. Then,
+pats_t, pat_groups_t,  cont(ent)_sets_t and cont_sets_meta_t
+and cont_settings_t  can all be useful?  See [cont_settings_t] in db-wip.sql.
+
 
 [message-managers]
 A way to message only the managers in a group, rather than everyone in the group?
@@ -627,6 +648,17 @@ Offline builds on various Linux distros, not just Debian 10?
 
 
 [ty_v1] Things to fix before Ty stack version 1: 0.20YY.NR —> version 1.20YY.NR
+
+s/typ.ts script: Check mem before upgrading, warn if too little? balloon.txt file?
+
+Use firewalld instead of ufw  [firewalld_not_ufw]
+    - recommended by the Debian wiki: https://wiki.debian.org/DebianFirewall
+    - better than ufw; ufw won't block exposed Docker ports,
+      see:  https://github.com/chaifeng/ufw-docker
+  Sth like:
+  firewall-cmd --zone=public --permanent --add-service=http
+  firewall-cmd --zone=public --permanent --add-service=https
+
 
 ? Rename /opt/talkyard/conf/play-framework.conf  to  talkyard-app.conf
 so can use other tech than only Play Fmw, without the file name getting misleading.

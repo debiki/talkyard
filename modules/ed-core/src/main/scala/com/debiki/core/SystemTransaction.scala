@@ -52,7 +52,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   def loadAllSitesInclDetails(): immutable.Seq[SiteInclDetails]
   def loadSiteInclDetailsById(siteId: SiteId): Option[SiteInclDetails]
-  def loadSitesDeletedNotPurged(): ImmSeq[SiteInclDetails]
+  def loadSitesToMaybePurge(): ImmSeq[SiteInclDetails]
 
   def loadSitesByIds(tenantIds: Seq[SiteId]): Seq[Site]
 
@@ -65,14 +65,15 @@ trait SystemTransaction {  RENAME // to SysTx, started already
   def loadSite(siteId: SiteId): Option[Site] =
     loadSitesByIds(Seq(siteId)).headOption
 
-  def updateSites(sites: Seq[SuperAdminSitePatch]): Unit
+  def updateSite(site: SuperAdminSitePatch): U
+  def schedulePurgeSite(siteId: SiteId, afterDays: Opt[f32]): U
 
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 
   def insertSiteHost(siteId: SiteId, host: Hostname): Unit
   def deleteAnyHostname(hostname: String): Boolean
 
-  def deleteSiteById(siteId: SiteId, mayDeleteRealSite: Boolean = false): Boolean
+  def deleteSiteById(siteId: SiteId, mayDeleteRealSite: Bo, keepHostname: Bo): Bo
 
 
   // ----- Staff users

@@ -265,6 +265,14 @@ function renderPageInBrowser() {
   const steps = [];
 
   steps.push(function() {
+    // Make scroll buttons like Page Down, Up, Space work directly after page load.
+    // (Unless the page column has focus, those buttons have no effect,
+    // until one has clicked somewhere in the page so it gets the focus
+    // somehow. But oddly enough, clicking in the page doesn't change
+    // document.activeElement from <body> — still, scroll starts working. Seems
+    // there's some kind of "scroll focus" too in the browser.)
+    debiki2.$byId('esPageColumn')?.focus();
+
     registerEventHandlersFireLoginOut();
     registerServiceWorkerWaitForSameVersion();
 

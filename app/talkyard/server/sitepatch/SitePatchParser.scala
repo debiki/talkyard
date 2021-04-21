@@ -462,10 +462,18 @@ case class SitePatchParser(context: EdContext) {
           createdAt = readWhen(jsObject, "createdAtMs"),
           createdFromIp = None,
           creatorEmailAddress = None,
+          autoPurgeAt = readOptWhen(jsObject, "autoPurgeAtMs"),
+          purgedAt = readOptWhen(jsObject, "purgedAtMs"),
           nextPageId = readInt(jsObject, "nextPageId"),
           version = readInt(jsObject, "version"),
           hostnames = hostnames.toList,
-          stats = ResourceUse(quotaLimitMbs = None))
+          stats = ResourceUse(
+                quotaLimitMbs = parseOptInt32(jsObject, "rdbQuotaMiBs"),
+                fileSysQuotaMiBs = parseOptInt32(jsObject, "fileQuotaMiBs")),
+          readLimitsMultiplier = readOptFloat(jsObject, "readLimsMult"),
+          logLimitsMultiplier = readOptFloat(jsObject, "logLimsMult"),
+          createLimitsMultiplier = readOptFloat(jsObject, "createLimsMult"),
+          )
   }
 
 

@@ -340,10 +340,12 @@ case class Post(   // [exp] ok use
   lastApprovedEditById: Option[UserId],
   numDistinctEditors: Int,
   safeRevisionNr: Option[Int],
+  // Needed for sorting by when the post appeared:  [first_last_apr_at]
+  // firstApprovedAt: Opt[When]  — or maybe firstAppearedAt/firstVisibleAt: Opt[When]?
   approvedSource: Option[String],
   approvedHtmlSanitized: Option[String],
-  approvedAt: Option[ju.Date],
-  approvedById: Option[UserId],
+  approvedAt: Option[ju.Date],   // RENAME to lastApprovedAt  [first_last_apr_at]
+  approvedById: Option[UserId],  // RENAME to lastApproved...
   approvedRevisionNr: Option[Int],
   collapsedStatus: CollapsedStatus,
   collapsedAt: Option[ju.Date],
@@ -867,11 +869,11 @@ object Post {
 
 
   private def sortPostsNewestFirst(postA: Post, postB: Post): Bo = {
-    !postApprovedOrCreatedBefore(postA, postB)
+    !postAppearedBefore(postA, postB)
   }
 
   private def sortPostsOldestFirst(postA: Post, postB: Post): Bo = {
-    postApprovedOrCreatedBefore(postA, postB)
+    postAppearedBefore(postA, postB)
   }
 
 
@@ -898,7 +900,7 @@ object Post {
     if (postA.tyype.placeLast && !postB.tyype.placeLast)
       return false
     if (postA.tyype.placeLast && postB.tyype.placeLast)
-      return postApprovedOrCreatedBefore(postA, postB)
+      return postAppearedBefore(postA, postB)
 
     // Place deleted posts last; they're rather uninteresting?
     if (!postA.deletedStatus.isDeleted && postB.deletedStatus.isDeleted)
@@ -976,18 +978,36 @@ object Post {
     else
       false  */
     // No, moving posts is a very rare thing. Instead, sort by approval time.
-    postApprovedOrCreatedBefore(postA, postB)
+    postAppearedBefore(postA, postB)
   }
 
 
-  private def postApprovedOrCreatedBefore(postA: Post, postB: Post): Boolean = {
+  /** The post that appeared first (visible to all members, not only to
+    * staff so they could review), might not be the one that got *posted*
+    * first, but rather the one that got approved first.
+    * Example: A new member posts a reply A, which gets queued for moderation,
+    * not yet visible.
+    * Then a trusted member posts a reply B, which gets auto approved, becomes
+    * visible directly.
+    * Thereafter a moderator approves reply A.
+    * Then, although B was created after A, it became visible to all members
+    * before A, and should get sorted be fore A. However because of
+    * a bug  [first_last_apr_at]  currently A would appear before B.
+    */
+  private def postAppearedBefore(postA: Post, postB: Post): Boolean = {
     // Sync w Typescript [5BKZQF02]
+    BUG //   [first_last_apr_at]
+    // Should create & use a field  firstApprovedAt  instead,  otherwise
+    // editing a post and approving the edits, changes the sort order.
+    // For now, it's better, I think, to just sort by creation time instead.
+    /*
     val postAApprAt: Long = postA.approvedAt.map(_.getTime).getOrElse(Long.MaxValue)
     val postBApprAt: Long = postB.approvedAt.map(_.getTime).getOrElse(Long.MaxValue)
     if (postAApprAt < postBApprAt)
       return true
     if (postAApprAt > postBApprAt)
       return false
+    */
     // This should order posts by when they got inserted into the database, not
     // by their creation timestamps. Usually gives the same result. Could matter
     // though, if one import-appends more posts to an already existing page.

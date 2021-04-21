@@ -338,8 +338,10 @@ GET   /-/super-admin/            controllers.SuperAdminController.redirect
 GET   /-/superadmin              controllers.SuperAdminController.redirect
 GET   /-/superadmin/             controllers.SuperAdminController.superAdminApp(clientRoute = "")
 GET   /-/superadmin/*clientRoute controllers.SuperAdminController.superAdminApp(clientRoute)
-GET   /-/list-sites              controllers.SuperAdminController.listSites
-POST  /-/update-sites            controllers.SuperAdminController.updateSites
+GET   /-/sa/list-sites           controllers.SuperAdminController.listSites
+POST  /-/sa/update-sites         controllers.SuperAdminController.updateSites
+POST  /-/sa/schedule-purge-sites controllers.SuperAdminController.schedulePurgeSites
+
 
 
 # ----- API

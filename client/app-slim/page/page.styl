@@ -156,6 +156,21 @@ html:not(.es-watchbar-open)
 // Page width & padding
 //==============================
 
+// Avoid overflow or horizontal scrolling.  [avoid_hz_scroll]
+// Might as well do this for everything in the page?  [nicewrap]  Otherwise,
+// more precisely needed for the .dw-p-bd-blk, in case people type long word
+//  or urls — and for the category/tags, in case a category name is long.
+.esPage
+  word-break: break-word;   // works in Safari, iOS, although deprecated...
+  //overflow-wrap: anywhere; // ... this instead, but Safari doesn't understand.
+  // But not this: (makes the browser break wherever, ignoring word boundaries)
+  //word-break: break-all;
+
+// We focus the page column, on page load, so the Page Down etc keys work
+// — but it doesn't look nice with a :focus outline around the page.
+#esPageColumn:focus
+  outline: none;
+
 .esScrollBtns_fixedBar,
 #esPageColumn
   .container

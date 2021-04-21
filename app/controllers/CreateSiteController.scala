@@ -48,9 +48,11 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   private val MinLocalHostnameLength = 6
 
 
+  // 200 OK means "Yes, generate a cert", and also, GetAction might try to redirect
+  // to a new location ofr this site — that is, return a 30X; that also means "Yes".
+  // Anything else means "No don't".
   def intReq_hostnameShouldHaveCert: Action[U] = GetAction { req: GetRequest =>
     val site = req.dao.getSite()
-    // 200 OK means "Yes, generate a cert". Anything else means "No don't".
     val shouldHaveCert = site.exists(_.status != SiteStatus.Purged)
     if (shouldHaveCert) Ok else NotFound
   }

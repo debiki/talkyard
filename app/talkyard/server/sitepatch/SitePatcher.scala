@@ -1123,7 +1123,9 @@ case class SitePatcher(globals: debiki.Globals) {
       // transaction — so we won't be left without any site at all, if something
       // errors out when creating the new site (e.g. Postgres serialization errors).
       globals.systemDao.deleteSites(siteIdToOverwrite, sysTx,
-        mayDeleteRealSite = !isTest && !siteData.isTestSiteOkDelete)
+            // CLEAN_UP isn't this always true, in Prod? Then just use 'true' instead?
+            mayDeleteRealSite = !isTest && !siteData.isTestSiteOkDelete,
+            keepHostname = false)
 
       // Keep the hostname of the site we're overwriting. Otherwise, once we've imported
       // the new site, and the hostname changes to whatever is in the dump — then,

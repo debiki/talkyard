@@ -130,6 +130,13 @@ case class PagePartsDao(
     settings.origPostVotes
   }
 
+  override def enableDisagreeVote: Bo = {
+    // Distant future: Lookup based on page type and category, maybe tags,
+    // in cont_settings_t [cont_settings_t]. Maybe also who the current user is?
+    // If, say, a community wants to enable this vote only for >= Full Members.
+    settings.enableDisagreeVote
+  }
+
   def postsOrderNesting: PostsOrderNesting = {
     // Later, will use discPostSortOrder for embedded comments too, [POSTSORDR].
     // but will then lookup emb comments settings by page type.

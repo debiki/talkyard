@@ -371,7 +371,7 @@ export function toId(x: number | { id: number } | { uniqueId: number }): number 
 }
 
 
-export function isNumGeZ(value: St): Bo {
+export function isNumGeZ(value: St): Bo {  // CLEAN_UP rename to isNumStGeZ
   // Ignore exponents for now ('123e45').
   return /^\d+(\.\d+)?$/.test(value);
 }
@@ -424,9 +424,38 @@ export function isUndef(x): Bo {
   return _.isUndefined(x);
 }
 
+// CLEAN_UP; RENAME to isNumType because _.isNumber() returns true for NaN
+// — NaN is of *type* number, although it is Not-a-Number.
+// (Can incl an isNumFinite that says false for NaN and +-Inf.)
+export function isNum(x): Bo {
+  return _.isNumber(x);
+}
 
-// Ooops bad name
-export function isDefined(x): boolean {  // NEXT RENAME to notNullOrUndef
+export function asIntOrNull(v: StV): Nr | Nl {
+  return asNumOrNull(false, v);
+}
+
+export function asFloatOrNull(v: StV): Nr | Nl {
+  return asNumOrNull(true, v);
+}
+
+function asNumOrNull(toFloat: Bo, v: StV): Nr | Nl {
+  if (!v) return null;
+  if (!numRegex.test(v)) return null;
+  const nr = toFloat ? parseFloat(v) : parseInt(v);
+  return isNaN(nr) || !isFinite(nr) ? null : nr;
+}
+
+const numRegex = /^ *[+-]? *\d+(\.\d*)? *$/;
+
+
+// Ooops bad name  RENAME to isVal
+export function isDefined(x): boolean {
+  return isVal(x);
+}
+// Let's talk about undefined and null as not real values, but 0, '' etc are
+// real values.
+export function isVal(x): Bo {
   return !isNullOrUndefined(x);
 }
 

@@ -610,6 +610,25 @@ html.esSidebarsOverlayPage
 
 
 
+// When at the top
+//==============================
+
+// Before we've scrolled down, the categories are show in the page column,
+// but hidden in the topbar — there's not much space in the topbar,
+// on mobile phones.
+
+.esPage .s_Tb_Pg_Cs
+  // Word break long cat names (cancel white-space: nowrap) otherwise they
+  // won't fit on narrow screens, can cause horizontal scrolling.
+  // (When in the topbar, though, we do overflow: hidden and ellipsis.)
+  .esTopbar_ancestors_link
+    white-space: normal;
+    text-align: left;  // else, centered, looks weird
+    // Can skip here, now done for the whole page instead [nicewrap]
+    //overflow-wrap: anywhere;
+
+
+
 // When scrolled down
 //==============================
 

@@ -346,8 +346,12 @@ class RdbSystemTransaction(
   }
 
 
-  def loadSitesDeletedNotPurged(): ImmSeq[SiteInclDetails] = {
-    val query = s"select * from sites3 where status = ${SiteStatus.Deleted.toInt}"
+  def loadSitesToMaybePurge(): ImmSeq[SiteInclDetails] = {
+    val query = s"""
+          select * from sites3
+          where status = ${SiteStatus.Deleted.toInt}
+            and auto_purge_at_c is not null
+          """
     loadSitesAndHosts(query, values = Nil)
   }
 
@@ -375,24 +379,68 @@ class RdbSystemTransaction(
   }
 
 
-  def updateSites(sites: Seq[SuperAdminSitePatch]) {
+  def updateSite(patch: SuperAdminSitePatch): U = {
+    val values = ArrayBuffer[AnyRef]()
+
+    val softDeleteOrUndelete = patch.newStatus match {
+      case SiteStatus.Deleted =>
+        // Soft-delete the site.
+        values.append(now.toJavaDate)
+        "deleted_at_c = ?,"
+      case s =>
+        if (s.isDeleted) {
+          "" // Leave the site as is (deleted, maybe purged).
+        }
+        else {
+          // This'll undelete it, or has no effect.
+          "deleted_at_c = null,  auto_purge_at_c = null,"
+        }
+    }
+
     val statement = s"""
        update sites3 set
+           $softDeleteOrUndelete
            status = ?,
            super_staff_notes = ?,
+           rdb_quota_mibs_c = ?,
+           file_quota_mibs_c = ?,
+           read_lims_mult_c = ?,
+           log_lims_mult_c = ?,
+           create_lims_mult_c = ?,
            feature_flags_c = ?
-       where id = ?
-       """
-    for (patch <- sites) {
+       where id = ? """
+
       val siteId = patch.siteId
-      val values = List(
+      values.append(
             patch.newStatus.toInt.asAnyRef,
             patch.newNotes.trimOrNullVarchar,
+            patch.rdbQuotaMiBs.orNullInt,
+            patch.fileQuotaMiBs.orNullInt,
+            patch.readLimitsMultiplier.orNullFloat,
+            patch.logLimitsMultiplier.orNullFloat,
+            patch.createLimitsMultiplier.orNullFloat,
             patch.featureFlags.trimNullVarcharIfBlank,
             siteId.asAnyRef)
-      val num = runUpdate(statement, values)
+      val num = runUpdate(statement, values.toList)
       dieIf(num != 1, "EsE24KF90", s"s$siteId: num = $num when changing site status")
-    }
+  }
+
+
+  def schedulePurgeSite(siteId: SiteId, afterDays: Opt[f32]): U = {
+    val values = ArrayBuffer[AnyRef]()
+    val statement = s"""
+          update sites3 set
+              auto_purge_at_c = ?
+          where id = ?
+            and status = ${SiteStatus.Deleted.toInt} """
+
+      val purgeWhen = afterDays map { days =>
+        val afterSeconds: i64 = (days.toDouble * 24 * 3600).toLong
+        now.plusSeconds(afterSeconds)
+      }
+      values.append(purgeWhen.orNullTimestamp, siteId.asAnyRef)
+      val num = runUpdate(statement, values.toList)
+      dieIf(num != 1, "TyE24KF94", s"s$siteId: num = $num when scheduling purge")
   }
 
 
@@ -402,7 +450,7 @@ class RdbSystemTransaction(
             t.CANONICAL THIS_CANONICAL,
             c.HOST CANONICAL_HOST
         from hosts3 t -- this host, the one connected to
-            left join hosts3 c  -- the cannonical host
+            inner join hosts3 c  -- the canonical host
             on c.SITE_ID = t.SITE_ID and c.CANONICAL = 'C'
         where t.HOST = ?
         """, List(hostname), rs => {

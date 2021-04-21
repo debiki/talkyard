@@ -28,7 +28,8 @@ case class OverQuotaException(
 
 
 case class ResourceUse(
-   quotaLimitMbs: Option[Int] = None,
+   quotaLimitMbs: Opt[i32] = None,     // RENAME rdbQuotaMiBs and move to Site
+   fileSysQuotaMiBs: Opt[i32] = None,  // RENAME fileQuotaMiBs and move to Site
    numAuditRows: Int = 0,
    numGuests: Int = 0,
    numIdentities: Int = 0,
@@ -51,15 +52,15 @@ case class ResourceUse(
    numEmailsSent: Int = 0,
 ) {
 
-  def databaseStorageLimitBytes: Option[Long] =
-    quotaLimitMbs.map(_.toLong * 1000L * 1000L)
+  def databaseStorageLimitBytes: Opt[i64] = quotaLimitMbs.map(_.toLong * Mebibyte64)
 
-  // For now, use the same limit for db storage, as for uploaded files,
-  // i.e. quotaLimitMbs. Later, uploaded files will have their own & higher limit.
-  def fileStorageLimitBytes: Option[Long] =
-    databaseStorageLimitBytes
+  def rdbQuotaMiBs: Opt[i32] = quotaLimitMbs
 
-  def fileStorageUsedBytes: Long =
+  def fileStorageLimitBytes: Opt[i64] = fileSysQuotaMiBs.map(_.toLong * Mebibyte64)
+
+  def fileQuotaMiBs: Opt[i32] = fileSysQuotaMiBs
+
+  def fileStorageUsedBytes: i64 =
     numUploadBytes
     // later: also += num local backup bytes? private uploads bytes?
     // E.g. if generates a backup, it's saved on the local file system
@@ -88,7 +89,8 @@ case class ResourceUse(
   // Let's guess 2kB if I don't know better, and multiply by 3 to stay on the
   // safe side (i.e. overestimate disk usage, so a site's estimated disk usage will
   // shrink in the future, when these estimates are adjusted).
-  def estimatedDbBytesUsed: Long =
+  def estimatedDbBytesUsed: i64 =
+    0L +
     numAuditRows      * 2000 * 3 +  // ??
     numGuests         * 2000 * 3 +  // ??
     numIdentities     * 2000 * 3 +  // ??

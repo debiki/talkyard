@@ -106,6 +106,10 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
 
   private def insertSite(siteNoId: Site, quotaLimitMegabytes: Option[Int])
         : Site = {
+    // For now
+    val databaseQuotaMiB = quotaLimitMegabytes
+    val fileSysQuotaMiB = quotaLimitMegabytes
+
     val newId = siteNoId.id match {
       case NoSiteId =>
         db.nextSeqNo("DW1_TENANTS_ID")(theOneAndOnlyConnection).toInt
@@ -121,10 +125,12 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
     runUpdateSingleRow("""
         insert into sites3 (
           ID, publ_id, status, NAME, ctime, CREATOR_IP,
-          QUOTA_LIMIT_MBS)
-        values (?, ?, ?, ?, ?, ?, ?)""",
+          rdb_quota_mibs_c, file_quota_mibs_c)
+        values (?, ?, ?, ?, ?, ?, ?, ?)""",
       List[AnyRef](site.id.asAnyRef, site.pubId, site.status.toInt.asAnyRef, site.name,
-        site.createdAt.asTimestamp, site.creatorIp, quotaLimitMegabytes.orNullInt))
+        site.createdAt.asTimestamp, site.creatorIp,
+        databaseQuotaMiB.orNullInt,
+        fileSysQuotaMiB.orNullInt))
     site
   }
 
@@ -145,6 +151,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       case Hostname.RoleRedirect => "R"
       case Hostname.RoleLink => "L"
       case Hostname.RoleDuplicate => "D"
+      case Hostname.RoleDeleted => "X"
     }
     val sql = """
       insert into hosts3 (SITE_ID, HOST, CANONICAL, ctime, mtime)
@@ -165,7 +172,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
   }
 
 
-  def deleteSiteById(siteId: SiteId, mayDeleteRealSite: Boolean = false): Boolean = {
+  def deleteSiteById(siteId: SiteId, mayDeleteRealSite: Bo, keepHostname: Bo): Bo = {
     require(mayDeleteRealSite || siteId <= MaxTestSiteId,
       s"Trying to delete real site $siteId, but may delete test sites only [TyEDELREALID]")
 
@@ -214,16 +221,39 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       delete from user_emails3 where site_id = ?
       delete from group_participants3 where site_id = ?
       delete from users3 where site_id = ?
-      delete from hosts3 where site_id = ?
-      """).trim.split("\n")
+      """).trim.split("\n").toBuffer
 
+    if (keepHostname) {
+      // Mark hostnames as deleted, but don't forget them.
+      statements.append("update hosts3 set canonical = 'X' where site_id = ?")
+    }
+    else {
+      statements.append("delete from hosts3 where site_id = ?")
+    }
+
+    var foundAnything = false
     statements foreach { statement =>
-      runUpdate(statement, List(siteId.asAnyRef))
+      val numRowsChanged = runUpdate(statement, List(siteId.asAnyRef))
+      foundAnything ||= numRowsChanged > 0
     }
 
     // Now all tables are empty, but there's still an entry for the site itself in sites3.
     // If we're able to delete it, then the site is really gone (otherwise, it never existed).
-    val isSiteGone = runUpdateSingleRow("delete from sites3 where id = ?", List(siteId.asAnyRef))
+    // But if we'll remember the hostnames, just mark it as purged.
+    val isSiteGone = {
+      if (keepHostname) {
+        runUpdateSingleRow(s"""
+              update sites3 set
+                  status = ${SiteStatus.Purged.toInt},
+                  purged_at_c = ?
+              where id = ? """,
+              List(now.asTimestamp, siteId.asAnyRef))
+      }
+      else {
+        runUpdateSingleRow(
+              "delete from sites3 where id = ?", List(siteId.asAnyRef))
+      }
+    }
 
     runUpdate("set constraints all immediate")
     isSiteGone

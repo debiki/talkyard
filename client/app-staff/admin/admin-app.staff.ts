@@ -2810,6 +2810,15 @@ const CustomizeBasicPanel = createFactory({
           }
         }),
 
+        Setting2(props, { type: 'checkbox', label: "Enable 'Disagree' votes",
+          help: "Un-tick to disable and remove all Disagree votes; " +
+              "tick again to re-enable Disagree votes and get them back.",
+          getter: (s: Settings) => s.enableDisagreeVote,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableDisagreeVote = target.checked;
+          }
+        }),
+
 
         // ---- Discussion and Progress sections
 

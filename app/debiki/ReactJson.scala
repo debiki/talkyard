@@ -316,6 +316,7 @@ class JsonMaker(dao: SiteDao) {
     val pagePath =
       page.path getOrElse PagePathWithId.fromIdOnly(page.id, canonical = true)
 
+    SAVE_BANDWIDTH // Skip null and default-value fields
     val pageJsonObj = Json.obj(  // ts: Page
       "pageId" -> page.id,
       "pageVersion" -> page.meta.version,
@@ -337,6 +338,7 @@ class JsonMaker(dao: SiteDao) {
       // "embComSortOrder" -> ..
       // "embComNesting" -> ..
       "origPostVotes" -> JsNumber(page.parts.origPostVotes.toInt),
+      "enableDisagreeVote" -> JsBoolean(page.parts.enableDisagreeVote),
       "origPostReplyBtnTitle" -> JsStringOrNull(page.parts.origPostReplyBtnTitle),
       // -------------------------------------------------
       "pageHtmlTagCssClasses" -> JsString(page.meta.htmlTagCssClasses),
@@ -1348,8 +1350,13 @@ object JsonMaker {
       json += "embComNesting" -> JsNumber(settings.embComNesting)
     if (settings.origPostReplyBtnTitle != D.origPostReplyBtnTitle)
       json += "origPostReplyBtnTitle" -> JsString(settings.origPostReplyBtnTitle)
+
+    // ----Not needed here? Are incl in per page json already: -----
     if (settings.origPostVotes != D.origPostVotes)
       json += "origPostVotes" -> JsNumber(settings.origPostVotes.toInt)
+    if (settings.enableDisagreeVote != D.enableDisagreeVote)
+      json += "enableDisagreeVote" -> JsBoolean(settings.enableDisagreeVote)
+    // -------------------------------------------------------------
     // -----------------------------------------------------------------------
 
     json
