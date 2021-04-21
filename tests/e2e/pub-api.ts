@@ -69,7 +69,6 @@ type MemberRef = string;
 type GuestRef = string;
 type PatRef = MemberRef | GuestRef;
 type PageRef = string;
-type CategoryRef = string;
 type TagRef = string;
 type BadgeRef = string;
 
