@@ -704,8 +704,7 @@ embedded comments:
           - embedded-comments-conf-notf-pref-first.test.ts  TyT502HMSJP3
   login via metabar:
           - embedded-comments-vote-first.test.ts  TyT2AKBS056
-  click login:
-          - embedded-comments-scroll  TyT2K4DHR49-02   MISSING
+          - embedded-comments-scroll  TyT2K4DHR49-02
   (50279460),
   scroll and load #comment-nnn,
   load more comments:
@@ -713,7 +712,10 @@ embedded comments:
           - embedded-comments-scroll-and-load-more.2browsers.test.ts  TyT603MRKH592S
   won't auto scroll to last read comment:
   (usually the blog post more interesting? so don't auto scroll):
-          - embedded-comments-scroll  TyT2K4DHR49   MISSING
+          - embedded-comments-scroll  TyT2K4DHR49
+  copy comment link,
+  auto scrolls to #comment-N:
+          - embedded-comments-scroll-embedding-page.test.ts  TyT2K4DHR49
   import with discussion id:
           - embedded-comments-scroll  TyT2K4DHR49   MISSING
   import from Disqus xml export file:  (impexp)

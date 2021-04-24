@@ -574,7 +574,7 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
   $r s/wdio       --only embedded-comments-drafts-not-logged-in $args
   $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
-  #$r s/wdio       --only embedded-comments-scroll-embedding-page $args
+  $r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
   $r s/wdio       --only embedded-comments-different-disc-ids-same-page $args
   $r s/wdio       --only embedded-comments-discussion-id.test $args
