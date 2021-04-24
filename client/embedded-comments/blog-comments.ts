@@ -116,7 +116,7 @@ tyns.fetchAndFillInCommentCounts(serverOrigin);
 
 
 var oneTimeLoginSecret;
-var postNrToFocus;
+var postNrToFocus;  // RENAME to ...AfterCommentsLoaded
 
 var commentsIframe;
 var commentsIframeInited;  // dupl, remove, use Arr instead (contents dyn upd)

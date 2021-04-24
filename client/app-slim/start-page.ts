@@ -271,7 +271,12 @@ function renderPageInBrowser() {
     // somehow. But oddly enough, clicking in the page doesn't change
     // document.activeElement from <body> — still, scroll starts working. Seems
     // there's some kind of "scroll focus" too in the browser.)
-    debiki2.$byId('esPageColumn')?.focus();
+    // But not if we're in an embedded blog comments discussion — then,
+    // focusing the Ty page would make the browser jump down to the comments
+    // section; however, people want to read the the blog post first.
+    if (!eds.isInIframe) {
+      debiki2.$byId('esPageColumn')?.focus();
+    }
 
     registerEventHandlersFireLoginOut();
     registerServiceWorkerWaitForSameVersion();

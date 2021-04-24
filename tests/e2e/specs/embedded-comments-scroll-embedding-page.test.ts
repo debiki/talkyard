@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
@@ -25,17 +25,25 @@ const localHostname = 'comments-for-e2e-test-embscrl-localhost-8080';
 const embeddingOrigin = 'http://e2e-test-embscrl.localhost:8080';
 //const pageShortSlug = 'emb-cmts-short.html';
 const pageTallSlug = 'emb-cmts-tall.html';
+const pageTallUrl = embeddingOrigin + '/' + pageTallSlug;
 const pageTallerSlug = 'emb-cmts-taller.html';
+const pageTallerUrl = embeddingOrigin + '/' + pageTallerSlug;
+
+const tallPagePx = 2500;
+const tallerPagePx = 5500;
+
+// Monitors aren't taller than 2000 px?
+const minScroll = tallPagePx - 2000;
 
 
-describe("embedded-comments-scroll  TyT2K4DHR49", () => {
+describe(`embedded-comments-scroll-embedding-page.test.ts  TyT2K4DHR49`, () => {
 
-  it("initialize people", () => {
+  it(`initialize people`, () => {
     mariasBrowser = new TyE2eTestBrowser(wdioBrowser);;
     maria = make.memberMaria();
   });
 
-  it("import a site", () => {
+  it(`import a site`, () => {
     const site: SiteData = make.forumOwnedByOwen('embscrl', { title: "Emb Cmts Scroll Test" });
     site.meta.localHostname = localHostname;
     site.settings.allowEmbeddingFrom = embeddingOrigin;
@@ -44,11 +52,11 @@ describe("embedded-comments-scroll  TyT2K4DHR49", () => {
     siteId = idAddress.id;
   });
 
-  it("create two embedding pages", () => {
+  it(`create two embedding pages`, () => {
     const dir = 'target';
     //fs.writeFileSync(`${dir}/${pageShortSlug}`, makeHtml('short', 0, '#005'));
-    fs.writeFileSync(`${dir}/${pageTallSlug}`, makeHtml('tall', 2000, '#405'));
-    //fs.writeFileSync(`${dir}/${pageTallerSlug}`, makeHtml('taller', 5000, '#040'));
+    fs.writeFileSync(`${dir}/${pageTallSlug}`, makeHtml('tall', tallPagePx, '#405'));
+    fs.writeFileSync(`${dir}/${pageTallerSlug}`, makeHtml('taller', tallerPagePx, '#040'));
   });
 
 
@@ -80,25 +88,104 @@ ${ extraHeight > 500 ? "<br><br><i>SCROLL DOWN\n:\n:\n:</i>" : ""}
 
   // TESTS_MISSING  emb cmts scroll
 
-  it("Maria opens a tall embedding page, does *not* scroll to comment-1", () => {
-    mariasBrowser.go(embeddingOrigin + '/' + pageTallSlug);
+  it(`Maria opens a tall embedding page`, () => {
+    mariasBrowser.go2(pageTallUrl);
   });
 
-  it("... the Log In button is not visible on screen", () => {
+  addTestsThatCheckWontScroll('A: ');
+
+  function addTestsThatCheckWontScroll(prefix: St) {
+    it(prefix + "... Ty does *not* scroll the comments into view", () => {
+      assert.not(mariasBrowser.isDisplayedInViewport('.ty_CmtsIfr'));
+    });
+
+    it(prefix + "Maria waits for the comments to load", () => {
+      mariasBrowser.switchToEmbeddedCommentsIrame();
+      mariasBrowser.metabar.waitForDisplayed();
+      mariasBrowser.switchToTheParentFrame();
+      assert.ok(mariasBrowser.isVisible('.ty_CmtsIfr'));
+    });
+
+    it(prefix + "... Ty still didn't scroll down to the comments", () => {
+      assert.not(mariasBrowser.isDisplayedInViewport('.ty_CmtsIfr'));
+    });
+
+    it(prefix + "... the browser scroll-top is still 0", () => {
+      assert.eq(mariasBrowser.getHtmlBodyScrollY(), 0);
+    });
+  }
+
+
+  it(`Maria logs in  TyT2K4DHR49-02`, () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    // No:
+    // mariasBrowser.loginWithPasswordViaMetabar(maria);
+    // Instead, so can set 'maybeMoves'.
+    mariasBrowser.metabar.waitForLoginButtonVisible();
+    // But why won't the first click work? Need to try twice, why? Oh well.
+    utils.tryUntilTrue("Click Login", 3, () => {
+      mariasBrowser.metabar.clickLogin({ maybeMoves: true });  // we're scrolling down
+      return mariasBrowser.waitForMinBrowserTabs(2, {
+              timeoutIsFine: true, timeoutMs: 500 });
+    });
+    mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
   });
 
-  it("Maria opens tall embedding page, auto scrolls to comment-1  TyT2K4DHR49-05", () => {
-    //mariasBrowser.go(embeddingOrigin + '/' + pageTallSlug + '#comment-1');
+  it(`... posts a comment`, () => {
+    mariasBrowser.complex.replyToEmbeddingBlogPost(
+          "To scroll, or not to scroll, that is the question");
   });
 
-  it("... now the Log In button is visible directly", () => {
+  let commentOneUrl: St;
 
+  it(`... copies a link to the comment`, () => {
+    mariasBrowser.topic.openShareDialogForPostNr(c.FirstReplyNr);
+    commentOneUrl = mariasBrowser.shareDialog.getLinkUrl();
+    mariasBrowser.shareDialog.close();
   });
 
-  it("Maria clicks Log In  TyT2K4DHR49-02", () => {
-    //mariasBrowser.switchToEmbeddedCommentsIrame();
-    //mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
+  it(`... the link looks fine: ends with #comment-1`, () => {
+    assert.eq(commentOneUrl, pageTallUrl + '#comment-1')
   });
+
+
+  it(`Maria temp-jumps to another page`, () => {
+    // If stayign on the same page, sometimes the browser won't notice
+    // that the URL hash frag got changed — at least when editing it outside a test.
+    // So, go to a different page in between.
+    mariasBrowser.go2(pageTallerUrl);
+  });
+
+  it(`... then pastes the link to the comment, goes there`, () => {
+    mariasBrowser.go2(commentOneUrl);
+  });
+
+  it(`Now, Ty *does* scroll the comments section into view  TyT2K4DHR49-05`, () => {
+    mariasBrowser.waitForDisplayedInViewport('.ty_CmtsIfr');
+    assert.ok(mariasBrowser.getHtmlBodyScrollY() >= minScroll);
+  });
+
+
+  it(`Maria goes to the other page again`, () => {
+    mariasBrowser.go2(pageTallerUrl);
+  });
+
+  it(`... then pastes the link to the page with the comment
+          — but *without* the #comment- hash`, () => {
+    mariasBrowser.go2(pageTallUrl);
+  });
+
+  addTestsThatCheckWontScroll('B: ');
+
+
+
+  // TESTS_MISSING  Show and scroll to the correct comment,
+  // in a 300 comments long discussion?
+
+
+  /*
+  Hmm never auto scroll to the last read pos, for a blog post?
+  So, never this:
 
   function markCommentsRead() {
     mariasBrowser.execute(function() {
@@ -115,6 +202,7 @@ ${ extraHeight > 500 ? "<br><br><i>SCROLL DOWN\n:\n:\n:</i>" : ""}
 
   it("... it won't auto-scroll to last reading position (reading the blog post = higher prio)", () => {
   });
+  */
 
 
 });

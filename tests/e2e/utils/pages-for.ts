@@ -813,13 +813,13 @@ export class TyE2eTestBrowser {
       return this.#br.getWindowHandles().length;
     }
 
-    waitForMinBrowserTabs(howMany: number) {
+    waitForMinBrowserTabs(howMany: number, waitPs: WaitPs = {}): Bo {
       let numNow = -1;
       const message = () => `Waiting for >= ${howMany} tabs, currently ${numNow} tabs...`;
-      this.waitUntil(() => {
+      return this.waitUntil(() => {
         numNow = this.numWindowsOpen();
         return numNow >= howMany;
-      }, { message });
+      }, { ...waitPs, message });
     }
 
     waitForMaxBrowserTabs(howMany: number) {
@@ -1152,6 +1152,13 @@ export class TyE2eTestBrowser {
     }
 
 
+    getHtmlBodyScrollY(): Nr {
+      return this.#br.execute(function(): Nr {
+        return document.body.scrollTop;
+      });
+    }
+
+
     scrollIntoViewInPageColumn(selector: string) {   // RENAME to  scrollIntoView
       dieIf(!selector, '!selector [TyE05RKCD5]');
       const isInPageColResult = this.#br.execute(function(selector) {
@@ -1347,6 +1354,14 @@ export class TyE2eTestBrowser {
     }
 
 
+    isDisplayedInViewport(selector: St): Bo {
+      // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
+      const elem: WElm = this.$(selector);
+      const displayed = elem?.isExisting?.() && elem.isDisplayedInViewport?.();
+      return !!displayed;
+    }
+
+
     // Makes it simple to find out which, of many, selectors won't appear,
     // or won't go away.
     filterVisible(selectors: string[],
@@ -1370,6 +1385,14 @@ export class TyE2eTestBrowser {
       this.waitUntil(() => this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
+      });
+    }
+
+
+    waitForDisplayedInViewport(selector: string, ps: WaitPs = {}) {
+      this.waitUntil(() => this.isDisplayedInViewport(selector), {
+        ...ps,
+        message: `Waiting for dispalyed in viewport:  ${selector}`,
       });
     }
 
@@ -4957,12 +4980,16 @@ export class TyE2eTestBrowser {
         return this.isVisible('.dw-cmts-tlbr-summary');
       },
 
+      waitForDisplayed: () => {
+        this.waitForDisplayed('.dw-cmts-tlbr-summary');
+      },
+
       isLoggedIn: (): boolean => {
         return this.isVisible('.dw-a-logout');
       },
 
-      clickLogin: () => {
-        this.waitAndClick('.esMetabar .dw-a-login');
+      clickLogin: (opts: WaitAndClickPs = {}) => {
+        this.waitAndClick('.esMetabar .dw-a-login', opts);
       },
 
       waitForLoginButtonVisible: () => {
@@ -5548,8 +5575,8 @@ export class TyE2eTestBrowser {
           if (!opts.logInAs || !this.isInIframe())
             return true;
           // A login popup should open.
-          this.#br.pause(200);
-          return this.numWindowsOpen() >= 2;
+          return this.waitForMinBrowserTabs(2, {
+                  timeoutMs: 1000, timeoutIsFine: true });
         });
 
         if (opts.logInAs) {
@@ -7879,8 +7906,12 @@ export class TyE2eTestBrowser {
 
 
     shareDialog = {
-      copyLinkToPost: () => {
+      copyLinkToPost: () => {  // RENAME, append:  ...ToClipboard
         this.waitAndClick('.s_ShareD_Link');
+      },
+
+      getLinkUrl: (): St => {
+        return this.waitAndGetValue('.s_ShareD_Link');
       },
 
       close: () => {
