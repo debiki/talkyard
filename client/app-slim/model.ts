@@ -905,8 +905,8 @@ interface Store extends Origins, PartialEditorStoreState {
 
   // Maybe move these to a Site interface?
   siteStatus: SiteStatus;
-  siteFeatureFlags?: St;
-  serverFeatureFlags?: St;
+  siteFeatureFlags?: St;    // use store_isFeatFlagOn; don't access directly
+  serverFeatureFlags?: St;  //
   siteOwnerTermsUrl?: string;
   siteOwnerPrivacyUrl?: string;
   isFirstSiteAdminEmailMissing?: boolean;
