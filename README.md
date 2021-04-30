@@ -15,7 +15,9 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-A community discussion platform — brings together the main features from
+<!-- Community discussion platform, or Structured discussion platform? A/B test?
+Or "Structured discussions, for your community — Talkyard brings together ..." ? -->
+A structured discussions platform — brings together the main features from
 StackOverflow, Slack, Discourse, Reddit/HackerNews, and Disqus blog comments.
 
 <!--
@@ -35,7 +37,13 @@ For your co-workers / customers /
 students / volunteers /
 contributors / users.
 
-But how does it compare with
+You can use Slack and Mattermost etc for day to day teamwork,
+combined with Talkyard for the more important discussions
+that you want to find in a nice-to-read format, months and years later.
+
+Or use Talkyard for customer support, or for schools and students helping each other.
+
+How does Talkyard compare with
 StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus?<br>
 — <a href="https://www.talkyard.io/compared-with">Find out here.</a>
 
