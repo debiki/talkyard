@@ -62,6 +62,9 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
         // ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory']
     });
 
+    // Change hostname
+    //builder.getSite().meta.localHostname = 'e2e-test-something';  // at .localhost
+
     // Adding a new member:
     const newMember: Member = builder.addMmember('hens_username');
 

@@ -33,13 +33,24 @@ d.i.createLoginPopup = function(url) {
   var anyProtocol = /^https?:/.test(url) ? '' : (
       eds.isInIframe ? (eds.secure ? 'https:' : 'http:') : '');
 
-  // Here is described how to configure the popup window:
-  // http://svn.openid.net/repos/specifications/user_interface/1.0/trunk
-  //    /openid-user-interface-extension-1_0.html
+  // Window features:
+  // https://developer.mozilla.org/en-US/docs/Web/API/Window/open#window_features
+  // For boolean features, '1' and 'yes' and '0' and 'no' means true and false.
   var popupWindow = window.open(anyProtocol + url, windowName,
       'width='+ width +',height='+ height +
-      ',status=1,location=1,resizable=yes'+
+      ',status=1,location=1,resizable=1'+
       ',left='+ coordinates[0] +',top='+ coordinates[1]);
+
+  // If !popupWindow — maybe login window blocked by a popup blocker.
+  // However typically won't happen, since the open-window code runs only when
+  // the human clicks a login button — and then popup blockers realize that the human
+  // wants the popup window to open.
+  if (!popupWindow) {
+    // use logW instead  CLEAN_UP  and change this file to Typescript
+    console.warn("Error opening login popup window. A malfunctioning popup blocker?");
+    // Continue anyway, so waitForPopupClose() below gets to clean up any
+    // login UI widgets / styles.
+  }
 
   // A check to perform at each execution of the timed loop. It also triggers
   // the action that follows the closing of the popup

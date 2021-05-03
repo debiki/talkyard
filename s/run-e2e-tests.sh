@@ -296,6 +296,10 @@ function runAllE2eTests {
   $r s/wdio --only create-site-linkedin.1br.extidp $args
   $r s/wdio --only create-site-admin-guide.2browsers $args
   $r s/wdio --only oauth-signup-signin $args
+
+  $r s/wdio --only oidc-azure-login-required.2br.extidp $args
+  $r s/wdio --only oidc-azure-pub-site.2br.extidp $args
+
   $r s/wdio --only login-expire-idle-after.2br.mtime $args
 
   $r s/wdio --only forum-sort-and-scroll.2browsers $args

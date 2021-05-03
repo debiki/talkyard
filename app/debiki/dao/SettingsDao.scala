@@ -152,7 +152,7 @@ trait SettingsDao {
         // Admin can login?
         // Check that the current admin can login via a currently enabled IDP,
         // so hen won't lock henself out.
-        TESTS_MISSING
+        // Test: oidc-azure-login-required.2br.extidp  TyTE2E60RTE24.TyTOIDCSSO
         val (admin: User, adminsIdentities: Seq[Identity]) =
               adminsAndIdentities.find(_._1.id == byWho.id) getOrDie "TyE5MGRT4"
         dieIf(admin.id != byWho.id, "TyE36KRST743")
@@ -176,7 +176,7 @@ trait SettingsDao {
         // If the admin hasn't logged in with any now enabled IDP, hen is
         // somewhat likely locking henself out.
         if (adminsEnabledIdentity.isEmpty) {
-          throwBadRequest("TyEADM0LGI2", o"""You cannot restrict login to
+          throwBadRequest("TyEADM0LGI2_", o"""You cannot restrict login to
                only custom OIDC or OAuth2, before you have logged in yourself
                in that way, so you know it actually works.""")
         }

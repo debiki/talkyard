@@ -1727,6 +1727,17 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
 // =========================================================================
 
 
+/// Authentication dialog
+interface AuthnDlgIf {
+  openToLogIn: (loginReason: LoginReason,
+        anyReturnToUrl?: St, callback?: () => Vo, preventClose?: Bo) => Vo;
+  openToSignUp: (loginReason: LoginReason, anyReturnToUrl?: St,
+        callback?: () => Vo, preventClose?: Bo) => Vo;
+  getDoAfter: () => [() => U | U, St | U];
+  close: () => Vo;
+}
+
+
 /// For rendering category trees.
 interface CatsTree {
   rootCats: CatsTreeCat[];

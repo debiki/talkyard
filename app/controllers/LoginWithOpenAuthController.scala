@@ -555,15 +555,21 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     *  to an existing Ty account] page.
     */
   def authnRedirBack(protocol: St, providerAlias: St,
-          state: St, session_state: Option[St], code: St): Action[U]
+          state: St, session_state: Option[St], code: Opt[St],
+          error: Opt[St], error_description: Opt[St], error_uri: Opt[St]): Action[U]
           = AsyncGetActionIsLoginRateLimited { redirBackRequest =>
+
     authnRedirBackImpl(protocol, providerAlias = providerAlias, state = state,
-          session_state = session_state, code = code, redirBackRequest)
+          session_state = session_state, anyCode = code,
+          anyError = error, anyErrDescr = error_description, anyErrUrl = error_uri,
+           redirBackRequest)
   }
 
 
   private def authnRedirBackImpl(protocol: St, providerAlias: St,
-          state: St, session_state: Option[St], code: St, redirBackRequest: GetRequest)
+          state: St, session_state: Opt[St], anyCode: Opt[St],
+          anyError: Opt[St], anyErrDescr: Opt[St], anyErrUrl: Opt[St],
+          redirBackRequest: GetRequest)
           : Future[p_Result] = {
 
     import redirBackRequest.{dao, siteId}
@@ -571,9 +577,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     logger.debug(i"""
           |s$siteId: Req to OAuth2 redirect uri:
           |  State: $state
-          |  Code: $code
+          |  Code: $anyCode
+          |  Error: $anyError
           |  Session state: $session_state""")
 
+    // The 'state' param needs to be valid, also if there's any error, so check it first.
     val authnState = getAuthnStateOrThrow(state, "redir_back", authnViaSiteId = siteId,
           // Keep the authn state — instead, we increment a useCount below,
           // and if > 1, we show a user friendly error message.
@@ -587,6 +595,26 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     logger.debug(s"s$siteId: Authn state: $authnState\n")
     dieIf(authnState.stateString != state, "TyE3M06KD24")
+
+    anyError foreach { error =>
+      // Error query params:  [admin_log]
+      // error_description: Optional Human-readable ASCII encoded error description.
+      // error_uri: Optional web page w additional info about the error.
+      // See: https://openid.net/specs/openid-connect-core-1_0.html#AuthError
+      val errMsg = o"""Redirback OAuth2 $protocol $providerAlias auth error:
+            $error, description: "$anyErrDescr", read more: $anyErrUrl,
+            redirback request URL: ${redirBackRequest.uri}"""
+      logger.warn(s"s$siteId: $errMsg")
+      throwForbidden("TyEOAUREDIRERR", errMsg)
+    }
+
+    val code = anyCode getOrElse {
+      // No code? That's a problem with the IDP or sth else, not Ty.  [admin_log]
+      val errMsg = s"Redirback OAuth2 code missing, $protocol ${providerAlias
+            }, redirback request URL: ${redirBackRequest.uri}"
+      logger.info(s"s$siteId: $errMsg")
+      throwForbidden("TyEOAUREDIR0CODE", errMsg)
+    }
 
     val useCount = authnState.oauth2StateUseCount.incrementAndGet()
     throwForbiddenIf(useCount >= 2, "TyEOAUSTATEUSED",
@@ -1154,7 +1182,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       val anyCode = request.queryString.getFirst("code")
       val anySessionState = request.queryString.getFirst("session_state")
       authnRedirBackImpl(ProtoNameOAuth2, providerAlias = providerName,
-            state = anyState.get, session_state = anySessionState, code = anyCode.getOrElse(""),
+            state = anyState.get, session_state = anySessionState,
+            anyCode = anyCode,
+            anyError = request.queryString.getFirst("error"),
+            anyErrDescr = request.queryString.getFirst("error_description"),
+            anyErrUrl = request.queryString.getFirst("error_uri"),
             request)
     }
     else {
@@ -1791,7 +1823,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val matchingTyUser = authnState.matchingTyUser getOrDie "TyE004MKP202"
     val extIdentity = authnState.extIdentity getOrDie "TyE6M9MXK201"
 
-    val tryLoginAgainUrl =
+    var tryLoginAgainUrl =
           originOf(request) +
           controllers.routes.LoginWithOpenAuthController.authnStart(
               protocol = authnState.protocol,
@@ -1806,6 +1838,17 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
               // question again.
               selectAccountAtIdp = Some(!shallLink)).url
 
+    // Remember to close any popup after login.
+    if (authnState.isInLoginPopup) {
+      tryLoginAgainUrl += "&isInLoginPopup"
+    }
+    // Remember this too — not impossible that the Talkyard user somehow gets
+    // deleted, whilst pat logs again via the IDP, and then we shouldn't show
+    // any create-Ty-user dialog.
+    if (!authnState.mayCreateUser) {
+      tryLoginAgainUrl += "&mayNotCreateUser"
+    }
+
     val idpName = dao.getIdentityProviderNameFor(extIdentity) getOrThrowForbidden(
           "TyEIDPGONE", s"IDP gone: ${extIdentity.prettyIdpId}")
 
@@ -1813,6 +1856,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // Send the user back to the IDP authn page, where hen can login
       // using a different IDP account or maybe create a new account.
       // What else is there to do?
+      // Maybe just close the login dialog / popup instead,
+      // and let the user click Log In henself, don't auto-do?
+
       CSP_MISSING
       Ok(views.html.login.accountsNotLinkedPleaseLoginAgain(
             tpi = SiteTpi(request,

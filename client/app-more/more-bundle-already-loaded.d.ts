@@ -92,7 +92,7 @@ declare namespace debiki2.edithistory {
 
 declare namespace debiki2.login {
 
-  function getLoginDialog();
+  function getLoginDialog(): AuthnDlgIf;
 
 }
 

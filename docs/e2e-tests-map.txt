@@ -111,10 +111,9 @@ authn:
   login directly to admin area
     with oidc,
     with server default oauth2:
-          - TESTS_MISSING?  TyTE2E503RK24
+          - see ^oidc
 
 oauth2,
-oidc,
 ext idps:
   keycloak:
     sign up, log in with Keycloak,
@@ -137,6 +136,47 @@ ext idps:
     link to existing account: (if migrating to Azure SSO)
           - TESTS_MISSING
 
+oidc,
+external idps,
+custom idps:
+  enable oidc sso:
+            - oidc-azure-login-required.2br.extidp.test.ts  TyTE2E60RTE24.TyTOIDCSSO
+  link to existing Ty accuont:
+    ext email already verified:
+            - oidc-azure-login-required.2br.extidp.test.ts  TyTE2E60RTE24.TyTOIDCLNVERACT
+    ext email not yet verified:
+
+  Ty account approval required:
+            - TESTS_MISSING  Skip for now, "always" handled at IDP instead.
+
+  linking ext IDP account question text placeholders filled in correctly:
+            - oidc-azure-login-required.2br.extidp  TyTE2E60RTE24.TyTLNIDP2TY043
+
+  # Lots of combos! 1*4*(1 + 1 + 3 + 3) = 32. Inherent complexity.
+  linking external IDP account:
+  All this tested here and here:
+            - oidc-azure-pub-site.2br.extidp  TyTE2EOIDCAZ02
+            - oidc-azure-login-required.2br.extidp  TyTE2E60RTE24
+    public site and IDP SSO,
+    public site and no SSO,
+    login required and IDP SSO,
+    login required but no SSO:
+      login to admin area:
+        IDP email verified:
+          Ty acct, email verified:
+        IDP email unverified:
+          Ty acct, email verified:
+      login to discussion:
+        IDP email verified:
+          no Ty acct
+          Ty acct, email verified:
+          Ty acct, email not verified:
+            - TESTS_MISSING  TyTE2E60RTE24.TyTE2EIDPTYEMLUNVER
+        IDP email unverified:
+          no Ty acct
+          Ty acct, email verified:
+          Ty acct, email not verified:
+            - TESTS_MISSING  TyTE2E60RTE24.TyTE2EIDPTYEMLUNVER
 
 
 sso,
