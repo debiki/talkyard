@@ -319,11 +319,14 @@ function getEmailsSentToAddrs(siteId: SiteId): { num: number, addrsByTimeAsc: st
 
 
 function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
-      browser?): string {
+      pauseOrLinkAccts?: Ay | 'LINKING_IDP_ACCT'): string {
   const email = getLastEmailSenTo(siteId, emailAddress, browser);
   dieIf(!email, `No email has yet been sent to ${emailAddress}. ` + (!browser ? '' :
     "Include a 'browser' as 3rd arguement, to poll-wait for an email.  [TyE2ABKF057]"));
-  return utils.findFirstLinkToUrlIn('https?://.*/-/login-password-confirm-email', email.bodyHtmlText);
+  const regex = (pauseOrLinkAccts !== 'LINKING_IDP_ACCT'
+          ? 'https?://.*/-/login-password-confirm-email'
+          : 'https?://.*/-/authn/verif-email-ask-if-link-accounts');
+  return utils.findFirstLinkToUrlIn(regex, email.bodyHtmlText);
 }
 
 
@@ -610,7 +613,7 @@ export = {
   getLastEmailSenTo,
   countLastEmailsSentTo,
   getEmailsSentToAddrs,
-  getLastVerifyEmailAddressLinkEmailedTo, // RENAME see next line
+  getLastVerifyEmailAddressLinkEmailedTo, // RENAME see next line.. No, nice name?
   getVerifyEmailAddressLinkFromLastEmailTo: getLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
   waitAndGetInviteLinkEmailedTo,

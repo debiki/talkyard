@@ -451,8 +451,14 @@ ${ htmlToPaste ? htmlToPaste : `
   },
 
 
-  tryUntilTrue: function<R>(what: string, maxNumTimes: number | 'ExpBackoff', fn: () => boolean) {
+  tryUntilTrue: function<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
+        fn: 'ExpBackoff' | (() => Bo), fn2?: () => Bo) {
     let delayMs = 300;
+
+    const doExpBackoff = maxNumTimes === 'ExpBackoff' || fn === 'ExpBackoff';
+    if (_.isString(fn)) {
+      fn = fn2;
+    }
 
     for (let retryCount = 0; true; ++retryCount) {
       if (retryCount === maxNumTimes)
@@ -469,7 +475,7 @@ ${ htmlToPaste ? htmlToPaste : `
         logUnusual(`Retrying: ${what}  [TyME2ERETRYB], because error: ${error.toString()}`);
       }
 
-      if (maxNumTimes === 'ExpBackoff') {
+      if (doExpBackoff) {
         oneWdioBrowser.pause(delayMs);
         delayMs = delayMs * 1.3
         delayMs = Math.min(2500, delayMs);

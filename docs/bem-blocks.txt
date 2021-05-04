@@ -57,6 +57,7 @@ L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list
 Ld  = load, Ldng = loading
 LD  = Log in Dialog, RENAME to AuD = Authn Dialog
 Lg  = large (screen), also: Sm, Md Xl
+LgI = log in, also SgU = sign up, and Au = Authentication, e.g. AuD
 Ls  = list
 Lt  = less than, Gt = greater than
 Ln  = link — like `ln -s ...` in Linux. E.g. LnPv = Link Preview.
@@ -77,8 +78,6 @@ Pb  = pagebar
 Pf  = preference, e.g. NfPfs = notification preferences
 Py  = property?
 Pw  = password, e.g. NwPwI
-St = status or state
-Stc = static, Fxd = fixed
 R = table row,  NO, should be Rw, and Cl = column
 U  = user
 FI = file input
@@ -96,12 +95,15 @@ Rs  = risk, e.g. RsLv = risk level
 Rw, Row = row, Col = column
 Sav = save
 Sch = Search
+SgU = sign up, also LgI = log in, and Au = Authentication, e.g. AuD
 Sm  = small (screen), also: Md, Lg, Xl
 Sub = "sub" as in "sub category"
 Sub = submit NO, CLEAN_UP, insetad:
 Sbm = submit
-Sz  = size
 Snz = Snooze
+St = status or state
+Stc = static, Fxd = fixed
+Sz  = size
 T   = table
 Tab = tab
 Tb  = Topbar, or Tab (when at the end)   RENAME esTopbarWrap to s_Tb

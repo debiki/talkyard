@@ -37,7 +37,7 @@ const embeddingOrigin = 'http://e2e-test-scrlld.localhost:8080';
 let veryLastPostNr;
 
 
-describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
+describe("embedded-comments-scroll-and-load-more.2browsers  TyT603MRKH592S", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -159,7 +159,7 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
     strangersBrowser.go2(embeddingOrigin + '/' + blankSlug);
   });
 
-  it("And returns — to see comment 30 (post 31)", () => {
+  it("And returns — to see comment 30 (post 31)  TyT03RMET742M", () => {
     strangersBrowser.go2(embeddingOrigin + '/' + pageSlug + '#comment-30');
   });
 

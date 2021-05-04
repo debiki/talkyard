@@ -60,6 +60,55 @@ interface TestSettings {
   only: string;
   isInProjBaseDir?: boolean;
   browserName: 'firefox' | 'chrome'; // won't work: Chromium, chromium
+
+
+  // azureTalkyardLocalHostname?: St; — skip, instead, must be 'e2e-test-azure-oidc'
+  azureOauAuthorizationUrl?: St;
+  azureOauAccessTokenUrl?: St;
+  azureOidcClientId?: St;
+  azureOidcClientSecret?: St;
+  azureOidcLogoutUrl?: St;
+  azureEmailVerifiedDomains?: St;
+
+  azureUser01UsernameAndEmail?: St;
+  azureUser01Password?: St;
+  azureUser01FullName?: St;
+
+  azureUser02UsernameAndEmailDashDot?: St;
+  azureUser02Password?: St;
+  azureUser02FullName?: St;
+
+  azureUser03UsernameAndEmail?: St;
+  azureUser03Password?: St;
+
+  azureUser04Username?: St;
+  azureUser04Password?: St;
+  azureUser04Email?: St;
+
+  azureUser06Username?: St;
+  azureUser06Password?: St;
+  azureUser06Email?: St;
+
+  azureUser11Username?: St;
+  azureUser11Password?: St;
+  azureUser11EmailWrongDomain?: St;
+  azureUser11FullName?: St;
+
+  azureUser12Username?: St;
+  azureUser12Password?: St;
+  azureUser12EmailWrongDomain?: St;
+
+  azureUser13Username?: St;
+  azureUser13Password?: St;
+  azureUser13EmailWrongDomain?: St;
+  azureUser13FullName?: St;
+
+  azureUser14Username?: St;
+  azureUser14Password?: St;
+  azureUser14EmailWrongDomain?: St;
+  azureUser14FullName?: St;
+
+
   gmailEmail?: string;
   gmailPassword?: string;
   githubUsernameMixedCase?: string;

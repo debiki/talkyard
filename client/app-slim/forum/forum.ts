@@ -246,6 +246,11 @@ export const ForumComponent = createReactClass(<any> {
       ? HelpMessageBox({ message: topicsAndCatsHelpMessage, className: 'esForum_topicsCatsHelp' })
       : null; */
 
+    const linkWapper =
+            store_isFeatFlagOn(store, 'ffNav') ? r.nav : (
+                store_isFeatFlagOn(store, 'ffAside') ? r.aside : (
+                    store_isFeatFlagOn(store, 'ffSection') ? r.section : r.div));
+
     const rootSlash = forumPath;
     const childRoutes = r.div({},
       Switch({},
@@ -256,13 +261,24 @@ export const ForumComponent = createReactClass(<any> {
         // [React_Router_v51] skip render(), use hooks and useParams instead.
         Route({ path: rootSlash + RoutePathCategories, exact: true, strict: true, render: (props) => {
           const propsWithRouterStuff = { ...childProps, ...props, isCategoriesRoute: true };
-          return r.div({},
+          // Don't use <div> — then DuckDuckGo and Bing can mistake this
+          // topic/category list page, from being a contents page, and show it
+          // in the search results, instead of the real contents page.
+          // MDN: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/nav
+          //  >  <nav> element represents a section of a page whose purpose is
+          //  >  to provide navigation links
+          // And that's what the topic / category list is — providing links
+          // to the actual topics / categories.
+          //
+          // Configurable, for now — just trying with <nav>.
+          //
+          return linkWapper({},  // or <aside> or <section> ?
             ForumButtons(propsWithRouterStuff),
             LoadAndListCategories(propsWithRouterStuff));
         }}),
         Route({ path: rootSlash + ':sortOrder?/:categorySlug?', strict: true, render: (props) => {
           const propsWithRouterStuff = { ...childProps, ...props };
-          return r.div({},
+          return linkWapper({},
             ForumButtons(propsWithRouterStuff),
             LoadAndListTopics(propsWithRouterStuff));
         }})));
@@ -322,8 +338,10 @@ const ForumIntroText = createComponent({
               t.fi.Hide_3)));  // "... to reopen"
 
     return (
+        // The intro text is typically self-contained content, a brief summary
+        // of the purpose with the forum. — So use the <article> tag.
         r.div({ className: 'esForumIntro' },
-          r.div({ dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }}),
+          r.article({ dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }}),
           anyForumIntroButtons));
   }
 });

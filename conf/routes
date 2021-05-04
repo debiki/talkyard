@@ -34,7 +34,7 @@ GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.co
 
 GET   /-/authn/:protocol/:providerAlias           controllers.LoginWithOpenAuthController.authnStart(protocol, providerAlias, returnToUrl, nonce, useServerGlobalIdp: Option[Boolean], selectAccountAtIdp: Option[Boolean])
 GET   /-/authn/continue-at-authn-origin           controllers.LoginWithOpenAuthController.continueAtAuthnOrigin(secretNonce)
-GET   /-/authn/:protocol/:providerAlias/redirback controllers.LoginWithOpenAuthController.authnRedirBack(protocol, providerAlias, state, session_state: Option[String], code)
+GET   /-/authn/:protocol/:providerAlias/redirback controllers.LoginWithOpenAuthController.authnRedirBack(protocol, providerAlias, state, session_state: Option[String], code: Option[String], error: Option[String], error_description: Option[String], error_uri: Option[String])
 GET   /-/authn/finish-at-orig-site                controllers.LoginWithOpenAuthController.finishAtOrigSite(secretNonce)
 
 GET   /-/authn/verif-email-ask-if-link-accounts   controllers.LoginWithOpenAuthController.verifyEmailAskIfLinkAccounts(secretNonce)

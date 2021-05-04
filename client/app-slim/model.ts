@@ -905,8 +905,8 @@ interface Store extends Origins, PartialEditorStoreState {
 
   // Maybe move these to a Site interface?
   siteStatus: SiteStatus;
-  siteFeatureFlags?: St;
-  serverFeatureFlags?: St;
+  siteFeatureFlags?: St;    // use store_isFeatFlagOn; don't access directly
+  serverFeatureFlags?: St;  //
   siteOwnerTermsUrl?: string;
   siteOwnerPrivacyUrl?: string;
   isFirstSiteAdminEmailMissing?: boolean;
@@ -1725,6 +1725,17 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
 // =========================================================================
 //  UI Widgets
 // =========================================================================
+
+
+/// Authentication dialog
+interface AuthnDlgIf {
+  openToLogIn: (loginReason: LoginReason,
+        anyReturnToUrl?: St, callback?: () => Vo, preventClose?: Bo) => Vo;
+  openToSignUp: (loginReason: LoginReason, anyReturnToUrl?: St,
+        callback?: () => Vo, preventClose?: Bo) => Vo;
+  getDoAfter: () => [() => U | U, St | U];
+  close: () => Vo;
+}
 
 
 /// For rendering category trees.

@@ -834,7 +834,7 @@ const LoginAndSignupSettings = createFactory({
 
         enableTySso || !allowSignup || !enableCustomIdps || this.state.showOidcConfig ? null :
             Button({ onClick: () => this.setState({ showOidcConfig: true }),
-                  className: 'col-sm-offset-3' },
+                  className: 'col-sm-offset-3 e_ConfIdpsB' },
               "Configure Identity Providers (IDPs) ..."),
 
         enableTySso || !allowSignup || !enableCustomIdps ? null : Setting2(props, {
@@ -859,10 +859,10 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        // CLEAN_UP REFACTOR use Setting2 instead, the  anyChildren param.
+        // CLEAN_UP REFACTOR use Setting2 instead, the  anyChildren param. [nice_oidc_conf_ux]
         enableTySso || !allowSignup || !enableCustomIdps || !this.state.showOidcConfig ? null :
             r.div({ className: 's_A_Ss_S s_CuIdpsEdr' },
-              Input({ type: 'textarea', label: rFragment({},
+              Input({ type: 'textarea', label: rFr({},
                   "ODIC or OAuth2 config", r.br(),
                   "(in JSON, for now)"),
                 labelClassName: 'col-sm-3 s_A_Ss_S s_A_Ss_S-Textarea',

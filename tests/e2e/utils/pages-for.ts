@@ -97,6 +97,11 @@ interface WaitPs {   // ps = params
 }
 
 
+interface WaitPsWithOptText extends WaitPs {
+  text?: St;
+}
+
+
 /// Returns only the WaitPs fields.
 ///
 function pluckWaitPs(ps: Partial<WaitPs>): WaitPs {
@@ -265,6 +270,12 @@ export class TyE2eTestBrowser {
     dieIf(!aWdioBrowser?.getPageSource,
         `Not a Wdio browser:  ${JSON.stringify(aWdioBrowser)}  [TyE2E7J02SAD35]`);
     this.#br = aWdioBrowser;
+  }
+
+  reloadSession(ps: { andGoTo?: St } = {}) {
+    const whereToday = ps.andGoTo || this.getUrl();
+    this.#br.reloadSession();
+    this.go2(whereToday);
   }
 
   // The global $ might be for the wrong this.#br somehow, so:
@@ -1377,12 +1388,29 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitForDisplayed(selector: string, ps: WaitPs = {}) {
-      this.waitForVisible(selector, ps);
+    waitForMaybeDisplayed(selector: string, ps: WaitPsWithOptText = {}): Bo {
+      const what = ps.text ? `"${ps.text}" text` : selector
+      const ps2 = {
+        timeoutMs: 2000,
+        timeoutIsFine: true,
+        winClosedIsFine: true,
+        message: `Waiting for any ${what}`,
+      };
+      if (ps.text) {
+        return this.waitUntilTextIs(selector, ps.text, ps2);
+      }
+      else {
+        return this.waitForDisplayed(selector, ps2);
+      }
     }
 
-    waitForVisible(selector: string, ps: WaitPs = {}) {  // RENAME to waitForDisplayed() above
-      this.waitUntil(() => this.isVisible(selector), {
+
+    waitForDisplayed(selector: string, ps: WaitPs = {}): Bo {
+      return this.waitForVisible(selector, ps);
+    }
+
+    waitForVisible(selector: string, ps: WaitPs = {}): Bo {  // RENAME to waitForDisplayed() above
+      return this.waitUntil(() => this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
       });
@@ -2222,6 +2250,19 @@ export class TyE2eTestBrowser {
     }
 
 
+    assertValueIs(selector: St, expected: St) {
+      const actual = this.waitAndGetValue(selector);
+      // [E2EEASYREAD].
+      tyAssert.ok(actual === expected, '\n' +
+        `Value of elem selected by:  ${selector}\n` +
+        `           does not match:  ${expected}\n` +
+        `    actual value: (between ---)\n` +
+        `-------------------------------------------\n` +
+        `${actual}\n` +
+        `-------------------------------------------\n`);
+    }
+
+
     waitAndGetVisibleText(selector): string {
       this.waitForVisibleText(selector);
       return this.$(selector).getText();
@@ -2914,18 +2955,23 @@ export class TyE2eTestBrowser {
         this.waitUntilLoadingOverlayGone();
       },
 
-      clickLogout: (options: { waitForLoginButton?: boolean } = {}) => {   // RENAME to logout
+      clickLogout: (options: { waitForLoginButton?: Bo,   // RENAME to logout
+              waitForLoginDialog?: Bo } = {}) => {
         // Sometimes this scrolls to top, small small steps, annoying, [FASTER_E2E_TESTS]
         // and not needed, right.
         // Can speed up by calling scrollToTop() — done here: [305RKTJ205].
         this.topbar.openMyMenu();
         this.waitAndClick('#e2eMM_Logout');
         this.waitAndClick('.e_ByeD .btn-primary');
-        if (options.waitForLoginButton === false) {
+        if (options.waitForLoginDialog) {
+          this.waitForDisplayed('.c_AuD');
+        }
+        else if (options.waitForLoginButton === false) {
           // Then a login dialog will probably have opened now in full screen, with a modal
           // backdrop, so don't wait for any backdrop to disappear.
           // Or we got redirected to an SSO login window.
-        } else {
+        }
+        else {
           this.waitUntilModalGone();
           this.topbar.waitUntilLoginButtonVisible();
         }
@@ -2938,7 +2984,15 @@ export class TyE2eTestBrowser {
       },
 
       openMyMenu: () => {
-        this.waitAndClick('.esMyMenu');
+        // We can click in the fixed topbar if it's present, instead of scrolling
+        // all the way up to the static topbar.
+        let sel = '.s_TbW-Fxd .esMyMenu';
+        const fixedScrollbarVisible = this.isVisible(sel);
+        const opts = { mayScroll: !fixedScrollbarVisible };
+        if (!fixedScrollbarVisible) {
+          sel = '.esMyMenu';
+        }
+        this.waitAndClick(sel, opts);
         this.waitUntilLoadingOverlayGone();
         // Because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? wait-and-click
         // attempts to click instantly, before the show-menu anim has completed and the elem
@@ -3666,6 +3720,7 @@ export class TyE2eTestBrowser {
         // the Gmail login widgets to load, or for us to be back in Talkyard again.
         while (true) {
           if (ps.isInFullScreenLogin) {
+            // Dupl code [insta_login]
             // If logged in both at Google and Ty directly: There's a race?
             // Sometimes we'll see Ty's login dialog briefly before it closes and
             // one's username appears. — This is fine, the tests should work anyway.
@@ -3702,7 +3757,7 @@ export class TyE2eTestBrowser {
         logMessage(`typing Gmail email: ${data.email}...`);
         this.waitAndSetValue(emailInputSelector, data.email, { checkAndRetry: true });
 
-        this.#br.pause(500);
+        this.waitForMaybeDisplayed(emailNext, { timeoutMs: 1000 });
         if (this.isExisting(emailNext)) {
           logMessage(`clicking ${emailNext}...`);
           this.waitAndClick(emailNext);
@@ -3712,7 +3767,7 @@ export class TyE2eTestBrowser {
         logMessage("typing Gmail password...");
         this.waitAndSetValue(passwordInputSelector, data.password, { checkAndRetry: true });
 
-        this.#br.pause(500);
+        this.waitForMaybeDisplayed(passwordNext, { timeoutMs: 1000 });
         if (this.isExisting(passwordNext)) {
           logMessage(`clicking ${passwordNext}...`);
           this.waitAndClick(passwordNext);
@@ -4011,6 +4066,123 @@ export class TyE2eTestBrowser {
           logMessage("switching back to first tab...");
           this.switchBackToFirstTabOrWindow();
         }
+      },
+
+
+      clickLoginWithOidcAzureAd: () => {
+        // Maybe moves — the dialog might scroll in?
+        this.waitAndClick('#e2eLoginoidc\\/azure_test_alias', { maybeMoves: true });
+      },
+
+
+      loginWithOidcAzureAd: (ps: { email: St, password: St,
+            anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
+            alreadyLoggedIn?: Bo, isInLoginPopupAlready?: Bo, stayInPopup?: Bo,
+            fullScreenLogin?: Bo, staySignedIn?: Bo }) => {
+
+        // Switch to LinkedIn's login popup window.
+        if (!ps.isInLoginPopupAlready && !ps.fullScreenLogin)
+          this.swithToOtherTabOrWindow(IsWhere.External);
+
+        const emailInputSelector = 'input[type="email"]';
+        const emailNext = 'input[type="submit"]';
+        const passwordInputSelector = 'input[type="password"]';
+        const passwordNext = 'input[type="submit"]';
+        const yesStaySignedInButton = 'input[type="submit"]';
+        const noDontStaySignedInButton = 'input#idBtn_Back';
+        const grantPermsButton = 'input[type="submit"]';
+
+        // Wait until popup window done loading.
+        while (true) {
+          if (ps.fullScreenLogin) {
+            // Dupl code [insta_login]
+            // If logged in both at Azure and Ty directly: There's a race?
+            // Sometimes we'll see Ty's login dialog briefly before it closes and
+            // one's username appears. — This is fine, the tests should work anyway.
+            const idpLoginDone = this.isExisting('.dw-login-modal');
+            logMessageIf(idpLoginDone,
+                `Got logged in directly at IDP (Azure)`);
+
+            const idpAndTalkyardLoginDone = this.isExisting('.esMyMenu .esAvtrName_name');
+            logMessageIf(idpAndTalkyardLoginDone,
+                `Got logged in directly at both IDP (Azure) and Talkyard`);
+
+            if (idpLoginDone || idpAndTalkyardLoginDone)
+              return;
+          }
+          else if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            logMessage(`IDP (Azure) login done, back at Talkyard`);
+            this.switchBackToFirstTabOrWindow();
+            return;
+          }
+          try {
+            // Continue below once the IDP input fields appear.
+            if (this.isExisting(emailInputSelector))
+              break;
+          }
+          catch (dummy) {
+            logMessage(`Didn't find ${emailInputSelector
+                  }. Login popup closed because already logged in?`);
+          }
+          this.#br.pause(300);
+        }
+
+        logMessage("Typing Azure user's email and password ...");
+        this.#br.pause(340); // so less risk Azure thinks this is a computer?
+        // This is over at Azure, and, as username, one can type one's email.
+        this.waitAndSetValue(emailInputSelector, ps.email);
+        this.#br.pause(380);
+        this.waitAndClick(emailNext);
+        this.waitAndSetValue(passwordInputSelector, ps.password);
+        this.#br.pause(280);
+        this.waitAndClick(passwordNext);
+        this.waitUntilTextIs('.text-title', "Stay signed in?");
+
+        logMessage(`submitting Azure login dialog, and ps.staySignedIn: ${
+                ps.staySignedIn} ...`);
+        this.waitAndClick(ps.staySignedIn ?
+                yesStaySignedInButton : noDontStaySignedInButton);
+
+        // Sometimes also:  .consentHeader  "Permissions requested"
+        // Then click:   grantPermsButton
+
+        if (!ps.isInLoginPopupAlready && !ps.stayInPopup && !ps.fullScreenLogin) {
+          logMessage("switching back to first tab...");
+          this.switchBackToFirstTabOrWindow();
+        }
+      },
+
+      checkLinkAccountsTextOk: (ps: { matchingEmail: St,
+            talkyardUsername: St, azureFullName: St, idpName: St }) => {
+        // Now there's some info text, and one needs to login again via the IDP,
+        // to find out directly, if it works or not.
+        this.assertTextIs('.e_EmAdr', ps.matchingEmail);
+        this.assertTextIs('.e_TyUn', ps.talkyardUsername);
+        this.assertTextIs('.e_NameAtIdp', ps.azureFullName);
+        this.assertTextIs('.e_IdpName', ps.idpName);
+      },
+
+      clickYesLinkAccounts: () => {
+        this.waitAndClick('.e_YesLnActsB');
+      },
+
+      clickLogInAgain: (ps: { isInPopupThatWillClose?: Bo } = {}) => {
+        // If clicking quickly, won't work. Why not? This is just a plain
+        // ordinary <a href=..>, no Javascript. Whatvever, just:  [E2EBUG]
+        this.pause(444);
+        this.waitAndClick('.e_LogInAgain');
+
+        /*
+        // There's some race, button clicked but nothing happens — so try a few times.)
+        utils.tryUntilTrue("Login again, after linked accounts", 3, 'ExpBackoff', () => {
+          return this.waitAndClick('.e_LogInAgain') === 'Clicked';
+        });
+        utils.tryUntilTrue("Login again, after linked accounts", 3, 'ExpBackoff', () => {
+          this.waitAndClick('.e_LogInAgain');
+          return this.waitUntilGone('.e_LogInAgain', {
+                  timeoutMs: 500, timeoutIsFine: true });
+        });
+        */
       },
 
       loginPopupClosedBecauseAlreadyLoggedIn: (): boolean => {
@@ -6973,7 +7145,7 @@ export class TyE2eTestBrowser {
         this.$$('.esAdminArea .dw-main-nav > li').length,
 
       settings: {
-        clickSaveAll: (ps: { willFail?: boolean } = {}) => {
+        clickSaveAll: (ps: { willFail?: Bo } = {}) => {
           this.scrollToBottom();
           this.waitAndClick('.esA_SaveBar_SaveAllB');
           this.waitUntilLoadingOverlayGone();
@@ -7019,8 +7191,8 @@ export class TyE2eTestBrowser {
         },
 
         login: {
-          goHere: () => {
-            this.adminArea.goToLoginSettings();
+          goHere: (origin?: St, opts: { loginAs? } = {}) => {
+            this.adminArea.goToLoginSettings(origin, opts);
           },
 
           setRequireVerifiedEmail: (isRequired: boolean) => {
@@ -7042,6 +7214,26 @@ export class TyE2eTestBrowser {
           setExpireIdleAfterMinutes: (minutes: number) => {
             this.scrollIntoViewInPageColumn('.e_LgoIdlAftMins input');
             this.waitAndSetValue('.e_LgoIdlAftMins input', minutes, { checkAndRetry: true });
+          },
+
+          setEnableOidcDontSave: (enabled: Bo) => {
+            const sel = '.e_A_Ss_S-OidcCB input';
+            this.scrollIntoViewInPageColumn(sel);
+            this.waitUntilDoesNotMove(sel);
+            this.setCheckbox(sel, enabled);
+          },
+
+          setOnlyOidc: (only: Bo) => {
+            const sel = '.e_A_Ss_S-OnlyOidcCB input';
+            this.scrollIntoViewInPageColumn(sel);
+            this.waitUntilDoesNotMove(sel);
+            this.setCheckbox(sel, only);
+          },
+
+          configureIdps: (json: St) => {
+            this.waitAndClick('.e_ConfIdpsB');
+            this.waitAndSetValue('.s_CuIdpsEdr textarea', json, { checkAndRetry: true });
+            this.waitAndClick('.s_CuIdpsEdr .btn');
           },
 
           setEmailDomainWhitelist: (text: string) => {

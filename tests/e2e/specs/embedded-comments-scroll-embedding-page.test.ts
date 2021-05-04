@@ -86,7 +86,6 @@ ${ extraHeight > 500 ? "<br><br><i>SCROLL DOWN\n:\n:\n:</i>" : ""}
 </html>`;
   }
 
-  // TESTS_MISSING  emb cmts scroll
 
   it(`Maria opens a tall embedding page`, () => {
     mariasBrowser.go2(pageTallUrl);

@@ -39,7 +39,7 @@ const EmailInput = util.EmailInput;
 let loginDialog;
 
 
-export function getLoginDialog() {   // also called from Scala template
+export function getLoginDialog(): AuthnDlgIf {   // also called from Scala template
   if (!loginDialog) {
     loginDialog = ReactDOM.render(LoginDialog(), utils.makeMountNode());
   }
@@ -143,7 +143,7 @@ const LoginDialog = createClassAndFactory({
       return;
     }
 
-    this.clearLoginRelatedCookies();
+    this.setLoginRelatedCookies();
     if (!anyReturnToUrl) {
       anyReturnToUrl = window.location.toString();
     }
@@ -194,18 +194,47 @@ const LoginDialog = createClassAndFactory({
   /**
    * Clears login related cookies so e.g. any lingering return-to-url won't cause troubles.
    */
-  clearLoginRelatedCookies: function() {
+  setLoginRelatedCookies: function() {
     getSetCookie('dwCoReturnToUrl', null);
     getSetCookie('dwCoReturnToSite', null);
     // Don't clear dwCoReturnToSiteXsrfToken — that'd break parallel login, [PRLGIN]
     // and break OAuth login if opens the login dialog, clicks "Google" to open a Google
     // login popup, then closes and reopens the login dialog, and then logs in at Google
     // in the popup.
-    getSetCookie('dwCoIsInLoginWindow', null);
     getSetCookie('dwCoIsInLoginPopup', null);
     getSetCookie('dwCoMayCreateUser', null);
     getSetCookie('dwCoOAuth2State', null);
     getSetCookie('esCoImp', null);
+
+    if (!eds.isInLoginWindow) {
+      // We're in a login popup, not in a dedicated "full screen" login window.
+      getSetCookie('dwCoIsInLoginWindow', null);
+    }
+    else {
+      // Later, remove dupl [.687263] below.
+      //
+      // Let the server know we're in a login window, so it can choose to reply with
+      // complete HTML pages to show in this window — rather than trying to tell
+      // a non-existing window.opener to continue (e.g. creating a new Ty account).
+      //
+      // Use a cookie not an URL param because the cookie will be present later whe we're
+      // being redirected back to the server from the OpenAuth provider
+      // CLEAN_UP when removing Silhouette: Now, year 2020, 2021, cookie not needed?
+      // Now remembered via URL param in OngoingAuthnState,isInLoginPopup.
+      getSetCookie('dwCoIsInLoginWindow', 'true');
+
+      // Maybe we're in a blog comments login popup? Then, cookies might not work,
+      // in the blog comments iframes — then, tell the server
+      // to include the session id in the response body, so we can access it browser side.
+      // Also see Server.ts. [NOCOOKIES]
+      const mainWin = getMainWin();
+      if (!win_canUseCookies(mainWin)) {
+        // (We can use cookies here in this login window — they're 1st party cookies.
+        // But not in the main window — which should be an embedded comments iframe,
+        // that is, 3rd party cookies, blocked.)
+        getSetCookie('TyCoAvoidCookies', 'Avoid');
+      }
+    }
   },
 
   close: function() {
@@ -289,11 +318,12 @@ interface LoginDialogContentProps {
 
 
 /**
- * This is a separate component because on embedded discussion pages, it's placed directly
- * in a popup window with no modal dialog around.
+ * (This no longer needs to be a separate component. In the past, in embedded
+ * discussions, it was placed directly in a popup window, no modal dialog around.)
+ *
  * RENAME to AuthnDlg and file too?
  */
-export const LoginDialogContent = createClassAndFactory({
+const LoginDialogContent = createClassAndFactory({
   displayName: 'LoginDialogContent',
 
   componentDidMount: function() {
@@ -326,7 +356,7 @@ export const LoginDialogContent = createClassAndFactory({
       shallRedir = true;
     }
     else if (ssoUrl && eds.isInLoginPopup) {
-      // Then, since this site is Single Sign-On, there'd be nothing to
+      // Then, since this site is Single Sign-On, there'd be nothing to  [insta_sso_redir]
       // choose among in this login popup — so redirect to the ssoUrl directly.
       // But, let's wait with changing any old behavior. For now, only
       // redirect, if useOnlyCustomIdps (new OIDC related code).
@@ -336,7 +366,7 @@ export const LoginDialogContent = createClassAndFactory({
 
     if (shallRedir) {
       // Don't think we want to open a popup here — we're in a full screen
-      // login window already?  Although we do here: [2ABKW24T].
+      // login window already?  We do if in an iframe: [2ABKW24T].
       logD(`Redir to SSO url`)
       location.assign(ssoUrl);
     }
@@ -659,8 +689,12 @@ const ExtIdpAuthnBtn = createClassAndFactory({
     const url = origin() + urlPathAndQuery;
 
     if (eds.isInLoginWindow) {
+      // --- CLEAN_UP REMOVE this -------------
+      // This is now here: [.687263] instead, so the cookies get set also if using SSO.
+      //
       // Let the server know we're in a login window, so it can choose to reply with
-      // complete HTML pages to show in the login window.
+      // complete HTML pages to show in this window (rather than trying to tell
+      // a non-existing window.opener to finish the login signup).
       // (Use a cookie not an URL param because the cookie will be present later whe we're
       // being redirected back to the server from the OpenAuth provider.)
       getSetCookie('dwCoIsInLoginWindow', 'true');
@@ -675,6 +709,7 @@ const ExtIdpAuthnBtn = createClassAndFactory({
         // that is, 3rd party cookies, blocked.)
         getSetCookie('TyCoAvoidCookies', 'Avoid');
       }
+      // --------------------------------------
       window.location.assign(url);
     }
     else {
