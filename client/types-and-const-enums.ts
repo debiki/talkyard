@@ -59,6 +59,7 @@ type NrV = Nr | NUV;    // A number or void-ish — but not '' or false
 
 type HElm = HTMLElement;
 type HInpElm = HTMLInputElement;
+type HIframeElm = HTMLIFrameElement;
 type Elm = Element;
 // Also: type RElm = JSX.Element (React.js element).
 

@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import assert = require('assert');
+import tyAssert = require('../utils/ty-assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
@@ -102,11 +103,12 @@ describe("emb cmts drafts when not logged in  TyT2ZBKPW048", () => {
   // ----- Drafts are per page
 
   it("she goes from page ddd to eee", () => {
-    let source = mariasBrowser.getSource();
-    assert(source.indexOf('ddd') > 0);
+    mariasBrowser.switchToAnyParentFrame();
+    let source = mariasBrowser.getPageSource();
+    tyAssert.includes(source, 'ddd');
     mariasBrowser.go(embeddingOrigin + '/' + pageEeeSlug);
-    source = mariasBrowser.getSource();
-    assert(source.indexOf('eee') > 0);
+    source = mariasBrowser.getPageSource();
+    tyAssert.includes(source, 'eee');
   });
 
   it("... starts replying to page Eee's blog post", () => {
@@ -121,8 +123,8 @@ describe("emb cmts drafts when not logged in  TyT2ZBKPW048", () => {
 
   it("she retunrs to ddd", () => {
     mariasBrowser.go(embeddingOrigin + '/' + pageDddSlug);
-    const source = mariasBrowser.getSource();
-    assert(source.indexOf('ddd') > 0);
+    const source = mariasBrowser.getPageSource();
+    tyAssert.includes(source, 'ddd');
   });
 
   it("... starts replying again", () => {

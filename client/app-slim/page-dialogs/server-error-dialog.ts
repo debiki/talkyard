@@ -58,7 +58,8 @@ const ServerErrorDialog = createComponent({
     };
   },
 
-  openForBrowserError: function(errorMessage: string, opts: { mayClose?: boolean } = {}) {
+  openForBrowserError: function(errorMessage: St,
+          opts: { title?: St, mayClose?: Bo } = {}) {
     this.setState({
       ...opts,
       isOpen: true,
@@ -94,7 +95,7 @@ const ServerErrorDialog = createComponent({
     let message: string;
 
     if (this.state.clientErrorMessage) {
-      title = "Error";
+      title = this.state.title || "Error";
       message = this.state.clientErrorMessage;
       if (debiki2.utils.isMouseDetected) {
         message += "\n\n" +

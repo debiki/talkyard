@@ -2187,7 +2187,7 @@ trait PostsDao {
   }
 
 
-  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Unit = {
+  def deleteVoteIfAuZ(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE2ABKPGN7")
 
     writeTx { (tx, staleStuff) =>
@@ -2235,7 +2235,7 @@ trait PostsDao {
   }
 
 
-  def ifAuthAddVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
+  def addVoteIfAuZ(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
         voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
 

@@ -480,6 +480,10 @@ Include session type (e.g. pwd, oauth, email secret, sso, emb sso) in sid:s,
 see: SessionType.AutoTokenSiteCustomSso, and: SidOk("_api_secret_".
 Also see: [weaksid].
 
+[sess_in_me]
+Store xsrf token and any sid-part-1 in Me, instead of win.typs?
+
+ 
 [hide_authn_btns]
 If auto logged in via token in embedd*ing* html, then, don't show logout button
 — instead the embedding site manages login/out for that user, by incl/excl the token.
@@ -505,6 +509,12 @@ Make  login-required work also for embeded comments.
 
 [emb_forum]
 Make it possible to embedd a forum, or fourm cateory (no just blog comments).
+
+[emb_ifr_shortcuts]
+Make shortcuts work also if there're many iframes with blog comments comments
+visible at the same time.
+[many_ifr_my_page_data]
+Make changing notf levels update the UI correctly also if many iframes.
 
 [ty_oemb_og]
 Add oEmbed & OpenGraph support to Ty.

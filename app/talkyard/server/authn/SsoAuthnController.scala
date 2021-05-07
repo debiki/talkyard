@@ -48,6 +48,12 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
   /** This endpoint logs in a pat via a GET request — and there needs to be
     * a one-time secret in a query param.  [GETLOGIN]
     * ex: http://localhost/-/v0/login-with-secret?oneTimeSecret=nnnnn&thenGoTo=/
+    *
+    * Always allowed, also if API not enabled —
+    * ?? old comment follows: needed for embedded comments
+    *   signup-login to work if 3rd party cookies blocked. [306KUD244]
+    *   Otherwise, works only if this server has generated a secret, that is,
+    *   API enabled.
     */
   def apiv0_loginWithSecret: Action[U] = GetActionIsLogin { request: GetRequest =>
 

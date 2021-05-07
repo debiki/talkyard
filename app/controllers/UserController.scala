@@ -940,8 +940,18 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadMyPageData(pageId: PageId): Action[Unit] = GetAction { request =>
-    val json = loadMyPageDataImpl(request, pageId)
+  def loadMyPageData(pageIds: St): Action[U] = GetAction { request =>
+    QUICK; COULD_OPTIMIZE // don't use String.split('') — it sometimes creates a regex.
+    // Review the whole code base. // Use Guava's Splitter instead.
+    // https://guava.dev/releases/20.0/api/docs/com/google/common/base/Splitter.html
+
+    COULD_OPTIMIZE // fewer requests
+    // Later, load data for many pages:  [many_ifr_my_page_data]
+    val pageIdsSeq: ImmSeq[PageId] =
+          if (pageIds.indexOf(',') == -1) ImmSeq(pageIds)
+          else pageIds.split(',').to[ImmSeq]
+   // For now:
+    val json = loadMyPageDataImpl(request, pageIdsSeq.head)
     OkSafeJson(json)
   }
 

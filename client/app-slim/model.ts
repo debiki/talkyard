@@ -18,6 +18,44 @@
 /// <reference path="./../types-and-const-enums.ts" />
 /// <reference path="./../third-party/third-party-types.d.ts" />
 
+
+interface PageSession  {
+  xsrfTokenIfNoCookies?: St;
+
+  // Initialized when the page loads, by checking navigator.cookieEnabled.
+  canUseCookies?: Bo;
+
+  // This session id is available to client side Javascript, and can be stolen
+  // if there's an XSS vulnerability. So, it's going to have fewer capabilities
+  // than a http-only session when the Talkyard site is opened as the main window
+  // (rather than embedded in an iframe).
+  //
+  // It's needed because Safari and FF blocks 3rd party cookies, so
+  // we need to remember the login session in a non-cookie somehow.
+  //
+  // ADD_TO_DOCS
+  //
+  weakSessionId?: St;
+
+  // If the session is for an embedded comments iframe. REMOVE incl in sid instead, somehow.
+  sessType?: SessionType.AutoTokenSiteCustomSso;
+}
+
+
+interface __TyWinInterface extends Window {
+  tydyn?: { allIframePageIds: PageId[] };
+  typs: PageSession;
+  theStore: Store;
+  eds: ServerVars;
+}
+
+
+// RENAME to DiscWin.
+type MainWin = __TyWinInterface & typeof globalThis;
+type DiscWin = MainWin;
+
+
+
 type DateMs = WhenMs;  // use When instead? sounds better since using When server side too
 
 type HttpRequest = XMLHttpRequest;
@@ -170,6 +208,7 @@ interface DraftLocator {
   // This is useful on embedded blog comments pages, if the Talkyard page hasn't yet
   // been created, so there's no page id. [BLGCMNT1]
   embeddingUrl?: string;
+  discussionId?: St;
   postNr?: PostNr;
 }
 
@@ -258,6 +297,7 @@ interface ScrollIntoViewOpts extends CalcScrollOpts {
 
 interface ShowPostOpts extends ScrollIntoViewOpts {
   showChildrenToo?: boolean;
+  inFrame?: DiscWin;
 }
 
 
@@ -395,6 +435,7 @@ type Me = Myself
 interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
   dbgSrc?: string;
   id?: UserId;
+  isStranger?: Bo;
   isGroup?: boolean; // currently always undefined (i.e. false)
   isLoggedIn?: boolean;
   isAdmin?: boolean;
@@ -900,7 +941,25 @@ interface Origins {
 }
 
 
-interface Store extends Origins, PartialEditorStoreState {
+interface SessWinStore {
+  me?: Myself;
+  embeddedOriginOrEmpty: St;
+}
+
+
+/// Can be 1) the main ('top') browser win (incl topbar, editor, sidebars etc), or
+/// 2) a copy of the store in an embedded comments iframe.  [many_embcom_iframes]
+///
+interface DiscStore extends SessWinStore {
+  currentPage?: Page;
+  currentPageId?: PageId;
+  currentCategories: Cat[];   // RENAME [concice_is_nice] curCats
+  usersByIdBrief: { [userId: number]: Pat };  // = PatsById
+  pagesById: { [pageId: string]: Page };
+}
+
+
+interface Store extends Origins, DiscStore, PartialEditorStoreState {
   // Need to use the same layout settings as the server, on the first
   // render, when reusing (hydrating) html from the server.
   isHydrating?: Bo;
@@ -923,7 +982,7 @@ interface Store extends Origins, PartialEditorStoreState {
   userMustBeApproved: boolean;
   settings: SettingsVisibleClientSide;
   hideForumIntro?: boolean;
-  currentCategories: Category[];   // RENAME [concice_is_nice] curCats
+
   // For all site sections, loaded lazily, and updated in a hacky way, for now, so have a look,
   // and refactor (?), before using it for anything more.
   allCategoriesHacky?: Category[];
@@ -937,7 +996,8 @@ interface Store extends Origins, PartialEditorStoreState {
   isImpersonating?: boolean;
   isViewingAs?: boolean;
   rootPostId: number;
-  usersByIdBrief: { [userId: number]: Participant };  // = PatsById
+
+  // Maybe move to DiscStore?
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
 
   isEditorOpen?: boolean;  // default: false
@@ -962,9 +1022,6 @@ interface Store extends Origins, PartialEditorStoreState {
   // Overrides quickUpdate.
   cannotQuickUpdate?: boolean;
 
-  pagesById: { [pageId: string]: Page };
-  currentPage?: Page;
-  currentPageId?: PageId;
   debugStartPageId: string;
 
   tagsStuff?: TagsStuff;
@@ -1533,7 +1590,7 @@ interface StorePatch extends EditorStorePatch {
 // So we know which post to highlight, to indicate it's being replied to.
 interface PartialEditorStoreState {
   editorsPageId?: PageId;
-  replyingToPostNr?: PostNr;
+  replyingToPostNr?: PostNr;  // on page editorsPageId
   editingPostId?: PostId;
 }
 

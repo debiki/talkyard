@@ -781,8 +781,6 @@ embedded comments:
   won't load at wrong domain / origin / hostname:
           - TESTS_MISSING TyT3059J267P, problem in wdio 6
                 embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts
-  embedded editor:
-          - may not see page:   TyT035KRGMTW2  TESTS_MISSING  SEC_TEST_MISSING
   different discussion id:
           - embedded-comments-discussion-id.test.ts   TyT603KRDL46
   place in custom categories:
@@ -792,6 +790,8 @@ embedded comments:
           - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59.TyT063AKDGW60
   comment counts:
           - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+  many comments iframes same page:
+            - embcom.many-comment-iframes-same-page.2br  TyTE2E50RMF24S  TESTS_MISSING
   sso: see [.embcom.sso]
 
 

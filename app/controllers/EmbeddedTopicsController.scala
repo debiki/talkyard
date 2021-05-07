@@ -49,7 +49,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
 
   def showTopic(embeddingUrl: String, discussionId: Option[AltPageId],   // [5BRW02]
-          edPageId: Option[PageId], category: Option[Ref]): Action[Unit] =
+          edPageId: Option[PageId], category: Option[Ref], scriptV: Opt[St]): Action[U] =
       AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
 
     import request.dao
@@ -112,7 +112,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
       case Some(realId) =>
         // (For now, ignore `category` here. Or, some time later, would an admin setting
-        // to move move the page to that category make sense?  [auto_upd_emb_cat])
+        // to move move the page to that category make sense?
 
         val pageMeta = dao.getThePageMeta(realId)
         if (pageMeta.pageType != PageType.EmbeddedComments)
@@ -172,49 +172,22 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
-  def showEmbeddedEditor(embeddingUrl: String, discussionId: Option[AltPageId],
-          edPageId: Option[PageId], category: Option[Ref]): Action[Unit] =
+  def showEmbeddedEditor(embeddingUrl: St, embeddingScriptV: Opt[i32]): Action[U] =
         AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
-    import request.{dao, requester}
 
-    val anyRealPageId = getAnyRealPageId(
-          edPageId, discussionId, embeddingUrl, categoryRef = category, request.dao)
+    val tpi = new EditPageTpi(request, anyEmbeddingUrl = Some(embeddingUrl))
+    val htmlStr = views.html.embeddedEditor(tpi, embeddingScriptV = embeddingScriptV).body
 
-    val lazyCreatePageInCatId =
-          if (anyRealPageId.isDefined) {
-            // The page already exists and was placed in some category already.
-            // For now, don't move it to `category`. (Maybe could be an admin
-            // setting to do that.  [auto_upd_emb_cat])
-            None
-          }
-          else {
-            category.map(dao.getOrThrowAnyCategoryByRef)
-          }
-
-    val tpi = new EditPageTpi(request, PageType.EmbeddedComments,
-          anyEmbeddedPageId = anyRealPageId, anyDiscussionId = discussionId,
-          anyEmbeddingUrl = Some(embeddingUrl),
-          lazyCreatePageInCatId = lazyCreatePageInCatId.map(_.id))
-
-    val htmlStr = views.html.embeddedEditor(tpi).body
-
-    for {
-      pageId <- anyRealPageId
-      pageMeta <- dao.getPageMeta(pageId)
-    } {
-      TESTS_MISSING // test may-not-see  TyT035KRGMTW2
-      val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, requester)
-      if (!maySee)
-        security.throwIndistinguishableNotFound(debugCode)
-    }
-
+    // (The callee needs to know the embedding origin, so the callee can know if
+    // the request is to localhost — then we allow embedding (from localhost),
+    // so techies can test on localhost.)
     ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
         unapprovedPostAuthorIds = Set.empty, request, embeddingUrl = Some(embeddingUrl))
   }
 
 
-  private def getAnyRealPageId(edPageId: Option[PageId], discussionId: Option[String],
-        embeddingUrl: String, categoryRef: Option[Ref], dao: SiteDao): Option[PageId] = {
+  private def getAnyRealPageId(tyPageId: Opt[PageId], discussionId: Opt[DiscId],
+        embeddingUrl: St, categoryRef: Opt[Ref], dao: SiteDao): Opt[PageId] = {
 
     // Lookup the page by Talkyard page id, if specified, otherwise
     // use the discussion id, or the embedding url, or, if no match,
@@ -266,7 +239,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
     // embeddingOrigin and data-category-ref makes sense then.
     // ---------------------------------------------------------
     //
-    edPageId orElse {
+    tyPageId orElse {
       discussionId.trimNoneIfBlank match {
         case Some(id) =>
           // If this finds nothing, then, don't try matching by embeddingUrl. — If the

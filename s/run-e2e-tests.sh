@@ -587,9 +587,13 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
   $r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
+
   $r s/wdio       --only embedded-comments-different-disc-ids-same-page $args
+  $r s/wdio       --only embcom.many-comment-iframes-same-page.2br $args
+  #r s/wdio       --only embcom.many-comment-iframes-click-load-more.2br $args TESTS_MISSING
   $r s/wdio       --only embedded-comments-discussion-id.test $args
   $r s/wdio       --only embedded-comments-discussion-id-old-name $args
+
   $r s/wdio       --only embedded-comments-guest-login-email-notf-unsbscribe $args
   $r s/wdio       --only embcom.all-idp-logins.1br.extidp $args
   $r s/wdio       --only embcom.all-idp-logins-old-name.1br.extidp $args

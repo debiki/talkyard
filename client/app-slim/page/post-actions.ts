@@ -295,7 +295,7 @@ export const PostActions = createComponent({
         t.Solution);
     }
 
-    const replyingToClass = store.replyingToPostNr === post.nr  ? ' s_PA_B-Active' : '';
+    const replyingToClass = store_isReplyingTo(store, post)  ? ' s_PA_B-Active' : '';
     const disabledClass = isEditorOpenAlready ? ' s_PA_B-Disabled' : '';
 
     const replyButton = !store_mayIReply(store, post) ? null :
@@ -650,8 +650,8 @@ function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolea
     postNrsRead: postNrsRead
   };
 
-  debiki2.Server.saveVote(data, function(updatedPost) {
-    ReactActions.vote(updatedPost, action, voteType);
+  debiki2.Server.saveVote(data, function(storePatch: StorePatch) {
+    ReactActions.vote(storePatch, action, voteType, post.nr);
   });
 }
 

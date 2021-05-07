@@ -269,6 +269,7 @@ eds.isInEmbeddedCommentsIframe = _isInEmbCmtsIframe && !eds.isInEmbeddedEditor;
   */
 if (!eds.isInEmbeddedEditor) {  // [6932867RMS]
   // CLEAN_UP use sth like:  getMainWin().theStore.currentPageId  instead?
+  // — no, remove main-win-current-page-id.  [many_embcom_iframes]
   eds.embeddedPageId = _isInIframe ? _pageId : undefined;
 }
 // Else: Already incl in eds, leave as is.
@@ -289,6 +290,8 @@ if (!eds.isInEmbeddedEditor) {  // [6932867RMS]
 var debiki = { internal: {}, v0: { util: {}} };
 
 // Talkyard per page load session data (if we avoid cookies). [NOCOOKIES]   rename to  tyd?  see above *@
+// Maybe store this in Myself instead? Next to Myself.mySidPart1ForJs? [sess_in_me]
+// And remove typs.
 var typs: PageSession = {
   xsrfTokenIfNoCookies: _volatileData.xsrfTokenIfNoCookies,
   canUseCookies: navigator.cookieEnabled

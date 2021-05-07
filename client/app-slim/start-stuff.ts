@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="prelude.ts" />
 
 debiki.startStuff = function() {
 
@@ -22,7 +23,21 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 
 debiki.debug = window.location.search.indexOf('debug=true') >= 0;
 
+
+// Copy any xsrf token to any session iframe.
 if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
+  // This is safe and cannot fail, still, try-catch for now, new code.
+  // DO_AFTER 2022-01-01 remove try-catch, keep just the contents.
+  try {
+    const sessWin = debiki2.getMainWin();
+    if (!sessWin.typs.xsrfTokenIfNoCookies && typs.xsrfTokenIfNoCookies) {
+      sessWin.typs.xsrfTokenIfNoCookies = typs.xsrfTokenIfNoCookies;
+    }
+  }
+  catch (ex) {
+    debiki2.logW(`Multi iframe error? [TyEMANYIFR01]`, ex)
+  }
+
   debiki2.startIframeMessages();
 }
 

@@ -39,6 +39,8 @@ Dg = dialog, when inside a phrase, e.g. InstaDgW = Instant-Dialog-Wrap
 Dd = deleted
 Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
 Df = draft
+Dsc,
+Disc = discussion
 Dl = download — change to Dwnl? so rare
 Dis = disabled, Ena = enabled
 Ed  = edit
