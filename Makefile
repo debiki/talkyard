@@ -646,13 +646,8 @@ push-tag-to-git:
 	@#
 	@echo ""
 	@echo "Tagging main repo with: tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX) ..."
-
-	@echo
-	@echo  "DO THIS:"
-	@echo
-	@echo  git tag tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
-
-	@echo  git push origin tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
+	@git tag tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
+	@git push origin tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
 	
 	@echo ""
 	@echo "Done. Now, bump the version number:"
