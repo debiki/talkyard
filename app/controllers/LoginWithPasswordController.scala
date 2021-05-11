@@ -32,6 +32,7 @@ import play.api.libs.json._
 import ed.server.security.{EdSecurity, SidOk}
 import org.owasp.encoder.Encode
 import talkyard.server.TyLogging
+import talkyard.server.authn.LoginWithSecretController
 
 
 

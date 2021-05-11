@@ -128,6 +128,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.TagsController(cc, context),
     new _root_.controllers.SuperAdminController(cc, context),
     new _root_.controllers.ApiSecretsController(cc, context),
+    new _root_.talkyard.server.authn.SsoAuthnController(cc, context),
     new _root_.talkyard.server.api.GetController(cc, context),
     new _root_.talkyard.server.api.ListController(cc, context),
     new _root_.controllers.ApiV0Controller(cc, context, sitePatchController),
