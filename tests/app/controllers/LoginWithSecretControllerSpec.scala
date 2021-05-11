@@ -27,7 +27,7 @@ class LoginWithSecretControllerSpec extends FreeSpec with MustMatchers {
   "LoginWithSecretController can" - {
 
     "ensure a redirect url is to an allow-embedding-from site" - {  // [305KSTTH2]
-      import LoginWithSecretController.isAllowedRedirectUrl
+      import talkyard.server.authn.LoginWithSecretController.isAllowedRedirectUrl
 
       def isAllowed(url: String, okSources: Seq[String],
           serverOrigin: String = "", secure: Boolean = true): Boolean =
