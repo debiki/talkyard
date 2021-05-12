@@ -230,26 +230,32 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
 
     val jsob = asJsObject(jsVal, what = "OIDC user info")
 
+    // Sync the different maxLength = ... with the database constraints,
+    // see:  \d identities3.  Could log a warning, if some field too long?
+    // But show in which log file? Anyone really cares about this?
+    // For now, just setting to None, rather than letting the db constraints
+    // fail, which would prevent people with "impossibly" long fields, from signing in.
     val sub = parseSt(jsob, "sub")
-    val preferredUsername = parseOptSt(jsob, "preferred_username")
-    val nickname = parseOptSt(jsob, "nickname")
-    val firstName = parseOptSt(jsob, "given_name")
-    val middleName = parseOptSt(jsob, "middle_name")
-    val lastName = parseOptSt(jsob, "family_name")
-    val name = parseOptSt(jsob, "name")
-    val email = parseOptSt(jsob, "email")
+    val preferredUsername = parseOptSt(jsob, "preferred_username", cutAt = 200)
+    val nickname = parseOptSt(jsob, "nickname", cutAt = 250)
+    val firstName = parseOptSt(jsob, "given_name", cutAt = 250)
+    val middleName = parseOptSt(jsob, "middle_name", cutAt = 250)
+    val lastName = parseOptSt(jsob, "family_name", cutAt = 250)
+    val name = parseOptSt(jsob, "name", cutAt = 250)
+    val email = parseOptSt(jsob, "email", noneIfLongerThan = 250)
     val email_verified = parseOptBo(jsob, "email_verified")
-    val phoneNumber = parseOptSt(jsob, "phone_number")
+    val phoneNumber = parseOptSt(jsob, "phone_number", noneIfLongerThan = 250)
     val phoneNrVerified = parseOptBo(jsob, "phone_number_verified")
 
     CLEAN_UP // move this to the place where a User gets constructed,
     // and just remember the name as-is, in IdpUserInfo,
     // like  parseOidcIdToken()  does.
-    val anyName = name.orElse(Seq(
+    val fullName = name.orElse(Seq(
               firstName, middleName, lastName
               ).flatten.mkString(" ").trimNoneIfEmpty)
           .orElse(nickname)
           .orElse(preferredUsername)
+          .map(_.take(250))
 
     val isEmailVerified = isEmailAddrVerified(
           email, idpSaysEmailVerified = email_verified, idp)
@@ -266,19 +272,19 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
           firstName = firstName,
           middleName = middleName,
           lastName = lastName,
-          fullName = anyName,
+          fullName = fullName,
           email = email,
           isEmailVerifiedByIdp = Some(isEmailVerified),
           phoneNumber = phoneNumber,
           isPhoneNumberVerifiedByIdp = phoneNrVerified,
-          profileUrl = parseOptSt(jsob, "profile"),
-          websiteUrl = parseOptSt(jsob, "website"),
-          avatarUrl = parseOptSt(jsob, "picture"),
-          gender = parseOptSt(jsob, "gender"),
-          birthdate = parseOptSt(jsob, "birthdate"),
-          timeZoneInfo = parseOptSt(jsob, "zoneinfo"),
-          // country: Opt[St]
-          locale = parseOptSt(jsob, "locale"),
+          profileUrl = parseOptSt(jsob, "profile", noneIfLongerThan = 500),
+          websiteUrl = parseOptSt(jsob, "website", noneIfLongerThan = 500),
+          avatarUrl = parseOptSt(jsob, "picture", noneIfLongerThan = 2100),
+          gender = parseOptSt(jsob, "gender", cutAt = 100),
+          birthdate = parseOptSt(jsob, "birthdate", cutAt = 100),
+          timeZoneInfo = parseOptSt(jsob, "zoneinfo", cutAt = 250),
+          // country: Opt[St]  cutAt = 250
+          locale = parseOptSt(jsob, "locale", cutAt = 250),
           //address = parseOptJsObject(jsob, "address")
           //roles: Seq[St]
           // isRealmGuest: Opt[Bo]

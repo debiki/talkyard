@@ -129,8 +129,24 @@ object JsonUtils {
     readOptString(json, fieldName) getOrElse throwMissing("EsE7JTB3", fieldName)
 
 
-  def parseOptSt(json: JsValue, fieldName: St, altName: St = ""): Opt[St] =
-    readOptString(json, fieldName, altName)
+  /** If noneIfLongerThan is >= 0, returns None if the value is longer than that.
+    */
+  def parseOptSt(json: JsValue, fieldName: St, altName: St = "",
+        noneIfLongerThan: i32 = -1, cutAt: i32 = -1): Opt[St] = {
+    var anySt = readOptString(json, fieldName, altName)
+    dieIf(noneIfLongerThan >= 0 && cutAt >= 0,
+          "TyE7PM506RP", "Both noneIfLongerThan and cutAt specified")
+    if (cutAt >= 0) {
+      anySt = anySt.map(_.take(cutAt))
+    }
+    if (noneIfLongerThan >= 0) {
+      anySt foreach { value =>
+        if (value.length > noneIfLongerThan)
+          return None
+      }
+    }
+    anySt
+  }
 
   def readOptString(json: JsValue, fieldName: St, altName: St = ""): Opt[St] = {
     val primaryResult = readOptStringImpl(json, fieldName)
