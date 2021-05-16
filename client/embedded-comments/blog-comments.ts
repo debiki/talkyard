@@ -30,6 +30,7 @@ declare function smoothScroll(elem: Element, x: number, y: number,
 interface WindowWithTalkyardProps {
   talkyardLogLevel: number | undefined;
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
+  talkyardAuthnToken: St | Ay | U;
   edRemoveCommentsAndEditor: () => void;
   edReloadCommentsAndEditor: () => void;
   talkyardRemoveCommentsAndEditor: () => void;
@@ -61,6 +62,10 @@ const winLogLvl = windowWithTalkyardProps.talkyardLogLevel;
 const winDbg = windowWithTalkyardProps.talkyardDebug;
 const talkyardLogLevel: number | string = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
     winDbg === false || winDbg === 0 ? 'warn' : 'trace');
+
+
+const talkyardAuthnToken = windowWithTalkyardProps.talkyardAuthnToken;
+
 
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
@@ -544,7 +549,14 @@ function onMessage(event) {
 
       // Can we login? Already logged in?
       //
-      if (oneTimeLoginSecret) {
+      // Log in via only one comments iframe — otherwise there'd be races
+      // and unnecessarily many server requests.
+      //
+      if (talkyardAuthnToken) {
+        sendToComments(
+              JSON.stringify(['loginWithAuthnToken', talkyardAuthnToken]));
+      }
+      else if (oneTimeLoginSecret) {
         // Tell the comments iframe to login, using our one-time secret.  [306KUD244]
         sendToComments(`["loginWithOneTimeSecret", "${oneTimeLoginSecret}"]`);
       }

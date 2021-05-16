@@ -30,6 +30,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import scala.util.Try
 import debiki.dao.RemoteRedisClientError
+import talkyard.server.JsX
 
 
 class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContext)
@@ -38,6 +39,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
   private val logger = talkyard.server.TyLogger("SsoAuthnController")
 
   import context.{security, globals}
+
+
 
   def apiv0_loginWithSecret: Action[U] =
         GetActionRateLimited(RateLimits.NoRateLimits) { request: GetRequest =>
@@ -190,21 +193,85 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
   }
 
 
+
+  def apiV0_upsertUserAndLogin: Action[JsValue] =
+        PostJsonAction(RateLimits.Login, maxBytes = 1000) { request: JsonPostRequest =>
+
+    import request.siteId
+    import debiki.JsonUtils._
+
+    val anyUserJsObj: Opt[JsObject] = if (globals.isProd) None else {
+      // Later: "user" field, if prod
+      parseOptJsObject(request.body, "userDevTest")
+    }
+
+    val anyUserAuthnToken = parseOptSt(request.body, "userAuthnToken")
+
+    throwBadReqIf(anyUserJsObj.isEmpty && anyUserAuthnToken.isEmpty,
+      "TyE0SSOTKN", "No 'user' or 'userAuthnToken' field")
+    throwBadReqIf(anyUserJsObj.isDefined && anyUserAuthnToken.isDefined,
+      "TyE0SSOTKN", "Got both 'userDevTest' or 'userAuthnToken'")
+
+    val userJsObj = anyUserJsObj getOrElse {
+      ???  // decrypt and check signature of  anyToken
+      // Remove "paseto:" prefix
+      // https://github.com/paseto-toolkit/jpaseto
+      // ( https://paseto.io/rfc/ )
+    }
+
+    // Compare with   /-/v0/sso-upsert-user-generate-login-secret
+    // — but here we use PASETO token standard fields:
+    // See 6.1.  Registered Claims  at  https://paseto.io/rfc/.
+    val ssoId = parseSt(userJsObj, "sub")
+    val expiresAt8601DateTimeSt = parseSt(userJsObj, "exp")
+    val issuedAt8601DateTimeSt = parseSt(userJsObj, "iat")
+
+    val extUser = JsX.apiV0_parseExternalUser(
+          userJsObj, ssoId = ssoId, errSuffix = "TyEBADSSOTOKENJSON")
+
+    SECURITY; SHOULD // check expires at, plus, must not be > 10 min in the future?
+    SECURITY; COULD  // remember issued-at, per user, and require that
+    // // it's > the highest seen issued at — that'd prevent reply attacks,
+    // also within the expiration window.
+
+    val (user, _) =
+          upsertUser(extUser, request)
+
+    val (sid, _, _) =
+          security.createSessionIdAndXsrfToken(siteId, user.id)
+
+    OkSafeJson(Json.obj(
+      // Not yet weak but later. [weaksid]  [NOCOOKIES]
+      "weakSessionId" -> JsString(sid.value)))
+  }
+
+
+
   def apiv0_upsertUserGenLoginSecret: Action[JsValue] =
         PostJsonAction(RateLimits.NoRateLimits, maxBytes = 1000) { request: JsonPostRequest =>
 
-    import request.{siteId, body, dao}
-    lazy val now = context.globals.now()
+    import request.dao
 
     throwForbiddenIf(!request.isViaApiSecret,
         "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
 
-    // Fix indentation later in a separate Git commit
-    {
-        val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
-          ssoId = (body \ "ssoId").asOpt[String].getOrElse(  // [395KSH20]
+    val (ssoId, bodyObj) = Try {
+      val body = debiki.JsonUtils.asJsObject(request.body, "request body")
+          ((body \ "ssoId").asOpt[String].getOrElse(  // [395KSH20]
                   (body \ "externalUserId") // DEPRECATED 2019-08-18 v0.6.43
                     .as[String]).trim,
+          body)
+    } getOrIfFailure { ex =>
+      throwBadRequest("TyEBADEXTUSR", ex.getMessage)
+    }
+
+    val extUser: ExternalUser = JsX.apiV0_parseExternalUser(
+          bodyObj, ssoId = ssoId, errSuffix = "TyEBADEXTUSR")
+
+    val (user, isNew) =
+          upsertUser(extUser, request)
+
+        /*
           extId = (body \ "extId").asOptStringNoneIfBlank,
           primaryEmailAddress = (body \ "primaryEmailAddress").as[String].trim,
           isEmailAddressVerified = (body \ "isEmailAddressVerified").as[Boolean],
@@ -215,7 +282,54 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
           isAdmin = (body \ "isAdmin").asOpt[Boolean].getOrElse(false),
           isModerator = (body \ "isModerator").asOpt[Boolean].getOrElse(false))) getOrIfFailure { ex =>
             throwBadRequest("TyEBADEXTUSR", ex.getMessage)
-          }
+          } */
+
+    val secret = nextRandomString()
+    val expireSeconds = Some(globals.config.oneTimeSecretSecondsToLive)
+
+    dao.redisCache.saveOneTimeLoginSecret(secret, user.id, expireSeconds)
+    OkApiJson(Json.obj(
+      "loginSecret" -> secret,
+      "ssoLoginSecret" -> secret))  // REMOVE deprecated old name
+  }
+
+
+
+  def apiV0_upsertUser: Action[JsValue] =
+        PostJsonAction(RateLimits.Login, maxBytes = 1000) { request: JsonPostRequest =>
+
+    import debiki.JsonUtils.{asJsObject, parseSt}
+
+    throwForbiddenIf(!request.isViaApiSecret,
+        "TyEAPI0SECR04", "The API may be called only via Basic Auth and an API secret")
+
+    val (ssoId, bodyObj) = Try {
+      val body = asJsObject(request.body, "request body")
+      val ssoId = parseSt(body, "ssoId")  // [395KSH20]  hmm, "authnId" better than ssoId?
+      (ssoId, body)
+    } getOrIfFailure { ex =>
+      throwBadRequest("TyEBADEXTUSR04", ex.getMessage)
+    }
+
+    val extUser: ExternalUser = JsX.apiV0_parseExternalUser(
+          bodyObj, ssoId = ssoId, errSuffix = "TyEBADEXTUSR04")
+
+    val (user, isNew) = upsertUser(extUser, request)
+    Ok
+  }
+
+
+
+  /** Returns (user: User, isNew: Bo).
+    */
+  private def upsertUser(extUser: ExternalUser, request: JsonPostRequest)
+        : (UserInclDetails, Bo) = {
+
+    import request.{siteId, dao}
+    lazy val now = context.globals.now()
+
+    // Fix indentation later in a separate Git commit
+
 
         throwForbiddenIf(!extUser.isEmailAddressVerified, "TyESSOEMLUNVERF", o"""s$siteId:
             The email address ${extUser.primaryEmailAddress} of external user 'ssoid:${extUser.ssoId}'
@@ -327,17 +441,11 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
           dao.memCache.fireUserCreated(user.briefUser)
         }
 
-        val secret = nextRandomString()
-        val expireSeconds = Some(globals.config.oneTimeSecretSecondsToLive)
-
-        dao.redisCache.saveOneTimeLoginSecret(secret, user.id, expireSeconds)
-        OkApiJson(Json.obj(
-          "loginSecret" -> secret,
-          "ssoLoginSecret" -> secret))  // REMOVE deprecated old name
-    }
+    (user, isNew)
   }
 
 }
+
 
 
 object LoginWithSecretController {

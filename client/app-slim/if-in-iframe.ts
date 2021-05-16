@@ -53,6 +53,14 @@ function onMessage(event) {
   }
 
   switch (eventName) {
+    case 'loginWithAuthnToken':
+      const authnToken = eventData;
+      Server.loginWithAuthnToken(authnToken, function() {
+        // typs.weakSessionId should have been updated by the above login fn.
+        ReactActions.loadMyself();
+      });
+
+      break;
     case 'loginWithOneTimeSecret':
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE50KH4');
       const oneTimeLoginSecret = eventData;

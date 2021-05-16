@@ -540,6 +540,8 @@ function runAllE2eTests {
   $r s/wdio --only sso-access-denied-login.2browsers $args
   $r s/wdio --only sso-one-time-key-errors.2browsers $args
 
+  # Also see  --only embcom.sso  below.
+
 
   # API + SSO
   # ------------
@@ -609,6 +611,9 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-restore-overwrite-site-new-domain.2browsers $args
 
   $r s/wdio       --only embcom.comment-counts.2br.cors $args
+
+  # Single Sign-On, embedded comments:
+  #$r s/wdio       --only embcom.sso.2br $args
 
   if [ -n "$http_server_pid" ]; then
     kill $http_server_pid

@@ -881,5 +881,22 @@ object JsX {
         "oidcLogoutUrl" -> JsStringOrNull(idp.oidcLogoutUrl))
   }
 
+
+  def apiV0_parseExternalUser(jsObj: JsObject, ssoId: St, errSuffix: St): ExternalUser = {
+    ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
+          ssoId = ssoId,
+          extId = (jsObj \ "extId").asOptStringNoneIfBlank,
+          primaryEmailAddress = (jsObj \ "primaryEmailAddress").as[String].trim,
+          isEmailAddressVerified = (jsObj \ "isEmailAddressVerified").as[Boolean],
+          username = (jsObj \ "username").asOptStringNoneIfBlank,
+          fullName = (jsObj \ "fullName").asOptStringNoneIfBlank,
+          avatarUrl = (jsObj \ "avatarUrl").asOptStringNoneIfBlank,
+          // BIO
+          aboutUser = (jsObj \ "aboutUser").asOptStringNoneIfBlank,  // RENAME to 'bio', right
+          isAdmin = (jsObj \ "isAdmin").asOpt[Boolean].getOrElse(false),
+          isModerator = (jsObj \ "isModerator").asOpt[Boolean].getOrElse(false))
+  }
+
+
 }
 
