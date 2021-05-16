@@ -63,7 +63,9 @@ object Email {
   }
 
   def isE2eTestEmailAddress(address: St): Bo =
-    address.startsWith("e2e-test-") || address.startsWith("e2e.test.") ||
+    address.startsWith("e2e-test-") ||
+        address.startsWith("e2e.test.") ||
+        address.startsWith("e2e_test_") ||
         address.startsWith("debiki.tester") ||
         // Facebook test account addresses:
         address.startsWith("facebook_") && address.endsWith("@tfbnw.net")

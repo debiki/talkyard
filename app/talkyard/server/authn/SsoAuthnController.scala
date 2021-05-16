@@ -30,6 +30,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import scala.util.Try
 import debiki.dao.RemoteRedisClientError
+import talkyard.server.JsX
 
 
 class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContext)
@@ -39,8 +40,13 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   import context.{security, globals}
 
-  def apiv0_loginWithSecret: Action[U] =
-        GetActionRateLimited(RateLimits.NoRateLimits) { request: GetRequest =>
+
+
+  /** This endpoint logs in a pat via a GET request — and there needs to be
+    * a one-time secret in a query param.  [GETLOGIN]
+    * ex: http://localhost/-/v0/login-with-secret?oneTimeSecret=nnnnn&thenGoTo=/
+    */
+  def apiv0_loginWithSecret: Action[U] = GetActionIsLogin { request: GetRequest =>
 
     import request.{siteId, queryString, dao}
 
@@ -54,29 +60,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
     def getOnlyOrThrow(queryParam: String, errorCode: String): String =
       getOnly(queryParam) getOrThrowBadArgument(errorCode, queryParam)
 
-    // Let's always allow one-time login — works only if this server has generated a secret.
-    // Needed for embedded comments signup-login to work if 3rd party cookies blocked. [306KUD244]
-    val isOneTimeLogin = request.underlying.path == "login-with-secret"
-
-    throwForbiddenIf(!settings.enableApi && !isOneTimeLogin, "TyEAPIDSBLD",
-          s"API not enabled. You tried to call: ${request.method} ${request.uri}")
-
-    // Fix indentation in a separate Git commit.
+    // Fix indentation in a separate Git commit.  [.reindent]
     {
-      // [GETLOGIN] should generate browser id cookie.
-      // ex: http://localhost/-/v0/sso-login?oneTimeSecret=nnnnn&thenGoTo=/
-      /*
-      case "sso-login" | // deprecated name, remove (because login secrets are generated
-           // in more ways than just sso. E.g. for one-time-login via email, [305KDDN24]).
-           "login-with-secret" =>
-       */
-        // [SSOBUGHACK] This endpoint should not be inside ApiV0Controller.
-        // Instead, it needs to be in its own GetAction, with isLogin=true, so
-        // one can reach it also if login required to read content. Otherwise,
-        // if login required, then, SSO won'twork, because ... one would need to be
-        // logged in already, to login  :- P
-        // In a new controller: LoginWithSecretController ?
-
         // Dupl code? Use this API endpoint also from impersonateWithKey?   [7AKBRW02]
 
         // Log problems to admin error log. [ADMERRLOG]
@@ -190,21 +175,104 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
   }
 
 
+
+  def apiV0_upsertUserAndLogin: Action[JsValue] =
+        PostJsonAction(RateLimits.Login,
+          isLogin = true,
+          maxBytes = 1000) {
+          request: JsonPostRequest =>
+
+    import request.siteId
+    import debiki.JsonUtils._
+
+    throwForbiddenIf(globals.isProd, "TyE403MRD67", "Not yet tested enough")
+
+    val anyUserJsObj: Opt[JsObject] = if (globals.isProd) None else {
+      // Later: "user" field, if prod — then would need an API secret.
+      // But maybe everyone can just use /-/v0/upsert-user instead.
+      parseOptJsObject(request.body, "userDevTest")
+    }
+
+    val anyAuthnToken = parseOptSt(request.body, "userInAuthnToken")
+
+    throwBadReqIf(anyUserJsObj.isEmpty && anyAuthnToken.isEmpty,
+      "TyE0SSOTKN", "No 'user' or 'userInAuthnToken' field")
+    throwBadReqIf(anyUserJsObj.isDefined && anyAuthnToken.isDefined,
+      "TyE0SSOTKN", "Got both 'userDevTest' and 'userInAuthnToken'")
+
+    val userJsObj = anyUserJsObj getOrElse {
+      ???  // decrypt and check signature of  anyAuthnToken
+      // Remove "paseto:" prefix
+      // https://github.com/paseto-toolkit/jpaseto
+      // ( https://paseto.io/rfc/ )
+    }
+
+    // Compare with   /-/v0/upsert-user-generate-login-secret
+    // — but here we use PASETO token standard fields:
+    // See 6.1.  Registered Claims  at  https://paseto.io/rfc/.
+    val ssoId = parseSt(userJsObj, "sub")
+    val expiresAt8601DateTimeSt = parseSt(userJsObj, "exp")
+    val issuedAt8601DateTimeSt = parseSt(userJsObj, "iat")
+
+    val extUser = JsX.apiV0_parseExternalUser(
+          userJsObj, ssoId = ssoId, errSuffix = "TyEBADSSOTOKENJSON")
+
+    SECURITY; SHOULD // check expires at, plus, must not be > 10 min in the future?
+    SECURITY; COULD  // remember issued-at, per user, and require that
+    // // it's > the highest seen issued at — that'd prevent reply attacks,
+    // also within the expiration window.
+
+    val (user, _) =
+          upsertUser(extUser, request, mayOnlyInsertNotUpdate = true)
+
+    val (sid, _, _) =
+          security.createSessionIdAndXsrfToken(siteId, user.id)
+
+    OkSafeJson(Json.obj(
+      // Not yet weak but later. [weaksid]  [NOCOOKIES]
+      "weakSessionId" -> JsString(sid.value)))
+  }
+
+
+
   def apiv0_upsertUserGenLoginSecret: Action[JsValue] =
         PostJsonAction(RateLimits.NoRateLimits, maxBytes = 1000) { request: JsonPostRequest =>
 
-    import request.{siteId, body, dao}
-    lazy val now = context.globals.now()
+    import request.dao
 
     throwForbiddenIf(!request.isViaApiSecret,
         "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
 
-    // Fix indentation later in a separate Git commit
-    {
-        val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
-          ssoId = (body \ "ssoId").asOpt[String].getOrElse(  // [395KSH20]
+    // Better name?:  "soId"  — because isn't necessarily *Single* Sign-On.
+    // So just keep the "SO" in "SSO"? "Talkyard Sign-On"?
+    // --- Old thoughts -----
+    // "ssoId" —> external Identity Provider user identity ID —> extIdpUserId or extIdpUserId ?
+    // or "authnId" or "apiAuthnId"  ?   Or  extIdId  'extidid:...'
+    // external identity id (from and IDP)"
+    // Maybe better to use  'extId' by default,  and 'extIdId' only in the (very) rare
+    // cases where it'd be needed.
+    //
+    // "extAuId" for ext authentication id — better than extIdId, the latter looks like a typo?
+    // Or instead,  "soId" and 'soid:....' for Single Sign-On ID, but without "single" since
+    // can be combined with other ways to login  ?
+    // ----------------------
+    val (ssoId, bodyObj) = Try {
+      val body = debiki.JsonUtils.asJsObject(request.body, "request body")
+      val ssoId = (body \ "ssoId").asOpt[String].getOrElse(  // [395KSH20]
                   (body \ "externalUserId") // DEPRECATED 2019-08-18 v0.6.43
-                    .as[String]).trim,
+                    .as[String]).trim
+      (ssoId, body)
+    } getOrIfFailure { ex =>
+      throwBadRequest("TyEBADEXTUSR", ex.getMessage)
+    }
+
+    val extUser: ExternalUser = JsX.apiV0_parseExternalUser(
+          bodyObj, ssoId = ssoId, errSuffix = "TyEBADEXTUSR02")
+
+    val (user, isNew) =
+          upsertUser(extUser, request, mayOnlyInsertNotUpdate = true)
+
+        /* CLEAN_UP  remove when [.reindent]inig.
           extId = (body \ "extId").asOptStringNoneIfBlank,
           primaryEmailAddress = (body \ "primaryEmailAddress").as[String].trim,
           isEmailAddressVerified = (body \ "isEmailAddressVerified").as[Boolean],
@@ -215,7 +283,65 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
           isAdmin = (body \ "isAdmin").asOpt[Boolean].getOrElse(false),
           isModerator = (body \ "isModerator").asOpt[Boolean].getOrElse(false))) getOrIfFailure { ex =>
             throwBadRequest("TyEBADEXTUSR", ex.getMessage)
-          }
+          } */
+
+    val secret = nextRandomString()
+    val expireSeconds = Some(globals.config.oneTimeSecretSecondsToLive)
+
+    dao.redisCache.saveOneTimeLoginSecret(secret, user.id, expireSeconds)
+    OkApiJson(Json.obj(
+      "loginSecret" -> secret,
+      "ssoLoginSecret" -> secret))  // REMOVE deprecated old name
+  }
+
+
+
+  def apiV0_upsertUser: Action[JsValue] =
+        PostJsonAction(RateLimits.Login, maxBytes = 5000) { request: JsonPostRequest =>
+
+    import debiki.JsonUtils.{asJsObject, parseSt}
+
+    throwForbiddenIf(!request.isViaApiSecret,
+        "TyEAPI0SECR04", "The API may be called only via Basic Auth and an API secret")
+
+    val (ssoId, bodyObj) = Try {
+      val body = asJsObject(request.body, "request body")
+      val ssoId = parseSt(body, "ssoId")  // [395KSH20]  hmm, "sigOnId" or "soId" better than ssoId?
+      (ssoId, body)
+    } getOrIfFailure { ex =>
+      throwBadRequest("TyEBADEXTUSR03", ex.getMessage)
+    }
+
+    val extUser: ExternalUser = JsX.apiV0_parseExternalUser(
+          bodyObj, ssoId = ssoId, errSuffix = "TyEBADEXTUSR04")
+
+    // Send back the user incl username — we might have changed it: removed forbidden
+    // punctuation, for example, and the requester might want to know about that so it can
+    // generate a user profile link.
+    val (user, isNew) = upsertUser(extUser, request, mayUpdate = true)
+    OkSafeJson(Json.obj(
+      "user" -> JsX.JsUserApiV0(user.briefUser, brief = true)))
+  }
+
+
+
+  /** Returns (user: User, isNew: Bo).
+    *
+    * If mayUpdate, then, updates any existing user with a matching ssoId,
+    * and throws Error if there's an email collision — but auto fixes any
+    * new username (if specified), e.g. removes punctuation chars Ty doesn't like.
+    * Otherwise won't try to update, won't throw error.
+    */
+  private def upsertUser(extUser: ExternalUser, request: JsonPostRequest,
+         mayUpdate: Bo = false, mayOnlyInsertNotUpdate: Bo = false)
+        : (UserInclDetails, Bo) = {
+
+    import request.{siteId, dao}
+    lazy val now = context.globals.now()
+
+    require(mayUpdate != mayOnlyInsertNotUpdate, "TyE406MRMG")
+
+    // Fix indentation later in a separate Git commit  [.reindent]
 
         throwForbiddenIf(!extUser.isEmailAddressVerified, "TyESSOEMLUNVERF", o"""s$siteId:
             The email address ${extUser.primaryEmailAddress} of external user 'ssoid:${extUser.ssoId}'
@@ -226,30 +352,135 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
           // Look up by email. If found, reuse account, set SSO id, and login.
           // Else, create new user with specified external id and email.
 
-          tx.loadUserInclDetailsBySsoId(extUser.ssoId).map({ user =>  // (7KAB2BA)
+          tx.loadUserInclDetailsBySsoId(extUser.ssoId).map({ user: UserInclDetails =>  // (7KAB2BA)
             dieIf(user.ssoId isNot extUser.ssoId, "TyE5KR02A")
-            // TODO update fields, if different.
+
+            throwForbiddenIf(user.id < LowestTalkToMemberId,
+                  "TyEUPDSYSUSR", "Cannot update or log in as built-in users like System")
+
+            // During *login*, we typically don't want any email or username
+            // collisions to happen — that'd prevent logging in.
+            //
+            // For example, if the ext email has been changed from aa@x.co to bb@x.co,
+            // but in Ty's db there's already a bb@x.co address, then we
+            // don't want an error *here* when logging in.
+            //
+            // Instead, to change email or username, one calls the
+            // /-/v0/upsert-user endpoint directly when the email or username changes
+            // in the external system (rather than waiting until pat logs in again).
+            //
+            if (mayOnlyInsertNotUpdate)
+              return (user, false)
+
+            // ----- Email address changed?
+
+            // Update pat_email_adrs_t here, and pats_t further down.
+            // Compare with  UserController.scala, addUserEmail()
+            // and setPrimaryEmailAddresses().
+
+            throwForbiddenIf(!extUser.isEmailAddressVerified, "TyE503RMG07",
+                  o"""Ext user email not verified, ssoId: "${extUser.ssoId}"""")
+
             if (extUser.primaryEmailAddress != user.primaryEmailAddress) {
-              // TODO later: The external user's email address has been changed? Update this Talkyard
-              // user's email address too, then.  —  However, would be weird,
-              // if there already is another Talkyard account that mirrors [*another* external user
-              // with that email]?
-              val anyUser2 = tx.loadUserByPrimaryEmailOrUsername(extUser.primaryEmailAddress)
+              // Update this Talkyard user's email address too, then.
+              // Just make sure the new email isn't already in use by
+              // another different Talkyard account that mirrors [*another*
+              // external user with that email].
+              val anyUser2: Opt[User] = tx.loadUserByPrimaryEmailOrUsername(
+                    extUser.primaryEmailAddress)
               anyUser2 foreach { user2 =>
-                throwForbidden("TyE2ABK40", o"""s$siteId: Cannot update the email address of
-                    Talkyard user ${user.usernameHashId} with Single Sign-On id
+                throwForbiddenIf(user2.id != user.id,
+                    "TyEUPSDUPEML_", o"""s$siteId: Cannot update the email address of
+                    Talkyard user ${user.usernameHashId} with Sign-On id
                     '${extUser.ssoId}' to match the external user's new email address
                     ('${extUser.primaryEmailAddress}'): The new address is already used
                     by another Talkyard user: ${user2.usernameHashId}""")
+                die("TyE6RMW40J", o"""Same user but two different primary emails?
+                      soId —> ${user}, but hens new email addr —> ${user2},
+                      with a *different* primary email, although same user id""")
               }
 
-              // TODO also check non-primary addrs. (5BK02A5)
+              // Or could there be an API parameter — delete old email, or not?
+              // There's a foreign key from pats_t to pat_emails_t, so
+              // need to defer constraints, before deleting from pat_emails_t.
+              // Then, if keeping old addr, check MaxEmailsPerUser.
+              tx.deferConstraints()
+              tx.deleteUserEmailAddress(user.id, user.primaryEmailAddress)
+
+              val emails: Seq[UserEmailAddress] = tx.loadUserEmailAddresses(user.id)
+              emails.find(_.emailAddress == extUser.primaryEmailAddress) match {
+                case None =>
+                  ANNOYING // Also non-primary addresses must be unique, [many_emails]
+                  // as of now, so this db insert might fail
+                  // (not important to fix as of May 2021).
+                  COULD // also check non-primary addrs. (5BK02A5)
+                  dieIf(!extUser.isEmailAddressVerified, "TyE406MRFEP8")
+                  tx.insertUserEmailAddress(
+                        UserEmailAddress(userId = user.id,
+                              emailAddress = extUser.primaryEmailAddress,
+                              addedAt = now, verifiedAt = Some(now)))
+                case Some(oldEmail) =>
+                  // Apparently pat added this email address henself via Ty's UI, already.
+                  if (oldEmail.isVerified) {
+                    // ... And hen has verified it too.
+                  }
+                  else {
+                    // ... But pat didn't verify it yet. However, the external
+                    // software system calling the API, claims it has verified that
+                    // the email address belongs to 'user'. So set it to verified.
+                    dieIf(!extUser.isEmailAddressVerified, "TyE406MRFEP2")
+                    tx.updateUserEmailAddress(oldEmail.copy(verifiedAt = Some(now)))
+                  }
+              }
             }
-            // email:  UserController.scala:  setPrimaryEmailAddresses (don't forget to upd email table)
-            // mod / admin:  UserDao:  editMember
-            // name etc:  UserDao:  saveAboutMemberPrefs
-            // For now, just generate a login secret; don't sync users:
-            (user, false)
+
+
+            // ----- Username changed?
+
+            // Update usernames_t here, and pats_t further down.
+            // Compare with:  UserDao.saveAboutMemberPrefs()  [ed_uname]
+
+            val anyNewOkUsername: Opt[St] = extUser.username flatMap { un =>
+              Participant.makeOkayUsername(un, allowDotDash = false,  // [CANONUN]
+                    tx.isUsernameInUse, noneIfIsAlready = Some(user.username))
+            }
+
+            anyNewOkUsername foreach { newUsername =>
+              dieIf(newUsername == user.username, "TyE4R06MES24")
+              // Update this Talkyard user's username.
+              // Participant.makeOkayUsername() above should have generated
+              // a not-in-use username, but double check anyway that there's no
+              // collision.
+              val anyUser2: Opt[User] = tx.loadUserByPrimaryEmailOrUsername(newUsername)
+              anyUser2 foreach { user2 =>
+                dieIf(user2.id != user.id,
+                      "TyE2ABK42", o"""s$siteId: Cannot update the username of
+                      Talkyard user ${user.usernameHashId} with Sign-On id
+                      '${extUser.ssoId}' to match the external user's new username
+                      ('${extUser.username}' corrected to '$newUsername'):
+                      The new username is already used
+                      by another Talkyard user: ${user2.usernameHashId}""")
+              }
+
+              ANNOYING // Shouldn't need to *load* the *System* user.
+              val systemUser = tx.loadTheUser(SystemUserId)
+
+              dao.addUsernameUsageOrThrowClientError(
+                    user.id, newUsername = newUsername, me = systemUser, tx)
+            }
+
+            // Wait with:
+            // Demote/promote to mod or admin — see  UserDao:  editMember. [2BRUI8]
+            // (Need some sanity checks so e.g. won't promote a suspended user.)
+
+            val updatedUser = user.copyWithUpdatedExternalData(
+                  extUser.copy(username = anyNewOkUsername), now, tryFixBadValues = true)
+
+            if (updatedUser != user) {
+              tx.updateUserInclDetails(updatedUser)
+            }
+
+            (updatedUser, false)
           }) orElse
               // TODO what about looking up by secondary email addresses, or not?
               // Don't do that? They aren't supposed to be used for login. And do require
@@ -265,6 +496,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
                   external user 'ssoid:${user.ssoId}' — cannot create a mirror account for
                   external user 'ssoid:${extUser.ssoId} that use that same email address""")
 
+            // Could instead ask if proceed with linking or not, and show relevant info
+            // about the old account, as is done with OpenID Connect, see: [act_fx_atk].
             throwForbiddenIf(user.emailVerifiedAt.isEmpty,
                "TyE7BKG52A4", o"""s$siteId: Cannot connect Talkyard user ${user.usernameHashId}
                   with external user 'ssoid:${user.ssoId}': The Talkyard user account's
@@ -280,7 +513,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
                 email address: ${extUser.primaryEmailAddress}, and the Talkyard
                 user account doesn't currently mirror any external user. [TyM2DKW07X]""")
 
-            val updatedUser = user.copyWithExternalData(extUser)
+            val updatedUser = user.copy(ssoId = Some(extUser.ssoId))
             dieIf(updatedUser == user, "TyE4AKBRE2")
             tx.updateUserInclDetails(updatedUser)
             (updatedUser, false)
@@ -290,6 +523,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
 
             def makeName(): String = "unnamed_" + (nextRandomLong() % 1000)
             val usernameToTry = extUser.username.orElse(extUser.fullName).getOrElse(makeName())
+
             val okayUsername = Participant.makeOkayUsername(usernameToTry, allowDotDash = false,  // [CANONUN]
               tx.isUsernameInUse)  getOrElse throwForbidden("TyE2GKRC4C2", s"Cannot generate username")
 
@@ -298,7 +532,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
 
             val userData = // [5LKKWA10]
               NewPasswordUserData.create(
-                name = extUser.fullName,
+                name = Validation.fixMaybeBadName(extUser.fullName),
                 username = okayUsername,
                 email = extUser.primaryEmailAddress,
                 password = None,
@@ -327,17 +561,11 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
           dao.memCache.fireUserCreated(user.briefUser)
         }
 
-        val secret = nextRandomString()
-        val expireSeconds = Some(globals.config.oneTimeSecretSecondsToLive)
-
-        dao.redisCache.saveOneTimeLoginSecret(secret, user.id, expireSeconds)
-        OkApiJson(Json.obj(
-          "loginSecret" -> secret,
-          "ssoLoginSecret" -> secret))  // REMOVE deprecated old name
-    }
+    (user, isNew)
   }
 
 }
+
 
 
 object LoginWithSecretController {

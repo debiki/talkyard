@@ -157,6 +157,7 @@ Let people create accounts without specifying any email address. Like at Reddit.
 Let someone create many accounts with the same email address.
 Also then one cannot try to find out if an account exists,
 by specifying that person's email addr.
+And when logging in via email, one gets to choose which account to login to.
 
 [known_verified_email_domains]
       // + known all-email-addrs-have-been-verified email domains from site settings?

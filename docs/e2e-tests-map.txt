@@ -201,6 +201,8 @@ single-sign-on:  (3093533)
           - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT0WMRSKJ4
   dupl username made unique:
           - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT05MSH47R
+  update sso user's email, username etc:
+          - api-update-user-and-sso-user.2br   TyTE2E05MRR9
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
@@ -1302,6 +1304,8 @@ api:
           - api-upsert-pages.2browsers.test.ts  TyT305WKTUC2
   wrong api user, or not-allowed user type (guest or System):
           - sso-one-time-key-errors.2browsers.test.ts  TyT062SUNF3
+  upsert user:
+          - api-update-user-and-sso-user.2br   TyTE2E05MRR9
   list usernames:
           - TyT05RKVJF68
   list topics:

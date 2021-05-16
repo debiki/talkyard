@@ -57,8 +57,10 @@ export interface SsoLoginTestVariants {
   extUsers?: ExtUserAndResult[];
 }
 
-// Previously, there was a bug [SSOBUGHACK] when combining SSO with Login Required,
-// so let's test those combinations.
+// Previously, there was a bug when combining SSO with Login Required,
+// because the sso endpoint (/-/v0/login-with-secret) wasn't public,
+// isLogin = true wasn't set.
+// So let's test those combinations.
 
 function constructSsoLoginTest(testName: string, variants: SsoLoginTestVariants) {
       describe(testName, () => {

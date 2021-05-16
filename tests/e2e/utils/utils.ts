@@ -169,7 +169,8 @@ const utils = {
 
   makeEmbeddedCommentsHtml(ps: { pageName: string, discussionId?: string,
       talkyardPageId?: string, categoryRef?: string,
-      localHostname?: string, color?: string, bgColor: string, htmlToPaste?: string }): string {
+      localHostname?: string, color?: string, bgColor: string, htmlToPaste?: string,
+      authnToken?: St | Ay }): St {
     // Dupl code [046KWESJJLI3].
     dieIf(!!ps.localHostname && !!ps.htmlToPaste, 'TyE502PK562');
     dieIf(!ps.localHostname && !ps.htmlToPaste, 'TyE7FHQJ45X');
@@ -183,6 +184,11 @@ const utils = {
         ` data-discussion-id=""`, ` data-discussion-id="${ps.discussionId}"`);
     }
 
+    const authnTokenScript = !ps.authnToken ? '' : `
+<script>
+talkyardAuthnToken = ${JSON.stringify(ps.authnToken)};
+</script>
+    `;
     const ieEmpty = !ps.discussionId ? ', i.e. <b>no</b> id' : '';
     let resultHtmlStr = `
 <html>

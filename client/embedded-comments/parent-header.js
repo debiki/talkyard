@@ -19,7 +19,7 @@
 // See readme.txt.
 
 
-window.eds = {};
+window.eds = {};  // CLEAN_UP REMOVE  not needed here any more?
 window.debiki = { internal: {}, v0: { util: {} } };
 
 // Finds the server origin, by extracting origin of the embedded comments script url.

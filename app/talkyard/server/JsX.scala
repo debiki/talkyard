@@ -155,7 +155,7 @@ object JsX {
     user.map(JsUser).getOrElse(JsNull)
 
 
-  def JsUser(user: Participant): JsObject = {  // Typescript: Participant, RENAME to JsParticipant
+  def JsUser(user: Participant): JsObject = {  // Typescript: Participant, RENAME to JsPat
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.anyUsername),
@@ -186,6 +186,15 @@ object JsX {
       json += "isGone" -> JsTrue
     }
     json
+  }
+
+
+  def JsUserApiV0(user: User, brief: Bo): JsObject = {
+    unimplIf(!brief, "TyE306RE5")
+    Json.obj(
+      "id" -> JsNumber(user.id),
+      "username" -> JsStringOrNull(user.anyUsername),
+      "fullName" -> JsStringOrNull(user.anyName))
   }
 
 
@@ -880,6 +889,23 @@ object JsX {
         "oidcUserinfoReqSendUserIp" -> JsBoolOrNull(idp.oidcUserinfoReqSendUserIp),
         "oidcLogoutUrl" -> JsStringOrNull(idp.oidcLogoutUrl))
   }
+
+
+  def apiV0_parseExternalUser(jsObj: JsObject, ssoId: St, errSuffix: St): ExternalUser = {
+    ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
+          ssoId = ssoId,
+          extId = (jsObj \ "extId").asOptStringNoneIfBlank,
+          primaryEmailAddress = (jsObj \ "primaryEmailAddress").as[String].trim,
+          isEmailAddressVerified = (jsObj \ "isEmailAddressVerified").as[Boolean],
+          username = (jsObj \ "username").asOptStringNoneIfBlank,
+          fullName = (jsObj \ "fullName").asOptStringNoneIfBlank,
+          avatarUrl = (jsObj \ "avatarUrl").asOptStringNoneIfBlank,
+          // BIO
+          aboutUser = (jsObj \ "aboutUser").asOptStringNoneIfBlank,  // RENAME to 'bio', right
+          isAdmin = (jsObj \ "isAdmin").asOpt[Boolean].getOrElse(false),
+          isModerator = (jsObj \ "isModerator").asOpt[Boolean].getOrElse(false))
+  }
+
 
 }
 

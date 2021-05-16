@@ -89,6 +89,7 @@ alter page user_pages3 drop column notf_reason;
 
 pats_t
 pat_groups_t
+pat_email_adrs_t
 
 #pat_sets_meta_t   — or maybe just reuse  pat_groups_t
 #  pat_set_id_c

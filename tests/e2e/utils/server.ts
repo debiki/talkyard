@@ -577,6 +577,19 @@ function upsertUserGetLoginSecret(ps: { origin: string, apiRequesterId?: UserId,
   return responseJson.loginSecret;
 }
 
+
+function upsertUser(ps: { origin: St, apiRequesterId?: UserId, apiSecret: St,
+      externalUser: ExternalUser, fail?: Bo }): St {
+  const url = ps.origin + '/-/v0/upsert-user';
+  const response = postOrDie(url, ps.externalUser, {
+    fail: ps.fail,
+    apiRequesterId: ps.apiRequesterId || c.SysbotUserId,
+    apiSecret: ps.apiSecret,
+  });
+  return response.bodyText;
+}
+
+
 function upsertSimple(ps: { origin: string, apiRequesterId: UserId, apiSecret: string, fail?: boolean,
       data }): string | any {
   const url = ps.origin + '/-/v0/upsert-simple';
@@ -587,6 +600,7 @@ function upsertSimple(ps: { origin: string, apiRequesterId: UserId, apiSecret: s
         apiSecret: ps.apiSecret });
   return ps.fail ? response.bodyText : response.bodyJson();
 }
+
 
 function listUsers(ps: { origin: string, usernamePrefix: string }): ListUsersApiResponse {
   const url = ps.origin + '/-/v0/list-users?usernamePrefix=' + ps.usernamePrefix;
@@ -631,6 +645,7 @@ export = {
   apiV0: {
     fullTextSearch,
     listQuery,
+    upsertUser,
     upsertUserGetLoginSecret,
     upsertSimple,
     listUsers,

@@ -519,10 +519,7 @@ class PlainApiActions(
         }
       }
 
-      if (!allowAnyone && !isLogin
-          // HACK, CLEAN_UP, QUICK [SSOBUGHACK]
-          && request.path != "/-/v0/login-with-secret") {
-
+      if (!allowAnyone && !isLogin) {
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
         val isInternalApi = isXhr  // TODO

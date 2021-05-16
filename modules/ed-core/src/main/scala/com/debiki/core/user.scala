@@ -464,6 +464,9 @@ case object Participant {
   private val TwoOrMoreSymbolsRegex =
     "[^a-zA-Z0-9]{2,}".r
 
+  private val TwoOrMoreUnderscoresRegex =
+    "_{2,}".r
+
   /** Comes up with a username that contains only valid characters, and is not already in use.
     * Does things like pads with numbers if too short, and, if already taken, appends
     * numbers to make it unique. And changes åäö to aao and replaces Unicode
@@ -472,7 +475,8 @@ case object Participant {
     * user 'tové' pretends to be 'tove').
     */
   def makeOkayUsername(somethingMaybeWeird: String, allowDotDash: Boolean,
-        isUsernameInUse: String => Boolean): Option[String] = {
+        isUsernameInUse: String => Boolean, noneIfIsAlready: Opt[St] = None)
+        : Option[String] = {
     // Tested in UserSpec:  TyT05RDPS24
     // And this e2e test: TyT306FKRDJ5.TyT05MSH47R
 
@@ -510,7 +514,14 @@ case object Participant {
     if (allowDotDash) {
       // Then maybe many in a row. Replace w underscore.
       usernameOkCharsNotTrimmed =
-        TwoOrMoreSymbolsRegex.replaceAllIn(usernameOkCharsNotTrimmed, "_")
+            TwoOrMoreSymbolsRegex.replaceAllIn(usernameOkCharsNotTrimmed, "_")
+    }
+    else {
+      // Then maybe many underscores '__' in a row — but Ty allows at most one.
+      // Hmm, could avoid this, by doing  replWithUnderscoreRegex  *after*
+      // UsernameBadCharsRegex, above, right.
+      usernameOkCharsNotTrimmed =
+            TwoOrMoreUnderscoresRegex.replaceAllIn(usernameOkCharsNotTrimmed, "_")
     }
 
     // Later, allow starting with '_', and change here too: [ALWUNDS1]
@@ -558,6 +569,13 @@ case object Participant {
 
     var nextToTry = usernameOkCharsLen
     val numCharsFree = Participant.MaxUsernameLength - usernameOkCharsLen.length
+
+    // Avoid hitting the db (both to see if exists, or to write), if the new
+    // username is already the same as the person's current username.
+    noneIfIsAlready foreach { currentUsername =>
+      if (nextToTry == currentUsername)
+        return None
+    }
 
     // `until` means up to length - 1 — so won't drop all chars here: (5WKBA2)
     for (i <- 1 until Participant.MaxUsernameLength) {
@@ -1125,25 +1143,41 @@ case class UserInclDetails( // ok for export
     else copy(threatLevel = newThreatLevel)
 
 
-  def copyWithExternalData(externalUser: ExternalUser): UserInclDetails = {
-    unimplementedIf(primaryEmailAddress != externalUser.primaryEmailAddress,
-      "Diffferent primaryEmailAddress not yet impl [TyE2BKRP0]")
-    unimplementedIf(emailVerifiedAt.isDefined != externalUser.isEmailAddressVerified,
-      "Diffferent email verified status, then do what? [TyE5KBRH8]")
-    copy(
-      ssoId = Some(externalUser.ssoId),
-      primaryEmailAddress = externalUser.primaryEmailAddress,
-      //emailVerifiedAt = externalUser.isEmailAddressVerified,
-      // username: Option[String] — keep old?
-      // fullName: Option[String] — keep old? or change?
-      // avatarUrl: Option[String],
-      // aboutUser: Option[String],
-      // isAdmin: Boolean,
-      // isModerator: Boolean
-      )
+  def copyWithUpdatedExternalData(extUser: ExternalUser, now: => When,
+          tryFixBadValues: Bo): UserInclDetails = {
+
+    // For now, require this, maybe not later:
+    require(tryFixBadValues, "TyE406MRSET24")
+    require(ssoId is extUser.ssoId,
+          o"""Different ssoId:s: in the Ty database: $ssoId,
+          but the external user "${extUser.ssoId}" TyE503RMG""")
+    require(extUser.isEmailAddressVerified,
+          o"""Ext user email not verified, ssoId: "${extUser.ssoId}" TyE503RMG""")
+
+    val gotNewEmail = primaryEmailAddress != extUser.primaryEmailAddress
+    val newEmailVerifiedAt = if (!gotNewEmail) emailVerifiedAt else {
+      if (extUser.isEmailAddressVerified) Some(now.toJavaDate)
+      else None
+    }
+
+    this.copy(
+          ssoId = Some(extUser.ssoId),
+          primaryEmailAddress = extUser.primaryEmailAddress,
+          emailVerifiedAt = newEmailVerifiedAt,
+          username = extUser.username getOrElse username,
+          fullName = Validation.fixMaybeBadName(extUser.fullName) orElse fullName,
+          // avatarUrl: Option[String],
+          // aboutUser: Option[String],
+          // Better wait with granting admin role via API
+          // — e.g. may not promote a suspended user! [2BRUI8]
+          // isAdmin: Boolean,
+          // isModerator: Boolean
+          )
   }
 
+
   def noDetails: Participant = briefUser
+
 
   def briefUser = User(   // RENAME? to just noDetails? see above
     id = id,

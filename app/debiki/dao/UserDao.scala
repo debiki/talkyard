@@ -1849,9 +1849,10 @@ trait UserDao {
         throwForbiddenIfBadFullName(preferences.fullName)
       }
 
-      // Don't let people change their usernames too often.
+      // Don't let people change their usernames too often.  Also see [ed_uname].
       if (user.username != preferences.username) {
-        addUsernameUsageOrThrowClientError(user.id, newUsername = preferences.username, me = me, tx)
+        addUsernameUsageOrThrowClientError(
+              user.id, newUsername = preferences.username, me = me, tx)
       }
 
       // Changing address is done via UserController.setPrimaryEmailAddresses instead, not here
@@ -1899,17 +1900,20 @@ trait UserDao {
 
         val usersOldUsernames: Seq[UsernameUsage] = tx.loadUsersOldUsernames(memberId)
 
-        // [CANONUN] load both exact & canonical username, any match —> not allowed (unless one's own).
+        // [CANONUN] load both exact & canonical username, any match —> not allowed
+        // (unless one's own).
         val previousUsages = tx.loadUsernameUsages(newUsername)
 
         // For now: (later, could allow, if never mentioned, after a grace period. Docs [8KFUT20])
         val usagesByOthers = previousUsages.filter(_.userId != memberId)
         if (usagesByOthers.nonEmpty)
           throwForbidden("EdE5D0Y29_",
-            s"The username '$newUsername' is, or has been, in use by someone else. You cannot use it.")
+                o"""The username '$newUsername' is, or has been, in use by someone else.
+                You cannot use it.""")
 
-        val maxPerYearTotal = me.isStaff ? 20 | 9
-        val maxPerYearDistinct = me.isStaff ? 8 | 3
+        // Sync with tests [max_uname_changes].
+        val maxPerYearTotal = me.isStaff ? 20 | 12
+        val maxPerYearDistinct = me.isStaff ? 10 | 4
 
         val recentUsernames = usersOldUsernames.filter(
             _.inUseFrom.daysBetween(tx.now) < 365)
