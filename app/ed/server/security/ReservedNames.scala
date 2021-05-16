@@ -75,6 +75,7 @@ object ReservedNames {
 
 
   private val allNames: Set[String] =
+    Set("")/*
     LongListOfNames.toLowerCase.lines
       .flatMap(
           // Remove comment lines, and trailing comments:
@@ -82,7 +83,7 @@ object ReservedNames {
           // If there're many words on one line:
           .split(" ").map(_.trim))
       .filterNot(_.isEmpty)
-      .toSet
+      .toSet */
 
   // Also see [2WJBG04]
   private def LongListOfNames: String = """

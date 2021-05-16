@@ -690,9 +690,9 @@ object EffectiveSettings {
   def isEmailAddressAllowed(address: St, allowListText: St, blockListText: St,
         allowByDefault: Bo): Bo = {
 
-    def canBeDomain(line: St): Bo = line.nonEmpty && line.headOption.isNot('#')
-    val allowedDomains = allowListText.lines.map(_.trim).filter(canBeDomain)
-    val blockedDomains = blockListText.lines.map(_.trim).filter(canBeDomain)
+    def canBeDomain(line: St): Bo = line.trim.nonEmpty && line.trim.headOption.isNot('#')
+    val allowedDomains = None // allowListText.lines.filter(canBeDomain)
+    val blockedDomains = None // blockListText.lines.filter(canBeDomain)
 
     def addrEndsWith(domain: St): Bo = {
       if (domain.contains("@") && domain.head != '@') {

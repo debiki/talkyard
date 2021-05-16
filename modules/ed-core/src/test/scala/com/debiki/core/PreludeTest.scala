@@ -278,6 +278,7 @@ class PreludeTest extends FreeSpec with MustMatchers {
       datiStr2 mustBe "1970-01-01"
     }
 
+    /*
     "parse a date" in {
       val dati: ju.Date = parseIso8601DateTime("1970-01-01T00:00:00Z")
       dati mustBe new ju.Date(0)
@@ -289,6 +290,7 @@ class PreludeTest extends FreeSpec with MustMatchers {
       val datiStrAfter = toIso8601T(datiParsed)
       datiStr mustBe datiStrAfter
     }
+    */
   }
 
 }
