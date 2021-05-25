@@ -42,7 +42,7 @@ require("resty.acme.autossl").init({
     -- ${YOUR_SECURITY_EMAIL_ADDR}  in  .env  ?
     account_email = "security@talkyard.io",
 
-    -- 31 days. LetsEncrypt recommends 30.
+    -- 30 days. LetsEncrypt recommends 30.
     renew_threshold = 3600 * 24 * 30,
 
     -- SHOULD make configurable [lua_conf]
