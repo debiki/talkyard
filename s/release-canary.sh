@@ -143,6 +143,7 @@ echo "Publishing version tag $release_version_tag to GitHub..."
 pushd .
 cd relchans/$promote_to_chan
   git fetch origin $promote_to_chan
+  git checkout $promote_to_chan
   git merge --ff-only origin/$promote_to_chan
   echo "$release_version_tag" >> $versions_file
   # The tag: edition (tyse), version and channel (regular).  [.must_be_dev_regular]
@@ -150,18 +151,16 @@ cd relchans/$promote_to_chan
   git add $versions_file
   git commit -m "Release $release_version_tag_w_ed_chan."
   echo
-  echo "DO THIS in relchans/$promote_to_chan/:"
-  echo git branch -f $promote_to_chan
-  echo git push origin $promote_to_chan
+  echo "In $(pwd):"
+  set -x
+  git push origin $promote_to_chan
   # 'master' is for backw compat. Don't incl in v1. [ty_v1]
   if [ "$promote_to_chan" = 'tyse-v0-regular' ]; then
     git branch -f master
-    echo git push origin master
+    git push origin master
   fi
 popd
 
-echo
-echo "AND THIS in ./:"
 # Future tag name:
 # Need to include release channel in the Git tag, otherwise we'd try to push the
 # same tag to different branches, e.g. push  tyse-v0.2021.04-abc123def
@@ -169,9 +168,10 @@ echo "AND THIS in ./:"
 # would overwrite the first.  Instead, we push two different tags:
 # tyse-v0.2021.04-abc123def-dev  and  tyse-v0.2021.04-abc123def-regular.
 # [.must_be_dev_regular]
-echo git tag $release_version_tag_w_ed_chan tyse-$wip_version_tag-dev
+git tag $release_version_tag_w_ed_chan tyse-$wip_version_tag-dev
 
-echo git push origin $release_version_tag_w_ed_chan
+git push origin $release_version_tag_w_ed_chan
 
-echo echo "Done, released $release_version_tag_w_ed_chan. Bye."
+set +x
+echo "Done, released $release_version_tag_w_ed_chan. Bye."
 echo

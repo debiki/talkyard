@@ -18,11 +18,12 @@ require("lua-limit-bandwidth/log-phase")
 --
 require("resty.acme.autossl").init({
     -- If one has accepted the LetsEncrypt ToS, https://letsencrypt.org/repository/.
-    -- SHOULD be configurable so self-hosted admins need to edit & change to true?
+    -- SHOULD be configurable [lua_conf] so self-hosted admins need to change to true?
     tos_accepted = true,
 
     -- Set to true in test env, to use LetsEncrypt staging env, and avoid
     -- "Too many requests" errors when using LetsEncrypt for real.
+    -- [lua_conf]
     -- staging = true,
 
     -- By default only RSA (not ECC) enabled.
@@ -37,9 +38,16 @@ require("resty.acme.autossl").init({
     -- LetsEncrypt''s rate limits are higher, if one specifies an account key.
     account_key_path = '/etc/nginx/acme/acme-account.key',
 
-    -- SHOULD be configurable, default empty.
+    -- SHOULD be configurable [lua_conf], default empty.
     -- ${YOUR_SECURITY_EMAIL_ADDR}  in  .env  ?
     account_email = "security@talkyard.io",
+
+    -- 30 days. LetsEncrypt recommends 30.
+    renew_threshold = 3600 * 24 * 30,
+
+    -- SHOULD make configurable [lua_conf]
+    -- number of certificate cache, per type
+    cache_size = 200,
 
     domain_whitelist_callback = function(domain)
         ngx.log(ngx.DEBUG, "Checking if should have cert: " .. domain

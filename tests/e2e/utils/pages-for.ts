@@ -6906,6 +6906,10 @@ export class TyE2eTestBrowser {
         },
 
         emailsLogins: {   // RENAME to `account`
+          goHere: (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+            this.userProfilePage._goHere(username, ps, '/preferences/account');
+          },
+
           getEmailAddress: () => {
             return this.waitAndGetVisibleText('.s_UP_EmLg_EmL_It_Em');
           },

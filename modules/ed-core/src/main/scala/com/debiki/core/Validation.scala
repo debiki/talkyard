@@ -35,15 +35,22 @@ object Validation {  RENAME // to Check, so:  Check.ifBadEmail( ...)  — looks 
   private val DigitsDotsDashesOnlyRegex = """^[0-9\.-]*$""".r
 
 
+  val MaxFullNameLength = 100
+
   // CLEAN_UP don't return the name — looks as if it's maybe getting changed
   def checkName(name: Option[String]): Option[String] Or ErrorMessage = {
     if (name.map(_.trim) != name)
       return Bad("Name starts or ends with blanks")
 
-    if (name.exists(_.length > 100))
+    if (name.exists(_.length > MaxFullNameLength))
       return Bad("The name is too long")
 
     Good(name)
+  }
+
+
+  def fixMaybeBadName(name: Opt[St]): Opt[St] = {
+    name map { n => n.trim.take(MaxFullNameLength).trim }
   }
 
 

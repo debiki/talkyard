@@ -350,6 +350,19 @@ GET   /-/list-api-secrets       controllers.ApiSecretsController.listApiSecrets
 POST  /-/create-api-secret      controllers.ApiSecretsController.createApiSecret
 POST  /-/delete-api-secrets     controllers.ApiSecretsController.deleteApiSecrets
 
+POST  /-/v0/upsert-user                  talkyard.server.authn.SsoAuthnController.apiV0_upsertUser
+POST  /-/v0/upsert-user-and-login        talkyard.server.authn.SsoAuthnController.apiV0_upsertUserAndLogin
+POST  /-/v0/upsert-user-get-login-secret talkyard.server.authn.SsoAuthnController.apiv0_upsertUserGenLoginSecret
+# Deprecated names, at least the first one in use:
+POST  /-/v0/sso-upsert-user-generate-login-secret      talkyard.server.authn.SsoAuthnController.apiv0_upsertUserGenLoginSecret
+POST  /-/v0/upsert-external-user-generate-login-secret talkyard.server.authn.SsoAuthnController.apiv0_upsertUserGenLoginSecret
+
+GET   /-/v0/login-with-secret   talkyard.server.authn.SsoAuthnController.apiv0_loginWithSecret
+# Deprecated name: (because login secrets are generated in more ways than just sso.
+# E.g. for one-time-login via email, [305KDDN24]).
+GET   /-/v0/sso-login           talkyard.server.authn.SsoAuthnController.apiv0_loginWithSecret
+
+
 POST  /-/v0/get                 talkyard.server.api.GetController.getThingsPubApi
 POST  /-/v0/list                talkyard.server.api.ListController.listThingsPubApi
 

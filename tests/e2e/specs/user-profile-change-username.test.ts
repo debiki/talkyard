@@ -120,7 +120,6 @@ describe("user-profile-change-username.test.ts  TyT4026WSH46", () => {
     mariasBrowser.userProfilePage.preferences.startChangingUsername();
     mariasBrowser.userProfilePage.preferences.setUsername(mariasUsername3);
     mariasBrowser.userProfilePage.preferences.save();
-
   });
 
   it("... then to: " + mariasUsername4, () => {
@@ -129,7 +128,13 @@ describe("user-profile-change-username.test.ts  TyT4026WSH46", () => {
     mariasBrowser.userProfilePage.preferences.clickSave();
   });
 
-  it("But that didn't work, too many changes", () => {
+  it("... then to: " + mariasUsername5, () => {
+    mariasBrowser.userProfilePage.preferences.startChangingUsername();
+    mariasBrowser.userProfilePage.preferences.setUsername(mariasUsername5);
+    mariasBrowser.userProfilePage.preferences.clickSave();
+  });
+
+  it("But that didn't work, too many changes, see: [max_uname_changes]", () => {
     mariasBrowser.serverErrorDialog.waitAndAssertTextMatches('EdE7KP4ZZ_');
     mariasBrowser.serverErrorDialog.close();
   });

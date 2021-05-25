@@ -1088,6 +1088,15 @@ export function loginAsGuest(name: string, email: string,
 }
 
 
+export function loginWithAuthnToken(authnToken: St | Ay, onOk: () => Vo) {
+  const isToken = _.isString(authnToken);
+  postJsonSuccess('/-/v0/upsert-user-and-login', makeUpdNoCookiesTempSessionIdFn(onOk), {
+    userInAuthnToken: isToken ? authnToken : undefined,
+    userDevTest: isToken ? undefined : authnToken,  // just for now, in dev/test
+  });
+}
+
+
 export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
     onDone: (weakSesionId: string) => void) {
   get(`/-/v0/login-with-secret?oneTimeSecret=${oneTimeLoginSecret}`,

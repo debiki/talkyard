@@ -157,6 +157,7 @@ Let people create accounts without specifying any email address. Like at Reddit.
 Let someone create many accounts with the same email address.
 Also then one cannot try to find out if an account exists,
 by specifying that person's email addr.
+And when logging in via email, one gets to choose which account to login to.
 
 [known_verified_email_domains]
       // + known all-email-addrs-have-been-verified email domains from site settings?
@@ -615,6 +616,9 @@ And cannot be 100% there are no bugs causing problems when running DDL data-def-
    "PostgreSQL instance was unrecoverably corrupted after the virtual machine running it was powered off"  https://dev.t-matix.com/blog/postgresql-as-a-time-series-database/
 https://news.ycombinator.com/item?id=20760324
 TimescaleDB = pg extentsion, nice, no need to learn a completely new db & storage type.
+
+[lua_conf]
+Conf settings for Lua plugins.
 
 [typesafe_lua]
 Maybe: https://github.com/teal-language/tl  Teal, a typed dialect of Lua  ?

@@ -209,7 +209,7 @@ type ThingFound = PageOptFields
 
 
 interface ParticipantFound {
-  ppId: ParticipantId;
+  ppId: ParticipantId;  // RENAME to patId
   username?: string;
   fullName?: string;
   tinyAvatarUrl?: string;
@@ -231,6 +231,8 @@ interface MemberFound extends ParticipantFound {
 
 interface UserFound extends MemberFound {
   isGroup?: false;
+  // soId?: St;   later (sign-on id)
+  // extId?: St;  later (external id)
 }
 
 interface GroupFound extends MemberFound {
@@ -743,6 +745,51 @@ type SearchResultsScrollCursor = Unimplemented;
 //    }
 //  }
 //
+
+
+
+
+// An  Upsert  request  ?
+// -------------------------
+
+//
+//
+/*
+interface UpsertApiRequest extends MaybePrettyApiRequest {
+  upsertCmd: UpsertCommand;
+  pretty?: Bo;
+}
+
+
+interface UpsertCommand {
+  upsertWhat: FindWhat;
+}
+
+
+interface UpsertPatsCommand extends UpsertCommand {
+  upsertWhat: 'Pats';
+  upsertThings: PatToUpsert[];
+}
+
+
+interface PatToUpsert {
+  key: St;
+  username?: St;
+  fullName?: St;
+  primaryEmailAddr?: St;
+  primaryEmailAddrVerified?: Bo;
+}
+
+
+type UpsertApiResponse<T extends ThingFound> = ApiResponse<GetQueryResults<T>>;
+
+interface UpsertCommandResults<T extends ThingFound> {
+  origin: St;
+
+  // One item for each upsertThings[] item, in the same order.
+  thingsOrErrs: (T | ErrCodeMsg | null)[];
+}
+*/
 
 
 

@@ -88,6 +88,23 @@ You'll find **Docker image** build files in: <code>./images/<i>image-name</i>/</
 This is beta software; there might be bugs.
 
 
+<!--
+### Project size
+
+It's sort of possible for one person to understand all of Talkyard —
+as May 2021, `https://github.com/boyter/scc` says
+Talkyard is 140 000  (111 359 + 32 653 = 144 012) lines of code and comments
+(excluding blank lines).   **and** that was with some other changes, different branch.
+Plus about 60 000 (59 425) lines test code.
+Server side code complexity: 5538, client side (a React.js web app): 8478.
+
+scc modules/ed-core/src  modules/ty-dao-rdb/src/ client/app-* client/embedded-comments/  client/serviceworker/  client/*.ts  app/  s/  Makefile to-talkyard/src/  gulpfile.js images/web/ed-lua/  images/web/*.conf  images/app/Dockerfile.*  images/rdb/
+
+scc tests/
+
+-->
+
+
 <!-- Some Features -----------
 - Avoid mistakes: See if people disagree.
 - Anonymous questions: So people dare to ask embarassing questions, or post crazy creative ideas.
