@@ -767,6 +767,7 @@ interface ExternalUser {   // sync with Scala [7KBA24Y]
 interface LinkPreviewProvider {
   name: St;
   inSandboxedIframe: Bo;  // default true
+  inDoubleIframe?: Bo;    // default false
   lnPvClassSuffix?: St;
 }
 

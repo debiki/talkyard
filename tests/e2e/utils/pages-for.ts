@@ -1027,7 +1027,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    switchToTheParentFrame() {
+    switchToTheParentFrame(ps: { parentIs?: IsWhere } = {}) {
         dieIf(!this.isInIframe(), 'TyE406RKH2');
         this.#br.switchToParentFrame();
         // Skip, was some other oddity:
@@ -1038,7 +1038,10 @@ export class TyE2eTestBrowser {
         //   message: `Waiting for this.#br to enter parent frame, until window.self === top`
         // });
         logMessage("Switched to parent frame.");
-        if (this.#isWhere === IsWhere.UnknownIframe) {
+        if (ps.parentIs) {
+          this.#isWhere = ps.parentIs;
+        }
+        else if (this.#isWhere === IsWhere.UnknownIframe) {
           // For now: (Later, might be in an embedded blog comments editor or discussion,
           // but right now (2020-07) there are no such tests.)
           this.#isWhere = IsWhere.Forum;
@@ -5069,11 +5072,12 @@ export class TyE2eTestBrowser {
     linkPreview = {
       waitUntilLinkPreviewMatches: (ps: { postNr: PostNr, timeoutMs?: number,
             regex: string | RegExp, whichLinkPreviewSelector?: string,
-            inSandboxedIframe: boolean }) => {
+            inSandboxedIframe: Bo, inDoubleIframe: Bo }) => {
         const linkPrevwSel = ' .s_LnPv' + (ps.whichLinkPreviewSelector || '');
         if (ps.inSandboxedIframe) {
           this.topic.waitForExistsInIframeInPost({ postNr: ps.postNr,
                 iframeSelector: linkPrevwSel + ' iframe',
+                yetAnotherIframeInside: ps.inDoubleIframe,
                 textToMatch: ps.regex,
                 timeoutMs: ps.timeoutMs });
         }
@@ -5119,11 +5123,17 @@ export class TyE2eTestBrowser {
       // ^--REMOVE, use --v  instead
       waitUntilPreviewTextMatches: (regex: string | RegExp,
             opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: string,
-                  inSandboxedIframe: boolean }) => {
+                  inSandboxedIframe: Bo, inDoubleIframe?: Bo }) => {
         this.preview.__checkPrevw(opts, (prevwSelector: string) => {
           if (opts.inSandboxedIframe) {
             this.switchToFrame(`${prevwSelector}.s_LnPv iframe`);
+            if (opts.inDoubleIframe) {
+              this.switchToFrame('iframe');
+            }
             this.waitUntilTextMatches('body', regex);
+            if (opts.inDoubleIframe) {
+              this.switchToTheParentFrame({ parentIs: IsWhere.UnknownIframe });
+            }
             this.switchToTheParentFrame();
           }
           else {
@@ -5421,14 +5431,21 @@ export class TyE2eTestBrowser {
 
       // Enters an <iframe> in a post, looks for sth, then exits the iframe.
       waitForExistsInIframeInPost: (ps: { postNr: PostNr, iframeSelector: string,
+            yetAnotherIframeInside?: Bo,
             thingInIframeSelector?: string, textToMatch?: string | RegExp,
             timeoutMs?: number, howMany?: number }) => {
         const complIfrSel = this.topic.postBodySelector(ps.postNr) + ' ' + ps.iframeSelector;
         this.switchToFrame(complIfrSel, { timeoutMs: ps.timeoutMs });
+        if (ps.yetAnotherIframeInside)  {
+          this.switchToFrame('iframe', { timeoutMs: ps.timeoutMs });
+        }
         const thingInIframeSelector = ps.thingInIframeSelector || 'body';
         this.waitForExist(thingInIframeSelector, { timeoutMs: ps.timeoutMs });
         if (ps.textToMatch) {
           this.waitUntilTextMatches(thingInIframeSelector, ps.textToMatch);
+        }
+        if (ps.yetAnotherIframeInside)  {
+          this.switchToTheParentFrame({ parentIs: IsWhere.UnknownIframe });
         }
         this.switchToTheParentFrame();
       },
