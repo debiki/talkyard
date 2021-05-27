@@ -307,16 +307,19 @@ declare namespace debiki2 {
   function uppercaseFirst(text: string): string;
   function firstDefinedOf(x, y, z?): any;
   function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V };
-  function isNullOrUndefined(x): boolean;
+  function isNullOrUndefined(x): boolean;  // REMOVE  use  notVal(x)  instead
   function isVal(x): Bo;
-  function isDefined2(x): boolean;  // = !_.isUndefined
+  function notVal(x): Bo;
+  function isDefined2(x): boolean;  // = !_.isUndefined  REMOVE
+  function isDef(x): boolean;  // = !_.isUndefined
+  function notDef(x): boolean;  // = _.isUndefined
   function nonEmpty(x): boolean;
   function isNum(value): Bo;
   function asIntOrNull(v: StV): Nr | Nl;
   function asFloatOrNull(v: StV): Nr | Nl;
   function isNumGeZ(value: St): Bo;
   function isDigitsOnly(maybeDigits: string): boolean;
-  function prettyNum(num: number): number;
+  function prettyNum(num: number, digits?: Nr): number;
   function isBlank(x: string): boolean;
 
   function whenMsToIsoDate(whenMs: WhenMs): string;

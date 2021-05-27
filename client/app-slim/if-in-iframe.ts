@@ -55,7 +55,8 @@ function onMessage(event) {
   switch (eventName) {
     case 'loginWithAuthnToken':
       const authnToken = eventData;
-      Server.loginWithAuthnToken(authnToken, function() {
+      Server.loginWithAuthnToken(authnToken, SessionType.AutoTokenSiteCustomSso,
+              function() {
         // typs.weakSessionId should have been updated by the above login fn.
         ReactActions.loadMyself();
       });

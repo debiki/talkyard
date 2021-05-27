@@ -38,6 +38,7 @@ const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 const SsoTestPath = '/-/sso-test';
 
+const logOutIdleAfterMinsLabel = "Log out idle user after minutes"
 
 function showAll() {
   return location.hash.indexOf('&showAll') >= 0;
@@ -582,6 +583,10 @@ const LoginAndSignupSettings = createFactory({
     const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
+    const logOutIdleAfterMins = valueOf(s => s.expireIdleAfterMins);
+    const logoutIdleDaysPretty = prettyNum(logOutIdleAfterMins / 60 / 24, 3);
+
+    const expireIdleEmbSessAfterMins = valueOf(s => s.expireIdleEmbSessAfterMins);
     const enableCustomIdps = valueOf(s => s.enableCustomIdps);
     const useOnlyCustomIdps = valueOf(s => s.useOnlyCustomIdps);
     const enableTySso = valueOf(s => s.enableSso);
@@ -592,6 +597,7 @@ const LoginAndSignupSettings = createFactory({
     const mayComposeBeforeSignup = valueOf(s => s.mayComposeBeforeSignup);
     const featureFlags = valueOf(s => s.featureFlags);
     const allowEmbeddingFrom = valueOf(s => s.allowEmbeddingFrom);
+    const rememberEmbSess = valueOf(s => s.rememberEmbSess);
 
     const canEnableGuestLogin =
             !valueOf(s => s.userMustBeApproved) && !loginRequired &&
@@ -746,9 +752,11 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         Setting2(props, { type: 'number', min: 5, max: 60 * 24 * 365 * 999,
-          label: "Logout idle user after minutes", className: 'e_LgoIdlAftMins',
-          help: "After how long a user who is away, gets logged out. " +
-            "Default: one year (525600 minutes). " +
+          label: logOutIdleAfterMinsLabel, className: 'e_LgoIdlAftMins',
+          help: (notDef(editedSettings.expireIdleAfterMins) ? '' :
+                  `(That's ${logoutIdleDaysPretty} days.) `) +
+            "After how long a user who is away, gets logged out. " +
+            "Default: one year (525600 minutes or 365 days). " +
             "This currently does log out also *active* users. " + // [EXPIREIDLE]
             "Will fix this later (so only users who are away get logged out).",
           getter: (s: Settings) => s.expireIdleAfterMins,
@@ -840,7 +848,7 @@ const LoginAndSignupSettings = createFactory({
 
         enableTySso || !allowSignup || !enableCustomIdps ? null : Setting2(props, {
           type: 'checkbox',
-          label: rFr({}, r.b({}, "Only"), " your OIDC or OAuth2"),
+          label: rFr({}, r.b({}, "Only"), " your OIDC or OAuth2"),  // [only_your_aun]
           className: 'e_A_Ss_S-OnlyOidcCB',
           help: rFr({},
               "Disables all ways to sign up, " +
@@ -1028,17 +1036,19 @@ const LoginAndSignupSettings = createFactory({
         // ---- Talyard's Single Sign-On
 
         // Hide, if only custom OIDC / OAuth2 is to be used. But if both enabled
-        // then show both  (that'd be a bug & impossible — there's a database
-        // constraint: settings_c_custom_idps_xor_sso).
+        // then show both  (currently not possible — there's a database
+        // constraint: settings_c_custom_idps_xor_sso,
+        // later, remove it, & make it possible to combine both. [sso_plus_oidc]
 
         enableCustomIdps && !enableTySso ? null : rFr({},
 
         r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
-          "Single Sign-On, Talkyard's Own"),
+          "Your custom Single Sign-On (SSO)"),
 
         r.p({ className: 'col-sm-offset-3 s_A_Ss_Expl'},
-          "This is Talkyard's custom Single Sign-On protocol. We think it's simpler to" +
-          "understand and integrate with, than OIDC (OpenID Connect). " +
+          "This lets you log in to Talkyard, " +
+          "using your own custom Single Sign-On, if any. " +
+          "This might be simpler to integrate with, than OIDC (OpenID Connect). " +
           "However if your software supports OIDC (being an ID provider), " +
           "then we think it's better if you use OIDC " +
           "— see the OIDC config section above."),
@@ -1074,6 +1084,7 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         // Ignored, without SSO and login-required-to-read. [350RKDDF5]
+        // MOVE to below the SSO checkbox?  NEXT
         !enableTySso || !loginRequired ? null : Setting2(props, {
           type: 'text', label: "SSO After Logout URL",
           className: 'e_SsoAftLgoUrl',
@@ -1103,11 +1114,175 @@ const LoginAndSignupSettings = createFactory({
               "— then go here: ",
               adminLoginLink,
               " and you'll get an email with a one time admin login link.")),
+            /* Later:
+            r.p({},
+              "Just enabling your custom Single Sign-On (SSO), does *not* disable other ways to log in. " +
+              "Instead, you can use your SSO, combined with, say, Gmail or " +
+              "email and password login, for people external to your organization.")),
+              */
           getter: (s: Settings) => s.enableSso,
           update: (newSettings: Settings, target) => {
             newSettings.enableSso = target.checked;
           }
         }),
+
+        /*
+        Setting2(props, {
+          type: 'checkbox', label: "Only your SSO",  // [only_your_aun]
+          disabled: !valueOf(s => s.ssoUrl && s.ssoUrl.trim()),
+          className: 'e_OnlySso',
+          help: rFr({},
+            r.p({},
+              "Disables all ways to sign up, " +
+              "except for your Single Sign-On."),
+              ),
+          getter: (s: Settings) => s.enableYourSignon,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableYourSignon = target.checked;
+          }
+        }), */
+
+        // If other authn methods than SSO enabled, then show these:
+        // ssoButtonTitle: St;
+        // ssoButtonDescr: St;
+        // ssoButtonImageUrl: St;
+
+        !enableTySso ? null : Setting2(props, {
+          label: "SSO Logout Redir URL",
+          className: 'e_SsoLgoUrl',
+          help: rFr({},
+            r.p({},
+              "If you want people to get logged out from your website, " +
+              "when they log out from Talkyard, then, specify a URL here. " +
+              "Talkyard then redirects your users to that URL, " +
+              "when they log out from Talkyard. " +
+              "And when they visit that URL, at your website, " +
+              "you can log them out from your website too. Example: "),
+            r.p({},
+              r.samp({}, "https://www.your-site/api/log-me-out"))),
+          getter: (s: Settings) => s.ssoLogoutRedirUrl,
+          update: (newSettings: Settings, target: HInpElm) => {
+            newSettings.ssoLogoutRedirUrl = target.value;
+          }
+        }),
+
+        /* Need a quick way to remember the session type.  [hide_authn_btns]
+        !enableTySso ? null : Setting2(props, {
+          label: "SSO Embedded Login/out Buttons",
+          type: 'checkbox', className: 'e_EmbAuBs',
+          help: rFr({},
+            r.p({},
+              "Show login and logout buttons in the embedded comments section, " +
+              "also if Single Sign-On is enabled. If your website has " +
+              "its own login and logout buttons already, " +
+              "you might want to disable (un-tick) this.", r.br(),
+              "Default: true, that is, show login and logout buttons.")),
+          getter: (s: Settings) =>
+            debiki2.notDef(s.ssoShowEmbAuthnBtns) ? undefined :
+                  s.ssoShowEmbAuthnBtns !== ShowEmbAuthnBtnsBitf.None,
+          update: (newSettings: Settings, target: HInpElm) => {
+            newSettings.ssoShowEmbAuthnBtns =
+                  target.checked ? ShowEmbAuthnBtnsBitf.All : ShowEmbAuthnBtnsBitf.None;
+          }
+        }),  */
+
+
+        !enableTySso ? null : Setting2(props, {
+          type: 'text', label: "Embedded Comments SSO Token Secret",
+          className: 'e_EmbComSecr',
+          help: rFr({},
+            Button({ onClick: () => Server.genPasetoV2LocSecr((secret: St) => {
+              props.setEditedSettings({
+                ...editedSettings,
+                ssoPasetoV2LocalSecret: secret,
+              });
+            }), className: 'e_EmbComSecr_GenB', }, "Generate new"),
+            r.p({},
+              "For embedded comments Single Sign-On (SSO) " +
+              "via user info in a Javascript variable, " +
+              "which your server needs to inject in your website's html pages " +
+              "(e.g. in your blog posts) if your website visitor is logged in. " +
+              "Tech wise, this is a shared symmetric encryption secret, " +
+              "for PASETO v2.local tokens.")),
+          getter: (s: Settings) => s.ssoPasetoV2LocalSecret,
+          update: (newSettings: Settings, target: HInpElm) => {
+            newSettings.ssoPasetoV2LocalSecret = target.value;
+          }
+        }),
+
+        /*
+        !enableTySso ? null : Setting2(props, {
+          type: 'text', label: "Embedded Comments SSO Token Public Key",
+          className: 'e_EmbComPubKey',
+          help: rFr({},
+            r.p({},
+              "You can use this instead of, or combined with, " +
+              "the encryption secret above. Tech wise, this is an asymetric " +
+              "encryption public key (so, it's not secret) " +
+              "for generating PASETO v2.public tokens.")),
+          getter: (s: Settings) => s.ssoPasetoV2PublicKey,
+          update: (newSettings: Settings, target) => {
+            newSettings.ssoPasetoV2PublicKey = target.value;
+          }
+        }), */
+
+        /*
+        !enableTySso ? null : Setting2(props, {
+          type: 'text', label: "Embedded Comments Authn Token Refresh URL",
+          className: 'e_EmbComTknRefrUrl',
+          help: rFr({},
+            r.p({},
+              "An URL of yours, which Talkyard embedded comments script " +
+              "can send a HTTP GET request to, to get a new authentication token " +
+              "(in case any token you've embedded in a blog post HTML code, " +
+              "has expired). " +
+              "Note that the browser would include any session cookie " +
+              "in such a request, so your servers could look at any such cookie, " +
+              "to know if they should generate a new token or not.")),
+          getter: (s: Settings) => s.ssoRefreshAuthnTokenUrl,
+          update: (newSettings: Settings, target) => {
+            newSettings.ssoRefreshAuthnTokenUrl = target.value;
+          }
+        }),
+
+        !enableTySso ? null : Setting2(props, {
+          label: "Stay Logged In in Embedded Comments",
+          type: 'checkbox', className: 'e_RemEmbSess',
+          help: rFr({},
+            r.p({},
+              "Stay logged in in the embedded comments section, " +
+              "also if you power off your computer and turn it back on. " +
+              "Default: Yes, stay logged in.")),
+          getter: (s: Settings) => s.rememberEmbSess,
+          update: (newSettings: Settings, target: HInpElm) => {
+            newSettings.rememberEmbSess = target.checked;
+          }
+        }),
+
+        !enableTySso ? null : Setting2(props, {
+          label: "Log Out from Embedded Comments After Minutes",
+          type: 'number', className: 'e_LgoIdlEmbMins',
+          help: rFr({},
+            r.p({},
+              (expireIdleEmbSessAfterMins === -1 ? '' : `(That's ${
+                    prettyNum(expireIdleEmbSessAfterMins / 60 / 24, 3)} days.) `) +
+              "After how long a user who is away, gets logged out " +
+              "from the embedded comments section. " +
+              "Default: Same as ", r.b({}, logOutIdleAfterMinsLabel),
+              ", which is: " +  logOutIdleAfterMins +
+              ` minutes or  ${logoutIdleDaysPretty} days.`)),
+          getter: (s: Settings) => {
+            if (s.expireIdleEmbSessAfterMins === -1) return '';
+            return s.expireIdleEmbSessAfterMins;
+          },
+          update: (newSettings: Settings, target: HInpElm) => {
+            let num = target.value ? parseInt(target.value) : -1;
+            if (num < -1) num = -1;
+            newSettings.expireIdleEmbSessAfterMins = num;
+          }
+        }),
+        */
+
         )
         ));
   }
@@ -3109,7 +3284,6 @@ const CustomizeCssJsPanel = createFactory({
             "you use it to describe the look and formatting of this site.",
           placeholder: ".selector { color: something }" }),
 
-        // SECURITY hide with display: none? Or if Experimental not enabled?
         SpecialContent({ contentId: '_javascript', label: 'Javascript',
           help: "Javascript for this site. Be careful because with Javascript you can break " +
             "everything and add security bugs.",

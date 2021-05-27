@@ -392,11 +392,11 @@ export function isDigitsOnly(maybeDigits: string): boolean {
 
 
 // E.g. 55555.0 —> 56000, looks nicer? But:  .toPrecision(2) —> "5.6e+4".
-export function prettyNum(num: number): number {
+export function prettyNum(num: number, digits: Nr = 2): number {
   // Ugh: (55555.0).toPrecision(2)          —> "5.6e+4"
   // But:  Number((55555.0).toPrecision(2)) —> 56000   nice
   // Thanks, https://stackoverflow.com/a/4689230/694469
-  return Number(num.toPrecision(2));
+  return Number(num.toPrecision(digits));
 }
 
 
@@ -424,7 +424,11 @@ export function isDefined2(x): boolean {   // RENAME to isDef
 export function isDef(x): Bo {
   return !isUndef(x);
 }
+// REMOVE  use  notDef(x) instead
 export function isUndef(x): Bo {
+  return _.isUndefined(x);
+}
+export function notDef(x): Bo {
   return _.isUndefined(x);
 }
 
@@ -460,11 +464,17 @@ export function isDefined(x): boolean {
 // Let's talk about undefined and null as not real values, but 0, '' etc are
 // real values.
 export function isVal(x): Bo {
-  return !isNullOrUndefined(x);
+  return !notVal(x);
 }
 
 
-export function isNullOrUndefined(x): boolean {   // RENAME to isNullOrUndef
+
+export function isNullOrUndefined(x): boolean {   // REMOVE, use notVal() below instead
+  return notVal(x);
+}
+
+
+export function notVal(x): Bo {
   return _.isNull(x) || _.isUndefined(x);
 }
 

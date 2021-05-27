@@ -322,6 +322,7 @@ class PlainApiActions(
         "TyEAPIBADUSR_", s"Not allowed to call the API as user ${user.usernameOrGuestName}")
 
       runBlockIfAuthOk(request, site, dao, Some(user),
+          // SECURITY minor: Less error prone with a Bool field instead of this magic string.
           SidOk("_api_secret_", 0, Some(user.id)), XsrfOk("_api_secret_"), None, block)
     }
 

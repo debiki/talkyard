@@ -88,6 +88,13 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         sso_url,
         sso_not_approved_url,
         sso_login_required_logout_url,
+        sso_logout_redir_url_c,
+        sso_show_emb_authn_btns_c,
+        sso_paseto_v2_loc_secret_c,
+        sso_paseto_v2_pub_pub_key_c,
+        sso_refresh_authn_token_url_c,
+        remember_emb_sess_c,
+        expire_idle_emb_sess_after_mins_c,
         forum_main_view,
         forum_topics_sort_buttons,
         forum_category_links,
@@ -156,7 +163,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         allow_embedding_from,
         embedded_comments_category_id,
         html_tag_css_classes)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -195,6 +203,13 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.ssoUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.ssoNotApprovedUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.ssoLoginRequiredLogoutUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.ssoLogoutRedirUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.ssoShowEmbAuthnBtns.getOrElse(None).orNullInt,
+      editedSettings2.ssoPasetoV2LocalSecret.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.ssoPasetoV2PublicKey.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.ssoRefreshAuthnTokenUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.rememberEmbSess.getOrElse(None).map(_.toZeroOne).orNullInt,
+      editedSettings2.expireIdleEmbSessAfterMins.getOrElse(None).orNullInt,
       editedSettings2.forumMainView.getOrElse(None).trimOrNullVarchar,
       editedSettings2.forumTopicsSortButtons.getOrElse(None).trimOrNullVarchar,
       editedSettings2.forumCategoryLinks.getOrElse(None).trimOrNullVarchar,
@@ -313,6 +328,13 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("sso_url", s.ssoUrl.map(_.trimOrNullVarchar))
     maybeSet("sso_not_approved_url", s.ssoNotApprovedUrl.map(_.trimOrNullVarchar))
     maybeSet("sso_login_required_logout_url", s.ssoLoginRequiredLogoutUrl.map(_.trimOrNullVarchar))
+    maybeSet("sso_logout_redir_url_c", s.ssoLogoutRedirUrl.map(_.trimOrNullVarchar))
+    maybeSet("sso_show_emb_authn_btns_c", s.ssoShowEmbAuthnBtns.map(_.orNullInt))
+    maybeSet("sso_paseto_v2_loc_secret_c", s.ssoPasetoV2LocalSecret.map(_.trimOrNullVarchar))
+    maybeSet("sso_paseto_v2_pub_pub_key_c", s.ssoPasetoV2PublicKey.map(_.trimOrNullVarchar))
+    maybeSet("sso_refresh_authn_token_url_c", s.ssoRefreshAuthnTokenUrl.map(_.trimOrNullVarchar))
+    maybeSet("remember_emb_sess_c", s.rememberEmbSess.map(_.map(_.toZeroOne).orNullInt))
+    maybeSet("expire_idle_emb_sess_after_mins_c", s.expireIdleEmbSessAfterMins.map(_.orNullInt))
     maybeSet("forum_main_view", s.forumMainView.map(_.trimOrNullVarchar))
     maybeSet("forum_topics_sort_buttons", s.forumTopicsSortButtons.map(_.trimOrNullVarchar))
     maybeSet("forum_category_links", s.forumCategoryLinks.map(_.trimOrNullVarchar))
@@ -431,6 +453,13 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       ssoUrl = getOptString(rs, "sso_url"),
       ssoNotApprovedUrl = getOptString(rs, "sso_not_approved_url"),
       ssoLoginRequiredLogoutUrl = getOptString(rs, "sso_login_required_logout_url"),
+      ssoLogoutRedirUrl = getOptString(rs, "sso_logout_redir_url_c"),
+      ssoShowEmbAuthnBtns = getOptInt32(rs, "sso_show_emb_authn_btns_c"),
+      ssoPasetoV2LocalSecret = getOptString(rs, "sso_paseto_v2_loc_secret_c"),
+      ssoPasetoV2PublicKey = getOptString(rs, "sso_paseto_v2_pub_pub_key_c"),
+      ssoRefreshAuthnTokenUrl = getOptString(rs, "sso_refresh_authn_token_url_c"),
+      rememberEmbSess = getOptInt32(rs, "remember_emb_sess_c").map(_ == 1),
+      expireIdleEmbSessAfterMins = getOptInt32(rs, "expire_idle_emb_sess_after_mins_c"),
       forumMainView = getOptString(rs, "forum_main_view"),
       forumTopicsSortButtons = getOptString(rs, "forum_topics_sort_buttons"),
       forumCategoryLinks = getOptString(rs, "forum_category_links"),

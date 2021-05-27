@@ -193,10 +193,14 @@ single-sign-on:  (3093533)
           - sso-all-ways-to-login.2browsers.test.ts  TyT7FKRTTSR024
           - sso-access-denied-login.2browsers.test.ts  TyT4AKT02DKJ41
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
+          - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1.TyT306MRG2
   one-time login secret abuse:
           - sso-one-time-key-errors.2browsers.test.ts  TyT5025BDUJQP4R
-  logout url:
+  login required ty-only logout url:
           - sso-login-required-w-logout-url.2browsers  TyTE2ESSOLGOURL.TyTE2ELGOURL
+  logout redir url:
+          - sso.logout-url.2br  TyTE2ESSOLGOURL2.TyTSSOLGO002
+          - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1.TyTSSOLGO002
   unusual names:
           - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT603KTMM653
   email conflict:
@@ -205,6 +209,11 @@ single-sign-on:  (3093533)
           - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT05MSH47R
   update sso user's email, username etc:
           - api-update-user-and-sso-user.2br   TyTE2E05MRR9
+
+sso, embedded comments, [.embcom.sso],
+embedded comments sso,
+blog comments sso:
+            - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
@@ -783,6 +792,7 @@ embedded comments:
           - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59.TyT063AKDGW60
   comment counts:
           - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+  sso: see [.embcom.sso]
 
 
 upload links,
@@ -1332,6 +1342,8 @@ api:
           - sso-one-time-key-errors.2browsers.test.ts  TyT062SUNF3
   upsert user:
           - api-update-user-and-sso-user.2br   TyTE2E05MRR9
+  import user with ssoid:
+            - embcom.sso.token-direct-w-logout-url.2br.test.ts TyTE2EEMBSSO1.TyTIMPWSSOID
   list usernames:
           - TyT05RKVJF68
   list topics:

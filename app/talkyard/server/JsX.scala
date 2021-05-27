@@ -39,7 +39,7 @@ import scala.util.matching.Regex
 // inherited by all JsObjVX and then they override and change only the things they do
 // different.
 //
-object JsX {
+object JsX {   RENAME // to JsonPaSe
 
   def JsSiteInclDetails_old(site: SiteInclDetails): JsObject = {
     Json.obj(
@@ -891,9 +891,10 @@ object JsX {
   }
 
 
-  def apiV0_parseExternalUser(jsObj: JsObject, ssoId: St, errSuffix: St): ExternalUser = {
+  def apiV0_parseExternalUser(jsObj: JsObject, ssoId: Opt[St] = None)
+          : ExternalUser = {
     ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
-          ssoId = ssoId,
+          ssoId = ssoId getOrElse parseSt(jsObj, "ssoId"),
           extId = (jsObj \ "extId").asOptStringNoneIfBlank,
           primaryEmailAddress = (jsObj \ "primaryEmailAddress").as[String].trim,
           isEmailAddressVerified = (jsObj \ "isEmailAddressVerified").as[Boolean],
@@ -905,7 +906,6 @@ object JsX {
           isAdmin = (jsObj \ "isAdmin").asOpt[Boolean].getOrElse(false),
           isModerator = (jsObj \ "isModerator").asOpt[Boolean].getOrElse(false))
   }
-
 
 }
 

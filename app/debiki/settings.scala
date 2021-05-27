@@ -93,7 +93,7 @@ trait AllSettings {
     */
   def begForEmailAddress: Boolean
 
-  // Single Sign-On
+  // "Your" (Single) Sign-On
   def enableSso: Boolean  // RENAME QUICK to enableTySso ?  different from custom IDP SSO
   def ssoUrl: String
   //  If a user logs in via SSO, but admin approval of new users is required, and the user's
@@ -110,7 +110,27 @@ trait AllSettings {
   // and then sent back to Talkyard, now logged in. — So one couldn't log out.
   // Instead, after logout, needs to be sent to somewhere else.
   //
-  def ssoLoginRequiredLogoutUrl: String
+  def ssoLoginRequiredLogoutUrl: St  ; RENAME // to ssoAuthnRequiredTyLogoutRedirUrl
+                                      // no?, to: ssoLogoutRedirUrlTyOnlyIfAuthnToRead
+
+  // Like ssoLoginRequiredLogoutUrl, but is for logging out pat from the SSO website
+  // too, not just from Talkyard. And always redirects, not only if authn required.
+  // (Can be nice with both, in case sometimes one wants to log out from Ty only,
+  // but not from the SSO site? Then, we'd send pat to ssoLoginRequiredLogoutUrl,
+  // otherwise (to log out from the SSO site too) to ssoLogoutRedirUrl.)
+  def ssoLogoutRedirUrl: St
+
+  // 0 = none, 1 = sign up, 2 = log in, 4 = logout, 7 = all
+  // Not yet in use — first need to remember the session type.
+  def ssoShowEmbAuthnBtns: i32
+
+  def ssoPasetoV2LocalSecret: St;
+  def ssoPasetoV2PublicKey: St;
+  def ssoRefreshAuthnTokenUrl: St;
+
+  def rememberEmbSess: Bo;
+  def expireIdleEmbSessAfterMins: i32;
+
 
 
   // UX settings (could add a UserId column so people can override some (not all) of these?)
@@ -253,6 +273,13 @@ trait AllSettings {
     ssoUrl = Some(self.ssoUrl),
     ssoNotApprovedUrl = Some(self.ssoNotApprovedUrl),
     ssoLoginRequiredLogoutUrl = Some(self.ssoLoginRequiredLogoutUrl),
+    ssoLogoutRedirUrl = Some(self.ssoLogoutRedirUrl),
+    ssoShowEmbAuthnBtns = Some(self.ssoShowEmbAuthnBtns),
+    ssoPasetoV2LocalSecret = Some(self.ssoPasetoV2LocalSecret),
+    ssoPasetoV2PublicKey = Some(self.ssoPasetoV2PublicKey),
+    ssoRefreshAuthnTokenUrl = Some(self.ssoRefreshAuthnTokenUrl),
+    rememberEmbSess = Some(self.rememberEmbSess),
+    expireIdleEmbSessAfterMins = Some(self.expireIdleEmbSessAfterMins),
     forumMainView = Some(self.forumMainView),
     forumTopicsSortButtons = Some(self.forumTopicsSortButtons),
     forumCategoryLinks = Some(self.forumCategoryLinks),
@@ -381,6 +408,13 @@ object AllSettings {
     val ssoUrl = ""
     val ssoNotApprovedUrl = ""
     val ssoLoginRequiredLogoutUrl = ""
+    val ssoLogoutRedirUrl = ""
+    val ssoShowEmbAuthnBtns = 7  // that's const enum ShowEmbAuthnBtnsBitf.All
+    val ssoPasetoV2LocalSecret = ""
+    val ssoPasetoV2PublicKey = ""
+    val ssoRefreshAuthnTokenUrl = ""
+    val rememberEmbSess = true
+    val expireIdleEmbSessAfterMins: i32 = -1
     val forumMainView = "latest"
     val forumTopicsSortButtons = "latest|top"
     val forumCategoryLinks = "categories"
@@ -510,6 +544,13 @@ case class EffectiveSettings(
   def ssoUrl: String = firstInChain(_.ssoUrl) getOrElse default.ssoUrl
   def ssoNotApprovedUrl: String = firstInChain(_.ssoNotApprovedUrl) getOrElse default.ssoNotApprovedUrl
   def ssoLoginRequiredLogoutUrl: String = firstInChain(_.ssoLoginRequiredLogoutUrl) getOrElse default.ssoLoginRequiredLogoutUrl
+  def ssoLogoutRedirUrl: St = firstInChain(_.ssoLogoutRedirUrl) getOrElse default.ssoLogoutRedirUrl
+  def ssoShowEmbAuthnBtns: i32 = firstInChain(_.ssoShowEmbAuthnBtns) getOrElse default.ssoShowEmbAuthnBtns
+  def ssoPasetoV2LocalSecret: St = firstInChain(_.ssoPasetoV2LocalSecret) getOrElse default.ssoPasetoV2LocalSecret
+  def ssoPasetoV2PublicKey: St = firstInChain(_.ssoPasetoV2PublicKey) getOrElse default.ssoPasetoV2PublicKey
+  def ssoRefreshAuthnTokenUrl: St = firstInChain(_.ssoRefreshAuthnTokenUrl) getOrElse default.ssoRefreshAuthnTokenUrl
+  def rememberEmbSess: Bo = firstInChain(_.rememberEmbSess) getOrElse default.rememberEmbSess
+  def expireIdleEmbSessAfterMins: i32 = firstInChain(_.expireIdleEmbSessAfterMins) getOrElse default.expireIdleEmbSessAfterMins
   def forumMainView: String = firstInChain(_.forumMainView) getOrElse default.forumMainView
   def forumTopicsSortButtons: String = firstInChain(_.forumTopicsSortButtons) getOrElse default.forumTopicsSortButtons
   def forumCategoryLinks: String = firstInChain(_.forumCategoryLinks) getOrElse default.forumCategoryLinks
@@ -594,10 +635,17 @@ case class EffectiveSettings(
   def canLoginWithPassword: Bo = !useOnlyCustomIdps && !enableSso
   def canLoginAsGuest: Bo = isGuestLoginAllowed
 
-  def effectiveSsoLoginRequiredLogoutUrl: Option[String] = { // [350RKDDF5]
+  def effSsoLogoutFromTyRedirUrlIfAuthnReq: Opt[St] = { // [350RKDDF5]
     COULD // do this also if usingCustomIdpSso
     if (enableSso && userMustBeAuthenticated && ssoLoginRequiredLogoutUrl.nonEmpty)
       Some(ssoLoginRequiredLogoutUrl)
+    else
+      None
+  }
+
+  def effSsoLogoutAllRedirUrl: Opt[St] = {
+    if (enableSso && ssoLogoutRedirUrl.nonEmpty)
+      Some(ssoLogoutRedirUrl)
     else
       None
   }
@@ -768,6 +816,13 @@ object Settings2 {
       "ssoUrl" -> JsStringOrNull(s.ssoUrl),
       "ssoNotApprovedUrl" -> JsStringOrNull(s.ssoNotApprovedUrl),
       "ssoLoginRequiredLogoutUrl" -> JsStringOrNull(s.ssoLoginRequiredLogoutUrl),
+      "ssoLogoutRedirUrl" -> JsStringOrNull(s.ssoLogoutRedirUrl),
+      "ssoShowEmbAuthnBtns" -> JsNumberOrNull(s.ssoShowEmbAuthnBtns),
+      "ssoPasetoV2LocalSecret" -> JsStringOrNull(s.ssoPasetoV2LocalSecret),
+      "ssoPasetoV2PublicKey" -> JsStringOrNull(s.ssoPasetoV2PublicKey),
+      "ssoRefreshAuthnTokenUrl" -> JsStringOrNull(s.ssoRefreshAuthnTokenUrl),
+      "rememberEmbSess" -> JsBoolOrNull(s.rememberEmbSess),
+      "expireIdleEmbSessAfterMins" -> JsNumberOrNull(s.expireIdleEmbSessAfterMins),
       "forumMainView" -> JsStringOrNull(s.forumMainView),
       "forumTopicsSortButtons" -> JsStringOrNull(s.forumTopicsSortButtons),
       "forumCategoryLinks" -> JsStringOrNull(s.forumCategoryLinks),
@@ -879,6 +934,13 @@ object Settings2 {
     ssoUrl = anyString(json, "ssoUrl", d.ssoUrl),
     ssoNotApprovedUrl = anyString(json, "ssoNotApprovedUrl", d.ssoNotApprovedUrl),
     ssoLoginRequiredLogoutUrl = anyString(json, "ssoLoginRequiredLogoutUrl", d.ssoLoginRequiredLogoutUrl),
+    ssoLogoutRedirUrl = anyString(json, "ssoLogoutRedirUrl", d.ssoLogoutRedirUrl),
+    ssoShowEmbAuthnBtns = anyInt32(json, "ssoShowEmbAuthnBtns", d.ssoShowEmbAuthnBtns),
+    ssoPasetoV2LocalSecret = anyString(json, "ssoPasetoV2LocalSecret", d.ssoPasetoV2LocalSecret),
+    ssoPasetoV2PublicKey = anyString(json, "ssoPasetoV2PublicKey", d.ssoPasetoV2PublicKey),
+    ssoRefreshAuthnTokenUrl = anyString(json, "ssoRefreshAuthnTokenUrl", d.ssoRefreshAuthnTokenUrl),
+    rememberEmbSess = anyBool(json, "rememberEmbSess", d.rememberEmbSess),
+    expireIdleEmbSessAfterMins = anyInt32(json, "expireIdleEmbSessAfterMins", d.expireIdleEmbSessAfterMins),
     forumMainView = anyString(json, "forumMainView", d.forumMainView),
     forumTopicsSortButtons = anyString(json, "forumTopicsSortButtons", d.forumTopicsSortButtons),
     forumCategoryLinks = anyString(json, "forumCategoryLinks", d.forumCategoryLinks),
@@ -983,7 +1045,10 @@ object Settings2 {
         throwBadRequest("EsE5J4K02", s"'$field' is not a JsBoolean, but a ${classNameOf(bad)}")
     }
 
-  private def anyInt(json: JsValue, field: St, default: i32): Opt[Opt[i32]] = {
+  private def anyInt(json: JsValue, field: St, default: i32): Opt[Opt[i32]] =
+    anyInt32(json, field = field, default = default)
+
+  private def anyInt32(json: JsValue, field: St, default: i32): Opt[Opt[i32]] = {
     anyInt64(json, field, default.toLong) map { anyVal64 =>
       anyVal64 map { val64 =>
         CLEAN_UP; DO_AFTER // 2021-09-01: Always do dieIf, .. or throwForbidden instead?

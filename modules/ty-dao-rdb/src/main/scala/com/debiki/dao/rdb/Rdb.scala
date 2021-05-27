@@ -217,7 +217,10 @@ object Rdb {
     else Some(value)
   }
 
-  def getInt(rs: js.ResultSet, column: String): Int = {
+  def getInt(rs: js.ResultSet, column: String): Int =
+    getInt32(rs, column)
+
+  def getInt32(rs: js.ResultSet, column: String): i32 = {
     var value = rs.getInt(column)
     dieIf(rs.wasNull, "TTyECOLINTISNL", s"Column int value is null: $column")
     value
@@ -230,7 +233,10 @@ object Rdb {
   }
 
   def getOptInt(rs: js.ResultSet, column: String): Option[Int] =
-    getResultSetIntOption(rs, column: String)
+    getOptInt32(rs, column)
+
+  def getOptInt32(rs: js.ResultSet, column: St): Opt[i32] =
+    getResultSetIntOption(rs, column: St)
 
   def getOptionalInt(rs: js.ResultSet, column: String): Option[Int] =
     getResultSetIntOption(rs, column: String)

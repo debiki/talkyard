@@ -58,9 +58,6 @@ regardless of how they inherited permissions from other groups.
 [sw] [sse]
 DONE: Service worker.  No, skip, using Websocket instead of:  Server sent events.
 
-[offline-first]
-Things to think about, if making Ty work offline.
-
 [spam]
 When deleting a post, ask if it's because it's spam. If yes, and the post
 hasn't been spam checked — send it to the spam check services so they'll
@@ -438,7 +435,12 @@ If moves CDN to a different address, or moves Talkyard server to a new address,
 then, lazily regenerate html with the correct addresses, for links to uploaded
 images etc.
 
-[blog_comments_sso]
+[sso_plus_oidc]
+Let people combine both custom OIDC IDPs with Ty SSO — that's just
+fine, some time large organization have more than one authn system,
+or they invite external collaborators with other authn systems.
+
+[blog_comments_sso]  emb_sso
 Use PASTEO https://news.ycombinator.com/item?id=17877332
  http://cryto.net/~joepie91/blog/2016/06/13/stop-using-jwt-fo...
  http://cryto.net/%7Ejoepie91/blog/2016/06/19/stop-using-jwt-...
@@ -450,9 +452,28 @@ Wow this is nice!:
      https://github.com/atholbro/paseto#local-and-public
 (Determinsistic json stringify: https://www.npmjs.com/package/fast-stable-stringify )
 
+Expired PASETO token in htmlp page — then try fetch from authn server,
+once iframe is in view — by asking any ssoRefreshAuthnTokenUrl endpoint.
+Maybe rename "AuthnToken"  to "EmbAuthnTkn" ?
+
+
+[offline-first]
+Things to think about, if making Ty work offline.
+Use two session ids and cookies — one HttpOnly, another not-HttpOnly. Both needs to be
+present, to be logged in. By deleting the not-HttpOnly, one can log out, also if
+the server is offline.  And, the HttpOnly session offers a bit extra security.
+
 [serversid]
 Server side sesison ids, maybe in Redis? So can log ppl out, without having access
 to their browsers to delete session cookies.
+(Also see [offline-first] above: need two cookies.)
+Include session type (e.g. pwd, oauth, email secret, sso, emb sso) in sid:s,
+see: SessionType.AutoTokenSiteCustomSso, and: SidOk("_api_secret_".
+Also see: [weaksid].
+
+[hide_authn_btns]
+If auto logged in via token in embedd*ing* html, then, don't show logout button
+— instead the embedding site manages login/out for that user, by incl/excl the token.
 
 [weaksid]
 

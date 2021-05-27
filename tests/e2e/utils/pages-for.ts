@@ -703,6 +703,43 @@ export class TyE2eTestBrowser {
     }
 
 
+
+    me = {
+      waitUntilLoggedIn: () => {
+        this.complex.waitUntilLoggedIn();
+      },
+
+      waitUntilKnowsNotLoggedIn: (): TestMyself => {
+        this.waitForMyDataAdded();
+        let me = {} as Partial<TestMyself>;
+        this.waitUntil(() => {
+          me = this.me.waitAndGetMyself();
+          return me && !me.isLoggedIn;
+        }, {
+          message: () =>
+              `Waiting until not logged in, me now: ${me.username || me.fullName}`,
+        });
+        return me;
+      },
+
+      waitAndGetMyself: (): TestMyself => {
+        return this.waitUntil(() => {
+          return this.#br.execute(function() {
+            try {
+              return window['debiki2'].ReactStore.getMe();
+            }
+            catch {
+              return false;
+            }
+          });
+        }, {
+          message: `Waiting for theStore.me  TyT6503MES63Z`
+        }) as TestMyself;
+      },
+    }
+
+
+
     newSite = {
       createNewSite: (data: NewSiteData): NewSiteResult => {
         // Dupl code [502SKHFSKN53]
@@ -5173,7 +5210,12 @@ export class TyE2eTestBrowser {
     };
 
 
-    metabar = {
+    metabar = {   // RENAME to pagebar? [metabar_2_pagebar]
+      __myName: '.s_MB_Name',
+      __loginBtnSel: '.esMetabar .dw-a-login',
+      __logoutBtnSel: '.esMetabar .dw-a-logout',
+      __anyLogoutBtnSel: '.dw-a-logout',
+
       isVisible: (): boolean => {
         return this.isVisible('.dw-cmts-tlbr-summary');
       },
@@ -5182,20 +5224,34 @@ export class TyE2eTestBrowser {
         this.waitForDisplayed('.dw-cmts-tlbr-summary');
       },
 
-      isLoggedIn: (): boolean => {
-        return this.isVisible('.dw-a-logout');
+      isLoggedIn: (): Bo => {
+        return this.isDisplayed(this.metabar.__myName);
+      },
+
+      isLogoutBtnDisplayed: (): Bo => {
+        return this.isDisplayed(this.metabar.__anyLogoutBtnSel);
       },
 
       clickLogin: (opts: WaitAndClickPs = {}) => {
-        this.waitAndClick('.esMetabar .dw-a-login', opts);
+        this.waitAndClick(this.metabar.__loginBtnSel, opts);
       },
 
       waitForLoginButtonVisible: () => {
-        this.waitForVisible('.esMetabar .dw-a-login');
+        this.waitForDisplayed(this.metabar.__loginBtnSel);
+      },
+
+      isLoginButtonDisplayed: (): Bo => {
+        return this.isDisplayed(this.metabar.__loginBtnSel);
       },
 
       waitUntilLoggedIn: () => {
-        this.waitForVisible('.dw-a-logout');
+        this.waitForMyDataAdded();
+        this.waitForVisible(this.metabar.__myName);
+      },
+
+      waitUntilNotLoggedIn: () => {
+        this.waitForMyDataAdded();
+        this.waitForGone(this.metabar.__myName);
       },
 
       getMyFullName: (): string => {
@@ -5206,16 +5262,30 @@ export class TyE2eTestBrowser {
         return this.waitAndGetVisibleText('.s_MB_Name .esP_By_U');
       },
 
-      clickLogout: () => {
+      isMyUsernameVisible: (): Bo => {
+        return this.isDisplayed('.s_MB_Name .esP_By_U');
+      },
+
+      openMyProfilePageInNewTab: () => {
+        this.waitAndClick('.s_MB_Name');
+        logBoring(`A new tab opens`);
+        this.waitForMinBrowserTabs(2);
+      },
+
+      clickLogout: (ps: { waitForLoginButton?: Bo } = {}) => {
         const wasInIframe = this.isInIframe();
         this.waitAndClick('.esMetabar .dw-a-logout');
         this.waitUntilGone('.esMetabar .dw-a-logout');
+        if (!ps.waitForLoginButton)
+          return;
+
         // Is there a race? Any iframe might reload, after logout. Better re-enter it?
         // Otherwise the wait-for .esMetabar below can fail.
         if (wasInIframe) {
           this.switchToEmbeddedCommentsIrame();
         }
         this.waitForVisible('.esMetabar');
+        this.waitForGone(this.metabar.__myName);  // later, move to above 'return',  [hide_authn_btns]
       },
 
       openMetabar: () => {
@@ -5264,6 +5334,8 @@ export class TyE2eTestBrowser {
       isPageDeletedButVisible: (): boolean => {
         return this.isVisible('.s_Pg_DdInf');
       },
+
+      postHeaderSelector: (postNr: PostNr) => `#post-${postNr} .dw-p-hd`,
 
       postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd .dw-p-bd-blk`,
 
@@ -5625,6 +5697,11 @@ export class TyE2eTestBrowser {
 
       getTopicAuthorUsernameInclAt: (): string => {
         return this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By_U');
+      },
+
+      getPostAuthorUsernameInclAt: (postNr: PostNr): St => {
+        const sel = this.topic.postHeaderSelector(postNr);
+        return this.waitAndGetVisibleText(sel + ' .esP_By_U');
       },
 
       clickFirstMentionOf: (username: string) => {
@@ -7371,6 +7448,12 @@ export class TyE2eTestBrowser {
             this.waitAndSetValue('.e_SsoUrl input', url, { checkAndRetry: true });
           },
 
+          setSsoLogoutUrl: (url: St) => {
+            this.scrollIntoViewInPageColumn('.e_SsoLgoUrl input');
+            this.waitUntilDoesNotMove('.e_SsoLgoUrl input');
+            this.waitAndSetValue('.e_SsoLgoUrl input', url, { checkAndRetry: true });
+          },
+
           setSsoLoginRequiredLogoutUrl: (url: string) => {
             this.scrollIntoViewInPageColumn('.e_SsoAftLgoUrl input');
             this.waitUntilDoesNotMove('.e_SsoAftLgoUrl input');
@@ -7381,6 +7464,20 @@ export class TyE2eTestBrowser {
             this.scrollIntoViewInPageColumn('.e_EnblSso input');
             this.waitUntilDoesNotMove('.e_EnblSso input');
             this.setCheckbox('.e_EnblSso input', enabled);
+          },
+
+          setShowEmbAuthnBtns: (enabled: Bo) => {
+            this.scrollIntoViewInPageColumn('.e_EmbAuBs input');
+            this.waitUntilDoesNotMove('.e_EmbAuBs input');
+            this.setCheckbox('.e_EmbAuBs input', enabled);
+          },
+
+          generatePasetoV2LocalSecret: () => {
+            this.waitAndClick('.e_EmbComSecr_GenB');
+          },
+
+          copyPasetoV2LocalSecret: (): St => {
+            return this.waitAndGetValue('.e_EmbComSecr input');
           },
 
           goToSsoTestPage: () => {
@@ -8446,8 +8543,8 @@ export class TyE2eTestBrowser {
     // REFACTOR  MOVE all these fns to the contexts where they can be called?
     // so autocomplete can be used
     complex = {
-      waitUntilLoggedIn: () => {
-        this.#br.waitUntil(() => {
+      waitUntilLoggedIn: () => {   // RENAME  use me.waitUntilLoggedIn()  instead
+        this.waitUntil(() => {
           return this.#br.execute(function() {
             try {
               return window['debiki2'].ReactStore.getMe().isLoggedIn;
@@ -8456,6 +8553,8 @@ export class TyE2eTestBrowser {
               return false;
             }
           });
+        }, {
+          message: `Waiting for theStore.me  TyT6503MES633`
         });
 
         if (this.metabar.isVisible()) {
@@ -8480,10 +8579,18 @@ export class TyE2eTestBrowser {
         this.switchToAnyParentFrame();
       },
 
-      waitForNotLoggedInInEmbeddedCommentsIframe: () => {
+      waitForNotLoggedInInEmbeddedCommentsIframe: (
+              ps: { willBeLogoutBtn?: false } = {}) => {
         this.switchToEmbeddedCommentsIrame();
         this.waitForMyDataAdded();
-        this.metabar.waitForLoginButtonVisible();  // ok? or is this a race?
+        if (ps.willBeLogoutBtn !== false) {
+          this.metabar.waitForLoginButtonVisible();  // ok? or is this a race?
+        }
+        else {
+          const me = this.me.waitAndGetMyself();
+          tyAssert.not(me.isLoggedIn);
+          tyAssert.not(me.id);
+        }
         this.switchToAnyParentFrame();
       },
 

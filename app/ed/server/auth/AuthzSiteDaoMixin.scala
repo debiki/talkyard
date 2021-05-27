@@ -102,6 +102,11 @@ trait AuthzSiteDaoMixin {
     if (urlPath.startsWith("/-/admin"))
       return false
 
+    // If we may see the embedding page, then probably we may see the embedded
+    // contents on that page, too.
+    if (urlPath.startsWith("/-/embedded-"))
+      return true
+
     // Probably /-/user/some-username — which one may normally access,
     // unless the site requires login to read.
     if (urlPath.startsWith("/-/")) {

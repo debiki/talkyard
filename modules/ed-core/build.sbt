@@ -17,7 +17,6 @@ libraryDependencies ++= Seq(
   "org.owasp.encoder" % "encoder" % "1.2.1",
   Dependencies.Play.json,
   "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to ed-server, see comments in src/main/scala/com/debiki/core/dao-db.scala
-  // "junit" % "junit" % "4.7" % "test", // what? why
   Dependencies.Libs.specs2,
   Dependencies.Libs.scalaTest,
 )

@@ -349,7 +349,11 @@ const LoginDialogContent = createClassAndFactory({
     //logD(`location.toString() was: ${location.toString()}`);
 
     let shallRedir;
-    if (settings.effectiveSsoLoginRequiredLogoutUrl) {
+    if (settings.ssoWillRedirAfterLogout) {
+      // Then we can redirect to the login page here — that won't make logout
+      // impossible, because after logout we get redirected elsewhere,
+      // rather than staying at the Ty site, which would auto redirect to the
+      // SSO login page again which might log us in automatically.
       // @ifdef DEBUG
       dieIf(!ssoUrl, 'TyE395KSETRS2');
       // @endif
