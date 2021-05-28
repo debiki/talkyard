@@ -1,0 +1,10 @@
+{
+  "author": "Kaj Magnus Lindberg",
+  "name": "tye2e",
+  "license": "AGPL-3.0",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "paseto.js": "^0.1.7"
+  }
+}
