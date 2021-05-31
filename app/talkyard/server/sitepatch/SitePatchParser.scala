@@ -1354,8 +1354,8 @@ case class SitePatchParser(context: EdContext) {
         deletedAt = readOptWhen(jsObj, "deletedAt"),
         topicType = readOptInt(jsObj, "topicType").flatMap(PageType.fromInt),
         postType = readOptInt(jsObj, "postType").flatMap(PostType.fromInt),
-        title = readOptString(jsObj, "title").map(_.trim).getOrElse(""),
-        text = readString(jsObj, "text").trim())
+        title = readOptString(jsObj, "title", maxLen = 450).map(_.trim).getOrElse(""),
+        text = readString(jsObj, "text", maxLen = 450 * 1000).trim())
     }
     catch {
       case ex: IllegalArgumentException =>

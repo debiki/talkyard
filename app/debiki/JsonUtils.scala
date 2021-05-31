@@ -123,10 +123,12 @@ object JsonUtils {
 
 
   def parseSt(json: JsValue, fieldName: St, altName: St = ""): St =
-    parseOptSt(json, fieldName, altName) getOrElse throwMissing("TyE5S204RTE", fieldName)
+    parseOptSt(json, fieldName, altName) getOrElse throwMissing(
+          "TyE5S204RTE", fieldName)
 
-  def readString(json: JsValue, fieldName: String): String =
-    readOptString(json, fieldName) getOrElse throwMissing("EsE7JTB3", fieldName)
+  def readString(json: JsValue, fieldName: St, maxLen: i32 = -1): St =
+    readOptString(json, fieldName, maxLen = maxLen) getOrElse throwMissing(
+          "EsE7JTB3", fieldName)
 
 
   /** If noneIfLongerThan is >= 0, returns None if the value is longer than that.
@@ -148,15 +150,24 @@ object JsonUtils {
     anySt
   }
 
-  def readOptString(json: JsValue, fieldName: St, altName: St = ""): Opt[St] = {
-    val primaryResult = readOptStringImpl(json, fieldName)
+  def readOptString(json: JsValue, fieldName: St, altName: St = "",
+          maxLen: i32 = -1): Opt[St] = {
+    val primaryResult = readOptStringImpl(json, fieldName, maxLen = maxLen)
     if (primaryResult.isDefined || altName.isEmpty) primaryResult
-    else readOptStringImpl(json, altName)
+    else readOptStringImpl(json, altName, maxLen = maxLen)
   }
 
-  private def readOptStringImpl(json: JsValue, fieldName: String): Option[String] =
+  private def readOptStringImpl(json: JsValue, fieldName: St, maxLen: i32 = -1)
+          : Opt[St] =
     (json \ fieldName).validateOpt[String] match {
-      case JsSuccess(value, _) => value.map(_.trim)
+      case JsSuccess(value, _) =>
+        value map { textUntrimmed =>
+          val text = textUntrimmed.trim
+          throwBadJsonIf(0 <= maxLen && maxLen < text.length,
+                "TyE7MW3RMJ5", s"'$fieldName' is too long: ${text.length
+                } chars, only $maxLen allowed")
+          text
+        }
       case JsError(errors) =>
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.
         throwBadJson("EsE5GUMK", s"'$fieldName' is not a string: " + errors.toString())
@@ -334,6 +345,9 @@ object JsonUtils {
         throwBadJson("EsE5YYW2", s"'$fieldName' is not a number: " + errors.toString())
     }
   }
+
+  private def throwBadJsonIf(test: => Bo, errCode: St, message: St): U =
+    if (test) throwBadJson(errCode, message)
 
   private def throwBadJson(errorCode: String, message: String) =
     throw new BadJsonException(s"$message [$errorCode]")
