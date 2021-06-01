@@ -214,8 +214,8 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
     val newSite: Site = doImportOrUpserts {
       // Delete test sites with the same hostnames, to avoid unique key errors. [DELTSTHOSTS]
       if (isTest && onlyTestHostnames) {
-        globals.systemDao.deleteSitesWithNameAndHostnames(
-          siteMeta.name, hostnames = siteMeta.hostnames.map(_.hostname).toSet)
+        globals.systemDao.deleteSitesWithNameOrHostnames(
+              siteMeta.name, hostnames = siteMeta.hostnames.map(_.hostname).toSet)
       }
 
       SitePatcher(globals).importCreateSite(

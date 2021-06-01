@@ -7404,7 +7404,9 @@ export class TyE2eTestBrowser {
           },
 
           followLinkToNewSiteAddr: () => {
+            this.rememberCurrentUrl();
             this.waitAndClick('.e_NewSiteAddr');
+            this.waitForNewOrigin();
           },
 
           clickRedirectOldSiteAddresses: () => {

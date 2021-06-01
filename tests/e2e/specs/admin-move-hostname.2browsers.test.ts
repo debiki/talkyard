@@ -82,6 +82,8 @@ describe("admin-move-hostname.2browsers  TyT6FKAR20P5", () => {
   });
 
   it(`Delete old site to free up hostname ${newHostname}`, () => {
+    // Otherwise the newHostname might be in the mem cache or db, and point back
+    // to the original hostname in a previous test run.  [.pointedback]
     server.deleteOldTestSite(newHostname);
   });
 
@@ -148,7 +150,7 @@ describe("admin-move-hostname.2browsers  TyT6FKAR20P5", () => {
     assert.equal(strangersHost, newHostname);
   });
 
-  it("Owen starts changing address back to the old hostname", () => {
+  it("Owen starts changing address back to the old hostname  [.pointedback]", () => {
     owensBrowser.refresh();
     owensBrowser.adminArea.settings.advanced.clickChangeSiteAddress();
     owensBrowser.adminArea.settings.advanced.typeNewSiteAddress(origHost);
