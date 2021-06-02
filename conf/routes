@@ -118,7 +118,7 @@ GET   /-/download-my-content    controllers.UserController.downloadUsersContent(
 GET   /-/download-personal-data controllers.UserController.downloadPersonalData(userId: Int)
 POST  /-/track-reading          controllers.UserController.trackReadingProgress
 POST  /-/track-reading-text     controllers.UserController.trackReadingProgressText
-POST  /-/mark-tour-tips-seen    controllers.UserController.markTourTipsSeen
+POST  /-/toggle-tips            controllers.UserController.toggleTips
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)
 POST  /-/mark-all-notfs-as-seen controllers.UserController.markAllNotfsAsSeen
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen

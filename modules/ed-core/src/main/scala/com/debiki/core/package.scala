@@ -1181,7 +1181,7 @@ package object core {
   }
 
 
-  type TourTipsId = String
+  type TourTipsId = String   // [Scala_3] opaque type
   type TourTipsSeen = immutable.Seq[TourTipsId]
 
   def anyTourTipsIdError(id: TourTipsId): Option[ErrorMessageCode] = {
@@ -1189,11 +1189,14 @@ package object core {
     // The ids are incl in each user info response, so should be short, like 2 or 3 chars.
     // Maybe later there'll be plugins with their own tours? It'd be good if they can have
     // longer names, so there won't be name clashes.
+    // Update: Let's allow alnum (but not only num), because the admin tips,
+    // .s_AdmTps, are alnum.
     val MaxLength = 30
     def EMC = ErrorMessageCode
     Some(
       if (id.isEmpty) EMC("TyE4ABKR0", "Bad tour or tips id: Empty string")
-      else if (!id.isOkVariableName) EMC("TyE4ABKR2", s"Bad tour or tips id: `$id'")
+      //else if (!id.isOkVariableName) EMC("TyE4ABKR2", s"Bad tour or tips id: `$id'")
+      else if (!id.isAlNumWithAl) EMC("TyE4ABKR2", s"Bad tour or tips id: `$id'")
       else if (id.length > MaxLength) EMC("TyE3ABKS52", s"Tour/tips id longer than $MaxLength: `$id'")
       else return None)
   }

@@ -716,6 +716,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
   private val AToZUnderscoreRegex = "^[a-zA-Z_]*$".r
   private val VariableNameRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
+  private val AlNumWithAl = "^[a-zA-Z0-9_]*[a-zA-Z_][a-zA-Z0-9_]*$".r
 
   /** Checks that all fields names are okay variable names,
     * and that all values are numbers, or also okay variable names.
@@ -800,6 +801,9 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
     def isOkVariableName: Boolean =
       VariableNameRegex.pattern.matcher(underlying).matches
+
+    def isAlNumWithAl: Bo =
+      AlNumWithAl.pattern.matcher(underlying).matches
 
     def obviouslyBadUrl: Bo =
       underlying.exists(c => " \n\t\r\"'<>".contains(c)) || underlying.isEmpty

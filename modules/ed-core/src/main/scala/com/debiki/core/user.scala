@@ -1916,7 +1916,7 @@ object BrowserIdData {
   *
   * Not 100% accurate. [BADSTATS]
   */
-case class UserStats(   // RENAME? to ParticipantDynData? PpDynData? PpLive? PpFreqFields? Meaning, frequently changed fields, not just stats
+case class UserStats(   // RENAME  to PatDynData
   userId: UserId,
   snoozeUntil: Option[When] = None,
   // SHOULD update based on browser activity
@@ -2056,6 +2056,13 @@ case class UserStats(   // RENAME? to ParticipantDynData? PpDynData? PpLive? PpF
       tourTipsSeen = allTourTipsSeenVecOpt)
     }
 
+  def filterTipsSeen(tipsPrefix: St, keep: Bo): UserStats = {
+    // To show a tips again, we remove it from the tips-seen list — that is,
+    // we say False to filter().
+    copy(tourTipsSeen = tourTipsSeen.map(_.filter { tipsId =>
+      tipsId.startsWith(tipsPrefix) == keep
+    }))
+  }
 
   def meetsBasicMemberRequirements: Boolean = {   // [TLVLBSC]
     // For now. Later, add a site-settings param, and compare with its config values.

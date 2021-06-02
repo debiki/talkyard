@@ -2224,8 +2224,8 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
 }
 
 
-export function markTourTipsSeen(tourTipsId: string) {
-  postJsonSuccess('/-/mark-tour-tips-seen', function() {}, { tourTipsId },
+export function toggleTips(tips: { tipsId?: St, hide: Bo }) {
+  postJsonSuccess('/-/toggle-tips', function() {}, tips,
         () => ShowNoErrorDialog, { showLoadingOverlay: false }); // [NOINETMSG]
 }
 

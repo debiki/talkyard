@@ -344,6 +344,7 @@ const AdminAppComponent = createReactClass(<any> {
       r.div({ className: 'esAdminArea' },
         topbar.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true,
             location: this.props.location }),
+        debiki2.help.getServerAnnouncements(store),
         r.div({ className: 'container' },
           r.ul({ className: 'dw-main-nav nav nav-pills' },
             dashboardLink,

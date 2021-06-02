@@ -293,6 +293,7 @@ export const ForumComponent = createReactClass(<any> {
 
     return (
       r.div({ className: 'container dw-forum' },
+        debiki2.help.getServerAnnouncements(store),
         debiki2.page.Title({ store }),
         ForumIntroText({ store }),
         //topsAndCatsHelp,
@@ -936,7 +937,7 @@ export const TopicsList = createComponent({
 
   openIconsHelp: function() {
     this.setState({ helpOpened: true });
-    ReactActions.showSingleHelpMessageAgain(IconHelpMessage.id);
+    ReactActions.showSingleTipsClientSide(IconHelpMessage.id);
   },
 
   render: function() {

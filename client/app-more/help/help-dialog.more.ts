@@ -68,7 +68,7 @@ const HelpDialog = createComponent({
 
   close: function() {
     if (this.state.hideNextTime) {
-      ReactActions.hideHelpMessageWithId(this.state.message.id);
+      ReactActions.hideTips({ id: this.state.message.id });
     }
     const doAfter = this.state.message.doAfter;
     this.setState({ isOpen: false, message: null });

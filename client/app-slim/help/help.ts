@@ -31,11 +31,17 @@ const r = ReactDOMFactories;
 
 
 export function isHelpMessageClosedAnyVersion(store: Store, messageId: string): boolean {
-  return store.me && !!store.me.closedHelpMessages[messageId];
+  return store.me && (!!store.me.closedHelpMessages[messageId] ||
+          store.me.tourTipsSeen.indexOf(messageId) >= 0);
 }
 
 export function isHelpMessageClosed(store: Store, message: HelpMessage) {
   if (!store.me) return false;
+  if (store.me.tourTipsSeen.indexOf(message.id) >= 0) {
+    // Let's ignore the version number. Unnecessarily complicated.
+    // Instead, change the id of a tips, if it's important that everyone reads it again.
+    return true;
+  }
   const closedVersion = store.me.closedHelpMessages[message.id];
   return closedVersion && closedVersion === message.version;
 }
@@ -70,13 +76,16 @@ export const HelpMessageBox = createComponent({   // props: HelpMessage. RENAME 
       // Then cannot close.
       return {};
     }
+    // CLEAN_UP why don't this code use isHelpMessageClosed() above instead?
     const closedMessages: { [id: string]: number } = me.closedHelpMessages || {};
     const thisMessClosedVersion = closedMessages[message.id];
-    return { hidden: thisMessClosedVersion === message.version };
+    const hidden = thisMessClosedVersion === message.version ||
+            me.tourTipsSeen.indexOf(message.id) >= 0;
+    return { hidden };
   },
 
   hideThisHelp: function() {
-    ReactActions.hideHelpMessages(this.props.message);
+    ReactActions.hideTips(this.props.message);
 
     const store: Store = ReactStore.allData();
     const me: Myself = store.me;

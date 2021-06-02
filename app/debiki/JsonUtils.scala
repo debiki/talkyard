@@ -287,7 +287,11 @@ object JsonUtils {
     }
 
 
-  def parseBo(json: JsValue, fieldName: St, default: Bo): Bo =
+  def parseBo(json: JsValue, fieldName: St, default: Opt[Bo] = None): Bo =
+    readOptBool(json, fieldName).orElse(default) getOrElse throwMissing(
+          "TyE603MFE67", fieldName)
+
+  def parseBoDef(json: JsValue, fieldName: St, default: Bo): Bo =
     readOptBool(json, fieldName) getOrElse default
 
   def readBoolean(json: JsValue, fieldName: String): Boolean =

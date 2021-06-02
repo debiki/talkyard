@@ -521,7 +521,7 @@ case class SitePatchParser(context: EdContext) {
             adminComments = readOptString(jsObj, "adminComments"),
             trustVerifiedEmail = readBoolean(jsObj, "trustVerifiedEmail"),
             emailVerifiedDomains = parseOptSt(jsObj, "emailVerifiedDomains"),
-            linkAccountNoLogin = parseBo(jsObj, "linkAccountNoLogin", default = false),
+            linkAccountNoLogin = parseBoDef(jsObj, "linkAccountNoLogin", default = false),
             guiOrder = readOptInt(jsObj, "guiOrder"),
             syncMode = readInt(jsObj, "syncMode"),
             oauAuthorizationUrl = readString(jsObj, "oauAuthorizationUrl"),

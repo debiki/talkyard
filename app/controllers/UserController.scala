@@ -1125,12 +1125,17 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def markTourTipsSeen: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
+  def toggleTips: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
         maxBytes = 200) { request =>
     import request.{dao, body, theRequester => requester}
-    val tourTipsIdSeen = (body \ "tourTipsId").as[JsString].value
-    anyTourTipsIdError(tourTipsIdSeen) foreach EdHttp.throwBadRequest
-    dao.rememberTourTipsSeen(requester, Some(Vector(tourTipsIdSeen)))
+    val tipsId: Opt[St] = parseOptSt(body, "tipsId")
+    val hide: Bo = parseBo(body, "hide")
+    val onlyAnnouncements: Bo = parseOptBo(body, "onlyAnnouncements") getOrElse false
+    tipsId foreach { id =>
+      anyTourTipsIdError(id) foreach EdHttp.throwBadRequest
+    }
+    dao.toggleTips(requester, anyTipsSeen = tipsId, hide = hide,
+          onlyAnnouncements = onlyAnnouncements)
     Ok
   }
 

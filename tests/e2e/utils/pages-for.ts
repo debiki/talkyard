@@ -3211,6 +3211,14 @@ export class TyE2eTestBrowser {
           this.topbar.closeMyMenuIfOpen();
           return isVisible;
         },
+
+        unhideTips: () => {
+          this.waitAndClick('.e_UnhTps');
+        },
+
+        unhideAnnouncements: () => {
+          this.waitAndClick('.e_UnhAnns');
+        }
       },
 
       pageTools: {
@@ -5111,6 +5119,10 @@ export class TyE2eTestBrowser {
         this.preview.__checkPrevw(opts, (prevwSelector: string) => {
           this.waitForExist(prevwSelector + selector, { howMany: opts.howMany });
         });
+      },
+
+      waitForDisplayedInEditor: () => {
+        this.waitForDisplayed(this.preview.__inEditorPreviewSelector);
       },
 
       waitUntilPreviewHtmlMatches: (text: string,
@@ -7075,6 +7087,46 @@ export class TyE2eTestBrowser {
       close: () => {
         this.stupidDialog.clickClose();
         this.waitUntilModalGone();
+      },
+    };
+
+
+    tips = {
+      numTipsDisplayed: (): Nr => {
+        return this.count(':not(.c_SrvAnns) > .dw-help');
+      },
+      hideATips: () => {
+        this.waitAndClickFirst(':not(.c_SrvAnns) > .dw-help .dw-hide');
+      },
+      waitForExactlyNumTips: (num: Nr) => {
+        this.waitForExactly(num, ':not(.c_SrvAnns) > .dw-help');
+      },
+      unhideAllTips: () => {
+        this.topbar.openMyMenu();
+        this.topbar.myMenu.unhideTips();
+      },
+      waitForPreviewTips: () => {
+        this.waitForDisplayed('.dw-preview-help');
+      },
+      waitForPreviewTipsGone: () => {
+        this.waitForGone('.dw-preview-help');
+      },
+      isPreviewTipsDisplayed: (): Bo => {
+        return this.isDisplayed('.dw-preview-help');
+      },
+
+      numAnnouncementsDisplayed: (): Nr => {
+        return this.count('.c_SrvAnns .dw-help');
+      },
+      hideAnAnnouncement: () => {
+        this.waitAndClickFirst('.c_SrvAnns .dw-hide');
+      },
+      waitForExactlyNumAnnouncements: (num: Nr) => {
+        this.waitForExactly(num, '.c_SrvAnns .dw-help');
+      },
+      unhideAllAnnouncements: () => {
+        this.topbar.openMyMenu();
+        this.topbar.myMenu.unhideAnnouncements();
       },
     };
 

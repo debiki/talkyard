@@ -82,6 +82,10 @@ function isServerSide(): boolean {
   return !!window['ReactDOMServer'];
 }
 
+function isSelfHosted(): Bo {
+  return eds.siteId === 1;
+}
+
 
 // Use this function to call getBoundingClientRect() and other stuff just before the next repaint,
 // to avoid forced refresh of the layout.
@@ -571,7 +575,8 @@ export function arr_sortAlphaInPlace<V>(vs: V[], strFn: (v: V) => St) {
 }
 
 
-export function arr_deleteInPlace<T>(ts: T[], toDelete: T) {  // RENAME arr_delInPl + arr_delCp
+
+export function arr_delInPlace<T>(ts: T[], toDelete: T) {
   while (true) {
     const ix = ts.indexOf(toDelete);
     if (ix === -1)
@@ -580,15 +585,17 @@ export function arr_deleteInPlace<T>(ts: T[], toDelete: T) {  // RENAME arr_delI
   }
 }
 
-/*
-export function arr_delete<T>(ts: T[], toDelete: T): T[] {
-  const ix = ts.indexOf(toDelete);
+
+
+export function arr_delInCopy<V>(vs: V[], toDelete: V): V[] {
+  const ix = vs.indexOf(toDelete);
   if (ix === -1)
-    return ts;
-  const clone = ts.slice();
-  clone.splice(ix, 1);  // but loop and delete all? clone 1st time only?
-  return clone;
-} */
+    return vs;
+  const copy = [...vs];
+  arr_delInPlace(copy, toDelete);
+  return copy;
+}
+
 
 
 export function shallowMergeFirstItemLast(items: any[]): any {

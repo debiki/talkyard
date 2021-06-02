@@ -886,6 +886,11 @@ site settings:
     num to allow:
           - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
 
+tips,
+announcements:
+            - hide-unhide-tips.2br  TyTE2EHIDETPS329
+
+
 intro tours:
   admin area, community, admin tour:
           - create-site-password-run-admin-intro-tours.test.ts  TyT7BAWFPK9
@@ -898,6 +903,7 @@ intro tours:
   exit tour:
           - embedded-comments-create-site-req-verif-email.2browsers.test.ts [Ty7ABKR024]
   restart tour:  [TyT2ABKRT05]
+
 
 admin:
   new admin intro tours:

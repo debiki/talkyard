@@ -309,6 +309,7 @@ function runAllE2eTests {
   $r s/wdio --only navigation-as-stranger $args
   # Also:  embedded-comments-navigation-as-guest  further below.
 
+  $r s/wdio --only hide-unhide-tips.2br $args
 
   $r s/wdio --only sanitize-posts.2browsers $args
 

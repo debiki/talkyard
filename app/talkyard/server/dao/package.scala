@@ -78,6 +78,11 @@ package object dao {
       _stalePpIdsMemCacheOnly.add(ppId)
     }
 
+    def addPatDynData(patId: PatId, memCacheOnly: Bo): U = {
+      unimplIf(!memCacheOnly, "TyE036WH7MN25")
+      // Noop, currently not cached.
+    }
+
 
     // ----- Pages
 

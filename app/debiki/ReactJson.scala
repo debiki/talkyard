@@ -384,7 +384,6 @@ class JsonMaker(dao: SiteDao) {
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
-      "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteFeatureFlags" -> JsString(site.featureFlags),
       "serverFeatureFlags" -> JsString(globals.config.featureFlags),
@@ -442,7 +441,6 @@ class JsonMaker(dao: SiteDao) {
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
-      "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteFeatureFlags" -> JsString(site.featureFlags),
       "serverFeatureFlags" -> JsString(globals.config.featureFlags),
@@ -705,10 +703,12 @@ class JsonMaker(dao: SiteDao) {
     val myGroupsEveryoneLast: Seq[Group] =
           pageRequest.authzContext.groupIdsEveryoneLast map dao.getTheGroup
 
+    val site = if (requester.isStaffOrCoreMember) dao.getSite else None
+
     dao.readOnlyTransaction { tx =>
       Some(requestersJsonImpl(requester, pageRequest.pageId, watchbarWithTitles,
             restrTopicsCatsLinks, permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds, myGroupsEveryoneLast, tx))
+            unapprovedPostAuthorIds, myGroupsEveryoneLast, site, tx))
     }
   }
 
@@ -726,11 +726,13 @@ class JsonMaker(dao: SiteDao) {
     val myGroupsEveryoneLast: Seq[Group] =
       request.authzContext.groupIdsEveryoneLast map dao.getTheGroup
 
+    val site = if (requester.isStaffOrCoreMember) dao.getSite else None
+
     dao.readOnlyTransaction { tx =>
       requestersJsonImpl(requester, anyPageId = None, watchbarWithTitles,
             RestrTopicsCatsLinks(JsArray(), Nil, Nil, Nil),
             permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, tx)
+            unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, site, tx)
     }
   }
 
@@ -739,7 +741,7 @@ class JsonMaker(dao: SiteDao) {
         watchbar: WatchbarWithTitles, restrTopicsCatsLinks: RestrTopicsCatsLinks,
         permissions: Seq[PermsOnPages], permsOnSiteTooMany: PermsOnSite,
         unapprovedPostAuthorIds: Set[UserId],
-        myGroupsEveryoneLast: Seq[Group], tx: SiteTransaction): JsObject = {
+        myGroupsEveryoneLast: Seq[Group], site: Opt[Site], tx: SiteTransaction): JsObject = {
 
     val restrictedCategories: JsArray = restrTopicsCatsLinks.categoriesJson
     val restrictedTopics: Seq[JsValue] = restrTopicsCatsLinks.topicsJson
@@ -896,6 +898,8 @@ class JsonMaker(dao: SiteDao) {
     if (requester.isAdmin) {
       val siteSettings = tx.loadSiteSettings()
       json += "isEmbeddedCommentsSite" -> JsBoolean(siteSettings.exists(_.allowEmbeddingFrom.nonEmpty))
+      json += "siteCreatedAtMs" -> JsWhenMsOrNull(site.map(_.createdAt))
+      // json += "talkyardVersion" -> ?  — maybe later.
     }
 
     json

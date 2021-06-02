@@ -359,21 +359,36 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.HideHelpMessage:
       dieIf(!store.me, 'EsE8UGM5');
-      const messageId = action.message ? action.message.id : action.messageId;
-      const version = action.message ? action.message.version : 1;
+      const messageId = action.message.id;
+      const version = action.message.version || 1;
+      // Legacy:  (use  me.tourTipsSeen  instead,  rename to just  tipsSeen,
+      // and save  tipsSeen  in localStorage, iff not logged in?)
       store.me.closedHelpMessages[messageId] = version;
       putInLocalStorage('closedHelpMessages', store.me.closedHelpMessages);
       break;
 
     case ReactActions.actionTypes.ShowHelpAgain:
+      const me: Myself = store.me;
       if (action.messageId) {
+        me.tourTipsSeen = arr_delInCopy(me.tourTipsSeen, action.messageId);
+        // Legacy:
         // Could mark as visible in local storage? Or not (simpler) — the user has
         // soon read it anyway.
-        delete store.me.closedHelpMessages[action.messageId];
+        delete me.closedHelpMessages[action.messageId];
       }
       else {
-        putInLocalStorage('closedHelpMessages', {});
-        store.me.closedHelpMessages = {};
+        // If action.onlyAnnouncements, remove all 'SAn_..' (Server Announcement)
+        // from the to-hide list — that is, keep those that don't start with 'SAn_'.
+        me.tourTipsSeen = me.tourTipsSeen.filter(t => {
+          const isAnnouncement = t.startsWith('SAn_');
+          const shallShow = isAnnouncement === !!action.onlyAnnouncements;
+          const keepInHiddenList = !shallShow;
+          return keepInHiddenList;
+        });
+        // Legacy:  CLEAN_UP
+        me.closedHelpMessages = _.pickBy(me.closedHelpMessages, (version, key) =>
+              key.startsWith('SAn_') !== !!action.onlyAnnouncements);
+        putInLocalStorage('closedHelpMessages', me.closedHelpMessages);
       }
       break;
 

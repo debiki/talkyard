@@ -271,7 +271,7 @@ function TalkyardTour() {
   function exitTour() {
     // This updates the state in place. Fine, in this case.  [redux]
     tour.forWho.tourTipsSeen.push(tour.id);
-    Server.markTourTipsSeen(tour.id);
+    Server.toggleTips({ tipsId: tour.id, hide: true });
     setTour(null);
     tourRunning = false;
   }

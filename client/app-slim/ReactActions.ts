@@ -826,15 +826,8 @@ export function setHorizontalLayout(enabled: boolean) {
 }
 
 
-export function hideHelpMessageWithId(messageId: string) {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.HideHelpMessage,
-    messageId: messageId,
-  });
-}
-
-
-export function hideHelpMessages(message) {
+export function hideTips(message: { id: St, version?: Nr }) {
+  Server.toggleTips({ tipsId: message.id, hide: true });
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.HideHelpMessage,
     message: message,
@@ -842,7 +835,7 @@ export function hideHelpMessages(message) {
 }
 
 
-export function showSingleHelpMessageAgain(messageId: string) {
+export function showSingleTipsClientSide(messageId: string) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowHelpAgain,
     messageId: messageId,
@@ -850,8 +843,10 @@ export function showSingleHelpMessageAgain(messageId: string) {
 }
 
 
-export function showHelpMessagesAgain() {
+export function showTipsAgain(ps: { onlyAnnouncements?: Bo } = {}) {
+  Server.toggleTips({ ...ps, hide: false });
   ReactDispatcher.handleViewAction({
+    ...ps,
     actionType: actionTypes.ShowHelpAgain,
   });
 }
