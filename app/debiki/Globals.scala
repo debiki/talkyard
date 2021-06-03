@@ -1273,6 +1273,10 @@ class Config(conf: play.api.Configuration) extends TyLogging {
     conf.getOptional[String]("talkyard.akismet.apiKey").noneIfBlank orElse  // old name
       conf.getOptional[String]("talkyard.akismetApiKey").noneIfBlank
 
+  // FOR NOW
+  val emailWebhooksApiSecret: Opt[St] =
+    conf.getOptional[St]("talkyard.emailWebhooksApiSecret").noneIfBlank
+
   object uploads {
     TESTS_MISSING // test that these conf vals work properly, by running UploadsDaoSpec twice,
     // once with default values, once with 2 x higher values (people typically want to increase,

@@ -332,6 +332,8 @@ POST  /-/set-tag-notf-level     controllers.TagsController.setTagNotfLevel
 GET   /-/load-my-tag-notf-levels controllers.TagsController.loadMyTagNotfLevels
 POST  /-/add-remove-tags        controllers.TagsController.addRemoveTags
 
+POST  /-/handle-email            talkyard.server.emails.in.EmailsInController.handleIncomingEmail(debug: Boolean = false)
+
 GET   /-/sa                      controllers.SuperAdminController.redirect
 GET   /-/super-admin             controllers.SuperAdminController.redirect
 GET   /-/super-admin/            controllers.SuperAdminController.redirect

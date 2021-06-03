@@ -20,8 +20,25 @@ package debiki
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import java.{util => ju}
-import org.scalactic.{Bad, Or}
+import org.scalactic.{Good, Or, Bad}
 import play.api.libs.json._
+
+
+
+// Move to  talkyard.server.parse.ParseText?
+object ParseText {
+  def parseFloat64(text: St, fieldName: St): f64 = {
+    try text.toDouble
+    catch {
+      case _: java.lang.NumberFormatException =>
+        // throwBadData instead?
+        JsonUtils.throwBadJson("TyE06MPGN2", s"Field $fieldName is not a number")
+      case _: java.lang.NullPointerException =>
+        JsonUtils.throwBadJson("TyE06MPGN3", s"Field $fieldName is null")
+    }
+  }
+}
+
 
 
 /** Parses JSON. Throws human friendly IllegalArgumentException:s. Is,a bit more concise
@@ -38,6 +55,14 @@ object JsonUtils {
 
   def tryParseGoodBad[R](block: => R Or ErrMsg): R Or ErrMsg = {
     try block
+    catch {
+      case ex: BadJsonException =>
+        Bad(ex.getMessage)
+    }
+  }
+
+  def tryParse[R](block: => R): R Or ErrMsg = {
+    try Good(block)
     catch {
       case ex: BadJsonException =>
         Bad(ex.getMessage)
@@ -353,7 +378,7 @@ object JsonUtils {
   private def throwBadJsonIf(test: => Bo, errCode: St, message: St): U =
     if (test) throwBadJson(errCode, message)
 
-  private def throwBadJson(errorCode: String, message: String) =
+  def throwBadJson(errorCode: String, message: String) =
     throw new BadJsonException(s"$message [$errorCode]")
 
 
