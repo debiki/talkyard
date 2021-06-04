@@ -2328,17 +2328,16 @@ chrome-launcher@^0.13.1, chrome-launcher@^0.13.4:
     mkdirp "^0.5.3"
     rimraf "^3.0.2"
 
-chromedriver@^89.0.0:
-  version "89.0.0"
-  resolved "https://registry.yarnpkg.com/chromedriver/-/chromedriver-89.0.0.tgz#a6f27aa306400651a20dc04976fe5b2c4e65d61a"
-  integrity sha512-+DVYp3+m6tZUYTMl9fEgCZIDk9YBTcHws82nIV1JYwusu51zRITA0oeNzuPyFhuK7ageFnnKCDviH2BL5I4M0w==
+chromedriver@^91.0.0:
+  version "91.0.0"
+  resolved "https://registry.yarnpkg.com/chromedriver/-/chromedriver-91.0.0.tgz#b8c07d715c1bde2ed5817757e923bd65565c8f94"
+  integrity sha512-0eQGLDWvfVd1apkqQpt4452bCATrsj50whhVzMqPiazNSfCXXwfYWRonYxx3DVFCG3+RwSCLvsk8/vpuojCyJA==
   dependencies:
     "@testim/chrome-version" "^1.0.7"
     axios "^0.21.1"
     del "^6.0.0"
     extract-zip "^2.0.1"
     https-proxy-agent "^5.0.0"
-    mkdirp "^1.0.4"
     proxy-from-env "^1.1.0"
     tcp-port-used "^1.0.1"
 
@@ -6667,10 +6666,10 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
-markdown-it@^12.0.3:
-  version "12.0.3"
-  resolved "https://registry.yarnpkg.com/markdown-it/-/markdown-it-12.0.3.tgz#8d1e47daf1d716d63610495eb93f6665573e4abe"
-  integrity sha512-M57RsMv+QQmJHz1yCu0gTJRMx/LlxRPtrrw+2kb/CpDVK/graCmWO0qfNnz/SE1FCNdyq3pkMMZ+itTnyT/YGA==
+markdown-it@^12.0.6:
+  version "12.0.6"
+  resolved "https://registry.yarnpkg.com/markdown-it/-/markdown-it-12.0.6.tgz#adcc8e5fe020af292ccbdf161fe84f1961516138"
+  integrity sha512-qv3sVLl4lMT96LLtR7xeRJX11OUFjsaD5oVat2/SNBIb21bJXwal2+SklcRbTwGwqWpWH/HRtYavOoJE+seL8w==
   dependencies:
     argparse "^2.0.1"
     entities "~2.1.0"

@@ -10,7 +10,9 @@ browser_name="chrome"
 container_name="tye2ebrowser"
 
 # !! Update Chromedriver and FF driver in wdio.conf.ts too. [upd_chromedriver_ffdriver]
+# Not using — see  image_name  below instead.
 image_version="4.0.0-alpha-7-prerelease-20201009" # 3.141.59-20201010"
+#image_version="selenium/standalone-chrome:4.0.0-beta-4-prerelease-20210527"
 
 # Is 3.5.x and 4.0.0 Selenium Grid? Selenium Server? versions?
 #  https://www.selenium.dev/downloads/
@@ -33,12 +35,12 @@ for arg in "$@"; do
         echo
         echo "Killing any $container_name container..."
         echo
-        sudo docker kill $container_name
-        sudo docker rm -f $container_name
+        docker kill $container_name
+        docker rm -f $container_name
         echo
         echo "Is it gone? These Selenium containers are now running:"
         echo
-        sudo docker ps  | grep selenium
+        docker ps  | grep selenium
         echo
         exit 0
         shift
@@ -74,7 +76,12 @@ done
 
 # E.g.: selenium/standalone-chrome-debug
 #image_name="selenium/standalone-${browser_name}${dash_debug}:${image_version}"
-image_name="selenium/standalone-chrome:4.0.0-alpha-7-prerelease-20201009"
+#image_name="selenium/standalone-chrome:4.0.0-alpha-7-prerelease-20201009"
+#image_name="selenium/standalone-chrome :4.0.0-beta-4-prerelease-20210527"
+image_name="selenium/standalone-$browser_name:4.0.0-beta-4-prerelease-20210604"
+#docker pull selenium/standalone-firefox:4.0.0-beta-4-prerelease-20210604
+#docker pull selenium/standalone-chrome:4.0.0-beta-4-prerelease-20210604
+
 # docker run -d -p 4444:4444 -v /dev/shm:/dev/shm selenium/standalone-chrome:4.0.0-alpha-7-prerelease-20201009
 
 # The names are like:
@@ -88,13 +95,13 @@ echo
 echo "Starting image '$image_name' as container '$container_name':"
 echo
 
-sudo docker kill $container_name
-sudo docker rm -f $container_name
+docker kill $container_name
+docker rm -f $container_name
 
 # See: https://github.com/SeleniumHQ/docker-selenium
 # Width, height: https://github.com/SeleniumHQ/docker-selenium#setting-screen-resolution
 #
-sudo docker run -d \
+docker run -d \
     --name $container_name  \
     --network=host \
     -p 4444:4444 \
@@ -110,12 +117,12 @@ echo
 echo "You now have these Selenium containers running:"
 echo
 
-sudo docker ps  | grep selenium
+docker ps  | grep selenium
 
 echo
 echo "You can ssh into the container:"
 echo
-echo "    sudo docker exec -it $container_name sh"
+echo "    docker exec -it $container_name sh"
 echo
 
 install_vinagre="sudo apt install vinagre"
@@ -139,7 +146,9 @@ else
         fi
         echo "Yes, here we go:"
         echo
+        set -x
         $install_vinagre
+        set +x
         echo
     fi
 

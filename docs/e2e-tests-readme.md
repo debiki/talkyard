@@ -1,6 +1,17 @@
 End-to-End tests Readme
 ===================
 
+Year 2021 update:
+
+Read this: docs/wildcard-dot-localhost.md
+
+And: `s/tyd u` (for "docker-compose up") in one shell,
+and `s/tyd e` (for "run end-to-end tests") in another.
+
+
+Old docs below, some stuff works the same
+--------------
+
 To do: Document variations, `my.conf`: `E2ECDN`, `E2EHTTPS`
 
 ```
