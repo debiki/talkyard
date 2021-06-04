@@ -79,10 +79,12 @@ let providersToTest: ProvidersMap = {
   reddit: {
     name: "Reddit",
     inSandboxedIframe: true,
-    // Reddit wraps their embeds in their own sandboxed iframe — and Ty does too,
-    // so there're douoble iframe sandboxes. (Ty cannot assume Reddit will keep
-    // their iframe, so Ty needs its own sandbox iframe too.)
-    inDoubleIframe: true,
+    // Reddit sometimes wraps their embeds in their own sandboxed iframe — Ty does too;
+    // then, there're douoble iframe sandboxes. (Ty cannot assume Reddit will keep
+    // their iframe, so Ty needs its own sandbox iframe too. Also, now some weeks later,
+    // Reddit has indeed stopped using their own iframe)
+    inDoubleIframe: false, // true, — maybe will need to toggle on/off to track
+                                    // what Reddit is doing
     // With 'utm' query param.
     linkInTopic: 'https://www.reddit.com/r/aww/comments/h84ti6/' +
           'pics_if_squirrels_landing_on_the_ground/?utm_source=share&utm_medium=web2x',
