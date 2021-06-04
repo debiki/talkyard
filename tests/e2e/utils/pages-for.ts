@@ -1357,7 +1357,11 @@ export class TyE2eTestBrowser {
     }
 
 
-    isVisible(selector: St): Bo {
+    isVisible(selector: St): Bo {  // RENAME to isDisplayed, started, see below
+      return this.isDisplayed(selector);
+    }
+
+    isDisplayed(selector: St): Bo {
       // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
       // Maybe if win closed so elem gone?
 
@@ -7160,7 +7164,20 @@ export class TyE2eTestBrowser {
         this.go((origin || '') + `/-/admin/users/id/${userId}`);
       },
 
-      navToGroups: () => {
+      tabs: {
+        navToApi: () => {
+          this.repeatUntilAtNewUrl(() => {
+            this.waitAndClick('.e_ApiB');
+          });
+        },
+        isApiTabDisplayed: (): Bo => {
+          return this.isDisplayed('.e_ApiB');
+        },
+
+        navToGroups: () => this.adminArea.navToGroups(),
+      },
+
+      navToGroups: () => {   // MOVE to inside tabs {}, see just above.
         this.repeatUntilAtNewUrl(() => {
           this.waitAndClick('.e_GrpsB');
         });

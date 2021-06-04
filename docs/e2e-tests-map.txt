@@ -1276,6 +1276,8 @@ server side rendering -
     category dropdown:
 
 api:
+  enable API:
+            - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyT6703MRJ5
   ext id, weird chars and loong id:
           - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
   upsert categories:  (upscats)

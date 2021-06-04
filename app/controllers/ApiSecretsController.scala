@@ -48,6 +48,9 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: EdCont
         request: JsonPostRequest =>
     import request.{body, dao}
 
+    throwForbiddenIf(!dao.getWholeSiteSettings().enableApi,
+          "TyE8B6MEG24M", "API not enabled")
+
     // Feels best to explicitly require forAnyUser=true, so won't accidentally create
     // a for-any-user key just because forgot to specify user id.
     val forUserId: Option[UserId] = (body \ "forUserId").asOpt[UserId]
@@ -64,6 +67,10 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   def deleteApiSecrets: Action[JsValue] = AdminPostJsonAction(maxBytes = 10*1000) {
         request: JsonPostRequest =>
+
+    // Maybe makes sense to allow this, even if API not enabled, so one can still
+    // delete old secrets.
+
     import request.{dao, body}
     val secretNrs = (body \ "secretNrs").as[immutable.Seq[ApiSecretNr]]
     dao.deleteApiSecrets(secretNrs)
