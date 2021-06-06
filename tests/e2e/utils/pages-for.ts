@@ -551,7 +551,11 @@ export class TyE2eTestBrowser {
     }
 
 
-    __updateIsWhere() {
+    __updateIsWhere(isWhere?: IsWhere) {
+      if (isWhere) {
+        this.#isWhere = isWhere;
+        return;
+      }
       // .DW = discussion / topic list page.  .btn = e.g. a Continue-after-having-verified
       // -one's-email-addr page.
       // ('ed-comments' is old, deprecated, class name.)
@@ -896,7 +900,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    switchBackToFirstTabOrWindow() {
+    switchBackToFirstTabOrWindow(isWhere?: IsWhere) {
       // There should be no other windows, except for maybe a login popup.
       // Wait until it closes. However if a developer has opened more tabs and
       // does some experiments, so there're many open windows — then, continue anyway.
@@ -942,7 +946,7 @@ export class TyE2eTestBrowser {
         // Don't catch.
       }
 
-      this.__updateIsWhere();
+      this.__updateIsWhere(isWhere);
     }
 
 
@@ -7147,6 +7151,7 @@ export class TyE2eTestBrowser {
         });
       },
 
+      // RENAME to tabs.navToLoginSettings
       goToLoginSettings: (origin?: string, opts: { loginAs? } = {}) => {
         this.go((origin || '') + '/-/admin/settings/login');
         if (opts.loginAs) {
@@ -7165,6 +7170,8 @@ export class TyE2eTestBrowser {
       },
 
       tabs: {
+        navToLoginSettings: (a?, b?) => this.adminArea.goToLoginSettings(a, b),
+
         navToApi: () => {
           this.repeatUntilAtNewUrl(() => {
             this.waitAndClick('.e_ApiB');

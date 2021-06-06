@@ -144,7 +144,8 @@ case class SitePatchParser(context: EdContext) {
 
     val (siteMetaJson, settingsJson, apiSecretsJson,
         guestsJson, anyGuestEmailPrefsJson, groupsJson, groupPpsJson,
-        usersJson, pptStatsJson, ppVisitStatsJson, usernameUsagesJson, identitiesJson,
+        usersJson, pptStatsJson, ppVisitStatsJson, usernameUsagesJson,
+        idpsJson, identitiesJson,
         invitesJson, notificationsJson, memberEmailAddressesJson, pageNotfPrefsJson) =
       try {
         (readOptJsObject(bodyJson, "meta"),
@@ -158,6 +159,7 @@ case class SitePatchParser(context: EdContext) {
           readJsArray(bodyJson, "ppStats", optional = true),
           readJsArray(bodyJson, "ppVisitStats", optional = true),
           readJsArray(bodyJson, "usernameUsages", optional = true),
+          readJsArray(bodyJson, "identityProviders", optional = true),
           readJsArray(bodyJson, "identities", optional = true),
           readJsArray(bodyJson, "invites", optional = true),
           readJsArray(bodyJson, "notifications", optional = true),
@@ -287,6 +289,14 @@ case class SitePatchParser(context: EdContext) {
         throwBadReq(
           "TyE20UWKD45", o"""Invalid UserEmailAddress json at index $index in
                the 'memberEmailAddresses' list: $errorMessage, json: $json"""))
+    }
+
+    val idps: Seq[IdentityProvider] = idpsJson.value.toVector.zipWithIndex map {
+          case (json, index) =>
+      parseIdentityProviderOrBad(json).getOrIfBad(errorMessage =>
+          throwBadReq(
+            "TyE5KD2P0", o"""Invalid Identity Provider (IDP) json at index $index in
+              the 'identityProviders' list: $errorMessage, json: $json"""))
     }
 
     val identities: Seq[Identity] = identitiesJson.value.toVector.zipWithIndex map { case (json, index) =>
@@ -421,7 +431,7 @@ case class SitePatchParser(context: EdContext) {
       guests, guestEmailPrefs, groups,
       groupParticipants,
       users, ppStats, ppVisitStats, usernameUsages, memberEmailAddrs,
-      identities, invites, notifications,
+      idps, identities, invites, notifications,
       categoryPatches.toVector, categories.toVector,
       pages, paths, pageIdsByAltIds, pagePopularityScores,
       pageNotfPrefs, pageParticipants,

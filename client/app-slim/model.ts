@@ -1704,7 +1704,7 @@ interface IdentityProviderPubFields {
 
 
 interface IdentityProviderSecretConf extends IdentityProviderPubFields {
-  idpId: Nr;
+  id: Nr;
   enabled: Bo;
   adminComments?: St;
   trustVerifiedEmail: Bo;
@@ -1713,8 +1713,10 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
   syncMode: Nr;
   oauAuthorizationUrl: St;
   oauAuthReqScope: St;
+  oauAuthReqClaims?: Ay;
   oauAuthReqHostedDomain?: St;
   oauAccessTokenUrl: St;
+  oauAccessTokenAuthMethod?: 'client_secret_basic' | 'client_secret_post';
   oauClientId: St;
   oauClientSecret: St;
   oauIssuer?: St;

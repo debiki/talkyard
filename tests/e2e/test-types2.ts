@@ -197,6 +197,7 @@ interface SiteData2 {   // [3SD5PB7]
   ppStats: any[];
   ppVisitStats: any[];
   usernameUsages: any[];
+  identityProviders: IdentityProviderSecretConf[];
   identities: any[];
   invites: any[];
   memberEmailAddresses: any[];
@@ -227,6 +228,8 @@ interface TestSiteSettings {
   allowEmbeddingFrom?: string;
   // inviteOnly?: boolean;
   allowSignup?: boolean;
+  enableCustomIdps?: Bo;
+  useOnlyCustomIdps?: Bo;
   // allowLocalSignup?: boolean;
   allowGuestLogin?: boolean;
   userMustBeAuthenticated?: boolean;  // = loginRequired

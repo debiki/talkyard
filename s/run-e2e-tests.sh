@@ -616,6 +616,7 @@ function runAllE2eTests {
 
   # Single Sign-On, embedded comments:
   #$r s/wdio       --only embcom.sso.2br $args
+  #$r s/wdio       --only embcom.sso.w-oidc.2br $args
 
   if [ -n "$http_server_pid" ]; then
     kill $http_server_pid

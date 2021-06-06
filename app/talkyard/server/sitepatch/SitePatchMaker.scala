@@ -176,6 +176,10 @@ object SitePatchMaker {
         anyDump.map(_.usernameUsages) getOrElse tx.loadAllUsernameUsages()
       fields("usernameUsages") = JsArray(usernameUsages.map(JsUsernameUsage))
 
+      val idps: Seq[IdentityProvider] =
+        anyDump.map(_.identityProviders) getOrElse tx.loadAllSiteCustomIdentityProviders()
+      fields("identityProviders") = JsArray(idps map JsIdentityProviderSecretConf)
+
       val identities: Seq[Identity] =
         anyDump.map(_.identities) getOrElse tx.loadAllIdentities()
       fields("identities") = JsArray(

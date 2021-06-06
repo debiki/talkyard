@@ -1263,6 +1263,10 @@ case class SitePatcher(globals: debiki.Globals) {
         tx.insertUserEmailAddress(meEmAddr)
       }
 
+      siteData.identityProviders foreach { idp: IdentityProvider =>
+        tx.upsertIdentityProvider(idp)
+      }
+
       siteData.identities foreach { identity: Identity =>
         tx.insertIdentity(identity)
       }

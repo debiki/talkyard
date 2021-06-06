@@ -128,7 +128,6 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
   "displayName": "Azure AD Test",
   "description": "Azure AD login test",
   "guiOrder": null,
-  "confFileIdpId": null,
   "id": 1,
   "trustVerifiedEmail": true,
   "emailVerifiedDomains": "${settings.azureEmailVerifiedDomains}",

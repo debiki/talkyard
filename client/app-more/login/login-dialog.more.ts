@@ -355,13 +355,29 @@ const LoginDialogContent = createClassAndFactory({
       // @endif
       shallRedir = true;
     }
-    else if (ssoUrl && eds.isInLoginPopup) {
-      // Then, since this site is Single Sign-On, there'd be nothing to  [insta_sso_redir]
-      // choose among in this login popup — so redirect to the ssoUrl directly.
-      // But, let's wait with changing any old behavior. For now, only
-      // redirect, if useOnlyCustomIdps (new OIDC related code).
-      // DO_AFTER 2020-11-11 always location.assign?
-      shallRedir = settings.useOnlyCustomIdps;
+    else if (eds.isInLoginPopup) {
+      if (ssoUrl) {
+        // Since this site is Single Sign-On, there'd be nothing to  [insta_sso_redir]
+        // choose among in this login popup —
+        // *edit*: Yes there might be. The SSO IDP need not be the only IDP in use
+        // — a company might want to combine, with say email + pwd login, for
+        // company external people.
+        // However, if there's just 1 way to login (the SSO IDP), then,
+        // redirect to the ssoUrl directly.
+        // But, let's wait with changing any old behavior. For now, only
+        // redirect, if useOnlyCustomIdps (new OIDC related code).
+        // DO_AFTER 2020-11-11 always location.assign?
+
+        // What! Bug.  useOnlyCustomIdps is for OIDC and OAuth,
+        // but shallRedir here is for Ty's custom SSO. Don't:
+        //shallRedir = settings.useOnlyCustomIdps;
+        // Instead, later:
+        //shallRedir = settings.useOnlySso;
+      }
+      else if (settings.useOnlyCustomIdps && settings.customIdps?.length === 1) {
+        // Just one IDP; then we can redirect to that one.
+
+      }
     }
 
     if (shallRedir) {
@@ -682,12 +698,12 @@ const ExtIdpAuthnBtn = createClassAndFactory({
         // If instead this is just a login popup win, the server wants to know about that —
         // it'll then instead return a html page that runs some javascript that updates our
         // window.opener, and then closes this popup. [49R6BRD2]
-        (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
+        (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +  // use eds.isInLoginPopup instead
         (useServerGlobalIdp ? 'useServerGlobalIdp=true&' : '') +
         `returnToUrl=${props.anyReturnToUrl || ''}`;
 
     const url = origin() + urlPathAndQuery;
-
+debugger;
     if (eds.isInLoginWindow) {
       // --- CLEAN_UP REMOVE this -------------
       // This is now here: [.687263] instead, so the cookies get set also if using SSO.

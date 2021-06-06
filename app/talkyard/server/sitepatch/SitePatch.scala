@@ -65,6 +65,7 @@ case class SitePatch(
   pptVisitStats: immutable.Seq[UserVisitStats],
   usernameUsages: immutable.Seq[UsernameUsage],
   memberEmailAddrs: immutable.Seq[UserEmailAddress],
+  identityProviders: ImmSeq[IdentityProvider],
   identities: immutable.Seq[Identity],
   invites: immutable.Seq[Invite],
   notifications: immutable.Seq[Notification],
@@ -136,6 +137,7 @@ case class SitePatch(
       pptVisitStats.length >= many ||
       usernameUsages.length >= many ||
       memberEmailAddrs.length >= many ||
+      identityProviders.length >= many ||
       identities.length >= many ||
       invites.length >= many ||
       notifications.length >= many ||
@@ -175,6 +177,7 @@ object SitePatch {
     pptVisitStats = Vector.empty,
     usernameUsages = Vector.empty,
     memberEmailAddrs = Vector.empty,
+    identityProviders = Vec.empty,
     identities = Vector.empty,
     invites = Vector.empty,
     notifications = Vector.empty,
