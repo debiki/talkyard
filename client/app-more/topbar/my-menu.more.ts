@@ -140,6 +140,7 @@ export const MyMenuContent = createFactory({
     let viewDraftsAndBookmarks;
     let myStuffDivider;
     let unhideHelpMenuItem;
+    let showAnnouncementsMenuItem;
     if (me.isLoggedIn) {
       // If is admin, show the logout button on the same line as the "View profile" link,
       // because then there're admin links above, and lots of space for the  X close-menu button.
@@ -167,8 +168,14 @@ export const MyMenuContent = createFactory({
       myStuffDivider = MenuItemDivider();
 
       unhideHelpMenuItem =
-        MenuItem({ onClick: ReactActions.showHelpMessagesAgain },
-          r.span({ className: 'icon-help' }, t.mm.UnhideHelp))
+        MenuItem({ onClick: () => ReactActions.showTipsAgain(),
+              className: 'e_UnhTps' },
+          r.span({ className: 'icon-help' }, t.mm.UnhideHelp));
+
+      if (me.isAdmin) showAnnouncementsMenuItem =
+        MenuItem({ onClick: () => ReactActions.showTipsAgain({
+                onlyAnnouncements: true }), className: 'e_UnhAnns' },
+          r.span({ className: 'icon-help' }, "Unhide Announcements"));  // 0I18N
     }
 
     // ------- The menu
@@ -192,7 +199,8 @@ export const MyMenuContent = createFactory({
         notfsItems,
         extraViewAllNotfsOrClear,
         myStuffDivider,
-        unhideHelpMenuItem);
+        unhideHelpMenuItem,
+        showAnnouncementsMenuItem);
 
     return menuContent;
   }

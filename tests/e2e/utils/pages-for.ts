@@ -1027,7 +1027,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    switchToTheParentFrame() {
+    switchToTheParentFrame(ps: { parentIs?: IsWhere } = {}) {
         dieIf(!this.isInIframe(), 'TyE406RKH2');
         this.#br.switchToParentFrame();
         // Skip, was some other oddity:
@@ -1038,7 +1038,10 @@ export class TyE2eTestBrowser {
         //   message: `Waiting for this.#br to enter parent frame, until window.self === top`
         // });
         logMessage("Switched to parent frame.");
-        if (this.#isWhere === IsWhere.UnknownIframe) {
+        if (ps.parentIs) {
+          this.#isWhere = ps.parentIs;
+        }
+        else if (this.#isWhere === IsWhere.UnknownIframe) {
           // For now: (Later, might be in an embedded blog comments editor or discussion,
           // but right now (2020-07) there are no such tests.)
           this.#isWhere = IsWhere.Forum;
@@ -1354,7 +1357,11 @@ export class TyE2eTestBrowser {
     }
 
 
-    isVisible(selector: St): Bo {
+    isVisible(selector: St): Bo {  // RENAME to isDisplayed, started, see below
+      return this.isDisplayed(selector);
+    }
+
+    isDisplayed(selector: St): Bo {
       // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
       // Maybe if win closed so elem gone?
 
@@ -3208,6 +3215,14 @@ export class TyE2eTestBrowser {
           this.topbar.closeMyMenuIfOpen();
           return isVisible;
         },
+
+        unhideTips: () => {
+          this.waitAndClick('.e_UnhTps');
+        },
+
+        unhideAnnouncements: () => {
+          this.waitAndClick('.e_UnhAnns');
+        }
       },
 
       pageTools: {
@@ -5069,11 +5084,12 @@ export class TyE2eTestBrowser {
     linkPreview = {
       waitUntilLinkPreviewMatches: (ps: { postNr: PostNr, timeoutMs?: number,
             regex: string | RegExp, whichLinkPreviewSelector?: string,
-            inSandboxedIframe: boolean }) => {
+            inSandboxedIframe: Bo, inDoubleIframe: Bo }) => {
         const linkPrevwSel = ' .s_LnPv' + (ps.whichLinkPreviewSelector || '');
         if (ps.inSandboxedIframe) {
           this.topic.waitForExistsInIframeInPost({ postNr: ps.postNr,
                 iframeSelector: linkPrevwSel + ' iframe',
+                yetAnotherIframeInside: ps.inDoubleIframe,
                 textToMatch: ps.regex,
                 timeoutMs: ps.timeoutMs });
         }
@@ -5109,6 +5125,10 @@ export class TyE2eTestBrowser {
         });
       },
 
+      waitForDisplayedInEditor: () => {
+        this.waitForDisplayed(this.preview.__inEditorPreviewSelector);
+      },
+
       waitUntilPreviewHtmlMatches: (text: string,
             opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: string }) => {
         this.preview.__checkPrevw(opts, (prevwSelector: string) => {
@@ -5119,11 +5139,17 @@ export class TyE2eTestBrowser {
       // ^--REMOVE, use --v  instead
       waitUntilPreviewTextMatches: (regex: string | RegExp,
             opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: string,
-                  inSandboxedIframe: boolean }) => {
+                  inSandboxedIframe: Bo, inDoubleIframe?: Bo }) => {
         this.preview.__checkPrevw(opts, (prevwSelector: string) => {
           if (opts.inSandboxedIframe) {
             this.switchToFrame(`${prevwSelector}.s_LnPv iframe`);
+            if (opts.inDoubleIframe) {
+              this.switchToFrame('iframe');
+            }
             this.waitUntilTextMatches('body', regex);
+            if (opts.inDoubleIframe) {
+              this.switchToTheParentFrame({ parentIs: IsWhere.UnknownIframe });
+            }
             this.switchToTheParentFrame();
           }
           else {
@@ -5421,14 +5447,21 @@ export class TyE2eTestBrowser {
 
       // Enters an <iframe> in a post, looks for sth, then exits the iframe.
       waitForExistsInIframeInPost: (ps: { postNr: PostNr, iframeSelector: string,
+            yetAnotherIframeInside?: Bo,
             thingInIframeSelector?: string, textToMatch?: string | RegExp,
             timeoutMs?: number, howMany?: number }) => {
         const complIfrSel = this.topic.postBodySelector(ps.postNr) + ' ' + ps.iframeSelector;
         this.switchToFrame(complIfrSel, { timeoutMs: ps.timeoutMs });
+        if (ps.yetAnotherIframeInside)  {
+          this.switchToFrame('iframe', { timeoutMs: ps.timeoutMs });
+        }
         const thingInIframeSelector = ps.thingInIframeSelector || 'body';
         this.waitForExist(thingInIframeSelector, { timeoutMs: ps.timeoutMs });
         if (ps.textToMatch) {
           this.waitUntilTextMatches(thingInIframeSelector, ps.textToMatch);
+        }
+        if (ps.yetAnotherIframeInside)  {
+          this.switchToTheParentFrame({ parentIs: IsWhere.UnknownIframe });
         }
         this.switchToTheParentFrame();
       },
@@ -7062,6 +7095,46 @@ export class TyE2eTestBrowser {
     };
 
 
+    tips = {
+      numTipsDisplayed: (): Nr => {
+        return this.count(':not(.c_SrvAnns) > .dw-help');
+      },
+      hideATips: () => {
+        this.waitAndClickFirst(':not(.c_SrvAnns) > .dw-help .dw-hide');
+      },
+      waitForExactlyNumTips: (num: Nr) => {
+        this.waitForExactly(num, ':not(.c_SrvAnns) > .dw-help');
+      },
+      unhideAllTips: () => {
+        this.topbar.openMyMenu();
+        this.topbar.myMenu.unhideTips();
+      },
+      waitForPreviewTips: () => {
+        this.waitForDisplayed('.dw-preview-help');
+      },
+      waitForPreviewTipsGone: () => {
+        this.waitForGone('.dw-preview-help');
+      },
+      isPreviewTipsDisplayed: (): Bo => {
+        return this.isDisplayed('.dw-preview-help');
+      },
+
+      numAnnouncementsDisplayed: (): Nr => {
+        return this.count('.c_SrvAnns .dw-help');
+      },
+      hideAnAnnouncement: () => {
+        this.waitAndClickFirst('.c_SrvAnns .dw-hide');
+      },
+      waitForExactlyNumAnnouncements: (num: Nr) => {
+        this.waitForExactly(num, '.c_SrvAnns .dw-help');
+      },
+      unhideAllAnnouncements: () => {
+        this.topbar.openMyMenu();
+        this.topbar.myMenu.unhideAnnouncements();
+      },
+    };
+
+
     adminArea = {
       waitAssertVisible: () => {
         this.waitForVisible('h1.esTopbar_custom_title');
@@ -7091,7 +7164,20 @@ export class TyE2eTestBrowser {
         this.go((origin || '') + `/-/admin/users/id/${userId}`);
       },
 
-      navToGroups: () => {
+      tabs: {
+        navToApi: () => {
+          this.repeatUntilAtNewUrl(() => {
+            this.waitAndClick('.e_ApiB');
+          });
+        },
+        isApiTabDisplayed: (): Bo => {
+          return this.isDisplayed('.e_ApiB');
+        },
+
+        navToGroups: () => this.adminArea.navToGroups(),
+      },
+
+      navToGroups: () => {   // MOVE to inside tabs {}, see just above.
         this.repeatUntilAtNewUrl(() => {
           this.waitAndClick('.e_GrpsB');
         });
@@ -7387,7 +7473,9 @@ export class TyE2eTestBrowser {
           },
 
           followLinkToNewSiteAddr: () => {
+            this.rememberCurrentUrl();
             this.waitAndClick('.e_NewSiteAddr');
+            this.waitForNewOrigin();
           },
 
           clickRedirectOldSiteAddresses: () => {

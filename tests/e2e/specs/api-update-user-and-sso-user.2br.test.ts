@@ -44,25 +44,6 @@ const categoryExtId = 'cat_ext_id';
 const majasExternalId = 'majasExternalId';
 const majasSsoId = 'majasSsoId';
 
-const pageOneToUpsertMajasSsoId = {
-  // id: assigned by the server
-  extId: 'ups_page_one_ext_id',
-  pageType: c.TestPageRole.Idea,
-  categoryRef: 'extid:' + categoryExtId,
-  authorRef: 'ssoid:' + majasSsoId,
-  title: 'UpsPageOneTitle ByMaja SsoId',
-  body: 'UpsPageOneBody ByMaja SsoId',
-};
-
-const pageTwoToUpsertMajasExtId = {
-  extId: 'ups_paage_two_ext_id',
-  pageType: c.TestPageRole.Problem,
-  categoryRef: 'extid:' + categoryExtId,
-  authorRef: 'extid:' + majasExternalId,
-  title: 'UpsPageTwoTitle ByMaja ExtId',
-  body: 'UpsPageTwoBody ByMaja ExtId',
-};
-
 
 
 describe(`api-update-user-and-sso-user.2br   TyTE2E05MRR9`, () => {
@@ -90,6 +71,11 @@ describe(`api-update-user-and-sso-user.2br   TyTE2E05MRR9`, () => {
       numFirstPostsToApprove: 0,
       numFirstPostsToReview: 0,
     });
+    builder.getSite().pageNotfPrefs = [{
+      memberId: forum.members.owen.id,
+      notfLevel: c.TestPageNotfLevel.EveryPost,
+      wholeSite: true,
+    }];
 
     site = server.importSiteData(builder.getSite());
     siteId = site.id;

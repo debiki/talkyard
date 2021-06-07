@@ -242,7 +242,11 @@ if (mainCmd === 'u' || mainCmd === 'up') {
   // (Also, log messages from make and the app server get mixed up with each other.)
   // Maybe  --no-bin-links?  [x_plat_offl_builds]
   spawnInForeground(`docker-compose run --rm nodejs yarn install ${yarnOfflineSt}`);
-  spawnInForeground('make debug_asset_bundles');
+  let exitCode = spawnInForeground('make debug_asset_bundles');
+  if (exitCode >= 1) {
+    logError(`Error building asset bundles, Make exit code: ${exitCode}`)
+    process.exit(exitCode);
+  }
 
   // Run `up -d` in foreground, so we won't start the `logs -f` process too soon
   // — that process would exit, if `up -d` hasn't yet started any containers.

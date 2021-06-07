@@ -118,7 +118,7 @@ GET   /-/download-my-content    controllers.UserController.downloadUsersContent(
 GET   /-/download-personal-data controllers.UserController.downloadPersonalData(userId: Int)
 POST  /-/track-reading          controllers.UserController.trackReadingProgress
 POST  /-/track-reading-text     controllers.UserController.trackReadingProgressText
-POST  /-/mark-tour-tips-seen    controllers.UserController.markTourTipsSeen
+POST  /-/toggle-tips            controllers.UserController.toggleTips
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)
 POST  /-/mark-all-notfs-as-seen controllers.UserController.markAllNotfsAsSeen
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
@@ -331,6 +331,8 @@ GET   /-/load-tags-and-stats    controllers.TagsController.loadTagsAndStats
 POST  /-/set-tag-notf-level     controllers.TagsController.setTagNotfLevel
 GET   /-/load-my-tag-notf-levels controllers.TagsController.loadMyTagNotfLevels
 POST  /-/add-remove-tags        controllers.TagsController.addRemoveTags
+
+POST  /-/handle-email            talkyard.server.emails.in.EmailsInController.handleIncomingEmail(debug: Boolean = false)
 
 GET   /-/sa                      controllers.SuperAdminController.redirect
 GET   /-/super-admin             controllers.SuperAdminController.redirect

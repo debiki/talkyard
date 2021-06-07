@@ -260,7 +260,22 @@ class PlainApiActions(
       val (username, colonPassword) = usernameColonPassword.span(_ != ':')
       val secretKey = colonPassword.drop(1)
 
-      // But if API disabled ???? TODO
+      // FOR NOW, trying out incoming email webhooks, logging messages only.
+      if (username == "emailwebhooks") {
+        throwForbiddenIf(globals.config.emailWebhooksApiSecret.isNot(secretKey),
+              "TyE60MREH35", "Wrong password")
+        // FOR NOW
+        throwForbiddenIf(request.path != "/-/handle-email", "TyE406MSE35", "Wrong path")
+
+        val sysbot = dao.getTheUser(SysbotUserId)
+        return runBlockIfAuthOk(request, site, dao, Some(sysbot),
+              SidOk("_api_secret_", 0, Some(SysbotUserId)),
+              XsrfOk("_api_secret_"), None, block)
+      }
+
+      DO_AFTER // 2021-08-01 enable this always. Test in dev-test first, for now.
+      throwForbiddenIf(Globals.isDevOrTest && !dao.getWholeSiteSettings().enableApi,
+            "TyE406MEG24M", "API not enabled")
 
       val apiSecret = dao.getApiSecret(secretKey) getOrElse {
         throwNotFound("TyEAPI0SECRET", "No such API secret or it has been deleted")

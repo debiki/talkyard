@@ -42,6 +42,10 @@ export function LiExtLink(...propsAndContents) {
   return r.li({}, r.a.apply(this, arguments));
 }
 
+export function ExtVerbLink(url: St): RElm {
+  return r.a({ href: url }, url);
+}
+
 
 /**
  * Redirects the URL path only — preserves query string and hash fragment.

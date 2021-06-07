@@ -19,7 +19,7 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../help/help.ts" />
+/// <reference path="../help/serverAnnouncements.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="discussion.ts" />
 /// <reference path="chat.ts" />
@@ -226,6 +226,7 @@ const Page = createComponent({
       isChat ? r.div({ id: 'theChatVspace' }) : null,
       r.div({ className: 'esPage' + compactClass + pageTypeClass },
         r.div({ className: 'container' },
+          debiki2.help.getServerAnnouncements(store),
           r.article({},
             content))));
   }

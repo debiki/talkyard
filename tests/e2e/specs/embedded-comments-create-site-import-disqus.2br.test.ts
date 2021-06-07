@@ -162,8 +162,16 @@ ${htmlToPaste}
 </html>`);
   };
 
-  it("Owen creates an API secret: Goes to the admin area, the API tab", () => {
-    owensBrowser.adminArea.goToApi();
+  it("Owen enables the API  TyT6703MRJ5", () => {
+    assert(!owensBrowser.adminArea.tabs.isApiTabDisplayed());
+    owensBrowser.adminArea.settings.features.goHere();
+    owensBrowser.adminArea.settings.features.setEnableApi(true);
+    owensBrowser.adminArea.settings.clickSaveAll();
+    // Now the API tab appears, we'll click it just below.
+  });
+
+  it("... creates an API secret: Goes to the admin area, the API tab", () => {
+    owensBrowser.adminArea.tabs.navToApi();
   });
 
   it("... generates the API secret", () => {

@@ -19,14 +19,19 @@ In-the-middle or at-a-word-end abbreviations: (but not at the start of the selec
 Ab  = about
 Aft = after
 Alw = allow(ed)
+Ann, An = announcement, also see SAn: Server Announcement
 AuD = authentication dialog (create account / log in / just type a name)
 Bef = before
 Em  = email
 Ena = enabled, Dis = disabled
 B   = button, e.g. ReplyB
 It  = list item
+Cb  = Contextbar
+CB  = checkbox, e.g. s_SthCB
 Cmt = comment
 Col = column, Rw or Row = row
+Cr  = create
+Cu  = Custom, e.g. CuNav = custom navigation links
 CUD = create user dialog
 D  = dialog,  e.g. AbtUsrD
 Dg = dialog, when inside a phrase, e.g. InstaDgW = Instant-Dialog-Wrap
@@ -39,20 +44,18 @@ Ed  = edit
 Edr = editor
 Eff = effective, but Fx = effect
 Feat = feature
+FI  = file input
 Flg = flag
 Fx  = Effect (standard abbr), but Eff = effective
 Fxd = fixed, Stc = static
 FN  = full name  (alt FuNm)
 Fu  = full
+G   = group  ? or Gp?  (but not Gr, could mean Greater or sh else?)
 Gst = guest
 Gt  = greater than, Lt = less than
 Hi  = high
 Hz  = horizontal, also Vl: vertical
 Ifr = iframe
-CB = checkbox, e.g. s_SthCB
-Cb = Contextbar
-Cr = create
-Cu = Custom, e.g. CuNav = custom navigation links
 L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list
 Ld  = load, Ldng = loading
 LD  = Log in Dialog, RENAME to AuD = Authn Dialog
@@ -74,15 +77,11 @@ Nm  = name
 Nf  = notification,  e.g. e_NfEm_NwTp = notification email, about a new topic
 Nv  = navigation, e.g. NvLs_Ln = Navigation-List Link
 Nw  = new
+Pat = participant
 Pb  = pagebar
 Pf  = preference, e.g. NfPfs = notification preferences
 Py  = property?
 Pw  = password, e.g. NwPwI
-R = table row,  NO, should be Rw, and Cl = column
-U  = user
-FI = file input
-G  = group  ? or Gp?
-Pat = participant
 Perm,
 Prm = permission, e.g.: 's_PP_PrmsTb' = profile page, permissions tab
 Pp = participant  NO change to Pat
@@ -92,8 +91,10 @@ Pv = Preview, e.g. LnPv = link preview
 Po = post
 Re  = reply  NO! Change to Ry — doesn't Re mean "rearding" as well?
 Rs  = risk, e.g. RsLv = risk level
+R   = table row,  NO, should be Rw, and Cl = column
 Rw, Row = row, Col = column
 Sav = save
+SAn = Server Announcement, also see Ann = announcement
 Sch = Search
 SgU = sign up, also LgI = log in, and Au = Authentication, e.g. AuD
 Sm  = small (screen), also: Md, Lg, Xl
@@ -107,17 +108,19 @@ Sz  = size
 T   = table
 Tab = tab
 Tb  = Topbar, or Tab (when at the end)   RENAME esTopbarWrap to s_Tb
+TBx = Tips Box (rename HelpMessageBox to TipsBox)
 Tl  = title
 Tg  = tag
 Tp, Tpc = topic
 Trt = threat
 Tru = trust
 Tsk = task
-Ttl = title,  no just Tl   RENAME
-Txt = text,   no just Tx   RENAME
+Ttl = title,  or just Tl?
+Txt = text,   or just Tx?
 Tr  = Trust,  eg. TrLv = trust level NO change to Tru & Trt
 Tx  = text (tx = transaction is only server side)
 Typ = type
+U   = user
 Un  = username
 Upl = upload
 Vb  = verbose, instead of Fat (and Thin) data?

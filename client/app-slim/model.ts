@@ -429,9 +429,11 @@ interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
   restrictedCategories: Category[];
   // groupsMaySee: Group[]; // groups oneself may see [305STGW2]
 
-  pageHelpMessage?: HelpMessage;
+  // Legacy: REMOVE
   closedHelpMessages: { [id: string]: number };  // id --> closed version of message   — id or nr?
+  // Use instead, and rename to just 'tipsSeen':
   tourTipsSeen: TourTipsSeen;
+
   uiPrefsOwnFirst: UiPrefs[];
 
   myGroupIds: UserId[];
@@ -443,6 +445,9 @@ interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
 
   // So can avoid showing getting-started-guide for admins — it's not needed, for embedded comments sites.
   isEmbeddedCommentsSite?: boolean;
+
+  // To know if to show certain admin announcements.
+  siteCreatedAtMs?: WhenMs;
 
 
   effMaxUplBytes: Nr;

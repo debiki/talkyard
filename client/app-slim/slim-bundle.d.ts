@@ -113,6 +113,13 @@ declare namespace ed {
   }
 }
 
+
+// prelude.ts:
+
+declare function isServerSide(): Bo;
+declare function isSelfHosted(): Bo;
+
+
 // In other files:
 
 declare namespace debiki2 {
@@ -196,6 +203,7 @@ declare namespace debiki2 {
   namespace help {
     var HelpMessageBox;
     function isHelpMessageClosedAnyVersion(store: Store, messageId: string): boolean;
+    function getServerAnnouncements(store: Store): RElm;
   }
 
   namespace topbar {

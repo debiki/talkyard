@@ -20,8 +20,25 @@ package debiki
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import java.{util => ju}
-import org.scalactic.{Bad, Or}
+import org.scalactic.{Good, Or, Bad}
 import play.api.libs.json._
+
+
+
+// Move to  talkyard.server.parse.ParseText?
+object ParseText {
+  def parseFloat64(text: St, fieldName: St): f64 = {
+    try text.toDouble
+    catch {
+      case _: java.lang.NumberFormatException =>
+        // throwBadData instead?
+        JsonUtils.throwBadJson("TyE06MPGN2", s"Field $fieldName is not a number")
+      case _: java.lang.NullPointerException =>
+        JsonUtils.throwBadJson("TyE06MPGN3", s"Field $fieldName is null")
+    }
+  }
+}
+
 
 
 /** Parses JSON. Throws human friendly IllegalArgumentException:s. Is,a bit more concise
@@ -38,6 +55,14 @@ object JsonUtils {
 
   def tryParseGoodBad[R](block: => R Or ErrMsg): R Or ErrMsg = {
     try block
+    catch {
+      case ex: BadJsonException =>
+        Bad(ex.getMessage)
+    }
+  }
+
+  def tryParse[R](block: => R): R Or ErrMsg = {
+    try Good(block)
     catch {
       case ex: BadJsonException =>
         Bad(ex.getMessage)
@@ -123,10 +148,12 @@ object JsonUtils {
 
 
   def parseSt(json: JsValue, fieldName: St, altName: St = ""): St =
-    parseOptSt(json, fieldName, altName) getOrElse throwMissing("TyE5S204RTE", fieldName)
+    parseOptSt(json, fieldName, altName) getOrElse throwMissing(
+          "TyE5S204RTE", fieldName)
 
-  def readString(json: JsValue, fieldName: String): String =
-    readOptString(json, fieldName) getOrElse throwMissing("EsE7JTB3", fieldName)
+  def readString(json: JsValue, fieldName: St, maxLen: i32 = -1): St =
+    readOptString(json, fieldName, maxLen = maxLen) getOrElse throwMissing(
+          "EsE7JTB3", fieldName)
 
 
   /** If noneIfLongerThan is >= 0, returns None if the value is longer than that.
@@ -148,15 +175,24 @@ object JsonUtils {
     anySt
   }
 
-  def readOptString(json: JsValue, fieldName: St, altName: St = ""): Opt[St] = {
-    val primaryResult = readOptStringImpl(json, fieldName)
+  def readOptString(json: JsValue, fieldName: St, altName: St = "",
+          maxLen: i32 = -1): Opt[St] = {
+    val primaryResult = readOptStringImpl(json, fieldName, maxLen = maxLen)
     if (primaryResult.isDefined || altName.isEmpty) primaryResult
-    else readOptStringImpl(json, altName)
+    else readOptStringImpl(json, altName, maxLen = maxLen)
   }
 
-  private def readOptStringImpl(json: JsValue, fieldName: String): Option[String] =
+  private def readOptStringImpl(json: JsValue, fieldName: St, maxLen: i32 = -1)
+          : Opt[St] =
     (json \ fieldName).validateOpt[String] match {
-      case JsSuccess(value, _) => value.map(_.trim)
+      case JsSuccess(value, _) =>
+        value map { textUntrimmed =>
+          val text = textUntrimmed.trim
+          throwBadJsonIf(0 <= maxLen && maxLen < text.length,
+                "TyE7MW3RMJ5", s"'$fieldName' is too long: ${text.length
+                } chars, only $maxLen allowed")
+          text
+        }
       case JsError(errors) =>
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.
         throwBadJson("EsE5GUMK", s"'$fieldName' is not a string: " + errors.toString())
@@ -276,7 +312,11 @@ object JsonUtils {
     }
 
 
-  def parseBo(json: JsValue, fieldName: St, default: Bo): Bo =
+  def parseBo(json: JsValue, fieldName: St, default: Opt[Bo] = None): Bo =
+    readOptBool(json, fieldName).orElse(default) getOrElse throwMissing(
+          "TyE603MFE67", fieldName)
+
+  def parseBoDef(json: JsValue, fieldName: St, default: Bo): Bo =
     readOptBool(json, fieldName) getOrElse default
 
   def readBoolean(json: JsValue, fieldName: String): Boolean =
@@ -335,7 +375,10 @@ object JsonUtils {
     }
   }
 
-  private def throwBadJson(errorCode: String, message: String) =
+  private def throwBadJsonIf(test: => Bo, errCode: St, message: St): U =
+    if (test) throwBadJson(errCode, message)
+
+  def throwBadJson(errorCode: String, message: String) =
     throw new BadJsonException(s"$message [$errorCode]")
 
 

@@ -148,7 +148,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
         should start with: ${Hostname.E2eTestPrefix}""")
 
     if (isTestSiteOkayToDelete && Hostname.isE2eTestHostname(hostname)) {
-      globals.systemDao.deleteSitesWithNameAndHostnames(
+      globals.systemDao.deleteSitesWithNameOrHostnames(
           siteName = localHostname, hostnames = Set(hostname))
     }
 
@@ -242,6 +242,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     request.systemDao.writeTxLockAllSites { tx =>
       tx.deleteAnyHostname(localHostname)
     }
+    request.systemDao.forgetHostname(localHostname)
     Ok
   }
 

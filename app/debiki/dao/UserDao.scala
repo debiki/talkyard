@@ -18,7 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.EdHttp.{throwBadRequest, throwBadRequestIf, throwForbidden, throwForbiddenIf, throwNotFound}
+import debiki.EdHttp._
 import debiki.JsonMaker.NotfsAndCounts
 import ed.server.security.{BrowserId, ReservedNames, SidStatus}
 import java.{util => ju}
@@ -109,7 +109,7 @@ trait UserDao {
           emailAddrBeforeAt, allowDotDash = false, tx.isUsernameInUse) getOrElse {
         // This means couldn't generate a username. That'd be impossibly bad luck, since we
         // try with random numbers of size up to 10^19 many times.
-        throwBadRequest("TyEBADLUCK", o"""Couldn't generate a unique username. Reload the page
+        throwBadReq("TyEBADLUCK", o"""Couldn't generate a unique username. Reload the page
             to try again, and I wish you good luck""")
       }
 
@@ -1601,16 +1601,36 @@ trait UserDao {
   }
 
 
-  def rememberTourTipsSeen(user: Pat, anyTourTipsSeen: Opt[TourTipsSeen]): U = {
+  def toggleTips(user: Pat, anyTipsSeen: Opt[TourTipsId], hide: Bo,
+          onlyAnnouncements: Bo): U = {
     require(user.isMember, "TyE5AKR5J") // see above [8PLKW46]
     if (user.id < LowestTalkToMemberId)
-      return
-    readWriteTransaction { tx =>
-      val statsBefore = tx.loadUserStats(user.id) getOrDie "TyEZ4KKJ5"
-      val statsAfter = statsBefore.addMoreStats(UserStats(
-        userId = user.id,
-        tourTipsSeen = anyTourTipsSeen))
-      tx.upsertUserStats(statsAfter)
+      return ()
+    writeTx { (tx, staleStuff) =>
+      val dataBefore = tx.loadUserStats(user.id) getOrDie "TyEZ4KKJ5"
+      val dataAfter =
+            if (hide) {
+              throwBadReqIf(onlyAnnouncements, "TyE03MSM57")
+              throwBadReqIf(anyTipsSeen.isEmpty, "TyE03MSM58")
+              dataBefore.addMoreStats(UserStats(
+                    userId = user.id, tourTipsSeen = Some(anyTipsSeen.toVector)))
+            }
+            else {
+              // Then, un-hide.
+              throwBadReqIf(anyTipsSeen.isDefined,
+                    "TyE760GEM35", "Cannot un-hide individual tips")
+              if (onlyAnnouncements) {
+                // Un-hide all server announcements, that is, remove all announcement
+                // tips ids, /^SAn_/, from the tips-seen list.
+                dataBefore.filterTipsSeen(tipsPrefix = "SAn_", keep = false)
+              }
+              else {
+                // Un-hide everything except for announcements.
+                dataBefore.filterTipsSeen(tipsPrefix = "SAn_", keep = true)
+              }
+            }
+      tx.upsertUserStats(dataAfter)
+      staleStuff.addPatDynData(user.id, memCacheOnly = true)
     }
   }
 

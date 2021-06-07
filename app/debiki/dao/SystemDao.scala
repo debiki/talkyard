@@ -245,7 +245,7 @@ class SystemDao(
     * deadlocks if the transaction here deletes the site, but another request
     * tries to update the same site, in a parallel transaction.
     */
-  def deleteSitesWithNameAndHostnames(siteName: String, hostnames: Set[String]): Unit = {
+  def deleteSitesWithNameOrHostnames(siteName: St, hostnames: Set[St]): U = {
     dieIfAny(hostnames, (h: String) => !Hostname.isE2eTestHostname(h), "TyE7PK5W8",
       (badName: String) => s"Not an e2e test hostname: $badName")
 

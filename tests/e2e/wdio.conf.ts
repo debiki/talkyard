@@ -499,28 +499,28 @@ const config: WebdriverIO.Config = {
       oneBrowser.debug();
     }
     else if (settings.sloooooooow) {
-      oneBrowser.pause(10000);
+      oneBrowser.pause(9000);
     }
     else if (settings.slooooooow) {
-      oneBrowser.pause(8000);
+      oneBrowser.pause(6500);
     }
     else if (settings.sloooooow) {
-      oneBrowser.pause(6000);
+      oneBrowser.pause(4500);
     }
     else if (settings.slooooow) {
-      oneBrowser.pause(5000);
-    }
-    else if (settings.sloooow) {
-      oneBrowser.pause(4000);
-    }
-    else if (settings.slooow) {
       oneBrowser.pause(3000);
     }
-    else if (settings.sloow) {
+    else if (settings.sloooow) {
       oneBrowser.pause(2000);
     }
-    else if (settings.slow) {
+    else if (settings.slooow) {
+      oneBrowser.pause(1500);
+    }
+    else if (settings.sloow) {
       oneBrowser.pause(1000);
+    }
+    else if (settings.slow) {
+      oneBrowser.pause(500);
     }
   },
 

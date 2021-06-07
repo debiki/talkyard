@@ -1580,8 +1580,8 @@ export function page_depthFirstWalk(page: Page, posts: Post[],
 
 export function page_deletePostInPlace(page: Page, post: Post) {
   delete page.postsByNr[post.nr];
-  arr_deleteInPlace(page.parentlessReplyNrsSorted, post.nr);
-  arr_deleteInPlace(page.progressPostNrsSorted, post.nr);
+  arr_delInPlace(page.parentlessReplyNrsSorted, post.nr);
+  arr_delInPlace(page.progressPostNrsSorted, post.nr);
   page_removeFromParentInPlace(page, post);
 }
 
@@ -1589,7 +1589,7 @@ export function page_deletePostInPlace(page: Page, post: Post) {
 export function page_removeFromParentInPlace(page: Page, post: Post) {
   const parent = page.postsByNr[post.parentNr];
   if (parent && parent.childNrsSorted) {
-    arr_deleteInPlace(parent.childNrsSorted, post.nr);
+    arr_delInPlace(parent.childNrsSorted, post.nr);
   }
 }
 
