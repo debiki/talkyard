@@ -47,7 +47,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   // "Code review: Auto https ...", Mars 20, 2021, in talkyard-prod-one.
   const autoLuaCertFromMs = 1616112000 * 1000 // 2021-03-19 00:00:00Z
   const maybeCertBug =
-      /*isSelfHosted() &&*/ me.siteCreatedAtMs && autoLuaCertFromMs < me.siteCreatedAtMs;
+      isSelfHosted() && me.siteCreatedAtMs && autoLuaCertFromMs < me.siteCreatedAtMs;
   let certBugAnn: RElm | Nl = !maybeCertBug ? null :
       help.HelpMessageBox({ message: {
           // SAn = Server Announcement, RnCt = Renew HTTPS Certificate tips nr 1.
@@ -56,7 +56,8 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
             r.p({},
               r.b({}, "Action required:"), " For HTTPS cert to get renewed, " +
               "clear the Redis cache — read more at ",
-              ExtVerbLink('https://www.talkyard.io/-123/something'),  // !
+              ExtVerbLink(
+                  'https://www.talkyard.io/-565/self-hosted-bug-auto-cert-renewal'),
               " (this is because of a Talkyard bug)."),
             ThisShownToAdminsOnly()),
       } });
