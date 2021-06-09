@@ -138,8 +138,8 @@ package object core {
   val NoCategoryId = 0
 
   // The Discourse help forum currently has 28 categories so 100 is a lot.
-  SHOULD // make this configurable, per site.  Now needs > 100
-  val MaxCategories = 300
+  SHOULD // make this configurable, per site.  Now needs > 100  [dynamic_max_limits]
+  val MaxCategories = 500
 
   type PubSiteId = String
 
