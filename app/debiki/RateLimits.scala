@@ -37,7 +37,7 @@ object LengthLimits {
 
   // Lowercase — late on, won't be a constant, but loaded from the database.
   // [dynamic_max_limits]
-  val maxPermsPerSite = 840 // was: 200
+  val maxPermsPerSite = 1000 // was: 200
 
   val maxCustomGroups = 21
   val maxGroupsMemberCanJoin = 25

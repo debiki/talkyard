@@ -9,7 +9,7 @@ Instead of this file, maybe use a combination of:
  (- https://git-scm.com/docs/git-notes? )
  (- https://github.com/google/git-appraise )
 
-[dynamic_max_limits]
+[dynamic_max_limits][rate_limits]
 SHOULD NEXT: Make these limits configurable at runtime, and trigger superadmin notifications
 when exceeded 50%, so can review and bump. And warnings if exceeds 75%, 90%.
 
