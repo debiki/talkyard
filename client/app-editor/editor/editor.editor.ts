@@ -189,6 +189,12 @@ export const Editor = createFactory<any, EditorState>({
     this.setState({ store: debiki2.ReactStore.allData() });
   },
 
+  onManualScroll: function() {
+    // Then stop auto scrolling.
+    // Start again, if pat clicks the Show Preview button?
+    delete this.scrollToPreview;
+  },
+
   UNSAFE_componentWillMount: function() {
     // Sync delay w e2e test. Dupl code. [upd_ed_pv_delay]
     this.updatePreviewSoon = _.debounce(this.updatePreviewNow, 333);
@@ -213,6 +219,10 @@ export const Editor = createFactory<any, EditorState>({
     // what's in focus? And instead show a tips if pat focuses the obviously wrong
     // thing?  E.g. tries to paste an image in the search field?  See this.onPaste().
     window.addEventListener('paste', this.onPaste, false);
+
+    Bliss.bind(window, {
+      'touchmove wheel': this.onManualScroll,
+    });
 
     // Don't scroll the main discussion area, when scrolling inside the editor.
     /* Oops this breaks scrolling in the editor and preview.
@@ -240,6 +250,9 @@ export const Editor = createFactory<any, EditorState>({
     logD("Editor: componentWillUnmount");
     window.removeEventListener('unload', this.saveDraftUseBeacon);
     window.removeEventListener('paste', this.onPaste);
+    Bliss.unbind(window, {
+      'touchmove wheel': this.onManualScroll,
+    });
     this.saveDraftNow();
   },
 
@@ -1132,7 +1145,6 @@ export const Editor = createFactory<any, EditorState>({
     // and only args from the last invokation are sent — so any scrollToPreview = true
     // argument, could get "debounce-overwritten".
     const scrollToPreview = this.scrollToPreview;
-    delete this.scrollToPreview;
 
     // (COULD verify still edits same post/thing, or not needed?)
     const isEditingBody = state.editingPostNr === BodyNr;
@@ -1977,6 +1989,7 @@ export const Editor = createFactory<any, EditorState>({
               onClick: (event) => {
                 event.preventDefault();
                 ReactActions.scrollAndShowPost(editingPostNr);
+                this.scrollToPreview = true;
               }},
             t.e.EditPost_2 + editingPostNr + ':'));
     }
@@ -2089,8 +2102,12 @@ export const Editor = createFactory<any, EditorState>({
                 r.a({
                   onMouseEnter: () => ReactActions.highlightPost(replToPostNr, true),
                   onMouseLeave: () => ReactActions.highlightPost(replToPostNr, false),
-                  onClick: !replToPost ? undefined : function() {
+                  onClick: !replToPost ? undefined : () => {
                     ReactActions.scrollAndShowPost(replToPost);
+                    // Stop auto scrolling the preview into view — since pat
+                    // apparently wants to view the post hen is replying to.
+                    // (If clicking Show Preview, we'll resume auto scrolling into view.)
+                    this.scrollToPreview = false;
                   }},
                   replyingToWhat)));
           }),
@@ -2272,6 +2289,8 @@ export const Editor = createFactory<any, EditorState>({
           isEditingBody: state.editingPostNr === BodyNr,
           isChat: page_isChat(editorsPageType),
         });
+        // Also resume auto-scrolling the preview into view, if typing more text.
+        this.scrollToPreview = true;
       },
     };
 

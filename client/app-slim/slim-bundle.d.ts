@@ -6,6 +6,8 @@
 
 declare const t: TalkyardTranslations;
 
+declare const Bliss: any;
+
 
 // In constants.ts:
 

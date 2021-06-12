@@ -1237,29 +1237,36 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
       return aPos < bPos
     } */
 
-    const onlyOneIsPreview = postA.isPreview !== postB.isPreview;
+    //const onlyOneIsPreview = postA.isPreview !== postB.isPreview;
 
     // Place append-at-the-bottom posts at the bottom, sorted by time.
-    const aLast = postA.postType === PostType.BottomComment || postA.postType === PostType.MetaMessage;
-    const bLast = postB.postType === PostType.BottomComment || postB.postType === PostType.MetaMessage;
+    // And preview posts too for now.
+    function shouldBeLast(p: Post): Bo {
+      return p.postType === PostType.BottomComment ||
+            p.postType === PostType.MetaMessage || p.isPreview;
+    }
+
+    const aLast = shouldBeLast(postA);
+    const bLast = shouldBeLast(postB);
     if (!aLast && bLast)
       return -1;
     if (aLast && !bLast)
       return +1;
     if (aLast && bLast) {
-      // Show any preview at the very bottom, that's where the post will later appear.
+      /* Show any preview at the very bottom, that's where the post will later appear.
       if (onlyOneIsPreview)
         return postA.isPreview ? +1 : -1;
-      else
-        return postAppearedBefore(postA, postB)
+      else */
+      return postAppearedBefore(postA, postB)
     }
 
-    // Show any preview post first, directly below the post it replies to — then,
+    /* Show any preview post first, directly below the post it replies to — then,
     // it's simpler to see what post one is replying to. Even though the reply maybe
     // won't appear at that exact location (maybe there're other replies with more
     // like votes to show first).
     if (onlyOneIsPreview)
       return postA.isPreview ? -1 : +1;
+    */
 
     // Place deleted posts last; they're rather uninteresting?
     if (!isDeleted(postA) && isDeleted(postB))
@@ -1346,6 +1353,12 @@ function postAppearedBefore(postA: Post, postB: Post): number {
   if (postAApprAt < postBApprAt) return -1;
   if (postAApprAt > postBApprAt) return +1;
   */
+
+  // Place previews last, since they don't even exist, yet.
+  // (There should be just one preview post visible at a time.)
+  if (postA.isPreview != postB.isPreview)
+    return postA.isPreview ? +1 : -1;
+
   return postA.nr < postB.nr ? -1 : +1;
 }
 
