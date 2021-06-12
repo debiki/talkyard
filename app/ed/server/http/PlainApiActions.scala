@@ -255,7 +255,13 @@ class PlainApiActions(
           dao: SiteDao, settings: AllSettings,
           authHeaderValue: String, block: ApiRequest[A] => Future[Result]): Future[Result] = {
       val usernamePasswordBase64Encoded = authHeaderValue.replaceFirst("Basic ", "")
-      val decodedBytes: Array[Byte] = acb.Base64.decodeBase64(usernamePasswordBase64Encoded)
+      val decodedBytes: Array[Byte] =
+            try acb.Base64.decodeBase64(usernamePasswordBase64Encoded)
+            catch {
+              case ex: IllegalArgumentException =>
+                throwBadReq("TyEAPIBASE64", o"""Error decoding Basic Authentication
+                      Base64 encoded username:password: ${ex.getMessage}""")
+            }
       val usernameColonPassword = new String(decodedBytes, "UTF-8")
       val (username, colonPassword) = usernameColonPassword.span(_ != ':')
       val secretKey = colonPassword.drop(1)
