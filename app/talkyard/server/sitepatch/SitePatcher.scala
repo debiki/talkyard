@@ -19,7 +19,7 @@ package talkyard.server.sitepatch
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import debiki.dao.CatAlgs
+import debiki.dao.{CatAlgs, UseTx}
 import debiki.EdHttp._
 import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PageDao, PagePartsDao, SettingsDao, SiteDao}
@@ -54,6 +54,7 @@ case class SitePatcher(globals: debiki.Globals) {
     var wroteToDatabase = false
 
     val sectionPagePaths = dao.readWriteTransaction { tx =>
+      val limits = dao.getMaxLimits(UseTx(tx))
 
       // Posts link to pages, and Question type pages link to the accepted answer post,
       // that is, can form foreign key cycles.  And a root category links to the section
@@ -689,10 +690,10 @@ case class SitePatcher(globals: debiki.Globals) {
         categoriesInDbById.get(realId).isEmpty
       })
       val numOldCats = categoriesInDb.size
-      throwForbiddenIf(numOldCats + numNewCats > MaxCategories,
-        "TyE05RKSDJ2", s"Too many categories: There are already $numOldCats categories, and " +
-          s"creating $numNewCats new categories, would result in more than $MaxCategories " +
-          "categories (the upper limit as of now).")
+      throwForbiddenIf(numOldCats + numNewCats > limits.maxCategories,
+        "TyE05RKSDJ2", o"""Too many categories: There are already $numOldCats categories;
+          importing $numNewCats more, would result in more than ${limits.maxCategories}
+          categories (the upper limit as of now).""")
 
       // This var is just for better error messages.
       var anyFirstUpsCat: Opt[Cat] = None

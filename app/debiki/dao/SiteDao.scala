@@ -185,10 +185,17 @@ class SiteDao(
           thePubSiteId())
   }
 
+
   def notfGenerator(tx: SiteTransaction) =
     NotificationGenerator(tx, this, context.nashorn, globals.config)
 
-  def getLengthLimits(): debiki.LengthLimits.type = debiki.LengthLimits
+
+  def getMaxLimits(cacheOrTx: CacheOrTx): MaxLimits = {
+    val site = cacheOrTx.anyTx.flatMap(_.loadSite()) getOrElse getSite().getOrDie(
+          "TyE60MSEH257")
+    MaxLimits.Default.multByMultipliers(site)
+  }
+
 
   import context.security.throwIndistinguishableNotFound
 
@@ -209,7 +216,9 @@ class SiteDao(
     }
   }
 
-  private def uncacheSiteFromMemCache(): Unit = {
+  RENAME // to uncacheSiteEntryFromMemCache? So it's clear that it's not all
+  // site contents get uncached?
+  def uncacheSiteFromMemCache(): U = {
     val thisSite = memCache.lookup[Site](thisSiteCacheKey)
     memCache.remove(thisSiteCacheKey)
     thisSite.foreach(SystemDao.removeCanonicalHostCacheEntries(_, memCache))
@@ -232,6 +241,8 @@ class SiteDao(
 
 
   def writeTx[R](retry: Boolean = false, allowOverQuota: Boolean = false)(
+          // maybe incl  lims = getMaxLimits(UseTx(tx))  too? Always needed, right?
+          // And a class  TxCtx(tx, maxLimits, rateLimits, staleStuff) ?
           fn: (SiteTransaction, StaleStuff) => R): R = {
     dieIf(retry, "TyE403KSDH46", "writeTx(retry = true) not yet impl")
 

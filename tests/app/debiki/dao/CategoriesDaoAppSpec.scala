@@ -34,6 +34,7 @@ class CategoriesDaoAppSpec extends DaoAppSuite(
   var curDaoMaybeStale: SiteDao = _
   var daoStale: Bo = false
 
+// Dupl code, use TestSiteAndDao instead.
   def daoSite1: SiteDao = {
     if (curDaoMaybeStale eq null) {
       globals.systemDao.getOrCreateFirstSite()

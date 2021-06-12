@@ -28,6 +28,7 @@ import scala.util.matching.Regex
 
 object TagsDao {
   val MinTagLength = 2
+  // Later: Use MaxLimits, instead of hardcoding here.
   val MaxNumTags = 200
   val MaxTagLength = 30
 

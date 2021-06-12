@@ -110,7 +110,17 @@ case class SuperAdminSitePatch(
   readLimitsMultiplier: Opt[f32],
   logLimitsMultiplier: Opt[f32],
   createLimitsMultiplier: Opt[f32],
-  featureFlags: St)
+  featureFlags: St) {
+
+  def forSite(siteId: SiteId): SuperAdminSitePatch = copy(siteId = siteId)
+}
+
+
+object SuperAdminSitePatch {
+  def empty(siteId: SiteId = NoSiteId): SuperAdminSitePatch =
+    SuperAdminSitePatch(
+          siteId = siteId, SiteStatus.Active, None, None, None, None, None, None, "")
+}
 
 
 object SiteStatus {
@@ -188,6 +198,13 @@ trait SiteIdHostnames {
 }
 
 
+trait SiteLimitsMultipliers {
+  def readLimitsMultiplier: Opt[f32]
+  def logLimitsMultiplier: Opt[f32]
+  def createLimitsMultiplier: Opt[f32]
+}
+
+
 case class Site(  // Remove? Use SiteBrief or SiteDetailed instead?
   id: SiteId,
   pubId: PubSiteId,
@@ -196,7 +213,11 @@ case class Site(  // Remove? Use SiteBrief or SiteDetailed instead?
   name: String,
   createdAt: When,
   creatorIp: String,
-  hostnames: Vector[Hostname]) extends SiteIdHostnames {
+  hostnames: Vector[Hostname],
+  readLimitsMultiplier: Opt[f32],
+  logLimitsMultiplier: Opt[f32],
+  createLimitsMultiplier: Opt[f32],
+  ) extends SiteIdHostnames with SiteLimitsMultipliers {
 
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)

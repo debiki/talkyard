@@ -496,6 +496,18 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     else result.toShort
   }
 
+  def clampToInt(value: f64): i32 = {
+    if (value >= Int.MaxValue.toDouble) return Int.MaxValue
+    if (value <= Int.MinValue.toDouble) return Int.MinValue
+    clampToInt(value.toLong)
+  }
+
+  def clampToInt(value: i64): i32 = {
+    if (value >= Int.MaxValue) Int.MaxValue
+    else if (value <= Int.MinValue) Int.MinValue
+    else value.toInt
+  }
+
   def anyMaxDate(a: Option[ju.Date], b: Option[ju.Date]): Option[ju.Date] = {
     if (a.isEmpty) b
     else if (b.isEmpty) a

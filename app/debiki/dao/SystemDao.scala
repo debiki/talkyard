@@ -156,34 +156,54 @@ class SystemDao(
     readOnlyTransaction(_.loadSitesByIds(Seq(siteId)).headOption)
 
 
-  def updateSites(sites: Seq[SuperAdminSitePatch]): U = {
+  def updateSites(patches: Seq[SuperAdminSitePatch]): U = {
     val sitesToClear = mutable.Set[SiteId]()
-    for (patch <- sites) {
-      val anySiteInDb = loadSiteInclDetailsById(patch.siteId)
-      val needToRefresh = anySiteInDb forall { siteInDb =>
-        throwForbiddenIf(siteInDb.isPurged && !patch.newStatus.isPurged,
-              "TyE503MREG2R5", s"Site already purged, cannot undo")
-        throwForbiddenIf(patch.siteId == globals.defaultSiteId &&
-              patch.newStatus.isMoreDeletedThan(siteInDb.status),
-              "TyEJ406RFMG24", s"Cannot delete or purge the default site")
-        siteInDb.status != patch.newStatus ||
-            // Maybe not always necessary, but for now:
-            siteInDb.featureFlags != patch.featureFlags
-      }
-      if (needToRefresh) {
-        sitesToClear.add(patch.siteId)
+    val siteEntriesToClear = mutable.Set[SiteId]()
+    for (patch <- patches) {
+      loadSiteInclDetailsById(patch.siteId) match {
+        case None =>
+          // Maybe some e2e test fails, if the site is somehow still in
+          // the mem cache, although gone from the db.  So, clear the mem
+          // cache, for this site. (Don't think this can happen in prod mode though.)
+          sitesToClear.add(patch.siteId)
+        case Some(siteInDb) =>
+          throwForbiddenIf(siteInDb.isPurged && !patch.newStatus.isPurged,
+                "TyE503MREG2R5", s"Site already purged, cannot undo")
+          throwForbiddenIf(patch.siteId == globals.defaultSiteId &&
+                patch.newStatus.isMoreDeletedThan(siteInDb.status),
+                "TyEJ406RFMG24", s"Cannot delete or purge the default site")
+
+          val clearWholeSite: Bo = siteInDb.status != patch.newStatus ||
+                // Maybe not always necessary, but for now:
+                siteInDb.featureFlags != patch.featureFlags
+          if (clearWholeSite) {
+            sitesToClear.add(patch.siteId)
+          }
+
+          // Maybe break out fn?
+          val clearSiteEntry: Bo =
+                siteInDb.readLimitsMultiplier != patch.readLimitsMultiplier ||
+                siteInDb.logLimitsMultiplier != patch.logLimitsMultiplier ||
+                siteInDb.createLimitsMultiplier != patch.createLimitsMultiplier
+          if (!clearWholeSite && clearSiteEntry) {
+            siteEntriesToClear.add(patch.siteId)
+          }
       }
     }
+
     COULD_OPTIMIZE // clearDatabaseCacheAndMemCache() does:
     // `readWriteTransaction(_.bumpSiteVersion())`, but could instead pass
     // a param `bumpSiteVersion = true` to updateSite(), so won't need
     // two separate transactions.
-    for (site <- sites) {
+    for (patch <- patches) {
       writeTxLockAllSites(
-            _.updateSite(site))
+            _.updateSite(patch))
     }
     for (siteId <- sitesToClear) {
       globals.siteDao(siteId).clearDatabaseCacheAndMemCache()
+    }
+    for (siteId <- siteEntriesToClear) {
+      globals.siteDao(siteId).uncacheSiteFromMemCache()
     }
   }
 

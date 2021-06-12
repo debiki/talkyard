@@ -1099,15 +1099,17 @@ trait UserDao {
         throwForbidden("TyEGSTINGR", s"Cannot add guests to groups. Is a guest: ${guest.nameParaId}")
       }
 
+      val maxLimits = getMaxLimits(UseTx(tx))
+
       // For now. Don't let a group become too large.
       val oldMemberIds = tx.loadGroupMembers(groupId).map(_.id).toSet
       val allMemberIdsAfter = oldMemberIds ++ memberIdsToAdd
-      val maxMembers = getLengthLimits().maxMembersPerCustomGroup
+      val maxMembers = maxLimits.maxMembersPerCustomGroup
       throwForbiddenIf(allMemberIdsAfter.size > maxMembers,
         "TyE2MNYMBRS", s"Group $groupId would get more than $maxMembers members")
 
       // Don't allow adding someone to very many groups — that could be a DoS attack.
-      val maxGroups = getLengthLimits().maxGroupsMemberCanJoin
+      val maxGroups = maxLimits.maxGroupsMemberCanJoin
       val anyMemberInManyGroups = newMembers.find(member => {
         if (oldMemberIds.contains(member.id)) false
         else {
@@ -2059,8 +2061,9 @@ trait UserDao {
 
     val result = readWriteTransaction { tx =>
       // Too many groups could be a DoS attack.
+      val maxLimits = getMaxLimits(UseTx(tx))
       val currentGroups = tx.loadAllGroupsAsSeq()
-      val maxCustomGroups = getLengthLimits().maxCustomGroups
+      val maxCustomGroups = maxLimits.maxCustomGroups
       throwForbiddenIf(currentGroups.length >= maxCustomGroups + Group.NumBuiltInGroups,
         "TyE2MNYGRPS", s"Cannot create more than $maxCustomGroups custom groups")
 
