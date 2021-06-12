@@ -28,8 +28,11 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     var dao: SiteDao = null
     var admin: Participant = null
 
-    lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
-      Who(SystemUserId, browserIdData)).get.pagePath.pageId
+    lazy val forum: CreateForumResult =
+      dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
+            Who(SystemUserId, browserIdData)).get
+
+    lazy val forumId: PageId = forum.pagePath.pageId
 
     lazy val discussionId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Title"),
       textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
@@ -69,22 +72,76 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       dao.getPageMeta(htmlPageId).get.deletedAt mustBe None
     }
 
-    "moderators may delete discussions" in {
-      val moderator = createPasswordModerator(s"dltr_mod", dao)
 
-      dao.deletePagesIfAuth(Seq(discussionId), moderator.id, browserIdData, undelete = false)
-      dao.getPageMeta(discussionId).get.deletedAt mustBe defined
+    lazy val moderator = createPasswordModerator(s"dltr_mod", dao)
 
-      dao.deletePagesIfAuth(Seq(discussionId), moderator.id, browserIdData, undelete = true)
-      dao.getPageMeta(discussionId).get.deletedAt mustBe None
+    "moderators cannot delete pages they cannot see — pages not in the forum yet" in {
+      for (pageId <- Seq(discussionId, htmlPageId, otherPageId)) {
+        intercept[ResultException] {
+          dao.deletePagesIfAuth(
+                Seq(pageId), moderator.id, browserIdData, undelete = false)
+          dao.getPageMeta(discussionId).get.deletedAt mustBe defined
+        }.getMessage must include("TyEM0SEEPG_")
+      }
+    }
 
+    lazy val user = createPasswordUser(s"dltr_mbr", dao)
+
+    "non-staff also may not delete pages they cannot see" in {
       intercept[ResultException] {
-        dao.deletePagesIfAuth(Seq(forumId), moderator.id, browserIdData, undelete = false)
-      }.getMessage must include("EsE5GKF23_")
+        dao.deletePagesIfAuth(Seq(discussionId), user.id, browserIdData, undelete = false)
+      }.getMessage must include("TyEM0SEEPG_")
+    }
 
-      intercept[ResultException] {
-        dao.deletePagesIfAuth(Seq(htmlPageId), moderator.id, browserIdData, undelete = false)
-      }.getMessage must include("EsE5GKF23_")
+    def moveToCat(pageId: PageId, catId: CatId): U = {
+      val pageBefore = dao.getPageMeta(pageId).get
+      val pageInCat = pageBefore.copy(categoryId = Some(catId))
+      dao.writeTx { (tx, _) =>
+        tx.updatePageMeta(pageInCat, oldMeta = pageBefore, markSectionPageStale = true)
+      }
+    }
+
+    "An admin moves the pages into the forum staff cat, so mods can see them" in {
+      moveToCat(discussionId, forum.staffCategoryId)
+      moveToCat(forumId, forum.staffCategoryId)
+      moveToCat(htmlPageId, forum.staffCategoryId)
+      // But not other-page-id.
+    }
+
+
+    "now mods can delete discussions — they may now see them" - {
+      "delete page" in {
+        dao.deletePagesIfAuth(
+              Seq(discussionId), moderator.id, browserIdData, undelete = false)
+        dao.getPageMeta(discussionId).get.deletedAt mustBe defined
+      }
+
+      "undelete page" in {
+        dao.deletePagesIfAuth(
+              Seq(discussionId), moderator.id, browserIdData, undelete = true)
+        dao.getPageMeta(discussionId).get.deletedAt mustBe None
+      }
+
+      "still cannot delete the *other* page, it's still not in the forum" in {
+        intercept[ResultException] {
+          dao.deletePagesIfAuth(
+                Seq(otherPageId), moderator.id, browserIdData, undelete = false)
+        }.getMessage must include("TyEM0SEEPG_")
+      }
+
+      "cannot delete forum" in {
+        intercept[ResultException] {
+          dao.deletePagesIfAuth(
+                Seq(forumId), moderator.id, browserIdData, undelete = false)
+        }.getMessage must include("EsE5GKF23_")
+      }
+
+      "cannot delete custom html page" in {
+        intercept[ResultException] {
+          dao.deletePagesIfAuth(
+                Seq(htmlPageId), moderator.id, browserIdData, undelete = false)
+        }.getMessage must include("EsE5GKF23_")
+      }
     }
 
     "do nothing if page doesn't exist" in {
@@ -94,13 +151,28 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       dao.getPageMeta(badPageId) mustBe None
     }
 
-    "non-staff may not delete" in {
-      val user = createPasswordUser(s"dltr_mbr", dao)
-      val discussionId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Title"),
-        textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
+    "non-staff users still cannot see the pages — they're in the staff cat" in {
       intercept[ResultException] {
         dao.deletePagesIfAuth(Seq(discussionId), user.id, browserIdData, undelete = false)
-      }.getMessage must include("EsE7YKP424_")
+      }.getMessage must include("TyEM0SEEPG_")
+    }
+
+    "An admin moves the disc page into a publ cat" in {
+      moveToCat(discussionId, forum.defaultCategoryId)
+    }
+
+    "non-staff can now see it — but still may not delete it" in {
+      intercept[ResultException] {
+        dao.deletePagesIfAuth(Seq(discussionId), user.id, browserIdData, undelete = false)
+      }.getMessage must include("TyEDELOTRSPG_")
+    }
+
+    "An admin sets the user as page author  TyTXAUT6920" in {
+      TESTS_MISSING
+    }
+
+    "Now the user can delete the page" in {
+      TESTS_MISSING
     }
   }
 

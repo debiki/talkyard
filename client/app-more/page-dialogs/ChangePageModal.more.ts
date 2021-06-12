@@ -77,7 +77,7 @@ const ChangePageDialog = createComponent({
     const store: Store = this.state.store;
     const settings: SettingsVisibleClientSide = store.settings;
     const me: Myself = store.me;
-    const isOwnPage = store_thisIsMyPage(store);
+    const isOwnPage = store_thisIsMyPage(store);  // [.store_or_state_pg]
     const isOwnOrStaff = isOwnPage || isStaff(me);
 
     let anyViewAnswerButton;
@@ -90,6 +90,8 @@ const ChangePageDialog = createComponent({
     let changeTopicTypeListItem;
     let closeListItem;
     let reopenListItem;
+    let deletePageListItem;
+    let undeletePageListItem;
 
     // Auto close the dialog after each change, otherwise people think
     // it's broken and are unsure if the changes took effect:
@@ -103,7 +105,13 @@ const ChangePageDialog = createComponent({
     };
 
     if (state.isOpen) {
-      const page: Page = state.page;
+      // CLEAN_UP use only one of  state.page and  store.currentPage!
+      // They're always the same, currently, but, still.
+      const page: Page = state.page;   // [.store_or_state_pg]
+      // @ifdef DEBUG
+      dieIf(page !== store.currentPage, 'TyE50MSED257');
+      // @endif
+
       // Ideas and Problems can be solved [tpc_typ_solv], and then
       // pat cannot change their doing status, unless un-selecting
       // the solution post.
@@ -214,6 +222,31 @@ const ChangePageDialog = createComponent({
                 t.pa.CloseTopic || t.Close),  // I18N remove  || ...  once translated
               r.div({ className: 'esExplDrp_ActIt_Expl' }, closeItemText)));
       }
+
+      if (page_isAncCatDeld(page)) {
+        // Then doesn't make sense to delete or undelete the page
+        // — when the whole category it's placed in, is deleted.
+      }
+      else if (store_canDeletePage(store)) {  // [.store_or_state_pg]
+        deletePageListItem = rFr({},
+            r.div({ className: 's_ExplDrp_Ttl' }, "Delete page" + '?'),  // I18N
+            r.div({ className: 's_ExplDrp_ActIt' },
+              Button({ className: 'e_DelPgB',
+                  onClick: () => {
+                    ReactActions.deletePages([page.pageId], this.close);
+                  } },
+                "Delete")));  // I18N
+      }
+      else if (store_canUndeletePage(store)) {  // [.store_or_state_pg]
+        undeletePageListItem = rFr({},
+            r.div({ className: 's_ExplDrp_Ttl' }, "Undelete page" + '?'),  // I18N
+            r.div({ className: 's_ExplDrp_ActIt' },
+              Button({ className: 'e_UndelPgB',
+                  onClick: () => {
+                    ReactActions.undeletePages([page.pageId], this.close);
+                  } },
+                "Undelete")));  // I18N
+      }
     }
 
     return (
@@ -230,6 +263,8 @@ const ChangePageDialog = createComponent({
         changeTopicTypeListItem,
         reopenListItem,
         closeListItem,
+        deletePageListItem,
+        undeletePageListItem,
         ));
   }
 });

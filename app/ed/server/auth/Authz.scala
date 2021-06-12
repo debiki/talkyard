@@ -477,11 +477,21 @@ object Authz {
     // down to the category in which the page is placed, and add/remove permissions along the way.
     // Move these pageMeta checks to 'Check page' above?
     val isForumPage = pageMeta.exists(_.pageType == PageType.Forum)
-    var isPageOrCatDeleted = pageMeta.exists(_.isDeleted)
+    val isPageDeleted = pageMeta.exists(_.isDeleted)
+    var isPageOrCatDeleted = isPageDeleted
 
     // Later: return may-not-see also if !published?
     if (isPageOrCatDeleted && !isStaff)
       return MayWhat.mayNotSee("TyEPAGEDELD_")
+    /* First add deleted_by_id field?
+    if (isPageDeleted && !isStaff) {
+      val deletedOwnPage = user exists { u =>
+        pageMeta.exists(p => p.authorId == u.id)
+              // later, add:  && p.deletedById.is(u.id)   [undel_pages]
+      }
+      if (!deletedOwnPage)
+        return MayWhat.mayNotSee("TyEPAGEDELD_")
+    } */
 
     // For now, hardcode may-see the forum page, otherwise only admins would see it.
     if (isForumPage) {

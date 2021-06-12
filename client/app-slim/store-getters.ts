@@ -152,19 +152,31 @@ export function store_getUsersHere(store: Store): UsersHere {
 }
 
 
-export function store_canDeletePage(store: Store): boolean {
+// -------
+// Also see:  store_isPageDeleted(store) and  page_isAncCatDeld(page),
+// maybe move those and these together?
+
+export function store_canDeletePage(store: Store): Bo {
   const page: Page = store.currentPage;
   // For now, don't let people delete sections = their forum — that just makes them confused.
   // Unless there are many sub communities — then let them delete all but one.
-  return !page.pageDeletedAtMs && isStaff(store.me) &&
-      page.pageRole && (!isSection(page.pageRole) || store_numSubCommunities(store) > 1);
+  // Sync w server side [who_del_pge]
+  const someoneCanDelete = !page.pageDeletedAtMs && page.pageRole && (
+          !isSection(page.pageRole) || store_numSubCommunities(store) > 1);
+  return someoneCanDelete && (
+          isStaff(store.me) || (
+          page_authorId(page) === store.me.id &&
+              page.numRepliesVisible == 0));
 }
 
 
-export function store_canUndeletePage(store: Store): boolean {
+export function store_canUndeletePage(store: Store): Bo {
   const page: Page = store.currentPage;
-  return !!page.pageDeletedAtMs && isStaff(store.me);
+  const pat = store.me;
+  return !!page.pageDeletedAtMs && (isStaff(pat) || page_authorId(page) === pat.id);
+                        // later, change to:  page.deletedById === pat.id
 }
+// -------
 
 
 //export function store_canSelectPosts(store: Store): boolean {

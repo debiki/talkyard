@@ -5978,14 +5978,19 @@ export class TyE2eTestBrowser {
         this.waitUntilGone('.dw-p-ttl .icon-block');
       },
 
-      canCloseOrReopen: (): boolean => {
+      canCloseOrReopen: (): Bo => {
+        return this.topic.__canSomething(() => {
+          return this.isVisible(this.topic._closeButtonSelector) ||
+                  this.isVisible(this.topic._reopenButtonSelector);
+        });
+      },
+
+      __canSomething: (fn: () => Bo): Bo => {
         this.waitForDisplayed('.dw-a-more'); // so all buttons have appeared
         if (!this.isVisible('.dw-a-change'))
           return false;
         this.topic.openChangePageDialog();
-        let result = false;
-        if (this.isVisible(this.topic._closeButtonSelector)) result = true;
-        else if (this.isVisible(this.topic._reopenButtonSelector)) result = true;
+        const result = fn();
         this.topic.closeChangePageDialog();
         return result;
       },
@@ -5998,6 +6003,30 @@ export class TyE2eTestBrowser {
 
       _closeButtonSelector: '.s_ChPgD .e_ClosePgB',
       _reopenButtonSelector: '.s_ChPgD .e_ReopenPgB',
+
+      deletePage: () => {
+        this.topic.openChangePageDialog();
+        this.waitAndClick(this.topic.__deletePageSelector);
+        this.topic.waitUntilChangePageDialogGone();
+        this.topic.waitUntilPageDeleted();
+      },
+
+      undeletePage: () => {
+        this.topic.openChangePageDialog();
+        this.waitAndClick(this.topic.__undeletePageSelector);
+        this.topic.waitUntilChangePageDialogGone();
+        this.topic.waitUntilPageRestored();
+      },
+
+      canDeleteOrUndeletePage: (): Bo => {
+        return this.topic.__canSomething(() => {
+          return this.isVisible(this.topic.__deletePageSelector) ||
+                  this.isVisible(this.topic.__undeletePageSelector);
+        });
+      },
+
+      __deletePageSelector: '.s_ChPgD .e_DelPgB',
+      __undeletePageSelector: '.s_ChPgD .e_UndelPgB',
 
       refreshUntilBodyHidden: (postNr: PostNr) => {  // RENAME to refreshUntilPostBodyHidden
         this.waitUntil(() => {

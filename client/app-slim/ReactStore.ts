@@ -830,17 +830,32 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     post.squash = oldVersion.squash;
     post.summarize = oldVersion.summarize;
   }
-  else if (!oldVersion && !post.isPreview) {
-    // Hmm, subtract instead, if oldVersion and isDeleted(post). Fix later...
+
+  if (post.isPreview) {
+    // Don't update num replies etc fields.
+  }
+  else if (oldVersion) {
+    if (post_isReply(post)) {
+      const wasVis = post_isPubVisible(oldVersion);
+      const isVis = post_isPubVisible(post);
+      const change = wasVis === isVis ? 0 : (isVis ? 1 : -1);
+      page.numPostsRepliesSection += change;  // CLEAN_UP; REMOVE  [prgr_chat_sect]
+      page.numRepliesVisible += change;
+    }
+  }
+  else {
     page.numPosts += 1;
     if (post.nr !== TitleNr) {
       page.numPostsExclTitle += 1;
     }
-    if (post.postType === PostType.Flat) {
+    if (post.postType === PostType.Flat) {  // CLEAN_UP; REMOVE  [prgr_chat_sect]
       page.numPostsChatSection += 1;
     }
-    else if (post.nr !== TitleNr && post.nr !== BodyNr) {
-      page.numPostsRepliesSection += 1;
+    if (post_isReply(post)) {
+      page.numPostsRepliesSection += 1;  // CLEAN_UP; REMOVE  [prgr_chat_sect]
+      if (post_isPubVisible(post)) {
+        page.numRepliesVisible += 1;
+      }
     }
   }
 

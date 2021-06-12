@@ -190,7 +190,7 @@ export const TitleBodyComments = createComponent({
       else {
         const isPageAuthor = bodyPost.authorId === me.id;
         if (isPageAuthor) {
-          if (page.numPostsRepliesSection) {
+          if (page.numRepliesVisible) {
             return { id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
               r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
                 "There's feedback for you"),
@@ -229,7 +229,7 @@ export const TitleBodyComments = createComponent({
                     location.assign('/give-me-a-task');
                   }}, title));
           }
-          if (page.numPostsRepliesSection) {
+          if (page.numRepliesVisible) {
             let feedbacks =
                 _.filter(_.values(page.postsByNr), (post: Post) => post.parentNr === BodyNr);
             const itsFeedbackByMe =

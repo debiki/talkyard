@@ -82,6 +82,7 @@ export function me_isStranger(me: Myself): boolean {
 }
 
 
+// RENAME to pat_maySendInvites(pat, store: StoreView_Settings): MayMayNot
 export function store_maySendInvites(store: Store, user: Myself | UserInclDetails): MayMayNot {
   if (store.settings.ssoUrl) {
     return mayMayNot(false, "SSO enabled");

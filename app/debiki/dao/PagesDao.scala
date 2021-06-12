@@ -586,16 +586,15 @@ trait PagesDao {
       // so all topics in the sub community will get deleted.
       // And remove the sub community from the watchbar's Communities section.
       // (And if undeleting the sub community, undelete the root category too.)
-      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete
-            )(tx, staleStuff)
+      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete)(tx, staleStuff)
     }
     refreshPagesInMemCache(pageIds.toSet)
   }
 
 
-  def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
-        undelete: Boolean = false)(
-        tx: SiteTx, staleStuff: StaleStuff): Unit = {
+  def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId,
+          browserIdData: BrowserIdData, undelete: Bo = false)(
+          tx: SiteTx, staleStuff: StaleStuff): U = {
 
     BUG; SHOULD // delete notfs or mark deleted?  [notfs_bug]  [nice_notfs]
     // But don't delete any review tasks — good if staff reviews, if a new
@@ -603,8 +602,6 @@ trait PagesDao {
     // Later, if undeleting, then restore the notfs? [undel_posts]
 
     val deleter = tx.loadTheParticipant(deleterId)
-    if (!deleter.isStaff)
-      throwForbidden("EsE7YKP424_", "Only staff may (un)delete pages")
 
     for {
       pageId <- pageIds
@@ -612,6 +609,24 @@ trait PagesDao {
       // Hmm but trying to delete a deleted *post*, throws an error. [5WKQRH2]
       if pageMeta.isDeleted == undelete
     } {
+      // Mods may not delete pages they cannot see — maybe admins have
+      // their own internal discussions.
+      throwIfMayNotSeePage(pageMeta, Some(deleter))(tx)
+
+      // Ordinary members may only delete their own pages, before others have replied.
+      // Sync with client side. [who_del_pge]
+      if (!deleter.isStaff) {
+        throwForbiddenIf(pageMeta.authorId != deleterId,
+                "TyEDELOTRSPG_", "May not delete other people's pages")
+        // When there are replies, the UX should send a request to delete the
+        // orig post only — but not the whole page. (Unless is staff, then can delete
+        // the whole page.)
+        // Later: Allow people to delete their own pages, if no one but themselves
+        // have replied.  [del_own_pg]
+        throwForbiddenIf(pageMeta.numRepliesVisible >= 1,
+                "TyEDELPGWRES", "May not delete pages with replies")
+      }
+
       if ((pageMeta.pageType.isSection || pageMeta.pageType == PageType.CustomHtmlPage) &&
           !deleter.isAdmin)
         throwForbidden("EsE5GKF23_", "Only admin may (un)delete sections and HTML pages")

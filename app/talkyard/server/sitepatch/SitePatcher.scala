@@ -1344,13 +1344,13 @@ case class SitePatcher(globals: debiki.Globals) {
         val pagePartsDao = PagePartsDao(pageMeta.pageId, settings, tx)
         PagePopularityDao.updatePagePopularity(pagePartsDao, tx)
         // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)
-        val numReplies = pagePartsDao.allPosts.count(_.isReply)
+        //val numReplies = pagePartsDao.allPosts.count(_.isReply)
         val correctMeta = pageMeta.copy(
 
           // Frequent posters, last approved reply by, and more?  forgotten here:
 
-          numRepliesVisible = numReplies,
-          numRepliesTotal = numReplies,
+          numRepliesVisible = pagePartsDao.numRepliesVisible,
+          numRepliesTotal = pagePartsDao.numRepliesTotal,
           numPostsTotal = pagePartsDao.numPostsTotal)
         tx.updatePageMeta(correctMeta, oldMeta = pageMeta, markSectionPageStale = true)
       }

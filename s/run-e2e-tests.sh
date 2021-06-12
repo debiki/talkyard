@@ -348,6 +348,8 @@ function runAllE2eTests {
   $r s/wdio --only drafts-chat-adv-ed.2browsers $args
   $r s/wdio --only drafts-delete $args
 
+  $r s/wdio --only delete-pages.2br $args
+
   $r s/wdio --only move-posts-same-page.2browsers $args
   $r s/wdio --only move-posts-other-page.2browsers $args
   # + delete-posts

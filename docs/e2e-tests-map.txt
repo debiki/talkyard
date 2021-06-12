@@ -680,7 +680,7 @@ post -
     bury –> sort order:  votes-and-best-first.test.ts
     unwanted –> karma:
     see who voted:
-  delete:
+  delete:  [.delposts]
   wikify:
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
   flag -   — also see (6JS3)
@@ -692,6 +692,8 @@ post -
     profile shown:
     ban guest:
     send message:
+  change author:
+            - TESTS_MISSING  TyTXAUT6920   plus, unimplemented
   submit reply, after having navigated to other page:
     should ask: "Jump back and view your new reply? It's on another page" [JMPBCK]
 
@@ -699,7 +701,7 @@ messages,
 private messages,
 direct messages:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
-  delete posts,
+  delete posts,  [.delposts]
   test email notf link:
           - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
   not searchable by the wrong people:
@@ -1054,13 +1056,25 @@ delete user:    NEXT was a bug, when deleted by admin
   deletes henself:
   deleted by admin:
 
-delete posts:
+delete posts:  [.delposts]
+            - delete-pages.2br  TyTE2EDELPG602.TyT602MREJ5
+  delete one's own:
+            - direct-messages-delete.2browsers.test.ts  TyT6036SKSSP
   cannot delete someone elses posts:
-          - direct-messages-delete.2browsers.test.ts  TyT05GKRD45
-  cannot delete one's own:
-          - direct-messages-delete.2browsers.test.ts  TyT6036SKSSP
+            - direct-messages-delete.2browsers.test.ts  TyT05GKRD45
   reply to deleted post:
-          - direct-messages-delete.2browsers.test.ts  TyT6026RSP3J  BUG [063KRTL64]
+            - direct-messages-delete.2browsers.test.ts  TyT6026RSP3J  BUG [063KRTL64]
+
+delete pages,
+undelete pages:
+  delete and undelete own page,
+  cannot delete other's pages,
+  cannot delete own pages with other's replies,
+  can delete own pages with only one's own replies, <—— TESTS_MISSING  TyT7MEWQ3SF
+  staff can delete everyone's pages:
+            - delete-pages.2br  TyTE2EDELPG602
+  cannot un/delete page if ancestor category deleted: (unless is staff)
+            - TESTS_MISSING
 
 moderators:
   profile says is moderator:
@@ -1187,6 +1201,8 @@ notifications:
 websocket,
 live notfs,
 live notifications -
+  reply appears in 2nd browser:
+            - delete-pages.2br  TyTE2EDELPG602.TyTWS702MEGR5
   attacker tries to bypass authentication:
           -  TESTS_MISSING  TyTWSAUTH
   reconnects after disconnection:

@@ -802,8 +802,9 @@ interface Page
   pageHiddenAtMs?: number;
   pageDeletedAtMs?: number;
   numPosts: number;
-  numPostsRepliesSection: number;  // change and rename to numDiscussionReplies
-  numPostsChatSection: number;     // change and rename to numProgressPosts
+  numRepliesVisible: Nr;
+  numPostsRepliesSection: number;  // CLEAN_UP REMOVE server side too  [prgr_chat_sect]
+  numPostsChatSection: number;     // REMOVE, don't: change and rename to numProgressPosts  [prgr_chat_sect]
   numPostsExclTitle: number;
   postsByNr: { [postNr: number]: Post };
   parentlessReplyNrsSorted: number[];
