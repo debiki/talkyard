@@ -151,9 +151,11 @@ trait LoginSiteDaoMixin extends SiteTransaction {
   }
 
 
+  REFACTOR; MOVE // to talkyard.server, and call  UserDao.loadEmailBySecretOrId(). [clean_up_emails]
+  REMOVE //  use  emails_out_t.secret_value_c  instead. [clean_up_emails]
   private def loginWithEmailId(loginAttempt: EmailLoginAttempt): MemberLoginGrant = {
     val emailId = loginAttempt.emailId
-    val email: Email = loadEmailById(emailId = emailId) getOrElse {
+    val email: Email = loadEmailBySecretOrId(emailId) getOrElse {
       throw EmailNotFoundException(emailId)
     }
 
@@ -175,7 +177,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       case None =>
         throw new QuickMessageException("Email hasn't been sent [TyEPWRST0SNT]")
       case Some(emailSentDate) =>
-        val expMins = 30 // [exp_emails_time]
+        val expMins = EmailType.ResetPassword.secretsExpireHours * 60
         if (emailSentDate.getTime + expMins * MillisPerMinute < loginAttempt.date.getTime)
           throw new QuickMessageException(
                 s"Reset password link expired (after $expMins minutes) [TyEPWRSTEXP_]")

@@ -37,6 +37,7 @@ import ed.server.summaryemails.SummaryEmailsDao
 import org.scalactic.{ErrorMessage, Or}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
+import org.scalactic.{Good, Or, Bad}
 
 
 /** If the Dao should use the mem cache, or load things from the database.
@@ -582,26 +583,126 @@ class SiteDao(
 
   // ----- Emails
 
-  def saveUnsentEmail(email: Email): Unit =
-    readWriteTransaction(_.saveUnsentEmail(email))
 
-  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit =
-    readWriteTransaction(_.saveUnsentEmailConnectToNotfs(email, notfs))
+  def saveUnsentEmail(email: Email): U = {
+    // Allow over quota, so "you're over quota" alert emails get sent.
+    readWriteTransaction(_.saveUnsentEmail(email),
+          allowOverQuota = true)
+  }
+
+
+  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): U = {
+    // Allow over quota, so "you're over quota" alert emails get sent.
+    readWriteTransaction(_.saveUnsentEmailConnectToNotfs(email, notfs),
+          allowOverQuota = true)
+  }
+
 
   def updateSentEmail(email: Email): Unit = {
-    readWriteTransaction { transaction =>
-      transaction.updateSentEmail(email)
+    readWriteTransaction(tx => {
+      tx.updateSentEmail(email)
       if (email.failureText.isEmpty) {
         email.toUserId foreach { userId =>
           addUserStats(UserStats(
-            userId, lastEmailedAt = When.fromOptDate(email.sentOn)))(transaction)
+                userId, lastEmailedAt = When.fromOptDate(email.sentOn)))(tx)
         }
       }
-    }
+    }, allowOverQuota = true)
   }
 
-  def loadEmailById(emailId: String): Option[Email] =
-    readOnlyTransaction(_.loadEmailById(emailId))
+
+  def loadEmailByIdOrErr(emailId: St, maxAgeDays: Opt[i32] = None)
+          : EmailOut Or ErrMsg = {
+    val email = readOnlyTransaction(_.loadEmailByIdOnly(emailId)) getOrElse {
+      return Bad("Email not found")
+    }
+    for (sentOn <- email.sentOn; maxDays <- maxAgeDays) {
+      if (now().daysSince(sentOn) > maxDays) {
+        return Bad(s"Email too old, older than $maxAgeDays days")
+      }
+    }
+    Good(email)
+  }
+
+
+  def loadEmailCheckSecret(secretOrId: St, mustBeOfType: EmailType)
+          : EmailOut Or ErrMsg = {
+
+    writeTx { (tx, _) =>
+      val emailInDb = tx.loadEmailBySecretOrId(secretOrId) getOrElse {
+        return Bad("Email not found")
+      }
+
+      var email = emailInDb
+
+      // New emails use secret values, instead of the email id — then, disallow
+      // looking up by id.
+      val isViaId = email.id == secretOrId
+      if (email.secretValue.isDefined && isViaId) {
+        logger.warn(s"s$siteId: Looked up email by id: ${email.id
+              } although there's a secret [TyE026MSJ]")
+        return Bad("Looked up new email by id — should look up by secret value")
+      }
+
+      val isViaSecret = email.secretValue.is(secretOrId)
+      dieIf(email.secretValue.isDefined && !isViaSecret, "TyE60MSI42")
+
+      val sentOn = email.sentOn getOrElse {
+        logger.warn(o"""Checking secret for email that hasn't been sent,
+              site: $siteId, email id: ${email.id}""")
+        return Bad(s"Email not yet sent [TyE60MREG26]")
+      }
+
+      val sentHoursAgo: i64 = {
+        val sentWhen = When.fromDate(sentOn)
+        tx.now.hoursSince(sentWhen)
+      }
+
+      val maxHours = email.tyype.secretsExpireHours
+      val expiredHoursAgo = sentHoursAgo - maxHours
+      if (expiredHoursAgo > 0) {
+        if (email.secretStatus.is(SecretStatus.DeletedCanUndo)) {
+          email = email.copy(secretStatus = Some(SecretStatus.DeletedNoUndo))
+          tx.updateSentEmail(email)
+        }
+        else if (email.secretStatus.forall(_.isOrWillBeValid)) {
+          // This includes secretStatus.isEmpty — old emails loaded by id, no secret.
+          email = email.copy(secretStatus = Some(SecretStatus.Expired))
+          tx.updateSentEmail(email)
+        }
+      }
+
+      email.secretStatus foreach { secretStatus =>
+        import SecretStatus._
+        secretStatus match {
+          case NotYetValid =>
+            return Bad(s"Email link not yet valid")
+          case Valid =>
+            // Continue below; we'll return email.secretStatus Valid,
+            // only marking the email Consumed in the database.
+            if (!mustBeOfType.canReuseSecret) {
+              tx.updateSentEmail(email.copy(secretStatus = Some(SecretStatus.Consumed)))
+            }
+          case Consumed =>
+            return Bad(s"Trying to use a one time email link many times")
+          case DeletedCanUndo | DeletedNoUndo =>
+            return Bad(s"Email link deleted")
+          case Expired =>
+            return Bad(o"""Email link expired $expiredHoursAgo hours ago —
+                  these email links are valid only for $maxHours hours""")
+        }
+      }
+
+      if (mustBeOfType != email.tyype) {
+        logger.warn(o"""s$siteId: Found email of type ${email.tyype}, expected:
+              $mustBeOfType, email id: ${email.id} [TyE726MS0]""")
+        return Bad(s"Wrong email type, should be: $mustBeOfType, is: ${
+              email.tyype} [TyEEMLTYPE]")
+      }
+
+      Good(email)
+    }
+  }
 
 
   // ----- Testing

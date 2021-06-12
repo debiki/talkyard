@@ -162,6 +162,10 @@ And when logging in via email, one gets to choose which account to login to.
 [known_verified_email_domains]
       // + known all-email-addrs-have-been-verified email domains from site settings?
 
+[clean_up_emails]
+Refactor a bit.
+Search for:  [4KDPREU2], break out fn.
+
 
 [reenable-akismet]:
 For some reason I disabled Akismet (why? when refactoring to save time?). Enable it again.

@@ -36,10 +36,8 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
       return
     // Perhaps we'd better allow notifications to be created and deleted, so that any
     // site-over-quota notifications get sent.
-    transactionAllowOverQuota { implicit connection =>
-      notifications.toCreate foreach { createNotf(_)(connection) }
-      notifications.toDelete foreach { deleteNotf(_)(connection) }
-    }
+    notifications.toCreate foreach { createNotf(_) }
+    notifications.toDelete foreach { deleteNotf(_) }
   }
 
 
@@ -54,7 +52,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def createNotf(notf: Notification)(implicit connection: js.Connection) {
+  private def createNotf(notf: Notification) {
     val sql = """
       insert into notifications3(
         SITE_ID, notf_id, CREATED_AT, NOTF_TYPE,
@@ -81,11 +79,11 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         values += postNotf.seenAt.orNullTimestamp
     }
 
-    db.update(sql, values.toList)
+    runUpdate(sql, values.toList)
   }
 
 
-  private def deleteNotf(notfToDelete: NotificationToDelete)(connection: js.Connection) {
+  private def deleteNotf(notfToDelete: NotificationToDelete) {
     import NotificationType._
     val (sql, values: List[AnyRef]) = notfToDelete match {
       case toDelete: NotificationToDelete.ToOneMember =>
@@ -110,7 +108,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         (sql, values)
     }
 
-    db.update(sql, values)(connection)
+    runUpdate(sql, values)
   }
 
 
@@ -211,22 +209,18 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
 
 
   def updateNotificationSkipEmail(notifications: Seq[Notification]) {
-    transactionAllowOverQuota { implicit connection =>
-      updateNotificationConnectToEmail(notifications, email = None)
+    updateNotificationConnectToEmail(notifications, email = None)
+  }
+
+
+  def updateNotificationConnectToEmail(notfs: Seq[Notification], email: Opt[Email]) {
+    notfs foreach {
+      connectNotificationToEmail(_, email)
     }
   }
 
 
-  def updateNotificationConnectToEmail(notifications: Seq[Notification], email: Option[Email])
-        (implicit connection: js.Connection) {
-    notifications foreach {
-      connectNotificationToEmail(_, email)(connection)
-    }
-  }
-
-
-  def connectNotificationToEmail(notification: Notification, email: Option[Email])
-        (connection: js.Connection) {
+  def connectNotificationToEmail(notification: Notification, email: Opt[Email]) {
     val statement = i"""
       update notifications3 set email_id = ?, email_status = ?
       where site_id = ? and notf_id = ?
@@ -242,7 +236,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
       siteId.asAnyRef,
       notification.id.asAnyRef)
 
-    db.update(statement, values)(connection)
+    runUpdate(statement, values)
   }
 
 

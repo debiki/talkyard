@@ -24,6 +24,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import Prelude._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
+import talkyard.server.emails.out.MaxUnsubEmailAgeDays
 
 
 /**
@@ -84,8 +85,10 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
     SECURITY; SHOULD // rate limit and check email type.
 
     val dao = globals.siteDao(site.id)
-    val email = dao.loadEmailById(emailId) getOrElse throwForbidden(
-      "EsE8YJ93Q", "Email not found")
+    val email = dao.loadEmailByIdOrErr(emailId, maxAgeDays = Some(MaxUnsubEmailAgeDays))
+      .getOrIfBad { err =>
+        throwForbidden("TyE8YJ93QJ", s"Bad unsubscription link: $err")
+      }
 
     // Find out what to do.
     val emailNotfPrefs: EmailNotfPrefs = doWhat(request) match {

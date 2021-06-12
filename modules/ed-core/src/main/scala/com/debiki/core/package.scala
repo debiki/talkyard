@@ -285,8 +285,10 @@ package object core {
 
   type IpAddress = String
 
-  type EmailAdr = String
-  type EmailId = String
+  type EmailAdr = String  // [Scala_3] opaque type
+  type EmailId = String   // [Scala_3] opaque type
+
+  type EmailOut = Email  // renaming from Email to EmailOut
 
   type AuditLogEntryId = Int
 
@@ -372,8 +374,10 @@ package object core {
     def unixMinutes: Int = (unixMillis / 1000 / 60).toInt
     def toUnixMillis: UnixMillis = unixMillis
     def daysSince(other: When): Long = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60 / 24
+    def daysSince(other: ju.Date): i64 = (unixMillis - other.getTime) / OneMinuteInMillis / 60 / 24
     def daysBetween(other: When): Long = math.abs(daysSince(other))
     def hoursSince(other: When): Long = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60
+    def hoursSince(other: ju.Date): i64 = (unixMillis - other.getTime) / OneMinuteInMillis / 60
     def minutesSince(other: When): Long = (unixMillis - other.unixMillis) / OneMinuteInMillis
     def millisSince(other: When): Long = unixMillis - other.unixMillis
     def minusMinutes(minutes: Int) = new When(unixMillis - minutes * OneMinuteInMillis)

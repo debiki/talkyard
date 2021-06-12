@@ -213,13 +213,13 @@ trait UserDao {
         case SetApproved if memberAfter.canReceiveEmail =>
           // Just send an email — no need to create any notification and show in the
           // new member's notification list, right.  TyTE2E05WKF2
-          emailsToSend.append(Email(
+          emailsToSend.append(Email.createGenId(
                 EmailType.YourAccountApproved,
                 createdAt = tx.now,
                 sendTo = memberAfter.primaryEmailAddress,
                 toUserId = Some(memberAfter.id),
                 subject = s"[$siteHostname] Account approved",
-                bodyHtmlText = (_) => views.html.createaccount.accountApprovedEmail(
+                bodyHtml = views.html.createaccount.accountApprovedEmail(
                       memberAfter,
                       siteHostname = siteHostname,
                       siteOrigin = siteOrigin).body))
@@ -1667,7 +1667,8 @@ trait UserDao {
   }
 
 
-  REFACTOR; CLEAN_UP // Delete, break out fn instead. [4KDPREU2]
+  REFACTOR; CLEAN_UP // Delete, break out fn instead  [4KDPREU2]  because
+  // doesn't need 2 different fns for verifying primary addr, and additional addrs?
   def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date): Unit = {
     // This is a new member henself verifying hens own email address.
     // We'll notify staff, if they now need to approve hens account.
@@ -1691,13 +1692,13 @@ trait UserDao {
         val (site, siteOrigin, siteHostname) = theSiteOriginHostname(tx)
         val allAdmins = tx.loadAdmins()
         allAdmins.filter(_.canReceiveEmail) foreach { admin =>
-          emailsToSend.append(Email(
+          emailsToSend.append(Email.createGenId(
                 EmailType.NewMemberToApprove,
                 createdAt = tx.now,
                 sendTo = admin.primaryEmailAddress,
                 toUserId = Some(admin.id),
                 subject = s"[$siteHostname] New member to approve",
-                bodyHtmlText = (_) => views.html.createaccount.newMemberToApproveEmail(
+                bodyHtml = views.html.createaccount.newMemberToApproveEmail(
                     user, siteOrigin = siteOrigin).body))
         }
       }

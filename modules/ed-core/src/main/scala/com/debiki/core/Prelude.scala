@@ -489,6 +489,12 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     else a
   }*/
 
+  def addUpToMaxShort(value: i32, toAdd: i32): i32 = {
+    val result = value.toLong + toAdd.toLong
+    if (result > Short.MaxValue) Short.MaxValue
+    else if (result < Short.MinValue) Short.MinValue
+    else result.toShort
+  }
 
   def anyMaxDate(a: Option[ju.Date], b: Option[ju.Date]): Option[ju.Date] = {
     if (a.isEmpty) b
@@ -675,7 +681,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     def is(value: T): Bo = underlying.contains(value)
     def isNot(value: T): Bo = !underlying.contains(value)
     def isSomethingButNot(value: T): Bo = underlying.isDefined && !underlying.contains(value)
-    def isOrEmpty(value: T): Bo = underlying.isEmpty || underlying.contains(value)
+    def isEmptyOr(value: T): Bo = underlying.isEmpty || underlying.contains(value)
   }
 
   implicit class RichOptionEq[T <: AnyRef](underlying: Option[T]) {
@@ -801,6 +807,9 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
     def isOkVariableName: Boolean =
       VariableNameRegex.pattern.matcher(underlying).matches
+
+    def isAlNum: Bo =
+      underlying.forall(charIsAzOrNum)
 
     def isAlNumWithAl: Bo =
       AlNumWithAl.pattern.matcher(underlying).matches

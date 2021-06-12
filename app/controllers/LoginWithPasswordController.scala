@@ -367,29 +367,11 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
   private def finishEmailAddressVerification(emailId: String, request: ApiRequest[_]): UserId = {
 
     REFACTOR // A bit dupl code. [4KDPREU2]  looks 100% fine to break out fn, & place in UserDao.
-    // and delete dao.verifyPrimaryEmailAddres().
-    // Or maybe save one-time secrets in Redis instead of email ids? [4KDPREU2]
+    // and delete dao.verifyPrimaryEmailAddres(). [clean_up_emails]
 
-    SECURITY // don't let the same email verif url be used more than once?
-    val email = request.dao.loadEmailById(emailId) getOrElse {
-      throwForbidden("DwE7GJP03", "Link expired? Bad email id; email not found.")
-    }
-
-    if (email.tyype != EmailType.VerifyAddress)
-      throwForbidden("DwE2DKP9", s"Bad email type: ${email.tyype}")
-
-    email.sentOn match {
-      case None =>
-        logger.warn(o"""Got an address verification email ID, although email not yet sent,
-            site: ${request.siteId}, email id: $emailId""")
-        throwForbidden("DwE8Gfh32", "Address verification email not yet sent")
-      case Some(_) =>
-        /* COULD restrict email age:
-        val emailAgeInMillis = new ju.Date().getTime - date.getTime
-        val emailAgeInHours = emailAgeInMillis / 1000 / 3600
-        if (MaxAddressVerificationEmailAgeInHours < emailAgeInHours)
-          return a response like "Registration link expired, please signup again"
-        */
+    val email: EmailOut = request.dao.loadEmailCheckSecret(
+          emailId, mustBeOfType = EmailType.VerifyAddress) .getOrIfBad { err =>
+      throwForbidden("TyE2G60MEG", s"Error checking email verification link: $err")
     }
 
     val roleId = email.toUserId getOrElse {
@@ -406,8 +388,6 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 object LoginWithPasswordController extends TyLogging {
 
   val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"
-
-  private val MaxAddressVerificationEmailAgeInHours = 25
 
 
   def createEmailAddrVerifEmailLogDontSend(
@@ -443,7 +423,7 @@ object LoginWithPasswordController extends TyLogging {
           siteAddress = host,
           username = user.theUsername,
           safeVerificationUrl = safeEmailAddrVerifUrl,
-          expirationTimeInHours = MaxAddressVerificationEmailAgeInHours,
+          expirationTimeInHours = EmailType.VerifyAddress.secretsExpireHours,
           globals).body)
 
     dao.saveUnsentEmail(email)
@@ -465,18 +445,17 @@ object LoginWithPasswordController extends TyLogging {
   def sendYouAlreadyHaveAnAccountWithThatAddressEmail(
         dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId): Unit = {
     val globals = dao.globals
-    val email = Email(
+    val email = Email.createGenId(
       EmailType.Notification,
       createdAt = globals.now(),
       sendTo = emailAddress,
       toUserId = None,
       subject = s"[${dao.theSiteName()}] You already have an account at " + siteHostname,
-      bodyHtmlText = (_: String) => {
+      bodyHtml =
         views.html.createaccount.accountAlreadyExistsEmail(
           emailAddress = emailAddress,
           siteAddress = siteHostname,
-          globals).body
-      })
+          globals).body)
     dao.saveUnsentEmail(email)
     globals.sendEmail(email, siteId)
   }

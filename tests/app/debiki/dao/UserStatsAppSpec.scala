@@ -177,9 +177,9 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... gets an email, last-emailed-at gets updated" in {
       playTimeMillis(1000)
-      val email = Email(EmailType.Notification, createdAt = globals.now(),
+      val email = Email.createGenId(EmailType.Notification, createdAt = globals.now(),
         sendTo = member1.email, toUserId = Some(member1.id),
-        subject = "Dummy email", bodyHtmlText = (emailId: String) => "Text text")
+        subject = "Dummy email", bodyHtml = "Text text")
       dao.saveUnsentEmail(email)
       globals.sendEmail(email, dao.siteId)
       // Reload stats, until the email has been sent and it's been updated.

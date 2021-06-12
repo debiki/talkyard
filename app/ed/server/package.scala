@@ -27,12 +27,6 @@ package object server {
 
   val UploadsUrlBasePath = "/-/u/"
 
-  // Email isn't a secure storage medium, and we don't know if all relevant
-  // email servers use SMTPS (SMTP in TLS), or who the admins there are
-  // — so expire secret links somewhat soon.
-  val MaxResetPasswordEmailAgeMinutes = 30   // [exp_emails_time]
-  val MaxEmailSecretLinkAgeMinutes: i32 = MaxResetPasswordEmailAgeMinutes  // better name?
-
 
   /** @param html Html for the whole page.
     * @param unapprovedPostAuthorIds Ids of authors who have posted stuff that hasn't yet been
