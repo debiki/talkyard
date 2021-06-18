@@ -622,12 +622,12 @@ push-tag-to-git:
 	@#
 	@set -e  ;\
 	cd relchans/$(DEV_RELEASE_CHANNEL)/  ;\
-	git fetch origin $(DEV_RELEASE_CHANNEL)  ;\
-	git merge --ff-only origin/$(DEV_RELEASE_CHANNEL)  ;\
-	echo $(tag) >> version-tags.log  ;\
-	git add version-tags.log  ;\
-	git commit -m "Release $(tag), channel $(DEV_RELEASE_CHANNEL)."  ;\
-	git push origin $(DEV_RELEASE_CHANNEL)
+	  git fetch origin $(DEV_RELEASE_CHANNEL)  ;\
+	  git merge --ff-only origin/$(DEV_RELEASE_CHANNEL)  ;\
+	  echo $(tag) >> version-tags.log  ;\
+	  git add version-tags.log  ;\
+	  git commit -m "Release $(tag), channel $(DEV_RELEASE_CHANNEL)."  ;\
+	  git push origin $(DEV_RELEASE_CHANNEL)
 
 	@# Later, this message instead:
 	@# git commit -m "Release tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)."
@@ -649,6 +649,12 @@ push-tag-to-git:
 	@git tag tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
 	@git push origin tyse-$(tag)-$(DEV_RELEASE_CHANNEL_SUFFIX)
 	
+	@echo "Look, the dev channel, now afterwards:"
+	@cd relchans/$(DEV_RELEASE_CHANNEL)/  ;\
+	  set -x  ;\
+	  git log --oneline -n5  ;\
+	  tail -n5 version-tags.log
+
 	@echo ""
 	@echo "Done. Now, bump the version number:"
 	@echo ""
