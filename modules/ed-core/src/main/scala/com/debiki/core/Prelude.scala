@@ -489,7 +489,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     else a
   }*/
 
-  def addUpToMaxShort(value: i32, toAdd: i32): i32 = {
+  def addUpToMaxInt16(value: i32, toAdd: i32): i32 = {
     val result = value.toLong + toAdd.toLong
     if (result > Short.MaxValue) Short.MaxValue
     else if (result < Short.MinValue) Short.MinValue

@@ -282,7 +282,8 @@ package object core {
   type IpAddress = String
 
   type EmailAdr = String  // [Scala_3] opaque type
-  type EmailId = String   // [Scala_3] opaque type
+  type EmailId = String   // [Scala_3] opaque type   RENAME to EmailOutId instead?
+  type EmailOutId = EmailId
 
   type EmailOut = Email  // renaming from Email to EmailOut
 

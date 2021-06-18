@@ -382,9 +382,12 @@ class MailerActor(
 
     val fakeSend = broken || (isProd && (isTestAddress || isE2eAddress))
 
+    val sitePubId = siteDao.thePubSiteId()
+
     val fromAddrMaybeEmailId =
           if (fromAddress.contains("+EMAIL_ID@"))
-            fromAddress.replaceAllLiterally("+EMAIL_ID@", s"+${emailToSend.id}@")
+            fromAddress.replaceAllLiterally(
+                  "+EMAIL_ID@", s"+$sitePubId.${emailToSend.id}@")
           else
             fromAddress
 
@@ -403,7 +406,7 @@ class MailerActor(
       }
       else try {
         val apacheCommonsEmail = makeApacheCommonsEmail(
-              emailToSend, fromAddr = fromAddrMaybeEmailId)
+              emailToSend, fromInclEmailId = fromAddrMaybeEmailId)
         apacheCommonsEmail.send()
         logger.debug(s"s$siteId: Sent email '${emailToSend.id}'. [TyMEMLSENT].")
         emailToSend
@@ -422,7 +425,7 @@ class MailerActor(
   }
 
 
-  private def makeApacheCommonsEmail(email: Email, fromAddr: St): acm.HtmlEmail = {
+  private def makeApacheCommonsEmail(email: Email, fromInclEmailId: St): acm.HtmlEmail = {
     val apacheCommonsEmail = new acm.HtmlEmail()
     apacheCommonsEmail.setDebug(debug)
     apacheCommonsEmail.setHostName(serverName)
@@ -452,7 +455,7 @@ class MailerActor(
     apacheCommonsEmail.setSSLCheckServerIdentity(checkServerIdentity)
 
     apacheCommonsEmail.addTo(email.sentTo)
-    apacheCommonsEmail.setFrom(fromAddr)
+    apacheCommonsEmail.setFrom(fromInclEmailId)
     bounceAddress foreach apacheCommonsEmail.setBounceAddress
 
     apacheCommonsEmail.setSubject(email.subject)

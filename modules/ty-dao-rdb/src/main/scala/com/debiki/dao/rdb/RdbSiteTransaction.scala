@@ -948,7 +948,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       where SITE_ID = ? and ID = ?
       """
     runQueryFindOneOrNone(query, List(siteId.asAnyRef, emailId), rs => {
-      getEmail(rs)
+      val e = getEmail(rs)
+      dieIf(e.id != emailId, "TyE507MREG24")
+      e
     })
   }
 
@@ -962,7 +964,11 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
           where site_id = ? and (id = ? or secret_value_c = ?)
           """
     val values = List(siteId.asAnyRef, secretOrId, secretOrId)
-    runQueryFindOneOrNone(query, values, getEmail)
+    runQueryFindOneOrNone(query, values, rs => {
+      val e = getEmail(rs)
+      dieIf(e.secretValue.isNot(secretOrId) && e.id != secretOrId, "TyE507MREG25")
+      e
+    })
   }
 
 

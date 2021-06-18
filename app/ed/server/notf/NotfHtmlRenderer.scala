@@ -130,11 +130,10 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       }
 
       if (newRepliesOrMentions || newMessagesToYou || newTopics || newPosts) {
-        // Later: do support reply-via-email.
         // (People sometimes reply to the email anyway, in spite of the text below.)
         htmlNodes =
-                <p>To reply, click the links below. But do <b
-                        >not</b> reply to this email.</p> ++
+                <p>Do <b>not</b> reply to this email.
+                  Click <i>Reply</i> below, instead.</p> ++
                 htmlNodes
       }
       else {
@@ -209,21 +208,28 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
     // I18N: Email notifications — lots of stuff here to translate.
 
+    var showReplyButton = false
     val (
       whatHappened,
       dotOrComma,
       inPostWrittenBy,
       cssE2eTestClass,
     ) = notf.notfType match {
+
       case NotificationType.Message =>
+        showReplyButton = true
         ("You have been sent a personal message", ",", "from", "e_NfEm_DirMsg")
       case NotificationType.Mention =>
+        showReplyButton = true
         ("You have been mentioned", ",", "in a post written by", "e_NfEm_Mentn")
       case NotificationType.DirectReply =>
+        showReplyButton = true
         ("You have a reply", ",", "written by", "e_NfEm_Re")
       case NotificationType.IndirectReply =>
+        showReplyButton = true
         ("A new reply in a thread by you", ",", "written by", "e_NfEm_IndRe")
       case NotificationType.NewPost =>
+        showReplyButton = true
         if (post.nr == PageParts.BodyNr)
           ("A new topic has been started", ",", "by", "e_NfEm_NwPg")
         else
@@ -258,11 +264,31 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
           s"$itIsShownOrHidden. It was posted by", "e_NfEm_ModTsk")
     }
 
+    UX; COULD // sync reply btn color w CSS; see $uiHue in variables.styl [site_prim_col].
+    val replyBtnStyles = o"""
+          display: inline-block;
+          padding: 8px 20px;
+          background: hsl(207 100% 54%);
+          color: white;
+          font-weight: bold;
+          font-size: 17px;
+          letter-spacing: 0.3px;
+          text-decoration: none;
+          """
+
+    // Email clients add  target="_blank" rel="noopener"  themselves if needed?
+
     <p class={cssE2eTestClass}>
       { whatHappened }, <a href={url}>here</a>, on page "<i>{pageTitle}</i>"{dotOrComma}
       { inPostWrittenBy } <i>{byUserName}</i>, on {date}:
     </p>
     <blockquote>{html}</blockquote>
+    <div>{
+    if (showReplyButton)
+      <a href={url} style={replyBtnStyles} class="e_EmReB" >Reply</a>
+    else
+      xml.Null
+    }</div>
   }
 
 
