@@ -6,6 +6,8 @@
 
 declare const t: TalkyardTranslations;
 
+declare const Bliss: any;
+
 
 // In constants.ts:
 
@@ -374,6 +376,7 @@ declare namespace debiki2 {
   function store_isFeatFlagOn(store: Store, featureFlag: St): Bo;
   function store_isNoPage(store: Store): boolean;
   function store_isPageDeleted(store: Store): boolean;
+  function page_isAncCatDeld(page: Page): Bo;
   function store_canDeletePage(store: Store): boolean;
   function store_canUndeletePage(store: Store): boolean;
   function store_canPinPage(store: Store): boolean;

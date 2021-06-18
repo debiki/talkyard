@@ -162,10 +162,22 @@ And when logging in via email, one gets to choose which account to login to.
 [known_verified_email_domains]
       // + known all-email-addrs-have-been-verified email domains from site settings?
 
+[clean_up_emails]
+Refactor a bit.
+Search for:  [4KDPREU2], break out fn.
+
 
 [reenable-akismet]:
 For some reason I disabled Akismet (why? when refactoring to save time?). Enable it again.
 
+
+[undel_pages]
+Should remember who deleted it, so can see one's own deleted pages and undelete them,
+but cannot seem one's own pages if instead they got deleted by staff.
+In fact, all pages_t.deleted_at, frozen_at,  etc,
+   should instead be   deleted_by, frozen_by, etc
+   — because always good to remember who did it; often, that person may undo (+ staff).
+   But *when*, that's for the audit log.
 
 [undel_posts] [62AKDN46] [apr_deld_post] [apr_movd_orig_post]
 Undelete posts, not just pages and categories.

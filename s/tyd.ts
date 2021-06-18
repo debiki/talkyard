@@ -28,7 +28,8 @@ completion.on('mainCmd', ({ reply }) => {
         'down',
         'recreate',
         'rebuild',
-        'l', 'logslive', 'lr', 'logsrecentlive', 'logsold',
+        'l', 'logs', 'lr', 'logsrecent',
+        'lo', 'logsold',
         'e', 'e2e',
         'cleane2elogs',
         'cd', 'clidb',
@@ -192,24 +193,30 @@ if (mainCmd === 'ps') {
 }
 
 
-if (mainCmd === 'l' || mainCmd === 'logslive') {
+if (mainCmd === 'l' || mainCmd === 'logs') {
   tailLogsThenExit();
 }
 
 function tailLogsThenExit() {
-  spawnInForeground('docker-compose logs -f --tail 0');
+  spawnInForeground(`docker-compose logs -f --tail 0 ${allSubCmdsSt}`);
   process.exit(0);
 }
 
 
-if (mainCmd === 'lr' || mainCmd === 'logsrecentlive') {
-  spawnInForeground('docker-compose logs -f --tail 555');
+if (mainCmd === 'lr' || mainCmd === 'logsrecent') {
+  spawnInForeground(`docker-compose logs -f --tail 555 ${allSubCmdsSt}`);
   process.exit(0);
 }
 
 
-if (mainCmd === 'logsold') {
-  spawnInForeground('docker-compose logs');
+if (mainCmd === 'lra' || mainCmd === 'logsrecentapp') {
+  spawnInForeground('docker-compose logs -f --tail 555 app');
+  process.exit(0);
+}
+
+
+if (mainCmd === 'lo' || mainCmd === 'logsold') {
+  spawnInForeground(`docker-compose logs ${allSubCmdsSt}`);
   process.exit(0);
 }
 

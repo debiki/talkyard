@@ -128,7 +128,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
     dao.redisCache.saveOneTimeLoginSecret(
       oneTimeSecret, admin.id, expireSeconds =
             // Same as for resetting a password, makes sense?
-            Some(MaxResetPasswordEmailAgeMinutes * 60))
+            Some(EmailType.ResetPassword.secretsExpireHours * 3600))
 
     sendOneTimeLoginEmail(
         admin, request, emailTitle = "Admin one time login link", secret = oneTimeSecret)
@@ -162,19 +162,19 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
       controllers.routes.ApiV0Controller.getFromApi("login-with-secret") +   // [305KDDN24]
       "?oneTimeSecret=" + secret + "&thenGoTo=/-/users/" + user.theUsername
 
-    val email = Email(
+    COULD // use  emails_out_t.secret_value_c  instead of Redis  [clean_up_emails]
+    val email = Email.createGenId(
       EmailType.OneTimeLoginLink,
       createdAt = globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),
       subject = s"[${dao.theSiteName()}] $emailTitle",
-      bodyHtmlText = (emailId: String) => {
+      bodyHtml =
         views.html.adminlogin.oneTimeLoginLinkEmail(
           siteAddress = request.host,
           url = url,
           member = user,
-          expiresInMinutes = MaxResetPasswordEmailAgeMinutes).body
-      })
+          expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60).body)
 
     dao.saveUnsentEmail(email)
     globals.sendEmail(email, dao.siteId)

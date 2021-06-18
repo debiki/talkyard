@@ -18,35 +18,64 @@
 package debiki
 
 import RateLimits._
+import com.debiki.core._
+import com.debiki.core.Prelude.clampToInt
 
 
 /** There should be a Max-X-per-site restriction for each X that can be saved in
   * the database — or X should count against the allowed disc quota.
   * Otherwise it'd be possible to out-of-disk DoS attack the database,
-  * or DoS attack the CPUs by giving O(n^2) algorithms too many items.
-  *
-  * In the distant future, these limits will be configurable in the Play config
-  * file — that'll be the default limits, for all sites on this server.
-  * And via an admin web interface — that'll be dynamic per site limits.
+  * or DoS attack the CPUs by giving O(n2) algorithms too many items.
   *
   * Maybe should be two default limits? One for blog comments sites —
-  * they shouldn't need any custom categories or permissions. And another for
-  * forums.
+  * they shouldn't need many categories or permissions. And another for
+  * discussion forums.
+  *
+  * [dynamic_max_limits]
   */
-object LengthLimits {
+object MaxLimits {
 
-  // Lowercase — late on, won't be a constant, but loaded from the database.
-  // [dynamic_max_limits]
-  val maxPermsPerSite = 1000 // was: 200
-
-  val maxCustomGroups = 21
-  val maxGroupsMemberCanJoin = 25
-  val maxMembersPerCustomGroup = 1000
+  val Default: MaxLimits = MaxLimits(
+    maxCategories = 500,    // later, change to 50 — barely any forum has more than 30
+    maxPermsPerSite = 1000, // was: 200
+    maxCustomGroups = 21,
+    maxGroupsMemberCanJoin = 25,
+    maxMembersPerCustomGroup = 1000)
 
   // There are many other limits but they're hardcoded here and there ...
   // COULD move them all to here. A nice first step, to later on making it
   // possible to bump the restrictions, per site.
 }
+
+
+case class MaxLimits(
+  maxCategories: i32,
+  maxPermsPerSite: i32,
+  maxCustomGroups: i32,
+  maxGroupsMemberCanJoin: i32,
+  maxMembersPerCustomGroup: i32,
+) {
+
+  /** Usage:  MaxLimits.Default.multByMultipliers(site)
+    */
+  def multByMultipliers(limitsMultipliers: SiteLimitsMultipliers): MaxLimits = {
+    val m = limitsMultipliers
+    this.copy(
+          maxCategories = multInt32(maxCategories, m.createLimitsMultiplier),
+          maxPermsPerSite = multInt32(maxPermsPerSite, m.createLimitsMultiplier),
+          maxCustomGroups = multInt32(maxCustomGroups, m.createLimitsMultiplier),
+          maxGroupsMemberCanJoin =
+                multInt32(maxGroupsMemberCanJoin, m.createLimitsMultiplier),
+          maxMembersPerCustomGroup =
+                multInt32(maxMembersPerCustomGroup, m.createLimitsMultiplier))
+  }
+
+  private def multInt32(value: i32, anyMultiplier: Opt[f32]): i32 = {
+    val multiplier = anyMultiplier getOrElse { return value }
+    clampToInt(value.toLong * multiplier.toDouble)
+  }
+}
+
 
 
 

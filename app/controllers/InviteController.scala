@@ -332,39 +332,48 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val emailBody: St = Emails.inLanguage(langCode).inviteEmail(
           inviterName = inviterName, siteHostname = siteHostname,
           probablyUsername = probablyUsername, secretKey = invite.secretKey, globals)
-    Email(
+    COULD // use  emails_out_t.secret_value_c  instead of invite.secretKey? [clean_up_emails]
+    Email.createGenId(
       EmailType.Invite,
       createdAt = globals.now(),
       sendTo = invite.emailAddress,
       toUserId = None,
-      subject = s"Invitation to $siteHostname",
-      bodyHtmlText = (_) => emailBody)
+      subject = s"Invitation to $siteHostname",   // I18N
+      bodyHtml = emailBody)
   }
 
 
   private def makeWelcomeSetPasswordEmail(newUser: UserInclDetails, siteHostname: St,
           langCode: St) = {
-    Email(
+    Email.createGenIdAndSecret(
       EmailType.InvitePassword,
       createdAt = globals.now(),
       sendTo = newUser.primaryEmailAddress,
       toUserId = Some(newUser.id),
-      subject = s"[$siteHostname] Welcome! Account created",
-      bodyHtmlText = (emailId) => Emails.inLanguage(langCode).welcomeSetPasswordEmail(
-      siteHostname = siteHostname, emailId = emailId, newUser.username, globals))
+      subject = s"[$siteHostname] Welcome! Account created",   // I18N
+      bodyHtmlWithSecret = (secret: St) => {
+        val setPasswordUrl: St =
+              globals.originOf(siteHostname) +
+              controllers.routes.ResetPasswordController
+                    .showChooseNewPasswordPage(secret)
+        Emails.inLanguage(langCode).welcomeSetPasswordEmail(
+            siteHostname = siteHostname, setPasswordUrl = setPasswordUrl,
+            username = newUser.username, globals)
+      })
   }
 
 
   private def makeYourInviteWasAcceptedEmail(
           siteHostname: St, newUser: UserInclDetails, inviter: Participant,
           langCode: LangCode): Email = {
-    Email(
+    Email.createGenId(
       EmailType.InviteAccepted,
       createdAt = globals.now(),
       sendTo = inviter.email,
       toUserId = Some(inviter.id),
-      subject = s"[$siteHostname] Your invitation for ${newUser.primaryEmailAddress} to join was accepted",
-      bodyHtmlText = (_) => Emails.inLanguage(langCode).inviteAcceptedEmail(
+      subject = s"[$siteHostname] Your invitation for ${newUser.primaryEmailAddress
+            } to join was accepted",   // I18N
+      bodyHtml = Emails.inLanguage(langCode).inviteAcceptedEmail(
         siteHostname = siteHostname, invitedEmailAddress = newUser.primaryEmailAddress))
   }
 }

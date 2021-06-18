@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
-import debiki.{TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml}
+import debiki.{TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml, MaxLimits}
 import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
 import org.scalactic.{Good, ErrorMessage, Or, Bad}
@@ -515,7 +515,7 @@ trait CategoriesDao {
   private def appendMaySeeCategoriesInTree(rootCategoryId: CatId, includeRoot: Bo,
       includeDeleted: Bo,
       inclCatsWithTopicsUnlisted: Bo,
-      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]): U = {
+      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]): Unit = {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
@@ -612,6 +612,7 @@ trait CategoriesDao {
   def editCategory(editsToDo: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
         who: Who): Category = {
     val (catBef, catAft, permissionsChanged) = readWriteTransaction { tx =>
+      val limits = getMaxLimits(UseTx(tx))
       val catId = editsToDo.anyId getOrDie "DwE7KPE0"
       val catBef = tx.loadCategory(catId).getOrElse(throwNotFound(
         "DwE5FRA2", s"Category not found, id: $catId"))
@@ -650,7 +651,8 @@ trait CategoriesDao {
 
       AUDIT_LOG // fix later
 
-      val permissionsChanged = addRemovePermsOnCategory(catId, permissions)(tx)._2
+      val permissionsChanged =
+            addRemovePermsOnCategory(catId, permissions)(tx, limits)._2
       (catBef, catAft, permissionsChanged)
     }
 
@@ -703,6 +705,8 @@ trait CategoriesDao {
   def createCategoryImpl(newCategoryData: CategoryToSave, permissions: ImmSeq[PermsOnPages],
         byWho: Who)(tx: SiteTx, staleStuff: StaleStuff): CreateCategoryResult = {
 
+    val limits = getMaxLimits(UseTx(tx))
+
     val categoryId = tx.nextCategoryId()  // [4GKWSR1]
     newCategoryData.anyId foreach { id =>
       if (id < 0) {
@@ -718,8 +722,10 @@ trait CategoriesDao {
     }
 
     // Can remove this later, when I think I won't want to add more cat perms via db migrations.
-    throwForbiddenIf(categoryId > MaxCategories,
-      "EdE7LKG2", s"Too many categories, > $MaxCategories") // see [B0GKWU52]
+    // Edit: What? Why? I don't understand my own comment. Keep the limits I think.
+    val maxCats = limits.maxCategories
+    throwForbiddenIf(categoryId > maxCats, "TyE2MNYCATS_",
+          s"Too many categories, $categoryId > $maxCats") // see [B0GKWU52]
 
     val category = newCategoryData.makeCategory(categoryId, tx.now.toJavaDate)
     val ancCats = getAndCheckAncestorCatsThrowIfProblem(category, tx)  // [.920946]
@@ -751,7 +757,8 @@ trait CategoriesDao {
 
     val effPerms = permissions.filter(_.hasSomeEffect)
     val permsWithCatId = effPerms.map(_.copy(onCategoryId = Some(categoryId)))
-    val permsWithId = addRemovePermsOnCategory(categoryId, permsWithCatId)(tx)._1
+    val permsWithId =
+          addRemovePermsOnCategory(categoryId, permsWithCatId)(tx, limits)._1
 
     if (byWho.isSystem) {
       // Then this category is being auto generated as part of creating
@@ -851,7 +858,7 @@ trait CategoriesDao {
     dieIf(ancCatsRootLast.headOption.map(_.id) != category.parentId, "TyE50RJ45")
     val rootCategory = ancCatsRootLast.lastOption getOrDie "EsE2PK8O4"
     if (rootCategory.defaultSubCatId.contains(category.id))
-      return
+      return ()
     val rootWithNewDefault = rootCategory.copy(defaultSubCatId = Some(category.id))
     // (The section page will be marked as stale anyway;
     // doesn't matter if we do it here too.)
@@ -860,7 +867,7 @@ trait CategoriesDao {
 
 
   private def addRemovePermsOnCategory(categoryId: CategoryId,
-        permissions: immutable.Seq[PermsOnPages])(tx: SiteTransaction)
+        permissions: immutable.Seq[PermsOnPages])(tx: SiteTransaction, lims: MaxLimits)
         : (immutable.Seq[PermsOnPages], Boolean) = {
     dieIf(permissions.exists(_.onCategoryId.isNot(categoryId)), "EdE2FK0YU5")
 
@@ -906,7 +913,7 @@ trait CategoriesDao {
     // Too many permission settings, afterwards?
     // (COULD add a check in the request handlers that throws client-error directly.)
     val permsAfter = tx.loadPermsOnPages()
-    val maxPerms = getLengthLimits().maxPermsPerSite
+    val maxPerms = lims.maxPermsPerSite
     dieIf(permsAfter.length > maxPerms,
       "TyEMNYPERMS", s"Cannot save ${permissions.length} permissions, " +
         s"would result in ${permsAfter.length} permissions in total, but $maxPerms is max")

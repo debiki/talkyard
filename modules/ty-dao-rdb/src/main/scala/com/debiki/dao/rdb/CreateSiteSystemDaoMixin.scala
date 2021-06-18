@@ -59,7 +59,10 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
 
     val newSiteNoId = Site(theId, pubId = pubId, status, name = name,
           createdAt = createdAt, creatorIp = creatorIp, featureFlags = "",
-          hostnames = Vector.empty)
+          hostnames = Vector.empty,
+          readLimitsMultiplier = None,
+          logLimitsMultiplier = None,
+          createLimitsMultiplier = None)
 
     val newSite =
       try insertSite(newSiteNoId, quotaLimitMegabytes)

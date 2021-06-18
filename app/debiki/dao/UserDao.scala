@@ -213,13 +213,13 @@ trait UserDao {
         case SetApproved if memberAfter.canReceiveEmail =>
           // Just send an email — no need to create any notification and show in the
           // new member's notification list, right.  TyTE2E05WKF2
-          emailsToSend.append(Email(
+          emailsToSend.append(Email.createGenId(
                 EmailType.YourAccountApproved,
                 createdAt = tx.now,
                 sendTo = memberAfter.primaryEmailAddress,
                 toUserId = Some(memberAfter.id),
                 subject = s"[$siteHostname] Account approved",
-                bodyHtmlText = (_) => views.html.createaccount.accountApprovedEmail(
+                bodyHtml = views.html.createaccount.accountApprovedEmail(
                       memberAfter,
                       siteHostname = siteHostname,
                       siteOrigin = siteOrigin).body))
@@ -1099,15 +1099,17 @@ trait UserDao {
         throwForbidden("TyEGSTINGR", s"Cannot add guests to groups. Is a guest: ${guest.nameParaId}")
       }
 
+      val maxLimits = getMaxLimits(UseTx(tx))
+
       // For now. Don't let a group become too large.
       val oldMemberIds = tx.loadGroupMembers(groupId).map(_.id).toSet
       val allMemberIdsAfter = oldMemberIds ++ memberIdsToAdd
-      val maxMembers = getLengthLimits().maxMembersPerCustomGroup
+      val maxMembers = maxLimits.maxMembersPerCustomGroup
       throwForbiddenIf(allMemberIdsAfter.size > maxMembers,
         "TyE2MNYMBRS", s"Group $groupId would get more than $maxMembers members")
 
       // Don't allow adding someone to very many groups — that could be a DoS attack.
-      val maxGroups = getLengthLimits().maxGroupsMemberCanJoin
+      val maxGroups = maxLimits.maxGroupsMemberCanJoin
       val anyMemberInManyGroups = newMembers.find(member => {
         if (oldMemberIds.contains(member.id)) false
         else {
@@ -1667,7 +1669,8 @@ trait UserDao {
   }
 
 
-  REFACTOR; CLEAN_UP // Delete, break out fn instead. [4KDPREU2]
+  REFACTOR; CLEAN_UP // Delete, break out fn instead  [4KDPREU2]  because
+  // doesn't need 2 different fns for verifying primary addr, and additional addrs?
   def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date): Unit = {
     // This is a new member henself verifying hens own email address.
     // We'll notify staff, if they now need to approve hens account.
@@ -1691,13 +1694,13 @@ trait UserDao {
         val (site, siteOrigin, siteHostname) = theSiteOriginHostname(tx)
         val allAdmins = tx.loadAdmins()
         allAdmins.filter(_.canReceiveEmail) foreach { admin =>
-          emailsToSend.append(Email(
+          emailsToSend.append(Email.createGenId(
                 EmailType.NewMemberToApprove,
                 createdAt = tx.now,
                 sendTo = admin.primaryEmailAddress,
                 toUserId = Some(admin.id),
                 subject = s"[$siteHostname] New member to approve",
-                bodyHtmlText = (_) => views.html.createaccount.newMemberToApproveEmail(
+                bodyHtml = views.html.createaccount.newMemberToApproveEmail(
                     user, siteOrigin = siteOrigin).body))
         }
       }
@@ -2058,8 +2061,9 @@ trait UserDao {
 
     val result = readWriteTransaction { tx =>
       // Too many groups could be a DoS attack.
+      val maxLimits = getMaxLimits(UseTx(tx))
       val currentGroups = tx.loadAllGroupsAsSeq()
-      val maxCustomGroups = getLengthLimits().maxCustomGroups
+      val maxCustomGroups = maxLimits.maxCustomGroups
       throwForbiddenIf(currentGroups.length >= maxCustomGroups + Group.NumBuiltInGroups,
         "TyE2MNYGRPS", s"Cannot create more than $maxCustomGroups custom groups")
 

@@ -24,6 +24,7 @@ import ed.server.http._
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import UnsubFromSummariesController._
+import talkyard.server.emails.out.MaxUnsubEmailAgeDays
 
 
 object UnsubFromSummariesController {
@@ -56,11 +57,13 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
   import context.safeActions.ExceptionAction
   import context.globals
 
-
   def showUnsubForm(emailId: EmailId): Action[Unit] = ExceptionAction(cc.parsers.empty) { request =>
     val site = globals.lookupSiteOrThrow(request)
     val dao = globals.siteDao(site.id)
-    val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE5JGKW0", "Bad email id")
+    val email = dao.loadEmailByIdOrErr(emailId, maxAgeDays = Some(MaxUnsubEmailAgeDays))
+          .getOrIfBad { err =>
+      throwForbidden( "TyE5JGKW0", s"Bad unsubscription link: $err  [TyEUNSBLN01]")
+    }
     CSP_MISSING
     Ok(views.html.summaryemails.unsubFromSummariesPage(emailId, emailAddress = email.sentTo))
   }
@@ -77,9 +80,14 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
     val site = globals.lookupSiteOrThrow(request)
 
     SECURITY; SHOULD // rate limit?
+    //globals.edContext.rateLimiter.rateLimit(
+    //      debiki.RateLimits.ConfigUser, ?? request)
 
     val dao = globals.siteDao(site.id)
-    val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE8YEM2Q", "Bad email id")
+    val email = dao.loadEmailByIdOrErr(emailId, maxAgeDays = Some(MaxUnsubEmailAgeDays))
+          .getOrIfBad { err =>
+      throwForbidden("TyE8YEM2Q", s"Bad unsubscription link: $err  [TyEUNSBLN02]")
+    }
 
     if (!email.toUserId.exists(Participant.isMember))
       throwForbidden("EdEZ5JKW30", "Not a member")

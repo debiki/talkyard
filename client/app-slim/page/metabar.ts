@@ -110,7 +110,7 @@ export var Metabar = createComponent({
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
               r.li({ className: 'dw-cmts-count' },
-                page.numPostsRepliesSection + ' ' + (
+                page.numRepliesVisible + ' ' + (
                     isBlogComments ? (t.comments || t.replies) : t.replies)),  // I18N t.comments missing
               nameLoginBtns,
               r.li({}, notfLevelElem)),
@@ -139,17 +139,17 @@ export var Metabar = createComponent({
     // ----- Summarize replies section
 
     let summarizeStuff;
-    if (page.numPostsRepliesSection >= 10) {
+    if (page.numRepliesVisible >= 10) {
       const doneSummarizing = !_.isNumber(this.state.numRepliesSummarized) ? null :
           r.span({ style: { marginLeft: '1em' }},
           // Only visiblie replies are summarized, so the count might be confusingly low,
           // if we don't clarify that only visible replies get summarized.
           t.mb.DoneSummarizing(this.state.numRepliesSummarized, this.state.numRepliesVisible));
       const minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(page.postsByNr));
-      if (minutes >= 10 || page.numPostsRepliesSection >= 20) {
+      if (minutes >= 10 || page.numRepliesVisible >= 20) {
         summarizeStuff =
           r.div({ className: 'esMetabar_summarize' },
-            r.p({}, t.mb.EstTime(page.numPostsRepliesSection, Math.ceil(minutes))),
+            r.p({}, t.mb.EstTime(page.numRepliesVisible, Math.ceil(minutes))),
             Button({ onClick: this.summarizeReplies }, t.mb.SmrzRepls), doneSummarizing);
       }
     }

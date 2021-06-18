@@ -157,18 +157,18 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
     val subject = if (isCreating) "Choose a Password" else "Reset Password"  // I18N
 
-    val email = Email(
+    val email = Email.createGenIdAndSecret(
       EmailType.ResetPassword,
       createdAt = globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),
       subject = s"[${dao.theSiteName()}] $subject",
-      bodyHtmlText = (emailId: String) => {
+      bodyHtmlWithSecret = (secret: St) => {
         views.html.resetpassword.resetPasswordEmail(
           userName = user.theUsername,
-          emailId = emailId,
+          secret = secret,
           siteAddress = request.host,
-          expiresInMinutes = ed.server.MaxResetPasswordEmailAgeMinutes,
+          expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60,
           globals = globals).body
       })
     dao.saveUnsentEmail(email)

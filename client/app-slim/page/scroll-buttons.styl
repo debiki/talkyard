@@ -2,14 +2,21 @@
 
 // Hide on custom html pages (typically, landing pages) and info pages. People seem to just
 // get confused & annoyed. The point with the scroll buttons is to navigate the comments.
-.s_PT-1,  // custom html
-.s_PT-2,  // info page
+.s_PT-1,  // custom html, e.g. landing page
+.s_PT-2   // info page
+  .esScrollBtns_fixedBar
+    display: none;
+/* But let's show the buttons on these pages?:
+   E.g. forum topic list pages: Someone tried to use iOS Safari's double tap top
+   nav bar, to jump to top — but doesn't work with Talkayrd, because there's a
+   content-scrollable and then iOS jump-to-top won't work.
+   But we can show Ty's own jump button — then works also on Android, plus for
+   iOS users who don't know about the shortcut.
 .s_PT-3,  // code page
 .s_PT-4,  // special content
 .s_PT-6,  // blog
 .s_PT-7   // forum
-  .esScrollBtns_fixedBar
-    display: none;
+*/
 
 .esScrollBtns_fixedBar
   position: fixed;

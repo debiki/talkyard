@@ -543,6 +543,12 @@ export function emailPref_descr(emailNotfPref: EmailNotfPrefs): RElm | St {
 }
 
 
+export function post_isReply(post: Post): Bo {
+  return post.nr >= FirstReplyNr &&
+          post.postType !== PostType.MetaMessage &&
+          post.postType !== PostType.CompletedForm;
+}
+
 export function post_isWiki(post: Post): boolean {
   // Skip PostType.StaffWiki, using the permission system instead. [NOSTAFFWIKI]
   return post.postType === PostType.CommunityWiki;
@@ -566,6 +572,11 @@ export function post_shallRenderAsDeleted(post: Post): boolean {
 
 export function post_shallRenderAsHidden(post: Post): boolean {
   return post.isBodyHidden && _.isEmpty(post.sanitizedHtml);
+}
+
+export function post_isPubVisible(post: Post): Bo {
+  // && !== CompletedForm  fix server side too if enabling forms
+  return !post.isBodyHidden && post.approvedAtMs && !post_isDeleted(post);
 }
 
 
@@ -735,9 +746,15 @@ export function store_isNoPage(store: Store): boolean {
 }
 
 
+// RENAME  to  page_isSelfOrAncCatDeld(page: Page)  ?
 export function store_isPageDeleted(store: Store): boolean {
   const page: Page = store.currentPage;
-  return !!page.pageDeletedAtMs || _.some(page.ancestorsRootFirst, a => a.isDeleted);
+  return !!page.pageDeletedAtMs || page_isAncCatDeld(page);
+}
+
+
+export function page_isAncCatDeld(page: Page): Bo {
+  return _.some(page.ancestorsRootFirst, a => a.isDeleted);
 }
 
 
@@ -1396,6 +1413,12 @@ export function categories_sortTree(categories: Category[]): CatsTree {
 
 // Page
 //----------------------------------
+
+
+export function page_authorId(page: Page): PatId | U {
+  const origPost = page.postsByNr[BodyNr];
+  return origPost && origPost.authorId;
+}
 
 
 export function page_isClosedUnfinished(page: Page | Topic): Bo {

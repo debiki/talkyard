@@ -115,8 +115,9 @@ class JsonMaker(dao: SiteDao) {
       "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
       "pagePath" -> JsPagePath(pageReq.pagePath),
       "numPosts" -> JsNumber(0),
-      "numPostsRepliesSection" -> JsNumber(0),
-      "numPostsChatSection" -> JsNumber(0),
+      "numRepliesVisible" -> JsNumber(0),
+      "numPostsRepliesSection" -> JsNumber(0),  // CHANGE to numPostsVisible (incl status change meta posts)
+      "numPostsChatSection" -> JsNumber(0),  // CLEAN_UP REMOVE
       "numPostsExclTitle" -> JsNumber(0),
       "postsByNr" -> JsObject(Nil),
       "topLevelCommentIdsSorted" -> JsArray(),
@@ -222,6 +223,7 @@ class JsonMaker(dao: SiteDao) {
     var numPosts = 0
     var numPostsRepliesSection = 0
     var numPostsChatSection = 0
+    var numRepliesVisible = 0
 
     val relevantPosts = posts filter { post =>
       // In case a page contains both form replies and "normal" comments, don't load any
@@ -240,6 +242,9 @@ class JsonMaker(dao: SiteDao) {
 
     var allPostsJson = relevantPosts map { post: Post =>
       numPosts += 1
+      if (post.isReply && post.isVisible) {
+        numRepliesVisible += 1
+      }
       if (post.tyype == PostType.Flat)
         numPostsChatSection += 1
       else if (!post.isOrigPost && !post.isTitle)
@@ -247,6 +252,20 @@ class JsonMaker(dao: SiteDao) {
       val tags = tagsByPostId(post.id)
       post.nr.toString ->
           postToJsonImpl(post, page, tags, includeUnapproved = false, showHidden = false)
+    }
+
+    if (Globals.isDevOrTest) {
+      BUG // sometimes tot num replies not updated properly, e.g. run:
+      // s/wdio --only api-upsert-posts.2browsers --cd --da
+      // and set a breakpoint in the if-mismatch.
+      val mismatch = numRepliesVisible != page.meta.numRepliesVisible
+      if (mismatch) {
+        System.err.println(o"""$numRepliesVisible != ${page.meta.numRepliesVisible}
+              [TyE2R0MSE3R2]""")
+      }
+      // No, breaks tests, and this mismatch is a pretty minor problem anyway:
+      //dieIf(mismatch, "TyE2R0MSE3R2",
+      //    s"$numRepliesVisible != ${page.meta.numRepliesVisible}")
     }
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
@@ -359,6 +378,7 @@ class JsonMaker(dao: SiteDao) {
       "pageHiddenAtMs" -> JsWhenMsOrNull(page.meta.hiddenAt),
       "pageDeletedAtMs" -> dateOrNull(page.meta.deletedAt),
       "numPosts" -> numPosts,
+      "numRepliesVisible" -> numRepliesVisible,
       "numPostsRepliesSection" -> numPostsRepliesSection,
       "numPostsChatSection" -> numPostsChatSection,
       "numPostsExclTitle" -> numPostsExclTitle,

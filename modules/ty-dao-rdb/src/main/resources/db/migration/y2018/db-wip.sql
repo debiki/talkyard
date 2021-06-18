@@ -230,3 +230,23 @@ create table how_often3(
 
 
 
+
+
+-- Maybe, emails:
+
+alter table emails_out3 add column is_auto_reply_2re2_id text;
+
+alter table emails_out3 add constraint emailsout_autoreply2re2_r_id
+    foreign key (site_id, is_auto_reply_2re2_id)
+    references emails_out3 (site_id, id)
+    on delete cascade
+    deferrable;
+
+create index emailsout_i_autoreply2re2 on emails_out3 (
+    site_id, is_auto_reply_2re2_id)
+    where is_auto_reply_2re2_id is not null;
+
+
+-- Maybe later, an email_lax_d too (only if needed), which would allow e.g.
+-- mixed case to the left of @?
+create domain email_lax_d as text;  -- + more lax constraints than  email_d

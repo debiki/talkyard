@@ -320,7 +320,10 @@ class RdbSystemTransaction(
           feature_flags_c,
           ctime,
           creator_ip,
-          creator_email_address
+          creator_email_address,
+          read_lims_mult_c,
+          log_lims_mult_c,
+          create_lims_mult_c
       from sites3
       $whereIdsIn
       """

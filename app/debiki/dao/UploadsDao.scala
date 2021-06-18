@@ -307,6 +307,7 @@ object UploadsDao {
     */
   val HashLength = 33
 
+  // Later: Use MaxLimits, instead of hardcoding here.
   val MaxUploadsLastWeek = 700
 
   val MaxAvatarTinySizeBytes: Int = 2*1000

@@ -39,7 +39,7 @@ trait EmailsOneLang {
 
   def inviteAcceptedEmail(siteHostname: St, invitedEmailAddress: St): St
 
-  def welcomeSetPasswordEmail(siteHostname: St, emailId: St, username: St,
+  def welcomeSetPasswordEmail(siteHostname: St, setPasswordUrl: St, username: St,
         globals: debiki.Globals): St
 }
 
@@ -63,11 +63,11 @@ object EmailsInEnglish extends EmailsOneLang {
     views.html.invite.inviteAcceptedEmail(
           siteHostname = siteHostname, invitedEmailAddress = invitedEmailAddress).body
 
-  def welcomeSetPasswordEmail(siteHostname: St, emailId: St, username: St,
+  def welcomeSetPasswordEmail(siteHostname: St, setPasswordUrl: St, username: St,
         globals: debiki.Globals): St =
     views.html.invite.welcomeSetPasswordEmail(
-          siteHostname = siteHostname, emailId = emailId, username = username,
-          globals).body
+          siteHostname = siteHostname, setPasswordUrl = setPasswordUrl,
+          username = username, globals).body
 
 }
 
@@ -91,10 +91,10 @@ object EmailsInPolish extends EmailsOneLang {
     html.inviteAcceptedEmail(
           siteHostname = siteHostname, invitedEmailAddress = invitedEmailAddress).body
 
-  def welcomeSetPasswordEmail(siteHostname: St, emailId: St, username: St,
+  def welcomeSetPasswordEmail(siteHostname: St, setPasswordUrl: St, username: St,
         globals: debiki.Globals): St =
     html.welcomeSetPasswordEmail(
-          siteHostname = siteHostname, emailId = emailId, username = username,
-          globals).body
+          siteHostname = siteHostname, setPasswordUrl = setPasswordUrl,
+          username = username, globals).body
 
 }

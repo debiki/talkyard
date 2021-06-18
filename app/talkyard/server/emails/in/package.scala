@@ -9,7 +9,7 @@ package object in {
   case class ParsedReplyEmail(
     messageId: St,
     dateText: St,
-    mailboxHash: St,
+    mailboxHash: Opt[St],
     sentToAddr: St,
     //sentToName: St,
     //sentToHash: St,

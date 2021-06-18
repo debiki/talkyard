@@ -107,7 +107,10 @@ object RdbUtil {
           createdAt = getWhen(rs, "ctime"),
           creatorIp = getString(rs, "creator_ip"),
           featureFlags = getOptString(rs, "feature_flags_c").getOrElse(""),
-          hostnames = hostnames.map(_.noDetails).toVector)
+          hostnames = hostnames.map(_.noDetails).toVector,
+          readLimitsMultiplier = getOptFloat(rs, "read_lims_mult_c"),
+          logLimitsMultiplier = getOptFloat(rs, "log_lims_mult_c"),
+          createLimitsMultiplier = getOptFloat(rs, "create_lims_mult_c"))
   }
 
 

@@ -135,7 +135,8 @@ object MailerActor {
             daoFactory, now, serverName = "", port = None,
             tlsPort = None, connectWithTls = false, enableStartTls = false, requireStartTls = false,
             checkServerIdentity = false, insecureTrustAllHosts = false,
-            userName = None, password = None, fromAddress = "", debug = debug,
+            userName = None, password = None,
+            fromAddress = anyFromAddress.getOrElse(""), debug = debug,
             bounceAddress = None, broken = true, isProd = isProd)),
           name = s"BrokenMailerActor-$testInstanceCounter")
       }
@@ -379,37 +380,52 @@ class MailerActor(
     // test addr   rs          fs            rs         fs           fs          fs
     // e2e addr    rs e2e      fs e2e        rs e2e     fs e2e       fs e2e      fs e2e
 
+    val fakeSend = broken || (isProd && (isTestAddress || isE2eAddress))
+
+    val sitePubId = siteDao.thePubSiteId()
+
+    val fromAddrMaybeEmailId =
+          if (fromAddress.contains("+EMAIL_ID@"))
+            fromAddress.replaceAllLiterally(
+                  "+EMAIL_ID@", s"+$sitePubId.${emailToSend.id}@")
+          else
+            fromAddress
+
     if (isE2eAddress)
-      rememberE2eTestEmail(emailToSend, siteDao)
+      rememberE2eTestEmail(emailToSend, fromAddrMaybeEmailId, siteDao)
 
-    if (broken || (isProd && (isTestAddress || isE2eAddress))) {
-      fakeSend(emailToSend, siteDao)
-      return
-    }
+    logger.debug(s"s$siteId: ${if (fakeSend) "Fake e" else "E"}mailing ${sendToAddress
+          }, from ${fromAddrMaybeEmailId.noneIfEmpty getOrElse "''"
+          }, email id '${emailToSend.id}' ${
+          if (fakeSend) "[TyMEMLFAKING]" else "[TyMEMLSENDNG]"}:\n    $emailToSend")
 
-    logger.debug(s"s$siteId: Sending email to $sendToAddress [TyMEMLSENDNG]: $emailToSend")
 
-    val apacheCommonsEmail  = makeApacheCommonsEmail(emailToSend)
-    val emailAfter =
-      try {
+    val emailSent = {
+      if (fakeSend) {
+        emailToSend
+      }
+      else try {
+        val apacheCommonsEmail = makeApacheCommonsEmail(
+              emailToSend, fromInclEmailId = fromAddrMaybeEmailId)
         apacheCommonsEmail.send()
-        // Nowadays not using Amazon's SES api, so no provider email id is available.
-        logger.trace(s"s$siteId: Email sent [TyMEMLSENT]: "+ emailToSend)
+        logger.debug(s"s$siteId: Sent email '${emailToSend.id}'. [TyMEMLSENT].")
         emailToSend
       }
       catch {
         case ex: acm.EmailException =>
           val message = stringifyExceptionAndCauses(ex)
           val badEmail = emailToSend.copy(failureText = Some(message))
-          logger.warn(s"s$siteId: Error sending email [TyEEMLERR]: $badEmail")
+          logger.warn(s"s$siteId: Error sending email '${emailToSend.id
+                }' [TyEEMLERR]: $badEmail")
           badEmail
       }
+    }
 
-    siteDao.updateSentEmail(emailAfter)
+    siteDao.updateSentEmail(emailSent)
   }
 
 
-  private def makeApacheCommonsEmail(email: Email): acm.HtmlEmail = {
+  private def makeApacheCommonsEmail(email: Email, fromInclEmailId: St): acm.HtmlEmail = {
     val apacheCommonsEmail = new acm.HtmlEmail()
     apacheCommonsEmail.setDebug(debug)
     apacheCommonsEmail.setHostName(serverName)
@@ -439,7 +455,7 @@ class MailerActor(
     apacheCommonsEmail.setSSLCheckServerIdentity(checkServerIdentity)
 
     apacheCommonsEmail.addTo(email.sentTo)
-    apacheCommonsEmail.setFrom(fromAddress)
+    apacheCommonsEmail.setFrom(fromInclEmailId)
     bounceAddress foreach apacheCommonsEmail.setBounceAddress
 
     apacheCommonsEmail.setSubject(email.subject)
@@ -470,23 +486,9 @@ class MailerActor(
   }
 
 
-  /** Updates the database so it looks as if the email has been sent, plus makes the
-    * email accessible to end-to-end tests.
-    */
-  def fakeSend(email: Email, siteDao: SiteDao): Unit = {
-    logger.debug(i"""
-      |Fake-sending email, logging to console only: [TyM123FAKEMAIL]
-      |————————————————————————————————————————————————————————————
-      |$email
-      |————————————————————————————————————————————————————————————
-      |""")
-    val emailSent = email.copy(sentOn = Some(now().toJavaDate))
-    siteDao.updateSentEmail(emailSent)
-  }
-
-
-  def rememberE2eTestEmail(email: Email, siteDao: SiteDao): Unit = {
+  def rememberE2eTestEmail(email: EmailOut, fromAddr: St, siteDao: SiteDao): U = {
     val siteIdColonEmailAddress = s"${siteDao.siteId}:${email.sentTo}"
+    val siteIdColToColFrom = s"$siteIdColonEmailAddress:$fromAddr"
     e2eTestEmails.get(siteIdColonEmailAddress) match {
       case Some(promise) =>
         if (promise.isCompleted) {

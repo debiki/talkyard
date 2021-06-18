@@ -2,7 +2,7 @@
 -- Tags want colors.
 create domain color_d as varchar
     constraint color_d_c_hex_or_rgb_or_hsl check (
-        value like '^#[a-f0-9]{3}([a-f0-9]{3})?$');
+        value ~ '^#[a-f0-9]{3}([a-f0-9]{3})?$');
 
 comment on domain color_d is
 'CSS colors for now, lowercase hex: #ab3 or #aabb33. Later, also rgba, hsl, hsla.';

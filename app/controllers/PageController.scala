@@ -256,17 +256,19 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     OkSafeJson(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
-  def deletePages: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
+  def deletePages: Action[JsValue] = PostJsonAction(
+          RateLimits.TogglePage, maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId, request.theBrowserIdData,
-      undelete = false)
+    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId,
+          request.theBrowserIdData, undelete = false)
     Ok
   }
 
-  def undeletePages: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
+  def undeletePages: Action[JsValue] = PostJsonAction(
+          RateLimits.TogglePage, maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId, request.theBrowserIdData,
-      undelete = true)
+    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId,
+          request.theBrowserIdData, undelete = true)
     Ok
   }
 

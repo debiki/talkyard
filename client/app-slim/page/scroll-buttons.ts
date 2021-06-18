@@ -31,6 +31,7 @@ const calcScrollIntoViewCoordsInPageColumn = debiki2.utils.calcScrollIntoViewCoo
 export var addVisitedPosts: (currentPostNr: number, nextPostNr: number) => void = _.noop;
 export var addVisitedPositionAndPost: (nextPostNr: number) => void = _.noop;
 export var addVisitedPosition: (whereNext?) => void = _.noop;
+export var clearScrollHistory: () => Vo = _.noop;
 
 var WhereTop = 'T';
 var WhereReplies = 'R';
@@ -105,6 +106,7 @@ export var ScrollButtons = createClassAndFactory({
     addVisitedPosts = this.addVisitedPosts;
     addVisitedPositionAndPost = this.addVisitedPositionAndPost;
     addVisitedPosition = this.addVisitedPosition;
+    clearScrollHistory = () => this.clearScrollHistory();
     keymaster('b', this.goBack);
     keymaster('f', this.goForward);
     keymaster('1', scrollToTop);
@@ -133,6 +135,14 @@ export var ScrollButtons = createClassAndFactory({
       this.setState({ isShown: pageHasScrollbars });
     }
     setTimeout(this.showOrHide, 500);
+  },
+
+  clearScrollHistory: function() {
+    if (this.isGone) return;
+    this.setState({
+      visitedPosts: [],
+      currentVisitedPostIndex: -1,
+    });
   },
 
   // Crazy with number | string. Oh well, fix later [3KGU02] CLEAN_UP
@@ -300,10 +310,13 @@ export var ScrollButtons = createClassAndFactory({
 
     // UX: Don't show num steps one can scroll back, don't: "Back (4)" — because people
     // sometimes think 4 is a post number.
-    const scrollBackButton =
+    // UX: Don't show the 'Back' button in disabled mode, if back list is empty.
+    // Instead, hide the btn, because sometimes people think Back means
+    // "navigate back to the prev page".  Hopefully, once they've scroll-jumped a bit,
+    // and the Back btn appears, they might realize that "back" means *scrolling* back?
+    const scrollBackButton = !this.canGoBack() ? null :
         Button({ className: 'esScrollBtns_back', onClick: this.goBack,
-            title: t.sb.BackExpl,
-            disabled: this.state.currentVisitedPostIndex <= 0 },
+            title: t.sb.BackExpl },
           r.span({ className: 'esScrollBtns_back_shortcut' }, t.sb.Back_1), t.sb.Back_2);
 
     return (
@@ -396,11 +409,14 @@ const ScrollButtonsDropdownModal = createComponent({
             title: t.sb.ReplHelp, disabled: !state.enableGotoRepliesBtn },
           r.span({ className: 'icon-reply' }, t.sb.Repl));
 
-      const scrollToCommentsButton = isChat || neverHasReplies ? null :
+      // Old. Progress notes are deprecated.
+      // Later, instead, a Timeline button.  [prgr_chat_sect]
+      const scrollToCommentsButton = null; /* isChat || neverHasReplies ? null :
         PrimaryButton({ className: 'esScrollDlg_Comments', onClick: this.scrollToComments,
             title: t.sb.ProgrHelp, disabled: !state.enableGotoCommentsBtn },
           r.span({ className: 'icon-comment' }),
           r.span({ className: 'esScrollDlg_Comments_Text' }, t.sb.Progr));
+          */
 
       const scrollToEndButton = PrimaryButton({ className: 'esScrollDlg_Down',
           onClick: this.scrollToEnd, title: t.sb.BtmHelp,

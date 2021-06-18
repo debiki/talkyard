@@ -394,9 +394,9 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
         subjText.toString
       } */
 
-    val email = Email(EmailType.Notification, createdAt = globals.now(),
+    val email = Email.createGenId(EmailType.Notification, createdAt = globals.now(),
       sendTo = user.email, toUserId = Some(user.id),
-      subject = subject, bodyHtmlText = (emailId: String) => "?")
+      subject = subject, bodyHtml = "?")
 
     // If this is an embedded discussion, there is no Debiki canonical host address to use.
     // So use the site-by-id origin, e.g. https://site-123.debiki.com, which always works.

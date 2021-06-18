@@ -638,7 +638,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def saveUnsentEmail(email: Email): Unit
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit
   def updateSentEmail(email: Email): Unit
-  def loadEmailById(emailId: String): Option[Email]
+  def loadEmailByIdOnly(emailId: St): Opt[Email]
+  def loadEmailBySecretOrId(emailId: St): Opt[Email]
   def loadEmailsSentTo(userIds: Set[UserId], after: When,
         emailType: EmailType): Map[UserId, Seq[Email]]
   def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit

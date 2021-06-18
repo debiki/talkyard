@@ -129,6 +129,7 @@ describe("summary-emails.2br.mtime  TyTE2E06AJG256", () => {
   });
 
   it("Michael gets an addr verif email, clicks the verif link", () => {
+    // The email link needs to be valid for > 25h or this'll fail.  [e2e_eml_exp_hs]
     const url = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, michael.emailAddress);
     michaelsBrowser.go(url);
     michaelsBrowser.waitAndClick('.btn'); // click Continue

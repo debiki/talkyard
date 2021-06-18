@@ -158,16 +158,6 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def transactionAllowOverQuota[T](f: (js.Connection) => T): T = {
-    anyOneAndOnlyConnection foreach { connection =>
-      return f(connection)
-    }
-    die("anyOneAndOnlyConnection is empty [EsE7GJMU23]") /*
-    systemDaoSpi.db.transaction(f)
-    */
-  }
-
-
   def makeSqlArrayOfStringsUnique(values: Iterable[String]): js.Array = {
     val distinctValues = values.toVector.sorted.distinct
     theOneAndOnlyConnection.createArrayOf("varchar", distinctValues.toArray[Object])
@@ -801,9 +791,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     val sql = """
       update sites3 set version = version + 1 where id = ?
       """
-    transactionAllowOverQuota { implicit connection =>
-      db.update(sql, List(siteId.asAnyRef))
-    }
+    runUpdate(sql, List(siteId.asAnyRef))
   }
 
 
@@ -874,73 +862,112 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]) {
-    // Allow over quota, so you're over quota emails get sent.
-    transactionAllowOverQuota { implicit connection =>
-      _saveUnsentEmail(email)
-      updateNotificationConnectToEmail(notfs, Some(email))
-    }
+    __saveUnsentEmail(email)
+    updateNotificationConnectToEmail(notfs, Some(email))
   }
 
 
   def saveUnsentEmail(email: Email) {
-    // Allow over quota, so you're over quota emails get sent.
-    transactionAllowOverQuota { _saveUnsentEmail(email)(_) }
+    __saveUnsentEmail(email)
   }
 
 
-  private def _saveUnsentEmail(email: Email)
-        (implicit connection: js.Connection) {
+  private def __saveUnsentEmail(email: EmailOut) {
     require(email.id != "?")
     require(email.failureText isEmpty)
     require(email.providerEmailId isEmpty)
     require(email.sentOn isEmpty)
+    require(email.secretStatus.isEmptyOr(SecretStatus.Valid))
+    require(email.numRepliesBack.isEmptyOr(0))
 
-    val vals = List(siteId.asAnyRef, email.id, email.tyype.toInt.asAnyRef, email.sentTo,
-      email.toUserId.orNullInt,
-      d2ts(email.createdAt), email.subject, email.bodyHtmlText)
+    val vals = List(
+          siteId.asAnyRef,
+          email.id,
+          email.tyype.toInt.asAnyRef,
+          email.sentTo,
+          email.toUserId.orNullInt,
+          email.sentFrom.orNullVarchar,
+          d2ts(email.createdAt),
+          email.subject,
+          email.bodyHtmlText,
+          email.secretValue.orNullVarchar,
+          email.secretStatus.map(_.toInt).orNullInt)
 
-    db.update("""
+    runUpdateSingleRow("""
       insert into emails_out3(
-        SITE_ID, ID, TYPE, SENT_TO, TO_USER_ID, CREATED_AT, SUBJECT, BODY_HTML)
+        SITE_ID, ID, TYPE, SENT_TO, TO_USER_ID,
+        sent_from_c,
+        CREATED_AT, SUBJECT, BODY_HTML,
+        secret_value_c, secret_status_c)
       values (
-        ?, ?, ?, ?, ?, ?, ?, ?)
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """, vals)
   }
 
 
-  def updateSentEmail(email: Email) {
-    transactionAllowOverQuota { implicit connection =>
-      val sentOn = email.sentOn.map(d2ts(_)) getOrElse NullTimestamp
-      // 'O' means Other, use for now.
-      val failureType = email.failureText.isDefined ?
+  def updateSentEmail(email: Email): U = {
+    val sentOn = email.sentOn.map(d2ts(_)) getOrElse NullTimestamp
+    // 'O' means Other, use for now.
+    val failureType = email.failureText.isDefined ?
          ("O": AnyRef) | (NullVarchar: AnyRef)
-      val failureTime = email.failureText.isDefined ?
+    val failureTime = email.failureText.isDefined ?
          (sentOn: AnyRef) | (NullTimestamp: AnyRef)
 
-      val vals = List(
-        sentOn, email.providerEmailId.orNullVarchar,
-        failureType, email.failureText.orNullVarchar, failureTime,
-        email.canLoginAgain.orNullBoolean,
-        siteId.asAnyRef, email.id)
+    val vals = List(
+          sentOn,
+          email.sentFrom.orNullVarchar,
+          email.providerEmailId.orNullVarchar,
+          failureType,
+          email.failureText.orNullVarchar,
+          failureTime,
+          email.secretStatus.map(_.toInt).orNullInt,
+          email.numRepliesBack.orNullInt,
+          email.canLoginAgain.orNullBoolean,
+          siteId.asAnyRef,
+          email.id)
 
-      db.update("""
+    runUpdateSingleRow("""
         update emails_out3
-        set SENT_ON = ?, PROVIDER_EMAIL_ID = ?,
-            FAILURE_TYPE = ?, FAILURE_TEXT = ?, FAILURE_TIME = ?,
+        set SENT_ON = ?,
+            sent_from_c = ?,
+            PROVIDER_EMAIL_ID = ?,
+            FAILURE_TYPE = ?,
+            FAILURE_TEXT = ?,
+            FAILURE_TIME = ?,
+            secret_status_c = ?,
+            num_replies_back_c = ?,
             can_login_again = ?
         where SITE_ID = ? and ID = ?
         """, vals)
-    }
   }
 
 
-  def loadEmailById(emailId: String): Option[Email] = {
+  def loadEmailByIdOnly(emailId: St): Option[Email] = {
     val query = s"""
       select * from emails_out3
       where SITE_ID = ? and ID = ?
       """
     runQueryFindOneOrNone(query, List(siteId.asAnyRef, emailId), rs => {
-      getEmail(rs)
+      val e = getEmail(rs)
+      dieIf(e.id != emailId, "TyE507MREG24")
+      e
+    })
+  }
+
+
+  DO_AFTER /** 2021-08-01 load by  *secret*  only, rename to  loadEmailBySecret()
+    * — currently loading by id too, for legacy reasons.
+    */
+  def loadEmailBySecretOrId(secretOrId: St): Opt[Email] = {
+    val query = s"""
+          select * from emails_out3
+          where site_id = ? and (id = ? or secret_value_c = ?)
+          """
+    val values = List(siteId.asAnyRef, secretOrId, secretOrId)
+    runQueryFindOneOrNone(query, values, rs => {
+      val e = getEmail(rs)
+      dieIf(e.secretValue.isNot(secretOrId) && e.id != secretOrId, "TyE507MREG25")
+      e
     })
   }
 
@@ -980,11 +1007,15 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       sentTo = rs.getString("sent_to"),
       toUserId = getOptInt(rs, "to_user_id"),
       sentOn = getOptionalDate(rs, "sent_on"),
+      sentFrom = getOptString(rs, "sent_from_c"),
       createdAt = getDate(rs, "created_at"),
       subject = rs.getString("subject"),
       bodyHtmlText = rs.getString("body_html"),
       providerEmailId = Option(rs.getString("provider_email_id")),
       failureText = Option(rs.getString("failure_text")),
+      secretValue = getOptString(rs, "secret_value_c"),
+      secretStatus = getOptInt(rs, "secret_status_c").flatMap(SecretStatus.fromInt),
+      numRepliesBack = getOptInt(rs, "num_replies_back_c"),
       canLoginAgain = getOptBool(rs, "can_login_again"))
   }
 

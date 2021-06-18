@@ -205,7 +205,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // BUG SHOULD use Redis, so the key won't disappear after server restart.
     // Cmp w GitHub: An authn code in an email from GitHub was valid for 1 hour,
     // today 2020-10-16.
-    .expireAfterWrite(65, j_MINUTES)
+    .expireAfterWrite(65, j_MINUTES)   // [.verif_em_ttl]
     .build().asInstanceOf[caffeine.cache.Cache[St, OngoingAuthnState]]
 
 
@@ -1698,31 +1698,29 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // But what about secondary addresses?  [2nd_email]
     dieIf(emailToVerify != user.primaryEmailAddress, "TyE39TKRSTRS20")
 
-    val expMins = MaxEmailSecretLinkAgeMinutes
     val secretNonce = nextRandomString()
     authnStateCache.put(secretNonce, authnState.copy(nextStep = "ask_if_link"))
 
-    COULD // use Redis instead
-    //dao.redisCache.saveOneTimeSecretKeyVal(
-    //      emailVerifSecret,  ...serialize-to-json..., expSecs = expMins * 60)
+    COULD // use  emails_out_t.secret_value_c  [clean_up_emails]
+    // instead of authnStateCache? Or both.
 
     val subject = "Verify your email address" // I18N
     val emailVerifUrl =
           originOf(request) +
           controllers.routes.LoginWithOpenAuthController.verifyEmailAskIfLinkAccounts(
               secretNonce).url
-    val email = Email(
+
+    val email = Email.createGenId(
           EmailType.LinkAccounts,
           createdAt = globals.now(),
           sendTo = user.primaryEmailAddress,
           toUserId = Some(user.id),
           subject = s"[${dao.theSiteName()}] $subject",
-          bodyHtmlText = _ => {
+          bodyHtml =
             views.html.login.verifyYourEmailAddrEmail(
                   name = user.nameOrUsername,
                   siteAddr = request.host,
-                  emailVerifUrl = emailVerifUrl).body
-          })
+                  emailVerifUrl = emailVerifUrl).body)
     dao.saveUnsentEmail(email)
     globals.sendEmail(email, dao.siteId)
 
@@ -1736,7 +1734,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                 isAdminArea = true),
           subject = subject,
           emailToVerify = emailToVerify,
-          expMins = expMins))
+          // authnStateCache remembers things for 65 mins [.verif_em_ttl]
+          // and this is 1 * 60 min:  [clean_up_emails]
+          expMins = EmailType.LinkAccounts.secretsExpireHours * 60))
   }
 
 
@@ -1750,6 +1750,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // not yet linked the end user's identity to the Ty account) so we cannot
     // currently save in the database that the email has been verified.
 
+    // This stops working after 65 minutes.  [.verif_em_ttl].
     val authnState = getAuthnStateOrThrow(secretNonce, "ask_if_link",
           loginToSiteId = request.siteId)
     logger.info(s"Email verified, nonce: $secretNonce, who: ${authnState.toLogString}")
