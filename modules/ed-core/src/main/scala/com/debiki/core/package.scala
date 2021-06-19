@@ -135,6 +135,7 @@ package object core {
   type CategoryId = Int   // too long!
   type CatId = CategoryId // better
   type Cat = Category     // better
+  val Cat = Category
   val NoCategoryId = 0
 
   // Only [a-z0-9] so works in domain names, and so won't be any surprising chars

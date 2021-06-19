@@ -119,7 +119,7 @@ case class CategoryToSave(
   def makeAboutTopicBody(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
     textAndHtmlMaker.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
 
-  def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
+  def makeCategory(id: CatId, createdAt: ju.Date): Cat = Cat(
     id = id,
     extImpId = extId,
     sectionPageId = sectionPageId,
@@ -169,6 +169,13 @@ case class CreateCategoryResult(
   category: Category,
   pagePath: PagePathWithId,
   permissionsWithIds: immutable.Seq[PermsOnPages])
+
+
+
+case class SavePermsResult(
+  permsWithIds: immutable.Seq[PermsOnPages],
+  wasChangesMade: Bo)
+
 
 
 /** Loads and saves categories.
@@ -651,9 +658,12 @@ trait CategoriesDao {
 
       AUDIT_LOG // fix later
 
-      val permissionsChanged =
-            addRemovePermsOnCategory(catId, permissions)(tx, limits)._2
-      (catBef, catAft, permissionsChanged)
+      val savePermsResult =
+            __savePermsOnCat(catId, permissions)(tx, limits) getOrIfBad { err =>
+              throwForbidden("TyEEDCATPRM", err)
+            }
+
+      (catBef, catAft, savePermsResult.wasChangesMade)
     }
 
     val nameChanged = catBef.name != catAft.name
@@ -757,8 +767,11 @@ trait CategoriesDao {
 
     val effPerms = permissions.filter(_.hasSomeEffect)
     val permsWithCatId = effPerms.map(_.copy(onCategoryId = Some(categoryId)))
-    val permsWithId =
-          addRemovePermsOnCategory(categoryId, permsWithCatId)(tx, limits)._1
+    val savePermsResult =
+          __savePermsOnCat(categoryId, permsWithCatId)(tx, limits)
+              .getOrIfBad { err =>
+                throwForbidden("TyECATPERMS", err)
+              }
 
     if (byWho.isSystem) {
       // Then this category is being auto generated as part of creating
@@ -778,7 +791,7 @@ trait CategoriesDao {
       throwForbidden("TyEBADCATS01", s"$siteId: Categories problem: ${p.message}")
     }
 
-    CreateCategoryResult(category, aboutPagePath, permsWithId)
+    CreateCategoryResult(category, aboutPagePath, savePermsResult.permsWithIds)
   }
 
 
@@ -866,9 +879,10 @@ trait CategoriesDao {
   }
 
 
-  private def addRemovePermsOnCategory(categoryId: CategoryId,
-        permissions: immutable.Seq[PermsOnPages])(tx: SiteTransaction, lims: MaxLimits)
-        : (immutable.Seq[PermsOnPages], Boolean) = {
+  private def __savePermsOnCat(categoryId: CatId,
+        permissions: immutable.Seq[PermsOnPages])(tx: SiteTx, lims: MaxLimits)
+        : SavePermsResult Or ErrMsg = {
+
     dieIf(permissions.exists(_.onCategoryId.isNot(categoryId)), "EdE2FK0YU5")
 
     val permsWithIds = ArrayBuffer[PermsOnPages]()
@@ -911,14 +925,16 @@ trait CategoriesDao {
     wasChangesMade ||= oldPermissionsById.nonEmpty
 
     // Too many permission settings, afterwards?
-    // (COULD add a check in the request handlers that throws client-error directly.)
     val permsAfter = tx.loadPermsOnPages()
     val maxPerms = lims.maxPermsPerSite
-    dieIf(permsAfter.length > maxPerms,
-      "TyEMNYPERMS", s"Cannot save ${permissions.length} permissions, " +
-        s"would result in ${permsAfter.length} permissions in total, but $maxPerms is max")
+    if (permsAfter.length > maxPerms)
+      return Bad(o"""Cannot save ${permissions.length} permissions
+            would result in ${permsAfter.length} permissions in total, but
+            $maxPerms is max [TyEMNYPERMS]""")
 
-    (permsWithIds.toVector, wasChangesMade)
+    Good(SavePermsResult(
+          permsWithIds = permsWithIds.toVector,
+          wasChangesMade = wasChangesMade))
   }
 
 
