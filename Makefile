@@ -652,6 +652,7 @@ push-tag-to-git:
 	@echo "Look, the dev channel, now afterwards:"
 	@cd relchans/$(DEV_RELEASE_CHANNEL)/  ;\
 	  set -x  ;\
+	  pwd  ;\
 	  git log --oneline -n5  ;\
 	  tail -n5 version-tags.log
 

@@ -29,6 +29,12 @@ let forum: TwoCatsTestForum;
 
 describe(`hide-unhide-tips.2br  TyTE2EHIDETPS329`, () => {
 
+  if (settings.prod) {
+    console.log(`Prod mode: Skipping this spec — the server
+            wouldn't show the e2e test announcement.`);
+    return;
+  }
+
   it(`construct site`, () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
