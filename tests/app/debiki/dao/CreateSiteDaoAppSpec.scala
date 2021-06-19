@@ -32,12 +32,13 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     require(prefix % 20 == 0) // else prefix + number just below won't be a nice looking number
     val theFingerprint = if (browserFingerprint == -1) prefix + number else browserFingerprint
     val thePrefix = s"e2e-test-crst-$prefix-$number"
+    val thePubId = pubId getOrElse s"e2epubid${thePrefix.replaceAllLiterally("-", "")}"
     val theLocalHostname = localHostname getOrElse thePrefix
     val theHostname = hostname getOrElse s"$theLocalHostname.example.com"
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
     val theIp = if (ip eq null) s"$prefix.0.0.$number" else ip
     globals.systemDao.createAdditionalSite(
-      anySiteId = None, pubId = pubId getOrElse s"createsitepubid-$thePrefix",
+      anySiteId = None, pubId = thePubId,
       name = name getOrElse theLocalHostname, status = SiteStatus.Active,
       hostname = Some(theHostname),
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix", creatorId = user.id,

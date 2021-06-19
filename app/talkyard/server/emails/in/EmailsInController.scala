@@ -81,7 +81,7 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
           case None =>
             logAndDebug(s"No hash, don't know what this incoming email replies to")
           case Some(hash: St) =>
-            val parts: Array[St] = hash.split(".")
+            val parts: Array[St] = hash.split('-')  // [em_in_hash]
             if (parts.length != 2) {
               logAndDebug(s"Bad site and email id hash, ${parts.length} parts: '$hash'")
             }

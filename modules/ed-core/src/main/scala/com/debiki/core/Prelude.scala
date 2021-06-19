@@ -823,6 +823,12 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     def isAlNum: Bo =
       underlying.forall(charIsAzOrNum)
 
+    def isAzLowerOrNum: Bo =
+      underlying.forall(charIsAzLowerOrNum)
+
+    def isAzLowerNumUn: Bo =
+      underlying.forall(charIsAzLowerNumUn)
+
     def isAlNumWithAl: Bo =
       AlNumWithAl.pattern.matcher(underlying).matches
 
@@ -834,14 +840,23 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   def charIsAzNumOrUnderscore(c: Char): Boolean =
     charIsAzOrNum(c) || c == '_'
 
-  def charIsAz(c: Char): Boolean =
-    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+  def charIsAzLower(c: Char): Bo =
+    c >= 'a' && c <= 'z'
+
+  def charIsAz(c: Char): Bo =
+    charIsAzLower(c) || (c >= 'A' && c <= 'Z')
 
   def charIsAzUnderscore(c: Char): Boolean =
     charIsAz(c) || c == '_'
 
   def charIsAzOrNum(c: Char): Boolean =
     charIsAz(c) || charIsNum(c)
+
+  def charIsAzLowerOrNum(c: Char): Bo =
+    charIsAzLower(c) || charIsNum(c)
+
+  def charIsAzLowerNumUn(c: Char): Bo =
+    charIsAzLower(c) || charIsNum(c) || c == '_'
 
   def charIsNumOrDotDash(c: Char): Boolean = charIsNum(c) || c == '.' || c == '-'
 

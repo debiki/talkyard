@@ -137,7 +137,9 @@ package object core {
   type Cat = Category     // better
   val NoCategoryId = 0
 
-  type PubSiteId = String
+  // Only [a-z0-9] so works in domain names, and so won't be any surprising chars
+  // if splitting on a (site pub id) and (some other id) separator. [em_in_hash]
+  type PubSiteId = String  // [Scala_3] opaque type  parse check here [503MSIEJ36]
 
   type SiteId = Int
   val NoSiteId = 0
