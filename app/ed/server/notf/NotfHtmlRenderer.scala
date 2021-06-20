@@ -21,6 +21,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.dao.SiteDao
 import scala.xml.{NodeSeq, Text}
+import NotfHtmlRenderer._
 
 
 case class RenderNotfsResult(
@@ -264,19 +265,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
           s"$itIsShownOrHidden. It was posted by", "e_NfEm_ModTsk")
     }
 
-    UX; COULD // sync reply btn color w CSS; see $uiHue in variables.styl [site_prim_col].
-    val replyBtnStyles = o"""
-          display: inline-block;
-          padding: 8px 20px;
-          background: hsl(207 100% 54%);
-          color: white;
-          font-weight: bold;
-          font-size: 17px;
-          letter-spacing: 0.3px;
-          text-decoration: none;
-          """
 
-    // Email clients add  target="_blank" rel="noopener"  themselves if needed?
+    // Email clients apparently add  target="_blank" (rel="noopener")  themselves.
 
     <p class={cssE2eTestClass}>
       { whatHappened }, <a href={url}>here</a>, on page "<i>{pageTitle}</i>"{dotOrComma}
@@ -309,4 +299,22 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     </p>
   }*/
 
+}
+
+object NotfHtmlRenderer {
+
+  UX; COULD // sync reply btn color w CSS; see $uiHue in variables.styl [site_prim_col].
+  val replyBtnStyles = o"""
+        display: inline-block !important;
+        padding: 4px 18px !important;
+        margin: 0.3em 0 1.4em !important;
+        background: hsl(207 100% 56%) !important;
+        box-shadow: 3px 3px 7px rgb(0 0 0 / 55%) !important;
+        color: white !important;
+        font-weight: bold !important;
+        font-size: 16px !important;
+        letter-spacing: 0.3px !important;
+        text-decoration: none !important;
+        cursor: pointer !important;
+        """
 }
