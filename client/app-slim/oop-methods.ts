@@ -1619,9 +1619,7 @@ export function page_removeFromParentInPlace(page: Page, post: Post) {
 
 export function page_voteTypeEnabled(page: Page, post: Post, voteType: PostVoteType) {
   // Just for now. All vote types enabled by default,
-  // but Disagree can be disabled.
-  // (Background: Some people wanted to not have any Disagree votes, but they were
-  // ok with the other votes — just the Like vote, plus Bury and Unwanted for staff.)
+  // but Disagree can be disabled. See:  [tyworld_5mj98267]
   return page.enableDisagreeVote || voteType !== PostVoteType.Disagree;
 }
 

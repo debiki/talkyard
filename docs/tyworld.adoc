@@ -5,6 +5,23 @@ Domain model.
 
 
 
+== Different types of "Posts"
+
+In Talkyard, pages and replies are "posts":
+
+Forum Post = new forum discussion page, a.k.a. thread, or Original Post.
+Forum Reply = A reply to a forum post.
+
+Forum intro post = Shown at the top of the forum post index page
+and explains what the forum is about. Can be collapsed.
+
+Blog Post = blog article.
+Blog Comment = a reply to a blog article.
+
+Wiki Page = a wiki page.
+Wiki Comment = a comment on a wiki page.
+
+
 == Three kinds of pages
 
 Index pages a.k.a. site section pages: Currently only of type Forum,
@@ -92,7 +109,17 @@ People both in and outside the organization discuss something. These types:
 
 
 
-== Topic statuses
+== Forum post statuses
+
+
+
+
+== Vote types
+
+
+All vote types enabled by default, but Disagree can be disabled  [tyworld_5mj98267]
+— some people wanted to not have any Disagree votes, but they were
+ok with the other votes — just the Like vote, plus Bury and Unwanted for staff.
 
 
 
