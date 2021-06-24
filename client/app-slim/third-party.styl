@@ -271,6 +271,15 @@ a.btn-default
   padding-top: 8px;
   padding-bottom: 8px;
 
+// Undo .dropdown-menu li a  no-wrap:
+.dropdown-menu > li.s_Hz > a
+  white-space: normal;
+
+// Without this, the menu items start extending outside the screen, when too narrow.
+@media (max-width: 330px)
+  .dropdown-menu > li > a
+    word-break: break-all;
+
 input, textarea {
   /* Disable annoyingly slow Twitter Bootstrap transitions.
   Alternatively, change from 0.2s to 0.05s. */
