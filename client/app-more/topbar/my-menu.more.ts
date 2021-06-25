@@ -195,6 +195,8 @@ export const MyMenuContent = createFactory({
         viewDraftsAndBookmarks,
         viewAsOtherItem,
         notfsDivider,
+        // UX BUG [ios_bugs] On Safari (& Chrome) on iOS, one cannot scroll down
+        // in the notifications list.
         viewAllNotfsOrClear,
         notfsItems,
         extraViewAllNotfsOrClear,

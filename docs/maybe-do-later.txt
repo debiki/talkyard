@@ -740,3 +740,8 @@ About how to write docs:
       Related discussion: https://news.ycombinator.com/item?id=26002656
 - https://v3.vuejs.org/guide/contributing/writing-guide.html:
       Vuejs writing guide
+
+
+[ios_bugs]
+Problems that happen only on iOS Safari (and Chrome, but all browsers are basically
+Safari on iOS). When works elsewhere, this might be bugs in iOS Safari.
