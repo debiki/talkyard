@@ -295,7 +295,7 @@ function runAllE2eTests {
   $r s/wdio --only create-site-github-uppercase-email.1br.extidp $args
   $r s/wdio --only create-site-linkedin.1br.extidp $args
   $r s/wdio --only create-site-admin-guide.2browsers $args
-  $r s/wdio --only oauth-signup-signin $args
+  $r s/wdio --only gmail-fb-join-login.extidp.1br $args
 
   $r s/wdio --only oidc-azure-login-required.2br.extidp $args
   $r s/wdio --only oidc-azure-pub-site.2br.extidp $args
@@ -354,7 +354,7 @@ function runAllE2eTests {
   $r s/wdio --only move-posts-other-page.2browsers $args
   # + delete-posts
 
-  $r s/wdio --only settings-allowed-email-domains.2browsers $args
+  $r s/wdio --only settings-allowed-email-domains.extidp.2br $args
   $r s/wdio --only settings-toggle-login-required.3browsers $args
   $r s/wdio --only login-required-ext-signup-login.1br.extidp $args
   $r s/wdio --only login-required-join-global-chat.2br $args

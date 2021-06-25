@@ -12,9 +12,6 @@ import c = require('../test-constants');
 
 
 
-
-
-let everyonesBrowsers;
 let richBrowserA;
 let richBrowserB;
 let owen: Member;
@@ -42,7 +39,7 @@ const notOkayOrgUser =
     { emailAddress: 'e2e-test-a@' + notOkayOrgDomain, username: "NOk", password: "1 pet is 1 cat" };
 
 
-describe("email-domain-allowlist-blocklist [TyT5AKRD04]", () => {
+describe("settings-allowed-email-domains.extidp.2br  TyT5AKRD04", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -56,7 +53,6 @@ describe("email-domain-allowlist-blocklist [TyT5AKRD04]", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
     richBrowserA = new TyE2eTestBrowser(browserA);
     richBrowserB = new TyE2eTestBrowser(browserB);
 
