@@ -1,0 +1,192 @@
+When running the e2e tests, the server crashed, here's the e2e log: (see "502 Bad Gateway" at the end)
+
+13:17:02 2 ~/styd/d9 topic-upgr-java-11 *+$% $ s/tyd e --retry 2 
+
+...
+
+
+
+0-61] Calling this.#br.switchToWindow(handle = 'CDwindow-287CBD2105AFADF49B182C75E8D962DA')
+[0-61] ... done, win handle is now: CDwindow-287CBD2105AFADF49B182C75E8D962DA.
+[0-61] ... and tries to join — although may not see the chat  TyT502RKTJF4
+[0-61] ... but there's an error
+[0-61] Merche cannot see the page at all, after reloading the page
+[0-61] Suite ended: promote-demote-by-staff-join-leave-chats.2br.test.ts: "promote-demote-by-staff-join-leave-chats.2br  TyTE2E5H3GFRVK" 2021-07-02T09:51:31.222Z took 86s
+[0-61] PASSED in MultiRemote - /tests/e2e/specs/promote-demote-by-staff-join-leave-chats.2br.test.ts
+[0-62] I'll start 2 chrome browsers.
+[0-62] RUNNING in MultiRemote - /tests/e2e/specs/sanitize-posts.2browsers.test.ts
+[0-62] Suite start: sanitize-posts.2browsers.test.ts: "sanitize-posts  TyT603RMDL3" 2021-07-02T09:51:39.565Z
+[0-62] import a site
+[0-62] POST http://localhost/-/import-test-site-json, headers: {"X-XSRF-TOKEN":"1625219496.1nqll3545o8o.PeJRGaxBs-zZH2k","Cookie":"XSRF-TOKEN=1625219496.1nqll3545o8o.PeJRGaxBs-zZH2k; "} ... [TyME2EPOST]
+[0-62] curl  \
+    -X POST  \
+    -H 'Content-Type: application/json'  \
+    -H 'X-XSRF-TOKEN: 1625219496.1nqll3545o8o.PeJRGaxBs-zZH2k'  \
+    -H 'Cookie: XSRF-TOKEN=1625219496.1nqll3545o8o.PeJRGaxBs-zZH2k; '  \
+    -d '{"meta":{"name":"e2e-test-cid-0-62-now-1949-1625219499568","localHostname":"e2e-test-cid-0-62-now-1949","creatorEmailAddress":"e2e-test--owen-owner@example.com","status":2,"createdAtMs":1449198824000,"nextPageId":100,"version":1},"settings":{"companyFullName":"E2E Test Org"},"groups":[],"members":[{"id":101,"username":"owen_owner","fullName":"Owen Owner","createdAtMs":1449198824000,"emailAddress":"e2e-test--owen-owner@example.com","emailVerifiedAtMs":1449198824000,"passwordHash":"cleartext:publ-ow020","password":"publ-ow020","isOwner":true,"isAdmin":true,"trustLevel":2},{"id":102,"username":"maria","fullName":"Maria","createdAtMs":1449198824000,"emailAddress":"e2e-test--maria@example.com","emailVerifiedAtMs":1449198824000,"passwordHash":"cleartext:publ-ma020","password":"publ-ma020","trustLevel":2},{"id":103,"username":"michael","fullName":"Michael","createdAtMs":1449198824000,"emailAddress":"e2e-test--michael@example.com","emailVerifiedAtMs":1449198824000,"passwordHash":"cleartext:pub
+       ...'  \
+    http://localhost/-/import-test-site-json
+[0-62] POST http://localhost/-/skip-rate-limits, headers: {"X-XSRF-TOKEN":"1625219496.1nqll3545o8o.PeJRGaxBs-zZH2k","Cookie":"XSRF-TOKEN=1625219496.1nqll3545o8o.PeJRGaxBs-zZH2k; "} ... [TyME2EPOST]
+curl  \
+    -X POST  \
+    -H 'Content-Type: application/json'  \
+    -H 'X-XSRF-TOKEN: 1625219496.1nqll3545o8o.PeJRGaxBs-zZH2k'  \
+    -H 'Cookie: XSRF-TOKEN=1625219496.1nqll3545o8o.PeJRGaxBs-zZH2k; '  \
+    -d '{"siteId":-288}'  \
+    http://localhost/-/skip-rate-limits
+[0-62] initialize people
+[0-62] Mallory logs in
+[0-62] Go: http://e2e-test-cid-0-62-now-1949.localhost  & disable rate limits
+[0-62] TyE2eApi: loginWithPasswordViaTopbar
+[0-62] Mallory posts an XSS and Other Attacks topic
+[0-62] Mallory posts attackStrOne
+[0-62] ... It got properly sanitized
+[0-62] Suite ended: sanitize-posts.2browsers.test.ts: "sanitize-posts  TyT603RMDL3" 2021-07-02T09:51:59.648Z took 20s
+[0-62] PASSED in MultiRemote - /tests/e2e/specs/sanitize-posts.2browsers.test.ts
+[0-63] I'll start 2 chrome browsers.
+[0-63] RUNNING in MultiRemote - /tests/e2e/specs/search-private-chat.2browsers.test.ts
+[0-63] Suite start: search-private-chat.2browsers.test.ts: "priv chat" 2021-07-02T09:52:08.408Z
+[0-63] initialize people
+[0-63] import a site
+[0-63] POST http://localhost/-/import-test-site-json, headers: {"X-XSRF-TOKEN":"1625219525.uhiqmo4a6cwm.RXKBxvR37pkqOp2","Cookie":"XSRF-TOKEN=1625219525.uhiqmo4a6cwm.RXKBxvR37pkqOp2; "} ... [TyME2EPOST]
+[0-63] curl  \
+    -X POST  \
+    -H 'Content-Type: application/json'  \
+    -H 'X-XSRF-TOKEN: 1625219525.uhiqmo4a6cwm.RXKBxvR37pkqOp2'  \
+    -H 'Cookie: XSRF-TOKEN=1625219525.uhiqmo4a6cwm.RXKBxvR37pkqOp2; '  \
+    -d '{"meta":{"name":"e2e-test-search-priv-chat-1625219528440","localHostname":"e2e-test-cid-0-63-now-1952","creatorEmailAddress":"e2e-test--owen-owner@example.com","status":2,"createdAtMs":1449198824000,"nextPageId":100,"version":1},"settings":{"companyFullName":"E2E Test Org","allowGuestLogin":true,"requireVerifiedEmail":false,"mayPostBeforeEmailVerified":true},"groups":[],"members":[{"id":105,"username":"owen_owner","fullName":"Owen Owner","createdAtMs":1449198824000,"emailAddress":"e2e-test--owen-owner@example.com","emailVerifiedAtMs":1449198824000,"passwordHash":"cleartext:publ-ow020","password":"publ-ow020","isOwner":true,"isAdmin":true},{"id":102,"username":"admin_alice","fullName":"Admin Alice","createdAtMs":1449198824000,"emailAddress":"e2e-test--admin-alice@example.com","emailVerifiedAtMs":1449198824000,"passwordHash":"cleartext:publ-al020","password":"publ-al020","isAdmin":true},{"id":104,"username":"mallory","fullName":"Malicious Mallory","createdAtMs":1449198824000,"emailAddres
+       ...'  \
+    http://localhost/-/import-test-site-json
+[0-63] Owen goes to the homepage and log in
+[0-63] Go: http://e2e-test-cid-0-63-now-1952.localhost  & disable rate limits
+[0-63] TyE2eApi: loginWithPasswordViaTopbar
+[0-63] Owen creates a private chat
+[0-63] 2021-07-02T09:52:17.829Z WARN webdriver: Request encountered a stale element - terminating request
+[0-63] 2021-07-02T09:52:18.048Z WARN webdriver: Request encountered a stale element - terminating request
+[0-63] Seems is gone:  #theLoadingOverlay  — continuing ...
+[0-63] ... and adds Michael
+[0-63] Users present: owen_owner, michael
+[0-63] Michael logs in
+[0-63] Go: http://e2e-test-cid-0-63-now-1952.localhost  & disable rate limits
+[0-63] TyE2eApi: loginWithPasswordViaTopbar
+[0-63] ... finds the chat topic in the watchbar, opens it
+[0-63] 2021-07-02T09:52:29.168Z WARN webdriver: Request encountered a stale element - terminating request
+[0-63] Owen and Michael exchange a few messages
+[0-63] 766 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 1408 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 2096 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 2781 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 3335 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 4033 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 4945 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 6135 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 7559 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 9438 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 11944 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 15231 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] 18872 ms elapsed: Waiting until gone:  #theLoadingOverlay  ... [TyME2EWAITGONE] ...
+[0-63] Error in "priv chat Owen and Michael exchange a few messages"
+Error: Timeout of 27000ms exceeded. The execution in the test "priv chat Owen and Michael exchange a few messages" took too long. Try to reduce the run time or increase your timeout for test specs (https://webdriver.io/docs/timeouts.html). (/home/user/styd/d9/tests/e2e/specs/search-private-chat.2browsers.test.ts)
+    at Test.Runnable._timeoutError (/home/user/styd/d9/node_modules/mocha/lib/runnable.js:426:10)
+    at Timeout.<anonymous> (/home/user/styd/d9/node_modules/mocha/lib/runnable.js:238:24)
+    at listOnTimeout (internal/timers.js:554:17)
+    at processTimers (internal/timers.js:497:7)
+[0-63] 
+FAILED: search-private-chat.2browsers.test.ts: Owen and Michael exchange a few messages  [TyEE2EFAIL] 2021-07-02T09:52:56.266Z took 48s
+
+[0-63] Suite ended: search-private-chat.2browsers.test.ts: "priv chat" 2021-07-02T09:52:56.279Z took 48s
+[0-63] RETRYING after 4s in MultiRemote - /tests/e2e/specs/search-private-chat.2browsers.test.ts
+[0-64] Error response from:  http://localhost  when requesting xsrf token and cookies [TyEE2ESRVSTS]
+
+[0-64] Trace: 
+    at Object.logError (/home/user/styd/d9/tests/e2e/utils/log-and-die.ts:84:13)
+    at Object.initOrExit (/home/user/styd/d9/tests/e2e/utils/server.ts:37:5)
+    at Object.<anonymous> (/home/user/styd/d9/tests/e2e/wdio.conf.ts:13:8)
+    at Module._compile (internal/modules/cjs/loader.js:999:30)
+    at Module.m._compile (/home/user/styd/d9/node_modules/ts-node/src/index.ts:1056:23)
+    at Module._extensions..js (internal/modules/cjs/loader.js:1027:10)
+    at Object.require.extensions.<computed> [as .ts] (/home/user/styd/d9/node_modules/ts-node/src/index.ts:1059:12)
+    at Module.load (internal/modules/cjs/loader.js:863:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:708:14)
+    at Module.require (internal/modules/cjs/loader.js:887:19)
+[0-64] Response status code: 502 (should have been  200)
+Response body: ———————————————————————————————————————————————————————————————————
+<html>
+<head></head>
+<body>
+<pre>
+502 Bad Gateway [TyE502BGW]
+
+Talkyard's Nginx server cannot connect to Talkyard's application server.
+Is the application server not running, or is there some network error?
+
+Please check if the 'app' Docker container is running:  'docker-compose ps'
+
+If it's not running:
+- Start it:  'docker-compose start app'. Then wait a few seconds and reload this page.
+- Or login in a Bash shell:  'docker-compose run --rm --service-ports app bash'
+
+If it is running:
+- Check the logs:  'docker-compose logs'
+- Only Play's logs: 'docker-compose logs app'
+- Or jump into the container:  'docker-compose exec app bash'
+
+
+</pre>
+
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+</body>
+</html>
+——————————————————————————————————————————————————————————————————————————————————
+
+[0-64] Trace: 
+    at Object.logError (/home/user/styd/d9/tests/e2e/utils/log-and-die.ts:84:13)
+    at Object.initOrExit (/home/user/styd/d9/tests/e2e/utils/server.ts:39:5)
+    at Object.<anonymous> (/home/user/styd/d9/tests/e2e/wdio.conf.ts:13:8)
+    at Module._compile (internal/modules/cjs/loader.js:999:30)
+    at Module.m._compile (/home/user/styd/d9/node_modules/ts-node/src/index.ts:1056:23)
+    at Module._extensions..js (internal/modules/cjs/loader.js:1027:10)
+    at Object.require.extensions.<computed> [as .ts] (/home/user/styd/d9/node_modules/ts-node/src/index.ts:1059:12)
+    at Module.load (internal/modules/cjs/loader.js:863:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:708:14)
+    at Module.require (internal/modules/cjs/loader.js:887:19)
+
+/home/user/styd/d9/node_modules/@wdio/cli/build/interface.js:127
+            throw new Error('Could not find job');
+                  ^
+Error: Could not find job
+    at WDIOCLInterface.clearJob (/home/user/styd/d9/node_modules/@wdio/cli/build/interface.js:127:19)
+    at WDIOCLInterface.emit (events.js:314:20)
+    at WDIOCLInterface.EventEmitter.emit (domain.js:483:12)
+    at Launcher.endHandler (/home/user/styd/d9/node_modules/@wdio/cli/build/launcher.js:222:28)
+    at WorkerInstance.emit (events.js:314:20)
+    at WorkerInstance.EventEmitter.emit (domain.js:483:12)
+    at WorkerInstance._handleExit (/home/user/styd/d9/node_modules/@wdio/local-runner/build/worker.js:93:14)
+    at ChildProcess.emit (events.js:314:20)
+    at ChildProcess.EventEmitter.emit (domain.js:483:12)
+    at Process.ChildProcess._handle.onexit (internal/child_process.js:276:12)
+ERROR exit code 1 from:  '.2br,!.mtime,!__e2e-test-template__,!embcom,!embedded-,!embforum.,!UNIMPL,!-impl.,!imp-exp-imp-exp-site'
+Trace: 
+    at Object.logError (/home/user/styd/d9/tests/e2e/utils/log-and-die.ts:84:13)
+    at Object.logErrorIf (/home/user/styd/d9/tests/e2e/utils/log-and-die.ts:73:11)
+    at /home/user/styd/d9/s/tyd.ts:565:7
+    at step (/home/user/styd/d9/s/tyd.ts:33:23)
+    at Object.next (/home/user/styd/d9/s/tyd.ts:14:53)
+    at fulfilled (/home/user/styd/d9/s/tyd.ts:5:58)
+    at processTicksAndRejections (internal/process/task_queues.js:97:5)
+Running 27 specs matching '.2br,.mtime,!embcom,!embedded-,!embforum.,!UNIMPL,!-impl.,!imp-exp-imp-exp-site':
+ - tests/e2e/specs/admin-review-cascade-approval.2br.mtime.test.ts
+ - tests/e2e/specs/admin-review-invalidate-for-reply.2br.mtime.test.ts
+ - tests/e2e/specs/admin-review-invalidate-page-deld.2br.mtime.test.ts
+ - tests/e2e/specs/admin-user-threat-mild.2br.mtime.test.ts
+ - tests/e2e/specs/admin-user-threat-moderate.2br.mtime.test.ts
+ - tests/e2e/specs/chat-basic.2br.mtime.test.ts
+ - tests/e2e/specs/drafts-new-topic.2br.mtime.test.ts
+
+
+

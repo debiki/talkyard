@@ -1,0 +1,290 @@
+JVM SIGSEGV, there's a 5G larg core dump in file ./core which I didn't include in this commit.
+
+
+
+app_1      | 09:52:00.083 [debug] t.RenderContentActor Background rendering site -288, page 1, None... [TyMBGRSTART]
+app_1      | 09:52:00.099 [trace] t.MemCache s-288: Mem cache: Inserting: 2|PageStuff 
+app_1      | 09:52:00.122 [trace] t.d.Nashorn Done rendering: 19 ms, thread application-akka.actor.default-dispatcher-11  (id 218)
+app_1      | 09:52:00.129 [debug] t.RenderContentActor Background rendered site -288, page 1, tiny width [TyMBGRDONE]
+app_1      | 09:52:00.182 [trace] t.d.Nashorn Done rendering: 24 ms, thread application-akka.actor.default-dispatcher-11  (id 218)
+app_1      | 09:52:00.189 [debug] t.RenderContentActor Background rendered site -288, page 1, medium width [TyMBGRDONE]
+app_1      | 09:52:00.189 [trace] t.d.dao.SiteDao Removing mem-cached page: site -288, page 1, all param combos [TyMJW2F72]...
+app_1      | 09:52:00.189 [trace] t.MemCache s-288: Mem cache: Removing: 1|tny|dir|http://e2e-test-cid-0-62-now-1949.localhost||PageHtml
+app_1      | 09:52:00.189 [trace] t.MemCache s-288: Mem cache: Removing: 1|tny|emb|http://e2e-test-cid-0-62-now-1949.localhost||PageHtml
+app_1      | 09:52:00.189 [trace] t.MemCache s-288: Mem cache: Removing: 1|med|dir|http://e2e-test-cid-0-62-now-1949.localhost||PageHtml
+app_1      | 09:52:00.189 [trace] t.MemCache s-288: Mem cache: Removing: 1|med|emb|http://e2e-test-cid-0-62-now-1949.localhost||PageHtml
+app_1      | 09:52:00.909 [debug] t.SpamCheckActor Checking 1 spam check tasks ... [TyM70295MA4]
+app_1      | 09:52:08.482 [info] t.SystemDao Deleting sites: Set()
+app_1      | 09:52:08.487 [info] t.SystemDao Done deleting sites: Set()
+app_1      | 09:52:08.493 [info] t.SystemDao Done deleting sites: Set()
+app_1      | 09:52:08.585 [trace] t.MemCache s-289: Mem cache: Inserting: 105|Watchbar 
+app_1      | 09:52:08.594 [trace] t.MemCache s-289: Mem cache: Inserting: 102|Watchbar 
+app_1      | 09:52:08.601 [trace] t.MemCache s-289: Mem cache: Inserting: 104|Watchbar 
+app_1      | 09:52:08.608 [trace] t.MemCache s-289: Mem cache: Inserting: 103|Watchbar 
+app_1      | 09:52:08.625 [debug] t.MemCache s-289: Emptying mem cache.
+app_1      | 09:52:08.700 [trace] t.MemCache s0: Mem cache: Inserting: e2e-test-cid-0-63-now-1952.localhost|SiteByOrigin 
+app_1      | 09:52:08.704 [trace] t.MemCache s-289: Mem cache: Inserting: |SiteId 
+app_1      | 09:52:08.708 [trace] t.MemCache s-289: Mem cache: Inserting: SiteSettingsKey 
+app_1      | 09:52:08.711 [trace] t.MemCache s-289: Mem cache: Inserting: /|PagePathByPath 
+app_1      | 09:52:08.715 [trace] t.MemCache s-289: Mem cache: Inserting: 1|PageMetaById 
+app_1      | 09:52:08.717 [trace] t.MemCache s-289: Mem cache: Inserting: AllPemrs 
+app_1      | 09:52:08.723 [trace] t.MemCache s-289: Mem cache: Inserting: AllCats 
+app_1      | 09:52:08.724 [trace] t.d.dao.SiteDao s-289: Page not in mem cache: -289|1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:08.725 [trace] t.d.dao.SiteDao s-289: Mem-Remembering forum: 1
+app_1      | 09:52:08.726 [trace] t.MemCache s-289: Mem cache: Inserted, was absent: |ForumIds 
+app_1      | 09:52:08.730 [trace] t.MemCache s-289: Mem cache: Inserting: 10|PptById 
+app_1      | 09:52:08.735 [trace] t.MemCache s-289: Mem cache: Inserting: 1|PagePathById 
+app_1      | 09:52:08.737 [trace] t.MemCache s-289: Mem cache: Inserting: 2|AbtPgId 
+app_1      | 09:52:08.741 [trace] t.MemCache s-289: Mem cache: Inserting: 1|PgLns 
+app_1      | 09:52:08.747 [trace] t.MemCache s-289: Mem cache: Inserting: Idps 
+app_1      | 09:52:08.753 [trace] t.MemCache s-289: Mem cache: Inserting: StrangersWatchbar 
+app_1      | 09:52:08.758 [trace] t.d.dao.SiteDao s-289: Page not in db cache: 1, rendering now..., version: site: 1, page: 1 | app: 0.00.76, hash: lyidvxC9mwLJfFfQg9tLN3aTKYQ [TyMRENDRNOW]
+app_1      | 09:52:08.769 [trace] t.d.Nashorn Done rendering: 11 ms, thread application-akka.actor.default-dispatcher-11  (id 218)
+app_1      | 09:52:08.779 [trace] t.MemCache s-289: Mem cache: Inserting: styles.css|AssetBundle 
+app_1      | 09:52:08.782 [trace] t.MemCache s-289: Mem cache: Inserting: scripts.js|AssetBundle 
+app_1      | 09:52:08.782 [trace] t.MemCache s-289: Mem cache: Inserting: 1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml 
+app_1      | 09:52:12.592 [trace] t.PubSubActor s-289: PubSub: Pupl presence @owen_owner #105: Active [TyDPRESCNS]
+app_1      | 09:52:12.592 [debug] t.PubSubActor s-289: Got @owen_owner #105 activity message, but there is no such WebSocket client [TyM502RDJ5]
+app_1      | 09:52:12.595 [trace] t.MemCache s-289: Mem cache: Inserting: 105|PptById 
+app_1      | 09:52:12.615 [trace] t.MemCache s-289: Mem cache: Inserting: 105|GIdsByPp 
+app_1      | 09:52:12.616 [trace] t.MemCache s-289: Mem cache: Inserting: 105|Watchbar 
+app_1      | 09:52:12.617 [debug] t.PubSubActor s-289: Not updating watched pages for 105: No WebSocket [TyM503RSKD]
+app_1      | 09:52:12.626 [trace] t.MemCache s-289: Mem cache: Inserting: 1|PageStuff 
+app_1      | 09:52:12.636 [trace] t.MemCache s-289: Mem cache: Inserting: 19|PptById 
+app_1      | 09:52:12.639 [trace] t.MemCache s-289: Mem cache: Inserting: 17|PptById 
+app_1      | 09:52:12.643 [trace] t.MemCache s-289: Mem cache: Inserting: 16|PptById 
+app_1      | 09:52:12.647 [trace] t.MemCache s-289: Mem cache: Inserting: 15|PptById 
+app_1      | 09:52:12.650 [trace] t.MemCache s-289: Mem cache: Inserting: 14|PptById 
+app_1      | 09:52:12.653 [trace] t.MemCache s-289: Mem cache: Inserting: 13|PptById 
+app_1      | 09:52:12.656 [trace] t.MemCache s-289: Mem cache: Inserting: 12|PptById 
+app_1      | 09:52:12.662 [trace] t.MemCache s-289: Mem cache: Inserting: 11|PptById 
+app_1      | 09:52:12.772 [debug] t.t.s.p.WebSocketMessageHandler s-289: WS conn: @owen_owner (id 105) [TyMWSCON]
+app_1      | 09:52:12.787 [debug] t.t.s.p.WebSocketMessageHandler s-289: WS: @owen_owner (id 105) connected, telling PubSubActor, it'll watch page ids: Set(1) [TyMWSCONN]
+app_1      | 09:52:12.789 [trace] t.PubSubActor s-289: PubSub: New WebSocket: @owen_owner #105 [TyMWSNEWCON]
+app_1      | 09:52:12.790 [trace] t.PubSubActor s-289: PubSub: @owen_owner #105 starts watching pages: Set(1), stopped: Set() [TyDWTCHPGS]
+app_1      | 09:52:17.163 [trace] t.MemCache s-289: Mem cache: Inserting: 105|Watchbar 
+app_1      | 09:52:17.164 [debug] t.d.dao.SiteDao s-289: Telling PubSubActor: @owen_owner #105 starts watching page 2 [TyM50AKTG3]
+app_1      | 09:52:17.165 [trace] t.PubSubActor s-289: PubSub: @owen_owner #105 starts watching pages: Set(2), stopped: Set() [TyDWTCHPGS]
+app_1      | 09:52:17.239 [trace] t.MemCache s-289: Mem cache: Inserting: 2|PageMetaById 
+app_1      | 09:52:17.250 [trace] t.MemCache s-289: Mem cache: Inserting: /-2/chat-topic-title|PagePathByPath 
+app_1      | 09:52:17.250 [trace] t.d.dao.SiteDao s-289: Page not in mem cache: -289|2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:17.274 [trace] t.MemCache s-289: Mem cache: Inserting: 2|PgLns 
+app_1      | 09:52:17.286 [trace] t.d.dao.SiteDao s-289: Page not in db cache: 2, rendering now..., version: site: 1, page: 1 | app: 0.00.76, hash: 2cZzE4EOr2DQtum-cRacfZMP-N8 [TyMRENDRNOW]
+app_1      | 09:52:17.292 [trace] t.d.Nashorn Done rendering: 6 ms, thread application-akka.actor.default-dispatcher-11  (id 218)
+app_1      | 09:52:17.298 [trace] t.MemCache s-289: Mem cache: Inserting: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml 
+app_1      | 09:52:17.306 [trace] t.MemCache s-289: Mem cache: Inserting: 2|PageStuff 
+app_1      | 09:52:17.354 [trace] t.c.UserController s-289, page Some(1): Post nrs read: Vector(), seconds reading: 4
+app_1      | 09:52:19.425 [debug] t.IndexingActor Indexed site:post -289:104
+app_1      | 09:52:19.425 [debug] t.IndexingActor Indexed site:post -289:103
+app_1      | 09:52:22.842 [trace] t.MemCache s-289: Mem cache: Removing: 2|FeedKey
+app_1      | 09:52:22.843 [trace] t.MemCache s-289: Mem cache: Removing: 0|FeedKey
+app_1      | 09:52:22.843 [trace] t.MemCache s-289: Mem cache: Removing: 2|CmtsFeedKey
+app_1      | 09:52:22.843 [trace] t.MemCache s-289: Mem cache: Removing: 0|CmtsFeedKey
+app_1      | 09:52:22.845 [trace] t.MemCache s-289: Mem cache: Removing: StrangersWatchbar
+app_1      | 09:52:22.845 [trace] t.d.dao.SiteDao Removing mem-cached page: site -289, page 2, all param combos [TyMJW2F72]...
+app_1      | 09:52:22.846 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:22.847 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:22.848 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:22.851 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:22.851 [debug] t.RenderContentActor Background rendering site -289, page 2, None... [TyMBGRSTART]
+app_1      | 09:52:22.852 [trace] t.d.dao.SiteDao Removing mem-cached forum page: site -289, page 1...
+app_1      | 09:52:22.853 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:22.853 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:22.853 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:22.853 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:22.853 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageStuff
+app_1      | 09:52:22.853 [trace] t.MemCache s-289: Mem cache: Removing: 2|AncestorIdsById
+app_1      | 09:52:22.853 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageMetaById
+app_1      | 09:52:22.859 [trace] t.MemCache s-289: Mem cache: Inserting: 103|PptById 
+app_1      | 09:52:22.865 [trace] t.MemCache s-289: Mem cache: Inserting: 103|GIdsByPp 
+app_1      | 09:52:22.867 [trace] t.MemCache s-289: Mem cache: Inserting: 103|Watchbar 
+app_1      | 09:52:22.868 [debug] t.PubSubActor s-289: Not updating watched pages for 103: No WebSocket [TyM503RSKD]
+app_1      | 09:52:22.869 [trace] t.PubSubActor s-289: PubSub: Pupl presence @michael #103: Active [TyDPRESCNS]
+app_1      | 09:52:22.871 [trace] t.MemCache s-289: Mem cache: Inserting: StrangersWatchbar 
+app_1      | 09:52:22.884 [trace] t.d.Nashorn Done rendering: 5 ms, thread application-akka.actor.default-dispatcher-14  (id 225)
+app_1      | 09:52:22.904 [debug] t.RenderContentActor Background rendered site -289, page 2, tiny width [TyMBGRDONE]
+app_1      | 09:52:22.909 [debug] t.RenderContentActor Page 2 site -289 is up-to-date, ignoring re-render message. [DwE4KPL8]
+app_1      | 09:52:23.416 [trace] t.MemCache s-289: Mem cache: Inserting: 2|PageMetaById 
+app_1      | 09:52:23.416 [trace] t.d.dao.SiteDao s-289: Page not in mem cache: -289|2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:23.429 [debug] t.d.dao.SiteDao s-289: Page 2 requested, db cache stale, will rerender soon, render params: PageRenderParams(Medium,false,http://e2e-test-cid-0-63-now-1952.localhost,None,Some(1),None), db cache version: site: 1, page: 1 | app: 0.00.76, hash: 2cZzE4EOr2DQtum-cRacfZMP-N8 current version: site: 1, page: 1 | app: 0.00.76, hash: eBMCP-RNS1VvOdi4529yvz-CAo4 [TyMRENDRSOON]
+app_1      | 09:52:23.429 [debug] t.RenderContentActor Background rendering site -289, page 2, Some(PageRenderParamsAndHash(PageRenderParams(Medium,false,http://e2e-test-cid-0-63-now-1952.localhost,None,Some(1),None),eBMCP-RNS1VvOdi4529yvz-CAo4))... [TyMBGRSTART]
+app_1      | 09:52:23.433 [trace] t.MemCache s-289: Mem cache: Inserting: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml 
+app_1      | 09:52:23.439 [trace] t.MemCache s-289: Mem cache: Inserting: 2|PageStuff 
+app_1      | 09:52:23.450 [trace] t.d.Nashorn Done rendering: 7 ms, thread application-akka.actor.default-dispatcher-15  (id 226)
+app_1      | 09:52:23.460 [debug] t.RenderContentActor Background rendered site -289, page 2, medium width, custom [TyMBGRDONE]
+app_1      | 09:52:23.460 [trace] t.d.dao.SiteDao Removing mem-cached page: site -289, page 2, PageRenderParams(Medium,false,http://e2e-test-cid-0-63-now-1952.localhost,None,Some(1),None) [TyMMW20ZF4]...
+app_1      | 09:52:23.462 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:23.539 [trace] t.c.UserController s-289, page Some(2): Post nrs read: Vector(), seconds reading: 5
+app_1      | 09:52:24.381 [trace] t.d.dao.SiteDao s-289: Page not in mem cache: -289|1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:24.381 [trace] t.d.dao.SiteDao s-289: Mem-Remembering forum: 1
+app_1      | 09:52:24.411 [trace] t.d.dao.SiteDao s-289: Page found in db cache, reusing: 1, render params: PageRenderParams(Medium,false,http://e2e-test-cid-0-63-now-1952.localhost,None,Some(1),None), db cache version: site: 1, page: 1 | app: 0.00.76, hash: lyidvxC9mwLJfFfQg9tLN3aTKYQ current version: site: 1, page: 1 | app: 0.00.76, hash: lyidvxC9mwLJfFfQg9tLN3aTKYQ [TyMREUSEDB]
+app_1      | 09:52:24.415 [trace] t.MemCache s-289: Mem cache: Inserting: 1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml 
+app_1      | 09:52:27.907 [debug] t.PubSubActor s-289: Got @michael #103 activity message, but there is no such WebSocket client [TyM502RDJ5]
+app_1      | 09:52:27.925 [trace] t.MemCache s-289: Mem cache: Inserting: 103|Watchbar 
+app_1      | 09:52:27.937 [debug] t.PubSubActor s-289: Not updating watched pages for 103: No WebSocket [TyM503RSKD]
+app_1      | 09:52:28.063 [debug] t.t.s.p.WebSocketMessageHandler s-289: WS conn: @michael (id 103) [TyMWSCON]
+app_1      | 09:52:28.090 [debug] t.t.s.p.WebSocketMessageHandler s-289: WS: @michael (id 103) connected, telling PubSubActor, it'll watch page ids: Set(1, 2) [TyMWSCONN]
+app_1      | 09:52:28.090 [trace] t.PubSubActor s-289: PubSub: New WebSocket: @michael #103 [TyMWSNEWCON]
+app_1      | 09:52:28.091 [trace] t.PubSubActor s-289: PubSub: @michael #103 starts watching pages: Set(1, 2), stopped: Set() [TyDWTCHPGS]
+app_1      | 09:52:28.890 [trace] t.d.dao.SiteDao s-289: Page not in mem cache: -289|2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:28.919 [trace] t.d.dao.SiteDao s-289: Page found in db cache, reusing: 2, render params: PageRenderParams(Medium,false,http://e2e-test-cid-0-63-now-1952.localhost,None,Some(1),None), db cache version: site: 1, page: 1 | app: 0.00.76, hash: eBMCP-RNS1VvOdi4529yvz-CAo4 current version: site: 1, page: 1 | app: 0.00.76, hash: eBMCP-RNS1VvOdi4529yvz-CAo4 [TyMREUSEDB]
+app_1      | 09:52:28.924 [trace] t.MemCache s-289: Mem cache: Inserting: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml 
+app_1      | 09:52:30.390 [trace] t.MemCache s-289: Mem cache: Inserting: 105|Watchbar 
+app_1      | 09:52:31.067 [trace] t.MemCache s-289: Mem cache: Removing: 2|FeedKey
+app_1      | 09:52:31.067 [trace] t.MemCache s-289: Mem cache: Removing: 0|FeedKey
+app_1      | 09:52:31.067 [trace] t.MemCache s-289: Mem cache: Removing: 2|CmtsFeedKey
+app_1      | 09:52:31.067 [trace] t.MemCache s-289: Mem cache: Removing: 0|CmtsFeedKey
+app_1      | 09:52:31.067 [trace] t.MemCache s-289: Mem cache: Removing: StrangersWatchbar
+app_1      | 09:52:31.067 [trace] t.d.dao.SiteDao Removing mem-cached page: site -289, page 2, all param combos [TyMJW2F72]...
+app_1      | 09:52:31.067 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.067 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.067 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.068 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.068 [debug] t.RenderContentActor Background rendering site -289, page 2, None... [TyMBGRSTART]
+ app_1      | 09:52:31.068 [trace] t.d.dao.SiteDao Removing mem-cached forum page: site -289, page 1...
+app_1      | 09:52:31.068 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.068 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.068 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.068 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.068 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageStuff
+app_1      | 09:52:31.068 [trace] t.MemCache s-289: Mem cache: Removing: 2|AncestorIdsById
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageMetaById
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 2|FeedKey
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 0|FeedKey
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 2|CmtsFeedKey
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 0|CmtsFeedKey
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: StrangersWatchbar
+app_1      | 09:52:31.069 [trace] t.d.dao.SiteDao Removing mem-cached page: site -289, page 2, all param combos [TyMJW2F72]...
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.069 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.070 [trace] t.d.dao.SiteDao Removing mem-cached forum page: site -289, page 1...
+app_1      | 09:52:31.070 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.070 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.070 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.070 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.070 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageStuff
+app_1      | 09:52:31.070 [trace] t.MemCache s-289: Mem cache: Removing: 2|AncestorIdsById
+app_1      | 09:52:31.070 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageMetaById
+app_1      | 09:52:31.083 [trace] t.PubSubActor s-289: PubSub: Publ notifications to @michael #103 [TyDPUBLNTFS]
+app_1      | 09:52:31.087 [trace] t.MemCache s-289: Mem cache: Inserting: 2|PageMetaById 
+app_1      | 09:52:31.088 [trace] t.MemCache s-289: Mem cache: Inserting: StrangersWatchbar 
+app_1      | 09:52:31.114 [trace] t.MemCache s-289: Mem cache: Inserting: 103|Watchbar 
+app_1      | 09:52:31.115 [trace] t.PubSubActor s-289: PubSub: Sending page 2 'storePatch' to: [@michael #103]  [TyDPUBLPTCH]
+app_1      | 09:52:31.118 [trace] t.d.Nashorn Done rendering: 12 ms, thread application-akka.actor.default-dispatcher-15  (id 226)
+app_1      | 09:52:31.133 [debug] t.RenderContentActor Background rendered site -289, page 2, tiny width [TyMBGRDONE]
+app_1      | 09:52:31.163 [trace] t.d.Nashorn Done rendering: 6 ms, thread application-akka.actor.default-dispatcher-15  (id 226)
+app_1      | 09:52:31.173 [debug] t.RenderContentActor Background rendered site -289, page 2, medium width [TyMBGRDONE]
+app_1      | 09:52:31.173 [trace] t.d.dao.SiteDao Removing mem-cached page: site -289, page 2, all param combos [TyMJW2F72]...
+app_1      | 09:52:31.173 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.173 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.173 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.173 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:31.174 [debug] t.RenderContentActor Background rendering site -289, page 2, None... [TyMBGRSTART]
+app_1      | 09:52:31.181 [debug] t.RenderContentActor Page 2 site -289 is up-to-date, ignoring re-render message. [DwE4KPL8]
+app_1      | 09:52:31.185 [debug] t.RenderContentActor Page 2 site -289 is up-to-date, ignoring re-render message. [DwE4KPL8]
+app_1      | 09:52:31.207 [trace] t.MemCache s-289: Mem cache: Inserting: 103|Watchbar 
+app_1      | 09:52:31.461 [trace] t.Notifier Found notifications for 1 sites.
+app_1      | 09:52:31.461 [debug] t.Notifier s-289: Sending up to 1 notifications to user 103...
+app_1      | 09:52:31.480 [debug] t.Notifier About to send email to e2e-test--michael@example.com
+app_1      | 09:52:31.481 [debug] t.app.mailer s-289: Fake emailing e2e-test--michael@example.com, from no-reply+xkn5redy4u.1ckgo6lbku6pnw2h@example.com, email id '1ckgo6lbku6pnw2h' [TyMEMLFAKING]:
+app_1      |     Email(1ckgo6lbku6pnw2h,Notification,e2e-test--michael@example.com,Some(103),None,Some(Fri Jul 02 09:52:31 UTC 2021),Fri Jul 02 09:52:31 UTC 2021,[e2e-test-cid-0-63-now-1952.localhost] New notifications,<div>
+app_1      |         <p>Dear michael,</p>
+app_1      |         <p>Do <b>not</b> reply to this email.
+app_1      |                   Click <i>Reply</i> below, instead.</p><p class="e_NfEm_NwPo">
+app_1      |       A new comment has been posted, <a href="http://e2e-test-cid-0-63-now-1952.localhost/-2#post-2">here</a>, on page &quot;<i>Chat Topic Title</i>&quot;,
+app_1      |       by <i>owen_owner</i>, on 2021-07-02:
+app_1      |     </p><blockquote>Hi let's chat!</blockquote><div><a href="http://e2e-test-cid-0-63-now-1952.localhost/-2#post-2" style="display: inline-block !important; padding: 4px 18px !important; margin: 0.3em 0 1.4em !important; background: hsl(207 100% 56%) !important; box-shadow: 3px 3px 7px rgb(0 0 0 / 55%) !important; color: white !important; font-weight: bold !important; font-size: 16px !important; letter-spacing: 0.3px !important; text-decoration: none !important; cursor: pointer !important; " class="e_EmReB">Reply</a></div>
+app_1      |         <p>
+app_1      |           Kind regards,<br/>
+app_1      |           <a href="http://e2e-test-cid-0-63-now-1952.localhost" style="text-decoration: none !important; color: #333 !important;">e2e-test-cid-0-63-now-1952.localhost</a>
+app_1      |         </p>
+app_1      |         <p style="font-size: 92%; opacity: 0.65; margin-top: 2em;">
+app_1      |           <a href="http://e2e-test-cid-0-63-now-1952.localhost/-/unsubscribe?emailId=1ckgo6lbku6pnw2h" style="color: #333 !important;">Unsubscribe</a>
+app_1      |         </p>
+app_1      |         <p style="font-size: 92%; opacity: 0.77; margin-top: 1.5em;">
+app_1      |           Powered by <a href="https://www.talkyard.io" style="color: #333 !important;">Talkyard</a>
+app_1      |         </p>
+app_1      |       </div>,None,None,None,None,None,None)
+app_1      | 09:52:33.894 [trace] t.MemCache s-289: Mem cache: Removing: 2|FeedKey
+app_1      | 09:52:33.894 [trace] t.MemCache s-289: Mem cache: Removing: 0|FeedKey
+app_1      | 09:52:33.894 [trace] t.MemCache s-289: Mem cache: Removing: 2|CmtsFeedKey
+app_1      | 09:52:33.894 [trace] t.MemCache s-289: Mem cache: Removing: 0|CmtsFeedKey
+app_1      | 09:52:33.894 [trace] t.MemCache s-289: Mem cache: Removing: StrangersWatchbar
+app_1      | 09:52:33.894 [trace] t.d.dao.SiteDao Removing mem-cached page: site -289, page 2, all param combos [TyMJW2F72]...
+app_1      | 09:52:33.895 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.895 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.895 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.895 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.895 [debug] t.RenderContentActor Background rendering site -289, page 2, None... [TyMBGRSTART]
+app_1      | 09:52:33.895 [trace] t.d.dao.SiteDao Removing mem-cached forum page: site -289, page 1...
+app_1      | 09:52:33.896 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageStuff
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|AncestorIdsById
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageMetaById
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|FeedKey
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 0|FeedKey
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|CmtsFeedKey
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 0|CmtsFeedKey
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: StrangersWatchbar
+app_1      | 09:52:33.897 [trace] t.d.dao.SiteDao Removing mem-cached page: site -289, page 2, all param combos [TyMJW2F72]...
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.897 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.898 [trace] t.d.dao.SiteDao Removing mem-cached forum page: site -289, page 1...
+app_1      | 09:52:33.898 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.898 [trace] t.MemCache s-289: Mem cache: Removing: 1|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.898 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.898 [trace] t.MemCache s-289: Mem cache: Removing: 1|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:33.898 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageStuff
+app_1      | 09:52:33.898 [trace] t.MemCache s-289: Mem cache: Removing: 2|AncestorIdsById
+app_1      | 09:52:33.898 [trace] t.MemCache s-289: Mem cache: Removing: 2|PageMetaById
+app_1      | 09:52:33.908 [trace] t.PubSubActor s-289: PubSub: Publ notifications to @owen_owner #105 [TyDPUBLNTFS]
+app_1      | 09:52:33.911 [trace] t.MemCache s-289: Mem cache: Inserting: 2|PageMetaById 
+app_1      | 09:52:33.911 [trace] t.MemCache s-289: Mem cache: Inserting: 105|Watchbar 
+app_1      | 09:52:33.911 [trace] t.PubSubActor s-289: PubSub: Sending page 2 'storePatch' to: [@owen_owner #105]  [TyDPUBLPTCH]
+app_1      | 09:52:33.929 [trace] t.MemCache s-289: Mem cache: Inserting: StrangersWatchbar 
+app_1      | 09:52:33.947 [trace] t.d.Nashorn Done rendering: 14 ms, thread application-akka.actor.default-dispatcher-13  (id 224)
+app_1      | 09:52:33.963 [debug] t.RenderContentActor Background rendered site -289, page 2, tiny width [TyMBGRDONE]
+app_1      | #
+app_1      | # A fatal error has been detected by the Java Runtime Environment:
+app_1      | #
+app_1      | #  SIGSEGV (0xb) at pc=0x00007ddd29ea04c9, pid=19, tid=145
+app_1      | #
+app_1      | # JRE version: OpenJDK Runtime Environment 18.9 (11.0.11+9) (build 11.0.11+9)
+app_1      | # Java VM: OpenJDK 64-Bit Server VM 18.9 (11.0.11+9, mixed mode, sharing, tiered, compressed oops, g1 gc, linux-amd64)
+app_1      | # Problematic frame:
+app_1      | # V  [libjvm.so+0x50e4c9]09:52:34.042 [trace] t.d.Nashorn Done rendering: 43 ms, thread application-akka.actor.default-dispatcher-13  (id 224)
+app_1      | 09:52:34.103 [debug] t.RenderContentActor Background rendered site -289, page 2, medium width [TyMBGRDONE]
+app_1      | 09:52:34.103 [trace] t.d.dao.SiteDao Removing mem-cached page: site -289, page 2, all param combos [TyMJW2F72]...
+app_1      | 09:52:34.104 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:34.104 [trace] t.MemCache s-289: Mem cache: Removing: 2|tny|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:34.104 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|dir|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:34.104 [trace] t.MemCache s-289: Mem cache: Removing: 2|med|emb|http://e2e-test-cid-0-63-now-1952.localhost||PageHtml
+app_1      | 09:52:34.104 [debug] t.RenderContentActor Background rendering site -289, page 2, None... [TyMBGRSTART]
+app_1      | 09:52:34.116 [debug] t.RenderContentActor Page 2 site -289 is up-to-date, ignoring re-render message. [DwE4KPL8]
+app_1      | 09:52:34.126 [debug] t.RenderContentActor Page 2 site -289 is up-to-date, ignoring re-render message. [DwE4KPL8]
+app_1      |   LinearScan::resolve_exception_edge(XHandler*, int, int, Phi*, MoveResolver&)+0x79
+app_1      | #
+app_1      | # Core dump will be written. Default location: /opt/talkyard/app/core
+app_1      | #
+app_1      | # An error report file with more information is saved as:
+app_1      | # /opt/talkyard/app/hs_err_pid19.log
+app_1      | [thread 232 also had an error]
+app_1      | [thread 231 also had an error]
+app_1      | 
+app_1      | [timeout occurred during error reporting in step ""] after 30 s.
+app_1      | #
+app_1      | # If you would like to submit a bug report, please visit:
+app_1      | #   https://bugreport.java.com/bugreport/crash.jsp
+app_1      | #
+app_1      | Aborted (core dumped)
+tyd_app_1 exited with code 134
+1
+
+
