@@ -1,8 +1,4 @@
 <configuration>
-
-  <!-- Generates colored log level names. -->
-  <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
-
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
       <layout class="ed.stackdriver.StackdriverLayout" />

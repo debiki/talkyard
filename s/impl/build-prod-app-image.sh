@@ -2,6 +2,9 @@
 
 # Run from the project root directory.
 
+# Builds an app server production image. But this script isn't really needed any
+# more — we can use Dockerfile multi stage builds, nowadays.  [appsv_build_image]
+
 set -e # exit on any error.
 set -x
 

@@ -119,6 +119,10 @@ val appDependencies = Seq(
 
 val main = (project in file("."))
   .enablePlugins(play.sbt.PlayWeb, BuildInfoPlugin)
+  // With Play's Logback plugin enabled (it is by default), there's this error:
+  // >  java.lang.NoClassDefFoundError: org/slf4j/impl/StaticLoggerBinder
+  // and the Ty Play app exits.
+  .disablePlugins(play.sbt.PlayLogback)
   .settings(mainSettings: _*)
   .dependsOn(
     tyModel % "test->test;compile->compile",
@@ -132,11 +136,6 @@ def mainSettings = List(
   name := appName,
   version := appVersion,
   libraryDependencies ++= appDependencies,
-
-  // Pin to >= 2.15, no, 2.16.
-  dependencyOverrides ++= Seq(
-        "org.apache.logging.log4j" % "log4j-api" % "2.17.1",
-        "org.apache.logging.log4j" % "log4j-core" % "2.17.1"),
 
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.

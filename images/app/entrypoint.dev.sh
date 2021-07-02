@@ -17,7 +17,15 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # We map /home/owner/.ivy and .sbt to the host user's .ivy and .sbt, in docker-compose.yml. [SBTHOME]
   # -D = don't assign password (would block Docker waiting for input).
   echo "Creating user 'owner' with id $file_owner_id..."
-  adduser -u $file_owner_id -h /home/owner/ -D owner
+  ## Alpine:
+  #adduser -u $file_owner_id -h /home/owner/ -D owner
+  ## Debian:
+  adduser \
+      --uid $file_owner_id  \
+      --home /home/owner  \
+      --disabled-password  \
+      --gecos ""  \
+      owner   # [5RZ4HA9]
 fi
 
 # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
@@ -35,7 +43,6 @@ if [ $file_owner_id -ne 0 ] ; then
   chown owner.owner /home/owner
   chown -R owner.owner /home/owner/.ivy2
   chown -R owner.owner /home/owner/.sbt
-  chown -R owner.owner /home/owner/.coursier
   chown -R owner.owner /home/owner/.cache
   # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
   chown -R owner.owner /opt/talkyard/uploads
@@ -45,10 +52,10 @@ if [ $file_owner_id -ne 0 ] ; then
   # 1) run $* as user owner, which has the same user id as the file owner on the Docker host
   # 2) use our current process id, namely 1. Then the Scala app will receive any shutdown signal,
   #    see: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#entrypoint
-  # However! 'gosu' doesn't work with "cd ... &&", and we need to have 'owner' cd to /opt/talkyard/app/.
+  # However! 'gosu' doesn't work with "cd ... &&", and we need to have 'owner' cd to /opt/talkyard/app/.  [su_or_gosu]
   # So instead use 'exec su -c ...'
   # exec gosu owner $*
-  echo "Starting Play as user id $file_owner_id":
+  echo "Starting Play as user 'owner', should be id $file_owner_id":
   set -x
   exec su -c "$*" owner
 else
