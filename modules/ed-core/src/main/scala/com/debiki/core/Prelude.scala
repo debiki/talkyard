@@ -459,12 +459,13 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     sdf.format(date) + "Z"
   }
 
+  /* javax.xml.bind not incl in Java 11. This fn not needed anyway.
   def parseIso8601DateTime(dateTime: String): ju.Date = {
     val calendar: ju.Calendar =
        javax.xml.bind.DatatypeConverter.parseDateTime(dateTime)
     val calendarUtc = _convertToUtc(calendar)
     calendarUtc.getTime
-  }
+  } */
 
   private val _timezoneUtc = ju.TimeZone.getTimeZone("UTC")
 

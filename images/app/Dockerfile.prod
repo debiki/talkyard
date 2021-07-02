@@ -1,13 +1,17 @@
-FROM openjdk:8u212-alpine3.9
+#FROM openjdk:8u212-alpine3.9
+FROM openjdk:11.0.11-9-jre-slim-buster
 
 # SECURITY SHOULD not be root (in Docker container)
 #RUN groupadd -r play && useradd -r -g play play
 
 # Nice to have:
-RUN apk add --no-cache \
-  curl tree less wget net-tools bash \
-  # Telnet, nice for troubleshooting SMTP problems for example.
-  busybox-extras
+RUN \
+  apt-get update && \
+  apt-get install -y \
+    curl tree less wget net-tools bash \
+    libsodium-dev \
+    # Telnet, nice for troubleshooting SMTP problems for example.
+    telnet
 
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333

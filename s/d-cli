@@ -39,7 +39,7 @@ sudo PLAY_HEAP_MEMORY_MB=$PLAY_HEAP_MEMORY_MB \
   docker-compose run --rm --service-ports $set_is_prod_test_env_var app \
   /opt/sbt/bin/sbt \
   --mem $PLAY_HEAP_MEMORY_MB \
-  -jvm-debug 9999 \
+  -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
   -J-Xss30m \
   -Duser.home=/home/owner \
   -Dcom.sun.management.jmxremote.port=3333 \
