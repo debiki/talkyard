@@ -24,7 +24,7 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 
 // Note: In VSCode, the Scala Metals plugin, one needs to run the
 // 'Metals: Import Build' task for Metals to notice a Scala version change.
-ThisBuild / scalaVersion := "2.12.12"
+ThisBuild / scalaVersion := "2.12.14"
 
 // Show unchecked and deprecated warnings, in this project and its modules.
 // scalacOptions in ThisBuild ++= Seq("-deprecation")
