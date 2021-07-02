@@ -308,9 +308,15 @@ object NotfHtmlRenderer {
         display: inline-block !important;
         padding: 4px 18px !important;
         margin: 0.3em 0 1.4em !important;
-        background: hsl(207 100% 56%) !important;
-        box-shadow: 3px 3px 7px rgb(0 0 0 / 55%) !important;
-        color: white !important;
+        background: hsl(207, 100%, 56%) !important;
+        ${/*
+        Gmail maybe doesn't like box-shadow?
+        Or it just doesn't like:  rgb(0 0 0 / 55%)
+        Anyway, *something* in these styles makes Gmail ignore them ail.
+        So let's try with excluding box-shadow, for a start.
+        box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.55) !important;
+        */ ""}
+        color: #fff !important;
         font-weight: bold !important;
         font-size: 16px !important;
         letter-spacing: 0.3px !important;
