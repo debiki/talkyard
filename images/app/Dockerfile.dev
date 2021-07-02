@@ -1,27 +1,41 @@
-FROM openjdk:8u212-jdk-alpine3.9
+# Scala supports Java 8, 11 and 17. Ty uses Debian 11 and Java 17, currently.
+# See: https://github.com/docker-library/docs/blob/master/openjdk/README.md
+# Don't use Alpine — it's unsupported:
+# > The OpenJDK port for Alpine is not in a supported release by OpenJDK,
+# > since it is not in the mainline code base.
+# > It is only available as early access builds
+#
+FROM  openjdk:11.0.13-jdk-slim-bullseye
+#FROM openjdk:11.0.11-9-jdk-slim-buster
+#FROM  openjdk:17.0.1-jdk-slim-bullseye  # oops Nashorn gone
 
-RUN apk add --no-cache \
+RUN \
+  apt-get update && \
+  apt-get install -y \
   # Required:
   # (git needed so can include Git revision in the build,
   # and show at http://server/-/build-info.)
   curl unzip git \
   # For PASETO v2.local tokens, needs XChaCha20Poly1305:
-  libsodium \
+  libsodium-dev \
   # Nice to have:
   tree less wget net-tools bash \
+  # For 'ps'
+  #procps \
   # tput, needed by Coursier somehow
-  ncurses \
+  #ncurses \
   # Telnet, nice for troubleshooting SMTP problems for example.
-  busybox-extras
+  telnet
+  #busybox-extras
 
 # ADD extracts tar archives; this .tgz gets unpacked at /opt/sbt/{bin/,conf/}.
 ADD  sbt/sbt-1.4.5.tgz  /opt/
 
 # Install 'gosu' so we can use it instead of 'su'.
 # For unknown reasons, '  exec su ...' no longer works, but 'exec gosu ...' works fine.
-RUN apk add --no-cache \
-  --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
-  gosu
+#RUN apk add --no-cache \
+#  --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
+#  gosu
 
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
@@ -32,10 +46,10 @@ RUN mkdir -p /opt/talkyard/uploads/ && \
 # Add a self signed dummy cert for the dummy SMTP server (the 'fakemail' Docker container),
 # so one can test connecting to it with TLS and see if the TLS conf vals work. [26UKWD2]
 # ("changeit" = default keystore password)
-COPY fakemail-publ-test-self-signed.crt /smtp-server.crt
-RUN cd $JAVA_HOME/jre/lib/security && \
-    keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts \
-        -importcert -alias ldapcert -file /smtp-server.crt
+#COPY fakemail-publ-test-self-signed.crt /smtp-server.crt
+#RUN cd $JAVA_HOME/jre/lib/security && \
+#    keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts \
+#        -importcert -alias ldapcert -file /smtp-server.crt
 
 WORKDIR /opt/talkyard/app/
 
@@ -45,7 +59,7 @@ RUN  chmod ugo+x   /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Overriden in docker-compose.yml
-ENV PLAY_HEAP_MEMORY_MB 1048
+ENV PLAY_HEAP_MEMORY_MB 2048
 
 
 
@@ -112,7 +126,7 @@ ENV PLAY_HEAP_MEMORY_MB 1048
 #
 CMD cd /opt/talkyard/app/ && exec /opt/sbt/bin/sbt \
   --mem $PLAY_HEAP_MEMORY_MB \
-  -jvm-debug 9999 \
+  -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
   # Avoid SBT compilation java.lang.StackOverflowError in
   # scala.tools.nsc.transform.Erasure.
   -J-Xss30m \

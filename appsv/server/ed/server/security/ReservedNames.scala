@@ -75,7 +75,7 @@ object ReservedNames {
 
 
   private val allNames: Set[String] =
-    LongListOfNames.toLowerCase.lines
+    LongListOfNames.toLowerCase.linesIterator
       .flatMap(
           // Remove comment lines, and trailing comments:
           _.span(_ != '#')._1.trim

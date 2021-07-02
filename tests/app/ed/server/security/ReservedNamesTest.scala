@@ -15,9 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package ed.server.security
-
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
