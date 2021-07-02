@@ -17,7 +17,15 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # We map /home/owner/.ivy and .sbt to the host user's .ivy and .sbt, in docker-compose.yml. [SBTHOME]
   # -D = don't assign password (would block Docker waiting for input).
   echo "Creating user 'owner' with id $file_owner_id..."
-  adduser -u $file_owner_id -h /home/owner/ -D owner
+  ## Alpine:
+  #adduser -u $file_owner_id -h /home/owner/ -D owner
+  ## Debian:
+  adduser \
+      --uid $file_owner_id  \
+      --home /home/owner  \
+      --disabled-password  \
+      --gecos ""  \
+      owner   # [5RZ4HA9]
 fi
 
 # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
@@ -51,6 +59,7 @@ if [ $file_owner_id -ne 0 ] ; then
   echo "Starting Play as user id $file_owner_id":
   set -x
   exec su -c "$*" owner
+  #exec su -c "_JAVA_OPTIONS='--add-modules javax.xml.bind' $*" owner
 else
   # We're root (user id 0), both on the Docker host and here in the container.
   # `exec su ...` is the only way I've found that makes Yarn and Gulp respond to CTRL-C,
@@ -60,6 +69,7 @@ else
   # Otherwise /root/.ivy2 and /root/.sbt would get used, and disappear with the contaner.
   echo "Starting Play as root":
   set -x
+  # --add-modules javax.xml.bind
   exec su -c "HOME=/home/owner _JAVA_OPTIONS='-Duser.home=/home/owner' $*" root
 fi
 

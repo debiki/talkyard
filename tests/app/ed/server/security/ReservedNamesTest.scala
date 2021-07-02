@@ -19,11 +19,19 @@
 package ed.server.security
 
 
-import org.scalatest.freespec.AnyFreeSpec
+//<<<<<<< HEAD
+//import org.scalatest.freespec.AnyFreeSpec
+//import org.scalatest.matchers.must
+//
+//
+//class ReservedNamesTest extends AnyFreeSpec with must.Matchers {
+//=======
+import org.scalatest._
 import org.scalatest.matchers.must
+import java.{util => ju}
 
 
-class ReservedNamesTest extends AnyFreeSpec with must.Matchers {
+class ReservedNamesTest extends FreeSpec with must.Matchers {
 
 
   "ReservedNames can" - {
