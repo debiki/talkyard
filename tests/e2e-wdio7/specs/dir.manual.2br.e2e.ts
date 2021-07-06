@@ -1,15 +1,12 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-// import fs = require('fs');  EMBCMTS
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import settings from '../utils/settings';
+import { dieIf } from '../utils/log-and-die';
 
 
 let everyonesBrowsers: TyAllE2eTestBrowsers;
@@ -37,7 +34,7 @@ describe("some-e2e-test  TyT1234ABC", () => {
     assert.refEq(builder.getSite(), forum.siteData);
 
     if (settings.reuseOldSite) {
-      lad.dieIf(!settings.localHostname,
+      dieIf(!settings.localHostname,
               `Don't know which site to reuse, when --localHostname
               not specified [TyE9395RKST4]`);
       // Maybe query the server?

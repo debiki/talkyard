@@ -1,22 +1,21 @@
 /// <reference path="../test-types2.ts"/>
 /// <reference path="../../../to-talkyard/src/to-talkyard.d.ts" />
 
-import assert = require('assert');
-import log = require('./log-and-die');
-import make = require('./make');
-declare function require(...whatever: any[]): any;
+import * as assert from 'assert';
+import * as log from './log-and-die';
+import * as make from './make';
 
-import _ = require('lodash');
-import c = require('../test-constants');
+import * as _ from 'lodash';
+import c from '../test-constants';
 import { dieIf } from './log-and-die';
 
 
-function makeSiteOwnedByOwenBuilder() {
+export function makeSiteOwnedByOwenBuilder() {
   return buildSite();
 }
 
 
-function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean } = {}) {
+export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean } = {}) {
   // Wdio seems to retry, if we just throw an exception here. So exit the process instead
   // (because the test is buggy, better fix the bug).
   log.dieAndExitIf(!(global as any).wdioBeforeHookHasRun && !ps.okInitEarly,
@@ -39,7 +38,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       site.settings = { ...site.settings, ...settings };
     },
 
-    defaultCreatedAtMs: make.defaultCreatedAtMs,
+    defaultCreatedAtMs: make.DefaultCreatedAtMs,  // oops, was small d —> undef
 
     addForumPageAndRootCategory: function(opts: {
       id: string,
@@ -645,8 +644,3 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
 
   return api;
 }
-
-const fns = { buildSite, makeSiteOwnedByOwenBuilder };
-
-export = fns;
-

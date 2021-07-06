@@ -2,12 +2,12 @@
 
 /// <reference path="../test-types2.ts"/>
 
-import _ = require('lodash');
-import assert = require('assert');
-import tyAssert = require('./ty-assert');
-import utils = require('./utils');
-import c = require('../test-constants');
-import { logMessage, logWarning, logError, logServerRequest, die, dieIf } from './log-and-die';
+import * as _ from 'lodash';
+import assert from './ty-assert';
+import * as utils from './utils';
+import c from '../test-constants';
+import { logMessage, logWarning, logError, logServerRequest, die, dieIf,
+        } from './log-and-die';
 
 // Didn't find any Typescript defs.
 declare function require(path: string): any;
@@ -490,7 +490,7 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
     }
   }
   if (assertMatches) {
-    assert(false, `Email text didn't match regex(s): '${JSON.stringify(textOrTextsToMatch)}',\n` +
+    assert.fail(`Email text didn't match regex(s): '${JSON.stringify(textOrTextsToMatch)}',\n` +
       `email sent to: ${emailAddress},\n` +
       `email title: ${email.subject},\n` +
       `email text: ${email.bodyHtmlText}`);
@@ -612,7 +612,7 @@ function listUsers(ps: { origin: string, usernamePrefix: string }): ListUsersApi
 
 // ----- Export functions
 
-export = {
+export default {
   initOrExit: initOrExit,
   importRealSiteData,
   importSiteData: importTestSiteData,

@@ -4,10 +4,6 @@ import { dieIf } from './log-and-die';
 
 // (Also see: https://www.npmjs.com/package/power-assert )
 
-interface TyAssert {
-  // Implement later
-}
-
 
 function toPrettyString(sth): string {
   if (_.isObject(sth)) return JSON.stringify(sth, undefined, 2);
@@ -15,17 +11,15 @@ function toPrettyString(sth): string {
 }
 
 
-const tyAssert: any = {   // : any = works around:
-              // error TS2775: Assertions require every name in the call target
-              // to be declared with an explicit type annotation.
+const tyAssert = {
   ...assert,
 
-  that: (test, message: string, sth?) => {
+  that: (test, message?: St, sth?) => {
     tyAssert.ok(test, message, sth);
   },
 
-  ok: (test, message: string, sth?) => {
-    const wholeMessage = message + (sth ? toPrettyString(sth) : '');
+  ok: (test, message?: St, sth?) => {
+    const wholeMessage = (message || '') + (sth ? toPrettyString(sth) : '');
     assert.ok(test, wholeMessage);
   },
 
@@ -127,4 +121,4 @@ function inlineOrDashPara(text: string): string {
         `------------------------------------------------------------------------\n`);
 }
 
-export = tyAssert;
+export default tyAssert;

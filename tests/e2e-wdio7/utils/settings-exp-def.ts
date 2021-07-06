@@ -2,11 +2,8 @@
 
 import * as _ from 'lodash';
 import * as minimist from 'minimist';
-import * as logAndDie from './log-and-die';
-import { logDebugIf } from './log-and-die';
-const unusualColor = logAndDie.unusualColor;
-const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
-const logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
+import { die, dieIf, logDebugIf, logWarning, unusualColor } from './log-and-die';
+
 
 let settings: Partial<TestSettings> = {
   host: 'localhost',

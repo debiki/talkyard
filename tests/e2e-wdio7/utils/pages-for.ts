@@ -15,7 +15,7 @@ import * as _ from 'lodash';
 
 // Assertions tests if Talkyard works, ...
 import * as assert from 'assert';
-import * as tyAssert from '../utils/ty-assert';
+import tyAssert from './ty-assert';
 
 // ... Use die() and dieIf(), though, if an e2e test is broken
 // (rather than Talkyard itself).
@@ -27,10 +27,10 @@ import { getOrCall, die, dieIf, logUnusual, logDebug,
 
 import * as path from 'path';
 import * as fs from 'fs';
-import settings = require('./settings');
-import server = require('./server');
-import utils = require('../utils/utils');
-import c = require('../test-constants');
+import settings from './settings';
+import server from './server';
+import * as utils from '../utils/utils';
+import c from '../test-constants';
 
 // Required with  transpileOnly: true,
 // but without, this error:
@@ -264,9 +264,9 @@ export type TyAllE2eTestBrowsers = TyE2eTestBrowser;
 
 export class TyE2eTestBrowser {
 
-  #br: WebdriverIO.BrowserObject;
+  #br: WebdriverIOSync.Browser;
 
-  constructor(aWdioBrowser: WebdriverIO.BrowserObject) {
+  constructor(aWdioBrowser: WebdriverIOSync.Browser) {
     dieIf(!aWdioBrowser?.getPageSource,
         `Not a Wdio browser:  ${JSON.stringify(aWdioBrowser)}  [TyE2E7J02SAD35]`);
     this.#br = aWdioBrowser;

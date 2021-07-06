@@ -1,106 +1,100 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import * as assert from './ty-assert';
+import assert from './ty-assert';
 import * as fs from 'fs';
 import { logMessage, logUnusual, dieIf } from './log-and-die';
-import settings = require('./settings');
-import c = require('../test-constants');
+import settings from './settings';
+import c from '../test-constants';
 
 
 
-function firstDefinedOf(x, y, z?) {
+export function firstDefinedOf(x, y, z?) {
   return !_.isUndefined(x) ? x : (!_.isUndefined(y) ? y : z);
 }
 
-function encodeInBase64(text: string): string {
+export function encodeInBase64(text: string): string {
   return Buffer.from(text, 'utf8').toString('base64');
 }
 
-const utils = {
+export function regexEscapeSlashes(origin: string): string {
+  return origin.replace(/\//g, '\\/');
+}
 
-  firstDefinedOf,
+export function generateTestId(): string {
+  return Date.now().toString().slice(3, 10);
+}
 
-  encodeInBase64,
+export function getLocalHostname(anyDefaultNameExclTestPrefix?: string): string {
+  return settings.localHostname || (
+      anyDefaultNameExclTestPrefix
+          ? settings.testLocalHostnamePrefix + anyDefaultNameExclTestPrefix
+          : (global as any).__thisSpecLocalHostname);
+}
 
-  regexEscapeSlashes: function(origin: string): string {
-    return origin.replace(/\//g, '\\/');
-  },
+export function makeSiteOrigin(localHostname: string): string {
+  return settings.scheme + '://' + localHostname + '.' + settings.newSiteDomain;
+}
 
-  generateTestId: function(): string {
-    return Date.now().toString().slice(3, 10);
-  },
+export function makeSiteOriginRegexEscaped(localHostname: string): string {
+  return settings.scheme + ':\\/\\/' + localHostname + '.' + settings.newSiteDomain;
+}
 
-  getLocalHostname(anyDefaultNameExclTestPrefix?: string): string {
-    return settings.localHostname || (
-        anyDefaultNameExclTestPrefix
-            ? settings.testLocalHostnamePrefix + anyDefaultNameExclTestPrefix
-            : (global as any).__thisSpecLocalHostname);
-  },
+export function makeCreateSiteWithFakeIpUrl(): St {
+  return _makeCreateSiteUrlImpl(false);
+}
 
-  makeSiteOrigin: function(localHostname: string): string {
-    return settings.scheme + '://' + localHostname + '.' + settings.newSiteDomain;
-  },
+export function makeCreateEmbeddedSiteWithFakeIpUrl(): St {
+  return _makeCreateSiteUrlImpl(true);
+}
 
-  makeSiteOriginRegexEscaped: function(localHostname: string): string {
-    return settings.scheme + ':\\/\\/' + localHostname + '.' + settings.newSiteDomain;
-  },
+function _makeCreateSiteUrlImpl(isEmbeddedSite: boolean): St {
+  function randomIpPart() { return '.' + Math.floor(Math.random() * 256); }
+  const ip = '0' + randomIpPart() + randomIpPart() + randomIpPart();
+  const embedded = isEmbeddedSite ? '/embedded-comments' : '';
+  return settings.mainSiteOrigin + `/-/create-site${embedded}?fakeIp=${ip}` +
+      `&e2eTestPassword=${settings.e2eTestPassword}&testSiteOkDelete=true`;
+}
 
-  makeCreateSiteWithFakeIpUrl: function () {
-    return utils._makeCreateSiteUrlImpl(false);
-  },
+export function findFirstLinkToUrlIn(url: string, text: string): string {
+  return _findFirstLinkToUrlImpl(url, text, true);
+}
 
-  makeCreateEmbeddedSiteWithFakeIpUrl: function () {
-    return utils._makeCreateSiteUrlImpl(true);
-  },
+export function findAnyFirstLinkToUrlIn(url: string, text: string): string | U {
+  return _findFirstLinkToUrlImpl(url, text, false);
+}
 
-  _makeCreateSiteUrlImpl: function (isEmbeddedSite: boolean) {
-    function randomIpPart() { return '.' + Math.floor(Math.random() * 256); }
-    const ip = '0' + randomIpPart() + randomIpPart() + randomIpPart();
-    const embedded = isEmbeddedSite ? '/embedded-comments' : '';
-    return settings.mainSiteOrigin + `/-/create-site${embedded}?fakeIp=${ip}` +
-        `&e2eTestPassword=${settings.e2eTestPassword}&testSiteOkDelete=true`;
-  },
-
-  findFirstLinkToUrlIn: function(url: string, text: string): string {
-    return utils._findFirstLinkToUrlImpl(url, text, true);
-  },
-
-  findAnyFirstLinkToUrlIn: function(url: string, text: string): string | U {
-    return utils._findFirstLinkToUrlImpl(url, text, false);
-  },
-
-  _findFirstLinkToUrlImpl: function(url: string, text: string, mustMatch: boolean): string | U {
-    // Make sure ends with ", otherwise might find: <a href="..">http://this..instead..of..the..href</a>.
-    // This:  (?: ...)  is a non-capture group, so the trailing " won't be incl in the match.
-    const regexString = '(' + utils.regexEscapeSlashes(url) + '[^"\']*)(?:["\'])';
-    const matches = text.match(new RegExp(regexString));
-    dieIf(mustMatch && !matches,
-        `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
-    return matches ? matches[1] : undefined;
-  },
+function _findFirstLinkToUrlImpl(url: string, text: string, mustMatch: boolean): string | U {
+  // Make sure ends with ", otherwise might find: <a href="..">http://this..instead..of..the..href</a>.
+  // This:  (?: ...)  is a non-capture group, so the trailing " won't be incl in the match.
+  const regexString = '(' + regexEscapeSlashes(url) + '[^"\']*)(?:["\'])';
+  const matches = text.match(new RegExp(regexString));
+  dieIf(mustMatch && !matches,
+      `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
+  return matches ? matches[1] : undefined;
+}
 
 
-  __brokenPreview: '.s_LnPv-Err',
-  __intLinkProvider: { name: 'Int', inSandboxedIframe: false } as LinkPreviewProvider,
+const __brokenPreview = '.s_LnPv-Err';
+const __intLinkProvider: LinkPreviewProvider = { name: 'Int', inSandboxedIframe: false };
 
 
-  // REMOVE use makeLinkPreviewSelector(..) instead.
-  makePreviewOkSelector: (provider: LinkPreviewProvider | 'InternalLink',
-          opts: { url?: St } = {}) => {
-    return utils.makeLinkPreviewSelector(provider, { ...opts, broken: false });
-  },
+// REMOVE use makeLinkPreviewSelector(..) instead.
+export function makePreviewOkSelector(provider: LinkPreviewProvider | 'InternalLink',
+        opts: { url?: St } = {}): St {
+  return makeLinkPreviewSelector(provider, { ...opts, broken: false });
+}
 
 
-  // REMOVE use makeLinkPreviewSelector(..) instead.
-  makePreviewBrokenSelector: (provider: LinkPreviewProvider | 'InternalLink',
-          opts: { url?: St, errCode?: St } = {}) => {
-    return utils.makeLinkPreviewSelector(provider, { ...opts, broken: true });
-  },
+// REMOVE use makeLinkPreviewSelector(..) instead.
+export function makePreviewBrokenSelector(provider: LinkPreviewProvider | 'InternalLink',
+        opts: { url?: St, errCode?: St } = {}): St {
+  return makeLinkPreviewSelector(provider, { ...opts, broken: true });
+}
 
 
-  makeLinkPreviewSelector: (provider: LinkPreviewProvider | 'InternalLink',
-          opts: { url?: St, broken?: Bo, errCode?: St } = {}) => {
+export function makeLinkPreviewSelector(provider: LinkPreviewProvider | 'InternalLink',
+          opts: { url?: St, broken?: Bo, errCode?: St } = {}): St {
 
     // Internal broken links renders as normal links, in case some people
     // may actually see the linked page — maybe it's access restricted. Then
@@ -116,22 +110,22 @@ const utils = {
       return sel;
     }
 
-    if (provider === 'InternalLink') provider = utils.__intLinkProvider;
+    if (provider === 'InternalLink') provider = __intLinkProvider;
     const colonNotPara = opts.broken ? '' : ':not(';
     const endPara      = opts.broken ? '' : ')';
     let sel = `.s_LnPv-${provider.lnPvClassSuffix || provider.name}${
           colonNotPara}${
-            utils.__brokenPreview}${
+            __brokenPreview}${
           endPara}`;
     if (opts.url) sel += ` a[href="${opts.url}"]`;
     return sel;
-  },
+}
 
 
-  ssoLogin: (ps: { member: Member, ssoId, browser,
+export function ssoLogin(ps: { member: Member, ssoId, browser,
         origin: string, server, apiSecret: string, apiRequesterId?: UserId,
-        thenGoTo: string }) => {
-    const extUser = utils.makeExternalUserFor(ps.member, { ssoId: ps.ssoId });
+        thenGoTo: string }) {
+    const extUser = makeExternalUserFor(ps.member, { ssoId: ps.ssoId });
     logMessage(`SSO: Upserting @${ps.member.username}, getting a one time secret ...`);
     const oneTimeLoginSecret = ps.server.apiV0.upsertUserGetLoginSecret({
         origin: ps.origin,
@@ -144,10 +138,10 @@ const utils = {
         oneTimeSecret: oneTimeLoginSecret,
         thenGoTo: ps.thenGoTo || '/' });
     logMessage(`SSO: Done`);
-  },
+  }
 
 
-  makeExternalUserFor: (member: Member, opts: {
+export function makeExternalUserFor(member: Member, opts: {
     ssoId: string,
     primaryEmailAddress?: string,
     isEmailAddressVerified?: boolean,
@@ -157,7 +151,7 @@ const utils = {
     aboutUser?: string,
     isAdmin?: boolean,
     isModerator?: boolean,
-  }): ExternalUser => {
+  }): ExternalUser {
     return {
       ssoId: opts.ssoId,
       primaryEmailAddress: firstDefinedOf(opts.primaryEmailAddress, member.emailAddress),
@@ -169,10 +163,10 @@ const utils = {
       isAdmin: firstDefinedOf(opts.isAdmin, member.isAdmin),
       isModerator: firstDefinedOf(opts.isModerator, member.isModerator),
     };
-  },
+}
 
 
-  makeEmbeddedCommentsHtml(ps: { pageName: string, discussionId?: string,
+export function makeEmbeddedCommentsHtml(ps: { pageName: string, discussionId?: string,
       talkyardPageId?: string, categoryRef?: string,
       localHostname?: string, color?: string, bgColor: string, htmlToPaste?: string,
       authnToken?: St | Ay }): St {
@@ -223,10 +217,10 @@ authnTokenScript + `
     }
 
     return resultHtmlStr;
-  },
+  }
 
 
-  makeManyEmbeddedCommentsHtml(ps: { pageName: St, discussionIds: St[],
+export function makeManyEmbeddedCommentsHtml(ps: { pageName: St, discussionIds: St[],
       localHostname?: St, color?: St, bgColor: St }): St {
     // Dupl code [046KWESJJLI3].
 
@@ -266,10 +260,10 @@ ${multiCommentsHtml}
 </html>`;
 
     return resultHtmlStr;
-  },
+  }
 
 
-  makeBlogPostIndexPageHtml(ps: { localHostname?: St, urlA: St, urlB: St, urlC: St,
+export function makeBlogPostIndexPageHtml(ps: { localHostname?: St, urlA: St, urlB: St, urlC: St,
           urlD: St, urlE: St, urlF: St, urlG: St,
           urlH: 'NoHref', urlI: 'NoLinkTag' }): St {
     // For now:
@@ -348,31 +342,31 @@ ${multiCommentsHtml}
 
     assert.eq(html.match(/ty_NumCmts/g).length, 9);  // ttt
     return html;
-  },
+  }
 
 
-  ssoLoginPageSlug: 'sso-dummy-login.html',
-  ssoAfterLogoutPageSlug: 'after-logout-page.html',
-  ssoLogoutRedirPageSlug: 'logout-redir-page.html',
+export const ssoLoginPageSlug = 'sso-dummy-login.html';
+export const ssoAfterLogoutPageSlug = 'after-logout-page.html';
+export const ssoLogoutRedirPageSlug = 'logout-redir-page.html';
 
-  createSingleSignOnPagesInHtmlDir() {
+export function createSingleSignOnPagesInHtmlDir() {
     // Chrome? Webdriverio? wants a 200 OK reply, so we need dummy pages.
-    utils.createPageInHtmlDirUnlessExists(utils.ssoLoginPageSlug,
+    createPageInHtmlDirUnlessExists(ssoLoginPageSlug,
             '<html><body>\n' +
             "SSO Login Ty test page. [8906QKSHM40]\n" +
             '</body></html>\n');
-    utils.createPageInHtmlDirUnlessExists(utils.ssoAfterLogoutPageSlug,
+    createPageInHtmlDirUnlessExists(ssoAfterLogoutPageSlug,
             '<html><body>\n' +
             "After Logout Ty SSO test page. [AFT_LGO_TST_537503_]\n" +
             '</body></html>\n');
-    utils.createPageInHtmlDirUnlessExists(utils.ssoLogoutRedirPageSlug,
+    createPageInHtmlDirUnlessExists(ssoLogoutRedirPageSlug,
             '<html><body>\n' +
             "Logout Redir Ty SSO test page. [LGO_RDR_TST_865033_]\n" +
             '</body></html>\n');
-  },
+  }
 
 
-  createPageInHtmlDirUnlessExists(pageSlug: St, html: St) {
+export function createPageInHtmlDirUnlessExists(pageSlug: St, html: St) {
     const fileSysPath = './target/' + pageSlug;
     if (fs.existsSync(fileSysPath)) {
       logMessage(`Page already exists: ${fileSysPath}`);
@@ -380,14 +374,14 @@ ${multiCommentsHtml}
     }
     logMessage(`Creating html page: ${fileSysPath}`);
     fs.writeFileSync(fileSysPath, html);
-  },
+  }
 
 
-  checkNewPageFields: (page, ps: {
+export function checkNewPageFields(page, ps: {
      categoryId: CategoryId,
       authorId?: UserId,
       numPostsTotal?: number,
-    }) => {
+    }) {
 
     // -2: Skip title and body posts.
     const numRepliesTotal = ps.numPostsTotal ? ps.numPostsTotal - 2 : 0;
@@ -450,10 +444,10 @@ ${multiCommentsHtml}
     assert.eq(page.embeddingPageUrl, null);
     assert.ok(!!page.frequentPosterIds);
     assert.eq(page.frequentPosterIds.length, 0);
-  },
+}
 
 
-  checkNewPostFields: (post, ps: {
+export function checkNewPostFields(post, ps: {
       postNr: PostNr,
       parentNr?: PostNr,
       postType: PostType,
@@ -461,7 +455,7 @@ ${multiCommentsHtml}
       authorId?: UserId,
       approvedSource: string,
       approvedHtmlSanitized: string,
-    }) => {
+    }) {
 
     assert.ok(!post.lastApprovedEditAt);
     assert.eq(post.closedStatus, 0);
@@ -510,10 +504,10 @@ ${multiCommentsHtml}
     assert.eq(post.approvedHtmlSanitized.trim(), ps.approvedHtmlSanitized.trim());
     if (ps.authorId) assert.eq(post.currRevById, ps.authorId);
     assert.ok(!post.lastApprovedEditById);
-  },
+}
 
 
-  tryManyTimes: function<R>(what, maxNumTimes, fn: () => R): R {
+export function tryManyTimes<R>(what, maxNumTimes, fn: () => R): R {
     for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {
       try {
         return fn();
@@ -523,10 +517,10 @@ ${multiCommentsHtml}
       }
     }
     return fn();
-  },
+}
 
 
-  tryUntilTrue: function<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
+export function tryUntilTrue<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
         fn: 'ExpBackoff' | (() => Bo), fn2?: () => Bo) {
     let delayMs = 300;
 
@@ -556,8 +550,4 @@ ${multiCommentsHtml}
         delayMs = Math.min(2500, delayMs);
       }
     }
-  },
-};
-
-
-export = utils;
+}

@@ -73,7 +73,7 @@ const TestPageNotfLevel = {
 };
 
 
-export = {
+export default {
   MinUnixMillis: 100000000000,  // [MINMILLIS]
   LowestTempImpId: 2 * 1000 * 1000 * 1000 + 1, //2000000001,
   JanOne2020HalfPastFive: 1577900000 * 1000,  // 2020-01-01T17:33:20 can use in tests

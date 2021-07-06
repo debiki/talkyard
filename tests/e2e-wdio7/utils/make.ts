@@ -1,22 +1,23 @@
 /// <reference path="../test-types2.ts"/>
 /// <reference path="../../../to-talkyard/src/to-talkyard.d.ts" />
 
-import settings = require('./settings');
-import log = require('./log-and-die');
-declare function require(...whatever: any[]): any;
+import * as log from './log-and-die';
 
-import _ = require('lodash');
-import c = require('../test-constants');
-import utils = require('../utils/utils');
+import * as _ from 'lodash';
+import c from '../test-constants';
+import * as utils from './utils';
+
 
 // This is 2015-12-04T03:13:44+00:00, hmm, why?
-const DefaultCreatedAtMs = 1449198824000;
+export const DefaultCreatedAtMs = 1449198824000;
+
 
 let nextPostId = 101;
 function getAndBumpNextPostId() {
   nextPostId += 1;
   return nextPostId - 1;
 }
+
 
 let nextUserId = 101;
 function getAndBumpNextUserId() {
@@ -66,18 +67,16 @@ function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
 }};
 
 
-const make = {
-  defaultCreatedAtMs: DefaultCreatedAtMs,
-
-  emptySiteOwnedByOwen: function(ps: { okInitEarly?: boolean } = {}): SiteData {
+export function emptySiteOwnedByOwen(ps: { okInitEarly?: boolean } = {}): SiteData {
     const site = _.cloneDeep(makeEmptySite(ps));
-    const owner = make.memberOwenOwner();
+    const owner = memberOwenOwner();
     site.members.push(owner);
     site.meta.creatorEmailAddress = owner.emailAddress;
     return site;
-  },
+}
 
-  memberOwenOwner: function(template: Partial<Member> = {}): Member {
+
+export function memberOwenOwner(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -91,9 +90,10 @@ const make = {
       isOwner: true,
       isAdmin: true,
     };
-  },
+}
 
-  memberAdminAdam: function(template: Partial<Member> = {}): Member {
+
+export function memberAdminAdam(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -106,9 +106,10 @@ const make = {
       password: "publ-ad020",
       isAdmin: true,
     };
-  },
+}
 
-  memberAdminAlice: function(template: Partial<Member> = {}): Member {
+
+export function memberAdminAlice(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -121,9 +122,10 @@ const make = {
       password: "publ-al020",
       isAdmin: true,
     };
-  },
+}
 
-  memberModeratorModya: function(template: Partial<Member> = {}): Member {
+
+export function memberModeratorModya(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -136,9 +138,10 @@ const make = {
       password: "publ-mo020",
       isModerator: true,
     };
-  },
+}
 
-  memberModeratorMons: function(template: Partial<Member> = {}): Member {
+
+export function memberModeratorMons(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -151,9 +154,10 @@ const make = {
       password: "publ-mo020",
       isModerator: true,
     };
-  },
+}
 
-  memberMaja: function(template: Partial<Member> = {}): Member {
+
+export function memberMaja(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -165,9 +169,10 @@ const make = {
       passwordHash: "cleartext:publ-ma020",
       password: "publ-ma020",
     };
-  },
+}
 
-  memberMemah: function(template: Partial<Member> = {}): Member {
+
+export function memberMemah(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -179,9 +184,10 @@ const make = {
       passwordHash: "cleartext:pub-mem020",
       password: "pub-mem020",
     };
-  },
+}
 
-  memberMaria: function(template: Partial<Member> = {}): Member {
+
+export function memberMaria(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -193,9 +199,10 @@ const make = {
       passwordHash: "cleartext:publ-ma020",
       password: "publ-ma020",
     };
-  },
+}
 
-  memberMerche: function(template: Partial<Member> = {}): Member {
+
+export function memberMerche(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -207,9 +214,10 @@ const make = {
       passwordHash: "cleartext:publ-me020",
       password: "publ-me020",
     };
-  },
+}
 
-  memberMeilani: function(template: Partial<Member> = {}): Member {
+
+export function memberMeilani(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -221,9 +229,10 @@ const make = {
       passwordHash: "cleartext:publ-me020",
       password: "publ-me020",
     };
-  },
+}
 
-  memberMichael: function(template: Partial<Member> = {}): Member {
+
+export function memberMichael(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -235,9 +244,10 @@ const make = {
       passwordHash: "cleartext:publ-mi020",
       password: "publ-mi020",
     };
-  },
+}
 
-  memberTrillian: function(template: Partial<Member> = {}): Member {
+
+export function memberTrillian(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -250,9 +260,10 @@ const make = {
       password: "publ-tr020",
       trustLevel: c.TestTrustLevel.Trusted,
     };
-  },
+}
 
-  memberRegina: function(template: Partial<Member> = {}): Member {
+
+export function memberRegina(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -265,9 +276,10 @@ const make = {
       password: "publ-re020",
       trustLevel: c.TestTrustLevel.Regular,
     };
-  },
+}
 
-  memberCorax: function(template: Partial<Member> = {}): Member {
+
+export function memberCorax(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -280,9 +292,10 @@ const make = {
       password: "publ-co020",
       trustLevel: c.TestTrustLevel.CoreMember,
     };
-  },
+}
 
-  memberMallory: function(template: Partial<Member> = {}): Member {
+
+export function memberMallory(template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -296,9 +309,10 @@ const make = {
       passwordHash: "cleartext:publ-ml020",
       password: "publ-ml020",
     };
-  },
+}
 
-  member: function(username: string, template: Partial<Member> = {}): Member {
+
+export function member(username: string, template: Partial<Member> = {}): Member {
     return {
       ...template,
       id: getAndBumpNextUserId(),
@@ -310,9 +324,10 @@ const make = {
       passwordHash: 'cleartext:pub-mem020',
       password: 'pub-mem020',
     };
-  },
+}
 
-  minion: function(ps: { oneWordNameAndNumber: string,
+
+export function minion(ps: { oneWordNameAndNumber: string,
           mixedCaseUsernameStartWithUpper: boolean }): Member {
     const nameLowercase = ps.oneWordNameAndNumber.toLowerCase();
     return {
@@ -327,9 +342,10 @@ const make = {
       passwordHash: "cleartext:pub-min020",
       password: "pub-min020",
     };
-  },
+}
 
-  guestGunnar: function(): TestGuest {
+
+export function guestGunnar(): TestGuest {
     return {
       id: -10,
       fullName: "Guest Gunnar",
@@ -338,9 +354,10 @@ const make = {
       guestBrowserId: 'guestBrowserIdGunnar',
       isGuest: true,
     };
-  },
+}
 
-  guestGreta: function(): TestGuest {
+
+export function guestGreta(): TestGuest {
     return {
       id: -11,
       fullName: "Guest Greta",
@@ -349,9 +366,10 @@ const make = {
       guestBrowserId: 'guestBrowserIdGreta',
       isGuest: true,
     };
-  },
+}
 
-  page: function(values: PageToMake): Page {
+
+export function page(values: PageToMake): Page {
     return <any> {
       id: values.id,
       role: values.role,
@@ -376,9 +394,10 @@ const make = {
       numOpRepliesVisible: values.numOpRepliesVisible,
       version: values.version || 1,
     };
-  },
+}
 
-  pagePath: function(pageId: PageId, folder: string, showId: boolean, slug?: string): PagePathWithId {
+
+export function pagePath(pageId: PageId, folder: string, showId: boolean, slug?: string): PagePathWithId {
     return {
       folder: folder,
       pageId: pageId,
@@ -386,16 +405,18 @@ const make = {
       slug: slug || '',
       canonical: true,
     };
-  },
+}
 
-  rootCategoryWithIdFor: function(id: CategoryId, forumPage: PageIdWhen): TestCategory {
-    const category = make.categoryWithIdFor(id, forumPage);
+
+export function rootCategoryWithIdFor(id: CategoryId, forumPage: PageIdWhen): TestCategory {
+    const category = categoryWithIdFor(id, forumPage);
     category.name = "(Root Category)";    // in Scala too [7UKPX5]
     category.slug =  `__root_cat_${id}`; //
     return category;
-  },
+}
 
-  categoryWithIdFor: function(id: CategoryId, forumPage: PageIdWhen): TestCategory {
+
+export function categoryWithIdFor(id: CategoryId, forumPage: PageIdWhen): TestCategory {
     return {
       id: id,
       sectionPageId: forumPage.id,
@@ -412,9 +433,10 @@ const make = {
       unlistCategory: false,
       unlistTopics: false,
     };
-  },
+}
 
-  post: function(values: NewTestPost): TestPost {
+
+export function post(values: NewTestPost): TestPost {
     let approvedHtmlSanitized = values.approvedHtmlSanitized;
     if (!approvedHtmlSanitized) {
       // Unless it's the title, wrap in <p>.
@@ -459,19 +481,21 @@ const make = {
       postType: values.postType,
       prevRevNr: undefined,
     };
-  },
+}
 
-  findForumPage: function(pages: Page[]): Page {
+
+export function findForumPage(pages: Page[]): Page {
     for (let i = 0; i < pages.length; ++i) {
       const page = pages[i];
       if (page.role === c.TestPageRole.Forum)
         return page;
     }
     log.die('EdE2KW055');
-  },
+}
 
-  forumOwnedByOwen: function(name: string, options?: { title?: string }): SiteData {
-    const site: SiteData = make.emptySiteOwnedByOwen();
+
+export function forumOwnedByOwen(name: string, options?: { title?: string }): SiteData {
+    const site: SiteData = emptySiteOwnedByOwen();
     const now = Date.now();
     site.meta.localHostname = site.meta.localHostname || 'e2e-test-' + now;
     site.meta.name = 'e2e-test-' + name + '-' + now;
@@ -481,7 +505,7 @@ const make = {
     // Dupl test code below [6FKR4D0]
     const rootCategoryId = 1;
 
-    const forumPage = make.page({
+    const forumPage = page({
       id: c.FirstPageId,
       role: c.TestPageRole.Forum,
       categoryId: rootCategoryId,
@@ -489,27 +513,27 @@ const make = {
     });
     site.pages.push(forumPage);
 
-    site.pagePaths.push(make.pagePath(forumPage.id, '/', false));
+    site.pagePaths.push(pagePath(forumPage.id, '/', false));
 
     // Forum title and intro text page.
-    site.posts.push(make.post({
+    site.posts.push(post({
       page: forumPage,
       nr: c.TitleNr,
       approvedSource: options.title || "Forum Title",
       approvedHtmlSanitized: options.title || "Forum Title",
     }));
-    site.posts.push(make.post({
+    site.posts.push(post({
       page: forumPage,
       nr: c.BodyNr,
       approvedSource: "Forum intro text.",
       approvedHtmlSanitized: "<p>Forum intro text.</p>",
     }));
 
-    const rootCategory = make.rootCategoryWithIdFor(rootCategoryId, forumPage);
+    const rootCategory = rootCategoryWithIdFor(rootCategoryId, forumPage);
     rootCategory.defaultCategoryId = 2;
     site.categories.push(rootCategory);
 
-    const uncategorizedCategory = make.categoryWithIdFor(2, forumPage);
+    const uncategorizedCategory = categoryWithIdFor(2, forumPage);
     uncategorizedCategory.parentId = rootCategory.id;
     uncategorizedCategory.name = "Uncategorized";
     uncategorizedCategory.slug = "uncategorized";
@@ -544,7 +568,7 @@ const make = {
     });
 
     return site;
-  },
+}
 
   // Creates this:
   //
@@ -596,9 +620,9 @@ const make = {
   //
   /*
   largeForumOwnedByOwen: function(name: string, options?): SiteBuilder {
-    let site = make.forumOwnedByOwen(name, options);
+    let site = forumOwnedByOwen(name, options);
 
-    var modya = make.memberModeratorModya();
+    var modya = memberModeratorModya();
     site.members.push(modya);
 
     let rootCategoryId = 1;
@@ -625,7 +649,4 @@ const make = {
 
     return site;
   } */
-};
 
-
-export = make;

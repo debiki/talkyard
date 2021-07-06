@@ -1,8 +1,9 @@
 {
     "compilerOptions": {
+        "target": "es2019",
         "types": [
             "node",
-            "webdriverio/async",
+            "webdriverio/sync",
             "@wdio/mocha-framework",
             "expect-webdriverio",
             "@wdio/devtools-service",
