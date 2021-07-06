@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "types": [
+            "node",
+            "webdriverio/async",
+            "@wdio/mocha-framework",
+            "expect-webdriverio",
+            "@wdio/devtools-service",
+            "@wdio/firefox-profile-service"]
+    }
+}
+
