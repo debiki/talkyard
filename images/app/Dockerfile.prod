@@ -6,6 +6,8 @@ FROM openjdk:8u212-alpine3.9
 # Nice to have:
 RUN apk add --no-cache \
   curl tree less wget net-tools bash \
+  # For PASETO v2.local tokens, needs XChaCha20Poly1305:
+  libsodium \
   # Telnet, nice for troubleshooting SMTP problems for example.
   busybox-extras
 
