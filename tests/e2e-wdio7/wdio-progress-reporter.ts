@@ -257,4 +257,4 @@ class TyWdioReporter extends WDIOReporter {
     }
 };
 
-export = TyWdioReporter;
+export default TyWdioReporter;

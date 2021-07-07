@@ -1,16 +1,14 @@
 declare const global: any;
 
 import * as _ from 'lodash';
-import TyWdioReporter = require('./wdio-progress-reporter');
-import settings = require('./utils/settings');
-import server = require('./utils/server');
-import lad = require('./utils/log-and-die');
-//import TyWdioReporter from './wdio-progress-reporter';
-//import { default as settings } from './utils/settings';
-//import { default as server } from './utils/server';
-//import * as lad from './utils/log-and-die';
+import TyWdioReporter from './wdio-progress-reporter';
+import settings from './utils/settings';
+import server from './utils/server';
+import * as lad from './utils/log-and-die';
+
 
 server.initOrExit(settings);
+
 
 let wasError = false;
 
@@ -36,7 +34,8 @@ let specs = [`${specsPathPrefix}/specs/**/*.ts`];
 
 // This now not needed? wdio v6 has  --spec
 if (settings.only) {
-  const globTs = settings.only.endsWith('.test.ts') ? '' : '*.ts';
+  const o = settings.only;
+  const globTs = o.endsWith('.test.ts') || o.endsWith('.e2e.ts') ? '' : '*.ts';
   specs = [`${specsPathPrefix}/specs/**/*${settings.only}${globTs}`];
 }
 
@@ -173,7 +172,7 @@ const firefoxDriverVersion = '0.26.0';
 // --------------------------------------------------------------------
 
 
-const config: WebdriverIO.Config = {
+export const config = { // doesn't work: WebdriverIO.Config = {
 
   // ====================
   // Runner Configuration
@@ -731,5 +730,3 @@ else {
   console.log(`I'll start one${maybeInvisible} ${browserName} browser.`);
 }
 
-
-export = config;
