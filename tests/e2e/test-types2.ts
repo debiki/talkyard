@@ -303,7 +303,7 @@ interface SiteMeta {
 
 interface TestMyself {
   isLoggedIn?: Bo;
-  id?;
+  id?: PatId;
   username?: St;
   fullName?: St;
 }
