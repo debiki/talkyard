@@ -52,11 +52,13 @@ type BoZ = Bo | Z;
 
 type NUV = null | undefined | void;
 
+type StN = St | Nl;     // Many APIs return `string | null` e.g. HTMLElement.getAttribute.
 type StV = St | NUV;    // 'V' for void-ish things, but not 0 or false
 type NrV = Nr | NUV;    // A number or void-ish — but not '' or false
 
 
 type HElm = HTMLElement;
+type HInpElm = HTMLInputElement;
 type Elm = Element;
 // Also: type RElm = JSX.Element (React.js element).
 
@@ -101,6 +103,44 @@ const enum UrlPaths {
   AdminLogin = '/-/admin-login',
   AuthnRoot = '/-/authn/',
   Groups = '/-/groups/'
+}
+
+
+// View bitfields like so:  Nr.toString(2) e.g. (2+4+16+256).toString(2) —> '100010110'.
+//
+const enum SessionType {
+  /*
+  // Enum:  — no, bitfield this too? In case 2FA or MFA?
+  UsernamePassword = 1,
+  ServerGlobalOAuth = 2,
+  SiteCustomOAuth = 3,
+  SiteCustomOSaml = 4,
+  SiteCustomSso = 5,
+
+  ApiSecret =  // instead of SidOk("_api_secret_", ..)
+
+  EmailSecret = 8,
+  BackupCode = 9,
+
+  // Combined with bitfield:
+  // If pat got logged in without doing anything henself.
+  // That's currently only for embedded comments, if the embedding page
+  // includse a PASETO token in the HTML, which Talkyard then automatically
+  // exchanges against a session id.
+  UrlOneTimeSecret = 64
+  AutoToken = 128,
+  */
+
+  AutoTokenSiteCustomSso = 72,  // AutoToken + SiteCustomSso, // = 72
+}
+
+
+const enum ShowEmbAuthnBtnsBitf {
+  None = 0,
+  // Join = 1
+  // LoginReplyEtc = 2
+  // Logout = 4
+  All = 7,
 }
 
 

@@ -96,7 +96,7 @@ d.i.createLoginPopup = function(url) {
       // overwrite the main win's session id with undefined.
       if (result.weakSessionId) {
         // Remember the session in getMainWin().typs.weakSessionId:
-        debiki2.Server.makeUpdNoCookiesTempSessionIdFn(function() {})(result); // [NOCOOKIES]
+        debiki2.Server.rememberTempSession(result); // [NOCOOKIES]
       }
     }
     catch (ex) {

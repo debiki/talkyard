@@ -95,6 +95,7 @@ POST  /-/change-hostname        controllers.SettingsController.changeHostname
 POST  /-/update-extra-hostnames controllers.SettingsController.updateExtraHostnames
 GET   /-/load-oidc-config       controllers.SettingsController.loadOidcConfig
 POST  /-/upsert-oidc-config     controllers.SettingsController.upsertOidcConfig
+GET   /-/gen-paseto-v2-loc-secr controllers.SettingsController.genPasetoV2LocalSecret
 
 GET   /-/terms-of-use            controllers.LegalController.viewTermsOfUsePage
 GET   /-/privacy-policy          controllers.LegalController.viewPrivacyPolicyPage

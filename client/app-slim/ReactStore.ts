@@ -146,27 +146,17 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.Logout:
-      // Not really needed, because logoutClientSideOnly() does reload() [502098SK]
-      // — but let's clear this anyway:
-      delete typs.weakSessionId;
-
-      // (Perhaps the server should instead include a 'reloadPage' param in the /-/logout response?)
-      if (store.userMustBeAuthenticated !== false || store.userMustBeApproved !== false)
-        location.reload();
-
-      // (No longer needed — now we redirect in Server.ts instead [9UMD24]. Remove this 'if' then?)
-      if (currentPage.pageRole === PageRole.FormalMessage) {
-        // We may not see it any longer.
-        location.assign('/');
-      }
-
+      // This isn't really needed, since we reload the page anyway,
+      // see logoutClientSideOnly(). But let's keep this, in case we some day
+      // in the future don't want to reload the page.
+      // ---------
       $h.removeClasses(htmlElem, 'dw-is-admin dw-is-staff dw-is-authenticated');
-
       if (store.userIdsOnline) delete store.userIdsOnline[store.me.id];
       store.numOnlineStrangers += 1;
       store.me = makeStranger(store);
       store.user = store.me; // try to remove
       debiki2.pubsub.subscribeToServerEvents(store.me);
+      // ---------
       break;
 
     case ReactActions.actionTypes.NewUserAccountCreated:

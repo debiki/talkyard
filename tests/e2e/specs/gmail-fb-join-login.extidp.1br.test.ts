@@ -11,7 +11,7 @@ import logAndDie = require('../utils/log-and-die');
 const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 const logMessage = logAndDie.logMessage;
 
-const testName = '/-/create-site  @createsite';
+const testName = 'gmail-fb-join-login.extidp.1br.test.ts  TyTE2EGMFBJOINLGI';
 let idAddress: IdAddress;
 let browser: TyE2eTestBrowser;
 

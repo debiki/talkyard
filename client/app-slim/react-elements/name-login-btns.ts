@@ -56,6 +56,37 @@ export const NameLoginBtns = createComponent({
     const store: Store = this.state.store;
     const me: Myself = store.me;
 
+    const settings: SettingsVisibleClientSide = store.settings;
+
+    let showAuthnBtns = true;  /*  [hide_authn_btns]
+    // Rethink this later. Need to store session type inside session string?
+    if (settings.enableSso) {
+      if (me.isLoggedIn) {
+        if (settings.ssoLogoutRedirUrl &&
+                  settings.ssoShowEmbAuthnBtns !== ShowEmbAuthnBtnsBitf.None) {
+          // Show logout button.
+        }
+        else {
+          // If auto logged in via token in embedding html, then auto log out,
+          // if it's not there any longer.
+    ———>  // But! accessing another frame from here maybe is bad for perforamnce?
+          // (getMainWin() might be another iframe, if embedded comments)
+          const sessType = getMainWin().typs.sessType;
+          if (sessType === SessionType.AutoTokenSiteCustomSso) {
+            showAuthnBtns = false;
+          }
+          else {
+            // Leave showAuthnBtns = true — apparently we got logged in in
+            // some other way, maybe just before an admin cahnged the settings.
+          }
+        }
+      }
+      else {
+        showAuthnBtns = settings.ssoShowEmbAuthnBtns !== ShowEmbAuthnBtnsBitf.None;
+      }
+    }
+    */
+
     let userNameElem = null;
     let logoutBtnElem = null;
     const target = store.isEmbedded ? '_blank' : undefined;
@@ -66,13 +97,13 @@ export const NameLoginBtns = createComponent({
             r.a({ className: 's_MB_Name', href: linkToUserProfilePage(me), target },
               !me.fullName ? null : r.span({ className: 'esP_By_F' }, me.fullName + ' '),
               !me.username ? null : r.span({ className: 'esP_By_U' }, '@' + me.username)));
-      logoutBtnElem =
+      logoutBtnElem = !showAuthnBtns ? null :
           r.span({ className: 'dw-a-logout', onClick: this.onLogoutClick, id: this.props.id },
             t.LogOut);
     }
 
     let loginBtnElem = null;
-    if (!me.isLoggedIn) {
+    if (!me.isLoggedIn && showAuthnBtns) {
       const disabled = this.props.disabled ? 'disabled' : '';
       loginBtnElem =
           r.span({ className: 'dw-a-login btn btn-primary ' + disabled,

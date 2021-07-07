@@ -993,8 +993,10 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
   doubleTypeEmailAddress?: boolean;     // default: false
   doubleTypePassword?: boolean;         // default: false
   ssoUrl?: string;                      // default: undefined
+  ssoShowEmbAuthnBtns?: ShowEmbAuthnBtnsBitf;  // default: undef —> All
   enableSso?: boolean;                  // default: undefined —> false
-  effectiveSsoLoginRequiredLogoutUrl?: boolean;  // default: undefined —> empty
+  ssoWillRedirAfterLogout?: Bo;         // default: undef —> false
+  rememberEmbSess?: Bo;                 // default: undef —> true
   enableApi?: boolean;                  // default: undefined —> true
   minPasswordLength?: number;           // default: 10
   enableForum?: boolean;                // default: true
@@ -1567,11 +1569,35 @@ interface Settings extends TopicInterfaceSettings {
   doubleTypePassword: boolean;
   begForEmailAddress: boolean;
 
-  // Single Sign-On
+
+
+  // ----- Your own custom (Single) Sign-On
+
   enableSso: boolean;
+
+  // ssoDisableAllOthers — later. Default to true, for old sites with  enableSso.
+  // (If not set, then, can still login using other methods — then, the ssoButtonTitle
+  // etc become relevant.)
+
   ssoUrl: string;
   ssoNotApprovedUrl: string;
   ssoLoginRequiredLogoutUrl: string;
+  ssoLogoutRedirUrl: St;
+  ssoShowEmbAuthnBtns: ShowEmbAuthnBtnsBitf;
+
+  ssoPasetoV2LocalSecret: St;
+  ssoPasetoV2PublicKey: St;
+  ssoRefreshAuthnTokenUrl: St;
+  rememberEmbSess: Bo;
+  expireIdleEmbSessAfterMins: Nr;
+
+  //ssoButtonTitle: St;
+  //ssoButtonDescr: St;
+  //ssoButtonImageUrl: St;
+  //ssoPopupWinWidth: Nr;
+  //ssoPopupWinHeight: Nr;
+  //ssoPopupWinIconUrl: Nr;
+
 
   // Own email server
   enableOwnEmailServer: boolean;
@@ -2127,6 +2153,11 @@ interface IframeOffsetWinSize {
   top: number;
   height: number;
   iframeVisibleHeight?: number;
+}
+
+
+interface GenPasetoV2LocSecrResp {
+  pasetoV2LocalSecret: St;
 }
 
 

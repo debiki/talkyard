@@ -27,6 +27,7 @@ import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
 import talkyard.server.TyLogging
 import talkyard.server.authn.LoginReason
+import talkyard.server.JsX
 
 
 /** Logs in and out.
@@ -130,30 +131,35 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Opt[St]): Result = {
-    import request.{dao, requester}
+    import request.{dao, requester, siteSettings}
 
     requester foreach { theRequester =>
       request.dao.logout(theRequester, bumpLastSeen = true)
     }
 
-    val stayOnSamePage = redirectIfMayNotSeeUrlPath match {
-      case None =>
-        true
-      case Some(urlPath) =>
+    val goToNext: Opt[St] = siteSettings.effSsoLogoutAllRedirUrl orElse {
+      redirectIfMayNotSeeUrlPath flatMap { urlPath =>
         // May-not-see tested here: [TyT503KRDHJ2]. (May-see: Tested "everywhere".)
-        dao.mayStrangerProbablySeeUrlPathUseCache(urlPath)
+        // (For embedded comments, maySee will be true.)
+        val maySee = dao.mayStrangerProbablySeeUrlPathUseCache(urlPath)
+        if (maySee) None
+        else siteSettings.effSsoLogoutFromTyRedirUrlIfAuthnReq orElse Some("/")
+      }
     }
-
-    def goToNext = request.siteSettings.effectiveSsoLoginRequiredLogoutUrl getOrElse "/"
 
     val response =
       if (request.isAjax) {
+        // (For embedded comments, we'll redirect the top window  [sso_redir_par_win]
         OkSafeJson(
           Json.obj(
-            "goToUrl" -> (if (stayOnSamePage) JsNull else JsString(goToNext))))
+            "goToUrl" -> JsX.JsStringOrNull(goToNext)))
       }
-      else
-        TemporaryRedirect(goToNext)
+      else {
+        TemporaryRedirect(
+              goToNext.orElse(
+                  // Then we may see this path: (if any)
+                  redirectIfMayNotSeeUrlPath) getOrElse "/")
+      }
 
     // Keep the xsrf cookie, so the login dialog will work.
     response.discardingCookies(DiscardingSessionCookie)

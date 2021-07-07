@@ -301,8 +301,16 @@ interface SiteMeta {
 }
 
 
+interface TestMyself {
+  isLoggedIn?: Bo;
+  id?;
+  username?: St;
+  fullName?: St;
+}
+
 interface Member {   // see also TestGuest below
   id: number;
+  ssoId?: St;
   username: string;
   fullName?: string;
   createdAtMs: number;

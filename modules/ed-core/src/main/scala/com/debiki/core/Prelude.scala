@@ -17,11 +17,14 @@
 
 package com.debiki.core
 
+import org.apache.commons.codec.binary.Hex
+
 import java.{util => ju}
 import java.{security => js}
 import org.apache.commons.codec.{binary => acb}
 import org.scalactic.{ErrorMessage, Or}
 import play.api.libs.json.{JsNumber, JsObject, JsString}
+
 import scala.collection.mutable
 import scala.util.Try
 import scala.util.matching.Regex
@@ -617,14 +620,38 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   val hashLengthEmail = 20
   val hashLengthIp = 20
 
-  def saltAndHashEmail = saltAndHash(hashLengthEmail) _
-  def saltAndHashIp = saltAndHash(hashLengthIp) _
+  def saltAndHashEmail: St => St = saltAndHash(hashLengthEmail) _
+  def saltAndHashIp: St => St = saltAndHash(hashLengthIp) _
 
   SECURITY; COULD // use SHA-256 instead.
   private def mdSha1 = js.MessageDigest.getInstance("SHA-1") // not thread safe
 
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
+
+
+  /* ------  Move to a 'security' package?    [406MRED256]
+  def base32EncodeSecretKey(key: javax.crypto.SecretKey): St = {
+    val b32 = new acb.Base32(99999)  // "unlimited" line length
+    b32.encodeToString(key.getEncoded)
+  }
+
+  def base32DecodeSecretKey(keyInBase32: St): javax.crypto.SecretKey = {
+    val b32 = new acb.Base32(99999)
+    val keyBytes = b32.decode(keyInBase32)
+    dev.paseto.jpaseto.lang.Keys.secretKey(keyBytes)
+  }
+
+  def hexDecodeSecretKey(keyInHex: St): javax.crypto.SecretKey = {
+    val keyBytes = acb.Hex.decodeHex(keyInHex)
+    dev.paseto.jpaseto.lang.Keys.secretKey(keyBytes)
+  }
+
+  def generateSecretKey(): javax.crypto.SecretKey = {
+    // This uses java.security.SecureRandom.
+    dev.paseto.jpaseto.lang.Keys.secretKey()
+  }
+  // ------ */
 
   def hideEmailLocalPart(emailAddress: String): String =
     if (emailAddress.isEmpty) ""

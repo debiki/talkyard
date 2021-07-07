@@ -2,8 +2,11 @@ FROM openjdk:8u212-jdk-alpine3.9
 
 RUN apk add --no-cache \
   # Required:
-  # (git needed so can include Git revision in the build, and show at http://server/-/build-info.)
+  # (git needed so can include Git revision in the build,
+  # and show at http://server/-/build-info.)
   curl unzip git \
+  # For PASETO v2.local tokens, needs XChaCha20Poly1305:
+  libsodium \
   # Nice to have:
   tree less wget net-tools bash \
   # tput, needed by Coursier somehow

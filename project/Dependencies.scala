@@ -24,6 +24,10 @@ object Dependencies {
   }
 
   object Libs {
+
+    // Scala / Java 11 compat, see: https://github.com/eed3si9n/scalaxb/issues/481
+    //val jaxbApi = "javax.xml.bind" % "jaxb-api" % "2.3.1"
+
     // See: https://mvnrepository.com/artifact/org.postgresql/postgresql/
     // Upgr to: 42.2.14?
     //   https://github.com/pgjdbc/pgjdbc#maven-central
@@ -70,8 +74,8 @@ object Dependencies {
     val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"
 
 
-    // Decoding JWT:s
-    //
+    // ----- Decoding JWT:s
+
     // Use which lib? Here's a list: https://jwt.io
     // - There's: https://github.com/jwtk/jjwt by Okta but not easy to find in
     //   the very long readme how to just decode a JWT one got straight
@@ -93,6 +97,34 @@ object Dependencies {
     // Repo: https://github.com/auth0/java-jwt
     val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.11.0"
 
+
+    // ----- PASETO tokens
+
+    val jpasetoApi = "dev.paseto" % "jpaseto-api" % "0.6.0"  // compile time (default)
+    val jpasetoImpl = "dev.paseto" % "jpaseto-impl" % "0.6.0" // % "runtime"
+
+    // Dependency Hell: Cannot use jpaseto-jackson (and we don't need it, fortunately) —
+    // it depends on jackson-databind:2.11.2, but other modules require 2.10.*.
+    //val jpasetoJackson = "dev.paseto" % "jpaseto-jackson" % "0.6.0" //% "runtime"
+    // But Gson works, no conflict:
+    val jpasetoGson = "dev.paseto" % "jpaseto-gson" % "0.6.0" //% "runtime"
+
+    // Needed for v2.local. Also needs OS native lib sodium.
+    val jpasetoSodium = "dev.paseto" % "jpaseto-sodium" % "0.6.0"
+
+    // Needed for v2.public, in Java 8:
+    // But the BouncyCastle docs are not nice to read, plus ads.
+    // Upgr to Java 11, so won't need to read.
+    //val jpasetoBouncyCastle = "dev.paseto" % "jpaseto-bouncy-castle" % "0.6.0" //% "runtime"
+    //val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15to18" % "1.68"
+
+    // For v2.public — cannot get this working though.
+    // https://mvnrepository.com/artifact/net.i2p.crypto/eddsa
+    // https://github.com/str4d/ed25519-java
+    // val edsaCryptoAlg = "net.i2p.crypto" % "eddsa" % "0.3.0"
+
+
+    // ----- Test
 
     // Not v 3.1.2?
     val scalactic = "org.scalactic" %% "scalactic" % "3.1.4"

@@ -20,7 +20,7 @@ package ed.server.security
 import com.debiki.core._
 import com.debiki.core.isDevOrTest
 import com.debiki.core.Prelude._
-import debiki.{AllSettings, EdHttp, EffectiveSettings, Globals}
+import debiki.{EdHttp, EffectiveSettings, Globals}
 import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
 import play.api.mvc.{Cookie, DiscardingCookie, RequestHeader}
 import scala.util.Try
@@ -28,6 +28,7 @@ import EdSecurity._
 import ed.server.auth.MayMaybe
 import play.api.http.{HeaderNames => p_HNs}
 import talkyard.server.TyLogger
+
 
 
 sealed abstract class XsrfStatus { def isOk = false }
@@ -41,6 +42,7 @@ case class XsrfOk(value: String) extends XsrfStatus {
     value.takeWhile(_ != '.').toLong
   }
 }
+
 
 
 // RENAME to AuthnMethod,
@@ -60,6 +62,7 @@ case object SidBadHash extends SidStatus
 case class SidExpired(minutesOld: Long, maxAgeMins: Long) extends SidStatus
 
 
+
 case class SidOk(
   value: String,
   ageInMillis: Long,
@@ -69,12 +72,14 @@ case class SidOk(
 }
 
 
+
 /** The value of Debiki's browser id cookie, which is used e.g. to count unique page
   * visits and to mitigate vote fraud.
   * @param isNew The cookie was just set, this very HTTP request, which means
   *              it's possible that the browser has disabled cookies?
   */
 case class BrowserId(cookieValue: String, isNew: Boolean)
+
 
 
 object EdSecurity {
@@ -953,4 +958,3 @@ class EdSecurity(globals: Globals) {
     }
   }
 }
-

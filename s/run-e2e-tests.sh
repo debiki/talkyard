@@ -295,7 +295,7 @@ function runAllE2eTests {
   $r s/wdio --only create-site-github-uppercase-email.1br.extidp $args
   $r s/wdio --only create-site-linkedin.1br.extidp $args
   $r s/wdio --only create-site-admin-guide.2browsers $args
-  $r s/wdio --only oauth-signup-signin $args
+  $r s/wdio --only gmail-fb-join-login.extidp.1br $args
 
   $r s/wdio --only oidc-azure-login-required.2br.extidp $args
   $r s/wdio --only oidc-azure-pub-site.2br.extidp $args
@@ -354,7 +354,7 @@ function runAllE2eTests {
   $r s/wdio --only move-posts-other-page.2browsers $args
   # + delete-posts
 
-  $r s/wdio --only settings-allowed-email-domains.2browsers $args
+  $r s/wdio --only settings-allowed-email-domains.extidp.2br $args
   $r s/wdio --only settings-toggle-login-required.3browsers $args
   $r s/wdio --only login-required-ext-signup-login.1br.extidp $args
   $r s/wdio --only login-required-join-global-chat.2br $args
@@ -536,6 +536,7 @@ function runAllE2eTests {
   $r s/wdio --only sso-login-new-members.2browsers $args
   $r s/wdio --only sso-login-required.2browsers $args
   $r s/wdio --only sso-login-required-w-logout-url.2browsers $args
+  $r s/wdio --only sso.logout-url.2br $args
   # unimpl:  s/wdio --only sso-approval-required.2browsers $args
   # unimpl:  s/wdio --only sso-login-and-approval-required.2browsers $args
   $r s/wdio --only sso-admin-extra-login $args
@@ -617,7 +618,7 @@ function runAllE2eTests {
   $r s/wdio       --only embcom.comment-counts.2br.cors $args
 
   # Single Sign-On, embedded comments:
-  #$r s/wdio       --only embcom.sso.2br $args
+  $r s/wdio       --only embcom.sso.token-direct-w-logout-url.2br $args
 
   if [ -n "$http_server_pid" ]; then
     kill $http_server_pid

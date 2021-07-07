@@ -971,6 +971,13 @@ export function upsertIdentityProvider(idps: IdentityProviderSecretConf[],
 }
 
 
+export function genPasetoV2LocSecr(onOk: (secret: St) => Vo, onErr: (err: St) => Vo) {
+  get('/-/gen-paseto-v2-loc-secr', function(resp: GenPasetoV2LocSecrResp) {
+    onOk(resp.pasetoV2LocalSecret);
+  }, onErr);
+}
+
+
 export function loadSpecialContent(rootPageId: string, contentId: string,
       doneCallback: (any) => void) {
   let url = '/-/load-special-content?rootPageId=' + (rootPageId ? rootPageId : '') +
@@ -1088,23 +1095,32 @@ export function loginAsGuest(name: string, email: string,
 }
 
 
-export function loginWithAuthnToken(authnToken: St | Ay, onOk: () => Vo) {
+export function loginWithAuthnToken(authnToken: St | Ay,
+        sessType: SessionType.AutoTokenSiteCustomSso, onOk: () => Vo) {
   const isToken = _.isString(authnToken);
-  postJsonSuccess('/-/v0/upsert-user-and-login', makeUpdNoCookiesTempSessionIdFn(onOk), {
-    userInAuthnToken: isToken ? authnToken : undefined,
+  const updSessionVars = makeUpdNoCookiesTempSessionIdFn(onOk, sessType);
+  postJsonSuccess('/-/v0/upsert-user-and-login', updSessionVars, {
+    userAuthnToken: isToken ? authnToken : undefined,
     userDevTest: isToken ? undefined : authnToken,  // just for now, in dev/test
   });
 }
 
 
 export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
-    onDone: (weakSesionId: string) => void) {
+    onDone: (weakSesionId: string) => void) {  // no, gets a { weakSessionId: .. } ?!
   get(`/-/v0/login-with-secret?oneTimeSecret=${oneTimeLoginSecret}`,
       makeUpdNoCookiesTempSessionIdFn(onDone));
 }
 
 
-export function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void) {
+export function rememberTempSession(ps: { weakSessionId: St }) {  // [ts_authn_modl]
+  const onOk = function() {};
+  makeUpdNoCookiesTempSessionIdFn(onOk)(ps);
+}
+
+
+function makeUpdNoCookiesTempSessionIdFn<R>(  // [ts_authn_modl]
+          onDone: (response: R) => void, sessType?: SessionType.AutoTokenSiteCustomSso) {
   return function(response) {
     // Update the current page session id, so we'll remember the current session  [NOCOOKIES]
     // until the page closes / reloads — so we stay logged in (until page closes) also if
@@ -1115,6 +1131,7 @@ export function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void
     const mainWin = getMainWin();
     const typs: PageSession = mainWin.typs;
     typs.weakSessionId = response.weakSessionId;
+    typs.sessType = sessType;
     // We'll tell any other iframes that we logged in, via a 'justLoggedIn' message. [JLGDIN]
     if (onDone) {
       onDone(response);
@@ -1123,23 +1140,29 @@ export function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void
 }
 
 
-export function logout(success: () => void) {
-  // SECURITY COULD delete cookies and typs.weakSessionId also if server offline?
+export function deleteTempSessId() {  // [ts_authn_modl]
+  const mainWin = getMainWin();
+  const typs: PageSession = mainWin.typs;
+  delete typs.weakSessionId;
+  delete typs.sessType;
+  try {
+    // Can this throw?
+    getSetCookie('dwCoSid', null);
+  }
+  catch (ex) {
+    // Just in case.
+    logW(`TyE603MSEL47`);
+  }
+}
+
+
+export function logoutServerAndClientSide() {
   const currentUrlPath = location.pathname.toString();
   postJsonSuccess(`/-/logout?currentUrlPath=${currentUrlPath}`, (response) => {
-    const mainWin = getMainWin();
-    const typs: PageSession = mainWin.typs;
-    delete typs.weakSessionId;
-    if (response.goToUrl && response.goToUrl !== currentUrlPath) {
-      location.assign(response.goToUrl);  // [9UMD24]
-      // Stop here, otherwise success() below might do location.reload(), which apparently
-      // cancels location.assign(..).
-      return;
-    }
-    if (success) {
-      success();
-    }
-  }, null);
+    const goTo = response.goToUrl !== currentUrlPath ? response.goToUrl : '';
+    ReactActions.logoutClientSideOnly({ goTo });
+  }, null,
+      /* onErr = */ ReactActions.logoutClientSideOnly);
 }
 
 

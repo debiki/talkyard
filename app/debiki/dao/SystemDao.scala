@@ -369,8 +369,8 @@ class SystemDao(
       throwForbidden("EsE7UZF2_", s"Bad site name: '$name', problem: $problem")
     }
 
-    throwForbiddenIf(!pubId.isAzLowerOrNum,  // [503MSIEJ36]
-          "TyESITEPUBID", o"""Only a-z and 0-9 allowed in site pub ids,
+    throwForbiddenIf(!pubId.isAzLowerNumUn,  // [503MSIEJ36]
+          "TyESITEPUBID", o"""Only a-z 0-9 and _ allowed in site pub ids,
           but this pub id includes other chars: '$pubId'""")
 
     dieIf(hostname.exists(_ contains ":"), "DwE3KWFE7")

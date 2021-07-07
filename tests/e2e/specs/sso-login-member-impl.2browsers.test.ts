@@ -30,15 +30,13 @@ let siteId;
 let forum: LargeTestForum;
 
 let discussionPageUrl: string;
-
-const loginPageSlug = 'sso-dummy-login.html';
-const afterLogoutPageSlug = 'after-logout-page.html';
+const u = utils;
 
 const ssoUrl =
-    `http://localhost:8080/${loginPageSlug}?returnPath=\${talkyardPathQueryEscHash}`;
+    `http://localhost:8080/${u.ssoLoginPageSlug}?returnPath=\${talkyardPathQueryEscHash}`;
 
 const ssoUrlVarsReplaced = (path: string): string =>
-    `http://localhost:8080/${loginPageSlug}?returnPath=${path}`;
+    `http://localhost:8080/${u.ssoLoginPageSlug}?returnPath=${path}`;
 
 const mariasSsoId = 'mariasSsoId';
 const mariasReplyText = "I login as usual, although SSO is being tested.";
@@ -53,6 +51,7 @@ export interface ExtUserAndResult {
 export interface SsoLoginTestVariants {
   loginRequired: boolean;
   ssoLoginRequiredLogoutUrl?: string;
+  ssoLogoutUrl?: St;
   approvalRequired: boolean;
   extUsers?: ExtUserAndResult[];
 }
@@ -70,7 +69,10 @@ function constructSsoLoginTest(testName: string, variants: SsoLoginTestVariants)
 
   // Maybe the param should be a Bo instead.
   dieIf(variants.ssoLoginRequiredLogoutUrl && variants.ssoLoginRequiredLogoutUrl !=
-            "http://localhost:8080/" + afterLogoutPageSlug, "TyE602MKSRM2");
+            "http://localhost:8080/" + u.ssoAfterLogoutPageSlug, "TyE602MKSRM2");
+
+  dieIf(!!variants.ssoLogoutUrl && !!variants.ssoLoginRequiredLogoutUrl, 'TyE36SMEJ2',
+    `Choosing between logging out from Ty only, or also the SSO IDP, is not yet impl.`);
 
   it("import a site", () => {
     const builder = buildSite();
@@ -132,20 +134,18 @@ function constructSsoLoginTest(testName: string, variants: SsoLoginTestVariants)
     owen_brA.adminArea.settings.login.setEnableSso(true);
   });
 
+  if (variants.ssoLogoutUrl) {
+    it("... and types a SSO logout URL", () => {
+      owen_brA.adminArea.settings.login.setSsoLogoutUrl(variants.ssoLogoutUrl);
+    });
+  }
+
   it("... and saves the new settings", () => {
     owen_brA.adminArea.settings.clickSaveAll();
   });
 
   it("Owen creates an external login page, and after-logout page", () => {
-    // Chrome? Webdriverio? wants a 200 OK reply, so need to create this dummy page.
-    utils.createPageInHtmlDirUnlessExists(loginPageSlug,
-            '<html><body>\n' +
-            "SSO Login Ty test page. [8906QKSHM40]\n" +
-            '</body></html>\n');
-    utils.createPageInHtmlDirUnlessExists(afterLogoutPageSlug,
-            '<html><body>\n' +
-            "After Logout Ty SSO test page. [AFT_LGO_TST_537503_]\n" +
-            '</body></html>\n');
+    utils.createSingleSignOnPagesInHtmlDir();
   });
 
 
@@ -181,7 +181,7 @@ function constructSsoLoginTest(testName: string, variants: SsoLoginTestVariants)
 function addOneExtUserTests(variants: SsoLoginTestVariants, getApiSecret: () => string,
             extUserNr: number) {
 
-  const willBeInstantRedirect = !!(
+  const willBeInstantRedirect: Bo = !!variants.ssoLogoutUrl || !!(
       variants.loginRequired && variants.ssoLoginRequiredLogoutUrl);
 
   const newExtUser: ExtUserAndResult = variants.extUsers?.[extUserNr];
@@ -346,13 +346,38 @@ function addOneExtUserTests(variants: SsoLoginTestVariants, getApiSecret: () => 
 
   it(`${extUserDispName} logs out, when at: /-/username/...`, () => {
     user_brB.rememberCurrentUrl();
-    user_brB.topbar.clickLogout({ waitForLoginButton: !variants.loginRequired });
+    user_brB.topbar.clickLogout({
+          waitForLoginButton: !variants.loginRequired && !variants.ssoLogoutUrl });
+    // We check below if the url afterwards is correct.
   });
 
-  if (variants.ssoLoginRequiredLogoutUrl) {
 
 
-    // ----- Test SSO Logout URLs  TyTE2ELGOURL
+  if (variants.ssoLogoutUrl) {
+
+
+    // ----- Test SSO Logout Redir URL  TyTSSOLGO002
+
+
+    it("... and gets sent to  ssoLogoutUrl", () => {
+      user_brB.waitForNewOrigin();
+      tyAssert.eq(user_brB.getUrl(), variants.ssoLogoutUrl);
+      tyAssert.includes(user_brB.getPageSource(), 'LGO_RDR_TST_865033_');
+    });
+
+    it("Back at the forum, hen is not logged in", () => {
+      user_brB.go2(discussionPageUrl);
+      user_brB.topic.assertPostTextIs(c.TitleNr,
+            forum.topics.byMichaelCategoryA.title, { wait: true });
+      user_brB.me.waitUntilKnowsNotLoggedIn();
+    });
+    // Could test redir from discussion pages too.
+
+  }
+  else if (variants.ssoLoginRequiredLogoutUrl) {
+
+
+    // ----- Test SSO Login Required Ty Logout Redir URLs  TyTE2ELGOURL
 
 
     // 1) This was when logging out from /-/username/../..:

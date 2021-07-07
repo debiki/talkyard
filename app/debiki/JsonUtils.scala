@@ -44,8 +44,12 @@ object ParseText {
 /** Parses JSON. Throws human friendly IllegalArgumentException:s. Is,a bit more concise
   * than Play's built in stuff.
   */
-object JsonUtils {
+object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
 
+  RENAME // to BadDataEx? And change TyJson, TyMap, TyPaseto so they get
+  // an extra param: inclStackTraceInErrors: Bo = false.
+  // If no stack trace, throw BadInpDataEx.
+  // Otherwise, throw BadDataEx *with* a stack trace.
   class BadJsonException(message: String) extends IllegalArgumentException(message)
 
 

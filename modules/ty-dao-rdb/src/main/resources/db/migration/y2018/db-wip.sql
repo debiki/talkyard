@@ -250,3 +250,20 @@ create index emailsout_i_autoreply2re2 on emails_out3 (
 -- Maybe later, an email_lax_d too (only if needed), which would allow e.g.
 -- mixed case to the left of @?
 create domain email_lax_d as text;  -- + more lax constraints than  email_d
+
+
+
+-- Maybe later, PEM values:
+-- Public and private assymetric keys, in PEM format.
+create domain key_pem_d text;
+-- PEM is Base64 encoded. Let's allow both the non-url safe, and the url safe version.
+-- Also, there's newlines, blanks and "--- title ---" headers. So this should do:
+alter domain key_pem_d add constraint key_pem_d_c_regex check (
+    value ~ '^[\sa-zA-Z0-9=+/_-]*$');
+alter domain key_pem_d add constraint key_pem_d_c_minlen check (length(value) >= 1);
+-- DER format is 540 hex chars I think, with 2024 bits. Lets mult w 4 so longer
+-- keys will work, and add a bit more —> 2000. But sometimes there're many
+-- keys in the same file, so let's mult by, say, 5?
+alter domain key_pem_d add constraint key_pem_d_c_maxlen check (
+    length(value) <= 10000);
+-- Min len? Maybe domain text_ne_d for non-empty?

@@ -203,8 +203,9 @@ function loadCommentsCreateEditor() {
   // + data-tags      = adds these tags to the page, *iff* gets lazy-created
   // + data-title
 
-  var discussionTitle = commentsElem.getAttribute('data-iframe-title');
-  var htmlClass = commentsElem.getAttribute('data-iframe-html-class');
+  const discussionTitle: StN = commentsElem.getAttribute('data-discussion-title');
+  const iframeTitle: StN = commentsElem.getAttribute('data-iframe-title');
+  const htmlClass: StN = commentsElem.getAttribute('data-iframe-html-class');
 
   // The discussion id might include a bit weird chars — it might have been imported
   // from WordPress or Ghost or Disqus [52TKRG40], and e.g. WordPress.com inserted spaces
@@ -257,7 +258,7 @@ function loadCommentsCreateEditor() {
     name: 'edComments',
     className: 'p_CmtsIfr ty_CmtsIfr',   // DEPRECATE old name p_CmtsIfr
     // A title attr, for better accessibility. See: https://www.w3.org/TR/WCAG20-TECHS/H64.html
-    title: discussionTitle || "Comments",
+    title: iframeTitle || "Comments",
     src: commentsIframeUrl,
     height: 0, // don't `hide()` (see comment just above)
     style: {
@@ -629,12 +630,20 @@ function onMessage(event) {
       break;
       */
     case 'justLoggedIn':
-      try {
+      if (eventData.rememberEmbSess) try {
         const item = {
           pubSiteId: eventData.pubSiteId,
           weakSessionId: eventData.weakSessionId,
         };
         const isUndef = item.weakSessionId === 'undefined'; // this'd be a bug elsewhere
+        /*
+        Got changed to  SessionType.AutoToken (bitfield). Setting name: 'rememberEmbSess'.
+        if (eventData.sessionType === 'AuthnToken') {
+          // Then the embedding page includes a 'authnToken' token,
+          // if we're logged in — don't combine that with localStorage, would get
+          // too complicated?
+        }
+        else */
         if (!item.weakSessionId || isUndef) {
           debugLog(`weakSessionId missing [TyE0WKSID]: ${JSON.stringify(eventData)}`);
           if (isUndef) {
@@ -663,6 +672,11 @@ function onMessage(event) {
       sendToOtherIframe(event.data);
       if (iframe === commentsIframe) {
         showEditor(false);
+      }
+      if (eventData.goTo) {
+        // For SSO-logout, we need to redirect this parent win  [sso_redir_par_win]
+        // to the logout url.
+        location.assign(eventData.goTo);
       }
       break;
     // Maybe remove this one, and use only 'showEditsPreviewInPage' instead, renamed to

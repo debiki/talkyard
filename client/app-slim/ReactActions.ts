@@ -87,8 +87,17 @@ export function loadMyself(afterwardsCallback?) {
       const mainWin = getMainWin();
       const typs: PageSession = mainWin.typs;
       const weakSessionId = typs.weakSessionId;
+      const store: Store = ReactStore.allData();
+      const settings: SettingsVisibleClientSide = store.settings;
+      const rememberEmbSess =
+              settings.rememberEmbSess !== false &&
+              // If we got logged in automatically, then logout will be automatic too
+              // — could be surprising if we had to click buttons to log out,
+              // when we didn't need to do that, to log in.
+              typs.sessType !== SessionType.AutoTokenSiteCustomSso;
       sendToOtherIframe([
-        'justLoggedIn', { user, weakSessionId, pubSiteId: eds.pubSiteId }]);  // [JLGDIN]
+        'justLoggedIn', { user, weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
+              sessionType: null, rememberEmbSess }]);
     }
     setNewMe(user);
     if (afterwardsCallback) {
@@ -113,19 +122,27 @@ export function newUserAccountCreated() {
 }
 
 
+//------------------------------------------------------
+// REFACTOR  Move these to an Authn module?  [ts_authn_modl]
+// Together with Server.deleteTempSessId() and Server.rememberTempSession().
+
+
 export function logout() {
-  Server.logout(logoutClientSideOnly);
+  Server.logoutServerAndClientSide();
 }
 
 
-export function logoutClientSideOnly() {
+export function logoutClientSideOnly(ps: { goTo?: St } = {}) {
+  Server.deleteTempSessId();
+
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
   });
 
   if (eds.isInEmbeddedCommentsIframe) {
     // Tell the editor iframe that we've logged out.
-    sendToEditorIframe(['logoutClientSideOnly', null]);
+    // And maybe we'll redirect the embedd*ing* window.  [sso_redir_par_win]
+    sendToOtherIframe(['logoutClientSideOnly', ps]);
 
     // Probaby not needed, since reload() below, but anyway:
     patchTheStore({ setEditorOpen: false });
@@ -135,9 +152,29 @@ export function logoutClientSideOnly() {
   // logged out: (we reload() below — but the service-worker might stay connected)
   pubsub.disconnectWebSocket();
 
-  // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
-  location.reload(); // [502098SK]
+  if (ps.goTo) {
+    if (eds.isInIframe) {
+      // Then we'll redirect the parent window instead. [sso_redir_par_win]
+    }
+    else {
+      location.assign(ps.goTo);
+    }
+    // If that for some reason won't do anything, then make sure we really forget
+    // all logged in state anyway:
+    setTimeout(function() {
+      logW(`location.assign(${ps.goTo}) had no effect? Reloading anyway...`);
+      location.reload();
+    }, 2000);
+  }
+  else {
+    // Quick fix that reloads the admin page (if one views it) so login dialog appears.
+    // But don't do in the goTo if branch — apparently location.reload()
+    // cancels location.assign(..) — even if done on the lines after (!).
+    location.reload();
+  }
 }
+
+//------------------------------------------------------
 
 
 export function saveCategory(category: Category, permissions: PermsOnPage[],

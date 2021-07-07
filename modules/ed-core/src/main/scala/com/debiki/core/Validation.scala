@@ -22,7 +22,9 @@ import Prelude._
 import scala.util.matching.Regex
 
 
-object Validation {  RENAME // to Check, so:  Check.ifBadEmail( ...)  — looks nice?
+object Validation {  // rename // to Check, so:  Check.ifBadEmail( ...)  — looks nice?
+                     // No, rename to Parse instead:
+                     //   Parse.email(email) => ParsedEmail Or ErrMsg
 
   private val EmailOkCharsRegex = """\S+@\S+\.\S+$""".r
 
@@ -69,8 +71,10 @@ object Validation {  RENAME // to Check, so:  Check.ifBadEmail( ...)  — looks 
   def isObviouslyBadEmail(email: String): Bo =
     checkEmail(email).isBad
 
-  @deprecated // use ifBadEmail() instead — then cannot forget to check any return val
-  def checkEmail(email: String): String Or ErrorMessage = {
+  // @deprecated // use ifBadEmail() instead — then cannot forget to check any return val
+  // No, return a ParsedEmail type instead, and use that type everywhere a seemingly
+  // OK email is needed.
+  def checkEmail(email: String): ParsedEmail Or ErrorMessage = {
     if (email.isEmpty)
       return Bad("No email address, length 0")
 

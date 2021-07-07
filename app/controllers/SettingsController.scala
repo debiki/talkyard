@@ -23,6 +23,7 @@ import debiki._
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
+import talkyard.server.security.PasetoSec
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Result => p_Result}
@@ -124,11 +125,34 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 
   private def loadOidcConfigImpl(request: DebikiRequest[_], inclSecret: Bo): p_Result = {
+    unimplIf(!inclSecret, "TyE6Y4PEJGW4")
     val idps = request.dao.getSiteCustomIdentityProviders(onlyEnabled = false)
           .sortBy(idp => idp.guiOrder getOrElse (
                 idp.idpId.getOrElse(0) + 1000 * 1000))
     val json = JsArray(idps map JsX.JsIdentityProviderSecretConf)
     OkSafeJson(json)
+  }
+
+
+  def genPasetoV2LocalSecret: Action[U] = AdminGetAction { _: GetRequest =>
+    val keyInHexLower = PasetoSec.genPasetoV2LocalSecret()
+    OkSafeJson(
+        Json.obj(
+          "pasetoV2LocalSecret" -> s"hex:$keyInHexLower"))
+  }
+
+
+  def decodePasetoV2LocalToken: Action[JsValue] = AdminPostJsonAction(maxBytes = 1000) {
+          req: JsonPostRequest =>
+    unused("TyE22340MS35566", "REST API decodePasetoV2LocalToken not in use")
+    val tokenSt = JsonUtils.parseSt(req.body, "token")
+    val prefixAndToken = if (tokenSt startsWith "paseto:") tokenSt else s"paseto:$tokenSt"
+    val ssoPasetoV2LocalSecret = req.siteSettings.ssoPasetoV2LocalSecret
+    val token = PasetoSec.decodePasetoV2LocalToken(
+          prefixAndToken = prefixAndToken, symmetricSecret = ssoPasetoV2LocalSecret)
+    OkSafeJson(
+        Json.obj(
+          "tokenDecrypted" -> token.toString))  // is this Base64? Convert to JSON?
   }
 
 }
