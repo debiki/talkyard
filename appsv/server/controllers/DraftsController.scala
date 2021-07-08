@@ -27,9 +27,10 @@ import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc._
-import scala.util.Try
 import scala.collection.immutable
 import talkyard.server.JsX.JsDraft
+import talkyard.server.authn.MinAuthnStrength
+
 
 
 class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
@@ -39,7 +40,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
 
-  def upsertDraft: Action[JsValue] = PostJsonAction(RateLimits.DraftSomething, maxBytes = MaxPostSize) {
+  def upsertDraft: Action[JsValue] = PostJsonAction(RateLimits.DraftSomething,
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     upsertDraftImpl(request.body, request)
   }
@@ -48,7 +50,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** In the browser, navigator.sendBeacon insists on sending plain text. So need this text handler.
     */
   def upsertDraftBeacon: Action[String] = PostTextAction(
-        RateLimits.DraftSomething, maxBytes = MaxPostSize) { request =>
+        RateLimits.DraftSomething,
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) { request =>
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)
     upsertDraftImpl(json, request)
@@ -78,6 +81,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     draft = draft.copy(
       byUserId = requester.id)  // [602KDGRE20]
+
+    CHECK_AUTHN_STRENGTH
 
     // Early access control, if possible:
     //
@@ -184,13 +189,15 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def deleteDrafts: Action[JsValue] = PostJsonAction(RateLimits.DraftSomething, maxBytes = 1000) {
+  def deleteDrafts: Action[JsValue] = PostJsonAction(RateLimits.DraftSomething,
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) {
         request: JsonPostRequest =>
     deleteDraftsImpl(request.body, request)
   }
 
 
-  def deleteDraftsBeacon: Action[String] = PostTextAction(RateLimits.DraftSomething, maxBytes = 1000) {
+  def deleteDraftsBeacon: Action[String] = PostTextAction(RateLimits.DraftSomething,
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) {
         request: ApiRequest[String] =>
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)
@@ -202,6 +209,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, theRequester => requester}
     val byUserId = requester.id
     val draftNrs = json.as[Seq[DraftNr]]
+
+    CHECK_AUTHN_STRENGTH
     dao.readWriteTransaction { tx =>
       draftNrs.foreach(nr => tx.deleteDraft(byUserId, nr))
     }

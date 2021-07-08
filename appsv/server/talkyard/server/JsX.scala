@@ -310,6 +310,24 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  /// ts: Session
+  def JsSession(sess: TySessionInDbMaybeBad, inclPart1: Bo = true): JsObject = {
+    // Don't include the actual session id. (That is, exclude parts 2 – 5. *Could* maybe
+    // theoretically include them, since they're hashes, but bad idea, and not needed.)
+    var json = Json.obj(
+          "patId" -> sess.patId,
+          "createdAt" -> JsWhenMs(sess.createdAt),
+          "deletedAt" -> JsWhenMsOrNull(sess.deletedAt),
+          "expiredAt" -> JsWhenMsOrNull(sess.expiredAt),
+          "version" -> JsNumber(sess.version),
+          "startHeaders" -> sess.startHeaders)
+    if (inclPart1) {
+      json += "part1" -> JsString(sess.part1CompId)
+    }
+    json
+  }
+
+
   def JsUserStats(stats: UserStats, isStaffOrSelf: Boolean): JsObject = {
     val tourTipsIds: immutable.Seq[String] = stats.tourTipsSeen getOrElse Nil
     var result = Json.obj(

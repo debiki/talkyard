@@ -35,7 +35,7 @@ interface PageSession  {
   //
   // ADD_TO_DOCS
   //
-  weakSessionId?: St;
+  weakSessionId?: St;  // RENAME to sid12Maybe3 ?
 
   // If the session is for an embedded comments iframe. REMOVE incl in sid instead, somehow.
   sessType?: SessionType.AutoTokenSiteCustomSso;
@@ -72,6 +72,10 @@ interface CheckboxEvent {
     checked: boolean;
   };
 }
+
+/// Either compares two items (if function.length === 2) or compares
+/// a field value (if length === 1).
+type ArrItemIsSameFn<Item> = ((a: Item, b: Item) => Bo) | ((it: Item) => any);
 
 type ValueOk<T> = {
   value?: T;
@@ -480,6 +484,9 @@ interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
 type Myself = Me; // renaming to Me
 interface Me extends OwnPageNotfPrefs {   // + extends Pat?
   dbgSrc?: string;
+  // This is not the whole session id — it's the first 16 chars only [sid_part1];
+  // the remaining parts have (a lot) more entropy than necessary.
+  mySidPart1?: St | N;
   id?: UserId;
   isStranger?: Bo;
   // missing?: isGuest?: Bo
@@ -562,6 +569,17 @@ type MePatch = MyselfPatch;  // renaming all 'Myself' to 'Me'
 
 interface StuffForMe {
   tagTypes?: TagType[];
+}
+
+
+interface Session {
+  patId: PatId;
+  createdAt: WhenMs;
+  version: Nr,
+  startHeaders: { [name: St]: St };
+  part1: St;
+  deletedAt?: WhenMs;
+  expiredAt?: WhenMs;
 }
 
 
@@ -2395,6 +2413,16 @@ interface LoadPatVvbResponse {
   user: PatVvb;
   groupsMaySee: Group[];
   tagTypes: TagType[];
+}
+
+
+interface ListSessionsResponse {
+  sessions: Session[];
+}
+
+
+interface TerminateSessionsResponse {
+  terminatedSessions: Session[];
 }
 
 

@@ -74,17 +74,46 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
+  def parseJson(jsonSt: St): JsValue = {
+    // Play uses JacksonJson.parseJsValue, see: play.api.libs.json.
+    // which throws: IOException, JsonParseException, JsonMappingException,
+    // and the latter are subclasses of IOException.
+    try Json.parse(jsonSt)
+    catch {
+      case ex: java.io.IOException =>
+        throwBadJson("TyEPARSJSN", s"Cannot parse text as json: ${ex.getMessage}")
+    }
+  }
+
   def asJsObject(json: JsValue, what: St): JsObject =
     json match {
       case o: JsObject => o
-      case _ => throwBadJson("TyE0JSOBJ", s"$what is not a JsObject")
+      case x => throwBadJson("TyE0JSOBJ", s"$what is not a JsObject, it is a: ${classNameOf(x)}")
     }
 
   def asJsArray(json: JsValue, what: St): Seq[JsValue] =
     json match {
       case a: JsArray => a.value
-      case _ => throwBadJson("TyE0JSARR", s"$what is not a JsArray")
+      case x => throwBadJson("TyE0JSARR", s"$what is not a JsArray, it is a: ${classNameOf(x)}")
     }
+
+  def asInt64(json: JsValue, what: St): i64 =
+    json match {
+      case n: JsNumber =>
+        try n.value.toLongExact
+        catch {
+          case _: java.lang.ArithmeticException =>
+            throwBadJson("TyE0JSINT64", s"$what does not fit in a 64 bit integer")
+        }
+      case x =>
+        throwBadJson("TyE0JSNUM", s"$what is not a JsNumber, it is a: ${classNameOf(x)}")
+    }
+
+  def asInt32(json: JsValue, what: St, min: Opt[i32] = None,
+          max: Opt[i32] = None): i32 = {
+    val int64 = asInt64(json, what)
+    int64To32ThrowIfOutOfRange(int64, what, min = min, max = max)
+  }
 
   def parseJsObject(json: JsValue, fieldName: St): JsObject =
     readJsObject(json, fieldName)
@@ -122,9 +151,9 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
-  def parseOptJsArray(jv: JsValue, fieldName: St): Opt[JsArray] =
+  def parseOptJsArray(jv: JsValue, fieldName: St): Opt[IndexedSeq[JsValue]] =
     (jv \ fieldName).toOption map {
-      case a: JsArray => a
+      case a: JsArray => a.value
       case JsNull => return None
       case bad =>
         throwBadJson(
@@ -355,19 +384,28 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
 
   def readOptInt(json: JsValue, fieldName: String, altName: String = "",
           min: Opt[i32] = None, max: Opt[i32] = None): Option[Int] = {
-    readOptLong(json, fieldName).orElse(readOptLong(json, altName)) map { valueAsLong =>
-      val maxVal = max getOrElse Int.MaxValue
-      val minVal = min getOrElse Int.MinValue
-      if (valueAsLong > maxVal)
-        throwBadJson("TyEJSNGTMX", s"$fieldName too large: $valueAsLong, max is: $maxVal")
-      if (valueAsLong < minVal)
-        throwBadJson("TyEJSNLTMN", s"$fieldName too small: $valueAsLong, min is: $minVal")
-      valueAsLong.toInt
+    val firstFieldValue = readOptLong(json, fieldName)
+    firstFieldValue.orElse(readOptLong(json, altName)) map { valueAsLong =>
+      val usedName = if (firstFieldValue.isDefined) fieldName else altName
+      int64To32ThrowIfOutOfRange(valueAsLong, usedName, min = min, max = max)
     }
   }
 
+  private def int64To32ThrowIfOutOfRange(valueAsLong: i64, name: St, min: Opt[i32] = None,
+        max: Opt[i32] = None): i32 = {
+    val maxVal = max getOrElse Int.MaxValue
+    val minVal = min getOrElse Int.MinValue
+    if (valueAsLong > maxVal)
+      throwBadJson("TyEJSNGTMX", s"$name too large: $valueAsLong, max is: $maxVal")
+    if (valueAsLong < minVal)
+      throwBadJson("TyEJSNLTMN", s"$name too small: $valueAsLong, min is: $minVal")
+    valueAsLong.toInt
+  }
 
   def readLong(json: JsValue, fieldName: String): Long =
+    parseInt64(json, fieldName)
+
+  def parseInt64(json: JsValue, fieldName: St): i64 =
     readOptLong(json, fieldName) getOrElse throwMissing("EsE6Y8FW2", fieldName)
 
   def parseOptLong(json: JsValue, fieldName: St): Opt[i64] =

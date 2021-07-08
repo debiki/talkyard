@@ -288,6 +288,7 @@ export function continueAfterLogin(anyReturnToUrl?: string) {
             "continue in?  [TyEOPNRGONE]", { mayClose: false });
       }
       else {
+        // We've remembered any weakSessionId already, see [5028KTDN306].
         window.opener['debiki'].internal.handleLoginResponse({ status: 'LoginOk' });
         // Close this popup window — we'll continue in the main window.
         close();

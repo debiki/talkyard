@@ -163,6 +163,10 @@ POST  /-/remove-email-address   controllers.UserController.removeUserEmail
 GET   /-/confirm-email-address  controllers.UserController.confirmOneMoreEmailAddress(confirmationEmailId)
 POST  /-/resend-email-addr-verif-email controllers.UserController.resendEmailAddrVerifEmail
 
+GET   /-/list-sessions          talkyard.server.sess.SessionController.listSessions(patId: Int)
+POST  /-/terminate-sessions     talkyard.server.sess.SessionController.terminateSessions
+# Maybe move /-/logout to SessionController?
+
 GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(emailId)
 POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)
 GET   /-/unsubscribed           controllers.UnsubscriptionController.showHasBeenUnsubscribed()

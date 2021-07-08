@@ -32,10 +32,11 @@ package object http {
 
   case class AuthnReqHeaderImpl(
     site: SiteBrief,
+    anyTySession: Opt[TySession],
     sid: SidStatus,
     xsrfToken: XsrfOk,
-    browserId: Option[BrowserId],
-    user: Option[Participant],
+    browserId: Opt[BrowserId],
+    user: Opt[Pat],
     dao: SiteDao,
     request: RequestHeader) extends AuthnReqHeader {
   }
@@ -43,10 +44,11 @@ package object http {
 
   case class ApiRequest[A](   // RENAME to AuthnReqImpl
     site: SiteBrief,
+    anyTySession: Opt[TySession],
     sid: SidStatus,
     xsrfToken: XsrfOk,
-    browserId: Option[BrowserId],
-    user: Option[Participant],
+    browserId: Opt[BrowserId],
+    user: Opt[Pat],
     dao: SiteDao,
     request: Request[A]) extends DebikiRequest[A] {
   }

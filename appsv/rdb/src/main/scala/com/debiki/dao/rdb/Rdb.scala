@@ -117,6 +117,13 @@ object Rdb {
     def orNullJson: AnyRef = opt.getOrElse(Null(js.Types.OTHER))
   }
 
+  implicit class PimpJsObjWithNullIfEmpty(jsOb: JsObject) {
+    def orNullIfEmpty: AnyRef = {
+      if (jsOb.value.isEmpty) Null(js.Types.OTHER)
+      else jsOb
+    }
+  }
+
   /*
   implicit class PimpOptionWithNullArray(opt: Option[ ? ]) {
     def orNullArray: AnyRef = opt.getOrElse(Null(js.Types.ARRAY))
@@ -328,6 +335,16 @@ object Rdb {
     val timestamp = rs.getTimestamp(column, calendarUtcTimeZone)
     if (timestamp eq null) None
     else Some(When.fromMillis(timestamp.getTime))
+  }
+
+  def getByteArray(rs: js.ResultSet, column: St): Array[i8] = {
+    val bytes = rs.getBytes(column)
+    dieIf(bytes eq null, "TyERSNULLBYTES", s"Column $column is null, should be a bytea")
+    bytes
+  }
+
+  def getOptByteArray(rs: js.ResultSet, column: St): Opt[Array[i8]] = {
+    Opt(rs.getBytes(column))
   }
 
   def getOptArrayOfStrings(rs: js.ResultSet, column: String): Option[immutable.Seq[String]] = {

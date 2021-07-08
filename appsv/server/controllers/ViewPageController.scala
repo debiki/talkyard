@@ -29,10 +29,10 @@ import scala.concurrent.Future
 import ed.server.{EdContext, EdController, RenderedPage}
 import javax.inject.Inject
 import ViewPageController._
-import debiki.dao.{UsersOnlineStuff, NoUsersOnlineStuff}
+import debiki.dao.NoUsersOnlineStuff
 import ed.server.auth.MaySeeOrWhyNot
-import ed.server.security.EdSecurity
 import talkyard.server.authn.LoginReason
+import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.JsX.JsObjOrNull
 
 
@@ -53,6 +53,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 
 
+  CHECK_AUTHN_STRENGTH
   def loadPost(pageId: PageId, postNr: PostNr): Action[Unit] = GetActionAllowAnyone { request =>
     // Similar to getPageAsJsonImpl and getPageAsHtmlImpl, keep in sync. [7PKW0YZ2]
 
@@ -69,6 +70,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         throwForbidden("EdE4F8WV0", "Account not approved")
     }
 
+    // & sid leveL?
     val (maySeeResult, debugCode) = dao.maySeePostUseCache(pageId, postNr, request.user)
     maySeeResult match {
       case MaySeeOrWhyNot.YesMaySee =>
@@ -103,6 +105,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     * Good for analytics and understanding what the users do at the site?
     * The SPA stuff is just an optimization.
     */
+  CHECK_AUTHN_STRENGTH
   def viewPage(path: String): Action[Unit] = AsyncGetActionAllowAnyone { request =>
     if (request.queryString.get("json").isDefined) {
       getPageAsJson(path, request)
@@ -185,6 +188,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
     val pageRequest = new PageRequest[Unit](
       request.site,
+      request.anyTySession,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
@@ -242,8 +246,9 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
   }
 
 
-  def markPageAsSeen(pageId: PageId): Action[JsValue] = PostJsonAction(NoRateLimits, maxBytes = 2) {
-        request =>
+  def markPageAsSeen(pageId: PageId): Action[JsValue] = PostJsonAction(NoRateLimits,
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 2) { request =>
+    CHECK_AUTHN_STRENGTH
     val watchbar = request.dao.getOrCreateWatchbar(request.theUserId)
     val newWatchbar = watchbar.markPageAsSeen(pageId)
     request.dao.saveWatchbar(request.theUserId, newWatchbar)
@@ -303,9 +308,15 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
                 die("DwE7KEWK2", "Both not approved and approved")
             }
         }
-        var forbidden = ForbiddenResult(s"TyM0APPR_-$code", message)
-        if (logout) forbidden = forbidden.discardingCookies(security.DiscardingSessionCookie)
-        return Future.successful(forbidden)
+        var forbiddenResp = ForbiddenResult(s"TyM0APPR_-$code", message)
+        if (logout) {
+          COULD_OPTIMIZE // do these two in the same tx:
+          dao.logout(request.theReqer, bumpLastSeen = true)
+          dao.terminateSessionForCurReq(request.underlying)
+
+          forbiddenResp = forbiddenResp.discardingCookies(security.DiscardingSessionCookies: _*)
+        }
+        return Future.successful(forbiddenResp)
       }
     }
 
@@ -350,6 +361,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
     val pageRequest = new PageRequest[Unit](
       request.site,
+      request.anyTySession,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
@@ -544,6 +556,7 @@ object ViewPageController {
 
     new DummyPageRequest(
       request.site,
+      request.anyTySession,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,

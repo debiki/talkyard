@@ -33,12 +33,14 @@
 //
 type U = undefined;
 type Vo = void; // but not 'V' because that's sometimes a 'V'alue template param.
+type V  = void; // ... hmm but really really not often. Let's use 'Va' for such templ params?
 type Nl = null; // but not 'Nu' because that could be "Number".
 type N = null;  // ... hmm I don't think so. One letter U and N for undef & null,
                 // ... and 2 letters for "real" datatypes — easy to remember?
                 // "Nl" is actually a bit hard to read! (the 'l')
 type Ay = any;  // but not 'An' because that sounds like 'an'. Upd: Skip this. Use 'any',
                 // should try to long term do away with all 'any' anyway.
+type A = any;   // Why not A! Let's use 'A'.
 type Bo = boolean;
 type Nr = number;
 type St = string;
@@ -131,8 +133,6 @@ const enum SessionType {
   SiteCustomOAuth = 3,
   SiteCustomOSaml = 4,
   SiteCustomSso = 5,
-
-  ApiSecret =  // instead of SidOk("_api_secret_", ..)
 
   EmailSecret = 8,
   BackupCode = 9,

@@ -28,6 +28,7 @@ import javax.inject.Inject
 import play.api._
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc._
+import talkyard.server.authn.MinAuthnStrength
 
 
 /** Saves replies. Lazily creates pages for embedded discussions
@@ -39,7 +40,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
 
-  def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
+  def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply,
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
     val anyPageId = (body \ "pageId").asOpt[PageId]
@@ -69,6 +71,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwNotFound(s"Post nr $missingPostNr not found", "EdEW3HPY08")
     }
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
