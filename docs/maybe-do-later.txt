@@ -558,8 +558,8 @@ Server side sesison ids, maybe in Redis? So can log ppl out, without having acce
 to their browsers to delete session cookies.
 (Also see [offline-first] above: need two cookies.)
 Include session type (e.g. pwd, oauth, email secret, sso, emb sso) in sid:s,
-see: SessionType.AutoTokenSiteCustomSso, and: SidOk("_api_secret_".
-Also see: [weaksid].
+see: SessionType.AutoTokenSiteCustomSso, and: SidOk(TySession.ApiSecretPart12, ..)
+Also see: [weaksid]. x
 
 [sess_in_me]
 Store xsrf token and any sid-part-1 in Me, instead of win.typs?

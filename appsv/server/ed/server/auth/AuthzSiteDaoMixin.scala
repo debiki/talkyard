@@ -216,7 +216,7 @@ trait AuthzSiteDaoMixin {
 
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
     */
-  def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Option[Participant])
+  def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Opt[Pat]) // ReqerInfo = AuthnMtd + Reqer = Pat ?
         : (MaySeeOrWhyNot, String) = {
     maySeePostImpl(pageId, postNr, user, anyPost = None, anyTx = None)
   }

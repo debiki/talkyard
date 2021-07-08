@@ -1,10 +1,12 @@
+RM this file — now 5 part SID solves this.
+
 Can it be okay to store a session in `localStorage`?
 ====================================================
 
 Short answer: Yes. If there's an XSS attack, you have other worse problems
 anyway.
 
-Nevertheless, planning to implement: `[weaksid]`.
+Nevertheless, planning to implement: `[weaksid]`.  x
 
 More details:
 

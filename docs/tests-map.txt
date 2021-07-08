@@ -239,6 +239,18 @@ impersonate:
 different users -
   login, logout, switch user:  almost all tests
 
+sessions:
+  list one's active sessions,
+  terminate one's other sessions:
+            - d.sessions-logout-elsewhere.4br.ts  TyTESESLGOSELF
+  staff can terminate others' sessions:
+            - d.sessions-staff-logout-others.4br  TyTESESLGOOTR
+  require both session part 1 and 2:
+  require part 3 for admin stuff:
+            - TESTS_MISSING
+  require part 3 for non-embedded comments stuff:
+            - UNIMPL
+
 navigation:
   from anywhere, to anywhere:
           - navigation-as-stranger.test.ts  TyT5WKAB024
@@ -1010,6 +1022,9 @@ admin:
   members tab:
     really many members:
           - many-users-mention-list-join-group.2browsers.test.ts   TESTS_MISSING  TyT60295KTDT
+  terminate someone else's sessions:
+            - d.sessions-staff-logout-others.4br  TyTESESLGOOTR
+
 
 moderation,
 approve before,
@@ -1328,6 +1343,9 @@ live notifications -
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   disconnected from chat, if removed from chat:
           - SEC_TESTS_MISSING  TyT6P03MRKD
+  now more WebSocket messages, if suspended,
+  or session terminated:
+          - SEC_TESTS_MISSING  TyTE0MOREWSMSG
   presence:
             - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTPRESENCE01
             - TESTS_MISSING  could add more, also for going offline

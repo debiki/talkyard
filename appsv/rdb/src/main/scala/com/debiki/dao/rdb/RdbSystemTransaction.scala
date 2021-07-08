@@ -1049,6 +1049,7 @@ class RdbSystemTransaction(
       delete from usernames3
       delete from user_emails3
       delete from group_participants3
+      delete from sessions_t
       delete from users3
       delete from hosts3
       delete from sites3

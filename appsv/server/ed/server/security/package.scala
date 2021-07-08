@@ -21,14 +21,17 @@ import com.debiki.core._
 import com.debiki.core.isDevOrTest
 import com.debiki.core.Prelude._
 import debiki.{EdHttp, EffectiveSettings, Globals}
+//import debiki.dao.SiteDao
 import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
 import play.api.mvc.{Cookie, DiscardingCookie, RequestHeader}
 import scala.util.Try
 import EdSecurity._
 import ed.server.auth.MayMaybe
 import play.api.http.{HeaderNames => p_HNs}
+import play.api.libs.json.{JsObject, JsString, JsValue}
 import talkyard.server.TyLogger
-
+import talkyard.server.sess.SessionSiteDaoMixin
+import talkyard.server.http
 
 
 sealed abstract class XsrfStatus { def isOk = false }
@@ -43,6 +46,27 @@ case class XsrfOk(value: String) extends XsrfStatus {
   }
 }
 
+
+case class CheckSidResult(
+  anyTySession: Opt[TySession],
+  sidStatus: SidStatus,
+  createCookies: List[Cookie] = Nil,
+  discardCookies: List[DiscardingCookie] = Nil)
+
+
+object CheckSidResult {
+  def noSession(
+        sidStatus: SidStatus,
+        discardAllSessionCookies: Bo = false,
+        discardCookies: List[DiscardingCookie] = Nil): CheckSidResult = {
+    dieIf(sidStatus.canUse && sidStatus != SidAbsent, "TyE2MFKJ063I")
+    dieIf(discardAllSessionCookies && discardCookies.nonEmpty, "TyE2MFKJ0632")
+    CheckSidResult(
+          anyTySession = None, sidStatus, discardCookies =
+              if (discardAllSessionCookies) ??? // EdSecurity.DiscardingSessionCookies.toList
+              else discardCookies)
+  }
+}
 
 
 // RENAME to AuthnMethod,
@@ -59,14 +83,31 @@ case object SidAbsent extends SidStatus {
 
 case object SidBadFormat extends SidStatus
 case object SidBadHash extends SidStatus
-case class SidExpired(minutesOld: Long, maxAgeMins: Long) extends SidStatus
+case class SidExpired(
+  minutesOld: i64,
+  maxAgeMins: i64,
+  wasForPatId: Opt[PatId]) extends SidStatus
+
+case class SidDeleted(
+  value: St,
+  wasForPatId: Opt[PatId]) extends SidStatus {
+}
 
 
 
+// CLEAN_UP REFACTOR REMOVE this class? Use only TySession instead.
 case class SidOk(
+  // If fancy sid, is part 1 + 2 = 16 + 24 = 40 chars.
   value: String,
   ageInMillis: Long,
   override val userId: Option[UserId]) extends SidStatus {
+
+  // We should never include session id part 3 — so check that the length is just part 1 + 2
+  // or that there's a '.' — then it's an old silly sid.
+  dieIf(value.length != TySession.SidLengthCharsPart12 && !value.contains('.'),
+        "TyEBADSID12LEN", s"Bad session id parts 1 + 2: '$value'")
+
+  def part1ForJson: St = value take TySession.SidLengthCharsPart1
 
   override def canUse = true
 }
@@ -80,6 +121,13 @@ case class SidOk(
   */
 case class BrowserId(cookieValue: String, isNew: Boolean)
 
+
+case class CheckSidAndXsrfResult(
+  anyTySession: Opt[TySession],
+  sidStatus: SidStatus,
+  xsrfStatus: XsrfOk,
+  cookiesToAdd: List[Cookie],
+  cookiesToDelete: List[DiscardingCookie])
 
 
 object EdSecurity {
@@ -113,6 +161,15 @@ object EdSecurity {
     * any time so I don't use Lift's stateful session stuff so very much.
     */
   val SessionIdCookieName = "dwCoSid"
+
+  // The session is split into two cookies, one HttpOnly and one not-HttpOnly.
+  // Both are, entropy wise, strong enough, alone. And by deleting the not-HttpOnly,
+  // one can log out client side, also if the server is offline. Whilst the
+  // HttpOnly cookie prevents clients side code from accessing the whole session id.
+  // No! Now 4 parts.  No! Now 5 parts.
+  val SessionIdPart123CookieName = "TyCoSid123"
+  val SessionIdPart4HttpOnlyCookieName = "TyCoSid4"
+  val SessionIdPart5StrictCookieName = "TyCoSid5"
 
   /** Don't rename. Is used by AngularJS: AngularJS copies the value of
     * this cookie to the HTTP header just above.
@@ -341,22 +398,61 @@ class EdSecurity(globals: Globals) {
    * but not here (the WebSocket upgrade request has no body, no custom headers).
    */
   def checkSidAndXsrfToken[A](request: RequestHeader, anyRequestBody: Option[A],
-        siteId: SiteId, expireIdleAfterMins: i64, maySetCookies: Bo, skipXsrfCheck: Bo)
-        : (SidStatus, XsrfOk, List[Cookie]) = {
+        site: SiteBrief, dao: SessionSiteDaoMixin, //debiki.dao.SiteDao,
+        expireIdleAfterMins: i64, maySetCookies: Bo, skipXsrfCheck: Bo)
+        : CheckSidAndXsrfResult = {
 
     val expireIdleAfterMillis: Long = expireIdleAfterMins * MillisPerMinute
 
     // If we cannot use cookies, then the sid is sent in a header. [NOCOOKIES]
-    val anySessionIdCookieValue: Opt[St] = urlDecodeCookie(SessionIdCookieName, request)
-    val anySessionId: Opt[St] =
-          anySessionIdCookieValue orElse request.headers.get(SessionIdHeaderName)
+    val anySillySidInCookie: Opt[St] = urlDecodeCookie(SessionIdCookieName, request)
+    val anySidHeaderValue: Opt[St] = request.headers.get(SessionIdHeaderName)
+    val (anySillySidInHeader, anyFancySidPart12InHeader) = anySidHeaderValue match {
+      case None => (None, None)
+      case Some(value) =>
+        if (value.contains('.')) {
+          // It's the old silly sid.
+          (Some(value), None)
+        }
+        else {
+          // It's the new fancy sid (Base64, no '.'), not the old silly sid.
+          (None, Some(value))
+        }
+    }
+
+    val anySillySid = anySillySidInCookie orElse anySillySidInHeader
+
+    // New better sid:  [btr_sid]
+    val anyFancySidPart123: Opt[St] =
+          urlDecodeCookie(SessionIdPart123CookieName, request
+              ) orElse anyFancySidPart12InHeader
+    val anyFancySidPart4: Opt[St] =
+          urlDecodeCookie(SessionIdPart4HttpOnlyCookieName, request)
+    val anyFancySidPart5: Opt[St] =
+          urlDecodeCookie(SessionIdPart5StrictCookieName, request)
+
+    /*
+    // If we got just one session cookie, delete the other one, to be in sync.
+        — no, sometimes we get only part 1 — when cookies don't work.
+    val deleteFancySidCookies =
+          if (anyFancySidPart1.isDefined == anyFancySidPart2.isDefined) Nil
+          else DiscardingFancySidCookies
+          */
 
     val now = globals.now()
 
-    val sessionIdStatus: SidStatus =
-          anySessionId.map(
-            checkSessionId(siteId, _, now, expireIdleAfterMillis = expireIdleAfterMillis)
-            ) getOrElse SidAbsent
+    //val CheckSidResult(sessionIdStatus: SidStatus, upgrToFancySidCookies) =
+    val checkSidResult: CheckSidResult =
+          checkSessionId(site, anyOldSid = anySillySid,
+                anyFancySidPart12Maybe3 = anyFancySidPart123,
+                anyFancySidPart4 = anyFancySidPart4,
+                anyFancySidPart5 = anyFancySidPart5,
+                Some(dao), now, expireIdleAfterMillis = expireIdleAfterMillis)
+
+    val sessionIdStatus = checkSidResult.sidStatus
+    val upgrToFancySidCookies = checkSidResult.createCookies
+    val deleteFancySidCookies = checkSidResult.discardCookies  // rename deleteFancySidCookies
+
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
@@ -365,12 +461,13 @@ class EdSecurity(globals: Globals) {
     val isGet = request.method == "GET"
     val isPost = request.method == "POST"
     val cookies = request.cookies // nice to see in debugger
-    val maybeCredentials = cookies.nonEmpty ||
-          // There's also the session id header, SessionIdHeaderName
-          // (for embedded discussions, cookies then usually won't work).
-          sessionIdStatus != SidAbsent
+    val maybeCredentials = cookies.nonEmpty || anySidHeaderValue.isDefined
+    dieIf(!maybeCredentials && sessionIdStatus != SidAbsent, "TyE50RMEG24")
 
-    val sidXsrfNewCookies: (SidStatus, XsrfOk, List[Cookie]) =
+    /*
+    val (sid, xsrf, newCookies): (SidStatus, XsrfOk, List[Cookie]) =
+    */
+    val (xsrf, newCookies): (XsrfOk, List[Cookie]) = {
       if (isGet || skipXsrfCheck) {
         // Accept this request, and create new XSRF token if needed.
         // Don't throw anything (for now at least). [GETNOTHROW]
@@ -396,8 +493,10 @@ class EdSecurity(globals: Globals) {
             val cookie = urlEncodeCookie(XsrfCookieName, newXsrfOk.value)
             (newXsrfOk, List(cookie))
           }
-
+        /*
         (sessionIdStatus, xsrfOk, anyNewXsrfCookie)
+        */
+        (xsrfOk, anyNewXsrfCookie)
       }
       else if (!isPost) {
         // Sometimes people do `curl -I http://...` which sends a HEAD
@@ -416,7 +515,12 @@ class EdSecurity(globals: Globals) {
         // Example: An Electron or iOS app, calling /-/v0/search, to show
         // in-app help.
         // No credentials are included in the request, so there's no xsrf risk.
+        /*
         (SidAbsent, XsrfOk("_no_creds_"), Nil)
+        */
+        dieIf(sessionIdStatus != SidAbsent,
+              "TyE502MWEG", s"No creds, still, session id != SidAbsent: $sessionIdStatus")
+        (XsrfOk(""), Nil)
       }
       else {
         // Reject this request if the XSRF token is invalid,
@@ -445,7 +549,7 @@ class EdSecurity(globals: Globals) {
           val xsrfStatus =
             checkXsrfToken(
               xsrfToken, anyXsrfCookieValue,
-              thereIsASidCookie = anySessionIdCookieValue.isDefined,
+              thereIsASidCookie = anySillySidInCookie.isDefined,
               now, expireIdleAfterMillis = expireIdleAfterMillis)
 
           def helpText(theProblem: String, nowHaveOrWillGet: String): String = i"""
@@ -513,22 +617,56 @@ class EdSecurity(globals: Globals) {
 
         CLEAN_UP // simplify this weird match-case!  & don't take & "return"
         // sessionIdStatus for no reason all the time.
+        /*
         val r = sessionIdStatus match {
           case s: SidOk => (s, xsrfOk, Nil)
           case SidAbsent => (SidAbsent, xsrfOk, Nil)
           case s: SidExpired => (s, xsrfOk, Nil)
-          case _ =>
+          case s: SidDeleted => (s, xsrfOk, Nil)
+         */
+        sessionIdStatus match {
+          case SidBadFormat | SidBadHash =>
             throw ResultException(
               ForbiddenResult("TyEBADSID", "Bad session ID",
                   "You can try again — I just deleted the bad session ID.")
                 .discardingCookies(
-                  DiscardingSessionCookie))
+                      DiscardingSessionCookies: _*))
+          case _ =>
+            // Fine.
+        }
+        /*
         }
         dieIf(isDevOrTest && r != (sessionIdStatus, xsrfOk, Nil), "TyE205RKPG36")
         r
+        */
+        (xsrfOk, Nil)
       }
+    }
 
-    sidXsrfNewCookies
+    dieIf(upgrToFancySidCookies.nonEmpty && deleteFancySidCookies.nonEmpty, "TyE5A6MRE25")
+
+    /*
+    if (deleteFancySidCookies.nonEmpty) {
+      // Let's try to delete the cookies, even if it probably won't work.
+      // It doesn't matter if we try and nothing happens.
+      (sid, xsrf, deleteFancySidCookies:::newCookies)
+    }
+    else if (upgrToFancySidCookies.isEmpty || !maySetCookies) {
+      sidXsrfNewCookies
+    }
+    else {
+      (sid, xsrf, upgrToFancySidCookies:::newCookies)
+    } */
+    val allCookiesToAdd =
+          if (!maySetCookies) Nil
+          else upgrToFancySidCookies:::newCookies
+
+    CheckSidAndXsrfResult(
+          checkSidResult.anyTySession,  // [btr_sid]
+          sessionIdStatus,  // old, will remove later
+          xsrf,
+          cookiesToAdd = allCookiesToAdd,
+          cookiesToDelete = deleteFancySidCookies)
   }
 
 
@@ -675,10 +813,22 @@ class EdSecurity(globals: Globals) {
   }
 
 
-  def createSessionIdAndXsrfToken(siteId: SiteId, userId: UserId): (SidOk, XsrfOk, List[Cookie]) = {
+  // 2 sids: 1 http-only, one not-http-only.
+  // TySid.ho.112233...xxyyzz
+  // TySid.nho.112233...xxyyzz
+  import ed.server.http.AuthnReqHeader
+
+  def createSessionIdAndXsrfToken(req: AuthnReqHeader, userId: PatId)
+        : (SidOk, XsrfOk, List[Cookie]) = {
     COULD_OPTIMIZE // pass settings or a dao to here instead? so won't need to create this 2nd one.
                     // (the caller always already has one)
-    val dao = globals.siteDao(siteId)
+    AUDIT_LOG // session id creation — don't log session; log salted hash instead.
+
+    val site = req.site
+    val dao = req.dao // globals.siteDao(site.id)
+
+    val tryFancySid = site.isFeatureEnabled("ffTryNewSid", globals.config.featureFlags)
+    val useFancySid = site.isFeatureEnabled("ffUseNewSid", globals.config.featureFlags)
 
     val ppt = dao.getParticipant(userId)
     throwForbiddenIf(ppt.exists(_.isGroup), "TyELGIGRP", "Cannot login as a group")  // [imp-groups]
@@ -686,9 +836,21 @@ class EdSecurity(globals: Globals) {
     val settings = dao.getWholeSiteSettings()
     val expireIdleAfterSecs = settings.expireIdleAfterMins * 60
 
-    // Note that the xsrf token is created using the non-base64 encoded cookie value.
-    val sidOk = createSessionId(siteId, userId)
     val xsrfOk = createXsrfToken()
+    val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value,
+          maxAgeSecs = Some(expireIdleAfterSecs + XsrfAliveExtraSeconds))
+
+    if (tryFancySid || useFancySid) {
+      val (newSidCookies, session) = genAndSaveFancySid(req,
+          patId = userId, expireIdleAfterSecs, dao.now, dao.asInstanceOf[SessionSiteDaoMixin])
+      val sidOk = SidOk(session.part1And2, expireIdleAfterSecs * 1000, Some(userId))
+      return (sidOk, xsrfOk, xsrfCookie :: newSidCookies)
+    }
+
+    // Old style sid: (signed cookie)
+    // ----------------------------------------
+    // Note that the xsrf token is created using the non-base64 encoded cookie value.
+    var sidOk = createSessionId(site, userId)
     UX; SECURITY; SHOULD // use HttpOnly cookies — otherwise Safari will delete the cookie
     // after 7 days. See: https://webkit.org/blog/8613/intelligent-tracking-prevention-2-1/
     // the "Client-Side Cookies Capped to 7 Days of Storage", section, and sub section
@@ -697,30 +859,374 @@ class EdSecurity(globals: Globals) {
     // logged in? Could add JS variables instead.  [NOCOOKIES]
     val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value,
       maxAgeSecs = Some(expireIdleAfterSecs))
-    val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value,
-      maxAgeSecs = Some(expireIdleAfterSecs + XsrfAliveExtraSeconds))
-    (sidOk, xsrfOk, sidCookie::xsrfCookie::Nil)
+
+    COULD_OPTIMIZE // use ArrBuf
+    var cookies = xsrfCookie::Nil
+
+    cookies = sidCookie::cookies
+
+
+    /*
+    // New better sid:  [btr_sid]
+    // ----------------------------------------
+    if (tryFancySid || useFancySid) {
+      val (newSidCookies, sidPart1, sidPart2) =
+            genAndSaveFancySid(patId = userId, expireIdleAfterSecs, dao.redisCache)
+      cookies = newSidCookies:::cookies
+      if (useFancySid) {
+        sidOk = SidOk(sidPart1, part2HttpOnly = sidPart2,
+              expireIdleAfterSecs * 1000, Some(userId))
+      }
+    } */
+
+    (sidOk, xsrfOk, cookies)
   }
 
 
-  private val HashLength: Int = 15
-  private def secretSalt = globals.applicationSecret
+  private def genAndSaveFancySid(req: AuthnReqHeader, patId: PatId, expireIdleAfterSecs: i32,
+          now: When, dao: SessionSiteDaoMixin): (List[Cookie], TySession) = {
+    // Old comment!
+    // Part 1 needs to be 12 + 26 chars long = 38, and, in base 36 (which nextRandomString()
+    // uses), that's < 38*6 bits entropy (a base64 char has 6 bits entropy) = 228 bits.
+    // Part 2 only needs to be 26 chars long, that's 156 bits entropy if was in base64.
+
+    import com.debiki.core.{TySession => S}
+    val totalEntropy = S.SidLengthCharsTotal * S.SidEntropyPerChar
+    assert(totalEntropy == 96 + 144 + 144 + 144 + 96)
+    val wholeSid = nextRandomString(totalEntropy, base36 = false, base64UrlSafe = true)
+    dieIf(wholeSid.length != S.SidLengthCharsTotal, "TyESIDLEN538RMD",
+          s"Generated a ${wholeSid.length} chars session id, but should be ${
+          S.SidLengthCharsTotal} chars long. Here it is: '$wholeSid' (won't get used)")
+
+    val lenUpTo1 = S.SidLengthCharsPart1
+    val lenUpTo2 = lenUpTo1 + S.SidLengthCharsPart2
+    val lenUpTo3 = lenUpTo2 + S.SidLengthCharsPart3
+    val lenUpTo4 = lenUpTo3 + S.SidLengthCharsPart4
+
+    val part1 = wholeSid.substring(0, lenUpTo1)
+    val part2 = wholeSid.substring(lenUpTo1, lenUpTo2)
+    val part3 = wholeSid.substring(lenUpTo2, lenUpTo3)
+    val part4 = wholeSid.substring(lenUpTo3, lenUpTo4)
+    val part5 = wholeSid.substring(lenUpTo4, S.SidLengthCharsTotal)
+
+    assert(part1.length == S.SidLengthCharsPart1)
+    assert(part2.length == S.SidLengthCharsPart2)
+    assert(part3.length == S.SidLengthCharsPart3)
+    assert(part4.length == S.SidLengthCharsPart4)
+    assert(part5.length == S.SidLengthCharsPart5)
+
+    val newSidPart123Cookie = urlEncodeCookie(
+          SessionIdPart123CookieName, part1 + part2 + part3,
+          maxAgeSecs = Some(expireIdleAfterSecs), httpOnly = false)
+
+    val newSidPart4Cookie = urlEncodeCookie(
+          SessionIdPart4HttpOnlyCookieName, part4,
+          maxAgeSecs = Some(expireIdleAfterSecs), httpOnly = true)
+
+    val newSidPart5Cookie = urlEncodeCookie(
+          SessionIdPart5StrictCookieName, part5,
+          maxAgeSecs = Some(expireIdleAfterSecs), httpOnly = true, sameSiteStrict = true)
+
+    /*
+    redisCache.saveSession(sessionId, TySession(
+          sessVer = TySession.Version,
+          patId = patId,
+          createdAtMs = globals.now().millis,
+          isEmbedded = false,
+          wasAutoAuthn = false,
+          isOldUpgraded = false)) */
+
+    val startHeaders = {
+      import http.{HeaderNamesLowercase => H}
+      // New & nice:
+      val uaChUserAgent = req.headers.get(H.ClientHintUserAgent).trimNoneIfBlank
+      val uaChMobile = req.headers.get(H.ClientHintUaMobile).trimNoneIfBlank
+      val uaChPlatform = req.headers.get(H.ClientHintUaPlatform).trimNoneIfBlank
+      // Old & verbose:
+      val userAgent = req.headers.get(H.UserAgent).trimNoneIfBlank
+
+      val allHeadersMap = req.headers.toSimpleMap
+      val hasClientHintUserAgent = allHeadersMap.keys.exists(
+            _.toLowerCase == H.ClientHintUserAgent)
+      val headerNamesToSave: Vec[St] =
+            if (hasClientHintUserAgent) H.ClientHintHeaders
+            else H.ClientHintHeadersAndUserAgent
+      val headersToSave =
+            allHeadersMap.filterKeys(name => headerNamesToSave.contains(name.toLowerCase))
+      val mapBuilder = Map.newBuilder[St, JsValue]
+
+      val mxLen = 200 // header max length. 200 is a lot?
+      val mobLen = 20 // should be just "?0" or "?1"
+      uaChUserAgent.foreach(v => mapBuilder += H.ClientHintUserAgent -> JsString(v take mxLen))
+      uaChMobile.foreach(v => mapBuilder += H.ClientHintUaMobile -> JsString(v take mobLen))
+      uaChPlatform.foreach(v => mapBuilder += H.ClientHintUaPlatform -> JsString(v take mxLen))
+
+      // Skip the verbose User-Agent header if we got the new & better client hint header.
+      if (uaChUserAgent.isEmpty) {
+        userAgent.foreach(v => mapBuilder +=
+              H.UserAgent -> JsString(v take http.UserAgentHeaderNormalLength * 2))
+      }
+      JsObject(mapBuilder.result)
+    }
+
+    val session = TySession(
+          patId = patId,
+          createdAt = now,
+          version = TySession.CurVersion,
+          startIp = Some(req.ip),
+          startBrowserId = req.browserId.map(_.cookieValue),
+          startHeaders = startHeaders,
+          part1CompId = part1,
+          part2ForEmbgStorage = part2,
+          part2Hash = hashSha512_256ToBytesLen32(part2),
+          part3ForDirJs = Some(part3),
+          part3Hash = hashSha512_256ToBytesLen32(part3),
+          part4HttpOnly = Some(part4),
+          part4Hash = hashSha512_256ToBytesLen32(part4),
+          part5Strict = Some(part5),
+          part5Hash = hashSha512_256ToBytesLen32(part5))
+
+    dao.insertValidSession(session)
+
+    (List(newSidPart123Cookie, newSidPart4Cookie, newSidPart5Cookie), session)
+  }
 
 
-  private def checkSessionId(siteId: SiteId, value: String, now: When, expireIdleAfterMillis: Long)
-      : SidStatus = {
+  // 15 chars is 90 bits entropy (15 * 6 bits, using Base64) — that's more than enough:
+  // https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html
+  // >  The session ID value must provide at least 64 bits of entropy
+  // 11 chars is 66 bits entropy (with a perfect rand num gen).
+  // If more than 128: 22 Base64 chars is 132 bits entropy.
+  private val HashLength: i32 = 15
+
+  private def secretSalt: St = globals.applicationSecret
+
+
+  private def checkSessionId(
+        site: SiteBrief,
+        anyOldSid: Opt[St],
+        anyFancySidPart12Maybe3: Opt[St],
+        anyFancySidPart4: Opt[St],
+        anyFancySidPart5: Opt[St],
+        anyDao: Opt[SessionSiteDaoMixin],
+        now: When,
+        expireIdleAfterMillis: i64): CheckSidResult = {
+
+    val hasFancySid = anyFancySidPart12Maybe3.isDefined || anyFancySidPart4.isDefined ||
+          anyFancySidPart5.isDefined
+    val useOnlyFancySid = site.isFeatureEnabled("ffUseNewSid", globals.config.featureFlags)
+    val tryFancySid = site.isFeatureEnabled("ffTryNewSid", globals.config.featureFlags)
+
+    if (useOnlyFancySid || (tryFancySid && hasFancySid)) {
+      var result = checkFancySessionId(site, anyFancySidPart12Maybe3,
+            anyPart4 = anyFancySidPart4, anyPart5 = anyFancySidPart5,
+            anyDao, now, expireIdleAfterMillis)
+      if (anyOldSid.isDefined) {
+        result = result.copy(
+              discardCookies = DiscardingSillySidCookie :: result.discardCookies)
+      }
+      result
+    }
+    else {
+      var result = checkSillySessionId(site, anyOldSid, anyDao, now, expireIdleAfterMillis)
+      if (hasFancySid) {
+        result = result.copy(
+              discardCookies = DiscardingFancySidCookies ::: result.discardCookies)
+      }
+      result
+    }
+  }
+
+
+  private def checkFancySessionId(site: SiteBrief,  // [btr_sid]
+        anyPart12Maybe3: Opt[St], anyPart4: Opt[St], anyPart5: Opt[St],
+        anyDao: Opt[SessionSiteDaoMixin], now: When,
+        expireIdleAfterMillis: i64): CheckSidResult = {
+
+      val dao = anyDao getOrDie "TyE603REN67"
+
+      val anySession = anyPart12Maybe3 flatMap dao.getSessionByPart1ForJson
+
+      if (anySession.isEmpty) {
+        val deleteCookies = {
+          if (anyPart4.isDefined) {
+            // Pat has logged out client side, when offline, so the not-HttpOnly parts
+            // of the session are gone, whilst we're still getting the 4rd and maybe 5th
+            // parts in HttpOnly cookies.
+            // There's an index on part 4 only (not part 5), because part 4 should always
+            // be present, if part 5 is present (part 4 is SameSite Lax, part 5 Strict).
+            anyPart4 flatMap dao.getSessionByPart4HttpOnly foreach { session =>
+              val sessionDeleted = session.copy(deletedAt = Some(now))
+              dao.updateSession(sessionDeleted)
+            }
+            true
+          }
+          else {  // Session gone, so delete any cookies; they're of no use.
+            anyPart12Maybe3.isDefined || anyPart4.isDefined ||
+                  anyPart5.isDefined
+          }
+        }
+
+        return CheckSidResult.noSession(SidAbsent,
+              discardCookies = if (deleteCookies) DiscardingFancySidCookies else Nil)
+      }
+
+      val session: TySessionInDbMaybeBad = anySession getOrDie "TyE703MRED24"
+
+      import TySession._
+      val thePart12Maybe3: St = anyPart12Maybe3 getOrDie "TyE3MG70QFM2"
+      val thePart2: St = thePart12Maybe3.substring(SidLengthCharsPart1, SidLengthCharsPart12)
+      val hashPart2: Array[i8] = hashSha512_256ToBytesLen32(thePart2)
+      val part3IsPresent = thePart12Maybe3.length > TySession.SidLengthCharsPart12
+      val anyPart3: Opt[St] =
+            if (!part3IsPresent) None
+            else Some(thePart12Maybe3.substring(SidLengthCharsPart12, SidLengthCharsPart123))
+
+      val anyPart3Hash = anyPart3.map(hashSha512_256ToBytesLen32)
+      val anyPart4Hash = anyPart4.map(hashSha512_256ToBytesLen32)
+      val anyPart5Hash = anyPart5.map(hashSha512_256ToBytesLen32)
+
+      // Part 2, and 3, 4, 5 if present, must be from the same session.
+      // Part 1 though has been checked already — we found the session via part 1.
+
+      val badPart2 = !hashPart2.sameElements(session.part2HashForEmbgStorage)
+      val badPart3 = anyPart3Hash.map(_ sameElements session.part3HashForDirJs) is false
+      val badPart4 = anyPart4Hash.map(_ sameElements session.part4HashHttpOnly) is false
+      val badPart5 = anyPart5Hash.map(_ sameElements session.part5HashStrict) is false
+
+      if (badPart2 || badPart3 || badPart4 || badPart5) {
+        AUDIT_LOG // this is suspicious?
+        // Or could this happen, if one first logs in directly to the Ty site, and
+        // gets SidDirectPart1 and SidDirectPart2, and thereafter logs in
+        // to embedded blog comments, and gets only an SidEmbPart1?
+        // And then returns to the forum — now with SidEmbPart1 and SidDirectPart2?
+        // Maybe an embedded sid should use different cookies?
+        // Or, when at the blog comments, wouldn't the browser actually get both
+        // SidDirectPart1 and SidDirectPart2 when in the login popup — and then
+        // it can remember SidDirectPart1, and use for the embedded blog comments?
+        // Or would it be better to auto generate a second "embedded" session for
+        // the blog comments? Maybe later.
+
+        val sessionDeleted = session.copy(deletedAt = Some(now))
+        dao.updateSession(sessionDeleted)
+
+        // Maybe part 4 is from another older/newer session somehow? That'd be weird.
+        // Then, invalidate that session too.
+        // (Since parts 123 are not-HttpOnly, but parts 4 and 5 are HttpOnly,
+        // they could get out of sync maybe because of some unknown bug, or if someone
+        // intentionally manipulates the cookies.)
+        if (badPart4) {
+          dao.getSessionByPart4HttpOnly(anyPart4.get) foreach { differentSession =>
+            // The database should prevent any parts being the same (unique indexes,
+            // on parts 1 and 4, but not 2, 3 or 5).
+            dieIf(differentSession.part1CompId == session.part1CompId, "TyE603MSEJ56")
+            dieUnless(differentSession.part4HashHttpOnly sameElements session.part4HashHttpOnly,
+                 "TyE603MSEJ56")
+
+            val differentSessionDeleted = differentSession.copy(deletedAt = Some(now))
+            dao.updateSession(differentSessionDeleted)
+          }
+        }
+
+        return CheckSidResult.noSession(SidAbsent, discardCookies = DiscardingSessionCookies)
+      }
+
+      if (session.isDeleted || session.hasExpired)
+        return CheckSidResult.noSession(SidAbsent, discardCookies = DiscardingSessionCookies)
+
+      // Did the session expire just now?  [lazy_expire_sessions]
+     // instead:  val justExpired = session.expiresNow(now, expireIdleAfterMillis / MillisPerMinute)
+
+      val expiresAt = expireIdleAfterMillis + session.createdAt.millis
+      if (expiresAt < now.millis) {
+        // Then don't allow using it again, even if the server time gets changed back
+        // to before expiresAt.
+        val sessionExpired = session.copy(expiredAt = Some(now))
+        dao.updateSession(sessionExpired)
+        // or use SidExpired. But why?
+        return CheckSidResult.noSession(SidAbsent, discardCookies = DiscardingSessionCookies)
+      }
+
+      val sidOk = SidOk(value = thePart12Maybe3.take(SidLengthCharsPart12),
+            ageInMillis = now.millis - session.createdAt.millis,
+            userId = Some(session.patId))
+
+      CheckSidResult(
+            Some(session.copyAsValid(
+                // Parts 3, 4, 5 are optional. (Parts 1 and 2? We found the session via part 1,
+                // and part 2 is required, and we have compared it with the session
+                // in the database already, above.)
+                part2 = thePart2,
+                part3 = anyPart3,
+                part4 = anyPart4,
+                part5 = anyPart5)),
+            sidOk)
+
+      /*
+      dao.redisCache.getSessionBySidPart2(part2) foreach { session: TySessionMaybeBad =>
+        val expiredAlready = session.hasExpired
+
+        val ageMillis = now.millis - session.createdAtMs
+        val expiredJustNow = !expiredAlready && expireIdleAfterMillis < ageMillis
+
+        val hasExpired = expiredAlready || expiredJustNow
+
+        if (expiredJustNow) {
+          // Then don't allow using it again, even if the server time gets
+          // adjusted slightly.
+          // To do: update Redis cache.
+          dao.redisCache.saveSession(newSid, session.copyAsBad(hasExpired = true))
+        }
+
+        AUDIT_LOG // session id getting used
+
+        if (useFancySid) {
+          val result =
+                if (session.isDeleted) {
+                  SidDeleted(value = newSid, wasForPatId = Some(session.patId))
+                }
+                else if (hasExpired) {
+                  SidExpired(
+                        minutesOld = ageMillis / MillisPerMinute,
+                        maxAgeMins = expireIdleAfterMillis / MillisPerMinute,
+                        wasForPatId = Some(session.patId))
+                }
+                else {
+                  SidOk(value = part1, part2HttpOnly = part2,
+                        ageInMillis = ageMillis, userId = Some(session.patId))
+                }
+          return (result, Nil)
+        }
+      } */
+  }
+
+
+
+  private def checkSillySessionId(site: SiteBrief, anyOldSid: Opt[St],
+        anyDao: Opt[SessionSiteDaoMixin], now: When,
+        expireIdleAfterMillis: i64): CheckSidResult = {
+
+    val value = anyOldSid getOrElse {
+      return CheckSidResult.noSession(SidAbsent)
+    }
+
     // Example value: 88-F7sAzB0yaaX.1312629782081.1c3n0fgykm  - no, obsolete
-    if (value.length <= HashLength) return SidBadFormat
+    if (value.length <= HashLength)
+      return CheckSidResult.noSession(SidBadFormat)
+
     val (hash, dotUseridDateRandom) = value splitAt HashLength
     val realHash = hashSha1Base64UrlSafe(
-      s"$secretSalt.$siteId$dotUseridDateRandom") take HashLength
-    if (hash != realHash) return SidBadHash
-    dotUseridDateRandom.drop(1).split('.') match {
+      s"$secretSalt.${site.id}$dotUseridDateRandom") take HashLength
+
+    if (hash != realHash)
+      return CheckSidResult.noSession(SidBadHash)
+
+    val oldOkSid = dotUseridDateRandom.drop(1).split('.') match {
       case Array(userIdString, dateStr, randVal) =>
         val userId: Option[UserId] =
           if (userIdString.isEmpty) None
           else Try(userIdString.toInt).toOption orElse {
-            return SidBadFormat
+            return CheckSidResult.noSession(SidBadFormat)
           }
         val ageMillis = now.millis - dateStr.toLong
         UX; BUG; COULD; // [EXPIREIDLE] this also expires *active* sessions. Instead,
@@ -728,42 +1234,67 @@ class EdSecurity(globals: Globals) {
         // ... Need to have a SiteDao here then. And pass the Participant back to the
         // caller, so it won't have to look it up again.
         // Not urgent though — no one will notice: by default, one stays logged in 1 year [7AKR04].
-        if (ageMillis > expireIdleAfterMillis)
-          return SidExpired(
-            minutesOld = ageMillis / MillisPerMinute,
-            maxAgeMins = expireIdleAfterMillis / MillisPerMinute)
+        if (ageMillis > expireIdleAfterMillis) {
+          val expiredSid = SidExpired(
+                  minutesOld = ageMillis / MillisPerMinute,
+                  maxAgeMins = expireIdleAfterMillis / MillisPerMinute,
+                  wasForPatId = userId)
+          return CheckSidResult.noSession(expiredSid)
+        }
         SidOk(
           value = value,
           ageInMillis = ageMillis,
           userId = userId)
       case _ => SidBadFormat
     }
+
+    var result = oldOkSid
+    var newSidCookies: List[Cookie] = Nil
+
+    // Upgrade old sid to new style sid:  [btr_sid]
+    // ----------------------------------------
+    /*
+    if ((tryFancySid || useFancySid) && oldOkSid.userId.isDefined) {
+      val dao = anyDao getOrDie "TyE50FREN68"
+      val patId = oldOkSid.userId getOrDie "TyE602MTEGPH"
+      val settings = dao.getWholeSiteSettings()
+      val expireIdleAfterSecs = settings.expireIdleAfterMins * 60
+      val (newCookies, sidPart1, sidPart2) =
+            genAndSaveFancySid(patId = patId, expireIdleAfterSecs, dao.redisCache,
+                isOldUpgraded = true)
+      // cookies = newSidPart1Cookie::newSidPart2Cookie::cookies
+      result = SidOk(sidPart1,
+            expireIdleAfterSecs * 1000, Some(patId))
+      newSidCookies = newCookies
+    }
+    */
+
+    CheckSidResult(anyTySession = None, result, createCookies = newSidCookies)
   }
 
 
-  private def createSessionId(siteId: SiteId, userId: UserId): SidOk = {
-    // For now, create a SID value and *parse* it to get a SidOk.
-    // This is stupid and inefficient.
+  @deprecated("Now", "Use the fancy session id instead.")
+  private def createSessionId(site: SiteBrief, userId: PatId): SidOk = {
     val now = globals.now()
-    val uid = "" // for now
     val useridDateRandom =
          userId +"."+
          now.millis +"."+
          (nextRandomString() take 10)
+
     // If the site id wasn't included in the hash, then an admin from site A could
     // login as admin at site B, if they have the same user id and username.
     val saltedHash = hashSha1Base64UrlSafe(
-      s"$secretSalt.$siteId.$useridDateRandom") take HashLength
-    val value = s"$saltedHash.$useridDateRandom"
+      s"$secretSalt.${site.id}.$useridDateRandom") take HashLength
 
-    checkSessionId(siteId, value, now, expireIdleAfterMillis = Long.MaxValue).asInstanceOf[SidOk]
+    val value = s"$saltedHash.$useridDateRandom"
+    SidOk(value, ageInMillis = 0, Some(userId))
   }
 
 
   // ----- Secure cookies
 
-  def SecureCookie(name: String, value: String, maxAgeSeconds: Option[Int] = None,
-        httpOnly: Boolean = false) =
+  def SecureCookie(name: St, value: St, maxAgeSeconds: Opt[i32] = None,
+        httpOnly: Bo = false): Cookie =
     Cookie(
       name,
       value,
@@ -798,7 +1329,20 @@ class EdSecurity(globals: Globals) {
   def DiscardingSecureCookie(name: String) =
     DiscardingCookie(name, secure = globals.secure)
 
-  def DiscardingSessionCookie: DiscardingCookie = DiscardingSecureCookie(SessionIdCookieName)
+  def DiscardingSessionCookies: List[DiscardingCookie] =
+    List(DiscardingSecureCookie(SessionIdCookieName),
+        DiscardingSecureCookie(SessionIdPart123CookieName),
+        DiscardingSecureCookie(SessionIdPart4HttpOnlyCookieName),
+        DiscardingSecureCookie(SessionIdPart5StrictCookieName))
+
+  def DiscardingSillySidCookie: DiscardingCookie =
+    DiscardingSecureCookie(SessionIdCookieName)
+
+  def DiscardingFancySidCookies: List[DiscardingCookie] =
+    List(DiscardingSecureCookie(SessionIdPart123CookieName),
+        DiscardingSecureCookie(SessionIdPart4HttpOnlyCookieName),
+        DiscardingSecureCookie(SessionIdPart5StrictCookieName))
+
   // Maybe also always delete:  ImpersonationCookieName  ?
   // Well, things work fine anyway as of now (Mars 2020).
 
@@ -809,25 +1353,33 @@ class EdSecurity(globals: Globals) {
   // then it is surrounded with quotes.
   // the jQuery cookie plugin however expects an urlencoded value:
   // 2. urlEncode(value) results in these cookies being sent:
-  //    Set-Cookie: dwCoUserEmail="kajmagnus79%40gmail.com";Path=/
-  //    Set-Cookie: dwCoUserName="Kaj%20Magnus";Path=/
+  //    Set-Cookie: dwCoUserEmail="someone%40exaple.com";Path=/
+  //    Set-Cookie: dwCoUserName="space%20text";Path=/
   // No encoding results in these cookies:
-  //    Set-Cookie: dwCoUserEmail=kajmagnus79@gmail.com;Path=/
-  //    Set-Cookie: dwCoUserName="Kaj Magnus";Path=/
+  //    Set-Cookie: dwCoUserEmail=someone@example.com;Path=/
+  //    Set-Cookie: dwCoUserName="space text";Path=/
   // So it seems a % encoded string is surrounded with double quotes, by
   // javax.servlet.http.Cookie? Why? Not needed!, '%' is safe.
   // So I've modified jquery-cookie.js to remove double quotes when
   // reading cookie values.
-  private def urlEncodeCookie(name: String, value: String, maxAgeSecs: Option[Int] = None) =
+  private def urlEncodeCookie(name: St, value: St, maxAgeSecs: Opt[i32] = None,
+        httpOnly: Bo = false, sameSiteStrict: Bo = false) =
     Cookie(
       name = name,
       value = urlEncode(convertEvil(value)),  // see comment above
       maxAge = maxAgeSecs,
       path = "/",
+      // Don't set — if set to, say, example.com, then, vulnerabilities at
+      // www.example.com might allow an attacker to get access to cookies
+      // from secure.example.com
+      // https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#domain-and-path-attributes
       domain = None,
       secure = globals.secure,
-      sameSite = anySameSiteCookieValue(),
-      httpOnly = false)
+      sameSite =
+            // If debugging on localhost over http, does Strict work?
+            if (sameSiteStrict) Some(Cookie.SameSite.Strict)
+            else anySameSiteCookieValue(),
+      httpOnly = httpOnly)
 
 
   /** Extracts any browser id cookie from the request, or creates it if absent

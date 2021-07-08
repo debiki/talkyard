@@ -23,7 +23,7 @@ import java.{util => ju}
 import java.{security => js}
 import org.apache.commons.codec.{binary => acb}
 import org.scalactic.{ErrorMessage, Or}
-import play.api.libs.json.{JsNumber, JsObject, JsString}
+import play.api.libs.json.{JsNumber, JsObject, JsArray, JsString, JsValue}
 
 import scala.collection.mutable
 import scala.util.Try
@@ -64,7 +64,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   // Should get rid of this version:
   def warnDbgDie(errorMsg: String): Unit = { warnDbgDie("", errorMsg) }
 
-  def warnDbgDieIf(test: => Bo, errorCode: St, details: St): U = {
+  def warnDbgDieIf(test: => Bo, errorCode: St, details: St = ""): U = {
     if (test) {
       warnDbgDie(errorCode, details)
     }
@@ -582,13 +582,32 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
 
-  /** Generates a 130 bit string, almost 26 chars long since each char in a 32 chars
-    * alphabet has 5 bits (but we use 36 chars here).
+  /** Generates a by default 130 bits entropy string, almost 26 chars long since
+    * each char in a 32 chars alphabet has 5 bits (but we use 36 chars here).
     * Wikipedia says: "128-bit keys are commonly used and considered very strong".
     * Here: http://en.wikipedia.org/wiki/Key_(cryptography)
     */
-  def nextRandomString(): String =
-    new java.math.BigInteger(130, _random).toString(36) // 0..9, a..z
+  def nextRandomString(bitsEntropy: i32 = 130, base36: Bo = true,
+          base64UrlSafe: Bo = false): St = {
+    require(base36 != base64UrlSafe)
+    if (base36) {
+      // Hmm the resulting length is a bit random — if the BigInteger happens to start
+      // with 0, the base 36 encoding will be shorter (leading zeroes are excluded).
+      val bigInt = new java.math.BigInteger(bitsEntropy, _random)
+      bigInt.toString(36) // 0..9, a..z
+    }
+    else {
+      assert(base64UrlSafe)
+      // Divisible by 8, so byte aligned — _random operates on bytes.
+      assert(bitsEntropy % 8 == 0)
+      // Divisible by 6, so always result in same length Base64 repr.
+      assert(bitsEntropy % 6 == 0)
+      val numBytes = bitsEntropy / 8
+      val bytesArray = new Array[Byte](numBytes)
+      _random.nextBytes(bytesArray)
+      acb.Base64.encodeBase64URLSafeString(bytesArray)
+    }
+  }
 
   // COULD split this in a random string function, and other id generation
   // functions, with string length adjusted, depending on how the random
@@ -649,10 +668,23 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   def saltAndHashIp: St => St = saltAndHash(hashLengthIp) _
 
   SECURITY; COULD // use SHA-256 instead.
-  private def mdSha1 = js.MessageDigest.getInstance("SHA-1") // not thread safe
+  private def mdSha1: js.MessageDigest = js.MessageDigest.getInstance("SHA-1") // not thread safe
+
+  /// SHA-512/256 is faster and stronger than SHA-224 (not in a way that matters, but anyway).
+  /// And BLAKE3 has a 256 bits output too by default.
+  private def mdSha512: js.MessageDigest =
+    js.MessageDigest.getInstance("SHA-512") // not thread safe
 
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
+
+  def hashSha512_256ToBytesLen32(text: St): Array[i8] = {
+    // I think this isn't the real SHA512/256, but this'll be ok too.
+    // SHA-512/256 not incl in Java 8.
+    val res = mdSha512.digest(text.getBytes("UTF-8"))
+    assert(res.length == 32 * 2)
+    res take 32
+  }
 
 
   /* ------  Move to a 'security' package?    [406MRED256]
@@ -789,25 +821,46 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   private val AToZUnderscoreRegex = "^[a-zA-Z_]*$".r
   private val VariableNameRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
   private val AlNumWithAl = "^[a-zA-Z0-9_]*[a-zA-Z_][a-zA-Z0-9_]*$".r
+  private val AlNumDashRegex = "^[a-zA-Z0-9_-]*$".r
 
   /** Checks that all fields names are okay variable names,
     * and that all values are numbers, or also okay variable names.
     * Just to avoid any unexpected things like some kind of injection.
     */
-  def anyWeirdJsObjField(obj: JsObject, maxLength: Int): Option[String] = {
+  def anyWeirdJsObjField(obj: JsObject, maxLength: i32,
+           allowHeaderNameValues: Bo = false): Opt[St] = {
     for ((fieldName, fieldValue) <- obj.fields) {
-      if (fieldName.isEmpty) return Some("Empty field name")
-      if (!fieldName.isOkVariableName) return Some(s"Weird field name: $fieldName")
-      if (fieldName.length > maxLength) return Some(s"Too long field name: $fieldName")
+      if (fieldName.isEmpty)
+        return Some("Empty field name")
+
+      if (allowHeaderNameValues) {
+        if (!fieldName.isOkHeaderName)
+          return Some(s"Weird field name: '$fieldName' [TyE0HDRNAME]")
+      }
+      else {
+        if (!fieldName.isOkVariableName)
+          return Some(s"Weird field name: '$fieldName' [TyE0VARNAME]")
+      }
+
+      if (fieldName.length > maxLength)
+        return Some(s"Too long field name: '$fieldName' [TyE2LNGFLDNM]")
+
       fieldValue match {
         case _: JsNumber =>
           // Fine
         case s: JsString =>
-          if (s.value.isEmpty) return Some(s"Empty value for field $fieldName")
-          if (!s.value.isOkVariableName) return Some(s"Bad value for field $fieldName: $fieldValue")
-          if (s.value.length > maxLength) return Some(s"Too long field value, $fieldName: $fieldValue")
+          if (s.value.isEmpty)
+            return Some(s"Empty value for field $fieldName")
+
+          if (!allowHeaderNameValues && !s.value.isOkVariableName)
+            return Some(s"Bad value for field $fieldName: $fieldValue")
+
+          if (s.value.length > maxLength)
+            return Some(s"Too long field value, $fieldName: $fieldValue")
+
         case _ =>
-          return Some(s"Value of field $fieldName is weird")
+          return Some(s"Value of field $fieldName is not a nummer or string; it is a ${
+            classNameOf(fieldValue)} [TyEFIELDVALTYP]")
       }
     }
     None
@@ -818,6 +871,36 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   def anyWeirdJsObjField(obj: JsObject): Option[String] =
     anyWeirdJsObjField(obj, maxLength = 100)
 
+  def jsObjectSize(obj: JsObject, depth: i32 = 0): i32 = {
+    var size = 0
+    for ((fieldName, value) <- obj.fields) {
+      size += fieldName.length + jsValueSize(value, depth = depth + 1)
+    }
+    size
+  }
+
+  def jsValueSize(value: JsValue, depth: i32 = 0): i32 = {
+    if (depth > 20)
+      return Int.MaxValue // for now
+    value match {
+      case _: JsNumber => 4 // let's just guess 4 bytes. Or log-10?
+      case s: JsString => s.value.length
+      case a: JsArray => a.value.foldLeft(0)((len, v) => len + jsValueSize(v, depth + 1))
+      case o: JsObject => jsObjectSize(o)
+    }
+  }
+
+  // Move to where?
+  val JsEmptyObj2: JsObject = JsObject(Nil)
+
+  /*
+  def mapKeyValuesTotalLength(map: Map[St, Any], depth: i32 = 0): i32 = {
+    var size = 0
+    for ((fieldName, value) <- map) {
+      size += fieldName.length + jsValueSize(value, depth = depth + 1)
+    }
+    size
+  } */
 
   /**
    * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
@@ -873,6 +956,9 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
     def isOkVariableName: Boolean =
       VariableNameRegex.pattern.matcher(underlying).matches
+
+    def isOkHeaderName: Bo =
+      AlNumDashRegex.pattern.matcher(underlying).matches
 
     def isAlNum: Bo =
       underlying.forall(charIsAzOrNum)

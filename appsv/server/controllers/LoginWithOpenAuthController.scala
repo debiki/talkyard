@@ -1605,7 +1605,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         authnState: OngoingAuthnState): Result = {
 
     request.dao.pubSub.userIsActive(request.siteId, member, request.theBrowserIdData)
-    val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, member.id)
+    val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, member.id)
 
     var maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid

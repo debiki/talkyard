@@ -310,6 +310,9 @@ function runAllE2eTests {
   $r s/wdio --only navigation-as-stranger $args
   # Also:  embedded-comments-navigation-as-guest  further below.
 
+  $r s/wdio-7 --only d.sessions-logout-elsewhere.4br --cd -i $args
+  $r s/wdio-7 --only d.sessions-staff-logout-others.4br --cd -i $args
+
   $r s/wdio --only hide-unhide-tips.2br $args
   $r s/wdio-7 --only show-admin-notices.2br --cd -i $args
 
@@ -646,6 +649,9 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.js-api.2br --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.comment-counts.2br.cors --cd -i $args
+
+  # Stealing an embedded session id
+  $r s/wdio-7     --only embcom.sessions-emb-sess-cannot-moderate.3br --cd -i $args
 
 
 

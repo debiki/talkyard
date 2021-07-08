@@ -81,8 +81,10 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
   Server.loadMyself((anyMe: Me | NU, stuffForMe?: StuffForMe) => {
     // @ifdef DEBUG
     // Might happen if there was no weakSessionId, and also, no cookie.
-    dieIf(!anyMe, 'TyE4032SMH57');
+    // Or if our session just got terminated from another device? TESTS_MISSING
+    dieIf(!anyMe, 'Server.loadMyself() returned me = null [TyE4032SMH57]');
     // @endif
+    // Maybe?: if (!anyMe) return;
     const newMe = anyMe as Me;
     if (isInSomeEmbCommentsIframe()) {
       // Tell the embedded comments or embedded editor iframe that we just logged in,
@@ -146,7 +148,7 @@ export function logout() {
 
 
 export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo } = {}) {
-  Server.deleteTempSessId();
+  Server.deleteTempSessId();  // [is_logging_out]
 
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout

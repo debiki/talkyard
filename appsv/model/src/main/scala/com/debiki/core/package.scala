@@ -99,6 +99,7 @@ package object core {
   def isDevOrTest: Bo = Prelude.isDevOrTest
   def isProd: Bo = Prelude.isProd
 
+  type SidSt = St   // [Scala_3] opaque type
   type SignOnId = St   // [Scala_3] opaque type   change to SsoId?
   type SsoId = SignOnId   // [Scala_3] opaque type   change to SsoId?
 
@@ -665,6 +666,8 @@ package object core {
 
   type ReqrId = Who // RENAME to ReqrIds? (with an ...s)
                     // ... because is more than one id (user id, ip, bowser id cookie, etc)
+
+  type BrowserIdSt = St  // [Scala_3] opaque type
 
   RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
   // I find "who" being confusing as to whom it refers to.
@@ -1617,5 +1620,6 @@ package object core {
 
   def GRAPH_DATABASE = () // Some queries are inefficient and require lots of code, when using a
                           // relational database — but are simple and fast, with a graph database.
+  def CHECK_AUTHN_STRENGTH = ()
 }
 

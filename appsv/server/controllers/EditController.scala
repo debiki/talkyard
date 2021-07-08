@@ -32,6 +32,7 @@ import EditController._
 import debiki.onebox.LinkPreviewRenderer
 import scala.concurrent.ExecutionContext
 import talkyard.server.JsX.{JsDraft, JsDraftOrNull, JsStringOrNull}
+import talkyard.server.authn.MinAuthnStrength
 import org.scalactic.{Good, Or, Bad}
 
 
@@ -47,8 +48,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   REFACTOR // Move to DraftController?
   def loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole: Int,
         categoryId: Option[Int], toUserId: Option[UserId],
-        pageId: Option[String], postNr: Option[Int]): Action[Unit] =
-      GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
+        pageId: Option[String], postNr: Option[Int],
+        ): Action[Unit] =
+            GetActionRateLimited(
+              RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddedHalfSidOld) { request =>
 
     import request.{dao, requester}
 
@@ -80,7 +83,9 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
           postNr = postNr))
     }
 
-    val drafts = requester flatMap { theRequester =>
+    CHECK_AUTHN_STRENGTH
+
+    val drafts: ImmSeq[Draft] = requester flatMap { theRequester =>
       anyDraftLocator map { draftLocator =>
         dao.readOnlyTransaction { tx =>
           tx.loadDraftsByLocator(theRequester.id, draftLocator)
@@ -128,14 +133,16 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Sends back a post's current CommonMark source to the browser.
     * SHOULD change to pageId + postId (not postNr)  [idnotnr]
     */
-  def loadDraftAndText(pageId: String, postNr: Int): Action[Unit] =
-        GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
+  def loadDraftAndText(pageId: String, postNr: Int): Action[Unit] = GetActionRateLimited(
+        RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddedHalfSidOld) { request =>
 
     import request.{dao, theRequester => requester}
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
@@ -169,7 +176,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** Edits posts.
     */
-  def edit: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = MaxPostSize) {
+  def edit: Action[JsValue] = PostJsonAction(RateLimits.EditPost,
+        MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     import request.{dao, body}
     val pageId = (body \ "pageId").as[PageId]
@@ -199,6 +207,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
@@ -232,7 +242,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * then creates and returns sanitized onebox html.
     */
   def fetchLinkPreview(url: St, curPageId: PageId, inline: Bo): Action[U] =
-        AsyncGetActionRateLimited(RateLimits.FetchLinkPreview) { request =>
+        AsyncGetActionRateLimited(
+            RateLimits.FetchLinkPreview, MinAuthnStrength.EmbeddedHalfSidOld) { request =>
     import edContext.globals
     import request.{siteId, requesterOrUnknown}
 
@@ -291,7 +302,11 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def loadPostRevisions(postId: PostId, revisionNr: String): Action[Unit] =
-        GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>
+        GetActionRateLimited(RateLimits.ExpensiveGetRequest,
+            MinAuthnStrength.EmbeddedHalfSidOld) { request =>
+
+    CHECK_AUTHN_STRENGTH
+
     val revisionNrInt =
       if (revisionNr == "LastRevision") PostRevision.LastRevisionMagicNr
       else revisionNr.toIntOption getOrElse throwBadRequest("EdE8UFMW2", "Bad revision nr")
@@ -327,7 +342,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def deletePost: Action[JsValue] = PostJsonAction(RateLimits.DeletePost, maxBytes = 5000) { request =>
+  def deletePost: Action[JsValue] = PostJsonAction(RateLimits.DeletePost,
+        MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = 5000) { request =>
     import request.dao
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
@@ -336,6 +352,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val action =
       if (repliesToo) PostStatusAction.DeleteTree
       else PostStatusAction.DeletePost(clearFlags = false)
+
+    CHECK_AUTHN_STRENGTH
 
     val result = dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
 
@@ -349,13 +367,16 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def movePost: Action[JsValue] = StaffPostJsonAction(maxBytes = 300) { request =>
+  def movePost: Action[JsValue] = StaffPostJsonAction(
+          MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = 300) { request =>
     val pageId = (request.body \ "pageId").as[PageId]   // apparently not used
     val postId = (request.body \ "postId").as[PostId]   // id not nr
     val newHost = (request.body \ "newHost").asOpt[String] // ignore for now though
     val newSiteId = (request.body \ "newSiteId").asOpt[SiteId] // ignore for now though
     val newPageId = (request.body \ "newPageId").as[PageId]
     val newParentNr = (request.body \ "newParentNr").asOpt[PostNr].getOrElse(PageParts.BodyNr)
+
+    CHECK_AUTHN_STRENGTH
 
     val (_, storePatch) = request.dao.movePostIfAuth(PagePostId(pageId, postId),
       newParent = PagePostNr(newPageId, newParentNr), moverId = request.theMember.id,

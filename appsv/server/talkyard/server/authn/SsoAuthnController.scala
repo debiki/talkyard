@@ -104,7 +104,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
 
         val user = dao.getTheUser(userId)
         dao.pubSub.userIsActive(siteId, user, request.theBrowserIdData)
-        val (sid, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(siteId, user.id)
+        val (sid, _, sidAndXsrfCookies) =
+              security.createSessionIdAndXsrfToken(request, user.id)
 
         val response = if (request.isAjax) {
           // As of 2019-12: This is embedded comments login, when 3rd party cookies blocked. [306KUD244]
@@ -241,7 +242,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
           upsertUser(extUser, req, mayOnlyInsertNotUpdate = true)
 
     val (sid, _, _) =
-          security.createSessionIdAndXsrfToken(siteId, user.id)
+          security.createSessionIdAndXsrfToken(req, user.id)
 
     OkSafeJson(Json.obj(
       // Not yet weak but later. [weaksid]  [NOCOOKIES]

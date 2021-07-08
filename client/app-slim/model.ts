@@ -73,6 +73,9 @@ interface CheckboxEvent {
   };
 }
 
+// Either compares two items (if function.length === 2) or compares a field (if length === 1).
+type ArrItemIsSameFn<Item> = ((a: Item, b: Item) => Bo) | ((it: Item) => any);
+
 type ValueOk<T> = {
   value?: T;
   isOk?: boolean;
@@ -480,6 +483,9 @@ interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
 type Myself = Me; // renaming to Me
 interface Me extends OwnPageNotfPrefs {   // + extends Pat?
   dbgSrc?: string;
+  // This is not the whole session id — it's the first 16 chars only [sid_part1];
+  // the remaining parts have (a lot) more entropy than necessary.
+  mySidPart1ForJson?: St | N;
   id?: UserId;
   isStranger?: Bo;
   // missing?: isGuest?: Bo
@@ -562,6 +568,16 @@ type MePatch = MyselfPatch;  // renaming all 'Myself' to 'Me'
 
 interface StuffForMe {
   tagTypes?: TagType[];
+}
+
+
+interface Session {
+  patId: PatId;
+  createdAt: WhenMs;
+  version: Nr,
+  part1ForJson: St;
+  deletedAt?: WhenMs;
+  expiredAt?: WhenMs;
 }
 
 
@@ -2395,6 +2411,16 @@ interface LoadPatVvbResponse {
   user: PatVvb;
   groupsMaySee: Group[];
   tagTypes: TagType[];
+}
+
+
+interface ListSessionsResponse {
+  sessions: Session[];
+}
+
+
+interface TerminateSessionsResponse {
+  terminatedSessions: Session[];
 }
 
 

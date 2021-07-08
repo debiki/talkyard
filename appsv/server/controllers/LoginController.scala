@@ -36,7 +36,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
   import context.globals
-  import context.security.DiscardingSessionCookie
+  import context.security.DiscardingSessionCookies
   import LoginController._
 
 
@@ -133,9 +133,13 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Opt[St]): Result = {
     import request.{dao, requester, siteSettings}
 
+    AUDIT_LOG // session id destruction
+
     requester foreach { theRequester =>
-      request.dao.logout(theRequester, bumpLastSeen = true)
+      request.dao.logout(theRequester, bumpLastSeen = true)  // + current session id, or all = true
     }
+
+    dao.terminateSessionForCurReq(request.underlying)
 
     val goToNext: Opt[St] = siteSettings.effSsoLogoutAllRedirUrl orElse {
       redirectIfMayNotSeeUrlPath flatMap { urlPath =>
@@ -162,7 +166,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
 
     // Keep the xsrf cookie, so the login dialog will work.
-    response.discardingCookies(DiscardingSessionCookie)
+    response.discardingCookies(DiscardingSessionCookies: _*)
   }
 
 

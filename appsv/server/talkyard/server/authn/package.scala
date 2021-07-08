@@ -33,6 +33,48 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
     case object LoginToAdministrate extends LoginReason(24)
   }
 
+  sealed abstract class MinAuthnStrength(val IntVal: i32, val fullSidRequired: Bo = true) {
+    def toInt: i32 = IntVal
+  }
+
+  object MinAuthnStrength {
+
+    /// Old embedded sessions can have been cached in localStorage in the embedding
+    /// website, and if the embedding website has security vulnerabilities,
+    /// an attacker might have gained access to the stuff in localStorage.
+    /// Therefore, those parts of the session should give access only to
+    /// embedded comments — like, posting comments, editing one's comments,
+    /// or (for mods) moderating embedded comments [mod_emb_coms_sid],
+    /// but nothing else. Then, if a blog has security vulnerabilities, only
+    /// the blog comments would be affected — but not any Talkyard forum on its own
+    /// sub domain (for organizations with both a Talkyard forum and
+    /// Talkyard blog comments), or any user accounts or email addresses.
+    case object EmbeddedHalfSidOld extends MinAuthnStrength(10, fullSidRequired = false)
+
+    /// The embedded sid can be refreshed by popping up a window directly
+    /// against the Talkyard server — then, the HttpOnly session id part 3 would
+    /// get sent to Talkyard, and Talkyard could auto-issue a new embedded sid,
+    /// or sth like that. But old sids part 1+2, could be rejected (since they're
+    /// less safe, see EmbeddedHalfSidOld above).
+    //case object EmbeddedHalfSidRechecked extends MinAuthnStrength(20, fullSidRequired = false)
+
+    /// What Normal authentication is, would be community specific. Some communities
+    /// might be ok with password authn — whilst others might want 2 or 3 factor authn,
+    /// and/or SameSite Strict cookies.
+    case object Normal extends MinAuthnStrength(30)
+
+    /// A community can optionally require stronger authentication, for some endpoints
+    /// (or maybe even some specific parts of a community?).  By default, though,
+    /// Strong is the same as Normal.
+    //case object Strong extends MinAuthnStrength(40)
+
+    /// Like Strong, but must have authenticated recently — say, within the last X minutes
+    /// (and X is community specific).
+    /// For things like changing one's email address or deleting one's account.
+    //case object StrongRecent extends MinAuthnStrength(50)
+  }
+
+
   // Aliases for better readability.
   type JoinOrLeave = AddOrRemove
   val Join: Add.type = Add

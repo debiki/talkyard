@@ -133,6 +133,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
         val pageRequest = new PageRequest[Unit](
           request.site,
+          request.anyTySession,
           sid = request.sid,
           xsrfToken = request.xsrfToken,
           browserId = request.browserId,

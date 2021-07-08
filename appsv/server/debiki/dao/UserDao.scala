@@ -379,7 +379,9 @@ trait UserDao {
       user
     }
 
+    // Maybe do this too inside the above tx?
     logout(user.noDetails, bumpLastSeen = false)
+    terminateSessions(forPatId = user.id, all = true)  ; UNTESTED
   }
 
 

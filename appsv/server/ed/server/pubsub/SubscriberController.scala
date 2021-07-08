@@ -25,11 +25,12 @@ import debiki._
 import talkyard.server.JsX
 import ed.server.{EdContext, EdController}
 import ed.server.http._
+import ed.server.security.CheckSidAndXsrfResult
 import javax.inject.Inject
 import org.scalactic.{Bad, Good, Or}
 import play.{api => p}
 import p.libs.json.{JsValue, Json}
-import p.mvc.{Action, ControllerComponents, RequestHeader, Result}
+import p.mvc.{Action, ControllerComponents, RequestHeader => play_RequestHeader, Result}
 import scala.concurrent.Future
 import talkyard.server.TyLogging
 import talkyard.server.RichResult
@@ -46,14 +47,14 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
 
   def webSocket: p.mvc.WebSocket = p.mvc.WebSocket.acceptOrResult[JsValue, JsValue] {
-        request: RequestHeader =>
+        request: play_RequestHeader =>
     webSocketImpl(request)
       // map { if  Left[Result = Problem ... log to admin problem log ?  }
       // [ADMERRLOG]
   }
 
 
-  private def webSocketImpl(request: RequestHeader): Future[Either[
+  private def webSocketImpl(request: play_RequestHeader): Future[Either[
         // Either an error response, if we reject the connection.
         Result,
         // Or an In and Out stream, for talking with the client.
@@ -111,7 +112,7 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
 
 
-  private def authenticateWebSocket(site: SiteBrief, request: RequestHeader)
+  private def authenticateWebSocket(site: SiteBrief, request: play_RequestHeader)
         : AuthnReqHeaderImpl Or Result = {
     import tyCtx.security
 
@@ -138,11 +139,13 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     // We check the xsrf token later — since a WebSocket upgrade request
     // cannot have a request body or custom header with xsrf token.
     // (checkSidAndXsrfToken() won't throw for GET requests. [GETNOTHROW])
-    val (sessionId, xsrfOk, newCookies) =
+    val CheckSidAndXsrfResult(anyTySession, sessionId, xsrfOk, newCookies, delFancySidCookies) =
           security.checkSidAndXsrfToken(
-                request, anyRequestBody = None, siteId = site.id,
+                request, anyRequestBody = None, site, dao,
                 expireIdleAfterMins = expireIdleAfterMins, maySetCookies = false,
                 skipXsrfCheck = false)
+
+    COULD // delete any delFancySidCookies.
 
     // Needs to have a cookie already. [WSXSRF]
     dieIf(newCookies.nonEmpty, "TyE503RKDJL2")
@@ -180,17 +183,17 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
     if (requesterMaybeSuspended.isDeleted)
       return Bad(ForbiddenResult("TyEWSUSRDLD", "User account deleted")
-          .discardingCookies(security.DiscardingSessionCookie))
+          .discardingCookies(security.DiscardingSessionCookies: _*))
           // + discard browser id co too   *edit:* Why?
 
     val isSuspended = requesterMaybeSuspended.isSuspendedAt(new java.util.Date)
     if (isSuspended)
       return Bad(ForbiddenResult("TyEWSSUSPENDED", "Your account has been suspended")
-          .discardingCookies(security.DiscardingSessionCookie))
+          .discardingCookies(security.DiscardingSessionCookies: _*))
 
     val requester = requesterMaybeSuspended
 
-    val authnReq = AuthnReqHeaderImpl(site, sessionId, xsrfOk,
+    val authnReq = AuthnReqHeaderImpl(site, anyTySession, sessionId, xsrfOk,
           anyBrowserId, Some(requester), dao, request)
 
     Good(authnReq)

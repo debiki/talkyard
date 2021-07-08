@@ -111,6 +111,7 @@ function onMessage(event) {
         mainWin.typs.weakSessionId = eventData.weakSessionId;
         typs.weakSessionId = eventData.weakSessionId;
         // This sends 'justLoggedIn' to other iframes, so they'll get updated too.
+        // ! Need to reply 'failedToLogin' if login failed
         ReactActions.loadMyself();
       }
       else {
@@ -124,9 +125,9 @@ function onMessage(event) {
       // makeUpdNoCookiesTempSessionIdFn() or in the 'case:' just above, lets check:
       // @ifdef DEBUG
       const mainWin: MainWin = getMainWin();
-      if (!mainWin.typs.weakSessionId && !getSetCookie('dwCoSid')) {
+      if (!me_hasSid()) {
         logAndDebugDie(`justLoggedIn but not logged in? ` +
-            `No cookie, no typs.weakSessionId. ` +
+            `No session cookie, no typs.weakSessionId. ` +
             `This frame name: ${window.name}, ` +
             `main frame name: ${mainWin.name}, ` +
             `this is main frame: ${window === mainWin}, ` +
@@ -141,6 +142,9 @@ function onMessage(event) {
       // param to cannot-be-undefined.
       // @endif
       ReactActions.setNewMe(eventData.user, eventData.stuffForMe);
+      break;
+    case 'logoutServerAndClientSide':
+      Server.logoutServerAndClientSide();
       break;
     case 'logoutClientSideOnly':
       // Sent from the comments iframe one logged out in, to the editor iframe

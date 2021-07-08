@@ -41,6 +41,7 @@ import scala.concurrent.Future._
 import scala.util.Try
 import talkyard.server.TyLogging
 import talkyard.server.JsX._
+import talkyard.server.authn.MinAuthnStrength
 
 
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
@@ -55,7 +56,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   /** If a JS error happens in the browser, it'll post the error message to this
     * endpoint, which logs it, so we'll get to know about client side errors.
     */
-  def logBrowserErrors: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 10000) {
+  def logBrowserErrors: Action[JsValue] = PostJsonAction(
+        RateLimits.BrowserError, MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = 10000) {
         request =>
     val allErrorMessages = request.body.as[Seq[String]]
     // If there are super many errors, perhaps all of them is the same error. Don't log too many.
@@ -305,8 +307,9 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def skipRateLimitsForThisSite: Action[JsValue] =
-        PostJsonAction(RateLimits.BrowserError, maxBytes = 150) { request =>
+  def skipRateLimitsForThisSite: Action[JsValue] = PostJsonAction(
+        RateLimits.BrowserError, MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = 150) {
+            request =>
     val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
     throwForbiddenIf(globals.isProd && !okE2ePassword,
       "TyE8WTHFJ25", "I only do this, in Prod mode, if I can see two moons from " +
@@ -332,8 +335,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def addAdminNotice: Action[JsValue] =
-        PostJsonAction(RateLimits.BrowserError, maxBytes = 50) { request =>
+  def addAdminNotice: Action[JsValue] = PostJsonAction(
+        RateLimits.BrowserError, MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = 50) { request =>
     val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
     throwForbiddenIf(globals.isProd && !okE2ePassword, "TyE60MRGP35", "E2e pwd missing")
     import request.body

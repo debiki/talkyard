@@ -24,6 +24,7 @@ import debiki.dao._
 import ed.server.auth.ForumAuthzContext
 import ed.server.auth.Authz
 import ed.server.http._
+import ed.server.security.{SidStatus, SidOk}
 import java.{lang => jl, util => ju}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Element => jsoup_Element}
@@ -793,7 +794,7 @@ class JsonMaker(dao: SiteDao) {
     val site = if (requester.isStaffOrCoreMember) dao.getSite else None
 
     dao.readOnlyTransaction { tx =>
-      requestersJsonImpl(requester, pageRequest.pageId, watchbarWithTitles,
+      requestersJsonImpl(pageRequest.sid, requester, pageRequest.pageId, watchbarWithTitles,
             restrTopicsCatsLinks, permissions, permsOnSiteTooMany,
             unapprovedPostAuthorIds, myGroupsEveryoneLast, site, tx)
     }
@@ -816,7 +817,7 @@ class JsonMaker(dao: SiteDao) {
     val site = if (requester.isStaffOrCoreMember) dao.getSite else None
 
     dao.readOnlyTransaction { tx =>
-      requestersJsonImpl(requester, anyPageId = None, watchbarWithTitles,
+      requestersJsonImpl(request.sid, requester, anyPageId = None, watchbarWithTitles,
             RestrTopicsCatsLinks(JsArray(), Nil, Nil, Nil, Set.empty),
             permissions, permsOnSiteTooMany,
             unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, site, tx)
@@ -824,7 +825,8 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  private def requestersJsonImpl(requester: Participant, anyPageId: Option[PageId],
+  private def requestersJsonImpl(
+        sid: SidStatus, requester: Participant, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrTopicsCatsLinks: RestrTopicsCatsLinks,
         permissions: Seq[PermsOnPages], permsOnSiteTooMany: PermsOnSite,
         unapprovedPostAuthorIds: Set[UserId],
@@ -938,9 +940,17 @@ class JsonMaker(dao: SiteDao) {
             "marksByPostId" -> JsObject(Nil)))
     }
 
+    // Parts 2 and other parts are all long enough themselves,  so we can include
+    // part 1 in generated html pages. [sid_part1]
+    val sidPart1ForJson: JsValue = sid match {
+      case s: SidOk => JsString(s.part1ForJson)
+      case _ => JsNull
+    }
+
     // Somewhat dupl code, (2WB4G7) and [B28JG4].
     var json = Json.obj(
       "dbgSrc" -> "4JKW7A0",
+      "mySidPart1ForJson" -> sidPart1ForJson,
       "id" -> JsNumber(requester.id),
       "userId" -> JsNumber(requester.id), // try to remove, use 'id' instead
       "username" -> JsStringOrNull(requester.anyUsername),

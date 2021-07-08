@@ -126,6 +126,7 @@ class SiteDao(
   with SpecialContentDao
   with ed.server.auth.AuthzSiteDaoMixin
   with talkyard.server.authn.AuthnSiteDaoMixin
+  with talkyard.server.sess.SessionSiteDaoMixin
   with ForumDao
   with CategoriesDao
   with PagesDao

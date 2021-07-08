@@ -51,6 +51,10 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   private def globals = dao.context.globals
 
   def site: SiteBrief
+
+  def anyTySession: Opt[TySession]
+  def tySession: TySession = anyTySession getOrElse throwForbidden("TyE0SESS", "Not logged in")
+
   def sid: SidStatus
   def xsrfToken: XsrfOk
   def browserId: Option[BrowserId]
@@ -79,7 +83,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   }
 
   def isViaApiSecret: Boolean = sid match { // should be case obj AuthnMethod.ApiSecret instead? [5BKRH02]
-    case SidOk("_api_secret_", 0, _) => true
+    case SidOk(TySession.ApiSecretPart12, 0, _) => true
     case _ => false
   }
 
@@ -165,7 +169,6 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def isGuest: Boolean = user.exists(_.isGuest)
   def isStaff: Boolean = user.exists(_.isStaff)
 
-  def session: mvc.Session = request.session
 
   def ip: IpAddress = security.realOrFakeIpOf(request)
 

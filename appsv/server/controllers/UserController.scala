@@ -37,7 +37,7 @@ import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import talkyard.server.JsX
 import talkyard.server.JsX._
-import talkyard.server.p_Result
+import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.TyLogging
 
 
@@ -104,7 +104,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** Loads a member or group, incl details, or a guest (then there are no details).
     */
-  def loadUserAnyDetails(who: String): Action[Unit] = GetAction { request =>
+  def loadUserAnyDetails(who: St): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddedHalfSidOld) { request =>
     import request.{dao, requesterOrUnknown}
     // First try looking up by `who` as a  numeric user id. If won't work,
     // lookup by `who` as username instead.
@@ -129,6 +130,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val tagTypes: Seq[TagType] = dao.getTagTypesForTags(tags)
+
+    // Maybe incl less data if embedded?
+    CHECK_AUTHN_STRENGTH
 
     // Maybe? No, stats is ok to show? Could possibly add another conf val, hmm.
     /*val stats =
@@ -890,7 +894,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** If not staff, returns a summary only.
     */
-  def loadAuthorBlocks(postId: Int): Action[Unit] = GetAction { request =>
+  def loadAuthorBlocks(postId: Int): Action[Unit] = GetActionRateLimited(
+        RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddedHalfSidOld) { request =>
+
+    CHECK_AUTHN_STRENGTH
+
     val blocks: Seq[Block] = request.dao.loadAuthorBlocks(postId)
     var json = blocksSummaryJson(blocks, request.ctime)
     if (request.user.exists(_.isStaff)) {
@@ -954,7 +962,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadMyPageData(pageIds: St): Action[U] = GetAction { request =>
+  def loadMyPageData(pageIds: St): Action[U] = GetAction2(RateLimits.ReadsFromDb,
+        MinAuthnStrength.EmbeddedHalfSidOld) { request =>
     import request.dao
     QUICK; COULD_OPTIMIZE // don't use String.split('') — it sometimes creates a regex.
     // Review the whole code base. // Use Guava's Splitter instead.
@@ -983,6 +992,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       return dao.jsonMaker.userNoPageToJson(request)
     }
 
+    CHECK_AUTHN_STRENGTH
+
     val pagePath = request.dao.getPagePath(pageId) getOrElse {
       // The page was apparently deleted some microseconds ago.
       return dao.jsonMaker.userNoPageToJson(request)
@@ -995,6 +1006,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pageRequest = new PageRequest(
       request.site,
       sid = request.sid,
+      anyTySession = request.anyTySession,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
       user = request.user,
@@ -1024,7 +1036,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def trackReadingProgress: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
-        maxBytes = 1000) { request =>
+        MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = 1000) { request =>
     import request.{dao, theRequester}
     val readMoreResult = trackReadingProgressImpl(request, request.body)
     val result =
@@ -1032,6 +1044,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       else {
         // Posts related to some notifications were seen. Update the notifications, client side,
         // so they'll get un-highlighted, since the posts they are about, have now been seen.
+
+        CHECK_AUTHN_STRENGTH // Skip the notifications, if in embedded iframe?
 
         // dupl line [8AKBR0]
         val notfsAndCounts = dao.loadNotificationsSkipReviewTasks(
@@ -1053,7 +1067,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** In the browser, navigator.sendBeacon insists on sending plain text. So need this text handler.
     */
   def trackReadingProgressText: Action[String] = PostTextAction(RateLimits.TrackReadingActivity,
-        maxBytes = 1000) { request =>
+        MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = 1000) { request =>
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)
     trackReadingProgressImpl(request, json)
@@ -1100,6 +1114,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // The title and draft post nrs are < 0 and shouldn't be included here.
       throwForbidden("TyE5RKPW025", s"Bad post nr, smaller than BodyNr: $badNr")
     }
+
+    CHECK_AUTHN_STRENGTH // + may see?
 
     logger.trace(
       s"s$siteId, page $anyPageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
@@ -1188,15 +1204,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def markAllNotfsAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) {
-        request =>
+  def markAllNotfsAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen,
+        maxBytes = 200) { request =>
     request.dao.markAllNotfsAsSeen(request.theUserId)
     loadNotificationsImpl(request.theUserId, upToWhen = None, request)
   }
 
 
-  def markNotificationAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) {
-        request =>
+  def markNotificationAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen,
+        maxBytes = 200) { request =>
     import request.{dao, theRequesterId}
     val notfId = (request.body \ "notfId").as[NotificationId]
     dao.markNotificationAsSeen(theRequesterId, notfId)
@@ -1204,8 +1220,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def snoozeNotifications(): Action[JsValue] =
-          PostJsonAction(RateLimits.ConfigUser, 200) { request =>
+  def snoozeNotifications(): Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        maxBytes = 200) { request =>
     import request.{dao, theRequesterId}
     val untilWhen: Option[When] =
           (request.body \ "untilMins").as[JsValue] match {
@@ -1219,8 +1235,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def saveContentNotfPref: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) {
-        request =>
+  def saveContentNotfPref: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+          MinAuthnStrength.EmbeddedHalfSidOld, maxBytes = 500) { request =>
     import request.{dao, theRequester => requester}
     val body = request.body
     val memberId = (body \ "memberId").as[MemberId]
@@ -1279,6 +1295,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
                 wholeSite = wholeSite.getOrElse(false),
                 notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
             .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
+
+    CHECK_AUTHN_STRENGTH
 
     if (newNotfLevel.isDefined) {
       dao.savePageNotfPrefIfAuZ(newPref, request.who)
@@ -1352,7 +1370,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   SECURITY // don't allow if user listing disabled, & isn't staff [8FKU2A4]
-  def listAllUsers(usernamePrefix: String): Action[Unit] = GetAction { request =>
+  CHECK_AUTHN_STRENGTH // maybe sometimes not allowed from embedded comments pages?
+  def listAllUsers(usernamePrefix: St): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddedHalfSidOld) { request =>
     // Authorization check: Is a member? Add MemberGetAction?
     request.theMember
 
@@ -1362,6 +1382,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   SECURITY // user listing disabled? [8FKU2A4]
+  CHECK_AUTHN_STRENGTH // maybe sometimes not allowed from embedded comments pages?
   def listMembersPubApi(usernamePrefix: String, usersOnly: Boolean)
         : Action[Unit] = GetAction { request =>
     // Allowed also if not logged in — so can use from a non-Talkyard client,
@@ -1399,7 +1420,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Listing usernames on a particular page is okay, if one may see the page
     * — however, listing all usernames for the whole site, isn't always okay. [8FKU2A4]
     */
-  def listUsernames(pageId: PageId, prefix: String): Action[Unit] = GetAction { request =>
+  def listUsernames(pageId: PageId, prefix: St): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddedHalfSidOld) { request =>
     import request.dao
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
@@ -1409,6 +1431,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Or if some time in the future there will be "hidden" accounts  [hdn_acts]
     // — someone who don't want strangers and new members to see hens profile —
     // then, would need to exclude those accounts here.
+
+    CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.maySeePage(
       pageMeta, request.user, dao.getGroupIdsOwnFirst(request.user),
@@ -1584,7 +1608,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val anonNNN = dao.deleteUser(userId, request.who)
     val response = OkSafeJsValue(JsString(anonNNN.username))
     // Log the user out, if hen deleted hens own account.
-    if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookie)
+    if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookies: _*)
     else response
   }
 

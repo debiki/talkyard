@@ -123,6 +123,9 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... logs out, last-seen stats get updated" in {
       playTimeMillis(1000)
       dao.logout(member1, bumpLastSeen = true)
+      // Maybe better end any sessions — although aren't any.
+      dao.terminateSessions(forPatId = member1.id, all = true)
+
       val stats = loadUserStats(member1.id)(dao)
       stats mustBe initialStats.copy(lastSeenAt = currentTime)
     }

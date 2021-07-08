@@ -226,6 +226,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       delete from usernames3 where site_id = ?
       delete from user_emails3 where site_id = ?
       delete from group_participants3 where site_id = ?
+      delete from sessions_t where site_id_c = ?
       delete from users3 where site_id = ?
       """).trim.split("\n").toBuffer
 
