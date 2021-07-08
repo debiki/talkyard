@@ -111,7 +111,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
       throwForbidden("EsE8YKW3", s"Wrong site id: ${request.siteId}, should go to site $siteId")
 
     // ? mark as online ?
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, userId)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.site, userId)
     Redirect("/").withCookies(sidAndXsrfCookies: _*)
   }
 
@@ -144,7 +144,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
     dieIf(anyUserId.isDefined && viewAsOnly, "EdE6WKT0S")
 
     val sidAndXsrfCookies = anyUserId.toList flatMap { userId =>
-      createSessionIdAndXsrfToken(request.siteId, userId)._3
+      createSessionIdAndXsrfToken(request, userId)._3
     }
 
     val logoutCookie =
@@ -194,7 +194,8 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
                 }
                 else {
                   // Restore the old user id.
-                  val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, oldUserId)
+                  val (_, _, sidAndXsrfCookies) =
+                        createSessionIdAndXsrfToken(request, oldUserId)
                   Ok.withCookies(sidAndXsrfCookies: _*)
                 }
           }

@@ -56,6 +56,27 @@ object RemoteRedisClientError {
 class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val now: () => When) {
 
 
+  import talkyard.server.security.TySession
+
+  def getSessionById(sid: St): Opt[TySession] = {
+    val futureString: Future[Option[ByteString]] = redis.get(sessionKey(siteId, sid))
+    val anyByteString: Option[ByteString] =
+      try Await.result(futureString, DefaultTimeout)
+      catch {
+        case _: TimeoutException => die("TyZ4BKW2F", "Redis timeout")
+      }
+    anyByteString.map { s =>
+      TySession.fromSt(s.utf8String) getOrIfBad(err => die(
+            "TyEREDISESS", s"Bad session: $err"))
+    }
+  }
+
+
+  def saveSession(sid: St, session: TySession): U = {
+    redis.set(sessionKey(siteId, sid), session.toVersionJsonSt)
+  }
+
+
   def loadWatchbar(userId: UserId): Option[BareWatchbar] = {
     val futureString: Future[Option[ByteString]] = redis.get(watchbarKey(siteId, userId))
     val anyByteString: Option[ByteString] =
@@ -269,6 +290,9 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   // All keys should be like:  <siteId>-
   // and then, if for a user: u<userId>-
   // e.g.  3-u456-w = site 3, user 456, then 'w' (watchbar) or 'LnPv' (link preview).
+  // Or if a session: <siteId>-s<sessionId>.
+
+  private def sessionKey(siteId: SiteId, sid: St) = s"$siteId-s$sid"
 
   private def watchbarKey(siteId: SiteId, userId: UserId) = s"$siteId-u$userId-w"
 

@@ -369,7 +369,7 @@ class PlainApiActions(
         case ci =>
           dieIf(ci.isCrossOrigin, "TyEJ2503TKHJ")
           security.checkSidAndXsrfToken(
-                request, anyRequestBody = Some(request.body), siteId = site.id,
+                request, anyRequestBody = Some(request.body), site, dao,
                 expireIdleAfterMins, maySetCookies = maySetCookies,
                 skipXsrfCheck = skipXsrfCheck)
       }

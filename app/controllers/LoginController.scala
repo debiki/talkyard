@@ -133,6 +133,8 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Opt[St]): Result = {
     import request.{dao, requester, siteSettings}
 
+    AUDIT_LOG // session id destruction
+
     requester foreach { theRequester =>
       request.dao.logout(theRequester, bumpLastSeen = true)
     }

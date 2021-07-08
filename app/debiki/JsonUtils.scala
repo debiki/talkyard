@@ -73,6 +73,17 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
+  def parseJson(text: St): JsValue = {
+    // Play uses JacksonJson.parseJsValue, see: play.api.libs.json.
+    // which throws: IOException, JsonParseException, JsonMappingException,
+    // and the latter are subclasses of IOException.
+    try Json.parse(text)
+    catch {
+      case ex: java.io.IOException =>
+        throwBadJson("TyEPARSJSN", s"Cannot parse text as json: ${ex.getMessage}")
+    }
+  }
+
   def asJsObject(json: JsValue, what: St): JsObject =
     json match {
       case o: JsObject => o
@@ -299,6 +310,9 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
 
 
   def readLong(json: JsValue, fieldName: String): Long =
+    parseInt64(json, fieldName)
+
+  def parseInt64(json: JsValue, fieldName: St): i64 =
     readOptLong(json, fieldName) getOrElse throwMissing("EsE6Y8FW2", fieldName)
 
   def parseOptLong(json: JsValue, fieldName: St): Opt[i64] =

@@ -139,7 +139,7 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     // (checkSidAndXsrfToken() won't throw for GET requests. [GETNOTHROW])
     val (sessionId, xsrfOk, newCookies) =
           security.checkSidAndXsrfToken(
-                request, anyRequestBody = None, siteId = site.id,
+                request, anyRequestBody = None, site, dao,
                 expireIdleAfterMins = expireIdleAfterMins, maySetCookies = false,
                 skipXsrfCheck = false)
 

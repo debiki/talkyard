@@ -125,7 +125,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     }
 
     dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
-    val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
+    val (sid, _, sidAndXsrfCookies) =
+          createSessionIdAndXsrfToken(request, loginGrant.user.id)
     (sid, sidAndXsrfCookies)
   }
 
@@ -138,7 +139,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         allowAnyone = true) { request: JsonPostRequest =>
 
     // A bit dupl code. [2FKD05]
-    import request.body
+    import request.{body, dao}
 
     val fullName = (body \ "fullName").asOptStringNoneIfBlank
     val emailAddress = (body \ "email").as[String].trim
@@ -149,18 +150,6 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
     val maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
-
-    CLEAN_UP // remove daoFor, use request.dao instead. Just look in the logs that this'll
-    // work fine for sure (shouldn't be any "TyEWEIRDDAO" in the logs).
-    val dao = daoFor(request.request)
-    if (dao.siteId != request.dao.siteId) {
-      if (globals.isProd) {
-        logger.warn("Weird: dao.siteId != request.dao.siteId  [TyEWEIRDDAO]")
-      }
-      else {
-        die("TyE305AKTFWJ2", "Wrong dao, *harmmless* but why?")
-      }
-    }
 
     val siteSettings = dao.getWholeSiteSettings()
 
@@ -257,7 +246,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         else {
           dieIf(newMember.email.isEmpty && requireVerifiedEmail, "EdE2GKF06")
           dao.pubSub.userIsActive(request.siteId, newMember, request.theBrowserIdData)
-          val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(dao.siteId, newMember.id)
+          val (sid, _, sidAndXsrfCookies) =
+                createSessionIdAndXsrfToken(request, newMember.id)
           (Some(sid), sidAndXsrfCookies)
         }
       }
@@ -352,7 +342,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         (Nil, Some(returnToUrl + s"#talkyardOneTimeLoginSecret=$loginSecret"))
       }
       else {
-        val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, user.id)
+        val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, user.id)
         val anyReturnToUrl: Option[String] =
           if (returnToUrl.nonEmpty) Some(returnToUrl) else None
         (sidAndXsrfCookies, anyReturnToUrl)
