@@ -73,11 +73,11 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   }
 
-  def parseJson(text: St): JsValue = {
+  def parseJson(jsonSt: St): JsValue = {
     // Play uses JacksonJson.parseJsValue, see: play.api.libs.json.
     // which throws: IOException, JsonParseException, JsonMappingException,
     // and the latter are subclasses of IOException.
-    try Json.parse(text)
+    try Json.parse(jsonSt)
     catch {
       case ex: java.io.IOException =>
         throwBadJson("TyEPARSJSN", s"Cannot parse text as json: ${ex.getMessage}")

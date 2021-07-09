@@ -111,7 +111,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
       throwForbidden("EsE8YKW3", s"Wrong site id: ${request.siteId}, should go to site $siteId")
 
     // ? mark as online ?
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.site, userId)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, userId)
     Redirect("/").withCookies(sidAndXsrfCookies: _*)
   }
 

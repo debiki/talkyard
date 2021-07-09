@@ -30,6 +30,7 @@ import ed.server.auth.MayMaybe
 import play.api.http.{HeaderNames => p_HNs}
 import talkyard.server.TyLogger
 import talkyard.server.security.TySession
+import debiki.dao.RedisCache
 
 
 sealed abstract class XsrfStatus { def isOk = false }
@@ -359,11 +360,11 @@ class EdSecurity(globals: Globals) {
 
     val now = globals.now()
 
-    val sessionIdStatus: SidStatus =
+    val (sessionIdStatus: SidStatus, upgrToNewSidCookies) =
           anySessionId.map(oldSid =>
             checkSessionId(site, value = oldSid, anyNewSid = anyNewSid, Some(dao),
                   now, expireIdleAfterMillis = expireIdleAfterMillis)
-            ) getOrElse SidAbsent
+            ) getOrElse (SidAbsent, Nil)
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
@@ -681,6 +682,10 @@ class EdSecurity(globals: Globals) {
     val site = req.site
     val dao = req.dao // globals.siteDao(site.id)
 
+    val tryNewSid = site.featureFlags.contains("ffTryNewSid")
+    val useNewSid = site.featureFlags.contains("ffUseNewSid")
+    val upgradeOldSid = site.featureFlags.contains("ffUpgrOldSid") && useNewSid
+
     val ppt = dao.getParticipant(userId)
     throwForbiddenIf(ppt.exists(_.isGroup), "TyELGIGRP", "Cannot login as a group")  // [imp-groups]
 
@@ -688,6 +693,7 @@ class EdSecurity(globals: Globals) {
     val expireIdleAfterSecs = settings.expireIdleAfterMins * 60
 
     // Old style sid: (signed cookie)
+    // ----------------------------------------
     // Note that the xsrf token is created using the non-base64 encoded cookie value.
     var sidOk = createSessionId(site, userId)
     val xsrfOk = createXsrfToken()
@@ -702,35 +708,52 @@ class EdSecurity(globals: Globals) {
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value,
       maxAgeSecs = Some(expireIdleAfterSecs + XsrfAliveExtraSeconds))
 
-    var cookies = sidCookie::xsrfCookie::Nil
+   COULD_OPTIMIZE // use ArrBuf
+    var cookies = xsrfCookie::Nil
+
+    if (upgradeOldSid) {
+      // Then don't create any more old sids.
+    }
+    else {
+      cookies = sidCookie::cookies
+    }
+
 
     // New better sid:  [btr_sid]
-    val tryNewSid = site.featureFlags.contains("ffTryNewSid")
-    val useNewSid = site.featureFlags.contains("ffUseNewSid")
+    // ----------------------------------------
     if (tryNewSid || useNewSid) {
-      val sessionId = nextRandomString()
-      val (sidPartOne, sidPartTwo) = sessionId splitAt SessionIdPartOneLength
-      dieIf(sidPartTwo.length < SessionIdPartTwoMinLength, "TyE507MWEJ35",
-            s"Session id part two is too short, ${sidPartTwo.length} chars only")
-      val newSidPart1Cookie = urlEncodeCookie(
-            SessionIdPartOneHttpOnlyCookieName, sidPartOne,
-            maxAgeSecs = Some(expireIdleAfterSecs), httpOnly = true)
-      val newSidPart2Cookie = urlEncodeCookie(
-            SessionIdPartTwoNotHttpOnlyCookieName, sidPartTwo,
-            maxAgeSecs = Some(expireIdleAfterSecs), httpOnly = false)
-      dao.redisCache.saveSession(sessionId, TySession(
-            sessVer = TySession.Version,
-            patId = userId,
-            createdAtMs = globals.now().millis,
-            isEmbedded = false,
-            wasAutoAuthn = false))
-      cookies = newSidPart1Cookie::newSidPart2Cookie::cookies
+      val (newSidCookies, sessionId) =
+            genAndSaveNewSid(patId = userId, expireIdleAfterSecs, dao.redisCache)
+      cookies = newSidCookies:::cookies // newSidPart1Cookie::newSidPart2Cookie::cookies
       if (useNewSid) {
         sidOk = SidOk(sessionId, expireIdleAfterSecs * 1000, Some(userId))
       }
     }
 
     (sidOk, xsrfOk, cookies)
+  }
+
+
+  private def genAndSaveNewSid(patId: PatId, expireIdleAfterSecs: i32,
+          redisCache: RedisCache): (List[Cookie], St) = {
+    val sessionId = nextRandomString()
+    val (sidPartOne, sidPartTwo) = sessionId splitAt SessionIdPartOneLength
+    dieIf(sidPartTwo.length < SessionIdPartTwoMinLength, "TyE507MWEJ35",
+          s"Session id part two is too short, ${sidPartTwo.length} chars only")
+    val newSidPart1Cookie = urlEncodeCookie(
+          SessionIdPartOneHttpOnlyCookieName, sidPartOne,
+          maxAgeSecs = Some(expireIdleAfterSecs), httpOnly = true)
+    val newSidPart2Cookie = urlEncodeCookie(
+          SessionIdPartTwoNotHttpOnlyCookieName, sidPartTwo,
+          maxAgeSecs = Some(expireIdleAfterSecs), httpOnly = false)
+    redisCache.saveSession(sessionId, TySession(
+          sessVer = TySession.Version,
+          patId = patId,
+          createdAtMs = globals.now().millis,
+          isEmbedded = false,
+          wasAutoAuthn = false,
+          isOldUpgraded = false))
+    (List(newSidPart1Cookie, newSidPart2Cookie), sessionId)
   }
 
 
@@ -745,9 +768,11 @@ class EdSecurity(globals: Globals) {
 
 
   private def checkSessionId(site: SiteBrief, value: St, anyNewSid: Opt[St],
-        anyDao: Opt[SiteDao], now: When, expireIdleAfterMillis: i64): SidStatus = {
+        anyDao: Opt[SiteDao], now: When, expireIdleAfterMillis: i64)
+        : (SidStatus, List[Cookie]) = {
 
     // New better sid:  [btr_sid]
+    // ----------------------------------------
     val tryNewSid = site.featureFlags.contains("ffTryNewSid")
     val useNewSid = site.featureFlags.contains("ffUseNewSid")
 
@@ -769,23 +794,25 @@ class EdSecurity(globals: Globals) {
                   SidOk(value = value, ageInMillis = ageMillis,
                         userId = Some(session.patId))
                 }
-          return result
+          return (result, Nil)
         }
       }
     }
 
+    // Old style sid:
+    // ----------------------------------------
     // Example value: 88-F7sAzB0yaaX.1312629782081.1c3n0fgykm  - no, obsolete
-    if (value.length <= HashLength) return SidBadFormat
+    if (value.length <= HashLength) return (SidBadFormat, Nil)
     val (hash, dotUseridDateRandom) = value splitAt HashLength
     val realHash = hashSha1Base64UrlSafe(
       s"$secretSalt.${site.id}$dotUseridDateRandom") take HashLength
-    if (hash != realHash) return SidBadHash
-    dotUseridDateRandom.drop(1).split('.') match {
+    if (hash != realHash) return (SidBadHash, Nil)
+    val oldOkSid = dotUseridDateRandom.drop(1).split('.') match {
       case Array(userIdString, dateStr, randVal) =>
         val userId: Option[UserId] =
           if (userIdString.isEmpty) None
           else Try(userIdString.toInt).toOption orElse {
-            return SidBadFormat
+            return (SidBadFormat, Nil)
           }
         val ageMillis = now.millis - dateStr.toLong
         UX; BUG; COULD; // [EXPIREIDLE] this also expires *active* sessions. Instead,
@@ -794,15 +821,34 @@ class EdSecurity(globals: Globals) {
         // caller, so it won't have to look it up again.
         // Not urgent though — no one will notice: by default, one stays logged in 1 year [7AKR04].
         if (ageMillis > expireIdleAfterMillis)
-          return SidExpired(
+          return (SidExpired(
             minutesOld = ageMillis / MillisPerMinute,
-            maxAgeMins = expireIdleAfterMillis / MillisPerMinute)
+            maxAgeMins = expireIdleAfterMillis / MillisPerMinute), Nil)
         SidOk(
           value = value,
           ageInMillis = ageMillis,
           userId = userId)
       case _ => SidBadFormat
     }
+
+    var result = oldOkSid
+    var newSidCookies: List[Cookie] = Nil
+
+    // Upgrade old sid to new style sid:  [btr_sid]
+    // ----------------------------------------
+    if (tryNewSid && oldOkSid.userId.isDefined) {
+      val dao = anyDao getOrDie "TyE50FREN68"
+      val patId = oldOkSid.userId getOrDie "TyE602MTEGPH"
+      val settings = dao.getWholeSiteSettings()
+      val expireIdleAfterSecs = settings.expireIdleAfterMins * 60
+      val (newCookies, sessionId) =
+            genAndSaveNewSid(patId = patId, expireIdleAfterSecs, dao.redisCache)
+      // cookies = newSidPart1Cookie::newSidPart2Cookie::cookies
+      result = SidOk(sessionId, expireIdleAfterSecs * 1000, Some(patId))
+      newSidCookies = newCookies
+    }
+
+    (result, newSidCookies)
   }
 
 

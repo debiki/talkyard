@@ -66,7 +66,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
         case _: TimeoutException => die("TyZ4BKW2F", "Redis timeout")
       }
     anyByteString.map { s =>
-      TySession.fromSt(s.utf8String) getOrIfBad(err => die(
+      TySession.parse(s.utf8String) getOrIfBad(err => die(
             "TyEREDISESS", s"Bad session: $err"))
     }
   }
