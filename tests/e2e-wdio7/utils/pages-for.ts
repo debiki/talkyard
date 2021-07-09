@@ -264,10 +264,10 @@ export type TyAllE2eTestBrowsers = TyE2eTestBrowser;
 
 export class TyE2eTestBrowser {
 
-  #br: WebdriverIOSync.Browser;
+  #br: WebdriverIOAsync.Browser;
   #name: St;
 
-  constructor(aWdioBrowser: WebdriverIOSync.Browser, name: 'brA' | 'brB' | 'brC' | 'brAll') {
+  constructor(aWdioBrowser: WebdriverIOAsync.Browser, name: 'brA' | 'brB' | 'brC' | 'brAll') {
     dieIf(!aWdioBrowser?.getPageSource,
         `Error creating Wdio browser '${name}', this is not a browser: ${
                 JSON.stringify(aWdioBrowser)}  [TyE2E7J02SAD35]`
@@ -607,7 +607,7 @@ export class TyE2eTestBrowser {
     // Returns true iff the event / condition happened, that is, if fn()
     // returned true before timeout.
     //
-    waitUntil(fn: () => Bo, ps: WaitPs = {}): Bo {
+    async waitUntil(fn: () => Pr<Bo>, ps: WaitPs = {}): Pr<Bo> {
 
       let delayMs = PollMs;
       let elapsedMs = 0;
@@ -619,7 +619,7 @@ export class TyE2eTestBrowser {
 
       try {
         do {
-          const done = fn();
+          const done = await fn();
           if (done) {
             if (loggedAnything) {
               logMessage(`Done: ${getMsg()}`);
@@ -641,9 +641,9 @@ export class TyE2eTestBrowser {
           // failing — easy to notice.)
           const waitingForServerError = () => getOrCall(ps.message)?.indexOf('s_SED_Msg') >= 0;
           if (elapsedMs > 500 && !waitingForServerError() && !ps.serverErrorDialogIsFine) {
-            if (this.serverErrorDialog.isDisplayed()) {
+            if (await this.serverErrorDialog.isDisplayed()) {
               loggedError = true;
-              this.serverErrorDialog.failTestAndShowDialogText();
+              await this.serverErrorDialog.failTestAndShowDialogText();
             }
           }
 
@@ -651,12 +651,12 @@ export class TyE2eTestBrowser {
             // Good with the same amount of time before and after the refresh,
             // so the server gets time to do its things, and the browser gets time
             // to reload & repaint the page.
-            this.#br.pause(delayMs / 2);
+            await this.#br.pause(delayMs / 2);
             this.refresh2();
-            this.#br.pause(delayMs / 2);
+            await this.#br.pause(delayMs / 2);
           }
           else {
-            this.#br.pause(delayMs);
+            await this.#br.pause(delayMs);
           }
           delayMs = expBackoff(delayMs);
         }
@@ -864,8 +864,9 @@ export class TyE2eTestBrowser {
     }
 
 
-    numTabs(): number {
-      return this.#br.getWindowHandles().length;
+    async numTabs(): Promise<Nr> {
+      const hs = await this.#br.getWindowHandles()
+      return hs.length;
     }
 
     waitForMinBrowserTabs(howMany: number, waitPs: WaitPs = {}): Bo {
@@ -877,12 +878,12 @@ export class TyE2eTestBrowser {
       }, { ...waitPs, message });
     }
 
-    waitForMaxBrowserTabs(howMany: number) {
+    async waitForMaxBrowserTabs(howMany: number) {
       let numNow = -1;
       const message = () => `Waiting for <= ${howMany} tabs, currently ${numNow} tabs...`;
-      this.waitUntil(() => {
+      await this.waitUntil(async () => {
         // Cannot be 0, that'd mean the test made itself disappear?
-        numNow = this.#br.getWindowHandles().length;
+        numNow = (await this.#br.getWindowHandles()).length;
         return numNow <= Math.max(1, howMany);
       }, { message, serverErrorDialogIsFine: true });
     }
@@ -1171,12 +1172,12 @@ export class TyE2eTestBrowser {
     }
 
 
-    getBoundingClientRect(selector: string, opts: { mustExist?: boolean } = {}): ElemRect | U {
+    async getBoundingClientRect(selector: string, opts: { mustExist?: boolean } = {}): Pr<ElemRect | U> {
       // Something like this might work too:
       //   const elemId: string = this.#br.findElement('css selector', selector);
       //   this.#br.getElementRect(elemId);  — how get the id?
       // But this already works:
-      const result = this.#br.execute(function(selector) {
+      const result = await this.#br.execute(function(selector) {
         var elem = document.querySelector(selector);
         if (!elem) return undefined;
         var rect = elem.getBoundingClientRect();
@@ -1200,8 +1201,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    getPageScrollY(): number {
-      return this.#br.execute(function(): number {
+    async getPageScrollY(): Pr<Nr> {
+      return await this.#br.execute(function(): number {
         var pageColumn = document.getElementById('esPageColumn');
         // ?? this works inside execute()?
         if (!pageColumn) throw Error("No #esPageColumn on this page [TyE7KBAQ2]");
@@ -1217,9 +1218,9 @@ export class TyE2eTestBrowser {
     }
 
 
-    scrollIntoViewInPageColumn(selector: string) {   // RENAME to  scrollIntoView
+    async scrollIntoViewInPageColumn(selector: string) {   // RENAME to  scrollIntoView
       dieIf(!selector, '!selector [TyE05RKCD5]');
-      const isInPageColResult = this.#br.execute(function(selector) {
+      const isInPageColResult = await this.#br.execute(function(selector) {
         var pageColumn = document.getElementById('esPageColumn');
         if (!pageColumn)
           return false;
@@ -1227,12 +1228,12 @@ export class TyE2eTestBrowser {
         return pageColumn.contains(elem);
       }, selector);
       if (isInPageColResult) {
-        this._real_scrollIntoViewInPageColumn(selector);
+        await this._real_scrollIntoViewInPageColumn(selector);
       }
       else {
         // Elem outside page column (e.g. modal dialog), or there is no page column.
-        this.waitForVisible(selector);
-        const problem = this.#br.execute(function(selector) {
+        await this.waitForVisible(selector);
+        const problem = await this.#br.execute(function(selector) {
           // Not logMessage — we're in the this.#br.
           console.log(`Scrolling into view in window: ${selector}`);
           var elem = document.querySelector(selector);
@@ -1246,19 +1247,19 @@ export class TyE2eTestBrowser {
     }
 
 
-    _real_scrollIntoViewInPageColumn (selector: string) { // RENAME to _scrollIntoViewInPageColumn
+    async _real_scrollIntoViewInPageColumn(selector: string) { // RENAME to _scrollIntoViewInPageColumn
       dieIf(!selector, '!selector [TyE5WKT02JK4]');
-      this.waitForVisible(selector);
-      let lastScrollY = this.getPageScrollY();
+      await this.waitForVisible(selector);
+      let lastScrollY = await this.getPageScrollY();
       for (let i = 0; i < 60; ++i) {   // try for a bit more than 10 seconds
-        this.#br.execute(function(selector) {
+        await this.#br.execute(function(selector) {
           // Not logMessage — we're in the this.#br.
           console.log(`Scrolling into view in page column: ${selector}`);
           window['debiki2'].utils.scrollIntoViewInPageColumn(
               selector, { marginTop: 100, marginBottom: 100, duration: 100 });
         }, selector);
-        this.#br.pause(150);
-        const curScrollY = this.getPageScrollY();
+        await this.#br.pause(150);
+        const curScrollY = await this.getPageScrollY();
         if (lastScrollY === curScrollY) {
           // Done scrolling;
           return;
@@ -1359,10 +1360,10 @@ export class TyE2eTestBrowser {
 
     // Can be used to wait until a fade-&-scroll-in dialog is done scrolling in, for example.
     //
-    waitUntilDoesNotMove(buttonSelector: string, pollInterval?: number) {
+    async waitUntilDoesNotMove(buttonSelector: string, pollInterval?: number) {
       let problem;
-      this.waitUntil(() => {
-        const location = this.getBoundingClientRect(buttonSelector, { mustExist: false });
+      await this.waitUntil(async () => {
+        const location = await this.getBoundingClientRect(buttonSelector, { mustExist: false });
         if (!location) {
           problem = `waitUntilDoesNotMove(..): Elem does not yet exist:  ${buttonSelector}`
           return false;
@@ -1401,17 +1402,20 @@ export class TyE2eTestBrowser {
     }
 
 
-    isVisible(selector: St): Bo {  // RENAME to isDisplayed, started, see below
-      return this.isDisplayed(selector);
+    async isVisible(selector: St): Pr<Bo> {  // RENAME to isDisplayed, started, see below
+      return await this.isDisplayed(selector);
     }
 
-    isDisplayed(selector: St): Bo {
+    async isDisplayed(selector: St): Pr<Bo> {
       // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
       // Maybe if win closed so elem gone?
 
-      const elem: WElm = this.$(selector);
+      const elem: WElm = await this.$(selector);
+      if (!elem) return false;
       // Skip isExisting()?
-      const displayed = elem?.isExisting?.() && elem.isDisplayed?.();
+      const displayed =
+              (await elem.isExisting?.()) &&
+              (await elem.isDisplayed?.());
       return !!displayed;
     }
 
@@ -1456,20 +1460,20 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitForDisplayed(selector: string, ps: WaitPs = {}): Bo {
-      return this.waitForVisible(selector, ps);
+    async waitForDisplayed(selector: string, ps: WaitPs = {}): Pr<Bo> {
+      return await this.waitForVisible(selector, ps);
     }
 
-    waitForVisible(selector: string, ps: WaitPs = {}): Bo {  // RENAME to waitForDisplayed() above
-      return this.waitUntil(() => this.isVisible(selector), {
+    async waitForVisible(selector: string, ps: WaitPs = {}): Pr<Bo> {  // RENAME to waitForDisplayed() above
+      return await this.waitUntil(async () => await this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
       });
     }
 
 
-    waitForDisplayedInViewport(selector: string, ps: WaitPs = {}) {
-      this.waitUntil(() => this.isDisplayedInViewport(selector), {
+    async waitForDisplayedInViewport(selector: string, ps: WaitPs = {}) {
+      await this.waitUntil(async () => await this.isDisplayedInViewport(selector), {
         ...ps,
         message: `Waiting for dispalyed in viewport:  ${selector}`,
       });
@@ -1625,8 +1629,8 @@ export class TyE2eTestBrowser {
       return this.waitAndClick(selector, { timeoutMs: 500, timeoutIsFine: true });
     }
 
-    waitAndClick(selector: St, opts: WaitAndClickPs = {}): ClickResult {
-      return this._waitAndClickImpl(selector, opts);
+    async waitAndClick(selector: St, opts: WaitAndClickPs = {}): Pr<ClickResult> {
+      return await this._waitAndClickImpl(selector, opts);
     }
 
 
@@ -1645,9 +1649,9 @@ export class TyE2eTestBrowser {
     //
     // Works with many browsers at the same time   — probably not any longer?
     //
-    _waitAndClickImpl(selector: St, ps: WaitAndClickPs = {}): ClickResult {
+    async _waitAndClickImpl(selector: St, ps: WaitAndClickPs = {}): Pr<ClickResult> {
       selector = selector.trim(); // so selector[0] below, works
-      if (this._waitForClickable(selector, ps) !== 'Clickable')
+      if (await this._waitForClickable(selector, ps) !== 'Clickable')
         return 'CouldNotClick';
 
       if (selector[0] !== '#' && !ps.clickFirst) {
@@ -1656,14 +1660,14 @@ export class TyE2eTestBrowser {
             `Don't know which one of ${elems.length} elems to click. ` +
             `Selector:  ${selector} [TyE305KSU]`);
       }
-     return this.clickNow(selector);
+     return await this.clickNow(selector);
     }
 
 
-    clickNow(selEl: SelectorOrElem): 'Clicked' {
+    async clickNow(selEl: SelectorOrElem): Pr<'Clicked'> {
       try {
-        if (_.isString(selEl)) this.$(selEl).click();
-        else selEl.click();
+        if (_.isString(selEl)) await (await this.$(selEl)).click();
+        else await selEl.click();
         return 'Clicked';
       }
       catch (ex) {
@@ -1671,8 +1675,8 @@ export class TyE2eTestBrowser {
         logWarning(`Error clicking ${what}: ${ex.toString()}`);
         if (isClickInterceptedException(ex)) {
           // This can happen if server error dialog appeared.
-          if (this.serverErrorDialog.isDisplayed()) {
-            this.serverErrorDialog.failTestAndShowDialogText();
+          if (await this.serverErrorDialog.isDisplayed()) {
+            await this.serverErrorDialog.failTestAndShowDialogText();
           }
         }
         throw ex;
@@ -1703,17 +1707,17 @@ export class TyE2eTestBrowser {
 
 
     // Throws, unless opts.timeoutIsFine.
-    _waitForClickable (selector: St,  // RENAME? to scrollToAndWaitUntilCanInteract
-          opts: WaitAndClickPs = {}): WaitForClickableResult {
-      const clickable = this.waitUntil(() => {
-        this.waitForVisible(selector, { timeoutMs: opts.timeoutMs });
-        this.waitForEnabled(selector, { timeoutMs: opts.timeoutMs });
+    async _waitForClickable (selector: St,  // RENAME? to scrollToAndWaitUntilCanInteract
+          opts: WaitAndClickPs = {}): Pr<WaitForClickableResult> {
+      const clickable = await this.waitUntil(async () => {
+        await this.waitForVisible(selector, { timeoutMs: opts.timeoutMs });
+        await this.waitForEnabled(selector, { timeoutMs: opts.timeoutMs });
         if (opts.mayScroll !== false) {
           // fix sleeping? bugs: [E2EBUG] set maybeMoves to true if did actually scroll
-          this.scrollIntoViewInPageColumn(selector);
+          await this.scrollIntoViewInPageColumn(selector);
         }
         if (opts.maybeMoves) {
-          this.waitUntilDoesNotMove(selector);
+          await this.waitUntilDoesNotMove(selector);
         }
 
         // Sometimes, a not-yet-done-loading-data-from-server overlays the element and steals
@@ -2281,17 +2285,17 @@ export class TyE2eTestBrowser {
     }
 
 
-    getText(selector: string): string {  // RENAME to waitAndGetText
+    async getText(selector: St): Pr<St> {  // RENAME to waitAndGetText
                                               // and thereafter, die(...) in this.getText().
-      return this.waitAndGetText(selector);
+      return await this.waitAndGetText(selector);
     }
 
 
-    waitAndGetText(selector: string): string {
+    async waitAndGetText(selector: St): Pr<St> {
       // Maybe not visible, if empty text? So use  waitForExist() here — and,
       // in waitAndGetVisibleText() just below, we waitForVisible() instead.
-      this.waitForExist(selector);
-      return this.$(selector).getText();
+      await this.waitForExist(selector);
+      return await (await this.$(selector)).getText();
     }
 
 
@@ -3560,7 +3564,7 @@ export class TyE2eTestBrowser {
         this.waitForVisible('.esLoginDlg_badPwd');
       },
 
-      loginWithPassword: (username: string | Member | { username: string, password: string },
+      loginWithPassword: async (username: string | Member | { username: string, password: string },
             password?, opts?: { resultInError?: boolean }) => {
 
         if (!opts && password && _.isObject(password)) {
@@ -3572,18 +3576,19 @@ export class TyE2eTestBrowser {
           password = username.password;
           username = username.username;
         }
-        const numTabs = this.numTabs();
-        this.loginDialog.tryLogin(username, password);
+        const numTabs = await this.numTabs();
+this.l(`Num tab: ${numTabs}`);
+        await this.loginDialog.tryLogin(username, password);
         if (opts && opts.resultInError)
           return;
         if (this.#isWhere === IsWhere.LoginPopup) {
           // Wait for this login popup tab/window to close.
-          this.waitForMaxBrowserTabs(numTabs - 1);
-          this.switchBackToFirstTabIfNeeded();
+          await this.waitForMaxBrowserTabs(numTabs - 1);
+          await this.switchBackToFirstTabIfNeeded();
         }
         else {
-          this.waitUntilModalGone();
-          this.waitUntilLoadingOverlayGone();
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
         }
       },
 
@@ -3616,11 +3621,11 @@ export class TyE2eTestBrowser {
         this.waitForVisible('.esLoginDlg_badPwd');
       },
 
-      tryLogin: (username: string, password: string) => {
-        this.loginDialog.switchToLoginIfIsSignup();
-        this.loginDialog.fillInUsername(username);
-        this.loginDialog.fillInPassword(password);
-        this.loginDialog.clickSubmit();
+      tryLogin: async (username: string, password: string) => {
+        await this.loginDialog.switchToLoginIfIsSignup();
+        await this.loginDialog.fillInUsername(username);
+        await this.loginDialog.fillInPassword(password);
+        await this.loginDialog.clickSubmit();
       },
 
       waitForEmailUnverifiedError: () => {
@@ -3697,19 +3702,20 @@ export class TyE2eTestBrowser {
         this.waitForVisible('#e2ePassword');
       },
 
-      switchToLoginIfIsSignup: () => {
+      switchToLoginIfIsSignup: async () => {
         // Switch to login form, if we're currently showing the signup form.
-        while (true) {
-          if (this.isVisible('.esCreateUser')) {
-            this.waitAndClick('.c_AuD_2LgI .c_AuD_SwitchB');
+        await this.waitUntil(async () => {
+          if (await this.isVisible('.esCreateUser')) {
+            await this.waitAndClick('.c_AuD_2LgI .c_AuD_SwitchB');
             // Don't waitForVisible('.dw-reset-pswd') — that can hang forever (weird?).
           }
-          else if (this.isVisible('.dw-reset-pswd')) {
+          else if (await this.isVisible('.dw-reset-pswd')) {
             // Then the login form is shown, fine.
-            break;
+            return true;
           }
-          this.#br.pause(PollMs);
-        }
+        }, {
+          message: `Switching to login dialog`
+        });
       },
 
 
@@ -8396,14 +8402,14 @@ export class TyE2eTestBrowser {
 
 
     serverErrorDialog = {
-      isDisplayed: (): boolean => {
-        return this.isVisible('.s_SED_Msg');
+      isDisplayed: async (): Pr<Bo> => {
+        return await this.isVisible('.s_SED_Msg');
       },
 
-      failTestAndShowDialogText: () => {
-        tyAssert.ok(this.serverErrorDialog.isDisplayed());
-        const title = this.waitAndGetText('.s_SED_Ttl');
-        const text = this.$('.s_SED_Msg').getHTML();
+      failTestAndShowDialogText: async () => {
+        tyAssert.ok(await this.serverErrorDialog.isDisplayed());
+        const title = await this.waitAndGetText('.s_SED_Ttl');
+        const text = await (await this.$('.s_SED_Msg')).getHTML();
         console.trace();
         assert.fail(
             `Unexpected error dialog: [TyEERRDLG]\n` +

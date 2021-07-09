@@ -63,9 +63,12 @@ describe("some-e2e-test  TyT1234ABC", () => {
     memahsBrowser = richBrowserB;
   });
 
-  it("Owen logs in to admin area, ... ", () => {
+  it(`Owen goes to the admin area, ... `, () => {
     owensBrowser.adminArea.goToUsersEnabled(site.origin);
-    owensBrowser.loginDialog.loginWithPassword(owen);
+  });
+
+  it(`... logs in`, async () => {
+    await owensBrowser.loginDialog.loginWithPassword(owen);
   });
 
   it("Memah logs in", () => {
