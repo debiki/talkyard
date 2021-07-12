@@ -1547,7 +1547,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val anonNNN = dao.deleteUser(userId, request.who)
     val response = OkSafeJson(JsString(anonNNN.username))
     // Log the user out, if hen deleted hens own account.
-    if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookie)
+    if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookies: _*)
     else response
   }
 

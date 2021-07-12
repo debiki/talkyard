@@ -23,7 +23,7 @@ declare const rFragment: any;  // soo long! CLEAN_UP REMOVE
 declare const rFr: any;      // better
 
 declare function doNextFrameOrNow(x);
-declare function getSetCookie(cookieName: string, value?: string, options?: any): string | null;
+declare function getSetCookie(cookieName: St, value?: St, options?: Ay): St | Nl;
 declare const parseQueryString: (s: string) => any;
 declare const stringifyQueryString: (s: any) => string;
 
@@ -296,6 +296,7 @@ declare namespace debiki2 {
   function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;
 
+  function me_hasSid(): Bo;
   function me_uiPrefs(me: Myself): UiPrefs;
   function pp_snoozeLeftMs(me: Myself): number;
   function member_isBuiltIn(member: Member): boolean;

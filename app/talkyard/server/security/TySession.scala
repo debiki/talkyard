@@ -4,19 +4,36 @@ import com.debiki.core._
 import play.api.libs.json._
 import org.scalactic.{Or, Bad}
 import debiki.{JsonUtils => jps}
+import TySession.NotDeleted
 
 
-trait TySessionMaybeBad {
+sealed abstract class TySessionMaybeBad {
   def sessVer: i32
   def patId: PatId
   def createdAtMs: i64
-  def deletedAtMs: i64 = TySession.NotDeleted
+  def deletedAtMs: i64 = NotDeleted
   def isEmbedded: Bo
   def wasAutoAuthn: Bo
   def isOldUpgraded: Bo
 
-  def isValid: Bo = deletedAtMs == TySession.NotDeleted
+  def isValid: Bo = deletedAtMs == NotDeleted && !hasExpired
   def isDeleted: Bo = deletedAtMs >= 0
+  def hasExpired: Bo = false
+
+  def copyAsBad(hasExpired: Bo = false, deletedAtMs: i64 = NotDeleted)
+        : TySessionBad = {
+    TySessionBad(
+          sessVer = sessVer,
+          patId = patId,
+          createdAtMs = createdAtMs,
+          deletedAtMs =
+              if (this.deletedAtMs == NotDeleted) deletedAtMs
+              else this.deletedAtMs,
+          isEmbedded = isEmbedded,
+          wasAutoAuthn = wasAutoAuthn,
+          isOldUpgraded = isOldUpgraded,
+          hasExpired = this.hasExpired || hasExpired)
+  }
 
   def toVersionJsonSt: St = {
     var jsonOb = Json.obj(
@@ -26,6 +43,7 @@ trait TySessionMaybeBad {
     if (isEmbedded) jsonOb += "isEmb" -> JsTrue
     if (wasAutoAuthn) jsonOb += "wasAuAu" -> JsTrue
     if (isOldUpgraded) jsonOb += "isOldUpgraded" -> JsTrue
+    if (hasExpired) jsonOb += "hasExpired" -> JsTrue
     s"v$sessVer:${jsonOb.toString}"
   }
 }
@@ -48,9 +66,10 @@ case class TySessionBad(
   override val deletedAtMs: i64,
   isEmbedded: Bo,
   wasAutoAuthn: Bo,
-  isOldUpgraded: Bo) extends TySessionMaybeBad  {
+  isOldUpgraded: Bo,
+  override val hasExpired: Bo) extends TySessionMaybeBad  {
 
-  require(deletedAtMs != TySession.NotDeleted, "TyE306MRE3")
+  require(isDeleted || hasExpired, "TyE306MRE3")
 }
 
 
@@ -72,15 +91,15 @@ object TySession {
       val isEmbedded = jps.parseOptBo(jOb, "isEmb") getOrElse false
       val wasAutoAuthn = jps.parseOptBo(jOb, "wasAuAu") getOrElse false
       val isOldUpgraded = jps.parseOptBo(jOb, "isOldUpgraded") getOrElse false
-      if (deletedAtMs != NotDeleted) {
+      val hasExpired = jps.parseOptBo(jOb, "hasExpired") getOrElse false
+      if (deletedAtMs == NotDeleted && !hasExpired) {
         TySession(
               sessVer = Version,
               patId = patId,
               createdAtMs = createdAtMs,
               isEmbedded = isEmbedded,
               wasAutoAuthn = wasAutoAuthn,
-            isOldUpgraded = isOldUpgraded)
-
+              isOldUpgraded = isOldUpgraded)
       }
       else {
         TySessionBad(
@@ -90,7 +109,8 @@ object TySession {
               deletedAtMs = deletedAtMs,
               isEmbedded = isEmbedded,
               wasAutoAuthn = wasAutoAuthn,
-              isOldUpgraded = isOldUpgraded)
+              isOldUpgraded = isOldUpgraded,
+              hasExpired = hasExpired)
       }
     }
   }

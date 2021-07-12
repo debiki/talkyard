@@ -714,8 +714,12 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 
 
 export function store_isFeatFlagOn(store: Store, featureFlag: St): Bo {
-  return _.includes(store.siteFeatureFlags, featureFlag) ||
+  const offFlag = '0' + featureFlag;
+  const isOn = _.includes(store.siteFeatureFlags, featureFlag) ||
          _.includes(store.serverFeatureFlags, featureFlag);
+  const isOff = _.includes(store.siteFeatureFlags, offFlag) ||
+         _.includes(store.serverFeatureFlags, offFlag);
+  return isOn && !isOff;   // [ff_on_off]
 }
 
 

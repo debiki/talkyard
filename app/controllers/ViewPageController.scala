@@ -299,7 +299,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
             }
         }
         var forbidden = ForbiddenResult(s"TyM0APPR_-$code", message)
-        if (logout) forbidden = forbidden.discardingCookies(security.DiscardingSessionCookie)
+        if (logout) forbidden = forbidden.discardingCookies(security.DiscardingSessionCookies: _*)
         return Future.successful(forbidden)
       }
     }

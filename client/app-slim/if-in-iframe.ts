@@ -89,7 +89,7 @@ function onMessage(event) {
       // makeUpdNoCookiesTempSessionIdFn() or in the 'case:' just above, lets check:
       // @ifdef DEBUG
       const mainWin: MainWin = getMainWin();
-      if (!mainWin.typs.weakSessionId && !getSetCookie('dwCoSid')) {
+      if (!me_hasSid()) {
         logAndDebugDie(`Not really logged in? No cookie, no typs.weakSessionId. ` +
             `This frame name: ${window.name}, ` +
             `main frame name: ${mainWin.name}, ` +
@@ -98,6 +98,9 @@ function onMessage(event) {
       }
       // @endif
       ReactActions.setNewMe(eventData.user);
+      break;
+    case 'logoutServerAndClientSide':
+      Server.logoutServerAndClientSide();
       break;
     case 'logoutClientSideOnly':
       // Sent from the comments iframe to the editor iframe, when one logs out in the comments iframe.

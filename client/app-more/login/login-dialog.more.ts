@@ -167,7 +167,7 @@ const LoginDialog = createClassAndFactory({
         anyReturnToUrl,
         preventClose: preventClose || loginReason === LoginReason.AuthnRequiredToRead ||
             loginReason === LoginReason.LoginToAdministrate,
-        isLoggedIn: !!getSetCookie('dwCoSid'),
+        isLoggedIn: store.me.isLoggedIn, //  !!getSetCookie('dwCoSid'),
       });
   },
 
@@ -553,7 +553,7 @@ const LoginDialogContent = createClassAndFactory({
     if (anySsoUrl) {
       // Maybe incl username and id in __html_encoded_volatile_json__ ?
       // Not always done in login window.
-      const hasSid = getSetCookie('dwCoSid');
+      const hasSid = me_hasSid();
       const loggedInButMayNotAccess = !hasSid ? null : r.p({},
         "You're logged in but seems you cannot access this part of the site " +  // I18N
         "(if it exists). " +

@@ -18,11 +18,15 @@
 /// <reference path="prelude.ts" />
 /// <reference path="init-all-react-roots.ts" />
 /// <reference path="link-previews.ts" />
+/// <reference path="oop-methods.ts" />
 
 
 const d = { i: debiki.internal };
 
 const logM = debiki2.logM;
+
+let sessId2Previously: St | Nl = null;
+
 
 let pageStarted: undefined | true;
 const scriptLoadDoneCallbacks = [];
@@ -61,8 +65,39 @@ debiki.nowServiceWorkerIsRightVersion = function() {
 const allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
 
+
 function handleLoginInOtherBrowserTab() {
-  const currentUser = debiki2.ReactStore.getMe();
+  const store: Store = debiki2.ReactStore.allData();
+  const currentUser: Myself = store.me;
+
+  // New style session id:  [btr_sid]
+  // ------------------------------------------
+  if (debiki2.store_isFeatFlagOn(store, 'ffUseNewSid')) {
+    const sidNow = debiki2.Server.getCurSid();
+    if ((currentUser.mySidPart1ForJs || null) !== sidNow) {
+      if (sidNow) {
+        debiki2.ReactActions.loadMyself();
+      }
+      else {
+        debiki2.ReactActions.logoutClientSideOnly();
+      }
+    } /*z
+    const sessId2Now: St | Nl = getSetCookie('TyCoSid2') || typs.weakSessionId;
+    if ((sessId2Previously || currentUser.isLoggedIn) && !sessId2Now) {
+      // We've logged out in another browser tab.
+      sessId2Previously = null;
+      debiki2.ReactActions.logoutClientSideOnly();
+    }
+    else if (sessId2Previously !== sessId2Now && sessId2Now) {
+      // We've logged in as another user in another browser tab.
+      debiki2.ReactActions.loadMyself();
+      sessId2Previously = sessId2Now;
+    } */
+    return;
+  }
+
+  // Old style session id:
+  // ------------------------------------------
   const sessionId = getSetCookie('dwCoSid');
   if (currentUser.isLoggedIn) {
     if (sessionId) {
@@ -70,7 +105,7 @@ function handleLoginInOtherBrowserTab() {
       // 'Y1pBlH7vY4JW9A.11.Magnus.1316266102779.15gl0p4xf7'
       const parts = sessionId.split('.');
       const newUserIdString = parts[1];
-      if (currentUser.userId !== parseInt(newUserIdString)) {
+      if (currentUser.id !== parseInt(newUserIdString)) {
         // We've logged in as another user in another browser tab.
         debiki2.ReactActions.loadMyself();
       }
@@ -91,6 +126,7 @@ function handleLoginInOtherBrowserTab() {
     debiki2.ReactActions.loadMyself();
   }
 }
+
 
 
 function registerEventHandlersFireLoginOut() {
@@ -163,6 +199,7 @@ function chooseInitialLayout() {
  * first step is done, the user should conceive the page as mostly loaded.)
  */
 function renderPageInBrowser() {
+  sessId2Previously = getSetCookie('TyCoSid2') || typs.weakSessionId;
   debiki2.ReactStore.initialize();
 
   // const _2dLayout = chooseInitialLayout() === 'TreeLayout';   // [2D_LAYOUT]

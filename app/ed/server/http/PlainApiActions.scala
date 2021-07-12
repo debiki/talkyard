@@ -46,7 +46,7 @@ class PlainApiActions(
 
   import EdHttp._
   import security.DiscardingSecureCookie
-  import security.DiscardingSessionCookie
+  import security.DiscardingSessionCookies
   import safeActions.ExceptionAction
 
   def PlainApiAction[B](parser: BodyParser[B],
@@ -275,7 +275,7 @@ class PlainApiActions(
 
         val sysbot = dao.getTheUser(SysbotUserId)
         return runBlockIfAuthOk(request, site, dao, Some(sysbot),
-              SidOk("_api_secret_", 0, Some(SysbotUserId)),
+              SidOk("_api_secret_", "", 0, Some(SysbotUserId)),
               XsrfOk("_api_secret_"), None, block)
       }
 
@@ -323,7 +323,8 @@ class PlainApiActions(
 
       runBlockIfAuthOk(request, site, dao, Some(user),
           // SECURITY minor: Less error prone with a Bool field instead of this magic string.
-          SidOk("_api_secret_", 0, Some(user.id)), XsrfOk("_api_secret_"), None, block)
+          SidOk("_api_secret_", "", 0, Some(user.id)),
+          XsrfOk("_api_secret_"), None, block)
     }
 
 
@@ -353,7 +354,8 @@ class PlainApiActions(
 
       val expireIdleAfterMins = siteSettings.expireIdleAfterMins
 
-      val (actualSidStatus, xsrfOk, newCookies) = corsInfo match {
+      val CheckSidAndXsrfResult(actualSidStatus, xsrfOk, newCookies, delFancySidCookies) =
+            corsInfo match {
         case ci: CorsInfo.OkayCrossOrigin =>
           // Cross-origin requests with credentials (i.e. session id cookie)
           // not yet tested and thought throw.
@@ -365,7 +367,7 @@ class PlainApiActions(
           // cross-origin requests, right.
           // Currently only publicly accessible data can be seen, since proceeding
           // with no session id.
-          (SidAbsent, XsrfOk("cors_no_xsrf"), Nil)
+          CheckSidAndXsrfResult(SidAbsent, XsrfOk("cors_no_xsrf"), Nil, Nil)
         case ci =>
           dieIf(ci.isCrossOrigin, "TyEJ2503TKHJ")
           security.checkSidAndXsrfToken(
@@ -375,7 +377,7 @@ class PlainApiActions(
       }
 
       // Ignore and delete any broken or expired session id cookie.
-      val (mendedSidStatus, deleteSidCookie) =
+      val (mendedSidStatus, deleteAllSidCookies) =
         if (actualSidStatus.canUse) (actualSidStatus, false)
         else (SidAbsent, true)
 
@@ -418,21 +420,26 @@ class PlainApiActions(
               |
               |Details: A certain login id has become invalid. I just gave you a new id,
               |but you will probably need to login again.""")
-              .discardingCookies(DiscardingSessionCookie))
+              .discardingCookies(DiscardingSessionCookies: _*))
         }
 
       val resultOkSid =
-        if (newCookies.isEmpty && newBrowserIdCookie.isEmpty && !deleteSidCookie) {
+        if (newCookies.isEmpty && newBrowserIdCookie.isEmpty && !deleteAllSidCookies
+              && delFancySidCookies.isEmpty) {
           resultOldCookies
         }
         else {
           resultOldCookies.map({ result =>
             var resultWithCookies = result
-              .withCookies(newCookies ::: newBrowserIdCookie: _*)
-              .withHeaders(safeActions.MakeInternetExplorerSaveIframeCookiesHeader)
-            if (deleteSidCookie) {
+                  .withCookies(newCookies ::: newBrowserIdCookie: _*)
+                  .withHeaders(safeActions.MakeInternetExplorerSaveIframeCookiesHeader)
+            if (deleteAllSidCookies) {
               resultWithCookies =
-                resultWithCookies.discardingCookies(DiscardingSessionCookie)
+                    resultWithCookies.discardingCookies(DiscardingSessionCookies: _*)
+            }
+            else if (delFancySidCookies.nonEmpty) {
+              resultWithCookies =
+                    resultWithCookies.discardingCookies(delFancySidCookies: _*)
             }
             resultWithCookies
           })(executionContext)
@@ -452,14 +459,14 @@ class PlainApiActions(
       if (anyUserMaybeSuspended.exists(_.isDeleted))
         return Future.successful(
           ForbiddenResult("TyEUSRDLD", "That account has been deleted")
-            .discardingCookies(DiscardingSessionCookie))
+            .discardingCookies(DiscardingSessionCookies: _*))
 
       val isSuspended = anyUserMaybeSuspended.exists(_.isSuspendedAt(new ju.Date))
 
       if (isSuspended && request.method != "GET")
         return Future.successful(
             ForbiddenResult("TyESUSPENDED_", "Your account has been suspended")
-              .discardingCookies(DiscardingSessionCookie))
+              .discardingCookies(DiscardingSessionCookies: _*))
 
       val anyUser =
         if (isSuspended) None
@@ -629,7 +636,7 @@ class PlainApiActions(
       if (isSuspended) {
         // BUG: (old? can still happen?) We won't get here if e.g. a 403 Forbidden exception
         // was thrown because 'anyUser' was set to None. How solve that?
-        result = result.map(_.discardingCookies(DiscardingSessionCookie))(executionContext)
+        result = result.map(_.discardingCookies(DiscardingSessionCookies: _*))(executionContext)
       }
       result
     }

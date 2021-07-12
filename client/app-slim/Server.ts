@@ -1113,6 +1113,15 @@ export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
 }
 
 
+export function getCurSid(): St | Nl {  // [ts_authn_modl]
+  const store: Store = debiki2.ReactStore.allData();
+  const cookieName =
+          debiki2.store_isFeatFlagOn(store, 'ffUseNewSid') ? 'TyCoSid2' : 'dwCoSid';
+  const sid = getSetCookie(cookieName) || typs.weakSessionId;
+  return sid || null;
+}
+
+
 export function rememberTempSession(ps: { weakSessionId: St }) {  // [ts_authn_modl]
   const onOk = function() {};
   makeUpdNoCookiesTempSessionIdFn(onOk)(ps);
@@ -1148,6 +1157,7 @@ export function deleteTempSessId() {  // [ts_authn_modl]
   try {
     // Can this throw?
     getSetCookie('dwCoSid', null);
+    getSetCookie('TyCoSid2', null);
   }
   catch (ex) {
     // Just in case.

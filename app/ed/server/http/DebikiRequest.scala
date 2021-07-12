@@ -79,7 +79,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   }
 
   def isViaApiSecret: Boolean = sid match { // should be case obj AuthnMethod.ApiSecret instead? [5BKRH02]
-    case SidOk("_api_secret_", 0, _) => true
+    case SidOk("_api_secret_", "", 0, _) => true
     case _ => false
   }
 
@@ -161,6 +161,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def isGuest: Boolean = user.exists(_.isGuest)
   def isStaff: Boolean = user.exists(_.isStaff)
 
+  // Play Framework session.
   def session: mvc.Session = request.session
 
   def ip: IpAddress = security.realOrFakeIpOf(request)

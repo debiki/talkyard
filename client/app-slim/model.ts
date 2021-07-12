@@ -394,6 +394,7 @@ interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
 type Me = Myself
 interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
   dbgSrc?: string;
+  mySidPart1ForJs?: St | Nl;
   id?: UserId;
   isGroup?: boolean; // currently always undefined (i.e. false)
   isLoggedIn?: boolean;

@@ -147,8 +147,8 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
       createSessionIdAndXsrfToken(request, userId)._3
     }
 
-    val logoutCookie =
-      if (anyUserId.isEmpty) Seq(DiscardingSessionCookie)
+    val logoutCookies =
+      if (anyUserId.isEmpty) DiscardingSessionCookies
       else Nil
 
     val impCookie = makeImpersonationCookie(request.siteId, viewAsOnly, request.theUserId)
@@ -160,7 +160,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
     // time events isn't the purpose of view-site-as.  The client should resubscribe
     // the requester to hens *own* notfs, once done impersonating, though.
 
-    Ok.withCookies(newCookies: _*).discardingCookies(logoutCookie: _*)
+    Ok.withCookies(newCookies: _*).discardingCookies(logoutCookies: _*)
   }
 
 

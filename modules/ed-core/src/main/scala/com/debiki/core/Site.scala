@@ -72,6 +72,31 @@ object Site {
 }
 
 
+trait SiteTrait {
+  def id: SiteId
+  def pubId: PubSiteId
+  def status: SiteStatus
+  def featureFlags: St
+
+  def isTestSite: Bo = id <= Site.MaxTestSiteId
+
+  def isFeatureEnabled(ffName: St, serverFeatureFlags: St): Bo = {
+    val offName = "0" + ffName  // zero  — same as when disabling options in Vim
+    val enabledWholeServer = serverFeatureFlags.contains(ffName)
+    val disabledWholeServer = serverFeatureFlags.contains(offName)
+    val enabledThisSite = featureFlags.contains(ffName)
+    val disabledThisSite = featureFlags.contains(offName)
+    val enabledSomewhere = enabledWholeServer || enabledThisSite
+    val disabledSomewhere = disabledWholeServer || disabledThisSite
+    // By default a feature flag is not enabled, and can be enabled in a   [ff_on_off]
+    // specific site only via this.featureFlags. So, if a feature has been
+    // disabled explicitly in the whole server, then, that overrides
+    // it being enabled per site (so it'll be disabled everywhere).
+    enabledSomewhere && !disabledSomewhere
+  }
+}
+
+
 /**
   * @param hostname — doesn't include any port number.
   */
@@ -81,8 +106,7 @@ case class SiteBrief(
   hostname: Opt[St],
   status: SiteStatus,
   featureFlags: St,
-) {
-  def isTestSite: Bo = id <= Site.MaxTestSiteId
+) extends SiteTrait {
 }
 
 
@@ -217,7 +241,7 @@ case class Site(  // Remove? Use SiteBrief or SiteDetailed instead?
   readLimitsMultiplier: Opt[f32],
   logLimitsMultiplier: Opt[f32],
   createLimitsMultiplier: Opt[f32],
-  ) extends SiteIdHostnames with SiteLimitsMultipliers {
+  ) extends SiteIdHostnames with SiteLimitsMultipliers with SiteTrait {
 
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
@@ -226,8 +250,6 @@ case class Site(  // Remove? Use SiteBrief or SiteDetailed instead?
   def canonicalHostnameStr: Option[String] = canonicalHostname.map(_.hostname)
 
   def allHostnames: Seq[St] = hostnames.map(_.hostname)
-
-  def isTestSite: Bo = id <= MaxTestSiteId
 
   def brief: SiteBrief =
     SiteBrief(id, pubId, canonicalHostname.map(_.hostname), status,

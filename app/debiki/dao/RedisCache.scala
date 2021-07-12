@@ -56,15 +56,16 @@ object RemoteRedisClientError {
 class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val now: () => When) {
 
 
-  import talkyard.server.security.TySession
+  import talkyard.server.security.{TySession, TySessionMaybeBad}
 
-  def getSessionById(sid: St): Opt[TySession] = {
-    val futureString: Future[Option[ByteString]] = redis.get(sessionKey(siteId, sid))
+  def getSessionById(wholeFancySid: St): Opt[TySessionMaybeBad] = {
+    val futureString: Future[Option[ByteString]] =
+          redis.get(sessionKey(siteId, wholeFancySid))
     val anyByteString: Option[ByteString] =
-      try Await.result(futureString, DefaultTimeout)
-      catch {
-        case _: TimeoutException => die("TyZ4BKW2F", "Redis timeout")
-      }
+          try Await.result(futureString, DefaultTimeout)
+          catch {
+            case _: TimeoutException => die("TyZ4BKW2F", "Redis timeout")
+          }
     anyByteString.map { s =>
       TySession.parse(s.utf8String) getOrIfBad(err => die(
             "TyEREDISESS", s"Bad session: $err"))
@@ -72,7 +73,23 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   }
 
 
-  def saveSession(sid: St, session: TySession): U = {
+  def getSessionBySidPart1(sidPart1ForJs: St): Opt[TySessionMaybeBad] = {
+    val futureString: Future[Option[ByteString]] =
+          redis.get(sessionKey(siteId, wholeFancySid))
+          redis. scan(cursor = 0, count = Some(2), matchGlob: Option[String] = None): Future[Cursor[Seq[String]]]
+    val anyByteString: Option[ByteString] =
+          try Await.result(futureString, DefaultTimeout)
+          catch {
+            case _: TimeoutException => die("TyZ4BKW2F", "Redis timeout")
+          }
+    anyByteString.map { s =>
+      TySession.parse(s.utf8String) getOrIfBad(err => die(
+            "TyEREDISESS", s"Bad session: $err"))
+    }
+  }
+
+
+  def saveSession(sid: St, session: TySessionMaybeBad): U = {
     redis.set(sessionKey(siteId, sid), session.toVersionJsonSt)
   }
 

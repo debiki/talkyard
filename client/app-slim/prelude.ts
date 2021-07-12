@@ -44,7 +44,7 @@ declare function smoothScroll(elem: Element, x: number, y: number,
     durationMs?: number, onDone?: () => void);
 
 // Defined in client/third-party/get-set-cookie.js.
-declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
+declare function getSetCookie(cookieName: St, value?: St, options?: Ay): St | Nl;
 
 
 // backw compat, later, do once per file instead (don't want a global 'r').

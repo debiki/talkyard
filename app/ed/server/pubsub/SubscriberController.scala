@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import debiki._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
+import ed.server.security.CheckSidAndXsrfResult
 import javax.inject.Inject
 import org.scalactic.{Bad, Good, Or}
 import play.{api => p}
@@ -137,11 +138,13 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     // We check the xsrf token later — since a WebSocket upgrade request
     // cannot have a request body or custom header with xsrf token.
     // (checkSidAndXsrfToken() won't throw for GET requests. [GETNOTHROW])
-    val (sessionId, xsrfOk, newCookies) =
+    val CheckSidAndXsrfResult(sessionId, xsrfOk, newCookies, delFancySidCookies) =
           security.checkSidAndXsrfToken(
                 request, anyRequestBody = None, site, dao,
                 expireIdleAfterMins = expireIdleAfterMins, maySetCookies = false,
                 skipXsrfCheck = false)
+
+    COULD // delete any delFancySidCookies.
 
     // Needs to have a cookie already. [WSXSRF]
     dieIf(newCookies.nonEmpty, "TyE503RKDJL2")
@@ -179,13 +182,13 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
     if (requesterMaybeSuspended.isDeleted)
       return Bad(ForbiddenResult("TyEWSUSRDLD", "User account deleted")
-          .discardingCookies(security.DiscardingSessionCookie))
+          .discardingCookies(security.DiscardingSessionCookies: _*))
           // + discard browser id co too   *edit:* Why?
 
     val isSuspended = requesterMaybeSuspended.isSuspendedAt(new java.util.Date)
     if (isSuspended)
       return Bad(ForbiddenResult("TyEWSSUSPENDED", "Your account has been suspended")
-          .discardingCookies(security.DiscardingSessionCookie))
+          .discardingCookies(security.DiscardingSessionCookies: _*))
 
     val requester = requesterMaybeSuspended
 

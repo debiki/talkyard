@@ -36,7 +36,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
   import context.globals
-  import context.security.DiscardingSessionCookie
+  import context.security.DiscardingSessionCookies
   import LoginController._
 
 
@@ -164,7 +164,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
 
     // Keep the xsrf cookie, so the login dialog will work.
-    response.discardingCookies(DiscardingSessionCookie)
+    response.discardingCookies(DiscardingSessionCookies: _*)
   }
 
 
