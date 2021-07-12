@@ -531,34 +531,34 @@ export const config = { // doesn't work: WebdriverIO.Config = {
   /**
    * Function to be executed before a test (in Mocha/Jasmine) starts.
    */
-  beforeTest: function (test, context) {
+  beforeTest: async function (test, context) {
     const oneBrowser = global.browserA || global.browser;
     if (settings.debugEachStep) {
-      oneBrowser.debug();
+      await oneBrowser.debug();
     }
     else if (settings.sloooooooow) {
-      oneBrowser.pause(9000);
+      await oneBrowser.pause(9000);
     }
     else if (settings.slooooooow) {
-      oneBrowser.pause(6500);
+      await oneBrowser.pause(6500);
     }
     else if (settings.sloooooow) {
-      oneBrowser.pause(4500);
+      await oneBrowser.pause(4500);
     }
     else if (settings.slooooow) {
-      oneBrowser.pause(3000);
+      await oneBrowser.pause(3000);
     }
     else if (settings.sloooow) {
-      oneBrowser.pause(2000);
+      await oneBrowser.pause(2000);
     }
     else if (settings.slooow) {
-      oneBrowser.pause(1500);
+      await oneBrowser.pause(1500);
     }
     else if (settings.sloow) {
-      oneBrowser.pause(1000);
+      await oneBrowser.pause(1000);
     }
     else if (settings.slow) {
-      oneBrowser.pause(500);
+      await oneBrowser.pause(500);
     }
   },
 
@@ -618,14 +618,14 @@ export const config = { // doesn't work: WebdriverIO.Config = {
    * @param {Array.<Object>} capabilities list of capabilities details
    * @param {Array.<String>} specs List of spec file paths that ran
    */
-  after: function (result, capabilities, specs) {
+  after: async function (result, capabilities, specs) {
     // This works right now, when there's just 1 spec per Webdriverio runner.  (852RS)
     const aTestFailed = result === 1;
     if (settings.debugAfterwards || settings.debugEachStep
           || (wasError || aTestFailed) && settings.debugIfError) {
       console.log("");
       console.log("*** Paused, before exiting test. You can connect a debugger ***");
-      global.browser.debug();
+      await global.browser.debug();
     }
   },
 

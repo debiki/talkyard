@@ -122,18 +122,18 @@ export function makeLinkPreviewSelector(provider: LinkPreviewProvider | 'Interna
 }
 
 
-export function ssoLogin(ps: { member: Member, ssoId, browser,
+export async function ssoLogin(ps: { member: Member, ssoId, browser,
         origin: string, server, apiSecret: string, apiRequesterId?: UserId,
         thenGoTo: string }) {
     const extUser = makeExternalUserFor(ps.member, { ssoId: ps.ssoId });
     logMessage(`SSO: Upserting @${ps.member.username}, getting a one time secret ...`);
-    const oneTimeLoginSecret = ps.server.apiV0.upsertUserGetLoginSecret({
+    const oneTimeLoginSecret = await ps.server.apiV0.upsertUserGetLoginSecret({
         origin: ps.origin,
         apiRequesterId: ps.apiRequesterId || c.SysbotUserId,
         apiSecret: ps.apiSecret,
         externalUser: extUser });
     logMessage(`SSO: Logging in as @${ps.member.username}, using one time secret ...`);
-    ps.browser.apiV0.loginWithSecret({
+    await ps.browser.apiV0.loginWithSecret({
         origin: ps.origin,
         oneTimeSecret: oneTimeLoginSecret,
         thenGoTo: ps.thenGoTo || '/' });
@@ -507,21 +507,21 @@ export function checkNewPostFields(post, ps: {
 }
 
 
-export function tryManyTimes<R>(what, maxNumTimes, fn: () => R): R {
+export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>): Pr<R> {
     for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {
       try {
-        return fn();
+        return await fn();
       }
       catch (error) {
         logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
       }
     }
-    return fn();
+    return await fn();
 }
 
 
-export function tryUntilTrue<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
-        fn: 'ExpBackoff' | (() => Bo), fn2?: () => Bo) {
+export async function tryUntilTrue<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
+        fn: 'ExpBackoff' | (() => Pr<Bo>), fn2?: () => Pr<Bo>) {
     let delayMs = 300;
 
     const doExpBackoff = maxNumTimes === 'ExpBackoff' || fn === 'ExpBackoff';
@@ -534,7 +534,7 @@ export function tryUntilTrue<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
         throw Error(`Tried ${maxNumTimes} times but failed:  ${what}`)
 
       try {
-        const done = fn();
+        const done = await fn();
         if (done)
           return;
 
@@ -545,7 +545,7 @@ export function tryUntilTrue<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
       }
 
       if (doExpBackoff) {
-        oneWdioBrowser.pause(delayMs);
+        await oneWdioBrowser.pause(delayMs);
         delayMs = delayMs * 1.3
         delayMs = Math.min(2500, delayMs);
       }

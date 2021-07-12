@@ -7,14 +7,6 @@ declare const __thisSpecLocalHostname: string | undefined;
 declare function getCidOrDie(): string;
 
 
-// ----- Test framework
-
-// This results in a weird outside-the-project error:
-//xx <reference path="../../../modules/definitely-typed/types/mocha/index.d.ts"/>
-// instead:
-declare const it: any;
-declare const describe: any;
-
 
 // ----- WebdriverIO
 
@@ -34,7 +26,7 @@ declare const browserC: WebdriverIO.BrowserObject | U;
 
 type SelectorOrElem = string | WebdriverIO.Element;
 
-const enum IsWhere {
+export const enum IsWhere {
   Forum = 1,
   LoginPopup = 2,
 

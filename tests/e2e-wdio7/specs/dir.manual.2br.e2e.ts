@@ -63,17 +63,17 @@ describe("some-e2e-test  TyT1234ABC", () => {
     memahsBrowser = richBrowserB;
   });
 
-  it(`Owen goes to the admin area, ... `, () => {
-    owensBrowser.adminArea.goToUsersEnabled(site.origin);
+  it(`Owen goes to the admin area, ... `, async () => {
+    await owensBrowser.adminArea.goToUsersEnabled(site.origin);
   });
 
   it(`... logs in`, async () => {
     await owensBrowser.loginDialog.loginWithPassword(owen);
   });
 
-  it("Memah logs in", () => {
-    memahsBrowser.go2(site.origin + '/' + forum.topics.byMichaelCategoryA.slug);
-    memahsBrowser.complex.loginWithPasswordViaTopbar(memah);
+  it("Memah logs in", async () => {
+    await memahsBrowser.go2(site.origin + '/' + forum.topics.byMichaelCategoryA.slug);
+    await memahsBrowser.complex.loginWithPasswordViaTopbar(memah);
   });
 
   it("Done", () => {
