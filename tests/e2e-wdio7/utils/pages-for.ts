@@ -4,7 +4,7 @@ import { IsWhere } from '../test-types';
 
 // Why are many WebdriverIO's functions reimplemented here?
 //
-// Because they're either 1) quiet, whilst waiting. No way to find out what's
+// Because the default ones are either 1) quiet, whilst waiting. No way to find out what's
 // wrong, when a test times out. Or, 2) they log frustratingly much log messages, always,
 // if you enable detailed log levels.
 //
@@ -78,6 +78,7 @@ function makeTimeoutMs(suggestedTimeoutMs?: number): number {
 
 
 type WElm = WebdriverIO.Element;
+type WElmArr = WebdriverIO.ElementArray;
 type ElemRect = { x: number, y: number, width: number, height: number };
 
 
@@ -193,7 +194,7 @@ function allBrowserValues(result) {
 }
 
 
-async function tryOrIfWinCloses<R>(toTry: () => R, ifWinCloses: R | U): R {
+async function tryOrIfWinCloses<R>(toTry: () => Pr<R>, ifWinCloses: R | U): Pr<R> {
   try {
     return await toTry();
   }
@@ -250,9 +251,6 @@ function typeAndAsString(sth): string {
   return `type: ${typeof sth}, as string: ${JSON.stringify(sth)}`;
 }
 
-// Don't use, deprecated.
-export interface MemberBrowser extends TyE2eTestBrowser, Member {
-}
 
 // Later, change TyAllE2eTestBrowsers to a class / interface that
 // only makes available the TyE2eTestBrowser methods that work with all
@@ -417,7 +415,7 @@ export class TyE2eTestBrowser {
     // Change all refresh() to refresh2, then remove '2' from name.
     // (Would need to add  waitForPageType: false  anywhere? Don't think so?)
     async refresh2(ps: { isWhere?: IsWhere.EmbeddedPagesListPage } = {}) {
-      this.#br.refresh();
+      await this.#br.refresh();
       if (ps.isWhere) this.#isWhere = ps.isWhere;
       else await this.__updateIsWhere();
     }
@@ -427,20 +425,20 @@ export class TyE2eTestBrowser {
     }
 
 
-    newWindow(url: St, thenWhat: 'StayInCurWin' | 'SwitchToNewWin') {
+    async newWindow(url: St, thenWhat: 'StayInCurWin' | 'SwitchToNewWin') {
       // It seemed as if different drivers had different opinions about which
       // window should be active, after having opened a new one.
       // DevTools seemed to stay in the orig win (2020-11-19) — or was I mistaken,
       // now it, like Selenium, switches to the new win.
       // The docs says the new win becomes active.
       // Anyway, the below code works reardless of what the drivers do.
-      const curWinHandle = this.#br.getWindowHandle();
-      const handlesBefore: St[] = this.#br.getWindowHandles();
+      const curWinHandle = await this.#br.getWindowHandle();
+      const handlesBefore: St[] = await this.#br.getWindowHandles();
 
-      this.#br.newWindow(url);
+      await this.#br.newWindow(url);
 
-      const handlesAfter: St[] = this.#br.getWindowHandles();
-      const newCurHandle = this.#br.getWindowHandle();
+      const handlesAfter: St[] = await this.#br.getWindowHandles();
+      const newCurHandle = await this.#br.getWindowHandle();
       const isInOldWin = newCurHandle === curWinHandle;
       const whereNow = isInOldWin ? `original` : `new`
       const switchToNew = thenWhat === 'SwitchToNewWin' && isInOldWin;
@@ -463,9 +461,9 @@ export class TyE2eTestBrowser {
       }
 
       if (switchToWhat) {
-        this.#br.switchToWindow(switchToWhat);
+        await this.#br.switchToWindow(switchToWhat);
         logMessage(`Switched to ${switchToWhat}.`);
-        const handleNow = this.#br.getWindowHandle();
+        const handleNow = await this.#br.getWindowHandle();
         dieIf(switchToWhat != handleNow,
               `Wrong handle after: ${handleNow} [TyE305MRKTM2]`);
       }
@@ -473,8 +471,8 @@ export class TyE2eTestBrowser {
 
 
     // Don't use. Change to go2 everywhere, then rename to 'go', and remove this old 'go'.
-    go(url: string, opts: { useRateLimits?: boolean } = {}) {
-      this.go2(url, { ...opts, waitForPageType: false });
+    async go(url: string, opts: { useRateLimits?: boolean } = {}) {
+      await this.go2(url, { ...opts, waitForPageType: false });
     }
 
     async go2(url: string, opts: { useRateLimits?: boolean, waitForPageType?: false,
@@ -601,6 +599,7 @@ export class TyE2eTestBrowser {
       await this.#br.pause(millis);
     }
 
+
     // The real waitUntil doesn't work, the first test makes any  $('sth')
     // inside be just an empty obj {}.  — Mabe I forgot 'this'? Should be: this.$().
     // Anyway, this wait fn logs a message about what we're waiting for, can be nice.
@@ -641,7 +640,7 @@ export class TyE2eTestBrowser {
           // And if stops working, some server error dialog tests should start
           // failing — easy to notice.)
           const waitingForServerError = () => getOrCall(ps.message)?.indexOf('s_SED_Msg') >= 0;
-          if (elapsedMs > 500 && (await !waitingForServerError())
+          if (elapsedMs > 500 && !await waitingForServerError()
                 && !ps.serverErrorDialogIsFine) {
             if (await this.serverErrorDialog.isDisplayed()) {
               loggedError = true;
@@ -750,7 +749,7 @@ export class TyE2eTestBrowser {
 
 
     newSite = {
-      createNewSite: (data: NewSiteData): NewSiteResult => {
+      createNewSite: async (data: NewSiteData): Pr<NewSiteResult> => {
         // Dupl code [502SKHFSKN53]
         let url;
         if (data.siteType === SiteType.Forum) {
@@ -761,16 +760,16 @@ export class TyE2eTestBrowser {
           console.log("Go to create Embedded Comments site page ...");
           url = utils.makeCreateEmbeddedSiteWithFakeIpUrl();
         }
-        this.go2(url);
-        this.disableRateLimits();
+        await this.go2(url);
+        await this.disableRateLimits();
 
         console.log("Fill in fields and submit...");
-        this.createSite.fillInFieldsAndSubmit(data);
+        await this.createSite.fillInFieldsAndSubmit(data);
 
         // New site; disable rate limits here too.
-        this.disableRateLimits();
-        const siteId = this.getSiteId();
-        const talkyardSiteOrigin = this.origin();
+        await this.disableRateLimits();
+        const siteId = await this.getSiteId();
+        const talkyardSiteOrigin = await this.origin();
 
         return {
           data,
@@ -781,46 +780,46 @@ export class TyE2eTestBrowser {
       },
 
 
-      signUpAsOwner: (newSiteResult: NewSiteResult) => {
+      signUpAsOwner: async (newSiteResult: NewSiteResult) => {
         const data = newSiteResult.data;
         const siteId = newSiteResult.siteId;
 
         console.log("Click sign up as owner ...");
-        this.createSite.clickOwnerSignupButton();
+        await this.createSite.clickOwnerSignupButton();
 
         console.log("... sign up as owner ...");
         switch (data.newSiteOwner) {
           case NewSiteOwnerType.OwenOwner:
-            this.loginDialog.createPasswordAccount(data, true);
-            const email = server.getLastEmailSenTo(siteId, data.email, this);
-            const link = utils.findFirstLinkToUrlIn(
-              data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-            this.go(link);
-            this.waitAndClick('#e2eContinue');
+            await this.loginDialog.createPasswordAccount(data, true);
+            const email = await server.getLastEmailSenTo(siteId, data.email, this);
+            const link = await utils.findFirstLinkToUrlIn(
+                    data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
+            await this.go(link);
+            await this.waitAndClick('#e2eContinue');
             break;
           case NewSiteOwnerType.GmailAccount:
-            this.loginDialog.createGmailAccount({
+            await this.loginDialog.createGmailAccount({
               email: settings.gmailEmail,
               password: settings.gmailPassword,
               username: data.username,
             }, { shallBecomeOwner: true });
             break;
           case NewSiteOwnerType.FacebookAccount:
-            this.loginDialog.createFacebookAccount({
+            await this.loginDialog.createFacebookAccount({
               email: settings.facebookAdminEmail,
               password: settings.facebookAdminPassword,
               username: data.username,
             }, { shallBecomeOwner: true });
             break;
           case NewSiteOwnerType.GitHubAccount:
-            this.loginDialog.createGitHubAccount({
+            await this.loginDialog.createGitHubAccount({
                 username: settings.githubUsernameMixedCase,
                 password: settings.githubPassword,
                 shallBecomeOwner: true,
                 alreadyLoggedInAtGitHub: data.alreadyLoggedInAtIdProvider });
             break;
           case NewSiteOwnerType.LinkedInAccount:
-            this.loginDialog.createLinkedInAccount({
+            await this.loginDialog.createLinkedInAccount({
               email: settings.linkedinEmail,
               password: settings.linkedinPassword,
               username: data.username,
@@ -866,12 +865,13 @@ export class TyE2eTestBrowser {
     }
 
 
-    async numTabs(): Promise<Nr> {
+    async numTabs(): Pr<Nr> {
       const hs = await this.#br.getWindowHandles()
       return hs.length;
     }
 
-    async waitForMinBrowserTabs(howMany: number, waitPs: WaitPs = {}): Pr<Bo> {
+
+    async waitForMinBrowserTabs(howMany: Nr, waitPs: WaitPs = {}): Pr<Bo> {
       let numNow = -1;
       const message = () => `Waiting for >= ${howMany} tabs, currently ${numNow} tabs...`;
       return await this.waitUntil(async () => {
@@ -880,7 +880,8 @@ export class TyE2eTestBrowser {
       }, { ...waitPs, message });
     }
 
-    async waitForMaxBrowserTabs(howMany: number) {
+
+    async waitForMaxBrowserTabs(howMany: Nr) {
       let numNow = -1;
       const message = () => `Waiting for <= ${howMany} tabs, currently ${numNow} tabs...`;
       await this.waitUntil(async () => {
@@ -999,6 +1000,7 @@ export class TyE2eTestBrowser {
       this._currentUrl = await this.#br.getUrl();
     }
 
+
     async waitForNewUrl() {
       assert(!!this._currentUrl, "Please call this.#br.rememberCurrentUrl() first [EsE7JYK24]");
       await this.waitUntil(async () => {
@@ -1008,6 +1010,7 @@ export class TyE2eTestBrowser {
       });
       delete this._currentUrl;
     }
+
 
     async repeatUntilAtNewUrl(fn: () => Pr<Vo>) {
       const urlBefore = await this.#br.getUrl();
@@ -1026,7 +1029,8 @@ export class TyE2eTestBrowser {
       }
     }
 
-    async waitForNewOrigin(anyCurrentUrl?: string) {
+
+    async waitForNewOrigin(anyCurrentUrl?: St) {
       const currentUrl = anyCurrentUrl || this._currentUrl;
       assert(!!currentUrl, "Please call this.#br.rememberCurrentUrl() first [TyE603RK54]");
       const curOrigin = await this._findOrigin(currentUrl);
@@ -1075,7 +1079,7 @@ export class TyE2eTestBrowser {
 
 
     async switchToTheParentFrame(ps: { parentIs?: IsWhere } = {}) {
-        dieIf(await !this.isInIframe(), 'TyE406RKH2');
+        dieIf(!await this.isInIframe(), 'TyE406RKH2');
         await this.#br.switchToParentFrame();
         // Skip, was some other oddity:
         // // Need to wait, otherwise apparently WebDriver can in rare cases run
@@ -1220,7 +1224,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    async scrollIntoViewInPageColumn(selector: string) {   // RENAME to  scrollIntoView
+    async scrollIntoViewInPageColumn(selector: St) {   // RENAME to  scrollIntoView
       dieIf(!selector, '!selector [TyE05RKCD5]');
       const isInPageColResult = await this.#br.execute(function(selector) {
         var pageColumn = document.getElementById('esPageColumn');
@@ -1249,7 +1253,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    async _real_scrollIntoViewInPageColumn(selector: string) { // RENAME to _scrollIntoViewInPageColumn
+    async _real_scrollIntoViewInPageColumn(selector: St) { // RENAME to _scrollIntoViewInPageColumn
       dieIf(!selector, '!selector [TyE5WKT02JK4]');
       await this.waitForVisible(selector);
       let lastScrollY = await this.getPageScrollY();
@@ -1362,7 +1366,7 @@ export class TyE2eTestBrowser {
 
     // Can be used to wait until a fade-&-scroll-in dialog is done scrolling in, for example.
     //
-    async waitUntilDoesNotMove(buttonSelector: string, pollInterval?: number) {
+    async waitUntilDoesNotMove(buttonSelector: St, pollInterval?: Nr) {
       let problem;
       await this.waitUntil(async () => {
         const location = await this.getBoundingClientRect(buttonSelector, { mustExist: false });
@@ -1387,7 +1391,8 @@ export class TyE2eTestBrowser {
 
 
     async count(selector: St): Pr<Nr> {
-      return tryOrIfWinCloses(async () => (await this.$$(selector)).length, undefined);
+      return await tryOrIfWinCloses(async () =>
+              (await this.$$(selector)).length, undefined);
     }
 
 
@@ -1400,10 +1405,10 @@ export class TyE2eTestBrowser {
     async isEnabled(selector: St): Pr<Bo> {
       const elem: WElm = await this.$(selector);
       // Sometimes these methods are missing, why?  [MISSINGFNS]
-      const enabled =
-              (await elem?.isExisting?.()) &&
-              (await elem.isDisplayed?.()) &&
-              (await elem.isEnabled?.());
+      const enabled = elem &&
+              await elem.isExisting() &&  // was: (await elem?.isExisting?.()) &&
+              await elem.isDisplayed() &&
+              await elem.isEnabled();
       return !!enabled;
     }
 
@@ -1415,33 +1420,35 @@ export class TyE2eTestBrowser {
     async isDisplayed(selector: St): Pr<Bo> {
       // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
       // Maybe if win closed so elem gone?
+      // CLEAN_UP remove comment, not a problem any more with  async ?
 
       const elem: WElm = await this.$(selector);
-      if (!elem) return false;
       // Skip isExisting()?
-      const displayed =
-              (await elem.isExisting?.()) &&
-              (await elem.isDisplayed?.());
+      const displayed = elem &&
+              await elem.isExisting() &&   // was:  elem.isExisting?.()) &&
+              await elem.isDisplayed();
       return !!displayed;
     }
 
 
-    isDisplayedInViewport(selector: St): Bo {
+    async isDisplayedInViewport(selector: St): Pr<Bo> {
       // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
-      const elem: WElm = this.$(selector);
-      const displayed = elem?.isExisting?.() && elem.isDisplayedInViewport?.();
+      const elem: WElm = await this.$(selector);
+      const displayed = elem &&
+              await elem.isExisting() &&    // was:  ?.()
+              await elem.isDisplayedInViewport();
       return !!displayed;
     }
 
 
     // Makes it simple to find out which, of many, selectors won't appear,
     // or won't go away.
-    filterVisible(selectors: string[],
-            opts: { keepVisible?: true, exclVisible?: true } = {}): string[] {
+    async filterVisible(selectors: St[],
+            opts: { keepVisible?: true, exclVisible?: true } = {}): Pr<St[]> {
       dieIf(!!opts.keepVisible === !!opts.exclVisible, 'TyE60RKDNF5');
       const result = [];
       for (let s of selectors) {
-        if (this.isVisible(s) === !!opts.keepVisible) {
+        if (await this.isVisible(s) === !!opts.keepVisible) {
           result.push(s);
         }
       }
@@ -1449,7 +1456,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitForMaybeDisplayed(selector: string, ps: WaitPsWithOptText = {}): Bo {
+    async waitForMaybeDisplayed(selector: St, ps: WaitPsWithOptText = {}): Pr<Bo> {
       const what = ps.text ? `"${ps.text}" text` : selector
       const ps2 = {
         timeoutMs: 2000,
@@ -1458,19 +1465,19 @@ export class TyE2eTestBrowser {
         message: `Waiting for any ${what}`,
       };
       if (ps.text) {
-        return this.waitUntilTextIs(selector, ps.text, ps2);
+        return await this.waitUntilTextIs(selector, ps.text, ps2);
       }
       else {
-        return this.waitForDisplayed(selector, ps2);
+        return await this.waitForDisplayed(selector, ps2);
       }
     }
 
 
-    async waitForDisplayed(selector: string, ps: WaitPs = {}): Pr<Bo> {
+    async waitForDisplayed(selector: St, ps: WaitPs = {}): Pr<Bo> {
       return await this.waitForVisible(selector, ps);
     }
 
-    async waitForVisible(selector: string, ps: WaitPs = {}): Pr<Bo> {  // RENAME to waitForDisplayed() above
+    async waitForVisible(selector: St, ps: WaitPs = {}): Pr<Bo> {  // RENAME to waitForDisplayed() above
       return await this.waitUntil(async () => await this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
@@ -1478,7 +1485,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitForDisplayedInViewport(selector: string, ps: WaitPs = {}) {
+    async waitForDisplayedInViewport(selector: St, ps: WaitPs = {}) {
       await this.waitUntil(async () => await this.isDisplayedInViewport(selector), {
         ...ps,
         message: `Waiting for dispalyed in viewport:  ${selector}`,
@@ -1487,11 +1494,11 @@ export class TyE2eTestBrowser {
 
 
     // DEPRECATED use waitUntilGone  instead?
-    waitForNotVisible(selector: string, timeoutMillis?: number) {
+    async waitForNotVisible(selector: St, timeoutMillis?: Nr) {
       for (let elapsed = 0; elapsed < timeoutMillis || true ; elapsed += PollMs) {
-        if (!this.isVisible(selector))
+        if (!await this.isVisible(selector))
           return;
-        this.#br.pause(PollMs);
+        await this.#br.pause(PollMs);
       }
       /*
       // API is: this.waitForDisplayed(selector[,ms][,reverse])
@@ -1504,13 +1511,13 @@ export class TyE2eTestBrowser {
 
 
     // deprecated
-    isDisplayedWithText(selector: string, text: string): boolean {
+    async isDisplayedWithText(selector: St, text: St): Pr<Bo> {
       // COULD_OPTIMIZE   test all at once — now the caller calls this fn many times instead.
-      const elems = this.$$(selector);
+      const elems = await this.$$(selector);
       for (let elem of elems) {
-        if (!elem.isDisplayed())
+        if (!await elem.isDisplayed())
           continue;
-        const actualText = elem.getText();
+        const actualText = await elem.getText();
         if (actualText.indexOf(text) >= 0)
           return true;
       }
@@ -1531,11 +1538,11 @@ export class TyE2eTestBrowser {
       let isDisplayed;
       let text;
       return await this.waitUntil(async () => {
-        const elem: WebdriverIO.Element = this.$(selector);
+        const elem: WebdriverIO.Element = await this.$(selector);
         try {
           // Oddly enough, sometimes isDisplayed is not a function, below. Maybe isExisting()
           // also isn't, sometimes? They're undefined, then, or what? And why?
-          // Anyway, let's use: `?.()`.
+          // Anyway, let's use: `?.()`.   [MISSINGFNS]
           isExisting = await elem?.isExisting?.();
           if (!isExisting)
             return false;
@@ -1570,7 +1577,7 @@ export class TyE2eTestBrowser {
       });
     }
 
-    async getWholePageJsonStrAndObj(): Pr<[string, any]> {
+    async getWholePageJsonStrAndObj(): Pr<[St, Ay]> {
       // Chrome: The this.#br wraps the json response in a <html><body><pre> tag.
       // Firefox: Shows pretty json with expand/collapse sub trees buttons,
       // and we need click a #rawdata-tab to get a <pre> with json text to copy.
@@ -1612,7 +1619,7 @@ export class TyE2eTestBrowser {
     async waitForExist(selector: string, ps: WaitPs & { howMany?: number } = {}) {
       await this.waitUntil(async () => {
         const elem = await this.$(selector);
-        if (elem && await elem?.isExisting())
+        if (elem && await elem.isExisting())
           return true;
       }, {
         ...pluckWaitPs(ps),
@@ -1787,7 +1794,7 @@ export class TyE2eTestBrowser {
       const isGone = await this.waitUntil(async () => {
         try {
           const elem = await this.$(what);
-          const gone = !elem || !(await elem.isExisting()) || !(await elem.isDisplayed());
+          const gone = !elem || !await elem.isExisting() || !await elem.isDisplayed();
           if (gone)
             return true;
         }
@@ -1993,7 +2000,7 @@ export class TyE2eTestBrowser {
       });
     }
 
-    async assertExactly(num: number, selector: string) {
+    async assertExactly(num: Nr, selector: St) {
       let errorString = '';
       const elems = await this.$$(selector);
       //let resultsByBrowser = byBrowser(this.#br.elements(selector));
@@ -2008,12 +2015,12 @@ export class TyE2eTestBrowser {
     }
 
 
-    async keys(keyStrokes: string | string[]) {
+    async keys(keyStrokes: St | St[]) {
       await this.#br.keys(keyStrokes);
     }
 
-    async waitAndPasteClipboard(selector: string, opts?: { maybeMoves?: true,
-          timeoutMs?: number, okayOccluders?: string }) {
+    async waitAndPasteClipboard(selector: St, opts?: { maybeMoves?: true,
+          timeoutMs?: Nr, okayOccluders?: St }) {
       await this.focus(selector, opts);
       // Different keys:
       // https://w3c.github.io/webdriver/#keyboard-actions
@@ -2021,8 +2028,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitAndSelectFile(selector: string, whichDir: 'TargetDir' | 'TestMediaDir',
-        fileName: string) {
+    async waitAndSelectFile(selector: St, whichDir: 'TargetDir' | 'TestMediaDir',
+        fileName: St) {
 
       const pathToUpload = (whichDir === 'TargetDir'
           // Step up from  tests/e2e/utils/  to  tests/e2e/target/:
@@ -2040,17 +2047,17 @@ export class TyE2eTestBrowser {
     }
 
 
-    async scrollAndSetValue(selector: string, value: string | number,
-        opts: { timeoutMs?: number, okayOccluders?: string, append?: boolean } = {}) {
+    async scrollAndSetValue(selector: St, value: St | Nr,
+            opts: { timeoutMs?: Nr, okayOccluders?: St, append?: Bo } = {}) {
       await this.scrollIntoViewInPageColumn(selector);
       await this.waitUntilDoesNotMove(selector);
       await this.waitAndSetValue(selector, value, { ...opts, checkAndRetry: true });
     }
 
 
-    async waitAndSetValue(selector: string, value: string | number,
-        opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number,
-            okayOccluders?: string, append?: boolean, skipWait?: true } = {}) {
+    async waitAndSetValue(selector: St, value: St | Nr,
+        opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: Nr,
+            okayOccluders?: St, append?: Bo, skipWait?: true } = {}) {
 
       if (opts.append) {
         dieIf(!_.isString(value), `Can only append strings [TyE692RKR3J]`);
@@ -2114,7 +2121,8 @@ export class TyE2eTestBrowser {
             //this.#br.keys(['Backspace']);  // properly triggers React.js event
             // Instead:
             await elem.setValue('x');  // focus it without clicking (in case a placeholder above)
-            await this.#br.keys(Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
+            await this.#br.keys(
+                    Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
           }
           else {
             // --------------------------------
@@ -2124,7 +2132,8 @@ export class TyE2eTestBrowser {
             await elem.setValue('x');  // appends, and focuses it without clicking
                                   // (in case a placeholder text above)
             // Delete chars one at a time:
-            await this.#br.keys(Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
+            await this.#br.keys(
+                    Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
             // --------------------------------
             await elem.setValue(value);
           }
@@ -2148,42 +2157,43 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndSetValueForId(id: string, value: string | number) {
-      this.waitAndSetValue('#' + id, value);
+    async waitAndSetValueForId(id: St, value: St | Nr) {
+      await this.waitAndSetValue('#' + id, value);
     }
 
 
-    waitAndClickSelectorWithText(selector: string, regex: string | RegExp) {
-      this.waitForThenClickText(selector, regex);
+    async waitAndClickSelectorWithText(selector: St, regex: St | RegExp) {
+      await this.waitForThenClickText(selector, regex);
     }
 
-    waitForThenClickText(selector: St, regex: St | RegExp,
+    async waitForThenClickText(selector: St, regex: St | RegExp,
             opts: { tryNumTimes?: Nr } = {}) {   // RENAME to waitAndClickSelectorWithText (above)
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
       const numTries = opts.tryNumTimes || 3;
-      utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, numTries, () => {
-        const elem = this.waitAndGetElemWithText(selector, regex);
-        this.clickNow(elem);
+      await utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, numTries,
+              async () => {
+        const elem = await this.waitAndGetElemWithText(selector, regex);
+        await this.clickNow(elem);
       });
     }
 
 
-    waitUntilTextMatches(selector: string, regex: string | RegExp,
-            opts: { timeoutMs?: number, invert?: boolean } = {}) {
-      this.waitAndGetElemWithText(selector, regex, opts);
+    async waitUntilTextMatches(selector: St, regex: St | RegExp,
+            opts: { timeoutMs?: Nr, invert?: Bo } = {}) {
+      await this.waitAndGetElemWithText(selector, regex, opts);
     }
 
 
-    waitUntilHtmlMatches(selector: string, regexOrStr: string | RegExp | any[]) {
-      this.waitForExist(selector);
+    async waitUntilHtmlMatches(selector: St, regexOrStr: St | RegExp | Ay[]) {
+      await this.waitForExist(selector);
 
       for (let i = 0; true; ++i) {
-        const html = this.$(selector).getHTML();
+        const html = await (await this.$(selector)).getHTML();
         const anyMiss = this._findHtmlMatchMiss(html, true, regexOrStr);
         if (!anyMiss)
           break;
 
-        this.#br.pause(PollMs);
+        await this.#br.pause(PollMs);
         if (i > 10 && (i % 10 === 0)) {
           console.log(`Waiting for '${selector}' to match: \`${anyMiss}'\n` +
             `but the html is:\n-----${html}\n----`);
@@ -2223,8 +2233,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndAssertVisibleTextIs(selector: St, expected: St) {
-      const actual = this.waitAndGetVisibleText(selector);
+    async waitAndAssertVisibleTextIs(selector: St, expected: St) {
+      const actual = await this.waitAndGetVisibleText(selector);
       tyAssert.ok(actual === expected, '\n\n' +
           `  Text of element selected by:  ${selector}\n` +
           `            should be exactly:  "${expected}"\n` +
@@ -2235,9 +2245,9 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndAssertVisibleTextMatches(selector: string, stringOrRegex: string | RegExp) {
+    async waitAndAssertVisibleTextMatches(selector: St, stringOrRegex: St | RegExp) {
       const regex = getRegExpOrDie(stringOrRegex);
-      const text = this.waitAndGetVisibleText(selector);
+      const text = await this.waitAndGetVisibleText(selector);
       // This is easy to read:  [E2EEASYREAD]
       tyAssert.ok(regex.test(text), '\n\n' +
           `  Text of element selected by:  ${selector}\n` +
@@ -2249,8 +2259,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndGetElemWithText(selector: string, stringOrRegex: string | RegExp,
-          opts: { timeoutMs?: number, invert?: boolean } = {}): WebdriverIO.Element {
+    async waitAndGetElemWithText(selector: St, stringOrRegex: St | RegExp,
+          opts: { timeoutMs?: Nr, invert?: Bo } = {}): Pr<WebdriverIO.Element> {
       const regex = getRegExpOrDie(stringOrRegex);
 
       // Don't use this.#br.waitUntil(..) — exceptions in waitUntil apparently don't
@@ -2258,11 +2268,11 @@ export class TyE2eTestBrowser {
       // a stale elem ref in an ok harmless way, apparently breaks the test.
       const startMs = Date.now();
       for (let pauseMs = PollMs; true; pauseMs *= PollExpBackoff) {
-        const elems = this.$$(selector);
+        const elems = await this.$$(selector);
         let texts = '';
         for (let i = 0; i < elems.length; ++i) {
           const elem = elems[i];
-          const text = elem.getText();
+          const text = await elem.getText();
           const matches = regex.test(text);
           if (matches && !opts.invert || !matches && opts.invert)
             return elem;
@@ -2286,7 +2296,7 @@ export class TyE2eTestBrowser {
             `Instead, the matching selectors texts are: [${texts}]  [TyE40MRBL25]`)
         }
 
-        this.#br.pause(Math.min(pauseMs, PollMaxMs));
+        await this.#br.pause(Math.min(pauseMs, PollMaxMs));
       }
     }
 
@@ -2305,14 +2315,14 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndGetValue(selector: string): string {
-      this.waitForExist(selector);
-      return this.$(selector).getValue();
+    async waitAndGetValue(selector: St): Pr<St> {
+      await this.waitForExist(selector);
+      return await (await this.$(selector)).getValue();
     }
 
 
-    assertValueIs(selector: St, expected: St) {
-      const actual = this.waitAndGetValue(selector);
+    async assertValueIs(selector: St, expected: St) {
+      const actual = await this.waitAndGetValue(selector);
       // [E2EEASYREAD].
       tyAssert.ok(actual === expected, '\n' +
         `Value of elem selected by:  ${selector}\n` +
@@ -2324,37 +2334,37 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndGetVisibleText(selector): string {
-      this.waitForVisibleText(selector);
-      return this.$(selector).getText();
+    async waitAndGetVisibleText(selector): Pr<St> {
+      await this.waitForVisibleText(selector);
+      return await (await this.$(selector)).getText();
     }
 
 
-    waitAndGetVisibleHtml(selector): string {
-      this.waitForVisibleText(selector);
-      return this.$(selector).getHTML();
+    async waitAndGetVisibleHtml(selector): Pr<St> {
+      await this.waitForVisibleText(selector);
+      return await (await this.$(selector)).getHTML();
     }
 
 
-    assertTextIs(selector: St, text: St) {
-      this.assertTextMatches(selector, text, 'exact');
+    async assertTextIs(selector: St, text: St) {
+      await this.assertTextMatches(selector, text, 'exact');
     }
 
 
-    assertTextMatches(selector: string, regex: string | RegExp | (string | RegExp)[],
+    async assertTextMatches(selector: string, regex: string | RegExp | (string | RegExp)[],
           how: 'regex' | 'exact' | 'includes' = 'regex') {
-      this._assertOneOrAnyTextMatches(false, selector, regex, how);
+      await this._assertOneOrAnyTextMatches(false, selector, regex, how);
     }
 
 
-    waitUntilAnyTextMatches(selector: string, stringOrRegex: string | RegExp) {
+    async waitUntilAnyTextMatches(selector: string, stringOrRegex: string | RegExp) {
       const regex = getRegExpOrDie(stringOrRegex);
       let num;
-      this.waitUntil(() => {
-        const items = this.$$(selector);
+      await this.waitUntil(async () => {
+        const items = await this.$$(selector);
         num = items.length;
         for (let item of items) {
-          if (regex.test(item.getText()))
+          if (regex.test(await item.getText()))
             return true;
         }
       }, {
@@ -2363,25 +2373,25 @@ export class TyE2eTestBrowser {
     }
 
 
-    assertAnyTextMatches(selector: string, regex: string | RegExp | (string | RegExp)[],
+    async assertAnyTextMatches(selector: string, regex: string | RegExp | (string | RegExp)[],
             how: 'regex' | 'exact' | 'includes' = 'regex') {
-      this._assertOneOrAnyTextMatches(true, selector, regex, how);
+      await this._assertOneOrAnyTextMatches(true, selector, regex, how);
     }
 
 
     // n starts on 1 not 0.
     // Also see:  assertNthClassIncludes
-    assertNthTextMatches(selector: string, n: number,
+    async assertNthTextMatches(selector: string, n: number,
           stringOrRegex: string | RegExp, stringOrRegex2?: string | RegExp,
           ps?: { caseless?: Bo }) {
       const regex = getRegExpOrDie(stringOrRegex);
       const regex2 = getAnyRegExpOrDie(stringOrRegex2);
 
       assert(n >= 1, "n starts on 1, change from 0 to 1 please");
-      const items = this.$$(selector);
+      const items = await this.$$(selector);
       assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
 
-      let text = items[n - 1].getText();
+      let text = await items[n - 1].getText();
       if (ps?.caseless) {
         text = text.toLowerCase();
       }
@@ -2404,11 +2414,12 @@ export class TyE2eTestBrowser {
 
     // n starts on 1 not 0.
     // Also see:  assertNthTextMatches
-    assertNthClassIncludes(selector: string, n: number, classToFind: string) {
+    async assertNthClassIncludes(selector: string, n: number, classToFind: string) {
       assert(n >= 1, "n starts on 1, change from 0 to 1 please");
-      const items = this.$$(selector);
+      const items = await this.$$(selector);
       assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
-      const actuallClassAttr = getNthFromStartOrEnd(n, items).getAttribute('class');
+      const item = getNthFromStartOrEnd(n, items);
+      const actuallClassAttr = await item.getAttribute('class');
       const regex = new RegExp(`\\b${classToFind}\\b`);
       // Simple to read [E2EEASYREAD].
       assert(regex.test(actuallClassAttr), '\n' +
@@ -2418,15 +2429,15 @@ export class TyE2eTestBrowser {
     }
 
 
-    assertNoTextMatches(selector: string, regex: string | RegExp) {
-      this._assertAnyOrNoneMatches(selector, false, regex, 'regex');
+    async assertNoTextMatches(selector: string, regex: string | RegExp) {
+      await this._assertAnyOrNoneMatches(selector, false, regex, 'regex');
     }
 
 
-    _assertOneOrAnyTextMatches (many, selector: string,
+    async _assertOneOrAnyTextMatches (many, selector: string,
           stringOrRegex: string | RegExp | (string | RegExp)[],
           how: 'regex' | 'exact' | 'includes') {
-      this._assertAnyOrNoneMatches(selector, true, stringOrRegex, how);
+      await this._assertAnyOrNoneMatches(selector, true, stringOrRegex, how);
       //process.stdout.write('■');
       //if (fast === 'FAST') {
         // This works with only one this.#br at a time, so only use if FAST, or tests will break.
@@ -2480,7 +2491,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    _assertAnyOrNoneMatches (selector: string, shallMatch: boolean,
+    async _assertAnyOrNoneMatches (selector: string, shallMatch: boolean,
           stringOrRegex: string | RegExp | (string | RegExp)[],
           how: 'regex' | 'exact' | 'includes') {
 
@@ -2513,7 +2524,7 @@ export class TyE2eTestBrowser {
       dieIf(_.isString(regex2) && !shallMatch,
           `two regexps only supported if shallMatch = true`);
 
-      const elems = this.$$(selector);
+      const elems = await this.$$(selector);
 
       // If many browsers, we got back {browserName: ...., otherBrowserName: ...} instead.
       tyAssert.ok(_.isArray(elems) || !_.isObject(elems), '\n\n' +
@@ -2528,12 +2539,12 @@ export class TyE2eTestBrowser {
 
       for (let i = 0; i < elems.length; ++i) {
         const elem = elems[i];
-        const isVisible = elem.isDisplayed();
+        const isVisible = await elem.isDisplayed();
         if (!isVisible) {
           problems += `  Elem ix 0: Not visible\n`;
           continue;
         }
-        const elemText = elem.getText();
+        const elemText = await elem.getText();
         const matchesRegex1 = regex ? regex.test(elemText) : (
                 how === 'includes'
                     ? elemText.indexOf(text) >= 0
@@ -2584,33 +2595,33 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitUntilIsOnHomepage() {
-      this.waitUntil(() => {
-        const url = this.#br.getUrl();
+    async waitUntilIsOnHomepage() {
+      await this.waitUntil(async () => {
+        const url = await this.#br.getUrl();
         return /https?:\/\/[^/?#]+(\/latest|\/top|\/)?(#.*)?$/.test(url);
       });
     }
 
 
     // RENAME to assertPageTitlePostMatches
-    assertPageTitleMatches(regex: string | RegExp) {
-      this.waitForVisible('h1.dw-p-ttl');
-      this.waitUntilTextMatches('h1.dw-p-ttl', regex);
+    async assertPageTitleMatches(regex: St | RegExp) {
+      await this.waitForVisible('h1.dw-p-ttl');
+      await this.waitUntilTextMatches('h1.dw-p-ttl', regex);
       //this.assertTextMatches('h1.dw-p-ttl', regex);
     }
 
 
     // RENAME to assertPageBodyPostMatches
-    assertPageBodyMatches(regex: string | RegExp) {
-      this.waitForVisible('.esOrigPost');
-      //this.waitUntilTextMatches('.esOrigPost', regex);
-      this.assertTextMatches('.esOrigPost', regex);
+    async assertPageBodyMatches(regex: St | RegExp) {
+      await this.waitForVisible('.esOrigPost');
+      //await this.waitUntilTextMatches('.esOrigPost', regex);
+      await this.assertTextMatches('.esOrigPost', regex);
     }
 
 
-    assertPageHtmlSourceMatches_1 (toMatch: string | RegExp) {
+    async assertPageHtmlSourceMatches_1 (toMatch: St | RegExp) {
       // _1 = only for 1 this.#br
-      const source = this.#br.getPageSource();
+      const source = await this.#br.getPageSource();
       const regex = getRegExpOrDie(toMatch);
       assert(regex.test(source), "Page source does match " + regex);
     }
@@ -2619,11 +2630,11 @@ export class TyE2eTestBrowser {
     /**
      * Useful if navigating to a new page, but don't know exactly when will have done that.
      */
-    waitUntilPageHtmlSourceMatches_1 (toMatch: string | RegExp) {
+    async waitUntilPageHtmlSourceMatches_1 (toMatch: St | RegExp) {
       // _1 = only for 1 this.#br
-      const regex = getRegExpOrDie(toMatch);
-      this.waitUntil(() => {
-        const source = this.#br.getPageSource();
+      const regex = await getRegExpOrDie(toMatch);
+      await this.waitUntil(async () => {
+        const source = await this.#br.getPageSource();
         return regex.test(source);
       }, {
         message: `Waiting for page source to match:  ${regex}`,
@@ -2631,8 +2642,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    assertPageHtmlSourceDoesNotMatch(toMatch: string | RegExp) {
-      const source = this.#br.getPageSource();
+    async assertPageHtmlSourceDoesNotMatch(toMatch: St | RegExp) {
+      const source = await this.#br.getPageSource();
       const regex = getRegExpOrDie(toMatch)
       assert(!regex.test(source), `Page source *does* match: ${regex}`);
       //let resultsByBrowser = byBrowser(this.#br.getPageSource());
@@ -2644,9 +2655,10 @@ export class TyE2eTestBrowser {
 
     _pageNotFoundOrAccessDenied = 'Page not found, or Access Denied';
 
+    /* CLEAN_UP  byBrowser probably doesn't work? if so,  REMOVE this.
     // Also see this.#br.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
-    assertWholePageHidden() {
-      let resultsByBrowser = byBrowser(this.#br.getPageSource());
+    async assertWholePageHidden() {
+      let resultsByBrowser = byBrowser(await this.#br.getPageSource());
       _.forOwn(resultsByBrowser, (text: any, browserName) => {
         if (settings.prod) {
           tyAssert.includes(text, this._pageNotFoundOrAccessDenied);
@@ -2659,8 +2671,8 @@ export class TyE2eTestBrowser {
 
 
     // Also see this.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
-    assertMayNotSeePage() {
-      let resultsByBrowser = byBrowser(this.#br.getPageSource());
+    async assertMayNotSeePage() {
+      let resultsByBrowser = byBrowser(await this.#br.getPageSource());
       _.forOwn(resultsByBrowser, (text: any, browserName) => {
         if (settings.prod) {
           tyAssert.includes(text, this._pageNotFoundOrAccessDenied);
@@ -2669,32 +2681,32 @@ export class TyE2eTestBrowser {
         else {
           tyAssert.includes(text, 'TyEM0SEE_'); /*, browserNamePrefix(browserName) +
               "User can see page. Or did you forget the --prod flag? (for Prod mode)");
-          */
+          * /
         }
       });
+    } */
+
+
+    async assertMayNotLoginBecauseNotYetApproved() {
+      await this.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMAPPRPEND_');
     }
 
 
-    assertMayNotLoginBecauseNotYetApproved() {
-      this.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMAPPRPEND_');
+    async assertMayNotLoginBecauseRejected() {
+      await this.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMNOACCESS_');
     }
 
 
-    assertMayNotLoginBecauseRejected() {
-      this.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMNOACCESS_');
-    }
-
-
-    assertNotFoundError(ps: {
+    async assertNotFoundError(ps: {
             whyNot?: 'CategroyDeleted' | 'MayNotCreateTopicsOrSeeCat' |
                 'MayNotSeeCat' | 'PageDeleted' } = {}) {
       for (let i = 0; i < 20; ++i) {
-        let source = this.#br.getPageSource();
+        let source = await this.#br.getPageSource();
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
         let is404 = /404 Not Found.+TyE404_/s.test(source);
         if (!is404) {
-          this.#br.pause(250);
-          this.#br.refresh();
+          await this.#br.pause(250);
+          await this.#br.refresh();
           continue;
         }
 
@@ -2727,31 +2739,31 @@ export class TyE2eTestBrowser {
     }
 
 
-    assertUrlIs(expectedUrl: string) {
-      let url = this.#br.getUrl();
-      assert(url === expectedUrl);
+    async assertUrlIs(expectedUrl: St) {
+      const url = await this.#br.getUrl();
+      tyAssert.eq(url, expectedUrl);
     }
 
-    goToSearchPage(query?: string) {
+    async goToSearchPage(query?: string) {
       const q = query ? '?q=' + query : '';
-      this.go('/-/search' + q);
-      this.waitForVisible('.s_SP_QueryTI');
+      await this.go('/-/search' + q);
+      await this.waitForVisible('.s_SP_QueryTI');
     }
 
-    acceptAnyAlert(howMany: number = 1): boolean {
-      return this.dismissAcceptAnyAlert(howMany, true);
+    async acceptAnyAlert(howMany: Nr = 1): Pr<Bo> {
+      return await this.dismissAcceptAnyAlert(howMany, true);
     }
 
-    dismissAnyAlert(howMany: number = 1): boolean {
-      return this.dismissAcceptAnyAlert(howMany, false);
+    async dismissAnyAlert(howMany: number = 1): Pr<Bo> {
+      return await this.dismissAcceptAnyAlert(howMany, false);
     }
 
-    dismissAcceptAnyAlert(howMany: number, accept: boolean): boolean {
+    async dismissAcceptAnyAlert(howMany: Nr, accept: Bo): Pr<Bo> {
       let numDone = 0;
-      this.waitUntil(() => {
+      await this.waitUntil(async () => {
         try {
-          if (accept) this.#br.acceptAlert();
-          else this.#br.dismissAlert();
+          if (accept) await this.#br.acceptAlert();
+          else await this.#br.dismissAlert();
           logMessage(accept ? "Accepted." : "Dismissed.");
           numDone += 1;
           if (numDone === howMany)
@@ -2782,34 +2794,34 @@ export class TyE2eTestBrowser {
     } */
 
     createSite = {
-      fillInFieldsAndSubmit: (data: NewSiteData) => {
+      fillInFieldsAndSubmit: async (data: NewSiteData) => {
         if (data.embeddingUrl) {
-          this.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
+          await this.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
         }
         else {
-          this.waitAndSetValue('#dwLocalHostname', data.localHostname);
+          await this.waitAndSetValue('#dwLocalHostname', data.localHostname);
         }
-        this.waitAndClick('#e2eNext3');
-        this.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
-        this.waitAndClick('input[type=submit]');
-        this.waitForVisible('#t_OwnerSignupB');
-        assert.equal(data.origin, this.origin());
+        await this.waitAndClick('#e2eNext3');
+        await this.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
+        await this.waitAndClick('input[type=submit]');
+        await this.waitForVisible('#t_OwnerSignupB');
+        assert.equal(data.origin, await this.origin());
       },
 
-      clickOwnerSignupButton: () => {
-        this.waitAndClick('#t_OwnerSignupB');
+      clickOwnerSignupButton: async () => {
+        await this.waitAndClick('#t_OwnerSignupB');
       }
     };
 
 
     createSomething = {
-      createForum: (forumTitle: string) => {
+      createForum: async (forumTitle: St) => {
         // Button gone, I'll add it back if there'll be Blog & Wiki too.
         // this.waitAndClick('#e2eCreateForum');
-        this.#br.pause(200); // [e2erace] otherwise it won't find the next input, in the
+        await this.#br.pause(200); // [e2erace] otherwise it won't find the next input, in the
                             // create-site-all-logins @facebook test
         logMessage(`Typig forum title: "${forumTitle}" ...`);
-        this.waitAndSetValue('input[type="text"]', forumTitle, { checkAndRetry: true });
+        await this.waitAndSetValue('input[type="text"]', forumTitle, { checkAndRetry: true });
         // Click Next, Next ... to accept all default choices.
         /*  [NODEFCATS]
         this.waitAndClick('.e_Next');
@@ -2820,7 +2832,7 @@ export class TyE2eTestBrowser {
         this.#br.pause(200);
         */
         logMessage(`Clicking Next ...`);
-        this.waitAndClick('.e_Next');
+        await this.waitAndClick('.e_Next');
 
         /*
         DB_CONFICT: A Postgres serialization error might happen here, sth like 1 in 12, or 0 in 22:
@@ -2913,11 +2925,11 @@ export class TyE2eTestBrowser {
             */
 
         logMessage(`Creating the forum ...`);
-        this.waitAndClick('#e2eDoCreateForum');
+        await this.waitAndClick('#e2eDoCreateForum');
         logMessage(`Waiting for title ...`);
-        const actualTitle = this.waitAndGetVisibleText('h1.dw-p-ttl');
+        const actualTitle = await this.waitAndGetVisibleText('h1.dw-p-ttl');
         logMessage(`Done? The forum title is: "${actualTitle}"`);
-        assert.equal(actualTitle, forumTitle);
+        tyAssert.eq(actualTitle, forumTitle);
       },
     };
 
@@ -2968,7 +2980,7 @@ export class TyE2eTestBrowser {
           // so it gets into view — but then the topbar might appear, just after
           // we've checked if it's there.)
           //
-          utils.tryManyTimes("Clicking ancestor link", 2, async () => {
+          await utils.tryManyTimes("Clicking ancestor link", 2, async () => {
             const ancLn = ' .esTopbar_ancestors_link';
             const where = await this.isVisible('.s_Tb ' + ancLn) ? '.s_Tb' : '.esPage';
             await this.waitForThenClickText(where + ancLn, categoryName, { tryNumTimes: 2 });
@@ -3095,7 +3107,7 @@ export class TyE2eTestBrowser {
       clickStopImpersonating: async () => {
         let oldName = await this.topbar.getMyUsername();
         let newName;
-        this.topbar.openMyMenu();
+        await this.topbar.openMyMenu();
         await this.waitAndClick('.s_MM_StopImpB');
         // Wait for page to reload:
         await this.waitForGone('.s_MMB-IsImp');  // first, page reloads: the is-impersonating mark, disappears
@@ -3133,24 +3145,24 @@ export class TyE2eTestBrowser {
         await this.waitForGone(this.topbar.notfsToMeClass);
       },
 
-      waitForNumOtherNotfs: (numNotfs: IntAtLeastOne) => {
+      waitForNumOtherNotfs: async (numNotfs: IntAtLeastOne) => {
         assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE4ABKF024]");
-        this.waitUntilTextMatches(this.topbar.otherNotfsClass, '^' + numNotfs + '$');
+        await this.waitUntilTextMatches(this.topbar.otherNotfsClass, '^' + numNotfs + '$');
       },
 
-      refreshUntilNumOtherNotfs: (desiredNumNotfs: number) => {
+      refreshUntilNumOtherNotfs: async (desiredNumNotfs: Nr) => {
         const millisBetweenRefresh = 15*1000;  // should be > report to server interval [6AK2WX0G]
         let millisLeftToRefresh = millisBetweenRefresh;
         while (true) {
           let isWhat;
           if (desiredNumNotfs === 0) {
-            if (!this.isVisible(this.topbar.otherNotfsClass)) {
+            if (!await this.isVisible(this.topbar.otherNotfsClass)) {
               break;
             }
             isWhat = '>= 1';
           }
           else {
-            const text = this.waitAndGetVisibleText(this.topbar.otherNotfsClass);
+            const text = await this.waitAndGetVisibleText(this.topbar.otherNotfsClass);
             const actualNumNotfs = parseInt(text);
             if (actualNumNotfs === desiredNumNotfs) {
               break;
@@ -3158,7 +3170,7 @@ export class TyE2eTestBrowser {
             isWhat = '' + actualNumNotfs;
           }
           const pauseMs = 1000;
-          this.#br.pause(pauseMs);
+          await this.#br.pause(pauseMs);
 
           // Because of some race condition, in rare cases, notifications won't get marked
           // as seen. Hard to reproduce, only happens 1 in 10 in invisible e2e tests.
@@ -3167,151 +3179,152 @@ export class TyE2eTestBrowser {
           if (millisLeftToRefresh < 0) {
             logUnusual(`Refreshing page. Num-other-notfs count is currently ${isWhat} ` +
                 `and refuses to become ${desiredNumNotfs}...`);
-            this.#br.refresh();
+            await this.#br.refresh();
             millisLeftToRefresh = millisBetweenRefresh;
           }
         }
       },
 
-      waitForNoOtherNotfs: () => {
-        this.waitForGone(this.topbar.otherNotfsClass);
+      waitForNoOtherNotfs: async () => {
+        await this.waitForGone(this.topbar.otherNotfsClass);
       },
 
-      openNotfToMe: (options: { waitForNewUrl?: boolean } = {}) => {
-        this.topbar.openLatestNotf(options);
+      openNotfToMe: async (options: { waitForNewUrl?: Bo } = {}) => {
+        await this.topbar.openLatestNotf(options);
       },
 
-      openLatestNotf: (options: { waitForNewUrl?: boolean, toMe?: true } = {}) => {
-        this.topbar.openMyMenu();
-        this.rememberCurrentUrl();
-        this.waitAndClickFirst('.s_MM .dropdown-menu ' + (options.toMe ? '.esNotf-toMe' : '.esNotf'));
+      openLatestNotf: async (options: { waitForNewUrl?: Bo, toMe?: true } = {}) => {
+        await this.topbar.openMyMenu();
+        await this.rememberCurrentUrl();
+        await this.waitAndClickFirst(
+                '.s_MM .dropdown-menu ' + (options.toMe ? '.esNotf-toMe' : '.esNotf'));
         if (options.waitForNewUrl !== false) {
-          this.waitForNewUrl();
+          await this.waitForNewUrl();
         }
       },
 
-      viewAsStranger: () => {
-        this.topbar.openMyMenu();
-        this.waitAndClick('.s_MM_ViewAsB');
+      viewAsStranger: async () => {
+        await this.topbar.openMyMenu();
+        await this.waitAndClick('.s_MM_ViewAsB');
         // Currently there's just one view-as button, namely to view-as-stranger.
-        this.waitAndClick('.s_VAD_Sbd button');
+        await this.waitAndClick('.s_VAD_Sbd button');
         // Now there's a warning, close it.
-        this.stupidDialog.clickClose();
+        await this.stupidDialog.clickClose();
         // Then another stupid-dialog appears. Wait for a while so we won't click the
         // button in the first dialog, before it has disappeared.
-        this.#br.pause(800);  // COULD give incrementing ids to the stupid dialogs,
+        await this.#br.pause(800);  // COULD give incrementing ids to the stupid dialogs,
                               // so can avoid this pause?
-        this.stupidDialog.close();
+        await this.stupidDialog.close();
       },
 
-      stopViewingAsStranger: () => {
-        this.topbar.openMyMenu();
-        this.waitAndClick('.s_MM_StopImpB a');
+      stopViewingAsStranger: async () => {
+        await this.topbar.openMyMenu();
+        await this.waitAndClick('.s_MM_StopImpB a');
       },
 
       myMenu: {
-        goToAdminReview: () => {
-          this.topbar.myMenu.goToImpl('#e2eMM_Review');
-          this.adminArea.review.waitUntilLoaded();
+        goToAdminReview: async () => {
+          await this.topbar.myMenu.goToImpl('#e2eMM_Review');
+          await this.adminArea.review.waitUntilLoaded();
         },
 
-        goToDraftsEtc: () => {
-          this.topbar.myMenu.goToImpl('.e_MyDfsB');
-          this.userProfilePage.draftsEtc.waitUntilLoaded();
+        goToDraftsEtc: async () => {
+          await this.topbar.myMenu.goToImpl('.e_MyDfsB');
+          await this.userProfilePage.draftsEtc.waitUntilLoaded();
         },
 
-        goToImpl: (selector: string) => {
-          this.rememberCurrentUrl();
-          this.topbar.openMyMenu();
-          this.waitAndClick(selector);
-          this.waitForNewUrl();
+        goToImpl: async (selector: St) => {
+          await this.rememberCurrentUrl();
+          await this.topbar.openMyMenu();
+          await this.waitAndClick(selector);
+          await this.waitForNewUrl();
         },
 
         _snoozeIcon: '.s_MMB_Snz .s_SnzI',
 
-        snoozeNotfs: (ps: SnoozeTime = {}) => {
-          tyAssert.not(this.isVisible(this.topbar.myMenu._snoozeIcon));  // ttt
-          this.waitAndClick('.s_MM_SnzB');
+        snoozeNotfs: async (ps: SnoozeTime = {}) => {
+          tyAssert.not(await this.isVisible(this.topbar.myMenu._snoozeIcon));  // ttt
+          await this.waitAndClick('.s_MM_SnzB');
           if (ps.toWhen === 'TomorrowMorning9am') {
-            this.waitAndClickFirst('.s_SnzD_9amBs .btn');
+            await this.waitAndClickFirst('.s_SnzD_9amBs .btn');
           }
-          this.waitAndClick('.e_SnzB');
-          this.topbar.closeMyMenuIfOpen();
-          this.waitForVisible(this.topbar.myMenu._snoozeIcon);
+          await this.waitAndClick('.e_SnzB');
+          await this.topbar.closeMyMenuIfOpen();
+          await this.waitForVisible(this.topbar.myMenu._snoozeIcon);
 
           if (ps.hours && !ps.minutes) {
-            this.assertTextMatches('.s_MMB_Snz', `${ps.hours}h`);
+            await this.assertTextMatches('.s_MMB_Snz', `${ps.hours}h`);
           }
           if (!ps.hours && ps.minutes) {
-            this.assertTextMatches('.s_MMB_Snz', `${ps.minutes}m`);
+            await this.assertTextMatches('.s_MMB_Snz', `${ps.minutes}m`);
           }
         },
 
-        unsnooze: () => {
-          tyAssert.that(this.isVisible(this.topbar.myMenu._snoozeIcon));  // ttt
-          this.waitAndClick('.s_MM_SnzB');
-          this.waitAndClick('.e_UnSnzB');
-          this.topbar.closeMyMenuIfOpen();
-          this.waitForGone(this.topbar.myMenu._snoozeIcon);
+        unsnooze: async () => {
+          tyAssert.that(await this.isVisible(this.topbar.myMenu._snoozeIcon));  // ttt
+          await this.waitAndClick('.s_MM_SnzB');
+          await this.waitAndClick('.e_UnSnzB');
+          await this.topbar.closeMyMenuIfOpen();
+          await this.waitForGone(this.topbar.myMenu._snoozeIcon);
         },
 
         dismNotfsBtnClass: '.e_DismNotfs',
 
-        markAllNotfsRead: () => {
-          this.topbar.openMyMenu();
-          this.waitAndClick(this.topbar.myMenu.dismNotfsBtnClass);
+        markAllNotfsRead: async () => {
+          await this.topbar.openMyMenu();
+          await this.waitAndClick(this.topbar.myMenu.dismNotfsBtnClass);
         },
 
-        isMarkAllNotfsReadVisibleOpenClose: (): boolean => {
-          this.topbar.openMyMenu();
-          this.waitForVisible('.s_MM_NotfsBs');  // (test code bug: sometimes absent — if 0 notfs)
-          const isVisible = this.isVisible(this.topbar.myMenu.dismNotfsBtnClass);
-          this.topbar.closeMyMenuIfOpen();
+        isMarkAllNotfsReadVisibleOpenClose: async (): Pr<Bo> => {
+          await this.topbar.openMyMenu();
+          await this.waitForVisible('.s_MM_NotfsBs');  // (test code bug: sometimes absent — if 0 notfs)
+          const isVisible = await this.isVisible(this.topbar.myMenu.dismNotfsBtnClass);
+          await this.topbar.closeMyMenuIfOpen();
           return isVisible;
         },
 
-        unhideTips: () => {
-          this.waitAndClick('.e_UnhTps');
+        unhideTips: async () => {
+          await this.waitAndClick('.e_UnhTps');
         },
 
-        unhideAnnouncements: () => {
-          this.waitAndClick('.e_UnhAnns');
+        unhideAnnouncements: async () => {
+          await this.waitAndClick('.e_UnhAnns');
         }
       },
 
       pageTools: {
-        pinPage: (where: 'Globally' | 'InCategory', ps: { willBeTipsAfter: Bo }) => {
-          this.topbar.pageTools.__openPinPageDialog();
+        pinPage: async (where: 'Globally' | 'InCategory', ps: { willBeTipsAfter: Bo }) => {
+          await this.topbar.pageTools.__openPinPageDialog();
           const pinWhereRadioBtn = where === 'Globally' ? '.e_PinGlb' : '.e_PinCat';
-          this.waitAndClick(pinWhereRadioBtn + ' input');
-          this.waitAndClick('.e_SavPinB');
+          await this.waitAndClick(pinWhereRadioBtn + ' input');
+          await this.waitAndClick('.e_SavPinB');
           if (ps.willBeTipsAfter !== false) {
-            this.helpDialog.waitForThenClose({ shallHaveBodyClass: '.esPinnedOk' });
+            await this.helpDialog.waitForThenClose({ shallHaveBodyClass: '.esPinnedOk' });
           }
-          this.waitUntilModalGone();
+          await this.waitUntilModalGone();
         },
 
-        __openPinPageDialog: () => {
-          this.waitAndClick('.dw-a-tools');
-          this.waitUntilDoesNotMove('.e_PinPg');
-          this.waitAndClick('.e_PinPg');
-          this.waitForDisplayed('input[name="pinWhere"]');
+        __openPinPageDialog: async () => {
+          await this.waitAndClick('.dw-a-tools');
+          await this.waitUntilDoesNotMove('.e_PinPg');
+          await this.waitAndClick('.e_PinPg');
+          await this.waitForDisplayed('input[name="pinWhere"]');
         },
 
-        deletePage: () => {
-          this.waitAndClick('.dw-a-tools');
-          this.waitUntilDoesNotMove('.e_DelPg');
-          this.waitAndClick('.e_DelPg');
-          this.waitUntilModalGone();
-          this.topic.waitUntilPageDeleted();
+        deletePage: async () => {
+          await this.waitAndClick('.dw-a-tools');
+          await this.waitUntilDoesNotMove('.e_DelPg');
+          await this.waitAndClick('.e_DelPg');
+          await this.waitUntilModalGone();
+          await this.topic.waitUntilPageDeleted();
         },
 
-        restorePage: () => {
-          this.waitAndClick('.dw-a-tools');
-          this.waitUntilDoesNotMove('.e_RstrPg');
-          this.waitAndClick('.e_RstrPg');
-          this.waitUntilModalGone();
-          this.topic.waitUntilPageRestored();
+        restorePage: async () => {
+          await this.waitAndClick('.dw-a-tools');
+          await this.waitUntilDoesNotMove('.e_RstrPg');
+          await this.waitAndClick('.e_RstrPg');
+          await this.waitUntilModalGone();
+          await this.topic.waitUntilPageRestored();
         },
       },
     };
@@ -3327,7 +3340,7 @@ export class TyE2eTestBrowser {
       },
 
       openIfNeeded: async () => {
-        if (await !this.isVisible('#esWatchbarColumn')) {
+        if (!await this.isVisible('#esWatchbarColumn')) {
           await this.watchbar.open();
         }
       },
@@ -3346,16 +3359,16 @@ export class TyE2eTestBrowser {
         await this.assertAnyTextMatches(this.watchbar.titleSelector, title);
       },
 
-      assertTopicAbsent: (title: string) => {
-        this.waitForVisible(this.watchbar.titleSelector);
-        this.assertNoTextMatches(this.watchbar.titleSelector, title);
+      assertTopicAbsent: async (title: St) => {
+        await this.waitForVisible(this.watchbar.titleSelector);
+        await this.assertNoTextMatches(this.watchbar.titleSelector, title);
       },
 
       asserExactlyNumTopics: async (num: number) => {
         if (num > 0) {
           await this.waitForVisible(this.watchbar.titleSelector);
         }
-        this.assertExactly(num, this.watchbar.titleSelector);
+        await this.assertExactly(num, this.watchbar.titleSelector);
       },
 
       numUnreadTopics: async (): Pr<Nr> => {
@@ -3375,37 +3388,37 @@ export class TyE2eTestBrowser {
         await this.assertExactly(num, '.esWB_T-Unread');
       },
 
-      goToTopic: (title: string, opts: { isHome?: true, shouldBeUnread?: Bo } = {}) => {
-        this.rememberCurrentUrl();
+      goToTopic: async (title: St, opts: { isHome?: true, shouldBeUnread?: Bo } = {}) => {
+        await this.rememberCurrentUrl();
         const selector = `${opts.shouldBeUnread ? this.watchbar.unreadSelector : ''
                 } ${this.watchbar.titleSelector}`;
         const titleOrHome = opts.isHome ? c.WatchbarHomeLinkTitle : title;
-        this.waitForThenClickText(selector, titleOrHome);
-        this.waitForNewUrl();
-        this.assertPageTitleMatches(title);
+        await this.waitForThenClickText(selector, titleOrHome);
+        await this.waitForNewUrl();
+        await this.assertPageTitleMatches(title);
       },
 
-      clickCreateChat: () => {
-        this.waitAndClick('#e2eCreateChatB');
+      clickCreateChat: async () => {
+        await this.waitAndClick('#e2eCreateChatB');
       },
 
-      clickCreateChatWaitForEditor: () => {
-        this.waitAndClick('#e2eCreateChatB');
-        this.waitForVisible('.esEdtr_titleEtc');
+      clickCreateChatWaitForEditor: async () => {
+        await this.waitAndClick('#e2eCreateChatB');
+        await this.waitForVisible('.esEdtr_titleEtc');
       },
 
-      clickViewPeople: () => {
-        this.waitAndClick('.esWB_T-Current .esWB_T_Link');
-        this.waitAndClick('#e2eWB_ViewPeopleB');
-        this.waitUntilModalGone();
-        this.waitForVisible('.esCtxbar_list_title');
+      clickViewPeople: async () => {
+        await this.waitAndClick('.esWB_T-Current .esWB_T_Link');
+        await this.waitAndClick('#e2eWB_ViewPeopleB');
+        await this.waitUntilModalGone();
+        await this.waitForVisible('.esCtxbar_list_title');
       },
 
-      clickLeaveChat: () => {
-        this.waitAndClick('.esWB_T-Current .esWB_T_Link');
-        this.waitAndClick('#e2eWB_LeaveB');
-        this.waitUntilModalGone();
-        this.waitForVisible('#theJoinChatB');
+      clickLeaveChat: async () => {
+        await this.waitAndClick('.esWB_T-Current .esWB_T_Link');
+        await this.waitAndClick('#e2eWB_LeaveB');
+        await this.waitUntilModalGone();
+        await this.waitForVisible('#theJoinChatB');
       },
     };
 
@@ -3416,22 +3429,23 @@ export class TyE2eTestBrowser {
         await this.waitUntilGone('#esThisbarColumn');
       },
 
-      clickAddPeople: () => {
-        this.waitAndClick('#e2eCB_AddPeopleB');
-        this.waitForVisible('#e2eAddUsD');
+      clickAddPeople: async () => {
+        await this.waitAndClick('#e2eCB_AddPeopleB');
+        await this.waitForVisible('#e2eAddUsD');
       },
 
-      clickUser: (username: string) => {
-        this.waitForThenClickText('.esCtxbar_list .esAvtrName_username', username);
+      clickUser: async (username: St) => {
+        await this.waitForThenClickText('.esCtxbar_list .esAvtrName_username', username);
       },
 
-      assertUserPresent: (username: string) => {
-        this.waitForVisible('.esCtxbar_onlineCol');
-        this.waitForVisible('.esCtxbar_list .esAvtrName_username');
-        var elems = this.$$('.esCtxbar_list .esAvtrName_username');
-        var usernamesPresent = elems.map((elem) => {
-          return elem.getText();
+      assertUserPresent: async (username: St) => {
+        await this.waitForVisible('.esCtxbar_onlineCol');
+        await this.waitForVisible('.esCtxbar_list .esAvtrName_username');
+        const elems: WElm[] = await this.$$('.esCtxbar_list .esAvtrName_username');
+        const usernamesPresentSoon: Pr<St>[] = elems.map(async (elem: WElm) => {
+          return await elem.getText();
         });
+        const usernamesPresent: St[] = await Promise.all(usernamesPresentSoon);
         const namesPresent = usernamesPresent.join(', ');
         logMessage(`Users present: ${namesPresent}`)
         assert(usernamesPresent.length, "No users listed at all");
@@ -3442,8 +3456,8 @@ export class TyE2eTestBrowser {
 
 
     createUserDialog = {
-      isVisible: () => {
-        return this.isVisible('.esCreateUser');
+      isVisible: async () => {
+        return await this.isVisible('.esCreateUser');
       },
 
       // Most other fns in loginDialog below,  move to here?
@@ -3451,9 +3465,9 @@ export class TyE2eTestBrowser {
 
 
     loginDialog = {
-      isVisible: async () => {
-        return (await this.isVisible('.dw-login-modal')) &&
-                (await this.isVisible('.c_AuD'));
+      isVisible: async (): Pr<Bo> => {
+        return await this.isVisible('.dw-login-modal') &&
+                await this.isVisible('.c_AuD');
       },
 
       refreshUntilFullScreen: async () => {
@@ -3477,17 +3491,17 @@ export class TyE2eTestBrowser {
         await this.waitForVisible('.dw-login-modal');
         await this.waitForVisible('.c_AuD');
         // Forum not shown.
-        assert(await !this.isVisible('.dw-forum'));
-        assert(await !this.isVisible('.dw-forum-actionbar'));
+        tyAssert.not(await this.isVisible('.dw-forum'));
+        tyAssert.not(await this.isVisible('.dw-forum-actionbar'));
         // No forum topic shown.
-        assert(await !this.isVisible('h1'));
-        assert(await !this.isVisible('.dw-p'));
-        assert(await !this.isVisible('.dw-p-ttl'));
+        tyAssert.not(await this.isVisible('h1'));
+        tyAssert.not(await this.isVisible('.dw-p'));
+        tyAssert.not(await this.isVisible('.dw-p-ttl'));
         // Admin area not shown.
-        assert(await !this.isVisible('.s_Tb_Ln'));
-        assert(await !this.isVisible('#dw-react-admin-app'));
+        tyAssert.not(await this.isVisible('.s_Tb_Ln'));
+        tyAssert.not(await this.isVisible('#dw-react-admin-app'));
         // User profile not shown.
-        assert(await !this.isVisible(this.userProfilePage.avatarAboutButtonsSelector));
+        tyAssert.not(await this.isVisible(this.userProfilePage.avatarAboutButtonsSelector));
       },
 
       clickSingleSignOnButton: async () => {
@@ -3499,11 +3513,11 @@ export class TyE2eTestBrowser {
       },
 
       createPasswordAccount: async (data: MemberToCreate | {
-            fullName?: string,
-            username: string,
-            email?: string,
-            emailAddress?: string,
-            password: string,
+            fullName?: St,
+            username: St,
+            email?: St,
+            emailAddress?: St,
+            password: St,
             shallBecomeOwner?: true,       // default is false
             willNeedToVerifyEmail?: false, // default is true
            },
@@ -3541,15 +3555,15 @@ export class TyE2eTestBrowser {
         logMessage('createPasswordAccount: done');
       },
 
-      fillInFullName: async (fullName: string) => {
+      fillInFullName: async (fullName: St) => {
         await this.waitAndSetValue('#e2eFullName', fullName);
       },
 
-      fillInUsername: async (username: string) => {
+      fillInUsername: async (username: St) => {
         await this.waitAndSetValue('#e2eUsername', username);
       },
 
-      fillInEmail: async (emailAddress: string) => {
+      fillInEmail: async (emailAddress: St) => {
         await this.waitAndSetValue('#e2eEmail', emailAddress);
       },
 
@@ -3563,7 +3577,7 @@ export class TyE2eTestBrowser {
         await this.waitUntilModalGone();
       },
 
-      fillInPassword: async (password: string) => {
+      fillInPassword: async (password: St) => {
         await this.waitAndSetValue('#e2ePassword', password);
       },
 
@@ -3571,8 +3585,8 @@ export class TyE2eTestBrowser {
         await this.waitForVisible('.esLoginDlg_badPwd');
       },
 
-      loginWithPassword: async (username: string | Member | { username: string, password: string },
-            password?, opts?: { resultInError?: boolean }) => {
+      loginWithPassword: async (username: St | Member | { username: St, password: St },
+            password?, opts?: { resultInError?: Bo }) => {
 
         if (!opts && password && _.isObject(password)) {
           opts = <any> password;
@@ -3584,7 +3598,7 @@ export class TyE2eTestBrowser {
           username = username.username;
         }
         const numTabs = await this.numTabs();
-this.l(`Num tab: ${numTabs}`);
+
         await this.loginDialog.tryLogin(username, password);
         if (opts && opts.resultInError)
           return;
@@ -3599,7 +3613,7 @@ this.l(`Num tab: ${numTabs}`);
         }
       },
 
-      loginWithEmailAndPassword: async (emailAddress: string, password: string, badLogin?: 'BAD_LOGIN') => {
+      loginWithEmailAndPassword: async (emailAddress: St, password: St, badLogin?: 'BAD_LOGIN') => {
         await this.loginDialog.tryLogin(emailAddress, password);
         if (badLogin !== 'BAD_LOGIN') {
           await this.waitUntilModalGone();
@@ -3609,7 +3623,7 @@ this.l(`Num tab: ${numTabs}`);
 
       // Embedded discussions do all logins in popups.
       loginWithPasswordInPopup:
-          async (username: string | NameAndPassword, password?: string) => {
+          async (username: St | NameAndPassword, password?: St) => {
         await this.swithToOtherTabOrWindow(IsWhere.LoginPopup);
         await this.disableRateLimits();
         if (_.isObject(username)) {
@@ -3651,55 +3665,55 @@ this.l(`Num tab: ${numTabs}`);
         await this.waitAndClick('.e_NoPwD button');
       },
 
-      signUpAsGuest: (name: string, email?: string) => { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
+      signUpAsGuest: async (name: St, email?: St) => { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
         logMessage('createPasswordAccount with no email: fillInFullName...');
-        this.loginDialog.fillInFullName(name);
+        await this.loginDialog.fillInFullName(name);
         logMessage('fillInUsername...');
         const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
-        this.loginDialog.fillInUsername(username);
+        await this.loginDialog.fillInUsername(username);
         if (email) {
           logMessage('fillInEmail...');
-          this.loginDialog.fillInEmail(email);
+          await this.loginDialog.fillInEmail(email);
         }
         else {
           logMessage('fillInEmail anyway, because for now, always require email [0KPS2J]');
-          this.loginDialog.fillInEmail(`whatever-${Date.now()}@example.com`);
+          await this.loginDialog.fillInEmail(`whatever-${Date.now()}@example.com`);
         }
         logMessage('fillInPassword...');
-        this.loginDialog.fillInPassword("public1234");
+        await this.loginDialog.fillInPassword("public1234");
         logMessage('clickSubmit...');
-        this.loginDialog.clickSubmit();
+        await this.loginDialog.clickSubmit();
         logMessage('acceptTerms...');
-        this.loginDialog.acceptTerms();
+        await this.loginDialog.acceptTerms();
         logMessage('waitForWelcomeLoggedInDialog...');
-        this.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
+        await this.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
         logMessage('createPasswordAccount with no email: done');
         // Took forever: waitAndGetVisibleText, [CHROME_60_BUG]? [E2EBUG] ?
-        const nameInHtml = this.waitAndGetText('.esTopbar .esAvtrName_name');
-        assert(nameInHtml === username);
+        const nameInHtml = await this.waitAndGetText('.esTopbar .esAvtrName_name');
+        tyAssert.eq(nameInHtml, username);
       },
 
-      logInAsGuest: (name: string, email_noLongerNeeded?: string) => { // CLEAN_UP [8JTW4] is just pwd login?
+      logInAsGuest: async (name: St, email_noLongerNeeded?: St) => { // CLEAN_UP [8JTW4] is just pwd login?
         const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
         logMessage('logInAsGuest: fillInFullName...');
-        this.loginDialog.fillInUsername(name);
+        await this.loginDialog.fillInUsername(name);
         logMessage('fillInPassword...');
-        this.loginDialog.fillInPassword("public1234");
+        await this.loginDialog.fillInPassword("public1234");
         logMessage('clickSubmit...');
-        this.loginDialog.clickSubmit();
+        await this.loginDialog.clickSubmit();
         logMessage('logInAsGuest with no email: done');
-        const nameInHtml = this.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
+        const nameInHtml = await this.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
         dieIf(nameInHtml !== username, `Wrong username in topbar: ${nameInHtml} [EdE2WKG04]`);
       },
 
       // For guests, there's a combined signup and login form.
-      signUpLogInAs_Real_Guest: (name: string, email?: string) => {  // RENAME remove '_Real_' [8JTW4]
-        this.loginDialog.fillInFullName(name);
+      signUpLogInAs_Real_Guest: async (name: St, email?: St) => {  // RENAME remove '_Real_' [8JTW4]
+        await this.loginDialog.fillInFullName(name);
         if (email) {
-          this.loginDialog.fillInEmail(email);
+          await this.loginDialog.fillInEmail(email);
         }
-        this.loginDialog.clickSubmit();
-        this.loginDialog.acceptTerms(false);
+        await this.loginDialog.clickSubmit();
+        await this.loginDialog.acceptTerms(false);
       },
 
       clickCreateAccountInstead: async () => {
@@ -3726,26 +3740,27 @@ this.l(`Num tab: ${numTabs}`);
       },
 
 
-      createGmailAccount: (data: { email: string, password: string, username: string },
-            ps: { isInPopupAlready?: true, shallBecomeOwner?: boolean,
+      createGmailAccount: async (data: { email: St, password: St, username: St },
+            ps: { isInPopupAlready?: true, shallBecomeOwner?: Bo,
                 anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
-                isInFullScreenLogin?: boolean } = {}) => {
+                isInFullScreenLogin?: Bo } = {}) => {
 
-        this.loginDialog.loginWithGmail(
+        await this.loginDialog.loginWithGmail(
               data, ps.isInPopupAlready, { isInFullScreenLogin: ps.isInFullScreenLogin });
         // This should be the first time we login with Gmail at this site, so we'll be asked
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("filling in username ...");
-        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username, { checkAndRetry: true });
-        this.loginDialog.clickSubmit();
+        await this.waitAndSetValue('.esCreateUserDlg #e2eUsername',
+                data.username, { checkAndRetry: true });
+        await this.loginDialog.clickSubmit();
         logMessage("accepting terms ...");
-        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        await this.loginDialog.acceptTerms(ps.shallBecomeOwner);
 
         if (ps.anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
           logMessage("waiting for and clicking ok in welcome dialog...");
-          this.loginDialog.waitAndClickOkInWelcomeDialog();
+          await this.loginDialog.waitAndClickOkInWelcomeDialog();
         }
 
         if (ps.isInPopupAlready) {
@@ -3759,24 +3774,24 @@ this.l(`Num tab: ${numTabs}`);
         }
         else {
           logMessage("waiting for login dialogs to close ...");
-          this.waitUntilModalGone();
-          this.waitUntilLoadingOverlayGone();
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
         }
         logMessage("... done signing up with Gmail.");
       },
 
-      loginWithGmail: (data: { email: string, password: string },
-            isInPopupAlready: boolean | U,
-            ps?: { stayInPopup?: boolean, isInFullScreenLogin?: boolean, anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG' }) => {
+      loginWithGmail: async (data: { email: St, password: St },
+            isInPopupAlready: Bo | U,
+            ps?: { stayInPopup?: Bo, isInFullScreenLogin?: Bo, anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG' }) => {
         // Pause or sometimes the click misses the button. Is the this.#br doing some re-layout?
-        this.#br.pause(150);
-        this.waitAndClick('#e2eLoginGoogle');
+        await this.#br.pause(150);
+        await this.waitAndClick('#e2eLoginGoogle');
         ps = ps || {};
 
         // Switch to a login popup window that got opened, for Google:
         if (!isInPopupAlready && !ps.isInFullScreenLogin) {
           logMessage(`Switching to login popup ...`);
-          this.swithToOtherTabOrWindow(IsWhere.External);
+          await this.swithToOtherTabOrWindow(IsWhere.External);
         }
         else {
           logMessage(`Already in popup, need not switch window.`);
@@ -3796,24 +3811,25 @@ this.l(`Num tab: ${numTabs}`);
             // If logged in both at Google and Ty directly: There's a race?
             // Sometimes we'll see Ty's login dialog briefly before it closes and
             // one's username appears. — This is fine, the tests should work anyway.
-            const googleLoginDone = this.isExisting('.dw-login-modal');
+            const googleLoginDone = await this.isExisting('.dw-login-modal');
             logMessageIf(googleLoginDone,
                 `Got logged in directly at Google`);
 
-            const googleAndTalkyardLoginDone = this.isExisting('.esMyMenu .esAvtrName_name');
+            const googleAndTalkyardLoginDone =
+                    await this.isExisting('.esMyMenu .esAvtrName_name');
             logMessageIf(googleAndTalkyardLoginDone,
                 `Got logged in directly at both Google and Talkyard`);
 
             if (googleLoginDone || googleAndTalkyardLoginDone)
               return;
           }
-          else if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+          else if (await this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
             // We're back in Talkyard.
-            this.switchBackToFirstTabOrWindow();
+            await this.switchBackToFirstTabOrWindow();
             return;
           }
           try {
-            if (this.isExisting(emailInputSelector)) {
+            if (await this.isExisting(emailInputSelector)) {
               // That's a Gmail login widget. Continue with Gmail login.
               break;
             }
@@ -3822,27 +3838,27 @@ this.l(`Num tab: ${numTabs}`);
             logMessage(`didn't find ${emailInputSelector}, ` +
                 "tab closed? already logged in? [EdM5PKWT0B]");
           }
-          this.#br.pause(PollMs);
+          await this.#br.pause(PollMs);
         }
 
-        this.#br.pause(250);
+        await this.#br.pause(250);
         logMessage(`typing Gmail email: ${data.email}...`);
-        this.waitAndSetValue(emailInputSelector, data.email, { checkAndRetry: true });
+        await this.waitAndSetValue(emailInputSelector, data.email, { checkAndRetry: true });
 
-        this.waitForMaybeDisplayed(emailNext, { timeoutMs: 1000 });
-        if (this.isExisting(emailNext)) {
+        await this.waitForMaybeDisplayed(emailNext, { timeoutMs: 1000 });
+        if (await this.isExisting(emailNext)) {
           logMessage(`clicking ${emailNext}...`);
-          this.waitAndClick(emailNext);
+          await this.waitAndClick(emailNext);
         }
 
-        this.#br.pause(250);
+        await this.#br.pause(250);
         logMessage("typing Gmail password...");
-        this.waitAndSetValue(passwordInputSelector, data.password, { checkAndRetry: true });
+        await this.waitAndSetValue(passwordInputSelector, data.password, { checkAndRetry: true });
 
-        this.waitForMaybeDisplayed(passwordNext, { timeoutMs: 1000 });
-        if (this.isExisting(passwordNext)) {
+        await this.waitForMaybeDisplayed(passwordNext, { timeoutMs: 1000 });
+        if (await this.isExisting(passwordNext)) {
           logMessage(`clicking ${passwordNext}...`);
-          this.waitAndClick(passwordNext);
+          await this.waitAndClick(passwordNext);
         }
 
         /*
@@ -3855,70 +3871,70 @@ this.l(`Num tab: ${numTabs}`);
 
         if (!isInPopupAlready && (!ps || !ps.stayInPopup)) {
           logMessage("switching back to first tab...");
-          this.switchBackToFirstTabOrWindow();
+          await this.switchBackToFirstTabOrWindow();
         }
       },
 
 
-      createGitHubAccount: (ps: { username: string, password: string, shallBecomeOwner: boolean,
+      createGitHubAccount: async (ps: { username: St, password: St, shallBecomeOwner: Bo,
             anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
-            alreadyLoggedInAtGitHub: boolean }) => {
+            alreadyLoggedInAtGitHub: Bo }) => {
 
         // This should fill in email (usually) and username (definitely).
-        this.loginDialog.logInWithGitHub(ps);
+        await this.loginDialog.logInWithGitHub(ps);
 
-        this.loginDialog.clickSubmit();
-        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        await this.loginDialog.clickSubmit();
+        await this.loginDialog.acceptTerms(ps.shallBecomeOwner);
         if (ps.anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
-          this.loginDialog.waitAndClickOkInWelcomeDialog();
+          await this.loginDialog.waitAndClickOkInWelcomeDialog();
         }
-        this.waitUntilModalGone();
-        this.waitUntilLoadingOverlayGone();
+        await this.waitUntilModalGone();
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      logInWithGitHub: (ps: { username: string, password: string, alreadyLoggedInAtGitHub: boolean }) => {
+      logInWithGitHub: async (ps: { username: St, password: St, alreadyLoggedInAtGitHub: Bo }) => {
         logMessage("Clicking GitHub login");
-        this.waitAndClick('#e2eLoginGitHub');
+        await this.waitAndClick('#e2eLoginGitHub');
 
         if (ps.alreadyLoggedInAtGitHub) {
           // The GitHub login window will auto-log the user in an close directly.
-          this.waitForVisible('.esCreateUserDlg');
+          await this.waitForVisible('.esCreateUserDlg');
           return;
         }
 
         //if (!isInPopupAlready)
         logMessage("Switching to GitHub login popup...");
-        this.swithToOtherTabOrWindow(IsWhere.External);
+        await this.swithToOtherTabOrWindow(IsWhere.External);
 
         logMessage("Typing GitHub username ...");
-        this.waitForDisplayed('.auth-form-body');
-        this.waitAndSetValue('.auth-form-body #login_field', ps.username);
-        this.#br.pause(340); // so less risk GitHub think this is a computer?
+        await this.waitForDisplayed('.auth-form-body');
+        await this.waitAndSetValue('.auth-form-body #login_field', ps.username);
+        await this.#br.pause(340); // so less risk GitHub think this is a computer?
 
         logMessage("Typing GitHub password ...");
-        this.waitAndSetValue('.auth-form-body #password', ps.password);
-        this.#br.pause(340); // so less risk GitHub think this is a computer?
+        await this.waitAndSetValue('.auth-form-body #password', ps.password);
+        await this.#br.pause(340); // so less risk GitHub think this is a computer?
 
         // GitHub might ask if we want cookies — yes we do.
         const cookieYesSelector =
                 '.js-main-cookie-banner .js-cookie-consent-accept-all';
-        if (this.isExisting(cookieYesSelector)) {
-          this.waitAndClick(cookieYesSelector);
+        if (await this.isExisting(cookieYesSelector)) {
+          await this.waitAndClick(cookieYesSelector);
         }
 
         logMessage("Submitting GitHub login form ...");
-        this.waitAndClick('.auth-form-body input[type="submit"]');
+        await this.waitAndClick('.auth-form-body input[type="submit"]');
         while (true) {
-          this.#br.pause(200);
+          await this.#br.pause(200);
           try {
-            if (this.isVisible('#js-oauth-authorize-btn')) {
+            if (await this.isVisible('#js-oauth-authorize-btn')) {
               logMessage("Authorizing Talkyard to handle this GitHub login ... [TyT4ABKR02F]");
-              this.waitAndClick('#js-oauth-authorize-btn');
+              await this.waitAndClick('#js-oauth-authorize-btn');
               break;
             }
           }
           catch (ex) {
-            if (isWindowClosedException(ex)) {
+            if (await isWindowClosedException(ex)) {
               // The login window closed itself. We've clicked the Authorize
               // button in the past, already.
               logMessage("The GitHub login popup closed itself, fine.");
@@ -3931,11 +3947,11 @@ this.l(`Num tab: ${numTabs}`);
         }
 
         logMessage("GitHub login done — switching back to first window...");
-        this.switchBackToFirstTabOrWindow();
+        await this.switchBackToFirstTabOrWindow();
       },
 
 
-      createFacebookAccount: (
+      createFacebookAccount: async (
             user: { email: St, password: St, username: St },
             ps: {
               shallBecomeOwner?: Bo,
@@ -3943,16 +3959,16 @@ this.l(`Num tab: ${numTabs}`);
               //anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
             } = {}) => {
 
-        this.loginDialog.loginWithFacebook(user);
+        await this.loginDialog.loginWithFacebook(user);
 
         // This should be the first time we login with Facebook at this site,
         // so we'll be asked to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("typing Facebook user's new username...");
-        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', user.username);
-        this.loginDialog.clickSubmit();
-        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        await this.waitAndSetValue('.esCreateUserDlg #e2eUsername', user.username);
+        await this.loginDialog.clickSubmit();
+        await this.loginDialog.acceptTerms(ps.shallBecomeOwner);
 
         // (Optionally, could verify a "Welcome" or "Verify your email addr"
         // dialog pops up.)
@@ -3961,77 +3977,77 @@ this.l(`Num tab: ${numTabs}`);
         // Need to click an email verif link:  (unless the site settings
         // don't require verified emails)
         if (ps.mustVerifyEmail !== false) {
-          const siteId = this.getSiteId();
+          const siteId = await this.getSiteId();
           const link = server.getLastVerifyEmailAddressLinkEmailedTo(
                   siteId, user.email, this.#br);
-          this.go2(link);
-          this.waitAndClick('#e2eContinue');
+          await this.go2(link);
+          await this.waitAndClick('#e2eContinue');
         }
       },
 
-      loginWithFacebook: (data: {
+      loginWithFacebook: async (data: {
             email: string, password: string }, isInPopupAlready?: boolean) => {
         // Pause or sometimes the click misses the button. Is the this.#br doing some re-layout?
-        this.#br.pause(100);
-        this.waitAndClick('#e2eLoginFacebook');
+        await this.#br.pause(100);
+        await this.waitAndClick('#e2eLoginFacebook');
 
         // In Facebook's login popup window:
         if (!isInPopupAlready)
-          this.swithToOtherTabOrWindow(IsWhere.External);
+          await this.swithToOtherTabOrWindow(IsWhere.External);
 
         // We'll get logged in immediately, if we're already logged in to Facebook. Wait for
         // a short while to find out what'll happen.
         while (true) {
-          if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            this.switchBackToFirstTabOrWindow();
+          if (await this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            await this.switchBackToFirstTabOrWindow();
             return;
           }
           try {
-            if (this.isExisting('#email'))
+            if (await this.isExisting('#email'))
               break;
           }
           catch (dummy) {
             logMessage("didn't find #email, tab closed? already logged in? [EdM5PKWT0]");
           }
-          this.#br.pause(300);
+          await this.#br.pause(300);
         }
 
         // Facebook asks if we want cookies — yes we do. And Facebook sometimes
         // renames the ok-cookies button.
         //const cookieYesSelector = '[data-testid="cookie-policy-banner-accept"]';
         const cookieYesSelector = '[data-testid="cookie-policy-dialog-accept-button"]';
-        if (this.isExisting(cookieYesSelector)) {
-          this.waitAndClick(cookieYesSelector);
+        if (await this.isExisting(cookieYesSelector)) {
+          await this.waitAndClick(cookieYesSelector);
         }
 
         logMessage("typing Facebook user's email and password...");
-        this.#br.pause(340); // so less risk Facebook think this is a computer?
-        this.waitAndSetValue('#email', data.email);
-        this.#br.pause(380);
-        this.waitAndSetValue('#pass', data.password);
-        this.#br.pause(280);
+        await this.#br.pause(340); // so less risk Facebook think this is a computer?
+        await this.waitAndSetValue('#email', data.email);
+        await this.#br.pause(380);
+        await this.waitAndSetValue('#pass', data.password);
+        await this.#br.pause(280);
 
         // Facebook recently changed from <input> to <button>. So just find anything with type=submit.
         logMessage("submitting Facebook login dialog...");
-        this.waitAndClick('#loginbutton'); // or: [type=submit]');
+        await this.waitAndClick('#loginbutton'); // or: [type=submit]');
 
         // Here Facebook sometimes asks:
         //   > You previously logged in to [localhost test app name] with Facebook.
         //   > Would you like to continue?
         // and we need to click Yes:
         const yesBtn = 'button[name="__CONFIRM__"]';
-        this.waitUntil(() => {
-          if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+        await this.waitUntil(async () => {
+          if (await this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
             logMessage(`Popup closed, got no "Would you like to continue?" question.`);
             return true;
           }
-          if (this.createUserDialog.isVisible()) {
+          if (await this.createUserDialog.isVisible()) {
             logMessage(`Continuing at Talkyard, same window as Facebook login`);
             logWarningIf(!isInPopupAlready, `But this is the wrong win?`);
             return true;
           }
           try {
-            if (this.tryClickNow(yesBtn) === 'Clicked')
+            if (await this.tryClickNow(yesBtn) === 'Clicked')
               return true;
           }
           catch (dummy) {
@@ -4044,14 +4060,14 @@ this.l(`Num tab: ${numTabs}`);
 
         if (!isInPopupAlready) {
           logMessage("switching back to first tab...");
-          this.switchBackToFirstTabOrWindow();
+          await this.switchBackToFirstTabOrWindow();
         }
       },
 
 
-      createLinkedInAccount: (ps: { email: string, password: string, username: string,
+      createLinkedInAccount: async (ps: { email: string, password: string, username: string,
         shallBecomeOwner: boolean, alreadyLoggedInAtLinkedIn: boolean }) => {
-        this.loginDialog.loginWithLinkedIn({
+        await this.loginDialog.loginWithLinkedIn({
           email: ps.email,
           password: ps.password,
           alreadyLoggedIn: ps.alreadyLoggedInAtLinkedIn,
@@ -4061,63 +4077,64 @@ this.l(`Num tab: ${numTabs}`);
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("typing LinkedIn user's new username...");
-        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', ps.username);
-        this.loginDialog.clickSubmit();
-        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        await this.waitAndSetValue('.esCreateUserDlg #e2eUsername', ps.username);
+        await this.loginDialog.clickSubmit();
+        await this.loginDialog.acceptTerms(ps.shallBecomeOwner);
         // LinkedIn email addresses might not have been verified (or?) so need
         // to click an email addr verif link.
-        const siteId = this.getSiteId();
-        const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, ps.email, this.#br);
-        this.go2(link);
-        this.waitAndClick('#e2eContinue');
+        const siteId = await this.getSiteId();
+        const link = await server.getLastVerifyEmailAddressLinkEmailedTo(
+                siteId, ps.email, this.#br);
+        await this.go2(link);
+        await this.waitAndClick('#e2eContinue');
       },
 
 
-      loginWithLinkedIn: (data: { email: string, password: string,
+      loginWithLinkedIn: async (data: { email: string, password: string,
             alreadyLoggedIn?: boolean, isInPopupAlready?: boolean }) => {
         // Pause or sometimes the click misses the button. Is the this.#br doing some re-layout?
-        this.#br.pause(100);
-        this.waitAndClick('#e2eLoginLinkedIn');
+        await this.#br.pause(100);
+        await this.waitAndClick('#e2eLoginLinkedIn');
 
         // Switch to LinkedIn's login popup window.
         if (!data.isInPopupAlready)
-          this.swithToOtherTabOrWindow(IsWhere.External);
+          await this.swithToOtherTabOrWindow(IsWhere.External);
 
         // Wait until popup window done loading.
         while (true) {
-          if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            this.switchBackToFirstTabOrWindow();
+          if (await this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            await this.switchBackToFirstTabOrWindow();
             return;
           }
           try {
-            if (this.isExisting('input#username'))
+            if (await this.isExisting('input#username'))
               break;
           }
           catch (dummy) {
             logMessage("Didn't find input#username. Tab closed because already logged in?");
           }
-          this.#br.pause(300);
+          await this.#br.pause(300);
         }
 
         logMessage("typing LinkedIn user's email and password...");
-        this.#br.pause(340); // so less risk LinkedIn thinks this is a computer?
+        await this.#br.pause(340); // so less risk LinkedIn thinks this is a computer?
         // This is over at LinkedIn, and, as username, one can type one's email.
-        this.waitAndSetValue('#username', data.email);
-        this.#br.pause(380);
-        this.waitAndSetValue('#password', data.password);
-        this.#br.pause(280);
+        await this.waitAndSetValue('#username', data.email);
+        await this.#br.pause(380);
+        await this.waitAndSetValue('#password', data.password);
+        await this.#br.pause(280);
 
         logMessage("submitting LinkedIn login dialog...");
-        this.waitAndClick('button[type="submit"]');
+        await this.waitAndClick('button[type="submit"]');
 
         // If needed, confirm permissions: click an Allow button.
         try {
           for (let i = 0; i < 10; ++i) {
-            if (this.isVisible('#oauth__auth-form__submit-btn')) {
-              this.waitAndClick('#oauth__auth-form__submit-btn');
+            if (await this.isVisible('#oauth__auth-form__submit-btn')) {
+              await this.waitAndClick('#oauth__auth-form__submit-btn');
             }
             else {
-              const url = this.#br.getUrl();
+              const url = await this.#br.getUrl();
               if (url.indexOf('linkedin.com') === -1) {
                 logMessage("Didn't need to click any Allow button: Left linkedin.com");
                 break;
@@ -4136,25 +4153,25 @@ this.l(`Num tab: ${numTabs}`);
 
         if (!data.isInPopupAlready) {
           logMessage("switching back to first tab...");
-          this.switchBackToFirstTabOrWindow();
+          await this.switchBackToFirstTabOrWindow();
         }
       },
 
 
-      clickLoginWithOidcAzureAd: () => {
+      clickLoginWithOidcAzureAd: async () => {
         // Maybe moves — the dialog might scroll in?
-        this.waitAndClick('#e2eLoginoidc\\/azure_test_alias', { maybeMoves: true });
+        await this.waitAndClick('#e2eLoginoidc\\/azure_test_alias', { maybeMoves: true });
       },
 
 
-      loginWithOidcAzureAd: (ps: { email: St, password: St,
+      loginWithOidcAzureAd: async (ps: { email: St, password: St,
             anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
             alreadyLoggedIn?: Bo, isInLoginPopupAlready?: Bo, stayInPopup?: Bo,
             fullScreenLogin?: Bo, staySignedIn?: Bo }) => {
 
         // Switch to LinkedIn's login popup window.
         if (!ps.isInLoginPopupAlready && !ps.fullScreenLogin)
-          this.swithToOtherTabOrWindow(IsWhere.External);
+          await this.swithToOtherTabOrWindow(IsWhere.External);
 
         const emailInputSelector = 'input[type="email"]';
         const emailNext = 'input[type="submit"]';
@@ -4171,48 +4188,50 @@ this.l(`Num tab: ${numTabs}`);
             // If logged in both at Azure and Ty directly: There's a race?
             // Sometimes we'll see Ty's login dialog briefly before it closes and
             // one's username appears. — This is fine, the tests should work anyway.
-            const idpLoginDone = this.isExisting('.dw-login-modal');
+            const idpLoginDone =
+                    await this.isExisting('.dw-login-modal');
             logMessageIf(idpLoginDone,
                 `Got logged in directly at IDP (Azure)`);
 
-            const idpAndTalkyardLoginDone = this.isExisting('.esMyMenu .esAvtrName_name');
+            const idpAndTalkyardLoginDone =
+                    await this.isExisting('.esMyMenu .esAvtrName_name');
             logMessageIf(idpAndTalkyardLoginDone,
                 `Got logged in directly at both IDP (Azure) and Talkyard`);
 
             if (idpLoginDone || idpAndTalkyardLoginDone)
               return;
           }
-          else if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+          else if (await this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
             logMessage(`IDP (Azure) login done, back at Talkyard`);
-            this.switchBackToFirstTabOrWindow();
+            await this.switchBackToFirstTabOrWindow();
             return;
           }
           try {
             // Continue below once the IDP input fields appear.
-            if (this.isExisting(emailInputSelector))
+            if (await this.isExisting(emailInputSelector))
               break;
           }
           catch (dummy) {
             logMessage(`Didn't find ${emailInputSelector
                   }. Login popup closed because already logged in?`);
           }
-          this.#br.pause(300);
+          await this.#br.pause(300);
         }
 
         logMessage("Typing Azure user's email and password ...");
-        this.#br.pause(340); // so less risk Azure thinks this is a computer?
+        await this.#br.pause(340); // so less risk Azure thinks this is a computer?
         // This is over at Azure, and, as username, one can type one's email.
-        this.waitAndSetValue(emailInputSelector, ps.email);
-        this.#br.pause(380);
-        this.waitAndClick(emailNext);
-        this.waitAndSetValue(passwordInputSelector, ps.password);
-        this.#br.pause(280);
-        this.waitAndClick(passwordNext);
-        this.waitUntilTextIs('.text-title', "Stay signed in?");
+        await this.waitAndSetValue(emailInputSelector, ps.email);
+        await this.#br.pause(380);
+        await this.waitAndClick(emailNext);
+        await this.waitAndSetValue(passwordInputSelector, ps.password);
+        await this.#br.pause(280);
+        await this.waitAndClick(passwordNext);
+        await this.waitUntilTextIs('.text-title', "Stay signed in?");
 
         logMessage(`submitting Azure login dialog, and ps.staySignedIn: ${
                 ps.staySignedIn} ...`);
-        this.waitAndClick(ps.staySignedIn ?
+        await this.waitAndClick(ps.staySignedIn ?
                 yesStaySignedInButton : noDontStaySignedInButton);
 
         // Sometimes also:  .consentHeader  "Permissions requested"
@@ -4220,7 +4239,7 @@ this.l(`Num tab: ${numTabs}`);
 
         if (!ps.isInLoginPopupAlready && !ps.stayInPopup && !ps.fullScreenLogin) {
           logMessage("switching back to first tab...");
-          this.switchBackToFirstTabOrWindow();
+          await this.switchBackToFirstTabOrWindow();
         }
       },
 
@@ -4298,11 +4317,11 @@ this.l(`Num tab: ${numTabs}`);
         await this.waitUntilModalGone();
       },
 
-      acceptTerms: async (isForSiteOwner?: boolean) => {
+      acceptTerms: async (isForSiteOwner?: Bo) => {
         await this.waitForVisible('#e_TermsL');
         await this.waitForVisible('#e_PrivacyL');
-        const termsLinkHtml = await this.$('#e_TermsL').getHTML();
-        const privacyLinkHtml = await this.$('#e_PrivacyL').getHTML();
+        const termsLinkHtml = await (await this.$('#e_TermsL')).getHTML();
+        const privacyLinkHtml = await (await this.$('#e_PrivacyL')).getHTML();
         if (isForSiteOwner) {
           // In dev-test, the below dummy urls are defined [5ADS24], but not in prod.
           if (!settings.prod) {
@@ -4383,119 +4402,120 @@ this.l(`Num tab: ${numTabs}`);
 
 
     pageTitle = {
-      clickEdit: () => {
-        this.waitAndClick('#e2eEditTitle');
+      clickEdit: async () => {
+        await this.waitAndClick('#e2eEditTitle');
       },
 
-      editTitle: (title: string) => {
-        this.waitAndSetValue('#e2eTitleInput', title);
+      editTitle: async (title: string) => {
+        await this.waitAndSetValue('#e2eTitleInput', title);
       },
 
-      save: () => {
-        this.waitAndClick('.e_Ttl_SaveB');
-        this.pageTitle.waitForVisible();
+      save: async () => {
+        await this.waitAndClick('.e_Ttl_SaveB');
+        await this.pageTitle.waitForVisible();
       },
 
-      waitForVisible: () => {
-        this.waitForVisible('.dw-p-ttl h1');
+      waitForVisible: async () => {
+        await this.waitForVisible('.dw-p-ttl h1');
       },
 
-      openAboutAuthorDialog: () => {
+      openAboutAuthorDialog: async () => {
         const selector = '.dw-ar-p-hd .esP_By';
-        this.waitForVisible(selector);
-        this.topic.clickPostActionButton(selector);
-        this.waitForVisible('.esUsrDlg');
+        await this.waitForVisible(selector);
+        await this.topic.clickPostActionButton(selector);
+        await this.waitForVisible('.esUsrDlg');
       },
 
-      assertMatches: (regex: string | RegExp) => {
-        this.assertPageTitleMatches(regex);
+      assertMatches: async (regex: string | RegExp) => {
+        await this.assertPageTitleMatches(regex);
       },
 
       // Also see this.assertWholePageHidden().
-      assertPageHidden: () => {
-        this.pageTitle.waitForVisible();
-        assert(this.pageTitle.__isEyeOffVisible());
+      assertPageHidden: async () => {
+        await this.pageTitle.waitForVisible();
+        assert(await this.pageTitle.__isEyeOffVisible());
       },
 
-      assertPageNotHidden: () => {
-        this.pageTitle.waitForVisible();
-        assert(!this.pageTitle.__isEyeOffVisible());
+      assertPageNotHidden: async () => {
+        await this.pageTitle.waitForVisible();
+        assert(!await this.pageTitle.__isEyeOffVisible());
       },
 
-      __isEyeOffVisible: (): Bo => this.isVisible('.dw-p-ttl .icon-eye-off'),
+      __isEyeOffVisible: async (): Pr<Bo> =>
+        await this.isVisible('.dw-p-ttl .icon-eye-off'),
 
 
       __changePageButtonSelector: '.dw-p-ttl .dw-clickable',
 
-      openChangePageDialog: () => {
-        this.waitAndClick(this.pageTitle.__changePageButtonSelector);
-        this.topic.waitUntilChangePageDialogOpen();
+      openChangePageDialog: async () => {
+        await this.waitAndClick(this.pageTitle.__changePageButtonSelector);
+        await this.topic.waitUntilChangePageDialogOpen();
       },
 
-      canBumpPageStatus: (): boolean => {
-        return this.isVisible(this.pageTitle.__changePageButtonSelector);
+      canBumpPageStatus: async (): Pr<Bo>=> {
+        return await this.isVisible(this.pageTitle.__changePageButtonSelector);
       },
     }
 
 
     forumButtons = {
-      clickEditIntroText: () => {
-        this.waitAndClick('.esForumIntro_edit');
-        this.waitAndClick('#e2eEID_EditIntroB');
-        this.waitUntilModalGone();
+      clickEditIntroText: async () => {
+        await this.waitAndClick('.esForumIntro_edit');
+        await this.waitAndClick('#e2eEID_EditIntroB');
+        await this.waitUntilModalGone();
       },
 
-      clickRemoveIntroText: () => {
-        this.waitAndClick('.esForumIntro_edit');
-        this.waitAndClick('#e2eEID_RemoveIntroB');
-        this.waitUntilModalGone();
+      clickRemoveIntroText: async () => {
+        await this.waitAndClick('.esForumIntro_edit');
+        await this.waitAndClick('#e2eEID_RemoveIntroB');
+        await this.waitUntilModalGone();
       },
 
-      clickViewCategories: () => {
-        this.waitAndClick('#e_ViewCatsB');
+      clickViewCategories: async () => {
+        await this.waitAndClick('#e_ViewCatsB');
       },
 
-      viewTopics: (ps: { waitForTopics?: false } = {}) => {
-        this.waitAndClick('#e2eViewTopicsB');
+      viewTopics: async (ps: { waitForTopics?: false } = {}) => {
+        await this.waitAndClick('#e2eViewTopicsB');
         if (ps.waitForTopics !== false) {
-          this.forumTopicList.waitForTopics();
+          await this.forumTopicList.waitForTopics();
         }
       },
 
-      clickViewNew: () => {
-        this.waitAndClick('#e_SortNewB');
+      clickViewNew: async (): Pr<Vo> => {
+        await this.waitAndClick('#e_SortNewB');
       },
 
-      clickCreateCategory: () => {
-        this.waitAndClick('#e2eCreateCategoryB');
+      clickCreateCategory: async () => {
+        await this.waitAndClick('#e2eCreateCategoryB');
       },
 
-      clickEditCategory: () => {
-        this.waitAndClick('.s_F_Ts_Cat_Edt');
+      clickEditCategory: async () => {
+        await this.waitAndClick('.s_F_Ts_Cat_Edt');
         // Wait until slide-in animation done, otherwise subsequent clicks inside
         // the dialog might miss.
-        this.waitForVisible('#t_CD_Tabs');
-        this.waitUntilDoesNotMove('#t_CD_Tabs');
+        await this.waitForVisible('#t_CD_Tabs');
+        await this.waitUntilDoesNotMove('#t_CD_Tabs');
       },
 
-      clickCreateTopic: () => {
-        this.waitAndClick('#e2eCreateSth');
+      clickCreateTopic: async () => {
+        await this.waitAndClick('#e2eCreateSth');
       },
 
-      getCreateTopicButtonText: (): string => {
-        return this.waitAndGetVisibleText('#e2eCreateSth');
+      getCreateTopicButtonText: async (): Pr<St> => {
+        return await this.waitAndGetVisibleText('#e2eCreateSth');
       },
 
-      assertNoCreateTopicButton: () => {
+      assertNoCreateTopicButton: async () => {
         // Wait until the button bar has loaded.
-        this.waitForVisible('#e_ViewCatsB');
-        assert(!this.isVisible('#e2eCreateSth'));
+        await this.waitForVisible('#e_ViewCatsB');
+        assert(!await this.isVisible('#e2eCreateSth'));
       },
 
-      listDeletedTopics: () => {
-        this.waitAndClick('.esForum_filterBtn');
-        this.waitAndClick('.s_F_BB_TF_Dd');
-        this.forumTopicList.waitForTopics();
+      listDeletedTopics: async () => {
+        await this.waitAndClick('.esForum_filterBtn');
+        await this.waitAndClick('.s_F_BB_TF_Dd');
+        await this.forumTopicList.waitForTopics();
       },
     }
 
@@ -4504,114 +4524,114 @@ this.l(`Num tab: ${numTabs}`);
       titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.esF_TsL_T_Title',  CLEAN_UP
       hiddenTopicTitleSelector: '.e2eTopicTitle a.icon-eye-off',
 
-      goHere: (ps: { origin?: string, categorySlug?: string } = {}) => {
+      goHere: async (ps: { origin?: St, categorySlug?: St } = {}) => {
         const origin = ps.origin || '';
-        this.go(origin + '/latest/' + (ps.categorySlug || ''));
+        await this.go(origin + '/latest/' + (ps.categorySlug || ''));
       },
 
-      waitUntilKnowsIsEmpty: () => {
-        this.waitForVisible('#e2eF_NoTopics');
+      waitUntilKnowsIsEmpty: async () => {
+        await this.waitForVisible('#e2eF_NoTopics');
       },
 
       clickEditCategory: () => die('TyE59273',
             "Use forumButtons.clickEditCategory() instead"),
 
-      waitForCategoryName: (name: string, ps: { isSubCat?: true } = {}) => {
+      waitForCategoryName: async (name: St, ps: { isSubCat?: true } = {}) => {
         const selector = ps.isSubCat ? '.s_F_Ts_Cat_Ttl-SubCat' : '.s_F_Ts_Cat_Ttl';
-        this.waitAndGetElemWithText(selector, name);
+        await this.waitAndGetElemWithText(selector, name);
       },
 
-      waitForTopics: (ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}) => {
-        this.waitForVisible('.e2eF_T', ps);  // was timeoutMs: 1000 why?
+      waitForTopics: async (ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}) => {
+        await this.waitForVisible('.e2eF_T', ps);  // was timeoutMs: 1000 why?
       },
 
-      waitForTopicVisible: (title: string) => {
-        this.waitUntilAnyTextMatches(this.forumTopicList.titleSelector, title);
+      waitForTopicVisible: async (title: St) => {
+        await this.waitUntilAnyTextMatches(this.forumTopicList.titleSelector, title);
       },
 
-      clickLoadMore: (opts: { mayScroll?: boolean } = {}) => {
-        this.waitAndClick('.load-more', opts);
+      clickLoadMore: async (opts: { mayScroll?: Bo } = {}) => {
+        await this.waitAndClick('.load-more', opts);
       },
 
-      switchToCategory: (toCatName: string) => {
-        this.waitAndClick('.esForum_catsDrop.s_F_Ts_Cat_Ttl');
-        this.waitAndClickSelectorWithText('.s_F_BB_CsM a', toCatName);
-        this.forumTopicList.waitForCategoryName(toCatName);
+      switchToCategory: async (toCatName: St) => {
+        await this.waitAndClick('.esForum_catsDrop.s_F_Ts_Cat_Ttl');
+        await this.waitAndClickSelectorWithText('.s_F_BB_CsM a', toCatName);
+        await this.forumTopicList.waitForCategoryName(toCatName);
       },
 
-      clickViewLatest: () => {
-        this.waitAndClick('#e2eSortLatestB');
-        this.waitUntilGone('.s_F_SI_TopB');
+      clickViewLatest: async () => {
+        await this.waitAndClick('#e2eSortLatestB');
+        await this.waitUntilGone('.s_F_SI_TopB');
         // Means topics loaded.
-        this.waitForVisible('.e_SrtOrdr-1'); // TopicSortOrder.BumpTime
+        await this.waitForVisible('.e_SrtOrdr-1'); // TopicSortOrder.BumpTime
       },
 
-      viewNewest: () => {
-        this.forumButtons.clickViewNew();
-        this.waitUntilGone('.s_F_SI_TopB');
+      viewNewest: async () => {
+        await this.forumButtons.clickViewNew();
+        await this.waitUntilGone('.s_F_SI_TopB');
         // This means topics loaded:
-        this.waitForVisible('.e_SrtOrdr-2'); // TopicSortOrder.CreatedAt
+        await this.waitForVisible('.e_SrtOrdr-2'); // TopicSortOrder.CreatedAt
       },
 
-      clickViewTop: () => {
-        this.waitAndClick('#e2eSortTopB');
-        this.waitForVisible('.s_F_SI_TopB');
-        this.waitForVisible('.e_SrtOrdr-3'); // TopicSortOrder.ScoreAndBumpTime
+      clickViewTop: async () => {
+        await this.waitAndClick('#e2eSortTopB');
+        await this.waitForVisible('.s_F_SI_TopB');
+        await this.waitForVisible('.e_SrtOrdr-3'); // TopicSortOrder.ScoreAndBumpTime
       },
 
-      openAboutUserDialogForUsername: (username: string) => {
-        this.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
+      openAboutUserDialogForUsername: async (username: St) => {
+        await this.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
       },
 
-      goToTopic: (title: string) => {   // RENAME to navToTopic
-        this.forumTopicList.navToTopic(title);
+      goToTopic: async (title: St) => {   // RENAME to navToTopic
+        await this.forumTopicList.navToTopic(title);
       },
 
-      navToTopic: (title: string) => {
-        this.rememberCurrentUrl();
-        this.waitForThenClickText(this.forumTopicList.titleSelector, title);
-        this.waitForNewUrl();
-        this.assertPageTitleMatches(title);
+      navToTopic: async (title: St) => {
+        await this.rememberCurrentUrl();
+        await this.waitForThenClickText(this.forumTopicList.titleSelector, title);
+        await this.waitForNewUrl();
+        await this.assertPageTitleMatches(title);
       },
 
-      assertNumVisible: (howMany: number, ps: { wait?: boolean } = {}) => {
+      assertNumVisible: async (howMany: Nr, ps: { wait?: Bo } = {}) => {
         if (ps.wait) {
-          this.forumTopicList.waitForTopics();
+          await this.forumTopicList.waitForTopics();
         }
-        this.assertExactly(howMany, '.e2eTopicTitle');
+        await this.assertExactly(howMany, '.e2eTopicTitle');
       },
 
-      assertTopicTitlesAreAndOrder: (titles: string[]) => {
-        const els = this.$$(this.forumTopicList.titleSelector);
+      assertTopicTitlesAreAndOrder: async (titles: St[]) => {
+        const els = await this.$$(this.forumTopicList.titleSelector);
         for (let i = 0; i < titles.length; ++i) {
           const titleShouldBe = titles[i];
           const actualTitleElem = els[i];
           if (!actualTitleElem) {
             assert(false, `Title nr ${i} missing, should be: "${titleShouldBe}"`);
           }
-          const actualTitle = actualTitleElem.getText();
+          const actualTitle = await actualTitleElem.getText();
           if (titleShouldBe !== actualTitle) {
             assert(false, `Title nr ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
           }
         }
       },
 
-      assertTopicVisible: (title: string) => {
-        this.assertAnyTextMatches(this.forumTopicList.titleSelector, title);
-        this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+      assertTopicVisible: async (title: St) => {
+        await this.assertAnyTextMatches(this.forumTopicList.titleSelector, title);
+        await this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
-      assertTopicNrVisible: (nr: number, title: string) => {
-        this.assertNthTextMatches(this.forumTopicList.titleSelector, nr, title);
-        this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+      assertTopicNrVisible: async (nr: Nr, title: St) => {
+        await this.assertNthTextMatches(this.forumTopicList.titleSelector, nr, title);
+        await this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
-      assertTopicNotVisible: (title: string) => {
-        this.assertNoTextMatches(this.forumTopicList.titleSelector, title);
+      assertTopicNotVisible: async (title: St) => {
+        await this.assertNoTextMatches(this.forumTopicList.titleSelector, title);
       },
 
-      assertTopicVisibleAsHidden: (title: string) => {
-        this.assertAnyTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+      assertTopicVisibleAsHidden: async (title: St) => {
+        await this.assertAnyTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
       },
     }
 
@@ -4620,225 +4640,231 @@ this.l(`Num tab: ${numTabs}`);
       categoryNameSelector: '.esForum_cats_cat .forum-title',
       subCategoryNameSelector: '.s_F_Cs_C_ChildCs_C',
 
-      goHere: (origin?: string, opts: { shouldSeeAnyCats?: Bo } = {}) => {
-        this.go((origin || '') + '/categories');
-        this.forumCategoryList.waitForCategories(opts.shouldSeeAnyCats !== false);
+      goHere: async (origin?: St, opts: { shouldSeeAnyCats?: Bo } = {}) => {
+        await this.go((origin || '') + '/categories');
+        await this.forumCategoryList.waitForCategories(opts.shouldSeeAnyCats !== false);
       },
 
-      waitForCategories: (shouldSeeAnyCats: Bo = true) => {
+      waitForCategories: async (shouldSeeAnyCats: Bo = true) => {
         if (shouldSeeAnyCats) {
-          this.waitForVisible('.s_F_Cs');
+          await this.waitForVisible('.s_F_Cs');
         }
         else {
-          this.waitForExist('.s_F_Cs');
-          this.waitForAtMost(0, this.forumCategoryList.categoryNameSelector);
+          await this.waitForExist('.s_F_Cs');
+          await this.waitForAtMost(0, this.forumCategoryList.categoryNameSelector);
         }
       },
 
-      waitForNumCategoriesVisible: (num: number) => {
-        this.waitForAtLeast(num, this.forumCategoryList.categoryNameSelector);
+      waitForNumCategoriesVisible: async (num: Nr) => {
+        await this.waitForAtLeast(num, this.forumCategoryList.categoryNameSelector);
       },
 
-      namesOfVisibleCategories: (): string[] =>
-        this.$$(this.forumCategoryList.categoryNameSelector).map(e => e.getText()),
-
-      numCategoriesVisible: (): number =>
-        this.$$(this.forumCategoryList.categoryNameSelector).length,
-
-      numSubCategoriesVisible: (): number =>
-        this.$$(this.forumCategoryList.subCategoryNameSelector).length,
-
-      isCategoryVisible: (categoryName: string): boolean => {
-        return this.isDisplayedWithText(
-            this.forumCategoryList.categoryNameSelector, categoryName);
+      namesOfVisibleCategories: async (): Pr<St[]> => {
+        const elms: WElm[] = await this.$$(this.forumCategoryList.categoryNameSelector);
+        const namesPromises: Pr<St>[] = elms.map(async (e: WElm) => {
+          return await e.getText();
+        });
+        const names: St[] = await Promise.all(namesPromises);
+        return names;
       },
 
-      isSubCategoryVisible: (categoryName: string): boolean => {
-        return this.isDisplayedWithText(
+      numCategoriesVisible: async (): Pr<Nr> =>
+        (await this.$$(this.forumCategoryList.categoryNameSelector)).length,
+
+      numSubCategoriesVisible: async (): Pr<Nr> =>
+        (await this.$$(this.forumCategoryList.subCategoryNameSelector)).length,
+
+      isCategoryVisible: async (categoryName: St): Pr<Bo> => {
+        return await this.isDisplayedWithText(
+                this.forumCategoryList.categoryNameSelector, categoryName);
+      },
+
+      isSubCategoryVisible: async (categoryName: St): Pr<Bo> => {
+        return await this.isDisplayedWithText(
             this.forumCategoryList.subCategoryNameSelector, categoryName);
       },
 
-      openCategory: (categoryName: string) => {
-        this.forumCategoryList._openCategoryImpl(
+      openCategory: async (categoryName: St) => {
+        await this.forumCategoryList._openCategoryImpl(
             categoryName, this.forumCategoryList.categoryNameSelector);
       },
 
-      openSubCategory: (categoryName: string) => {
-        this.forumCategoryList._openCategoryImpl(
+      openSubCategory: async (categoryName: St) => {
+        await this.forumCategoryList._openCategoryImpl(
             categoryName, this.forumCategoryList.subCategoryNameSelector);
       },
 
-      _openCategoryImpl: (categoryName: string, selector: string) => {
-        this.repeatUntilAtNewUrl(() => {
-          this.waitForThenClickText(selector, categoryName);
+      _openCategoryImpl: async (categoryName: St, selector: St) => {
+        await this.repeatUntilAtNewUrl(async () => {
+          await this.waitForThenClickText(selector, categoryName);
         });
-        this.waitForVisible('.s_F_Ts_Cat_Ttl');
+        await this.waitForVisible('.s_F_Ts_Cat_Ttl');
         const titleSelector = selector === this.forumCategoryList.subCategoryNameSelector
             ? '.s_F_Ts_Cat_Ttl-SubCat'
             : '.s_F_Ts_Cat_Ttl';
-        this.assertTextMatches(titleSelector, categoryName);
+        await this.assertTextMatches(titleSelector, categoryName);
       },
 
       // RENAME to setNotfLevelForCategoryNr?
-      setCatNrNotfLevel: (categoryNr: number, notfLevel: PageNotfLevel) => {
-        this.waitAndClickNth('.dw-notf-level', categoryNr);
-        this.notfLevelDropdown.clickNotfLevel(notfLevel);
+      setCatNrNotfLevel: async (categoryNr: Nr, notfLevel: PageNotfLevel) => {
+        await this.waitAndClickNth('.dw-notf-level', categoryNr);
+        await this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
 
       // MOVE to forumTopicList?
-      assertCategoryNotFoundOrMayNotAccess: () => {
-        this.assertAnyTextMatches('.dw-forum', '_TyE0CAT');
+      assertCategoryNotFoundOrMayNotAccess: async () => {
+        await this.assertAnyTextMatches('.dw-forum', '_TyE0CAT');
       }
     }
 
 
     categoryDialog = {
-      fillInFields: (data: { name?: string, slug?: string,
-            setAsDefault?: boolean, extId?: string }) => {
+      fillInFields: async (data: { name?: St, slug?: St,
+            setAsDefault?: Bo, extId?: St }) => {
         if (data.name) {
-          this.waitAndSetValue('#e2eCatNameI', data.name);
+          await this.waitAndSetValue('#e2eCatNameI', data.name);
         }
         if (data.slug) {
-          this.waitAndClick('#e2eShowCatSlug');
-          this.waitAndSetValue('#e2eCatSlug', data.slug);
+          await this.waitAndClick('#e2eShowCatSlug');
+          await this.waitAndSetValue('#e2eCatSlug', data.slug);
         }
         if (data.setAsDefault) {
-          this.waitAndClick('#e2eSetDefCat');
+          await this.waitAndClick('#e2eSetDefCat');
         }
         if (data.extId) {
-          this.waitAndClick('#te_ShowExtId');
-          this.waitAndSetValue('#te_CatExtId', data.extId);
+          await this.waitAndClick('#te_ShowExtId');
+          await this.waitAndSetValue('#te_CatExtId', data.extId);
         }
       },
 
-      setParentCategory: (catName: St) => {
-        this.waitAndClick('.s_CD .e_SelCatB');
-        this.waitAndClickSelectorWithText('.e_CatLs .esExplDrp_entry_title', catName)
-        this.waitUntilTextIs('.s_CD .e_SelCatB', catName);
+      setParentCategory: async (catName: St) => {
+        await this.waitAndClick('.s_CD .e_SelCatB');
+        await this.waitAndClickSelectorWithText('.e_CatLs .esExplDrp_entry_title', catName);
+        await this.waitUntilTextIs('.s_CD .e_SelCatB', catName);
       },
 
-      clearParentCategory: () => {
-        this.waitAndClick('.s_CD_0SubCat');
-        this.waitUntilTextIs('.s_CD .e_SelCatB', "None");
+      clearParentCategory: async () => {
+        await this.waitAndClick('.s_CD_0SubCat');
+        await this.waitUntilTextIs('.s_CD .e_SelCatB', "None");
       },
 
-      submit: () => {
+      submit: async () => {
         // ---- Some scroll-to-Save-button problem. So do a bit double scrolling.
-        this.scrollIntoViewInPageColumn('#e2eSaveCatB')
-        this.scrollToBottom();
+        await this.scrollIntoViewInPageColumn('#e2eSaveCatB')
+        await this.scrollToBottom();
         // ----
-        this.waitAndClick('#e2eSaveCatB');
-        this.waitUntilModalGone();
-        this.waitUntilLoadingOverlayGone();
+        await this.waitAndClick('#e2eSaveCatB');
+        await this.waitUntilModalGone();
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      cancel: () => {
-        this.waitAndClick('.e_CancelCatB');
-        this.waitUntilGone('.s_CD');
-        this.waitUntilModalGone();
-        this.waitUntilLoadingOverlayGone();
+      cancel: async () => {
+        await this.waitAndClick('.e_CancelCatB');
+        await this.waitUntilGone('.s_CD');
+        await this.waitUntilModalGone();
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      setCategoryUnlisted: () => {
-        this.waitAndClick('#e_ShowUnlRBs');
-        this.waitAndClick('.e_UnlCatRB input');
+      setCategoryUnlisted: async () => {
+        await this.waitAndClick('#e_ShowUnlRBs');
+        await this.waitAndClick('.e_UnlCatRB input');
       },
 
-      setTopicsUnlisted: () => {
-        this.waitAndClick('#e_ShowUnlRBs');
-        this.waitAndClick('.e_UnlTpcsRB input');
+      setTopicsUnlisted: async () => {
+        await this.waitAndClick('#e_ShowUnlRBs');
+        await this.waitAndClick('.e_UnlTpcsRB input');
       },
 
-      setNotUnlisted: () => {
-        this.waitAndClick('#e_ShowUnlRBs');
-        this.waitAndClick('.e_DontUnlRB input');
+      setNotUnlisted: async () => {
+        await this.waitAndClick('#e_ShowUnlRBs');
+        await this.waitAndClick('.e_DontUnlRB input');
       },
 
-      deleteCategory: () => {
-        this.waitAndClick('.s_CD_DelB');
+      deleteCategory: async () => {
+        await this.waitAndClick('.s_CD_DelB');
         // Dismiss "Category deleted" message.
-        this.stupidDialog.clickClose();
-        this.categoryDialog.cancel();
+        await this.stupidDialog.clickClose();
+        await this.categoryDialog.cancel();
       },
 
-      undeleteCategory: () => {
-        this.waitAndClick('.s_CD_UndelB');
+      undeleteCategory: async () => {
+        await this.waitAndClick('.s_CD_UndelB');
         // Dismiss "Done, category undeleted" message.
-        this.stupidDialog.clickClose();
-        this.categoryDialog.cancel();
+        await this.stupidDialog.clickClose();
+        await this.categoryDialog.cancel();
       },
 
-      openSecurityTab: () => {
-        this.waitAndClick('#t_CD_Tabs-tab-2');
-        this.waitForVisible('.s_CD_Sec_AddB');
+      openSecurityTab: async () => {
+        await this.waitAndClick('#t_CD_Tabs-tab-2');
+        await this.waitForVisible('.s_CD_Sec_AddB');
       },
 
       securityTab: {
-        switchGroupFromTo: (fromGroupName: string, toGroupName: string) => {
-          this.waitAndClickSelectorWithText('.s_PoP_Un .e_SelGrpB', fromGroupName);
-          this.waitAndClickSelectorWithText(
+        switchGroupFromTo: async (fromGroupName: St, toGroupName: St) => {
+          await this.waitAndClickSelectorWithText('.s_PoP_Un .e_SelGrpB', fromGroupName);
+          await this.waitAndClickSelectorWithText(
               '.esDropModal_content .esExplDrp_entry', toGroupName);
         },
 
-        removeGroup: (groupId: UserId) => {
-          this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Dl`);
-          this.waitUntilGone(`.s_PoP-Grp-${groupId}`);
+        removeGroup: async (groupId: UserId) => {
+          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Dl`);
+          await this.waitUntilGone(`.s_PoP-Grp-${groupId}`);
         },
 
-        addGroup: (groupName: string) => {
-          this.waitAndClick('.s_CD_Sec_AddB');
-          this.waitAndClick('.s_PoP-Select-Grp .e_SelGrpB');
-          this.waitAndClickSelectorWithText(
+        addGroup: async (groupName: St) => {
+          await this.waitAndClick('.s_CD_Sec_AddB');
+          await this.waitAndClick('.s_PoP-Select-Grp .e_SelGrpB');
+          await this.waitAndClickSelectorWithText(
               '.esDropModal_content .esExplDrp_entry', groupName);
         },
 
-        setMayCreate: (groupId: UserId, may: boolean) => {
+        setMayCreate: async (groupId: UserId, may: Bo) => {
           // For now, just click once
-          this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
+          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
         },
 
-        setMayReply: (groupId: UserId, may: boolean) => {
+        setMayReply: async (groupId: UserId, may: Bo) => {
           // For now, just click once
-          this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
+          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
         },
 
-        setMayEditWiki: (groupId: UserId, may: boolean) => {
+        setMayEditWiki: async (groupId: UserId, may: Bo) => {
           // For now, just click once
-          this.waitAndClick(`li.s_PoP:last-child .s_PoP_Ps_P_EdWk input`);  // for now
+          await this.waitAndClick(`li.s_PoP:last-child .s_PoP_Ps_P_EdWk input`);  // for now
         },
 
-        setMaySee: (groupId: UserId, may: boolean) => {
+        setMaySee: async (groupId: UserId, may: Bo) => {
           // For now, just click once
-          this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
+          await this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
         },
       }
     }
 
 
     aboutUserDialog = {
-      waitForLoaded: () => {
-        this.waitUntilLoadingOverlayGone();
-        this.waitForEnabled('.s_UD .e_CloseB');
-        this.waitUntilDoesNotMove('.s_UD .e_CloseB');
+      waitForLoaded: async () => {
+        await this.waitUntilLoadingOverlayGone();
+        await this.waitForEnabled('.s_UD .e_CloseB');
+        await this.waitUntilDoesNotMove('.s_UD .e_CloseB');
       },
 
-      getUsername: (): string => {
-        this.aboutUserDialog.waitForLoaded();
-        return this.waitAndGetVisibleText('.s_UD_Un');
+      getUsername: async (): Pr<St> => {
+        await this.aboutUserDialog.waitForLoaded();
+        return await this.waitAndGetVisibleText('.s_UD_Un');
       },
 
-      close: () => {
-        this.aboutUserDialog.waitForLoaded();
-        this.waitAndClick('.s_UD .e_CloseB');
-        this.waitForGone('.s_UD');
-        this.waitUntilModalGone();
+      close: async () => {
+        await this.aboutUserDialog.waitForLoaded();
+        await this.waitAndClick('.s_UD .e_CloseB');
+        await this.waitForGone('.s_UD');
+        await this.waitUntilModalGone();
       },
 
-      clickSendMessage: () => {
-        this.aboutUserDialog.waitForLoaded();
-        this.rememberCurrentUrl();
-        this.waitAndClick('#e2eUD_MessageB');
-        this.waitForNewUrl();
+      clickSendMessage: async () => {
+        await this.aboutUserDialog.waitForLoaded();
+        await this.rememberCurrentUrl();
+        await this.waitAndClick('#e2eUD_MessageB');
+        await this.waitForNewUrl();
         /*  DO_AFTER having tested this in FF with Wdio 6.0: Remove this:
         // Wait until new-message title can be edited.
         // For some reason, FF is so fast, so typing the title now after new page load, fails
@@ -4849,58 +4875,58 @@ this.l(`Num tab: ${numTabs}`);
         }); */
       },
 
-      clickViewProfile: () => {
-        this.aboutUserDialog.waitForLoaded();
-        this.rememberCurrentUrl();
-        this.waitAndClick('#e2eUD_ProfileB');
-        this.waitForNewUrl();
+      clickViewProfile: async () => {
+        await this.aboutUserDialog.waitForLoaded();
+        await this.rememberCurrentUrl();
+        await this.waitAndClick('#e2eUD_ProfileB');
+        await this.waitForNewUrl();
       },
 
-      clickRemoveFromPage: () => {
-        this.aboutUserDialog.waitForLoaded();
-        this.waitAndClick('#e2eUD_RemoveB');
+      clickRemoveFromPage: async () => {
+        await this.aboutUserDialog.waitForLoaded();
+        await this.waitAndClick('#e2eUD_RemoveB');
         // Later: this.#br.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
-        this.waitForVisible('.esStupidDlg');
-        this.#br.refresh();
+        await this.waitForVisible('.esStupidDlg');
+        await this.#br.refresh();
       },
     }
 
 
     addUsersToPageDialog = {
-      focusNameInputField: () => {
-        this.waitAndClick('#e2eAddUsD .Select-placeholder');
+      focusNameInputField: async () => {
+        await this.waitAndClick('#e2eAddUsD .Select-placeholder');
       },
 
-      startTypingNewName: (chars: string) => {
-        this.waitAndSetValue('#e2eAddUsD .Select-input > input', chars,
+      startTypingNewName: async (chars: St) => {
+        await this.waitAndSetValue('#e2eAddUsD .Select-input > input', chars,
             { okayOccluders: '.Select-placeholder', checkAndRetry: true });
       },
 
-      appendChars: (chars: string) => {
-        this.$('#e2eAddUsD .Select-input > input').addValue(chars);
+      appendChars: async (chars: St) => {
+        await (await this.$('#e2eAddUsD .Select-input > input')).addValue(chars);
       },
 
-      hitEnterToSelectUser: () => {
+      hitEnterToSelectUser: async () => {
         // Might not work in Firefox. Didn't in wdio v4.
         // Doesn't work with DevTools; types the letters in "Return" instead. [E2EBUG]
         // But works with WebDriver / Selenium.
         logWarningIf(settings.useDevtoolsProtocol, `\n\n` +
               `this.#br.keys(['Return'])  won't work with DevTools!  ` +
               `Just types "Return" instead\n\n`);
-        this.#br.keys(['Return']);
+        await this.#br.keys(['Return']);
       },
 
-      addOneUser: (username: string) => {
-        this.addUsersToPageDialog.focusNameInputField();
-        this.addUsersToPageDialog.startTypingNewName(
+      addOneUser: async (username: St) => {
+        await this.addUsersToPageDialog.focusNameInputField();
+        await this.addUsersToPageDialog.startTypingNewName(
             // Clicking Return = complicated!  Only + \n  works in FF:  [E2EENTERKEY]
             // The Select input is special: the <input> is occluded, but still works fine.
             // Update: '\n' stopped working properly in Wdio v6?  Try with 'Enter' again.
             // username + '\n');
             username);
 
-        this.addUsersToPageDialog.hitEnterToSelectUser();
+        await this.addUsersToPageDialog.hitEnterToSelectUser();
 
 
         // Works in Chrome but not FF:
@@ -4946,14 +4972,14 @@ this.l(`Num tab: ${numTabs}`);
         // this.#br.click('#e2eAddUsD_SubmitB');
       },
 
-      submit: (ps: { closeStupidDialogAndRefresh?: true } = {}) => {
+      submit: async (ps: { closeStupidDialogAndRefresh?: true } = {}) => {
           // Sometimes the click fails (maybe the dialog resizes, once a member is selected, so
           // the Submit button moves a bit?). Then, the Add More Group Members button will
           // remain occluded.
         const submitSelector = '#e2eAddUsD_SubmitB';
-        utils.tryManyTimes(`Submit members`, 2, () => {
-          this.waitAndClick(submitSelector);
-          const isGone = this.waitUntilGone(submitSelector, {
+        await utils.tryManyTimes(`Submit members`, 2, async () => {
+          await this.waitAndClick(submitSelector);
+          const isGone = await this.waitUntilGone(submitSelector, {
                   timeoutMs: 2000, timeoutIsFine: true });
           if (!isGone)
             throw `Not yet gone: ${submitSelector}`;
@@ -4961,65 +4987,65 @@ this.l(`Num tab: ${numTabs}`);
         // Later: this.#br.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
         if (ps.closeStupidDialogAndRefresh) {
-          this.waitForVisible('.esStupidDlg');
-          this.#br.refresh();
+          await this.waitForVisible('.esStupidDlg');
+          await this.#br.refresh();
         }
       }
     };
 
 
     editor = {
-      editTitle: (title: string, opts: { checkAndRetry?: true } = {}) => {
-        this.waitAndSetValue('.esEdtr_titleEtc_title', title, opts);
+      editTitle: async (title: St, opts: { checkAndRetry?: true } = {}) => {
+        await this.waitAndSetValue('.esEdtr_titleEtc_title', title, opts);
       },
 
-      isTitleVisible: () => {
-        this.waitForDisplayed('.editor-area');
-        return this.isVisible('.editor-area .esEdtr_titleEtc_title');
+      isTitleVisible: async () => {
+        await this.waitForDisplayed('.editor-area');
+        return await this.isVisible('.editor-area .esEdtr_titleEtc_title');
       },
 
-      getTitle: (): string => {
-        return this.$('.editor-area .esEdtr_titleEtc_title').getText();
+      getTitle: async (): Pr<St> => {
+        return await (await this.$('.editor-area .esEdtr_titleEtc_title')).getText();
       },
 
-      waitForSimilarTopics: () => {
-        this.waitForVisible('.s_E_SimlTpcs');
+      waitForSimilarTopics: async () => {
+        await this.waitForVisible('.s_E_SimlTpcs');
       },
 
-      numSimilarTopics: (): number => {
-        return this.count('.s_E_SimlTpcs_L_It');
+      numSimilarTopics: async (): Pr<Nr> => {
+        return await this.count('.s_E_SimlTpcs_L_It');
       },
 
-      isSimilarTopicTitlePresent: (title: string) => {
-        const text = this.waitAndGetVisibleText('.s_E_SimlTpcs')
+      isSimilarTopicTitlePresent: async (title: St): Pr<Bo> => {
+        const text = await this.waitAndGetVisibleText('.s_E_SimlTpcs')
         return text.search(title) >= 0;
       },
 
-      editText: (text: string, opts: {
+      editText: async (text: St, opts: {
           timeoutMs?: number, checkAndRetry?: true,
           append?: boolean, skipWait?: true } = {}) => {
-        this.switchToEmbEditorIframeIfNeeded();
-        this.waitAndSetValue('.esEdtr_textarea', text, opts);
+        await this.switchToEmbEditorIframeIfNeeded();
+        await this.waitAndSetValue('.esEdtr_textarea', text, opts);
       },
 
-      getText: (): string => {
-        return this.waitAndGetValue('.editor-area textarea');
+      getText: async (): Pr<St> => {
+        return await this.waitAndGetValue('.editor-area textarea');
       },
 
-      openTopicTypeDropdown: () => {
-        this.waitAndClick('.esTopicType_dropdown');
+      openTopicTypeDropdown: async () => {
+        await this.waitAndClick('.esTopicType_dropdown');
       },
 
-      closeTopicTypeDropdown: () => {
-        this.waitAndClick('.esDropModal_CloseB');
+      closeTopicTypeDropdown: async () => {
+        await this.waitAndClick('.esDropModal_CloseB');
       },
 
-      canClickShowMoreTopicTypes: (): Bo => {
-        this.waitForDisplayed('#te_DiscO');
-        return this.isVisible('.esPageRole_showMore');
+      canClickShowMoreTopicTypes: async (): Pr<Bo> => {
+        await this.waitForDisplayed('#te_DiscO');
+        return await this.isVisible('.esPageRole_showMore');
       },
 
-      setTopicType: (type: PageRole) => {
+      setTopicType: async (type: PageRole) => {
         let optionId = null;
         let needsClickMore = false;
         switch (type) {
@@ -5033,128 +5059,128 @@ this.l(`Num tab: ${numTabs}`);
           case c.TestPageRole.WebPage: optionId = '#e2eTTD_WebPageO'; needsClickMore = true; break;
           default: die('Test unimpl [EsE4WK0UP]');
         }
-        this.editor.openTopicTypeDropdown();
+        await this.editor.openTopicTypeDropdown();
         if (needsClickMore) {
-          this.waitAndClick('.esPageRole_showMore');
+          await this.waitAndClick('.esPageRole_showMore');
         }
-        this.waitAndClick(optionId);
-        this.waitUntilModalGone();
+        await this.waitAndClick(optionId);
+        await this.waitUntilModalGone();
       },
 
-      uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: St,
+      uploadFile: async (whichDir: 'TargetDir' | 'TestMediaDir', fileName: St,
             ps: { waitForBadExtErr?: Bo, waitForTooLargeErr?: Bo, allFine?: false } = {}
             ) => {
         //this.waitAndClick('.e_UplB');
         // There'll be a file <input> not interactable error, unless we change
         // its size to sth larger than 0 x 0.
-        this.waitForExist('.e_EdUplFI');
-        this.#br.execute(function() {
+        await this.waitForExist('.e_EdUplFI');
+        await this.#br.execute(function() {
           var elem = document.querySelector('.e_EdUplFI');
           // Use ['style'] because this:  elem.style  causes a compilation error.
           elem['style'].width = '70px';
           elem['style'].height = '20px';
         });
-        this.waitAndSelectFile('.e_EdUplFI', whichDir, fileName);
+        await this.waitAndSelectFile('.e_EdUplFI', whichDir, fileName);
         if (ps.waitForBadExtErr) {
           // If there's no extension, then waitForExist(), not waitForVisibleText().
           const sel = '.s_UplErrD .s_UplErrD_UplNm';
           const lastIx = fileName.lastIndexOf('.')
           0 <= lastIx && lastIx <= fileName.length - 2
-                ? this.waitForVisibleText(sel)
-                : this.waitForExist(sel);
-          this.stupidDialog.close();
+                ? await this.waitForVisibleText(sel)
+                : await this.waitForExist(sel);
+          await this.stupidDialog.close();
         }
         else if (ps.waitForTooLargeErr) {
-          this.waitForVisibleText('.s_UplErrD .e_FlTooLg');
-          this.stupidDialog.close();
+          await this.waitForVisibleText('.s_UplErrD .e_FlTooLg');
+          await this.stupidDialog.close();
         }
         else if (ps.allFine !== false) {
-          tyAssert.not(this.isVisible('.s_UplErrD'), `Unexpected file upload error`);
+          tyAssert.not(await this.isVisible('.s_UplErrD'), `Unexpected file upload error`);
         }
       },
 
-      cancelNoHelp: () => {  // REMOVE just use cancel() now, help dialog removed
+      cancelNoHelp: async () => {  // REMOVE just use cancel() now, help dialog removed
         const buttonSelector = '#debiki-editor-controller .e_EdCancelB';
-        this.waitAndClick(buttonSelector);
+        await this.waitAndClick(buttonSelector);
         // waitForGone won't work — the editor just gets display:none but is still there.
         logWarning(`Trying  this.waitUntilGone(buttonSelector)  although won't work?`);
-        this.waitUntilGone(buttonSelector);  // waitForNotVisible
+        await this.waitUntilGone(buttonSelector);  // waitForNotVisible
       },
 
-      cancel: () => {
-        this.editor.cancelNoHelp();
+      cancel: async () => {
+        await this.editor.cancelNoHelp();
       },
 
-      closeIfOpen: () => {
-        if (this.isVisible('#debiki-editor-controller .e_EdCancelB')) {
-          this.editor.cancel();
+      closeIfOpen: async () => {
+        if (await this.isVisible('#debiki-editor-controller .e_EdCancelB')) {
+          await this.editor.cancel();
         }
       },
 
-      switchToSimpleEditor: () => {
-        this.waitAndClick('.e_EdCancelB'); // could use different class, weird name
-        this.waitForVisible('.esC_Edtr');
+      switchToSimpleEditor: async () => {
+        await this.waitAndClick('.e_EdCancelB'); // could use different class, weird name
+        await this.waitForVisible('.esC_Edtr');
       },
 
-      save: () => {
-        this.switchToEmbEditorIframeIfNeeded();
-        this.editor.clickSave();
-        this.waitUntilLoadingOverlayGone();
+      save: async () => {
+        await this.switchToEmbEditorIframeIfNeeded();
+        await this.editor.clickSave();
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      clickSave: () => {
-        this.waitAndClick('.e_E_SaveB');
+      clickSave: async () => {
+        await this.waitAndClick('.e_E_SaveB');
       },
 
-      saveWaitForNewPage: () => {
-        this.rememberCurrentUrl();
-        this.editor.save();
-        this.waitForNewUrl();
+      saveWaitForNewPage: async () => {
+        await this.rememberCurrentUrl();
+        await this.editor.save();
+        await this.waitForNewUrl();
       },
 
-      isDraftJustSaved: () => {
-        this.isVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      isDraftJustSaved: async (): Pr<Bo> => {
+        return await this.isVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
       },
 
-      waitForDraftSaved: () => {
-        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      waitForDraftSaved: async () => {
+        await this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
       },
 
-      waitForDraftSavedInBrowser: () => {
-        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.SavedInBrowser);
+      waitForDraftSavedInBrowser: async () => {
+        await this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.SavedInBrowser);
       },
 
-      waitForDraftDeleted: () => {
-        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
+      waitForDraftDeleted: async () => {
+        await this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
       },
 
-      waitForDraftTitleToLoad: (text: string) => {
-        this.waitUntilValueIs('.editor-area .esEdtr_titleEtc_title', text);
+      waitForDraftTitleToLoad: async (text: St) => {
+        await this.waitUntilValueIs('.editor-area .esEdtr_titleEtc_title', text);
       },
 
-      waitForDraftTextToLoad: (text: string) => {
-        this.waitUntilValueIs('.editor-area textarea', text);
+      waitForDraftTextToLoad: async (text: St) => {
+        await this.waitUntilValueIs('.editor-area textarea', text);
       },
     };
 
 
     linkPreview = {
-      waitUntilLinkPreviewMatches: (ps: { postNr: PostNr, timeoutMs?: number,
+      waitUntilLinkPreviewMatches: async (ps: { postNr: PostNr, timeoutMs?: number,
             regex: string | RegExp, whichLinkPreviewSelector?: string,
             inSandboxedIframe: Bo, inDoubleIframe: Bo }) => {
         const linkPrevwSel = ' .s_LnPv' + (ps.whichLinkPreviewSelector || '');
         if (ps.inSandboxedIframe) {
-          this.topic.waitForExistsInIframeInPost({ postNr: ps.postNr,
+          await this.topic.waitForExistsInIframeInPost({ postNr: ps.postNr,
                 iframeSelector: linkPrevwSel + ' iframe',
                 yetAnotherIframeInside: ps.inDoubleIframe,
                 textToMatch: ps.regex,
                 timeoutMs: ps.timeoutMs });
         }
         else {
-          const selector = this.topic.postBodySelector(ps.postNr) + linkPrevwSel;
-          this.waitForExist(selector, { timeoutMs: ps.timeoutMs });
+          const selector: St = this.topic.postBodySelector(ps.postNr) + linkPrevwSel;
+          await this.waitForExist(selector, { timeoutMs: ps.timeoutMs });
           if (ps.regex) {
-            this.waitUntilTextMatches(selector, ps.regex);
+            await this.waitUntilTextMatches(selector, ps.regex);
           }
         }
       },
@@ -5164,67 +5190,67 @@ this.l(`Num tab: ${numTabs}`);
       __inPagePreviewSelector: '.s_P-Prvw',
       __inEditorPreviewSelector: '#t_E_Preview',
 
-      exists: (selector: string, opts: { where: 'InEditor' | 'InPage' }): boolean => {
-        return this.preview.__checkPrevw(opts, (prevwSelector: string) => {
-          return this.isExisting(prevwSelector + selector);
+      exists: async (selector: St, opts: { where: 'InEditor' | 'InPage' }): Pr<Bo> => {
+        return await this.preview.__checkPrevw(opts, async (prevwSelector: St) => {
+          return await this.isExisting(prevwSelector + selector);
         });
       },
 
-      waitUntilGone: () => {
-        this.waitForGone(this.preview.__inPagePreviewSelector);
-        this.waitForGone(this.preview.__inEditorPreviewSelector);
+      waitUntilGone: async () => {
+        await this.waitForGone(this.preview.__inPagePreviewSelector);
+        await this.waitForGone(this.preview.__inEditorPreviewSelector);
       },
 
-      waitForExist: (
-            selector: string, opts: { where: 'InEditor' | 'InPage', howMany?: number }) => {
-        this.preview.__checkPrevw(opts, (prevwSelector: string) => {
-          this.waitForExist(prevwSelector + selector, { howMany: opts.howMany });
+      waitForExist: async (
+            selector: St, opts: { where: 'InEditor' | 'InPage', howMany?: Nr }) => {
+        await this.preview.__checkPrevw(opts, async (prevwSelector: St) => {
+          await this.waitForExist(prevwSelector + selector, { howMany: opts.howMany });
         });
       },
 
-      waitForDisplayedInEditor: () => {
-        this.waitForDisplayed(this.preview.__inEditorPreviewSelector);
+      waitForDisplayedInEditor: async () => {
+        await this.waitForDisplayed(this.preview.__inEditorPreviewSelector);
       },
 
-      waitUntilPreviewHtmlMatches: (text: string,
-            opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: string }) => {
-        this.preview.__checkPrevw(opts, (prevwSelector: string) => {
-          this.waitUntilHtmlMatches(prevwSelector, text);
+      waitUntilPreviewHtmlMatches: async (text: St,
+            opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: St }) => {
+        await this.preview.__checkPrevw(opts, async (prevwSelector: St) => {
+          await this.waitUntilHtmlMatches(prevwSelector, text);
         });
       },
 
       // ^--REMOVE, use --v  instead
-      waitUntilPreviewTextMatches: (regex: string | RegExp,
-            opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: string,
+      waitUntilPreviewTextMatches: async (regex: St | RegExp,
+            opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: St,
                   inSandboxedIframe: Bo, inDoubleIframe?: Bo }) => {
-        this.preview.__checkPrevw(opts, (prevwSelector: string) => {
+        await this.preview.__checkPrevw(opts, async (prevwSelector: St) => {
           if (opts.inSandboxedIframe) {
-            this.switchToFrame(`${prevwSelector}.s_LnPv iframe`);
+            await this.switchToFrame(`${prevwSelector}.s_LnPv iframe`);
             if (opts.inDoubleIframe) {
-              this.switchToFrame('iframe');
+              await this.switchToFrame('iframe');
             }
-            this.waitUntilTextMatches('body', regex);
+            await this.waitUntilTextMatches('body', regex);
             if (opts.inDoubleIframe) {
-              this.switchToTheParentFrame({ parentIs: IsWhere.UnknownIframe });
+              await this.switchToTheParentFrame({ parentIs: IsWhere.UnknownIframe });
             }
-            this.switchToTheParentFrame();
+            await this.switchToTheParentFrame();
           }
           else {
-            this.waitUntilTextMatches(`${prevwSelector}.s_LnPv`, regex);  // or just prevwSelector ?
+            await this.waitUntilTextMatches(`${prevwSelector}.s_LnPv`, regex);  // or just prevwSelector ?
           }
         });
       },
 
-      __checkPrevw: <R>(opts: { where: 'InEditor' | 'InPage',
-              whichLinkPreviewSelector?: string }, fn: (string) => R): R => {
+      __checkPrevw: async <R>(opts: { where: 'InEditor' | 'InPage',
+              whichLinkPreviewSelector?: St }, fn: (selector: St) => Pr<R>): Pr<R> => {
         const lnPvSelector = opts.whichLinkPreviewSelector || '';
         if (opts.where === 'InEditor') {
-          this.switchToEmbEditorIframeIfNeeded();
-          return fn(`${this.preview.__inEditorPreviewSelector} ${lnPvSelector}`);
+          await this.switchToEmbEditorIframeIfNeeded();
+          return await fn(`${this.preview.__inEditorPreviewSelector} ${lnPvSelector}`);
         }
         else {
-          this.switchToEmbCommentsIframeIfNeeded();
-          return fn(`${this.preview.__inPagePreviewSelector} ${lnPvSelector}`);
+          await this.switchToEmbCommentsIframeIfNeeded();
+          return await fn(`${this.preview.__inPagePreviewSelector} ${lnPvSelector}`);
         }
       },
     };
@@ -5308,142 +5334,142 @@ this.l(`Num tab: ${numTabs}`);
         await this.waitForGone(this.metabar.__myName);  // later, move to above 'return',  [hide_authn_btns]
       },
 
-      openMetabar: () => {
-        this.waitAndClick('.dw-page-notf-level');
-        this.waitForVisible('.esMB_Dtls_Ntfs_Lbl');
+      openMetabar: async () => {
+        await this.waitAndClick('.dw-page-notf-level');
+        await this.waitForVisible('.esMB_Dtls_Ntfs_Lbl');
       },
 
-      openMetabarIfNeeded: () => {
-        if (!this.isVisible('.esMB_Dtls_Ntfs_Lbl')) {
-          this.metabar.openMetabar();
+      openMetabarIfNeeded: async () => {
+        if (!await this.isVisible('.esMB_Dtls_Ntfs_Lbl')) {
+          await this.metabar.openMetabar();
         }
       },
 
-      chooseNotfLevelWatchAll: () => {
-        this.waitAndClick('.dw-notf-level');
-        this.waitAndClick('.e_NtfAll');
-        this.waitForGone('.e_NtfAll');
+      chooseNotfLevelWatchAll: async () => {
+        await this.waitAndClick('.dw-notf-level');
+        await this.waitAndClick('.e_NtfAll');
+        await this.waitForGone('.e_NtfAll');
       },
 
-      setPageNotfLevel: (notfLevel: PageNotfLevel) => {
-        this.switchToEmbCommentsIframeIfNeeded();
-        this.metabar.openMetabarIfNeeded();
-        this.waitAndClick('.dw-notf-level');
-        this.notfLevelDropdown.clickNotfLevel(notfLevel);
+      setPageNotfLevel: async (notfLevel: PageNotfLevel) => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.metabar.openMetabarIfNeeded();
+        await this.waitAndClick('.dw-notf-level');
+        await this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
     };
 
 
     topicTypeExpl = {
-      isTopicTypeExplVisible: (): Bo => {
-        this.waitForDisplayed('.dw-p-ttl');
-        return this.isVisible('.s_Pg_TtlExpl');
+      isTopicTypeExplVisible: async (): Pr<Bo> => {
+        await this.waitForDisplayed('.dw-p-ttl');
+        return await this.isVisible('.s_Pg_TtlExpl');
       }
     };
 
 
     topic = {
-      waitUntilPageDeleted: () => {
-        this.waitForVisible('.s_Pg_DdInf');
+      waitUntilPageDeleted: async () => {
+        await this.waitForVisible('.s_Pg_DdInf');
       },
 
-      waitUntilPageRestored: () => {
-        this.waitUntilGone('.s_Pg_DdInf');
+      waitUntilPageRestored: async () => {
+        await this.waitUntilGone('.s_Pg_DdInf');
       },
 
-      isPageDeletedButVisible: (): boolean => {
-        return this.isVisible('.s_Pg_DdInf');
+      isPageDeletedButVisible: async (): Pr<Bo> => {
+        return await this.isVisible('.s_Pg_DdInf');
       },
 
       postHeaderSelector: (postNr: PostNr) => `#post-${postNr} .dw-p-hd`,
 
       postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd .dw-p-bd-blk`,
 
-      forAllPostIndexNrElem: (fn: (index: number, postNr: PostNr, elem) => void) => {
-        const postElems = this.$$('[id^="post-"]');
+      forAllPostIndexNrElem: async (fn: (index: Nr, postNr: PostNr, elem) => Pr<Vo>) => {
+        const postElems: WElm[] = await this.$$('[id^="post-"]');
         for (let index = 0; index < postElems.length; ++index) {
-          const elem = postElems[index];
-          const idAttr = elem.getAttribute('id');
+          const elem: WElm = postElems[index];
+          const idAttr = await elem.getAttribute('id');
           const postNrStr: string = idAttr.replace('post-', '');
           const postNr: PostNr = parseInt(postNrStr);
           logBoring(`post elem id attr: ${idAttr}, nr: ${postNr}`);
-          assert.equal(0, c.TitleNr);
-          assert.equal(1, c.BodyNr);
-          assert.equal(2, c.FirstReplyNr);
+          tyAssert.eq(0, c.TitleNr);
+          tyAssert.eq(1, c.BodyNr);
+          tyAssert.eq(2, c.FirstReplyNr);
           // The title and body cannot be moved elsewhere on the page.
-          if (postNr === c.TitleNr) assert.equal(index, c.TitleNr);
-          if (postNr === c.BodyNr) assert.equal(index, c.BodyNr);
-          fn(index, postNr, elem);
+          if (postNr === c.TitleNr) tyAssert.eq(index, c.TitleNr);
+          if (postNr === c.BodyNr) tyAssert.eq(index, c.BodyNr);
+          await fn(index, postNr, elem);
         }
       },
 
-      clickHomeNavLink: () => {
+      clickHomeNavLink: async () => {
         // this.waitAndClick() results in this error:
         //   Failed to execute 'querySelector' on 'Document':
         //   'a=Home' is not a valid selector.
         // Instead:  [EQSELEC]
-        this.waitForDisplayed(`a=Home`);
-        this.$("a=Home").click();
+        await this.waitForDisplayed(`a=Home`);
+        await (await this.$("a=Home")).click();
       },
 
-      waitForLoaded: () => {
-        this.waitForVisible('.dw-ar-t');
+      waitForLoaded: async () => {
+        await this.waitForVisible('.dw-ar-t');
       },
 
-      assertPagePendingApprovalBodyHidden: () => {
-        this.topic.waitForLoaded();
-        assert(this.topic._isTitlePendingApprovalVisible());
-        assert(this.topic._isOrigPostPendingApprovalVisible());
-        assert(!this.topic._isOrigPostBodyVisible());
+      assertPagePendingApprovalBodyHidden: async () => {
+        await this.topic.waitForLoaded();
+        assert(await this.topic._isTitlePendingApprovalVisible());
+        assert(await this.topic._isOrigPostPendingApprovalVisible());
+        assert(!await this.topic._isOrigPostBodyVisible());
       },
 
-      assertPagePendingApprovalBodyVisible: () => {
-        this.topic.waitForLoaded();
-        assert(this.topic._isTitlePendingApprovalVisible());
-        assert(this.topic._isOrigPostPendingApprovalVisible());
-        assert(this.topic._isOrigPostBodyVisible());
+      assertPagePendingApprovalBodyVisible: async () => {
+        await this.topic.waitForLoaded();
+        assert(await this.topic._isTitlePendingApprovalVisible());
+        assert(await this.topic._isOrigPostPendingApprovalVisible());
+        assert(await this.topic._isOrigPostBodyVisible());
       },
 
-      assertPageNotPendingApproval: () => {
-        this.topic.waitForLoaded();
-        assert(!this.topic._isOrigPostPendingApprovalVisible());
-        assert(this.topic._isOrigPostBodyVisible());
+      assertPageNotPendingApproval: async () => {
+        await this.topic.waitForLoaded();
+        assert(!await this.topic._isOrigPostPendingApprovalVisible());
+        assert(await this.topic._isOrigPostBodyVisible());
       },
 
-      getCurCategoryName: (): St => {
-        return this.waitAndGetVisibleText(this.topic.__getCurCatNameSelector());
+      getCurCategoryName: async (): Pr<St> => {
+        return await this.waitAndGetVisibleText(this.topic.__getCurCatNameSelector());
       },
 
-      movePageToOtherCategory: (catName: St) => {
-        this.topic.openChangePageDialog();
-        this.waitAndClick('.s_ChPgD .e_SelCatB');
-        this.waitAndClickSelectorWithText('.e_CatLs .esExplDrp_entry_title', catName)
-        this.topic.waitUntilParentCatIs(catName);
+      movePageToOtherCategory: async (catName: St) => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick('.s_ChPgD .e_SelCatB');
+        await this.waitAndClickSelectorWithText('.e_CatLs .esExplDrp_entry_title', catName)
+        await this.topic.waitUntilParentCatIs(catName);
       },
 
-      waitUntilParentCatIs: (catName: St) => {
-        const sel = this.topic.__getCurCatNameSelector();
-        this.waitUntilTextIs(sel, catName);
+      waitUntilParentCatIs: async (catName: St) => {
+        const sel = await this.topic.__getCurCatNameSelector();
+        await this.waitUntilTextIs(sel, catName);
       },
 
-      __getCurCatNameSelector: (): St => {
+      __getCurCatNameSelector: async (): Pr<St> => {
         const ancLn = ' .esTopbar_ancestors_link';
-        const where = this.isVisible('.s_Tb ' + ancLn) ? '.s_Tb' : '.esPage';
+        const where = await this.isVisible('.s_Tb ' + ancLn) ? '.s_Tb' : '.esPage';
         return where + ' .s_Tb_Pg_Cs_C:last-child ' + ancLn;
       },
 
-      isPostNrDescendantOf: (postNr: PostNr, maybeParentNr: PostNr) => {
-        this.switchToEmbCommentsIframeIfNeeded();
-        return this.isVisible(
+      isPostNrDescendantOf: async (postNr: PostNr, maybeParentNr: PostNr): Pr<Bo> => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        return await this.isVisible(
             `#post-${maybeParentNr} + .dw-p-as + .dw-single-and-multireplies #post-${postNr}`);
       },
 
-      isPostNrVisible: (postNr: PostNr) => {
-        this.switchToEmbCommentsIframeIfNeeded();
-        return this.isVisible('#post-' + postNr);
+      isPostNrVisible: async (postNr: PostNr): Pr<Bo> => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        return await this.isVisible('#post-' + postNr);
       },
 
-      clickShowMorePosts: (ps: { nextPostNr: PostNr }) => {
+      clickShowMorePosts: async (ps: { nextPostNr: PostNr }) => {
         // This would be fragile, because waitAndClickLast won't
         // scroll [05YKTDTH4]: (only scrolls to the *first* thing)
         //
@@ -5455,39 +5481,39 @@ this.l(`Num tab: ${numTabs}`);
         const nrs = `${nxtNr}, ${nxtNr + 1}, ${nxtNr + 2}`;
         const selector = `.s_X_Show-PostNr-${nxtNr}`;
 
-        utils.tryUntilTrue(`show more posts: ${nrs} ...`, 3, (): boolean => {
-          if (this.isVisible(selector)) {
-            this.waitAndClick(selector, { maybeMoves: true });
+        await utils.tryUntilTrue(`show more posts: ${nrs} ...`, 3, async (): Pr<Bo> => {
+          if (await this.isVisible(selector)) {
+            await this.waitAndClick(selector, { maybeMoves: true });
           }
-          return this.topic.waitForPostNrVisible(
+          return await this.topic.waitForPostNrVisible(
               ps.nextPostNr, { timeoutMs: 1500, timeoutIsFine: true });
         });
       },
 
-      waitForPostNrVisible: (postNr: PostNr, ps: { timeoutMs?: number,  // RENAME to ...VisibleText?
-              timeoutIsFine?: boolean } = {}): boolean => {
-        this.switchToEmbCommentsIframeIfNeeded();
-        return this.waitForVisibleText('#post-' + postNr, ps);
+      waitForPostNrVisible: async (postNr: PostNr, ps: { timeoutMs?: Nr,  // RENAME to ...VisibleText?
+              timeoutIsFine?: Bo } = {}): Pr<Bo> => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        return await this.waitForVisibleText('#post-' + postNr, ps);
       },
 
-      waitForPostAssertTextMatches: (postNr: PostNr, text: string | RegExp) => {
+      waitForPostAssertTextMatches: async (postNr: PostNr, text: St | RegExp) => {
         dieIf(!_.isString(text) && !_.isRegExp(text),
             "Test broken: `text` is not a string nor a regex [TyEJ53068MSK]");
-        this.switchToEmbCommentsIframeIfNeeded();
-        this.waitForVisibleText(this.topic.postBodySelector(postNr));
-        this.topic.assertPostTextMatches(postNr, text);
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.waitForVisibleText(this.topic.postBodySelector(postNr));
+        await this.topic.assertPostTextMatches(postNr, text);
       },
 
       // waitUntilPostTextMatches — see below
 
-      waitUntilPostHtmlMatches: (postNr: PostNr, regexOrString: string | RegExp | any[]) => {
+      waitUntilPostHtmlMatches: async (postNr: PostNr, regexOrString: St | RegExp | Ay[]) => {
         const selector = this.topic.postBodySelector(postNr);
-        this.waitUntilHtmlMatches(selector, regexOrString)
+        await this.waitUntilHtmlMatches(selector, regexOrString)
       },
 
-      assertPostHtmlDoesNotMatch: (postNr: PostNr, regexOrString: string | RegExp | any[]) => {
+      assertPostHtmlDoesNotMatch: async (postNr: PostNr, regexOrString: St | RegExp | any[]) => {
         const selector = this.topic.postBodySelector(postNr);
-        const html = this.$(selector).getHTML();
+        const html = await (await this.$(selector)).getHTML();
         const badMatch = this._findHtmlMatchMiss(html, false, regexOrString);
         if (badMatch) {
           assert(false,
@@ -5495,14 +5521,14 @@ this.l(`Num tab: ${numTabs}`);
         }
       },
 
-      assertPostOrderIs: (expectedPostNrs: PostNr[], selector: string = '[id^="post-"]') => {
+      assertPostOrderIs: async (expectedPostNrs: PostNr[], selector: St = '[id^="post-"]') => {
         dieIf(!expectedPostNrs || !expectedPostNrs.length, `No expected posts [TyEE062856]`);
 
         // Replace other dupl code with this fn.  [59SKEDT0652]
-        this.switchToEmbCommentsIframeIfNeeded();
-        this.waitForVisible(selector);
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.waitForVisible(selector);
 
-        const postElems = this.$$(selector);
+        const postElems: WElm[] = await this.$$(selector);
 
         if (postElems.length >= expectedPostNrs.length) {
           logMessage(
@@ -5520,136 +5546,137 @@ this.l(`Num tab: ${numTabs}`);
 
         for (let i = 0; i < expectedPostNrs.length; ++i) {
           const expectedNr = expectedPostNrs[i];
-          const postElem = postElems[i];
+          const postElem: WElm = postElems[i];
 
-          tyAssert.ok(postElem && postElem.isExisting(),
+          tyAssert.ok(postElem && await postElem.isExisting(),
               `Not enough posts on page to compare with ` +
               `expected post nr ${expectedNr} [TyEE2ETOOFEWPOSTSE]`);
 
-          const idAttr = postElem.getAttribute('id');
+          const idAttr = await postElem.getAttribute('id');
           logMessage(`id attr: ${idAttr}, expected nr: ${expectedNr}`);
           tyAssert.eq(idAttr, `post-${expectedNr}`);
         }
       },
 
-      waitForExistsInPost: (postNr: PostNr, selector: string,
-            ps: { timeoutMs?: number, howMany?: number } = {}) => {
-        this.waitForExist(this.topic.postBodySelector(postNr) + ' ' + selector, ps);
+      waitForExistsInPost: async (postNr: PostNr, selector: St,
+            ps: { timeoutMs?: Nr, howMany?: Nr } = {}) => {
+        await this.waitForExist(this.topic.postBodySelector(postNr) + ' ' + selector, ps);
       },
 
       // Enters an <iframe> in a post, looks for sth, then exits the iframe.
-      waitForExistsInIframeInPost: (ps: { postNr: PostNr, iframeSelector: string,
+      waitForExistsInIframeInPost: async (ps: { postNr: PostNr, iframeSelector: St,
             yetAnotherIframeInside?: Bo,
-            thingInIframeSelector?: string, textToMatch?: string | RegExp,
-            timeoutMs?: number, howMany?: number }) => {
+            thingInIframeSelector?: St, textToMatch?: St | RegExp,
+            timeoutMs?: Nr, howMany?: Nr }) => {
         const complIfrSel = this.topic.postBodySelector(ps.postNr) + ' ' + ps.iframeSelector;
-        this.switchToFrame(complIfrSel, { timeoutMs: ps.timeoutMs });
+        await this.switchToFrame(complIfrSel, { timeoutMs: ps.timeoutMs });
         if (ps.yetAnotherIframeInside)  {
-          this.switchToFrame('iframe', { timeoutMs: ps.timeoutMs });
+          await this.switchToFrame('iframe', { timeoutMs: ps.timeoutMs });
         }
         const thingInIframeSelector = ps.thingInIframeSelector || 'body';
-        this.waitForExist(thingInIframeSelector, { timeoutMs: ps.timeoutMs });
+        await this.waitForExist(thingInIframeSelector, { timeoutMs: ps.timeoutMs });
         if (ps.textToMatch) {
-          this.waitUntilTextMatches(thingInIframeSelector, ps.textToMatch);
+          await this.waitUntilTextMatches(thingInIframeSelector, ps.textToMatch);
         }
         if (ps.yetAnotherIframeInside)  {
-          this.switchToTheParentFrame({ parentIs: IsWhere.UnknownIframe });
+          await this.switchToTheParentFrame({ parentIs: IsWhere.UnknownIframe });
         }
-        this.switchToTheParentFrame();
+        await this.switchToTheParentFrame();
       },
 
-      postNrContains: (postNr: PostNr, selector: string) => {
-        return this.isExisting(this.topic.postBodySelector(postNr) + ' ' + selector);
+      postNrContains: async (postNr: PostNr, selector: St) => {
+        return await this.isExisting(this.topic.postBodySelector(postNr) + ' ' + selector);
       },
 
-      assertPostNrContains: (postNr: PostNr, selector: string) => {
-        if (!this.topic.postNrContains(postNr, selector)) {
+      assertPostNrContains: async (postNr: PostNr, selector: St) => {
+        if (!await this.topic.postNrContains(postNr, selector)) {
           assert.fail(`Post ${postNr} doesn't contain selector:  ${selector}`);
         }
       },
 
-      assertPostNrNotContains: (postNr: PostNr, selector: string) => {
-        if (this.topic.postNrContains(postNr, selector)) {
+      assertPostNrNotContains: async (postNr: PostNr, selector: St) => {
+        if (await this.topic.postNrContains(postNr, selector)) {
           assert.fail(`Post ${postNr} contains, but should not, selector:  ${selector}`);
         }
       },
 
-      postNrContainsVisible: (postNr: PostNr, selector: string) => {
-        return this.isVisible(this.topic.postBodySelector(postNr) + ' ' + selector);
+      postNrContainsVisible: async (postNr: PostNr, selector: St): Pr<Bo> => {
+        return await this.isVisible(this.topic.postBodySelector(postNr) + ' ' + selector);
       },
 
-      assertPostTextMatches: (postNr: PostNr, text: string | RegExp) => {
-        this.assertTextMatches(this.topic.postBodySelector(postNr), text, 'regex')
+      assertPostTextMatches: async (postNr: PostNr, text: St | RegExp) => {
+        await this.assertTextMatches(this.topic.postBodySelector(postNr), text, 'regex')
       },
 
-      assertPostTextIs: (postNr: PostNr, text: St, ps: { wait?: Bo } = {}) => {
+      assertPostTextIs: async (postNr: PostNr, text: St, ps: { wait?: Bo } = {}) => {
         const s = this.topic.postBodySelector(postNr);
-        if (ps.wait) this.waitForVisibleText(s);
-        this.assertTextMatches(s, text, 'exact')
+        if (ps.wait) await this.waitForVisibleText(s);
+        await this.assertTextMatches(s, text, 'exact')
       },
 
-      getPostText: (postNr: PostNr): string => {
-        return this.waitAndGetVisibleText(this.topic.postBodySelector(postNr));
+      getPostText: async (postNr: PostNr): Pr<St> => {
+        return await this.waitAndGetVisibleText(this.topic.postBodySelector(postNr));
       },
 
-      getPostHtml: (postNr: PostNr): string => {
-        return this.waitAndGetVisibleHtml(this.topic.postBodySelector(postNr));
+      getPostHtml: async (postNr: PostNr): Pr<St> => {
+        return await this.waitAndGetVisibleHtml(this.topic.postBodySelector(postNr));
       },
 
-      waitUntilPostTextIs: (postNr: PostNr, text: string,
-              opts: { thingInPostSelector?: string } = {}) => {
-        this.switchToEmbCommentsIframeIfNeeded();
+      waitUntilPostTextIs: async (postNr: PostNr, text: St,
+              opts: { thingInPostSelector?: St } = {}) => {
+        await this.switchToEmbCommentsIframeIfNeeded();
         const selector =
             `${this.topic.postBodySelector(postNr)} ${opts.thingInPostSelector || ''}`;
-        this.waitUntilTextIs(selector, text);
+        await this.waitUntilTextIs(selector, text);
       },
 
-      waitUntilPostTextMatches: (postNr: PostNr, regex: string | RegExp,
-              opts: { thingInPostSelector?: string } = {}) => {
-        this.switchToEmbCommentsIframeIfNeeded();
+      waitUntilPostTextMatches: async (postNr: PostNr, regex: St | RegExp,
+              opts: { thingInPostSelector?: St } = {}) => {
+        await this.switchToEmbCommentsIframeIfNeeded();
         const selector =
             `${this.topic.postBodySelector(postNr)} ${opts.thingInPostSelector || ''}`;
-        this.waitUntilTextMatches(selector, regex);
+        await this.waitUntilTextMatches(selector, regex);
       },
 
-      refreshUntilPostNrAppears: (postNr: PostNr,
+      refreshUntilPostNrAppears: async (postNr: PostNr,
             ps: { isEmbedded?: true, isMetaPost?: true } = {}) => {
-        if (ps.isEmbedded) this.switchToEmbeddedCommentsIrame();
+        if (ps.isEmbedded) await this.switchToEmbeddedCommentsIrame();
         const selector = ps.isMetaPost
             ? `#post-${postNr} .s_MP_Text`
             : this.topic.postBodySelector(postNr);
-        this.topic.refreshUntilAppears(selector, ps);
+        await this.topic.refreshUntilAppears(selector, ps);
       },
 
-      refreshUntilAppears: (selector: string, ps: { isEmbedded?: true } = {}) => {
+      refreshUntilAppears: async (selector: St, ps: { isEmbedded?: true } = {}) => {
         // Maybe use this.waitUntil()? But it's ok to call it from inside itself?
         let delayMs = RefreshPollMs;
-        while (!this.isVisible(selector)) {
+        while (!await this.isVisible(selector)) {
           logMessage(`Refreshing page until appears:  ${selector}  [TyE2EMREFRWAIT]`);
-          this.#br.refresh();
+          await this.#br.refresh();
           // Pause *after* the refresh, so there's some time for the post to get loaded & appear.
-          this.#br.pause(delayMs);
+          await this.#br.pause(delayMs);
           // Give the thing more and more time to appear, after page reresh, in case
           // for whatever reason it won't show up immediately.
           delayMs = expBackoff(delayMs);
-          if (ps.isEmbedded) this.switchToEmbeddedCommentsIrame();
+          if (ps.isEmbedded) await this.switchToEmbeddedCommentsIrame();
         }
       },
 
-      refreshUntilPostTextMatches: (postNr: PostNr, regex: string | RegExp) => {
+      refreshUntilPostTextMatches: async (postNr: PostNr, regex: St | RegExp) => {
         regex = getRegExpOrDie(regex);
         while (true) {
-          const text = this.waitAndGetVisibleText(this.topic.postBodySelector(postNr));
+          const text = await this.waitAndGetVisibleText(
+                  this.topic.postBodySelector(postNr));
           if (text.match(regex)) {
             break;
           }
-          this.#br.pause(200);
-          this.#br.refresh();
+          await this.#br.pause(200);
+          await this.#br.refresh();
         }
       },
 
-      assertMetaPostTextMatches: (postNr: PostNr, text: string) => {
-        this.assertTextMatches(`#post-${postNr} .s_MP_Text`, text)
+      assertMetaPostTextMatches: async (postNr: PostNr, text: St) => {
+        await this.assertTextMatches(`#post-${postNr} .s_MP_Text`, text)
       },
 
       topLevelReplySelector: '.dw-depth-1 > .dw-p',
@@ -5660,71 +5687,71 @@ this.l(`Num tab: ${numTabs}`);
       addProgressReplySelector: '.s_OpReB-Prg',
       previewSelector: '.dw-depth-1 .s_P-Prvw',
 
-      waitForReplyButtonAssertCommentsVisible: () => {
-        this.waitForVisible(this.topic.anyReplyButtonSelector);
-        assert(this.isVisible(this.topic.anyCommentSelector));
+      waitForReplyButtonAssertCommentsVisible: async () => {
+        await this.waitForVisible(this.topic.anyReplyButtonSelector);
+        assert(await this.isVisible(this.topic.anyCommentSelector));
       },
 
-      waitForReplyButtonAssertNoComments: () => {
-        this.waitForVisible(this.topic.anyReplyButtonSelector);
-        assert(!this.isVisible(this.topic.anyCommentSelector));
+      waitForReplyButtonAssertNoComments: async () => {
+        await this.waitForVisible(this.topic.anyReplyButtonSelector);
+        assert(!await this.isVisible(this.topic.anyCommentSelector));
       },
 
-      countReplies: (ps: { skipWait?: boolean } = {}): NumReplies => {
+      countReplies: async (ps: { skipWait?: Bo } = {}): Pr<NumReplies> => {
         if (!ps.skipWait) {
-          this.waitForMyDataAdded();
+          await this.waitForMyDataAdded();
         }
-        let numNormal = this.count(this.topic.replySelector);
+        let numNormal = await this.count(this.topic.replySelector);
 
         // One's own, pending mod (or maybe if is staff, then can see others').
-        const ownUnapproved = this.count(this.topic.replySelector + ' .dw-p-pending-mod');
+        const ownUnapproved = await this.count(this.topic.replySelector + ' .dw-p-pending-mod');
         // Others' unapproved posts.
-        const othersUnapproved = this.count(this.topic.replySelector + '.dw-p-unapproved');
+        const othersUnapproved = await this.count(this.topic.replySelector + '.dw-p-unapproved');
         // Total.
         const numUnapproved = othersUnapproved + ownUnapproved;
 
-        const numPreviews = this.count(this.topic.previewSelector);
-        const numDeleted = this.count(this.topic.replySelector + '.s_P-Dd');
+        const numPreviews = await this.count(this.topic.previewSelector);
+        const numDeleted = await this.count(this.topic.replySelector + '.s_P-Dd');
 
         numNormal = numNormal - numPreviews - numUnapproved - numDeleted;
         return { numNormal, numPreviews, numUnapproved, numDeleted };
       },
 
-      assertNumRepliesVisible: (num: number) => {
-        this.waitForMyDataAdded();
-        this.assertExactly(num, this.topic.replySelector);
+      assertNumRepliesVisible: async (num: Nr) => {
+        await this.waitForMyDataAdded();
+        await this.assertExactly(num, this.topic.replySelector);
       },
 
-      assertNumOrigPostRepliesVisible: (num: number) => {
-        this.waitForMyDataAdded();
-        this.assertExactly(num, this.topic.topLevelReplySelector);
+      assertNumOrigPostRepliesVisible: async (num: Nr) => {
+        await this.waitForMyDataAdded();
+        await this.assertExactly(num, this.topic.topLevelReplySelector);
       },
 
-      assertNoReplyMatches: (text: string | RegExp) => {
-        this.waitForMyDataAdded();
-        this.assertNoTextMatches(this.topic.allRepliesTextSelector, text);
+      assertNoReplyMatches: async (text: St | RegExp) => {
+        await this.waitForMyDataAdded();
+        await this.assertNoTextMatches(this.topic.allRepliesTextSelector, text);
       },
 
-      assertSomeReplyMatches: (text: string | RegExp) => {
-        this.waitForMyDataAdded();
-        this.assertTextMatches(this.topic.allRepliesTextSelector, text);
+      assertSomeReplyMatches: async (text: St | RegExp) => {
+        await this.waitForMyDataAdded();
+        await this.assertTextMatches(this.topic.allRepliesTextSelector, text);
       },
 
-      assertNoAuthorMissing: () => {
+      assertNoAuthorMissing: async () => {
         // There's this error code if a post author isn't included on the page.
-        this.topic.assertNoReplyMatches("EsE4FK07_");
+        await this.topic.assertNoReplyMatches("EsE4FK07_");
       },
 
-      getTopicAuthorUsernameInclAt: (): string => {
-        return this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By_U');
+      getTopicAuthorUsernameInclAt: async (): Pr<St> => {
+        return await this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By_U');
       },
 
-      getPostAuthorUsernameInclAt: (postNr: PostNr): St => {
+      getPostAuthorUsernameInclAt: async (postNr: PostNr): Pr<St> => {
         const sel = this.topic.postHeaderSelector(postNr);
-        return this.waitAndGetVisibleText(sel + ' .esP_By_U');
+        return await this.waitAndGetVisibleText(sel + ' .esP_By_U');
       },
 
-      clickFirstMentionOf: (username: string) => {
+      clickFirstMentionOf: async (username: St) => {
         // This:  this.waitAndClick(`a.esMention=@${username}`);
         // fails:
         //    Failed to execute 'querySelector' on 'Document':
@@ -5732,133 +5759,133 @@ this.l(`Num tab: ${numTabs}`);
         // because  scrollIntoViewInPageColumn()  sends Javascript to the browser,
         // but only Wdio, not the browser, understands these Wdio / WebDriver
         // "magic" selectors:  [EQSELEC]
-        this.waitForDisplayed(`a.esMention=@${username}`);
-        const elem = this.$(`a.esMention=@${username}`);
-        elem.click();
+        await this.waitForDisplayed(`a.esMention=@${username}`);
+        const elem = await this.$(`a.esMention=@${username}`);
+        await elem.click();
       },
 
-      clickReplyToOrigPost: (whichButton?: 'DiscussionSection') => {
+      clickReplyToOrigPost: async (whichButton?: 'DiscussionSection') => {
         const selector = whichButton === 'DiscussionSection' ?
             '.s_OpReB-Dsc' : '.dw-ar-p + .esPA .dw-a-reply';
-        this.topic.clickPostActionButton(selector);
+        await this.topic.clickPostActionButton(selector);
       },
 
-      clickReplyToEmbeddingBlogPost: () => {
-        this.switchToEmbCommentsIframeIfNeeded();
-        this.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply');
+      clickReplyToEmbeddingBlogPost: async () => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply');
       },
 
-      clickReplyToPostNr: (postNr: PostNr) => {
-        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
+      clickReplyToPostNr: async (postNr: PostNr) => {
+        await this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
       },
 
-      clickAddProgressReply: () => {
-        this._waitForClickable(this.topic.addProgressReplySelector);
-        this.topic.clickPostActionButton(this.topic.addProgressReplySelector);
+      clickAddProgressReply: async () => {
+        await this._waitForClickable(this.topic.addProgressReplySelector);
+        await this.topic.clickPostActionButton(this.topic.addProgressReplySelector);
         // Dismiss any help dialog that explains what bottom comments are.
-        this.#br.pause(150);
-        if (this.isVisible('.e_HelpOk')) {
-          this.waitAndClick('.e_HelpOk');
-          this.waitUntilModalGone();
+        await this.#br.pause(150);
+        if (await this.isVisible('.e_HelpOk')) {
+          await this.waitAndClick('.e_HelpOk');
+          await this.waitUntilModalGone();
         }
       },
 
-      wikifyPostNr: (postNr: PostNr, shallWikify: boolean) => {
+      wikifyPostNr: async (postNr: PostNr, shallWikify: Bo) => {
         // Break out fn? (5936RKTL6)
-        utils.tryManyTimes("Wikify post", 3, () => {
-          if (!this.isVisible('.s_PA_WkB')) {
-            this.topic.clickMoreForPostNr(postNr);
+        await utils.tryManyTimes("Wikify post", 3, async () => {
+          if (!await this.isVisible('.s_PA_WkB')) {
+            await this.topic.clickMoreForPostNr(postNr);
           }
-          this.waitAndClick('.s_PA_WkB', { timeoutMs: 500 });
-          this.waitAndClick(shallWikify ? '.e_MkWk' : '.e_UnWk', { timeoutMs: 500 });
-          this.waitUntilTextMatches(`#post-${postNr} + .esPA .dw-a-edit`, "Wiki", {
+          await this.waitAndClick('.s_PA_WkB', { timeoutMs: 500 });
+          await this.waitAndClick(shallWikify ? '.e_MkWk' : '.e_UnWk', { timeoutMs: 500 });
+          await this.waitUntilTextMatches(`#post-${postNr} + .esPA .dw-a-edit`, "Wiki", {
                   timeoutMs: 500, invert: !shallWikify });
         });
       },
 
-      canEditSomething: (): boolean => {
-        return this.isVisible('.dw-a-edit');
+      canEditSomething: async (): Pr<Bo> => {
+        return await this.isVisible('.dw-a-edit');
       },
 
-      canReplyToSomething: (): boolean => {
-        return this.isVisible('.dw-a-reply');
+      canReplyToSomething: async (): Pr<Bo> => {
+        return await this.isVisible('.dw-a-reply');
       },
 
-      canEditOrigPost: (): boolean => {
-        return this.topic.canEditPostNr(c.BodyNr);
+      canEditOrigPost: async (): Pr<Bo> => {
+        return await this.topic.canEditPostNr(c.BodyNr);
       },
 
-      canEditPostNr: (postNr: number): boolean => {
+      canEditPostNr: async (postNr: Nr): Pr<Bo> => {
         const selector = `#post-${postNr} + .esPA .dw-a-edit`;
-        return this.isEnabled(selector);
+        return await this.isEnabled(selector);
       },
 
-      clickEditOrigPost: () => {
-        this.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
+      clickEditOrigPost: async () => {
+        await this.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
       },
 
-      clickEditoPostNr: (postNr: PostNr) => {
-        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-edit`);
+      clickEditoPostNr: async (postNr: PostNr) => {
+        await this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-edit`);
       },
 
-      waitForViewEditsButton: (postNr: PostNr) => {
-        this.waitForVisible(`#post-${postNr} .esP_viewHist`);
+      waitForViewEditsButton: async (postNr: PostNr) => {
+        await this.waitForVisible(`#post-${postNr} .esP_viewHist`);
       },
 
-      isViewEditsButtonVisible: (postNr: PostNr): boolean => {
-        return this.isVisible(`#post-${postNr} .esP_viewHist`);
+      isViewEditsButtonVisible: async (postNr: PostNr): Pr<Bo> => {
+        return await this.isVisible(`#post-${postNr} .esP_viewHist`);
       },
 
-      openEditHistory: (postNr: PostNr) => {
-        this.waitAndClick(`#post-${postNr} .esP_viewHist`);
-        this.editHistoryDialog.waitUntilVisible();
+      openEditHistory: async (postNr: PostNr) => {
+        await this.waitAndClick(`#post-${postNr} .esP_viewHist`);
+        await this.editHistoryDialog.waitUntilVisible();
       },
 
-      openAboutUserDialogForPostNr: (postNr: PostNr) => {
-        this.waitAndClick(`#post-${postNr} .esP_By`);
-        this.aboutUserDialog.waitForLoaded();
+      openAboutUserDialogForPostNr: async (postNr: PostNr) => {
+        await this.waitAndClick(`#post-${postNr} .esP_By`);
+        await this.aboutUserDialog.waitForLoaded();
       },
 
-      clickMoreForPostNr: (postNr: PostNr) => {  // RENAME to openMoreDialogForPostNr()?
-        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
+      clickMoreForPostNr: async (postNr: PostNr) => {  // RENAME to openMoreDialogForPostNr()?
+        await this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
       },
 
-      isPostMoreDialogVisible: (): boolean => {
+      isPostMoreDialogVisible: async (): Pr<Bo> => {
         // This works for now.
-        return this.isVisible(this.topic.__flagPostSelector);
+        return await this.isVisible(this.topic.__flagPostSelector);
       },
 
-      closePostMoreDialog: () => {
-        assert.ok(this.topic.isPostMoreDialogVisible());
+      closePostMoreDialog: async () => {
+        assert.ok(await this.topic.isPostMoreDialogVisible());
         // Break out close dialog fn?  [E2ECLOSEDLGFN]
-        this.waitAndClick('.esDropModal_CloseB');
-        this.waitUntilGone('.esDropModal_CloseB');
-        this.waitUntilModalGone();
+        await this.waitAndClick('.esDropModal_CloseB');
+        await this.waitUntilGone('.esDropModal_CloseB');
+        await this.waitUntilModalGone();
       },
 
-      openShareDialogForPostNr: (postNr: PostNr) => {
-        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-link`);
-        this.waitForVisible('.s_ShareD');
+      openShareDialogForPostNr: async (postNr: PostNr) => {
+        await this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-link`);
+        await this.waitForVisible('.s_ShareD');
       },
 
-      openMoveDialogForPostNr: (postNr: PostNr) => {
+      openMoveDialogForPostNr: async (postNr: PostNr) => {
         // Break out fn? (5936RKTL6)
         // This always works, when the tests are visible and I look at them.
         // But can block forever, in an invisible this.#br. Just repeat until works.
-        utils.tryManyTimes("Open move post dialog", 3, () => {
-          if (!this.isVisible('.s_PA_MvB')) {
-            this.topic.clickMoreForPostNr(postNr);
+        await utils.tryManyTimes("Open move post dialog", 3, async () => {
+          if (!await this.isVisible('.s_PA_MvB')) {
+            await this.topic.clickMoreForPostNr(postNr);
           }
-          this.waitAndClick('.s_PA_MvB', { timeoutMs: 500 });
-          this.waitForVisible('.s_MvPD', { timeoutMs: 500 });
+          await this.waitAndClick('.s_PA_MvB', { timeoutMs: 500 });
+          await this.waitForVisible('.s_MvPD', { timeoutMs: 500 });
         });
       },
 
-      clickMoreVotesForPostNr: (postNr: PostNr) => {
-        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-votes`);
+      clickMoreVotesForPostNr: async (postNr: PostNr) => {
+        await this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-votes`);
       },
 
-      makeLikeVoteSelector: (postNr: PostNr, ps: { byMe?: boolean } = {}): string => {
+      makeLikeVoteSelector: (postNr: PostNr, ps: { byMe?: Bo } = {}): St => {
         // Embedded comments pages lack the orig post — instead, there's the
         // blog post, on the embedding page.
         const startSelector = this.#isOnEmbeddedCommentsPage && postNr === c.BodyNr
@@ -5869,41 +5896,41 @@ this.l(`Num tab: ${numTabs}`);
         return result;
       },
 
-      clickLikeVote: (postNr: PostNr, opts: { logInAs? } = {}) => {
+      clickLikeVote: async (postNr: PostNr, opts: { logInAs? } = {}) => {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
 
-        utils.tryUntilTrue("click Like", 3, () => {
-          this.waitAndClick(likeVoteSelector);
-          if (!opts.logInAs || !this.isInIframe())
+        await utils.tryUntilTrue("click Like", 3, async () => {
+          await this.waitAndClick(likeVoteSelector);
+          if (!opts.logInAs || !await this.isInIframe())
             return true;
           // A login popup should open.
-          return this.waitForMinBrowserTabs(2, {
+          return await this.waitForMinBrowserTabs(2, {
                   timeoutMs: 1000, timeoutIsFine: true });
         });
 
         if (opts.logInAs) {
-          this.switchToLoginPopupIfEmbedded();
-          this.loginDialog.loginWithPassword(opts.logInAs);
-          this.switchToEmbCommentsIframeIfNeeded();
+          await this.switchToLoginPopupIfEmbedded();
+          await this.loginDialog.loginWithPassword(opts.logInAs);
+          await this.switchToEmbCommentsIframeIfNeeded();
         }
       },
 
-      clickLikeVoteForBlogPost: () => {
-        this.switchToEmbCommentsIframeIfNeeded();
-        this.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
+      clickLikeVoteForBlogPost: async () => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
       },
 
-      toggleLikeVote: (postNr: PostNr, opts: { logInAs? } = {}) => {
+      toggleLikeVote: async (postNr: PostNr, opts: { logInAs? } = {}) => {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
-        this.switchToEmbCommentsIframeIfNeeded();
-        const isLikedBefore = this.isVisible(likeVoteSelector + '.dw-my-vote');
+        await this.switchToEmbCommentsIframeIfNeeded();
+        const isLikedBefore = await this.isVisible(likeVoteSelector + '.dw-my-vote');
         // This click for some reason won't always work, here: [E2ECLICK03962]
-        utils.tryUntilTrue(`toggle Like vote`, 3, () => {
-          this.switchToEmbCommentsIframeIfNeeded();
-          this.topic.clickLikeVote(postNr, opts);
+        await utils.tryUntilTrue(`toggle Like vote`, 3, async () => {
+          await this.switchToEmbCommentsIframeIfNeeded();
+          await this.topic.clickLikeVote(postNr, opts);
           // Wait for the server to reply, and the page to get updated.
-          const gotToggled = this.waitUntil(() => {
-            const likedNow = this.isVisible(likeVoteSelector + '.dw-my-vote');
+          const gotToggled = await this.waitUntil(async () => {
+            const likedNow = await this.isVisible(likeVoteSelector + '.dw-my-vote');
             //this.l(`isLikedBefore: ${isLikedBefore}  likedNow: ${likedNow}`)
             return isLikedBefore !== likedNow;
           }, {
@@ -5915,94 +5942,94 @@ this.l(`Num tab: ${numTabs}`);
         });
       },
 
-      isPostLikedByMe: (postNr: PostNr) => {
-        return this.topic.isPostLiked(postNr, { byMe: true });
+      isPostLikedByMe: async (postNr: PostNr): Pr<Bo> => {
+        return await this.topic.isPostLiked(postNr, { byMe: true });
       },
 
-      isPostLiked: (postNr: PostNr, ps: { byMe?: boolean } = {}) => {
+      isPostLiked: async (postNr: PostNr, ps: { byMe?: Bo } = {}): Pr<Bo> => {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr, ps);
-        return this.isVisible(likeVoteSelector);
+        return await this.isVisible(likeVoteSelector);
       },
 
-      waitForLikeVote: (postNr: PostNr, ps: { byMe?: boolean } = {}) => {
+      waitForLikeVote: async (postNr: PostNr, ps: { byMe?: Bo } = {}) => {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr, ps);
-        this.waitForVisible(likeVoteSelector);
+        await this.waitForVisible(likeVoteSelector);
       },
 
-      toggleDisagreeVote: (postNr: PostNr) => {
-        this.topic._toggleMoreVote(postNr, '.dw-a-wrong');
+      toggleDisagreeVote: async (postNr: PostNr) => {
+        await this.topic._toggleMoreVote(postNr, '.dw-a-wrong');
       },
 
-      toggleBuryVote: (postNr: PostNr) => {
-        this.topic._toggleMoreVote(postNr, '.dw-a-bury');
+      toggleBuryVote: async (postNr: PostNr) => {
+        await this.topic._toggleMoreVote(postNr, '.dw-a-bury');
       },
 
-      toggleUnwantedVote: (postNr: PostNr) => {
-        this.topic._toggleMoreVote(postNr, '.dw-a-unwanted');
+      toggleUnwantedVote: async (postNr: PostNr) => {
+        await this.topic._toggleMoreVote(postNr, '.dw-a-unwanted');
       },
 
-      _toggleMoreVote: (postNr: PostNr, selector: string) => {
-        this.topic.clickMoreVotesForPostNr(postNr);
+      _toggleMoreVote: async (postNr: PostNr, selector: St) => {
+        await this.topic.clickMoreVotesForPostNr(postNr);
         // The vote button appears in a modal dropdown.
-        this.waitAndClick('.esDropModal_content ' + selector);
-        this.waitUntilModalGone();
-        this.waitUntilLoadingOverlayGone();
+        await this.waitAndClick('.esDropModal_content ' + selector);
+        await this.waitUntilModalGone();
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      canVoteLike: (postNr: PostNr): boolean => {
+      canVoteLike: async (postNr: PostNr): Pr<Bo> => {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
-        return this.isVisible(likeVoteSelector);
+        return await this.isVisible(likeVoteSelector);
       },
 
-      canVoteUnwanted: (postNr: PostNr): boolean => {
-        this.topic.clickMoreVotesForPostNr(postNr);
-        this.waitForVisible('.esDropModal_content .dw-a-like');
-        const canVote = this.isVisible('.esDropModal_content .dw-a-unwanted');
+      canVoteUnwanted: async (postNr: PostNr): Pr<Bo> => {
+        await this.topic.clickMoreVotesForPostNr(postNr);
+        await this.waitForVisible('.esDropModal_content .dw-a-like');
+        const canVote = await this.isVisible('.esDropModal_content .dw-a-unwanted');
         assert(false); // how close modal? to do... later when needed
         return canVote;
       },
 
       __flagPostSelector: '.icon-flag',  // for now, later: e_...
 
-      clickFlagPost: (postNr: PostNr) => {
-        this.topic.clickMoreForPostNr(postNr);
-        this.waitAndClick(this.topic.__flagPostSelector);
+      clickFlagPost: async (postNr: PostNr) => {
+        await this.topic.clickMoreForPostNr(postNr);
+        await this.waitAndClick(this.topic.__flagPostSelector);
         // This opens  this.flagDialog.
       },
 
       __deletePostSelector: '.dw-a-delete',
 
-      deletePost: (postNr: PostNr) => {
-        this.topic.clickMoreForPostNr(postNr);
-        this.waitAndClick(this.topic.__deletePostSelector);
-        this.waitAndClick('.dw-delete-post-dialog .e_YesDel');
-        this.waitUntilGone('.dw-delete-post-dialog');
-        this.waitUntilLoadingOverlayGone();
-        this.topic.waitForPostVisibleAsDeleted(postNr);
+      deletePost: async (postNr: PostNr) => {
+        await this.topic.clickMoreForPostNr(postNr);
+        await this.waitAndClick(this.topic.__deletePostSelector);
+        await this.waitAndClick('.dw-delete-post-dialog .e_YesDel');
+        await this.waitUntilGone('.dw-delete-post-dialog');
+        await this.waitUntilLoadingOverlayGone();
+        await this.topic.waitForPostVisibleAsDeleted(postNr);
       },
 
-      canDeletePost: (postNr: PostNr): boolean => {
-        this.topic.clickMoreForPostNr(postNr);
-        this.waitForVisible('.esDropModal_content .dw-a-flag');
-        const canDelete = this.isVisible(this.topic.__deletePostSelector);
-        this.topic.closePostMoreDialog();
+      canDeletePost: async (postNr: PostNr): Pr<Bo> => {
+        await this.topic.clickMoreForPostNr(postNr);
+        await this.waitForVisible('.esDropModal_content .dw-a-flag');
+        const canDelete = await this.isVisible(this.topic.__deletePostSelector);
+        await this.topic.closePostMoreDialog();
         return canDelete;
       },
 
-      canSelectAnswer: (): boolean => {
-        return this.isVisible('.dw-a-solve');
+      canSelectAnswer: async (): Pr<Bo> => {
+        return await this.isVisible('.dw-a-solve');
       },
 
-      selectPostNrAsAnswer: (postNr: PostNr) => {
-        assert(!this.isVisible(this.topic._makeUnsolveSelector(postNr)));
-        this.topic.clickPostActionButton(this.topic._makeSolveSelector(postNr));
-        this.waitForVisible(this.topic._makeUnsolveSelector(postNr));
+      selectPostNrAsAnswer: async (postNr: PostNr) => {
+        assert(!await this.isVisible(this.topic._makeUnsolveSelector(postNr)));
+        await this.topic.clickPostActionButton(this.topic._makeSolveSelector(postNr));
+        await this.waitForVisible(this.topic._makeUnsolveSelector(postNr));
       },
 
-      unselectPostNrAsAnswer: (postNr: PostNr) => {
-        assert(!this.isVisible(this.topic._makeSolveSelector(postNr)));
-        this.topic.clickPostActionButton(this.topic._makeUnsolveSelector(postNr));
-        this.waitForVisible(this.topic._makeSolveSelector(postNr));
+      unselectPostNrAsAnswer: async (postNr: PostNr) => {
+        assert(!await this.isVisible(this.topic._makeSolveSelector(postNr)));
+        await this.topic.clickPostActionButton(this.topic._makeUnsolveSelector(postNr));
+        await this.waitForVisible(this.topic._makeSolveSelector(postNr));
       },
 
       _makeSolveSelector(postNr: PostNr) {
@@ -6013,35 +6040,35 @@ this.l(`Num tab: ${numTabs}`);
         return `#post-${postNr} + .esPA .dw-a-unsolve`;
       },
 
-      openChangePageDialog: () => {
-        this.waitAndClick('.dw-a-change');
-        this.topic.waitUntilChangePageDialogOpen();
+      openChangePageDialog: async () => {
+        await this.waitAndClick('.dw-a-change');
+        await this.topic.waitUntilChangePageDialogOpen();
       },
 
       __changePageDialogSelector: '.s_ChPgD .esDropModal_content',
 
       // Could break out to  changePageDialog: { ... } obj.
-      waitUntilChangePageDialogOpen: () => {
-        this.waitForVisible(this.topic.__changePageDialogSelector);
-        this.waitForDisplayed('.modal-backdrop');
+      waitUntilChangePageDialogOpen: async () => {
+        await this.waitForVisible(this.topic.__changePageDialogSelector);
+        await this.waitForDisplayed('.modal-backdrop');
       },
 
-      isChangePageDialogOpen: () => {
-        return this.isVisible(this.topic.__changePageDialogSelector);
+      isChangePageDialogOpen: async (): Pr<Bo> => {
+        return await this.isVisible(this.topic.__changePageDialogSelector);
       },
 
-      waitUntilChangePageDialogGone: () => {
-        this.waitUntilGone(this.topic.__changePageDialogSelector);
-        this.waitUntilGone('.modal-backdrop');
+      waitUntilChangePageDialogGone: async () => {
+        await this.waitUntilGone(this.topic.__changePageDialogSelector);
+        await this.waitUntilGone('.modal-backdrop');
       },
 
-      closeChangePageDialog: () => {
-        dieIf(!this.topic.isChangePageDialogOpen(), 'TyE5AKTDFF2');
+      closeChangePageDialog: async () => {
+        dieIf(!await this.topic.isChangePageDialogOpen(), 'TyE5AKTDFF2');
         // Don't: this.waitAndClick('.modal-backdrop');
         // That might block forever, waiting for the dialog that's in front of the backdrop
         // to stop occluding (parts of) the backdrop.
         // Instead:
-        this.waitUntil(() => {
+        await this.waitUntil(async () => {
           // This no longer works, why not? Chrome 77. The click has no effect —
           // maybe it doesn't click at 10,10 any longer? Or what?
           //if (this.isVisible('.modal-backdrop')) {
@@ -6051,192 +6078,192 @@ this.l(`Num tab: ${numTabs}`);
           //}
           // Instead: (and is this even slightly better?)
           // (Break out close dialog fn?  [E2ECLOSEDLGFN])
-          if (this.isVisible('.esDropModal_CloseB')) {
-            this.waitAndClick('.esDropModal_CloseB');
+          if (await this.isVisible('.esDropModal_CloseB')) {
+            await this.waitAndClick('.esDropModal_CloseB');
           }
-          return !this.topic.isChangePageDialogOpen();
+          return !await this.topic.isChangePageDialogOpen();
         }, {
           message: `Waiting for Change Page dialog to close`,
         });
-        this.waitUntilModalGone();
+        await this.waitUntilModalGone();
       },
 
-      closeTopic: () => {
-        this.topic.openChangePageDialog();
-        this.waitAndClick(this.topic._closeButtonSelector);
-        this.topic.waitUntilChangePageDialogGone();
-        this.waitForVisible('.dw-p-ttl .icon-block');
+      closeTopic: async () => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick(this.topic._closeButtonSelector);
+        await this.topic.waitUntilChangePageDialogGone();
+        await this.waitForVisible('.dw-p-ttl .icon-block');
       },
 
-      reopenTopic: () => {
-        this.topic.openChangePageDialog();
-        this.waitAndClick(this.topic._reopenButtonSelector);
-        this.topic.waitUntilChangePageDialogGone();
-        this.waitUntilGone('.dw-p-ttl .icon-block');
+      reopenTopic: async () => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick(this.topic._reopenButtonSelector);
+        await this.topic.waitUntilChangePageDialogGone();
+        await this.waitUntilGone('.dw-p-ttl .icon-block');
       },
 
-      canCloseOrReopen: (): Bo => {
-        return this.topic.__canSomething(() => {
-          return this.isVisible(this.topic._closeButtonSelector) ||
-                  this.isVisible(this.topic._reopenButtonSelector);
+      canCloseOrReopen: async (): Pr<Bo> => {
+        return await this.topic.__canSomething(async () => {
+          return await this.isVisible(this.topic._closeButtonSelector) ||
+                  await this.isVisible(this.topic._reopenButtonSelector);
         });
       },
 
-      __canSomething: (fn: () => Bo): Bo => {
-        this.waitForDisplayed('.dw-a-more'); // so all buttons have appeared
-        if (!this.isVisible('.dw-a-change'))
+      __canSomething: async (fn: () => Pr<Bo>): Pr<Bo> => {
+        await this.waitForDisplayed('.dw-a-more'); // so all buttons have appeared
+        if (!await this.isVisible('.dw-a-change'))
           return false;
-        this.topic.openChangePageDialog();
-        const result = fn();
-        this.topic.closeChangePageDialog();
+        await this.topic.openChangePageDialog();
+        const result = await fn();
+        await this.topic.closeChangePageDialog();
         return result;
       },
 
-      setDoingStatus: (newStatus: 'New' | 'Planned' | 'Started' | 'Done') => {
-        this.topic.openChangePageDialog();
-        this.waitAndClick('.e_PgSt-' + newStatus);
-        this.topic.waitUntilChangePageDialogGone();
+      setDoingStatus: async (newStatus: 'New' | 'Planned' | 'Started' | 'Done') => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick('.e_PgSt-' + newStatus);
+        await this.topic.waitUntilChangePageDialogGone();
       },
 
       _closeButtonSelector: '.s_ChPgD .e_ClosePgB',
       _reopenButtonSelector: '.s_ChPgD .e_ReopenPgB',
 
-      deletePage: () => {
-        this.topic.openChangePageDialog();
-        this.waitAndClick(this.topic.__deletePageSelector);
-        this.topic.waitUntilChangePageDialogGone();
-        this.topic.waitUntilPageDeleted();
+      deletePage: async () => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick(this.topic.__deletePageSelector);
+        await this.topic.waitUntilChangePageDialogGone();
+        await this.topic.waitUntilPageDeleted();
       },
 
-      undeletePage: () => {
-        this.topic.openChangePageDialog();
-        this.waitAndClick(this.topic.__undeletePageSelector);
-        this.topic.waitUntilChangePageDialogGone();
-        this.topic.waitUntilPageRestored();
+      undeletePage: async () => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick(this.topic.__undeletePageSelector);
+        await this.topic.waitUntilChangePageDialogGone();
+        await this.topic.waitUntilPageRestored();
       },
 
-      canDeleteOrUndeletePage: (): Bo => {
-        return this.topic.__canSomething(() => {
-          return this.isVisible(this.topic.__deletePageSelector) ||
-                  this.isVisible(this.topic.__undeletePageSelector);
+      canDeleteOrUndeletePage: async (): Pr<Bo> => {
+        return await this.topic.__canSomething(async () => {
+          return await this.isVisible(this.topic.__deletePageSelector) ||
+                  await this.isVisible(this.topic.__undeletePageSelector);
         });
       },
 
       __deletePageSelector: '.s_ChPgD .e_DelPgB',
       __undeletePageSelector: '.s_ChPgD .e_UndelPgB',
 
-      refreshUntilBodyHidden: (postNr: PostNr) => {  // RENAME to refreshUntilPostBodyHidden
-        this.waitUntil(() => {
-          let isBodyHidden = this.topic.isPostBodyHidden(postNr);
+      refreshUntilBodyHidden: async (postNr: PostNr) => {  // RENAME to refreshUntilPostBodyHidden
+        await this.waitUntil(async () => {
+          let isBodyHidden = await this.topic.isPostBodyHidden(postNr);
           if (isBodyHidden) return true;
-          this.#br.pause(RefreshPollMs);
-          this.#br.refresh();
+          await this.#br.pause(RefreshPollMs);
+          await this.#br.refresh();
         }, {
           message: `Waiting for post nr ${postNr}'s body to hide`,
         });
       },
 
-      refreshUntilPostPresentBodyNotHidden: (postNr: PostNr) => {
-        this.waitUntil(() => {
-          let isVisible = this.isVisible(`#post-${postNr}`);
-          let isBodyHidden = this.topic.isPostBodyHidden(postNr);
+      refreshUntilPostPresentBodyNotHidden: async (postNr: PostNr) => {
+        await this.waitUntil(async () => {
+          let isVisible = await this.isVisible(`#post-${postNr}`);
+          let isBodyHidden = await this.topic.isPostBodyHidden(postNr);
           if (isVisible && !isBodyHidden) return true;
-          this.#br.pause(RefreshPollMs);
-          this.#br.refresh();
+          await this.#br.pause(RefreshPollMs);
+          await this.#br.refresh();
         }, {
           message: `Waiting for post nr ${postNr}: isVisible && !isBodyHidden`,
         });
       },
 
-      isPostBodyHidden: (postNr: PostNr) => {
-        return this.isVisible(`#post-${postNr}.s_P-Hdn`);
+      isPostBodyHidden: async (postNr: PostNr): Pr<Bo> => {
+        return await this.isVisible(`#post-${postNr}.s_P-Hdn`);
       },
 
-      waitForPostVisibleAsDeleted: (postNr: PostNr) => {
-        this.waitForDisplayed(`#post-${postNr}.s_P-Dd`);
+      waitForPostVisibleAsDeleted: async (postNr: PostNr) => {
+        await this.waitForDisplayed(`#post-${postNr}.s_P-Dd`);
       },
 
-      assertPostHidden: (postNr: PostNr) => {
-        assert(this.topic.isPostBodyHidden(postNr));
+      assertPostHidden: async  (postNr: PostNr) => {
+        assert(await this.topic.isPostBodyHidden(postNr));
       },
 
-      assertPostNotHidden: (postNr: PostNr) => {
-        assert(!this.isVisible(`#post-${postNr}.s_P-Hdn`));
-        assert(this.isVisible(`#post-${postNr}`));
+      assertPostNotHidden: async (postNr: PostNr) => {
+        assert(!await this.isVisible(`#post-${postNr}.s_P-Hdn`));
+        assert(await this.isVisible(`#post-${postNr}`));
         // Check -Hdn again, to prevent some races (but not all), namely that the post gets
         // loaded, and is invisible, but the first -Hdn check didn't find it because at that time
         // it hadn't yet been loaded.
-        assert(!this.isVisible(`#post-${postNr}.s_P-Hdn`));
+        assert(!await this.isVisible(`#post-${postNr}.s_P-Hdn`));
       },
 
-      rejectPostNr: (postNr: PostNr) => {
+      rejectPostNr: async (postNr: PostNr) => {
         const selector = `#post-${postNr} + .esPA .s_PA_ModB-Rej`;
-        this.waitAndClick(selector);
-        this.stupidDialog.yesIAmSure();
+        await this.waitAndClick(selector);
+        await this.stupidDialog.yesIAmSure();
         if (postNr === c.BodyNr) {
           // Then currently the page gets deleted instead
           // — the posts need an [ApprovedStatus] post field.
-          this.topic.waitUntilPageDeleted();
+          await this.topic.waitUntilPageDeleted();
           return;
         }
-        this.waitUntilGone(selector);
-        this.topic.waitForPostVisibleAsDeleted(postNr);
-        assert(!this.topic._hasUnapprovedClass(postNr));
-        assert(!this.topic._hasPendingModClass(postNr));
+        await this.waitUntilGone(selector);
+        await this.topic.waitForPostVisibleAsDeleted(postNr);
+        assert(!await this.topic._hasUnapprovedClass(postNr));
+        assert(!await this.topic._hasPendingModClass(postNr));
       },
 
-      approvePostNr: (postNr: PostNr) => {
+      approvePostNr: async (postNr: PostNr) => {
         const selector = `#post-${postNr} + .esPA .s_PA_ModB-Apr`;
-        this.waitAndClick(selector);
-        this.stupidDialog.yesIAmSure();
-        this.waitUntilGone(selector);
-        assert(!this.topic._hasUnapprovedClass(postNr));
-        assert(!this.topic._hasPendingModClass(postNr));
+        await this.waitAndClick(selector);
+        await this.stupidDialog.yesIAmSure();
+        await this.waitUntilGone(selector);
+        assert(!await this.topic._hasUnapprovedClass(postNr));
+        assert(!await this.topic._hasPendingModClass(postNr));
       },
 
-      assertPostNeedsApprovalBodyVisible: (postNr: PostNr) => {
+      assertPostNeedsApprovalBodyVisible: async (postNr: PostNr) => {
         // Test visible = true first, else, race. [is_visible_1st]
-        assert(this.topic._hasPendingModClass(postNr));
-        assert(!this.topic._hasUnapprovedClass(postNr));
-        assert(this.topic._isBodyVisible(postNr));
+        assert(await this.topic._hasPendingModClass(postNr));
+        assert(!await this.topic._hasUnapprovedClass(postNr));
+        assert(await this.topic._isBodyVisible(postNr));
       },
 
-      assertPostNeedsApprovalBodyHidden: (postNr: PostNr) => {
+      assertPostNeedsApprovalBodyHidden: async (postNr: PostNr) => {
         // Test visible = true first, else, race. [is_visible_1st]
-        assert(this.topic._hasUnapprovedClass(postNr));
-        assert(!this.topic._hasPendingModClass(postNr));
-        assert(!this.topic._isBodyVisible(postNr));
+        assert(await this.topic._hasUnapprovedClass(postNr));
+        assert(!await this.topic._hasPendingModClass(postNr));
+        assert(!await this.topic._isBodyVisible(postNr));
       },
 
-      refreshUntilPostNotPendingApproval: (postNr: PostNr) => {
-        this.waitUntil(() => {
-          return this.topic.isPostNotPendingApproval(postNr);
+      refreshUntilPostNotPendingApproval: async (postNr: PostNr) => {
+        await this.waitUntil(async () => {
+          return await this.topic.isPostNotPendingApproval(postNr);
         }, {
           refreshBetween: true,
           message: `Waiting for post nr ${postNr} to get approved`,
         });
       },
 
-      assertPostNotPendingApproval: (postNr: PostNr, ps: { wait?: false } = {}) => {
+      assertPostNotPendingApproval: async (postNr: PostNr, ps: { wait?: false } = {}) => {
         if (ps.wait !== false) {
-          this.topic.waitForPostNrVisible(postNr);
+          await this.topic.waitForPostNrVisible(postNr);
         }
-        assert(this.topic.isPostNotPendingApproval(postNr));
+        assert(await this.topic.isPostNotPendingApproval(postNr));
       },
 
-      isPostNotPendingApproval: (postNr: PostNr) => {
+      isPostNotPendingApproval: async (postNr: PostNr): Pr<Bo> => {
         // Test visible = true first, else, race. [is_visible_1st]
-        return this.topic._isBodyVisible(postNr) &&
-            !this.topic._hasUnapprovedClass(postNr) &&
-            !this.topic._hasPendingModClass(postNr);
+        return await this.topic._isBodyVisible(postNr) &&
+            !await this.topic._hasUnapprovedClass(postNr) &&
+            !await this.topic._hasPendingModClass(postNr);
       },
 
       // Not needed? Just use  waitAndClick()  instead?
-      clickPostActionButton: (buttonSelector: string,
-            opts: { clickFirst?: boolean } = {}) => {   // RENAME to this.scrollAndClick?
-        this.switchToEmbCommentsIframeIfNeeded();
-        this.waitAndClick(buttonSelector, opts);
-        return;
+      clickPostActionButton: async (buttonSelector: St,
+            opts: { clickFirst?: Bo } = {}) => {   // RENAME to this.scrollAndClick?
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.waitAndClick(buttonSelector, opts);
+        /*
         // DO_AFTER 2020-06-01: CLEAN_UP REMOVE the rest of this function.
         let hasScrolled = false;
         const isInIframe = this.isInIframe();
@@ -6283,7 +6310,7 @@ this.l(`Num tab: ${numTabs}`);
               logMessage(`Cannot scroll: ${hasScrollBtns} ${isOnAutoPage},` +
                   ` won't try to scroll to: ${buttonSelector}`);
               break;
-            } */
+            } * /
 
             let bottomY = this.getWindowHeight();
             if (true) { // hasScrollBtns) {
@@ -6340,155 +6367,155 @@ this.l(`Num tab: ${numTabs}`);
             }
           }
           logMessage(`clickPostActionButton: attempt 2...`);
-        }
+        }*/
       },
 
-      _isOrigPostBodyVisible: () => {
-        return !!this.$('#post-1 > .dw-p-bd').getText();
+      _isOrigPostBodyVisible: async (): Pr<Bo> => {
+        return !!await (await this.$('#post-1 > .dw-p-bd')).getText();
       },
 
-      _isTitlePendingApprovalVisible: () => {
-        return this.isVisible('.dw-p-ttl .esPendingApproval');
+      _isTitlePendingApprovalVisible: async (): Pr<Bo> => {
+        return await this.isVisible('.dw-p-ttl .esPendingApproval');
       },
 
-      _isOrigPostPendingApprovalVisible: () => {
-        return this.isVisible('.dw-ar-t > .esPendingApproval');
+      _isOrigPostPendingApprovalVisible: async (): Pr<Bo> => {
+        return await this.isVisible('.dw-ar-t > .esPendingApproval');
       },
 
-      _isBodyVisible: (postNr: PostNr) => {
-        return this.isVisible(`#post-${postNr} .dw-p-bd`);
+      _isBodyVisible: async (postNr: PostNr): Pr<Bo> => {
+        return await this.isVisible(`#post-${postNr} .dw-p-bd`);
       },
 
-      _hasPendingModClass: (postNr: PostNr) => {
-        return this.isVisible(`#post-${postNr} .dw-p-pending-mod`);
+      _hasPendingModClass: async (postNr: PostNr): Pr<Bo> => {
+        return await this.isVisible(`#post-${postNr} .dw-p-pending-mod`);
       },
 
-      _hasUnapprovedClass: (postNr: PostNr) => {
-        return this.isVisible(`#post-${postNr}.dw-p-unapproved`);
+      _hasUnapprovedClass: async (postNr: PostNr): Pr<Bo> => {
+        return await this.isVisible(`#post-${postNr}.dw-p-unapproved`);
       },
 
 
       backlinks: {
         __mkSelector: (pageId: PageId) => `.s_InLns_Ln[href="/-${pageId}"]`,
 
-        countBacklinks: (): number => this.count('.s_InLns_Ln'),
+        countBacklinks: async (): Pr<Nr> => await this.count('.s_InLns_Ln'),
 
-        refreshUntilNum: (num: number) => {
+        refreshUntilNum: async (num: Nr) => {
           let numNow: number;
-          this.waitUntil(() => {
-            this.waitForMyDataAdded();
-            numNow = this.topic.backlinks.countBacklinks();
+          await this.waitUntil(async () => {
+            await this.waitForMyDataAdded();
+            numNow = await this.topic.backlinks.countBacklinks();
             if (numNow === num) return true;
-            this.refresh2();
+            await this.refresh2();
           }, {
             message: () => `Waiting for ${num} backlinks, num now: ${numNow}`,
           });
         },
 
-        isLinkedFromPageId: (pageId: PageId): boolean => {
-          return this.isExisting(this.topic.backlinks.__mkSelector(pageId));
+        isLinkedFromPageId: async (pageId: PageId): Pr<Bo> => {
+          return await this.isExisting(this.topic.backlinks.__mkSelector(pageId));
         },
 
-        getLinkTitle: (pageId: PageId): string => {
-          return this.waitAndGetText(this.topic.backlinks.__mkSelector(pageId));
+        getLinkTitle: async (pageId: PageId): Pr<St> => {
+          return await this.waitAndGetText(this.topic.backlinks.__mkSelector(pageId));
         },
 
-        clickBacklinkFrom: (pageId: PageId): void => {
-          this.waitAndClick(this.topic.backlinks.__mkSelector(pageId));
+        clickBacklinkFrom: async (pageId: PageId) => {
+          await this.waitAndClick(this.topic.backlinks.__mkSelector(pageId));
         },
       },
     };
 
 
     chat = {
-      joinChat: () => {
-        this.waitAndClick('#theJoinChatB');
+      joinChat: async () => {
+        await this.waitAndClick('#theJoinChatB');
       },
 
-      waitAndAssertPurposeMatches: (regex: RegExp | string) => {
-        this.waitAndAssertVisibleTextMatches('.esChatChnl_about', regex);
+      waitAndAssertPurposeMatches: async (regex: RegExp | St) => {
+        await this.waitAndAssertVisibleTextMatches('.esChatChnl_about', regex);
       },
 
-      waitAndAssertPurposeIs: (text: St) => {
-        this.waitAndAssertVisibleTextIs('.esChatChnl_about .dw-p-bd', text);
+      waitAndAssertPurposeIs: async (text: St) => {
+        await this.waitAndAssertVisibleTextIs('.esChatChnl_about .dw-p-bd', text);
       },
 
-      addChatMessage: (text: string) => {
-        this.chat.editChatMessage(text);
-        this.chat.submitChatMessage();
+      addChatMessage: async (text: St) => {
+        await this.chat.editChatMessage(text);
+        await this.chat.submitChatMessage();
         // could verify visible
       },
 
       __previewSelector: '.s_C_M-Prvw',
 
-      editChatMessage: (text: string) => {
-        this.waitAndSetValue('.esC_Edtr_textarea', text);
+      editChatMessage: async (text: St) => {
+        await this.waitAndSetValue('.esC_Edtr_textarea', text);
         // Wait for a message preview to appear — because it can push the submit button down,
         // so when we click it, when done editing, we'd miss it, if we click at
         // exacty the same time. (Happens like 1 in 5.)
-        if (text) this.waitForVisible(this.chat.__previewSelector);
-        else this.waitForGone(this.chat.__previewSelector);
+        if (text) await this.waitForVisible(this.chat.__previewSelector);
+        else await this.waitForGone(this.chat.__previewSelector);
       },
 
-      getChatInputText: (): string => {
-        return this.waitAndGetText('.esC_Edtr_textarea');
+      getChatInputText: async (): Pr<St> => {
+        return await this.waitAndGetText('.esC_Edtr_textarea');
       },
 
-      waitForDraftSaved: () => {
-        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      waitForDraftSaved: async () => {
+        await this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
       },
 
-      waitForDraftDeleted: () => {
-        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
+      waitForDraftDeleted: async () => {
+        await this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
       },
 
-      waitForDraftChatMessageToLoad: (text: string) => {
-        this.waitUntilValueIs('.esC_Edtr textarea', text);
+      waitForDraftChatMessageToLoad: async (text: St) => {
+        await this.waitUntilValueIs('.esC_Edtr textarea', text);
       },
 
-      submitChatMessage: () => {
-        this.waitAndClick('.esC_Edtr_SaveB');
-        this.waitUntilLoadingOverlayGone();
+      submitChatMessage: async () => {
+        await this.waitAndClick('.esC_Edtr_SaveB');
+        await this.waitUntilLoadingOverlayGone();
         //this.waitForGone('.s_C_M-Prvw'); [DRAFTS_BUG] — add this, see if works?
       },
 
-      waitForNumMessages: (howMany: Nr, exact?: 'Exactly') => {
-        if (exact === 'Exactly') this.waitForExactly(howMany, '.esC_M');
-        else this.waitForAtLeast(howMany, '.esC_M');
+      waitForNumMessages: async (howMany: Nr, exact?: 'Exactly') => {
+        if (exact === 'Exactly') await this.waitForExactly(howMany, '.esC_M');
+        else await this.waitForAtLeast(howMany, '.esC_M');
       },
 
-      countMessages: (ps: { inclAnyPreview?: boolean } = {}): number =>
-        this.count(
+      countMessages: async (ps: { inclAnyPreview?: Bo } = {}): Pr<Nr> =>
+        await this.count(
             `.esC_M${ps.inclAnyPreview === false ? '' : ':not(.s_C_M-Prvw)'}`),
 
-      assertMessageNrMatches: (messageNr, regex: RegExp | string) => {
+      assertMessageNrMatches: async (messageNr, regex: RegExp | St) => {
         const postNr = messageNr + 1;
-        this.topic.waitForPostAssertTextMatches(postNr, regex);
+        await this.topic.waitForPostAssertTextMatches(postNr, regex);
       },
 
-      openAdvancedEditor: () => {
-        this.waitAndClick('.esC_Edtr_AdvB');
+      openAdvancedEditor: async () => {
+        await this.waitAndClick('.esC_Edtr_AdvB');
       },
 
-      deleteChatMessageNr: (nr: PostNr) => {
+      deleteChatMessageNr: async (nr: PostNr) => {
         const postSelector = `#post-${nr}`;
-        this.waitAndClick(`${postSelector} .s_C_M_B-Dl`);
-        this.waitAndClick('.dw-delete-post-dialog .e_YesDel');
-        this.waitUntilLoadingOverlayGone();
-        this.waitForVisible(`${postSelector}.s_C_M-Dd`);
+        await this.waitAndClick(`${postSelector} .s_C_M_B-Dl`);
+        await this.waitAndClick('.dw-delete-post-dialog .e_YesDel');
+        await this.waitUntilLoadingOverlayGone();
+        await this.waitForVisible(`${postSelector}.s_C_M-Dd`);
       },
     };
 
 
     customForm = {
-      submit: () => {
-        this.waitAndClick('form input[type="submit"]');
-        this.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
+      submit: async () => {
+        await this.waitAndClick('form input[type="submit"]');
+        await this.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
       },
 
-      assertNumSubmissionVisible: (num: number) => {
-        this.waitForMyDataAdded();
-        this.assertExactly(num, '.dw-p-flat');
+      assertNumSubmissionVisible: async (num: number) => {
+        await this.waitForMyDataAdded();
+        await this.assertExactly(num, '.dw-p-flat');
       },
     };
 
@@ -6499,70 +6526,70 @@ this.l(`Num tab: ${numTabs}`);
 
 
     searchResultsPage = {
-      waitForSearchInputField: () => {
-        this.waitForVisible('.s_SP_QueryTI');
+      waitForSearchInputField: async () => {
+        await this.waitForVisible('.s_SP_QueryTI');
       },
 
-      assertPhraseNotFound: (phrase: string) => {
-        this.searchResultsPage.waitForResults(phrase);
-        assert(this.isVisible('#e_SP_NothingFound'));
+      assertPhraseNotFound: async (phrase: St) => {
+        await this.searchResultsPage.waitForResults(phrase);
+        assert(await this.isVisible('#e_SP_NothingFound'));
       },
 
-      waitForAssertNumPagesFound: (phrase: string, numPages: number) => {
-        this.searchResultsPage.waitForResults(phrase);
+      waitForAssertNumPagesFound: async (phrase: St, numPages: Nr) => {
+        await this.searchResultsPage.waitForResults(phrase);
         // oops, search-search-loop needed ...
         // for now:
-        this.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
-        this.assertExactly(numPages, '.esSERP_Hit_PageTitle');
+        await this.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
+        await this.assertExactly(numPages, '.esSERP_Hit_PageTitle');
       },
 
-      searchForWaitForResults: (phrase: string) => {
-        this.waitAndSetValue('.s_SP_QueryTI', phrase);
-        this.searchResultsPage.clickSearchButton();
+      searchForWaitForResults: async (phrase: St) => {
+        await this.waitAndSetValue('.s_SP_QueryTI', phrase);
+        await this.searchResultsPage.clickSearchButton();
         // Later, with Nginx 1.11.0+, wait until a $request_id in the page has changed [5FK02FP]
-        this.searchResultsPage.waitForResults(phrase);
+        await this.searchResultsPage.waitForResults(phrase);
       },
 
-      searchForUntilNumPagesFound: (phrase: string, numResultsToFind: number) => {
+      searchForUntilNumPagesFound: async (phrase: St, numResultsToFind: Nr) => {
         let numFound;
-        this.waitUntil(() => {
-          this.searchResultsPage.searchForWaitForResults(phrase);
-          numFound = this.searchResultsPage.countNumPagesFound_1();
+        await this.waitUntil(async () => {
+          await this.searchResultsPage.searchForWaitForResults(phrase);
+          numFound = await this.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
             tyAssert.eq(numFound, numResultsToFind);
             return true;
           }
-          this.#br.pause(111);
+          await this.#br.pause(111);
         }, {
           message: `Waiting for ${numResultsToFind} pages found for search ` +
               `phrase:  "${phrase}"  found this far: ${numFound}`,
         });
       },
 
-      clickSearchButton: () => {
-        this.waitAndClick('.s_SP_SearchB');
+      clickSearchButton: async () => {
+        await this.waitAndClick('.s_SP_SearchB');
       },
 
-      waitForResults: (phrase: string) => {
+      waitForResults: async (phrase: St) => {
         // Later, check Nginx $request_id to find out if the page has been refreshed
         // unique request identifier generated from 16 random bytes, in hexadecimal (1.11.0).
-        this.waitUntilTextMatches('#e2eSERP_SearchedFor', phrase);
+        await this.waitUntilTextMatches('#e2eSERP_SearchedFor', phrase);
       },
 
-      countNumPagesFound_1: (): number =>
-        this.$$('.esSERP_Hit_PageTitle').length,
+      countNumPagesFound_1: async (): Pr<Nr> =>
+        (await this.$$('.esSERP_Hit_PageTitle')).length,
 
-      assertResultPageTitlePresent: (title: string) => {
-        this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, { timeoutMs: 1 });
+      assertResultPageTitlePresent: async (title: St) => {
+        await this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, { timeoutMs: 1 });
       },
 
-      goToSearchResult: (linkText?: string) => {
-        this.repeatUntilAtNewUrl(() => {
+      goToSearchResult: async (linkText?: St) => {
+        await this.repeatUntilAtNewUrl(async () => {
           if (!linkText) {
-            this.waitAndClick('.esSERP_Hit_PageTitle a');
+            await this.waitAndClick('.esSERP_Hit_PageTitle a');
           }
           else {
-            this.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
+            await this.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
           }
         });
       },
@@ -6570,40 +6597,40 @@ this.l(`Num tab: ${numTabs}`);
 
 
     groupListPage = {
-      goHere: (origin?: string) => {
-        this.go((origin || '') + '/-/groups/');
-        this.groupListPage.waitUntilLoaded();
+      goHere: async (origin?: St) => {
+        await this.go((origin || '') + '/-/groups/');
+        await this.groupListPage.waitUntilLoaded();
       },
 
-      waitUntilLoaded: () => {
-        this.waitForVisible('.s_GP');
+      waitUntilLoaded: async () => {
+        await this.waitForVisible('.s_GP');
       },
 
-      countCustomGroups: (): number => {
-        return this.count('.s_Gs-Custom .s_Gs_G');
+      countCustomGroups: async (): Pr<Nr> => {
+        return await this.count('.s_Gs-Custom .s_Gs_G');
       },
 
-      openTrustedMembersGroup: () => {
-        this.waitForThenClickText('.s_Gs_G_Lk .esP_By', 'trusted_members');
-        this.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
+      openTrustedMembersGroup: async () => {
+        await this.waitForThenClickText('.s_Gs_G_Lk .esP_By', 'trusted_members');
+        await this.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
       },
 
-      createGroup: (ps: { username: string, fullName: string }) => {
-        this.waitAndClick('.s_GP_CrGB');
-        this.waitAndSetValue('#te_CrGD_Un', ps.username);
-        this.waitAndSetValue('#te_CrGD_FN', ps.fullName);
-        this.waitAndClick('.s_CrGD .btn-primary');
-        this.waitForVisible('.e_AddMbrsB');
+      createGroup: async (ps: { username: St, fullName: St }) => {
+        await this.waitAndClick('.s_GP_CrGB');
+        await this.waitAndSetValue('#te_CrGD_Un', ps.username);
+        await this.waitAndSetValue('#te_CrGD_FN', ps.fullName);
+        await this.waitAndClick('.s_CrGD .btn-primary');
+        await this.waitForVisible('.e_AddMbrsB');
       },
 
-      waitUntilGroupPresent: (ps: { username: string, fullName: string }) => {
-        this.waitAndGetElemWithText('.s_Gs_G_Lk .esP_By_U', ps.username);
-        this.waitAndGetElemWithText('.s_Gs_G_Lk .esP_By_F', ps.fullName);
+      waitUntilGroupPresent: async (ps: { username: St, fullName: St }) => {
+        await this.waitAndGetElemWithText('.s_Gs_G_Lk .esP_By_U', ps.username);
+        await this.waitAndGetElemWithText('.s_Gs_G_Lk .esP_By_F', ps.fullName);
       },
 
-      openGroupWithUsername: (username: string) => {
-        this.waitForThenClickText('.s_Gs_G_Lk .esP_By_U', username);
-        this.userProfilePage.groupMembers.waitUntilLoaded();
+      openGroupWithUsername: async (username: St) => {
+        await this.waitForThenClickText('.s_Gs_G_Lk .esP_By_U', username);
+        await this.userProfilePage.groupMembers.waitUntilLoaded();
       }
     };
 
@@ -6618,37 +6645,37 @@ this.l(`Num tab: ${numTabs}`);
     userProfilePage = {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
-      waitUntilUsernameVisible: () => {
-        this.waitForVisible('.esUP_Un');
+      waitUntilUsernameVisible: async () => {
+        await this.waitForVisible('.esUP_Un');
       },
 
-      waitUntilUsernameIs: (username) => {
-        this.waitAndGetElemWithText('.esUP_Un', username);
+      waitUntilUsernameIs: async (username: St) => {
+        await this.waitAndGetElemWithText('.esUP_Un', username);
       },
 
-      waitAndGetUsername: (): string => {
-        return this.waitAndGetVisibleText('.esUP_Un');
+      waitAndGetUsername: async (): Pr<St> => {
+        return await this.waitAndGetVisibleText('.esUP_Un');
       },
 
-      waitAndGetFullName: (): string => {
-        return this.waitAndGetVisibleText('.esUP_FN');
+      waitAndGetFullName: async (): Pr<St> => {
+        return await this.waitAndGetVisibleText('.esUP_FN');
       },
 
-      waitUntilDeletedOrDeactivated: () => {
-        this.waitForDisplayed('.e_ActDd');
+      waitUntilDeletedOrDeactivated: async () => {
+        await this.waitForDisplayed('.e_ActDd');
       },
 
-      navBackToGroups: () => {
-        this.userProfilePage._navigateBackToUsersOrGroupsList(true);
+      navBackToGroups: async () => {
+        await this.userProfilePage._navigateBackToUsersOrGroupsList(true);
       },
 
-      _navigateBackToUsersOrGroupsList: (isGroup: boolean) => {
-        this.repeatUntilAtNewUrl(() => {
-          this.waitAndClick('.s_Tb_Ln-Grps');
+      _navigateBackToUsersOrGroupsList: async (isGroup: Bo) => {
+        await this.repeatUntilAtNewUrl(async () => {
+          await this.waitAndClick('.s_Tb_Ln-Grps');
         });
-        if (this.urlPath().startsWith(c.GroupsUrlPrefix)) {
+        if ((await this.urlPath()).startsWith(c.GroupsUrlPrefix)) {
           assert(isGroup);
-          this.groupListPage.waitUntilLoaded();
+          await this.groupListPage.waitUntilLoaded();
         }
         else {
           assert(!isGroup);
@@ -6656,273 +6683,276 @@ this.l(`Num tab: ${numTabs}`);
         }
       },
 
-      openActivityFor: (who: string | UserId, origin?: string) => {
-        this.go((origin || '') + `/-/users/${who}/activity/posts`);
-        this.waitUntilLoadingOverlayGone();
+      openActivityFor: async (who: St | UserId, origin?: St) => {
+        await this.go((origin || '') + `/-/users/${who}/activity/posts`);
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      openNotfsFor: (who: string | UserId, origin?: string) => {
-        this.go((origin || '') + `/-/users/${who}/notifications`);
-        this.waitUntilLoadingOverlayGone();
+      openNotfsFor: async (who: St | UserId, origin?: St) => {
+        await this.go((origin || '') + `/-/users/${who}/notifications`);
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      openNotfPrefsFor: (who: string | UserId, origin?: string) => {  // oops, dupl (443300222), remove this
-        this.go((origin || '') + `/-/users/${who}/preferences/notifications`);
-        this.waitUntilLoadingOverlayGone();
+      openNotfPrefsFor: async (who: St | UserId, origin?: St) => {  // oops, dupl (443300222), remove this
+        await this.go((origin || '') + `/-/users/${who}/preferences/notifications`);
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      openDraftsEtcFor: (who: string | UserId, origin?: string) => {
-        this.go((origin || '') + `/-/users/${who}/drafts-etc`);
-        this.waitUntilLoadingOverlayGone();
+      openDraftsEtcFor: async (who: St | UserId, origin?: St) => {
+        await this.go((origin || '') + `/-/users/${who}/drafts-etc`);
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      openPreferencesFor: (who: string | UserId, origin?: string) => {
-        this.go((origin || '') + `/-/users/${who}/preferences`);
-        this.waitUntilLoadingOverlayGone();
+      openPreferencesFor: async (who: St | UserId, origin?: St) => {
+        await this.go((origin || '') + `/-/users/${who}/preferences`);
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      openPermissionsFor: (who: string | UserId, origin?: string) => {
-        this.go((origin || '') + `/-/users/${who}/permissions`);
-        this.waitUntilLoadingOverlayGone();
+      openPermissionsFor: async (who: St | UserId, origin?: St) => {
+        await this.go((origin || '') + `/-/users/${who}/permissions`);
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      goToActivity: () => {
-        this.waitAndClick('.e_UP_ActivityB');
-        this.waitForVisible('.s_UP_Act_List');
-        this.waitUntilLoadingOverlayGone();
+      goToActivity: async () => {
+        await this.waitAndClick('.e_UP_ActivityB');
+        await this.waitForVisible('.s_UP_Act_List');
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      tabToNotfs: () => {
-        this.waitAndClick('.e_UP_NotfsB');
-        this.userProfilePage.notfs.waitUntilSeesNotfs();
-        this.waitUntilLoadingOverlayGone();
+      tabToNotfs: async () => {
+        await this.waitAndClick('.e_UP_NotfsB');
+        await this.userProfilePage.notfs.waitUntilSeesNotfs();
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      goToPreferences: () => {  // RENAME switchTo and goTo, for tabs, to  tabToNnn ?
-        this.userProfilePage.clickGoToPreferences();
+      goToPreferences: async () => {  // RENAME switchTo and goTo, for tabs, to  tabToNnn ?
+        await this.userProfilePage.clickGoToPreferences();
       },
 
       // rename
-      clickGoToPreferences: () => {
-        this.waitAndClick('#e2eUP_PrefsB');
-        this.waitForVisible('.e_UP_Prefs_FN');
-        this.waitUntilLoadingOverlayGone();
+      clickGoToPreferences: async () => {
+        await this.waitAndClick('#e2eUP_PrefsB');
+        await this.waitForVisible('.e_UP_Prefs_FN');
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      switchToInvites: () => {
-        this.waitAndClick('.e_InvTabB');
-        this.invitedUsersList.waitUntilLoaded();
+      switchToInvites: async () => {
+        await this.waitAndClick('.e_InvTabB');
+        await this.invitedUsersList.waitUntilLoaded();
       },
 
-      waitForTabsVisible: () => {
+      waitForTabsVisible: async () => {
         // The activity tab is always visible, if the notfs tab can possibly be visible.
-        this.waitForVisible('.e_UP_ActivityB');
+        await this.waitForVisible('.e_UP_ActivityB');
       },
 
-      isInvitesTabVisible: () => {
-        this.userProfilePage.waitForTabsVisible();
-        return this.isVisible('.e_InvTabB');
+      isInvitesTabVisible: async (): Pr<Bo> => {
+        await this.userProfilePage.waitForTabsVisible();
+        return await this.isVisible('.e_InvTabB');
       },
 
-      isNotfsTabVisible: () => {
-        this.userProfilePage.waitForTabsVisible();
-        return this.isVisible('.e_UP_NotfsB');
+      isNotfsTabVisible: async (): Pr<Bo> => {
+        await this.userProfilePage.waitForTabsVisible();
+        return await this.isVisible('.e_UP_NotfsB');
       },
 
-      isPrefsTabVisible: () => {
-        this.userProfilePage.waitForTabsVisible();
-        return this.isVisible('#e2eUP_PrefsB');
+      isPrefsTabVisible: async (): Pr<Bo> => {
+        await this.userProfilePage.waitForTabsVisible();
+        return await this.isVisible('#e2eUP_PrefsB');
       },
 
-      assertIsMyProfile: () => {
-        this.waitForVisible('.esUP_Un');
-        assert(this.isVisible('.esProfile_isYou'));
+      assertIsMyProfile: async () => {
+        await this.waitForVisible('.esUP_Un');
+        assert(await this.isVisible('.esProfile_isYou'));
       },
 
-      assertUsernameIs: (username: string) => {
-        this.assertTextMatches('.esUP_Un', username);
+      assertUsernameIs: async (username: St) => {
+        await this.assertTextMatches('.esUP_Un', username);
       },
 
-      assertFullNameIs: (name: string) => {
-        this.assertTextMatches('.esUP_FN', name);
+      assertFullNameIs: async (name: St) => {
+        await this.assertTextMatches('.esUP_FN', name);
       },
 
-      assertFullNameIsNot: (name: string) => {
-        this.assertNoTextMatches('.esUP_FN', name);
+      assertFullNameIsNot: async (name: St) => {
+        await this.assertNoTextMatches('.esUP_FN', name);
       },
 
-      clickSendMessage: () => {
-        this.waitAndClick('.s_UP_SendMsgB');
+      clickSendMessage: async () => {
+        await this.waitAndClick('.s_UP_SendMsgB');
       },
 
-      _goHere: (username: string, ps: { isGroup?: true, origin?: string }, suffix: string) => {
-        this.go(`${ps.origin || ''}/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
+      _goHere: async (username: St, ps: { isGroup?: true, origin?: St }, suffix: St) => {
+        await this.go((ps.origin || '') +
+                `/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
       },
 
       groupMembers: {
-        goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
-          this.userProfilePage._goHere(username, ps, '/members');
-          this.userProfilePage.groupMembers.waitUntilLoaded();
+        goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+          await this.userProfilePage._goHere(username, ps, '/members');
+          await this.userProfilePage.groupMembers.waitUntilLoaded();
         },
 
-        waitUntilLoaded: () => {
-          this.waitForExist('.s_G_Mbrs, .s_G_Mbrs-Dnd');
+        waitUntilLoaded: async () => {
+          await this.waitForExist('.s_G_Mbrs, .s_G_Mbrs-Dnd');
         },
 
-        waitUntilMemberPresent: (username: string) => {
-          this.waitUntilTextMatches('.s_G_Mbrs .esP_By_U', username);
+        waitUntilMemberPresent: async (username: St) => {
+          await this.waitUntilTextMatches('.s_G_Mbrs .esP_By_U', username);
         },
 
-        getNumMembers: (): number => {
-          return this.count('.s_G_Mbrs .esP_By_U');
+        getNumMembers: async (): Pr<Nr> => {
+          return await this.count('.s_G_Mbrs .esP_By_U');
         },
 
-        openAddMemberDialog: () => {
-          this.waitAndClick('.e_AddMbrsB');
+        openAddMemberDialog: async () => {
+          await this.waitAndClick('.e_AddMbrsB');
         },
 
-        addOneMember: (username: string) => {
-          this.userProfilePage.groupMembers.openAddMemberDialog();
-          this.addUsersToPageDialog.addOneUser(username);
-          this.addUsersToPageDialog.submit();
-          this.userProfilePage.groupMembers.waitUntilMemberPresent(username);
+        addOneMember: async (username: St) => {
+          await this.userProfilePage.groupMembers.openAddMemberDialog();
+          await this.addUsersToPageDialog.addOneUser(username);
+          await this.addUsersToPageDialog.submit();
+          await this.userProfilePage.groupMembers.waitUntilMemberPresent(username);
         },
 
-        removeFirstMember: () => {
-          this.waitAndClick('.s_G_Mbrs_Mbr .e_MngMbr');
-          this.waitAndClick('.e_RmMbr');
+        removeFirstMember: async () => {
+          await this.waitAndClick('.s_G_Mbrs_Mbr .e_MngMbr');
+          await this.waitAndClick('.e_RmMbr');
           // (Could wait until 1 fewer member? or name gone?)
         }
       },
 
       activity: {
-        switchToPosts: (opts: { shallFindPosts: boolean | 'NoSinceActivityHidden' }) => {
-          this.waitAndClick('.s_UP_Act_Nav_PostsB');
+        switchToPosts: async (opts: { shallFindPosts: Bo | 'NoSinceActivityHidden' }) => {
+          await this.waitAndClick('.s_UP_Act_Nav_PostsB');
           if (opts.shallFindPosts === 'NoSinceActivityHidden') {
-            this.userProfilePage.activity.posts.waitForNothingToShow();
+            await this.userProfilePage.activity.posts.waitForNothingToShow();
           }
           else if (opts.shallFindPosts) {
-            this.waitForVisible('.s_UP_Act_Ps');
-            this.waitForVisible('.s_UP_Act_Ps_P');
+            await this.waitForVisible('.s_UP_Act_Ps');
+            await this.waitForVisible('.s_UP_Act_Ps_P');
           }
           else {
-            this.userProfilePage.activity.posts.waitForNoPosts();
+            await this.userProfilePage.activity.posts.waitForNoPosts();
           }
-          this.waitUntilLoadingOverlayGone();
+          await this.waitUntilLoadingOverlayGone();
         },
 
-        switchToTopics: (opts: { shallFindTopics: boolean | 'NoSinceActivityHidden' }) => {
-          this.waitAndClick('.s_UP_Act_Nav_TopicsB');
-          this.waitForVisible('.s_UP_Act_Ts');
+        switchToTopics: async (opts: { shallFindTopics: Bo | 'NoSinceActivityHidden' }) => {
+          await this.waitAndClick('.s_UP_Act_Nav_TopicsB');
+          await this.waitForVisible('.s_UP_Act_Ts');
           if (opts.shallFindTopics === 'NoSinceActivityHidden') {
-            this.userProfilePage.activity.topics.waitForNothingToShow();
+            await this.userProfilePage.activity.topics.waitForNothingToShow();
           }
           else if (opts.shallFindTopics) {
-            this.waitForVisible('.e2eTopicTitle');
+            await this.waitForVisible('.e2eTopicTitle');
           }
           else {
-            this.userProfilePage.activity.topics.waitForNoTopics();
+            await this.userProfilePage.activity.topics.waitForNoTopics();
           }
-          this.waitUntilLoadingOverlayGone();
+          await this.waitUntilLoadingOverlayGone();
         },
 
         posts: {
           postSelector: '.s_UP_Act_Ps_P .dw-p-bd',
 
-          waitForNothingToShow: () => {
-            this.waitForVisible('.s_UP_Act_List .e_NothingToShow');
+          waitForNothingToShow: async () => {
+            await this.waitForVisible('.s_UP_Act_List .e_NothingToShow');
           },
 
-          waitForNoPosts: () => {
-            this.waitForVisible('.e_NoPosts');
+          waitForNoPosts: async () => {
+            await this.waitForVisible('.e_NoPosts');
           },
 
-          assertExactly: (num: number) => {
-            this.assertExactly(num, this.userProfilePage.activity.posts.postSelector);
+          assertExactly: async (num: Nr) => {
+            await this.assertExactly(num, this.userProfilePage.activity.posts.postSelector);
           },
 
           // Do this separately, because can take rather long (suprisingly?).
-          waitForPostTextsVisible: () => {
-            this.waitForVisible(this.userProfilePage.activity.posts.postSelector);
+          waitForPostTextsVisible: async () => {
+            await this.waitForVisible(this.userProfilePage.activity.posts.postSelector);
           },
 
-          assertPostTextVisible: (postText: string) => {
+          assertPostTextVisible: async (postText: St) => {
             let selector = this.userProfilePage.activity.posts.postSelector;
-            this.assertAnyTextMatches(selector, postText);
+            await this.assertAnyTextMatches(selector, postText);
           },
 
-          assertPostTextAbsent: (postText: string) => {
+          assertPostTextAbsent: async (postText: St) => {
             let selector = this.userProfilePage.activity.posts.postSelector;
-            this.assertNoTextMatches(selector, postText);
+            await this.assertNoTextMatches(selector, postText);
           },
         },
 
         topics: {
           topicsSelector: '.s_UP_Act_Ts .e2eTopicTitle',
 
-          waitForNothingToShow: () => {
-            this.waitForVisible('.s_UP_Act_List .e_NothingToShow');
+          waitForNothingToShow: async () => {
+            await this.waitForVisible('.s_UP_Act_List .e_NothingToShow');
           },
 
-          waitForNoTopics: () => {
-            this.waitForVisible('.e_NoTopics');
+          waitForNoTopics: async () => {
+            await this.waitForVisible('.e_NoTopics');
           },
 
-          assertExactly: (num: number) => {
-            this.assertExactly(num, this.userProfilePage.activity.topics.topicsSelector);
+          assertExactly: async (num: Nr) => {
+            await this.assertExactly(
+                    num, this.userProfilePage.activity.topics.topicsSelector);
           },
 
-          waitForTopicTitlesVisible: () => {
-            this.waitForVisible(this.userProfilePage.activity.topics.topicsSelector);
+          waitForTopicTitlesVisible: async () => {
+            await this.waitForVisible(
+                    this.userProfilePage.activity.topics.topicsSelector);
           },
 
-          assertTopicTitleVisible: (title: string) => {
+          assertTopicTitleVisible: async (title: St) => {
             let selector = this.userProfilePage.activity.topics.topicsSelector;
-            this.assertAnyTextMatches(selector, title);
+            await this.assertAnyTextMatches(selector, title);
           },
 
-          assertTopicTitleAbsent: (title: string) => {
+          assertTopicTitleAbsent: async (title: St) => {
             let selector = this.userProfilePage.activity.topics.topicsSelector;
-            this.assertNoTextMatches(selector, title);
+            await this.assertNoTextMatches(selector, title);
           },
         }
       },
 
       notfs: {
-        waitUntilKnowsIsEmpty: () => {
-          this.waitForVisible('.e_UP_Notfs_None');
+        waitUntilKnowsIsEmpty: async () => {
+          await this.waitForVisible('.e_UP_Notfs_None');
         },
 
-        waitUntilSeesNotfs: () => {
-          this.waitForVisible('.esUP .esNotfs li a');
+        waitUntilSeesNotfs: async () => {
+          await this.waitForVisible('.esUP .esNotfs li a');
         },
 
-        numNotfs: (): number => {
-          return this.count('.esUP .esNotfs li a');
+        numNotfs: async (): Pr<Nr> => {
+          return await this.count('.esUP .esNotfs li a');
         },
 
-        openPageNotfWithText: (text) => {
-          this.repeatUntilAtNewUrl(() => {
-            this.waitForThenClickText('.esNotf_page', text);
+        openPageNotfWithText: async (text: St) => {
+          await this.repeatUntilAtNewUrl(async () => {
+            await this.waitForThenClickText('.esNotf_page', text);
           });
         },
 
-        assertMayNotSeeNotfs: () => {
-          this.waitForVisible('.e_UP_Notfs_Err');
-          this.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
+        assertMayNotSeeNotfs: async () => {
+          await this.waitForVisible('.e_UP_Notfs_Err');
+          await this.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
         }
       },
 
       draftsEtc: {
-        waitUntilLoaded: () => {
-          this.waitForExist('.s_Dfs');
+        waitUntilLoaded: async () => {
+          await this.waitForExist('.s_Dfs');
         },
 
-        refreshUntilNumDraftsListed: (numDrafts: number) => {
+        refreshUntilNumDraftsListed: async (numDrafts: Nr) => {
           // But this doesn't refresh the page? Hmm
-          let numNow: number;
-          this.waitUntil(() => {
-            numNow = this.$$('.s_Dfs_Df').length;
+          let numNow: Nr;
+          await this.waitUntil(async () => {
+            numNow = (await this.$$('.s_Dfs_Df')).length;
             if (numNow === numDrafts)
               return true;
           }, {
@@ -6930,229 +6960,229 @@ this.l(`Num tab: ${numTabs}`);
           });
         },
 
-        waitUntilNumDraftsListed: (numDrafts: number) => {
+        waitUntilNumDraftsListed: async (numDrafts: Nr) => {
           if (numDrafts === 0) {
-            this.waitForDisplayed('.e_Dfs_None');
+            await this.waitForDisplayed('.e_Dfs_None');
           }
           else {
-            this.waitForAtLeast(numDrafts, '.s_Dfs_Df');
-            this.assertExactly(numDrafts, '.s_Dfs_Df');
+            await this.waitForAtLeast(numDrafts, '.s_Dfs_Df');
+            await this.assertExactly(numDrafts, '.s_Dfs_Df');
           }
         },
 
-        openDraftIndex: (index: number) => {
-          this.repeatUntilAtNewUrl(() => {
-            this.waitAndClickNth('.s_Dfs_Df', index);
+        openDraftIndex: async (index: Nr) => {
+          await this.repeatUntilAtNewUrl(async () => {
+            await this.waitAndClickNth('.s_Dfs_Df', index);
           });
         },
       },
 
       invites: {
-        clickSendInvite: () => {
-          this.waitAndClick('.e_SndInvB');
+        clickSendInvite: async () => {
+          await this.waitAndClick('.e_SndInvB');
         }
       },
 
       preferences: {  // RENAME to prefs
-        goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
-          this.userProfilePage._goHere(username, ps, '/preferences');
+        goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+          await this.userProfilePage._goHere(username, ps, '/preferences');
         },
 
-        switchToEmailsLogins: () => {  // RENAME to tabToAccount
-          this.waitAndClick('.s_UP_Prf_Nav_EmLgL');
-          if (this.urlPath().startsWith(c.UsersUrlPrefix)) {
+        switchToEmailsLogins: async () => {  // RENAME to tabToAccount
+          await this.waitAndClick('.s_UP_Prf_Nav_EmLgL');
+          if ((await this.urlPath()).startsWith(c.UsersUrlPrefix)) {
             // Wait for user emails loaded.
-            this.waitForVisible('.s_UP_EmLg_EmL');
+            await this.waitForVisible('.s_UP_EmLg_EmL');
           }
           else {
             // Currently (May 2019) just this section with a delete button.
-            this.waitForVisible('.s_UP_EmLg');
+            await this.waitForVisible('.s_UP_EmLg');
           }
-          this.waitUntilLoadingOverlayGone();
+          await this.waitUntilLoadingOverlayGone();
         },
 
-        switchToAbout: () => {
-          this.waitAndClick('.s_UP_Prf_Nav_AbtL');
-          this.waitForVisible('.e_UP_Prefs_FN');
+        switchToAbout: async () => {
+          await this.waitAndClick('.s_UP_Prf_Nav_AbtL');
+          await this.waitForVisible('.e_UP_Prefs_FN');
         },
 
-        switchToNotifications: () => {
-          this.waitAndClick('.s_UP_Prf_Nav_NtfsL');
-          this.waitForVisible('.dw-notf-level.btn');
+        switchToNotifications: async () => {
+          await this.waitAndClick('.s_UP_Prf_Nav_NtfsL');
+          await this.waitForVisible('.dw-notf-level.btn');
         },
 
-        switchToPrivacy: () => {
-          this.waitAndClick('.e_UP_Prf_Nav_PrivL');
-          this.waitForVisible('.e_HideActivityAllCB');
+        switchToPrivacy: async () => {
+          await this.waitAndClick('.e_UP_Prf_Nav_PrivL');
+          await this.waitForVisible('.e_HideActivityAllCB');
         },
 
         // ---- Should be wrapped in `about { .. }`:
 
-        setFullName: (fullName: string) => {
-          this.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
+        setFullName: async (fullName: St) => {
+          await this.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
         },
 
-        startChangingUsername: () => {
-          this.waitAndClick('.s_UP_Prefs_ChangeUNB');
-          this.stupidDialog.close();
+        startChangingUsername: async () => {
+          await this.waitAndClick('.s_UP_Prefs_ChangeUNB');
+          await this.stupidDialog.close();
         },
 
-        setUsername: (username: string) => {
-          this.waitAndSetValue('.s_UP_Prefs_UN input', username);
+        setUsername: async (username: St) => {
+          await this.waitAndSetValue('.s_UP_Prefs_UN input', username);
         },
 
-        setSummaryEmailsEnabled: (enabled: boolean) => {
-          this.setCheckbox('#sendSummaryEmails', enabled);
+        setSummaryEmailsEnabled: async (enabled: Bo) => {
+          await this.setCheckbox('#sendSummaryEmails', enabled);
         },
 
-        clickChangePassword: () => {
-          this.waitAndClick('.s_UP_Prefs_ChangePwB');
+        clickChangePassword: async () => {
+          await this.waitAndClick('.s_UP_Prefs_ChangePwB');
         },
 
-        save: () => {
-          this.userProfilePage.preferences.clickSave();
-          this.waitUntilModalGone();
-          this.waitUntilLoadingOverlayGone();
+        save: async () => {
+          await this.userProfilePage.preferences.clickSave();
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
         },
 
-        clickSave: () => {
-          this.waitAndClick('#e2eUP_Prefs_SaveB');
+        clickSave: async () => {
+          await this.waitAndClick('#e2eUP_Prefs_SaveB');
         },
         // ---- /END should be wrapped in `about { .. }`.
 
         notfs: {  // this.userProfilePage.preferences.notfs
 
-          goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {  // oops, dupl (443300222), keep this
-            this.userProfilePage._goHere(username, ps, '/preferences/notifications');
+          goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {  // oops, dupl (443300222), keep this
+            await this.userProfilePage._goHere(username, ps, '/preferences/notifications');
           },
 
-          setSiteNotfLevel: (notfLevel: PageNotfLevel) => {  // RENAME to setNotfLevelForWholeSite?
-            this.userProfilePage.preferences.notfs.setNotfLevelForWholeSite(notfLevel);
+          setSiteNotfLevel: async (notfLevel: PageNotfLevel) => {  // RENAME to setNotfLevelForWholeSite?
+            await this.userProfilePage.preferences.notfs.setNotfLevelForWholeSite(notfLevel);
           },
 
-          setNotfLevelForWholeSite: (notfLevel: PageNotfLevel) => {
-            this.waitAndClickFirst('.e_SiteNfLvB');
-            this.notfLevelDropdown.clickNotfLevel(notfLevel);
-            this.waitForDisplayed(`.e_SiteNfLvB.s_NfLv-${notfLevel}`);
+          setNotfLevelForWholeSite: async (notfLevel: PageNotfLevel) => {
+            await this.waitAndClickFirst('.e_SiteNfLvB');
+            await this.notfLevelDropdown.clickNotfLevel(notfLevel);
+            await this.waitForDisplayed(`.e_SiteNfLvB.s_NfLv-${notfLevel}`);
           },
 
-          setNotfLevelForTopicsRepliedTo: (notfLevel: PageNotfLevel) => {
-            this.waitAndClickFirst('.e_ReToNfLvB');
-            this.notfLevelDropdown.clickNotfLevel(notfLevel);
-            this.waitForDisplayed(`.e_ReToNfLvB.s_NfLv-${notfLevel}`);
+          setNotfLevelForTopicsRepliedTo: async (notfLevel: PageNotfLevel) => {
+            await this.waitAndClickFirst('.e_ReToNfLvB');
+            await this.notfLevelDropdown.clickNotfLevel(notfLevel);
+            await this.waitForDisplayed(`.e_ReToNfLvB.s_NfLv-${notfLevel}`);
           },
 
-          setNotfLevelForCategoryId: (categoryId: CategoryId, notfLevel: PageNotfLevel) => {
-            this.waitAndClick(`.e_CId-${categoryId} .dw-notf-level`);
-            this.notfLevelDropdown.clickNotfLevel(notfLevel);
+          setNotfLevelForCategoryId: async (categoryId: CategoryId, notfLevel: PageNotfLevel) => {
+            await this.waitAndClick(`.e_CId-${categoryId} .dw-notf-level`);
+            await this.notfLevelDropdown.clickNotfLevel(notfLevel);
           },
         },
 
         privacy: {
-          setHideActivityForStrangers: (enabled: boolean) => {
-            this.setCheckbox('.e_HideActivityStrangersCB input', enabled);
+          setHideActivityForStrangers: async (enabled: Bo) => {
+            await this.setCheckbox('.e_HideActivityStrangersCB input', enabled);
           },
 
-          setHideActivityForAll: (enabled: boolean) => {
-            this.setCheckbox('.e_HideActivityAllCB input', enabled);
+          setHideActivityForAll: async (enabled: Bo) => {
+            await this.setCheckbox('.e_HideActivityAllCB input', enabled);
           },
 
-          savePrivacySettings: () => {
-            dieIf(this.isVisible('.e_Saved'), 'TyE6UKHRQP4'); // unimplemented
-            this.waitAndClick('.e_SavePrivacy');
-            this.waitForVisible('.e_Saved');
+          savePrivacySettings: async () => {
+            dieIf(await this.isVisible('.e_Saved'), 'TyE6UKHRQP4'); // unimplemented
+            await this.waitAndClick('.e_SavePrivacy');
+            await this.waitForVisible('.e_Saved');
           },
         },
 
         emailsLogins: {   // RENAME to `account`
-          goHere: (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
-            this.userProfilePage._goHere(username, ps, '/preferences/account');
+          goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+            await this.userProfilePage._goHere(username, ps, '/preferences/account');
           },
 
-          getEmailAddress: () => {
-            return this.waitAndGetVisibleText('.s_UP_EmLg_EmL_It_Em');
+          getEmailAddress: async (): Pr<St> => {
+            return await this.waitAndGetVisibleText('.s_UP_EmLg_EmL_It_Em');
           },
 
-          waitUntilEmailAddressListed: (addrRegexStr: string,
-                  opts: { shallBeVerified?: boolean } = {}) => {
+          waitUntilEmailAddressListed: async (addrRegexStr: St,
+                  opts: { shallBeVerified?: Bo } = {}) => {
             const verified = opts.shallBeVerified ? '.e_EmVerfd' : (
               opts.shallBeVerified === false ? '.e_EmNotVerfd' : '');
-            this.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
+            await this.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
           },
 
-          waitAndAssertLoginMethod: (ps: { providerName: St, username?: St,
+          waitAndAssertLoginMethod: async (ps: { providerName: St, username?: St,
                     emailAddr?: St, index?: Nr }) => {
             const howSel = '.s_UP_EmLg_LgL_It_How';
-            this.waitForDisplayed(howSel);
-            this.assertNthTextMatches(howSel, ps.index || 1,
+            await this.waitForDisplayed(howSel);
+            await this.assertNthTextMatches(howSel, ps.index || 1,
                     ps.providerName.toLowerCase(), undefined, { caseless: true });
 
             if (ps.username || ps.emailAddr) {
               dieIf(!!ps.index, 'unimpl TyE530RKTMD');
-              const actualUsername = this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Un');
-              const actualEmail = this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Em');
+              const actualUsername = await this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Un');
+              const actualEmail = await this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Em');
               // Don't convert to lowercase:
               tyAssert.eq(actualUsername, ps.username);
               tyAssert.eq(actualEmail, ps.emailAddr);
             }
           },
 
-          addEmailAddress: (address) => {
+          addEmailAddress: async (address: St) => {
             const emailsLogins = this.userProfilePage.preferences.emailsLogins;
-            emailsLogins.clickAddEmailAddress();
-            emailsLogins.typeNewEmailAddress(address);
-            emailsLogins.saveNewEmailAddress();
+            await emailsLogins.clickAddEmailAddress();
+            await emailsLogins.typeNewEmailAddress(address);
+            await emailsLogins.saveNewEmailAddress();
           },
 
-          clickAddEmailAddress: () => {
-            this.waitAndClick('.e_AddEmail');
-            this.waitForVisible('.e_NewEmail input');
+          clickAddEmailAddress: async () => {
+            await this.waitAndClick('.e_AddEmail');
+            await this.waitForVisible('.e_NewEmail input');
           },
 
-          typeNewEmailAddress: (emailAddress) => {
-            this.waitAndSetValue('.e_NewEmail input', emailAddress);
+          typeNewEmailAddress: async (emailAddress: St) => {
+            await this.waitAndSetValue('.e_NewEmail input', emailAddress);
           },
 
-          saveNewEmailAddress: () => {
-            this.waitAndClick('.e_SaveEmB');
-            this.waitForVisible('.s_UP_EmLg_EmAdded');
+          saveNewEmailAddress: async () => {
+            await this.waitAndClick('.e_SaveEmB');
+            await this.waitForVisible('.s_UP_EmLg_EmAdded');
           },
 
-          canRemoveEmailAddress: (): boolean => {
-            this.waitForVisible('.e_AddEmail');
+          canRemoveEmailAddress: async (): Pr<Bo> => {
+            await this.waitForVisible('.e_AddEmail');
             // Now any remove button should have appeared.
-            return this.isVisible('.e_RemoveEmB');
+            return await this.isVisible('.e_RemoveEmB');
           },
 
-          removeFirstEmailAddrOutOf: (numCanRemoveTotal: number) => {
-            for (let i = 0; this.count('.e_RemoveEmB') !== numCanRemoveTotal; ++i) {
-              this.#br.pause(PollMs);
+          removeFirstEmailAddrOutOf: async (numCanRemoveTotal: Nr) => {
+            for (let i = 0; await this.count('.e_RemoveEmB') !== numCanRemoveTotal; ++i) {
+              await this.#br.pause(PollMs);
               if (i >= 10 && (i % 10) === 0) {
                 logWarning(`Waiting for ${numCanRemoveTotal} remove buttons ...`);
               }
             }
-            this.waitAndClick('.e_RemoveEmB', { clickFirst: true });
-            while (this.count('.e_RemoveEmB') !== numCanRemoveTotal - 1) {
-              this.#br.pause(PollMs);
+            await this.waitAndClick('.e_RemoveEmB', { clickFirst: true });
+            while (await this.count('.e_RemoveEmB') !== numCanRemoveTotal - 1) {
+              await this.#br.pause(PollMs);
             }
           },
 
-          canMakeOtherEmailPrimary: (): boolean => {
+          canMakeOtherEmailPrimary: async (): Pr<Bo> => {
             // Only call this function if another email has been added (then there's a Remove button).
-            this.waitForVisible('.e_RemoveEmB');
+            await this.waitForVisible('.e_RemoveEmB');
             // Now the make-primary button would also have appeared, if it's here.
-            return this.isVisible('.e_MakeEmPrimaryB');
+            return await this.isVisible('.e_MakeEmPrimaryB');
           },
 
-          makeOtherEmailPrimary: () => {
-            this.waitAndClick('.e_MakeEmPrimaryB');
+          makeOtherEmailPrimary: async () => {
+            await this.waitAndClick('.e_MakeEmPrimaryB');
           },
 
-          deleteAccount: () => {
-            this.rememberCurrentUrl();
-            this.waitAndClick('.e_DlAct');
-            this.waitAndClick('.e_SD_SecB');
-            this.waitForNewUrl();
+          deleteAccount: async () => {
+            await this.rememberCurrentUrl();
+            await this.waitAndClick('.e_DlAct');
+            await this.waitAndClick('.e_SD_SecB');
+            await this.waitForNewUrl();
           }
         }
       }
@@ -7160,44 +7190,44 @@ this.l(`Num tab: ${numTabs}`);
 
 
     hasVerifiedSignupEmailPage = {
-      clickContinue: () => {
-        this.repeatUntilAtNewUrl(() => {
-          this.waitAndClick('#e2eContinue');
+      clickContinue: async () => {
+        await this.repeatUntilAtNewUrl(async () => {
+          await this.waitAndClick('#e2eContinue');
         });
       }
     };
 
 
     hasVerifiedEmailPage = {  // for additional addresses, RENAME?
-      waitUntilLoaded: (opts: { needToLogin: boolean }) => {
-        this.waitForVisible('.e_HasVerifiedEmail');
-        this.waitForVisible('.e_ViewProfileL');
-        this.waitForVisible('.e_HomepageL');
-        assert(opts.needToLogin === this.isVisible('.e_NeedToLogin'));
+      waitUntilLoaded: async (opts: { needToLogin: Bo }) => {
+        await this.waitForVisible('.e_HasVerifiedEmail');
+        await this.waitForVisible('.e_ViewProfileL');
+        await this.waitForVisible('.e_HomepageL');
+        assert(opts.needToLogin === await this.isVisible('.e_NeedToLogin'));
       },
 
-      goToHomepage: () => {
-        this.waitAndClick('.e_HomepageL');
+      goToHomepage: async () => {
+        await this.waitAndClick('.e_HomepageL');
       },
 
-      goToProfile: () => {
-        this.waitAndClick('.e_ViewProfileL');
+      goToProfile: async () => {
+        await this.waitAndClick('.e_ViewProfileL');
       }
     };
 
 
     flagDialog = {
-      waitUntilFadedIn: () => {
-        this.waitUntilDoesNotMove('.e_FD_InaptRB');
+      waitUntilFadedIn: async () => {
+        await this.waitUntilDoesNotMove('.e_FD_InaptRB');
       },
 
-      clickInappropriate: () => {
-        this.waitAndClick('.e_FD_InaptRB label');
+      clickInappropriate: async () => {
+        await this.waitAndClick('.e_FD_InaptRB label');
       },
 
-      submit: () => {
-        this.waitAndClick('.e_FD_SubmitB');
-        this.waitUntilLoadingOverlayGone();
+      submit: async () => {
+        await this.waitAndClick('.e_FD_SubmitB');
+        await this.waitUntilLoadingOverlayGone();
         // Don't: this.waitUntilModalGone(), because now the stupid-dialog pop ups
         // and says "Thanks", and needs to be closed.
       },
@@ -7205,58 +7235,58 @@ this.l(`Num tab: ${numTabs}`);
 
 
     stupidDialog = {
-      yesIAmSure: () => {
+      yesIAmSure: async () => {
         // It's the same.
-        this.stupidDialog.close();
+        await this.stupidDialog.close();
       },
 
-      clickClose: () => {
-        this.waitAndClick('.e_SD_CloseB');
+      clickClose: async () => {
+        await this.waitAndClick('.e_SD_CloseB');
       },
 
-      close: () => {
-        this.stupidDialog.clickClose();
-        this.waitUntilModalGone();
+      close: async () => {
+        await this.stupidDialog.clickClose();
+        await this.waitUntilModalGone();
       },
     };
 
 
     tips = {
-      numTipsDisplayed: (): Nr => {
-        return this.count(':not(.c_SrvAnns) > .dw-help');
+      numTipsDisplayed: async (): Pr<Nr> => {
+        return await this.count(':not(.c_SrvAnns) > .dw-help');
       },
-      hideATips: () => {
-        this.waitAndClickFirst(':not(.c_SrvAnns) > .dw-help .dw-hide');
+      hideATips: async () => {
+        await this.waitAndClickFirst(':not(.c_SrvAnns) > .dw-help .dw-hide');
       },
-      waitForExactlyNumTips: (num: Nr) => {
-        this.waitForExactly(num, ':not(.c_SrvAnns) > .dw-help');
+      waitForExactlyNumTips: async (num: Nr) => {
+        await this.waitForExactly(num, ':not(.c_SrvAnns) > .dw-help');
       },
-      unhideAllTips: () => {
-        this.topbar.openMyMenu();
-        this.topbar.myMenu.unhideTips();
+      unhideAllTips: async () => {
+        await this.topbar.openMyMenu();
+        await this.topbar.myMenu.unhideTips();
       },
-      waitForPreviewTips: () => {
-        this.waitForDisplayed('.dw-preview-help');
+      waitForPreviewTips: async () => {
+        await this.waitForDisplayed('.dw-preview-help');
       },
-      waitForPreviewTipsGone: () => {
-        this.waitForGone('.dw-preview-help');
+      waitForPreviewTipsGone: async () => {
+        await this.waitForGone('.dw-preview-help');
       },
-      isPreviewTipsDisplayed: (): Bo => {
-        return this.isDisplayed('.dw-preview-help');
+      isPreviewTipsDisplayed: async (): Pr<Bo> => {
+        return await this.isDisplayed('.dw-preview-help');
       },
 
-      numAnnouncementsDisplayed: (): Nr => {
-        return this.count('.c_SrvAnns .dw-help');
+      numAnnouncementsDisplayed: async (): Pr<Nr> => {
+        return await this.count('.c_SrvAnns .dw-help');
       },
-      hideAnAnnouncement: () => {
-        this.waitAndClickFirst('.c_SrvAnns .dw-hide');
+      hideAnAnnouncement: async () => {
+        await this.waitAndClickFirst('.c_SrvAnns .dw-hide');
       },
-      waitForExactlyNumAnnouncements: (num: Nr) => {
-        this.waitForExactly(num, '.c_SrvAnns .dw-help');
+      waitForExactlyNumAnnouncements: async (num: Nr) => {
+        await this.waitForExactly(num, '.c_SrvAnns .dw-help');
       },
-      unhideAllAnnouncements: () => {
-        this.topbar.openMyMenu();
-        this.topbar.myMenu.unhideAnnouncements();
+      unhideAllAnnouncements: async () => {
+        await this.topbar.openMyMenu();
+        await this.topbar.myMenu.unhideAnnouncements();
       },
     };
 
@@ -7273,7 +7303,7 @@ this.l(`Num tab: ${numTabs}`);
         });
       },
 
-      goToLoginSettings: async (origin?: string, opts: { loginAs? } = {}) => {
+      goToLoginSettings: async (origin?: St, opts: { loginAs? } = {}) => {
         await this.go2((origin || '') + '/-/admin/settings/login');
         if (opts.loginAs) {
           await this.loginDialog.loginWithPassword(opts.loginAs);
@@ -7281,11 +7311,11 @@ this.l(`Num tab: ${numTabs}`);
         }
       },
 
-      goToUsersEnabled: async (origin?: string) => {
+      goToUsersEnabled: async (origin?: St) => {
         await this.go2((origin || '') + '/-/admin/users');
       },
 
-      goToUser: async (member: Member | UserId, origin?: string) => {
+      goToUser: async (member: Member | UserId, origin?: St) => {
         const userId = _.isNumber(member) ? member : member.id;
         await this.go2((origin || '') + `/-/admin/users/id/${userId}`);
       },
@@ -7300,7 +7330,7 @@ this.l(`Num tab: ${numTabs}`);
           return await this.isDisplayed('.e_ApiB');
         },
 
-        navToGroups: () => this.adminArea.navToGroups(),
+        navToGroups: async () => await this.adminArea.navToGroups(),
       },
 
       navToGroups: async () => {   // MOVE to inside tabs {}, see just above.
@@ -7309,268 +7339,268 @@ this.l(`Num tab: ${numTabs}`);
         });
       },
 
-      goToUsersInvited: (origin?: string, opts: { loginAs? } = {}) => {
-        this.go((origin || '') + '/-/admin/users/invited');
+      goToUsersInvited: async (origin?: St, opts: { loginAs? } = {}) => {
+        await this.go((origin || '') + '/-/admin/users/invited');
         if (opts.loginAs) {
-          this.loginDialog.loginWithPassword(opts.loginAs);
+          await this.loginDialog.loginWithPassword(opts.loginAs);
         }
-        this.adminArea.users.invites.waitUntilLoaded();
+        await this.adminArea.users.invites.waitUntilLoaded();
       },
 
-      goToBackupsTab: (origin?: string, opts: { loginAs? } = {}) => {
-        this.adminArea._goToMaybeLogin(origin, '/-/admin/backup', opts);
-        this.adminArea.backupsTab.waitUntilLoaded();
+      goToBackupsTab: async (origin?: St, opts: { loginAs? } = {}) => {
+        await this.adminArea._goToMaybeLogin(origin, '/-/admin/backup', opts);
+        await this.adminArea.backupsTab.waitUntilLoaded();
       },
 
-      goToApi: (origin?: string, opts: { loginAs? } = {}) => {
-        this.go((origin || '') + '/-/admin/api');
+      goToApi: async (origin?: St, opts: { loginAs? } = {}) => {
+        await this.go((origin || '') + '/-/admin/api');
         if (opts.loginAs) {
-          this.loginDialog.loginWithPassword(opts.loginAs);
+          await this.loginDialog.loginWithPassword(opts.loginAs);
         }
-        this.adminArea.apiTab.waitUntilLoaded();
+        await this.adminArea.apiTab.waitUntilLoaded();
       },
 
-      goToReview: (origin?: string, opts: { loginAs? } = {}) => {
-        this.go((origin || '') + '/-/admin/review/all');
+      goToReview: async (origin?: St, opts: { loginAs? } = {}) => {
+        await this.go((origin || '') + '/-/admin/review/all');
         if (opts.loginAs) {
-          this.loginDialog.loginWithPassword(opts.loginAs);
+          await this.loginDialog.loginWithPassword(opts.loginAs);
         }
-        this.adminArea.review.waitUntilLoaded();
+        await this.adminArea.review.waitUntilLoaded();
       },
 
-      _goToMaybeLogin: (origin: string, endpoint: string, opts: { loginAs? } = {}) => {
-        this.go((origin || '') + endpoint);
+      _goToMaybeLogin: async (origin: St, endpoint: St, opts: { loginAs? } = {}) => {
+        await this.go((origin || '') + endpoint);
         if (opts.loginAs) {
-          this.loginDialog.loginWithPassword(opts.loginAs);
+          await this.loginDialog.loginWithPassword(opts.loginAs);
         }
       },
 
-      goToAdminExtraLogin: (origin?: string) => {
-        this.go((origin || '') + '/-/admin-login');
+      goToAdminExtraLogin: async (origin?: St) => {
+        await this.go((origin || '') + '/-/admin-login');
       },
 
-      isReviewTabVisible: () => {
-        return this.isVisible('.e_RvwB');
+      isReviewTabVisible: async (): Pr<Bo> => {
+        return await this.isVisible('.e_RvwB');
       },
 
-      isUsersTabVisible: () => {
-        return this.isVisible('.e_UsrsB');
+      isUsersTabVisible: async (): Pr<Bo> => {
+        return await this.isVisible('.e_UsrsB');
       },
 
-      numTabsVisible: () =>
-        this.$$('.esAdminArea .dw-main-nav > li').length,
+      numTabsVisible: async (): Pr<Nr> =>
+        (await this.$$('.esAdminArea .dw-main-nav > li')).length,
 
       settings: {
-        clickSaveAll: (ps: { willFail?: Bo } = {}) => {
-          this.scrollToBottom();
-          this.waitAndClick('.esA_SaveBar_SaveAllB');
-          this.waitUntilLoadingOverlayGone();
+        clickSaveAll: async (ps: { willFail?: Bo } = {}) => {
+          await this.scrollToBottom();
+          await this.waitAndClick('.esA_SaveBar_SaveAllB');
+          await this.waitUntilLoadingOverlayGone();
           if (!ps.willFail) {
-            this.waitUntilGone('.esA_SaveBar_SaveAllB');
+            await this.waitUntilGone('.esA_SaveBar_SaveAllB');
           }
         },
 
-        clickLegalNavLink: () => {
-          this.waitAndClick('#e2eAA_Ss_LegalL');
-          this.waitForVisible('#e2eAA_Ss_OrgNameTI');
+        clickLegalNavLink: async () => {
+          await this.waitAndClick('#e2eAA_Ss_LegalL');
+          await this.waitForVisible('#e2eAA_Ss_OrgNameTI');
         },
 
-        clickLoginNavLink: () => {
-          this.waitAndClick('#e2eAA_Ss_LoginL');
-          this.waitForVisible('#e2eLoginRequiredCB');
+        clickLoginNavLink: async () => {
+          await this.waitAndClick('#e2eAA_Ss_LoginL');
+          await this.waitForVisible('#e2eLoginRequiredCB');
         },
 
-        clickModerationNavLink: () => {
-          this.waitAndClick('#e2eAA_Ss_ModL');
+        clickModerationNavLink: async () => {
+          await this.waitAndClick('#e2eAA_Ss_ModL');
         },
 
-        clickAnalyticsNavLink: () => {
-          this.waitAndClick('#e2eAA_Ss_AnalyticsL');
+        clickAnalyticsNavLink: async () => {
+          await this.waitAndClick('#e2eAA_Ss_AnalyticsL');
         },
 
-        clickAdvancedNavLink: () => {
-          this.waitAndClick('#e2eAA_Ss_AdvancedL');
+        clickAdvancedNavLink: async () => {
+          await this.waitAndClick('#e2eAA_Ss_AdvancedL');
         },
 
-        clickExperimentalNavLink: () => {
-          this.waitAndClick('#e2eAA_Ss_ExpL');
+        clickExperimentalNavLink: async () => {
+          await this.waitAndClick('#e2eAA_Ss_ExpL');
         },
 
         legal: {
-          editOrgName: (newName: string) => {
-            this.waitAndSetValue('#e2eAA_Ss_OrgNameTI', newName);
+          editOrgName: async (newName: St) => {
+            await this.waitAndSetValue('#e2eAA_Ss_OrgNameTI', newName);
           },
 
-          editOrgNameShort: (newName: string) => {
-            this.waitAndSetValue('#e2eAA_Ss_OrgNameShortTI', newName);
+          editOrgNameShort: async (newName: St) => {
+            await this.waitAndSetValue('#e2eAA_Ss_OrgNameShortTI', newName);
           },
         },
 
         login: {
-          goHere: (origin?: St, opts: { loginAs? } = {}) => {
-            this.adminArea.goToLoginSettings(origin, opts);
+          goHere: async (origin?: St, opts: { loginAs? } = {}) => {
+            await this.adminArea.goToLoginSettings(origin, opts);
           },
 
-          setRequireVerifiedEmail: (isRequired: boolean) => {
-            this.setCheckbox('.e_A_Ss_S-RequireVerifiedEmailCB input', isRequired);
+          setRequireVerifiedEmail: async (isRequired: Bo) => {
+            await this.setCheckbox('.e_A_Ss_S-RequireVerifiedEmailCB input', isRequired);
           },
 
-          setLoginRequired: (isRequired: boolean) => {
-            this.setCheckbox('#e2eLoginRequiredCB', isRequired);
+          setLoginRequired: async (isRequired: Bo) => {
+            await this.setCheckbox('#e2eLoginRequiredCB', isRequired);
           },
 
-          setApproveUsers: (isRequired: boolean) => {
-            this.setCheckbox('#e_ApproveUsersCB', isRequired);
+          setApproveUsers: async (isRequired: Bo) => {
+            await this.setCheckbox('#e_ApproveUsersCB', isRequired);
           },
 
-          clickAllowGuestLogin: () => {
-            this.waitAndClick('#e2eAllowGuestsCB');
+          clickAllowGuestLogin: async () => {
+            await this.waitAndClick('#e2eAllowGuestsCB');
           },
 
-          setExpireIdleAfterMinutes: (minutes: number) => {
-            this.scrollIntoViewInPageColumn('.e_LgoIdlAftMins input');
-            this.waitAndSetValue('.e_LgoIdlAftMins input', minutes, { checkAndRetry: true });
+          setExpireIdleAfterMinutes: async (minutes: Nr) => {
+            await this.scrollIntoViewInPageColumn('.e_LgoIdlAftMins input');
+            await this.waitAndSetValue('.e_LgoIdlAftMins input', minutes, { checkAndRetry: true });
           },
 
-          setEnableOidcDontSave: (enabled: Bo) => {
+          setEnableOidcDontSave: async (enabled: Bo) => {
             const sel = '.e_A_Ss_S-OidcCB input';
-            this.scrollIntoViewInPageColumn(sel);
-            this.waitUntilDoesNotMove(sel);
-            this.setCheckbox(sel, enabled);
+            await this.scrollIntoViewInPageColumn(sel);
+            await this.waitUntilDoesNotMove(sel);
+            await this.setCheckbox(sel, enabled);
           },
 
-          setOnlyOidc: (only: Bo) => {
+          setOnlyOidc: async (only: Bo) => {
             const sel = '.e_A_Ss_S-OnlyOidcCB input';
-            this.scrollIntoViewInPageColumn(sel);
-            this.waitUntilDoesNotMove(sel);
-            this.setCheckbox(sel, only);
+            await this.scrollIntoViewInPageColumn(sel);
+            await this.waitUntilDoesNotMove(sel);
+            await this.setCheckbox(sel, only);
           },
 
-          configureIdps: (json: St) => {
-            this.waitAndClick('.e_ConfIdpsB');
-            this.waitAndSetValue('.s_CuIdpsEdr textarea', json, { checkAndRetry: true });
-            this.waitAndClick('.s_CuIdpsEdr .btn');
+          configureIdps: async (json: St) => {
+            await this.waitAndClick('.e_ConfIdpsB');
+            await this.waitAndSetValue('.s_CuIdpsEdr textarea', json, { checkAndRetry: true });
+            await this.waitAndClick('.s_CuIdpsEdr .btn');
           },
 
-          setEmailDomainWhitelist: (text: string) => {
-            this.scrollIntoViewInPageColumn('.e_EmailWhitelist textarea');
-            this.waitAndSetValue('.e_EmailWhitelist textarea', text, { checkAndRetry: true });
+          setEmailDomainWhitelist: async (text: St) => {
+            await this.scrollIntoViewInPageColumn('.e_EmailWhitelist textarea');
+            await this.waitAndSetValue('.e_EmailWhitelist textarea', text, { checkAndRetry: true });
           },
 
-          setEmailDomainBlocklist: (text: string) => {
-            this.scrollIntoViewInPageColumn('.e_EmailBlacklist textarea');
-            this.waitAndSetValue('.e_EmailBlacklist textarea', text, { checkAndRetry: true });
+          setEmailDomainBlocklist: async (text: St) => {
+            await this.scrollIntoViewInPageColumn('.e_EmailBlacklist textarea');
+            await this.waitAndSetValue('.e_EmailBlacklist textarea', text, { checkAndRetry: true });
           },
 
-          typeSsoUrl: (url: string) => {
-            this.scrollIntoViewInPageColumn('.e_SsoUrl input');
-            this.waitUntilDoesNotMove('.e_SsoUrl input');
-            this.waitAndSetValue('.e_SsoUrl input', url, { checkAndRetry: true });
+          typeSsoUrl: async (url: St) => {
+            await this.scrollIntoViewInPageColumn('.e_SsoUrl input');
+            await this.waitUntilDoesNotMove('.e_SsoUrl input');
+            await this.waitAndSetValue('.e_SsoUrl input', url, { checkAndRetry: true });
           },
 
-          setSsoLogoutUrl: (url: St) => {
-            this.scrollIntoViewInPageColumn('.e_SsoLgoUrl input');
-            this.waitUntilDoesNotMove('.e_SsoLgoUrl input');
-            this.waitAndSetValue('.e_SsoLgoUrl input', url, { checkAndRetry: true });
+          setSsoLogoutUrl: async (url: St) => {
+            await this.scrollIntoViewInPageColumn('.e_SsoLgoUrl input');
+            await this.waitUntilDoesNotMove('.e_SsoLgoUrl input');
+            await this.waitAndSetValue('.e_SsoLgoUrl input', url, { checkAndRetry: true });
           },
 
-          setSsoLoginRequiredLogoutUrl: (url: string) => {
-            this.scrollIntoViewInPageColumn('.e_SsoAftLgoUrl input');
-            this.waitUntilDoesNotMove('.e_SsoAftLgoUrl input');
-            this.waitAndSetValue('.e_SsoAftLgoUrl input', url, { checkAndRetry: true });
+          setSsoLoginRequiredLogoutUrl: async (url: St) => {
+            await this.scrollIntoViewInPageColumn('.e_SsoAftLgoUrl input');
+            await this.waitUntilDoesNotMove('.e_SsoAftLgoUrl input');
+            await this.waitAndSetValue('.e_SsoAftLgoUrl input', url, { checkAndRetry: true });
           },
 
-          setEnableSso: (enabled: boolean) => {
-            this.scrollIntoViewInPageColumn('.e_EnblSso input');
-            this.waitUntilDoesNotMove('.e_EnblSso input');
-            this.setCheckbox('.e_EnblSso input', enabled);
+          setEnableSso: async (enabled: Bo) => {
+            await this.scrollIntoViewInPageColumn('.e_EnblSso input');
+            await this.waitUntilDoesNotMove('.e_EnblSso input');
+            await this.setCheckbox('.e_EnblSso input', enabled);
           },
 
-          setShowEmbAuthnBtns: (enabled: Bo) => {
-            this.scrollIntoViewInPageColumn('.e_EmbAuBs input');
-            this.waitUntilDoesNotMove('.e_EmbAuBs input');
-            this.setCheckbox('.e_EmbAuBs input', enabled);
+          setShowEmbAuthnBtns: async (enabled: Bo) => {
+            await this.scrollIntoViewInPageColumn('.e_EmbAuBs input');
+            await this.waitUntilDoesNotMove('.e_EmbAuBs input');
+            await this.setCheckbox('.e_EmbAuBs input', enabled);
           },
 
-          generatePasetoV2LocalSecret: () => {
-            this.waitAndClick('.e_EmbComSecr_GenB');
+          generatePasetoV2LocalSecret: async () => {
+            await this.waitAndClick('.e_EmbComSecr_GenB');
           },
 
-          copyPasetoV2LocalSecret: (): St => {
-            return this.waitAndGetValue('.e_EmbComSecr input');
+          copyPasetoV2LocalSecret: async (): Pr<St> => {
+            return await this.waitAndGetValue('.e_EmbComSecr input');
           },
 
-          goToSsoTestPage: () => {
-            this.repeatUntilAtNewUrl(() => {
-              this.waitAndClickFirst('.e_SsoTestL');
+          goToSsoTestPage: async () => {
+            await this.repeatUntilAtNewUrl(async () => {
+              await this.waitAndClickFirst('.e_SsoTestL');
             });
           }
         },
 
         moderation: {
-          goHere: (origin?: St, opts: { loginAs? } = {}) => {
-            this.adminArea._goToMaybeLogin(origin, '/-/admin/settings/moderation', opts);
-            this.waitForVisible('.e_NumFstAprBef');
+          goHere: async (origin?: St, opts: { loginAs? } = {}) => {
+            await this.adminArea._goToMaybeLogin(origin, '/-/admin/settings/moderation', opts);
+            await this.waitForVisible('.e_NumFstAprBef');
           },
 
-          setNumFirstToApproveBefore: (n: Nr) => {
-            this.scrollAndSetValue('.e_NumFstAprBef input', n);
+          setNumFirstToApproveBefore: async (n: Nr) => {
+            await this.scrollAndSetValue('.e_NumFstAprBef input', n);
           },
 
-          setApproveBeforeTrustLevel: (level: Nr) => {
-            this.scrollAndSetValue('.e_AprBefTrLvl input', level);
+          setApproveBeforeTrustLevel: async (level: Nr) => {
+            await this.scrollAndSetValue('.e_AprBefTrLvl input', level);
           },
 
-          setMaxNumPendingApproval: (n: Nr) => {
-            this.scrollAndSetValue('.e_MxPndApr input', n);
+          setMaxNumPendingApproval: async (n: Nr) => {
+            await this.scrollAndSetValue('.e_MxPndApr input', n);
           },
 
-          setNumFirstToReviewAfter: (n: Nr) => {
-            this.scrollAndSetValue('.e_NumFstRvwAft input', n);
+          setNumFirstToReviewAfter: async (n: Nr) => {
+            await this.scrollAndSetValue('.e_NumFstRvwAft input', n);
           },
 
-          setReviewAfterTrustLevel: (level: Nr) => {
-            this.scrollAndSetValue('.e_RvwAftTrLvl input', level);
+          setReviewAfterTrustLevel: async (level: Nr) => {
+            await this.scrollAndSetValue('.e_RvwAftTrLvl input', level);
           },
 
-          setMaxNumPendingReview: (n: Nr) => {
-            this.scrollAndSetValue('.e_MxPndRvw input', n);
+          setMaxNumPendingReview: async (n: Nr) => {
+            await this.scrollAndSetValue('.e_MxPndRvw input', n);
           },
         },
 
         features: {
-          goHere: (origin?: string, opts: { loginAs? } = {}) => {
-            this.adminArea._goToMaybeLogin(origin, '/-/admin/settings/features', opts);
+          goHere: async (origin?: St, opts: { loginAs? } = {}) => {
+            await this.adminArea._goToMaybeLogin(origin, '/-/admin/settings/features', opts);
           },
 
-          setEnableApi: (enabled: boolean) => {
+          setEnableApi: async (enabled: Bo) => {
             // ---- Can remove, right
-            this.scrollIntoViewInPageColumn('#te_EnblApi');
-            this.waitUntilDoesNotMove('#te_EnblApi');
+            await this.scrollIntoViewInPageColumn('#te_EnblApi');
+            await this.waitUntilDoesNotMove('#te_EnblApi');
             // ----------------------
-            this.setCheckbox('#te_EnblApi', enabled);
+            await this.setCheckbox('#te_EnblApi', enabled);
           },
 
-          setEnableCors: (enabled: Bo) => {
-            this.setCheckbox('.e_EnbCors input', enabled);
+          setEnableCors: async (enabled: Bo) => {
+            await this.setCheckbox('.e_EnbCors input', enabled);
           },
 
-          setCorsOrigins: (text: St) => {
-            this.waitAndSetValue('.e_CorsFrm textarea', text);
+          setCorsOrigins: async (text: St) => {
+            await this.waitAndSetValue('.e_CorsFrm textarea', text);
           },
         },
 
         embedded: {
-          goHere: (origin?: string) => {
-            this.go((origin || '') + '/-/admin/settings/embedded-comments');
+          goHere: async (origin?: St) => {
+            await this.go((origin || '') + '/-/admin/settings/embedded-comments');
           },
 
-          setAllowEmbeddingFrom: (value: string) => {
-            this.waitAndSetValue('#e_AllowEmbFrom', value);
+          setAllowEmbeddingFrom: async (value: St) => {
+            await this.waitAndSetValue('#e_AllowEmbFrom', value);
           },
 
-          createSaveEmbeddingPage: (ps: { urlPath: string, discussionId?: string }) => {
-            const htmlToPaste = this.waitAndGetVisibleText('#e_EmbCmtsHtml');
+          createSaveEmbeddingPage: async (ps: { urlPath: St, discussionId?: St }) => {
+            const htmlToPaste = await this.waitAndGetVisibleText('#e_EmbCmtsHtml');
             const pageHtml = utils.makeEmbeddedCommentsHtml({
                 htmlToPaste, discussionId: ps.discussionId,
                 pageName: ps.urlPath, color: 'black', bgColor: '#a359fc' });
@@ -7582,50 +7612,50 @@ this.l(`Num tab: ${numTabs}`);
           duplHostnamesSelector: '.s_A_Ss_S-Hostnames-Dupl pre',
           redirHostnamesSelector: '.s_A_Ss_S-Hostnames-Redr pre',
 
-          getHostname: (): string => {
-            return this.waitAndGetVisibleText('.esA_Ss_S_Hostname');
+          getHostname: async (): Pr<St> => {
+            return await this.waitAndGetVisibleText('.esA_Ss_S_Hostname');
           },
 
-          getDuplicatingHostnames: (): string => {
-            return this.waitAndGetVisibleText(this.adminArea.settings.advanced.duplHostnamesSelector);
+          getDuplicatingHostnames: async (): Pr<St> => {
+            return await this.waitAndGetVisibleText(this.adminArea.settings.advanced.duplHostnamesSelector);
           },
 
-          isDuplicatingHostnamesVisible: (): boolean => {
-            return this.isVisible(this.adminArea.settings.advanced.duplHostnamesSelector);
+          isDuplicatingHostnamesVisible: async (): Pr<Bo> => {
+            return await this.isVisible(this.adminArea.settings.advanced.duplHostnamesSelector);
           },
 
-          getRedirectingHostnames: (): string => {
-            return this.waitAndGetVisibleText(this.adminArea.settings.advanced.redirHostnamesSelector);
+          getRedirectingHostnames: async (): Pr<St> => {
+            return await this.waitAndGetVisibleText(this.adminArea.settings.advanced.redirHostnamesSelector);
           },
 
-          isRedirectingHostnamesVisible: (): boolean => {
-            return this.isVisible(this.adminArea.settings.advanced.redirHostnamesSelector);
+          isRedirectingHostnamesVisible: async (): Pr<Bo> => {
+            return await this.isVisible(this.adminArea.settings.advanced.redirHostnamesSelector);
           },
 
-          clickChangeSiteAddress: () => {
-            this.waitAndClick('.e_ChAdrB');
+          clickChangeSiteAddress: async () => {
+            await this.waitAndClick('.e_ChAdrB');
           },
 
-          typeNewSiteAddress: (newAddress: string) => {
-            this.waitAndSetValue('.s_A_NewAdrD_HostnI input', newAddress);
+          typeNewSiteAddress: async (newAddress: St) => {
+            await this.waitAndSetValue('.s_A_NewAdrD_HostnI input', newAddress);
           },
 
-          saveNewSiteAddress: () => {
-            this.waitAndClick('.s_A_NewAdrD .btn-primary');
+          saveNewSiteAddress: async () => {
+            await this.waitAndClick('.s_A_NewAdrD .btn-primary');
           },
 
-          waitForNewSiteRedirectLink: () => {
-            this.waitForVisible('.e_NewSiteAddr');
+          waitForNewSiteRedirectLink: async () => {
+            await this.waitForVisible('.e_NewSiteAddr');
           },
 
-          followLinkToNewSiteAddr: () => {
-            this.rememberCurrentUrl();
-            this.waitAndClick('.e_NewSiteAddr');
-            this.waitForNewOrigin();
+          followLinkToNewSiteAddr: async () => {
+            await this.rememberCurrentUrl();
+            await this.waitAndClick('.e_NewSiteAddr');
+            await this.waitForNewOrigin();
           },
 
-          clickRedirectOldSiteAddresses: () => {
-            this.waitAndClick('.e_RedirOldAddrB');
+          clickRedirectOldSiteAddresses: async () => {
+            await this.waitAndClick('.e_RedirOldAddrB');
           }
         },
       },
@@ -7639,184 +7669,184 @@ this.l(`Num tab: ${numTabs}`);
         setEmailNotVerifiedButtonSelector: '.e_SetEmNotVerifB',
         sendEmVerEmButtonSelector: '.s_SendEmVerifEmB',
 
-        viewUser: (username: St | Member) => {
-          this.go2('/-/admin/users/id/' + ((username as Member).username || username));
-          this.adminArea.user.waitForLoaded();
+        viewUser: async (username: St | Member) => {
+          await this.go2('/-/admin/users/id/' + ((username as Member).username || username));
+          await this.adminArea.user.waitForLoaded();
         },
 
-        waitForLoaded: () => {
-          this.waitForVisible('.esA_Us_U_Rows');
+        waitForLoaded: async () => {
+          await this.waitForVisible('.esA_Us_U_Rows');
         },
 
-        viewPublProfile: () => {
-          this.waitAndClick('.e_VwPblPrfB');
+        viewPublProfile: async () => {
+          await this.waitAndClick('.e_VwPblPrfB');
         },
 
-        assertUsernameIs: (usernameOrMember: string | Member) => {
+        assertUsernameIs: async (usernameOrMember: St | Member) => {
           const username = _.isString(usernameOrMember) ?
               usernameOrMember : (usernameOrMember as Member).username;
-          this.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
+          await this.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
         },
 
-        assertEnabled: () => {
-          this.adminArea.user.waitForLoaded();
-          assert(this.isVisible(this.adminArea.user.enabledSelector));
+        assertEnabled: async () => {
+          await this.adminArea.user.waitForLoaded();
+          assert(await this.isVisible(this.adminArea.user.enabledSelector));
         },
 
-        assertEmailVerified: () => {
-          assert(this.isVisible(this.adminArea.user.setEmailNotVerifiedButtonSelector));
+        assertEmailVerified: async () => {
+          assert(await this.isVisible(this.adminArea.user.setEmailNotVerifiedButtonSelector));
         },
 
-        assertEmailNotVerified: () => {
-          assert(this.isVisible(this.adminArea.user.setEmailVerifiedButtonSelector));
+        assertEmailNotVerified: async () => {
+          assert(await this.isVisible(this.adminArea.user.setEmailVerifiedButtonSelector));
         },
 
-        setEmailToVerified: (verified: boolean) => {
+        setEmailToVerified: async (verified: Bo) => {
           const u = this.adminArea.user;
-          this.waitAndClick(
+          await this.waitAndClick(
               verified ? u.setEmailVerifiedButtonSelector : u.setEmailNotVerifiedButtonSelector);
           // Wait for the request to complete — then, the opposite buttons will be shown:
-          this.waitForVisible(
+          await this.waitForVisible(
               verified ? u.setEmailNotVerifiedButtonSelector : u.setEmailVerifiedButtonSelector);
         },
 
-        resendEmailVerifEmail: () => {
-          this.waitAndClick(this.adminArea.user.sendEmVerEmButtonSelector);
+        resendEmailVerifEmail: async () => {
+          await this.waitAndClick(this.adminArea.user.sendEmVerEmButtonSelector);
         },
 
-        assertDisabledBecauseNotYetApproved: () => {
-          this.adminArea.user.waitForLoaded();
-          assert(this.isVisible(this.adminArea.user.disabledSelector));
-          assert(this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
+        assertDisabledBecauseNotYetApproved: async () => {
+          await this.adminArea.user.waitForLoaded();
+          assert(await this.isVisible(this.adminArea.user.disabledSelector));
+          assert(await this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
           // If email not verified, wouldn't be considered waiting.
-          assert(!this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
+          assert(!await this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
         },
 
-        assertDisabledBecauseEmailNotVerified: () => {
-          this.adminArea.user.waitForLoaded();
-          assert(this.isVisible(this.adminArea.user.disabledSelector));
-          assert(this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
+        assertDisabledBecauseEmailNotVerified: async () => {
+          await this.adminArea.user.waitForLoaded();
+          assert(await this.isVisible(this.adminArea.user.disabledSelector));
+          assert(await this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
           // Isn't considered waiting, until after email approved.
-          assert(!this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
+          assert(!await this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
         },
 
-        assertApprovedInfoAbsent: () => {
-          this.adminArea.user.waitForLoaded();
-          assert(this.isExisting('.e_Appr_Info-Absent'));
+        assertApprovedInfoAbsent: async () => {
+          await this.adminArea.user.waitForLoaded();
+          assert(await this.isExisting('.e_Appr_Info-Absent'));
         },
 
-        assertApproved: () => {
-          this.adminArea.user.waitForLoaded();
-          assert(this.isVisible('.e_Appr_Yes'));
+        assertApproved: async () => {
+          await this.adminArea.user.waitForLoaded();
+          assert(await this.isVisible('.e_Appr_Yes'));
         },
 
-        assertRejected: () => {
-          this.adminArea.user.waitForLoaded();
-          assert(this.isVisible('.e_Appr_No'));
+        assertRejected: async () => {
+          await this.adminArea.user.waitForLoaded();
+          assert(await this.isVisible('.e_Appr_No'));
         },
 
-        assertWaitingForApproval: () => {   // RENAME to  assertApprovalUndecided
-          this.adminArea.user.waitForLoaded();
-          assert(this.isVisible('.e_Appr_Undecided'));
+        assertWaitingForApproval: async () => {   // RENAME to  assertApprovalUndecided
+          await this.adminArea.user.waitForLoaded();
+          assert(await this.isVisible('.e_Appr_Undecided'));
         },
 
-        approveUser: () => {
-          this.waitAndClick('.e_Appr_ApprB');
-          this.waitForVisible('.e_Appr_Yes');
+        approveUser: async () => {
+          await this.waitAndClick('.e_Appr_ApprB');
+          await this.waitForVisible('.e_Appr_Yes');
         },
 
-        rejectUser: () => {
-          this.waitAndClick('.e_Appr_RejB');
-          this.waitForVisible('.e_Appr_No');
+        rejectUser: async () => {
+          await this.waitAndClick('.e_Appr_RejB');
+          await this.waitForVisible('.e_Appr_No');
         },
 
-        undoApproveOrReject: () => {
-          this.waitAndClick('.e_Appr_UndoB');
-          this.waitForVisible('.e_Appr_Undecided');
+        undoApproveOrReject: async () => {
+          await this.waitAndClick('.e_Appr_UndoB');
+          await this.waitForVisible('.e_Appr_Undecided');
         },
 
-        suspendUser: (opts: {
-              days: number, reason: string } = { days: 10, reason: "Because." }) => {
-          this.waitAndClick('.e_Suspend');
-          this.waitUntilDoesNotMove('.e_SuspDays');
-          this.waitAndSetValue('.e_SuspDays input', opts.days);
-          this.waitAndSetValue('.e_SuspReason input', opts.reason);
-          this.waitAndClick('.e_DoSuspendB');
-          this.waitForVisible('.e_Unuspend');
+        suspendUser: async (opts: {
+              days: Nr, reason: St } = { days: 10, reason: "Because." }) => {
+          await this.waitAndClick('.e_Suspend');
+          await this.waitUntilDoesNotMove('.e_SuspDays');
+          await this.waitAndSetValue('.e_SuspDays input', opts.days);
+          await this.waitAndSetValue('.e_SuspReason input', opts.reason);
+          await this.waitAndClick('.e_DoSuspendB');
+          await this.waitForVisible('.e_Unuspend');
         },
 
-        unsuspendUser: () => {
-          this.waitAndClick('.e_Unuspend');
-          this.waitForVisible('.e_Suspend');
+        unsuspendUser: async () => {
+          await this.waitAndClick('.e_Unuspend');
+          await this.waitForVisible('.e_Suspend');
         },
 
-        setTrustLevel: (trustLevel: TrustLevel) => {
-          this.waitAndClick('.e_TruLvB');
-          this.waitAndClick('.e_TruLv-' + trustLevel);
-          this.waitForDisplayed('.e_TruLvLkd');
+        setTrustLevel: async (trustLevel: TrustLevel) => {
+          await this.waitAndClick('.e_TruLvB');
+          await this.waitAndClick('.e_TruLv-' + trustLevel);
+          await this.waitForDisplayed('.e_TruLvLkd');
         },
 
-        unlockTrustLevel: () => {
-          this.waitAndClick('.e_TruLvB');
-          this.waitAndClick('.e_UnlkTruLvB');
-          this.waitForVisible('.e_TruLv0Lkd');
+        unlockTrustLevel: async () => {
+          await this.waitAndClick('.e_TruLvB');
+          await this.waitAndClick('.e_UnlkTruLvB');
+          await this.waitForVisible('.e_TruLv0Lkd');
         },
 
         // RENAME to setTheatLevel(...)
-        markAsNoThreat: () => {
-          this.waitAndClick('.e_TrtLvB');
-          this.waitAndClick('.e_HopfSafB');
-          this.waitForVisible('.e_ThreatLvlIsLkd');
-          this.waitForDisplayed('.e_TrtLv-3'); // HopefullySafe
+        markAsNoThreat: async () => {
+          await this.waitAndClick('.e_TrtLvB');
+          await this.waitAndClick('.e_HopfSafB');
+          await this.waitForVisible('.e_ThreatLvlIsLkd');
+          await this.waitForDisplayed('.e_TrtLv-3'); // HopefullySafe
         },
 
-        markAsMildThreat: () => {
-          this.waitAndClick('.e_TrtLvB');
-          this.waitAndClick('.e_MildThreatB');
-          this.waitForVisible('.e_ThreatLvlIsLkd');
-          this.waitForDisplayed('.e_TrtLv-4'); // MildThreat
+        markAsMildThreat: async () => {
+          await this.waitAndClick('.e_TrtLvB');
+          await this.waitAndClick('.e_MildThreatB');
+          await this.waitForVisible('.e_ThreatLvlIsLkd');
+          await this.waitForDisplayed('.e_TrtLv-4'); // MildThreat
         },
 
-        markAsModerateThreat: () => {
-          this.waitAndClick('.e_TrtLvB');
-          this.waitAndClick('.e_ModerateThreatB');
-          this.waitForVisible('.e_ThreatLvlIsLkd');
-          this.waitForDisplayed('.e_TrtLv-5'); // ModerateThreat
+        markAsModerateThreat: async () => {
+          await this.waitAndClick('.e_TrtLvB');
+          await this.waitAndClick('.e_ModerateThreatB');
+          await this.waitForVisible('.e_ThreatLvlIsLkd');
+          await this.waitForDisplayed('.e_TrtLv-5'); // ModerateThreat
         },
 
-        unlockThreatLevel: () => {
-          this.waitAndClick('.e_TrtLvB');
-          this.waitAndClick('.e_UnlockThreatB');
-          this.waitForVisible('.e_ThreatLvlNotLkd');
+        unlockThreatLevel: async () => {
+          await this.waitAndClick('.e_TrtLvB');
+          await this.waitAndClick('.e_UnlockThreatB');
+          await this.waitForVisible('.e_ThreatLvlNotLkd');
         },
 
-        grantAdmin: () => {
-          this.waitForVisible('.e_Adm-No');
-          this.waitAndClick('.e_ToggleAdminB');
-          this.waitForVisible('.e_Adm-Yes');
+        grantAdmin: async () => {
+          await this.waitForVisible('.e_Adm-No');
+          await this.waitAndClick('.e_ToggleAdminB');
+          await this.waitForVisible('.e_Adm-Yes');
         },
 
-        revokeAdmin: () => {
-          this.waitForVisible('.e_Adm-Yes');
-          this.waitAndClick('.e_ToggleAdminB');
-          this.waitForVisible('.e_Adm-No');
+        revokeAdmin: async () => {
+          await this.waitForVisible('.e_Adm-Yes');
+          await this.waitAndClick('.e_ToggleAdminB');
+          await this.waitForVisible('.e_Adm-No');
         },
 
-        grantModerator: () => {
-          this.waitForVisible('.e_Mod-No');
-          this.waitAndClick('.e_ToggleModB');
-          this.waitForVisible('.e_Mod-Yes');
+        grantModerator: async () => {
+          await this.waitForVisible('.e_Mod-No');
+          await this.waitAndClick('.e_ToggleModB');
+          await this.waitForVisible('.e_Mod-Yes');
         },
 
-        revokeModerator: () => {
-          this.waitForVisible('.e_Mod-Yes');
-          this.waitAndClick('.e_ToggleModB');
-          this.waitForVisible('.e_Mod-No');
+        revokeModerator: async () => {
+          await this.waitForVisible('.e_Mod-Yes');
+          await this.waitAndClick('.e_ToggleModB');
+          await this.waitForVisible('.e_Mod-No');
         },
 
-        startImpersonating: () => {
-          this.repeatUntilAtNewUrl(() => {
-            this.waitAndClick('#e2eA_Us_U_ImpersonateB');
+        startImpersonating: async () => {
+          await this.repeatUntilAtNewUrl(async () => {
+            await this.waitAndClick('#e2eA_Us_U_ImpersonateB');
           });
         },
       },
@@ -7826,236 +7856,236 @@ this.l(`Num tab: ${numTabs}`);
         enabledUsersTabSelector: '.e_EnabledUsB',
         waitingUsersTabSelector: '.e_WaitingUsB',
 
-        waitForLoaded: () => {
-          this.waitForVisible('.e_AdminUsersList');
+        waitForLoaded: async () => {
+          await this.waitForVisible('.e_AdminUsersList');
         },
 
-        goToUser: (user: string | Member) => {
+        goToUser: async (user: St | Member) => {
           const username = _.isString(user) ? user : user.username;
-          this.rememberCurrentUrl();
-          this.waitForThenClickText(this.adminArea.users.usernameSelector, username);
-          this.waitForNewUrl();
-          this.adminArea.user.assertUsernameIs(user);
+          await this.rememberCurrentUrl();
+          await this.waitForThenClickText(this.adminArea.users.usernameSelector, username);
+          await this.waitForNewUrl();
+          await this.adminArea.user.assertUsernameIs(user);
         },
 
-        assertUserListEmpty: () => {
-          this.adminArea.users.waitForLoaded();
-          assert(this.isVisible('.e_NoSuchUsers'));
+        assertUserListEmpty: async () => {
+          await this.adminArea.users.waitForLoaded();
+          assert(await this.isVisible('.e_NoSuchUsers'));
         },
 
-        assertUserListed: (member: { username: string }) => {
-          this.adminArea.users.waitForLoaded();
-          this.assertAnyTextMatches(this.adminArea.users.usernameSelector, member.username);
+        assertUserListed: async (member: { username: St }) => {
+          await this.adminArea.users.waitForLoaded();
+          await this.assertAnyTextMatches(this.adminArea.users.usernameSelector, member.username);
         },
 
-        assertUserAbsent: (member: { username: string }) => {
-          this.adminArea.users.waitForLoaded();
-          this.assertNoTextMatches(this.adminArea.users.usernameSelector, member.username);
+        assertUserAbsent: async (member: { username: St }) => {
+          await this.adminArea.users.waitForLoaded();
+          await this.assertNoTextMatches(this.adminArea.users.usernameSelector, member.username);
         },
 
-        asserExactlyNumUsers: (num: number) => {
-          this.adminArea.users.waitForLoaded();
-          this.assertExactly(num, this.adminArea.users.usernameSelector);
+        asserExactlyNumUsers: async (num: Nr) => {
+          await this.adminArea.users.waitForLoaded();
+          await this.assertExactly(num, this.adminArea.users.usernameSelector);
         },
 
         // Works only if exactly 1 user listed.
-        assertEmailVerified_1_user: (member: Member, verified: boolean) => {
+        assertEmailVerified_1_user: async (member: Member, verified: Bo) => {
           // for now:  --
-          this.adminArea.users.assertUserListed(member);
+          await this.adminArea.users.assertUserListed(member);
           // later, check the relevant user row.
           // ------------
           if (verified) {
-            assert(!this.isVisible('.e_EmNotVerfd'));
+            assert(!await this.isVisible('.e_EmNotVerfd'));
           }
           else {
-            assert(this.isVisible('.e_EmNotVerfd'));
+            assert(await this.isVisible('.e_EmNotVerfd'));
           }
         },
 
-        switchToEnabled: () => {
-          this.waitAndClick(this.adminArea.users.enabledUsersTabSelector);
-          this.waitForVisible('.e_EnabledUsersIntro');
-          this.adminArea.users.waitForLoaded();
+        switchToEnabled: async () => {
+          await this.waitAndClick(this.adminArea.users.enabledUsersTabSelector);
+          await this.waitForVisible('.e_EnabledUsersIntro');
+          await this.adminArea.users.waitForLoaded();
         },
 
-        switchToWaiting: () => {
-          this.waitAndClick(this.adminArea.users.waitingUsersTabSelector);
-          this.adminArea.users.waiting.waitUntilLoaded();
+        switchToWaiting: async () => {
+          await this.waitAndClick(this.adminArea.users.waitingUsersTabSelector);
+          await this.adminArea.users.waiting.waitUntilLoaded();
         },
 
-        isWaitingTabVisible: () => {
-          this.waitForVisible(this.adminArea.users.enabledUsersTabSelector);
-          return this.isVisible(this.adminArea.users.waitingUsersTabSelector);
+        isWaitingTabVisible: async (): Pr<Bo> => {
+          await this.waitForVisible(this.adminArea.users.enabledUsersTabSelector);
+          return await this.isVisible(this.adminArea.users.waitingUsersTabSelector);
         },
 
-        switchToNew: () => {
-          this.waitAndClick('.e_NewUsB');
-          this.waitForVisible('.e_NewUsersIntro');
-          this.adminArea.users.waitForLoaded();
+        switchToNew: async () => {
+          await this.waitAndClick('.e_NewUsB');
+          await this.waitForVisible('.e_NewUsersIntro');
+          await this.adminArea.users.waitForLoaded();
         },
 
-        switchToStaff: () => {
-          this.waitAndClick('.e_StaffUsB');
-          this.waitForVisible('.e_StaffUsersIntro');
-          this.adminArea.users.waitForLoaded();
+        switchToStaff: async () => {
+          await this.waitAndClick('.e_StaffUsB');
+          await this.waitForVisible('.e_StaffUsersIntro');
+          await this.adminArea.users.waitForLoaded();
         },
 
-        switchToSuspended: () => {
-          this.waitAndClick('.e_SuspendedUsB');
-          this.waitForVisible('.e_SuspendedUsersIntro');
-          this.adminArea.users.waitForLoaded();
+        switchToSuspended: async () => {
+          await this.waitAndClick('.e_SuspendedUsB');
+          await this.waitForVisible('.e_SuspendedUsersIntro');
+          await this.adminArea.users.waitForLoaded();
         },
 
-        switchToWatching: () => {
-          this.waitAndClick('.e_WatchingUsB');
-          this.waitForVisible('.e_ThreatsUsersIntro');
-          this.adminArea.users.waitForLoaded();
+        switchToWatching: async () => {
+          await this.waitAndClick('.e_WatchingUsB');
+          await this.waitForVisible('.e_ThreatsUsersIntro');
+          await this.adminArea.users.waitForLoaded();
         },
 
-        switchToInvites: () => {
-          this.waitAndClick('.e_InvitedUsB');
-          this.adminArea.users.invites.waitUntilLoaded();
+        switchToInvites: async () => {
+          await this.waitAndClick('.e_InvitedUsB');
+          await this.adminArea.users.invites.waitUntilLoaded();
         },
 
         waiting: {
           undoSelector: '.e_UndoApprRjctB',
 
-          waitUntilLoaded: () => {
-            this.waitForVisible('.e_WaitingUsersIntro');
-            this.adminArea.users.waitForLoaded();
+          waitUntilLoaded: async () => {
+            await this.waitForVisible('.e_WaitingUsersIntro');
+            await this.adminArea.users.waitForLoaded();
           },
 
-          approveFirstListedUser: () => {
-            this.waitAndClickFirst('.e_ApproveUserB');
-            this.waitForVisible(this.adminArea.users.waiting.undoSelector);
+          approveFirstListedUser: async () => {
+            await this.waitAndClickFirst('.e_ApproveUserB');
+            await this.waitForVisible(this.adminArea.users.waiting.undoSelector);
           },
 
-          rejectFirstListedUser: () => {
-            this.waitAndClickFirst('.e_RejectUserB');
-            this.waitForVisible(this.adminArea.users.waiting.undoSelector);
+          rejectFirstListedUser: async () => {
+            await this.waitAndClickFirst('.e_RejectUserB');
+            await this.waitForVisible(this.adminArea.users.waiting.undoSelector);
           },
 
-          undoApproveOrReject: () => {
-            this.waitAndClickFirst(this.adminArea.users.waiting.undoSelector);
-            this.waitUntilGone(this.adminArea.users.waiting.undoSelector);
+          undoApproveOrReject: async () => {
+            await this.waitAndClickFirst(this.adminArea.users.waiting.undoSelector);
+            await this.waitUntilGone(this.adminArea.users.waiting.undoSelector);
           },
         },
 
         invites: {
-          waitUntilLoaded: () => {
+          waitUntilLoaded: async () => {
             // When this elem present, any invited-users-data has also been loaded.
-            this.waitForExist('.s_InvsL');
+            await this.waitForExist('.s_InvsL');
           },
 
-          clickSendInvite: () => {
-            this.waitAndClick('.s_AA_Us_Inv_SendB');
+          clickSendInvite: async () => {
+            await this.waitAndClick('.s_AA_Us_Inv_SendB');
           },
         }
       },
 
       interface: {
-        goHere: (origin?: string, opts: { loginAs? } = {}) => {
-          this.adminArea._goToMaybeLogin(origin, '/-/admin/customize/basic', opts);
+        goHere: async (origin?: St, opts: { loginAs? } = {}) => {
+          await this.adminArea._goToMaybeLogin(origin, '/-/admin/customize/basic', opts);
         },
 
-        waitUntilLoaded: () => {
-          this.waitForVisible('.s_A_Ss_S');
+        waitUntilLoaded: async () => {
+          await this.waitForVisible('.s_A_Ss_S');
           // Top tab pane unmount bug workaround apparently not needed here. [5QKBRQ] [E2EBUG]
           // Can be removed elsewhere too?
         },
 
-        areTopicSectionSettingsVisible: () => {
-          return this.isVisible('.e_DscPrgSct');
+        areTopicSectionSettingsVisible: async (): Pr<Bo> => {
+          return await this.isVisible('.e_DscPrgSct');
         },
 
-        setSortOrder: (value: number) => {
+        setSortOrder: async (value: Nr) => {
           dieIf(value === 0, "Cannot set to default — that'd clear the value, " +
               "but this.#br drivers are buggy / weird, won't work with Webdriver v4 [TyE06KUDS]");
           // 0 = default.
           const valueOrEmpty = value === 0 ? '' : value;
-          this.waitAndSetValue('.e_BlgSrtOdr input', valueOrEmpty, { checkAndRetry: true });
+          await this.waitAndSetValue('.e_BlgSrtOdr input', valueOrEmpty, { checkAndRetry: true });
         },
 
-        setBlogPostLikeVotes: (value: number) => {
-          this.waitAndSetValue('.e_BlgPstVts input', value, { checkAndRetry: true });
+        setBlogPostLikeVotes: async (value: Nr) => {
+          await this.waitAndSetValue('.e_BlgPstVts input', value, { checkAndRetry: true });
         },
 
-        setAddCommentBtnTitle: (title: string) => {
-          this.waitAndSetValue('.e_AddCmtBtnTtl input', title, { checkAndRetry: true });
+        setAddCommentBtnTitle: async (title: St) => {
+          await this.waitAndSetValue('.e_AddCmtBtnTtl input', title, { checkAndRetry: true });
         },
 
       },
 
       backupsTab: {
-        waitUntilLoaded: () => {
-          this.waitForVisible('.s_A_Bkp');
+        waitUntilLoaded: async () => {
+          await this.waitForVisible('.s_A_Bkp');
         },
 
-        clickRestore: () => {
-          this.waitAndClick('.e_RstBkp');
+        clickRestore: async () => {
+          await this.waitAndClick('.e_RstBkp');
         },
 
-        selectFileToRestore: (fileNameInTargetDir: string) => {
-          this.waitAndSelectFile('.e_SelFil', 'TargetDir', fileNameInTargetDir);
+        selectFileToRestore: async (fileNameInTargetDir: St) => {
+          await this.waitAndSelectFile('.e_SelFil', 'TargetDir', fileNameInTargetDir);
         },
       },
 
       apiTab: {
-        waitUntilLoaded: () => {
-          this.waitForVisible('.s_A_Api');
+        waitUntilLoaded: async () => {
+          await this.waitForVisible('.s_A_Api');
         },
 
-        generateSecret: () => {
-          this.waitAndClick('.e_GenSecrB');
+        generateSecret: async () => {
+          await this.waitAndClick('.e_GenSecrB');
         },
 
-        showAndCopyMostRecentSecret: (): string => {
-          this.waitAndClick('.e_ShowSecrB');
-          return this.waitAndGetVisibleText('.esStupidDlg .e_SecrVal');
+        showAndCopyMostRecentSecret: async (): Pr<St> => {
+          await this.waitAndClick('.e_ShowSecrB');
+          return await this.waitAndGetVisibleText('.esStupidDlg .e_SecrVal');
         },
       },
 
       review: {
-        goHere: (origin?: string, opts: { loginAs? } = {}) => {
-          this.adminArea.goToReview(origin, opts);
+        goHere: async (origin?: St, opts: { loginAs? } = {}) => {
+          await this.adminArea.goToReview(origin, opts);
         },
 
-        waitUntilLoaded: () => {
-          this.waitForVisible('.s_A_Rvw');
+        waitUntilLoaded: async () => {
+          await this.waitForVisible('.s_A_Rvw');
           //----
           // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].  [E2EBUG]
           // Going to the Settings tab, makes the Review tab pane unmount, and after that,
           // it won't surprise-unmount ever again (until page reload).
-          this.waitAndClick('.e_UsrsB');
-          this.waitAndClick('.e_RvwB');
-          this.waitForVisible('.s_A_Rvw');
+          await this.waitAndClick('.e_UsrsB');
+          await this.waitAndClick('.e_RvwB');
+          await this.waitForVisible('.s_A_Rvw');
           //----
         },
 
-        hideCompletedTasks: () => {
-          this.setCheckbox('.e_HideCompl input', true);
-          this.waitForGone('.e_TskDoneGone');
+        hideCompletedTasks: async () => {
+          await this.setCheckbox('.e_HideCompl input', true);
+          await this.waitForGone('.e_TskDoneGone');
         },
 
-        playTimePastUndo: () => {
+        playTimePastUndo: async () => {
           // Make the server and this.#br believe we've waited for the review timeout seconds.
-          server.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
-          this.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
+          await server.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
+          await this.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
         },
 
         // DEPRECATED  CLEAN_UP REFACTOR change to  { pageId?, postNr?, dontCareWhichPost? }
         // and require  dontCareWhichPost  to be true, or the others.
         // So won't create flappy tests!
-        waitForServerToCarryOutDecisions: (pageId?: PageId, postNr?: PostNr) => {
+        waitForServerToCarryOutDecisions: async (pageId?: PageId, postNr?: PostNr) => {
           // Then wait for the server to actually do something.
           // The UI will reload the task list and auto-update itself [2WBKG7E], when
           // the review decisions have been carried out server side. Then the buttons
           // tested for below, hide.
           let buttonsNotGone;
-          this.waitUntil(() => {
-            this.#br.pause(c.JanitorThreadIntervalMs + 200);
+          await this.waitUntil(async () => {
+            await this.#br.pause(c.JanitorThreadIntervalMs + 200);
             if (!pageId) {
-              if (!this.isVisible('.s_A_Rvw_Tsk_UndoB'))
+              if (!await this.isVisible('.s_A_Rvw_Tsk_UndoB'))
                 return true;
             }
             else {
@@ -8064,7 +8094,7 @@ this.l(`Num tab: ${numTabs}`);
               // disappear, when the server is done.
               assert(_.isNumber(postNr));
               const pagePostSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
-              const stillVisible = this.filterVisible([
+              const stillVisible = await this.filterVisible([
                       pagePostSelector + ' .s_A_Rvw_Tsk_UndoB',
                       pagePostSelector + ' .e_A_Rvw_Tsk_AcptB',
                       pagePostSelector + ' .e_A_Rvw_Tsk_RjctB'],
@@ -8076,142 +8106,142 @@ this.l(`Num tab: ${numTabs}`);
             }
             //----
             // Top tab pane unmount bug workaround. [5QKBRQ].  [E2EBUG]  DO_AFTER 2021-02-01 REMOVE?  + other "unmount bug workaround" elsewhere.
-            this.#br.refresh();
-            this.adminArea.review.waitUntilLoaded();
+            await this.#br.refresh();
+            await this.adminArea.review.waitUntilLoaded();
             //----
           }, {
             message: () => buttonsNotGone,
             refreshBetween: true,
           });
-          this.waitUntilLoadingOverlayGone();
+          await this.waitUntilLoadingOverlayGone();
         },
 
-        goToPostForTaskIndex: (index: number) => {
+        goToPostForTaskIndex: async (index: Nr) => {
           die("Won't work, opens in new tab [TyE5NA2953]");
-          const numTabsBefore = this.numTabs();
-          this.topic.clickPostActionButton(`.e_RT-Ix-${index} .s_A_Rvw_Tsk_ViewB`);
-          this.waitForMinBrowserTabs(numTabsBefore + 1);
-          this.swithToOtherTabOrWindow();  // ! but might be the wrong window
+          const numTabsBefore = await this.numTabs();
+          await this.topic.clickPostActionButton(`.e_RT-Ix-${index} .s_A_Rvw_Tsk_ViewB`);
+          await this.waitForMinBrowserTabs(numTabsBefore + 1);
+          await this.swithToOtherTabOrWindow();  // ! but might be the wrong window
           // Need to find the newly appeared new win id?
-          this.topic.waitForLoaded();
+          await this.topic.waitForLoaded();
         },
 
-        approvePostForMostRecentTask: () => {
-          this.topic.clickPostActionButton('.e_A_Rvw_Tsk_AcptB', { clickFirst: true });
-          this.waitUntilModalGone();
-          this.waitUntilLoadingOverlayGone();
+        approvePostForMostRecentTask: async () => {
+          await this.topic.clickPostActionButton('.e_A_Rvw_Tsk_AcptB', { clickFirst: true });
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
         },
 
-        approvePostForTaskIndex: (index: number) => {
-          this.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_AcptB`);
-          this.waitUntilModalGone();
-          this.waitUntilLoadingOverlayGone();
+        approvePostForTaskIndex: async (index: Nr) => {
+          await this.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_AcptB`);
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
         },
 
-        rejectDeleteTaskIndex: (index: number) => {
-          this.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_RjctB`);
-          this.waitUntilModalGone();
-          this.waitUntilLoadingOverlayGone();
+        rejectDeleteTaskIndex: async (index: Nr) => {
+          await this.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_RjctB`);
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
         },
 
-        countReviewTasksFor: (pageId: PageId, postNr: PostNr,
-              opts: { waiting: boolean }): number => {
+        countReviewTasksFor: async (pageId: PageId, postNr: PostNr,
+              opts: { waiting: Bo }): Pr<Nr> => {
           const pageIdPostNrSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
           const waitingSelector = opts.waiting ? '.e_Wtng' : '.e_NotWtng';
           const selector = '.esReviewTask' + pageIdPostNrSelector + waitingSelector;
-          const elems = this.$$(selector);
+          const elems: WElm[] = await this.$$(selector);
           logMessage(`Counted to ${elems.length} of these: ${selector}`);
           return elems.length;
         },
 
-        isMoreStuffToReview: () => {
-          return this.isVisible('.e_A_Rvw_Tsk_AcptB');
+        isMoreStuffToReview: async (): Pr<Bo> => {
+          return await this.isVisible('.e_A_Rvw_Tsk_AcptB');
         },
 
-        waitForTextToReview: (text: string | RegExp, ps: { index?: number } = {}) => {
+        waitForTextToReview: async (text: St | RegExp, ps: { index?: Nr } = {}) => {
           let selector = '.esReviewTask_it';
           if (ps.index !== undefined) {
             selector = `.e_RT-Ix-${ps.index} ${selector}`;
           }
-          this.waitUntilTextMatches(selector, text);
+          await this.waitUntilTextMatches(selector, text);
         },
 
         // RENAME to countReviewTasks? and add countReviewTasksWaiting?
-        countThingsToReview: (): number =>
-          this.$$('.esReviewTask_it').length,
+        countThingsToReview: async (): Pr<Nr> =>
+          (await this.$$('.esReviewTask_it')).length,
 
-        isTasksPostDeleted: (taskIndex: number): boolean => {
-          return this.isVisible(`.e_RT-Ix-${taskIndex}.e_P-Dd`);
+        isTasksPostDeleted: async (taskIndex: Nr): Pr<Bo> => {
+          return await this.isVisible(`.e_RT-Ix-${taskIndex}.e_P-Dd`);
         }
       },
 
       adminExtraLogin: {
-        submitEmailAddress: (emailAddress: string) => {
-          this.waitAndSetValue('.e_AdmEmI', emailAddress);
-          this.waitAndClick('.e_SbmB');
-          this.waitForGone('.e_SbmB');
+        submitEmailAddress: async (emailAddress: St) => {
+          await this.waitAndSetValue('.e_AdmEmI', emailAddress);
+          await this.waitAndClick('.e_SbmB');
+          await this.waitForGone('.e_SbmB');
         },
 
-        assertIsBadEmailAddress: () => {
-          this.assertPageHtmlSourceMatches_1('TyE0ADMEML_');
+        assertIsBadEmailAddress: async () => {
+          await this.assertPageHtmlSourceMatches_1('TyE0ADMEML_');
         },
 
-        assertEmailSentMessage: () => {
-          this.assertPageHtmlSourceMatches_1('Email sent');
+        assertEmailSentMessage: async () => {
+          await this.assertPageHtmlSourceMatches_1('Email sent');
         }
       }
     };
 
 
     inviteDialog = {
-      waitUntilLoaded: () => {
-        this.waitForVisible('.s_InvD');
+      waitUntilLoaded: async () => {
+        await this.waitForVisible('.s_InvD');
       },
 
-      typeAndSubmitInvite: (emailAddress: string, ps: { numWillBeSent?: number } = {}) => {
-        this.inviteDialog.typeInvite(emailAddress);
-        this.inviteDialog.clickSubmit();
+      typeAndSubmitInvite: async (emailAddress: St, ps: { numWillBeSent?: Nr } = {}) => {
+        await this.inviteDialog.typeInvite(emailAddress);
+        await this.inviteDialog.clickSubmit();
         if (ps.numWillBeSent !== undefined) {
-          this.inviteDialog.waitForCorrectNumSent(ps.numWillBeSent);
+          await this.inviteDialog.waitForCorrectNumSent(ps.numWillBeSent);
         }
-        this.inviteDialog.closeResultsDialog();
+        await this.inviteDialog.closeResultsDialog();
       },
 
-      typeInvite: (emailAddress: string) => {
-        this.waitAndSetValue('.s_InvD textarea', emailAddress, { maybeMoves: true });
+      typeInvite: async (emailAddress: St) => {
+        await this.waitAndSetValue('.s_InvD textarea', emailAddress, { maybeMoves: true });
       },
 
-      clickSubmit: () => {
-        this.waitAndClick('.s_InvD .btn-primary');
+      clickSubmit: async () => {
+        await this.waitAndClick('.s_InvD .btn-primary');
       },
 
-      cancel: () => {
-        this.waitAndClick('.s_InvD .e_Cncl');
+      cancel: async () => {
+        await this.waitAndClick('.s_InvD .e_Cncl');
       },
 
-      waitForCorrectNumSent: (num: number) => {
-        this.waitForVisible('.e_Invd-' + num);
+      waitForCorrectNumSent: async (num: Nr) => {
+        await this.waitForVisible('.e_Invd-' + num);
       },
 
-      assertAlreadyJoined: (emailAddr: string) => {
-        this.waitForVisible('.e_InvJoind');
-        assert.equal(this.count('.e_InvJoind li'), 1);
-        assert.equal(this.waitAndGetVisibleText('.e_InvJoind li'), emailAddr);
+      assertAlreadyJoined: async (emailAddr: St) => {
+        await this.waitForVisible('.e_InvJoind');
+        tyAssert.eq(await this.count('.e_InvJoind li'), 1);
+        tyAssert.eq(await this.waitAndGetVisibleText('.e_InvJoind li'), emailAddr);
       },
 
-      assertAlreadyInvited: (emailAddr: string) => {
-        this.waitForVisible('.e_InvRtr');
-        assert.equal(this.count('.e_InvRtr li'), 1);
-        assert.equal(this.waitAndGetVisibleText('.e_InvRtr li'), emailAddr);
+      assertAlreadyInvited: async (emailAddr: St) => {
+        await this.waitForVisible('.e_InvRtr');
+        tyAssert.eq(await this.count('.e_InvRtr li'), 1);
+        tyAssert.eq(await this.waitAndGetVisibleText('.e_InvRtr li'), emailAddr);
       },
 
-      closeResultsDialog: () => {
-        this.waitAndClick('.s_InvSentD .e_SD_CloseB', { maybeMoves: true });
+      closeResultsDialog: async () => {
+        await this.waitAndClick('.s_InvSentD .e_SD_CloseB', { maybeMoves: true });
       },
 
-      isInviteAgainVisible: (): boolean => {
-        this.waitForVisible('.s_InvD .btn-primary');
-        return this.isVisible('.e_InvAgain');
+      isInviteAgainVisible: async (): Pr<Bo> => {
+        await this.waitForVisible('.s_InvD .btn-primary');
+        return await this.isVisible('.e_InvAgain');
       }
     };
 
@@ -8219,30 +8249,30 @@ this.l(`Num tab: ${numTabs}`);
     invitedUsersList = {
       invitedUserSelector: '.e_Inv_U',
 
-      waitUntilLoaded: () => {
+      waitUntilLoaded: async () => {
         // When this elem present, any invited-users-data has also been loaded.
-        this.waitForExist('.s_InvsL');
+        await this.waitForExist('.s_InvsL');
       },
 
-      setHideOld: (value: boolean) => {
-        this.setCheckbox('.e_OnlPend input', value);
+      setHideOld: async (value: Bo) => {
+        await this.setCheckbox('.e_OnlPend input', value);
       },
 
-      setShowOnePerUserOnly: (value: boolean) => {
-        this.setCheckbox('.e_OnePerP input', value);
+      setShowOnePerUserOnly: async (value: Bo) => {
+        await this.setCheckbox('.e_OnePerP input', value);
       },
 
-      assertHasAcceptedInvite: (username: string) => {
-        this.assertAnyTextMatches(this.invitedUsersList.invitedUserSelector, username);
+      assertHasAcceptedInvite: async (username: St) => {
+        await this.assertAnyTextMatches(this.invitedUsersList.invitedUserSelector, username);
       },
 
-      assertHasNotAcceptedInvite: (username: string) => {
-        this.assertNoTextMatches(this.invitedUsersList.invitedUserSelector, username);
+      assertHasNotAcceptedInvite: async (username: St) => {
+        await this.assertNoTextMatches(this.invitedUsersList.invitedUserSelector, username);
       },
 
-      waitAssertInviteRowPresent: (index: number, opts: {
-            email: string, accepted?: boolean, acceptedByUsername?: string, sentByUsername?: string,
-            deleted?: boolean }) => {
+      waitAssertInviteRowPresent: async (index: Nr, opts: {
+            email: St, accepted?: Bo, acceptedByUsername?: St, sentByUsername?: St,
+            deleted?: Bo }) => {
 
         dieIf(opts.accepted === false && !_.isUndefined(opts.acceptedByUsername), 'TyE06WKTJ3');
         dieIf(
@@ -8250,24 +8280,24 @@ this.l(`Num tab: ${numTabs}`);
             _.isUndefined(opts.accepted) &&
             _.isUndefined(opts.acceptedByUsername), 'TyE502RKDL24');
 
-        this.waitForAtLeast(index, '.s_InvsL_It');
-        this.assertNthTextMatches('.e_Inv_Em', index, opts.email);
+        await this.waitForAtLeast(index, '.s_InvsL_It');
+        await this.assertNthTextMatches('.e_Inv_Em', index, opts.email);
         if (opts.accepted === false) {
-          this.assertNthTextMatches('.e_Inv_U', index, /^$/);
+          await this.assertNthTextMatches('.e_Inv_U', index, /^$/);
         }
         if (opts.deleted) {
-          this.assertNthClassIncludes('.s_InvsL_It', index, 's_InvsL_It-Dd');
+          await this.assertNthClassIncludes('.s_InvsL_It', index, 's_InvsL_It-Dd');
         }
         if (opts.acceptedByUsername) {
-          this.assertNthTextMatches('.e_Inv_U', index, opts.acceptedByUsername);
+          await this.assertNthTextMatches('.e_Inv_U', index, opts.acceptedByUsername);
         }
         if (opts.sentByUsername) {
-          this.assertNthTextMatches('.e_Inv_SentByU', index, opts.sentByUsername);
+          await this.assertNthTextMatches('.e_Inv_SentByU', index, opts.sentByUsername);
         }
       },
 
-      countNumInvited: (): number =>
-        this.$$('.s_InvsL_It').length,
+      countNumInvited: async (): Pr<Nr> =>
+        (await this.$$('.s_InvsL_It')).length,
     };
 
 
@@ -8280,28 +8310,28 @@ this.l(`Num tab: ${numTabs}`);
 
 
     unsubscribePage = {
-      confirmUnsubscription: () => {
-        this.rememberCurrentUrl();
-        this.waitAndClick('input[type="submit"]');
-        this.waitForNewUrl();
-        this.waitForDisplayed('#e2eBeenUnsubscribed');
+      confirmUnsubscription: async () => {
+        await this.rememberCurrentUrl();
+        await this.waitAndClick('input[type="submit"]');
+        await this.waitForNewUrl();
+        await this.waitForDisplayed('#e2eBeenUnsubscribed');
       },
     };
 
 
     changePasswordDialog = {
-      clickYesChange: () => {
-        this.waitAndClick('.esStupidDlg .btn-primary');
+      clickYesChange: async () => {
+        await this.waitAndClick('.esStupidDlg .btn-primary');
       },
     };
 
 
     notfLevelDropdown = {
-      clickNotfLevel: (notfLevel: PageNotfLevel) => {
+      clickNotfLevel: async (notfLevel: PageNotfLevel) => {
         switch (notfLevel) {
           case c.TestPageNotfLevel.EveryPost:
-            this.waitAndClick('.e_NtfAll');
-            this.waitForGone('.e_NtfAll');
+            await this.waitAndClick('.e_NtfAll');
+            await this.waitForGone('.e_NtfAll');
             break;
           case c.TestPageNotfLevel.TopicProgress:
             die('unimpl');
@@ -8310,23 +8340,23 @@ this.l(`Num tab: ${numTabs}`);
             die('unimpl');
             break;
           case c.TestPageNotfLevel.NewTopics:
-            this.waitAndClick('.e_NtfFst');
-            this.waitForGone('.e_NtfFst');
+            await this.waitAndClick('.e_NtfFst');
+            await this.waitForGone('.e_NtfFst');
             break;
           case c.TestPageNotfLevel.Tracking:
             die('unimpl');
             break;
           case c.TestPageNotfLevel.Normal:
-            this.waitAndClick('.e_NtfNml');
-            this.waitForGone('.e_NtfNml');
+            await this.waitAndClick('.e_NtfNml');
+            await this.waitForGone('.e_NtfNml');
             break;
           case c.TestPageNotfLevel.Hushed:
-            this.waitAndClick('.e_NtfHsh');
-            this.waitForGone('.e_NtfHsh');
+            await this.waitAndClick('.e_NtfHsh');
+            await this.waitForGone('.e_NtfHsh');
             break;
           case c.TestPageNotfLevel.Muted:
-            this.waitAndClick('.e_NtfMtd');
-            this.waitForGone('.e_NtfMtd');
+            await this.waitAndClick('.e_NtfMtd');
+            await this.waitForGone('.e_NtfMtd');
             break;
           default:
             die('e2e bug');
@@ -8336,56 +8366,56 @@ this.l(`Num tab: ${numTabs}`);
 
 
     shareDialog = {
-      copyLinkToPost: () => {  // RENAME, append:  ...ToClipboard
-        this.waitAndClick('.s_ShareD_Link');
+      copyLinkToPost: async () => {  // RENAME, append:  ...ToClipboard
+        await this.waitAndClick('.s_ShareD_Link');
       },
 
-      getLinkUrl: (): St => {
-        return this.waitAndGetValue('.s_ShareD_Link');
+      getLinkUrl: async (): Pr<St> => {
+        return await this.waitAndGetValue('.s_ShareD_Link');
       },
 
-      close: () => {
-        this.waitAndClick('.esDropModal_CloseB');  // currently not inside .s_ShareD
+      close: async () => {
+        await this.waitAndClick('.esDropModal_CloseB');  // currently not inside .s_ShareD
       }
     };
 
 
     movePostDialog = {
-      moveToOtherSection: () => {
-        this.waitAndClick('.s_MPD_OtrSct .btn');
-        this.waitAndClick('.esStupidDlg a');
+      moveToOtherSection: async () => {
+        await this.waitAndClick('.s_MPD_OtrSct .btn');
+        await this.waitAndClick('.esStupidDlg a');
       },
 
-      pastePostLinkMoveToThere: () => {
-        this.waitAndPasteClipboard('#te_MvPI');
-        this.waitAndClick('.e_MvPB');
+      pastePostLinkMoveToThere: async () => {
+        await this.waitAndPasteClipboard('#te_MvPI');
+        await this.waitAndClick('.e_MvPB');
       }
     };
 
 
     editHistoryDialog = {
-      close: () => {
-        this.waitAndClick('.dw-edit-history .modal-footer .btn');
-        this.waitUntilGone('.dw-edit-history');
+      close: async () => {
+        await this.waitAndClick('.dw-edit-history .modal-footer .btn');
+        await this.waitUntilGone('.dw-edit-history');
       },
 
-      countDiffs: (): number => {
-        return this.count('.dw-edit-history pre');
+      countDiffs: async (): Pr<Nr> => {
+        return await this.count('.dw-edit-history pre');
       },
 
-      waitUntilVisible: () => {
-        this.waitForVisible('.dw-edit-history');
-        this.waitUntilDoesNotMove('.dw-edit-history');
+      waitUntilVisible: async () => {
+        await this.waitForVisible('.dw-edit-history');
+        await this.waitUntilDoesNotMove('.dw-edit-history');
       },
 
-      waitGetAuthorAndDiff: (editEntryNr: number): EditHistoryEntry => {
+      waitGetAuthorAndDiff: async (editEntryNr: Nr): Pr<EditHistoryEntry> => {
         dieIf(editEntryNr < 1, "First edit diff entry is nr 1, not 0 [TyE20KGUTf06]");
         // Nr 1 is a help text, nr 2 is the first diff entry — so add +1.
         const selector =
             `.dw-edit-history .modal-body > div > .ed-revision:nth-child(${editEntryNr + 1})`;
-        this.waitForDisplayed(selector);
-        const authorUsername = this.waitAndGetVisibleText(selector + ' .dw-username');
-        const diffHtml = this.$(selector + ' pre').getHTML();
+        await this.waitForDisplayed(selector);
+        const authorUsername = await this.waitAndGetVisibleText(selector + ' .dw-username');
+        const diffHtml = await (await this.$(selector + ' pre')).getHTML();
         return {
           authorUsername,
           diffHtml,
@@ -8395,15 +8425,15 @@ this.l(`Num tab: ${numTabs}`);
 
 
     notFoundDialog = {
-      waitAndAssertErrorMatches: (regex: St | RegExp, ifDevRegex?: St | RegExp) => {
-        this.waitAndAssertVisibleTextMatches('body > pre', regex);
+      waitAndAssertErrorMatches: async (regex: St | RegExp, ifDevRegex?: St | RegExp) => {
+        await this.waitAndAssertVisibleTextMatches('body > pre', regex);
         if (!settings.prod && ifDevRegex) {
-          this.waitAndAssertVisibleTextMatches('body > pre', ifDevRegex);
+          await this.waitAndAssertVisibleTextMatches('body > pre', ifDevRegex);
         }
       },
 
-      clickHomeLink: () => {
-        this.waitAndClick('.s_LD_NotFound_HomeL');
+      clickHomeLink: async () => {
+        await this.waitAndClick('.s_LD_NotFound_HomeL');
       }
     };
 
@@ -8426,26 +8456,26 @@ this.l(`Num tab: ${numTabs}`);
             `--------------------------------------------------------------------\n`);
       },
 
-      waitForNotLoggedInError: () => {
-        this.waitUntilTextMatches('.s_SED_Msg', 'TyE0LGDIN_');
+      waitForNotLoggedInError: async () => {
+        await this.waitUntilTextMatches('.s_SED_Msg', 'TyE0LGDIN_');
       },
 
-      waitForNotLoggedInAsAdminError: () => {
-        this.waitUntilTextMatches('.s_SED_Msg', 'TyE0LGIADM_');
+      waitForNotLoggedInAsAdminError: async () => {
+        await this.waitUntilTextMatches('.s_SED_Msg', 'TyE0LGIADM_');
       },
 
-      waitForJustGotSuspendedError: () => {
-        this.waitUntilTextMatches('.s_SED_Msg', 'TyESUSPENDED_|TyE0LGDIN_');
+      waitForJustGotSuspendedError: async () => {
+        await this.waitUntilTextMatches('.s_SED_Msg', 'TyESUSPENDED_|TyE0LGDIN_');
       },
 
-      dismissReloadPageAlert: () => {
+      dismissReloadPageAlert: async () => {
         // Seems this alert appears only in a visible browser (but not if invisible/headless).
         for (let i = 0; i < 3; ++i) {
           // Clicking anywhere triggers an alert about reloading the page, although has started
           // writing — because was logged out by the server (e.g. because user suspended)
           // and then som js tries to reload.
-          this.$('.modal-body').click();
-          const gotDismissed = this.dismissAnyAlert();
+          await (await this.$('.modal-body')).click();
+          const gotDismissed = await this.dismissAnyAlert();
           if (gotDismissed) {
             logMessage("Dismissed got-logged-out but-had-started-writing related alert.");
             return;
@@ -8454,109 +8484,110 @@ this.l(`Num tab: ${numTabs}`);
         logMessage("Didn't get any got-logged-out but-had-started-writing related alert.");
       },
 
-      waitAndAssertTextMatches: (regex: St | RegExp, ifDevRegex?: St | RegExp) => {
-        this.waitAndAssertVisibleTextMatches('.s_SED_Msg', regex);
+      waitAndAssertTextMatches: async (regex: St | RegExp, ifDevRegex?: St | RegExp) => {
+        await this.waitAndAssertVisibleTextMatches('.s_SED_Msg', regex);
         if (!settings.prod && ifDevRegex) {
-          this.waitAndAssertVisibleTextMatches('.s_SED_Msg', ifDevRegex);
+          await this.waitAndAssertVisibleTextMatches('.s_SED_Msg', ifDevRegex);
         }
       },
 
-      waitForBadEmailAddressError: () => {
-        this.waitUntilTextMatches('.s_SED_Msg', 'TyEBADEMLADR_');
+      waitForBadEmailAddressError: async () => {
+        await this.waitUntilTextMatches('.s_SED_Msg', 'TyEBADEMLADR_');
       },
 
-      waitForBadEmailDomainError: () => {
+      waitForBadEmailDomainError: async () => {
         // Sometimes there's this error:
         //   stale element reference: element is not attached to the page document
         // Why? Maybe there's another dialog .modal-body that fades away and disappears
         // before the server error dialog's .modal-body appears?
-        utils.tryManyTimes("waitForBadEmailDomainError", 2, () => {
-          this.waitUntilTextMatches('.s_SED_Msg', 'TyEBADEMLDMN_');
+        await utils.tryManyTimes("waitForBadEmailDomainError", 2, async () => {
+          await this.waitUntilTextMatches('.s_SED_Msg', 'TyEBADEMLDMN_');
         });
       },
 
-      waitForTooManyInvitesError: () => {
-        this.waitUntilTextMatches('.s_SED_Msg', 'TyETOOMANYBULKINV_');
+      waitForTooManyInvitesError: async () => {
+        await this.waitUntilTextMatches('.s_SED_Msg', 'TyETOOMANYBULKINV_');
       },
 
-      waitForTooManyInvitesLastWeekError: () => {
-        this.waitUntilTextMatches('.s_SED_Msg', 'TyINVMANYWEEK_');
+      waitForTooManyInvitesLastWeekError: async () => {
+        await this.waitUntilTextMatches('.s_SED_Msg', 'TyINVMANYWEEK_');
       },
 
-      waitForXsrfTokenExpiredError: () => {
-        this.waitUntilTextMatches('.s_SED_Msg', 'TyEXSRFEXP_');
+      waitForXsrfTokenExpiredError: async () => {
+        await this.waitUntilTextMatches('.s_SED_Msg', 'TyEXSRFEXP_');
       },
 
-      waitForIsRegistrationSpamError: () => {
+      waitForIsRegistrationSpamError: async () => {
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
-        this.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyEPWREGSPM_/s);
+        await this.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyEPWREGSPM_/s);
       },
 
-      waitForFirstPostsNotApproved: () => {
-        this.serverErrorDialog.waitAndAssertTextMatches(/approv.*_EsE6YKF2_/);
+      waitForFirstPostsNotApproved: async () => {
+        await this.serverErrorDialog.waitAndAssertTextMatches(/approv.*_EsE6YKF2_/);
       },
 
-      waitForTooManyPendingApproval: () => {
-        this.serverErrorDialog.waitAndAssertTextMatches(/approv.*TyE2MNYPNDAPR_/);
+      waitForTooManyPendingApproval: async () => {
+        await this.serverErrorDialog.waitAndAssertTextMatches(/approv.*TyE2MNYPNDAPR_/);
       },
 
-      waitForTooManyPendingReview: () => {
-        this.serverErrorDialog.waitAndAssertTextMatches(/review.*TyE2MNYPNDRVW_/);
+      waitForTooManyPendingReview: async () => {
+        await this.serverErrorDialog.waitAndAssertTextMatches(/review.*TyE2MNYPNDRVW_/);
       },
 
-      waitForTooManyPendingMaybeSpamPostsError: () => {
+      waitForTooManyPendingMaybeSpamPostsError: async () => {
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
-        this.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyENEWMBRSPM_/s);
+        await this.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyENEWMBRSPM_/s);
       },
 
-      waitForCannotReplyPostDeletedError: () => {
-        this.serverErrorDialog.waitAndAssertTextMatches(/has been deleted.*TyEM0REPLY_/s);
+      waitForCannotReplyPostDeletedError: async () => {
+        await this.serverErrorDialog.waitAndAssertTextMatches(/has been deleted.*TyEM0REPLY_/s);
       },
 
-      close: () => {
-        this.waitAndClick('.e_SED_CloseB');
-        this.waitUntilGone('.dw-server-error .modal-dialog');
+      close: async () => {
+        await this.waitAndClick('.e_SED_CloseB');
+        await this.waitUntilGone('.dw-server-error .modal-dialog');
       }
     };
 
     tour = {
-      runToursAlthoughE2eTest: () => {
-        this.#br.execute(function() {
+      runToursAlthoughE2eTest: async () => {
+        await this.#br.execute(function() {
           localStorage.setItem('runToursAlthoughE2eTest', 'true');
         });
       },
 
-      assertTourStarts: (shallStart: boolean) => {
+      assertTourStarts: async (shallStart: Bo) => {
         // Wait for the tour to appear. (There's no other way to do that right now,
         // than just waiting for a while. It appears within about a second.
         // Note that this is also used to test that the tour *does* appear fast enough,
         // not only that it does *not* appear — to test, that this test, works.)
-        this.waitUntil(() => this.isVisible('.s_Tour'), {
+        await this.waitUntil(async () => await this.isVisible('.s_Tour'), {
           timeoutMs: 3500,
           timeoutIsFine: true,
           message: `Will the intro tour start? ...`,
         });
-        assert.equal(this.isVisible('.s_Tour'), shallStart);
+        tyAssert.eq(await this.isVisible('.s_Tour'), shallStart);
       },
 
-      clickNextForStepNr: (stepNr: number) => {
+      clickNextForStepNr: async (stepNr: Nr) => {
         // Don't scroll — the tour will scroll for us. (Scrolling here too, could scroll
         // too much, and the click might fail.)
-        this.waitAndClick(`.s_Tour-Step-${stepNr} .s_Tour_D_Bs_NextB`, { mayScroll: false });
+        await this.waitAndClick(
+                `.s_Tour-Step-${stepNr} .s_Tour_D_Bs_NextB`, { mayScroll: false });
       },
 
-      exitTour: () => {
-        this.waitAndClick(`.s_Tour_D_Bs_ExitB`, { mayScroll: false });
+      exitTour: async () => {
+        await this.waitAndClick(`.s_Tour_D_Bs_ExitB`, { mayScroll: false });
       },
     };
 
     helpDialog = {
-      waitForThenClose: (ps: { shallHaveBodyClass?: St } = {}) => {
+      waitForThenClose: async (ps: { shallHaveBodyClass?: St } = {}) => {
         if (ps.shallHaveBodyClass) {
-          this.waitForDisplayed(`.esHelpDlg ${ps.shallHaveBodyClass}`);
+          await this.waitForDisplayed(`.esHelpDlg ${ps.shallHaveBodyClass}`);
         }
-        this.waitAndClick('.esHelpDlg .btn-primary');
-        this.waitUntilModalGone();
+        await this.waitAndClick('.esHelpDlg .btn-primary');
+        await this.waitUntilModalGone();
       },
     };
 
@@ -8611,7 +8642,7 @@ this.l(`Num tab: ${numTabs}`);
           tyAssert.not(me.isLoggedIn);
           tyAssert.not(me.id);
         }
-        this.switchToAnyParentFrame();
+        await this.switchToAnyParentFrame();
       },
 
       loginWithPasswordViaTopbar: async (username: St | Member | { username, password },
@@ -8629,10 +8660,10 @@ this.l(`Num tab: ${numTabs}`);
         await this.loginDialog.loginWithPassword(credentials, opts || {});
       },
 
-      signUpAsMemberViaTopbar: (
+      signUpAsMemberViaTopbar: async (
             member: Member | { emailAddress: string, username: string, password: string }) => {
-        this.topbar.clickSignUp();
-        this.loginDialog.createPasswordAccount({
+        await this.topbar.clickSignUp();
+        await this.loginDialog.createPasswordAccount({
           username: member.username,
           emailAddress: member.emailAddress,
           password: member.password,
@@ -8640,9 +8671,9 @@ this.l(`Num tab: ${numTabs}`);
         });
       },
 
-      signUpAsGuestViaTopbar: (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
-        this.disableRateLimits();
-        this.topbar.clickSignUp();
+      signUpAsGuestViaTopbar: async (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
+        await this.disableRateLimits();
+        await this.topbar.clickSignUp();
         let name: string;
         if (_.isObject(nameOrObj)) {
           assert(!email);
@@ -8652,18 +8683,18 @@ this.l(`Num tab: ${numTabs}`);
         else {
           name = nameOrObj;
         }
-        this.loginDialog.signUpAsGuest(name, email);
+        await this.loginDialog.signUpAsGuest(name, email);
       },
 
-      signUpAsGmailUserViaTopbar: ({ username }) => {
-        this.disableRateLimits();
-        this.topbar.clickSignUp();
-        this.loginDialog.createGmailAccount({
+      signUpAsGmailUserViaTopbar: async ({ username }) => {
+        await this.disableRateLimits();
+        await this.topbar.clickSignUp();
+        await this.loginDialog.createGmailAccount({
             email: settings.gmailEmail, password: settings.gmailPassword, username });
       },
 
-      logInAsGuestViaTopbar: (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
-        this.topbar.clickLogin();
+      logInAsGuestViaTopbar: async (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
+        await this.topbar.clickLogin();
         let name: string;
         if (_.isObject(nameOrObj)) {
           assert(!email);
@@ -8673,13 +8704,13 @@ this.l(`Num tab: ${numTabs}`);
         else {
           name = nameOrObj;
         }
-        this.loginDialog.logInAsGuest(name, email);
+        await this.loginDialog.logInAsGuest(name, email);
       },
 
       loginIfNeededViaMetabar: async (ps: NameAndPassword) => {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitForMyDataAdded();
-        if (await !this.metabar.isLoggedIn()) {
+        if (!await this.metabar.isLoggedIn()) {
           logMessage(`Need to log in, as @${ps.username
                 } — session id cookie blocked? [TyM306MRKTJ]`);
           await this.complex.loginWithPasswordViaMetabar(ps);
@@ -8710,36 +8741,36 @@ this.l(`Num tab: ${numTabs}`);
         }
       },
 
-      createCategory: (ps: { name: string, extId?: string }) => {
-        this.forumButtons.clickCreateCategory();
-        this.categoryDialog.fillInFields(ps);
-        this.categoryDialog.submit();
+      createCategory: async (ps: { name: string, extId?: string }) => {
+        await this.forumButtons.clickCreateCategory();
+        await this.categoryDialog.fillInFields(ps);
+        await this.categoryDialog.submit();
       },
 
-      createAndSaveTopic: (data: { title: string, body: string, type?: PageRole,
-            willBePendingApproval?: boolean,
-            matchAfter?: boolean, titleMatchAfter?: string | false,
-            bodyMatchAfter?: string | false, resultInError?: boolean }) => {
-        this.forumButtons.clickCreateTopic();
-        this.editor.editTitle(data.title);
-        this.editor.editText(data.body);
-        if (data.type) {
-          this.editor.setTopicType(data.type);
-        }
-        this.complex.saveTopic(data);
-      },
-
-      saveTopic: (data: { title: St, body?: St, type?: PageRole,
+      createAndSaveTopic: async (data: { title: St, body: St, type?: PageRole,
             willBePendingApproval?: Bo,
             matchAfter?: Bo, titleMatchAfter?: St | false,
             bodyMatchAfter?: St | false, resultInError?: Bo }) => {
-        this.rememberCurrentUrl();
-        this.editor.save();
+        await this.forumButtons.clickCreateTopic();
+        await this.editor.editTitle(data.title);
+        await this.editor.editText(data.body);
+        if (data.type) {
+          await this.editor.setTopicType(data.type);
+        }
+        await this.complex.saveTopic(data);
+      },
+
+      saveTopic: async (data: { title: St, body?: St, type?: PageRole,
+            willBePendingApproval?: Bo,
+            matchAfter?: Bo, titleMatchAfter?: St | false,
+            bodyMatchAfter?: St | false, resultInError?: Bo }) => {
+        await this.rememberCurrentUrl();
+        await this.editor.save();
         if (!data.resultInError) {
-          this.waitForNewUrl();
+          await this.waitForNewUrl();
           if (data.willBePendingApproval) {
-            this.waitForVisible('.dw-p-ttl .esPendingApproval');
-            this.waitForVisible('.dw-ar-t .esPendingApproval');
+            await this.waitForVisible('.dw-p-ttl .esPendingApproval');
+            await this.waitForVisible('.dw-ar-t .esPendingApproval');
           }
 
           // Only in the title text, not body text.
@@ -8747,9 +8778,9 @@ this.l(`Num tab: ${numTabs}`);
 
           if (data.matchAfter !== false && data.titleMatchAfter !== false) {
             // if (data.titleMatchAfter)
-            this.assertPageTitleMatches(data.titleMatchAfter || data.title);
+            await this.assertPageTitleMatches(data.titleMatchAfter || data.title);
             if (!data.titleMatchAfter) {
-              this.topic.assertPostTextIs(c.TitleNr, titlePend + data.title);
+              await this.topic.assertPostTextIs(c.TitleNr, titlePend + data.title);
             }
           }
 
@@ -8759,202 +8790,216 @@ this.l(`Num tab: ${numTabs}`);
           else if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
             if (data.type === c.TestPageRole.OpenChat) {
               // Then there's no page body, insetad:
-              this.chat.waitAndAssertPurposeIs(data.body);
+              await this.chat.waitAndAssertPurposeIs(data.body);
             }
             else {
-              this.assertPageBodyMatches(data.bodyMatchAfter || data.body);
+              await this.assertPageBodyMatches(data.bodyMatchAfter || data.body);
               if (!data.bodyMatchAfter) {
-                this.topic.assertPostTextIs(c.BodyNr, data.body);
+                await this.topic.assertPostTextIs(c.BodyNr, data.body);
               }
             }
           }
         }
-        this.waitUntilLoadingOverlayGone();
+        await this.waitUntilLoadingOverlayGone();
       },
 
-      editPageTitle: (newTitle: string) => {
-        this.pageTitle.clickEdit();
-        this.pageTitle.editTitle(newTitle);
-        this.pageTitle.save();
-        this.topic.waitUntilPostTextMatches(c.TitleNr, newTitle);
-        this.assertPageTitleMatches(newTitle);
+      editPageTitle: async (newTitle: string) => {
+        await this.pageTitle.clickEdit();
+        await this.pageTitle.editTitle(newTitle);
+        await this.pageTitle.save();
+        await this.topic.waitUntilPostTextMatches(c.TitleNr, newTitle);
+        await this.assertPageTitleMatches(newTitle);
       },
 
-      editPageBody: (newText: string, opts: { append?: Bo, textAfterIs?: St,
+      editPageBody: async (newText: string, opts: { append?: Bo, textAfterIs?: St,
               textAfterMatches?: St } = {}) => {
-        this.topic.clickEditOrigPost();
-        this.editor.editText(newText, opts);
-        this.editor.save();
+        await this.topic.clickEditOrigPost();
+        await this.editor.editText(newText, opts);
+        await this.editor.save();
         if (opts.textAfterMatches || opts.textAfterIs) {
           if (opts.textAfterMatches) {
-            this.topic.waitUntilPostTextMatches(c.BodyNr, opts.textAfterMatches);
+            await this.topic.waitUntilPostTextMatches(c.BodyNr, opts.textAfterMatches);
           }
           if (opts.textAfterIs) {
-            this.topic.waitUntilPostTextIs(c.BodyNr, opts.textAfterIs);
-            this.topic.assertPostTextIs(c.BodyNr, newText);  // why this too?
+            await this.topic.waitUntilPostTextIs(c.BodyNr, opts.textAfterIs);
+            await this.topic.assertPostTextIs(c.BodyNr, newText);  // why this too?
           }
         }
         else if (opts.append) {
-          this.topic.waitUntilPostTextMatches(c.BodyNr, newText);  // includes!
-          this.assertPageBodyMatches(newText);  // includes!
+          await this.topic.waitUntilPostTextMatches(c.BodyNr, newText);  // includes!
+          await this.assertPageBodyMatches(newText);  // includes!
         }
         else {
-          this.topic.waitUntilPostTextIs(c.BodyNr, newText);
-          this.topic.assertPostTextIs(c.BodyNr, newText);  // why this too?
+          await this.topic.waitUntilPostTextIs(c.BodyNr, newText);
+          await this.topic.assertPostTextIs(c.BodyNr, newText);  // why this too?
         }
       },
 
-      editPostNr: (postNr: PostNr, newText: string, opts: { append?: boolean } = {}) => {
-        this.topic.clickEditoPostNr(postNr);
-        this.editor.editText(newText, opts);
-        this.editor.save();
-        this.topic.waitUntilPostTextMatches(postNr, newText);
+      editPostNr: async (postNr: PostNr, newText: string, opts: { append?: boolean } = {}) => {
+        await this.topic.clickEditoPostNr(postNr);
+        await this.editor.editText(newText, opts);
+        await this.editor.save();
+        await this.topic.waitUntilPostTextMatches(postNr, newText);
       },
 
-      replyToOrigPost: (text: string, whichButton?: 'DiscussionSection') => {
-        this.topic.clickReplyToOrigPost(whichButton);
-        this.editor.editText(text);
-        this.editor.save();
+      replyToOrigPost: async (text: string, whichButton?: 'DiscussionSection') => {
+        await this.topic.clickReplyToOrigPost(whichButton);
+        await this.editor.editText(text);
+        await this.editor.save();
       },
 
-      replyToEmbeddingBlogPost: (text: string,
+      replyToEmbeddingBlogPost: async (text: string,
             opts: { signUpWithPaswordAfterAs?, needVerifyEmail?: boolean } = {}) => {
         // Apparently, if FF cannot click the Reply button, now when in an iframe,
         // then FF says "all fine I clicked the button", but in fact does nothing,
         // also won't log any error or anything, so that later on, we'll block
         // forever when waiting for the editor.
         // So sometimes this neeeds to be in a retry loop, + timeoutMs below. [4RDEDA0]
-        this.switchToEmbeddedCommentsIrame();
+        await this.switchToEmbeddedCommentsIrame();
         logMessage("comments iframe: Clicking Reply ...");
-        this.topic.clickReplyToEmbeddingBlogPost();
+        await this.topic.clickReplyToEmbeddingBlogPost();
         //if (opts.loginWithPaswordBeforeAs) {
           //this.loginDialog.loginWithPasswordInPopup(opts.loginWithPaswordBeforeAs);
         //}
-        this.switchToEmbeddedEditorIrame();
+        await this.switchToEmbeddedEditorIrame();
         logMessage("editor iframe: Composing a reply ...");
         // Previously, before retrying scroll-to-top, this could hang forever in FF.
         // Add a timeout here so the retry (see comment above) will work.
-        this.editor.editText(text, { timeoutMs: 3000 });
+        await this.editor.editText(text, { timeoutMs: 3000 });
         logMessage("editor iframe: Saving ...");
-        this.editor.save();
+        await this.editor.save();
 
         if (opts.signUpWithPaswordAfterAs) {
           logMessage("editor iframe: Switching to login popup to log in / sign up ...");
-          this.swithToOtherTabOrWindow();
-          this.disableRateLimits();
-          this.loginDialog.createPasswordAccount(
+          await this.swithToOtherTabOrWindow();
+          await this.disableRateLimits();
+          await this.loginDialog.createPasswordAccount(
               opts.signUpWithPaswordAfterAs, false,
               opts.needVerifyEmail === false ? 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG' : null);
-          this.switchBackToFirstTabOrWindow();
+          await this.switchBackToFirstTabOrWindow();
         }
 
         logMessage("editor iframe: Done.");
-        this.switchToEmbeddedCommentsIrame();
+        await this.switchToEmbeddedCommentsIrame();
       },
 
-      addProgressReply: (text: string) => {
-        this.topic.clickAddProgressReply();
-        this.editor.editText(text);
-        this.editor.save();
+      addProgressReply: async (text: string) => {
+        await this.topic.clickAddProgressReply();
+        await this.editor.editText(text);
+        await this.editor.save();
       },
 
-      replyToPostNr: (postNr: PostNr, text: string, opts: { isEmbedded?: true } = {}) => {
-        if (opts.isEmbedded) this.switchToEmbeddedCommentsIrame();
+      replyToPostNr: async (postNr: PostNr, text: string, opts: { isEmbedded?: true } = {}) => {
+        if (opts.isEmbedded) {
+          await this.switchToEmbeddedCommentsIrame();
+        }
 
         // Sometimes the click fails — maybe a sidebar opens, making the button move a bit? Or
         // the window scrolls, making the click miss? Or whatever. If the click misses the
         // button, most likely, the editor won't open. So, if after clicking, the editor
         // won't appear, then click again.
-        this.topic.waitForPostNrVisible(postNr);
-        this.#br.pause(50); // makes the first click more likely to succeed (without,
+        await this.topic.waitForPostNrVisible(postNr);
+        await this.#br.pause(50); // makes the first click more likely to succeed (without,
         // failed 2 times out of 4 at a place in unsubscribe.2browsers.test.ts — but with,
         // failed 2 times out of 20).
         for (let clickAttempt = 0; true; ++clickAttempt) {
-          this.topic.clickReplyToPostNr(postNr);
+          await this.topic.clickReplyToPostNr(postNr);
           try {
-            if (opts.isEmbedded) this.switchToEmbeddedEditorIrame();
-            this.waitForVisible('.esEdtr_textarea', { timeoutMs: 5000 });
+            if (opts.isEmbedded) {
+              await this.switchToEmbeddedEditorIrame();
+            }
+            await this.waitForVisible('.esEdtr_textarea', { timeoutMs: 5000 });
             break;
           }
           catch (ignore) {
             logUnusual("When clicking the Reply button, the editor didn't open. Trying again");
             dieIf(clickAttempt === 3, "Couldn't click Reply and write a reply [EdE7FKAC2]");
-            if (opts.isEmbedded) this.switchToEmbeddedCommentsIrame();
+            if (opts.isEmbedded) {
+              await this.switchToEmbeddedCommentsIrame();
+            }
           }
         }
-        this.editor.editText(text);
-        this.editor.save();
-        if (opts.isEmbedded) this.switchToEmbeddedCommentsIrame();
+        await this.editor.editText(text);
+        await this.editor.save();
+        if (opts.isEmbedded) {
+          await this.switchToEmbeddedCommentsIrame();
+        }
       },
 
-      flagPost: (postNr: PostNr, reason: 'Inapt' | 'Spam') => {
-        this.topic.clickFlagPost(postNr);
-        this.flagDialog.waitUntilFadedIn();
+      flagPost: async (postNr: PostNr, reason: 'Inapt' | 'Spam') => {
+        await this.topic.clickFlagPost(postNr);
+        await this.flagDialog.waitUntilFadedIn();
         if (reason === 'Inapt') {
-          this.flagDialog.clickInappropriate();
+          await this.flagDialog.clickInappropriate();
         }
         else {
           die('Test code bug, only Inapt implemented in tests, yet [EdE7WK5FY0]');
         }
-        this.flagDialog.submit();
-        this.stupidDialog.close();
+        await this.flagDialog.submit();
+        await this.stupidDialog.close();
       },
 
-      openPageAuthorProfilePage: () => {
+      openPageAuthorProfilePage: async () => {
         logMessage(`Open about author dialog...`);
-        this.pageTitle.openAboutAuthorDialog();
+        await this.pageTitle.openAboutAuthorDialog();
         logMessage(`Click view profile...`);
-        this.aboutUserDialog.clickViewProfile();
+        await this.aboutUserDialog.clickViewProfile();
       },
 
-      sendMessageToPageAuthor: (messageTitle: string, messageText: string) => {
+      sendMessageToPageAuthor: async (messageTitle: St, messageText: St) => {
         logMessage(`Opens page author's About dialog...`);
-        this.pageTitle.openAboutAuthorDialog();
-        this.complex.__sendMessageImpl(messageTitle, messageText);
+        await this.pageTitle.openAboutAuthorDialog();
+        await this.complex.__sendMessageImpl(messageTitle, messageText);
       },
 
-      sendMessageToPostNrAuthor: (postNr: PostNr, messageTitle: string, messageText: string) => {
+      sendMessageToPostNrAuthor: async (postNr: PostNr, messageTitle: St, messageText: St) => {
         logMessage(`Opens post nr ${postNr} author's About dialog ...`);
-        this.topic.openAboutUserDialogForPostNr(postNr);
-        this.complex.__sendMessageImpl(messageTitle, messageText);
+        await this.topic.openAboutUserDialogForPostNr(postNr);
+        await this.complex.__sendMessageImpl(messageTitle, messageText);
       },
 
-      __sendMessageImpl: (messageTitle: string, messageText: string) => {
+      __sendMessageImpl: async (messageTitle: St, messageText: St) => {
         logMessage(`Click Send Message...`);
-        this.aboutUserDialog.clickSendMessage();
+        await this.aboutUserDialog.clickSendMessage();
         logMessage(`Edit message title...`);
-        this.editor.editTitle(messageTitle);
+        await this.editor.editTitle(messageTitle);
         logMessage(`Edit message text...`);
-        this.editor.editText(messageText);
+        await this.editor.editText(messageText);
         logMessage(`Submit...`);
-        this.editor.saveWaitForNewPage();
-        logMessage(`Done, now at new page: ${this.urlPath()}`);
+        await this.editor.saveWaitForNewPage();
+        logMessage(`Done, now at new page: ${await this.urlPath()}`);
       },
 
-      createChatChannelViaWatchbar: (
-            data: { name: string, purpose: string, public_?: boolean }) => {
-        this.watchbar.clickCreateChatWaitForEditor();
-        this.editor.editTitle(data.name);
-        this.editor.editText(data.purpose);
+      createChatChannelViaWatchbar: async (
+            data: { name: St, purpose: St, public_?: Bo }) => {
+        await this.watchbar.clickCreateChatWaitForEditor();
+        await this.editor.editTitle(data.name);
+        await this.editor.editText(data.purpose);
         if (data.public_ === false) {
-          this.editor.setTopicType(c.TestPageRole.PrivateChat);
+          await this.editor.setTopicType(c.TestPageRole.PrivateChat);
         }
-        this.rememberCurrentUrl();
-        this.editor.save();
-        this.waitForNewUrl();
-        this.assertPageTitleMatches(data.name);
+        await this.rememberCurrentUrl();
+        await this.editor.save();
+        await this.waitForNewUrl();
+        await this.assertPageTitleMatches(data.name);
       },
 
-      addPeopleToPageViaContextbar: (usernames: string[]) => {
-        this.contextbar.clickAddPeople();
-        _.each(usernames, this.addUsersToPageDialog.addOneUser);
-        this.addUsersToPageDialog.submit({ closeStupidDialogAndRefresh: true });
-        _.each(usernames, this.contextbar.assertUserPresent);
+      addPeopleToPageViaContextbar: async (usernames: St[]) => {
+        await this.contextbar.clickAddPeople();
+        // was:  _.each(usernames, this.addUsersToPageDialog.addOneUser));
+        for (const un of usernames) {
+          await this.addUsersToPageDialog.addOneUser(un);
+        }
+        await this.addUsersToPageDialog.submit({ closeStupidDialogAndRefresh: true });
+        // was:  _.each(usernames, this.contextbar.assertUserPresent);
+        for (const un of usernames) {
+          await this.contextbar.assertUserPresent(un);
+        }
       }
     }
 
 
-  setCheckbox(selector: string, checked: boolean, opts: WaitAndClickPs = {}) {
+  async setCheckbox(selector: St, checked: Bo, opts: WaitAndClickPs = {}) {
     dieIf(_.isUndefined(checked), "setCheckbox: Pass true or false  [TyE036WKDP45]");
     // Sometimes, clicking this checkbox has no effect. Perhaps a sidebar appeared, which
     // caused the checkbox to move? so the click missed? Therefore, try many times.
@@ -8977,31 +9022,32 @@ this.l(`Num tab: ${numTabs}`);
     // to a new user — before the new one had been loaded. [pat_prof_fields]
     // DO_AFTER 2021-03-01 REMOVE all weird stuff here (i.e. "Somehow once ... " below).
     //
-    this.waitForVisible(selector, opts);
+    await this.waitForVisible(selector, opts);
     let bugRetry = 0;
     const maxBugRetry = 2;
     for (; bugRetry <= maxBugRetry; ++bugRetry) {
       logMessage(selector + ' is visible, should be checked: ' + checked);
       for (let i = 0; i < 99; ++i) {
-        let isChecked = this.$(selector).isSelected();
+        let isChecked = await (await this.$(selector)).isSelected();
         logMessage(selector + ' is checked: ' + isChecked);
         if (isChecked === checked)
           break;
-        this.waitAndClick(selector, opts);
+        await this.waitAndClick(selector, opts);
         logMessage(selector + ' **click**');
       }
       // Somehow once this function exited with isChecked !== isRequired. Race condition?
       // Let's find out:
-      let isChecked = this.$(selector).isSelected();
+      let isChecked = await (await this.$(selector)).isSelected();
       let was = isChecked;
       logMessage(selector + ' is checked: ' + isChecked);
-      this.#br.pause(300);
-      isChecked = this.$(selector).isSelected();
+      await this.#br.pause(300);
+      isChecked = await (await this.$(selector)).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
       if (was !== isChecked) debugger;
-      this.#br.pause(400);
-      isChecked = this.$(selector).isSelected();
+      await this.#br.pause(400);
+      isChecked = await (await this.$(selector)).isSelected();
       /* maybe works better now? (many months later)
+      ... yes, CLEAN_UP remove this, plus the comment above. Was a bug I've now fixed watn't it.
       logMessage(selector + ' is checked: ' + isChecked);
       if (was !== isChecked) debugger;
       this.#br.pause(500);
