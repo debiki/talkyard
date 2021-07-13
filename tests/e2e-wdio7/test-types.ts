@@ -2,29 +2,29 @@
 /// <reference path="./pub-api.ts" />
 
 
-// Unique hostname for the current test run, so sites won't overwrite each other.
-declare const __thisSpecLocalHostname: string | undefined;
-declare function getCidOrDie(): string;
+declare global {
+
+  // Unique hostname for the current test run, so sites won't overwrite each other.
+  const __thisSpecLocalHostname: string | undefined;
+  function getCidOrDie(): string;
 
 
 
-// ----- WebdriverIO
+  // ----- WebdriverIO
 
-// It's unclear if 'browser' refers to an instance of TyE2eTestBrowser
-// or WebdriverIO.BrowserObject, so let's avoid that name.
-declare const wdioBrowser: WebdriverIO.BrowserObject;  // RENAME to allWdioBrowsers
-declare const allWdioBrowsers: WebdriverIO.BrowserObject;  // ... started
-declare const oneWdioBrowser: WebdriverIO.BrowserObject;
-declare const wdioBrowserA: WebdriverIO.BrowserObject;
-declare const wdioBrowserB: WebdriverIO.BrowserObject | U;
-declare const wdioBrowserC: WebdriverIO.BrowserObject | U;
+  // It's unclear if 'browser' refers to an instance of TyE2eTestBrowser
+  // or WebdriverIO.BrowserObject, so let's avoid that name.
+  const allWdioBrowsers: WebdriverIOAsync.MultiRemoteBrowser; // ... started
+  const oneWdioBrowser: WebdriverIOAsync.MultiRemoteBrowser;
+  const wdioBrowserA: WebdriverIOAsync.MultiRemoteBrowser;
+  const wdioBrowserB: WebdriverIOAsync.MultiRemoteBrowser | U;
+  const wdioBrowserC: WebdriverIOAsync.MultiRemoteBrowser | U;
 
-// Rename to  wdioBrowserA  instead:
-declare const browserA: WebdriverIO.BrowserObject;
-declare const browserB: WebdriverIO.BrowserObject | U;
-declare const browserC: WebdriverIO.BrowserObject | U;
+  type Sel = St // selector
+  type SelOrEl = St | WebdriverIO.Element;
 
-type SelectorOrElem = string | WebdriverIO.Element;
+}
+
 
 export const enum IsWhere {
   Forum = 1,

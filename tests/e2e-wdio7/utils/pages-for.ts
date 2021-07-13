@@ -1669,7 +1669,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    async clickNow(selEl: SelectorOrElem): Pr<'Clicked'> {
+    async clickNow(selEl: SelOrEl): Pr<'Clicked'> {
       try {
         if (_.isString(selEl)) await (await this.$(selEl)).click();
         else await selEl.click();
