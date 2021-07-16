@@ -22,7 +22,9 @@ vars='
   \${TY_MAX_AGE_YEAR}
   \${TY_MAX_AGE_MONTH}
   \${TY_MAX_AGE_WEEK}
-  \${TY_MAX_AGE_DAY}'
+  \${TY_MAX_AGE_DAY}
+  \${TY_MAX_AGE_HOUR}
+  \${TY_MAX_AGE_15MIN}'
 
 
 # Or use instead: https://github.com/a8m/envsubst

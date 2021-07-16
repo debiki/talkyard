@@ -14,7 +14,10 @@ const scriptUrl2 = `${settings.scheme}://localhost/-/ed-comments.v0.min.js`;
 const scriptUrl3 = `${settings.scheme}://localhost/-/talkyard-comments.min.js`;
 
 const desiredCacheHeader = settings.prod ?
+    /*
     'max-age=86400, s-maxage=86400, public' : 'no-cache';
+    */
+    'max-age=900, s-maxage=900, public' : 'no-cache';
 
 describe("the embedded comments script is cached for a day only", () => {
 
