@@ -235,6 +235,15 @@ Performance tests:
 Test on real life anonymized data:  PostgreSQL Anonymizer?
    https://www.postgresql.org/about/news/2017
 
+[overcommit_memory]
+Postgres might get OOM-killed if overcommit enabled. Maybe edit installation
+instructions to disable overcommit?
+vm.overcommit_memory = 2   (the default is 0 = yes)
+vm.overcommit_ratio = 75   (how much, in %, of the mem + swap the kernel may overcommit)
+https://news.ycombinator.com/item?id=27794237 CloudSQL Postgres misconfigured OS OOM killer
+https://stackoverflow.com/questions/52148675/aws-rds-with-postgres-is-oom-killer-configured
+
+
 [table_partitions]
 {{{2 Shard tables by site_id_c?
 Needs pg11 (not pg10): In pg11, a parent table index gets auto-created on child tables
