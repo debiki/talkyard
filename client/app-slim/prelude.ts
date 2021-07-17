@@ -304,8 +304,8 @@ export function getMainWin(): MainWin {  // QUICK RENAME to win_getMainWin()
   // If we're in a login popup window, switch to the opener, which should be either the
   // main win (with all comments and discussions), or the embedded editor 'edEditor' in an iframe.
   try {
-    if (win.opener && win.opener.typs) {
-      win = win.opener;
+    if (win.opener && (win.opener as MainWin).typs) {
+      win = win.opener as MainWin;
     }
   }
   catch (ignored) {
