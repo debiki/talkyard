@@ -1102,6 +1102,12 @@ export function loginWithAuthnToken(authnToken: St | Ay,
   postJsonSuccess('/-/v0/upsert-user-and-login', updSessionVars, {
     userAuthnToken: isToken ? authnToken : undefined,
     userDevTest: isToken ? undefined : authnToken,  // just for now, in dev/test
+  }, function (xhr: XMLHttpRequest) {
+    if (eds.isInIframe) {
+      window.parent.postMessage(
+            JSON.stringify(['authnErr', { prettyMethod: 'authn token' }]),
+            eds.embeddingOrigin);
+    }
   });
 }
 

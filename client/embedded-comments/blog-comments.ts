@@ -20,6 +20,7 @@
  // — how know if not loaded? Set timeout, wait for iframe-inited messge.
 
 /// <reference path="comments-count.ts" />
+/// <reference path="../app-slim/constants.ts" />
 
 
 declare const debiki: any | undefined;
@@ -60,32 +61,43 @@ const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 //   0,    10,    20,   30,   40,     50,    60,    70,       80
 const winLogLvl = windowWithTalkyardProps.talkyardLogLevel;
 const winDbg = windowWithTalkyardProps.talkyardDebug;
-const talkyardLogLevel: number | string = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
+const talkyardLogLevel: Nr | St = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
     winDbg === false || winDbg === 0 ? 'warn' : 'trace');
 
-
+// For automatic Single Sign-On with PASETO authn tokens.
 const talkyardAuthnToken = windowWithTalkyardProps.talkyardAuthnToken;
 
 
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
-const debugLog: (...args) => void =
-    // For now, so at least 'warn' works, as per the "disable logging by ..."
-    // comment below.
-    !talkyardLogLevel || talkyardLogLevel === 'warn' ||
-        !window.console ? function() {} : function() {
-      // Clone the function arguments array.
-      const args = [].slice.call(arguments);
-      // Add a prefix to the 1st arg, the actuall message.
-      // (Subsequent args could be an exception to log, who knows.)
-      var arg0 = args[0];
-      arg0 = "Talkyard comments: " + arg0;
-      args.splice(0, 1, arg0);
-      // And log the message.
-      console.log.apply(console, args);
-    };
+function makeTalkyardLogFn(isWarn: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
+  // For now, so at least 'warn' works, as per the "disable logging by ..."
+  // comment below.
+  const skipDebug = !talkyardLogLevel || talkyardLogLevel === 'warn';
+  if (skipDebug && !isWarn || !window.console)
+    return function() {};
 
-debugLog("Starting... (disable logging by setting talkyardLogLevel = 'warn')");
+  return function logFn(..._arguments) {
+    // Clone the function arguments array.
+    const args = [].slice.call(arguments);
+    // Add a prefix to the 1st arg, the actuall message.
+    // (Subsequent args could be an exception to log, who knows.)
+    let arg0 = args[0];
+    arg0 = "Talkyard comments: " + arg0;
+    args.splice(0, 1, arg0);
+    // And log the message.
+    consoleLogFn.apply(console, args);
+  }
+}
+
+const logD = makeTalkyardLogFn(false, console.debug);
+const logM = makeTalkyardLogFn(false, console.log);
+const logW = makeTalkyardLogFn(true, console.warn);
+
+
+logM(`Starting ${TalkyardVersion} ... ` +
+      `(disable logging by setting talkyardLogLevel = 'warn')`);
+
 
 const d = { i: debiki.internal };
 const serverOrigin = d.i.commentsServerOrigin;
@@ -112,8 +124,12 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
     "— If this is your site, what if you get a LetsEncrypt cert? [TyEINSCBLG]"
         ) : */  '');
 
+if (talkyardAuthnToken) {
+  logM(`Found authn token in talkyardAuthnToken`);
+}
+
 if (insecureSomethingErrMsg) {
-  debugLog(insecureSomethingErrMsg);
+  logW(insecureSomethingErrMsg);
 }
 
 
@@ -122,6 +138,8 @@ tyns.fetchAndFillInCommentCounts(serverOrigin);
 
 var oneTimeLoginSecret;
 var postNrToFocus;  // RENAME to ...AfterCommentsLoaded
+
+const commentsIframeName = 'edComments';
 
 var commentsIframe;
 var commentsIframeInited;  // dupl, remove, use Arr instead (contents dyn upd)
@@ -180,7 +198,7 @@ addEventListener('message', onMessage, false);
 
 
 function loadCommentsCreateEditor() {
-  debugLog("loadCommentsCreateEditor()");
+  logM("loadCommentsCreateEditor()");
   // Create <iframe>s for embedded comments and an embedded editor.
   // Show a "Loading comments..." message until comments loaded.
   // For now, choose the first .talkyard-comments only, because
@@ -192,7 +210,7 @@ function loadCommentsCreateEditor() {
   if (!commentsElems.length)
     return;
   var commentsElem = commentsElems[0];
-  debugLog("found commentsElem");
+  logM("found commentsElem");
 
   var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
@@ -214,7 +232,7 @@ function loadCommentsCreateEditor() {
   var discussionId = commentsElem.getAttribute('data-discussion-id');
   if (/[\t\r\n]/.test(discussionId)) {
     var errorMessage = "Bad discussion id: " + discussionId + ' [TyEEMDIID]';
-    debugLog(errorMessage);
+    logW(errorMessage);
     throw Error(errorMessage);
   }
   var discIdParam = discussionId ? `discussionId=${discussionId}&` : '';
@@ -224,7 +242,7 @@ function loadCommentsCreateEditor() {
   var categoryRef = commentsElem.getAttribute('data-category');
   if (/[\t\r\n]/.test(categoryRef)) {
     var errorMessage = `Bad category ref: ${categoryRef} [TyEEMCATRFCL]`;
-    debugLog(errorMessage);
+    logW(errorMessage);
     throw Error(errorMessage);
   }
   const catRefParam = categoryRef ? `category=${categoryRef}&` : '';
@@ -255,7 +273,7 @@ function loadCommentsCreateEditor() {
   commentsIframeInited = false;
   commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
-    name: 'edComments',
+    name: commentsIframeName,
     className: 'p_CmtsIfr ty_CmtsIfr',   // DEPRECATE old name p_CmtsIfr
     // A title attr, for better accessibility. See: https://www.w3.org/TR/WCAG20-TECHS/H64.html
     title: iframeTitle || "Comments",
@@ -276,7 +294,7 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.start(commentsIframe, commentsElem);
-  debugLog("inserted commentsIframe");
+  logM("inserted commentsIframe");
 
   if (insecureSomethingErrMsg) {
     // If insecureTyIframeProbl, then for sure the comments won't load.
@@ -334,7 +352,7 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.inside(editorWrapper, document.body);
-  debugLog("inserted editorWrapper");
+  logM("inserted editorWrapper");
 
   var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
   if (loadWeinre) {
@@ -358,7 +376,7 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.inside(editorIframe, editorWrapper);
-  debugLog("inserted editorIframe");
+  logM("inserted editorIframe");
 
   findOneTimeLoginSecret();
   findCommentToScrollTo();
@@ -367,7 +385,7 @@ function loadCommentsCreateEditor() {
 
 
 function removeCommentsAndEditor() {
-  debugLog("removeCommentsAndEditor()");
+  logM("removeCommentsAndEditor()");
   if (commentsIframe) {
     commentsIframe.remove();
     commentsIframe = null;
@@ -498,13 +516,13 @@ function onMessage(event) {
   // @ifdef DEBUG
   assertIsFromEditorToComments = function() {
     if (iframe !== editorIframe) {
-      debugLog(`Bad msg dir [TyEMSGDIR1]: '${eventName}', ${JSON.stringify(eventData)}`);
+      logW(`Bad msg dir [TyEMSGDIR1]: '${eventName}', ${JSON.stringify(eventData)}`);
       debugger;
     }
   };
   assertIsFromCommentsToEditor = function() {
     if (iframe !== commentsIframe) {
-      debugLog(`Bad msg dir [TyEMSGDIR2]: '${eventName}', ${JSON.stringify(eventData)}`);
+      logW(`Bad msg dir [TyEMSGDIR2]: '${eventName}', ${JSON.stringify(eventData)}`);
       debugger;
     }
   };
@@ -525,14 +543,14 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'iframeInited':
-      debugLog("got 'iframeInited' message");
 
       if (iframe !== commentsIframe) {
+        logM(`Editor iframe inited`);
         editorIframeInitedArr = [true];
         return;
       }
 
-      debugLog("it's the comments iframe");
+      logM(`Comments iframe inited`);
       commentsIframeInited = true;
       commentsIframeInitedArr = [true];
 
@@ -554,6 +572,7 @@ function onMessage(event) {
       // and unnecessarily many server requests.
       //
       if (talkyardAuthnToken) {
+        logM(`Sending authn token to comments iframe`);
         sendToComments(
               JSON.stringify(['loginWithAuthnToken', talkyardAuthnToken]));
       }
@@ -578,7 +597,7 @@ function onMessage(event) {
           theStorage.removeItem('talkyardSession');  // see above (3548236)
         }
         catch (ex) {
-          debugLog(`Error getting 'talkyardSession' from theStorage [TyEGETWKSID]`, ex);
+          logW(`Error getting 'talkyardSession' from theStorage [TyEGETWKSID]`, ex);
         }
         if (sessionStr) {
           try {
@@ -586,7 +605,7 @@ function onMessage(event) {
             sendToComments(['resumeWeakSession', session]);
           }
           catch (ex) {
-            debugLog(
+            logW(
                 `Error parsing 'talkyardSession', this: "${sessionStr}" [TyEPARSEWKSID]`, ex);
           }
         }
@@ -629,7 +648,16 @@ function onMessage(event) {
       debiki.Utterscroll.stopScrolling(eventData);
       break;
       */
+
+    case 'authnErr':
+      logW(`Error logging in using ${eventData.prettyMethod}. ` +
+            `Check the console log messages in the Talkyard comments iframe ` +
+            `for details (its name is "${commentsIframeName}").`)
+      break;
+
     case 'justLoggedIn':
+      const u = eventData.user || {};
+      logM(`Logged in as ${u.username || u.fullName} in iframe`);
       if (eventData.rememberEmbSess) try {
         const item = {
           pubSiteId: eventData.pubSiteId,
@@ -645,7 +673,7 @@ function onMessage(event) {
         }
         else */
         if (!item.weakSessionId || isUndef) {
-          debugLog(`weakSessionId missing [TyE0WKSID]: ${JSON.stringify(eventData)}`);
+          logW(`weakSessionId missing [TyE0WKSID]: ${JSON.stringify(eventData)}`);
           if (isUndef) {
             debugger;
           }
@@ -658,16 +686,18 @@ function onMessage(event) {
         }
       }
       catch (ex) {
-        debugLog(`Error setting 'talkyardSession' in  theStorage [TyESETWKSID]`, ex);
+        logW(`Error setting 'talkyardSession' in  theStorage [TyESETWKSID]`, ex);
       }
       sendToOtherIframe(event.data);
       break;
+
     case 'logoutClientSideOnly':
+      logM(`Logged out`);
       try {
         theStorage.removeItem('talkyardSession');
       }
       catch (ex) {
-        debugLog(`Error removing 'talkyardSession' from  theStorage [TyERMWKSID]`, ex);
+        logW(`Error removing 'talkyardSession' from  theStorage [TyERMWKSID]`, ex);
       }
       sendToOtherIframe(event.data);
       if (iframe === commentsIframe) {
@@ -803,7 +833,7 @@ function findOneTimeLoginSecret() {
     // Remove the login secret from the url, because it works only once — and if
     // someone copies the url with this soon-used-up secret in, the server
     // will reply Error and Talkyard would show an error message in the browser.
-    debugLog("Found one time login secret, removing from url: " + oneTimeLoginSecret);
+    logM("Found one time login secret, removing from url: " + oneTimeLoginSecret);
     // Maybe use history.replaceState({}, '', '# ...') instead?
     window.location.hash = window.location.hash.replace(
         'talkyardOneTimeLoginSecret=' + oneTimeLoginSecret, '');

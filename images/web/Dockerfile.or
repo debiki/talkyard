@@ -456,7 +456,9 @@ ENV \
     TY_MAX_AGE_YEAR="max-age=2592000, s-maxage=2592000, public" \
     TY_MAX_AGE_MONTH="max-age=2592000, s-maxage=2592000, public" \
     TY_MAX_AGE_WEEK="max-age=604800, s-maxage=604800, public" \
-    TY_MAX_AGE_DAY="max-age=86400, s-maxage=86400, public"
+    TY_MAX_AGE_DAY="max-age=86400, s-maxage=86400, public" \
+    TY_MAX_AGE_HOUR="max-age=3600, s-maxage=3600, public" \
+    TY_MAX_AGE_15MIN="max-age=900, s-maxage=900, public"
 
 
 

@@ -54,6 +54,8 @@ services:
       TY_MAX_AGE_MONTH: "no-cache"
       TY_MAX_AGE_WEEK: "no-cache"
       TY_MAX_AGE_DAY: "no-cache"
+      TY_MAX_AGE_HOUR: "no-cache"
+      TY_MAX_AGE_15MIN: "no-cache"
     # Try this out during development for a while,
     # see: https://stackoverflow.com/questions/43467670/which-capabilities-can-i-drop-in-a-docker-nginx-container
     # DO_AFTER 2021-03-1 reply and say if worked, accept answer.
