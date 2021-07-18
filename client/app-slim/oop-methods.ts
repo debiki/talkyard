@@ -1080,6 +1080,7 @@ export function store_getPostId(store: DiscStore, pageId: PageId,
 
   // The page might not be the current page, if the editor is open and we've
   // temporarily jumped to a different page or user's profile maybe.
+  // BUG happens sometimes, browser error auto reported on 2021-07-15 from one ip addr.
   const page: Page = store.pagesById[pageId];
   dieIf(!page, 'TyE603KWUDB4');
 

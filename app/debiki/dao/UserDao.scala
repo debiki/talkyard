@@ -1605,7 +1605,7 @@ trait UserDao {
 
   def toggleTips(user: Pat, anyTipsSeen: Opt[TourTipsId], hide: Bo,
           onlyAnnouncements: Bo): U = {
-    require(user.isMember, "TyE5AKR5J") // see above [8PLKW46]
+    require(user.isMember, "TyE5AKR5J") // see above [8PLKW46]  BUG reply forbidden instead, skip browser side
     if (user.id < LowestTalkToMemberId)
       return ()
     writeTx { (tx, staleStuff) =>

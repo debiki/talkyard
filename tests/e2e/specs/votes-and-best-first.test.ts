@@ -73,7 +73,7 @@ describe("votes and best first", () => {
     // Add AA, BB, CC, XX, YY, ZZ, but not in that order, instead, an a bit random
     // order: AA, BB, CC reversed and inserted in between the others. Then, when
     // adding votes, we'll notice if AA, BB, CC will get sorted correctly.
-    siteData.posts.push(make.post({
+    siteData.posts.push(make.post({  // Nice!
       nr: postNrXX,
       parentNr: c.BodyNr,
       page: forum.topics.byMariaCategoryA,
