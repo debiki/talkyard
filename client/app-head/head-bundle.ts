@@ -17,7 +17,6 @@
 
 /// <reference path="../types-and-const-enums.ts" />
 /// <reference path="../app-slim/model.ts" />
-/// <reference path="../app-slim/server-vars.d.ts" />
 
  /*
 @(tpi: debiki.SiteTpi, siteId: Int, isInLoginWindow: Boolean, isInLoginPopup: Boolean,

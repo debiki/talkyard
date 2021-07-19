@@ -1,5 +1,4 @@
 
-/// <reference path="server-vars.ts" />
 /// <reference path="model.ts" />
 /// <reference path="translations.d.ts" />
 /// <reference path="../reactjs-types.ts" />
@@ -7,6 +6,25 @@
 declare const t: TalkyardTranslations;
 
 declare const Bliss: any;
+
+// Legacy:
+declare const debiki: {
+  currentYear: Nr,
+  prettyDuration: (thenMs: Date | Nr, nowMs: Date | Nr) => St,
+  prettyLetterDuration: (thenOrDurationMs: Date | Nr, nowMs?: Date | Nr) => St,
+  v0: {
+    util: Ay,
+  },
+  internal: Ay,
+  mentionsServerHelp: Ay,
+};
+
+declare const talkyard: {
+  postElemPostProcessor?: Ay,
+}
+
+
+declare const eds: ServerVars;
 
 
 // In constants.ts:
