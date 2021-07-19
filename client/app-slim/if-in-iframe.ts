@@ -186,7 +186,12 @@ function syncDocSizeWithIframeSize() {
     // Make space for any notf prefs dialog — it can be taller than the emb cmts
     // iframe height, before there're any comments. [IFRRESIZE]
     const anyDialog = $first('.esDropModal_content');
-    const dialogHeightPlusPadding = anyDialog ? anyDialog.clientHeight + 30 : 0;
+    let dialogHeightPlusPadding = 0;
+    if (anyDialog) {
+      const rect = anyDialog.getBoundingClientRect();
+      dialogHeightPlusPadding = rect.bottom + 30;
+      // Was: anyDialog.clientHeight + 30, but that didn't incl whitespace above.
+    }
 
     const currentHeight = Math.max(currentDiscussionHeight, dialogHeightPlusPadding);
 
