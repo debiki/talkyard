@@ -1399,8 +1399,12 @@ export function handleReplyResult(patch: StorePatch, draftToDelete: Draft | unde
 function patchTheStoreManyFrames(storePatch: StorePatch, onOk: () => Vo,
           inFrame: DiscWin) {
   patchTheStore(storePatch, onOk);
-  if (inFrame === window) {
+  if (inFrame === window || !eds.isInIframe) {
     // Just patched above.
+    // @ifdef DEBUG
+    dieIf(inFrame, 'TyE4WM6L2Q0');
+    // @endif
+    void 0;
   }
   else {
     sendToCommentsIframe(['patchTheStore', storePatch], inFrame);

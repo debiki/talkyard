@@ -610,6 +610,8 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
   });
   it(`... doesn't work, she's still logged in afterwards:
             the embedding site still includes the PASETO authn token`, () => {
+    selina_brB.refresh2();
+    selina_brB.switchToEmbCommentsIframeIfNeeded();
     selina_brB.metabar.waitUntilLoggedIn();
   });
   // ----------------
