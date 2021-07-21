@@ -1,6 +1,6 @@
 // This file sends requests to the server we're testing. Doesn't start any server.
 
-/// <reference path="../test-types2.ts"/>
+/// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
 import assert from './ty-assert';
@@ -9,8 +9,6 @@ import c from '../test-constants';
 import { logMessage, logWarning, logError, logServerRequest, die, dieIf,
         } from './log-and-die';
 
-// Didn't find any Typescript defs.
-declare function require(path: string): any;
 const syncRequest = require('sync-request');
 
 let xsrfTokenAndCookies;
@@ -273,6 +271,7 @@ function getTestCounters(): TestCounters {
 function getLastEmailSenTo(siteId: SiteId, email: string,
       pause: any // CLEAN_UP: wrong type — was a wdio browser obj in the past.
       ): EmailSubjectBody | null {
+  throw Error("Make async?");
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
@@ -289,7 +288,7 @@ function getLastEmailSenTo(siteId: SiteId, email: string,
     }
     // Internal functions can pass false, if they pause themselves.
     if (pause !== false) {
-      (wdioBrowserA || wdioBrowser).pause(500 - 100); // 100 ms for a request, perhaps?
+      wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
     }
     else {
       return null;
@@ -399,11 +398,12 @@ function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string,
 
 
 function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+  throw Error("Make async?");
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const email = getLastEmailSenTo(siteId, emailAddress, false);
     const link = !email ? null : utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
     if (!link)
-      (wdioBrowserA || wdioBrowser).pause(500 - 100); // 100 ms for a request, perhaps?
+      wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
     else
       return link;
   }
@@ -422,6 +422,7 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
         : EmailMatchResult {
   let textsToMatch: string[] =
       _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
+  throw Error("Make async?");
   if (opts?.isActivitySummary) {
     textsToMatch = [...textsToMatch, 'e_ActSumEm'];
   }
@@ -463,7 +464,7 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
         '\n');
     }
 
-    (wdioBrowserA || wdioBrowser).pause(500 - 50);
+    wdioBrowserA.pause(500 - 50);
   }
   const missesString = misses.join(', ');
   die(`Never got any email to ${emailAddress} matching ${missesString} [EdE5JGK2Q1]`);
