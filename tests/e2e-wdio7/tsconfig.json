@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "es2019",
+        "types": [
+            "node",
+            "webdriverio/sync",
+            "@wdio/mocha-framework",
+            "expect-webdriverio",
+            "@wdio/devtools-service",
+            "@wdio/firefox-profile-service"]
+    }
+}
+

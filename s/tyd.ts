@@ -623,8 +623,9 @@ async function runE2eTests(): Promise<ExitCode> {
     // Need to escape the backslask, like this:  `sh -c "...\\n..."`,
     // so that  sh   gets "...\n..." instead of a real line break.
     const specsOnePerLine = specs.join('\\n');
+    // This is for wdio 6, located in tests/e2e/.  [wdio_6_to_7]
     const commandLine = `echo "${specsOnePerLine}" ` +
-              `| node_modules/.bin/wdio tests/e2e/wdio.conf.js ${optsStr} ${wdioArgs}`;
+              `| tests/e2e/node_modules/.bin/wdio tests/e2e/wdio.conf.js ${optsStr} ${wdioArgs}`;
     const exitCode = await spawnInForeground('sh', ['-c', commandLine]);
     return exitCode;
   }
