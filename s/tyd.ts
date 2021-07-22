@@ -11,6 +11,7 @@ import type { ExitCode } from './impl/tyd-util';
 import { runE2eTestsOldWdio6 } from './impl/tyd-e2e-tests-old-wdio-6';
 //import { runE2eTestsNewWdio7 } from './impl/tyd-e2e-tests-new-wdio-7';
 
+/// <reference path="../client/types-and-const-enums.ts" />
 
 
 // Bash, Zsh, Fish shell command line completion:
@@ -394,14 +395,20 @@ if (mainCmd === 'tapi' || mainCmd === 'testapi') {
 // -----------------------------------------------------------------------
 
 
+let wdioVersion: 6 | 7 = 7;
 
-if (mainCmd === 'e6' || mainCmd === 'e2e6') {
-  runE2eTestsOldWdio6({ allSubCmdsSt, allSubCmds, opts });
-}
-else if (mainCmd === 'e7' || mainCmd === 'e2e7') {
-  //runE2eTestsNewWdio7({ allSubCmdsSt, allSubCmds, opts });
-}
-else if (!mainCmdIsOk) {
-  console.error(`Werid main command: ${mainCmd}. Error. Bye.  [TyE30598256]`);
-  process.exit(1);
+switch (mainCmd) {
+  case 'e6':
+  case 'e2e6':
+    wdioVersion = 6;
+    // continue
+  case 'e7':
+  case 'e2e7':
+    runE2eTestsOldWdio6({ wdioVersion, allSubCmdsSt, allSubCmds, opts });
+    break;
+  default:
+    if (!mainCmdIsOk) {
+      console.error(`Werid main command: ${mainCmd}. Error. Bye.  [TyE30598256]`);
+      process.exit(1);
+    }
 }

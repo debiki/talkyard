@@ -1,9 +1,12 @@
 /// <reference path="../test-types2.ts"/>
 
 import * as _ from 'lodash';
-import * as minimist from 'minimist';
+// Won't work, results in error:  minimist is not a function
+// import * as minimist from 'minimist';
+// It's not available as an ES6 module? But this works:
+const minimist = require('minimist');
+import type { ParsedArgs as minimist_ParsedArgs } from 'minimist';
 import { die, dieIf, logDebugIf, logWarning, unusualColor } from './log-and-die';
-
 
 let settings: Partial<TestSettings> = {
   host: 'localhost',
@@ -25,7 +28,7 @@ const argvFromEnv: St[] | U = argvFromEnvSt?.split(' ');
 logDebugIf(!!argvFromEnvSt, `env.TY_ENV_ARGV_ST: ${argvFromEnvSt}`);
 
 
-const args: minimist.ParsedArgs = minimist(argvFromEnv || process.argv.slice(2));
+const args: minimist_ParsedArgs = minimist(argvFromEnv || process.argv.slice(2));
 _.extend(settings, args);
 
 if (settings.randomLocalHostname) {

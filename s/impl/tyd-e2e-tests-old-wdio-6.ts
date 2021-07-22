@@ -7,8 +7,18 @@ import { die, dieIf, logMessage, logMessageIf, logDebug, logError, logErrorIf, l
 import * as tyu from './tyd-util';
 import type { ExitCode } from './tyd-util';
 
+//type Pr<R> = Promise<R>;
+
+//x <reference path="../../client/short-types.ts" />
+//x <reference path="../../client/types-and-const-enums.ts" />
+
+
 export function runE2eTestsOldWdio6(ps: {
-        allSubCmdsSt: St, allSubCmds: St[], opts: minimist_ParsedArgs }) {
+  wdioVersion: 6 | 7,
+  allSubCmdsSt: St,
+  allSubCmds: St[],
+  opts: minimist_ParsedArgs,
+}) {
 
 const { allSubCmdsSt, allSubCmds, opts } = ps;
 
@@ -44,10 +54,13 @@ tyu.spawnInForeground(`mkdir ${e2eLogsDirOld}`);
 //const e2eSpecsPattern = `tests/e2e/specs/${subCmd ? `*${subCmd}*.ts` : '*.ts'}`;
 //const allMatchingSpecs_old = glob.sync(e2eSpecsPattern, {});
 
-const allSpecs = glob.sync('tests/e2e/specs/*.ts', {});
+const testProjDir = ps.wdioVersion === 6 ? 'tests/e2e' : 'tests/e2e-wdio7';
+const specsGlob = testProjDir + '/specs/' + (ps.wdioVersion === 6 ? '*.ts' : '**.e2e.ts');
+const allSpecs = glob.sync(specsGlob, {});
+
 let allMatchingSpecs: St[] = [...allSpecs];
 
-for (let pattern of allSubCmds) {
+for (const pattern of allSubCmds) {
   // Dupl filter (987RM29565W)
   allMatchingSpecs = allMatchingSpecs.filter((fileName: St) => {
     // '!' and '0' (like, Nothing, Not) means exclude those tests.
@@ -61,6 +74,7 @@ for (let pattern of allSubCmds) {
 
 
 console.log(`Specs patterns:  ${allSubCmdsSt}`);
+console.log(`Specs glob:      ${specsGlob}`);
 console.log(`Specs matching:\n - ${allMatchingSpecs.join('\n - ')}`);
 
 
@@ -68,8 +82,15 @@ console.log(`Specs matching:\n - ${allMatchingSpecs.join('\n - ')}`);
 // Let wdio handle signals — until it exits.
 // But maybe exit directly on SIGINT if running >= 2 specs? Then probably not debugging.
 process.on('SIGINT', function() {
-  logMessage(`Caught SIGINT.`);
+  if (allMatchingSpecs.length >= 2) {
+    logMessage(`Caught SIGINT. Exiting, since >= 2 specs, apparently not debugging.`);
+    process.exit(1);
+  }
+  else {
+    logMessage(`Caught SIGINT, not exiting, maybe we're debugging?`);
+  }
 });
+
 
 // Can look at node_modules/@wdio/cli/build/launcher.js  to see
 // ex of how handle async errs?
@@ -180,9 +201,13 @@ async function runE2eTests(): Promise<ExitCode> {
     // Need to escape the backslask, like this:  `sh -c "...\\n..."`,
     // so that  sh   gets "...\n..." instead of a real line break.
     const specsOnePerLine = specs.join('\\n');
-    // This is for wdio 6, located in tests/e2e/.  [wdio_6_to_7]
-    const commandLine = `echo "${specsOnePerLine}" ` +
-              `| tests/e2e/node_modules/.bin/wdio tests/e2e/wdio.conf.js ${optsStr} ${wdioArgs}`;
+    const wdioConfFile = ps.wdioVersion === 6
+          ? `${testProjDir}/wdio.conf.js`  // wdio 6, in tests/e2e/.  [wdio_6_to_7]
+          : `${testProjDir}/wdio.conf.ts`; // wdio 7, in tests/e2e-wdio7/
+    const commandLine =
+            `echo "${specsOnePerLine}" ` +
+              `| ${testProjDir}/node_modules/.bin/wdio ${wdioConfFile} ${
+                    optsStr} ${wdioArgs}`;
     const exitCode = await tyu.spawnInForeground('sh', ['-c', commandLine]);
     return exitCode;
   }

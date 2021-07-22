@@ -1,7 +1,7 @@
 /// <reference path="../test-types2.ts"/>
 /// <reference path="../../../to-talkyard/src/to-talkyard.d.ts" />
 
-import * as assert from 'assert';
+import assert from './ty-assert';
 import * as log from './log-and-die';
 import * as make from './make';
 
@@ -81,7 +81,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       unlistTopics?: boolean,
       deletedAtMs?: number,
     }): CategoryJustAdded {
-      assert(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
+      assert.ok(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
       const category = make.categoryWithIdFor(opts.id, forumPage);
       category.extId = opts.extId;
       category.parentId = opts.parentCategoryId;  // note: different name
