@@ -1,4 +1,4 @@
-name := "ed-core"
+name := "ty-model"
 
 organization := "com.debiki"
 
@@ -23,3 +23,4 @@ libraryDependencies ++= Seq(
 
 scalacOptions += "-deprecation"
 
+compileOrder := CompileOrder.JavaThenScala
