@@ -2,8 +2,9 @@ import * as _  from 'lodash';
 import { ParsedArgs as minimist_ParsedArgs } from 'minimist';
 import * as fs from 'fs';
 import * as glob from 'glob';
-import { die, dieIf, logMessage, logMessageIf, logDebug, logError, logErrorIf, logUnusual
-            } from '../../tests/e2e/utils/log-and-die';
+import { die, dieIf, logMessage, logMessageIf, logDebug,
+         logError, logErrorIf, logErrorNoTrace, logErrorNoTraceIf, logUnusual
+         } from '../../tests/e2e-wdio7/utils/log-and-die';
 import * as tyu from './tyd-util';
 import type { ExitCode } from './tyd-util';
 
@@ -140,8 +141,8 @@ async function runE2eTests(): Promise<ExitCode> {
       if (!zeroOrFirstErrorCode) {
         zeroOrFirstErrorCode = exitCode;
       }
-      logErrorIf(exitCode !== 0, `ERROR exit code ${exitCode} from:  ${what}`);
-      logMessageIf(exitCode === 0, `Done, fine, exit code 0 from:  ${what}`);
+      logErrorNoTraceIf(exitCode !== 0, `ERROR exit code ${exitCode}, from:  ${what}`);
+      logMessageIf(exitCode === 0, `Done, exit code 0, fine, from:  ${what}`);
     }
   }
 
@@ -350,9 +351,10 @@ console.log(`Running e2e tests ...`);
 runE2eTests().then((code) => {
   const isFine = code === 0;
   const fineOrFailed = isFine ? 'fine' : 'tests FAILED';
-  const logFn = isFine ? logMessage : logError;
+  const logFn = isFine ? logMessage : logErrorNoTrace;
   logFn(`\n\nDone running e2e tests, exit code: ${code}, ${fineOrFailed}\n`);
-  logErrorIf(code === undefined, `Error: Didn't run any tests at all [TyE0SPECSRUN]`);
+  logErrorNoTraceIf(code === undefined,
+        `Error: Didn't run any tests at all [TyE0SPECSRUN]`);
   process.exit(code);
 }, (error) => {
   console.error(`Error starting tests [TyEE2ESTART]`, error);  // error.stacktrace ?
