@@ -276,8 +276,10 @@ export function startStaticFileServer(portNr: Nr, relativeFileDir: St) {
   }
   else {
     dieIf(server.relativeFileDir !== relativeFileDir,
-          `Trying to starts many servers on the same port, but different file dirs ` +
-          `[TyE60RMD25]`);
+          `Trying to starts many servers on the same port, but different file dirs:` +
+          `    old server.relativeFileDir: ${server.relativeFileDir}\n` +
+          `    new server.relativeFileDir: ${relativeFileDir} ` +
+          `  [TyE60RMD25]`);
     server.numWantsIt = server.numWantsIt + 1;
   }
 }

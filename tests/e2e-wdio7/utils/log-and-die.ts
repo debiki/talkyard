@@ -79,6 +79,12 @@ export function logErrorIf(test: boolean, message: string, ex?: any) {
   }
 }
 
+export function logErrorNoTraceIf(test: Bo, message: St, ex?: Ay) {
+  if (test) {
+    logErrorNoTrace(message, ex);
+  }
+}
+
 export function logErrorNoTrace(message: string, ex?: any) {
   const m = errorColor(message);
   // Avoid printing 'undefined' if ex is undefined.
