@@ -328,6 +328,7 @@ export class TyE2eTestBrowser {
   #hostsVisited = {};
   #isWhere: IsWhere | U;
   #isOnEmbeddedCommentsPage = false;
+  #useCommentsIframe: { discussionId: St };
 
   isOnEmbeddedPage(): boolean {
     return this.#isWhere && IsWhere.EmbFirst <= this.#isWhere && this.#isWhere <= IsWhere.EmbLast;
@@ -1147,6 +1148,11 @@ export class TyE2eTestBrowser {
     }
 
 
+    useCommentsIframe(ps: { discussionId: St }) {
+      this.#useCommentsIframe = ps;
+    }
+
+
     async switchToEmbEditorIframeIfNeeded() {
       if (!this.#isWhere || this.#isWhere == IsWhere.Forum)
         return;
@@ -1161,7 +1167,16 @@ export class TyE2eTestBrowser {
       await this.switchToAnyParentFrame();
       // Let's wait for the editor iframe, so Reply buttons etc will work.
       await this.waitForExist('iframe#ed-embedded-editor');
-      await this.switchToFrame('iframe#ed-embedded-comments');
+      let commentsIframeSelector = '';
+      if (this.#useCommentsIframe?.discussionId) {
+        commentsIframeSelector =
+                `.talkyard-comments[data-discussion-id="${
+                        this.#useCommentsIframe.discussionId}"] iframe`;
+      }
+      else {
+        commentsIframeSelector = 'iframe#ed-embedded-comments';
+      }
+      await this.switchToFrame(commentsIframeSelector);
       if (ps.waitForContent !== false) {
         await this.waitForExist('.DW');
       }

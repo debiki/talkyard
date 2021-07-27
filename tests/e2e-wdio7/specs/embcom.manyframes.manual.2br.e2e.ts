@@ -1,15 +1,15 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import settings from '../utils/settings';
+import { dieIf } from '../utils/log-and-die';
+import c from '../test-constants';
 
 
 let everyonesBrowsers: TyAllE2eTestBrowsers;
@@ -34,7 +34,7 @@ const embPage404FilePath = 'target' + embPage404SlashSlug;
 
 describe(`embcom.many-comment-iframes-same-page.2br  TyTE2E50RMF24S`, () => {
 
-  it(`construct site`, () => {
+  it(`construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Many Comment Iframes",
@@ -46,9 +46,9 @@ describe(`embcom.many-comment-iframes-same-page.2br  TyTE2E50RMF24S`, () => {
     builder.getSite().settings.allowEmbeddingFrom = embeddingOrigin;
 
 
-    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers);
-    brA = new TyE2eTestBrowser(wdioBrowserA);
-    brB = new TyE2eTestBrowser(wdioBrowserB);
+    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owen_brA = brA;
@@ -62,14 +62,14 @@ describe(`embcom.many-comment-iframes-same-page.2br  TyTE2E50RMF24S`, () => {
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`import site`, () => {
+  it(`import site`, async () => {
     site = server.importSiteData(forum.siteData);
     server.skipRateLimits(site.id);
   });
 
 
 
-  it(`Creates an embedding page`, () => {
+  it(`Creates an embedding page`, async () => {
     const dir = 'target';
     fs.writeFileSync(embPage404FilePath, makeHtml('404', '#404'));
     //fs.writeFileSync(`${dir}/page-b-slug.html`, makeHtml('bbb', '#040'));
@@ -80,12 +80,13 @@ describe(`embcom.many-comment-iframes-same-page.2br  TyTE2E50RMF24S`, () => {
     }
   });
 
-  it("Maria opens embedding page aaa", () => {
-    maria_brB.go2(embeddingOrigin + embPage404SlashSlug);
+  it("Maria opens embedding page aaa", async () => {
+    await maria_brB.go2(embeddingOrigin + embPage404SlashSlug);
   });
 
-  it("... logs in", () => {
-    //maria_brB.complex.loginIfNeededViaMetabar(maria);
+  it("... logs in", async () => {
+    await maria_brB.useCommentsIframe({ discussionId: '222' });
+    await maria_brB.complex.loginIfNeededViaMetabar(maria);
   });
 
 });
