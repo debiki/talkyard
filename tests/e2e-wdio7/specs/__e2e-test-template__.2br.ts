@@ -1,16 +1,15 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-// import fs = require('fs');  EMBCMTS
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
-
+import settings from '../utils/settings';
+import { dieIf } from '../utils/log-and-die';
+import c from '../test-constants';
 
 let allBrowsers: TyAllE2eTestBrowsers;
 let brA: TyE2eTestBrowser;
@@ -58,7 +57,7 @@ const apiSecret: TestApiSecret = {
 
 describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
-  it(`construct site`, () => {
+  it(`construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({ // or addTwoPagesForum, addEmptyForum, addLargeForum
       title: "Some E2E Test",
@@ -113,11 +112,11 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     builder.getSite().apiSecrets = [apiSecret];
 
     // Add an ext id to a category.
-    forum.categories.specificCategory.extId = 'specific cat ext id';
+    //forum.categories.specificCategory.extId = 'some-id'; // only in TwoPagesTestForum
 
-    allBrowsers = new TyE2eTestBrowser(allWdioBrowsers);
-    brA = new TyE2eTestBrowser(wdioBrowserA);
-    brB = new TyE2eTestBrowser(wdioBrowserB);
+    allBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owen_brA = brA;
@@ -143,7 +142,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`import site`, () => {
+  it(`import site`, async () => {
     site = server.importSiteData(forum.siteData);
     server.skipRateLimits(site.id);
     michaelsTopicUrl = site.origin + '/' + forum.topics.byMichaelCategoryA.slug;
@@ -151,15 +150,15 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
   });
 
 
-  it(`Owen logs in to admin area, ... `, () => {
-    owen_brA.adminArea.goToUsersEnabled(site.origin);
-    owen_brA.loginDialog.loginWithPassword(owen);
+  it(`Owen logs in to admin area, ... `, async () => {
+    await owen_brA.adminArea.goToUsersEnabled(site.origin);
+    await owen_brA.loginDialog.loginWithPassword(owen);
   });
 
 
-  it(`Maria logs in`, () => {
-    maria_brB.go2(michaelsTopicUrl);
-    maria_brB.complex.loginWithPasswordViaTopbar(maria);
+  it(`Maria logs in`, async () => {
+    await maria_brB.go2(michaelsTopicUrl);
+    await maria_brB.complex.loginWithPasswordViaTopbar(maria);
   });
 
 
@@ -174,10 +173,10 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     }
   });
   it("Maria opens embedding page aaa", () => {
-    maria_brB.go(embeddingOrigin + '/page-a-slug.html');
+    await maria_brB.go(embeddingOrigin + '/page-a-slug.html');
   });
   it("... logs in", () => {
-    maria_brB.complex.loginIfNeededViaMetabar(maria);
+    await maria_brB.complex.loginIfNeededViaMetabar(maria);
     */
   });
 
