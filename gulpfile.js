@@ -215,9 +215,15 @@ let versionTag;
 let preprocessProdContext;
 
 // Here we'll place the generated js, min.js and min.js.gz files. [GZPATHS]
-const webDest = 'images/web/assets';
+const webDest = 'images/web/assets';  // assets-dev (no min.js), assets-prod (only min.js)
+const webDestDev = 'images/web/assets-dev';  // only .js, no min.js
+const webDestProd = 'images/web/assets-prod';  // only min.js
 let webDestVersioned;
+let webDestVersionedDev;
+let webDestVersionedProd;
 let webDestTranslations;
+let webDestTranslationsDev;
+let webDestTranslationsProd;
 
 const webDestFonts = `images/web/fonts`;
 
@@ -767,8 +773,8 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
       // The Scala app server wants a min.js (no gzip compression), for Nashorn.
       makeMinJsGzStream(serverDest, false),
       // Nginx wants both min.js and min.js.gz [UNCOMPRAST].
-      makeMinJsGzStream(webDest, true),
-      makeMinJsGzStream(webDestVersioned, true));
+      makeMinJsGzStream(webDest, true),  // webDevDest, webProdDest
+      makeMinJsGzStream(webDestVersioned, true));  // webDevDestVersioned, webProdDestVersioned
 }));
 
 
@@ -1035,6 +1041,8 @@ gulp.task('clean', gulp.series('cleanTranslations', () => {
           `target/client`,
           `${webDest}/*`,
           `!${webDest}/.gitkeep`,
+          // `!${webDestProd}/*`,
+          // `!${webDestProd}/.gitkeep`,
           `${webDestFonts}/*`,
           `!${webDestFonts}/.gitkeep`,
           `${serverDest}/*`,

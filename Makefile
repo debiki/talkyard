@@ -108,6 +108,9 @@ print_help:
 	@echo "https://www.talkyard.io/forum/."
 	@echo
 
+# devbuild or prodbuild
+BUILD_MODE := devbuild
+BM := $(BUILD_MODE)
 
 DOCKER_REPOSITORY := \
   $(shell sed -nr 's/^DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env)
@@ -120,6 +123,8 @@ DEV_RELEASE_CHANNEL_SUFFIX := dev
 
 TALKYARD_VERSION := \
   $(shell cat version.txt)
+
+TYV := $(TALKYARD_VERSION)
 
 define ask_for_root_password
   sudo echo
@@ -155,62 +160,64 @@ node_modules/.bin/gulp: git-subm-init-upd
 # BUG RISK sync with Gulp so won't accidentally forget to (re)build? [GZPATHS]
 # Sync with the languages in module ty-translations. [5JUKQR2]
 #  public/res/2d-bundle.min.js.gz // [SLIMTYPE]
-prod_asset_bundle_files:=\
-  images/web/assets/talkyard-comments.min.js.gz \
-  images/web/assets/talkyard-service-worker.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/editor-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/more-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/slim-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/staff-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/styles-bundle.min.css.gz \
-  images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.css.gz \
-  images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.min.css.gz \
-  images/web/assets/$(TALKYARD_VERSION)/zxcvbn.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/es_CL/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/es_CL/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/lv_LV/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/lv_LV/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/pl_PL/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/pl_PL/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/pt_BR/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/pt_BR/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/ru_RU/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/ru_RU/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.min.js.gz \
-  images/app/assets/server-bundle.min.js \
-  images/app/assets/translations/en_US/i18n.min.js \
-  images/app/assets/translations/es_CL/i18n.min.js \
-  images/app/assets/translations/de_DE/i18n.min.js \
-  images/app/assets/translations/he_IL/i18n.min.js \
-  images/app/assets/translations/pl_PL/i18n.min.js
+asset_bundles-prodbuild:=\
+  images/web/assets-prodbuild/talkyard-comments.min.js.gz \
+  images/web/assets-prodbuild/talkyard-service-worker.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/editor-bundle.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/more-bundle.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/slim-bundle.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/staff-bundle.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/styles-bundle.min.css.gz \
+  images/web/assets-prodbuild/$(TYV)/styles-bundle.rtl.css.gz \
+  images/web/assets-prodbuild/$(TYV)/styles-bundle.rtl.min.css.gz \
+  images/web/assets-prodbuild/$(TYV)/zxcvbn.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/en_US/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/en_US/i18n.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/es_CL/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/es_CL/i18n.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/de_DE/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/de_DE/i18n.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/he_IL/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/he_IL/i18n.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/lv_LV/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/lv_LV/i18n.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/pl_PL/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/pl_PL/i18n.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/pt_BR/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/pt_BR/i18n.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/ru_RU/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/ru_RU/i18n.min.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/sv_SE/i18n.js.gz \
+  images/web/assets-prodbuild/$(TYV)/translations/sv_SE/i18n.min.js.gz \
+  images/app/assets-prodbuild/server-bundle.min.js \
+  images/app/assets-prodbuild/translations/en_US/i18n.min.js \
+  images/app/assets-prodbuild/translations/es_CL/i18n.min.js \
+  images/app/assets-prodbuild/translations/de_DE/i18n.min.js \
+  images/app/assets-prodbuild/translations/he_IL/i18n.min.js \
+  images/app/assets-prodbuild/translations/pl_PL/i18n.min.js
 
 # Sync this task name w e2e test [MKBUNDLS].
-prod_asset_bundles: debug_asset_bundles $(prod_asset_bundle_files)
+#prod_asset_bundles: debug_asset_bundles $(prod_asset_bundle_files)
 
 $(prod_asset_bundle_files): $@
 	s/d-gulp build_release_dont_clean_before
 
 
-# Use .js.gz, because .js files get deleted (aren't needed). [UNCOMPRAST]
+# Use .js.gz, because .js files get deleted (aren't needed). [UNCOMPRAST]   NO SKIP .gz here
 # Except for the server bundle — it loads non-gz scripts.
-debug_asset_bundles_files: \
-  images/app/assets/server-bundle.js \
-  images/web/assets/talkyard-comments.js.gz \
-  images/web/assets/talkyard-service-worker.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/head-bundle.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz
+# /assets-dev/
+# debug_asset_bundles_files:
+asset_bundles-devbuild: \
+  images/app/assets-devbuild/server-bundle.js \
+  images/web/assets-devbuild/talkyard-comments.js.gz \
+  images/web/assets-devbuild/talkyard-service-worker.js.gz \
+  images/web/assets-devbuild/$(TYV)/editor-bundle.js.gz \
+  images/web/assets-devbuild/$(TYV)/head-bundle.js.gz \
+  images/web/assets-devbuild/$(TYV)/more-bundle.js.gz \
+  images/web/assets-devbuild/$(TYV)/slim-bundle.js.gz \
+  images/web/assets-devbuild/$(TYV)/staff-bundle.js.gz \
+  images/web/assets-devbuild/$(TYV)/zxcvbn.js.gz \
+  images/web/assets-devbuild/$(TYV)/styles-bundle.css.gz
 
 
 
@@ -228,7 +235,7 @@ debug_asset_bundles_files: \
 #
 # Doesn't work:  $(shell find client/{app-slim,server}/   — so 2 lines instead.
 #
-images/app/assets/server-bundle.js: \
+images/app/assets-$(BM)/server-bundle.js: \
        $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        $(shell find client/server/   -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        modules/sanitize-html/dist/sanitize-html.min.js \
@@ -249,7 +256,7 @@ images/app/assets/server-bundle.js: \
 
 
 # Sync w gulpfile.js [embcmts_js_files]
-images/web/assets/talkyard-comments.js.gz: \
+images/web/assets-$(BM)/talkyard-comments.js.gz: \
        $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        client/third-party/bliss.shy.js \
        client/third-party/smoothscroll-tiny.js \
@@ -259,14 +266,14 @@ images/web/assets/talkyard-comments.js.gz: \
 
 
 # Sync w gulpfile.js. [sw_js_files]
-images/web/assets/talkyard-service-worker.js.gz: \
+images/web/assets-$(BM)/talkyard-service-worker.js.gz: \
        $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSwTypescript-concatScripts
 
 
 # Sync w gulpfile.js. [edr_js_files]
-images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
+images/web/assets-$(BM)/$(TYV)/editor-bundle.js.gz: \
        $(shell find client/app-editor/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        modules/sanitize-html/dist/sanitize-html.js \
        client/third-party/html-css-sanitizer-bundle.js \
@@ -281,14 +288,14 @@ images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
 
 
 # Sync w gulpfile.js. [head_js_files]
-images/web/assets/$(TALKYARD_VERSION)/head-bundle.js.gz: \
+images/web/assets-$(BM)/$(TYV)/head-bundle.js.gz: \
        $(shell find client/app-head/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileHeadTypescript-concatScripts
 
 
 # Sync with gulpfile.ts [more_js_files].
-images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
+images/web/assets-$(BM)/$(TYV)/more-bundle.js.gz: \
        $(shell find client/app-more/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        node_modules/react-bootstrap/dist/react-bootstrap.js \
        node_modules/classnames/index.js \
@@ -300,7 +307,7 @@ images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
 
 
 # Sync with gulpfile.ts [slim_js_files].
-images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
+images/web/assets-$(BM)/$(TYV)/slim-bundle.js.gz: \
        $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        node_modules/react/umd/react.development.js \
        node_modules/react-dom/umd/react-dom.development.js \
@@ -321,17 +328,17 @@ images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSlimTypescript-concatScripts
 
-images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz: \
+images/web/assets-$(BM)/$(TYV)/staff-bundle.js.gz: \
        $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileStaffTypescript-concatScripts
 
-images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz: \
+images/web/assets-$(BM)/$(TYV)/zxcvbn.js.gz: \
        node_modules/zxcvbn/dist/zxcvbn.js
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  bundleZxcvbn
 
-images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz: \
+images/web/assets-$(BM)/$(TYV)/styles-bundle.css.gz: \
        $(shell  find client/  -type f  \(  -name '*.styl'  -o  -name '*.css'  \)  )
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compile-stylus
@@ -341,33 +348,33 @@ images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz: \
 
 # Skip minify, for now.
 ext_iframe_js: \
-        images/web/assets/ext-iframe.min.js \
-        images/web/assets/ext-iframe.min.js.gz \
-        images/web/assets/ext-iframe.js.gz
+        images/web/assets-$(BM)/ext-iframe.min.js \
+        images/web/assets-$(BM)/ext-iframe.min.js.gz \
+        images/web/assets-$(BM)/ext-iframe.js.gz
 
-images/web/assets/ext-iframe.min.js: client/ext-iframe.js
-	@cp      client/ext-iframe.js   images/web/assets/ext-iframe.min.js
+images/web/assets-$(BM)/ext-iframe.min.js: client/ext-iframe.js
+	@cp      client/ext-iframe.js   images/web/assets-$(BM)/ext-iframe.min.js
 
-images/web/assets/ext-iframe.min.js.gz: client/ext-iframe.js
-	@gzip -c client/ext-iframe.js > images/web/assets/ext-iframe.min.js.gz
+images/web/assets-$(BM)/ext-iframe.min.js.gz: client/ext-iframe.js
+	@gzip -c client/ext-iframe.js > images/web/assets-$(BM)/ext-iframe.min.js.gz
 
-images/web/assets/ext-iframe.js.gz: client/ext-iframe.js
-	@gzip -c client/ext-iframe.js > images/web/assets/ext-iframe.js.gz
+images/web/assets-$(BM)/ext-iframe.js.gz: client/ext-iframe.js
+	@gzip -c client/ext-iframe.js > images/web/assets-$(BM)/ext-iframe.js.gz
 
 
 # ----- Translations
 
 # For Play Framework, the app container.
-# E.g.:  images/app/assets/translations/en_US/i18n.js  etc.
+# E.g.:  images/app/assets-$(BM)/translations/en_US/i18n.js  etc.
 transl_dev_app_bundle_files := \
   ${shell find translations/ -name '*.ts'  \
-              | sed -nr 's;(.*)\.ts;images/app/assets/\1.js;p' }
+              | sed -nr 's;(.*)\.ts;images/app/assets-$(BM)/\1.js;p' }
 
 # For Nginx, the web container — includes the version number, for asset versioning.
-# E.g. images/web/assets/v0.2020.25/translations/en_US/i18n.js
+# E.g. images/web/assets-prodbuild/v0.2020.25/translations/en_US/i18n.js
 transl_dev_web_bundle_files := \
   ${shell find translations/ -name '*.ts'  \
-              | sed -nr 's;(.*)\.ts;images/web/assets/$(TALKYARD_VERSION)/\1.js;p' }
+              | sed -nr 's;(.*)\.ts;images/web/assets-$(BM)/$(TYV)/\1.js;p' }
 
 $(transl_dev_app_bundle_files) $(transl_dev_web_bundle_files): \
         ${shell find translations/ -name '*.ts' }
@@ -453,21 +460,29 @@ pristine: clean
 
 build:
 	@echo "Build what, dev or prod images? Do one of these:"
-	@echo "   make dev-images"
-	@echo "   make prod-images"
+	@echo "   make images"
+	@echo "   make images BUILD_MODE=prodbuild"
 
 
-dev-images:  debug_asset_bundles
+images:  images-$(BM)
+
+images-devbuild:  asset_bundles-devbuild
 	s/d build
 
+images-prodbuild:  asset_bundles-prodbuild
+	s/build-prod-images.sh
 
-# Starts an SBT shell where you can run unit tests by typing 'test'.
-play-cli: debug_asset_bundles dead-app
-	s/d-cli
+#dev-images:  debug_asset_bundles
+#	s/d build
 
-# Starts but uses prod assets bundles.
-play-cli-prod: prod_asset_bundles dead-app
-	IS_PROD_TEST=true s/d-cli
+
+# # Starts an SBT shell where you can run unit tests by typing 'test'.
+# play-cli: debug_asset_bundles dead-app
+# 	s/d-cli
+#
+# # Starts but uses prod assets bundles.
+# play-cli-prod: prod_asset_bundles dead-app
+# 	IS_PROD_TEST=true s/d-cli
 
 
 db-cli:
@@ -480,7 +495,7 @@ db-cli:
 	  s/d-psql "$$db_user" "$$db_user"
 
 
-up: debug_asset_bundles
+up: asset_bundles-$(BM)  # debug_asset_bundles
 	s/d up -d
 	@echo
 	@echo "Started. Now, tailing logs..."
