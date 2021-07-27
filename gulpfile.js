@@ -159,7 +159,7 @@ function expandCPreProcessorMacros(ps) {  // : { debug?: true, prod?: true }
     //   >   // #endif
     // DO_AFTER soon: remove dependency 'gulp-preprocess', use cpp instead  [js_macros]
     // and change  '  // @ifdef DEBUG   .. // @endif'  to  '#ifdef DEBUG ... #endif'.
-    const sourceCodeStWithIfdefUncommented = sourceCodeSt.replaceAll(
+    const sourceCodeStWithIfdefUncommented = sourceCodeSt.replace(
             /^[ \t]*\/\/[ \t]*(#[a-z]+([ \t]+[a-zA-Z0-9_]+)?)[ \t]*$/gm, '$1');
 
     // cpp -traditional-cpp -nostdinc -P -E -CC /home/user/styd/d9/client/embedded-comments/blog-comments.ts ./blog-comments.ts.after-cpp.ts -imacros /home/user/styd/d9/client/macros-prod.cpp
