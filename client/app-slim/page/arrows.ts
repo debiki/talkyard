@@ -172,7 +172,7 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   //                                             |parent comment    |
   //                                             |text…             |
   //                                             +------------------+
-  //                                              \
+  //                                              ＼
   //                                               v
   // The child comment (would be this post,      +-----—------------+
   // if `isOnlyChild` below is true).            |the only child    |
@@ -212,7 +212,7 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   // is "dw-arw-vt-line-to-sibling-1",           |    |child comment|
   // again.                                      |    |text…        |
   //                                             |    +-------------+
-  //                                             \
+  //                                             ＼
   // This very last line to the :last-child -->   v
   // is "dw-arw-vt-curve-to-unindented".         +-----—------------+
   // Here, numRemainingWithArrows is 0.          |:last-child       |
@@ -234,7 +234,7 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
     arrows.push(
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-2', key: 25 }));
 
-    //          \
+    //          ＼
     // Draw the  v  arrow to the very last sibling: — ... but always indent it, nowadays. [6UWADTW0]
     if (numRemainingWithArrows === 1) {
       //if (!horizontalLayout && depth === 2) {
