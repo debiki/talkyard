@@ -32,7 +32,7 @@
 
 
 export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') {
-  // /-/admin/*
+  // /-/admin/ *
   // app/views/adminPage.scala.html
   // <div id="esPageColumn">
   // <div id="esPageScrollable">
@@ -51,7 +51,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
     return;
   }
 
-  // /-/superadmin/*clientRoute
+  // /-/superadmin/ *clientRoute
   // adminPage.scala.html, appId = "theSuperAdminApp"
   const superAdminAppElem = document.getElementById('theSuperAdminApp');
   if (superAdminAppElem) {
@@ -60,7 +60,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
     return;
   }
 
-  // /-/tags/*
+  // /-/tags/ *
   // adminPage.scala.html, appId = "theTagsApp"
   // No! This should be part of  MoreScriptsRoutesComponent.
   const tagsAppElem = document.getElementById('theTagsApp');
