@@ -111,6 +111,10 @@ Reproducible builds.
 [rate_limits]
 Configurable rate limits.
 
+[precompile_luajit]  COULD_OPTIMIZE
+See: https://blog.openresty.com/en/luajit-bytecode/
+Many times faster startup time, hopefully uses less memory too?
+
 [server_limits] [site_limits]
 If admins try to configure too "high" values, e.g. 1 TB upload size,
 need a way for them to know they're above the server or site limits,
@@ -686,6 +690,9 @@ E.g. disallow toxic speech, or pics of zebras if that's against the community's 
 Blake3 is ~ 10x faster than SHA2:
   https://news.ycombinator.com/item?id=22021769
   https://news.ycombinator.com/item?id=22003315
+  Java bindings:
+    https://dev.to/johanneslichtenberger/blake3-crytopgrahic-hash-function-java-implementation-2bg7
+    —>  https://github.com/sken77/BLAKE3jni
 Wait until there's a well tested Java lib available?
 Then use Blake3 instead e.g. to hash long Redis keys (and just delete the old
 cached things, it's a cache).
