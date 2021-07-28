@@ -555,6 +555,18 @@ editor -
   maximize editor:
           - embed-twitter-tweets-etc.test.ts  TyT0JSM8PF68.TyT033SKHWW73M
   preview:
+    not embedded:
+            - TESTS_MISSING barely needed
+    just one comments iframe:
+            - TESTS_MISSING barely needed
+    many comments iframes:
+      replies:
+            - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02.TyTREPREVW
+            - TESTS_MISSING actually scroll between replying-to-post and reply preview
+            - TESTS_MISSING preview placed just below post being replied to
+      edits:
+            - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02.TyTEDPREVW
+            - TESTS_MISSING scroll to edits preview
   upload things:  (7KFC2)
   other buttons -
     ...
@@ -791,9 +803,10 @@ embedded comments:
   comment counts:
           - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
   many comments iframes same page:
-            - embcom.many-comment-iframes-same-page.2br  TyTE2E50RMF24S  TESTS_MISSING
+            - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01
+            - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02
+            - TESTS_MISSING:  forgetRemovedCommentIframes  talkyardAddCommentsIframe
   sso: see [.embcom.sso]
-
 
 upload links,
 uploads -  (7KFC2)
@@ -1124,13 +1137,22 @@ draft: [7WKABZP2]
           - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
   delete:
           - drafts-delete.test.ts  TyT5BKRQ0
+          - draft previews [.dft_pvs]
+  resume, delete in page:
   works also if not logged in:
           - forum-drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
           - embedded-comments-drafts-not-logged-in.test.ts  TyT2ZBKPW048
 
-  draft previews, resume and delete:  TESTS_MISSING
+  draft previews, resume and delete: [.dft_pvs]  TESTS_MISSING [many_ifr_my_page_data]
     - chat:
     - embeded comments:
+            - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01.TyTEMBDFT02
+                mainly in 1st iframe, not 2nd [many_ifr_my_page_data]
+            - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02
+                mainly in 1st iframe, not 2nd [many_ifr_my_page_data]
+        - BUG tiny: beacon-save on page reload won't work, in emb editor
+    - upload image:
+            - TESTS_MISSING
     - discussion topic:
     - load from browser storage:
     - go to drafts page w editor open, try open other draft:

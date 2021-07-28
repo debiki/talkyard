@@ -805,3 +805,4 @@ https://docusaurus.io/docs/markdown-features/code-blocks#syntax-highlighting )
 
 [wdio_6_to_7]
 Upgr Webdriverio from 6 to 7.
+Add Typescript-ESLint warning: no-floating-promises!

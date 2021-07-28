@@ -282,7 +282,8 @@ function runAllE2eTests {
   fi
 
   # Start and exit the manual testing tests, just to verify this works.
-  $r s/wdio --only manual.2browsers $args
+  $r s/wdio --only manual.2browsers $args  # remove soon
+  $r s/wdio-7 --only dir.manual.2br.e2e.ts $args
   #
   # To restart, reusing same test site: (not deleting and recreating)
   #
@@ -574,7 +575,9 @@ function runAllE2eTests {
 
   # For testing manually. Just verify the test starts properly.
   # For now, not "manual" (with 'l' at the end) — that'd start manual.2browsers too  o.O
-  $r s/wdio       --only embcom.manua.2br $args
+  $r s/wdio       --only embcom.manua.2br $args  # delete soon
+  $r s/wdio-7     --only embcom.manual.2br $args
+  $r s/wdio-7     --only embcom.manyframes.manual.2br $args
 
   # Also see navigation-as-* above.
   $r s/wdio       --only embedded-comments-navigation-as-guest $args
@@ -623,6 +626,11 @@ function runAllE2eTests {
 
   # Single Sign-On, embedded comments:
   $r s/wdio       --only embcom.sso.token-direct-w-logout-url.2br $args
+
+  $r s/wdio-7     --only embcom.manyframes.basic.2br $args
+  $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br.ts $args
+
+
 
   if [ -n "$http_server_pid" ]; then
     kill $http_server_pid

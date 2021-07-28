@@ -1105,11 +1105,11 @@ export class TyE2eTestBrowser {
 
 
     async switchToFrame(selector: string, ps: { timeoutMs?: number } = {}) {
-      printBoringToStdout(`Switching to frame ${selector}...`);
+      logMessage(`Switching to frame ${selector}...`);
       await this.waitForExist(selector, ps);
       const iframe = await this.$(selector);
       await this.#br.switchToFrame(iframe);
-      printBoringToStdout(` done, now in frame  ${selector}.\n`);
+      logMessage(` done, now in frame  ${selector}.\n`);
       this.#isWhere = IsWhere.UnknownIframe;
     }
 
@@ -1151,6 +1151,9 @@ export class TyE2eTestBrowser {
     useCommentsIframe(ps: { discussionId: St }) {
       this.#useCommentsIframe = ps;
     }
+    useFirstCommentsIframe() {
+      this.#useCommentsIframe = null;
+    }
 
 
     async switchToEmbEditorIframeIfNeeded() {
@@ -1163,7 +1166,14 @@ export class TyE2eTestBrowser {
     }
 
 
-    async switchToEmbeddedCommentsIrame(ps: { waitForContent?: false } = {}) {
+    async switchToEmbeddedCommentsIrame(ps: {
+            waitForContent?: false, discId?: St, theresOnlyOne?: true } = {}) {
+      if (ps.discId) {
+        this.useCommentsIframe({ discussionId: ps.discId });
+      }
+      else if (ps.theresOnlyOne) {
+        this.useFirstCommentsIframe();
+      }
       await this.switchToAnyParentFrame();
       // Let's wait for the editor iframe, so Reply buttons etc will work.
       await this.waitForExist('iframe#ed-embedded-editor');
@@ -1446,6 +1456,13 @@ export class TyE2eTestBrowser {
     }
 
 
+    async assertDisplayed(selector: St) {
+      if (!await this.isDisplayed(selector)) {
+        tyAssert.fail(`Not displayed:  ${selector} `);
+      }
+    }
+
+
     async isDisplayedInViewport(selector: St): Pr<Bo> {
       // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
       const elem: WElm = await this.$(selector);
@@ -1453,6 +1470,13 @@ export class TyE2eTestBrowser {
               await elem.isExisting() &&    // was:  ?.()
               await elem.isDisplayedInViewport();
       return !!displayed;
+    }
+
+
+    async assertDisplayedInViewport(selector: St) {
+      if (!await this.isDisplayedInViewport(selector)) {
+        tyAssert.fail(`Not displayed in viewport:  ${selector} `);
+      }
     }
 
 
@@ -5271,6 +5295,30 @@ export class TyE2eTestBrowser {
     };
 
 
+    drafts = {
+      assertNumDrafts: async (num: Nr) => {
+        await this.assertExactly(num, '.s_P-Prvw-NotEd');
+      },
+
+      waitUntilNumDrafts: async (num: Nr) => {
+        await this.waitForExactly(num, '.s_P-Prvw-NotEd');
+      },
+
+      resumeNthDraft: async (n: Nr) => {
+        await this.waitAndClickNth('.e_RsmDft', n);
+        await this.waitForDisplayed('.s_T_YourPrvw');
+        await this.waitForDisplayed('.s_P-Prvw-IsEd');
+      },
+
+      deleteNthDraft: async (n: Nr) => {
+        const numBefore = await this.count('.e_DelDft');
+        await this.waitAndClickNth('.e_DelDft', n);
+        await this.stupidDialog.yesIAmSure();
+        await this.waitForExactly(numBefore - 1, '.e_DelDft');
+      },
+    }
+
+
     metabar = {   // RENAME to pagebar? [metabar_2_pagebar]
       __myName: '.s_MB_Name',
       __loginBtnSel: '.esMetabar .dw-a-login',
@@ -5700,7 +5748,8 @@ export class TyE2eTestBrowser {
       anyCommentSelector: '.dw-p',
       anyReplyButtonSelector: '.dw-a-reply',
       addProgressReplySelector: '.s_OpReB-Prg',
-      previewSelector: '.dw-depth-1 .s_P-Prvw',
+      previewSelector: '.dw-depth-1 .s_P-Prvw:not(.s_P-Prvw-NotEd)',
+      draftSelector: '.dw-depth-1 .s_P-Prvw.s_P-Prvw-NotEd',
 
       waitForReplyButtonAssertCommentsVisible: async () => {
         await this.waitForVisible(this.topic.anyReplyButtonSelector);
@@ -5712,24 +5761,37 @@ export class TyE2eTestBrowser {
         assert(!await this.isVisible(this.topic.anyCommentSelector));
       },
 
+      waitForPostPreviewDisplayed: async () => {
+        await this.waitForDisplayed(this.topic.previewSelector);
+      },
+
+      waitForPostDraftDisplayed: async () => {
+        await this.waitForDisplayed(this.topic.draftSelector);
+      },
+
+      waitForNumReplies: async (n: NumReplies) => {
+        throw Error("waitForNumReplies  unimpl");
+      },
+
       countReplies: async (ps: { skipWait?: Bo } = {}): Pr<NumReplies> => {
         if (!ps.skipWait) {
           await this.waitForMyDataAdded();
         }
         let numNormal = await this.count(this.topic.replySelector);
 
-        // One's own, pending mod (or maybe if is staff, then can see others').
+        // Own unapproved posts, pending mod (or maybe if is staff, then can see others').
         const ownUnapproved = await this.count(this.topic.replySelector + ' .dw-p-pending-mod');
-        // Others' unapproved posts.
+        // Others' unapproved posts (mods can see other's unapproved posts).
         const othersUnapproved = await this.count(this.topic.replySelector + '.dw-p-unapproved');
-        // Total.
+        // Total num unapproved.
         const numUnapproved = othersUnapproved + ownUnapproved;
 
         const numPreviews = await this.count(this.topic.previewSelector);
+        const numDrafts = await this.count(this.topic.draftSelector);
         const numDeleted = await this.count(this.topic.replySelector + '.s_P-Dd');
 
-        numNormal = numNormal - numPreviews - numUnapproved - numDeleted;
-        return { numNormal, numPreviews, numUnapproved, numDeleted };
+        numNormal = numNormal - numPreviews - numDrafts - numUnapproved - numDeleted;
+        return { numNormal, numPreviews, numDrafts, numUnapproved, numDeleted };
       },
 
       assertNumRepliesVisible: async (num: Nr) => {
@@ -5839,7 +5901,7 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
       },
 
-      clickEditoPostNr: async (postNr: PostNr) => {
+      clickEditPostNr: async (postNr: PostNr) => {
         await this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-edit`);
       },
 
@@ -8851,7 +8913,7 @@ export class TyE2eTestBrowser {
       },
 
       editPostNr: async (postNr: PostNr, newText: string, opts: { append?: boolean } = {}) => {
-        await this.topic.clickEditoPostNr(postNr);
+        await this.topic.clickEditPostNr(postNr);
         await this.editor.editText(newText, opts);
         await this.editor.save();
         await this.topic.waitUntilPostTextMatches(postNr, newText);
@@ -8861,6 +8923,17 @@ export class TyE2eTestBrowser {
         await this.topic.clickReplyToOrigPost(whichButton);
         await this.editor.editText(text);
         await this.editor.save();
+      },
+
+      startReplyingToEmbBlogPost: async (text: St) => {
+        await this.complex.startReplyingToPostNr(c.BodyNr, text);
+      },
+
+      startReplyingToPostNr: async (postNr: PostNr, text: St) => {
+        if (postNr === c.BodyNr) await this.topic.clickReplyToEmbeddingBlogPost();
+        else await this.topic.clickReplyToPostNr(postNr);
+        await this.switchToEmbeddedEditorIrame();
+        await this.editor.editText(text, { timeoutMs: 3000 });
       },
 
       replyToEmbeddingBlogPost: async (text: string,

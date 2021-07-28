@@ -1348,11 +1348,12 @@ const Thread = createComponent({
       }
 
       const resumeDraftBtn = post.isEditing || store.isEditorOpen ? null :
-            Button({ onClick: this.resumeDraft, className: 's_T_YourPrvw_ResumeB' },
+            Button({ onClick: this.resumeDraft, className: 's_T_YourPrvw_ResumeB e_RsmDft' },
               t.d.ResumeEdting);
 
       const deleteDraftBtn = post.isEditing || store.isEditorOpen ? null :
-            Button({ onClick: this.askDeleteDraft, className: 's_T_YourPrvw_ResumeB' },
+            Button({ onClick: this.askDeleteDraft,
+                  className: 's_T_YourPrvw_ResumeB e_DelDft' },
               t.d.DelDraft);
 
       previewElem = r.div({ className: 's_T_YourPrvw' },

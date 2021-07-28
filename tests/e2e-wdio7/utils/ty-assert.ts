@@ -29,9 +29,9 @@ const tyAssert = {
     assert.fail(wholeMessage);
   },
 
-  // Maybe might as well always use this one, instead of  strictEqual  sometimes?
-  // Could do that change later — but start with deepEq as a separate fn.
-  deepEq: assert.deepStrictEqual,
+  deepEq: function<T>(actual: unknown, expected: T, message?: St) {
+    assert.deepStrictEqual<T>(actual, expected, message);
+  },
 
   not: (what, message?) => {
     assert.ok(!what, message);

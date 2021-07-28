@@ -75,6 +75,18 @@ function _findFirstLinkToUrlImpl(url: string, text: string, mustMatch: boolean):
 }
 
 
+export function numReplies(n: Partial<NumReplies>): NumReplies {
+  return {
+    numNormal: 0,
+    numPreviews: 0,
+    numDrafts: 0,
+    numUnapproved: 0,
+    numDeleted: 0,
+    ...n,
+  };
+}
+
+
 const __brokenPreview = '.s_LnPv-Err';
 const __intLinkProvider: LinkPreviewProvider = { name: 'Int', inSandboxedIframe: false };
 

@@ -598,6 +598,7 @@ interface TestPost {  // later: try to unify with Post?
 interface NumReplies {
   numNormal: number;
   numPreviews: number;
+  numDrafts: number;
   numUnapproved: number;
   numDeleted: number;
 }

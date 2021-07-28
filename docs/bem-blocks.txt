@@ -37,7 +37,9 @@ CUD = create user dialog
 D  = dialog,  e.g. AbtUsrD
 Dg = dialog, when inside a phrase, e.g. InstaDgW = Instant-Dialog-Wrap
 Dd = deleted
+Del,
 Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
+Dft,
 Df = draft
 Dsc,
 Disc = discussion
