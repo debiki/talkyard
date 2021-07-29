@@ -42,6 +42,21 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   const me: Myself = store.me;
   if (!me.isAdmin) return null;
 
+  let newTyVersionAnn: RElm =
+      help.HelpMessageBox({ message: {
+          // SAn = Server Announcement, TyV = Talkyard new Version announcement nr 1.
+          id: 'SAn_TyV1', version: 1,
+          content: rFr({},
+            r.p({},
+              r.b({}, `New Talkyard version: ${TalkyardVersion}, `),
+              "read more here: ",
+              ExtVerbLink(
+                  'https://www.talkyard.io/-589/talkyard-v0202122')),
+            ThisShownToAdminsOnly()),
+      } });
+
+  let prevTyVersionAnn: RElm | U;
+
   // Announcement about HTTPS certificates renewal problem.
   // Only for admins for self hosted sites, created after revision 895b7aa6e2
   // "Code review: Auto https ...", Mars 20, 2021, in talkyard-prod-one.
@@ -65,6 +80,8 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   let e2eTestAnn: RElm | Nl = null;
   // @ifdef DEBUG
   if (document.querySelector('h1.dw-p-ttl')?.textContent === "Hide_Unhide_Tips_") {
+    newTyVersionAnn = null;
+    prevTyVersionAnn = null;
     certBugAnn = null;
     e2eTestAnn =
           help.HelpMessageBox({ message: {
@@ -80,6 +97,8 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
     r.div({ className: 'c_SrvAnns' },
       e2eTestAnn,
       certBugAnn,
+      newTyVersionAnn,
+      prevTyVersionAnn,
     ));
 }
 
