@@ -57,7 +57,7 @@ const apiSecret: TestApiSecret = {
 
 describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
-  it(`construct site`, async () => {
+  it(`Construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({ // or addTwoPagesForum, addEmptyForum, addLargeForum
       title: "Some E2E Test",
@@ -91,7 +91,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
       nr: c.FirstReplyNr,
       parentNr: c.BodyNr,
       authorId: forum.members.maria.id,
-      approvedSource: "The secret of getting ahead is getting started",
+      approvedSource: "It's not always good to procrastinate",
     });
 
     // Disable notifications, or notf email counts will be off
@@ -142,7 +142,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`import site`, async () => {
+  it(`Import site`, async () => {
     site = server.importSiteData(forum.siteData);
     server.skipRateLimits(site.id);
     michaelsTopicUrl = site.origin + '/' + forum.topics.byMichaelCategoryA.slug;
@@ -163,7 +163,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
 
   // For embedded comments:  EMBCMTS
-  it(`Creates an embedding page`, () => {
+  it(`Create embedding pages`, async () => {
     /*
     const dir = 'target';
     fs.writeFileSync(`${dir}/page-a-slug.html`, makeHtml('aaa', '#500'));
@@ -172,10 +172,12 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
       return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
     }
   });
-  it("Maria opens embedding page aaa", () => {
+
+  it(`Maria opens embedding page aaa`, async () => {
     await maria_brB.go(embeddingOrigin + '/page-a-slug.html');
   });
-  it("... logs in", () => {
+
+  it(`... logs in`, async () => {
     await maria_brB.complex.loginIfNeededViaMetabar(maria);
     */
   });

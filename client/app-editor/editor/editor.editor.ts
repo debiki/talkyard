@@ -1086,7 +1086,11 @@ export const Editor = createFactory<any, EditorState>({
         pageRole?: PageRole, inFrameStore?: DiscStore) {
 
     const setDraftAndGuidelines = (anyDraft?, anyGuidelines?) => {
-      let draft = anyDraft || BrowserStorage.get(draftLocator);
+      let draft = anyDraft ||
+            // BUG harmleess: Use BrowserStorage.forEachDraft(page-id) instead?
+            // So same algorithm for finding drafts to show in-page, as to load
+            // in the editor.  [find_br_drafts]
+            BrowserStorage.get(draftLocator);
       // Also try without any  pageId  or discussionId,  [draft_diid]
       // in case we started writing, before a page had been created,
       // or before there was a discussion id (maybe the site admin added later).
@@ -1098,6 +1102,8 @@ export const Editor = createFactory<any, EditorState>({
         if (hasDiscId) {
           // Lookup by url path or page id, if the draft was saved before the
           // embedded discussion had a discussion id assigned.
+          // But if the url is different, skip this draft [emb_draft_url].
+          // (COULD consider the url path only? In case blog moved elsewhere?)
           const loc2 = { ... draftLocator };
           delete loc2.discussionId;
           draft = BrowserStorage.get(loc2);

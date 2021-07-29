@@ -2272,7 +2272,12 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitAndAssertVisibleTextIs(selector: St, expected: St) {
+    async waitForTextVisibleAssertIs(selector: St, expected: St) {
+      await this.waitAndAssertVisibleTextIs(selector, expected);
+    }
+
+
+    async waitAndAssertVisibleTextIs(selector: St, expected: St) {  // RENAME to waitForTextVisibleAssertIs?
       const actual = await this.waitAndGetVisibleText(selector);
       tyAssert.ok(actual === expected, '\n\n' +
           `  Text of element selected by:  ${selector}\n` +
@@ -2284,7 +2289,12 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitAndAssertVisibleTextMatches(selector: St, stringOrRegex: St | RegExp) {
+    async waitForTextVisibleAssertMatches(selector: St, stringOrRegex: St | RegExp) {
+      await this.waitAndAssertVisibleTextMatches(selector, stringOrRegex);
+    }
+
+
+    async waitAndAssertVisibleTextMatches(selector: St, stringOrRegex: St | RegExp) {  // RENAME to waitForTextVisibleAssertMatches ?
       const regex = getRegExpOrDie(stringOrRegex);
       const text = await this.waitAndGetVisibleText(selector);
       // This is easy to read:  [E2EEASYREAD]
@@ -5295,13 +5305,17 @@ export class TyE2eTestBrowser {
     };
 
 
-    drafts = {
+    drafts = {   // or rename to page.postDrafts = ..  ?
       assertNumDrafts: async (num: Nr) => {
         await this.assertExactly(num, '.s_P-Prvw-NotEd');
       },
 
       waitUntilNumDrafts: async (num: Nr) => {
         await this.waitForExactly(num, '.s_P-Prvw-NotEd');
+      },
+
+      assertNthDraftTextMatches: async (n: Nr, text: St) => {
+        await this.assertNthTextMatches('.s_P-Prvw-NotEd', n, text);
       },
 
       resumeNthDraft: async (n: Nr) => {

@@ -1300,9 +1300,13 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
     const noOrSameDraftDiscId =  // [draft_diid]
         !draft.forWhat.discussionId ||
             draft.forWhat.discussionId === draftDeletor.forWhat.discussionId;
+    const noOrSameEmbUrl =   // dupl code [find_br_drafts]
+        !draft.forWhat.embeddingUrl ||
+            draft.forWhat.embeddingUrl === draftDeletor.forWhat.embeddingUrl;
     if (draft.forWhat.postNr === draftDeletor.forWhat.postNr &&
-        draft.forWhat.draftType === draftDeletor.forWhat.draftType &&
-        noOrSameDraftDiscId) {
+          draft.forWhat.draftType === draftDeletor.forWhat.draftType &&
+          noOrSameDraftDiscId &&
+          noOrSameEmbUrl) {
       BrowserStorage.remove(keyStr);
     }
   });

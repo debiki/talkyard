@@ -679,6 +679,7 @@ discussion -
           - votes-and-best-first.test.ts
     oldest first:
     newest first:
+            - embcom.drafts-previews-not-logged-in.2br.e2e.ts  TyT2ZBKPW048.TyTPOSTORDR
 
 large pages,
 really large:
@@ -1140,12 +1141,14 @@ draft: [7WKABZP2]
           - draft previews [.dft_pvs]
   resume, delete in page:
   works also if not logged in:
-          - forum-drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
-          - embedded-comments-drafts-not-logged-in.test.ts  TyT2ZBKPW048
+            - forum-drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
+            - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048
 
-  draft previews, resume and delete: [.dft_pvs]  TESTS_MISSING [many_ifr_my_page_data]
+  draft previews, resume and delete: [.dft_pvs]
+    - some TESTS_MISSING if [many_ifr_my_page_data]
     - chat:
     - embeded comments:
+            - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048
             - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01.TyTEMBDFT02
                 mainly in 1st iframe, not 2nd [many_ifr_my_page_data]
             - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02

@@ -1979,14 +1979,20 @@ function addLocalStorageDataTo(me: Myself) {
     // if their url or discussion id match. They might have been saved in the browser,
     // before an embedded discussion page had been created.
 
+    //   [find_br_drafts] Should do like this in the editor too?
     BrowserStorage.forEachDraft(store.currentPageId, (draft: Draft) => {
       // BUG, harmless: Skip drafts that got loaded from the server already,
       // so browser storage drafts won't overwrite them (until the editor gets opened
       // and the real draft text gets loaded from the server).
       const draftDiscId = draft.forWhat.discussionId;
+      const embUrl = draft.forWhat.embeddingUrl;
       if (draftDiscId && draftDiscId !== eds.embeddedPageAltId) {
         // This is for an embedded discussion, not the same as the discussion
         // we're in now. [draft_diid]
+      }
+      else if (embUrl && embUrl !== eds.embeddingUrl) { // dupl code  [find_br_drafts]
+        // Also the wrong embedded discussion — at least the editor won't load it,
+        // so better not show it here, currently. [emb_draft_url]
       }
       else {
         me.myCurrentPageData.myDrafts.push(draft);

@@ -342,7 +342,9 @@ function runAllE2eTests {
   $r s/wdio --only private-chat.3browsers $args
 
   # Is named 'forum-' because there's another test with 'drafts-not-logged-in' in the name.
+  # But now that one got renamed, so remove 'forum-' from here — should be 'dir.' instead for "direct".
   $r s/wdio --only forum-drafts-not-logged-in.2browsers $args
+
   $r s/wdio --only drafts-new-topic.2br.mtime $args
   $r s/wdio --only drafts-new-topic-from-cats-page $args
   $r s/wdio --only drafts-reply-edit-dir-msg.2br.mtime $args
@@ -586,7 +588,8 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-create-site-req-verif-email.2browsers $args
   $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
-  $r s/wdio       --only embedded-comments-drafts-not-logged-in $args
+  $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br $args
+  #r s/wdio-7     --only embcom.drafts-repl-to.2br $args
   $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
   $r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
@@ -628,7 +631,7 @@ function runAllE2eTests {
   $r s/wdio       --only embcom.sso.token-direct-w-logout-url.2br $args
 
   $r s/wdio-7     --only embcom.manyframes.basic.2br $args
-  $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br.ts $args
+  $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br $args
 
 
 
