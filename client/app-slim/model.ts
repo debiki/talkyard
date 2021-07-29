@@ -2275,13 +2275,20 @@ interface ServerVars {
   // For embedded comments.
   isInEmbeddedCommentsIframe: boolean;
   isInEmbeddedEditor: boolean;
+
   embeddingScriptV?: Nr;
   embeddingOrigin?: string;
+
+  // Wrap in an obj so they can be updated all at the same time?
+  // ---------------
+  // (In an embedded editor, they're updated dynamically, depending on which
+  // blog comments iframe is active.  [many_embcom_iframes])
   embeddingUrl?: string;
   embeddedPageAltId?: string;  // RENAME to embeddedDiscussionId
   lazyCreatePageInCatId?: CategoryId;
   // Sometimes lazy-inited when the page gets lazy-created, when the first reply is posted. [4HKW28]
   embeddedPageId?: string;
+  // ---------------
 
   // When creating new site.
   baseDomain?: string;

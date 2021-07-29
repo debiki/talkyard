@@ -1246,10 +1246,12 @@ export function hideEditorAndPreview(ps?: HideEditorAndPreviewParams, inFrame?) 
 export function deleteDraftPost(pageId: PageId, draftPost: Post) {
   const store: Store = ReactStore.allData();
 
-  // This is a post on an already existing page — no category id needed.
+  // This is a post on an already existing page, or on a not yet created page
+  // — in any case no category id needed.
   const draftLocator: DraftLocator = {
     draftType: postType_toDraftType(draftPost.postType),
     pageId: pageId,
+    discussionId: eds.embeddedPageAltId,
     postNr: draftPost.parentNr,
     postId: store_getPostId(store, pageId, draftPost.parentNr),
   };
@@ -1400,11 +1402,8 @@ function patchTheStoreManyFrames(storePatch: StorePatch, onOk: () => Vo,
           inFrame: DiscWin) {
   patchTheStore(storePatch, onOk);
   if (inFrame === window || !eds.isInIframe) {
-    // Just patched above.
-    // @ifdef DEBUG
-    dieIf(inFrame, 'TyE4WM6L2Q0');
-    // @endif
-    void 0;
+    // No other frame store to patch. (This happens e.g. if clicking Delete Draft
+    // in a comments iframe — then only that one needs to get patched.)
   }
   else {
     sendToCommentsIframe(['patchTheStore', storePatch], inFrame);

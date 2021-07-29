@@ -136,8 +136,18 @@ export const StupidDialog = createComponent({
             showCloseButton: !preventClose, className,
             // For now:
             windowWidth: this.state.winWidth,
-            atX: this.state.atX - 150,
-            atY: debiki2.iframeOffsetWinSize.top + 80,
+            // It's about 250 px wide — place the left border 125 px to the left
+            // of the middle. (Doesn't need to be exact — the DropdownModal
+            // fits it in view if needed.)
+            pullLeft: true,
+            atX: this.state.atX - 125,
+            // If the upper edge of the iframe is above the upper edge of the viewport
+            // (debiki2.iframeOffsetWinSize.top > 0),  (annoying negation! [why_neg_ifr_top])
+            // then show the dialog a bit down — namely just below the upper edge
+            // of the viewport. Otherwise (debiki2.iframeOffsetWinSize.top <= 0)
+            // show the dialog at the top of the iframe (since the top of the iframe
+            // is either visible in the viewport, or is somewhere further down).
+            atY: Math.max(0, debiki2.iframeOffsetWinSize.top) + 80,
           },
           body));
     }

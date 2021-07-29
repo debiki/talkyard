@@ -663,13 +663,15 @@ function calcSizes(commentsIframe: HIframeElm): St {
   // If the iframe extends below the lower window edge, we see only the part of it
   // down to `window.innerHeight` (then, don't use `rect.bottom`).
   var height = Math.min(window.innerHeight, rect.bottom);
+   // iframeVisibleBottomInParentWin
 
   // If the iframe starts above the upper window edge, we don't see the parts of it above 0 (zero).
   // And if it starts below the upper window edge, then, `rect.top` is where it starts.
   var iframeVisibleHeight = height - Math.max(0, rect.top);
+                                  // iframeVisibleTopInParentWin
 
   return ('["iframeOffsetWinSize",' +
-      '{ "top":' + (-rect.top) +  // why did I negate?
+      '{ "top":' + (-rect.top) +  // why did I negate? [why_neg_ifr_top]
       ', "height":' + height +    // rename 'height'? but to what? Maybe 'iframeVisibleBottom'?
       ', "iframeVisibleHeight": ' + iframeVisibleHeight + '}]');
 }
