@@ -14,7 +14,7 @@ import type { ExitCode } from './tyd-util';
 //x <reference path="../../client/types-and-const-enums.ts" />
 
 
-export function runE2eTestsOldWdio6(ps: {
+export function runE2eTestsExitIfErr(ps: {
   wdioVersion: 6 | 7,
   allSubCmdsSt: St,
   allSubCmds: St[],
@@ -79,8 +79,7 @@ console.log(`Specs glob:      ${specsGlob}`);
 console.log(`Specs matching:\n - ${allMatchingSpecs.join('\n - ')}`);
 
 
-// If we're run
-// Let wdio handle signals — until it exits.
+// Let wdio handle signals, until it exits.
 // But maybe exit directly on SIGINT if running >= 2 specs? Then probably not debugging.
 process.on('SIGINT', function() {
   if (allMatchingSpecs.length >= 2) {

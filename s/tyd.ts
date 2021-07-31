@@ -1,15 +1,11 @@
 import * as _  from 'lodash';
 import * as minimist from 'minimist';
-import * as fs from 'fs';
-import * as glob from 'glob';
 import { die, dieIf, logMessage, logMessageIf, logDebug, logError, logErrorIf, logUnusual
-            } from '../tests/e2e/utils/log-and-die';
-import { ChildProcess, spawn as _spawnAsync, spawnSync as _spawnSync } from 'child_process';
+            } from '../tests/e2e-wdio7/utils/log-and-die';
 import { argv } from 'process';
 import * as tyu from './impl/tyd-util';
 import type { ExitCode } from './impl/tyd-util';
-import { runE2eTestsOldWdio6 } from './impl/tyd-e2e-tests-old-wdio-6';
-//import { runE2eTestsNewWdio7 } from './impl/tyd-e2e-tests-new-wdio-7';
+import { runE2eTestsExitIfErr } from './impl/tyd-e2e-tests';
 
 /// <reference path="../client/types-and-const-enums.ts" />
 
@@ -293,6 +289,7 @@ if (mainCmd === 'recreate') {
 
 if (mainCmd === 'rebuild') {
   rebuild();
+  process.exit(0)
 }
 
 function rebuild() {
@@ -302,7 +299,6 @@ function rebuild() {
   logMessage(`\n**Building: ${cs} **`)
   tyu.spawnInForeground('sh', ['-c', `s/d build ${cs}`]);
   logMessage(`\n**Done rebuilding: ${cs}. Bye.**`)
-  process.exit(0)
 }
 
 
@@ -355,11 +351,30 @@ if (mainCmd === 'cleane2elogs') {
 //  E2E and API tests
 // -----------------------------------------------------------------------
 
+
 const useHttps = argv.includes('--secure') || argv.includes('--https');
 
 if (useHttps) {
   logMessage(`Will use HTTPS, because --secure flag. Disabling HTTPS certificate checks`);
   process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = '0';
+}
+
+
+{
+  let wdioVersion: 6 | 7 = 7;
+
+  switch (mainCmd) {
+    case 'e6':
+    case 'e2e6':
+      wdioVersion = 6;
+      // Fall through.
+    case 'e7':
+    case 'e2e7':
+      runE2eTestsExitIfErr({ wdioVersion, allSubCmdsSt, allSubCmds, opts });
+      process.exit(0);
+    default:
+      // Continue below.
+  }
 }
 
 
@@ -385,30 +400,18 @@ if (mainCmd === 'tapi' || mainCmd === 'testapi') {
   // process.argv = ['node', 'jest', '--config', 'tests/api/jest.config.ts']
   // — but won't work, if we switch to Deno instead, for this s/tyd.ts script?)
 
-  tyu.spawnInForeground('./node_modules/.bin/jest',
+  const exitCode = tyu.spawnInForeground('./node_modules/.bin/jest',
         ['--config', 'tests/api/jest.config.ts'], jestTestEnv);
 
-  process.exit(1);
+  process.exit(exitCode);
 }
 
+
 // -----------------------------------------------------------------------
 // -----------------------------------------------------------------------
 
 
-let wdioVersion: 6 | 7 = 7;
-
-switch (mainCmd) {
-  case 'e6':
-  case 'e2e6':
-    wdioVersion = 6;
-    // continue
-  case 'e7':
-  case 'e2e7':
-    runE2eTestsOldWdio6({ wdioVersion, allSubCmdsSt, allSubCmds, opts });
-    break;
-  default:
-    if (!mainCmdIsOk) {
-      console.error(`Werid main command: ${mainCmd}. Error. Bye.  [TyE30598256]`);
-      process.exit(1);
-    }
+if (!mainCmdIsOk) {
+  console.error(`Werid main command: ${mainCmd}. Error. Bye.  [TyE30598256]`);
+  process.exit(1);
 }

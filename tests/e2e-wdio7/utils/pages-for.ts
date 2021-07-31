@@ -328,7 +328,7 @@ export class TyE2eTestBrowser {
   #hostsVisited = {};
   #isWhere: IsWhere | U;
   #isOnEmbeddedCommentsPage = false;
-  #useCommentsIframe: { discussionId: St };
+  #useCommentsIframe: { discussionId: St } | U;
 
   isOnEmbeddedPage(): boolean {
     return this.#isWhere && IsWhere.EmbFirst <= this.#isWhere && this.#isWhere <= IsWhere.EmbLast;
@@ -5306,16 +5306,18 @@ export class TyE2eTestBrowser {
 
 
     drafts = {   // or rename to page.postDrafts = ..  ?
+      __draftSel: '.s_P-Prvw-NotEd',  // or topic.draftSelector
+
       assertNumDrafts: async (num: Nr) => {
-        await this.assertExactly(num, '.s_P-Prvw-NotEd');
+        await this.assertExactly(num, this.drafts.__draftSel);
       },
 
       waitUntilNumDrafts: async (num: Nr) => {
-        await this.waitForExactly(num, '.s_P-Prvw-NotEd');
+        await this.waitForExactly(num, this.drafts.__draftSel);
       },
 
       assertNthDraftTextMatches: async (n: Nr, text: St) => {
-        await this.assertNthTextMatches('.s_P-Prvw-NotEd', n, text);
+        await this.assertNthTextMatches(this.drafts.__draftSel, n, text);
       },
 
       resumeNthDraft: async (n: Nr) => {
@@ -5763,7 +5765,7 @@ export class TyE2eTestBrowser {
       anyReplyButtonSelector: '.dw-a-reply',
       addProgressReplySelector: '.s_OpReB-Prg',
       previewSelector: '.dw-depth-1 .s_P-Prvw:not(.s_P-Prvw-NotEd)',
-      draftSelector: '.dw-depth-1 .s_P-Prvw.s_P-Prvw-NotEd',
+      draftSelector: '.dw-depth-1 .s_P-Prvw.s_P-Prvw-NotEd',  // or drafts.__draftSel
 
       waitForReplyButtonAssertCommentsVisible: async () => {
         await this.waitForVisible(this.topic.anyReplyButtonSelector);

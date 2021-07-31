@@ -40,7 +40,7 @@ type Nr = number;
 type St = string;
 type Bitfield = Nr;  // in Javascript, only 53? bits, the rest is for the exponent [make_opaque_type]
 
-type Pr<R> = Promise<R>
+type Pr<R> = Promise<R>;
 
 // Nullish and falsy values.
 type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}

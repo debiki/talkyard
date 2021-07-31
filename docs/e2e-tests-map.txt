@@ -676,10 +676,10 @@ discussion -
 
   sort order of replies:
     best first:
-          - votes-and-best-first.test.ts
+            - votes-and-best-first  TyTESORTBEST
     oldest first:
-    newest first:
             - embcom.drafts-previews-not-logged-in.2br.e2e.ts  TyT2ZBKPW048.TyTPOSTORDR
+    newest first:
 
 large pages,
 really large:
@@ -1153,7 +1153,6 @@ draft: [7WKABZP2]
                 mainly in 1st iframe, not 2nd [many_ifr_my_page_data]
             - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02
                 mainly in 1st iframe, not 2nd [many_ifr_my_page_data]
-        - BUG tiny: beacon-save on page reload won't work, in emb editor
     - upload image:
             - TESTS_MISSING
     - discussion topic:
