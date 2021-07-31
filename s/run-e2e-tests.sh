@@ -608,7 +608,7 @@ function runAllE2eTests {
   $r s/wdio --b3c --only embcom.b3c.unverif-gmail.1br.extidp $args
   $r s/wdio       --only embedded-comments-edit-and-vote.test $args
   $r s/wdio       --only embedded-comments-edit-and-vote-old-name $args
-  $r s/wdio       --only embedded-comments-vote-first $args
+  $r s/wdio-7     --only embcom.vote-bef-page-exists.1br $args
   $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
   $r s/wdio       --only embedded-comments-sort-order-op-likes-btn-txt.2browsers $args
   $r s/wdio       --only embedded-comments-category-refs.2browsers $args

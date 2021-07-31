@@ -1,21 +1,17 @@
 /// <reference path="../test-types.ts"/>
 
-import * as _ from 'lodash';
-import assert = require('assert');
-import fs = require('fs');
-import server = require('../utils/server');
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
+import * as make from '../utils/make';
 import { TyE2eTestBrowser } from '../utils/pages-for';
-import utils = require('../utils/utils');
-import make = require('../utils/make');
+import settings from '../utils/settings';
 
-let browser: TyE2eTestBrowser;
-
-let everyonesBrowsers;
+let brA;
 let michael;
-let michaelsBrowser: TyE2eTestBrowser;
+let michal_brA: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
-let siteId: any;
 
 const michaelsComment = 'michaelsComment';
 
@@ -27,61 +23,66 @@ const pageName = "The Page Name";
 const bgColor = "#550";
 
 
-describe("emb cmts vote first  TyT2AKBS056", () => {
+describe(`embcom.vote-bef-page-exists.1br  TyT2AKBS056`, () => {
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    michaelsBrowser = everyonesBrowsers;
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    michal_brA = brA;
     michael = make.memberMichael();
   });
 
-  it("import a site", () => {
-    const site: SiteData = make.forumOwnedByOwen('embvote1st', { title: "Emb Cmts Vote First Test" });
+  it("import a site", async () => {
+    const site: SiteData = make.forumOwnedByOwen('embvote1st', {
+            title: "Emb Cmts Vote First Test" });
     site.meta.localHostname = localHostname;
     site.settings.allowEmbeddingFrom = embeddingOrigin;
     site.settings.requireVerifiedEmail = false;
     site.settings.mayPostBeforeEmailVerified = true;
     site.members.push(michael);
     idAddress = server.importSiteData(site);
-    siteId = idAddress.id;
   });
 
-  it("create embedding page", () => {
-    const html = utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor });
+  it("create embedding page", async () => {
+    const html = utils.makeEmbeddedCommentsHtml({
+            pageName, discussionId: '', localHostname, bgColor });
     fs.writeFileSync(`target/${pageSlug}`, html);
   });
 
-  it("Michael opens the embedding page", () => {
-    michaelsBrowser.go(pageUrl);
-    michaelsBrowser.switchToEmbeddedCommentsIrame();
-    michaelsBrowser.disableRateLimits();
+  it("Michael opens the embedding page", async () => {
+    await michal_brA.go2(pageUrl);
+    await michal_brA.switchToEmbeddedCommentsIrame();
+    await michal_brA.disableRateLimits();
   });
 
-  it("... logs in", () => {
-    michaelsBrowser.complex.loginWithPasswordViaMetabar(michael);
+  it("... logs in", async () => {
+    await michal_brA.complex.loginWithPasswordViaMetabar(michael);
   });
 
-  it("... clicks Like, the very first thing, before page created", () => {
+
+  // ----- Like vote before page exists
+
+  it("... clicks Like, the very first thing, before page created", async () => {
     // This previously resulted in a "Page not found, id: `0'" error, because the page had
     // not yet been created.
-    michaelsBrowser.switchToEmbeddedCommentsIrame();
-    michaelsBrowser.topic.clickLikeVoteForBlogPost();
+    await michal_brA.switchToEmbeddedCommentsIrame();
+    await michal_brA.topic.clickLikeVoteForBlogPost();
   });
 
-  it("Michael replies, too", () => {
-    michaelsBrowser.complex.replyToEmbeddingBlogPost(michaelsComment);
+  it("Michael replies, too", async () => {
+    await michal_brA.complex.replyToEmbeddingBlogPost(michaelsComment);
   });
 
-  it("After page reload, the reply is still there", () => {
-    michaelsBrowser.refresh();
-    michaelsBrowser.switchToEmbeddedCommentsIrame();
-    michaelsBrowser.topic.waitForPostNrVisible(2);
-    michaelsBrowser.topic.assertPostTextMatches(2, michaelsComment);
+  it("After page reload, the reply is still there", async () => {
+    await michal_brA.refresh2();
+    await michal_brA.switchToEmbeddedCommentsIrame();
+    await michal_brA.topic.waitForPostNrVisible(2);
+    await michal_brA.topic.assertPostTextMatches(2, michaelsComment);
   });
 
-  it("... and the like vote is there too", () => {
-    assert(michaelsBrowser.isVisible('.dw-a-like.icon-heart.dw-my-vote'));
+  it("... and the like vote is there too", async () => {
+    await michal_brA.assertDisplayed('.dw-a-like.icon-heart.dw-my-vote');
   });
+
 
 });
 

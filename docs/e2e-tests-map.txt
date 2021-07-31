@@ -766,12 +766,12 @@ embedded comments:
   post 1st comment, edit:   TESTS_MISSING
     when unapproved:
     auto approved:
-  start with Like vote:
-          - embedded-comments-vote-first.test.ts  TyT2AKBS056
-  start with configuring one's notf prefs:
+  vote before page exists:
+          - embcom.vote-bef-page-exists.1br  TyT2AKBS056
+  config notf prefs before page exists:
           - embedded-comments-conf-notf-pref-first.test.ts  TyT502HMSJP3
   login via metabar:
-          - embedded-comments-vote-first.test.ts  TyT2AKBS056
+          - embcom.vote-bef-page-exists.1br  TyT2AKBS056
           - embedded-comments-scroll  TyT2K4DHR49-02
   (50279460),
   scroll and show #comment-n:
