@@ -22,6 +22,7 @@ const mariasCommentOneOrig = 'mariasCommentOneOrig';
 const mariasCommentOneEdited = 'mariasCommentOneEdited';
 const mariasCommentTwo = 'mariasCommentTwo';
 const mariasCommentThree = 'mariasCommentThree';
+const mariasCommentFour = 'mariasCommentFour';
 
 const localHostname = 'comments-for-e2e-test-embddrft-localhost-8080';
 const embeddingOrigin = 'http://e2e-test-embddrft.localhost:8080';
@@ -91,14 +92,16 @@ describe(`embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048`, () => {
   });
   it(`... nothing else (no replies or previews)`, async () => {
     numReplies = await maria_brA.topic.countReplies();
-    assert.deepEq(numReplies, ut.numReplies({ numDrafts: 1 }));   // fok
+    assert.deepEq(numReplies, ut.numReplies({ numDrafts: 1 }));
   });
   it(`... the draft text is the text she drafted`, async () => {
-    await maria_brA.drafts.assertNthDraftTextMatches(1, mariasCommentOneOrig);  // fok
+    await maria_brA.drafts.waitForNthDraftWithText(1, mariasCommentOneOrig);
   });
 
-  it("Maria starts writing again", async () => {
-    await maria_brA.switchToEmbeddedCommentsIrame();
+
+  // ----- Resumeb draft by clicking Reply
+
+  it("Maria starts writing again, by clicking blog-post-Reply", async () => {
     await maria_brA.topic.clickReplyToEmbeddingBlogPost();
   });
 
@@ -109,10 +112,37 @@ describe(`embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048`, () => {
   });
   it(`... the preview shows the draft text`, async () => {
     await maria_brA.waitForTextVisibleAssertIs(
-            '.s_P-Prvw-IsEd .dw-p-bd', mariasCommentOneOrig);  // fok
+            '.s_P-Prvw-IsEd .dw-p-bd', mariasCommentOneOrig);
   });
 
-  it("The draft text appears in the editor; it was saved in the browser's sessionStorage", async () => {
+  it("The draft text appears in the editor; was saved in browser's storage", async () => {
+    await maria_brA.switchToEmbeddedEditorIrame();
+    await maria_brA.editor.waitForDraftTextToLoad(mariasCommentOneOrig);
+  });
+
+
+  // ----- Resumeb draft by clicking Resume Draft  TyTINPGDFTS
+
+  it("Maria closes the editor ...", async () => {
+    await maria_brA.editor.cancelNoHelp();
+  });
+  it(`... draft back`, async () => {
+    await maria_brA.switchToEmbeddedCommentsIrame();
+    await maria_brA.topic.waitForPostDraftDisplayed();
+  });
+  it(`... preview gone`, async () => {
+    numReplies = await maria_brA.topic.countReplies();
+    assert.deepEq(numReplies, ut.numReplies({ numDrafts: 1 }));
+  });
+  it(`Maria opens by clicking the Resume Draft button`, async () => {
+    await maria_brA.drafts.resumeNthDraft(1);
+  });
+  it(`... a reply preview appears, draft hidden`, async () => {
+    await maria_brA.topic.waitForPostPreviewDisplayed();
+    numReplies = await maria_brA.topic.countReplies();
+    assert.deepEq(numReplies, ut.numReplies({ numPreviews: 1 }));
+  });
+  it(`... the draft text appears in the editor now too`, async () => {
     await maria_brA.switchToEmbeddedEditorIrame();
     await maria_brA.editor.waitForDraftTextToLoad(mariasCommentOneOrig);
   });
@@ -132,7 +162,7 @@ describe(`embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048`, () => {
   it(`... there's no draft in this comments iframe — it's another page`, async () => {
     await maria_brA.switchToEmbeddedCommentsIrame();
     numReplies = await maria_brA.topic.countReplies();
-    assert.deepEq(numReplies, ut.numReplies({}));  // fok
+    assert.deepEq(numReplies, ut.numReplies({}));
   });
 
   it("... starts replying to page Eee's blog post", async () => {
@@ -150,8 +180,13 @@ describe(`embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048`, () => {
     assert.includes(source, 'ddd');
   });
 
-  it("... starts replying again", async () => {
+  it(`... her draft is here`, async () => {
     await maria_brA.switchToEmbeddedCommentsIrame();
+    numReplies = await maria_brA.topic.countReplies();
+    assert.deepEq(numReplies, ut.numReplies({ numDrafts: 1 }));
+  });
+
+  it("Maria starts replying again", async () => {
     await maria_brA.topic.clickReplyToEmbeddingBlogPost();
   });
 
@@ -197,7 +232,7 @@ describe(`embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048`, () => {
 
   it("... the draft and preview are gone", async () => {
     numReplies = await maria_brA.topic.countReplies();
-    assert.deepEq(numReplies, ut.numReplies({ numNormal: 1 }));  // fok
+    assert.deepEq(numReplies, ut.numReplies({ numNormal: 1 }));
   });
 
 
@@ -277,7 +312,7 @@ describe(`embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048`, () => {
   });
   it(`... with the text "Preview:" above`, async () => {
     await maria_brA.waitForTextVisibleAssertIs(
-            '.s_T-Prvw-IsEd > .s_T_YourPrvw', "Preview:");   // fok
+            '.s_T-Prvw-IsEd > .s_T_YourPrvw', "Preview:");
   });
   it(`... it's placed after the other commets  TyTPOSTORDR`, async () => {
     await maria_brA.assertDisplayed(
@@ -305,16 +340,86 @@ describe(`embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048`, () => {
     await maria_brA.topic.waitForPostAssertTextMatches(
             c.FirstReplyNr + 1, mariasCommentThree);
   });
-  it(`... at the bottom  TyTPOSTORDR`, async () => {
+  it(`... at the bottom  TyTPOSTORDR`, async () => {   // dupl test code [repl_pv_e2e]
     await maria_brA.assertDisplayed(
           '.s_ThrDsc > .dw-single-and-multireplies > .dw-res > li:last-child ' +
           ` > .dw-t > #post-${c.FirstReplyNr + 1} > .dw-p-bd`);
   });
   it(`The comment preview is gone, but the draft still there`, async () => {
-    await maria_brA.switchToEmbeddedCommentsIrame();
     numReplies = await maria_brA.topic.countReplies();
     assert.deepEq(numReplies, ut.numReplies({ numNormal: 2, numDrafts: 1 }));
   });
 
+
+  // ----- Delete drafts by clicking Delete Draft  TyTINPGDFTS
+
+  it(`Maria starts replying to the last comment`, async () => {
+    await maria_brA.complex.startReplyingToPostNr(
+            c.FirstReplyNr + 1, mariasCommentFour);
+  });
+  it("... cancels", async () => {
+    await maria_brA.editor.cancelNoHelp();
+  });
+  it(`... now there're two drafts`, async () => {
+    await maria_brA.switchToEmbeddedCommentsIrame();
+    await maria_brA.topic.waitForNumReplies({ numNormal: 2, numDrafts: 2 });
+  });
+
+  it(`Maria deletes the first draft`, async () => {
+    await maria_brA.drafts.deleteNthDraft(1);
+  });
+  it(`... now there's just one draft`, async () => {
+    await maria_brA.topic.waitForNumReplies({ numNormal: 2, numDrafts: 1 });
+  });
+  it(`... it's for the last reply`, async () => {   // dupl test code [repl_pv_e2e]
+    await maria_brA.assertDisplayed(
+            `#post-${c.FirstReplyNr + 1
+              } + .esPA + .dw-single-and-multireplies > .dw-res > .s_T-Prvw-NotEd`);
+  });
+
+  it(`Maria reloads the page`, async () => {
+    await maria_brA.refresh2();
+  });
+  it(`... the draft is still there (but not the deleted one)`, async () => {
+    await maria_brA.switchToEmbeddedCommentsIrame();
+    await maria_brA.topic.waitForNumReplies({ numNormal: 2, numDrafts: 1 });
+  });
+  it(`... still for the last reply`, async () => {   // dupl test code [repl_pv_e2e]
+    await maria_brA.assertDisplayed(
+            `#post-${c.FirstReplyNr + 1
+              } + .esPA + .dw-single-and-multireplies > .dw-res > .s_T-Prvw-NotEd`);
+  });
+
+  it(`Maria resumes and submits the draft`, async () => {
+    await maria_brA.drafts.resumeNthDraft(1);
+    await maria_brA.switchToEmbeddedEditorIrame();
+    await maria_brA.editor.editText(" EDITED", { append: true});
+    await maria_brA.editor.save();
+  });
+  it(`... a reply to the last comment appears`, async () => {
+    await maria_brA.switchToEmbeddedCommentsIrame();
+    await maria_brA.topic.waitForPostAssertTextMatches(
+            c.FirstReplyNr + 2, mariasCommentFour + " EDITED");
+  });
+  it(`... all drafts gone`, async () => {
+    await maria_brA.topic.waitForNumReplies({ numNormal: 3 });
+  });
+
+
+  // ----- Deleted draft really gone
+
+  it(`Replying to the first comment, won't bring back the deleted draft`, async () => {
+    await maria_brA.complex.startReplyingToPostNr(c.FirstReplyNr);
+    await maria_brA.editor.waitForDraftTextToLoad('');
+  });
+  it(`... also won't, if logging out ...`, async () => {
+    await maria_brA.metabar.clickLogout();
+    await maria_brA.refresh2();
+  });
+  it(`... and starting to reply: there's no saved draft text`, async () => {
+    await maria_brA.switchToEmbeddedCommentsIrame();
+    await maria_brA.complex.startReplyingToPostNr(c.FirstReplyNr);
+    await maria_brA.editor.waitForDraftTextToLoad('');
+  });
 });
 

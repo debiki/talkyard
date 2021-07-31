@@ -2389,6 +2389,34 @@ export class TyE2eTestBrowser {
     }
 
 
+    async waitAndGetNthText(selector, n: Nr, ps: { notEmpty?: Bo } = {}): Pr<St> {
+      let text = '';
+      await this.waitUntil(async () => {
+        const elms = await this.$$(selector);
+        if (!elms || elms.length < n) return false;
+        text = await elms[n - 1].getText();
+        return ps.notEmpty ? !!text : _.isString(text);
+      }, {
+        message: () => `Waiting for text in: ${selector} nr ${n}`,
+      })
+      return text;
+    }
+
+
+    async waitUntilNthTextMatches(selector, n: Nr, toMatch: St | RegExp): Pr<St> {
+      let textNow: StV;
+      const regex = getRegExpOrDie(toMatch);
+      await this.waitUntil(async () => {
+        textNow = await this.waitAndGetNthText(selector, n);
+        return regex.test(textNow);
+      }, {
+        message: () => `Waiting for text in: ${selector} nr: ${n
+                } to match: ${regex}, text is now: "${textNow}"`,
+      })
+      return textNow as St;
+    }
+
+
     async waitAndGetVisibleHtml(selector): Pr<St> {
       await this.waitForVisibleText(selector);
       return await (await this.$(selector)).getHTML();
@@ -5208,6 +5236,8 @@ export class TyE2eTestBrowser {
       },
 
       waitForDraftTextToLoad: async (text: St) => {
+        // Could wait for .e_LdDft to disappear, but not needed —
+        // the editor textarea won't appear until any draft has been loaded.
         await this.waitUntilValueIs('.editor-area textarea', text);
       },
     };
@@ -5314,6 +5344,10 @@ export class TyE2eTestBrowser {
 
       waitUntilNumDrafts: async (num: Nr) => {
         await this.waitForExactly(num, this.drafts.__draftSel);
+      },
+
+      waitForNthDraftWithText: async (n: Nr, text: St | RegExp) => {
+        await this.waitUntilNthTextMatches(this.drafts.__draftSel, n, text);
       },
 
       assertNthDraftTextMatches: async (n: Nr, text: St) => {
@@ -5785,8 +5819,18 @@ export class TyE2eTestBrowser {
         await this.waitForDisplayed(this.topic.draftSelector);
       },
 
-      waitForNumReplies: async (n: NumReplies) => {
-        throw Error("waitForNumReplies  unimpl");
+      waitForNumReplies: async (n: Partial<NumReplies>, ps: { skipWait?: Bo } = {}) => {
+        if (!ps.skipWait) {
+          await this.waitForMyDataAdded();
+        }
+        const numExpected = utils.numReplies(n);
+        let numNow: NumReplies | U;
+        await this.waitUntil(async () => {
+          numNow = await this.topic.countReplies({ skipWait: true });
+          return _.isEqual(numNow, numExpected);
+        }, {
+          message: () => `Waiting for replies: ${sfy(n)}, now: ${sfy(numNow)}`,
+        })
       },
 
       countReplies: async (ps: { skipWait?: Bo } = {}): Pr<NumReplies> => {
@@ -8945,11 +8989,13 @@ export class TyE2eTestBrowser {
         await this.complex.startReplyingToPostNr(c.BodyNr, text);
       },
 
-      startReplyingToPostNr: async (postNr: PostNr, text: St) => {
+      startReplyingToPostNr: async (postNr: PostNr, text?: St) => {
         if (postNr === c.BodyNr) await this.topic.clickReplyToEmbeddingBlogPost();
         else await this.topic.clickReplyToPostNr(postNr);
         await this.switchToEmbeddedEditorIrame();
-        await this.editor.editText(text, { timeoutMs: 3000 });
+        if (!_.isUndefined(text)) {
+          await this.editor.editText(text, { timeoutMs: 3000 });
+        }
       },
 
       replyToEmbeddingBlogPost: async (text: string,

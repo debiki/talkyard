@@ -1252,6 +1252,7 @@ export function deleteDraftPost(pageId: PageId, draftPost: Post) {
     draftType: postType_toDraftType(draftPost.postType),
     pageId: pageId,
     discussionId: eds.embeddedPageAltId,
+    embeddingUrl: eds.embeddingUrl,
     postNr: draftPost.parentNr,
     postId: store_getPostId(store, pageId, draftPost.parentNr),
   };
@@ -1296,17 +1297,16 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
   // browser storage drafts.
   BrowserStorage.forEachDraft(draftDeletor.pageId, (draft: Draft, keyStr: string) => {
     // If there're many iframes on the same embedding page, we should only
-    // look at the draft in the correct iframe — i.e. same discussion id.
-    const noOrSameDraftDiscId =  // [draft_diid]
-        !draft.forWhat.discussionId ||
-            draft.forWhat.discussionId === draftDeletor.forWhat.discussionId;
+    // look at the draft in the correct iframe — i.e. same discussion id. [draft_diid]
+    const noDiscId = !draft.forWhat.discussionId;
+    const sameDiscId = draft.forWhat.discussionId === draftDeletor.forWhat.discussionId;
+    // If there's no discussion id, then any embedding url needs to be the same.
     const noOrSameEmbUrl =   // dupl code [find_br_drafts]
         !draft.forWhat.embeddingUrl ||
             draft.forWhat.embeddingUrl === draftDeletor.forWhat.embeddingUrl;
     if (draft.forWhat.postNr === draftDeletor.forWhat.postNr &&
           draft.forWhat.draftType === draftDeletor.forWhat.draftType &&
-          noOrSameDraftDiscId &&
-          noOrSameEmbUrl) {
+          (sameDiscId || (noDiscId && noOrSameEmbUrl))) {
       BrowserStorage.remove(keyStr);
     }
   });

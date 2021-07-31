@@ -1140,6 +1140,7 @@ draft: [7WKABZP2]
           - drafts-delete.test.ts  TyT5BKRQ0
           - draft previews [.dft_pvs]
   resume, delete in page:
+            - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048.TyTINPGDFTS
   works also if not logged in:
             - forum-drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
             - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048
