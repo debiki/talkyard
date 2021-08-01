@@ -347,9 +347,20 @@ function loadRemainingCommentIframes() {
  * Ex:
  *   talkyardAddCommentsIframe({ appendInside: document.body, discussionId: 'abc123' });
  */
-function addCommentsIframe(ps: { appendInside: HElm, discussionId: St }): HElm {
+function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): HElm {
   if (!windowWithTalkyardProps.talkyardManyCommentIframes)
     throw Error(`Set  talkyardManyCommentIframes = true  to allow many comments iframes`);
+
+  // Tests: TyTEMANYEMBDISAPI.TyTAPNDIFR283
+  const appendIn: HElm = typeof ps.appendInside === 'string' ?
+          document.querySelector(ps.appendInside) : ps.appendInside;
+  if (!appendIn) {
+    logW(`No elem to append in: ${ps.appendInside}`);
+    return;
+  }
+
+  logD(`Creating iframe for disc id ${ps.discussionId
+          } in #${appendIn.id}.${appendIn.className} ...`);
 
   const wrapperDiv = Bliss.create('div', {
     className: 'talkyard-comments',
@@ -363,7 +374,7 @@ function addCommentsIframe(ps: { appendInside: HElm, discussionId: St }): HElm {
   pendingIframeMessages.push(undefined);
   numDiscussions = iframeElms.length - FirstCommentsIframeNr;
 
-  Bliss.inside(wrapperDiv, ps.appendInside);
+  Bliss.inside(wrapperDiv, appendIn);
   const commentIframeNr = iframeElms.length - 1;
   intCommentIframe(wrapperDiv, commentIframeNr, numDiscussions >= 2);
   return wrapperDiv;
@@ -380,6 +391,7 @@ function forgetRemovedCommentIframes() {
       iframesInited.splice(i, 1);
       pendingIframeMessages.splice(i, 1);
       numDiscussions = iframeElms.length - FirstCommentsIframeNr;
+      logD(`Forgot removed iframe ${iframe.name}, ${numDiscussions} discussions left.`);
     }
   }
 }
@@ -1370,5 +1382,8 @@ windowWithTalkyardProps.talkyardAddCommentsIframe = addCommentsIframe;
 windowWithTalkyardProps.talkyardForgetRemovedCommentIframes = forgetRemovedCommentIframes;
 //windowWithTalkyardProps.talkyardLoadNewCommentIframes = loadNewCommentIframes;
 
+// @ifdef DEBUG
+windowWithTalkyardProps['e2e_getNumEmbDiscs'] = () => numDiscussions;
+// @endif
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

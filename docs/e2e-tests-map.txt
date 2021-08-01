@@ -821,7 +821,7 @@ embedded comments:
   many comments iframes same page:
             - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01
             - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02
-            - TESTS_MISSING:  forgetRemovedCommentIframes  talkyardAddCommentsIframe
+            - embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI
   sso: see [.embcom.sso]
 
 upload links,
@@ -1406,6 +1406,11 @@ api:
   atom feed:
             - TESTS_MISSING
   rss feed: No, there're only Atom feeds.
+
+api for comments,
+comments api,
+embedded comments api:
+            - embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI
 
 url api,
 frag action api,

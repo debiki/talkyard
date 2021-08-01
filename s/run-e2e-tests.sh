@@ -630,8 +630,10 @@ function runAllE2eTests {
   $r s/wdio       --only embcom.sso.token-direct-w-logout-url.2br $args
   $r s/wdio       --only embcom.sso.token-in-cookie.2br $args
 
+  # Many comments iframes:
   $r s/wdio-7     --only embcom.manyframes.basic.2br --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br --cd -i $args
+  $r s/wdio-7     --only embcom.manyframes.js-api.2br --cd -i $args
 
 
 
