@@ -589,7 +589,6 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
   $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br --cd -i $args
-  #r s/wdio-7     --only embcom.drafts-repl-to.2br --cd -i $args
   $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
   $r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
@@ -609,6 +608,7 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-edit-and-vote.test $args
   $r s/wdio       --only embedded-comments-edit-and-vote-old-name $args
   $r s/wdio-7     --only embcom.vote-bef-page-exists.1br $args
+  $r s/wdio-7     --only embcom.reply-vote-report-bef-login.2br $args
   $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
   $r s/wdio       --only embedded-comments-sort-order-op-likes-btn-txt.2browsers $args
   $r s/wdio       --only embedded-comments-category-refs.2browsers $args

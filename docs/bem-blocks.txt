@@ -139,6 +139,7 @@ Vl  = vertical, also: Hz: horizontal
 Vt  = vote, NO Vo instead,  Vt could be Vertical
 W   = wrap, wrapper: a div that's wrapped around the main something
 Wik = wiki
+Wro = wrong
 X   = extra
 Xl  = extra large (screen), also: Lg, Sm, Md
 Wb  = Watchbar

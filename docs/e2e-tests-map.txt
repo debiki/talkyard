@@ -115,6 +115,20 @@ authn:
     with server default oauth2:
           - see ^oidc
 
+  [.lazy_authn],
+  lazy authn,
+  authn lazily,
+    dir:
+      after composing
+        new topic:
+        reply:
+    emb:
+      composing comment before logged in:
+            - embcom.reply-vote-report-bef-login.2br  TyTEEMBCDOBEFAUN.TyTRELZYAUN
+            - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048.TyTRELZYAUN
+      report & vote before logged in:
+            - embcom.reply-vote-report-bef-login.2br  TyTEEMBCDOBEFAUN
+
 oauth2,
 ext idps:
   keycloak:
@@ -1064,11 +1078,15 @@ review after:
     #    Alice deletes.
     #    Memah visits reply — not found.
 
+report post,
+flag post,
 flags:
   auto threat level, moderate:
           - flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK
   lock threat level:
           - flag-member-block-agree.2browsers  TyTE2EFLGMEMBLK.TyTE2ETHRLVDEF
+  report post before logged in:
+            - [.lazy_authn]
 
 spam: (4BKS0)
           - spam-basic-local.2browsers.test.ts  TyT530KRM1R

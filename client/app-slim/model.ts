@@ -1409,11 +1409,14 @@ const enum EditMemberAction {
 }
 
 
-// Sync w Scala: LoginReason.
+/// Sync w Scala: LoginReason.
+/// Some reasons make a short text appear in the login dialog. [authn_reason_info]
 const enum LoginReason {
   LoginToEdit = 9,
   LoginToChat = 10,
   LoginToLike = 11,
+  LoginToDisagree = 25,
+  LoginToFlag = 26,
   BecomeOwner = 12,
   SignUp = 13,
   TryToAccessNotFoundPage = 14,
@@ -1427,6 +1430,7 @@ const enum LoginReason {
   AuthnRequiredToRead = 22,  // was: 'LoginToAuthenticate'
   NeedToBeAdmin = 23, // was: 'LoginAsAdmin'
   LoginToAdministrate = 24,
+  // Last: 26, see above
 }
 
 

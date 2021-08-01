@@ -862,7 +862,7 @@ export class TyE2eTestBrowser {
 
 
     async numWindowsOpen(): Pr<Nr> {
-      return await this.#br.getWindowHandles().length;
+      return await this.#br.getWindowHandles().length;  // how can this be undefined?
     }
 
 
@@ -6033,6 +6033,10 @@ export class TyE2eTestBrowser {
         return result;
       },
 
+      __disagreeVoteSel: (postNr: PostNr): St => {
+        return `#post-${postNr} + .esPA .e_WroVo`;
+      },
+
       clickLikeVote: async (postNr: PostNr, opts: { logInAs? } = {}) => {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
 
@@ -6093,8 +6097,12 @@ export class TyE2eTestBrowser {
         await this.waitForVisible(likeVoteSelector);
       },
 
-      toggleDisagreeVote: async (postNr: PostNr) => {
-        await this.topic._toggleMoreVote(postNr, '.dw-a-wrong');
+      toggleDisagreeVote: async (postNr: PostNr, opts: { waitForModalGone?: false } = {}) => {
+        await this.topic._toggleMoreVote(postNr, '.dw-a-wrong', opts);
+      },
+
+      isPostDisagreVoted: async (postNr: PostNr): Pr<Bo> => {
+        return await this.isDisplayed(this.topic.__disagreeVoteSel(postNr));
       },
 
       toggleBuryVote: async (postNr: PostNr) => {
@@ -6105,12 +6113,15 @@ export class TyE2eTestBrowser {
         await this.topic._toggleMoreVote(postNr, '.dw-a-unwanted');
       },
 
-      _toggleMoreVote: async (postNr: PostNr, selector: St) => {
+      _toggleMoreVote: async (postNr: PostNr, selector: St,
+              opts: { waitForModalGone?: false } = {}) => {
         await this.topic.clickMoreVotesForPostNr(postNr);
         // The vote button appears in a modal dropdown.
         await this.waitAndClick('.esDropModal_content ' + selector);
-        await this.waitUntilModalGone();
-        await this.waitUntilLoadingOverlayGone();
+        if (opts.waitForModalGone !== false) {
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
+        }
       },
 
       canVoteLike: async (postNr: PostNr): Pr<Bo> => {
@@ -6128,9 +6139,13 @@ export class TyE2eTestBrowser {
 
       __flagPostSelector: '.icon-flag',  // for now, later: e_...
 
-      clickFlagPost: async (postNr: PostNr) => {
-        await this.topic.clickMoreForPostNr(postNr);
-        await this.waitAndClick(this.topic.__flagPostSelector);
+      clickFlagPost: async (postNr: PostNr, opts: { needToClickMore?: false } = {}) => {
+        if (opts.needToClickMore !== false) {
+          await this.topic.clickMoreForPostNr(postNr);
+        }
+        // Else: Flag button already visible (this is the case if logged out).
+        await this.waitAndClick(
+                `#post-${postNr} + .esPA ${this.topic.__flagPostSelector}`);
         // This opens  this.flagDialog.
       },
 
