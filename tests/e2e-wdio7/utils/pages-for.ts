@@ -8783,13 +8783,14 @@ export class TyE2eTestBrowser {
       },
 
       waitForNotLoggedInInEmbeddedCommentsIframe: async (
-              ps: { willBeLogoutBtn?: false } = {}) => {
+              ps: { willBeLoginBtn?: false } = {}) => {
         await this.switchToEmbeddedCommentsIrame();
         await this.waitForMyDataAdded();
-        if (ps.willBeLogoutBtn !== false) {
+        if (ps.willBeLoginBtn !== false) {
           await this.metabar.waitForLoginButtonVisible();  // ok? or is this a race?
         }
         else {
+          // Could do always, but looking for the login button (above) is enough.
           const me = await this.me.waitAndGetMyself();
           tyAssert.not(me.isLoggedIn);
           tyAssert.not(me.id);

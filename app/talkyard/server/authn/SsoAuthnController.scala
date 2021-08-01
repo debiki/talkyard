@@ -198,6 +198,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
       parseOptJsObject(req.body, "userDevTest")
     }
 
+    // SECURITY [stop_emb_aun_tkn_rply] Incl seq nr in token, bump on
+    // each login, store highest seen in pats_t, require next is greater.
     val anyAuthnToken = parseOptSt(req.body, "userAuthnToken")
 
     throwBadReqIf(anyUserJsObj.isEmpty && anyAuthnToken.isEmpty,

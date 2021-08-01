@@ -207,7 +207,7 @@ single-sign-on:  (3093533)
           - sso-all-ways-to-login.2browsers.test.ts  TyT7FKRTTSR024
           - sso-access-denied-login.2browsers.test.ts  TyT4AKT02DKJ41
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
-          - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1.TyT306MRG2
+          - [.embcom_sso]
   one-time login secret abuse:
           - sso-one-time-key-errors.2browsers.test.ts  TyT5025BDUJQP4R
   login required ty-only logout url:
@@ -224,10 +224,11 @@ single-sign-on:  (3093533)
   update sso user's email, username etc:
           - api-update-user-and-sso-user.2br   TyTE2E05MRR9
 
-sso, embedded comments, [.embcom.sso],
+sso, embedded comments, [.embcom_sso],
 embedded comments sso,
 blog comments sso:
             - embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1
+            - embcom.sso.token-in-cookie.2br.test.ts  TyTE2EEMBSSO2
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24

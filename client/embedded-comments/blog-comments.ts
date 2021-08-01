@@ -67,10 +67,6 @@ const winDbg = windowWithTalkyardProps.talkyardDebug;
 const talkyardLogLevel: Nr | St = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
     winDbg === false || winDbg === 0 ? 'warn' : 'trace');
 
-// For automatic Single Sign-On with PASETO authn tokens.
-const talkyardAuthnToken = windowWithTalkyardProps.talkyardAuthnToken;
-
-
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
 function makeTalkyardLogFn(isWarn: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
@@ -130,9 +126,37 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
     "— If this is your site, what if you get a LetsEncrypt cert? [TyEINSCBLG]"
         ) : */  '');
 
-if (talkyardAuthnToken) {
-  logM(`Found authn token in talkyardAuthnToken`);
+
+// For automatic Single Sign-On with PASETO authn tokens, either in a variable,
+// or a cookie (cookie better? So not incl in html, although encrypted).
+const authnTokenInVar = windowWithTalkyardProps.talkyardAuthnToken;
+const authnTokenCookieMatches: St[] | Nl =
+        document.cookie.match(
+            // (There're no spaces in PASETO tokens.)
+            /(^|;)\s*TalkyardAuthnToken\s*=\s*([^\s;]+)/);
+const authnTokenInCookie: StV = authnTokenCookieMatches ? authnTokenCookieMatches[2] : null;
+
+if (authnTokenInCookie) {
+  // Delete, these should be one time tokens [stop_emb_aun_tkn_rply],
+  // and shouldn't linger after pat has logged out from the embedd*ing* website.
+  // https://stackoverflow.com/questions/2144386/how-to-delete-a-cookie
+  document.cookie = 'TalkyardAuthnToken=; Max-Age=0; path=/';
 }
+
+if (authnTokenInVar) {
+  logM(`Found authn token in js var`);
+}
+if (authnTokenInCookie) {
+  logM(`Found authn token in cookie`);
+}
+
+const differentTokens =
+        authnTokenInVar && authnTokenInCookie && authnTokenInVar !== authnTokenInCookie;
+if (differentTokens) {
+  logW(`Authn token in var and cookie differs, ignoring both`);
+}
+
+const autnToken: StV = differentTokens ? null : authnTokenInVar || authnTokenInCookie;
 
 if (insecureSomethingErrMsg) {
   logW(insecureSomethingErrMsg);
@@ -796,10 +820,10 @@ function onMessage(event) {
       if (authnTried) {
         // Noop.
       }
-      else if (talkyardAuthnToken) {
+      else if (autnToken) {
         logM(`Sending authn token to first comments iframe`);
         sendToFirstCommentsIframe(
-              JSON.stringify(['loginWithAuthnToken', talkyardAuthnToken]));
+              JSON.stringify(['loginWithAuthnToken', autnToken]));
       }
       else if (oneTimeLoginSecret) {
         // Tell the comments iframe to login, using our one-time secret.  [306KUD244]
