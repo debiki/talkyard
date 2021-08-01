@@ -730,6 +730,11 @@ ReactStore.allData = function(): Store {
 };
 
 
+ReactStore.me = function(): Me {
+  return store.me;
+};
+
+
 // Shows one's drafts: Create a preview post, for each new post draft (but not
 // for edit drafts — then, we instead show a text "Unfinished edits" next to the
 // edit button. [UFINEDT])

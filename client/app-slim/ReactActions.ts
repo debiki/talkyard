@@ -891,7 +891,10 @@ export function setHorizontalLayout(enabled: boolean) {
 
 
 export function hideTips(message: { id: St, version?: Nr }) {
-  Server.toggleTips({ tipsId: message.id, hide: true });
+  const me: Me = ReactStore.me();
+  if (me.isAuthenticated) {
+    Server.toggleTips({ tipsId: message.id, hide: true });
+  }
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.HideHelpMessage,
     message: message,
@@ -908,7 +911,10 @@ export function showSingleTipsClientSide(messageId: string) {
 
 
 export function showTipsAgain(ps: { onlyAnnouncements?: Bo } = {}) {
-  Server.toggleTips({ ...ps, hide: false });
+  const me: Me = ReactStore.me();
+  if (me.isAuthenticated) {
+    Server.toggleTips({ ...ps, hide: false });
+  }
   ReactDispatcher.handleViewAction({
     ...ps,
     actionType: actionTypes.ShowHelpAgain,

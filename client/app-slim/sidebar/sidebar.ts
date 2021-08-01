@@ -517,25 +517,13 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
             adminGuideButton));
     }
 
-    // Show four help messages: first no. 1, then 2, 3, 4, one at a time, which clarify
-    // how the sidebar recent-comments list works.
-    let helpMessageBoxOne;
-    let helpMessageBoxTwo;
-    let helpMessageBoxTree;
-    let helpMessageBoxFour;
-    let dimCommentsStyle: { opacity: string; };
+    // Show help messages, one at a time, to clarify how the recent comments list works.
+    // (Previously there were 4 tips, and people thought that was too many, so skip the
+    // first two: helpMessageOne & Two — you can find them out commented below.)
+    let helpMessageBoxTree: RElm | U;
+    let helpMessageBoxFour: RElm | U;
+    let dimCommentsStyle: { opacity: St } | U;
     if (this.state.commentsType === 'Recent' && listItems.length >= 6) {
-      // People think 4 tips are too many, and the first two are a bit redundant, so
-      // remove them for now.
-      /*
-      helpMessageBoxOne =
-          help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
-      if (help.isHelpMessageClosed(store, helpMessageOne)) {
-        helpMessageBoxTwo =
-            help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
-      }
-      if (help.isHelpMessageClosed(store, helpMessageTwo)) {
-      */
       helpMessageBoxTree =
           help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree,
             showUnhideTips: false });
@@ -544,11 +532,11 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
             help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour,
               // Don't show, because would cause them to forget what they just read about
               // the recent comments list. This is complicated enough already.
-              showUnhideTips: false });
+              showUnhideTips: false } as TipsBoxProps);
       }
       // Dim the comments list until all help messages have been closed.
       dimCommentsStyle = help.isHelpMessageClosed(store, helpMessageFour) ?
-          null : { opacity: '0.6' };
+          null : { opacity: '0.5' };
     }
 
     const addMorePeopleButton = !page_isGroupTalk(page.pageRole) || !isStaffOrMyPage ? null :
@@ -573,12 +561,10 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           MiniMap(minimapProps))),
           */
       r.div({ id: 'dw-sidebar', className: 'esCtxbar' + sidebarClasses, ref: 'sidebar' },
-        r.div({ className: 'esCtxbar_btns' },
+        r.div({ className: 'esCtxbar_btns', style: dimCommentsStyle  },
           CloseSidebarButton({ onClick: this.closeSidebar }),
           tabButtons),
         r.div({ className: 'dw-comments esCtxbar_list' },
-          helpMessageBoxOne,
-          helpMessageBoxTwo,
           helpMessageBoxTree,
           helpMessageBoxFour,
           r.div({ style: dimCommentsStyle },

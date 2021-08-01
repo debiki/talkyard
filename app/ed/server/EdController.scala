@@ -97,6 +97,17 @@ class EdController(cc: ControllerComponents, val context: EdContext)
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
       rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(f)
 
+  def AsyncUserPostJsonAction(rateLimits: RateLimits, maxBytes: i32,
+        avoidCookies: Bo = false)(
+        f: JsonPostRequest => Future[Result]): Action[JsValue] =
+    PlainApiAction(cc.parsers.json(maxLength = maxBytes),
+      rateLimits, authnUsersOnly = true, avoidCookies = avoidCookies).async(f)
+
+  def UserPostJsonAction(rateLimits: RateLimits, maxBytes: i32)(
+        f: JsonPostRequest => Result): Action[JsValue] =
+    PlainApiAction(cc.parsers.json(maxLength = maxBytes),
+      rateLimits, authnUsersOnly = true)(f)
+
   def PostTextAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
         f: ApiRequest[String] => Result): Action[String] =
     PlainApiAction(cc.parsers.text(maxLength = maxBytes),

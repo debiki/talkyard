@@ -1870,6 +1870,16 @@ interface ExplainingListItemProps extends ExplainingTitleText {
 }
 
 
+interface TipsBoxProps {
+  message: HelpMessage;
+  alwaysShow?: Bo;
+  showUnhideTips?: Bo;
+  className?: St;
+  large?: Bo;
+}
+
+
+
 // =========================================================================
 //  Admin Area
 // =========================================================================

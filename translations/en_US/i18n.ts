@@ -463,7 +463,8 @@ var t_en_US: TalkyardTranslations = t = {
 
     // This explains how the Recent tab in the sidebar works.
 
-    RepliesToTheLeft: "The replies to the left are sorted by ",
+    // MISSING "are sorted by" —> "might be"
+    RepliesToTheLeft: "The replies to the left might be sorted by ",
     bestFirst: "best-first.",
     ButBelow: "But below ",
     insteadBy: " the same replies are instead sorted by ",

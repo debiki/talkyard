@@ -1141,7 +1141,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def toggleTips: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
+  def toggleTips: Action[JsValue] = UserPostJsonAction(RateLimits.TrackReadingActivity,
         maxBytes = 200) { request =>
     import request.{dao, body, theRequester => requester}
     val tipsId: Opt[St] = parseOptSt(body, "tipsId")
