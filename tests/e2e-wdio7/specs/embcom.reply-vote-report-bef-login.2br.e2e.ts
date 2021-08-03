@@ -107,11 +107,17 @@ describe(`embcom.reply-vote-report-bef-login.2br  TyTEEMBCDOBEFAUN`, () => {
   it(`... needs to login`, async () => {
     await maria_brB.loginDialog.loginWithPasswordInPopup(maria);
   });
-  it(`... thereafter, can flag the comment as Inappropriate`, async () => {
+  it(`... back in the comments iframe`, async () => {
     await maria_brB.switchToEmbeddedCommentsIrame();
+  });
+  it(`... can now flag the comment as Inappropriate`, async () => {
     await maria_brB.flagDialog.waitUntilFadedIn();
     await maria_brB.flagDialog.clickInappropriate();
+  });
+  it(`... submit`, async () => {
     await maria_brB.flagDialog.submit();
+  });
+  it(`... close "the staff will take a look" dialog`, async () => {
     await maria_brB.stupidDialog.close();
   });
   it(`(Add test?: Owen gets an email)`, async () => {

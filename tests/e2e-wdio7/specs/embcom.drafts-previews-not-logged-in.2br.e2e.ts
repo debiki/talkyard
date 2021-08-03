@@ -413,6 +413,7 @@ describe(`embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048`, () => {
     await maria_brA.editor.waitForDraftTextToLoad('');
   });
   it(`... also won't, if logging out ...`, async () => {
+    await maria_brA.switchToEmbeddedCommentsIrame();
     await maria_brA.metabar.clickLogout();
     await maria_brA.refresh2();
   });
