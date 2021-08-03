@@ -32,10 +32,13 @@ interface WindowWithTalkyardProps {
   talkyardLogLevel: number | undefined;
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   talkyardAuthnToken: St | Ay | U;
+  talkyardManyCommentIframes: Bo | U;
   edRemoveCommentsAndEditor: () => void;
   edReloadCommentsAndEditor: () => void;
   talkyardRemoveCommentsAndEditor: () => void;
   talkyardReloadCommentsAndEditor: () => void;
+  talkyardAddCommentsIframe: (ps: { appendInside: HElm, discussionId: St }) => HElm;
+  talkyardForgetRemovedCommentIframes: () => Vo;
 }
 
 // Later: SSO and HMAC via https://pasteo.io? https://paseto.io/rfc/  [blog_comments_sso]
@@ -64,10 +67,6 @@ const winDbg = windowWithTalkyardProps.talkyardDebug;
 const talkyardLogLevel: Nr | St = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
     winDbg === false || winDbg === 0 ? 'warn' : 'trace');
 
-// For automatic Single Sign-On with PASETO authn tokens.
-const talkyardAuthnToken = windowWithTalkyardProps.talkyardAuthnToken;
-
-
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
 function makeTalkyardLogFn(isWarn: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
@@ -90,13 +89,16 @@ function makeTalkyardLogFn(isWarn: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
   }
 }
 
+// const logT =
 const logD = makeTalkyardLogFn(false, console.debug);
 const logM = makeTalkyardLogFn(false, console.log);
 const logW = makeTalkyardLogFn(true, console.warn);
 
+// const j2s = JSON.stringify;
 
 logM(`Starting ${TalkyardVersion} ... ` +
       `(disable logging by setting talkyardLogLevel = 'warn')`);
+
 
 
 const d = { i: debiki.internal };
@@ -124,9 +126,37 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
     "— If this is your site, what if you get a LetsEncrypt cert? [TyEINSCBLG]"
         ) : */  '');
 
-if (talkyardAuthnToken) {
-  logM(`Found authn token in talkyardAuthnToken`);
+
+// For automatic Single Sign-On with PASETO authn tokens, either in a variable,
+// or a cookie (cookie better? So not incl in html, although encrypted).
+const authnTokenInVar = windowWithTalkyardProps.talkyardAuthnToken;
+const authnTokenCookieMatches: St[] | Nl =
+        document.cookie.match(
+            // (There're no spaces in PASETO tokens.)
+            /(^|;)\s*TalkyardAuthnToken\s*=\s*([^\s;]+)/);
+const authnTokenInCookie: StV = authnTokenCookieMatches ? authnTokenCookieMatches[2] : null;
+
+if (authnTokenInCookie) {
+  // Delete, these should be one time tokens [stop_emb_aun_tkn_rply],
+  // and shouldn't linger after pat has logged out from the embedd*ing* website.
+  // https://stackoverflow.com/questions/2144386/how-to-delete-a-cookie
+  document.cookie = 'TalkyardAuthnToken=; Max-Age=0; path=/';
 }
+
+if (authnTokenInVar) {
+  logM(`Found authn token in js var`);
+}
+if (authnTokenInCookie) {
+  logM(`Found authn token in cookie`);
+}
+
+const differentTokens =
+        authnTokenInVar && authnTokenInCookie && authnTokenInVar !== authnTokenInCookie;
+if (differentTokens) {
+  logW(`Authn token in var and cookie differs, ignoring both`);
+}
+
+const autnToken: StV = differentTokens ? null : authnTokenInVar || authnTokenInCookie;
 
 if (insecureSomethingErrMsg) {
   logW(insecureSomethingErrMsg);
@@ -136,18 +166,55 @@ if (insecureSomethingErrMsg) {
 tyns.fetchAndFillInCommentCounts(serverOrigin);
 
 
-var oneTimeLoginSecret;
-var postNrToFocus;  // RENAME to ...AfterCommentsLoaded
+let oneTimeLoginSecret: St | U;
+let authnTried = false;
+let postNrToFocus: PostNr | U;  // RENAME to ...AfterCommentsLoaded
 
-const commentsIframeName = 'edComments';
+let loadWeinre: Bo | U;
 
-var commentsIframe;
-var commentsIframeInited;  // dupl, remove, use Arr instead (contents dyn upd)
-var commentsIframeInitedArr = [false];
-var editorIframe;
-var editorIframeInitedArr = [false];
-var editorWrapper;
-var editorPlaceholder;
+// Could move 2 to enums-and-constants.ts. [emb_scr_ver]
+const scriptVersionQueryParam = '&embeddingScriptV=2';
+
+const EditorIframeNr = 0;
+const FirstCommentsIframeNr = 1;
+// 2, 3, 4 etc are other comments iframes.
+let numDiscussions = 0;
+
+let sessionIframeInited: Bo | U;
+let sessionIframe: HIframeElm | U | Nl;
+
+let commentsElems: HTMLCollectionOf<Elm> | U | Nl;
+let loadingElms: HElm[] = [];
+let iframeElms: HIframeElm[] = [];
+let iframesInited: (Bo | U)[] = [];
+let pendingIframeMessages: Ay[][] = [];
+
+let editorIframe: HIframeElm | U;
+let editorWrapper: HElm | U;
+let editorPlaceholder: HElm | U;
+
+
+/*
+Maybe use MutationObserver — but probaly, don't, not needed?
+// (MutationObserver won't work in Opera Mini from 2015, but that's a while ago.)
+const mutationObserver = new MutationObserver(function (mutations, observer) {
+  for (const mutation of mutations) {
+    console.log(`MUTATION: ${mutation.type} tgt: ${mutation.target}`);
+    if (mutation.type !== 'childList')
+      continue;
+    
+    console.log(`mutation.removedNodes.length: ${mutation.removedNodes.length}`);
+    console.log(`mutation.removedNodes: ${mutation.removedNodes}`);
+  }
+});
+
+// We don't know what elems the embedding page (blog post) might remove that
+// makes comment iframes disappear. So observe everything. (Performance impact
+// should be negligible, compared to the actual mutations.)
+mutationObserver.observe(document.body, { subtree: true, childList: true });
+*/
+
+
 
 // We store a weak session in localStorage, if 3rd party cookies disabled.
 // It's fairly ok to use localStorage in our case, see:
@@ -197,21 +264,164 @@ addEventListener('scroll', messageCommentsIframeNewWinTopSize);
 addEventListener('message', onMessage, false);
 
 
+
 function loadCommentsCreateEditor() {
-  logM("loadCommentsCreateEditor()");
+  findOneTimeLoginSecret();
+  findCommentToScrollTo();
+  createSessionFrame();
+}
+
+
+
+function createSessionFrame() {
+  if (sessionIframe)
+    return;
+
+  logD("createSessionFrame()");
+  sessionIframe = Bliss.create('iframe', {
+    id: 'talkyard-session',
+    name: 'edComments',
+    title: "Talkyard comments helper iframe",
+    src: serverOrigin + '/-/session-iframe',
+    height: 0, // don't `hide()` [.hdn_iframe]
+    'aria-hidden': true,
+    style: {
+      padding: 0,
+      margin: 0,
+      width: '100%',
+      border: 'none',
+      overflow: 'hidden'
+    },
+    allowtransparency: 'true',
+    frameborder: 0,
+    scrolling: 'no',
+    horizontalscrolling: 'no',
+    verticalscrolling: 'no'
+  });
+
+  Bliss.inside(sessionIframe, document.body);
+}
+
+
+
+function loadFirstCommentsIframe() {
+  logD("loadFirstCommentsIframe()");
   // Create <iframe>s for embedded comments and an embedded editor.
   // Show a "Loading comments..." message until comments loaded.
   // For now, choose the first .talkyard-comments only, because
   // the embedded editor will be bound to one page only, and two editors
   // seems complicated.
-  var commentsElems = document.getElementsByClassName('ed-comments'); // old name [2EBG05]
+  commentsElems = document.getElementsByClassName('ed-comments'); // old name [2EBG05]
   if (!commentsElems.length)
     commentsElems = document.getElementsByClassName('talkyard-comments');
   if (!commentsElems.length)
     return;
-  var commentsElem = commentsElems[0];
-  logM("found commentsElem");
 
+  numDiscussions = commentsElems.length;
+  logD(`Found ${numDiscussions} Ty comment elems`);
+
+  intCommentIframe(commentsElems[0], FirstCommentsIframeNr, numDiscussions > 1);
+}
+
+
+
+// It's simpler to debug, if waiting with creating additional comments iframes
+// until the first one has been created?
+function loadRemainingCommentIframes() {
+  logD("loadRemainingCommentIframes()");
+  if (!commentsElems)
+    return;
+
+  // But skip index 0 — that iframe has been loaded already.
+  for (let i = 1; i < commentsElems.length; ++i) {
+    intCommentIframe(
+          commentsElems[i], i + FirstCommentsIframeNr, numDiscussions > 1);
+  }
+
+  // No need to hang on to the comments elems.
+  commentsElems = null;
+}
+
+
+/**
+ * Ex:
+ *   talkyardAddCommentsIframe({ appendInside: document.body, discussionId: 'abc123' });
+ */
+function addCommentsIframe(ps: { appendInside: HElm | St, discussionId: St }): HElm {
+  if (!windowWithTalkyardProps.talkyardManyCommentIframes)
+    throw Error(`Set  talkyardManyCommentIframes = true  to allow many comments iframes`);
+
+  // Tests: TyTEMANYEMBDISAPI.TyTAPNDIFR283
+  const appendIn: HElm = typeof ps.appendInside === 'string' ?
+          document.querySelector(ps.appendInside) : ps.appendInside;
+  if (!appendIn) {
+    logW(`No elem to append in: ${ps.appendInside}`);
+    return;
+  }
+
+  logD(`Creating iframe for disc id ${ps.discussionId
+          } in #${appendIn.id}.${appendIn.className} ...`);
+
+  const wrapperDiv = Bliss.create('div', {
+    className: 'talkyard-comments',
+    'data-discussion-id': ps.discussionId,
+  });
+
+  // (At least iframesInited needs to be appended to. [.if_initd])
+  loadingElms.push(undefined);
+  iframeElms.push(undefined);
+  iframesInited.push(undefined);
+  pendingIframeMessages.push(undefined);
+  numDiscussions = iframeElms.length - FirstCommentsIframeNr;
+
+  Bliss.inside(wrapperDiv, appendIn);
+  const commentIframeNr = iframeElms.length - 1;
+  intCommentIframe(wrapperDiv, commentIframeNr, numDiscussions >= 2);
+  return wrapperDiv;
+}
+
+
+
+function forgetRemovedCommentIframes() {
+  for (let i = iframeElms.length - 1; i >= 0; --i) {
+    const iframe = iframeElms[i];
+    if (!iframe.isConnected)  {
+      loadingElms.splice(i, 1);
+      iframeElms.splice(i, 1);
+      iframesInited.splice(i, 1);
+      pendingIframeMessages.splice(i, 1);
+      numDiscussions = iframeElms.length - FirstCommentsIframeNr;
+      logD(`Forgot removed iframe ${iframe.name}, ${numDiscussions} discussions left.`);
+    }
+  }
+}
+
+
+
+/// Loads newly added embedded discussions, without the embedding page having
+/// to call talkyardAddCommentsIframe(..).
+/*
+function loadNewCommentIframes(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
+  const newCommentElems = document.querySelectorAll('.talkyard-comments:not(.ty_IfrCr)');
+  const numOld = commentsElems.length;
+  for (let i = 0; i < newCommentElems.length; ++i) {
+    const iframeNr = numOld + i + FirstCommentsIframeNr;
+    intCommentIframe(
+          newCommentElems[i], iframeNr, i > 1);
+  }
+}  */
+
+
+
+function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
+  const existingIframe = commentsElem.querySelector('.ty_CmtsIfr');
+  if (existingIframe)
+    return;
+
+  logD(`intCommentIframe(..., iframeNr = ${iframeNr}, ...)`);
+
+  // The server wants the embedding URL, to know if it should add 'localhost'
+  // to the allowed frame-ancestors, for development. [embng_url]
   var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
@@ -233,9 +443,23 @@ function loadCommentsCreateEditor() {
   if (/[\t\r\n]/.test(discussionId)) {
     var errorMessage = "Bad discussion id: " + discussionId + ' [TyEEMDIID]';
     logW(errorMessage);
-    throw Error(errorMessage);
+    if (manyCommentsIframes) return false;  // other iframes might work
+    else throw Error(errorMessage);
   }
   var discIdParam = discussionId ? `discussionId=${discussionId}&` : '';
+
+  if (windowWithTalkyardProps.talkyardManyCommentIframes && !discussionId) {
+    // Without a discussion id, how could we know which (if any) of the
+    // iframe discussion should be associated with just the URL or URL path?
+    // Or if there's a discussion with no id, associated with the URL,
+    // and then a 2nd discussion iframe is added, with an id
+    // — the Ty server won't know if this is supposed to be a separate discussion,
+    // or if the blog admin just wants to add the id, to the already existing discussion.
+    const errMsg =
+          `iframe nr ${iframeNr}: Attribute 'data-discussion-id=...' missing — ` +
+          `it's required if many comment iframes allowed [TyEMANYIFRID]`;
+    throw Error(errMsg);
+  }
 
   // To place the lazy-created embedded discussion pages in a specific
   // category. E.g.:  data-category="extid:some_category"
@@ -243,7 +467,8 @@ function loadCommentsCreateEditor() {
   if (/[\t\r\n]/.test(categoryRef)) {
     var errorMessage = `Bad category ref: ${categoryRef} [TyEEMCATRFCL]`;
     logW(errorMessage);
-    throw Error(errorMessage);
+    if (manyCommentsIframes) return false;
+    else throw Error(errorMessage);
   }
   const catRefParam = categoryRef ? `category=${categoryRef}&` : '';
 
@@ -258,10 +483,10 @@ function loadCommentsCreateEditor() {
 
   const allUrlParams =
           edPageIdParam + discIdParam + catRefParam + embeddingUrlParam +
-          htmlClassParam + logLevelParam;
+          htmlClassParam + logLevelParam + scriptVersionQueryParam;
 
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
-  var loadWeinre = window.location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
+  loadWeinre = window.location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
   if (loadWeinre) {
     // Let's append the whole hash fragment — nice to see any client "name"
     // you can debug-include in the hash, in Weinre's debug targets list.
@@ -269,11 +494,10 @@ function loadCommentsCreateEditor() {
   }
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
-  // no messages at all from it.
-  commentsIframeInited = false;
-  commentsIframe = Bliss.create('iframe', {
+  // no messages at all from it.  [.hdn_iframe]
+  const commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
-    name: commentsIframeName,
+    name: 'edComments-' + iframeNr,
     className: 'p_CmtsIfr ty_CmtsIfr',   // DEPRECATE old name p_CmtsIfr
     // A title attr, for better accessibility. See: https://www.w3.org/TR/WCAG20-TECHS/H64.html
     title: iframeTitle || "Comments",
@@ -294,7 +518,11 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.start(commentsIframe, commentsElem);
-  logM("inserted commentsIframe");
+
+  commentsElem.classList.add('ty_IfrCr');  // iframe created
+
+  iframeElms[iframeNr] = commentsIframe;
+  logD(`Inserted commentsIframes[${iframeNr}]`);
 
   if (insecureSomethingErrMsg) {
     // If insecureTyIframeProbl, then for sure the comments won't load.
@@ -320,10 +548,17 @@ function loadCommentsCreateEditor() {
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
     className: 'p_Ldng p_Ldng-Cmts',
-    text: "Loading comments ..."
+    textContent: "Loading comments ..."
   });
 
   Bliss.start(loadingCommentsElem, commentsElem);
+  loadingElms[iframeNr] = loadingCommentsElem;
+}
+
+
+
+function createEditorIframe() {
+  logD(`createEditorIframe()`);
 
   editorWrapper = Bliss.create('div', {
     id: 'ed-editor-wrapper',
@@ -352,9 +587,13 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.inside(editorWrapper, document.body);
-  logM("inserted editorWrapper");
+  logD("inserted editorWrapper");
 
-  var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
+  // [embng_url]
+  let editorIframeUrl =
+        `${serverOrigin}/-/embedded-editor?embeddingUrl=${location.origin}` +
+        scriptVersionQueryParam;
+
   if (loadWeinre) {
     editorIframeUrl += location.hash;
   }
@@ -364,7 +603,8 @@ function loadCommentsCreateEditor() {
     name: 'edEditor',
     className: 'p_EdrIfr',
     style: {
-      display: 'block', // otherwise 'inline' —> some blank space below, because of descender spacing?
+      // Otherwise 'inline' —> some blank space below, because of descender spacing?
+      display: 'block',
       padding: 0,
       margin: 0,
       width: '100%',
@@ -375,31 +615,54 @@ function loadCommentsCreateEditor() {
     src: editorIframeUrl
   });
 
-  Bliss.inside(editorIframe, editorWrapper);
-  logM("inserted editorIframe");
+  iframeElms[EditorIframeNr] = editorIframe;
 
-  findOneTimeLoginSecret();
-  findCommentToScrollTo();
+  Bliss.inside(editorIframe, editorWrapper);
+  logD("inserted editorIframe");
+
   makeEditorResizable();
 }
 
 
+
 function removeCommentsAndEditor() {
-  logM("removeCommentsAndEditor()");
-  if (commentsIframe) {
-    commentsIframe.remove();
-    commentsIframe = null;
-    commentsIframeInited = false;
-    commentsIframeInitedArr = [false];
+  logD("removeCommentsAndEditor()");
+
+  postNrToFocus = undefined;
+  oneTimeLoginSecret = undefined;
+  // Maybe?: talkyardAuthnToken = undefined, since won't be able to reuse anyway.
+  authnTried = false;
+
+  for (let i = 0; i < iframeElms.length; ++i) {
+    const iframe = iframeElms[i];
+    if (iframe) {
+      iframe.remove();
+    }
+    const loadingText = loadingElms[i];
+    if (loadingText) {
+      loadingText.remove();
+    }
   }
+
+  loadingElms.length = 0;
+  iframeElms.length = 0;
+  iframesInited.length = 0;
+  pendingIframeMessages.length = 0;
+  numDiscussions = 0;
+
   if (editorIframe) {
-    editorIframe.remove();
+    //editorIframe.remove();  // done above
     editorIframe = null;
     editorWrapper.remove();
     editorWrapper = null;
-    editorIframeInitedArr = [false];
+  }
+  if (sessionIframe) {
+    sessionIframe.remove();
+    sessionIframe = null;
+    sessionIframeInited = false;
   }
 }
+
 
 
 // Editor placeholder, so the <iframe> won't occlude the lower parts of the page.
@@ -412,6 +675,7 @@ function createEditorPlaceholder() {
 }
 
 
+
 /* Enable Utterscroll in parent window.
 // Once the iframe has been loaded, Utterscroll will run in the iframe too,
 // and the two Utterscroll instances will cooperate via `window.postMessage`.
@@ -422,51 +686,28 @@ jQuery(function($) {   // xx
 }); */
 
 
+
 function messageCommentsIframeNewWinTopSize() {
-  // Dupl code (6029084583).
-  // Remove this; reuse sendToIframeImpl instead?
+  sendToComments(calcSizes);
+}
 
-  if (!commentsIframe) {
-    // Not yet created, or maybe got deleted by some other Javascript.
-    return;
-  }
 
-  // Wait until the <iframe> is "alive".
-  // Posting a message when the html <iframe> has been created but before it's been fully
-  // loaded, as of 2019-03 makes Chrome send the message to this parent frame instead,
-  // resulting in errors like these in the dev console:
-  //
-  //   Failed to execute 'postMessage' on 'DOMWindow': The target origin
-  //   provided ('https://comments-for-the-blog-address.talkyard.net') does not match
-  //   the recipient window's origin ('https://the-blog-address.com').
-  //
-  // Explanation: postMessage tried to send to https://comments-for... (the target origin) but
-  // instead Chrome sent the message to the main window https://the-blog-address
-  // (the recipient origin).
-  //
-  // This error typically does not happen on localhost, because then the iframe loads
-  // quickly. Instead, it happens in production, sometimes only. To reproduce, on localhost,
-  // set a breakpoint in the app server, in EmbeddedTopicsController.showTopic [5BRW02],
-  // to block the iframe from loading, and then you can reproduce this error.
-  //
-  if (!commentsIframeInited) {
-    setTimeout(messageCommentsIframeNewWinTopSize, 1000);
-    return;
-  }
-
+function calcSizes(commentsIframe: HIframeElm): St {
   var rect = commentsIframe.getBoundingClientRect();
   // We're interested in the height part of the viewport that is used for the iframe.
 
   // If the iframe extends below the lower window edge, we see only the part of it
   // down to `window.innerHeight` (then, don't use `rect.bottom`).
   var height = Math.min(window.innerHeight, rect.bottom);
+   // iframeVisibleBottomInParentWin
 
   // If the iframe starts above the upper window edge, we don't see the parts of it above 0 (zero).
   // And if it starts below the upper window edge, then, `rect.top` is where it starts.
   var iframeVisibleHeight = height - Math.max(0, rect.top);
+                                  // iframeVisibleTopInParentWin
 
-  sendToComments('["iframeOffsetWinSize",' +
-      '{ "top":' + (-rect.top) +  // why did I negate?
+  return ('["iframeOffsetWinSize",' +
+      '{ "top":' + (-rect.top) +  // why did I negate? [why_neg_ifr_top]
       ', "height":' + height +    // rename 'height'? but to what? Maybe 'iframeVisibleBottom'?
       ', "iframeVisibleHeight": ' + iframeVisibleHeight + '}]');
 }
@@ -481,7 +722,7 @@ function messageCommentsIframeToMessageMeToScrollTo(postNr) {
 
 
 function onMessage(event) {
-  if (!commentsIframe) return;
+  if (!sessionIframe) return;
 
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
   // sending objects. CLEAN_UP COULD send a real obj nowadays, because we don't support IE 9 any more.
@@ -509,7 +750,24 @@ function onMessage(event) {
   // COULD REFACTOR: Actually, child iframes can message each other directly;
   // need not send via the parent.
 
-  const iframe = findIframeThatSent(event);
+  if (sessionIframe.contentWindow === event.source) {
+    // @ifdef DEBUG
+    if (eventName !== 'iframeInited')
+      throw Error(`Unexpected message from session iframe: ${eventName}  TyE4MREJ36`);
+    // @endif
+    logM(`Session iframe inited`);
+    sessionIframeInited = true;
+    createEditorIframe();  // [ed_ifr_1st]
+    return;
+  }
+
+  const anyFrameAndNr: [HIframeElm, Nr] | U = findIframeThatSent(event);
+  if (!anyFrameAndNr)
+    return;
+
+  const [iframe, iframeNr] = anyFrameAndNr;
+  const isFromCommentsIframe = iframeNr >= FirstCommentsIframeNr;
+  const isFromEditorIframe = iframeNr === EditorIframeNr;
 
   let assertIsFromEditorToComments = function() {};
   let assertIsFromCommentsToEditor = function() {};
@@ -521,38 +779,38 @@ function onMessage(event) {
     }
   };
   assertIsFromCommentsToEditor = function() {
-    if (iframe !== commentsIframe) {
+    if (!isFromCommentsIframe) {
       logW(`Bad msg dir [TyEMSGDIR2]: '${eventName}', ${JSON.stringify(eventData)}`);
       debugger;
     }
   };
   // @endif
 
-  function sendToOtherIframe(what) {
-    if (iframe === editorIframe) {
-      sendToComments(what);
-    }
-    else if (iframe === commentsIframe) {
-      sendToEditor(what);
-    }
-    else {
-      // Is this in the future and there's now an iframe for one
-      // of the sidebars?
-    }
-  }
-
   switch (eventName) {
     case 'iframeInited':
+      iframesInited[iframeNr] = true;
 
-      if (iframe !== commentsIframe) {
+      if (isFromEditorIframe) {
         logM(`Editor iframe inited`);
-        editorIframeInitedArr = [true];
+        loadFirstCommentsIframe();  // [ed_ifr_1st]
         return;
       }
 
-      logM(`Comments iframe inited`);
-      commentsIframeInited = true;
-      commentsIframeInitedArr = [true];
+      logM(`Comments iframe nr ${iframeNr} inited`);
+
+      if (iframeNr === FirstCommentsIframeNr) {
+        loadRemainingCommentIframes();
+      }
+
+      // If something prevented the editor from loading, let's continue anyway,
+      // so the comments at least appear, although wouldn't be possible to reply.
+      // (So start at i = FirstCommentsIframeNr, not 0.)
+      for (let i = FirstCommentsIframeNr; i < iframesInited.length; ++i) { // [.if_initd]
+        if (!iframesInited[i])
+          return;
+      }
+
+      logM(`All comment iframes inited — continuing ...`);
 
       // Any comment to scroll into view?
       //
@@ -568,17 +826,22 @@ function onMessage(event) {
 
       // Can we login? Already logged in?
       //
-      // Log in via only one comments iframe — otherwise there'd be races
+      // Log in via the first comments iframe only — otherwise there'd be races
       // and unnecessarily many server requests.
       //
-      if (talkyardAuthnToken) {
-        logM(`Sending authn token to comments iframe`);
-        sendToComments(
-              JSON.stringify(['loginWithAuthnToken', talkyardAuthnToken]));
+      if (authnTried) {
+        // Noop.
+      }
+      else if (autnToken) {
+        logM(`Sending authn token to first comments iframe`);
+        sendToFirstCommentsIframe(
+              JSON.stringify(['loginWithAuthnToken', autnToken]));
       }
       else if (oneTimeLoginSecret) {
         // Tell the comments iframe to login, using our one-time secret.  [306KUD244]
-        sendToComments(`["loginWithOneTimeSecret", "${oneTimeLoginSecret}"]`);
+        logM(`Sending one time login secret to first comments iframe`);
+        sendToFirstCommentsIframe(
+              `["loginWithOneTimeSecret", "${oneTimeLoginSecret}"]`);
       }
       else {
         // Resume any old session.
@@ -591,7 +854,8 @@ function onMessage(event) {
         // then we won't remember the session again — so that after page reload,
         // any resume-session error message won't re-appear.
         //
-        var sessionStr;
+        logM(`Resuming old session`);
+        let sessionStr;
         try {
           sessionStr = theStorage.getItem('talkyardSession');
           theStorage.removeItem('talkyardSession');  // see above (3548236)
@@ -602,7 +866,8 @@ function onMessage(event) {
         if (sessionStr) {
           try {
             const session = JSON.parse(sessionStr);
-            sendToComments(['resumeWeakSession', session]);
+            sendToFirstCommentsIframe(
+                  ['resumeWeakSession', session]);
           }
           catch (ex) {
             logW(
@@ -610,20 +875,28 @@ function onMessage(event) {
           }
         }
       }
+      authnTried = true;
+
       break;
     case 'setIframeSize':
+      //logT(`setIframeSize ${j2s(eventData)}`);
+
       setIframeSize(iframe, eventData);
-      // The comments iframe wants to know the real win dimensions, so it can position modal
-      // dialogs on screen. But wait until the iframe has been resized — because if
-      // the iframe bottom after the above resize, is higher up than the window bottom,
+      // The comments iframes want to know the real win dimensions, so they can position
+      // dialogs on screen (so pat can see the dialogs). But wait until [the iframe
+      // whose size we're changing] has been resized — because if the iframe bottom
+      // after having been resized, is higher up than the window bottom,
       // then that'd reduce the height we send to the iframe.
-      if (iframe === commentsIframe) {
-        setTimeout(messageCommentsIframeNewWinTopSize);
+      if (isFromCommentsIframe) {
+        setTimeout(
+              messageCommentsIframeNewWinTopSize);
       }
       // Remove the "loading comments" info text.
-      var loadingText = document.getElementById('ed-loading-comments');
-      if (loadingText)
-        loadingText.parentNode.removeChild(loadingText);
+      var loadingText = loadingElms[iframeNr];
+      if (loadingText) {
+        loadingText.remove();
+        loadingElms[iframeNr] = undefined;
+      }
       break;
     case 'scrollToPostNr':
       // The comments iframe will calculate the rectangle to scroll into view,
@@ -652,7 +925,7 @@ function onMessage(event) {
     case 'authnErr':
       logW(`Error logging in using ${eventData.prettyMethod}. ` +
             `Check the console log messages in the Talkyard comments iframe ` +
-            `for details (its name is "${commentsIframeName}").`)
+            `for details (its name is 'edComments-1').`)
       break;
 
     case 'justLoggedIn':
@@ -688,7 +961,7 @@ function onMessage(event) {
       catch (ex) {
         logW(`Error setting 'talkyardSession' in  theStorage [TyESETWKSID]`, ex);
       }
-      sendToOtherIframe(event.data);
+      sendToOtherIframes(event.data, iframeNr);
       break;
 
     case 'logoutClientSideOnly':
@@ -699,8 +972,8 @@ function onMessage(event) {
       catch (ex) {
         logW(`Error removing 'talkyardSession' from  theStorage [TyERMWKSID]`, ex);
       }
-      sendToOtherIframe(event.data);
-      if (iframe === commentsIframe) {
+      sendToOtherIframes(event.data, iframeNr);
+      if (isFromCommentsIframe) {
         showEditor(false);
       }
       if (eventData.goTo) {
@@ -718,6 +991,10 @@ function onMessage(event) {
       break;
     case 'showEditsPreview':  // REMOVE DO_AFTER 2020-09-01 deprecated
     case 'showEditsPreviewInPage':
+      // REMOVE
+      // @ifdef DEBUG
+      throw Error('TyE306MWEG25_06');
+      // @endif
       assertIsFromEditorToComments();
       sendToComments(event.data);
       break;
@@ -725,7 +1002,12 @@ function onMessage(event) {
       assertIsFromEditorToComments();
       sendToComments(event.data);
       break;
-    case 'hideEditorAndPreview':
+    case 'hideEditorAndPreview': // CLEAN_UP REMOVE_AFTER 2021-10-01 this line only.
+      // REMOVE
+      // @ifdef DEBUG
+      throw Error('TyE306MWEG25_07');
+      // @endif
+    case 'hideEditor':
       assertIsFromEditorToComments();
       showEditor(false);
       sendToComments(event.data);
@@ -737,26 +1019,43 @@ function onMessage(event) {
       setEditorMinimized(eventData);
       break;
     case 'editorToggleReply':
+      // REMOVE
+      // @ifdef DEBUG
+      throw Error('TyE306MWEG25_01');
+      // @endif
       assertIsFromCommentsToEditor();
       sendToEditor(event.data);
       break;
     case 'handleReplyResult':
+      // REMOVE
+      // @ifdef DEBUG
+      throw Error('TyE306MWEG25_02');
+      // @endif
       assertIsFromEditorToComments();
       sendToComments(event.data);
       break;
     case 'editorEditPost':
+      // REMOVE
+      // @ifdef DEBUG
+      throw Error('TyE306MWEG25_03');
+      // @endif
       assertIsFromCommentsToEditor();
       sendToEditor(event.data);
       break;
     case 'handleEditResult':
+      // REMOVE
+      // @ifdef DEBUG
+      throw Error('TyE306MWEG25_04');
+      // @endif
       assertIsFromEditorToComments();
       sendToComments(event.data);
       break;
     case 'patchTheStore':
-      sendToOtherIframe(event.data);
+      sendToOtherIframes(event.data, iframeNr);
       break;
   }
 }
+
 
 
 function setIframeSize(iframe, dimensions) {
@@ -768,51 +1067,119 @@ function setIframeSize(iframe, dimensions) {
 }
 
 
-function findIframeThatSent(event) {  // [find_evt_ifrm]
+
+/// Returns: [iframe, index] or undefined.
+function findIframeThatSent(event): [HIframeElm, Nr] | U {  // [find_evt_ifrm]
   // See http://stackoverflow.com/a/18267415/694469
-  if (commentsIframe && commentsIframe.contentWindow === event.source)
-    return commentsIframe;
-  if (editorIframe && editorIframe.contentWindow === event.source)
-    return editorIframe;
+  for (let i = 0; i < iframeElms.length; ++i) {
+    const comIfr = iframeElms[i];
+    if (comIfr && comIfr.contentWindow === event.source)
+      return [comIfr, i];
+  }
 }
 
 
-const pendingMainIframeMessages = [];
+
+
+function sendToOtherIframes(message, skipIframeNr: Nr) {
+  // Send to all (except for the one to skip). If we have a specific iframe
+  // in mind, then we postMessage() to that one directly instead. [post_dir_2_ifr]
+  for (let i = 0; i < iframeElms.length; ++i) {
+    if (i === skipIframeNr) {
+      continue;
+    }
+    const otherIframe = iframeElms[i];
+    sendToOneIframe(otherIframe, message);
+  }
+}
+
 
 function sendToComments(message) {
-  sendToIframeImpl(
-      commentsIframe, commentsIframeInitedArr, pendingMainIframeMessages, message);
+  sendToOtherIframes(message, EditorIframeNr);
 }
 
 
-const pendingEditorIframeMessages = [];
 
 function sendToEditor(message) {
-  sendToIframeImpl(
-      editorIframe, editorIframeInitedArr, pendingEditorIframeMessages, message);
+  sendToOneIframe(editorIframe, message);
 }
 
-function sendToIframeImpl(iframe, initedArr: boolean[], pendingMessages,
-      message: any | null) {
+
+
+function sendToFirstCommentsIframe(message: Ay) {   // [1st_com_frame]
+  sendToOneIframe(iframeElms[FirstCommentsIframeNr], message);
+}
+
+
+
+function sendToOneIframe(iframe, message: any | null, retryNr: Nr = 0) {
+  //initedArr: boolean[], pendingMessages,
   // Dupl code (6029084583).
+
+  const iframeNr: Nr = iframeElms.indexOf(iframe);
+  if (iframeNr === -1) {
+    // Gone, skip message.
+    return;
+  }
+
+  const iframeInited = iframesInited[iframeNr];
+  const pendingMessages = pendingIframeMessages[iframeNr] || [];
+  pendingIframeMessages[iframeNr] = pendingMessages;
 
   // Sometimes one iframe comes alive and wants to message the other one,
   // before that other iframe is ready.
-  // [E2EBUG] it's not impossible that an e2e test browser super quickly clicks something,
-  // before any pending message has been delivered?  This'd be harmless — would only
-  // affect e2e tests; humans aren't that fast.
   if (message) {
     pendingMessages.push(message);
   }
-  if (!initedArr[0]) {
+
+  if (!pendingMessages.length)
+    return;
+
+  // Wait until the <iframe> is "alive".
+  // Posting a message when the html <iframe> has been created but before it's been fully
+  // loaded, as of 2019-03 made Chrome send the message to this parent window instead,
+  // resulting in errors like these in the dev console:
+  //
+  //   Failed to execute 'postMessage' on 'DOMWindow': The target origin
+  //   provided ('https://comments-for-the-blog-address.talkyard.net') does not match
+  //   the recipient window's origin ('https://the-blog-address.com').
+  //
+  // Explanation: postMessage tried to send to https://comments-for... (the target origin)
+  // but instead Chrome sent the message to the top window, https://the-blog-address
+  // (the recipient origin).
+  //
+  // This error typically does not happen on localhost, because then the iframe loads
+  // quickly. Instead, it happens in production, sometimes only. To reproduce, on localhost,
+  // set a breakpoint in the app server, in EmbeddedTopicsController.showTopic [5BRW02],
+  // to block the iframe from loading, and then you can reproduce this error.
+  //
+  if (!iframeInited) {
     setTimeout(function() {
-      sendToIframeImpl(iframe, initedArr, pendingMessages, null);
+      // Maybe the iframe is gone, was removed before it got inited?
+      // If so, remove it from our iframes list — then, indexOf() above, won't
+      // find it so we'd return and skip the message.
+      if ((retryNr % 5) === 1) {
+        forgetRemovedCommentIframes();
+      }
+      sendToOneIframe(iframe, null, retryNr + 1);
     }, 500);
     return;
   }
+
+  // Iframe inited, but contents gone? That'd mean it got removed by javascript.
+  if (!iframe.contentWindow) {
+    // If many iframes gone, we'd call forgetRemovedCommentIframes()
+    // unnecessarily many times, that's ok.
+    setTimeout(forgetRemovedCommentIframes, 1);
+    return;
+  }
+
   for (let i = 0; i < pendingMessages.length; ++i) {
     let m = pendingMessages[i];
-    if ((typeof m) !== 'string') {
+    if ((typeof m) === 'function') {
+      m = m(iframe, iframeNr);
+    }
+    else if ((typeof m) !== 'string') {
       // For now. Could remove JSON.parse instead [3056MSDJ1].
       m = JSON.stringify(m);
     }
@@ -821,6 +1188,7 @@ function sendToIframeImpl(iframe, initedArr: boolean[], pendingMessages,
   // Empty the array.
   pendingMessages.length = 0;
 }
+
 
 
 function findOneTimeLoginSecret() {
@@ -841,6 +1209,7 @@ function findOneTimeLoginSecret() {
 }
 
 
+
 function findCommentToScrollTo() {
   const commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)([#&].*)?$/);  // [2PAWC0]
   if (commentNrHashMatch) {
@@ -858,12 +1227,20 @@ function findCommentToScrollTo() {
 }
 
 
+
 function scrollComments(rectToScrollIntoView, options /* CalcScrollOpts */) {
   // For a discussion about using <html> or <body>, see:
   // https://stackoverflow.com/questions/19618545/
   //    body-scrolltop-vs-documentelement-scrolltop-vs-window-pagyoffset-vs-window-scrol
   // COULD use  window.scrollY instead, that's maybe more future compatible,
   // see: https://stackoverflow.com/a/33462363/694469
+
+  // This currently works only with one single comments iframe — if more,
+  // then, currently we don't know which one to scroll.
+  if (numDiscussions > 1)
+    return;
+
+  const commentsIframe = iframeElms[FirstCommentsIframeNr];
   options.parent = document.documentElement.scrollTop ? document.documentElement : document.body;
   const iframeRect = commentsIframe.getBoundingClientRect();
   const rectWithOffset = {
@@ -909,7 +1286,7 @@ function setEditorMaximized(maximized) {
     oldHeight = editorWrapper.style.height;
     oldBorderTop = editorWrapper.style.borderTop;
     oldPaddingTop = editorWrapper.style.paddingTop;
-    editorWrapper.style.top = 0; // bottom is 0 already
+    editorWrapper.style.top = '0px'; // bottom is 0 already
     editorWrapper.style.height = 'auto';
     editorWrapper.style.borderTop = 'none';
     editorWrapper.style.paddingTop = 'none';
@@ -1001,5 +1378,12 @@ windowWithTalkyardProps.edRemoveCommentsAndEditor = removeCommentsAndEditor;  //
 windowWithTalkyardProps.edReloadCommentsAndEditor = loadCommentsCreateEditor; // old name [2EBG05]
 windowWithTalkyardProps.talkyardRemoveCommentsAndEditor = removeCommentsAndEditor;
 windowWithTalkyardProps.talkyardReloadCommentsAndEditor = loadCommentsCreateEditor;
+windowWithTalkyardProps.talkyardAddCommentsIframe = addCommentsIframe;
+windowWithTalkyardProps.talkyardForgetRemovedCommentIframes = forgetRemovedCommentIframes;
+//windowWithTalkyardProps.talkyardLoadNewCommentIframes = loadNewCommentIframes;
+
+// @ifdef DEBUG
+windowWithTalkyardProps['e2e_getNumEmbDiscs'] = () => numDiscussions;
+// @endif
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

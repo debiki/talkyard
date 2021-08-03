@@ -51,9 +51,11 @@ class PlainApiActions(
 
   def PlainApiAction[B](parser: BodyParser[B],
         rateLimits: RateLimits, allowAnyone: Bo = false, isLogin: Bo = false,
+        authnUsersOnly: Bo = false,
         avoidCookies: Bo = false, skipXsrfCheck: Bo = false)
         : ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, rateLimits,
+        authnUsersOnly = authnUsersOnly,
         allowAnyone = allowAnyone, isLogin = isLogin, avoidCookies = avoidCookies,
         skipXsrfCheck = skipXsrfCheck)
 
@@ -87,6 +89,7 @@ class PlainApiActions(
         rateLimits: RateLimits,
         adminOnly: Boolean = false,
         staffOnly: Boolean = false,
+        authnUsersOnly: Bo = false,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         avoidCookies: Boolean = false,
         isLogin: Boolean = false,
@@ -541,6 +544,15 @@ class PlainApiActions(
         }
       }
 
+      if (authnUsersOnly) {
+        if (!anyUser.exists(_.isUserNotGuest))
+          throwForbidden(
+                "TyE0AUTHND", "You need to be logged in to do this")
+        if (!anyUser.exists(_.isApprovedOrStaff))
+          throwForbidden(
+                "TyE0APPRVD1", "Your user account has not yet been approved")
+      }
+
       if (!allowAnyone && !isLogin) {
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
@@ -563,11 +575,16 @@ class PlainApiActions(
 
         if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved)
           goToHomepageOrIfApiReqThen(throwForbidden(
-                "TyE0APPRVD", "Your user account has not yet been approved"))
+                "TyE0APPRVD2", "Your user account has not yet been approved"))
 
-        if (anyUser.exists(_.isGuest) && !siteSettings.isGuestLoginAllowed && isApiReq)
-          throwForbidden("DwE7JYK4", o"""Guest access has been disabled, but you're logged in
+        if (anyUser.exists(_.isGuest) && !siteSettings.isGuestLoginAllowed) {
+          throwForbiddenIf(isApiReq,
+                "TyE7JYK4", o"""Guest access has been disabled, but you're logged in
                 as guest. Please sign up with a real account instead""")
+          // If !api-req, then could be *viewing* a page — that's ok,
+          // since !siteSettings.userMustBeApproved.
+          // Or maybe delete guest session, show a message that one is now logged out?
+        }
       }
 
       val apiRequest = ApiRequest[A](

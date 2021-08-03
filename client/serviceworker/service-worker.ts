@@ -46,12 +46,12 @@ Connected  ——> Human gone ——> Stay connected
   |                           (since already connected, anyway)
   |
    `——> Disconnected —> Browser window open?
-                           \
-                            \———[no]——> Stay disconnected (don't reconnect
-                             \                     the service worker alone)
-                              \
+                           ＼
+                            ＼———[no]——> Stay disconnected (don't reconnect
+                             ＼                     the service worker alone)
+                              ＼
                               [yes]——> Human there? ———[yes] ———> Try to reconnect
-                                          \
+                                          ＼
                                          [no, gone] —–—> Stay disonnected [HUMANGONE]
 */
 

@@ -50,15 +50,18 @@ const fs = require("fs");
 // COULD remove, uses old gulp-util, deprecated and pulls in old cruft.
 const save = require('gulp-save');
 const execSync = require('child_process').execSync;
+const spawnSync = require('child_process').spawnSync;
 const preprocess = require('gulp-preprocess');
 
 const uglify = require('gulp-uglify');
+
 // Later, to use a more recent uglifyjs version:
 //const composer = require('gulp-uglify/composer');
 //const uglify = composer(require('uglify-js'), console);
 
 const currentDirectorySlash = __dirname + '/';
 const versionFilePath = 'version.txt';
+
 
 // Gzip otions: Use max level = 9 for 0.5% better compression.
 //
@@ -91,15 +94,120 @@ const versionFilePath = 'version.txt';
 //
 const gzipOptions = { level: 9, memLevel: 9 };
 
+
 function readGitHash() {
   try {
     return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
   }
   catch (ex) {
-    return 'bad_git_repo';
+    const errCode = 'TyE_BAD_GIT_REPO';
+    console.error(`Error finding Git revision [${errCode}]`, ex)
+    return errCode;
   }
 }
 
+
+/// Only for Ty's own Typescript code. Not for 3rd party Javascript.
+///
+function expandCPreProcessorMacros(ps) {  // : { debug?: true, prod?: true }
+  // See also: nextFileTemplate = function(contents, file) ...
+
+  // And: http://www.nongnu.org/espresso/js-cpp.html
+  // or: https://www.npmjs.com/package/c-preprocessor
+  // or: https://www.reddit.com/r/javascript/comments/2ymw1q/using_gcccppclangs_cpreprocessor_in_javascript/
+  // etc: https://www.google.com/search?q=javascript+%22c+preprocessor%22
+  // (but they're doing it in an unsafe way, without any [cpp_sane] check.)
+
+  if (!!ps.dev === !!ps.prod) throw Error('TyE396MFEG2');
+
+  return insert.transform(function(sourceCodeSt, sourceFile) {
+    const macrosFile = `macros-${ps.dev ? 'dev' : 'prod'}.h`;
+    function makeCppArgs(macrosFile) {
+      return [
+            // Read from stdin — we'll pipe sourceCodeSt to stdin.
+            '-',
+            // Write to stdout.
+            `-`,
+            // Read C preprocessor macros from this file.
+            `-imacros`, 'client/macros/' + macrosFile,
+            // Interpret the source code file more as text, but "less" as C or C++ code,
+            // otherwise the C preprocessor removes "unneeded" whitespace — but
+            // such whitespace might mean something in javascript or typescript.
+            // See: https://stackoverflow.com/questions/445986/how-to-force-gcc-preprocessor-to-preserve-whitespace
+            // and: https://gcc.gnu.org/onlinedocs/cpp/Traditional-Mode.html
+            `-traditional-cpp`,
+            // Skip default C macros (only use Talkyard's own macros) and headers.
+            `-nostdinc`,
+            // Don't add any '#line 123' line markers (for C, not javascript).
+            `-P`,
+            // Keep comments.
+            `-CC`];
+            // Allow '//' comments — included the C99 standard, not C89. Doesn't work,
+            // because of -traditional-cpp above?
+            //`-x=c99`
+            // This works, but deletes blanks before the '//', which fails the
+            // safety test below. [cpp_sane]
+            //`-x=c++`;
+    }
+
+    // Make #ifdef work if commented out — so can be used in Typescript files,
+    // where #ifdef would cause a Typescript syntax error if on the first column,
+    // without comments '//' before.
+    // So, in Ty's Typescript, this will get processed by cpp:
+    //   >   // #ifdef DEBUG
+    //   >   debugStuff();
+    //   >   // #endif
+    // DO_AFTER soon: remove dependency 'gulp-preprocess', use cpp instead  [js_macros]
+    // and change  ' // @ifdef DEBUG .. // @endif'  to  ' // #ifdef DEBUG ... // #endif'.
+    const sourceCodeStWithIfdefUncommented = sourceCodeSt.replace(
+            /^[ \t]*\/\/[ \t]*(#[a-z]+([ \t]+[a-zA-Z0-9_]+)?)[ \t]*$/gm, '$1');
+
+    // cpp -traditional-cpp -nostdinc -P -E -CC /home/user/styd/d9/client/embedded-comments/blog-comments.ts ./blog-comments.ts.after-cpp.ts -imacros /home/user/styd/d9/client/macros-prod.cpp
+    console.log(`Running:  cpp ${makeCppArgs(macrosFile).join(' ')}`);
+    const resultObj = spawnSync('cpp', makeCppArgs(macrosFile), {
+      input: sourceCodeStWithIfdefUncommented,
+      encoding: 'utf8',
+      // Unminified script bundles can be large, 1 - 10 MiB, but 50 MiB is impossibly
+      // much? If too little, there'll be an ENOBUFS error (ENd Of BUFferS?)
+      // and the file truncated.
+      maxBuffer: 50 * 1024 * 1024,
+    });
+    const processedCodeSt = resultObj.stdout.toString();
+
+    // Preprocess the file without any macros too — then we should get back sourceCodeSt
+    // unchanged, [cpp_sane]  otherwise we cannot be sure that cpp didn't
+    // mess up anything — after all, it's for C and C++, not Javascript, so if it
+    // does anything unexpected, that would have been a tiny bit risky.
+    const resultObjNoMacros = spawnSync(
+            'cpp', makeCppArgs('macros-none.h'), {
+              input: sourceCodeStWithIfdefUncommented,
+              encoding: 'utf8', maxBuffer: 50 * 1024 * 1024, });
+    const processedCodeNoMacrosSt = resultObjNoMacros.stdout.toString();
+    // Hmm, but this can fail, although all fine, if there's #ifdef ... ... #endif.
+    if (processedCodeNoMacrosSt !== sourceCodeSt) {
+      fs.mkdirSync('target/client', { recursive: true });
+      fs.writeFileSync('target/client/cpp-before.ts', sourceCodeSt);
+      fs.writeFileSync('target/client/cpp-after.ts', processedCodeNoMacrosSt);
+      throw Error(`The C Preprocessor messes up this file:  ${sourceFile.path} \n` +
+          `  Look at this:\n` +
+          `     gvimdiff  target/client/cpp-before.ts  target/client/cpp-after.ts  \n` +
+          `\n` +
+          `  Tips 1: cpp (the C Preprocessor) concatenates lines ending with '\\',\n` +
+          `  so you can change from '\\' (backslash) to '＼' which is\n` +
+          `  U+FF3C	FULLWIDTH REVERSE SOLIDUS (not backslash),\n` +
+          `  see: https://unicode-search.net/unicode-namesearch.pl?term=BACKSLASH\n\n` +
+          `\n` +
+          `  Tips 2: cpp also doesn't know that // starts a comment, and\n` +
+          `  will complain about an unterminated /* comment for lines like:\n` +
+          `  "// text text /* more text", so add a space between / and *: "/ *"\n` +
+          `  (If enabling C++ or C99 mode, cpp then understands // *but* strips\n` +
+          `  whitespace before, making our [cpp_sane] check sometimes fail.)\n\n`
+          );
+    }
+
+    return processedCodeSt;
+  });
+}
 
 let version;
 let versionTag;
@@ -413,12 +521,15 @@ var serverJavascriptSrc = [
 // This one also concatenates Javascript, so it's different from the other
 // 'compile(Sth)Typescript' functions — so let's append 'ConcatJavascript' to the name.
 function compileServerTypescriptConcatJavascript() {
-  var typescriptStream = serverTypescriptProject.src()
+  // Generates server-bundle.js, with Ty's own code.
+  const typescriptStream = serverTypescriptProject.src()
       .pipe(plumber())
       .pipe(insert.transform(nextFileTemplate))
-      .pipe(serverTypescriptProject());
+      .pipe(serverTypescriptProject())
+      .pipe(expandCPreProcessorMacros({ dev: true }));
 
-  var javascriptStream = gulp.src(serverJavascriptSrc)
+  // Third party code (and skip expandCPreProcessorMacros()).
+  const javascriptStream = gulp.src(serverJavascriptSrc)
       .pipe(plumber())
       .pipe(insert.transform(nextFileTemplate));
 
@@ -444,29 +555,12 @@ var _2dTypescriptProject = typeScript.createProject({  // [SLIMTYPE]
 }); */
 
 
-function compileSwTypescript() {
-  return swTypescriptProject.src()
-    .pipe(plumber())
-    .pipe(insert.transform(nextFileTemplate))
-    .pipe(swTypescriptProject())
-    .pipe(updateAtimeAndMtime())
-    .pipe(gulp.dest('target/client/'));
-}
-
-function compileSlimTypescript() {
-  return slimTypescriptProject.src()
-    .pipe(plumber())
-    .pipe(insert.transform(nextFileTemplate))
-    .pipe(slimTypescriptProject())
-    .pipe(updateAtimeAndMtime())
-    .pipe(gulp.dest('target/client/'));
-}
-
-function compileOtherTypescript(typescriptProject) {
+function compileTypescript(typescriptProject) {
   return typescriptProject.src()
     .pipe(plumber())
     .pipe(insert.transform(nextFileTemplate))
     .pipe(typescriptProject())
+    .pipe(expandCPreProcessorMacros({ dev: true }))
     .pipe(updateAtimeAndMtime())
     .pipe(gulp.dest('target/client/'));
 }
@@ -477,7 +571,7 @@ gulp.task('compileServerTypescriptConcatJavascript', () => {
 
 
 gulp.task('compileSwTypescript', () => {
-  return compileSwTypescript();
+  return compileTypescript(swTypescriptProject);
 });
 gulp.task('compileSwTypescript-concatScripts',
         gulp.series('compileSwTypescript',() => {
@@ -486,7 +580,7 @@ gulp.task('compileSwTypescript-concatScripts',
 
 
 gulp.task('compileHeadTypescript', () => {
-  return compileOtherTypescript(headTypescriptProject);
+  return compileTypescript(headTypescriptProject);
 });
 gulp.task('compileHeadTypescript-concatScripts',
         gulp.series('compileHeadTypescript',() => {
@@ -497,7 +591,7 @@ gulp.task('compileHeadTypescript-concatScripts',
 
 
 gulp.task('compileSlimTypescript', () => {
-  return compileSlimTypescript();
+  return compileTypescript(slimTypescriptProject);
 });
 gulp.task('compileSlimTypescript-concatScripts',
         gulp.series('compileSlimTypescript',() => {
@@ -506,7 +600,7 @@ gulp.task('compileSlimTypescript-concatScripts',
 
 
 gulp.task('compileMoreTypescript', () => {
-  return compileOtherTypescript(moreTypescriptProject);
+  return compileTypescript(moreTypescriptProject);
 });
 gulp.task('compileMoreTypescript-concatScripts',
         gulp.series('compileMoreTypescript',() => {
@@ -524,7 +618,7 @@ gulp.task('compile2dTypescript-concatScripts',
  */
 
 gulp.task('compileStaffTypescript', () => {
-  return compileOtherTypescript(staffTypescriptProject);
+  return compileTypescript(staffTypescriptProject);
 });
 gulp.task('compileStaffTypescript-concatScripts',
         gulp.series('compileStaffTypescript',() => {
@@ -533,7 +627,7 @@ gulp.task('compileStaffTypescript-concatScripts',
 
 
 gulp.task('compileEditorTypescript', () => {
-  return compileOtherTypescript(editorTypescriptProject);
+  return compileTypescript(editorTypescriptProject);
 });
 gulp.task('compileEditorTypescript-concatScripts',
         gulp.series('compileEditorTypescript',() => {
@@ -542,7 +636,7 @@ gulp.task('compileEditorTypescript-concatScripts',
 
 
 gulp.task('compileBlogCommentsTypescript', () => {
-  return compileOtherTypescript(blogCommentsTypescriptProject);
+  return compileTypescript(blogCommentsTypescriptProject);
 });
 gulp.task('compileBlogCommentsTypescript-concatScripts',
         gulp.series('compileBlogCommentsTypescript',() => {
@@ -634,7 +728,11 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
         minimal: false,
         title: `gulp-debug: minifying scripts: ${JSON.stringify(sourceAndDest)}`,
       }))
-      .pipe(preprocess({ context: preprocessProdContext })) // see comment above
+      .pipe(preprocess({ context: preprocessProdContext })) // comment above [js_macros]
+      // Skip for now — causes problems with backslash '\' at the end
+      // of lines in 3rd party scripts.
+      //   .pipe(expandCPreProcessorMacros({ prod: true }))
+      .pipe(gulp.dest('target/client/before-uglify'))
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
@@ -695,6 +793,8 @@ gulp.task('compile-stylus', () => {
 
     stream = stream
       .pipe(stylus(stylusOpts))
+      // Don't: .pipe(expandCPreProcessorMacros())
+      // — cpp thinks #some-tag-id is a macro keyword.
       // Make the .rtl styles work by removing this hacky text.
       .pipe(replace('__RTL__', ''))
       .pipe(concat(`styles-bundle${rtlSuffix}.css`))
@@ -914,6 +1014,7 @@ gulp.task('delete-non-gzipped', () => {
 
 gulp.task('clean', gulp.series('cleanTranslations', () => {
   return g_del([
+          `target/client`,
           `${webDest}/*`,
           `!${webDest}/.gitkeep`,
           `${webDestFonts}/*`,

@@ -103,6 +103,9 @@ function monthDayYear(when) {
 // ------- Bug functions
 
 
+// CLEAN_UP SMALLER_BUNDLE  use the ones in  prelude.ts  instead
+
+
 // Don't use. Use die2 instead. Could rewrite all calls to die() to use
 // die2 instead, and then rename die2 to die and remove the original die().
 d.u.die = function(message) {

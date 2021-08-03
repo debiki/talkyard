@@ -25,6 +25,10 @@
 // CLEAN_UP try to remove this dependency from here.
 /// <reference path="utils/scroll-into-view.ts" />
 
+
+// Old comment! Do *not* start using Redux or any such, in Ty's case, over complicated
+// things. Instead, remove the Flux pattern and call Store fns directly, [flux_mess].
+//
 /* This Flux store is perhaps a bit weird, not sure. I'll switch to Redux or
  * Flummox or Fluxxor or whatever later, and rewrite everything in a better way?
  * Also perhaps there should be more than one store, so events won't be broadcasted
@@ -41,9 +45,9 @@ const htmlElem = document.getElementsByTagName('html')[0];
 declare const EventEmitter3; // don't know why, but the TypeScript defs doesn't work.
 export const ReactStore = new EventEmitter3();
 
-export function getMainWinStore(): Store {  // RENAME QUICK to win_getMainWinStore()
+export function win_getSessWinStore(): SessWinStore {
   const mainWin = getMainWin();
-  return mainWin.debiki2.ReactStore.allData();
+  return mainWin.theStore;
 }
 
 type StoreStateSetter = (store: Store) => void;
@@ -504,9 +508,64 @@ let volatileDataActivated = false;
 ReactStore.activateVolatileData = function() {
   dieIf(volatileDataActivated, 'EsE4PFY03');
   volatileDataActivated = true;
-  const data: VolatileDataFromServer = eds.volatileDataFromServer;
-  theStore_setOnlineUsers(data.numStrangersOnline, data.usersOnline);
-  ReactStore.activateMyself(data.me);
+  const volData: VolatileDataFromServer = eds.volatileDataFromServer;
+
+  // Update this win's/frame's user
+  // ------------------------------
+  // Copy any session frame user to this frame's user:  [mny_ifr_pat_dta]
+  // If we're in a comments iframe, and we're logged in — there's a session
+  // and a user in the session-iframe.html — then, use that session and user.
+  // This makes it possible to dynamically add new blog comments iframes,
+  // and they'll be already-logged-in — works also if session cookies blocked.
+  let sessFrameStore: SessWinStore;
+  if (eds.isInIframe) {
+    try {
+      const sessFrame = getMainWin();
+      sessFrameStore = sessFrame.theStore;
+      if (_.isObject(sessFrameStore.me)) {
+        if (!volData.me || volData.me.isStranger) {
+          volData.me = _.cloneDeep(sessFrameStore.me);  // [emb_ifr_shortcuts]
+        }
+        else {
+          // @ifdef DEBUG
+          if (volData.me.id !== sessFrameStore.me.id) {
+            logW(`sessStore.me and volData.me race? Ids: ${sessFrameStore.me.id
+                } and ${volData.me.id}  [TyM0J2MW67]`);
+            debugger;
+          }
+          // @endif
+          volData.me = me_merge(sessFrameStore.me, volData.me);  // [emb_ifr_shortcuts]
+          sessFrameStore.me = _.cloneDeep(volData.me);
+        }
+      }
+    }
+    catch (ex) {
+      logW(`Multi iframe error? [TyEMANYIFR02]`, ex)
+    }
+  }
+
+  // Do the interesting thing
+  // ------------------------------
+
+  theStore_setOnlineUsers(volData.numStrangersOnline, volData.usersOnline);
+  ReactStore.activateMyself(volData.me);
+
+  // Update any session frame's user
+  // ------------------------------
+  // Copy this frame's user to the session frame, if missing there:  [mny_ifr_pat_dta]
+  // This is safe and cannot fail, still, try-catch for now, new code.
+  // DO_AFTER 2022-01-01 remove try-catch, keep just the contents.
+  if (sessFrameStore) {
+    try {
+      if (!_.isObject(sessFrameStore.me) && store.me) {  // [emb_ifr_shortcuts]
+        sessFrameStore.me = _.cloneDeep(store.me);
+      }
+    }
+    catch (ex) {
+      logW(`Multi iframe error? [TyEMANYIFR03]`, ex)
+    }
+  }
+
   store.quickUpdate = false;
   this.emitChange();
 };
@@ -671,6 +730,11 @@ ReactStore.allData = function(): Store {
 };
 
 
+ReactStore.me = function(): Me {
+  return store.me;
+};
+
+
 // Shows one's drafts: Create a preview post, for each new post draft (but not
 // for edit drafts — then, we instead show a text "Unfinished edits" next to the
 // edit button. [UFINEDT])
@@ -680,11 +744,13 @@ ReactStore.allData = function(): Store {
 // message text input box. [CHATPRVW]
 //
 function addMyDraftPosts(store: Store, myPageData: MyPageData) {
+  // Some drafts are saved server side, others just in the browser — the latter ones
+  // get loaded here: addLocalStorageDataTo().
   if (!eds.isInEmbeddedEditor && !page_isChat(store.currentPage?.pageRole)) {
     _.each(myPageData.myDrafts, (draft: Draft) => {
       const draftType = draft.forWhat.draftType;
       if (draftType === DraftType.Reply || draftType === DraftType.ProgressPost) {
-        const post: Post | null = store_makePostForDraft(store, draft);
+        const post: Post | null = store_makePostForDraft(store.me.id, draft);
         if (post) {
           updatePost(post, store.currentPageId);
         }
@@ -905,14 +971,14 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
 
 
 function voteOnPost(action) {
-  const post: Post = action.post;
+  const postNr: PostNr = action.postNr;
 
   const me: Myself = store.me;
   const myPageData: MyPageData = me.myCurrentPageData;
-  let votes = myPageData.votes[post.nr];
+  let votes = myPageData.votes[postNr];
   if (!votes) {
     votes = [];
-    myPageData.votes[post.nr] = votes;
+    myPageData.votes[postNr] = votes;
   }
 
   if (action.doWhat === 'CreateVote') {
@@ -922,7 +988,7 @@ function voteOnPost(action) {
     _.remove(votes, (voteType) => voteType === action.voteType);
   }
 
-  updatePost(post, store.currentPageId);
+  patchTheStore(action.storePatch);
 }
 
 
@@ -1401,7 +1467,7 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 }
 
 
-function patchTheStore(storePatch: StorePatch) {
+function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly, instead of via [flux_mess].
   if (isDefined2(storePatch.setEditorOpen) && storePatch.setEditorOpen !== store.isEditorOpen) {
     store.isEditorOpen = storePatch.setEditorOpen;
     store.editorsPageId = storePatch.setEditorOpen && storePatch.editorsPageId;
@@ -1426,7 +1492,25 @@ function patchTheStore(storePatch: StorePatch) {
 
   if (storePatch.me) {
     // [redux] modifying the store in place, again.
-    store.me = <Myself> _.assign(store.me || {}, storePatch.me);
+    let patchedMe: Myself | U;
+    if (eds.isInIframe) {
+      // Don't forget [data about pat] loaded by other frames.  [mny_ifr_pat_dta]
+      try {
+        const sessWin = getMainWin();
+        const sessStore: SessWinStore = sessWin.theStore;
+        if (_.isObject(sessStore.me)) {
+          patchedMe = me_merge(sessStore.me, store.me, storePatch.me);  // [emb_ifr_shortcuts]
+          sessStore.me = _.cloneDeep(patchedMe);
+        }
+      }
+      catch (ex) {
+        logW(`Multi iframe error? [TyEMANYIFR04]`, ex)
+      }
+    }
+    if (!patchedMe) {
+      patchedMe = _.assign(store.me || {} as Myself, storePatch.me);
+    }
+    store.me = patchedMe;
   }
 
   if (storePatch.deleteDraft) {
@@ -1516,6 +1600,8 @@ function patchTheStore(storePatch: StorePatch) {
     const origPost = currentPage.postsByNr[BodyNr];
     origPost.uniqueId = storePatch.newlyCreatedOrigPostId;
 
+    // Update this, so subsequent server requests, will use the correct page id. [4HKW28]
+    eds.embeddedPageId = storePatch.newlyCreatedPageId;
     // Later: Add this new page to the watchbar? Currently not needed, because pages created
     // lazily only for embedded comments, and then there's no watchbar.
   }
@@ -1539,6 +1625,8 @@ function patchTheStore(storePatch: StorePatch) {
     _.each(store.pagesById, (oldPage: Page) => {
       _.each(patchedPosts, (patchedPost: Post) => {
         _.each(oldPage.postsByNr, (oldPost: Post) => {
+          // Oops, drafts and previews have ids like = -1000101, -1000102
+          // — but they are the *newest*, so, "old" in oldPost is then misleading.
           if (oldPost.uniqueId === patchedPost.uniqueId) {
             const movedToNewPage = oldPage.pageId !== patchedPageId;
             const movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
@@ -1830,6 +1918,7 @@ function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
 function makeStranger(store: Store): Myself {
   const stranger = {
     dbgSrc: '5BRCW27',
+    isStranger: true,
     trustLevel: TrustLevel.Stranger,
     threatLevel: ThreatLevel.HopefullySafe,
     permsOnPages: [],
@@ -1891,11 +1980,28 @@ function addLocalStorageDataTo(me: Myself) {
   //
   // Any drafts in the browser's storage?
   if (!eds.isInEmbeddedEditor) {
+    // BUG minor: COULD also load embedded comments drafts whose pageId is NoPageId,
+    // if their url or discussion id match. They might have been saved in the browser,
+    // before an embedded discussion page had been created.
+
+    //   [find_br_drafts] Should do like this in the editor too?
     BrowserStorage.forEachDraft(store.currentPageId, (draft: Draft) => {
       // BUG, harmless: Skip drafts that got loaded from the server already,
       // so browser storage drafts won't overwrite them (until the editor gets opened
       // and the real draft text gets loaded from the server).
-      me.myCurrentPageData.myDrafts.push(draft);
+      const draftDiscId = draft.forWhat.discussionId;
+      const embUrl = draft.forWhat.embeddingUrl;
+      if (draftDiscId && draftDiscId !== eds.embeddedPageAltId) {
+        // This is for an embedded discussion, not the same as the discussion
+        // we're in now. [draft_diid]
+      }
+      else if (embUrl && embUrl !== eds.embeddingUrl) { // dupl code  [find_br_drafts]
+        // Also the wrong embedded discussion — at least the editor won't load it,
+        // so better not show it here, currently. [emb_draft_url]
+      }
+      else {
+        me.myCurrentPageData.myDrafts.push(draft);
+      }
     });
   }
 

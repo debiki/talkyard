@@ -20,7 +20,7 @@
 /// <reference path="login/login-if-needed.ts" />
 
 // REFACTOR SMALLER_BUNDLE [4WG20ABG2] try to remove ReactActions? Move the fns to the store instead,
-// call directly? This ReactActions obj is just a pointless indirection.
+// call directly? This ReactActions obj is just a pointless indirection. [flux_mess]
 // Also, remove the EventEmitter. I can write my own in 10 lines. The EventEmitter
 // has 99% things that aren't needed in Talkyard's case. It just makes the slim-bundle larger.
 
@@ -72,13 +72,17 @@ export const actionTypes = {
 };
 
 
-export function loadMyself(afterwardsCallback?) {
+export function loadMyself(afterwardsCallback?: () => Vo) {
   // (Don't delete temp login cookies here, because this fn gets called if login is
   // detected in another tab — and perhaps yet another login has been started in that other
   // tab, and we don't want to break it by deleting cookies. Instead login temp cookies are
   // deleted by the server.)
 
   Server.loadMyself((user) => {
+    // @ifdef DEBUG
+    // Might happen if there was no weakSessionId, and also, no cookie.
+    dieIf(!user, 'TyE4032SMH57');
+    // @endif
     if (isInSomeEmbCommentsIframe()) {
       // Tell the embedded comments or embedded editor iframe that we just logged in,
       // also include the session id, so Talkyard's script on the embedding page
@@ -95,7 +99,10 @@ export function loadMyself(afterwardsCallback?) {
               // — could be surprising if we had to click buttons to log out,
               // when we didn't need to do that, to log in.
               typs.sessType !== SessionType.AutoTokenSiteCustomSso;
-      sendToOtherIframe([
+      if (mainWin !== window) {
+        mainWin.theStore.me = _.cloneDeep(user);
+      }
+      sendToOtherIframes([
         'justLoggedIn', { user, weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
               sessionType: null, rememberEmbSess }]);
     }
@@ -108,6 +115,9 @@ export function loadMyself(afterwardsCallback?) {
 
 
 export function setNewMe(user) {
+  // @ifdef DEBUG
+  dieIf(!user, `setNewMe(nothing) TyE60MRJ46RS`);
+  // @endif
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.NewMyself,
     user: user
@@ -132,20 +142,23 @@ export function logout() {
 }
 
 
-export function logoutClientSideOnly(ps: { goTo?: St } = {}) {
+export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo } = {}) {
   Server.deleteTempSessId();
 
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
   });
 
-  if (eds.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe && !ps.skipSend) {
     // Tell the editor iframe that we've logged out.
     // And maybe we'll redirect the embedd*ing* window.  [sso_redir_par_win]
-    sendToOtherIframe(['logoutClientSideOnly', ps]);
+    sendToOtherIframes(['logoutClientSideOnly', ps]);
 
     // Probaby not needed, since reload() below, but anyway:
     patchTheStore({ setEditorOpen: false });
+    const sessWin: MainWin = getMainWin();
+    delete sessWin.typs.weakSessionId;
+    sessWin.theStore.me = 'TyMLOGDOUT' as any;
   }
 
   // Disconnect WebSocket so we won't receive data, for this user, after we've
@@ -316,24 +329,37 @@ export function showForumIntro(visible: boolean) {
 }
 
 
-export function editPostWithNr(postNr: PostNr) {
+export function editPostWithNr(postNr: PostNr, inWhichWin?: MainWin) {
   login.loginIfNeededReturnToPost(LoginReason.LoginToEdit, postNr, () => {
     if (eds.isInEmbeddedCommentsIframe) {
+      // [many_embcom_iframes]
       sendToEditorIframe(['editorEditPost', postNr]);
     }
     else {
       // Right now, we don't need to use the Store for this.
-      editor.openToEditPostNr(postNr);
+      editor.openToEditPostNr(postNr, undefined, inWhichWin);
     }
   });
 }
 
 
-export function handleEditResult(editedPost) {
+export function handleEditResult(editedPost: Post, sendToWhichFrame?: MainWin) {
   if (eds.isInEmbeddedEditor) {
-    sendToCommentsIframe(['handleEditResult', editedPost]);
+    sendToCommentsIframe(['handleEditResult', editedPost], sendToWhichFrame);
   }
   else {
+    // Forget any pre-edits cached post — we no longer need to restore it
+    // when the editor closes and we remove any preview, because we've saved the edits.
+    if (origPostBeforeEdits) {
+      // @ifdef DEBUG
+      dieIf(editedPost.nr !== origPostBeforeEdits.nr,
+            `Preview post, and the now edited and saved post, are different:
+            nr ${editedPost.nr} and ${origPostBeforeEdits.nr} respectively,
+            here's the cached post: ${JSON.stringify(origPostBeforeEdits)},
+            and the edited post: ${JSON.stringify(editedPost)} [TyE3056MR35]`);
+      // @endif
+      origPostBeforeEdits = null;
+    }
     updatePost(editedPost);
   }
 }
@@ -366,7 +392,7 @@ export function deletePost(postNr: number, repliesToo: boolean, success: () => v
 
 
 // try to remove, use patchTheStore() instead
-export function updatePost(post) {
+export function updatePost(post: Post) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdatePost,
     post: post
@@ -387,12 +413,14 @@ export function changePostType(post: Post, newType: PostType, onDone: () => void
 }
 
 
-export function vote(post, doWhat: string, voteType: string) {
+export function vote(storePatch: StorePatch, doWhat: 'DeleteVote' | 'CreateVote',
+        voteType: St, postNr: PostNr) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.VoteOnPost,
-    post: post,
-    doWhat: doWhat,
-    voteType: voteType
+    storePatch,
+    doWhat,
+    voteType,
+    postNr,
   });
 }
 
@@ -484,7 +512,7 @@ export function scrollAndShowPost(postOrNr: Post | PostNr, anyShowPostOpts?: Sho
 
   if (eds.isInEmbeddedEditor) {
     const nr = _.isNumber(postOrNr) ? postOrNr : postOrNr.nr;
-    sendToCommentsIframe(['scrollToPostNr', nr]);
+    sendToCommentsIframe(['scrollToPostNr', nr], anyShowPostOpts.inFrame);
     return;
   }
 
@@ -510,8 +538,7 @@ export function scrollAndShowPost(postOrNr: Post | PostNr, anyShowPostOpts?: Sho
   // We don't want the topbar to occlude the whatever we're scrolling to.
   // COULD do in utils.scrollIntoView() instead?  [306KDRGFG2]
   marginTop += topbar.getTopbarHeightInclShadow();
-  if (store.replyingToPostNr === post.nr ||
-      store.editingPostId === post.uniqueId) {
+  if (store_isReplyingToOrEditing(store, post)) {
     // Add more margin so "Replying to:" above also will scroll into view. [305KTJ4]
     marginTop += 75;
   }
@@ -864,7 +891,10 @@ export function setHorizontalLayout(enabled: boolean) {
 
 
 export function hideTips(message: { id: St, version?: Nr }) {
-  Server.toggleTips({ tipsId: message.id, hide: true });
+  const me: Me = ReactStore.me();
+  if (me.isAuthenticated) {
+    Server.toggleTips({ tipsId: message.id, hide: true });
+  }
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.HideHelpMessage,
     message: message,
@@ -881,7 +911,10 @@ export function showSingleTipsClientSide(messageId: string) {
 
 
 export function showTipsAgain(ps: { onlyAnnouncements?: Bo } = {}) {
-  Server.toggleTips({ ...ps, hide: false });
+  const me: Me = ReactStore.me();
+  if (me.isAuthenticated) {
+    Server.toggleTips({ ...ps, hide: false });
+  }
   ReactDispatcher.handleViewAction({
     ...ps,
     actionType: actionTypes.ShowHelpAgain,
@@ -961,7 +994,7 @@ let origPostBeforeEdits: Post | undefined;
 let lastFlashPostNr: PostNr | undefined;
 
 
-export function showEditsPreviewInPage(ps: ShowEditsPreviewParams) {
+export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: DiscWin) {
   // @ifdef DEBUG
   dieIf(ps.replyToNr && ps.editingPostNr, 'TyE73KGTD02');
   dieIf(ps.replyToNr && !ps.anyPostType, 'TyE502KGSTJ46');
@@ -970,7 +1003,8 @@ export function showEditsPreviewInPage(ps: ShowEditsPreviewParams) {
   if (eds.isInEmbeddedEditor) {
     const editorIframeHeightPx = window.innerHeight;
      // DO_AFTER 2020-09-01 send 'showEditsPreviewInPage' instead.
-    sendToCommentsIframe(['showEditsPreview', { ...ps, editorIframeHeightPx }]);
+    sendToCommentsIframe(
+            ['showEditsPreview', { ...ps, editorIframeHeightPx }], inFrame);
     return;
   }
 
@@ -1025,12 +1059,14 @@ export function showEditsPreviewInPage(ps: ShowEditsPreviewParams) {
       origPostBeforeEdits = postToEdit;
     }
     patch = page_makeEditsPreviewPatch(page, origPostBeforeEdits, ps.safeHtml);
+    patch.editingPostId = postToEdit.uniqueId;
   }
   else if (ps.replyToNr || isChat) {
     const postType = ps.anyPostType || PostType.ChatMessage;
     // Show an inline preview, where the reply will appear.
     patch = store_makeNewPostPreviewPatch(
         store, page, ps.replyToNr, ps.safeHtml, postType);
+    patch.replyingToPostNr = ps.replyToNr;
   }
 
   // @ifdef DEBUG
@@ -1038,6 +1074,7 @@ export function showEditsPreviewInPage(ps: ShowEditsPreviewParams) {
   // @endif
 
   if (patch) {
+    patch.editorsPageId = ps.editorsPageId;
     patchTheStore(patch, () => {
       // The preview won't appear until a bit later, after the preview post
       // store patch has been applied — currently the wait-a-bit code is
@@ -1125,14 +1162,20 @@ export function scrollToPreview(ps: {
 }
 
 
-export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
+export function hideEditor() {
+  patchTheStore({ setEditorOpen: false });
+}
+
+
+export function hideEditorAndPreview(ps?: HideEditorAndPreviewParams, inFrame?) {
   // @ifdef DEBUG
   dieIf(ps.replyToNr && ps.editingPostNr, 'TyE4KTJW035M');
   dieIf(ps.replyToNr && !ps.anyPostType, 'TyE72SKJRW46');
   // @endif
 
   if (eds.isInEmbeddedEditor) {
-    sendToCommentsIframe(['hideEditorAndPreview', ps]);
+    sendToCommentsIframe(['hideEditorAndPreview', ps], inFrame);
+    sendToParent(['hideEditor']);
     patchTheStore({ setEditorOpen: false });
     return;
   }
@@ -1147,6 +1190,9 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
 
   // If' we've navigated to a different page, then, any preview is gone already.
   const isOtherPage = ps.editorsPageId && ps.editorsPageId !== store.currentPageId;
+  // editorsPageId  has been updated already, if was typing the first reply
+  // on a new now lazy-created page [4HKW28] — then, !isOtherPage, so below,
+  // we'll pick the remove-preview if branch [.rm_prv_if_br].
 
   // A bit dupl debug checks (49307558).
   // @ifdef DEBUG
@@ -1164,18 +1210,24 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
   }
   else if (ps.keepPreview) {
     // This happens if we're editing a chat message in the advanced editor — we can
-    // continue typing in the cat message text box, and keep the preview.
+    // continue typing in the chat message text box, and keep the preview.
   }
   else if (ps.editingPostNr) {
-    // Put back the original post, the one before the edits. If saving, then,
-    // once the serve has replied, we'll insert the new updated post instead.  Or...? [359264FKUGP]
+    // Put back the post as it was before the edits. If we submitted the edits, then,
+    // once the serve has replied, we'll insert the new updated post instead.  Or...?
     if (origPostBeforeEdits) {
+      // @ifdef DEBUG
+      dieIf(ps.editingPostNr !== origPostBeforeEdits.nr,
+            `Preview post to hide, and cached post before edits, are different:
+           nr ${ps.editingPostNr} and ${origPostBeforeEdits.nr} respectively, here's
+           the cached post: ${JSON.stringify(origPostBeforeEdits)} [TyE3056MR35]`);
+      // @endif
       highlightPostNrAfter = origPostBeforeEdits.nr;
       patch = page_makePostPatch(page, origPostBeforeEdits);
       origPostBeforeEdits = null;
     }
   }
-  else if (ps.replyToNr || isChat) {
+  else if (ps.replyToNr || isChat) {   // [.rm_prv_if_br]
     const postType = ps.anyPostType || PostType.ChatMessage;
     patch = ps.anyDraft && ps.keepDraft
         ? store_makeDraftPostPatch(store, page, ps.anyDraft)
@@ -1200,10 +1252,13 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
 export function deleteDraftPost(pageId: PageId, draftPost: Post) {
   const store: Store = ReactStore.allData();
 
-  // This is a post on an already existing page — no category id needed.
+  // This is a post on an already existing page, or on a not yet created page
+  // — in any case no category id needed.
   const draftLocator: DraftLocator = {
     draftType: postType_toDraftType(draftPost.postType),
     pageId: pageId,
+    discussionId: eds.embeddedPageAltId,
+    embeddingUrl: eds.embeddingUrl,
     postNr: draftPost.parentNr,
     postId: store_getPostId(store, pageId, draftPost.parentNr),
   };
@@ -1213,14 +1268,14 @@ export function deleteDraftPost(pageId: PageId, draftPost: Post) {
     draftNr,
     forWhat: draftLocator,
   };
-  deleteDraftImpl(draftPost, draftDeletor);
+  deleteDraftImpl(draftPost, draftDeletor, undefined, undefined, window as DiscWin);
 }
 
 
 /// Deletes the draft, and optionally any draft post too.
 ///
 export function deleteDraft(pageId: PageId, draft: Draft, deleteDraftPost: boolean,
-      onDoneOrBeacon?: OnDoneOrBeacon, onError?: ErrorStatusHandler) {
+      onDoneOrBeacon?: OnDoneOrBeacon, onError?: ErrorStatusHandler, inFrame?: DiscWin) {
 
   // What about category id, for new topics?  [DRAFTS_BUG]
   const draftDeletor: DraftDeletor = {
@@ -1228,17 +1283,18 @@ export function deleteDraft(pageId: PageId, draft: Draft, deleteDraftPost: boole
     draftNr: draft.draftNr,
     forWhat: draft.forWhat,
   }
-  let draftPost;
+  let draftPost: Post | U;
   if (deleteDraftPost) {
-    const store: Store = getMainWinStore();
-    draftPost = store_makePostForDraft(store, draft);  // [60MNW53]
+    // Maybe pass one's id in a param to this fn deleteDraft() instead?
+    const store: SessWinStore = win_getSessWinStore();
+    draftPost = store_makePostForDraft(store.me.id, draft);  // [60MNW53]
   }
-  deleteDraftImpl(draftPost, draftDeletor, onDoneOrBeacon, onError);
+  deleteDraftImpl(draftPost, draftDeletor, onDoneOrBeacon, onError, inFrame);
 }
 
 
 function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
-      onDoneOrBeacon?: OnDoneOrBeacon, onError?: ErrorStatusHandler) {
+      onDoneOrBeacon?: OnDoneOrBeacon, onError?: ErrorStatusHandler, inFrame?: DiscWin) {
 
   // ----- Delete from browser storage
 
@@ -1246,8 +1302,17 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
   // were included in the storage key, when saving the draft. So look at all
   // browser storage drafts.
   BrowserStorage.forEachDraft(draftDeletor.pageId, (draft: Draft, keyStr: string) => {
+    // If there're many iframes on the same embedding page, we should only
+    // look at the draft in the correct iframe — i.e. same discussion id. [draft_diid]
+    const noDiscId = !draft.forWhat.discussionId;
+    const sameDiscId = draft.forWhat.discussionId === draftDeletor.forWhat.discussionId;
+    // If there's no discussion id, then any embedding url needs to be the same.
+    const noOrSameEmbUrl =   // dupl code [find_br_drafts]
+        !draft.forWhat.embeddingUrl ||
+            draft.forWhat.embeddingUrl === draftDeletor.forWhat.embeddingUrl;
     if (draft.forWhat.postNr === draftDeletor.forWhat.postNr &&
-        draft.forWhat.draftType === draftDeletor.forWhat.draftType) {
+          draft.forWhat.draftType === draftDeletor.forWhat.draftType &&
+          (sameDiscId || (noDiscId && noOrSameEmbUrl))) {
       BrowserStorage.remove(keyStr);
     }
   });
@@ -1271,7 +1336,9 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
   const draftNr: DraftNr | U = draftDeletor.draftNr;
   if (!draftNr) {
     // This draft existed locally only, in the browse's storage.
-    patchTheStoreAllIframes(storePatch, onDone);
+    patchTheStoreManyFrames(storePatch, onDone,
+          // Delete it from the correct iframe only. [draft_diid]
+          inFrame);
   }
   else if (_.isNumber(draftNr)) {
     if (onDoneOrBeacon === UseBeacon) {
@@ -1280,7 +1347,7 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
     }
     else {
       Server.deleteDrafts([draftNr], function() {
-        patchTheStoreAllIframes(storePatch, onDone);
+        patchTheStoreManyFrames(storePatch, onDone, inFrame);
       }, onError);
     }
   }
@@ -1305,10 +1372,11 @@ export function composeReplyTo(parentNr: PostNr, replyPostType: PostType) {
 
 
 export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
-      anyPostType: number, draftToDelete: Draft | undefined, onDone?: () => void) {
+      anyPostType: Nr, draftToDelete: Draft | U, onOk?: () => Vo,
+      sendToWhichFrame?: MainWin) {
   Server.saveReply(editorsPageId, postNrs, text, anyPostType, draftToDelete?.draftNr,
       (storePatch) => {
-    handleReplyResult(storePatch, draftToDelete, onDone);
+    handleReplyResult(storePatch, draftToDelete, onOk, sendToWhichFrame);
   });
 }
 
@@ -1322,15 +1390,16 @@ export function insertChatMessage(text: string, draftToDelete: Draft | undefined
 
 
 export function handleReplyResult(patch: StorePatch, draftToDelete: Draft | undefined,
-      onDone?: () => void) {
+      onDone?: () => void, sendToWhichFrame?: MainWin) {
   if (eds.isInEmbeddedEditor) {
     if (patch.newlyCreatedPageId) {
       // Update this, so subsequent server requests, will use the correct page id. [4HKW28]
+      // (Also done in patchTheStore().)
       eds.embeddedPageId = patch.newlyCreatedPageId;
     }
     // Send a message to the embedding page, which will forward it to
     // the comments iframe, which will show the new comment.
-    sendToCommentsIframe(['handleReplyResult', [patch, draftToDelete]]);
+    sendToCommentsIframe(['handleReplyResult', [patch, draftToDelete]], sendToWhichFrame);
     onDone?.();
     return;
   }
@@ -1339,9 +1408,16 @@ export function handleReplyResult(patch: StorePatch, draftToDelete: Draft | unde
 }
 
 
-function patchTheStoreAllIframes(storePatch: StorePatch, onDone?: () => void) {
-  patchTheStore(storePatch, onDone);
-  sendToOtherIframe(['patchTheStore', storePatch]);
+function patchTheStoreManyFrames(storePatch: StorePatch, onOk: () => Vo,
+          inFrame: DiscWin) {
+  patchTheStore(storePatch, onOk);
+  if (inFrame === window || !eds.isInIframe) {
+    // No other frame store to patch. (This happens e.g. if clicking Delete Draft
+    // in a comments iframe — then only that one needs to get patched.)
+  }
+  else {
+    sendToCommentsIframe(['patchTheStore', storePatch], inFrame);
+  }
 }
 
 
@@ -1521,24 +1597,51 @@ export function openPagePostNr(pageId: string, postNr: number) { // CLEAN_UP use
 
 
 function sendToEditorIframe(message) {
+  sendToIframesImpl(message, true);
+}
+
+
+function sendToCommentsIframe(message, toWhichFrame?: DiscWin) {
+  sendToIframesImpl(message, false, toWhichFrame);
+}
+
+
+function sendToParent(message) {
+  sendToIframesImpl(message, false, parent);
+}
+
+
+function sendToIframesImpl(message, toEditor?: Bo, toWhichFrame?: Window) {
   // Send the message to any embedding page; it'll forward it to the appropriate iframe.
   // But only if we're in an iframe — otherwise, in Safari, there's an error. Not in
   // Chrome or FF; they do nothing instead.
+  // @ifdef DEBUG
+  if (!eds.isInIframe) {
+    die(`Sending to iframe when not in iframe? toEditor: ${toEditor
+          }, toWhichIframe.name: ${toWhichFrame?.name} [TyE40GWG2R]`);
+  }
+  // @endif
   if (eds.isInIframe) {
     try {
-      window.parent.postMessage(JSON.stringify(message), eds.embeddingOrigin);
+      const sendDirectly = toWhichFrame || toEditor; //  &&  feature flag
+      const win = sendDirectly ? toWhichFrame || win_getEditorWin() : window.parent;
+      // Which origin? 1) The parent win is the embedding page, e.g. a blog post page,
+      // with origin eds.embeddingOrigin. 2) If not posting to the parent win,
+      // we're posting to another Talkyard iframe on the same server (same origin).
+      const targetOrigin = !sendDirectly || toWhichFrame === parent ?
+              eds.embeddingOrigin : location.origin;
+      win.postMessage(JSON.stringify(message), targetOrigin);  // [post_dir_2_ifr]
     }
     catch (ex) {
       // Don't propagate this. Probably better to let the current frame continue
       // as best it can with whatever it's doing.
-      console.error(`Error posting to parent frame [TyEPSTPRNT]`, ex);
+      logW(`Error posting to other frame [TyEPSTPRNT]`, ex);
     }
   }
 }
 
 // An alias, for better readability.
-const sendToCommentsIframe = sendToEditorIframe;
-const sendToOtherIframe = sendToEditorIframe;
+const sendToOtherIframes = sendToIframesImpl;
 
 
 //------------------------------------------------------------------------------

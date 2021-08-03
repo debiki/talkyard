@@ -1,10 +1,23 @@
 {
   "author": "Kaj Magnus Lindberg",
-  "name": "tye2e",
-  "license": "AGPL-3.0",
+  "name": "ty-e2e-wdio6",
+  "description": "Talkyard's e2e tests in Webdriverio 6",
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
   },
   "devDependencies": {
-    "paseto.js": "^0.1.7"
+    "@wdio/cli": "=6.10.10",
+    "@wdio/devtools-service": "=6.10.10",
+    "@wdio/dot-reporter": "=6.10.6",
+    "@wdio/firefox-profile-service": "=6.10.6",
+    "@wdio/local-runner": "=6.10.10",
+    "@wdio/mocha-framework": "=6.10.10",
+    "@wdio/selenium-standalone-service": "=6.10.10",
+    "@wdio/spec-reporter": "=6.10.6",
+    "@wdio/static-server-service": "=6.10.10",
+    "@wdio/sync": "=6.10.10",
+    "chromedriver": "^91.0.0",
+    "paseto.js": "^0.1.7",
+    "wdio-chromedriver-service": "=6.0.4"
   }
 }

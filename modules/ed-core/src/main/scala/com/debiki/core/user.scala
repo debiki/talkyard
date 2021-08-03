@@ -647,6 +647,8 @@ sealed trait Participant {    RENAME // to Pat, already started, in core/package
 
   def isMember: Bo = Participant.isMember(id)
   def isGuest: Bo = Participant.isGuestId(id)
+  // Rename to jus isUser later when "user" means "user not guest" everywhere anyway.
+  def isUserNotGuest: Bo = isMember && !isGroup && !isBuiltIn
   def isGroup: Bo = false
   def anyMemberId: Opt[MembId] = if (isRoleId(id)) Some(id) else None
 

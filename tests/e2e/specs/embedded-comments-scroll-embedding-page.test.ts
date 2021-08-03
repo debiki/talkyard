@@ -102,7 +102,10 @@ ${ extraHeight > 500 ? "<br><br><i>SCROLL DOWN\n:\n:\n:</i>" : ""}
       mariasBrowser.switchToEmbeddedCommentsIrame();
       mariasBrowser.metabar.waitForDisplayed();
       mariasBrowser.switchToTheParentFrame();
-      assert.ok(mariasBrowser.isVisible('.ty_CmtsIfr'));
+      // Weird, fails:  assert.ok(mariasBrowser.isVisible('.ty_CmtsIfr'));
+      // although it's there already. Chromedriver or Webdriverio bug?
+      // Works:
+      mariasBrowser.waitForVisible('.ty_CmtsIfr');
     });
 
     it(prefix + "... Ty still didn't scroll down to the comments", () => {

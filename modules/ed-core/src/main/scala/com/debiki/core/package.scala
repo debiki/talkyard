@@ -129,6 +129,7 @@ package object core {
   REFACTOR // change page id to Int (not String) — is always an Int anyway,
   // except for the forum main page at Ty .io.
   type PageId = String  // Int better
+  type DiscId = String  // End user (admin) defined, could be anything, so String is good.
 
   // ... But this should be a string.
   type AltPageId = String

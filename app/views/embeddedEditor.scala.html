@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.EditPageTpi)
+@(tpi: debiki.EditPageTpi, embeddingScriptV: Option[Int])
 
 
 <html class="DW dw-pri dw-embedded-editor">
@@ -23,7 +23,12 @@
 @tpi.debikiMeta
 @tpi.debikiStyles
 @tpi.stylesheetBundle("styles.css")
-@tpi.debikiScriptsInHead(isInEmbeddedEditor = true, anyEmbeddedPageId = tpi.anyEmbeddedPageId)
+
+@* Won't work any more: anyEmbeddedPageId,  with [many_embcom_iframes]  *@
+@tpi.debikiScriptsInHead(
+      isInEmbeddedEditor = true,
+      embeddingScriptV = embeddingScriptV)
+
 @* [script_src_self]
 <script>
 eds.isInEmbeddedEditor = true;

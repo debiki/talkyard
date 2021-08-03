@@ -580,14 +580,37 @@ export function post_isPubVisible(post: Post): Bo {
 }
 
 
+
 // Me
 //----------------------------------
+
+
+/// Me2 has precedence over me1, and me3 over me2.
+///
+export function me_merge(me1: Myself, me2: Partial<Myself> | U,
+        me3?: Partial<Myself>): Myself {
+  let me = me_mergeImpl(me1, me2 || {});
+  if (me3) {
+    me = me_mergeImpl(me, me3);
+  }
+  return me;
+}
+
+
+function me_mergeImpl(me1: Partial<Myself>, me2: Partial<Myself>): Myself {
+  const me = { ...me1, ...me2 };
+  me.myDataByPageId = { ...me1.myDataByPageId, ...me2.myDataByPageId };
+  me.marksByPostId = { ...me1.marksByPostId, ...me2.marksByPostId };
+  return me as Myself;
+}
+
 
 export function me_isUser(me: Myself): boolean {
   return (!isGuest(me) && !me.isGroup &&
       // Don't need both these? Oh well.
       me.isAuthenticated && me_isAuthenticated(me));
 }
+
 
 export function me_hasRead(me: Myself, post: Post) {
   // If not logged in, we have no idea.
@@ -741,8 +764,8 @@ export function store_mainSiteSection(store: Store): SiteSection {
 
 
 
-export function store_isNoPage(store: Store): boolean {
-  return !store.currentPageId || store.currentPageId === EmptyPageId;
+export function isNoPage(pageId: PageId): Bo {
+  return !pageId || pageId === EmptyPageId;
 }
 
 
@@ -972,6 +995,21 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 }
 
 
+export function store_isReplyingTo(store: Store, post: Post): Bo {
+  return store.editorsPageId === store.currentPageId &&
+          store.replyingToPostNr === post.nr;
+}
+
+
+export function store_isReplyingToOrEditing(store: Store, post: Post): Bo {
+  // @ifdef DEBUG
+  dieIf(store.editorsPageId !== store.currentPageId &&
+          store.editingPostId === post.uniqueId, 'TyE60IMJ257');
+  // @endif
+  return store_isReplyingTo(store, post) || store.editingPostId === post.uniqueId;
+}
+
+
 // Also see: store_getCurrOrDefaultCat(store) [GETACTDEFCAT]
 //
 export function store_findTheDefaultCategory(store: Store): Category | U {
@@ -1033,14 +1071,16 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
-export function store_getPostId(store: Store, pageId: PageId, postNr: PostNr): PostId | U {
+export function store_getPostId(store: DiscStore, pageId: PageId,
+        postNr: PostNr): PostId | U {
   // If we're on a blog bost with embedded comments, then, the Talkyard embedded
   // comments page might not yet have been created.
-  if (!pageId)
+  if (isNoPage(pageId))
     return undefined;
 
   // The page might not be the current page, if the editor is open and we've
   // temporarily jumped to a different page or user's profile maybe.
+  // BUG happens sometimes, browser error auto reported on 2021-07-15 from one ip addr.
   const page: Page = store.pagesById[pageId];
   dieIf(!page, 'TyE603KWUDB4');
 
@@ -1062,7 +1102,7 @@ export function page_makePostPatch(page: Page, post: Post): StorePatch {
 
 export function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft)
       : StorePatch {
-  const draftPost = store_makePostForDraft(store, draft)
+  const draftPost = store_makePostForDraft(store.me.id, draft)
   return page_makePostPatch(page, draftPost);
 }
 
@@ -1071,7 +1111,7 @@ export function store_makeNewPostPreviewPatch(store: Store, page: Page,
       parentPostNr: PostNr | undefined, safePreviewHtml: string,
       newPostType?: PostType): StorePatch {
   const previewPost = store_makePreviewPost({
-      store, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
+      authorId: store.me.id, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
   return page_makePostPatch(page, previewPost);
 }
 
@@ -1109,7 +1149,8 @@ export function postType_toDraftType(postType: PostType): DraftType | undefined 
 }
 
 
-export function store_makePostForDraft(store: Store, draft: Draft): Post | null {
+// RENAME? to draft_makePreviewPost(draft, authorId)?
+export function store_makePostForDraft(authorId: PatId, draft: Draft): Post | Nl {
   const locator: DraftLocator = draft.forWhat;
   const parentPostNr = locator.postNr;
 
@@ -1123,7 +1164,7 @@ export function store_makePostForDraft(store: Store, draft: Draft): Post | null 
   // For now, use the CommonMark source instead.
 
   const previewPost = store_makePreviewPost({
-      store, parentPostNr, unsafeSource: draft.text, newPostType: postType,
+      authorId, parentPostNr, unsafeSource: draft.text, newPostType: postType,
       isForDraftNr: draft.draftNr || true });
   return previewPost;
 }
@@ -1148,7 +1189,7 @@ export function post_makePreviewIdNr(parentNr: PostNr, newPostType: PostType): P
 
 
 interface MakePreviewParams {
-  store: Store;
+  authorId: PatId;
   parentPostNr?: PostNr;
   safePreviewHtml?: string;
   unsafeSource?: string;
@@ -1161,7 +1202,7 @@ interface MakePreviewParams {
 
 
 function store_makePreviewPost({
-    store, parentPostNr, safePreviewHtml, unsafeSource,
+    authorId, parentPostNr, safePreviewHtml, unsafeSource,
     newPostType, isForDraftNr, isEditing }: MakePreviewParams): Post {
 
   dieIf(!newPostType, "Don't use for edit previews [TyE4903KS]");
@@ -1180,7 +1221,7 @@ function store_makePreviewPost({
     parentNr: parentPostNr,
     multireplyPostNrs: [], //PostNr[];
     postType: newPostType,
-    authorId: store.me.id,
+    authorId,
     createdAtMs: now,
     //approvedAtMs?: number;
     //lastApprovedEditAtMs: number;
@@ -1204,7 +1245,7 @@ function store_makePreviewPost({
     branchSideways: 0,
     likeScore: 0,
     childNrsSorted: [],
-    unsafeSource: unsafeSource,
+    unsafeSource,
     sanitizedHtml: safePreviewHtml,
     //tags?: string[];
     //numPendingFlags?: number;
@@ -1217,7 +1258,7 @@ function store_makePreviewPost({
 
 /* Not in use, but maybe later? Instead, for now, this: [60MNW53].
 export function store_makeDeleteDraftPostPatch(store: Store, draft: Draft): StorePatch {
-  const draftPost = store_makePostForDraft(store, draft);
+  const draftPost = store_makePostForDraft(store.me.id, draft);
   return store_makeDeletePostPatch(draftPost);
 } */
 
@@ -1225,7 +1266,7 @@ export function store_makeDeleteDraftPostPatch(store: Store, draft: Draft): Stor
 export function store_makeDeletePreviewPostPatch(store: Store, parentPostNr: PostNr,
       newPostType?: PostType): StorePatch {
   const previewPost: Post = store_makePreviewPost({
-      store, parentPostNr, safePreviewHtml: '', newPostType });
+      authorId: store.me.id, parentPostNr, safePreviewHtml: '', newPostType });
   return store_makeDeletePostPatch(previewPost);
 }
 

@@ -54,6 +54,8 @@ with "negative" permissions — e.g. a group that may Not something.
 Then, everyone in that group, would be forbidden from doing that something,
 regardless of how they inherited permissions from other groups.
 
+[tags]
+Nice props / tags in Gerrit: https://chromium-review.googlesource.com/c/v8/v8/+/2537690
 
 [sw] [sse]
 DONE: Service worker.  No, skip, using Websocket instead of:  Server sent events.
@@ -108,6 +110,10 @@ Reproducible builds.
 
 [rate_limits]
 Configurable rate limits.
+
+[precompile_luajit]  COULD_OPTIMIZE
+See: https://blog.openresty.com/en/luajit-bytecode/
+Many times faster startup time, hopefully uses less memory too?
 
 [server_limits] [site_limits]
 If admins try to configure too "high" values, e.g. 1 TB upload size,
@@ -480,6 +486,10 @@ Include session type (e.g. pwd, oauth, email secret, sso, emb sso) in sid:s,
 see: SessionType.AutoTokenSiteCustomSso, and: SidOk("_api_secret_".
 Also see: [weaksid].
 
+[sess_in_me]
+Store xsrf token and any sid-part-1 in Me, instead of win.typs?
+
+ 
 [hide_authn_btns]
 If auto logged in via token in embedd*ing* html, then, don't show logout button
 — instead the embedding site manages login/out for that user, by incl/excl the token.
@@ -505,6 +515,12 @@ Make  login-required work also for embeded comments.
 
 [emb_forum]
 Make it possible to embedd a forum, or fourm cateory (no just blog comments).
+
+[emb_ifr_shortcuts]
+Make shortcuts work also if there're many iframes with blog comments comments
+visible at the same time.
+[many_ifr_my_page_data]
+Make changing notf levels update the UI correctly also if many iframes.
 
 [ty_oemb_og]
 Add oEmbed & OpenGraph support to Ty.
@@ -674,6 +690,9 @@ E.g. disallow toxic speech, or pics of zebras if that's against the community's 
 Blake3 is ~ 10x faster than SHA2:
   https://news.ycombinator.com/item?id=22021769
   https://news.ycombinator.com/item?id=22003315
+  Java bindings:
+    https://dev.to/johanneslichtenberger/blake3-crytopgrahic-hash-function-java-implementation-2bg7
+    —>  https://github.com/sken77/BLAKE3jni
 Wait until there's a well tested Java lib available?
 Then use Blake3 instead e.g. to hash long Redis keys (and just delete the old
 cached things, it's a cache).
@@ -775,3 +794,15 @@ About how to write docs:
 [ios_bugs]
 Problems that happen only on iOS Safari (and Chrome, but all browsers are basically
 Safari on iOS). When works elsewhere, this might be bugs in iOS Safari.
+
+
+[default_plugins]
+KaTeX for Maths (VSCode supports KaTeX, and Docusaurus too:
+https://docusaurus.io/docs/markdown-features/math-equations )
+Prism for syntax highlighting (Docusaurus uses it:
+https://docusaurus.io/docs/markdown-features/code-blocks#syntax-highlighting )
+
+
+[wdio_6_to_7]
+Upgr Webdriverio from 6 to 7.
+Add Typescript-ESLint warning: no-floating-promises!

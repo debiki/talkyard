@@ -715,6 +715,8 @@ object MaySeeOrWhyNot {
 
   case object NopeNoSuchPage extends MaySeeOrWhyNot(5)
   case object NopeNoPostWithThatNr extends MaySeeOrWhyNot(3)  // RENAME NopeNoSuchPost
+  case object NopePostNotApproved extends MaySeeOrWhyNot(6)
   case object NopePostDeleted extends MaySeeOrWhyNot(4)
+
 }
 

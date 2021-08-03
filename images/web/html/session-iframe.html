@@ -1,0 +1,23 @@
+<html>
+<body>
+<script>
+var tydyn = {
+  allIframePageIds: []
+};
+var typs = {
+  // There's always something about cookies that won't work,
+  // or will soon stop working.
+  canUseCookies: false
+  // doesn't seem to work:  navigator.cookieEnabled   — Chrome still won't send cookies.
+};
+var theStore = {  // : SessWinStore
+  embeddedOriginOrEmpty: location.origin,
+  // Needed, for shortcuts to work, in blog comment iframes, before logged in.
+  // [emb_ifr_shortcuts]
+  me: 'TyESESIFRME',
+};
+window.parent.postMessage(
+      JSON.stringify(['iframeInited', {}]), '*');
+</script>
+</body>
+</html>

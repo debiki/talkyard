@@ -461,7 +461,7 @@ object ViewPageController {
         // also be https"""
         " http://localhost:* https://localhost:*"
       }
-      // Also update: [4GUYQC0]
+      // Also update: [4GUYQC0]   [embng_url]
       frameAncestorsSpace + allowEmbeddingFrom + allowIfLocalhost
     }
     }

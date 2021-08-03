@@ -31,16 +31,17 @@ function ensureEditorCreated(success: (editor: any) => void) {
 
 
 export function toggleWriteReplyToPostNr(postNr: PostNr, inclInReply: boolean,
-      anyPostType?: PostType) {
+      anyPostType?: PostType, inWhichFrame?: MainWin) {
   ensureEditorCreated(editor => {
-    editor.toggleWriteReplyToPostNr(postNr, inclInReply, anyPostType);
+    editor.toggleWriteReplyToPostNr(postNr, inclInReply, anyPostType, inWhichFrame);
   });
 }
 
 
-export function openToEditPostNr(postNr: PostNr, onDone?: EditsDoneHandler) {
+export function openToEditPostNr(postNr: PostNr, onDone?: EditsDoneHandler,
+        inWhichFrame?: MainWin) {
   ensureEditorCreated(editor => {
-    editor.editPost(postNr, onDone);
+    editor.editPost(postNr, onDone, inWhichFrame);
   });
 }
 

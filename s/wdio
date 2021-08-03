@@ -4,7 +4,8 @@ cd tests/e2e/
 
 
 # [E2EHTTPS]
-cmd="../../node_modules/.bin/wdio  wdio.conf.js  $@"
+# This is old Webdriver 6, since we're in tests/e2e/ not e2e-wdio7/.  [wdio_6_to_7]
+cmd="node_modules/.bin/wdio  wdio.conf.js  $@"
 echo
 echo "NODE_TLS_REJECT_UNAUTHORIZED=0  $cmd"
 echo

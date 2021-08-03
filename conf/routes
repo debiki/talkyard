@@ -56,8 +56,8 @@ POST  /-/stop-impersonating     controllers.ImpersonateController.stopImpersonat
 GET   /-/load-online-users      ed.server.pubsub.SubscriberController.loadOnlineUsers
 GET   /-/websocket              ed.server.pubsub.SubscriberController.webSocket
 
-GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic(embeddingUrl, discussionId: Option[String], edPageId: Option[String], category: Option[String])
-GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(embeddingUrl, discussionId: Option[String], edPageId: Option[String], category: Option[String])
+GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic(embeddingUrl, discussionId: Option[String], edPageId: Option[String], category: Option[String], scriptV: Option[String])
+GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(embeddingUrl, embeddingScriptV: Option[Int])
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
 POST  /-/search                 controllers.SearchController.doSearch
@@ -112,7 +112,7 @@ GET   /-/users/                 controllers.UserController.viewUserPage(whatever
 GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)
 GET   /-/groups/                controllers.UserController.viewUserPage(whatever = "")
 GET   /-/groups/*whatever       controllers.UserController.viewUserPage(whatever)
-GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageId)
+GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageIds)
 GET   /-/list-topics-by-user    controllers.UserController.listTopicsByUser(userId: Int)
 GET   /-/list-posts             controllers.UserController.listPostsByUser(authorId: Int)
 GET   /-/download-my-content    controllers.UserController.downloadUsersContent(authorId: Int)

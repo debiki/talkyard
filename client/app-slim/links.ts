@@ -37,9 +37,19 @@ export function origin(): string {
   // This needs to happen in a function, so gets reevaluated server side, where the same script
   // engine gets reused, for rendering pages at different sites, different origins.
   //
-  const mainStore: Store = getMainWinStore();
-  return mainStore.embeddedOriginOrEmpty;  // [ONESTORE]
+  // We cache the origin, so, if many Ty comments iframes,  [many_embcom_iframes]
+  // so we won't need to access a different iframe all the time.
+  // But if server side, don't cache — the origin will change when rendering pages
+  // for different sites. (Also, then no need to cache, aren't any iframes.)
+  //
+  if (notDef(cachedEmbOrig) || isServerSide()) {
+    const mainStore: SessWinStore = win_getSessWinStore();
+    cachedEmbOrig = mainStore.embeddedOriginOrEmpty;  // [ONESTORE]
+  }
+  return cachedEmbOrig;
 }
+
+let cachedEmbOrig: St | U;
 
 
 export function linkToPageId(pageId: PageId): string {

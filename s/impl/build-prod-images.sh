@@ -161,16 +161,22 @@ if [ -z "$skip_e2e_tests" ]; then
   fi
 
 
-  # Run e2e tests, but not as root.
+  exit_code_file='./target/e2e-tests-exit-code'
+  rm -f $exit_code_file
+
+  # Run Webdrier.io e2e tests, but not as root.
   # To stop these e2e tests, you need to 'sudo -i' in another shell, then 'ps aux | grep e2e'
   # and then kill the right stuff.
-  su $my_username -c "s/run-e2e-tests.sh --is-root --prod $all_orig_options ; echo \$? > ./target/e2e-tests-exit-code"
+  echo "Running E2E tests ..."
+  su $my_username -c "s/run-e2e-tests.sh --is-root --prod $all_orig_options ; echo \$? > $exit_code_file"
 
-  e2e_tests_exit_code=`cat ./target/e2e-tests-exit-code`
+  e2e_tests_exit_code=$(cat $exit_code_file)
 
   if [ "$e2e_tests_exit_code" != '0' ]; then
     echo
-    echo E2E tests failed. Aborting.
+    echo "E2E tests failed. Aborting build."
+    echo
+    echo "(You can test run the failed test now — Talkyard server still running.)"
     echo
     die_if_in_script
   fi

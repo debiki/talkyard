@@ -295,7 +295,7 @@ export const PostActions = createComponent({
         t.Solution);
     }
 
-    const replyingToClass = store.replyingToPostNr === post.nr  ? ' s_PA_B-Active' : '';
+    const replyingToClass = store_isReplyingTo(store, post)  ? ' s_PA_B-Active' : '';
     const disabledClass = isEditorOpenAlready ? ' s_PA_B-Disabled' : '';
 
     const replyButton = !store_mayIReply(store, post) ? null :
@@ -337,7 +337,7 @@ export const PostActions = createComponent({
 
     let numWrongsText;
     if (post.numWrongVotes && useDownvotes && isDisagreeEnabled) {
-      numWrongsText = r.a({ className: 'dw-a dw-vote-count',
+      numWrongsText = r.a({ className: 'dw-a dw-vote-count e_WroVo',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Disagree, event.target) },
           t.pa.NumDisagree(post.numWrongVotes));
     }
@@ -554,24 +554,22 @@ const MoreVotesDropdownModal = createComponent({
 
   onWrongClick: function(event) {
     const post: Post = this.state.post;
-    loginIfNeededThen('LoginToVote', post.nr, () => {
+    loginIfNeededThen(LoginReason.LoginToDisagree, post.nr, () => {
       toggleVote(this.state.store, post, 'VoteWrong', !this.hasVoted('VoteWrong'));
       this.closeSoon();
     });
   },
   onBuryClick: function(event) {
     const post: Post = this.state.post;
-    loginIfNeededThen('LoginToVote', post.nr, () => {
-      toggleVote(this.state.store, post, 'VoteBury', !this.hasVoted('VoteBury'));
-      this.closeSoon();
-    });
+    // Not visible unless logged in.
+    toggleVote(this.state.store, post, 'VoteBury', !this.hasVoted('VoteBury'));
+    this.closeSoon();
   },
   onUnwantedClick: function(event) {
     const post: Post = this.state.post;
-    loginIfNeededThen('LoginToVote', post.nr, () => {
-      toggleVote(this.state.store, post, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
-      this.closeSoon();
-    });
+    // Not visible unless logged in.
+    toggleVote(this.state.store, post, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
+    this.closeSoon();
   },
 
   makeVoteButtons: function() {
@@ -650,8 +648,8 @@ function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolea
     postNrsRead: postNrsRead
   };
 
-  debiki2.Server.saveVote(data, function(updatedPost) {
-    ReactActions.vote(updatedPost, action, voteType);
+  debiki2.Server.saveVote(data, function(storePatch: StorePatch) {
+    ReactActions.vote(storePatch, action, voteType, post.nr);
   });
 }
 
@@ -935,13 +933,13 @@ const MoreDropdownModal = createComponent({
 
 
 function flagPost(post: Post, at: Rect) {
-  loginIfNeededThen('LoginToFlag', post.nr, () => {
+  loginIfNeededThen(LoginReason.LoginToFlag, post.nr, () => {
     morebundle.openFlagDialog(post.nr, at);
   });
 }
 
 
-function loginIfNeededThen(loginToWhat, postNr: PostNr, success: () => void) {
+function loginIfNeededThen(loginToWhat: LoginReason, postNr: PostNr, success: () => Vo) {
   login.loginIfNeededReturnToPost(loginToWhat, postNr, success);
 }
 

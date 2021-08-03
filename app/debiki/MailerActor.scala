@@ -387,7 +387,7 @@ class MailerActor(
     val fromAddrMaybeEmailId =
           if (fromAddress.contains("+EMAIL_ID@"))
             fromAddress.replaceAllLiterally(
-                  "+EMAIL_ID@", s"+$sitePubId.${emailToSend.id}@")
+                  "+EMAIL_ID@", s"+$sitePubId-${emailToSend.id}@")
           else
             fromAddress
 

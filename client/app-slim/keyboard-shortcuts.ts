@@ -523,7 +523,7 @@ function onKeyUp(event: KeyboardEvent) {
   if (isModifierNotShift(key))
     return;
 
-  const store: Store = getMainWinStore();
+  const store: Store = win_getSessWinStore() as Store;
 
   const uiPrefs = me_uiPrefs(store.me);
   if (uiPrefs.kbd !== UiPrefsKeyboardShortcuts.On)
@@ -611,7 +611,7 @@ function onKeyUp(event: KeyboardEvent) {
 
 
 function onKeyDown(event: KeyboardEvent) {
-  const store: Store = getMainWinStore();
+  const store: Store = win_getSessWinStore() as Store;
 
   const uiPrefs = me_uiPrefs(store.me);
   if (!uiPrefs.kbd)

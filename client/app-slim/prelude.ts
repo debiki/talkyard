@@ -17,7 +17,6 @@
 
 /// <reference path="../types-and-const-enums.ts" />
 /// <reference path="../reactjs-types.ts" />
-/// <reference path="server-vars.ts" />
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 /// <reference path="translations.d.ts" />
@@ -279,7 +278,7 @@ export function win_isLoginPopup(): Bo {
  * are made from the editor iframe and login popup wins too, not just the main
  * comments win.
  */
-export function getMainWin(): MainWin {  // QUICK RENAME to win_getMainWin()
+export function getMainWin(): MainWin {  // QUICK RENAME to win_getSessWin() ?
   // Maybe there're no iframes and we're already in the main win?
   // (window.opener might still be defined though — could be an embedded
   // comments iframe, in another browser tab. So if we were to continue below,
@@ -293,16 +292,17 @@ export function getMainWin(): MainWin {  // QUICK RENAME to win_getMainWin()
 
   if (window.name === lookingForName) {
     // @ifdef DEBUG
-    dieIf(!window['typs'], 'TyE7S2063D');
+    dieIf(!(window as MainWin).typs, 'TyE7S2063D');
     // @endif
     return <MainWin> window;
   }
 
-  // This is the main window already, unless we're on an embedded comments page or in a login popup.
+  // This is the main window already, unless we're on an embedded comments page
+  // or in a login popup.
   let win = window;
 
   // If we're in a login popup window, switch to the opener, which should be either the
-  // main win (with all comments and discussions), or the embedded editor 'edEditor' in an iframe.
+  // main win (with comments and discussions), or an embedded comments or editor iframe.
   try {
     if (win.opener && (win.opener as MainWin).typs) {
       win = win.opener as MainWin;
@@ -314,21 +314,45 @@ export function getMainWin(): MainWin {  // QUICK RENAME to win_getMainWin()
     // an "accessing a cross-origin frame" error. Fine, just ignore.
   }
 
-  if (win.name === 'edEditor') {
-    // We're in the embedded editor iframe window. The parent window is the embedding window,
-    // e.g. a blog post with comments embedded. And it should have another child window, namely
-    // the main window, with all embedded comments.
+  if (win.name !== lookingForName) {
+    // We're in the embedded editor iframe window, or in an embedded comments iframe
+    // but not in the one we're looking for (which is the #talkyard-session iframe).
     // @ifdef DEBUG
+    dieIf(win.name !== 'edEditor' && !/edComments-[0-9]+/.test(win.name),
+          `This window has an unexpected name: '${win.name}' TyE7S2RME75`);
+    // The parent window is the embedding window, e.g. a blog post with
+    // comments embedded. It can have one or many iframes with embedded comments.
     dieIf(!win.parent, 'TyE7KKWGCE2');
     // @endif
-    win = win.parent[lookingForName];
+    try {
+      win = win.parent[lookingForName];
+    }
+    catch (ex) {
+      // Maybe got deleted by scripts on the embedding page? Then what?
+      logW(`Main win '${lookingForName}' not found [TyE0MAINWIN]`);
+    }
   }
 
   // @ifdef DEBUG
-  dieIf(!win['typs'], 'TyE5KTGW0256');
+  dieIf(!win, 'TyE5KTGW0258');
+  dieIf(!(win as MainWin).typs, 'TyE5KTGW0256');
   // @endif
 
   return <MainWin> win;
+}
+
+
+export function win_getEditorWin(): MainWin | U {
+  if (window.name === 'edEditor') {
+    return window as MainWin;
+  }
+  // The editor iframe is created first, so this should always work. [ed_ifr_1st]
+  let win;
+  try { win = window.parent['edEditor']; }
+  catch (ignored) {
+    logW(`Editor iframe 'edEditor' not found [TyE0EDWIN]`);
+  }
+  return win;
 }
 
 

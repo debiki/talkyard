@@ -210,7 +210,7 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
           createdAt = dao.globals.now(),
           sendTo = emailIn.sentFromAddr,
           toUserId = origEmailOut.toUserId,
-          subject = s"[$siteName] You cannot reply via email",   // I18N
+          subject = s"[$siteName] New notifications",   // I18N
           bodyHtml = htmlSt)
   }
 }

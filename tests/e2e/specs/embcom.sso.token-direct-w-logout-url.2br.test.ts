@@ -14,6 +14,8 @@ import c = require('../test-constants');
 import * as Paseto from 'paseto.js';
 
 
+// Dupl code  [embcom_sso_e2e_dupl]
+
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
 let owen: Member;
@@ -313,6 +315,9 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
   });
 
 
+
+  // ----- Good token
+
   it(`Selina opens embedding page aaa`, () => {
     selina_brB.go2(embeddingOrigin + '/so-as-selina.html');
   });
@@ -331,6 +336,9 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
   });
 
 
+
+  // ----- No token
+
   it(`Selina goes to a page without any token`, () => {
     selina_brB.go2('/so-no-token.html');
     selina_brB.switchToEmbeddedCommentsIrame();
@@ -341,7 +349,7 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
         across page reloads`, () => {
     // ttt  [.648927]
     selina_brB.complex.waitForNotLoggedInInEmbeddedCommentsIframe({
-          willBeLogoutBtn: false });
+          willBeLoginBtn: false });
     selina_brB.switchToEmbeddedCommentsIrame();
     assert.not(selina_brB.metabar.isMyUsernameVisible());
   });
@@ -372,7 +380,7 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
   it(`... still not logged in ...`, () => {
     // test code tested above  [.648927]
     selina_brB.complex.waitForNotLoggedInInEmbeddedCommentsIframe({
-          willBeLogoutBtn: false });
+          willBeLoginBtn: false });
     selina_brB.switchToEmbeddedCommentsIrame();
     assert.not(selina_brB.metabar.isMyUsernameVisible());
   });
@@ -610,6 +618,8 @@ describe(`embcom.sso.token-direct-w-logout-url.2br.test.ts  TyTE2EEMBSSO1`, () =
   });
   it(`... doesn't work, she's still logged in afterwards:
             the embedding site still includes the PASETO authn token`, () => {
+    selina_brB.refresh2();
+    selina_brB.switchToEmbCommentsIframeIfNeeded();
     selina_brB.metabar.waitUntilLoggedIn();
   });
   // ----------------

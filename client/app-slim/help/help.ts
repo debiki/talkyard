@@ -47,7 +47,7 @@ export function isHelpMessageClosed(store: Store, message: HelpMessage) {
 }
 
 
-export const HelpMessageBox = createComponent({   // props: HelpMessage. RENAME to TipsBox
+export const HelpMessageBox = createComponent({   // RENAME to TipsBox
   mixins: [StoreListenerMixin],
 
   getInitialState: function() {
@@ -65,7 +65,8 @@ export const HelpMessageBox = createComponent({   // props: HelpMessage. RENAME 
   },
 
   computeState: function() {
-    const message: HelpMessage = this.props.message;
+    const props: TipsBoxProps = this.props;
+    const message: HelpMessage = props.message;
     const store: Store = ReactStore.allData();
     const me: Myself = store.me;
     if (!store.userSpecificDataAdded) {
@@ -85,7 +86,8 @@ export const HelpMessageBox = createComponent({   // props: HelpMessage. RENAME 
   },
 
   hideThisHelp: function() {
-    ReactActions.hideTips(this.props.message);
+    const props: TipsBoxProps = this.props;
+    ReactActions.hideTips(props.message);
 
     const store: Store = ReactStore.allData();
     const me: Myself = store.me;
@@ -96,7 +98,7 @@ export const HelpMessageBox = createComponent({   // props: HelpMessage. RENAME 
     // Wait a short while with opening this, so one first sees the effect of clicking Close.
     // Also, wait until one has clicked 3? Close buttons — to me, it otherwise feels annoying
     // that this tips pops up directly, and I have to close it too.
-    if (this.props.showUnhideTips !== false && numClosed >= minNumClosedToShowUnhideTips) {
+    if (props.showUnhideTips !== false && numClosed >= minNumClosedToShowUnhideTips) {
       setTimeout(() => morebundle.openHelpDialogUnlessHidden({
         content: r.span({}, t.help.YouCanShowAgain_1, r.b({}, t.help.YouCanShowAgain_2), '.'),
         id: '5YK7EW3',
@@ -105,8 +107,9 @@ export const HelpMessageBox = createComponent({   // props: HelpMessage. RENAME 
   },
 
   render: function() {
-    const message: HelpMessage = this.props.message;
-    const alwaysShow = (this.props.alwaysShow || message.alwaysShow || !message.id)
+    const props: TipsBoxProps = this.props;
+    const message: HelpMessage = props.message;
+    const alwaysShow = (props.alwaysShow || message.alwaysShow || !message.id)
     if (this.state.hidden && !alwaysShow)
       return null;
 
@@ -119,8 +122,8 @@ export const HelpMessageBox = createComponent({   // props: HelpMessage. RENAME 
         : r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
             message.okayText || t.Hide);
 
-    const className = this.props.className || message.className || '';
-    const largeClass = this.props.large ? ' dwHelp-large' : '';
+    const className = props.className || message.className || '';
+    const largeClass = props.large ? ' dwHelp-large' : '';
     const warningClass = message.isWarning ? ' esHelp-warning' : '';
     const classes = className + ' dw-help' + largeClass + warningClass;
     return (

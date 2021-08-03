@@ -55,6 +55,7 @@
  * @cat Plugins/Cookie
  * @author Klaus Hartl/klaus.hartl@stilbuero.de
  */
+//  COULD_OPTIMIZE  SMALLER_BUNDLE  this getSetCookie is over-fancy.
 window.getSetCookie = function(name, value, options) {
     if (typeof value != 'undefined') { // name and value given, set cookie
         options = options || {};

@@ -25,6 +25,13 @@
 export function startIframeMessages() {
   addEventListener('message', onMessage, false);
 
+  if (!isNoPage(eds.embeddedPageId)) {
+    const sessWin = getMainWin();
+    if (sessWin.tydyn) {
+      sessWin.tydyn.allIframePageIds.push(eds.embeddedPageId);
+    }
+  }
+
   window.parent.postMessage(
       JSON.stringify(['iframeInited', {}]),
       eds.embeddingOrigin);
@@ -35,7 +42,8 @@ export function startIframeMessages() {
 
 
 function onMessage(event) {
-  if (event.origin !== eds.embeddingOrigin)
+  const isFromOtherFrame = event.origin === location.origin;
+  if (event.origin !== eds.embeddingOrigin && !isFromOtherFrame)
     return;
 
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
@@ -48,13 +56,33 @@ function onMessage(event) {
     eventData = json[1];
   }
   catch (error) {
-    // This isn't a message from Debiki.
+    // Not from Talkyard.
+    return;
+  }
+
+  // We can access other Ty frames  [many_embcom_iframes], but if the sender is
+  // window.parent, we cannot access it — then, set to undefined.
+  const fromFrame = isFromOtherFrame ? event.source : undefined;
+
+  // If the embedding script's cache time hasn't yet expired, it might be
+  // old and then don't show the editor (it too likely would malfunction).
+  // Could move 2 to enums-and-constants.ts. [emb_scr_ver]
+  const curScriptV = 2;
+  if (eds.isInEmbeddedEditor && eds.embeddingScriptV !== curScriptV) {
+    (fromFrame || window.parent).postMessage(
+          JSON.stringify(['tooOldEmbeddingScript', {
+            embeddingScriptV: eds.embeddingScriptV,
+            curScriptV,
+          }]),
+          fromFrame ? location.origin : eds.embeddingOrigin);
     return;
   }
 
   switch (eventName) {
     case 'loginWithAuthnToken':
+      // This gets sent to the first comments iframe only. [1st_com_frame]
       const authnToken = eventData;
+      // REFACTOR to Authn.loginWithToken, calls Server and loadMyself()? [ts_authn_modl]
       Server.loginWithAuthnToken(authnToken, SessionType.AutoTokenSiteCustomSso,
               function() {
         // typs.weakSessionId should have been updated by the above login fn.
@@ -63,19 +91,26 @@ function onMessage(event) {
 
       break;
     case 'loginWithOneTimeSecret':
+      // This gets sent to the first comments iframe only. [1st_com_frame]
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE50KH4');
       const oneTimeLoginSecret = eventData;
+      // REFACTOR to Authn.loginWithOneTimeSecret? [ts_authn_modl]
       Server.loginWithOneTimeSecret(oneTimeLoginSecret, function() {
+        // REFACTOR call loadMyself() directly from loginWithOneTimeSecret().
         // typs.weakSessionId has been updated already by the above login fn.
         ReactActions.loadMyself();
       });
       break;
     case 'resumeWeakSession':
+      // This gets sent to the first comments iframe only. [1st_com_frame]
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
       const pubSiteId = eventData.pubSiteId;
       if (eds.pubSiteId === pubSiteId) {
+        // REFACTOR break out fn Authn.loginWithOldSession()?  [ts_authn_modl]
+        const mainWin = debiki2.getMainWin();
+        mainWin.typs.weakSessionId = eventData.weakSessionId;
         typs.weakSessionId = eventData.weakSessionId;
-        // This will send 'justLoggedIn' to the editor iframe, so it'll get updated too.
+        // This sends 'justLoggedIn' to other iframes, so they'll get updated too.
         ReactActions.loadMyself();
       }
       else {
@@ -90,18 +125,23 @@ function onMessage(event) {
       // @ifdef DEBUG
       const mainWin: MainWin = getMainWin();
       if (!mainWin.typs.weakSessionId && !getSetCookie('dwCoSid')) {
-        logAndDebugDie(`Not really logged in? No cookie, no typs.weakSessionId. ` +
+        logAndDebugDie(`justLoggedIn but not logged in? ` +
+            `No cookie, no typs.weakSessionId. ` +
             `This frame name: ${window.name}, ` +
             `main frame name: ${mainWin.name}, ` +
             `this is main frame: ${window === mainWin}, ` +
             `mainWin.typs: ${JSON.stringify(mainWin.typs)} [TyE60UKTTGL35]`);
       }
+      // theStore.me was updated by ReactActions.loadMyself():
+      dieIf(!mainWin.theStore.me, 'justLoggedIn but theStore.me missing [TyE406MR4E2]');
+      dieIf(!eventData.user, 'justLoggedIn but user missing [TyE406MR4E3]');
       // @endif
       ReactActions.setNewMe(eventData.user);
       break;
     case 'logoutClientSideOnly':
-      // Sent from the comments iframe to the editor iframe, when one logs out in the comments iframe.
-      ReactActions.logoutClientSideOnly();
+      // Sent from the comments iframe one logged out in, to the editor iframe
+      // and other comments iframes.
+      ReactActions.logoutClientSideOnly({ skipSend: true });
       break;
     case 'scrollToPostNr':  // rename to loadAndShowPost  ? + add  anyShowPostOpts?: ShowPostOpts
       var postNr = eventData;
@@ -117,12 +157,12 @@ function onMessage(event) {
       });
       break;
     case 'editorToggleReply':
-      // This message is sent from an embedded comments page to the embedded editor.
-      // It opens the editor to write a reply to `postId`.
+      // This message is sent from a comments iframe to the editor iframe.
+      // Will open the editor to write a reply to `postNr` in that comments iframe.
       var postNr = eventData[0];
       var inclInReply = eventData[1];
       var postType = eventData[2] ?? PostType.Normal;
-      editor.toggleWriteReplyToPostNr(postNr, inclInReply, postType);
+      editor.toggleWriteReplyToPostNr(postNr, inclInReply, postType, fromFrame);
       break;
     case 'handleReplyResult':
       // This message is sent from the embedded editor <iframe> to the comments
@@ -132,28 +172,49 @@ function onMessage(event) {
       ReactActions.handleReplyResult(eventData[0], eventData[1]);
       break;
     case 'editorEditPost':
-      // Sent from an embedded comments page to the embedded editor.
+      // Sent from a comments iframe to the editor iframe.
       var postNr = eventData;
-      ReactActions.editPostWithNr(postNr);
+      ReactActions.editPostWithNr(postNr, fromFrame);
       break;
     case 'onEditorOpen':
-      // Sent from the embedded editor to the comments iframe.
+      // Sent from the embedded editor to all comment iframes, so they can
+      // disable Reply and Edit buttons, since pat is already editing editing sth.
       ReactActions.onEditorOpen(eventData);
       break;
     case 'handleEditResult':
-      // This is sent from the embedded editor back to an embedded comments page.
+      // Sent from the editor iframe to the iframe with the edited comment.
       ReactActions.handleEditResult(eventData);
       break;
     case 'showEditsPreview':  // REMOVE DO_AFTER 2020-09-01 deprecated
     case 'showEditsPreviewInPage':
+    case 'showEditsPreviewInDisc': // use instead?
       ReactActions.showEditsPreviewInPage(eventData);
       break;
     case 'scrollToPreview':
       ReactActions.scrollToPreview(eventData);
       break;
+    case 'hideEditor':
+      ReactActions.hideEditor();
+      break;
     case 'hideEditorAndPreview':
       // This is sent from the embedded editor to an embedded comments page.
       ReactActions.hideEditorAndPreview(eventData);
+      break;
+    case 'tooOldEmbeddingScript':
+      // Sent from the editor iframe to a comments iframe that says anything,
+      // if the embedding script (on the embedding blog post page) are too old,
+      // so the editor might not work. [embcom_upgr_0cache]
+      // (The cache time is just 15 minutes, for this upgrade.)
+      pagedialogs.getServerErrorDialog().openForBrowserError(
+            "Try again in 15 minutes.\n\n" +
+            "This server was recently upgraded. The changes will take effect " +
+            "within 15 minutes — thereafter, you can post and edit comments again.\n\n" +
+            "Details: " + JSON.stringify(eventData) + " [TyM04MWEJQ3]",
+            { title: "Wait for a while" });
+      /* Or, but won't appear in the middle:
+      morebundle.openDefaultStupidDialog({
+         body: ...
+          });*/
       break;
     case 'iframeOffsetWinSize':
       debiki2.iframeOffsetWinSize = eventData;
@@ -186,7 +247,12 @@ function syncDocSizeWithIframeSize() {
     // Make space for any notf prefs dialog — it can be taller than the emb cmts
     // iframe height, before there're any comments. [IFRRESIZE]
     const anyDialog = $first('.esDropModal_content');
-    const dialogHeightPlusPadding = anyDialog ? anyDialog.clientHeight + 30 : 0;
+    let dialogHeightPlusPadding = 0;
+    if (anyDialog) {
+      const rect = anyDialog.getBoundingClientRect();
+      dialogHeightPlusPadding = rect.bottom + 30;
+      // Was: anyDialog.clientHeight + 30, but that didn't incl whitespace above.
+    }
 
     const currentHeight = Math.max(currentDiscussionHeight, dialogHeightPlusPadding);
 

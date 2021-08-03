@@ -148,3 +148,32 @@ may-post-topics, are not inherited; instead, are configured per category.
 Maybe it'd be nice if may-edit-wiki permissions got inherited?  Or if, when adding
 a sub category, or editing the base category perms, one could apply the base
 category settings to the sub cats  `[propagate_cat_perms]`  (instead of inheriting).
+
+
+
+
+== Embedded comments
+
+A Talkyard discussion can be embedded below a blog post, as a blog comments section.
+And on other types of web pages, for discussing other things.
+
+There can be many comments iframes, on the same embedding page.
+So, for example, a page showing different items in a shop, on the same page,
+can have small comment sections about each item, below the item,
+simultaneously on the same page, e.g. to show the most popular customer comments
+about each item. Could be combined with a button to expand the comments or
+maybe go to a full screen discussion page about that item.
+
+
+=== Lazy pages
+
+[emb_lzy_pgs]
+Each iframe with comments, is backed by a Talkyard discussion page of
+type PageType.EmbeddedComments. Such a Talkyard page isn't created
+before it's needed — that is, when the first comment gets posted,
+or someone clicks Like (then, the like vote needs a page id),
+or the blog visitor configures a notify-me-of-comments notification level
+for that blog post discussion.
+
+// first comment gets posted (or like vote or notf setting changed).
+// So, a draft for the very first comment, usually won't have any page id.)

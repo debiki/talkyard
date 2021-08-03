@@ -256,7 +256,7 @@ const LoginDialog = createClassAndFactory({
     const state: LoginDialogState = this.state;
     const fade = state.childDialog ? ' dw-modal-fade' : '';
 
-    /*
+    /*  Use loginToWhat() instead  [authn_reason_info]
     let title;
     switch (state.loginReason) {
       case LoginReason.AuthnRequiredToRead:
@@ -801,6 +801,8 @@ const PasswordLoginDialogContent = createClassAndFactory({
 
 /**
  * Text to append to the login button so it reads e.g. "Log in to write a comment".
+ *
+ * [authn_reason_info]
  */
 function loginToWhat(loginReason: LoginReason): St {
   switch (loginReason) {

@@ -5,7 +5,7 @@
    module debiki2 {
 //------------------------------------------------------------------------------
 
-export function getMainWinStore(): Store {
+export function win_getSessWinStore(): SessWinStore {
   return (<any> window).theStore;  // [ONESTORE]
 }
 

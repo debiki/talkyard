@@ -282,7 +282,8 @@ function runAllE2eTests {
   fi
 
   # Start and exit the manual testing tests, just to verify this works.
-  $r s/wdio --only manual.2browsers $args
+  $r s/wdio --only manual.2browsers $args  # remove soon
+  $r s/wdio-7 --only dir.manual.2br.e2e.ts --cd -i $args
   #
   # To restart, reusing same test site: (not deleting and recreating)
   #
@@ -341,7 +342,9 @@ function runAllE2eTests {
   $r s/wdio --only private-chat.3browsers $args
 
   # Is named 'forum-' because there's another test with 'drafts-not-logged-in' in the name.
+  # But now that one got renamed, so remove 'forum-' from here — should be 'dir.' instead for "direct".
   $r s/wdio --only forum-drafts-not-logged-in.2browsers $args
+
   $r s/wdio --only drafts-new-topic.2br.mtime $args
   $r s/wdio --only drafts-new-topic-from-cats-page $args
   $r s/wdio --only drafts-reply-edit-dir-msg.2br.mtime $args
@@ -574,7 +577,9 @@ function runAllE2eTests {
 
   # For testing manually. Just verify the test starts properly.
   # For now, not "manual" (with 'l' at the end) — that'd start manual.2browsers too  o.O
-  $r s/wdio       --only embcom.manua.2br $args
+  $r s/wdio       --only embcom.manua.2br $args  # delete soon
+  $r s/wdio-7     --only embcom.manual.2br --cd -i $args
+  $r s/wdio-7     --only embcom.manyframes.manual.2br --cd -i $args
 
   # Also see navigation-as-* above.
   $r s/wdio       --only embedded-comments-navigation-as-guest $args
@@ -583,13 +588,16 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-create-site-req-verif-email.2browsers $args
   $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
-  $r s/wdio       --only embedded-comments-drafts-not-logged-in $args
+  $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br --cd -i $args
   $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
   $r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
+
   $r s/wdio       --only embedded-comments-different-disc-ids-same-page $args
+  #r s/wdio       --only embcom.many-comment-iframes-click-load-more.2br $args TESTS_MISSING
   $r s/wdio       --only embedded-comments-discussion-id.test $args
   $r s/wdio       --only embedded-comments-discussion-id-old-name $args
+
   $r s/wdio       --only embedded-comments-guest-login-email-notf-unsbscribe $args
   $r s/wdio       --only embcom.all-idp-logins.1br.extidp $args
   $r s/wdio       --only embcom.all-idp-logins-old-name.1br.extidp $args
@@ -599,7 +607,8 @@ function runAllE2eTests {
   $r s/wdio --b3c --only embcom.b3c.unverif-gmail.1br.extidp $args
   $r s/wdio       --only embedded-comments-edit-and-vote.test $args
   $r s/wdio       --only embedded-comments-edit-and-vote-old-name $args
-  $r s/wdio       --only embedded-comments-vote-first $args
+  $r s/wdio-7     --only embcom.vote-bef-page-exists.1br --cd -i $args
+  $r s/wdio-7     --only embcom.reply-vote-report-bef-login.2br --cd -i $args
   $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
   $r s/wdio       --only embedded-comments-sort-order-op-likes-btn-txt.2browsers $args
   $r s/wdio       --only embedded-comments-category-refs.2browsers $args
@@ -619,6 +628,14 @@ function runAllE2eTests {
 
   # Single Sign-On, embedded comments:
   $r s/wdio       --only embcom.sso.token-direct-w-logout-url.2br $args
+  $r s/wdio       --only embcom.sso.token-in-cookie.2br $args
+
+  # Many comments iframes:
+  $r s/wdio-7     --only embcom.manyframes.basic.2br --cd -i $args
+  $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br --cd -i $args
+  $r s/wdio-7     --only embcom.manyframes.js-api.2br --cd -i $args
+
+
 
   if [ -n "$http_server_pid" ]; then
     kill $http_server_pid

@@ -1278,13 +1278,8 @@ const Thread = createComponent({
 
     const branchSidewaysClass = horizontalCss(childrenSideways);
 
-    const isEditorsPage =
-        store.editorsPageId === page.pageId ||
-        // The embedded editor doesn't know about page ids (as of now). [EMBED0PG]
-        page.pageRole === PageRole.EmbeddedComments;
-
     let replyingToElem;
-    if (store.replyingToPostNr === post.nr && isEditorsPage) {
+    if (store_isReplyingTo(store, post)) {
       replyingToElem = r.div({ className: 's_T_ReTo' },
         r.span({ className: 's_T_ReTo_Ttl' },
           t.d.ReplyingToC),  // [305KTJ4]
@@ -1353,11 +1348,12 @@ const Thread = createComponent({
       }
 
       const resumeDraftBtn = post.isEditing || store.isEditorOpen ? null :
-            Button({ onClick: this.resumeDraft, className: 's_T_YourPrvw_ResumeB' },
+            Button({ onClick: this.resumeDraft, className: 's_T_YourPrvw_ResumeB e_RsmDft' },
               t.d.ResumeEdting);
 
       const deleteDraftBtn = post.isEditing || store.isEditorOpen ? null :
-            Button({ onClick: this.askDeleteDraft, className: 's_T_YourPrvw_ResumeB' },
+            Button({ onClick: this.askDeleteDraft,
+                  className: 's_T_YourPrvw_ResumeB e_DelDft' },
               t.d.DelDraft);
 
       previewElem = r.div({ className: 's_T_YourPrvw' },
