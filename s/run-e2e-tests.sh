@@ -312,6 +312,7 @@ function runAllE2eTests {
 
   $r s/wdio --only hide-unhide-tips.2br $args
 
+  $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
   $r s/wdio --only sanitize-posts.2browsers $args
 
   $r s/wdio --only votes-and-best-first $args

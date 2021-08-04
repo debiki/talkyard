@@ -2223,6 +2223,24 @@ export class TyE2eTestBrowser {
     }
 
 
+    async waitUntilHtmlIncludes(selector: St, text: St, ps: { multiLine?: Bo } = {}) {
+      let htmlNow = ''
+      await this.waitForExist(selector);
+      await this.waitUntil(async () => {
+        htmlNow = await (await this.$(selector)).getHTML();
+        if (htmlNow.indexOf(text) >= 0)
+          return true;
+      }, {
+        message: () =>
+            `Waiting for: ${selector}  to include: --------\n${
+            text
+            }\n---- but the html is currently: -----------------\n${
+            htmlNow
+            }\n-------------------------------------------------`,
+      });
+    }
+
+
     async waitUntilHtmlMatches(selector: St, regexOrStr: St | RegExp | Ay[]) {
       await this.waitForExist(selector);
 
@@ -5098,6 +5116,46 @@ export class TyE2eTestBrowser {
         return text.search(title) >= 0;
       },
 
+      selectAllText: async () => {
+        await this.editor.__setSelectionRange('SelectAll');
+      },
+
+      moveCursorToEnd: async () => {
+        // Move cursor to the end.  This:
+        //await this.#br.keys(Array('Control', 'End'));
+        // Or:
+        await this.editor.__setSelectionRange('MoveToEnd');
+      },
+
+      __setSelectionRange: async (doWhat: 'SelectAll' | 'MoveToEnd') => {
+        await this.#br.execute(function(doWhat) {
+          var textarea = document.querySelector('.esEdtr_textarea');
+          var textLen = textarea['value'].length;
+          const all = doWhat === 'SelectAll';
+          textarea['setSelectionRange'](all ? 0 : textLen, textLen);
+        }, doWhat);
+      },
+
+      /// Didn't need now, but maybe will be useful later?
+      /*
+      isCursorAtEnd: async (): Pr<Bo> => {
+        return await this.#br.execute(function() {
+          var textarea = document.querySelector('.esEdtr_textarea');
+          var textLen = textarea['value'].length;
+          var selStart = textarea['selectionStart'];
+          return selStart === textLen;
+        });
+      }, */
+
+      typeChar: async (char: St, ps: { append?: Bo } = {}) => {
+        await this.switchToEmbEditorIframeIfNeeded();
+        await this.focus('.esEdtr_textarea');
+        if (ps.append) {
+          await this.editor.moveCursorToEnd();
+        }
+        await this.#br.keys(Array(char));
+      },
+
       editText: async (text: St, opts: {
           timeoutMs?: number, checkAndRetry?: true,
           append?: boolean, skipWait?: true } = {}) => {
@@ -5291,6 +5349,13 @@ export class TyE2eTestBrowser {
         await this.waitForDisplayed(this.preview.__inEditorPreviewSelector);
       },
 
+      waitUntilPreviewHtmlIncludes: async (text: St,
+            opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: St }) => {
+        await this.preview.__checkPrevw(opts, async (prevwSelector: St) => {
+          await this.waitUntilHtmlIncludes(prevwSelector, text);
+        });
+      },
+
       waitUntilPreviewHtmlMatches: async (text: St,
             opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: St }) => {
         await this.preview.__checkPrevw(opts, async (prevwSelector: St) => {
@@ -5299,6 +5364,19 @@ export class TyE2eTestBrowser {
       },
 
       // ^--REMOVE, use --v  instead
+      /// Matches text in 1) Ty's edits preview, and also in 2) link previews
+      /// in Ty's edit perviews. So, if typing a reply with, say, a Twitter tweet link,
+      /// there'll be a preview of the reply, and in the preview of the reply,
+      /// there's a preview of the link.
+      /// And this can appear either in the editor (which is the case, if creating
+      /// a new page), or inside the current page (if it already exists), where
+      /// the post will appear once saved.
+      /// So, a links preview, in a post preview, either in the editor or
+      /// in the discussion page.
+      ///
+      /// The link preview html might be in an iframe in an iframe, because some
+      /// external websites include their own iframe, others don't. [dbl_ln_pv_iframe]
+      ///
       waitUntilPreviewTextMatches: async (regex: St | RegExp,
             opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: St,
                   inSandboxedIframe: Bo, inDoubleIframe?: Bo }) => {

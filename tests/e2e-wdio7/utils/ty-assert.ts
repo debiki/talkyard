@@ -61,6 +61,25 @@ const tyAssert = {
     assert.strictEqual(actual, expected, wholeMessage);
   },
 
+  eqManyLines: (actual, expected, message?: St, detailsObj?) => {
+    // Show the two values on many lines.
+    let wholeMessage = '\n\n' +
+          `assert.eqManyLines: Actual value differs from expected value:\n` +
+          `===== actual + ▩\\n: ========================\n` +  // ◪ or ▩?
+          `${actual}▩\n` +
+          `===== expected + ▩\\n: ======================\n` +
+          `${expected}▩\n` +
+          `===========================================\n`;
+    if (message) {
+      wholeMessage +=
+          `Details:\n` +
+          `    ${toPrettyString(message) +
+                    (detailsObj ? toPrettyString(detailsObj) : '')
+                }\n`;
+    }
+    assert.strictEqual(actual, expected, wholeMessage);
+  },
+
   refEq: (actual, expected) => {
     assert.ok(actual === expected,
       `  assert.refEq: Not reference-equal:\n` +

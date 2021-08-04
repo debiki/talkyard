@@ -571,6 +571,9 @@ editor -
           - embed-twitter-tweets-etc.test.ts  TyT0JSM8PF68.TyT033SKHWW73M
   preview:
     not embedded:
+      in editor preview:
+            - editor-toolbar-preview.1br  TyTEEDTOOLBTNS
+      in page preview:
             - TESTS_MISSING barely needed
     just one comments iframe:
             - TESTS_MISSING barely needed
@@ -583,8 +586,8 @@ editor -
             - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02.TyTEDPREVW
             - TESTS_MISSING scroll to edits preview
   upload things:  (7KFC2)
-  other buttons -
-    ...
+  toolbar buttons:
+            - editor-toolbar-preview.1br  TyTEEDTOOLBTNS
   similar topics:
           - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
   late edits:
