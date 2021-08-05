@@ -78,6 +78,19 @@ function scrollToLastPositionSoon() {
 }
 
 
+
+interface ForumComponentProps extends ReactRouterProps {
+}
+
+
+interface ForumComponentState {
+  store: Store;
+  topicsInStoreMightBeOld: Bo;
+  useWideLayout: Bo;
+  topPeriod: TopTopicsPeriod;
+}
+
+
 export const ForumComponent = createReactClass(<any> {
   displayName: 'ForumComponent',
   mixins: [StoreListenerMixin, utils.PageScrollMixin],
@@ -101,8 +114,10 @@ export const ForumComponent = createReactClass(<any> {
   },
 
   componentDidMount: function() {
-    ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location);
-    scrollToWhenCommentsLoaded = lastScrollYByPath[this.props.location.pathname] || 0;
+    const props: ForumComponentProps = this.props;
+    const state: ForumComponentState = this.state;
+    ReactActions.maybeLoadAndShowNewPage(state.store, props.history, props.location);
+    scrollToWhenCommentsLoaded = lastScrollYByPath[props.location.pathname] || 0;
     lastScrollYByPath = {};
     // Dupl code [5KFEWR7]
     this.timerHandle = setInterval(this.checkSizeChangeLayout, 500);
@@ -117,31 +132,35 @@ export const ForumComponent = createReactClass(<any> {
     // Remember scroll only for the current sort order, otherwise, if there's a scroll position
     // remembered for each possible combination of categories and sort orders, the user will get
     // confused, because hen won't remember that stuff, henself, and wonder "why not starts at top?".
+    const props: ForumComponentProps = this.props;
     lastScrollYByPath = {};
-    lastScrollYByPath[this.props.location.pathname] = $byId('esPageColumn').scrollTop;
+    lastScrollYByPath[props.location.pathname] = $byId('esPageColumn').scrollTop;
   },
 
   checkSizeChangeLayout: function() {
+    const state: ForumComponentState = this.state;
     // Dupl code [5KFEWR7]
     if (this.isGone) return;
     const isWide = this.isPageWide();
-    if (isWide !== this.state.useWideLayout) {
-      this.setState({ useWideLayout: isWide });
+    if (isWide !== state.useWideLayout) {
+      this.setState({ useWideLayout: isWide } as ForumComponentState);
     }
   },
 
   isPageWide: function(store?: Store) {
-    return store_getApproxPageWidth(store || this.state.store) > UseWideForumLayoutMinWidth;
+    const state: ForumComponentState = this.state;
+    return store_getApproxPageWidth(store || state.store) > UseWideForumLayoutMinWidth;
   },
 
   setTopPeriod: function(period: TopTopicsPeriod) {
     this.setState({ topPeriod: period });
   },
 
-  getActiveCategory: function(currentCategorySlug: string) {
-    const store: Store = this.state.store;
+  getActiveCategory: function(currentCategorySlug: St): Cat | U {
+    const state: ForumComponentState = this.state;
+    const store: Store = state.store;
     const forumPage: Page = store.currentPage;
-    let activeCategory: any;
+    let activeCategory: Cat | U;
     const activeCategorySlug = currentCategorySlug;
     if (activeCategorySlug) {
       activeCategory = _.find(store.currentCategories, (category: Category) => {
@@ -156,6 +175,10 @@ export const ForumComponent = createReactClass(<any> {
         id: forumPage.categoryId, // the forum root category
         isForumItself: true,
         newTopicTypes: [],
+        slug: '',
+        description: '',
+        // Whatever:
+        defaultTopicType: PageRole.Discussion,
       };
     }
     return activeCategory;
@@ -167,16 +190,17 @@ export const ForumComponent = createReactClass(<any> {
     const currentPath = sortOrderRoute;
     const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
     const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
-    this.props.history.push({
+    const props: ForumComponentProps = this.props;
+    props.history.push({
       pathname: forumPath + nextPath + slashSlug,
-      search: this.props.location.search,
+      search: props.location.search,
     });
   },
 
   editCategory: function() {
     const [forumPath, routes] = this.getForumPathAndRoutes();
     const currentCategorySlug = routes[1];
-    const activeCategory = this.getActiveCategory(currentCategorySlug);
+    const activeCategory: Cat | U = this.getActiveCategory(currentCategorySlug);
     morebundle.getEditCategoryDialog(dialog => {
       if (this.isGone) return;
       dialog.open(activeCategory.id, (serverResponse: SaveCategoryResponse) => {
@@ -189,20 +213,23 @@ export const ForumComponent = createReactClass(<any> {
   },
 
   getForumPathAndRoutes: function(): [string, string[]] {
-    const store: Store = this.state.store;
+    const props: ForumComponentProps = this.props;
+    const state: ForumComponentState = this.state;
+    const store: Store = state.store;
     const page: Page = store.currentPage;
     const forumPath = page.pagePath.value;
     // This is done this way because of how React-Router v3 was working. It was simpler
     // do do this than to totally-rewrite. Maybe refactor-&-simplify some day?
     // Remove e.g. a '/forum/' prefix to the 'top/ideas' or 'new/bugs' whatever suffix:
-    const pathRelForumPage = this.props.location.pathname.replace(forumPath, '');
+    const pathRelForumPage = props.location.pathname.replace(forumPath, '');
     // This becomes e.g. ['new', 'ideas']:
     const routes = pathRelForumPage.split('/');
     return [forumPath, routes];
   },
 
   render: function() {
-    const store: Store = this.state.store;
+    const state: ForumComponentState = this.state;
+    const store: Store = state.store;
     const page: Page = store.currentPage;
 
     if (page.pageRole !== PageRole.Forum) {
@@ -213,9 +240,9 @@ export const ForumComponent = createReactClass(<any> {
       return r.div({ className: 'container dw-forum' }, t.Loading + ' [TyM2EPKB04]');
     }
 
-    const [forumPath, routes] = this.getForumPathAndRoutes();
+    const [forumPath, routes]: [St, St[]] = this.getForumPathAndRoutes();
 
-    const sortOrderRoute = routes[0];
+    const sortOrderRoute: St = routes[0];
     switch (sortOrderRoute) {
       case RoutePathLatest: break;
       case RoutePathNew: break;
@@ -225,9 +252,10 @@ export const ForumComponent = createReactClass(<any> {
         return r.p({}, `Bad route in the URL: '${sortOrderRoute}' [EdE2WKB4]`);
     }
     const currentCategorySlug = routes[1];
-    const activeCategory = this.getActiveCategory(currentCategorySlug);
+    const activeCategory: Cat | U = this.getActiveCategory(currentCategorySlug);
     const layout = store.currentPage.pageLayout;
 
+    /*
     const childProps = _.assign({}, {
       store: store,
       forumPath,
@@ -239,7 +267,7 @@ export const ForumComponent = createReactClass(<any> {
       editCategory: this.editCategory,
       topPeriod: this.state.topPeriod,
       setTopPeriod: this.setTopPeriod,
-    });
+    }); */
 
     /* Remove this? Doesn't look nice & makes the categories page look complicated.
     var topsAndCatsHelp = this.props.sortOrderRoute === RoutePathCategories
@@ -259,8 +287,23 @@ export const ForumComponent = createReactClass(<any> {
         RedirToNoSlash({ path: rootSlash + RoutePathTop + '/' }),
         RedirToNoSlash({ path: rootSlash + RoutePathCategories + '/' }),
         // [React_Router_v51] skip render(), use hooks and useParams instead.
-        Route({ path: rootSlash + RoutePathCategories, exact: true, strict: true, render: (props) => {
-          const propsWithRouterStuff = { ...childProps, ...props, isCategoriesRoute: true };
+        Route({ path: rootSlash + RoutePathCategories, exact: true, strict: true,
+                  render: (routerProps: ReactRouterProps) => {
+          const childProps: ForumButtonsProps & LoadAndListCatsProps = {
+            store,
+            forumPath,
+            //useTable: this.state.useWideLayout && layout != TopicListLayout.NewsFeed,
+            sortOrderRoute,
+            queryParams: parseQueryString(routerProps.location.search), // was: this.props
+            activeCategory,
+            //setCategory: this.setCategory,
+            //editCategory: this.editCategory,
+            //topPeriod: this.state.topPeriod,
+            //setTopPeriod: this.setTopPeriod,
+            //...childProps,
+            isCategoriesRoute: true,
+            ...routerProps,
+          };
           // Don't use <div> — then DuckDuckGo and Bing can mistake this
           // topic/category list page, from being a contents page, and show it
           // in the search results, instead of the real contents page.
@@ -273,14 +316,29 @@ export const ForumComponent = createReactClass(<any> {
           // Configurable, for now — just trying with <nav>.
           //
           return linkWapper({},  // or <aside> or <section> ?
-            ForumButtons(propsWithRouterStuff),
-            LoadAndListCategories(propsWithRouterStuff));
+            ForumButtons(childProps),
+            LoadAndListCategories(childProps));
         }}),
-        Route({ path: rootSlash + ':sortOrder?/:categorySlug?', strict: true, render: (props) => {
-          const propsWithRouterStuff = { ...childProps, ...props };
+        Route({ path: rootSlash + ':sortOrder?/:categorySlug?', strict: true,
+                render: (routerProps: ReactRouterProps) => {
+          const childProps: ForumButtonsProps & LoadAndListTopicsProps = { // [.btn_props]
+            store: store,
+            forumPath,
+            useTable: state.useWideLayout && layout != TopicListLayout.NewsFeed,
+            sortOrderRoute,
+            queryParams: parseQueryString(routerProps.location.search), // was: this.props
+            activeCategory,
+            setCategory: this.setCategory,
+            editCategory: this.editCategory,
+            topPeriod: state.topPeriod,
+            setTopPeriod: this.setTopPeriod,
+            ...routerProps,
+          };
           return linkWapper({},
-            ForumButtons(propsWithRouterStuff),
-            LoadAndListTopics(propsWithRouterStuff));
+            // Moving the buttons to after the category title — just keeping this,
+            // in case anyone complains and wants to improve something somehow.
+            !store_isFeatFlagOn(store, 'ffBtnsBefCat') ? null : ForumButtons(childProps),
+            LoadAndListTopics(childProps));
         }})));
     /* SHOULD instead of the below, throw? show? some error, if invalid sort order or bad cat name
         Route({ path: rootSlash, component: LoadAndListTopics }),
@@ -348,6 +406,22 @@ const ForumIntroText = createComponent({
 });
 
 
+
+interface ForumButtonsProps {  // extends ReactRouterProps, but better get in field?
+  store: Store;
+  forumPath: St;
+  activeCategory?: Cat;
+  isCategoriesRoute?: Bo;
+  sortOrderRoute: St;
+  location: ReactRouterLocation;
+  queryParams: { [paramName: string]: St };
+  history: ReactRouterHistory;
+}
+
+interface ForumButtonsState {
+  compact: Bo;
+}
+
 const wideMinWidth = 801;
 
 const ForumButtons = createComponent({
@@ -357,7 +431,7 @@ const ForumButtons = createComponent({
   getInitialState: function() {
     return {
       compact: window.innerWidth < wideMinWidth,
-    };
+    } as ForumButtonsState;
   },
 
   componentWillUnmount: function() {
@@ -365,25 +439,27 @@ const ForumButtons = createComponent({
   },
 
   onWindowZoomOrResize: function() {
+    const state: ForumButtonsState = this.state;
     const newCompact = window.innerWidth < wideMinWidth;
-    if (this.state.compact !== newCompact) {
+    if (state.compact !== newCompact) {
       this.setState({ compact: newCompact });
     }
   },
 
   setSortOrder: function(newPath: string) {
-    const store: Store = this.props.store;
-    this.props.history.push({
-      pathname: this.props.forumPath + newPath + this.slashCategorySlug(),
-      search: this.props.location.search,
+    const props: ForumButtonsProps = this.props;
+    props.history.push({
+      pathname: props.forumPath + newPath + this.slashCategorySlug(),
+      search: props.location.search,
     });
   },
 
   getSortOrderName: function(sortOrderRoutePath?: string) {
+    const props: ForumButtonsProps = this.props;
     if (!sortOrderRoutePath) {
-      sortOrderRoutePath = this.props.sortOrderRoute;
+      sortOrderRoutePath = props.sortOrderRoute;
     }
-    const store: Store = this.props.store;
+    const store: Store = props.store;
     const showTopicFilter = settings_showFilterButton(store.settings, store.me);
     // If there's no topic filter button, the text "All Topics" won't be visible to the
     // right of the Latest / Top sort order buttons, which makes it hard to understand what
@@ -398,15 +474,16 @@ const ForumButtons = createComponent({
   },
 
   setTopicFilter: function(entry: ExplainingTitleTextSelected) {
-    const newQuery: any = { ...this.props.queryParams };
+    const props: ForumButtonsProps = this.props;
+    const newQuery: any = { ...props.queryParams };
     if (entry.eventKey === FilterShowAll) {
       delete newQuery.filter;
     }
     else {
       newQuery.filter = entry.eventKey;
     }
-    this.props.history.push({
-      pathname: this.props.location.pathname,
+    props.history.push({
+      pathname: props.location.pathname,
       search: stringifyQueryString(newQuery),
     });
   },
@@ -460,17 +537,19 @@ const ForumButtons = createComponent({
   },
 
   slashCategorySlug: function() {
-    const slug = this.props.activeCategory.slug;
+    const props: ForumButtonsProps = this.props;
+    const slug: St | U = props.activeCategory.slug;
     return slug ? '/' + slug : '';
   },
 
   render: function() {
-    const state = this.state;
-    const store: Store = this.props.store;
+    const state: ForumButtonsState = this.state;
+    const props: ForumButtonsProps = this.props;
+    const store: Store = props.store;
     const settings: SettingsVisibleClientSide = store.settings;
     const me: Myself = store.me;
-    const showsCategoryTree: boolean = this.props.isCategoriesRoute;
-    const activeCategory: Category = this.props.activeCategory;
+    const showsCategoryTree: Bo = props.isCategoriesRoute;
+    const activeCategory: Cat | U = props.activeCategory;
     if (!activeCategory) {
       // The user has typed a non-existing category slug in the URL. Or she has just created
       // a category, opened a page and then clicked Back in the browser. Then this page
@@ -488,7 +567,7 @@ const ForumButtons = createComponent({
           PrimaryLinkButton({ href: '/' }, "Go to the homepage"));
     }
 
-    const queryParams = this.props.queryParams;
+    const queryParams = props.queryParams;
     const showsTopicList = !showsCategoryTree;
 
     const showFilterButton = settings_showFilterButton(settings, me);
@@ -501,7 +580,7 @@ const ForumButtons = createComponent({
           showsCategoryTree ? t.Categories : t.Topics) : null;
 
     const makeCategoryLink = (where, text, linkId, extraClass?) => NavLink({
-      to: { pathname: this.props.forumPath + where, search: this.props.location.search },
+      to: { pathname: props.forumPath + where, search: props.location.search },
       id: linkId,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
@@ -516,7 +595,7 @@ const ForumButtons = createComponent({
       makeCategoryLink(RoutePathLatest, t.fb.TopicList, 'e2eViewTopicsB', 'esForum_navLink');
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
-    const currentSortOrderPath = this.props.sortOrderRoute;
+    const currentSortOrderPath = props.sortOrderRoute;
     let latestNewTopButton;
     if (showsCategoryTree) {
       // Then hide the sort order buttons.
@@ -613,7 +692,7 @@ const ForumButtons = createComponent({
     // get placed. Instead they get placed in a default category. Find out which
     // one that is, so can show the correct create topic button title (depends
     // on the default topic type in the default category).
-    const activeOrDefCat: Category | U =
+    const activeOrDefCat: Cat | U =
         activeCategory.isForumItself ?
             store_findTheDefaultCategory(store) : activeCategory;
     // @ifdef DEBUG
@@ -666,6 +745,24 @@ const ForumButtons = createComponent({
 
 
 
+
+interface LoadAndListTopicsProps {
+  store: Store;
+  activeCategory: Cat;
+  topicsInStoreMightBeOld?: Bo;
+  queryParams: UrlParamsMap;
+  sortOrderRoute: St;
+  match: ReactRouterMatch;
+
+  forumPath; //: props.forumPath,
+  useTable?: Bo; // props.useTable,
+  setCategory; //: props.setCategory,
+  editCategory; //: props.editCategory,
+  topPeriod; //: props.topPeriod,
+  setTopPeriod; //: props.setTopPeriod,
+}
+
+
 const LoadAndListTopics = createFactory({
   displayName: 'LoadAndListTopics',
   mixins: [debiki2.StoreListenerMixin],
@@ -675,7 +772,8 @@ const LoadAndListTopics = createFactory({
     // can use that lis when rendering the topic list server side, or for the first time
     // in the browser (but not after that, because then new topics might have appeared).
     if (this.canUseTopicsInScriptTag()) {
-      const store: Store = this.props.store;
+      const props: LoadAndListTopicsProps = this.props;
+      const store: Store = props.store;
       return {
         topics: store.topics,
         showLoadMoreButton: store.topics && store.topics.length >= NumNewTopicsPerRequest
@@ -704,8 +802,9 @@ const LoadAndListTopics = createFactory({
 
     // We're still using a copy of the topics list in the store, so update the copy,
     // maybe new user-specific data has been added.
-    const store: Store = this.props.store;
-    const category: Category = this.props.activeCategory;
+    const props: LoadAndListTopicsProps = this.props;
+    const store: Store = props.store;
+    const category: Cat = props.activeCategory;
     let topics: Topic[];
     if (category) {
       topics = _.clone(store.topics);
@@ -720,16 +819,17 @@ const LoadAndListTopics = createFactory({
   },
 
   canUseTopicsInScriptTag: function() {
-    const store: Store = this.props.store;
-    if (!store.topics || this.props.topicsInStoreMightBeOld)
+    const props: LoadAndListTopicsProps = this.props;
+    const store: Store = props.store;
+    if (!store.topics || props.topicsInStoreMightBeOld)
       return false;
 
-    const topicFilter = this.props.queryParams.filter;
+    const topicFilter = props.queryParams.filter;
 
     // The server includes topics for the active-topics sort order, all categories.
-    return this.props.sortOrderRoute === RoutePathLatest &&
+    return props.sortOrderRoute === RoutePathLatest &&
         (!topicFilter || topicFilter === FilterShowAll) &&
-        !this.props.match.params.categorySlug;
+        !props.match.params.categorySlug;
   },
 
   componentDidMount: function() {
@@ -861,7 +961,7 @@ const LoadAndListTopics = createFactory({
     });
   },
 
-  getOrderOffset: function(nextProps?) {
+  getOrderOffset: function(nextProps?): OrderOffset {
     const props = nextProps || this.props;
     let lastBumpedAt: number;
     let lastScore: number;
@@ -893,25 +993,32 @@ const LoadAndListTopics = createFactory({
   },
 
   render: function() {
-    return TopicsList({
-      categoryId: this.state.categoryId,              // why this, (406826)
-      categoryParentId: this.state.categoryParentId,  //
+    const props: LoadAndListTopicsProps = this.props;
+    const topicListProps: TopicListProps = {
+      //categoryId: this.state.categoryId,              // why this, (406826)
+      //categoryParentId: this.state.categoryParentId,  //
       topics: this.state.topics,
-      store: this.props.store,
-      forumPath: this.props.forumPath,
-      useTable: this.props.useTable,
+      store: props.store,
+      forumPath: props.forumPath,
+      useTable: props.useTable,
       minHeight: this.state.minHeight,
       showLoadMoreButton: this.state.showLoadMoreButton,
       loadMoreTopics: this.loadMoreTopics,
-      activeCategory: this.props.activeCategory,   // and also this? (406826)
-      setCategory: this.props.setCategory,
-      editCategory: this.props.editCategory,
+      activeCategory: props.activeCategory,   // and also this? (406826)
+      setCategory: props.setCategory,
+      editCategory: props.editCategory,
       orderOffset: this.getOrderOffset(),
-      topPeriod: this.props.topPeriod,
-      setTopPeriod: this.props.setTopPeriod,
+      topPeriod: props.topPeriod,
+      setTopPeriod: props.setTopPeriod,
       linkCategories: true,
-      sortOrderRoute: this.props.sortOrderRoute,
-    });
+      sortOrderRoute: props.sortOrderRoute,
+
+      // For the buttons [.reorder_forum_btns] — those propr are included [.btn_props].
+      location: (props as any as  ForumButtonsProps).location,
+      queryParams: (props as any as  ForumButtonsProps).queryParams,
+      history: (props as any as  ForumButtonsProps).history,
+    };
+    return TopicsList(topicListProps);
   },
 });
 
@@ -941,17 +1048,20 @@ export const TopicsList = createComponent({
   },
 
   render: function() {
-    const store: Store = this.props.store;
+    const props: TopicListProps = this.props;
+    const store: Store = props.store;
     const me: Myself = store.me;
-    const topics: Topic[] = this.props.topics;
-    const activeCategory: Category = this.props.activeCategory;
-    if (!activeCategory) {
+    const isLoading = !props.topics;
+    const topics: Topic[] = props.topics || [];
+    const activeCategory: Cat | U = props.activeCategory;
+    if (!activeCategory && !props.noSpecificCat) {
       // The category doesn't exist, or it's restricted, and maybe included in the
       // user specific json. When the user specific json has been activated, either the
       // category will exist and we won't get to here again, or a "category not found" message
       // will be displayed (4JKSWX2). — But don't show any "Loading..." message here.
       return null;
     }
+    /*
     if (!topics) {
       // The min height preserves scrollTop, even though the topic list becomes empty
       // for a short while (which would otherwise reduce the windows height which
@@ -959,17 +1069,20 @@ export const TopicsList = createComponent({
       // COULD make minHeight work when switching to the Categories view too? But should
       // then probably scroll the top of the categories list into view.
       // COULD use store.topics, used when rendering server side, but for now:
-      return r.p({ style: { minHeight: this.props.minHeight } }, t.Loading);
-    }
+      // Moved to below instead [.is_loading]
+      return r.p({ style: { minHeight: props.minHeight } }, t.Loading);
+    } */
 
-    const useTable = this.props.useTable;
-    const orderOffset: OrderOffset = this.props.orderOffset;
+    const useTable: Bo = props.useTable;
+    const orderOffset: OrderOffset = props.orderOffset;
 
     const topicElems = topics.map((topic: Topic) => {
-      return TopicRow({
-          store, topic, categories: store.currentCategories, activeCategory, orderOffset,
-          key: topic.pageId, sortOrderRoute: this.props.sortOrderRoute,
-          inTable: useTable, forumPath: this.props.forumPath });
+      const topicRowProps: TopicRowProps = {
+          store, topic, // categories: store.currentCategories,
+          activeCatId: activeCategory?.id, orderOffset,
+          key: topic.pageId, sortOrderRoute: props.sortOrderRoute,
+          inTable: useTable, forumPath: props.forumPath };
+      return TopicRow(topicRowProps);
     });
 
     // Insert an icon explanation help message in the topic list. Anywhere else, and
@@ -998,21 +1111,21 @@ export const TopicsList = createComponent({
         : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff));
 
     let loadMoreTopicsBtn;
-    if (this.props.showLoadMoreButton) {
+    if (props.showLoadMoreButton) {
       const queryString = '?' + debiki2.ServerApi.makeForumTopicsQueryParams(orderOffset);
       loadMoreTopicsBtn =
         r.div({},
           r.a({ className: 'load-more', href: queryString, onClick: (event) => {
             event.preventDefault();
-            this.props.loadMoreTopics();
+            props.loadMoreTopics();
           } }, t.LoadMore));
     }
 
     let topTopicsPeriodButton;
     if (orderOffset.sortOrder === TopicSortOrder.ScoreAndBumpTime) {
       const makeTopPeriodListItem = (period: TopTopicsPeriod, text?: string) => {
-        return ExplainingListItem({ onSelect: () => this.props.setTopPeriod(period),
-          activeEventKey: this.props.topPeriod, eventKey: period,
+        return ExplainingListItem({ onSelect: () => props.setTopPeriod(period),
+          activeEventKey: props.topPeriod, eventKey: period,
           title: topPeriod_toString(period),
           text: text });
       };
@@ -1021,7 +1134,7 @@ export const TopicsList = createComponent({
           r.span({ className: 'esForum_sortInfo' }, t.ft.PopularTopicsComma),
           ModalDropdownButton({ className: 'esForum_sortInfo s_F_SI_TopB', pullLeft: true,
               title: r.span({},
-                topPeriod_toString(this.props.topPeriod) + ' ', r.span({ className: 'caret' })) },
+                topPeriod_toString(props.topPeriod) + ' ', r.span({ className: 'caret' })) },
             r.ul({ className: 'dropdown-menu' },
               makeTopPeriodListItem(TopTopicsPeriod.All,
                 t.ft.TopFirstAllTime),
@@ -1033,9 +1146,10 @@ export const TopicsList = createComponent({
               makeTopPeriodListItem(TopTopicsPeriod.Year))));
     }
 
-    const deletedClass = !activeCategory.isDeleted ? '' : ' s_F_Ts-CatDd';
-    const anyDeletedCross = !activeCategory.isDeleted ? null : r.div({ className: 's_Pg_DdX' });
-    const categoryDeletedInfo = !activeCategory.isDeleted ? null :
+    const catDeld = activeCategory && activeCategory.isDeleted;
+    const deletedClass = !catDeld ? '' : ' s_F_Ts-CatDd';
+    const anyDeletedCross = !catDeld ? null : r.div({ className: 's_Pg_DdX' });
+    const categoryDeletedInfo = !catDeld ? null :
       r.p({ className: 'icon-trash s_F_CatDdInfo' },
         t.ft.CatHasBeenDeleted);
 
@@ -1072,39 +1186,71 @@ export const TopicsList = createComponent({
     // Otherwise people tend to not notice that they are inside a category.
     // And they typically do *not* see any about-category pinned topic
     // (like Discourse does — don't do that).
-    let categoryNameDescr = !settings_showCategories(store.settings, me) ||
-        this.props.skipCatNameDescr ? null :
+    let categoryNameDescr = !activeCategory || !settings_showCategories(store.settings, me) ||
+        props.skipCatNameDescr ? null :
       CatNameDescr({ store, activeCategory, setCategory: this.props.setCategory,
           editCategory: this.props.editCategory });
 
+    const showForumBtns = activeCategory && !store_isFeatFlagOn(store, 'ffBtnsBefCat');
+    const forumButtonProps: ForumButtonsProps = !showForumBtns ? null : {
+      store,
+      forumPath: props.forumPath,
+      activeCategory,
+      isCategoriesRoute: false,  // we're in a topic list, not a categories tree
+      sortOrderRoute: props.sortOrderRoute,
+
+      // [.reorder_forum_btns]
+      location: props.location,
+      queryParams: props.queryParams,
+      history: props.history,
+    }
+    const forumButtons = !showForumBtns ? null : ForumButtons(forumButtonProps);
+
+    // Dim the topics list until topics loaded.  [.is_loading]
+    // Looks better than just removing it completely.
+    const loadingStyle = !isLoading ? {} : {
+      minHeight: props.minHeight ,
+      pointerEvents: 'none',
+      opacity: '0.8',
+    }
+
     return (
-      r.div({ className: 's_F_Ts e_SrtOrdr-' + orderOffset.sortOrder },
+      r.div({ className: 's_F_Ts e_SrtOrdr-' + orderOffset.sortOrder,
+              style: loadingStyle },
         categoryDeletedInfo,
-        topTopicsPeriodButton,
+        showForumBtns ? null :
+              // Legacy. Then the forum buttons are just above, instead of inside this
+              // component — and then it makes sense to show the trending topics
+              // period at the top of this component (so they appear just below
+              // the forum buttons).
+              topTopicsPeriodButton,
         r.div({ style: { position: 'relative' }},
           anyDeletedCross,
           categoryNameDescr,
+          forumButtons,
+          showForumBtns ? topTopicsPeriodButton : null,
+          isLoading ? t.Loading : null,
           topicsTable || topicRows),
-        topics.length ? null :
+        isLoading || topics.length ? null :
           r.div({ className: 's_F_Ts_NoTopics', id: 'e2eF_NoTopics' }, t.NoTopics),
         loadMoreTopicsBtn));
   }
 });
 
 
-function CatNameDescr(props: { store: Store, activeCategory: Category,
+function CatNameDescr(props: { store: Store, activeCategory: Cat,
       setCategory, editCategory }) {
   const store: Store = props.store;
   const me: Myself = store.me;
-  const activeCategory: Category = props.activeCategory;
+  const activeCategory: Cat = props.activeCategory;
 
   const catsActiveLast = store_ancestorCatsCurLast(store, activeCategory.id);
 
   // catsActiveLast is empty, if we haven't selected any category. Then, currently,
   // activeCategory is a dummy category for the whole site section. (What about
   // using the root category (include it in the json from the server) instead?)
-  const baseCat: Category = catsActiveLast[0] || activeCategory;
-  const anySubCat: Category | undefined = catsActiveLast[1];
+  const baseCat: Cat = catsActiveLast[0] || activeCategory;
+  const anySubCat: Cat | U = catsActiveLast[1];
   const totalDepth = catsActiveLast.length;
   // @ifdef DEBUG
   dieIf(totalDepth >= 3, '3 level cats not yet impl [TyE0GKRH]');
@@ -1132,12 +1278,12 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
 
 
   function makeCatDropdown(store: Store, parentCatSlug: string,
-        catsSameLevel: Category[], thisCat: Category, isSubCat: boolean, isLastCat: boolean) {
+        catsSameLevel: Cat[], thisCat: Cat, isSubCat: boolean, isLastCat: boolean) {
 
     if (!catsSameLevel.length)
       return null;
 
-    const categoryMenuItems = catsSameLevel.map((category: Category) => {
+    const categoryMenuItems = catsSameLevel.map((category: Cat) => {
       return MenuItem({ key: category.id, active: thisCat && thisCat.id === category.id,
           onClick: () => props.setCategory(category.slug) },
             r.span({ className: category_iconClass(category, store) }, category.name));
@@ -1217,6 +1363,18 @@ const IconHelpMessage = {
 
 
 
+interface TopicRowProps {
+  store: Store;
+  topic: Topic;
+  activeCatId?: CatId;
+  sortOrderRoute: St;
+  forumPath: St;
+  orderOffset: OrderOffset;
+  inTable: Bo;
+  key: St | Nr,
+}
+
+
 const TopicRow = createComponent({
   displayName: 'TopicRow',
 
@@ -1283,18 +1441,19 @@ const TopicRow = createComponent({
   },
 
   makeCategoryLink: function(category: Category, skipQuery?: boolean) {
-    const store: Store = this.props.store;
-    const sortOrderPath = this.props.sortOrderRoute;
+    const props: TopicRowProps = this.props;
+    const sortOrderPath = props.sortOrderRoute;
     // this.props.queryParams — later: could convert to query string, unless skipQuery === true
-    return this.props.forumPath + sortOrderPath + '/' + category.slug;
+    return props.forumPath + sortOrderPath + '/' + category.slug;
   },
 
   render: function() {
-    const store: Store = this.props.store;
+    const props: TopicRowProps = this.props;
+    const store: Store = props.store;
     const page: Page = store.currentPage;
     const me = store.me;
     const settings = store.settings;
-    const topic: Topic = this.props.topic;
+    const topic: Topic = props.topic;
     const category: Category = _.find(store.currentCategories, (category: Category) => {
       return category.id === topic.categoryId;
     });
@@ -1345,7 +1504,7 @@ const TopicRow = createComponent({
     let excerpt;  // [7PKY2X0]
     const showExcerptAsParagraph =
         topic.pinWhere === PinPageWhere.Globally ||
-        (topic.pinWhere && topic.categoryId === this.props.activeCategory.id) ||
+        (topic.pinWhere && topic.categoryId === props.activeCatId) ||
         page.pageLayout >= TopicListLayout.ExcerptBelowTitle;
     if (showExcerptAsParagraph) {
       excerpt =
@@ -1418,7 +1577,7 @@ const TopicRow = createComponent({
       showMoreClickHandler = this.showMoreExcerpt;
     }
 
-    const orderOffset: OrderOffset = this.props.orderOffset;
+    const orderOffset: OrderOffset = props.orderOffset;
 
     const activeAt = Link({ to: topic.url + FragActionHashScrollLatest },
         prettyLetterTimeAgo(
@@ -1427,7 +1586,7 @@ const TopicRow = createComponent({
             : topic.bumpedAtMs || topic.createdAtMs));
 
     // We use a table layout, only for wide screens, because table columns = spacy.
-    if (this.props.inTable) return (
+    if (props.inTable) return (
       r.tr({ className: 'esForum_topics_topic e2eF_T' },  // (update BJJ CSS before renaming 'esForum_topics_topic' (!))
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
           contentReactFn({ className: 's_F_Ts_T_Con' + manyLinesClass,
@@ -1467,6 +1626,14 @@ function topic_mediaThumbnailUrls(topic: Topic): string[] {
 
 
 
+interface LoadAndListCatsProps {
+  store: Store;
+  queryParams: UrlParamsMap;
+  location: ReactRouterLocation;
+  forumPath: St;
+}
+
+
 const LoadAndListCategories = createFactory({
   displayName: 'LoadAndListCategories',
 
@@ -1482,7 +1649,7 @@ const LoadAndListCategories = createFactory({
     this.isGone = true;
   },
 
-  UNSAFE_componentWillReceiveProps: function(nextProps) {
+  UNSAFE_componentWillReceiveProps: function(nextProps: LoadAndListCatsProps) {
     this.loadCategories(nextProps);
   },
 
@@ -1490,7 +1657,7 @@ const LoadAndListCategories = createFactory({
     processTimeAgo();
   },
 
-  loadCategories: function(props) {
+  loadCategories: function(props: LoadAndListCatsProps) {
     const store: Store = props.store;
     Server.loadForumCategoriesTopics(store.currentPageId, props.queryParams.filter,
         (categories: Category[]) => {
@@ -1500,7 +1667,8 @@ const LoadAndListCategories = createFactory({
   },
 
   render: function() {
-    const store: Store = this.props.store;
+    const props: LoadAndListCatsProps = this.props;
+    const store: Store = props.store;
     const categories: Category[] = this.state.categories;
     if (!categories)
       return r.p({}, t.Loading);
@@ -1513,13 +1681,13 @@ const LoadAndListCategories = createFactory({
     const categoryRows = topLevelCats.map((category: Category) => {
       const childCategories = categories.filter(c => c.parentId === category.id);
       arr_sortAlphaInPlace(childCategories, c => c.name);
-      return CategoryRow({ store: this.props.store, location: this.props.location,
-          forumPath: this.props.forumPath, category: category, childCategories, siteSection,
+      return CategoryRow({ store: props.store, location: props.location,
+          forumPath: props.forumPath, category: category, childCategories, siteSection,
           key: category.id });
     });
 
     let recentTopicsColumnTitle;
-    switch (this.props.queryParams.filter) {
+    switch (props.queryParams.filter) {
       case FilterShowWaiting:
         recentTopicsColumnTitle = t.fc.RecentTopicsWaiting;
         break;
@@ -1785,7 +1953,7 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
 }
 
 
-function createTopicBtnTitle(category: Category) {
+function createTopicBtnTitle(category: Cat) {
   let title = t.fb.CreateTopic;
   if (_.isEqual([PageRole.Idea], category.newTopicTypes)) {
     title = t.fb.PostIdea;

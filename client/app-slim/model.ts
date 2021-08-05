@@ -90,6 +90,52 @@ interface MayMayNot {
 }
 
 
+/// See: https://reactrouter.com/web/api/location — but Ty's interface is safer?
+/// — it hides some history object fields we sholudn't use. [.mut_hist]
+///
+interface ReactRouterProps {
+  history: ReactRouterHistory;
+  // Where we're now.
+  location: ReactRouterLocation;
+  // How this route path matched the URL.
+  match: ReactRouterMatch;
+}
+
+interface ReactRouterHistory {
+  // Don't use, changes at any time. Use location (below) instead. [.mut_hist]
+  // length,
+  // action,
+  // location
+
+  // But the functions are okay?:
+  push: (path, state?) => Vo;
+  replace: (path, state?) => Vo;
+  go: (n: Nr) => Vo;
+  goBack: (n: Nr) => Vo;   // same as go(-1)
+  goForward: () => Vo;     // same as go(+1)
+  block: (prompt)  => Vo;  // prevents navigation
+}
+
+interface ReactRouterLocation {
+  // key: 'ac3df4', // absent if using HashHistory
+  pathname: St; // e.g. '/some/page'
+  search: St;  // e.g '?query=param'
+  hash: St; // e.g. #hash-frag
+  state: any; // e.g. a map
+}
+
+interface ReactRouterMatch {
+  params: UrlParamsMap;   // params in the URL
+  isExact: Bo; // entire URL matches, no trailing chars
+  path: St;
+  url: St;
+}
+
+
+// Query params — but can also also be params in the url path?
+type UrlParamsMap = { [paramName: string]: St };
+
+
 const enum MagicAnchor {
   ScrollToLatest = 1,
 }
@@ -1844,6 +1890,37 @@ interface CatsTreeCat extends Category {
   // isSubSubCat?: Bo; — later
   subCats?: CatsTreeCat[];
 }
+
+
+
+// For rendering a topic list.
+interface TopicListProps {
+  //categoryId: CatId;        // why this, (406826)
+  //categoryParentId: CatId;  //
+  topics?: Topic[];
+  store: Store;
+  forumPath?: St;
+  useTable?: Bo;
+  minHeight: Nr;
+  showLoadMoreButton: Bo;
+  skipCatNameDescr?: Bo;
+  loadMoreTopics: () => Vo;
+  activeCategory?: Cat;      // and also this? (406826)
+  noSpecificCat?: Bo;
+  setCategory?: (newCatSlug: St) => Vo;
+  editCategory?: () => Vo;
+  orderOffset: OrderOffset;
+  topPeriod?: TopTopicsPeriod;
+  setTopPeriod?: (period: TopTopicsPeriod) => Vo;
+  linkCategories: Bo;
+  sortOrderRoute?: St;
+
+  // For the buttons [reorder_forum_btns]
+  location?: ReactRouterLocation;
+  queryParams?: UrlParamsMap;
+  history?: ReactRouterHistory;
+}
+
 
 
 interface ExplainingTitleText {

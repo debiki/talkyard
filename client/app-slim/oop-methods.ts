@@ -781,7 +781,7 @@ export function page_isAncCatDeld(page: Page): Bo {
 }
 
 
-export function store_mayICreateTopics(store: Store, category: Category | U): boolean {
+export function store_mayICreateTopics(store: Store, category: Cat | U): Bo {
   const settings: SettingsVisibleClientSide = store.settings;
   if (settings.enableForum === false || !category)
     return false;

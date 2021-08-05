@@ -260,17 +260,19 @@ const UsersTopics = createFactory<any, any>({
 
     const noTopicsClass = _.isEmpty(topics) ? ' e_NoTopics' : '';
 
-    const topicsElems = forum.TopicsList({
+    const topicElmsProps: TopicListProps = {
       topics: this.state.topics,
       store: this.props.store,
       skipCatNameDescr: true,
       useTable: true,
       minHeight: 300,
       showLoadMoreButton: false,
-      activeCategory: {},
+      loadMoreTopics: () => {}, // implement later
+      noSpecificCat: true,
       orderOffset: <OrderOffset> { sortOrder: TopicSortOrder.CreatedAt },
       linkCategories: false,
-    });
+    };
+    const topicsElems = forum.TopicsList(topicElmsProps);
 
     return rFragment({},
       makeMaybeHiddenInfo(me, user),

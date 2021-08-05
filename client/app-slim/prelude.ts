@@ -27,8 +27,8 @@ declare const ReactDOMServer: any;
 declare const ReactRouterDOM: any;
 declare const ReactDOMFactories: any;
 declare const createReactClass: any;
-declare const parseQueryString: (s: string) => any;
-declare const stringifyQueryString: (s: any) => string;
+declare const parseQueryString: (s: St) => UrlParamsMap;
+declare const stringifyQueryString: (s: UrlParamsMap) => St;
 
 
 const rFragment = reactCreateFactory(React.Fragment);
