@@ -541,6 +541,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.numRepliesVisible.asAnyRef,
       newMeta.numRepliesTotal.asAnyRef,
       newMeta.numPostsTotal.asAnyRef,
+      newMeta.numOrigPostDoVotes.asAnyRef,
+      newMeta.numOrigPostDontVotes.asAnyRef,
       newMeta.numOrigPostLikeVotes.asAnyRef,
       newMeta.numOrigPostWrongVotes.asAnyRef,
       newMeta.numOrigPostBuryVotes.asAnyRef,
@@ -556,6 +558,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.frozenAt.orNullTimestamp,
       newMeta.hiddenAt.orNullTimestamp,
       newMeta.deletedAt.orNullTimestamp,
+      newMeta.deletedById.orNullInt,
       newMeta.htmlTagCssClasses.orIfEmpty(NullVarchar),
       newMeta.htmlHeadTitle.orIfEmpty(NullVarchar),
       newMeta.htmlHeadDescription.orIfEmpty(NullVarchar),
@@ -589,6 +592,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         NUM_REPLIES_VISIBLE = ?,
         NUM_REPLIES_TOTAL = ?,
         num_posts_total = ?,
+        num_op_do_votes_c = ?,
+        num_op_dont_votes_c = ?,
         NUM_OP_LIKE_VOTES = ?,
         NUM_OP_WRONG_VOTES = ?,
         NUM_OP_BURY_VOTES = ?,
@@ -604,6 +609,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         FROZEN_AT = ?,
         hidden_at = ?,
         deleted_at = ?,
+        deleted_by_id_c = ?,
         html_tag_css_classes = ?,
         html_head_title = ?,
         html_head_description = ?,
@@ -1188,7 +1194,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def insertPageMetaMarkSectionPageStale(pageMeta: PageMeta, isImporting: Boolean) {
+  def insertPageMetaMarkSectionPageStale(pageMeta: PageMeta, isImporting: Bo): U = {
     require(pageMeta.createdAt.getTime <= pageMeta.updatedAt.getTime, "TyE2EGPF8")
 
     // Publ date can be in the future, also if creating new page.
@@ -1203,6 +1209,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       // Page cannot have been bumped yet, since it's getting created now.
       require(pageMeta.bumpedAt.isEmpty, "TyE2AKB40F")
       // It's getting created, so shouldn't be any votes or replies etc yet.
+      require(pageMeta.numOrigPostDoVotes == 0, "TyE4KPE2")
+      require(pageMeta.numOrigPostDontVotes == 0, "TyE4KPE3")
       require(pageMeta.numOrigPostLikeVotes == 0, "DwE4KPE8")
       require(pageMeta.numOrigPostWrongVotes == 0, "DwE2PKFE9")
       require(pageMeta.numOrigPostBuryVotes == 0, "DwE44KP5")
@@ -1248,6 +1256,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         num_replies_visible,
         num_replies_total,
         num_posts_total,
+        num_op_do_votes_c,
+        num_op_dont_votes_c,
         num_op_like_votes,
         num_op_wrong_votes,
         num_op_bury_votes,
@@ -1263,6 +1273,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         frozen_at,
         hidden_at,
         deleted_at,
+        deleted_by_id_c,
         html_tag_css_classes,
         html_head_title,
         html_head_description,
@@ -1272,7 +1283,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
     // Dulp code, see the update query [5RKS025].
     val values = List(
@@ -1305,6 +1316,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.numRepliesVisible.asAnyRef,
       pageMeta.numRepliesTotal.asAnyRef,
       pageMeta.numPostsTotal.asAnyRef,
+      pageMeta.numOrigPostDoVotes.asAnyRef,
+      pageMeta.numOrigPostDontVotes.asAnyRef,
       pageMeta.numOrigPostLikeVotes.asAnyRef,
       pageMeta.numOrigPostWrongVotes.asAnyRef,
       pageMeta.numOrigPostBuryVotes.asAnyRef,
@@ -1320,6 +1333,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.frozenAt.orNullTimestamp,
       pageMeta.hiddenAt.orNullTimestamp,
       pageMeta.deletedAt.orNullTimestamp,
+      pageMeta.deletedById.orNullInt,
       pageMeta.htmlTagCssClasses.orIfEmpty(NullVarchar),
       pageMeta.htmlHeadTitle.orIfEmpty(NullVarchar),
       pageMeta.htmlHeadDescription.orIfEmpty(NullVarchar),

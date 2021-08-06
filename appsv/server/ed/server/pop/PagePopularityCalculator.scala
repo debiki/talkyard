@@ -25,7 +25,8 @@ import Prelude._
 
 object PagePopularityCalculator {
 
-  val CurrentAlgorithmVersion = 1
+  // Currently there's just one; it has no name.
+  val CurrentScoreAlg: PageScoreAlg = 1
 
 
   /** How do votes affect the score:
@@ -58,7 +59,7 @@ object PagePopularityCalculator {
     PagePopularityScores(
       pageId = stats.pageId,
       updatedAt = stats.sinceYesterday.to,
-      algorithmVersion = CurrentAlgorithmVersion,
+      scoreAlgorithm = CurrentScoreAlg,
       dayScore = calcPopScore(stats.sinceYesterday),
       weekScore = calcPopScore(stats.sinceLastWeek),
       monthScore = calcPopScore(stats.sinceLastMonth),

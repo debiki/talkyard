@@ -304,16 +304,29 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       insert into categories3 (
         site_id, id, ext_id, page_id, parent_id, default_category_id,
         name, slug, position,
-        description, new_topic_types, unlist_category, unlist_topics, incl_in_summaries,
+        description, new_topic_types,
+        def_sort_order_c,
+        def_score_alg_c,
+        def_score_period_c,
+        do_it_votes_c,
+        do_it_vote_in_topic_list_c,
+        unlist_category, unlist_topics, incl_in_summaries,
         created_at, updated_at, deleted_at)
       values (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val values = List[AnyRef](
       siteId.asAnyRef, category.id.asAnyRef, category.extImpId.orNullVarchar,
       category.sectionPageId, category.parentId.orNullInt,
       category.defaultSubCatId.orNullInt,
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
+
+      category.defaultSortOrder.map(_.toInt).orNullInt,
+      catSortOrderScoreAlg(category).orNullInt,
+      catSortOrderScorePeriodInt(category).orNullInt,
+      category.doItVotes.map(_.toInt).orNullInt,
+      category.doItVoteInTopicList.orNullBo,
+
       category.unlistCategory.asAnyRef, category.unlistTopics.asAnyRef,
       category.includeInSummaries.toInt.asAnyRef,
       category.createdAt.asTimestamp, category.updatedAt.asTimestamp,
@@ -331,6 +344,11 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
         name = ?, slug = ?, position = ?,
         description = ?,   -- REFACTOR CLEAN_UP no longer needed, instead: [502RKDJWF5]
         new_topic_types = ?,
+        def_sort_order_c = ?,
+        def_score_alg_c = ?,
+        def_score_period_c = ?,
+        do_it_votes_c = ?,
+        do_it_vote_in_topic_list_c = ?,
         unlist_category = ?, unlist_topics = ?, incl_in_summaries = ?,
         created_at = ?, updated_at = ?,
         deleted_at = ?
@@ -340,6 +358,11 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       category.extImpId.orNullVarchar,
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
+      category.defaultSortOrder.map(_.toInt).orNullInt,
+      catSortOrderScoreAlg(category).orNullInt,
+      catSortOrderScorePeriodInt(category).orNullInt,
+      category.doItVotes.map(_.toInt).orNullInt,
+      category.doItVoteInTopicList.orNullBo,
       category.unlistCategory.asAnyRef, category.unlistTopics.asAnyRef, category.includeInSummaries.toInt.asAnyRef,
       category.createdAt.asTimestamp, category.updatedAt.asTimestamp,
       category.deletedAt.orNullTimestamp,
@@ -349,6 +372,19 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
     markSectionPageContentHtmlAsStale(category.id)
   }
 
+  def catSortOrderScoreAlg(cat: Cat): Opt[i32] = {
+    cat.defaultSortOrder.flatMap({
+      case byScore: PageOrderOffset.ByScoreAndBumpTime => Some(byScore.scoreAlg)
+      case _ => None
+    })
+  }
+
+  def catSortOrderScorePeriodInt(cat: Cat): Opt[i32] = {
+    cat.defaultSortOrder.flatMap({
+      case byScore: PageOrderOffset.ByScoreAndBumpTime => Some(byScore.period.toInt)
+      case _ => None
+    })
+  }
 
   override def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId] = {
     val query = s"""
@@ -375,6 +411,12 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       slug = rs.getString("slug"),
       description = Option(rs.getString("description")),
       newTopicTypes = getNewTopicTypes(rs),
+      defaultSortOrder = PageOrderOffset.fromOptVals(
+            orderInt = getOptInt32(rs, "def_sort_order_c"),
+            scoreAlgInt = getOptInt32(rs, "def_score_alg_c"),
+            scorePeriodInt = getOptInt32(rs, "def_score_period_c")),
+      doItVotes = DoItVotes.fromOptInt32(getOptInt32(rs, "do_it_votes_c")),
+      doItVoteInTopicList = getOptBool(rs, "do_it_vote_in_topic_list_c"),
       unlistCategory = rs.getBoolean("unlist_category"),
       unlistTopics = rs.getBoolean("unlist_topics"),
       includeInSummaries = IncludeInSummaries.fromInt(rs.getInt("incl_in_summaries"))

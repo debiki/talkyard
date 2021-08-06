@@ -87,6 +87,7 @@ interface ForumComponentState {
   store: Store;
   topicsInStoreMightBeOld: Bo;
   useWideLayout: Bo;
+  explSetSortOrder?: St;
   topPeriod: TopTopicsPeriod;
 }
 
@@ -152,9 +153,41 @@ export const ForumComponent = createReactClass(<any> {
     return store_getApproxPageWidth(store || state.store) > UseWideForumLayoutMinWidth;
   },
 
-  setTopPeriod: function(period: TopTopicsPeriod) {
-    this.setState({ topPeriod: period });
+  setTopPeriod: function(topPeriod: TopTopicsPeriod) {
+    this.setState({ topPeriod });
   },
+
+
+  setSortOrder: function (sortOrder: St, remember: Bo, slashSlug: St): Vo {
+    const props: ForumComponentProps = this.props;
+    const state: ForumComponentState = this.state;
+
+    // If we're in a specic category, then remember the sort order, if we switch
+    // to a different category. But if jumping to the categories list or
+    // back from there to the all topics list, forget any old sort order.
+    //const inSpecificCat = !!slashSlug;
+    //const explSetSortOrder = inSpecificCat ? sortOrder : null;
+    //const explSetSortOrder = sortOrder === RoutePathCategories ? null : sortOrder;
+    const explSetSortOrder = remember &&
+            // If it's the same, then we're toggling off the expl set sort order.
+            sortOrder !== state.explSetSortOrder ? sortOrder : null;
+    const newState: Partial<ForumComponentState> = { explSetSortOrder };
+    this.setState(newState);
+
+    const [forumPath, routes]: [St, St[]] = this.getForumPathAndRoutes();
+    // @ifdef DEBUG
+    const currentSlug: St = routes[1] || '';
+    if (slashSlug && currentSlug) {
+      dieIf('/' + currentSlug !== slashSlug, 'TyE603MSEJ5');
+    }
+    // @endif
+
+    props.history.push({
+      pathname: forumPath + sortOrder + slashSlug,
+      search: props.location.search,
+    });
+  },
+
 
   getActiveCategory: function(currentCategorySlug: St): Cat | U {
     const state: ForumComponentState = this.state;
@@ -184,12 +217,26 @@ export const ForumComponent = createReactClass(<any> {
     return activeCategory;
   },
 
-  setCategory: function(newCategorySlug) {
+  setCategory: function(newCatSlug?: St, newCat?: Cat) {
+    const state: ForumComponentState = this.state;
     const [forumPath, routes] = this.getForumPathAndRoutes();
     const sortOrderRoute = routes[0];
     const currentPath = sortOrderRoute;
-    const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
-    const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
+    //const savedSortOrderPath = this.savedSortOrderPath;
+    //delete this.savedSortOrderPath;
+
+    // Restore any sort order from before enterng a feature-votes popular-first category.
+    let nextPath = currentPath === RoutePathCategories ?
+          RoutePathLatest : state.explSetSortOrder || RoutePathLatest; // currentPath; // (savedSortOrderPath || currentPath);
+
+    // A feature votes categories is sorted by popular-first, when one enters the category.
+    if (!state.explSetSortOrder && nextPath !== RoutePathTop &&
+            newCat && newCat.doItVotesPopFirst) {
+      this.savedSortOrderPath = nextPath;
+      nextPath = RoutePathTop;
+    }
+
+    const slashSlug = newCatSlug ? '/' + newCatSlug : '';
     const props: ForumComponentProps = this.props;
     props.history.push({
       pathname: forumPath + nextPath + slashSlug,
@@ -294,6 +341,8 @@ export const ForumComponent = createReactClass(<any> {
             forumPath,
             //useTable: this.state.useWideLayout && layout != TopicListLayout.NewsFeed,
             sortOrderRoute,
+            setSortOrder: this.setSortOrder,
+            explSetSortOrder: state.explSetSortOrder,
             queryParams: parseQueryString(routerProps.location.search), // was: this.props
             activeCategory,
             //setCategory: this.setCategory,
@@ -326,6 +375,8 @@ export const ForumComponent = createReactClass(<any> {
             forumPath,
             useTable: state.useWideLayout && layout != TopicListLayout.NewsFeed,
             sortOrderRoute,
+            setSortOrder: this.setSortOrder,
+            explSetSortOrder: state.explSetSortOrder,
             queryParams: parseQueryString(routerProps.location.search), // was: this.props
             activeCategory,
             setCategory: this.setCategory,
@@ -413,6 +464,8 @@ interface ForumButtonsProps {  // extends ReactRouterProps, but better get in fi
   activeCategory?: Cat;
   isCategoriesRoute?: Bo;
   sortOrderRoute: St;
+  setSortOrder: (sortOrder: St, remember: Bo, slashSlug: St) => Vo;
+  explSetSortOrder?: St;
   location: ReactRouterLocation;
   queryParams: { [paramName: string]: St };
   history: ReactRouterHistory;
@@ -446,14 +499,7 @@ const ForumButtons = createComponent({
     }
   },
 
-  setSortOrder: function(newPath: string) {
-    const props: ForumButtonsProps = this.props;
-    props.history.push({
-      pathname: props.forumPath + newPath + this.slashCategorySlug(),
-      search: props.location.search,
-    });
-  },
-
+  // Refactor: Move to static fn.
   getSortOrderName: function(sortOrderRoutePath?: string) {
     const props: ForumButtonsProps = this.props;
     if (!sortOrderRoutePath) {
@@ -536,11 +582,6 @@ const ForumButtons = createComponent({
     }, true);
   },
 
-  slashCategorySlug: function() {
-    const props: ForumButtonsProps = this.props;
-    const slug: St | U = props.activeCategory.slug;
-    return slug ? '/' + slug : '';
-  },
 
   render: function() {
     const state: ForumButtonsState = this.state;
@@ -579,20 +620,37 @@ const ForumButtons = createComponent({
         r.div({ className: 'esF_BB_PageTitle' },
           showsCategoryTree ? t.Categories : t.Topics) : null;
 
-    const makeCategoryLink = (where, text, linkId, extraClass?) => NavLink({
-      to: { pathname: props.forumPath + where, search: props.location.search },
-      id: linkId,
-      className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
-      activeClassName: 'active' }, text);
+    // @ifdef DEBUG
+    dieIf(!showsCategoryTree && !props.setSortOrder, 'TyE60MREJ35');
+    // @endif
+    // The root cat has no slug.
+    const anyActCatSlug: St | U = props.activeCategory.slug;
+    const slashSlug = anyActCatSlug ? '/' + anyActCatSlug : '';
+
+    const makeCategoryLink = (order: St, rememberSortOrder: Bo, slashSlug: St,
+            text: St, linkId: St, extraClass?: St) => {
+      const explSelected = props.explSetSortOrder === order ? ' n_ExplSel' : '';
+      return NavLink({
+        // The onClick handler will remember that we set the sort order explicitly,
+        // so it'll stay, when jumping between categories ...
+        onClick: () => props.setSortOrder(order, rememberSortOrder, slashSlug),
+        // ... whilst the link let's us middle mouse click to open in new tab.
+        to: { pathname: props.forumPath + order + slashSlug, search: props.location.search },
+        id: linkId,
+        className: 'btn esForum_catsNav_btn ' + explSelected + (extraClass || ''),
+        activeClassName: 'active' }, text);
+    };
 
     let omitCategoryStuff = showsCategoryTree || !settings_showCategories(store.settings, me);
     let categoryTreeLink = omitCategoryStuff ? null :
-      makeCategoryLink(RoutePathCategories, t.fb.ViewCategories, 'e_ViewCatsB', 'esForum_navLink');
+            makeCategoryLink(RoutePathCategories, false, '', t.fb.ViewCategories,
+                'e_ViewCatsB', 'esForum_navLink');
 
     // COULD remember which topics were listed previously and return to that view.
     // Or would a Back btn somewhere be better?
     const topicListLink = showsTopicList ? null :
-      makeCategoryLink(RoutePathLatest, t.fb.TopicList, 'e2eViewTopicsB', 'esForum_navLink');
+            makeCategoryLink(RoutePathLatest, false, '', t.fb.TopicList,
+                'e2eViewTopicsB', 'esForum_navLink');
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     const currentSortOrderPath = props.sortOrderRoute;
@@ -607,29 +665,29 @@ const ForumButtons = createComponent({
           r.ul({},
             // Active topics, followed by Popular, are the most useful buttons I think.
             // Mainly staff are interested in new topics? — so place the New button last.
-            ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathLatest),
+            // Maybe these should be links too? I.e. use makeCategoryLink?
+            ExplainingListItem({ onClick: () => props.setSortOrder(RoutePathLatest, true, slashSlug),
                 active: currentSortOrderPath === RoutePathLatest,
                 title: this.getSortOrderName(RoutePathLatest),
                 text: t.fb.ActiveDescr }),
-            ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathTop),
+            ExplainingListItem({ onClick: () => props.setSortOrder(RoutePathTop, true, slashSlug),
                 active: currentSortOrderPath === RoutePathTop,
                 title: this.getSortOrderName(RoutePathTop),
                 text: t.fb.TopDescr }),
-            ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathNew),
+            ExplainingListItem({ onClick: () => props.setSortOrder(RoutePathNew, true, slashSlug),
               active: currentSortOrderPath === RoutePathNew,
               title: this.getSortOrderName(RoutePathNew),
               text: t.fb.NewDescr })));
     }
     else {
-      const slashSlug = this.slashCategorySlug();
       latestNewTopButton =
           r.ul({ className: 'nav esForum_catsNav_sort' },
-            makeCategoryLink(RoutePathLatest + slashSlug, this.getSortOrderName(RoutePathLatest),
-                'e2eSortLatestB'),
-            makeCategoryLink(RoutePathTop + slashSlug, this.getSortOrderName(RoutePathTop),
-                'e2eSortTopB'),
-            makeCategoryLink(RoutePathNew + slashSlug, this.getSortOrderName(RoutePathNew),
-                'e_SortNewB'));
+            makeCategoryLink(RoutePathLatest, true, slashSlug,
+                  this.getSortOrderName(RoutePathLatest), 'e2eSortLatestB'),
+            makeCategoryLink(RoutePathTop, true, slashSlug,
+                  this.getSortOrderName(RoutePathTop), 'e2eSortTopB'),
+            makeCategoryLink(RoutePathNew, true, slashSlug,
+                  this.getSortOrderName(RoutePathNew), 'e_SortNewB'));
     }
 
     // ------ The filter topics select.
@@ -752,14 +810,16 @@ interface LoadAndListTopicsProps {
   topicsInStoreMightBeOld?: Bo;
   queryParams: UrlParamsMap;
   sortOrderRoute: St;
+  setSortOrder: (sortOrder: St, remember: Bo, slashSlug: St) => Vo;
+  explSetSortOrder?: St;
   match: ReactRouterMatch;
 
-  forumPath; //: props.forumPath,
-  useTable?: Bo; // props.useTable,
-  setCategory; //: props.setCategory,
-  editCategory; //: props.editCategory,
-  topPeriod; //: props.topPeriod,
-  setTopPeriod; //: props.setTopPeriod,
+  forumPath: St;
+  useTable?: Bo;
+  setCategory: (newCatSlug?: St, newCat?: Cat) => Vo;
+  editCategory: () => Vo;
+  topPeriod: TopTopicsPeriod;
+  setTopPeriod: (period: TopTopicsPeriod) => Vo;
 }
 
 
@@ -1012,6 +1072,8 @@ const LoadAndListTopics = createFactory({
       setTopPeriod: props.setTopPeriod,
       linkCategories: true,
       sortOrderRoute: props.sortOrderRoute,
+      setSortOrder: props.setSortOrder,
+      explSetSortOrder: props.explSetSortOrder,
 
       // For the buttons [.reorder_forum_btns] — those propr are included [.btn_props].
       location: (props as any as  ForumButtonsProps).location,
@@ -1076,12 +1138,14 @@ export const TopicsList = createComponent({
     const useTable: Bo = props.useTable;
     const orderOffset: OrderOffset = props.orderOffset;
 
+    const doItVotesPopFirst = activeCategory && activeCategory.doItVotesPopFirst;
+
     const topicElems = topics.map((topic: Topic) => {
       const topicRowProps: TopicRowProps = {
           store, topic, // categories: store.currentCategories,
           activeCatId: activeCategory?.id, orderOffset,
           key: topic.pageId, sortOrderRoute: props.sortOrderRoute,
-          inTable: useTable, forumPath: props.forumPath };
+          doItVotesPopFirst, inTable: useTable, forumPath: props.forumPath };
       return TopicRow(topicRowProps);
     });
 
@@ -1108,7 +1172,7 @@ export const TopicsList = createComponent({
     topicElems.splice(Math.min(topicElems.length, numFewTopics), 0,
       useTable
         ? r.tr({ key: 'ExplIcns' }, r.td({ colSpan: 5 }, iconsHelpStuff))
-        : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff));
+        : r.li({ key: 'ExplIcns', className: 'c_F_TsL_T clearfix' }, iconsHelpStuff));
 
     let loadMoreTopicsBtn;
     if (props.showLoadMoreButton) {
@@ -1146,6 +1210,10 @@ export const TopicsList = createComponent({
               makeTopPeriodListItem(TopTopicsPeriod.Year))));
     }
 
+    const forumPage: Page = store.currentPage;
+    const oneLinePerTopic = forumPage.pageLayout <= TopicListLayout.TitleExcerptSameLine;
+    const oneLineClass = oneLinePerTopic ? ' c_F_TsT-OneLine' : ''; // [tab_do_vo_1_line]
+
     const catDeld = activeCategory && activeCategory.isDeleted;
     const deletedClass = !catDeld ? '' : ' s_F_Ts-CatDd';
     const anyDeletedCross = !catDeld ? null : r.div({ className: 's_Pg_DdX' });
@@ -1166,9 +1234,10 @@ export const TopicsList = createComponent({
         orderOffset.sortOrder === TopicSortOrder.CreatedAt ? t.Created : t.Activity;
 
     const topicsTable = !useTable ? null :
-        r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' + deletedClass },
+        r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' + deletedClass + oneLineClass },
           r.thead({},
             r.tr({},
+              doItVotesPopFirst ? r.th({ className: 'c_F_TsT_T_DvoTH' }, "Votes") : null,    // I18N
               r.th({}, topicsHeaderText),
               categoryHeader,
               r.th({ className: 's_F_Ts_T_Avs' }, t.Users),
@@ -1178,8 +1247,8 @@ export const TopicsList = createComponent({
           r.tbody({},
             topicElems));
 
-    const topicRows = useTable ? null :
-        r.ol({ className: 'esF_TsL s_F_Ts-Nrw' + deletedClass },
+    const topicList = useTable ? null :
+        r.ol({ className: 'c_F_TsL s_F_Ts-Nrw' + deletedClass },
           topicElems);
 
     // Show a category title and description.
@@ -1198,6 +1267,8 @@ export const TopicsList = createComponent({
       activeCategory,
       isCategoriesRoute: false,  // we're in a topic list, not a categories tree
       sortOrderRoute: props.sortOrderRoute,
+      setSortOrder: props.setSortOrder,
+      explSetSortOrder: props.explSetSortOrder,
 
       // [.reorder_forum_btns]
       location: props.location,
@@ -1230,7 +1301,7 @@ export const TopicsList = createComponent({
           forumButtons,
           showForumBtns ? topTopicsPeriodButton : null,
           isLoading ? t.Loading : null,
-          topicsTable || topicRows),
+          topicsTable || topicList),
         isLoading || topics.length ? null :
           r.div({ className: 's_F_Ts_NoTopics', id: 'e2eF_NoTopics' }, t.NoTopics),
         loadMoreTopicsBtn));
@@ -1239,7 +1310,7 @@ export const TopicsList = createComponent({
 
 
 function CatNameDescr(props: { store: Store, activeCategory: Cat,
-      setCategory, editCategory }) {
+      setCategory: (newCatSlug?: St, newCat?: Cat) => Vo, editCategory }) {
   const store: Store = props.store;
   const me: Myself = store.me;
   const activeCategory: Cat = props.activeCategory;
@@ -1285,7 +1356,7 @@ function CatNameDescr(props: { store: Store, activeCategory: Cat,
 
     const categoryMenuItems = catsSameLevel.map((category: Cat) => {
       return MenuItem({ key: category.id, active: thisCat && thisCat.id === category.id,
-          onClick: () => props.setCategory(category.slug) },
+          onClick: () => props.setCategory(category.slug, category) },
             r.span({ className: category_iconClass(category, store) }, category.name));
     });
     categoryMenuItems.unshift(
@@ -1370,6 +1441,7 @@ interface TopicRowProps {
   sortOrderRoute: St;
   forumPath: St;
   orderOffset: OrderOffset;
+  doItVotesPopFirst: Bo;
   inTable: Bo;
   key: St | Nr,
 }
@@ -1450,7 +1522,7 @@ const TopicRow = createComponent({
   render: function() {
     const props: TopicRowProps = this.props;
     const store: Store = props.store;
-    const page: Page = store.currentPage;
+    const forumPage: Page = store.currentPage;
     const me = store.me;
     const settings = store.settings;
     const topic: Topic = props.topic;
@@ -1505,27 +1577,27 @@ const TopicRow = createComponent({
     const showExcerptAsParagraph =
         topic.pinWhere === PinPageWhere.Globally ||
         (topic.pinWhere && topic.categoryId === props.activeCatId) ||
-        page.pageLayout >= TopicListLayout.ExcerptBelowTitle;
+        forumPage.pageLayout >= TopicListLayout.ExcerptBelowTitle;
     if (showExcerptAsParagraph) {
       excerpt =
           r.p({ className: 'dw-p-excerpt' }, topic.excerpt);
           // , r.a({ href: topic.url }, 'read more')); — no, better make excerpt click open page?
     }
-    else if (page.pageLayout === TopicListLayout.TitleExcerptSameLine) {
+    else if (forumPage.pageLayout === TopicListLayout.TitleExcerptSameLine) {
       excerpt =
           r.span({ className: 's_F_Ts_T_Con_B' }, topic.excerpt);
     }
     else {
       // No excerpt.
-      dieIf(page.pageLayout && page.pageLayout !== TopicListLayout.TitleOnly,
+      dieIf(forumPage.pageLayout && forumPage.pageLayout !== TopicListLayout.TitleOnly,
           'EdE5FK2W8');
     }
 
     let anyThumbnails;
-    if (page.pageLayout === TopicListLayout.ThumbnailLeft) {
+    if (forumPage.pageLayout === TopicListLayout.ThumbnailLeft) {
       die('Unimplemented: thumbnail left [EdE7KW4024]')
     }
-    else if (page.pageLayout >= TopicListLayout.ThumbnailsBelowTitle) {
+    else if (forumPage.pageLayout >= TopicListLayout.ThumbnailsBelowTitle) {
       let thumbnailUrls = topic_mediaThumbnailUrls(topic);
       let imgIndex = 0;
       anyThumbnails = _.isEmpty(thumbnailUrls) ? null :
@@ -1557,23 +1629,23 @@ const TopicRow = createComponent({
             title: t.ft.mostRecentPoster }));
     }
 
-    let titleReactFn = Link;
-    let contentReactFn = r.div;
-    let contentLinkUrl;
-    let manyLinesClass = '';
+    let titleLinkTag = Link;
+    let titleCellTag = r.div;
+    let contentLinkUrl: St | U;
+    let manyLinesClass = '';  // remove, place on table insted?, see oneLineClass somewhere above.
     let showMoreClickHandler;
     if (showExcerptAsParagraph) {
       manyLinesClass = ' s_F_Ts_T_Con-Para';
       // Make the whole title and paragraph block a link, not just the title.
-      titleReactFn = r.span;
-      contentReactFn = Link;
+      titleLinkTag = r.span;
+      titleCellTag = Link;
       contentLinkUrl = topic.url;
     }
     else if (this.state.showMoreExcerpt) {
-      manyLinesClass += ' s_F_Ts_T_Con-More';
+      manyLinesClass = ' s_F_Ts_T_Con-More';
     }
     else {
-      manyLinesClass += ' s_F_Ts_T_Con-OneLine';
+      manyLinesClass = ' s_F_Ts_T_Con-OneLine';
       showMoreClickHandler = this.showMoreExcerpt;
     }
 
@@ -1585,14 +1657,25 @@ const TopicRow = createComponent({
             ? topic.createdAtMs
             : topic.bumpedAtMs || topic.createdAtMs));
 
+    // Calculate at same place as useWideLayout. For <= 350 px, e.g. smart watches?
+    const useNarrowLayout = false;
+
+    /* If each topic is just one line in the table, show the do-votes on one line too.
+    const tableDovotesOneLine = props.inTable && // [tab_do_vo_1_line]
+            forumPage.pageLayout <= TopicListLayout.TitleExcerptSameLine;
+            */
+
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (props.inTable) return (
       r.tr({ className: 'esForum_topics_topic e2eF_T' },  // (update BJJ CSS before renaming 'esForum_topics_topic' (!))
+        !props.doItVotesPopFirst ? null :
+              r.td({ className: 'c_F_TsT_T_Dvo' },
+                TopicUpvotes(topic, true /*iconFirst*/)),
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
-          contentReactFn({ className: 's_F_Ts_T_Con' + manyLinesClass,
+          titleCellTag({ className: 's_F_Ts_T_Con' + manyLinesClass,
               onClick: showMoreClickHandler, to: contentLinkUrl },
             makeTitle(topic, 's_F_Ts_T_Con_Ttl ' + anyPinOrHiddenIconClass,
-                settings, me, titleReactFn),
+                settings, me, titleLinkTag),
             excerpt),
           anyThumbnails),
         !showCategories ? null : r.td({ className: 's_F_Ts_T_CN' }, categoryName),
@@ -1601,20 +1684,47 @@ const TopicRow = createComponent({
         r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activeAt)));
         // skip for now:  r.td({ className: 'num dw-tpc-feelings' }, feelings)));  [8PKY25]
     else return (
-      r.li({ className: 'esF_TsL_T e2eF_T' },
-        r.div({ className: 'esF_TsL_T_Title e2eTopicTitle' },
-          makeTitle(topic, anyPinOrHiddenIconClass, settings, me)),
-        r.div({ className: 'esF_TsL_T_NumRepls' },
-          topic.numPosts - 1, r.span({ className: 'icon-comment-empty' })),
-        excerpt,
-        r.div({ className: 'esF_TsL_T_Row2' },
-          r.div({ className: 'esF_TsL_T_Row2_Users' }, userAvatars),
-          !showCategories ? null : r.div({ className: 'esF_TsL_T_Row2_Cat' },
-            r.span({ className: 'esF_TsL_T_Row2_Cat_Expl' }, t.ft.inC), categoryName),
-          r.span({ className: 'esF_TsL_T_Row2_When' }, activeAt)),
-        anyThumbnails));
+      r.li({ className: 'c_F_TsL_T e2eF_T' },
+        !props.doItVotesPopFirst || useNarrowLayout ? null :
+            r.div({ className: 'n_Col1' },
+              TopicUpvotes(topic, true /*iconFirst*/)),
+        r.div({ className: 'n_Col2' },
+          r.div({ className: 'n_Row1' },
+            r.div({ className: 'c_F_TsL_T_Title e2eTopicTitle' },
+              makeTitle(topic, anyPinOrHiddenIconClass, settings, me)),
+            r.div({ className: 'c_F_TsL_T_Stats'},
+              !props.doItVotesPopFirst || !useNarrowLayout ? null :
+                    TopicUpvotes(topic, false /*iconFirst*/),
+              r.span({ className: 'c_F_TsL_T_NumRepls' },
+                topic.numPosts - 1, r.span({ className: 'icon-comment-empty' })))),
+          excerpt,
+          r.div({ className: 'n_Row2' },
+            r.div({ className: 'c_F_TsL_T_Users' },
+              userAvatars),
+            !showCategories ? null : r.div({ className: 'c_F_TsL_T_Cat' },
+              r.span({ className: 'c_F_TsL_T_Cat_Expl' }, t.ft.inC), categoryName),
+            r.span({ className: 'c_F_TsL_T_When' }, activeAt)),
+          anyThumbnails)));
   }
 });
+
+
+function TopicUpvotes(topic: Topic, iconFirst: Bo): RElm {
+  // Does log2 grow fast enough? 32 –> 4, 64 –> 5 etc. There're colors up to 11 –> 2048.
+  const logLikes = Math.trunc(Math.log2(topic.numOrigPostLikes + 1));
+  const votesColorClass = Math.min(logLikes, 11);  // [max_log_likes]
+
+  const upvoteIcon = r.span({ className: 'icon-heart' });  // or Reddit/SO upvote button?
+  const upvoteCount = r.span({ className: 'c_TpcDiVo_Ttl' }, topic.numOrigPostLikes);
+  return (
+      r.span({ className: 'c_TpcDvo c_DiVo-' + votesColorClass },
+        // In vertical layout, the icon is above the numbe, so needs to be first here.
+        // Otherwise, the number is before the icon, e.g. 5 <3 (and the icons
+        // right aligned).
+        iconFirst ? upvoteIcon : null,
+        upvoteCount,
+        !iconFirst ? upvoteIcon : null));
+}
 
 
 function topic_mediaThumbnailUrls(topic: Topic): string[] {
@@ -1793,8 +1903,9 @@ function CatLink(props: { category: Category, forumPath: string, location,
       className: string, isDefaultText? }) {
   const forumPath = props.forumPath;
   const category = props.category;
+  const sortOrderPath = category.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
   return Link({ to: {
-      pathname: forumPath + RoutePathLatest + '/' + category.slug,
+      pathname: forumPath + sortOrderPath + '/' + category.slug,
       search: props.location.search }, className: props.className },
     category.name, props.isDefaultText);
 }

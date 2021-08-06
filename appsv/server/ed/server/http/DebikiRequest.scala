@@ -236,7 +236,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     * (E.g. for the forum topic list.)
     */
   def parsePageQuery(): Option[PageQuery] = {
-    val orderOffset = ListPagesQueryParser.parseOrderOffset(queryString) getOrElse {
+    val orderOffset = ListPagesQueryParser.parseOrderOffset_(queryString) getOrElse {
       return None
     }
     val pageFilter = parsePageFilter()
@@ -258,7 +258,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
 object ListPagesQueryParser {
 
-  def parseOrderOffset(params: FormInpReader): Opt[PageOrderOffset] = {
+  def parseOrderOffset_(params: FormInpReader): Opt[PageOrderOffset] = {
     val sortOrderStr = params.getFirst("sortOrder") getOrElse { return None }
     def anyDateOffset: Opt[ju.Date] = params.getLong("olderThan") map (new ju.Date(_))
     val orderOffset: PageOrderOffset = sortOrderStr match {
@@ -269,7 +269,7 @@ object ListPagesQueryParser {
       case "ByScore" =>
         val scoreStr = params.getFirst("maxScore")
         val periodStr = params.getFirst("period")
-        val period = periodStr.flatMap(TopTopicsPeriod.fromIntString) getOrElse TopTopicsPeriod.Month
+        val period = periodStr.flatMap(TopTopicsPeriod.fromIntString_) getOrElse TopTopicsPeriod.Month
         val score = scoreStr.map(_.toFloatOrThrow("EdE28FKSD3", "Score is not a number"))
         PageOrderOffset.ByScoreAndBumpTime(offset = score, period)
       case "ByLikes" =>

@@ -716,6 +716,7 @@ interface Cat {
   slug: string;
   defaultTopicType: PageRole;
   newTopicTypes?: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
+  doItVotesPopFirst?: Bo;
   position?: number;
   description: string;    // from the about category topic
   thumbnailUrl?: string;  // from the about category topic
@@ -1914,6 +1915,8 @@ interface TopicListProps {
   setTopPeriod?: (period: TopTopicsPeriod) => Vo;
   linkCategories: Bo;
   sortOrderRoute?: St;
+  setSortOrder: (sortOrder: St, remember: Bo, slashSlug: St) => Vo;
+  explSetSortOrder?: St;
 
   // For the buttons [reorder_forum_btns]
   location?: ReactRouterLocation;

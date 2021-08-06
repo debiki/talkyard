@@ -203,7 +203,7 @@ var SearchPageContentComponent = createReactClass(<any> {
         this.tagsLoaded = true;
         Server.loadTagsAndStats();
       }
-      queryStringObj.advanced = true;
+      queryStringObj.advanced = 'true';
     }
     this.props.history.push({
       pathname: this.props.location.pathname,

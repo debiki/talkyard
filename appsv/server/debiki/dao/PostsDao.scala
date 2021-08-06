@@ -2872,16 +2872,20 @@ trait PostsDao {
     val readStats = tx.loadPostsReadStats(post.pageId, Some(post.nr))
     val postAfter = post.copyWithUpdatedVoteAndReadCounts(actions, readStats)
 
+    val numNewDoVotes = 0
+    val numNewDontVotes = 0
     val numNewLikes = postAfter.numLikeVotes - post.numLikeVotes
     val numNewWrongs = postAfter.numWrongVotes - post.numWrongVotes
     val numNewBurys = postAfter.numBuryVotes - post.numBuryVotes
     val numNewUnwanteds = postAfter.numUnwantedVotes - post.numUnwantedVotes
 
-    val (numNewOpLikes, numNewOpWrongs, numNewOpBurys, numNewOpUnwanteds) =
+    val (numNewOpDoVotes, numNewOpDontVotes, numNewOpLikes, numNewOpWrongs,
+          numNewOpBurys, numNewOpUnwanteds) =
       if (post.isOrigPost)
-        (numNewLikes, numNewWrongs, numNewBurys, numNewUnwanteds)
+        (numNewDoVotes, numNewDontVotes, numNewLikes, numNewWrongs,
+          numNewBurys, numNewUnwanteds)
       else
-        (0, 0, 0, 0)
+        (0, 0, 0, 0, 0, 0)
 
     val pageMetaBefore = tx.loadThePageMeta(post.pageId)
     val pageMetaAfter = pageMetaBefore.copy(
@@ -2890,7 +2894,9 @@ trait PostsDao {
       numBurys = pageMetaBefore.numBurys + numNewBurys,
       numUnwanteds = pageMetaBefore.numUnwanteds + numNewUnwanteds,
       // For now: use max() because the db fields were just added so some counts are off.
-      // (but not for Unwanted, that vote was added after the vote count fields)
+      // (but not for Do-It, Do-Not, Unwanted — they got added after the vote count fields)
+      numOrigPostDoVotes = pageMetaBefore.numOrigPostDoVotes + numNewOpDoVotes,
+      numOrigPostDontVotes = pageMetaBefore.numOrigPostDontVotes + numNewOpDontVotes,
       numOrigPostLikeVotes = math.max(0, pageMetaBefore.numOrigPostLikeVotes + numNewOpLikes),
       numOrigPostWrongVotes = math.max(0, pageMetaBefore.numOrigPostWrongVotes + numNewOpWrongs),
       numOrigPostBuryVotes = math.max(0, pageMetaBefore.numOrigPostBuryVotes + numNewOpBurys),

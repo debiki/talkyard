@@ -134,6 +134,9 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val defaultTopicType = PageType.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
+    // For now, do-it-votes just on or off:  [do_it_on_off]
+    val doItVotesPopFirst = (categoryJson \ "doItVotesPopFirst").asOpt[Bo] getOrElse false
+
     val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
     val categoryId = (categoryJson \ "id").as[Int]
     if (categoryId == NoCategoryId)
@@ -151,6 +154,16 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       description = CategoriesDao.CategoryDescriptionSource,
       position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
+      defaultSortOrder =
+            if (!doItVotesPopFirst) None
+            else Some(PageOrderOffset.ByScoreAndBumpTime(
+                  offset = None, TopTopicsPeriod.Year)),
+      doItVotes =
+            if (!doItVotesPopFirst) None
+            else Some(DoItVotes.Likes),
+      doItVoteInTopicList =
+            if (!doItVotesPopFirst) None
+            else Some(true),
       shallBeDefaultCategory = shallBeDefaultCategory,
       unlistCategory = unlistCategory,
       unlistTopics = unlistTopics,
@@ -413,6 +426,8 @@ object ForumController {
       "numWrongs" -> page.numWrongs,
       "numBurys" -> page.numBurys,
       "numUnwanteds" -> page.numUnwanteds,
+      "numOrigPostDoVotes" -> page.numOrigPostDoVotes,
+      "numOrigPostDontVotes" -> page.numOrigPostDontVotes,
       "numOrigPostLikes" -> page.numOrigPostLikeVotes,
       "numOrigPostReplies" -> page.numOrigPostRepliesVisible,
       "authorId" -> JsNumber(page.authorId),

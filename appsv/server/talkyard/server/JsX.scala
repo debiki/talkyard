@@ -495,6 +495,8 @@ object JsX {   RENAME // to JsonPaSe
       "numRepliesVisible" -> pageMeta.numRepliesVisible,
       "numRepliesTotal" -> pageMeta.numRepliesTotal,
       "numPostsTotal" -> pageMeta.numPostsTotal,
+      "numOrigPostDoVotes" -> pageMeta.numOrigPostDoVotes,
+      "numOrigPostDontVotes" -> pageMeta.numOrigPostDontVotes,
       "numOrigPostLikeVotes" -> pageMeta.numOrigPostLikeVotes,
       "numOrigPostWrongVotes" -> pageMeta.numOrigPostWrongVotes,
       "numOrigPostBuryVotes" -> pageMeta.numOrigPostBuryVotes,
@@ -512,6 +514,7 @@ object JsX {   RENAME // to JsonPaSe
       "unwantedAt" -> JsNull,
       "hiddenAt" -> JsWhenMsOrNull(pageMeta.hiddenAt),
       "deletedAt" -> JsDateMsOrNull(pageMeta.deletedAt),
+      "deletedById" -> JsNumberOrNull(pageMeta.deletedById),
       "htmlTagCssClasses" -> pageMeta.htmlTagCssClasses,
       "htmlHeadTitle" -> pageMeta.htmlHeadTitle,
       "htmlHeadDescription" -> pageMeta.htmlHeadDescription)
@@ -596,6 +599,7 @@ object JsX {   RENAME // to JsonPaSe
       "description" -> JsStringOrNull(category.description), // remove [502RKDJWF5]
       // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
       "newTopicTypes" -> category.newTopicTypes.map(_.toInt),  // : immutable.Seq[PageType],
+      "doItVotesPopFirst" -> JsBoolOrNull(category.doItVotes.map(_ => true)),
       // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?
       "unlistCategory" -> category.unlistCategory,
       "unlistTopics" -> category.unlistTopics,
@@ -774,7 +778,7 @@ object JsX {   RENAME // to JsonPaSe
     Json.obj(
       "pageId" -> scores.pageId,
       "updatedAt" -> JsWhenMs(scores.updatedAt),
-      "algorithmVersion" -> scores.algorithmVersion,
+      "algorithmVersion" -> scores.scoreAlgorithm,
       "dayScore" -> scores.dayScore,
       "weekScore" -> scores.weekScore,
       "monthScore" -> scores.monthScore,

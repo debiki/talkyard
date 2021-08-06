@@ -325,6 +325,7 @@ case class SimpleSitePatch(
         position = categoryPatch.position getOrElse Category.DefaultPosition,
         description = Some(theCategoryDescription),
         newTopicTypes = Vector(PageType.Question),       // for now
+        doItVotes = None,                                // for now
         unlistCategory = false,                          // for now
         unlistTopics = false,                            // for now
         includeInSummaries = IncludeInSummaries.Default, // for now

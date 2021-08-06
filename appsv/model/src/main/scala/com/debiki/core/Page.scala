@@ -182,7 +182,7 @@ object PageMeta {
   * @param htmlHeadTitle Text for the html <title>...</title> tag.
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
   */
-case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
+case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until  ! more
   pageId: String,
   extImpId: Option[ExtId] = None,  // RENAME to extId
   pageType: PageType,
@@ -208,6 +208,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   numRepliesVisible: Int = 0,
   numRepliesTotal: Int = 0,
   numPostsTotal: Int = 0,
+  numOrigPostDoVotes: i32 = 0,
+  numOrigPostDontVotes: i32 = 0,
   numOrigPostLikeVotes: Int = 0,
   numOrigPostWrongVotes: Int = 0,
   numOrigPostBuryVotes: Int = 0,
@@ -225,6 +227,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
   hiddenAt: Option[When] = None,
   deletedAt: Option[ju.Date] = None,
+  deletedById: Option[PatId] = None,
   htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited
   htmlHeadTitle: String = "",
   htmlHeadDescription: String = "",
@@ -269,6 +272,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   require(numBurys >= 0, s"[DwE2KEP4] $wp")
   require(numUnwanteds >= 0, s"[DwE4JGY7] $wp")
   require(numPostsTotal >= numRepliesTotal, s"Fail: $numPostsTotal >= $numRepliesTotal [EdE2WTK4L] $wp")
+  require(numOrigPostDoVotes >= 0, s"[TyE5KJF9] $wp")
+  require(numOrigPostDontVotes >= 0, s"[TyE5KJF8] $wp")
   require(numOrigPostLikeVotes >= 0, s"[DwE5KJF2] $wp")
   require(numOrigPostLikeVotes <= numLikes, s"Fail: $numOrigPostLikeVotes <= $numLikes [EdE5KJF2B] $wp")
   require(numOrigPostWrongVotes >= 0, s"[DwE4WKEQ1] $wp")
@@ -299,6 +304,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // A locked or frozen topic, should be closed too.
   require((lockedAt.isEmpty && frozenAt.isEmpty) || closedAt.isDefined, s"[DwE6UMP3] $wp")
   require(answeredAt.isEmpty == answerPostId.isEmpty, s"[DwE2PYU5] $wp")
+  // deletedById was added later.
+  require(deletedById.isEmpty || deletedAt.isDefined, "TyE602MSREJ6")
   require(numChildPages >= 0, s"Page $pageId has $numChildPages child pages [EsE5FG3W02] $wp")
 
   def isPinned: Boolean = pinOrder.isDefined
@@ -420,6 +427,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
       numRepliesVisible = page.parts.numRepliesVisible,
       numRepliesTotal = page.parts.numRepliesTotal,
       numPostsTotal = page.parts.numPostsTotal,
+      numOrigPostDoVotes = bodyVotes(_.numDoVotes),
+      numOrigPostDontVotes = bodyVotes(_.numDontVotes),
       numOrigPostLikeVotes = bodyVotes(_.numLikeVotes),
       numOrigPostWrongVotes = bodyVotes(_.numWrongVotes),
       numOrigPostBuryVotes = bodyVotes(_.numBuryVotes),
@@ -907,19 +916,65 @@ case class PageQuery(  // also see PeopleQuery
 /** How to sort pages, and where to start listing them, e.g. if fetching additional
   * pages after the user has scrolled down to the end of a page list.
   */
-sealed abstract class PageOrderOffset
+sealed abstract class PageOrderOffset(val IntVal: i32) { def toInt: i32 = IntVal }
 
+// Create PageOrder enum?
+//
 object PageOrderOffset {
   //case object Any extends PageOrderOffset
-  case object ByPath extends PageOrderOffset
-  case object ByPublTime extends PageOrderOffset
-  case object ByPinOrderLoadOnlyPinned extends PageOrderOffset
-  case class ByBumpTime(offset: Option[ju.Date]) extends PageOrderOffset
-  case class ByCreatedAt(offset: Option[ju.Date]) extends PageOrderOffset
-  case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
-  case class ByScoreAndBumpTime(offset: Option[Float], period: TopTopicsPeriod)
-    extends PageOrderOffset
+  case object ByPath extends PageOrderOffset(1)
+  case object ByPinOrderLoadOnlyPinned extends PageOrderOffset(2)
+  case class ByBumpTime(offset: Option[ju.Date]) extends PageOrderOffset(21)
+  // Maybe later;
+  // By last reply
+  // By last orig post edit
+  // By last edit of any reply
+  // By last edit of op or reply
+  case class ByCreatedAt(offset: Option[ju.Date]) extends PageOrderOffset(11)
+  case object ByPublTime extends PageOrderOffset(12)
+  // This makes any sense?
+  // Maybe better leave to ElasticSearch and faceted search?
+  //case object ByPlannedAt, Postponed, Started, Paused, Done, Answered,
+  //case object ByClosedAt, Locket, Frozen, Deleted,
+  //case object ByStatusChange
+
+  // ByFlagsAndBumpTime  31
+  // ByAngerAndBumpTime  // combines flags and Unwanted votes  32
+
+  case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset(41)
+
+  // Maybe should incl score algorithm id?
+  case class ByScoreAndBumpTime(offset: Opt[f32], period: TopTopicsPeriod)
+    extends PageOrderOffset(ByScoreAndBumpTimeIntVal) {
+    // For now, just hardcode PagePopularityCalculator.CurrentScoreAlg1 here.
+    def scoreAlg: PageScoreAlg = 1
+  }
+
+  // ByNumRepliesAndBumpTime  33
+
+  val ByScoreAndBumpTimeIntVal = 42
+
+  def fromOptVals(orderInt: Opt[i32], scoreAlgInt: Opt[i32], scorePeriodInt: Opt[i32])
+        : Opt[PageOrderOffset] = Some {
+    val theOrderInt = orderInt getOrElse { return None }
+    theOrderInt match {
+      case ByPath.IntVal => ByPath
+      case ByPinOrderLoadOnlyPinned.IntVal => ByPinOrderLoadOnlyPinned
+      case 11 /*ByCreatedAt.IntVal*/ => ByCreatedAt(offset = None)
+      case 12 /*ByPublTime.IntVal*/ => ByPublTime
+      case 21 /*ByBumpTime.IntVal*/ => ByBumpTime(offset = None)
+      case 41 /*ByLikesAndBumpTime.IntVal*/ => ByLikesAndBumpTime(offset = None)
+      case ByScoreAndBumpTimeIntVal =>
+        val period = TopTopicsPeriod.fromOptInt(scorePeriodInt) getOrElse { return None }
+        val alg = scoreAlgInt getOrElse { return None }
+        dieIf(alg != (1: PageScoreAlg), "TyE03MSJ62") // for now
+        ByScoreAndBumpTime(offset = None, period = period)
+      case _ =>
+        return None
+    }
+  }
 }
+
 
 case class PageFilter(
   filterType: PageFilterType,

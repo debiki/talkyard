@@ -902,7 +902,7 @@ case class SitePatchParser(context: EdContext) {
       Good(PagePopularityScores(
         pageId = pageId,
         updatedAt = readWhen(jsObj, "updatedAt"),
-        algorithmVersion = readInt(jsObj, "algorithmVersion"),
+        scoreAlgorithm = readInt(jsObj, "algorithmVersion"),
         dayScore = readFloat(jsObj, "dayScore"),
         weekScore = readFloat(jsObj, "weekScore"),
         monthScore = readFloat(jsObj, "monthScore"),
@@ -1105,6 +1105,8 @@ case class SitePatchParser(context: EdContext) {
         numRepliesVisible = readInt(jsObj, "numRepliesVisible", default = Some(0)),
         numRepliesTotal = readInt(jsObj, "numRepliesTotal", default = Some(0)),
         numPostsTotal = readInt(jsObj, "numPostsTotal", default = Some(0)),
+        numOrigPostDoVotes = readInt(jsObj, "numOrigPostDoVotes", default = Some(0)),
+        numOrigPostDontVotes = readInt(jsObj, "numOrigPostDontVotes", default = Some(0)),
         numOrigPostLikeVotes = readInt(jsObj, "numOrigPostLikeVotes", default = Some(0)),
         numOrigPostWrongVotes = readInt(jsObj, "numOrigPostWrongVotes", default = Some(0)),
         numOrigPostBuryVotes = readInt(jsObj, "numOrigPostBuryVotes", default = Some(0)),
@@ -1121,6 +1123,7 @@ case class SitePatchParser(context: EdContext) {
         //unwantedAt = readOptDateMs(jsObj, "unwantedAt"),
         hiddenAt = readOptWhen(jsObj, "hiddenAt"),
         deletedAt = readOptDateMs(jsObj, "deletedAt"),
+        deletedById = readOptInt(jsObj, "deletedById"),
         htmlTagCssClasses = readOptString(jsObj, "htmlTagCssClasses").getOrElse(""),
         htmlHeadTitle = readOptString(jsObj, "htmlHeadTitle").getOrElse(""),
         htmlHeadDescription = readOptString(jsObj, "htmlHeadDescription").getOrElse("")))
@@ -1272,6 +1275,9 @@ case class SitePatchParser(context: EdContext) {
 
       val defaultTopicType = (jsObj \ "defaultTopicType").asOpt[Int] flatMap PageType.fromInt
 
+      // [do_it_on_off]
+      val doItVotesPopFirst = (jsObj \ "doItVotesPopFirst").asOpt[Bo] getOrElse false
+
       Good(Left(Category(
         id = theId,
         extImpId = extId,
@@ -1283,6 +1289,16 @@ case class SitePatchParser(context: EdContext) {
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,
         description = readOptString(jsObj, "description"),
         newTopicTypes = defaultTopicType.toVector, // [962MRYPG]
+        defaultSortOrder =
+              if (!doItVotesPopFirst) None
+              else Some(PageOrderOffset.ByScoreAndBumpTime(
+                    offset = None, TopTopicsPeriod.Year)),
+        doItVotes =
+              if (!doItVotesPopFirst) None
+              else Some(DoItVotes.Likes),
+        doItVoteInTopicList =
+              if (!doItVotesPopFirst) None
+              else Some(true),
         unlistCategory = readOptBool(jsObj, "unlistCategory").getOrElse(false),
         unlistTopics = readOptBool(jsObj, "unlistTopics").getOrElse(false),
         includeInSummaries = includeInSummaries,

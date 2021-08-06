@@ -184,7 +184,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
       PagePopularityScores(
         pageId = rs.getString("page_id"),
         updatedAt = getWhen(rs, "updated_at"),
-        algorithmVersion = rs.getInt("algorithm"),
+        scoreAlgorithm = rs.getInt("score_alg_c"),
         dayScore = rs.getFloat("day_score"),
         weekScore = rs.getFloat("week_score"),
         monthScore = rs.getFloat("month_score"),
@@ -201,7 +201,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         page_id,
         popular_since,
         updated_at,
-        algorithm,
+        score_alg_c,
         day_score,
         week_score,
         month_score,
@@ -211,7 +211,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
       values (?, ?, now_utc(), now_utc(), ?, ?, ?, ?, ?, ?, ?)
       on conflict (site_id, page_id) do update set
         updated_at = excluded.updated_at,
-        algorithm = excluded.algorithm,
+        score_alg_c = excluded.score_alg_c,
         day_score = excluded.day_score,
         week_score = excluded.week_score,
         month_score = excluded.month_score,
@@ -221,7 +221,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
       """
 
     val values = List(
-      siteId.asAnyRef, scores.pageId, scores.algorithmVersion.asAnyRef,
+      siteId.asAnyRef, scores.pageId, scores.scoreAlgorithm.asAnyRef,
       scores.dayScore.asAnyRef, scores.weekScore.asAnyRef,
       scores.monthScore.asAnyRef, scores.quarterScore.asAnyRef,
       scores.yearScore.asAnyRef, scores.allScore.asAnyRef)

@@ -120,6 +120,8 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
             topicsOrErrs.map({
               case Good(pagePathAndMeta) =>
                 Json.obj(
+                    "numOpDoVotes" -> pagePathAndMeta.meta.numOrigPostDoVotes,
+                    "numOpDontVotes" -> pagePathAndMeta.meta.numOrigPostDontVotes,
                     "numOpLikeVotes" -> pagePathAndMeta.meta.numOrigPostLikeVotes,
                     "numTotRepliesVisible" -> pagePathAndMeta.meta.numRepliesVisible)
               case Bad(errMsg) =>

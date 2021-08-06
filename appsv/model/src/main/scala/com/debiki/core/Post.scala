@@ -364,6 +364,8 @@ case class Post(   // [exp] ok use
   numPendingFlags: Int,
   numHandledFlags: Int,
   numPendingEditSuggestions: Int,
+  numDoVotes: i32 = 0,    // for now
+  numDontVotes: i32 = 0,  // for now
   numLikeVotes: Int,
   numWrongVotes: Int,
   numBuryVotes: Int,

@@ -24,7 +24,7 @@ import java.{util => ju}
 /** Tells how popular a page is, so it can be shown first (or 2nd... or last... or not at all)
   * in the Top forum topics view. Scores can perhaps be < 0 if there're many Unwanted votes.
   *
-  * @param algorithmVersion Pages with old algorithm versions, should gradually be refreshed
+  * @param scoreAlgorithm Pages with old algorithm versions, should gradually be refreshed
   *   to have their score calculated using the latest algorithm, because the daily/weekly/etc
   *   scores are otherwise not comparable to scores from the latest algorithm version.
   * @param dayScore How much more popular the topic has become, the last day. Also includes
@@ -34,7 +34,7 @@ import java.{util => ju}
 case class PagePopularityScores(
   pageId: PageId,
   updatedAt: When,
-  algorithmVersion: Int,
+  scoreAlgorithm: PageScoreAlg,
   dayScore: Float,
   weekScore: Float,
   monthScore: Float,
@@ -45,7 +45,7 @@ case class PagePopularityScores(
   def toPrettyString: String = {
     i"""
       |updatedAt: ${toIso8601NoSecondsNoT(updatedAt.toJavaDate)},
-      |algorithmVersion: $algorithmVersion,
+      |algorithmVersion: $scoreAlgorithm,
       |dayScore: $dayScore,
       |weekScore: $weekScore,
       |monthScore: $monthScore,
@@ -68,7 +68,20 @@ object TopTopicsPeriod {
   case object Year extends TopTopicsPeriod(5)
   case object All extends TopTopicsPeriod(6)
 
-  def fromIntString(value: String): Option[TopTopicsPeriod] = Some(value match {
+  def fromOptInt(value: Opt[i32]): Option[TopTopicsPeriod] =
+    fromInt(value getOrElse { return None })
+
+  def fromInt(value: i32): Option[TopTopicsPeriod] = Some(value match {
+    case 1 => Day
+    case 2 => Week
+    case 3 => Month
+    case 4 => Quarter
+    case 5 => Year
+    case 6 => All
+    case x => return None
+  })
+
+  def fromIntString_(value: String): Option[TopTopicsPeriod] = Some(value match {
     case "1" => Day
     case "2" => Week
     case "3" => Month

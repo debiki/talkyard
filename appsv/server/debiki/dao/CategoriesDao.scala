@@ -84,6 +84,9 @@ case class CategoryToSave(
   position: Int,
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageType],
+  defaultSortOrder: Opt[PageOrderOffset],
+  doItVotes: Opt[DoItVotes],
+  doItVoteInTopicList: Opt[Bo],
   shallBeDefaultCategory: Boolean,
   unlistCategory: Boolean,
   unlistTopics: Boolean,
@@ -134,6 +137,9 @@ case class CategoryToSave(
       else Some(untilNewline)
     },
     newTopicTypes = newTopicTypes,
+    defaultSortOrder = defaultSortOrder,
+    doItVotes = doItVotes,
+    doItVoteInTopicList = doItVoteInTopicList,
     unlistCategory = unlistCategory,
     unlistTopics = unlistTopics,
     includeInSummaries = includeInSummaries,
@@ -152,6 +158,9 @@ object CategoryToSave {
           slug = cat.slug,
           position = cat.position,
           newTopicTypes = cat.newTopicTypes,
+          defaultSortOrder = cat.defaultSortOrder,
+          doItVotes = cat.doItVotes,
+          doItVoteInTopicList = cat.doItVoteInTopicList,
           shallBeDefaultCategory = makeDefault,
           unlistCategory = cat.unlistCategory,
           unlistTopics = cat.unlistTopics,
@@ -635,6 +644,9 @@ trait CategoriesDao {
             slug = editsToDo.slug,
             position = editsToDo.position,
             newTopicTypes = editsToDo.newTopicTypes,
+            defaultSortOrder = editsToDo.defaultSortOrder,
+            doItVotes = editsToDo.doItVotes,
+            doItVoteInTopicList = editsToDo.doItVoteInTopicList,
             unlistCategory = editsToDo.unlistCategory,
             unlistTopics = editsToDo.unlistTopics,
             includeInSummaries = editsToDo.includeInSummaries,
@@ -648,6 +660,7 @@ trait CategoriesDao {
         setDefaultCat(catAft, ancCats, tx)
       }
 
+      // (Could skip marking page stale, if only newTopicTypes or ext id changed)
       tx.updateCategoryMarkSectionPageStale(catAft)
 
       // Check if any sub tree to deep. [.7M27J525]

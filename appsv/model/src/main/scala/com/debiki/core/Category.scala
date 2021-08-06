@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2021 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,30 @@ package com.debiki.core
 import Prelude._
 import java.{util => ju}
 import scala.collection.immutable
+
+
+sealed abstract class DoItVotes(val IntVal: i32) { def toInt: i32 = IntVal }
+object DoItVotes {
+  case object Disabled extends DoItVotes(0)
+  case object Likes extends DoItVotes(1)
+  case object LikesAsUpvotes extends DoItVotes(2)
+  case object LikesAsUpvotesAndDownvotes extends DoItVotes(3)
+  case object Upvotes extends DoItVotes(4)
+  case object UpvotesAndDownvotes extends DoItVotes(5)
+
+  def fromOptInt32(value: Opt[i32]): Opt[DoItVotes] =
+    fromInt32(value getOrElse { return None })
+
+  def fromInt32(value: i32): Opt[DoItVotes] = Some(value match {
+    case Disabled.IntVal => Disabled
+    case Likes.IntVal => Likes
+    case LikesAsUpvotes.IntVal => LikesAsUpvotes
+    case LikesAsUpvotesAndDownvotes.IntVal => LikesAsUpvotesAndDownvotes
+    case Upvotes.IntVal => Upvotes
+    case UpvotesAndDownvotes.IntVal => UpvotesAndDownvotes
+    case _ => return None
+  })
+}
 
 
 sealed abstract class IncludeInSummaries(val IntVal: Int) { def toInt: Int = IntVal }
@@ -76,10 +100,15 @@ case class Category(  // [exp] ok use   too long name! use Cat instead
   description: Option[String],  // REMOVE [502RKDJWF5]
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageType],
+  // None —> inherited from parent cat
+  defaultSortOrder: Opt[PageOrderOffset] = None,
+  doItVotes: Opt[DoItVotes] = None,
+  doItVoteInTopicList: Opt[Bo] = None,
   // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?
   unlistCategory: Boolean,  // also unlists topics
   unlistTopics: Boolean,
   //  -----------
+
   includeInSummaries: IncludeInSummaries = IncludeInSummaries.Default,
   createdAt: ju.Date,
   updatedAt: ju.Date,

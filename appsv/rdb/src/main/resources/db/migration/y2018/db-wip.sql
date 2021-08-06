@@ -148,6 +148,7 @@ update users3 set separate_email_for_every = 3 where email_for_every_new_post;  
 alter table users3 drop column email_for_every_new_post;
 
 alter table users3 add column watch_level_after_posted smallint;
+alter table users3 add column watch_level_after_upvoted smallint;
 alter table users3 add column notify_if_voted_up int;
 alter table users3 add column notify_if_voted_other int;
 
@@ -267,3 +268,11 @@ alter domain key_pem_d add constraint key_pem_d_c_minlen check (length(value) >=
 alter domain key_pem_d add constraint key_pem_d_c_maxlen check (
     length(value) <= 10000);
 -- Min len? Maybe domain text_ne_d for non-empty?
+
+
+
+-- ?
+alter table page_popularity_scores3 add column two_weeks_score f64_d;
+alter table page_popularity_scores3 add column two_days_score f64_d;
+-- + custom time, maybe two arrays:  AlgorithmParams[], score[], last_calculated_at[] ?
+

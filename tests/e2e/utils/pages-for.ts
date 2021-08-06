@@ -4482,7 +4482,7 @@ export class TyE2eTestBrowser {
 
 
     forumTopicList = {  // RENAME to topicList
-      titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.esF_TsL_T_Title',  CLEAN_UP
+      titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.c_F_TsL_T_Title',  CLEAN_UP
       hiddenTopicTitleSelector: '.e2eTopicTitle a.icon-eye-off',
 
       goHere: (ps: { origin?: string, categorySlug?: string } = {}) => {
