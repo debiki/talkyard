@@ -525,6 +525,10 @@ class SiteDao(
   def pubSub: PubSubApi = globals.pubSub
   def strangerCounter: StrangerCounterApi = globals.strangerCounter
 
+  def loadNotificationByEmailId(emailId: EmailOutId): Opt[Notf] = {
+    readTx(_.loadNotificationByEmailId(emailId))
+  }
+
   def saveDeleteNotifications(notifications: Notifications): Unit = {
     readWriteTransaction(_.saveDeleteNotifications(notifications))
   }
@@ -610,6 +614,8 @@ class SiteDao(
 
 
   def updateSentEmail(email: Email): Unit = {
+    dieIf(Globals.isDevOrTest && email.sentOn.isDefined && email.sentFrom.isEmpty,
+          "TyE5MW20UM4")
     readWriteTransaction(tx => {
       tx.updateSentEmail(email)
       if (email.failureText.isEmpty) {

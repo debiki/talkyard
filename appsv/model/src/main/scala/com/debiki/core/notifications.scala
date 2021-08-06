@@ -38,7 +38,10 @@ object Notifications {
 
 
 
-sealed abstract class NotificationType(val IntValue: Int) {  RENAME // just NotfType, shorter
+sealed abstract class NotificationType(
+  val IntValue: Int,
+  val isAboutNewApprovedPost: Bo = false) {  RENAME // just NotfType, shorter
+
   def toInt: Int = IntValue
   def isAboutReviewTask = false
 }
@@ -71,12 +74,12 @@ object NotificationType {
   // 203: post rejected
 
   // 300-399 Notifications about new posts (that are visible, not hidden waiting for approval).
-  case object DirectReply extends NotificationType(301)
-  case object IndirectReply extends NotificationType(306)
-  case object Mention extends NotificationType(302)
+  case object DirectReply extends NotificationType(301, isAboutNewApprovedPost = true)
+  case object IndirectReply extends NotificationType(306, isAboutNewApprovedPost = true)
+  case object Mention extends NotificationType(302, isAboutNewApprovedPost = true)
   // + Quote
-  case object Message extends NotificationType(304)
-  case object NewPost extends NotificationType(305)
+  case object Message extends NotificationType(304, isAboutNewApprovedPost = true)
+  case object NewPost extends NotificationType(305, isAboutNewApprovedPost = true)
   // + NewTopic  [REFACTORNOTFS]
 
 
@@ -116,7 +119,7 @@ object NotificationType {
 
 
 
-sealed abstract class Notification {
+sealed abstract class Notification {  // RENAME to just Notf
   def id: NotificationId
   def createdAt: ju.Date
   def tyype: NotificationType

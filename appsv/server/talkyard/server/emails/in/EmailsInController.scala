@@ -31,7 +31,8 @@ import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import play.mvc.Http.{HeaderNames => play_HeaderNames}
 import talkyard.server.TyLogging
-import org.scalactic.{Good, Bad}
+import org.scalactic.{Good, Or, Bad}
+import ed.server.notf.NotfHtmlRenderer
 
 
 class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContext)
@@ -110,6 +111,7 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
   }
 
 
+  /** [pars_em_in] */
   private def parseIncomingEmail(email: JsValue): ParsedReplyEmail = {
     var seemsLikeSpam: Opt[Bo] = None
     var spamScore: Opt[f32] = None
@@ -163,20 +165,31 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
       return ()
     }
 
+    val replyNr = addUpToMaxInt16(emailInDb.numRepliesBack getOrElse 0, 1)
+
     // Update db, before sending a cannot-reply email reply to the reply, so we
     // for sure won't try to reply to the reply more than once.
-    siteDao.updateSentEmail(emailInDb.copy(numRepliesBack =
-          emailInDb.numRepliesBack.map(
-              addUpToMaxInt16(_, 1)).orElse(Some(1))))
+    siteDao.updateSentEmail(
+          emailInDb.copy(numRepliesBack = Some(replyNr)))
 
-    val replyNr = (emailInDb.numRepliesBack getOrElse 0) + 1
+    val notf = siteDao.loadNotificationByEmailId(emailInDb.id) getOrElse {
+      logAndDebug(o"""s$siteId: Not replying to incoming email reply to
+            outgoing email id ${emailInDb.id} — cannot find any related notification""")
+      return
+    }
+
     if (replyNr == 1) {
       val ffName = "ffSendCannotReplyViaEmail"
       if (context.globals.config.featureFlags.contains(ffName) || isDevOrTest) {
         logAndDebug(s"s$siteId: Sending cannot-reply-via-email once to ${
               emailIn.sentFromAddr}")
         val emailToSend = makeCannotReplyViaEmailEmail(
-              emailIn, emailInDb, siteDao)
+              emailIn, emailInDb, notf, siteDao) getOrIfBad { problem =>
+          logAndDebug(s"s$siteId: Won't send a cannot-reply-via-email to ${
+                emailIn.sentFromAddr} who replied to email id ${emailInDb.id
+                }, because: $problem")
+          return
+        }
         siteDao.globals.sendEmail(emailToSend, siteId)
         // But don't save this email in the db — that could create an eternal
         // email loop between Ty and an external email service that auto
@@ -195,22 +208,91 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 
   private def makeCannotReplyViaEmailEmail(
-        emailIn: ParsedReplyEmail, origEmailOut: EmailOut, dao: SiteDao): EmailOut = {
+        emailIn: ParsedReplyEmail, origEmailOut: EmailOut,
+        notfAny: Notification, dao: SiteDao): EmailOut Or ErrMsg = {
     val (siteName, origin) = dao.theSiteNameAndOrigin()
     val htmlSt: St =
-          <div>
-            <p>You cannot reply via email. Instead, go here:</p>
-            <p><a href={origin}>{origin}</a></p>
-            <p>and check your reply notifications. You might need to log in.</p>
-            <p>Kind regards.</p>
-          </div>.toString
+          if (notfAny.tyype.isAboutNewApprovedPost) {
+            val notf = notfAny match {
+              case n: Notification.NewPost => n
+            }
+            makeCannotReplyEmailText(siteName, origin, notf, dao) getOrIfBad { probl =>
+              return Bad(probl)
+            }
+          }
+          else {
+            makeCannotReplyEverEmailText(siteName, origin)
+          }
 
-    Email.createGenId(
+    // Reuse the original email out From: address, so the cannot-reply email ends up
+    // in the same email thread as the notification email pat replied to. So that
+    // pat can just scroll up a bit in that email thread, and find the notf email.
+    // (But don't reuse the original email id — that'd make us overwrite that email
+    // in the database>)
+    Good(Email.createGenId(
           EmailType.YouCannotReply,
           createdAt = dao.globals.now(),
           sendTo = emailIn.sentFromAddr,
+          sendFrom = origEmailOut.sentFrom,
           toUserId = origEmailOut.toUserId,
           subject = s"[$siteName] New notifications",   // I18N
-          bodyHtml = htmlSt)
+          bodyHtml = htmlSt))
+  }
+
+
+  private def makeCannotReplyEmailText(siteName: St, origin: St,
+        notf: Notification.NewPost, dao: SiteDao): St Or ErrMsg = {
+    import dao.siteId
+
+    val post = dao.loadPostByUniqueId(notf.uniquePostId) getOrElse {
+      return Bad(s"s$siteId: Post ${notf.uniquePostId} missing for AboutPost notf ${notf.id}")
+    }
+
+    val pageMeta = dao.getPageMeta(post.pageId) getOrElse {
+      return Bad(s"s$siteId: Page ${post.pageId} missing for AboutPost notf ${notf.id}")
+    }
+
+    val anyAuthor = dao.getUser(post.createdById)
+    val byAuthorName = anyAuthor map { a => s"by ${a.usernameOrGuestName}" }
+    val notfRenderer = NotfHtmlRenderer(dao, Some(origin))
+    val url = notfRenderer.postUrl(pageMeta, post)
+
+    val htmlSt: St =
+        <div class="e_CantReViaEmail">
+          <p>It seems you tried to reply to a notification email
+            about a new post {byAuthorName}, at {siteName}.
+            {/*
+            Maybe better skip the site link — they've already demonstrated
+            that they don't look at the emails carefully, and another link
+            is likely a bad idea?
+            So, don't:  <a href={origin}>{siteName}</a>   */}
+          </p>
+          <p>
+            Unfortunately, our system doesn't support replying via email.
+          </p>
+          <p>Instead, click this blue Reply link:
+          (or the one in the notification email; it's the same)
+          </p>
+          <p>
+            <a href={url} style={NotfHtmlRenderer.replyBtnStyles
+                } class="e_EmReB2" >Reply</a>
+          </p>
+          <p>(This is an automated message, and you cannot reply to this either.)</p>
+          <p>Kind regards.</p>
+        </div>.toString
+
+    Good(htmlSt)
+  }
+
+
+  private def makeCannotReplyEverEmailText(siteName: St, origin: St): St = {
+    <div>
+      <p>You tried to reply to a notification email from <samp>{siteName}</samp>.
+        Unfortunately, you cannot reply to that type of notifications.</p>
+      <p>But you can go here and check your notifications:</p>
+      <p><a href={origin}>{origin}</a></p>
+      <p>(You might need to log in.)</p>
+      <p>Kind regards.</p>
+    </div>.toString
   }
 }

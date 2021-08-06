@@ -152,6 +152,8 @@ and idps_t.guid_c. And rename conf_file_idp_id_c to glob_idp_guid.
 Migrate to ScribeJava, [migr_to_scribejava]
 
 
+[per_site_email_domain]
+Optionally configure email settings in the admin area, per site.
 
 [no-email]:
 Let people create accounts without specifying any email address. Like at Reddit.

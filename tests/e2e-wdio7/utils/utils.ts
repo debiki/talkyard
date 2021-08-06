@@ -56,6 +56,14 @@ function _makeCreateSiteUrlImpl(isEmbeddedSite: boolean): St {
       `&e2eTestPassword=${settings.e2eTestPassword}&testSiteOkDelete=true`;
 }
 
+///
+/// Changes e.g.: "http://e2e-test-cid-0-0-now-6233.localhost/-2/owenspagetitle"
+///      to e.g.: "http://e2e-test-cid-0-0-now-6233.localhost/-2#post-1"
+///
+export function replaceSlugWithPostNr(pageUrl: St, postNr: PostNr): St {
+  return pageUrl.replace(/\/[^/]+$/, `#post-${postNr}`);
+}
+
 export function findFirstLinkToUrlIn(url: St, text: St): St {
   return _findFirstLinkToUrlImpl(url, text, true);
 }

@@ -428,7 +428,7 @@ function runAllE2eTests {
   $r s/wdio --only notf-prefs-custom-groups.2browsers $args
   $r s/wdio --only notf-prefs-private-groups.2browsers $args
   $r s/wdio --only notf-prefs-pages-replied-to.2br $args
-
+  $r s/wdio-7 --only cannot-reply-via-email.2br --cd -i $args
   $r s/wdio --only notfs-page-gone.2browsers $args
   # Later:
   # Move page from a staff only cat, to a publ cat, and verify people who have

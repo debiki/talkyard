@@ -110,8 +110,10 @@ export function printBoringToStdout(message: string) {
   process.stdout.write(boringColor(getOrCall(message)));
 }
 
-export function die(message: string, details?: string): never {
-  logError('\n' + message + (details ? '\n' + details : '') + '\n');
+export function die(message: St, details?: St, debugHint?: St): never {
+  logErrorNoTrace('\n' + message + (details ? '\n' + details : '') + '\n');
+  logDebugIf(!!debugHint, '\n' + debugHint + '\n');
+  console.trace();
   throw Error(message);
 }
 

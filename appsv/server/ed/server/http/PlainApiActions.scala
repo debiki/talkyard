@@ -269,11 +269,10 @@ class PlainApiActions(
       val (username, colonPassword) = usernameColonPassword.span(_ != ':')
       val secretKey = colonPassword.drop(1)
 
-      // FOR NOW, trying out incoming email webhooks, logging messages only.
+      // Could make username configurable in Play Fmw config, and on the API secrets
       if (username == "emailwebhooks") {
         throwForbiddenIf(globals.config.emailWebhooksApiSecret.isNot(secretKey),
               "TyE60MREH35", "Wrong password")
-        // FOR NOW
         throwForbiddenIf(request.path != "/-/handle-email", "TyE406MSE35", "Wrong path")
 
         val sysbot = dao.getTheUser(SysbotUserId)

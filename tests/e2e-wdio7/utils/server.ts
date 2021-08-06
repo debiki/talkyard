@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as utils from './utils';
 import c from '../test-constants';
-import { logMessage, logWarning, logError, logServerRequest, die, dieIf,
+import { logDebug, logMessage, logWarning, logError, logServerRequest, die, dieIf,
         } from './log-and-die';
 
 const syncRequest = require('sync-request');
@@ -67,7 +67,7 @@ function initOrExit(theSettings) {
 
 function postOrDie(url, data, opts: { apiRequesterId?: number,
       apiRequester?: St, apiSecret?: string,
-      retryIfXsrfTokenExpired?: boolean, fail?: boolean } = {})
+      retryIfXsrfTokenExpired?: boolean, fail?: boolean, hintIfErr?: St } = {})
       : { statusCode: number, headers, bodyText: string, bodyJson: () => any } {
 
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2WKG4]");
@@ -137,9 +137,9 @@ function postOrDie(url, data, opts: { apiRequesterId?: number,
       "POST request should have gotten back an error code, to " +
           url + " [TyE507KDF2P]", showResponse(response, true));
   }
-  else {
-    dieIf(response.statusCode !== 200,
-        "POST request failed to " + url + " [EsE5GPK02]", showResponse(response));
+  else if (response.statusCode !== 200) {
+    die("POST request failed to " + url + " [EsE5GPK02]", showResponse(response),
+        opts.hintIfErr);
   }
 
   return {
@@ -508,7 +508,7 @@ async function lastEmailMatches(siteId: SiteId, emailAddress: St,
 
 
 async function sendIncomingEmailWebhook(ps: { to: St,
-        body: St, apiSecret: St, format: 'Postmarkapp' }) {
+        body: St, format: 'Postmarkapp', wrongApiSecret?: true }) {
   // See EmailsInController.parseIncomingEmail [pars_em_in].
   const url = settings.mainSiteOrigin + '/-/handle-email';
   const mailboxHash = getHashOrDie(ps.to, 'TyE70MWEP52');
@@ -525,10 +525,6 @@ async function sendIncomingEmailWebhook(ps: { to: St,
     StrippedTextReply: 'StrippedTextReply',
     Headers: [{ Name: 'HeaderName', Value: 'HeaderValue' }],
   };
-  // <<<<< Oops, Git rebase messed up
-  postOrDie(url, data, { apiRequester: 'emailwebhooks',
-          apiSecret: 'publicEmailWebhooksApiTestSecret' });
-  // =======
   const apiSecret = ps.wrongApiSecret ? 'wrongApiSecret' :
           'publicEmailWebhooksApiTestSecret';
   await postOrDie(url, data, { apiRequester: 'emailwebhooks', apiSecret,
@@ -536,14 +532,16 @@ async function sendIncomingEmailWebhook(ps: { to: St,
         hintIfErr:
           `You need this in conf/my.conf:\n\n` +
           'talkyard.emailWebhooksApiSecret="publicEmailWebhooksApiTestSecret"' });
-  //>>>>>>>
 }
+
 
 
 function getHashOrDie(emailAdr: St, errCode: St): St {
   const matches = emailAdr.match(/^[^@\s+]+\+([^@\s]+)@[^@\s]+$/);
   dieIf(!matches || matches.length !== 2,
-        `No hash in email addr: "${emailAdr}" [${errCode}]`);
+        `No hash in email addr: "${emailAdr}" [${errCode}]\n\n` +
+        `Edit conf/my.conf and include +EMAIL_ID in the from addr, e.g.:\n` +
+        `talkyard.smtp.fromAddress="no-reply+EMAIL_ID@example.com\n`);
   return matches[1];
 }
 

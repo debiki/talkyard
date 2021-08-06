@@ -384,15 +384,13 @@ class MailerActor(
 
     val sitePubId = siteDao.thePubSiteId()
 
-    val fromAddrMaybeEmailId =
-          if (fromAddress.contains("+EMAIL_ID@"))
-            fromAddress.replaceAllLiterally(
-                  "+EMAIL_ID@", s"+$sitePubId-${emailToSend.id}@")
-          else
-            fromAddress
-
-    if (isE2eAddress)
-      rememberE2eTestEmail(emailToSend, fromAddrMaybeEmailId, siteDao)
+    val fromAddrMaybeEmailId = emailToSend.sentFrom getOrElse {
+      if (fromAddress.contains("+EMAIL_ID@"))
+        fromAddress.replaceAllLiterally(
+              "+EMAIL_ID@", s"+$sitePubId-${emailToSend.id}@")
+      else
+        fromAddress
+    }
 
     logger.debug(s"s$siteId: ${if (fakeSend) "Fake e" else "E"}mailing ${sendToAddress
           }, from ${fromAddrMaybeEmailId.noneIfEmpty getOrElse "''"
@@ -419,7 +417,10 @@ class MailerActor(
                 }' [TyEEMLERR]: $badEmail")
           badEmail
       }
-    }
+    }.copy(sentFrom = Some(fromAddrMaybeEmailId))
+
+    if (isE2eAddress)
+      rememberE2eTestEmail(emailSent, siteDao)
 
     siteDao.updateSentEmail(emailSent)
   }
@@ -486,9 +487,10 @@ class MailerActor(
   }
 
 
-  def rememberE2eTestEmail(email: EmailOut, fromAddr: St, siteDao: SiteDao): U = {
+  def rememberE2eTestEmail(email: EmailOut, siteDao: SiteDao): U = {
+    val fromAddr = email.sentFrom getOrDie "TyE603MWFPL"
     val siteIdColonEmailAddress = s"${siteDao.siteId}:${email.sentTo}"
-    val siteIdColToColFrom = s"$siteIdColonEmailAddress:$fromAddr"
+    //val siteIdColToColFrom = s"$siteIdColonEmailAddress:$fromAddr"
     e2eTestEmails.get(siteIdColonEmailAddress) match {
       case Some(promise) =>
         if (promise.isCompleted) {

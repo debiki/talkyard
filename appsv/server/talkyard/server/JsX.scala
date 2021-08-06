@@ -678,7 +678,10 @@ object JsX {   RENAME // to JsonPaSe
   def JsBoolOrNull(value: Option[Boolean]): JsValue =
     value.map(JsBoolean).getOrElse(JsNull)
 
-  def JsNumberOrNull(value: Option[Int]): JsValue =  // RENAME to JsNum32OrNull
+  def JsNum32OrNull(value: Opt[i32]): JsValue =
+    JsNumberOrNull(value)
+
+  def JsNumberOrNull(value: Option[Int]): JsValue =  // RENAME use JsNum32OrNull instead
     JsI32OrNull(value)
 
   def JsI32OrNull(value: Opt[i32]): JsValue = JsInt32OrNull(value)
@@ -686,7 +689,10 @@ object JsX {   RENAME // to JsonPaSe
   def JsInt32OrNull(value: Opt[i32]): JsValue =  // Scala 3: union types:  i32 | i64  ?
     value.map(JsNumber(_)).getOrElse(JsNull)
 
-  def JsLongOrNull(value: Option[Long]): JsValue =   // RENAME to JsNum64OrNull ?
+  def JsNum64OrNull(value: Opt[i64]): JsValue =
+    JsLongOrNull(value)
+
+  def JsLongOrNull(value: Option[Long]): JsValue =   // RENAME use JsNum64OrNull instead
     value.map(JsNumber(_)).getOrElse(JsNull)
 
   def JsFloatOrNull(value: Option[Float]): JsValue =   // RENAME to JsFloat32OrNull

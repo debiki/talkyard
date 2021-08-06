@@ -669,6 +669,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadAllNotifications(): immutable.Seq[Notification]
 
+  def loadNotificationByEmailId(emailId: EmailOutId): Opt[Notf]
+
   /** This skips review tasks notfs — they're shown in the admin area instead, the review tab. */
   def loadNotificationsToShowInMyMenu(roleId: RoleId, limit: Int, unseenFirst: Boolean,
     skipDeleted: Boolean, upToWhen: Option[ju.Date] = None): Seq[Notification]

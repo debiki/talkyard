@@ -173,6 +173,7 @@ package object core {
   // Use MemberId instead.
   type RoleId = UserId   ; CLEAN_UP ; REMOVE
 
+  type Notf = Notification  // renaming
   type NotfType = NotificationType
   val NotfType: NotificationType.type = NotificationType
   type NotificationId = Int  ; RENAME // to NotfId

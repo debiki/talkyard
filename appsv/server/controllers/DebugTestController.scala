@@ -39,6 +39,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.Future._
 import scala.util.Try
 import talkyard.server.TyLogging
+import talkyard.server.JsX._
 
 
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
@@ -358,6 +359,11 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
           case emails: Vector[Email] =>
             OkPrettyJson(JsArray(emails.map(email => {
               Json.obj(
+                "emailId" -> JsString(email.id),
+                "to" -> JsString(email.sentTo),
+                "from" -> JsStringOrNull(email.sentFrom),
+                "sentOn" -> JsDateMsOrNull(email.sentOn),
+                "numRepliesBack" -> JsNum32OrNull(email.numRepliesBack),
                 "subject" -> JsString(email.subject),
                 "bodyHtmlText" -> JsString(email.bodyHtmlText))
             })))

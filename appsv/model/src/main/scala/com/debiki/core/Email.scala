@@ -53,6 +53,7 @@ object Email {   RENAME // to EmailOut?
     tyype: EmailType,
     createdAt: When,
     sendTo: String,
+    sendFrom: Opt[St] = None,
     toUserId: Option[UserId],
     subject: String,
     bodyHtmlText: String,
@@ -61,7 +62,7 @@ object Email {   RENAME // to EmailOut?
           id = emailId,
           tyype = tyype,
           sentTo = sendTo,
-          sentFrom = None,
+          sentFrom = sendFrom,
           toUserId = toUserId,
           sentOn = None,
           createdAt = createdAt.toJavaDate,
@@ -78,6 +79,7 @@ object Email {   RENAME // to EmailOut?
         tyype: EmailType,
         createdAt: When,
         sendTo: String,
+        sendFrom: Opt[St] = None,
         toUserId: Option[UserId],
         subject: String,
         bodyHtml: St): Email = {
@@ -87,6 +89,7 @@ object Email {   RENAME // to EmailOut?
       tyype,
       createdAt,
       sendTo = sendTo,
+      sendFrom = sendFrom,
       toUserId = toUserId,
       subject = subject,
       bodyHtmlText = bodyHtml)
@@ -160,8 +163,7 @@ case class Email(
   }
 
   dieIf(sentFrom.exists(_.isEmpty), "TyE306MSEG34")
-  dieIf(sentFrom.isDefined && sentOn.isEmpty, "TyE60MEG25")
-  // (But sentFrom.isEmpty and sentOn.isDefined is ok, for backw compat.)
+  // (sentFrom.isEmpty and sentOn.isDefined is ok, for backw compat.)
 
   dieIf(secretValue.exists(v => v.length < 20 || 50 < v.length), "TyE5MIRF26")
   dieIf(secretValue.exists(!_.isAlNum), "TyE7S45MIRF9")

@@ -59,7 +59,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }*/
 
 
-  private def postUrl(pageMeta: PageMeta, post: Post): String =
+  def postUrl(pageMeta: PageMeta, post: Post): String =
     pageMeta.embeddingPageUrl match {
       case Some(url) =>
         // If many different discussions (topics) on the same page, would need to include
@@ -306,7 +306,7 @@ object NotfHtmlRenderer {
   UX; COULD // sync reply btn color w CSS; see $uiHue in variables.styl [site_prim_col].
   val replyBtnStyles = o"""
         display: inline-block !important;
-        padding: 4px 18px !important;
+        padding: 8px 18px 6px !important;
         margin: 0.3em 0 1.4em !important;
         background: hsl(207, 100%, 56%) !important;
         ${/*
