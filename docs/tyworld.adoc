@@ -1,8 +1,6 @@
 
 = The Talkyard World
 
-Domain model.
-
 
 
 == Different types of "Posts"
@@ -119,8 +117,63 @@ People both in and outside the organization discuss something. These types:
 
 All vote types enabled by default, but Disagree can be disabled  [tyworld_5mj98267]
 — some people wanted to not have any Disagree votes, but they were
-ok with the other votes — just the Like vote, plus Bury and Unwanted for staff.
+ok with the other votes — just the Like vote, plus Bury and Unwanted for staff,
+and optionally Do-It and Do-Not votes.
 
+=== Do-It votes, Do-Not votes and Like votes
+
+Admins can enable Do-It and, optionally, Do-Not votes of topics,
+in categories of their choice.
+And, optionally, let people do-it(-not) vote directly from the topic list page.
+
+This can 1) make Talkyard work like a news aggregator with vote buttons that
+moves a news topic up, or down. (Do and Do-Not then means
+"do show this higher up in the news items list" or "do not show higher up").
+And can 2) make Ty work like an idea voting tool,
+where you can see the number of votes, and also vote,
+directly from the question or feature ideas lists — A Do-It vote then means
+"Yes, do implement this idea".
+
+These votes are called Do-it (and Do-Not) votes, instead of "upvotes",
+because "upvote" would be ambigious — could also refer to a Like vote.
+
+==== Do-It votes and Like votes
+
+Do-It votes and Like votes, can work independenttly of each other,
+if the admins want. (Not yet implemented.)
+For example, you can Do-Not vote on an idea, and at the same time
+Like vote the _description_ of the idea
+— in case you like the way the idea was presented,
+although you might think it's too off-topic (so you Do-Not voted it).
+
+Maybe this can make a Talkyard communtiy feel extra friendly, when although
+someone's idea got Do-Not votes and won't happen, there might still be some
+Like votes of the _description_ of the idea, making the idea submitter feel
+welcomend although the idea got rejected.
+
+But if Do-It votes and Like votes were the same, it wouldn't be possible to
+both Do-Not and Like vote a topic (because that'd mean Do-Not and yes-Do-It
+votes at the same time by the same person).
+
+Also, maybe in the future maybe each person would get a certain number of Do-It
+votes to distribute among all ideas, and hen could add many votes to the
+same idea. — Everyone got, say, 10, Do-It votes to distribute among all ieas /
+feature requests.
+And you could add, say, 3 Do-It votes to a feature that was really important
+to you. For this to work, it makes sense to keep Like votes and Do-It votes separate.
+(Ty would then show both how many Do-It votes an idea got, _and_ from how many
+different people.) — This not implemented.
+
+=== Upvotes and Downvotes
+
+There isn't any single specific "upvote" or "downvote" in Talkyard.
+
+You might say that Do-It and, optionally, Do-Not votes are upvotes and downvotes.
+They don't affect people's karma — they're only for indicating how the community
+wants to prioritize things.
+
+Or you might say that Like votes and Unwanted votes are upvotes and downvotes.
+They affect the post author's karma.
 
 Disagree and Bury votes are not meant as downvotes. Disagreeing isn't
 inherently negative, and a Bury voted reply might just be a welcomed "Thanks" or "Me too"

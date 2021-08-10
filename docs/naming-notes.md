@@ -37,6 +37,18 @@ they never see the phrase "Root category".
 
 
 
+### CSS classes and ids
+
+HTML tag classes should start with `c_...` for "class". This is for Ty's
+internal CSS, not to be relied upon by external things like plugins.
+HTML tag ids should start with `i_...` for "id".
+
+However end-to-end helper tag classes should start with `e_...`
+— and, always use classes, not ids. (If adding any id, that'd be `ei_...` but don't).
+
+See ./bem-blocks.txt for more details.
+
+
 ### Database tables, columns etc
 
 Table names ends with `_t`, e.g. `links_t`.
@@ -99,6 +111,7 @@ And old columns: `site_id` or `post_id` but now it's `site_id_c` and `post_c` in
 ### Cookies
 
 Names like `tyCo...` so you can: `grep -r tyCo ./` and find all cookies.
+No, instead: `TyCo...` (1st letter uppercase).
 (Right now it's `dwCo...`, should change to `tyCo`. RENAME )
 
 
