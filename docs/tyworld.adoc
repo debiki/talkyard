@@ -122,6 +122,11 @@ All vote types enabled by default, but Disagree can be disabled  [tyworld_5mj982
 ok with the other votes — just the Like vote, plus Bury and Unwanted for staff.
 
 
+Disagree and Bury votes are not meant as downvotes. Disagreeing isn't
+inherently negative, and a Bury voted reply might just be a welcomed "Thanks" or "Me too"
+that the staff wanted to move downwards (curating the discussion).
+— In fact, something people disagree a bit about, can be more interesting,
+than something everyone agrees about? [tywd_disagree_fine]
 
 
 == Categories and permissions

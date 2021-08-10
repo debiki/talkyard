@@ -71,25 +71,39 @@ object PagePopularityCalculator {
   private def calcPopScore(stats: PagePopularityStats): Float = {
     var score = 0f
 
-    // Like votes increase the page score.
+    // Like votes increase the page score — especially upvoted posts that can be
+    // seen without scrolling down "a lot".
+    // However, now Ty sorts OP replies by time, by default, so this makes less
+    // sense now.
     score += stats.topmostLikeScoreTotal
+
+    // What! Skip this. It's confusing, and also, for the forum staff, it's
+    // more interesting to know what ordinary members like,
+    // than what they themselves like. ?  [dont_4x_staff_likes]
+    /*
     score += stats.topmostLikeScoreByTrusted // means x 2, since incl in Total
     score += stats.topmostLikeScoreByCore * 2f // means x 4, since incl in Total and Trusted too
+    */
 
     // Disagree votes also increase the page score, a little bit. Because if people
-    // disagree about something, it's probably more important, than something everyone agrees about.
-    val DisagreeWeight = 0.3f
+    // disagree about something, it's probably more important,
+    // than something everyone agrees about.  [tywd_disagree_fine]
+    val DisagreeWeight = 0.25f
     score += DisagreeWeight * stats.topmostDisagreeScoreTotal
+    /* Skip, see above. [dont_4x_staff_likes]
     score += DisagreeWeight * stats.topmostDisagreeScoreByTrusted
     score += DisagreeWeight * stats.topmostDisagreeScoreByCore * 2f
+    */
 
     // Likes "hidden" further down the page doesn't matter that much? Because one is less likely
     // to scroll down and find them? + the non-topmost comments might be a bit more like chat.
-    val TotalLikesWeight = 0.5f
+    val TotalLikesWeight = 1.0f // 0.5f
     val numPostsInclOld = math.max(1, stats.numPostsInclOld)
     score += TotalLikesWeight * stats.numLikesTotal / numPostsInclOld
+    /* Skip, see above. [dont_4x_staff_likes]
     score += TotalLikesWeight * stats.numLikesByTrusted / numPostsInclOld  // x 2
     score += TotalLikesWeight * stats.numLikesByCore * 2f / numPostsInclOld  // x 4
+     */
 
     // Skip total disagrees — Disagree votes are only interesting, if there are Like votes too.
     // Right now ... we don't keep track of that though.
