@@ -207,6 +207,7 @@ object SitePatch {
   * — and returns info about what was, and wasn't, done.)
   *
   * POST /-/v0/do-action-batch    or just:  /-/v0/act  or  /-/v0/do-batch   /do  /do-something ?
+  * Update: Seems will be  /-/v0/batch-do,  see  pub-api.ts.
   * {
   *   actionBatch: [{   // or actionGroups? no, "group" is also used for user groups
   *     sendDirectMessages: [{ from: ... , to: ..., text: ..., textFormatLang: ... }],

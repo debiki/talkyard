@@ -748,6 +748,33 @@ type SearchResultsScrollCursor = Unimplemented;
 
 
 
+// A Do Command request   [ACTNPATCH]
+// -------------------------
+//
+//  /-/v0/batch-do  {
+//    batchDo: {
+//      inOneTx: t/f
+//      actionList: [
+//        doAction: {
+//          asWho: 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_',
+//          doWhat: 'SetVote'
+//          whatVote: 'Like',
+//          whichPost: { postId: _ } | { pageId: _, postNr: 1 },
+//          howMany: 1 | 0,
+//          // Future compat w assigning many Do-It votes
+//          // per person to a single feature request.
+//        },
+//        doAction: {
+//          asWho: _
+//          doWhat: 'SetNotfLevel',
+//          toLevel: 'EveryPost',
+//          whichPage: { pageId: _ },
+//        },
+//      ],
+//    }
+//  }
+
+
 
 // An  Upsert  request  ?
 // -------------------------
@@ -863,3 +890,5 @@ interface UpsertCommandResults<T extends ThingFound> {
 //
 
 
+//   /-/v0/batch-do — see above
+//
