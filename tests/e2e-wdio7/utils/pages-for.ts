@@ -4074,8 +4074,8 @@ export class TyE2eTestBrowser {
         // don't require verified emails)
         if (ps.mustVerifyEmail !== false) {
           const siteId = await this.getSiteId();
-          const link = server.getLastVerifyEmailAddressLinkEmailedTo(
-                  siteId, user.email, this.#br);
+          const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+                  siteId, user.email);
           await this.go2(link);
           await this.waitAndClick('#e2eContinue');
         }
@@ -4179,8 +4179,8 @@ export class TyE2eTestBrowser {
         // LinkedIn email addresses might not have been verified (or?) so need
         // to click an email addr verif link.
         const siteId = await this.getSiteId();
-        const link = await server.getLastVerifyEmailAddressLinkEmailedTo(
-                siteId, ps.email, this.#br);
+        const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+                siteId, ps.email);
         await this.go2(link);
         await this.waitAndClick('#e2eContinue');
       },

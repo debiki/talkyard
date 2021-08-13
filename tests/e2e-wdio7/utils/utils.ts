@@ -56,11 +56,11 @@ function _makeCreateSiteUrlImpl(isEmbeddedSite: boolean): St {
       `&e2eTestPassword=${settings.e2eTestPassword}&testSiteOkDelete=true`;
 }
 
-export function findFirstLinkToUrlIn(url: string, text: string): string {
+export function findFirstLinkToUrlIn(url: St, text: St): St {
   return _findFirstLinkToUrlImpl(url, text, true);
 }
 
-export function findAnyFirstLinkToUrlIn(url: string, text: string): string | U {
+export function findAnyFirstLinkToUrlIn(url: St, text: St): St | U {
   return _findFirstLinkToUrlImpl(url, text, false);
 }
 
@@ -70,7 +70,10 @@ function _findFirstLinkToUrlImpl(url: string, text: string, mustMatch: boolean):
   const regexString = '(' + regexEscapeSlashes(url) + '[^"\']*)(?:["\'])';
   const matches = text.match(new RegExp(regexString));
   dieIf(mustMatch && !matches,
-      `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
+      `No link matching /${regexString}/ found in email [EsE5GPYK2],\n` +
+      `---- email body: --------------------------\n${
+      text
+      }\n------------------------------------------`);
   return matches ? matches[1] : undefined;
 }
 
