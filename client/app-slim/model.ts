@@ -111,13 +111,13 @@ interface ReactRouterHistory {
   push: (path, state?) => Vo;
   replace: (path, state?) => Vo;
   go: (n: Nr) => Vo;
-  goBack: (n: Nr) => Vo;   // same as go(-1)
+  goBack: () => Vo;        // same as go(-1)
   goForward: () => Vo;     // same as go(+1)
   block: (prompt)  => Vo;  // prevents navigation
 }
 
 interface ReactRouterLocation {
-  // key: 'ac3df4', // absent if using HashHistory
+  // key: e.g. 'ac3df4', // absent if using HashHistory
   pathname: St; // e.g. '/some/page'
   search: St;  // e.g '?query=param'
   hash: St; // e.g. #hash-frag
@@ -125,8 +125,8 @@ interface ReactRouterLocation {
 }
 
 interface ReactRouterMatch {
-  params: UrlParamsMap;   // params in the URL
-  isExact: Bo; // entire URL matches, no trailing chars
+  params: UrlParamsMap; // params in the URL path and query string
+  isExact: Bo; // if the entire URL matches, no trailing chars
   path: St;
   url: St;
 }
@@ -1896,8 +1896,6 @@ interface CatsTreeCat extends Category {
 
 // For rendering a topic list.
 interface TopicListProps {
-  //categoryId: CatId;        // why this, (406826)
-  //categoryParentId: CatId;  //
   topics?: Topic[];
   store: Store;
   forumPath?: St;
@@ -1906,7 +1904,7 @@ interface TopicListProps {
   showLoadMoreButton: Bo;
   skipCatNameDescr?: Bo;
   loadMoreTopics: () => Vo;
-  activeCategory?: Cat;      // and also this? (406826)
+  activeCategory?: Cat;
   noSpecificCat?: Bo;
   setCategory?: (newCatSlug: St) => Vo;
   editCategory?: () => Vo;
@@ -1918,7 +1916,7 @@ interface TopicListProps {
   setSortOrder: (sortOrder: St, remember: Bo, slashSlug: St) => Vo;
   explSetSortOrder?: St;
 
-  // For the buttons [reorder_forum_btns]
+  // For the topic list sort and filter buttons. [reorder_forum_btns]
   location?: ReactRouterLocation;
   queryParams?: UrlParamsMap;
   history?: ReactRouterHistory;

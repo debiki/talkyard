@@ -210,7 +210,7 @@ export const ForumComponent = createReactClass(<any> {
         newTopicTypes: [],
         slug: '',
         description: '',
-        // Whatever:
+        // Whatever: (cannot create topics in this cat anyway)
         defaultTopicType: PageRole.Discussion,
       };
     }
@@ -302,20 +302,6 @@ export const ForumComponent = createReactClass(<any> {
     const activeCategory: Cat | U = this.getActiveCategory(currentCategorySlug);
     const layout = store.currentPage.pageLayout;
 
-    /*
-    const childProps = _.assign({}, {
-      store: store,
-      forumPath,
-      useTable: this.state.useWideLayout && layout != TopicListLayout.NewsFeed,
-      sortOrderRoute,
-      queryParams: parseQueryString(this.props.location.search),
-      activeCategory: activeCategory,
-      setCategory: this.setCategory,
-      editCategory: this.editCategory,
-      topPeriod: this.state.topPeriod,
-      setTopPeriod: this.setTopPeriod,
-    }); */
-
     /* Remove this? Doesn't look nice & makes the categories page look complicated.
     var topsAndCatsHelp = this.props.sortOrderRoute === RoutePathCategories
       ? HelpMessageBox({ message: topicsAndCatsHelpMessage, className: 'esForum_topicsCatsHelp' })
@@ -339,18 +325,12 @@ export const ForumComponent = createReactClass(<any> {
           const childProps: ForumButtonsProps & LoadAndListCatsProps = {
             store,
             forumPath,
-            //useTable: this.state.useWideLayout && layout != TopicListLayout.NewsFeed,
+            activeCategory,
+            isCategoriesRoute: true,
             sortOrderRoute,
             setSortOrder: this.setSortOrder,
             explSetSortOrder: state.explSetSortOrder,
-            queryParams: parseQueryString(routerProps.location.search), // was: this.props
-            activeCategory,
-            //setCategory: this.setCategory,
-            //editCategory: this.editCategory,
-            //topPeriod: this.state.topPeriod,
-            //setTopPeriod: this.setTopPeriod,
-            //...childProps,
-            isCategoriesRoute: true,
+            queryParams: parseQueryString(routerProps.location.search),
             ...routerProps,
           };
           // Don't use <div> — then DuckDuckGo and Bing can mistake this
@@ -371,18 +351,18 @@ export const ForumComponent = createReactClass(<any> {
         Route({ path: rootSlash + ':sortOrder?/:categorySlug?', strict: true,
                 render: (routerProps: ReactRouterProps) => {
           const childProps: ForumButtonsProps & LoadAndListTopicsProps = { // [.btn_props]
-            store: store,
+            store,
             forumPath,
             useTable: state.useWideLayout && layout != TopicListLayout.NewsFeed,
-            sortOrderRoute,
-            setSortOrder: this.setSortOrder,
-            explSetSortOrder: state.explSetSortOrder,
-            queryParams: parseQueryString(routerProps.location.search), // was: this.props
             activeCategory,
             setCategory: this.setCategory,
             editCategory: this.editCategory,
+            sortOrderRoute,
+            setSortOrder: this.setSortOrder,
+            explSetSortOrder: state.explSetSortOrder,
             topPeriod: state.topPeriod,
             setTopPeriod: this.setTopPeriod,
+            queryParams: parseQueryString(routerProps.location.search),
             ...routerProps,
           };
           return linkWapper({},
@@ -458,7 +438,7 @@ const ForumIntroText = createComponent({
 
 
 
-interface ForumButtonsProps {  // extends ReactRouterProps, but better get in field?
+interface ForumButtonsProps {
   store: Store;
   forumPath: St;
   activeCategory?: Cat;
@@ -466,8 +446,8 @@ interface ForumButtonsProps {  // extends ReactRouterProps, but better get in fi
   sortOrderRoute: St;
   setSortOrder: (sortOrder: St, remember: Bo, slashSlug: St) => Vo;
   explSetSortOrder?: St;
-  location: ReactRouterLocation;
   queryParams: { [paramName: string]: St };
+  location: ReactRouterLocation;
   history: ReactRouterHistory;
 }
 
@@ -822,6 +802,12 @@ interface LoadAndListTopicsProps {
   setTopPeriod: (period: TopTopicsPeriod) => Vo;
 }
 
+interface LoadAndListTopicsState {
+  topics?: Topic[];
+  minHeight?: Nr;
+  showLoadMoreButton?: Bo;
+}
+
 
 const LoadAndListTopics = createFactory({
   displayName: 'LoadAndListTopics',
@@ -1054,17 +1040,16 @@ const LoadAndListTopics = createFactory({
 
   render: function() {
     const props: LoadAndListTopicsProps = this.props;
+    const state: LoadAndListTopicsState = this.state;
     const topicListProps: TopicListProps = {
-      //categoryId: this.state.categoryId,              // why this, (406826)
-      //categoryParentId: this.state.categoryParentId,  //
-      topics: this.state.topics,
+      topics: state.topics,
       store: props.store,
       forumPath: props.forumPath,
       useTable: props.useTable,
-      minHeight: this.state.minHeight,
-      showLoadMoreButton: this.state.showLoadMoreButton,
+      minHeight: state.minHeight,
+      showLoadMoreButton: state.showLoadMoreButton,
       loadMoreTopics: this.loadMoreTopics,
-      activeCategory: props.activeCategory,   // and also this? (406826)
+      activeCategory: props.activeCategory,
       setCategory: props.setCategory,
       editCategory: props.editCategory,
       orderOffset: this.getOrderOffset(),
@@ -1075,10 +1060,10 @@ const LoadAndListTopics = createFactory({
       setSortOrder: props.setSortOrder,
       explSetSortOrder: props.explSetSortOrder,
 
-      // For the buttons [.reorder_forum_btns] — those propr are included [.btn_props].
-      location: (props as any as  ForumButtonsProps).location,
-      queryParams: (props as any as  ForumButtonsProps).queryParams,
-      history: (props as any as  ForumButtonsProps).history,
+      // For the topic list buttons [.reorder_forum_btns] — props included [.btn_props].
+      location: (props as any as ForumButtonsProps).location,
+      queryParams: (props as any as ForumButtonsProps).queryParams,
+      history: (props as any as ForumButtonsProps).history,
     };
     return TopicsList(topicListProps);
   },
@@ -1123,17 +1108,6 @@ export const TopicsList = createComponent({
       // will be displayed (4JKSWX2). — But don't show any "Loading..." message here.
       return null;
     }
-    /*
-    if (!topics) {
-      // The min height preserves scrollTop, even though the topic list becomes empty
-      // for a short while (which would otherwise reduce the windows height which
-      // in turn might reduce scrollTop).
-      // COULD make minHeight work when switching to the Categories view too? But should
-      // then probably scroll the top of the categories list into view.
-      // COULD use store.topics, used when rendering server side, but for now:
-      // Moved to below instead [.is_loading]
-      return r.p({ style: { minHeight: props.minHeight } }, t.Loading);
-    } */
 
     const useTable: Bo = props.useTable;
     const orderOffset: OrderOffset = props.orderOffset;
@@ -1142,7 +1116,7 @@ export const TopicsList = createComponent({
 
     const topicElems = topics.map((topic: Topic) => {
       const topicRowProps: TopicRowProps = {
-          store, topic, // categories: store.currentCategories,
+          store, topic,
           activeCatId: activeCategory?.id, orderOffset,
           key: topic.pageId, sortOrderRoute: props.sortOrderRoute,
           doItVotesPopFirst, inTable: useTable, forumPath: props.forumPath };
@@ -1174,7 +1148,7 @@ export const TopicsList = createComponent({
         ? r.tr({ key: 'ExplIcns' }, r.td({ colSpan: 5 }, iconsHelpStuff))
         : r.li({ key: 'ExplIcns', className: 'c_F_TsL_T clearfix' }, iconsHelpStuff));
 
-    let loadMoreTopicsBtn;
+    let loadMoreTopicsBtn: RElm;
     if (props.showLoadMoreButton) {
       const queryString = '?' + debiki2.ServerApi.makeForumTopicsQueryParams(orderOffset);
       loadMoreTopicsBtn =
@@ -1185,7 +1159,7 @@ export const TopicsList = createComponent({
           } }, t.LoadMore));
     }
 
-    let topTopicsPeriodButton;
+    let topTopicsPeriodButton: RElm;
     if (orderOffset.sortOrder === TopicSortOrder.ScoreAndBumpTime) {
       const makeTopPeriodListItem = (period: TopTopicsPeriod, text?: string) => {
         return ExplainingListItem({ onSelect: () => props.setTopPeriod(period),
@@ -1277,8 +1251,16 @@ export const TopicsList = createComponent({
     }
     const forumButtons = !showForumBtns ? null : ForumButtons(forumButtonProps);
 
-    // Dim the topics list until topics loaded.  [.is_loading]
+    // Dim the topics list until topics loaded.
     // Looks better than just removing it completely.
+    // -- Is this still needed?: -------
+    // The min height preserves scrollTop, even though the topic list becomes empty
+    // for a short while (which would otherwise reduce the windows height which
+    // in turn might reduce scrollTop).
+    // COULD make minHeight work when switching to the Categories view too? But should
+    // then probably scroll the top of the categories list into view.
+    // COULD use store.topics, used when rendering server side, but for now:
+    // ---------------------------------
     const loadingStyle = !isLoading ? {} : {
       minHeight: props.minHeight ,
       pointerEvents: 'none',
