@@ -1878,12 +1878,12 @@ export class TyE2eTestBrowser {
     waitUntilElementNotOccluded(selector: string, opts: {
           okayOccluders?: string, timeoutMs?: number, timeoutIsFine?: boolean } = {}): boolean {
       dieIf(!selector, '!selector,  [TyE7WKSH206]');
-      let result: string | true;
+      let result: [St, St] | true;
       return this.waitUntil(() => {
-        result = <string | true> this.#br.execute(function(selector, okayOccluders): boolean | string {
+        result = <[St, St] | true> this.#br.execute(function(selector, okayOccluders): [St, St] | Bo {
           var elem = document.querySelector(selector);
           if (!elem)
-            return `No elem matches:  ${selector}`;
+            return [`No elem matches:  ${selector}`, ''];
 
           var rect = elem.getBoundingClientRect();
           var middleX = rect.left + rect.width / 2;
@@ -1891,13 +1891,13 @@ export class TyE2eTestBrowser {
           var elemAtTopOfCenter = document.elementFromPoint(middleX, middleY);
           if (!elemAtTopOfCenter) {
             // This happens if the elem is outside the viewport.
-            return `Elem not in viewport? ` +
+            return [`Elem not in viewport? ` +
                 `elementFromPoint(${middleX}, ${middleY}) returns: ${elemAtTopOfCenter}, ` +
                 `elem top left width height: ` +
                   `${rect.left}, ${rect.top}, ${rect.width}, ${rect.height}\n` +
                 `--- elem.innerHTML.substr(0,100): ------------------------\n` +
                 `${elem.innerHTML?.substr(0,100)}\n` +
-                `----------------------------------------------------------`;
+                `----------------------------------------------------------`, ''];
           }
 
           // Found elem directly, or found a nested elem inside?
@@ -1931,11 +1931,12 @@ export class TyE2eTestBrowser {
           if (elemIdClass === okayOccluders) {
             return true;
           }
+          var occludersTextContent = elemAtTopOfCenter.textContent;
           // Return the id/class of the thing that occludes 'elem'.
-          return `Occluded by: ${elemIdClass + maybeWeird}`;
+          return [`Occluded by: ${elemIdClass + maybeWeird}`, occludersTextContent];
         }, selector, opts.okayOccluders || '');
 
-        dieIf(!_.isBoolean(result) && !_.isString(result),
+        dieIf(!_.isBoolean(result) && !_.isString(result[0]) && !_.isString(result[1]),
             `Error checking if elem interactable, result: ${
                 JSON.stringify(result) }  [TyE306KT73S]`);
 
@@ -1946,7 +1947,7 @@ export class TyE2eTestBrowser {
         message: () =>
             `Waiting for elem [ ${selector} ] to not be occluded, ` +
                 `okayOccluders: [ ${opts.okayOccluders} ],\n` +
-            `problem: ${result}`,
+            `problem: ${result[0]}, occluder's text content: """${result[1]}"""`,
 
       });
     }

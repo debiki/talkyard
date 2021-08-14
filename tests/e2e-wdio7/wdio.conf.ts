@@ -488,6 +488,10 @@ export const config = { // doesn't work: WebdriverIO.Config = {
     global.wdioBrowserB = global.browserB; // only in multiremote tests
     global.wdioBrowserC = global.browserC; //  — "" —
 
+    global.wdioBrowserA.setWindowSize(1150, 1150);
+    if (global.wdioBrowserB) global.wdioBrowserB.setWindowSize(1150, 1150);
+    if (global.wdioBrowserC) global.wdioBrowserC.setWindowSize(1150, 1150);
+
     // Extremely confusing if calling the wrong $, e.g.:
     //   $('#e_TermsL').getHTML();
     // instead of:
