@@ -32,6 +32,13 @@ $isWideMinWidth = 900px;
   overflow-x: hidden;
 
 
+.c_F_0Cat
+  background: hsl(0 0% 93%);
+  padding: 1px 20px 20px;
+  .btn
+    margin-right: 8px;
+
+
 .s_F_Ts_T_Con-Para
   display: block;
   padding-top: 0 !important;
@@ -154,8 +161,6 @@ html.js:not(.dw-react-started)
   .esForum_catsNav_sort
     margin: 0 8px 7px 0;  // the margin-bottom adds some vertical space, if float drops
 
-.esForum_catsNav_btn.n_ExplSel
-  box-shadow: 1px 1px 7px hsl(0deg 0% 40%) inset !important;
 
 .esF_BB_SortBtn
   border: none !important;
@@ -184,7 +189,7 @@ html.js:not(.dw-react-started)
         border-color = hsl(0, 0%, 80%);
     &.active
       cursor: default;
-      background: hsl(0, 0%, 96%);
+      background: hsl(0, 0%, 97%);
       border-top: $border;
       border-bottom: $border;
       border-left: none;
@@ -192,8 +197,13 @@ html.js:not(.dw-react-started)
       padding-left: $sideWithBorder + 1;
       padding-right: $sideWithBorder + 1;
       font-weight: normal;
-      box-shadow: 1px 2px 5px hsl(0, 0%, 77%) inset;
+      box-shadow: 1px 2px 5px hsl(0, 0%, 74%) inset;
       color: hsl(0, 0%, 21%);
+    &.n_ExplSel
+      // Give it an even more stiky-down-pressed look.
+      background: hsl(0, 0%, 96%);
+      box-shadow: 1px 1px 7px hsl(0 0% 42%) inset;
+      color: hsl(0 0% 17%);
 
 .esForum_navLink
   float: left;
@@ -960,13 +970,12 @@ $less_forum_padding_width = 680px;
 // Forum in list layout (not table)
 //------------------------
 
-//$numRepliesWidth = 70px; // dupl below [3WKF04]
 $topicTitlePadding = 6px;
 $row2PaddingBottom = 7px;
 
 .c_F_TsL_T
-  display: flex; // ok w flex on <li> ?
-  //list-style: none; — not needed, is display: flex, not display: list-item.
+  display: flex; // this changes from display: list-item to flex on <li> (that's fine).
+  //list-style: none; — not needed, is display: flex, not list-item.
   margin: 0;
   padding: (12px - $topicTitlePadding) 0 6px;
   border-top: 1px solid hsl(0, 0%, 86%);
@@ -987,7 +996,6 @@ $row2PaddingBottom = 7px;
 
 .c_F_TsL_T_Title
   display: inline-block;
-  //width: calc(100% - 70px); // $numRepliesWidth [3WKF04] doesn't work in here, why not?
   padding-right: 15px;
   word-break: break-word;
   > a:first-child
@@ -1010,7 +1018,6 @@ $row2PaddingBottom = 7px;
 .c_F_TsL_T_Stats
   display: inline-block;
   white-space: nowrap;
-  //width: $numRepliesWidth;
   padding: $topicTitlePadding 0 0 20px;
   text-align: right;
 
@@ -1069,8 +1076,8 @@ $row2PaddingBottom = 7px;
 // Votes
 
 // In list alt 1, its own column to the left
-.esForum_topics_topic .c_TpcDvo,   // ... vert_dovotes
-.c_F_TsL_T .n_Col1 .c_TpcDvo
+.esForum_topics_topic .c_TpDvo,   // ... vert_dovotes
+.c_F_TsL_T .n_Col1 .c_TpDvo
   display: block;
   text-align: center;
   .icon-heart
@@ -1085,43 +1092,52 @@ $row2PaddingBottom = 7px;
 .c_F_TsT-OneLine
   .c_F_TsT_T_Dvo
     vertical-align: middle;
-  .c_TpcDvo .icon-heart:first-child
+  .c_TpDvo .icon-heart:first-child
     display: inline-block;
     margin-right: 4px;
     font-size: 15px;
 
-.esForum_topics_topic .c_TpcDvo
+.esForum_topics_topic .c_TpDvo
   padding-right: 3px;
   // Would be better to merge with ..dw-tpc-title somehow.
   padding-top: 3px;
 
-.c_F_TsL_T .n_Col1 .c_TpcDvo
+.c_F_TsL_T .n_Col1 .c_TpDvo
   padding-top: 6px;
 
 // In list alt 2, next to num-replies
-.c_F_TsL_T_Stats .c_TpcDvo
+.c_F_TsL_T_Stats .c_TpDvo
   padding-right: 7px;
   .icon-heart
     font-size: 15px;
     padding: 0 2px 1px 0px;
     margin-right: 4px;
 
-.c_TpcDvo .icon-heart
+.c_TpDvo .icon-heart
   color: white;
   text-shadow: 0 0 1px black;
 
-.c_TpcDvo:hover .icon-heart
+/* Later, once vote-from-topic-list has been impl. [vote_from_tp_ls]
+.c_TpDvo:hover .icon-heart
   background: hsl(207 100% 94%);
   outline: hsl(207 100% 92%);
   text-shadow: 1px 1px 3px hsl(207deg 100% 30%);
+  */
 
-.c_TpcDvo
+.c_TpDvo
+  // Do-It vote count text:
+  .c_TpDiVo_Ttl
+    color: hsl(0 0% 42%);
+
+  &.c_DiVo-0 .c_TpDiVo_Ttl
+    color: hsl(0 0% 48%);
+
+  // Do-It vote icon — stronger red color, the more votes.
   &.c_DiVo-1 .icon-heart
-    //text-shadow: 1px 1px 3px hsl(7deg 100% 40%) !important;
-    text-shadow: 1px 1px 3px hsl(7deg 35% 34%) !important;
+    text-shadow: 1px 1px 3px hsl(7deg 25% 40%) !important;
 
   &.c_DiVo-2 .icon-heart
-    text-shadow: 1px 1px 4px hsl(7deg 37% 34%) !important;
+    text-shadow: 1px 1px 4px hsl(7deg 33% 34%) !important;
 
   &.c_DiVo-3 .icon-heart
     text-shadow: 1px 1px 5px hsl(7deg 40% 34%) !important;
@@ -1131,7 +1147,6 @@ $row2PaddingBottom = 7px;
 
   &.c_DiVo-5 .icon-heart
     text-shadow: 1px 1px 7px hsl(7deg 50% 34%) !important;
-    //text-shadow: 1px 1px 9px hsl(7deg 100% 30%) !important;
 
   &.c_DiVo-6 .icon-heart
     text-shadow: 1px 1px 7px hsl(7deg 55% 34%) !important;

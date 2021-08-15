@@ -2866,23 +2866,27 @@ trait PostsDao {
   }
 
 
-  private def updatePageAndPostVoteCounts(post: Post, tx: SiteTransaction): Unit = {
+  /**
+    * @param post — post before actions done
+    * @param tx
+    */
+  private def updatePageAndPostVoteCounts(post: Post, tx: SiteTransaction): U = {
     dieIf(post.nr < PageParts.BodyNr, "TyE4WKAB02")
     val actions = tx.loadActionsDoneToPost(post.pageId, postNr = post.nr)
     val readStats = tx.loadPostsReadStats(post.pageId, Some(post.nr))
     val postAfter = post.copyWithUpdatedVoteAndReadCounts(actions, readStats)
 
-    val numNewDoVotes = 0
-    val numNewDontVotes = 0
+    val numNewDoIts = postAfter.numDoItVotes - post.numDoItVotes
+    val numNewDoNots = postAfter.numDoNotVotes - post.numDoNotVotes
     val numNewLikes = postAfter.numLikeVotes - post.numLikeVotes
     val numNewWrongs = postAfter.numWrongVotes - post.numWrongVotes
     val numNewBurys = postAfter.numBuryVotes - post.numBuryVotes
     val numNewUnwanteds = postAfter.numUnwantedVotes - post.numUnwantedVotes
 
-    val (numNewOpDoVotes, numNewOpDontVotes, numNewOpLikes, numNewOpWrongs,
+    val (numNewOpDoIts, numNewOpDoNots, numNewOpLikes, numNewOpWrongs,
           numNewOpBurys, numNewOpUnwanteds) =
       if (post.isOrigPost)
-        (numNewDoVotes, numNewDontVotes, numNewLikes, numNewWrongs,
+        (numNewDoIts, numNewDoNots, numNewLikes, numNewWrongs,
           numNewBurys, numNewUnwanteds)
       else
         (0, 0, 0, 0, 0, 0)
@@ -2895,8 +2899,8 @@ trait PostsDao {
       numUnwanteds = pageMetaBefore.numUnwanteds + numNewUnwanteds,
       // For now: use max() because the db fields were just added so some counts are off.
       // (but not for Do-It, Do-Not, Unwanted — they got added after the vote count fields)
-      numOrigPostDoVotes = pageMetaBefore.numOrigPostDoVotes + numNewOpDoVotes,
-      numOrigPostDontVotes = pageMetaBefore.numOrigPostDontVotes + numNewOpDontVotes,
+      numOrigPostDoItVotes = pageMetaBefore.numOrigPostDoItVotes + numNewOpDoIts,
+      numOrigPostDoNotVotes = pageMetaBefore.numOrigPostDoNotVotes + numNewOpDoNots,
       numOrigPostLikeVotes = math.max(0, pageMetaBefore.numOrigPostLikeVotes + numNewOpLikes),
       numOrigPostWrongVotes = math.max(0, pageMetaBefore.numOrigPostWrongVotes + numNewOpWrongs),
       numOrigPostBuryVotes = math.max(0, pageMetaBefore.numOrigPostBuryVotes + numNewOpBurys),

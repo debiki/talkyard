@@ -541,8 +541,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.numRepliesVisible.asAnyRef,
       newMeta.numRepliesTotal.asAnyRef,
       newMeta.numPostsTotal.asAnyRef,
-      newMeta.numOrigPostDoVotes.asAnyRef,
-      newMeta.numOrigPostDontVotes.asAnyRef,
+      newMeta.numOrigPostDoItVotes.asAnyRef,
+      newMeta.numOrigPostDoNotVotes.asAnyRef,
       newMeta.numOrigPostLikeVotes.asAnyRef,
       newMeta.numOrigPostWrongVotes.asAnyRef,
       newMeta.numOrigPostBuryVotes.asAnyRef,
@@ -592,8 +592,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         NUM_REPLIES_VISIBLE = ?,
         NUM_REPLIES_TOTAL = ?,
         num_posts_total = ?,
-        num_op_do_votes_c = ?,
-        num_op_dont_votes_c = ?,
+        num_op_do_it_votes_c = ?,
+        num_op_do_not_votes_c = ?,
         NUM_OP_LIKE_VOTES = ?,
         NUM_OP_WRONG_VOTES = ?,
         NUM_OP_BURY_VOTES = ?,
@@ -1209,8 +1209,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       // Page cannot have been bumped yet, since it's getting created now.
       require(pageMeta.bumpedAt.isEmpty, "TyE2AKB40F")
       // It's getting created, so shouldn't be any votes or replies etc yet.
-      require(pageMeta.numOrigPostDoVotes == 0, "TyE4KPE2")
-      require(pageMeta.numOrigPostDontVotes == 0, "TyE4KPE3")
+      require(pageMeta.numOrigPostDoItVotes == 0, "TyE4KPE2")
+      require(pageMeta.numOrigPostDoNotVotes == 0, "TyE4KPE3")
       require(pageMeta.numOrigPostLikeVotes == 0, "DwE4KPE8")
       require(pageMeta.numOrigPostWrongVotes == 0, "DwE2PKFE9")
       require(pageMeta.numOrigPostBuryVotes == 0, "DwE44KP5")
@@ -1256,8 +1256,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         num_replies_visible,
         num_replies_total,
         num_posts_total,
-        num_op_do_votes_c,
-        num_op_dont_votes_c,
+        num_op_do_it_votes_c,
+        num_op_do_not_votes_c,
         num_op_like_votes,
         num_op_wrong_votes,
         num_op_bury_votes,
@@ -1316,8 +1316,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.numRepliesVisible.asAnyRef,
       pageMeta.numRepliesTotal.asAnyRef,
       pageMeta.numPostsTotal.asAnyRef,
-      pageMeta.numOrigPostDoVotes.asAnyRef,
-      pageMeta.numOrigPostDontVotes.asAnyRef,
+      pageMeta.numOrigPostDoItVotes.asAnyRef,
+      pageMeta.numOrigPostDoNotVotes.asAnyRef,
       pageMeta.numOrigPostLikeVotes.asAnyRef,
       pageMeta.numOrigPostWrongVotes.asAnyRef,
       pageMeta.numOrigPostBuryVotes.asAnyRef,

@@ -374,18 +374,18 @@ const CatSettings = createClassAndFactory({
         r.span({ className: 'help-block' },
           "New topics in this category will be of this type, by default."));
 
-    const pageTypeSingName = editor.forumTopicType_toEnSingSt(category.defaultTopicType);
     const pageTypePlurName = editor.forumTopicType_toEnPlSt(category.defaultTopicType);
+    // The label is like "Upvote ideas" or "Upvote questions", depending on the page type.
     const doItVotes =
-                          // or label: "Upvote features" or "Idea tracker"?
-      Input({ type: 'checkbox', label: `Upvote ${pageTypePlurName}`, id: 'e2eSetDefCat',
+      Input({ type: 'checkbox', className: 'e_DoVote',
+        label: `Upvote ${pageTypePlurName}`,
         checked: category.doItVotesPopFirst, onChange: (event: CheckboxEvent) => {
           this.props.updateCategory({ doItVotesPopFirst: event.target.checked });
         },
         help: `Let members upvote ${pageTypePlurName}, by clicking Like ` +
               `(the heart icon). ` +
-              `Sorts the ${pageTypePlurName} by popular (more votes) first. ` +
-              `Shows number of votes in the ${pageTypeSingName} list.` });
+              `Sorts the ${pageTypePlurName} by popular (more votes) first, and ` +
+              `shows number of votes.` });
 
     const rootCatId = sectPage.categoryId;
     const parentCatDropdown =

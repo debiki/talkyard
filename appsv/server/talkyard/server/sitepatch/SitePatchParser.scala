@@ -1105,8 +1105,8 @@ case class SitePatchParser(context: EdContext) {
         numRepliesVisible = readInt(jsObj, "numRepliesVisible", default = Some(0)),
         numRepliesTotal = readInt(jsObj, "numRepliesTotal", default = Some(0)),
         numPostsTotal = readInt(jsObj, "numPostsTotal", default = Some(0)),
-        numOrigPostDoVotes = readInt(jsObj, "numOrigPostDoVotes", default = Some(0)),
-        numOrigPostDontVotes = readInt(jsObj, "numOrigPostDontVotes", default = Some(0)),
+        numOrigPostDoItVotes = readInt(jsObj, "numOrigPostDoItVotes", default = Some(0)),
+        numOrigPostDoNotVotes = readInt(jsObj, "numOrigPostDoNotVotes", default = Some(0)),
         numOrigPostLikeVotes = readInt(jsObj, "numOrigPostLikeVotes", default = Some(0)),
         numOrigPostWrongVotes = readInt(jsObj, "numOrigPostWrongVotes", default = Some(0)),
         numOrigPostBuryVotes = readInt(jsObj, "numOrigPostBuryVotes", default = Some(0)),
@@ -1293,10 +1293,10 @@ case class SitePatchParser(context: EdContext) {
               if (!doItVotesPopFirst) None
               else Some(PageOrderOffset.ByScoreAndBumpTime(
                     offset = None, TopTopicsPeriod.Year)),
-        doItVotes =
+        doVoteStyle =
               if (!doItVotesPopFirst) None
-              else Some(DoItVotes.Likes),
-        doItVoteInTopicList =
+              else Some(DoVoteStyle.Likes),
+        doVoteInTopicList =
               if (!doItVotesPopFirst) None
               else Some(true),
         unlistCategory = readOptBool(jsObj, "unlistCategory").getOrElse(false),

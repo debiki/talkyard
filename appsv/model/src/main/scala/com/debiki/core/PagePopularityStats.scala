@@ -45,7 +45,7 @@ case class PagePopularityScores(
   def toPrettyString: String = {
     i"""
       |updatedAt: ${toIso8601NoSecondsNoT(updatedAt.toJavaDate)},
-      |algorithmVersion: $scoreAlgorithm,
+      |scoreAlgorithm: $scoreAlgorithm,
       |dayScore: $dayScore,
       |weekScore: $weekScore,
       |monthScore: $monthScore,
@@ -57,14 +57,17 @@ case class PagePopularityScores(
 }
 
 
-
-sealed abstract class TopTopicsPeriod(IntVal: Int) { def toInt = IntVal }
+// RENAME to TrendingPeriod
+sealed abstract class TopTopicsPeriod(val IntVal: Int) { def toInt = IntVal }
 
 object TopTopicsPeriod {
   case object Day extends TopTopicsPeriod(1)
+  // later: 2Days
   case object Week extends TopTopicsPeriod(2)
+  // later: 2Weeks
   case object Month extends TopTopicsPeriod(3)
   case object Quarter extends TopTopicsPeriod(4)
+  // later: HalfYear
   case object Year extends TopTopicsPeriod(5)
   case object All extends TopTopicsPeriod(6)
 
@@ -72,23 +75,23 @@ object TopTopicsPeriod {
     fromInt(value getOrElse { return None })
 
   def fromInt(value: i32): Option[TopTopicsPeriod] = Some(value match {
-    case 1 => Day
-    case 2 => Week
-    case 3 => Month
-    case 4 => Quarter
-    case 5 => Year
-    case 6 => All
-    case x => return None
+    case Day.IntVal => Day
+    case Week.IntVal => Week
+    case Month.IntVal => Month
+    case Quarter.IntVal => Quarter
+    case Year.IntVal => Year
+    case All.IntVal => All
+    case _ => return None
   })
 
-  def fromIntString_(value: String): Option[TopTopicsPeriod] = Some(value match {
+  def fromIntString(value: String): Option[TopTopicsPeriod] = Some(value match {
     case "1" => Day
     case "2" => Week
     case "3" => Month
     case "4" => Quarter
     case "5" => Year
     case "6" => All
-    case x => return None
+    case _ => return None
   })
 }
 

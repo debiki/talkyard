@@ -1,0 +1,22 @@
+If any upgr problems, then:
+
+[source, sql]
+----
+-- Left trim urls:
+update settings3 set sso_logout_redir_url_c = regexp_replace(
+    sso_logout_redir_url_c, '^(.*)(https?:\/\/.*)$', '\2')
+    where sso_logout_redir_url_c is not null;
+update settings3 set sso_refresh_authn_token_url_c = regexp_replace(
+    sso_refresh_authn_token_url_c, '^(.*)(https?:\/\/.*)$', '\2')
+    where sso_refresh_authn_token_url_c is not null;
+
+-- Fix hostname:
+update settings3 set sso_logout_redir_url_c = regexp_replace(
+    sso_logout_redir_url_c,
+    '^(https?:\/\/[a-z0-9_.-]+(:[0-9]+)?)[^/]*(.*)$', '\1\3')
+    where sso_logout_redir_url_c is not null;
+update settings3 set sso_refresh_authn_token_url_c = regexp_replace(
+    sso_refresh_authn_token_url_c,
+    '^(https?:\/\/[a-z0-9_.-]+(:[0-9]+)?)[^/]*(.*)$', '\1\3')
+    where sso_refresh_authn_token_url_c is not null;
+----

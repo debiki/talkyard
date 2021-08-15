@@ -269,7 +269,6 @@ const UsersTopics = createFactory<any, any>({
       showLoadMoreButton: false,
       loadMoreTopics: () => {}, // implement later, there're no buttons for
       setSortOrder: (...ignored) => {},  // .. this, here, currently anyway.
-      noSpecificCat: true,
       orderOffset: <OrderOffset> { sortOrder: TopicSortOrder.CreatedAt },
       linkCategories: false,
     };

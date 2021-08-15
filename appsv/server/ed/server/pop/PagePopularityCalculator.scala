@@ -26,6 +26,7 @@ import Prelude._
 object PagePopularityCalculator {
 
   // Currently there's just one; it has no name.
+  // If adding more, rename json field: readInt(jsObj, "algorithmVersion") to "scoreAlg"?
   val CurrentScoreAlg: PageScoreAlg = 1
 
 

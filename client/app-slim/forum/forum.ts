@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2021 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -86,7 +86,12 @@ interface ForumComponentProps extends ReactRouterProps {
 interface ForumComponentState {
   store: Store;
   topicsInStoreMightBeOld: Bo;
+  // Or combine these two into a WinWidth enum? [5KFEWR7]
+  // { Watch, MobilePortrait, MobileLandscapeOrTabletPortrait,
+  //   TabletLandscapeOrLaptopSmall, LaptopMediumOrDesktopSmall, DesktopMedium,
+  //   WideScreen }
   useWideLayout: Bo;
+  useNarrowLayout: Bo
   explSetSortOrder?: St;
   topPeriod: TopTopicsPeriod;
 }
@@ -98,10 +103,12 @@ export const ForumComponent = createReactClass(<any> {
 
   getInitialState: function() {
     const store: Store = ReactStore.allData();
+    const [useNarrowLayout, useWideLayout] = this.isPageNarrowWide(store);
     return {
       store,
       topicsInStoreMightBeOld: false,
-      useWideLayout: this.isPageWide(store),
+      useNarrowLayout,
+      useWideLayout,
       topPeriod: TopTopicsPeriod.Month,
     }
   },
@@ -142,15 +149,17 @@ export const ForumComponent = createReactClass(<any> {
     const state: ForumComponentState = this.state;
     // Dupl code [5KFEWR7]
     if (this.isGone) return;
-    const isWide = this.isPageWide();
-    if (isWide !== state.useWideLayout) {
-      this.setState({ useWideLayout: isWide } as ForumComponentState);
+    const [useNarrowLayout, useWideLayout] = this.isPageNarrowWide();
+    if (useNarrowLayout !== state.useNarrowLayout ||
+          useWideLayout !== state.useWideLayout) {
+      this.setState({ useNarrowLayout, useWideLayout } as ForumComponentState);
     }
   },
 
-  isPageWide: function(store?: Store) {
+  isPageNarrowWide: function(store?: Store): [Bo, Bo] {
     const state: ForumComponentState = this.state;
-    return store_getApproxPageWidth(store || state.store) > UseWideForumLayoutMinWidth;
+    const width = store_getApproxPageWidth(store || state.store);
+    return [width <= UseNarrowForumLayoutMaxWidth, UseWideForumLayoutMinWidth <= width];
   },
 
   setTopPeriod: function(topPeriod: TopTopicsPeriod) {
@@ -162,14 +171,8 @@ export const ForumComponent = createReactClass(<any> {
     const props: ForumComponentProps = this.props;
     const state: ForumComponentState = this.state;
 
-    // If we're in a specic category, then remember the sort order, if we switch
-    // to a different category. But if jumping to the categories list or
-    // back from there to the all topics list, forget any old sort order.
-    //const inSpecificCat = !!slashSlug;
-    //const explSetSortOrder = inSpecificCat ? sortOrder : null;
-    //const explSetSortOrder = sortOrder === RoutePathCategories ? null : sortOrder;
     const explSetSortOrder = remember &&
-            // If it's the same, then we're toggling off the expl set sort order.
+            // If it's the same, then we're toggling off the explicitly set sort order.
             sortOrder !== state.explSetSortOrder ? sortOrder : null;
     const newState: Partial<ForumComponentState> = { explSetSortOrder };
     this.setState(newState);
@@ -218,21 +221,20 @@ export const ForumComponent = createReactClass(<any> {
   },
 
   setCategory: function(newCatSlug?: St, newCat?: Cat) {
+    // @ifdef DEBUG
+    dieIf(newCatSlug && newCat && newCatSlug !== newCat.slug, 'TyE4MJLC027');
+    // @endif
     const state: ForumComponentState = this.state;
     const [forumPath, routes] = this.getForumPathAndRoutes();
     const sortOrderRoute = routes[0];
-    const currentPath = sortOrderRoute;
-    //const savedSortOrderPath = this.savedSortOrderPath;
-    //delete this.savedSortOrderPath;
 
-    // Restore any sort order from before enterng a feature-votes popular-first category.
-    let nextPath = currentPath === RoutePathCategories ?
-          RoutePathLatest : state.explSetSortOrder || RoutePathLatest; // currentPath; // (savedSortOrderPath || currentPath);
+    let nextPath = sortOrderRoute === RoutePathCategories ?
+          RoutePathLatest : state.explSetSortOrder || RoutePathLatest;
 
-    // A feature votes categories is sorted by popular-first, when one enters the category.
+    // Do-it votes categories are sorted by popular-first (unless pat has
+    // clicked another sort order button).
     if (!state.explSetSortOrder && nextPath !== RoutePathTop &&
             newCat && newCat.doItVotesPopFirst) {
-      this.savedSortOrderPath = nextPath;
       nextPath = RoutePathTop;
     }
 
@@ -354,6 +356,7 @@ export const ForumComponent = createReactClass(<any> {
             store,
             forumPath,
             useTable: state.useWideLayout && layout != TopicListLayout.NewsFeed,
+            useNarrowLayout: state.useNarrowLayout,
             activeCategory,
             setCategory: this.setCategory,
             editCategory: this.editCategory,
@@ -446,6 +449,7 @@ interface ForumButtonsProps {
   sortOrderRoute: St;
   setSortOrder: (sortOrder: St, remember: Bo, slashSlug: St) => Vo;
   explSetSortOrder?: St;
+  useNarrowLayout?: Bo;
   queryParams: { [paramName: string]: St };
   location: ReactRouterLocation;
   history: ReactRouterHistory;
@@ -571,22 +575,9 @@ const ForumButtons = createComponent({
     const me: Myself = store.me;
     const showsCategoryTree: Bo = props.isCategoriesRoute;
     const activeCategory: Cat | U = props.activeCategory;
-    if (!activeCategory) {
-      // The user has typed a non-existing category slug in the URL. Or she has just created
-      // a category, opened a page and then clicked Back in the browser. Then this page
-      // reloads, and the browser then uses cached HTML including JSON in which the new
-      // category does not yet exist. Let's try to reload the category list page:
-      // (However, if user-specific-data hasn't yet been activated, the "problem" is probably
-      // just that we're going to show a restricted category, which isn't available before
-      // user specific data added. (6KEWM02). )
-      // Or hen is not allowed to access the category.
-      return !store.userSpecificDataAdded ? null : r.p({},
-          r.br(),
-          "Category not found. Did you just create it? Or renamed it? Or you may not " +
-          "access it? Maybe it doesn't exist? [_TyE0CAT]",  // (4JKSWX2)
-          r.br(), r.br(),
-          PrimaryLinkButton({ href: '/' }, "Go to the homepage"));
-    }
+    // Backw compat, if buttons before cat title & descr ('ffBtnsBefCat').
+    if (!activeCategory)
+      return CatNotFound(store);
 
     const queryParams = props.queryParams;
     const showsTopicList = !showsCategoryTree;
@@ -603,22 +594,24 @@ const ForumButtons = createComponent({
     // @ifdef DEBUG
     dieIf(!showsCategoryTree && !props.setSortOrder, 'TyE60MREJ35');
     // @endif
+
     // The root cat has no slug.
     const anyActCatSlug: St | U = props.activeCategory.slug;
     const slashSlug = anyActCatSlug ? '/' + anyActCatSlug : '';
 
     const makeCategoryLink = (order: St, rememberSortOrder: Bo, slashSlug: St,
             text: St, linkId: St, extraClass?: St) => {
-      const explSelected = props.explSetSortOrder === order ? ' n_ExplSel' : '';
+      const explSelected = props.explSetSortOrder === order ? 'n_ExplSel ' : '';
       return NavLink({
-        // The onClick handler will remember that we set the sort order explicitly,
-        // so it'll stay, when jumping between categories ...
-        onClick: () => props.setSortOrder(order, rememberSortOrder, slashSlug),
-        // ... whilst the link let's us middle mouse click to open in new tab.
-        to: { pathname: props.forumPath + order + slashSlug, search: props.location.search },
-        id: linkId,
-        className: 'btn esForum_catsNav_btn ' + explSelected + (extraClass || ''),
-        activeClassName: 'active' }, text);
+          // The onClick handler will remember that we set the sort order explicitly,
+          // so it'll stay, when jumping between categories ...
+          onClick: () => props.setSortOrder(order, rememberSortOrder, slashSlug),
+          // ... whilst this <a> link let's us middle mouse click to open in new tab.
+          to: { pathname: props.forumPath + order + slashSlug,
+                search: props.location.search },
+          id: linkId,
+          className: 'btn esForum_catsNav_btn ' + explSelected + (extraClass || ''),
+          activeClassName: 'active' }, text);
     };
 
     let omitCategoryStuff = showsCategoryTree || !settings_showCategories(store.settings, me);
@@ -795,7 +788,8 @@ interface LoadAndListTopicsProps {
   match: ReactRouterMatch;
 
   forumPath: St;
-  useTable?: Bo;
+  useTable: Bo;
+  useNarrowLayout: Bo;
   setCategory: (newCatSlug?: St, newCat?: Cat) => Vo;
   editCategory: () => Vo;
   topPeriod: TopTopicsPeriod;
@@ -1041,11 +1035,19 @@ const LoadAndListTopics = createFactory({
   render: function() {
     const props: LoadAndListTopicsProps = this.props;
     const state: LoadAndListTopicsState = this.state;
+
+    // The category might not exist, or might be access restricted, and,
+    // if pat may see it, will then appear in a moment, once pat specific data
+    // has been activated (and then we'll continue below).
+    if (!props.activeCategory)
+      return CatNotFound(props.store);
+
     const topicListProps: TopicListProps = {
       topics: state.topics,
       store: props.store,
       forumPath: props.forumPath,
       useTable: props.useTable,
+      useNarrowLayout: props.useNarrowLayout,
       minHeight: state.minHeight,
       showLoadMoreButton: state.showLoadMoreButton,
       loadMoreTopics: this.loadMoreTopics,
@@ -1101,13 +1103,6 @@ export const TopicsList = createComponent({
     const isLoading = !props.topics;
     const topics: Topic[] = props.topics || [];
     const activeCategory: Cat | U = props.activeCategory;
-    if (!activeCategory && !props.noSpecificCat) {
-      // The category doesn't exist, or it's restricted, and maybe included in the
-      // user specific json. When the user specific json has been activated, either the
-      // category will exist and we won't get to here again, or a "category not found" message
-      // will be displayed (4JKSWX2). — But don't show any "Loading..." message here.
-      return null;
-    }
 
     const useTable: Bo = props.useTable;
     const orderOffset: OrderOffset = props.orderOffset;
@@ -1119,7 +1114,8 @@ export const TopicsList = createComponent({
           store, topic,
           activeCatId: activeCategory?.id, orderOffset,
           key: topic.pageId, sortOrderRoute: props.sortOrderRoute,
-          doItVotesPopFirst, inTable: useTable, forumPath: props.forumPath };
+          doItVotesPopFirst, inTable: useTable, useNarrowLayout: props.useNarrowLayout,
+          forumPath: props.forumPath };
       return TopicRow(topicRowProps);
     });
 
@@ -1186,7 +1182,7 @@ export const TopicsList = createComponent({
 
     const forumPage: Page = store.currentPage;
     const oneLinePerTopic = forumPage.pageLayout <= TopicListLayout.TitleExcerptSameLine;
-    const oneLineClass = oneLinePerTopic ? ' c_F_TsT-OneLine' : ''; // [tab_do_vo_1_line]
+    const oneLineClass = oneLinePerTopic ? ' c_F_TsT-OneLine' : '';
 
     const catDeld = activeCategory && activeCategory.isDeleted;
     const deletedClass = !catDeld ? '' : ' s_F_Ts-CatDd';
@@ -1243,6 +1239,7 @@ export const TopicsList = createComponent({
       sortOrderRoute: props.sortOrderRoute,
       setSortOrder: props.setSortOrder,
       explSetSortOrder: props.explSetSortOrder,
+      useNarrowLayout: props.useNarrowLayout,
 
       // [.reorder_forum_btns]
       location: props.location,
@@ -1251,7 +1248,7 @@ export const TopicsList = createComponent({
     }
     const forumButtons = !showForumBtns ? null : ForumButtons(forumButtonProps);
 
-    // Dim the topics list until topics loaded.
+    // Dim the topics list until topics loaded. UNTESTED after code moved to here  !.
     // Looks better than just removing it completely.
     // -- Is this still needed?: -------
     // The min height preserves scrollTop, even though the topic list becomes empty
@@ -1425,6 +1422,7 @@ interface TopicRowProps {
   orderOffset: OrderOffset;
   doItVotesPopFirst: Bo;
   inTable: Bo;
+  useNarrowLayout?: Bo;
   key: St | Nr,
 }
 
@@ -1639,14 +1637,6 @@ const TopicRow = createComponent({
             ? topic.createdAtMs
             : topic.bumpedAtMs || topic.createdAtMs));
 
-    // Calculate at same place as useWideLayout. For <= 350 px, e.g. smart watches?
-    const useNarrowLayout = false;
-
-    /* If each topic is just one line in the table, show the do-votes on one line too.
-    const tableDovotesOneLine = props.inTable && // [tab_do_vo_1_line]
-            forumPage.pageLayout <= TopicListLayout.TitleExcerptSameLine;
-            */
-
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (props.inTable) return (
       r.tr({ className: 'esForum_topics_topic e2eF_T' },  // (update BJJ CSS before renaming 'esForum_topics_topic' (!))
@@ -1667,7 +1657,7 @@ const TopicRow = createComponent({
         // skip for now:  r.td({ className: 'num dw-tpc-feelings' }, feelings)));  [8PKY25]
     else return (
       r.li({ className: 'c_F_TsL_T e2eF_T' },
-        !props.doItVotesPopFirst || useNarrowLayout ? null :
+        !props.doItVotesPopFirst || props.useNarrowLayout ? null :
             r.div({ className: 'n_Col1' },
               TopicUpvotes(topic, true /*iconFirst*/)),
         r.div({ className: 'n_Col2' },
@@ -1675,7 +1665,7 @@ const TopicRow = createComponent({
             r.div({ className: 'c_F_TsL_T_Title e2eTopicTitle' },
               makeTitle(topic, anyPinOrHiddenIconClass, settings, me)),
             r.div({ className: 'c_F_TsL_T_Stats'},
-              !props.doItVotesPopFirst || !useNarrowLayout ? null :
+              !props.doItVotesPopFirst || !props.useNarrowLayout ? null :
                     TopicUpvotes(topic, false /*iconFirst*/),
               r.span({ className: 'c_F_TsL_T_NumRepls' },
                 topic.numPosts - 1, r.span({ className: 'icon-comment-empty' })))),
@@ -1696,12 +1686,14 @@ function TopicUpvotes(topic: Topic, iconFirst: Bo): RElm {
   const logLikes = Math.trunc(Math.log2(topic.numOrigPostLikes + 1));
   const votesColorClass = Math.min(logLikes, 11);  // [max_log_likes]
 
-  const upvoteIcon = r.span({ className: 'icon-heart' });  // or Reddit/SO upvote button?
-  const upvoteCount = r.span({ className: 'c_TpcDiVo_Ttl' }, topic.numOrigPostLikes);
+  // Later, if DoVoteStyle is DoIt/AndDoNot, instead of a Like icon, there'll be
+  // up and down arrows.
+  const upvoteIcon = r.span({ className: 'icon-heart' });
+  const upvoteCount = r.span({ className: 'c_TpDiVo_Ttl' }, topic.numOrigPostLikes);
   return (
-      r.span({ className: 'c_TpcDvo c_DiVo-' + votesColorClass },
-        // In vertical layout, the icon is above the numbe, so needs to be first here.
-        // Otherwise, the number is before the icon, e.g. 5 <3 (and the icons
+      r.span({ className: 'c_TpDvo c_DiVo-' + votesColorClass },
+        // In vertical layout, the icon is above the vote count, then, icon first here.
+        // Otherwise, the number is before the icon, e.g. 5 <like-icon>  (and the icons
         // right aligned).
         iconFirst ? upvoteIcon : null,
         upvoteCount,
@@ -2073,6 +2065,29 @@ function createTopicBtnTitle(category: Cat) {
   return title;
 }
 
+
+function CatNotFound(store: Store) {
+  // Can happen if 1) pat types a non-existing category slug in the URL.
+  // Or if 2) hen has just created a category, clicked a link to another page,
+  // and then clicked Back in the browser, and thus navigated back to the forum page
+  // — then, the browser reloads the forum page, but uses cached forum page HTML
+  // which includes JSON in which the newly created category is missing (wasn't
+  // created, when the forum page was first loaded).
+  // However, if 3) user-specific-data hasn't yet been activated, the reason the cat
+  // seems missing, can be that it's access restricted, and will get added to the
+  // store's category list in a moment, when user specific data gets activated (6KEWM02).
+  // Or 4) pat may indeed not see the cat.
+  // So, let's wait until user specific data added, before showing any not-found error.
+  return !store.userSpecificDataAdded ? null : (
+    r.div({ className: 'c_F_0Cat' },
+      r.h3({}, "Category not found."),
+      r.p({},
+      "Did you just create it? Or renamed it?", r.br(),
+      "Or you may not access it? Maybe it doesn't exist? [_TyE0CAT]"),
+      r.br(),
+      PrimaryLinkButton({ href: '/' }, "Go to Homepage"),
+      Button({ onClick: () => location.reload() }, "Reload page")));
+}
 
 //------------------------------------------------------------------------------
    }

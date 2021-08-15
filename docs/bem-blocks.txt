@@ -116,6 +116,7 @@ Perm,
 Prm = permission, e.g.: 's_PP_PrmsTb' = profile page, permissions tab
 Pp = participant  NO change to Pat
 P, Pg = page
+Pop = popular
 Prvw = preview
 Pv = Preview, e.g. LnPv = link preview
 Po = post
@@ -149,6 +150,7 @@ Trt = threat
 Tru = trust
 Tsk = task
 Ttl = title
+Top = top (as in popular)
 Txt = text
 Tr  = Trust,  eg. TrLv = trust level NO change to Tru & Trt
 Tx  = text (tx = transaction is only server side)

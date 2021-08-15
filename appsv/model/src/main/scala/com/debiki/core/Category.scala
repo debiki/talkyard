@@ -22,25 +22,29 @@ import java.{util => ju}
 import scala.collection.immutable
 
 
-sealed abstract class DoItVotes(val IntVal: i32) { def toInt: i32 = IntVal }
-object DoItVotes {
-  case object Disabled extends DoItVotes(0)
-  case object Likes extends DoItVotes(1)
-  case object LikesAsUpvotes extends DoItVotes(2)
-  case object LikesAsUpvotesAndDownvotes extends DoItVotes(3)
-  case object Upvotes extends DoItVotes(4)
-  case object UpvotesAndDownvotes extends DoItVotes(5)
+sealed abstract class DoVoteStyle(val IntVal: i32) { def toInt: i32 = IntVal }
+object DoVoteStyle {
+  case object Disabled extends DoVoteStyle(0)
+  case object Likes extends DoVoteStyle(1)
+  /** The Like looks like an arrow up symbol, on the topic list page
+    * — technically it's still a Like vote. */
+  case object LikesUpIcon extends DoVoteStyle(2)
+  /** Same as LikesUpIcon, but there's also a down icon for Do-Not votes. */
+  case object LikesUpIconAndDoNot extends DoVoteStyle(3)
+  /** Only Do-It votes, counted separately from Like votes. */
+  case object DoIt extends DoVoteStyle(4)
+  case object DoItAndDoNot extends DoVoteStyle(5)
 
-  def fromOptInt32(value: Opt[i32]): Opt[DoItVotes] =
+  def fromOptInt32(value: Opt[i32]): Opt[DoVoteStyle] =
     fromInt32(value getOrElse { return None })
 
-  def fromInt32(value: i32): Opt[DoItVotes] = Some(value match {
+  def fromInt32(value: i32): Opt[DoVoteStyle] = Some(value match {
     case Disabled.IntVal => Disabled
     case Likes.IntVal => Likes
-    case LikesAsUpvotes.IntVal => LikesAsUpvotes
-    case LikesAsUpvotesAndDownvotes.IntVal => LikesAsUpvotesAndDownvotes
-    case Upvotes.IntVal => Upvotes
-    case UpvotesAndDownvotes.IntVal => UpvotesAndDownvotes
+    case LikesUpIcon.IntVal => LikesUpIcon
+    case LikesUpIconAndDoNot.IntVal => LikesUpIconAndDoNot
+    case DoIt.IntVal => DoIt
+    case DoItAndDoNot.IntVal => DoItAndDoNot
     case _ => return None
   })
 }
@@ -100,10 +104,11 @@ case class Category(  // [exp] ok use   too long name! use Cat instead
   description: Option[String],  // REMOVE [502RKDJWF5]
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageType],
-  // None —> inherited from parent cat
+  // None —> inherited from parent cat (not impl though)
   defaultSortOrder: Opt[PageOrderOffset] = None,
-  doItVotes: Opt[DoItVotes] = None,
-  doItVoteInTopicList: Opt[Bo] = None,
+  doVoteStyle: Opt[DoVoteStyle] = None,
+  // Not impl though. [vote_from_tp_ls]
+  doVoteInTopicList: Opt[Bo] = None,
   // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?
   unlistCategory: Boolean,  // also unlists topics
   unlistTopics: Boolean,

@@ -1893,19 +1893,18 @@ interface CatsTreeCat extends Category {
 }
 
 
-
 // For rendering a topic list.
 interface TopicListProps {
   topics?: Topic[];
   store: Store;
   forumPath?: St;
   useTable?: Bo;
+  useNarrowLayout?: Bo;
   minHeight: Nr;
   showLoadMoreButton: Bo;
   skipCatNameDescr?: Bo;
   loadMoreTopics: () => Vo;
   activeCategory?: Cat;
-  noSpecificCat?: Bo;
   setCategory?: (newCatSlug: St) => Vo;
   editCategory?: () => Vo;
   orderOffset: OrderOffset;

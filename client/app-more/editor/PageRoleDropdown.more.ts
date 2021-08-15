@@ -220,15 +220,15 @@ export var PageRoleDropdown = createComponent({
 ///
 export function forumTopicType_toEnSingSt(pageType: PageType): St {
   switch (pageType) {
-    case PageRole.EmbeddedComments: return "discussion";
     case PageRole.Question: return "question";
     case PageRole.Problem: return "problem";
     case PageRole.Idea: return "idea";
+    case PageRole.EmbeddedComments: // fall through
     case PageRole.Discussion: return "discussion";
     case PageRole.OpenChat: return "chat";
     default:
       // @ifdef DEBUG
-      die(`Bad page role: ${pageType} [EsE4GUK75Z]`);
+      die(`Bad page role: ${pageType} [TyE52PK75R]`);
       // @endif
       return "topics";
   }

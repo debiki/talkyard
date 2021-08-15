@@ -364,8 +364,8 @@ case class Post(   // [exp] ok use
   numPendingFlags: Int,
   numHandledFlags: Int,
   numPendingEditSuggestions: Int,
-  numDoVotes: i32 = 0,    // for now
-  numDontVotes: i32 = 0,  // for now
+  numDoItVotes: i32 = 0,   // for now
+  numDoNotVotes: i32 = 0,  // for now
   numLikeVotes: Int,
   numWrongVotes: Int,
   numBuryVotes: Int,
@@ -644,8 +644,10 @@ case class Post(   // [exp] ok use
   }
 
 
-  def copyWithUpdatedVoteAndReadCounts(actions: Iterable[PostAction], readStats: PostsReadStats)
-        : Post = {
+  def copyWithUpdatedVoteAndReadCounts(actions: Iterable[PostAction],
+        readStats: PostsReadStats): Post = {
+    var numDoItVotes = 0
+    var numDoNotVotes = 0
     var numLikeVotes = 0
     var numWrongVotes = 0
     var numBuryVotes = 0
@@ -654,6 +656,12 @@ case class Post(   // [exp] ok use
       action match {
         case vote: PostVote =>
           vote.voteType match {
+            /*
+            case PostVoteType.DoIt =>
+              numDoItVotes += 1
+            case PostVoteType.DoNot =>
+              numDoNotVotes += 1
+             */
             case PostVoteType.Like =>
               numLikeVotes += 1
             case PostVoteType.Wrong =>
@@ -668,6 +676,8 @@ case class Post(   // [exp] ok use
     }
     val numTimesRead = readStats.readCountFor(nr)
     copy(
+      numDoItVotes = numDoItVotes,
+      numDoNotVotes = numDoNotVotes,
       numLikeVotes = numLikeVotes,
       numWrongVotes = numWrongVotes,
       numBuryVotes = numBuryVotes,

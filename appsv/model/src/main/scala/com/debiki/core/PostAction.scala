@@ -28,13 +28,25 @@ sealed abstract class PostActionType { def toInt: Int }
 
 sealed abstract class PostVoteType(val IntVal: Int) extends PostActionType { def toInt: Int = IntVal }
 object PostVoteType {
+
+  // Page votes? (These votes are cast on posts, although they are for pages
+  // — so won't be lost if merging two pages, and splitting them again.)
+  //case object DoIt extends PostVoteType(31)
+  //case object DoNot extends PostVoteType(32)
+
   // dupl numbers [2PKWQUT0] perhaps use 1,2,4,8 instead? [8FEX1Q4]
   case object Like extends PostVoteType(41)
   case object Wrong extends PostVoteType(42) // RENAME to Disagree
-  case object Bury extends PostVoteType(43)
+  case object Bury extends PostVoteType(43)  // rename to MoveDownwards? [.ren_bury]
   case object Unwanted extends PostVoteType(44)
 
+  // case object Promote/Boost/PinAtTop + priority value?  For curating the discussion
+  // case object Demote/MoveDown — but there's Bury for that alreayd,
+  // maybe rename to MoveDownwards? sounds more neutral / less negative [.ren_bury]
+
   def fromInt(value: Int): Option[PostVoteType] = Some(value match {
+    //case DoIt.IntVal => DoIt
+    //case DoNot.IntVal => DoNot
     case Like.IntVal => Like
     case Wrong.IntVal => Wrong
     case Bury.IntVal => Bury
@@ -56,7 +68,7 @@ object PostFlagType {
   // + disagree (why? for silly flaggers?)
 }
 
-
+// val toInt = 61, 62, 63, .. ?
 sealed abstract class PostStatusAction(val affectsSuccessors: Boolean)
 object PostStatusAction {
   case object HidePost extends PostStatusAction(affectsSuccessors = false)

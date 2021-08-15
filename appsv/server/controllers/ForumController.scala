@@ -158,10 +158,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
             if (!doItVotesPopFirst) None
             else Some(PageOrderOffset.ByScoreAndBumpTime(
                   offset = None, TopTopicsPeriod.Year)),
-      doItVotes =
+      doVoteStyle =
             if (!doItVotesPopFirst) None
-            else Some(DoItVotes.Likes),
-      doItVoteInTopicList =
+            else Some(DoVoteStyle.Likes),
+      doVoteInTopicList =
             if (!doItVotesPopFirst) None
             else Some(true),
       shallBeDefaultCategory = shallBeDefaultCategory,
@@ -426,8 +426,8 @@ object ForumController {
       "numWrongs" -> page.numWrongs,
       "numBurys" -> page.numBurys,
       "numUnwanteds" -> page.numUnwanteds,
-      "numOrigPostDoVotes" -> page.numOrigPostDoVotes,
-      "numOrigPostDontVotes" -> page.numOrigPostDontVotes,
+      "numOrigPostDoItVotes" -> page.numOrigPostDoItVotes,
+      "numOrigPostDoNotVotes" -> page.numOrigPostDoNotVotes,
       "numOrigPostLikes" -> page.numOrigPostLikeVotes,
       "numOrigPostReplies" -> page.numOrigPostRepliesVisible,
       "authorId" -> JsNumber(page.authorId),
@@ -446,6 +446,7 @@ object ForumController {
       "frozenAtMs" -> dateOrNull(page.frozenAt),
       "hiddenAtMs" -> JsWhenMsOrNull(page.hiddenAt),
       "deletedAtMs" -> JsDateMsOrNull(page.deletedAt))
+      // Could incl deletedById but only if requester is staff?
   }
 
 }

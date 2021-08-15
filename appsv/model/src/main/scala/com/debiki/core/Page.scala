@@ -182,7 +182,7 @@ object PageMeta {
   * @param htmlHeadTitle Text for the html <title>...</title> tag.
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
   */
-case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until  ! more
+case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
   pageId: String,
   extImpId: Option[ExtId] = None,  // RENAME to extId
   pageType: PageType,
@@ -208,8 +208,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   numRepliesVisible: Int = 0,
   numRepliesTotal: Int = 0,
   numPostsTotal: Int = 0,
-  numOrigPostDoVotes: i32 = 0,
-  numOrigPostDontVotes: i32 = 0,
+  numOrigPostDoItVotes: i32 = 0,
+  numOrigPostDoNotVotes: i32 = 0,
   numOrigPostLikeVotes: Int = 0,
   numOrigPostWrongVotes: Int = 0,
   numOrigPostBuryVotes: Int = 0,
@@ -227,7 +227,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
   hiddenAt: Option[When] = None,
   deletedAt: Option[ju.Date] = None,
-  deletedById: Option[PatId] = None,
+  deletedById: Opt[PatId] = None,
   htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited
   htmlHeadTitle: String = "",
   htmlHeadDescription: String = "",
@@ -272,8 +272,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   require(numBurys >= 0, s"[DwE2KEP4] $wp")
   require(numUnwanteds >= 0, s"[DwE4JGY7] $wp")
   require(numPostsTotal >= numRepliesTotal, s"Fail: $numPostsTotal >= $numRepliesTotal [EdE2WTK4L] $wp")
-  require(numOrigPostDoVotes >= 0, s"[TyE5KJF9] $wp")
-  require(numOrigPostDontVotes >= 0, s"[TyE5KJF8] $wp")
+  require(numOrigPostDoItVotes >= 0, s"[TyE5KJF9] $wp")
+  require(numOrigPostDoNotVotes >= 0, s"[TyE5KJF8] $wp")
   require(numOrigPostLikeVotes >= 0, s"[DwE5KJF2] $wp")
   require(numOrigPostLikeVotes <= numLikes, s"Fail: $numOrigPostLikeVotes <= $numLikes [EdE5KJF2B] $wp")
   require(numOrigPostWrongVotes >= 0, s"[DwE4WKEQ1] $wp")
@@ -427,8 +427,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
       numRepliesVisible = page.parts.numRepliesVisible,
       numRepliesTotal = page.parts.numRepliesTotal,
       numPostsTotal = page.parts.numPostsTotal,
-      numOrigPostDoVotes = bodyVotes(_.numDoVotes),
-      numOrigPostDontVotes = bodyVotes(_.numDontVotes),
+      numOrigPostDoItVotes = bodyVotes(_.numDoItVotes),
+      numOrigPostDoNotVotes = bodyVotes(_.numDoNotVotes),
       numOrigPostLikeVotes = bodyVotes(_.numLikeVotes),
       numOrigPostWrongVotes = bodyVotes(_.numWrongVotes),
       numOrigPostBuryVotes = bodyVotes(_.numBuryVotes),

@@ -148,7 +148,8 @@ update users3 set separate_email_for_every = 3 where email_for_every_new_post;  
 alter table users3 drop column email_for_every_new_post;
 
 alter table users3 add column watch_level_after_posted smallint;
-alter table users3 add column watch_level_after_upvoted smallint;
+alter table users3 add column watch_level_after_do_it_voted smallint;
+-- What's this?
 alter table users3 add column notify_if_voted_up int;
 alter table users3 add column notify_if_voted_other int;
 

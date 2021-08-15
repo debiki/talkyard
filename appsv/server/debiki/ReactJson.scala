@@ -1711,7 +1711,7 @@ object JsonMaker {
       // [refactor] [5YKW294] delete this later:
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       // For now, this cannot be configured in any more detail. [do_it_on_off]
-      "doItVotesPopFirst" -> JsBoolOrNull(category.doItVotes.map(_ => true)),
+      "doItVotesPopFirst" -> JsBoolOrNull(category.doVoteStyle.map(_ => true)),
       "unlistCategory" -> JsBoolean(category.unlistCategory),
       "unlistTopics" -> JsBoolean(category.unlistTopics),
       "includeInSummaries" -> JsNumber(category.includeInSummaries.toInt),
