@@ -618,6 +618,13 @@ trait PagesDao {
       if (!deleter.isStaff) {
         throwForbiddenIf(pageMeta.authorId != deleterId,
                 "TyEDELOTRSPG_", "May not delete other people's pages")
+
+        // Shouldn't have been allowed to see sbd else's deleted page.
+        val deletedOwn = pageMeta.deletedById.is(deleterId) &&
+                pageMeta.authorId == deleterId
+        dieIf(undelete && !deletedOwn, "TyEUNDELOTRS",
+              s"s$siteId: User $deleterId may not undelete sbd else's page $pageId")
+
         // When there are replies, the UX should send a request to delete the
         // orig post only — but not the whole page. (Unless is staff, then can delete
         // the whole page.)
@@ -643,13 +650,21 @@ trait PagesDao {
 
       var (newMeta, auditLogEntry) =
         if (undelete) {
-          (pageMeta.copy(deletedAt = None, version = pageMeta.version + 1),
+          (pageMeta.copy(
+                deletedAt = None,
+                deletedById = None,
+                version = pageMeta.version + 1),
             baseAuditEntry.copy(didWhat = AuditLogEntryType.UndeletePage))
         }
         else {
-          (pageMeta.copy(deletedAt = Some(tx.now.toJavaDate),
-            version = pageMeta.version + 1), baseAuditEntry)
+          (pageMeta.copy(
+                deletedAt = Some(tx.now.toJavaDate),
+                deletedById = Some(deleter.id),
+                version = pageMeta.version + 1),
+            baseAuditEntry)
         }
+
+      // We're adding a meta post below.
       newMeta = newMeta.copy(numPostsTotal = newMeta.numPostsTotal + 1)
 
       // Invalidate, or re-activate, review tasks whose posts now get deleted / undeleted.

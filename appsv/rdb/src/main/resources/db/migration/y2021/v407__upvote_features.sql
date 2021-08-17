@@ -93,6 +93,10 @@ alter table pages3 add constraint pages_hiddenby_r_pats foreign key (
 alter table pages3 add constraint pages_deletedby_r_pats foreign key (
   site_id, deleted_by_id_c) references users3(site_id, user_id) deferrable;
 
+-- deleted_by_id_c was added later, so might be null even if deleted_at isn't.
+alter table pages3 add constraint pages_c_deletedby_at_null check (
+  deleted_by_id_c is null or deleted_at is not null);
+
 -- Foreign key indexes.
 create index pages_i_answeredby on pages3 (site_id, answered_by_id_c)
   where answered_by_id_c is not null;

@@ -478,20 +478,20 @@ object Authz {
     // Move these pageMeta checks to 'Check page' above?
     val isForumPage = pageMeta.exists(_.pageType == PageType.Forum)
     val isPageDeleted = pageMeta.exists(_.isDeleted)
-    var isPageOrCatDeleted = isPageDeleted
 
     // Later: return may-not-see also if !published?
-    if (isPageOrCatDeleted && !isStaff)
-      return MayWhat.mayNotSee("TyEPAGEDELD_")
-    /* First add deleted_by_id field?
     if (isPageDeleted && !isStaff) {
-      val deletedOwnPage = user exists { u =>
-        pageMeta.exists(p => p.authorId == u.id)
-              // later, add:  && p.deletedById.is(u.id)   [undel_pages]
+      // We need to check both authorId and deletedById: deletedBy == user,
+      // but page-author != user, can happen, if the user deletes hens own page
+      // — and thereafter, an admin sets the page author to someone else. Then,
+      // the user should not able to see or undelete the page any longer.
+      // Tests:  delete-pages.2br  TyTE2EDELPG602
+      val deletedOwnPage = user exists { theUser =>
+        pageMeta.exists(p => p.authorId == theUser.id && p.deletedById.is(theUser.id))
       }
       if (!deletedOwnPage)
         return MayWhat.mayNotSee("TyEPAGEDELD_")
-    } */
+    }
 
     // For now, hardcode may-see the forum page, otherwise only admins would see it.
     if (isForumPage) {
@@ -523,6 +523,7 @@ object Authz {
     val catsRootFirst = catsRootLast.reverseIterator
     val catsBaseFirst = catsRootFirst.drop(1)
     var anyCatMayWhat: Opt[MayWhat] = None
+    var anyAncestorCatDeleted = false
 
     for (category <- catsBaseFirst) {
       // Start with a fresh MayWhat here — if pat doesn't somehow have
@@ -538,7 +539,7 @@ object Authz {
       }
 
       if (category.isDeleted) {
-        isPageOrCatDeleted = true
+        anyAncestorCatDeleted = true
         if (!isStaff)
           return MayWhat.mayNotSee("TyECATDELD_")
       }
@@ -574,7 +575,7 @@ object Authz {
 
     // Do first here, so is-deleted mayWhat fields won't get overwritten
     // in the cat loop above.
-    if (isPageOrCatDeleted) {
+    if (isPageDeleted || anyAncestorCatDeleted) {
       mayWhat = mayWhat.copyAsDeleted
     }
 
