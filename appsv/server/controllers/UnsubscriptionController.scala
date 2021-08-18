@@ -62,7 +62,7 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
   private def doWhat(request: mvc.RequestHeader): String =
      request.queryString.get(DoWhatParam).map(_.head).getOrElse(Unsub)
 
-  private def nextPage(request: mvc.RequestHeader) =
+  private def nextPage(request: mvc.RequestHeader): St =
     "/-/unsubscribe&emailId="+ emailId(request) +"&do="+ (doWhat(request) match {
       case Unsub => UnsubDone
       case UnsubDone => PreventResub
@@ -110,9 +110,14 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
-  def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
+  def showHasBeenUnsubscribed(): Action[U] = ExceptionAction(cc.parsers.empty) { req =>
+    SECURITY; SHOULD // rate limit
+    val site = globals.lookupSiteOrThrow(req)
+    val dao = globals.siteDao(site.id)
+    val lang = dao.getWholeSiteSettings().languageCode
+    val emailTexts = talkyard.server.emails.out.Emails.inLanguage(lang)
     CSP_MISSING
-    Ok(views.html.unsubscribe.youHaveBeenUnsubscribed().body) as HTML
+    Ok(emailTexts.youHaveBeenUnsubscribed()) as HTML
   }
 
 }

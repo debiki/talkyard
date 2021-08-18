@@ -182,6 +182,7 @@ trait UserDao {
     // E2e tested here: [5RBKWEF8]
     val now = globals.now()
     val emailsToSend = ArrayBuffer[Email]()
+    val lang = getWholeSiteSettings().languageCode
 
     writeTx { (tx, _) =>
       val byMember = tx.loadTheUser(byWho.id)
@@ -213,16 +214,17 @@ trait UserDao {
         case SetApproved if memberAfter.canReceiveEmail =>
           // Just send an email — no need to create any notification and show in the
           // new member's notification list, right.  TyTE2E05WKF2
+          val emailTexts = talkyard.server.emails.out.Emails.inLanguage(lang)
           emailsToSend.append(Email.createGenId(
                 EmailType.YourAccountApproved,
                 createdAt = tx.now,
                 sendTo = memberAfter.primaryEmailAddress,
                 toUserId = Some(memberAfter.id),
                 subject = s"[$siteHostname] Account approved",
-                bodyHtml = views.html.createaccount.accountApprovedEmail(
+                bodyHtml = emailTexts.accountApprovedEmail(
                       memberAfter,
                       siteHostname = siteHostname,
-                      siteOrigin = siteOrigin).body))
+                      siteOrigin = siteOrigin)))
 
         case _ =>
           // Noop.
@@ -1691,6 +1693,7 @@ trait UserDao {
       // Need not notify *all* staff members — maybe just one or two. [nice_notfs]
       val settings = getWholeSiteSettings(Some(tx))
       if (settings.userMustBeApproved) {
+        val emailTexts = talkyard.server.emails.out.Emails.inLanguage(settings.languageCode)
         val (site, siteOrigin, siteHostname) = theSiteOriginHostname(tx)
         val allAdmins = tx.loadAdmins()
         allAdmins.filter(_.canReceiveEmail) foreach { admin =>
@@ -1700,8 +1703,8 @@ trait UserDao {
                 sendTo = admin.primaryEmailAddress,
                 toUserId = Some(admin.id),
                 subject = s"[$siteHostname] New member to approve",
-                bodyHtml = views.html.createaccount.newMemberToApproveEmail(
-                    user, siteOrigin = siteOrigin).body))
+                bodyHtml = emailTexts.newMemberToApproveEmail(
+                      user, siteOrigin = siteOrigin)))
         }
       }
 

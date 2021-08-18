@@ -649,6 +649,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     // A bit dupl code. Break out simplifying fn? Or reuse the other fn? [4CUJQT4]
 
+    val lang = dao.getWholeSiteSettings().languageCode
+    val emailTexts = talkyard.server.emails.out.Emails.inLanguage(lang)
     val email = Email.createGenIdAndSecret(
       EmailType.VerifyAddress,
       createdAt = globals.now(),
@@ -659,14 +661,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         val safeEmailAddrVerifUrl =
               globals.originOf(host) +
               routes.UserController.confirmOneMoreEmailAddress(secret)
-        views.html.confirmOneMoreEmailAddressEmail(
+        emailTexts.confirmOneMoreEmailAddressEmail(
           siteAddress = host,
           username = user.username,
           emailAddress = newEmailAddress,
           isNewAddr = isNewAddr,
           safeVerificationUrl = safeEmailAddrVerifUrl,
           expirationTimeInHours = EmailType.VerifyAddress.secretsExpireHours,
-          globals).body
+          globals)
       })
 
     dao.saveUnsentEmail(email)

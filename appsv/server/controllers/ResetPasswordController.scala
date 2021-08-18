@@ -157,6 +157,9 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
     val subject = if (isCreating) "Choose a Password" else "Reset Password"  // I18N
 
+    val lang = dao.getWholeSiteSettings().languageCode
+    val emailTexts = talkyard.server.emails.out.Emails.inLanguage(lang)
+
     val email = Email.createGenIdAndSecret(
       EmailType.ResetPassword,
       createdAt = globals.now(),
@@ -164,12 +167,12 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
       toUserId = Some(user.id),
       subject = s"[${dao.theSiteName()}] $subject",
       bodyHtmlWithSecret = (secret: St) => {
-        views.html.resetpassword.resetPasswordEmail(
-          userName = user.theUsername,
-          secret = secret,
-          siteAddress = request.host,
-          expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60,
-          globals = globals).body
+        emailTexts.resetPasswordEmail(
+              userName = user.theUsername,
+              secret = secret,
+              siteAddress = request.host,
+              expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60,
+              globals = globals)
       })
     dao.saveUnsentEmail(email)
     globals.sendEmail(email, dao.siteId)

@@ -153,14 +153,16 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def sendOneTimeLoginEmail(user: User, request: ApiRequest[_],
-                                    emailTitle: String, secret: String): Unit = {
+  private def sendOneTimeLoginEmail(user: User, request: ApiRequest[_], emailTitle: St,
+          secret: St): U = {
     import request.dao
-
     val origin = globals.originOf(request.host)
     val url = origin +
       controllers.routes.ApiV0Controller.getFromApi("login-with-secret") +   // [305KDDN24]
       "?oneTimeSecret=" + secret + "&thenGoTo=/-/users/" + user.theUsername
+
+    val lang = dao.getWholeSiteSettings().languageCode
+    val emailTexts = talkyard.server.emails.out.Emails.inLanguage(lang)
 
     COULD // use  emails_out_t.secret_value_c  instead of Redis  [clean_up_emails]
     val email = Email.createGenId(
@@ -170,11 +172,11 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
       toUserId = Some(user.id),
       subject = s"[${dao.theSiteName()}] $emailTitle",
       bodyHtml =
-        views.html.adminlogin.oneTimeLoginLinkEmail(
-          siteAddress = request.host,
-          url = url,
-          member = user,
-          expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60).body)
+          emailTexts.oneTimeLoginLinkEmail(
+                siteAddress = request.host,
+                url = url,
+                member = user,
+                expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60))
 
     dao.saveUnsentEmail(email)
     globals.sendEmail(email, dao.siteId)

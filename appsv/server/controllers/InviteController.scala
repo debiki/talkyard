@@ -325,7 +325,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  import talkyard.server.emails.Emails
+  import talkyard.server.emails.out.Emails
 
   private def makeInvitationEmail(invite: Invite, inviterName: String,
           probablyUsername: String, siteHostname: String, langCode: St): Email = {

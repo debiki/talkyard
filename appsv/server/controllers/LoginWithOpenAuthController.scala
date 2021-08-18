@@ -1709,6 +1709,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           originOf(request) +
           controllers.routes.LoginWithOpenAuthController.verifyEmailAskIfLinkAccounts(
               secretNonce).url
+    val lang = dao.getWholeSiteSettings().languageCode
+    val emailTexts = talkyard.server.emails.out.Emails.inLanguage(lang)
 
     val email = Email.createGenId(
           EmailType.LinkAccounts,
@@ -1717,10 +1719,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           toUserId = Some(user.id),
           subject = s"[${dao.theSiteName()}] $subject",
           bodyHtml =
-            views.html.login.verifyYourEmailAddrEmail(
+              emailTexts.verifyYourEmailAddrEmail(
                   name = user.nameOrUsername,
                   siteAddr = request.host,
-                  emailVerifUrl = emailVerifUrl).body)
+                  emailVerifUrl = emailVerifUrl))
+
     dao.saveUnsentEmail(email)
     globals.sendEmail(email, dao.siteId)
 
