@@ -206,14 +206,15 @@ export function MenuItemsMany(props, ...children) {
 }
 
 
-export function MenuItem(props, ...children) {
-  var className = props.className || '';
+export function MenuItem(props: { id?: St, className?: St, active?: Bo,
+        href?: St, onClick?, onSelect?, tabIndex?: Nr, key?: Nr | St }, ...children) {
+  let className = props.className || '';
   if (props.active) {
     className += ' active';
   }
   // Don't do  r.a(props, children)  because that'd result in an """an array or iterator
   // should have a unique "key" prop""" React.js warning.
-  var linkProps = { role: 'button', id: props.id,
+  const linkProps = { role: 'button', id: props.id, href: props.href,
     onClick: props.onClick || props.onSelect, tabIndex: props.tabIndex || -1 };
   return (
     r.li({ role: 'presentation', className: className, key: props.key },

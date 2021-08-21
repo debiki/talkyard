@@ -241,7 +241,7 @@ export const ForumComponent = createReactClass(<any> {
     const slashSlug = newCatSlug ? '/' + newCatSlug : '';
     const props: ForumComponentProps = this.props;
     props.history.push({
-      pathname: forumPath + nextPath + slashSlug,
+      pathname: forumPath + nextPath + slashSlug,  // dupl [.cat_ln]
       search: props.location.search,
     });
   },
@@ -607,7 +607,7 @@ const ForumButtons = createComponent({
           // so it'll stay, when jumping between categories ...
           onClick: () => props.setSortOrder(order, rememberSortOrder, slashSlug),
           // ... whilst this <a> link let's us middle mouse click to open in new tab.
-          to: { pathname: props.forumPath + order + slashSlug,
+          to: { pathname: props.forumPath + order + slashSlug,  // dupl [.cat_ln]
                 search: props.location.search },
           id: linkId,
           className: 'btn esForum_catsNav_btn ' + explSelected + (extraClass || ''),
@@ -1227,7 +1227,8 @@ export const TopicsList = createComponent({
     // (like Discourse does — don't do that).
     let categoryNameDescr = !activeCategory || !settings_showCategories(store.settings, me) ||
         props.skipCatNameDescr ? null :
-      CatNameDescr({ store, activeCategory, setCategory: this.props.setCategory,
+      CatNameDescr({ store, forumPath: props.forumPath,
+          activeCategory, setCategory: this.props.setCategory,
           editCategory: this.props.editCategory });
 
     const showForumBtns = activeCategory && !store_isFeatFlagOn(store, 'ffBtnsBefCat');
@@ -1288,7 +1289,7 @@ export const TopicsList = createComponent({
 });
 
 
-function CatNameDescr(props: { store: Store, activeCategory: Cat,
+function CatNameDescr(props: { store: Store, forumPath: St, activeCategory: Cat,
       setCategory: (newCatSlug?: St, newCat?: Cat) => Vo, editCategory }) {
   const store: Store = props.store;
   const me: Myself = store.me;
@@ -1334,7 +1335,9 @@ function CatNameDescr(props: { store: Store, activeCategory: Cat,
       return null;
 
     const categoryMenuItems = catsSameLevel.map((category: Cat) => {
+      const sortOrderPath = category.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
       return MenuItem({ key: category.id, active: thisCat && thisCat.id === category.id,
+          href: props.forumPath + sortOrderPath + '/' + category.slug, // dupl [.cat_ln]
           onClick: () => props.setCategory(category.slug, category) },
             r.span({ className: category_iconClass(category, store) }, category.name));
     });
@@ -1878,7 +1881,7 @@ function CatLink(props: { category: Category, forumPath: string, location,
   const forumPath = props.forumPath;
   const category = props.category;
   const sortOrderPath = category.doItVotesPopFirst ? RoutePathTop : RoutePathLatest;
-  return Link({ to: {
+  return Link({ to: {  // dupl [.cat_ln]
       pathname: forumPath + sortOrderPath + '/' + category.slug,
       search: props.location.search }, className: props.className },
     category.name, props.isDefaultText);
