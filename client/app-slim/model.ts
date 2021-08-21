@@ -727,6 +727,8 @@ interface Cat {
   isDefaultCategory?: boolean;
   isForumItself?: boolean;
   isDeleted?: boolean;
+
+  // forumMainView — move to here, rename to catDefView
 }
 
 
@@ -1110,11 +1112,13 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
   enableSimilarTopics?: boolean;        // default: depends on config file, later: true
   showSubCommunities?: boolean;         // default: false
   navConf?: BrowserCode;                // default: {}
+  // -- Move to interface Cat ----
   forumMainView?: string;               // default: 'latest'
   forumTopicsSortButtons?: string;      // default: 'latest|top'
   forumCategoryLinks?: string;          // default: 'categories'
   forumTopicsLayout?: TopicListLayout;  // default: title only
   forumCategoriesLayout?: CategoriesLayout; // default: (there's only one as of Jan 2017)
+  // -----------------------------
   showExperimental?: boolean;           // default: false
   showCategories?: boolean;             // default: true
   showTopicFilterButton?: boolean;      // default: true

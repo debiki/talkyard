@@ -49,10 +49,13 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
   let catsOrHomeLink: RElm | Nl = null;
 
   if (showCategories) {
+    const rotCatSortOrder = store.settings.forumMainView === RoutePathCategories ?
+            RoutePathCategories : RoutePathLatest;
     catsOrHomeLink =
         // RENAME  esTopbar_ancestors  and  s_Tb_Pg_Cs
         r.ol({ className: 'esTopbar_ancestors s_Tb_Pg_Cs' },
           page.ancestorsRootFirst.map((ancestor: Ancestor) => {
+            const cat: Cat | U = store_findCatByRefOrId(store, ancestor.categoryId);
             const deletedClass = ancestor.isDeleted ? ' s_Tb_Pg_Cs_C-Dd' : '';
             const catIcon = category_iconClass(ancestor.categoryId, store);  // [4JKKQS20]
             const key = ancestor.categoryId;

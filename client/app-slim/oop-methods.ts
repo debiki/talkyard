@@ -1367,17 +1367,22 @@ export function category_isPublic(category: Category | undefined, store: Store):
 
 export function category_iconClass(category: Category | CategoryId, store: Store): string {
   // (Deleted and unlisted categories aren't included in the public categories list. [5JKWT42])
-  const anyCategory: Category | undefined =
+  const anyCategory: Cat | U =
       _.isNumber(category) ? _.find(store.currentCategories, (c) => c.id === category) : category;
 
-  const isPublic = category_isPublic(anyCategory, store);
+  if (!anyCategory)
+    return '';
+
+  const theCat: Cat = anyCategory;
+
+  const isPublic = category_isPublic(theCat, store);
   if (!isPublic) return (
-      anyCategory.isDeleted ? 'icon-trash ' : (
+      theCat.isDeleted ? 'icon-trash ' : (
         // Both category and topics unlisted? (Unlisting category means unlisting the topics too)
-        anyCategory.unlistCategory ? 'icon-2x-unlisted ' : 'icon-lock '));
+        theCat.unlistCategory ? 'icon-2x-unlisted ' : 'icon-lock '));
 
   // Ony topics unlisted?
-  return anyCategory && anyCategory.unlistTopics ? 'icon-unlisted ' : '';
+  return theCat.unlistTopics ? 'icon-unlisted ' : '';
 }
 
 

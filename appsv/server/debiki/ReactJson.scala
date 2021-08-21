@@ -1397,13 +1397,14 @@ object JsonMaker {
     val forumPathSlash = forumPath.value.endsWith("/") ? forumPath.value | forumPath.value + "/"
     val (name, path) =
       if (category.isRoot)
-        ("Home", s"${forumPathSlash}latest")   // [i18n]
+        ("Home", s"${forumPathSlash}")   // [i18n]    removed  latest
       else
         (category.name, s"${forumPathSlash}latest/${category.slug}")
     var result = Json.obj(
       "categoryId" -> category.id,
       "title" -> name,
       "path" -> path,
+      "doVoteInTopicList" -> category.doVoteInTopicList,
       "unlistCategory" -> category.unlistCategory,
       "unlistTopics" -> category.unlistTopics)
     if (category.isDeleted) {
