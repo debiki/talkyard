@@ -45,17 +45,28 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   let newTyVersionAnn: RElm =
       help.HelpMessageBox({ message: {
           // SAn = Server Announcement, TyV = Talkyard new Version announcement nr 1.
-          id: 'SAn_TyV1', version: 1,
+          id: 'SAn_TyV2', version: 2,
           content: rFr({},
             r.p({},
               r.b({}, `New Talkyard version: ${TalkyardVersion}, `),
+              "read more here: ",
+              ExtVerbLink(
+                  'https://www.talkyard.io/-596/talkyard-v0202123')),
+            ThisShownToAdminsOnly()),
+      } });
+
+  let prevTyVersionAnn: RElm | U;
+      help.HelpMessageBox({ message: {
+          id: 'SAn_TyV1', version: 1,
+          content: rFr({},
+            r.p({},
+              r.b({}, `New Talkyard version: v0.2021.22, `),
               "read more here: ",
               ExtVerbLink(
                   'https://www.talkyard.io/-589/talkyard-v0202122')),
             ThisShownToAdminsOnly()),
       } });
 
-  let prevTyVersionAnn: RElm | U;
 
   // Announcement about HTTPS certificates renewal problem.
   // Only for admins for self hosted sites, created after revision 895b7aa6e2
