@@ -41,6 +41,8 @@ full text search:
           - category-permissions.2br   TyTE2ECATPREMS01
   deleted cat:
           - categories-delete.2br   TyTE2ECATDEL01
+  from external backend server:
+            - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
 
 create site & forum -
   create:  create-site-all-logins
@@ -344,7 +346,8 @@ security:
           - coed tag: [e2e_xss] — but at other places too, didn't tag at the time
             search for "<script>" or "javascript:" to find?
   cors:
-          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
+            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
 
 suspended users:
   gets no email notfs,

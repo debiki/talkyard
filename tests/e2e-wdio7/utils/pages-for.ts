@@ -409,6 +409,10 @@ export class TyE2eTestBrowser {
       return await this.#br.execute.apply(this.#br, arguments);
     }
 
+    async executeAsync<T>(script: ((...args: any[]) => T), ...args: any[]): Pr<T> {
+      return await this.#br.executeAsync.apply(this.#br, arguments);
+    }
+
     async refresh() {
       await this.#br.refresh();
     }

@@ -278,7 +278,7 @@ class PlainApiActions(
         val sysbot = dao.getTheUser(SysbotUserId)
         return runBlockIfAuthOk(request, site, dao, Some(sysbot),
               SidOk("_api_secret_", 0, Some(SysbotUserId)),
-              XsrfOk("_api_secret_"), None, block)
+              XsrfOk("_email_webhook_"), None, block)
       }
 
       DO_AFTER // 2021-08-01 enable this always. Test in dev-test first, for now.
@@ -358,18 +358,18 @@ class PlainApiActions(
       val (actualSidStatus, xsrfOk, newCookies) = corsInfo match {
         case ci: CorsInfo.OkayCrossOrigin =>
           // Cross-origin requests with credentials (i.e. session id cookie)
-          // not yet tested and thought throw.
+          // not yet tested and thought thrown.
           // Continue as a stranger (a not logged in user).
           throwForbiddenIf(ci.hasCorsCreds,  // [CORSCREDSUNIMPL]
                 "TyECORSCREDSUNIM", o"""Cross-Origin requests with credentials
-                  (i.e. session id cookie) not implemented""")
+                  (i.e. session id cookie or header) not implemented""")
           // Skip any xsrf token check since this origin is *supposed* to do
-          // cross-origin requests, right.
+          // cross-origin requests.
           // Currently only publicly accessible data can be seen, since proceeding
           // with no session id.
           (SidAbsent, XsrfOk("cors_no_xsrf"), Nil)
-        case ci =>
-          dieIf(ci.isCrossOrigin, "TyEJ2503TKHJ")
+
+        case _: CorsInfo.SameOrigins | CorsInfo.NotCorsNoOriginHeader =>
           security.checkSidAndXsrfToken(
                 request, anyRequestBody = Some(request.body), siteId = site.id,
                 expireIdleAfterMins, maySetCookies = maySetCookies,
