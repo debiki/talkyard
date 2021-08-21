@@ -296,17 +296,31 @@ class EdSecurity(globals: Globals) {
     //   browsers will not send credentials. A specific flag has to be set [...]""
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Requests_with_credentials
     //   2020-05
-    val hasCreds = request.cookies.nonEmpty
-    throwForbiddenIf(hasCreds && !siteSettings.allowCorsCreds,
-          "TyECORSCOOKIES", o"""This looks like a CORS (Cross-Origin) request,
-            but it includes credentials (cookies), which this site doesn't allow.""")
+    val hasCookies = request.cookies.nonEmpty
+    val hasSidHeader = request.headers.hasHeader(SessionIdHeaderName)
 
-    throwForbiddenIf(hasCreds && isPreFlight,
+    val (errCode, credsType) =
+          if (hasCookies) ("TyECORSCOOKIES", "cookies")
+          else if (hasSidHeader) ("TyECORSSIDHDR", "a Talkyard session id header")
+          else ("", "")
+
+    throwForbiddenIf(credsType.nonEmpty && !siteSettings.allowCorsCreds,
+          errCode, o"""This looks like a CORS (Cross-Origin) request,
+          but it includes credentials: $credsType, which this site doesn't allow.""")
+    // If allowCorsCreds: Won't work anyway, because cross-origin requests
+    // with credentials hasn't been implemented. [CORSCREDSUNIMPL]
+
+    throwForbiddenIf(hasCookies && isPreFlight,
           "TyEPREFLCREDS", "CORS pre-flight request *with cookies* — not allowed.")
+
+    // Don't think this can happen, but anyway:
+    throwForbiddenIf(hasSidHeader && isPreFlight,
+          "TyEPREFLCREDS2", "CORS pre-flight request *with SID header* — not allowed.")
 
     // This cross-origin request is okay.
     CorsInfo.OkayCrossOrigin(
-          requestOrigin, hasCorsCreds = hasCreds, isPreFlight = isPreFlight)
+          requestOrigin, hasCorsCreds = hasCookies || hasSidHeader,
+          isPreFlight = isPreFlight)
   }
 
 
@@ -348,8 +362,16 @@ class EdSecurity(globals: Globals) {
     // (On POST requests, however, we check the xsrf form input value)
     val anyXsrfCookieValue = urlDecodeCookie(XsrfCookieName, request)
 
+    val isGet = request.method == "GET"
+    val isPost = request.method == "POST"
+    val cookies = request.cookies // nice to see in debugger
+    val maybeCredentials = cookies.nonEmpty ||
+          // There's also the session id header, SessionIdHeaderName
+          // (for embedded discussions, cookies then usually won't work).
+          sessionIdStatus != SidAbsent
+
     val sidXsrfNewCookies: (SidStatus, XsrfOk, List[Cookie]) =
-      if (request.method == "GET" || skipXsrfCheck) {
+      if (isGet || skipXsrfCheck) {
         // Accept this request, and create new XSRF token if needed.
         // Don't throw anything (for now at least). [GETNOTHROW]
 
@@ -377,7 +399,7 @@ class EdSecurity(globals: Globals) {
 
         (sessionIdStatus, xsrfOk, anyNewXsrfCookie)
       }
-      else if (request.method != "POST") {
+      else if (!isPost) {
         // Sometimes people do `curl -I http://...` which sends a HEAD
         // request — but only GET and POST, sometimes OPTIONS,
         // are allowed.  It's nice, though, if in the X-Error-Code response
@@ -388,6 +410,13 @@ class EdSecurity(globals: Globals) {
         throwForbiddenIf(request.method == "HEAD",
               "TyE_REQUEST_METHOD__HEAD__NOT_ALLOWED", details)
         throwForbidden( "TyE_REQUEST_METHOD_NOT_ALLOWED", details)
+      }
+      else if (isPost && !maybeCredentials) {
+        // This might be from a backend server, fetching publicly available data.
+        // Example: An Electron or iOS app, calling /-/v0/search, to show
+        // in-app help.
+        // No credentials are included in the request, so there's no xsrf risk.
+        (SidAbsent, XsrfOk("_no_creds_"), Nil)
       }
       else {
         // Reject this request if the XSRF token is invalid,
@@ -410,7 +439,7 @@ class EdSecurity(globals: Globals) {
               None
           }
         } getOrElse
-            throwForbidden("TyE0XSRFTKN", "No xsrf token")
+            throwForbidden("TyE0XSRFTKN_", "No xsrf token")
 
         val xsrfOk = {
           val xsrfStatus =

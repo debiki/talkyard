@@ -65,10 +65,25 @@ function initOrExit(theSettings) {
 }
 
 
-function postOrDie(url, data, opts: { apiRequesterId?: number,
-      apiRequester?: St, apiSecret?: string,
-      retryIfXsrfTokenExpired?: boolean, fail?: boolean, hintIfErr?: St } = {})
-      : { statusCode: number, headers, bodyText: string, bodyJson: () => any } {
+function postOrDie(
+      url: St,
+      data: Object,
+      opts: {
+        apiRequesterId?: Nr,
+        apiRequester?: St,
+        apiSecret?: St,
+        retryIfXsrfTokenExpired?: Bo,
+        fail?: Bo,
+        hintIfErr?: St ,
+        cookie?: St | Nl,
+        sidHeader?: St,
+        xsrfTokenHeader?: St | Nl } = {},
+      ): {
+        statusCode: Nr,
+        headers: { [name: string]: St },
+        bodyText: St,
+        bodyJson: () => Ay,
+      } {
 
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2WKG4]");
   dieIf(!!(opts.apiRequester || opts.apiRequesterId) !== !!opts.apiSecret,
@@ -93,6 +108,24 @@ function postOrDie(url, data, opts: { apiRequesterId?: number,
         'X-XSRF-TOKEN': xsrfTokenAndCookies[0],
         'Cookie': xsrfTokenAndCookies[1]
       });
+
+  if (opts.cookie) {
+    headers.Cookie = opts.cookie;
+  }
+  else if (opts.cookie === null) {
+    delete headers.Cookie;
+  }
+
+  if (opts.sidHeader) {
+    headers['X-Ty-Sid'] = opts.sidHeader;
+  }
+
+  if (opts.xsrfTokenHeader) {
+    headers['X-XSRF-TOKEN'] = opts.xsrfTokenHeader;
+  }
+  else if (opts.xsrfTokenHeader === null) {
+    delete headers['X-XSRF-TOKEN'];
+  }
 
   logServerRequest(`POST ${url}, headers: ${ JSON.stringify(headers) } ... [TyME2EPOST]`);
 
@@ -121,7 +154,7 @@ function postOrDie(url, data, opts: { apiRequesterId?: number,
 
   //console.log('\n\n' + url + '  ——>\n' + responseBody + '\n\n');
   if (response.statusCode !== 200 && responseBody.indexOf('TyEXSRFEXP_') >= 0 &&
-      opts.retryIfXsrfTokenExpired !== false) {
+      opts.retryIfXsrfTokenExpired !== false && _.isUndefined(opts.xsrfTokenHeader)) {
     // The xsrf token expires, if we playTime...() too much.
     logMessage("Getting a new xsrf token; the old one has expired ...");
 
@@ -133,12 +166,12 @@ function postOrDie(url, data, opts: { apiRequesterId?: number,
   }
 
   if (opts.fail) {
-    dieIf(response.statusCode === 200,
+    dieIf(200 <= response.statusCode && response.statusCode <= 399,
       "POST request should have gotten back an error code, to " +
           url + " [TyE507KDF2P]", showResponse(response, true));
   }
   else if (response.statusCode !== 200) {
-    die("POST request failed to " + url + " [EsE5GPK02]", showResponse(response),
+    die(`POST request failed to: ${url}  [TyE2EPOSTREQ]`, showResponse(response),
         opts.hintIfErr);
   }
 
@@ -210,7 +243,7 @@ function showResponseBodyJson(body) {
   let text = body;
   if (!_.isString(text)) text = JSON.stringify(text);
   return (
-  "Response body: ———————————————————————————————————————————————————————————————————\n" +
+  "———— Response body: ——————————————————————————————————————————————————————————————\n" +
   text +
   "\n——————————————————————————————————————————————————————————————————————————————————\n");
 }
@@ -554,14 +587,21 @@ const isApiErrorResponse = (response: ApiResponse<any>)
   (response as ApiErrorResponse).error !== undefined;
 
 
-function fullTextSearch<T extends ThingFound>(ps: { origin: string, queryText: string })
-      :  SearchQueryResults<T> {
+function fullTextSearch<T extends ThingFound>(ps: {
+      origin: St, queryText: St, opts?: {
+          cookie?: St | Nl, sidHeader?: St, xsrfTokenHeader?: St | Nl, fail?: true }})
+      :  SearchQueryResults<T> | St {
   const url = ps.origin + '/-/v0/search';
   const requestBody: SearchQueryApiRequest = {
     searchQuery: { freetext: ps.queryText },
     pretty: true,
   };
-  const responseObj = postOrDie(url, requestBody);
+
+  const responseObj = postOrDie(url, requestBody, ps.opts);
+
+  if (ps.opts.fail)
+    return responseObj.bodyText;
+
   const responseBody = responseObj.bodyJson() as SearchQueryApiResponse<T>;
   const result = responseObj.statusCode === 200 && !isApiErrorResponse(responseBody)
       ? responseBody
