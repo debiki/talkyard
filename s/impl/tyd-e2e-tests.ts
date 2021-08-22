@@ -2,11 +2,13 @@ import * as _  from 'lodash';
 import { ParsedArgs as minimist_ParsedArgs } from 'minimist';
 import * as fs from 'fs';
 import * as glob from 'glob';
-import { die, dieIf, logMessage, logMessageIf, logDebug,
-         logError, logErrorIf, logErrorNoTrace, logErrorNoTraceIf, logUnusual
+import { prettyNum, j2s, die, dieIf, logMessage, logMessageIf,
+         logBitHappy, logMuchHappy,
+         logError, logErrorIf, logErrorNoTrace, logErrorNoTraceIf, logWarning,
          } from '../../tests/e2e-wdio7/utils/log-and-die';
 import * as tyu from './tyd-util';
 import type { ExitCode } from './tyd-util';
+import { stdout } from 'process';
 
 //type Pr<R> = Promise<R>;
 
@@ -21,6 +23,7 @@ export function runE2eTestsExitIfErr(ps: {
   opts: minimist_ParsedArgs,
 }) {
 
+const startMs = Date.now();
 const { allSubCmdsSt, allSubCmds, opts } = ps;
 
 
@@ -74,9 +77,10 @@ for (const pattern of allSubCmds) {
 }
 
 
-console.log(`Specs patterns:  ${allSubCmdsSt}`);
+console.log(`Specs patterns:  ${allSubCmdsSt || '(none, will match all)'}`);
 console.log(`Specs glob:      ${specsGlob}`);
-console.log(`Specs matching:\n - ${allMatchingSpecs.join('\n - ')}`);
+console.log(`${allMatchingSpecs.length} specs match glob and pattern:\n   - ${
+      allMatchingSpecs.join('\n   - ')}\n`);
 
 
 // Let wdio handle signals, until it exits.
@@ -95,8 +99,8 @@ process.on('SIGINT', function() {
 // Can look at node_modules/@wdio/cli/build/launcher.js  to see
 // ex of how handle async errs?
 //
-async function runE2eTests(): Promise<ExitCode> {
-  let zeroOrFirstErrorCode: U | Nr;
+function runE2eTests(): U | ExitCode | 'TestsCancelled' {
+  let zeroOrFirstErrorCode: U | ExitCode | 'TestsCancelled';
 
   // Command line arguments and the test runners?
   //
@@ -105,12 +109,13 @@ async function runE2eTests(): Promise<ExitCode> {
   // fork() with: { cwd: process.cwd(), env: runnerEnv, execArgv: this.execArgv },
   // see: ../node_modules/@wdio/local-runner/build/worker.js
 
-  async function withSpecsMatching(testTypes: St[] | St[][], run: (specs: St[]) =>
-          Promise<ExitCode> | 'Skip') {
+  function withSpecsMatching(testTypes: St[] | St[][], run: (specs: St[]) =>
+          ExitCode | 'DontUpdFirstExitCode') {
 
     if (_.isString(testTypes[0])) {
       testTypes = [testTypes as St[]];
     }
+
     dieIf(!testTypes?.[0]?.length, 'TyE38590RTK');
     let specsNow = [];
     for (let tts of testTypes) {
@@ -127,22 +132,42 @@ async function runE2eTests(): Promise<ExitCode> {
       }
       specsNow = [...specsNow, ...moreSpecs];
     }
+
+    const what = j2s(testTypes);
+
     const num = specsNow.length;
-    if (num >= 1) {
-      const sep = '\n - ';
-      const what = `'${testTypes.join(' ')}'`;
-      logMessage(`Running ${num} specs matching ${what}:` + sep + specsNow.join(sep));
-
-      const exitCode = await run(specsNow);
-      if (exitCode === 'Skip')
-        return;
-
-      if (!zeroOrFirstErrorCode) {
-        zeroOrFirstErrorCode = exitCode;
-      }
-      logErrorNoTraceIf(exitCode !== 0, `ERROR exit code ${exitCode}, from:  ${what}`);
-      logMessageIf(exitCode === 0, `Done, exit code 0, fine, from:  ${what}`);
+    if (num === 0) {
+      logMessage(`No specs match in group ${what}`);
+      return;
     }
+
+    const sep = '\n   - ';
+    logMessage(`Running ${num} matching specs in group ${what}:${
+          sep + specsNow.join(sep)}\n`);
+
+    const exitCode = run(specsNow);
+
+    if (exitCode === 'DontUpdFirstExitCode')
+      return;
+
+    if (exitCode === null) {
+      logWarning(`Exit code null, tests cancelled? [TyM50MWEG1]`);
+      zeroOrFirstErrorCode = 'TestsCancelled';
+      return;
+    }
+
+    dieIf(!_.isNumber(exitCode), `Exit code is not a number: ${exitCode} [TyE4G6SEJ25]`);
+    if (!zeroOrFirstErrorCode) {
+      zeroOrFirstErrorCode = exitCode;
+    }
+    const fromWhat = `from specs group: ${what}`;
+    if (exitCode !== 0) {
+      logErrorNoTrace(`ERROR, exit code ${exitCode} `);
+    }
+    else {
+      logBitHappy(`OK, exit code 0`);
+    }
+    logMessage(`   ${fromWhat}\n`);
   }
 
 
@@ -197,7 +222,7 @@ async function runE2eTests(): Promise<ExitCode> {
 
   const optsStr = tyu.stringifyOpts(opts) + ' --isInProjBaseDir';
 
-  async function runWdioInForeground(specs: St[], wdioArgs: St): Promise<Nr> {
+  function runWdioInForeground(specs: St[], wdioArgs: St): Nr {
     // Need to escape the backslask, like this:  `sh -c "...\\n..."`,
     // so that  sh   gets "...\n..." instead of a real line break.
     const specsOnePerLine = specs.join('\\n');
@@ -208,7 +233,7 @@ async function runE2eTests(): Promise<ExitCode> {
             `echo "${specsOnePerLine}" ` +
               `| ${testProjDir}/node_modules/.bin/wdio ${wdioConfFile} ${
                     optsStr} ${wdioArgs}`;
-    const exitCode = await tyu.spawnInForeground('sh', ['-c', commandLine]);
+    const exitCode = tyu.spawnInForeground('sh', ['-c', commandLine]);
     return exitCode;
   }
 
@@ -227,34 +252,34 @@ async function runE2eTests(): Promise<ExitCode> {
 
   let next: St[] | St[][] = [...skip2And3Browsers, ...skipEmbAndAlways];
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<ExitCode> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     //const pipeSpecsToWdio__old =
     //        `echo "${ specs.join('\\n') }" ` +
     //          `| node_modules/.bin/wdio  tests/e2e/wdio.conf.js  --parallel 3`;
     return runWdioInForeground(specs, '');
   });
 
-
   // ----- 2 browsers
 
   // This tests needs a static file server.
   // Should rename this test: incl ss8080 in the name? (static server port 8080)
-  await withSpecsMatching(['sso-login-required-w-logout-url.2br'], (): 'Skip' => {
+  withSpecsMatching(['sso-login-required-w-logout-url.2br'],
+          (): 'DontUpdFirstExitCode' => {
     tyu.startStaticFileServer(8080, 'target/');
-    return 'Skip';
+    return 'DontUpdFirstExitCode';
   });
 
   // Tests that don't modify time can run in parallel.
   next = ['.2br', '!.mtime', '!__e2e-test-template__', ...skipEmbAndAlways];
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     return runWdioInForeground(specs, '--2browsers');
   });
 
   // But tests that do modify time cannot run in parallel (on the same server).
   next = ['.2br', '.mtime', ...skipEmbAndAlways];
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     return runWdioInForeground(specs, '--2browsers --not-parallel');
   });
 
@@ -263,7 +288,7 @@ async function runE2eTests(): Promise<ExitCode> {
 
   next = ['.3br', ...skipEmbAndAlways];
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     return runWdioInForeground(specs, '--3browsers');
   });
 
@@ -276,10 +301,10 @@ async function runE2eTests(): Promise<ExitCode> {
   next = [['embedded-', ...skip23BrAndUnusualEmb],
           ['embcom.', ...skip23BrAndUnusualEmb]];
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     // Note: 8080 eighty eighty.
     tyu.startStaticFileServer(8080, 'target/');
-    return await runWdioInForeground(specs,
+    return runWdioInForeground(specs,
               // Doesn't work, why not? Disable via xx. (BADSTCSRV)
               // The server starts, lisens to 8080, but never replies to anything :-|
               // Just times out.
@@ -289,7 +314,7 @@ async function runE2eTests(): Promise<ExitCode> {
 
   next = [['embcom.', '.b3c.', '.1br.', ...skipAlways]];
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     tyu.startStaticFileServer(8080, 'target/');
     return runWdioInForeground(specs, ' --b3c ' +
               // Doesn't work (BADSTCSRV)
@@ -307,7 +332,7 @@ async function runE2eTests(): Promise<ExitCode> {
         ['.2br', 'embcom', '!.b3c.', ...skipAlways],
         ];
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     tyu.startStaticFileServer(8080, 'target/');
     return runWdioInForeground(specs, ' --2browsers ' +
               // Doesn't work (BADSTCSRV)
@@ -322,7 +347,7 @@ async function runE2eTests(): Promise<ExitCode> {
 
   next = ['embedded-', 'gatsby', ...skip2And3Browsers, ...skipAlways];
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     // Note: 8000 eighty zero zero.
     tyu.startStaticFileServer(8000, 'modules/gatsby-starter-blog/public/');
     return runWdioInForeground(specs,
@@ -333,7 +358,7 @@ async function runE2eTests(): Promise<ExitCode> {
   // Note: 8000 eighty zero zero.
   tyu.stopStaticFileServer({ portNr: 8000, stopAnyAndAll: true });
 
-  await withSpecsMatching(next, async (specs: St[]): Promise<Nr> => {
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
     tyu.startStaticFileServer(8000, 'modules/gatsby-starter-blog-ed-comments-0.4.4/public/');
     return runWdioInForeground(specs,
               // Doesn't work (BADSTCSRV)
@@ -348,20 +373,36 @@ async function runE2eTests(): Promise<ExitCode> {
 
 
 
-console.log(`Running e2e tests ...`);
+logMessage(`Running e2e tests ...\n`);
+let e2eExitCode: ExitCode = 1;
 
-runE2eTests().then((code) => {
-  const isFine = code === 0;
-  const fineOrFailed = isFine ? 'fine' : 'tests FAILED';
-  const logFn = isFine ? logMessage : logErrorNoTrace;
-  logFn(`\n\nDone running e2e tests, exit code: ${code}, ${fineOrFailed}\n`);
-  logErrorNoTraceIf(code === undefined,
-        `Error: Didn't run any tests at all [TyE0SPECSRUN]`);
-  process.exit(code);
-}, (error) => {
-  console.error(`Error starting tests [TyEE2ESTART]`, error);  // error.stacktrace ?
-  process.exit(1);
-});
+try {
+  const code: U | ExitCode | 'TestsCancelled' = runE2eTests();
+  const endMs = Date.now();
+  const durationMins = (endMs - startMs) / 1000 / 60;
+  process.stdout.write('\n');
+  if (_.isNumber(code)) {
+    e2eExitCode = code;
+    if (code === 0) {
+      logMuchHappy(`E2E tests OK  `);
+    }
+    else {
+      logErrorNoTrace(`E2E tests FAILED `);
+    }
+    logMessage(`Tests done after ${prettyNum(durationMins)} minutes, exit code: ${code}`);
+  }
+  else if (code === 'TestsCancelled') {
+    logMessage(`Tests cancelled? [TyME2ECANCLD]`);
+  }
+  else {
+    logErrorNoTrace(`Error: No tests run [TyE0SPECSRUN] `);
+  }
+}
+catch (ex) {
+  logErrorNoTrace(`Unexpected exception when running e2e tests [TyEE2EUNEXEX] `, ex);
+}
 
+console.log(`Exiting: process.exit(${e2eExitCode})\n`);
+process.exit(e2eExitCode);
 
 }

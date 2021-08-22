@@ -5,7 +5,7 @@ const ansiColors = require('ansi-colors');
 
 const normalColor = ansiColors.white;
 const boringColor = ansiColors.gray;
-const errorColor = ansiColors.bold.yellow.bgRed;
+const errorColor = ansiColors.bold.bgRed;
 const exceptionColor = ansiColors.bold.yellow;
 const warningColor = ansiColors.bold.red;
 const debugColor = ansiColors.bold.yellow;
@@ -16,6 +16,16 @@ const serverResponseColor = ansiColors.bold.blue;
 
 export function getOrCall<V>(valueOrFn: U | V | (() => V)): U | V {
   return _.isFunction(valueOrFn) ? valueOrFn() : valueOrFn;
+}
+
+// Also in slim-bundle. [pretty_num]
+export function prettyNum(num: Nr, digits: Nr = 2): Nr {
+  return Number(num.toPrecision(digits));
+}
+
+/// JSON to string — 'j2s' is shorter than 'JSON.stringify'.
+export function j2s(any: any, hmm?, indentation?: Nr): St {
+  return JSON.stringify.apply(JSON, arguments);
 }
 
 /// "dj" = Debug log Json
@@ -52,6 +62,17 @@ export function logDebug(message: StringOrFn) {
 
 export function logUnusual(message: StringOrFn) {
   console.log(unusualColor(getOrCall(message)));
+}
+
+export function logBitHappy(message: St) {
+  const m = ansiColors.bold.green(message);
+}
+
+export function logMuchHappy(message: St) {
+  // '.black' is actually gray, but '.inverse' gives us the for-real
+  // black background as the font color.
+  const m = ansiColors.bold.green.inverse(message);
+  console.log(m);
 }
 
 export function logWarningIf(test: BoolOrFn, message: StringOrFn) {
