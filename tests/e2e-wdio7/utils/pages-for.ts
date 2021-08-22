@@ -409,6 +409,10 @@ export class TyE2eTestBrowser {
       return await this.#br.execute.apply(this.#br, arguments);
     }
 
+    async executeAsync<T>(script: ((...args: any[]) => T), ...args: any[]): Pr<T> {
+      return await this.#br.executeAsync.apply(this.#br, arguments);
+    }
+
     async refresh() {
       await this.#br.refresh();
     }
@@ -792,7 +796,7 @@ export class TyE2eTestBrowser {
         switch (data.newSiteOwner) {
           case NewSiteOwnerType.OwenOwner:
             await this.loginDialog.createPasswordAccount(data, true);
-            const email = await server.getLastEmailSenTo(siteId, data.email, this);
+            const email = await server.getLastEmailSenTo(siteId, data.email);
             const link = await utils.findFirstLinkToUrlIn(
                     data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
             await this.go(link);
@@ -1003,7 +1007,7 @@ export class TyE2eTestBrowser {
 
 
     async waitForNewUrl() {
-      assert(!!this._currentUrl, "Please call this.#br.rememberCurrentUrl() first [EsE7JYK24]");
+      assert.ok(!!this._currentUrl, "Please call this.#br.rememberCurrentUrl() first [EsE7JYK24]");
       await this.waitUntil(async () => {
         return this._currentUrl !== await this.#br.getUrl();
       }, {
@@ -1033,7 +1037,7 @@ export class TyE2eTestBrowser {
 
     async waitForNewOrigin(anyCurrentUrl?: St) {
       const currentUrl = anyCurrentUrl || this._currentUrl;
-      assert(!!currentUrl, "Please call this.#br.rememberCurrentUrl() first [TyE603RK54]");
+      assert.ok(!!currentUrl, "Please call this.#br.rememberCurrentUrl() first [TyE603RK54]");
       const curOrigin = await this._findOrigin(currentUrl);
       while (curOrigin === await this.origin()) {
         await this.#br.pause(250);
@@ -1746,7 +1750,7 @@ export class TyE2eTestBrowser {
         return 'CouldNotClick';
 
       const elems = await this.$$(selector);
-      assert(elems.length >= n, `Elem ${n} missing: Only ${elems.length} elems match: ${selector}`);
+      tyAssert.ok(elems.length >= n, `Elem ${n} missing: Only ${elems.length} elems match: ${selector}`);
       const index = n > 0
           ? n - 1
           : elems.length - (-n); // count from the end
@@ -1940,12 +1944,12 @@ export class TyE2eTestBrowser {
     async waitUntilElementNotOccluded(selector: string, opts: {
           okayOccluders?: string, timeoutMs?: number, timeoutIsFine?: boolean } = {}): Pr<Bo> {
       dieIf(!selector, '!selector,  [TyE7WKSH206]');
-      let result: string | true;
+      let result: [St, St] | true;
       return await this.waitUntil(async () => {
-        result = await this.#br.execute(function(selector, okayOccluders): boolean | string {
+        result = await <[St, St] | true> this.#br.execute(function(selector, okayOccluders): [St, St] | Bo {
           var elem = document.querySelector(selector);
           if (!elem)
-            return `No elem matches:  ${selector}`;
+            return [`No elem matches:  ${selector}`, ''];
 
           var rect = elem.getBoundingClientRect();
           var middleX = rect.left + rect.width / 2;
@@ -1953,13 +1957,13 @@ export class TyE2eTestBrowser {
           var elemAtTopOfCenter = document.elementFromPoint(middleX, middleY);
           if (!elemAtTopOfCenter) {
             // This happens if the elem is outside the viewport.
-            return `Elem not in viewport? ` +
+            return [`Elem not in viewport? ` +
                 `elementFromPoint(${middleX}, ${middleY}) returns: ${elemAtTopOfCenter}, ` +
                 `elem top left width height: ` +
                   `${rect.left}, ${rect.top}, ${rect.width}, ${rect.height}\n` +
                 `--- elem.innerHTML.substr(0,100): ------------------------\n` +
                 `${elem.innerHTML?.substr(0,100)}\n` +
-                `----------------------------------------------------------`;
+                `----------------------------------------------------------`, ''];
           }
 
           // Found elem directly, or found a nested elem inside?
@@ -1993,11 +1997,12 @@ export class TyE2eTestBrowser {
           if (elemIdClass === okayOccluders) {
             return true;
           }
+          var occludersTextContent = elemAtTopOfCenter.textContent;
           // Return the id/class of the thing that occludes 'elem'.
-          return `Occluded by: ${elemIdClass + maybeWeird}`;
+          return [`Occluded by: ${elemIdClass + maybeWeird}`, occludersTextContent];
         }, selector, opts.okayOccluders || '');
 
-        dieIf(!_.isBoolean(result) && !_.isString(result),
+        dieIf(!_.isBoolean(result) && !_.isString(result[0]) && !_.isString(result[1]),
             `Error checking if elem interactable, result: ${
                 JSON.stringify(result) }  [TyE306KT73S]`);
 
@@ -2008,7 +2013,7 @@ export class TyE2eTestBrowser {
         message: () =>
             `Waiting for elem [ ${selector} ] to not be occluded, ` +
                 `okayOccluders: [ ${opts.okayOccluders} ],\n` +
-            `problem: ${result}`,
+            `problem: ${result[0]}, occluder's text content: """${result[1]}"""`,
 
       });
     }
@@ -2220,6 +2225,24 @@ export class TyE2eTestBrowser {
     async waitUntilTextMatches(selector: St, regex: St | RegExp,
             opts: { timeoutMs?: Nr, invert?: Bo } = {}) {
       await this.waitAndGetElemWithText(selector, regex, opts);
+    }
+
+
+    async waitUntilHtmlIncludes(selector: St, text: St, ps: { multiLine?: Bo } = {}) {
+      let htmlNow = ''
+      await this.waitForExist(selector);
+      await this.waitUntil(async () => {
+        htmlNow = await (await this.$(selector)).getHTML();
+        if (htmlNow.indexOf(text) >= 0)
+          return true;
+      }, {
+        message: () =>
+            `Waiting for: ${selector}  to include: --------\n${
+            text
+            }\n---- but the html is currently: -----------------\n${
+            htmlNow
+            }\n-------------------------------------------------`,
+      });
     }
 
 
@@ -2464,9 +2487,9 @@ export class TyE2eTestBrowser {
       const regex = getRegExpOrDie(stringOrRegex);
       const regex2 = getAnyRegExpOrDie(stringOrRegex2);
 
-      assert(n >= 1, "n starts on 1, change from 0 to 1 please");
+      assert.ok(n >= 1, "n starts on 1, change from 0 to 1 please");
       const items = await this.$$(selector);
-      assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
+      assert.ok(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
 
       let text = await items[n - 1].getText();
       if (ps?.caseless) {
@@ -2474,7 +2497,7 @@ export class TyE2eTestBrowser {
       }
 
       // Could reformat, make simpler to read [E2EEASYREAD].
-      assert(regex.test(text), '\n' +
+      assert.ok(regex.test(text), '\n' +
         `Text of elem ${n} selected by:  ${selector}\n` +
         `            does not match:  ${regex.toString()}\n` +
         `    actual text: (between ---)\n` +
@@ -2483,7 +2506,7 @@ export class TyE2eTestBrowser {
         `-------------------------------------------\n`);
       // COULD use 'arguments' & a loop instead
       if (regex2) {
-        assert(regex2.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
+        assert.ok(regex2.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
             regex2.toString() + ", actual text: '" + text + "'");
       }
     }
@@ -2492,14 +2515,14 @@ export class TyE2eTestBrowser {
     // n starts on 1 not 0.
     // Also see:  assertNthTextMatches
     async assertNthClassIncludes(selector: string, n: number, classToFind: string) {
-      assert(n >= 1, "n starts on 1, change from 0 to 1 please");
+      assert.ok(n >= 1, "n starts on 1, change from 0 to 1 please");
       const items = await this.$$(selector);
-      assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
+      assert.ok(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
       const item = getNthFromStartOrEnd(n, items);
       const actuallClassAttr = await item.getAttribute('class');
       const regex = new RegExp(`\\b${classToFind}\\b`);
       // Simple to read [E2EEASYREAD].
-      assert(regex.test(actuallClassAttr), '\n' +
+      assert.ok(regex.test(actuallClassAttr), '\n' +
         `       Elem ${n} selected by:  ${selector}\n` +
            `  doesn't have this class:  ${classToFind}\n` +
            `           instead it has:  ${actuallClassAttr}\n`);
@@ -2700,7 +2723,7 @@ export class TyE2eTestBrowser {
       // _1 = only for 1 this.#br
       const source = await this.#br.getPageSource();
       const regex = getRegExpOrDie(toMatch);
-      assert(regex.test(source), "Page source does match " + regex);
+      assert.ok(regex.test(source), "Page source does match " + regex);
     }
 
 
@@ -2722,7 +2745,7 @@ export class TyE2eTestBrowser {
     async assertPageHtmlSourceDoesNotMatch(toMatch: St | RegExp) {
       const source = await this.#br.getPageSource();
       const regex = getRegExpOrDie(toMatch)
-      assert(!regex.test(source), `Page source *does* match: ${regex}`);
+      assert.ok(!regex.test(source), `Page source *does* match: ${regex}`);
       //let resultsByBrowser = byBrowser(this.#br.getPageSource());
       //_.forOwn(resultsByBrowser, (text, browserName) => {
       //  assert(!regex.test(text), browserNamePrefix(browserName) + "Page source does match " + regex);
@@ -3074,12 +3097,12 @@ export class TyE2eTestBrowser {
       },
 
       waitForNumPendingUrgentReviews: async (numUrgent: IntAtLeastOne) => {
-        assert(numUrgent >= 1, "Zero tasks won't ever become visible [TyE5GKRBQQ2]");
+        assert.ok(numUrgent >= 1, "Zero tasks won't ever become visible [TyE5GKRBQQ2]");
         await this.waitUntilTextMatches('.esNotfIcon-reviewUrgent', '^' + numUrgent + '$');
       },
 
       waitForNumPendingOtherReviews: async (numOther: IntAtLeastOne) => {
-        assert(numOther >= 1, "Zero tasks won't ever become visible [TyE2WKBPJR3]");
+        assert.ok(numOther >= 1, "Zero tasks won't ever become visible [TyE2WKBPJR3]");
         await this.waitUntilTextMatches('.esNotfIcon-reviewOther', '^' + numOther + '$');
       },
 
@@ -3207,14 +3230,14 @@ export class TyE2eTestBrowser {
       },
 
       assertNotfToMe: async () => {
-        assert(await this.isVisible('.esTopbar .esNotfIcon-toMe'));
+        assert.ok(await this.isVisible('.esTopbar .esNotfIcon-toMe'));
       },
 
       notfsToMeClass: '.esTopbar .esNotfIcon-toMe',
       otherNotfsClass: '.esTopbar .esNotfIcon-toOthers',
 
       waitForNumDirectNotfs: async (numNotfs: IntAtLeastOne) => {
-        assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE5GKRBQQ03]");
+        assert.ok(numNotfs >= 1, "Zero notfs won't ever become visible [TyE5GKRBQQ03]");
         await this.waitUntilTextMatches(this.topbar.notfsToMeClass, '^' + numNotfs + '$');
       },
 
@@ -3223,7 +3246,7 @@ export class TyE2eTestBrowser {
       },
 
       waitForNumOtherNotfs: async (numNotfs: IntAtLeastOne) => {
-        assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE4ABKF024]");
+        assert.ok(numNotfs >= 1, "Zero notfs won't ever become visible [TyE4ABKF024]");
         await this.waitUntilTextMatches(this.topbar.otherNotfsClass, '^' + numNotfs + '$');
       },
 
@@ -3525,8 +3548,8 @@ export class TyE2eTestBrowser {
         const usernamesPresent: St[] = await Promise.all(usernamesPresentSoon);
         const namesPresent = usernamesPresent.join(', ');
         logMessage(`Users present: ${namesPresent}`)
-        assert(usernamesPresent.length, "No users listed at all");
-        assert(_.includes(usernamesPresent, username), "User missing: " + username +
+        assert.ok(usernamesPresent.length, "No users listed at all");
+        assert.ok(_.includes(usernamesPresent, username), "User missing: " + username +
             ", those present are: " + namesPresent);
       },
     };
@@ -3560,7 +3583,7 @@ export class TyE2eTestBrowser {
           if (dialogShown)
             break;
         }
-        assert(dialogShown, "The login dialog never appeared");
+        assert.ok(dialogShown, "The login dialog never appeared");
         await this.loginDialog.waitAssertFullScreen();
       },
 
@@ -4055,8 +4078,8 @@ export class TyE2eTestBrowser {
         // don't require verified emails)
         if (ps.mustVerifyEmail !== false) {
           const siteId = await this.getSiteId();
-          const link = server.getLastVerifyEmailAddressLinkEmailedTo(
-                  siteId, user.email, this.#br);
+          const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+                  siteId, user.email);
           await this.go2(link);
           await this.waitAndClick('#e2eContinue');
         }
@@ -4160,8 +4183,8 @@ export class TyE2eTestBrowser {
         // LinkedIn email addresses might not have been verified (or?) so need
         // to click an email addr verif link.
         const siteId = await this.getSiteId();
-        const link = await server.getLastVerifyEmailAddressLinkEmailedTo(
-                siteId, ps.email, this.#br);
+        const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+                siteId, ps.email);
         await this.go2(link);
         await this.waitAndClick('#e2eContinue');
       },
@@ -4402,13 +4425,13 @@ export class TyE2eTestBrowser {
         if (isForSiteOwner) {
           // In dev-test, the below dummy urls are defined [5ADS24], but not in prod.
           if (!settings.prod) {
-            assert(termsLinkHtml.indexOf('href="/e2e-test-siteOwnerTermsUrl"') >= 0);
-            assert(privacyLinkHtml.indexOf('href="/e2e-test-siteOwnerPrivacyUrl"') >= 0);
+            assert.ok(termsLinkHtml.indexOf('href="/e2e-test-siteOwnerTermsUrl"') >= 0);
+            assert.ok(privacyLinkHtml.indexOf('href="/e2e-test-siteOwnerPrivacyUrl"') >= 0);
           }
         }
         else if (isForSiteOwner === false) {
-          assert(termsLinkHtml.indexOf('/-/terms-of-use') >= 0);
-          assert(privacyLinkHtml.indexOf('/-/privacy-policy') >= 0);
+          assert.ok(termsLinkHtml.indexOf('/-/terms-of-use') >= 0);
+          assert.ok(privacyLinkHtml.indexOf('/-/privacy-policy') >= 0);
         }
         await this.setCheckbox('.s_TermsD_CB input', true);
         await this.waitAndClick('.s_TermsD_B');
@@ -4450,7 +4473,7 @@ export class TyE2eTestBrowser {
         if (!opts.oldPassword) {
           // There's a <span> with the below class, just to show this test that there's
           // no type-old-password input field.
-          assert(await this.isExisting('.e_NoOldPwI'));
+          assert.ok(await this.isExisting('.e_NoOldPwI'));
         }
         await this.chooseNewPasswordPage.submit();
         await this.chooseNewPasswordPage.waitUntilPasswordChanged();
@@ -4510,12 +4533,12 @@ export class TyE2eTestBrowser {
       // Also see this.assertWholePageHidden().
       assertPageHidden: async () => {
         await this.pageTitle.waitForVisible();
-        assert(await this.pageTitle.__isEyeOffVisible());
+        assert.ok(await this.pageTitle.__isEyeOffVisible());
       },
 
       assertPageNotHidden: async () => {
         await this.pageTitle.waitForVisible();
-        assert(!await this.pageTitle.__isEyeOffVisible());
+        assert.ok(!await this.pageTitle.__isEyeOffVisible());
       },
 
       __isEyeOffVisible: async (): Pr<Bo> =>
@@ -4586,7 +4609,7 @@ export class TyE2eTestBrowser {
       assertNoCreateTopicButton: async () => {
         // Wait until the button bar has loaded.
         await this.waitForVisible('#e_ViewCatsB');
-        assert(!await this.isVisible('#e2eCreateSth'));
+        assert.ok(!await this.isVisible('#e2eCreateSth'));
       },
 
       listDeletedTopics: async () => {
@@ -4684,11 +4707,11 @@ export class TyE2eTestBrowser {
           const titleShouldBe = titles[i];
           const actualTitleElem = els[i];
           if (!actualTitleElem) {
-            assert(false, `Title nr ${i} missing, should be: "${titleShouldBe}"`);
+            assert.ok(false, `Title nr ${i} missing, should be: "${titleShouldBe}"`);
           }
           const actualTitle = await actualTitleElem.getText();
           if (titleShouldBe !== actualTitle) {
-            assert(false, `Title nr ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
+            assert.ok(false, `Title nr ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
           }
         }
       },
@@ -5098,6 +5121,46 @@ export class TyE2eTestBrowser {
         return text.search(title) >= 0;
       },
 
+      selectAllText: async () => {
+        await this.editor.__setSelectionRange('SelectAll');
+      },
+
+      moveCursorToEnd: async () => {
+        // Move cursor to the end.  This:
+        //await this.#br.keys(Array('Control', 'End'));
+        // Or:
+        await this.editor.__setSelectionRange('MoveToEnd');
+      },
+
+      __setSelectionRange: async (doWhat: 'SelectAll' | 'MoveToEnd') => {
+        await this.#br.execute(function(doWhat) {
+          var textarea = document.querySelector('.esEdtr_textarea');
+          var textLen = textarea['value'].length;
+          const all = doWhat === 'SelectAll';
+          textarea['setSelectionRange'](all ? 0 : textLen, textLen);
+        }, doWhat);
+      },
+
+      /// Didn't need now, but maybe will be useful later?
+      /*
+      isCursorAtEnd: async (): Pr<Bo> => {
+        return await this.#br.execute(function() {
+          var textarea = document.querySelector('.esEdtr_textarea');
+          var textLen = textarea['value'].length;
+          var selStart = textarea['selectionStart'];
+          return selStart === textLen;
+        });
+      }, */
+
+      typeChar: async (char: St, ps: { append?: Bo } = {}) => {
+        await this.switchToEmbEditorIframeIfNeeded();
+        await this.focus('.esEdtr_textarea');
+        if (ps.append) {
+          await this.editor.moveCursorToEnd();
+        }
+        await this.#br.keys(Array(char));
+      },
+
       editText: async (text: St, opts: {
           timeoutMs?: number, checkAndRetry?: true,
           append?: boolean, skipWait?: true } = {}) => {
@@ -5291,6 +5354,13 @@ export class TyE2eTestBrowser {
         await this.waitForDisplayed(this.preview.__inEditorPreviewSelector);
       },
 
+      waitUntilPreviewHtmlIncludes: async (text: St,
+            opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: St }) => {
+        await this.preview.__checkPrevw(opts, async (prevwSelector: St) => {
+          await this.waitUntilHtmlIncludes(prevwSelector, text);
+        });
+      },
+
       waitUntilPreviewHtmlMatches: async (text: St,
             opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: St }) => {
         await this.preview.__checkPrevw(opts, async (prevwSelector: St) => {
@@ -5299,6 +5369,19 @@ export class TyE2eTestBrowser {
       },
 
       // ^--REMOVE, use --v  instead
+      /// Matches text in 1) Ty's edits preview, and also in 2) link previews
+      /// in Ty's edit perviews. So, if typing a reply with, say, a Twitter tweet link,
+      /// there'll be a preview of the reply, and in the preview of the reply,
+      /// there's a preview of the link.
+      /// And this can appear either in the editor (which is the case, if creating
+      /// a new page), or inside the current page (if it already exists), where
+      /// the post will appear once saved.
+      /// So, a links preview, in a post preview, either in the editor or
+      /// in the discussion page.
+      ///
+      /// The link preview html might be in an iframe in an iframe, because some
+      /// external websites include their own iframe, others don't. [dbl_ln_pv_iframe]
+      ///
       waitUntilPreviewTextMatches: async (regex: St | RegExp,
             opts: { where: 'InEditor' | 'InPage', whichLinkPreviewSelector?: St,
                   inSandboxedIframe: Bo, inDoubleIframe?: Bo }) => {
@@ -5531,22 +5614,22 @@ export class TyE2eTestBrowser {
 
       assertPagePendingApprovalBodyHidden: async () => {
         await this.topic.waitForLoaded();
-        assert(await this.topic._isTitlePendingApprovalVisible());
-        assert(await this.topic._isOrigPostPendingApprovalVisible());
-        assert(!await this.topic._isOrigPostBodyVisible());
+        assert.ok(await this.topic._isTitlePendingApprovalVisible());
+        assert.ok(await this.topic._isOrigPostPendingApprovalVisible());
+        assert.ok(!await this.topic._isOrigPostBodyVisible());
       },
 
       assertPagePendingApprovalBodyVisible: async () => {
         await this.topic.waitForLoaded();
-        assert(await this.topic._isTitlePendingApprovalVisible());
-        assert(await this.topic._isOrigPostPendingApprovalVisible());
-        assert(await this.topic._isOrigPostBodyVisible());
+        assert.ok(await this.topic._isTitlePendingApprovalVisible());
+        assert.ok(await this.topic._isOrigPostPendingApprovalVisible());
+        assert.ok(await this.topic._isOrigPostBodyVisible());
       },
 
       assertPageNotPendingApproval: async () => {
         await this.topic.waitForLoaded();
-        assert(!await this.topic._isOrigPostPendingApprovalVisible());
-        assert(await this.topic._isOrigPostBodyVisible());
+        assert.ok(!await this.topic._isOrigPostPendingApprovalVisible());
+        assert.ok(await this.topic._isOrigPostBodyVisible());
       },
 
       getCurCategoryName: async (): Pr<St> => {
@@ -5629,7 +5712,7 @@ export class TyE2eTestBrowser {
         const html = await (await this.$(selector)).getHTML();
         const badMatch = this._findHtmlMatchMiss(html, false, regexOrString);
         if (badMatch) {
-          assert(false,
+          assert.ok(false,
               `Found text that shouldn't be there [TyE53DTEGJ4]:\n\n  ${badMatch}\n`);
         }
       },
@@ -5803,12 +5886,12 @@ export class TyE2eTestBrowser {
 
       waitForReplyButtonAssertCommentsVisible: async () => {
         await this.waitForVisible(this.topic.anyReplyButtonSelector);
-        assert(await this.isVisible(this.topic.anyCommentSelector));
+        assert.ok(await this.isVisible(this.topic.anyCommentSelector));
       },
 
       waitForReplyButtonAssertNoComments: async () => {
         await this.waitForVisible(this.topic.anyReplyButtonSelector);
-        assert(!await this.isVisible(this.topic.anyCommentSelector));
+        assert.ok(!await this.isVisible(this.topic.anyCommentSelector));
       },
 
       waitForPostPreviewDisplayed: async () => {
@@ -6133,7 +6216,7 @@ export class TyE2eTestBrowser {
         await this.topic.clickMoreVotesForPostNr(postNr);
         await this.waitForVisible('.esDropModal_content .dw-a-like');
         const canVote = await this.isVisible('.esDropModal_content .dw-a-unwanted');
-        assert(false); // how close modal? to do... later when needed
+        assert.ok(false); // how close modal? to do... later when needed
         return canVote;
       },
 
@@ -6173,13 +6256,13 @@ export class TyE2eTestBrowser {
       },
 
       selectPostNrAsAnswer: async (postNr: PostNr) => {
-        assert(!await this.isVisible(this.topic._makeUnsolveSelector(postNr)));
+        assert.ok(!await this.isVisible(this.topic._makeUnsolveSelector(postNr)));
         await this.topic.clickPostActionButton(this.topic._makeSolveSelector(postNr));
         await this.waitForVisible(this.topic._makeUnsolveSelector(postNr));
       },
 
       unselectPostNrAsAnswer: async (postNr: PostNr) => {
-        assert(!await this.isVisible(this.topic._makeSolveSelector(postNr)));
+        assert.ok(!await this.isVisible(this.topic._makeSolveSelector(postNr)));
         await this.topic.clickPostActionButton(this.topic._makeUnsolveSelector(postNr));
         await this.waitForVisible(this.topic._makeSolveSelector(postNr));
       },
@@ -6336,16 +6419,16 @@ export class TyE2eTestBrowser {
       },
 
       assertPostHidden: async  (postNr: PostNr) => {
-        assert(await this.topic.isPostBodyHidden(postNr));
+        assert.ok(await this.topic.isPostBodyHidden(postNr));
       },
 
       assertPostNotHidden: async (postNr: PostNr) => {
-        assert(!await this.isVisible(`#post-${postNr}.s_P-Hdn`));
-        assert(await this.isVisible(`#post-${postNr}`));
+        assert.ok(!await this.isVisible(`#post-${postNr}.s_P-Hdn`));
+        assert.ok(await this.isVisible(`#post-${postNr}`));
         // Check -Hdn again, to prevent some races (but not all), namely that the post gets
         // loaded, and is invisible, but the first -Hdn check didn't find it because at that time
         // it hadn't yet been loaded.
-        assert(!await this.isVisible(`#post-${postNr}.s_P-Hdn`));
+        assert.ok(!await this.isVisible(`#post-${postNr}.s_P-Hdn`));
       },
 
       rejectPostNr: async (postNr: PostNr) => {
@@ -6360,8 +6443,8 @@ export class TyE2eTestBrowser {
         }
         await this.waitUntilGone(selector);
         await this.topic.waitForPostVisibleAsDeleted(postNr);
-        assert(!await this.topic._hasUnapprovedClass(postNr));
-        assert(!await this.topic._hasPendingModClass(postNr));
+        assert.ok(!await this.topic._hasUnapprovedClass(postNr));
+        assert.ok(!await this.topic._hasPendingModClass(postNr));
       },
 
       approvePostNr: async (postNr: PostNr) => {
@@ -6369,22 +6452,22 @@ export class TyE2eTestBrowser {
         await this.waitAndClick(selector);
         await this.stupidDialog.yesIAmSure();
         await this.waitUntilGone(selector);
-        assert(!await this.topic._hasUnapprovedClass(postNr));
-        assert(!await this.topic._hasPendingModClass(postNr));
+        assert.ok(!await this.topic._hasUnapprovedClass(postNr));
+        assert.ok(!await this.topic._hasPendingModClass(postNr));
       },
 
       assertPostNeedsApprovalBodyVisible: async (postNr: PostNr) => {
         // Test visible = true first, else, race. [is_visible_1st]
-        assert(await this.topic._hasPendingModClass(postNr));
-        assert(!await this.topic._hasUnapprovedClass(postNr));
-        assert(await this.topic._isBodyVisible(postNr));
+        assert.ok(await this.topic._hasPendingModClass(postNr));
+        assert.ok(!await this.topic._hasUnapprovedClass(postNr));
+        assert.ok(await this.topic._isBodyVisible(postNr));
       },
 
       assertPostNeedsApprovalBodyHidden: async (postNr: PostNr) => {
         // Test visible = true first, else, race. [is_visible_1st]
-        assert(await this.topic._hasUnapprovedClass(postNr));
-        assert(!await this.topic._hasPendingModClass(postNr));
-        assert(!await this.topic._isBodyVisible(postNr));
+        assert.ok(await this.topic._hasUnapprovedClass(postNr));
+        assert.ok(!await this.topic._hasPendingModClass(postNr));
+        assert.ok(!await this.topic._isBodyVisible(postNr));
       },
 
       refreshUntilPostNotPendingApproval: async (postNr: PostNr) => {
@@ -6400,7 +6483,7 @@ export class TyE2eTestBrowser {
         if (ps.wait !== false) {
           await this.topic.waitForPostNrVisible(postNr);
         }
-        assert(await this.topic.isPostNotPendingApproval(postNr));
+        assert.ok(await this.topic.isPostNotPendingApproval(postNr));
       },
 
       isPostNotPendingApproval: async (postNr: PostNr): Pr<Bo> => {
@@ -6684,7 +6767,7 @@ export class TyE2eTestBrowser {
 
       assertPhraseNotFound: async (phrase: St) => {
         await this.searchResultsPage.waitForResults(phrase);
-        assert(await this.isVisible('#e_SP_NothingFound'));
+        assert.ok(await this.isVisible('#e_SP_NothingFound'));
       },
 
       waitForAssertNumPagesFound: async (phrase: St, numPages: Nr) => {
@@ -6826,11 +6909,11 @@ export class TyE2eTestBrowser {
           await this.waitAndClick('.s_Tb_Ln-Grps');
         });
         if ((await this.urlPath()).startsWith(c.GroupsUrlPrefix)) {
-          assert(isGroup);
+          assert.ok(isGroup);
           await this.groupListPage.waitUntilLoaded();
         }
         else {
-          assert(!isGroup);
+          assert.ok(!isGroup);
           // /-/users/ all users list not yet impl
         }
       },
@@ -6915,7 +6998,7 @@ export class TyE2eTestBrowser {
 
       assertIsMyProfile: async () => {
         await this.waitForVisible('.esUP_Un');
-        assert(await this.isVisible('.esProfile_isYou'));
+        assert.ok(await this.isVisible('.esProfile_isYou'));
       },
 
       assertUsernameIs: async (username: St) => {
@@ -7355,7 +7438,7 @@ export class TyE2eTestBrowser {
         await this.waitForVisible('.e_HasVerifiedEmail');
         await this.waitForVisible('.e_ViewProfileL');
         await this.waitForVisible('.e_HomepageL');
-        assert(opts.needToLogin === await this.isVisible('.e_NeedToLogin'));
+        assert.ok(opts.needToLogin === await this.isVisible('.e_NeedToLogin'));
       },
 
       goToHomepage: async () => {
@@ -7842,15 +7925,15 @@ export class TyE2eTestBrowser {
 
         assertEnabled: async () => {
           await this.adminArea.user.waitForLoaded();
-          assert(await this.isVisible(this.adminArea.user.enabledSelector));
+          assert.ok(await this.isVisible(this.adminArea.user.enabledSelector));
         },
 
         assertEmailVerified: async () => {
-          assert(await this.isVisible(this.adminArea.user.setEmailNotVerifiedButtonSelector));
+          assert.ok(await this.isVisible(this.adminArea.user.setEmailNotVerifiedButtonSelector));
         },
 
         assertEmailNotVerified: async () => {
-          assert(await this.isVisible(this.adminArea.user.setEmailVerifiedButtonSelector));
+          assert.ok(await this.isVisible(this.adminArea.user.setEmailVerifiedButtonSelector));
         },
 
         setEmailToVerified: async (verified: Bo) => {
@@ -7868,38 +7951,38 @@ export class TyE2eTestBrowser {
 
         assertDisabledBecauseNotYetApproved: async () => {
           await this.adminArea.user.waitForLoaded();
-          assert(await this.isVisible(this.adminArea.user.disabledSelector));
-          assert(await this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
+          assert.ok(await this.isVisible(this.adminArea.user.disabledSelector));
+          assert.ok(await this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
           // If email not verified, wouldn't be considered waiting.
-          assert(!await this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
+          assert.ok(!await this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
         },
 
         assertDisabledBecauseEmailNotVerified: async () => {
           await this.adminArea.user.waitForLoaded();
-          assert(await this.isVisible(this.adminArea.user.disabledSelector));
-          assert(await this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
+          assert.ok(await this.isVisible(this.adminArea.user.disabledSelector));
+          assert.ok(await this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
           // Isn't considered waiting, until after email approved.
-          assert(!await this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
+          assert.ok(!await this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
         },
 
         assertApprovedInfoAbsent: async () => {
           await this.adminArea.user.waitForLoaded();
-          assert(await this.isExisting('.e_Appr_Info-Absent'));
+          assert.ok(await this.isExisting('.e_Appr_Info-Absent'));
         },
 
         assertApproved: async () => {
           await this.adminArea.user.waitForLoaded();
-          assert(await this.isVisible('.e_Appr_Yes'));
+          assert.ok(await this.isVisible('.e_Appr_Yes'));
         },
 
         assertRejected: async () => {
           await this.adminArea.user.waitForLoaded();
-          assert(await this.isVisible('.e_Appr_No'));
+          assert.ok(await this.isVisible('.e_Appr_No'));
         },
 
         assertWaitingForApproval: async () => {   // RENAME to  assertApprovalUndecided
           await this.adminArea.user.waitForLoaded();
-          assert(await this.isVisible('.e_Appr_Undecided'));
+          assert.ok(await this.isVisible('.e_Appr_Undecided'));
         },
 
         approveUser: async () => {
@@ -8022,7 +8105,7 @@ export class TyE2eTestBrowser {
 
         assertUserListEmpty: async () => {
           await this.adminArea.users.waitForLoaded();
-          assert(await this.isVisible('.e_NoSuchUsers'));
+          assert.ok(await this.isVisible('.e_NoSuchUsers'));
         },
 
         assertUserListed: async (member: { username: St }) => {
@@ -8047,10 +8130,10 @@ export class TyE2eTestBrowser {
           // later, check the relevant user row.
           // ------------
           if (verified) {
-            assert(!await this.isVisible('.e_EmNotVerfd'));
+            assert.ok(!await this.isVisible('.e_EmNotVerfd'));
           }
           else {
-            assert(await this.isVisible('.e_EmNotVerfd'));
+            assert.ok(await this.isVisible('.e_EmNotVerfd'));
           }
         },
 
@@ -8244,7 +8327,7 @@ export class TyE2eTestBrowser {
               // If we have a specific post in mind, then not only the Undo, but also
               // any Accept or Delete buttons elsewhere, for the same post, should
               // disappear, when the server is done.
-              assert(_.isNumber(postNr));
+              assert.ok(_.isNumber(postNr));
               const pagePostSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
               const stillVisible = await this.filterVisible([
                       pagePostSelector + ' .s_A_Rvw_Tsk_UndoB',
@@ -8829,7 +8912,7 @@ export class TyE2eTestBrowser {
         await this.topbar.clickSignUp();
         let name: string;
         if (_.isObject(nameOrObj)) {
-          assert(!email);
+          assert.ok(!email);
           name = nameOrObj.fullName;
           email = nameOrObj.emailAddress;
         }
@@ -8850,7 +8933,7 @@ export class TyE2eTestBrowser {
         await this.topbar.clickLogin();
         let name: string;
         if (_.isObject(nameOrObj)) {
-          assert(!email);
+          assert.ok(!email);
           name = nameOrObj.fullName;
           email = nameOrObj.emailAddress;
         }
@@ -9232,6 +9315,6 @@ export class TyE2eTestBrowser {
         break;
       logUnusual("Checkbox refuses to change state. Clicking it again.");
     }
-    assert(bugRetry <= maxBugRetry, "Couldn't set checkbox to checked = " + checked);
+    tyAssert.ok(bugRetry <= maxBugRetry, "Couldn't set checkbox to checked = " + checked);
   }
 }

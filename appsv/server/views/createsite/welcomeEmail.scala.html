@@ -1,0 +1,35 @@
+// Oops, not in use [welc_em_0used]
+@()
+@*
+@(site: com.debiki.core.Tenant, userName: String)
+
+@import controllers.CreateEmbeddedSiteController
+@import debiki.HtmlUtils.link
+
+@embeddingSiteUrl = @{ site.embeddingSiteUrl.get }
+@adminUrl = @{ CreateEmbeddedSiteController.adminUrlForEmbeddedSite(site.id) }
+
+@embeddedCommentsInstructionsUrl = @{
+  val embeddedSiteOrigin = debiki.Globals.siteByIdOrigin(site.id)
+  embeddedSiteOrigin + routes.CreateEmbeddedSiteController.embeddingSiteInstructionsPage()
+}
+
+<div>
+<p>Hi @userName,</p>
+
+<p>Embedded comments have been setup for your website at <tt>@embeddingSiteUrl</tt>.</p>
+
+<p>Please find here getting started instructions:</p>
+
+<a href="@embeddedCommentsInstructionsUrl">Instructions</a>
+
+<p>You can log in and administrate comments here:</p>
+
+<p>@link(adminUrl)</p>
+
+<p>Kind regards, Debiki<br>
+www.debiki.com
+</p>
+</div>
+
+*@

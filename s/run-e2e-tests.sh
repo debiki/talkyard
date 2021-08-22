@@ -312,6 +312,7 @@ function runAllE2eTests {
 
   $r s/wdio --only hide-unhide-tips.2br $args
 
+  $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
   $r s/wdio --only sanitize-posts.2browsers $args
 
   $r s/wdio --only votes-and-best-first $args
@@ -427,7 +428,7 @@ function runAllE2eTests {
   $r s/wdio --only notf-prefs-custom-groups.2browsers $args
   $r s/wdio --only notf-prefs-private-groups.2browsers $args
   $r s/wdio --only notf-prefs-pages-replied-to.2br $args
-
+  $r s/wdio-7 --only cannot-reply-via-email.2br --cd -i $args
   $r s/wdio --only notfs-page-gone.2browsers $args
   # Later:
   # Move page from a staff only cat, to a publ cat, and verify people who have
@@ -562,7 +563,7 @@ function runAllE2eTests {
   # API: CORS
   # ------------
 
-  # $r s/wdio --only api-search-cors.UNIMPL.2br
+  $r s/wdio-7 --only api-search-ext-site-and-server.2br.cors --cd -i $args
 
 
   # Embedded forum

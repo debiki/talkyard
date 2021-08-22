@@ -28,14 +28,13 @@ let wasError = false;
 // So cannot look at the file names, to determine which capabilities we need.
 // Instead, we need to use the command line args, i.e. `settings` (USESTNGS).
 
-const specsPathPrefix = settings.isInProjBaseDir ? './tests/e2e' : '.';
+const specsPathPrefix = settings.isInProjBaseDir ? './tests/e2e-wdio7' : '.';
 
-let specs = [`${specsPathPrefix}/specs/**/*.ts`];
+let specs = [`${specsPathPrefix}/specs/**/*.e2e.ts`];
 
 // This now not needed? wdio v6 has  --spec
 if (settings.only) {
-  const o = settings.only;
-  const globTs = o.endsWith('.test.ts') || o.endsWith('.e2e.ts') ? '' : '*.ts';
+  const globTs = settings.only.endsWith('.e2e.ts') ? '' : '*.e2e.ts';
   specs = [`${specsPathPrefix}/specs/**/*${settings.only}${globTs}`];
 }
 
@@ -200,7 +199,7 @@ export const config = { // doesn't work: WebdriverIO.Config = {
   specs,
 
   exclude: [
-    specsPathPrefix + './specs/**/*__e2e-test-template__*.ts',
+    //specsPathPrefix + './specs/**/..  .ts',
   ],
 
 
@@ -487,6 +486,10 @@ export const config = { // doesn't work: WebdriverIO.Config = {
     global.wdioBrowserA = global.oneWdioBrowser;
     global.wdioBrowserB = global.browserB; // only in multiremote tests
     global.wdioBrowserC = global.browserC; //  — "" —
+
+    global.wdioBrowserA.setWindowSize(1150, 1150);
+    if (global.wdioBrowserB) global.wdioBrowserB.setWindowSize(1150, 1150);
+    if (global.wdioBrowserC) global.wdioBrowserC.setWindowSize(1150, 1150);
 
     // Extremely confusing if calling the wrong $, e.g.:
     //   $('#e_TermsL').getHTML();

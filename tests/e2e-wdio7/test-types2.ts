@@ -622,8 +622,13 @@ interface IdAddress {
 
 
 interface EmailSubjectBody {
-  subject: string;
-  bodyHtmlText: string;
+  emailId: St;
+  to: St;
+  from: St;
+  sentOnMs: WhenMs;
+  numRepliesBack?: Nr;
+  subject: St;
+  bodyHtmlText: St;
 }
 
 

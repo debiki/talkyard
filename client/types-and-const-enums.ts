@@ -288,7 +288,7 @@ type PageLayout = number;
 
 
 const enum TopicListLayout {
-  Default = 0,
+  Default = 0,  // currently same as title only [topicListLayout_getName]
   TitleOnly = 1,
   TitleExcerptSameLine = 2,
   ExcerptBelowTitle = 3,

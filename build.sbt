@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2012-2020 Kaj Magnus Lindberg
+  * Copyright (c) 2012-2021 Kaj Magnus Lindberg
   *
   * This program is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Affero General Public License as
@@ -34,16 +34,15 @@ val appName = "talkyard-server"
 val appVersion = ProjectDirectory.versionFileContents
 
 
+// Data structures shared between appsv/server and appsv/rdb.
+lazy val tyModel =
+  project in file("appsv/model")
 
-// Code shared between <repo-root>/app/ and <repo-root>/modules/ty-dao-rdb.
-lazy val edCore =
-  project in file("modules/ed-core")
 
-
-// ty = Talkyard, dao = Database Access Object, rdb = Relational DataBase (PostgreSQL)
-lazy val tyDaoRdb =
-  (project in file("modules/ty-dao-rdb"))
-    .dependsOn(edCore)
+// Relational dataBase module (PostgreSQL).
+lazy val tyRdb =
+  (project in file("appsv/rdb"))
+    .dependsOn(tyModel)
 
 
 val appDependencies = Seq(
@@ -114,11 +113,11 @@ val main = (project in file("."))
   .enablePlugins(play.sbt.PlayWeb, BuildInfoPlugin)
   .settings(mainSettings: _*)
   .dependsOn(
-    edCore % "test->test;compile->compile",
-    tyDaoRdb)
+    tyModel % "test->test;compile->compile",
+    tyRdb)
   .aggregate(
-    edCore,
-    tyDaoRdb)
+    tyModel,
+    tyRdb)
 
 
 def mainSettings = List(
@@ -128,12 +127,17 @@ def mainSettings = List(
 
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
+  // RENAME to ./tests/appsv? (since ./app is now ./appsv)
   scalaSource in Test := { (baseDirectory in Test)(_ / "tests" / "app") }.value,
+
+  // The app server code is in ./appsv, not ./app, because just "app" might
+  // as well be Ty's web app (in ./client).
+  scalaSource in Compile := { (baseDirectory in Test)(_ / "appsv" / "server") }.value,
 
   // This compiles language specific email templates in:
   // talkyard.server.emails.transl.nn_NN.
   sourceDirectories in (Compile, TwirlKeys.compileTemplates) :=
-        Seq({ (baseDirectory in Compile)(_ / "app") }.value),
+        Seq({ (baseDirectory in Compile)(_ / "appsv" / "server") }.value),
 
   // Silhouette needs com.atlassian.jwt:jwt-core and jwt-api, but there's a problem:
   // """the problem is that the jwt-lib is hosted on bintray.com and then mirrored to

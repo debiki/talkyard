@@ -42,8 +42,8 @@ declare const rFr: any;      // better
 
 declare function doNextFrameOrNow(x);
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string | null;
-declare const parseQueryString: (s: string) => any;
-declare const stringifyQueryString: (s: any) => string;
+declare const parseQueryString: (s: St) => UrlParamsMap;
+declare const stringifyQueryString: (s: UrlParamsMap) => St;
 
 declare const ReactStartedClass: string;
 

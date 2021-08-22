@@ -17,6 +17,7 @@ let owen: Member;
 let owen_brA: TyE2eTestBrowser;
 let maria: Member;
 let maria_brA: TyE2eTestBrowser;
+let maria_brB: TyE2eTestBrowser;
 let memah: Member;
 let memah_brB: TyE2eTestBrowser;
 
@@ -55,6 +56,8 @@ describe(`delete-pages.2br  TyTE2EDELPG602`, () => {
 
     memah = forum.members.memah;
     memah_brB = brB;
+
+    maria_brB = brB;
 
     assert.refEq(builder.getSite(), forum.siteData);
   });
@@ -120,11 +123,10 @@ describe(`delete-pages.2br  TyTE2EDELPG602`, () => {
     memah_brB.assertNotFoundError({ whyNot: 'PageDeleted' });
   });
 
-  // -------------------------------------------------------------------
-  /* This won't work right now — first need to remember that Maria deleted the page.  [del_own_pg]
-     So instead, for now, Owen (admin) needs to un-delete the page.
-
-  it(`... but Maria can still see it — her page, deleted by her  [undel_pages]`, () => {
+  it(`... but Maria can still see it — her page, deleted by her`, () => {
+    maria_brA.topic.assertPostTextIs(c.TitleNr, mariasTopicTitle, { wait : true });
+  });
+  it(`... also after page reload`, () => {
     maria_brA.refresh2();
     maria_brA.topic.assertPostTextIs(c.TitleNr, mariasTopicTitle, { wait : true });
   });
@@ -136,22 +138,6 @@ describe(`delete-pages.2br  TyTE2EDELPG602`, () => {
     maria_brA.topic.undeletePage();
     nextPostNr += 1; // meta post about page undeleted
   });
-  */
-  it(`Owen arrives TEMPFX`, () => {
-    maria_brA.topbar.clickLogout();
-    owen_brA.complex.loginWithPasswordViaTopbar(owen);
-    owen_brA.go2(mariasTopicUrl);
-  });
-  it(`... and undeletes the page TEMPFX`, () => {
-    owen_brA.topic.undeletePage();
-    nextPostNr += 1; // meta post about page undeleted
-  });
-  it(`... Maria is back TEMPFX`, () => {
-    owen_brA.topbar.clickLogout();
-    maria_brA.complex.loginWithPasswordViaTopbar(maria);
-  });
-  // -------------------------------------------------------------------
-
   it(`... now Memah sees it again`, () => {
     memah_brB.refresh2();
     memah_brB.topic.assertPostTextIs(c.TitleNr, mariasTopicTitle, { wait : true });
@@ -196,26 +182,11 @@ describe(`delete-pages.2br  TyTE2EDELPG602`, () => {
     memah_brB.refresh2();
     memah_brB.assertNotFoundError({ whyNot: 'PageDeleted' });
   });
-  // -------------------------------------------------------------------
-  /* This won't work right now — first need to remember that Maria deleted the page.  [del_own_pg]
-     So instead, for now, Owen (admin) needs to un-delete the page.
+
   it(`Maria undeletes it`, () => {
     maria_brA.topic.undeletePage();
-  }); */
-  it(`Owen arrives TEMPFX`, () => {
-    maria_brA.topbar.clickLogout();
-    owen_brA.complex.loginWithPasswordViaTopbar(owen);
-    owen_brA.go2(mariasTopicUrl);
-  });
-  it(`... and undeletes the page TEMPFX`, () => {
-    owen_brA.topic.undeletePage();
     nextPostNr += 1; // meta post about page undeleted
   });
-  it(`... Maria is back TEMPFX`, () => {
-    owen_brA.topbar.clickLogout();
-    maria_brA.complex.loginWithPasswordViaTopbar(maria);
-  });
-  // -------------------------------------------------------------------
 
 
   // ----- Staff can delete pages with other's replies
@@ -239,20 +210,36 @@ describe(`delete-pages.2br  TyTE2EDELPG602`, () => {
     owen_brA.topbar.pageTools.deletePage();
   });
 
-  /* Not yet impl  [undel_pages]
-  it(`Now Maria cannot see it, because deleted by staff, not her`, () => {
-  });
-  */
-
   it(`Memah cannot see it`, () => {
     memah_brB.refresh2();
     memah_brB.assertNotFoundError({ whyNot: 'PageDeleted' });
   });
 
-  it(`Owen undeletes it`, () => {
+  it(`Maria wants to try, takes Memahs laptop (they're in the same café)`, () => {
+    memah_brB.go2('/');  // so topbar visible
+    memah_brB.topbar.clickLogout();
+    maria_brB.complex.loginWithPasswordViaTopbar(maria);
+  });
+
+  it(`Maria also cannot see the page — it got deleted by staff, not by her`, () => {
+    maria_brB.go2(mariasTopicUrl);
+    maria_brB.assertNotFoundError({ whyNot: 'PageDeleted' });
+  });
+
+  it(`Owen undeletes the page`, () => {
     owen_brA.topbar.pageTools.restorePage();
   });
-  it(`... now Memah sees it again, again`, () => {
+  it(`... now Maria sees it again`, () => {
+    maria_brB.refresh2();
+    maria_brB.topbar.assertMyUsernameMatches(maria.username); // ttt
+    maria_brB.topic.assertPostTextIs(c.TitleNr, mariasTopicTitle, { wait : true });
+  });
+
+  it(`Memah takes her laptop back, and looks upset`, () => {
+    maria_brB.topbar.clickLogout();
+    memah_brB.complex.loginWithPasswordViaTopbar(memah);
+  });
+  it(`... Memah too can see the page`, () => {
     memah_brB.refresh2();
     memah_brB.topic.assertPostTextIs(c.TitleNr, mariasTopicTitle, { wait : true });
   });
@@ -271,11 +258,11 @@ describe(`delete-pages.2br  TyTE2EDELPG602`, () => {
 
 
 
-  // ----- Can delete own page with one's own replise only
+  // ----- Can delete own page with one's own replies only  [del_own_pg]
 
   // TESTS_MISSING  TyT7MEWQ3SF
 
-  // Memah posts a reply on her own page, thereafter deletes it
+  // Memah posts a reply on her own page, thereafter deletes the page
   //   — fine, since is her own reply.
 
 });

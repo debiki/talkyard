@@ -1431,7 +1431,7 @@ export function patchTheStore(storePatch: StorePatch, onDone?: () => void) {
 
 
 export function maybeLoadAndShowNewPage(store: Store,
-        history, location: Location, newLocation?: Location) {
+        history, location: ReactRouterLocation, newLocation?: ReactRouterLocation) {
 
   // No router, so no history or location, if in embedded comments discussion.
   if (!history || !location) {

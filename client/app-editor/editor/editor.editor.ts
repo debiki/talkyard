@@ -2016,28 +2016,41 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   makeTextBold: function() {
-    const newText = wrapSelectedText(this.textareaElm, t.e.exBold, '**');
-    this.setState({ text: newText }, this.updatePreviewSoon);
+    const text = wrapSelectedText(this.textareaElm, t.e.exBold, '**');
+    this.setState({ text }, this.updatePreviewSoon);
   },
 
   makeTextItalic: function() {
-    const newText = wrapSelectedText(this.textareaElm, t.e.exEmph, '*');
-    this.setState({ text: newText }, this.updatePreviewSoon);
+    const text = wrapSelectedText(this.textareaElm, t.e.exEmph, '*');
+    this.setState({ text }, this.updatePreviewSoon);
   },
 
-  markupAsCode: function() {
+  // It's more important to get code blocks right, than inline single variables,
+  // so skip this fn, and we'll use markupAsCode() below instead.
+  // (If forgetting to markup an inline variable, that barely matters. But a
+  // messed up code block can be both long and hard to read.)
+  /*
+  markupAsInlineCode: function() {
     const newText = wrapSelectedText(this.textareaElm, t.e.exPre, '`');
     this.setState({ text: newText }, this.updatePreviewSoon);
+  }, */
+
+  markupAsCode: function() {
+    // UX COULD use just `...` if text selected inside a line.
+    const text = wrapSelectedText(
+            this.textareaElm, t.e.exPre, '\n\n```\n', '\n```\n\n');
+    this.setState({ text }, this.updatePreviewSoon);
   },
 
   quoteText: function() {
-    const newText = wrapSelectedText(this.textareaElm, t.e.exQuoted, '> ', null, '\n\n');
-    this.setState({ text: newText }, this.updatePreviewSoon);
+    const text = wrapSelectedText(
+            this.textareaElm, t.e.exQuoted, '\n\n> ', '\n\n', '\n> ');
+    this.setState({ text }, this.updatePreviewSoon);
   },
 
   addHeading: function() {
-    const newText = wrapSelectedText(this.textareaElm, t.e.ExHeading, '### ', null, '\n\n');
-    this.setState({ text: newText }, this.updatePreviewSoon);
+    const text = wrapSelectedText(this.textareaElm, t.e.ExHeading, '\n\n### ', '\n\n');
+    this.setState({ text });
   },
 
 
@@ -2598,7 +2611,7 @@ function page_isUsabilityTesting(pageType: PageRole): boolean {  // [plugin]
 
 
 
-function wrapSelectedText(textarea: HTMLTextAreaElement, content: St,
+function wrapSelectedText(textarea: HTMLTextAreaElement, placeholder: St,
       wrap: St, wrapAfter?: St, newlines?: St) {
   const startIndex = textarea.selectionStart;
   const endIndex = textarea.selectionEnd;
@@ -2606,11 +2619,20 @@ function wrapSelectedText(textarea: HTMLTextAreaElement, content: St,
   const textBefore = textarea.value.substring(0, startIndex);
   const textAfter = textarea.value.substring(endIndex);
 
-  if (_.isUndefined(wrapAfter)) wrapAfter = wrap;
-  if (selectedText) content = selectedText;
-  if (!newlines) newlines = '';
-
-  return textBefore + newlines + wrap + content + (wrapAfter || '') + newlines + textAfter;
+  // [ed_toolbr_2_newl]
+  const twoNewlinesAlready = wrap.startsWith('\n\n') && /^\s*$|\n\n$/.test(textBefore);
+  const oneNewlineAlready = wrap.startsWith('\n') && /^\s*$|\n$/.test(textBefore);
+  const wrapMaybeTrimmed =
+          twoNewlinesAlready ? wrap.substr(2) : (
+              oneNewlineAlready ? wrap.substr(1) : wrap);
+  const contentWithNewlines = !selectedText ? placeholder : (
+          newlines ? selectedText.replace(/\n/gm, newlines) : selectedText);
+  if (notVal(wrapAfter)) wrapAfter = wrap;
+  return (textBefore +
+            wrapMaybeTrimmed +
+            contentWithNewlines +
+            (wrapAfter || '') +
+          textAfter);
 }
 
 

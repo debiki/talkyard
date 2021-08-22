@@ -61,6 +61,7 @@ interface EditCatDiagState {
   isSaving?: Bo;
   onSaved?;
   defaultTopicType: PageRole;
+  doItVotesPopFirst: Bo;
   categoryId?: CategoryId;
   originalSlug?: St;                // CLEAN_UP remove, ...
   category?: CategoryPatch;
@@ -143,6 +144,7 @@ const EditCategoryDialog = createClassAndFactory({
           name: '',
           slug: '',
           defaultTopicType: PageRole.Discussion,
+          doItVotesPopFirst: false,
           isDefaultCategory: false,
           position: DefaultPosition,
           description: '',
@@ -372,6 +374,19 @@ const CatSettings = createClassAndFactory({
         r.span({ className: 'help-block' },
           "New topics in this category will be of this type, by default."));
 
+    const pageTypePlurName = editor.forumTopicType_toEnPlSt(category.defaultTopicType);
+    // The label is like "Upvote ideas" or "Upvote questions", depending on the page type.
+    const doItVotes =
+      Input({ type: 'checkbox', className: 'e_DoVote',
+        label: `Upvote ${pageTypePlurName}`,
+        checked: category.doItVotesPopFirst, onChange: (event: CheckboxEvent) => {
+          this.props.updateCategory({ doItVotesPopFirst: event.target.checked });
+        },
+        help: `Let members upvote ${pageTypePlurName}, by clicking Like ` +
+              `(the heart icon). ` +
+              `Sorts the ${pageTypePlurName} by popular (more votes) first, and ` +
+              `shows number of votes.` });
+
     const rootCatId = sectPage.categoryId;
     const parentCatDropdown =
         r.div({ className: 'form-group' },
@@ -505,6 +520,7 @@ const CatSettings = createClassAndFactory({
             nameInput,
             editDescriptionLink,
             defaultTopicTypeInput,
+            doItVotes,
             parentCatDropdown,
             isDefaultInput,
             slugInput,

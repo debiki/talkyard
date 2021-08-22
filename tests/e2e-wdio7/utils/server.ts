@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as utils from './utils';
 import c from '../test-constants';
-import { logMessage, logWarning, logError, logServerRequest, die, dieIf,
+import { logDebug, logMessage, logWarning, logError, logServerRequest, die, dieIf,
         } from './log-and-die';
 
 const syncRequest = require('sync-request');
@@ -65,13 +65,31 @@ function initOrExit(theSettings) {
 }
 
 
-function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: string,
-      retryIfXsrfTokenExpired?: boolean, fail?: boolean } = {})
-      : { statusCode: number, headers, bodyText: string, bodyJson: () => any } {
+function postOrDie(
+      url: St,
+      data: Object,
+      opts: {
+        apiRequesterId?: Nr,
+        apiRequester?: St,
+        apiSecret?: St,
+        retryIfXsrfTokenExpired?: Bo,
+        fail?: Bo,
+        hintIfErr?: St ,
+        cookie?: St | Nl,
+        sidHeader?: St,
+        xsrfTokenHeader?: St | Nl } = {},
+      ): {
+        statusCode: Nr,
+        headers: { [name: string]: St },
+        bodyText: St,
+        bodyJson: () => Ay,
+      } {
 
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2WKG4]");
-  dieIf(!!opts.apiRequesterId !== !!opts.apiSecret,
+  dieIf(!!(opts.apiRequester || opts.apiRequesterId) !== !!opts.apiSecret,
         "API user id or secret missing [TyE450KST]");
+  dieIf(!!opts.apiRequester && !!opts.apiRequesterId,
+        "Both apiRequester and apiRequesterId specified [TyE7M0MEG25R]");
 
   const passwordParam =
       (url.indexOf('?') === -1 ? '?' : '&') + 'e2eTestPassword=' + settings.e2eTestPassword;
@@ -79,15 +97,35 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
   // Authentication headers.
   // Either use Bausic Authentication, if we're doing an API request with an API secret,
   // or include an xsrf cookie if something else.
-  const headers = opts.apiRequesterId
+  const apiRequester = opts.apiRequester || (
+            opts.apiRequesterId ? 'talkyardId=' + opts.apiRequesterId : null);
+  const headers = apiRequester
     ? {
         'Authorization': 'Basic ' +
-            utils.encodeInBase64(`talkyardId=${opts.apiRequesterId}:${opts.apiSecret}`)
+            utils.encodeInBase64(apiRequester + ':' + opts.apiSecret)
       }
     : (!xsrfTokenAndCookies ? {} : {
         'X-XSRF-TOKEN': xsrfTokenAndCookies[0],
         'Cookie': xsrfTokenAndCookies[1]
       });
+
+  if (opts.cookie) {
+    headers.Cookie = opts.cookie;
+  }
+  else if (opts.cookie === null) {
+    delete headers.Cookie;
+  }
+
+  if (opts.sidHeader) {
+    headers['X-Ty-Sid'] = opts.sidHeader;
+  }
+
+  if (opts.xsrfTokenHeader) {
+    headers['X-XSRF-TOKEN'] = opts.xsrfTokenHeader;
+  }
+  else if (opts.xsrfTokenHeader === null) {
+    delete headers['X-XSRF-TOKEN'];
+  }
 
   logServerRequest(`POST ${url}, headers: ${ JSON.stringify(headers) } ... [TyME2EPOST]`);
 
@@ -116,7 +154,7 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
 
   //console.log('\n\n' + url + '  ——>\n' + responseBody + '\n\n');
   if (response.statusCode !== 200 && responseBody.indexOf('TyEXSRFEXP_') >= 0 &&
-      opts.retryIfXsrfTokenExpired !== false) {
+      opts.retryIfXsrfTokenExpired !== false && _.isUndefined(opts.xsrfTokenHeader)) {
     // The xsrf token expires, if we playTime...() too much.
     logMessage("Getting a new xsrf token; the old one has expired ...");
 
@@ -128,13 +166,13 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
   }
 
   if (opts.fail) {
-    dieIf(response.statusCode === 200,
+    dieIf(200 <= response.statusCode && response.statusCode <= 399,
       "POST request should have gotten back an error code, to " +
           url + " [TyE507KDF2P]", showResponse(response, true));
   }
-  else {
-    dieIf(response.statusCode !== 200,
-        "POST request failed to " + url + " [EsE5GPK02]", showResponse(response));
+  else if (response.statusCode !== 200) {
+    die(`POST request failed to: ${url}  [TyE2EPOSTREQ]`, showResponse(response),
+        opts.hintIfErr);
   }
 
   return {
@@ -170,6 +208,7 @@ function getOrDie(url) {
     'Cookie': xsrfTokenAndCookies[1]
   };
 
+  // Later, asyncRequest
   const response = syncRequest('GET', url + passwordParam, { headers: headers });
 
   dieIf(response.statusCode !== 200, "GET request failed to " + url + " [EsE8JYT4]",
@@ -204,7 +243,7 @@ function showResponseBodyJson(body) {
   let text = body;
   if (!_.isString(text)) text = JSON.stringify(text);
   return (
-  "Response body: ———————————————————————————————————————————————————————————————————\n" +
+  "———— Response body: ——————————————————————————————————————————————————————————————\n" +
   text +
   "\n——————————————————————————————————————————————————————————————————————————————————\n");
 }
@@ -268,12 +307,10 @@ function getTestCounters(): TestCounters {
 }
 
 
-function getLastEmailSenTo(siteId: SiteId, email: string,
-      pause: any // CLEAN_UP: wrong type — was a wdio browser obj in the past.
-      ): EmailSubjectBody | null {
-  throw Error("Make async?");
+async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait')
+        : Pr<EmailSubjectBody | Nl> {
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
-    const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
+    const response = await getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
     const lastEmails = JSON.parse(response.body);
     if (lastEmails.length) {
@@ -287,8 +324,8 @@ function getLastEmailSenTo(siteId: SiteId, email: string,
       return lastEmail;
     }
     // Internal functions can pass false, if they pause themselves.
-    if (pause !== false) {
-      wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
+    if (dontWait !== 'DontWait') {
+      await wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
     }
     else {
       return null;
@@ -300,9 +337,10 @@ function getLastEmailSenTo(siteId: SiteId, email: string,
 
 /** Doesn't count all emails, only the last 15? so after many emails sent, becomes useless.
  */
-function countLastEmailsSentTo(siteId: SiteId, email: string): number {
-  const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
-    '&siteId=' + siteId + '&timeoutMs=1000');
+async function countLastEmailsSentTo(siteId: SiteId, email: St): Pr<Nr> {
+  const response = await getOrDie(
+          settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
+              '&siteId=' + siteId + '&timeoutMs=1000');
   const lastEmails = JSON.parse(response.body);
   dieIf(lastEmails.length >= 14, 'TyE2ABKT0', "Too many emails, e2e test won't work  [R2AB067]");
   return lastEmails.length;
@@ -311,18 +349,18 @@ function countLastEmailsSentTo(siteId: SiteId, email: string): number {
 
 /** Counts emails sent, for a test site.
  */
-function getEmailsSentToAddrs(siteId: SiteId): { num: number, addrsByTimeAsc: string[] } {
-  const response = getOrDie(settings.mainSiteOrigin + `/-/num-e2e-test-emails-sent?siteId=${siteId}`);
+async function getEmailsSentToAddrs(siteId: SiteId): Pr<{ num: Nr, addrsByTimeAsc: St[] }> {
+  const response = await getOrDie(settings.mainSiteOrigin + `/-/num-e2e-test-emails-sent?siteId=${siteId}`);
   return JSON.parse(response.body);
 }
 
 
-function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
-      pauseOrLinkAccts?: Ay | 'LINKING_IDP_ACCT'): string {
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+async function waitAndGetLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: St,
+      linkAccounts?: 'LINKING_IDP_ACCT'): Pr<St> {
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   dieIf(!email, `No email has yet been sent to ${emailAddress}. ` + (!browser ? '' :
     "Include a 'browser' as 3rd arguement, to poll-wait for an email.  [TyE2ABKF057]"));
-  const regex = (pauseOrLinkAccts !== 'LINKING_IDP_ACCT'
+  const regex = (linkAccounts !== 'LINKING_IDP_ACCT'
           ? 'https?://.*/-/login-password-confirm-email'
           : 'https?://.*/-/authn/verif-email-ask-if-link-accounts');
   return utils.findFirstLinkToUrlIn(regex, email.bodyHtmlText);
@@ -330,99 +368,100 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
 
 
 // Note: for *an additional* email address, not for the initial signup.
-function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string, browser,
-     options?: { isOldAddr: boolean }): string {
+async function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(
+        siteId: SiteId, emailAddress: St, browser, options?: { isOldAddr: Bo }): Pr<St> {
   const textToMatch = options && options.isOldAddr
       ? "To verify email"   // [4GKQM2_]
       : "To finish adding"; // [B4FR20L_]
-  waitUntilLastEmailMatches(
-    siteId, emailAddress, [textToMatch, emailAddress], browser);
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  await waitUntilLastEmailMatches(
+          siteId, emailAddress, [textToMatch, emailAddress], browser);
+  const email = await getLastEmailSenTo(siteId, emailAddress, browser);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/confirm-email-address', email.bodyHtmlText);
 }
 
 
-function waitAndGetInviteLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+async function waitAndGetInviteLinkEmailedTo(siteId: SiteId, emailAddress: St): Pr<St> {
   const textToMatch = "invites you to join"; // [5FJBAW2_]
-  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/accept-invite', email.bodyHtmlText);
 }
 
 
-function waitAndGetThanksForAcceptingInviteEmailResetPasswordLink(siteId, emailAddress, browser) {
+async function waitAndGetThanksForAcceptingInviteEmailResetPasswordLink(
+        siteId: SiteId, emailAddress: St): Pr<St> {
   const textToMatch = "thanks for accepting the invitation"; // [5FJB2AZY_]
-  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch]);
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/reset-password', email.bodyHtmlText);
 }
 
 
-function waitForAlreadyHaveAccountEmailGetResetPasswordLink(
-      siteId: SiteId, emailAddress: string, browser): string {
+async function waitForAlreadyHaveAccountEmailGetResetPasswordLink(
+      siteId: SiteId, emailAddress: St): Pr<St> {
   const textToMatch = "you already have such an account"; // [2WABJDD4_]
-  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/reset-password', email.bodyHtmlText);
 }
 
 
-function waitAndGetResetPasswordLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+async function waitAndGetResetPasswordLinkEmailedTo(siteId: SiteId, emailAddress: St): Pr<St> {
   const textToMatch = 'reset-password';  // in the url
-  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/reset-password', email.bodyHtmlText);
 }
 
 
-function waitAndGetOneTimeLoginLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+async function waitAndGetOneTimeLoginLinkEmailedTo(siteId: SiteId, emailAddress: St)
+        : Pr<St> {
   const textToMatch = 'login-with-secret';  // in the url
-  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch]);
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']+/-/v0/login-with-secret', email.bodyHtmlText);
 }
 
 
 const unsubUrlRegexString = 'https?://[^"\']*/-/unsubscribe';
 
-function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+async function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: St): Pr<St> {
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
 }
 
 
-function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser?): string {
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+async function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: St): Pr<St> {
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
 }
 
 
-function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
-  throw Error("Make async?");
+async function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: St)
+        : Pr<St> {
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
-    const email = getLastEmailSenTo(siteId, emailAddress, false);
+    const email = await getLastEmailSenTo(siteId, emailAddress, 'DontWait');
     const link = !email ? null : utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
     if (!link)
-      wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
+      await wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
     else
       return link;
   }
 }
 
 
-function waitUntilLastEmailIsActSumAndMatches(siteId: SiteId, emailAddress: string,
-        textOrTextsToMatch: string | string[]): EmailMatchResult {
-  return waitUntilLastEmailMatches(siteId, emailAddress, textOrTextsToMatch,
+async function waitUntilLastEmailIsActSumAndMatches(siteId: SiteId, emailAddress: St,
+        textOrTextsToMatch: St | St[]): Pr<EmailMatchResult> {
+  return await waitUntilLastEmailMatches(siteId, emailAddress, textOrTextsToMatch,
           { isActivitySummary: true });
 }
 
 
-function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
+async function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
         textOrTextsToMatch: string | string[], opts?: { isActivitySummary?: Bo } | any)
-        : EmailMatchResult {
+        : Pr<EmailMatchResult> {
   let textsToMatch: string[] =
       _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
-  throw Error("Make async?");
   if (opts?.isActivitySummary) {
     textsToMatch = [...textsToMatch, 'e_ActSumEm'];
   }
@@ -431,7 +470,8 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
   let misses: string[];
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
-    const email: EmailSubjectBody | U = getLastEmailSenTo(siteId, emailAddress, false);
+    const email: EmailSubjectBody | U =
+            await getLastEmailSenTo(siteId, emailAddress, 'DontWait');
     misses = [];
     let matchingStrings: string[] = [];
     for (let i = 0; i < regexs.length; ++i) {
@@ -464,25 +504,25 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
         '\n');
     }
 
-    wdioBrowserA.pause(500 - 50);
+    await wdioBrowserA.pause(500 - 50);
   }
   const missesString = misses.join(', ');
   die(`Never got any email to ${emailAddress} matching ${missesString} [EdE5JGK2Q1]`);
 }
 
 
-function assertLastEmailMatches(siteId: SiteId, emailAddress: string,
+async function assertLastEmailMatches(siteId: SiteId, emailAddress: string,
       textOrTextsToMatch: string | string[], browser) {
-  lastEmailMatches(siteId, emailAddress, textOrTextsToMatch, browser, true);
+  await lastEmailMatches(siteId, emailAddress, textOrTextsToMatch, browser, true);
 }
 
 
-function lastEmailMatches(siteId: SiteId, emailAddress: string,
-      textOrTextsToMatch: string | string[], browser?, assertMatches?: true): string | false {
+async function lastEmailMatches(siteId: SiteId, emailAddress: St,
+      textOrTextsToMatch: St | St[], browser?, assertMatches?: true): Pr<St | false> {
   const textsToMatch: string[] =
     _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
-  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  const email = await getLastEmailSenTo(siteId, emailAddress, browser);
   for (let i = 0; i < regexs.length; ++i) {
     const regex = regexs[i];
     const matches = email.bodyHtmlText.match(regex);
@@ -500,6 +540,44 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
 }
 
 
+async function sendIncomingEmailWebhook(ps: { to: St,
+        body: St, format: 'Postmarkapp', wrongApiSecret?: true }) {
+  // See EmailsInController.parseIncomingEmail [pars_em_in].
+  const url = settings.mainSiteOrigin + '/-/handle-email';
+  const mailboxHash = getHashOrDie(ps.to, 'TyE70MWEP52');
+  const data = {
+    MessageID: 'MessageID',
+    Date: '2021-12-31T23:59:59',
+    MailboxHash: mailboxHash,
+    To: ps.to,
+    From: 'From@ex.co',
+    ReplyTo: 'ReplyTo@x.co',
+    Subject: 'Subject',
+    HtmlBody: 'HtmlBody',
+    TextBody: 'TextBody',
+    StrippedTextReply: 'StrippedTextReply',
+    Headers: [{ Name: 'HeaderName', Value: 'HeaderValue' }],
+  };
+  const apiSecret = ps.wrongApiSecret ? 'wrongApiSecret' :
+          'publicEmailWebhooksApiTestSecret';
+  await postOrDie(url, data, { apiRequester: 'emailwebhooks', apiSecret,
+        fail: !!ps.wrongApiSecret,
+        hintIfErr:
+          `You need this in conf/my.conf:\n\n` +
+          'talkyard.emailWebhooksApiSecret="publicEmailWebhooksApiTestSecret"' });
+}
+
+
+
+function getHashOrDie(emailAdr: St, errCode: St): St {
+  const matches = emailAdr.match(/^[^@\s+]+\+([^@\s]+)@[^@\s]+$/);
+  dieIf(!matches || matches.length !== 2,
+        `No hash in email addr: "${emailAdr}" [${errCode}]\n\n` +
+        `Edit conf/my.conf and include +EMAIL_ID in the from addr, e.g.:\n` +
+        `talkyard.smtp.fromAddress="no-reply+EMAIL_ID@example.com\n`);
+  return matches[1];
+}
+
 
 // ----- API v0
 
@@ -509,14 +587,21 @@ const isApiErrorResponse = (response: ApiResponse<any>)
   (response as ApiErrorResponse).error !== undefined;
 
 
-function fullTextSearch<T extends ThingFound>(ps: { origin: string, queryText: string })
-      :  SearchQueryResults<T> {
+function fullTextSearch<T extends ThingFound>(ps: {
+      origin: St, queryText: St, opts?: {
+          cookie?: St | Nl, sidHeader?: St, xsrfTokenHeader?: St | Nl, fail?: true }})
+      :  SearchQueryResults<T> | St {
   const url = ps.origin + '/-/v0/search';
   const requestBody: SearchQueryApiRequest = {
     searchQuery: { freetext: ps.queryText },
     pretty: true,
   };
-  const responseObj = postOrDie(url, requestBody);
+
+  const responseObj = postOrDie(url, requestBody, ps.opts);
+
+  if (ps.opts.fail)
+    return responseObj.bodyText;
+
   const responseBody = responseObj.bodyJson() as SearchQueryApiResponse<T>;
   const result = responseObj.statusCode === 200 && !isApiErrorResponse(responseBody)
       ? responseBody
@@ -625,11 +710,13 @@ export default {
   playTimeDays,
   deleteRedisKey,
   getTestCounters,
-  getLastEmailSenTo,
+  getLastEmailSenTo,  // RENAME waitGetLastEmailsSentTo
   countLastEmailsSentTo,
   getEmailsSentToAddrs,
-  getLastVerifyEmailAddressLinkEmailedTo, // RENAME see next line.. No, nice name?
-  getVerifyEmailAddressLinkFromLastEmailTo: getLastVerifyEmailAddressLinkEmailedTo,
+  sendIncomingEmailWebhook,
+  waitAndGetLastVerifyEmailAddressLinkEmailedTo,
+  // no, worse name:
+  // getVerifyEmailAddressLinkFromLastEmailTo: waitAndGetLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
   waitAndGetInviteLinkEmailedTo,
   waitAndGetThanksForAcceptingInviteEmailResetPasswordLink,

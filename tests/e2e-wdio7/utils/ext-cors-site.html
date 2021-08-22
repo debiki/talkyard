@@ -24,6 +24,7 @@ function corsFetch(ps) {
     const message = `Error: ${statusCode} ${statusText}`;
     console.error(message, ex)
     logToPageAndConsole(`${message}: ${ex}`);
+    ps.onError && ps.onError(statusCode, statusText, ex);
   }
 
   const method = ps.POST ? 'POST' : 'GET';

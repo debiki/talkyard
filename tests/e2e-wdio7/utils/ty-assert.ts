@@ -61,6 +61,25 @@ const tyAssert = {
     assert.strictEqual(actual, expected, wholeMessage);
   },
 
+  eqManyLines: (actual, expected, message?: St, detailsObj?) => {
+    // Show the two values on many lines.
+    let wholeMessage = '\n\n' +
+          `assert.eqManyLines: Actual value differs from expected value:\n` +
+          `===== actual + ▩\\n: ========================\n` +  // ◪ or ▩?
+          `${actual}▩\n` +
+          `===== expected + ▩\\n: ======================\n` +
+          `${expected}▩\n` +
+          `===========================================\n`;
+    if (message) {
+      wholeMessage +=
+          `Details:\n` +
+          `    ${toPrettyString(message) +
+                    (detailsObj ? toPrettyString(detailsObj) : '')
+                }\n`;
+    }
+    assert.strictEqual(actual, expected, wholeMessage);
+  },
+
   refEq: (actual, expected) => {
     assert.ok(actual === expected,
       `  assert.refEq: Not reference-equal:\n` +
@@ -83,8 +102,14 @@ const tyAssert = {
         `       does not match:  ${inlineOrDashPara(text)}\n`);
   },
 
-  includes: (text: string, expectedSubstring: string, message?: string) => {
+  includes: (text: St, expectedSubstring: St, atIndex?: Nr | St, message?: St) => {
     // Could make this work w regexs too.
+
+    if (_.isString(atIndex)) {
+      dieIf(!_.isUndefined(message), 'TyE603MSE5');
+      message = atIndex;
+      atIndex = undefined;
+    }
 
     dieIf(!_.isString(text), `\`text\` is not a string, here it is:  ${text}`);
     dieIf(!_.isString(expectedSubstring), `\`expectedSubstring\` is not a string, ` +
@@ -95,6 +120,15 @@ const tyAssert = {
       `  assert.includes:\n` +
       `     This text:  "${expectedSubstring}"\n` +
       `     is missing from:  ${inlineOrDashPara(text)}\n`));
+    if (_.isNumber(atIndex)) {
+      tyAssert.eq(ix, atIndex, '\n\n' + (message ||
+        `  assert.includes:\n` +
+        `     This text:  "${expectedSubstring}"\n` +
+        `             found at index: ${ix}\n` +
+        `     but should be at index: ${atIndex},\n` +
+        `     in this text:  ${inlineOrDashPara(text)}\n`));
+
+    }
   },
 
   excludes: (text: string, unexpectedSubstring: string, message?: string) => {

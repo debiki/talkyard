@@ -152,6 +152,8 @@ and idps_t.guid_c. And rename conf_file_idp_id_c to glob_idp_guid.
 Migrate to ScribeJava, [migr_to_scribejava]
 
 
+[per_site_email_domain]
+Optionally configure email settings in the admin area, per site.
 
 [no-email]:
 Let people create accounts without specifying any email address. Like at Reddit.
@@ -449,6 +451,10 @@ within X days, then the site staff get notified? (Passive group managers = not g
 If moves CDN to a different address, or moves Talkyard server to a new address,
 then, lazily regenerate html with the correct addresses, for links to uploaded
 images etc.
+
+[list_uploaded_files]
+Admin page that lists uploaded files, sorts by name or size etc.
+Optionally deletes file (initially, maybe just a Linux `rm ...` tips instead).
 
 [sso_plus_oidc]
 Let people combine both custom OIDC IDPs with Ty SSO — that's just

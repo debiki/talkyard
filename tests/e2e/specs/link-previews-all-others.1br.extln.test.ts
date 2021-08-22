@@ -82,7 +82,7 @@ let providersToTest: ProvidersMap = {
     // Reddit sometimes wraps their embeds in their own sandboxed iframe — Ty does too;
     // then, there're douoble iframe sandboxes. (Ty cannot assume Reddit will keep
     // their iframe, so Ty needs its own sandbox iframe too. Also, now some weeks later,
-    // Reddit has indeed stopped using their own iframe)
+    // Reddit has indeed stopped using their own iframe)  [dbl_ln_pv_iframe]
     inDoubleIframe: false, // true, — maybe will need to toggle on/off to track
                                     // what Reddit is doing
     // With 'utm' query param.
@@ -97,7 +97,7 @@ let providersToTest: ProvidersMap = {
     linkInReply: 'https://www.reddit.com/r/aww/comments/h85mc9/human_here_i_come/',
     // This is not a Reddit topic/orig-post, but a reply/comment.
     linkInReplyTwo: 'https://www.reddit.com/r/aww/comments/h85mc9/human_here_i_come/fupb4cd/',
-    // A kitten attempts an apparently not-too-easy long distance jump.
+    // A kitten attempts a not-too-easy long distance jump, ends in tragedy.
     linkInReplyTwoExpectedPreviewText: "That little squeak",
   },
 

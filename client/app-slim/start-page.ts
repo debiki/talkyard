@@ -23,6 +23,7 @@
 const d = { i: debiki.internal };
 
 const logM = debiki2.logM;
+const logE = debiki2.logE;
 
 let pageStarted: undefined | true;
 const scriptLoadDoneCallbacks = [];
@@ -351,12 +352,13 @@ function renderPageInBrowser() {
             talkyardVersion: TalkyardVersion,
           });
         }).catch(function(ex) {
-          console.error("Error sending start-magic-time to service worker [TyESWMGCTM]", ex);
+          if (ex !== 'skip_sw')
+            logE("Error sending start-magic-time to service worker [TyESWMGCTM]", ex);
         });
 
     swPromise.finally(lastStep).catch(function(ex) {
       if (ex !== 'skip_sw')
-        console.error("Error in lastStep() [TyELSTSTP]", ex);
+        logE("Error in lastStep() [TyELSTSTP]", ex);
     });
   });
 
@@ -475,8 +477,20 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
           }
         }, 50)
       }).catch(function(ex) {
-        console.error("Error registering service worker [TyESWREGKO]", ex);
-        rejectServiceWorkerPromise(ex);
+        // If we're in an iframe, the problem is probably Firefox "Enhanced Tracking
+        // Prevention" or maybe iOS "Intelligent Tracking Prevention", which
+        // doesn't let us use the service worker — that's fine.
+        let rejectWith;
+        if (eds.isInIframe) {
+          logM("Couldn't register service worker, maybe because of " +
+                "FF ETP or iOS ITP. [TyMSWREGKO]");
+          rejectWith = 'skip_sw';
+        }
+        else {
+          logE("Error registering service worker [TyESWREGKO]", ex);
+          rejectWith = ex;
+        }
+        rejectServiceWorkerPromise(rejectWith);
       });
 }
 

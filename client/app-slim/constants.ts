@@ -134,6 +134,7 @@ const ImpersonationCookieName = 'esCoImp';
 // Also see: docs/ux-design.adoc
 const UseWideForumLayoutMinWidth = 1000;  // (or 1024 would work too, doesn't matter)
 const UseWidePageLayoutMinWidth = 750;    // (or 768 ok too)
+const UseNarrowForumLayoutMaxWidth = 419; // smart watches
 
 // Also see: [wide_topbar_min_px]
 const WatchbarWidth = 230;  // dupl in css [7GYK42]

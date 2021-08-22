@@ -144,7 +144,7 @@ const NotfsLevelDropdownModal = createComponent({
       normalListItem =
           ExplainingListItem({
             active: effLevel === PageNotfLevel.Normal || (
-                isForPage && effLevel === PageNotfLevel.NewTopics),
+                !!isForPage && effLevel === PageNotfLevel.NewTopics),
             title: r.span({ className: 'e_NtfNml'  }, t.nl.Normal),
             text: notfLevel_descr(PageNotfLevel.Normal, effPref, ppsById),
             onSelect: () => this.saveNotfLevel(PageNotfLevel.Normal) });

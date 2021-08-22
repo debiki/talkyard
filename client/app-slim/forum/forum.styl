@@ -32,6 +32,13 @@ $isWideMinWidth = 900px;
   overflow-x: hidden;
 
 
+.c_F_0Cat
+  background: hsl(0 0% 93%);
+  padding: 1px 20px 20px;
+  .btn
+    margin-right: 8px;
+
+
 .s_F_Ts_T_Con-Para
   display: block;
   padding-top: 0 !important;
@@ -52,7 +59,7 @@ $isWideMinWidth = 900px;
 // is narrow and switching to list layout).
 html.js:not(.dw-react-started)
   .dw-topic-list,
-  .esF_TsL
+  .c_F_TsL
     display: none;
 
 .esForumIntro
@@ -154,6 +161,7 @@ html.js:not(.dw-react-started)
   .esForum_catsNav_sort
     margin: 0 8px 7px 0;  // the margin-bottom adds some vertical space, if float drops
 
+
 .esF_BB_SortBtn
   border: none !important;
 
@@ -181,7 +189,7 @@ html.js:not(.dw-react-started)
         border-color = hsl(0, 0%, 80%);
     &.active
       cursor: default;
-      background: hsl(0, 0%, 96%);
+      background: hsl(0, 0%, 97%);
       border-top: $border;
       border-bottom: $border;
       border-left: none;
@@ -189,8 +197,13 @@ html.js:not(.dw-react-started)
       padding-left: $sideWithBorder + 1;
       padding-right: $sideWithBorder + 1;
       font-weight: normal;
-      box-shadow: 1px 2px 5px hsl(0, 0%, 77%) inset;
+      box-shadow: 1px 2px 5px hsl(0, 0%, 74%) inset;
       color: hsl(0, 0%, 21%);
+    &.n_ExplSel
+      // Give it an even more stiky-down-pressed look.
+      background: hsl(0, 0%, 96%);
+      box-shadow: 1px 1px 7px hsl(0 0% 42%) inset;
+      color: hsl(0 0% 17%);
 
 .esForum_navLink
   float: left;
@@ -300,10 +313,11 @@ $tableHeaderFontSize = 14px;
 //===========================
 
 // First, any category title and about-text (shown above the topics).
+// (Then, topic filter buttons, then the topic list.)
 
 .s_F_Ts_Cat
   text-align: center;
-  margin-bottom: 20px;
+  margin: 17px auto 3px;
 
 .s_F_Ts_Cat_SelectCatBs
   margin-bottom: 6px;
@@ -440,7 +454,7 @@ td.dw-tpc-activity
   overflow: hidden;
   margin-bottom: 5px;
 
-.esF_TsL_T .s_F_Ts_T_Tmbs
+.c_F_TsL_T .s_F_Ts_T_Tmbs
   margin: 2px 0 8px; // some whitespace looks better in mobile view
   img
     margin: 6px 10px 7px -1px;
@@ -464,8 +478,9 @@ td.dw-tpc-activity
 .dw-topic-list
   width: 100%
 
+  th.c_F_TsT_T_DvoTH,
   .num
-    text-align: center
+    text-align: center   // but left if just one row?
     min-width: 55px
 
   .edAvtr
@@ -494,6 +509,10 @@ td.dw-tpc-activity
         margin: 11px;
 
     tr.esForum_topics_topic
+      td.c_F_TsT_T_Dvo,
+      td.dw-tpc-title
+        vertical-align: top;  // vertical_align_top
+
       td
         padding: 10px $tablePaddingLeftNarrow
         @media (min-width: $isWideMinWidth)
@@ -656,6 +675,8 @@ td.dw-tpc-activity
           max-width: 650px;
           font-size: 100%;
           letter-spacing: -0.1px; // weird, easier to read I think
+          //margin-bottom: 0; // else vertical-align: middle gets messed up
+                              // skip, now using vertical_align_top  instead
           a
             color: hsl($uiHue, 100%, 40%);
             margin-left: 6px;
@@ -949,19 +970,32 @@ $less_forum_padding_width = 680px;
 // Forum in list layout (not table)
 //------------------------
 
-$numRepliesWidth = 70px; // dupl below [3WKF04]
 $topicTitlePadding = 6px;
 $row2PaddingBottom = 7px;
 
-.esF_TsL_T
-  list-style: none;
+.c_F_TsL_T
+  display: flex; // this changes from display: list-item to flex on <li> (that's fine).
+  //list-style: none; — not needed, is display: flex, not list-item.
   margin: 0;
   padding: (12px - $topicTitlePadding) 0 6px;
   border-top: 1px solid hsl(0, 0%, 86%);
 
-.esF_TsL_T_Title
+  .n_Col1
+    margin: 0 19px 0 16px;
+    @media (max-width: 480px)
+      margin: 0 11px 0 5px;
+    @media (max-width: 380px)
+      margin: 0 10px 0 0;
+
+  .n_Col2
+    flex: 1;
+
+.c_F_TsL_T .n_Row1
+  display: flex;
+  justify-content: space-between;
+
+.c_F_TsL_T_Title
   display: inline-block;
-  width: calc(100% - 70px); // $numRepliesWidth [3WKF04] doesn't work in here, why not?
   padding-right: 15px;
   word-break: break-word;
   > a:first-child
@@ -981,18 +1015,20 @@ $row2PaddingBottom = 7px;
   .icon-pin [class^=icon-]:before
     display: none;
 
-.esF_TsL_T_NumRepls
-  display: block;
-  float: right;
-  width: $numRepliesWidth;
-  padding: $topicTitlePadding 0 0;
+.c_F_TsL_T_Stats
+  display: inline-block;
+  white-space: nowrap;
+  padding: $topicTitlePadding 0 0 20px;
   text-align: right;
+
+.c_F_TsL_T_NumRepls
+  min-width: 30px;  // so do-it votes get right aligned
   .icon-comment-empty:before
     position: relative;
     top: -1px;
     right: -1px;
 
-.esF_TsL_T
+.c_F_TsL_T
   .dw-p-excerpt
     overflow: hidden; // otherwise a long URL can cause horizontal scrollbars
   .dw-p-excerpt,
@@ -1003,18 +1039,18 @@ $row2PaddingBottom = 7px;
     a
       margin-left: 7px;
 
-.esF_TsL_T_Row2
+.c_F_TsL_T .n_Row2
   clearfix();
   margin-top: 7px;
 
-.esF_TsL_T_Row2_When
+.c_F_TsL_T_When
   float: right;
   vertical-align: middle;
   padding: 2px 3px 5px 5px; // top:2px aligns w category name, other sides make easier to click
   min-width: 35px;
   text-align: right;
 
-.esF_TsL_T_Row2_Users
+.c_F_TsL_T_Users
   clearfix();
   padding-bottom: $row2PaddingBottom;
   display: inline-block;
@@ -1023,7 +1059,7 @@ $row2PaddingBottom = 7px;
   .esAvtr-tny
     margin-right: 4px;
 
-.esF_TsL_T_Row2_Cat
+.c_F_TsL_T_Cat
   display: inline-block;
   margin: 0 4px 0 8px;
   vertical-align: middle;
@@ -1031,10 +1067,104 @@ $row2PaddingBottom = 7px;
   .esF_Ts_T_CName
     color: #222;
 
-.esF_TsL_T_Row2_Cat_Expl
+.c_F_TsL_T_Cat_Expl
   color: hsl(0, 0%, 50%);
   margin-right: 1px;
   vertical-align: middle;
+
+
+// Votes
+
+// In list alt 1, its own column to the left
+.esForum_topics_topic .c_TpDvo,   // ... vert_dovotes
+.c_F_TsL_T .n_Col1 .c_TpDvo
+  display: block;
+  text-align: center;
+  .icon-heart
+    display: inline-block;
+    font-size: 15px;  // if on one line [tab_do_vo_1_line]
+  .icon-heart:first-child
+    display: block;
+    font-size: 22px;  // if on two lines: icon, then vote count below
+
+// But show votes in one line, if topics in one line (no 2nd line
+// with any excerpt or thumbnails).  [tab_do_vo_1_line]
+.c_F_TsT-OneLine
+  .c_F_TsT_T_Dvo
+    vertical-align: middle;
+  .c_TpDvo .icon-heart:first-child
+    display: inline-block;
+    margin-right: 4px;
+    font-size: 15px;
+
+.esForum_topics_topic .c_TpDvo
+  padding-right: 3px;
+  // Would be better to merge with ..dw-tpc-title somehow.
+  padding-top: 3px;
+
+.c_F_TsL_T .n_Col1 .c_TpDvo
+  padding-top: 6px;
+
+// In list alt 2, next to num-replies
+.c_F_TsL_T_Stats .c_TpDvo
+  padding-right: 7px;
+  .icon-heart
+    font-size: 15px;
+    padding: 0 2px 1px 0px;
+    margin-right: 4px;
+
+.c_TpDvo .icon-heart
+  color: white;
+  text-shadow: 0 0 1px black;
+
+/* Later, once vote-from-topic-list has been impl. [vote_from_tp_ls]
+.c_TpDvo:hover .icon-heart
+  background: hsl(207 100% 94%);
+  outline: hsl(207 100% 92%);
+  text-shadow: 1px 1px 3px hsl(207deg 100% 30%);
+  */
+
+.c_TpDvo
+  // Do-It vote count text:
+  .c_TpDiVo_Ttl
+    color: hsl(0 0% 42%);
+
+  &.c_DiVo-0 .c_TpDiVo_Ttl
+    color: hsl(0 0% 48%);
+
+  // Do-It vote icon — stronger red color, the more votes.
+  &.c_DiVo-1 .icon-heart
+    text-shadow: 1px 1px 3px hsl(7deg 25% 40%) !important;
+
+  &.c_DiVo-2 .icon-heart
+    text-shadow: 1px 1px 4px hsl(7deg 33% 34%) !important;
+
+  &.c_DiVo-3 .icon-heart
+    text-shadow: 1px 1px 5px hsl(7deg 40% 34%) !important;
+
+  &.c_DiVo-4 .icon-heart
+    text-shadow: 1px 1px 6px hsl(7deg 45% 34%) !important;
+
+  &.c_DiVo-5 .icon-heart
+    text-shadow: 1px 1px 7px hsl(7deg 50% 34%) !important;
+
+  &.c_DiVo-6 .icon-heart
+    text-shadow: 1px 1px 7px hsl(7deg 55% 34%) !important;
+
+  &.c_DiVo-7 .icon-heart
+    text-shadow: 1px 1px 8px hsl(7deg 65% 33%) !important;
+
+  &.c_DiVo-8 .icon-heart
+    text-shadow: 1px 1px 8px hsl(7deg 75% 34%) !important;
+
+  &.c_DiVo-9 .icon-heart
+    text-shadow: 1px 1px 9px hsl(7deg 80% 34%) !important;
+
+  &.c_DiVo-10 .icon-heart
+    text-shadow: 1px 1px 9px hsl(7deg 90% 34%) !important;
+
+  &.c_DiVo-11 .icon-heart  // [max_log_likes]
+    text-shadow: 1px 1px 10px hsl(7deg 100% 34%) !important;
 
 
 // vim: fdm=indent et ts=2 sw=2 fo=r list

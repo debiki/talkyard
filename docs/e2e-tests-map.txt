@@ -41,6 +41,8 @@ full text search:
           - category-permissions.2br   TyTE2ECATPREMS01
   deleted cat:
           - categories-delete.2br   TyTE2ECATDEL01
+  from external backend server:
+            - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
 
 create site & forum -
   create:  create-site-all-logins
@@ -344,7 +346,8 @@ security:
           - coed tag: [e2e_xss] — but at other places too, didn't tag at the time
             search for "<script>" or "javascript:" to find?
   cors:
-          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
+            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
 
 suspended users:
   gets no email notfs,
@@ -571,6 +574,9 @@ editor -
           - embed-twitter-tweets-etc.test.ts  TyT0JSM8PF68.TyT033SKHWW73M
   preview:
     not embedded:
+      in editor preview:
+            - editor-toolbar-preview.1br  TyTEEDTOOLBTNS
+      in page preview:
             - TESTS_MISSING barely needed
     just one comments iframe:
             - TESTS_MISSING barely needed
@@ -583,8 +589,8 @@ editor -
             - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02.TyTEDPREVW
             - TESTS_MISSING scroll to edits preview
   upload things:  (7KFC2)
-  other buttons -
-    ...
+  toolbar buttons:
+            - editor-toolbar-preview.1br  TyTEEDTOOLBTNS
   similar topics:
           - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
   late edits:
@@ -1326,6 +1332,8 @@ email notifications:  (5ABKR024)
           - notfs-like-votes.2browsers.test.ts  TyTE2E703KDH
   unsubscribe:
           -  (7ABKR023)
+  cannot reply via email to email notifications:
+            - cannot-reply-via-email.2br  TyTE0REVIAEML
 
 terms and privacy:
   read after have signed up:

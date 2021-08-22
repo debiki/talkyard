@@ -215,6 +215,32 @@ export var PageRoleDropdown = createComponent({
 });
 
 
+// Move to page-type.ts?
+/// To English Singularis String. For admins, 0I18N.
+///
+export function forumTopicType_toEnSingSt(pageType: PageType): St {
+  switch (pageType) {
+    case PageRole.Question: return "question";
+    case PageRole.Problem: return "problem";
+    case PageRole.Idea: return "idea";
+    case PageRole.EmbeddedComments: // fall through
+    case PageRole.Discussion: return "discussion";
+    case PageRole.OpenChat: return "chat";
+    default:
+      // @ifdef DEBUG
+      die(`Bad page role: ${pageType} [TyE52PK75R]`);
+      // @endif
+      return "topics";
+  }
+}
+
+/// To English Pluralis String. For admins, 0I18N.
+///
+export function forumTopicType_toEnPlSt(pageType: PageType): St {
+  // Good luck that we can just append 's'.
+  return forumTopicType_toEnSingSt(pageType) + 's';
+}
+
 
 export function pageRole_toIconString(pageRole: PageRole) {
   switch (pageRole) {

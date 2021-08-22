@@ -1,0 +1,23 @@
+@(tpi: debiki.SiteTpi, returnToUrl: Option[String])
+
+
+@css = @{("""
+
+""")}
+
+@returnToUrlUnescapedHash = @{
+  returnToUrl.map(_.replaceAllLiterally("__dwHash__", "#"))
+}
+@views.html.createsite.main(tpi, css = css) {
+  <h1>Welcome!</h1>
+
+  <br>
+  <p>You have verified your email address. You are now logged in.</p>
+
+  <p>
+  <a class="btn btn-primary" href="@{ returnToUrlUnescapedHash getOrElse "/" }"
+      id="e2eContinue">Continue...</a>
+  </p>
+
+}
+
