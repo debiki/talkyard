@@ -85,25 +85,25 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
   });
 
   it(`But Memah replies via email instead`, async () => {
-    server.sendIncomingEmailWebhook({
+    await server.sendIncomingEmailWebhook({
             to: replyNotfEmailToMemah.from,
             body: "Hi_first_reply_via_email so convenient",
             format: 'Postmarkapp' });
   });
   it(`... and again`, async () => {
-    server.sendIncomingEmailWebhook({
+    await server.sendIncomingEmailWebhook({
             to: replyNotfEmailToMemah.from,
             body: "Hi_2nd_reply_via_email, so much there is to say",
             format: 'Postmarkapp' });
   });
   it(`... a third time, wow! is Memah never done typing?`, async () => {
-    server.sendIncomingEmailWebhook({
+    await server.sendIncomingEmailWebhook({
             to: replyNotfEmailToMemah.from,
             body: "Hi_3nd_reply_via_email, I forgot",
             format: 'Postmarkapp' });
   });
   it(`... once more, now with the wrong API secret`, async () => {
-    server.sendIncomingEmailWebhook({
+    await server.sendIncomingEmailWebhook({
             to: replyNotfEmailToMemah.from,
             body: "Hi_4nd_reply_via_email, Thanks for all the fish",
             format: 'Postmarkapp',
@@ -124,7 +124,7 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
 
 
   it(`... she replies to that email`, async () => {
-    server.sendIncomingEmailWebhook({
+    await server.sendIncomingEmailWebhook({
             to: cannotReplyEmailToMemah.from, body: "But_I_can!",
             format: 'Postmarkapp' });
   });
