@@ -859,15 +859,39 @@ trait UserDao {
 
 
   def getParticipantByParsedRef(ref: ParsedRef): Option[Participant] = {
+    // username: and userid: refs must be to users (not guests or groups).
+    COULD // return Bad("Not a user, but a guest/group: __")
+    val returnBadUnlessIsUser = (pat: Opt[Pat]) =>
+      if (pat.exists(!_.isUserNotGuest))
+        return None  // Bad("Not a user but a ${}: ${ref}")
+
+    val returnBadUnlessGroup = (pat: Opt[Pat]) =>
+      if (pat.exists(!_.isGroup))
+        return None  // Bad("Not a group but a ${}: ${ref}")
+
     ref match {
       case ParsedRef.ExternalId(extId) =>
         getParticipantByExtId(extId)
       case ParsedRef.TalkyardId(tyId) =>
         tyId.toIntOption flatMap getParticipant
+      case ParsedRef.UserId(id) =>
+        val pat = getParticipant(id)
+        returnBadUnlessIsUser(pat)
+        pat
       case ParsedRef.SingleSignOnId(ssoId) =>
         getMemberBySsoId(ssoId)
       case ParsedRef.Username(username) =>
-        getMemberByUsername(username)
+        val pat = getMemberByUsername(username)
+        returnBadUnlessIsUser(pat)
+        pat
+      case ParsedRef.Groupname(username) =>
+        val pat = getMemberByUsername(username)
+        returnBadUnlessGroup(pat)
+        pat
+      //case ParsedRef.Membername(membername) =>
+      // val pat = getMemberByUsername(username)
+      // returnBadUnlessUserOrGroup(pat)
+      // pat
     }
   }
 
@@ -1826,14 +1850,14 @@ trait UserDao {
   }
 
 
-  def savePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
+  def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): U = {
     editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") { tx =>
       tx.upsertPageNotfPref(pageNotfPref)
     }
   }
 
 
-  def deletePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
+  def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
     editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") { tx =>
       tx.deletePageNotfPref(pageNotfPref)
     }

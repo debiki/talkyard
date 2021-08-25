@@ -142,7 +142,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
       "numReportedSpamFalsePositives" -> globals.e2eTestCounters.numReportedSpamFalsePositives,
       "numReportedSpamFalseNegatives" -> globals.e2eTestCounters.numReportedSpamFalseNegatives,
     )
-    Ok(responseJson.toString) as JSON
+    OkApiJson(responseJson)
   }
 
 
@@ -357,7 +357,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
         firstCompletedOf(Seq(futureEmail, futureTimeout)).map({
           case emails: Vector[Email] =>
-            OkPrettyJson(JsArray(emails.map(email => {
+            OkPrettyJson(Json.obj("emails" -> JsArray(emails.map(email => {
               Json.obj(
                 "emailId" -> JsString(email.id),
                 "to" -> JsString(email.sentTo),
@@ -366,7 +366,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
                 "numRepliesBack" -> JsNum32OrNull(email.numRepliesBack),
                 "subject" -> JsString(email.subject),
                 "bodyHtmlText" -> JsString(email.bodyHtmlText))
-            })))
+            }))))
           case x =>
             InternalErrorResult("DwE7UGY4", "Mailer sent the wrong class: " + classNameOf(x))
         }).recover({
@@ -401,9 +401,9 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
       futureReply.map(sentToAddrsUntyped => {
         val sentToAddrs = sentToAddrsUntyped.asInstanceOf[Seq[String]]
         dieIf(!sentToAddrs.forall(Email.isE2eTestEmailAddress), "TyE2ABK503")
-        Ok(Json.obj(
+        OkApiJson(Json.obj(
           "num" -> sentToAddrs.length,
-          "addrsByTimeAsc" -> sentToAddrs)) as JSON
+          "addrsByTimeAsc" -> sentToAddrs))
       })
     }
 

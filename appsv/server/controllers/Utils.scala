@@ -90,8 +90,9 @@ object Utils extends Results with http.ContentTypes {
 
   /** Pretty prints by default, nice when troubleshooting. And doesn't incl the
     * don't-parse-as-a-script tag — that's only meaningful for browsers?
+    * And not needed, when returning a JsObject.
     */
-  def OkApiJson(json: JsValue, pretty: Boolean = true): Result = {
+  def OkApiJson(json: JsObject, pretty: Boolean = true): Result = {
     val jsonString = if (pretty) Json.prettyPrint(json) else Json.stringify(json)
     Ok(jsonString) as JSON
   }

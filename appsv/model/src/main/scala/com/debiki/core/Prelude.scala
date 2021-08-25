@@ -175,6 +175,10 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     throw new UnimplementedEx(msg)
   }
 
+  def throwUnimplIf(test: Bo, msg: => St): U = {
+    if (test) throwUnimpl(msg)
+  }
+
 
   sealed abstract class DieOrComplain  // or rename to "ComplainHow" or "Angry"?
   object Die extends DieOrComplain

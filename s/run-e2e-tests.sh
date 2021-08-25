@@ -514,6 +514,8 @@ function runAllE2eTests {
   $r s/wdio --only api-list-query-for-topics-recent-etc-first $args
   $r s/wdio --only api-list-query-for-posts $args
 
+  $r s/wdio-7 --only do-api-like-and-subscribe.2br --cd -i $args
+
   # wip:
   # settings-allow-local-signup
   # settings-allow-signup

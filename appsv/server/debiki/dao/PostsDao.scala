@@ -325,7 +325,7 @@ trait PostsDao {
     ... derive prefs, looking at own and groups ...
     val oldPostsByAuthor = page.parts.postByAuthorId(authorId)
     if (oldPostsByAuthor.isEmpty) {
-      savePageNotfPref(PageNotfPref(
+      savePageNotfPrefIfAuZ(PageNotfPref(
             peopleId = authorId,
             NotfLevel.WatchingAll,
             pageId = Some(pageId)), byWho = Who.System)
@@ -2195,7 +2195,9 @@ trait PostsDao {
       val voter = tx.loadTheParticipant(voterId)
       throwIfMayNotSeePost(post, Some(voter))(tx)
 
-      tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
+      val gotDeleted = tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
+      throwForbiddenIf(!gotDeleted, "TyE50MWW14",
+            s"No $voteType vote by ${voter.nameHashId} on post id ${post.id} to delete")
 
       // Don't delete — for now. Because that'd result in many emails
       // getting sent, if someone toggles a Like on/off.  [toggle_like_email]
@@ -2236,7 +2238,7 @@ trait PostsDao {
 
 
   def addVoteIfAuZ(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
-        voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]): Unit = {
+        voterId: UserId, voterIp: Opt[IpAdr], postNrsRead: Set[PostNr]): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
 
     writeTx { (tx, staleStuff) =>
@@ -2288,7 +2290,7 @@ trait PostsDao {
         }
 
       tx.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
-        readFromIp = voterIp)
+            readFromIp = voterIp)
       updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(page.parts, tx)
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(tx)

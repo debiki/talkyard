@@ -1263,10 +1263,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
             .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
 
     if (newNotfLevel.isDefined) {
-      dao.savePageNotfPref(newPref, request.who)
+      dao.savePageNotfPrefIfAuZ(newPref, request.who)
     }
     else {
-      dao.deletePageNotfPref(newPref, request.who)
+      dao.deletePageNotfPrefIfAuZ(newPref, request.who)
     }
 
     OkSafeJson(

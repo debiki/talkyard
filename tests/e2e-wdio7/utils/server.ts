@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as utils from './utils';
 import c from '../test-constants';
-import { logDebug, logMessage, logWarning, logError, logServerRequest, die, dieIf,
+import { j2s, logMessage, logWarning, logError, logServerRequest, die, dieIf,
         } from './log-and-die';
 
 const syncRequest = require('sync-request');
@@ -57,7 +57,7 @@ function initOrExit(theSettings) {
     logError(
         `Got no xsrf token from:  ${settings.mainSiteOrigin}   [TyEE2ESRVXSRF]\n` +
         `Cookie headers:\n` +
-        `    ${JSON.stringify(cookies)}\n`);
+        `    ${j2s(cookies)}\n`);
     process.exit(1);
   }
 
@@ -127,7 +127,7 @@ function postOrDie(
     delete headers['X-XSRF-TOKEN'];
   }
 
-  logServerRequest(`POST ${url}, headers: ${ JSON.stringify(headers) } ... [TyME2EPOST]`);
+  logServerRequest(`POST ${url}, headers: ${j2s(headers)} ... [TyME2EPOST]`);
 
   // Log the request as a copy-pasteable cURL command, so one can re-run this server request
   // manually, for testing & debugging.
@@ -136,18 +136,25 @@ function postOrDie(
     dieIf(value.indexOf("'") >= 0, "Header value contains ' [TyE305KTH3KTS]");
     curlHeadersTexts.push(`-H '${key}: ${value}'`);
   });
-  let curlDataText = JSON.stringify(data).replace("'", "'\\''");
-  if (curlDataText.length > 1000 && settings.logLevel != 'trace') {
+  let curlDataText = j2s(data).replace("'", "'\\''");
+  if (curlDataText.length > 1500 && settings.logLevel != 'trace') {
     // This is a bit much json, makes the logs annoyingly verbose. So truncate. Won't be
     // copy-pasteable.
-    curlDataText = curlDataText.substr(0, 1000) + '\n       ...';
+    curlDataText = curlDataText.substr(0, 1500) + '\n       ...';
   }
+  // It's more nice with the cURL command on a single line — then it can be
+  // copy-pasted easily. The many-lines alternative (below) gets broken up
+  // by some column-0 prompt Webdriverio adds.
+  logServerRequest(`curl -X POST ${url}  -H 'Content-Type: application/json'  ` +
+        curlHeadersTexts.join('  ') + ` -d '${curlDataText}'`);
+  /*
   logServerRequest(`curl  \\
     -X POST  \\
     -H 'Content-Type: application/json'  \\
     ${curlHeadersTexts.join('  \\\n    ')}  \\
     -d '${curlDataText}'  \\
     ${url}`);
+    */
 
   const response = syncRequest('POST', url + passwordParam, { json: data, headers: headers });
   const responseBody = getResponseBodyString(response);
@@ -241,7 +248,7 @@ function showResponse(response, shouldHaveFailed?: boolean) {
 
 function showResponseBodyJson(body) {
   let text = body;
-  if (!_.isString(text)) text = JSON.stringify(text);
+  if (!_.isString(text)) text = j2s(text);
   return (
   "———— Response body: ——————————————————————————————————————————————————————————————\n" +
   text +
@@ -312,7 +319,7 @@ async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const response = await getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
-    const lastEmails = JSON.parse(response.body);
+    const lastEmails = JSON.parse(response.body).emails;
     if (lastEmails.length) {
       logMessage(`${email} has gotten ${lastEmails.length} emails:`);
       for (let i = 0; i < lastEmails.length; ++i) {
@@ -341,7 +348,7 @@ async function countLastEmailsSentTo(siteId: SiteId, email: St): Pr<Nr> {
   const response = await getOrDie(
           settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
               '&siteId=' + siteId + '&timeoutMs=1000');
-  const lastEmails = JSON.parse(response.body);
+  const lastEmails = JSON.parse(response.body).emails;
   dieIf(lastEmails.length >= 14, 'TyE2ABKT0', "Too many emails, e2e test won't work  [R2AB067]");
   return lastEmails.length;
 }
@@ -498,7 +505,7 @@ async function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
     if (!hasDebugLoggedLastEmail && (tenSecondsPassed || testEndsSoon)) {
       //hasDebugLoggedLastEmail = true;
       logWarning(
-        `Waiting for email to: ${emailAddress} to match: ${JSON.stringify(textsToMatch)} ` +
+        `Waiting for email to: ${emailAddress} to match: ${j2s(textsToMatch)} ` +
         (!email ? ` — but no email sent to that address` :
             `\nLast email is:\n${email.subject}\n${email.bodyHtmlText}`) +
         '\n');
@@ -531,7 +538,7 @@ async function lastEmailMatches(siteId: SiteId, emailAddress: St,
     }
   }
   if (assertMatches) {
-    assert.fail(`Email text didn't match regex(s): '${JSON.stringify(textOrTextsToMatch)}',\n` +
+    assert.fail(`Email text didn't match regex(s): '${j2s(textOrTextsToMatch)}',\n` +
       `email sent to: ${emailAddress},\n` +
       `email title: ${email.subject},\n` +
       `email text: ${email.bodyHtmlText}`);
@@ -695,6 +702,18 @@ function listUsers(ps: { origin: string, usernamePrefix: string }): ListUsersApi
 }
 
 
+async function do_(ps: { origin: St, apiRequesterId: UserId, apiSecret: St, fail?: Bo,
+      data: DoApiRequest }): Pr<St | Ay> {
+  const url = ps.origin + '/-/v0/do';
+  const response = postOrDie(
+      url, ps.data, {
+        fail: ps.fail,
+        apiRequesterId: ps.apiRequesterId || c.SysbotUserId,
+        apiSecret: ps.apiSecret });
+  return ps.fail ? response.bodyText : response.bodyJson();
+}
+
+
 
 // ----- Export functions
 
@@ -733,6 +752,7 @@ export default {
   apiV0: {
     fullTextSearch,
     listQuery,
+    do_,
     upsertUser,
     upsertUserGetLoginSecret,
     upsertSimple,

@@ -217,18 +217,73 @@ package object core {
   // ext ids, could estimate the number of people in the organization.)
   type ExtId = String
 
-  type Ref = String  ; RENAME // to RefStr(ing) or RawRef? maybe rename ParsedRef to just Ref?
+  type Ref = String  ; RENAME // to RawRef, and rename ParsedRef to just Ref
+  type RawRef = Ref  //  ... started
 
-  sealed abstract class ParsedRef(val canOnlyBeToParticipant: Boolean = false)
+  sealed trait PatRef
+
+  sealed trait PageRef { self: ParsedRef =>
+    // Why this needed, I thought the compiler would deduce this itself?
+    // (when [the exact type is known to the compiler], and it extends PageRef).
+    def asParsedRef: ParsedRef = self
+  }
+
+  sealed trait PostRef
+
+  sealed abstract class ParsedRef(
+    val canBeToPat: Bo = true,
+    val canOnlyBeToPat: Bo = false,
+    val canBeToPage: Bo = true)
+
   object ParsedRef {
-    case class ExternalId(value: ExtId) extends ParsedRef
-    case class SingleSignOnId(value: String) extends ParsedRef(true)
-    case class TalkyardId(value: String) extends ParsedRef
-    case class Username(value: String) extends ParsedRef(true)
+    case class ExternalId(value: ExtId)
+      extends ParsedRef with PatRef with PageRef with PostRef
+
+    case class SingleSignOnId(value: St)
+      extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef
+
+    case class TalkyardId(value: St)
+      extends ParsedRef with PatRef with PageRef with PostRef
+
+    case class PageId(value: core.PageId)
+      extends ParsedRef(canBeToPat = false) with PageRef
+
+    case class PagePath(value: St)
+      extends ParsedRef(canBeToPat = false) with PageRef
+
+    case class UserId(value: core.UserId)
+      extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef
+
+    case class Username(value: St)
+      extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef
+
+    case class Groupname(value: St)
+      extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef
+
+    // Either a user or a group, but not a guest.
+    //case class Membername(value: St)
+    //  extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef
 
     // Maybe trait PageLookupId { def lookupId: St }  —>  "diid:..." or "https://..." ?
-    case class DiscussionId(diid: St) extends ParsedRef
-    case class EmbeddingUrl(url: St) extends ParsedRef
+    case class DiscussionId(diid: St)
+      extends ParsedRef(canBeToPat = false) with PageRef
+
+    case class EmbeddingUrl(url: St)
+      extends ParsedRef(canBeToPat = false, canBeToPage = false)
+  }
+
+  def parsePatRef(ref: Ref): PatRef Or ErrMsg = {
+    parseRef(ref, allowParticipantRef = true) map { parsedRef =>
+      if (!parsedRef.canBeToPat) return Bad(s"Not a participant ref: $ref")
+      parsedRef.asInstanceOf[PatRef]
+    }
+  }
+
+  def parsePageRef(ref: Ref): PageRef Or ErrMsg = {
+    parseRef(ref, allowParticipantRef = false) map { parsedRef =>
+      if (!parsedRef.canBeToPage) return Bad(s"Not a page ref: $ref")
+      parsedRef.asInstanceOf[PageRef]
+    }
   }
 
   def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrMsg = {
@@ -254,15 +309,41 @@ package object core {
       returnBadIfContainsAt(tyId)
       Good(ParsedRef.TalkyardId(tyId))
     }
+    else if (ref startsWith "userid:") {
+      returnBadIfDisallowParticipant()
+      val idSt = ref drop "userid:".length
+      val id = idSt.toIntOption getOrElse {
+        return Bad("After 'userid:' must follow an integer: " + ref)
+      }
+      if (Pat.isGuestId(id))
+        return Bad("Not a user ref, but a guest ref: " + ref)
+      if (Pat.isBuiltInGroup(id))
+        return Bad("Not a user ref, but a built-in group ref: " + ref)
+      Good(ParsedRef.UserId(id))
+    }
     else if (ref startsWith "username:") {
       returnBadIfDisallowParticipant()
       val username = ref drop "username:".length
       returnBadIfContainsAt(username)
       Good(ParsedRef.Username(username))
     }
+    else if (ref startsWith "groupname:") {
+      returnBadIfDisallowParticipant()
+      val groupname = ref drop "groupname:".length
+      returnBadIfContainsAt(groupname)
+      Good(ParsedRef.Groupname(groupname))
+    }
     else if (ref startsWith "diid:") {
       val discId = ref drop "diid:".length
       Good(ParsedRef.DiscussionId(discId))
+    }
+    else if (ref startsWith "pageid:") {
+      val id = ref drop "pageid:".length
+      Good(ParsedRef.PageId(id))
+    }
+    else if (ref startsWith "pagepath:") {
+      val path = ref drop "pagepath:".length
+      Good(ParsedRef.PagePath(path))
     }
     else if (ref startsWith "emburl:") {
       val url = ref drop "emburl:".length
@@ -290,7 +371,8 @@ package object core {
   /** Email identities are strings, all others are numbers but converted to strings. */
   type IdentityId = String
 
-  type IpAddress = String
+  type IpAddress = String  // Too long
+  type IpAdr = IpAddress  // [Scala_3] opaque type
 
   type EmailAdr = String  // [Scala_3] opaque type
   type EmailId = String   // [Scala_3] opaque type   RENAME to EmailOutId instead?

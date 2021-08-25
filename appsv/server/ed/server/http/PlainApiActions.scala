@@ -323,6 +323,9 @@ class PlainApiActions(
       throwForbiddenIf(user.id < Group.EveryoneId && user.id != SysbotUserId,
         "TyEAPIBADUSR_", s"Not allowed to call the API as user ${user.usernameOrGuestName}")
 
+      // See: [non_adm_api_usr] for code that does slightly different things
+      // if isn't sysbot.
+
       runBlockIfAuthOk(request, site, dao, Some(user),
           // SECURITY minor: Less error prone with a Bool field instead of this magic string.
           SidOk("_api_secret_", 0, Some(user.id)), XsrfOk("_api_secret_"), None, block)

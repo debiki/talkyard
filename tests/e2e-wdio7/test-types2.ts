@@ -312,6 +312,7 @@ interface TestMyself {
 interface Member {   // see also TestGuest below
   id: number;
   ssoId?: St;
+  extId?: St;
   username: string;
   fullName?: string;
   createdAtMs: number;
@@ -453,6 +454,7 @@ interface CategoryJustAdded {
 
 interface PageJustAdded {
   id: string;
+  extId?: St;
   folder: string;
   showId: boolean;
   slug: string;

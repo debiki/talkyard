@@ -5580,6 +5580,18 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.dw-notf-level');
         await this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
+
+      assertPageNotfLevelIs: async (level: PageNotfLevel) => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        const actualLevelText = await this.waitAndGetVisibleText('.dw-page-notf-level');
+        // Or, if metabar open:  `dw-notf-level s_NfLv-${level}`
+        const selector = `.dw-page-notf-level.n_NfLv-${level}`;
+        const isCorrectLevel = await this.isVisible(selector);
+        if (!isCorrectLevel) {
+          assert.fail(`Wrong notf level, expected: ${level} but is (in text): ${
+                actualLevelText}`);
+        }
+      },
     };
 
 
@@ -6144,6 +6156,10 @@ export class TyE2eTestBrowser {
         return result;
       },
 
+      makeLikeVoteCountSelector: (postNr: PostNr): St => {
+        return this.topic.makeLikeVoteSelector(postNr) + ' + .dw-vote-count';
+      },
+
       __disagreeVoteSel: (postNr: PostNr): St => {
         return `#post-${postNr} + .esPA .e_WroVo`;
       },
@@ -6199,12 +6215,17 @@ export class TyE2eTestBrowser {
       },
 
       isPostLiked: async (postNr: PostNr, ps: { byMe?: Bo } = {}): Pr<Bo> => {
-        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr, ps);
+        // We'll know if the post is liked byMe, by looking at the Like vote heart
+        // button — if it's red, the post is liked byMe.
+        // Otherwise, if there's any Like vote count, the post is liked by *someone*.
+        const likeVoteSelector = ps.byMe
+            ?  this.topic.makeLikeVoteSelector(postNr, ps)
+            : this.topic.makeLikeVoteCountSelector(postNr);
         return await this.isVisible(likeVoteSelector);
       },
 
       waitForLikeVote: async (postNr: PostNr, ps: { byMe?: Bo } = {}) => {
-        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr, ps);
+        const likeVoteSelector = this.topic.makeLikeVoteCountSelector(postNr);
         await this.waitForVisible(likeVoteSelector);
       },
 

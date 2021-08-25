@@ -19,7 +19,7 @@ import com.debiki.core.QuickMessageException
 import com.debiki.core.fileExists
 import com.debiki.core.Prelude._
 import debiki.Globals
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, JsObject}
 import play.api.mvc.Result
 
 
@@ -29,10 +29,10 @@ package object controllers {
   def OkSafeJson(json: JsValue, pretty: Boolean = false): Result =
     Utils.OkSafeJson(json, pretty)
 
-  def OkPrettyJson(json: JsValue): Result =
+  def OkPrettyJson(json: JsObject): Result =
     Utils.OkApiJson(json, pretty = true)
 
-  def OkApiJson(json: JsValue, pretty: Boolean = false): Result =
+  def OkApiJson(json: JsObject, pretty: Boolean = false): Result =
     Utils.OkApiJson(json, pretty)
 
   /** Better fail fast with a full page error message, if assets have not yet been

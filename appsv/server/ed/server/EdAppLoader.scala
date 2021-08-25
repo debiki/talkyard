@@ -132,6 +132,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.talkyard.server.authn.SsoAuthnController(cc, context),
     new _root_.talkyard.server.api.GetController(cc, context),
     new _root_.talkyard.server.api.ListController(cc, context),
+    new _root_.talkyard.server.api.QueryDoController(cc, context),
     new _root_.controllers.ApiV0Controller(cc, context, sitePatchController),
     //new _root_.controllers.Application(cc, context),
     new _root_.controllers.ViewPageController(cc, context))

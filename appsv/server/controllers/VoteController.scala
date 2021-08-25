@@ -105,7 +105,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
     else {
       dao.addVoteIfAuZ(pageId, postNr, voteType,
-            voterId = request.theUser.id, voterIp = request.ip, postNrsRead)
+            voterId = request.theReqerId, voterIp = Some(request.ip), postNrsRead)
     }
 
     RACE // Fine, harmless.
