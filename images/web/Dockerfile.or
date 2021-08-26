@@ -7,7 +7,11 @@
 
 # COULD_OPTIMIZE smaller image: Copy just what's needed from openresty_build
 # (and would need to 'apk add' some things too, to the final image).
-FROM alpine:3.12 AS openresty_build
+FROM alpine:3.13 AS openresty_build
+# No:
+# FROM alpine:3.14 AS openresty_build
+# results in an error "make: uname: Operation not permitted"
+# when building Lua and Make does:   HOST_SYS:= $(shell uname -s)
 
 
 # '--virtual .build_deps' lets one uninstall all these build dependencies,
