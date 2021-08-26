@@ -28,6 +28,9 @@ services:
       - ./images/web/ed-lua/:/opt/talkyard/lua/:ro
       - ./images/web/assets/:/opt/talkyard/assets/:ro   # [NGXSTC]
       - ./images/web/ty-media/:/opt/talkyard/ty-media/:ro
+      # Mount Lua packages dir, so can upgrade packages by running
+      # 'opm install' from inside a web container. [upd_resty_pkgs]
+      #- ./images/web/openresty-pkgs/new/:/usr/local/openresty/site/
       - ./volumes/uploads/:/opt/talkyard/uploads/:ro
       - ./volumes/letsencrypt/:/etc/letsencrypt/:ro
       - ./volumes/nginx-logs/:/var/log/nginx/
