@@ -157,7 +157,7 @@ class PlainApiActions(
       // but reading, e.g. saving a reply. That is, throw for all POST request. Except for
       // logout or login, so people can login and read (OpenAuth login is GET only).
       def logoutPath: String = controllers.routes.LoginController.logout(None).url
-      def loginPasswordPath: String = controllers.routes.LoginWithPasswordController.login().url
+      def loginPasswordPath: String = controllers.routes.LoginWithPasswordController.login.url
       if (globals.maintWorkUntilSecs.isDefined && request.method == "POST"
           && request.path != logoutPath
           && request.path != loginPasswordPath) {

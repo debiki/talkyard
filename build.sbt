@@ -128,16 +128,16 @@ def mainSettings = List(
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
   // RENAME to ./tests/appsv? (since ./app is now ./appsv)
-  scalaSource in Test := { (baseDirectory in Test)(_ / "tests" / "app") }.value,
+  Test / scalaSource := { (Test / baseDirectory)(_ / "tests" / "app") }.value,
 
   // The app server code is in ./appsv, not ./app, because just "app" might
   // as well be Ty's web app (in ./client).
-  scalaSource in Compile := { (baseDirectory in Test)(_ / "appsv" / "server") }.value,
+  Compile / scalaSource := { (Test / baseDirectory)(_ / "appsv" / "server") }.value,
 
   // This compiles language specific email templates in:
   // talkyard.server.emails.transl.nn_NN.
-  sourceDirectories in (Compile, TwirlKeys.compileTemplates) :=
-        Seq({ (baseDirectory in Compile)(_ / "appsv" / "server") }.value),
+  Compile / TwirlKeys.compileTemplates / sourceDirectories :=
+        Seq({ (Compile / baseDirectory)(_ / "appsv" / "server") }.value),
 
   // Silhouette needs com.atlassian.jwt:jwt-core and jwt-api, but there's a problem:
   // """the problem is that the jwt-lib is hosted on bintray.com and then mirrored to
@@ -193,13 +193,13 @@ def mainSettings = List(
   // Disable ScalaDoc generation, it breaks seemingly because I'm compiling some Javascript
   // files to Java, and ScalaDoc complains the generated classes don't exist and breaks
   // the `dist` task.
-  sources in (Compile, doc) := Seq.empty, // don't generate any docs
-  publishArtifact in (Compile, packageDoc) := false,  // don't generate doc JAR
+  Compile / doc / sources := Seq.empty, // don't generate any docs
+  Compile / packageDoc / publishArtifact := false,  // don't generate doc JAR
 
-  Keys.fork in Test := false, // or cannot place breakpoints in test suites
+  Test / Keys.fork := false, // or cannot place breakpoints in test suites
 
   // ScalaTest full stack traces:
-  testOptions in Test += Tests.Argument("-oF"))
+  Test / testOptions += Tests.Argument("-oF"))
   // Disable:
   // sbt> test -- -oS
 
