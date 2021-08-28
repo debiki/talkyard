@@ -76,7 +76,12 @@ const opts: minimist.ParsedArgs = _tmpCommandsAndOpts;
 delete opts._;
  
 const mainCmd = commands[0];
-dieIf(!mainCmd, `No main command? '${process.argv.join(' ')}' TyE52SKDM7`)
+if (!mainCmd) {
+  logMessage(`Usage:\n    s/tyd some-main-command\n\n` +
+        `Open  s/tyd.ts  and read, for details.\n`);
+  process.exit(1);
+}
+
 dieIf(mainCmd !== process.argv[2], `Weird main command: '${mainCmd}' TyE52SKDM5`)
 
 const mainSubCmd: St = commands[1];
@@ -92,7 +97,7 @@ const yarnOfflineSt = opts.offline || opts.o ? '--offline' : '';
 
 
 if (mainCmd === 'h' || mainCmd === 'help') {
-  logMessage(`You help me or I help you?`);
+  logMessage(`You help me or I help you? Open  s/tyd.ts  and read`);
   process.exit(0);
 }
 
