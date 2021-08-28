@@ -21,17 +21,19 @@ resolvers ++= Seq(
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.8")
 
 // A refactoring and linting tool for Scala
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.24")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.30")
 
 // Pin dependencies.
-addSbtPlugin("com.github.tkawachi" % "sbt-lock" % "0.6.2")
+addSbtPlugin("com.github.tkawachi" % "sbt-lock" % "0.8.0")
 
 // Dependency tree, https://github.com/jrudolph/sbt-dependency-graph
 // ---------------------------------------------------------------
-// dependencyTree
-// dependencyBrowseGraph  / -Tree
-// whatDependsOn  com.nimbusds  nimbus-jose-jwt
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
+// Usage:
+//   dependencyTree
+//   dependencyBrowseGraph  / -Tree
+//   whatDependsOn  com.nimbusds  nimbus-jose-jwt
+// Plugin now bundled with SBT, so just this:
+addDependencyTreePlugin
 
 
 // Makes e.g. Git SHA1 available to the Scala code at runtime.

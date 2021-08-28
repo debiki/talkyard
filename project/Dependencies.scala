@@ -20,7 +20,7 @@ object ProjectDirectory {
 object Dependencies {
 
   object Play {
-    val json = "com.typesafe.play" %% "play-json" % "2.9.1"
+    val json = "com.typesafe.play" %% "play-json" % "2.9.2"
   }
 
   object Libs {
@@ -44,6 +44,7 @@ object Dependencies {
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"
 
+    // Play Framework 2.8.8 uses 28.2-jre.
     val guava = "com.google.guava" % "guava" % "28.2-jre"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
@@ -52,9 +53,9 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "1.25"
+    val apacheTika = "org.apache.tika" % "tika-core" % "1.27"
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.13.1"   // newest as of 2020-06
+    val jsoup = "org.jsoup" % "jsoup" % "1.14.2"   // newest as of 2021-08
 
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
@@ -95,7 +96,7 @@ object Dependencies {
     //
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.11.0"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.18.1"
 
 
     // ----- PASETO tokens
