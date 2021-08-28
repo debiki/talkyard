@@ -141,7 +141,7 @@
 [submodule "vendors/jars"]
 	path = vendors/jars
 	url = https://github.com/debiki/ty-vendors.git
-	branch = ty-jars
+	branch = ty-vendors-jars
 	shallow = true
 
 # OpenResty.
