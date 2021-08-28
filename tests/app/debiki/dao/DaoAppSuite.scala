@@ -21,7 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{Globals, TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml}
 import ed.server.{EdAppComponents, EdContext}
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory}
 import DaoAppSuite._
 import java.io.File
@@ -50,7 +51,7 @@ class DaoAppSuite(
   val minPasswordLength: Option[Int] = None,
   val startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis),
   val extraConfig: Map[String, String] = Map.empty)
-  extends FreeSpec with MustMatchers with BaseOneAppPerSuite with FakeApplicationFactory {
+  extends AnyFreeSpec with must.Matchers with BaseOneAppPerSuite with FakeApplicationFactory {
 
 
   /** Adds new ScalaTest syntax:  "test name".inReadTx(dao) { tx => .... }

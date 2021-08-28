@@ -20,7 +20,9 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.TitleSourceAndHtml
-import org.scalatest._
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
 class ReviewStuffAppSuite(randomString: String)
@@ -29,7 +31,7 @@ class ReviewStuffAppSuite(randomString: String)
   private def r = randomString
   var nameCounter = 0
 
-  class NestedPostsSuite extends FreeSpec with MustMatchers with BeforeAndAfterAll {
+  class NestedPostsSuite extends AnyFreeSpec with must.Matchers with BeforeAndAfterAll {
     var thePageId: PageId = _
     lazy val theAdmin: Participant =  createPasswordOwner(s"aaddmm_${nextNameNr}_$r", dao)
     lazy val dao: SiteDao = {

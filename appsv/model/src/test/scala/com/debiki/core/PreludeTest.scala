@@ -18,11 +18,12 @@
 package com.debiki.core
 
 import java.{util => ju}
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 import Prelude._
 
 
-class PreludeTest extends FreeSpec with MustMatchers {
+class PreludeTest extends AnyFreeSpec with must.Matchers {
 
   "isAToZUnderscoreOnly" - {
     "'': yes" in { "".isAToZUnderscoreOnly mustBe true }

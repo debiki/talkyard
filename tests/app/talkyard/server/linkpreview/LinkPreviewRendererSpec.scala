@@ -18,14 +18,14 @@
 package talkyard.server.linkpreview
 
 
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.onebox.engines.TwitterPrevwRendrEng
 
 
-class LinkPreviewRendererSpec extends FreeSpec with must.Matchers {
+class LinkPreviewRendererSpec extends AnyFreeSpec with must.Matchers {
 
   def tweakLinks(htmlSt: St, toHttps: Bo, uploadsUrlCdnPrefix: Opt[St],
         followLinksSkipNoopener: Bo = false,

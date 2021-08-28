@@ -22,11 +22,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.ResultException
 import debiki.TitleSourceAndHtml
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 import java.{io => jio}
 
 
-class UploadsDaoSpec extends FreeSpec with MustMatchers {
+class UploadsDaoSpec extends AnyFreeSpec with must.Matchers {
 
   "UploadsDao can" - {
 

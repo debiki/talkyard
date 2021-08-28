@@ -18,10 +18,12 @@
 package controllers
 
 import com.debiki.core.CategoryId
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class LoginWithSecretControllerSpec extends FreeSpec with MustMatchers {
+
+class LoginWithSecretControllerSpec extends AnyFreeSpec with must.Matchers {
 
 
   "LoginWithSecretController can" - {

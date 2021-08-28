@@ -127,10 +127,9 @@ object Dependencies {
 
     // ----- Test
 
-    // Not v 3.1.2?
-    val scalactic = "org.scalactic" %% "scalactic" % "3.1.4"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.1.4" % "test"
-    val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.9"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.9" % "test"
+    val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
     val specs2 = "org.specs2" %% "specs2-core" % "3.9.4" % "test"

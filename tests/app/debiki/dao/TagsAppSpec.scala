@@ -20,10 +20,11 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class TagsDaoSpec extends FreeSpec with MustMatchers {
+class TagsDaoSpec extends AnyFreeSpec with must.Matchers {
 
   "TagsDao can" - {
     "findTagLabelProblem" - {

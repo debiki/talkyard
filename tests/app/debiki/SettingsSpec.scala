@@ -19,12 +19,13 @@
 package debiki
 
 
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 import com.debiki.core._
 import com.debiki.core.Prelude._
 
 
-class SettingsSpec extends FreeSpec with MustMatchers {
+class SettingsSpec extends AnyFreeSpec with must.Matchers {
 
 
   "EffectiveSettings.improveAllowEmbeddingFrom can" - {

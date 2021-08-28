@@ -19,11 +19,11 @@
 package com.debiki.core
 
 
-import org.scalatest._
-import java.{util => ju}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class PagePathTest extends FreeSpec with MustMatchers {
+class PagePathTest extends AnyFreeSpec with must.Matchers {
 
   val TestSiteId = 2345
 

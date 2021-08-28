@@ -17,10 +17,12 @@
 
 package com.debiki.core
 
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class UserSpec extends FreeSpec with MustMatchers {   // TyT05RDPS24
+
+class UserSpec extends AnyFreeSpec with must.Matchers {   // TyT05RDPS24
 
   "User can" - {
 

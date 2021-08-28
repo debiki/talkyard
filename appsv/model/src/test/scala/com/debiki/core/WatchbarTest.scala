@@ -19,11 +19,12 @@
 package com.debiki.core
 
 
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 import java.{util => ju}
 
 
-class WatchbarTest extends FreeSpec with MustMatchers {
+class WatchbarTest extends AnyFreeSpec with must.Matchers {
 
 
   "Watchbar can" - {

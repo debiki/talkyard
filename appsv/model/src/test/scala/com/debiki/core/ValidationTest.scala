@@ -18,10 +18,12 @@
 
 package com.debiki.core
 
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
+
+class ValidationTest extends AnyFreeSpec with must.Matchers {    // TyT2AKB503
 
 
   "Validation can check usernames" - {
