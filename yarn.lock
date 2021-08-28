@@ -89,10 +89,10 @@
     "@types/minimatch" "*"
     "@types/node" "*"
 
-"@types/keymaster@^1.6.30":
-  version "1.6.30"
-  resolved "https://registry.yarnpkg.com/@types/keymaster/-/keymaster-1.6.30.tgz#11c3d8b9cb05f207816b77b9621afc6ec8ad01be"
-  integrity sha512-mtL/NuDBX72zmyIa3cYHA1bQj1WAYlSC4eZcIQj+DHJkcRyTRF2XJXo7DBmkkY8TEq7XaAf7B8TGxs5PHhjRtw==
+"@types/keymaster@=1.6.28":
+  version "1.6.28"
+  resolved "https://registry.yarnpkg.com/@types/keymaster/-/keymaster-1.6.28.tgz#093fc6fe49deff4ee17d36935a49230edb1c935f"
+  integrity sha1-CT/G/kne/07hfTaTWkkjDtsck18=
 
 "@types/linkify-it@*":
   version "3.0.0"
@@ -2474,6 +2474,7 @@ keycode@^2.2.0:
 keymaster@^1.6.2:
   version "1.6.2"
   resolved "https://registry.yarnpkg.com/keymaster/-/keymaster-1.6.2.tgz#e1ae54d0ea9488f9f60b66b668f02e9a1946c6eb"
+  integrity sha1-4a5U0OqUiPn2C2a2aPAumhlGxus=
 
 kind-of@^1.1.0:
   version "1.1.0"

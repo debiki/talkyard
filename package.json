@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@types/core-js": "^2.5.5",
-    "@types/keymaster": "^1.6.30",
+    "@types/keymaster": "=1.6.28",
     "@types/lodash": "^4.14.172",
     "@types/react": "=16.8.2",
     "@types/react-dom": "=16.8.0",
