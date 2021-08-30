@@ -163,10 +163,14 @@ object JsX {   RENAME // to JsonPaSe
 
 
   def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
-    user.map(JsUser).getOrElse(JsNull)
+    user.map(JsUser(_)).getOrElse(JsNull)
 
 
-  def JsUser(user: Participant): JsObject = {  // Typescript: Participant, RENAME to JsPat
+  def JsPat(pat: Pat, tagAndBadges: TagsAndBadges): JsObject = {  // Typescript: Pat
+    JsUser(pat, tagAndBadges.badges.getOrElse(pat.id, Nil))
+  }
+
+  def JsUser(user: Pat, tags: Seq[Tag] = Nil): JsObject = {  // Typescript: Pat, RENAME to JsPat
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.anyUsername),
@@ -196,6 +200,9 @@ object JsX {   RENAME // to JsonPaSe
     if (user.isGone) {
       json += "isGone" -> JsTrue
     }
+    if (tags.nonEmpty) {
+      json += "pubTags" -> JsArray(tags map JsTag)
+    }
     json
   }
 
@@ -212,8 +219,8 @@ object JsX {   RENAME // to JsonPaSe
   def JsUserInclDetails(user: UserInclDetails,
         usersById: Map[UserId, User], // CLEAN_UP remove, send back a user map instead
         groups: immutable.Seq[Group],
-        callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
-        anyStats: Option[UserStats] = None, inclPasswordHash: Boolean = false)
+        callerIsAdmin: Bo, callerIsStaff: Bo = false, callerIsUserHerself: Bo = false,
+        anyStats: Option[UserStats] = None, inclPasswordHash: Bo = false)
       : JsObject = {
     def callerIsStaff_ = callerIsAdmin || callerIsStaff
     dieIf(inclPasswordHash && !callerIsAdmin, "TyE305KSJWG2")
@@ -427,7 +434,8 @@ object JsX {   RENAME // to JsonPaSe
     val jsob = asJsObject(jsVal, "pat perms")
     val anyMaxUplBytes = parseOptI32(jsob, "maxUploadBytes")
     val anyExts = parseOptSt(jsob, "allowedUplExts")
-    PatPerms.create(ifBad = ThrowBadReq,
+    // IfBadAbortReq should be a param. Have a look at all parse fns? [mess_aborter]
+    PatPerms.create(IfBadAbortReq,
           maxUploadBytes = anyMaxUplBytes,
           allowedUplExts = anyExts)
   }
@@ -622,6 +630,68 @@ object JsX {   RENAME // to JsonPaSe
       "frozenAtMs" -> JsDateMsOrNull(category.frozenAt),
       "deletedAtMs" -> JsDateMsOrNull(category.deletedAt))
   }
+
+
+  def JsTagType(tagType: TagType): JsObject = {
+    Json.obj(
+        "id" -> tagType.id,
+        "canTagWhat" -> tagType.canTagWhat,
+        "dispName" -> tagType.dispName)
+  }
+
+
+  def parseTagType(jsVal: JsValue, createdById: Opt[PatId])(mab: MessAborter): TagType = {
+    val jOb = asJsObject(jsVal, "tag type")
+    val id = parseInt32(jOb, "id")
+    val canTagWhat = parseInt32(jOb, "canTagWhat")
+    val dispName = parseSt(jOb, "dispName")
+    val createdByIdInJson = parseOptInt32(jOb, "createdById")
+    createdById foreach { id =>
+      if (createdByIdInJson.isSomethingButNot(id)) {
+        mab.abort("TyE2MW04MEFQ2", "createdById in JSON is wrong")
+      }
+    }
+    val byId = createdById.orElse(createdByIdInJson) getOrDie "TyE603MRAI5"
+    TagType(
+          id = id,
+          canTagWhat = canTagWhat,
+          urlSlug_unimpl = None,
+          dispName = dispName,
+          createdById = byId)(mab)
+  }
+
+
+  def JsTag(tag: Tag): JsObject = {
+    Json.obj(
+        "id" -> tag.id,
+        "tagTypeId" -> tag.tagTypeId,
+        "onPatId" -> JsNum32OrNull(tag.onPatId),
+        "onPostId" -> JsNum32OrNull(tag.onPostId))
+  }
+
+
+  def parseTag(jsVal: JsValue)(mab: MessAborter): Tag = {
+    val jOb = asJsObject(jsVal, "tag")
+    val id = parseInt32(jOb, "id")
+    val tagTypeId = parseInt32(jOb, "tagTypeId")
+    val onPatId = parseOptInt32(jOb, "onPatId")
+    val onPostId = parseOptInt32(jOb, "onPostId")
+    Tag(id = id,
+          tagTypeId = tagTypeId,
+          parentTagId_unimpl = None,
+          onPatId = onPatId,
+          onPostId = onPostId)(mab)
+  }
+
+
+  def JsTagStats(stats: TagTypeStats): JsObject = {
+    Json.obj(
+        "tagTypeId" -> stats.tagTypeId,
+        "numTotal" -> JsNumber(stats.numTotal),
+        "numPostTags" -> JsNumber(stats.numPostTags),
+        "numPatBadges" -> JsNumber(stats.numPatBadges))
+  }
+
 
   def JsPagePath(pagePath: PagePath): JsValue =
     Json.obj(  // dupl code (4AKBS03)

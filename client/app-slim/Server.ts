@@ -589,6 +589,27 @@ export const testPost = postJsonSuccess;
 type JsonData = object | any[];
 type OnErrorFn = (xhr: XMLHttpRequest) => any;
 
+
+/// Posts JSON to the server, and uses the response to patch the store. Thereafter,
+/// passes the response to onOk — for example, to scroll to or highlight something
+/// that the user just created or edited.
+///
+/// Always place StorePatch fields in a  { storePatch: {...} }  obj?  [storepatch_field]
+///
+function postAndPatchStore(
+        urlPath: St,
+        onOk: (response: StorePatch) => Vo,
+        data: JsonData | OnErrorFn,
+        onErr?: JsonData | OnErrorFn,
+        opts?: { showLoadingOverlay?: Bo },  // default true
+        ) {
+  postJsonSuccess(urlPath, response => {
+    ReactActions.patchTheStore(response);
+    onOk(response);
+  }, data, onErr, opts);
+}
+
+
 /** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog.
   */
 function postJsonSuccess(
@@ -632,6 +653,17 @@ interface GetOptions {
   timeout?: number;
   suppressErrorDialog?: boolean;
   showLoadingOverlay?: true;  // default false, for GET requests
+}
+
+
+function getAndPatchStore(uri: string, onOk?: GetSuccessFn,
+      onErr?: GetErrorFn, opts?: GetOptions): OngoingRequest {
+  return get(uri, function(response) {
+    ReactActions.patchTheStore(response);
+    if (onOk) {
+      onOk(response);
+    }
+  }, onErr, opts);
 }
 
 
@@ -1229,13 +1261,15 @@ export function removeGroupMembers(groupId: UserId, memberIds: UserId[], onDone:
 }
 
 
+// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead.  [.get_n_patch]
 // BUG might get a Guest or Group, not always a UserInclDetails. SHOULD find for usages & fix.
 // (Some callers, but not all, can deal with Group or Guest.)
-export function loadUserAnyDetails(userIdOrUsername: UserId | string,
-      onDone: (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => void, error?: () => void) {
-  get('/-/load-user-any-details?who=' + userIdOrUsername, (response) => {
-    onDone(response.user, response.groupsMaySee);
-  }, error);
+export function loadPatVvbPatchStore(userIdOrUsername: UserId | St,
+      onOk: (resp: LoadPatVvbResponse) => Vo, onErr?: () => Vo) {
+  get('/-/load-user-any-details?who=' + userIdOrUsername, function(resp: LoadPatVvbResponse) {
+    ReactActions.patchTheStore({ tagTypes: resp.tagTypes });
+    if (onOk) onOk(resp);
+  }, onErr);
 }
 
 
@@ -1497,7 +1531,7 @@ export function snoozeNotfs(untilMins: number | false, onDone?: () => void) {
 }
 
 
-/*
+/*  [missing_tags_feats]
 export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: PageNotfLevel) {
   postJsonSuccess('/-/set-tag-notf-level', () => {
     const store: Store = ReactStore.allData();
@@ -1598,23 +1632,30 @@ export function loadForumCategoriesTopics(forumPageId: string, topicFilter: stri
 }
 
 
-export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
+// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
+// 'users' field to 'usersBrief'.  [.get_n_patch]
+// Maybe minor BUG might this overwrite  store.usersById with users without badges? [pat_tags_lost]
+export function loadForumTopics(categoryId: Nr, orderOffset: OrderOffset,
     doneCallback: (response: LoadTopicsResponse) => void) {
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
-  get(url, (response: LoadTopicsResponse) => {
-    ReactActions.patchTheStore({ usersBrief: response.users });  // [2WKB04R]
-    doneCallback(response);
+  get(url, (resp: LoadTopicsResponse) => {
+    // SLEEPING_BUG: pat tags lost? resp.users doesn't incl pat tags. [pat_tags_lost]
+    ReactActions.patchTheStore({ usersBrief: resp.users, tagTypes: resp.tagTypes });  // [2WKB04R]
+    doneCallback(resp);
   });
 }
 
 
+// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
+// 'users' field to 'usersBrief'.  [.get_n_patch]
+// Maybe minor BUG might this overwrite  store.usersById with users without badges? [pat_tags_lost]
 export function loadTopicsByUser(userId: UserId,
         doneCallback: (topics: Topic[]) => void) {
   const url = `/-/list-topics-by-user?userId=${userId}`;
-  get(url, (response: any) => {
-    ReactActions.patchTheStore({ usersBrief: response.users });
-    doneCallback(response.topics);
+  get(url, (resp: any) => {
+    ReactActions.patchTheStore({ usersBrief: resp.users, tagTypes: resp.tagTypes  });
+    doneCallback(resp.topics);
   });
 }
 
@@ -2015,8 +2056,12 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
 }
 
 
-export function loadPostsByAuthor(authorId: UserId, success: (response) => void) {
-  get(`/-/list-posts?authorId=${authorId}`, success);
+// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead.  [.get_n_patch]
+export function loadPostsByAuthor(authorId: UserId, onOk: (resp) => Vo) {
+  get(`/-/list-posts?authorId=${authorId}`, function (resp) {
+    ReactActions.patchTheStore({ tagTypes: resp.tagTypes });
+    onOk(resp);
+  });
 }
 
 
@@ -2063,29 +2108,34 @@ export function editPostSettings(postId: PostId, settings: PostSettings) {
 }
 
 
-export function loadAllTags(success: (tags: string[]) => void) {
-  get('/-/load-all-tags', success);
+export function createTagType(newTagType: TagType, onOk: (newWithId: TagType) => Vo) {
+  postAndPatchStore(`/-/create-tag-type`, (r: StorePatch) => onOk(r.tagTypes[0]), newTagType);
 }
 
 
-export function loadTagsAndStats() {
-  get('/-/load-tags-and-stats', r => ReactActions.patchTheStore(r));
+export function listTagTypes(forWhat: ThingType, prefix: St,
+        onOk: (tagTypes: TagType[]) => Vo) {
+  getAndPatchStore(`/-/list-tag-types?forWhat=${forWhat}&tagNamePrefix=${prefix}`, onOk);
+}
+
+
+export function loadTagsAndStats(onOk?: () => Vo) {
+  getAndPatchStore('/-/load-tags-and-stats', onOk);
 }
 
 
 export function loadMyTagNotfLevels() {
-  get('/-/load-my-tag-notf-levels', r => ReactActions.patchTheStore(r));
+  getAndPatchStore('/-/load-my-tag-notf-levels');
 }
 
 
-export function addRemovePostTags(postId: PostId, tags: string[], success: () => void) {
+export function addRemoveTags(ps: { add: Tag[], remove: Tag[] }, onOk: () => Vo) {
   postJsonSuccess('/-/add-remove-tags', (response) => {
     ReactActions.patchTheStore(response);
-    success();
+    onOk();
   }, {
-    pageId: getPageId(),
-    postId: postId,
-    tags: tags
+    tagsToAdd: ps.add,
+    tagsToRemove: ps.remove,
   });
 }
 

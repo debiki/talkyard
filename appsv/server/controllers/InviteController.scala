@@ -304,7 +304,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val userIds = (senderIds ++ invitedIds).distinct
     val users = dao.getUsersAsSeq(userIds)
     OkSafeJson(Json.obj(
-      "users" -> JsArray(users.map(JsUser)),
+      "users" -> JsArray(users.map(JsUser(_))),
       "invites" -> JsArray(invites.map(jsonForInvite(_, showFullEmails)))))
   }
 

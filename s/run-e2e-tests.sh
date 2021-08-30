@@ -341,6 +341,9 @@ function runAllE2eTests {
   $r s/wdio --only categories-basic.3browsers $args
   # There're more category tests below. [.more_cat_tests]
 
+  $r s/wdio-7 --only badges-basic.2br --cd -i $args
+  $r s/wdio-7 --only tags-basic.2br --cd -i $args
+
   $r s/wdio --only private-chat.3browsers $args
 
   # Is named 'forum-' because there's another test with 'drafts-not-logged-in' in the name.

@@ -162,8 +162,8 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
     },
 
 
-    updatePage: function(pageId: PageId, updFn: (p: PageToAdd) => Vo) {
-      const page: PageToAdd | U = site.pages.find(p => p.id === pageId);
+    updatePage: function(pageId: PageId, updFn: (p: PageJustAdded) => Vo) {
+      const page: PageJustAdded | U = site.pages.find(p => p.id === pageId);
       dieIf(!page, `No such page to update: ${pageId}, e2e test code broken? TyE2RMF3SP`);
       updFn(page);
     },

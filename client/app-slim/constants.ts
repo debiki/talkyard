@@ -51,7 +51,7 @@ const TitleNr = 0;
 const BodyNr = 1;
 const BodyNrStr = '1';
 const FirstReplyNr = 2;
-const NoDraftNr = 0;
+const NoDraftNr = 0;  // move to No.DraftNr in types-and-const-enums.ts
 
 // Posts nrs below this, are previews of reply drafts not yet published.
 const MaxVirtPostNr = -1000 * 1000;

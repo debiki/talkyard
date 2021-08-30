@@ -82,6 +82,8 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         throwIndistinguishableNotFound(debugCode)
     }
 
+    // Later, if caching post json, don't forget to uncache, if author or post tags
+    // added/removed. [if_caching_posts]
     val json = dao.jsonMaker.makeStorePatchForPostNr(pageId, postNr, showHidden = true) getOrElse {
       throwNotFound("EdE6PK4SI2", s"Post ${PagePostNr(pageId, postNr)} not found")
     }
@@ -195,7 +197,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       request = request.request)
 
     // Json for strangers and the publicly visible parts of the page.
-    val renderedPage = request.dao.renderPageMaybeUseMemCache(pageRequest)
+    val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
 
     // Any stuff, like unapproved comments, only the current user may see.
     COULD_OPTIMIZE // this loads some here unneeded data about the current user.
@@ -357,7 +359,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       dao = dao,
       request = request.request)
 
-    val renderedPage = dao.renderPageMaybeUseMemCache(pageRequest)
+    val renderedPage = dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
 
     addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
   }

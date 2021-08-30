@@ -155,10 +155,17 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     throw new UOE(s"Not in use: $what [$errorCode]")
 
   def untested(errorCode: String, what: => String = "") =
+    throwUntested(errorCode, what)
+
+  // Via "throwUntested" you can find some UNTESTED code if any.
+  def throwUntested(errorCode: St, what: => St = ""): Nothing =
     throw new UOE(s"Not tested: $what [$errorCode]")
 
   def untestedIf(condition: Boolean, errorCode: String, what: => String = ""): Unit =
-    if (condition) untested(errorCode, what)
+    throwUntestedIf(condition, errCode = errorCode, what)
+
+  def throwUntestedIf(condition: Bo, errCode: St, what: => St = ""): U =
+    if (condition) untested(errCode, what)
 
   def throwNoSuchElem(errorCode: String, message: => String) =
     throw new NoSuchElementException(s"$message [$errorCode]")
@@ -179,33 +186,36 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     if (test) throwUnimpl(msg)
   }
 
-
-  sealed abstract class DieOrComplain  // or rename to "ComplainHow" or "Angry"?
-  object Die extends DieOrComplain
-  object ThrowNotFound extends DieOrComplain
-  object ThrowBadReq extends DieOrComplain
-  object ThrowForbidden extends DieOrComplain
-
-  // When parsing user provided data from a HTTP request, we should throw a
-  // Bad Request exception, if the data is bad.  However not when doing
-  // server internal things — then, die() or some-logger.warn() instead.
-  //
-  def dieOrComplain(errMsg: ErrMsg, doWhat: DieOrComplain): Nothing = {
-    doWhat match {
-      case Die => die(errorCode = null, errMsg)  // err code should be incl in errMsg
-      case ThrowNotFound => throw new NotFoundEx(errMsg)
-      case ThrowBadReq => throw new BadRequestEx(errMsg)
-      case ThrowForbidden => throw new ForbiddenEx(errMsg)
-      case _ =>
-        die("TyE602MKTDG", s"Invalid doWhat: $doWhat")
+  /// Checks that all is fine. If it's a mess, aborts, in the right way:
+  /// - If parsing user provided data from a HTTP request, throws a
+  ///   Bad Request exception, or Forbidden or Not Found, if the data is bad
+  ///   or some other problem.
+  /// - When doing server internal things, calls die() which aborts and
+  ///   logs an internal error — there's no one to reply to.
+  ///
+  /// See  [mess_aborter] for places to improve how it's used.
+  ///
+  sealed abstract class MessAborter {
+    def check(test: Bo, errCode: St, errMsg: => St = "Error"): U = {
+      if (!test) abort(errCode, errMsg)
+    }
+    def abortIf(test: Bo, errCode: St, errMsg: => St = "Error"): U = {
+      if (test) abort(errCode, errMsg)
+    }
+    def abort(errCode: St, errMsg: St = ""): Nothing = {
+      die(errCode, errMsg)
     }
   }
 
-  def dieOrComplainIf(test: Bo, errMsg: => ErrMsg, ifBad: DieOrComplain): U = {
-    if (!test) return
-    dieOrComplain(errMsg = errMsg, doWhat = ifBad)
-  }
+  /// For internal errors.
+  object IfBadDie extends MessAborter
 
+  /// For HTTP requests with bad data or that try to access forbidden things.
+  object IfBadAbortReq extends MessAborter {
+    override def abort(errCode: St, errMsg: St = ""): Nothing = {
+      throw new BadRequestEx(s"$errMsg [$errCode]")
+    }
+  }
 
 
   def die(errorCode: String, problem: => String = null, cause: => Throwable = null): Nothing = {
@@ -221,7 +231,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
 
-  def formatErrorMessage(errorCode: St, details: St) = {
+  def formatErrorMessage(errorCode: St, details: St): St = {
     if (errorCode ne null) {
       (if ((details eq null) || details.isEmpty) "" else details + " ") + s"[$errorCode]"
     }

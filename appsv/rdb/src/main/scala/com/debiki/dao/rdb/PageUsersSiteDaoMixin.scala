@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import scala.collection.immutable
 import Rdb._
+import RdbUtil.makeInListFor
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -152,6 +153,25 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
     runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef), rs => {
       rs.getString("page_id")
     })
+  }
+
+
+  override def loadPageIdsWithVisiblePostsBy(patIds: Set[PatId], limit: i32): Set[PageId] = {
+    if (patIds.isEmpty) return Set.empty
+    val query = s"""
+          select distinct page_id
+          from posts3
+          where site_id = ?
+            and created_by_id in (${ makeInListFor(patIds) })
+            and approved_at is not null
+            and deleted_status = 0
+            and hidden_at is null
+          limit $limit"""
+
+    val values = siteId.asAnyRef :: patIds.map(_.asAnyRef).toList
+    runQueryFindMany(query, values, rs => {
+      getString(rs, "page_id")
+    }).toSet
   }
 
 

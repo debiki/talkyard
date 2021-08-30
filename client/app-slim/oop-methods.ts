@@ -700,6 +700,19 @@ export function user_isGone(user: Myself | BriefUser | UserInclDetails | Partici
 }
 
 
+export function pat_mayEditTags(me: Me, ps: { forPost?: Post, forPat?: Pat,
+      store: Store }): Bo {
+  const isPostDeleted = ps.forPost && post_isDeleted(ps.forPost);
+  return !ps.store.isEmbedded &&
+          ps.store.settings.enableTags !== false &&
+          !isPostDeleted &&
+          isStaff(me);  // for now. Later: user_isStaffOrCoreMember [missing_tags_feats]
+                        // for page tags, but still isStaff() for pat tags?
+                        // + || isOwnPost for own post?
+}
+
+
+
 // Settings
 //----------------------------------
 
@@ -1449,6 +1462,37 @@ export function categories_sortTree(categories: Category[]): CatsTree {
 
   return { rootCats, baseCats, catsById };
 }
+
+
+
+// Tags
+//----------------------------------
+
+
+export function tags_mkSortFn(tagTypesById: TagTypesById): (a: Tag, b: Tag) => Nr {
+  return function(tagA: Tag, tagB: Tag): Nr {
+    const tagTypeA = tagTypesById[tagA.tagTypeId];
+    const tagTypeB = tagTypesById[tagB.tagTypeId];
+    // @ifdef DEBUG
+    if (numTagTypeMissingWarnings < 3 && (!tagTypeA || !tagTypeB)) {
+      numTagTypeMissingWarnings += 1;
+      const warningNr = `\n\n(Warning nr ${numTagTypeMissingWarnings} of max 3)`;
+      !tagTypeA && debiki2.pagedialogs.showClientSideError(
+            `Tag type missing, id: ${tagA.tagTypeId} [TyE5MW208M2]` + warningNr);
+      !tagTypeB && debiki2.pagedialogs.showClientSideError(
+            `Tag type missing, id: ${tagB.tagTypeId} [TyE5MW208M3]` + warningNr);
+    }
+    // @endif
+    // Place any tag with a missing tag type last. (Would be a bug. '~' is last ASCII char.)
+    const nameA = tagTypeA && tagTypeA.dispName || ('~' + tagA.tagTypeId);
+    const nameB = tagTypeB && tagTypeB.dispName || ('~' + tagB.tagTypeId);
+    return nameA.localeCompare(nameB);
+  }
+}
+
+// @ifdef DEBUG
+let numTagTypeMissingWarnings = 0;
+// @endif
 
 
 

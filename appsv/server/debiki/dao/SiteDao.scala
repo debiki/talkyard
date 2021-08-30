@@ -250,6 +250,9 @@ class SiteDao(
     val result: R = readWriteTransaction(tx => {
       val result = fn(tx, staleStuff)
 
+
+      // ----- Refresh database cache
+
       if (staleStuff.areAllPagesStale) {
         tx.bumpSiteVersion()
       }
@@ -266,7 +269,9 @@ class SiteDao(
       result
     }, allowOverQuota)
 
-    // Refresh in-memory cache:  [rm_cache_listeners]
+
+    // ----- Refresh in-memory cache   [rm_cache_listeners]
+
     if (staleStuff.areAllPagesStale) {
       // Currently then need to: (although clears unnecessarily much)
       memCache.clearThisSite()
@@ -322,6 +327,12 @@ class SiteDao(
   def refreshPageInMemCache(pageId: PageId): Unit = {
     // Old approach:
     memCache.firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
+
+    // But this won't uncache links? In case needed. Currently, though, never
+    // happens that a page needs to be updated & uncached at the same time as
+    // other pages linking to it got changed / links remvoed/added.
+    // [sleeping_links_bug]
+
     // New:  [rm_cache_listeners]
   }
 

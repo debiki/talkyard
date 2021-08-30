@@ -65,7 +65,7 @@ export const UserPreferences = createFactory({
 
     const childRoute = Switch({},
       // [React_Router_v51] skip render(), use hooks and useParams instead.
-      Route({ path: prefsPathSlash, exact: true, render: ({ match }) =>
+      Route({ path: prefsPathSlash, exact: true, render: () =>
           Redirect({ to: aboutPath + location.search + location.hash })}),
       Route({ path: '(.*)/' + aboutPathSeg, exact: true, render: () => AboutTab(childProps) }),
       Route({ path: '(.*)/' + notfsPathSeg, exact: true, render: () => NotfPrefsTab(childProps) }),

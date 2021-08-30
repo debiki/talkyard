@@ -65,7 +65,9 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
         "reviewTaskCounts" -> Json.obj(
           "numUrgent" -> reviewTaskCounts.numUrgent,
           "numOther" -> reviewTaskCounts.numOther),
-        "users" -> usersById.values.map(JsUser),
+        // [missing_tags_feats] load user badges too, and page tags
+        // And change to "pats".
+        "users" -> usersById.values.map(JsUser(_)),
         "pageMetasBrief" -> pageMetaById.values.map(JsPageMetaBrief)))
   }
 

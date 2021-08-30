@@ -113,14 +113,23 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Don't incl  anyUserStats  inside the member json?
     // Don't incl  groupIdsMaySee ?
 
-    var (userJson, anyStatsJson, ppt) = Try(who.toInt).toOption match {
+    var (userJson, anyStatsJson, pat) = Try(who.toInt).toOption match {
       case Some(id) => loadPatJsonAnyDetailsById(id, includeStats = true, request)
       case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
         who, includeStats = true, request)
     }
     val groupsMaySee = dao.getGroupsReqrMaySee(requesterOrUnknown)
-    val pptGroupIdsMaybeRestr = dao.getOnesGroupIds(ppt)
+    val pptGroupIdsMaybeRestr = dao.getOnesGroupIds(pat)
     val pptGroupIds = pptGroupIdsMaybeRestr.filter(id => groupsMaySee.exists(g => g.id == id))
+
+    // Later, pass to JsUserInclDetails() instead of adding here.
+    val tags: Seq[Tag] = dao.getTags(forPat = Some(pat.id))
+    if (tags.nonEmpty) {
+      userJson += "pubTags" -> JsArray(tags.map(JsTag))
+    }
+
+    val tagTypes: Seq[TagType] = dao.getTagTypesForTags(tags)
+
     // Maybe? No, stats is ok to show? Could possibly add another conf val, hmm.
     /*val stats =
       if (maySeeActivity(userId, request.requester, request.dao)) anyStatsJson
@@ -131,7 +140,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "user" -> userJson,
       // COULD_OPTIMIZE: need only include user's groups — or always incl in the
       // volatile json? [305STGW2] — so need not incl here again?
-      "groupsMaySee" -> groupsMaySee.map(JsGroup)))
+      "groupsMaySee" -> groupsMaySee.map(JsGroup),
+      "tagTypes" -> tagTypes.map(JsTagType)))
   }
 
 
@@ -320,14 +330,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
                 writtenById = Some(authorId))
 
     val posts = postsOneMaySee
-    val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.id)))
+    COULD_OPTIMIZE // cache tags per post?
+    val tagsAndBadges: TagsAndBadges = dao.readTx(_.loadPostTagsAndAuthorBadges(posts.map(_.id)))
+    val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
 
     val postsJson = posts flatMap { post =>
       val pageStuff = pageStuffById.get(post.pageId) getOrDie "EdE2KW07E"
       val pageMeta = pageStuff.pageMeta
-      val tags = tagsByPostId.getOrElse(post.id, Set.empty)
       var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
-            showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tags)
+            showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tagsAndBadges)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)
@@ -343,7 +354,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     OkSafeJson(Json.obj(
       "author" -> JsUser(author),
-      "posts" -> JsArray(postsJson)))
+      "posts" -> JsArray(postsJson),
+      "tagTypes" -> JsArray(tagTypes map JsTagType)))
   }
 
 
@@ -992,7 +1004,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val json: JsObject =
       if (pageRequest.user.isDefined) {
-        val renderedPage = request.dao.renderPageMaybeUseMemCache(pageRequest)
+        val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
         dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
           "EdE4ZBXKG")
       }
@@ -1306,8 +1318,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def listGroupMembers(groupId: UserId): Action[Unit] =
         GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
     val maybeMembers = request.dao.listGroupMembersIfReqrMaySee(groupId, request.requesterOrUnknown)
-    val membersJson: JsValue = maybeMembers.map(ms => JsArray(ms map JsUser)).getOrElse(JsFalse)
-    OkSafeJsValue(membersJson)
+    val respJson = maybeMembers match {
+      case None =>
+        // May not know who the members are.
+        JsFalse
+      case Some(membs: Vec[Pat]) =>
+        // [missing_tags_feats]  load tags and tag types, incl here.
+        JsArray(membs.map(JsUser(_)))
+    }
+    OkSafeJsValue(respJson)
   }
 
 

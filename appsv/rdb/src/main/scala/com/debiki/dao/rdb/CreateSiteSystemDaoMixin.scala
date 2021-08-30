@@ -183,11 +183,13 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
 
     // Dupl code [7KUW0ZT2]
     val statements = (s"""
+      delete from audit_log3 where site_id = ?
       delete from index_queue3 where site_id = ?
       delete from spam_check_queue3 where site_id = ?
+      delete from tags_t where site_id_c = ?
+      delete from tagtypes_t where site_id_c = ?
       delete from links_t where site_id_c = ?
       delete from link_previews_t where site_id_c = ?
-      delete from audit_log3 where site_id = ?
       delete from review_tasks3 where site_id = ?
       delete from perms_on_pages3 where site_id = ?
       delete from settings3 where site_id = ?

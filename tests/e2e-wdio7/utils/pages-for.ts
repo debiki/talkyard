@@ -1640,7 +1640,7 @@ export class TyE2eTestBrowser {
           if (isBadElemException(ex)) {
             // Fine, maybe it didn't appear yet?
             logUnusual(`Bad element exception when waiting for:  ${
-                  selector} — retrying ...`);
+                  selector}  — will retry. The error: ${ex.toString()}`);
             return false;
           }
           if (isWindowClosedException(ex)) {
@@ -1842,34 +1842,6 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitAndClickLinkToNewPage(selector: St, refreshBetweenTests?: Bo) {
-      // Keep the debug stuff, for now — once, the click failed, although visible already, weird.
-      let delay = 30;
-      //let count = 0;
-      //logMessage(`waitAndClickLinkToNewPage ${selector} ...`);
-      await this.waitUntilLoadingOverlayGone();
-      while (true) {
-        await this.waitForMyDataAdded();
-        await this.#br.pause(delay);
-        //logMessage(`waitAndClickLinkToNewPage ${selector} testing:`);
-        if (await this.isEnabled(selector)) {
-          //logMessage(`waitAndClickLinkToNewPage ${selector} —> FOUND and ENABLED`);
-          // count += 1;
-          // if (count >= 6)
-          break;
-        }
-        else {
-          //logMessage(`waitAndClickLinkToNewPage ${selector} —> NOT found...`);
-          if (refreshBetweenTests) await this.#br.refresh();
-          delay *= 1.67;
-        }
-      }
-      await this.rememberCurrentUrl();
-      await this.waitAndClick(selector);
-      await this.waitForNewUrl();
-    }
-
-
     async waitUntilGone(what: St, ps: WaitPs = {}): Pr<Bo> {   // RENAME to waitUntilCannotSee ?
       const isGone = await this.waitUntil(async () => {
         try {
@@ -2066,22 +2038,25 @@ export class TyE2eTestBrowser {
       });
     }
 
-    async waitForAtLeast(num: number, selector: string) {
-      await this._waitForHowManyImpl(num, selector, '>= ');
+    async waitForAtLeast(num: number, selector: string): Pr<WElm[]> {
+      return await this._waitForHowManyImpl(num, selector, '>= ');
     }
 
-    async waitForAtMost(num: number, selector: string) {
-      await this._waitForHowManyImpl(num, selector, '<= ');
+    async waitForAtMost(num: number, selector: string): Pr<WElm[]> {
+      return await this._waitForHowManyImpl(num, selector, '<= ');
     }
 
-    async waitForExactly(num: number, selector: string) {
-      await this._waitForHowManyImpl(num, selector, '');
+    async waitForExactly(num: number, selector: string): Pr<WElm[]> {
+      return await this._waitForHowManyImpl(num, selector, '');
     }
 
-    async _waitForHowManyImpl(num: number, selector: string, compareHow: '>= ' | '<= ' | '') {
+    async _waitForHowManyImpl(num: number, selector: string,
+            compareHow: '>= ' | '<= ' | ''): Pr<WElm[]> {
       let numNow = 0;
+      let elms: WElm[] = [];
       await this.waitUntil(async () => {
-        numNow = await this.count(selector);
+        elms = await this.$$(selector);
+        numNow = elms.length;
         switch (compareHow) {
           case '>= ': return numNow >= num;
           case '<= ': return numNow <= num;
@@ -2090,6 +2065,7 @@ export class TyE2eTestBrowser {
       }, {
         message: () => `Waiting for ${compareHow}${num}  ${selector}  there are: ${numNow}`
       });
+      return elms;
     }
 
     async assertExactly(num: Nr, selector: St) {
@@ -3694,7 +3670,7 @@ export class TyE2eTestBrowser {
         logMessage('fillInPassword...');
         await this.loginDialog.fillInPassword(data.password);
         logMessage('clickSubmit...');
-        // In headless Chrome (-i flag), the middle of the button is 0.2 pixels below
+        // In headless Chrome (-i flag), the middle of the button is/can-be 0.2 pixels below
         // the lower edge of any login popup. So scroll to the bottom. [e2e_win_size]
         await this.scrollToBottom();
         await this.loginDialog.clickSubmit();
@@ -4755,7 +4731,8 @@ export class TyE2eTestBrowser {
       },
 
       openAboutUserDialogForUsername: async (username: St) => {
-        await this.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
+        // ~= matches whole words anywhere in the attr value.
+        await this.waitAndClickFirst(`.edAvtr[title~="${username}"]`);
       },
 
       goToTopic: async (title: St) => {   // RENAME to navToTopic
@@ -4807,6 +4784,20 @@ export class TyE2eTestBrowser {
 
       assertTopicVisibleAsHidden: async (title: St) => {
         await this.assertAnyTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+      },
+
+      getTopicTags: async (ps: { topicUrlPath: St, howManyTags: Nr }): Pr<St[]> => {
+        const topicSel = `.c_TpcTtl[href="${ps.topicUrlPath}"] + .dw-p-excerpt `;
+        const tagListSel = `${topicSel} .c_TagL`;
+        if (ps.howManyTags === 0) {
+          // When the topic has appeared, tags should be there too.
+          await this.waitForDisplayed(topicSel);
+          await this.waitForGone(topicSel + this.widgets.tagList.tagListItemSelector);
+          return [];
+        }
+        else {
+          return await this.widgets.tagList.getTagTitles(tagListSel, ps.howManyTags);
+        }
       },
     }
 
@@ -5028,6 +5019,11 @@ export class TyE2eTestBrowser {
         return await this.waitAndGetVisibleText('.s_UD_Un');
       },
 
+      getBadgeTitles: async (howManyBadges: Nr): Pr<St[]> => {
+        // scope more precisely! or might get post tags [precise_tag_sels]
+        return this.widgets.tagList.getTagTitles('.s_UD', howManyBadges);
+      },
+
       close: async () => {
         await this.aboutUserDialog.waitForLoaded();
         await this.waitAndClick('.s_UD .e_CloseB');
@@ -5074,6 +5070,7 @@ export class TyE2eTestBrowser {
       },
 
       startTypingNewName: async (chars: St) => {
+        // Dupl code. [.react_select]
         await this.waitAndSetValue('#e2eAddUsD .Select-input > input', chars,
             { okayOccluders: '.Select-placeholder', checkAndRetry: true });
       },
@@ -5083,6 +5080,7 @@ export class TyE2eTestBrowser {
       },
 
       hitEnterToSelectUser: async () => {
+        // Dupl code. [.react_select]
         // Might not work in Firefox. Didn't in wdio v4.
         // Doesn't work with DevTools; types the letters in "Return" instead. [E2EBUG]
         // But works with WebDriver / Selenium.
@@ -5664,9 +5662,15 @@ export class TyE2eTestBrowser {
         return await this.isVisible('.s_Pg_DdInf');
       },
 
-      postHeaderSelector: (postNr: PostNr) => `#post-${postNr} .dw-p-hd`,
+      postHeaderSelector: (postNr: PostNr) => {
+        if (postNr === c.BodyNr) return '.dw-ar-p-hd';
+        else return `#post-${postNr} .dw-p-hd`;
+      },
 
-      postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd .dw-p-bd-blk`,
+      postBodySelector: (postNr: PostNr) => {
+        if (postNr === c.BodyNr) return '.dw-ar-p';  // +  .dw-p-bd-blk  ? [precise_tag_sels]
+        else return `#post-${postNr} .dw-p-bd .dw-p-bd-blk`;
+      },
 
       forAllPostIndexNrElem: async (fn: (index: Nr, postNr: PostNr, elem) => Pr<Vo>) => {
         const postElems: WElm[] = await this.$$('[id^="post-"]');
@@ -6059,6 +6063,26 @@ export class TyE2eTestBrowser {
         return await this.waitAndGetVisibleText(sel + ' .esP_By_U');
       },
 
+      getPostAuthorUsername: async (postNr: PostNr): Pr<St> => {
+        const atUsername = await this.topic.getPostAuthorUsernameInclAt(postNr);
+        dieIf(atUsername[0] !== '@', 'TyE3G3MEEGW2')
+        return atUsername.substr(1);
+      },
+
+      getPostAuthorBadgeTitles: async (postNr: PostNr, howManyBadges: Nr | U): Pr<St[]> => {
+        // Make selector more precise, so we get pat tags (user badges) for sure, not post tag! [precise_tag_sels]
+        const sel = this.topic.postHeaderSelector(postNr);
+        if (howManyBadges === 0) {
+          // When the username has appeared, tags should be there too?
+          await this.topic.getPostAuthorUsernameInclAt(postNr);
+          await this.waitForGone(sel + ' ' + this.widgets.tagList.tagListItemSelector);
+          return [];
+        }
+        else {
+          return await this.widgets.tagList.getTagTitles(sel, howManyBadges);
+        }
+      },
+
       clickFirstMentionOf: async (username: St) => {
         // This:  this.waitAndClick(`a.esMention=@${username}`);
         // fails:
@@ -6151,6 +6175,11 @@ export class TyE2eTestBrowser {
 
       openAboutUserDialogForPostNr: async (postNr: PostNr) => {
         await this.waitAndClick(`#post-${postNr} .esP_By`);
+        await this.aboutUserDialog.waitForLoaded();
+      },
+
+      openAboutUserDialogForUsername: async (username: St) => {
+        await this.waitAndClickFirst(`.esP_By[href="/-/users/${username}"]`);
         await this.aboutUserDialog.waitForLoaded();
       },
 
@@ -6370,6 +6399,37 @@ export class TyE2eTestBrowser {
 
       _makeUnsolveSelector(postNr: PostNr) {
         return `#post-${postNr} + .esPA .dw-a-unsolve`;
+      },
+
+      openTagsDialog: async (ps: { openHow?: 'ClickHeaderTags' | 'ViaMoreDropdown',
+              forPostNr?: PostNr } = {}) => {
+        const postNr = ps.forPostNr || c.BodyNr;
+        if (!ps.openHow || ps.openHow === 'ClickHeaderTags') {
+          // Make 'sel' more precise, so cannot click pat tags.  [precise_tag_sels]
+          const sel = this.topic.postHeaderSelector(postNr) + ' .c_TagL_AddB';
+          await this.waitAndClick(sel);
+        }
+        else {
+          await this.topic.clickMoreForPostNr(postNr);
+          await this.waitAndClick(' .dw-a.icon-plus');  // add real e_SthB class?  [precise_tag_sels]
+        }
+      },
+
+      // Move to this.utils? Y. Because also used from user profile page, recent posts list.
+      getTags: async (ps: { forPostNr?: PostNr, howManyTags: Nr, within?: Sel }): Pr<St[]> => {
+        const postNr = ps.forPostNr || c.BodyNr;
+        const sel =
+                (ps.within || '') + ' ' +
+                this.topic.postHeaderSelector(postNr) + ' .n_TagL-Po ';
+        if (ps.howManyTags === 0) {
+          // When the username has appeared, tags should be there too?
+          await this.topic.getPostAuthorUsernameInclAt(postNr);
+          await this.waitForGone(sel + this.widgets.tagList.tagListItemSelector);
+          return [];
+        }
+        else {
+          return await this.widgets.tagList.getTagTitles(sel, ps.howManyTags);
+        }
       },
 
       openChangePageDialog: async () => {
@@ -7119,6 +7179,16 @@ export class TyE2eTestBrowser {
                 `/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
       },
 
+      aboutPanel: {
+        getBadgeTitles: async (howManyBadges: Nr): Pr<St[]> => {
+          return this.widgets.tagList.getTagTitles('.s_UP_Ab', howManyBadges);
+        },
+
+        openBadgesDialog: async () => {
+          await this.waitAndClick('.s_UP_Ab .c_TagL_AddB');
+        },
+      },
+
       groupMembers: {
         goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
           await this.userProfilePage._goHere(username, ps, '/members');
@@ -7186,8 +7256,18 @@ export class TyE2eTestBrowser {
           await this.waitUntilLoadingOverlayGone();
         },
 
+        summary: {
+          goHere: async(username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+            await this.userProfilePage._goHere(username, ps, '/activity/summary');
+          },
+        },
+
         posts: {
           postSelector: '.s_UP_Act_Ps_P .dw-p-bd',
+
+          goHere: async(username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+            await this.userProfilePage._goHere(username, ps, '/activity/posts');
+          },
 
           waitForNothingToShow: async () => {
             await this.waitForVisible('.s_UP_Act_List .e_NothingToShow');
@@ -7199,6 +7279,25 @@ export class TyE2eTestBrowser {
 
           assertExactly: async (num: Nr) => {
             await this.assertExactly(num, this.userProfilePage.activity.posts.postSelector);
+          },
+
+          getTags: async (ps: { forPostNr: PostNr, howManyTags: Nr }): Pr<St[]> => {
+            // Selector is:  .s_UP_Act_Ps_P .n_TagL-Po .c_TagL_Tag
+            return await this.topic.getTags({
+                    forPostNr: ps.forPostNr,
+                    howManyTags: ps.howManyTags,
+                    within: '.s_UP_Act_Ps_P' });
+          },
+
+          navToPost: async (ps: { anyOnPageId?: St, justClickFirst?: Bo } = {}) => {
+            dieIf(!!ps.anyOnPageId === !!ps.justClickFirst, 'TyE06WEJPF3');
+            const urlPath = ps.anyOnPageId && `/-${ps.anyOnPageId}`;
+            // \b means word boundary — so won't match the start of a longer page id.
+            // Eh, no, ^= is not a regex. So skip.
+            const selector = '.s_UP_Act_Ps_P_Link' + (!urlPath ? '' : `[href^="${urlPath}"]`);
+            await this.rememberCurrentUrl();
+            await this.waitAndClickFirst(selector);
+            await this.waitForNewUrl();
           },
 
           // Do this separately, because can take rather long (suprisingly?).
@@ -7219,6 +7318,24 @@ export class TyE2eTestBrowser {
 
         topics: {
           topicsSelector: '.s_UP_Act_Ts .e2eTopicTitle',
+
+          goHere: async(username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+            await this.userProfilePage._goHere(username, ps, '/activity/topics');
+          },
+
+          navToPage: async (ps: { pagePath: St }) => {
+            // Not href^= because there's a 2nd link that ends with #post-... too,
+            // and then Webdriverio wouldn't know which one to click.
+            const selector = `.s_UP_Act_Ts .e2eF_T [href="${ps.pagePath}"]`;
+            await this.rememberCurrentUrl();
+            await this.waitAndClick(selector);
+            await this.waitForNewUrl();
+          },
+
+          waitForPageLinkDisplayed: async (ps: { pagePath: St }) => {
+            const selector = `.s_UP_Act_Ts .e2eF_T [href="${ps.pagePath}"]`;
+            await this.waitForDisplayed(selector);
+          },
 
           waitForNothingToShow: async () => {
             await this.waitForVisible('.s_UP_Act_List .e_NothingToShow');
@@ -7247,6 +7364,24 @@ export class TyE2eTestBrowser {
             let selector = this.userProfilePage.activity.topics.topicsSelector;
             await this.assertNoTextMatches(selector, title);
           },
+          
+          getTags: async (ps: { forPagePath: PageId, howManyTags: Nr }): Pr<St[]> => {
+            // Use .c_TagL-Po  instead, if always including tag type. [alw_tag_type] — yes? pass to 
+            // this.widgets.tagList.getTagTitles(..)? to do  [precise_tag_sels]
+            const sel = '.s_UP_Act_Ts .esF_TsT .e2eF_T .c_TagL ';
+            if (ps.howManyTags === 0) {
+              // When the page has appeared, any tags should be there too.
+              await this.userProfilePage.activity.topics.waitForPageLinkDisplayed({
+                      pagePath: ps.forPagePath });
+              await this.waitForGone(sel + this.widgets.tagList.tagListItemSelector);
+              return [];
+            }
+            else {  // incl page id in selector! Currently always just one page.  [precise_tag_sels]
+              return await this.widgets.tagList.getTagTitles(sel, ps.howManyTags);
+            }
+          },
+
+
         }
       },
 
@@ -8700,6 +8835,31 @@ export class TyE2eTestBrowser {
     };
 
 
+    tagsDialog = {
+      createAndAddTag: async (tagName: St, ps: { numAfterwards: Nr }) => {
+        await this.waitAndSetValue('.e_CrTgI input', tagName);
+        await this.waitAndClick('.e_CrTgB');
+        await this.widgets.reactSelect('.e_AdTg').waitUntilNumItems(ps.numAfterwards);
+      },
+
+      addExistingTag: async (tagName: St, ps: { numAfterwards: Nr }) => {
+        await this.widgets.reactSelect('.e_AdTg').startTypingItemName(tagName);
+        await this.widgets.reactSelect('.e_AdTg').hitEnterToSelectItem();
+        await this.widgets.reactSelect('.e_AdTg').waitUntilNumItems(ps.numAfterwards);
+      },
+
+      removeNthTag: async (n: Nr, ps: { numAfterwards: Nr }) => {
+        await this.widgets.reactSelect('.e_AdTg').removeNthItem(n);
+        await this.widgets.reactSelect('.e_AdTg').waitUntilNumItems(ps.numAfterwards);
+      },
+
+      saveAndClose: async () => {
+        // More preciise selector? So knows is the correct dialog  [precise_tag_sels]
+        await this.waitAndClick('.modal-footer .btn-primary');
+      },
+    };
+
+
     shareDialog = {
       copyLinkToPost: async () => {  // RENAME, append:  ...ToClipboard
         await this.waitAndClick('.s_ShareD_Link');
@@ -9416,5 +9576,60 @@ export class TyE2eTestBrowser {
       logUnusual("Checkbox refuses to change state. Clicking it again.");
     }
     tyAssert.ok(bugRetry <= maxBugRetry, "Couldn't set checkbox to checked = " + checked);
+  }
+
+
+  widgets = {
+    tagList: {
+      tagListItemSelector: '.c_TagL_Tag',
+
+      // Instead, paramms?:  { within, howMany, forWhat: 'Pat' | 'Post' ?}  [precise_tag_sels]
+      getTagTitles: async (selector: St, howManyTags: Nr | U): Pr<St[]> => {
+        return await utils.tryManyTimes(`Getting tags/badges in: ${selector}`, 2,
+                async (): Pr<St[]> => {
+          const tagSel = selector + ' ' + this.widgets.tagList.tagListItemSelector;
+          const elms: WElm[] = howManyTags === undefined
+              ? await this.$$(tagSel)
+              : await this.waitForExactly(howManyTags, tagSel);
+          const titles: St[] = [];
+          for (const el of elms) {
+            const title: St = await el.getText();
+            titles.push(title);
+          }
+          return titles;
+        })
+      }
+    },
+
+    reactSelect: (selector: St) => { return {
+      startTypingItemName: async (chars: St) => {
+        // Dupl code. [.react_select]
+        await this.waitAndSetValue(`${selector} .Select-input > input`, chars,
+            { okayOccluders: '.Select-placeholder', checkAndRetry: true });
+      },
+
+      appendChars: async (chars: St) => {
+        await (await this.$(`${selector} .Select-input > input`)).addValue(chars);
+      },
+
+      hitEnterToSelectItem: async () => {
+        // Dupl code. [.react_select]
+        // Might not work in Firefox. Didn't in wdio v4.
+        // Doesn't work with DevTools; types the letters in "Return" instead. [E2EBUG]
+        // But works with WebDriver / Selenium.
+        logWarningIf(settings.useDevtoolsProtocol, `\n\n` +
+              `this.#br.keys(['Return'])  won't work with DevTools!  ` +
+              `Just types "Return" instead\n\n`);
+        await this.#br.keys(['Return']);
+      },
+
+      waitUntilNumItems: async (num: Nr) => {
+        await this.waitForExactly(num, `${selector} .Select-value-label`);
+      },
+
+      removeNthItem: async (n: Nr) => {
+        await this.waitAndClickNth(`${selector} .Select-value-icon`, n);
+      },
+    }},
   }
 }

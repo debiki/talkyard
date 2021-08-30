@@ -324,6 +324,7 @@ function AdvancedSearchPanel(props: {
           // ?which? sub community? But not all. Probably want to list cats from all sub communities?
           options: makeCategoryLabelValues(store.currentCategories),
           onChange: props.onCategoriesSelectionChange })),
+      /* Reimplement, with new tags. & add username search too?  [missing_tags_feats]
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label' }, "For posts with tags:"),
         // UX SHOULD add a modal backdrop and close Select if clicked.
@@ -340,6 +341,7 @@ function AdvancedSearchPanel(props: {
           onChange: props.onNotTagsSelectionChange }))
       // On pages with tags:
       // But without these tags:
+      */
     ));
 }
 
@@ -355,7 +357,7 @@ function makeCategoryLabelValues(categories: Category[]) {
   });
 }
 
-
+/*  [missing_tags_feats]
 function makeTagLabelValues(tagsStuff: TagsStuff) {
   if (!tagsStuff || !tagsStuff.tagsAndStats)
     return [];
@@ -365,7 +367,7 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
       value: tagAndStats.label,
     };
   });
-}
+} */
 
 
 

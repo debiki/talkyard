@@ -247,6 +247,10 @@ navigation:
           - embedded-comments-navigation-as-guest.test.ts  TyT2P067WKT2
   to topic with unapproved posts:
           - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ.TyTE2E603SKD
+  from user profile topic list to page:
+            - tags-basic.2br  TyTE2ETAGSBSC.TyTNAVUSR2PG
+  from user profile posts list to page:
+            - badges-basic.2br  TyTE2EBADGESBSC.TyTNAVUSR2PO
 
 profile page, user:
   upload photo:  (8PK2)
@@ -456,6 +460,10 @@ forum intro text -  (5KC2)
   edit, remove, add back:
   hide, show:
 
+forum page layout:
+  import:
+            - tags-basic.2br  TyTE2ETAGSBSC.TyTFRMLAYOUT
+
 categories -
   create -
     custom name, default everything:
@@ -501,6 +509,14 @@ categories -
     permissions:
           - category-permissions.2br   TyTE2ECATPREMS01
           - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
+
+tags:
+            - tags-basic.2br  TyTE2ETAGSBSC
+            - TESTS_MISSING: invalid names: too long, short, commas. Unique key error
+            - TESTS_MISSING server side tag tests, see:   TyTIT_TAGS
+
+badges:
+            - badges-basic.2br  TyTE2EBADGESBSC
 
 permissions -
   category -

@@ -40,7 +40,7 @@ AuD = authentication dialog (create account / log in / just type a name)
 Bef = before
 Bitf = bitfield
 Em  = email
-Ena = enabled, Dis = disabled
+Enb = enabled, Dsb? Disb? = disabled
 B   = button, e.g. ReplyB
 It  = list item
 Cb  = Contextbar
@@ -83,6 +83,7 @@ Hi  = high
 Hz  = horizontal, also Vl: vertical
 Ifr = iframe
 L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list, ..T = table
+Ls  = list, when not at the end, e.g LsPgsB = list pages button
 Ld  = load, Ldng = loading
 LD  = Log in Dialog, RENAME to AuD = Authn Dialog
 Lg  = large (screen), also: Sm, Md Xl
@@ -131,6 +132,7 @@ SgU = sign up, also LgI/LgO = log in/out, and Au = Authentication, e.g. AuD
 Sm  = small (screen), also: Md, Lg, Xl
 Sub = "sub" as in "sub category"
 Sub = submit NO, CLEAN_UP, insetad:
+Sug = suggest
 Sbm = submit
 Snz = Snooze
 St = status or state

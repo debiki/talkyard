@@ -15,8 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import com.debiki.core.QuickMessageException
-import com.debiki.core.fileExists
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.Globals
 import play.api.libs.json.{JsValue, JsArray, JsObject}

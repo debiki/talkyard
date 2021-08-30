@@ -779,6 +779,7 @@ trait UserDao {
   }
 
 
+  // Change param to Set[UserId] instead?
   def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[Participant] = {
     getParticipantsImpl(userIds).toVector
   }
@@ -1789,15 +1790,16 @@ trait UserDao {
         userAfter.tinyAvatar.foreach(tx.updateUploadedFileReferenceCount)
         userAfter.smallAvatar.foreach(tx.updateUploadedFileReferenceCount)
         userAfter.mediumAvatar.foreach(tx.updateUploadedFileReferenceCount)
-        tx.markPagesWithUserAvatarAsStale(userId)
+        // A user's avatar is shown in posts written by him/her.
+        tx.markPagesHtmlStaleIfVisiblePostsBy(userId)
       }
       removeUserFromMemCache(userId)
 
       // Clear the PageStuff cache (by clearing the whole in-mem cache), because
       // PageStuff includes avatar urls.
-      // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
+      SHOULD_OPTIMIZE // let above markPagesWithUserAvatarAsStale() return a page id list and
       // uncache only those pages.
-      emptyCacheImpl(tx)
+      emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
   }
 
 
@@ -1927,7 +1929,7 @@ trait UserDao {
       if (preferences.changesStuffIncludedEverywhere(user)) {
         // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something.
         // Use markPagesWithUserAvatarAsStale ?
-        emptyCacheImpl(tx)
+        emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
         clearMemCacheAfterTx = true
       }
     }
@@ -2035,7 +2037,7 @@ trait UserDao {
   def savePatPerms(patId: PatId, perms: PatPerms, byWho: Who): U = {
     editMemberThrowUnlessSelfStaff2(patId, byWho, "TyE3ASHW6703", "edit pat perms") {
         (tx, memberInclDetails, _) =>
-      val groupBef: Group = memberInclDetails.asGroupOr(ThrowForbidden)
+      val groupBef: Group = memberInclDetails.asGroupOr(IfBadAbortReq)
       val groupAft = groupBef.copy(perms = perms)
       tx.updateMemberInclDetails(groupAft)
     }
@@ -2283,7 +2285,7 @@ trait UserDao {
       tx.removeDeletedMemberFromAllGroups(userId)
 
       // Clear the page cache, by clearing all caches.
-      emptyCacheImpl(tx)
+      emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
 
       (memberDeleted, groupIds)
     }
@@ -2315,7 +2317,7 @@ trait UserDao {
         }
         UsersOnlineStuff(
           users,
-          usersJson = JsArray(users.map(JsX.JsUser)),
+          usersJson = JsArray(users.map(JsX.JsUser(_))),
           numStrangers = numStrangers)
       }
     })
@@ -2381,6 +2383,11 @@ trait UserDao {
 
   private def allGroupsKey = MemCacheKey(siteId, "AlGrps")
   private def groupMembersKey(groupId: UserId) = MemCacheKey(siteId, s"$groupId|GrMbrs")
+
+  // Not cached by patKey() — because is in a different table, and by using
+  // different cache entries, we thereby eliminate some race conditions?
+  // (It's confusing if seemingly unrelated changes (e.g. name and group memberships)
+  // race against each other.)  [avoid_pat_cache_race]
   private def onesGroupIdsKey(userId: UserId) = MemCacheKey(siteId, s"$userId|GIdsByPp")
 
 }
