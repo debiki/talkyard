@@ -540,11 +540,11 @@ async function lastEmailMatches(siteId: SiteId, emailAddress: St,
 }
 
 
-async function sendIncomingEmailWebhook(ps: { to: St,
+async function sendIncomingEmailWebhook(ps: { to: St, toAddrHasNeeded?: Bo,
         body: St, format: 'Postmarkapp', wrongApiSecret?: true }) {
   // See EmailsInController.parseIncomingEmail [pars_em_in].
   const url = settings.mainSiteOrigin + '/-/handle-email';
-  const mailboxHash = getHashOrDie(ps.to, 'TyE70MWEP52');
+  const mailboxHash = getHashOrDie(ps.to, 'TyE70MWEP52', ps.toAddrHasNeeded);
   const data = {
     MessageID: 'MessageID',
     Date: '2021-12-31T23:59:59',
@@ -553,8 +553,8 @@ async function sendIncomingEmailWebhook(ps: { to: St,
     From: 'From@ex.co',
     ReplyTo: 'ReplyTo@x.co',
     Subject: 'Subject',
-    HtmlBody: 'HtmlBody',
-    TextBody: 'TextBody',
+    HtmlBody: ps.body,
+    TextBody: ps.body, // whatever
     StrippedTextReply: 'StrippedTextReply',
     Headers: [{ Name: 'HeaderName', Value: 'HeaderValue' }],
   };
@@ -569,13 +569,13 @@ async function sendIncomingEmailWebhook(ps: { to: St,
 
 
 
-function getHashOrDie(emailAdr: St, errCode: St): St {
+function getHashOrDie(emailAdr: St, errCode: St, toAddrHasNeeded?: Bo): St {
   const matches = emailAdr.match(/^[^@\s+]+\+([^@\s]+)@[^@\s]+$/);
-  dieIf(!matches || matches.length !== 2,
+  dieIf(matches?.length !== 2 && toAddrHasNeeded !== false,
         `No hash in email addr: "${emailAdr}" [${errCode}]\n\n` +
         `Edit conf/my.conf and include +EMAIL_ID in the from addr, e.g.:\n` +
         `talkyard.smtp.fromAddress="no-reply+EMAIL_ID@example.com\n`);
-  return matches[1];
+  return matches?.[1];
 }
 
 

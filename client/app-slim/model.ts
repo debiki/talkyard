@@ -1783,6 +1783,7 @@ interface Settings extends TopicInterfaceSettings {
   companyDomain: string;
   companyFullName: string;
   companyShortName: string;
+  outboundEmailsFromName: St;
   termsOfUseUrl: string;
   privacyUrl: string;
   contribAgreement: ContribAgreement;

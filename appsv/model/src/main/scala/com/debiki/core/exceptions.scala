@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012, _, 2021 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -53,6 +53,11 @@ class BadRequestEx(message: ErrMsg) extends QuickException {
 
 
 class ForbiddenEx(message: ErrMsg) extends QuickException {
+  override def getMessage: St = message
+}
+
+
+class UnimplementedEx(message: ErrMsg) extends QuickException {
   override def getMessage: St = message
 }
 

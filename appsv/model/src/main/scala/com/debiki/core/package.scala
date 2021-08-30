@@ -328,6 +328,7 @@ package object core {
     * @param debugInfo — more details, for Talkyard developers
     * @param anyException — remove later
     */
+  // Split into Problem & SiteProblem? The latter w site id, the former without?
   case class Problem(
     message: ErrorMessage,
     siteId: SiteId,

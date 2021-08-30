@@ -141,6 +141,10 @@ case class EditedSettings(
   orgDomain: Option[String],
   orgFullName: Option[String],
   orgShortName: Option[String],
+  outboundEmailsFromName: Opt[St],
+  outboundEmailsFromAddr: Opt[St],
+  outboundEmailsReplyTo: Opt[St],
+  outboundEmailsSmtpConf: Opt[JsObject],
   termsOfUseUrl: Option[String],
   privacyUrl: Option[String],
   rulesUrl: Option[String],
@@ -288,6 +292,10 @@ object EditedSettings {
     orgDomain = None,
     orgFullName = None,
     orgShortName = None,
+    outboundEmailsFromName = None,
+    outboundEmailsFromAddr = None,
+    outboundEmailsReplyTo = None,
+    outboundEmailsSmtpConf = None,
     termsOfUseUrl = None,
     privacyUrl = None,
     rulesUrl = None,
@@ -411,6 +419,10 @@ case class SettingsToSave(
   orgDomain: Option[Option[String]] = None,
   orgFullName: Option[Option[String]] = None,
   orgShortName: Option[Option[String]] = None,
+  outboundEmailsFromName: Opt[Opt[St]] = None,
+  outboundEmailsFromAddr: Opt[Opt[St]] = None,
+  outboundEmailsReplyTo: Opt[Opt[St]] = None,
+  outboundEmailsSmtpConf: Opt[Opt[JsObject]] = None,
   termsOfUseUrl: Option[Option[String]] = None,
   privacyUrl: Option[Option[String]] = None,
   rulesUrl: Option[Option[String]] = None,
@@ -457,6 +469,11 @@ case class SettingsToSave(
   // For now, disable license-to-us-for-use-on-this-site-only, see [6UK2F4X] in admin-app.ts(?).
   if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly))) {
     unimplemented("UseOnThisSiteOnly not yet supported because of tricky legal stuff [EsE4YKW21]")
+  }
+
+  for (anyName <- outboundEmailsFromName; name <- anyName) {
+    throwBadReqIfAny(Validation.findEmailNameProblem(name),
+          "TyE5MW2Z8", "Weird email From name: ")
   }
 }
 

@@ -5633,7 +5633,8 @@ export class TyE2eTestBrowser {
       },
 
       getCurCategoryName: async (): Pr<St> => {
-        return await this.waitAndGetVisibleText(this.topic.__getCurCatNameSelector());
+        return await this.waitAndGetVisibleText(
+              await this.topic.__getCurCatNameSelector());
       },
 
       movePageToOtherCategory: async (catName: St) => {

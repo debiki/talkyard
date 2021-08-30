@@ -139,6 +139,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         org_domain,
         org_full_name,
         org_short_name,
+        outbound_emails_from_name_c,
+        outbound_emails_from_addr_c,
+        outbound_emails_reply_to_c,
+        outbound_emails_smtp_conf_c,
         terms_of_use_url,
         privacy_url,
         rules_url,
@@ -166,7 +170,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?::jsonb, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
 
@@ -254,6 +259,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.orgDomain.getOrElse(None).trimOrNullVarchar,
       editedSettings2.orgFullName.getOrElse(None).trimOrNullVarchar,
       editedSettings2.orgShortName.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.outboundEmailsFromName.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.outboundEmailsFromAddr.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.outboundEmailsReplyTo.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.outboundEmailsSmtpConf.getOrElse(None).orNullJson,
       editedSettings2.termsOfUseUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.privacyUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.rulesUrl.getOrElse(None).trimOrNullVarchar,
@@ -379,6 +388,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("org_domain", s.orgDomain.map(_.trimOrNullVarchar))
     maybeSet("org_full_name", s.orgFullName.map(_.trimOrNullVarchar))
     maybeSet("org_short_name", s.orgShortName.map(_.trimOrNullVarchar))
+    maybeSet("outbound_emails_from_name_c", s.outboundEmailsFromName.map(_.orNullVarchar))
+    maybeSet("outbound_emails_from_addr_c", s.outboundEmailsFromAddr.map(_.orNullVarchar))
+    maybeSet("outbound_emails_reply_to_c", s.outboundEmailsReplyTo.map(_.orNullVarchar))
+    maybeSet("outbound_emails_smtp_conf_c", s.outboundEmailsSmtpConf.map(_.orNullJson))
     maybeSet("terms_of_use_url", s.termsOfUseUrl.map(_.trimOrNullVarchar))
     maybeSet("privacy_url", s.privacyUrl.map(_.trimOrNullVarchar))
     maybeSet("rules_url", s.rulesUrl.map(_.trimOrNullVarchar))
@@ -504,6 +517,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       orgDomain = getOptString(rs, "org_domain"),
       orgFullName = getOptString(rs, "org_full_name"),
       orgShortName = getOptString(rs, "org_short_name"),
+      outboundEmailsFromName = getOptString(rs, "outbound_emails_from_name_c"),
+      outboundEmailsFromAddr = getOptString(rs, "outbound_emails_from_addr_c"),
+      outboundEmailsReplyTo = getOptString(rs, "outbound_emails_reply_to_c"),
+      outboundEmailsSmtpConf = getOptJsObject(rs, "outbound_emails_smtp_conf_c"),
       termsOfUseUrl = getOptString(rs, "terms_of_use_url"),
       privacyUrl = getOptString(rs, "privacy_url"),
       rulesUrl = getOptString(rs, "rules_url"),
