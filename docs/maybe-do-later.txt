@@ -39,6 +39,7 @@ https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
 
 [subcats]
 DONE: Implement sub categories.
+But missing: Search in sub cats, if searching in base cat.
 
 [propagate_cat_perms]
 It'd be nice if there was a way to get an overview of sub cat permissions,
@@ -179,12 +180,13 @@ toxicity/content-filter, image scan, other uploads / check hashsums, outgoing li
 
 
 [undel_pages]
-Should remember who deleted it, so can see one's own deleted pages and undelete them,
+DONE: Should remember who deleted it, so can see one's own deleted pages and undelete them,
 but cannot seem one's own pages if instead they got deleted by staff.
 In fact, all pages_t.deleted_at, frozen_at,  etc,
    should instead be   deleted_by, frozen_by, etc
    — because always good to remember who did it; often, that person may undo (+ staff).
    But *when*, that's for the audit log.
+Missing: Improve the UX.
 
 [undel_posts] [62AKDN46] [apr_deld_post] [apr_movd_orig_post]
 Undelete posts, not just pages and categories.
