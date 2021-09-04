@@ -3,8 +3,7 @@
   "name": "ty-e2e-wdio6",
   "description": "Talkyard's e2e tests in Webdriverio 6",
   "license": "AGPL-3.0-or-later",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@wdio/cli": "=6.10.10",
     "@wdio/devtools-service": "=6.10.10",
@@ -16,7 +15,7 @@
     "@wdio/spec-reporter": "=6.10.6",
     "@wdio/static-server-service": "=6.10.10",
     "@wdio/sync": "=6.10.10",
-    "chromedriver": "^91.0.0",
+    "chromedriver": "^93.0.1",
     "paseto.js": "^0.1.7",
     "wdio-chromedriver-service": "=6.0.4"
   }
