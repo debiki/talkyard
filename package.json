@@ -74,6 +74,7 @@
     "stylus": "^0.54.8",
     "supertest": "^6.1.6",
     "sync-request": "^6.1.0",
+    "ts-node": "^10.0.0 — results in 'TypeError: minimist is not a function', in tyd.ts line 112:  minimist(process.argv.slice(2));",
     "ts-node": "^9.1.1",
     "typescript": "^4.4.2",
     "uglify-js": "^3.14.1"
