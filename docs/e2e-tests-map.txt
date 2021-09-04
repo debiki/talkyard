@@ -348,6 +348,7 @@ security:
   cors:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
             - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
 
 suspended users:
   gets no email notfs,
@@ -823,11 +824,13 @@ embedded comments:
   notf about new discusion:
           - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59.TyT063AKDGW60
   comment counts:
-          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   many comments iframes same page:
             - embcom.manyframes.basic.2br  TyTEMANYCOMIFR01
             - embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02
             - embcom.manyframes.js-api.2br  TyTEMANYEMBDISAPI
+            - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   sso: see [.embcom.sso]
 
 upload links,
@@ -1411,6 +1414,7 @@ api:
             - api-search-full-text.test.ts   TyT70ADNEFTD36
   get api:
           - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+          - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   atom feed:
             - TESTS_MISSING
   rss feed: No, there're only Atom feeds.

@@ -24,7 +24,7 @@
 
 
 export function fetchAndFillInCommentCounts(talkyardServerUrl: St) {
-  const urls: St[] = [];
+  const pageRefs: St[] = [];
   const countElms: Element[] = [];
   const countElmsColl: NodeListOf<Element> =
           document.querySelectorAll('.ty_NumCmts'); // '.ty_NumOpLikeVotes');
@@ -32,16 +32,27 @@ export function fetchAndFillInCommentCounts(talkyardServerUrl: St) {
   for (let i = 0; i < countElmsColl.length; ++i) {
     const countElm = countElmsColl[i];
     const enclosingLink: HTMLElement | Nl = countElm.closest('a[href]')
-    if (!enclosingLink) continue;
-    let url: St = enclosingLink.getAttribute('href');
-    // Don't send URL hash fragment to server.
-    // Also skip urls without any '/' — Talkyard wants embedding page paths
-    // to either be an origin + full url path, or full url path (incl leading slash).
-    url = url.replace(/#.*$/, '');
-    if (!url || url.indexOf('/') === -1) {
-      // Use debugLog():
-      // console.debug(`Skipping: "${url}", not a complete URL or path`);
-      continue;
+    const enclosingDiscId: HTMLElement | Nl = countElm.closest('[data-discussion-id]')
+    if (!enclosingLink && !enclosingDiscId) continue;
+
+    let ref;
+    const discId: St | U = enclosingDiscId &&
+          enclosingDiscId.getAttribute('data-discussion-id');
+    if (discId) {
+      ref = 'diid:' + discId;
+    }
+    else {
+      let url: St = enclosingLink.getAttribute('href');
+      // Don't send URL hash fragment to server.
+      // Also skip urls without any '/' — Talkyard wants embedding page paths
+      // to either be an origin + full url path, or full url path (incl leading slash).
+      url = url.replace(/#.*$/, '');
+      if (!url || url.indexOf('/') === -1) {
+        // Use debugLog():
+        // console.debug(`Skipping: "${url}", not a complete URL or path`);
+        continue;
+      }
+      ref = 'emburl:' + url;
     }
 
     // Use debugLog():
@@ -49,12 +60,11 @@ export function fetchAndFillInCommentCounts(talkyardServerUrl: St) {
     // console.debug(enclosingLink);
     // console.debug(`URL: ${url}`);
 
-    urls.push(url);
+    pageRefs.push(ref);
     countElms.push(countElm);
   }
 
-  if (urls.length) {
-    const pageRefs = urls.map(u => 'emburl:' + u);
+  if (pageRefs.length) {
     const requestBody: GetQueryApiRequest = {
       getQuery: {
         getWhat: 'Pages',

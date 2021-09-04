@@ -163,6 +163,11 @@ if (insecureSomethingErrMsg) {
 }
 
 
+// (UX COULD have the comments iframes postMessage() to this main win if new comments
+// appear, so the main win comment counts will stay up-to-date, without page reload.
+// — This is only relevant for pages with many comment iframes, where comment counts
+// can be shown together with comment iframes.)  [dyn_upd_com_counts])
+//
 tyns.fetchAndFillInCommentCounts(serverOrigin);
 
 

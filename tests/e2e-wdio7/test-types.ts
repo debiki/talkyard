@@ -47,3 +47,14 @@ export const enum IsWhere {
   External = 10,
 }
 
+
+export function isWhere_isInIframe(where: IsWhere): Bo {
+  switch (where) {
+    case IsWhere.EmbCommentsIframe: // fall through
+    case IsWhere.EmbEditorIframe: // fall through
+    case IsWhere.UnknownIframe:
+      return true;
+    default:
+      return false;
+  }
+}
