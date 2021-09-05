@@ -91,7 +91,7 @@ val appDependencies = Seq(
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
   // Dependencies.Libs.apacheTika
-  "io.dropwizard.metrics" % "metrics-core" % "4.1.12.1",
+  "io.dropwizard.metrics" % "metrics-core" % "4.1.25",
   "io.jaegertracing" % "jaeger-client" % "0.32.0",
   "nl.grons" %% "metrics4-scala" % "4.1.9",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"
