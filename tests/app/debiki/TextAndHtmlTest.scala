@@ -21,10 +21,11 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import org.jsoup.Jsoup
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class TextAndHtmlTest extends FreeSpec with matchers.must.Matchers {
+class TextAndHtmlTest extends AnyFreeSpec with must.Matchers {
 
   "TextAndHtml can" - {
 

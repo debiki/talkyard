@@ -68,27 +68,28 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
           "TyE603MRT4", "Currently at most 30 at a time")
 
     def notFoundMsg(embUrl: St, pageId: PageId = NoPageId): St = {
-      s"No page with embedding url $embUrl"
+      s"No page with that embedding url or discussion id: $embUrl"
     }
 
-    type UrlAndPageId = (St, PageId)
-    val urlAndIds: Seq[UrlAndPageId Or ErrMsg] = pageRefs map { ref: St =>
-      val urlOrErr: St Or ErrMsg = parseRef(ref, allowParticipantRef = false) flatMap {
+    type PageRefAndId = (St, PageId)
+    val refsAndIds: Seq[PageRefAndId Or ErrMsg] = pageRefs map { ref: St =>
+      val refOrErr: St Or ErrMsg = parseRef(ref, allowParticipantRef = false) flatMap {
         case ParsedRef.EmbeddingUrl(url) => Good(url)
-        case x => Bad(s"Not an embedding url: $x")
+        case ParsedRef.DiscussionId(id) => Good(id)
+        case x => Bad(s"Not an embedding url or discussion id: $x")
       }
-      urlOrErr flatMap { url: St =>
-        val anyPageId: Opt[PageId] = dao.getRealPageId(url)
+      refOrErr flatMap { ref: St =>
+        val anyPageId: Opt[PageId] = dao.getRealPageId(ref)
         anyPageId match {
-          case Some(id) => Good((url, id))
-          case None => Bad(notFoundMsg(url))
+          case Some(id) => Good((ref, id))
+          case None => Bad(notFoundMsg(ref))
         }
       }
     }
 
-    val topicsOrErrs = urlAndIds map { urlAndIdOrErr =>
-      urlAndIdOrErr flatMap {
-        case (url: St, pageId) => dao.getPagePathAndMeta(pageId) match {
+    val topicsOrErrs = refsAndIds map { refAndIdOrErr =>
+      refAndIdOrErr flatMap {
+        case (ref: St, pageId) => dao.getPagePathAndMeta(pageId) match {
           case Some(page: PagePathAndMeta) =>
             COULD_OPTIMIZE // will typically always be same cat, for emb cmts.
             val categories = dao.getAncestorCategoriesRootLast(page.categoryId)
@@ -102,9 +103,9 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
                   // Embedded discussion topics are typically unlisted.
                   maySeeUnlisted = true)
            if (may == MayMaybe.Yes) Good(page)
-           else Bad(notFoundMsg(url))  // or if dev/test: s"Cannot find page $pageId"
+           else Bad(notFoundMsg(ref))  // or if dev/test: s"Cannot find page $pageId"
           case None =>
-            Bad(notFoundMsg(url))      // ... here too?  + err code
+            Bad(notFoundMsg(ref))      // ... here too?  + err code
         }
       }
     }

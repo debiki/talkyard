@@ -174,6 +174,8 @@ Search for:  [4KDPREU2], break out fn.
 
 [reenable-akismet]:
 For some reason I disabled Akismet (why? when refactoring to save time?). Enable it again.
+Conf vals for enable/disable: check ip addr, country, sign-up email addr, aksimet,
+toxicity/content-filter, image scan, other uploads / check hashsums, outgoing links.
 
 
 [undel_pages]
@@ -366,7 +368,7 @@ use message passing & async replies?
 Make it possible to change the author of a post to someone else. Or change edited-by to another user id.
 
 [assign-posts]
-Assign topics and posts to people.
+Assign topics and posts to people. (Not only whole topics, but also comments/sub-threads inside topics.)
 Why assign a post? Because someone might ask a good question, in a longer discussion, and nice
 to know & remember who will try to answer it, later.
 
@@ -417,11 +419,6 @@ wouldn't result in unexpected weird things. And who should be notified about rep
 a test comment made when impersonating a group?
 (Everyone in the group? No, they'd get annoyed. Only the group then?)
 
-[grp-mbr-title]
-Show a title, like "Team" or "Support" or "Volunteer" or "Students 2019",
-depending on which custom group one is in.  Need clear caches after?
-That is, both: emptyCacheImpl(tx)  and  memCache.clearSingleSite(siteId).
-
 [group-feats]
 Add group visibility settings, e.g. no one (incl members in the group) can see
 members in the group — except for some specific groups, e.g. staff.
@@ -461,7 +458,7 @@ Let people combine both custom OIDC IDPs with Ty SSO — that's just
 fine, some time large organization have more than one authn system,
 or they invite external collaborators with other authn systems.
 
-[blog_comments_sso]  emb_sso
+DONE [blog_comments_sso]  emb_sso
 Use PASTEO https://news.ycombinator.com/item?id=17877332
  http://cryto.net/~joepie91/blog/2016/06/13/stop-using-jwt-fo...
  http://cryto.net/%7Ejoepie91/blog/2016/06/19/stop-using-jwt-...
@@ -688,9 +685,6 @@ Conf settings for Lua plugins.
 Maybe: https://github.com/teal-language/tl  Teal, a typed dialect of Lua  ?
   by https://github.com/hishamhm  works at Kong. FOSDEM2020, VSCode & Vim support.
 https://github.com/emilk/sol — no longer in active development
-
-[content_filter]
-E.g. disallow toxic speech, or pics of zebras if that's against the community's rules.
 
 [blake3]  COULD_OPTIMIZE
 Blake3 is ~ 10x faster than SHA2:

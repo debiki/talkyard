@@ -280,6 +280,9 @@ This repo is for **development**. To install and *use* the software, instead go 
 
 #### Before you start
 
+As operating system, you can use Debian 10, probably Debian 11, Ubuntu 20.04 should work too.
+We use Debian 9 and 10, soon Debian 11.
+
 You need about 6 GB RAM for the development environment (whereas the production environment needs about 2 GB).
 And an internet connection — you'll download perhaps 1 GB Docker images and other files.
 
@@ -297,6 +300,7 @@ docker-compose --version  # should print "docker-compose version ... build ..."
 
 Read [A brief intro to Docker-Compose](docs/intro-to-docker-compose.md) — unless you know
 how to use docker-compose already.
+
 
 #### The instructions
 
@@ -328,26 +332,35 @@ how to use docker-compose already.
 
        sudo sysctl --system
 
+1. You need Git, Make, `jq` for viewing logs, and a file change notifier:
 
-1. Clone the repository, install GNU Make (and `jq` for viewing logs), and type `make up`:
+    ```
+    sudo apt install git make jq inotify-tools
+    ```
 
-       git clone https://github.com/debiki/talkyard.git talkyard
-       cd talkyard
-       apt install make jq inotify-tools
+1. Clone the Talkyard repository:
 
- 1. Start Talkyard: (`s/tyd` is a Talkyard development helper script)
+    ```
+    git clone https://github.com/debiki/talkyard.git talkyard
+    cd talkyard
+    ```
 
-        s/tyd up
+1. Download dependencies — they're in Git submodules:
+    (this might take long — you'll be downloading about 1 GB files)
 
-    And have a coffee — this takes a while: About 1.5 GB Git submodules
-    with Nodejs packages, JVM JARs and OpenResty source code will get downloaded,
+    ```
+    git submodule update --init
+    ```
+
+1. Start Talkyard: (`s/tyd` is a Talkyard development helper script)
+
+    ```
+    s/tyd up
+    ```
+
+    And have a coffee — it takes a while before Talkyard starts the first time:
     Typescript, Stylus and Scala code gets compiled and packaged, Docker images get built.
-    You can tail the log messages, by typing `make tail`,
-    or `sudo s/d logs -f`.  (s/d means "scripts" and "docker-compose")
-
-    The following log message might take 10 - 20 minutes: (to download things)
-
-        Loading project definition from /opt/talkyard/app/project
+    To view log messages, type `s/tyd logs -f` (or `docker-compose logs -f`).
 
     Wait for these "Server started" log messages to appear:
 
@@ -395,7 +408,7 @@ how to use docker-compose already.
    confirmation link from the `<a href=...>` and paste it in the browser's address bar.
    -->
 
-Shut down everything like so: `make dead`.
+Shut down everything like so: `s/tyd kill`. (To remove all containers: `s/tyd down`.)
 
 
 

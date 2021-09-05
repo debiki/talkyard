@@ -19,11 +19,12 @@
 package com.debiki.core
 
 
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 import java.{util => ju}
 
 
-class ReviewTaskSpec extends FreeSpec with MustMatchers {
+class ReviewTaskSpec extends AnyFreeSpec with must.Matchers {
 
   val TestSiteId = 2345
   val BadUserId = 444

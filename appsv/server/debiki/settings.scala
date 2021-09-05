@@ -191,6 +191,10 @@ trait AllSettings {
   def orgDomain: String
   def orgFullName: String
   def orgShortName: String
+  def outboundEmailsFromName: St
+  def outboundEmailsFromAddr: St
+  def outboundEmailsReplyTo: St
+  def outboundEmailsSmtpConf: JsObject
   def termsOfUseUrl: String
   def privacyUrl: String
   def rulesUrl: String
@@ -324,6 +328,10 @@ trait AllSettings {
     orgDomain = Some(self.orgDomain),
     orgFullName = Some(self.orgFullName),
     orgShortName = Some(self.orgShortName),
+    outboundEmailsFromName = Some(self.outboundEmailsFromName),
+    outboundEmailsFromAddr = Some(self.outboundEmailsFromAddr),
+    outboundEmailsReplyTo = Some(self.outboundEmailsReplyTo),
+    outboundEmailsSmtpConf = Some(self.outboundEmailsSmtpConf),
     termsOfUseUrl = Some(self.termsOfUseUrl),
     privacyUrl = Some(self.privacyUrl),
     rulesUrl = Some(self.rulesUrl),
@@ -451,7 +459,7 @@ object AllSettings {
     val startOfBodyHtml = ""
     val endOfBodyHtml = ""
     val headerHtml = ""
-    val navConf = JsEmptyObj
+    val navConf: JsObject = JsEmptyObj
     val footerHtml = /* default CSS here: [5UK62W] */ o"""
       <footer><p>
         <a href="/-/terms-of-use" rel="nofollow">Terms of use</a>
@@ -463,6 +471,10 @@ object AllSettings {
     val orgDomain = ""
     val orgFullName = ""
     val orgShortName = ""
+    val outboundEmailsFromName = ""
+    val outboundEmailsFromAddr = ""
+    val outboundEmailsReplyTo = ""
+    val outboundEmailsSmtpConf: JsObject = JsEmptyObj
     val termsOfUseUrl = ""
     val privacyUrl = ""
     val rulesUrl = ""
@@ -595,6 +607,10 @@ case class EffectiveSettings(
   def orgDomain: String = firstInChain(_.orgDomain) getOrElse default.orgDomain
   def orgFullName: String = firstInChain(_.orgFullName) getOrElse default.orgFullName
   def orgShortName: String = firstInChain(_.orgShortName) getOrElse default.orgShortName
+  def outboundEmailsFromName: St = firstInChain(_.outboundEmailsFromName) getOrElse default.outboundEmailsFromName
+  def outboundEmailsFromAddr: St = firstInChain(_.outboundEmailsFromAddr) getOrElse default.outboundEmailsFromAddr
+  def outboundEmailsReplyTo: St = firstInChain(_.outboundEmailsReplyTo) getOrElse default.outboundEmailsReplyTo
+  def outboundEmailsSmtpConf: JsObject = firstInChain(_.outboundEmailsSmtpConf) getOrElse default.outboundEmailsSmtpConf
   def termsOfUseUrl: String = firstInChain(_.termsOfUseUrl) getOrElse default.termsOfUseUrl
   def privacyUrl: String = firstInChain(_.privacyUrl) getOrElse default.privacyUrl
   def rulesUrl: String = firstInChain(_.rulesUrl) getOrElse default.rulesUrl
@@ -867,6 +883,10 @@ object Settings2 {
       "companyDomain" -> JsStringOrNull(s.orgDomain),
       "companyFullName" -> JsStringOrNull(s.orgFullName),
       "companyShortName" -> JsStringOrNull(s.orgShortName),
+      "outboundEmailsFromName" -> JsStringOrNull(s.outboundEmailsFromName),
+      "outboundEmailsFromAddr" -> JsStringOrNull(s.outboundEmailsFromAddr),
+      "outboundEmailsReplyTo" -> JsStringOrNull(s.outboundEmailsReplyTo),
+      "outboundEmailsSmtpConf" -> JsObjOrNull(s.outboundEmailsSmtpConf),
       "termsOfUseUrl" -> JsStringOrNull(s.termsOfUseUrl),
       "privacyUrl" -> JsStringOrNull(s.privacyUrl),
       "rulesUrl" -> JsStringOrNull(s.rulesUrl),
@@ -985,6 +1005,10 @@ object Settings2 {
     orgDomain = anyString(json, "companyDomain", d.orgDomain),
     orgFullName = anyString(json, "companyFullName", d.orgFullName),
     orgShortName = anyString(json, "companyShortName", d.orgShortName),
+    outboundEmailsFromName = anyString(json, "outboundEmailsFromName", d.outboundEmailsFromName),
+    outboundEmailsFromAddr = anyString(json, "outboundEmailsFromAddr", d.outboundEmailsFromAddr),
+    outboundEmailsReplyTo = anyString(json, "outboundEmailsReplyTo", d.outboundEmailsReplyTo),
+    outboundEmailsSmtpConf = anyJsObj(json, "outboundEmailsSmtpConf", d.outboundEmailsSmtpConf),
     termsOfUseUrl = anyString(json, "termsOfUseUrl", d.termsOfUseUrl),
     privacyUrl = anyString(json, "privacyUrl", d.privacyUrl),
     rulesUrl = anyString(json, "rulesUrl", d.rulesUrl),

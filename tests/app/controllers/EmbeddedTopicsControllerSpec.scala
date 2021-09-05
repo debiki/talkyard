@@ -19,11 +19,13 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import org.scalatest._
+import org.scalatest.Ignore
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
 @Ignore
-class EmbeddedTopicsControllerSpec extends FreeSpec with MustMatchers {
+class EmbeddedTopicsControllerSpec extends AnyFreeSpec with must.Matchers {
 
 
   "EmbeddedTopicsController can" - {

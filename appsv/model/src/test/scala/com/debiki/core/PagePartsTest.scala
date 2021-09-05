@@ -17,12 +17,13 @@
 
 package com.debiki.core
 
-import org.scalatest.{FreeSpec, MustMatchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 import Prelude._
 import java.{util => ju}
 
 /*
-class PagePartsTest extends FreeSpec with MustMatchers with PageTestValues {
+class PagePartsTest extends AnyFreeSpec with must.Matchers with PageTestValues {
 
   "A page can" - {
 

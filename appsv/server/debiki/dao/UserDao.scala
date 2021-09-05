@@ -2139,7 +2139,7 @@ trait UserDao {
 
     // Ignore not-logged-in people, unless they attempt to login as guests.
     if (sidStatus.userId.isEmpty) {
-      val guestLoginPath = controllers.routes.LoginAsGuestController.loginGuest().url
+      val guestLoginPath = controllers.routes.LoginAsGuestController.loginGuest.url
       if (!request.path.contains(guestLoginPath))
         return
     }

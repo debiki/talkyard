@@ -298,7 +298,7 @@ function renderPageInBrowser() {
       }
     }); */
 
-    window.addEventListener('hashchange', function(event) {
+    window.addEventListener('hashchange', function(event: HashChangeEvent) {
       function isAction(url: string) {
         const replyIx = url.indexOf(FragActionAndReplyToPost);
         const editIx = url.indexOf(FragActionAndEditPost);

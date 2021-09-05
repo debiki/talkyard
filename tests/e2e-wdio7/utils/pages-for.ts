@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { IsWhere } from '../test-types';
+import { IsWhere, isWhere_isInIframe } from '../test-types';
 
 
 // Why are many WebdriverIO's functions reimplemented here?
@@ -419,9 +419,13 @@ export class TyE2eTestBrowser {
 
     // Change all refresh() to refresh2, then remove '2' from name.
     // (Would need to add  waitForPageType: false  anywhere? Don't think so?)
-    async refresh2(ps: { isWhere?: IsWhere.EmbeddedPagesListPage } = {}) {
+    async refresh2(ps: { isWhere?: IsWhere } = {}) {
       await this.#br.refresh();
-      if (ps.isWhere) this.#isWhere = ps.isWhere;
+      if (ps.isWhere) {
+        dieIf(isWhere_isInIframe(ps.isWhere),
+              `Cannot be in iframe directly after page reload [TyE507MEW2]`);
+        this.#isWhere = ps.isWhere;
+      }
       else await this.__updateIsWhere();
     }
 
@@ -1084,7 +1088,8 @@ export class TyE2eTestBrowser {
 
 
     async switchToTheParentFrame(ps: { parentIs?: IsWhere } = {}) {
-        dieIf(!await this.isInIframe(), 'TyE406RKH2');
+        dieIf(!await this.isInIframe(), `Cannot switch to parent frame, ` +
+              `we're not in an iframe:  !this.isInIframe()  [TyE406RKH2]`);
         await this.#br.switchToParentFrame();
         // Skip, was some other oddity:
         // // Need to wait, otherwise apparently WebDriver can in rare cases run
@@ -1576,27 +1581,48 @@ export class TyE2eTestBrowser {
     }
 
 
+    // Why not return the text instead!  Pr<false | St>
+    // See [waitAndGetVisibleText].
     async waitForVisibleText(selector: St, ps: WaitPs = {}): Pr<Bo> {
-      let isExisting;
-      let isDisplayed;
-      let text;
+      let problem: St | U;
       return await this.waitUntil(async () => {
         const elem: WebdriverIO.Element = await this.$(selector);
         try {
           // Oddly enough, sometimes isDisplayed is not a function, below. Maybe isExisting()
-          // also isn't, sometimes? They're undefined, then, or what? And why?
-          // Anyway, let's use: `?.()`.   [MISSINGFNS]
-          isExisting = await elem?.isExisting?.();
-          if (!isExisting)
+          // also isn't, sometimes? They're undefined, then, or what?  [MISSINGFNS]
+          if (!elem) {
+            problem = `this.$(selector) –> null`;
             return false;
-          isDisplayed = await elem.isDisplayed?.();
-          if (!isDisplayed)
+          }
+          if (!elem.isExisting) {
+            problem = `elem.isExisting is absent, no such function`;  // [MISSINGFNS]
             return false;
+          }
+          const isExisting = await elem.isExisting();
+          if (!isExisting) {
+            problem = `isExisting() –> ${isExisting}`;
+            return false;
+          }
+          if (!elem.isDisplayed) {
+            // This happened sometimes with Webdriverio 6.  [MISSINGFNS]
+            problem = `elem.isDisplayed is absent, no such function`;
+            return false;
+          }
+          const isDisplayed = await elem.isDisplayed();
+          if (!isDisplayed) {
+            problem = `isDisplayed() –> ${isDisplayed}`;
+            return false;
+          }
           // This one blocks until the elem appears — so, need 'return' above.
           // Enable DEBUG WebdriverIO log level and you'll see:
           // """DEBUG webdriverio: command getText was called on an element ("#post-670")
           //       that wasn't found, waiting for it... """
-          text = await elem.getText?.();
+          const text = await elem.getText();
+          if (!text) {
+            problem = `getText() –> ${_.isUndefined(text) ? 'undefined' : `"${text}"`}`;
+            return false;
+          }
+          return true;
         }
         catch (ex) {
           if (isBadElemException(ex)) {
@@ -1610,13 +1636,12 @@ export class TyE2eTestBrowser {
           }
           throw ex;
         }
-        return !!text;
       }, {
         ...ps,
         serverErrorDialogIsFine: selector.indexOf('.s_SED_Msg') >= 0,
-        message: `Waiting for visible non-empty text, selector:  ${selector}\n` +
-            `    isExisting: ${isExisting}, isDisplayed: ${isDisplayed}, getText: ${
-            _.isUndefined(text) ? 'undefined' : `"${text}"`}`,
+        message: () =>
+            `Waiting for visible non-empty text, selector:  ${selector}\n` +
+            `    problem: ${problem}`,
       });
     }
 
@@ -2406,7 +2431,9 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitAndGetVisibleText(selector): Pr<St> {
+    // COULD_OPTIMIZE_TESTS: Can optimize [waitAndGetVisibleText():
+    // Have  waitAndGetVisibleText return the text, not just a Bo.
+    async waitAndGetVisibleText(selector: St): Pr<St> {
       await this.waitForVisibleText(selector);
       return await (await this.$(selector)).getText();
     }
@@ -5633,7 +5660,8 @@ export class TyE2eTestBrowser {
       },
 
       getCurCategoryName: async (): Pr<St> => {
-        return await this.waitAndGetVisibleText(this.topic.__getCurCatNameSelector());
+        return await this.waitAndGetVisibleText(
+              await this.topic.__getCurCatNameSelector());
       },
 
       movePageToOtherCategory: async (catName: St) => {

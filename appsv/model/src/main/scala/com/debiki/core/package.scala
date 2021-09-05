@@ -328,6 +328,7 @@ package object core {
     * @param debugInfo — more details, for Talkyard developers
     * @param anyException — remove later
     */
+  // Split into Problem & SiteProblem? The latter w site id, the former without?
   case class Problem(
     message: ErrorMessage,
     siteId: SiteId,
@@ -1402,6 +1403,7 @@ package object core {
   def SLOW_QUERY = ()
   def SHOULD_OPTIMIZE = ()
   def COULD_OPTIMIZE = () // Also see [On2] but typically O(n^2) is intentional (because simpler).
+  def COULD_OPTIMIZE_TESTS = () // Less important
   def WOULD_OPTIMIZE = () // Unimportant thing that could be optimized.
   def BLOCKING_REQ = ()
   def EDIT_INDEX = ()     // Database index could be simplified. Or investigate if it's getting used?

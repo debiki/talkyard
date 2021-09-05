@@ -417,8 +417,9 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
           Kind regards,<br/>
           { makeBoringLink(siteName, url = origin) }
         </p>
-        <p style='font-size: 92%; opacity: 0.65; margin-top: 2em;'>
-          { makeUnderlinedLink("Unsubscribe", url = unsubscriptionUrl) }
+        <p style='font-size: 92%; opacity: 0.67; margin-top: 2em;'>
+          { makeUnderlinedLink("Unsubscribe", url = unsubscriptionUrl) }<br/>
+          <small style='opacity: 0.67'>Ty_email_id={dao.thePubSiteId() + '-' + email.id}</small>
         </p>
         <p style='font-size: 92%; opacity: 0.77; margin-top: 1.5em;'>
           Powered by {

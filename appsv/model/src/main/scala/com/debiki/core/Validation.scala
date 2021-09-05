@@ -95,6 +95,30 @@ object Validation {  // rename // to Check, so:  Check.ifBadEmail( ...)  — loo
     }
   }
 
+  import java.util.regex.{Pattern => j_Pattern}
+  val UnicodePrintCharsRegex: j_Pattern =
+        j_Pattern.compile("""^\p{Print}*$""", j_Pattern.UNICODE_CHARACTER_CLASS)
+
+  // '.unanchored' apparently does nothing, seems to not work.
+  // Still requires exact match. Unless adding .* ...  .* too.
+  val BadEmailNamePunctParts: Regex = """.*[!"#$%&();<=>?@[\\]^`{|}].*""".r
+  val BadEmailNameUrlParts: Regex = """.*(//|https?:|script:).*""".r
+
+  def findEmailNameProblem(name: St): Opt[St] = {
+    // Sync w email_name_d, the constraint email_name_d_c_regex.
+    // [Scala_3]: Break out fn  checkOkEmailSenderName(..): EmailSenderName | Problem  ?
+    //            And fn  checkOkTextOneLine(..) for use with Postgres text_oneline_d?
+    if (BadEmailNamePunctParts matches name) return Some("Bad punctuation chars")
+    if (BadEmailNameUrlParts matches name) return Some("Looks almost like an URL")
+    val matcher = UnicodePrintCharsRegex.matcher(name)
+    if (!matcher.matches) return Some("Weird chars")
+    if (name.isEmpty) return Some("Empty name")
+    if (name.startsWith(" ") || name.endsWith(" ")) return Some("Name not space trimmed")
+    // The db constraints allows 60 chars — let's say at most 50 here.
+    if (name.length > 50) return Some("Too long name")
+    None
+  }
+
 
   val StackExchangeUsernameRegex: Regex = "^__sx_[a-z]+_[0-9]+__$".r
 

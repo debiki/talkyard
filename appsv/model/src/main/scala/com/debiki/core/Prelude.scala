@@ -165,6 +165,17 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
 
 
+  def throwBadReqIfAny(anyErrMsg: Opt[St], errCode: St, msgPrefix: => St = ""): U = {
+    anyErrMsg map { errMsg =>
+      throw new BadRequestEx(msgPrefix + errMsg + s" [$errCode]")
+    }
+  }
+
+  def throwUnimpl(msg: St): Nothing = {
+    throw new UnimplementedEx(msg)
+  }
+
+
   sealed abstract class DieOrComplain  // or rename to "ComplainHow" or "Angry"?
   object Die extends DieOrComplain
   object ThrowNotFound extends DieOrComplain
@@ -706,6 +717,8 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
   implicit class RegexToFindGroup(regex: scala.util.matching.Regex) {
+    def findGroupInAny(anyText: Opt[St]): Opt[St] =
+      anyText flatMap findGroupIn
     def findGroupIn(text: String): Option[String] =
       text match {
         case regex(firstGroup) =>

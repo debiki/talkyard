@@ -18,10 +18,11 @@
 package talkyard.server
 
 import debiki.Config
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class GlobalConfigSpec extends FreeSpec with MustMatchers {
+class GlobalConfigSpec extends AnyFreeSpec with must.Matchers {
 
   def makeConfig(keyValues: Map[String, String]): Config = {
     val playConf = play.api.Configuration.from(keyValues)

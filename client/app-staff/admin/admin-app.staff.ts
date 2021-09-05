@@ -2752,6 +2752,15 @@ const LegalSettings = createFactory({
           }
         }),
 
+        Setting2(props, { type: 'text', label: "Email sender name",
+          help: r.span({}, "Notification emails will " +
+                `get sent from this name. Example: "Support Forum".`),
+          getter: (s: Settings) => s.outboundEmailsFromName,
+          update: (newSettings: Settings, target) => {
+            newSettings.outboundEmailsFromName = target.value;
+          }
+        }),
+
         Setting2(props, { type: 'text', label: "Custom Terms of Use URL",
           id: 'e_ToUUrl',
           help: r.span({}, "A URL to any Terms of Use page of yours that you want to use " +

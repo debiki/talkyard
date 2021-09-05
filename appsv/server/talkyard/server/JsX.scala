@@ -461,7 +461,7 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
-  val JsEmptyObj = JsObject(Nil)
+  val JsEmptyObj: JsObject = JsObject(Nil)
 
   def JsObjOrNull(obj: Opt[JsObject]): JsValue =
     obj getOrElse JsNull

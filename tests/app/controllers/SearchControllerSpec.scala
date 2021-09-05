@@ -18,10 +18,11 @@
 package controllers
 
 import com.debiki.core.CategoryId
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class SearchControllerSpec extends FreeSpec with MustMatchers {
+class SearchControllerSpec extends AnyFreeSpec with must.Matchers {
 
   def categorySlugToId(slug: String): Option[CategoryId] = slug match {
     case "catOne" => Some(1)

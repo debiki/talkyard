@@ -19,11 +19,11 @@
 package com.debiki.core
 
 
-import org.scalatest._
-import java.{util => ju}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must
 
 
-class PageReadingProgressTest extends FreeSpec with MustMatchers {
+class PageReadingProgressTest extends AnyFreeSpec with must.Matchers {
 
 
   "PageReadingProgress can" - {

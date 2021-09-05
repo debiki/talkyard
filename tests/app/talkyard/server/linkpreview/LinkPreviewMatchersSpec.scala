@@ -18,14 +18,14 @@
 package talkyard.server.linkpreview
 
 
-import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.onebox.engines.TwitterPrevwRendrEng
 
 
-class LinkPreviewMatchersSpec extends FreeSpec with must.Matchers {
+class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
 
   val http = "http"
   val https = "https"

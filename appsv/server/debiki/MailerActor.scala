@@ -64,6 +64,7 @@ object MailerActor {
     val anySmtpUserName = getStringNoneIfBlank("talkyard.smtp.user")
     val anySmtpPassword = getStringNoneIfBlank("talkyard.smtp.password")
     val anyFromAddress = getStringNoneIfBlank("talkyard.smtp.fromAddress")
+    val anyFromName = getStringNoneIfBlank("talkyard.smtp.fromName")
     val anyBounceAddress = getStringNoneIfBlank("talkyard.smtp.bounceAddress")
     val debug = getBoolOr("talkyard.smtp.debug", default = false)
 
@@ -136,8 +137,9 @@ object MailerActor {
             tlsPort = None, connectWithTls = false, enableStartTls = false, requireStartTls = false,
             checkServerIdentity = false, insecureTrustAllHosts = false,
             userName = None, password = None,
-            fromAddress = anyFromAddress.getOrElse(""), debug = debug,
-            bounceAddress = None, broken = true, isProd = isProd)),
+            fromAddress = anyFromAddress.getOrElse(""),
+            anyFromName = anyFromName,
+            debug = debug, bounceAddress = None, broken = true, isProd = isProd)),
           name = s"BrokenMailerActor-$testInstanceCounter")
       }
       else {
@@ -152,7 +154,8 @@ object MailerActor {
             connect with TLS: $connectWithTls,
             check server identity: $checkServerIdentity,
             insecureTrustAllHosts: $insecureTrustAllHosts,
-            from addr: $fromAddress [TyMEMAILCONF]""")
+            from name and addr: ${
+                  anyFromName getOrElse ""} <$fromAddress> [TyMEMAILCONF]""")
         if (requireStartTls && connectWithTls) {
           logger.warn(o"""Weird email config: both require-STARTTLS and
           connect-directly-with-TLS have been configured, but I can do only *one*
@@ -176,6 +179,7 @@ object MailerActor {
             userName = userName,
             password = anySmtpPassword,
             fromAddress = fromAddress,
+            anyFromName = anyFromName,
             debug = debug,
             bounceAddress = anyBounceAddress,
             broken = false,
@@ -222,6 +226,7 @@ class MailerActor(
   val userName: Option[String],
   val password: Option[String],
   val fromAddress: String,
+  val anyFromName: Opt[St],
   val bounceAddress: Option[String],
   val debug: Boolean,
   val broken: Boolean,
@@ -353,12 +358,18 @@ class MailerActor(
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
     val isTestAddress =
-      emailToSend.sentTo.endsWith("@example.com") ||
-      emailToSend.sentTo.endsWith(".example.com") ||
-      emailToSend.sentTo.endsWith("@ex.com") ||
-      emailToSend.sentTo.endsWith("@x.co")
+          emailToSend.sentTo.endsWith("@example.com") ||
+          emailToSend.sentTo.endsWith(".example.com") ||
+          emailToSend.sentTo.endsWith("@ex.com") ||
+          emailToSend.sentTo.endsWith("@x.co")
 
     val isE2eAddress = Email.isE2eTestEmailAddress(emailToSend.sentTo)
+
+    val isDummySmtpServer =
+          serverName.isEmpty ||
+          serverName.endsWith(".example.com") ||
+          serverName.endsWith(".ex.com") ||
+          serverName.endsWith(".x.co")
 
     // Table about when to log email to console but not send it (fake send),
     // and when to send for real (real send), and when to remember it for the e2e tests:
@@ -380,9 +391,12 @@ class MailerActor(
     // test addr   rs          fs            rs         fs           fs          fs
     // e2e addr    rs e2e      fs e2e        rs e2e     fs e2e       fs e2e      fs e2e
 
-    val fakeSend = broken || (isProd && (isTestAddress || isE2eAddress))
+    val fakeSend =
+          broken || isDummySmtpServer ||
+          (isProd && (isTestAddress || isE2eAddress))
 
     val sitePubId = siteDao.thePubSiteId()
+    val fromName = siteDao.getWholeSiteSettings().outboundEmailsFromName.noneIfEmpty
 
     val fromAddrMaybeEmailId = emailToSend.sentFrom getOrElse {
       if (fromAddress.contains("+EMAIL_ID@"))
@@ -399,14 +413,22 @@ class MailerActor(
 
 
     val emailSent = {
-      if (fakeSend) {
+      if (fakeSend && isProd) {
+        // Don't try to construct the email — that might log a warning, if the address
+        // is an invalid e2e test address. Don't want warnings in prod builds.
         emailToSend
       }
       else try {
         val apacheCommonsEmail = makeApacheCommonsEmail(
-              emailToSend, fromInclEmailId = fromAddrMaybeEmailId)
-        apacheCommonsEmail.send()
-        logger.debug(s"s$siteId: Sent email '${emailToSend.id}'. [TyMEMLSENT].")
+              emailToSend, fromInclEmailId = fromAddrMaybeEmailId,
+              perSiteFromName = fromName)
+        if (fakeSend) {
+          // Then just create the Apache Commons email (above), but don't send it.
+        }
+        else {
+          apacheCommonsEmail.send()
+          logger.debug(s"s$siteId: Sent email '${emailToSend.id}'. [TyMEMLSENT].")
+        }
         emailToSend
       }
       catch {
@@ -426,7 +448,8 @@ class MailerActor(
   }
 
 
-  private def makeApacheCommonsEmail(email: Email, fromInclEmailId: St): acm.HtmlEmail = {
+  private def makeApacheCommonsEmail(email: Email, fromInclEmailId: St,
+          perSiteFromName: Opt[St]): acm.HtmlEmail = {
     val apacheCommonsEmail = new acm.HtmlEmail()
     apacheCommonsEmail.setDebug(debug)
     apacheCommonsEmail.setHostName(serverName)
@@ -456,7 +479,31 @@ class MailerActor(
     apacheCommonsEmail.setSSLCheckServerIdentity(checkServerIdentity)
 
     apacheCommonsEmail.addTo(email.sentTo)
-    apacheCommonsEmail.setFrom(fromInclEmailId)
+
+    // The 'From:' SMTP header, e.g. "Our Forum <our-email@example.com>".
+    val fromAddr = email.sentFrom getOrElse fromInclEmailId
+    perSiteFromName orElse anyFromName match {
+      case None =>
+        apacheCommonsEmail.setFrom(fromAddr)
+      case Some(fromName) =>
+        apacheCommonsEmail.setFrom(fromAddr, fromName, "UTF-8")
+    }
+
+    // The address a human (hens email client) should reply to.  This is different
+    // from the address the SMTP servers would return the email to, if there are
+    // problems: they instead return the email to the 'MAIL FROM:some@addr.ess'
+    // email address. — Not needed; replying to the From address works fine.
+    // See: https://stackoverflow.com/questions/1235534/
+    //        what-is-the-behavior-difference-between-return-path-reply-to-and-from
+    /*
+    import javax.mail.internet.{InternetAddress => j_InetAdr}
+    val replyTo = new java.util.ArrayList[j_InetAdr]()
+    replyTo.add(new j_InetAdr(fromInclEmailId));
+    apacheCommonsEmail.setReplyTo(replyTo)   */
+
+    // Is this the 'MAIL FROM:<some@addr.ess>' email address? If so, the SMTP servers
+    // will add it in a Return-Path SMTP header. — This might not be needed, since
+    // the intermediate SMTP servers use their own email addresses anyway?
     bounceAddress foreach apacheCommonsEmail.setBounceAddress
 
     apacheCommonsEmail.setSubject(email.subject)

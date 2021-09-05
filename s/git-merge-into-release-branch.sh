@@ -10,8 +10,8 @@ dbg="f"
 
 cur_branch=$(git rev-parse --abbrev-ref HEAD)
 
-if [ "$cur_branch" != 'master' ]; then
-  echo "Current branch should be 'master'"
+if [ "$cur_branch" != 'main' ]; then
+  echo "Current branch should be 'main'"
   exit 1
 fi
 
@@ -84,4 +84,5 @@ echo "Run these commands, that's all:  (do manually, for now)"
 echo
 
 echo git checkout release
-echo git merge --no-ff master -m "\"Merge $next_version into 'release'.\""
+echo git merge --no-ff main -m "\"Merge $next_version into 'release'.\""
+echo 'git branch -f master main  # backw compat'

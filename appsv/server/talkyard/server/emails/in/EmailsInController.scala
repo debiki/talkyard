@@ -40,6 +40,8 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   import context.safeActions.ExceptionAction
 
+  // '(?s)' makes '.' match newlines too.
+  private val EmailIdRegex = """(?s).*Ty_email_id=([a-zA-Z0-9_]+-[a-zA-Z0-9_]+).*""".r
 
   def handleIncomingEmail(debug: Bo): Action[JsValue] =
         PostJsonAction(RateLimits.PostReply,
@@ -77,14 +79,34 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
 
     tryParse(parseIncomingEmail(request.body)) match {
       case Good(parsedEmail) =>
-        logAndDebug(s"Could parse email: $parsedEmail")
-        parsedEmail.mailboxHash match {
+        // We include the (pub-site-id)-(email-id) in the From address and also
+        // in a gray <small> text in the email body, to know which email
+        // someone is trying to reply to.
+        val emailIdInAddr: Opt[St] = parsedEmail.mailboxHash
+        val emailIdInBody: Opt[St] =
+              EmailIdRegex.findGroupInAny(
+                  parsedEmail.htmlBody.orElse(parsedEmail.textBody))
+
+        logAndDebug(s"Could parse email, has id in addr hash: ${emailIdInAddr.isDefined
+              }, in body: ${emailIdInBody.isDefined}")
+        logger.trace(s"The parsed email: $parsedEmail")
+
+        var anyEmailId: Opt[St] = emailIdInAddr orElse emailIdInBody
+        emailIdInAddr foreach { idInAddr =>
+          if (emailIdInBody.isSomethingButNot(idInAddr)) {
+            logAndDebug(s"Email id in email addr differs from id in body, ignoring")
+            anyEmailId = None
+          }
+        }
+
+        anyEmailId match {
           case None =>
-            logAndDebug(s"No hash, don't know what this incoming email replies to")
-          case Some(hash: St) =>
-            val parts: Array[St] = hash.split('-')  // [em_in_hash]
+            logAndDebug(s"No email id, don't know what this incoming email replies to")
+          case Some(siteEmailId: St) =>
+            val parts: Array[St] = siteEmailId.split('-')  // [em_in_hash]
             if (parts.length != 2) {
-              logAndDebug(s"Bad site and email id hash, ${parts.length} parts: '$hash'")
+              logAndDebug(s"Bad site and email id, ${parts.length
+                    } parts: '$siteEmailId'")
             }
             else {
               val pubSiteId = parts(0)
@@ -94,8 +116,8 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
                 case None =>
                   logAndDebug(s"Bad hash: No site with pub id '$pubSiteId'")
                 case Some(site: Site) =>
-                  logAndDebug(s"MailboxHash '$hash' maps to site ${site.id}, hostname ${
-                        site.canonicalHostnameStr}")
+                  logAndDebug(s"Email id '$siteEmailId' maps to site ${site.id
+                        }, hostname ${site.canonicalHostnameStr}")
                   maybeSendCannotReplyToEmailsInfoEmail(
                         parsedEmail, emailId, context.globals.siteDao(site.id),
                         debugResponse)
@@ -253,14 +275,15 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
     }
 
     val anyAuthor = dao.getUser(post.createdById)
-    val byAuthorName = anyAuthor map { a => s"by ${a.usernameOrGuestName}" }
+    val byAuthorName = anyAuthor map { a => s"by ${a.usernameOrGuestName}," } getOrElse ""
     val notfRenderer = NotfHtmlRenderer(dao, Some(origin))
     val url = notfRenderer.postUrl(pageMeta, post)
 
     val htmlSt: St =
         <div class="e_CantReViaEmail">
+          <p>Hi there,</p>
           <p>It seems you tried to reply to a notification email
-            about a new post {byAuthorName}, at {siteName}.
+            about a new post {byAuthorName} at {siteName}.
             {/*
             Maybe better skip the site link — they've already demonstrated
             that they don't look at the emails carefully, and another link
@@ -271,13 +294,13 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
             Unfortunately, our system doesn't support replying via email.
           </p>
           <p>Instead, click this blue Reply link:
-          (or the one in the notification email; it's the same)
+          (or the one in the original notification email; it's the same)
           </p>
           <p>
             <a href={url} style={NotfHtmlRenderer.replyBtnStyles
                 } class="e_EmReB2" >Reply</a>
           </p>
-          <p>(This is an automated message, and you cannot reply to this either.)</p>
+          <p>(This is an automated message; you cannot reply to this either.)</p>
           <p>Kind regards.</p>
         </div>.toString
 
@@ -287,6 +310,7 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   private def makeCannotReplyEverEmailText(siteName: St, origin: St): St = {
     <div>
+      <p>Hi there,</p>
       <p>You tried to reply to a notification email from <samp>{siteName}</samp>.
         Unfortunately, you cannot reply to that type of notifications.</p>
       <p>But you can go here and check your notifications:</p>

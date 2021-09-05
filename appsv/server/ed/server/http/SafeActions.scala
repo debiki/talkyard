@@ -135,6 +135,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
           Future.successful(Results.BadRequest(ex.getMessage))
         case ex: ForbiddenEx =>
           Future.successful(Results.Forbidden(ex.getMessage))
+        case ex: UnimplementedEx =>
+          Future.successful(Results.NotImplemented(ex.getMessage))
         case ex: OverQuotaException =>
           Future.successful(Results.Forbidden(o"""You cannot do that, because this site's
             disk quota has been exceeded, sorry. [DwE7GH4R2]"""))
@@ -183,6 +185,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
           Results.BadRequest(ex.getMessage)
         case ex: ForbiddenEx =>
           Results.Forbidden(ex.getMessage)
+        case ex: UnimplementedEx =>
+          Results.NotImplemented(ex.getMessage)
         case ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
           Results.BadRequest(s"Bad JSON: $ex [error DwE6PK30]")

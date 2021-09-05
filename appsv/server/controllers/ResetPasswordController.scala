@@ -39,7 +39,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
 
   def start = GetActionAllowAnyone { _ =>
-    Redirect(routes.ResetPasswordController.showResetPasswordPage().url)
+    Redirect(routes.ResetPasswordController.showResetPasswordPage.url)
   }
 
 

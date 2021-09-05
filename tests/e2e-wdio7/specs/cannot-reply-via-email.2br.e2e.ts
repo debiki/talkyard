@@ -7,16 +7,13 @@ import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
 import settings from '../utils/settings';
-import { logMessage } from '../utils/log-and-die';
+import { j2s, logBoring, logMessage } from '../utils/log-and-die';
 import c from '../test-constants';
 
-let allBrowsers: TyAllE2eTestBrowsers;
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
 let owen: Member;
 let owen_brA: TyE2eTestBrowser;
-let maria: Member;
-let maria_brB: TyE2eTestBrowser;
 let memah: Member;
 let memah_brB: TyE2eTestBrowser;
 
@@ -41,21 +38,24 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Some E2E Test",
-      members: ['owen', 'memah'],
+      members: ['owen', 'memah', 'maria'],
     });
 
     // Enable API — currently app server conf val instead.
     //builder.settings({ enableApi: true });
 
-    allBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
     brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+
+    // So Owen won't get any approve-post email, instead, a reply notf directly.
+    builder.settings({
+      numFirstPostsToApprove: 0,
+      numFirstPostsToReview: 0,
+    });
 
     owen = forum.members.owen;
     owen_brA = brA;
 
-    maria = forum.members.maria;
-    maria_brB = brB;
     memah = forum.members.memah;
     memah_brB = brB;
 
@@ -154,6 +154,10 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
   });
 
 
+  let replyNotfEmailToOwen: EmailSubjectBody | U;
+  let replyAddrToOwenNoHash: St | U;
+  let replyNotfEmailIdToOwen: St | U;
+
   it(`Memah logs in`, async () => {
     await memah_brB.complex.loginWithPasswordViaTopbar(memah);
   });
@@ -161,8 +165,41 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
     await memah_brB.complex.replyToOrigPost(memahsReplyToOwen);
   });
   it(`... Owen gets a reply notification`, async () => {
-    const email = await server.getLastEmailSenTo(site.id, owen.emailAddress);
-    assert.includes(email.bodyHtmlText, memahsReplyToOwen);
+    replyNotfEmailToOwen = await server.getLastEmailSenTo(site.id, owen.emailAddress);
+    const body = replyNotfEmailToOwen.bodyHtmlText;
+    assert.includes(body, memahsReplyToOwen);
+    // Find the email id:
+    const matches = body.match(/Ty_email_id=([\w-]+)/)
+    assert.ok(matches && matches.length === 2,
+          `Email body doesn't include Ty_email_id=... ?\nMatches: ${j2s(matches)
+          }\nThe email: --------\n${
+          body
+          }\n-------------------\n`)
+    replyNotfEmailIdToOwen = matches[1];
+  });
+
+
+  it(`Owen oddly enough removes the +EMAIL_ID from the From address`, async () => {
+    // The email id is after a '+' and up to the '@'.
+    replyAddrToOwenNoHash = replyNotfEmailToOwen.from.replace(/\+[\w-]+@/, '@');
+    logMessage(`From addr with site-email-id hash: ${replyNotfEmailToOwen.from
+          }, w/o: ${replyAddrToOwenNoHash}`);
+  });
+  it(`... then replies to that site-email-id hash-less address`, async () => {
+    await server.sendIncomingEmailWebhook({
+            to: replyAddrToOwenNoHash,
+            toAddrHasNeeded: false,
+            body: `Hello, hi there hello. End goodbye the end. Bye
+                <blockquote>
+                  Ty_email_id=${replyNotfEmailIdToOwen}
+                </blockquote>`,
+            format: 'Postmarkapp' });
+  });
+  it(`... Owen gets a cannot-reply-via-email email, although no site-email-id
+          in the address he emailed
+          — there's a site-email-id in the email body, that's enough`, async () => {
+    await server.waitUntilLastEmailMatches(
+            site.id, owen.emailAddress, 'e_CantReViaEmail');
   });
 
 
@@ -170,9 +207,10 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
         — max one cannot-reply email is sent, per outgoing email`, async () => {
     const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(site.id);
     // First a reply notf email to Memah,
-    // then a cannot-reply email to Memah,
-    // then a reply notf email to Owen  =  3
-    assert.eq(num, 3, `Emails sent to: ${addrsByTimeAsc}`);
+    // then a cannot-reply-via-email email to Memah,
+    // then a reply notf email to Owen,
+    // and a cannot-reply-via-email email to Owen  =  4
+    assert.eq(num, 4, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 });
