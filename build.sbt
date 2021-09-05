@@ -93,7 +93,7 @@ val appDependencies = Seq(
   // Dependencies.Libs.apacheTika
   "io.dropwizard.metrics" % "metrics-core" % "4.1.12.1",
   "io.jaegertracing" % "jaeger-client" % "0.32.0",
-  "nl.grons" %% "metrics4-scala" % "4.1.9",
+  "nl.grons" %% "metrics4-scala" % "4.1.19",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"
   // so it won't be included in the JAR), or there's this weird error: """
   //   class file '...guava-13.0.1.jar(.../LocalCache.class)' is broken
