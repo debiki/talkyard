@@ -42,7 +42,7 @@ object Dependencies {
     val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.2.4"
 
     // Database migrations.
-    val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"
+    val flywaydb = "org.flywaydb" % "flyway-core" % "5.2.4"
 
     // Play Framework 2.8.8 uses 28.2-jre.
     val guava = "com.google.guava" % "guava" % "28.2-jre"
