@@ -72,7 +72,7 @@ object Dependencies {
     // throws an error:
     //  """...JsonMappingException: Scala module 2.10.3 requires
     //     Jackson Databind version..."""
-    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"
+    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.1"
 
 
     // ----- Decoding JWT:s
