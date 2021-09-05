@@ -358,12 +358,18 @@ class MailerActor(
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
     val isTestAddress =
-      emailToSend.sentTo.endsWith("@example.com") ||
-      emailToSend.sentTo.endsWith(".example.com") ||
-      emailToSend.sentTo.endsWith("@ex.com") ||
-      emailToSend.sentTo.endsWith("@x.co")
+          emailToSend.sentTo.endsWith("@example.com") ||
+          emailToSend.sentTo.endsWith(".example.com") ||
+          emailToSend.sentTo.endsWith("@ex.com") ||
+          emailToSend.sentTo.endsWith("@x.co")
 
     val isE2eAddress = Email.isE2eTestEmailAddress(emailToSend.sentTo)
+
+    val isDummySmtpServer =
+          serverName.isEmpty ||
+          serverName.endsWith(".example.com") ||
+          serverName.endsWith(".ex.com") ||
+          serverName.endsWith(".x.co")
 
     // Table about when to log email to console but not send it (fake send),
     // and when to send for real (real send), and when to remember it for the e2e tests:
@@ -385,7 +391,9 @@ class MailerActor(
     // test addr   rs          fs            rs         fs           fs          fs
     // e2e addr    rs e2e      fs e2e        rs e2e     fs e2e       fs e2e      fs e2e
 
-    val fakeSend = broken || (isProd && (isTestAddress || isE2eAddress))
+    val fakeSend =
+          broken || isDummySmtpServer ||
+          (isProd && (isTestAddress || isE2eAddress))
 
     val sitePubId = siteDao.thePubSiteId()
     val fromName = siteDao.getWholeSiteSettings().outboundEmailsFromName.noneIfEmpty
