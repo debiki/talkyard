@@ -634,13 +634,12 @@ interface ExtIdpAuthnBtnProps {
   authnNonce;
   content;
   iconClass;
+  key?;
 }
 
 
-const ExtIdpAuthnBtn = createClassAndFactory({
-  displayName: 'ExtIdpAuthnButton',
-  onClick: function() {
-    const props: ExtIdpAuthnBtnProps = this.props;
+function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
+  function onClick() {
     const providerLowercase = props.provider.toLowerCase();
     // Any new user wouldn't be granted access to the admin page, so don't allow
     // creation of  new users from here.
@@ -719,14 +718,12 @@ const ExtIdpAuthnBtn = createClassAndFactory({
     else {
       d.i.createLoginPopup(url);
     }
-  },
-  render: function() {
-    const props: ExtIdpAuthnBtnProps = this.props;
-    return (
-      Button({ id: props.id, className: props.iconClass, onClick: this.onClick },
-        props.content || props.provider));
   }
-});
+
+  return (
+    Button({ id: props.id, className: props.iconClass, key: props.key, onClick },
+      props.content || props.provider));
+}
 
 
 

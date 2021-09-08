@@ -116,6 +116,17 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  def JsNotice(n: Notice): JsObject = {
+    Json.obj(
+          "id" -> n.noticeId,
+          "toPatId" -> n.toPatId,
+          "firstAtMins" -> JsWhenMins(n.firstAt),
+          "lastAtMins" -> JsWhenMins(n.lastAt),
+          "numTotal" -> n.numTotal,
+          "noticeData" -> JsObjOrNull(n.noticeData))
+  }
+
+
   def JsInvite(invite: Invite, shallHideEmailLocalPart: Boolean, inclSecret: Boolean = false): JsObject = {
     val safeEmail =
       if (shallHideEmailLocalPart) hideEmailLocalPart(invite.emailAddress)
@@ -729,8 +740,17 @@ object JsX {   RENAME // to JsonPaSe
   def JsWhenMsOrNull(value: Option[When]): JsValue =
     value.map(when => JsNumber(when.unixMillis)).getOrElse(JsNull)
 
+  def JsWhenMins(value: When): JsNumber =
+    JsNumber(value.unixMinutes)
+
+  def JsWhenMins(value: WhenMins): JsNumber =
+    JsNumber(value.mins)
+
   def JsWhenMinsOrNull(value: Option[When]): JsValue =
-    value.map(when => JsNumber(when.unixMinutes)).getOrElse(JsNull)
+    value.map(JsWhenMins) getOrElse JsNull
+
+  def JsWhenMins2OrNull(value: Opt[WhenMins]): JsValue =
+    value.map(JsWhenMins) getOrElse JsNull
 
   def JsDateMsOrNull(value: Option[ju.Date]): JsValue =
     value.map(JsDateMs).getOrElse(JsNull)

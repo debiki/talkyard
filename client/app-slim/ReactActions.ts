@@ -913,6 +913,7 @@ export function showSingleTipsClientSide(messageId: string) {
 export function showTipsAgain(ps: { onlyAnnouncements?: Bo } = {}) {
   const me: Me = ReactStore.me();
   if (me.isAuthenticated) {
+    // No need to wait until the server is done, not so important?  [e2e_tips_race]
     Server.toggleTips({ ...ps, hide: false });
   }
   ReactDispatcher.handleViewAction({

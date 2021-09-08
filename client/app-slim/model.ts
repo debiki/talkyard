@@ -506,6 +506,12 @@ interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
   thereAreMoreUnseenNotfs: boolean;
   notifications: Notification[];
 
+  // "Notice" means info / a warning of something, especially to allow
+  // preparations to be made. "Notification" though, is getting info about
+  // something, need not be so important.
+  // Currently only to admins.
+  adminNotices?: Notice[];
+
   snoozeUntilMins?: WhenMins | false;
 
   watchbarTopics?: WatchbarTopics;
@@ -621,6 +627,16 @@ interface Notification {
 }
 
 
+interface Notice {
+  id: NoticeId;
+  toPatId: 19;  // always to admins, group 19, currently
+  firstAtMins: WhenMins;
+  lastAtMins: WhenMins,
+  numTotal: Nr,
+  noticeData?: Object,
+}
+
+
 interface ReadingProgress {
   lastViewedPostNr: number;
 }
@@ -635,6 +651,7 @@ interface HelpMessage {
   doAfter?: () => void;
   type?: number;
   className?: string;
+  isNice?: Bo;
   isWarning?: boolean;
   alwaysShow?: boolean;
   moreHelpAwaits?: boolean;
@@ -1949,6 +1966,7 @@ interface ExplainingListItemProps extends ExplainingTitleText {
 
 
 interface TipsBoxProps {
+  key?: St | Nr;
   message: HelpMessage;
   alwaysShow?: Bo;
   showUnhideTips?: Bo;

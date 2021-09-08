@@ -941,6 +941,9 @@ site settings:
 tips,
 announcements:
             - hide-unhide-tips.2br  TyTE2EHIDETPS329
+notices,
+announcements:
+            - show-admin-notices.2br.e2e.ts  TyTE2EADMNTC
 
 
 intro tours:

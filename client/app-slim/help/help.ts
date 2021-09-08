@@ -125,9 +125,12 @@ export const HelpMessageBox = createComponent({   // RENAME to TipsBox
     const className = props.className || message.className || '';
     const largeClass = props.large ? ' dwHelp-large' : '';
     const warningClass = message.isWarning ? ' esHelp-warning' : '';
-    const classes = className + ' dw-help' + largeClass + warningClass;
+    const niceClass = message.isNice ? ' c_Help-Nice' : '';
+
+
+    const classes = className + ' dw-help' + largeClass + warningClass + niceClass;
     return (
-      r.div({ className: classes },
+      r.div({ className: classes, key: props.key },
         r.div({ className: 'dw-help-text' },
           message.content),
         okayButton));

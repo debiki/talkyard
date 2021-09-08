@@ -84,7 +84,8 @@ type PatName = St;
 type Username = St;
 type PeopleId = UserId;   // REMOVE
 type PermissionId = number;
-type NotificationId = number;
+type NotificationId = number;  // RENAME to NotfId
+type NoticeId = Nr;
 type ReviewTaskId = number;
 type IdentityId = string;
 type IpAddress = string;
@@ -509,6 +510,11 @@ const enum Groups {   // QUICK RENAME to Pats or PatIds?
   MaxBuiltInGroupId = AdminsId,
 }
 
+
+const enum Notices {
+  TwitterLoginConfigured = 1001,
+  TwitterLoginInUse = 1002,
+}
 
 const enum ContribAgreement {
   CcBy3And4 = 10,

@@ -311,6 +311,7 @@ function runAllE2eTests {
   # Also:  embedded-comments-navigation-as-guest  further below.
 
   $r s/wdio --only hide-unhide-tips.2br $args
+  $r s/wdio-7 --only show-admin-notices.2br --cd -i $args
 
   $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
   $r s/wdio --only sanitize-posts.2browsers $args

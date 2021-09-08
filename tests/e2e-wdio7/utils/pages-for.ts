@@ -7568,6 +7568,9 @@ export class TyE2eTestBrowser {
       waitForExactlyNumAnnouncements: async (num: Nr) => {
         await this.waitForExactly(num, '.c_SrvAnns .dw-help');
       },
+      assertAnnouncementDisplayed: async (dotClassName: St) => {
+        await this.assertDisplayed('.c_SrvAnns .dw-help ' + dotClassName);
+      },
       unhideAllAnnouncements: async () => {
         await this.topbar.openMyMenu();
         await this.topbar.myMenu.unhideAnnouncements();

@@ -919,6 +919,13 @@ class JsonMaker(dao: SiteDao) {
       val siteSettings = tx.loadSiteSettings()
       json += "isEmbeddedCommentsSite" -> JsBoolean(siteSettings.exists(_.allowEmbeddingFrom.nonEmpty))
       json += "siteCreatedAtMs" -> JsWhenMsOrNull(site.map(_.createdAt))
+
+      // For now, for admins only (although the table notices_t supports notices to
+      // all groups and users).
+      COULD_OPTIMIZE // cache in SiteDao. Don't need to be milliseconds up-to-date.
+      val adminNotices: Seq[Notice] = tx.loadAdminNotices()
+      json += "adminNotices" -> JsArray(adminNotices map JsNotice)
+
       // json += "talkyardVersion" -> ?  — maybe later.
     }
 

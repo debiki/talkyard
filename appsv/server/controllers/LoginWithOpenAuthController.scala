@@ -1217,6 +1217,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         when using only site custom IDP""")
 
     // This'll break Twitter authn, until they support OAuth2.
+    // (There's addAdminNotice() below, if Twitter used.)
     throwForbiddenIf(globals.config.featureFlags.contains("ffSilhouetteOff"),
            "TyEOLDAUTHNOFF",
            o"""Login with $providerName disabled for now. Can you please login
@@ -1240,6 +1241,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         googleProvider()
       case TwitterProvider.ID =>
         throwForbiddenIf(!settings.enableTwitterLogin, "TyE0TWTTRLOGIN", "Twitter login disabled")
+        request.dao.addAdminNotice(Notice.TwitterLoginUsed)
         twitterProvider()
       case GitHubProvider.ID =>
         throwForbiddenIf(!settings.enableGitHubLogin, "TyE0GITHLOGIN", "GitHub login disabled")

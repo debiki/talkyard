@@ -356,6 +356,52 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  // -- Could break out to separate file  -------------
+  def loadAdminNotices(): ImmSeq[Notice] = {
+    val query = "select * from notices_t where site_id_c = ?"
+    runQueryFindMany(query, List(siteId.asAnyRef), parseNotice)
+  }
+
+
+  private def parseNotice(rs: ResultSet): Notice = {
+    Notice(
+          siteId = siteId,
+          toPatId = getInt32(rs, "to_pat_id_c"),
+          noticeId = getInt32(rs, "notice_id_c"),
+          firstAt = getWhenMins(rs, "first_at_c"),
+          lastAt = getWhenMins(rs, "last_at_c"),
+          numTotal = getInt32(rs, "num_total_c"),
+          noticeData = None)
+  }
+
+
+  def addAdminNotice(noticeId: NoticeId): U = {
+    val statement = """
+          insert into notices_t (
+            site_id_c,
+            to_pat_id_c,
+            notice_id_c,
+            first_at_c,
+            last_at_c,
+            num_total_c)
+          values (?, ?, ?, ?, ?, 1)
+          on conflict (site_id_c, to_pat_id_c, notice_id_c) do update set
+            -- use greatest(), in case of clock skew or races?
+            last_at_c = greatest(notices_t.last_at_c, excluded.last_at_c),
+            first_at_c = least(notices_t.first_at_c, excluded.first_at_c),
+            num_total_c = notices_t.num_total_c + 1
+        """
+    val values = List(
+          siteId.asAnyRef,
+          Group.AdminsId.asAnyRef,
+          noticeId.asAnyRef,
+          now.unixMinutes.asAnyRef,  // first
+          now.unixMinutes.asAnyRef)  // last
+    runUpdateSingleRow(statement, values)
+  }
+  // --------------------------------------------------
+
+
   def nextPageId(): PageId = {
     transactionCheckQuota { connection =>
       // Loop until we find an unused id (there're might be old pages with "weird" colliding ids).

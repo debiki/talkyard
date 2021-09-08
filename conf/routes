@@ -314,6 +314,7 @@ GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
 POST /-/delete-redis-key        controllers.DebugTestController.deleteRedisKey
 POST /-/skip-rate-limits        controllers.DebugTestController.skipRateLimitsForThisSite
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
+POST /-/add-admin-notice        controllers.DebugTestController.addAdminNotice
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
 GET  /-/num-e2e-test-emails-sent controllers.DebugTestController.numE2eTestEmailSent(siteId: Int)
 GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessages()
