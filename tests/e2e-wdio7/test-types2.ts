@@ -244,6 +244,7 @@ interface TestSiteSettings {
   numFlagsToHidePost?: number;
   numFlagsToBlockNewUser?: number;
   numFlaggersToBlockNewUser?: number;
+  enableForum?: Bo;
   enableApi?: boolean;
   ssoUrl?: string;
   enableSso?: boolean;
