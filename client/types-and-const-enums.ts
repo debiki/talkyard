@@ -34,7 +34,11 @@
 type U = undefined;
 type Vo = void; // but not 'V' because that's sometimes a 'V'alue template param.
 type Nl = null; // but not 'Nu' because that could be "Number".
-type Ay = any;  // but not 'An' because that sounds like 'an'.
+type N = null;  // ... hmm I don't think so. One letter U and N for undef & null,
+                // ... and 2 letters for "real" datatypes — easy to remember?
+                // "Nl" is actually a bit hard to read! (the 'l')
+type Ay = any;  // but not 'An' because that sounds like 'an'. Upd: Skip this. Use 'any',
+                // should try to long term do away with all 'any' anyway.
 type Bo = boolean;
 type Nr = number;
 type St = string;
