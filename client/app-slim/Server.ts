@@ -1421,7 +1421,7 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
 }
 
 
-export function loadMyself(callback: (user: any) => void) {
+export function loadMyself(callback: (me: Me | NU) => void) {
   // @ifdef DEBUG
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
@@ -1453,7 +1453,9 @@ export function loadMyself(callback: (user: any) => void) {
     }
   }
   // SHOULD incl sort order & topic filter in the url params. [2KBLJ80]
-  get(`/-/load-my-page-data?pageIds=${pageIds}`, callback);
+  get(`/-/load-my-page-data?pageIds=${pageIds}`, function (resp: { me?: Me }) {
+    callback(resp.me);
+  });
 }
 
 

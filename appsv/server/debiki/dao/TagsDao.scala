@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
 import ed.server.pubsub.StorePatchMessage
-import play.api.libs.json.JsValue
+import play.api.libs.json.JsObject
 import TagsDao._
 import scala.util.matching.Regex
 
@@ -88,7 +88,7 @@ trait TagsDao {
 
 
   def addRemoveTagsIfAuth(pageId: PageId, postId: PostId, tags: Set[Tag], who: Who)
-        : JsValue = {
+        : JsObject = {
 
     throwForbiddenIf(tags.size > MaxNumTags,
       "EsE5KG0F3", s"Too many tags: ${tags.size}, max is $MaxNumTags")

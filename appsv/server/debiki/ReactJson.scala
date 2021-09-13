@@ -733,11 +733,11 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def userNoPageToJson(request: DebikiRequest[_]): JsValue = {
+  def userNoPageToJson(request: DebikiRequest[_]): Opt[JsObject] = Some {
     import request.authzContext
     require(request.dao == dao, "TyE4JK5WS2")
     val requester = request.user getOrElse {
-      return JsNull
+      return None
     }
     val permissions = authzContext.tooManyPermissions
     val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()
@@ -1047,7 +1047,7 @@ class JsonMaker(dao: SiteDao) {
 
 
   def makeCategoriesStorePatch(categoryId: CategoryId, authzCtx: ForumAuthzContext)
-        : JsValue = {
+        : JsObject = {
     // 2 dupl lines [7UXAI1]
     val restrCategoriesJson =
       makeCategoriesJson(categoryId, authzCtx, exclPublCats = true)
@@ -1122,7 +1122,8 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeStorePatchForPostNr(pageId: PageId, postNr: PostNr, showHidden: Boolean): Option[JsValue] = {
+  def makeStorePatchForPostNr(pageId: PageId, postNr: PostNr, showHidden: Bo)
+        : Opt[JsObject] = {
     val post = dao.loadPost(pageId, postNr) getOrElse {
       return None
     }
@@ -1135,7 +1136,7 @@ class JsonMaker(dao: SiteDao) {
 
 
   def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean, dao: SiteDao)
-  : JsValue = {
+        : JsObject = {
     dao.readOnlyTransaction { tx =>
       makeStorePatchForPosts(postIds, showHidden, dao.context.postRenderer,
         tx, appVersion = dao.globals.applicationVersion)
@@ -1143,8 +1144,8 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean,
-    postRenderer: PostRenderer, transaction: SiteTransaction, appVersion: String): JsValue = {
+  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Bo,
+    postRenderer: PostRenderer, transaction: SiteTx, appVersion: St): JsObject = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsByPostId = transaction.loadTagsByPostId(postIds)
     val pageIds = posts.map(_.pageId).toSet
@@ -1168,7 +1169,7 @@ class JsonMaker(dao: SiteDao) {
 
   @deprecated("now", "use makeStorePatchForPosts instead")
   def makeStorePatch2(postId: PostId, pageId: PageId, appVersion: String,
-        transaction: SiteTransaction): JsValue = {
+        transaction: SiteTransaction): JsObject = {
     // Warning: some similar code above [89fKF2]
     // Load the page so we'll get a version that includes postId, in case it was just added.
     val page = dao.newPageDao(pageId, transaction)
@@ -1205,7 +1206,7 @@ class JsonMaker(dao: SiteDao) {
   ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
      tagsByPostId: Map[PostId, Set[String]], users: Iterable[Participant], appVersion: String)(
-    transaction: SiteTransaction): JsValue = {
+     tx: SiteTx): JsObject = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
     val pageVersionsByPageIdJson =
       JsObject(pageIdVersions.toSeq.map(p => p.pageId -> JsNumber(p.version)))
@@ -1214,7 +1215,7 @@ class JsonMaker(dao: SiteDao) {
       postsByPageId.toSeq.map(pageIdPosts => {
         val pageId = pageIdPosts._1
         val posts = pageIdPosts._2
-        val page = dao.newPageDao(pageId, transaction)
+        val page = dao.newPageDao(pageId, tx)
         val postsJson = posts map { p =>
           postToJsonImpl(p, page, tagsByPostId.getOrElse(p.id, Set.empty),
             includeUnapproved = false, showHidden = false)
@@ -2050,12 +2051,12 @@ object JsonMaker {
   }
 
 
-  def makeTagsStuffPatch(json: JsObject, appVersion: String): JsValue = {
+  def makeTagsStuffPatch(json: JsObject, appVersion: String): JsObject = {
     makeStorePatch(Json.obj("tagsStuff" -> json), appVersion = appVersion)
   }
 
 
-  def makeStorePatch(json: JsObject, appVersion: String): JsValue = {
+  def makeStorePatch(json: JsObject, appVersion: String): JsObject = {
     json + ("appVersion" -> JsString(appVersion))
   }
 

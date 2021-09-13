@@ -400,12 +400,12 @@ object ViewPageController {
       if (skipUsersOnline) UsersOnlineStuff(users = Nil, usersJson = JsArray(), numStrangers = 0)
       else dao.loadUsersOnlineStuff()
 
-    val anyUserSpecificDataJson: Option[JsValue] =
+    val anyUserSpecificDataJson: Opt[JsObject] =
       request match {
         case pageRequest: PageRequest[_] =>
           dao.jsonMaker.userDataJson(pageRequest, unapprovedPostAuthorIds)
         case _: DebikiRequest[_] =>
-          Some(dao.jsonMaker.userNoPageToJson(request))
+          dao.jsonMaker.userNoPageToJson(request)
       }
 
     var volatileJson = Json.obj(  // VolatileDataFromServer

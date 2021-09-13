@@ -78,11 +78,12 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
   // tab, and we don't want to break it by deleting cookies. Instead login temp cookies are
   // deleted by the server.)
 
-  Server.loadMyself((user) => {
+  Server.loadMyself((anyMe: Me | NU) => {
     // @ifdef DEBUG
     // Might happen if there was no weakSessionId, and also, no cookie.
-    dieIf(!user, 'TyE4032SMH57');
+    dieIf(!anyMe, 'TyE4032SMH57');
     // @endif
+    const newMe = anyMe as Me;
     if (isInSomeEmbCommentsIframe()) {
       // Tell the embedded comments or embedded editor iframe that we just logged in,
       // also include the session id, so Talkyard's script on the embedding page
@@ -100,13 +101,13 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
               // when we didn't need to do that, to log in.
               typs.sessType !== SessionType.AutoTokenSiteCustomSso;
       if (mainWin !== window) {
-        mainWin.theStore.me = _.cloneDeep(user);
+        mainWin.theStore.me = _.cloneDeep(newMe);
       }
       sendToOtherIframes([
-        'justLoggedIn', { user, weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
+        'justLoggedIn', { user: newMe, weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
               sessionType: null, rememberEmbSess }]);
     }
-    setNewMe(user);
+    setNewMe(newMe);
     if (afterwardsCallback) {
       afterwardsCallback();
     }
@@ -114,7 +115,7 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
 }
 
 
-export function setNewMe(user) {
+export function setNewMe(user: Me | NU) {
   // @ifdef DEBUG
   dieIf(!user, `setNewMe(nothing) TyE60MRJ46RS`);
   // @endif

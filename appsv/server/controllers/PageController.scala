@@ -236,7 +236,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val postUniqueId = (request.body \ "postId").as[PostId]   // id not nr
     val acceptedAt: Option[ju.Date] = request.dao.ifAuthAcceptAnswer(
       pageId, postUniqueId, userId = request.theUserId, request.theBrowserIdData)
-    OkSafeJson(JsLongOrNull(acceptedAt.map(_.getTime)))
+    OkSafeJsValue(JsLongOrNull(acceptedAt.map(_.getTime)))
   }
 
 
@@ -253,7 +253,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pageId = (request.body \ "pageId").as[PageId]
     val closedAt: Option[ju.Date] = request.dao.ifAuthTogglePageClosed(
       pageId, userId = request.theUserId, request.theBrowserIdData)
-    OkSafeJson(JsLongOrNull(closedAt.map(_.getTime)))
+    OkSafeJsValue(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
   def deletePages: Action[JsValue] = PostJsonAction(

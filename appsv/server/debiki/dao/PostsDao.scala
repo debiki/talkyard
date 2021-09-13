@@ -1530,7 +1530,7 @@ trait PostsDao {
   }
 
 
-  def editPostSettings(postId: PostId, branchSideways: Option[Byte], me: Who): JsValue = {
+  def editPostSettings(postId: PostId, branchSideways: Option[Byte], me: Who): JsObject = {
     val (post, patch) = readWriteTransaction { tx =>
       val postBefore = tx.loadPostsByUniqueId(Seq(postId)).headOption.getOrElse({
         throwNotFound("EsE5KJ8W2", s"Post not found: $postId")
@@ -2331,7 +2331,7 @@ trait PostsDao {
 
   RENAME // all ... IfAuth to IfAuZ (if authorized)
   def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: UserId,
-        browserIdData: BrowserIdData): (Post, JsValue) = {
+        browserIdData: BrowserIdData): (Post, JsObject) = {
 
     if (newParent.postNr == PageParts.TitleNr)
       throwForbidden("EsE4YKJ8_", "Cannot place a post below the title")

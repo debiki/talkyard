@@ -22,7 +22,7 @@ import debiki.EdHttp._
 import ed.server.liftweb
 import java.{lang => jl}
 import play.api._
-import play.api.libs.json.{Json, JsValue, JsObject}
+import play.api.libs.json.{Json, JsValue, JsArray, JsObject}
 import play.api.mvc._
 
 
@@ -79,8 +79,12 @@ object Utils extends Results with http.ContentTypes {
    *   - http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx
    * Ty's Javascript strips the ")]}'," prefix  [5LKW02D4]
    * before parsing the JSON.
+
+   CLEAN_UP // don't have 3x these at 3 places !
+
    */
-  def OkSafeJson(json: JsValue, pretty: Boolean = false): Result = {
+
+  def OkSafeJsValue(json: JsValue, pretty: Bo = false): Result = {
     val jsonString = if (pretty) Json.prettyPrint(json) else Json.stringify(json)
     // Would excluding the prefix be a maybe breaking API change?
     // Better post about this in the forum first.
@@ -88,11 +92,11 @@ object Utils extends Results with http.ContentTypes {
     Ok(prefix + jsonString) as JSON
   }
 
-  /** Pretty prints by default, nice when troubleshooting. And doesn't incl the
+  /** Doesn't incl the
     * don't-parse-as-a-script tag — that's only meaningful for browsers?
     * And not needed, when returning a JsObject.
     */
-  def OkApiJson(json: JsObject, pretty: Boolean = true): Result = {
+  def OkApiJson(json: JsObject, pretty: Bo = false): Result = {
     val jsonString = if (pretty) Json.prettyPrint(json) else Json.stringify(json)
     Ok(jsonString) as JSON
   }

@@ -571,7 +571,7 @@ ReactStore.activateVolatileData = function() {
 };
 
 
-ReactStore.activateMyself = function(anyNewMe: Myself) {
+ReactStore.activateMyself = function(anyNewMe: Myself | NU) {
   // [redux] Modifying state in-place, shouldn't do? But works fine.
 
   store.userSpecificDataAdded = true;

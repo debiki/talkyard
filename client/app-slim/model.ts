@@ -549,7 +549,7 @@ interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
 
 
 type MyselfPatch = Partial<Myself>;
-
+type MePatch = MyselfPatch;  // renaming all 'Myself' to 'Me'
 
 interface GroupPerms {
   maxUploadBytes?: Nr;

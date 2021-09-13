@@ -55,6 +55,7 @@ type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}
 // or can return a boolean. So, boolean or falsy:
 type BoZ = Bo | Z;
 
+type NU  = null | undefined;
 type NUV = null | undefined | void;
 
 type StN = St | Nl;     // Many APIs return `string | null` e.g. HTMLElement.getAttribute.
