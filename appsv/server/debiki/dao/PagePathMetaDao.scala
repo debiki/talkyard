@@ -164,10 +164,27 @@ trait PagePathMetaDao {
   }
 
 
-  def getPageMetaByParsedRef(parsedRef: ParsedRef): Option[PageMeta] = {
+  // Later, return a PageMeta Or ErrMsg?
+  def getPageMetaByParsedRef(parsedRef: ParsedRef): Opt[PageMeta] = {
     parsedRef match {
+      case ParsedRef.PageId(id) => getPageMeta(id)
+      // later: case ParsedRef.DiscussionId(id) => use SiteTx.loadPageMetasByAltIdAsMap?
       case ParsedRef.TalkyardId(id) => getPageMeta(id)
       case ParsedRef.ExternalId(extId) => getPageMetaByExtId(extId)
+      case ParsedRef.PagePath(urlPath) =>
+        val path: PagePath.Parsed = PagePath.fromUrlPath(siteId, urlPath)
+        path match {
+          case PagePath.Parsed.Good(pagePath: PagePath) =>
+            val pathWithId: Opt[PagePathWithId] = checkPagePath2(pagePath)
+            pathWithId.flatMap(pathWithId => getPageMeta(pathWithId.pageId))
+            // Later, return Bad("No such page: id") if not found?
+          case c: PagePath.Parsed.Corrected =>
+            // For now
+            None
+          case b: PagePath.Parsed.Bad =>
+            // For now
+            None
+        }
       case bad => die("TyE404KSR5", s"Bad ref type: ${classNameOf(bad)}")
     }
   }

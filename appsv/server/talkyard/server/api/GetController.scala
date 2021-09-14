@@ -40,13 +40,13 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
 
-  def getThingsPubApi(): Action[JsValue] = PostJsonAction(  // [PUB_API]
+  def apiV0_get(): Action[JsValue] = PostJsonAction(  // [PUB_API]
           RateLimits.ReadsFromDb, maxBytes = 2000) { request: JsonPostRequest =>
-    getThingsPubApiImpl(request)
+    getThingsImpl(request)
   }
 
 
-  def getThingsPubApiImpl(request: JsonPostRequest): Result = {
+  private def getThingsImpl(request: JsonPostRequest): Result = {
     import request.body
     val pretty = (body \ "pretty").asOpt[Bo].getOrElse(false)
     val getQueryJson = (body \ "getQuery").as[JsObject]

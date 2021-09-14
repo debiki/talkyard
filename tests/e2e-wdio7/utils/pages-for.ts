@@ -4142,9 +4142,11 @@ export class TyE2eTestBrowser {
         // Facebook asks if we want cookies — yes we do. And Facebook sometimes
         // renames the ok-cookies button.
         //const cookieYesSelector = '[data-testid="cookie-policy-banner-accept"]';
-        const cookieYesSelector = '[data-testid="cookie-policy-dialog-accept-button"]';
-        if (await this.isExisting(cookieYesSelector)) {
-          await this.waitAndClick(cookieYesSelector);
+        // (There's yet another cookie button, cookieYesBtn2, below.)
+        const cookieYesBtn1 = '[data-testid="cookie-policy-dialog-accept-button"]';
+        if (await this.isExisting(cookieYesBtn1)) {
+          logMessage("Accepting cookies 1 ...");
+          await this.waitAndClick(cookieYesBtn1);
         }
 
         logMessage("typing Facebook user's email and password...");
@@ -4163,6 +4165,12 @@ export class TyE2eTestBrowser {
         //   > Would you like to continue?
         // and we need to click Yes:
         const yesBtn = 'button[name="__CONFIRM__"]';
+
+        // And asks about cookies a 2nd time:
+        const cookieYesBtn2 = '[aria-label="Allow All Cookies"]';
+        // (Or: div or span with the text 'Allow All Cookies' — but clicking it,
+        // does nothing. Instead, clicking the ancestor aria-label=... works.)
+
         await this.waitUntil(async () => {
           if (await this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
             logMessage(`Popup closed, got no "Would you like to continue?" question.`);
@@ -4174,14 +4182,28 @@ export class TyE2eTestBrowser {
             return true;
           }
           try {
-            if (await this.tryClickNow(yesBtn) === 'Clicked')
-              return true;
+            // Suddenly, Sept 2021, FB has added a 2nd cookie button. Who knows why.
+            // So let's accept cookies a 2nd time.
+            if (await this.tryClickNow(cookieYesBtn2) === 'Clicked') {
+              logMessage("Accepted FB cookies 2.");
+              // Contiue looping afterwards, until the dialog closes or we see the
+              // create-user Talkyard fields. Also, it seemed as if the first click
+              // once didn't work, who cares why, just click more?
+              return false;
+            }
+            // Previously, there was some confirmation button. Mayeb FB will
+            // add it back?
+            if (await this.tryClickNow(yesBtn) === 'Clicked') {
+              logMessage("Clicked some FB Continue button.");
+              // Continue looping, see if{} above.
+              return false;
+            }
           }
           catch (dummy) {
             logMessage(`No Yes button — already logged in, tab closed? [TyM5PKW5RM8]`);
           }
         }, {
-          message: `Waiting for any FB "Continue?" question`,
+          message: `Waiting for any FB "Continue?" question or cookie button 2`,
           winClosedIsFine: true,  // FB popup can close itself
         });
 
@@ -5580,6 +5602,18 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.dw-notf-level');
         await this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
+
+      assertPageNotfLevelIs: async (level: PageNotfLevel) => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        const actualLevelText = await this.waitAndGetVisibleText('.dw-page-notf-level');
+        // Or, if metabar open:  `dw-notf-level s_NfLv-${level}`
+        const selector = `.dw-page-notf-level.n_NfLv-${level}`;
+        const isCorrectLevel = await this.isVisible(selector);
+        if (!isCorrectLevel) {
+          assert.fail(`Wrong notf level, expected: ${level} but is (in text): ${
+                actualLevelText}`);
+        }
+      },
     };
 
 
@@ -6144,6 +6178,10 @@ export class TyE2eTestBrowser {
         return result;
       },
 
+      makeLikeVoteCountSelector: (postNr: PostNr): St => {
+        return this.topic.makeLikeVoteSelector(postNr) + ' + .dw-vote-count';
+      },
+
       __disagreeVoteSel: (postNr: PostNr): St => {
         return `#post-${postNr} + .esPA .e_WroVo`;
       },
@@ -6199,12 +6237,17 @@ export class TyE2eTestBrowser {
       },
 
       isPostLiked: async (postNr: PostNr, ps: { byMe?: Bo } = {}): Pr<Bo> => {
-        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr, ps);
+        // We'll know if the post is liked byMe, by looking at the Like vote heart
+        // button — if it's red, the post is liked byMe.
+        // Otherwise, if there's any Like vote count, the post is liked by *someone*.
+        const likeVoteSelector = ps.byMe
+            ?  this.topic.makeLikeVoteSelector(postNr, ps)
+            : this.topic.makeLikeVoteCountSelector(postNr);
         return await this.isVisible(likeVoteSelector);
       },
 
       waitForLikeVote: async (postNr: PostNr, ps: { byMe?: Bo } = {}) => {
-        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr, ps);
+        const likeVoteSelector = this.topic.makeLikeVoteCountSelector(postNr);
         await this.waitForVisible(likeVoteSelector);
       },
 
@@ -7546,6 +7589,9 @@ export class TyE2eTestBrowser {
       },
       waitForExactlyNumAnnouncements: async (num: Nr) => {
         await this.waitForExactly(num, '.c_SrvAnns .dw-help');
+      },
+      assertAnnouncementDisplayed: async (dotClassName: St) => {
+        await this.assertDisplayed('.c_SrvAnns .dw-help ' + dotClassName);
       },
       unhideAllAnnouncements: async () => {
         await this.topbar.openMyMenu();

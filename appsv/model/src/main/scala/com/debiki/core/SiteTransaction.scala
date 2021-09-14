@@ -62,6 +62,10 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadResourceUsage(): ResourceUse
 
+  def loadAdminNotices(): ImmSeq[Notice]
+  def addAdminNotice(noticeId: NoticeId): U
+
+
   def loadCategory(categoryId: CategoryId): Option[Category]
   def loadCategoryMap(): Map[CategoryId, Category]
 
@@ -218,7 +222,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   /** Remembers that the specified posts have been read by a certain user.
     */
   def updatePostsReadStats(pageId: PageId, postNrsRead: Set[PostNr], readById: UserId,
-        readFromIp: String): Unit
+        readFromIp: Opt[IpAdr]): U
 
 
   def loadParticipantAndStats(ppId: UserId): (Option[Participant], Option[UserStats]) = {

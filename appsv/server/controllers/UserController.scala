@@ -97,7 +97,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         JsUserInclDetails(member, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
           callerIsStaff = true, anyStats = anyStats)
       }))
-      OkSafeJson(Json.toJson(Map("users" -> usersJson)))
+      OkSafeJson(Json.obj("users" -> usersJson))
     }
   }
 
@@ -432,8 +432,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         "browserIdDataRecentFirst" -> browserIdDataJson)
     }
 
-    // These responses are fairly brief; ok to prettify the json.
-    OkSafeJson(result, pretty = true)
+    OkSafeJson(result)
   }
 
 
@@ -954,11 +953,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           else pageIds.split(',').to[ImmSeq]
    // For now:
     val json = loadMyPageDataImpl(request, pageIdsSeq.head)
-    OkSafeJson(json)
+    OkSafeJson(Json.obj(
+        "me" -> JsObjOrNull(json)))
   }
 
 
-  private def loadMyPageDataImpl(request: ApiRequest[_], pageId: PageId): JsValue = {
+  private def loadMyPageDataImpl(request: ApiRequest[_], pageId: PageId)
+        : Opt[JsObject] = Some {
     import request.dao
     val pageMeta = request.dao.getPageMeta(pageId) getOrElse {
       // Might be an embedded comment page, not yet created because no comments posted.
@@ -989,7 +990,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       dao = request.dao,
       request = request.request)
 
-    val json =
+    val json: JsObject =
       if (pageRequest.user.isDefined) {
         val renderedPage = request.dao.renderPageMaybeUseMemCache(pageRequest)
         dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
@@ -1020,7 +1021,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           theRequester.id, upToWhen = None, request.who, unseenFirst = true, limit = 20)
 
         // dupl code [7KABR20]
-        Json.obj(
+        Json.obj(  // ts: MePatch
           "numTalkToMeNotfs" -> notfsAndCounts.numTalkToMe,
           "numTalkToOthersNotfs" -> notfsAndCounts.numTalkToOthers,
           "numOtherNotfs" -> notfsAndCounts.numOther,
@@ -1028,7 +1029,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           "notifications" -> notfsAndCounts.notfsJson)
       }
 
-    OkSafeJson(result)
+    OkSafeJsValue(result)
   }
 
 
@@ -1263,10 +1264,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
             .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
 
     if (newNotfLevel.isDefined) {
-      dao.savePageNotfPref(newPref, request.who)
+      dao.savePageNotfPrefIfAuZ(newPref, request.who)
     }
     else {
-      dao.deletePageNotfPref(newPref, request.who)
+      dao.deletePageNotfPrefIfAuZ(newPref, request.who)
     }
 
     OkSafeJson(
@@ -1306,7 +1307,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
     val maybeMembers = request.dao.listGroupMembersIfReqrMaySee(groupId, request.requesterOrUnknown)
     val membersJson: JsValue = maybeMembers.map(ms => JsArray(ms map JsUser)).getOrElse(JsFalse)
-    OkSafeJson(membersJson)
+    OkSafeJsValue(membersJson)
   }
 
 
@@ -1557,7 +1558,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(!isOneself && !requester.isAdmin,
       "TyE7UBQP21", "Cannot delete other user")
     val anonNNN = dao.deleteUser(userId, request.who)
-    val response = OkSafeJson(JsString(anonNNN.username))
+    val response = OkSafeJsValue(JsString(anonNNN.username))
     // Log the user out, if hen deleted hens own account.
     if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookie)
     else response

@@ -42,13 +42,47 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   const me: Myself = store.me;
   if (!me.isAdmin) return null;
 
+  // ----- Dynamic notices
+
+  // Depends on features enabled / in use at this particular site).
+
+  const adminNotices: RElm[] = (me.adminNotices || []).map((notice: Notice) => {
+    let text: St | RElm = 'TyE02MREG56';
+    switch (notice.id) {
+      case Notices.TwitterLoginConfigured:
+        const anyoneUsesTwitterLogin =
+                _.some(me.adminNotices, n => n.id === Notices.TwitterLoginInUse);
+        text = r.p({},
+              r.b({ className: 'e_TwLgI-Conf' }, "Twitter login willl stop working. "),
+              "Twitter login is enabled in this forum" + (
+              anyoneUsesTwitterLogin ? '.' : " — but it seems no one uses it."));
+        break;
+      case Notices.TwitterLoginInUse:
+        text = r.p({},
+              r.b({ className: 'e_TwLgI-InUse' }, "Twitter login in use"),
+              " — but will stop working.");
+        break;
+      default:
+    }
+    // @ifdef DEBUG
+    dieIf(!text, 'TyE60WEJf372');
+    // @endif
+    return help.HelpMessageBox({ key: notice.id, message: {
+        // SAn = Server Announcement, NtcX = Notice X.
+        id: `SAn_Ntc${notice.id}`, version: 1, isWarning: true,
+        content: rFr({}, text, ThisShownToAdminsOnly()),
+    } });
+  });
+
+  // ----- New version announcements
+
   let newTyVersionAnn: RElm =
       help.HelpMessageBox({ message: {
           // SAn = Server Announcement, TyV = Talkyard new Version announcement nr 1.
-          id: 'SAn_TyV2', version: 2,
+          id: 'SAn_TyV2', version: 2, isNice: true,
           content: rFr({},
             r.p({},
-              r.b({}, `New Talkyard version: ${TalkyardVersion}, `),
+              r.b({ className: 'e_LstTyV'}, `New Talkyard version: ${TalkyardVersion}, `),
               "read more here: ",
               ExtVerbLink(
                   'https://www.talkyard.io/-596/talkyard-v0202123')),
@@ -57,7 +91,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
 
   let prevTyVersionAnn: RElm | U;
       help.HelpMessageBox({ message: {
-          id: 'SAn_TyV1', version: 1,
+          id: 'SAn_TyV1', version: 1, // old announcement, skip isNice
           content: rFr({},
             r.p({},
               r.b({}, `New Talkyard version: v0.2021.22, `),
@@ -67,6 +101,8 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
             ThisShownToAdminsOnly()),
       } });
 
+
+  // ----- Other announcements
 
   // Announcement about HTTPS certificates renewal problem.
   // Only for admins for self hosted sites, created after revision 895b7aa6e2
@@ -106,6 +142,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
 
   return (
     r.div({ className: 'c_SrvAnns' },
+      rFr({}, adminNotices),
       e2eTestAnn,
       certBugAnn,
       newTyVersionAnn,

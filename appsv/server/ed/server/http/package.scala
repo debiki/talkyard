@@ -20,14 +20,14 @@ package ed.server
 import com.debiki.core._
 import debiki.dao.SiteDao
 import ed.server.security.{BrowserId, SidStatus, XsrfOk}
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, JsArray, JsObject}
 import play.api.mvc._
 
 
 package object http {
 
-  def OkSafeJson(json: JsValue): Result =
-    _root_.controllers.Utils.OkSafeJson(json)
+  def OkSafeJson(json: JsObject): Result =
+    _root_.controllers.Utils.OkApiJson(json)
 
 
   case class AuthnReqHeaderImpl(

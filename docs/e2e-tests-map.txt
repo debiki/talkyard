@@ -941,6 +941,9 @@ site settings:
 tips,
 announcements:
             - hide-unhide-tips.2br  TyTE2EHIDETPS329
+notices,
+announcements:
+            - show-admin-notices.2br.e2e.ts  TyTE2EADMNTC
 
 
 intro tours:
@@ -1301,40 +1304,43 @@ notf prefs inherited:
 
 email notifications:  (5ABKR024)
   change between Always / Unread / Only from staff / No / Never:
-          - TESTS_MISSING   TyTE2E693RTMPG
+            - TESTS_MISSING   TyTE2E693RTMPG
   to staff when new member waiting to get approved to join the site:
-          - settings-approve-members.2browsers.test.ts  TyT2HUWX8.TyTE2E502AHL4
+            - settings-approve-members.2browsers.test.ts  TyT2HUWX8.TyTE2E502AHL4
   to new members when membership approved:
-          - settings-approve-members.2browsers.test.ts  TyT2HUWX8.TyTE2E05WKF2
+            - settings-approve-members.2browsers.test.ts  TyT2HUWX8.TyTE2E05WKF2
   #no skip this?:
   #to new members when their posts approved:  see (60MR2)
-  #        - TESTS_MISSING  TyT4AKBJ20.TyTE2E062KR
+  #         - TESTS_MISSING  TyT4AKBJ20.TyTE2E062KR
   to staff about mod tasks:  (502M7)
-          - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20
-          - new-user-review-ok.2browsers.test.ts  TyT39657MRDT2
+            - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20
+            - new-user-review-ok.2browsers.test.ts  TyT39657MRDT2
   watching everything:
-          - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
+            - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
   new discourse reply:
+            - do-api-like-and-subscribe.2br  TyTEAPILIKESUBS.TyTDISCRE08
+            - search for waitUntilLastEmailMatches(), 100s of places
   new direct message reply:
-          - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
+            - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
     email notf link:
-          - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
+            - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
   private chat messages:
-          - private-chat.3browsers.test.ts  TyT2ABKR045
+            - private-chat.3browsers.test.ts  TyT2ABKR045
   mentions:
-          - notf-emails-discussion.2browsers.test.ts   TyT4FKA2EQ02
-          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+            - notf-emails-discussion.2browsers.test.ts   TyT4FKA2EQ02
+            - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+            - search for waitUntilLastEmailMatches(), 100s of places
   watching:
   not until after email verified:
-          - unsubscribe.2browsers.test.ts  [TyT2ABKR04]
-          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT305RKTH4
+            - unsubscribe.2browsers.test.ts  [TyT2ABKR04]
+            - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT305RKTH4
   new topics:
-          - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
-          - ... more, which?
+            - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
+            - ... more, which?
   like votes:
-          - notfs-like-votes.2browsers.test.ts  TyTE2E703KDH
+            - notfs-like-votes.2browsers.test.ts  TyTE2E703KDH
   unsubscribe:
-          -  (7ABKR023)
+            -  (7ABKR023)
   cannot reply via email to email notifications:
             - cannot-reply-via-email.2br  TyTE0REVIAEML
 
@@ -1363,6 +1369,12 @@ api:
             - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyT6703MRJ5
   ext id, weird chars and loong id:
           - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
+  refs:
+    userid:_, pageid:_,
+    ssoid:_, tyid:_,
+    extid:_ for users and pages,
+    username:_, pagepath:_
+            - do-api-like-and-subscribe.2br  TyTEAPILIKESUBS.TyTREFTYPES01
   upsert categories:  (upscats)
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
   upsert pages:
@@ -1413,8 +1425,10 @@ api:
   full text search:
             - api-search-full-text.test.ts   TyT70ADNEFTD36
   get api:
-          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
-          - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
+            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
+  do api:
+            - do-api-like-and-subscribe.2br  TyTEAPILIKESUBS
   atom feed:
             - TESTS_MISSING
   rss feed: No, there're only Atom feeds.

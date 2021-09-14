@@ -496,6 +496,7 @@ class SiteDao(
     uncacheSiteFromMemCache()
   }
 
+
   def changeExtraHostsRole(newRole: Hostname.Role): Unit = {
     readWriteTransaction { tx =>
       tx.changeExtraHostsRole(newRole)
@@ -503,9 +504,17 @@ class SiteDao(
     }
   }
 
+
   def loadResourceUsage(): ResourceUse = {
     readOnlyTransaction { tx =>
       tx.loadResourceUsage()
+    }
+  }
+
+
+  def addAdminNotice(noticeId: NoticeId): U = {
+    writeTx { (tx, _) =>
+      tx.addAdminNotice(noticeId)
     }
   }
 

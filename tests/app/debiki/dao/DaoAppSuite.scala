@@ -40,6 +40,8 @@ object DaoAppSuite {
     */
   val OneAndZeros1157DaysInMillis = 100000000000L // divide by (24*3600*1000) —> 1157.4 days
 
+  val Jan2020InMillis: i64 = 26300000 * MillisPerMinute  // = 1578000000 * 1000
+  val Jan2020: When = When.fromMillis(Jan2020InMillis)
 }
 
 

@@ -194,6 +194,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       delete from drafts3 where site_id = ?
       delete from post_read_stats3 where site_id = ?
       delete from notifications3 where site_id = ?
+      delete from notices_t where site_id_c = ?
       delete from emails_out3 where site_id = ?
       delete from upload_refs3 where site_id = ?""" +
       // skip: uploads3, not per-site. But... latent BUG: should update upload ref counts,

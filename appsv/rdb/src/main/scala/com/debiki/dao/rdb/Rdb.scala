@@ -105,6 +105,14 @@ object Rdb {
     }).getOrElse(NullTimestamp)
   }
 
+  implicit class PimpWhenMinsWithIntMins(when: WhenMins) {
+    def asIntMins: AnyRef = when.mins.asAnyRef
+  }
+
+  implicit class PimpOptionWithNullIntMins(opt: Opt[WhenMins]) {
+    def orNullIntMins: AnyRef = opt.map(_.mins.asAnyRef) getOrElse NullInt
+  }
+
   implicit class PimpOptionWithNullJsValue(opt: Option[play.api.libs.json.JsValue]) {
     def orNullJson: AnyRef = opt.getOrElse(Null(js.Types.OTHER))
   }
@@ -282,15 +290,28 @@ object Rdb {
     else When.fromMillis(timestamp.getTime)
   }
 
+  // Remove, change to when_mins_d and getWhenMins() instead?
   def getWhenMinutes(rs: js.ResultSet, column: String): When = {
     val unixMinutes = rs.getInt(column)
     When.fromMillis(unixMinutes * 60L * 1000)
   }
 
+  // Remove, change to when_mins_d and getOptWhenMins() instead?
   def getOptWhenMinutes(rs: js.ResultSet, column: String): Option[When] = {
     val unixMinutes = rs.getInt(column)
     if (rs.wasNull()) None
     else Some(When.fromMillis(unixMinutes * 60L * 1000))
+  }
+
+  def getWhenMins(rs: js.ResultSet, column: St): WhenMins = {
+    val unixMinutes = rs.getInt(column)
+    WhenMins.fromMins(unixMinutes)
+  }
+
+  def getOptWhenMins(rs: js.ResultSet, column: St): Opt[WhenMins] = {
+    val unixMinutes = rs.getInt(column)
+    if (rs.wasNull()) None
+    else Some(WhenMins.fromMins(unixMinutes))
   }
 
   def getOptionalDate(rs: js.ResultSet, column: String): Option[ju.Date] = {

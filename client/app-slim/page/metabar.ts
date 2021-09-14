@@ -92,11 +92,14 @@ export var Metabar = createComponent({
     const me: Myself = store.me;
     const isBlogComments = page.pageRole === PageRole.EmbeddedComments;
 
-    const notfLevelElem = !me.isAuthenticated || ui.showDetails ? null :
-      r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
-          t.Notifications + ': ' +
-            notfPref_title(
-              pageNotfPrefTarget_findEffPref({ pageId: page.pageId }, store, me)));
+    let notfLevelElem: RElm | Nl = null;
+    if (me.isAuthenticated && !ui.showDetails) {
+      const effPref = pageNotfPrefTarget_findEffPref({ pageId: page.pageId }, store, me);
+      const level = notfPref_level(effPref);
+      notfLevelElem = r.span({ className: `dw-page-notf-level n_NfLv-${level}`,
+              onClick: this.onToggleDetailsClick },
+          t.Notifications + ': ' + notfPref_title(effPref));
+    }
 
     const toggleDetailsBtn = !me.isLoggedIn ? null :
         r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },

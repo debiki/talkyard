@@ -142,7 +142,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
       "numReportedSpamFalsePositives" -> globals.e2eTestCounters.numReportedSpamFalsePositives,
       "numReportedSpamFalseNegatives" -> globals.e2eTestCounters.numReportedSpamFalseNegatives,
     )
-    Ok(responseJson.toString) as JSON
+    OkApiJson(responseJson)
   }
 
 
@@ -323,6 +323,18 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
+  def addAdminNotice: Action[JsValue] =
+        PostJsonAction(RateLimits.BrowserError, maxBytes = 50) { request =>
+    val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
+    throwForbiddenIf(globals.isProd && !okE2ePassword, "TyE60MRGP35", "E2e pwd missing")
+    import request.body
+    val siteId = (body \ "siteId").as[SiteId]
+    val noticeId = (body \ "noticeId").as[NoticeId]
+    globals.siteDao(siteId).addAdminNotice(noticeId)
+    Ok
+  }
+
+
   def showLastE2eTestEmailSent(siteId: SiteId, sentToWithSpaces: String): Action[Unit] =
         ExceptionAction.async(cc.parsers.empty) { request =>
     SECURITY // COULD add and check an e2e password. Or rate limits.
@@ -357,7 +369,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
         firstCompletedOf(Seq(futureEmail, futureTimeout)).map({
           case emails: Vector[Email] =>
-            OkPrettyJson(JsArray(emails.map(email => {
+            OkPrettyJson(Json.obj("emails" -> JsArray(emails.map(email => {
               Json.obj(
                 "emailId" -> JsString(email.id),
                 "to" -> JsString(email.sentTo),
@@ -366,7 +378,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
                 "numRepliesBack" -> JsNum32OrNull(email.numRepliesBack),
                 "subject" -> JsString(email.subject),
                 "bodyHtmlText" -> JsString(email.bodyHtmlText))
-            })))
+            }))))
           case x =>
             InternalErrorResult("DwE7UGY4", "Mailer sent the wrong class: " + classNameOf(x))
         }).recover({
@@ -401,9 +413,9 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
       futureReply.map(sentToAddrsUntyped => {
         val sentToAddrs = sentToAddrsUntyped.asInstanceOf[Seq[String]]
         dieIf(!sentToAddrs.forall(Email.isE2eTestEmailAddress), "TyE2ABK503")
-        Ok(Json.obj(
+        OkApiJson(Json.obj(
           "num" -> sentToAddrs.length,
-          "addrsByTimeAsc" -> sentToAddrs)) as JSON
+          "addrsByTimeAsc" -> sentToAddrs))
       })
     }
 

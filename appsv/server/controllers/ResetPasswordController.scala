@@ -148,7 +148,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
       logger.info(s"s$siteId: Sending create password email ${toWho(member)} [TyM2AKBP05]")
     }
     sendChangePasswordEmailTo(member.briefUser, request, isCreating = member.passwordHash.isEmpty)
-    OkSafeJson(JsString("Ok."))
+    OkSafeJsValue(JsString("Ok."))
   }
 
 

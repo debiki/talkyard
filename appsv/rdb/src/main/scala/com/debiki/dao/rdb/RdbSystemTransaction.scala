@@ -1019,6 +1019,7 @@ class RdbSystemTransaction(
       delete from drafts3
       delete from post_read_stats3
       delete from notifications3
+      delete from notices_t
       delete from emails_out3
       delete from upload_refs3
       delete from uploads3

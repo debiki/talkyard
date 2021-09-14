@@ -34,7 +34,11 @@
 type U = undefined;
 type Vo = void; // but not 'V' because that's sometimes a 'V'alue template param.
 type Nl = null; // but not 'Nu' because that could be "Number".
-type Ay = any;  // but not 'An' because that sounds like 'an'.
+type N = null;  // ... hmm I don't think so. One letter U and N for undef & null,
+                // ... and 2 letters for "real" datatypes — easy to remember?
+                // "Nl" is actually a bit hard to read! (the 'l')
+type Ay = any;  // but not 'An' because that sounds like 'an'. Upd: Skip this. Use 'any',
+                // should try to long term do away with all 'any' anyway.
 type Bo = boolean;
 type Nr = number;
 type St = string;
@@ -51,6 +55,7 @@ type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}
 // or can return a boolean. So, boolean or falsy:
 type BoZ = Bo | Z;
 
+type NU  = null | undefined;
 type NUV = null | undefined | void;
 
 type StN = St | Nl;     // Many APIs return `string | null` e.g. HTMLElement.getAttribute.
@@ -84,7 +89,8 @@ type PatName = St;
 type Username = St;
 type PeopleId = UserId;   // REMOVE
 type PermissionId = number;
-type NotificationId = number;
+type NotificationId = number;  // RENAME to NotfId
+type NoticeId = Nr;
 type ReviewTaskId = number;
 type IdentityId = string;
 type IpAddress = string;
@@ -509,6 +515,11 @@ const enum Groups {   // QUICK RENAME to Pats or PatIds?
   MaxBuiltInGroupId = AdminsId,
 }
 
+
+const enum Notices {
+  TwitterLoginConfigured = 1001,
+  TwitterLoginInUse = 1002,
+}
 
 const enum ContribAgreement {
   CcBy3And4 = 10,

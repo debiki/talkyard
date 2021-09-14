@@ -36,6 +36,7 @@ describe(`embcom.manual.2br.e2e.ts  TyTE2EEMBCOMMAN`, () => {
 
     builder.getSite().meta.localHostname = localHostname;
     builder.getSite().settings.allowEmbeddingFrom = embeddingOrigin;
+    builder.getSite().settings.enableForum = false;
 
     everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
     richBrowserA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
