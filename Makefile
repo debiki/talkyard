@@ -231,6 +231,7 @@ debug_asset_bundles_files: \
 images/app/assets/server-bundle.js: \
        $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        $(shell find client/server/   -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts \
        modules/sanitize-html/dist/sanitize-html.min.js \
        client/third-party/html-css-sanitizer-bundle.js \
        node_modules/react/umd/react.production.min.js \
@@ -251,6 +252,7 @@ images/app/assets/server-bundle.js: \
 # Sync w gulpfile.js [embcmts_js_files]
 images/web/assets/talkyard-comments.js.gz: \
        $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts \
        client/third-party/bliss.shy.js \
        client/third-party/smoothscroll-tiny.js \
        client/app-slim/utils/calcScrollRectIntoViewCoords.js
@@ -260,7 +262,8 @@ images/web/assets/talkyard-comments.js.gz: \
 
 # Sync w gulpfile.js. [sw_js_files]
 images/web/assets/talkyard-service-worker.js.gz: \
-       $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+       $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileSwTypescript-concatScripts
 
@@ -268,6 +271,7 @@ images/web/assets/talkyard-service-worker.js.gz: \
 # Sync w gulpfile.js. [edr_js_files]
 images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
        $(shell find client/app-editor/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts \
        modules/sanitize-html/dist/sanitize-html.js \
        client/third-party/html-css-sanitizer-bundle.js \
        node_modules/markdown-it/dist/markdown-it.js \
@@ -282,7 +286,8 @@ images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
 
 # Sync w gulpfile.js. [head_js_files]
 images/web/assets/$(TALKYARD_VERSION)/head-bundle.js.gz: \
-       $(shell find client/app-head/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+       $(shell find client/app-head/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileHeadTypescript-concatScripts
 
@@ -290,6 +295,7 @@ images/web/assets/$(TALKYARD_VERSION)/head-bundle.js.gz: \
 # Sync with gulpfile.ts [more_js_files].
 images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
        $(shell find client/app-more/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts \
        node_modules/react-bootstrap/dist/react-bootstrap.js \
        node_modules/classnames/index.js \
        node_modules/react-input-autosize/dist/react-input-autosize.js \
@@ -302,6 +308,7 @@ images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
 # Sync with gulpfile.ts [slim_js_files].
 images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
        $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts \
        node_modules/react/umd/react.development.js \
        node_modules/react-dom/umd/react-dom.development.js \
        node_modules/prop-types/prop-types.js \
@@ -322,7 +329,8 @@ images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
 	s/d-gulp  compileSlimTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz: \
-       $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+       $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       client/types-and-const-enums.ts
 	@echo "\nRegenerating: $@ ..."
 	s/d-gulp  compileStaffTypescript-concatScripts
 
