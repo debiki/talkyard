@@ -566,6 +566,10 @@ prod-images-only-e2e-tests:  _kill_old_prod_build_project
 	@# This runs the e2e tests only.
 	s/build-prod-images.sh --skip-build
 
+prod-images-skip-build-and-e2e-test:  _kill_old_prod_build_project
+	@# This runs the e2e tests only.
+	s/build-prod-images.sh --skip-build --skip-e2e-tests
+
 
 tag-and-push-latest-images:  \
        tag-latest-images  push-tagged-images  _print_push_git_tag_command
