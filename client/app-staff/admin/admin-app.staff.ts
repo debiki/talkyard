@@ -1797,6 +1797,7 @@ const EmbeddedCommentsSettings = createFactory({
 
   render: function() {
     const props = this.props;
+    const store: Store = props.store;
     const currentSettings: Settings = props.currentSettings;
     const editedSettings: Settings = props.editedSettings;
     const embeddingUrl = currentSettings.allowEmbeddingFrom.trim();
@@ -1838,9 +1839,18 @@ const EmbeddedCommentsSettings = createFactory({
             r.br(),
             makeWhichBlogInput("Something Else", 'e_SthElseB')));
 
-    let discussionId = '';
+    // We'd want to use location.origin here, but Safari (and Chrome?) thinks
+    // addresses like: https://comments-for-blog-example-com.talkyard.net
+    // are too similar to: https://blog.example-com  (because of "blog-example-com"),
+    // and shows a big warning in the login popup (which opens on Talkyard's
+    // domain).
+    // No idea how Safari and Chrome will change their algorithm in the future.
+    // Anything with the slightest trace of the embedding website in the
+    // address, might break. — So let's use the public site id instead; that's
+    // a bunch of random chars.
+    // Also see this admin action-required notice: [emb_coms_origin].
     const blogInstrProps = {
-      talkyardServerUrl: location.origin,
+      talkyardServerUrl: eds.pubSiteIdOrigin,
       commentsScriptSrc: `${eds.cdnOrServerOrigin}/-/talkyard-comments${dotMin}.js`,
     };
 
