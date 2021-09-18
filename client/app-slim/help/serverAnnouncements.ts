@@ -62,6 +62,39 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
               r.b({ className: 'e_TwLgI-InUse' }, "Twitter login in use"),
               " — but will stop working.");
         break;
+      case Notices.ChangeBlogCommentsOrigin:  // [emb_coms_origin]
+        text = rFr({},
+            r.p({},
+              r.b({}, "Action required: "),
+              "In your blog's HTML templates, change the Talkyard server URL to ",
+              r.code({}, eds.pubSiteIdOrigin), ", like so:"),
+            r.pre({},
+              `<script>talkyardServerUrl='${eds.pubSiteIdOrigin}';</script>`),
+            r.p({},
+            `Thereafter you might need to regenerate your blog (depending on what ` +
+            `blog platform you use) and push to your Git repo (if any).`),
+            r.p({},
+              r.b({}, `Background: `),
+              `Some/many users might be unable to log in and post comments, ` +
+              `because the Safari web browser (unsure about Chrome and Edge) ` +
+              `shows a security warning in the login popup ` +
+              `(instead of showing the login popup contents). `),
+            r.p({},
+              `The browser would do that if it thinks your ` +
+              `auto generated Talkyard comments site address, is too similar ` +
+              `to the address of your blog itself — this could be phishing, ` +
+              `the broser thinks. ` +
+              `For example, if your blog address were: `, r.code({}, "blog.example.com"),
+              `, Talkyard would have generated an address like: `,
+              r.code({}, "comments-for-blog-example-com.talkyard.net"),
+              ` which the browser can think is too similar ` +
+              `(because of "`, r.i({}, 'blog-example-com'),
+              `" in the Talkyard address).`),
+            r.p({},
+              `You can ask questions `,
+              r.a({ href: 'https://www.talkyard.io/-610' },
+                    "on this page over at Talkyard.io")));
+        break;
       default:
     }
     // @ifdef DEBUG

@@ -519,6 +519,7 @@ const enum Groups {   // QUICK RENAME to Pats or PatIds?
 const enum Notices {
   TwitterLoginConfigured = 1001,
   TwitterLoginInUse = 1002,
+  ChangeBlogCommentsOrigin = 1003,
 }
 
 const enum ContribAgreement {

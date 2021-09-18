@@ -186,6 +186,7 @@ class SiteTpi protected (
           "debugOrigin" -> s"$httpsColonOrEmpty//$serverAddress", // [INLTAGORIG]
           "cdnOriginOrEmpty" -> JsString(cdnOrigin.getOrElse("")),
           "cdnOrServerOrigin" -> cdnOrServerOrigin, // for admin page embedded comments code
+          "pubSiteIdOrigin" -> pubSiteIdOrigin,
           "isInLoginWindow" -> isInLoginWindow, // @isInLoginWindowBoolStr,
           "isInLoginPopup" -> isInLoginPopup,  // @isInLoginPopupBoolStr,
           "isInAdminArea" -> isAdminApp, // @{ if (isAdminApp) "true" else "false" },
@@ -344,6 +345,9 @@ class SiteTpi protected (
 
   def uploadsUrlPrefix: St =
     cdnOrServerOrigin + ed.server.UploadsUrlBasePath + pubSiteId + '/'
+
+  def pubSiteIdOrigin: St =
+    globals.siteByPubIdOrigin(pubSiteId)
 
   /** Even if there's no CDN, we use the full server address so works also in
     * embedded comments iframes.

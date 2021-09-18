@@ -2355,6 +2355,7 @@ interface ServerVars {
   // in links.ts instead.
   // const debugOrigin: string;
 
+  pubSiteIdOrigin: St;
   cdnOriginOrEmpty: string;
   cdnOrServerOrigin: string;
   assetUrlPrefix: string;
