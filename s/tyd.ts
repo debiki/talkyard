@@ -22,6 +22,7 @@ completion.on('mainCmd', ({ reply }) => {
   reply([
         'h', 'help',
         'u', 'up', //'watchup',
+        'up0lim', // no rate limits, for load testing (from a single ip addr)
         'runl', // 'recreate-up-no-limits'  — not impl though. See
                 // docker-compose-no-limits.yml.
         'w', 'watch',
@@ -181,12 +182,15 @@ if (mainCmd === 'w' || mainCmd === 'watch') {
 }
 
 
-if (mainCmd === 'u' || mainCmd === 'up') {
+if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
   mainCmdIsOk = true;
+
+  const nolimConf = mainCmd !== 'up0lim' ? '' :
+          '-f docker-compose.yml -f docker-compose-no-limits.yml';
 
   // If only starting some specific containers, skip Yarn and Make.
   if (mainSubCmd) {
-    tyu.spawnInForeground(`docker-compose up -d ${allSubCmdsSt}`);
+    tyu.spawnInForeground(`docker-compose ${nolimConf} up -d ${allSubCmdsSt}`);
     tailLogsThenExit();
   }
 
@@ -195,7 +199,7 @@ if (mainCmd === 'u' || mainCmd === 'up') {
   // might decide to stop and restart just to pick up any soon newly built bundles?
   // (Also, log messages from make and the app server get mixed up with each other.)
   // Maybe  --no-bin-links?  [x_plat_offl_builds]
-  tyu.spawnInForeground(`docker-compose run --rm nodejs yarn install ${yarnOfflineSt}`);
+  tyu.spawnInForeground(`docker-compose ${nolimConf} run --rm nodejs yarn install ${yarnOfflineSt}`);
   let exitCode: ExitCode = tyu.spawnInForeground('make debug_asset_bundles');
   if (exitCode >= 1) {
     logError(`Error building asset bundles, Make exit code: ${exitCode}`)
@@ -204,10 +208,10 @@ if (mainCmd === 'u' || mainCmd === 'up') {
 
   // Run `up -d` in foreground, so we won't start the `logs -f` process too soon
   // — that process would exit, if `up -d` hasn't yet started any containers.
-  tyu.spawnInForeground('docker-compose up -d');
+  tyu.spawnInForeground(`docker-compose ${nolimConf} up -d`);
 
   // Just this:
-  tyu.spawnInForeground('docker-compose logs -f --tail 0');
+  tyu.spawnInForeground(`docker-compose ${nolimConf} logs -f --tail 0`);
   // ... instead of the below,
 
   // ... Skip this, because 'make watch' and assets rebuild problems
