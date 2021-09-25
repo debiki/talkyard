@@ -81,6 +81,7 @@ type CategoryId = number;   // too long name!
 type CatRef = string;
 type CategoryRef = string;  //
 type SiteId = number;
+type PubSiteId = St;
 type SiteVersion = number;
 type LoginId = string;
 type UserId = number;     // RENAME to PatId

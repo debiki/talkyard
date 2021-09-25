@@ -20,7 +20,7 @@ import tyAssert from './ty-assert';
 
 // ... Use die() and dieIf(), though, if an e2e test is broken
 // (rather than Talkyard itself).
-import { getOrCall, die, dieIf, logUnusual, logDebug,
+import { getOrCall, die, dieIf, logUnusual, logDebug, j2s,
     logError, logErrorNoTrace, logErrorIf,
     logWarning, logWarningIf,
     logException, logMessage, logMessageIf, logBoring,
@@ -364,8 +364,8 @@ export class TyE2eTestBrowser {
     }
 
     /** @deprecated */
-    getSource = async () => await this.#br.getPageSource();  // backw compat
-    getPageSource = async () => await this.#br.getPageSource();
+    getSource = async (): Pr<St> => await this.#br.getPageSource();  // backw compat
+    getPageSource = async (): Pr<St> => await this.#br.getPageSource();
 
     async host(): Pr<St> {
       const origin = await this.origin();
@@ -711,12 +711,24 @@ export class TyE2eTestBrowser {
 
 
     async getSiteId(): Pr<SiteId> {
+      return (await this.getSiteIds()).siteId;
+    }
+
+
+    async getPubSiteId(): Pr<PubSiteId> {
+      return (await this.getSiteIds()).pubSiteId;
+    }
+
+
+    async getSiteIds(): Pr<{ siteId: SiteId, pubSiteId: PubSiteId }> {
       const result = await this.#br.execute(function() {
-        return window['eds'].siteId;
+        return { siteId: window['eds'].siteId, pubSiteId: window['eds'].pubSiteId };
       });
-      dieIf(!result || _.isNaN(parseInt(result)),
-          "Error getting site id, result: " + JSON.stringify(result));
-      return result;  // ? return  parseInt(result.value)  instead ?
+      dieIf(!result || !result.siteId || !result.pubSiteId,
+            `Error getting site ids, result: ${j2s(result)}  [TyE6MWE520R5MRS]`);
+      dieIf(_.isNaN(result.siteId),
+            `Error getting site ids: Site id is NaN: ${j2s(result)}  [TyE6MR20E456]`);
+      return result;
     }
 
 
@@ -1981,13 +1993,24 @@ export class TyE2eTestBrowser {
           var middleY = rect.top + rect.height / 2;
           var elemAtTopOfCenter = document.elementFromPoint(middleX, middleY);
           if (!elemAtTopOfCenter) {
-            // This happens if the elem is outside the viewport.
-            return [`Elem not in viewport? ` +
-                `elementFromPoint(${middleX}, ${middleY}) returns: ${elemAtTopOfCenter}, ` +
-                `elem top left width height: ` +
-                  `${rect.left}, ${rect.top}, ${rect.width}, ${rect.height}\n` +
-                `--- elem.innerHTML.substr(0,100): ------------------------\n` +
-                `${elem.innerHTML?.substr(0,100)}\n` +
+            // This happens if the elem is outside the viewport,  [e2e_win_size]
+            // """ If the specified point is outside the visible bounds of the document
+            // or either coordinate is negative, the result is null."""
+            // https://developer.mozilla.org/en-US/docs/Web/API/Document/elementFromPoint
+            var message =
+                    elemAtTopOfCenter === null ?
+                        "Element not in viewport:\n" : "Error finding element from point:\n";
+            return [message +
+                `    elementFromPoint(middleX = ${middleX}, middleY = ${middleY
+                        })  returns: ${elemAtTopOfCenter},\n` +
+                `    elem bottom, right; top, left; width, height: ${
+                        rect.bottom}, ${rect.right}; ${
+                        rect.top}, ${rect.left}; ${
+                        rect.width}, ${rect.height}\n` +
+                `    win innerHeight, innerWidth: ` +
+                        `${window.innerHeight}, ${window.innerWidth}\n` +
+                `--- elem.innerHTML.substr(0,150): ------------------------\n` +
+                `${elem.innerHTML?.substr(0,150)}\n` +
                 `----------------------------------------------------------`, ''];
           }
 
@@ -2036,9 +2059,9 @@ export class TyE2eTestBrowser {
         timeoutMs: opts.timeoutMs,
         timeoutIsFine: opts.timeoutIsFine,
         message: () =>
-            `Waiting for elem [ ${selector} ] to not be occluded, ` +
-                `okayOccluders: [ ${opts.okayOccluders} ],\n` +
-            `problem: ${result[0]}, occluder's text content: """${result[1]}"""`,
+            `waitUntilElementNotOccluded(): Waiting for [ ${selector} ] to not be occluded, ` +
+                `okayOccluders: ${j2s(opts.okayOccluders)},\n` +
+            `Problem: ${result[0]}\nAny occluder's text content: """${result[1]}"""`,
 
       });
     }
@@ -3671,6 +3694,9 @@ export class TyE2eTestBrowser {
         logMessage('fillInPassword...');
         await this.loginDialog.fillInPassword(data.password);
         logMessage('clickSubmit...');
+        // In headless Chrome (-i flag), the middle of the button is 0.2 pixels below
+        // the lower edge of any login popup. So scroll to the bottom. [e2e_win_size]
+        await this.scrollToBottom();
         await this.loginDialog.clickSubmit();
         logMessage('acceptTerms...');
         await this.loginDialog.acceptTerms(data.shallBecomeOwner || shallBecomeOwner);

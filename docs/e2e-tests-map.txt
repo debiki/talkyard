@@ -782,6 +782,9 @@ chat:
           - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24.TyT0527X8M302
 
 embedded comments:
+  create site:
+            - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1
+            - no verif email
   no about page created:  [5WAKR02]
   post comment:
           - "all" e2e emb cmts tests
@@ -956,7 +959,7 @@ intro tours:
   forum section, blog comments, admin tour:
           - embedded-comments-forum-intro-tour.test.ts  TyT6AKBR2044
   exit tour:
-          - embedded-comments-create-site-req-verif-email.2browsers.test.ts [Ty7ABKR024]
+            - embcom.create-site-req-verif-email-exit-tours.2br TyTE2ECREMBCOM1.Ty7ABKR024
   restart tour:  [TyT2ABKRT05]
 
 

@@ -182,6 +182,8 @@
   // Draw double lines through the list. No, hard to see the difference between 2 lines and just 1 line.
   //background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><path d='M56 0 L10 100' stroke='%235a5a5a' stroke-width='11'/><path d='M90 0 L44 100' stroke='%235a5a5a' stroke-width='11'/></svg>");
 
+
+
 // Twitter Bootstrap
 //===========================
 
@@ -300,6 +302,12 @@ input, textarea {
 @media (min-width: $modalDialogBreakpoint)
   .modal-dialog
     width: 630px;  // else 600, Bootstrap's default
+
+// If we're in some popup or small win, better show scrollbars if needed.  [e2e_win_size]
+// Does it make sense to show only in small wins?
+// Like so: @media (max-height: 1000px)
+.modal .modal-content
+  overflow-y: auto;
 
 // Scrollbars appear sometimes although not needed, in the editor dialog, when full screen,
 // and opening the category dropdown. (Sep 2016)
