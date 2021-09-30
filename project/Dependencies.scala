@@ -55,7 +55,7 @@ object Dependencies {
     // extra checks in module ty-core. [5AKR20]
     val apacheTika = "org.apache.tika" % "tika-core" % "1.27"
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.14.2"   // newest as of 2021-08
+    val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-08
 
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
