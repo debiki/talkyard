@@ -101,17 +101,17 @@ object Dependencies {
 
     // ----- PASETO tokens
 
-    val jpasetoApi = "dev.paseto" % "jpaseto-api" % "0.6.0"  // compile time (default)
-    val jpasetoImpl = "dev.paseto" % "jpaseto-impl" % "0.6.0" // % "runtime"
+    val jpasetoApi = "dev.paseto" % "jpaseto-api" % "0.7.0"  // compile time (default)
+    val jpasetoImpl = "dev.paseto" % "jpaseto-impl" % "0.7.0" // % "runtime"
 
     // Dependency Hell: Cannot use jpaseto-jackson (and we don't need it, fortunately) —
     // it depends on jackson-databind:2.11.2, but other modules require 2.10.*.
     //val jpasetoJackson = "dev.paseto" % "jpaseto-jackson" % "0.6.0" //% "runtime"
     // But Gson works, no conflict:
-    val jpasetoGson = "dev.paseto" % "jpaseto-gson" % "0.6.0" //% "runtime"
+    val jpasetoGson = "dev.paseto" % "jpaseto-gson" % "0.7.0" //% "runtime"
 
     // Needed for v2.local. Also needs OS native lib sodium.
-    val jpasetoSodium = "dev.paseto" % "jpaseto-sodium" % "0.6.0"
+    val jpasetoSodium = "dev.paseto" % "jpaseto-sodium" % "0.7.0"
 
     // Needed for v2.public, in Java 8:
     // But the BouncyCastle docs are not nice to read, plus ads.
