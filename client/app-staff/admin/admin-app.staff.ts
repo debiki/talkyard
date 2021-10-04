@@ -1647,7 +1647,7 @@ const FeatureSettings = createFactory({
           help: rFr({},
             "Lets other websites of yours send API requests to this Talkyard site. ",
             (isApiEnabled ? '' : rFr({},
-                "Currently ", r.b({}, "you need to enalbe the API"), " (above)"))),
+                "Currently ", r.b({}, "you need to enable the API"), " (above)"))),
           // Dont' hide completely — then people asks for help about how to enable it.
           disabled: !isApiEnabled,
           getter: (s: Settings) => s.enableCors,
