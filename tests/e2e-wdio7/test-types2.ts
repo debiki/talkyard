@@ -245,6 +245,7 @@ interface TestSiteSettings {
   numFlagsToBlockNewUser?: number;
   numFlaggersToBlockNewUser?: number;
   enableForum?: Bo;
+  enableTags?: Bo;
   enableApi?: boolean;
   ssoUrl?: string;
   enableSso?: boolean;
@@ -465,6 +466,7 @@ interface PageJustAdded {
   authorId: number;
   createdAtMs: number;
   updatedAtMs: number;
+  layout: PageLayout;
 }
 
 
@@ -637,7 +639,7 @@ interface EmailSubjectBody {
 
 interface EmptyTestForum {
   siteData: SiteData;
-  forumPage: any;
+  forumPage: PageJustAdded;
   members: {
     owen?: Member;
     adam?: Member;

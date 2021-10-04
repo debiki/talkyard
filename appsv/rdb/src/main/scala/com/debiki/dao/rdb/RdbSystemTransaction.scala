@@ -1008,11 +1008,13 @@ class RdbSystemTransaction(
 
     // Dupl code [7KUW0ZT2]
     s"""
+      delete from audit_log3
       delete from index_queue3
       delete from spam_check_queue3
+      delete from tags_t
+      delete from tagtypes_t
       delete from links_t
       delete from link_previews_t
-      delete from audit_log3
       delete from review_tasks3
       delete from perms_on_pages3
       delete from settings3

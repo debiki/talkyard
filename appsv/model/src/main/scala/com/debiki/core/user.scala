@@ -909,9 +909,9 @@ sealed trait ParticipantInclDetails {
   def website: Option[String] = None  ; RENAME // to websiteUrl
   def country: Option[String] = None  ; SHOULD // CHANGE to  location somehow, opt incl city
 
-  def asGroupOr(doWhat: DieOrComplain): Group = this match {
+  def asGroupOr(mab: MessAborter): Group = this match {
     case g: Group => g
-    case _ => dieOrComplain("Not a group [TyE6502MRA6]", doWhat)
+    case _ => mab.abort("Not a group [TyE6502MRA6]")
   }
 }
 

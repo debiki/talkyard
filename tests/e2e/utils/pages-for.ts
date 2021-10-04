@@ -1536,7 +1536,7 @@ export class TyE2eTestBrowser {
           if (isBadElemException(ex)) {
             // Fine, maybe it didn't appear yet?
             logUnusual(`Bad element exception when waiting for:  ${
-                  selector} — retrying ...`);
+                  selector}  — will retry. The error: ${ex.toString()}`);
             return false;
           }
           if (isWindowClosedException(ex)) {
@@ -1736,34 +1736,6 @@ export class TyE2eTestBrowser {
         message: `Waiting for  ${selector}  to be clickable`
       });
       return clickable ? 'Clickable' : 'NotClickable';
-    }
-
-
-    waitAndClickLinkToNewPage(selector: string, refreshBetweenTests?: boolean) {
-      // Keep the debug stuff, for now — once, the click failed, although visible already, weird.
-      let delay = 30;
-      //let count = 0;
-      //logMessage(`waitAndClickLinkToNewPage ${selector} ...`);
-      this.waitUntilLoadingOverlayGone();
-      while (true) {
-        this.waitForMyDataAdded();
-        this.#br.pause(delay);
-        //logMessage(`waitAndClickLinkToNewPage ${selector} testing:`);
-        if (this.isEnabled(selector)) {
-          //logMessage(`waitAndClickLinkToNewPage ${selector} —> FOUND and ENABLED`);
-          // count += 1;
-          // if (count >= 6)
-          break;
-        }
-        else {
-          //logMessage(`waitAndClickLinkToNewPage ${selector} —> NOT found...`);
-          if (refreshBetweenTests) this.#br.refresh();
-          delay *= 1.67;
-        }
-      }
-      this.rememberCurrentUrl();
-      this.waitAndClick(selector);
-      this.waitForNewUrl();
     }
 
 

@@ -55,6 +55,9 @@ type Z = 0 | false | '' | null | undefined | void;  // don't incl [] or {}
 // or can return a boolean. So, boolean or falsy:
 type BoZ = Bo | Z;
 
+// Void function.
+type VoFn = () => Vo;
+
 type NU  = null | undefined;
 type NUV = null | undefined | void;
 
@@ -71,6 +74,7 @@ type Elm = Element;
 
 type SiteData = any;   // [3SD5PB7]
 
+// Many many [opaque_type]s!
 type PageId = string;
 type PostId = number;
 type PostNr = number;
@@ -80,7 +84,10 @@ type CatId = number;
 type CategoryId = number;   // too long name!
 type CatRef = string;
 type CategoryRef = string;  //
+type TagTypeId = Nr;
+type TagId = Nr;
 type SiteId = number;
+type PubSiteId = St;
 type SiteVersion = number;
 type LoginId = string;
 type UserId = number;     // RENAME to PatId
@@ -163,6 +170,17 @@ const enum TopicFilters {
   ShowDeleted = 'ShowDeleted',
 }
 
+
+const enum ThingType {
+  Pats = 7,
+  Posts = 56,
+}
+
+const enum No {
+  PageIdSt = '0',
+  TagTypeId = 0,
+  TagId = 0,
+}
 
 const enum ReviewDecision {
   // 1nnn = Accept.

@@ -1647,7 +1647,7 @@ const FeatureSettings = createFactory({
           help: rFr({},
             "Lets other websites of yours send API requests to this Talkyard site. ",
             (isApiEnabled ? '' : rFr({},
-                "Currently ", r.b({}, "you need to enalbe the API"), " (above)"))),
+                "Currently ", r.b({}, "you need to enable the API"), " (above)"))),
           // Dont' hide completely — then people asks for help about how to enable it.
           disabled: !isApiEnabled,
           getter: (s: Settings) => s.enableCors,
@@ -1685,7 +1685,7 @@ const FeatureSettings = createFactory({
         !isForumEnabled ? null : Setting2(props, {
           type: 'checkbox', label: "Enable categories",
           className: 'e_A_Ss_S-ShowCatsCB',
-          help: "Unckeck to disable categories and hide category related buttons and columns " +
+          help: "Uncheck to disable categories and hide category related buttons and columns " +
           "— can make sense if your community is small and you don't need different categories.",
           getter: (s: Settings) => s.showCategories,
           update: (newSettings: Settings, target) => {
@@ -1693,7 +1693,16 @@ const FeatureSettings = createFactory({
           }
         }),
 
-        // Later enableTags
+        // Blogs have their own tags system, probably no need to use Ty's too.
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable tags",
+          className: 'e_EnbTagsCB',
+          help: "Uncheck to disable page tags.",
+          getter: (s: Settings) => s.enableTags,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableTags = target.checked;
+          }
+        }),
 
         !isForumEnabled ? null : Setting2(props, {
           type: 'checkbox', label: "Enable chat",

@@ -408,7 +408,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.ShowNewPage:
-      showNewPage(action.newPage, action.newPublicCategories, action.newUsers, action.me, action.history);
+      showNewPage(action.params);
     break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
@@ -1490,6 +1490,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     store.superadmin = storePatch.superadmin;
   }
 
+  // ----- Oneself
+
   if (storePatch.me) {
     // [redux] modifying the store in place, again.
     let patchedMe: Myself | U;
@@ -1512,6 +1514,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     }
     store.me = patchedMe;
   }
+
+  // ----- Drafts
 
   if (storePatch.deleteDraft) {
     const deletor: DraftDeletor = storePatch.deleteDraft;
@@ -1547,6 +1551,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     });
   }
 
+  // ----- Categories
+
   if (storePatch.publicCategories) {
     dieIf(!storePatch.restrictedCategories, 'TyEK2WP49');
     // [redux] modifying the store in place, again.
@@ -1557,14 +1563,34 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
   }
 
-  if (storePatch.tagsStuff) {
-    // [redux] modifying the store in place, again.
-    store.tagsStuff = _.assign(store.tagsStuff || {}, storePatch.tagsStuff);
+  // ----- Tags and badges
+
+  // @ifdef DEBUG
+  dieIf(storePatch.allTagTypes && storePatch.tagTypes, 'TyE40JMW3XP5');
+  // @endif
+
+  const tagTypes: TagType[] = storePatch.tagTypes || [];
+  if (tagTypes.length) {
+    store.tagTypesById = { ...store.tagTypesById };
+    for (const tt of tagTypes) {
+      store.tagTypesById[tt.id] = tt;
+    }
   }
+
+  if (storePatch.allTagTypes) {
+    store.tagTypesById = groupByKeepOne(storePatch.allTagTypes, tt => tt.id);
+  }
+  if (storePatch.allTagTypeStatsById) {
+    store.tagTypeStatsById = storePatch.allTagTypeStatsById;
+  }
+
+  // ----- Users
 
   _.each(storePatch.usersBrief || [], (user: BriefUser) => {
     store.usersByIdBrief[user.id] = user;
   });
+
+  // ----- Pages
 
   _.each(storePatch.pageMetasBrief || [], (pageMeta: PageMetaBrief) => {
     store.pageMetaBriefById[pageMeta.pageId] = pageMeta;
@@ -1606,7 +1632,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     // lazily only for embedded comments, and then there's no watchbar.
   }
 
-  // New or moved/removed posts?
+  // ----- Posts — new or re/moved?
+
   _.each(storePatch.postsByPageId, (patchedPosts: Post[], patchedPageId: PageId) => {
     // Highligt pages with new posts, in the watchbar.
     if (patchedPageId !== store.currentPageId) {
@@ -1659,6 +1686,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     return;
   }
 
+  // ----- Posts, edited?
+
   _.each(store.pagesById, patchPage);
 
   function patchPage(page: Page) {
@@ -1666,7 +1695,7 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     if (!storePatchPageVersion || storePatchPageVersion < page.pageVersion) {
       // These changes are old, might be out-of-date, ignore.
       // COULD rename .usersBrief to .authorsBrief so it's apparent that they're related
-      // to the posts, and that it's ok to ignore them if the posts are too old.
+      // to the posts, and that it's ok to ignore them if the posts are too old.  [store_patch_pats]
       return;
     }
     else if (storePatchPageVersion === page.pageVersion) {
@@ -1697,8 +1726,12 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
 }
 
 
-function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: BriefUser[],
-        updatedMe: Myself | null, history) {
+function showNewPage(ps: ShowNewPageParams) {
+  const newPage = ps.newPage;
+  const newPublicCategories = ps.pubCats;
+  const newUsers = ps.pats;
+  const updatedMe = ps.me;
+  const history = ps.history;
 
   // Upload any current reading progress, before changing page id.
   page.PostsReadTracker.sendAnyRemainingData(() => {}); // not as beacon
@@ -1751,6 +1784,9 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   _.each(newUsers, (user: BriefUser) => {
     store.usersByIdBrief[user.id] = user;
   });
+
+  // Add page tags and user badges needed to render the page.
+  store.tagTypesById = { ...store.tagTypesById, ...ps.tagTypesById };
 
   // Update <html> elem classes list, so pages with custom classes & CSS render properly.
   const oldClassesStr = (oldPage.pageHtmlTagCssClasses || '') + magicClassFor(oldPage);

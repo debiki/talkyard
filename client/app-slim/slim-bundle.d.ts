@@ -440,6 +440,8 @@ declare namespace debiki2 {
 
   var anyForbiddenPassword;
 
+  function tags_mkSortFn(tagTypesById: TagTypesById): (a: Tag, b: Tag) => Nr;
+
   function isSection(pageRole: PageRole): boolean;
   function page_isClosedUnfinished(page: Page): Bo;
   function page_isDone(page: Page | Topic): Bo;
@@ -519,6 +521,9 @@ declare namespace debiki2 {
   function UserName(props: {
       user: Pat, store?: Store, settings?: SettingsVisibleClientSide,
       makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo });
+
+  function TagListLive(ps: TagListLiveProps): RElm | U;
+  function TagList(ps: TagListProps): RElm | U;
 
   var FacebookLogoImage;
 

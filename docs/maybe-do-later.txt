@@ -39,6 +39,7 @@ https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
 
 [subcats]
 DONE: Implement sub categories.
+But missing: Search in sub cats, if searching in base cat.
 
 [propagate_cat_perms]
 It'd be nice if there was a way to get an overview of sub cat permissions,
@@ -56,6 +57,15 @@ regardless of how they inherited permissions from other groups.
 
 [tags]
 Nice props / tags in Gerrit: https://chromium-review.googlesource.com/c/v8/v8/+/2537690
+
+[missing_tags_feats]
+Wasn't fixed in first iteration.
++ search by content tags, incl in ElasticSearch index (faceted search).
++ orig post author user flair (badge).
++ might as well add search-by-user-id/username/full-name at the same time?
+  And upgr ES to 7.x.
++ search for all JsUser(_) — then tags (badges) not included.
++ get notified about posts w tags one follows
 
 [sw] [sse]
 DONE: Service worker.  No, skip, using Websocket instead of:  Server sent events.
@@ -108,7 +118,7 @@ https://docs.gitlab.com/ee/user/application_security/dast/index.html
 [repr_builds]
 Reproducible builds.
 
-[rate_limits]
+[rate_limits][to_rate_lim]
 Configurable rate limits.
 
 [precompile_luajit]  COULD_OPTIMIZE
@@ -179,12 +189,13 @@ toxicity/content-filter, image scan, other uploads / check hashsums, outgoing li
 
 
 [undel_pages]
-Should remember who deleted it, so can see one's own deleted pages and undelete them,
+DONE: Should remember who deleted it, so can see one's own deleted pages and undelete them,
 but cannot seem one's own pages if instead they got deleted by staff.
 In fact, all pages_t.deleted_at, frozen_at,  etc,
    should instead be   deleted_by, frozen_by, etc
    — because always good to remember who did it; often, that person may undo (+ staff).
    But *when*, that's for the audit log.
+Missing: Improve the UX.
 
 [undel_posts] [62AKDN46] [apr_deld_post] [apr_movd_orig_post]
 Undelete posts, not just pages and categories.
@@ -234,6 +245,10 @@ Search for that tag.
 Improve sub communities, e.g. selecting a category across all sub communities,
 not only the current one.
 
+[large_pages]
+Support pages with 10 000+ replies or 10M replies.
+(Some real life blog posts get 2M comments!)
+
 [performance]
 Use:  ch.qos.Logback.classic.AsyncAppender, measure req/s bef & aftr.
 Nginx: error_log  debug vs warn.
@@ -253,6 +268,13 @@ vm.overcommit_ratio = 75   (how much, in %, of the mem + swap the kernel may ove
 https://news.ycombinator.com/item?id=27794237 CloudSQL Postgres misconfigured OS OOM killer
 https://stackoverflow.com/questions/52148675/aws-rds-with-postgres-is-oom-killer-configured
 
+[when_pg_smarter]
+Can remove fk indexes?:
+  tags_i_parentid_patid
+  tags_i_parentid_postid
+And these unique indexes:
+  tags_u_id_patid
+  tags_u_id_postid
 
 [table_partitions]
 {{{2 Shard tables by site_id_c?

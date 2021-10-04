@@ -364,11 +364,17 @@ package object core {
   def isPageTempId(pageId: PageId): Boolean =
     pageId.length == 10 && pageId.startsWith("2000") // good enough for now
 
-  type Tag = String
+  type TagTypeId = i32
+  type TagId = i32
+
+  // Old ------------
+  type Tag_old = String
   type TagDefId = Int
   type TagLabelId = Int
   type TagLabel = String
-  val NoTagId: TagLabelId = 0
+  // ----------------
+  val NoTagId: TagId = 0
+  val NoTagTypeId: TagTypeId = 0
 
   /** Email identities are strings, all others are numbers but converted to strings. */
   type IdentityId = String
@@ -404,6 +410,7 @@ package object core {
   case object Fine extends AnyProblem {
     override def isFine: Bo = true
   }
+
 
   /**
     * @param message — for end users
@@ -843,6 +850,14 @@ package object core {
     reactStoreJsonHash = "wrong")
 
 
+  case class TagTypeStats(
+    tagTypeId: TagTypeId,
+    numTotal: Int,
+    numPostTags: Int,
+    numPatBadges: Int)
+
+
+  @deprecated
   case class TagAndStats(
     label: TagLabel,
     numTotal: Int,

@@ -35,6 +35,7 @@ interface PageToAdd {
   showId?: boolean;
   slug?: string;
   role: number;// PageRole;
+  layout?: PageLayout;
   title: string;
   body: string;
   categoryId?: number;// CategoryId;

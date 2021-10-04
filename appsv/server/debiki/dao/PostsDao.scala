@@ -96,7 +96,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatch(newPost, author, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(newPost, author, showHidden = true)
 
     // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
@@ -617,7 +617,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatch(post, author, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(post, author, showHidden = true)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 

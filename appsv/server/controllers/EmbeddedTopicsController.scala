@@ -144,7 +144,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           dao = dao,
           request = request.request)
 
-        (request.dao.renderPageMaybeUseMemCache(pageRequest), pageRequest)
+        (request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest), pageRequest)
     }
 
     // Privacy tools and settings might break cookies. If we may not use cookies,  [NOCOOKIES]

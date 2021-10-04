@@ -298,7 +298,7 @@ object RdbUtil {
         country = dn2e(rs.getString("u_country")).trimNoneIfEmpty,
         lockedThreatLevel = lockedThreatLevel)
     else if (isGroup) {
-      val perms = PatPerms.create(ifBad = Die,
+      val perms = PatPerms.create(IfBadDie,
             maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
             allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
       Group(
@@ -340,7 +340,7 @@ object RdbUtil {
 
 
   def getGroup(rs: js.ResultSet): Group = {
-    val perms = PatPerms.create(ifBad = Die,
+    val perms = PatPerms.create(IfBadDie,
           maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
           allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
     Group(

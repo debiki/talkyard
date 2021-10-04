@@ -375,16 +375,33 @@ object ForumController {
 
   // Vaguely similar code: ThingsFoundJson.makePagesFoundResponseImpl()  [406RKD2JB]
   //
-  def makeTopicsResponse(categoryId: Option[CategoryId], topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
-    val category: Option[Category] = categoryId.flatMap(dao.getCategory)
+  def makeTopicsResponse(categoryId: Opt[CatId], topics: Seq[PagePathAndMeta],
+          dao: SiteDao): Result = {
+    val category: Opt[Cat] = categoryId.flatMap(dao.getCategory)
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
-    val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
+    val pageStuffList: Iterable[PageStuff] = pageStuffById.values
+
+    val users = dao.getUsersAsSeq(pageStuffList.flatMap(_.userIds).toSet)
+
+    // In the topic list, we show only post tags (not author badges),
+    // so we don't need any pat tags (user badges).
+
+    val tagTypeIds = pageStuffList.flatMap(_.pageTags.map(_.tagTypeId))
+    val tagTypes = dao.getTagTypes(tagTypeIds.toSet)
+
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
-    val json = Json.obj(   // LoadTopicsResponse
-      "categoryId" -> JsNumberOrNull(categoryId),
-      "categoryParentId" -> JsNumberOrNull(category.flatMap(_.parentId)),
+    val json = Json.obj(   // ts: LoadTopicsResponse
       "topics" -> topicsJson,
-      "users" -> users.map(JsUser))
+
+      // ----- ts: StorePatch
+      "tagTypes" -> JsArray(tagTypes map JsTagType),
+      // --------------------
+
+      // These lack tags (badges) — make sure won't overwrite. [maybe_incl_tags_tagtypes]
+      // We won't — the StorePatch looks at a usersBrief field instead. [store_patch_pats]
+      // Oops but browser side we rename 'userst' to 'usersBrief'!  [missing_tags_feats]
+      // SLEEPING_BUG: pat tags lost? resp.users doesn't incl pat tags. [pat_tags_lost]
+      "users" -> users.map(JsUser(_)))
     OkSafeJson(json)
   }
 
@@ -416,6 +433,7 @@ object ForumController {
       "url" -> urlPath,
       // Private chats & formal messages might not belong to any category.
       "categoryId" -> JsNumberOrNull(page.categoryId),
+      "pubTags" -> JsArray(topicStuff.pageTags map JsTag),
       "pinOrder" -> JsNumberOrNull(page.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.pinWhere.map(_.toInt)),
       "excerpt" -> JsStringOrNull(topicStuff.bodyExcerpt),

@@ -23,6 +23,7 @@ import com.debiki.core.Prelude._
 import debiki.{GetEndToEndTestEmail, Nashorn, NumEndToEndTestEmailsSent, RateLimits}
 import debiki.dao.PagePartsDao
 import debiki.EdHttp._
+import debiki.JsonUtils.{parseOptInt32, parseOptSt}
 import ed.server.{EdContext, EdController}
 import ed.server.pop.PagePopularityCalculator
 import ed.server.pubsub.WebSocketClient
@@ -305,12 +306,20 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   def skipRateLimitsForThisSite: Action[JsValue] =
-        PostJsonAction(RateLimits.BrowserError, maxBytes = 50) { request =>
+        PostJsonAction(RateLimits.BrowserError, maxBytes = 150) { request =>
     val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
     throwForbiddenIf(globals.isProd && !okE2ePassword,
       "TyE8WTHFJ25", "I only do this, in Prod mode, if I can see two moons from " +
         "my kitchen window and at least two of my pigeons tell me I should.")
-    val siteId = (request.body \ "siteId").as[SiteId]
+    val anySiteId: Opt[i32] = parseOptInt32(request.body, "siteId")
+    val anySiteOrigin: Opt[St] = parseOptSt(request.body, "siteOrigin")
+    throwBadReqIf(anySiteId.isDefined == anySiteOrigin.isDefined, "TyE0J5MWSG24",
+          "Specify only one of siteId and siteOrigin")
+    val siteId = anySiteId getOrElse {
+      val site = request.context.globals.lookupSiteOrThrow(anySiteOrigin.get)
+      site.id
+    }
+
     globals.siteDao(siteId).skipRateLimitsBecauseIsTest()
     Ok
   }

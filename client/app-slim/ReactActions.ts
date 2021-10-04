@@ -1432,8 +1432,8 @@ export function patchTheStore(storePatch: StorePatch, onDone?: () => void) {
 }
 
 
-export function maybeLoadAndShowNewPage(store: Store,
-        history, location: ReactRouterLocation, newLocation?: ReactRouterLocation) {
+export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistory,
+        location: ReactRouterLocation, newLocation?: ReactRouterLocation) {
 
   // No router, so no history or location, if in embedded comments discussion.
   if (!history || !location) {
@@ -1444,7 +1444,7 @@ export function maybeLoadAndShowNewPage(store: Store,
     return;
   }
 
-  let newUrlPath = newLocation ? newLocation.pathname : undefined;
+  let newUrlPath: St | U = newLocation ? newLocation.pathname : undefined;
 
   // If navigating within a mounted component. Maybe new query string?
   if (location.pathname === newUrlPath)
@@ -1525,7 +1525,7 @@ export function maybeLoadAndShowNewPage(store: Store,
 }
 
 
-export function loadAndShowNewPage(newUrlPath, history) {
+function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
   // UX maybe dim & overlay-cover the current page, to prevent interactions, until request completes?
   // So the user e.g. won't click Reply and start typing, but then the page suddenly changes.
   Server.loadPageJson(newUrlPath, response => {
@@ -1555,25 +1555,27 @@ export function loadAndShowNewPage(newUrlPath, history) {
     // This is the React store for showing the page at the new url path.
     const newStore: Store = JSON.parse(response.reactStoreJsonString);
     const pageId = newStore.currentPageId;
-    const page = newStore.pagesById[pageId];
-    const newUsers = _.values(newStore.usersByIdBrief);
-    const newPublicCategories = newStore.publicCategories;
+    const newPage = newStore.pagesById[pageId];
+    const pats = _.values(newStore.usersByIdBrief);
+    const pubCats = newStore.publicCategories;
 
     // This'll trigger ReactStore onChange() event, and everything will redraw to show the new page.
-    showNewPage(page, newPublicCategories, newUsers, response.me, history);
+    showNewPage({
+      newPage,
+      pubCats,
+      pats,
+      me: response.me,
+      tagTypesById: newStore.tagTypesById,
+      history,
+    });
   });
 }
 
 
-export function showNewPage(newPage: Page | AutoPage, newPublicCategories, newUsers: BriefUser[],
-        me: Myself, history: History) {
+export function showNewPage(params: ShowNewPageParams) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowNewPage,
-    newPage,
-    newPublicCategories,
-    newUsers,
-    me,
-    history,
+    params,
   });
 }
 

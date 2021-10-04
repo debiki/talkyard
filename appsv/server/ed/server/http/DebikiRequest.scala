@@ -91,6 +91,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   // Instead, use 'requester' always, to refer to the requester.
   def requester: Option[Participant] = user
   def reqer: Opt[Pat] = user  // shorter, nicer. "Req" = request, + "er" = "requester"
+                        RENAME // to  anyReqer?
   def requesterOrUnknown: Participant = user getOrElse UnknownParticipant
   def requesterIdOrUnknown: UserId = user.map(_.id) getOrElse UnknownUserId
   def theRequester: Participant = theUser

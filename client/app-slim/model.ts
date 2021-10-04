@@ -394,7 +394,7 @@ interface Post {
   // And for drafts, we show a <pre>the-source</pre>, for now. [DFTSRC]
   unsafeSource?: string;
   sanitizedHtml?: string;
-  tags?: string[];
+  pubTags?: Tag[];
   numPendingFlags?: number;
   numHandledFlags?: number;
 }
@@ -478,10 +478,11 @@ interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
 
 // Extend Pat, set id to a new StrangerId if not logged in?
 type Me = Myself
-interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
+interface Myself extends OwnPageNotfPrefs {   // + extends Pat?  RENAME to Me
   dbgSrc?: string;
   id?: UserId;
   isStranger?: Bo;
+  // missing?: isGuest?: Bo
   isGroup?: boolean; // currently always undefined (i.e. false)
   isLoggedIn?: boolean;
   isAdmin?: boolean;
@@ -752,6 +753,47 @@ interface CategoryPatch extends Category {  // or Partial<Category>?
 }
 
 
+
+interface TagType {
+  id: TagTypeId;
+  canTagWhat: ThingType;
+  dispName: St;
+}
+
+
+interface TagTypeStats {
+  tagTypeId: TagTypeId;
+  numTotal: Nr;
+  numPostTags: Nr;
+  numPatBadges: Nr;
+}
+
+
+interface Tag {
+  id: TagId;
+  tagTypeId: TagTypeId;
+  onPatId?: PatId;
+  onPostId?: PostId;
+}
+
+
+// Previously, old tags:
+/*
+interface TagAndStats {
+  label: string;
+  numTotal: number;
+  numPages: number;
+  numSubscribers?: number;
+  numMuted?: number;
+}
+
+interface TagsStuff {
+  tagsAndStats?: TagAndStats[];
+  myTagNotfLevels?: { [tagLabel: string]: PageNotfLevel };
+}
+*/
+
+
 interface Topic {
   pageId: string;
   pageRole: PageRole;
@@ -764,6 +806,7 @@ interface Topic {
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;
+  pubTags?: Tag[];
   firstImageUrls?: string[];
   popularRepliesImageUrls?: string[];
   popularityScore?: number;
@@ -1088,7 +1131,9 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
 
   debugStartPageId: string;
 
-  tagsStuff?: TagsStuff;
+  tagTypesById?: TagTypesById;
+  tagTypeStatsById?: { [tagTypeId: number]: TagTypeStats };
+
   superadmin?: SuperAdminStuff;
 }
 
@@ -1210,15 +1255,6 @@ interface SiteSection {  // also see interface Forum just above
 }
 
 
-interface TagAndStats {
-  label: string;
-  numTotal: number;
-  numPages: number;
-  numSubscribers?: number;
-  numMuted?: number;
-}
-
-
 interface Setting {  // rename to SettingToSave
   type: string;  // 'WholeSite' or 'PageTree' or 'SinglePage'
   pageId?: string;
@@ -1268,6 +1304,8 @@ interface Pat {   // Guest or Member, and Member = group or user
   avatarSmallHashPath?: string;
   isMissing?: boolean;
   isGone?: boolean;
+  // User badges that should be displayed almost always.
+  pubTags?: Tag[];
 }
 
 type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
@@ -1381,16 +1419,16 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   deletedAt?: number;
 }
 
-interface UserInclDetailsWithStats extends PatVb {
+interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb?
   // Mabye some old accounts lack stats?
   anyUserStats?: UserStats;
 }
 
-// rename to ParticipantDetailsStatsGroups?
-interface UserDetailsStatsGroups extends UserInclDetailsWithStats {
+// A participant, Very VerBose: all fields, badges, stats and groups.
+interface PatVvb extends UserInclDetailsWithStats {
   groupIdsMaySee: UserId[];
 }
-
+type UserDetailsStatsGroups = PatVvb; // old name
 
 interface CreateUserParams {
   idpName?: St;
@@ -1638,14 +1676,18 @@ interface StorePatch extends EditorStorePatch {
   postsByPageId?: { [pageId: string]: Post[] };
   // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
   // ignored (because the page version is too old).
+  // No, just pats?  And Brief will be the default data structure.  [store_patch_pats]
   usersBrief?: Participant[];
   pageMetasBrief?: PageMetaBrief[];
   superadmin?: SuperAdminStuff;
   me?: MyselfPatch;
-  tagsStuff?: TagsStuff;
 
   deletePageIds?: PageId[];
   deleteDraft?: DraftDeletor;
+
+  tagTypes?: TagType[];
+  allTagTypes?: TagType[];
+  allTagTypeStatsById?: { [tagTypeId: string]: TagTypeStats };
 
   // Some pages get created lazily, namely embedded comments pages. They get
   // created when someone posts the first comment, or posts the first Like vote,
@@ -1817,12 +1859,6 @@ interface Settings extends TopicInterfaceSettings {
 type PartialSettings = Partial<Settings>;
 
 
-interface TagsStuff {
-  tagsAndStats?: TagAndStats[];
-  myTagNotfLevels?: { [tagLabel: string]: PageNotfLevel };
-}
-
-
 interface ShareOptions {
   title?: string;
   description?: string;
@@ -1885,6 +1921,18 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
 // =========================================================================
 
 
+/// For rendering a new page.
+interface ShowNewPageParams {
+  newPage: Page;  // | AutoPage;
+  pubCats;
+  pats: Pat[];
+  me: Me;
+  // Is from the new page store, so it's tagTypesById, rather than StorePatch.tagTypes[].
+  tagTypesById: TagTypesById;
+  history: ReactRouterHistory;
+}
+
+
 /// Authentication dialog
 interface AuthnDlgIf {
   openToLogIn: (loginReason: LoginReason,
@@ -1939,6 +1987,34 @@ interface TopicListProps {
   history?: ReactRouterHistory;
 }
 
+
+interface TagListProps {
+  store: Store;
+  className?: St;
+  tags?: Tag[];
+  // tagTypesById?: TagTypesById; — maybe later
+  forPost?: Post;
+  forPat?: Pat;
+  onClick?: () => Vo;
+ }
+
+
+interface TagListLiveProps {
+  store: Store;
+  className?: St;
+  forPost?: Post;
+  forPat?: Pat;
+  live?: Bo; // default true
+  onChanged?: () => Vo;
+}
+
+
+interface TagDiagProps {
+  store: Store;
+  forPost?: Post;
+  forPat?: Pat;
+  onChanged?: () => Vo;
+}
 
 
 interface ExplainingTitleText {
@@ -2204,11 +2280,12 @@ interface AuthnResponse {
 type LoadPageIdsUrlsResponse = PageIdsUrls[];
 
 
+type TagTypesById = { [tagTypeId: number]: TagType };
+
 interface LoadTopicsResponse {
-  categoryId?: CategoryId;
-  categoryParentId?: CategoryId;
+  tagTypes: TagType[];
   topics: Topic[];
-  users: Participant[];
+  users: Pat[];
 }
 
 
@@ -2263,6 +2340,13 @@ interface UserAccountLoginMethod {  // Maybe repl w Identity = Scala: JsIdentity
   idpUsername?: St;
   idpEmailAddr?: St;
   idpUserId?: St;
+}
+
+
+interface LoadPatVvbResponse {
+  user: PatVvb;
+  groupsMaySee: Group[];
+  tagTypes: TagType[];
 }
 
 

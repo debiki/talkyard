@@ -24,13 +24,22 @@ export function prettyNum(num: Nr, digits: Nr = 2): Nr {
 }
 
 /// JSON to string — 'j2s' is shorter than 'JSON.stringify'.
-export function j2s(any: any, hmm?, indentation?: Nr): St {
-  return JSON.stringify.apply(JSON, arguments);
+export function j2s(something: Ay, replacer = stringifyReplacer, indentation?: Nr): St {
+  return JSON.stringify(something, replacer, indentation);
+}
+
+/// JSON.stringify() doesn't know how to serialize a Map, so we'll need to specify
+/// what JSON to generate, for a Map.
+function stringifyReplacer(key: Ay, value: Ay): Ay {
+  if (value instanceof Map) {
+    return { mapEntries: [...value.entries()] };
+  }
+  return value;
 }
 
 /// "dj" = Debug log Json
 export function dj(message: string, json: any, indentation?: number) {
-  logMessage(`${message} ${JSON.stringify(json, undefined, indentation)}`);
+  logMessage(`${message} ${j2s(json, stringifyReplacer, indentation)}`);
 }
 
 export function logMessage(message: StringOrFn) {

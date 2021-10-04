@@ -20,8 +20,7 @@ package talkyard.server
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.Globals
-import debiki.dao._
-import scala.collection.mutable
+import scala.collection.{mutable => mut}
 import scala.collection.immutable
 
 
@@ -38,15 +37,15 @@ package object dao {
     *   or moved to a different access restricted category so the
     *   backlink should disappear.
     * @param ancestorCategoriesStale
-    * @param ppNamesStale
+    * @param bylinesStale
     */
   case class StalePage(
     pageId: PageId,
-    memCacheOnly: Boolean,
-    pageModified: Boolean,
-    backlinksStale: Boolean,
-    ancestorCategoriesStale: Boolean,
-    ppNamesStale: Boolean)
+    memCacheOnly: Bo,
+    pageModified: Bo,
+    backlinksStale: Bo,
+    ancestorCategoriesStale: Bo,
+    bylinesStale: Bo)
 
 
   /** Remembers things that got out-of-date and should be uncached, e.g. html
@@ -61,11 +60,13 @@ package object dao {
     */
   class StaleStuff {
     private var _allPagesStale = false
-    private val _stalePages = mutable.Map[PageId, StalePage]()
-    private val _stalePpIdsMemCacheOnly = mutable.Set[UserId]()
+    private val _stalePages = mut.Map[PageId, StalePage]()
+    private val _stalePpIdsMemCacheOnly = mut.Set[PatId]()
 
-    def nonEmpty: Boolean =
-      _allPagesStale || _stalePages.nonEmpty || _stalePpIdsMemCacheOnly.nonEmpty
+    def nonEmpty: Bo =
+      _allPagesStale ||
+      _stalePages.nonEmpty ||
+      _stalePpIdsMemCacheOnly.nonEmpty
 
 
     // ----- Participants
@@ -73,7 +74,13 @@ package object dao {
     def staleParticipantIdsInMem: Set[UserId] =
       _stalePpIdsMemCacheOnly.to[immutable.Set]
 
-    def addParticipantId(ppId: UserId, memCacheOnly: Boolean): Unit = {
+    def addPatIds(patIds: Set[PatId]): U = {
+      // Only cached in-memory.
+      patIds foreach _stalePpIdsMemCacheOnly.add
+    }
+
+    def addParticipantId(ppId: UserId, memCacheOnly: Bo): U = {
+      // Only cached in-memory. Remove memCacheOnly param? It's confusing?
       unimplIf(!memCacheOnly, "TyE036WH7MN24")
       _stalePpIdsMemCacheOnly.add(ppId)
     }
@@ -100,6 +107,31 @@ package object dao {
       r
     }
 
+    def addPagesWithPostIds(postIds: Set[PostId], tx: SiteTx): U = {
+      val pagePostNrByPostId = tx.loadPagePostNrsByPostIds(postIds)
+      val pageIdsDirectlyAffected: Set[PageId] = pagePostNrByPostId.values.map(_.pageId).toSet
+      addPageIds(pageIdsDirectlyAffected)
+    }
+
+    def addPagesWithVisiblePostsBy(patIds: Set[PatId], tx: SiteTx): U = {
+      val _200k = 200 * 1000
+      val pageIds: Set[PageId] = tx.loadPageIdsWithVisiblePostsBy(patIds, limit = _200k)
+      if (pageIds.size < _200k) {
+        addPageIds(pageIds, pageModified = false, bylinesStale = true)
+      }
+      else {
+        // This won't happen until after 10+ years? Can any human
+        // ever write 200 000 posts? Yes maybe: 200e3 / (50 * 365) = 11 years, if
+        // writing 50 posts every day. Maybe a bot? However, rate limits, and they
+        // wouldn't create that many new pages? Instead, they'd append to the same page?
+        // Anyway. Maybe we don't want to load say 1M page ids. Let's update the pages
+        // directly in the database instead, and clear the mem cache?
+        // Or, just clear the whole page cache? But that might be a bad idea too? Hmm.
+        // For now: (doesn't matter until after 10+ years!?)
+        addAllPages()
+      }
+    }
+
     def addAllPages(): U =
       _allPagesStale = true
 
@@ -111,6 +143,8 @@ package object dao {
       * Example: Page A links to page B. Page A got renamed — so the backlinks
       * displayed on page B back to A, should get updated with the new title of
       * the linking page A. Here, A was directly modified, and B indirectly.
+      *
+      * Hmm, instead, needs a staleBacklinksPageIds?  [sleeping_links_bug]
       */
     def stalePageIdsInMemIndirectly: Set[PageId] =
       stalePages.filter(p => !p.pageModified).map(_.pageId).toSet
@@ -127,15 +161,18 @@ package object dao {
       * @param backlinksStale If backlinks on this page, back to other pages
       *   that link to it, needs to be refreshed.
       */
-    def addPageId(pageId: PageId, memCacheOnly: Boolean = false,
-            pageModified: Boolean = true, backlinksStale: Boolean = false): Unit = {
-      dieIf(!pageModified && !backlinksStale, "TyE305KTDT", "Nothing happened")
+    def addPageId(pageId: PageId, memCacheOnly: Bo = false,
+            pageModified: Bo = true, backlinksStale: Bo = false,
+            bylinesStale: Bo = false): U = {
+      dieIf(!pageModified && !backlinksStale && !bylinesStale,
+            "TyE305KTDT", "Nothing happened")
       val oldEntry = _stalePages.get(pageId)
       val newEntry = oldEntry.map(o =>
             o.copy(
               memCacheOnly = o.memCacheOnly && memCacheOnly,
               pageModified = o.pageModified || pageModified,
-              backlinksStale = o.backlinksStale || backlinksStale))
+              backlinksStale = o.backlinksStale || backlinksStale,
+              bylinesStale = o.bylinesStale || bylinesStale))
           .getOrElse(StalePage(
               pageId,
               memCacheOnly = memCacheOnly,
@@ -143,18 +180,19 @@ package object dao {
               backlinksStale = backlinksStale,
               // Not yet implemented:
               ancestorCategoriesStale = false,
-              ppNamesStale = false))
+              bylinesStale = bylinesStale))
 
       if (oldEntry isNot newEntry) {
         _stalePages.update(pageId, newEntry)
       }
     }
 
-    def addPageIds(pageIds: Set[PageId], memCacheOnly: Boolean = false,
-            pageModified: Boolean = true, backlinksStale: Boolean = false): Unit = {
+    def addPageIds(pageIds: Set[PageId], memCacheOnly: Bo = false,
+            pageModified: Bo = true, backlinksStale: Bo = false,
+            bylinesStale: Bo = false): U = {
       pageIds foreach { pageId =>
         addPageId(pageId, memCacheOnly = memCacheOnly, pageModified = pageModified,
-              backlinksStale = backlinksStale)
+              backlinksStale = backlinksStale, bylinesStale = bylinesStale)
       }
     }
 

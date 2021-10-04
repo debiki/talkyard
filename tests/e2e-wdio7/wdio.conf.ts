@@ -487,6 +487,7 @@ export const config = { // doesn't work: WebdriverIO.Config = {
     global.wdioBrowserB = global.browserB; // only in multiremote tests
     global.wdioBrowserC = global.browserC; //  — "" —
 
+    // This won't resize any login popup though. Then, might need to scroll. [e2e_win_size]
     global.wdioBrowserA.setWindowSize(1150, 1150);
     if (global.wdioBrowserB) global.wdioBrowserB.setWindowSize(1150, 1150);
     if (global.wdioBrowserC) global.wdioBrowserC.setWindowSize(1150, 1150);

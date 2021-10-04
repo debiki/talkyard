@@ -41,6 +41,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   with PagesSiteDaoMixin
   with PostsSiteDaoMixin
   with DraftsSiteDaoMixin
+  with TagsRdbMixin
   with TagsSiteDaoMixin
   with PageUsersSiteDaoMixin
   with UploadsSiteDaoMixin
@@ -161,6 +162,18 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   def makeSqlArrayOfStringsUnique(values: Iterable[String]): js.Array = {
     val distinctValues = values.toVector.sorted.distinct
     theOneAndOnlyConnection.createArrayOf("varchar", distinctValues.toArray[Object])
+  }
+
+
+  def runQueryFindNextFreeInt32(tableName: St, columnName: St): i32 = {
+    val query = s"""
+          select max($columnName) as any_max
+          from $tableName
+          where site_id_c = ?  """
+    val anyMax = runQueryFindExactlyOne(
+          query, List(siteId.asAnyRef), rs => getOptInt32(rs, "any_max"))
+    // Let's start at 1001 so there's room for some built-in whatever-is-in-the-table.
+    (anyMax getOrElse 1000) + 1
   }
 
 
