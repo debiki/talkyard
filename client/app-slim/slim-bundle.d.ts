@@ -490,7 +490,8 @@ declare namespace debiki2 {
   }
   namespace pagedialogs {
     function getServerErrorDialog(): any;
-    function showAndThrowClientSideError(errorMessage: string);
+    function showClientError(errorMessage: St);
+    function showAndThrowClientSideError(errorMessage: St);
     var openSharePopup;
     const Facebook;
     const Twitter;
