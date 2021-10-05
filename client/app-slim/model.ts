@@ -2113,18 +2113,18 @@ interface SuperAdminStuff {
 
 
 interface SASite {
-  id: number;
+  id: SiteId;
   status: SiteStatus;
-  name: string;
-  hostnames: string[];
-  canonicalHostname: string;
+  name: St;
+  hostnames: St[];
+  canonicalHostname: St;
   createdAtMs: Nr;
   deletedAtMs?: Nr;
   autoPurgeAtMs?: Nr;
   purgedAtMs?: Nr;
-  staffUsers: UserInclDetails[];
+  staffUsers: PatVb[];
   stats: SiteStats;
-  superStaffNotes?: string;
+  superStaffNotes?: St;
   // CLEAN_UP use also for display not only when saving. Remove from SiteStats [.6093456]
   rdbQuotaMiBs?: Nr;
   fileQuotaMiBs?: Nr;
