@@ -230,6 +230,7 @@ package object core {
     def asParsedRef: ParsedRef = self
   }
 
+  // Hmm, PostIdRef and PostNrRef extends PostRef?  [post_id_nr_ref]
   sealed trait PostRef
 
   sealed abstract class ParsedRef(

@@ -24,6 +24,8 @@ import ed.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsObject
 import TagsDao._
 import scala.util.matching.Regex
+import scala.{collection => col}
+import scala.collection.{mutable => mut}
 
 
 object TagsDao {
@@ -147,6 +149,16 @@ trait TagsDao {
             loadTags(forPat = forPat)
           })
     tags getOrDie "TyE752WG36X"
+  }
+
+
+  def getTagsByPatIds(patIds: Iterable[PatId]): col.Map[PatId, ImmSeq[Tag]] = {
+    val tagsByPatId = mut.Map[PatId, ImmSeq[Tag]]()
+    for (patId <- patIds) {
+      val tags = getTags(forPat = Some(patId))
+      tagsByPatId(patId) = tags
+    }
+    tagsByPatId.withDefaultValue(Nil)
   }
 
 

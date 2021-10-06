@@ -343,6 +343,7 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only badges-basic.2br --cd -i $args
   $r s/wdio-7 --only tags-basic.2br --cd -i $args
+  $r s/wdio-7 --only tags-badges-not-missing.2br --cd -i $args
 
   $r s/wdio --only private-chat.3browsers $args
 

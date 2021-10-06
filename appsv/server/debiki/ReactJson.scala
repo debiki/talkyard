@@ -29,7 +29,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.{Element => jsoup_Element}
 import org.jsoup.nodes.{Attribute => jsoup_Attribute}
 import play.api.libs.json._
-import scala.collection.{immutable, mutable}
+import scala.collection.{immutable => imm, mutable => mut}
 import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 import talkyard.server.{IfCached, PostRenderer, PostRendererSettings}
@@ -37,7 +37,7 @@ import JsonMaker._
 import talkyard.server.JsX._
 
 
-case class PostExcerpt(text: String, firstImageUrls: immutable.Seq[String])
+case class PostExcerpt(text: String, firstImageUrls: imm.Seq[String])
 
 
 private case class RendererWithSettings(
@@ -48,17 +48,54 @@ private case class RendererWithSettings(
   }
 }
 
+
+case class MeAndStuff(me: Me, stuffForMe: StuffForMe)
+
+
+case class Me(
+  // For now. Later, separate fields, so can load only what's needed.
+  meJsOb: JsObject)
+
+
+case class StuffForMe(  // ts: StuffForMe
+  tagTypeIdsNeeded: Set[TagTypeId],
+) {
+
+  def isEmpty: Bo = tagTypeIdsNeeded.isEmpty
+
+  /// Prefers the mem caches, avoids db access.
+  def toJson(dao: SiteDao): JsObject = {
+    val tagTypes = dao.getTagTypes(tagTypeIdsNeeded)
+    Json.obj(
+        "tagTypes" -> tagTypes.map(JsTagType))
+  }
+}
+
+
+object StuffForMe {
+  val empty: StuffForMe = StuffForMe(Set.empty)
+}
+
+
 private case class RestrTopicsCatsLinks(
   categoriesJson: JsArray,
   topicsJson: Seq[JsValue],
   topicParticipantsJson: Seq[JsObject],
-  internalBacklinksJson: Seq[JsValue])
+  internalBacklinksJson: Seq[JsValue],
+  tagTypeIdsNeeded: Set[TagTypeId])
+
+
+private case class UnapprovedPostsAndAuthors(
+  posts: JsObject, // why object? try to change to JsArray instead
+  authors: JsArray,
+  tagTypeIdsNeeded: Set[TagTypeId])
+
 
 class HowRenderPostInPage(
   val summarize: Boolean,
   val jsSummary: JsValue,
   val squash: Boolean,
-  val childrenSorted: immutable.Seq[Post])
+  val childrenSorted: imm.Seq[Post])
 
 
 case class PageToJsonResult(
@@ -145,7 +182,7 @@ class JsonMaker(dao: SiteDao) {
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
       "publicCategories" -> JsArray(),
       "topics" -> JsNull,
-      "me" -> noUserSpecificData(everyonesPerms, everyoneGroup),
+      "me" -> noUserSpecificData(everyonesPerms, everyoneGroup).meJsOb,
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "pageMetaBriefById" -> JsObject(Nil),
@@ -232,13 +269,17 @@ class JsonMaker(dao: SiteDao) {
       // Note that we do include unapproved posts. Client side, they're shown
       // as empty posts with a date but no author, and "not yet approved"
       // text. [show_empty_unapr]
+      COULD_OPTIMIZE // don't load the actual text. [iz01]
       post.tyype != PostType.CompletedForm &&
       post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
       !post.deletedStatus.isDeleted || post.isOrigPost || post.isTitle || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
     }
 
-    val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(relevantPosts.map(_.id))
+    val relevantApprovedPosts = relevantPosts.filter(_.isSomeVersionApproved)
+
+    // (Tags and author badges not shown for unapproved posts.)
+    val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(relevantApprovedPosts.map(_.id))
 
     // Json by post nr as string.
     var allPostsJson: Seq[(St, JsObject)] = relevantPosts map { post: Post =>
@@ -274,9 +315,9 @@ class JsonMaker(dao: SiteDao) {
     // than to lookup them each request.
     val pageMemberIds = transaction.loadMessageMembers(page.id)
 
-    val userIdsToLoad = mutable.Set[UserId]()
+    val userIdsToLoad = mut.Set[UserId]()
     userIdsToLoad ++= pageMemberIds
-    userIdsToLoad ++= relevantPosts.map(_.createdById)
+    userIdsToLoad ++= relevantPosts.map(_.createdById)  // or relevantApprovedPosts? [iz01]
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
@@ -301,7 +342,7 @@ class JsonMaker(dao: SiteDao) {
 
     val internalBacklinksJson = makeInternalBacklinksJson(page.id, authzCtx, dao)
 
-    val tagTypeIdsToLoad = mutable.Set[TagTypeId]()
+    val tagTypeIdsToLoad = mut.Set[TagTypeId]()
     tagsAndBadges.tagTypeIds foreach tagTypeIdsToLoad.add
 
     val anyLatestTopicsJsVal: JsValue =
@@ -424,7 +465,7 @@ class JsonMaker(dao: SiteDao) {
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
       "publicCategories" -> categories,
       "topics" -> anyLatestTopicsJsVal,
-      "me" -> noUserSpecificData(authzCtx.tooManyPermissions, everyoneGroup),
+      "me" -> noUserSpecificData(authzCtx.tooManyPermissions, everyoneGroup).meJsOb,
       "rootPostId" -> JsNumber(renderParams.thePageRoot),
       "usersByIdBrief" -> usersByIdJson,
       "pageMetaBriefById" -> JsObject(Nil),
@@ -467,7 +508,8 @@ class JsonMaker(dao: SiteDao) {
     val site = dao.theSite()
     val everyoneGroup = dao.getTheGroup(Group.EveryoneId)
     val idps = dao.getSiteCustomIdentityProviders(onlyEnabled = true)
-    var result = Json.obj(
+
+    val result = Json.obj(
       "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,  // what ??? Yes, if in emb editor iframe
@@ -483,7 +525,7 @@ class JsonMaker(dao: SiteDao) {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
-      "me" -> noUserSpecificData(dao.getPermsForEveryone(), everyoneGroup),
+      "me" -> noUserSpecificData(dao.getPermsForEveryone(), everyoneGroup).meJsOb,
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "siteSections" -> makeSiteSectionsJson(),
       "usersByIdBrief" -> Json.obj(),
@@ -550,12 +592,14 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
+  @deprecated("now", "use makeStorePatchForPostIds instead?")
   def postToJson2(postNr: PostNr, pageId: PageId,
         includeUnapproved: Boolean = false, showHidden: Boolean = false): JsObject =
     postToJson(postNr, pageId, includeUnapproved = includeUnapproved,
       showHidden = showHidden)._1
 
 
+  @deprecated("now", "use makeStorePatchForPostIds instead?")
   private def postToJson(postNr: PostNr, pageId: PageId,
         tagsAndBadges: Opt[TagsAndBadges] = None, includeUnapproved: Bo = false,
         showHidden: Bo = false): (JsObject, PageVersion) = {
@@ -565,6 +609,8 @@ class JsonMaker(dao: SiteDao) {
       val post = page.parts.thePostByNr(postNr)
       val theTagsAndBadges = tagsAndBadges.getOrElse(
             tx.loadPostTagsAndAuthorBadges(Seq(post.id)))
+      // [tags_and_badges_missing]  but don't fix? Instead, start using
+      // makeStorePatchForPostIds instead?
       val json = postToJsonImpl(post, page, theTagsAndBadges,
         includeUnapproved = includeUnapproved, showHidden = showHidden)
       (json, page.version)
@@ -661,6 +707,7 @@ class JsonMaker(dao: SiteDao) {
 
     val postRenderSettings = dao.makePostRenderSettings(page.pageType)
 
+    // We're about to renders CommonMark in a tx, slightly bad. [nashorn_in_tx]
     val renderer = RendererWithSettings(
           dao.context.postRenderer, postRenderSettings, dao.theSite())
 
@@ -681,13 +728,13 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def noUserSpecificData(everyonesPerms: Seq[PermsOnPages], everyone: Group): JsObject = {
+  def noUserSpecificData(everyonesPerms: Seq[PermsOnPages], everyone: Group): Me = {
     require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "TyE52WBG08")
     require(everyone.id == Group.EveryoneId, "TyE2WBG09")
     val perms = everyone.perms
 
     // Somewhat dupl code. (2WB4G7)
-    Json.obj(
+    val meJsOb = Json.obj(
       "dbgSrc" -> "2FBS6Z8",
       "trustLevel" -> TrustLevel.StrangerDummyLevel,
       "notifications" -> JsArray(),
@@ -701,13 +748,15 @@ class JsonMaker(dao: SiteDao) {
       "permsOnPages" -> permsOnPagesToJson(everyonesPerms, excludeEveryone = false),
       "effMaxUplBytes" -> JsNumber(perms.maxUploadBytes.getOrElse(0).toInt),
       "effAlwUplExts" -> JsArray(perms.allowedUplExtensionsAsSet.toSeq.map(JsString)))
+
+    Me(meJsOb = meJsOb)
   }
 
 
   RENAME // this function (i.e. userDataJson) so it won't come as a
   // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
   def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
-        : Option[JsObject] = {
+        : Opt[MeAndStuff] = Some {
     require(pageRequest.dao == dao, "TyE4GKVRY3")
     val requester = pageRequest.user getOrElse {
       return None
@@ -744,14 +793,14 @@ class JsonMaker(dao: SiteDao) {
     val site = if (requester.isStaffOrCoreMember) dao.getSite else None
 
     dao.readOnlyTransaction { tx =>
-      Some(requestersJsonImpl(requester, pageRequest.pageId, watchbarWithTitles,
+      requestersJsonImpl(requester, pageRequest.pageId, watchbarWithTitles,
             restrTopicsCatsLinks, permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds, myGroupsEveryoneLast, site, tx))
+            unapprovedPostAuthorIds, myGroupsEveryoneLast, site, tx)
     }
   }
 
 
-  def userNoPageToJson(request: DebikiRequest[_]): Opt[JsObject] = Some {
+  def userNoPageToJson(request: DebikiRequest[_]): Opt[MeAndStuff] = Some {
     import request.authzContext
     require(request.dao == dao, "TyE4JK5WS2")
     val requester = request.user getOrElse {
@@ -768,7 +817,7 @@ class JsonMaker(dao: SiteDao) {
 
     dao.readOnlyTransaction { tx =>
       requestersJsonImpl(requester, anyPageId = None, watchbarWithTitles,
-            RestrTopicsCatsLinks(JsArray(), Nil, Nil, Nil),
+            RestrTopicsCatsLinks(JsArray(), Nil, Nil, Nil, Set.empty),
             permissions, permsOnSiteTooMany,
             unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, site, tx)
     }
@@ -779,13 +828,17 @@ class JsonMaker(dao: SiteDao) {
         watchbar: WatchbarWithTitles, restrTopicsCatsLinks: RestrTopicsCatsLinks,
         permissions: Seq[PermsOnPages], permsOnSiteTooMany: PermsOnSite,
         unapprovedPostAuthorIds: Set[UserId],
-        myGroupsEveryoneLast: Seq[Group], site: Opt[Site], tx: SiteTransaction): JsObject = {
+        myGroupsEveryoneLast: Seq[Group], site: Opt[Site], tx: SiteTransaction)
+        : MeAndStuff = {
+
+    val tagTypeIdsNeeded = mut.Set[TagTypeId]()
+    restrTopicsCatsLinks.tagTypeIdsNeeded foreach tagTypeIdsNeeded.add
 
     val restrictedCategories: JsArray = restrTopicsCatsLinks.categoriesJson
     val restrictedTopics: Seq[JsValue] = restrTopicsCatsLinks.topicsJson
     val restrictedTopicsUsers: Seq[JsObject] = restrTopicsCatsLinks.topicParticipantsJson
 
-    val draftsOnThisPage: immutable.Seq[Draft] =
+    val draftsOnThisPage: imm.Seq[Draft] =
       anyPageId.map(tx.loadDraftsByUserOnPage(requester.id, _)).getOrElse(Nil)
 
     // Bug: If !isAdmin, might count [review tasks one cannot see on the review page]. [5FSLW20]
@@ -808,6 +861,9 @@ class JsonMaker(dao: SiteDao) {
     val myCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId == requester.id)
     val groupsCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId != requester.id)
 
+    val reqersTags = dao.getTags(forPat = Some (requester.id))
+    reqersTags.foreach(t => tagTypeIdsNeeded.add(t.tagTypeId))
+
     val (pageNotfPrefs: Seq[PageNotfPref],
          votes,
          unapprovedPosts,
@@ -820,9 +876,11 @@ class JsonMaker(dao: SiteDao) {
 
         val votes = votesJson(requester.id, pageId, tx)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
-        val (postsJson, postAuthorsJson) =
+        val UnapprovedPostsAndAuthors(postsJson, postAuthorsJson, tagTypeIds) =
               unapprovedPostsAndAuthorsJson(
                   requester, pageId, unapprovedPostAuthorIds, tx)
+
+        tagTypeIds foreach tagTypeIdsNeeded.add
 
         (pageNotfPrefs, votes, postsJson, postAuthorsJson)
       } getOrElse (
@@ -930,7 +988,7 @@ class JsonMaker(dao: SiteDao) {
       "myCatsTagsSiteNotfPrefs" -> JsArray(myCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
       "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
       "myGroupIds" -> JsArray(myGroupsEveryoneLast.map(g => JsNumber(g.id))),
-      // "pubTags" -> JsArray(pubTags map JsTag)  — not needed
+      "pubTags" -> JsArray(reqersTags map JsTag),
       "myDataByPageId" -> ownDataByPageId,
       "marksByPostId" -> JsObject(Nil))
 
@@ -944,11 +1002,12 @@ class JsonMaker(dao: SiteDao) {
       COULD_OPTIMIZE // cache in SiteDao. Don't need to be milliseconds up-to-date.
       val adminNotices: Seq[Notice] = tx.loadAdminNotices()
       json += "adminNotices" -> JsArray(adminNotices map JsNotice)
-
-      // json += "talkyardVersion" -> ?  — maybe later.
     }
 
-    json
+    // "talkyardVersion" -> _  maybe later.
+    MeAndStuff(
+        me = Me(meJsOb = json),
+        StuffForMe(tagTypeIdsNeeded = tagTypeIdsNeeded.toSet))
   }
 
 
@@ -956,9 +1015,6 @@ class JsonMaker(dao: SiteDao) {
   // user + pageMeta?
   private def listRestrictedCategoriesAndTopics(request: PageRequest[_])
         : RestrTopicsCatsLinks = {
-    // OLD: Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
-    // DON'T: if (!request.isStaff)
-      //return (JsArray(), Nil)
 
     require(request.dao == dao, "TyE5JKWC3")
     val authzCtx = request.authzContext
@@ -967,7 +1023,7 @@ class JsonMaker(dao: SiteDao) {
     val categoryId = request.thePageMeta.categoryId getOrElse {
       // Not a forum topic. Could instead show an option to add the page to the / a forum?
       val internalBacklinksJson = Nil // later
-      return RestrTopicsCatsLinks(JsArray(), Nil, Nil, internalBacklinksJson)
+      return RestrTopicsCatsLinks(JsArray(), Nil, Nil, internalBacklinksJson, Set.empty)
     }
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
@@ -997,16 +1053,21 @@ class JsonMaker(dao: SiteDao) {
         (topics, pageStuffById, Nil)
       }
 
-    val userIds = mutable.Set[UserId]()
+    val userIds = mut.Set[UserId]()
     topics.foreach(_.meta.addUserIdsTo(userIds))
     val users = dao.getUsersAsSeq(userIds)
 
-    // Tags and badges missing, right. [missing_tags_feats]
+    val tagTypeIdsNeeded = mut.Set[TagTypeId]()
+    for (stuff <- pageStuffById.values; tag <- stuff.pageTags) {
+      tagTypeIdsNeeded.add(tag.tagTypeId)
+    }
+
     RestrTopicsCatsLinks(
           categoriesJson = categoriesJson,
           topicsJson = topics.map(ForumController.topicToJson(_, pageStuffById)),
-          topicParticipantsJson = users.map(JsUser(_)),
-          internalBacklinksJson = internalBacklinksJson)
+          topicParticipantsJson = users.map(JsPatNameAvatar),
+          internalBacklinksJson = internalBacklinksJson,
+          tagTypeIdsNeeded = tagTypeIdsNeeded.toSet)
   }
 
 
@@ -1017,35 +1078,41 @@ class JsonMaker(dao: SiteDao) {
       includeAboutCategoryPages = siteSettings.showCategories)
 
 
-  private def unapprovedPostsAndAuthorsJson(user: Participant, pageId: PageId,
-        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): (
-          JsObject /* why object? try to change to JsArray instead */, JsArray) = {
+  private def unapprovedPostsAndAuthorsJson(reqer: Pat, pageId: PageId,
+        unapprovedPostAuthorIds: Set[UserId], tx: SiteTx): UnapprovedPostsAndAuthors = {
 
     var posts: Seq[Post] =
       if (unapprovedPostAuthorIds.isEmpty) {
         // This is usually the case, and lets us avoid a db query.
         Nil
       }
-      else if (user.isStaff) {
-        transaction.loadAllUnapprovedPosts(pageId, limit = 999)
+      else if (reqer.isStaff) {
+        // Mods & admins can see and apporve unapproved posts.
+        tx.loadAllUnapprovedPosts(pageId, limit = 999)
       }
-      else if (unapprovedPostAuthorIds.contains(user.id)) {
-        transaction.loadUnapprovedPosts(pageId, by = user.id, limit = 999)
+      else if (unapprovedPostAuthorIds.contains(reqer.id)) {
+        // The requester henself can see and edit hens own unapproved posts.
+        tx.loadUnapprovedPosts(pageId, by = reqer.id, limit = 999)
       }
       else {
+        // Others cannot see unapproved posts. Except for category mods? [cat_mods]
         Nil
       }
 
     COULD // load form replies also if user is page author?
-    if (user.isAdmin) {
-      posts ++= transaction.loadCompletedForms(pageId, limit = 999)
+    if (reqer.isAdmin) {
+      posts ++= tx.loadCompletedForms(pageId, limit = 999)
     }
 
     if (posts.isEmpty)
-      return (JsObject(Nil), JsArray())
+      return UnapprovedPostsAndAuthors(JsObject(Nil), JsArray(), Set.empty)
 
-    val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(posts.map(_.id))
-    val pageMeta = transaction.loadThePageMeta(pageId)
+    val tagsAndBadges = tx.loadPostTagsAndAuthorBadges(posts.map(_.id))
+
+    val tagTypeIdsNeeded = mut.Set[TagTypeId]()
+    tagsAndBadges.tagTypeIds foreach tagTypeIdsNeeded.add
+
+    val pageMeta = tx.loadThePageMeta(pageId)
 
     val postIdsAndJson: Seq[(String, JsValue)] = posts.map { post =>
       val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
@@ -1059,10 +1126,13 @@ class JsonMaker(dao: SiteDao) {
             Nil), renderer)
     }
 
-    // Tag types missing? [missing_tags_feats]
-    val authors = transaction.loadParticipants(posts.map(_.createdById).toSet)
-    val authorsJson = JsArray(authors.map(JsUser(_)))
-    (JsObject(postIdsAndJson), authorsJson)
+    // Tests:  tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTTAGUNAPRPO
+    val authors = tx.loadParticipants(posts.map(_.createdById).toSet)
+    val authorsJson = JsArray(authors.map(JsPat(_, tagsAndBadges)))
+    UnapprovedPostsAndAuthors(
+          posts = JsObject(postIdsAndJson),
+          authors = authorsJson,
+          tagTypeIdsNeeded = tagTypeIdsNeeded.toSet)
   }
 
 
@@ -1143,29 +1213,33 @@ class JsonMaker(dao: SiteDao) {
 
 
   def makeStorePatchForPostNr(pageId: PageId, postNr: PostNr, showHidden: Bo)
-        : Opt[JsObject] = {
+        : Opt[JsObject] = Some {
+    COULD_OPTIMIZE // make makeStorePatchForPostIds work also with page-id, post-nr?
+    // So can skip this lookup. Maybe could be a case class PostIdentifier, which
+    // would be either a PageId+PostNr, or a PostId?
+    // Maybe that'd be a PostRef: PostIdRef or PostNrRef? [post_id_nr_ref]
     val post = dao.loadPost(pageId, postNr) getOrElse {
       return None
     }
-    val author = dao.getParticipant(post.createdById) getOrElse {
-      // User was just deleted? Race condition.
-      UnknownParticipant
-    }
-    Some(makeStorePatchForPost(post, author, showHidden = showHidden))
+    makeStorePatchForPostIds(
+          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true, dao)
   }
 
 
-  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Bo, dao: SiteDao)
-        : JsObject = {
+  def makeStorePatchForPostIds(postIds: Set[PostId], showHidden: Bo,
+        inclUnapproved: Bo, dao: SiteDao): JsObject = {
+    dieIf(Globals.isDevOrTest && dao != this.dao, "TyE602MWJL43") ; CLEAN_UP // remove dao param?
     dao.readTx { tx =>
-      makeStorePatchForPosts(postIds, showHidden, dao.context.postRenderer,
-        tx, appVersion = dao.globals.applicationVersion)
+      // This might render CommonMark, in a tx — slightly bad. [nashorn_in_tx]
+      makeStorePatchForPostIds(postIds, showHidden = showHidden,
+            inclUnapproved = inclUnapproved, tx)
     }
   }
 
 
-  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Bo,
-          postRenderer: PostRenderer, transaction: SiteTx, appVersion: St): JsObject = {
+  private def makeStorePatchForPostIds(postIds: Set[PostId],
+          showHidden: Bo, inclUnapproved: Bo,
+          transaction: SiteTx): JsObject = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(postIds)
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
@@ -1173,58 +1247,16 @@ class JsonMaker(dao: SiteDao) {
     val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
     val authorIds = posts.map(_.createdById).toSet
     val authors = transaction.loadParticipants(authorIds)
-    makeStorePatch3(pageIdVersions, posts, tagsAndBadges, tagTypes,
-          authors, appVersion = appVersion)(transaction)
+    makeStorePatch3(pageIdVersions, posts,
+          showHidden = showHidden, inclUnapproved = inclUnapproved,
+          tagsAndBadges, tagTypes,
+          authors, appVersion = dao.globals.applicationVersion)(transaction)
   }
 
 
   def makeStorePatchForPost(post: Post, author: Pat, showHidden: Bo): JsObject = {
-    // Warning: some similar code below [89fKF2]
-    require(post.createdById == author.id, "EsE5PKY2")
-    COULD_OPTIMIZE // cache tags and badges
-    val tagsAndBadges = dao.readTx { tx =>
-      tx.loadPostTagsAndAuthorBadges(Seq(post.id))
-    }
-    // If always for the *post*, could load author, tags & tag types from cache?
-    val (postJson, pageVersion) = postToJson(
-          post.nr, pageId = post.pageId, Some(tagsAndBadges), includeUnapproved = true,
-          showHidden = showHidden)
-    makeStorePatchForPagePosts(
-          PageIdVersion(post.pageId, pageVersion),
-          appVersion = dao.globals.applicationVersion,
-          posts = Seq(postJson), users = Seq(JsPat(author, tagsAndBadges)))
-  }
-
-
-  @deprecated("now", "use makeStorePatchForPosts instead")
-  def makeStorePatch2(postId: PostId, pageId: PageId, appVersion: String,
-        transaction: SiteTransaction): JsObject = {
-    // Warning: some similar code above [89fKF2]
-    // Load the page so we'll get a version that includes postId, in case it was just added.
-    val page = dao.newPageDao(pageId, transaction)
-    val post = page.parts.postById(postId) getOrDie "EsE8YKPW2"
-    dieIf(post.pageId != pageId, "EdE4FK0Q2W", o"""Wrong page id: $pageId, was post $postId
-        just moved to page ${post.pageId} instead? Site: ${transaction.siteId}""")
-    val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(Seq(post.id))
-    val author = transaction.loadTheParticipant(post.createdById)
-    require(post.createdById == author.id, "EsE4JHKX1")
-    val postJson = postToJsonImpl(
-          post, page, tagsAndBadges, includeUnapproved = true, showHidden = true)
-    makeStorePatchForPagePosts(PageIdVersion(post.pageId, page.version),
-          appVersion = appVersion, posts = Seq(postJson),
-          users = Seq(JsPat(author, tagsAndBadges)))
-  }
-
-
-  def makeStorePatchForPagePosts(pageIdVersion: PageIdVersion, appVersion: St,
-          posts: Seq[JsObject] = Nil, users: Seq[JsObject] = Nil): JsObject = {
-    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
-    // Not tags, but tag types missing?  [missing_tags_feats]
-    Json.obj(
-      "appVersion" -> appVersion,
-      "pageVersionsByPageId" -> Json.obj(pageIdVersion.pageId -> pageIdVersion.version),
-      "usersBrief" -> users,
-      "postsByPageId" -> Json.obj(pageIdVersion.pageId -> posts))
+    makeStorePatchForPostIds(
+          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true, dao)
   }
 
 
@@ -1235,8 +1267,9 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
+  ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove [nashorn_in_tx]
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
+          showHidden: Bo, inclUnapproved: Bo,
           tagsAndBadges: TagsAndBadges, tagTypes: Seq[TagType],
           users: Iterable[Pat], appVersion: St)(
           tx: SiteTx): JsObject = {
@@ -1252,13 +1285,13 @@ class JsonMaker(dao: SiteDao) {
         val posts = pageIdPosts._2
         val page = dao.newPageDao(pageId, tx)
         val postsJson = posts map { p =>
+          // We're in a tx, and postToJsonImpl renders CommonMark, slightly bad. [nashorn_in_tx]
           postToJsonImpl(p, page, tagsAndBadges,
-                includeUnapproved = false, showHidden = false)
+                includeUnapproved = inclUnapproved, showHidden = showHidden)
         }
         pageId -> JsArray(postsJson.toSeq)
       }))
 
-    // Not tags, but tag types missing?  [missing_tags_feats]
     Json.obj(
       "appVersion" -> appVersion,
       "pageVersionsByPageId" -> pageVersionsByPageIdJson,
@@ -1647,7 +1680,7 @@ object JsonMaker {
   private def votesJson(userId: UserId, pageId: PageId, transaction: SiteTransaction): JsObject = {
     val actions = transaction.loadActionsByUserOnPage(userId, pageId)
     // COULD load flags too, at least if user is staff [7KW20WY1]
-    val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
+    val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[imm.Seq[PostVote]]
     val userVotesMap = UserPostVotes.makeMap(votes)
     val votesByPostId = userVotesMap map { case (postNr, postVotes) =>
       var voteStrs = Vector[String]()
@@ -1843,6 +1876,7 @@ object JsonMaker {
         (None, post.approvedSource, post.approvedAt.isDefined)
       }
       else if (includeUnapproved) {
+        SHOULD_OPTIMIZE // Don't render CommonMark in a db tx!
         // Later: Save sanitized html in the post always. [html_json] [nashorn_in_tx]
         val htmlString = renderer.renderAndSanitize(post, IfCached.Use)
         (Some(htmlString), Some(post.currentSource), post.isCurrentVersionApproved)
@@ -1943,7 +1977,7 @@ object JsonMaker {
 
 
   /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(parentlessReplyNrsSorted: immutable.Seq[JsNumber]): JsObject =
+  def embeddedCommentsDummyRootPost(parentlessReplyNrsSorted: imm.Seq[JsNumber]): JsObject =
     Json.obj(
       "nr" -> JsNumber(PageParts.BodyNr),
       "isApproved" -> JsTrue,
@@ -2065,13 +2099,13 @@ object JsonMaker {
   }
 
   // Move to new classs ed.server.util.HtmlUtils? [5WK9GP6FUQ]
-  def findImageUrls(htmlText: String): immutable.Seq[String] = {
+  def findImageUrls(htmlText: String): imm.Seq[String] = {
     findImageUrlsImpl(Jsoup.parse(htmlText))
   }
 
 
   // Move to new classs ed.server.util.HtmlUtils? [5WK9GP6FUQ]
-  def findImageUrlsImpl(jsoupDoc: org.jsoup.nodes.Document): immutable.Seq[String] = {
+  def findImageUrlsImpl(jsoupDoc: org.jsoup.nodes.Document): imm.Seq[String] = {
     // Later: COULD use https://github.com/bytedeco/javacv to extract frame samples from videos.
     // Sample code: http://stackoverflow.com/a/22107132/694469
     /*

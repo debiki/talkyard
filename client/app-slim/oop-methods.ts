@@ -574,7 +574,7 @@ export function post_shallRenderAsHidden(post: Post): boolean {
   return post.isBodyHidden && _.isEmpty(post.sanitizedHtml);
 }
 
-export function post_isPubVisible(post: Post): Bo {
+export function post_isPubVisible(post: Post): BoZ {
   // && !== CompletedForm  fix server side too if enabling forms
   return !post.isBodyHidden && post.approvedAtMs && !post_isDeleted(post);
 }

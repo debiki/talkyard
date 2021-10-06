@@ -78,7 +78,7 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
   // tab, and we don't want to break it by deleting cookies. Instead login temp cookies are
   // deleted by the server.)
 
-  Server.loadMyself((anyMe: Me | NU) => {
+  Server.loadMyself((anyMe: Me | NU, stuffForMe?: StuffForMe) => {
     // @ifdef DEBUG
     // Might happen if there was no weakSessionId, and also, no cookie.
     dieIf(!anyMe, 'TyE4032SMH57');
@@ -104,10 +104,11 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
         mainWin.theStore.me = _.cloneDeep(newMe);
       }
       sendToOtherIframes([
-        'justLoggedIn', { user: newMe, weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
+        'justLoggedIn', { user: newMe, stuffForMe,
+              weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
               sessionType: null, rememberEmbSess }]);
     }
-    setNewMe(newMe);
+    setNewMe(newMe, stuffForMe);
     if (afterwardsCallback) {
       afterwardsCallback();
     }
@@ -115,13 +116,14 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
 }
 
 
-export function setNewMe(user: Me | NU) {
+export function setNewMe(user: Me | NU, stuffForMe?: StuffForMe) {
   // @ifdef DEBUG
   dieIf(!user, `setNewMe(nothing) TyE60MRJ46RS`);
   // @endif
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.NewMyself,
-    user: user
+    user,
+    stuffForMe,
   });
 }
 
@@ -946,11 +948,10 @@ export function removeMeAsPageMember() {
 }
 
 
-export function updateUserPresence(user: BriefUser, presence: Presence) {
+export function updateUserPresence(data: UserPresenceWsMsg) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdateUserPresence,
-    user: user,
-    presence: presence,
+    data,
   });
 }
 
@@ -1528,10 +1529,11 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
 function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
   // UX maybe dim & overlay-cover the current page, to prevent interactions, until request completes?
   // So the user e.g. won't click Reply and start typing, but then the page suddenly changes.
-  Server.loadPageJson(newUrlPath, response => {
-    if (response.problemCode) {
+  Server.loadPageJson(newUrlPath, (jsonOrProblem: PageJsonAndMe | PageJsonProblem) => {
+    if ((jsonOrProblem as PageJsonProblem).problemCode) {
       // Code 404 Not Found  happens if page delted, or moved to a category one may not access.
-      switch (response.problemCode) {
+      const problem = jsonOrProblem as PageJsonProblem;
+      switch (problem.problemCode) {
         case 404:
           let closeDialogFn;
           function goBack() {
@@ -1547,25 +1549,28 @@ function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
                 r.p({}, r.a({ onClick: goBack }, t.GoBackToLastPage))) });
           break;
         default:
-          die(`${response.problemMessage} [${response.problemCode}]`);
+          die(`${problem.problemMessage} [${problem.problemCode}]`);
       }
       return;
     }
 
+    const pageJsonAndMe = jsonOrProblem as PageJsonAndMe;
+
     // This is the React store for showing the page at the new url path.
-    const newStore: Store = JSON.parse(response.reactStoreJsonString);
+    const newStore: Store = JSON.parse(pageJsonAndMe.reactStoreJsonString);
     const pageId = newStore.currentPageId;
     const newPage = newStore.pagesById[pageId];
     const pats = _.values(newStore.usersByIdBrief);
     const pubCats = newStore.publicCategories;
 
-    // This'll trigger ReactStore onChange() event, and everything will redraw to show the new page.
+    // This'll trigger ReactStore onChange() event; everything will redraw to show the new page.
     showNewPage({
       newPage,
       pubCats,
       pats,
-      me: response.me,
-      tagTypesById: newStore.tagTypesById,
+      tagTypesById: newStore.tagTypesById,  // tag types everyone needs
+      me: pageJsonAndMe.me,
+      stuffForMe: pageJsonAndMe.stuffForMe, // includes additional tag types `me` needs
       history,
     });
   });

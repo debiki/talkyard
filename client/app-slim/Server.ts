@@ -1455,7 +1455,7 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
 }
 
 
-export function loadMyself(callback: (me: Me | NU) => void) {
+export function loadMyself(onOk: (me: Me | NU, stuffForMe?: StuffForMe) => Vo) {
   // @ifdef DEBUG
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
@@ -1487,8 +1487,9 @@ export function loadMyself(callback: (me: Me | NU) => void) {
     }
   }
   // SHOULD incl sort order & topic filter in the url params. [2KBLJ80]
-  get(`/-/load-my-page-data?pageIds=${pageIds}`, function (resp: { me?: Me }) {
-    callback(resp.me);
+  get(`/-/load-my-page-data?pageIds=${pageIds}`,
+        function (resp: { me?: Me, stuffForMe?: StuffForMe }) {
+    onOk(resp.me, resp.stuffForMe);
   });
 }
 
@@ -1633,28 +1634,25 @@ export function loadForumCategoriesTopics(forumPageId: string, topicFilter: stri
 
 
 // SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
-// 'users' field to 'usersBrief'.  [.get_n_patch]
-// Maybe minor BUG might this overwrite  store.usersById with users without badges? [pat_tags_lost]
-export function loadForumTopics(categoryId: Nr, orderOffset: OrderOffset,
-    doneCallback: (response: LoadTopicsResponse) => void) {
+// 'users' field to 'usersBrief', no, 'patsBr'? 'Tn = Tiny, Br = Brief, Vb = Verbose?  [.get_n_patch]
+export function loadForumTopics(categoryId: CatId, orderOffset: OrderOffset,
+    onOk: (resp: LoadTopicsResponse) => Vo) {
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
   get(url, (resp: LoadTopicsResponse) => {
-    // SLEEPING_BUG: pat tags lost? resp.users doesn't incl pat tags. [pat_tags_lost]
-    ReactActions.patchTheStore({ usersBrief: resp.users, tagTypes: resp.tagTypes });  // [2WKB04R]
-    doneCallback(resp);
+    ReactActions.patchTheStore(resp.storePatch);  // [2WKB04R]
+    onOk(resp);
   });
 }
 
 
 // SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
 // 'users' field to 'usersBrief'.  [.get_n_patch]
-// Maybe minor BUG might this overwrite  store.usersById with users without badges? [pat_tags_lost]
 export function loadTopicsByUser(userId: UserId,
         doneCallback: (topics: Topic[]) => void) {
   const url = `/-/list-topics-by-user?userId=${userId}`;
-  get(url, (resp: any) => {
-    ReactActions.patchTheStore({ usersBrief: resp.users, tagTypes: resp.tagTypes  });
+  get(url, (resp: LoadTopicsResponse) => {
+    ReactActions.patchTheStore(resp.storePatch);
     doneCallback(resp.topics);
   });
 }

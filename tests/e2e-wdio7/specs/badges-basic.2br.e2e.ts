@@ -183,7 +183,7 @@ describe(`badges-basic.2br  TyTE2EBADGESBSC`, () => {
 
     it(`${who} sees that @${ps.username} has these title badge next to posts ${
             ps.postNrs.join(', ')}: ${j2s(ps.badgeTitles)}`, async () => {
-      // Dupl code [.author_badges]
+      // Dupl code [author_badges]
       // Might need to wait for the server to re-render the page — but only in this
       // first `it(..)`.
       let badgeTitles: St[] = [];

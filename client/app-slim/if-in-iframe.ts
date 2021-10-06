@@ -135,8 +135,12 @@ function onMessage(event) {
       // theStore.me was updated by ReactActions.loadMyself():
       dieIf(!mainWin.theStore.me, 'justLoggedIn but theStore.me missing [TyE406MR4E2]');
       dieIf(!eventData.user, 'justLoggedIn but user missing [TyE406MR4E3]');
+      // DO_AFTER v0.2021.31:
+      //dieIf(!eventData.stuffForMe, 'justLoggedIn but stuffForMe missing [TyE406MR4E4]');
+      // Could assert present also in setNewMe() and loadMyself(), and change
+      // param to cannot-be-undefined.
       // @endif
-      ReactActions.setNewMe(eventData.user);
+      ReactActions.setNewMe(eventData.user, eventData.stuffForMe);
       break;
     case 'logoutClientSideOnly':
       // Sent from the comments iframe one logged out in, to the editor iframe

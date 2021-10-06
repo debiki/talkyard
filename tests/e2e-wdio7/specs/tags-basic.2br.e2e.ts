@@ -335,7 +335,7 @@ describe(`tags-basic.2br  TyTE2ETAGSBSC`, () => {
         // [E2EBUG] no idea why, but unless triggering a relayout,  Webdriverio never finds:
         //   .c_TpcTtl[href="/by-maria-category-a"] + .dw-p-excerpt
         // although I see it myself, find it in Dev Tools.
-        // Trigger relayout: (or make the page wider?)
+        // Trigger relayout: (or make the page wider?)  [topc_list_tags_not_found]
         await br().watchbar.openIfNeeded();
         await br().watchbar.close();
         const actualTagTitles: St[] = await br().forumTopicList.getTopicTags({

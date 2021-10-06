@@ -510,14 +510,23 @@ categories -
           - category-permissions.2br   TyTE2ECATPREMS01
           - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
 
-tags:
-            - tags-basic.2br  TyTE2ETAGSBSC
-            - TESTS_MISSING: invalid names: too long, short, commas. Unique key error
-            - TESTS_MISSING server side tag tests, see:   TyTIT_TAGS
-
-badges:
+tags, post tags, content tags,
+badges, user badges, user flairs:
             - badges-basic.2br  TyTE2EBADGESBSC
+            - tags-basic.2br  TyTE2ETAGSBSC
+  works for oneself and others who are already online,
+      (there was a bug where users-online-data without tags overwrote users with tags),
+  works for others who goes online: (WS message with user):
+            - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTPRESENCE01
+  works also if post not approved:
+            - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTTAGUNAPRPO
+            - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTUNAPRPATBADGE
+  invalid names: too long, short, commas. Unique key error:
+            - TESTS_MISSING
+  server side tag tests:
+            - TESTS_MISSING see:   TyTIT_TAGS
 
+access permissions,
 permissions -
   category -
     change to staff-only —> globally pinned chat dissappears from stranger's watchbar  (6KWQ2)
@@ -877,6 +886,10 @@ uploads -  (7KFC2)
 
 recent comments:
 
+contextbar:
+  switch to users online:
+            - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTPRESENCE01
+
 users online -
   forum:
     I go on/off:
@@ -884,6 +897,7 @@ users online -
   discussion:
     I go on/off:
     other on/off:
+            - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTPRESENCE01
   chat:
     I go on/off:
     other on/off:
@@ -1013,8 +1027,11 @@ review after:
     delete flagged:   — also see (6JS3)
     clear flag:   — also see (6JS3)
     approve posts:
-      - admin-user-threat-mild.2browsers.test.ts  [TyT2WKBG4Z]
-      - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
+            - admin-user-threat-mild.2browsers.test.ts  [TyT2WKBG4Z]
+            - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
+      with tags:
+            - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTAPRTGDPO
+
     undoReviewDecision: [4JKWWD4]
     ... lots of stuff ...
     bad user auto-banned:
@@ -1084,7 +1101,8 @@ review after:
     # Undo reject, and undelete — then, can approve?
     # Delete whole page. Undelete page. Then can approve / reject afterwards.
   moderate from page:
-          - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
+            - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
+            - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTAPRTGDPO
     other mod moderates just after, from moderation page:
           - TESTS_MISSING TyT204RKSTEM
 
@@ -1310,6 +1328,9 @@ live notifications -
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   disconnected from chat, if removed from chat:
           - SEC_TESTS_MISSING  TyT6P03MRKD
+  presence:
+            - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTPRESENCE01
+            - TESTS_MISSING  could add more, also for going offline
 
 notf prefs inherited:
   one's own, from site, to cat, to topic:

@@ -3550,9 +3550,37 @@ export class TyE2eTestBrowser {
 
 
     contextbar = {
+      openIfNeeded: async () => {
+        if (!await this.isDisplayed('#esThisbarColumn')) {
+          await this.contextbar.open();
+        }
+      },
+
+      open: async () => {
+        await this.waitAndClick('.esOpenPagebarBtn');
+        await this.waitForDisplayed('#esThisbarColumn');
+      },
+
       close: async () => {
         await this.waitAndClick('.esCtxbar_close');
         await this.waitUntilGone('#esThisbarColumn');
+      },
+
+      usersHere: {
+        switchToThisTab: async () => {
+          await this.waitAndClick('.e_CtxBarB');
+          await this.waitForDisplayed('.esCtxbar_onlineCol');
+        },
+
+        waitFor: async (username: St, ps: { online?: Bo } = {}) => {
+          await this.waitForVisible('.esCtxbar_list .esAvtrName_username');
+          const onOfflineSel = ps.online
+              ? '.esPresence-active'
+              : (ps.online === false ? ':not(.esPresence-active)' : '');
+
+          const sel = `.esCtxbar_list .esPresence${onOfflineSel} .esAvtrName_username`;
+          await this.waitAndGetElemWithText(sel, username);
+        },
       },
 
       clickAddPeople: async () => {
@@ -6070,8 +6098,7 @@ export class TyE2eTestBrowser {
       },
 
       getPostAuthorBadgeTitles: async (postNr: PostNr, howManyBadges: Nr | U): Pr<St[]> => {
-        // Make selector more precise, so we get pat tags (user badges) for sure, not post tag! [precise_tag_sels]
-        const sel = this.topic.postHeaderSelector(postNr);
+        const sel = this.topic.postHeaderSelector(postNr) + ' .n_TagL-Pat ';
         if (howManyBadges === 0) {
           // When the username has appeared, tags should be there too?
           await this.topic.getPostAuthorUsernameInclAt(postNr);
@@ -6404,7 +6431,7 @@ export class TyE2eTestBrowser {
       openTagsDialog: async (ps: { openHow?: 'ClickHeaderTags' | 'ViaMoreDropdown',
               forPostNr?: PostNr } = {}) => {
         const postNr = ps.forPostNr || c.BodyNr;
-        if (!ps.openHow || ps.openHow === 'ClickHeaderTags') {
+        if ((!ps.openHow && postNr === c.BodyNr) || ps.openHow === 'ClickHeaderTags') {
           // Make 'sel' more precise, so cannot click pat tags.  [precise_tag_sels]
           const sel = this.topic.postHeaderSelector(postNr) + ' .c_TagL_AddB';
           await this.waitAndClick(sel);
@@ -6415,7 +6442,6 @@ export class TyE2eTestBrowser {
         }
       },
 
-      // Move to this.utils? Y. Because also used from user profile page, recent posts list.
       getTags: async (ps: { forPostNr?: PostNr, howManyTags: Nr, within?: Sel }): Pr<St[]> => {
         const postNr = ps.forPostNr || c.BodyNr;
         const sel =
