@@ -324,7 +324,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
   def loadPageMetasByExtIdAsMap(extImpIds: Iterable[ExtId]): Map[ExtId, PageMeta]
   def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta]
-  def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false): Unit
+  def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Bo = false)(
+        mab: MessAborter): U
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean): Unit = {
     dieIf(newMeta.pageType != oldMeta.pageType && !oldMeta.pageType.mayChangeRole, "EsE4KU0W2")

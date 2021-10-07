@@ -890,7 +890,8 @@ case class SitePatcher(globals: debiki.Globals) {
               lastApprovedReplyById = pageInPatch.lastApprovedReplyById.map(remappedPpTempId),
               frequentPosterIds = pageInPatch.frequentPosterIds.map(remappedPpTempId))
 
-            tx.insertPageMetaMarkSectionPageStale(pageWithRealIdsButWrongStats, isImporting = true)
+            tx.insertPageMetaMarkSectionPageStale(
+                  pageWithRealIdsButWrongStats, isImporting = true)(IfBadAbortReq)
             wroteToDatabase = true
             // We update  upsertedPages below, after page meta stats has been updated.
             pageIdsWithBadStats.add(realPageId)
@@ -1283,7 +1284,7 @@ case class SitePatcher(globals: debiki.Globals) {
 
       siteData.pages foreach { pageMeta =>
         //val newId = transaction.nextPageId()
-        tx.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)
+        tx.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)(IfBadAbortReq)
       }
 
       siteData.pagePaths foreach { path =>

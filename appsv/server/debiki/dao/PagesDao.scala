@@ -341,7 +341,7 @@ trait PagesDao {
       numChatTopicsCreated = pageRole.isChat ? 1 | 0)
 
     addUserStats(stats)(tx)
-    tx.insertPageMetaMarkSectionPageStale(pageMeta)
+    tx.insertPageMetaMarkSectionPageStale(pageMeta)(IfBadDie)
     tx.insertPagePath(pagePath)
     tx.insertPost(titlePost)
     tx.insertPost(bodyPost)
