@@ -1,23 +1,16 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import fs = require('fs');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
-import * as embPages from './embedded-comments-create-site-export-json.2browsers.pages';
+import assert from '../utils/ty-assert';
+import * as fs from 'fs';
+import server from '../utils/server';
+import * as make from '../utils/make';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
+import c from '../test-constants';
+import * as embPages from './embcom.expimpjson.test-data';
 
-let browser: TyE2eTestBrowser;
-declare let browserA: any;
-declare let browserB: any;
-
-let everyonesBrowsers;
-let owen;
+let owen: Member;
 let owensBrowser: TyE2eTestBrowser;
 let maria: Member;
 let mariasBrowser: TyE2eTestBrowser;
@@ -27,21 +20,20 @@ let guestsBrowser: TyE2eTestBrowser;
 let strangersBrowser: TyE2eTestBrowser;
 
 let data: NewSiteData;
-let siteId: any;
-let talkyardSiteOrigin: string;
+let siteId: SiteId;
+let talkyardSiteOrigin: St;
 
 
-describe("embedded comments export json  TyT7FKDJF3", () => {
+describe(`embedded comments export json  TyT7FKDJF3`, async () => {
 
   if (settings.prod) {
     console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
     return;
   }
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    owensBrowser = new TyE2eTestBrowser(browserA);
-    mariasBrowser = new TyE2eTestBrowser(browserB);
+  it(`Initialize people`, async () => {
+    owensBrowser = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    mariasBrowser = new TyE2eTestBrowser(wdioBrowserB, 'brB');
     michaelsBrowser = mariasBrowser;
     strangersBrowser = mariasBrowser;
     guestsBrowser = strangersBrowser;
@@ -51,11 +43,11 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
   });
 
 
-  it('Owen creates an embedded comments site as a Password user  @login @password', () => {
+  it('Owen creates an embedded comments site as a Password user  @login @password', async () => {
     const newSiteData: NewSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
         shortName: 'emb-exp', longName: "Emb Cmts Exp" });
-    const result = owensBrowser.newSite.createNewSite(newSiteData);
-    owensBrowser.newSite.signUpAsOwner(result);
+    const result = await owensBrowser.newSite.createNewSite(newSiteData);
+    await owensBrowser.newSite.signUpAsOwner(result);
     data = result.data;
     siteId = result.siteId;
     talkyardSiteOrigin = result.talkyardSiteOrigin;
@@ -64,165 +56,165 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
 
   // ----- Prepare: Create embedding pages and API secret
 
-  it("Owen clicks Blog = Something Else, to show the instructions", () => {
-    owensBrowser.waitAndClick('.e_SthElseB');
+  it(`Owen clicks Blog = Something Else, to show the instructions`, async () => {
+    await owensBrowser.waitAndClick('.e_SthElseB');
   });
 
 
-  it("He creates some embedding pages", () => {
-    embPages.createEmbeddingPages(owensBrowser);
+  it(`He creates some embedding pages`, async () => {
+    await embPages.createEmbeddingPages(owensBrowser);
   });
 
 
   // ----- Create things to export
 
-  it(`A stranger goes to ${embPages.slugs.guestReplyPageSlug}`, () => {
-    strangersBrowser.go(data.embeddingUrl + embPages.slugs.guestReplyPageSlug);
+  it(`A stranger goes to ${embPages.slugs.guestReplyPageSlug}`, async () => {
+    await strangersBrowser.go(data.embeddingUrl + embPages.slugs.guestReplyPageSlug);
   });
 
-  it("... posts a comment", () => {
+  it(`... posts a comment`, async () => {
     // Dupl code 0. [60290KWFUDTT]
-    guestsBrowser.switchToEmbeddedCommentsIrame();
-    guestsBrowser.topic.clickReplyToEmbeddingBlogPost();
-    guestsBrowser.switchToEmbeddedEditorIrame();
-    guestsBrowser.editor.editText(embPages.texts.guestsReply);
-    guestsBrowser.editor.save();
+    await guestsBrowser.switchToEmbeddedCommentsIrame();
+    await guestsBrowser.topic.clickReplyToEmbeddingBlogPost();
+    await guestsBrowser.switchToEmbeddedEditorIrame();
+    await guestsBrowser.editor.editText(embPages.texts.guestsReply);
+    await guestsBrowser.editor.save();
   });
 
-  it("... logs in as Garbo Guest", () => {
+  it(`... logs in as Garbo Guest`, async () => {
     // Dupl code 1. [60290KWFUDTT]
-    guestsBrowser.swithToOtherTabOrWindow();
-    guestsBrowser.disableRateLimits();
-    guestsBrowser.loginDialog.signUpLogInAs_Real_Guest(
+    await guestsBrowser.swithToOtherTabOrWindow();
+    await guestsBrowser.disableRateLimits();
+    await guestsBrowser.loginDialog.signUpLogInAs_Real_Guest(
         embPages.texts.guestsName, embPages.texts.guestsEmail);
-    guestsBrowser.switchBackToFirstTabOrWindow();
+    await guestsBrowser.switchBackToFirstTabOrWindow();
   });
 
-  it("... the comment appears", () => {
+  it(`... the comment appears`, async () => {
     // Dupl code 2. [60290KWFUDTT]
-    guestsBrowser.switchToEmbeddedCommentsIrame();
-    guestsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    guestsBrowser.topic.assertPostTextMatches(c.FirstReplyNr, embPages.texts.guestsReply);
+    await guestsBrowser.switchToEmbeddedCommentsIrame();
+    await guestsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    await guestsBrowser.topic.assertPostTextMatches(c.FirstReplyNr, embPages.texts.guestsReply);
   });
 
-  it("... the guest leaves", () => {
-    guestsBrowser.metabar.clickLogout();
+  it(`... the guest leaves`, async () => {
+    await guestsBrowser.metabar.clickLogout();
   });
 
-  it(`Michael goes to ${embPages.slugs.threeRepliesPageSlug}`, () => {
-    michaelsBrowser.go(data.embeddingUrl + embPages.slugs.threeRepliesPageSlug);
-    michaelsBrowser.switchToEmbeddedCommentsIrame();
+  it(`Michael goes to ${embPages.slugs.threeRepliesPageSlug}`, async () => {
+    await michaelsBrowser.go(data.embeddingUrl + embPages.slugs.threeRepliesPageSlug);
+    await michaelsBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("Michael posts a comment, does *not* verify his email address", () => {
-    michaelsBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.michaelsReply,
+  it(`Michael posts a comment, does *not* verify his email address`, async () => {
+    await michaelsBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.michaelsReply,
       { signUpWithPaswordAfterAs: michael, needVerifyEmail: false });
   });
 
-  it("Michael leaves", () => {
-    michaelsBrowser.metabar.clickLogout();
+  it(`Michael leaves`, async () => {
+    await michaelsBrowser.metabar.clickLogout();
   });
 
-  it("Maria posts a comment", () => {
-    mariasBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.mariasReplyOne,
+  it(`Maria posts a comment`, async () => {
+    await mariasBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.mariasReplyOne,
       { signUpWithPaswordAfterAs: maria, needVerifyEmail: false });
   });
 
-  it("... and *does* verify her email address", () => {
-    const link = server.getLastVerifyEmailAddressLinkEmailedTo(
-        siteId, maria.emailAddress, mariasBrowser);
-    mariasBrowser.go2(link);
+  it(`... and *does* verify her email address`, async () => {
+    const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+        siteId, maria.emailAddress);
+    await mariasBrowser.go2(link);
   });
 
-  it("Maria and Michael got 1 emails each: the verif-addr email", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, michael.emailAddress), 1);
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), 1);
+  it(`Maria and Michael got 1 emails each: the verif-addr email`, async () => {
+    assert.eq(await server.countLastEmailsSentTo(siteId, michael.emailAddress), 1);
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), 1);
   });
 
-  it("Owen goes to the blog", () => {
-    owensBrowser.go2(data.embeddingUrl + embPages.slugs.threeRepliesPageSlug);
+  it(`Owen goes to the blog`, async () => {
+    await owensBrowser.go2(data.embeddingUrl + embPages.slugs.threeRepliesPageSlug);
   });
 
-  it("... Owen needs to login?", () => {
-    owensBrowser.complex.loginIfNeededViaMetabar(owen);
+  it(`... Owen needs to login?`, async () => {
+    await owensBrowser.complex.loginIfNeededViaMetabar(owen);
   });
 
-  it("Owen flags Michael's reply", () => {
-    owensBrowser.topic.refreshUntilPostNrAppears(c.FirstReplyNr, { isEmbedded: true });
-    owensBrowser.complex.flagPost(c.FirstReplyNr, 'Inapt');
+  it(`Owen flags Michael's reply`, async () => {
+    await owensBrowser.topic.refreshUntilPostNrAppears(c.FirstReplyNr, { isEmbedded: true });
+    await owensBrowser.complex.flagPost(c.FirstReplyNr, 'Inapt');
   });
 
-  it("... and posts a reply, @mentions both Michael and Maria", () => {
-    owensBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.owensReplyMentionsMariaMichael);
+  it(`... and posts a reply, @mentions both Michael and Maria`, async () => {
+    await owensBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.owensReplyMentionsMariaMichael);
   });
 
-  it(`Maria gets a reply notf email, Michael doesn't (didn't verify his email)`, () => {
-    server.waitUntilLastEmailMatches(
+  it(`Maria gets a reply notf email, Michael doesn't (didn't verify his email)`, async () => {
+    await server.waitUntilLastEmailMatches(
         siteId, maria.emailAddress, embPages.texts.owensReplyMentionsMariaMichael, mariasBrowser);
     // Email addr verif email + reply notf = 2.
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), 2);
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), 2);
   });
 
-  it("... but Michal got no more emails", () => {
+  it(`... but Michal got no more emails`, async () => {
     // Email addr verif email + *no* reply notf = 1.
-    assert.equal(server.countLastEmailsSentTo(siteId, michael.emailAddress), 1);
+    assert.eq(await server.countLastEmailsSentTo(siteId, michael.emailAddress), 1);
   });
 
-  it(`Maria goes to ${embPages.slugs.replyWithImagePageSlug}`, () => {
-    mariasBrowser.go2(data.embeddingUrl + embPages.slugs.replyWithImagePageSlug);
+  it(`Maria goes to ${embPages.slugs.replyWithImagePageSlug}`, async () => {
+    await mariasBrowser.go2(data.embeddingUrl + embPages.slugs.replyWithImagePageSlug);
   });
 
-  it("... posts a comment with an image", () => {
+  it(`... posts a comment with an image`, async () => {
     // TESTS_MISSING: no image uploaded [402KGS4RQ]
-    mariasBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.mariasReplyTwoWithImage);
+    await mariasBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.mariasReplyTwoWithImage);
   });
 
-  it(`Maria goes to ${embPages.slugs.onlyLikeVotePageSlug}`, () => {
-    mariasBrowser.go2(data.embeddingUrl + embPages.slugs.onlyLikeVotePageSlug);
+  it(`Maria goes to ${embPages.slugs.onlyLikeVotePageSlug}`, async () => {
+    await mariasBrowser.go2(data.embeddingUrl + embPages.slugs.onlyLikeVotePageSlug);
   });
 
-  it("... Like-votes the blog post", () => {
+  it(`... Like-votes the blog post`, async () => {
     // This tests export & import of an empty page, except for the Like vote.
-    mariasBrowser.topic.clickLikeVoteForBlogPost();
+    await mariasBrowser.topic.clickLikeVoteForBlogPost();
   });
 
-  it(`Maria goes to ${embPages.slugs.onlySubscrNotfsPageSlug}`, () => {
-    mariasBrowser.go2(data.embeddingUrl + embPages.slugs.onlySubscrNotfsPageSlug);
+  it(`Maria goes to ${embPages.slugs.onlySubscrNotfsPageSlug}`, async () => {
+    await mariasBrowser.go2(data.embeddingUrl + embPages.slugs.onlySubscrNotfsPageSlug);
   });
 
-  it("... subscribes to new comments", () => {
+  it(`... subscribes to new comments`, async () => {
     // This tests export & import of an empty page — there's just the new-replies subscription.
-    mariasBrowser.metabar.setPageNotfLevel(c.TestPageNotfLevel.EveryPost);
+    await mariasBrowser.metabar.setPageNotfLevel(c.TestPageNotfLevel.EveryPost);
   });
 
 
   // ----- Export site to .json file
 
-  it("Exports the site as json", () => {
-    owensBrowser.adminArea.goToBackupsTab(talkyardSiteOrigin);
+  it(`Exports the site as json`, async () => {
+    await owensBrowser.adminArea.goToBackupsTab(talkyardSiteOrigin);
 
     // There should be a download file link here.
-    owensBrowser.waitForVisible('.e_DnlBkp');
-    const downloadAttr = owensBrowser.$('.e_DnlBkp').getAttribute('download');
-    assert(_.isString(downloadAttr)); // but not null
-    const wrongAttr = owensBrowser.$('.e_DnlBkp').getAttribute('download-wrong');
-    assert(!_.isString(wrongAttr)); // tests the test
+    await owensBrowser.waitForVisible('.e_DnlBkp');
+    const downloadAttr = await (await owensBrowser.$('.e_DnlBkp')).getAttribute('download');
+    assert.that(_.isString(downloadAttr)); // but not null
+    const wrongAttr = await (await owensBrowser.$('.e_DnlBkp')).getAttribute('download-wrong');
+    assert.that(!_.isString(wrongAttr)); // tests the test
 
     // Don't know how to choose where to save the file, so instead, open the json 
     // directly in the browser:
-    const downloadUrl = owensBrowser.$('.e_DnlBkp').getAttribute('href');
-    owensBrowser.go(downloadUrl);
+    const downloadUrl = await (await owensBrowser.$('.e_DnlBkp')).getAttribute('href');
+    await owensBrowser.go(downloadUrl);
   });
 
 
   let jsonDumpStr: string;
 
-  it("Can parse the exported json into a js obj", () => {
+  it(`Can parse the exported json into a js obj`, async () => {
     let dummy;
-    [jsonDumpStr, dummy] = owensBrowser.getWholePageJsonStrAndObj();
+    [jsonDumpStr, dummy] = await owensBrowser.getWholePageJsonStrAndObj();
   });
 
-  it("Saves the dump, here:\n\n      " + c.EmbCommentsJsonExport + "\n", () => {
+  it(`Saves the dump, here:\n\n      ` + c.EmbCommentsJsonExport + `\n`, () => {
     fs.writeFileSync(c.EmbCommentsJsonExport, jsonDumpStr);
   });
 

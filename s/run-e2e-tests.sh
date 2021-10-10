@@ -626,11 +626,11 @@ function runAllE2eTests {
   # (all names included in short-cache-time already)
 
   # Do last, easier to debug the tests above instead if there's a bug:
-  $r s/wdio       --only embedded-comments-create-site-export-json.2browsers $args
-  $r s/wdio       --only embedded-comments-import-json-create-new-site.2browsers $args
-  #$r s/wdio       --only embedded-comments-import-json-to-existing-emb-cmts-site.2browsers $args
-  $r s/wdio       --only embedded-comments-restore-overwrite-site-same-domain.2browsers $args
-  $r s/wdio       --only embedded-comments-restore-overwrite-site-new-domain.2browsers $args
+  $r s/wdio-7     --only embcom.expimpjson.create-site-exp-json.2br --cd -i $args
+  $r s/wdio-7     --only embcom.expimpjson.imp-to-new-site.2br --cd -i $args
+  #r s/wdio-7     --only embcom.expimpjson.imp-to-existing-site.2br.e2e-UNIMPL --cd -i $args
+  $r s/wdio-7     --only embcom.expimpjson.restore-overwrite-site-same-domain.2br --cd -i $args
+  $r s/wdio-7     --only embcom.expimpjson.restore-overwrite-site-new-domain.2br --cd -i $args
 
   $r s/wdio       --only embcom.comment-counts.2br.cors $args
 

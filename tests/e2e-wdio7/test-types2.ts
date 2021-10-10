@@ -1,6 +1,9 @@
 /// <reference path="../../client/app-slim/constants.ts" />
 /// <reference path="../../client/types-and-const-enums.ts" />
 
+import { SiteType, NewSiteOwnerType } from './test-constants';
+
+
 
 type BoolOrFn = boolean | (() => boolean);
 type StringOrFn = string | (() => string);
@@ -130,12 +133,6 @@ interface TestCounters {
 
 
 
-const enum SiteType {
-  Forum = 1,
-  EmbeddedCommments = 2,
-}
-
-
 interface NewSiteResult {
   data: NewSiteData;
   testId: string;
@@ -173,15 +170,6 @@ interface NewSiteDataForForum extends NewSiteDataSharedFields {
 interface NewSiteDataForEmbeddedComments extends NewSiteDataSharedFields {
   siteType: SiteType.EmbeddedCommments;
   embeddingUrl: string;
-}
-
-
-const enum NewSiteOwnerType {
-  OwenOwner = 1,
-  GmailAccount = 2,
-  FacebookAccount = 3,
-  GitHubAccount = 4,
-  LinkedInAccount = 5,
 }
 
 

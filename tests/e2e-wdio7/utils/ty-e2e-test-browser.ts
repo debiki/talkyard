@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { IsWhere, isWhere_isInIframe } from '../test-types';
+import { SiteType, NewSiteOwnerType } from '../test-constants';
 
 
 // Why are many WebdriverIO's functions reimplemented here?
@@ -6377,11 +6378,15 @@ export class TyE2eTestBrowser {
 
       clickFlagPost: async (postNr: PostNr, opts: { needToClickMore?: false } = {}) => {
         if (opts.needToClickMore !== false) {
+          // Flag button is inside the More dialog.
           await this.topic.clickMoreForPostNr(postNr);
+          await this.waitAndClick('.e_PAMoreD .dw-a-flag');
         }
-        // Else: Flag button already visible (this is the case if logged out).
-        await this.waitAndClick(
+        else {
+          // Flag button already visible (this is the case if logged out).
+          await this.waitAndClick(
                 `#post-${postNr} + .esPA ${this.topic.__flagPostSelector}`);
+        }
         // This opens  this.flagDialog.
       },
 

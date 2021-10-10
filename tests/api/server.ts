@@ -330,6 +330,7 @@ function getEmailsSentToAddrs(siteId: SiteId): { num: number, addrsByTimeAsc: st
 }
 
 
+// Renamed to waitAndGetLastVerifyEmailAddressLinkEmailedTo in /e2e-wdio7/.
 function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
       browser?): string {
   const email = getLastEmailSenTo(siteId, emailAddress, browser);

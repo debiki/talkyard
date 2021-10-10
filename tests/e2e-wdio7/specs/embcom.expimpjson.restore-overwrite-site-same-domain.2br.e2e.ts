@@ -1,4 +1,4 @@
-import constructEmbCommentsImportTest from './embedded-comments-create-site-export-import-impl';
+import constructEmbCommentsImportTest from './embcom.expimpjson.import-tests-impl';
 
 
 constructEmbCommentsImportTest("emb-cmts-restore-overwr-same-domain  TyT5WKTJL025", {

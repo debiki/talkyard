@@ -1,6 +1,6 @@
 /// <reference path="../test-types.ts"/>
 
-import { TyE2eTestBrowser } from '../utils/pages-for';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 
 const slugs = {
   threeRepliesPageSlug: 'impexp-three-replies.html',
@@ -20,13 +20,13 @@ const texts = {
   guestsEmail: 'e2e-garboguest@x.co',
 };
 
-function createEmbeddingPages(browser: TyE2eTestBrowser) {
+async function createEmbeddingPages(browser: TyE2eTestBrowser) {
   const mkPage = browser.adminArea.settings.embedded.createSaveEmbeddingPage;
-  mkPage({ urlPath: slugs.threeRepliesPageSlug });
-  mkPage({ urlPath: slugs.replyWithImagePageSlug });
-  mkPage({ urlPath: slugs.onlyLikeVotePageSlug });
-  mkPage({ urlPath: slugs.onlySubscrNotfsPageSlug });
-  mkPage({ urlPath: slugs.guestReplyPageSlug });
+  await mkPage({ urlPath: slugs.threeRepliesPageSlug });
+  await mkPage({ urlPath: slugs.replyWithImagePageSlug });
+  await mkPage({ urlPath: slugs.onlyLikeVotePageSlug });
+  await mkPage({ urlPath: slugs.onlySubscrNotfsPageSlug });
+  await mkPage({ urlPath: slugs.guestReplyPageSlug });
 }
 
 

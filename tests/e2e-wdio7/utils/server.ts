@@ -370,8 +370,7 @@ async function getEmailsSentToAddrs(siteId: SiteId): Pr<{ num: Nr, addrsByTimeAs
 async function waitAndGetLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: St,
       linkAccounts?: 'LINKING_IDP_ACCT'): Pr<St> {
   const email = await getLastEmailSenTo(siteId, emailAddress);
-  dieIf(!email, `No email has yet been sent to ${emailAddress}. ` + (!browser ? '' :
-    "Include a 'browser' as 3rd arguement, to poll-wait for an email.  [TyE2ABKF057]"));
+  dieIf(!email, `No email has yet been sent to ${emailAddress}. [TyE2ABKF057]`);
   const regex = (linkAccounts !== 'LINKING_IDP_ACCT'
           ? 'https?://.*/-/login-password-confirm-email'
           : 'https?://.*/-/authn/verif-email-ask-if-link-accounts');
