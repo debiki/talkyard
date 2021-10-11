@@ -64,8 +64,8 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val authzCtx = dao.getForumAuthzContext(requester)
 
-    throwUnimplementedIf(pageRefs.size >= 30,
-          "TyE603MRT4", "Currently at most 30 at a time")
+    throwUnimplementedIf(pageRefs.size > 50,
+          "TyE603MRT4", "Currently at most 50 at a time")
 
     def notFoundMsg(embUrl: St, pageId: PageId = NoPageId): St = {
       s"No page with that embedding url or discussion id: $embUrl"
