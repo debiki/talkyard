@@ -868,7 +868,7 @@ uploads -  (7KFC2)
           TESTS_MISSING: Verify the images actually appears — Wdio visual regression test
   upload profile pic:  (8PK2)
   upload jpg, png:
-          - TESTS_MISSING  embedded-comments-create-site-export-json.2browsers.test.ts  [402KGS4RQ]
+          - TESTS_MISSING  embcom.expimpjson.create-site-exp-json.2br  [402KGS4RQ]
   upload video:
   upload pdf, tar.gz:
   changed to https if server uses https:  (HTTP2S)  # [E2EHTTPS]
@@ -1406,7 +1406,8 @@ server side rendering -
 
 api:
   enable API:
-            - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyT6703MRJ5
+            - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyTENAAPI
+            - dir.create-site-imp-json.2br  TyTEIMPJSON01.TyTENAAPI
   ext id, weird chars and loong id:
           - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
   refs:
@@ -1484,30 +1485,34 @@ url frag action api,
 links like: http://site.localhost/forum/#composeTopic&category=slug:ideas
           - TESTS_MISSING,  search for  enum FragActionType.
 
+
 import,
 export and restore:  (impexp)
   site patch:
-          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+            - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+            - dir.create-site-imp-json.2br  TyTEIMPJSON01
+    import unapproved page and posts:
+            - TESTS_MISSING
   import Disqus comments:
-          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+            - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
   export json:
     embedded comments:
-          - embedded-comments-create-site-export-json.2browsers.test.ts TyT7FKDJF3
+            - embcom.expimpjson.create-site-exp-json.2br TyT7FKDJF3
   things remembered after exp-imp:
-          - embedded-comments-restore-overwrite-site-same-domain.2browsers.test.ts  TyT5WKTJL025
-          - embedded-comments-restore-overwrite-site-new-domain.2browsers.test.ts  TyT603KNF62
-          - embedded-comments-import-json-create-new-site.2browsers.test.ts  TyT4SLCD24S
+            - embcom.expimpjson.restore-overwrite-site-same-domain.2br  TyT5WKTJL025
+            - embcom.expimpjson.restore-overwrite-site-new-domain.2br  TyT603KNF62
+            - embcom.expimpjson.imp-to-new-site.2br  TyT4SLCD24S
   restore,
   overwrite current site:
-          - embedded-comments-restore-overwrite-site-same-domain.2browsers.test.ts  TyT5WKTJL025
-          - embedded-comments-restore-overwrite-site-new-domain.2browsers.test.ts  TyT603KNF62
+            - embcom.expimpjson.restore-overwrite-site-same-domain.2br  TyT5WKTJL025
+            - embcom.expimpjson.restore-overwrite-site-new-domain.2br  TyT603KNF62
   exp imp images:
-          - TESTS_MISSING  embedded-comments-create-site-export-json.2browsers.test.ts  [402KGS4RQ]
+            - embcom.expimpjson.create-site-exp-json.2br  [402KGS4RQ]
   sanitize html:
-          - api-upsert-pages.2browsers.test.ts   TyT603PKRAEPGJ5: TyT306KTG24M
+            - api-upsert-pages.2browsers.test.ts   TyT603PKRAEPGJ5: TyT306KTG24M
   TESTS_MISSING:
     not yet enabled: 
-          - embedded-comments-import-json-to-existing-emb-cmts-site.2browsers.test.ts  TyT7WKGKS269
+            - embcom.expimpjson.imp-to-existing-site.2br.e2e-UNIMPL.ts  TyT7WKGKS269
   TESTS_MISSING:
     - Login w Gmail, FB, Twitter, LinkedIn, GitHub. Export, import. Still works?
     - Usernames, email addrs, stats, page visit stats, latest post — remembered accross exp-imp?
