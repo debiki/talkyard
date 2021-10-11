@@ -286,7 +286,7 @@ GET   /-/export-site-json        talkyard.server.sitepatch.SitePatchController.e
 # or if creates a new site.
 # Remove '-json' suffix: The Content-Type can clarify if it's json, a zip or a protobuf.
 POST  /-/import-site-json        talkyard.server.sitepatch.SitePatchController.importSiteJson(deleteOldSite: Option[Boolean])
-POST  /-/import-test-site-json   talkyard.server.sitepatch.SitePatchController.importTestSite
+POST  /-/import-test-site-json   talkyard.server.sitepatch.SitePatchController.importTestSite(overwriteDefaultSite: Option[Boolean])
 # New API:
 #POST  /-/v0/do-action-batch     talkyard.server.sitepatch.ActionBatchController.doActionBatch
 # ... but upsert-simple deprecated?:

@@ -299,8 +299,8 @@ class RedisCacheAllSites(redisClient: RedisClient, now: () => When) {
             .flatMap(_.replaceAllLiterally("-uo", "").toIntOption)
       }
       catch {
-        case _: TimeoutException => die("EdEWQ0XU4", "Redis timeout")
-      }
+        case _: TimeoutException => die("TyEREDISTMT", "Redis timeout")
+     }
     val siteAndUserIds = siteIds map { id =>
       id -> RedisCache.forSite(id, redisClient, now).removeNoLongerOnlineUserIds()
     }

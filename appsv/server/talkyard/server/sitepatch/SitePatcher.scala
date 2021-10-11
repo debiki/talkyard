@@ -23,6 +23,7 @@ import debiki.dao.{CatAlgs, UseTx}
 import debiki.EdHttp._
 import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PageDao, PagePartsDao, SettingsDao, SiteDao}
+import debiki.Globals.{isProd, isDevOrTest}
 import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import org.jsoup.Jsoup
@@ -1114,9 +1115,29 @@ case class SitePatcher(globals: debiki.Globals) {
       "EdE7KB4W5", "No organization name specified")
 
     val siteIdToOverwrite = anySiteToOverwrite.map(_.id).toSet
+    val isOverwritingRealWithTest =
+          siteData.isTestSiteOkDelete && siteIdToOverwrite.exists(_ > MaxTestSiteId)
+    val iOverwritingDefaultSite = isOverwritingRealWithTest &&
+          siteIdToOverwrite.forall(id => id <= MaxTestSiteId || id == globals.defaultSiteId)
 
-    dieIf(siteData.isTestSiteOkDelete && siteIdToOverwrite.exists(_ > MaxTestSiteId),
-      "TyE5032FPKJ63", s"Trying to e2e-test overwrite real site: $anySiteToOverwrite")
+    if (isOverwritingRealWithTest) {
+      if (debiki.Globals.isProd) {
+        // In Prod, we may only overwrite test sites with test sites.
+        // (E.g. for running smoke tests in Prod.)
+        die("TyE5032FPKJ63", s"Trying to e2e-test overwrite real site: $anySiteToOverwrite")
+      }
+      else {
+        // The auto tests do sometimes overwrite the default site. It's a "real" one,
+        // in that its id is >= 1. But if the auto tests try to overwrite any other site
+        // — that'd be a bug.
+        dieIf(!isDevOrTest, "TyE20MLER476")
+        dieIf(!iOverwritingDefaultSite, "TyE50MJRT42MS", o"""Test suite trying to overwrite
+              a *real* site other than the default: ${anySiteToOverwrite}""")
+      }
+    }
+    else {
+      // Fine, overwriting a test site with a test site. Ok also in Prod, maybe smoke testing.
+    }
 
     val newSite = globals.systemDao.writeTxLockManySites(siteIdToOverwrite) { sysTx =>
 
@@ -1124,8 +1145,13 @@ case class SitePatcher(globals: debiki.Globals) {
       // transaction — so we won't be left without any site at all, if something
       // errors out when creating the new site (e.g. Postgres serialization errors).
       globals.systemDao.deleteSites(siteIdToOverwrite, sysTx,
-            // CLEAN_UP isn't this always true, in Prod? Then just use 'true' instead?
-            mayDeleteRealSite = !isTest && !siteData.isTestSiteOkDelete,
+            mayDeleteRealSite =
+                // If testing, we sometimes overwrite the default site.
+                (isDevOrTest && isTest && iOverwritingDefaultSite) ||
+                // In prod, don't overwrite a real site with a test site.
+                // But overwriting a real with a real — that can be ok, e.g. to restore
+                // from backup.
+                (!isTest && !siteData.isTestSiteOkDelete),
             keepHostname = false)
 
       // Keep the hostname of the site we're overwriting. Otherwise, once we've imported

@@ -267,14 +267,17 @@ function importRealSiteData(siteData: SiteData2): IdAddress {
 }
 
 
-function importTestSiteData(siteData: SiteData): IdAddress {
+function importTestSiteData(siteData: SiteData, opts: { overwriteDefaultSite?: true } = {})
+          : IdAddress {
   siteData.meta.nextPageId = 100; // for now
   siteData.meta.version = 1;      // for now
 
   // Maybe remove this param? Now done automatically in most cases [DELTSTHOSTS].
   const deleteOldSite = settings.deleteOldSite ? '?deleteOldSite=true' : '';
+  const overwriteDefaultSite = opts.overwriteDefaultSite ? '?overwriteDefaultSite=true' : '';
 
-  const url = settings.mainSiteOrigin + '/-/import-test-site-json' + deleteOldSite;
+  const url = settings.mainSiteOrigin + '/-/import-test-site-json' +
+          deleteOldSite + overwriteDefaultSite;
   const idAddr = postOrDie(url, { ...siteData, isTestSiteOkDelete: true }).bodyJson();
   dieIf(!idAddr.id, "No site id in import-site response [TyE7UGK2]",
       showResponseBodyJson(idAddr));
@@ -321,6 +324,15 @@ function addAdminNotice(ps: { siteId: SiteId, noticeId: Nr }) {
 
 async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait')
         : Pr<EmailSubjectBody | Nl> {
+  const emails: EmailSubjectBody[] = await waitGetLastEmailsSenTo(siteId, email, dontWait);
+  if (!emails.length) return null;
+  const lastEmail = emails[emails.length - 1];
+  return lastEmail;
+}
+
+
+async function waitGetLastEmailsSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait')
+        : Pr<EmailSubjectBody[]> {
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const response = await getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
@@ -332,15 +344,14 @@ async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait
         logMessage(`  subject: "${oneLastEmail.subject}" ` + (
             i === lastEmails.length - 1 ? " <— the last one, returning it" : ''));
       }
-      const lastEmail = lastEmails[lastEmails.length - 1];
-      return lastEmail;
+      return lastEmails;
     }
     // Internal functions can pass false, if they pause themselves.
     if (dontWait !== 'DontWait') {
       await wdioBrowserA.pause(500 - 100); // 100 ms for a request, perhaps?
     }
     else {
-      return null;
+      return [];
     }
   }
   die(`Timeout in getLastEmailSenTo, address: ${email} [EdE5JSRWG0]`)
@@ -362,6 +373,14 @@ async function countLastEmailsSentTo(siteId: SiteId, email: St): Pr<Nr> {
 /** Counts emails sent, for a test site.
  */
 async function getEmailsSentToAddrs(siteId: SiteId): Pr<{ num: Nr, addrsByTimeAsc: St[] }> {
+  const response = await getOrDie(settings.mainSiteOrigin + `/-/num-e2e-test-emails-sent?siteId=${siteId}`);
+  return JSON.parse(response.body);
+}
+
+
+/** Counts emails sent, for a test site.
+ */
+async function getEmailsInlcBodySentToSite(siteId: SiteId): Pr<{ num: Nr, addrsByTimeAsc: St[] }> {
   const response = await getOrDie(settings.mainSiteOrigin + `/-/num-e2e-test-emails-sent?siteId=${siteId}`);
   return JSON.parse(response.body);
 }
@@ -736,6 +755,7 @@ export default {
   getTestCounters,
   addAdminNotice,
   getLastEmailSenTo,  // RENAME waitGetLastEmailsSentTo
+  waitGetLastEmailsSenTo,
   countLastEmailsSentTo,
   getEmailsSentToAddrs,
   sendIncomingEmailWebhook,

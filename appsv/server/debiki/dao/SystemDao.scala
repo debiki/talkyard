@@ -333,13 +333,11 @@ class SystemDao(
 
     // ----- Cancel any background jobs
 
-    val testSiteIds = siteIdsToDelete.filter(_ <= MaxTestSiteId)
-    if (testSiteIds.nonEmpty)
-      globals.endToEndTestMailer.tell(
-        ForgetEndToEndTestEmails(testSiteIds), Actor.noSender)
+    globals.endToEndTestMailer.tell(
+          ForgetEndToEndTestEmails(siteIdsToDelete), Actor.noSender)
 
     globals.spamCheckActor.foreach(_.tell(
-      ClearCheckingSpamNowCache(siteIdsToDelete), Actor.noSender))
+          ClearCheckingSpamNowCache(siteIdsToDelete), Actor.noSender))
   }
 
 

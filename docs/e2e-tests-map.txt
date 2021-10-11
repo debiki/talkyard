@@ -77,7 +77,8 @@ authn:
           - embedded-comments-no-cookies-verif-gmail.test.ts  TyT795KB61368
           - embedded-comments-no-cookies-unverif-gmail.test.ts  TyT6224BKA253
   password:
-          - password-login-reset.2browsers.test.ts  TyT5KAES20W
+            - password-login-reset.2browsers.test.ts  TyT5KAES20W
+            - d.secfix.host-header-inj.2br  TyTEHOSTHDRINJ
     via email verif email:
           - unsubscribe.2browsers.test.ts  [TyT2ABK5I0]
   forgot password -
@@ -353,6 +354,8 @@ security:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
             - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
+  host header injection, mallicious password reset:
+            - d.secfix.host-header-inj.2br  TyTEHOSTHDRINJ
 
 suspended users:
   gets no email notfs,

@@ -145,7 +145,7 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
+  def importSiteJson(deleteOldSite: Opt[Bo]): Action[JsValue] =
         ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) { request =>
     // Dupl code (968754903265).
     throwForbiddenIf(!globals.config.mayImportSite,
@@ -159,14 +159,17 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) {
-        request =>
+  def importTestSite(overwriteDefaultSite: Opt[Bo]): Action[JsValue] =
+        ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) { request =>
     // Dupl code (968754903265) — this endpoint can be replaced by the other
     // importSiteJson() just above, and a url param 'isTestDeleteOld'?
     throwForbiddenIf(!security.hasOkE2eTestPassword(request),
       "TyE5JKU2", "Importing test sites only allowed when e2e testing")
     globals.testResetTime()
-    importOverwriteImpl(request, request.body, overwriteSite = None, isTest = true)
+    val overwriteSite = if (overwriteDefaultSite isNot true) None else {
+      globals.siteDao(globals.defaultSiteId).getSite()
+    }
+    importOverwriteImpl(request, request.body, overwriteSite = overwriteSite, isTest = true)
   }
 
 

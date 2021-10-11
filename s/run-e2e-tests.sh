@@ -572,6 +572,12 @@ function runAllE2eTests {
   $r s/wdio-7 --only api-search-ext-site-and-server.2br.cors --cd -i $args
 
 
+  # Security fixes, forum
+  # ------------
+
+  $r s/wdio-7 --only d.secfix.host-header-inj.2br --cd -i $args
+
+
   # Embedded forum
   # ------------
 
