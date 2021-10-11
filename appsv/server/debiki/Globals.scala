@@ -801,11 +801,12 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
             die("DwE20SE4")
         }
       case None =>
+        /* Not really needed. Better to use a real domain name.
         if (Site.Ipv4AnyPortRegex.matches(hostname)) {
           // Make it possible to access the server before any domain has been pointed
           // to it, just after installation, by lazy-creating an empty default site.
           return defaultSiteIdAndHostname
-        }
+        } */
         throwSiteNotFound(
           hostname, debugCode = "LKPCANHOST")
     }
