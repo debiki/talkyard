@@ -58,7 +58,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
       Future.successful(Ok(views.html.authn.authnPage(
         SiteTpi(apiReq, isAdminArea = true),
         loginReasonInt = LoginReason.LoginToAdministrate.toInt,
-        serverAddress = s"//${apiReq.host}",
+        serverAddress = s"//${apiReq.host}",  // dont_use_req_host
         returnToUrl = apiReq.uri)) as HTML)
     }
     else {
@@ -156,7 +156,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
   private def sendOneTimeLoginEmail(user: User, request: ApiRequest[_], emailTitle: St,
           secret: St): U = {
     import request.dao
-    val origin = globals.originOf(request.host)
+    val origin = globals.originOf(request.host)  // dont_use_req_host  — but this is ok? Disallow IP though
     val url = origin +
       controllers.routes.ApiV0Controller.getFromApi("login-with-secret") +   // [305KDDN24]
       "?oneTimeSecret=" + secret + "&thenGoTo=/-/users/" + user.theUsername
@@ -173,7 +173,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
       subject = s"[${dao.theSiteName()}] $emailTitle",
       bodyHtml =
           emailTexts.oneTimeLoginLinkEmail(
-                siteAddress = request.host,
+                siteAddress = request.host, // oops  // dont_use_req_host
                 url = url,
                 member = user,
                 expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60))

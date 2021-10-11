@@ -170,7 +170,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
         emailTexts.resetPasswordEmail(
               userName = user.theUsername,
               secret = secret,
-              siteAddress = request.host,
+              siteAddress = request.host, // oops  // dont_use_req_host
               expiresInMinutes = EmailType.ResetPassword.secretsExpireHours * 60,
               globals = globals)
       })

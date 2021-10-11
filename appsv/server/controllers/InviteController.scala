@@ -231,7 +231,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
           invite,
           inviterName = request.theMember.usernameParensFullName,
           probablyUsername = probablyUsername,
-          siteHostname = request.host,
+          siteHostname = request.host,  // dont_use_req_host
           langCode = settings.languageCode)
 
     UX // would be nice if the inviter got a message if the email couldn't be sent.
@@ -260,14 +260,14 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (!alreadyAccepted) {
       // Could try to ensure this happens also if the server crashes here? [retry-after-crash]
       val settings = dao.getWholeSiteSettings()
-      val welcomeEmail = makeWelcomeSetPasswordEmail(newUser, request.host,
+      val welcomeEmail = makeWelcomeSetPasswordEmail(newUser, request.host,  // dont_use_req_host
             langCode = settings.languageCode)
       dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
       globals.sendEmail(welcomeEmail, request.siteId)
 
       val inviter = dao.getParticipant(invite.createdById) getOrDie "DwE4KDEP0"
       val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(
-            request.host, newUser, inviter, langCode = settings.languageCode)
+            request.host, newUser, inviter, langCode = settings.languageCode)  // dont_use_req_host
       globals.sendEmail(inviteAcceptedEmail, request.siteId)
       // COULD create a notification instead / too.
     }

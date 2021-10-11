@@ -246,7 +246,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       val (anySid: Option[SidOk], loginCookies: List[Cookie]) = try {
         val newMember = dao.createPasswordUserCheckPasswordStrong(userData, request.theBrowserIdData)
         if (newMember.email.nonEmpty && !isServerInstaller) {
-          sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
+          sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)  // dont_use_req_host
         }
         if (newMember.email.nonEmpty && !mayPostBeforeEmailVerified && !isServerInstaller) {
           TESTS_MISSING // no e2e tests for this
@@ -269,7 +269,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           // Send account reminder email. But don't otherwise indicate that the account exists,
           // so no email addresses are leaked.
           LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-            dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
+            dao, emailAddress, siteHostname = request.host, siteId = request.siteId)  // dont_use_req_host
           (None, Nil)
       }
 

@@ -656,7 +656,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     import context.globals, request.dao
     val (siteName, origin) = dao.theSiteNameAndOrigin()
-    val host = request.host
+    val host = request.host  // dont_use_req_host
 
     // A bit dupl code. Break out simplifying fn? Or reuse the other fn? [4CUJQT4]
 

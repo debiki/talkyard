@@ -221,7 +221,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         SiteTpi(request),
         loginReasonInt = LoginReason.LoginBecauseNotFound.toInt,
         // error =  result.body
-        serverAddress = s"//${request.host}",
+        serverAddress = s"//${request.host}",  // dont_use_req_host
         returnToUrl = request.uri,
         debugMessage = exception.bodyToString)) as HTML
     }
@@ -274,7 +274,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         return Future.successful(Ok(views.html.authn.authnPage(
           SiteTpi(request),
           loginReasonInt = LoginReason.AuthnRequiredToRead.toInt,
-          serverAddress = s"//${request.host}",
+          serverAddress = s"//${request.host}",  // dont_use_req_host
           returnToUrl = request.uri)) as HTML)
       }
 

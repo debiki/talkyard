@@ -85,7 +85,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     Ok(views.html.authn.authnPage(
       SiteTpi(apiReq, isAdminArea = toAdminArea),
       loginReasonInt = loginReason.toInt,
-      serverAddress = s"//${apiReq.host}",  // try to remove
+      serverAddress = s"//${apiReq.host}",  // try to remove  // dont_use_req_host
       returnToUrl = apiReq.origin + path)) as HTML
   }
 
@@ -116,7 +116,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     Ok(views.html.authn.authnPage(
       SiteTpi(request),
       loginReasonInt = mode,
-      serverAddress = s"//${request.host}",  // try to remove
+      serverAddress = s"//${request.host}",  // try to remove  // dont_use_req_host
       returnToUrl = returnToUrl,
       isInLoginPopup = true)) as HTML
   }
@@ -173,7 +173,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val email = LoginWithPasswordController.createEmailAddrVerifEmailLogDontSend(
-      siteOwner.briefUser, anyReturnToUrl = None, request.host, request.dao)
+      siteOwner.briefUser, anyReturnToUrl = None, request.host, request.dao)  // dont_use_req_host
 
     // Don't send a verif email, if already verified, because of possible security issues (?).
     // The verif link was written to the log files though (by ...LogDontSend(...) above),

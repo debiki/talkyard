@@ -1723,7 +1723,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           bodyHtml =
               emailTexts.verifyYourEmailAddrEmail(
                   name = user.nameOrUsername,
-                  siteAddr = request.host,
+                  siteAddr = request.host,  // dont_use_req_host  !
                   emailVerifUrl = emailVerifUrl))
 
     dao.saveUnsentEmail(email)
@@ -1925,7 +1925,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         origNonceBack = authnState.browserNonce,
         idpName = idpName,
         idpHasVerifiedEmail = oauthDetails.isEmailVerifiedByIdp.is(true),
-        serverAddress = s"//${request.host}",
+        serverAddress = s"//${request.host}",  // dont_use_req_host
         newUserUsername = oauthDetails.username getOrElse "",
         newUserFullName = oauthDetails.displayNameOrEmpty,
         newUserEmail = oauthDetails.emailLowercasedOrEmpty,
@@ -2070,7 +2070,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         if (emailAddress.nonEmpty && emailVerifiedAt.isEmpty) {
           TESTS_MISSING
           val email = LoginWithPasswordController.createEmailAddrVerifEmailLogDontSend(
-              newMember, Some(authnState.returnToUrl), request.host, request.dao)
+              newMember, Some(authnState.returnToUrl), request.host, request.dao)  // dont_use_req_host
           globals.sendEmail(email, dao.siteId)
         }
 
@@ -2106,7 +2106,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           }
           // Don't indicate that there is already an account with this email.
           LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-            request.dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
+            request.dao, emailAddress, siteHostname = request.host, siteId = request.siteId)  // dont_use_req_host
           OkSafeJson(Json.obj(  // ts: AuthnResponse
             "origNonceBack" -> authnState.browserNonce,
             "userCreatedAndLoggedIn" -> JsFalse,

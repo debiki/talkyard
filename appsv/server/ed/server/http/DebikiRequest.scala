@@ -175,7 +175,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   lazy val ctime: ju.Date = globals.now().toJavaDate
 
   /** The scheme, host and port specified in the request. */
-  def origin: String = s"$scheme://$host"
+  def origin: String = s"$scheme://$host"  // dont_use_req_host
 
   def isDevTestToLocalhost: Bo = Globals.isDevOrTest && (
     host == "localhost" || host.startsWith("localhost:") ||
@@ -186,10 +186,10 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def scheme: String = if (globals.secure) "https" else "http"
 
-  def host: String = request.host
-  def hostname: String = request.host.span(_ != ':')._1
+  def host: String = request.host  // dont_use_req_host
+  def hostname: String = request.host.span(_ != ':')._1  // dont_use_req_host
 
-  def colonPort: String = request.host.dropWhile(_ != ':')
+  def colonPort: String = request.host.dropWhile(_ != ':')  // dont_use_req_host
 
   def method: String = request.method
   def uri: String = request.uri

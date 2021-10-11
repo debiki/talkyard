@@ -247,7 +247,7 @@ class SiteTpi protected (
     */
   def httpsColonOrEmpty: String = if (globals.secure) "https:" else ""
 
-  def hostname: String = debikiRequest.host
+  def hostname: String = debikiRequest.host  // dont_use_req_host
 
   def companyDomain: String = {
     debikiRequest.canonicalHostname.getOrElse(
