@@ -158,9 +158,9 @@ describe(`badges-basic.2br  TyTE2EBADGESBSC`, () => {
   it(`Owen removes Maria's 2nd badge`, async () => {
     await owen_brA.userProfilePage.preferences.goHere(maria.username);
     await owen_brA.userProfilePage.aboutPanel.openBadgesDialog();
-    // This should remove badgeTwoSpace, which is the 2nd one added,
-    // should be in the middle (regardless of sort order).
-    await owen_brA.tagsDialog.removeNthTag(2, { numAfterwards: 2 });
+    // This should remove badgeTwoSpace, which is the last one, index 3 (1 based)
+    // — badges sorted by name [sort_tags]: ['badgeOne..', '..Three...', '...Two..'].
+    await owen_brA.tagsDialog.removeNthTag(3, { numAfterwards: 2 });
     await owen_brA.tagsDialog.saveAndClose();
   });
 

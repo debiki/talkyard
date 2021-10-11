@@ -203,6 +203,13 @@ export function dieIf(condition, errorMessage: string) {
 }
 
 
+export function showClientError(errMsg: St) {
+  if (isServerSide()) return;
+  // Not incl in server bundle, so access via lookup, to avoid harmless transpiler warnings.
+  debiki2.pagedialogs['showClientError'](errMsg);
+}
+
+
 export function logError(errorMessage: string) {
   console.error(Error(errorMessage));
   // Why setTimeout()? I don't remember, see above in die(errorMessage).

@@ -36,12 +36,12 @@ export function getServerErrorDialog() {
 
 
 export function showAndThrowClientSideError(errMsg: St) {
-  showClientSideError(errMsg);
+  showClientError(errMsg);
   throw new Error(errMsg);
 }
 
 
-export function showClientSideError(errMsg: St) {
+export function showClientError(errMsg: St) {
   // Don't call immediately, in case we're in a React render() pass — then we're not allowed
   // to render even more stuff, which getServerErrorDialog() might do.
   setTimeout(function() {

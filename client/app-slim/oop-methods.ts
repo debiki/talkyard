@@ -1477,9 +1477,9 @@ export function tags_mkSortFn(tagTypesById: TagTypesById): (a: Tag, b: Tag) => N
     if (numTagTypeMissingWarnings < 3 && (!tagTypeA || !tagTypeB)) {
       numTagTypeMissingWarnings += 1;
       const warningNr = `\n\n(Warning nr ${numTagTypeMissingWarnings} of max 3)`;
-      !tagTypeA && debiki2.pagedialogs.showClientSideError(
+      !tagTypeA && showClientError(
             `Tag type missing, id: ${tagA.tagTypeId} [TyE5MW208M2]` + warningNr);
-      !tagTypeB && debiki2.pagedialogs.showClientSideError(
+      !tagTypeB && showClientError(
             `Tag type missing, id: ${tagB.tagTypeId} [TyE5MW208M3]` + warningNr);
     }
     // @endif
