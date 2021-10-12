@@ -270,8 +270,36 @@ package object core {
     case class DiscussionId(diid: St)
       extends ParsedRef(canBeToPat = false) with PageRef
 
-    case class EmbeddingUrl(url: St)
-      extends ParsedRef(canBeToPat = false, canBeToPage = false)
+    /// EmbeddingUrl(.., lax = true)  tries to match by exact URL (or no?),
+    /// or //hostname:port/path, or just /url/path, in that order.  [emburl_emgurl]
+    /// Whilst:  EmbeddingUrl("/url/path", lax=true)   matches the url path only
+    /// (there's no hostname).
+    ///  EmbeddingUrl("//hostname/url/path", lax = false) requires an exact host & path match,
+    /// and:  https://hostname/url/part  !lax  would require the scheme to match too?
+    ///
+    /// emgurllax:https://hostname/blog/post
+    ///   first tries: https://hostname/blog/post
+    ///          then: http://hostname/blog/post (i.e. http:)
+    ///          or does it try just:  //hostname/blog/post ?
+    ///          then: /blog/post            (i.e. only the url path)
+    ///
+    /// emgurlexact:https://hostname/blog/post
+    ///   tries only: https://hostname/blog/post
+    ///
+    /// emgurlexact://hostname/blog/post
+    ///  first tries: https://hostname/blog/post
+    ///         then: http://hostname/blog/post
+    /// (nothing more)
+    ///
+    /// emgurllax:/blog/post  and
+    /// emgurlexact:/blog/post
+    ///   both tries only: /blog/post
+    ///
+    case class EmbeddingUrl(url: St, lax: Bo)
+      extends ParsedRef(canBeToPat = false, canBeToPage = false) {
+
+      def exact: Bo = !lax
+    }
   }
 
   def parsePatRef(ref: Ref): PatRef Or ErrMsg = {
@@ -289,6 +317,16 @@ package object core {
   }
 
   def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrMsg = {
+    if (ref.isEmpty)
+      return Bad("Empty ref: Neither prefix, nor value [TyEEMPTREF]")
+
+    /* After prefixed all discussion ids with 'diid:'  [prefix_diid], then,
+    // here, we can:
+    if (ref.count(_ == ':') == 1 && ref.last == ':')
+      return Bad("Empty ref: No value after the  ':'")
+    // Maybe reject the ref, if any non-[a-z0-9] before the ':'?
+    */
+
     val returnBadIfDisallowParticipant = () =>
       if (!allowParticipantRef)
         return Bad("Refs to participants not allowed here, got: " + ref)
@@ -347,10 +385,20 @@ package object core {
       val path = ref drop "pagepath:".length
       Good(ParsedRef.PagePath(path))
     }
-    else if (ref startsWith "emburl:") {
-      val url = ref drop "emburl:".length
-      Good(ParsedRef.EmbeddingUrl(url))
+    else if (ref startsWith "emgurllax:") {
+      val url = ref drop "emgurllax:".length
+      Good(ParsedRef.EmbeddingUrl(url, lax = true))
     }
+    else if (ref startsWith "emburl:") {
+      DO_AFTER // 0.2021.30: Remove 'emburl:', only support 'emgurllax' (just above) [emburl_emgurl]
+      val url = ref drop "emburl:".length
+      Good(ParsedRef.EmbeddingUrl(url, lax = true))
+    }
+    /* Not impl (elsewhere)
+    else if (ref startsWith "emgurlexact:") {
+      val url = ref drop "emgurlexact:".length
+      Good(ParsedRef.EmbeddingUrl(url, lax = false))
+    } */
     else {
       var refDots = ref.takeWhile(_ != ':') take 14
       if (refDots.length >= 14) refDots = refDots.dropRight(1) + "..."

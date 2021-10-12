@@ -37,6 +37,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
   import context.globals
   import context.security
+  import EmbeddedTopicsController._
 
 
   def createEmbeddedCommentsForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
@@ -184,9 +185,14 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
     ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
         unapprovedPostAuthorIds = Set.empty, request, embeddingUrl = Some(embeddingUrl))
   }
+}
 
 
-  private def getAnyRealPageId(tyPageId: Opt[PageId], discussionId: Opt[DiscId],
+
+object EmbeddedTopicsController {
+
+  REFACTOR // Move to PagePathMetaDao.getRealPageIdByDiidOrEmbUrl() instead? [emb_pg_lookup]
+  def getAnyRealPageId(tyPageId: Opt[PageId], discussionId: Opt[DiscId],
         embeddingUrl: St, categoryRef: Opt[Ref], dao: SiteDao): Opt[PageId] = {
 
     // Lookup the page by Talkyard page id, if specified, otherwise
@@ -248,6 +254,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           // A bit dupl knowledge. [205KST526]
           dao.getRealPageId("diid:" + id) orElse {
             // Backw compat: Old ids weren't prefixed with 'diid:'.
+            // Can remove this, after 'diid:' prefixed in all of alt_page_ids3.  [prefix_diid]
             dao.getRealPageId(id)
           }
         case None =>

@@ -72,24 +72,22 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     type PageRefAndId = (St, PageId)
-    val refsAndIds: Seq[PageRefAndId Or ErrMsg] = pageRefs map { ref: St =>
-      val refOrErr: St Or ErrMsg = parseRef(ref, allowParticipantRef = false) flatMap {
-        case ParsedRef.EmbeddingUrl(url) => Good(url)
-        case ParsedRef.DiscussionId(id) => Good(id)
-        case x => Bad(s"Not an embedding url or discussion id: $x")
-      }
-      refOrErr flatMap { ref: St =>
-        val anyPageId: Opt[PageId] = dao.getRealPageId(ref)
-        anyPageId match {
-          case Some(id) => Good((ref, id))
-          case None => Bad(notFoundMsg(ref))
-        }
+    val refsAndIds: Seq[PageRefAndId Or ErrMsg] = pageRefs map { rawRef: St =>
+      parseRef(rawRef, allowParticipantRef = false) flatMap {
+        case parsedRef @ (_: ParsedRef.DiscussionId | _: ParsedRef.EmbeddingUrl) =>
+          val anyPageId: Opt[PageId] = dao.getRealPageIdByDiidOrEmbUrl(parsedRef)
+          anyPageId match {
+            case Some(id) => Good((rawRef, id))
+            case None => Bad(notFoundMsg(rawRef))
+          }
+        case _ =>
+          Bad(s"Not an embedding url or discussion id: $rawRef [TyE0EMBURLORDIID]")
       }
     }
 
     val topicsOrErrs = refsAndIds map { refAndIdOrErr =>
       refAndIdOrErr flatMap {
-        case (ref: St, pageId) => dao.getPagePathAndMeta(pageId) match {
+        case (rawRef: St, pageId) => dao.getPagePathAndMeta(pageId) match {
           case Some(page: PagePathAndMeta) =>
             COULD_OPTIMIZE // will typically always be same cat, for emb cmts.
             val categories = dao.getAncestorCategoriesRootLast(page.categoryId)
@@ -103,9 +101,9 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
                   // Embedded discussion topics are typically unlisted.
                   maySeeUnlisted = true)
            if (may == MayMaybe.Yes) Good(page)
-           else Bad(notFoundMsg(ref))  // or if dev/test: s"Cannot find page $pageId"
+           else Bad(notFoundMsg(rawRef))  // or if dev/test: s"Cannot find page $pageId"
           case None =>
-            Bad(notFoundMsg(ref))      // ... here too?  + err code
+            Bad(notFoundMsg(rawRef))      // ... here too?  + err code
         }
       }
     }

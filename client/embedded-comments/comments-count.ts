@@ -52,6 +52,9 @@ export function fetchAndFillInCommentCounts(talkyardServerUrl: St) {
         // console.debug(`Skipping: "${url}", not a complete URL or path`);
         continue;
       }
+      // Change to emgurl? EMbedd*inG* url (not embedd*ed* url). Wait for server
+      // version 0.2021.30 first. [emburl_emgurl]
+      // No, instead?:  'emgurllax:..' ?
       ref = 'emburl:' + url;
     }
 

@@ -3,6 +3,10 @@ Each issue starts with a "code tag", e.g.:  [subcats]
 which you can search for across the whole code base, to find some-of / all-of
 the relevant source code places to change.
 
+[emburl_emgurl] [prefix_diid]
+Change from emburl:.. to emgurl:..  no, to  emgurllax:.. and emgurlexact:...  ?
+And prefix w 'diid:' in alt_page_ids3. Rename to page_(lookup)_keys_t?
+
 
 Instead of this file, maybe use a combination of:
  - https://github.com/dspinellis/git-issue   wow! and source code with  {{ {1  vi folds
