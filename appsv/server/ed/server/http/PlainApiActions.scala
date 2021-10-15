@@ -283,10 +283,10 @@ class PlainApiActions(
 
       DO_AFTER // 2021-08-01 enable this always. Test in dev-test first, for now.
       throwForbiddenIf(Globals.isDevOrTest && !dao.getWholeSiteSettings().enableApi,
-            "TyE406MEG24M", "API not enabled")
+            "TyEAPI0ENB_", "API not enabled")
 
       val apiSecret = dao.getApiSecret(secretKey) getOrElse {
-        throwNotFound("TyEAPI0SECRET", "No such API secret or it has been deleted")
+        throwForbidden("TyEAPI0SECRET01_", "No such API secret or it has been deleted")
       }
       val tyIdPrefix = "tyid="
       val talkyardIdPrefix = "talkyardId="   // DEPRECATED 2019-08-18 v0.6.43

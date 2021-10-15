@@ -135,8 +135,8 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val affectedPostIds = dao.addRemoveTagsIfAuth(
           toAdd = toAdd, toRemove = toRemove, req.who)(IfBadAbortReq)
 
-    val storePatch = dao.jsonMaker.makeStorePatchForPosts(
-          postIds = affectedPostIds, showHidden = true, dao)
+    val storePatch = dao.jsonMaker.makeStorePatchForPostIds(
+          postIds = affectedPostIds, showHidden = true, inclUnapproved = true, dao)
 
     OkSafeJson(storePatch)
 

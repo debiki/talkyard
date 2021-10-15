@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 import DbDao._
 import Rdb._
 import RdbUtil._
-import java.sql.ResultSet
+import java.sql.{ResultSet, SQLException => j_SQLException}
 
 
 /** A relational database Data Access Object, for a specific website.
@@ -1253,7 +1253,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def insertPageMetaMarkSectionPageStale(pageMeta: PageMeta, isImporting: Bo): U = {
+  def insertPageMetaMarkSectionPageStale(pageMeta: PageMeta, isImporting: Bo)(
+          mab: MessAborter): U = {
     require(pageMeta.createdAt.getTime <= pageMeta.updatedAt.getTime, "TyE2EGPF8")
 
     // Publ date can be in the future, also if creating new page.
@@ -1398,7 +1399,13 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.htmlHeadDescription.orIfEmpty(NullVarchar),
       pageMeta.numChildPages.asAnyRef)
 
-    val numNewRows = runUpdate(statement, values)
+    val numNewRows = try runUpdate(statement, values) catch {
+      case ex: j_SQLException if isUniqueConstrViolation(ex) =>
+        if (uniqueConstrViolatedIs("dw1_pages__u", ex)) {
+          mab.abort("TyEDUPLPAGEID", s"There is already a page with id '${pageMeta.pageId}'")
+        }
+        throw ex
+    }
 
     dieIf(numNewRows == 0, "TyE4GKPE21")
     dieIf(numNewRows > 1, "TyE45UL8")

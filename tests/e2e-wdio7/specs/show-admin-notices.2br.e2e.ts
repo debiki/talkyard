@@ -4,8 +4,7 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import c from '../test-constants';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;

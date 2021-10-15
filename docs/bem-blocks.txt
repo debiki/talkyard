@@ -42,6 +42,7 @@ Bitf = bitfield
 Em  = email
 Enb = enabled, Dsb? Disb? = disabled
 B   = button, e.g. ReplyB
+Br  = brief. Also, Tn  = tiny, Vb = verbose, Vvb = very verbose.
 It  = list item
 Cb  = Contextbar
 CB  = checkbox, e.g. s_SthCB
@@ -147,6 +148,7 @@ TBx = Tips Box (rename HelpMessageBox to TipsBox)
 Tg  = tag
 Tkn = token
 Tl  = title, no, Ttl instead, see below.
+Tn  = tiny. Also Vvb and Vb = (very) verbose, Br = brief.
 Tp, Tpc = topic  [.TsT_to_TpT]
 Trt = threat
 Tru = trust
@@ -160,7 +162,8 @@ Typ = type
 U   = user
 Un  = username
 Upl = upload
-Vb  = verbose, instead of Fat (and Thin) data?
+Vb  = verbose, instead of Fat (and Thin) data?. Also Br = brief, Tn = tiny
+Vvb = very verbose.
 Vl  = vertical, also: Hz: horizontal
 Vt  = vote, NO Vo instead,  Vt could be Vertical
 W   = wrap, wrapper: a div that's wrapped around the main something

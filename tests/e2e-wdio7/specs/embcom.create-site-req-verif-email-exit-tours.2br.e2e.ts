@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as make from '../utils/make';
 import server from '../utils/server';
 import * as utils from '../utils/utils';
-import { TyE2eTestBrowser } from '../utils/pages-for';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import settings from '../utils/settings';
 import c from '../test-constants';
 

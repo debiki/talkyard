@@ -477,8 +477,8 @@ interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
 
 
 // Extend Pat, set id to a new StrangerId if not logged in?
-type Me = Myself
-interface Myself extends OwnPageNotfPrefs {   // + extends Pat?  RENAME to Me
+type Myself = Me; // renaming to Me
+interface Me extends OwnPageNotfPrefs {   // + extends Pat?
   dbgSrc?: string;
   id?: UserId;
   isStranger?: Bo;
@@ -518,9 +518,12 @@ interface Myself extends OwnPageNotfPrefs {   // + extends Pat?  RENAME to Me
   watchbarTopics?: WatchbarTopics;
   watchbar: Watchbar;
 
+  // --- Include in StuffForMe insted? ----
   restrictedTopics: Topic[];
   restrictedTopicsUsers: Participant[];
   restrictedCategories: Category[];
+  // -----------------------------------
+
   // groupsMaySee: Group[]; // groups oneself may see [305STGW2]
 
   // Legacy: REMOVE
@@ -531,11 +534,15 @@ interface Myself extends OwnPageNotfPrefs {   // + extends Pat?  RENAME to Me
   uiPrefsOwnFirst: UiPrefs[];
 
   myGroupIds: UserId[];
+  // --- Include in StuffForMe insted? ----
   myDataByPageId: { [id: string]: MyPageData };
   myCurrentPageData: MyPageData;
+  // -----------------------------------
 
   // For all pages in the store / recent-posts-lists on the profile page.
   marksByPostId: { [postId: number]: any }; // sleeping BUG: probably using with Nr (although the name implies ID), but should be ID
+
+  pubTags?: Tag[];
 
   // So can avoid showing getting-started-guide for admins — it's not needed, for embedded comments sites.
   isEmbeddedCommentsSite?: boolean;
@@ -551,6 +558,12 @@ interface Myself extends OwnPageNotfPrefs {   // + extends Pat?  RENAME to Me
 
 type MyselfPatch = Partial<Myself>;
 type MePatch = MyselfPatch;  // renaming all 'Myself' to 'Me'
+
+
+interface StuffForMe {
+  tagTypes?: TagType[];
+}
+
 
 interface GroupPerms {
   maxUploadBytes?: Nr;
@@ -882,13 +895,37 @@ interface WatchbarTopics {
 }
 
 
+/// When loading new page html, this is included, as json, in a <script> tag in the page html.
+///
 interface VolatileDataFromServer {
-  usersOnline: Participant[];
-  numStrangersOnline: number;
-  me?: Myself;
+  usersOnline: Pat[];
+  numStrangersOnline: Nr;
+  me?: Me;
+  stuffForMe?: StuffForMe;
   // Sometimes, on embedded comments pages, privacy tools and settings remove cookies.  [NOCOOKIES]
   // Then we include an xsrf token in the page json instead.
-  xsrfTokenIfNoCookies?: string;
+  xsrfTokenIfNoCookies?: St;
+}
+
+
+/// For single-page-app-navigating to a new page — then, we don't need everything in
+/// VolatileDataFromServer, only the below. And we get it from the server via a http request.
+///
+/// reactStoreJsonString includes things needed to show the page, e.g. page title,
+/// orig post, replies, authors, etc — the same (exactly?) as the store json in the
+/// <script id='thePageJson'> json incl in the page html.
+///
+interface PageJsonAndMe {
+  reactStoreJsonString: St;
+  // Actually only need .watchbar and .myDataByPageId. [load_less_me_data]
+  me?: Me;
+  stuffForMe?: StuffForMe;
+}
+
+
+interface PageJsonProblem {
+  problemCode;
+  problemMessage: St;
 }
 
 
@@ -1291,16 +1328,24 @@ type Who = Pat | Me | Store | PatId | Username;
 type BriefUser = Pat;    // CLEAN_UP RENAME to Pat
 type Participant = Pat;  // RENAME to Pat
 
-interface Pat {   // Guest or Member, and Member = group or user
+
+interface PatNameAvatar {
   id: UserId;
   fullName?: string;
   username?: string;
+  avatarTinyHashPath?: St;
+}
+
+
+interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group or user
   isGroup?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
+
   isGuest?: boolean;  // = !isAuthenticated
+  isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
+
   isEmailUnknown?: boolean;
-  avatarTinyHashPath?: string;
   avatarSmallHashPath?: string;
   isMissing?: boolean;
   isGone?: boolean;
@@ -1664,7 +1709,7 @@ interface SearchHit {
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
-interface StorePatch extends EditorStorePatch {
+interface StorePatch extends EditorStorePatch, TagTypesStorePatch, PatsStorePatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
@@ -1674,10 +1719,7 @@ interface StorePatch extends EditorStorePatch {
 
   pageVersionsByPageId?: { [pageId: string]: PageVersion };
   postsByPageId?: { [pageId: string]: Post[] };
-  // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
-  // ignored (because the page version is too old).
-  // No, just pats?  And Brief will be the default data structure.  [store_patch_pats]
-  usersBrief?: Participant[];
+
   pageMetasBrief?: PageMetaBrief[];
   superadmin?: SuperAdminStuff;
   me?: MyselfPatch;
@@ -1685,7 +1727,6 @@ interface StorePatch extends EditorStorePatch {
   deletePageIds?: PageId[];
   deleteDraft?: DraftDeletor;
 
-  tagTypes?: TagType[];
   allTagTypes?: TagType[];
   allTagTypeStatsById?: { [tagTypeId: string]: TagTypeStats };
 
@@ -1708,6 +1749,13 @@ interface EditorStorePatch extends PartialEditorStoreState {
   setEditorOpen?: boolean;
 }
 
+interface TagTypesStorePatch {
+  tagTypes?: TagType[];
+}
+
+interface PatsStorePatch {
+  usersBrief?: Pat[];
+}
 
 
 
@@ -1926,9 +1974,10 @@ interface ShowNewPageParams {
   newPage: Page;  // | AutoPage;
   pubCats;
   pats: Pat[];
-  me: Me;
   // Is from the new page store, so it's tagTypesById, rather than StorePatch.tagTypes[].
   tagTypesById: TagTypesById;
+  me?: Me;
+  stuffForMe?: StuffForMe;
   history: ReactRouterHistory;
 }
 
@@ -2283,9 +2332,8 @@ type LoadPageIdsUrlsResponse = PageIdsUrls[];
 type TagTypesById = { [tagTypeId: number]: TagType };
 
 interface LoadTopicsResponse {
-  tagTypes: TagType[];
   topics: Topic[];
-  users: Pat[];
+  storePatch: TagTypesStorePatch & PatsStorePatch;
 }
 
 
@@ -2409,6 +2457,18 @@ interface IframeOffsetWinSize {
 
 interface GenPasetoV2LocSecrResp {
   pasetoV2LocalSecret: St;
+}
+
+
+// =========================================================================
+//  WebSocket messages
+// =========================================================================
+
+
+interface UserPresenceWsMsg {
+  user: Pat;
+  presence: Presence;
+  storePatch: TagTypesStorePatch;
 }
 
 

@@ -2301,24 +2301,31 @@ trait UserDao {
     user
   }
 
+
   def deleteGuest(guestId: UserId, byWho: Who): Guest = {
     ???  // don't forget to delete any ext imp id [03KRP5N2]
   }
 
-  def loadUsersOnlineStuff(): UsersOnlineStuff = {
+
+  def getUsersOnlineStuff(): UsersOnlineStuff = {
     usersOnlineCache.get(siteId, new ju.function.Function[SiteId, UsersOnlineStuff] {
       override def apply(dummySiteId: SiteId): UsersOnlineStuff = {
         val (userIdsInclSystem, numStrangers) = redisCache.loadOnlineUserIds()
         // If a superadmin is visiting the site (e.g. to help fixing a config error), don't  [EXCLSYS]
         // show hen in the online list — hen isn't a real member.
-        val userIds = userIdsInclSystem.filterNot(id => id == SystemUserId || id == Participant.SuperAdminId)
-        val users = readOnlyTransaction { tx =>
-          tx.loadParticipants(userIds)
+        val userIds = userIdsInclSystem.filterNot(Pat.isBuiltInPerson)
+        // Load all this atomically? [user_version]
+        val users = getUsersAsSeq(userIds)
+        val tagsByUserId = getTagsByPatIds(userIds)
+        val usersJson = users map { user =>
+          val tags = tagsByUserId(user.id)
+          JsX.JsUser(user, tags)
         }
         UsersOnlineStuff(
-          users,
-          usersJson = JsArray(users.map(JsX.JsUser(_))),
-          numStrangers = numStrangers)
+              users,
+              tagsByUserId = tagsByUserId,
+              numStrangers = numStrangers,
+              cachedUsersJson = JsArray(usersJson))
       }
     })
   }

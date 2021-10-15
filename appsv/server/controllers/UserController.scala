@@ -282,12 +282,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listTopicsByUser(userId: UserId): Action[Unit] = GetAction { request =>
+  def listTopicsByUser(userId: PatId): Action[U] = GetAction { request =>
     import request.{dao, requester}
 
     val isStaff = requester.exists(_.isStaff)
     val isStaffOrSelf = isStaff || requester.exists(_.id == userId)
-    val user = dao.getTheParticipant(userId)
+    // Return Not Found directly, using the cache, if no such user.
+    dao.getTheParticipant(userId)
 
     throwForbiddenIfActivityPrivate(userId, requester, dao)
 
@@ -296,7 +297,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
       dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf)._1
     }
-    ForumController.makeTopicsResponse(categoryId = None, topics, dao)
+    ForumController.makeTopicsResponse(topics, dao)
   }
 
 
@@ -954,6 +955,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def loadMyPageData(pageIds: St): Action[U] = GetAction { request =>
+    import request.dao
     QUICK; COULD_OPTIMIZE // don't use String.split('') — it sometimes creates a regex.
     // Review the whole code base. // Use Guava's Splitter instead.
     // https://guava.dev/releases/20.0/api/docs/com/google/common/base/Splitter.html
@@ -964,14 +966,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           if (pageIds.indexOf(',') == -1) ImmSeq(pageIds)
           else pageIds.split(',').to[ImmSeq]
    // For now:
-    val json = loadMyPageDataImpl(request, pageIdsSeq.head)
+    val anyMeAndStuff: Opt[MeAndStuff] = loadMyPageDataImpl(request, pageIdsSeq.head)
+    val stuffJsOb = anyMeAndStuff.map(_.stuffForMe.toJson(dao))
     OkSafeJson(Json.obj(
-        "me" -> JsObjOrNull(json)))
+        "me" -> JsObjOrNull(anyMeAndStuff.map(_.me.meJsOb)),
+        "stuffForMe" -> JsObjOrNull(stuffJsOb)))
   }
 
 
   private def loadMyPageDataImpl(request: ApiRequest[_], pageId: PageId)
-        : Opt[JsObject] = Some {
+        : Opt[MeAndStuff] = Some {
     import request.dao
     val pageMeta = request.dao.getPageMeta(pageId) getOrElse {
       // Might be an embedded comment page, not yet created because no comments posted.
@@ -1002,7 +1006,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       dao = request.dao,
       request = request.request)
 
-    val json: JsObject =
+    val res: MeAndStuff =
       if (pageRequest.user.isDefined) {
         val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
         dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
@@ -1011,10 +1015,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()
         val everyoneGroup = request.dao.getTheGroup(Group.EveryoneId)
-        dao.jsonMaker.noUserSpecificData(everyonesPerms, everyoneGroup)
+        val me = dao.jsonMaker.noUserSpecificData(everyonesPerms, everyoneGroup)
+        MeAndStuff(me, StuffForMe.empty)
       }
 
-    json
+    res
   }
 
 

@@ -256,7 +256,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
     import request.dao
 
     throwForbiddenIf(!request.isViaApiSecret,
-        "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
+        "TyEAPI0SECRET03", "The API may be called only via Basic Auth and an API secret")
 
     // Better name?:  "soId"  — because isn't necessarily *Single* Sign-On.
     // So just keep the "SO" in "SSO"? "Talkyard Sign-On"?

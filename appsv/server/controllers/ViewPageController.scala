@@ -29,10 +29,11 @@ import scala.concurrent.Future
 import ed.server.{EdContext, EdController, RenderedPage}
 import javax.inject.Inject
 import ViewPageController._
-import debiki.dao.UsersOnlineStuff
+import debiki.dao.{UsersOnlineStuff, NoUsersOnlineStuff}
 import ed.server.auth.MaySeeOrWhyNot
 import ed.server.security.EdSecurity
 import talkyard.server.authn.LoginReason
+import talkyard.server.JsX.JsObjOrNull
 
 
 
@@ -197,18 +198,20 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       request = request.request)
 
     // Json for strangers and the publicly visible parts of the page.
-    val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
+    val renderedPage = dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
 
     // Any stuff, like unapproved comments, only the current user may see.
     COULD_OPTIMIZE // this loads some here unneeded data about the current user.
-    val anyUserSpecificDataJson: Option[JsObject] =
+    // we only need: watchbar and .myDataByPageId[].  [load_less_me_data]
+    val anyMeAndStuff: Opt[MeAndStuff] =
       dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds)
 
     Future.successful(
       OkSafeJson(
-        Json.obj(
+        Json.obj(  // ts: PageJsonAndMe
           "reactStoreJsonString" -> renderedPage.reactStoreJsonString,
-          "me" -> anyUserSpecificDataJson)))
+          "me" -> JsObjOrNull(anyMeAndStuff.map(_.me.meJsOb)),
+          "stuffForMe" -> JsObjOrNull(anyMeAndStuff.map(_.stuffForMe.toJson(dao))))))
   }
 
 
@@ -399,10 +402,10 @@ object ViewPageController {
     // Could do asynchronously later. COULD avoid sending back empty json fields
     // — first verify that then nothing will break though.
     val usersOnlineStuff =
-      if (skipUsersOnline) UsersOnlineStuff(users = Nil, usersJson = JsArray(), numStrangers = 0)
-      else dao.loadUsersOnlineStuff()
+      if (skipUsersOnline) NoUsersOnlineStuff
+      else dao.getUsersOnlineStuff()
 
-    val anyUserSpecificDataJson: Opt[JsObject] =
+    val anyMeAndRestrStuff: Opt[MeAndStuff] =
       request match {
         case pageRequest: PageRequest[_] =>
           dao.jsonMaker.userDataJson(pageRequest, unapprovedPostAuthorIds)
@@ -410,10 +413,12 @@ object ViewPageController {
           dao.jsonMaker.userNoPageToJson(request)
       }
 
-    var volatileJson = Json.obj(  // VolatileDataFromServer
-      "usersOnline" -> usersOnlineStuff.usersJson,
+    var volatileJson = Json.obj(  // ts: VolatileDataFromServer
+      "usersOnline" -> usersOnlineStuff.cachedUsersJson,
       "numStrangersOnline" -> usersOnlineStuff.numStrangers,
-      "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
+      "me" -> JsObjOrNull(anyMeAndRestrStuff.map(_.me.meJsOb)),
+      "stuffForMe" -> JsObjOrNull(anyMeAndRestrStuff.map(_.stuffForMe.toJson(dao))),
+      )
 
     // (If the requester is logged in so we could load a real 'me' here,
     // then, somehow the browser sent the server the session id, so no need to

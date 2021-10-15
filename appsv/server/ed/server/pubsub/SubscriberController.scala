@@ -22,6 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
 import debiki._
+import talkyard.server.JsX
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
@@ -197,13 +198,14 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
 
 
-  def loadOnlineUsers(): Action[Unit] = GetActionRateLimited(RateLimits.ExpensiveGetRequest) {
+  COULD // change rate limits — isn't expensive any more? Cached.
+  def loadOnlineUsers(): Action[U] = GetActionRateLimited(RateLimits.ExpensiveGetRequest) {
         request =>
-    val stuff = request.dao.loadUsersOnlineStuff()
+    val stuff = request.dao.getUsersOnlineStuff()
     OkSafeJson(
       Json.obj(
         "numOnlineStrangers" -> stuff.numStrangers,
-        "onlineUsers" -> stuff.usersJson))
+        "onlineUsers" -> stuff.cachedUsersJson))
   }
 
 }

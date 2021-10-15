@@ -259,7 +259,27 @@ trait PagePathMetaDao {
   }
 
 
+  def getRealPageIdByDiidOrEmbUrl(parsedRef: ParsedRef): Opt[PageId] = {
+    parsedRef match {
+      case ParsedRef.EmbeddingUrl(url, lax) =>
+        // Could move this getAnyRealPageId fn to here instead. [emb_pg_lookup]
+        controllers.EmbeddedTopicsController.getAnyRealPageId(
+              tyPageId = None, discussionId = None, embeddingUrl = url,
+              categoryRef = None, dao = this)
+      case ParsedRef.DiscussionId(id) =>
+        controllers.EmbeddedTopicsController.getAnyRealPageId(
+              tyPageId = None, discussionId = Some(id), embeddingUrl = "",
+              categoryRef = None, dao = this)
+      case _ =>
+        die("TyE206MSEJ4", s"Not a discussion id or embedding url: ${parsedRef}")
+    }
+  }
+
+
   def getRealPageId(altPageId: AltPageId): Option[PageId] = {
+    // Wait with skipping "" — maybe might mean '/' somewhere?
+    //if (altPageId.isEmpty) return None
+
     memCache.lookup(
       realPageIdByAltIdKey(altPageId),
       orCacheAndReturn =

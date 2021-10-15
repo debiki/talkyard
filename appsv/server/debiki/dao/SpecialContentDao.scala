@@ -123,7 +123,7 @@ trait SpecialContentDao {
       htmlSanitized = htmlSanitized,
       approvedById = Some(authorId))
 
-    transaction.insertPageMetaMarkSectionPageStale(pageMeta)
+    transaction.insertPageMetaMarkSectionPageStale(pageMeta)(IfBadDie)
     transaction.insertPost(bodyPost)
 
     val dummyPagePath = PagePathWithId(

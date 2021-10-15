@@ -370,8 +370,7 @@ async function getEmailsSentToAddrs(siteId: SiteId): Pr<{ num: Nr, addrsByTimeAs
 async function waitAndGetLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: St,
       linkAccounts?: 'LINKING_IDP_ACCT'): Pr<St> {
   const email = await getLastEmailSenTo(siteId, emailAddress);
-  dieIf(!email, `No email has yet been sent to ${emailAddress}. ` + (!browser ? '' :
-    "Include a 'browser' as 3rd arguement, to poll-wait for an email.  [TyE2ABKF057]"));
+  dieIf(!email, `No email has yet been sent to ${emailAddress}. [TyE2ABKF057]`);
   const regex = (linkAccounts !== 'LINKING_IDP_ACCT'
           ? 'https?://.*/-/login-password-confirm-email'
           : 'https?://.*/-/authn/verif-email-ask-if-link-accounts');
@@ -382,19 +381,20 @@ async function waitAndGetLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, ema
 // Note: for *an additional* email address, not for the initial signup.
 async function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(
         siteId: SiteId, emailAddress: St, browser, options?: { isOldAddr: Bo }): Pr<St> {
+  die("Remove 'browser' arg [TyE4MREG83R-1]");
   const textToMatch = options && options.isOldAddr
       ? "To verify email"   // [4GKQM2_]
       : "To finish adding"; // [B4FR20L_]
   await waitUntilLastEmailMatches(
-          siteId, emailAddress, [textToMatch, emailAddress], browser);
-  const email = await getLastEmailSenTo(siteId, emailAddress, browser);
+          siteId, emailAddress, [textToMatch, emailAddress]);
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/confirm-email-address', email.bodyHtmlText);
 }
 
 
 async function waitAndGetInviteLinkEmailedTo(siteId: SiteId, emailAddress: St): Pr<St> {
   const textToMatch = "invites you to join"; // [5FJBAW2_]
-  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch]);
   const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/accept-invite', email.bodyHtmlText);
 }
@@ -412,7 +412,7 @@ async function waitAndGetThanksForAcceptingInviteEmailResetPasswordLink(
 async function waitForAlreadyHaveAccountEmailGetResetPasswordLink(
       siteId: SiteId, emailAddress: St): Pr<St> {
   const textToMatch = "you already have such an account"; // [2WABJDD4_]
-  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch]);
   const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/reset-password', email.bodyHtmlText);
 }
@@ -420,7 +420,7 @@ async function waitForAlreadyHaveAccountEmailGetResetPasswordLink(
 
 async function waitAndGetResetPasswordLinkEmailedTo(siteId: SiteId, emailAddress: St): Pr<St> {
   const textToMatch = 'reset-password';  // in the url
-  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  await waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch]);
   const email = await getLastEmailSenTo(siteId, emailAddress);
   return utils.findFirstLinkToUrlIn('https?://[^"\']*/-/reset-password', email.bodyHtmlText);
 }
@@ -525,16 +525,18 @@ async function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
 
 async function assertLastEmailMatches(siteId: SiteId, emailAddress: string,
       textOrTextsToMatch: string | string[], browser) {
+  die("Remove 'browser' arg [TyE4MREG83R-2]");
   await lastEmailMatches(siteId, emailAddress, textOrTextsToMatch, browser, true);
 }
 
 
 async function lastEmailMatches(siteId: SiteId, emailAddress: St,
       textOrTextsToMatch: St | St[], browser?, assertMatches?: true): Pr<St | false> {
+  dieIf(browser, "Remove 'browser' arg [TyE4MREG83R-3]");
   const textsToMatch: string[] =
     _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
-  const email = await getLastEmailSenTo(siteId, emailAddress, browser);
+  const email = await getLastEmailSenTo(siteId, emailAddress);
   for (let i = 0; i < regexs.length; ++i) {
     const regex = regexs[i];
     const matches = email.bodyHtmlText.match(regex);

@@ -200,6 +200,8 @@ object EmbeddedCommentsPageCreator {   REFACTOR; CLEAN_UP; // moe to talkyard.se
       // if an id does start with '/', it'll be mistaken for being an url path, and
       // won't get migrated. Apparently not an issue, as of Sept -19 (there are no
       // such discussion ids in the hosted blog comments sites).
+      DO_AFTER // 2022-01-01, prefix all discussion ids in alt_page_ids3 with 'diid:'?
+      // (Skip rows that start with 'https?:' and '/' (url paths).)  [prefix_diid]
       request.dao.getRealPageId(discussionId) foreach { pageId =>
         return (pageId, None)
       }
@@ -211,10 +213,15 @@ object EmbeddedCommentsPageCreator {   REFACTOR; CLEAN_UP; // moe to talkyard.se
 
     // Lookup by complete url, or, if no match, url path only (not query string
     // — we don't know if a query string is related to identifying the embedding page or not).
+    // [lookup_url_urlpath]
     val pageIdByUrl: Option[PageId] = request.dao.getRealPageId(embeddingUrl) orElse {
       // There could be a site setting to disable lookup by url path (without origin and
       // query params), if the same Talkyard site is used for different blogs on different
       // domains, with possibly similar url paths. [06KWDNF2] [COMCATS]
+      // Or, instead,the blog can use different URL params: embeddingUrlLax=...
+      // which tries with the exact url, host + path, and just path.
+      // And, embeddingUrlExact=... which requiers an exact match. See
+      // case class EmbeddingUrl.  [emburl_emgurl]
       val urlPath = extractUrlPath(embeddingUrl)
       request.dao.getRealPageId(urlPath)
     }
