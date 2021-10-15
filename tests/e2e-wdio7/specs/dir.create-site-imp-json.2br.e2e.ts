@@ -6,6 +6,7 @@ import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import * as utils from '../utils/utils';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
 import c from '../test-constants';
 
 let brA: TyE2eTestBrowser;
@@ -36,6 +37,11 @@ const importedTopicTwoBody = 'importedTopicTwoBody';
 
 
 describe(`dir.create-site-imp-json.2br  TyTEIMPJSON01`, async () => {
+
+  if (settings.prod) {
+    console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
+    return;
+  }
 
   it(`Init browsers`, async () => {
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
