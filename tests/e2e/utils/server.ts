@@ -7,7 +7,7 @@ import assert = require('assert');
 import tyAssert = require('./ty-assert');
 import utils = require('./utils');
 import c = require('../test-constants');
-import { j2s, logMessage, logWarning, logError, logServerRequest, die, dieIf,
+import { j2s, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, dieIf,
         } from './log-and-die';
 
 // Didn't find any Typescript defs.
@@ -29,15 +29,15 @@ function initOrExit(theSettings) {
     response = syncRequest('GET', settings.mainSiteOrigin);
   }
   catch (ex) {
-    logError(`Error talking with:  ${settings.mainSiteOrigin}\n` +
+    logErrorNoTrace(`Error talking with:  ${settings.mainSiteOrigin}\n` +
         `Is the server not running?  [TyEE2ESRVOFF]\n\n`, ex);
     process.exit(1);
   }
 
   if (response.statusCode !== 200) {
-    logError(`Error response from:  ${settings.mainSiteOrigin}  ` +
+    logErrorNoTrace(`Error response from:  ${settings.mainSiteOrigin}  ` +
         `when requesting xsrf token and cookies [TyEE2ESRVSTS]\n`);
-    logError(showResponse(response));
+    logErrorNoTrace(showResponse(response));
     process.exit(1);
   }
 
@@ -57,7 +57,7 @@ function initOrExit(theSettings) {
   });
 
   if (!xsrfToken) {
-    logError(
+    logErrorNoTrace(
         `Got no xsrf token from:  ${settings.mainSiteOrigin}   [TyEE2ESRVXSRF]\n` +
         `Cookie headers:\n` +
         `    ${j2s(cookies)}\n`);
