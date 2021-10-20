@@ -150,11 +150,11 @@ class SiteTpi protected (
   def xsrfToken: String = debikiRequest.xsrfToken.value
 
 
-  def debikiStyles: xml.Unparsed =
+  def talkyardStyles: xml.Unparsed =
     xml.Unparsed(views.html.debikiStyles(this).body)
 
   CLEAN_UP // isAdminApp not needed? already has isAdminArea.
-  def debikiScriptsInHead(
+  def jsonDataMustBeFirst(
         isCreateSitePage: Bo = false,
         isInLoginWindow: Bo = false,
         isInLoginPopup: Bo = false,
@@ -231,16 +231,20 @@ class SiteTpi protected (
         "resetPasswordEmailId" -> JsString(anyResetPasswordEmailId))
     }
 
-    xml.Unparsed(views.html.debikiScriptsHead(
-          tpi = this,
+    xml.Unparsed(views.html.tags.jsonDataMustBeFirst(
           safeStaticJsonSt = safeStaticJson.toString,
           reactStoreSafeJsonString = reactStoreSafeJsonString).body)
   }
 
 
-  def scriptBundlesEndOfBody(loadStaffBundle: Bo = false): xml.Unparsed =
+  def parseJsonUpdDocClassesScript(): xml.Unparsed = {
+    xml.Unparsed(views.html.debikiScriptsHead(tpi = this).body)
+  }
+
+
+  def talkyardScriptBundles(loadStaffBundle: Bo = false): xml.Unparsed =
     xml.Unparsed(
-          views.html.debikiScriptsEndOfBody(
+          views.html.tags.talkyardScriptBundles(
               this, loadStaffBundle = loadStaffBundle).body)
 
 
@@ -278,7 +282,7 @@ class SiteTpi protected (
   def minMaxCss: String = PageTpi.minMaxCss
   def minMaxJs: String = PageTpi.minMaxJs
 
-  def stylesheetBundle(bundleName: String): xml.NodeSeq = {
+  def anySiteCustomStylesBundle(bundleName: String): xml.NodeSeq = {
 
     val (nameNoSuffix, suffix) = bundleName match {
       case StylesheetAssetBundleNameRegex(nameNoSuffix, suffix) =>
@@ -312,8 +316,7 @@ class SiteTpi protected (
     }
   }
 
-  RENAME // to anySiteCustomScriptsBundle
-  def anyScriptsBundle(): xml.NodeSeq = {
+  def anySiteCustomScriptBundle(): xml.NodeSeq = {
     val version = debikiRequest.dao.getAssetBundleVersion("scripts", "js") getOrElse {
       return <span></span>
     }

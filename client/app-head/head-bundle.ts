@@ -129,7 +129,7 @@ _store.currentPage = _cp; // Is set to {} in the embedded editor [2BK4P3R]
 if (eds.isInEmbeddedEditor) {
   // This avoids null errors when editor accesses the current page. [2BK4P3R]
   _store.currentPage = {} as Page;
-  // CLEAN_UP: Why this needed? Can remove, or do always? Previously: [603WMSRKD3]
+  // CLEAN_UP: Why this needed? Can remove, or do always?
   _store.me = _volatileData.me;
 }
 
@@ -266,7 +266,7 @@ eds.isInEmbeddedCommentsIframe = _isInEmbCmtsIframe && !eds.isInEmbeddedEditor;
   embeddingOrigin: @Html(embeddingOriginOrUndefined),
   embeddingUrl: @Html(embeddingUrlOrUndefined),
   */
-if (!eds.isInEmbeddedEditor) {  // [6932867RMS]
+if (!eds.isInEmbeddedEditor) {
   // CLEAN_UP use sth like:  getMainWin().theStore.currentPageId  instead?
   // — no, remove main-win-current-page-id.  [many_embcom_iframes]
   eds.embeddedPageId = _isInIframe ? _pageId : undefined;

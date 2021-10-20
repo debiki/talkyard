@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, safeStaticJsonSt: String, reactStoreSafeJsonString: String)
+@(safeStaticJsonSt: String, reactStoreSafeJsonString: String)
 
 @import org.owasp.encoder.Encode
 
@@ -35,5 +35,3 @@ occurrence of the magic string with volatile + user specific data. [8BKAZ2G] *@
 <script id="theStaticJson" type="application/json">
 @Html(Encode.forHtmlContent(safeStaticJsonSt))
 </script>
-
-<script src="@tpi.assetUrl(s"head-bundle.${tpi.minMaxJs}")"></script>
