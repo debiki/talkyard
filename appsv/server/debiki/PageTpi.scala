@@ -133,7 +133,9 @@ class SiteTpi protected (
     globals.config.featureFlags.contains("ffNoPolyfillDotIo")
 
   def avoidPolyfillDotIo: Bo =
-    globals.config.featureFlags.contains("ffAvoidPolyfillDotIo")
+    // Was: globals.config.featureFlags.contains("ffAvoidPolyfillDotIo")
+    // But let's avoid always, by default, nowadays: (after Oct 2021)
+    !globals.config.featureFlags.contains("ffAlwaysPolyfillDotIo")
 
   def debikiHtmlTagClasses: String = {
     // Sync with js [4JXW5I2].
