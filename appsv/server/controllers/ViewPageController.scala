@@ -372,8 +372,11 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 object ViewPageController {
 
-  val HtmlEncodedVolatileJsonMagicString =
-    "\"__html_encoded_volatile_json__\""
+  val HtmlEncodedVolatileJsonMagicStringNoQuotes =
+    "__html_encoded_volatile_json__"
+
+  val HtmlEncodedVolatileJsonMagicStringQuoted: St =
+    "\"" + HtmlEncodedVolatileJsonMagicStringNoQuotes + "\""
 
   val ContSecPolHeaderName = "Content-Security-Policy"
   val objectSrcNonePolicy = "object-src 'none'; "
@@ -433,9 +436,11 @@ object ViewPageController {
     // The Scala templates take care to place the <script type="application/json">
     // tag with the magic-string-that-we'll-replace-with-user-specific-data before
     // user editable HTML for comments and the page title and body. [8BKAZ2G]
+    // (We replace the quotes around the string too, or the page json would end up
+    // inside "...".)
     val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(volatileJson.toString)
     val pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
-        pageHtmlNoVolData, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
+          pageHtmlNoVolData, HtmlEncodedVolatileJsonMagicStringQuoted, htmlEncodedJson)
 
     requester.foreach(dao.pubSub.userIsActive(request.siteId, _, request.theBrowserIdData))
 

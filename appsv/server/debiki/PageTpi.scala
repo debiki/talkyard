@@ -141,7 +141,17 @@ class SiteTpi protected (
     // Sync with js [4JXW5I2].
     val chatClass = if (anyCurrentPageRole.exists(_.isChat)) " es-chat" else ""
     val forumClass = if (anyCurrentPageRole.contains(PageType.Forum)) " es-forum" else ""
-    val customClass = anyCurrentPageMeta.map(" " + _.htmlTagCssClasses) getOrElse ""
+
+    var customClass = anyCurrentPageMeta.map(" " + _.htmlTagCssClasses) getOrElse ""
+    // Any page custom html classes would appear before the json data placeholder,
+    // and we don't want to insert the json data in the html class attribute, so:  [8BKAZ2G]
+    // (Use ...NoQuotes, because then no need to think about if the quotes got escaped
+    // or not, and would/could there then still be a match or not.)
+    if (customClass contains
+          controllers.ViewPageController.HtmlEncodedVolatileJsonMagicStringNoQuotes) {
+      customClass = ""
+    }
+
     val pageTypeClass = anyCurrentPageRole.map(" s_PT-" + _.toInt) getOrElse ""     // [5J7KTW2]
     val pageLayoutClass = anyCurrentPageLayout.map(" s_PL-" + _.toInt) getOrElse ""
     "DW dw-pri" + pageTypeClass + pageLayoutClass + chatClass + forumClass + customClass + " "
