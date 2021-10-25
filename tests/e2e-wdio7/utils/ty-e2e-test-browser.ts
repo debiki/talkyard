@@ -883,7 +883,7 @@ export class TyE2eTestBrowser {
 
 
     async numWindowsOpen(): Pr<Nr> {
-      return await this.#br.getWindowHandles().length;  // how can this be undefined?
+      return (await this.#br.getWindowHandles()).length;
     }
 
 
