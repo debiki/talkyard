@@ -90,7 +90,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private val EmbCommentsModeStr = 16.toString  // [8UKBR2AD5]
+  private val EmbCommentsModeStr = 16  // also in model.ts [8UKBR2AD5]
 
   /** For showing a login dialog inside a popup window. Used when   [2ABKW24T]
     * 1) logging in in an iframe,

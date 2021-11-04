@@ -1,5 +1,5 @@
 @**
- * Copyright (c) 2014-2015, 2017 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2015, 2017, 2021 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,29 +20,19 @@
 
 <html class="DW dw-pri dw-embedded-editor">
 <head>
-@tpi.debikiMeta
-@tpi.debikiStyles
-@tpi.stylesheetBundle("styles.css")
-
-@* Won't work any more: anyEmbeddedPageId,  with [many_embcom_iframes]  *@
-@tpi.debikiScriptsInHead(
+@tpi.jsonDataMustBeFirst(
       isInEmbeddedEditor = true,
       embeddingScriptV = embeddingScriptV)
 
-@* [script_src_self]
-<script>
-eds.isInEmbeddedEditor = true;
-eds.isInEmbeddedCommentsIframe = false;
-eds.embeddedPageId = @Html(embeddedPageIdOrUndefined);    [6932867RMS]
-  was: tpi.anyEmbeddedPageId.map(id => s"'${ Encode.forJavaScript(id) }'") getOrElse "undefined"
-_store.currentPage = {};    Avoids null errors when editor accesses the current page. [2BK4P3R]
-_store.me = _volatileData.me;   [603WMSRKD3]
-</script>
-*@
+@tpi.debikiMeta
+@tpi.talkyardStyles
+@tpi.anySiteCustomStylesBundle("styles.css")
+
+@tpi.parseJsonUpdDocClassesScript()
 </head>
 <body>
   <!-- embeddedEditor.scala.html -->
   <div id="dw-editor"></div>
-  @tpi.scriptBundlesEndOfBody()
+  @tpi.talkyardScriptBundles()
 </body>
 </html>

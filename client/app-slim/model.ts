@@ -1568,7 +1568,7 @@ const enum LoginReason {
   SignUp = 13,
   TryToAccessNotFoundPage = 14,
   SubmitEditorText = 15,
-  PostEmbeddedComment = 16,  // dupl [8UKBR2AD5]
+  PostEmbeddedComment = 16,  // also in Scala code [8UKBR2AD5]
   PostProgressPost = 17,
   PostReply = 18,     // was: 'LoginToComment'
   CreateTopic = 19,   // was: 'LoginToCreateTopic'

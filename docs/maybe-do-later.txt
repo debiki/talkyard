@@ -288,8 +288,38 @@ And these unique indexes:
   tags_u_id_patid
   tags_u_id_postid
 
+[careless_rdb]  ty_crdb
+Use a 2nd PostgreSQL server for a persistent mem + disk "cache"?
+E.g. for session storage and user visit logs.
+Set isolation level read-committed, https://www.postgresql.org/docs/current/transaction-iso.html
+and synchronous_commit = off,
+    https://www.postgresql.org/docs/current/wal-async-commit.html
+    https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-SYNCHRONOUS-COMMIT
+and increase commit_delay
+and set commit_siblings?
+    https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-COMMIT-DELAY
+    See: https://stackoverflow.com/a/58169528
+see https://dba.stackexchange.com/questions/42290/configuring-postgresql-for-read-performance
+https://www.cybertec-postgresql.com/en/postgresql-vs-redis-vs-memcached-performance/
+>  Asynchronous mode was used for writing data, meaning a slight loss of most recent data is possible in case of a server crash
+Could move to the careless rdb?  "AC" means async-commits-probably-ok
+    (Change the suffixes to "_ct", meaning "...cache table" or "... careless table".
+    user_visit_stats3 AC
+    page_html3  — is just a cache. AC
+    user_stats3?
+    spam_check_queue3
+    sessions_t   — AC if a session is lost, all that happens is that one needs to log in again.
+              When logging out, then, that transaction should be synchronous (not async) though.
+    review_tasks3 — No! That's important, don't move to the careless rdb.
+    post_read_stats3 AC ?
+    page_popularity_scores3 ??
+    link_previews_t AC — who cares if a Twitter tweet wasn't saved, has to be fetched again.
+    index_queue3
+    emails_out3
+    audit_log3 — split in 2 parts maybe?  One less interesting, and one important?
+
 [table_partitions]
-{{{2 Shard tables by site_id_c?
+Shard tables by site_id_c? {{{2
 Needs pg11 (not pg10): In pg11, a parent table index gets auto-created on child tables
 (both child tables that already existed, or get created after the index).
 What happens when partitions created and there's data already?
@@ -312,13 +342,18 @@ Nice way to quickly delete a whole site: Just drop the whole partitioned tables.
 
 Pg12 has good partition pruning: at ~ 8k partitions, speed is ~90% of w just 1 table, and ~100% up to
 about 2k partitions. https://www.2ndquadrant.com/en/blog/postgresql-12-partitioning/
+}}}2
 
+[cluster_tables]
 Or, cluster tables — but:
   > when the table is subsequently updated, the changes are not clustered
-  https://www.postgresql.org/docs/12/sql-cluster.html
+  https://www.postgresql.org/docs/current/sql-cluster.html
   One can periodically recluster — but that requries an exclusive lock!
   However, clustering posts3 / posts_t by page_id_c = good idea.
-}}}2
+  There is also:
+  https://github.com/reorg/pg_repack, clustering without exclusive locks, a fork of:
+    https://github.com/reorg/pg_reorg  (abandoned)
+
 
 DONE [onesocket]
 Subscribe to live-updates via a "shared web worker" so each browser gets its own connection,

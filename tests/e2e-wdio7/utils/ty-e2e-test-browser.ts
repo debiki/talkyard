@@ -883,7 +883,7 @@ export class TyE2eTestBrowser {
 
 
     async numWindowsOpen(): Pr<Nr> {
-      return await this.#br.getWindowHandles().length;  // how can this be undefined?
+      return (await this.#br.getWindowHandles()).length;
     }
 
 
@@ -2153,6 +2153,9 @@ export class TyE2eTestBrowser {
         await this._waitForClickable(selector, opts);
       }
 
+      let oldText;
+      let desiredValue = null;
+
         // Sometimes, when starting typing, React does a refresh / unmount?
         // — maybe the mysterious unmount e2e test problem [5QKBRQ] ? [E2EBUG]
         // so the remaining characters gets lost. Then, try again.
@@ -2165,7 +2168,13 @@ export class TyE2eTestBrowser {
           //  https://github.com/webdriverio/webdriverio/issues/3024#issuecomment-542888255
           
           const elem = await this.$(selector);
-          const oldText = await elem.getValue();
+          oldText = await elem.getValue();
+
+          if (desiredValue === null) {
+            desiredValue = (opts.append ? oldText : '') + value;
+          }
+          if (desiredValue === oldText)
+            return true;
 
           if (opts.append) {
             dieIf(!value, 'TyE29TKP0565');
@@ -2203,25 +2212,16 @@ export class TyE2eTestBrowser {
             // Delete chars one at a time:
             await this.#br.keys(
                     Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
+            // This in rare cases leaves an 'x'. (A race condition?) So
+            // we'll waitUntil()-try until we've also read back the correct new value.
             // --------------------------------
             await elem.setValue(value);
           }
-
-          if (!opts.checkAndRetry)
-            return true;
-
-          await this.#br.pause(200);
-
-          const valueReadBack = await elem.getValue();
-          const desiredValue = (opts.append ? oldText : '') + value;
-
-          if (desiredValue === valueReadBack)
-            return true;
-
-          logUnusual('\n' +
+      }, {
+        message: () =>
             `   Couldn't set value to:  ${desiredValue}\n` +
-            `   got back when reading:  ${valueReadBack}\n` +
-            `                selector:  ${selector}   — trying again... [TyME2E5MKSRJ2]`);
+            `   got back when reading:  ${oldText}\n` +
+            `                selector:  ${selector}   — trying again... [TyME2E5MKSRJ2]`,
       });
     }
 
