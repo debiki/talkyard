@@ -1,0 +1,107 @@
+
+
+== Session ids
+
+In Talkyard, session ids have four parts. Some things require only
+the first 2 parts of the session id, whilst more important parts require all
+four parts (actually there'll be five parts "soon" — a fifth SameSite Stict cookie too).
+
+The reason for this unusual approach, is that Ty can be used for blog comments.
+Then, Ty runs in an iframe — but they tend to block cookies; therefore,
+a traditional session cookie consisting of one single part, wouldn't have worked.
+
+All session id parts have at least 96 bits entropy (parts 2, 3 and 4 have 144 bits),
+assuming a "perfect" pseudo random number generator. In the database, SHA-512 32 bytes or
+(later) BLAKE3 hashes are saved, rather than the session ids themselves
+— so anyone who somehow gains access to the session storage, won't be able to
+use the session ids for anything (the hashes cannot be reversed to real ids).
+
+=== Part 1, semi public
+
+Part 1 of the session id is included in the json object representing the
+currently logged in user (if any). It makes it simpler to know if the user
+logged out in another tab, and logged in as someone else (then, part 1
+in theStore.me would be different from part 1 in the current session).
+
+If you save the HTML source of a Ty forum page, whilst logged in, you'd find part 1
+of the session included in the html (in a json tag in the html <head>).
+If you then emailed that forum page html to someone, he/she would get
+this part of the session id, which is fine — others cannot use it for anything.
+
+(Why not use hashed part 2 instead? Because then someone might try to brute force a
+colission offline, to get the real part 2, and that doesn't feel nice.
+Maybe part 1 could have been the first 12 bytes of a hashed part 2 (instead of
+16 random base64 chars). But doesn't really matter, and would make it a tiny bit
+harder to debug sessions, when evereything was hashes. Also, maybe even good to,
+in case someone tries to online-attack a session, easily see what session they're after?)
+
+=== Part 2, for blog comments
+
+Part 2 is for staying logged in, in embedded blog comments iframes.
+
+In iframes, cookies usually don't work (because of iOS Safari ITP (Intelligent Tracking
+Prevention) and Firefox ETP (Extended Tracking Prevention)).
+
+For you to stay logged in, in a blog comments iframe, across browser restarts,
+Talkyard can instead save parts 1 and 2 of the session, in the
+`localStorage` in the embedd*ing* website. And when you revisit the blog,
+Talkyard's comments script in the embedd*ing* website finds parts 1 and 2 in
+`localStorage` and sends it to the server, and you get partly logged in.
+
+However, if the embedding website (e.g. a blog) has security vulnerabilities,
+an attacker might gain access to its localStorage. Therefore, part 2 doesn't give
+full access to Talkyard. It currently lets you read, write and moderate blog comments
+— but does not let you see or change your own (or anyone elses) email address,
+or do anything "important" like accessing the admin area.
+
+Not now but later, part 2 will give access only to embedded comments discussions
+but not to discussions in a forum area in a Ty site (in case a Ty site is used
+both as a forum and for blog comments).
+
+In this way, if the embedding website (e.g. a blog with Ty comments) is vulnerable,
+only the blog comments are affected (but not any user accounts or related Ty forum).
+
+Also, (and maybe this will be the default?) part 2 will optionally let one see
+only one's name, and if (for mods) there's anything new to moderatde (but not what).
+Apart from that, only publicly visible blog comments would be shown.
+
+=== Part 3, for blog comments too
+
+(Not implemented. Currently part 2 above is enough.)
+To actually do anything, e.g. post a comment or approve a comment (if one is a
+moderator), in an embedded blog comments discussion, one would need to click
+an action button, say, Reply or Log In. Then, a login popup window would
+open, connected directly to Talkyard's server (not embedded). Now, cookies would be
+included — and Ty's scripts in the popup window, can read part 3 of the session id
+from a cookie, so that you won't need to log in again (apart from clicking
+the action button).
+
+The popup window would send part 3 via `window.postMessage` to the iframes but _not_
+ever send part 3 to the embedd*ing* page.
+
+Thereafter, the iframes have access to part 3, which was never included in localStorage
+(and any attacker woudln't see it, even if the blog itself has security holes, e.g. xss).
+Part 3 would let one do things like posting and editing blog comments, and
+approve and reject new blog comments (from inside the iframes), if one is a moderator.
+
+However, part 3 wouldn't give access to anything except for blog comments discussions.
+
+In this way, if the embedd*ing* website (e.g. a blog with Ty comments) is vulnerable,
+all an attacker would learn about a logged in Ty user, would be hens username
+and see numbers telling how many things there were to moderate, or how many not-
+publicly-visible comments there are, and a button to open the login popup, auto
+log in (the attacker cannot) and read them. — That is, things that session id part 2
+gives access to.
+
+=== Part 4, for the forum
+
+Session id part 4 is a HttpOnly cookie and is required for doing anything "important",
+like, looking at or changing one's email, or looking at other user profiles details
+or ... Doing anything except for reading, writing and moderating blog comments.
+
+=== Part 5, extra safe
+
+(Not implemented.) Session id part 5 is in a HttpOnly SameSite Strict cookie.
+Strict cookies aren't normally used for discussion forum software —
+banks though, use these cookies, if you log in to your online bank account,
+and there are cases where SameSite Strict is good also for communication software.
