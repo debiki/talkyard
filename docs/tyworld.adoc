@@ -222,6 +222,8 @@ simultaneously on the same page, e.g. to show the most popular customer comments
 about each item. Could be combined with a button to expand the comments or
 maybe go to a full screen discussion page about that item.
 
+Session ID management gets a bit involved in iframes, because cookies generally
+don't work — see section Session IDs in ty-security.adoc.
 
 === Lazy pages
 
