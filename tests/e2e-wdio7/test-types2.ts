@@ -692,6 +692,26 @@ interface CatABTestForum extends TwoCatsTestForum {
 }
 
 
+interface CatABTrustedTestForum extends CatABTestForum {
+  topics: {
+    aboutCategoryA: { title: string };
+    aboutTrustedCat: { title: St };
+    aboutStaffCat: { title: St };
+    aboutStaffOnlyCategory: { title: string };
+  };
+  categories: {
+    rootCat: { id: Nr },
+    rootCategory: { id: number },
+    catA: CategoryJustAdded;
+    categoryA: CategoryJustAdded;
+    catB: CategoryJustAdded;
+    trustedCat: CategoryJustAdded;
+    staffCat: CategoryJustAdded;
+    staffOnlyCategory: CategoryJustAdded;
+  };
+}
+
+
 interface TwoPagesTestForum extends TwoCatsTestForum {
   topics: {
     byMariaCatA: PageJustAdded;
