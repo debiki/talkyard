@@ -85,8 +85,8 @@ export function memberOwenOwner(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--owen-owner@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-ow020",
-      password: "publ-ow020",
+      passwordHash: "cleartext:pub-owe020",
+      password: "pub-owe020",
       isOwner: true,
       isAdmin: true,
     };
@@ -102,8 +102,8 @@ export function memberAdminAdam(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--admin-adam@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-ad020",
-      password: "publ-ad020",
+      passwordHash: "cleartext:pub-ada020",
+      password: "pub-ada020",
       isAdmin: true,
     };
 }
@@ -118,8 +118,8 @@ export function memberAdminAlice(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--admin-alice@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-al020",
-      password: "publ-al020",
+      passwordHash: "cleartext:pub-ali020",
+      password: "pub-ali020",
       isAdmin: true,
     };
 }
@@ -134,8 +134,8 @@ export function memberModeratorModya(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mod-modya@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-mo020",
-      password: "publ-mo020",
+      passwordHash: "cleartext:pub-mod020",
+      password: "pub-mod020",
       isModerator: true,
     };
 }
@@ -150,8 +150,8 @@ export function memberModeratorMons(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mod-mons@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-mo020",
-      password: "publ-mo020",
+      passwordHash: "cleartext:pub-mon020",
+      password: "pub-mon020",
       isModerator: true,
     };
 }
@@ -166,8 +166,8 @@ export function memberMaja(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--maja@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-ma020",
-      password: "publ-ma020",
+      passwordHash: "cleartext:pub-maj020",
+      password: "pub-maj020",
     };
 }
 
@@ -196,8 +196,8 @@ export function memberMaria(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--maria@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-ma020",
-      password: "publ-ma020",
+      passwordHash: "cleartext:pub-mar020",
+      password: "pub-mar020",
     };
 }
 
@@ -211,8 +211,8 @@ export function memberMerche(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--merche@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-me020",
-      password: "publ-me020",
+      passwordHash: "cleartext:pub-mer020",
+      password: "pub-mer020",
     };
 }
 
@@ -226,8 +226,8 @@ export function memberMeilani(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--meilani@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-me020",
-      password: "publ-me020",
+      passwordHash: "cleartext:pub-mei020",
+      password: "pub-mei020",
     };
 }
 
@@ -241,8 +241,8 @@ export function memberMichael(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--michael@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-mi020",
-      password: "publ-mi020",
+      passwordHash: "cleartext:pub-mic020",
+      password: "pub-mic020",
     };
 }
 
@@ -256,8 +256,8 @@ export function memberTrillian(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--trillian@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-tr020",
-      password: "publ-tr020",
+      passwordHash: "cleartext:pub-tri020",
+      password: "pub-tri020",
       trustLevel: c.TestTrustLevel.Trusted,
     };
 }
@@ -272,8 +272,8 @@ export function memberRegina(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--regina@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-re020",
-      password: "publ-re020",
+      passwordHash: "cleartext:pub-reg020",
+      password: "pub-reg020",
       trustLevel: c.TestTrustLevel.Regular,
     };
 }
@@ -288,8 +288,8 @@ export function memberCorax(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--corax@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-co020",
-      password: "publ-co020",
+      passwordHash: "cleartext:pub-cor020",
+      password: "pub-cor020",
       trustLevel: c.TestTrustLevel.CoreMember,
     };
 }
@@ -304,10 +304,8 @@ export function memberMallory(template: Partial<Member> = {}): Member {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mallory@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      // As two chars from one's username, just after 'publ-', use 'ml' not 'ma',
-      // so will be different from Maja's password.
-      passwordHash: "cleartext:publ-ml020",
-      password: "publ-ml020",
+      passwordHash: "cleartext:pub-mal020",
+      password: "pub-mal020",
     };
 }
 
