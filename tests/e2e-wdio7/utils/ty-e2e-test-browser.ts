@@ -877,7 +877,7 @@ export class TyE2eTestBrowser {
         fullName: ps.longName + " test id " + testId,
         email: settings.testEmailAddressPrefix + testId + '@example.com',
         username: 'owen_owner',
-        password: 'publ-ow020',
+        password: 'pub-owe020',
       }
     }
 

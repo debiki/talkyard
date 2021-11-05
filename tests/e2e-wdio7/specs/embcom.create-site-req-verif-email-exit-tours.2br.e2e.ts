@@ -58,7 +58,7 @@ describe(`embcom.create-site-req-verif-email-exit-tours.2br  TyTE2ECREMBCOM1`, (
       fullName: 'E2E Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
       username: 'owen_owner',
-      password: 'publ-ow020',
+      password: 'pub-owe020',
     }
   }
 
