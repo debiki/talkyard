@@ -343,6 +343,34 @@ export function minion(ps: { oneWordNameAndNumber: string,
 }
 
 
+export function loadTestGoose(ps: { nr: Nr, trustLevel: Nr }): Member {
+  const trustLevel = ps.trustLevel || c.TestTrustLevel.Basic;
+  let levelName;
+  switch (trustLevel) {
+    case c.TestTrustLevel.New: levelName = "New"; break;
+    case c.TestTrustLevel.Basic: levelName = "Basic"; break;
+    case c.TestTrustLevel.FullMember: levelName = "Full"; break;
+    case c.TestTrustLevel.Trusted: levelName = "Trusted"; break;
+    case c.TestTrustLevel.Regular: levelName = "Regular"; break;
+    case c.TestTrustLevel.CoreMember: levelName = "Core"; break;
+    default: log.die('TyE3056MWEPF24');
+  }
+
+  const levelLower = levelName.toLowerCase();
+  return {
+    id: getAndBumpNextUserId(),
+    username: `${levelLower}_${ps.nr}`,
+    fullName: `${levelName} Goose Nr ${ps.nr}`,
+    createdAtMs: DefaultCreatedAtMs,
+    emailAddress: `e2e-test--${levelLower}-goose-${ps.nr}@ex.co`,  // load-test-- ?
+    emailVerifiedAtMs: DefaultCreatedAtMs,
+    passwordHash: "cleartext:pub-goo020",
+    password: "pub-goo020",
+    trustLevel,
+  };
+}
+
+
 export function guestGunnar(): TestGuest {
     return {
       id: -10,
