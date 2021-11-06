@@ -33,17 +33,17 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     });
 
     const newGs = builder.addLoadTestGooseUsers({
-            nextNr:  0, howMany: 10, trustLevel: c.TestTrustLevel.New });
+            nextNr: 1, howMany: 10, trustLevel: c.TestTrustLevel.New });
     const basicGs = builder.addLoadTestGooseUsers({
-            nextNr: 10, howMany: 10, trustLevel: c.TestTrustLevel.Basic });
+            nextNr: 1, howMany: 10, trustLevel: c.TestTrustLevel.Basic });
     const fullGs = builder.addLoadTestGooseUsers({
-            nextNr: 20, howMany: 10, trustLevel: c.TestTrustLevel.FullMember });
+            nextNr: 1, howMany: 10, trustLevel: c.TestTrustLevel.FullMember });
     const trustedGs = builder.addLoadTestGooseUsers({
-            nextNr: 30, howMany: 10, trustLevel: c.TestTrustLevel.Trusted });
+            nextNr: 1, howMany: 10, trustLevel: c.TestTrustLevel.Trusted });
     const regularGs = builder.addLoadTestGooseUsers({
-            nextNr: 40, howMany: 10, trustLevel: c.TestTrustLevel.Regular });
+            nextNr: 1, howMany: 10, trustLevel: c.TestTrustLevel.Regular });
     const coreGs = builder.addLoadTestGooseUsers({
-            nextNr: 50, howMany: 10, trustLevel: c.TestTrustLevel.CoreMember });
+            nextNr: 1, howMany: 10, trustLevel: c.TestTrustLevel.CoreMember });
 
     const newToFullGs = [...newGs, ...basicGs, ...fullGs];
     const trustedToCoreGs = [...trustedGs, ...regularGs, ...coreGs];
