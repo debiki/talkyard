@@ -5,8 +5,9 @@
 # > since it is not in the mainline code base.
 # > It is only available as early access builds
 #
+FROM  openjdk:11.0.13-jdk-slim-bullseye
 #FROM openjdk:11.0.11-9-jdk-slim-buster
-FROM  openjdk:17.0.1-jdk-slim-bullseye
+#FROM  openjdk:17.0.1-jdk-slim-bullseye  # oops Nashorn gone
 
 RUN \
   apt-get update && \

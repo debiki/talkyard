@@ -1,7 +1,8 @@
 #FROM openjdk:8u212-alpine3.9
 #FROM openjdk:11.0.11-9-jre-slim-buster
+FROM  openjdk:11.0.13-jdk-slim-bullseye
 # There's no longer any JRE-only image.
-FROM  openjdk:17.0.1-jdk-slim-bullseye
+#FROM  openjdk:17.0.1-jdk-slim-bullseye  # oops Nashorn gone
 
 # SECURITY SHOULD not be root (in Docker container)
 #RUN groupadd -r play && useradd -r -g play play
