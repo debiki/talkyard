@@ -21,6 +21,18 @@ let site: IdAddress;
 let forum: CatABTrustedTestForum;
 
 
+// Params: Num users, divisible by 6 (num tr groups).
+// Num pages, divisible by 2.
+// Later: Max num replies — then, num replies distributed linearly? exp?
+// from 0 up to max, e.g.  0 2 4 ... 16 if 16 = max and 8 pages  (16/8 = step 2,
+// if linearly distr).
+//
+// Drafts ?
+// Or drafts per user = say 2  —> means each authn user will have 2 drafts
+// on a page with the same nr as hens id? ... hmm, only half of the pages,
+// so also some without any drafts?
+//
+// User X can have N unapproved posts too?
 
 describe(`some-e2e-test  TyTE2E1234ABC`, () => {
 
