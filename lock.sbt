@@ -6,8 +6,8 @@ Compile / dependencyOverrides ++= {
     Seq.empty
   } else {
     Seq(
-      "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "ch.qos.logback" % "logback-core" % "1.2.3",
+      "ch.qos.logback" % "logback-classic" % "1.2.7",
+      "ch.qos.logback" % "logback-core" % "1.2.7",
       "com.atlassian.jwt" % "jwt-api" % "2.0.5",
       "com.atlassian.jwt" % "jwt-core" % "2.0.5",
       "com.auth0" % "java-jwt" % "3.18.1",
