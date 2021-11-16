@@ -776,6 +776,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     DraftsEtc: "Drafts etc",  // MISSING
     About: "Sobre",
     Privacy: "Privacidade",
+    Security: "Segurança",  // MAYBE, GTR
     Account: "Conta",
     Interface: "Interface",  // MISSING
 
