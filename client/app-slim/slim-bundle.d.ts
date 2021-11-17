@@ -189,6 +189,14 @@ declare namespace debiki2 {
   var createClassAndFactory: any; // don't use — I'm renaming to createFactory
   function createFactory<P, S = any>(compSpec: React.ComponentSpec<P, S>): React.Factory<any>;
 
+  function arr_replaceMany<Item>(arr: Item[],
+        newerItems: Item[], isSame: ArrItemIsSameFn<Item>): Item[];
+
+  function arr_replaceManyInPl<Item>(arr: Item[],
+        newerItems: Item[], isSame: ArrItemIsSameFn<Item>);
+
+  function arr_replaceOneInPl<Item>(arr: Item[],
+        newerItem: Item, isSame: ArrItemIsSameFn<Item>);
 
   function replaceById(itemsWithId: any[], replacement);
   function deleteById(itemsWithId: any[], id);
@@ -314,6 +322,7 @@ declare namespace debiki2 {
   function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;
 
+  function me_hasSid(): Bo;
   function me_uiPrefs(me: Myself): UiPrefs;
   function pp_snoozeLeftMs(me: Myself): number;
   function member_isBuiltIn(member: Member): boolean;

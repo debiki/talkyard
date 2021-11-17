@@ -668,6 +668,7 @@ interface TalkyardTranslations {
     DraftsEtc: string;
     About: string;
     Privacy: string;
+    Security: string;
     Account: string;
     Interface: string;
 

@@ -692,6 +692,26 @@ interface CatABTestForum extends TwoCatsTestForum {
 }
 
 
+interface CatABTrustedTestForum extends CatABTestForum {
+  topics: {
+    aboutCategoryA: { title: string };
+    aboutTrustedCat: { title: St };
+    aboutStaffCat: { title: St };
+    aboutStaffOnlyCategory: { title: string };
+  };
+  categories: {
+    rootCat: { id: Nr },
+    rootCategory: { id: number },
+    catA: CategoryJustAdded;
+    categoryA: CategoryJustAdded;
+    catB: CategoryJustAdded;
+    trustedCat: CategoryJustAdded;
+    staffCat: CategoryJustAdded;
+    staffOnlyCategory: CategoryJustAdded;
+  };
+}
+
+
 interface TwoPagesTestForum extends TwoCatsTestForum {
   topics: {
     byMariaCatA: PageJustAdded;
@@ -785,6 +805,16 @@ interface EmailMatchResult {
   matchingStrings: string[];
 }
 
+
+export type ServerSays = ServerSaysOk | ServerSaysError;
+
+export interface ServerSaysOk {
+  serverSaysOk: A;
+}
+
+export interface  ServerSaysError {
+  serverSaysError: A;
+}
 
 // Right now, constraints like >= 1 aren't supported in Typescript, but this works, and, in test
 // cases, probably won't ever need larger numbers?

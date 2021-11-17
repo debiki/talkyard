@@ -239,6 +239,34 @@ impersonate:
 different users -
   login, logout, switch user:  almost all tests
 
+sessions:
+  list one's active sessions,
+  terminate one's other sessions:
+            - d.sessions-logout-elsewhere.4br.ts  TyTESESLGOSELF
+  staff can terminate others' sessions:
+            - d.sessions-staff-logout-others.4br  TyTESESLGOOTR
+  mods cannot terminate admins sessions:
+            - TESTS_MISSING  TyTESESTERMADM
+            - d.sessions-staff-logout-others.4br  TyTESESLGOOTR  TyEADMINSESS_
+  require session part 4,
+  a stolen embdding storage sid part 1+2 is pretty useless:
+            - embcom.sessions-emb-sess-cannot-moderate.3br  TyTEECSESS0MOD
+  require part 4 HttpOnly for admin stuff:
+            - TESTS_MISSING
+  require part 4 HttpOnly for non-embedded comments stuff:
+            - TESTS_MISSING, and partly UNIMPL
+  part 123 gone, client side offline logout:
+            - sso-test  TyT4ABKRW0268.TyTESESS123GONE
+            - TESTS_MISSING could add tests for this specifically
+  part 123 bad,
+  part 4 or 5 bad or gone:
+            - TESTS_MISSING  TyTSESSHALFBAD
+  sorted by recently active first, on one's user page:
+            - TESTS_MISSING
+  session terminated if user suspended or deleted:  [.del_susp_usr]
+            - TESTS_MISSING
+
+
 navigation:
   from anywhere, to anywhere:
           - navigation-as-stranger.test.ts  TyT5WKAB024
@@ -251,6 +279,8 @@ navigation:
             - tags-basic.2br  TyTE2ETAGSBSC.TyTNAVUSR2PG
   from user profile posts list to page:
             - badges-basic.2br  TyTE2EBADGESBSC.TyTNAVUSR2PO
+  from page to one's active sessions list:
+            - d.sessions-logout-elsewhere.4br  TyTESESLGOSELF
 
 profile page, user:
   upload photo:  (8PK2)
@@ -354,6 +384,8 @@ security:
             - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
 
+deleted users:  [.del_susp_usr]
+            - SEC_TEST_MISSING
 suspended users:
   gets no email notfs,
   websocket gets disconnected,
@@ -1010,6 +1042,9 @@ admin:
   members tab:
     really many members:
           - many-users-mention-list-join-group.2browsers.test.ts   TESTS_MISSING  TyT60295KTDT
+  terminate someone else's sessions:
+            - d.sessions-staff-logout-others.4br  TyTESESLGOOTR
+
 
 moderation,
 approve before,
@@ -1328,6 +1363,11 @@ live notifications -
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   disconnected from chat, if removed from chat:
           - SEC_TESTS_MISSING  TyT6P03MRKD
+  no more WebSocket messages,
+    if account deleted,
+    or if suspended,
+    or session terminated:
+          - SEC_TESTS_MISSING  TyTE0MOREWSMSG
   presence:
             - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTPRESENCE01
             - TESTS_MISSING  could add more, also for going offline

@@ -1153,6 +1153,27 @@ export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
 }
 
 
+/// Returns parts 1 and 2 of any current session id, maybe 3. (Parts 4 and 5 are HttpOnly
+/// cookies, not accessible here.)
+///
+export function getCurSid12Maybe3(): St | N {  // [ts_authn_modl]
+  const store: Store = debiki2.ReactStore.allData();
+  const cookieName =
+          debiki2.store_isFeatFlagOn(store, 'ffUseNewSid') ? 'TyCoSid123' : 'dwCoSid';
+  let sid = getSetCookie(cookieName);
+  if (!sid) {
+    // Cannot use store.me.mySidPart1 — we might not yet have loaded
+    // the current user from the server; store.me might be stale.
+    const typs: PageSession = getMainWin().typs;
+    // This might not include part 3 (won't, if we're in an embedded comments
+    // iframe, and didn't login or resume via a popup win directly against the
+    // server so we could access cookie TyCoSid123, which includes part 3).
+    sid = typs.weakSessionId;
+  }
+  return sid || null;
+}
+
+
 export function rememberTempSession(ps: { weakSessionId: St }) {  // [ts_authn_modl]
   const onOk = function() {};
   makeUpdNoCookiesTempSessionIdFn(onOk)(ps);
@@ -1181,6 +1202,7 @@ function makeUpdNoCookiesTempSessionIdFn<R>(  // [ts_authn_modl]
 
 
 export function deleteTempSessId() {  // [ts_authn_modl]
+  // Need not delete store.me.mySidPart1 — we'll reload the page anyway. [is_logging_out]
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
   delete typs.weakSessionId;
@@ -1188,6 +1210,7 @@ export function deleteTempSessId() {  // [ts_authn_modl]
   try {
     // Can this throw?
     getSetCookie('dwCoSid', null);
+    getSetCookie('TyCoSid123', null);
   }
   catch (ex) {
     // Just in case.
@@ -1283,10 +1306,9 @@ export function listCompleteUsers(whichUsers, success: (users: UserInclDetailsWi
 type UserAcctRespHandler = (response: UserAccountResponse) => void;
 
 
-export function loadEmailAddressesAndLoginMethods(userId: UserId, success: UserAcctRespHandler) {
-  get(`/-/load-email-addrs-login-methods?userId=${userId}`, response => {
-    success(response);
-  });
+export function loadEmailAddressesAndLoginMethods(userId: UserId, onOk: UserAcctRespHandler,
+          onErr?: (resp: A) => V) {
+  get(`/-/load-email-addrs-login-methods?userId=${userId}`, onOk, onErr);
 }
 
 
@@ -1303,8 +1325,9 @@ export function resendEmailAddrVerifEmail(userId: UserId, emailAddress: string) 
   }, { userId, emailAddress });
 }
 
-export function addEmailAddresses(userId: UserId, emailAddress: string, success: UserAcctRespHandler) {
-  postJsonSuccess('/-/add-email-address', success, { userId, emailAddress });
+export function addEmailAddresses(userId: UserId, emailAddress: St, onOk: UserAcctRespHandler,
+        onErr: (resp: A) => V) {
+  postJsonSuccess('/-/add-email-address', onOk, onErr, { userId, emailAddress });
 }
 
 
@@ -1350,8 +1373,9 @@ export function editMember(userId: UserId, doWhat: EditMemberAction, success: ()
 }
 
 
-export function suspendUser(userId: UserId, numDays: number, reason: string, success: () => void) {
-  postJsonSuccess('/-/suspend-user', success, {
+export function suspendUser(userId: UserId, numDays: Nr, reason: St, onOk: () => V,
+        onErr: (resp: A) => V) {
+  postJsonSuccess('/-/suspend-user', onOk, onErr, {
     userId: userId,
     numDays: numDays,
     reason: reason
@@ -1491,6 +1515,20 @@ export function loadMyself(onOk: (me: Me | NU, stuffForMe?: StuffForMe) => Vo) {
         function (resp: { me?: Me, stuffForMe?: StuffForMe }) {
     onOk(resp.me, resp.stuffForMe);
   });
+    // onErr(() => send 'failedToLogin' to parent frame)  [forget_sid12]
+}
+
+
+export function listSessions(patId: PatId, onOk: (resp: ListSessionsResponse) => V,
+        onErr: () => V) {
+  get(`/-/list-sessions?patId=${patId}`, onOk, onErr);
+}
+
+
+export function terminateSessions(
+        ps: { forPatId: PatId, sessionsStartedAt?: WhenMs[], all?: true },
+        onOk: (response: TerminateSessionsResponse) => V, onErr: () => V) {
+  postJsonSuccess(`/-/terminate-sessions`, onOk, ps, onErr);
 }
 
 

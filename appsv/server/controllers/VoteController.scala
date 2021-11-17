@@ -29,6 +29,8 @@ import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX.{JsUser, JsStringOrNull}
+import talkyard.server.authn.MinAuthnStrength
+
 
 
 /** Handles votes, e.g. "I like this comment" or "this comment is faulty" votes.
@@ -46,8 +48,9 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     *   action: "CreateVote"  # or "DeleteVote"
     *   postIdsRead: [1, 9, 53, 82]
     */
-  def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost, maxBytes = 500) {
-        request: JsonPostRequest =>
+  def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost,
+          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 500) {
+          request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
     val anyPageId = (body \ "pageId").asOpt[PageId]
 
@@ -100,6 +103,8 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
           anyEmbeddingUrl = anyEmbeddingUrl, lazyCreatePageInCatId = lazyCreatePageInCatId,
           request)
 
+    CHECK_AUTHN_STRENGTH
+
     if (delete) {
       dao.deleteVoteIfAuZ(pageId, postNr, voteType, voterId = request.theUser.id)
     }
@@ -124,11 +129,14 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadVoters(postId: PostId, voteType: Int): Action[Unit] = GetAction { request =>
+  def loadVoters(postId: PostId, voteType: Int): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     import request.{dao, requester}
 
     val pageMeta: PageMeta = dao.getThePageMetaForPostId(postId)
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.maySeePage(
       pageMeta, requester,

@@ -92,6 +92,9 @@ Privacy Badger doesn't like transient session cookies, currently.
 So maybe change from csrf Double Submit Cookie, to Encrypted Token Pattern?
 https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Cheat_Sheet#Encrypted_Token_Patternp
 
+[gdpr]
+New table: sessions_t, impl fn deletePersonalDataFromOldSessions().  [sess_deleted_ix]
+
 [pps]
 Rename User to Participant and User to Member.  Participant = Guest or Member, Member = User or Group.
 Rename variables named like "member" to "user", "memberOrGroup" to "member", "user" to "participant"
@@ -558,8 +561,11 @@ Server side sesison ids, maybe in Redis? So can log ppl out, without having acce
 to their browsers to delete session cookies.
 (Also see [offline-first] above: need two cookies.)
 Include session type (e.g. pwd, oauth, email secret, sso, emb sso) in sid:s,
-see: SessionType.AutoTokenSiteCustomSso, and: SidOk("_api_secret_".
-Also see: [weaksid].
+see: SessionType.AutoTokenSiteCustomSso, and: SidOk(TySession.ApiSecretPart12, ..)
+Also see: [weaksid]. [which_ws_session]
+Add [sess_deleted_ix]
+And [btr_sid].
+Missing:  [forget_sid12] [restrict_sid_part_2_more] [bump_sid_last_use]
 
 [sess_in_me]
 Store xsrf token and any sid-part-1 in Me, instead of win.typs?
@@ -867,6 +873,15 @@ About how to write docs:
 Problems that happen only on iOS Safari (and Chrome, but all browsers are basically
 Safari on iOS). When works elsewhere, this might be bugs in iOS Safari.
 
+[ios_itp]
+Trigger happy tracking prevention produces problems.
+Maybe maybe Safari [ios_itp] will sometimes mistake email verification links
+or SSO url params, for being click trackers — e.g. Talkyard's
+#talkyardOneTimeLoginSecret=... hash fragment param. See:
+https://webkit.org/blog/9521/intelligent-tracking-prevention-2-3/
+— then, Safari would delete the Ty session parts 1+2 from localStorage,
+after a day.
+https://www.cookiestatus.com/safari/
 
 [default_plugins]
 KaTeX for Maths (VSCode supports KaTeX, and Docusaurus too:

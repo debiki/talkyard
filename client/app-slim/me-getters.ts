@@ -30,6 +30,16 @@
 //------------------------------------------------------------------------------
 
 
+/// I can haz session id?
+///
+export function me_hasSid(): Bo {
+  return !!(
+        getSetCookie('dwCoSid') ||        // old
+        getSetCookie('TyCoSid123') ||     // new, better  [btr_sid]
+        getMainWin().typs.weakSessionId); // if cookies don't work
+}
+
+
 export function me_isAuthenticated(me: Myself): boolean {
   return me.id && me.id >= MinMemberId;
 }

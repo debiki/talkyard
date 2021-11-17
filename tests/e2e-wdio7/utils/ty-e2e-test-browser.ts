@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { IsWhere, isWhere_isInIframe } from '../test-types';
+import { ServerSays } from '../test-types2';
 import { SiteType, NewSiteOwnerType } from '../test-constants';
 
 
@@ -129,6 +130,16 @@ interface WaitAndClickPs extends WaitPs {
 
 type WaitForClickableResult = 'Clickable' | 'NotClickable';
 type ClickResult = 'Clicked' | 'CouldNotClick';
+
+interface SidFieldsParts {
+  sidFieldParts12Maybe3?: St;
+}
+
+interface SidParts extends SidFieldsParts {
+  sidCookiePart123?: St;
+  sidCookiePart4?: St;
+  sidCookiePart5?: St;
+}
 
 
 function isBlank(x: string): boolean {
@@ -267,7 +278,8 @@ export class TyE2eTestBrowser {
   #br: WebdriverIOAsync.Browser;
   #name: St;
 
-  constructor(aWdioBrowser: WebdriverIOAsync.Browser, name: 'brA' | 'brB' | 'brC' | 'brAll') {
+  constructor(aWdioBrowser: WebdriverIOAsync.Browser,
+          name: 'brA' | 'brB' | 'brC' | 'brD' | 'brAll') {
     dieIf(!aWdioBrowser?.getPageSource,
         `Error creating Wdio browser '${name}', this is not a browser: ${
                 JSON.stringify(aWdioBrowser)}  [TyE2E7J02SAD35]`
@@ -410,7 +422,7 @@ export class TyE2eTestBrowser {
       return await this.#br.execute.apply(this.#br, arguments);
     }
 
-    async executeAsync<T>(script: ((...args: any[]) => T), ...args: any[]): Pr<T> {
+    async executeAsync<T>(script: ((...args: any[]) => V), ...args: any[]): Pr<T> {
       return await this.#br.executeAsync.apply(this.#br, arguments);
     }
 
@@ -768,6 +780,16 @@ export class TyE2eTestBrowser {
       },
     }
 
+    user = {
+      genDownloadPersonalDataUrl: (userId: PatId): St => {
+        return '/-/download-personal-data?userId=' + userId;
+      },
+
+      genDownloadPersonalContentUrl: (userId: PatId): St => {
+        return '/-/download-my-content?authorId=' + userId;
+      },
+    }
+
 
 
     newSite = {
@@ -877,7 +899,7 @@ export class TyE2eTestBrowser {
         fullName: ps.longName + " test id " + testId,
         email: settings.testEmailAddressPrefix + testId + '@example.com',
         username: 'owen_owner',
-        password: 'publ-ow020',
+        password: 'pub-owe020',
       }
     }
 
@@ -1189,7 +1211,8 @@ export class TyE2eTestBrowser {
 
 
     async switchToEmbeddedCommentsIrame(ps: {
-            waitForContent?: false, discId?: St, theresOnlyOne?: true } = {}) {
+            waitForContent?: false, discId?: St, theresOnlyOne?: true,
+            theSessionIdIframe?: true } = {}) {
       if (ps.discId) {
         this.useCommentsIframe({ discussionId: ps.discId });
       }
@@ -1200,7 +1223,10 @@ export class TyE2eTestBrowser {
       // Let's wait for the editor iframe, so Reply buttons etc will work.
       await this.waitForExist('iframe#ed-embedded-editor');
       let commentsIframeSelector = '';
-      if (this.#useCommentsIframe?.discussionId) {
+      if (ps.theSessionIdIframe) {
+        commentsIframeSelector = 'iframe#talkyard-session';
+      }
+      else if (this.#useCommentsIframe?.discussionId) {
         commentsIframeSelector =
                 `.talkyard-comments[data-discussion-id="${
                         this.#useCommentsIframe.discussionId}"] iframe`;
@@ -1732,8 +1758,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitAndClickLast(selector: St): Pr<ClickResult> {
-      return await this.waitAndClickNth(selector, -1);
+    async waitAndClickLast(selector: St, ps: { needScroll?: Bo } = {}): Pr<ClickResult> {
+      return await this.waitAndClickNth(selector, -1, ps);
     }
 
 
@@ -1778,9 +1804,9 @@ export class TyE2eTestBrowser {
 
     // For one this.#br at a time only.
     // n starts on 1 not 0. -1 clicks the last, -2 the last but one etc.
-    async waitAndClickNth(selector: string, n: number): Pr<ClickResult> {   // BUG will only scroll the 1st elem into view [05YKTDTH4]
-      dieIf(n <= 0, "n starts on 1, change from 0 to 1 please");
-      logWarningIf(n !== 1,
+    async waitAndClickNth(selector: St, n: Nr, ps: { needScroll?: Bo } = {}): Pr<ClickResult> {   // BUG will only scroll the 1st elem into view [05YKTDTH4]
+      dieIf(n === 0, "n starts on 1, change from 0 to 1 please (or -1 to click the last item)");
+      logWarningIf(n !== 1 && ps.needScroll !== false,
           `n = ${n} !== 1, won't scroll into view before trying to click, maybe will miss:  ${selector} [05YKTDTH4]`);
 
       // Currently always throws if couldn't click — timeoutIsFine isn't set.
@@ -1788,7 +1814,8 @@ export class TyE2eTestBrowser {
         return 'CouldNotClick';
 
       const elems = await this.$$(selector);
-      tyAssert.ok(elems.length >= n, `Elem ${n} missing: Only ${elems.length} elems match: ${selector}`);
+      tyAssert.ok(elems.length >= Math.abs(n),
+            `Elem ${n} missing: Only ${elems.length} elems match: ${selector}`);
       const index = n > 0
           ? n - 1
           : elems.length - (-n); // count from the end
@@ -7159,14 +7186,33 @@ export class TyE2eTestBrowser {
         await this.waitUntilLoadingOverlayGone();
       },
 
-      switchToInvites: async () => {
+      switchToInvites: async (ps: { willFail?: true } = {}) => {
         await this.waitAndClick('.e_InvTabB');
-        await this.invitedUsersList.waitUntilLoaded();
+        if (!ps.willFail) {
+          await this.invitedUsersList.waitUntilLoaded();
+        }
       },
 
       waitForTabsVisible: async () => {
         // The activity tab is always visible, if the notfs tab can possibly be visible.
         await this.waitForVisible('.e_UP_ActivityB');
+      },
+
+      tabs: {
+        switchToDraftsEtc: async (ps: { willFail?: true } = {}) => {
+          await this.waitAndClick('.e_UP_DrftsB');
+          if (!ps.willFail) {
+            await this.waitUntilLoadingOverlayGone();
+            await this.userProfilePage.draftsEtc.waitUntilLoaded();
+          }
+        },
+
+        isPreferencesTabDisplayed: async (): Pr<Bo> => {
+          return await this.isDisplayed('#e2eUP_PrefsB');
+        },
+        switchToPreferences: async () => {
+          await this.userProfilePage.clickGoToPreferences();
+        },
       },
 
       isInvitesTabVisible: async (): Pr<Bo> => {
@@ -7486,8 +7532,33 @@ export class TyE2eTestBrowser {
           await this.userProfilePage._goHere(username, ps, '/preferences');
         },
 
-        switchToEmailsLogins: async () => {  // RENAME to tabToAccount
+        tabs: {
+          waitForAboutTabDisplayed: async (): Pr<Bo> => {
+            return await this.waitForDisplayed('.s_UP_Prf_Nav_AbtL');
+          },
+          switchToAbout: async (ps: { willFail?: true } = {}) => {
+            await this.waitAndClick('.s_UP_Prf_Nav_AbtL');
+            if (!ps.willFail) {
+              await this.waitForVisible('.e_UP_Prefs_FN');
+            }
+          },
+
+          switchToAccount: async (ps: { /*willFail?: true*/ } = {}) => {
+            await this.userProfilePage.preferences.switchToEmailsLogins();
+          },
+
+          isSecurityTabDisplayed: async (): Pr<Bo> => {
+            return await this.isDisplayed('.e_UP_Prf_Nav_SecL');
+          },
+          switchToSecurity: async () => {
+            await this.waitAndClick('.e_UP_Prf_Nav_SecL');
+            await this.userProfilePage.preferences.security.waitForLoaded();
+          },
+        },
+
+        switchToEmailsLogins: async () => {  // MOVE to tabs.switchToAccount() instead (above)
           await this.waitAndClick('.s_UP_Prf_Nav_EmLgL');
+          // Break out fn:  waitForLoaded();  ?
           if ((await this.urlPath()).startsWith(c.UsersUrlPrefix)) {
             // Wait for user emails loaded.
             await this.waitForVisible('.s_UP_EmLg_EmL');
@@ -7592,6 +7663,55 @@ export class TyE2eTestBrowser {
           },
         },
 
+        security: {
+          goHere: async (viewWho: St | Member, ps: { isGroup?: true, origin?: St,
+                    loginAs?: Member } = {}) => {
+            const username = _.isString(viewWho) ? viewWho : viewWho.username;
+            await this.userProfilePage._goHere(username, ps, '/preferences/security');
+            if (ps.loginAs) {
+              await this.complex.loginWithPasswordViaTopbar(ps.loginAs);
+            }
+          },
+
+          waitForLoaded: async (): Pr<V> => {
+            await this.waitForVisible('.c_SessL');  // or waitForExist? works if not logged in
+          },
+
+          waitForSessions: async (ps: { numActive: Nr, numEnded: Nr }): Pr<V> => {
+            let numNow;
+            await this.waitUntil(async () => {
+              numNow = await this.userProfilePage.preferences.security.countSessions();
+              return _.isEqual(numNow, ps);
+            }, {
+              message: () => `Waiting for ${j2s(ps)} sessions, currently: ${j2s(numNow)}`,
+            })
+          },
+
+          countSessions: async (): Pr<{ numActive: Nr, numEnded: Nr }> => {
+            const numEnded = await this.count('.c_SessL_Sess-Ended');
+            const numActive = await this.count('.c_SessL_Sess-Active');
+            return { numEnded, numActive };
+          },
+
+          numEndSessionButtonsVisible: async (): Pr<Nr> => {
+            const num = await this.count('.c_SessL_Sess_EndB');
+            return num + await this.count('.c_SessL_EndAllB');
+          },
+
+          terminateNewestSession: async (): Pr<V> => {
+            await this.waitAndClickFirst('.c_SessL_Sess_EndB');
+          },
+
+          terminateOldestSession: async (): Pr<V> => {
+            await this.scrollToBottom();
+            await this.waitAndClickLast('.c_SessL_Sess_EndB', { needScroll: false });
+          },
+
+          terminateAllSessions: async (): Pr<V> => {
+            await this.waitAndClick('.c_SessL_EndAllB');
+          },
+        },
+
         emailsLogins: {   // RENAME to `account`
           goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
             await this.userProfilePage._goHere(username, ps, '/preferences/account');
@@ -7599,6 +7719,17 @@ export class TyE2eTestBrowser {
 
           getEmailAddress: async (): Pr<St> => {
             return await this.waitAndGetVisibleText('.s_UP_EmLg_EmL_It_Em');
+          },
+
+          getAllEmailAddresses: async (): Pr<St[]> => {
+            await this.waitForDisplayed('.s_UP_EmLg_EmL_It_Em');
+            const elms = await this.$$('.s_UP_EmLg_EmL_It_Em');
+            const adrs = [];
+            for (const el of elms) {
+              const text = await el.getText();
+              adrs.push(text);
+            }
+            return adrs;
           },
 
           waitUntilEmailAddressListed: async (addrRegexStr: St,
@@ -9663,4 +9794,168 @@ export class TyE2eTestBrowser {
       },
     }},
   }
+
+
+  /// For hacking into Talkyard, doing weird things.
+  ///
+  hackServer = {
+    setSidPart12ViaJs: async (value: St, ps: { inCookie?: true, inField?: true }): Pr<V> => {
+      await this.execute(function(value, ps) {
+        if (ps.inCookie) {
+          console.debug(`Setting cookie TyCoSid123 = "${value}" ...`);
+          window['getSetCookie']('TyCoSid123', value);
+          console.debug(`Done.`);
+        }
+        if (ps.inField) {
+          try {
+            console.debug(`Setting getMainWin().typs.weakSessionId = "${value}" ...`);
+            window['debiki2'].getMainWin().typs.weakSessionId = value;
+            console.debug(`Done.`);
+          }
+          catch (ex) {
+            console.error(ex);  // logs nothing?
+          }
+        }
+      }, value, ps);
+    },
+
+
+    getSidPart12Maybe3ViaJs: async (ps: { inCookie?: true, inField?: true })
+          : Pr<SidFieldsParts | U> => {
+      dieIf(!!ps.inCookie == !!ps.inField, "TyE50MEPW24");
+      const anyValue = await this.#br.execute(function(ps) {
+        let result: SidFieldsParts | U;
+        if (ps.inCookie) {
+          die(`Unimpl: Getting cookie TyCoSid123...`);
+          result = {
+            // sidCookiePart123ViaJs: window['getSetCookie']('TyCoSid123'),
+          };
+          console.debug(`Done.`);
+        }
+        if (ps.inField) {
+          try {
+            console.debug(`Getting getMainWin().typs.weakSessionId...`);
+            result = {
+              sidFieldParts12Maybe3: window['debiki2'].getMainWin().typs.weakSessionId,
+            };
+            console.debug(`Done.`);
+          }
+          catch (ex) {
+            console.error(ex);  // logs nothing?
+          }
+        }
+        console.debug(`Returning: "${result}`);
+        return result;
+      }, ps);
+      return anyValue;
+    },
+
+    getSids: async (): Pr<SidParts> => {
+      const result: SidParts = await this.hackServer.getSidPart12Maybe3ViaJs({ inField: true });
+      const sidCookies = await this.#br.getCookies(
+              ['TyCoSid123', 'TyCoSid4', 'TyCoSid5']);
+      for (const cookie of sidCookies) {
+        const resultFieldName =
+                cookie.name === 'TyCoSid123' ? 'sidCookiePart123' : (
+                cookie.name === 'TyCoSid4' ? 'sidCookiePart4' : (
+                cookie.name === 'TyCoSid5' ? 'sidCookiePart5' : die('TyE503MEGE2')));
+        result[resultFieldName] = cookie.value;
+      }
+      return result;
+    },
+
+    getMyUserId: async (): Pr<PatId> => {
+      return await this.execute(function() {
+        const store = window['theStore'];
+        return store.me.id;
+      });
+    },
+
+    loadEmailAddressesAndLoginMethods: async (): Pr<ServerSays> => {
+      const result: ServerSays = await this.executeAsync<ServerSays>(function(done) {
+        const store = window['theStore'];
+        const me = store.me;
+        // Calls:  `/-/load-email-addrs-login-methods?userId=${userId}`
+        window['debiki2'].Server.loadEmailAddressesAndLoginMethods(me.id, function(resp) {
+          console.debug(`OK response: ${JSON.stringify(resp)}`);
+          done({ serverSaysOk: resp });
+        }, function(resp) {
+          console.debug(`Error response: ${JSON.stringify(resp)}`);
+          done({ serverSaysError: resp });
+        });
+      });
+      console.debug(`Result: ${j2s(result)}`);
+      return result;
+    },
+
+    addEmailAddresses: async (newAdr: St): Pr<ServerSays> => {
+      const result: ServerSays = await this.executeAsync<ServerSays>(function(newAdr, done) {
+        const store = window['theStore'];
+        const me = store.me;
+        // Calls:  /-/add-email-address
+        // handled by:  UserController.addUserEmail().
+        window['debiki2'].Server.addEmailAddresses(me.id, newAdr, function(resp) {
+          console.debug(`OK response: ${JSON.stringify(resp)}`);
+          done({ serverSaysOk: resp });
+        }, function(resp) {
+          console.debug(`Error response: ${JSON.stringify(resp)}`);
+          done({ serverSaysError: resp });
+        });
+      }, newAdr);
+      console.debug(`Result: ${j2s(result)}`);
+      return result;
+    },
+
+    /* Currently not needed, maybe later?:
+
+    tryChangeMyEmail: async (newAdr: St): Pr<{ emailAddresses } | { error }> => {
+      const resp: A = await this.executeAsync(function(newAdr, done) {
+        const store = window['theStore'];
+        const me = store.me;
+        // Calls: /-/set-primary-email-address
+        // handled by: UserController.setPrimaryEmailAddresses().
+        window['debiki2'].Server.setPrimaryEmailAddresses(me.id, newAdr, function(resp) {
+          console.debug(`Emails after: ${JSON.stringify(resp)}`);
+          done(resp);
+        });
+      }, newAdr);
+      console.debug(`Emails after: ${JSON.stringify(resp)}`);
+      return resp;
+    },
+
+    tryChangeMyPrefs: async (newAdr: St): Pr<V> => {
+      const meAfter = await this.executeAsync(function(newAdr, done) {
+        const store = window['theStore'];
+        const me = store.me;
+        window['debiki2'].Server.saveAboutPatPrefs({
+          userId: me.id,
+          emailAddress: newAdr,
+          username: me.username,
+          emailPref: 5, // ReceiveAlways  (whatever)
+        }, false, // isGroup
+        function(patAfter) { // onOk
+          done(patAfter);
+        });
+      }, newAdr);
+    }, */
+
+    suspendUser: async (userId: PatId): Pr<ServerSays> => {
+      const result: ServerSays = await this.executeAsync(function(userId, done) {
+        // Calls:  /-/suspend-user
+        // handled by:  UserController.suspendUser().
+        window['debiki2'].Server.suspendUser(userId, 123, "No reason",
+              function onOk(resp) {
+                console.debug(`OK response: ${JSON.stringify(resp)}`);
+                done({ serverSaysOk: resp });
+              },
+              function onErr(resp) {
+                console.debug(`Error response: ${JSON.stringify(resp)}`);
+                done({ serverSaysError: resp });
+              });
+      }, userId);
+      console.debug(`Result: ${j2s(result)}`);
+      return result;
+    },
+  };
+
 }

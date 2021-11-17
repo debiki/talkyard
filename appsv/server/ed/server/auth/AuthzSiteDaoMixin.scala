@@ -215,9 +215,12 @@ trait AuthzSiteDaoMixin {
 
 
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
+    *
+    * Also needs any authn strength? Maybe: WhoInfo = ReqerInfo = Opt[(Pat, Opt[AuthnStrength])]?
+    * Maybe Opt[(Pat, AuthnStrength)] where AuthnStrength can be [InternalJob], instead of None?
     */
-  def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Option[Participant])
-        : (MaySeeOrWhyNot, String) = {
+  def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Opt[Pat])
+        : (MaySeeOrWhyNot, St) = {
     maySeePostImpl(pageId, postNr, user, anyPost = None, anyTx = None)
   }
 

@@ -289,7 +289,7 @@ if (!eds.isInEmbeddedEditor) {
 var debiki = { internal: {}, v0: { util: {}} };
 
 // Talkyard per page load session data (if we avoid cookies). [NOCOOKIES]   rename to  tyd?  see above *@
-// Maybe store this in Myself instead? Next to Myself.mySidPart1ForJs? [sess_in_me]
+// Maybe store this in Me instead? Next to Me.mySidPart1? [sess_in_me]
 // And remove typs.
 var typs: PageSession = {
   xsrfTokenIfNoCookies: _volatileData.xsrfTokenIfNoCookies,

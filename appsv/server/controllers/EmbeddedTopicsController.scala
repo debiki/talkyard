@@ -49,6 +49,13 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
+  /** If in iframe, either no cookies get included, or all — so won't
+    * run into problems with just parts of the session id being present,
+    * and we can leave the authn strength at the default, MinAuthnStrength.Normal.
+    *
+    * Might need to ask the user to click a button in the iframe, triggering
+    * iOS to show a dialog where the user can let the iframe use cookies.  [ios_itp]
+    */
   def showTopic(embeddingUrl: String, discussionId: Option[AltPageId],   // [5BRW02]
           edPageId: Option[PageId], category: Option[Ref], scriptV: Opt[St]): Action[U] =
       AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
@@ -124,6 +131,16 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           a specific id, you can use the data-discussion-id="..." html attribute in
           the Talkyard html code snippet in your blog.""")
 
+        CHECK_AUTHN_STRENGTH // done just above. Some time later, maybe also
+        // some per category checks?
+        // Apparently Safari can pop up a dialog where the user can let the iframe
+        // use cookies, if hen interacts with the iframe. So, if a blog comments
+        // discussion requires authn to read, Ty could show a button in the iframe,
+        // like, "Click to authenticate"?
+        // Then, if clicking, Safari would ask if the iframe was allowed to use cookies,
+        // and (if answering Yes), one would get logged in directly, if there were
+        // cookies already?  [ios_itp]
+
         val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.requester)
         if (!maySee)
           security.throwIndistinguishableNotFound(debugCode)
@@ -133,6 +150,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
         val pageRequest = new PageRequest[Unit](
           request.site,
+          request.anyTySession,
           sid = request.sid,
           xsrfToken = request.xsrfToken,
           browserId = request.browserId,

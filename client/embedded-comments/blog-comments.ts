@@ -221,16 +221,14 @@ mutationObserver.observe(document.body, { subtree: true, childList: true });
 
 
 
-// We store a weak session in localStorage, if 3rd party cookies disabled.
-// It's fairly ok to use localStorage in our case, see:
-//   ../../docs/session-in-local-storage.md
+// For the user to stay logged in, Ty can store not the whole but parts 1 and 2 of
+// the session id in localStorage, if 3rd party cookies disabled.
+// See docs/ty-security.adoc for more about sessions and parts 1, 2, 3, 4 and 5.
+// [NOCOOKIES] Parts 1 and 2 don't let the user do much more than accessing and
+// posting blog comments, and moderating blog comments if hen's a moderator
+// (but won't give access to, for example, the admin area).
+// Some more things to do: [restrict_sid_part_2_more].  [sid_part_3]
 //
-// [NOCOOKIES] [weaksid] ADD_TO_DOCS The session is (will be) "weak", in
-// the sense that, even if you're admin, you cannot use it to go to the admin area
-// and do things there. Then instead you need to login directly to the Talkyard
-// server, rather than on the embedding site via the iframe — so an XSS
-// vulnerability on the embedding site (the blog) cannot give admin access.
-
 let someStorage: Storage | undefined;
 let tempObjStorage;
 
@@ -238,6 +236,7 @@ let tempObjStorage;
 // so need try-catch.
 try {
   someStorage = localStorage;
+  window.addEventListener('storage', onLocalStorageChanged);
 }
 catch {
 }
@@ -263,6 +262,24 @@ const theStorage: Storage = someStorage || {
   },
 } as Storage;
 
+
+let curSessItemInStorage: St | Nl = null;
+
+function onLocalStorageChanged() {
+  // Maybe we logged out in another browser tab?
+  /* First fix: [forget_sid12]
+  const maybeNewSessItem: St | Nl = theStorage.getItem('talkyardSession');
+  if (curSessItemInStorage !== maybeNewSessItem) {
+    if (maybeNewSessItem) {
+      sendToComments(['resumeWeakSession', maybeNewSessItem]);
+    }
+    else {
+      sendToComments(['logoutServerAndClientSide', null]);
+      sendToEditor(['logoutClientSideOnly', null]);
+    }
+    curSessItemInStorage = maybeNewSessItem;
+  } */
+}
 
 
 addEventListener('scroll', messageCommentsIframeNewWinTopSize);
@@ -863,7 +880,11 @@ function onMessage(event) {
         let sessionStr;
         try {
           sessionStr = theStorage.getItem('talkyardSession');
+          // Skip this hereafter?! [btr_sid] Do afterwards instead, if is now invalid.
+          // Because otherwise we'd get logged out in other tabs — they listen to localStorage.
+          // The iframe can send back a 'failedToLogin' instead?  [forget_sid12]
           theStorage.removeItem('talkyardSession');  // see above (3548236)
+          curSessItemInStorage = null;
         }
         catch (ex) {
           logW(`Error getting 'talkyardSession' from theStorage [TyEGETWKSID]`, ex);
@@ -936,6 +957,16 @@ function onMessage(event) {
     case 'justLoggedIn':
       const u = eventData.user || {};
       logM(`Logged in as ${u.username || u.fullName} in iframe`);
+      // @ifdef DEBUG
+      // Here, session id part 3 must not be included — it must not be seen
+      // by the embedding website (only by code directly on the Talkyard domain).
+      // So, the length should be:  SidLengthCharsPart1 + SidLengthCharsPart2 = 16 + 24
+      // for the new fancy sessions. Whilst the old silly sids include a '.' dot.
+      if (eventData.weakSessionId && eventData.weakSessionId.length !== 16 + 24
+            && eventData.weakSessionId.indexOf('.') === -1)
+        throw Error(`tySid12 should be 16 + 24 = ${16 + 24} chars but is ${
+                eventData.weakSessionId.length} chars [TyEBADSID12LEN]`);
+      // @endif
       if (eventData.rememberEmbSess) try {
         const item = {
           pubSiteId: eventData.pubSiteId,
@@ -960,7 +991,10 @@ function onMessage(event) {
           // This re-inserts our session (3548236), if we just sent a 'resumeWeakSession'
           // message to the iframe and then removed it from theStorage  — because
           // the comments iframe sends back 'justLoggedIn', after having logged in.
-          theStorage.setItem('talkyardSession', JSON.stringify(item));
+          curSessItemInStorage = JSON.stringify(item);
+          theStorage.setItem('talkyardSession', curSessItemInStorage);
+
+          // ! Need a 'failedToLogin' if login failed  [forget_sid12]
         }
       }
       catch (ex) {
@@ -973,6 +1007,7 @@ function onMessage(event) {
       logM(`Logged out`);
       try {
         theStorage.removeItem('talkyardSession');
+        curSessItemInStorage = null;
       }
       catch (ex) {
         logW(`Error removing 'talkyardSession' from  theStorage [TyERMWKSID]`, ex);

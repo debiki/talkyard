@@ -450,6 +450,15 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def nextMemberId: UserId
   def insertMember(user: UserInclDetails): Unit
 
+
+  def loadSession(part1Maybe2Or3: Opt[St] = None, part4HttpOnly: Opt[St] = None,
+        maybeActiveOnly: Bo = false): Opt[TySessionInDbMaybeBad]
+  def loadOneOrTwoSessions(part1Maybe2Or3: Opt[St], part4HttpOnly: Opt[St],
+        maybeActiveOnly: Bo): ImmSeq[TySessionInDbMaybeBad]
+  def loadActiveSessions(patId: PatId): ImmSeq[TySessionInDbMaybeBad]
+  def insertValidSession(session: TySession): U
+  def upsertSession(session: TySessionInDbMaybeBad): U
+
   def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Boolean)
         : Hopefully[MemberLoginGrant]
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult

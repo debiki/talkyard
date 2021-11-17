@@ -25,6 +25,7 @@ import javax.inject.Inject
 import play.api.mvc._
 import ed.server.auth.Authz
 import play.api.libs.json.JsValue
+import talkyard.server.authn.MinAuthnStrength
 
 
 
@@ -36,7 +37,8 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security._
 
 
-  def flagPost: Action[JsValue] = PostJsonAction(RateLimits.FlagPost, maxBytes = 2000) { request =>
+  def flagPost: Action[JsValue] = PostJsonAction(RateLimits.FlagPost,
+          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 2000) { request =>
     import request.{body, dao}
     SHOULD // change from page-id + post-nr to post-id.
     val pageId = (body \ "pageId").as[PageId]
@@ -56,6 +58,8 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE3FJB8W2")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE5PJB2R8")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.mayFlagPost(
       request.theMember, dao.getOnesGroupIds(request.theUser),

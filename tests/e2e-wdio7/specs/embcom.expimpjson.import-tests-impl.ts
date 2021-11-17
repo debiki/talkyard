@@ -215,9 +215,15 @@ function constructEmbCommentsImportTest(testName: string, variants: {
         await owensBrowser.waitForExist('.e_RstrDne');
       });
 
-      it(`Owen remains logged in?  Or needs to login again?`, async () => {
+      it(`Owen reloads the page, as per the instructions ...`, async () => {
         await owensBrowser.refresh();
-        // Hmm, currently:
+      });
+
+      it(`... needs to log in again — sessions_t curently not exported`, async () => {
+        await owensBrowser.loginDialog.loginWithPassword(owen);
+      });
+
+      it(`... he's Owen again`, async () => {
         await owensBrowser.topbar.assertMyUsernameMatches(owen.username);
       });
     }

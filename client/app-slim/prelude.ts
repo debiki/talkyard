@@ -43,7 +43,7 @@ declare function smoothScroll(elem: Element, x: number, y: number,
     durationMs?: number, onDone?: () => void);
 
 // Defined in client/third-party/get-set-cookie.js.
-declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
+declare function getSetCookie(cookieName: St, value?: St, options?: Ay): St | Nl;
 
 
 // backw compat, later, do once per file instead (don't want a global 'r').
@@ -517,6 +517,7 @@ export function firstDefinedOf(x, y, z?) {
 
 
 /** Like _.groupBy but keeps just one value per key.
+    RENAME to arr_groupByKeepOne ?
   */
 export function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V } {
   const manyById: { [key: number]: V[] } = _.groupBy(vs, fn);
@@ -525,8 +526,47 @@ export function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number
 }
 
 
+export function arr_replaceMany<Item>(
+        arr: Item[], newerItems: Item[], isSame: ArrItemIsSameFn<Item>): Item[] {
+  const newArr = [...arr];
+  arr_replaceManyInPl(newArr, newerItems, isSame);
+  return newArr;
+}
+
+
+export function arr_replaceManyInPl<Item>(
+        arr: Item[], newerItems: Item[], isSame: ArrItemIsSameFn<Item>) {
+  for (const newerItem of newerItems) {
+    arr_replaceOneInPl(arr, newerItem, isSame);
+  }
+}
+
+
+export function arr_replaceOneInPl<Item>(
+        arr: Item[], newerItem: Item, isSame: ArrItemIsSameFn<Item>) {
+  const fnLen = isSame.length;
+  // @ifdef DEBUG
+  dieIf(fnLen < 1 || 2 < fnLen, 'TyE60MEPWH32');
+  // @endif
+
+  const getFieldVal = fnLen === 1 ? isSame as ((item: Item) => A) : undefined;
+  const newerFieldVal = getFieldVal && getFieldVal(newerItem);
+
+  const ix = _.findIndex(arr, function(oldItem) {
+    if (getFieldVal) return getFieldVal(oldItem) === newerFieldVal;
+    else return isSame(oldItem, newerItem);
+  });
+
+  if (ix >= 0) {
+    arr[ix] = newerItem;
+  }
+}
+
+
 // Finds and replaces (in-place) the first item with item.id = replacement.id.
 // Dies, if there's not matching item.
+// REFACTOR use arr_replaceOneInPl & x => x.id  instead.
+// + add an IfNotFound.ThenDie/ThenAppend/ThenIgnore param? Default to ThenDie?
 export function replaceById(itemsWithId: any[], replacement) {
   // @ifdef DEBUG
   dieIf(isNullOrUndefined(replacement.id), 'EdE4GJTH02');
