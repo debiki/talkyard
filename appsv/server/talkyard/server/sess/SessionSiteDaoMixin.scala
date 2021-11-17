@@ -20,8 +20,9 @@ package talkyard.server.sess
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.urlDecodeCookie
-import debiki.dao.SiteDao
+import debiki.dao.{MemCacheKey, MemCacheValueIgnoreVersion, SiteDao}
 import talkyard.server.dao.StaleStuff
+import org.apache.commons.codec.{binary => acb}
 
 
 
@@ -47,36 +48,68 @@ trait SessionSiteDaoMixin {
     activeSessions
   }
 
+
   def getSessionByPart1(part1Maybe2Or3: St): Opt[TySessionInDbMaybeBad] = {
-    readTx(_.loadSession(part1Maybe2Or3 = Some(part1Maybe2Or3)))
-     // + cache
+    memCache.lookup[TySessionInDbMaybeBad](
+          key = mkSessionPart1Key(part1Maybe2Or3),
+          orCacheAndReturn = loadSessionByPart1(part1Maybe2Or3),
+          // We don't want to reload all sessions from the database, just because
+          // some site settings got changed.
+          ignoreSiteCacheVersion = true)
   }
 
+
+  def loadSessionByPart1(part1Maybe2Or3: St): Opt[TySessionInDbMaybeBad] = {
+    readTx(_.loadSession(part1Maybe2Or3 = Some(part1Maybe2Or3)))
+  }
+
+
+  /*
+  def getSessionByPart4MaybeActiveOnly(part4Hash: Array[i8]): Opt[TySessionInDbMaybeBad] = {
+    memCache.lookup[TySessionInDbMaybeBad](
+          key = mkSessionPart4Key(part4),
+          orCacheAndReturn = loadSessionByPart4(part4, maybeActiveOnly = true),
+          ignoreSiteCacheVersion = true)
+  } */
 
   /// If maybeActiveOnly, won't load sessions that have been terminated for sure,
   /// but does load sessions that might have expired, but that has not yet been
   /// marked as expired in the database.
   ///
-  def getSessionByPart4HttpOnly(part4: St, maybeActiveOnly: Bo): Opt[TySessionInDbMaybeBad] = {
-    readTx(_.loadSession(part4HttpOnly = Some(part4), maybeActiveOnly = maybeActiveOnly))
-     // + cache
+  def loadSessionByPart4(hash4: Array[i8], maybeActiveOnly: Bo): Opt[TySessionInDbMaybeBad] = {
+    readTx(_.loadSession(hash4HttpOnly = Some(hash4), maybeActiveOnly = maybeActiveOnly))
   }
 
 
   def insertValidSession(session: TySession): U = {
     writeTx { (tx, _) =>
      tx.insertValidSession(session)
-     // + cache
     }
+    updateSessionInCache(session.copyAsMaybeBad)
   }
 
 
   def updateSession(session: TySessionInDbMaybeBad): U = {
     writeTx { (tx, _) =>
      tx.upsertSession(session)
-
-     // + uncache
     }
+    updateSessionInCache(session)
+  }
+
+
+  private def updateSessionInCache(session: TySessionInDbMaybeBad): U = {
+     memCache.put(
+          mkSessionPart1Key(session.part1CompId),
+          MemCacheValueIgnoreVersion(session))
+    //memCache.put(
+    //    mkSessionPart4HashKey(session.part4HashHttpOnly),
+    //    MemCacheValueIgnoreVersion(session))
+  }
+
+
+  private def removeSessionFromCache(session: TySessionInDbMaybeBad): U = {
+    memCache.remove(mkSessionPart1Key(session.part1CompId))
+    //memCache.remove(mkSessionPart4HashKey(session.part4HashHttpOnly))
   }
 
 
@@ -113,17 +146,22 @@ trait SessionSiteDaoMixin {
 
 
   private def terminateAnySession(sidPart1Maybe2Or3: Opt[St], sidPart4: Opt[St]): U = {
-    writeTx { (tx, _) =>
-      val sessions = tx.loadOneOrTwoSessions(sidPart1Maybe2Or3, part4HttpOnly = sidPart4,
+    val hash4 = sidPart4 map hashSha512FirstHalf32Bytes
+    val terminatedSessions = writeTx { (tx, _) =>
+      val sessions = tx.loadOneOrTwoSessions(sidPart1Maybe2Or3, hash4HttpOnly = hash4,
             maybeActiveOnly = true)
       assert(sessions.forall(_.wasValidJustRecently))  // could remove the filter() below
       val terminatedSessions =
             sessions.filter(_.wasValidJustRecently)
                 .map(_.copy(deletedAt = Some(tx.now)))
       terminatedSessions foreach tx.upsertSession
-
-       // + uncache
+      terminatedSessions
     }
+    // Alternatively, cache the terminated sessions for 10 seconds, in case of
+    // any already in-flight requests, so those requests won't need to look in the db?
+    // The response (from any current request) will delete all session cookies,
+    // so no need to cache for longer than some seconds (maybe 10? more than enough).
+    terminatedSessions foreach removeSessionFromCache
     AUDIT_LOG // 0, 1 or 2 sessions got terminated.
   }
 
@@ -154,12 +192,23 @@ trait SessionSiteDaoMixin {
     if (terminatedSessions.nonEmpty) {
       writeTxTryReuse(anyTx) { (tx, _) =>
         terminatedSessions foreach tx.upsertSession
-
-        // + uncache
       }
     }
+    terminatedSessions foreach removeSessionFromCache
 
+    AUDIT_LOG // >= 0 sessions got terminated.
     terminatedSessions
   }
+
+
+  private def mkSessionPart1Key(part1Maybe23: St): MemCacheKey =
+    MemCacheKey(siteId, s"${part1Maybe23 take TySession.SidLengthCharsPart1}|sid1")
+
+
+  /*
+  private def mkSessionPart4HashKey(hash4: Array[i8]): MemCacheKey = {
+    val hashSt = acb.Base64.encodeBase64URLSafeString(hash4)
+    MemCacheKey(siteId, s"$hashSt|sid1")
+  } */
 
 }

@@ -451,9 +451,9 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def insertMember(user: UserInclDetails): Unit
 
 
-  def loadSession(part1Maybe2Or3: Opt[St] = None, part4HttpOnly: Opt[St] = None,
+  def loadSession(part1Maybe2Or3: Opt[St] = None, hash4HttpOnly: Opt[Array[i8]] = None,
         maybeActiveOnly: Bo = false): Opt[TySessionInDbMaybeBad]
-  def loadOneOrTwoSessions(part1Maybe2Or3: Opt[St], part4HttpOnly: Opt[St],
+  def loadOneOrTwoSessions(part1Maybe2Or3: Opt[St], hash4HttpOnly: Opt[Array[i8]],
         maybeActiveOnly: Bo): ImmSeq[TySessionInDbMaybeBad]
   def loadActiveSessions(patId: PatId): ImmSeq[TySessionInDbMaybeBad]
   def insertValidSession(session: TySession): U

@@ -157,6 +157,21 @@ case class TySession(
   def part4Absent: Bo = part4HttpOnly.isEmpty
   def part4Present: Bo = !part4Absent
   def part5Absent: Bo = part5Strict.isEmpty
+
+  def copyAsMaybeBad: TySessionInDbMaybeBad = TySessionInDbMaybeBad(
+        patId = patId,
+        createdAt = createdAt,
+        deletedAt = None,
+        expiredAt = None,
+        version = version,
+        startIp = startIp,
+        startBrowserId = startBrowserId,
+        startHeaders = startHeaders,
+        part1CompId = part1CompId,
+        part2HashForEmbgStorage = part2Hash,
+        part3HashForDirJs = part3Hash,
+        part4HashHttpOnly = part4Hash,
+        part5HashStrict = part5Hash)
 }
 
 
