@@ -42,7 +42,25 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   const me: Myself = store.me;
   if (!me.isAdmin) return null;
 
-  // ----- Dynamic notices
+  // ----- Notice: New sessions, everyone will get logged out
+
+  let betterSessionsNotice: RElm =
+      help.HelpMessageBox({ message: {
+          // SAn = Server Announcement, NSid = new session ids
+          id: 'SAn_NSid', version: 1, isNice: true,
+          content: rFr({},
+            r.p({},
+              r.b({}, `Everyone will get logged out, `),
+              "and will need to log in again. Some time soon, maybe next week. " +
+              "This is because we're improving login session management in Talkyard, " +
+              "and as part of that, old sessions will stop working."),
+            r.p({}, `We're telling you just so you won't get surprised, when ` +
+              `suddenly you'll find yourself automatically logged out. — ` +
+              `Or if some of your users get confused and ask you why they got logged out.`),
+            ThisShownToAdminsOnly()),
+      } });
+
+  // ----- Notice: Blog comments URL
 
   // Depends on features enabled / in use at this particular site).
 
@@ -111,7 +129,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
 
   let newTyVersionAnn: RElm =
       help.HelpMessageBox({ message: {
-          // SAn = Server Announcement, TyV = Talkyard new Version announcement nr 1.
+          // SAn = Server Announcement, TyV = Talkyard new Version announcement nr X.
           id: 'SAn_TyV2', version: 2, isNice: true,
           content: rFr({},
             r.p({},
@@ -177,6 +195,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
     r.div({ className: 'c_SrvAnns' },
       rFr({}, adminNotices),
       e2eTestAnn,
+      betterSessionsNotice,
       certBugAnn,
       newTyVersionAnn,
       prevTyVersionAnn,
