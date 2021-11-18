@@ -86,7 +86,7 @@ val appDependencies = Seq(
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
   "ch.qos.logback" % "logback-core" % "1.2.3",              // newest as of 18-07-17
   // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-  "net.logstash.logback" % "logstash-logback-encoder" % "4.11",  // newest 4.x as of 18-07-17, there's 5.1
+  "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",  // newest 4.x as of 18-07-17, there's 5.1
   //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
