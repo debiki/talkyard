@@ -579,29 +579,7 @@ export const TopBar = createComponent({
 
     // ------- Open Watchbar button
 
-    const openWatchbarButton = hideSidebarBtns ? null :
-        Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar,
-            title: t.tb.WatchbToolt },
-          r.span({ className: 'icon-right-open' }),
-
-          // Button title:
-          // 1) An eye icon makes sense? because the first list is "Recently *viewed*".
-          // And one kind of uses that whole sidebar to *watch* / get-updated-about topics
-          // one is interested in.
-          // — no, hmm, someone remembers it from Photoshop and view-layers.
-          // Don't:  r.span({ className: 'icon-eye' }));
-          // 2) Let's call it "Activity"? since highlights topics with new posts.
-          // (Better give it a label, then easier for people to remember what it does.)
-          // r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
-          // No, most topics listed won't have any recent activity.
-          // 3) "Your topics"? Since shows topics one has viewed, or created, or chats
-          // one has joined. But, "Your topics" is too long, on tablets, mobile.
-          // Then, just: "Topics".
-          // 4) Maybe always ues just "Topics" instead. Looks better, and, the topics
-          // usually aren't "owned" by oneself anyway.  [open_wb_btn_ttl]
-          //
-          r.span({ className: 'esOpenWatchbarBtn_text' },
-            t.Topics));  // could:  justOneRow ? t.tb.WatchbBtn : t.Topics
+    const openWatchbarButton = hideSidebarBtns ? null : OpenWatchbarButton();
 
 
     // ------- Admin tips
@@ -815,6 +793,33 @@ const SearchForm = createComponent({
                   tabIndex: '4' }, t.AdvSearch))));
   }
 });
+
+
+export function OpenWatchbarButton() {
+  return Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar,
+      title: t.tb.WatchbToolt },
+    r.span({ className: 'icon-right-open' }),
+
+    // Button title:
+    // 1) An eye icon makes sense? because the first list is "Recently *viewed*".
+    // And one kind of uses that whole sidebar to *watch* / get-updated-about topics
+    // one is interested in.
+    // — no, hmm, someone remembers it from Photoshop and view-layers.
+    // Don't:  r.span({ className: 'icon-eye' }));
+    // 2) Let's call it "Activity"? since highlights topics with new posts.
+    // (Better give it a label, then easier for people to remember what it does.)
+    // r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
+    // No, most topics listed won't have any recent activity.
+    // 3) "Your topics"? Since shows topics one has viewed, or created, or chats
+    // one has joined. But, "Your topics" is too long, on tablets, mobile.
+    // Then, just: "Topics".
+    // 4) Maybe always ues just "Topics" instead. Looks better, and, the topics
+    // usually aren't "owned" by oneself anyway.  [open_wb_btn_ttl]
+    //
+    r.span({ className: 'esOpenWatchbarBtn_text' },
+      t.Topics));  // could:  justOneRow ? t.tb.WatchbBtn : t.Topics
+}
+
 
 //------------------------------------------------------------------------------
    }

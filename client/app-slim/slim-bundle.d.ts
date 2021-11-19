@@ -237,6 +237,7 @@ declare namespace debiki2 {
   namespace topbar {
     function getTopbarHeightInclShadow(): number;
     function TopBar(props): RElm; // TopbarProps
+    function OpenWatchbarButton(): RElm;
   }
 
   namespace sidebar {

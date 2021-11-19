@@ -1052,6 +1052,7 @@ interface TalkyardTranslations {
 
     TypeHerePlaceholder: string;
 
+    PlaceLeft?: string;
     Maximize: string;
     ToNormal: string;
     TileHorizontally: string;

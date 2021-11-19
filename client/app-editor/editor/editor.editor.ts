@@ -137,6 +137,7 @@ interface EditorState {
   draft?: Draft;
   draftErrorStatusCode?: number;
   safePreviewHtml: string;
+  // [showPreviewWhere]: Maybe change & reuse UiPrefsIninePreviews somehow?
   onDone?:  EditsDoneHandler;
   guidelines?: Guidelines;
   showGuidelinesInModal?: boolean;
@@ -150,6 +151,8 @@ interface EditorState {
 
   showMinimized?: boolean;
   showOnlyPreview?: boolean;
+  canPlaceLeft?: Bo;  // undef means false
+  placeLeft?: Bo;
   showMaximized?: boolean;
   splitHorizontally?: boolean;
 }
@@ -170,8 +173,10 @@ export const Editor = createFactory<any, EditorState>({
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function(): EditorState {
-    return {
+    const state: EditorState = {
       store: debiki2.ReactStore.allData(),
+      // For now, remember "forever" (until page reload), simpler.
+      canPlaceLeft: window.innerWidth >= WinDims.MinEditorLeftWidth && !eds.isInIframe,
       visible: false,
       text: '',
       caretPos: 0,
@@ -185,6 +190,7 @@ export const Editor = createFactory<any, EditorState>({
       fileUploadProgress: 0,
       uploadFileXhr: null,
     };
+    return state;
   },
 
 
@@ -331,9 +337,25 @@ export const Editor = createFactory<any, EditorState>({
   componentDidUpdate: function(prevProps, prevState: EditorState) {
     const state: EditorState = this.state;
     this.perhapsShowGuidelineModal();
-    if (!prevState.visible && state.visible) {
-      this.makeSpaceAtBottomForEditor();
+    this.reserveSpaceForEditor(prevState);
+
+    // If the preview is show inline (in the page where the reply will appear / in the
+    // post we're editing), and we click Maximize, then, there's not yet any preview
+    // in the *editor*, and e.g. external link previews would be missing.
+    // So, then, need to update any preview in the editor.
+    // COULD_OPTIMIZE: Skip if preview already shown in editor (rather than in page).
+    //
+    // Maybe remember this.[showPreviewWhere] in a field,
+    // where: 1 = none, 2 = in editor, 3 = in page?  4 both — could actually be nice
+    // on a wide screen, then, one would see the post one is replying to, the editor,
+    // and a preview of one's reply — all at the same time. And could scroll own in the page,
+    // and see precisely how one's reply will look, once submitted.
+    //
+    if (!prevState.showMaximized && state.showMaximized && state.visible) {
+      this.updatePreviewSoon();
+      // Maybe postpone  talkyard.postElemPostProcessor(..) below until aftewards?
     }
+
     if (talkyard.postElemPostProcessor &&
           prevState.safePreviewHtml !== state.safePreviewHtml) {
       talkyard.postElemPostProcessor('t_E_Preview');
@@ -366,22 +388,135 @@ export const Editor = createFactory<any, EditorState>({
       // The iframe is resizable instead. [RESEMBEDTR]
       return;
     }
-    util.makeResizableUp(this.refs.editor, this.refs.resizeHandle, this.makeSpaceAtBottomForEditor);
+    this.stopResizeUp = util.makeResizableUp(this.refs.editor, this.refs.resizeHandle,
+          this.adjustSpaceAtBottomForEditor);
+  },
+
+
+  reserveSpaceForEditor: function(prevState: EditorState) {
+    if (this.isGone) return;
+    const state: EditorState = this.state;
+
+    // Reserve (or hand back) space to the left, or at the bottom.
+    let reserveLeft: Bo | U;
+    let returnLeft: Bo | U;
+    let reserveBottom: Bo | U;
+    let returnBottom: Bo | U;
+
+    const prev = prevState;
+    const now = state;
+
+    const becameVisible = !prev.visible && now.visible;
+    const becameUnminimized = prev.showMinimized && !now.showMinimized;
+    const becameVisOrUnmin = becameVisible || becameUnminimized;
+    // Became minimized? — See the `if` just below.
+
+    if (prev.visible && !now.visible ||
+        !prev.showMinimized && now.showMinimized) {
+      // No longer shown, so make the page and sidebars full size again.
+      // (Hmm, maybe should keep some space at the bottom? No, not needed — it's ok
+      // if the un-minimize button occludes the bottom of the footer.)
+      returnLeft = true;
+      returnBottom = true;
+    }
+    else if (now.placeLeft && (!prev.placeLeft || becameVisOrUnmin)) {
+      reserveLeft = true;
+      returnBottom = true;
+    }
+    else {
+      if (prev.placeLeft && !now.placeLeft) {
+        returnLeft = true;
+      }
+      if (!now.showMaximized && !now.placeLeft && (prev.showMaximized || becameVisOrUnmin)) {
+        // We're 1) cycling back to normal layout, that is, the editor at the bottom.
+        // Or we're 2) un-minimizing the editor, when it was previously in normal layout
+        // (that is, at the bottom).
+        reserveBottom = true;
+      }
+    }
+
+    // @ifdef DEBUG
+    dieIf(reserveLeft && returnLeft, 'TyE4MW28PU51');
+    dieIf(reserveBottom && returnBottom, 'TyE4MW28PU52');
+    // @endif
+
+    if (returnBottom) {
+      this.returnSpaceAtBottomForEditor();
+    }
+
+    if (returnLeft) {
+      this.returnSpaceToTheLeftForEditor();
+    }
+
+    if (reserveLeft) {
+      this.makeSpaceToTheLeftForEditor();
+    }
+
+    if (reserveBottom) {
+      this.makeSpaceAtBottomForEditor();
+    }
+  },
+
+
+  makeSpaceToTheLeftForEditor: function() {
+    debiki2.$h.addClasses(document.documentElement, 'c_Html-EdLeft');
+  },
+
+
+  returnSpaceToTheLeftForEditor: function() {
+    debiki2.$h.removeClasses(document.documentElement, 'c_Html-EdLeft');
   },
 
 
   makeSpaceAtBottomForEditor: function() {
     if (this.isGone) return;
+
+    let editorHeightPx = this.savedHeightPx;
+
+    if (editorHeightPx) {
+      this.refs.editor.style.height = editorHeightPx;
+    }
+    else {
+      editorHeightPx = this.refs.editor.clientHeight + 'px';
+      this.savedHeightPx = editorHeightPx;
+    }
+
+    // This works also if unmounted (changes the heights of *other* elements).
+    this.setColumnsHeights(editorHeightPx);
+
+    if (this.stopResizeUp) {
+      // Re-activate the resize handle. (Stop stopping it :-/)
+      // Works also if unmounted — the resize handles changes are in try-catch.
+      // Maybe RENAME to something that shows it's ok also if unmounted? But what?
+      this.stopResizeUp(false);
+    }
+  },
+
+
+  adjustSpaceAtBottomForEditor: function() {
+    if (this.isGone) return;
     const editorHeightPx = this.refs.editor.clientHeight + 'px';
-    _.each(this.columns, (c) => {
-      c.style.bottom = editorHeightPx; // has no effect for the sidebar (5YKQ27)
-    });
+    this.savedHeightPx = editorHeightPx;
+    this.setColumnsHeights(editorHeightPx);
   },
 
 
   returnSpaceAtBottomForEditor: function() {
+    // Set the bottom to 0px, that is, 100% height.
+    this.setColumnsHeights('0px');
+    // In case the editor will now be placed to the left, remove the style="height: ..."
+    // so it'll be 100% tall.
+    this.refs.editor.style.height = null;   // ([IE11] would have wanted '' not null)
+    // When the editor is 100% tall, doesn't make sense to resize it vertically.
+    if (this.stopResizeUp) {
+      this.stopResizeUp(true);
+    }
+  },
+
+
+  setColumnsHeights: function(editorHeightPx: St) {
     _.each(this.columns, (c) => {
-      c.style.bottom = '0px';
+      c.style.bottom = editorHeightPx;  // has no effect for the sidebar (5YKQ27)
     });
   },
 
@@ -1339,7 +1474,7 @@ export const Editor = createFactory<any, EditorState>({
       safePreviewHtml: safeHtml,
     }, () => {
       if (this.isGone) return;
-      // Show an in-page preview, unless we're creating a new page.
+      // Show an in-page preview, unless we're creating a new page.  [showPreviewWhere]
       const state: EditorState = this.state;
       if (state.newPageRole || state.newForumTopicCategoryId) {
         // Then the page doesn't yet exist — cannot show any in-page preview.
@@ -1841,23 +1976,40 @@ export const Editor = createFactory<any, EditorState>({
 
 
   cycleMaxHorizBack: function() {
-    // Cycle from 1) normal to 2) maximized & tiled vertically, to 3) maximized & tiled horizontally
-    // and then back to normal.
+    // Cycle from 1) normal to 2) place left (or right, if rtl language),
+    // to 3) maximized & tiled vertically, to 4) maximized & tiled horizontally,
+    // and then back to normal.  [.cycle_editor_layout]
+
     const state: EditorState = this.state;
-    const newShowMaximized = !state.showMaximized || !state.splitHorizontally;
+
+    // The next layout after the default (which is the editor at the bottom, and the
+    // discussion above), is the editor to the left, and the discussion to the right.
+    const newPlaceLeft = state.canPlaceLeft && !state.placeLeft &&
+            // But if we're already using another layout, we'll cycle back to normal first.
+            !state.showMaximized;
+
+    // After place-left, we make the editor full screen, with the preview to the right
+    // of the editable textarea. Thereafter, the preview below, instead.
+    const newShowMaximized = !newPlaceLeft && (!state.showMaximized ||
+            // After the horizontal split layout (preview below), we cycle back to normal.
+            !state.splitHorizontally);
+
+    // In full screen layout, we first show the preview to the right of the editable textarae,
+    // then below it.
+    const newSplitHorizontally = state.showMaximized && !state.splitHorizontally;
+
     if (eds.isInEmbeddedEditor && newShowMaximized !== state.showMaximized) {
       window.parent.postMessage(JSON.stringify(['maximizeEditor', newShowMaximized]),
           eds.embeddingOrigin);
     }
-    this.setState({
+
+    const newState: Partial<EditorState> = {
+      placeLeft: newPlaceLeft,
       showMaximized: newShowMaximized,
-      splitHorizontally: state.showMaximized && !state.splitHorizontally,
-    },
-      // If the preview is show inline directly in the post we're editing, and
-      // we click Maximize, then, there's not yet any preview here in the editor,
-      // and e.g. external link previews wouldn't appear. Then, need to:
-      newShowMaximized && !state.showMaximized ?
-            this.updatePreviewSoon : undefined);
+      splitHorizontally: newSplitHorizontally,
+    };
+
+    this.setState(newState);
   },
 
 
@@ -1880,11 +2032,6 @@ export const Editor = createFactory<any, EditorState>({
       window.parent.postMessage(JSON.stringify(['minimizeEditor', nextShowMini]), eds.embeddingOrigin);
     }
     this.setState({ showMinimized: nextShowMini });
-    if (nextShowMini) {
-      // Wait until after new size has taken effect.
-      setTimeout(this.makeSpaceAtBottomForEditor);
-    }
-    // Else: the editor covers 100% anyway.
   },
 
 
@@ -1892,7 +2039,7 @@ export const Editor = createFactory<any, EditorState>({
     // @ifdef DEBUG
     dieIf(!_.isUndefined(statePatch.visible), 'TyE305WKTJP4');
     // @endif
-    this.makeSpaceAtBottomForEditor();
+
     const oldState: EditorState = this.state;
     const newState: Partial<EditorState> = { ...statePatch, visible: true };
     this.setState(newState);
@@ -1960,6 +2107,7 @@ export const Editor = createFactory<any, EditorState>({
     ReactActions.hideEditorAndPreview(params, state.inFrame);
 
     this.returnSpaceAtBottomForEditor();
+    this.returnSpaceToTheLeftForEditor();
 
     if (this.isGone)
       return;
@@ -2462,6 +2610,7 @@ export const Editor = createFactory<any, EditorState>({
 
     // Don't show any in-editor preview, if we're showing an in-page preview,
     // and hasn't configured double previews (in editor too).
+    // UX Actually, always show double previews, if replying, and wide screen? [showPreviewWhere]
     const skipInEditorPreview =
         thereIsAnInPagePreview &&
         myUiPrefs.inp !== UiPrefsIninePreviews.Double &&
@@ -2504,6 +2653,7 @@ export const Editor = createFactory<any, EditorState>({
     // ----- Editor size
 
     editorClasses += eds.isInEmbeddedEditor ? '' : ' editor-box-shadow';
+    editorClasses += state.placeLeft ? ' c_E-PlaceLeft' : '';
     editorClasses += state.showMaximized ? ' s_E-Max' : '';
     editorClasses += state.splitHorizontally ? ' s_E-SplitHz' : '';
     editorClasses += state.showMinimized ? ' s_E-Min' : (
@@ -2512,9 +2662,15 @@ export const Editor = createFactory<any, EditorState>({
     const editorStyles = state.showOnlyPreview ? { display: 'none' } : null;
     const previewStyles = state.showOnlyPreview ? { display: 'block' } : null;
 
+    // [.cycle_editor_layout]
     const maximizeAndHorizSplitBtnTitle =
-        !state.showMaximized ? t.e.Maximize : (
-          state.splitHorizontally ? t.e.ToNormal : t.e.TileHorizontally);
+        !state.showMaximized
+            ? (state.canPlaceLeft && !state.placeLeft
+                  ? t.e.PlaceLeft || "Place left"
+                  : t.e.Maximize)
+            : (state.splitHorizontally
+                  ? t.e.ToNormal
+                  : t.e.TileHorizontally);
 
 
     // ----- Draft status
@@ -2533,8 +2689,7 @@ export const Editor = createFactory<any, EditorState>({
       r.div({ style: styles },
         guidelinesModal,
         anyBackdrop,
-        r.div({ id: 'debiki-editor-controller', ref: 'editor',
-            className: editorClasses },
+        r.div({ id: 'debiki-editor-controller', ref: 'editor', className: editorClasses },
           r.button({ className: 'esEdtr_close esCloseCross', onClick: this.onCancelClick }),
           guidelinesElem,
           similarTopicsTips,
@@ -2542,6 +2697,7 @@ export const Editor = createFactory<any, EditorState>({
             r.div({ className: 'editor-area', style: editorStyles },
               r.div({ className: 'editor-area-after-borders' },
                 r.div({ className: 's_E_DoingRow' },
+                  state.placeLeft ? topbar.OpenWatchbarButton() : null,
                   r.span({ className: 's_E_DoingWhat' }, doingWhatInfo),
                   showGuidelinesBtn,
                   scrollToPreviewBtn,
