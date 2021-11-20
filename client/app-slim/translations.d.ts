@@ -1115,6 +1115,7 @@ interface TalkyardTranslations {
 
   // Search dialogs and the search page.
   s: {
+    SearchForHelp?: string;
     TxtToFind: string;
   },
 

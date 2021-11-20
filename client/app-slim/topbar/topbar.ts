@@ -741,7 +741,8 @@ function makeNotfIcon(type: string, number: number) {
 // COULD move SearchForm to more-bundle, so won't need to access via ['search']
 // (needs to do that currently, because not available server side)
 //
-const SearchForm = createComponent({
+// MOVE to ... widgets/search-form.ts or widgets.s?
+export const SearchForm = createComponent({
   displayName: 'SearchForm',
 
   getInitialState: function() {
@@ -771,7 +772,8 @@ const SearchForm = createComponent({
   },
 
   render: function() {
-    const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.queryInputText);
+    const search: A = debiki2['search']; // absent server side
+    const urlEncodedQuery = search ? search.urlEncodeSearchQuery(this.state.queryInputText) : '';
     const searchEndpoint    = '/-/search';
     const searchUrl         = '/-/search?q=' + urlEncodedQuery;
     const searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;
@@ -779,7 +781,8 @@ const SearchForm = createComponent({
     return (
         r.form({ className: 'c_SchD', ref: 'form',
             method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
-          (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: t.s.TxtToFind,  // [TYPEERROR]
+          (<any> r.input)({ type: 'text', tabIndex: '1',
+              placeholder: t.s.SearchForHelp || t.s.TxtToFind,  // [TYPEERROR]  I18N
               ref: 'input', name: 'q',
               value: this.state.queryInputText, onChange: this.onQueryChange }),
           PrimaryLinkButton({ href: searchUrl, tabIndex: '2',

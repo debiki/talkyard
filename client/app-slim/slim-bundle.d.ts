@@ -385,6 +385,8 @@ declare namespace debiki2 {
 
   function categories_sortTree(categories: Category[]): CatsTree;
 
+  function store_curPage(store: Store): Page | U;
+
   function page_makePostPatch(page: Page, post: Post): StorePatch;
   function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft): StorePatch;
 

@@ -1184,6 +1184,11 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
   // Overrides quickUpdate.
   cannotQuickUpdate?: boolean;
 
+  // Any page settings, e.g. layout or sort order, pat is currently editing and previewing.
+  // Any fields here, overrides those in this.currentPage. But disappears on page reload
+  // (unless saved).
+  curPageTweaks?: Partial<Page>;
+
   debugStartPageId: string;
 
   tagTypesById?: TagTypesById;
@@ -1727,7 +1732,8 @@ interface SearchHit {
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
-interface StorePatch extends EditorStorePatch, TagTypesStorePatch, PatsStorePatch {
+interface StorePatch
+      extends EditorStorePatch, TagTypesStorePatch, PatsStorePatch, PageTweaksStorePatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
@@ -1775,6 +1781,9 @@ interface PatsStorePatch {
   usersBrief?: Pat[];
 }
 
+interface PageTweaksStorePatch {
+  curPageTweaks?: Partial<Page>;
+}
 
 
 interface Settings extends TopicInterfaceSettings {

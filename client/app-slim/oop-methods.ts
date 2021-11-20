@@ -763,6 +763,15 @@ export function store_isFeatFlagOn(store: Store, featureFlag: St): Bo {
 // Store
 //----------------------------------
 
+
+export function store_curPage(store: Store): Page | U {
+  return !store.currentPage || _.isEmpty(store.curPageTweaks) ? store.currentPage : {
+    ...store.currentPage,
+    ...store.curPageTweaks,
+  };
+}
+
+
 export function store_mainSiteSection(store: Store): SiteSection {
   // Currently there's always just one sub site, namely the forum.
   // Edit: Actually, there're some old sites, with many sub sites — they

@@ -261,6 +261,9 @@ ReactDispatcher.register(function(payload) {
       currentPage.pageDoneAtMs = newMeta.doneAt;
       currentPage.pageClosedAtMs = newMeta.closedAt;
 
+      // Clear any previews of the changes, after they've been saved. [clear_pg_tweaks]
+      delete store.curPageTweaks;
+
       // [2D_LAYOUT]
       //currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
       //const is2dTree = currentPage.horizontalLayout;
@@ -1607,7 +1610,17 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     }
   });
 
-  const currentPage: Page = store.currentPage;
+  const currentPage: Page | U = store.currentPage;
+
+  if (!currentPage) {
+    delete store.curPageTweaks;
+  }
+  else if (storePatch.curPageTweaks) {
+    store.curPageTweaks = {
+      ...store.curPageTweaks,
+      ...storePatch.curPageTweaks,
+    };
+  }
 
   // If we just posted the very first reply on an embedded discussion, a page for the discussion
   // will have been created now, lazily. Then need to update the store page id.
@@ -1777,6 +1790,8 @@ function showNewPage(ps: ShowNewPageParams) {
     dieIf(newPage.dbgSrc !== 'AP', 'TyE25KT70R1');
   }
   // @endif
+
+  delete store.curPageTweaks;
 
   // Update categories — maybe this page is in a different sub community with different categories.
   store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories

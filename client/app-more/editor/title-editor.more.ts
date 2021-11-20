@@ -29,6 +29,21 @@ const ModalDropdownButton = utils.ModalDropdownButton;
 const MaxSlugLength = 100;  // sync with Scala [MXPGSLGLN]
 
 
+interface TitleEditorPops {
+  closeEditor: () => V;
+  // ... fill in later
+}
+
+interface TitleEditorState {
+  showLayoutAndSettings?: Bo;
+  newLayout?: {
+    showSearchField?: Bo;
+  }
+  // ... many more
+}
+
+
+
 export const TitleEditor = createComponent({
   displayName: 'TitleEditor',
 
@@ -114,6 +129,7 @@ export const TitleEditor = createComponent({
     this.setState({ isSaving: true });
     var newTitle = this.refs.titleInput.getValue();
     var pageSettings = this.getSettings();
+    // This clears any change previews. [clear_pg_tweaks]
     ReactActions.editTitleAndSettings({ ...pageSettings, newTitle }, () => {
       document.title = newTitle; // also done here: [30MRVH2]
       if (this.isGone) return;
@@ -121,6 +137,17 @@ export const TitleEditor = createComponent({
     }, () => {
       this.setState({ isSaving: false });
     });
+  },
+
+  cancel: function() {
+    const props: TitleEditorPops = this.props;
+    const state: TitleEditorState = this.state;
+    if (state.showLayoutAndSettings) {
+      // Clear any unsaved changes.
+      const patch: PageTweaksStorePatch = { curPageTweaks: {} };
+      ReactActions.patchTheStore(patch);
+    }
+    props.closeEditor();
   },
 
   getSettings: function() {
@@ -142,8 +169,9 @@ export const TitleEditor = createComponent({
   },
 
   render: function() {
+    const state: TitleEditorState = this.state;
     const store: Store = this.props.store;
-    const page: Page = store.currentPage;
+    const page: Page = store_curPage(store);
     const me: Myself = store.me;
     const settings: SettingsVisibleClientSide = store.settings;
     const pageRole: PageRole = page.pageRole;
@@ -160,10 +188,26 @@ export const TitleEditor = createComponent({
       const layoutBtnTitle = r.span({},
           topicListLayout_getName(this.state.pageLayout) + ' ',
           r.span({ className: 'caret' }));
-      const mkSetter = (layout) => (() => this.setState({ pageLayout: layout }));
+
+      const mkSetter = (pageLayout: PageLayout) => () => {
+        this.setState({ pageLayout });
+        const patch: PageTweaksStorePatch = {
+          curPageTweaks: { ...store.curPageTweaks, pageLayout },
+        };
+        ReactActions.patchTheStore(patch);
+      };
+
       layoutAndSettings =
         r.div({},
           r.div({ className: 'form-horizontal', key: 'layout-settings-key' },
+            /* Feature flag, for now, instead.
+            Input({ type: 'checkbox', label: "Show search box",
+                wrapperClassName: 'col-xs-offset-2 col-xs-10',
+                className: 'e_SearchFld',
+                checked: showSearchField,
+                onChange: mkSetter({ ... ? }) }),
+            */
+
             Input({ type: 'custom', label: "Topic list layout",
                 labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
               ModalDropdownButton({ title: layoutBtnTitle },
@@ -289,7 +333,7 @@ export const TitleEditor = createComponent({
       ? r.div({}, t.SavingDots)
       : r.div({ className: 'dw-save-btns-etc' },
           PrimaryButton({ onClick: this.save, className: 'e_Ttl_SaveB' }, t.Save),
-          Button({ onClick: this.props.closeEditor }, t.Cancel));
+          Button({ onClick: this.cancel }, t.Cancel));
 
     return (
       r.div({ className: 'dw-p-ttl-e' },
