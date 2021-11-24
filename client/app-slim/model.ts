@@ -2346,10 +2346,21 @@ interface LoginPopupLoginResponse {
 }
 
 interface AuthnResponse {
+  // me?: Me  — or extend FetchMeResponse?  [incl_me_in_aun_rsp]
+  // stuffForMe?: StuffForMe
   origNonceBack?: St;
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
   weakSessionId?: string;
+}
+
+
+/// If not logged in (maybe the session just expired or got deleted from another device),
+/// `me` and `stuffForMe` would be null.
+///
+interface FetchMeResponse {
+  me: Me | N;
+  stuffForMe: StuffForMe | N;
 }
 
 

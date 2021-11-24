@@ -227,7 +227,7 @@ describe("sso-test  TyT4ABKRW0268", () => {
     mariasBrowser.go(discussionPageUrl);
   });
 
-  it("... logs in, without getting redirected to the external SSO login page", () => {
+  it("... logs in, doesn't get redirected to the external SSO login page  TyTECONTAFTAUN", () => {
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
