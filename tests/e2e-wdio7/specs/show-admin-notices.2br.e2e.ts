@@ -25,7 +25,7 @@ describe(`show-admin-notices.2br.e2e.ts  TyTE2EADMNTC`, () => {
   it(`Construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
-      title: "Some E2E Test",
+      title: 'Admin_Notices_',
       members: ['owen', 'modya', 'memah'],
     });
 
