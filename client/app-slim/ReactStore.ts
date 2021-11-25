@@ -1862,16 +1862,16 @@ function showNewPage(ps: ShowNewPageParams) {
   function magicClassFor(page: Page): string {
     // Sync with Scala [4JXW5I2].
     let clazz = '';
-    if (page_isChat(page.pageRole)) clazz = ' dw-vt es-chat';
+    if (page_isChat(page.pageRole)) clazz = ' es-chat';
     if (page.pageRole === PageRole.Forum) clazz = ' es-forum';
-    if (page.pageRole === PageRole.MindMap) clazz = ' dw-hz';
-    if (page.pageRole) clazz = ' dw-vt';
+    if (page.pageRole === PageRole.MindMap) clazz += ' dw-hz';
+    else clazz += ' dw-vt';
     clazz += (!page.pageRole ? '' : ' s_PT-' + page.pageRole);     // [5J7KTW2]
     clazz += (!page.pageLayout ? '' : ' s_PL-' + page.pageLayout);
     return clazz;
   }
   if (oldClassesStr || newClassesStr) {
-    const regex = /[ ,]/;
+    const regex = /[ ,]+/;
     const oldClasses = oldClassesStr.split(regex);
     const newClasses = newClassesStr.split(regex);
     function addOrRemoveClasses(as, bs, fn) {
