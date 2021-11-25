@@ -53,6 +53,7 @@ trait SessionSiteDaoMixin {
     memCache.lookup[TySessionInDbMaybeBad](
           key = mkSessionPart1Key(part1Maybe2Or3),
           orCacheAndReturn = loadSessionByPart1(part1Maybe2Or3),
+          reloadUncacheIfChanged = true,
           // We don't want to reload all sessions from the database, just because
           // some site settings got changed.
           ignoreSiteCacheVersion = true)
@@ -69,6 +70,7 @@ trait SessionSiteDaoMixin {
     memCache.lookup[TySessionInDbMaybeBad](
           key = mkSessionPart4Key(part4),
           orCacheAndReturn = loadSessionByPart4(part4, maybeActiveOnly = true),
+          reloadUncacheIfChanged = true,
           ignoreSiteCacheVersion = true)
   } */
 
@@ -83,8 +85,9 @@ trait SessionSiteDaoMixin {
 
   def insertValidSession(session: TySession): U = {
     writeTx { (tx, _) =>
-     tx.insertValidSession(session)
+      tx.insertValidSession(session)
     }
+    // This is a new session — it's not yet in the cache, no data race.
     updateSessionInCache(session.copyAsMaybeBad)
   }
 
@@ -93,7 +96,19 @@ trait SessionSiteDaoMixin {
     writeTx { (tx, _) =>
      tx.upsertSession(session)
     }
-    updateSessionInCache(session)
+
+    // This'd be a data race:  updateSessionInCache(session)  — what if another thread
+    // inserts a now expired session, but we insert a possibly *not* expired
+    // version of the same session.  Instead, and this is fine:
+    removeSessionFromCache(session)
+
+    // Could also:
+    //  - Upsert into cache,
+    //  - Load from db (in a new tx)
+    //  - Is it the same as the one we inserted into the cache?
+    //  - If yes, fine, keep it.
+    //  - If no, uncache it.
+    // See [cache_race] in MemCache.scala, which does this.
   }
 
 
@@ -161,6 +176,8 @@ trait SessionSiteDaoMixin {
     // any already in-flight requests, so those requests won't need to look in the db?
     // The response (from any current request) will delete all session cookies,
     // so no need to cache for longer than some seconds (maybe 10? more than enough).
+    // But might need to reload the session anyway, and see if it's still the same,
+    // to avoid data race [cache_race]. Simpler to just uncache it.
     terminatedSessions foreach removeSessionFromCache
     AUDIT_LOG // 0, 1 or 2 sessions got terminated.
   }
