@@ -67,6 +67,7 @@ create account -
   username aready in use:
   reserved username:
 
+login,
 authn:
   single sign-on: (3093533)
   guest:  # copy-edit unsubscribe.2browsers.test.ts + use signUpLogInAs_Real_Guest
@@ -116,6 +117,10 @@ authn:
     with oidc,
     with server default oauth2:
           - see ^oidc
+  continue after login:
+            - sso-test  TyT4ABKRW0268.TyTECONTAFTAUN
+            - TESTS_MISSING  would be good with more tests: Reply, Like, Flag,
+                but first, on click, needs to log in.
 
   [.lazy_authn],
   lazy authn,
@@ -248,6 +253,8 @@ sessions:
   mods cannot terminate admins sessions:
             - TESTS_MISSING  TyTESESTERMADM
             - d.sessions-staff-logout-others.4br  TyTESESLGOOTR  TyEADMINSESS_
+  terminate embedded comments session cached in localStorage:
+            - TESTS_MISSING  TyTESESTERMEMBD
   require session part 4,
   a stolen embdding storage sid part 1+2 is pretty useless:
             - embcom.sessions-emb-sess-cannot-moderate.3br  TyTEECSESS0MOD

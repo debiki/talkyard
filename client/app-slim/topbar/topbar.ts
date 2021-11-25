@@ -579,29 +579,7 @@ export const TopBar = createComponent({
 
     // ------- Open Watchbar button
 
-    const openWatchbarButton = hideSidebarBtns ? null :
-        Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar,
-            title: t.tb.WatchbToolt },
-          r.span({ className: 'icon-right-open' }),
-
-          // Button title:
-          // 1) An eye icon makes sense? because the first list is "Recently *viewed*".
-          // And one kind of uses that whole sidebar to *watch* / get-updated-about topics
-          // one is interested in.
-          // — no, hmm, someone remembers it from Photoshop and view-layers.
-          // Don't:  r.span({ className: 'icon-eye' }));
-          // 2) Let's call it "Activity"? since highlights topics with new posts.
-          // (Better give it a label, then easier for people to remember what it does.)
-          // r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
-          // No, most topics listed won't have any recent activity.
-          // 3) "Your topics"? Since shows topics one has viewed, or created, or chats
-          // one has joined. But, "Your topics" is too long, on tablets, mobile.
-          // Then, just: "Topics".
-          // 4) Maybe always ues just "Topics" instead. Looks better, and, the topics
-          // usually aren't "owned" by oneself anyway.  [open_wb_btn_ttl]
-          //
-          r.span({ className: 'esOpenWatchbarBtn_text' },
-            t.Topics));  // could:  justOneRow ? t.tb.WatchbBtn : t.Topics
+    const openWatchbarButton = hideSidebarBtns ? null : OpenWatchbarButton();
 
 
     // ------- Admin tips
@@ -763,7 +741,8 @@ function makeNotfIcon(type: string, number: number) {
 // COULD move SearchForm to more-bundle, so won't need to access via ['search']
 // (needs to do that currently, because not available server side)
 //
-const SearchForm = createComponent({
+// MOVE to ... widgets/search-form.ts or widgets.s?
+export const SearchForm = createComponent({
   displayName: 'SearchForm',
 
   getInitialState: function() {
@@ -793,7 +772,8 @@ const SearchForm = createComponent({
   },
 
   render: function() {
-    const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.queryInputText);
+    const search: A = debiki2['search']; // absent server side
+    const urlEncodedQuery = search ? search.urlEncodeSearchQuery(this.state.queryInputText) : '';
     const searchEndpoint    = '/-/search';
     const searchUrl         = '/-/search?q=' + urlEncodedQuery;
     const searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;
@@ -801,7 +781,8 @@ const SearchForm = createComponent({
     return (
         r.form({ className: 'c_SchD', ref: 'form',
             method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
-          (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: t.s.TxtToFind,  // [TYPEERROR]
+          (<any> r.input)({ type: 'text', tabIndex: '1',
+              placeholder: t.s.SearchForHelp || t.s.TxtToFind,  // [TYPEERROR]  I18N
               ref: 'input', name: 'q',
               value: this.state.queryInputText, onChange: this.onQueryChange }),
           PrimaryLinkButton({ href: searchUrl, tabIndex: '2',
@@ -815,6 +796,33 @@ const SearchForm = createComponent({
                   tabIndex: '4' }, t.AdvSearch))));
   }
 });
+
+
+export function OpenWatchbarButton() {
+  return Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar,
+      title: t.tb.WatchbToolt },
+    r.span({ className: 'icon-right-open' }),
+
+    // Button title:
+    // 1) An eye icon makes sense? because the first list is "Recently *viewed*".
+    // And one kind of uses that whole sidebar to *watch* / get-updated-about topics
+    // one is interested in.
+    // — no, hmm, someone remembers it from Photoshop and view-layers.
+    // Don't:  r.span({ className: 'icon-eye' }));
+    // 2) Let's call it "Activity"? since highlights topics with new posts.
+    // (Better give it a label, then easier for people to remember what it does.)
+    // r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
+    // No, most topics listed won't have any recent activity.
+    // 3) "Your topics"? Since shows topics one has viewed, or created, or chats
+    // one has joined. But, "Your topics" is too long, on tablets, mobile.
+    // Then, just: "Topics".
+    // 4) Maybe always ues just "Topics" instead. Looks better, and, the topics
+    // usually aren't "owned" by oneself anyway.  [open_wb_btn_ttl]
+    //
+    r.span({ className: 'esOpenWatchbarBtn_text' },
+      t.Topics));  // could:  justOneRow ? t.tb.WatchbBtn : t.Topics
+}
+
 
 //------------------------------------------------------------------------------
    }

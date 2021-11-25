@@ -72,23 +72,33 @@ export const actionTypes = {
 };
 
 
-export function loadMyself(afterwardsCallback?: () => Vo) {
+// REFACTOR, COULD_OPTIMIZE: Let the authn methods, e.g. Server.loginWithAuthnToken()
+// and Server.loginWithOneTimeSecret() incl the current user in the response — then,
+// can skip doing an extra roundtrip by calling this fn.  [incl_me_in_aun_rsp]
+//
+// Thereafter, rename? It's not clear from the name, that this fn also can remember a session,
+// and send to other iframes. And that it closes the login dialog! [confusing_loadMyself]
+// Or, better?, don't rename — instead, let the caller do all different stuff instead?
+// Maybe could even remove this fn then (and inline in just one caller).
+//
+export function loadMyself(onOkMaybe?: (resp: FetchMeResponse) => Vo) {
   // (Don't delete temp login cookies here, because this fn gets called if login is
   // detected in another tab — and perhaps yet another login has been started in that other
   // tab, and we don't want to break it by deleting cookies. Instead login temp cookies are
   // deleted by the server.)
 
-  Server.loadMyself((anyMe: Me | NU, stuffForMe?: StuffForMe) => {
-    // @ifdef DEBUG
-    // Might happen if there was no weakSessionId, and also, no cookie.
-    // Or if our session just got terminated from another device?
-    // To try to make this happen, see /^sessions/ in tests-map.txt.
-    dieIf(!anyMe, 'Server.loadMyself() returned me = null [TyE4032SMH57]');
-    // @endif
-    // Maybe?: if (!anyMe) return;
-    // Or?: if (!anyMe) logoutClientSideOnly()
+  Server.loadMyself(function(resp: FetchMeResponse) {
+    // We might get no user back — any current session might have ended just now,
+    // e.g. expired, or been terminated from another device.
+    if (!resp.me) {
+      // TESTS_MISSING TyTESESTERMEMBD, SHOULD add e2e tests? See /^sessions/ in tests-map.txt.
+      onOkMaybe && onOkMaybe(resp);
+      return;
+    }
 
-    const newMe = anyMe as Me;
+    const newMe: Me = resp.me;
+    const stuffForMe = resp.stuffForMe;
+
     if (isInSomeEmbCommentsIframe()) {
       // Tell the embedded comments or embedded editor iframe that we just logged in,
       // also include the session id, so Talkyard's script on the embedding page
@@ -108,20 +118,19 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
       if (mainWin !== window) {
         mainWin.theStore.me = _.cloneDeep(newMe);
       }
-      sendToOtherIframes([
+      sendToOtherIframes([  // [confusing_loadMyself]
         'justLoggedIn', { user: newMe, stuffForMe,
               weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
               sessionType: null, rememberEmbSess }]);
     }
-    setNewMe(newMe, stuffForMe);
-    if (afterwardsCallback) {
-      afterwardsCallback();
-    }
+
+    setNewMe(newMe, stuffForMe);  // [confusing_loadMyself]
+    onOkMaybe && onOkMaybe(resp);
   });
 }
 
 
-export function setNewMe(user: Me | NU, stuffForMe?: StuffForMe) {
+export function setNewMe(user: Me | NU, stuffForMe?: StuffForMe | N) {
   // @ifdef DEBUG
   dieIf(!user, `setNewMe(nothing) TyE60MRJ46RS`);
   // @endif
@@ -152,7 +161,7 @@ export function logout() {
 }
 
 
-export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo } = {}) {
+export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } = {}) {
   Server.deleteTempSessId();  // [is_logging_out]
 
   ReactDispatcher.handleViewAction({
@@ -167,7 +176,7 @@ export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo } = {}) {
     // Probaby not needed, since reload() below, but anyway:
     patchTheStore({ setEditorOpen: false });
     const sessWin: MainWin = getMainWin();
-    delete sessWin.typs.weakSessionId;
+    delete sessWin.typs.weakSessionId;   // can skip? Already done by deleteTempSessId() above
     sessWin.theStore.me = 'TyMLOGDOUT' as any;
   }
 

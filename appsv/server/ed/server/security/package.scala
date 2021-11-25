@@ -961,6 +961,7 @@ class EdSecurity(globals: Globals) {
         expireIdleAfterMillis: i64): CheckSidResult = {
 
     val anySession = anyPart12Maybe3 flatMap dao.getSessionByPart1
+    val anyPart4Hash = anyPart4.map(hashSha512FirstHalf32Bytes)
 
     val session: TySessionInDbMaybeBad = anySession getOrElse {
       // If pat has logged out client side, when offline, the not-HttpOnly session parts
@@ -973,7 +974,7 @@ class EdSecurity(globals: Globals) {
       // Maybe maybe Safari will sometimes mistakenly auto clear localStorage?
       // See [ios_itp] in maybe-later.txt.
 
-      anyPart4.flatMap(dao.getSessionByPart4HttpOnly(_, maybeActiveOnly = true)) foreach { s =>
+      anyPart4Hash.flatMap(dao.loadSessionByPart4(_, maybeActiveOnly = true)) foreach { s =>
         // Test: sso-test  TyT4ABKRW0268.TyTESESS123GONE
         AUDIT_LOG // client side logout
         val sessionDeleted = s.copy(deletedAt = Some(now))
@@ -998,9 +999,15 @@ class EdSecurity(globals: Globals) {
           if (!part3IsPresent) None
           else Some(thePart12Maybe3.substring(SidLengthCharsPart12, SidLengthCharsPart123))
 
-    val anyPart3Hash = anyPart3.map(hashSha512FirstHalf32Bytes)
-    val anyPart4Hash = anyPart4.map(hashSha512FirstHalf32Bytes)
-    val anyPart5Hash = anyPart5.map(hashSha512FirstHalf32Bytes)
+    val (anyPart3Hash, anyPart5Hash) =
+          if (session.isDeleted || session.hasExpired) {
+            // Then we won't use parts 3 and 5 anyway. (But we'll check part 4.)
+            (None, None)
+          }
+          else {
+            (anyPart3.map(hashSha512FirstHalf32Bytes),
+                anyPart5.map(hashSha512FirstHalf32Bytes))
+          }
 
     // Part 2, and 3, 4, 5 if present, must be from the same session.
     // We've checked part 1 already — we found the session via part 1.
@@ -1022,9 +1029,7 @@ class EdSecurity(globals: Globals) {
       // they could get out of sync maybe because of some unknown bug, or if a script
       // or a person manipulates their cookies.)
       if (badPart4) {
-        COULD_OPTIMIZE // We've hashed part 4 above, need not do again in
-        // SessionsRdbMixin.loadSession().
-        dao.getSessionByPart4HttpOnly(anyPart4.get, maybeActiveOnly = true) foreach {
+        dao.loadSessionByPart4(anyPart4Hash.get, maybeActiveOnly = true) foreach {
               differentSession =>
           // The database should prevent any parts being the same (unique indexes,
           // on parts 1 and 4, but not 2, 3 or 5).

@@ -55,11 +55,11 @@ trait SessionsRdbMixin extends SiteTransaction {
     private val AndMaybeActiveOnlySql =
       "and deleted_at_c is null and expired_at_c is null"
 
-  def loadSession(part1Maybe2Or3: Opt[St] = None, part4HttpOnly: Opt[St] = None,
+  def loadSession(part1Maybe2Or3: Opt[St] = None, hash4HttpOnly: Opt[Array[i8]] = None,
         maybeActiveOnly: Bo = false)
         : Opt[TySessionInDbMaybeBad] = {
-    dieIf(part1Maybe2Or3.isDefined == part4HttpOnly.isDefined, "TyE50MG24SMP")
-    val part1OrHash4 = part4HttpOnly.map(hashSha512FirstHalf32Bytes) getOrElse {
+    dieIf(part1Maybe2Or3.isDefined == hash4HttpOnly.isDefined, "TyE50MG24SMP")
+    val part1OrHash4 = hash4HttpOnly getOrElse {
       // Compare with part 1 only (not 2 or 3).
       part1Maybe2Or3.getOrDie("TyE603MWEG657") take TySession.SidLengthCharsPart1
     }
@@ -80,9 +80,9 @@ trait SessionsRdbMixin extends SiteTransaction {
   }
 
 
-  def loadOneOrTwoSessions(part1Maybe2Or3: Opt[St], part4HttpOnly: Opt[St],
+  def loadOneOrTwoSessions(part1Maybe2Or3: Opt[St], hash4HttpOnly: Opt[Array[i8]],
         maybeActiveOnly: Bo = false): ImmSeq[TySessionInDbMaybeBad] = {
-    if (part1Maybe2Or3.isEmpty && part4HttpOnly.isEmpty)
+    if (part1Maybe2Or3.isEmpty && hash4HttpOnly.isEmpty)
       return Vec.empty
 
     val values = MutArrBuf[AnyRef]()
@@ -95,11 +95,11 @@ trait SessionsRdbMixin extends SiteTransaction {
     } getOrElse ""
 
     val or =
-          if (part1Maybe2Or3.isEmpty || part4HttpOnly.isEmpty) ""
+          if (part1Maybe2Or3.isEmpty || hash4HttpOnly.isEmpty) ""
           else "or"
 
-    val partFourEq = part4HttpOnly map { part4 =>
-      values.append(hashSha512FirstHalf32Bytes(part4))
+    val partFourEq = hash4HttpOnly map { hash4 =>
+      values.append(hash4)
       "hash_4_http_only_c = ?"
     } getOrElse ""
 

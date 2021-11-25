@@ -220,6 +220,7 @@ function constructEmbCommentsImportTest(testName: string, variants: {
       });
 
       it(`... needs to log in again — sessions_t curently not exported`, async () => {
+        // This won't work with the old silly sids. But with the new fancy sids. [btr_sid]
         await owensBrowser.loginDialog.loginWithPassword(owen);
       });
 

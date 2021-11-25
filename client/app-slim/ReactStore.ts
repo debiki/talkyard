@@ -261,6 +261,9 @@ ReactDispatcher.register(function(payload) {
       currentPage.pageDoneAtMs = newMeta.doneAt;
       currentPage.pageClosedAtMs = newMeta.closedAt;
 
+      // Clear any previews of the changes, after they've been saved. [clear_pg_tweaks]
+      delete store.curPageTweaks;
+
       // [2D_LAYOUT]
       //currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
       //const is2dTree = currentPage.horizontalLayout;
@@ -1607,7 +1610,17 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     }
   });
 
-  const currentPage: Page = store.currentPage;
+  const currentPage: Page | U = store.currentPage;
+
+  if (!currentPage) {
+    delete store.curPageTweaks;
+  }
+  else if (storePatch.curPageTweaks) {
+    store.curPageTweaks = {
+      ...store.curPageTweaks,
+      ...storePatch.curPageTweaks,
+    };
+  }
 
   // If we just posted the very first reply on an embedded discussion, a page for the discussion
   // will have been created now, lazily. Then need to update the store page id.
@@ -1778,6 +1791,8 @@ function showNewPage(ps: ShowNewPageParams) {
   }
   // @endif
 
+  delete store.curPageTweaks;
+
   // Update categories — maybe this page is in a different sub community with different categories.
   store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories
   store.currentCategories = _.clone(newPublicCategories);
@@ -1847,16 +1862,16 @@ function showNewPage(ps: ShowNewPageParams) {
   function magicClassFor(page: Page): string {
     // Sync with Scala [4JXW5I2].
     let clazz = '';
-    if (page_isChat(page.pageRole)) clazz = ' dw-vt es-chat';
+    if (page_isChat(page.pageRole)) clazz = ' es-chat';
     if (page.pageRole === PageRole.Forum) clazz = ' es-forum';
-    if (page.pageRole === PageRole.MindMap) clazz = ' dw-hz';
-    if (page.pageRole) clazz = ' dw-vt';
+    if (page.pageRole === PageRole.MindMap) clazz += ' dw-hz';
+    else clazz += ' dw-vt';
     clazz += (!page.pageRole ? '' : ' s_PT-' + page.pageRole);     // [5J7KTW2]
     clazz += (!page.pageLayout ? '' : ' s_PL-' + page.pageLayout);
     return clazz;
   }
   if (oldClassesStr || newClassesStr) {
-    const regex = /[ ,]/;
+    const regex = /[ ,]+/;
     const oldClasses = oldClassesStr.split(regex);
     const newClasses = newClassesStr.split(regex);
     function addOrRemoveClasses(as, bs, fn) {

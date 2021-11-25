@@ -86,7 +86,7 @@ function onMessage(event) {
       Server.loginWithAuthnToken(authnToken, SessionType.AutoTokenSiteCustomSso,
               function() {
         // typs.weakSessionId should have been updated by the above login fn.
-        ReactActions.loadMyself();
+        ReactActions.loadMyself();  // later: skip [incl_me_in_aun_rsp]
       });
 
       break;
@@ -98,7 +98,7 @@ function onMessage(event) {
       Server.loginWithOneTimeSecret(oneTimeLoginSecret, function() {
         // REFACTOR call loadMyself() directly from loginWithOneTimeSecret().
         // typs.weakSessionId has been updated already by the above login fn.
-        ReactActions.loadMyself();
+        ReactActions.loadMyself();  // later: skip [incl_me_in_aun_rsp]
       });
       break;
     case 'resumeWeakSession':
@@ -111,8 +111,18 @@ function onMessage(event) {
         mainWin.typs.weakSessionId = eventData.weakSessionId;
         typs.weakSessionId = eventData.weakSessionId;
         // This sends 'justLoggedIn' to other iframes, so they'll get updated too.
-        // Reply 'failedToLogin' if login failed  [forget_sid12]
-        ReactActions.loadMyself();
+        ReactActions.loadMyself(function(resp: FetchMeResponse) {
+          if (resp.me) {
+            // Maybe send 'justLoggedIn' from here, instead of from inside loadMyself()?
+            // Can do after: [incl_me_in_aun_rsp].
+            // For now, noop, here.
+          }
+          else {
+            // This'll delete any session parts saved in cookies or  [forget_sid12]
+            // browser storage — the session doesn't work anyway.
+            ReactActions.logoutClientSideOnly({ msg: "Could not resume session [TyMSES0VLD]"});
+          }
+        });
       }
       else {
         // This session id won't work — it's for some other Talkyard site.
@@ -133,8 +143,8 @@ function onMessage(event) {
             `this is main frame: ${window === mainWin}, ` +
             `mainWin.typs: ${JSON.stringify(mainWin.typs)} [TyE60UKTTGL35]`);
       }
-      // theStore.me was updated by ReactActions.loadMyself():
-      dieIf(!mainWin.theStore.me, 'justLoggedIn but theStore.me missing [TyE406MR4E2]');
+      // mainWin.theStore.me was updated by ReactActions.loadMyself():
+      dieIf(!mainWin.theStore.me, 'justLoggedIn but mainWin.theStore.me missing [TyE406MR4E2]');
       dieIf(!eventData.user, 'justLoggedIn but user missing [TyE406MR4E3]');
       // DO_AFTER v0.2021.31:
       //dieIf(!eventData.stuffForMe, 'justLoggedIn but stuffForMe missing [TyE406MR4E4]');
