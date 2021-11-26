@@ -25,7 +25,7 @@ import debiki._
 import debiki.dao.{SiteDao, SystemDao}
 import debiki.EdHttp._
 import ed.server.EdContext
-import ed.server.auth.ForumAuthzContext
+import talkyard.server.authz.ForumAuthzContext
 import ed.server.security.{BrowserId, SidOk, SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc

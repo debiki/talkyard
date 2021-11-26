@@ -21,8 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao._
-import ed.server.auth.ForumAuthzContext
-import ed.server.auth.Authz
+import talkyard.server.authz.{Authz, ForumAuthzContext}
 import ed.server.http._
 import ed.server.security.{SidStatus, SidOk}
 import java.{lang => jl, util => ju}

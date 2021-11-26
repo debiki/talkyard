@@ -23,7 +23,7 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.api.mvc._
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import play.api.libs.json.JsValue
 import talkyard.server.authn.MinAuthnStrength
 

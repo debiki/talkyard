@@ -24,7 +24,6 @@ import debiki.EdHttp._
 import talkyard.server.linkpreviews.{LinkPreviewRenderer, PreviewResult, LinkPreviewProblem}
 import ed.server.http._
 import ed.server.{EdContext, EdController}
-import ed.server.auth.Authz
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
@@ -32,6 +31,7 @@ import EditController._
 import scala.concurrent.ExecutionContext
 import talkyard.server.JsX.{JsDraft, JsDraftOrNull, JsStringOrNull}
 import talkyard.server.authn.MinAuthnStrength
+import talkyard.server.authz.Authz
 import org.scalactic.{Good, Or, Bad}
 
 

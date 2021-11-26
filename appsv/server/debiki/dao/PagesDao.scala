@@ -24,7 +24,7 @@ import com.debiki.core.PageParts.FirstReplyNr
 import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import ed.server.spam.SpamChecker
 import java.{util => ju}
 import scala.collection.immutable
@@ -194,7 +194,7 @@ trait PagesDao {
         context.nashorn.slugifyTitle(title.source)
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
-    COULD // try to move this authz + review-reason check to ed.server.auth.Authz?
+    COULD // try to move this authz + review-reason check to talkyard.server.authz.Authz?
     val (
       reviewReasons: Seq[ReviewReason],
       shallApprove: Boolean) =

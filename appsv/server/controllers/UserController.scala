@@ -32,7 +32,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
 import debiki.RateLimits.TrackReadingActivity
 import ed.server.{EdContext, EdController}
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import talkyard.server.JsX

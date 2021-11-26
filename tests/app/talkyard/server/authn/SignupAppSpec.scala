@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.auth
+package talkyard.server.authn
 
 import com.debiki.core._
 import debiki.AllSettings

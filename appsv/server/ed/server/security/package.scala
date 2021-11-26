@@ -24,7 +24,7 @@ import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
 import play.api.mvc.{Cookie, DiscardingCookie, RequestHeader}
 import scala.util.Try
 import EdSecurity._
-import ed.server.auth.MayMaybe
+import talkyard.server.authz.MayMaybe
 import play.api.http.{HeaderNames => p_HNs}
 import play.api.libs.json.{JsObject, JsString, JsValue}
 import talkyard.server.TyLogger

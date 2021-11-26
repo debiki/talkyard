@@ -21,7 +21,7 @@ import com.debiki.core._
 import controllers.OkApiJson
 import debiki.RateLimits
 import ed.server.http._
-import ed.server.auth.MayMaybe
+import talkyard.server.authz.MayMaybe
 import debiki.EdHttp._
 import Prelude._
 import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
@@ -91,7 +91,7 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
           case Some(page: PagePathAndMeta) =>
             COULD_OPTIMIZE // will typically always be same cat, for emb cmts.
             val categories = dao.getAncestorCategoriesRootLast(page.categoryId)
-            val may = ed.server.auth.Authz.maySeePage(
+            val may = talkyard.server.authz.Authz.maySeePage(
                   page.meta,
                   user = authzCtx.requester,
                   groupIds = authzCtx.groupIdsUserIdFirst,

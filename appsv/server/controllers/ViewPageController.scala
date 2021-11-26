@@ -30,9 +30,9 @@ import ed.server.{EdContext, EdController, RenderedPage}
 import javax.inject.Inject
 import ViewPageController._
 import debiki.dao.NoUsersOnlineStuff
-import ed.server.auth.MaySeeOrWhyNot
 import talkyard.server.authn.LoginReason
 import talkyard.server.authn.MinAuthnStrength
+import talkyard.server.authz.MaySeeOrWhyNot
 import talkyard.server.JsX.JsObjOrNull
 
 

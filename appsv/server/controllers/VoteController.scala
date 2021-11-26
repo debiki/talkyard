@@ -23,7 +23,7 @@ import collection.immutable
 import debiki._
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
