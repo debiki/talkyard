@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki.onebox   // RENAME to talkyard.server.links
+package talkyard.server.linkpreviews
 
 import com.debiki.core._
 import com.debiki.core.Prelude._

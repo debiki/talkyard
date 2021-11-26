@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki.onebox   // RENAME QUICK to talkyard.server.linkpreviews.LinkPreviewRenderer
+package talkyard.server.linkpreviews
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{Globals, TextAndHtml, TextAndHtmlMaker, JsoupLinkElems}
-import debiki.onebox.engines._
+import engines._
 import debiki.TextAndHtml.safeEncodeForHtml
 import debiki.dao.RedisCache
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
@@ -611,7 +611,7 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
         noPreviewHtmlSt(" class=\"" + cssClass + "\"")
       case donePreview: RenderPreviewResult.Done =>
         donePreviews.append(donePreview)
-        // Return a placeholder because `doneOnebox.html` might be an iframe which would
+        // Return a placeholder because `donePreview.html` might be an iframe which would
         // be removed by the sanitizer. So replace the placeholder with the html later, when
         // the sanitizer has been run.
         donePreview.placeholder

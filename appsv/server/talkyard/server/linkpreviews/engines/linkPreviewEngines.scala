@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki.onebox.engines   // RENAME to  talkyard.server.linkpreview
+package talkyard.server.linkpreviews.engines
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{Globals, TextAndHtml, JsonMaker}
 import debiki.dao.{PageStuffDao, UseCache}
-import debiki.onebox.{InstantLinkPrevwRendrEng, LinkPreviewProblem, RenderPreviewParams, PreviewTitleHtml}
+import talkyard.server.linkpreviews._
 import ed.server.auth.MaySeeOrWhyNot.{YesMaySee, NopeNoSuchPage, NopeNoPostWithThatNr}
 import org.scalactic.{Bad, Good, Or}
 import scala.util.matching.Regex

@@ -15,14 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.linkpreview
+package talkyard.server.linkpreviews
 
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import debiki.onebox.engines.TwitterPrevwRendrEng
 
 
 class LinkPreviewRendererSpec extends AnyFreeSpec with must.Matchers {
@@ -30,7 +29,7 @@ class LinkPreviewRendererSpec extends AnyFreeSpec with must.Matchers {
   def tweakLinks(htmlSt: St, toHttps: Bo, uploadsUrlCdnPrefix: Opt[St],
         followLinksSkipNoopener: Bo = false,
         siteId_unused: SiteId = NoSiteId, sitePubId_unused: PubSiteId = ""): St = {
-    debiki.onebox.LinkPreviewRenderer.tweakLinks(htmlSt, toHttps,
+    LinkPreviewRenderer.tweakLinks(htmlSt, toHttps,
           uploadsUrlCdnPrefix = uploadsUrlCdnPrefix,
           followLinksSkipNoopener = followLinksSkipNoopener,
           siteId_unused = siteId_unused, sitePubId_unused = sitePubId_unused)

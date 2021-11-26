@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.onebox.{PreviewResult, LinkPreviewProblem}
+import talkyard.server.linkpreviews.{LinkPreviewRenderer, PreviewResult, LinkPreviewProblem}
 import ed.server.http._
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
@@ -29,7 +29,6 @@ import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
 import EditController._
-import debiki.onebox.LinkPreviewRenderer
 import scala.concurrent.ExecutionContext
 import talkyard.server.JsX.{JsDraft, JsDraftOrNull, JsStringOrNull}
 import talkyard.server.authn.MinAuthnStrength
@@ -239,7 +238,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * Does this by sending a request to the content provider, for example, calls:
     *   https://publish.twitter.com/oembed?url=the_url
     * and gets back Twitter tweet json that shows how to embed the tweet,
-    * then creates and returns sanitized onebox html.
+    * then creates and returns sanitized preview html.
     */
   def fetchLinkPreview(url: St, curPageId: PageId, inline: Bo): Action[U] =
         AsyncGetActionRateLimited(
