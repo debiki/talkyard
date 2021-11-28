@@ -41,9 +41,12 @@ Make all js objs "light weight immutable", via Typescript's 'readonly' propertie
 https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
 (React wants immutable.)
 
-[subcats]
+[subcats] [sub_cats]
 DONE: Implement sub categories.
 But missing: Search in sub cats, if searching in base cat.
+
+[forum_page]
+More configurable, & discussions too, see:  y2999/wip_sect_disc_props_views_stats.sql
 
 [propagate_cat_perms]
 It'd be nice if there was a way to get an overview of sub cat permissions,
