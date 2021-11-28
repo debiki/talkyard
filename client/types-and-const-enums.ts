@@ -174,6 +174,7 @@ const enum TopicFilters {
 const enum ThingType {
   Pats = 7,
   Posts = 56,
+  All = Pats + Posts,
 }
 
 const enum No {

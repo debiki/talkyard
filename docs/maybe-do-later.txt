@@ -85,6 +85,7 @@ Wasn't fixed in first iteration.
 + search for all JsUser(_) — then tags (badges) not included.
 + get notified about posts w tags one follows
 + for some endpoints, [tags_and_badges_missing]
++ access restricted tags [priv_tags]
 
 
 [sw] [sse]

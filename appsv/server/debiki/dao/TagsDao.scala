@@ -89,7 +89,7 @@ trait TagsDao {
   }
 
 
-  def getTagTypesSeq(forWhat: i32, tagNamePrefix: St): Seq[TagType] = {
+  def getTagTypesSeq(forWhat: Opt[i32], tagNamePrefix: Opt[St]): Seq[TagType] = {
     getAllTagTypesSeq()  // for now
   }
 

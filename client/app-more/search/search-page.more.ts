@@ -76,7 +76,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     this.searchUseUrlQuery(urlQueryParams);
     if (urlQueryParams.advanced) {
       this.tagsLoaded = true;
-      Server.loadTagsAndStats();
+      Server.listTagTypes();
     }
   },
 
@@ -160,7 +160,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     else {
       if (!this.tagsLoaded) {
         this.tagsLoaded = true;
-        Server.loadTagsAndStats();
+        Server.listTagTypes();
       }
       queryStringObj.advanced = 'true';
     }
