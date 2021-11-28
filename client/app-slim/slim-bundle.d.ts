@@ -292,13 +292,14 @@ declare namespace debiki2 {
 
   var findDOMNode: any;
   function randomNumSt(): St;
-  var die: any;
-  var dieIf: any;
-  var scrollToBottom: any;
-  var prettyBytes: any;
+  function die(errMsg: St);
+  function dieIf(test, errMsg: St);
+  function scrollToBottom(node: Element);
+  function prettyBytes(num: Nr): St;
   var Server: any;
   var reactelements: any;
-  var hashStringToNumber: any;
+  function hashStringToNumber(string: St): Nr;
+  function urlEncodeSearchQuery(query: St): St;
 
   function stableStringify(obj: any): string;
 

@@ -131,7 +131,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     userUrl = None,
     userTrustLevel = user.map(_.effectiveTrustLevel))
 
-  @deprecated("now", "use theRequester instead")
+  @deprecated("now", "use theRequester instead") // and rename theMember to theReqUser?
   def theUser: Participant = user_!
   @deprecated("now", "use theRequesterId instead")
   def theUserId: UserId = theUser.id
@@ -160,7 +160,9 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def theMember: User = theUser match {
     case m: User => m
-    case g: Guest => throwForbidden("EsE5YKJ37", "Not authenticated")
+    case _: Guest => throwForbidden("EsE5YKJ37", "Not authenticated")
+    case _: Group => throwForbidden("TyE5YKJ38", "Not a user, but a group")
+    case UnknownParticipant => throwForbidden("TyE5YKJ39", "Unknown participant")
   }
 
   def anyRoleId: Option[UserId] = user.flatMap(_.anyMemberId)

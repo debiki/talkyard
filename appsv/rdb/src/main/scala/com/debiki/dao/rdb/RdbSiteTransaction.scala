@@ -592,6 +592,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.frequentPosterIds.drop(2).headOption.orNullInt,
       newMeta.frequentPosterIds.drop(3).headOption.orNullInt,
       newMeta.layout.toInt.asAnyRef,
+      newMeta.forumSearchBox.orNullInt,
+      newMeta.forumMainView.orNullInt,
+      newMeta.forumCatsTopics.orNullInt,
       newMeta.pinOrder.orNullInt,
       newMeta.pinWhere.map(_.toInt).orNullInt,
       newMeta.numLikes.asAnyRef,
@@ -643,6 +646,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         frequent_poster_3_id = ?,
         frequent_poster_4_id = ?,
         layout = ?,
+        forum_search_box_c = ?,
+        forum_main_view_c = ?,
+        forum_cats_topics_c = ?,
         PIN_ORDER = ?,
         PIN_WHERE = ?,
         NUM_LIKES = ?,
@@ -1308,6 +1314,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         frequent_poster_3_id,
         frequent_poster_4_id,
         layout,
+        forum_search_box_c,
+        forum_main_view_c,
+        forum_cats_topics_c,
         pin_order,
         pin_where,
         num_likes,
@@ -1344,7 +1353,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?)"""
 
     // Dulp code, see the update query [5RKS025].
     val values = List(
@@ -1368,6 +1378,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.frequentPosterIds.drop(2).headOption.orNullInt,
       pageMeta.frequentPosterIds.drop(3).headOption.orNullInt,
       pageMeta.layout.toInt.asAnyRef,
+      pageMeta.forumSearchBox.orNullInt,
+      pageMeta.forumMainView.orNullInt,
+      pageMeta.forumCatsTopics.orNullInt,
       pageMeta.pinOrder.orNullInt,
       pageMeta.pinWhere.map(_.toInt).orNullInt,
       pageMeta.numLikes.asAnyRef,

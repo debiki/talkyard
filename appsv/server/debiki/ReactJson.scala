@@ -401,6 +401,9 @@ class JsonMaker(dao: SiteDao) {
       "pagePath" -> JsPagePathWithId(pagePath),
       // --- These and some more, could be in separate objs instead [DBLINHERIT]
       "pageLayout" -> JsNumber(page.meta.layout.toInt),
+      "forumSearchBox" -> JsNum32OrNull(page.meta.forumSearchBox),
+      "forumMainView" -> JsNum32OrNull(page.meta.forumMainView),
+      "forumCatsTopics" -> JsNum32OrNull(page.meta.forumCatsTopics),
       "discussionLayout" -> JsNumber(siteSettings.discussionLayout.toInt),
       "discPostSortOrder" -> JsNumber(page.parts.postsOrderNesting.sortOrder.toInt),
       "discPostNesting" -> JsNumber(page.parts.postsOrderNesting.nestingDepth),

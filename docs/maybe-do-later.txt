@@ -27,6 +27,17 @@ and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
 
 [wiki_links] — link to Ty page via its name, like at Wikipedia etc.
 
+[wiki_perms]
+Make page props, e.g. answer-post, doing-status, page type, etc wiki-editable?
+Rather than only individually, per post / comment.
+Wikifiable things: Title, properties (doing-status, answer-post etc), Orig Post, replies.
+What should be wiki-editable? Just the Orig Post? Or also replies, or page-props?
+Probably per post (e.g. per OP or comment) is a good default / what people expect?
+
+[page_props_perms]
+If pat 1) may edit the Orig Post text, and if pat 2) may change the page type, doing-status
+etc, maybe should be different permissions? Or not?
+
 [staff_can_see]
 Add a black hanglock next to things one can see, because of one's extra
 access permissions? E.g. editing category settings, or backlinks from

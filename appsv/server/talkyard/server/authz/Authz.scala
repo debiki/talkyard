@@ -198,6 +198,56 @@ object Authz {
   }
 
 
+  COULD // add a new permission that says if sbd may edit page properties, [page_props_perms]
+  // e.g. move to another category, or change the page type? But might not be
+  // allowed to edit the title or OriginalPost?
+  // mayEditPageBody, mayEditPageTitle, mayEditPageProps? Maybe unless the admins
+  // enable "complicated settings", by default, mayEditPageTitle & mayEditPageProps
+  // would be the same — or all 3 would be the same, like now?
+  //
+  /** If pat may edit the page title & body, and settings e.g. page type,
+    * and open/close it, delete/undeleted, move to another category.
+    */
+  def mayEditPage(
+        pageMeta: PageMeta,
+        pat: Pat,
+        groupIds: immutable.Seq[GroupId],
+        pageMembers: Set[UserId],
+        catsRootLast: immutable.Seq[Cat],
+        tooManyPermissions: immutable.Seq[PermsOnPages],
+        maySeeUnlisted: Bo = true): MayMaybe = {
+
+    val mayWhat = checkPermsOnPages(
+          Some(pat), groupIds, Some(pageMeta), Some(pageMembers),
+          catsRootLast = catsRootLast, tooManyPermissions,
+          maySeeUnlisted = maySeeUnlisted)
+
+    if (mayWhat.maySee isNot true)
+      return NoNotFound(s"TyEM0SEE2-${mayWhat.debugCode}")
+
+    if (pageMeta.authorId == pat.id) {
+      // Do this check in mayEditPost() too?  [.mayEditOwn]
+      if (!mayWhat.mayEditOwn)
+        return NoMayNot(s"TyEM0EDOWN-${mayWhat.debugCode}", "")
+    }
+    else {
+      if (!mayWhat.mayEditPage)
+        return NoMayNot(s"TyEM0EDPG-${mayWhat.debugCode}", "")
+    }
+
+    // [wiki_perms] Maybe the whole page, and not just each post individually,
+    // could be wiki-editable? Then those with wiki-edit-permissions,
+    // could change the page type, doing-status, answer-post, title, etc.
+    // (But not turning off wiki status or deleting the page?)
+    // Or maybe it's better to just grant the Edit Page permission to the
+    // relevant people — and wiki means only editing the title & text,
+    // maybe doing-status and page-type. What about moving to another category?
+    // Would that be incl in wiki persm?
+
+    Yes
+  }
+
+
   def maySeeCategory(authzCtx: AuthzContext, catsRootLast: immutable.Seq[Category])
         : MayWhat = {
     checkPermsOnPages(authzCtx.requester, authzCtx.groupIdsUserIdFirst,
@@ -289,7 +339,7 @@ object Authz {
     val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
     if (isOwnPost) {
       // Fine, may edit.
-      // But shouldn't:  isOwnPost && mayWhat.mayEditOwn ?  (2020-07-17)
+      // But shouldn't:  isOwnPost && mayWhat[.mayEditOwn] ?  (2020-07-17)
     }
     else if (pageMeta.pageType == PageType.MindMap) {  // [0JUK2WA5]
       if (!mayWhat.mayEditPage)

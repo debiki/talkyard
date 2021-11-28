@@ -461,7 +461,11 @@ const enum OrigPostVotes {
   AllVotes = 3,
 }
 
-
+const enum ShowSearchBox {
+  Default = 0, // or null / undefined
+  No = 1,
+  Yes = 2,
+}
 
 const enum SiteStatus {
   NoAdmin = 1,

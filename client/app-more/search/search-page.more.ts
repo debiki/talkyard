@@ -35,47 +35,6 @@ export function searchRoute() {
 }
 
 
-export function urlEncodeSearchQuery(query: string): string {
-  // encodeURIComponent encodes a query string param and escapes "everything", but we
-  // don't need to do that. Instead, use encodeURI, and then manually escape a few
-  // more chars. This is the difference between encodeURIComponent and encodeURI:
-  // for (var i = 0; i < 256; i++) {
-  //   var char = String.fromCharCode(i);
-  //   if (encodeURI(char) !== encodeURIComponent(char)) {
-  //     console.log(char + ': ' + encodeURI(char) + ' —> ' + encodeURIComponent(char));
-  //   }
-  // }
-  // (see http://stackoverflow.com/a/23842171/694469)
-  // ==>
-  // #: # —> %23
-  // $: $ —> %24
-  // &: & —> %26
-  // +: + —> %2B
-  // ,: , —> %2C
-  // /: / —> %2F
-  // :: : —> %3A
-  // ;: ; —> %3B
-  // =: = —> %3D
-  // ?: ? —> %3F
-  // @: @ —> %40
-
-  var encoded = encodeURI(query);
-  encoded = encoded.replace('#', '%23');
-  encoded = encoded.replace('$', '%24');
-  encoded = encoded.replace('&', '%26');
-  // '+' means space in a query param and is easier to read. First encode all "real" '+' to %2B,
-  // then decode spaces to '+':
-  encoded = encoded.replace('+', '%2B');
-  encoded = encoded.replace('%20', '+');
-  // leave , / :  — they're reserved for us to use as delimiters or whatever.
-  encoded = encoded.replace(';', '%3B');
-  encoded = encoded.replace('=', '%3D');
-  encoded = encoded.replace('?', '%3F');
-  // leave @  — it's reserved for us.
-  return encoded;
-}
-
-
 var SearchPageComponent = createReactClass(<any> {
   displayName: 'SearchPageComponent',
 

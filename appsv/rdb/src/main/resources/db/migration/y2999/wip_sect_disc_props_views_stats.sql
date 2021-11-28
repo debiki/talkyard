@@ -1,5 +1,5 @@
 
-create table pages_t (
+create table pages_t (  -- [disc_props_view_stats]
   site_id_c,
   id_c,
   old_id_st_c, -- legacy textual id

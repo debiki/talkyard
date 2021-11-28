@@ -2259,7 +2259,7 @@ export const Editor = createFactory<any, EditorState>({
     const searchResults: SearchResults = state.searchResults;
 
     if (searchResults && state.showSimilarTopics) {
-      const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(state.title);
+      const urlEncodedQuery = urlEncodeSearchQuery(state.title);
       const searchUrl = '/-/search?q=' + urlEncodedQuery;
 
       const hitList = !searchResults.pagesAndHits.length ? null :
