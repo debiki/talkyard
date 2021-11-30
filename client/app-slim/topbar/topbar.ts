@@ -741,7 +741,7 @@ function makeNotfIcon(type: string, number: number) {
 // COULD move SearchForm to more-bundle, so won't need to access via ['search']
 // (needs to do that currently, because not available server side)
 //
-// MOVE to ... widgets/search-form.ts or widgets.s?
+// MOVE to widgets.s?
 export const SearchForm = createComponent({
   displayName: 'SearchForm',
 
@@ -772,8 +772,7 @@ export const SearchForm = createComponent({
   },
 
   render: function() {
-    const search: A = debiki2['search']; // absent server side
-    const urlEncodedQuery = search ? search.urlEncodeSearchQuery(this.state.queryInputText) : '';
+    const urlEncodedQuery   = urlEncodeSearchQuery(this.state.queryInputText);
     const searchEndpoint    = '/-/search';
     const searchUrl         = '/-/search?q=' + urlEncodedQuery;
     const searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;

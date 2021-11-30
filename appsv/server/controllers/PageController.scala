@@ -23,7 +23,7 @@ import debiki._
 import debiki.EdHttp._
 import debiki.dao.SiteDao
 import ed.server.{EdContext, EdController}
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import ed.server.http._
 import java.{util => ju}
 import javax.inject.Inject

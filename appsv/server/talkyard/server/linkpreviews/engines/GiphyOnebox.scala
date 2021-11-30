@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki.onebox.engines
+package talkyard.server.linkpreviews.engines
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.Globals
 import debiki.TextAndHtml.safeEncodeForHtml
-import debiki.onebox._
+import talkyard.server.linkpreviews._
 import org.scalactic.{Bad, Good, Or}
 import scala.util.matching.Regex
 

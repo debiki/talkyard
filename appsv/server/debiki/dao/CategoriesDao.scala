@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
 import debiki.{TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml, MaxLimits}
-import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
+import talkyard.server.authz.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
 import org.scalactic.{Good, ErrorMessage, Or, Bad}
 import scala.collection.{immutable, mutable}
@@ -388,7 +388,7 @@ trait CategoriesDao {
     // just because all most-recent-pages are e.g. hidden.
     val filteredPages = pagesInclForbidden filter { page =>
       val categories = getAncestorCategoriesRootLast(page.categoryId)
-      val may = ed.server.auth.Authz.maySeePage(
+      val may = talkyard.server.authz.Authz.maySeePage(
             page.meta,
             user = authzCtx.requester,
             groupIds = authzCtx.groupIdsUserIdFirst,

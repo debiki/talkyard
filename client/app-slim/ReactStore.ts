@@ -261,9 +261,6 @@ ReactDispatcher.register(function(payload) {
       currentPage.pageDoneAtMs = newMeta.doneAt;
       currentPage.pageClosedAtMs = newMeta.closedAt;
 
-      // Clear any previews of the changes, after they've been saved. [clear_pg_tweaks]
-      delete store.curPageTweaks;
-
       // [2D_LAYOUT]
       //currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
       //const is2dTree = currentPage.horizontalLayout;

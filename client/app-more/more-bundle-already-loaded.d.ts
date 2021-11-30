@@ -54,7 +54,6 @@ declare namespace debiki2 {
 
   namespace search {
     function searchRoute(): any;
-    function urlEncodeSearchQuery(query: string): string;
   }
 
   namespace help {

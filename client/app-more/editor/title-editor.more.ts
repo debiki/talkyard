@@ -31,15 +31,26 @@ const MaxSlugLength = 100;  // sync with Scala [MXPGSLGLN]
 
 interface TitleEditorPops {
   closeEditor: () => V;
-  // ... fill in later
+  store: Store;
 }
 
 interface TitleEditorState {
-  showLayoutAndSettings?: Bo;
-  newLayout?: {
-    showSearchField?: Bo;
-  }
-  // ... many more
+  categoryId: CatId;
+  pageRole: PageRole;
+  editorScriptsLoaded?: Bo;
+  // (Alternatively, could keep these changes in the Store [.only_store], and re-render when
+  // the store changes? But the current approach (simpleChanges here) works fine too.)
+  simpleChanges?: Partial<Page>;
+  showComplicated?: Bo;
+  // -- COULD wrap these in a advChanges obj? ------
+  folder?: St;
+  showId?: Bo;
+  slug?: St;
+  htmlTagCssClasses?: St;
+  htmlHeadTitle?: St;
+  htmlHeadDescription?: St;
+  // -----------------------------------------------
+  isSaving?: Bo;
 }
 
 
@@ -48,11 +59,10 @@ export const TitleEditor = createComponent({
   displayName: 'TitleEditor',
 
   getInitialState: function() {
-    const store: Store = this.props.store;
+    const props: TitleEditorPops = this.props;
+    const store: Store = props.store;
     const page: Page = store.currentPage;
     return {
-      showComplicated: false,
-      isSaving: false,
       pageRole: page.pageRole,
       categoryId: page.categoryId,
     };
@@ -70,15 +80,27 @@ export const TitleEditor = createComponent({
     this.isGone = true;
   },
 
-  showLayoutAndSettings: function() {
-    this.setState({ showLayoutAndSettings: true });
+  showSettings: function() {
+    const props: TitleEditorPops = this.props;
+    const store: Store = props.store;
+    const page: Page = store.currentPage;
+    const newState: Partial<TitleEditorState> = {
+      simpleChanges: {
+        pageLayout: page.pageLayout,
+        forumSearchBox: page.forumSearchBox,
+        forumMainView: page.forumMainView,
+        forumCatsTopics: page.forumCatsTopics,
+      },
+    };
+    this.setState(newState);
   },
 
   showComplicated: function() {
-    const store: Store = this.props.store;
+    const props: TitleEditorPops = this.props;
+    const store: Store = props.store;
     const page: Page = store.currentPage;
     const pagePath: PagePath = page.pagePath;
-    this.setState({
+    const newState: Partial<TitleEditorState> = {
       showComplicated: true,
       folder: pagePath.folder,
       slug: pagePath.slug,
@@ -86,11 +108,13 @@ export const TitleEditor = createComponent({
       htmlTagCssClasses: page.pageHtmlTagCssClasses || '',
       htmlHeadTitle: page.pageHtmlHeadTitle,
       htmlHeadDescription: page.pageHtmlHeadDescription,
-    });
+    };
+    this.setState(newState);
   },
 
   onTitleChanged: function(event) {
-    const store: Store = this.props.store;
+    const props: TitleEditorPops = this.props;
+    const store: Store = props.store;
     const page: Page = store.currentPage;
     const idWillBeInUrlPath = this.refs.showIdInput ?
         this.refs.showIdInput.getChecked() : page.pagePath.showId; // isIdShownInUrl();
@@ -105,6 +129,7 @@ export const TitleEditor = createComponent({
     this.setState({ slug: slugMatchingTitle.substr(0, MaxSlugLength) });
   },
 
+  // COULD_OPTIMIZE SMALLER_BUNDLE inline all these
   onCategoryChanged: function(categoryId: CategoryId) {
     this.setState({ categoryId: categoryId });
   },
@@ -129,11 +154,12 @@ export const TitleEditor = createComponent({
     this.setState({ isSaving: true });
     var newTitle = this.refs.titleInput.getValue();
     var pageSettings = this.getSettings();
-    // This clears any change previews. [clear_pg_tweaks]
+    // This'll keep any layout changes, so the current user won't need to reload the page.
     ReactActions.editTitleAndSettings({ ...pageSettings, newTitle }, () => {
       document.title = newTitle; // also done here: [30MRVH2]
       if (this.isGone) return;
-      this.props.closeEditor();
+      const props: TitleEditorPops = this.props;
+      props.closeEditor();
     }, () => {
       this.setState({ isSaving: false });
     });
@@ -142,7 +168,7 @@ export const TitleEditor = createComponent({
   cancel: function() {
     const props: TitleEditorPops = this.props;
     const state: TitleEditorState = this.state;
-    if (state.showLayoutAndSettings) {
+    if (state.simpleChanges) {
       // Clear any unsaved changes.
       const patch: PageTweaksStorePatch = { curPageTweaks: {} };
       ReactActions.patchTheStore(patch);
@@ -151,26 +177,26 @@ export const TitleEditor = createComponent({
   },
 
   getSettings: function() {
+    const state: TitleEditorState = this.state;
     var settings: any = {
-      categoryId: this.state.categoryId,
-      pageRole: this.state.pageRole,
-      pageLayout: this.state.pageLayout,
-      folder: addFolderSlashes(this.state.folder),
-      slug: this.state.slug,
-      showId: this.state.showId,
-      htmlTagCssClasses: this.state.htmlTagCssClasses,
-      htmlHeadTitle: this.state.htmlHeadTitle,
-      htmlHeadDescription: this.state.htmlHeadDescription,
+      categoryId: state.categoryId,
+      pageRole: state.pageRole,
+      ...state.simpleChanges,
+      folder: addFolderSlashes(state.folder),
+      slug: state.slug,
+      showId: state.showId,
+      htmlTagCssClasses: state.htmlTagCssClasses,
+      htmlHeadTitle: state.htmlHeadTitle,
+      htmlHeadDescription: state.htmlHeadDescription,
     };
-    if (this.refs.layoutInput) {
-      settings.layout = this.refs.layoutInput.getValue();
-    }
     return settings;
   },
 
   render: function() {
+    const props: TitleEditorPops = this.props;
     const state: TitleEditorState = this.state;
-    const store: Store = this.props.store;
+    const simpleChanges: Partial<Page> | U = state.simpleChanges;
+    const store: Store = props.store;
     const page: Page = store_curPage(store);
     const me: Myself = store.me;
     const settings: SettingsVisibleClientSide = store.settings;
@@ -178,71 +204,76 @@ export const TitleEditor = createComponent({
     const titlePost: Post = page.postsByNr[TitleNr];
     const isForum = pageRole === PageRole.Forum;
 
-    if (!this.state.editorScriptsLoaded) {
+    if (!state.editorScriptsLoaded) {
       // The title is not shown, so show some whitespace to avoid the page jumping upwards.
       return r.div({ style: { height: 80 }});
     }
 
-    let layoutAndSettings;
-    if (this.state.showLayoutAndSettings) {
+    let layoutAndSettings: RElm | U;
+    if (simpleChanges) {
       const layoutBtnTitle = r.span({},
-          topicListLayout_getName(this.state.pageLayout) + ' ',
+          topicListLayout_getName(simpleChanges.pageLayout) + ' ',
           r.span({ className: 'caret' }));
 
-      const mkSetter = (pageLayout: PageLayout) => () => {
-        this.setState({ pageLayout });
+      const setLayoutFn = (pageLayout: PageLayout) => changeSthFn({ pageLayout });
+
+      const changeSthFn = (moreChanges: Partial<Page>) => () => {
+        const newChanges = { ...simpleChanges, ...moreChanges };
+        // (Could maybe skip setState, and only use the store?  [.only_store])
+        this.setState({ simpleChanges: newChanges });
         const patch: PageTweaksStorePatch = {
-          curPageTweaks: { ...store.curPageTweaks, pageLayout },
+          curPageTweaks: { ...store.curPageTweaks, ...newChanges },
         };
         ReactActions.patchTheStore(patch);
       };
 
       layoutAndSettings =
-        r.div({},
           r.div({ className: 'form-horizontal', key: 'layout-settings-key' },
-            /* Feature flag, for now, instead.
+
             Input({ type: 'checkbox', label: "Show search box",
                 wrapperClassName: 'col-xs-offset-2 col-xs-10',
                 className: 'e_SearchFld',
-                checked: showSearchField,
-                onChange: mkSetter({ ... ? }) }),
-            */
+                checked: simpleChanges.forumSearchBox === 2,
+                onChange: changeSthFn({
+                  forumSearchBox: simpleChanges.forumSearchBox === ShowSearchBox.Yes ?
+                      ShowSearchBox.No : ShowSearchBox.Yes }),
+                }),
 
             Input({ type: 'custom', label: "Topic list layout",
                 labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
               ModalDropdownButton({ title: layoutBtnTitle },
                 r.ul({ className: 'dropdown-menu' },
-                  MenuItem({ onClick: mkSetter(TopicListLayout.TitleOnly) },
+                  MenuItem({ onClick: setLayoutFn(TopicListLayout.TitleOnly) },
                     topicListLayout_getName(TopicListLayout.TitleOnly)),
-                  MenuItem({ onClick: mkSetter(TopicListLayout.TitleExcerptSameLine) },
+                  MenuItem({ onClick: setLayoutFn(TopicListLayout.TitleExcerptSameLine) },
                     topicListLayout_getName(TopicListLayout.TitleExcerptSameLine)),
-                  MenuItem({ onClick: mkSetter(TopicListLayout.ExcerptBelowTitle) },
+                  MenuItem({ onClick: setLayoutFn(TopicListLayout.ExcerptBelowTitle) },
                     topicListLayout_getName(TopicListLayout.ExcerptBelowTitle)),
-                  MenuItem({ onClick: mkSetter(TopicListLayout.ThumbnailsBelowTitle) },
+                  MenuItem({ onClick: setLayoutFn(TopicListLayout.ThumbnailsBelowTitle) },
                     topicListLayout_getName(TopicListLayout.ThumbnailsBelowTitle)),
-                  MenuItem({ onClick: mkSetter(TopicListLayout.NewsFeed) },
-                    topicListLayout_getName(TopicListLayout.NewsFeed)))))));
+                  MenuItem({ onClick: setLayoutFn(TopicListLayout.NewsFeed) },
+                    topicListLayout_getName(TopicListLayout.NewsFeed))))));
     }
 
-    var complicatedStuff;
-    if (this.state.showComplicated) {
-      const dashId = this.state.showId ? '-' + page.pageId : '';
-      let slashSlug =  this.state.slug;
+    let complicatedStuff: RElm | U;
+    if (state.showComplicated) {
+      const dashId = state.showId ? '-' + page.pageId : '';
+      let slashSlug =  state.slug;
       if (dashId && slashSlug) slashSlug = '/' + slashSlug;
       const url = location.protocol + '//' + location.host +
-          addFolderSlashes(this.state.folder) + dashId + slashSlug;
+          addFolderSlashes(state.folder) + dashId + slashSlug;
 
       const anyMetaTitleAndDescription = pageRole !== PageRole.Forum ? null :
         r.div({ className: 'esTtlEdtr_metaTags' },
           Input({ label: "SEO title", type: 'text',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-            value: this.state.htmlHeadTitle,
+            value: state.htmlHeadTitle,
             onChange: (event) => this.setState({ htmlHeadTitle: event.target.value }),
             help: "Custom title for Search Engine Optimization (SEO). Will be inserted " +
               "into the <html><head><title> tag."}),
           Input({ label: "SERP description", type: 'textarea',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-            value: this.state.htmlHeadDescription,
+            value: state.htmlHeadDescription,
             onChange: (event) => this.setState({ htmlHeadDescription: event.target.value }),
             help: "Page description, for Search Engine Result Pages (SERP). Will be inserted " +
                 "into the <html><head><meta name='description' content='...'> attribute." }));
@@ -255,20 +286,20 @@ export const TitleEditor = createComponent({
           r.p({}, r.b({}, "Ignore this "), "— unless you understand URL addresses and CSS."),
           isForum ? null : Input({ label: 'Page slug', type: 'text', ref: 'slugInput',
             className: 'dw-i-slug', labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-            value: this.state.slug, onChange: this.onSlugChanged,
+            value: state.slug, onChange: this.onSlugChanged,
             help: "The name of this page in the URL."}),
           Input({ label: 'Folder', type: 'text', ref: 'folderInput', className: 'dw-i-folder',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-            value: this.state.folder, onChange: this.onFolderChanged,
+            value: state.folder, onChange: this.onFolderChanged,
             help: "Any /url/path/ to this page." }),
           isForum ? null : Input({ label: 'Show page ID in URL', type: 'checkbox', ref: 'showIdInput',
             wrapperClassName: 'col-xs-offset-2 col-xs-10',
-            className: 'dw-i-showid', checked: this.state.showId,
+            className: 'dw-i-showid', checked: state.showId,
             onChange: this.onShowIdChanged }),
           r.p({}, "The page URL will be: ", r.kbd({}, url)),
           Input({ label: 'CSS class', type: 'text', className: 'theCssClassInput',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-            value: this.state.htmlTagCssClasses,
+            value: state.htmlTagCssClasses,
             onChange: (event) => this.setState({ htmlTagCssClasses: event.target.value }),
             help: r.span({}, "The CSS classes you type here will be added to the ",
                 r.kbd({}, '<html class="...">'), " attribute.") }));
@@ -284,15 +315,15 @@ export const TitleEditor = createComponent({
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
 
     const layoutAndSettingsButton =
-        this.state.showLayoutAndSettings || !me.isAdmin || pageRole !== PageRole.Forum ||
+        simpleChanges || !me.isAdmin || pageRole !== PageRole.Forum ||
               settings.enableForum === false
           ? null
-          : r.a({ className: 'esTtlEdtr_openAdv icon-wrench', onClick: this.showLayoutAndSettings },
+          : r.a({ className: 'esTtlEdtr_openAdv icon-wrench', onClick: this.showSettings },
               "Layout and settings");
 
     const existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showExperimental;
     const advancedStuffButton = !existsAdvStuffToEdit ||
-        this.state.showComplicated || !me.isAdmin || pageRole === PageRole.FormalMessage ||
+        state.showComplicated || !me.isAdmin || pageRole === PageRole.FormalMessage ||
               settings.enableForum === false
           ? null
           : r.a({ className: 'esTtlEdtr_openAdv icon-settings', onClick: this.showComplicated },
@@ -303,15 +334,15 @@ export const TitleEditor = createComponent({
       // UX BUG  col-xs-2 beomes needlessly small, when screen narrow.
       Input({ type: 'custom', label: t.Category, labelClassName: 'col-xs-2',
             wrapperClassName: 'col-xs-10' },
-          SelectCategoryDropdown({ store: this.props.store, pullLeft: true,
-            selectedCategoryId: this.state.categoryId,
+          SelectCategoryDropdown({ store: props.store, pullLeft: true,
+            selectedCategoryId: state.categoryId,
             onCategorySelected: this.onCategoryChanged }));
 
     const selectTopicType =
         !page_mayChangeRole(pageRole) || !settings_selectTopicType(settings, me) ? null :
       Input({ type: 'custom', label: t.TopicType, labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10' },
-        editor.PageRoleDropdown({ store, pageRole: this.state.pageRole, pageExists: true,
+        editor.PageRoleDropdown({ store, pageRole: state.pageRole, pageExists: true,
           onSelect: this.onPageRoleChanged, pullLeft: true,
           complicated: store.settings.showExperimental,
           className: 'esEdtr_titleEtc_pageRole' }));
@@ -329,7 +360,7 @@ export const TitleEditor = createComponent({
       }
     }
 
-    const saveCancel = this.state.isSaving
+    const saveCancel = state.isSaving
       ? r.div({}, t.SavingDots)
       : r.div({ className: 'dw-save-btns-etc' },
           PrimaryButton({ onClick: this.save, className: 'e_Ttl_SaveB' }, t.Save),

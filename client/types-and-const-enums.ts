@@ -174,6 +174,7 @@ const enum TopicFilters {
 const enum ThingType {
   Pats = 7,
   Posts = 56,
+  All = Pats + Posts,
 }
 
 const enum No {
@@ -461,7 +462,11 @@ const enum OrigPostVotes {
   AllVotes = 3,
 }
 
-
+const enum ShowSearchBox {
+  Default = 0, // or null / undefined
+  No = 1,
+  Yes = 2,
+}
 
 const enum SiteStatus {
   NoAdmin = 1,

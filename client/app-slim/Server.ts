@@ -2151,8 +2151,10 @@ export function createTagType(newTagType: TagType, onOk: (newWithId: TagType) =>
 
 
 export function listTagTypes(forWhat: ThingType, prefix: St,
-        onOk: (tagTypes: TagType[]) => Vo) {
-  getAndPatchStore(`/-/list-tag-types?forWhat=${forWhat}&tagNamePrefix=${prefix}`, onOk);
+        onOk: (resp: { allTagTypes: TagType[] }) => Vo) {
+  const forWhatParam = !forWhat ? '' : `forWhat=${forWhat}&`;
+  const namePrefixParam = !prefix ? '' : `tagNamePrefix=${prefix}`;
+  getAndPatchStore(`/-/list-tag-types?${forWhatParam + namePrefixParam}`, onOk);
 }
 
 

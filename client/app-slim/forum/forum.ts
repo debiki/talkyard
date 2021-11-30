@@ -383,8 +383,8 @@ export const ForumComponent = createReactClass(<any> {
 
     const navConf: BrowserCode = store.settings.navConf || {};
 
-    const searchBox = store_isFeatFlagOn(store, 'ffForumSearchBox') ?
-            topbar.SearchForm() : null;
+    const searchBox = page.forumSearchBox !== ShowSearchBox.Yes ? null :
+            topbar.SearchForm();
 
     return (
       r.div({ className: 'container dw-forum' },

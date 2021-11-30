@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.auth   // RENAME to talkyard.server.authz
+package talkyard.server.authz
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{MemCacheKey, SiteDao, CacheOrTx}
-import ed.server.auth.MayMaybe.{NoMayNot, NoNotFound, Yes}
+import MayMaybe.{NoMayNot, NoNotFound, Yes}
 import ed.server.http._
 import scala.collection.immutable
 import scala.collection.immutable.Seq

@@ -975,8 +975,13 @@ interface Page
   externalBacklinks?: LinkTitleUrl[];
   pageRole: PageRole;
   pagePath: PagePath;
+  //--------
   pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings
-      // Or rather, split into different fields [PAGETYPESETTNG].
+      // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
+  forumSearchBox?: ShowSearchBox;
+  forumMainView?: Nr;
+  forumCatsTopics?: Nr;
+  //--------
   pageHtmlTagCssClasses?: string;
   // Overrides the title from the title Post.
   pageHtmlHeadTitle?: string;
