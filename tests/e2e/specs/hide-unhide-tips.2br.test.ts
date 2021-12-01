@@ -38,7 +38,7 @@ describe(`hide-unhide-tips.2br  TyTE2EHIDETPS329`, () => {
   it(`construct site`, () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
-      title: "Hide_Unhide_Tips_",
+      title: 'Hide_Unhide_Tips_',
       members: ['memah'],
     });
 

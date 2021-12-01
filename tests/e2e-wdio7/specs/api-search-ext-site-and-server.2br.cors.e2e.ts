@@ -4,10 +4,8 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import * as fs from 'fs';
 import server from '../utils/server';
-import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings from '../utils/settings';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { logMessage } from '../utils/log-and-die';
 import c from '../test-constants';
 

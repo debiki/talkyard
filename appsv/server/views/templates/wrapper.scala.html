@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2013-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2013-2017, 2021 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,8 @@
 <!DOCTYPE html>
 <html class="@tpi.debikiHtmlTagClasses">
 <head>
+@tpi.jsonDataMustBeFirst()
+
 @if(noindex) {
 <meta name="robots" content="noindex">
 }
@@ -28,10 +30,12 @@
 <base href="@{tpi.anyEmbeddingUrl.get}" target="_parent">
 }
 @Html(tpi.anySafeMetaTags)
-@tpi.debikiStyles
-@tpi.stylesheetBundle("styles.css")
+@tpi.talkyardStyles
+@tpi.anySiteCustomStylesBundle("styles.css")
 @Html(tpi.siteSettings.headStylesHtml)
-@tpi.debikiScriptsInHead()
+
+@tpi.parseJsonUpdDocClassesScript()
+
 @if(useGoogleAnalytics) {
 @Html(tpi.anyGoogleUniversalAnalyticsScript)
 }
@@ -62,9 +66,9 @@
 <div id="esWatchbarColumn"></div>
 <div id="esThisbarColumn"><div id="dw-any-sidebar"></div></div>
 
-@tpi.scriptBundlesEndOfBody()
+@tpi.talkyardScriptBundles()
 @Html(tpi.siteSettings.headScriptsHtml)
-@tpi.anyScriptsBundle()
+@tpi.anySiteCustomScriptBundle()
 @Html(tpi.siteSettings.endOfBodyHtml)
 </body>
 </html>

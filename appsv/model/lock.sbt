@@ -12,9 +12,9 @@ Compile / dependencyOverrides ++= {
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.10.5",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.10.5",
       "com.google.code.findbugs" % "jsr305" % "3.0.2",
-      "com.google.errorprone" % "error_prone_annotations" % "2.3.4",
+      "com.google.errorprone" % "error_prone_annotations" % "2.7.1",
       "com.google.guava" % "failureaccess" % "1.0.1",
-      "com.google.guava" % "guava" % "28.2-jre",
+      "com.google.guava" % "guava" % "31.0.1-jre",
       "com.google.guava" % "listenablefuture" % "9999.0-empty-to-avoid-conflict-with-guava",
       "com.google.j2objc" % "j2objc-annotations" % "1.3",
       "com.lambdaworks" % "scrypt" % "1.4.0",
@@ -32,11 +32,11 @@ Compile / dependencyOverrides ++= {
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
       "org.apache.tika" % "tika-core" % "1.27",
-      "org.checkerframework" % "checker-qual" % "2.10.0",
+      "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.scalactic" % "scalactic_2.12" % "3.2.9",
+      "org.scalactic" % "scalactic_2.12" % "3.2.10",
       "org.slf4j" % "slf4j-api" % "1.7.30"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 8fa90cbf067561ed2eaca75ec866c8a472528446
+// LIBRARY_DEPENDENCIES_HASH c199aa400f8d3476ee7eec6914f6ae981575f183

@@ -1,0 +1,305 @@
+
+----
+pats_t
+  -- defautl: Admins only. Later, migrate this to tagtype_perms_t:
+  may_edit_post_tags_c  may_d
+  may_edit_pat_tags_c  may_d  -- pat tags more sensitive? are personal
+  may_create_tagtypes_c  may_d
+  may_edit_tagtypes_tr_lv  may_d
+
+
+
+
+-- wait:
+needed_d?
+  0 = optional (not neeed)
+  1? -1? = cannot add more (disallowed),
+  2 = required at creation
+  3 = required,
+
+No. Instead, a member who wants a new tag type, craets it henself — a personal, public tag.
+Starts using it a bit, and then messages the mods and says "Can we add this tag? ... ".
+Skip: suggestion_status_d
+     null/0 = nothing suggested,
+     1 = new suggestion, 2 = under review, 3 = accepted, pending creation,  4 = accepted, created,  -1 = rejected?
+
+
+
+create table tagtypes_t (
+  -- Later, these as well?:
+
+  owned_by_id_c int,    -- by default visible only to that user/group, null = global, everyone can see
+                        -- to make visible for others, use  tagtype_perms_t
+  deleted_by_id_c int,
+  merged_into_tagtype_id_c int,
+  merged_by_id_c int,
+
+  ---- WAIT with this: ------------------------------
+  icon_nr_c,              -- to use any Ty built-in icon?
+  image_upl_path_c,
+
+
+  ---- WAIT with this: ------------------------------
+  -- if non-staff wants to create tags, which staff can later one-click approve, not having to do the work themselves:
+  -- No, skip.
+  suggestion_status_c    suggestion_status_d,
+  suggested_by_id_c,
+
+  enabled_c,
+
+  -- No, skip. Better use an Idea topic instead?
+  deleted_status_c,       -- 1 = deletion suggested, 2 = pending deletion?, 3 = deleted?, 4 = purged?   -1 = deletion suggestion rejected
+
+  use_in_whole_site_c,   -- if not, use-were defined in: tagtypes_use_where_t
+
+  can_be_seen_by_min_trust_level_c,   -- null —> none
+  can_be_seen_by_group_id_c,          -- or  a tagtype_perms_t ?
+  can_use_self_c,                     -- publ/priv bookmark
+
+  -- post tagged
+  show_in_page_list_if_on_reply_c   show_tag_how_d,
+  show_in_page_list_if_on_op_c      show_tag_how_d,  >= show_in_page_list_if_on_reply_c
+  show_on_reply_post_c              show_tag_how_d,  >= show_in_page_list_if_on_reply_c
+  show_on_orig_post_c               show_tag_how_d,  >= show_in_page_list_if_on_op_c
+
+  -- pat tagged
+  show_in_pat_list_c      show_tag_how_d,
+  show_on_post_author_c   show_tag_how_d,
+  show_on_pat_card_c      show_tag_how_d,  >= show_on_post_author_c & show_in_pat_list_c
+  show_on_profile_page_c  show_tag_how_d,  >= show_on_post_author_c & show_in_pat_list_c & show_on_pat_card_c
+  needed_on_pats_c        needed_d,       -- and/or-insetad: tagtypes_use_where_t.needed_c
+  ?? child_tag_needed
+  ?? default_child_tag
+  -----------------------------------------
+);
+
+
+create table tag_synonyms_t (
+  site_id_c int,
+  lang_code_c text_oneline_30_d default '',  ?
+  synonym_c text_oneline_60_d,
+  tagtype_id_c int,
+  pk:  site_id_c, lang_code_c, synonym_c  ?
+);
+
+
+
+
+create table tag_actions_t (  -- maybe never
+  site_id_c
+  tag_id_c
+  action_type_c
+     e.g.:  SuggestDeleteTag, SuggestEditValue, Do-It Vote -N/+N (like in Gerrit), DiscussTag
+  action_value_int_c
+  discussion_page_id_c
+);
+
+
+
+
+create table tagtype_perms_t(    -- much later
+  site_id_c int,
+  pat_id_c,
+  on_all_global_c bool,
+  on_all_global_and_priv_c bool,
+  on_tagtype_id_c int,
+  may_edit_tagtype_name_slug_descr_looks_c,   ??
+  may_edit_tagtype_name_descr_c,              ??
+  may_edit_tagtype_other_c,
+  may_edit_tagtype_use_where,
+  may_see_others_c,      -- false —> becomes personal bookmark / star?
+  may_add_c,
+  may_edit_others_c,
+  may_add_own_inst_c,
+  may_edit_own_inst_c,
+  may_merge_c,
+);
+
+
+create table tagtypes_use_where_t(    -- much later
+  site_id_c int,
+  tagtype_id_c int,
+  use_in_cat_id_c,
+  use_in_group_id_c,
+  use_on_oneself_c,
+  child_of_tagtype_id_c,
+  needed_c  needed_d,
+  auto_create_c,
+  auto_create_child_c,   -- then, auto created with def value (if any), if creating parent tag
+);
+
+
+
+create table tags_t(
+
+  -- mayeb add later: ------------
+  on_cat_id_c,
+  on_tag_id_c,       -- tag a tag? Maybe later
+  on_tagtype_id_c,   -- e.g. tag a tagtype with a "Merge this tagtype with: (other tagtype)"?
+
+  simple_vals_c jsonb,  -- sometimes denormalize, instead of tag_vals_t?
+
+  -- So anyone can suggest tags, but, say, a trusted member needs to review and
+  -- approve — so tags end up getting wisely used: (tags are often a mess, in other
+  -- software systems)
+  suggestion_status_c suggestion_d,
+
+  deleted_by_id_c, -- maybe only the deleter and those-with-the-required-permission can undelete?
+  hidden_by_id_c,  -- e.g. if staff added tag, but pat hides it, doesn't like it, then hidden_by_id_c = pat's id
+  ----------------------------
+);
+----
+
+
+== Can tag what?
+
+Each tag type, what things can one tag with it?
+There're pages, votes, flags, cats, tags, pats, plugins, nothing (plugin key-value store).
+Use a bitfield?
+
+No --------------------
+Guests, (built-in users), users, bot users, groups,  = 2^5 - 1 = 31.
+  — what about accounts controlled by both a bot and a human? Or if unknown.
+Pages (orig posts), replies, meta posts, = 2^5 + 2^6 + 2^7 - 1 = 32+64+128 = 224
+Think about later: categories, tags, votes, flags, edit suggestions, plugins, ... .
+------ Intstead?: -----
+  Guests = 2^0 + Users = 2^1 + Groups = 2^2       =  7  (instead of 31)
+  Pages  = 2^3 + Replies = 2^4 + Meta posts = 2^5 = 56  (instead of 224)
+
+Therefore: domain thing_types_d, can be only 7 or 56, for now.
+
+
+== Tag values
+
+Later:
+
+In Talkyard, tags will be able to have values. E.g. an Assigned-To page tag,
+with its value being the person (or people, or group) responsible for gettin it done.
+
+Or a Do-After tag, saying that something should/needs-to wait until
+after another feature/problem has been done/fixed.
+
+Or a "Staff Notes" tag (user badge) on a person, visible only to staff,
+which links to a staff-only page with notes and comments about that person.
+
+(Or could it be better to have these in dedicated tables?)
+
+Probably there'd be some default tag types, in the same way as there are
+default categories (ideas, questions etc).
+They could be: Assigned-To and Staff-Notes?
+
+There could be numeric or text values, e.g. `version: `1.23.01-beta-1`,
+or `price: 234` (but what currency?).  Or `location-lat: 123` `..-long: 456`?
+Or `Happens-In-City: (some city)`, or `Happens-At: (date-time)`
+
+This could also be achieved via a consistent tag naming scheme,
+like people do in GitHub, e.g.: `version-1.23.01-beta-1`
+or `happens-in-London` and `happens-in-Barcelona`,
+but then it's cumbersome or even infeasible to change `happens-in-` to, say,
+`Happens in: ` or `Where: ` or `location-`
+— instead of just renaming one tag (the "Happens in city" tag),
+you'd have to rename _all_ tags with that prefix.
+
+----
+create table tag_vals_t(
+  site_id_c int,
+  tag_id_c int,
+
+  val_pat_id_c     i32,    -- e.g.  Assigned to: {some-user}  on a page
+
+  val_page_id_c    i32,    -- this tag or user badge, links to a page
+                           -- e.g. a "Maybe Promote" tag, placed on a user,
+                           -- visible only to core members,
+                           -- which links to a page with a discussion about
+                           -- what this user is doing well / why-very-helpful,
+                           -- explaining why s/he should be made a Trusted member.
+  val_cat_id_c     i32,
+
+
+  -- Maybe not: -----------
+  -- Maybe simple_vals_c (see above) instead?
+
+  -- Link from a tag, to another tag, which could be on a different page? But why?
+  -- val_tag_id_c     i32,
+
+  -- val_tagtype_id_c     i32,  -- link to a tagtype? Mabye not.
+
+  --  val_i64_c         i64,
+  --  val_i64_len_c     i64_gez,  -- if a range
+
+  --  val_f64_c         f64,
+  --  val_f64_len_c     f64_gez,
+
+  --  -- val_f64_perc_c    f64,  -- for confidence intervals, percent?
+
+  --  val_text varchar,
+  --  val_text_end varchar,  -- if a text range, e.g. v0.2021.30 to v0.2021.40
+  --  val_json jsonb,
+
+  --  val_link_url_c url_d,
+  --  val_link_title_c title_d,
+);
+----
+
+
+
+
+== How tags are shown
+
+Only if needed / many people ask for this.
+
+Can be nice to abbreviate long tag names or values. Therefore:
+`show_tag_how_d`. For now, just don't-show = 0, or show full name and value = 16.
+In the distant future:
+
+----
+create domain show_tag_how_d  i16
+    bits 0, 1:   0 = don't show name, 1 = show very abbreviated,
+                 2 = show bit abbreviated, 3 = show full (default)
+    bits 2, 3:   same, for any tag value
+    bits 4 - 6:  if many values, 0 = don't show,
+                 1 = just show num values (click to expand),
+                 2 = show 1 value, 3 = show 3, 4 = show 7,
+                 5 = show 14, 6 = show 30, 7 = show all?
+    bits 7 - x:  ?show votes on tag how?  0 = don't show votes
+----
+
+Initially, only full names and maybe abbreviated names.
+
+Or maybe, instead of bitfield (but this won't work with very-abbreviated tag names)
+
+----
+create domain show_tag_how_d  i16_gez_d & <= 9:
+    0: don't-show here,
+    1: tag name abbr,
+    2: tag name full,
+
+    3: tag value abbr,
+    4: tag value full,
+
+    5: abbr-name: abbr value(s)
+    6: abbr-name: value
+    6: name: abbr value(s)
+    7: full name, value
+    8: full name, expanded value: <= 4 rows
+    9: full name, expanded value: <= 12 rows
+----
+
+If many values, then, better placed after the post? rather than in the header.
+
+
+=== Maybe much later
+
+.
+
+==== Vote on tags?
+
+Inspired by Gerrit, maybe Do-It votes on tags?
+
+-- create domain may_do_it_vote_d i16_d,
+--     lower 8 bits is max negative vote (e.g. -2 to block),
+--     upper 8 bits is max positive number (e.g. +1 looks-good-to-me)
+or just:
+    tags_t
+        max_do_it_vote_c  i16_gez_d,
+        max_do_not_vote_c i16_gez_d,

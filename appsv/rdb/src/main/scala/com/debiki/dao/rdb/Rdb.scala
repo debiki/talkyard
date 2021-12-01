@@ -105,8 +105,23 @@ object Rdb {
     }).getOrElse(NullTimestamp)
   }
 
+  implicit class PimpWhenMinsWithIntMins(when: WhenMins) {
+    def asIntMins: AnyRef = when.mins.asAnyRef
+  }
+
+  implicit class PimpOptionWithNullIntMins(opt: Opt[WhenMins]) {
+    def orNullIntMins: AnyRef = opt.map(_.mins.asAnyRef) getOrElse NullInt
+  }
+
   implicit class PimpOptionWithNullJsValue(opt: Option[play.api.libs.json.JsValue]) {
     def orNullJson: AnyRef = opt.getOrElse(Null(js.Types.OTHER))
+  }
+
+  implicit class PimpJsObjWithNullIfEmpty(jsOb: JsObject) {
+    def orNullIfEmpty: AnyRef = {
+      if (jsOb.value.isEmpty) Null(js.Types.OTHER)
+      else jsOb
+    }
   }
 
   /*
@@ -282,15 +297,28 @@ object Rdb {
     else When.fromMillis(timestamp.getTime)
   }
 
+  // Remove, change to when_mins_d and getWhenMins() instead?
   def getWhenMinutes(rs: js.ResultSet, column: String): When = {
     val unixMinutes = rs.getInt(column)
     When.fromMillis(unixMinutes * 60L * 1000)
   }
 
+  // Remove, change to when_mins_d and getOptWhenMins() instead?
   def getOptWhenMinutes(rs: js.ResultSet, column: String): Option[When] = {
     val unixMinutes = rs.getInt(column)
     if (rs.wasNull()) None
     else Some(When.fromMillis(unixMinutes * 60L * 1000))
+  }
+
+  def getWhenMins(rs: js.ResultSet, column: St): WhenMins = {
+    val unixMinutes = rs.getInt(column)
+    WhenMins.fromMins(unixMinutes)
+  }
+
+  def getOptWhenMins(rs: js.ResultSet, column: St): Opt[WhenMins] = {
+    val unixMinutes = rs.getInt(column)
+    if (rs.wasNull()) None
+    else Some(WhenMins.fromMins(unixMinutes))
   }
 
   def getOptionalDate(rs: js.ResultSet, column: String): Option[ju.Date] = {
@@ -307,6 +335,16 @@ object Rdb {
     val timestamp = rs.getTimestamp(column, calendarUtcTimeZone)
     if (timestamp eq null) None
     else Some(When.fromMillis(timestamp.getTime))
+  }
+
+  def getByteArray(rs: js.ResultSet, column: St): Array[i8] = {
+    val bytes = rs.getBytes(column)
+    dieIf(bytes eq null, "TyERSNULLBYTES", s"Column $column is null, should be a bytea")
+    bytes
+  }
+
+  def getOptByteArray(rs: js.ResultSet, column: St): Opt[Array[i8]] = {
+    Opt(rs.getBytes(column))
   }
 
   def getOptArrayOfStrings(rs: js.ResultSet, column: String): Option[immutable.Seq[String]] = {

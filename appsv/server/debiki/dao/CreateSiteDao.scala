@@ -77,7 +77,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
     // But people who create a real account can upload images.
     val New = Group(
       AllMembersId, "all_members", Some("All Members"), createdAt = now, // , grantsTrustLevel = Some(TrustLevel.NewMember))
-      perms = PatPerms.create(ifBad = Die,
+      perms = PatPerms.create(IfBadDie,
             maxUploadBytes = Some(1 * Mebibyte),
             allowedUplExts = Some("jpeg jpg png gif")))
 

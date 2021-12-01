@@ -37,6 +37,7 @@ object MaxLimits {
 
   val Default: MaxLimits = MaxLimits(
     maxCategories = 500,    // later, change to 50 — barely any forum has more than 30
+    maxTagTypes = 250,
     maxPermsPerSite = 1000, // was: 200
     maxCustomGroups = 21,
     maxGroupsMemberCanJoin = 25,
@@ -50,6 +51,7 @@ object MaxLimits {
 
 case class MaxLimits(
   maxCategories: i32,
+  maxTagTypes: i32,
   maxPermsPerSite: i32,
   maxCustomGroups: i32,
   maxGroupsMemberCanJoin: i32,
@@ -62,6 +64,7 @@ case class MaxLimits(
     val m = limitsMultipliers
     this.copy(
           maxCategories = multInt32(maxCategories, m.createLimitsMultiplier),
+          maxTagTypes = multInt32(maxTagTypes, m.createLimitsMultiplier),
           maxPermsPerSite = multInt32(maxPermsPerSite, m.createLimitsMultiplier),
           maxCustomGroups = multInt32(maxCustomGroups, m.createLimitsMultiplier),
           maxGroupsMemberCanJoin =
@@ -242,6 +245,9 @@ object RateLimits {
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
   }
+
+
+  val ReadsFromCache = ReadsFromDb  // for now
 
 
   object TrackReadingActivity extends RateLimits {
@@ -456,13 +462,18 @@ object RateLimits {
   }
 
 
-  // CreateCategory
-  // But not until after > 50 cats?
+  // Maybe not until after > 50 cats?
   // Or maybe proportionally to num topics?
   // Example:  10 000 topics —>  <= 5% * 10 000 = 500 cats?
-
-  // CreateTag
-  // But not until after > 50 tags?
+  // CreateCategory, no, us this for "all":?
+  object CreateTagCatPermGroup extends RateLimits {
+    val key = "CrTgCtPeGp"
+    val what = "created too many tags or categories etc"
+    def maxPerFifteenSeconds = 7
+    def maxPerFifteenMinutes = 50
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
+  }
 
 
   /** Discourse does this, as of February 2015:

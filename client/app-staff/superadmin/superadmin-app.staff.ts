@@ -82,13 +82,15 @@ const DashboardPanel = createFactory({
     if (!stuff)
       return r.p({}, "Loading ...");
 
-    let filteredSites = [];
+    let filteredSites: SASite[] = [];
 
-    const filterText: string = this.state.filter;
+    const filterText: St = this.state.filter;
     if (filterText && filterText.length >= 2) {
       _.each(stuff.sites, (site: SASite) => {
-        let show = _.some(site.hostnames, h => h.indexOf(filterText) >= 0);
-        show = show || _.some(site.staffUsers, (m: UserInclDetails) =>
+        let show =
+              _.some(site.hostnames, h => h.indexOf(filterText) >= 0) ||
+              site.featureFlags.toLowerCase().indexOf(filterText) >= 0;
+        show = show || _.some(site.staffUsers, (m: PatVb) =>
             m.email?.toLowerCase().indexOf(filterText) >= 0 ||
             m.username?.toLowerCase().indexOf(filterText) >= 0 ||
             m.fullName?.toLowerCase().indexOf(filterText) >= 0);
@@ -118,7 +120,7 @@ const DashboardPanel = createFactory({
 
     const filter =
         r.div({ className: 's_SA_Filter' },
-          r.div({}, "Filter hostnames, staff names, emails: (at least 2 chars)"),
+          r.div({}, "Filter hostnames, staff names, emails, feature flags: (at least 2 chars)"),
           r.input({
             tabIndex: 1,
             value: this.state.filter,

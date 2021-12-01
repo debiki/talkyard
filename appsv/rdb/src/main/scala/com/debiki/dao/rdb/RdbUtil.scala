@@ -298,7 +298,7 @@ object RdbUtil {
         country = dn2e(rs.getString("u_country")).trimNoneIfEmpty,
         lockedThreatLevel = lockedThreatLevel)
     else if (isGroup) {
-      val perms = PatPerms.create(ifBad = Die,
+      val perms = PatPerms.create(IfBadDie,
             maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
             allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
       Group(
@@ -340,7 +340,7 @@ object RdbUtil {
 
 
   def getGroup(rs: js.ResultSet): Group = {
-    val perms = PatPerms.create(ifBad = Die,
+    val perms = PatPerms.create(IfBadDie,
           maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
           allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
     Group(
@@ -704,6 +704,9 @@ object RdbUtil {
       |g.frequent_poster_2_id,
       |g.frequent_poster_3_id,
       |g.layout,
+      |g.forum_search_box_c,
+      |g.forum_main_view_c,
+      |g.forum_cats_topics_c,
       |g.PIN_ORDER,
       |g.PIN_WHERE,
       |g.PAGE_ROLE,
@@ -775,6 +778,9 @@ object RdbUtil {
       authorId = resultSet.getInt("AUTHOR_ID"),
       frequentPosterIds = frequentPosterIds,
       layout = PageLayout.fromInt(resultSet.getInt("layout")) getOrElse PageLayout.Default,
+      forumSearchBox = getOptInt32(resultSet, "forum_search_box_c"),
+      forumMainView = getOptInt32(resultSet, "forum_main_view_c"),
+      forumCatsTopics = getOptInt32(resultSet, "forum_cats_topics_c"),
       pinOrder = getOptionalIntNoneNot0(resultSet, "PIN_ORDER"),
       pinWhere = getOptionalIntNoneNot0(resultSet, "PIN_WHERE").map(int =>
         PinPageWhere.fromInt(int).getOrElse(PinPageWhere.InCategory)),

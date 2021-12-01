@@ -44,8 +44,8 @@ object Dependencies {
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.2.4"
 
-    // Play Framework 2.8.8 uses 28.2-jre.
-    val guava = "com.google.guava" % "guava" % "28.2-jre"
+    // Play Framework 2.8.9 uses 31.0.1-jre
+    val guava = "com.google.guava" % "guava" % "31.0.1-jre"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
@@ -53,9 +53,9 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "1.27"
+    val apacheTika = "org.apache.tika" % "tika-core" % "1.27"  // 2.1.0 is newest, SHOULD SECURITY
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.14.2"   // newest as of 2021-08
+    val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
 
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
@@ -72,7 +72,8 @@ object Dependencies {
     // throws an error:
     //  """...JsonMappingException: Scala module 2.10.3 requires
     //     Jackson Databind version..."""
-    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"
+    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"  //  8.3.1 newest
+                                // ... but no hurry with upgrading; it incl no security fixes
 
 
     // ----- Decoding JWT:s
@@ -96,22 +97,22 @@ object Dependencies {
     //
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.18.1"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.18.2"
 
 
     // ----- PASETO tokens
 
-    val jpasetoApi = "dev.paseto" % "jpaseto-api" % "0.6.0"  // compile time (default)
-    val jpasetoImpl = "dev.paseto" % "jpaseto-impl" % "0.6.0" // % "runtime"
+    val jpasetoApi = "dev.paseto" % "jpaseto-api" % "0.7.0"  // compile time (default)
+    val jpasetoImpl = "dev.paseto" % "jpaseto-impl" % "0.7.0" // % "runtime"
 
     // Dependency Hell: Cannot use jpaseto-jackson (and we don't need it, fortunately) —
     // it depends on jackson-databind:2.11.2, but other modules require 2.10.*.
     //val jpasetoJackson = "dev.paseto" % "jpaseto-jackson" % "0.6.0" //% "runtime"
     // But Gson works, no conflict:
-    val jpasetoGson = "dev.paseto" % "jpaseto-gson" % "0.6.0" //% "runtime"
+    val jpasetoGson = "dev.paseto" % "jpaseto-gson" % "0.7.0" //% "runtime"
 
     // Needed for v2.local. Also needs OS native lib sodium.
-    val jpasetoSodium = "dev.paseto" % "jpaseto-sodium" % "0.6.0"
+    val jpasetoSodium = "dev.paseto" % "jpaseto-sodium" % "0.7.0"
 
     // Needed for v2.public, in Java 8:
     // But the BouncyCastle docs are not nice to read, plus ads.
@@ -127,8 +128,8 @@ object Dependencies {
 
     // ----- Test
 
-    val scalactic = "org.scalactic" %% "scalactic" % "3.2.9"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.9" % "test"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.10"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.10" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.

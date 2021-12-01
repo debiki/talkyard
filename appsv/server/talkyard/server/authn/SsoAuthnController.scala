@@ -104,14 +104,14 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
 
         val user = dao.getTheUser(userId)
         dao.pubSub.userIsActive(siteId, user, request.theBrowserIdData)
-        val (sid, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(siteId, user.id)
+        val (sid, _, sidAndXsrfCookies) =
+              security.createSessionIdAndXsrfToken(request, user.id)
 
         val response = if (request.isAjax) {
           // As of 2019-12: This is embedded comments login, when 3rd party cookies blocked. [306KUD244]
           SECURITY // a session cookie will get attached too — would be good if it could
           // be deleted server side. [serversid]
           OkSafeJson(Json.obj(
-            // Not yet weak but later. [weaksid]
             "weakSessionId" -> JsString(sid.value)))  // [NOCOOKIES]
         }
         else {
@@ -241,11 +241,10 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
           upsertUser(extUser, req, mayOnlyInsertNotUpdate = true)
 
     val (sid, _, _) =
-          security.createSessionIdAndXsrfToken(siteId, user.id)
+          security.createSessionIdAndXsrfToken(req, user.id)
 
     OkSafeJson(Json.obj(
-      // Not yet weak but later. [weaksid]  [NOCOOKIES]
-      "weakSessionId" -> JsString(sid.value)))
+      "weakSessionId" -> JsString(sid.value)))  // [NOCOOKIES]
   }
 
 
@@ -256,7 +255,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
     import request.dao
 
     throwForbiddenIf(!request.isViaApiSecret,
-        "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
+        "TyEAPI0SECRET03", "The API may be called only via Basic Auth and an API secret")
 
     // Better name?:  "soId"  — because isn't necessarily *Single* Sign-On.
     // So just keep the "SO" in "SSO"? "Talkyard Sign-On"?

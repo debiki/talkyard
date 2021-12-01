@@ -144,7 +144,7 @@ ReactDispatcher.register(function(payload) {
   switch (action.actionType) {
 
     case ReactActions.actionTypes.NewMyself:
-      ReactStore.activateMyself(action.user);
+      ReactStore.activateMyself(action.user, action.stuffForMe);
       store.numOnlineStrangers = Math.max(0, store.numOnlineStrangers - 1);
       theStore_addOnlineUser(me_toBriefUser(action.user));
       break;
@@ -408,15 +408,17 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.ShowNewPage:
-      showNewPage(action.newPage, action.newPublicCategories, action.newUsers, action.me, action.history);
+      showNewPage(action.params);
     break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
-      if (action.presence === Presence.Active) {
-        theStore_addOnlineUser(action.user);
+      const data: UserPresenceWsMsg = action.data;
+      maybePatchTheStore(data);
+      if (data.presence === Presence.Active) {
+        theStore_addOnlineUser(data.user);
       }
       else {
-        theStore_removeOnlineUser(action.user);
+        theStore_removeOnlineUser(data.user);
       }
       break;
 
@@ -536,6 +538,8 @@ ReactStore.activateVolatileData = function() {
           // @endif
           volData.me = me_merge(sessFrameStore.me, volData.me);  // [emb_ifr_shortcuts]
           sessFrameStore.me = _.cloneDeep(volData.me);
+          // Tags and badges?  [tags_and_badges_missing]
+          // sessFrameStore.stuffForMe = _.cloneDeep(volData.stuffForMe);
         }
       }
     }
@@ -548,7 +552,8 @@ ReactStore.activateVolatileData = function() {
   // ------------------------------
 
   theStore_setOnlineUsers(volData.numStrangersOnline, volData.usersOnline);
-  ReactStore.activateMyself(volData.me);
+
+  ReactStore.activateMyself(volData.me, volData.stuffForMe);
 
   // Update any session frame's user
   // ------------------------------
@@ -571,10 +576,14 @@ ReactStore.activateVolatileData = function() {
 };
 
 
-ReactStore.activateMyself = function(anyNewMe: Myself) {
+ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffForMe) {
   // [redux] Modifying state in-place, shouldn't do? But works fine.
 
   store.userSpecificDataAdded = true;
+
+  if (stuffForMe) {
+    store_patchTagTypesInPl(store, stuffForMe.tagTypes);
+  }
 
   setTimeout(function() {
     $h.addClasses(htmlElem, 'e2eMyDataAdded');
@@ -659,9 +668,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     store.topics = _.uniqBy(store.topics, 'pageId');
 
     // Add users for these topics, so avatars can be shown in topic list.
-    _.each(store.me.restrictedTopicsUsers, (user: BriefUser) => {
-      store.usersByIdBrief[user.id] = user;
-    });
+    store_patchPatsInPl(store, store.me.restrictedTopicsUsers);
   }
 
   // Absent on about-user pages. CLEAN_UP no it's always present? Need not test for that.
@@ -704,9 +711,7 @@ function store_addUnapprovedPosts(store: Store, myPageData: MyPageData) {
     // COULD_FREE_MEM if other user was logged in before?
   });
 
-  _.each(myPageData.unapprovedPostAuthors, (author: BriefUser) => {
-    store.usersByIdBrief[author.id] = author;
-  });
+  store_patchPatsInPl(store, myPageData.unapprovedPostAuthors);
 };
 
 
@@ -772,8 +777,8 @@ function theStore_addOnlineUser(user: BriefUser) {
   if (store.userIdsOnline) {
     store.userIdsOnline[user.id] = true;
   }
-  // In case any user has e.g. changed his/her name or avatar, use the newer version:
-  store.usersByIdBrief[user.id] = user;
+  // In case any user has e.g. changed his/her name or avatar, use the newer version.
+  store_patchPatsInPl(store, [user]);
 }
 
 
@@ -783,7 +788,7 @@ function theStore_removeOnlineUser(user: BriefUser) {
     delete store.userIdsOnline[user.id];
   }
   // In case any user has e.g. changed his/her name or avatar, use the newer version:
-  store.usersByIdBrief[user.id] = user;
+  store_patchPatsInPl(store, [user]);
 }
 
 
@@ -1467,6 +1472,13 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 }
 
 
+function maybePatchTheStore(ps: { storePatch?: StorePatch }) {
+  if (ps.storePatch) {
+    patchTheStore(ps.storePatch);
+  }
+}
+
+
 function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly, instead of via [flux_mess].
   if (isDefined2(storePatch.setEditorOpen) && storePatch.setEditorOpen !== store.isEditorOpen) {
     store.isEditorOpen = storePatch.setEditorOpen;
@@ -1490,6 +1502,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     store.superadmin = storePatch.superadmin;
   }
 
+  // ----- Oneself
+
   if (storePatch.me) {
     // [redux] modifying the store in place, again.
     let patchedMe: Myself | U;
@@ -1512,6 +1526,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     }
     store.me = patchedMe;
   }
+
+  // ----- Drafts
 
   if (storePatch.deleteDraft) {
     const deletor: DraftDeletor = storePatch.deleteDraft;
@@ -1547,6 +1563,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     });
   }
 
+  // ----- Categories
+
   if (storePatch.publicCategories) {
     dieIf(!storePatch.restrictedCategories, 'TyEK2WP49');
     // [redux] modifying the store in place, again.
@@ -1557,14 +1575,26 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
   }
 
-  if (storePatch.tagsStuff) {
-    // [redux] modifying the store in place, again.
-    store.tagsStuff = _.assign(store.tagsStuff || {}, storePatch.tagsStuff);
+  // ----- Tag types
+
+  // @ifdef DEBUG
+  dieIf(storePatch.allTagTypes && storePatch.tagTypes, 'TyE40JMW3XP5');
+  // @endif
+
+  store_patchTagTypesInPl(store, storePatch.tagTypes);
+
+  if (storePatch.allTagTypes) {
+    store.tagTypesById = groupByKeepOne(storePatch.allTagTypes, tt => tt.id);
+  }
+  if (storePatch.allTagTypeStatsById) {
+    store.tagTypeStatsById = storePatch.allTagTypeStatsById;
   }
 
-  _.each(storePatch.usersBrief || [], (user: BriefUser) => {
-    store.usersByIdBrief[user.id] = user;
-  });
+  // ----- Users
+
+  store_patchPatsInPl(store, storePatch.usersBrief);
+
+  // ----- Pages
 
   _.each(storePatch.pageMetasBrief || [], (pageMeta: PageMetaBrief) => {
     store.pageMetaBriefById[pageMeta.pageId] = pageMeta;
@@ -1577,7 +1607,17 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     }
   });
 
-  const currentPage: Page = store.currentPage;
+  const currentPage: Page | U = store.currentPage;
+
+  if (!currentPage) {
+    delete store.curPageTweaks;
+  }
+  else if (storePatch.curPageTweaks) {
+    store.curPageTweaks = {
+      ...store.curPageTweaks,
+      ...storePatch.curPageTweaks,
+    };
+  }
 
   // If we just posted the very first reply on an embedded discussion, a page for the discussion
   // will have been created now, lazily. Then need to update the store page id.
@@ -1606,7 +1646,8 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     // lazily only for embedded comments, and then there's no watchbar.
   }
 
-  // New or moved/removed posts?
+  // ----- Posts — new or re/moved?
+
   _.each(storePatch.postsByPageId, (patchedPosts: Post[], patchedPageId: PageId) => {
     // Highligt pages with new posts, in the watchbar.
     if (patchedPageId !== store.currentPageId) {
@@ -1659,14 +1700,14 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     return;
   }
 
+  // ----- Posts, edited?
+
   _.each(store.pagesById, patchPage);
 
   function patchPage(page: Page) {
     const storePatchPageVersion = storePatch.pageVersionsByPageId[page.pageId];
     if (!storePatchPageVersion || storePatchPageVersion < page.pageVersion) {
       // These changes are old, might be out-of-date, ignore.
-      // COULD rename .usersBrief to .authorsBrief so it's apparent that they're related
-      // to the posts, and that it's ok to ignore them if the posts are too old.
       return;
     }
     else if (storePatchPageVersion === page.pageVersion) {
@@ -1697,8 +1738,38 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
 }
 
 
-function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: BriefUser[],
-        updatedMe: Myself | null, history) {
+/// Adds/updates pats, in-place. Avoids overwriting a pat obj with "lots of" info,
+/// e.g. tags, with an obj with less info.
+///
+function store_patchPatsInPl(store: Store, pats: Pat[]) {
+  for (const pat of pats || []) {
+    // Don't overwrite any existing user entry, with a new entry with only the name
+    // and avatar — if the old entry includes more data (e.g. pubTags).
+    // Later: Also don't overwrite with out-of-date user. [user_version]
+    const oldPat: Pat | U = store.usersByIdBrief[pat.id];
+    // That at least the pubTags fields is not lost, is tested here:
+    // Tests:  tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTUNAPRPATBADGE
+    const mergedPat = oldPat ? { ...oldPat, ...pat } : pat;   // [merge_pub_restr]
+    store.usersByIdBrief[pat.id] = mergedPat;
+  }
+}
+
+
+function store_patchTagTypesInPl(store: Store, tagTypes: TagType[] | NU) {
+  if (!tagTypes || !tagTypes.length) return;
+  store.tagTypesById = { ...store.tagTypesById };
+  for (const tt of tagTypes) {
+    // Ok to overwrite any old with new — there're currently no restricted fields
+    // that can get lost. But later, maybe merge?  [merge_pub_restr]  [tag_versions]
+    store.tagTypesById[tt.id] = tt;
+  }
+}
+
+
+function showNewPage(ps: ShowNewPageParams) {
+  const newPage = ps.newPage;
+  const newPublicCategories = ps.pubCats;
+  const history = ps.history;
 
   // Upload any current reading progress, before changing page id.
   page.PostsReadTracker.sendAnyRemainingData(() => {}); // not as beacon
@@ -1717,6 +1788,8 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   }
   // @endif
 
+  delete store.curPageTweaks;
+
   // Update categories — maybe this page is in a different sub community with different categories.
   store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories
   store.currentCategories = _.clone(newPublicCategories);
@@ -1726,15 +1799,15 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   store.topics = null;
 
   let myData: MyPageData;
-  if (updatedMe) {
+  if (ps.me) {
+    const updatedMe: Me = ps.me;
+    // We only use .watchbar and .myDataByPageId[_], but server side, we load more stuff.
+    // [load_less_me_data]
     store.me.watchbar = updatedMe.watchbar;
     myData = updatedMe.myDataByPageId[newPage.pageId];
     if (myData) {
       store.me.myDataByPageId[newPage.pageId] = myData;
     }
-
-    store_addUnapprovedPosts(store, myData);  // TyTE2E603SKD
-    addRestrictedCategories(updatedMe.restrictedCategories, store.currentCategories);
   }
 
   store.me.myCurrentPageData = myData || makeNoPageData();
@@ -1747,10 +1820,38 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
     document.title = titlePost.unsafeSource;
   }
 
+  // ----- Add public things
+
   // Add users on the new page, to the global users-by-id map.
-  _.each(newUsers, (user: BriefUser) => {
-    store.usersByIdBrief[user.id] = user;
-  });
+  store_patchPatsInPl(store, ps.pats);
+
+  // Add page tags and user badges needed to render the page.
+  store.tagTypesById = { ...store.tagTypesById, ...ps.tagTypesById };
+
+  // ----- Add access restricted things
+
+  // Add things only this user, `me`, may see, after the public things.
+  // The access restricted things can include details, e.g. access restricted
+  // obj fields, so we add these last, so they'll replace any public stuff. Rather
+  // than the other way around — then, the restricted fields might get lost.
+  // However, no longer an issue, since now we { ... ... } merge the pub and
+  // restr things? [merge_pub_restr]
+
+  if (myData) {
+    store_addUnapprovedPosts(store, myData);  // TyTE2E603SKD
+  }
+  if (ps.me) {
+    addRestrictedCategories(ps.me.restrictedCategories, store.currentCategories);
+  }
+
+  // And more things needed for rendering things the current user can see,
+  // but not everyone, so not incl in e.g. ps.tagTypesById.
+  if (ps.stuffForMe) {
+    const stuff = ps.stuffForMe;
+    store_patchTagTypesInPl(store, stuff.tagTypes);
+  }
+
+  // ----- HTML classes
 
   // Update <html> elem classes list, so pages with custom classes & CSS render properly.
   const oldClassesStr = (oldPage.pageHtmlTagCssClasses || '') + magicClassFor(oldPage);
@@ -1758,16 +1859,16 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   function magicClassFor(page: Page): string {
     // Sync with Scala [4JXW5I2].
     let clazz = '';
-    if (page_isChat(page.pageRole)) clazz = ' dw-vt es-chat';
+    if (page_isChat(page.pageRole)) clazz = ' es-chat';
     if (page.pageRole === PageRole.Forum) clazz = ' es-forum';
-    if (page.pageRole === PageRole.MindMap) clazz = ' dw-hz';
-    if (page.pageRole) clazz = ' dw-vt';
+    if (page.pageRole === PageRole.MindMap) clazz += ' dw-hz';
+    else clazz += ' dw-vt';
     clazz += (!page.pageRole ? '' : ' s_PT-' + page.pageRole);     // [5J7KTW2]
     clazz += (!page.pageLayout ? '' : ' s_PL-' + page.pageLayout);
     return clazz;
   }
   if (oldClassesStr || newClassesStr) {
-    const regex = /[ ,]/;
+    const regex = /[ ,]+/;
     const oldClasses = oldClassesStr.split(regex);
     const newClasses = newClassesStr.split(regex);
     function addOrRemoveClasses(as, bs, fn) {
@@ -1781,6 +1882,8 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
     addOrRemoveClasses(oldClasses, newClasses, $h.removeClasses);
     addOrRemoveClasses(newClasses, oldClasses, $h.addClasses);
   }
+
+  // ----- URL path
 
   // Maybe a /-pageid path to the page was specified. But that won't work for forum pages,
   // whose routes have been mounted only on path like /forum/. So, if the path is
@@ -1800,13 +1903,19 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
     }
   }
 
+  // ----- Watchbar
+
   if (me_isStranger(store.me)) {
     addPageToStrangersWatchbar(store.currentPage, store.me.watchbar);
   }
 
+  // ----- Drafts (coudl move upwards to other `me` things)
+
   // COULD also load draft from the browser storage for this new page. [LDDFTS]
   // Like:  addLocalStorageDataTo(me, isNewPage = true);
   addMyDraftPosts(store, store.me.myCurrentPageData);
+
+  // ----- Misc & "hacks"
 
   // Make Back button work properly.
   debiki2.rememberBackUrl(correctedUrl);

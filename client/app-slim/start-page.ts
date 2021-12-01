@@ -18,12 +18,14 @@
 /// <reference path="prelude.ts" />
 /// <reference path="init-all-react-roots.ts" />
 /// <reference path="link-previews.ts" />
+/// <reference path="oop-methods.ts" />
 
 
 const d = { i: debiki.internal };
 
 const logM = debiki2.logM;
 const logE = debiki2.logE;
+
 
 let pageStarted: undefined | true;
 const scriptLoadDoneCallbacks = [];
@@ -62,16 +64,55 @@ debiki.nowServiceWorkerIsRightVersion = function() {
 const allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
 
+
 function handleLoginInOtherBrowserTab() {
-  const currentUser = debiki2.ReactStore.getMe();
+  const store: Store = debiki2.ReactStore.allData();
+  const me: Myself = store.me;
+
+  // New style session id:  [btr_sid]
+  // ------------------------------------------
+  const useNewSid = !debiki2.store_isFeatFlagOn(store, 'ffUseOldSid');
+  if (useNewSid) {
+    const sidParts123 = debiki2.Server.getCurSid12Maybe3();
+    const stillTheSameSid = sidParts123
+          ? me.mySidPart1 && sidParts123.startsWith(me.mySidPart1)
+          : !me.mySidPart1;
+    if (!stillTheSameSid) {
+      if (sidParts123) {
+        // The human has logged in.
+        if (me.mySidPart1) {
+          // The human was already logged in. Then it's good to reload the page so
+          // stuff related to the previous user, disappears from the browser memory.
+          location.reload();
+        }
+        else {
+          // The human wasn't logged in. We can load the human's data without page reload.
+          debiki2.ReactActions.loadMyself(function (resp: FetchMeResponse) {
+            // if (!resp.me)
+            //   Then what? Nothing? Or ReactActions.logoutClientSideOnly()?
+            //   Doesn't matter?
+          });
+        }
+      }
+      else {
+        // The human was logged in, but has now logged out. (This reloads the
+        // page, or loads a new page, and forgets all in-mem state.)
+        debiki2.ReactActions.logoutClientSideOnly();
+      }
+    }
+    return;
+  }
+
+  // Old style session id:  CLEAN_UP REMOVE [btr_sid]
+  // ------------------------------------------
   const sessionId = getSetCookie('dwCoSid');
-  if (currentUser.isLoggedIn) {
+  if (me.isLoggedIn) {
     if (sessionId) {
       // Session id example: (parts: hash, user id, name, login time, random value)
       // 'Y1pBlH7vY4JW9A.11.Magnus.1316266102779.15gl0p4xf7'
       const parts = sessionId.split('.');
       const newUserIdString = parts[1];
-      if (currentUser.userId !== parseInt(newUserIdString)) {
+      if (me.id !== parseInt(newUserIdString)) {
         // We've logged in as another user in another browser tab.
         debiki2.ReactActions.loadMyself();
       }
@@ -92,6 +133,7 @@ function handleLoginInOtherBrowserTab() {
     debiki2.ReactActions.loadMyself();
   }
 }
+
 
 
 function registerEventHandlersFireLoginOut() {

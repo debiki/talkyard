@@ -96,6 +96,12 @@ if (args['2br'] || args['2browsers']) {
 if (args['3br'] || args['3browsers']) {
   settings.numBrowsers = 3;
 }
+if (args['4br'] || args['4browsers']) {
+  settings.numBrowsers = 4;
+}
+if (args['5br'] || args['5browsers'] || args['6br'] || args['6browsers']) {
+  die(`E2e tests with 5 or 6 browsers isn't supported. [TyE2MNYBROWSRS]`);
+}
 
 if (args.cd || args.chromedrier) {
   settings.useChromedriver = true;

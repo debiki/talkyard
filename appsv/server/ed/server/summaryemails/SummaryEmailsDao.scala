@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao._
-import ed.server.auth.ForumAuthzContext
+import talkyard.server.authz.ForumAuthzContext
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 import SummaryEmailsDao._

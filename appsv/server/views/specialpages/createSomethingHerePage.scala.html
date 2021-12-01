@@ -21,9 +21,10 @@
 <!DOCTYPE html>
 <html class="dw-pri DW">
 <head>
+@tpi.jsonDataMustBeFirst()
 @tpi.debikiMeta
-@tpi.debikiStyles
-@tpi.debikiScriptsInHead()
+@tpi.talkyardStyles
+@tpi.parseJsonUpdDocClassesScript()
 </head>
 <body>
 <!-- createSomethingHerePage.scala.html -->
@@ -34,6 +35,6 @@
     <div id="dw-non-existing-page"></div>
 </div>
 
-@tpi.scriptBundlesEndOfBody()
+@tpi.talkyardScriptBundles()
 </body>
 </html>

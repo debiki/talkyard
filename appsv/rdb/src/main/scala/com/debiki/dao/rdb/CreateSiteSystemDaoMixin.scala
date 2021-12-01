@@ -183,17 +183,20 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
 
     // Dupl code [7KUW0ZT2]
     val statements = (s"""
+      delete from audit_log3 where site_id = ?
       delete from index_queue3 where site_id = ?
       delete from spam_check_queue3 where site_id = ?
+      delete from tags_t where site_id_c = ?
+      delete from tagtypes_t where site_id_c = ?
       delete from links_t where site_id_c = ?
       delete from link_previews_t where site_id_c = ?
-      delete from audit_log3 where site_id = ?
       delete from review_tasks3 where site_id = ?
       delete from perms_on_pages3 where site_id = ?
       delete from settings3 where site_id = ?
       delete from drafts3 where site_id = ?
       delete from post_read_stats3 where site_id = ?
       delete from notifications3 where site_id = ?
+      delete from notices_t where site_id_c = ?
       delete from emails_out3 where site_id = ?
       delete from upload_refs3 where site_id = ?""" +
       // skip: uploads3, not per-site. But... latent BUG: should update upload ref counts,
@@ -223,6 +226,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       delete from usernames3 where site_id = ?
       delete from user_emails3 where site_id = ?
       delete from group_participants3 where site_id = ?
+      delete from sessions_t where site_id_c = ?
       delete from users3 where site_id = ?
       """).trim.split("\n").toBuffer
 

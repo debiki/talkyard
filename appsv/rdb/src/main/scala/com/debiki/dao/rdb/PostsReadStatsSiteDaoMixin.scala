@@ -34,7 +34,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
 
 
   def updatePostsReadStats(pageId: PageId, postNrsRead: Set[PostNr],
-        readById: UserId, readFromIp: String) {
+        readById: UserId, readFromIp: Opt[IpAdr]) {
     for (postNr <- postNrsRead) {
       // Do nothing if the row already exists — simply means the user has already read the post.
       val sql = s"""
@@ -43,7 +43,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
         on conflict do nothing
         """
       val values = List[AnyRef](siteId.asAnyRef, pageId, postNr.asAnyRef,
-        readFromIp, readById.asAnyRef, now.asTimestamp)
+        readFromIp.orNullVarchar, readById.asAnyRef, now.asTimestamp)
       runUpdate(sql, values)
     }
   }

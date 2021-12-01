@@ -248,7 +248,14 @@ export const DropdownModal = createComponent({
 
       // Place at atX, atY.
       const left = pullLeft ? atX : undefined;
-      const right = pullLeft ? undefined : 'calc(100% - ' + atX + 'px)';
+      // If atX is too close to the left edge. set it to at least the below, so the dialog
+      // won't get too narrow.  UX, COULD set atX more to the left, if the open-dialog-
+      // button is far to the left, and the dialog is really narrow — so the dialog
+      // won't pop up far to the right of the button. Would need to remember
+      // getBoundingClientRect() in the did-update fn? But store in this.state just once,
+      // so won't cause some eternal update-setState-update... loop.
+      const atXMin = Math.max(atX, 470);
+      const right = pullLeft ? undefined : `calc(100% - min(100% - 10px, ${atXMin}px))`;
       const styles = {
         left: left,
         right: right,

@@ -5,7 +5,7 @@ import settings = require('../utils/settings');
 
 
 
-function createPasswordTestData(ps: {
+function createPasswordTestData(ps: {  // renamed to generateNewSiteData  in tests/e2e-wdio7/.
   newSiteOwner?: NewSiteOwnerType,
   alreadyLoggedInAtIdProvider?: boolean,
 } = {}): NewSiteData {
