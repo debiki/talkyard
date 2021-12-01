@@ -23,8 +23,9 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.api.mvc._
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import play.api.libs.json.JsValue
+import talkyard.server.authn.MinAuthnStrength
 
 
 
@@ -36,7 +37,8 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security._
 
 
-  def flagPost: Action[JsValue] = PostJsonAction(RateLimits.FlagPost, maxBytes = 2000) { request =>
+  def flagPost: Action[JsValue] = PostJsonAction(RateLimits.FlagPost,
+          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 2000) { request =>
     import request.{body, dao}
     SHOULD // change from page-id + post-nr to post-id.
     val pageId = (body \ "pageId").as[PageId]
@@ -57,6 +59,8 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE5PJB2R8")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
+    CHECK_AUTHN_STRENGTH
+
     throwNoUnless(Authz.mayFlagPost(
       request.theMember, dao.getOnesGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
@@ -73,8 +77,8 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     // If some posts got hidden, then rerender them as hidden, so the flagger sees they got hidden.
-    val json = dao.jsonMaker.makeStorePatchForPosts(
-      postsHidden.map(_.id).toSet, showHidden = false, dao)
+    val json = dao.jsonMaker.makeStorePatchForPostIds(
+          postsHidden.map(_.id).toSet, showHidden = false, inclUnapproved = false, dao)
     OkSafeJson(json)
   }
 

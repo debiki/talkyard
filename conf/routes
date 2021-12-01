@@ -61,8 +61,8 @@ GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbedde
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
 POST  /-/search                 controllers.SearchController.doSearch
-GET   /-/v0/search              controllers.SearchController.doSearchPubApiGet(freetext: Option[String], pretty: Option[Boolean])
-POST  /-/v0/search              controllers.SearchController.doSearchPubApiPost
+GET   /-/v0/search              controllers.SearchController.apiV0_search_get(freetext: Option[String], pretty: Option[Boolean])
+POST  /-/v0/search              controllers.SearchController.apiV0_search_post
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage
@@ -162,6 +162,10 @@ POST  /-/add-email-address      controllers.UserController.addUserEmail
 POST  /-/remove-email-address   controllers.UserController.removeUserEmail
 GET   /-/confirm-email-address  controllers.UserController.confirmOneMoreEmailAddress(confirmationEmailId)
 POST  /-/resend-email-addr-verif-email controllers.UserController.resendEmailAddrVerifEmail
+
+GET   /-/list-sessions          talkyard.server.sess.SessionController.listSessions(patId: Int)
+POST  /-/terminate-sessions     talkyard.server.sess.SessionController.terminateSessions
+# Maybe move /-/logout to SessionController?
 
 GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(emailId)
 POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)
@@ -314,6 +318,7 @@ GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
 POST /-/delete-redis-key        controllers.DebugTestController.deleteRedisKey
 POST /-/skip-rate-limits        controllers.DebugTestController.skipRateLimitsForThisSite
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
+POST /-/add-admin-notice        controllers.DebugTestController.addAdminNotice
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
 GET  /-/num-e2e-test-emails-sent controllers.DebugTestController.numE2eTestEmailSent(siteId: Int)
 GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessages()
@@ -327,7 +332,8 @@ GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 GET   /-/tags                   controllers.TagsController.redirect
 GET   /-/tags/                  controllers.TagsController.tagsApp(clientRoute = "")
 GET   /-/tags/*clientRoute      controllers.TagsController.tagsApp(clientRoute)
-GET   /-/load-all-tags          controllers.TagsController.loadAllTags
+POST  /-/create-tag-type        controllers.TagsController.createTagType
+GET   /-/list-tag-types         controllers.TagsController.listTagTypes(forWhat: Option[Int], tagNamePrefix: Option[String])
 GET   /-/load-tags-and-stats    controllers.TagsController.loadTagsAndStats
 POST  /-/set-tag-notf-level     controllers.TagsController.setTagNotfLevel
 GET   /-/load-my-tag-notf-levels controllers.TagsController.loadMyTagNotfLevels
@@ -366,8 +372,12 @@ GET   /-/v0/login-with-secret   talkyard.server.authn.SsoAuthnController.apiv0_l
 GET   /-/v0/sso-login           talkyard.server.authn.SsoAuthnController.apiv0_loginWithSecret
 
 
-POST  /-/v0/get                 talkyard.server.api.GetController.getThingsPubApi
-POST  /-/v0/list                talkyard.server.api.ListController.listThingsPubApi
+POST  /-/v0/get                 talkyard.server.api.GetController.apiV0_get
+POST  /-/v0/list                talkyard.server.api.ListController.apiV0_list
+# POST  /-/v0/search — see above
+POST  /-/v0/query               talkyard.server.api.QueryDoController.apiV0_query
+POST  /-/v0/do                  talkyard.server.api.QueryDoController.apiV0_do
+POST  /-/v0/query-do            talkyard.server.api.QueryDoController.apiV0_queryDo
 
 GET   /-/v0/list-users          controllers.UserController.listMembersPubApi(usernamePrefix, usersOnly: Boolean = true)
 #ET   /-/v0/list-groups — only groups

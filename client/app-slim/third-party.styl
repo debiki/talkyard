@@ -182,6 +182,8 @@
   // Draw double lines through the list. No, hard to see the difference between 2 lines and just 1 line.
   //background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><path d='M56 0 L10 100' stroke='%235a5a5a' stroke-width='11'/><path d='M90 0 L44 100' stroke='%235a5a5a' stroke-width='11'/></svg>");
 
+
+
 // Twitter Bootstrap
 //===========================
 
@@ -271,7 +273,7 @@ a.btn-default
   padding-top: 8px;
   padding-bottom: 8px;
 
-// Undo .dropdown-menu li a  no-wrap:
+// Undo .dropdown-menu li a  nowrap:   (Or always remove nowrap?: [.twbs_menu_item_wrap] )
 .dropdown-menu > li.s_Hz > a
   white-space: normal;
 
@@ -301,6 +303,12 @@ input, textarea {
   .modal-dialog
     width: 630px;  // else 600, Bootstrap's default
 
+// If we're in some popup or small win, better show scrollbars if needed.  [e2e_win_size]
+// Does it make sense to show only in small wins?
+// Like so: @media (max-height: 1000px)
+.modal .modal-content
+  overflow-y: auto;
+
 // Scrollbars appear sometimes although not needed, in the editor dialog, when full screen,
 // and opening the category dropdown. (Sep 2016)
 .modal.fade.in
@@ -322,6 +330,10 @@ input, textarea {
       color: #262626;
       text-decoration: none;
       background-color: #f5f5f5;
+
+  & > a
+    // Cancel nowrap?  [.twbs_menu_item_wrap]
+    white-space: inherit;
 
   // Horizontal layout for many links on the same row.
   &.s_Hz

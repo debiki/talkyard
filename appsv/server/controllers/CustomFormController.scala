@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import ed.server._
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import javax.inject.Inject
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._

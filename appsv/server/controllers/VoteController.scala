@@ -23,12 +23,14 @@ import collection.immutable
 import debiki._
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX.{JsUser, JsStringOrNull}
+import talkyard.server.authn.MinAuthnStrength
+
 
 
 /** Handles votes, e.g. "I like this comment" or "this comment is faulty" votes.
@@ -46,8 +48,9 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     *   action: "CreateVote"  # or "DeleteVote"
     *   postIdsRead: [1, 9, 53, 82]
     */
-  def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost, maxBytes = 500) {
-        request: JsonPostRequest =>
+  def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost,
+          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 500) {
+          request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
     val anyPageId = (body \ "pageId").asOpt[PageId]
 
@@ -100,12 +103,14 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
           anyEmbeddingUrl = anyEmbeddingUrl, lazyCreatePageInCatId = lazyCreatePageInCatId,
           request)
 
+    CHECK_AUTHN_STRENGTH
+
     if (delete) {
       dao.deleteVoteIfAuZ(pageId, postNr, voteType, voterId = request.theUser.id)
     }
     else {
       dao.addVoteIfAuZ(pageId, postNr, voteType,
-            voterId = request.theUser.id, voterIp = request.ip, postNrsRead)
+            voterId = request.theReqerId, voterIp = Some(request.ip), postNrsRead)
     }
 
     RACE // Fine, harmless.
@@ -114,7 +119,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val author = dao.getParticipantOrUnknown(updatedPost.createdById)
 
-    val storePatchJson = dao.jsonMaker.makeStorePatch(
+    val storePatchJson = dao.jsonMaker.makeStorePatchForPost(
           updatedPost, author, showHidden = true)
 
     val responseJson = storePatchJson ++
@@ -124,11 +129,14 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadVoters(postId: PostId, voteType: Int): Action[Unit] = GetAction { request =>
+  def loadVoters(postId: PostId, voteType: Int): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     import request.{dao, requester}
 
     val pageMeta: PageMeta = dao.getThePageMetaForPostId(postId)
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.maySeePage(
       pageMeta, requester,
@@ -145,7 +153,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
     val json = Json.obj(
       "numVoters" -> voters.size, // currently all voters always loaded [1WVKPW02]
-      "someVoters" -> JsArray(voters map JsUser))
+      "someVoters" -> JsArray(voters.map(JsUser(_))))
     OkSafeJson(json)
   }
 }

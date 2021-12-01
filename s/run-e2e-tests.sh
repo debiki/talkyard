@@ -310,7 +310,11 @@ function runAllE2eTests {
   $r s/wdio --only navigation-as-stranger $args
   # Also:  embedded-comments-navigation-as-guest  further below.
 
+  $r s/wdio-7 --only d.sessions-logout-elsewhere.4br --cd -i $args
+  $r s/wdio-7 --only d.sessions-staff-logout-others.4br --cd -i $args
+
   $r s/wdio --only hide-unhide-tips.2br $args
+  $r s/wdio-7 --only show-admin-notices.2br --cd -i $args
 
   $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
   $r s/wdio --only sanitize-posts.2browsers $args
@@ -339,6 +343,10 @@ function runAllE2eTests {
 
   $r s/wdio --only categories-basic.3browsers $args
   # There're more category tests below. [.more_cat_tests]
+
+  $r s/wdio-7 --only badges-basic.2br --cd -i $args
+  $r s/wdio-7 --only tags-basic.2br --cd -i $args
+  $r s/wdio-7 --only tags-badges-not-missing.2br --cd -i $args
 
   $r s/wdio --only private-chat.3browsers $args
 
@@ -514,6 +522,11 @@ function runAllE2eTests {
   $r s/wdio --only api-list-query-for-topics-recent-etc-first $args
   $r s/wdio --only api-list-query-for-posts $args
 
+  $r s/wdio-7 --only do-api-like-and-subscribe.2br --cd -i $args
+
+  $r s/wdio-7 --only dir.create-site-imp-json.2br --cd -i $args
+
+
   # wip:
   # settings-allow-local-signup
   # settings-allow-signup
@@ -586,7 +599,7 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-navigation-as-guest $args
 
   $r s/wdio       --only embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers $args
-  $r s/wdio       --only embedded-comments-create-site-req-verif-email.2browsers $args
+  $r s/wdio-7     --only embcom.create-site-req-verif-email-exit-tours.2br --cd -i $args
   $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
   $r s/wdio       --only embedded-comments-create-site-import-disqus.2br $args
   $r s/wdio-7     --only embcom.drafts-previews-not-logged-in.2br --cd -i $args
@@ -619,11 +632,11 @@ function runAllE2eTests {
   # (all names included in short-cache-time already)
 
   # Do last, easier to debug the tests above instead if there's a bug:
-  $r s/wdio       --only embedded-comments-create-site-export-json.2browsers $args
-  $r s/wdio       --only embedded-comments-import-json-create-new-site.2browsers $args
-  #$r s/wdio       --only embedded-comments-import-json-to-existing-emb-cmts-site.2browsers $args
-  $r s/wdio       --only embedded-comments-restore-overwrite-site-same-domain.2browsers $args
-  $r s/wdio       --only embedded-comments-restore-overwrite-site-new-domain.2browsers $args
+  $r s/wdio-7     --only embcom.expimpjson.create-site-exp-json.2br --cd -i $args
+  $r s/wdio-7     --only embcom.expimpjson.imp-to-new-site.2br --cd -i $args
+  #r s/wdio-7     --only embcom.expimpjson.imp-to-existing-site.2br.e2e-UNIMPL --cd -i $args
+  $r s/wdio-7     --only embcom.expimpjson.restore-overwrite-site-same-domain.2br --cd -i $args
+  $r s/wdio-7     --only embcom.expimpjson.restore-overwrite-site-new-domain.2br --cd -i $args
 
   $r s/wdio       --only embcom.comment-counts.2br.cors $args
 
@@ -636,6 +649,9 @@ function runAllE2eTests {
   $r s/wdio-7     --only embcom.manyframes.drafts-repl-to.2br --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.js-api.2br --cd -i $args
   $r s/wdio-7     --only embcom.manyframes.comment-counts.2br.cors --cd -i $args
+
+  # Stealing an embedded session id
+  $r s/wdio-7     --only embcom.sessions-emb-sess-cannot-moderate.3br --cd -i $args
 
 
 

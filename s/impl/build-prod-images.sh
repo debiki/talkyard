@@ -75,7 +75,7 @@ done
 # Ensure no other containers running
 # ----------------------
 
-# Dupl kill-down prod test code. [KLLPRDTST]
+# Dupl kill-down prod test code. [KLLPRDTST]  [prod_test_docker_conf]
 test_containers='docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
 $test_containers kill web app search cache rdb
 $test_containers down

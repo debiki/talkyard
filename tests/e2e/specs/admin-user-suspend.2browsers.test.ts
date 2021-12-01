@@ -104,6 +104,9 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
     mariasBrowser.editor.cancel();
   });
 
+  // TESTS_MISSING: should not get any more live updates via WebSocket  TyTE0MOREWSMSG
+  // Or is that better done in a separate e2e test file?
+
   it("... Now, she cannot login (was logged out by the server)", function() {
     mariasBrowser.refresh();
     mariasBrowser.acceptAnyAlert(2);  // for some reason, up to 2 alerts

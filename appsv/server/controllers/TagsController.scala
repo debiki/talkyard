@@ -18,12 +18,14 @@
 package controllers
 
 import com.debiki.core._
+import com.debiki.core.Prelude.{IfBadAbortReq, IfBadDie, throwUnimpl}
 import debiki.{JsonMaker, RateLimits, SiteTpi}
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import play.api.libs.json._
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
+import talkyard.server.JsX
 
 
 class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
@@ -36,7 +38,8 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def tagsApp(clientRoute: String): Action[Unit] = GetAction { apiReq =>
+  // For now, admin only?
+  def tagsApp(clientRoute: String): Action[Unit] = StaffGetAction { apiReq =>
     _root_.controllers.dieIfAssetsMissingIfDevTest()
     val siteTpi = SiteTpi(apiReq)
     CSP_MISSING
@@ -45,17 +48,47 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadAllTags: Action[Unit] = GetAction { request =>
-    val tags = request.dao.loadAllTagsAsSet()
-    OkSafeJson(JsArray(tags.toSeq.map(JsString)))
+  def createTagType: Action[JsValue] = StaffPostJsonAction(
+        maxBytes = 2000) { req =>   // RateLimits.CreateTagCatPermGroup [to_rate_lim]
+    import req.{dao, theRequester => reqer}
+    // Pass a CheckThoroughly param to the mess aborter? And then check the tag name
+    // too. [mess_aborter]. Or always do from inside JsX.parseTagType()
+    val tagTypeMaybeId: TagType = JsX.parseTagType(req.body, Some(reqer.id))(IfBadAbortReq)
+    val tagType = dao.createTagType(tagTypeMaybeId)(IfBadAbortReq)
+    OkSafeJson(Json.obj(  // ts: StorePatch
+      "tagTypes" -> Json.arr(JsX.JsTagType(tagType))))
   }
 
 
-  def loadTagsAndStats: Action[Unit] = GetAction { request =>
+
+  def listTagTypes(forWhat: Opt[i32], tagNamePrefix: Opt[St]): Action[U] =
+          GetActionRateLimited(RateLimits.ReadsFromCache) { req =>
+    // Later, when there are access restricted tags, need to authz filter here. [priv_tags]
+    // But tag stats isn't public, at least not now.
+    val tagTypes = req.dao.getTagTypesSeq(forWhat, tagNamePrefix)
+    val json = JsonMaker.makeStorePatch(Json.obj(
+          "allTagTypes" -> JsArray(tagTypes map JsX.JsTagType)), globals.applicationVersion)
+    OkSafeJson(json)
+  }
+
+
+  def loadTagsAndStats: Action[Unit] = StaffGetAction { request =>
+    import request.dao
+    val (tagTypes, tagStats) = dao.readTx { tx =>
+      (tx.loadAllTagTypes(),
+          tx.loadTagTypeStats())
+    }
+
+    /*
     val tagsAndStats = request.dao.loadTagsAndStats()
     val isStaff = request.isStaff
-    OkSafeJson(JsonMaker.makeTagsStuffPatch(Json.obj(
-      "tagsAndStats" -> JsArray(tagsAndStats.map(tagAndStats => {
+     */
+    val json = JsonMaker.makeStorePatch(Json.obj(
+      "allTagTypes" -> JsArray(tagTypes map JsX.JsTagType),
+      "allTagTypeStatsById" ->
+            JsObject(tagStats.map(s => s.toString -> JsX.JsTagStats(s))),
+      /* Old!:   CLEAN_UP ; REMOVE
+      "tagsStuff" -> Json.obj( "tagsAndStats" -> JsArray(tagsAndStats.map(tagAndStats => {
         Json.obj(
           "label" -> tagAndStats.label,
           "numTotal" -> tagAndStats.numTotal,
@@ -63,20 +96,30 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
           // Don't think everyone should know about this:
           "numSubscribers" -> (if (isStaff) tagAndStats.numSubscribers else JsNull),
           "numMuted" -> (if (isStaff) tagAndStats.numMuted else JsNull))
-      }))), globals.applicationVersion))
+       })))*/
+      ), globals.applicationVersion)
+
+      OkSafeJson(json)
   }
 
 
+  @deprecated
   def loadMyTagNotfLevels: Action[Unit] = GetAction { request =>
+    throwUnimpl("TyE406MRE2")
     val notfLevelsByTagLabel = request.dao.loadTagNotfLevels(request.theUserId, request.who)
-    OkSafeJson(JsonMaker.makeTagsStuffPatch(Json.obj(
+    OkSafeJson(JsonMaker.makeStorePatch(
+      // Old json!
+      Json.obj("tagsStuff" -> Json.obj(
       "myTagNotfLevels" -> JsObject(notfLevelsByTagLabel.toSeq.map({ labelAndLevel =>
         labelAndLevel._1 -> JsNumber(labelAndLevel._2.toInt)
-      }))), globals.applicationVersion))
+      })))), globals.applicationVersion))
   }
 
 
-  def setTagNotfLevel: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) { request =>
+  @deprecated
+  def setTagNotfLevel: Action[JsValue] = PostJsonAction(
+          RateLimits.ConfigUser, maxBytes = 500) { request =>
+    throwUnimpl("TyE406MRE23")
     val body = request.body
     val tagLabel = (body \ "tagLabel").as[String]
     val notfLevelInt = (body \ "notfLevel").as[Int]
@@ -88,12 +131,28 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def addRemoveTags: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 5000) { request =>
+  def addRemoveTags: Action[JsValue] = StaffPostJsonAction( // RateLimits.EditPost,
+          maxBytes = 5000) { req =>
+    import req.{body, dao}
+    val toAddJsVals: Seq[JsValue] = debiki.JsonUtils.parseJsArray(body, "tagsToAdd")
+    val toAdd = toAddJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
+    val toRemoveJsVals = debiki.JsonUtils.parseJsArray(body, "tagsToRemove")
+    val toRemove = toRemoveJsVals.map(v => JsX.parseTag(v)(IfBadAbortReq))
+    val affectedPostIds = dao.addRemoveTagsIfAuth(
+          toAdd = toAdd, toRemove = toRemove, req.who)(IfBadAbortReq)
+
+    val storePatch = dao.jsonMaker.makeStorePatchForPostIds(
+          postIds = affectedPostIds, showHidden = true, inclUnapproved = true, dao)
+
+    OkSafeJson(storePatch)
+
+    /* Old!:   CLEAN_UP ; REMOVE
     val pageId = (request.body \ "pageId").as[PageId]
     val postId = (request.body \ "postId").as[PostId]  // yes id not nr
     val tags = (request.body \ "tags").as[Set[TagLabel]]
     val patch = request.dao.addRemoveTagsIfAuth(pageId, postId, tags, request.who)
     OkSafeJson(patch) // or skip? or somehow include tags *only*? [5GKU0234]
+     */
   }
 }
 

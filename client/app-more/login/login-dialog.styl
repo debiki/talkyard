@@ -48,6 +48,11 @@
       border: none !important;
       border-radius: 0;
       height: 100%;
+      // sometimes Ty adds some text dynamically, e.g.
+      // an invalid input message — which can make the dialog
+      // taller than any popup it is in. Then
+      // it's good if one can scroll down and see the bottom.
+      //overflow-y: auto; — already in client/app-slim/third-party.styl   [e2e_win_size]
     .modal-body
       // Reduce padding so gets closer to top of window, and so there's more
       // horizontal space for the ext IDP authn buttons (e.g. Continue with Google).

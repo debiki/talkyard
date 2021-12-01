@@ -77,7 +77,7 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
       titleSourceAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who,
       request.spamRelatedStuff, deleteDraftNr)
 
-    OkSafeJson(JsString(pagePath.pageId))
+    OkSafeJsValue(JsString(pagePath.pageId))
   }
 
 }
