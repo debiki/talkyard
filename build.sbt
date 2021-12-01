@@ -104,7 +104,7 @@ val appDependencies = Seq(
   //              why-do-i-need-jsr305-to-use-guava-in-scala
   "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided",
   // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
-  "org.mockito" % "mockito-all" % "1.9.5" % "test", // I use Mockito with Specs2...
+  "org.mockito" % "mockito-all" % "1.10.19" % "test", // I use Mockito with Specs2...
   Dependencies.Libs.scalaTest,
   Dependencies.Libs.scalaTestPlusPlay)
 
