@@ -33,7 +33,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.commons" % "commons-email" % "1.5",
       "org.apache.tika" % "tika-core" % "1.27",
       "org.checkerframework" % "checker-qual" % "3.12.0",
-      "org.flywaydb" % "flyway-core" % "5.0.7",
+      "org.flywaydb" % "flyway-core" % "5.2.4",
       "org.owasp.encoder" % "encoder" % "1.2.3",
       "org.postgresql" % "postgresql" % "42.2.4",
       "org.scalactic" % "scalactic_2.12" % "3.2.10",
