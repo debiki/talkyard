@@ -245,7 +245,7 @@ function runE2eTests(): U | ExitCode | 'TestsCancelled' {
 
   const skipAlways = ['!UNIMPL', '!-impl.', '!imp-exp-imp-exp-site'];
   const skipEmbAndAlways = ['!embcom', '!embedded-', '!embforum.', ...skipAlways]
-  const skip2And3Browsers = ['!.2br', '!.3br'];
+  const skip2And3Browsers = ['!.2br', '!.3br', '!.4br'];  // and skip 4 as well
 
 
   // ----- 1 browser
@@ -290,6 +290,19 @@ function runE2eTests(): U | ExitCode | 'TestsCancelled' {
 
   withSpecsMatching(next, (specs: St[]): ExitCode => {
     return runWdioInForeground(specs, '--3browsers');
+  });
+
+
+  // ----- 4 browsers
+
+  // Just these, currently:
+  // d.sessions-logout-elsewhere.4br  TyTESESLGOSELF
+  // d.sessions-staff-logout-others.4br  TyTESESLGOOTR
+
+  next = ['.4br', ...skipEmbAndAlways];
+
+  withSpecsMatching(next, (specs: St[]): ExitCode => {
+    return runWdioInForeground(specs, '--4browsers');   // UNTESTED
   });
 
 

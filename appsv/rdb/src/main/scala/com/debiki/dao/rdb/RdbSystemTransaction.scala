@@ -895,6 +895,37 @@ class RdbSystemTransaction(
   val SomeMonthsAgo = 5
   val SomeYearsAgo = 5
 
+  def deletePersonalDataFromOldSessions(): U = {
+    TESTS_MISSING
+    PRIVACY; COULD // make x months below configurable
+    /*
+    val deleteABitStatement = s"""
+          update sessions_t set
+            start_ip_c = start_ip_c & inet '255.255.255.0',
+            start_headers_c = null
+            -- start_browser_id_c = hash(..)
+            forgotten_c = 1
+          where
+            forgotten_c = 0 and                    -- needs new col
+            least(deleted_at_c, expired_at_c) < ?  -- needs ix  [sess_deleted_ix]
+          """
+    runUpdate(deleteABitStatement, List(now.minusMonths(SomeMonthsAgo).asTimestamp))
+
+    val deleteMoreStatement = s"""
+          update sessions_t set
+            start_ip_c = start_ip_c & inet '255.255.0.0',
+            start_headers_c = null,
+            start_browser_id_c = null,
+            forgotten_c = 2
+          where
+            forgotten_c = 1 and                    -- needs new col
+            least(deleted_at_c, expired_at_c) < ?  -- needs ix
+          """
+    runUpdate(deleteMoreStatement, List(now.minusMonths(SomeYearsAgo).asTimestamp))
+    */
+  }
+
+
   def deletePersonalDataFromOldAuditLogEntries() {
     TESTS_MISSING
 
@@ -920,6 +951,7 @@ class RdbSystemTransaction(
         forgotten = 0 and
         done_at < ?
       """
+
     runUpdate(deleteABitStatement, List(now.minusMonths(SomeMonthsAgo).asTimestamp))
 
     PRIVACY; COULD // make x years below configurable
@@ -1008,17 +1040,20 @@ class RdbSystemTransaction(
 
     // Dupl code [7KUW0ZT2]
     s"""
+      delete from audit_log3
       delete from index_queue3
       delete from spam_check_queue3
+      delete from tags_t
+      delete from tagtypes_t
       delete from links_t
       delete from link_previews_t
-      delete from audit_log3
       delete from review_tasks3
       delete from perms_on_pages3
       delete from settings3
       delete from drafts3
       delete from post_read_stats3
       delete from notifications3
+      delete from notices_t
       delete from emails_out3
       delete from upload_refs3
       delete from uploads3
@@ -1046,6 +1081,7 @@ class RdbSystemTransaction(
       delete from usernames3
       delete from user_emails3
       delete from group_participants3
+      delete from sessions_t
       delete from users3
       delete from hosts3
       delete from sites3

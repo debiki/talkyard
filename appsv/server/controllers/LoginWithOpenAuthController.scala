@@ -182,6 +182,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private val MayCreateUserCookieName = "dwCoMayCreateUser"
   private val AuthStateCookieName = "dwCoOAuth2State"
 
+  // Discard these also if logging in with username + password?  [clear_aun_cookies]
   private val CookiesToDiscardAfterLogin: Seq[DiscardingCookie] = Seq(
     ReturnToUrlCookieName,
     ReturnToSiteOriginTokenCookieName,
@@ -1217,6 +1218,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         when using only site custom IDP""")
 
     // This'll break Twitter authn, until they support OAuth2.
+    // (There's addAdminNotice() below, if Twitter used.)
     throwForbiddenIf(globals.config.featureFlags.contains("ffSilhouetteOff"),
            "TyEOLDAUTHNOFF",
            o"""Login with $providerName disabled for now. Can you please login
@@ -1240,6 +1242,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         googleProvider()
       case TwitterProvider.ID =>
         throwForbiddenIf(!settings.enableTwitterLogin, "TyE0TWTTRLOGIN", "Twitter login disabled")
+        request.dao.addAdminNotice(Notice.TwitterLoginUsed)
         twitterProvider()
       case GitHubProvider.ID =>
         throwForbiddenIf(!settings.enableGitHubLogin, "TyE0GITHLOGIN", "GitHub login disabled")
@@ -1590,6 +1593,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // missing. But supporting page reload here requires fairly many mini fixes,
     // and maybe is marginally worse for security? since then someone else,
     // e.g. an "evil" tech support person, can ask for and reuse the url?
+    // [.clearing_cookies] [clear_aun_cookies]
     result.discardingCookies(CookiesToDiscardAfterLogin: _*)
   }
 
@@ -1603,7 +1607,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         authnState: OngoingAuthnState): Result = {
 
     request.dao.pubSub.userIsActive(request.siteId, member, request.theBrowserIdData)
-    val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, member.id)
+    val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, member.id)
 
     var maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
@@ -1946,6 +1950,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         anyContinueToUrl = Some(authnState.returnToUrl)))
     }
 
+    // This not needed? These cookies, and many more, already cleared at the
+    // end of the caller, tryLoginOrShowCreateUserDialog()  [.clearing_cookies].
     result.discardingCookies(
       DiscardingSecureCookie(IsInLoginWindowCookieName),
       DiscardingSecureCookie(ReturnToUrlCookieName))

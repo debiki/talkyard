@@ -332,11 +332,63 @@ how to use docker-compose already.
 
        sudo sysctl --system
 
-1. You need Git, Make, `jq` for viewing logs, and a file change notifier:
+1. You need Git, Make, cURL, `jq` for viewing logs, `gpg2` for checking signatures,
+    and a file change notifier:
 
     ```
-    sudo apt install git make jq inotify-tools
+    sudo apt install git make curl jq gpg2 inotify-tools
     ```
+
+1. (Optional step, for now.)
+    Install Nix-shell, see https://nixos.org/download.html#nix-verify-installation.
+    Nix gives you all build tools, no need to modify your host OS.
+    For example, Nodejs 14. And later, Deno, and Rust build stuff.
+
+    Get the installation script and signature:
+
+    ```
+    curl -o install-nix-2.3.15     https://releases.nixos.org/nix/nix-2.3.15/install
+    curl -o install-nix-2.3.15.asc https://releases.nixos.org/nix/nix-2.3.15/install.asc
+    ```
+
+    Import the public signing key:
+    ```
+    # Try this:
+    gpg2 --recv-keys B541D55301270E0BCF15CA5D8170B4726D7198DE
+
+    # Or, if that won't work, the key is in the vendors/ dir:
+    gpg2 vendors/nixos-signing-pub-key.gpg
+    # should print:  B541D55301270E0BCF15CA5D8170B4726D7198DE
+    # then:
+    gpg2 --import vendors/nixos-signing-pub-key.gpg
+    ```
+
+    Verify the signature — this should say "Good signature", and print:
+    `Primary key fingerprint: B541 D553 0127 0E0B CF15  CA5D 8170 B472 6D71 98DE`:
+
+    ```
+    gpg2 --verify ./install-nix-2.3.15.asc
+    ```
+
+    Install Nix and, optionally, Niv.
+    Either **1/2:** First create the `/nix` directory for yourself,
+    and then install — no need to be root:
+    (see https://nixos.wiki/wiki/Nix_Installation_Guide)
+
+    ```
+    sudo install --directory --mode=755 --owner=$(id -u) --group=$(id -g) /nix
+    sh ./install-nix-2.3.15    # not root
+    # nix-env -iA nixpkgs.niv  # optionally, if you want to upgrade Ty's build tools
+    ```
+
+    (To uninstall Nix, remove `/nix`, a line in `~/.profile`, and:
+    `~/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs}`)
+
+    Or alternatively, **2/2:** Do a multi-user installation of Nix:
+    https://nixos.org/manual/nix/stable/#sect-multi-user-installation
+    (then I'd think it's best to use the above `./install-nix-...`
+    script whose signature you've verified).
+
 
 1. Clone the Talkyard repository:
 

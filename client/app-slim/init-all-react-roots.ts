@@ -181,7 +181,14 @@ const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBT
   UNSAFE_componentWillMount: function() {
     Server.loadMoreScriptsBundle(() => {
       if (this.isGone) return;
-      ReactActions.showNewPage(makeAutoPage(), [], [], null, this.props.history);
+      ReactActions.showNewPage({
+        newPage: makeAutoPage(),
+        pubCats: [],
+        pats: [],
+        me: null,
+        tagTypesById: {},
+        history: this.props.history,
+      });
       this.setState({ moreScriptsLoaded: true });
     });
   },

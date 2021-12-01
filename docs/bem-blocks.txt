@@ -40,8 +40,9 @@ AuD = authentication dialog (create account / log in / just type a name)
 Bef = before
 Bitf = bitfield
 Em  = email
-Ena = enabled, Dis = disabled
+Enb = enabled, Dsb? Disb? = disabled
 B   = button, e.g. ReplyB
+Br  = brief. Also, Tn  = tiny, Vb = verbose, Vvb = very verbose.
 It  = list item
 Cb  = Contextbar
 CB  = checkbox, e.g. s_SthCB
@@ -83,6 +84,7 @@ Hi  = high
 Hz  = horizontal, also Vl: vertical
 Ifr = iframe
 L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list, ..T = table
+Ls  = list, when not at the end, e.g LsPgsB = list pages button
 Ld  = load, Ldng = loading
 LD  = Log in Dialog, RENAME to AuD = Authn Dialog
 Lg  = large (screen), also: Sm, Md Xl
@@ -131,6 +133,7 @@ SgU = sign up, also LgI/LgO = log in/out, and Au = Authentication, e.g. AuD
 Sm  = small (screen), also: Md, Lg, Xl
 Sub = "sub" as in "sub category"
 Sub = submit NO, CLEAN_UP, insetad:
+Sug = suggest
 Sbm = submit
 Snz = Snooze
 St = status or state
@@ -145,6 +148,7 @@ TBx = Tips Box (rename HelpMessageBox to TipsBox)
 Tg  = tag
 Tkn = token
 Tl  = title, no, Ttl instead, see below.
+Tn  = tiny. Also Vvb and Vb = (very) verbose, Br = brief.
 Tp, Tpc = topic  [.TsT_to_TpT]
 Trt = threat
 Tru = trust
@@ -158,7 +162,8 @@ Typ = type
 U   = user
 Un  = username
 Upl = upload
-Vb  = verbose, instead of Fat (and Thin) data?
+Vb  = verbose, instead of Fat (and Thin) data?. Also Br = brief, Tn = tiny
+Vvb = very verbose.
 Vl  = vertical, also: Hz: horizontal
 Vt  = vote, NO Vo instead,  Vt could be Vertical
 W   = wrap, wrapper: a div that's wrapped around the main something

@@ -69,6 +69,10 @@ trait PageLinksDao {
     // But if a category got deleted or access restricted, then, would need
     // to to something here — if we didn't clear the whole site cache already,
     // on such changes.  [cats_clear_cache]
+    //
+    // [sleeping_links_bug] Should also uncache links from pages *directly* modified?
+    // But only if backlinks stale. The filter should be on backlinks not in/dircetly?
+    //
     val uncacheLinksToPageIds = staleStuff.stalePageIdsInMemIndirectly
 
     // This shouldn't be needed — stalePageIdsInMemIndirectly ought to include

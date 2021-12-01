@@ -369,11 +369,11 @@ class SiteTransactionAppSpec extends DaoAppSuite {
       "load and save posts read stats, for members" in {
         dao.readWriteTransaction { transaction =>
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(1), userA.id,
-            readFromIp = "1.2.3.4")
+            readFromIp = Some("1.2.3.4"))
           transaction.updatePostsReadStats(pageBId, postNrsRead = Set(1,2,3,5), userA.id,
-            readFromIp = "1.2.3.4")
+            readFromIp = Some("1.2.3.4"))
           transaction.updatePostsReadStats(pageBId, postNrsRead = Set(1,5), userB.id,
-            readFromIp = "1.2.3.4")
+            readFromIp = Some("1.2.3.4"))
 
           val pageAStats = transaction.loadPostsReadStats(pageAId)
 
@@ -409,7 +409,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
           info("Handles dupl inserts: post 5 already inserted")
           transaction.updatePostsReadStats(pageBId, postNrsRead = Set(5, 7), userB.id,
-            readFromIp = "1.2.3.4")
+            readFromIp = Some("1.2.3.4"))
           val pageBStats2 = transaction.loadPostsReadStats(pageBId)
           pageBStats2.readCountFor(5) mustBe 2  // wasn't incremented to 3, because is same user
           pageBStats2.readCountFor(6) mustBe 0
@@ -428,7 +428,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
       "load and save posts read stats, for guests" in {
         dao.readWriteTransaction { transaction =>
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(1,3), guestA.id,
-            readFromIp = "2.2.2.2")
+            readFromIp = Some("2.2.2.2"))
           val pageAStats = transaction.loadPostsReadStats(pageAId)
           pageAStats.readCountFor(1) mustBe 2  // userA and guestA have read it
           pageAStats.readCountFor(2) mustBe 0
@@ -437,7 +437,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
           info("Handles dupl guest inserts: post 3 already inserted")
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(3,4), guestA.id,
-            readFromIp = "2.2.2.2")
+            readFromIp = Some("2.2.2.2"))
           val pageAStats2 = transaction.loadPostsReadStats(pageAId)
           pageAStats2.readCountFor(1) mustBe 2
           pageAStats2.readCountFor(2) mustBe 0
@@ -447,7 +447,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
           info("But other guest can read that post")
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(3,5), guestB.id,
-            readFromIp = "3.3.3.3")
+            readFromIp = Some("3.3.3.3"))
           val pageAStats3 = transaction.loadPostsReadStats(pageAId)
           pageAStats3.readCountFor(1) mustBe 2
           pageAStats3.readCountFor(2) mustBe 0

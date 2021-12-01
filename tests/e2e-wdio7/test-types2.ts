@@ -1,6 +1,9 @@
 /// <reference path="../../client/app-slim/constants.ts" />
 /// <reference path="../../client/types-and-const-enums.ts" />
 
+import { SiteType, NewSiteOwnerType } from './test-constants';
+
+
 
 type BoolOrFn = boolean | (() => boolean);
 type StringOrFn = string | (() => string);
@@ -130,12 +133,6 @@ interface TestCounters {
 
 
 
-const enum SiteType {
-  Forum = 1,
-  EmbeddedCommments = 2,
-}
-
-
 interface NewSiteResult {
   data: NewSiteData;
   testId: string;
@@ -173,15 +170,6 @@ interface NewSiteDataForForum extends NewSiteDataSharedFields {
 interface NewSiteDataForEmbeddedComments extends NewSiteDataSharedFields {
   siteType: SiteType.EmbeddedCommments;
   embeddingUrl: string;
-}
-
-
-const enum NewSiteOwnerType {
-  OwenOwner = 1,
-  GmailAccount = 2,
-  FacebookAccount = 3,
-  GitHubAccount = 4,
-  LinkedInAccount = 5,
 }
 
 
@@ -244,6 +232,8 @@ interface TestSiteSettings {
   numFlagsToHidePost?: number;
   numFlagsToBlockNewUser?: number;
   numFlaggersToBlockNewUser?: number;
+  enableForum?: Bo;
+  enableTags?: Bo;
   enableApi?: boolean;
   ssoUrl?: string;
   enableSso?: boolean;
@@ -311,6 +301,7 @@ interface TestMyself {
 interface Member {   // see also TestGuest below
   id: number;
   ssoId?: St;
+  extId?: St;
   username: string;
   fullName?: string;
   createdAtMs: number;
@@ -452,6 +443,7 @@ interface CategoryJustAdded {
 
 interface PageJustAdded {
   id: string;
+  extId?: St;
   folder: string;
   showId: boolean;
   slug: string;
@@ -462,6 +454,7 @@ interface PageJustAdded {
   authorId: number;
   createdAtMs: number;
   updatedAtMs: number;
+  layout: PageLayout;
 }
 
 
@@ -634,7 +627,7 @@ interface EmailSubjectBody {
 
 interface EmptyTestForum {
   siteData: SiteData;
-  forumPage: any;
+  forumPage: PageJustAdded;
   members: {
     owen?: Member;
     adam?: Member;
@@ -693,6 +686,26 @@ interface CatABTestForum extends TwoCatsTestForum {
     catA: CategoryJustAdded;
     categoryA: CategoryJustAdded;
     catB: CategoryJustAdded;
+    staffCat: CategoryJustAdded;
+    staffOnlyCategory: CategoryJustAdded;
+  };
+}
+
+
+interface CatABTrustedTestForum extends CatABTestForum {
+  topics: {
+    aboutCategoryA: { title: string };
+    aboutTrustedCat: { title: St };
+    aboutStaffCat: { title: St };
+    aboutStaffOnlyCategory: { title: string };
+  };
+  categories: {
+    rootCat: { id: Nr },
+    rootCategory: { id: number },
+    catA: CategoryJustAdded;
+    categoryA: CategoryJustAdded;
+    catB: CategoryJustAdded;
+    trustedCat: CategoryJustAdded;
     staffCat: CategoryJustAdded;
     staffOnlyCategory: CategoryJustAdded;
   };
@@ -792,6 +805,16 @@ interface EmailMatchResult {
   matchingStrings: string[];
 }
 
+
+export type ServerSays = ServerSaysOk | ServerSaysError;
+
+export interface ServerSaysOk {
+  serverSaysOk: A;
+}
+
+export interface  ServerSaysError {
+  serverSaysError: A;
+}
 
 // Right now, constraints like >= 1 aren't supported in Typescript, but this works, and, in test
 // cases, probably won't ever need larger numbers?

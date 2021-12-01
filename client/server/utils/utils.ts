@@ -27,6 +27,10 @@ export function removeFromSessionStorage(key) {
   throw new Error('removeFromSessionStorage called server side [TyE8PM26B]');
 }
 
+export function urlEncodeSearchQuery(query: St): St {
+  return '';
+}
+
 export function prettyMonthDayYear(when: number, includeCurrentYear): string {
   throw new Error('prettyMonthDayYear called server side [TyE506RKT3]');
 }

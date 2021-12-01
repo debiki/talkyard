@@ -315,7 +315,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       info("create post read stats, find on first page")
       dao.readWriteTransaction(_.updatePostsReadStats(
-        thePageId, Set(postRead.nr, postToMove.nr), theModerator.id, ip))
+        thePageId, Set(postRead.nr, postToMove.nr), theModerator.id, Some(ip)))
 
       val fromPageReadStatsBefore = dao.readOnlyTransaction(_.loadPostsReadStats(thePageId))
       fromPageReadStatsBefore.guestIpsByPostNr.get(postUnread.nr) mustBe None

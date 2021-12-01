@@ -41,6 +41,7 @@ export const MyMenuContent = createFactory({
       dialogClassName: 'e_ByeD',
       tiny: true,
       body: t.LogOut + '?',
+      // + "[x] Log out from all devices"  — if there're other sessions as well
       primaryButtonTitle: t.YesBye,
       secondaryButonTitle: t.Cancel,
       onCloseOk: function(whichButton) {

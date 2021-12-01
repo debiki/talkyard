@@ -22,16 +22,15 @@ import akka.pattern.ask
 import akka.stream.scaladsl.SourceQueueWithComplete
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import debiki.dao.{RedisCache, RedisCacheAllSites}
+import debiki.dao.{RedisCache, RedisCacheAllSites, SiteDao}
 import debiki.{Globals, JsonMaker}
-import org.scalactic.ErrorMessage
-import play.api.libs.json.{JsNull, JsValue, Json}
+import play.api.libs.json.{JsArray, JsNull, JsValue, Json}
 import redis.RedisClient
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import talkyard.server.JsX.JsUser
+import talkyard.server.JsX
 import talkyard.server.TyLogger
 
 
@@ -509,11 +508,12 @@ class PubSubActor(val globals: Globals) extends Actor {
   private def publishPresenceIfChanged(siteId: SiteId, users: Iterable[Participant],
         newPresence: Presence): Unit = {
     COULD_OPTIMIZE // send just 1 WebSocket message, list many users. (5JKWQU01)
+    val siteDao = globals.siteDao(siteId)
     users foreach { user =>
       val isActive = redisCacheForSite(siteId).isUserActive(user.id)
       if (isActive && newPresence != Presence.Active ||
           !isActive && newPresence != Presence.Away) {
-        publishPresenceImpl(siteId, user, newPresence)
+        publishPresenceImpl(siteDao, user, newPresence)
       }
     }
   }
@@ -521,17 +521,19 @@ class PubSubActor(val globals: Globals) extends Actor {
 
   private def publishPresenceAlways(siteId: SiteId, users: Iterable[Participant], newPresence: Presence): Unit = {
     COULD_OPTIMIZE // send just 1 WebSocket message, list many users. (5JKWQU01)
+    val siteDao = globals.siteDao(siteId)
     users foreach { user =>
-      publishPresenceImpl(siteId, user, newPresence)
+      publishPresenceImpl(siteDao, user, newPresence)
     }
   }
 
 
-  private def publishPresenceImpl(siteId: SiteId, user: Participant, presence: Presence): Unit = {
+  private def publishPresenceImpl(siteDao: SiteDao, user: Pat, presence: Presence): U = {
     // Don't send num-online-strangers. Instead, let it be a little bit inexact so that
     // other people won't know if a user that logged out, stays online or not.
     // No. *Do* send num-strangers-online. Otherwise I get confused and think here's some bug :-/.
     // Do later...
+    val siteId = siteDao.siteId
     val clientsByUserId = clientsByUserIdForSite(siteId)
     val toUserIds = clientsByUserId.keySet - user.id
     traceLog(siteId, s"Pupl presence ${user.nameHashId}: $presence [TyDPRESCNS]")
@@ -540,9 +542,14 @@ class PubSubActor(val globals: Globals) extends Actor {
     // presence here.  [PRESPRIV]
     // Compare with pages one may not see: [WATCHSEC].
 
+    val tags = siteDao.getTags(forPat = Some(user.id))
+    val tagTypes = siteDao.getTagTypes(tags.map(_.tagTypeId).toSet)
+
     sendWebSocketMessage(siteId, toUserIds, "presence", Json.obj(
-          "user" -> JsUser(user),
-          "presence" -> presence.toInt))
+          "user" -> JsX.JsUser(user, tags),
+          "presence" -> presence.toInt,
+          "storePatch" -> Json.obj(
+            "tagTypes" -> JsArray(tagTypes map JsX.JsTagType))))
   }
 
 

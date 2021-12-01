@@ -30,34 +30,84 @@ const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;
 
 
+interface UserProfileAdminViewProps {
+  store: Store;
+  settings: Settings;
+  match: ReactRouterMatch;
+}
+
+
+interface UserProfileAdminViewState {
+  user?: UserDetailsStatsGroups | N;
+  myId?: PatId;
+}
+
+
 export const UserProfileAdminView = createFactory({
   displayName: 'UserProfileAdminView',
 
   getInitialState: function() {
-    return {
-      user: null
-    };
+    return {};
   },
 
   componentDidMount: function() {
-    this.loadCompleteUser();
+    this.maybeLoadPatVvb();
+  },
+
+  componentDidUpdate: function() {
+    this.maybeLoadPatVvb();
   },
 
   componentWillUnmount: function() {
     this.isGone = true;
   },
 
-  UNSAFE_componentWillReceiveProps: function(nextProps) {
-    this.loadCompleteUser();
-  },
-
-  loadCompleteUser: function() {
+  maybeLoadPatVvb: function(always?: 'Alw') {
     if (this.isGone) return;
-    this.setState({ user: null });
-    const params = this.props.match.params;
-    Server.loadUserAnyDetails(params.userId, (user: UserDetailsStatsGroups) => {
+
+    const stateBef: UserProfileAdminViewState = this.state;
+    const propsBef: UserProfileAdminViewProps = this.props;
+    const meBef: Me = propsBef.store.me;
+    const params = propsBef.match.params;
+    {
+      // The props changes first, before the state gets updated (later in this fn).
+      const isSameMe = meBef.id === stateBef.myId;
+
+      const prevPat: Pat | U = stateBef.user;
+      const isSamePat = prevPat && (
+              ('' + prevPat.id) === params.userId || prevPat.username === params.userId);
+
+      // If !isSameMe, reload pat, even if loaded — maybe we are/aren't now mods and
+      // can see more/less info about hen. (Actually cannot happen — this component would
+      // get unmounted first.)
+      const loadPat = !isSamePat || !isSameMe || always === 'Alw';
+      if (!loadPat)
+        return;
+
+      if (prevPat || !isSameMe) {
+        this.setState({ user: null, myId: meBef.id });
+      }
+
+      if (this.nowLoading === params.userId) return;
+      this.nowLoading = params.userId;
+    }
+
+    Server.loadPatVvbPatchStore(params.userId, (resp: LoadPatVvbResponse) => {
+      this.nowLoading = null; // (or only if correct id)
       if (this.isGone) return;
-      this.setState({ user });
+      const propsAft: UserProfileAdminViewProps = this.props;
+      const meAft = propsAft.store.me;
+      const isSameMeLater = meAft.id === meBef.id;
+
+      // Maybe we started loading another pat instead — then ignore the response
+      // about the old pat.
+      const pat: PatVvb = resp.user;
+      const paramsAft = propsAft.match.params;
+      const rightPat = ('' + pat.id) === paramsAft.userId || pat.username === paramsAft.userId;
+      if (!rightPat || !isSameMeLater)
+        return;
+
+      this.setState({ user: pat });
     });
   },
 
@@ -66,7 +116,7 @@ export const UserProfileAdminView = createFactory({
   },
 
   editMember: function(doWhat: EditMemberAction) {
-    Server.editMember(this.state.user.id, doWhat, this.loadCompleteUser);
+    Server.editMember(this.state.user.id, doWhat, this.reloadUser);
   },
 
   resendEmailAddrVerifEmail: function() {
@@ -77,27 +127,29 @@ export const UserProfileAdminView = createFactory({
   toggleIsAdmin: function() {
     const user: UserInclDetails = this.state.user;
     const doWhat = user.isAdmin ? EditMemberAction.SetNotAdmin : EditMemberAction.SetIsAdmin;
-    Server.editMember(user.id, doWhat, this.loadCompleteUser);
+    Server.editMember(user.id, doWhat, this.reloadUser);
   },
 
   toggleIsModerator: function() {
     const user: UserInclDetails = this.state.user;
     const doWhat = user.isModerator ? EditMemberAction.SetNotModerator : EditMemberAction.SetIsModerator;
-    Server.editMember(user.id, doWhat, this.loadCompleteUser);
+    Server.editMember(user.id, doWhat, this.reloadUser);
   },
 
   unsuspendUser: function() {
     const user: UserInclDetails = this.state.user;
-    Server.unsuspendUser(user.id, this.loadCompleteUser);
+    Server.unsuspendUser(user.id, this.reloadUser);
   },
 
   reloadUser: function() {
-    this.loadCompleteUser();
+    // COULD_OPTIMIZE incl the pat in the Server.editMember() etc responses instead.
+    this.maybeLoadPatVvb('Alw');
   },
 
   render: function() {
-    const store: Store = this.props.store;
-    const settings: Settings = this.props.settings;
+    const props: UserProfileAdminViewProps = this.props;
+    const store: Store = props.store;
+    const settings: Settings = props.settings;
     const user: UserInclDetails = this.state.user;
     const me: Myself = store.me;
     if (!user)
@@ -258,7 +310,7 @@ export const UserProfileAdminView = createFactory({
     }
     else {
       suspendButton =
-          Button({ onClick: () => openSuspendUserDialog(user, this.loadCompleteUser),
+          Button({ onClick: () => openSuspendUserDialog(user, this.reloadUser),
               className: 'e_Suspend' },
             "Suspend");
     }

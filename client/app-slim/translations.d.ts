@@ -668,6 +668,7 @@ interface TalkyardTranslations {
     DraftsEtc: string;
     About: string;
     Privacy: string;
+    Security: string;
     Account: string;
     Interface: string;
 
@@ -1051,6 +1052,7 @@ interface TalkyardTranslations {
 
     TypeHerePlaceholder: string;
 
+    PlaceLeft?: string;
     Maximize: string;
     ToNormal: string;
     TileHorizontally: string;
@@ -1113,6 +1115,7 @@ interface TalkyardTranslations {
 
   // Search dialogs and the search page.
   s: {
+    SearchForHelp?: string;
     TxtToFind: string;
   },
 

@@ -1,5 +1,5 @@
 -- Oops, see:
--- y2018/db-wip.sql
+-- ./db-wip.sql
 
 ?? settings3.many_sections  —> enable_sub_sites
 
@@ -8,14 +8,14 @@ rename perms_on_pages to  page_perms  ?
 
 
 split  page_users into:
-  - page_members    — maybe  is_assigned?
-  - page_visits
-  - page_notf_prefs
+  - page_pats_t    — maybe  is_assigned?
+  - page_visits_t
+  - page_notf_prefs_t
 
-users3 -> people3
+users3 -> pats_t
 
 
-could have:  category_perms3  and tag_perms3
+could have:  cat_perms_t  and tag_perms_t
 but that's overkill.
 Only  tag_label_perms.may_use  makes sense (says who may add/remove a tag with that label)
 

@@ -118,6 +118,33 @@ html.js:not(.dw-react-started)
   margin-bottom: 7px;
 
 
+
+// Search field
+//===========================
+
+
+.dw-forum .c_SchD
+  margin: 20px auto 24px;
+
+  input[type='text']
+    height: 38px;
+    padding-left: 1ex;
+    // box-shadow: 4px 4px 8px rgb(0 0 0 / 35%);
+    // border: none;
+    // border-width: 1px;
+    font-size: 15px;
+
+  .btn
+    height: 38px;
+    font-size: 15px;
+    font-weight: bold;
+    padding-top: 8px;
+
+  .c_SchD_X
+    display: none;
+
+
+
 // Action bar
 //===========================
 
@@ -320,7 +347,7 @@ $tableHeaderFontSize = 14px;
   margin: 17px auto 3px;
 
 .s_F_Ts_Cat_SelectCatBs
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 
 .DW.DW .s_F_Ts_Cat_Ttl
   text-align: center;
@@ -395,7 +422,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   padding-right: 0 !important;
 
 th.dw-tpc-replies
-  padding-left: 0;
+  padding-left: 0;  // is bug? Remove?
 
 /* COULD RESPONSIVE if forum table narrow
 // Smaller distance between stats columns:
@@ -525,12 +552,12 @@ td.dw-tpc-activity
           .dw-p-excerpt
             font-size: $tableTopicExcerptFontSize;
         .s_F_Ts_T_Con_Ttl,
-        a:not(.esAvtr)
+        a.c_TpcTtl // :not(.esAvtr)
           $leftPadding = 5px;  // dupl 5px, see (305FF220)
           padding: 3px 2px 5px $leftPadding; // makes it easier to click
           position: relative;
           left: - $leftPadding;
-        a:not(.esAvtr)
+        a.c_TpcTtl  // :not(.esAvtr)
           &:hover
             // Dupl [HOVERSTYL]
             text-decoration: none;
@@ -670,14 +697,14 @@ td.dw-tpc-activity
           color: hsl(0, 0%, 53%);
 
         .dw-p-excerpt
-          color: hsl(0, 0%, 53%);
+          color: hsl(0, 0%, 50%);
           margin: 0.8ex 20px 1.2ex 0;
           max-width: 650px;
           font-size: 100%;
           letter-spacing: -0.1px; // weird, easier to read I think
           //margin-bottom: 0; // else vertical-align: middle gets messed up
                               // skip, now using vertical_align_top  instead
-          a
+          a:not(.c_TagL_Tag) // would be better to add a class on the title instead
             color: hsl($uiHue, 100%, 40%);
             margin-left: 6px;
             &:hover
@@ -745,6 +772,30 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
 
 .s_F_Ts_NoTopics
   margin: 20px 0 10px;
+
+
+
+// Tags
+//===========================
+
+.s_F_Ts
+  .dw-p-excerpt
+    .c_TagL
+      margin-left: 9px;
+    .c_TagL_Tag
+      margin-left: 0;
+      margin-right: 9px;
+
+.s_F_Ts
+  .c_TagL_Tag
+    font-size: 14px;
+    // No, a bit hard to read:
+    //background: hsl(0deg 0% 98%);
+    // Easy to read and looks nice:
+    box-shadow: 1px 0.8px 3.7px hsl(0 0% 64%);
+    color: hsl(0 0% 40%);
+    background: none;
+
 
 
 // Categories tree

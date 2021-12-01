@@ -43,24 +43,23 @@ case class PatPerms (
 }
 
 
-object PatPerms {  REFACTOR // add ifBad: Complain  to "all" case classes  instead?
-  def empty: PatPerms = create(ifBad = Die)
+object PatPerms {  REFACTOR // add MessAborter  to "all" case classes  instead? [mess_aborter]
+  def empty: PatPerms = create(mab = IfBadDie)
 
-  def create(ifBad: DieOrComplain,
+  def create(mab: MessAborter,
         maxUploadBytes: Opt[i32] = None,
         allowedUplExts: Opt[St] = None): PatPerms = {
 
     allowedUplExts foreach { exts =>
       val max = 1500
-      dieOrComplainIf(exts.length > max, s"Too long extensions list, ${exts.length
-            } chars, max: $max [TyE3056RMD27]", ifBad)
-      Validation.ifBadFileExtCommaList(exts, NoSiteId, _ => dieOrComplain(
-            s"Bad file exts list: $exts [TyE306MS4A]", ifBad))
+      mab.abortIf(exts.length > max, "TyE3056RMD27", s"Too long extensions list, ${
+            exts.length} chars, max: $max")
+      Validation.ifBadFileExtCommaList(exts, NoSiteId, _ => mab.abort(
+            "TyE306MS4A", s"Bad file exts list: $exts"))
     }
 
     maxUploadBytes foreach { maxBytes =>   // [server_limits]
-      dieOrComplainIf(maxBytes < 0, s"Max bytes negative: $maxBytes [TyE3056RMD24]",
-          ifBad)
+      mab.abortIf(maxBytes < 0, "TyE3056RMD24", s"Max bytes negative: $maxBytes")
     }
 
     PatPerms(maxUploadBytes = maxUploadBytes,
