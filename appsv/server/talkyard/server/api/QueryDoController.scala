@@ -81,8 +81,8 @@ class QueryDoController @Inject()(cc: ControllerComponents, edContext: EdContext
       val listQueryJsOb = parseOptJsObject(jsOb, "listQuery")
       val searchQueryJsOb = parseOptJsObject(jsOb, "searchQuery")
       // Any nested queries or actions? (E.g. for fine grained transaction control.)
-      val nestedQueries: Opt[JsArray] = parseOptJsArray(jsVal, "manyQueries")
-      val nestedActions: Opt[JsArray] = parseOptJsArray(jsVal, "doActions")
+      val nestedQueries: Opt[IndexedSeq[JsValue]] = parseOptJsArray(jsVal, "manyQueries")
+      val nestedActions: Opt[IndexedSeq[JsValue]] = parseOptJsArray(jsVal, "doActions")
 
       val anyQueryDefined =
             getQueryJsOb.isDefined || listQueryJsOb.isDefined ||

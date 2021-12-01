@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 import DbDao._
 import Rdb._
 import RdbUtil._
-import java.sql.ResultSet
+import java.sql.{ResultSet, SQLException => j_SQLException}
 
 
 /** A relational database Data Access Object, for a specific website.
@@ -41,6 +41,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   with PagesSiteDaoMixin
   with PostsSiteDaoMixin
   with DraftsSiteDaoMixin
+  with TagsRdbMixin
   with TagsSiteDaoMixin
   with PageUsersSiteDaoMixin
   with UploadsSiteDaoMixin
@@ -49,6 +50,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   with SearchSiteDaoMixin
   with SpamCheckQueueDaoMixin
   with AuthnSiteTxMixin
+  with SessionsRdbMixin
   with UserSiteDaoMixin
   with EmailAddressesSiteDaoMixin
   with UsernamesSiteDaoMixin
@@ -161,6 +163,18 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   def makeSqlArrayOfStringsUnique(values: Iterable[String]): js.Array = {
     val distinctValues = values.toVector.sorted.distinct
     theOneAndOnlyConnection.createArrayOf("varchar", distinctValues.toArray[Object])
+  }
+
+
+  def runQueryFindNextFreeInt32(tableName: St, columnName: St): i32 = {
+    val query = s"""
+          select max($columnName) as any_max
+          from $tableName
+          where site_id_c = ?  """
+    val anyMax = runQueryFindExactlyOne(
+          query, List(siteId.asAnyRef), rs => getOptInt32(rs, "any_max"))
+    // Let's start at 1001 so there's room for some built-in whatever-is-in-the-table.
+    (anyMax getOrElse 1000) + 1
   }
 
 
@@ -578,6 +592,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.frequentPosterIds.drop(2).headOption.orNullInt,
       newMeta.frequentPosterIds.drop(3).headOption.orNullInt,
       newMeta.layout.toInt.asAnyRef,
+      newMeta.forumSearchBox.orNullInt,
+      newMeta.forumMainView.orNullInt,
+      newMeta.forumCatsTopics.orNullInt,
       newMeta.pinOrder.orNullInt,
       newMeta.pinWhere.map(_.toInt).orNullInt,
       newMeta.numLikes.asAnyRef,
@@ -629,6 +646,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         frequent_poster_3_id = ?,
         frequent_poster_4_id = ?,
         layout = ?,
+        forum_search_box_c = ?,
+        forum_main_view_c = ?,
+        forum_cats_topics_c = ?,
         PIN_ORDER = ?,
         PIN_WHERE = ?,
         NUM_LIKES = ?,
@@ -1240,7 +1260,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def insertPageMetaMarkSectionPageStale(pageMeta: PageMeta, isImporting: Bo): U = {
+  def insertPageMetaMarkSectionPageStale(pageMeta: PageMeta, isImporting: Bo)(
+          mab: MessAborter): U = {
     require(pageMeta.createdAt.getTime <= pageMeta.updatedAt.getTime, "TyE2EGPF8")
 
     // Publ date can be in the future, also if creating new page.
@@ -1293,6 +1314,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         frequent_poster_3_id,
         frequent_poster_4_id,
         layout,
+        forum_search_box_c,
+        forum_main_view_c,
+        forum_cats_topics_c,
         pin_order,
         pin_where,
         num_likes,
@@ -1329,7 +1353,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?)"""
 
     // Dulp code, see the update query [5RKS025].
     val values = List(
@@ -1353,6 +1378,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.frequentPosterIds.drop(2).headOption.orNullInt,
       pageMeta.frequentPosterIds.drop(3).headOption.orNullInt,
       pageMeta.layout.toInt.asAnyRef,
+      pageMeta.forumSearchBox.orNullInt,
+      pageMeta.forumMainView.orNullInt,
+      pageMeta.forumCatsTopics.orNullInt,
       pageMeta.pinOrder.orNullInt,
       pageMeta.pinWhere.map(_.toInt).orNullInt,
       pageMeta.numLikes.asAnyRef,
@@ -1385,7 +1413,13 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.htmlHeadDescription.orIfEmpty(NullVarchar),
       pageMeta.numChildPages.asAnyRef)
 
-    val numNewRows = runUpdate(statement, values)
+    val numNewRows = try runUpdate(statement, values) catch {
+      case ex: j_SQLException if isUniqueConstrViolation(ex) =>
+        if (uniqueConstrViolatedIs("dw1_pages__u", ex)) {
+          mab.abort("TyEDUPLPAGEID", s"There is already a page with id '${pageMeta.pageId}'")
+        }
+        throw ex
+    }
 
     dieIf(numNewRows == 0, "TyE4GKPE21")
     dieIf(numNewRows > 1, "TyE45UL8")

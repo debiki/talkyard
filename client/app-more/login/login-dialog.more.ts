@@ -167,7 +167,7 @@ const LoginDialog = createClassAndFactory({
         anyReturnToUrl,
         preventClose: preventClose || loginReason === LoginReason.AuthnRequiredToRead ||
             loginReason === LoginReason.LoginToAdministrate,
-        isLoggedIn: !!getSetCookie('dwCoSid'),
+        isLoggedIn: store.me.isLoggedIn,
       });
   },
 
@@ -246,6 +246,14 @@ const LoginDialog = createClassAndFactory({
       anyReturnToUrl: null,
       isLoggedIn: null,
     });
+    /* COULD_OPTIMIZE: Clear these cookies, maybe all authn cookies? [clear_aun_cookies]
+     * Clear cookies both server side — and from here too, in case closing the dialog
+     * without logging in?
+     * (This close() runs also after the create-user dialog, via:
+     * closeDialog('CloseAllLoginDialogs'))
+    getSetCookie('dwCoIsInLoginWindow', null);
+    getSetCookie('TyCoAvoidCookies', null);
+     */
   },
 
   setChildDialog: function(childDialog) {
@@ -553,7 +561,7 @@ const LoginDialogContent = createClassAndFactory({
     if (anySsoUrl) {
       // Maybe incl username and id in __html_encoded_volatile_json__ ?
       // Not always done in login window.
-      const hasSid = getSetCookie('dwCoSid');
+      const hasSid = me_hasSid();
       const loggedInButMayNotAccess = !hasSid ? null : r.p({},
         "You're logged in but seems you cannot access this part of the site " +  // I18N
         "(if it exists). " +

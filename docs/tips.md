@@ -49,6 +49,12 @@ $ d/c exec cache redis-cli
 > FLUSHDB
 ```
 
+### Regular expressions, regexps, regexs
+
+Nice graph over character classes like `[[:print:]]` and what they mean:
+https://en.cppreference.com/w/c/string/byte/isgraph
+
+
 ### ElasticSearch stuff:
 
 If the disk is >= 95% full, ElasticSearch enters read-only mode (or read-delete-only).

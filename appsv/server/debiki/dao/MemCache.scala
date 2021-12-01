@@ -144,6 +144,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
         key: MemCacheKey,
         ifFound: => Unit = {},
         orCacheAndReturn: => Option[A] = null,
+        reloadUncacheIfChanged: Bo = false,
         //expireAfterSeconds: Option[Int] = None,
         metric: CacheMetric = null,
         ignoreSiteCacheVersion: Boolean = false)(
@@ -162,17 +163,66 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
       if (ignoreSiteCacheVersion) IgnoreSiteCacheVersion
       else siteCacheVersionNow(key.siteId)
 
-    val newValueOpt = orCacheAndReturn
-    if (newValueOpt eq null)
+    val anyNewValue: Opt[A] = orCacheAndReturn
+    if (anyNewValue eq null)
       return None
 
-    // – In case some other thread just inserted another value,
-    // overwrite it, because `newValue` is probably more recent.
-    // – For now, don't store info on cache misses.
-    newValueOpt foreach { newValue =>
-      put(key, MemCacheItem(newValue, siteCacheVersion))
+    // For now, don't store info on cache misses. Maybe could be a param?
+    // Because sometimes could make sense. But maybe put an upper limit on how
+    // many "miss items" there can be? So no one can fill the available RAM with
+    // None cache entries.
+    val newValue = anyNewValue getOrElse {
+      return None
     }
-    newValueOpt
+
+    // In case some other thread just inserted another value,
+    // overwrite it, because `newValue` is probably more recent.
+    // But ...
+    put(key, MemCacheItem(newValue, siteCacheVersion))
+
+    if (!reloadUncacheIfChanged)
+      return anyNewValue
+
+    // ... However [cache_race], maybe it's important to avoid data races, e.g.
+    // overwriting a newer value with a fractions of a second older value — maybe
+    // newValue is in fact older than some other value another thread tries to cache.
+    // So, reload/recompute the value, and if it's now different from what
+    // we put into the cache just above, then delete it from the cache
+    // (otherwise we'd need to reload and compare in a loop — just uncaching it
+    // is simpler).
+    //
+    COULD // somehow debug-verify that orCacheAndReturn here will create its
+    // own separate read-only rdb transaction — otherwise this'd be just pointless.
+    // However, as of 2021-11, that's how the caller(s) work.
+    val anyNewValue2 = {
+      val v = orCacheAndReturn
+      if (v eq null) None else v
+    }
+
+    var uncacheWhy = ""
+    if (anyNewValue2 contains newValue) {
+      // Fine, no race.
+    }
+    else if (anyNewValue2.isEmpty) {
+      // The item must have been deleted by another thread? Then it shouldn't
+      // be in the cache.
+      uncacheWhy = "deleted"
+    }
+    else {
+      // Another thread has modified the value. We could put the new value in
+      // the cache, however, thereafter we'd need to reload it again and see if it
+      // changed again, and so on.  It's simpler & safer to just uncache it?
+      uncacheWhy = "modified"
+    }
+
+    if (uncacheWhy.nonEmpty) {
+      cache.invalidate(key.toString)
+      logger.debug(
+            s"s${key.siteId}: Mem cache: Data race: Cached, uncached: '${key.rest
+              }' — was $uncacheWhy by other db tx")
+    }
+
+    anyNewValue2
   }
 
 

@@ -163,10 +163,17 @@ object JsX {   RENAME // to JsonPaSe
 
 
   def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
-    user.map(JsUser).getOrElse(JsNull)
+    user.map(JsUser(_)).getOrElse(JsNull)
 
 
-  def JsUser(user: Participant): JsObject = {  // Typescript: Participant, RENAME to JsPat
+  def JsPat(pat: Pat, tagAndBadges: TagsAndBadges): JsObject = {  // Typescript: Pat
+    JsUser(pat, tagAndBadges.badges.getOrElse(pat.id, Nil))
+  }
+
+  /// As little info about someone as possible — just name and tiny avatar. Currently
+  /// used for showing in the forum topic list.
+  ///
+  def JsPatNameAvatar(user: Pat): JsObject = {  // ts: PatNameAvatar
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.anyUsername),
@@ -174,9 +181,15 @@ object JsX {   RENAME // to JsonPaSe
     user.tinyAvatar foreach { uploadRef =>
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
+    json
+  }
+
+  def JsUser(user: Pat, tags: Seq[Tag] = Nil): JsObject = {  //RENAME to JsPat, ts: Pat
+    var json = JsPatNameAvatar(user)
     user.smallAvatar foreach { uploadRef =>
       json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
     }
+
     if (user.isGuest) {
       json += "isGuest" -> JsTrue
     }
@@ -184,6 +197,7 @@ object JsX {   RENAME // to JsonPaSe
       require(user.isAuthenticated, "EdE8GPY4")
       json += "isAuthenticated" -> JsTrue  // COULD remove this, client side, use !isGuest instead
     }
+
     if (user.email.isEmpty) {
       json += "isEmailUnknown" -> JsTrue
     }
@@ -195,6 +209,9 @@ object JsX {   RENAME // to JsonPaSe
     }
     if (user.isGone) {
       json += "isGone" -> JsTrue
+    }
+    if (tags.nonEmpty) {
+      json += "pubTags" -> JsArray(tags map JsTag)
     }
     json
   }
@@ -212,8 +229,8 @@ object JsX {   RENAME // to JsonPaSe
   def JsUserInclDetails(user: UserInclDetails,
         usersById: Map[UserId, User], // CLEAN_UP remove, send back a user map instead
         groups: immutable.Seq[Group],
-        callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
-        anyStats: Option[UserStats] = None, inclPasswordHash: Boolean = false)
+        callerIsAdmin: Bo, callerIsStaff: Bo = false, callerIsUserHerself: Bo = false,
+        anyStats: Option[UserStats] = None, inclPasswordHash: Bo = false)
       : JsObject = {
     def callerIsStaff_ = callerIsAdmin || callerIsStaff
     dieIf(inclPasswordHash && !callerIsAdmin, "TyE305KSJWG2")
@@ -290,6 +307,24 @@ object JsX {   RENAME // to JsonPaSe
     }
 
     userJson
+  }
+
+
+  /// ts: Session
+  def JsSession(sess: TySessionInDbMaybeBad, inclPart1: Bo = true): JsObject = {
+    // Don't include the actual session id. (That is, exclude parts 2 – 5. *Could* maybe
+    // theoretically include them, since they're hashes, but bad idea, and not needed.)
+    var json = Json.obj(
+          "patId" -> sess.patId,
+          "createdAt" -> JsWhenMs(sess.createdAt),
+          "deletedAt" -> JsWhenMsOrNull(sess.deletedAt),
+          "expiredAt" -> JsWhenMsOrNull(sess.expiredAt),
+          "version" -> JsNumber(sess.version),
+          "startHeaders" -> sess.startHeaders)
+    if (inclPart1) {
+      json += "part1" -> JsString(sess.part1CompId)
+    }
+    json
   }
 
 
@@ -427,7 +462,8 @@ object JsX {   RENAME // to JsonPaSe
     val jsob = asJsObject(jsVal, "pat perms")
     val anyMaxUplBytes = parseOptI32(jsob, "maxUploadBytes")
     val anyExts = parseOptSt(jsob, "allowedUplExts")
-    PatPerms.create(ifBad = ThrowBadReq,
+    // IfBadAbortReq should be a param. Have a look at all parse fns? [mess_aborter]
+    PatPerms.create(IfBadAbortReq,
           maxUploadBytes = anyMaxUplBytes,
           allowedUplExts = anyExts)
   }
@@ -497,6 +533,9 @@ object JsX {   RENAME // to JsonPaSe
       "authorId" -> pageMeta.authorId,
       "frequentPosterIds" -> pageMeta.frequentPosterIds,
       "layout" -> pageMeta.layout.toInt,
+      "forumSearchBox" -> JsNum32OrNull(pageMeta.forumSearchBox),
+      "forumMainView" -> JsNum32OrNull(pageMeta.forumMainView),
+      "forumCatsTopics" -> JsNum32OrNull(pageMeta.forumCatsTopics),
       "pinOrder" -> JsNumberOrNull(pageMeta.pinOrder),
       "pinWhere" -> JsNumberOrNull(pageMeta.pinWhere.map(_.toInt)),
       "numLikes" -> pageMeta.numLikes,
@@ -622,6 +661,73 @@ object JsX {   RENAME // to JsonPaSe
       "frozenAtMs" -> JsDateMsOrNull(category.frozenAt),
       "deletedAtMs" -> JsDateMsOrNull(category.deletedAt))
   }
+
+
+  def JsTagType(tagType: TagType): JsObject = {
+    Json.obj(
+        "id" -> tagType.id,
+        "canTagWhat" -> tagType.canTagWhat,
+        "dispName" -> tagType.dispName)
+  }
+
+
+  def parseTagType(jsVal: JsValue, createdById: Opt[PatId])(mab: MessAborter): TagType = {
+    val jOb = asJsObject(jsVal, "tag type")
+    val id = parseInt32(jOb, "id")
+    val canTagWhat = parseInt32(jOb, "canTagWhat")
+    val dispName = parseSt(jOb, "dispName")
+    val createdByIdInJson = parseOptInt32(jOb, "createdById")
+    createdById foreach { id =>
+      if (createdByIdInJson.isSomethingButNot(id)) {
+        mab.abort("TyE2MW04MEFQ2", "createdById in JSON is wrong")
+      }
+    }
+    val byId = createdById.orElse(createdByIdInJson) getOrDie "TyE603MRAI5"
+    TagType(
+          id = id,
+          canTagWhat = canTagWhat,
+          urlSlug_unimpl = None,
+          dispName = dispName,
+          createdById = byId)(mab)
+  }
+
+
+  def JsTag(tag: Tag): JsObject = {
+    var jOb = Json.obj(
+        "id" -> tag.id,
+        "tagTypeId" -> tag.tagTypeId)
+    tag.onPatId foreach { patId =>
+      jOb += "onPatId" -> JsNumber(patId)
+    }
+    tag.onPostId foreach { postId =>
+      jOb += "onPostId" -> JsNumber(postId)
+    }
+    jOb
+  }
+
+
+  def parseTag(jsVal: JsValue)(mab: MessAborter): Tag = {
+    val jOb = asJsObject(jsVal, "tag")
+    val id = parseInt32(jOb, "id")
+    val tagTypeId = parseInt32(jOb, "tagTypeId")
+    val onPatId = parseOptInt32(jOb, "onPatId")
+    val onPostId = parseOptInt32(jOb, "onPostId")
+    Tag(id = id,
+          tagTypeId = tagTypeId,
+          parentTagId_unimpl = None,
+          onPatId = onPatId,
+          onPostId = onPostId)(mab)
+  }
+
+
+  def JsTagStats(stats: TagTypeStats): JsObject = {
+    Json.obj(
+        "tagTypeId" -> stats.tagTypeId,
+        "numTotal" -> JsNumber(stats.numTotal),
+        "numPostTags" -> JsNumber(stats.numPostTags),
+        "numPatBadges" -> JsNumber(stats.numPatBadges))
+  }
+
 
   def JsPagePath(pagePath: PagePath): JsValue =
     Json.obj(  // dupl code (4AKBS03)

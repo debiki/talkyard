@@ -35,47 +35,6 @@ export function searchRoute() {
 }
 
 
-export function urlEncodeSearchQuery(query: string): string {
-  // encodeURIComponent encodes a query string param and escapes "everything", but we
-  // don't need to do that. Instead, use encodeURI, and then manually escape a few
-  // more chars. This is the difference between encodeURIComponent and encodeURI:
-  // for (var i = 0; i < 256; i++) {
-  //   var char = String.fromCharCode(i);
-  //   if (encodeURI(char) !== encodeURIComponent(char)) {
-  //     console.log(char + ': ' + encodeURI(char) + ' —> ' + encodeURIComponent(char));
-  //   }
-  // }
-  // (see http://stackoverflow.com/a/23842171/694469)
-  // ==>
-  // #: # —> %23
-  // $: $ —> %24
-  // &: & —> %26
-  // +: + —> %2B
-  // ,: , —> %2C
-  // /: / —> %2F
-  // :: : —> %3A
-  // ;: ; —> %3B
-  // =: = —> %3D
-  // ?: ? —> %3F
-  // @: @ —> %40
-
-  var encoded = encodeURI(query);
-  encoded = encoded.replace('#', '%23');
-  encoded = encoded.replace('$', '%24');
-  encoded = encoded.replace('&', '%26');
-  // '+' means space in a query param and is easier to read. First encode all "real" '+' to %2B,
-  // then decode spaces to '+':
-  encoded = encoded.replace('+', '%2B');
-  encoded = encoded.replace('%20', '+');
-  // leave , / :  — they're reserved for us to use as delimiters or whatever.
-  encoded = encoded.replace(';', '%3B');
-  encoded = encoded.replace('=', '%3D');
-  encoded = encoded.replace('?', '%3F');
-  // leave @  — it's reserved for us.
-  return encoded;
-}
-
-
 var SearchPageComponent = createReactClass(<any> {
   displayName: 'SearchPageComponent',
 
@@ -117,7 +76,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     this.searchUseUrlQuery(urlQueryParams);
     if (urlQueryParams.advanced) {
       this.tagsLoaded = true;
-      Server.loadTagsAndStats();
+      Server.listTagTypes();
     }
   },
 
@@ -201,7 +160,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     else {
       if (!this.tagsLoaded) {
         this.tagsLoaded = true;
-        Server.loadTagsAndStats();
+        Server.listTagTypes();
       }
       queryStringObj.advanced = 'true';
     }
@@ -324,6 +283,7 @@ function AdvancedSearchPanel(props: {
           // ?which? sub community? But not all. Probably want to list cats from all sub communities?
           options: makeCategoryLabelValues(store.currentCategories),
           onChange: props.onCategoriesSelectionChange })),
+      /* Reimplement, with new tags. & add username search too?  [missing_tags_feats]
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label' }, "For posts with tags:"),
         // UX SHOULD add a modal backdrop and close Select if clicked.
@@ -340,6 +300,7 @@ function AdvancedSearchPanel(props: {
           onChange: props.onNotTagsSelectionChange }))
       // On pages with tags:
       // But without these tags:
+      */
     ));
 }
 
@@ -355,7 +316,7 @@ function makeCategoryLabelValues(categories: Category[]) {
   });
 }
 
-
+/*  [missing_tags_feats]
 function makeTagLabelValues(tagsStuff: TagsStuff) {
   if (!tagsStuff || !tagsStuff.tagsAndStats)
     return [];
@@ -365,7 +326,7 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
       value: tagAndStats.label,
     };
   });
-}
+} */
 
 
 

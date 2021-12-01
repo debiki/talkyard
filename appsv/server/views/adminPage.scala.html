@@ -20,9 +20,10 @@
 <!DOCTYPE html>
 <html class="dw-pri DW dw-admin-page">
 <head>
-  @tpi.debikiMeta
-  @tpi.debikiStyles
-  @tpi.debikiScriptsInHead(isAdminApp = true)
+@tpi.jsonDataMustBeFirst(isAdminApp = true)
+@tpi.debikiMeta
+@tpi.talkyardStyles
+@tpi.parseJsonUpdDocClassesScript()
 </head>
 <body>
 <!-- adminPage.scala.html -->
@@ -37,6 +38,6 @@
 <div id="esWatchbarColumn"></div>
 <div id="esThisbarColumn"><div id="dw-any-sidebar"></div></div>
 
-@tpi.scriptBundlesEndOfBody(loadStaffBundle = true)
+@tpi.talkyardScriptBundles(loadStaffBundle = true)
 </body>
 </html>

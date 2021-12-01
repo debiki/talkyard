@@ -163,6 +163,10 @@ POST  /-/remove-email-address   controllers.UserController.removeUserEmail
 GET   /-/confirm-email-address  controllers.UserController.confirmOneMoreEmailAddress(confirmationEmailId)
 POST  /-/resend-email-addr-verif-email controllers.UserController.resendEmailAddrVerifEmail
 
+GET   /-/list-sessions          talkyard.server.sess.SessionController.listSessions(patId: Int)
+POST  /-/terminate-sessions     talkyard.server.sess.SessionController.terminateSessions
+# Maybe move /-/logout to SessionController?
+
 GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(emailId)
 POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)
 GET   /-/unsubscribed           controllers.UnsubscriptionController.showHasBeenUnsubscribed()
@@ -328,7 +332,8 @@ GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 GET   /-/tags                   controllers.TagsController.redirect
 GET   /-/tags/                  controllers.TagsController.tagsApp(clientRoute = "")
 GET   /-/tags/*clientRoute      controllers.TagsController.tagsApp(clientRoute)
-GET   /-/load-all-tags          controllers.TagsController.loadAllTags
+POST  /-/create-tag-type        controllers.TagsController.createTagType
+GET   /-/list-tag-types         controllers.TagsController.listTagTypes(forWhat: Option[Int], tagNamePrefix: Option[String])
 GET   /-/load-tags-and-stats    controllers.TagsController.loadTagsAndStats
 POST  /-/set-tag-notf-level     controllers.TagsController.setTagNotfLevel
 GET   /-/load-my-tag-notf-levels controllers.TagsController.loadMyTagNotfLevels

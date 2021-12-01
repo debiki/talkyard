@@ -32,12 +32,12 @@ import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
 import debiki.RateLimits.TrackReadingActivity
 import ed.server.{EdContext, EdController}
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import talkyard.server.JsX
 import talkyard.server.JsX._
-import talkyard.server.p_Result
+import talkyard.server.authn.MinAuthnStrength
 import talkyard.server.TyLogging
 
 
@@ -104,7 +104,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** Loads a member or group, incl details, or a guest (then there are no details).
     */
-  def loadUserAnyDetails(who: String): Action[Unit] = GetAction { request =>
+  def loadUserAnyDetails(who: St): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     import request.{dao, requesterOrUnknown}
     // First try looking up by `who` as a  numeric user id. If won't work,
     // lookup by `who` as username instead.
@@ -113,14 +114,26 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Don't incl  anyUserStats  inside the member json?
     // Don't incl  groupIdsMaySee ?
 
-    var (userJson, anyStatsJson, ppt) = Try(who.toInt).toOption match {
+    var (userJson, anyStatsJson, pat) = Try(who.toInt).toOption match {
       case Some(id) => loadPatJsonAnyDetailsById(id, includeStats = true, request)
       case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
         who, includeStats = true, request)
     }
     val groupsMaySee = dao.getGroupsReqrMaySee(requesterOrUnknown)
-    val pptGroupIdsMaybeRestr = dao.getOnesGroupIds(ppt)
+    val pptGroupIdsMaybeRestr = dao.getOnesGroupIds(pat)
     val pptGroupIds = pptGroupIdsMaybeRestr.filter(id => groupsMaySee.exists(g => g.id == id))
+
+    // Later, pass to JsUserInclDetails() instead of adding here.
+    val tags: Seq[Tag] = dao.getTags(forPat = Some(pat.id))
+    if (tags.nonEmpty) {
+      userJson += "pubTags" -> JsArray(tags.map(JsTag))
+    }
+
+    val tagTypes: Seq[TagType] = dao.getTagTypesForTags(tags)
+
+    // Maybe incl less data if embedded?
+    CHECK_AUTHN_STRENGTH
+
     // Maybe? No, stats is ok to show? Could possibly add another conf val, hmm.
     /*val stats =
       if (maySeeActivity(userId, request.requester, request.dao)) anyStatsJson
@@ -131,7 +144,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "user" -> userJson,
       // COULD_OPTIMIZE: need only include user's groups — or always incl in the
       // volatile json? [305STGW2] — so need not incl here again?
-      "groupsMaySee" -> groupsMaySee.map(JsGroup)))
+      "groupsMaySee" -> groupsMaySee.map(JsGroup),
+      "tagTypes" -> tagTypes.map(JsTagType)))
   }
 
 
@@ -272,12 +286,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listTopicsByUser(userId: UserId): Action[Unit] = GetAction { request =>
+  def listTopicsByUser(userId: PatId): Action[U] = GetAction { request =>
     import request.{dao, requester}
 
     val isStaff = requester.exists(_.isStaff)
     val isStaffOrSelf = isStaff || requester.exists(_.id == userId)
-    val user = dao.getTheParticipant(userId)
+    // Return Not Found directly, using the cache, if no such user.
+    dao.getTheParticipant(userId)
 
     throwForbiddenIfActivityPrivate(userId, requester, dao)
 
@@ -286,7 +301,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
       dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf)._1
     }
-    ForumController.makeTopicsResponse(categoryId = None, topics, dao)
+    ForumController.makeTopicsResponse(topics, dao)
   }
 
 
@@ -320,14 +335,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
                 writtenById = Some(authorId))
 
     val posts = postsOneMaySee
-    val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.id)))
+    COULD_OPTIMIZE // cache tags per post?
+    val tagsAndBadges: TagsAndBadges = dao.readTx(_.loadPostTagsAndAuthorBadges(posts.map(_.id)))
+    val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
 
     val postsJson = posts flatMap { post =>
       val pageStuff = pageStuffById.get(post.pageId) getOrDie "EdE2KW07E"
       val pageMeta = pageStuff.pageMeta
-      val tags = tagsByPostId.getOrElse(post.id, Set.empty)
       var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
-            showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tags)
+            showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tagsAndBadges)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)
@@ -343,7 +359,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     OkSafeJson(Json.obj(
       "author" -> JsUser(author),
-      "posts" -> JsArray(postsJson)))
+      "posts" -> JsArray(postsJson),
+      "tagTypes" -> JsArray(tagTypes map JsTagType)))
   }
 
 
@@ -356,7 +373,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def downloadPersonalData(userId: UserId): Action[Unit] = GetActionRateLimited(
         RateLimits.DownloaPersonalData) { request: GetRequest =>
-      import request.{dao, theRequester => requester}
+    import request.{dao, theRequester => requester}
     throwForbiddenIf(userId != requester.id && !requester.isAdmin,
       "TyE2PKAQX8", "Cannot download someone else's data")
 
@@ -381,6 +398,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val otherEmailAddresses =
         tx.loadUserEmailAddresses(userId).filterNot(_.emailAddress == member.primaryEmailAddress)
       val otherEmailsJson = JsArray(otherEmailAddresses.map(ea => JsString(ea.emailAddress)))
+
+      // To do: Incl old expired sessions too? Or maybe that should be a separate
+      // endpoint. [gdpr]
+      val sessions = dao.listPatsSessions(userId)
 
       val identities: Seq[Identity] = tx.loadIdentities(userId)
       val identitiesJson = JsArray(identities map {
@@ -429,7 +450,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         "trustLevel" -> JsString(member.effectiveTrustLevel.toString),
         "identities" -> identitiesJson,
         "statistics" -> statsJson,
-        "browserIdDataRecentFirst" -> browserIdDataJson)
+        "browserIdDataRecentFirst" -> browserIdDataJson,
+        "sessions" -> sessions.map(s => JsSession(s, inclPart1 = false)))
     }
 
     OkSafeJson(result)
@@ -877,7 +899,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** If not staff, returns a summary only.
     */
-  def loadAuthorBlocks(postId: Int): Action[Unit] = GetAction { request =>
+  def loadAuthorBlocks(postId: Int): Action[Unit] = GetActionRateLimited(
+        RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
+
+    CHECK_AUTHN_STRENGTH
+
     val blocks: Seq[Block] = request.dao.loadAuthorBlocks(postId)
     var json = blocksSummaryJson(blocks, request.ctime)
     if (request.user.exists(_.isStaff)) {
@@ -941,7 +967,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadMyPageData(pageIds: St): Action[U] = GetAction { request =>
+  def loadMyPageData(pageIds: St): Action[U] = GetAction2(RateLimits.ReadsFromDb,
+        MinAuthnStrength.EmbeddingStorageSid12) { request =>
+    import request.dao
     QUICK; COULD_OPTIMIZE // don't use String.split('') — it sometimes creates a regex.
     // Review the whole code base. // Use Guava's Splitter instead.
     // https://guava.dev/releases/20.0/api/docs/com/google/common/base/Splitter.html
@@ -952,20 +980,24 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           if (pageIds.indexOf(',') == -1) ImmSeq(pageIds)
           else pageIds.split(',').to[ImmSeq]
    // For now:
-    val json = loadMyPageDataImpl(request, pageIdsSeq.head)
+    val anyMeAndStuff: Opt[MeAndStuff] = loadMyPageDataImpl(request, pageIdsSeq.head)
+    val stuffJsOb = anyMeAndStuff.map(_.stuffForMe.toJson(dao))
     OkSafeJson(Json.obj(
-        "me" -> JsObjOrNull(json)))
+        "me" -> JsObjOrNull(anyMeAndStuff.map(_.me.meJsOb)),
+        "stuffForMe" -> JsObjOrNull(stuffJsOb)))
   }
 
 
   private def loadMyPageDataImpl(request: ApiRequest[_], pageId: PageId)
-        : Opt[JsObject] = Some {
+        : Opt[MeAndStuff] = Some {
     import request.dao
     val pageMeta = request.dao.getPageMeta(pageId) getOrElse {
       // Might be an embedded comment page, not yet created because no comments posted.
       // Or we might be in the signup-to-become-owner step, when creating a new site.
       return dao.jsonMaker.userNoPageToJson(request)
     }
+
+    CHECK_AUTHN_STRENGTH
 
     val pagePath = request.dao.getPagePath(pageId) getOrElse {
       // The page was apparently deleted some microseconds ago.
@@ -979,6 +1011,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pageRequest = new PageRequest(
       request.site,
       sid = request.sid,
+      anyTySession = request.anyTySession,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
       user = request.user,
@@ -990,24 +1023,25 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       dao = request.dao,
       request = request.request)
 
-    val json: JsObject =
+    val res: MeAndStuff =
       if (pageRequest.user.isDefined) {
-        val renderedPage = request.dao.renderPageMaybeUseMemCache(pageRequest)
+        val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
         dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
           "EdE4ZBXKG")
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()
         val everyoneGroup = request.dao.getTheGroup(Group.EveryoneId)
-        dao.jsonMaker.noUserSpecificData(everyonesPerms, everyoneGroup)
+        val me = dao.jsonMaker.noUserSpecificData(everyonesPerms, everyoneGroup)
+        MeAndStuff(me, StuffForMe.empty)
       }
 
-    json
+    res
   }
 
 
   def trackReadingProgress: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
-        maxBytes = 1000) { request =>
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) { request =>
     import request.{dao, theRequester}
     val readMoreResult = trackReadingProgressImpl(request, request.body)
     val result =
@@ -1015,6 +1049,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       else {
         // Posts related to some notifications were seen. Update the notifications, client side,
         // so they'll get un-highlighted, since the posts they are about, have now been seen.
+
+        CHECK_AUTHN_STRENGTH // Skip the notifications, if in embedded iframe?
 
         // dupl line [8AKBR0]
         val notfsAndCounts = dao.loadNotificationsSkipReviewTasks(
@@ -1036,7 +1072,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** In the browser, navigator.sendBeacon insists on sending plain text. So need this text handler.
     */
   def trackReadingProgressText: Action[String] = PostTextAction(RateLimits.TrackReadingActivity,
-        maxBytes = 1000) { request =>
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) { request =>
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)
     trackReadingProgressImpl(request, json)
@@ -1083,6 +1119,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // The title and draft post nrs are < 0 and shouldn't be included here.
       throwForbidden("TyE5RKPW025", s"Bad post nr, smaller than BodyNr: $badNr")
     }
+
+    CHECK_AUTHN_STRENGTH // + may see?
 
     logger.trace(
       s"s$siteId, page $anyPageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
@@ -1171,15 +1209,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def markAllNotfsAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) {
-        request =>
+  def markAllNotfsAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen,
+        maxBytes = 200) { request =>
     request.dao.markAllNotfsAsSeen(request.theUserId)
     loadNotificationsImpl(request.theUserId, upToWhen = None, request)
   }
 
 
-  def markNotificationAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) {
-        request =>
+  def markNotificationAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen,
+        maxBytes = 200) { request =>
     import request.{dao, theRequesterId}
     val notfId = (request.body \ "notfId").as[NotificationId]
     dao.markNotificationAsSeen(theRequesterId, notfId)
@@ -1187,8 +1225,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def snoozeNotifications(): Action[JsValue] =
-          PostJsonAction(RateLimits.ConfigUser, 200) { request =>
+  def snoozeNotifications(): Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        maxBytes = 200) { request =>
     import request.{dao, theRequesterId}
     val untilWhen: Option[When] =
           (request.body \ "untilMins").as[JsValue] match {
@@ -1202,8 +1240,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def saveContentNotfPref: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) {
-        request =>
+  def saveContentNotfPref: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+          MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 500) { request =>
     import request.{dao, theRequester => requester}
     val body = request.body
     val memberId = (body \ "memberId").as[MemberId]
@@ -1263,6 +1301,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
                 notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
             .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
 
+    CHECK_AUTHN_STRENGTH
+
     if (newNotfLevel.isDefined) {
       dao.savePageNotfPrefIfAuZ(newPref, request.who)
     }
@@ -1306,8 +1346,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def listGroupMembers(groupId: UserId): Action[Unit] =
         GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
     val maybeMembers = request.dao.listGroupMembersIfReqrMaySee(groupId, request.requesterOrUnknown)
-    val membersJson: JsValue = maybeMembers.map(ms => JsArray(ms map JsUser)).getOrElse(JsFalse)
-    OkSafeJsValue(membersJson)
+    val respJson = maybeMembers match {
+      case None =>
+        // May not know who the members are.
+        JsFalse
+      case Some(membs: Vec[Pat]) =>
+        // [missing_tags_feats]  load tags and tag types, incl here.
+        JsArray(membs.map(JsUser(_)))
+    }
+    OkSafeJsValue(respJson)
   }
 
 
@@ -1328,7 +1375,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   SECURITY // don't allow if user listing disabled, & isn't staff [8FKU2A4]
-  def listAllUsers(usernamePrefix: String): Action[Unit] = GetAction { request =>
+  CHECK_AUTHN_STRENGTH // maybe sometimes not allowed from embedded comments pages?
+  def listAllUsers(usernamePrefix: St): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     // Authorization check: Is a member? Add MemberGetAction?
     request.theMember
 
@@ -1338,6 +1387,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   SECURITY // user listing disabled? [8FKU2A4]
+  CHECK_AUTHN_STRENGTH // maybe sometimes not allowed from embedded comments pages?
   def listMembersPubApi(usernamePrefix: String, usersOnly: Boolean)
         : Action[Unit] = GetAction { request =>
     // Allowed also if not logged in — so can use from a non-Talkyard client,
@@ -1375,7 +1425,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Listing usernames on a particular page is okay, if one may see the page
     * — however, listing all usernames for the whole site, isn't always okay. [8FKU2A4]
     */
-  def listUsernames(pageId: PageId, prefix: String): Action[Unit] = GetAction { request =>
+  def listUsernames(pageId: PageId, prefix: St): Action[U] = GetActionRateLimited(
+          RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
     import request.dao
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
@@ -1385,6 +1436,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Or if some time in the future there will be "hidden" accounts  [hdn_acts]
     // — someone who don't want strangers and new members to see hens profile —
     // then, would need to exclude those accounts here.
+
+    CHECK_AUTHN_STRENGTH  // disallow if just sid part 1+2 but not embedded page
 
     throwNoUnless(Authz.maySeePage(
       pageMeta, request.user, dao.getGroupIdsOwnFirst(request.user),
@@ -1560,7 +1613,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val anonNNN = dao.deleteUser(userId, request.who)
     val response = OkSafeJsValue(JsString(anonNNN.username))
     // Log the user out, if hen deleted hens own account.
-    if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookie)
+    if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookies: _*)
     else response
   }
 

@@ -213,7 +213,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
     // Log the user in and show password changed message.
     request.dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, loginGrant.user.id)
     val newSessionCookies = sidAndXsrfCookies
     CSP_MISSING
     Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))

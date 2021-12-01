@@ -153,7 +153,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
         PostJsonAction(RateLimits.NoRateLimits, maxBytes = 1000) { request: JsonPostRequest =>
 
     throwForbiddenIf(!request.isViaApiSecret && apiEndpoint != "ping",
-        "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
+        "TyEAPI0SECRET02", "The API may be called only via Basic Auth and an API secret")
 
     // DEPRECATED  don't do match-case, instead, use different controllers,
     // and endpoint handlers prefixed with  apiv0_ ...

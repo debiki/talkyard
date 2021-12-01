@@ -702,6 +702,12 @@ class SystemDao(
 
   // ----- The janitor actor
 
+  def deletePersonalDataFromOldSessions(): U = {
+    writeTxLockAllSites { tx =>
+      tx.deletePersonalDataFromOldSessions()
+    }
+  }
+
   def deletePersonalDataFromOldAuditLogEntries(): U = {
     writeTxLockAllSites { tx =>
       tx.deletePersonalDataFromOldAuditLogEntries()

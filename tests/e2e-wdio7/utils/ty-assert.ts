@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as assert from 'assert';
-import { dieIf } from './log-and-die';
+import { j2s, dieIf } from './log-and-die';
 
 // (Also see: https://www.npmjs.com/package/power-assert )
 
@@ -100,6 +100,22 @@ const tyAssert = {
         `  assert.matches:\n` +
         `       This regex:  ${regex.toString()}\n` +
         `       does not match:  ${inlineOrDashPara(text)}\n`);
+  },
+
+  containsAll: (items: Ay[], expectedItems: Ay[]) => {
+    for (const i of expectedItems) {
+      tyAssert.contains(items, i);
+    }
+  },
+
+  contains: (items: Ay[], expectedItem: Ay) => {
+    const foundAtIx = _.indexOf(items, expectedItem);
+    if (foundAtIx === -1) {
+      assert.fail(`\n\n` +
+        `  assert.contains:\n` +
+        `      This is missing: ${j2s(expectedItem)}\n` +
+        `            from list: ${j2s(items)}}\n`);
+    }
   },
 
   includes: (text: St, expectedSubstring: St, atIndex?: Nr | St, message?: St) => {

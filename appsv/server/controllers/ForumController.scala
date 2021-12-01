@@ -273,7 +273,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listTopics(categoryId: Int): Action[Unit] = GetAction { request =>
+  def listTopics(categoryId: CatId): Action[U] = GetAction { request =>
     SECURITY; TESTS_MISSING  // securified
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
@@ -293,7 +293,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val topics = dao.listMaySeeTopicsInclPinned(categoryId, pageQuery,
       includeDescendantCategories = true, authzCtx, limit = NumTopicsToList)
 
-    makeTopicsResponse(Some(categoryId), topics, dao)
+    makeTopicsResponse(topics, dao)
   }
 
 
@@ -375,16 +375,24 @@ object ForumController {
 
   // Vaguely similar code: ThingsFoundJson.makePagesFoundResponseImpl()  [406RKD2JB]
   //
-  def makeTopicsResponse(categoryId: Option[CategoryId], topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
-    val category: Option[Category] = categoryId.flatMap(dao.getCategory)
+  def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
-    val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
+    val pageStuffList: Iterable[PageStuff] = pageStuffById.values
+
+    val users = dao.getUsersAsSeq(pageStuffList.flatMap(_.userIds).toSet)
+
+    // In the topic list, we show only post tags (not author badges),
+    // so we don't need any pat tags (user badges).
+
+    val tagTypeIds = pageStuffList.flatMap(_.pageTags.map(_.tagTypeId))
+    val tagTypes = dao.getTagTypes(tagTypeIds.toSet)
+
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
-    val json = Json.obj(   // LoadTopicsResponse
-      "categoryId" -> JsNumberOrNull(categoryId),
-      "categoryParentId" -> JsNumberOrNull(category.flatMap(_.parentId)),
+    val json = Json.obj(   // ts: LoadTopicsResponse
       "topics" -> topicsJson,
-      "users" -> users.map(JsUser))
+      "storePatch" -> Json.obj(
+        "tagTypes" -> JsArray(tagTypes map JsTagType),
+        "usersBrief" -> users.map(JsPatNameAvatar)))
     OkSafeJson(json)
   }
 
@@ -416,6 +424,7 @@ object ForumController {
       "url" -> urlPath,
       // Private chats & formal messages might not belong to any category.
       "categoryId" -> JsNumberOrNull(page.categoryId),
+      "pubTags" -> JsArray(topicStuff.pageTags map JsTag),
       "pinOrder" -> JsNumberOrNull(page.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.pinWhere.map(_.toInt)),
       "excerpt" -> JsStringOrNull(topicStuff.bodyExcerpt),

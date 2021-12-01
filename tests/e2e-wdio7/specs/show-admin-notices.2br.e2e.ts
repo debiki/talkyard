@@ -4,8 +4,8 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import c from '../test-constants';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
@@ -23,10 +23,15 @@ let forum: TwoCatsTestForum;
 
 describe(`show-admin-notices.2br.e2e.ts  TyTE2EADMNTC`, () => {
 
+  if (settings.prod) {
+    console.log("Skipping this spec — the e2e test announcement would be missing.");
+    return;
+  }
+
   it(`Construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
-      title: "Some E2E Test",
+      title: 'Admin_Notices_',
       members: ['owen', 'modya', 'memah'],
     });
 

@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{io => jio}
 import javax.{script => js}
-import debiki.onebox.{LinkPreviewRendererForNashorn, LinkPreviewRenderer}
+import talkyard.server.linkpreviews.{LinkPreviewRendererForNashorn, LinkPreviewRenderer}
 import org.apache.lucene.util.IOUtils
 import scala.concurrent.Future
 import Nashorn._

@@ -23,7 +23,7 @@ import java.{util => ju}
 import java.{security => js}
 import org.apache.commons.codec.{binary => acb}
 import org.scalactic.{ErrorMessage, Or}
-import play.api.libs.json.{JsNumber, JsObject, JsString}
+import play.api.libs.json._
 
 import scala.collection.mutable
 import scala.util.Try
@@ -64,13 +64,27 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   // Should get rid of this version:
   def warnDbgDie(errorMsg: String): Unit = { warnDbgDie("", errorMsg) }
 
-  def warnDbgDieIf(test: => Bo, errorCode: St, details: St): U = {
+  def warnDevDieIf(test: => Bo, errorCode: St, details: St = ""): U =
+    warnDbgDieIf(test, errorCode, details)
+
+  RENAME // to ..DevDie..?
+  def warnDbgDieIf(test: => Bo, errorCode: St, details: St = ""): U = {
     if (test) {
       warnDbgDie(errorCode, details)
     }
   }
 
+  def warnDevDieUnless(test: => Bo, errorCode: St, details: St = ""): U = {
+    if (!test) {
+      warnDbgDie(errorCode, details)
+    }
+  }
+
   def warnDbgDie(errorCode: St, warningMsg: St): U = {
+    warnDevDie(errorCode, warningMsg)
+  }
+
+  def warnDevDie(errorCode: St, warningMsg: St = ""): U = {
     if (true) {
       // Fail hard in debug mode so this error will be fixed.
       throw new AssertionError(s"$warningMsg [$errorCode]")
@@ -155,10 +169,17 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     throw new UOE(s"Not in use: $what [$errorCode]")
 
   def untested(errorCode: String, what: => String = "") =
+    throwUntested(errorCode, what)
+
+  // Via "throwUntested" you can find some UNTESTED code if any.
+  def throwUntested(errorCode: St, what: => St = ""): Nothing =
     throw new UOE(s"Not tested: $what [$errorCode]")
 
   def untestedIf(condition: Boolean, errorCode: String, what: => String = ""): Unit =
-    if (condition) untested(errorCode, what)
+    throwUntestedIf(condition, errCode = errorCode, what)
+
+  def throwUntestedIf(condition: Bo, errCode: St, what: => St = ""): U =
+    if (condition) untested(errCode, what)
 
   def throwNoSuchElem(errorCode: String, message: => String) =
     throw new NoSuchElementException(s"$message [$errorCode]")
@@ -179,33 +200,36 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     if (test) throwUnimpl(msg)
   }
 
-
-  sealed abstract class DieOrComplain  // or rename to "ComplainHow" or "Angry"?
-  object Die extends DieOrComplain
-  object ThrowNotFound extends DieOrComplain
-  object ThrowBadReq extends DieOrComplain
-  object ThrowForbidden extends DieOrComplain
-
-  // When parsing user provided data from a HTTP request, we should throw a
-  // Bad Request exception, if the data is bad.  However not when doing
-  // server internal things — then, die() or some-logger.warn() instead.
-  //
-  def dieOrComplain(errMsg: ErrMsg, doWhat: DieOrComplain): Nothing = {
-    doWhat match {
-      case Die => die(errorCode = null, errMsg)  // err code should be incl in errMsg
-      case ThrowNotFound => throw new NotFoundEx(errMsg)
-      case ThrowBadReq => throw new BadRequestEx(errMsg)
-      case ThrowForbidden => throw new ForbiddenEx(errMsg)
-      case _ =>
-        die("TyE602MKTDG", s"Invalid doWhat: $doWhat")
+  /// Checks that all is fine. If it's a mess, aborts, in the right way:
+  /// - If parsing user provided data from a HTTP request, throws a
+  ///   Bad Request exception, or Forbidden or Not Found, if the data is bad
+  ///   or some other problem.
+  /// - When doing server internal things, calls die() which aborts and
+  ///   logs an internal error — there's no one to reply to.
+  ///
+  /// See  [mess_aborter] for places to improve how it's used.
+  ///
+  sealed abstract class MessAborter {
+    def check(test: Bo, errCode: St, errMsg: => St = "Error"): U = {
+      if (!test) abort(errCode, errMsg)
+    }
+    def abortIf(test: Bo, errCode: St, errMsg: => St = "Error"): U = {
+      if (test) abort(errCode, errMsg)
+    }
+    def abort(errCode: St, errMsg: St = ""): Nothing = {
+      die(errCode, errMsg)
     }
   }
 
-  def dieOrComplainIf(test: Bo, errMsg: => ErrMsg, ifBad: DieOrComplain): U = {
-    if (!test) return
-    dieOrComplain(errMsg = errMsg, doWhat = ifBad)
-  }
+  /// For internal errors.
+  object IfBadDie extends MessAborter
 
+  /// For HTTP requests with bad data or that try to access forbidden things.
+  object IfBadAbortReq extends MessAborter {
+    override def abort(errCode: St, errMsg: St = ""): Nothing = {
+      throw new BadRequestEx(s"$errMsg [$errCode]")
+    }
+  }
 
 
   def die(errorCode: String, problem: => String = null, cause: => Throwable = null): Nothing = {
@@ -221,7 +245,7 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
 
-  def formatErrorMessage(errorCode: St, details: St) = {
+  def formatErrorMessage(errorCode: St, details: St): St = {
     if (errorCode ne null) {
       (if ((details eq null) || details.isEmpty) "" else details + " ") + s"[$errorCode]"
     }
@@ -572,13 +596,34 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
 
-  /** Generates a 130 bit string, almost 26 chars long since each char in a 32 chars
-    * alphabet has 5 bits (but we use 36 chars here).
+  /** Generates a by default 130 bits entropy string, almost 26 chars long since
+    * each char in a 32 chars alphabet has 5 bits (but we use 36 chars here).
     * Wikipedia says: "128-bit keys are commonly used and considered very strong".
     * Here: http://en.wikipedia.org/wiki/Key_(cryptography)
     */
-  def nextRandomString(): String =
-    new java.math.BigInteger(130, _random).toString(36) // 0..9, a..z
+  def nextRandomString(bitsEntropy: i32 = 130, base36: Bo = true,
+          base64UrlSafe: Bo = false): St = {
+    require(base36 != base64UrlSafe)
+    if (base36) {
+      // Hmm the resulting length is a bit random — if the BigInteger happens to start
+      // with 0, the base 36 encoding will be shorter (leading zeroes are excluded).
+      val bigInt = new java.math.BigInteger(bitsEntropy, _random)
+      bigInt.toString(36) // 0..9, a..z
+    }
+    else {
+      assert(base64UrlSafe)
+      // Divisible by 8, so byte aligned — _random operates on bytes.
+      assert(bitsEntropy % 8 == 0)
+      // Divisible by 6, so always result in same length Base64 repr.
+      assert(bitsEntropy % 6 == 0)
+      val numBytes = bitsEntropy / 8
+      val bytesArray = new Array[Byte](numBytes)
+      _random.nextBytes(bytesArray)
+      val res = acb.Base64.encodeBase64URLSafeString(bytesArray)
+      assert(res.length * 6 == bitsEntropy)
+      res
+    }
+  }
 
   // COULD split this in a random string function, and other id generation
   // functions, with string length adjusted, depending on how the random
@@ -638,11 +683,25 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   def saltAndHashEmail: St => St = saltAndHash(hashLengthEmail) _
   def saltAndHashIp: St => St = saltAndHash(hashLengthIp) _
 
-  SECURITY; COULD // use SHA-256 instead.
-  private def mdSha1 = js.MessageDigest.getInstance("SHA-1") // not thread safe
+  SECURITY; COULD_OPTIMIZE // use BLAKE3 instead.
+  private def mdSha1: js.MessageDigest = js.MessageDigest.getInstance("SHA-1") // not thread safe
+
+  /// SHA-512/256 is faster and stronger than SHA-224 (not in a way that matters, but anyway).
+  /// And BLAKE3 has a 256 bits output too by default.
+  private def mdSha512: js.MessageDigest =
+    js.MessageDigest.getInstance("SHA-512") // not thread safe
 
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
+
+  def hashSha512FirstHalf32Bytes(text: St): Array[i8] = {
+    // I think this isn't the real SHA512/256, but this'll be ok too.
+    // SHA-512/256 not incl in Java 8.
+    // Later: Use BLAKE3, the Rust implementation, call from Java.
+    val res = mdSha512.digest(text.getBytes("UTF-8"))
+    assert(res.length == 32 * 2)
+    res take 32
+  }
 
 
   /* ------  Move to a 'security' package?    [406MRED256]
@@ -779,25 +838,52 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   private val AToZUnderscoreRegex = "^[a-zA-Z_]*$".r
   private val VariableNameRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
   private val AlNumWithAl = "^[a-zA-Z0-9_]*[a-zA-Z_][a-zA-Z0-9_]*$".r
+  private val AlNumDashRegex = "^[a-zA-Z0-9_-]*$".r
 
   /** Checks that all fields names are okay variable names,
     * and that all values are numbers, or also okay variable names.
     * Just to avoid any unexpected things like some kind of injection.
     */
-  def anyWeirdJsObjField(obj: JsObject, maxLength: Int): Option[String] = {
+  def anyWeirdJsObjField(obj: JsObject, maxLength: i32,
+           allowHeaderNameValues: Bo = false): Opt[St] = {
+    unimplIf(allowHeaderNameValues, "TyE50MFEDJ4601")
     for ((fieldName, fieldValue) <- obj.fields) {
-      if (fieldName.isEmpty) return Some("Empty field name")
-      if (!fieldName.isOkVariableName) return Some(s"Weird field name: $fieldName")
-      if (fieldName.length > maxLength) return Some(s"Too long field name: $fieldName")
+      if (fieldName.isEmpty)
+        return Some("Empty field name")
+
+      if (allowHeaderNameValues) {
+        if (!fieldName.isOkHeaderName)
+          return Some(s"Weird header name: '$fieldName' [TyE0HDRNAME]")
+      }
+      else {
+        if (!fieldName.isOkVariableName)
+          return Some(s"Weird field name: '$fieldName' [TyE0VARNAME]")
+      }
+
+      if (fieldName.length > maxLength)
+        return Some(s"Too long field name: '$fieldName' [TyE2LNGFLDNM]")
+
       fieldValue match {
         case _: JsNumber =>
           // Fine
         case s: JsString =>
-          if (s.value.isEmpty) return Some(s"Empty value for field $fieldName")
-          if (!s.value.isOkVariableName) return Some(s"Bad value for field $fieldName: $fieldValue")
-          if (s.value.length > maxLength) return Some(s"Too long field value, $fieldName: $fieldValue")
+          if (s.value.isEmpty)
+            return Some(s"Empty value for field $fieldName")
+
+          if (allowHeaderNameValues) {
+            // Don't allow newlines in value?
+            unimpl("TyE50MFEDJ4602")
+          }
+          else if (!s.value.isOkVariableName) {
+            return Some(s"Bad value for field $fieldName: '$fieldValue'")
+          }
+
+          if (s.value.length > maxLength)
+            return Some(s"Too long field value, $fieldName: '$fieldValue'")
+
         case _ =>
-          return Some(s"Value of field $fieldName is weird")
+          return Some(s"Value of field $fieldName is not a nummer or string; it is a ${
+            classNameOf(fieldValue)} [TyEFIELDVALTYP]")
       }
     }
     None
@@ -808,6 +894,52 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   def anyWeirdJsObjField(obj: JsObject): Option[String] =
     anyWeirdJsObjField(obj, maxLength = 100)
 
+  def jsObjectSize(obj: JsObject, depth: i32 = 0): i32 = {
+    TESTS_MISSING
+    var size = 0
+    for ((fieldName, value) <- obj.fields) {
+      size += fieldName.length + jsValueSize(value, depth = depth + 1)
+    }
+    size
+  }
+
+  private def jsValueSize(value: JsValue, depth: i32 = 0): i32 = {
+    TESTS_MISSING
+    if (depth > 10)
+      return Int.MaxValue // for now
+    value match {
+      case JsNull => 4
+      case _: JsBoolean => 4
+      case _: JsNumber => 4 // let's just guess 4 bytes. Or log-10?
+      case s: JsString => s.value.length
+      case _: JsArray =>
+        // What about infinitely deeply nested empty arrays in arrays! Would be size 0 :-(
+        Int.MaxValue // for now
+        // a.value.foldLeft(0)((len, v) => {
+        //   jsValueSize(v, sizeThisFar + len, maxAllowedSize, depth = depth + 1)
+        // })
+      case _: JsObject =>
+        Int.MaxValue // for now
+        //jsObjectSize(o)
+      case _ =>
+        // What's this?
+        assert(false)
+        Int.MaxValue
+    }
+  }
+
+  // Move to where?
+  val JsEmptyObj2: JsObject = JsObject(Nil)
+
+  /*
+  def mapKeyValuesTotalLength(map: Map[St, Any], depth: i32 = 0): i32 = {
+    var size = 0
+    for ((fieldName, value) <- map) {
+      size += fieldName.length + jsValueSize(value, depth = depth + 1)
+      // or:   + value match { case n: some-number: ...  case s: St => s.length  case _ => no! }
+    }
+    size
+  } */
 
   /**
    * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
@@ -863,6 +995,9 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
 
     def isOkVariableName: Boolean =
       VariableNameRegex.pattern.matcher(underlying).matches
+
+    def isOkHeaderName: Bo =
+      underlying.nonEmpty && AlNumDashRegex.pattern.matcher(underlying).matches
 
     def isAlNum: Bo =
       underlying.forall(charIsAzOrNum)

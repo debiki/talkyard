@@ -20,6 +20,7 @@ package com.debiki.core
 import java.net.InetAddress
 import java.{util => ju}
 import scala.collection.immutable
+import scala.{collection => col}
 import Prelude._
 
 
@@ -184,6 +185,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   // Returns recently active pages first.
   def loadPagePostNrsByPostIds(postIds: Iterable[PostId]): Map[PostId, PagePostNr]
+  def loadPageIdsWithVisiblePostsBy(patIds: Set[PatId], limit: i32): Set[PageId]
   def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageType]): immutable.Seq[PageId]
   def loadReadProgress(userId: UserId, pageId: PageId): Option[PageReadingProgress]
   def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)
@@ -261,17 +263,46 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def movePostsReadStats(oldPageId: PageId, newPageId: PageId,
     newPostNrsByOldNrs: Map[PostNr, PostNr]): Unit
 
+  // ----- Tag types (TagsRdbMixin)
+  def nextTagTypeId(): i32
+  def loadAllTagTypes(): ImmSeq[TagType]
+  def loadTagTypeStats(): ImmSeq[TagTypeStats]
+  def upsertTagType(tagType: TagType)(mab: MessAborter): U
+  def hardDeleteTagType(tagType: TagType): Bo
+
+  // ----- Tags (TagsRdbMixin)
+  def nextTagId(): i32
+  def addTag(tag: Tag): U
+  def removeTags(tags: Seq[Tag]): U
+  def loadTagsByPatId(patIds: PatId): ImmSeq[Tag]
+  def loadTagsForPages(pageIds: Iterable[PageId]): Map[PageId, ImmSeq[Tag]]
+  def loadPostTagsAndAuthorBadges(postIds: Iterable[PostId]): TagsAndBadges
+  def loadTagsToRenderSmallPage(pageId: PageId): Seq[Tag]
+
+  CLEAN_UP ; REMOVE // old tags code
+  // -- Old: (TagsSiteDaoMixin) -----
+  @deprecated("", "")
   def loadAllTagsAsSet(): Set[TagLabel]
+  @deprecated("", "")
   def loadTagsAndStats(): Seq[TagAndStats]
+  @deprecated("", "")
   def loadTagsByPostId(postIds: Iterable[PostId]): Map[PostId, Set[TagLabel]]
+  @deprecated("", "")
   def loadTagsForPost(postId: PostId): Set[TagLabel] =
     loadTagsByPostId(Seq(postId)).getOrElse(postId, Set.empty)
+  @deprecated("", "")
   def removeTagsFromPost(labels: Set[TagLabel], postId: PostId): Unit
+  @deprecated("", "")
   def addTagsToPost(labels: Set[TagLabel], postId: PostId, isPage: Boolean): Unit
+  @deprecated("", "")
   def renameTag(from: String, to: String): Unit
+  @deprecated("", "")
   def setTagNotfLevel(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel): Unit
+  @deprecated("", "")
   def loadTagNotfLevels(userId: UserId): Map[TagLabel, NotfLevel]
+  @deprecated("", "")
   def listUsersWatchingTags(tags: Set[TagLabel]): Set[UserId]
+  // --------------------------
 
   def loadFlagsFor(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[PostFlag]
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId): Unit
@@ -293,7 +324,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
   def loadPageMetasByExtIdAsMap(extImpIds: Iterable[ExtId]): Map[ExtId, PageMeta]
   def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta]
-  def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false): Unit
+  def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Bo = false)(
+        mab: MessAborter): U
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean): Unit = {
     dieIf(newMeta.pageType != oldMeta.pageType && !oldMeta.pageType.mayChangeRole, "EsE4KU0W2")
@@ -303,7 +335,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   protected def updatePageMetaImpl(newMeta: PageMeta, oldMeta: PageMeta,
         markSectionPageStale: Boolean): Unit
 
-  def markPagesWithUserAvatarAsStale(userId: UserId): Unit
+  def markPagesHtmlStaleIfVisiblePostsBy(patId: PatId): i32
   def markPagesHtmlStale(pageIds: Set[PageId]): Unit
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId): Unit
   def loadCachedPageContentHtml(pageId: PageId, renderParams: PageRenderParams)
@@ -417,6 +449,15 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def nextMemberId: UserId
   def insertMember(user: UserInclDetails): Unit
+
+
+  def loadSession(part1Maybe2Or3: Opt[St] = None, hash4HttpOnly: Opt[Array[i8]] = None,
+        maybeActiveOnly: Bo = false): Opt[TySessionInDbMaybeBad]
+  def loadOneOrTwoSessions(part1Maybe2Or3: Opt[St], hash4HttpOnly: Opt[Array[i8]],
+        maybeActiveOnly: Bo): ImmSeq[TySessionInDbMaybeBad]
+  def loadActiveSessions(patId: PatId): ImmSeq[TySessionInDbMaybeBad]
+  def insertValidSession(session: TySession): U
+  def upsertSession(session: TySessionInDbMaybeBad): U
 
   def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Boolean)
         : Hopefully[MemberLoginGrant]
@@ -741,3 +782,20 @@ case class PostNotFoundException(pageId: PageId, postNr: PostNr) extends QuickMe
 case class PostNotFoundByIdException(postId: PostId) extends QuickMessageException(
   s"Post not found by id: $postId")
 
+
+case class TagsAndBadgesSinglePosts(
+  tags: Seq[Tag],
+  badges: Seq[Tag])
+
+case class TagsAndBadges(
+  tags: col.Map[PostId, col.Seq[Tag]],
+  badges: col.Map[PatId, col.Seq[Tag]]) {
+
+  def tagTypeIds: Set[TagTypeId] =
+    tags.values.flatMap(_.map(_.tagTypeId)).toSet ++
+    badges.values.flatMap(_.map(_.tagTypeId)).toSet
+}
+
+object TagsAndBadges {
+  val None: TagsAndBadges = TagsAndBadges(Map.empty, Map.empty)
+}

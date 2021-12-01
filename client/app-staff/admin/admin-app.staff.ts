@@ -1647,7 +1647,7 @@ const FeatureSettings = createFactory({
           help: rFr({},
             "Lets other websites of yours send API requests to this Talkyard site. ",
             (isApiEnabled ? '' : rFr({},
-                "Currently ", r.b({}, "you need to enalbe the API"), " (above)"))),
+                "Currently ", r.b({}, "you need to enable the API"), " (above)"))),
           // Dont' hide completely — then people asks for help about how to enable it.
           disabled: !isApiEnabled,
           getter: (s: Settings) => s.enableCors,
@@ -1685,7 +1685,7 @@ const FeatureSettings = createFactory({
         !isForumEnabled ? null : Setting2(props, {
           type: 'checkbox', label: "Enable categories",
           className: 'e_A_Ss_S-ShowCatsCB',
-          help: "Unckeck to disable categories and hide category related buttons and columns " +
+          help: "Uncheck to disable categories and hide category related buttons and columns " +
           "— can make sense if your community is small and you don't need different categories.",
           getter: (s: Settings) => s.showCategories,
           update: (newSettings: Settings, target) => {
@@ -1693,7 +1693,16 @@ const FeatureSettings = createFactory({
           }
         }),
 
-        // Later enableTags
+        // Blogs have their own tags system, probably no need to use Ty's too.
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable tags",
+          className: 'e_EnbTagsCB',
+          help: "Uncheck to disable page tags.",
+          getter: (s: Settings) => s.enableTags,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableTags = target.checked;
+          }
+        }),
 
         !isForumEnabled ? null : Setting2(props, {
           type: 'checkbox', label: "Enable chat",
@@ -1797,6 +1806,7 @@ const EmbeddedCommentsSettings = createFactory({
 
   render: function() {
     const props = this.props;
+    const store: Store = props.store;
     const currentSettings: Settings = props.currentSettings;
     const editedSettings: Settings = props.editedSettings;
     const embeddingUrl = currentSettings.allowEmbeddingFrom.trim();
@@ -1838,9 +1848,18 @@ const EmbeddedCommentsSettings = createFactory({
             r.br(),
             makeWhichBlogInput("Something Else", 'e_SthElseB')));
 
-    let discussionId = '';
+    // We'd want to use location.origin here, but Safari (and Chrome?) thinks
+    // addresses like: https://comments-for-blog-example-com.talkyard.net
+    // are too similar to: https://blog.example-com  (because of "blog-example-com"),
+    // and shows a big warning in the login popup (which opens on Talkyard's
+    // domain).
+    // No idea how Safari and Chrome will change their algorithm in the future.
+    // Anything with the slightest trace of the embedding website in the
+    // address, might break. — So let's use the public site id instead; that's
+    // a bunch of random chars.
+    // Also see this admin action-required notice: [emb_coms_origin].
     const blogInstrProps = {
-      talkyardServerUrl: location.origin,
+      talkyardServerUrl: eds.pubSiteIdOrigin,
       commentsScriptSrc: `${eds.cdnOrServerOrigin}/-/talkyard-comments${dotMin}.js`,
     };
 

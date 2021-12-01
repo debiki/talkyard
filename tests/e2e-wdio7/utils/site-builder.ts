@@ -162,8 +162,8 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
     },
 
 
-    updatePage: function(pageId: PageId, updFn: (p: PageToAdd) => Vo) {
-      const page: PageToAdd | U = site.pages.find(p => p.id === pageId);
+    updatePage: function(pageId: PageId, updFn: (p: PageJustAdded) => Vo) {
+      const page: PageJustAdded | U = site.pages.find(p => p.id === pageId);
       dieIf(!page, `No such page to update: ${pageId}, e2e test code broken? TyE2RMF3SP`);
       updFn(page);
     },
@@ -198,6 +198,17 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
         newMinions.push(minion);
       }
       return newMinions;
+    },
+
+
+    addLoadTestGooseUsers: function(ps: { howMany: number, nextNr: Nr, trustLevel: Nr }): Member[] {
+      const newUsers = [];
+      for (let nr = ps.nextNr; nr < ps.nextNr + ps.howMany; ++nr) {
+        const user = make.loadTestGoose({ nr, trustLevel: ps.trustLevel });
+        site.members.push(user);
+        newUsers.push(user);
+      }
+      return newUsers;
     },
 
 
@@ -346,6 +357,61 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       });
       api.addDefaultCatPerms(site, forum.categories.catB.id,
             startPermsId, opts.categoryPerms);
+
+      return forum;
+    },
+
+
+    addCatABTrustedForum: function(opts: { title: St, introText?: St,
+          members?: WellKnownMemberUsername[], categoryAExtId?: St,
+           }):CatABTrustedTestForum {
+
+      const forum: CatABTrustedTestForum = api.addCatABForum({
+        ...opts, categoryPerms: 'FullMembersMayEditWiki' }) as CatABTrustedTestForum;
+
+      const forumPage: PageJustAdded = forum.forumPage;
+
+      // Category A and B has 3 perms:
+      // 1) for Everyone, 2) for Full-members-to-edit-wiki, and 3) for Staff.
+      // Then, the next availabe perm id is 1 + 3*2 + 1 = 7  (+ 1 is the root cat).
+      // REFACTOR use fn findNextPermId() instead? [refctr_nxt_prmid]
+      //const startPermsId = 1 + 3 + 3 + 1;   // root cat, A, B, staff
+
+      forum.categories.trustedCat = api.addCategoryWithAboutPage(forumPage, {
+        id: 5,  // 1 = root, 2 = category A, 3 = staff, 4 = B, 5 = this
+        parentCategoryId: forumPage.categoryId,
+        name: "TrustedCat",
+        slug: 'trusted-cat',
+        aboutPageText: "Trusted Category description.",
+      });
+
+      const nextPermsId = 3 + 3 + 1 + 1;  // A + B + staff + 1?
+      site.permsOnPages.push({
+        id: nextPermsId,
+        forPeopleId: c.TrustedMembersId,
+        onCategoryId: forum.categories.trustedCat.id,
+        mayEditWiki: true,
+        mayEditOwn: true,
+        mayCreatePage: true,
+        mayPostComment: true,
+        maySee: true,
+        maySeeOwn: true,
+      });
+      site.permsOnPages.push({
+        id: nextPermsId + 1,
+        forPeopleId: c.StaffId,
+        onCategoryId: forum.categories.trustedCat.id,
+        mayEditPage: true,
+        mayEditComment: true,
+        mayEditWiki: true,
+        mayEditOwn: true,
+        mayDeletePage: true,
+        mayDeleteComment: true,
+        mayCreatePage: true,
+        mayPostComment: true,
+        maySee: true,
+        maySeeOwn: true,
+      });
 
       return forum;
     },

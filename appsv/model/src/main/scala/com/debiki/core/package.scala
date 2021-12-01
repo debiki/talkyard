@@ -99,6 +99,7 @@ package object core {
   def isDevOrTest: Bo = Prelude.isDevOrTest
   def isProd: Bo = Prelude.isProd
 
+  type SidSt = St   // [Scala_3] opaque type
   type SignOnId = St   // [Scala_3] opaque type   change to SsoId?
   type SsoId = SignOnId   // [Scala_3] opaque type   change to SsoId?
 
@@ -230,6 +231,7 @@ package object core {
     def asParsedRef: ParsedRef = self
   }
 
+  // Hmm, PostIdRef and PostNrRef extends PostRef?  [post_id_nr_ref]
   sealed trait PostRef
 
   sealed abstract class ParsedRef(
@@ -270,8 +272,36 @@ package object core {
     case class DiscussionId(diid: St)
       extends ParsedRef(canBeToPat = false) with PageRef
 
-    case class EmbeddingUrl(url: St)
-      extends ParsedRef(canBeToPat = false, canBeToPage = false)
+    /// EmbeddingUrl(.., lax = true)  tries to match by exact URL (or no?),
+    /// or //hostname:port/path, or just /url/path, in that order.  [emburl_emgurl]
+    /// Whilst:  EmbeddingUrl("/url/path", lax=true)   matches the url path only
+    /// (there's no hostname).
+    ///  EmbeddingUrl("//hostname/url/path", lax = false) requires an exact host & path match,
+    /// and:  https://hostname/url/part  !lax  would require the scheme to match too?
+    ///
+    /// emgurllax:https://hostname/blog/post
+    ///   first tries: https://hostname/blog/post
+    ///          then: http://hostname/blog/post (i.e. http:)
+    ///          or does it try just:  //hostname/blog/post ?
+    ///          then: /blog/post            (i.e. only the url path)
+    ///
+    /// emgurlexact:https://hostname/blog/post
+    ///   tries only: https://hostname/blog/post
+    ///
+    /// emgurlexact://hostname/blog/post
+    ///  first tries: https://hostname/blog/post
+    ///         then: http://hostname/blog/post
+    /// (nothing more)
+    ///
+    /// emgurllax:/blog/post  and
+    /// emgurlexact:/blog/post
+    ///   both tries only: /blog/post
+    ///
+    case class EmbeddingUrl(url: St, lax: Bo)
+      extends ParsedRef(canBeToPat = false, canBeToPage = false) {
+
+      def exact: Bo = !lax
+    }
   }
 
   def parsePatRef(ref: Ref): PatRef Or ErrMsg = {
@@ -289,6 +319,16 @@ package object core {
   }
 
   def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrMsg = {
+    if (ref.isEmpty)
+      return Bad("Empty ref: Neither prefix, nor value [TyEEMPTREF]")
+
+    /* After prefixed all discussion ids with 'diid:'  [prefix_diid], then,
+    // here, we can:
+    if (ref.count(_ == ':') == 1 && ref.last == ':')
+      return Bad("Empty ref: No value after the  ':'")
+    // Maybe reject the ref, if any non-[a-z0-9] before the ':'?
+    */
+
     val returnBadIfDisallowParticipant = () =>
       if (!allowParticipantRef)
         return Bad("Refs to participants not allowed here, got: " + ref)
@@ -347,10 +387,20 @@ package object core {
       val path = ref drop "pagepath:".length
       Good(ParsedRef.PagePath(path))
     }
-    else if (ref startsWith "emburl:") {
-      val url = ref drop "emburl:".length
-      Good(ParsedRef.EmbeddingUrl(url))
+    else if (ref startsWith "emgurllax:") {
+      val url = ref drop "emgurllax:".length
+      Good(ParsedRef.EmbeddingUrl(url, lax = true))
     }
+    else if (ref startsWith "emburl:") {
+      DO_AFTER // 0.2021.30: Remove 'emburl:', only support 'emgurllax' (just above) [emburl_emgurl]
+      val url = ref drop "emburl:".length
+      Good(ParsedRef.EmbeddingUrl(url, lax = true))
+    }
+    /* Not impl (elsewhere)
+    else if (ref startsWith "emgurlexact:") {
+      val url = ref drop "emgurlexact:".length
+      Good(ParsedRef.EmbeddingUrl(url, lax = false))
+    } */
     else {
       var refDots = ref.takeWhile(_ != ':') take 14
       if (refDots.length >= 14) refDots = refDots.dropRight(1) + "..."
@@ -364,11 +414,17 @@ package object core {
   def isPageTempId(pageId: PageId): Boolean =
     pageId.length == 10 && pageId.startsWith("2000") // good enough for now
 
-  type Tag = String
+  type TagTypeId = i32
+  type TagId = i32
+
+  // Old ------------
+  type Tag_old = String
   type TagDefId = Int
   type TagLabelId = Int
   type TagLabel = String
-  val NoTagId: TagLabelId = 0
+  // ----------------
+  val NoTagId: TagId = 0
+  val NoTagTypeId: TagTypeId = 0
 
   /** Email identities are strings, all others are numbers but converted to strings. */
   type IdentityId = String
@@ -404,6 +460,7 @@ package object core {
   case object Fine extends AnyProblem {
     override def isFine: Bo = true
   }
+
 
   /**
     * @param message — for end users
@@ -609,6 +666,8 @@ package object core {
 
   type ReqrId = Who // RENAME to ReqrIds? (with an ...s)
                     // ... because is more than one id (user id, ip, bowser id cookie, etc)
+
+  type BrowserIdSt = St  // [Scala_3] opaque type
 
   RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
   // I find "who" being confusing as to whom it refers to.
@@ -843,6 +902,14 @@ package object core {
     reactStoreJsonHash = "wrong")
 
 
+  case class TagTypeStats(
+    tagTypeId: TagTypeId,
+    numTotal: Int,
+    numPostTags: Int,
+    numPatBadges: Int)
+
+
+  @deprecated
   case class TagAndStats(
     label: TagLabel,
     numTotal: Int,
@@ -1553,5 +1620,6 @@ package object core {
 
   def GRAPH_DATABASE = () // Some queries are inefficient and require lots of code, when using a
                           // relational database — but are simple and fast, with a graph database.
+  def CHECK_AUTHN_STRENGTH = ()
 }
 

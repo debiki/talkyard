@@ -33,6 +33,82 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
     case object LoginToAdministrate extends LoginReason(24)
   }
 
+  sealed abstract class MinAuthnStrength(val IntVal: i32, val fullSidRequired: Bo = true) {
+    def toInt: i32 = IntVal
+  }
+
+
+  // RENAME to AuthnStrength? And a *param* name can be minAuthnStrength instead?
+  // Then, AuthnStrength.[InternalJob] makes sense, otherwise not.
+  //
+  object MinAuthnStrength {
+
+    // No session id needed — instead, we check an e2e test secret, for each request.
+    case object E2eTestPassword extends MinAuthnStrength(10, fullSidRequired = false)
+
+    // No session id needed — instead, we check an API secret, for each request.
+    case object ApiSecret extends MinAuthnStrength(15, fullSidRequired = false)
+
+    /// Parts 1 and 2 of old embedded sessions might have been cached in localStorage
+    /// in the embedding website, and if the embedding website has security vulnerabilities,
+    /// an attacker might have gained access to those parts of the session.
+    /// Therefore, those parts of the session should give access only to
+    /// embedded comments — like, posting comments, editing one's comments,
+    /// or (for mods) moderating embedded comments [mod_emb_coms_sid],
+    /// but nothing else. Then, if a blog has security vulnerabilities, only
+    /// the blog comments would be affected — but not any Talkyard forum on its own
+    /// sub domain (for organizations with both a forum and blog comments),
+    /// or any user accounts or email addresses.
+    ///
+    /// This could also be configurable, so the site admins could choose to always
+    /// require session part 3, or even require people to interact with the comments
+    /// iframe, trying to make iOS Safari ITP understand that the comments aren't
+    /// a tracker, and allow cookies — then, the server would get the HttpOnly
+    /// cookies. [ios_itp]
+    ///
+    case object EmbeddingStorageSid12 extends MinAuthnStrength(20, fullSidRequired = false)
+
+    /// The embedded sid can be refreshed by popping up a window directly
+    /// against the Talkyard server — then, the session id part 3, in a cookie, would
+    /// be accessible to the javascript in the popup, which could send it to the iframes.
+    /// Or the app server could reply and include parts 1, 2, 3 in the response.
+    /// But only sids part 1+2 (without part 3), would get rejected (since they're
+    /// less safe, see EmbeddingStorageSid12 above). Part 3 would be temporarily
+    /// remembered only in the iframes, never accessible to the embedd*ing* website,
+    //case object EmbeddedIframeSid123 extends MinAuthnStrength(30, part3Required = true)
+
+    //case object EmbeddedIframeSid123Recent extends MinAuthnStrength(35, part3Required = true)
+
+    /// Apart from requiring HttpOnly cookies (session id part 4), what Normal
+    /// authentication is, would be community specific. Some communities might be ok
+    /// with password authn — whilst others might want 2 or 3 factor authn,
+    /// and/or SameSite Strict cookies.
+    case object Normal extends MinAuthnStrength(40)
+
+    /// Like Normal, but must have authenticated recently. Could protect against
+    /// someone grabbing another person's laptop, running away, and then 5 minutes later
+    /// trying to change the other person's email address to hens own — this wouldn't work,
+    /// since hen would need to authenticate again first (so has authenticated just recently).
+    //case object NormalRecent extends MinAuthnStrength(45)
+
+    /// A community can optionally require stronger authentication, for some endpoints
+    /// (or maybe even some specific parts of a community?), or custom groups, mods or admins.
+    /// By default, Strong is the same as Normal — the site admins would need to
+    /// specify somehow what Strong means, in their community's case. Maybe
+    /// OTP + 2FA could be a default? Or should WebAuthn be the default Strong method?
+    /// (Unlike 2FA in general, WebAuthn works against phishing.)
+    //case object Strong extends MinAuthnStrength(50)
+
+    /// Like Strong, but must have authenticated recently — say, within the last X minutes
+    /// (and X is community specific).
+    /// For things like changing one's email address or deleting one's account.
+    //case object StrongRecent extends MinAuthnStrength(55)
+
+    /// Maybe useful if min-auth-strength fn gets called by an internal background job?
+    // case object [InternalJob] extends MinAuthnStrength(99)
+  }
+
+
   // Aliases for better readability.
   type JoinOrLeave = AddOrRemove
   val Join: Add.type = Add

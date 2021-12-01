@@ -189,6 +189,14 @@ declare namespace debiki2 {
   var createClassAndFactory: any; // don't use — I'm renaming to createFactory
   function createFactory<P, S = any>(compSpec: React.ComponentSpec<P, S>): React.Factory<any>;
 
+  function arr_replaceMany<Item>(arr: Item[],
+        newerItems: Item[], isSame: ArrItemIsSameFn<Item>): Item[];
+
+  function arr_replaceManyInPl<Item>(arr: Item[],
+        newerItems: Item[], isSame: ArrItemIsSameFn<Item>);
+
+  function arr_replaceOneInPl<Item>(arr: Item[],
+        newerItem: Item, isSame: ArrItemIsSameFn<Item>);
 
   function replaceById(itemsWithId: any[], replacement);
   function deleteById(itemsWithId: any[], id);
@@ -229,6 +237,7 @@ declare namespace debiki2 {
   namespace topbar {
     function getTopbarHeightInclShadow(): number;
     function TopBar(props): RElm; // TopbarProps
+    function OpenWatchbarButton(): RElm;
   }
 
   namespace sidebar {
@@ -283,13 +292,14 @@ declare namespace debiki2 {
 
   var findDOMNode: any;
   function randomNumSt(): St;
-  var die: any;
-  var dieIf: any;
-  var scrollToBottom: any;
-  var prettyBytes: any;
+  function die(errMsg: St);
+  function dieIf(test, errMsg: St);
+  function scrollToBottom(node: Element);
+  function prettyBytes(num: Nr): St;
   var Server: any;
   var reactelements: any;
-  var hashStringToNumber: any;
+  function hashStringToNumber(string: St): Nr;
+  function urlEncodeSearchQuery(query: St): St;
 
   function stableStringify(obj: any): string;
 
@@ -314,6 +324,7 @@ declare namespace debiki2 {
   function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;
 
+  function me_hasSid(): Bo;
   function me_uiPrefs(me: Myself): UiPrefs;
   function pp_snoozeLeftMs(me: Myself): number;
   function member_isBuiltIn(member: Member): boolean;
@@ -374,6 +385,8 @@ declare namespace debiki2 {
   function store_getPostId(store: DiscStore, pageId: PageId, postNr: PostNr): PostId | U;
 
   function categories_sortTree(categories: Category[]): CatsTree;
+
+  function store_curPage(store: Store): Page | U;
 
   function page_makePostPatch(page: Page, post: Post): StorePatch;
   function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft): StorePatch;
@@ -440,6 +453,8 @@ declare namespace debiki2 {
 
   var anyForbiddenPassword;
 
+  function tags_mkSortFn(tagTypesById: TagTypesById): (a: Tag, b: Tag) => Nr;
+
   function isSection(pageRole: PageRole): boolean;
   function page_isClosedUnfinished(page: Page): Bo;
   function page_isDone(page: Page | Topic): Bo;
@@ -488,7 +503,8 @@ declare namespace debiki2 {
   }
   namespace pagedialogs {
     function getServerErrorDialog(): any;
-    function showAndThrowClientSideError(errorMessage: string);
+    function showClientError(errorMessage: St);
+    function showAndThrowClientSideError(errorMessage: St);
     var openSharePopup;
     const Facebook;
     const Twitter;
@@ -519,6 +535,9 @@ declare namespace debiki2 {
   function UserName(props: {
       user: Pat, store?: Store, settings?: SettingsVisibleClientSide,
       makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo });
+
+  function TagListLive(ps: TagListLiveProps): RElm | U;
+  function TagList(ps: TagListProps): RElm | U;
 
   var FacebookLogoImage;
 

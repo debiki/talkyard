@@ -7,9 +7,7 @@ import * as fs from 'fs';
 import server from '../utils/server';
 import * as ut from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings from '../utils/settings';
-import { dieIf } from '../utils/log-and-die';
+import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 
 

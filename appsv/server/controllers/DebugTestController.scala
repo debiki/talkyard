@@ -23,6 +23,7 @@ import com.debiki.core.Prelude._
 import debiki.{GetEndToEndTestEmail, Nashorn, NumEndToEndTestEmailsSent, RateLimits}
 import debiki.dao.PagePartsDao
 import debiki.EdHttp._
+import debiki.JsonUtils.{parseOptInt32, parseOptSt}
 import ed.server.{EdContext, EdController}
 import ed.server.pop.PagePopularityCalculator
 import ed.server.pubsub.WebSocketClient
@@ -40,6 +41,7 @@ import scala.concurrent.Future._
 import scala.util.Try
 import talkyard.server.TyLogging
 import talkyard.server.JsX._
+import talkyard.server.authn.MinAuthnStrength
 
 
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
@@ -54,7 +56,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   /** If a JS error happens in the browser, it'll post the error message to this
     * endpoint, which logs it, so we'll get to know about client side errors.
     */
-  def logBrowserErrors: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 10000) {
+  def logBrowserErrors: Action[JsValue] = PostJsonAction(
+        RateLimits.BrowserError, MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 10000) {
         request =>
     val allErrorMessages = request.body.as[Seq[String]]
     // If there are super many errors, perhaps all of them is the same error. Don't log too many.
@@ -297,20 +300,29 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
         request =>
     throwForbiddenIf(globals.isProd, "TyE502KUJ5",
         "I only do this, in Prod mode, when an odd number of " +
-          "Phoenix birds sleep at my fireplace")
+          "Phoenix birds sleep at my fireplace, and more than one")
     val key = (request.body \ "key").as[String]
     context.globals.redisClient.del(key)
     Ok
   }
 
 
-  def skipRateLimitsForThisSite: Action[JsValue] =
-        PostJsonAction(RateLimits.BrowserError, maxBytes = 50) { request =>
+  def skipRateLimitsForThisSite: Action[JsValue] = PostJsonAction(
+        RateLimits.BrowserError, MinAuthnStrength.E2eTestPassword, maxBytes = 150) {
+            request =>
     val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
     throwForbiddenIf(globals.isProd && !okE2ePassword,
       "TyE8WTHFJ25", "I only do this, in Prod mode, if I can see two moons from " +
         "my kitchen window and at least two of my pigeons tell me I should.")
-    val siteId = (request.body \ "siteId").as[SiteId]
+    val anySiteId: Opt[i32] = parseOptInt32(request.body, "siteId")
+    val anySiteOrigin: Opt[St] = parseOptSt(request.body, "siteOrigin")
+    throwBadReqIf(anySiteId.isDefined == anySiteOrigin.isDefined, "TyE0J5MWSG24",
+          "Specify only one of siteId and siteOrigin")
+    val siteId = anySiteId getOrElse {
+      val site = request.context.globals.lookupSiteOrThrow(anySiteOrigin.get)
+      site.id
+    }
+
     globals.siteDao(siteId).skipRateLimitsBecauseIsTest()
     Ok
   }
@@ -323,8 +335,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def addAdminNotice: Action[JsValue] =
-        PostJsonAction(RateLimits.BrowserError, maxBytes = 50) { request =>
+  def addAdminNotice: Action[JsValue] = PostJsonAction(
+        RateLimits.BrowserError, MinAuthnStrength.E2eTestPassword, maxBytes = 50) { request =>
     val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
     throwForbiddenIf(globals.isProd && !okE2ePassword, "TyE60MRGP35", "E2e pwd missing")
     import request.body

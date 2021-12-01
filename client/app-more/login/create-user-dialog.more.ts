@@ -328,7 +328,8 @@ export var CreateUserDialogContent = createClassAndFactory({
       const alreadyAtReturnToUrl = returnToUrl === currentUrl;
       if (alreadyAtReturnToUrl || props.afterLoginCallback) {
         const afterLoginCallback = props.afterLoginCallback; // gets nulled when dialogs closed
-        debiki2.ReactActions.loadMyself(() => {
+        // Later: skip, instead incl in Server.createOauthUser/createPasswordUser/loginAsGuest()
+        debiki2.ReactActions.loadMyself(() => {  // [incl_me_in_aun_rsp]
           if (afterLoginCallback) {
             afterLoginCallback();
           }
