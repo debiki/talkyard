@@ -288,6 +288,7 @@ export function continueAfterLogin(anyReturnToUrl?: string) {
             "continue in?  [TyEOPNRGONE]", { mayClose: false });
       }
       else {
+        // We've remembered any weakSessionId already, see [5028KTDN306].
         window.opener['debiki'].internal.handleLoginResponse({ status: 'LoginOk' });
         // Close this popup window — we'll continue in the main window.
         close();
@@ -297,7 +298,13 @@ export function continueAfterLogin(anyReturnToUrl?: string) {
   else {
     // We're on a normal page (but not in a login popup window for an embedded comments page).
     // (The login dialogs close themselves when the login event gets fired.)
-    debiki2.ReactActions.loadMyself(anyContinueAfterLoginCallback);
+    // Later: skip this? And incl one's data directly in the authn response. [incl_me_in_aun_rsp]
+    const cbk = anyContinueAfterLoginCallback;  // gets reset when login dialog closes [confusing_loadMyself]
+    debiki2.ReactActions.loadMyself(function(resp: FetchMeResponse) {
+      if (cbk) {
+        cbk();
+      }
+    });
   }
 }
 

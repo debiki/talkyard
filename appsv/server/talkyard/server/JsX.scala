@@ -170,7 +170,10 @@ object JsX {   RENAME // to JsonPaSe
     JsUser(pat, tagAndBadges.badges.getOrElse(pat.id, Nil))
   }
 
-  def JsUser(user: Pat, tags: Seq[Tag] = Nil): JsObject = {  // Typescript: Pat, RENAME to JsPat
+  /// As little info about someone as possible — just name and tiny avatar. Currently
+  /// used for showing in the forum topic list.
+  ///
+  def JsPatNameAvatar(user: Pat): JsObject = {  // ts: PatNameAvatar
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.anyUsername),
@@ -178,9 +181,15 @@ object JsX {   RENAME // to JsonPaSe
     user.tinyAvatar foreach { uploadRef =>
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
+    json
+  }
+
+  def JsUser(user: Pat, tags: Seq[Tag] = Nil): JsObject = {  //RENAME to JsPat, ts: Pat
+    var json = JsPatNameAvatar(user)
     user.smallAvatar foreach { uploadRef =>
       json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
     }
+
     if (user.isGuest) {
       json += "isGuest" -> JsTrue
     }
@@ -188,6 +197,7 @@ object JsX {   RENAME // to JsonPaSe
       require(user.isAuthenticated, "EdE8GPY4")
       json += "isAuthenticated" -> JsTrue  // COULD remove this, client side, use !isGuest instead
     }
+
     if (user.email.isEmpty) {
       json += "isEmailUnknown" -> JsTrue
     }
@@ -297,6 +307,24 @@ object JsX {   RENAME // to JsonPaSe
     }
 
     userJson
+  }
+
+
+  /// ts: Session
+  def JsSession(sess: TySessionInDbMaybeBad, inclPart1: Bo = true): JsObject = {
+    // Don't include the actual session id. (That is, exclude parts 2 – 5. *Could* maybe
+    // theoretically include them, since they're hashes, but bad idea, and not needed.)
+    var json = Json.obj(
+          "patId" -> sess.patId,
+          "createdAt" -> JsWhenMs(sess.createdAt),
+          "deletedAt" -> JsWhenMsOrNull(sess.deletedAt),
+          "expiredAt" -> JsWhenMsOrNull(sess.expiredAt),
+          "version" -> JsNumber(sess.version),
+          "startHeaders" -> sess.startHeaders)
+    if (inclPart1) {
+      json += "part1" -> JsString(sess.part1CompId)
+    }
+    json
   }
 
 
@@ -505,6 +533,9 @@ object JsX {   RENAME // to JsonPaSe
       "authorId" -> pageMeta.authorId,
       "frequentPosterIds" -> pageMeta.frequentPosterIds,
       "layout" -> pageMeta.layout.toInt,
+      "forumSearchBox" -> JsNum32OrNull(pageMeta.forumSearchBox),
+      "forumMainView" -> JsNum32OrNull(pageMeta.forumMainView),
+      "forumCatsTopics" -> JsNum32OrNull(pageMeta.forumCatsTopics),
       "pinOrder" -> JsNumberOrNull(pageMeta.pinOrder),
       "pinWhere" -> JsNumberOrNull(pageMeta.pinWhere.map(_.toInt)),
       "numLikes" -> pageMeta.numLikes,
@@ -662,11 +693,16 @@ object JsX {   RENAME // to JsonPaSe
 
 
   def JsTag(tag: Tag): JsObject = {
-    Json.obj(
+    var jOb = Json.obj(
         "id" -> tag.id,
-        "tagTypeId" -> tag.tagTypeId,
-        "onPatId" -> JsNum32OrNull(tag.onPatId),
-        "onPostId" -> JsNum32OrNull(tag.onPostId))
+        "tagTypeId" -> tag.tagTypeId)
+    tag.onPatId foreach { patId =>
+      jOb += "onPatId" -> JsNumber(patId)
+    }
+    tag.onPostId foreach { postId =>
+      jOb += "onPostId" -> JsNumber(postId)
+    }
+    jOb
   }
 
 

@@ -11,6 +11,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc._
 import play.{api => p}
 import scala.concurrent.{ExecutionContext, Future}
+import talkyard.server.authn.MinAuthnStrength
 
 
 
@@ -30,7 +31,8 @@ class EdController(cc: ControllerComponents, val context: EdContext)
     PlainApiAction(cc.parsers.empty, NoRateLimits, avoidCookies = avoidCookies).async(f)
 
   def AsyncGetActionAllowAnyone(f: GetRequest => Future[Result]): mvc.Action[Unit] =
-    PlainApiAction(cc.parsers.empty, NoRateLimits, allowAnyone = true).async(f)
+    PlainApiAction(cc.parsers.empty, NoRateLimits, MinAuthnStrength.EmbeddingStorageSid12,
+          allowAnyone = true).async(f)
 
   def AsyncGetActionIsLogin(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits, isLogin = true).async(f)
@@ -38,26 +40,42 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   def AsyncGetActionIsLoginRateLimited(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(cc.parsers.empty, RateLimits.Login, isLogin = true).async(f)
 
-  def AsyncGetActionRateLimited(rateLimits: RateLimits)(f: GetRequest => Future[Result])
+  def AsyncGetActionRateLimited(rateLimits: RateLimits,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        )(f: GetRequest => Future[Result])
         : mvc.Action[Unit] =
-    PlainApiAction(cc.parsers.empty, rateLimits).async(f)
+    PlainApiAction(cc.parsers.empty, rateLimits, minAuthnStrength).async(f)
 
+  @deprecated("Use GetActionRateLimited instead, remove this, and rename it to this", "")
   def GetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits)(f)
 
+  def GetAction2(  // use GetActionRateLimited instead!
+        rateLimits: RateLimits,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        )(f: GetRequest => Result): Action[Unit] =
+    PlainApiAction(cc.parsers.empty, rateLimits, minAuthnStrength)(f)
+
+  SECURITY; COULD // let MinAuthnStrength be a param, so it's more explicitly visible
+  // in the endpoint fn declaration, here and everywhere — don't let EmbeddedHalfSidOld
+  // be the default anywhere?
   def GetActionAllowAnyone(f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(cc.parsers.empty, NoRateLimits, allowAnyone = true)(f)
+    PlainApiAction(cc.parsers.empty, NoRateLimits, MinAuthnStrength.EmbeddingStorageSid12,
+          allowAnyone = true)(f)
 
   def GetActionAllowAnyoneRateLimited(rateLimits: RateLimits, avoidCookies: Boolean = false)
         (f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(cc.parsers.empty, rateLimits, allowAnyone = true, avoidCookies = avoidCookies)(f)
+    PlainApiAction(cc.parsers.empty, rateLimits, MinAuthnStrength.EmbeddingStorageSid12,
+          allowAnyone = true, avoidCookies = avoidCookies)(f)
 
   def GetActionIsLogin(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits, isLogin = true)(f)
 
-  def GetActionRateLimited(rateLimits: RateLimits = RateLimits.ExpensiveGetRequest,
+  def GetActionRateLimited(
+        rateLimits: RateLimits = RateLimits.ExpensiveGetRequest,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
         allowAnyone: Boolean = false)(f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(cc.parsers.empty, rateLimits, allowAnyone = allowAnyone)(f)
+    PlainApiAction(cc.parsers.empty, rateLimits, minAuthnStrength, allowAnyone = allowAnyone)(f)
 
   def StaffGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionStaffOnly(cc.parsers.empty)(f)
@@ -91,11 +109,13 @@ class EdController(cc: ControllerComponents, val context: EdContext)
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
       rateLimits, allowAnyone = allowAnyone, avoidCookies = avoidCookies).async(f)
 
-  def PostJsonAction(rateLimits: RateLimits, maxBytes: Int,
+  def PostJsonAction(rateLimits: RateLimits,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        maxBytes: Int,
         allowAnyone: Boolean = false, isLogin: Boolean = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
-      rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(f)
+        rateLimits, minAuthnStrength, allowAnyone = allowAnyone, isLogin = isLogin)(f)
 
   def AsyncUserPostJsonAction(rateLimits: RateLimits, maxBytes: i32,
         avoidCookies: Bo = false)(
@@ -108,15 +128,19 @@ class EdController(cc: ControllerComponents, val context: EdContext)
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
       rateLimits, authnUsersOnly = true)(f)
 
-  def PostTextAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
+  def PostTextAction(rateLimits: RateLimits,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        maxBytes: Int, allowAnyone: Boolean = false)(
         f: ApiRequest[String] => Result): Action[String] =
     PlainApiAction(cc.parsers.text(maxLength = maxBytes),
-      rateLimits, allowAnyone = allowAnyone)(f)
+      rateLimits, minAuthnStrength, allowAnyone = allowAnyone)(f)
 
   SECURITY // add rate limits for staff too
-  def StaffPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
+  def StaffPostJsonAction(
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionStaffOnly(
-      cc.parsers.json(maxLength = maxBytes))(f)
+      cc.parsers.json(maxLength = maxBytes), minAuthnStrength)(f)
 
   SECURITY // add rate limits for admins — use AdminPostJsonAction2, then remove this & rm '2' from name.
   def AdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
@@ -156,17 +180,11 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   // ----- Site id lookup
 
 
-  def originOf(request: DebikiRequest[_]) =
+  def originOf(request: DebikiRequest[_]): St =
     globals.originOf(request.underlying)
 
-  def originOf(request: RequestHeader) =
+  def originOf(request: RequestHeader): St =
     globals.originOf(request)
-
-
-  def daoFor(request: Request[_]) = {
-    val site = globals.lookupSiteOrThrow(originOf(request))
-    globals.siteDao(site.id)
-  }
 
 
 }

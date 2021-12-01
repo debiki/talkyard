@@ -4,8 +4,7 @@ import * as fs from 'fs';
 import server from '../utils/server';
 import * as utils from '../utils/utils';
 import * as make from '../utils/make';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings from '../utils/settings';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 
 let brA;
 let michael;

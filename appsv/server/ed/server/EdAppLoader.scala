@@ -106,6 +106,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.SpecialContentController(cc, context),
     new _root_.controllers.ModerationController(cc, context),
     new _root_.controllers.UserController(cc, context),
+    new talkyard.server.sess.SessionController(cc, context),
     new _root_.controllers.UnsubscriptionController(cc, context),
     new ed.server.summaryemails.UnsubFromSummariesController(cc, context),
     new _root_.controllers.InviteController(cc, context),

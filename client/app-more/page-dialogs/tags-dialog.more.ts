@@ -81,8 +81,9 @@ const TagsDialog = createComponent({
 
     const listWhatTagTypes = ps.forPost ? ThingType.Posts : ThingType.Pats;
 
-    Server.listTagTypes(listWhatTagTypes, '', (tagTypes: TagType[]) => {
+    Server.listTagTypes(listWhatTagTypes, '', (resp: { allTagTypes: TagType[] }) => {
       const state: TagsDiagState = this.state;
+      const tagTypes = resp.allTagTypes;
       if (this.isGone) return;
       if (!state.curTags) return; // got closed
       // Sort the tags by name. More user friendly? Also, needed for the tags e2e tests

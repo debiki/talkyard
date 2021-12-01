@@ -33,12 +33,14 @@
 //
 type U = undefined;
 type Vo = void; // but not 'V' because that's sometimes a 'V'alue template param.
+type V  = void; // ... hmm but really really not often. Let's use 'Va' for such templ params?
 type Nl = null; // but not 'Nu' because that could be "Number".
 type N = null;  // ... hmm I don't think so. One letter U and N for undef & null,
                 // ... and 2 letters for "real" datatypes — easy to remember?
                 // "Nl" is actually a bit hard to read! (the 'l')
 type Ay = any;  // but not 'An' because that sounds like 'an'. Upd: Skip this. Use 'any',
                 // should try to long term do away with all 'any' anyway.
+type A = any;   // Why not A! Let's use 'A'.
 type Bo = boolean;
 type Nr = number;
 type St = string;
@@ -132,8 +134,6 @@ const enum SessionType {
   SiteCustomOSaml = 4,
   SiteCustomSso = 5,
 
-  ApiSecret =  // instead of SidOk("_api_secret_", ..)
-
   EmailSecret = 8,
   BackupCode = 9,
 
@@ -174,6 +174,7 @@ const enum TopicFilters {
 const enum ThingType {
   Pats = 7,
   Posts = 56,
+  All = Pats + Posts,
 }
 
 const enum No {
@@ -461,7 +462,11 @@ const enum OrigPostVotes {
   AllVotes = 3,
 }
 
-
+const enum ShowSearchBox {
+  Default = 0, // or null / undefined
+  No = 1,
+  Yes = 2,
+}
 
 const enum SiteStatus {
   NoAdmin = 1,
@@ -584,6 +589,15 @@ const enum StorageKeys {
   AuthnNonce = 'authnNonce',
 }
 
+
+const enum WinDims {
+  // UX: As narrow as 640 works fine (!), with sidebars closed. But then currently
+  // Ty tries to use only the full screen editor.
+  // And at ~ 900 the "Draft saved" text gets pushed to the right outside the editor.
+  // Warning: iOS Safari will probably? try to cause troubles, if editor-to-the-left and
+  // just 640 pixels. Maybe require >= 1000 width for Safari or have a look in an emulator?
+  MinEditorLeftWidth = 1000,
+}
 
 
 // vim: et ts=2 sw=2 tw=0 fo=r list

@@ -32,6 +32,7 @@ import EmailInput = debiki2.util.EmailInput;
 const aboutPathSeg = 'about';
 const notfsPathSeg = 'notifications';
 const privacyPathSeg = 'privacy';
+const securityPathSeg = 'security';
 const uiPathSeg = 'ui';
 const accountPathSeg = 'account';  // [4JKT28TS]
 
@@ -44,6 +45,7 @@ export const UserPreferences = createFactory({
     const prefsPathSlash = pathTo(user) + SlashPrefsSlash;
     const aboutPath = prefsPathSlash + aboutPathSeg;
     const privacyPath = prefsPathSlash + privacyPathSeg;
+    const securityPath = prefsPathSlash + securityPathSeg;
     const uiPath = prefsPathSlash + uiPathSeg;
     const emailsLoginsPath = prefsPathSlash + accountPathSeg;
     const location = this.props.location;
@@ -70,6 +72,7 @@ export const UserPreferences = createFactory({
       Route({ path: '(.*)/' + aboutPathSeg, exact: true, render: () => AboutTab(childProps) }),
       Route({ path: '(.*)/' + notfsPathSeg, exact: true, render: () => NotfPrefsTab(childProps) }),
       Route({ path: '(.*)/' + privacyPathSeg, exact: true, render: () => PrivacyPrefsTab(childProps) }),
+      Route({ path: '(.*)/' + securityPathSeg, exact: true, render: () => SecurityPrefsTab(childProps) }),
       Route({ path: '(.*)/' + accountPathSeg, exact: true, render: (ps) =>
           user.isGroup
             ? AccountTabForGroup({ ...childProps, ...ps })
@@ -95,6 +98,8 @@ export const UserPreferences = createFactory({
                   to: prefsPathSlash + notfsPathSeg, className: 's_UP_Prf_Nav_NtfsL' }, t.Notifications),
               isGroupGuestOrBuiltIn ? null : LiNavLink({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
+              isGroupGuestOrBuiltIn ? null : LiNavLink({
+                  to: securityPath, className: 'e_UP_Prf_Nav_SecL' }, t.upp.Security),
               isGuestOrBuiltIn ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account),
               !isNormalMember ? null : LiNavLink({
@@ -783,6 +788,127 @@ const PrivacyPrefsTab = createFactory({
         savingInfo));
   }
 });
+
+
+
+const SecurityPrefsTab = React.createFactory<any>(function(props: {
+        user: UserInclDetails, store: Store }) {
+
+  const store = props.store;
+  const user = props.user;
+
+  const [sessionsOrNull, setSessions] = React.useState<Session[] | N>(null);
+
+  // Break out hook? [my_cur_id]
+  const me = store.me;
+  const myIdRef = React.useRef(me.id);
+
+  React.useEffect(() => {
+    myIdRef.current = me.id;
+    listPatsSessions();
+    return () => myIdRef.current = null;
+  }, []);//, [me.id, user.id]);
+
+  function listPatsSessions() {
+    // If one is admin, then, `me` can be !== `user`.
+    Server.listSessions(user.id, (resp: ListSessionsResponse) => {
+      if (myIdRef.current !== me.id) return;
+      // Show most recent first.
+      const sessionsByTime = [...resp.sessions].sort(
+              function(a,b ) { return b.createdAt - a.createdAt; });
+      setSessions(sessionsByTime);
+    });
+  }
+
+  if (!sessionsOrNull)
+    return r.p({}, t.Loading);
+
+  const sessions: Session[] = sessionsOrNull;
+  let numActive = 0;
+
+  const sessionItems = sessions.map((session: Session) => {
+    if (!session.deletedAt && !session.expiredAt) numActive += 1;
+    return r.li({ key: session.createdAt },
+        SessionInfo(session, endSession, me));
+  });
+
+  function endSession(ps: { session?: Session, all?: true }) {
+    const sessionsStartedAt = ps.session && [ps.session.createdAt];
+    Server.terminateSessions({ forPatId: user.id, sessionsStartedAt, all: ps.all },
+            (resp: TerminateSessionsResponse) => {
+      if (myIdRef.current !== me.id) return;
+      // Is sorted by time already, see sort(..) above.
+      const sessionsAfter = arr_replaceMany(sessions,
+              resp.terminatedSessions, (s: Session) => s.createdAt);
+      setSessions(sessionsAfter);
+    });
+  }
+
+  const isMyOnlySession = me.id === user.id && numActive === 1;
+
+  const logOutEverywhereBtn = !numActive || isMyOnlySession ? null :
+      Button({ className: 'c_SessL_EndAllB', onClick: () => endSession({ all: true })},
+          "Log out everywhere (but not here)");   // I18N
+
+  return (
+    r.div({},
+      // Later: "You're logged in on these devices:"
+      // Or: "You are logged in on these devices, or were recently:"
+      // Or: "Active or recently active devices:"  ?
+      r.h2({}, "Active sessions:"),  // I18N
+      r.ol({ className: 'c_SessL' }, sessionItems),
+      sessionItems.length ? null : r.p({}, "None"), // I18N
+      logOutEverywhereBtn,
+      ));
+});
+
+
+function SessionInfo(session: Session, endSessionFn: (ps: { session: Session }) => V, me: Me) {
+  const createdAt: St = new Date(session.createdAt).toISOString();
+  let activeOrEnded: St;
+
+  let deletedAt = session.deletedAt;
+  let expiredAt = session.expiredAt;
+  if (deletedAt && expiredAt) {
+    if (deletedAt <= expiredAt) expiredAt = null;
+    else deletedAt = null;
+  }
+
+  const isCurrent = me.mySidPart1 !== session.part1 ? '' :
+          " — this session, here";
+
+  let terminateBtn: RElm | U;
+  let activeOrEndedClass = 'c_SessL_Sess-Ended';
+
+  if (deletedAt) {
+    activeOrEnded = " — got deleted at " + new Date(deletedAt).toISOString();
+  }
+  else if (expiredAt) {
+    activeOrEnded = " — expired at " + new Date(expiredAt).toISOString();
+  }
+  else {
+    activeOrEnded = isCurrent ? '' : " — currently active";
+    activeOrEndedClass = 'c_SessL_Sess-Active';
+
+    // Skip logout button for the current session. It's better if one stays logged
+    // in and can see that the relevant sessions got terminated properly. And
+    // thereafter click Log Out in one's username menu. (Or?)
+    terminateBtn = me.mySidPart1 === session.part1 ? null :
+          Button({ className: 'c_SessL_Sess_EndB',
+              onClick: () => endSessionFn({ session }) }, "Log out");  // I18N
+  }
+
+  let debugJson = null;
+  // @ifdef DEBUG
+  debugJson = r.pre({}, JSON.stringify(session, undefined, 3));
+  // @endif
+
+  return r.div({ className: 'c_SessL_Sess ' + activeOrEndedClass },
+      r.span({}, "Session started at " + createdAt + isCurrent + activeOrEnded),
+      debugJson,
+      terminateBtn);
+}
+
 
 
 const AccountTabForGroup = React.createFactory<any>(function(props: { member: Group, store: Store }) {

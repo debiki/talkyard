@@ -1,4 +1,19 @@
 
+export const enum SiteType {
+  Forum = 1,
+  EmbeddedCommments = 2,
+}
+
+
+export const enum NewSiteOwnerType {
+  OwenOwner = 1,
+  GmailAccount = 2,
+  FacebookAccount = 3,
+  GitHubAccount = 4,
+  LinkedInAccount = 5,
+}
+
+
 
 // Need to include here, for now, ? because client/app/ doesn't use any modules system,
 // doesn't export any constants ?

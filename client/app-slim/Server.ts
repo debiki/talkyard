@@ -1153,6 +1153,27 @@ export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
 }
 
 
+/// Returns parts 1 and 2 of any current session id, maybe 3. (Parts 4 and 5 are HttpOnly
+/// cookies, not accessible here.)
+///
+export function getCurSid12Maybe3(): St | N {  // [ts_authn_modl]
+  const store: Store = debiki2.ReactStore.allData();
+  const cookieName =
+          !debiki2.store_isFeatFlagOn(store, 'ffUseOldSid') ? 'TyCoSid123' : 'dwCoSid';
+  let sid = getSetCookie(cookieName);
+  if (!sid) {
+    // Cannot use store.me.mySidPart1 — we might not yet have loaded
+    // the current user from the server; store.me might be stale.
+    const typs: PageSession = getMainWin().typs;
+    // This might not include part 3 (won't, if we're in an embedded comments
+    // iframe, and didn't login or resume via a popup win directly against the
+    // server so we could access cookie TyCoSid123, which includes part 3).
+    sid = typs.weakSessionId;
+  }
+  return sid || null;
+}
+
+
 export function rememberTempSession(ps: { weakSessionId: St }) {  // [ts_authn_modl]
   const onOk = function() {};
   makeUpdNoCookiesTempSessionIdFn(onOk)(ps);
@@ -1181,6 +1202,7 @@ function makeUpdNoCookiesTempSessionIdFn<R>(  // [ts_authn_modl]
 
 
 export function deleteTempSessId() {  // [ts_authn_modl]
+  // Need not delete store.me.mySidPart1 — we'll reload the page anyway. [is_logging_out]
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
   delete typs.weakSessionId;
@@ -1188,6 +1210,8 @@ export function deleteTempSessId() {  // [ts_authn_modl]
   try {
     // Can this throw?
     getSetCookie('dwCoSid', null);
+    getSetCookie('TyCoSid123', null);
+    // Later: getSetCookie('TyCoSid4', null) — when SameSite None, and 6 cookies in total.
   }
   catch (ex) {
     // Just in case.
@@ -1283,10 +1307,9 @@ export function listCompleteUsers(whichUsers, success: (users: UserInclDetailsWi
 type UserAcctRespHandler = (response: UserAccountResponse) => void;
 
 
-export function loadEmailAddressesAndLoginMethods(userId: UserId, success: UserAcctRespHandler) {
-  get(`/-/load-email-addrs-login-methods?userId=${userId}`, response => {
-    success(response);
-  });
+export function loadEmailAddressesAndLoginMethods(userId: UserId, onOk: UserAcctRespHandler,
+          onErr?: (resp: A) => V) {
+  get(`/-/load-email-addrs-login-methods?userId=${userId}`, onOk, onErr);
 }
 
 
@@ -1303,8 +1326,9 @@ export function resendEmailAddrVerifEmail(userId: UserId, emailAddress: string) 
   }, { userId, emailAddress });
 }
 
-export function addEmailAddresses(userId: UserId, emailAddress: string, success: UserAcctRespHandler) {
-  postJsonSuccess('/-/add-email-address', success, { userId, emailAddress });
+export function addEmailAddresses(userId: UserId, emailAddress: St, onOk: UserAcctRespHandler,
+        onErr: (resp: A) => V) {
+  postJsonSuccess('/-/add-email-address', onOk, onErr, { userId, emailAddress });
 }
 
 
@@ -1350,8 +1374,9 @@ export function editMember(userId: UserId, doWhat: EditMemberAction, success: ()
 }
 
 
-export function suspendUser(userId: UserId, numDays: number, reason: string, success: () => void) {
-  postJsonSuccess('/-/suspend-user', success, {
+export function suspendUser(userId: UserId, numDays: Nr, reason: St, onOk: () => V,
+        onErr: (resp: A) => V) {
+  postJsonSuccess('/-/suspend-user', onOk, onErr, {
     userId: userId,
     numDays: numDays,
     reason: reason
@@ -1455,7 +1480,10 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
 }
 
 
-export function loadMyself(callback: (me: Me | NU) => void) {
+/// If not logged in, e.g. the session just expired or got deleted, then, in the response,
+/// `me` and `stuffForMe` in LoadMeResponse would be null.
+///
+export function loadMyself(onOkMaybe: (resp: FetchMeResponse) => Vo) {
   // @ifdef DEBUG
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
@@ -1487,9 +1515,21 @@ export function loadMyself(callback: (me: Me | NU) => void) {
     }
   }
   // SHOULD incl sort order & topic filter in the url params. [2KBLJ80]
-  get(`/-/load-my-page-data?pageIds=${pageIds}`, function (resp: { me?: Me }) {
-    callback(resp.me);
-  });
+  get(`/-/load-my-page-data?pageIds=${pageIds}`, onOkMaybe);
+    // onErr(() => send 'failedToLogin' to parent frame)  [forget_sid12]
+}
+
+
+export function listSessions(patId: PatId, onOk: (resp: ListSessionsResponse) => V,
+        onErr: () => V) {
+  get(`/-/list-sessions?patId=${patId}`, onOk, onErr);
+}
+
+
+export function terminateSessions(
+        ps: { forPatId: PatId, sessionsStartedAt?: WhenMs[], all?: true },
+        onOk: (response: TerminateSessionsResponse) => V, onErr: () => V) {
+  postJsonSuccess(`/-/terminate-sessions`, onOk, ps, onErr);
 }
 
 
@@ -1633,28 +1673,25 @@ export function loadForumCategoriesTopics(forumPageId: string, topicFilter: stri
 
 
 // SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
-// 'users' field to 'usersBrief'.  [.get_n_patch]
-// Maybe minor BUG might this overwrite  store.usersById with users without badges? [pat_tags_lost]
-export function loadForumTopics(categoryId: Nr, orderOffset: OrderOffset,
-    doneCallback: (response: LoadTopicsResponse) => void) {
+// 'users' field to 'usersBrief', no, 'patsBr'? 'Tn = Tiny, Br = Brief, Vb = Verbose?  [.get_n_patch]
+export function loadForumTopics(categoryId: CatId, orderOffset: OrderOffset,
+    onOk: (resp: LoadTopicsResponse) => Vo) {
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
   get(url, (resp: LoadTopicsResponse) => {
-    // SLEEPING_BUG: pat tags lost? resp.users doesn't incl pat tags. [pat_tags_lost]
-    ReactActions.patchTheStore({ usersBrief: resp.users, tagTypes: resp.tagTypes });  // [2WKB04R]
-    doneCallback(resp);
+    ReactActions.patchTheStore(resp.storePatch);  // [2WKB04R]
+    onOk(resp);
   });
 }
 
 
 // SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
 // 'users' field to 'usersBrief'.  [.get_n_patch]
-// Maybe minor BUG might this overwrite  store.usersById with users without badges? [pat_tags_lost]
 export function loadTopicsByUser(userId: UserId,
         doneCallback: (topics: Topic[]) => void) {
   const url = `/-/list-topics-by-user?userId=${userId}`;
-  get(url, (resp: any) => {
-    ReactActions.patchTheStore({ usersBrief: resp.users, tagTypes: resp.tagTypes  });
+  get(url, (resp: LoadTopicsResponse) => {
+    ReactActions.patchTheStore(resp.storePatch);
     doneCallback(resp.topics);
   });
 }
@@ -2114,8 +2151,10 @@ export function createTagType(newTagType: TagType, onOk: (newWithId: TagType) =>
 
 
 export function listTagTypes(forWhat: ThingType, prefix: St,
-        onOk: (tagTypes: TagType[]) => Vo) {
-  getAndPatchStore(`/-/list-tag-types?forWhat=${forWhat}&tagNamePrefix=${prefix}`, onOk);
+        onOk: (resp: { allTagTypes: TagType[] }) => Vo) {
+  const forWhatParam = !forWhat ? '' : `forWhat=${forWhat}&`;
+  const namePrefixParam = !prefix ? '' : `tagNamePrefix=${prefix}`;
+  getAndPatchStore(`/-/list-tag-types?${forWhatParam + namePrefixParam}`, onOk);
 }
 
 

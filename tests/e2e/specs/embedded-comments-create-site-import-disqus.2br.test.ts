@@ -162,7 +162,7 @@ ${htmlToPaste}
 </html>`);
   };
 
-  it("Owen enables the API  TyT6703MRJ5", () => {
+  it("Owen enables the API  TyTENAAPI", () => {
     assert(!owensBrowser.adminArea.tabs.isApiTabDisplayed());
     owensBrowser.adminArea.settings.features.goHere();
     owensBrowser.adminArea.settings.features.setEnableApi(true);
@@ -486,7 +486,7 @@ ${htmlToPaste}
     postCommentsToTalkyard(talkyardPatchFilePath);
   });
 
-  function postCommentsToTalkyard(filePath: string) {
+  function postCommentsToTalkyard(filePath: string) {  // postJsonPatchToTalkyard in wdio-7
     const cmd =
         `nodejs ${toTalkyardScript} ` +
           `--talkyardJsonPatchFile=${filePath} ` +

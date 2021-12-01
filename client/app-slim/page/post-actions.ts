@@ -917,7 +917,7 @@ const MoreDropdownModal = createComponent({
     const content = state.isOpen ? this.makeButtons() : null;
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, showCloseButton: true,
-          atRect: state.buttonRect, windowWidth: state.windowWidth },
+          className: 'e_PAMoreD', atRect: state.buttonRect, windowWidth: state.windowWidth },
         content));
   }
 });

@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as make from '../utils/make';
 import server from '../utils/server';
 import * as utils from '../utils/utils';
-import { TyE2eTestBrowser } from '../utils/pages-for';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import settings from '../utils/settings';
 import c from '../test-constants';
 
@@ -58,7 +58,7 @@ describe(`embcom.create-site-req-verif-email-exit-tours.2br  TyTE2ECREMBCOM1`, (
       fullName: 'E2E Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
       username: 'owen_owner',
-      password: 'publ-ow020',
+      password: 'pub-owe020',
     }
   }
 

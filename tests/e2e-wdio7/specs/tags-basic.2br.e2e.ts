@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { j2s } from '../utils/log-and-die';
 import c from '../test-constants';
 
@@ -335,7 +335,7 @@ describe(`tags-basic.2br  TyTE2ETAGSBSC`, () => {
         // [E2EBUG] no idea why, but unless triggering a relayout,  Webdriverio never finds:
         //   .c_TpcTtl[href="/by-maria-category-a"] + .dw-p-excerpt
         // although I see it myself, find it in Dev Tools.
-        // Trigger relayout: (or make the page wider?)
+        // Trigger relayout: (or make the page wider?)  [topc_list_tags_not_found]
         await br().watchbar.openIfNeeded();
         await br().watchbar.close();
         const actualTagTitles: St[] = await br().forumTopicList.getTopicTags({

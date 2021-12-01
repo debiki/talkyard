@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { j2s } from '../utils/log-and-die';
 import c from '../test-constants';
 
@@ -183,7 +183,7 @@ describe(`badges-basic.2br  TyTE2EBADGESBSC`, () => {
 
     it(`${who} sees that @${ps.username} has these title badge next to posts ${
             ps.postNrs.join(', ')}: ${j2s(ps.badgeTitles)}`, async () => {
-      // Dupl code [.author_badges]
+      // Dupl code [author_badges]
       // Might need to wait for the server to re-render the page — but only in this
       // first `it(..)`.
       let badgeTitles: St[] = [];

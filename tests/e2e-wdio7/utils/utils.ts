@@ -3,10 +3,16 @@
 import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as fs from 'fs';
+import { execSync } from 'child_process';
 import { j2s, logMessage, logUnusual, dieIf } from './log-and-die';
 import settings from './settings';
 import c from '../test-constants';
+import * as utils from './utils';
+import { SiteType, NewSiteOwnerType } from '../test-constants';
 
+const toTalkyardScript =
+        (settings.isInProjBaseDir ? './' : '../../') +
+        'to-talkyard/dist/to-talkyard/src/to-talkyard.js';
 
 
 export function firstDefinedOf(x, y, z?) {
@@ -23,6 +29,59 @@ export function regexEscapeSlashes(origin: string): string {
 
 export function generateTestId(): string {
   return Date.now().toString().slice(3, 10);
+}
+
+export function generateNewSiteData(ps: {
+  newSiteOwner?: NewSiteOwnerType,
+  alreadyLoggedInAtIdProvider?: boolean,
+} = {}): NewSiteData {
+
+  const testId = utils.generateTestId();
+  const localHostname = utils.getLocalHostname('create-site-' + testId);
+
+  return {
+    siteType: SiteType.Forum,
+    testId: testId,
+    localHostname: localHostname,
+    origin: utils.makeSiteOrigin(localHostname),
+    //originRegexEscaped: utils.makeSiteOriginRegexEscaped(localHostname),
+    orgName: "E2E Org Name",
+    newSiteOwner: ps.newSiteOwner ||
+        // Backw compat, old tests:
+        NewSiteOwnerType.OwenOwner,
+    alreadyLoggedInAtIdProvider: ps.alreadyLoggedInAtIdProvider,
+    fullName: 'E2E Test ' + testId,
+    email: settings.testEmailAddressPrefix + testId + '@example.com',
+    // Prefix the number with 'z' because '..._<number>' is reserved. [7FLA3G0L]
+    username: 'e2e_test_z' + testId,
+    password: 'pub5KFV2FY8C',
+  }
+}
+
+export async function postJsonPatchToTalkyard(ps: {
+        filePath: St, apiSecret: St, talkyardSiteOrigin: St, fail?: true,
+        expectedErrors?: St[] }) {
+  const cmd =
+      `nodejs ${toTalkyardScript} ` +
+        `--talkyardJsonPatchFile=${ps.filePath} ` +
+        `--sysbotApiSecret=${ps.apiSecret} ` +
+        `--sendTo=${ps.talkyardSiteOrigin}`
+  logMessage(`Executing this:\n  ${cmd}`)
+  try {
+    await execSync(cmd);  // 'await' so won't forget later
+    if (ps.fail) {
+      assert.fail(`This ought to have failed:\n\n` +
+      `    ${cmd}\n\n` +
+      `    with these error substrings: ${j2s(ps.expectedErrors)}\n`);
+    }
+  }
+  catch (ex) {
+    if (!ps.fail) throw ex;
+    const actualErrText = ex.toString();
+    for (const expErr of ps.expectedErrors || []) {
+      assert.includes(actualErrText, expErr);
+    }
+  }
 }
 
 export function getLocalHostname(anyDefaultNameExclTestPrefix?: string): string {

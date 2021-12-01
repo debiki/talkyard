@@ -24,7 +24,7 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 
 // Note: In VSCode, the Scala Metals plugin, one needs to run the
 // 'Metals: Import Build' task for Metals to notice a Scala version change.
-ThisBuild / scalaVersion := "2.12.12"
+ThisBuild / scalaVersion := "2.12.15"
 
 // Show unchecked and deprecated warnings, in this project and its modules.
 // scalacOptions in ThisBuild ++= Seq("-deprecation")
@@ -68,7 +68,7 @@ val appDependencies = Seq(
   // see: https://mvnrepository.com/artifact/org.postgresql/postgresql/
   Dependencies.Libs.postgresqlJbcdClient,
   // HikariCP — "A solid high-performance JDBC connection pool at last"
-  "com.zaxxer" % "HikariCP" % "3.4.5",                      // latest 3.x as of 2021-08
+  "com.zaxxer" % "HikariCP" % "3.4.5",      // latest 3.x as of 2021-08.  5.0.0 latest version
   // We use both an in-the-JVM-memory cache, and Redis:
   caffeine,  // was: "com.github.ben-manes.caffeine" % "caffeine"
   Dependencies.Libs.rediscala,
@@ -91,9 +91,9 @@ val appDependencies = Seq(
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
   // Dependencies.Libs.apacheTika
-  "io.dropwizard.metrics" % "metrics-core" % "4.1.12.1",
-  "io.jaegertracing" % "jaeger-client" % "0.32.0",
-  "nl.grons" %% "metrics4-scala" % "4.1.9",
+  "io.dropwizard.metrics" % "metrics-core" % "4.1.26",
+  "io.jaegertracing" % "jaeger-client" % "0.32.0",  // 1.6.0 exists now
+  "nl.grons" %% "metrics4-scala" % "4.1.19",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"
   // so it won't be included in the JAR), or there's this weird error: """
   //   class file '...guava-13.0.1.jar(.../LocalCache.class)' is broken
@@ -104,7 +104,7 @@ val appDependencies = Seq(
   //              why-do-i-need-jsr305-to-use-guava-in-scala
   "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided",
   // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
-  "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
+  "org.mockito" % "mockito-all" % "1.9.5" % "test", // I use Mockito with Specs2...
   Dependencies.Libs.scalaTest,
   Dependencies.Libs.scalaTestPlusPlay)
 

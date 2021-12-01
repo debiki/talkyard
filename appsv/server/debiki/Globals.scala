@@ -1100,6 +1100,9 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     // so that the online-users-json sent to the browsers on page load will be mostly up-to-date.
     // (It'll get patched, later, via pubsub events. SHOULD implement this, otherwise
     // race conditions can cause the online-users list in the browser to become incorrect.)
+    // Add a version field to pats_t and an in-mem user? So knows if the in-mem one
+    // is stale; then, the browser shouldn't use it, if it already has a newer
+    // version. [user_version]
     private val usersOnlineCache: UsersOnlineCache =
       caffeine.cache.Caffeine.newBuilder()
         .expireAfterWrite(3, TimeUnit.SECONDS)

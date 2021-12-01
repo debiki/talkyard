@@ -34,9 +34,10 @@ import scala.collection.mutable
 import play.api.http.{HeaderNames => p_HNs}
 import play.api.mvc.{Results => p_Results}
 import talkyard.server.TyLogging
+import talkyard.server.authn.MinAuthnStrength
 
 
-/** Play Framework Actions for requests to Debiki's HTTP API.
+/** Play Framework Actions for requests to Talkyard's HTTP API.
   */
 class PlainApiActions(
   val safeActions: SafeActions,
@@ -46,21 +47,29 @@ class PlainApiActions(
 
   import EdHttp._
   import security.DiscardingSecureCookie
-  import security.DiscardingSessionCookie
+  import security.DiscardingSessionCookies
   import safeActions.ExceptionAction
 
-  def PlainApiAction[B](parser: BodyParser[B],
-        rateLimits: RateLimits, allowAnyone: Bo = false, isLogin: Bo = false,
+  def PlainApiAction[B](
+        parser: BodyParser[B],
+        rateLimits: RateLimits,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+        allowAnyone: Bo = false,
+        isLogin: Bo = false,
         authnUsersOnly: Bo = false,
-        avoidCookies: Bo = false, skipXsrfCheck: Bo = false)
-        : ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, rateLimits,
+        avoidCookies: Bo = false,
+        skipXsrfCheck: Bo = false,
+        ): ActionBuilder[ApiRequest, B] =
+    PlainApiActionImpl(parser, rateLimits, minAuthnStrength = minAuthnStrength,
         authnUsersOnly = authnUsersOnly,
         allowAnyone = allowAnyone, isLogin = isLogin, avoidCookies = avoidCookies,
         skipXsrfCheck = skipXsrfCheck)
 
-  def PlainApiActionStaffOnly[B](parser: BodyParser[B]): ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, NoRateLimits, staffOnly = true)
+  def PlainApiActionStaffOnly[B](
+          parser: BodyParser[B],
+          minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
+          ): ActionBuilder[ApiRequest, B] =
+    PlainApiActionImpl(parser, NoRateLimits, minAuthnStrength, staffOnly = true)
 
   def PlainApiActionAdminOnly[B](rateLimits: RateLimits, parser: BodyParser[B])
         : ActionBuilder[ApiRequest, B] =
@@ -68,7 +77,7 @@ class PlainApiActions(
 
   def PlainApiActionApiSecretOnly[B](rateLimits: RateLimits, parser: BodyParser[B])
         : ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, rateLimits, viaApiSecretOnly = true)
+    PlainApiActionImpl(parser, rateLimits, MinAuthnStrength.ApiSecret, viaApiSecretOnly = true)
 
   def PlainApiActionSuperAdminOnly[B](parser: BodyParser[B])
         : ActionBuilder[ApiRequest, B] =
@@ -87,6 +96,7 @@ class PlainApiActions(
     */
   def PlainApiActionImpl[B](aParser: BodyParser[B],
         rateLimits: RateLimits,
+        minAuthnStrength: MinAuthnStrength = MinAuthnStrength.Normal,
         adminOnly: Boolean = false,
         staffOnly: Boolean = false,
         authnUsersOnly: Bo = false,
@@ -277,16 +287,17 @@ class PlainApiActions(
 
         val sysbot = dao.getTheUser(SysbotUserId)
         return runBlockIfAuthOk(request, site, dao, Some(sysbot),
-              SidOk("_api_secret_", 0, Some(SysbotUserId)),
+              Some(TySession.singleApiCallSession(asPatId = SysbotUserId)),
+              SidOk(TySession.ApiSecretPart12, 0, Some(SysbotUserId)),
               XsrfOk("_email_webhook_"), None, block)
       }
 
       DO_AFTER // 2021-08-01 enable this always. Test in dev-test first, for now.
       throwForbiddenIf(Globals.isDevOrTest && !dao.getWholeSiteSettings().enableApi,
-            "TyE406MEG24M", "API not enabled")
+            "TyEAPI0ENB_", "API not enabled")
 
       val apiSecret = dao.getApiSecret(secretKey) getOrElse {
-        throwNotFound("TyEAPI0SECRET", "No such API secret or it has been deleted")
+        throwForbidden("TyEAPI0SECRET01_", "No such API secret or it has been deleted")
       }
       val tyIdPrefix = "tyid="
       val talkyardIdPrefix = "talkyardId="   // DEPRECATED 2019-08-18 v0.6.43
@@ -327,8 +338,11 @@ class PlainApiActions(
       // if isn't sysbot.
 
       runBlockIfAuthOk(request, site, dao, Some(user),
+          Some(TySession.singleApiCallSession(asPatId = user.id)),
           // SECURITY minor: Less error prone with a Bool field instead of this magic string.
-          SidOk("_api_secret_", 0, Some(user.id)), XsrfOk("_api_secret_"), None, block)
+          // ... getting fixed, see TySession just above, [btr_sid].
+          SidOk(TySession.ApiSecretPart12, 0, Some(user.id)),
+          XsrfOk(TySession.ApiSecretPart12), None, block)
     }
 
 
@@ -338,11 +352,11 @@ class PlainApiActions(
           block: ApiRequest[A] => Future[Result]): Future[Result] = {
 
       // Why avoid cookies? In an embedded comments iframe, cookies frequently get blocked
-      // by Privacy Badger or iOS or browser settings for 3rd-party-cookies.
+      // by iOS ITP or FF ETP or browser settings for 3rd-party-cookies.
       // The embedded comments show-page etc endpoints sets avoidCookies,
       // so we know, here, that we should avoid setting any cookies.  [NOCOOKIES]
       // And, for subsequent requests — to *other* endpoints — the browser Javascript code sets
-      // the AvoidCookiesHeaderName header, so we won't froget that we should avoid cookies here.
+      // the AvoidCookiesHeaderName header, so we won't forget that we should avoid cookies here.
       val hasCookiesAlready = request.cookies.exists(_.name != "esCoE2eTestPassword")
       val maySetCookies = hasCookiesAlready || {   // TODO
         val shallAvoid = avoidCookies || {
@@ -358,7 +372,9 @@ class PlainApiActions(
 
       val expireIdleAfterMins = siteSettings.expireIdleAfterMins
 
-      val (actualSidStatus, xsrfOk, newCookies) = corsInfo match {
+      val CheckSidAndXsrfResult(
+              anyTySession, actualSidStatus, xsrfOk, newCookies, delFancySidCookies) =
+            corsInfo match {
         case ci: CorsInfo.OkayCrossOrigin =>
           // Cross-origin requests with credentials (i.e. session id cookie)
           // not yet tested and thought thrown.
@@ -370,17 +386,19 @@ class PlainApiActions(
           // cross-origin requests.
           // Currently only publicly accessible data can be seen, since proceeding
           // with no session id.
-          (SidAbsent, XsrfOk("cors_no_xsrf"), Nil)
+          CheckSidAndXsrfResult(
+                None, SidAbsent, XsrfOk("cors_no_xsrf"), Nil, Nil)
 
-        case _: CorsInfo.SameOrigins | CorsInfo.NotCorsNoOriginHeader =>
+        case ci =>
+          dieIf(ci.isCrossOrigin, "TyEJ2503TKHJ")
           security.checkSidAndXsrfToken(
-                request, anyRequestBody = Some(request.body), siteId = site.id,
+                request, anyRequestBody = Some(request.body), site, dao,
                 expireIdleAfterMins, maySetCookies = maySetCookies,
                 skipXsrfCheck = skipXsrfCheck)
       }
 
       // Ignore and delete any broken or expired session id cookie.
-      val (mendedSidStatus, deleteSidCookie) =
+      val (mendedSidStatus, deleteAllSidCookies) =
         if (actualSidStatus.canUse) (actualSidStatus, false)
         else (SidAbsent, true)
 
@@ -411,33 +429,40 @@ class PlainApiActions(
                 }
 
           runBlockIfAuthOk(request, site, dao, anyUserMaybeSuspended,
-                mendedSidStatus, xsrfOk, anyBrowserId, block)
+                anyTySession, mendedSidStatus, xsrfOk, anyBrowserId, block)
         }
         catch {
+          // CLEAN_UP have getUserBySessionId() return an error instead of throwing
           case _: LoginNotFoundException =>
             // This might happen if I manually deleted stuff from the
             // database during development, or if the server has fallbacked
             // to a standby database.
+            // (Does it make sense to delete any related session from sessions_t?)
             throw ResultException(InternalErrorResult2(i"""
               |Internal error, please try again. For example, reload the page. [DwE034ZQ3]
               |
               |Details: A certain login id has become invalid. I just gave you a new id,
               |but you will probably need to login again.""")
-              .discardingCookies(DiscardingSessionCookie))
+              .discardingCookies(DiscardingSessionCookies: _*))
         }
 
       val resultOkSid =
-        if (newCookies.isEmpty && newBrowserIdCookie.isEmpty && !deleteSidCookie) {
+        if (newCookies.isEmpty && newBrowserIdCookie.isEmpty && !deleteAllSidCookies
+              && delFancySidCookies.isEmpty) {
           resultOldCookies
         }
         else {
           resultOldCookies.map({ result =>
             var resultWithCookies = result
-              .withCookies(newCookies ::: newBrowserIdCookie: _*)
-              .withHeaders(safeActions.MakeInternetExplorerSaveIframeCookiesHeader)
-            if (deleteSidCookie) {
+                  .withCookies(newCookies ::: newBrowserIdCookie: _*)
+                  .withHeaders(safeActions.MakeInternetExplorerSaveIframeCookiesHeader)
+            if (deleteAllSidCookies) {
               resultWithCookies =
-                resultWithCookies.discardingCookies(DiscardingSessionCookie)
+                    resultWithCookies.discardingCookies(DiscardingSessionCookies: _*)
+            }
+            else if (delFancySidCookies.nonEmpty) {
+              resultWithCookies =
+                    resultWithCookies.discardingCookies(delFancySidCookies: _*)
             }
             resultWithCookies
           })(executionContext)
@@ -448,27 +473,37 @@ class PlainApiActions(
 
 
     private def runBlockIfAuthOk[A](request: Request[A], site: SiteBrief, dao: SiteDao,
-          anyUserMaybeSuspended: Option[Participant], sidStatus: SidStatus,
+          anyUserMaybeSuspended: Option[Participant],
+          anyTySession: Opt[TySession], sidStatus: SidStatus,
           xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result])
           : Future[Result] = {
 
       // Maybe the user was logged in in two different browsers, and deleted hens account
-      // in one browser and got logged out there, only.
-      if (anyUserMaybeSuspended.exists(_.isDeleted))
+      // in one browser and got logged out, when this request was going on already?
+      if (anyUserMaybeSuspended.exists(_.isDeleted)) {
+        // A race. Any session already deleted by UserDao [end_sess],
+        dieIf(dao.listPatsSessions(anyUserMaybeSuspended.get.id).nonEmpty, "TyESTILLSID01")
         return Future.successful(
-          ForbiddenResult("TyEUSRDLD", "That account has been deleted")
-            .discardingCookies(DiscardingSessionCookie))
+              ForbiddenResult("TyEUSRDLD", "That account has been deleted")
+                  .discardingCookies(DiscardingSessionCookies: _*))
+      }
 
       val isSuspended = anyUserMaybeSuspended.exists(_.isSuspendedAt(new ju.Date))
 
-      if (isSuspended && request.method != "GET")
+      if (isSuspended && request.method != "GET") {
+        // A race. Any session already deleted by UserDao [end_sess],
+        dieIf(dao.listPatsSessions(anyUserMaybeSuspended.get.id).nonEmpty, "TyESTILLSID02")
         return Future.successful(
-            ForbiddenResult("TyESUSPENDED_", "Your account has been suspended")
-              .discardingCookies(DiscardingSessionCookie))
+              ForbiddenResult("TyESUSPENDED_", "Your account has been suspended")
+                  .discardingCookies(DiscardingSessionCookies: _*))
+      }
 
       val anyUser =
-        if (isSuspended) None
-        else anyUserMaybeSuspended
+            if (!isSuspended) anyUserMaybeSuspended
+            else {
+              // If suspended, one can still see publicly visible things.
+              None
+            }
 
       // Re the !superAdminOnly test: Do allow access for superadmin endpoints,
       // so they can reactivate this site, in case this site is the superadmin site itself.
@@ -493,6 +528,41 @@ class PlainApiActions(
 
       if (adminOnly && !anyUser.exists(_.isAdmin) && !isLogin)
         throwLoginAsAdmin(request)
+
+      // Some staffOnly endpoints are okay with an embedded session — namely
+      // if moderating embedded comments [mod_emb_coms_sid]. But admin endpoints always
+      // need the full session id (not just parts 1+2+3, but also part 4 HttpOnly).
+      dieIf((adminOnly || superAdminOnly) && !minAuthnStrength.fullSidRequired, "TyE502MGE6M1")
+
+      if (anyTySession.exists(_.isApiCall)) {
+        // Fine, we've checked an API secret, no session parts needed.
+        assert(anyTySession.get.part1CompId == TySession.ApiSecretPart1, "TyE502MEG5")
+      }
+      else if (anyTySession.forall(_.part4Present)) {
+        // Then either 1) the user isn't logged in; there is no session — that's fine;
+        // we'll do authZ checks later; some endpoints (e.g. for logging in) are accessible
+        // also if not logged in.
+        // Or 2) the user is logged in, and this request does include the HttpOnly
+        // session part — all fine.
+      }
+      else if (minAuthnStrength.fullSidRequired || staffOnly || adminOnly || superAdminOnly) {
+        // Part 4 HttpOnly is required, but is missing.  Dupl code [btr_sid_part_4]
+        assert(anyTySession.isDefined, "TyE04MWG245")
+        assert(anyTySession.get.part4Absent, "TyE04MWG246")
+        val useOldSid = site.isFeatureEnabled("ffUseOldSid", globals.config.featureFlags)
+        if (!useOldSid) {
+          throwForbidden("TyEWEAKSID_",
+                s"Please log out and log in, to get a complete session id — \n" +
+                s"this endpoint, ${request.path}, requires the HttpOnly part of the session id")
+        }
+      }
+      else {
+        // Part 4 of the session is missing, and the current endpoint doesn't need part 4
+        // (such endpoints are for embedded discussions — then, cookies don't work (they
+        // generally don't work in iframes), so we're getting only session parts 1+2(+3) via
+        // javascript and custom HTTP headers).
+        dieUnless(anyTySession.exists(_.part4Absent), "TyE70MWEG25SM")
+      }
 
       if (superAdminOnly) {
         globals.config.superAdmin.siteIdString match {
@@ -590,7 +660,7 @@ class PlainApiActions(
       }
 
       val apiRequest = ApiRequest[A](
-        site, sidStatus, xsrfOk, browserId, anyUser, dao, request)
+        site, anyTySession, sidStatus, xsrfOk, browserId, anyUser, dao, request)
 
       rateLimiter.rateLimit(rateLimits, apiRequest)
 
@@ -646,9 +716,11 @@ class PlainApiActions(
       })(executionContext)
 
       if (isSuspended) {
-        // BUG: (old? can still happen?) We won't get here if e.g. a 403 Forbidden exception
-        // was thrown because 'anyUser' was set to None. How solve that?
-        result = result.map(_.discardingCookies(DiscardingSessionCookie))(executionContext)
+        // Harmless "problem": This code won't run, if we started handling the request,
+        // but then an exception got thrown (e.g. a 404 Access Denied ResultException,
+        // see above).  Then, the cookies won't get deleted — which doesn't really matter,
+        // since they're unusable; session deleted server side already.  [btr_sid]
+        result = result.map(_.discardingCookies(DiscardingSessionCookies: _*))(executionContext)
       }
       result
     }
