@@ -162,10 +162,8 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     // maybe reconsider, and e.g. allow live updates of embedded comments.
     if (anyTySession.exists(_.part4Absent)) {
       // Dupl code [btr_sid_part_4]
-      val tryFancySid = site.isFeatureEnabled("ffTryNewSid", globals.config.featureFlags)
-      val onlyFancySid = site.isFeatureEnabled("ffUseNewSid", globals.config.featureFlags)
-      val doUseFancySid = onlyFancySid || tryFancySid
-      if (doUseFancySid) {
+      val useOldSid = site.isFeatureEnabled("ffUseOldSid", globals.config.featureFlags)
+      if (!useOldSid) {
         UNTESTED
         throwForbidden("TyEWEAKSIDWS",
               s"Please log out and log in, to get a complete session id — \n" +

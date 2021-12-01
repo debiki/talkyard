@@ -1159,7 +1159,7 @@ export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
 export function getCurSid12Maybe3(): St | N {  // [ts_authn_modl]
   const store: Store = debiki2.ReactStore.allData();
   const cookieName =
-          debiki2.store_isFeatFlagOn(store, 'ffUseNewSid') ? 'TyCoSid123' : 'dwCoSid';
+          !debiki2.store_isFeatFlagOn(store, 'ffUseOldSid') ? 'TyCoSid123' : 'dwCoSid';
   let sid = getSetCookie(cookieName);
   if (!sid) {
     // Cannot use store.me.mySidPart1 — we might not yet have loaded

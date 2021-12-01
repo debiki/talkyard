@@ -71,7 +71,8 @@ function handleLoginInOtherBrowserTab() {
 
   // New style session id:  [btr_sid]
   // ------------------------------------------
-  if (debiki2.store_isFeatFlagOn(store, 'ffUseNewSid')) {
+  const useNewSid = !debiki2.store_isFeatFlagOn(store, 'ffUseOldSid');
+  if (useNewSid) {
     const sidParts123 = debiki2.Server.getCurSid12Maybe3();
     const stillTheSameSid = sidParts123
           ? me.mySidPart1 && sidParts123.startsWith(me.mySidPart1)

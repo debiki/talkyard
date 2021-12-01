@@ -788,8 +788,7 @@ class EdSecurity(globals: Globals) {
     val site = req.site
     val dao = req.dao
 
-    val tryFancySid = site.isFeatureEnabled("ffTryNewSid", globals.config.featureFlags)
-    val useFancySid = site.isFeatureEnabled("ffUseNewSid", globals.config.featureFlags)
+    val useOldSid = site.isFeatureEnabled("ffUseOldSid", globals.config.featureFlags)
 
     val ppt = dao.getParticipant(userId)
     throwForbiddenIf(ppt.exists(_.isGroup), "TyELGIGRP", "Cannot login as a group")  // [imp-groups]
@@ -804,7 +803,7 @@ class EdSecurity(globals: Globals) {
     // New better sid  [btr_sid]
     // ----------------------------------------
 
-    if (tryFancySid || useFancySid) {
+    if (!useOldSid) {
       val (newSidCookies, session) = genAndSaveFancySid(req, patId = userId,
             expireIdleAfterSecs = expireIdleAfterSecs, dao.now(),
             dao.asInstanceOf[SessionSiteDaoMixin])
@@ -931,10 +930,9 @@ class EdSecurity(globals: Globals) {
 
     val hasFancySid = anyFancySidPart12Maybe3.isDefined || anyFancySidPart4.isDefined ||
           anyFancySidPart5.isDefined
-    val useOnlyFancySid = site.isFeatureEnabled("ffUseNewSid", globals.config.featureFlags)
-    val tryFancySid = site.isFeatureEnabled("ffTryNewSid", globals.config.featureFlags)
+    val useOldSid = site.isFeatureEnabled("ffUseOldSid", globals.config.featureFlags)
 
-    if (useOnlyFancySid || (tryFancySid && hasFancySid)) {
+    if (!useOldSid) {
       var result = checkFancySessionId(anyPart12Maybe3 = anyFancySidPart12Maybe3,
             anyPart4 = anyFancySidPart4, anyPart5 = anyFancySidPart5,
             dao, now, expireIdleAfterMillis = expireIdleAfterMillis)
