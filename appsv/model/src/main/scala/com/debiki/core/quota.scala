@@ -24,7 +24,24 @@ import java.{util => ju}
 case class OverQuotaException(
   siteId: SiteId,
   resourceUsage: ResourceUse)
-  extends DebikiException("DwE9Z53K7", "Disk quota exceeded")
+  extends DebikiException("", "") {
+
+  override def getMessage = {
+    val diskBytes = resourceUsage.estimatedDbBytesUsed
+    val diskMiB = diskBytes.toDouble / Mebibyte64
+    //val diskMayUse = resourceUsage.quotaLimitMbs * Mebibyte64
+    //val diskPercent = diskBytes.toDouble / diskMayUse.toDouble
+    val fileBytes = resourceUsage.fileStorageUsedBytes
+    val fileMiB = fileBytes.toDouble / Mebibyte64
+    //val fileMayUse = resourceUsage.fileSysQuotaMiBs * Mebibyte64
+
+    s"s$siteId: Disk quota exceeded, db uses ${diskBytes} bytes, fs ${
+          fileBytes} bytes [TyE9Z53K7]"
+    //s"fs: ${ resourceUsage.fileStorageUsedBytes} of ${resourceUsage.fileSysQuotaMiBs} MiB")
+    //s"$details [TyE9Z53K7]"
+  }
+
+}
 
 
 case class ResourceUse(

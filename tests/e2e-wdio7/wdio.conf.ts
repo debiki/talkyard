@@ -487,6 +487,7 @@ export const config = { // doesn't work: WebdriverIO.Config = {
     global.wdioBrowserB = global.browserB; // only in multiremote tests
     global.wdioBrowserC = global.browserC; //  — "" —
 
+    // This won't resize any login popup though. Then, might need to scroll. [e2e_win_size]
     global.wdioBrowserA.setWindowSize(1150, 1150);
     if (global.wdioBrowserB) global.wdioBrowserB.setWindowSize(1150, 1150);
     if (global.wdioBrowserC) global.wdioBrowserC.setWindowSize(1150, 1150);
@@ -739,11 +740,13 @@ const browserName = config.capabilities[0].browserName;
 // 2br and 3br is how many browsers the tests need — 2 or 3 browsers, default 1.
 const onlyAndSpec = (settings.only || '') + ((settings as any).spec || '');
 const needsNumBrowsers =
+    onlyAndSpec.indexOf('4br') >= 0 || settings.numBrowsers >= 4
+        ? 4 : (
     onlyAndSpec.indexOf('3br') >= 0 || settings.numBrowsers >= 3
-        ? 3
-        : (onlyAndSpec.indexOf('2br') >= 0 || settings.numBrowsers === 2
-            ? 2
-            : 1);
+        ? 3 : (
+    onlyAndSpec.indexOf('2br') >= 0 || settings.numBrowsers === 2
+        ? 2
+        : 1));
 
 if (needsNumBrowsers >= 2) {
   const theCaps = config.capabilities[0];
@@ -762,6 +765,12 @@ if (needsNumBrowsers >= 2) {
   // in @wdio/selenium-standalone-service/build/launcher.js (v6.0.15, April 2020).
   if (needsNumBrowsers >= 3) {
     config.capabilities.browserC = {
+      capabilities: { ...theCaps }
+    };
+  };
+
+  if (needsNumBrowsers >= 4) {
+    config.capabilities.wdioBrowserD = {
       capabilities: { ...theCaps }
     };
   };

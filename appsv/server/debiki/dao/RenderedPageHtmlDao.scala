@@ -57,20 +57,20 @@ trait RenderedPageHtmlDao {
   }
 
 
-  private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_], renderParams: PageRenderParams)
-        : RenderedPage = {
+  private def renderWholePageHtmlUseDbCache(pageRequest: PageRequest[_],
+        renderParams: PageRenderParams): RenderedPage = {
     if (!pageRequest.pageExists)
       throwNotFound("TyE00404", "Page not found")
 
     val pageId = pageRequest.thePageId
 
     globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
-      val jsonResult: PageToJsonResult = jsonMaker.pageToJson(pageId, renderParams)
+      val jsonResult: PageToJsonResult =
+            jsonMaker.pageToJson(pageId, renderParams)
 
       // This is the html for the topic and replies, i.e. the main content / interesting thing.
-      RENAME // 'HtmlContent'  to 'PagePosts'?  More specific?
       val (cachedHtmlContent, cachedVersion) =
-        renderContentMaybeUseDatabaseCache(  // RENAME to renderPagePostsUseDbCache ?
+        renderPagePostsHtmlUseDbCache(
             pageId, renderParams, jsonResult.version, jsonResult.reactStoreJsonString)
 
       val tpi = new PageTpi(pageRequest, jsonResult.reactStoreJsonString,
@@ -83,14 +83,14 @@ trait RenderedPageHtmlDao {
 
       // This is the html for the whole page: <html>, <head>, <body>, and <script>s,
       // and the html content.
-      val pageHtml: String = views.html.templates.page(tpi).body
+      val pageHtml: St = views.html.templates.page(tpi).body
 
       RenderedPage(pageHtml, jsonResult.reactStoreJsonString, jsonResult.unapprovedPostAuthorIds)
     }
   }
 
 
-  def renderPageMaybeUseMemCache(pageRequest: PageRequest[_]): RenderedPage = {
+  def renderWholePageHtmlMaybeUseMemCache(pageRequest: PageRequest[_]): RenderedPage = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
@@ -117,7 +117,7 @@ trait RenderedPageHtmlDao {
     if (!useMemCache) {
       // Bypassing the cache is rather expensive.
       context.rateLimiter.rateLimit(RateLimits.ViewPageNoCache, pageRequest)
-      return loadPageFromDatabaseAndRender(pageRequest, renderParams)
+      return renderWholePageHtmlUseDbCache(pageRequest, renderParams)
     }
 
     context.rateLimiter.rateLimit(RateLimits.ViewPage, pageRequest)
@@ -127,13 +127,31 @@ trait RenderedPageHtmlDao {
       ifFound = {
         logger.trace(s"s$siteId: Page found in mem cache: $key")
       },
-      orCacheAndReturn = {
-      logger.trace(s"s$siteId: Page not in mem cache: $key")
+      orCacheAndReturn = Some {
+        logger.trace(s"s$siteId: Page not in mem cache: $key")
+        rememberOrigin(renderParams)
 
-      // Remember the server's origin, so we'll be able to uncache pages cached with this origin.
-      // Could CLEAN_UP this later. Break out reusable fn? place in class MemCache?  [5KDKW2A]
-      val originsKey = s"$siteId|origins"
-      memCache.cache.asMap().merge(
+        if (pageRequest.thePageRole == PageType.Forum) {
+          logger.trace(s"s$siteId: Mem-Remembering forum: ${pageRequest.thePageId}")
+          rememberForum(pageRequest.thePageId)
+        }
+
+        // Here we might load and mem-cache actually stale html from the database. But if
+        // loading stale html, we also enqueue the page to be rerendered in the background,
+        // and once it's been rerendered, we update this mem cache. [7UWS21]
+        renderWholePageHtmlUseDbCache(pageRequest, renderParams)
+      },
+      metric = globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
+
+    result
+  }
+
+
+  /// Remember the server's origin, so we'll be able to uncache pages cached with this origin.
+  /// Could CLEAN_UP this later. Break out reusable fn? place in class MemCache?  [5KDKW2A]
+  private def rememberOrigin(renderParams: PageRenderParams): U = {
+    val originsKey = s"$siteId|origins"
+    memCache.cache.asMap().merge(
         originsKey,
         MemCacheValueIgnoreVersion(Set(renderParams.origin)),
         new ju.function.BiFunction[DaoMemCacheAnyItem, DaoMemCacheAnyItem, DaoMemCacheAnyItem] () {
@@ -151,26 +169,12 @@ trait RenderedPageHtmlDao {
             }
           }
         })
-
-      if (pageRequest.thePageRole == PageType.Forum) {
-        logger.trace(s"s$siteId: Mem-Remembering forum: ${pageRequest.thePageId}")
-        rememberForum(pageRequest.thePageId)
-      }
-
-      // Here we might load and mem-cache actually stale html from the database. But if
-      // loading stale html, we also enqueue the page to be rerendered in the background,
-      // and once it's been rerendered, we update this mem cache. [7UWS21]
-      Some(loadPageFromDatabaseAndRender(pageRequest, renderParams))
-    },
-      metric = globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
-
-    result
   }
 
 
-  private def renderContentMaybeUseDatabaseCache(pageId: PageId, renderParams: PageRenderParams,
-        currentReactStoreJsonVersion: CachedPageVersion, currentReactStoreJsonString: String)
-        : (String, CachedPageVersion) = {
+  private def renderPagePostsHtmlUseDbCache(pageId: PageId, renderParams: PageRenderParams,
+        currentReactStoreJsonVersion: CachedPageVersion, currentReactStoreJsonString: St)
+        : (St, CachedPageVersion) = {
     // COULD reuse the caller's transaction, but the caller currently uses > 1  :-(
     // Or could even do this outside any transaction.
 

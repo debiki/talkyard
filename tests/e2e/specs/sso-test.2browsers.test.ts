@@ -126,6 +126,11 @@ describe("sso-test  TyT4ABKRW0268", () => {
 
   it("... he logs out", () => {
     owensBrowser.deleteCookie('dwCoSid');
+    // Deleting any session id cookie, logs us out.  Only cookie TyCoSid123
+    // is not-HttpOnly and can be deleted, so let's delete it.
+    // What! This is Webdriver.io, which can delete all cookies. But whatever,
+    // let's delete 123 only, that's enough.
+    owensBrowser.deleteCookie('TyCoSid123');  // TyTESESS123GONE
     owensBrowser.refresh();
   });
 
@@ -222,7 +227,7 @@ describe("sso-test  TyT4ABKRW0268", () => {
     mariasBrowser.go(discussionPageUrl);
   });
 
-  it("... logs in, without getting redirected to the external SSO login page", () => {
+  it("... logs in, doesn't get redirected to the external SSO login page  TyTECONTAFTAUN", () => {
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 

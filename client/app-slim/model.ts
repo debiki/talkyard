@@ -35,7 +35,7 @@ interface PageSession  {
   //
   // ADD_TO_DOCS
   //
-  weakSessionId?: St;
+  weakSessionId?: St;  // RENAME to sid12Maybe3 ?
 
   // If the session is for an embedded comments iframe. REMOVE incl in sid instead, somehow.
   sessType?: SessionType.AutoTokenSiteCustomSso;
@@ -72,6 +72,10 @@ interface CheckboxEvent {
     checked: boolean;
   };
 }
+
+/// Either compares two items (if function.length === 2) or compares
+/// a field value (if length === 1).
+type ArrItemIsSameFn<Item> = ((a: Item, b: Item) => Bo) | ((it: Item) => any);
 
 type ValueOk<T> = {
   value?: T;
@@ -394,7 +398,7 @@ interface Post {
   // And for drafts, we show a <pre>the-source</pre>, for now. [DFTSRC]
   unsafeSource?: string;
   sanitizedHtml?: string;
-  tags?: string[];
+  pubTags?: Tag[];
   numPendingFlags?: number;
   numHandledFlags?: number;
 }
@@ -477,11 +481,15 @@ interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
 
 
 // Extend Pat, set id to a new StrangerId if not logged in?
-type Me = Myself
-interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
+type Myself = Me; // renaming to Me
+interface Me extends OwnPageNotfPrefs {   // + extends Pat?
   dbgSrc?: string;
+  // This is not the whole session id — it's the first 16 chars only [sid_part1];
+  // the remaining parts have (a lot) more entropy than necessary.
+  mySidPart1?: St | N;
   id?: UserId;
   isStranger?: Bo;
+  // missing?: isGuest?: Bo
   isGroup?: boolean; // currently always undefined (i.e. false)
   isLoggedIn?: boolean;
   isAdmin?: boolean;
@@ -506,14 +514,23 @@ interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
   thereAreMoreUnseenNotfs: boolean;
   notifications: Notification[];
 
+  // "Notice" means info / a warning of something, especially to allow
+  // preparations to be made. "Notification" though, is getting info about
+  // something, need not be so important.
+  // Currently only to admins.
+  adminNotices?: Notice[];
+
   snoozeUntilMins?: WhenMins | false;
 
   watchbarTopics?: WatchbarTopics;
   watchbar: Watchbar;
 
+  // --- Include in StuffForMe insted? ----
   restrictedTopics: Topic[];
   restrictedTopicsUsers: Participant[];
   restrictedCategories: Category[];
+  // -----------------------------------
+
   // groupsMaySee: Group[]; // groups oneself may see [305STGW2]
 
   // Legacy: REMOVE
@@ -524,11 +541,15 @@ interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
   uiPrefsOwnFirst: UiPrefs[];
 
   myGroupIds: UserId[];
+  // --- Include in StuffForMe insted? ----
   myDataByPageId: { [id: string]: MyPageData };
   myCurrentPageData: MyPageData;
+  // -----------------------------------
 
   // For all pages in the store / recent-posts-lists on the profile page.
   marksByPostId: { [postId: number]: any }; // sleeping BUG: probably using with Nr (although the name implies ID), but should be ID
+
+  pubTags?: Tag[];
 
   // So can avoid showing getting-started-guide for admins — it's not needed, for embedded comments sites.
   isEmbeddedCommentsSite?: boolean;
@@ -543,6 +564,23 @@ interface Myself extends OwnPageNotfPrefs {   // RENAME to Me
 
 
 type MyselfPatch = Partial<Myself>;
+type MePatch = MyselfPatch;  // renaming all 'Myself' to 'Me'
+
+
+interface StuffForMe {
+  tagTypes?: TagType[];
+}
+
+
+interface Session {
+  patId: PatId;
+  createdAt: WhenMs;
+  version: Nr,
+  startHeaders: { [name: St]: St };
+  part1: St;
+  deletedAt?: WhenMs;
+  expiredAt?: WhenMs;
+}
 
 
 interface GroupPerms {
@@ -621,6 +659,16 @@ interface Notification {
 }
 
 
+interface Notice {
+  id: NoticeId;
+  toPatId: 19;  // always to admins, group 19, currently
+  firstAtMins: WhenMins;
+  lastAtMins: WhenMins,
+  numTotal: Nr,
+  noticeData?: Object,
+}
+
+
 interface ReadingProgress {
   lastViewedPostNr: number;
 }
@@ -635,6 +683,7 @@ interface HelpMessage {
   doAfter?: () => void;
   type?: number;
   className?: string;
+  isNice?: Bo;
   isWarning?: boolean;
   alwaysShow?: boolean;
   moreHelpAwaits?: boolean;
@@ -735,6 +784,47 @@ interface CategoryPatch extends Category {  // or Partial<Category>?
 }
 
 
+
+interface TagType {
+  id: TagTypeId;
+  canTagWhat: ThingType;
+  dispName: St;
+}
+
+
+interface TagTypeStats {
+  tagTypeId: TagTypeId;
+  numTotal: Nr;
+  numPostTags: Nr;
+  numPatBadges: Nr;
+}
+
+
+interface Tag {
+  id: TagId;
+  tagTypeId: TagTypeId;
+  onPatId?: PatId;
+  onPostId?: PostId;
+}
+
+
+// Previously, old tags:
+/*
+interface TagAndStats {
+  label: string;
+  numTotal: number;
+  numPages: number;
+  numSubscribers?: number;
+  numMuted?: number;
+}
+
+interface TagsStuff {
+  tagsAndStats?: TagAndStats[];
+  myTagNotfLevels?: { [tagLabel: string]: PageNotfLevel };
+}
+*/
+
+
 interface Topic {
   pageId: string;
   pageRole: PageRole;
@@ -747,6 +837,7 @@ interface Topic {
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;
+  pubTags?: Tag[];
   firstImageUrls?: string[];
   popularRepliesImageUrls?: string[];
   popularityScore?: number;
@@ -822,13 +913,37 @@ interface WatchbarTopics {
 }
 
 
+/// When loading new page html, this is included, as json, in a <script> tag in the page html.
+///
 interface VolatileDataFromServer {
-  usersOnline: Participant[];
-  numStrangersOnline: number;
-  me?: Myself;
+  usersOnline: Pat[];
+  numStrangersOnline: Nr;
+  me?: Me;
+  stuffForMe?: StuffForMe;
   // Sometimes, on embedded comments pages, privacy tools and settings remove cookies.  [NOCOOKIES]
   // Then we include an xsrf token in the page json instead.
-  xsrfTokenIfNoCookies?: string;
+  xsrfTokenIfNoCookies?: St;
+}
+
+
+/// For single-page-app-navigating to a new page — then, we don't need everything in
+/// VolatileDataFromServer, only the below. And we get it from the server via a http request.
+///
+/// reactStoreJsonString includes things needed to show the page, e.g. page title,
+/// orig post, replies, authors, etc — the same (exactly?) as the store json in the
+/// <script id='thePageJson'> json incl in the page html.
+///
+interface PageJsonAndMe {
+  reactStoreJsonString: St;
+  // Actually only need .watchbar and .myDataByPageId. [load_less_me_data]
+  me?: Me;
+  stuffForMe?: StuffForMe;
+}
+
+
+interface PageJsonProblem {
+  problemCode;
+  problemMessage: St;
 }
 
 
@@ -860,8 +975,13 @@ interface Page
   externalBacklinks?: LinkTitleUrl[];
   pageRole: PageRole;
   pagePath: PagePath;
+  //--------
   pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings
-      // Or rather, split into different fields [PAGETYPESETTNG].
+      // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
+  forumSearchBox?: ShowSearchBox;
+  forumMainView?: Nr;
+  forumCatsTopics?: Nr;
+  //--------
   pageHtmlTagCssClasses?: string;
   // Overrides the title from the title Post.
   pageHtmlHeadTitle?: string;
@@ -1069,9 +1189,16 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
   // Overrides quickUpdate.
   cannotQuickUpdate?: boolean;
 
+  // Any page settings, e.g. layout or sort order, pat is currently editing and previewing.
+  // Any fields here, overrides those in this.currentPage. But disappears on page reload
+  // (unless saved).
+  curPageTweaks?: Partial<Page>;
+
   debugStartPageId: string;
 
-  tagsStuff?: TagsStuff;
+  tagTypesById?: TagTypesById;
+  tagTypeStatsById?: { [tagTypeId: number]: TagTypeStats };
+
   superadmin?: SuperAdminStuff;
 }
 
@@ -1193,15 +1320,6 @@ interface SiteSection {  // also see interface Forum just above
 }
 
 
-interface TagAndStats {
-  label: string;
-  numTotal: number;
-  numPages: number;
-  numSubscribers?: number;
-  numMuted?: number;
-}
-
-
 interface Setting {  // rename to SettingToSave
   type: string;  // 'WholeSite' or 'PageTree' or 'SinglePage'
   pageId?: string;
@@ -1238,19 +1356,29 @@ type Who = Pat | Me | Store | PatId | Username;
 type BriefUser = Pat;    // CLEAN_UP RENAME to Pat
 type Participant = Pat;  // RENAME to Pat
 
-interface Pat {   // Guest or Member, and Member = group or user
+
+interface PatNameAvatar {
   id: UserId;
   fullName?: string;
   username?: string;
+  avatarTinyHashPath?: St;
+}
+
+
+interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group or user
   isGroup?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
+
   isGuest?: boolean;  // = !isAuthenticated
+  isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
+
   isEmailUnknown?: boolean;
-  avatarTinyHashPath?: string;
   avatarSmallHashPath?: string;
   isMissing?: boolean;
   isGone?: boolean;
+  // User badges that should be displayed almost always.
+  pubTags?: Tag[];
 }
 
 type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
@@ -1364,16 +1492,16 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   deletedAt?: number;
 }
 
-interface UserInclDetailsWithStats extends PatVb {
+interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb?
   // Mabye some old accounts lack stats?
   anyUserStats?: UserStats;
 }
 
-// rename to ParticipantDetailsStatsGroups?
-interface UserDetailsStatsGroups extends UserInclDetailsWithStats {
+// A participant, Very VerBose: all fields, badges, stats and groups.
+interface PatVvb extends UserInclDetailsWithStats {
   groupIdsMaySee: UserId[];
 }
-
+type UserDetailsStatsGroups = PatVvb; // old name
 
 interface CreateUserParams {
   idpName?: St;
@@ -1468,7 +1596,7 @@ const enum LoginReason {
   SignUp = 13,
   TryToAccessNotFoundPage = 14,
   SubmitEditorText = 15,
-  PostEmbeddedComment = 16,  // dupl [8UKBR2AD5]
+  PostEmbeddedComment = 16,  // also in Scala code [8UKBR2AD5]
   PostProgressPost = 17,
   PostReply = 18,     // was: 'LoginToComment'
   CreateTopic = 19,   // was: 'LoginToCreateTopic'
@@ -1609,7 +1737,8 @@ interface SearchHit {
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
-interface StorePatch extends EditorStorePatch {
+interface StorePatch
+      extends EditorStorePatch, TagTypesStorePatch, PatsStorePatch, PageTweaksStorePatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
@@ -1619,16 +1748,16 @@ interface StorePatch extends EditorStorePatch {
 
   pageVersionsByPageId?: { [pageId: string]: PageVersion };
   postsByPageId?: { [pageId: string]: Post[] };
-  // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
-  // ignored (because the page version is too old).
-  usersBrief?: Participant[];
+
   pageMetasBrief?: PageMetaBrief[];
   superadmin?: SuperAdminStuff;
   me?: MyselfPatch;
-  tagsStuff?: TagsStuff;
 
   deletePageIds?: PageId[];
   deleteDraft?: DraftDeletor;
+
+  allTagTypes?: TagType[];
+  allTagTypeStatsById?: { [tagTypeId: string]: TagTypeStats };
 
   // Some pages get created lazily, namely embedded comments pages. They get
   // created when someone posts the first comment, or posts the first Like vote,
@@ -1649,7 +1778,17 @@ interface EditorStorePatch extends PartialEditorStoreState {
   setEditorOpen?: boolean;
 }
 
+interface TagTypesStorePatch {
+  tagTypes?: TagType[];
+}
 
+interface PatsStorePatch {
+  usersBrief?: Pat[];
+}
+
+interface PageTweaksStorePatch {
+  curPageTweaks?: Partial<Page>;
+}
 
 
 interface Settings extends TopicInterfaceSettings {
@@ -1800,12 +1939,6 @@ interface Settings extends TopicInterfaceSettings {
 type PartialSettings = Partial<Settings>;
 
 
-interface TagsStuff {
-  tagsAndStats?: TagAndStats[];
-  myTagNotfLevels?: { [tagLabel: string]: PageNotfLevel };
-}
-
-
 interface ShareOptions {
   title?: string;
   description?: string;
@@ -1868,6 +2001,19 @@ interface IdentityProviderSecretConf extends IdentityProviderPubFields {
 // =========================================================================
 
 
+/// For rendering a new page.
+interface ShowNewPageParams {
+  newPage: Page;  // | AutoPage;
+  pubCats;
+  pats: Pat[];
+  // Is from the new page store, so it's tagTypesById, rather than StorePatch.tagTypes[].
+  tagTypesById: TagTypesById;
+  me?: Me;
+  stuffForMe?: StuffForMe;
+  history: ReactRouterHistory;
+}
+
+
 /// Authentication dialog
 interface AuthnDlgIf {
   openToLogIn: (loginReason: LoginReason,
@@ -1923,6 +2069,34 @@ interface TopicListProps {
 }
 
 
+interface TagListProps {
+  store: Store;
+  className?: St;
+  tags?: Tag[];
+  // tagTypesById?: TagTypesById; — maybe later
+  forPost?: Post;
+  forPat?: Pat;
+  onClick?: () => Vo;
+ }
+
+
+interface TagListLiveProps {
+  store: Store;
+  className?: St;
+  forPost?: Post;
+  forPat?: Pat;
+  live?: Bo; // default true
+  onChanged?: () => Vo;
+}
+
+
+interface TagDiagProps {
+  store: Store;
+  forPost?: Post;
+  forPat?: Pat;
+  onChanged?: () => Vo;
+}
+
 
 interface ExplainingTitleText {
   iconUrl?: St;
@@ -1949,6 +2123,7 @@ interface ExplainingListItemProps extends ExplainingTitleText {
 
 
 interface TipsBoxProps {
+  key?: St | Nr;
   message: HelpMessage;
   alwaysShow?: Bo;
   showUnhideTips?: Bo;
@@ -2019,18 +2194,18 @@ interface SuperAdminStuff {
 
 
 interface SASite {
-  id: number;
+  id: SiteId;
   status: SiteStatus;
-  name: string;
-  hostnames: string[];
-  canonicalHostname: string;
+  name: St;
+  hostnames: St[];
+  canonicalHostname: St;
   createdAtMs: Nr;
   deletedAtMs?: Nr;
   autoPurgeAtMs?: Nr;
   purgedAtMs?: Nr;
-  staffUsers: UserInclDetails[];
+  staffUsers: PatVb[];
   stats: SiteStats;
-  superStaffNotes?: string;
+  superStaffNotes?: St;
   // CLEAN_UP use also for display not only when saving. Remove from SiteStats [.6093456]
   rdbQuotaMiBs?: Nr;
   fileQuotaMiBs?: Nr;
@@ -2176,6 +2351,8 @@ interface LoginPopupLoginResponse {
 }
 
 interface AuthnResponse {
+  // me?: Me  — or extend FetchMeResponse?  [incl_me_in_aun_rsp]
+  // stuffForMe?: StuffForMe
   origNonceBack?: St;
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
@@ -2183,14 +2360,23 @@ interface AuthnResponse {
 }
 
 
+/// If not logged in (maybe the session just expired or got deleted from another device),
+/// `me` and `stuffForMe` would be null.
+///
+interface FetchMeResponse {
+  me: Me | N;
+  stuffForMe: StuffForMe | N;
+}
+
+
 type LoadPageIdsUrlsResponse = PageIdsUrls[];
 
 
+type TagTypesById = { [tagTypeId: number]: TagType };
+
 interface LoadTopicsResponse {
-  categoryId?: CategoryId;
-  categoryParentId?: CategoryId;
   topics: Topic[];
-  users: Participant[];
+  storePatch: TagTypesStorePatch & PatsStorePatch;
 }
 
 
@@ -2245,6 +2431,23 @@ interface UserAccountLoginMethod {  // Maybe repl w Identity = Scala: JsIdentity
   idpUsername?: St;
   idpEmailAddr?: St;
   idpUserId?: St;
+}
+
+
+interface LoadPatVvbResponse {
+  user: PatVvb;
+  groupsMaySee: Group[];
+  tagTypes: TagType[];
+}
+
+
+interface ListSessionsResponse {
+  sessions: Session[];
+}
+
+
+interface TerminateSessionsResponse {
+  terminatedSessions: Session[];
 }
 
 
@@ -2310,6 +2513,18 @@ interface GenPasetoV2LocSecrResp {
 }
 
 
+// =========================================================================
+//  WebSocket messages
+// =========================================================================
+
+
+interface UserPresenceWsMsg {
+  user: Pat;
+  presence: Presence;
+  storePatch: TagTypesStorePatch;
+}
+
+
 
 // =========================================================================
 //  Server variables
@@ -2337,6 +2552,7 @@ interface ServerVars {
   // in links.ts instead.
   // const debugOrigin: string;
 
+  pubSiteIdOrigin: St;
   cdnOriginOrEmpty: string;
   cdnOrServerOrigin: string;
   assetUrlPrefix: string;

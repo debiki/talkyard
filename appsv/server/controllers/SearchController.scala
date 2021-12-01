@@ -91,7 +91,7 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * the user can type anything. And the server interprets the meaning as best
     * it can, maybe interprets "buy ice skating shoes" as "buy ice skates".
     */
-  def doSearchPubApiGet(freetext: Option[String], pretty: Option[Boolean]): Action[Unit] =  // [PUB_API]
+  def apiV0_search_get(freetext: Option[String], pretty: Option[Boolean]): Action[Unit] =  // [PUB_API]
          AsyncGetActionRateLimited( RateLimits.FullTextSearch) { request: GetRequest =>
     import request.{dao, user => requester}
 
@@ -116,7 +116,7 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def doSearchPubApiPost(): Action[JsValue] = AsyncPostJsonAction(  // [PUB_API]
+  def apiV0_search_post(): Action[JsValue] = AsyncPostJsonAction(  // [PUB_API]
           RateLimits.FullTextSearch, maxBytes = 1000) { request: JsonPostRequest =>
     import request.{body, dao}
 

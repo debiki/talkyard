@@ -113,8 +113,8 @@ const AboutPatDialog = createComponent({
   },
 
   loadPat: function(idOrUsername: Nr | St) {
-    Server.loadUserAnyDetails(idOrUsername,
-          (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => {
+    Server.loadPatVvbPatchStore(idOrUsername,
+            ({ user, groupsMaySee }: LoadPatVvbResponse) => {
       if (this.isGone) return;
       const nextState: AboutPatDialogState = {
         user,
@@ -250,6 +250,8 @@ const AboutUser = createComponent({
     const isGoneInfo = !user_isGone(user) ? null :
       r.p({}, t.aud.IsDeld);
 
+    const pubTags = TagList({ forPat: user, store });
+
     const afterClick = props.close;
 
     const sendMessageButton =
@@ -300,7 +302,8 @@ const AboutUser = createComponent({
           r.b({ className: 's_UD_Un' }, user.username), r.br(),
           r.span({ className: 's_UD_FN' }, user.fullName), r.br(),
           isStaffInfo,
-          isGoneInfo),
+          isGoneInfo,
+          pubTags),
         r.div({ className: 's_UD_BelwAv' },  // "below avatar"
           userDetailed && AnyUserEmail(userDetailed, me),
           r.div({ className: 's_UP_Gs' },

@@ -776,6 +776,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     DraftsEtc: "Черновики",
     About: "About",
     Privacy: "Конфиденциальность",
+    Security: "Безопасность",  // MAYBE, GTR
     Account: "Аккаунт",
     Interface: "Интерфейс",
 

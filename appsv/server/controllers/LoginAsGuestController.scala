@@ -95,7 +95,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
       val guestUser = dao.loginAsGuest(loginAttempt)
 
       val (sid, _, sidAndXsrfCookies) =
-        security.createSessionIdAndXsrfToken(request.siteId, guestUser.id)
+            security.createSessionIdAndXsrfToken(request, guestUser.id)
 
       var responseJson = Json.obj(  // ts: AuthnResponse
         "userCreatedAndLoggedIn" -> JsTrue,

@@ -501,7 +501,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           recentButton,
           unreadButton,
           starredButton,
-          r.button({ className: 'btn btn-default' + usersClass, onClick: this.showUsers },
+          r.button({ className: 'e_CtxBarB btn btn-default' + usersClass,
+                onClick: this.showUsers },
               usersBtnTitle),
           adminGuideButton);
     }

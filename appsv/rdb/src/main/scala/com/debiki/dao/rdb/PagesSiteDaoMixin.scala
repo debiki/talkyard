@@ -50,17 +50,25 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def markPagesWithUserAvatarAsStale(userId: UserId) {
-    // Currently a user's avatar is shown in posts written by him/her.
+  @deprecated("Use StaleStuff.addPagesWithVisiblePostsBy() instead", "Now")
+  def markPagesHtmlStaleIfVisiblePostsBy(patId: PatId): i32 = {
+    BUG // sleeping (since caller clears whole cache anyway)
+    // This won't clear the mem cache. Use StaleStuff and addPagesWithVisiblePostsBy() instead.
     val statement = s"""
       update pages3
         set version = version + 1, updated_at = now_utc()
         where site_id = ?
           and page_id in (
             select distinct page_id from posts3
-            where site_id = ? and created_by_id = ?)
+            where site_id = ?
+              and created_by_id = ?
+              and approved_at is not null
+              and deleted_status = 0
+              and hidden_at is null)
+            -- COULD_OPTIMIZE:  and not collapsed so invisible
       """
-    runUpdate(statement, List(siteId.asAnyRef, siteId.asAnyRef, userId.asAnyRef))
+    val numStale = runUpdate(statement, List(siteId.asAnyRef, siteId.asAnyRef, patId.asAnyRef))
+    numStale
   }
 
 

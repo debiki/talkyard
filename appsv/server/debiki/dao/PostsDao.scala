@@ -30,7 +30,7 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
 import PostsDao._
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import ed.server.spam.SpamChecker
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
@@ -96,7 +96,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatch(newPost, author, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(newPost, author, showHidden = true)
 
     // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
@@ -325,7 +325,7 @@ trait PostsDao {
     ... derive prefs, looking at own and groups ...
     val oldPostsByAuthor = page.parts.postByAuthorId(authorId)
     if (oldPostsByAuthor.isEmpty) {
-      savePageNotfPref(PageNotfPref(
+      savePageNotfPrefIfAuZ(PageNotfPref(
             peopleId = authorId,
             NotfLevel.WatchingAll,
             pageId = Some(pageId)), byWho = Who.System)
@@ -617,7 +617,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatch(post, author, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(post, author, showHidden = true)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
@@ -1530,8 +1530,14 @@ trait PostsDao {
   }
 
 
-  def editPostSettings(postId: PostId, branchSideways: Option[Byte], me: Who): JsValue = {
-    val (post, patch) = readWriteTransaction { tx =>
+  def editPostSettings(postId: PostId, branchSideways: Option[Byte], me: Who): JsObject = {
+    // Haven't tested the change from old & deleted jsonMaker.makeStorePatch2()
+    // to jsonMaker.makeStorePatchForPostIds().
+    // This branch-sideways code was for 2D mind maps, which are disabled nowadays,
+    // so this fn isn't currently in use.
+    throwUntested("TyEBRANCHSIDEW")
+
+    val post /* patch*/ = readWriteTransaction { tx =>
       val postBefore = tx.loadPostsByUniqueId(Seq(postId)).headOption.getOrElse({
         throwNotFound("EsE5KJ8W2", s"Post not found: $postId")
       })._2
@@ -1558,10 +1564,13 @@ trait PostsDao {
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = false)
       insertAuditLogEntry(auditLogEntry, tx)
 
-      COULD_OPTIMIZE // try not to load the whole page in makeStorePatch2
-      (postAfter, jsonMaker.makeStorePatch2(postId, postAfter.pageId,
-          appVersion = globals.applicationVersion, tx))
+      postAfter /* jsonMaker.makeStorePatch2(postId, postAfter.pageId,
+          appVersion = globals.applicationVersion, tx))*/
     }
+
+    val patch = jsonMaker.makeStorePatchForPostIds(
+          Set(post.id), showHidden = true, inclUnapproved = true, dao = this)
+
     refreshPageInMemCache(post.pageId)
     patch
   }
@@ -2195,7 +2204,9 @@ trait PostsDao {
       val voter = tx.loadTheParticipant(voterId)
       throwIfMayNotSeePost(post, Some(voter))(tx)
 
-      tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
+      val gotDeleted = tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
+      throwForbiddenIf(!gotDeleted, "TyE50MWW14",
+            s"No $voteType vote by ${voter.nameHashId} on post id ${post.id} to delete")
 
       // Don't delete — for now. Because that'd result in many emails
       // getting sent, if someone toggles a Like on/off.  [toggle_like_email]
@@ -2236,7 +2247,7 @@ trait PostsDao {
 
 
   def addVoteIfAuZ(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
-        voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]): Unit = {
+        voterId: UserId, voterIp: Opt[IpAdr], postNrsRead: Set[PostNr]): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
 
     writeTx { (tx, staleStuff) =>
@@ -2288,7 +2299,7 @@ trait PostsDao {
         }
 
       tx.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
-        readFromIp = voterIp)
+            readFromIp = voterIp)
       updatePageAndPostVoteCounts(post, tx)
       updatePagePopularity(page.parts, tx)
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(tx)
@@ -2329,14 +2340,14 @@ trait PostsDao {
 
   RENAME // all ... IfAuth to IfAuZ (if authorized)
   def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: UserId,
-        browserIdData: BrowserIdData): (Post, JsValue) = {
+        browserIdData: BrowserIdData): (Post, JsObject) = {
 
     if (newParent.postNr == PageParts.TitleNr)
       throwForbidden("EsE4YKJ8_", "Cannot place a post below the title")
 
     val now = globals.now()
 
-    val (postBefore, postAfter, storePatch) = writeTx { (tx, staleStuff) =>
+    val postAfter = writeTx { (tx, staleStuff) =>
       val mover = tx.loadTheUser(moverId)
       if (!mover.isStaff)
         throwForbidden("EsE6YKG2_", "Only staff may move posts")
@@ -2421,8 +2432,8 @@ trait PostsDao {
             nr = firstFreePostNr,
             parentNr = Some(newParentPost.nr))
 
-          var postsAfter = ArrayBuffer[Post](postAfter)
-          var auditEntries = ArrayBuffer[AuditLogEntry](moveTreeAuditEntry)
+          val postsAfter = ArrayBuffer[Post](postAfter)
+          val auditEntries = ArrayBuffer[AuditLogEntry](moveTreeAuditEntry)
 
           descendants foreach { descendant =>
             val descendantAfter = descendant.copy(
@@ -2490,15 +2501,11 @@ trait PostsDao {
             anyNewModTask = None, skipMentions = true)
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 
-      val patch = jsonMaker.makeStorePatch2(postAfter.id, toPage.id,
-        appVersion = globals.applicationVersion, tx)
-      (postToMove, postAfter, patch)
+      postAfter
     }
 
-    refreshPageInMemCache(postBefore.pageId)  ; REMOVE // now not needed, instead [staleStuff] above
-    if (postBefore.pageId != postAfter.pageId) {       //
-      refreshPageInMemCache(postAfter.pageId)
-    }
+    val storePatch = jsonMaker.makeStorePatchForPostIds(
+          Set(postAfter.id), showHidden = true, inclUnapproved = true, dao = this)
 
     (postAfter, storePatch)
   }

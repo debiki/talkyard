@@ -193,7 +193,7 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
     // Avoid PostgreSQL serialization errors. [one-db-writer]
     globals.pauseAutoBackgorundRenderer3Seconds()
 
-    val siteData = {
+    val siteData: SitePatch = {
         val siteDump = SitePatchParser(context).parseDumpJsonMaybeThrowBadRequest(
           siteId = None, json, simpleFormat = false, isE2eTest = isTest)
         throwBadRequestIf(siteDump.site.isEmpty, "TyE305MHKR2", "No site meta included in dump")

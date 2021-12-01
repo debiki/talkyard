@@ -37,7 +37,7 @@ object PostVoteType {
   // dupl numbers [2PKWQUT0] perhaps use 1,2,4,8 instead? [8FEX1Q4]
   case object Like extends PostVoteType(41)
   case object Wrong extends PostVoteType(42) // RENAME to Disagree
-  case object Bury extends PostVoteType(43)  // rename to MoveDownwards? [.ren_bury]
+  case object Bury extends PostVoteType(43)  // rename to MoveDown? [.ren_bury]
   case object Unwanted extends PostVoteType(44)
 
   // case object Promote/Boost/PinAtTop + priority value?  For curating the discussion
@@ -51,6 +51,16 @@ object PostVoteType {
     case Wrong.IntVal => Wrong
     case Bury.IntVal => Bury
     case Unwanted.IntVal => Unwanted
+    case _ => return None
+  })
+
+  def apiV0_fromStr(value: St): Option[PostVoteType] = Some(value match {
+    //case DoIt.IntVal => DoIt
+    //case DoNot.IntVal => DoNot
+    case "Like" => Like
+    // case "Disagree" => Wrong
+    // case "Bury" => Bury — rename to MoveDown
+    // case "Unwanted" => Unwanted
     case _ => return None
   })
 }

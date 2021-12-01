@@ -36,6 +36,7 @@ case class PageStuff(
   bodyExcerpt: Option[String],
   // Need not cache these urls per server origin? [5JKWBP2]
   bodyImageUrls: immutable.Seq[String],
+  pageTags: ImmSeq[Tag], // but not page author tags (badges)
   popularRepliesImageUrls: immutable.Seq[String],
   authorUserId: UserId,  // RENAME to just authorId
   lastReplyerId: Option[UserId],
@@ -132,21 +133,22 @@ trait PageStuffDao {
   }
 
 
-  def loadPageStuffById(pageIds: Iterable[PageId], transaction: SiteTransaction)
-        : Map[PageId, PageStuff] = {
+  def loadPageStuffById(pageIds: Iterable[PageId], tx: SiteTx): Map[PageId, PageStuff] = {
     if (pageIds.isEmpty)
       return Map.empty
     var stuffById = Map[PageId, PageStuff]()
-    val pageMetasById = transaction.loadPageMetasAsMap(pageIds)
+    val pageMetasById = tx.loadPageMetasAsMap(pageIds)
 
     // Load titles and bodies for all pages. (Because in forum topic lists, we show excerpts
     // of pinned topics, and the start of other topics.)
-    val titlesAndBodies = transaction.loadPostsByNrs(pageIds flatMap { pageId =>
+    val titlesAndBodies = tx.loadPostsByNrs(pageIds flatMap { pageId =>
       Seq(PagePostNr(pageId, TitleNr), PagePostNr(pageId, BodyNr))
     })
 
     val popularRepliesByPageId: Map[PageId, immutable.Seq[Post]] =
-      transaction.loadPopularPostsByPage(pageIds, limitPerPage = 10, exclOrigPost = true)
+      tx.loadPopularPostsByPage(pageIds, limitPerPage = 10, exclOrigPost = true)
+
+    val tagsByPageId = tx.loadTagsForPages(pageIds)
 
     for (pageMeta <- pageMetasById.values) {
       val pageId = pageMeta.pageId
@@ -171,7 +173,7 @@ trait PageStuffDao {
         JsonMaker.htmlToExcerpt(html, length, firstParagraphOnly)
       })
 
-      val summary = PageStuff(
+      val pageStuff = PageStuff(
         pageId,
         pageMeta,
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
@@ -179,12 +181,13 @@ trait PageStuffDao {
         currTitleSource = anyTitle.map(_.currentSource),
         bodyExcerpt = anyExcerpt.map(_.text),
         bodyImageUrls = anyExcerpt.map(_.firstImageUrls).getOrElse(Vector.empty),
+        pageTags = tagsByPageId.getOrElse(pageId, Nil),
         popularRepliesImageUrls = popularImageUrls,
         authorUserId = pageMeta.authorId,
         lastReplyerId = pageMeta.lastApprovedReplyById,
         frequentPosterIds = pageMeta.frequentPosterIds)
 
-      stuffById += pageMeta.pageId -> summary
+      stuffById += pageMeta.pageId -> pageStuff
     }
 
     stuffById

@@ -42,10 +42,14 @@ interface ListUsersApiResponse {
 // Misc types
 // -------------------------
 
-interface MaybePrettyApiRequest {
+interface ApiRequest {
   pretty?: Bo;
 }
 
+// An API request can include one or many things for the server to do — many tasks.
+// For example, a SearchQueryApiRequest includes just a single SearchQueryApiTask,
+// whilst a ManyQueriesApiRequest can include many SearchQueryApiTask:s.
+interface ApiTask {}
 
 type ApiResponse<R> = ApiErrorResponse | R;
 
@@ -53,13 +57,27 @@ interface ApiErrorResponse {
   error: ResponseError;
 }
 
-interface ResponseError extends ErrCodeMsg {
+interface ResponseError extends Partial<ErrCodeMsg> {
   httpStatusCode?: Nr;
 }
 
 interface ErrCodeMsg {
-  errCode?: St;
-  errMsg?: St;
+  errCode: St;
+  errMsg: St;
+}
+
+
+interface ManyResults {
+  results: (OkResult | ErrorResult | ManyResults)[];
+}
+
+
+interface OkResult {
+  ok: true;
+}
+
+interface ErrorResult {
+  error: ErrCodeMsg;
 }
 
 
@@ -329,11 +347,12 @@ interface CategoryFound {
 // lookWhere: category-ids, to find recent posts in those categories.
 //
 
-interface GetQueryApiRequest extends MaybePrettyApiRequest {
-  getQuery: GetPagesQuery | GetPatsQuery;
-  pretty?: Bo;
+interface GetQueryApiRequest extends ApiRequest, GetQueryApiTask {
 }
 
+interface GetQueryApiTask extends ApiTask {
+  getQuery: GetPagesQuery | GetPatsQuery;
+}
 
 interface GetQuery {
   getWhat: FindWhat;
@@ -445,15 +464,17 @@ interface GetQueryResults<T extends ThingFound> {
 // The index might be on table B, although you're finding things in table A.
 // E.g. you might list the most recent topics in a category.
 //
-interface ListQueryApiRequest {
-  // Either:
-  listQuery?: ListQuery;
+interface ListQueryApiRequest extends ApiRequest, ListQueryApiTask {
+}
 
-  // Or:
-  continueAtScrollCursor?: ListResultsScrollCursor;
-
+interface ListQueryApiTask extends ApiTask {
+  listQuery: ListQuery;
   limit?: Nr;
-  pretty?: Bo;
+}
+
+interface ContinueListQueryApiRequest extends ApiRequest {
+  continueAtScrollCursor?: ListResultsScrollCursor;
+  limit?: Nr;
 }
 
 interface ListQuery {
@@ -622,23 +643,28 @@ type ListResultsScrollCursor = Unimplemented;
 // that is, ElasticSearch (currently), not PostgreSQL.
 //
 
-interface SearchQueryApiRequest {
-  // Either:
-  searchQuery?: SearchQuery2;
-
-  // Or:
-  continueAtScrollCursor?: SearchResultsScrollCursor;
-
-  limit?: number;
-  pretty?: boolean;
+interface SearchQueryApiRequest extends ApiRequest, SearchQueryApiTask {
 }
 
-type SearchQuery2 = SinglSearchQuery | CompoundSearchQuery;
+interface SearchQueryApiTask extends ApiTask {
+  searchQuery: SearchQuery_;
+  limit?: number;
+}
+
+interface ContinueSearchQueryApiRequest extends ApiRequest {
+  continueAtScrollCursor?: SearchResultsScrollCursor;
+  limit?: Nr;
+}
+
+
+type SearchQuery_ = SinglSearchQuery | CompoundSearchQuery;
 
 // Not implemented.
 type CompoundSearchQuery =
-  // All must match.
+  // 'And' match — all must match.
+  // (For 'or' match, instead, send many SearchQueryRequest:s.)
   SinglSearchQuery[];
+
 
 interface SinglSearchQuery {
   // "Freetext" refers to free-form text, meaning, unstructured text:
@@ -649,6 +675,7 @@ interface SinglSearchQuery {
   findWhat?: FindWhat,
   lookWhere?: LookWhere;
 };
+
 
 type SearchQueryApiResponse<T extends ThingFound> = ApiResponse<SearchQueryResults<T>>;
 
@@ -747,148 +774,317 @@ type SearchResultsScrollCursor = Unimplemented;
 //
 
 
-
-// A Do Command request   [ACTNPATCH]
+// A Query API request
 // -------------------------
 //
-//  /-/v0/batch-do  {
-//    batchDo: {
-//      inOneTx: t/f
-//      actionList: [
-//        doAction: {
-//          asWho: 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_',
-//          doWhat: 'SetVote'
-//          whatVote: 'Like',
-//          whichPost: { postId: _ } | { pageId: _, postNr: 1 },
-//          howMany: 1 | 0,
-//          // Future compat w assigning many Do-It votes
-//          // per person to a single feature request.
+//  POST /-/v0/query  {
+//    manyQueries: [{
+//      getQuery: {
+//        getWhat: 'Pages',
+//        getRefs: [
+//          'emburl:https://blog/a-blog-post':
+//          'emburl:https://blog/another',
+//          'emburl:https://blog/a-third',
+//        ],
+//        inclFields: {
+//          numRepliesVisible: true,
+//          numOrigPostLikeVotes: true,
 //        },
-//        doAction: {
-//          asWho: _
-//          doWhat: 'SetNotfLevel',
-//          toLevel: 'EveryPost',
-//          whichPage: { pageId: _ },
-//        },
-//      ],
-//    }
+//      }
+//    }, {
+//      listQuery: {
+//        listWhat: 'Members',
+//        exactPrefix: 'jane_d',
+//        lookWhere: { usernames: true },
+//      }
+//    }, {
+//      listQuery: {
+//        listWhat: 'Pages',
+//        lookWhere: { inCategories: [catB, catC] },
+//      }
+//    }, {
+//      searchQuery: {
+//        ...
+//      }
+//    }, {
+//      // Nested query list — to run in single transaction.
+//      inSingleTransaction: true,
+//      manyQueries: [...]
+//    }, {
+//      ...
+//    }]
 //  }
 
+interface QueryApiRequest extends ApiRequest, ManyQueriesApiTask {
+}
+
+interface ManyQueriesApiTask extends ApiTask {
+  inSingleTransaction?: Bo;
+  manyQueries: (QueryApiTask | ManyQueriesApiTask)[];
+
+  // Optional default for each QueryRequest.
+  // sortOrder?
+  // perQueryLimit?
+  // totalLimit?
+  // limit?: number; — for what?
+}
+
+type QueryApiTask = GetQueryApiTask | ListQueryApiTask | SearchQueryApiTask;
 
 
-// An  Upsert  request  ?
+
+
+// A Do API request   [ACTNPATCH]
 // -------------------------
 
+interface DoApiRequest extends ApiRequest, DoActionsApiTask {
+}
+
+interface DoActionsApiTask extends ApiTask {
+  //inSingleTransaction: true;  // later: optional
+  doActions: (Action | ActionGraph | DoActionsApiTask)[];
+
+  // Maybe in the distant future: (could also be inside each Action)
+  // doWhen: 'now' | 'YYYY-MM-DDTHH:MI:SSZ'
+  // doIf: hmm
+}
+
+type DoActionsApiResponse = ApiResponse<ManyResults>;
+
+type ActionGraph = Unimplemented;
+
+interface Action {
+  asWho: St; // 'sysbot' | 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_';
+  doWhat: ActionType,
+  //doWhen?: 'YYYY-MM-DDTHH:MI:SSZ';
+  //doIf?;
+  doWhy?: St; // optional description for the audit log
+  doHow: Object;  // per action type parameters
+}
+
+type ActionType =
+  'CreateReplyPost' |
+  'CreateMetaPost' |
+  'SetVote' |
+  'SetNotfLevel';
+  // Distant future:
+  // 'CreateWorkfow' with  doHow: { workflowSteps: ActionGraph }  // directed, asyclic?
+  //   returns a workflow id
+  // 'DeleteWorkfow'
+  // 'RunWorkfowNow'
+  // 'CreateWorkfowTrigger' with doHow: { runWorkflow: _ runIf: __ runWhen: __ }
+  // 'DeleteWorkfowTrigger'
+  // A workflow step could be a RunScriptAction for example.
+
+
+interface SetVoteAction extends Action {
+  doWhat: 'SetVote';
+  doHow: {
+    whatVote: 'Like';
+    whatPost: { pageId: St, postNr: 1 };  // { postId: _ } | { pageId: _, postNr: _ },
+    howMany: 0 | 1;
+  }
+}
+
+interface SetNotfLevelAction extends Action {
+  doWhat: 'SetNotfLevel';
+  doHow: {
+    toLevel: Nr;
+    whatPages: ({ pageId: St } | { inCategoryId: CatId })[];
+  }
+}
+
+interface CreateReplyPostAction extends Action {
+  doWhat: 'CreateReplyPost';
+  doHow: {
+    replyTo: { pageId: PageId, postNr?: PostNr } | { postId: PostId };
+    body: St;
+    bodyFormat: 'CommonMark';
+  }
+}
+
+interface CreateMetaPostAction extends Action {
+  doWhat: 'CreateMetaPost';
+  doHow: {
+    appendTo: { pageId: PageId };
+    body: St;
+    bodyFormat: 'CommonMark';
+  }
+}
+
+
+
+// Example Do API request:
+//
+//  /-/v0/do  {
+//    doActions: [{
+//      asWho: 'sysbot' | 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_',
+//      doWhat: 'SetVote'
+//      doHow: {
+//        whatVote: 'Like',
+//        whatPost: { postId: _ } | { pageId: _, postNr: 1 },
+//        howMany: 1 | 0,
+//        // Future compat w assigning many Do-It votes
+//        // per person to a single feature request.
+//      },
+//    }, {
+//      asWho: _
+//      doWhat: 'SetNotfLevel',
+//      doHow: {
+//        whatLevel: 'EveryPost',
+//        whatPage: { pageId: _ },
+//      }
+//    }, {
+//      asWho: 'ssoid:some-user-id',
+//      doWhat: 'CreateMetaPost',
+//      doHow: {
+//        body: _,
+//        bodyFormat: 'CommonMark',
+//        appendTo: { pageId: _ },
+//      }
+//    }, {
+//      asWho: 'ssoid:some-user-id',
+//      doWhat: 'CreateReplyPost',
+//      doHow: {
+//        body: _,
+//        bodyFormat: 'CommonMark',
+//        replyTo: { pageId: _, postNr: _ },
+//      }
+//    }, {
+//      asWho: _
+//      doWhat: 'CreatePage',
+//      doHow: {
+//        pageTitle: _,
+//        pageBody: _,
+//        inCategory: CatRef,
+//        withTags: TagRef[];
+//      }
+//    }, {
+//      asWho: 'sysbot',
+//      doWhat: 'CreateUser',
+//      doHow: {
+//        username: _,
+//        fullName: _,
+//        primaryEmailAddr?: St;
+//        primaryEmailAddrVerified?: Bo;
+//        addToGroups: _  // or  doWhat: 'AddUserToGroup'  below, instead?
+//      }
+//    }, {
+//      asWho: 'sysbot',
+//      doWhat: 'AddUserToGroup',
+//      doHow: {
+//        whichUser: _,  // reference user above
+//        whichGroup: _,
+//      }
+//    }, {
+//      // Nested — e.g. to run in single transaction. Not implemented (maybe never).
+//      inSingleTransaction: true;
+//      doActions: [{ ... }, { ... }, { ... }],
+//    }],
+//  }
 //
 //
-/*
-interface UpsertApiRequest extends MaybePrettyApiRequest {
-  upsertCmd: UpsertCommand;
-  pretty?: Bo;
-}
+// Response is ManyResults:
+//
+//  {
+//    results: [{
+//      ok: true,   // if 'SetVote' went fine
+//    }, {
+//      ok: true,   // if 'SetNotfLevel' went fine
+//    }, {
+//      error: {    // if 'CreateMetaPost' failed
+//        errCode: _,
+//        errMsg: _,
+//      }
+//    }, {
+//    ...
+//    }, {
+//      ok: true,   // user created
+//    }, {
+//      ok: true,   // user added to group
+//    }, {
+//      results: [{ ... }, { ... }, { ... }]  // nested doActions results
+//    }],
+//  }
+//
+//
+//  Distant future, custom scripts:
+//
+//  /-/v0/do  {
+//    doActions: [{
+//      asWho: 'sysbot' | 'tyid:_' | 'extid:_' | 'ssoid:_' | 'username:_',
+//      doWhat: 'custom-action:unique-name',  // hmm
+//      doHow: {
+//        whatVote: 'Like',
+//        whatPost: { postId: _ } | { pageId: _, postNr: 1 },
+//        howMany: 1 | 0,
+//        // Future compat w assigning many Do-It votes
+//        // per person to a single feature request.
+//      },
+//    }, {
 
 
-interface UpsertCommand {
-  upsertWhat: FindWhat;
-}
 
-
-interface UpsertPatsCommand extends UpsertCommand {
-  upsertWhat: 'Pats';
-  upsertThings: PatToUpsert[];
-}
-
-
-interface PatToUpsert {
-  key: St;
-  username?: St;
-  fullName?: St;
-  primaryEmailAddr?: St;
-  primaryEmailAddrVerified?: Bo;
-}
-
-
-type UpsertApiResponse<T extends ThingFound> = ApiResponse<GetQueryResults<T>>;
-
-interface UpsertCommandResults<T extends ThingFound> {
-  origin: St;
-
-  // One item for each upsertThings[] item, in the same order.
-  thingsOrErrs: (T | ErrCodeMsg | null)[];
-}
-*/
-
-
-
-// Batch search/list/get requests?
+// A Query-Do API request
 // -------------------------
 
-// Should Not implement this, unless clearly needed.
-// Still, good to think about in advance, so as not to paint oneself into a corner?
+// Maybe later.
+
+interface QueryDoApiRequest extends ApiRequest, QueryDoApiTask {
+}
+
+interface QueryDoApiTask extends ApiTask {
+  inSingleTransaction?: true;  // default: false
+  queriesAndActions: (QueryApiTask | ManyQueriesApiTask | Action | DoActionsApiTask)[];
+}
+
+type RunQueriesDoActionsResults = ApiResponse<ManyResults>;
+
+
+//  Example Query-Do API request:
 //
-//   /-/v0/batch-query {
-//     batchQuery: {
-//       // Maybe sth like:
-//       //perQueryLimit: NN,
-//       //this: mergeResultsHow:  ... ?? ..,
-//       //or?: perQuerySortOrder:
-//       //     totalSortOrder:
+//  POST /-/v0/query-do  {
+//    queriesAndActions: [{
+//      getQuery: {
+//        getWhat: 'Pages',
+//        getRefs: ['tyid:1234'],
+//        inclFields: { ... },
+//      }
+//    }, {
+//      listQuery: {
+//        ...
+//      }
+//    }, {
+//      searchQuery: {
+//        findWhat: 'Posts',
+//        freetext: "how to feed an anteater that has climbed a tall tree",
+//      }
+//    }, {
+//      // Nested, to run in single transaction.
+//      inSingleTransaction: true;
+//      doActions: [{
+//        ...
+//      }]
+//    }, {
+//      inSingleTransaction: true,
+//      manyQueries: [{
+//        ...
+//      }]
+//    }, {
+//      ...
+//    }]
+//  }
 //
-//       queryList: [
-//         getQuery: {
-//           getWhat: 'Pages',
-//           getRefs: [
-//             'emburl:https://blog/a-blog-post':
-//             'emburl:https://blog/another',
-//             'emburl:https://blog/a-third',
-//           ],
-//           inclFields: {
-//             numRepliesVisible: true,
-//             numOrigPostLikeVotes: true,
-//           },
-//         },
-//
-//         getQuery: {
-//           getWhat: 'Pages',
-//           getRefs: [ ... ],
-//           inclFields: {
-//             someOtherField: true,
-//           },
-//         },
-//
-//         listQuery: {
-//           listWhat: 'Members',
-//           exactPrefix: 'jane_d',
-//           lookWhere: { usernames: true },
-//         },
-//
-//         listQuery: {
-//           listWhat: 'Pages',
-//           lookWhere: { inCategories: [catB, catC] },
-//         },
-//
-//         searchQuery: {
-//           findWhat: 'Posts',
-//           freetext: "how to feed an anteater that has climbed a tall tree",
-//         },
-//       ],
-//     },
-//   }
-//
-// Response could be:
+// Response would be ManyResults?
 //
 //   {
 //     origin: "https://example.com",
-//     batchQueryResults: [
-//       { getResults: ... },
-//       { getResults: ... },
-//       { listResults: ... },
-//       { listResults: ... },
-//       { searchResults: ... },
+//     results: [
+//       { thingsOrErrs: [...] },  // getQuery results
+//       { thingsFound: [...] },   // listQuery results
+//       { thingsFound: [...] },   // searchQuery results
+//       { results: [{ ok: true }, ...] },  // nested doActions results
+//       { results: [...] },                // nested manyQueries results
 //     ],
 //   }
-//
 
-
-//   /-/v0/batch-do — see above
-//

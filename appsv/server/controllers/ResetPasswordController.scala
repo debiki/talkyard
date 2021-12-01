@@ -148,7 +148,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
       logger.info(s"s$siteId: Sending create password email ${toWho(member)} [TyM2AKBP05]")
     }
     sendChangePasswordEmailTo(member.briefUser, request, isCreating = member.passwordHash.isEmpty)
-    OkSafeJson(JsString("Ok."))
+    OkSafeJsValue(JsString("Ok."))
   }
 
 
@@ -213,7 +213,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
     // Log the user in and show password changed message.
     request.dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, loginGrant.user.id)
     val newSessionCookies = sidAndXsrfCookies
     CSP_MISSING
     Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))

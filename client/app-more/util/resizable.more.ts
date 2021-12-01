@@ -20,11 +20,13 @@
 //------------------------------------------------------------------------------
 
 
-export function makeResizableUp(elem, handle, onResize) {
-  handle.addEventListener('mousedown', startDrag);
-
+/// Returns a stop-resizable fn: pass true and the handle will stop being
+/// resizable (all event handlers gone); pass false and it'll be resizable again.
+///
+export function makeResizableUp(elem, handle, onResize): (pause: Bo) => Vo {
   let startY = 0;
   let startHeight = 0;
+  let paused;
 
   function startDrag(event) {
     startY = event.clientY;
@@ -40,11 +42,33 @@ export function makeResizableUp(elem, handle, onResize) {
     if (onResize) onResize(newHeight);
   }
 
-  function stopDrag(event) {
+  function stopDrag() {
     document.documentElement.removeEventListener('mousemove', doDrag, false);
     document.documentElement.removeEventListener('mouseup', stopDrag, false);
     $h.removeClasses(document.body, 's_Resizing');
   }
+
+  function pauseResizable(pause: Bo) {
+    try {
+      if (pause === paused) {
+        // Noop
+      }
+      else if (pause) {
+        stopDrag();
+        handle.removeEventListener('mousedown', startDrag);
+      }
+      else {
+        handle.addEventListener('mousedown', startDrag);
+      }
+      paused = pause;
+    }
+    catch (ex) {
+      logD(`Couldn't stop/restart resizable — elem gone? [TyMTOGLRESZ]`);
+    }
+  }
+
+  pauseResizable(false);
+  return pauseResizable;
 }
 
 

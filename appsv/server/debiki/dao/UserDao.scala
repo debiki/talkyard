@@ -364,7 +364,7 @@ trait UserDao {
     val cappedDays = math.min(numDays, 365 * 110)
     val now = globals.now()
 
-    val user = readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       var user = tx.loadTheUserInclDetails(userId)
       if (user.isAdmin)
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
@@ -375,11 +375,14 @@ trait UserDao {
         suspendedTill = Some(suspendedTill),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
-      tx.updateUserInclDetails(user)
-      user
-    }
 
-    logout(user.noDetails, bumpLastSeen = false)
+      tx.updateUserInclDetails(user)
+      staleStuff.addPatIds(Set(userId))
+
+      logout(user.noDetails, bumpLastSeen = false, anyTx = Some(tx, staleStuff))
+      terminateSessions(  // [end_sess]
+            forPatId = user.id, all = true, anyTx = Some(tx, staleStuff))
+    }
   }
 
 
@@ -758,12 +761,19 @@ trait UserDao {
   }
 
 
-  def logout(pat: Pat, bumpLastSeen: Bo): U = {
-    readWriteTransaction { tx =>
+  def logout(pat: Pat, bumpLastSeen: Bo, anyTx: Opt[(SiteTx, StaleStuff)] = None): U = {
+    if (bumpLastSeen) writeTxTryReuse(anyTx) { (tx, staleStuff) =>
       addUserStats(UserStats(pat.id, lastSeenAt = tx.now))(tx)
+      staleStuff.addPatIds(Set(pat.id))
     }
+
+    UX; COULD // Maybe a WebSocket channel should remember which session & browser it
+    // got started from? Rather than only what user. So can disconnect the right browser,
+    // instead of all the user's browsers. For example, if impersonating,
+    // then, this'll disconnect all current channels of the real person,
+    // and mark hen as away (maybe incorrectly).
+    // [which_ws_session]
     pubSub.unsubscribeUser(siteId, pat)
-    removeUserFromMemCache(pat.id)
   }
 
 
@@ -779,6 +789,7 @@ trait UserDao {
   }
 
 
+  // Change param to Set[UserId] instead?
   def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[Participant] = {
     getParticipantsImpl(userIds).toVector
   }
@@ -859,15 +870,39 @@ trait UserDao {
 
 
   def getParticipantByParsedRef(ref: ParsedRef): Option[Participant] = {
+    // username: and userid: refs must be to users (not guests or groups).
+    COULD // return Bad("Not a user, but a guest/group: __")
+    val returnBadUnlessIsUser = (pat: Opt[Pat]) =>
+      if (pat.exists(!_.isUserNotGuest))
+        return None  // Bad("Not a user but a ${}: ${ref}")
+
+    val returnBadUnlessGroup = (pat: Opt[Pat]) =>
+      if (pat.exists(!_.isGroup))
+        return None  // Bad("Not a group but a ${}: ${ref}")
+
     ref match {
       case ParsedRef.ExternalId(extId) =>
         getParticipantByExtId(extId)
       case ParsedRef.TalkyardId(tyId) =>
         tyId.toIntOption flatMap getParticipant
+      case ParsedRef.UserId(id) =>
+        val pat = getParticipant(id)
+        returnBadUnlessIsUser(pat)
+        pat
       case ParsedRef.SingleSignOnId(ssoId) =>
         getMemberBySsoId(ssoId)
       case ParsedRef.Username(username) =>
-        getMemberByUsername(username)
+        val pat = getMemberByUsername(username)
+        returnBadUnlessIsUser(pat)
+        pat
+      case ParsedRef.Groupname(username) =>
+        val pat = getMemberByUsername(username)
+        returnBadUnlessGroup(pat)
+        pat
+      //case ParsedRef.Membername(membername) =>
+      // val pat = getMemberByUsername(username)
+      // returnBadUnlessUserOrGroup(pat)
+      // pat
     }
   }
 
@@ -1765,15 +1800,16 @@ trait UserDao {
         userAfter.tinyAvatar.foreach(tx.updateUploadedFileReferenceCount)
         userAfter.smallAvatar.foreach(tx.updateUploadedFileReferenceCount)
         userAfter.mediumAvatar.foreach(tx.updateUploadedFileReferenceCount)
-        tx.markPagesWithUserAvatarAsStale(userId)
+        // A user's avatar is shown in posts written by him/her.
+        tx.markPagesHtmlStaleIfVisiblePostsBy(userId)
       }
       removeUserFromMemCache(userId)
 
       // Clear the PageStuff cache (by clearing the whole in-mem cache), because
       // PageStuff includes avatar urls.
-      // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
+      SHOULD_OPTIMIZE // let above markPagesWithUserAvatarAsStale() return a page id list and
       // uncache only those pages.
-      emptyCacheImpl(tx)
+      emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
   }
 
 
@@ -1826,14 +1862,14 @@ trait UserDao {
   }
 
 
-  def savePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
+  def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): U = {
     editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") { tx =>
       tx.upsertPageNotfPref(pageNotfPref)
     }
   }
 
 
-  def deletePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
+  def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
     editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") { tx =>
       tx.deletePageNotfPref(pageNotfPref)
     }
@@ -1903,7 +1939,7 @@ trait UserDao {
       if (preferences.changesStuffIncludedEverywhere(user)) {
         // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something.
         // Use markPagesWithUserAvatarAsStale ?
-        emptyCacheImpl(tx)
+        emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
         clearMemCacheAfterTx = true
       }
     }
@@ -2011,7 +2047,7 @@ trait UserDao {
   def savePatPerms(patId: PatId, perms: PatPerms, byWho: Who): U = {
     editMemberThrowUnlessSelfStaff2(patId, byWho, "TyE3ASHW6703", "edit pat perms") {
         (tx, memberInclDetails, _) =>
-      val groupBef: Group = memberInclDetails.asGroupOr(ThrowForbidden)
+      val groupBef: Group = memberInclDetails.asGroupOr(IfBadAbortReq)
       val groupAft = groupBef.copy(perms = perms)
       tx.updateMemberInclDetails(groupAft)
     }
@@ -2164,7 +2200,7 @@ trait UserDao {
     * - EdT5WKBWQ2
     */
   def deleteUser(userId: UserId, byWho: Who): UserInclDetails = {
-    val (user, usersGroupIds) = readWriteTransaction { tx =>
+    val (user, usersGroupIds) = writeTx { (tx, staleStuff) =>
       tx.deferConstraints()
 
       val deleter = tx.loadTheParticipant(byWho.id)
@@ -2258,8 +2294,11 @@ trait UserDao {
       tx.removeDeletedMemberFromAllPages(userId)
       tx.removeDeletedMemberFromAllGroups(userId)
 
+      // logout(..) done below.  [end_sess]
+      terminateSessions(forPatId = userId, all = true, anyTx = Some(tx, staleStuff))
+
       // Clear the page cache, by clearing all caches.
-      emptyCacheImpl(tx)
+      emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
 
       (memberDeleted, groupIds)
     }
@@ -2270,29 +2309,40 @@ trait UserDao {
     // (this not needed, since cleared the site cache just above. Do anyway.)
     uncacheOnesGroupIds(Seq(userId))
     uncacheGroupsMemberLists(usersGroupIds)
+
+    // Or just call:  logout(user, bumpLastSeen = false)
+    pubSub.unsubscribeUser(siteId, user.briefUser)
     removeUserFromMemCache(userId)
+    // terminateSessions() done above.
 
     user
   }
+
 
   def deleteGuest(guestId: UserId, byWho: Who): Guest = {
     ???  // don't forget to delete any ext imp id [03KRP5N2]
   }
 
-  def loadUsersOnlineStuff(): UsersOnlineStuff = {
+
+  def getUsersOnlineStuff(): UsersOnlineStuff = {
     usersOnlineCache.get(siteId, new ju.function.Function[SiteId, UsersOnlineStuff] {
       override def apply(dummySiteId: SiteId): UsersOnlineStuff = {
         val (userIdsInclSystem, numStrangers) = redisCache.loadOnlineUserIds()
         // If a superadmin is visiting the site (e.g. to help fixing a config error), don't  [EXCLSYS]
         // show hen in the online list — hen isn't a real member.
-        val userIds = userIdsInclSystem.filterNot(id => id == SystemUserId || id == Participant.SuperAdminId)
-        val users = readOnlyTransaction { tx =>
-          tx.loadParticipants(userIds)
+        val userIds = userIdsInclSystem.filterNot(Pat.isBuiltInPerson)
+        // Load all this atomically? [user_version]
+        val users = getUsersAsSeq(userIds)
+        val tagsByUserId = getTagsByPatIds(userIds)
+        val usersJson = users map { user =>
+          val tags = tagsByUserId(user.id)
+          JsX.JsUser(user, tags)
         }
         UsersOnlineStuff(
-          users,
-          usersJson = JsArray(users.map(JsX.JsUser)),
-          numStrangers = numStrangers)
+              users,
+              tagsByUserId = tagsByUserId,
+              numStrangers = numStrangers,
+              cachedUsersJson = JsArray(usersJson))
       }
     })
   }
@@ -2357,6 +2407,11 @@ trait UserDao {
 
   private def allGroupsKey = MemCacheKey(siteId, "AlGrps")
   private def groupMembersKey(groupId: UserId) = MemCacheKey(siteId, s"$groupId|GrMbrs")
+
+  // Not cached by patKey() — because is in a different table, and by using
+  // different cache entries, we thereby eliminate some race conditions?
+  // (It's confusing if seemingly unrelated changes (e.g. name and group memberships)
+  // race against each other.)  [avoid_pat_cache_race]
   private def onesGroupIdsKey(userId: UserId) = MemCacheKey(siteId, s"$userId|GIdsByPp")
 
 }

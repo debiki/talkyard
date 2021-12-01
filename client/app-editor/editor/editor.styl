@@ -163,6 +163,68 @@ $scrollPreviewButtonPaddingTop = 6px;
     box-shadow: 0 0 23px 6px rgba(0,0,0,0.6);
     border-top: 1px solid hsl(0, 0%, 94%);
 
+  &.c_E-PlaceLeft
+    top: 0;
+    height: 100%;
+    border-top: none;
+    box-shadow: 0 0 14px 2px rgb(0 0 0 / 73%);
+    padding-top: 9px;
+    left: 0;
+    width: calc(100% * 0.45);  // [ed_left_width]
+    //max-width: 850px;  — wait, complicated to sync w page content width [ed_left_max_width]
+
+    // The watchbar would be to the left, if it was open — so there's an open-watchbar
+    // button to the left, if it's closed. (But no open-watchbar in the topbar,
+    // which is to the right of the eitor. That is: 1) watchbar (to the very left),
+    // 2) editor with open-watchbar button, 3) topbar and page contents, 4) the right sidebar.)
+    .esOpenWatchbarBtn
+      float: none;
+      margin: 0 12px 2px -21px;
+      padding: 6px 10px 6px 3px;
+
+    // No need for any thick gray border-looking area to the right — not close to
+    // the screen edge any more; instead, there's the page content to the right.
+    // (And then a thick border instead looks distracting.)  [.no_border_right]
+    #editor-after-borders
+      right: 0;
+    .editor-area-after-borders
+      right: 4px !important;
+
+    // There's almost no border to the right (see [.no_border_right] just above),
+    // instead, we're using this scrollbar — and let's show it also when it's not needed,
+    // so it works as a border (looks ok nice, better than the [.no_border_right]).
+    textarea.rta__textarea.editor
+      overflow-y: scroll;
+
+// On forum topic list pages, there's no in-page preview — instead, the preview
+// is inside the editor. Then, the editor needs more space, say, 60% instead of 45%:
+// COULD UX: Make the editor horizontally resizable.
+html.es-forum #debiki-editor-controller.c_E-PlaceLeft
+  width: calc(100% * 0.60);  // [ed_left_width]
+
+
+html.es-watchbar-open #debiki-editor-controller
+  &.c_E-PlaceLeft
+    // The watchbar is 230 px wide. We'll split the remaining 45% + 55% between the
+    // editor (to the left) and page contents (to the right).
+    left: $watchbarWidth; // 230px;
+    // Seems `$watchbarWidth` won't get replaced inside calc!?
+    width: calc((100% - 230px) * 0.45);  // [ed_left_width]
+    // Nothing to the right of the buttons (no preview).
+    .submit-cancel-btns
+      width: auto;
+    .esOpenWatchbarBtn
+      // Not needed; watchbar already open.
+      display: none;
+
+// Extra wide, on topic list pages — but subtract the watchbar width.
+html.es-watchbar-open.es-forum #debiki-editor-controller
+  &.c_E-PlaceLeft
+    // Try using $watchbarWidth instead of 230, hmm.
+    width: calc((100% - 230px) * 0.60);  // [ed_left_width]
+
+
+#debiki-editor-controller
   &.s_E-Max
     // --- dupl [5KETW02]
     height: 100% !important;
@@ -172,7 +234,7 @@ $scrollPreviewButtonPaddingTop = 6px;
       right: 5px !important;
     &.editor-box-shadow
       border: none !important;
-  // --- /dupl
+    // --- /dupl
 
   @media (min-width: $showPreviewMinWidth + 1)
     &.s_E-SplitHz
@@ -277,6 +339,7 @@ $scrollPreviewButtonPaddingTop = 6px;
     .s_E_DoingRow
       position: relative; // why? can remove?
       display: flex;
+      align-items: baseline;
       @media (min-height: $spacyYMinHeight)
         margin-bottom: 4px;
 

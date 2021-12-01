@@ -29,10 +29,11 @@ import scala.concurrent.Future
 import ed.server.{EdContext, EdController, RenderedPage}
 import javax.inject.Inject
 import ViewPageController._
-import debiki.dao.UsersOnlineStuff
-import ed.server.auth.MaySeeOrWhyNot
-import ed.server.security.EdSecurity
+import debiki.dao.NoUsersOnlineStuff
 import talkyard.server.authn.LoginReason
+import talkyard.server.authn.MinAuthnStrength
+import talkyard.server.authz.MaySeeOrWhyNot
+import talkyard.server.JsX.JsObjOrNull
 
 
 
@@ -52,6 +53,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 
 
+  CHECK_AUTHN_STRENGTH
   def loadPost(pageId: PageId, postNr: PostNr): Action[Unit] = GetActionAllowAnyone { request =>
     // Similar to getPageAsJsonImpl and getPageAsHtmlImpl, keep in sync. [7PKW0YZ2]
 
@@ -68,6 +70,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         throwForbidden("EdE4F8WV0", "Account not approved")
     }
 
+    // & sid leveL?
     val (maySeeResult, debugCode) = dao.maySeePostUseCache(pageId, postNr, request.user)
     maySeeResult match {
       case MaySeeOrWhyNot.YesMaySee =>
@@ -82,6 +85,8 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         throwIndistinguishableNotFound(debugCode)
     }
 
+    // Later, if caching post json, don't forget to uncache, if author or post tags
+    // added/removed. [if_caching_posts]
     val json = dao.jsonMaker.makeStorePatchForPostNr(pageId, postNr, showHidden = true) getOrElse {
       throwNotFound("EdE6PK4SI2", s"Post ${PagePostNr(pageId, postNr)} not found")
     }
@@ -100,6 +105,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     * Good for analytics and understanding what the users do at the site?
     * The SPA stuff is just an optimization.
     */
+  CHECK_AUTHN_STRENGTH
   def viewPage(path: String): Action[Unit] = AsyncGetActionAllowAnyone { request =>
     if (request.queryString.get("json").isDefined) {
       getPageAsJson(path, request)
@@ -182,6 +188,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
     val pageRequest = new PageRequest[Unit](
       request.site,
+      request.anyTySession,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
@@ -195,18 +202,20 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       request = request.request)
 
     // Json for strangers and the publicly visible parts of the page.
-    val renderedPage = request.dao.renderPageMaybeUseMemCache(pageRequest)
+    val renderedPage = dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
 
     // Any stuff, like unapproved comments, only the current user may see.
     COULD_OPTIMIZE // this loads some here unneeded data about the current user.
-    val anyUserSpecificDataJson: Option[JsObject] =
+    // we only need: watchbar and .myDataByPageId[].  [load_less_me_data]
+    val anyMeAndStuff: Opt[MeAndStuff] =
       dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds)
 
     Future.successful(
       OkSafeJson(
-        Json.obj(
+        Json.obj(  // ts: PageJsonAndMe
           "reactStoreJsonString" -> renderedPage.reactStoreJsonString,
-          "me" -> anyUserSpecificDataJson)))
+          "me" -> JsObjOrNull(anyMeAndStuff.map(_.me.meJsOb)),
+          "stuffForMe" -> JsObjOrNull(anyMeAndStuff.map(_.stuffForMe.toJson(dao))))))
   }
 
 
@@ -237,8 +246,9 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
   }
 
 
-  def markPageAsSeen(pageId: PageId): Action[JsValue] = PostJsonAction(NoRateLimits, maxBytes = 2) {
-        request =>
+  def markPageAsSeen(pageId: PageId): Action[JsValue] = PostJsonAction(NoRateLimits,
+        MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 2) { request =>
+    CHECK_AUTHN_STRENGTH
     val watchbar = request.dao.getOrCreateWatchbar(request.theUserId)
     val newWatchbar = watchbar.markPageAsSeen(pageId)
     request.dao.saveWatchbar(request.theUserId, newWatchbar)
@@ -298,9 +308,15 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
                 die("DwE7KEWK2", "Both not approved and approved")
             }
         }
-        var forbidden = ForbiddenResult(s"TyM0APPR_-$code", message)
-        if (logout) forbidden = forbidden.discardingCookies(security.DiscardingSessionCookie)
-        return Future.successful(forbidden)
+        var forbiddenResp = ForbiddenResult(s"TyM0APPR_-$code", message)
+        if (logout) {
+          COULD_OPTIMIZE // do these two in the same tx:
+          dao.logout(request.theReqer, bumpLastSeen = true)
+          dao.terminateSessionForCurReq(request.underlying)
+
+          forbiddenResp = forbiddenResp.discardingCookies(security.DiscardingSessionCookies: _*)
+        }
+        return Future.successful(forbiddenResp)
       }
     }
 
@@ -345,6 +361,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
     val pageRequest = new PageRequest[Unit](
       request.site,
+      request.anyTySession,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
@@ -357,7 +374,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       dao = dao,
       request = request.request)
 
-    val renderedPage = dao.renderPageMaybeUseMemCache(pageRequest)
+    val renderedPage = dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
 
     addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
   }
@@ -367,8 +384,11 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 object ViewPageController {
 
-  val HtmlEncodedVolatileJsonMagicString =
-    "\"__html_encoded_volatile_json__\""
+  val HtmlEncodedVolatileJsonMagicStringNoQuotes =
+    "__html_encoded_volatile_json__"
+
+  val HtmlEncodedVolatileJsonMagicStringQuoted: St =
+    "\"" + HtmlEncodedVolatileJsonMagicStringNoQuotes + "\""
 
   val ContSecPolHeaderName = "Content-Security-Policy"
   val objectSrcNonePolicy = "object-src 'none'; "
@@ -397,21 +417,23 @@ object ViewPageController {
     // Could do asynchronously later. COULD avoid sending back empty json fields
     // — first verify that then nothing will break though.
     val usersOnlineStuff =
-      if (skipUsersOnline) UsersOnlineStuff(users = Nil, usersJson = JsArray(), numStrangers = 0)
-      else dao.loadUsersOnlineStuff()
+      if (skipUsersOnline) NoUsersOnlineStuff
+      else dao.getUsersOnlineStuff()
 
-    val anyUserSpecificDataJson: Option[JsValue] =
+    val anyMeAndRestrStuff: Opt[MeAndStuff] =
       request match {
         case pageRequest: PageRequest[_] =>
           dao.jsonMaker.userDataJson(pageRequest, unapprovedPostAuthorIds)
         case _: DebikiRequest[_] =>
-          Some(dao.jsonMaker.userNoPageToJson(request))
+          dao.jsonMaker.userNoPageToJson(request)
       }
 
-    var volatileJson = Json.obj(  // VolatileDataFromServer
-      "usersOnline" -> usersOnlineStuff.usersJson,
+    var volatileJson = Json.obj(  // ts: VolatileDataFromServer
+      "usersOnline" -> usersOnlineStuff.cachedUsersJson,
       "numStrangersOnline" -> usersOnlineStuff.numStrangers,
-      "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
+      "me" -> JsObjOrNull(anyMeAndRestrStuff.map(_.me.meJsOb)),
+      "stuffForMe" -> JsObjOrNull(anyMeAndRestrStuff.map(_.stuffForMe.toJson(dao))),
+      )
 
     // (If the requester is logged in so we could load a real 'me' here,
     // then, somehow the browser sent the server the session id, so no need to
@@ -426,9 +448,11 @@ object ViewPageController {
     // The Scala templates take care to place the <script type="application/json">
     // tag with the magic-string-that-we'll-replace-with-user-specific-data before
     // user editable HTML for comments and the page title and body. [8BKAZ2G]
+    // (We replace the quotes around the string too, or the page json would end up
+    // inside "...".)
     val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(volatileJson.toString)
     val pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
-        pageHtmlNoVolData, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
+          pageHtmlNoVolData, HtmlEncodedVolatileJsonMagicStringQuoted, htmlEncodedJson)
 
     requester.foreach(dao.pubSub.userIsActive(request.siteId, _, request.theBrowserIdData))
 
@@ -532,6 +556,7 @@ object ViewPageController {
 
     new DummyPageRequest(
       request.site,
+      request.anyTySession,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,

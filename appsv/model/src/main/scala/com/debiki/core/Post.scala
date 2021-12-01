@@ -707,7 +707,7 @@ case class SimplePostPatch(
     "TyE6033MKSHUW2", s"parentNr is < $BodyNr (the Orig Post), parentNr: $parentNr")
 
   // COULD make the type system prevent this (and handle this higher up in the call stack).
-  throwIllegalArgumentIf(pageRef.canOnlyBeToParticipant,
+  throwIllegalArgumentIf(pageRef.canOnlyBeToPat,
     "TyE630RKDNW2J", s"The *page* ref is to a user/participant: $pageRef")
 
   // Better not allow unexpected things, for now.

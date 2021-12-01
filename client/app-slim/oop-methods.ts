@@ -574,7 +574,7 @@ export function post_shallRenderAsHidden(post: Post): boolean {
   return post.isBodyHidden && _.isEmpty(post.sanitizedHtml);
 }
 
-export function post_isPubVisible(post: Post): Bo {
+export function post_isPubVisible(post: Post): BoZ {
   // && !== CompletedForm  fix server side too if enabling forms
   return !post.isBodyHidden && post.approvedAtMs && !post_isDeleted(post);
 }
@@ -700,6 +700,19 @@ export function user_isGone(user: Myself | BriefUser | UserInclDetails | Partici
 }
 
 
+export function pat_mayEditTags(me: Me, ps: { forPost?: Post, forPat?: Pat,
+      store: Store }): Bo {
+  const isPostDeleted = ps.forPost && post_isDeleted(ps.forPost);
+  return !ps.store.isEmbedded &&
+          ps.store.settings.enableTags !== false &&
+          !isPostDeleted &&
+          isStaff(me);  // for now. Later: user_isStaffOrCoreMember [missing_tags_feats]
+                        // for page tags, but still isStaff() for pat tags?
+                        // + || isOwnPost for own post?
+}
+
+
+
 // Settings
 //----------------------------------
 
@@ -737,14 +750,27 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 
 
 export function store_isFeatFlagOn(store: Store, featureFlag: St): Bo {
-  return _.includes(store.siteFeatureFlags, featureFlag) ||
+  const offFlag = '0' + featureFlag;
+  const isOn = _.includes(store.siteFeatureFlags, featureFlag) ||
          _.includes(store.serverFeatureFlags, featureFlag);
+  const isOff = _.includes(store.siteFeatureFlags, offFlag) ||
+         _.includes(store.serverFeatureFlags, offFlag);
+  return isOn && !isOff;   // [ff_on_off]
 }
 
 
 
 // Store
 //----------------------------------
+
+
+export function store_curPage(store: Store): Page | U {
+  return !store.currentPage || _.isEmpty(store.curPageTweaks) ? store.currentPage : {
+    ...store.currentPage,
+    ...store.curPageTweaks,
+  };
+}
+
 
 export function store_mainSiteSection(store: Store): SiteSection {
   // Currently there's always just one sub site, namely the forum.
@@ -1449,6 +1475,37 @@ export function categories_sortTree(categories: Category[]): CatsTree {
 
   return { rootCats, baseCats, catsById };
 }
+
+
+
+// Tags
+//----------------------------------
+
+
+export function tags_mkSortFn(tagTypesById: TagTypesById): (a: Tag, b: Tag) => Nr {
+  return function(tagA: Tag, tagB: Tag): Nr {
+    const tagTypeA = tagTypesById[tagA.tagTypeId];
+    const tagTypeB = tagTypesById[tagB.tagTypeId];
+    // @ifdef DEBUG
+    if (numTagTypeMissingWarnings < 3 && (!tagTypeA || !tagTypeB)) {
+      numTagTypeMissingWarnings += 1;
+      const warningNr = `\n\n(Warning nr ${numTagTypeMissingWarnings} of max 3)`;
+      !tagTypeA && showClientError(
+            `Tag type missing, id: ${tagA.tagTypeId} [TyE5MW208M2]` + warningNr);
+      !tagTypeB && showClientError(
+            `Tag type missing, id: ${tagB.tagTypeId} [TyE5MW208M3]` + warningNr);
+    }
+    // @endif
+    // Place any tag with a missing tag type last. (Would be a bug. '~' is last ASCII char.)
+    const nameA = tagTypeA && tagTypeA.dispName || ('~' + tagA.tagTypeId);
+    const nameB = tagTypeB && tagTypeB.dispName || ('~' + tagB.tagTypeId);
+    return nameA.localeCompare(nameB);
+  }
+}
+
+// @ifdef DEBUG
+let numTagTypeMissingWarnings = 0;
+// @endif
 
 
 

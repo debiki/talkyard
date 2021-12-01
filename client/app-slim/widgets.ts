@@ -368,6 +368,86 @@ export function UserName(props: {
 }
 
 
+
+
+export function TagListLive(ps: TagListLiveProps): RElm | U {
+  const store: Store = ps.store;
+  if (store.settings.enableTags === false)
+    return null;
+
+  const me: Me = store.me;
+  const tags = (ps.forPost && ps.forPost.pubTags) || (ps.forPat && ps.forPat.pubTags);
+
+  const canEditTags = ps.live !== false && pat_mayEditTags(me, ps);
+  const thereAreTags = tags && tags.length;
+
+  if (!thereAreTags && !canEditTags)
+    return;
+
+  const maybeOpenTagsDiag = !canEditTags ? null : () => {
+    morebundle.openTagsDialog(ps);
+  }
+  return TagList({ ...ps, onClick: maybeOpenTagsDiag });
+}
+
+
+
+export function TagList(ps: TagListProps): RElm | U {
+  // @ifdef DEBUG
+  // Only one of { tags, forPat, forPost } should be specified.
+  dieIf(ps.tags && ps.forPat, 'TyE4MGD2RUJ6');
+  dieIf(ps.tags && ps.forPost, 'TyE4MGD2RUJ5');
+  dieIf(ps.forPost && ps.forPat, 'TyE4MGD2RUJ7');
+  // @endif
+
+  const patOrPostClass = ps.forPat ? ' c_Tag-Pat' : ' c_Tag-Po';
+  const anyTags: Tag[] | U = ps.tags || ps.forPost?.pubTags || ps.forPat?.pubTags;
+  const tagTypesById: TagTypesById = (
+          //ps.tagTypesById ||  // maybe later
+          ps.store?.tagTypesById || {});
+  const thereAreTags = anyTags && anyTags.length;
+  const canEditTags = ps.onClick;
+
+  let tagElms: RElm[] = [];
+  const canEditAnyClass = !canEditTags ? '' : ' c_TagL-CanEdAny';
+  const canEditThisClass = !canEditTags ? '' : ' c_TagL_Tag-CanEd';
+
+  function onClick(event: MouseEvent) {
+    event.stopPropagation();
+    event.preventDefault();
+    if (ps.onClick) ps.onClick();
+  }
+
+  if (thereAreTags) {
+    // The e2e tests expect the tags in the same order always. [sort_tags]
+    // Not that much point in sorting server side, because it's good to sort
+    // here anyway, if pat adds a single tag browser side.
+    const tagsSorted = [...anyTags].sort(tags_mkSortFn(tagTypesById));
+    tagElms = tagsSorted.map((tag: Tag) => {
+      const tagType = tagTypesById[tag.tagTypeId];
+      return (
+          r.li({ key: tag.id },
+            r.a({ className: 'c_TagL_Tag' + canEditThisClass + patOrPostClass, onClick },
+              tagType?.dispName ||
+                  // In case there's some bug so the tag type wasn't found.
+                  `tag_id: ${tag.id} tag_type: ${tag.tagTypeId}`)));
+    });
+  }
+
+  // Don't show the add tag button at reply posts — usually doesn't make
+  // any sense to tag replies.
+  if (canEditTags && (!ps.forPost || ps.forPost.nr === BodyNr)) {
+    tagElms.push(r.li({ key: '+' },
+        Button({ onClick, className: 'c_TagL_AddB' }, '+ ...' )))
+  }
+
+  // Maybe always add classes 'n_TagL-Pat' and 'n_TagL-Po' here? Instead of only
+  // if on a discussion page?  [alw_tag_type]
+  return r.ul({ className: ' c_TagL ' + (ps.className || '') + canEditAnyClass }, tagElms);
+}
+
+
+
 export interface InstaDiagProps {
   diagClassName?: St;
   titleClassName?: St;

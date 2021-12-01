@@ -435,14 +435,6 @@ export const PostActions = createComponent({
           title: t.pa.ReportThisPost });
     }
 
-    let tagList;
-    if (post.tags && post.tags.length) {
-      const tags = post.tags.map((label) => {
-        return r.li({ key: label }, r.a({ className: 'esTg' }, label));
-      });
-      tagList = r.ul({ className: 'esPA_Ts' }, tags);
-    }
-
     const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null : rFragment({},
       r.a({ className: 'dw-a dw-a-other-topics icon-link-ext', href: linkToEmbeddedDiscussions(),
         target: '_blank' }, t.pa.DiscIx),
@@ -504,7 +496,6 @@ export const PostActions = createComponent({
         numLikesText,
         numUnwantedsText,
         acceptAnswerButton,
-        tagList,
         approveOrDeleteBtns));
   }
 });
@@ -744,8 +735,9 @@ const MoreDropdownModal = createComponent({
     this.close();
   },
 
-  openTagsDialog: function(event) {
-    morebundle.openTagsDialog(this.state.store, this.state.post);
+  openTagsDialog: function() {
+    const state = this.state;
+    morebundle.openTagsDialog({ forPost: state.post, store: state.store });
     this.close();
   },
 
@@ -859,8 +851,7 @@ const MoreDropdownModal = createComponent({
 
     // ----- Tags
 
-    if ((isStaff(me) || isOwnPost) && !store.isEmbedded && settings.enableTags !== false
-          && !isPostDeleted) {
+    if (pat_mayEditTags(me, { forPost: post, store })) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-plus', onClick: this.openTagsDialog, key: 'ts' },
           t.pa.AddTags));
@@ -926,7 +917,7 @@ const MoreDropdownModal = createComponent({
     const content = state.isOpen ? this.makeButtons() : null;
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, showCloseButton: true,
-          atRect: state.buttonRect, windowWidth: state.windowWidth },
+          className: 'e_PAMoreD', atRect: state.buttonRect, windowWidth: state.windowWidth },
         content));
   }
 });

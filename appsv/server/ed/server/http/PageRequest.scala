@@ -37,6 +37,7 @@ import play.api.mvc.Request
   */
 class PageRequest[A](
   val site: SiteBrief,
+  val anyTySession: Opt[TySession],
   val sid: SidStatus,
   val xsrfToken: XsrfOk,
   val browserId: Option[BrowserId],
@@ -140,6 +141,7 @@ class PageRequest[A](
   */
 class DummyPageRequest[A](
   siteIdAndCanonicalHostname: SiteBrief,
+  anyTySession: Opt[TySession],
   sid: SidStatus,
   xsrfToken: XsrfOk,
   browserId: Option[BrowserId],
@@ -149,7 +151,7 @@ class DummyPageRequest[A](
   pageMeta: PageMeta,
   dao: SiteDao,
   request: Request[A]) extends PageRequest[A](
-    siteIdAndCanonicalHostname, sid, xsrfToken, browserId, user, pageExists,
+    siteIdAndCanonicalHostname, anyTySession, sid, xsrfToken, browserId, user, pageExists,
     pagePath, Some(pageMeta), altPageId = None, embeddingUrl = None,
     dao = dao, request = request) {
 
