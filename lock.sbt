@@ -99,7 +99,7 @@ Compile / dependencyOverrides ++= {
       "dev.paseto" % "jpaseto-sodium" % "0.7.0",
       "io.dropwizard.metrics" % "metrics-core" % "4.1.26",
       "io.dropwizard.metrics" % "metrics-healthchecks" % "4.1.19",
-      "io.jaegertracing" % "jaeger-client" % "0.32.0",
+      "io.jaegertracing" % "jaeger-client" % "0.35.5",
       "io.jaegertracing" % "jaeger-core" % "0.32.0",
       "io.jaegertracing" % "jaeger-thrift" % "0.32.0",
       "io.jaegertracing" % "jaeger-tracerresolver" % "0.32.0",
