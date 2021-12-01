@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.github.benmanes.caffeine
+import scala.{collection => col}
 import play.api.libs.json.JsArray
 
 
@@ -51,8 +52,12 @@ package object dao {
 
   case class UsersOnlineStuff(
     users: Seq[Participant],
-    usersJson: JsArray,
-    numStrangers: Int)
+    tagsByUserId: col.Map[PatId, ImmSeq[Tag]],
+    numStrangers: i32,
+    cachedUsersJson: JsArray)
+
+  val NoUsersOnlineStuff: UsersOnlineStuff =
+    UsersOnlineStuff(Nil, Map.empty, 0, JsArray(Nil))
 
 }
 

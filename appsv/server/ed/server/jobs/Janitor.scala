@@ -112,6 +112,7 @@ class JanitorActor(val globals: Globals) extends Actor {
 
   private def findAndDeleteOldStuff(): Unit = {
     val dao = globals.systemDao
+    dao.deletePersonalDataFromOldSessions()
     dao.deletePersonalDataFromOldAuditLogEntries()
     dao.deletePersonalDataFromOldSpamCheckTasks()
     dao.deleteOldUnusedUploads()

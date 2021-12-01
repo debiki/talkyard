@@ -113,7 +113,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       expectedTotalNumNotfs += 1
 
       // The rest of the tests don't expect Owner to be notified about everything.
-      dao.savePageNotfPref(
+      dao.savePageNotfPrefIfAuZ(
         PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(withRepliesTopicId)),
         Who.System)
 
@@ -123,7 +123,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         owner.id, browserIdData, dao, Some(categoryId))
       dao.addUsersToPage(Set(owner.id), oldChatTopicId, byWho = ownerWho)
       dao.addUsersToPage(Set(moderator.id), oldChatTopicId, byWho = ownerWho)
-      dao.savePageNotfPref(
+      dao.savePageNotfPrefIfAuZ(
         PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(oldChatTopicId)),
         Who.System)
       chat(owner.id, oldChatTopicId, "chat message 1")(dao)
@@ -133,7 +133,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
       chatTopicOneId = createPage(PageType.OpenChat,
         textAndHtmlMaker.testTitle("chatTopicId"), textAndHtmlMaker.testBody("chatTopicId body"),
         owner.id, browserIdData, dao, Some(categoryId))
-      dao.savePageNotfPref(
+      dao.savePageNotfPrefIfAuZ(
         PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(chatTopicOneId)),
         Who.System)
 
@@ -141,7 +141,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         textAndHtmlMaker.testTitle("chatTopicTwoId"),
         textAndHtmlMaker.testBody("chatTopicTwoId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
-      dao.savePageNotfPref(
+      dao.savePageNotfPrefIfAuZ(
         PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(chatTopicTwoId)),
         Who.System)
 
@@ -149,7 +149,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         textAndHtmlMaker.testTitle("chatTopicManyJoinedId"),
         textAndHtmlMaker.testBody("chatTopicManyJoinedId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
-      dao.savePageNotfPref(
+      dao.savePageNotfPrefIfAuZ(
         PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(chatTopicManyJoinedId)),
         Who.System)
 

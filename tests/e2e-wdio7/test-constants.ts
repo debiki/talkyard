@@ -1,4 +1,19 @@
 
+export const enum SiteType {
+  Forum = 1,
+  EmbeddedCommments = 2,
+}
+
+
+export const enum NewSiteOwnerType {
+  OwenOwner = 1,
+  GmailAccount = 2,
+  FacebookAccount = 3,
+  GitHubAccount = 4,
+  LinkedInAccount = 5,
+}
+
+
 
 // Need to include here, for now, ? because client/app/ doesn't use any modules system,
 // doesn't export any constants ?
@@ -25,6 +40,16 @@ const TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
   Form: <PageRole> 20,  // try to remove?
   Critique: <PageRole> 16, // [plugin] CLEAN_UP REMOVE
 };
+
+enum TestTopicListLayout {   // same as TopicListLayout
+  Default = 0,
+  TitleOnly = 1,
+  TitleExcerptSameLine = 2,
+  ExcerptBelowTitle = 3,
+  ThumbnailLeft = 4,
+  ThumbnailsBelowTitle = 5,
+  NewsFeed = 6,
+}
 
 const TestTrustLevel = {
   New: <TrustLevel> 1,
@@ -78,6 +103,7 @@ export default {
   LowestTempImpId: 2 * 1000 * 1000 * 1000 + 1, //2000000001,
   JanOne2020HalfPastFive: 1577900000 * 1000,  // 2020-01-01T17:33:20 can use in tests
   TestPageRole,
+  TestTopicListLayout,
   TestPageNotfLevel,
   TestPostType,
   TestTrustLevel,
@@ -87,6 +113,8 @@ export default {
   MaxTitleLength: 200,    // sync with Scala
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
+  SecondReplyNr: 3,
+  ThirdReplyNr: 4,
   UnknownUserId: -3,
   NoUserId: 0,
   SystemUserId: 1,

@@ -36,7 +36,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
   import context.globals
-  import context.security.DiscardingSessionCookie
+  import context.security.DiscardingSessionCookies
   import LoginController._
 
 
@@ -90,7 +90,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private val EmbCommentsModeStr = 16.toString  // [8UKBR2AD5]
+  private val EmbCommentsModeStr = 16  // also in model.ts [8UKBR2AD5]
 
   /** For showing a login dialog inside a popup window. Used when   [2ABKW24T]
     * 1) logging in in an iframe,
@@ -122,20 +122,26 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  /** Clears login related cookies and OpenID and OpenAuth stuff, unsubscribes
-    * from any event channel.
+  /** Clears session cookies and ends the session server side too; unsubscribes
+    * from any websockets channel.
     */
   def logout(currentUrlPath: Opt[St]): Action[U] = GetActionAllowAnyone { request =>
-    doLogout(request, redirectIfMayNotSeeUrlPath = currentUrlPath)
+    SECURITY // optionally log out from all devices?
+    doLogout(request, redirectIfMayNotSeeUrlPath = currentUrlPath,
+          wasImpersonating = false)
   }
 
 
-  def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Opt[St]): Result = {
+  def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Opt[St],
+          wasImpersonating: Bo): Result = {
     import request.{dao, requester, siteSettings}
 
+    AUDIT_LOG // session id destruction
+
     requester foreach { theRequester =>
-      request.dao.logout(theRequester, bumpLastSeen = true)
+      request.dao.logout(theRequester, bumpLastSeen = !wasImpersonating)
     }
+    dao.terminateSessionForCurReq(request.underlying)
 
     val goToNext: Opt[St] = siteSettings.effSsoLogoutAllRedirUrl orElse {
       redirectIfMayNotSeeUrlPath flatMap { urlPath =>
@@ -162,7 +168,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
 
     // Keep the xsrf cookie, so the login dialog will work.
-    response.discardingCookies(DiscardingSessionCookie)
+    response.discardingCookies(DiscardingSessionCookies: _*)
   }
 
 

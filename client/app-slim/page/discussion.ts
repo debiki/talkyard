@@ -1661,6 +1661,7 @@ export const PostHeader = createComponent({
   },
 
   render: function() {
+    const props = this.props;
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
     const me: Myself = store.me;
@@ -1731,7 +1732,7 @@ export const PostHeader = createComponent({
 
     const isPageBody = post.nr === BodyNr;
 
-    const by = isPageBody ? t.d.By : '';
+    const by = isPageBody ? r.span({ className: 'n_By' }, t.d.By) : '';
     const userName =
         UserName({ user: author, store, makeLink: !abbreviate,
             onClick: abbreviate ? undefined : this.onUserClick });
@@ -1762,26 +1763,37 @@ export const PostHeader = createComponent({
       inReplyTo = ReplyReceivers({ store, post, comma: true });
     }
 
+    // Maybe always add these classes, in TagList() instead?  [alw_tag_type]
+    const patTagList: RElm | U =
+            TagList({ className: 'n_TagL-Pat', forPat: author, store });
+    const postTagList: RElm | U =
+            TagListLive({ className: 'n_TagL-Po', forPost: post, store, live: props.live });
+
     const timeClass = 'esP_H_At';
 
-    return (
-        r.div({ className: 'dw-p-hd' + isBodyPostClass },
+    return (r.div({ className: 'dw-p-hd' + isBodyPostClass },
+        r.span({ className: 'n_ByAt'},
           anyPin,
           hashPostNr,
           anySolutionIcon,
           anyAvatar,
           by,
           userName,
+          patTagList,
           // COULD add "Posted on ..." tooltip.
-          post.isPreview ? null : (
-            this.props.exactTime ?
-              timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass)),
-          editInfo,
+          r.span({ className: 'n_EdAt'},
+            post.isPreview ? null : (
+              this.props.exactTime ?
+                timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass)),
+            editInfo),
           inReplyTo,
           toggleCollapsedButton,
           bookmark,
           unreadMark,
-          this.props.stuffToAppend));
+          this.props.stuffToAppend,
+          ),
+        postTagList,
+        ));
   }
 });
 

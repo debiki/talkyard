@@ -1536,7 +1536,7 @@ export class TyE2eTestBrowser {
           if (isBadElemException(ex)) {
             // Fine, maybe it didn't appear yet?
             logUnusual(`Bad element exception when waiting for:  ${
-                  selector} — retrying ...`);
+                  selector}  — will retry. The error: ${ex.toString()}`);
             return false;
           }
           if (isWindowClosedException(ex)) {
@@ -1736,34 +1736,6 @@ export class TyE2eTestBrowser {
         message: `Waiting for  ${selector}  to be clickable`
       });
       return clickable ? 'Clickable' : 'NotClickable';
-    }
-
-
-    waitAndClickLinkToNewPage(selector: string, refreshBetweenTests?: boolean) {
-      // Keep the debug stuff, for now — once, the click failed, although visible already, weird.
-      let delay = 30;
-      //let count = 0;
-      //logMessage(`waitAndClickLinkToNewPage ${selector} ...`);
-      this.waitUntilLoadingOverlayGone();
-      while (true) {
-        this.waitForMyDataAdded();
-        this.#br.pause(delay);
-        //logMessage(`waitAndClickLinkToNewPage ${selector} testing:`);
-        if (this.isEnabled(selector)) {
-          //logMessage(`waitAndClickLinkToNewPage ${selector} —> FOUND and ENABLED`);
-          // count += 1;
-          // if (count >= 6)
-          break;
-        }
-        else {
-          //logMessage(`waitAndClickLinkToNewPage ${selector} —> NOT found...`);
-          if (refreshBetweenTests) this.#br.refresh();
-          delay *= 1.67;
-        }
-      }
-      this.rememberCurrentUrl();
-      this.waitAndClick(selector);
-      this.waitForNewUrl();
     }
 
 
@@ -3980,9 +3952,11 @@ export class TyE2eTestBrowser {
         // Facebook asks if we want cookies — yes we do. And Facebook sometimes
         // renames the ok-cookies button.
         //const cookieYesSelector = '[data-testid="cookie-policy-banner-accept"]';
-        const cookieYesSelector = '[data-testid="cookie-policy-dialog-accept-button"]';
-        if (this.isExisting(cookieYesSelector)) {
-          this.waitAndClick(cookieYesSelector);
+        // (There's yet another cookie button, cookieYesBtn2, below.)
+        const cookieYesBtn1 = '[data-testid="cookie-policy-dialog-accept-button"]';
+        if (this.isExisting(cookieYesBtn1)) {
+          logMessage("Accepting cookies 1 ...");
+          this.waitAndClick(cookieYesBtn1);
         }
 
         logMessage("typing Facebook user's email and password...");
@@ -4001,6 +3975,12 @@ export class TyE2eTestBrowser {
         //   > Would you like to continue?
         // and we need to click Yes:
         const yesBtn = 'button[name="__CONFIRM__"]';
+
+        // And asks about cookies a 2nd time:
+        const cookieYesBtn2 = '[aria-label="Allow All Cookies"]';
+        // (Or: div or span with the text 'Allow All Cookies' — but clicking it,
+        // does nothing. Instead, clicking the ancestor aria-label=... works.)
+
         this.waitUntil(() => {
           if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
             logMessage(`Popup closed, got no "Would you like to continue?" question.`);
@@ -4012,14 +3992,28 @@ export class TyE2eTestBrowser {
             return true;
           }
           try {
-            if (this.tryClickNow(yesBtn) === 'Clicked')
-              return true;
+            // Suddenly, Sept 2021, FB has added a 2nd cookie button. Who knows why.
+            // So let's accept cookies a 2nd time.
+            if (this.tryClickNow(cookieYesBtn2) === 'Clicked') {
+              logMessage("Accepted FB cookies 2.");
+              // Contiue looping afterwards, until the dialog closes or we see the
+              // create-user Talkyard fields. Also, it seemed as if the first click
+              // once didn't work, who cares why, just click more?
+              return false;
+            }
+            // Previously, there was some confirmation button. Mayeb FB will
+            // add it back?
+            if (this.tryClickNow(yesBtn) === 'Clicked') {
+              logMessage("Clicked some FB Continue button.");
+              // Continue looping, see if{} above.
+              return false;
+            }
           }
           catch (dummy) {
             logMessage(`No Yes button — already logged in, tab closed? [TyM5PKW5RM8]`);
           }
         }, {
-          message: `Waiting for any FB "Continue?" question`,
+          message: `Waiting for any FB "Continue?" question or cookie button 2`,
           winClosedIsFine: true,  // FB popup can close itself
         });
 

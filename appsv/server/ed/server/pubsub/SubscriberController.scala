@@ -22,13 +22,15 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
 import debiki._
+import talkyard.server.JsX
 import ed.server.{EdContext, EdController}
 import ed.server.http._
+import ed.server.security.CheckSidAndXsrfResult
 import javax.inject.Inject
 import org.scalactic.{Bad, Good, Or}
 import play.{api => p}
 import p.libs.json.{JsValue, Json}
-import p.mvc.{Action, ControllerComponents, RequestHeader, Result}
+import p.mvc.{Action, ControllerComponents, RequestHeader => play_RequestHeader, Result}
 import scala.concurrent.Future
 import talkyard.server.TyLogging
 import talkyard.server.RichResult
@@ -45,14 +47,14 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
 
   def webSocket: p.mvc.WebSocket = p.mvc.WebSocket.acceptOrResult[JsValue, JsValue] {
-        request: RequestHeader =>
+        request: play_RequestHeader =>
     webSocketImpl(request)
       // map { if  Left[Result = Problem ... log to admin problem log ?  }
       // [ADMERRLOG]
   }
 
 
-  private def webSocketImpl(request: RequestHeader): Future[Either[
+  private def webSocketImpl(request: play_RequestHeader): Future[Either[
         // Either an error response, if we reject the connection.
         Result,
         // Or an In and Out stream, for talking with the client.
@@ -110,7 +112,7 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
 
 
-  private def authenticateWebSocket(site: SiteBrief, request: RequestHeader)
+  private def authenticateWebSocket(site: SiteBrief, request: play_RequestHeader)
         : AuthnReqHeaderImpl Or Result = {
     import tyCtx.security
 
@@ -137,11 +139,13 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     // We check the xsrf token later — since a WebSocket upgrade request
     // cannot have a request body or custom header with xsrf token.
     // (checkSidAndXsrfToken() won't throw for GET requests. [GETNOTHROW])
-    val (sessionId, xsrfOk, newCookies) =
+    val CheckSidAndXsrfResult(anyTySession, sessionId, xsrfOk, newCookies, delFancySidCookies) =
           security.checkSidAndXsrfToken(
-                request, anyRequestBody = None, siteId = site.id,
+                request, anyRequestBody = None, site, dao,
                 expireIdleAfterMins = expireIdleAfterMins, maySetCookies = false,
                 skipXsrfCheck = false)
+
+    COULD // delete any delFancySidCookies.
 
     // Needs to have a cookie already. [WSXSRF]
     dieIf(newCookies.nonEmpty, "TyE503RKDJL2")
@@ -154,7 +158,20 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     if (sessionId.userId.isEmpty)
       return Bad(ForbiddenResult("TyEWS0SID", "No session id"))
 
-    // For now, let's require a browser id cookie — then, *in some cases* simpler
+    // For now, let's require part 4 HttpOnly to use WebSocket. And some time later
+    // maybe reconsider, and e.g. allow live updates of embedded comments.
+    if (anyTySession.exists(_.part4Absent)) {
+      // Dupl code [btr_sid_part_4]
+      val useOldSid = site.isFeatureEnabled("ffUseOldSid", globals.config.featureFlags)
+      if (!useOldSid) {
+        UNTESTED
+        throwForbidden("TyEWEAKSIDWS",
+              s"Please log out and log in, to get a complete session id — \n" +
+              s"WebSockets, ${request.path}, requires the HttpOnly part of the session id")
+      }
+    }
+
+    // For now, let's require a browser id cookie — then, *in some cases* simpler
     // to detect WebSocket abuse or attacks? (Also see: [GETLOGIN] — an id cookie
     // needs to be set also via GET requests, if they're for logging in.)
     val anyBrowserId = security.getAnyBrowserId(request)
@@ -179,17 +196,16 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
     if (requesterMaybeSuspended.isDeleted)
       return Bad(ForbiddenResult("TyEWSUSRDLD", "User account deleted")
-          .discardingCookies(security.DiscardingSessionCookie))
-          // + discard browser id co too   *edit:* Why?
+          .discardingCookies(security.DiscardingSessionCookies: _*))
 
     val isSuspended = requesterMaybeSuspended.isSuspendedAt(new java.util.Date)
     if (isSuspended)
       return Bad(ForbiddenResult("TyEWSSUSPENDED", "Your account has been suspended")
-          .discardingCookies(security.DiscardingSessionCookie))
+          .discardingCookies(security.DiscardingSessionCookies: _*))
 
     val requester = requesterMaybeSuspended
 
-    val authnReq = AuthnReqHeaderImpl(site, sessionId, xsrfOk,
+    val authnReq = AuthnReqHeaderImpl(site, anyTySession, sessionId, xsrfOk,
           anyBrowserId, Some(requester), dao, request)
 
     Good(authnReq)
@@ -197,13 +213,14 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
 
 
 
-  def loadOnlineUsers(): Action[Unit] = GetActionRateLimited(RateLimits.ExpensiveGetRequest) {
+  COULD // change rate limits — isn't expensive any more? Cached.
+  def loadOnlineUsers(): Action[U] = GetActionRateLimited(RateLimits.ExpensiveGetRequest) {
         request =>
-    val stuff = request.dao.loadUsersOnlineStuff()
+    val stuff = request.dao.getUsersOnlineStuff()
     OkSafeJson(
       Json.obj(
         "numOnlineStrangers" -> stuff.numStrangers,
-        "onlineUsers" -> stuff.usersJson))
+        "onlineUsers" -> stuff.cachedUsersJson))
   }
 
 }

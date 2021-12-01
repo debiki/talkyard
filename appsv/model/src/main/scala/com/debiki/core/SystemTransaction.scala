@@ -109,6 +109,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   // ----- The janitor: Old stuff deletion
 
+  def deletePersonalDataFromOldSessions(): U
   def deletePersonalDataFromOldAuditLogEntries(): Unit
   def deletePersonalDataFromOldSpamCheckTasks(): Unit
   def deleteOldUnusedUploads(): Unit = { /* ... later ... */ }

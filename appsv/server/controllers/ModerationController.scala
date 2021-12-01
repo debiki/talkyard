@@ -65,7 +65,9 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
         "reviewTaskCounts" -> Json.obj(
           "numUrgent" -> reviewTaskCounts.numUrgent,
           "numOther" -> reviewTaskCounts.numOther),
-        "users" -> usersById.values.map(JsUser),
+        // [missing_tags_feats] load user badges too, and page tags
+        // And change to "pats".
+        "users" -> usersById.values.map(JsUser(_)),
         "pageMetasBrief" -> pageMetaById.values.map(JsPageMetaBrief)))
   }
 
@@ -90,7 +92,9 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   def moderateFromPage: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     import request.{dao, body}
-    // Tests: modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
+    // Tests:
+    // - modn-from-disc-page-appr-befr.2browsers.test.ts  TyTE2E603RTJ
+    // - tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTAPRTGDPO
 
     val postId = (body \ "postId").as[PostId]
     val postRevNr = (body \ "postRevNr").as[Int]
@@ -102,13 +106,14 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
           decision != ReviewDecision.DeletePostOrPage, "TyE305RKDJ3",
           s"That decision not allowed here: $decision")
 
-    val patchJson = dao.writeTx { (tx, staleStuff) =>
-      val modResult = dao.moderatePostInstantly(postId = postId, postRevNr = postRevNr,
-            decision, moderator = request.theRequester)
+    val modResult = dao.moderatePostInstantly(postId = postId, postRevNr = postRevNr,
+          decision, moderator = request.theRequester)
 
+    val patchJson = {
       if (modResult.updatedPosts.nonEmpty) {
         val postIds = modResult.updatedPosts.map(_.id).toSet
-        dao.jsonMaker.makeStorePatchForPosts(postIds, showHidden = true, dao)
+        dao.jsonMaker.makeStorePatchForPostIds(
+              postIds, showHidden = true, inclUnapproved = true, dao)
       }
       else if (modResult.deletedPageId.nonEmpty) {  // [62AKDN46]
         dao.jsonMaker.makeStorePatchDeletePages(

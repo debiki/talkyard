@@ -24,7 +24,7 @@ import com.debiki.core.Prelude._
 import ed.server.security.EdSecurity
 import controllers.{LoginController, routes}
 import java.{net => jn}
-import play.api.libs.json.{JsLookupResult, JsValue}
+import play.api.libs.json.{JsLookupResult, JsValue, JsObject}
 import play.{api => p}
 import play.api.mvc._
 import scala.concurrent.Await
@@ -164,7 +164,11 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
     // So, right now, don't:
     //   p.http.Status.MOVED_PERMANENTLY
 
+  @deprecated("Now", "use throwOkJson instead")
   def throwOkSafeJson(json: JsValue): Nothing =
+    throw ResultException(controllers.OkSafeJsValue(json))
+
+  def throwOkJson(json: JsObject): Nothing =
     throw ResultException(controllers.OkSafeJson(json))
 
   def throwBadRequest(errCode: String, message: String = ""): Nothing =

@@ -105,7 +105,7 @@ const UserPageComponent = createReactClass(<any> {
       return;
 
     const newUsernameOrId: string = this.props.match.params.usernameOrId;
-    const maybeOldUser: UserInclDetails = this.state.user;
+    const maybeOldUser: UserInclDetails | NU = this.state.user;
     const isSameUser = maybeOldUser && (
         '' + maybeOldUser.id === newUsernameOrId || maybeOldUser.username === newUsernameOrId);
     if (!isSameUser) {
@@ -135,10 +135,10 @@ const UserPageComponent = createReactClass(<any> {
     // wait until the new UI state for the correct user appears.
     this.setState({ user: null });
 
-    Server.loadUserAnyDetails(usernameOrId,
+    Server.loadPatVvbPatchStore(usernameOrId,
           // CLEAN_UP don't merge objs server side and pick apart here
           // — just send them as separate fields from the start. [load_pat_stats_grps]
-          (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => {
+          ({ user, groupsMaySee }: LoadPatVvbResponse) => {
       const stats: UserStats | undefined = user.anyUserStats;
       this.nowLoading = null;
       if (this.isGone) return;
@@ -236,22 +236,20 @@ const UserPageComponent = createReactClass(<any> {
         LiNavLink({ to: linkStart + 'permissions', className: 'e_PermsTabB' },
           "Permissions"); // I18N
 
-    const childProps = {
+    const childProps: PatTopPanelProps = {
       store: store,
       me: me, // CLEAN_UP try to remove, incl already in `store`
       user: user,
       groupsMaySee: this.state.groupsMaySee,
-      match: this.props.match,
       stats: this.state.stats,
       reloadUser: this.loadUserAnyDetails,
-      updatePat: this.updatePat,
     };
 
     const u = (user.isGroup ? GroupsRoot : UsersRoot) + ':usernameOrId/';
 
     const childRoutes = Switch({},
       // [React_Router_v51] skip render(), use hooks and useParams instead.
-      Route({ path: u + 'activity', exact: true, render: ({ match }) => {
+      Route({ path: u + 'activity', exact: true, render: () => {
         const hash = this.props.location.hash;
         return Redirect({ to: pathToUser + '/activity/posts' + hash });
       }}),
@@ -259,13 +257,25 @@ const UserPageComponent = createReactClass(<any> {
       Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
       Route({ path: u + 'drafts-etc', render: () => UserDrafts(childProps) }),
-      Route({ path: u + 'preferences', render: (ps) => UserPreferences({ ...childProps, ...ps }) }),
-      Route({ path: u + 'invites', render: () => UserInvites(childProps) }),
-      Route({ path: u + 'permissions', render: (ps) => PatPerms({ ...childProps, ...ps }) }));
+
+      Route({ path: u + 'preferences', render: (ps) => {
+        return UserPreferences({ ...childProps, updatePat: this.updatePat, ...ps });
+      } }),
+
+      Route({ path: u + 'invites', render: () => {
+        return UserInvites(childProps);
+      } }),
+
+      Route({ path: u + 'permissions', render: (ps) => {
+        // @ifdef DEBUG
+        dieIf(!user.isGroup, `TyE052MW5: Not a group: ${JSON.stringify(user)}`)
+        // @endif
+        return PatPerms({ user: user as GroupVb, store, updatePat: this.updatePat });
+      } }));
 
     return (
       r.div({ className: 'container esUP' },
-        AvatarAboutAndButtons(childProps),
+        PatTopPanel(childProps),
         r.ul({ className: 'dw-sub-nav nav nav-pills' },
           membersNavItem,
           activityNavItem,
@@ -278,13 +288,29 @@ const UserPageComponent = createReactClass(<any> {
   }
 });
 
-const AvatarAboutAndButtons = createComponent({
-  displayName: 'AvatarAboutAndButtons',
+
+
+interface PatTopPanelProps {
+  me: Me;
+  store: Store;
+  user: UserDetailsStatsGroups;
+  stats: UserStats | U;
+  groupsMaySee: Group[];
+  reloadUser: () => Vo;
+}
+
+
+interface PatTopPanelState {
+  isUploadingProfilePic?: Bo;
+  uploadCancelled?: Bo;
+}
+
+
+const PatTopPanel = createComponent({
+  displayName: 'PatTopPanel',
 
   getInitialState: function() {
-    return {
-      isUploadingProfilePic: false,
-    };
+    return {};
   },
 
   componentDidMount: function() {
@@ -296,6 +322,7 @@ const AvatarAboutAndButtons = createComponent({
   },
 
   createUploadAvatarButton: function() {
+    const props: PatTopPanelProps = this.props;
     if (!this.refs.chooseAvatarInput)
       return;
 
@@ -319,7 +346,7 @@ const AvatarAboutAndButtons = createComponent({
       }, (files, rejected) => {
         dieIf(files.length !== 1, 'DwE5UPM2');
         FileAPI.upload({   // a bit dupl code [2UK503]
-          url: '/-/upload-avatar?userId=' + this.props.user.id,
+          url: '/-/upload-avatar?userId=' + props.user.id,
           headers: { 'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN') },
           files: { images: files },
           imageOriginal: false,
@@ -332,7 +359,8 @@ const AvatarAboutAndButtons = createComponent({
           },
           // This is per file.
           fileprogress: (event, file, xhr, options) => {
-            if (!this.state.isUploadingProfilePic) {
+            const state: PatTopPanelState = this.state;
+            if (!state.isUploadingProfilePic) {
               this.setState({ isUploadingProfilePic: true });
               pagedialogs.getProgressBarDialog().open(t.UploadingDots, () => {
                 this.setState({ uploadCancelled: true });
@@ -346,12 +374,13 @@ const AvatarAboutAndButtons = createComponent({
           },
           // This is when all files have been uploaded — but we're uploading just one.
           complete: (error, xhr) => {
-            if (error && !this.state.uploadCancelled) {
+            const state: PatTopPanelState = this.state;
+            if (error && !state.uploadCancelled) {
               pagedialogs.getServerErrorDialog().open(xhr);
             }
             // Reload in any case — perhaps the error happened after the whole image had been
             // uploaded already.
-            this.props.reloadUser();
+            props.reloadUser();
             pagedialogs.getProgressBarDialog().close();
             this.setState({
               isUploadingProfilePic: false,
@@ -364,16 +393,21 @@ const AvatarAboutAndButtons = createComponent({
   },
 
   sendMessage: function() {
-    editor.openToWriteMessage(this.props.user.id);
+    const props: PatTopPanelProps = this.props;
+    editor.openToWriteMessage(props.user.id);
   },
 
   render: function() {
-    const store: Store = this.props.store;
-    const user: UserDetailsStatsGroups = this.props.user;
-    const groupsMaySee: Group[] = this.props.groupsMaySee;
-    const stats: UserStats | undefined = this.props.stats;
-    const me: Myself = this.props.me;
+    const props: PatTopPanelProps = this.props;
+    const state: PatTopPanelState = this.state;
+
+    const store: Store = props.store;
+    const user: UserDetailsStatsGroups = props.user;
+    const groupsMaySee: Group[] = props.groupsMaySee;
+    const stats: UserStats | undefined = props.stats;
+    const me: Myself = props.me;
     const isGone = user_isGone(user);
+
     let suspendedInfo;
     if (user.suspendedAtEpoch) {
       const thisUserIsWhat = (<number | string> user.suspendedTillEpoch) === 'Forever'
@@ -410,6 +444,9 @@ const AvatarAboutAndButtons = createComponent({
 
     const thatIsYou = !isMe ? null :
       r.span({ className: 'esProfile_isYou' }, t.upp.you);
+
+    // COULD_OPTIMIZE Incl the updated pat in the response.
+    const pubTags = TagListLive({ forPat: user, store, onChanged: props.reloadUser });
 
     const bio = !!user.bio &&
         r.div({ className: 's_UP_Ab_Bio' }, user.bio);
@@ -470,6 +507,7 @@ const AvatarAboutAndButtons = createComponent({
           adminButton,
           r.h1({ className: 'esUP_Un' }, user.username, thatIsYou, isAGroup),
           r.h2({ className: 'esUP_FN' }, user.fullName, isWhatInfo),
+          pubTags,
           bio,
           websteUrl,
           location,

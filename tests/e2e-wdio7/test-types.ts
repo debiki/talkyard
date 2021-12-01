@@ -19,6 +19,7 @@ declare global {
   const wdioBrowserA: WebdriverIOAsync.MultiRemoteBrowser;
   const wdioBrowserB: WebdriverIOAsync.MultiRemoteBrowser | U;
   const wdioBrowserC: WebdriverIOAsync.MultiRemoteBrowser | U;
+  const wdioBrowserD: WebdriverIOAsync.MultiRemoteBrowser | U;
 
   type Sel = St // selector
   type SelOrEl = St | WebdriverIO.Element;
@@ -32,7 +33,7 @@ export const enum IsWhere {
 
   EmbFirst = 3,
   EmbeddingPage = 3,
-  EmbCommentsIframe = 4,
+  EmbCommentsIframe = 4,  // hmm could add an enum value for EmbSessionIframe
   EmbEditorIframe = 5,
   EmbLast = 5,
 

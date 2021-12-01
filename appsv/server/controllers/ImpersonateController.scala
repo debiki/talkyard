@@ -48,7 +48,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
   val MaxKeyAgeSeconds = 3600
 
   // This stuff is used client side too. [8AXFC0J2]
-  private val ImpersonationCookieName = "esCoImp"
+  private val ImpersonationCookieName = "esCoImp"  ; SECURITY ; SHOULD // add a HttpOnly cookie too? & delete. Both cookies required.
   private val FieldSeparator = '.'
   private val ViewAsGroupOnly = "VAO"
   private val ImpersonateRealUser = "IRU"
@@ -111,7 +111,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
       throwForbidden("EsE8YKW3", s"Wrong site id: ${request.siteId}, should go to site $siteId")
 
     // ? mark as online ?
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, userId)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, userId)
     Redirect("/").withCookies(sidAndXsrfCookies: _*)
   }
 
@@ -144,11 +144,11 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
     dieIf(anyUserId.isDefined && viewAsOnly, "EdE6WKT0S")
 
     val sidAndXsrfCookies = anyUserId.toList flatMap { userId =>
-      createSessionIdAndXsrfToken(request.siteId, userId)._3
+      createSessionIdAndXsrfToken(request, userId)._3
     }
 
-    val logoutCookie =
-      if (anyUserId.isEmpty) Seq(DiscardingSessionCookie)
+    val logoutCookies =
+      if (anyUserId.isEmpty) DiscardingSessionCookies
       else Nil
 
     val impCookie = makeImpersonationCookie(request.siteId, viewAsOnly, request.theUserId)
@@ -160,7 +160,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
     // time events isn't the purpose of view-site-as.  The client should resubscribe
     // the requester to hens *own* notfs, once done impersonating, though.
 
-    Ok.withCookies(newCookies: _*).discardingCookies(logoutCookie: _*)
+    Ok.withCookies(newCookies: _*).discardingCookies(logoutCookies: _*)
   }
 
 
@@ -182,19 +182,22 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
         // What's this? Clicking Stop Impersonating, but no such cookie?
         // Maybe clicking twice in different tabs? Anyway, feels
         // better to log out, so as not to accidentally stay logged in somehow.
-        LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None)
+        LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None,
+              wasImpersonating = true)
       case Some(cookieValue) =>
         val response =
           checkHashElseGetAgeAndUserId(cookieValue) match {
             case Bad(r) => r
             case Good((secondsAgo, oldUserId)) =>
-              // Ignore old impersonation cookies, in case they're leaked somehow.
+                // Ignore old impersonation cookies, in case they're leaked somehow.
                 if (secondsAgo > MaxBecomeOldUserSeconds || oldUserId == NoUserId) {
-                  LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None)
+                  LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None,
+                        wasImpersonating = true)
                 }
                 else {
                   // Restore the old user id.
-                  val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, oldUserId)
+                  val (_, _, sidAndXsrfCookies) =
+                        createSessionIdAndXsrfToken(request, oldUserId)
                   Ok.withCookies(sidAndXsrfCookies: _*)
                 }
           }
