@@ -62,6 +62,14 @@
   z-index: 2; // > the body, so avatar circle won't be cut off when highlighting body background
   position: relative;
 
+  // Can right-align post tags, but doesn't look that nice. Might make sense, though,
+  // if pat tags (user badges) look like post tags, so they'd be visually separated.
+  //display: flex;
+  //justify-content: space-between;
+  //align-items: baseline;
+
+  // Post tags often line wrap, and are hard to read if too close.
+  line-height: 165%;
 
 
 // Relying-to, draft and preview posts
@@ -556,9 +564,12 @@ html:not(.mouse) .dw-rr
 
 .esP_By
   margin-right: 12px;
-.dw-p-hd .dw-ago,
+.dw-p-hd .dw-ago
+  margin-right: 7px;
+.dw-p-hd .n_EdAt
+  white-space: nowrap;
 .esP_viewHist
-  margin-right: 10px;
+  margin-right: 12px;
 
 .esP_By_F,
 .esP_By_U
@@ -589,6 +600,17 @@ html:not(.mouse) .dw-rr
   color: hsl(0, 0%, 11%);
   &:not(:first-child)
     margin-left: 6px;
+
+
+// Badges.
+// User title badges.
+.dw-p-hd .n_TagL-Pat li
+  &:first-child
+    .c_TagL_Tag
+      margin-left: -5px;
+  &:last-child
+    .c_TagL_Tag
+      margin-right: 11px;
 
 .esP_By_U_at
   padding-right: 1px;
@@ -651,6 +673,7 @@ html:not(.mouse) .dw-rr
   display: inline-block;
   position: relative;
   top: -1px;
+  margin-right: 10px;
 
 .dw-a-clps.icon-left-open,
 .dw-a-clps.icon-right-open
@@ -687,7 +710,12 @@ html:not(.mouse) .dw-rr
 .DW .dw-ar-p-hd
   border: none
   background-color: transparent
-  opacity: 0.7
+  // Dim username and date (but not the post tags — the text therein is already gray).
+  .n_ByAt
+    opacity: 0.8;
+  // "By" is an uninteresting word.
+  .n_By
+    color: hsl(0 0% 31%);
   font-size: $postFontSize;
   margin: 6px 0 0;
 

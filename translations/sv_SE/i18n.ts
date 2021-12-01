@@ -770,13 +770,14 @@ var t_sv_SE: TalkyardTranslations = t = {
   upp: {
     // ----- Links
 
-    Preferences: "Preferences",
-    Invites: "Invites",
-    DraftsEtc: "Drafts etc",
-    About: "About",
+    Preferences: "Preferenser",
+    Invites: "Inbjudningar",
+    DraftsEtc: "Utkast etc",
+    About: "Om dig",
     Privacy: "Privacy",
-    Account: "Account",
-    Interface: "Interface",
+    Security: "Säkerhet",
+    Account: "Konto",
+    Interface: "Gränssnitt",
 
     // ----- Overview stats
 

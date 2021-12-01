@@ -38,13 +38,13 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
 
-  def listThingsPubApi(): Action[JsValue] = PostJsonAction(  // [PUB_API]
+  def apiV0_list(): Action[JsValue] = PostJsonAction(  // [PUB_API]
           RateLimits.ReadsFromDb, maxBytes = 2000) { request: JsonPostRequest =>
-    listThingsPubApiImpl(request)
+    listThingsImpl(request)
   }
 
 
-  def listThingsPubApiImpl(request: JsonPostRequest): Result = {
+  private def listThingsImpl(request: JsonPostRequest): Result = {
     import request.{body, dao, requester}
 
     val pretty = (body \ "pretty").asOpt[Bo].getOrElse(false)

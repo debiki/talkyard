@@ -29,7 +29,7 @@ import talkyard.server.{PostRendererSettings, TyLogging}
 import scala.collection.immutable
 import scala.collection.mutable
 import ed.server.EdContext
-import ed.server.auth.MayMaybe
+import talkyard.server.authz.MayMaybe
 import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
@@ -124,8 +124,9 @@ class SiteDao(
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao
-  with ed.server.auth.AuthzSiteDaoMixin
+  with talkyard.server.authz.AuthzSiteDaoMixin
   with talkyard.server.authn.AuthnSiteDaoMixin
+  with talkyard.server.sess.SessionSiteDaoMixin
   with ForumDao
   with CategoriesDao
   with PagesDao
@@ -250,6 +251,9 @@ class SiteDao(
     val result: R = readWriteTransaction(tx => {
       val result = fn(tx, staleStuff)
 
+
+      // ----- Refresh database cache
+
       if (staleStuff.areAllPagesStale) {
         tx.bumpSiteVersion()
       }
@@ -266,7 +270,9 @@ class SiteDao(
       result
     }, allowOverQuota)
 
-    // Refresh in-memory cache:  [rm_cache_listeners]
+
+    // ----- Refresh in-memory cache   [rm_cache_listeners]
+
     if (staleStuff.areAllPagesStale) {
       // Currently then need to: (although clears unnecessarily much)
       memCache.clearThisSite()
@@ -310,6 +316,9 @@ class SiteDao(
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = true) { fn(_) }
 
   def readOnlyTransactionTryReuse[R](anyTx: Option[SiteTransaction])(fn: SiteTransaction => R): R =
+    readTxTryReuse(anyTx)(fn)
+
+  def readTxTryReuse[R](anyTx: Opt[SiteTx])(fn: SiteTx => R): R =
     anyTx match {
       case Some(tx) => fn(tx)
       case None => readOnlyTransaction(fn)
@@ -322,6 +331,12 @@ class SiteDao(
   def refreshPageInMemCache(pageId: PageId): Unit = {
     // Old approach:
     memCache.firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
+
+    // But this won't uncache links? In case needed. Currently, though, never
+    // happens that a page needs to be updated & uncached at the same time as
+    // other pages linking to it got changed / links remvoed/added.
+    // [sleeping_links_bug]
+
     // New:  [rm_cache_listeners]
   }
 
@@ -496,6 +511,7 @@ class SiteDao(
     uncacheSiteFromMemCache()
   }
 
+
   def changeExtraHostsRole(newRole: Hostname.Role): Unit = {
     readWriteTransaction { tx =>
       tx.changeExtraHostsRole(newRole)
@@ -503,9 +519,17 @@ class SiteDao(
     }
   }
 
+
   def loadResourceUsage(): ResourceUse = {
     readOnlyTransaction { tx =>
       tx.loadResourceUsage()
+    }
+  }
+
+
+  def addAdminNotice(noticeId: NoticeId): U = {
+    writeTx { (tx, _) =>
+      tx.addAdminNotice(noticeId)
     }
   }
 

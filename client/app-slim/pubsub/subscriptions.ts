@@ -52,7 +52,7 @@ if (eds.useServiceWorker) {
         ReactActions.addNotifications(message.data);
         break;
       case 'presence':
-        ReactActions.updateUserPresence(message.data.user, message.data.presence);
+        ReactActions.updateUserPresence(message.data);
         break;
       case 'disconnected':
         $h.addClasses(document.documentElement, 's_NoInet');

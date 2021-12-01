@@ -404,3 +404,41 @@ can be compiled to WebAssembly:
 https://rustwasm.github.io and https://github.com/AssemblyScript/assemblyscript.
 (But not Scala: https://github.com/scala-js/scala-js/issues/1747)
 
+
+=== Use the tag system for user titles
+
+In Talkyard, one can tag not only pages, but also users. A user tag functions
+as a user badge: the badge (tag) title can be configured to appear
+next to the names of people with that badge, for example in the about-user dialog,
+or in posts by them, e.g.: "By  Some Name  @some_name  support-team"
+so everyone notices that Some Name is an official member of the support team.
+
+Why use the tag system, for user titles, instead of adding titles directly
+to users and groups?
+
+- Because if there's both user badges, and also user titles / group-member titles,
+  then there'd be two systems for making a text appear next to someone's name.
+  And two systems, is more complicated, than just one system?
+  E.g. more code for deciding which titles to show/not-show, if someone
+  has, say, two titles from two groups hen is in, and also has two badge titles.
+  And in which order to show the titles. Sometimes the group/user title(s)
+  would be more interesting; in other cases the badge title(s)? And db columns
+  determining what to show/hide & show in which order, would need to be duplicated
+  between tables (both pats_t and tags_t)? And there'd be source code that
+  understands and considers both group titles and badge titles,
+  and maybe keeps badge + group titles unique accorss two tables?
+  More complicated.
+
+- Maybe maybe a security issue, if using groups for titles? A moderator might
+  want to give someone a title, and so adds hen to a group with that user title.
+  But groups can have security settings, and maybe the mod didn't remember
+  all security settings associated with that group — and by adding the user,
+  accidentally granted unintended permissions. However, giving someone a badge,
+  won't have any such security implications.
+
+  ("Badge permissions" gives 0.8k Google search hits, whilst "group permissions"
+  gives 300k hits — so, probably people expect groups, but not badges, to be
+  associated with permissions? Groups = security, badges = for display.)
+
+Summary: Group member titles, and user titles, would make sense, if there
+wasn't also group member badges and user badges. But one solution is enough.

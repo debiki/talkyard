@@ -21,7 +21,7 @@ import com.debiki.core._
 import controllers.OkApiJson
 import debiki.RateLimits
 import ed.server.http._
-import ed.server.auth.MayMaybe
+import talkyard.server.authz.MayMaybe
 import debiki.EdHttp._
 import Prelude._
 import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
@@ -40,13 +40,13 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
 
-  def getThingsPubApi(): Action[JsValue] = PostJsonAction(  // [PUB_API]
+  def apiV0_get(): Action[JsValue] = PostJsonAction(  // [PUB_API]
           RateLimits.ReadsFromDb, maxBytes = 2000) { request: JsonPostRequest =>
-    getThingsPubApiImpl(request)
+    getThingsImpl(request)
   }
 
 
-  def getThingsPubApiImpl(request: JsonPostRequest): Result = {
+  private def getThingsImpl(request: JsonPostRequest): Result = {
     import request.body
     val pretty = (body \ "pretty").asOpt[Bo].getOrElse(false)
     val getQueryJson = (body \ "getQuery").as[JsObject]
@@ -64,36 +64,34 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val authzCtx = dao.getForumAuthzContext(requester)
 
-    throwUnimplementedIf(pageRefs.size >= 30,
-          "TyE603MRT4", "Currently at most 30 at a time")
+    throwUnimplementedIf(pageRefs.size > 50,
+          "TyE603MRT4", "Currently at most 50 at a time")
 
     def notFoundMsg(embUrl: St, pageId: PageId = NoPageId): St = {
       s"No page with that embedding url or discussion id: $embUrl"
     }
 
     type PageRefAndId = (St, PageId)
-    val refsAndIds: Seq[PageRefAndId Or ErrMsg] = pageRefs map { ref: St =>
-      val refOrErr: St Or ErrMsg = parseRef(ref, allowParticipantRef = false) flatMap {
-        case ParsedRef.EmbeddingUrl(url) => Good(url)
-        case ParsedRef.DiscussionId(id) => Good(id)
-        case x => Bad(s"Not an embedding url or discussion id: $x")
-      }
-      refOrErr flatMap { ref: St =>
-        val anyPageId: Opt[PageId] = dao.getRealPageId(ref)
-        anyPageId match {
-          case Some(id) => Good((ref, id))
-          case None => Bad(notFoundMsg(ref))
-        }
+    val refsAndIds: Seq[PageRefAndId Or ErrMsg] = pageRefs map { rawRef: St =>
+      parseRef(rawRef, allowParticipantRef = false) flatMap {
+        case parsedRef @ (_: ParsedRef.DiscussionId | _: ParsedRef.EmbeddingUrl) =>
+          val anyPageId: Opt[PageId] = dao.getRealPageIdByDiidOrEmbUrl(parsedRef)
+          anyPageId match {
+            case Some(id) => Good((rawRef, id))
+            case None => Bad(notFoundMsg(rawRef))
+          }
+        case _ =>
+          Bad(s"Not an embedding url or discussion id: $rawRef [TyE0EMBURLORDIID]")
       }
     }
 
     val topicsOrErrs = refsAndIds map { refAndIdOrErr =>
       refAndIdOrErr flatMap {
-        case (ref: St, pageId) => dao.getPagePathAndMeta(pageId) match {
+        case (rawRef: St, pageId) => dao.getPagePathAndMeta(pageId) match {
           case Some(page: PagePathAndMeta) =>
             COULD_OPTIMIZE // will typically always be same cat, for emb cmts.
             val categories = dao.getAncestorCategoriesRootLast(page.categoryId)
-            val may = ed.server.auth.Authz.maySeePage(
+            val may = talkyard.server.authz.Authz.maySeePage(
                   page.meta,
                   user = authzCtx.requester,
                   groupIds = authzCtx.groupIdsUserIdFirst,
@@ -103,9 +101,9 @@ class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
                   // Embedded discussion topics are typically unlisted.
                   maySeeUnlisted = true)
            if (may == MayMaybe.Yes) Good(page)
-           else Bad(notFoundMsg(ref))  // or if dev/test: s"Cannot find page $pageId"
+           else Bad(notFoundMsg(rawRef))  // or if dev/test: s"Cannot find page $pageId"
           case None =>
-            Bad(notFoundMsg(ref))      // ... here too?  + err code
+            Bad(notFoundMsg(rawRef))      // ... here too?  + err code
         }
       }
     }

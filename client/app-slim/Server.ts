@@ -589,6 +589,27 @@ export const testPost = postJsonSuccess;
 type JsonData = object | any[];
 type OnErrorFn = (xhr: XMLHttpRequest) => any;
 
+
+/// Posts JSON to the server, and uses the response to patch the store. Thereafter,
+/// passes the response to onOk — for example, to scroll to or highlight something
+/// that the user just created or edited.
+///
+/// Always place StorePatch fields in a  { storePatch: {...} }  obj?  [storepatch_field]
+///
+function postAndPatchStore(
+        urlPath: St,
+        onOk: (response: StorePatch) => Vo,
+        data: JsonData | OnErrorFn,
+        onErr?: JsonData | OnErrorFn,
+        opts?: { showLoadingOverlay?: Bo },  // default true
+        ) {
+  postJsonSuccess(urlPath, response => {
+    ReactActions.patchTheStore(response);
+    onOk(response);
+  }, data, onErr, opts);
+}
+
+
 /** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog.
   */
 function postJsonSuccess(
@@ -632,6 +653,17 @@ interface GetOptions {
   timeout?: number;
   suppressErrorDialog?: boolean;
   showLoadingOverlay?: true;  // default false, for GET requests
+}
+
+
+function getAndPatchStore(uri: string, onOk?: GetSuccessFn,
+      onErr?: GetErrorFn, opts?: GetOptions): OngoingRequest {
+  return get(uri, function(response) {
+    ReactActions.patchTheStore(response);
+    if (onOk) {
+      onOk(response);
+    }
+  }, onErr, opts);
 }
 
 
@@ -1121,6 +1153,27 @@ export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
 }
 
 
+/// Returns parts 1 and 2 of any current session id, maybe 3. (Parts 4 and 5 are HttpOnly
+/// cookies, not accessible here.)
+///
+export function getCurSid12Maybe3(): St | N {  // [ts_authn_modl]
+  const store: Store = debiki2.ReactStore.allData();
+  const cookieName =
+          !debiki2.store_isFeatFlagOn(store, 'ffUseOldSid') ? 'TyCoSid123' : 'dwCoSid';
+  let sid = getSetCookie(cookieName);
+  if (!sid) {
+    // Cannot use store.me.mySidPart1 — we might not yet have loaded
+    // the current user from the server; store.me might be stale.
+    const typs: PageSession = getMainWin().typs;
+    // This might not include part 3 (won't, if we're in an embedded comments
+    // iframe, and didn't login or resume via a popup win directly against the
+    // server so we could access cookie TyCoSid123, which includes part 3).
+    sid = typs.weakSessionId;
+  }
+  return sid || null;
+}
+
+
 export function rememberTempSession(ps: { weakSessionId: St }) {  // [ts_authn_modl]
   const onOk = function() {};
   makeUpdNoCookiesTempSessionIdFn(onOk)(ps);
@@ -1149,6 +1202,7 @@ function makeUpdNoCookiesTempSessionIdFn<R>(  // [ts_authn_modl]
 
 
 export function deleteTempSessId() {  // [ts_authn_modl]
+  // Need not delete store.me.mySidPart1 — we'll reload the page anyway. [is_logging_out]
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
   delete typs.weakSessionId;
@@ -1156,6 +1210,8 @@ export function deleteTempSessId() {  // [ts_authn_modl]
   try {
     // Can this throw?
     getSetCookie('dwCoSid', null);
+    getSetCookie('TyCoSid123', null);
+    // Later: getSetCookie('TyCoSid4', null) — when SameSite None, and 6 cookies in total.
   }
   catch (ex) {
     // Just in case.
@@ -1229,13 +1285,15 @@ export function removeGroupMembers(groupId: UserId, memberIds: UserId[], onDone:
 }
 
 
+// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead.  [.get_n_patch]
 // BUG might get a Guest or Group, not always a UserInclDetails. SHOULD find for usages & fix.
 // (Some callers, but not all, can deal with Group or Guest.)
-export function loadUserAnyDetails(userIdOrUsername: UserId | string,
-      onDone: (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => void, error?: () => void) {
-  get('/-/load-user-any-details?who=' + userIdOrUsername, (response) => {
-    onDone(response.user, response.groupsMaySee);
-  }, error);
+export function loadPatVvbPatchStore(userIdOrUsername: UserId | St,
+      onOk: (resp: LoadPatVvbResponse) => Vo, onErr?: () => Vo) {
+  get('/-/load-user-any-details?who=' + userIdOrUsername, function(resp: LoadPatVvbResponse) {
+    ReactActions.patchTheStore({ tagTypes: resp.tagTypes });
+    if (onOk) onOk(resp);
+  }, onErr);
 }
 
 
@@ -1249,10 +1307,9 @@ export function listCompleteUsers(whichUsers, success: (users: UserInclDetailsWi
 type UserAcctRespHandler = (response: UserAccountResponse) => void;
 
 
-export function loadEmailAddressesAndLoginMethods(userId: UserId, success: UserAcctRespHandler) {
-  get(`/-/load-email-addrs-login-methods?userId=${userId}`, response => {
-    success(response);
-  });
+export function loadEmailAddressesAndLoginMethods(userId: UserId, onOk: UserAcctRespHandler,
+          onErr?: (resp: A) => V) {
+  get(`/-/load-email-addrs-login-methods?userId=${userId}`, onOk, onErr);
 }
 
 
@@ -1269,8 +1326,9 @@ export function resendEmailAddrVerifEmail(userId: UserId, emailAddress: string) 
   }, { userId, emailAddress });
 }
 
-export function addEmailAddresses(userId: UserId, emailAddress: string, success: UserAcctRespHandler) {
-  postJsonSuccess('/-/add-email-address', success, { userId, emailAddress });
+export function addEmailAddresses(userId: UserId, emailAddress: St, onOk: UserAcctRespHandler,
+        onErr: (resp: A) => V) {
+  postJsonSuccess('/-/add-email-address', onOk, onErr, { userId, emailAddress });
 }
 
 
@@ -1316,8 +1374,9 @@ export function editMember(userId: UserId, doWhat: EditMemberAction, success: ()
 }
 
 
-export function suspendUser(userId: UserId, numDays: number, reason: string, success: () => void) {
-  postJsonSuccess('/-/suspend-user', success, {
+export function suspendUser(userId: UserId, numDays: Nr, reason: St, onOk: () => V,
+        onErr: (resp: A) => V) {
+  postJsonSuccess('/-/suspend-user', onOk, onErr, {
     userId: userId,
     numDays: numDays,
     reason: reason
@@ -1421,7 +1480,10 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
 }
 
 
-export function loadMyself(callback: (user: any) => void) {
+/// If not logged in, e.g. the session just expired or got deleted, then, in the response,
+/// `me` and `stuffForMe` in LoadMeResponse would be null.
+///
+export function loadMyself(onOkMaybe: (resp: FetchMeResponse) => Vo) {
   // @ifdef DEBUG
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
@@ -1453,7 +1515,21 @@ export function loadMyself(callback: (user: any) => void) {
     }
   }
   // SHOULD incl sort order & topic filter in the url params. [2KBLJ80]
-  get(`/-/load-my-page-data?pageIds=${pageIds}`, callback);
+  get(`/-/load-my-page-data?pageIds=${pageIds}`, onOkMaybe);
+    // onErr(() => send 'failedToLogin' to parent frame)  [forget_sid12]
+}
+
+
+export function listSessions(patId: PatId, onOk: (resp: ListSessionsResponse) => V,
+        onErr: () => V) {
+  get(`/-/list-sessions?patId=${patId}`, onOk, onErr);
+}
+
+
+export function terminateSessions(
+        ps: { forPatId: PatId, sessionsStartedAt?: WhenMs[], all?: true },
+        onOk: (response: TerminateSessionsResponse) => V, onErr: () => V) {
+  postJsonSuccess(`/-/terminate-sessions`, onOk, ps, onErr);
 }
 
 
@@ -1495,7 +1571,7 @@ export function snoozeNotfs(untilMins: number | false, onDone?: () => void) {
 }
 
 
-/*
+/*  [missing_tags_feats]
 export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: PageNotfLevel) {
   postJsonSuccess('/-/set-tag-notf-level', () => {
     const store: Store = ReactStore.allData();
@@ -1596,23 +1672,27 @@ export function loadForumCategoriesTopics(forumPageId: string, topicFilter: stri
 }
 
 
-export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
-    doneCallback: (response: LoadTopicsResponse) => void) {
+// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
+// 'users' field to 'usersBrief', no, 'patsBr'? 'Tn = Tiny, Br = Brief, Vb = Verbose?  [.get_n_patch]
+export function loadForumTopics(categoryId: CatId, orderOffset: OrderOffset,
+    onOk: (resp: LoadTopicsResponse) => Vo) {
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
-  get(url, (response: LoadTopicsResponse) => {
-    ReactActions.patchTheStore({ usersBrief: response.users });  // [2WKB04R]
-    doneCallback(response);
+  get(url, (resp: LoadTopicsResponse) => {
+    ReactActions.patchTheStore(resp.storePatch);  // [2WKB04R]
+    onOk(resp);
   });
 }
 
 
+// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead, & change the reply
+// 'users' field to 'usersBrief'.  [.get_n_patch]
 export function loadTopicsByUser(userId: UserId,
         doneCallback: (topics: Topic[]) => void) {
   const url = `/-/list-topics-by-user?userId=${userId}`;
-  get(url, (response: any) => {
-    ReactActions.patchTheStore({ usersBrief: response.users });
-    doneCallback(response.topics);
+  get(url, (resp: LoadTopicsResponse) => {
+    ReactActions.patchTheStore(resp.storePatch);
+    doneCallback(resp.topics);
   });
 }
 
@@ -2013,8 +2093,12 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
 }
 
 
-export function loadPostsByAuthor(authorId: UserId, success: (response) => void) {
-  get(`/-/list-posts?authorId=${authorId}`, success);
+// SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead.  [.get_n_patch]
+export function loadPostsByAuthor(authorId: UserId, onOk: (resp) => Vo) {
+  get(`/-/list-posts?authorId=${authorId}`, function (resp) {
+    ReactActions.patchTheStore({ tagTypes: resp.tagTypes });
+    onOk(resp);
+  });
 }
 
 
@@ -2061,29 +2145,36 @@ export function editPostSettings(postId: PostId, settings: PostSettings) {
 }
 
 
-export function loadAllTags(success: (tags: string[]) => void) {
-  get('/-/load-all-tags', success);
+export function createTagType(newTagType: TagType, onOk: (newWithId: TagType) => Vo) {
+  postAndPatchStore(`/-/create-tag-type`, (r: StorePatch) => onOk(r.tagTypes[0]), newTagType);
 }
 
 
-export function loadTagsAndStats() {
-  get('/-/load-tags-and-stats', r => ReactActions.patchTheStore(r));
+export function listTagTypes(forWhat: ThingType, prefix: St,
+        onOk: (resp: { allTagTypes: TagType[] }) => Vo) {
+  const forWhatParam = !forWhat ? '' : `forWhat=${forWhat}&`;
+  const namePrefixParam = !prefix ? '' : `tagNamePrefix=${prefix}`;
+  getAndPatchStore(`/-/list-tag-types?${forWhatParam + namePrefixParam}`, onOk);
+}
+
+
+export function loadTagsAndStats(onOk?: () => Vo) {
+  getAndPatchStore('/-/load-tags-and-stats', onOk);
 }
 
 
 export function loadMyTagNotfLevels() {
-  get('/-/load-my-tag-notf-levels', r => ReactActions.patchTheStore(r));
+  getAndPatchStore('/-/load-my-tag-notf-levels');
 }
 
 
-export function addRemovePostTags(postId: PostId, tags: string[], success: () => void) {
+export function addRemoveTags(ps: { add: Tag[], remove: Tag[] }, onOk: () => Vo) {
   postJsonSuccess('/-/add-remove-tags', (response) => {
     ReactActions.patchTheStore(response);
-    success();
+    onOk();
   }, {
-    pageId: getPageId(),
-    postId: postId,
-    tags: tags
+    tagsToAdd: ps.add,
+    tagsToRemove: ps.remove,
   });
 }
 

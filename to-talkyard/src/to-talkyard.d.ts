@@ -28,12 +28,14 @@ interface CategoryDumpV0 {
 interface PageToAdd {
   dbgSrc?: string;
   id: string;
+  extId?: ExtId;
   altIds?: string[];
   extImpId?: ExtImpId;
   folder?: string;
   showId?: boolean;
   slug?: string;
   role: number;// PageRole;
+  layout?: PageLayout;
   title: string;
   body: string;
   categoryId?: number;// CategoryId;

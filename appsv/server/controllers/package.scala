@@ -15,24 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import com.debiki.core.QuickMessageException
-import com.debiki.core.fileExists
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.Globals
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, JsArray, JsObject}
 import play.api.mvc.Result
 
 
 package object controllers {
 
-  // Move it to here soon ... No, move it to io.efdi.server.http package?
-  def OkSafeJson(json: JsValue, pretty: Boolean = false): Result =
-    Utils.OkSafeJson(json, pretty)
+  def OkSafeJson(json: JsObject): Result =
+    OkApiJson(json)
 
-  def OkPrettyJson(json: JsValue): Result =
+  @deprecated("Now", "Use OkSafeJson(JsObject) instead")
+  def OkSafeJson(json: JsArray): Result =
+    OkSafeJsValue(json)
+
+  @deprecated("Now", "Use OkSafeJson(JsObject) instead")
+  def OkSafeJsValue(json: JsValue, pretty: Boolean = false): Result =
+    Utils.OkSafeJsValue(json, pretty)
+
+  def OkPrettyJson(json: JsObject): Result =
     Utils.OkApiJson(json, pretty = true)
 
-  def OkApiJson(json: JsValue, pretty: Boolean = false): Result =
+  def OkApiJson(json: JsObject, pretty: Boolean = false): Result =
     Utils.OkApiJson(json, pretty)
 
   /** Better fail fast with a full page error message, if assets have not yet been
