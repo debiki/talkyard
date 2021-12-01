@@ -304,17 +304,25 @@ html.c_Html-EdLeft #esPageColumn
     margin: 0;
     padding: 0;
 
+// MOVE to widgets.styl?
 .c_SchD
   padding: 13px 5px 0 12px;
+  max-width: @css{ min(600px, 100%) };
+
+.c_SchD_QnB
+  display: flex;
+  justify-content: center;
+  @media (max-width: 400px)
+    flex-wrap: wrap;
+
   $marginBottom = 7px;
   $height = 34px;
   input[type='text']
-    padding-left: 3px;
-    width: 40vw;
+    padding-left: 4px;
     min-width: 250px;
-    max-width: min(500px, 100%);
     vertical-align: middle;
     height: $height;
+    width: 56ex;
     margin: 0 9px $marginBottom 0;
   .btn
     margin-bottom: $marginBottom;

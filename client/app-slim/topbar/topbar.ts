@@ -780,13 +780,14 @@ export const SearchForm = createComponent({
     return (
         r.form({ className: 'c_SchD', ref: 'form',
             method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
-          (<any> r.input)({ type: 'text', tabIndex: '1',
-              placeholder: t.s.SearchForHelp || t.s.TxtToFind,  // [TYPEERROR]  I18N
-              ref: 'input', name: 'q',
-              value: this.state.queryInputText, onChange: this.onQueryChange }),
-          PrimaryLinkButton({ href: searchUrl, tabIndex: '2',
-              className: 'e_SchB', afterClick },
-            t.Search),
+          r.div({ className: 'c_SchD_QnB' },  // QnB = query field and button
+            r.input({ type: 'text', tabIndex: '1',
+                placeholder: t.s.SearchForHelp || t.s.TxtToFind,  // I18N
+                ref: 'input', name: 'q',
+                value: this.state.queryInputText, onChange: this.onQueryChange }),
+            PrimaryLinkButton({ href: searchUrl, tabIndex: '2',
+                className: 'e_SchB', afterClick },
+              t.Search)),
           r.div({ className: 'c_SchD_X' },
             // UX: These should activate on Space, not just Enter? [sch_b_space]
             r.a({ className: 'c_SchD_X_B', href: searchUrl, target: '_blank',
