@@ -59,9 +59,11 @@ val appDependencies = Seq(
   // OAuth2 and OIDC authentication.
   Dependencies.Libs.scribeJava,
   Dependencies.Libs.auth0JavaJwt,
+  /*
   // Deprecated:
   "com.mohiva" %% "play-silhouette" % "7.0.0",
   "com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
+   */
 
 
   Dependencies.Libs.jpasetoApi,
@@ -82,6 +84,7 @@ val appDependencies = Seq(
   "org.elasticsearch.client" % "transport" % "6.8.21",
 
   Dependencies.Libs.apacheCommonsEmail,
+  Dependencies.Libs.apacheCommonsLang3,
   Dependencies.Libs.guava,
   Dependencies.Libs.jsoup,
   // Fluentd better understands json logs.
@@ -148,6 +151,7 @@ def mainSettings = List(
   Compile / TwirlKeys.compileTemplates / sourceDirectories :=
         Seq({ (Compile / baseDirectory)(_ / "appsv" / "server") }.value),
 
+  /*
   // Silhouette needs com.atlassian.jwt:jwt-core and jwt-api, but there's a problem:
   // """the problem is that the jwt-lib is hosted on bintray.com and then mirrored to
   // the typesafe.com repository. It seems that the typesafe repository uses a redirect
@@ -158,6 +162,7 @@ def mainSettings = List(
   resolvers :=
     ("Atlassian Releases" at "https://maven.atlassian.com/public/") +:
       Keys.resolvers.value,
+  */
 
   // This is the default. But keep anyway, because if needed later, then won't have to try to
   // find out in which packages the stuff is located.

@@ -397,7 +397,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
 
   object socialLogin {
-    import com.mohiva.play.silhouette.impl.providers.{OAuth1Settings, OAuth2Settings}
+    //import com.mohiva.play.silhouette.impl.providers.{OAuth1Settings, OAuth2Settings}
+    import talkyard.server.authn.OAuth2Settings
 
     val googleOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
@@ -421,6 +422,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         scope = getStringNoneIfBlank("silhouette.facebook.scope"))
     }
 
+    /*
     val twitterOAuthSettings: OAuth1Settings Or ErrorMessage = goodOrError {
       def getTwitter(confValName: String) = getConfValOrThrowDisabled(confValName, "Twitter")
       OAuth1Settings(
@@ -430,7 +432,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         callbackURL = makeRedirectUrl("twitter").get,
         consumerKey = getTwitter("silhouette.twitter.consumerKey"),
         consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
-    }
+    } */
 
     val githubOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
