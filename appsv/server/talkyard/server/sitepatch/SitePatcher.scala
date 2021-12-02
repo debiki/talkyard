@@ -326,6 +326,8 @@ case class SitePatcher(globals: debiki.Globals) {
             //  guestRealId
             //else
             guestInDb
+          case x =>
+            die("TyE57MWP2P", s"Guest is not a guest, it is a: ${classNameOf(x)}")
         }
         dieIf(upsertedGuestRealId.id <= -LowestTempImpId,
           "TyE305HKSD2", s"Guest id ${guestInPatch.id} got remapped to ${upsertedGuestRealId.id}")
