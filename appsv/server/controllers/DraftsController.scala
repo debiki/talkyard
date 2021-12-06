@@ -114,9 +114,13 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
           tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
       }
       else {
+        val anyOtherAuthor =
+              if (post.createdById == requester.id) None
+              else dao.getParticipant(post.createdById)
         throwNoUnless(Authz.mayEditPost(
           request.theUserAndLevels, dao.getOnesGroupIds(requester),
-          post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+          post, otherAuthor = anyOtherAuthor, pageMeta,
+          dao.getAnyPrivateGroupTalkMembers(pageMeta),
           inCategoriesRootLast = categoriesRootLast,
           tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "TyEZBXK3M3")
       }

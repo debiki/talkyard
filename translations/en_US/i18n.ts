@@ -25,6 +25,7 @@ var t_en_US: TalkyardTranslations = t = {
   AddComment: "Add Comment",  // MISSING, & dupl t.e.AddCommentC
   Admin: "Admin",
   AdvSearch: "Advanced search",
+  Anonym: "Anonym",
   Away: "Away",
   Back: "Back",
   BlogN: "Blog",

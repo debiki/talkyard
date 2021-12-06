@@ -27,6 +27,71 @@ PatRelType.AssignedTo or VotedOn, from a pat to a post.
 Is a thing_type_d.
 $_$;
 
+--  ------------------------------------------------------------------------
+--  comment on domain page_id_st_d is $_$
+--  
+--  Currently, page ids are strings — later, those will become aliases,
+--  and there'll be numeric ids instead?
+--  $_$;  -- '
+
+--  ------------------------------------------------------------------------
+--  pat_type_d  REMOVE
+--  comment on domain pat_type_d is $_$
+--
+--  Participant types:   — if null (the default), then, < 0 => Guest, > 0 => User?
+--     and incl extra flag fields if different somehow, e.g. isBot,
+--     isExtHelp, isSupRead, isSupAdm etc?
+--
+--  Maybe rename to specType?
+--
+--  ==== Anon, per page
+--  %% -3 = Unknown pat
+--  ==== Guests (semi anon blog commenters)
+--  %% 1 = Guest or anonymous/unknown stranger.
+--  ==== Not a real account, cannot add to groups etc:
+--  %% 2 = Anonyn, with real_user_id identifying the real user.
+--  ==== Cannot add to groups. Has all permisssions or gets in other ways:
+--  1 = System user
+--  2 = System bot ?
+--  ==== Cannot log in, is just a pseudonym. But can add to groups etc:
+--  21  = Anon
+--  ====
+--  <=  49 cannot have permissions?
+--  51 = Group. Created by admins, top down. Can have security permissions
+--      and config settings that get inherited by those in the group.
+--  (? 52 = Circle, or bottom-up group. Created by ordinary members.
+--      E.g. a study circle, or teacher circle. Doesn't have inheritable
+--      settings? Nor permissions. Not impl.)
+--  ==== Cannot config UI prefs — doesn't use any UI:
+--  61 = Only bot, e.g. CI system? — cannot log in; can *only* do things via AIP.
+--       A human + custom client should use type 9 User instead.
+--  71  = Pen name. Not impl.
+--  ====
+--  %% 31 = User (a human, maybe a bot, sometimes cannot know. Maybe an extrenal Matrix
+--      user who got an account auto generated).
+--  ====
+--  ? 101 = External management account: superbot, superadmin, superstaff (mod)
+--  ? 111 = External help account — if site admins ask for help, and want to give access
+--       only to some parts of their site? (e.g. dev/design help)
+--  ====
+--  ? 127 = temporary just one-request user, via API secret, mustn't store in db
+--  
+--  No!: Participant types:
+--  1 = Unknown stranger or user.  — skip
+--  2 = Anonymous stranger or user (no name).  — skip
+--  3 = Guest.
+--  4 = Pen name. Not impl.
+--  7 = Built-in account, e.g. system, sysbot, superadmin.
+--  8 = External management account: superbot, superadmin, superstaff?
+--  9 = User (a human, maybe a bot, sometimes cannot no).
+--  (10 = Bot, can only do things via AIP? But could be a human + a custom client?)
+--  91 = Group. Created by admins, top down. Can have security permissions
+--      and config settings that get inherited by those in the group.
+--  (? 92 = Circle, or bottom-up group. Created by ordinary members.
+--      E.g. a study circle, or teacher circle. Doesn't have inheritable
+--      settings? Nor permissions. Not impl.)
+--  $_$;
+
 ------------------------------------------------------------------------
 comment on domain  post_nr_d  is $_$
 On each page, the Orig Post is nr 1, the first reply is nr 2, and so on.
@@ -68,17 +133,101 @@ they'd try to use the same table row).
 $_$; -- '
 
 ------------------------------------------------------------------------
-comment on domain trust_level_or_staff_d is $_$
+comment on domain  trust_level_or_staff_d  is $_$
 
 Trust levels from Stranger = 0 to Core Member = 6, plus dummy trust levels
 for staff, i.e. mods = 7 and admins = 8.
 $_$;
+------------------------------------------------------------------------
+-- comment on domain  anon_level_d  is $_$
+-- 
+-- 10: Not anon, even if would have been by default. For example, a moderator
+-- or maybe a school teacher who wants to say something more officially.
+-- 
+-- (20, not impl: Anon post, by an a bit traceable "virtual anon account":
+-- The poster would use the same account accross different categories and pages,
+-- during anon_incarnation_ttl_mins_c minutes. Then hen gets a new anon acct.
+-- Except for when posting more on the same page — then hen will reuse hen's
+-- last annon acct on that page.)
+-- 
+-- (30, not impl: Anon account, less traceable: The same in the same category only;
+-- it cannot follow accross categories. After anon_incarnation_ttl_mins_c,
+-- the poster will get a new virtual annon acct. Except for when posting more on
+-- the same page; see above.  — Maybe skip forever? Things get complicated,
+-- if moving a page to a different category, and continuing posting there.)
+-- 
+-- (40, not impl: Anon account, less traceable: The same in the same category,
+-- excl sub categories.)
+-- 
+-- 50: Anon account: Same on the same page only.
+-- 
+-- (60: Anon account, even less less traceable: Same on the same page only,
+-- and only during anon_incarnation_ttl_mins_c.)
+-- 
+-- (70: Anon account, unique per post / same-for-all-users-and-posts.)
+-- $_$;  -- '
+------------------------------------------------------------------------
 
 
 
 --@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 --  Tables
 --@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+--======================================================================
+--  cont_prefs_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  cont_prefs_t  is $_$
+
+Settings and preferences that make sense for all of categories, tags
+and specific pages. Usually they're default, for everyone in the forum;
+then, memb_id_c is 10 (Everyone) and prefs_id_c is > 0.
+
+But some preferences can be overridden by user groups or individual users
+themselves — then, prefs_id_c is < 0 and memb_id_c is the user/group id.
+Let's say you want to always post anonymously in a specific
+category. Then, you can (not impl though) set ops_start_anon_c and cmts_start_anon_c
+to true, for yourself only, in that category. And thereafter you cannot
+forget to be anonyomus, there. Whilst others are unaffected.
+Or maybe you're the teacher, and don't care about being anonymous in one
+specific category — whilst the default (for all students) is to be anonymous. 
+
+Maybe later, there'll be a table cont_mixed_prefs_t for specifying
+content preferences for many categories, optionally combined with tags,
+in one single row. But currently there's one cont_prefs_t per category,
+maybe "soon" per tag too.
+
+Wikis: cont_prefs_t lets you implement wikis by making a forum
+category a wiki category: set ops_start_wiki_c to true, and set
+base_folder_c to e.g. '/wiki/' and show_page_ids_c to false.
+Alternatively, you can create a *tag* named 'wiki', and configure the
+same settings for that tag (instaed of a category).
+Then wiki pages can be placed in the categories where it makes the most sense
+whilst still being part of a wiki — just tag them with the wiki tag.
+So, a wiki via a category, or a tag. What makes sense, is community
+specific I suppose.
+
+Docs: In a documentation / articles category, you might want to set
+show_op_author_c = false and allow_cmts_c = false,
+and maybe base_folder_c = '/docs/'.
+Or you can use a 'docs' tag, and have docs in different categories,
+whilst still appearing below the '/docs/' URL path'
+$_$;  -- '
+
+-- comment on column  cont_prefs_t.anon_by_def_c  is $_$
+-- 
+-- If posts in this category, are anonymous, by default.
+-- $_$;
+-- ---------------------------------------------------------------------
+-- comment on column  cont_prefs_t.def_anon_level_c  is $_$
+-- 
+-- Default anonymity level, in this category.
+-- $_$; -- '
+------------------------------------------------------------------------
+
 
 
 --======================================================================
@@ -204,9 +353,8 @@ comment on column  identities3.idp_user_id_c  is $_$
 
 For OIDC, this is the 'sub', Subject Identifier.
 $_$;
-
-
 ------------------------------------------------------------------------
+
 
 
 --======================================================================
@@ -385,7 +533,7 @@ oEmbed was 9 215 bytes, and included an inline <svg> image, and
 'background-color: #F4F4F4' repeated at 8 places, and the Instagram post text
 repeated twice. Better allow at least 2x more than that.
 There's an appserver max length check too [oEmb_json_len].
-$_$;
+$_$;  -- '
 
 
 ------------------------------------------------------------------------
@@ -396,7 +544,7 @@ E.g. TCP RST or timeout. 0 means the same in a browser typically, e.g. request.a
 
 However, currently (maybe always?) failed fetches are instead cached temporarily
 only, in Redis, so cannot DoS attack the disk storage.  [ln_pv_fetch_errs]
-$_$;
+$_$; -- '
 
 
 ------------------------------------------------------------------------
@@ -405,6 +553,27 @@ comment on column  link_previews_t.content_json_c  is $_$
 Null if the request failed, got no response json. E.g. an error status code,
 or a request timeout or TCP RST?   [ln_pv_fetch_errs]
 $_$;
+
+
+
+-- --======================================================================
+-- --  posts3
+-- --======================================================================
+-- 
+-- ------------------------------------------------------------------------
+-- comment on column  posts3.anon_level_c  is $_$
+-- 
+-- If this post was done anonymously, by a member (not a guest), and how
+-- much it is anonymized.
+-- $_$;
+-- ------------------------------------------------------------------------
+-- comment on column  posts3.anonym_nr_c  is $_$
+-- 
+-- Others can see that one's anonymous posts with the same virtual anon
+-- account incarnation, were made by the same anonymous person (but of course
+-- not who hen is).
+-- $_$; -- '
+-- ------------------------------------------------------------------------
 
 
 --======================================================================

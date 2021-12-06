@@ -478,13 +478,6 @@ rename table alt_page_ids3 to discussion_keys;
 -- or an url path:   /....
 
 
--- Discussion id / page id  domain?:
-create domain page_id_st_d text_oneline_57_d;
-alter domain page_id_st_d add constraint url_slug_d_c_regex check (
-    value ~ '^[[:alnum:]_-]*$');
-comment on domain page_id_st_d is
-    'Currently, page ids are strings — later, those will become aliases, '
-    'and there''l be numeric ids instead?';
 ---------------
 
 -- RENAME pages3 to  page_meta_t?

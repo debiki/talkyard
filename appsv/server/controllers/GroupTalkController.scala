@@ -51,6 +51,7 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: TyConte
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
 
     throwBadRequestIf(!pageRole.isPrivateGroupTalk, "EsE5PK0R", s"Not private group talk: $pageRole")
+    dieIf(request.user.exists(_.isAnon), "TyE6PGKB1", "Anons cannot send HTTP requests")
     throwBadRequestIf(request.isGuest, "EsE6PGKB2", "Guests may not send private messages")
     throwBadRequestIf(title.isEmpty, "EsE2FKUp8", "No message title")
     throwBadRequestIf(text.trim.isEmpty, "EsE5JGU8", "Empty message")

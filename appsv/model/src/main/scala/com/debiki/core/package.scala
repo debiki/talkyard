@@ -776,17 +776,90 @@ package object core {
 
   RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
   // I find "who" being confusing as to whom it refers to.
-  case class Who(id: UserId, browserIdData: BrowserIdData) {
+  case class Who(id: UserId, browserIdData: BrowserIdData, isAnon: Bo = false) {
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
-    def isGuest: Boolean = Participant.isGuestId(id)
+    def isGuest: Bo = !isAnon && Participant.isGuestId(id)
     def isSystem: Boolean = id == SystemUserId
   }
 
   object Who {
     val System = Who(SystemUserId, BrowserIdData.System)
   }
+
+
+  /*
+  sealed abstract class AnonLevel(val IntVal: i32) { def toInt: i32 = IntVal }
+  object AnonLevel {
+    case object NotAnon extends AnonLevel(10)
+    case object AnonymPerPage extends AnonLevel(50)
+
+    def fromInt(value: i32): Opt[AnonLevel] = Some(value match {
+      case NotAnon.IntVal => NotAnon
+      case AnonymPerPage.IntVal => AnonymPerPage
+      case _ => return None
+    })
+  }*/
+
+
+  /** A bitfield. Currently only None, 5 (made anon by oneself, can deanon oneself)
+    * and 5 + 32 (deanonymized by oneself) = 37 are supported:
+    *
+    * None or 0  = it not anon, was never anon
+    * 000---01  = made anon by oneself
+    * 000---10  = made anon by staff   (might not have been pub for any time —
+    *             if been in a staff-only category all the time)
+    * 000---11  = made anon automatically (e.g. auto anon category)
+    *
+    * ---000--  = cannot be deanonymized
+    * -----1--  = can deanonymized oneself
+    * ----1---  = can be deanonymized by staff
+    * ---1----  = was deanonymized automatically (after page anonym ttl)
+    *
+    * -00-----  = is still anonymous
+    * -01-----  = 32, was deanonymized by oneself (no longer anonymous)
+    * -10-----  = 64, was deanonymized by staff
+    * -11-----  = 96, was deanonymized automatically (after page anonym ttl)
+    *
+    * 1--- ----  = was public for some time
+    *
+    * %% Was never anon, is not anon  = 0  (all bits 0)
+    * %% Was anon             = ----1     = 1  (lowest bit set, other bits can be whatever)
+    * %% Is anon              = -0-11     = 3
+    * %% Was, but isn't       = ---01
+    * %% Can auto deanon      = -0111     = 7
+    * %% Was auto deanon      = -0101     = 5  (automatically deanonymized)
+    * %% Was deanond by other = -1001     = 9
+    * %% Was pub some time    = 1---1
+    */
+  sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
+    def toInt: i32 = IntVal
+  }
+
+  object AnonStatus {
+    // Cannot save in the database (that'd mean an anonymous user that wasn't anonymous)
+    // — just means that pat intentionally wants to use hens real account.
+    case object NotAnon extends AnonStatus(0, isAnon = false)
+    case object IsAnonBySelf extends AnonStatus(5)
+    case object DeanondBySelf extends AnonStatus(37, isAnon = false)
+
+    def fromInt(value: i32): Opt[AnonStatus] = Some(value match {
+      case NotAnon.IntVal => return None // for now, simpler?
+      case IsAnonBySelf.IntVal => IsAnonBySelf
+      case DeanondBySelf.IntVal => DeanondBySelf
+      case _ => return None
+    })
+  }
+
+
+  sealed abstract class WhichAnon() {}
+
+  object WhichAnon {
+    case class NewAnon(anonStatus: AnonStatus) extends WhichAnon
+    case class SameAsBefore(sameAnonId: PatId) extends WhichAnon
+  }
+
 
   case class UserAndLevels(user: Participant, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
     def id: UserId = user.id
@@ -887,6 +960,7 @@ package object core {
   def UnknownUserName: String = Participant.UnknownUserName
   def UnknownUserBrowserId: String = Participant.UnknownUserBrowserId
   def MaxGuestId: UserId = Participant.MaxGuestId
+  def MaxGuestOrAnonId: PatId = Participant.MaxGuestOrAnonId
   def MaxCustomGuestId: UserId = Participant.MaxCustomGuestId
   def LowestNonGuestId: UserId = Participant.LowestNonGuestId
   def LowestTalkToMemberId: UserId = Participant.LowestTalkToMemberId
@@ -1729,6 +1803,9 @@ package object core {
   def CR_DONE = ()
   def FASTER_E2E_TESTS = () // An opportunity to speed up the e2e tests (maybe just marginally)
   def FLAKY = ()          // If an e2e test has races, can fail (ought to fix ... well ... later)
+
+  def UNIMPL = ()
+  def ANON_UNIMPL = ()
 
   // Maybe split into [defense] and [weakness]?
   // [defense] code tags are good — means security issues that have been dealt with.

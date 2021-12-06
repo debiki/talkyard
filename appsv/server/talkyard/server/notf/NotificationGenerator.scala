@@ -356,7 +356,7 @@ case class NotificationGenerator(
     //
     val pageRepliersPrefsOnPage: Set[PageNotfPrefAndWhy] = {  // [interact_notf_pref]
       if (page.meta.pageType.isChat) {
-        // Chats tend to be chatty? Maybe better let the pages_pat_replied_to
+        // Chats tend to be chatty? Maybe better let the pages_pat_replied_to_c
         // setting skip chats. And not impossible it'd be bad for performance
         // to notify / email hundreds of people in a chat "all the time"?
         Set.empty
@@ -494,6 +494,10 @@ case class NotificationGenerator(
     if (sentToUserIds.contains(toUserMaybeGroup.id))
       return
 
+    ANON_UNIMPL // notify the underlying real user.
+    if (toUserMaybeGroup.isAnon)
+      return // for now. Later: Look up the real underlying user.
+
     if (toUserMaybeGroup.isGuest) {
       if (toUserMaybeGroup.emailNotfPrefs == EmailNotfPrefs.DontReceive ||
           toUserMaybeGroup.emailNotfPrefs == EmailNotfPrefs.ForbiddenForever ||
@@ -565,7 +569,7 @@ case class NotificationGenerator(
 
         var groupMembers = tx.loadGroupMembers(groupId).filter(_.id != newPost.createdById)
 
-        dieIf(groupMembers.exists(_.isGuest), "TyE7ABK402")
+        dieIf(groupMembers.exists(_.isGuestOrAnon), "TyE7ABK402")
 
         // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
         // because they're members of the AllMembers group. But later, if [sub_groups] supported,

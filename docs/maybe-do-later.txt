@@ -826,6 +826,8 @@ Sign.
 [improve_imp_exp]
 Remove fk from notfs_t to emails_out_t?
 
+[per_pat_api_secrets]
+Optional per ordinary user API secrets, e.g. personal bot?
 
 [extensions] [themes]
 Needs new table: t_extensions
