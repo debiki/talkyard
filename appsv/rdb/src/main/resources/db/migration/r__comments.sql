@@ -6,15 +6,106 @@
 --======================================================================
 --  Domains
 --======================================================================
-
-------------------------------------------------------------------------
-comment on domain trust_level_or_staff_d is $_$
+--  pat_type_d
+--  ------------------------------------------------------------------------
+--  comment on domain page_id_st_d is $_$
+--  
+--  Currently, page ids are strings — later, those will become aliases,
+--  and there'l be numeric ids instead?;
+--  $_$;  -- '
+--  ------------------------------------------------------------------------
+--  comment on domain pat_type_d is $_$
+--
+--  Participant types:
+--  ==== Not a real account:
+--  1 = Guest or anonymous/unknown stranger.
+--  ==== Cannot log in, is just a pseudonym:
+--  2 = Pen name. Not impl.
+--  ==== Cannot add to groups. Has all permisssions or gets in other ways:
+--  4 = System account (system, sysbot).
+--  5 = External management account: superbot, superadmin, superstaff (mod, dev/design help)
+--  k=== Cannot config UI prefs — doesn't use any UI:
+--  (8 = Bot, e.g. CI system — can only do things via AIP.
+--       A human + custom client should use type 6 User instead.)
+--  ====
+--  9 = User (a human, maybe a bot, sometimes cannot know. Maybe an extrenal Matrix
+--      user who got an account auto generated).
+--  ====
+--  12 = Group. Created by admins, top down. Can have security permissions
+--      and config settings that get inherited by those in the group.
+--  (? 13 = Circle, or bottom-up group. Created by ordinary members.
+--      E.g. a study circle, or teacher circle. Doesn't have inheritable
+--      settings? Nor permissions. Not impl.)
+--  
+--  No!: Participant types:
+--  1 = Unknown stranger or user.  — skip
+--  2 = Anonymous stranger or user (no name).  — skip
+--  3 = Guest.
+--  4 = Pen name. Not impl.
+--  7 = Built-in account, e.g. system, sysbot, superadmin.
+--  8 = External management account: superbot, superadmin, superstaff?
+--  9 = User (a human, maybe a bot, sometimes cannot no).
+--  (10 = Bot, can only do things via AIP? But could be a human + a custom client?)
+--  91 = Group. Created by admins, top down. Can have security permissions
+--      and config settings that get inherited by those in the group.
+--  (? 92 = Circle, or bottom-up group. Created by ordinary members.
+--      E.g. a study circle, or teacher circle. Doesn't have inheritable
+--      settings? Nor permissions. Not impl.)
+--  $_$;
+--  ------------------------------------------------------------------------
+comment on domain  trust_level_or_staff_d  is $_$
 
 Trust levels from Stranger = 0 to Core Member = 6, plus dummy trust levels
 for staff, i.e. mods = 7 and admins = 8.
 $_$;
+------------------------------------------------------------------------
+-- comment on domain  anon_level_d  is $_$
+-- 
+-- 10: Not anon, even if would have been by default. For example, a moderator
+-- or maybe a school teacher who wants to say something more officially.
+-- 
+-- (20, not impl: Anon post, by an a bit traceable "virtual anon account":
+-- The poster would use the same account accross different categories and pages,
+-- during anon_incarnation_ttl_mins_c minutes. Then hen gets a new anon acct.
+-- Except for when posting more on the same page — then hen will reuse hen's
+-- last annon acct on that page.)
+-- 
+-- (30, not impl: Anon account, less traceable: The same in the same category only;
+-- it cannot follow accross categories. After anon_incarnation_ttl_mins_c,
+-- the poster will get a new virtual annon acct. Except for when posting more on
+-- the same page; see above.  — Maybe skip forever? Things get complicated,
+-- if moving a page to a different category, and continuing posting there.)
+-- 
+-- (40, not impl: Anon account, less traceable: The same in the same category,
+-- excl sub categories.)
+-- 
+-- 50: Anon account: Same on the same page only.
+-- 
+-- (60: Anon account, even less less traceable: Same on the same page only,
+-- and only during anon_incarnation_ttl_mins_c.)
+-- 
+-- (70: Anon account, unique per post / same-for-all-users-and-posts.)
+-- $_$;  -- '
+------------------------------------------------------------------------
+
+
+
+--======================================================================
+--  disc_prefs_t
+--======================================================================
 
 ------------------------------------------------------------------------
+-- comment on column  disc_prefs_t.anon_by_def_c  is $_$
+-- 
+-- If posts in this category, are anonymous, by default.
+-- $_$;
+-- ------------------------------------------------------------------------
+-- comment on column  disc_prefs_t.def_anon_level_c  is $_$
+-- 
+-- Default anonymity level, in this category.
+-- $_$; -- '
+------------------------------------------------------------------------
+
 
 
 --======================================================================
@@ -26,9 +117,8 @@ comment on column  identities3.idp_user_id_c  is $_$
 
 For OIDC, this is the 'sub', Subject Identifier.
 $_$;
-
-
 ------------------------------------------------------------------------
+
 
 
 --======================================================================
@@ -39,7 +129,7 @@ $_$;
 comment on table  idps_t  is $_$
 
 OIDC and OAuth2 providers, e.g. a company's private Keycloak server.
-$_$;
+$_$;  -- '
 
 
 ------------------------------------------------------------------------
@@ -120,7 +210,7 @@ comment on table  links_t  is $_$
 
 There's no foreign key to link_previews_t, because maybe no preview has
 been fetched yet (or maybe never — maybe broken external link).
-$_$;
+$_$;  -- '
 
 
 
@@ -198,7 +288,7 @@ oEmbed was 9 215 bytes, and included an inline <svg> image, and
 'background-color: #F4F4F4' repeated at 8 places, and the Instagram post text
 repeated twice. Better allow at least 2x more than that.
 There's an appserver max length check too [oEmb_json_len].
-$_$;
+$_$;  -- '
 
 
 ------------------------------------------------------------------------
@@ -209,7 +299,7 @@ E.g. TCP RST or timeout. 0 means the same in a browser typically, e.g. request.a
 
 However, currently (maybe always?) failed fetches are instead cached temporarily
 only, in Redis, so cannot DoS attack the disk storage.  [ln_pv_fetch_errs]
-$_$;
+$_$; -- '
 
 
 ------------------------------------------------------------------------
@@ -218,6 +308,27 @@ comment on column  link_previews_t.content_json_c  is $_$
 Null if the request failed, got no response json. E.g. an error status code,
 or a request timeout or TCP RST?   [ln_pv_fetch_errs]
 $_$;
+
+
+
+-- --======================================================================
+-- --  posts3
+-- --======================================================================
+-- 
+-- ------------------------------------------------------------------------
+-- comment on column  posts3.anon_level_c  is $_$
+-- 
+-- If this post was done anonymously, by a member (not a guest), and how
+-- much it is anonymized.
+-- $_$;
+-- ------------------------------------------------------------------------
+-- comment on column  posts3.anonym_nr_c  is $_$
+-- 
+-- Others can see that one's anonymous posts with the same virtual anon
+-- account incarnation, were made by the same anonymous person (but of course
+-- not who hen is).
+-- $_$; -- '
+-- ------------------------------------------------------------------------
 
 
 --======================================================================
