@@ -130,6 +130,13 @@ create table disc_props_t (   -- Scala:  DiscProps
 
 -- or name it  disc_layout_t  instead?
 -- Or skip for now, incl in  disc_props_t  instead?  then, not configurable per pat.
+--
+-- Maybe: Add these columns to disc_prefst_t, and to reuse layout settings,
+-- instead create a layouts_t with layout settins, and then one can choose from those
+-- predefined settings?  Hmm but if an admin edits a layouts_t row, then,
+-- should those changes take effect in the cats that used those templates, or not?
+-- Maybe instead: Link from it to disc_views_t.
+--
 create table disc_view_t (   -- people can configure their own ~~view~~ layout (distant future)
   site_id,
   pat_id_c,  -- if someone's personal view. Default Everyone.Id
@@ -164,6 +171,29 @@ create table disc_stats_t (   -- updated automatically
   ...
 );
 
+
+-- Maybe make some per cat settings individually / by-group configurable?
+-- Categories are less frequent, so no need for a  cat_props_t with id rows and
+-- referencing them, for sharing the same settings between many cats?
+-- (But for pages — then, having pages_t.disc_props_id_c link to disc_props_t.props_id_c
+-- makes sense.)
+--
+alter table disc_prefs_t add column view_id_c; -- or inline in table?
+alter table disc_prefs_t add column incl_in_summaries;
+alter table disc_prefs_t add column unlist_topics; -- ?
+-- create table cat_pat_props_t (   -- or  per_pat_cat_props_t   or  cat_per_pat_props_t?
+--                                 -- no, instead, incl in disc_prefs_t, see above
+--   site_id_c,
+--   cat_props_id_c,
+--   -- cat_id_c,
+--   -- pat_id_c default everyone.id,
+--   anon_by_def_c           bool,
+--   def_anon_level_c        anon_status_d,
+--   max_anon_level_c        anon_status_d,
+-- 
+--   incl_in_summaries,  -- so people can choose themselves
+--   unlist_topics,      -- if one thinks it's just noise in this category
+-- );
 
 
 

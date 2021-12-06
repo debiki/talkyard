@@ -251,6 +251,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
     if (pat.isGroup) json += "isGroup" -> JsTrue
     if (pat.isGuest) json += "isGuest" -> JsTrue
+    if (pat.isAnon) json += "isAnon" -> JsTrue
 
     avatarUrlPrefix foreach { avUrlPerf =>
       pat.tinyAvatar foreach { tinyAv =>
@@ -266,5 +267,3 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   }
 
 }
-
-

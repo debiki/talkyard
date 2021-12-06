@@ -105,6 +105,9 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
+    ANON_UNIMPL // don't allow, if is anon post by oneself
+    // val author = dao.getParticipantOrUnknown( the-post .createdById)
+
     if (delete) {
       dao.deleteVoteIfAuZ(pageId, postNr, voteType, voterId = request.theUser.id)
     }
@@ -117,10 +120,8 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val updatedPost = dao.loadPost(pageId, postNr) getOrThrowForbidden(
           "TyE7M3MRSED5", "The post just got hard deleted?")
 
-    val author = dao.getParticipantOrUnknown(updatedPost.createdById)
-
     val storePatchJson = dao.jsonMaker.makeStorePatchForPost(
-          updatedPost, author, showHidden = true)
+          updatedPost, showHidden = true, reqerId = request.theReqerId)
 
     val responseJson = storePatchJson ++
           EmbeddedCommentsPageCreator.makeAnyNewPageJson(newEmbPage)

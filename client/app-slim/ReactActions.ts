@@ -1391,10 +1391,10 @@ export function composeReplyTo(parentNr: PostNr, replyPostType: PostType) {
 
 
 export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
-      anyPostType: Nr, draftToDelete: Draft | U, onOk?: () => Vo,
+      anyPostType: Nr, draftToDelete: Draft | U, doAsAnon: WhichAnon | U, onOk?: () => Vo,
       sendToWhichFrame?: MainWin) {
   Server.saveReply(editorsPageId, postNrs, text, anyPostType, draftToDelete?.draftNr,
-      (storePatch) => {
+        doAsAnon, (storePatch) => {
     handleReplyResult(storePatch, draftToDelete, onOk, sendToWhichFrame);
   });
 }

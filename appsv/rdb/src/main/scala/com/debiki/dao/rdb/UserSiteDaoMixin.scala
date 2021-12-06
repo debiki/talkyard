@@ -222,7 +222,11 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
     runQueryFindMany(query, values.toList, rs => {
       val user = getParticipant(rs)
+      dieIf(user.isAnon, "TyE5ABK20A1")
       dieIf(user.isGuest, "TyE5ABK20A2")
+      // Cannot be a group? [.0_group_in_group]  Use  pat.toUserOrThrow ?
+      DO_AFTER // 2022-02-01 comment in this? Even later, remove isDevOrTest
+      //dieIf(user.isGroup && com.debiki.core.isDevOrTest, "TyE5ABK20A3")
       user
     })
   }
@@ -244,7 +248,11 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
     runQueryFindMany(query, values.toList, rs => {
       val user = getParticipant(rs)
+      dieIf(user.isAnon, "TyE5ABK20B1")
       dieIf(user.isGuest, "TyE603KRJL")
+      // Cannot be a group? [.0_group_in_group]
+      DO_AFTER // 2022-02-01 comment in this? Even later, remove isDevOrTest
+      //dieIf(user.isGroup && com.debiki.core.isDevOrTest, "TyE5ABK20B3")
       user
     })
   }
@@ -424,7 +432,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
   def loadGroupIdsMemberIdFirst(ppt: Participant): Vector[UserId] = {
     val builtInGroups = ppt match {
-      case _: Guest | UnknownParticipant => return Vector(Group.EveryoneId)
+      case _: Guest | _: Anonym | UnknownParticipant => return Vector(Group.EveryoneId)
       case u: User => getBuiltInGroupIdsForUser(u)
       case g: Group => getBuiltInGroupIdsForGroup(g)
     }
@@ -576,6 +584,25 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
+  def insertAnonym(anon: Anonym) {
+    val stmt = s"""
+          insert into users3(
+            site_id,
+            user_id,
+            created_at,
+            true_id_c,
+            anonym_status_c,
+            anon_on_page_id_st_c)
+          values (?, ?, ?, ?, ?, ?)
+          """
+    val values = List(
+          siteId.asAnyRef, anon.id.asAnyRef,
+          anon.createdAt.asTimestamp, anon.anonForPatId.asAnyRef,
+          anon.anonStatus.toInt.asAnyRef, anon.anonOnPageId)
+    runUpdateSingleRow(stmt, values)
+  }
+
+
   def insertMember(user: UserInclDetails) {
     try {
       runUpdate("""
@@ -585,7 +612,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
             IS_APPROVED, APPROVED_AT, APPROVED_BY_ID,
             IS_OWNER, IS_ADMIN, IS_MODERATOR,
             about, website, country,
-            see_activity_min_trust_level,
+            see_activity_min_tr_lv_c,
             trust_level, locked_trust_level, threat_level, locked_threat_level,
             deactivated_at, deleted_at)
         values (
@@ -670,6 +697,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       """
     runQueryFindOneOrNone(query, values.toList, rs => {
       val user = getParticipant(rs)
+      // Use  pat.toMemberOrThrow instead of these dieIf?
+      dieIf(user.isAnon, "TyE2AKB7F2")
       dieIf(user.isGuest, "TyE2AKB7F3")
       user.asInstanceOf[Member]
     })
@@ -1043,7 +1072,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
       val user = getMemberInclDetails(rs) match {
         case m: UserInclDetails => m
-        case g: Group => throw GotAGroupException(g.id)
+        case g: Group => throw GotAGroupException(g.id, wantedWhat = "a user")
       }
 
       (user, anyStats)
@@ -1069,7 +1098,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         country = ?,
         website = ?,
         about = ?,
-        see_activity_min_trust_level = ?,
+        see_activity_min_tr_lv_c = ?,
         avatar_tiny_base_url = ?,
         avatar_tiny_hash_path = ?,
         avatar_small_base_url = ?,

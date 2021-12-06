@@ -163,13 +163,41 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  def JsKnownAnonym(anon: Anonym): JsObject = {  // ts: KnownAnonym
+    // Bit hacky: Pretend we're showing this anonym for the person behind the anonym.
+    // Later, maybe incl a boolean flag instead?
+    JsPat(anon, TagsAndBadges.None, toShowForPatId = Some(anon.anonForPatId))
+  }
+
+
+  /*  rm
+  def JsAnon(anon: Anonym, inclRealId: Bo = false): JsObject = {  // ts: Anonym
+    var json = Json.obj(
+          "id" -> JsNumber(anon.id),
+          "isAnon" -> JsTrue,
+          "isEmailUnknown" -> JsTrue,  // or skip?
+          )
+    if (inclRealId) {
+      json += "anonForId" -> JsNumber(anon.anonForPatId)
+      //json += "anonOnPageId" -> JsString(anon.anonOnPageId),
+      json += "anonStatus" -> JsNumber(anon.anonStatus.toInt)
+    }
+    if (anon.isGone) {
+      json += "isGone" -> JsTrue
+    }
+    json
+  } */
+
+
   def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
     user.map(JsUser(_)).getOrElse(JsNull)
 
 
-  def JsPat(pat: Pat, tagAndBadges: TagsAndBadges): JsObject = {  // Typescript: Pat
-    JsUser(pat, tagAndBadges.badges.getOrElse(pat.id, Nil))
+  def JsPat(pat: Pat, tagAndBadges: TagsAndBadges,  // Typescript: Pat
+        toShowForPatId: Opt[PatId] = None): JsObject = {
+    JsUser(pat, tagAndBadges.badges.getOrElse(pat.id, Nil), toShowForPatId = toShowForPatId)
   }
+
 
   /// As little info about someone as possible — just name and tiny avatar. Currently
   /// used for showing in the forum topic list.
@@ -185,13 +213,29 @@ object JsX {   RENAME // to JsonPaSe
     json
   }
 
-  def JsUser(user: Pat, tags: Seq[Tag] = Nil): JsObject = {  //RENAME to JsPat, ts: Pat
+  def JsUser(user: Pat, tags: Seq[Tag] = Nil, toShowForPatId: Opt[PatId] = None): JsObject = {  //RENAME to JsPat, ts: Pat
     var json = JsPatNameAvatar(user)
     user.smallAvatar foreach { uploadRef =>
       json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
     }
 
-    if (user.isGuest) {
+    if (user.isAnon) {
+      json += "isAnon" -> JsTrue
+      // If this anonym is user `toShowForPatId`s own anonym, include details — so
+      // that user can see it's hens own anonym.
+      toShowForPatId foreach { showForPatId: PatId =>
+        user match {
+          case anon: Anonym =>
+            if (anon.anonForPatId == showForPatId) {
+              json += "anonForId" -> JsNumber(anon.anonForPatId)
+              //on += "anonOnPageId" -> JsString(anon.anonOnPageId),
+              json += "anonStatus" -> JsNumber(anon.anonStatus.toInt)
+            }
+          case x => die(s"An isAnon pat isn't an Anonym, it's an: ${classNameOf(x)}")
+        }
+      }
+    }
+    else if (user.isGuest) {
       json += "isGuest" -> JsTrue
     }
     else {

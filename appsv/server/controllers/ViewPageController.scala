@@ -208,7 +208,8 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
     COULD_OPTIMIZE // this loads some here unneeded data about the current user.
     // we only need: watchbar and .myDataByPageId[].  [load_less_me_data]
     val anyMeAndStuff: Opt[MeAndStuff] =
-      dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds)
+      dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds,
+            renderedPage.anonsByRealId)
 
     Future.successful(
       OkSafeJson(
@@ -331,7 +332,8 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
           request, pageId = EmptyPageId, showId = false, pageRole = PageType.WebPage, globals.now())
       val json = dao.jsonMaker.emptySiteJson(pageRequest).toString()
       val html = views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest, Some(json))).body
-      val renderedPage = RenderedPage(html, "NoJson-2WBKCG7", unapprovedPostAuthorIds = Set.empty)
+      val renderedPage = RenderedPage(html, "NoJson-2WBKCG7",
+            unapprovedPostAuthorIds = Set.empty, anonsByRealId = Map.empty)
       return addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
     }
 
@@ -402,6 +404,7 @@ object ViewPageController {
         skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
     val pageHtml = renderedPage.html
     addVolatileJsonAndPreventClickjacking2(pageHtml, renderedPage.unapprovedPostAuthorIds, request,
+      anonsByRealId = renderedPage.anonsByRealId,
       embeddingUrl = embeddingUrl, skipUsersOnline = skipUsersOnline,
       xsrfTokenIfNoCookies = xsrfTokenIfNoCookies)
   }
@@ -410,6 +413,7 @@ object ViewPageController {
   RENAME // to addVolatileJsonAndContentSecurityPolicy
   def addVolatileJsonAndPreventClickjacking2(pageHtmlNoVolData: String,
         unapprovedPostAuthorIds: Set[UserId], request: DebikiRequest[_],
+        anonsByRealId: Map[PatId, Seq[Anonym]] = Map.empty,
         embeddingUrl: Option[String] = None,
         skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
     import request.{dao, requester}
@@ -423,7 +427,7 @@ object ViewPageController {
     val anyMeAndRestrStuff: Opt[MeAndStuff] =
       request match {
         case pageRequest: PageRequest[_] =>
-          dao.jsonMaker.userDataJson(pageRequest, unapprovedPostAuthorIds)
+          dao.jsonMaker.userDataJson(pageRequest, unapprovedPostAuthorIds, anonsByRealId)
         case _: DebikiRequest[_] =>
           dao.jsonMaker.userNoPageToJson(request)
       }

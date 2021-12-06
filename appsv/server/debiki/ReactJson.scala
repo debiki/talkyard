@@ -104,7 +104,8 @@ case class PageToJsonResult(
   version: CachedPageVersion,
   pageTitleUnsafe: Option[String],
   customHeadTags: FindHeadTagsResult,
-  unapprovedPostAuthorIds: Set[UserId])
+  unapprovedPostAuthorIds: Set[UserId],
+  anonsByRealId: Map[PatId, Seq[Anonym]])
 
 case class FindHeadTagsResult(
   includesTitleTag: Boolean,
@@ -387,6 +388,9 @@ class JsonMaker(dao: SiteDao) {
       idAndUser._1.toString -> JsPat(idAndUser._2, tagsAndBadges)
     })
 
+    val anons: Seq[Anonym] = usersById.values.collect({ case a: Anonym => a }).toSeq
+    val anonsByRealId = anons.groupBy(_.anonForPatId)
+
     // These don't change often, can use the cache.
     val tagTypes = dao.getTagTypes(tagTypeIdsToLoad.toSet)
 
@@ -502,10 +506,12 @@ class JsonMaker(dao: SiteDao) {
       renderParams = renderParams,
       storeJsonHash = hashSha1Base64UrlSafe(reactStoreJsonString))
 
+    COULD_OPTIMIZE // cache unapproved posts too?
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
-    PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags, unapprovedPostAuthorIds)
+    PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags,
+          unapprovedPostAuthorIds, anonsByRealId = anonsByRealId)
   }
 
 
@@ -803,8 +809,10 @@ class JsonMaker(dao: SiteDao) {
 
   RENAME // this function (i.e. userDataJson) so it won't come as a
   // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
-  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
+  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId],
+        anonsByRealId: Map[PatId, Seq[Anonym]])
         : Opt[MeAndStuff] = Some {
+
     require(pageRequest.dao == dao, "TyE4GKVRY3")
     val requester = pageRequest.user getOrElse {
       return None
@@ -842,7 +850,7 @@ class JsonMaker(dao: SiteDao) {
     dao.readOnlyTransaction { tx =>
       requestersJsonImpl(pageRequest.sid, requester, pageRequest.pageId, watchbarWithTitles,
             restrTopicsCatsLinks, permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds, myGroupsEveryoneLast, site, tx)
+            unapprovedPostAuthorIds, anonsByRealId, myGroupsEveryoneLast, site, tx)
     }
   }
 
@@ -866,7 +874,9 @@ class JsonMaker(dao: SiteDao) {
       requestersJsonImpl(request.sid, requester, anyPageId = None, watchbarWithTitles,
             RestrTopicsCatsLinks(JsArray(), Nil, Nil, Nil, Set.empty),
             permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, site, tx)
+            unapprovedPostAuthorIds = Set.empty,
+            anonsByRealId = Map.empty,
+            myGroupsEveryoneLast, site, tx)
     }
   }
 
@@ -875,7 +885,7 @@ class JsonMaker(dao: SiteDao) {
         sid: SidStatus, requester: Participant, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrTopicsCatsLinks: RestrTopicsCatsLinks,
         permissions: Seq[PermsOnPages], permsOnSiteTooMany: PermsOnSite,
-        unapprovedPostAuthorIds: Set[UserId],
+        unapprovedPostAuthorIds: Set[UserId], anonsByRealId: Map[PatId, Seq[Anonym]],
         myGroupsEveryoneLast: Seq[Group], site: Opt[Site], tx: SiteTransaction)
         : MeAndStuff = {
 
@@ -966,6 +976,10 @@ class JsonMaker(dao: SiteDao) {
     val anyReadingProgress = anyPageId.flatMap(tx.loadReadProgress(requester.id, _))
     val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
 
+    // later:  if (requester.isAdmin *and* wants to see who the anonyms are) ... hmm ..
+    val ownAnons: Seq[Anonym] =
+          anonsByRealId.getOrElse(requester.id, Nil)
+
     val ownDataByPageId = anyPageId match {
       case None => Json.obj()
       case Some(pageId) =>
@@ -981,6 +995,9 @@ class JsonMaker(dao: SiteDao) {
             // later: "flags" -> JsArray(...) [7KW20WY1]
             "unapprovedPosts" -> unapprovedPosts,
             "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
+            "knownAnons" -> JsArray(ownAnons map JsKnownAnonym),
+            // later: JsArray(real-anon-authors.map(a => JsUser(a))), if is staff.
+            "patsBehindAnons" -> JsArray(),
             "postNrsAutoReadLongAgo" -> JsArray(Nil),      // should remove
             "postNrsAutoReadNow" -> JsArray(Nil),
             "marksByPostId" -> JsObject(Nil)))
@@ -1282,19 +1299,19 @@ class JsonMaker(dao: SiteDao) {
 
 
   def makeStorePatchForPostIds(postIds: Set[PostId], showHidden: Bo,
-        inclUnapproved: Bo, dao: SiteDao): JsObject = {
+        inclUnapproved: Bo, dao: SiteDao, reqerId: Opt[PatId] = None): JsObject = {
     dieIf(Globals.isDevOrTest && dao != this.dao, "TyE602MWJL43") ; CLEAN_UP // remove dao param?
     dao.readTx { tx =>
       // This might render CommonMark, in a tx — slightly bad. [nashorn_in_tx]
       makeStorePatchForPostIds(postIds, showHidden = showHidden,
-            inclUnapproved = inclUnapproved, tx)
+            inclUnapproved = inclUnapproved, tx, reqerId = reqerId)
     }
   }
 
 
   private def makeStorePatchForPostIds(postIds: Set[PostId],
           showHidden: Bo, inclUnapproved: Bo,
-          transaction: SiteTx): JsObject = {
+          transaction: SiteTx, reqerId: Opt[PatId]): JsObject = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(postIds)
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
@@ -1305,13 +1322,14 @@ class JsonMaker(dao: SiteDao) {
     makeStorePatch3(pageIdVersions, posts,
           showHidden = showHidden, inclUnapproved = inclUnapproved,
           tagsAndBadges, tagTypes,
-          authors, appVersion = dao.globals.applicationVersion)(transaction)
+          authors, reqerId = reqerId, appVersion = dao.globals.applicationVersion)(transaction)
   }
 
 
-  def makeStorePatchForPost(post: Post, author: Pat, showHidden: Bo): JsObject = {
+  def makeStorePatchForPost(post: Post, showHidden: Bo, reqerId: PatId): JsObject = {
     makeStorePatchForPostIds(
-          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true, dao)
+          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true, dao,
+          reqerId = Some(reqerId))
   }
 
 
@@ -1326,7 +1344,7 @@ class JsonMaker(dao: SiteDao) {
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
           showHidden: Bo, inclUnapproved: Bo,
           tagsAndBadges: TagsAndBadges, tagTypes: Seq[TagType],
-          users: Iterable[Pat], appVersion: St)(
+          users: Iterable[Pat], reqerId: Opt[PatId] = None, appVersion: St)(
           tx: SiteTx): JsObject = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
 
@@ -1351,7 +1369,7 @@ class JsonMaker(dao: SiteDao) {
     Json.obj(
       "appVersion" -> appVersion,
       "pageVersionsByPageId" -> pageVersionsByPageIdJson,
-      "usersBrief" -> users.map(JsPat(_, tagsAndBadges)),
+      "usersBrief" -> users.map(JsPat(_, tagsAndBadges, toShowForPatId = reqerId)),
       "tagTypes" -> tagTypes.map(JsTagType),
       "postsByPageId" -> postsByPageIdJson)
   }

@@ -118,8 +118,10 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
               anyDiscussionId = discussionId, anyEmbeddingUrl = Some(embeddingUrl),
               lazyCreatePageInCatId = Some(lazyCreateInCatId))
         val htmlString = views.html.templates.page(tpi).body
+        val renderedPage = RenderedPage(htmlString, "NoJson-1WB4Z6",
+              unapprovedPostAuthorIds = Set.empty, anonsByRealId = Map.empty)
 
-        (RenderedPage(htmlString, "NoJson-1WB4Z6", unapprovedPostAuthorIds = Set.empty), pageRequest)
+        (renderedPage, pageRequest)
 
       case Some(realId) =>
         // (For now, ignore `category` here. Or, some time later, would an admin setting

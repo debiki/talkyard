@@ -312,7 +312,8 @@ case object Participant {
   val SuperAdminId = 3  // no, 4? or 49?  see below
 
   /** Maintenance tasks by bot(s) that supervise all sites. */
-  // val SuperbotId = 4  ?
+  // val SuperStaffId = 4  ?
+  // val SuperBotId = 5  ?
 
   // ? rename SuperX to Global Read/Action X,
   // Hmm these would be useful, for site staff to View As ...
@@ -328,13 +329,18 @@ case object Participant {
   // val SuperPupbMod = 6 ?
 
   // ?? If a member chooses to post anonymously:
+  //     — no, using anonym_id_c  and anonym_ids_t instead?  And optional pen names
   // val AnonymousUserId = 7
+
+  // UnknownUserId = 6
+  // UnknownStaffId = 7
 
   // The real ids of deactivated and deleted users, could be replaced with these ids, when rendering
   // pages, so others won't find the real ids of the deactivated/deleted accounts.
   // val DeactivatedUserId = 8
   // val DeletedUserId = 9
-  // or just: DeactivatedOrDeletedUserId = 9 ?
+  // or just: DeactivatedOrDeletedUserId = 9 ?  or just: DeactivatedUserId incl deleted users?
+
 
   // Can talk with, and can listen to notifications. But 1..9 = special. And -X = guests.
   val LowestNormalMemberId: Int = Group.EveryoneId  // [S7KPWG42]
@@ -354,10 +360,13 @@ case object Participant {
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
   // Change to <= -1001?  [UID1001]
   val MaxCustomGuestId: UserId = -10
+  val MaxAnonId: PatId = MaxCustomGuestId
 
   val MaxGuestId: UserId = -1
   //assert(MaxGuestId == AnonymousUserId)
   assert(UnknownUserId.toInt <= MaxGuestId)
+
+  val MaxGuestOrAnonId: PatId = MaxGuestId
 
   /** Ids 1 .. 99 are reserved in case in the future I want to combine users and groups,
     * and then there'll be a few groups with hardcoded ids in the range 1..99.
@@ -368,6 +377,7 @@ case object Participant {
   val LowestNonGuestId = 1  // CLEAN_UP RENAME to LowestMemberId?
   assert(LowestNonGuestId == SystemUserId)
 
+  RENAME // to isGuestOrAnonId
   def isGuestId(userId: UserId): Boolean =
     userId <= MaxGuestId
 
@@ -637,6 +647,7 @@ sealed trait Pat {
   // Later: Impl for Guest users too?
   def isDeactivated: Bo = false
   def isDeleted: Bo = false
+  def isAnon: Bo = false
 
   final def isAuthenticated: Bo = isRoleId(id)
   def isApprovedOrStaff: Bo
@@ -659,14 +670,16 @@ sealed trait Pat {
   def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo
 
   final def isMember: Bo = Participant.isMember(id)
-  final def isGuest: Bo = Participant.isGuestId(id)
+  final def isGuest: Bo = Participant.isGuestId(id) && !isAnon
+  final def isGuestOrAnon: Bo = Participant.isGuestId(id)
   // Rename to jus isUser later when "user" means "user not guest" everywhere anyway.
   final def isUserNotGuest: Bo = isMember && !isGroup && !isBuiltIn
 
   def isGroup: Bo
   final def anyMemberId: Opt[MembId] = if (isRoleId(id)) Some(id) else None
 
-  final def accountType: St = if (isGuest) "guest" else if (isGroup) "group" else "user"
+  final def accountType: St =
+    if (isGuest) "guest" else if (isAnon) "anonym" else if (isGroup) "group" else "user"
 
   final def isSuspendedAt(when: When): Bo = isSuspendedAt(when.toJavaDate)
   final def isSuspendedAt(when: ju.Date): Bo =
@@ -702,17 +715,38 @@ sealed trait Pat {
   final def toMemberOrThrow: Member = {
     this match {
       case m: User => m
-      case g: Guest => throw GotAGuestException(g.id)
       case g: Group => g
-      case UnknownParticipant => throw GotUnknownUserException
+      case _ => throwWrongPatType(wantedWhat = "a user or group")
+    }
+  }
+
+  def asAnonOrThrow: Anonym = {
+    this match {
+      case anon: Anonym => anon
+      case _ => throwWrongPatType(wantedWhat = "an anonym")
+    }
+  }
+
+  def asGuestOrThrow: Guest = {
+    this match {
+      case guest: Guest => guest
+      case _ => throwWrongPatType(wantedWhat = "a guest")
     }
   }
 
   final def toUserOrThrow: User = {
     this match {
-      case m: User => m
-      case g: Guest => throw GotAGuestException(g.id)
-      case g: Group => throw GotAGroupException(g.id)
+      case user: User => user
+      case _ => throwWrongPatType(wantedWhat = "a user")
+    }
+  }
+
+  private def throwWrongPatType(wantedWhat: St): Nothing = {
+    this match {
+      case _: User => throw GotAUserEx(this.id, wantedWhat)
+      case _: Anonym => throw GotAnAnonEx(this.id, wantedWhat)
+      case _: Guest => throw GotAGuestException(this.id, wantedWhat)
+      case _: Group => throw GotAGroupException(this.id, wantedWhat)
       case UnknownParticipant => throw GotUnknownUserException
     }
   }
@@ -726,7 +760,7 @@ sealed trait Member extends Pat {
   final def usernameOrGuestName: St = theUsername
   final def nameOrUsername: St = anyName getOrElse theUsername
 
-  final def usernameParensFullName: St = anyName match {
+  final def usernameParensFullName: St = anyName match {    // dupl fn?
     case Some(name) => s"$theUsername ($name)"
     case None => theUsername
   }
@@ -854,6 +888,67 @@ case class UserBr(
 }
 
 
+
+trait MemberMaybeDetails {
+  def theUsername: String
+  def fullName: Option[String]
+  def usernameHashId: String
+  def primaryEmailAddress: String
+  def emailVerified: Bo
+  def nameOrUsername: String = fullName getOrElse theUsername
+
+  def usernameParensFullName: String = fullName match {
+    case Some(name) => s"$theUsername ($name)"
+    case None => theUsername
+  }
+}
+
+
+
+case class Anonym(
+  id: PatId,
+  createdAt: When,
+  anonStatus: AnonStatus,
+  anonForPatId: PatId,   // rename to trueId
+  anonOnPageId: PageId,
+  ) extends Pat with GuestOrAnon {
+
+  def nameOrUsername: St = "Anonym"
+  override def anyName: Opt[St] = Some(nameOrUsername)
+  override def usernameOrGuestName: St =  nameOrUsername
+
+  def extId: Opt[ExtId] = None
+  def noDetails: Pat = this
+
+  def email: EmailAdr = ""
+  def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.Unspecified
+  def tinyAvatar: Opt[UploadRef] = None
+  def smallAvatar: Opt[UploadRef] = None
+  def suspendedTill: Opt[ju.Date] = None // for now
+
+  def isAdmin: Bo = false
+  def isOwner: Bo = false
+  def isModerator: Bo = false
+  def isSuperAdmin: Bo = false
+  override def isBuiltIn: Bo = false
+  override def isAnon: Bo = true
+
+  // Never deactivate or delete. If the underlying real user deactivates hens account,
+  // don't deactivate the anonym — that'd make it simpler to know who the anonym is
+  // (if gets deactivated at the same time).
+  override def isDeactivated: Bo = false
+  override def isDeleted: Bo = false
+
+  // Currently only approved users may use anonyms, so, for now:
+  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
+  override def isAuthenticated: Bo = true
+
+  // But the accounts haven't been approved?
+  override def isApprovedOrStaff: Bo = false
+}
+
+
+
 case class ExternalUser(   // sync with test code [7KBA24Y]
   ssoId: St,
   extId: Opt[St],
@@ -905,7 +1000,7 @@ case class Guest( // [exp] ok   REFACTOR split into GuestBr and GuestVb [guest_b
   // -----------------------
   lockedThreatLevel: Option[ThreatLevel] = None,
   )
-  extends Participant with ParticipantInclDetails with Someone {
+  extends Participant with ParticipantInclDetails with GuestOrAnon with Someone {
 
   def isApprovedOrStaff = false
   def emailVerifiedAt: Option[ju.Date] = None
@@ -937,9 +1032,14 @@ case class Guest( // [exp] ok   REFACTOR split into GuestBr and GuestVb [guest_b
 }
 
 
+sealed trait GuestOrAnon extends ParticipantInclDetails
+
+
 /** Includes info about the pat that's usually not needed.
   */
 sealed trait ParticipantInclDetails extends Pat {    RENAME   // to PatVb
+  //f id: UserId
+  //f extId: Option[ExtId]
   def createdAt: When
   def noDetails: Participant
   def about: Option[String] = None    ; RENAME // to bio

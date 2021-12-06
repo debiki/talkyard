@@ -275,6 +275,7 @@ interface DraftDeletor {
 
 interface Draft {
   byUserId: UserId;
+  doAsAnon?: U | WhichAnon;  // not yet impl [doAsAnon_draft]
   draftNr: DraftNr;
   forWhat: DraftLocator;
   createdAt: WhenMs;
@@ -458,6 +459,8 @@ interface MyPageData {
   internalBacklinks?: Topic[];
   unapprovedPosts: { [id: number]: Post };
   unapprovedPostAuthors: Participant[];
+  knownAnons?: KnownAnonym[];
+  patsBehindAnons?: Pat[];
   postNrsAutoReadLongAgo: number[];
   postNrsAutoReadNow: number[];
 
@@ -1402,6 +1405,11 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
   isAdmin?: boolean;
   isModerator?: boolean;
 
+  isAnon?: Bo;
+  anonForId?: PatId;
+  anonStatus?: AnonStatus;
+  anonOnPageId?: PageId;
+
   isGuest?: boolean;  // = !isAuthenticated
   isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
 
@@ -1416,16 +1424,61 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
 type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
 
 
-interface Guest extends Participant {
+interface Anonym extends GuestOrAnon {
+  isAnon: true;
+  isGuest?: false;  // = !isAuthenticated — no!  BUG RISK ensure ~isGuest isn't relied on
+                                         // anywhere, to "know" it's a user / group
+}
+
+
+interface KnownAnonym extends Anonym {
+  isAnon: true;
+  anonForId: PatId;
+  anonStatus: AnonStatus;
+  anonOnPageId: PageId;
+}
+
+
+// For choosing an anonym. Maybe rename to ChooseAnon? Or ChoosenAnon / SelectedAnon?
+interface WhichAnon {
+  sameAnonId?: PatId;
+  newAnonStatus?: AnonStatus;
+}
+interface SameAnon extends WhichAnon {
+  sameAnonId: PatId;
+  newAnonStatus?: U;
+}
+interface Deanonymized extends WhichAnon {
+  sameAnonId: PatId;
+  newAnonStatus: AnonStatus.DeanondBySelf;
+}
+interface NewAnon extends WhichAnon {
+  sameAnonId?: U;
+  newAnonStatus: AnonStatus.PerPage;
+}
+interface NotAnon extends WhichAnon {
+  sameAnonId?: U;
+  newAnonStatus: AnonStatus.NotAnon;
+}
+
+
+interface Guest extends GuestOrAnon {
   fullName: string;
   username?: undefined;
   email: string;
   isEmailUnknown?: boolean;
   isGuest: true;
+  isAnon?: false;
+}
+
+
+interface GuestOrAnon extends Pat {
   isAdmin?: false;
   isModerator?: false;
+  isAuthenticated?: false;
   avatarTinyHashPath?: undefined;
   avatarSmallHashPath?: undefined;
+  pubTags?: [];
 }
 
 
@@ -1469,6 +1522,7 @@ interface GroupStats {
 type ParticipantAnyDetails = MemberInclDetails | GuestDetailed;
 
 
+/// RENAME to MembVb?
 interface MemberInclDetails extends Member {
   avatarMediumHashPath?: string;
   // Only if requester is staff:
@@ -1490,6 +1544,7 @@ type UserInclDetails = PatVb; // old name, remove
 // ("Thin" and "Fat"? Maybe "PatFatStaff" isn't the best interface name
 // "PatVbStaff" better?)
 /// A Participant including verbose details, for the pat profile pages.
+// RENAME to UserVb? Isn't this alaways a user — not a group or guest.
 interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
@@ -1524,7 +1579,7 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   deletedAt?: number;
 }
 
-interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb?
+interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb? no UserVvb?
   // Mabye some old accounts lack stats?
   anyUserStats?: UserStats;
 }
@@ -2131,6 +2186,19 @@ interface AuthnDlgIf {
         callback?: () => Vo, preventClose?: Bo) => Vo;
   getDoAfter: () => [() => U | U, St | U];
   close: () => Vo;
+}
+
+
+/// A dropdown for choosing which anonym to use (e.g. if posting anonymous comments).
+/// DlgPs = dialog parameters, hmm.
+///
+interface ChooseAnonDlgPs {
+  atRect: Rect;
+  open?: Bo;
+  pat?: Pat;
+  me: Me,
+  curAnon?: WhichAnon;
+  saveFn: (_: WhichAnon) => Vo ;
 }
 
 
