@@ -700,6 +700,8 @@ server / bot.
 Custom headers.
 Sign.
 
+[per_pat_api_secrets]
+Optional per ordinary user API secrets, e.g. personal bot?
 
 [extensions] [themes]
 Needs new table: t_extensions

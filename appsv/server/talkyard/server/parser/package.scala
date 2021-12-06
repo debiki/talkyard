@@ -2,6 +2,9 @@ package talkyard.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude.dieIf
+import debiki.JsonUtils.parseOptJsObject
+import org.scalactic.{Bad, Good, Or}
+import play.api.libs.json.JsObject
 
 
 /** Parsers and serializers, e.g. from-to JSON or from PASETO token claims.
@@ -24,8 +27,8 @@ package object parser {
     override def getMessage: St = message
   }
 
-  // How to serialize things to JSON — different flags, for backw compat.
-  /**
+
+  /** How to serialize things to JSON — different flags, for backw compat.
     *
     * @param v0_1 — just "id" instead of "pageId" and "ppId".
     */
@@ -40,5 +43,30 @@ package object parser {
   object JsonConf {
     val v0_0: JsonConf = JsonConf(v0_0 = true)
     val v0_1: JsonConf = JsonConf(v0_1 = true)
+  }
+
+
+
+  def parseWhichAnonJson(jsOb: JsObject): Opt[WhichAnon] Or ErrMsg = {
+    import debiki.JsonUtils.parseOptInt32
+    val doAsJsOb = parseOptJsObject(jsOb, "doAsAnon") getOrElse {
+      return Good(None)
+    }
+    val sameAnonId = parseOptInt32(doAsJsOb, "sameAnonId")
+    val newAnonStatus = parseOptInt32(doAsJsOb, "newAnonStatus").flatMap(AnonStatus.fromInt)
+    if (sameAnonId.isDefined && newAnonStatus.isDefined) {
+      Bad("Both sameAnonId and newAnonStatus specified")
+    }
+    else Good {
+      if (sameAnonId.isDefined) {
+        Some(WhichAnon.SameAsBefore(sameAnonId.get))
+      }
+      else if (newAnonStatus.isDefined) {
+        Some(WhichAnon.NewAnon(newAnonStatus.get))
+      }
+      else {
+        None
+      }
+    }
   }
 }

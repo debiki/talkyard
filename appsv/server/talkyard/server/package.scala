@@ -121,7 +121,8 @@ package object server {
   case class RenderedPage(
     html: String,
     reactStoreJsonString: String,
-    unapprovedPostAuthorIds: Set[UserId])
+    unapprovedPostAuthorIds: Set[UserId],
+    anonsByRealId: Map[PatId, Seq[Anonym]])
 
 
   REMOVE // ?

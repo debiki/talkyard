@@ -159,6 +159,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def theMember: User = theUser match {
     case m: User => m
+    case _: Anonym => throwForbidden("TyE5YKJ36", "Not a user, but an anonym")
     case _: Guest => throwForbidden("EsE5YKJ37", "Not authenticated")
     case _: Group => throwForbidden("TyE5YKJ38", "Not a user, but a group")
     case UnknownParticipant => throwForbidden("TyE5YKJ39", "Unknown participant")
@@ -166,7 +167,6 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def anyRoleId: Option[UserId] = user.flatMap(_.anyMemberId)
   def theRoleId: UserId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
-
   def isGuest: Boolean = user.exists(_.isGuest)
   def isStaff: Boolean = user.exists(_.isStaff)
 

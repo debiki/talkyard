@@ -654,7 +654,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
   watchbar_markAsRead(store.me.watchbar, store.currentPageId);
 
   // Show the user's own unapproved posts, or all, for admins.
-  store_addUnapprovedPosts(store, myPageData);  // TyTE2E603SKD
+  store_addAnonsAndUnapprovedPosts(store, myPageData);  // TyTE2E603SKD
 
   if (_.isArray(store.topics)) {
     const currentPage: Page = store.currentPage;
@@ -707,7 +707,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
 };
 
 
-function store_addUnapprovedPosts(store: Store, myPageData: MyPageData) {
+function store_addAnonsAndUnapprovedPosts(store: Store, myPageData: MyPageData) {
   // Test:  modn-from-disc-page-approve-before  TyTE2E603RTJ
   _.each(myPageData.unapprovedPosts, (post: Post) => {
     updatePost(post, store.currentPageId);
@@ -715,6 +715,7 @@ function store_addUnapprovedPosts(store: Store, myPageData: MyPageData) {
   });
 
   store_patchPatsInPl(store, myPageData.unapprovedPostAuthors);
+  store_patchPatsInPl(store, myPageData.knownAnons);
 };
 
 
@@ -1843,7 +1844,7 @@ function showNewPage(ps: ShowNewPageParams) {
   // restr things? [merge_pub_restr]
 
   if (myData) {
-    store_addUnapprovedPosts(store, myData);  // TyTE2E603SKD
+    store_addAnonsAndUnapprovedPosts(store, myData);  // TyTE2E603SKD
   }
   if (ps.me) {
     addRestrictedCategories(ps.me.restrictedCategories, store.currentCategories);
