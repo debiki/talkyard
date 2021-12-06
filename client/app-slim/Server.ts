@@ -1850,7 +1850,8 @@ export function loadVoters(postId: PostId, voteType: PostVoteType,
 
 
 export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
-      deleteDraftNr: DraftNr, onOK: () => Vo, sendToWhichFrame?: MainWin) {
+      deleteDraftNr: DraftNr, doAsAnon: WhichAnon | U, onOK: () => Vo,
+      sendToWhichFrame?: MainWin) {
   postJson('/-/edit', {
     data: {
       pageId: editorsPageId ||
@@ -1859,6 +1860,8 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
       postNr: postNr,
       text: text,
       deleteDraftNr,
+      sameAnonId: undefined,
+      doAsAnon,
     },
     success: (editedPost) => {
       // This hides the editor and places back the orig post [6027TKWAPJ5]
@@ -1927,7 +1930,7 @@ export function unpinPage(success: () => void) {
 
 
 export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
-      anyPostType: number, deleteDraftNr: DraftNr | undefined,
+      anyPostType: number, deleteDraftNr: DraftNr | undefined, doAsAnon: WhichAnon | U,
       success: (storePatch: StorePatch) => void) {
   postJson('/-/reply', {
     data: {
@@ -1943,6 +1946,8 @@ export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string
       postType: anyPostType || PostType.Normal,
       text: text,
       deleteDraftNr,
+      sameAnonId: undefined,
+      doAsAnon,
     },
     success
   });

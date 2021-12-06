@@ -93,6 +93,7 @@ const AboutPatDialog = createComponent({
       ...newState,
     };
     this.setState(newState2);
+    // Needs [loadTheGuestOrAnon] server side.  ANON_UNIMPL
     this.loadPat(idOrUsername);
   },
 
@@ -168,6 +169,9 @@ const AboutPatDialog = createComponent({
 
       if (!user) {
         content = r.p({}, t.Loading);
+      }
+      else if (user.isAnon) {
+        content = AboutAnon({ anon: user as Anonym });
       }
       else if (isGuest(user)) {
         content = AboutGuest(childProps);
@@ -313,6 +317,22 @@ const AboutUser = createComponent({
   }
 });
 
+
+
+interface AboutAnonymProps {
+  anon: Anonym;
+}
+
+
+const AboutAnon = React.createFactory<AboutAnonymProps>(function(props) {
+  const anon: Anonym = props.anon;
+  return (
+    r.div({ className: 'clearfix' },
+      r.div({ className: 'dw-about-user-actions' },
+        LinkButton({ href: linkToUserProfilePage(anon) }, t.aud.ViewComments)),
+      r.p({},
+        t.Anonym)));
+});
 
 
 

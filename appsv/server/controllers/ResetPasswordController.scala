@@ -131,7 +131,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
           try dao.loadTheUserInclDetailsById(forUserId)
           catch {
             case _: GotAGroupException =>
-              throwForbidden("TyE50AMWG5", s"User $forUserId a group not a user")
+              throwForbidden("TyE50AMWG5", s"User $forUserId is a group not a user")
           }
 
     throwForbiddenIf(member.isAdmin && !requester.isAdmin,

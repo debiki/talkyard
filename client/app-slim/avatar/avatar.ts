@@ -69,6 +69,9 @@ export const Avatar = createComponent({
     else if (user.fullName) {
       firstLetterInName = user.fullName[0].toUpperCase();  // [7ED8A2M]
     }
+    else if (user.isAnon) {
+      firstLetterInName = '?';
+    }
     else {
       debiki2.die("Name missing: " + JSON.stringify(user) + " [EdE7UMYP3]");
     }
@@ -105,7 +108,7 @@ export const Avatar = createComponent({
       isGuestClass = ' esAvtr-sys';
     }
     else {
-      // Give all guest users the same boring gray color.
+      // Give all guests and anonyms the same boring gray color.
       isGuestClass = ' esAvtr-gst';
     }
 

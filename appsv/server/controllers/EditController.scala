@@ -21,9 +21,11 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.JsonUtils.asJsObject
 import talkyard.server.linkpreviews.{LinkPreviewRenderer, PreviewResult, LinkPreviewProblem}
 import talkyard.server.http._
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.parser
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
@@ -140,12 +142,15 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+    val anyOtherAuthor =
+          if (post.createdById == requester.id) None
+          else dao.getParticipant(post.createdById)
 
     CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
-      post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      post, otherAuthor = anyOtherAuthor, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
@@ -178,12 +183,16 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def edit: Action[JsValue] = PostJsonAction(RateLimits.EditPost,
         MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
-    import request.{dao, body}
+    import request.{dao, theRequester => requester}
+    val body = asJsObject(request.body, "request body")
     val pageId = (body \ "pageId").as[PageId]
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, in case moved to other page [idnotnr]
     val anyPostId: Option[PostId] = (body \ "postId").asOpt[PostId]
     val newText = (body \ "text").as[String]
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+    val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
+      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+    }
 
     if (postNr == PageParts.TitleNr)
       throwForbidden("DwE5KEWF4", "Edit the title via /-/edit-title-save-settings instead")
@@ -209,9 +218,13 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
+    val anyOtherAuthor =
+          if (post.createdById == requester.id) None
+          else dao.getParticipant(post.createdById)
+
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
-      post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      post, otherAuthor = anyOtherAuthor, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 
@@ -227,7 +240,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
       followLinks = postNr == PageParts.BodyNr && pageMeta.pageType.shallFollowLinks)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, deleteDraftNr = deleteDraftNr,
-      request.who, request.spamRelatedStuff, newTextAndHtml)
+          request.who, request.spamRelatedStuff, newTextAndHtml, doAsAnon)
 
     OkSafeJson(dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
       includeUnapproved = true))

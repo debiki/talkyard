@@ -433,7 +433,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
   def loadGroupIdsMemberIdFirst(ppt: Participant): Vector[UserId] = {
     val builtInGroups = ppt match {
-      case _: Guest | UnknownParticipant => return Vector(Group.EveryoneId)
+      case _: Guest | _: Anonym | UnknownParticipant => return Vector(Group.EveryoneId)
       case u: User => getBuiltInGroupIdsForUser(u)
       case u: UserInclDetails => getBuiltInGroupIdsForUser(u)
       case _: UserBase => die("TyE26MP431", "Should see User or UserInclDetails before UserBase")
@@ -587,6 +587,25 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
+  def insertAnonym(anon: Anonym) {
+    val stmt = s"""
+          insert into users3(
+            site_id,
+            user_id,
+            created_at,
+            true_id_c,
+            anonym_status_c,
+            anon_on_page_id_st_c)
+          values (?, ?, ?, ?, ?, ?)
+          """
+    val values = List(
+          siteId.asAnyRef, anon.id.asAnyRef,
+          anon.createdAt.asTimestamp, anon.anonForPatId.asAnyRef,
+          anon.anonStatus.toInt.asAnyRef, anon.anonOnPageId)
+    runUpdateSingleRow(stmt, values)
+  }
+
+
   def insertMember(user: UserInclDetails) {
     try {
       runUpdate("""
@@ -680,6 +699,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       """
     runQueryFindOneOrNone(query, values.toList, rs => {
       val user = getParticipant(rs)
+      // Use  pat.toMemberOrThrow instead of these dieIf?
+      dieIf(user.isAnon, "TyE2AKB7F2")
       dieIf(user.isGuest, "TyE2AKB7F3")
       user.asInstanceOf[Member]
     })
@@ -1062,7 +1083,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
       val user = getMemberInclDetails(rs) match {
         case m: UserInclDetails => m
-        case g: Group => throw GotAGroupException(g.id)
+        case g: Group => throw GotAGroupException(g.id, wantedWhat = "a user")
       }
 
       (user, anyStats)

@@ -420,6 +420,10 @@ declare namespace debiki2 {
   function store_canDeletePage(store: Store): boolean;
   function store_canUndeletePage(store: Store): boolean;
   function store_canPinPage(store: Store): boolean;
+
+  function disc_findCurPageAnons(discStore: DiscStore, ps: {
+      forPatId?: PatId, startAtPostNr?: PostNr }): KnownAnonym[];
+
   function siteStatusToString(siteStatus: SiteStatus);
   var cloneRect;
   var cloneEventTargetRect;
