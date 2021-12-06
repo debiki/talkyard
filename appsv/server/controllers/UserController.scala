@@ -175,10 +175,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           (json, memberOrGroup)
         }
         else {
-          val guest = tx.loadTheGuest(userId)
-          val json = jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
-            callerIsAdmin = callerIsAdmin)
-          (json, guest)
+          val pat = tx.loadTheParticipant(userId)
+          val json = pat match {
+            case anon: Anonym => JsPat(anon, TagsAndBadges.None)
+            case guest: Guest => jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
+                callerIsAdmin = callerIsAdmin)
+          }
+          (json, pat.asInstanceOf[ParticipantInclDetails])
         }
       dieIf(pat.id != userId, "TyE36WKDJ03")
       (pptJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), pat.noDetails)
@@ -1026,8 +1029,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val res: MeAndStuff =
       if (pageRequest.user.isDefined) {
         val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
-        dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
-          "EdE4ZBXKG")
+        dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds,
+              renderedPage.anonsByRealId).getOrDie("EdE4ZBXKG")
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()
@@ -1088,6 +1091,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     import request.{siteId, dao, theRequester => requester}
     import talkyard.server.{WhenFormat, OptWhenFormat}
 
+    throwForbiddenIf(requester.isAnon, "TyE8LUHE1", "Not tracking anonyms' reading progress")
     throwForbiddenIf(requester.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
     throwForbiddenIf(requester.isGroup, "EdE5QFVB5", "Not tracking groups' reading progress")
 

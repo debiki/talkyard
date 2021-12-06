@@ -43,7 +43,11 @@ case class ActionParser(dao: SiteDao) {
     // For now
     if (pat.isBuiltIn)
       return Bad(o"""Currently built-in users cannot do things via
-            the API. Set asWho to a human's user account instead [TyEAPIUSRGST]""")
+            the API. Set asWho to a human's user account instead [TyEAPIUSRBLTIN]""")
+
+    if (pat.isAnon)
+      return Bad(o"""Anonyms don't call the API — instead, the real user does,
+            and specifies that the actions should be done anonymously. [TyEAPIUSRANON]""")
 
     // Guests may not do lots of things.
     if (pat.isGuest) {
@@ -52,7 +56,8 @@ case class ActionParser(dao: SiteDao) {
         // case ActionType.SetVote =>
         //   // Fine, guests may Like vote.
         case _ =>
-          return Bad(s"Participant $asWhoSt is a guest and therefore may not: $doWhatSt")
+          return Bad(s"Participant $asWhoSt is a guest and therefore may not: ${
+                doWhatSt} [TyEAPIUSRGGST]")
       }
     }
 

@@ -77,6 +77,10 @@ class SiteTxLoadParticipantsAppSpec extends DaoAppSuite {
       userBDetails = dao.loadTheUserInclDetailsById(userB.id)
       guest = dao.loginAsGuest(GuestLoginAttempt(ip = "2.2.2.2", globals.now().toJavaDate,
         name = "Guestellina", guestBrowserId = "guestellinacookie"))
+      TESTS_MISSING // Create an anonym too? And load, below.
+      // Already done here: debiki/dao/AnonymAppSpec.scala  but makes sense
+      // in this spec too. And that other spec, AnonymAppSpec, could do more anon
+      // specific things (whilst this spec, just creates & loads).
     }
 
 

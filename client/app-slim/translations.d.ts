@@ -26,6 +26,7 @@ interface TalkyardTranslations {
   AddComment?: string;
   Admin: string;
   AdvSearch: string;
+  Anonym?: string;
   Away: string;
   Back: string;
   BlogN: string;

@@ -699,7 +699,8 @@ But rename useParams to useUrlParams !?
 [bot_api]  [plugin]
 Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange external
 server / bot.
-
+[per_pat_api_secrets]
+Optional per ordinary user API secrets, e.g. personal bot?
 
 [extensions] [themes]
 Needs new table: t_extensions

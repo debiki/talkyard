@@ -346,8 +346,14 @@ class PlainApiActions(
 
       throwForbiddenIf(user.id == SystemUserId,
         "TyEAPISYSUSR_", s"Call the API as Sysbot (id 2), not System (id 1)")
+
+      // It's ok to show the user's name — the requester has an API secret. More likely,
+      // it's a software bug in the requester's code.
+      // (However, if per pat API secrets, then, maybe don't show the name here.
+      // [per_pat_api_secrets])
       throwForbiddenIf(user.id < Group.EveryoneId && user.id != SysbotUserId,
-        "TyEAPIBADUSR_", s"Not allowed to call the API as user ${user.usernameOrGuestName}")
+        "TyEAPIBADUSR_", s"Not allowed to call the API as user ${user.usernameOrGuestName
+              } of type ${user.accountType}")
 
       // See: [non_adm_api_usr] for code that does slightly different things
       // if isn't sysbot.
@@ -492,6 +498,12 @@ class PlainApiActions(
           anyTySession: Opt[TySession], sidStatus: SidStatus,
           xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result])
           : Future[Result] = {
+
+      if (anyUserMaybeSuspended.exists(_.isAnon)) {
+        // Client side bug?
+        return Future.successful(
+              ForbiddenResult("TyEUSRANON", "Anonyms cannot call the server themselves"))
+      }
 
       // Maybe the user was logged in in two different browsers, and deleted hens account
       // in one browser and got logged out, when this request was going on already?
@@ -663,6 +675,9 @@ class PlainApiActions(
         if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved)
           goToHomepageOrIfApiReqThen(throwForbidden(
                 "TyE0APPRVD2", "Your user account has not yet been approved"))
+
+        // Already rejected at the start of this fn..
+        dieIf(anyUser.exists(_.isAnon), "TyE4J3MRG5")
 
         if (anyUser.exists(_.isGuest) && !siteSettings.isGuestLoginAllowed) {
           throwForbiddenIf(isApiReq,

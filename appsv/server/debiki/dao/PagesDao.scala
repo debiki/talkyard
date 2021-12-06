@@ -66,16 +66,20 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
+        doAsAnon: Opt[WhichAnon.NewAnon] = None, // make non-optional?
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
-        extId: Option[ExtId] = None): PagePathWithId = {
+        extId: Option[ExtId] = None,
+        ): PagePathWithId = {
 
     createPage2(pageRole, pageStatus = pageStatus, anyCategoryId = anyCategoryId,
           anyFolder = anyFolder, anySlug = anySlug, title = title,
           bodyTextAndHtml = bodyTextAndHtml, showId = showId,
           deleteDraftNr = deleteDraftNr, byWho = byWho,
           spamRelReqStuff = spamRelReqStuff,
+          doAsAnon = doAsAnon,
           discussionIds = discussionIds, embeddingUrl = embeddingUrl,
-          extId = extId).path
+          extId = extId,
+          ).path
   }
 
 
@@ -83,8 +87,10 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
+        doAsAnon: Opt[WhichAnon.NewAnon] = None, // make non-optional?
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
-        extId: Option[ExtId] = None): CreatePageResult = {
+        extId: Option[ExtId] = None,
+        ): CreatePageResult = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.
@@ -127,6 +133,7 @@ trait PagesDao {
                 pinWhere = None,
                 byWho,
                 Some(spamRelReqStuff),
+                doAsAnon,
                 discussionIds = discussionIds,
                 embeddingUrl = embeddingUrl,
                 extId = extId)(tx, staleStuff)
@@ -144,6 +151,8 @@ trait PagesDao {
 
 
   /** Returns (PagePath, body-post, any-review-task)
+    *
+    * @param doAsAnon — must be a new anonym, since anons are per page, and this page is new.
     */
   def createPageImpl(pageRole: PageType,
       pageStatus: PageStatus,
@@ -157,6 +166,7 @@ trait PagesDao {
       pinWhere: Option[PinPageWhere] = None,
       byWho: Who,
       spamRelReqStuff: Option[SpamRelReqStuff],
+      doAsAnon: Opt[WhichAnon.NewAnon] = None,
       hidePageBody: Boolean = false,
       layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
@@ -172,19 +182,19 @@ trait PagesDao {
         (PagePathWithId, Post, Option[ReviewTask]) = {
 
     val now = globals.now()
-    val authorId = byWho.id
-    val authorAndLevels = loadUserAndLevels(byWho, tx)
-    val author = authorAndLevels.user
+    val realAuthorId = byWho.id
+    val realAuthorAndLevels = loadUserAndLevels(byWho, tx)
+    val realAuthor = realAuthorAndLevels.user
 
     val site = tx.loadSite() getOrDie "TyE8MWNP247"
     val categoryPath = tx.loadCategoryPathRootLast(anyCategoryId, inclSelfFirst = true)
-    val groupIds = tx.loadGroupIdsMemberIdFirst(author)
+    val groupIds = tx.loadGroupIdsMemberIdFirst(realAuthor)
     val permissions = tx.loadPermsOnPages()
     //val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)  ?  [5FLK02]
     val settings = loadWholeSiteSettings(tx)
 
     dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
-      authorAndLevels, groupIds,
+      realAuthorAndLevels, groupIds,
       pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoryPath,
       permissions), "EdE5JGK2W4")
@@ -204,12 +214,12 @@ trait PagesDao {
     val (
       reviewReasons: Seq[ReviewReason],
       shallApprove: Boolean) =
-        throwOrFindReviewNewPageReasons(authorAndLevels, pageRole, tx)
+        throwOrFindReviewNewPageReasons(realAuthorAndLevels, pageRole, tx)
 
     val approvedById =
-      if (author.isStaff) {
+      if (realAuthor.isStaff) {
         dieIf(!shallApprove, "EsE2UPU70")
-        Some(author.id)
+        Some(realAuthor.id)
       }
       else if (shallApprove) Some(SystemUserId)
       else None
@@ -251,6 +261,26 @@ trait PagesDao {
 
     val titleUniqueId = tx.nextPostId()
     val bodyUniqueId = titleUniqueId + 1
+
+    val (authorId, author) =
+          if (doAsAnon.forall(!_.anonStatus.isAnon)) {
+            (realAuthorId, realAuthor)
+          }
+          else {
+            // Dupl code. [mk_new_anon]
+            val anonymId = tx.nextGuestId
+            val anonym = Anonym(
+                  id = anonymId,
+                  createdAt = tx.now,
+                  anonStatus = doAsAnon.getOrDie("TyE7MF26F").anonStatus,
+                  anonForPatId = realAuthorId,
+                  anonOnPageId = pageId)
+            // We'll insert the anonym before the page exists, but there's a
+            // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
+            tx.deferConstraints()
+            tx.insertAnonym(anonym)
+            (anonymId, anonym)
+          }
 
     val titlePost = Post.createTitle(
       uniqueId = titleUniqueId,
@@ -309,6 +339,9 @@ trait PagesDao {
         createdById = SystemUserId,
         createdAt = now.toJavaDate,
         createdAtRevNr = Some(bodyPost.currentRevisionNr),
+        // Show the anonym, not the real user — so staff won't accidentally learn
+        // who the anonyms are. Only if a post is really problematic, can the staff
+        // choose to have a look and consider suspending the real post author.
         maybeBadUserId = authorId,
         pageId = Some(pageId),
         postId = Some(bodyPost.id),
@@ -316,7 +349,7 @@ trait PagesDao {
 
     val anySpamCheckTask =
       if (spamRelReqStuff.isEmpty || !globals.spamChecker.spamChecksEnabled) None
-      else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
+      else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None
       else {
         // The uri is now sth like /-/create-page. Change to the path to the page
         // we're creating.
@@ -334,7 +367,7 @@ trait PagesDao {
               pageAvailableAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
               htmlToSpamCheck = body.safeHtml,
               language = settings.languageCode)),
-            who = byWho,
+            who = byWho.copy(id = authorId, isAnon = author.isAnon),
             requestStuff = spamStuffPageUri))
       }
 
@@ -354,9 +387,11 @@ trait PagesDao {
 
     // By default, one follows all activity on a page one has created — unless this is some page
     // that gets auto created by System. [EXCLSYS]
-    if (author.id >= Participant.LowestNormalMemberId) {
+    // Notfs need to get sent to the real author (not the anonym — it's just an
+    // "indirectin" account).
+    if (realAuthor.id >= Participant.LowestNormalMemberId) {
       tx.upsertPageNotfPref(
-          PageNotfPref(authorId, NotfLevel.WatchingAll, pageId = Some(pageId)))
+          PageNotfPref(realAuthorId, NotfLevel.WatchingAll, pageId = Some(pageId)))
     }
 
     if (approvedById.isDefined) {

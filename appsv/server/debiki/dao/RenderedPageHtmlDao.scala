@@ -85,7 +85,9 @@ trait RenderedPageHtmlDao {
       // and the html content.
       val pageHtml: St = views.html.templates.page(tpi).body
 
-      RenderedPage(pageHtml, jsonResult.reactStoreJsonString, jsonResult.unapprovedPostAuthorIds)
+
+      RenderedPage(pageHtml, jsonResult.reactStoreJsonString, jsonResult.unapprovedPostAuthorIds,
+            jsonResult.anonsByRealId)
     }
   }
 

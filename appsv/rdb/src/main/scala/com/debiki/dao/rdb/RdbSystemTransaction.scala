@@ -224,17 +224,17 @@ class RdbSystemTransaction(
     if (idCount == 0)
       return Map.empty
 
-    var usersByTenantAndId = Map[(SiteId, UserId), Participant]()
+    var patsBySiteAndId = Map[(SiteId, PatId), Pat]()
 
     runQuery(totalQuery.toString, allValsReversed.reverse, rs => {
       while (rs.next) {
         val siteId = rs.getInt("SITE_ID")
-        val user = getParticipant(rs)
-        usersByTenantAndId = usersByTenantAndId + ((siteId, user.id) -> user)
+        val pat = getParticipant(rs)
+        patsBySiteAndId = patsBySiteAndId + ((siteId, pat.id) -> pat)
       }
     })
 
-    usersByTenantAndId
+    patsBySiteAndId
   }
 
 
@@ -1058,7 +1058,8 @@ class RdbSystemTransaction(
       delete from upload_refs3
       delete from uploads3
       delete from page_users3
-      delete from page_notf_prefs3
+      delete from page_notf_prefs_t
+      delete from cont_prefs_t
       delete from tag_notf_levels3
       delete from post_tags3
       delete from post_actions3

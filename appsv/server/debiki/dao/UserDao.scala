@@ -858,8 +858,8 @@ trait UserDao {
     require(userId >= Participant.LowestMemberId, "EsE4GKX24")
     getParticipant(userId).map(_ match {
       case user: User => user
-      case _: Group => throw GotAGroupException(userId)
-      case _: Guest => die("TyE2AKBP067")
+      case _: Group => throw GotAGroupException(userId, wantedWhat = "a user")
+      case _ => die("TyE2AKBP067")
     })
   }
 
@@ -958,6 +958,7 @@ trait UserDao {
   }
 
 
+  RENAME // to getPatBySessionId
   /**
     * Loads a user from the database.
     * Verifies that the loaded id match the id encoded in the session identifier,
@@ -1132,8 +1133,10 @@ trait UserDao {
         // [ck_grp_ckl]
         throwForbidden("TyEGRINGR", s"Cannot add groups to groups. Is a group: ${group.nameParaId}")
       }
-      newMembers.find(_.isGuest) foreach { guest =>
-        throwForbidden("TyEGSTINGR", s"Cannot add guests to groups. Is a guest: ${guest.nameParaId}")
+
+      newMembers.find(_.isGuestOrAnon) foreach { guest =>
+        throwForbidden("TyEGSTINGR", s"Cannot add guests or anons to groups; this pat: ${
+              guest.nameParaId} is a ${guest.accountType}.")
       }
 
       val maxLimits = getMaxLimits(UseTx(tx))
@@ -1209,7 +1212,7 @@ trait UserDao {
 
   def getOnesGroupIds(ppt: Participant): Vector[UserId] = {
     ppt match {
-      case _: Guest | UnknownParticipant => Vector(Group.EveryoneId)
+      case _: Guest | _: Anonym | UnknownParticipant => Vector(Group.EveryoneId)
       case _: User | _: Group =>
         memCache.lookup[Vector[UserId]](
           onesGroupIdsKey(ppt.id),

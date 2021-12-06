@@ -278,10 +278,34 @@ export function UserName(props: {
 
   const guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
 
-  let namePartOne;
-  let namePartTwo;
+  let namePartOne: St | RElm | U;
+  let namePartTwo: St | RElm | U;
 
-  if (showHow === ShowAuthorHow.UsernameOnly) {
+  if (user.isAnon) {
+    // There's already "By" before, and "anonym" isn't a name, so use lowercase.
+    namePartOne = r.span({className: 'esP_By_F esP_By_F-G' }, t.Anonym);
+    if (props.store && user.anonForId) {  // maybe always take a DiscStore as fn props?
+      const store = props.store;
+      if (store.me.id === user.anonForId) {  // [is_own_post_fn]
+        // For now: ...
+        namePartTwo = rFr({}, " ", r.span({ className: 'c_P_By_AnonYou' }, "you"));  // I18N
+      }
+      else {
+        // ... Later: show "you" if it's oneself. But otherwise, set `user = the-real-user`
+        // and generate namePartOne & namePartTwo as usual, as if wasn't anon?
+        // And prefix with "anonym, namely: ..." and let "anonym" link to
+        // the anonym's profile page. — This is only for admins, who can, if they want,
+        // see who the anonyms are — can be needed to stop bad behavior.
+        const anyRealAuthor = store.usersByIdBrief[user.anonForId];
+        if (anyRealAuthor) {
+          // ...
+          // user = anyRealAuthor?  + do the if{} below as usual (remove the 'else') ?
+          // ...
+        }
+      }
+    }
+  }
+  else if (showHow === ShowAuthorHow.UsernameOnly) {
     // CLEAN_UP rename these CSS classes from ...By_F to By_1 and By_2 for part 1 (bold font)
     // and 2 (normal font) instead?
     // But for now, use By_F for the *username* just because it's bold, and By_U for the full name,

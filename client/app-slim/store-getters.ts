@@ -34,9 +34,19 @@
 export function store_thisIsMyPage(store: Store): boolean {
   const page: Page = store.currentPage;
   if (!page || !store.me.id) return false;
+  const me: Me = store.me;
   const bodyOrTitle = page.postsByNr[BodyNr] || page.postsByNr[TitleNr];
-  // If !bodyOrTitle, is an auto page, e.g. user profile or admin area.
-  return bodyOrTitle && store.me.id === bodyOrTitle.authorId;
+
+  // If !bodyOrTitle, we're on an auto page, e.g. a user profile page, or in the admin area.
+  if (!bodyOrTitle)
+    return false;
+
+  if (me.id === bodyOrTitle.authorId)
+    return true;
+
+  // Maybe it's me, but posted anonymously?
+  const authorMaybeAnon = store.usersByIdBrief[bodyOrTitle.authorId];
+  return authorMaybeAnon && authorMaybeAnon.anonForId === me.id;  // [is_own_post_fn]
 }
 
 
