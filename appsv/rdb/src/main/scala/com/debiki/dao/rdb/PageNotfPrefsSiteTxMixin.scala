@@ -29,7 +29,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * Tested here:  TyT8MKRD25
   */
-trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
+trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPrefs...
   self: RdbSiteTransaction =>
 
 
@@ -62,9 +62,9 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
     val (thingColumnName, _) = thingColumnNameValue(notfPref)
 
     val insertStatement = s"""
-      insert into page_notf_prefs3 (
+      insert into disc_notf_prefs_t (
         site_id,
-        people_id,
+        pat_id_c,
         notf_level,
         page_id,
         pages_pat_created,
@@ -74,7 +74,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
         -- pages_with_tag_label_id,
       values (?, ?, ?, ?, ?, ?, ?, ?)
       -- There can be only one on-conflict clause.
-      on conflict (site_id, $thingColumnName, people_id)
+      on conflict (site_id, $thingColumnName, pat_id_c)
       do update set
         notf_level = excluded.notf_level
       """
@@ -97,9 +97,9 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
   override def deletePageNotfPref(notfPref: PageNotfPref): Boolean = {
     val (thingColumnName, thingColumnValue) = thingColumnNameValue(notfPref)
     val deleteStatement = s"""
-      delete from page_notf_prefs3
+      delete from disc_notf_prefs_t
       where site_id = ?
-        and people_id = ?
+        and pat_id_c = ?
         and $thingColumnName = ?
       """
     val values = List(siteId.asAnyRef, notfPref.peopleId.asAnyRef, thingColumnValue)
@@ -111,9 +111,9 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
         : PageNotfLevels = {
     def selectNotfLevelWhere(what: Int) = s"""
       select notf_level, $what as what
-      from page_notf_prefs3
+      from disc_notf_prefs_t
       where site_id = ?
-        and people_id = ?"""
+        and pat_id_c = ?"""
 
     val query = s"""
       ${selectNotfLevelWhere(111)} and page_id = ?
@@ -172,7 +172,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
         s"and $thingColumnName = ?"
       }
     val query = s"""
-      select * from page_notf_prefs3
+      select * from disc_notf_prefs_t
       where site_id = ? $andThingEq
       """
     runQueryFindMany(query, values.toList, readNotfPref)
@@ -213,9 +213,9 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
         "and page_id = ?"
     }
     val query = s"""
-      select * from page_notf_prefs3
+      select * from disc_notf_prefs_t
       where site_id = ?
-        and people_id in (${makeInListFor(memberIds)})
+        and pat_id_c in (${makeInListFor(memberIds)})
         $andPageIdClause
       """
     runQueryFindMany(query, values.toList, readNotfPref)
@@ -224,7 +224,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
 
   private def readNotfPref(rs: js.ResultSet): PageNotfPref = {
     PageNotfPref(
-          peopleId = getInt(rs, "people_id"),
+          peopleId = getInt(rs, "pat_id_c"),
           notfLevel = NotfLevel.fromInt(getInt(rs, "notf_level")).getOrElse(NotfLevel.Normal),
           pageId = getOptString(rs, "page_id"),
           pagesPatCreated = getOptBool(rs, "pages_pat_created").getOrElse(false),

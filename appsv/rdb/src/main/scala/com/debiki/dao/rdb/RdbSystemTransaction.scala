@@ -1058,7 +1058,7 @@ class RdbSystemTransaction(
       delete from upload_refs3
       delete from uploads3
       delete from page_users3
-      delete from page_notf_prefs3
+      delete from disc_notf_prefs_t
       delete from tag_notf_levels3
       delete from post_tags3
       delete from post_actions3

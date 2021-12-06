@@ -581,7 +581,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
             IS_APPROVED, APPROVED_AT, APPROVED_BY_ID,
             IS_OWNER, IS_ADMIN, IS_MODERATOR,
             about, website, country,
-            see_activity_min_trust_level,
+            see_activity_min_tr_lv_c,
             trust_level, locked_trust_level, threat_level, locked_threat_level,
             deactivated_at, deleted_at)
         values (
@@ -999,7 +999,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         country = ?,
         website = ?,
         about = ?,
-        see_activity_min_trust_level = ?,
+        see_activity_min_tr_lv_c = ?,
         avatar_tiny_base_url = ?,
         avatar_tiny_hash_path = ?,
         avatar_small_base_url = ?,
