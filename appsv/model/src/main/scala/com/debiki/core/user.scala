@@ -306,7 +306,8 @@ case object Participant {
   val SuperAdminId = 3  // no, 4? or 49?  see below
 
   /** Maintenance tasks by bot(s) that supervise all sites. */
-  // val SuperbotId = 4  ?
+  // val SuperStaffId = 4  ?
+  // val SuperBotId = 5  ?
 
   // ? rename SuperX to Global Read/Action X,
   // Hmm these would be useful, for site staff to View As ...
@@ -322,13 +323,18 @@ case object Participant {
   // val SuperPupbMod = 6 ?
 
   // ?? If a member chooses to post anonymously:
+  //     — no, using anonym_id_c  and anonym_ids_t instead?  And optional pen names
   // val AnonymousUserId = 7
+
+  // UnknownUserId = 6
+  // UnknownStaffId = 7
 
   // The real ids of deactivated and deleted users, could be replaced with these ids, when rendering
   // pages, so others won't find the real ids of the deactivated/deleted accounts.
   // val DeactivatedUserId = 8
   // val DeletedUserId = 9
-  // or just: DeactivatedOrDeletedUserId = 9 ?
+  // or just: DeactivatedOrDeletedUserId = 9 ?  or just: DeactivatedUserId incl deleted users?
+
 
   // Can talk with, and can listen to notifications. But 1..9 = special. And -X = guests.
   val LowestNormalMemberId: Int = Group.EveryoneId  // [S7KPWG42]

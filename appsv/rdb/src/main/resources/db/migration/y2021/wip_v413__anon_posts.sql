@@ -12,8 +12,16 @@
 
 create domain site_id_d i32_d;
 alter  domain site_id_d add
-   constraint site_id_d_not_0 check (value <> 0);
+   constraint site_id_d_c_not_0 check (value <> 0);
 
+create domain pat_id_d i32_d;
+alter  domain pat_id_d add
+   constraint pat_id_d_c_not_0 check (value <> 0);
+-- Higher values are reserved.
+alter  domain pat_id_d add
+   constraint pat_id_d_c_lt_2e9 check (value < 2000000000);
+alter  domain pat_id_d add
+   constraint pat_id_d_c_gt_min2e9 check (value > -2000000000);
 
 create domain page_id_st_d text_nonempty_ste60_d;
 alter  domain page_id_st_d add
@@ -57,6 +65,12 @@ alter  domain pat_type_user_group_d add
 
 alter table users3 rename column see_activity_min_trust_level to see_activity_min_tr_lv_c;
 alter table users3 add column see_profile_min_tr_lv_c  trust_level_or_staff_d;
+
+-- But by looking at last visit date-time, reading time, and comparing with
+-- anonymous posts, it could be possible to, in a small forum, knwo who posted an
+-- anonymous post.  So, sometimes the stats should be hidden
+alter table users3 add column see_stats_min_tr_lv_c    trust_level_or_staff_d;
+      -- or, but a bit long:  see_stats_and_dates_min_tr_lv_c
 
 
 alter table users3 add column pat_type_c pat_type_d not null default 9;  -- user
@@ -181,6 +195,19 @@ create index anonymids_i_patid_pattype on anonym_ids_t (site_id_c, pat_id_c, pat
 
 
 
+alter table posts3 add column author_id_c   pat_id_d;
+alter table posts3 add column owner_id_c    pat_id_d;  -- coudl do via perms_on_pages3 but more complicated, and original owner would get to keep hens perms.
+
+create index posts_i_authorid on posts3 (site_id, author_id_c) where author_id_c is not null;
+create index posts_i_ownerid  on posts3 (site_id, owner_id_c)  where owner_id_c  is not null;
+
+alter table posts3 add constraint posts_authorid_r_pats
+    foreign key (site_id, author_id_c)
+    references users3 (site_id, user_id) deferrable;
+alter table posts3 add constraint posts_ownerid_r_pats
+    foreign key (site_id, owner_id_c)
+    references users3 (site_id, user_id) deferrable;
+
 alter table posts3 add column anonym_id_c   anonym_id_d;
 alter table posts3 add column anon_level_c  anon_level_d;
 
@@ -190,4 +217,55 @@ create index posts3_i_anonymid on posts3 (site_id, anonym_id_c);
 alter table posts3 add constraint posts_anonymid_r_anonymids
     foreign key (site_id, anonym_id_c)
     references anonym_ids_t (site_id_c, anonym_id_c) deferrable;
+
+
+
+
+alter table post_revisions3 add column author_id_c   pat_id_d;
+alter table post_revisions3 add column owner_id_c    pat_id_d;
+
+create index postrevisions_i_authorid on post_revisions3 (site_id, author_id_c) where author_id_c is not null;
+create index postrevisions_i_ownerid  on post_revisions3 (site_id, owner_id_c)  where owner_id_c  is not null;
+
+alter table post_revisions3 add constraint postrevisions_authorid_r_pats
+    foreign key (site_id, author_id_c)
+    references users3 (site_id, user_id) deferrable;
+alter table post_revisions3 add constraint postrevisions_ownerid_r_pats
+    foreign key (site_id, owner_id_c)
+    references users3 (site_id, user_id) deferrable;
+
+alter table post_revisions3 add column anonym_id_c   anonym_id_d;
+alter table post_revisions3 add column anon_level_c  anon_level_d;
+
+create index post_revisions3_i_anonymid on post_revisions3 (site_id, anonym_id_c);
+
+-- ix:  post_revisions3_i_anonymid  and  anonymids_p_anonymid
+alter table post_revisions3 add constraint postrevisions_anonymid_r_anonymids
+    foreign key (site_id, anonym_id_c)
+    references anonym_ids_t (site_id_c, anonym_id_c) deferrable;
+
+
+
+page_users3 has:             joined_by_id
+            would also need: joined_as_id  (or joined_as_pseudonym_id or show_penname_id_c?)
+
+group_participants3 has:
+  participant_id
+would also need:
+  pat_penname_id  or  show_penname_id_c ?
+
+pages3 has:        author_id,
+      would need:  owner_id   ?  by default the OP author
+
+
+Maybe new category permission: Change post author,  Change post owner ?
+
+
+post_actions3 has:  created_by_id_c
+      also needs:   show_penname_id_c
+                    anonym_id_c
+                    anon_level_c  ? so knows if ok to make less anonymous
+
+
+upload_refs3.added_by_id  ? hmm ?  maybe leave as is.
 
