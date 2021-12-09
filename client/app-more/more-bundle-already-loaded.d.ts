@@ -78,6 +78,13 @@ declare namespace debiki2.pagedialogs {
   function getProgressBarDialog();
 }
 
+declare namespace debiki2.anon {
+  function openAnonDropdown(ps: any); //AnonLevelState);
+  function anonLevel_titleShort(level: AnonLevel): St;
+  function anonLevel_title(level: AnonLevel): St;
+  function anonLevel_descr(level: AnonLevel): St;
+}
+
 declare namespace debiki2.subcommunities {
   function joinOrCreateSubCommunity(store: Store);
 }

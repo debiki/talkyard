@@ -119,6 +119,8 @@ interface EditorState {
   visible: boolean;
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
+  anonLevel?: AnonLevel;
+  authorId?: PatId;
   editorsCategories?: Category[];
   editorsPageId?: PageId;
   editingPostNr?: PostNr;
@@ -2456,6 +2458,19 @@ export const Editor = createFactory<any, EditorState>({
           ':');
     }
 
+    let maybeAnonymously: RElm | U;
+    {
+      maybeAnonymously =
+          Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
+            const atRect = reactGetRefRect(this.refs.anonB);
+            anon.openAnonDropdown({ atRect, open: true, curLevel: state.anonLevel,
+                saveFn: (anonLevel) => {
+                  const newState: Partial<EditorState> = { anonLevel };
+                  this.setState(newState);
+                } });
+          } },
+          anon.anonLevel_titleShort(state.anonLevel), ' ', r.span({ className: 'caret' }));
+    }
 
     // ----- Save button
 
@@ -2699,6 +2714,7 @@ export const Editor = createFactory<any, EditorState>({
                 r.div({ className: 's_E_DoingRow' },
                   state.placeLeft ? topbar.OpenWatchbarButton() : null,
                   r.span({ className: 's_E_DoingWhat' }, doingWhatInfo),
+                  maybeAnonymously,
                   showGuidelinesBtn,
                   scrollToPreviewBtn,
                   draftStatusText),

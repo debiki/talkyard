@@ -263,6 +263,12 @@ const enum PostVoteType {
 }
 
 
+const enum AnonLevel {
+  NotAnon = 10,
+  PerPage = 50,
+}
+
+
 const enum PageNotfLevel {
   EveryPostAllEdits = 9,
   EveryPost = 8,
