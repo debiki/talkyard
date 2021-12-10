@@ -93,6 +93,9 @@ CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-s
   # when running scrypt the first time, waiting for "enough entropy".
   -Djava.security.egd=file:/dev/./urandom \
   #
+  # log4j2 problem, disable this:
+  -Dlog4j2.formatMsgNoLookups=true \
+  #
   -Dlogger.file=/opt/talkyard/app/conf/logback-prod.xml \
   -Dconfig.file=${CONFIG_FILE}
 
