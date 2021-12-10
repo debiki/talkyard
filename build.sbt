@@ -75,8 +75,7 @@ val appDependencies = Seq(
   // Search engine, in https://mvnrepository.com.
   "org.elasticsearch" % "elasticsearch" % "6.2.4",          // newest 6.2 as of 18-07-17, there's 6.3.
   "org.elasticsearch.client" % "transport" % "6.2.4",       // newest 6.2 as of 18-07-17, there's 6.3.
-  // ElasticSearch needs log4j
-  "log4j" % "log4j" % "1.2.17",
+
   Dependencies.Libs.apacheCommonsEmail,
   Dependencies.Libs.guava,
   Dependencies.Libs.jsoup,
@@ -124,6 +123,11 @@ def mainSettings = List(
   name := appName,
   version := appVersion,
   libraryDependencies ++= appDependencies,
+
+  // Pin to >= 2.15.
+  dependencyOverrides ++= Seq(
+        "org.apache.logging.log4j" % "log4j-api" % "2.15.0",
+        "org.apache.logging.log4j" % "log4j-core" % "2.15.0"),
 
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
