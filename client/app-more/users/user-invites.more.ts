@@ -253,7 +253,7 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
     };
 
     Server.sendInvites(requestBody, (sendInvitesResponse: SendInvitesResponse) => {
-      dieIf(sendInvitesResponse.willSendLater, 'TyE2ABKR03', "Unimpl");
+      dieIf(sendInvitesResponse.willSendLater, 'Unimpl [TyE2ABKR03]');
       const invitesSent: Invite[] = sendInvitesResponse.invitesSent;
       this.state.addInvites(invitesSent);
 
