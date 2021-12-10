@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import server from '../utils/server';
 import * as ut from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 import { IsWhere } from '../test-types';
 

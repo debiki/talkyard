@@ -273,7 +273,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listTopics(categoryId: Int): Action[Unit] = GetAction { request =>
+  def listTopics(categoryId: CatId): Action[U] = GetAction { request =>
     SECURITY; TESTS_MISSING  // securified
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
@@ -293,7 +293,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val topics = dao.listMaySeeTopicsInclPinned(categoryId, pageQuery,
       includeDescendantCategories = true, authzCtx, limit = NumTopicsToList)
 
-    makeTopicsResponse(Some(categoryId), topics, dao)
+    makeTopicsResponse(topics, dao)
   }
 
 
@@ -375,9 +375,7 @@ object ForumController {
 
   // Vaguely similar code: ThingsFoundJson.makePagesFoundResponseImpl()  [406RKD2JB]
   //
-  def makeTopicsResponse(categoryId: Opt[CatId], topics: Seq[PagePathAndMeta],
-          dao: SiteDao): Result = {
-    val category: Opt[Cat] = categoryId.flatMap(dao.getCategory)
+  def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
     val pageStuffList: Iterable[PageStuff] = pageStuffById.values
 
@@ -392,16 +390,9 @@ object ForumController {
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj(   // ts: LoadTopicsResponse
       "topics" -> topicsJson,
-
-      // ----- ts: StorePatch
-      "tagTypes" -> JsArray(tagTypes map JsTagType),
-      // --------------------
-
-      // These lack tags (badges) — make sure won't overwrite. [maybe_incl_tags_tagtypes]
-      // We won't — the StorePatch looks at a usersBrief field instead. [store_patch_pats]
-      // Oops but browser side we rename 'userst' to 'usersBrief'!  [missing_tags_feats]
-      // SLEEPING_BUG: pat tags lost? resp.users doesn't incl pat tags. [pat_tags_lost]
-      "users" -> users.map(JsUser(_)))
+      "storePatch" -> Json.obj(
+        "tagTypes" -> JsArray(tagTypes map JsTagType),
+        "usersBrief" -> users.map(JsPatNameAvatar)))
     OkSafeJson(json)
   }
 

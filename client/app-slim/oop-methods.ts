@@ -574,7 +574,7 @@ export function post_shallRenderAsHidden(post: Post): boolean {
   return post.isBodyHidden && _.isEmpty(post.sanitizedHtml);
 }
 
-export function post_isPubVisible(post: Post): Bo {
+export function post_isPubVisible(post: Post): BoZ {
   // && !== CompletedForm  fix server side too if enabling forms
   return !post.isBodyHidden && post.approvedAtMs && !post_isDeleted(post);
 }
@@ -750,14 +750,27 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 
 
 export function store_isFeatFlagOn(store: Store, featureFlag: St): Bo {
-  return _.includes(store.siteFeatureFlags, featureFlag) ||
+  const offFlag = '0' + featureFlag;
+  const isOn = _.includes(store.siteFeatureFlags, featureFlag) ||
          _.includes(store.serverFeatureFlags, featureFlag);
+  const isOff = _.includes(store.siteFeatureFlags, offFlag) ||
+         _.includes(store.serverFeatureFlags, offFlag);
+  return isOn && !isOff;   // [ff_on_off]
 }
 
 
 
 // Store
 //----------------------------------
+
+
+export function store_curPage(store: Store): Page | U {
+  return !store.currentPage || _.isEmpty(store.curPageTweaks) ? store.currentPage : {
+    ...store.currentPage,
+    ...store.curPageTweaks,
+  };
+}
+
 
 export function store_mainSiteSection(store: Store): SiteSection {
   // Currently there's always just one sub site, namely the forum.

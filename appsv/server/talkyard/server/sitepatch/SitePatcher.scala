@@ -161,14 +161,14 @@ case class SitePatcher(globals: debiki.Globals) {
         if (!isPageTempId(tempId)) tempId
         else {
           pageRealIdsByImpId.getOrElse(tempId, throwBadRequest(
-            "TyE5DKGWT205", s"Page with temp id $tempId missing from the uploaded data"))
+            "TyEIMP_PgNf1_", s"Page with temp id '$tempId' missing from the uploaded data"))
         }
       }
 
       siteData.pages foreach { pageInPatch: PageMeta =>
         val tempId = pageInPatch.pageId
-        val extId = pageInPatch.extImpId getOrElse throwForbidden(
-          "TyE305KBSG", s"Inserting pages with no extId not implemented. Page temp imp id: $tempId")
+        val extId = pageInPatch.extImpId getOrElse throwForbidden("TyE305KBSG",
+              s"Inserting pages with no extId not implemented. Page temp imp id: '$tempId'")
           // Old: --------
           // Aha? If site meta is incl, then, lazy create an extId here:
           // publ-site-id:page-id:pge  ?
@@ -266,7 +266,7 @@ case class SitePatcher(globals: debiki.Globals) {
           // Or 2) we're inserting a new user and have assigned it a new real id.
           val anyPpWithRealId = ppsWithRealIdsByTempImpId.get(tempId)
           val ppWithRealId: ParticipantInclDetails = anyPpWithRealId.getOrElse({
-            throwBadRequest("TyE305KRD3H", o"""Participant with temp id $tempId
+            throwBadRequest("TyEIMP_PatNf1_", o"""Participant with temp id $tempId
               missing from the uploaded data""")
           })
           dieIf(ppWithRealId.id <= -LowestTempImpId || LowestTempImpId <= ppWithRealId.id, "TyE305KRST2")
@@ -326,6 +326,8 @@ case class SitePatcher(globals: debiki.Globals) {
             //  guestRealId
             //else
             guestInDb
+          case x =>
+            die("TyE57MWP2P", s"Guest is not a guest, it is a: ${classNameOf(x)}")
         }
         dieIf(upsertedGuestRealId.id <= -LowestTempImpId,
           "TyE305HKSD2", s"Guest id ${guestInPatch.id} got remapped to ${upsertedGuestRealId.id}")
@@ -655,7 +657,7 @@ case class SitePatcher(globals: debiki.Globals) {
            id: $tempImpId should instead have a > 2e9 id (temp import id).
            The category: $catPatch""")
         val catInDb = categoriesInDb.find(_.extImpId is extId) getOrThrowBadRequest(
-          "TYE40GKRD81", s"No category in the database with ext id $extId, for $catPatch")
+            "TYE0CATWEXTID_", s"No category in the database with ext id '$extId', for $catPatch")
         categoriesRealIdsByTempImpId.put(tempImpId, catInDb.id)
       }
 
@@ -890,7 +892,8 @@ case class SitePatcher(globals: debiki.Globals) {
               lastApprovedReplyById = pageInPatch.lastApprovedReplyById.map(remappedPpTempId),
               frequentPosterIds = pageInPatch.frequentPosterIds.map(remappedPpTempId))
 
-            tx.insertPageMetaMarkSectionPageStale(pageWithRealIdsButWrongStats, isImporting = true)
+            tx.insertPageMetaMarkSectionPageStale(
+                  pageWithRealIdsButWrongStats, isImporting = true)(IfBadAbortReq)
             wroteToDatabase = true
             // We update  upsertedPages below, after page meta stats has been updated.
             pageIdsWithBadStats.add(realPageId)
@@ -1283,7 +1286,7 @@ case class SitePatcher(globals: debiki.Globals) {
 
       siteData.pages foreach { pageMeta =>
         //val newId = transaction.nextPageId()
-        tx.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)
+        tx.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)(IfBadAbortReq)
       }
 
       siteData.pagePaths foreach { path =>

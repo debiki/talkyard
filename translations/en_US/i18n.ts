@@ -783,6 +783,7 @@ var t_en_US: TalkyardTranslations = t = {
     DraftsEtc: "Drafts etc",
     About: "About",
     Privacy: "Privacy",
+    Security: "Security",
     Account: "Account",
     Interface: "Interface",
 
@@ -1285,6 +1286,7 @@ var t_en_US: TalkyardTranslations = t = {
   // Search dialogs and the search page.
 
   s: {
+    SearchForHelp: "Search for help",  // MISSING
     TxtToFind: "Text to search for",
   },
 

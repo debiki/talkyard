@@ -370,19 +370,21 @@ how to use docker-compose already.
     gpg2 --verify ./install-nix-2.3.15.asc
     ```
 
-    Install Nix and Niv. Either 1/2: First create the `/nix` directory for yourself,
+    Install Nix and, optionally, Niv.
+    Either **1/2:** First create the `/nix` directory for yourself,
     and then install — no need to be root:
     (see https://nixos.wiki/wiki/Nix_Installation_Guide)
+
     ```
     sudo install --directory --mode=755 --owner=$(id -u) --group=$(id -g) /nix
-    sh ./install-nix-2.3.15  # not root
-    nix-env -iA nixpkgs.niv
+    sh ./install-nix-2.3.15    # not root
+    # nix-env -iA nixpkgs.niv  # optionally, if you want to upgrade Ty's build tools
     ```
 
     (To uninstall Nix, remove `/nix`, a line in `~/.profile`, and:
     `~/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs}`)
 
-    Or, 2/2, alternatively, you can do a multi-user installation of Nix:
+    Or alternatively, **2/2:** Do a multi-user installation of Nix:
     https://nixos.org/manual/nix/stable/#sect-multi-user-installation
     (then I'd think it's best to use the above `./install-nix-...`
     script whose signature you've verified).

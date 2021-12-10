@@ -21,9 +21,10 @@
 <!DOCTYPE html>
 <html class="dw-pri DW">
 <head>
+@tpi.jsonDataMustBeFirst(isCreateSitePage = true)
 @tpi.debikiMeta
-@tpi.debikiStyles
-@tpi.debikiScriptsInHead(isCreateSitePage = true)
+@tpi.talkyardStyles
+@tpi.parseJsonUpdDocClassesScript()
 </head>
 <body style="overflow: auto">
 <!-- createSitePage.scala.html -->
@@ -42,6 +43,6 @@
   <div id="dw-react-create-site"></div>
 </div>
 
-@tpi.scriptBundlesEndOfBody(loadStaffBundle = true)
+@tpi.talkyardScriptBundles(loadStaffBundle = true)
 </body>
 </html>

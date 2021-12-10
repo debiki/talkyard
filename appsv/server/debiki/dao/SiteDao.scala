@@ -29,7 +29,7 @@ import talkyard.server.{PostRendererSettings, TyLogging}
 import scala.collection.immutable
 import scala.collection.mutable
 import ed.server.EdContext
-import ed.server.auth.MayMaybe
+import talkyard.server.authz.MayMaybe
 import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
@@ -124,8 +124,9 @@ class SiteDao(
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao
-  with ed.server.auth.AuthzSiteDaoMixin
+  with talkyard.server.authz.AuthzSiteDaoMixin
   with talkyard.server.authn.AuthnSiteDaoMixin
+  with talkyard.server.sess.SessionSiteDaoMixin
   with ForumDao
   with CategoriesDao
   with PagesDao
@@ -315,6 +316,9 @@ class SiteDao(
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = true) { fn(_) }
 
   def readOnlyTransactionTryReuse[R](anyTx: Option[SiteTransaction])(fn: SiteTransaction => R): R =
+    readTxTryReuse(anyTx)(fn)
+
+  def readTxTryReuse[R](anyTx: Opt[SiteTx])(fn: SiteTx => R): R =
     anyTx match {
       case Some(tx) => fn(tx)
       case None => readOnlyTransaction(fn)

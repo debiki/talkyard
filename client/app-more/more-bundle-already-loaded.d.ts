@@ -41,7 +41,7 @@ declare namespace debiki2 {
 
   namespace util {
     function makeStupidDialogGetter();
-    function makeResizableUp(elem, handle, onResize);
+    function makeResizableUp(elem, handle, onResize): (stop: Bo) => Vo;
   }
 
   namespace topbar {
@@ -54,7 +54,6 @@ declare namespace debiki2 {
 
   namespace search {
     function searchRoute(): any;
-    function urlEncodeSearchQuery(query: string): string;
   }
 
   namespace help {

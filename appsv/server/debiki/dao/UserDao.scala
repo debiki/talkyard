@@ -364,7 +364,7 @@ trait UserDao {
     val cappedDays = math.min(numDays, 365 * 110)
     val now = globals.now()
 
-    val user = readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       var user = tx.loadTheUserInclDetails(userId)
       if (user.isAdmin)
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
@@ -375,11 +375,14 @@ trait UserDao {
         suspendedTill = Some(suspendedTill),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
-      tx.updateUserInclDetails(user)
-      user
-    }
 
-    logout(user.noDetails, bumpLastSeen = false)
+      tx.updateUserInclDetails(user)
+      staleStuff.addPatIds(Set(userId))
+
+      logout(user.noDetails, bumpLastSeen = false, anyTx = Some(tx, staleStuff))
+      terminateSessions(  // [end_sess]
+            forPatId = user.id, all = true, anyTx = Some(tx, staleStuff))
+    }
   }
 
 
@@ -758,12 +761,19 @@ trait UserDao {
   }
 
 
-  def logout(pat: Pat, bumpLastSeen: Bo): U = {
-    readWriteTransaction { tx =>
+  def logout(pat: Pat, bumpLastSeen: Bo, anyTx: Opt[(SiteTx, StaleStuff)] = None): U = {
+    if (bumpLastSeen) writeTxTryReuse(anyTx) { (tx, staleStuff) =>
       addUserStats(UserStats(pat.id, lastSeenAt = tx.now))(tx)
+      staleStuff.addPatIds(Set(pat.id))
     }
+
+    UX; COULD // Maybe a WebSocket channel should remember which session & browser it
+    // got started from? Rather than only what user. So can disconnect the right browser,
+    // instead of all the user's browsers. For example, if impersonating,
+    // then, this'll disconnect all current channels of the real person,
+    // and mark hen as away (maybe incorrectly).
+    // [which_ws_session]
     pubSub.unsubscribeUser(siteId, pat)
-    removeUserFromMemCache(pat.id)
   }
 
 
@@ -2190,7 +2200,7 @@ trait UserDao {
     * - EdT5WKBWQ2
     */
   def deleteUser(userId: UserId, byWho: Who): UserInclDetails = {
-    val (user, usersGroupIds) = readWriteTransaction { tx =>
+    val (user, usersGroupIds) = writeTx { (tx, staleStuff) =>
       tx.deferConstraints()
 
       val deleter = tx.loadTheParticipant(byWho.id)
@@ -2284,6 +2294,9 @@ trait UserDao {
       tx.removeDeletedMemberFromAllPages(userId)
       tx.removeDeletedMemberFromAllGroups(userId)
 
+      // logout(..) done below.  [end_sess]
+      terminateSessions(forPatId = userId, all = true, anyTx = Some(tx, staleStuff))
+
       // Clear the page cache, by clearing all caches.
       emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
 
@@ -2296,29 +2309,40 @@ trait UserDao {
     // (this not needed, since cleared the site cache just above. Do anyway.)
     uncacheOnesGroupIds(Seq(userId))
     uncacheGroupsMemberLists(usersGroupIds)
+
+    // Or just call:  logout(user, bumpLastSeen = false)
+    pubSub.unsubscribeUser(siteId, user.briefUser)
     removeUserFromMemCache(userId)
+    // terminateSessions() done above.
 
     user
   }
+
 
   def deleteGuest(guestId: UserId, byWho: Who): Guest = {
     ???  // don't forget to delete any ext imp id [03KRP5N2]
   }
 
-  def loadUsersOnlineStuff(): UsersOnlineStuff = {
+
+  def getUsersOnlineStuff(): UsersOnlineStuff = {
     usersOnlineCache.get(siteId, new ju.function.Function[SiteId, UsersOnlineStuff] {
       override def apply(dummySiteId: SiteId): UsersOnlineStuff = {
         val (userIdsInclSystem, numStrangers) = redisCache.loadOnlineUserIds()
         // If a superadmin is visiting the site (e.g. to help fixing a config error), don't  [EXCLSYS]
         // show hen in the online list — hen isn't a real member.
-        val userIds = userIdsInclSystem.filterNot(id => id == SystemUserId || id == Participant.SuperAdminId)
-        val users = readOnlyTransaction { tx =>
-          tx.loadParticipants(userIds)
+        val userIds = userIdsInclSystem.filterNot(Pat.isBuiltInPerson)
+        // Load all this atomically? [user_version]
+        val users = getUsersAsSeq(userIds)
+        val tagsByUserId = getTagsByPatIds(userIds)
+        val usersJson = users map { user =>
+          val tags = tagsByUserId(user.id)
+          JsX.JsUser(user, tags)
         }
         UsersOnlineStuff(
-          users,
-          usersJson = JsArray(users.map(JsX.JsUser(_))),
-          numStrangers = numStrangers)
+              users,
+              tagsByUserId = tagsByUserId,
+              numStrangers = numStrangers,
+              cachedUsersJson = JsArray(usersJson))
       }
     })
   }

@@ -22,8 +22,10 @@ import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.EdHttp._
+import debiki.JsonUtils.parseOptInt32
 import ed.server.{EdContext, EdController}
 import ed.server.http._
+import talkyard.server.authz.Authz
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
@@ -36,10 +38,11 @@ import talkyard.server.JsX.{JsStringOrNull, JsPageMeta}
 class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
+  import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
   def editTitleSaveSettings: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
         request: JsonPostRequest =>
-    import request.{dao, theRequester => requester}
+    import request.{body, dao, theRequester => requester}
 
     val pageId = (request.body \ "pageId").as[PageId]
     val anyNewTitle = (request.body \ "newTitle").asOptStringNoneIfBlank
@@ -52,6 +55,9 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val anySlug = (request.body \ "slug").asOptStringNoneIfBlank
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
     val anyLayout = (request.body \ "pageLayout").asOpt[Int].flatMap(PageLayout.fromInt)
+    val anyForumSearchBox = parseOptInt32(body, "forumSearchBox")
+    val anyForumMainView = parseOptInt32(body, "forumMainView")
+    val anyForumCatsTopics = parseOptInt32(body, "forumCatsTopics")
     val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringNoneIfBlank
     val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringNoneIfBlank
     val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringNoneIfBlank
@@ -80,6 +86,19 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val oldMeta = request.dao.getPageMeta(pageId) getOrElse throwNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
+    // AuthZ check 1/3:
+    // Could skip authz check 2/3 below: [.dbl_auz] ?
+    val oldCatsRootLast = dao.getAncestorCategoriesRootLast(oldMeta.categoryId)
+    val requestersGroupIds = dao.getOnesGroupIds(requester)
+    throwNoUnless(Authz.mayEditPage(
+          pageMeta = oldMeta,
+          pat = requester,
+          groupIds = requestersGroupIds,
+          pageMembers = dao.getAnyPrivateGroupTalkMembers(oldMeta),
+          catsRootLast = oldCatsRootLast,
+          tooManyPermissions = dao.getPermsOnPages(oldCatsRootLast),
+          maySeeUnlisted = true), "TyE0EDPGPRPS1")
+
     val pageTypeAfter = anyNewRole getOrElse oldMeta.pageType
 
     throwForbiddenIf(oldMeta.pageType == PageType.AboutCategory,  //  [4AKBE02]
@@ -94,20 +113,29 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(anyLayout.isDefined && pageTypeAfter != PageType.Forum,
       "EdE5FKL0P", "Can only specify topic list layout for forum pages")
 
-    // Authorization.
-    SECURITY; SHOULD // do same authz checks as when editing posts?
-    // throwNoUnless(Authz.mayEditPost(  ... ?  Not so urgent, mods somewhat ok to trust?
-    // Fix this, by moving this impl to a (new?) Dao? And look at:  PostsDao.editPostIfAuth(...)
+    // (Could incl `anyLayout` too)
+    val forumViewChanged: Bo = anyForumSearchBox.isDefined ||
+          anyForumMainView.isDefined || anyForumCatsTopics.isDefined
+    throwForbiddenIf(forumViewChanged && pageTypeAfter != PageType.Forum,
+          "TyE0FORMPGE", "Can only edit these properties for forum pages")
+
     if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
       throwForbidden("TyECHOTRPGS", "You may not change other people's pages")
 
     if (!request.theUser.isAdmin) {
+      // Forum page URL.
       throwForbiddenIf(hasManuallyEditedSlug,
           "TyENEWPATH001", "Only admins may change the page slug")
       throwForbiddenIf(anyFolder.isDefined,
           "TyENEWPATH002", "Only admins can specify url/path/folders/")
       throwForbiddenIf(anyShowId.isDefined,
           "TyENEWPATH003", "Only admins can hide or show page ids")
+
+      // How a forum looks.
+      throwForbiddenIf(anyLayout.isDefined,
+          "TyE0EDFORUMLAYT", "Only admins may edit forum topics layout")
+      throwForbiddenIf(forumViewChanged,
+          "TyE0EDFORUMPRPS", "Only admins may edit forum properties")
     }
 
     if (anyNewRole.is(PageType.Forum) || (anyNewRole.isEmpty && oldMeta.pageType == PageType.Forum)) {
@@ -142,7 +170,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       throwBadReq("DwE5kEF2", s"Bad CSS class, doesn't match: ${HtmlUtils.OkCssClassRegexText}")
 
     val editsHtmlStuff = anyHtmlTagCssClasses.isDefined || anyHtmlHeadTitle.isDefined ||
-      anyHtmlHeadDescription.isDefined
+          anyHtmlHeadDescription.isDefined
     if (editsHtmlStuff && !request.theMember.isStaff)
       throwForbidden("EdE4WU8F2", "You may not edit CSS classes or HTML tags")
 
@@ -157,6 +185,12 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
 
     // Update page title.
     anyNewTitle foreach { newTitle => {
+      // AuthZ check 2/3, unnecessary? We've already verified that pat may edit the page
+      // (which includes editing the title).  [.dbl_auz]
+      // Could do this in the same tx as updating the page meta below? [.ed_pg_1_tx]
+      // Then we'd also access check the new category, if moving the page at the same time
+      // as editing the title (doesn't matter? Pat could just edit the title first, then
+      // move it, in a separate step.)
       val newTextAndHtml = dao.textAndHtmlMaker.forTitle(newTitle)
       request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr, deleteDraftNr = None,
         request.who, request.spamRelatedStuff, newTextAndHtml)
@@ -169,20 +203,38 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     var newMeta = oldMeta
     newMeta = anyNewRole.map(newMeta.copyWithNewRole).getOrElse(newMeta)
     newMeta = anyNewDoingStatus.map(s =>
-      newMeta.copyWithNewDoingStatus(s, context.globals.now())).getOrElse(newMeta)
+          newMeta.copyWithNewDoingStatus(s, context.globals.now())).getOrElse(newMeta)
+
     val addsNewDoingStatusMetaPost = newMeta.doingStatus != oldMeta.doingStatus
+
     newMeta = newMeta.copy(
-      categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
-      htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
-      htmlHeadTitle = anyHtmlHeadTitle.getOrElse(oldMeta.htmlHeadTitle),
-      htmlHeadDescription = anyHtmlHeadDescription.getOrElse(oldMeta.htmlHeadDescription),
-      layout = anyLayout.getOrElse(oldMeta.layout),
-      // A meta post about changing the doingStatus.
-      numPostsTotal = oldMeta.numPostsTotal + (addsNewDoingStatusMetaPost ? 1 | 0),
-      version = oldMeta.version + 1)
+          categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
+          htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
+          htmlHeadTitle = anyHtmlHeadTitle.getOrElse(oldMeta.htmlHeadTitle),
+          htmlHeadDescription = anyHtmlHeadDescription.getOrElse(oldMeta.htmlHeadDescription),
+          layout = anyLayout.getOrElse(oldMeta.layout),
+          forumSearchBox = anyForumSearchBox.orElse(oldMeta.forumSearchBox),
+          forumMainView = anyForumMainView.orElse(oldMeta.forumMainView),
+          forumCatsTopics = anyForumCatsTopics.orElse(oldMeta.forumCatsTopics),
+          // A meta post about changing the doingStatus.
+          numPostsTotal = oldMeta.numPostsTotal + (addsNewDoingStatusMetaPost ? 1 | 0),
+          version = oldMeta.version + 1)
+
+    // AuthZ check 3/3: May pat access any new category?
+    if (newMeta.categoryId != oldMeta.categoryId) {
+      val newCatsRootLast = dao.getAncestorCategoriesRootLast(newMeta.categoryId)
+      throwNoUnless(Authz.mayEditPage(
+            pageMeta = newMeta,
+            pat = requester,
+            groupIds = requestersGroupIds,
+            pageMembers = dao.getAnyPrivateGroupTalkMembers(newMeta),
+            catsRootLast = newCatsRootLast,
+            tooManyPermissions = dao.getPermsOnPages(newCatsRootLast),
+            maySeeUnlisted = true), "TyE0EDPGPRPS2")
+    }
 
     request.dao.writeTx { (tx, staleStuff) =>  // COULD wrap everything in this transaction
-                                                        // and move it to PagesDao?
+                                                // and move it to PagesDao? [.ed_pg_1_tx]
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       if (addsNewDoingStatusMetaPost) {
         dao.addMetaMessage(requester, s" marked this topic as ${newMeta.doingStatus}", pageId, tx)

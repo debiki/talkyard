@@ -37,7 +37,6 @@
 // Columns
 //==============================
 
-$watchbarWidth = 230px  // dupl value, in js pixels & chars  [7GYK42] & [4YK0F2]
 $sidebarZIndex = 1010
 $contextbarWidth = 25vw; // = win width 1/4, and 4 is used on the next line. Dupl in js [5RK9W2]
 $contextbarMinWidth = 270px; // has effect when window width < 270 * 4 = 1080. Dupl in JS [4FK0ZD]
@@ -151,6 +150,43 @@ html:not(.es-watchbar-open)
   .esScrollBtns_fixedBar,
   #esPageColumn
     left: 0;
+
+// Editor to the left  (or right, if rtl language)
+//------------------------------
+
+// If placing the editor to the left of the page content, need to move the page
+// content to the right, so it won't be occluded by the editor.
+// (Need not consider the cases of a too narrow screen, or of being in an iframe
+// — then the editor-to-the-left layout isn't available.)
+html.c_Html-EdLeft
+  &:not(.es-watchbar-open)
+    .s_Tb-Fxd,
+    #esPageColumn
+      // 45% width to the editor, 55% to the page content.
+      left: calc(100% * 0.45);  // [ed_left_width]
+
+  &.es-watchbar-open
+    .s_Tb-Fxd,
+    #esPageColumn
+      // Move everything $watchbarWidth to the right.
+      left: calc((100% - 230px) * 0.45 + 230px);  // [ed_left_width]
+
+    // @media (min-width: ???)
+    // then can hardcode left — since editor has max width.  [ed_left_max_width]
+
+html.es-forum.c_Html-EdLeft
+  &:not(.es-watchbar-open)
+    .s_Tb-Fxd,
+    #esPageColumn
+      // On forum topic list pages, the editor gets 60% of the space, since
+      // now the editor includes the preview too (there's no page to show any
+      // in-page-preview in).
+      left: calc(100% * 0.60);  // [ed_left_width]
+
+  &.es-watchbar-open
+    .s_Tb-Fxd,
+    #esPageColumn
+      left: calc((100% - 230px) * 0.60 + 230px);  // [ed_left_width]
 
 
 // Page width & padding

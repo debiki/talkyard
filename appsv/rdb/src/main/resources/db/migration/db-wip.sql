@@ -2,6 +2,14 @@
 --  — move some / most-of ?  this db-wip stuff to there instead?
 --
 
+
+-- Split settings3 and pages3 into:
+--   pages_t,
+--   sect_props_t, sect_views_t, sect_stats_t,
+--   disc_props_t, disc_views_t, disc_stats_t,
+-- see: y2999/wip_sect_disc_props_views_stats.sql
+
+
 -- Tags:
 create domain show_tag_how_d as i16_d;
 alter domain show_tag_how_d add constraint show_tag_how_d_c_vals_in check (

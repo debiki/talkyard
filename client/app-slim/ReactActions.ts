@@ -72,18 +72,33 @@ export const actionTypes = {
 };
 
 
-export function loadMyself(afterwardsCallback?: () => Vo) {
+// REFACTOR, COULD_OPTIMIZE: Let the authn methods, e.g. Server.loginWithAuthnToken()
+// and Server.loginWithOneTimeSecret() incl the current user in the response — then,
+// can skip doing an extra roundtrip by calling this fn.  [incl_me_in_aun_rsp]
+//
+// Thereafter, rename? It's not clear from the name, that this fn also can remember a session,
+// and send to other iframes. And that it closes the login dialog! [confusing_loadMyself]
+// Or, better?, don't rename — instead, let the caller do all different stuff instead?
+// Maybe could even remove this fn then (and inline in just one caller).
+//
+export function loadMyself(onOkMaybe?: (resp: FetchMeResponse) => Vo) {
   // (Don't delete temp login cookies here, because this fn gets called if login is
   // detected in another tab — and perhaps yet another login has been started in that other
   // tab, and we don't want to break it by deleting cookies. Instead login temp cookies are
   // deleted by the server.)
 
-  Server.loadMyself((anyMe: Me | NU) => {
-    // @ifdef DEBUG
-    // Might happen if there was no weakSessionId, and also, no cookie.
-    dieIf(!anyMe, 'TyE4032SMH57');
-    // @endif
-    const newMe = anyMe as Me;
+  Server.loadMyself(function(resp: FetchMeResponse) {
+    // We might get no user back — any current session might have ended just now,
+    // e.g. expired, or been terminated from another device.
+    if (!resp.me) {
+      // TESTS_MISSING TyTESESTERMEMBD, SHOULD add e2e tests? See /^sessions/ in tests-map.txt.
+      onOkMaybe && onOkMaybe(resp);
+      return;
+    }
+
+    const newMe: Me = resp.me;
+    const stuffForMe = resp.stuffForMe;
+
     if (isInSomeEmbCommentsIframe()) {
       // Tell the embedded comments or embedded editor iframe that we just logged in,
       // also include the session id, so Talkyard's script on the embedding page
@@ -103,25 +118,26 @@ export function loadMyself(afterwardsCallback?: () => Vo) {
       if (mainWin !== window) {
         mainWin.theStore.me = _.cloneDeep(newMe);
       }
-      sendToOtherIframes([
-        'justLoggedIn', { user: newMe, weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
+      sendToOtherIframes([  // [confusing_loadMyself]
+        'justLoggedIn', { user: newMe, stuffForMe,
+              weakSessionId, pubSiteId: eds.pubSiteId,  // [JLGDIN]
               sessionType: null, rememberEmbSess }]);
     }
-    setNewMe(newMe);
-    if (afterwardsCallback) {
-      afterwardsCallback();
-    }
+
+    setNewMe(newMe, stuffForMe);  // [confusing_loadMyself]
+    onOkMaybe && onOkMaybe(resp);
   });
 }
 
 
-export function setNewMe(user: Me | NU) {
+export function setNewMe(user: Me | NU, stuffForMe?: StuffForMe | N) {
   // @ifdef DEBUG
   dieIf(!user, `setNewMe(nothing) TyE60MRJ46RS`);
   // @endif
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.NewMyself,
-    user: user
+    user,
+    stuffForMe,
   });
 }
 
@@ -138,13 +154,15 @@ export function newUserAccountCreated() {
 // Together with Server.deleteTempSessId() and Server.rememberTempSession().
 
 
+/// Not currently in use? But maybe call this one instead of
+/// Server.logoutServerAndClientSide() drectly?
 export function logout() {
   Server.logoutServerAndClientSide();
 }
 
 
-export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo } = {}) {
-  Server.deleteTempSessId();
+export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo, msg?: St } = {}) {
+  Server.deleteTempSessId();  // [is_logging_out]
 
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
@@ -158,7 +176,7 @@ export function logoutClientSideOnly(ps: { goTo?: St, skipSend?: Bo } = {}) {
     // Probaby not needed, since reload() below, but anyway:
     patchTheStore({ setEditorOpen: false });
     const sessWin: MainWin = getMainWin();
-    delete sessWin.typs.weakSessionId;
+    delete sessWin.typs.weakSessionId;   // can skip? Already done by deleteTempSessId() above
     sessWin.theStore.me = 'TyMLOGDOUT' as any;
   }
 
@@ -946,11 +964,10 @@ export function removeMeAsPageMember() {
 }
 
 
-export function updateUserPresence(user: BriefUser, presence: Presence) {
+export function updateUserPresence(data: UserPresenceWsMsg) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdateUserPresence,
-    user: user,
-    presence: presence,
+    data,
   });
 }
 
@@ -1528,10 +1545,11 @@ export function maybeLoadAndShowNewPage(store: Store, history: ReactRouterHistor
 function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
   // UX maybe dim & overlay-cover the current page, to prevent interactions, until request completes?
   // So the user e.g. won't click Reply and start typing, but then the page suddenly changes.
-  Server.loadPageJson(newUrlPath, response => {
-    if (response.problemCode) {
+  Server.loadPageJson(newUrlPath, (jsonOrProblem: PageJsonAndMe | PageJsonProblem) => {
+    if ((jsonOrProblem as PageJsonProblem).problemCode) {
       // Code 404 Not Found  happens if page delted, or moved to a category one may not access.
-      switch (response.problemCode) {
+      const problem = jsonOrProblem as PageJsonProblem;
+      switch (problem.problemCode) {
         case 404:
           let closeDialogFn;
           function goBack() {
@@ -1547,25 +1565,28 @@ function loadAndShowNewPage(newUrlPath: St, history: ReactRouterHistory) {
                 r.p({}, r.a({ onClick: goBack }, t.GoBackToLastPage))) });
           break;
         default:
-          die(`${response.problemMessage} [${response.problemCode}]`);
+          die(`${problem.problemMessage} [${problem.problemCode}]`);
       }
       return;
     }
 
+    const pageJsonAndMe = jsonOrProblem as PageJsonAndMe;
+
     // This is the React store for showing the page at the new url path.
-    const newStore: Store = JSON.parse(response.reactStoreJsonString);
+    const newStore: Store = JSON.parse(pageJsonAndMe.reactStoreJsonString);
     const pageId = newStore.currentPageId;
     const newPage = newStore.pagesById[pageId];
     const pats = _.values(newStore.usersByIdBrief);
     const pubCats = newStore.publicCategories;
 
-    // This'll trigger ReactStore onChange() event, and everything will redraw to show the new page.
+    // This'll trigger ReactStore onChange() event; everything will redraw to show the new page.
     showNewPage({
       newPage,
       pubCats,
       pats,
-      me: response.me,
-      tagTypesById: newStore.tagTypesById,
+      tagTypesById: newStore.tagTypesById,  // tag types everyone needs
+      me: pageJsonAndMe.me,
+      stuffForMe: pageJsonAndMe.stuffForMe, // includes additional tag types `me` needs
       history,
     });
   });

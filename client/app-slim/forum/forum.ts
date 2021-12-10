@@ -279,7 +279,7 @@ export const ForumComponent = createReactClass(<any> {
   render: function() {
     const state: ForumComponentState = this.state;
     const store: Store = state.store;
-    const page: Page = store.currentPage;
+    const page: Page = store_curPage(store);
 
     if (page.pageRole !== PageRole.Forum) {
       // We're navigating from a discussion topic to the forum page (= topic list page).
@@ -302,7 +302,7 @@ export const ForumComponent = createReactClass(<any> {
     }
     const currentCategorySlug = routes[1];
     const activeCategory: Cat | U = this.getActiveCategory(currentCategorySlug);
-    const layout = store.currentPage.pageLayout;
+    const layout: PageLayout = page.pageLayout;
 
     /* Remove this? Doesn't look nice & makes the categories page look complicated.
     var topsAndCatsHelp = this.props.sortOrderRoute === RoutePathCategories
@@ -383,18 +383,22 @@ export const ForumComponent = createReactClass(<any> {
 
     const navConf: BrowserCode = store.settings.navConf || {};
 
+    const searchBox = page.forumSearchBox !== ShowSearchBox.Yes ? null :
+            topbar.SearchForm();
+
     return (
       r.div({ className: 'container dw-forum' },
         debiki2.help.getServerAnnouncements(store),
         debiki2.page.Title({ store }),
         ForumIntroText({ store }),
+        searchBox,
         //topsAndCatsHelp,
         childRoutes));
   }
 });
 
 
-/* ? Remove ?
+/* CLEAN_UP  Remove this old out commented code?  + class .esForum_topicsCatsHelp
 const topicsAndCatsHelpMessage = {
   id: 'EsH4YKG81',
   version: 1,
@@ -410,7 +414,7 @@ const ForumIntroText = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const settings: SettingsVisibleClientSide = store.settings;
-    const page: Page = store.currentPage;
+    const page: Page = store_curPage(store);
     const user: Myself = store.me;
     const introPost = page.postsByNr[BodyNr];
     if (!introPost || introPost.isBodyHidden)
@@ -583,7 +587,7 @@ const ForumButtons = createComponent({
     const showsTopicList = !showsCategoryTree;
 
     const showFilterButton = settings_showFilterButton(settings, me);
-    const topicFilterFirst = true; //me_uiPrefs(me).fbs !== UiPrefsForumButtons.CategoryDropdownFirst; CLEAN_UP
+    const topicFilterFirst = true; // CLEAN_UP remove me_uiPrefs(me).fbs !== UiPrefsForumButtons.CategoryDropdownFirst; CLEAN_UP
 
     // A tester got a little bit confused in the categories view, because it starts with
     // the filter-*topics* button. So insert this title, before, instead.
@@ -752,7 +756,7 @@ const ForumButtons = createComponent({
 
     const whatClass = showsCategoryTree ? 's_F_BB-Cats' : 's_F_BB-Topics';
 
-    const filterAndSortButtons = /*topicFilterFirst
+    const filterAndSortButtons = /*topicFilterFirst  CLEAN_UP remove this comment block
         ? r.div({ className: 'esForum_catsNav s_F_BB-Topics_Filter' },
             anyPageTitle,
             topicFilterButton,
@@ -1184,7 +1188,7 @@ export const TopicsList = createComponent({
               makeTopPeriodListItem(TopTopicsPeriod.Year))));
     }
 
-    const forumPage: Page = store.currentPage;
+    const forumPage: Page = store_curPage(store);
     const oneLinePerTopic = forumPage.pageLayout <= TopicListLayout.TitleExcerptSameLine;
     const oneLineClass = oneLinePerTopic ? ' c_F_TsT-OneLine' : '';
 
@@ -1510,7 +1514,7 @@ const TopicRow = createComponent({
   render: function() {
     const props: TopicRowProps = this.props;
     const store: Store = props.store;
-    const forumPage: Page = store.currentPage;
+    const forumPage: Page = store_curPage(store);
     const me = store.me;
     const settings = store.settings;
     const topic: Topic = props.topic;

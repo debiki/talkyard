@@ -124,6 +124,7 @@ object PageMeta {
       embeddingPageUrl = embeddingUrl,
       authorId = authorId,
       layout = layout getOrElse PageLayout.Default,
+      // forumSearchBox, forumMainView, forumCatsTopics — can be None, use the defaults.
       pinOrder = pinOrder,
       pinWhere = pinWhere,
       numLikes = 0,
@@ -161,6 +162,11 @@ object PageMeta {
   * @param authorId
   * @param frequentPosterIds: Most frequent poster listed first. Author & last-reply-by excluded.
   * @param layout: A bitmask that tells JS code how to render the page
+  * @param forumSearchBox: 2 if should show a prominent search box, on forum homepage.
+  *   The ShowSearchBox enum, in Typescript.
+  * @param forumMainView: 1 for topics, 2 for cats.
+  * @param forumCatsTopics: 1 for cats only, 2 for cats to the left, and active & popular
+  *   to the right.
   * @param numLikes
   * @param numWrongs
   * @param numBurys
@@ -183,6 +189,15 @@ object PageMeta {
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
   */
 case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
+  // No, better: Split into 0) PageMeta, 1) DiscProps, 2) DiscView, 3) DiscStats,
+  // and SectProps, SectView, SectStats?   [disc_props_view_stats]
+  // Because PageMeta is in fact 3 separate things:
+  // 1) page properties: page type, answeredBy, plannedBy, closed/open, deleted, etc,
+  // 2) how it looks — Sect/DiscView, and  3) statistics (numLikes/Wrongs/...).
+  // The stats gets auto updated, whilst the properties only changes when
+  // the page e.g. gets closed or answered etc. And the view — the forum would
+  // provide a default, but everyone can override it, e.g. change sort order
+  // or 1D/2D layout etc, for themselves.
   pageId: String,
   extImpId: Option[ExtId] = None,  // RENAME to extId
   pageType: PageType,
@@ -197,8 +212,13 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   embeddingPageUrl: Option[String],
   authorId: UserId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
-  // REFACTOR move to site settings and admin area — and per topic type. [PAGETYPESETTNG]
+  // -----
+  // REFACTOR move to disc_views_t   [disc_props_view_stats]  [PAGETYPESETTNG]
   layout: PageLayout = PageLayout.Default,
+  forumSearchBox: Opt[i32] = None,
+  forumMainView: Opt[i32] = None,
+  forumCatsTopics: Opt[i32] = None,
+  // -----
   pinOrder: Option[Int] = None,
   pinWhere: Option[PinPageWhere] = None,
   numLikes: Int = 0,

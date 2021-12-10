@@ -254,7 +254,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       secretKey, request.theBrowserIdData)
 
     dao.pubSub.userIsActive(request.siteId, newUser.briefUser, request.theBrowserIdData)
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, newUser.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request, newUser.id)
     val newSessionCookies = sidAndXsrfCookies
 
     if (!alreadyAccepted) {

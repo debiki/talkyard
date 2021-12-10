@@ -103,8 +103,8 @@ export const UserDrafts = createFactory({
             pagePostNrsByPostId: this.state.pagePostNrsByPostId })));
 
     return (
-      r.div({},
-        r.p({},
+      r.div({ className: 'c_Dfs' },
+        r.p({ className: 'c_Dfs_By' },
           isMe ? t.upp.YourDraftsC : t.upp.DraftsByC(user.username || user.fullName)),
         anyNoDraftsMessage,
         r.ol({ className: 's_Dfs' },

@@ -60,9 +60,15 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listTagTypes(forWhat: i32, tagNamePrefix: Opt[St]): Action[U] = StaffGetAction { req =>
-    val tagTypes = req.dao.getTagTypesSeq(forWhat, tagNamePrefix getOrElse "")
-    OkSafeJson(JsArray(tagTypes map JsX.JsTagType))
+
+  def listTagTypes(forWhat: Opt[i32], tagNamePrefix: Opt[St]): Action[U] =
+          GetActionRateLimited(RateLimits.ReadsFromCache) { req =>
+    // Later, when there are access restricted tags, need to authz filter here. [priv_tags]
+    // But tag stats isn't public, at least not now.
+    val tagTypes = req.dao.getTagTypesSeq(forWhat, tagNamePrefix)
+    val json = JsonMaker.makeStorePatch(Json.obj(
+          "allTagTypes" -> JsArray(tagTypes map JsX.JsTagType)), globals.applicationVersion)
+    OkSafeJson(json)
   }
 
 
@@ -135,8 +141,8 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val affectedPostIds = dao.addRemoveTagsIfAuth(
           toAdd = toAdd, toRemove = toRemove, req.who)(IfBadAbortReq)
 
-    val storePatch = dao.jsonMaker.makeStorePatchForPosts(
-          postIds = affectedPostIds, showHidden = true, dao)
+    val storePatch = dao.jsonMaker.makeStorePatchForPostIds(
+          postIds = affectedPostIds, showHidden = true, inclUnapproved = true, dao)
 
     OkSafeJson(storePatch)
 
