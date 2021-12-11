@@ -588,8 +588,10 @@ const LoginDialogContent = createClassAndFactory({
                 ExtIdpAuthnBtn(makeAuthnProps('icon-facebook', 'Facebook', rFragment({},
                   // Need to follow Facebook's brand guidelines. [FBBRAND]
                   FacebookLogoImage, "Facebook"))),
+            /* Twitter login won't work, until they support OAuth2. [0_twitter_aun]
             !ss.enableTwitterLogin ? null :
                 ExtIdpAuthnBtn(makeAuthnProps('icon-twitter', 'Twitter')),
+                */
             !ss.enableGitHubLogin ? null :
                 ExtIdpAuthnBtn(makeAuthnProps('icon-github-circled', 'GitHub')),
             !ss.enableLinkedInLogin ? null :
