@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.summaryemails
+package talkyard.server.summaryemails
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
