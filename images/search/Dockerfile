@@ -8,8 +8,7 @@
 # happens below), and use all Basic features at no cost, so, no problems
 # with using ES, right. Also see decisions.adoc.
 #
-# Can just bump to 6.8, right?
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.2.3
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.20
 
 # [ty_v1] mount these instead — in a conf.d?
 # In dev, mount the conf from  modules/ed-prod-one-test/conf/search/.
