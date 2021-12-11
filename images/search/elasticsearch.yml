@@ -1,8 +1,10 @@
 network.host: 0.0.0.0
 
+discovery.type: single-node
+
 # Required, because network.host specified.
 # Should be a quorum of master-eligible nodes: (num_master_eligible_nodes / 2) + 1
-discovery.zen.minimum_master_nodes: 1
+#discovery.zen.minimum_master_nodes: 1
 
 # 1) Use a single index for all sites, but many shards, and route to the shard
 # derived from the site id. Then only one shard will be touched, when indexing

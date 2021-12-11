@@ -99,6 +99,10 @@ package object search {
     * More: https://www.elastic.co/guide/en/elasticsearch/guide/current/language-intro.html
     *
     * For now, English only.
+    *
+    * Invex name v1 was for ElasticSearch 6.x, but now reindexing everything
+    * from scratch with ElasticSearch 8.x (instead of upgrading step by step).
+    * So, bumping version to v2.
     */
   val IndexName = "all_english_v1"
 

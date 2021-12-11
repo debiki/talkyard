@@ -1124,6 +1124,24 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     //
     val elasticSearchHost = "search"
 
+    {
+    import org.elasticsearch.client.RestClient
+    import org.elasticsearch.client.ElasticsearchClient
+    //import org.elasticsearch.ElaSTr
+    //import org.elasticsearch.client.ReCTr
+    import org.apache.http.HttpHost
+    // Create the low-level client
+    val restClient: RestClient = RestClient.builder(
+        new HttpHost("localhost", 9200)).build();
+
+    // Create the transport with a Jackson mapper
+    ElasticsearchTransport transport = new RestClientTransport(
+        restClient, new JacksonJsonpMapper());
+
+    // And create the API client
+    ElasticsearchClient client = new ElasticsearchClient(transport);
+    }
+
     val elasticSearchClient: es.client.transport.TransportClient =
       new es.transport.client.PreBuiltTransportClient(es.common.settings.Settings.EMPTY)
         .addTransportAddress(

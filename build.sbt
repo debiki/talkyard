@@ -73,8 +73,18 @@ val appDependencies = Seq(
   caffeine,  // was: "com.github.ben-manes.caffeine" % "caffeine"
   Dependencies.Libs.rediscala,
   // Search engine, in https://mvnrepository.com.
-  "org.elasticsearch" % "elasticsearch" % "6.8.20",
-  "org.elasticsearch.client" % "transport" % "6.8.20",
+  //"org.elasticsearch" % "elasticsearch" % "6.8.20",
+  //"org.elasticsearch.client" % "transport" % "6.8.20",
+  "co.elastic.clients" % "elasticsearch-java" % "7.16.1",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.3",
+  //"org.elasticsearch.client" % "elasticsearch-rest-client" % "7.15.2",
+  // https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/_maven_repository.html
+  "org.elasticsearch.client" % "transport" % "7.16.0",
+
+  //  org.elasticsearch.client:elasticsearch-rest-client
+  //  org.elasticsearch:elasticsearch
+
+
 
   Dependencies.Libs.apacheCommonsEmail,
   Dependencies.Libs.guava,
