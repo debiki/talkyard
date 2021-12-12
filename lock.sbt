@@ -122,7 +122,7 @@ Compile / dependencyOverrides ++= {
       "javax.cache" % "cache-api" % "1.1.1",
       "javax.inject" % "javax.inject" % "1",
       "joda-time" % "joda-time" % "2.10.1",
-      "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
+      "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
       "net.minidev" % "accessors-smart" % "1.2",
       "net.minidev" % "json-smart" % "2.3",
       "net.sf.jopt-simple" % "jopt-simple" % "5.0.2",
