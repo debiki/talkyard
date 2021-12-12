@@ -876,8 +876,7 @@ function onMessage(event) {
         // then we won't remember the session again — so that after page reload,
         // any resume-session error message won't re-appear.
         //
-        logM(`Resuming old session`);
-        let sessionStr;
+        let sessionStr: St | NU;
         try {
           sessionStr = theStorage.getItem('talkyardSession');
           // Skip this hereafter?! [btr_sid] Do afterwards instead, if is now invalid.
@@ -890,10 +889,15 @@ function onMessage(event) {
           logW(`Error getting 'talkyardSession' from theStorage [TyEGETWKSID]`, ex);
         }
         if (sessionStr) {
+          logM(`Resuming old session...`);
           try {
             const session = JSON.parse(sessionStr);
             sendToFirstCommentsIframe(
                   ['resumeWeakSession', session]);
+
+            // We'll get back either a 'justLoggedIn' or a 'logoutClientSideOnly' message.
+            // In the latter case, we'll forget the session, so we won't needlessly try
+            // to use it on every page load.
           }
           catch (ex) {
             logW(
@@ -1004,7 +1008,7 @@ function onMessage(event) {
       break;
 
     case 'logoutClientSideOnly':
-      logM(`Logged out`);
+      logM(eventData.why || `Logged out`);
       try {
         theStorage.removeItem('talkyardSession');
         curSessItemInStorage = null;

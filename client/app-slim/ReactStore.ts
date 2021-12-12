@@ -154,7 +154,7 @@ ReactDispatcher.register(function(payload) {
       // see logoutClientSideOnly(). But let's keep this, in case we some day
       // in the future don't want to reload the page.
       // ---------
-      $h.removeClasses(htmlElem, 'dw-is-admin dw-is-staff dw-is-authenticated');
+      $h.removeClasses(htmlElem, 'c_IsSupAdm dw-is-admin dw-is-staff dw-is-authenticated');
       if (store.userIdsOnline) delete store.userIdsOnline[store.me.id];
       store.numOnlineStrangers += 1;
       store.me = makeStranger(store);
@@ -619,6 +619,9 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
 
   if (newMe.isAdmin) {
     $h.addClasses(htmlElem, 'dw-is-admin dw-is-staff');
+  }
+  if (newMe.id === SystemUserId) {
+    $h.addClasses(htmlElem, 'c_IsSupAdm');
   }
   if (newMe.isModerator) {
     $h.addClasses(htmlElem, 'dw-is-staff');
@@ -1607,7 +1610,17 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     }
   });
 
-  const currentPage: Page = store.currentPage;
+  const currentPage: Page | U = store.currentPage;
+
+  if (!currentPage) {
+    delete store.curPageTweaks;
+  }
+  else if (storePatch.curPageTweaks) {
+    store.curPageTweaks = {
+      ...store.curPageTweaks,
+      ...storePatch.curPageTweaks,
+    };
+  }
 
   // If we just posted the very first reply on an embedded discussion, a page for the discussion
   // will have been created now, lazily. Then need to update the store page id.
@@ -1778,6 +1791,8 @@ function showNewPage(ps: ShowNewPageParams) {
   }
   // @endif
 
+  delete store.curPageTweaks;
+
   // Update categories — maybe this page is in a different sub community with different categories.
   store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories
   store.currentCategories = _.clone(newPublicCategories);
@@ -1847,16 +1862,16 @@ function showNewPage(ps: ShowNewPageParams) {
   function magicClassFor(page: Page): string {
     // Sync with Scala [4JXW5I2].
     let clazz = '';
-    if (page_isChat(page.pageRole)) clazz = ' dw-vt es-chat';
+    if (page_isChat(page.pageRole)) clazz = ' es-chat';
     if (page.pageRole === PageRole.Forum) clazz = ' es-forum';
-    if (page.pageRole === PageRole.MindMap) clazz = ' dw-hz';
-    if (page.pageRole) clazz = ' dw-vt';
+    if (page.pageRole === PageRole.MindMap) clazz += ' dw-hz';
+    else clazz += ' dw-vt';
     clazz += (!page.pageRole ? '' : ' s_PT-' + page.pageRole);     // [5J7KTW2]
     clazz += (!page.pageLayout ? '' : ' s_PL-' + page.pageLayout);
     return clazz;
   }
   if (oldClassesStr || newClassesStr) {
-    const regex = /[ ,]/;
+    const regex = /[ ,]+/;
     const oldClasses = oldClassesStr.split(regex);
     const newClasses = newClassesStr.split(regex);
     function addOrRemoveClasses(as, bs, fn) {

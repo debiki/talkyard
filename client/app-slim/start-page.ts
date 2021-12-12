@@ -71,7 +71,8 @@ function handleLoginInOtherBrowserTab() {
 
   // New style session id:  [btr_sid]
   // ------------------------------------------
-  if (debiki2.store_isFeatFlagOn(store, 'ffUseNewSid')) {
+  const useNewSid = !debiki2.store_isFeatFlagOn(store, 'ffUseOldSid');
+  if (useNewSid) {
     const sidParts123 = debiki2.Server.getCurSid12Maybe3();
     const stillTheSameSid = sidParts123
           ? me.mySidPart1 && sidParts123.startsWith(me.mySidPart1)
@@ -86,7 +87,11 @@ function handleLoginInOtherBrowserTab() {
         }
         else {
           // The human wasn't logged in. We can load the human's data without page reload.
-          debiki2.ReactActions.loadMyself();
+          debiki2.ReactActions.loadMyself(function (resp: FetchMeResponse) {
+            // if (!resp.me)
+            //   Then what? Nothing? Or ReactActions.logoutClientSideOnly()?
+            //   Doesn't matter?
+          });
         }
       }
       else {
@@ -98,7 +103,7 @@ function handleLoginInOtherBrowserTab() {
     return;
   }
 
-  // Old style session id:
+  // Old style session id:  CLEAN_UP REMOVE [btr_sid]
   // ------------------------------------------
   const sessionId = getSetCookie('dwCoSid');
   if (me.isLoggedIn) {

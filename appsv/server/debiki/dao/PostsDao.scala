@@ -30,7 +30,7 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
 import PostsDao._
-import ed.server.auth.Authz
+import talkyard.server.authz.Authz
 import ed.server.spam.SpamChecker
 import org.scalactic.{Bad, Good, One, Or}
 import math.max

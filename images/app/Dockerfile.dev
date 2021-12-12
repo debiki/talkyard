@@ -129,6 +129,9 @@ CMD cd /opt/talkyard/app/ && exec /opt/sbt/bin/sbt \
   -Ddeployment.security.SSLv3=false \
   -Dhttps.protocols=TLSv1.1,TLSv1.2 \
   -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
+  # log4j2 problem, disable this:
+  -Dlog4j2.formatMsgNoLookups=true \
+  #
   -Dconfig.file=/opt/talkyard/app/conf/app-dev.conf \
   run
 

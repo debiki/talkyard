@@ -229,7 +229,7 @@ export function logErrorIf(condition, errorMessage: string) {
 }
 
 
-export function scrollToBottom(node) {
+export function scrollToBottom(node: Element) {
   dieIf(!node, 'DwE9FMW2');
   node.scrollTop = node.scrollHeight;
 }
@@ -372,6 +372,7 @@ export function anyForbiddenPassword() {
 }
 
 
+// function findDOMNode(instance: ReactInstance): Element | null | Text
 export const findDOMNode = isServerSide() ? null : window['ReactDOM'].findDOMNode;
 dieIf(!isServerSide() && !findDOMNode, 'EsE6UMGY2');
 

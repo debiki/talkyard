@@ -975,8 +975,13 @@ interface Page
   externalBacklinks?: LinkTitleUrl[];
   pageRole: PageRole;
   pagePath: PagePath;
+  //--------
   pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings
-      // Or rather, split into different fields [PAGETYPESETTNG].
+      // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
+  forumSearchBox?: ShowSearchBox;
+  forumMainView?: Nr;
+  forumCatsTopics?: Nr;
+  //--------
   pageHtmlTagCssClasses?: string;
   // Overrides the title from the title Post.
   pageHtmlHeadTitle?: string;
@@ -1183,6 +1188,11 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
   postsToUpdate: { [postId: number]: boolean };
   // Overrides quickUpdate.
   cannotQuickUpdate?: boolean;
+
+  // Any page settings, e.g. layout or sort order, pat is currently editing and previewing.
+  // Any fields here, overrides those in this.currentPage. But disappears on page reload
+  // (unless saved).
+  curPageTweaks?: Partial<Page>;
 
   debugStartPageId: string;
 
@@ -1727,7 +1737,8 @@ interface SearchHit {
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
-interface StorePatch extends EditorStorePatch, TagTypesStorePatch, PatsStorePatch {
+interface StorePatch
+      extends EditorStorePatch, TagTypesStorePatch, PatsStorePatch, PageTweaksStorePatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
@@ -1775,6 +1786,9 @@ interface PatsStorePatch {
   usersBrief?: Pat[];
 }
 
+interface PageTweaksStorePatch {
+  curPageTweaks?: Partial<Page>;
+}
 
 
 interface Settings extends TopicInterfaceSettings {
@@ -2337,10 +2351,21 @@ interface LoginPopupLoginResponse {
 }
 
 interface AuthnResponse {
+  // me?: Me  — or extend FetchMeResponse?  [incl_me_in_aun_rsp]
+  // stuffForMe?: StuffForMe
   origNonceBack?: St;
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
   weakSessionId?: string;
+}
+
+
+/// If not logged in (maybe the session just expired or got deleted from another device),
+/// `me` and `stuffForMe` would be null.
+///
+interface FetchMeResponse {
+  me: Me | N;
+  stuffForMe: StuffForMe | N;
 }
 
 

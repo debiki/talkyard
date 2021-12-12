@@ -20,13 +20,13 @@
  * - https://github.com/discourse/onebox/blob/master/LICENSE.txt
  */
 
-package debiki.onebox.engines
+package talkyard.server.linkpreviews.engines
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.Globals
 import debiki.TextAndHtml.safeEncodeForHtml
-import debiki.onebox._
+import talkyard.server.linkpreviews._
 import org.scalactic.Good
 import scala.util.matching.Regex
 

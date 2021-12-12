@@ -19,11 +19,11 @@
  * - https://github.com/discourse/onebox/blob/master/LICENSE.txt
  */
 
-package debiki.onebox.engines
+package talkyard.server.linkpreviews.engines
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.onebox._
+import talkyard.server.linkpreviews._
 import java.{net => jn}
 import debiki.Globals
 import debiki.TextAndHtml
@@ -89,7 +89,7 @@ class YouTubePrevwRendrEng(globals: Globals) extends InstantLinkPrevwRendrEng(gl
         //  https://github.com/discourse/onebox/blob/master/lib/onebox/engine/youtube_onebox.rb
         // No, instead use oEmbed.
         Bad(LinkPreviewProblem(
-              "Cannot currently onebox this YouTube URL",
+              "Cannot currently preview this YouTube URL",
               unsafeUrl = unsafeUrl, errorCode = "TyEYOUTB0ID"))
     }
   }

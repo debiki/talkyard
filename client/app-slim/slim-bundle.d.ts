@@ -237,6 +237,7 @@ declare namespace debiki2 {
   namespace topbar {
     function getTopbarHeightInclShadow(): number;
     function TopBar(props): RElm; // TopbarProps
+    function OpenWatchbarButton(): RElm;
   }
 
   namespace sidebar {
@@ -291,13 +292,14 @@ declare namespace debiki2 {
 
   var findDOMNode: any;
   function randomNumSt(): St;
-  var die: any;
-  var dieIf: any;
-  var scrollToBottom: any;
-  var prettyBytes: any;
+  function die(errMsg: St);
+  function dieIf(test, errMsg: St);
+  function scrollToBottom(node: Element);
+  function prettyBytes(num: Nr): St;
   var Server: any;
   var reactelements: any;
-  var hashStringToNumber: any;
+  function hashStringToNumber(string: St): Nr;
+  function urlEncodeSearchQuery(query: St): St;
 
   function stableStringify(obj: any): string;
 
@@ -383,6 +385,8 @@ declare namespace debiki2 {
   function store_getPostId(store: DiscStore, pageId: PageId, postNr: PostNr): PostId | U;
 
   function categories_sortTree(categories: Category[]): CatsTree;
+
+  function store_curPage(store: Store): Page | U;
 
   function page_makePostPatch(page: Page, post: Post): StorePatch;
   function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft): StorePatch;

@@ -174,6 +174,7 @@ const enum TopicFilters {
 const enum ThingType {
   Pats = 7,
   Posts = 56,
+  All = Pats + Posts,
 }
 
 const enum No {
@@ -461,7 +462,11 @@ const enum OrigPostVotes {
   AllVotes = 3,
 }
 
-
+const enum ShowSearchBox {
+  Default = 0, // or null / undefined
+  No = 1,
+  Yes = 2,
+}
 
 const enum SiteStatus {
   NoAdmin = 1,
@@ -584,6 +589,15 @@ const enum StorageKeys {
   AuthnNonce = 'authnNonce',
 }
 
+
+const enum WinDims {
+  // UX: As narrow as 640 works fine (!), with sidebars closed. But then currently
+  // Ty tries to use only the full screen editor.
+  // And at ~ 900 the "Draft saved" text gets pushed to the right outside the editor.
+  // Warning: iOS Safari will probably? try to cause troubles, if editor-to-the-left and
+  // just 640 pixels. Maybe require >= 1000 width for Safari or have a look in an emulator?
+  MinEditorLeftWidth = 1000,
+}
 
 
 // vim: et ts=2 sw=2 tw=0 fo=r list

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.auth   // MOVE to  authn
+package talkyard.server.authn
 
 import com.debiki.core._
 import debiki.dao.{DaoAppSuite, SiteDao}

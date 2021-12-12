@@ -1159,7 +1159,7 @@ export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
 export function getCurSid12Maybe3(): St | N {  // [ts_authn_modl]
   const store: Store = debiki2.ReactStore.allData();
   const cookieName =
-          debiki2.store_isFeatFlagOn(store, 'ffUseNewSid') ? 'TyCoSid123' : 'dwCoSid';
+          !debiki2.store_isFeatFlagOn(store, 'ffUseOldSid') ? 'TyCoSid123' : 'dwCoSid';
   let sid = getSetCookie(cookieName);
   if (!sid) {
     // Cannot use store.me.mySidPart1 — we might not yet have loaded
@@ -1211,6 +1211,7 @@ export function deleteTempSessId() {  // [ts_authn_modl]
     // Can this throw?
     getSetCookie('dwCoSid', null);
     getSetCookie('TyCoSid123', null);
+    // Later: getSetCookie('TyCoSid4', null) — when SameSite None, and 6 cookies in total.
   }
   catch (ex) {
     // Just in case.
@@ -1479,7 +1480,10 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
 }
 
 
-export function loadMyself(onOk: (me: Me | NU, stuffForMe?: StuffForMe) => Vo) {
+/// If not logged in, e.g. the session just expired or got deleted, then, in the response,
+/// `me` and `stuffForMe` in LoadMeResponse would be null.
+///
+export function loadMyself(onOkMaybe: (resp: FetchMeResponse) => Vo) {
   // @ifdef DEBUG
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
@@ -1511,10 +1515,7 @@ export function loadMyself(onOk: (me: Me | NU, stuffForMe?: StuffForMe) => Vo) {
     }
   }
   // SHOULD incl sort order & topic filter in the url params. [2KBLJ80]
-  get(`/-/load-my-page-data?pageIds=${pageIds}`,
-        function (resp: { me?: Me, stuffForMe?: StuffForMe }) {
-    onOk(resp.me, resp.stuffForMe);
-  });
+  get(`/-/load-my-page-data?pageIds=${pageIds}`, onOkMaybe);
     // onErr(() => send 'failedToLogin' to parent frame)  [forget_sid12]
 }
 
@@ -2150,8 +2151,10 @@ export function createTagType(newTagType: TagType, onOk: (newWithId: TagType) =>
 
 
 export function listTagTypes(forWhat: ThingType, prefix: St,
-        onOk: (tagTypes: TagType[]) => Vo) {
-  getAndPatchStore(`/-/list-tag-types?forWhat=${forWhat}&tagNamePrefix=${prefix}`, onOk);
+        onOk: (resp: { allTagTypes: TagType[] }) => Vo) {
+  const forWhatParam = !forWhat ? '' : `forWhat=${forWhat}&`;
+  const namePrefixParam = !prefix ? '' : `tagNamePrefix=${prefix}`;
+  getAndPatchStore(`/-/list-tag-types?${forWhatParam + namePrefixParam}`, onOk);
 }
 
 

@@ -15,14 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.linkpreview
+package talkyard.server.linkpreviews
 
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import debiki.onebox.engines.TwitterPrevwRendrEng
 
 
 class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
@@ -100,7 +99,7 @@ class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
   }
 
   "FacebookPostPrevwRendrEng can" - {
-    import debiki.onebox.engines.{FacebookPostPrevwRendrEng => fb}
+    import talkyard.server.linkpreviews.engines.{FacebookPostPrevwRendrEng => fb}
     import FacebookLinks._
 
     val postUrl = facebookPostUrl
@@ -148,7 +147,7 @@ class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
 
 
   "FacebookVideoPrevwRendrEng can" - {
-    import debiki.onebox.engines.{FacebookVideoPrevwRendrEng => fb}
+    import talkyard.server.linkpreviews.engines.{FacebookVideoPrevwRendrEng => fb}
     import FacebookLinks._
 
     val videoUrl = facebookVideoUrl
@@ -204,7 +203,7 @@ class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
   }
 
   "InstagramPrevwRendrEng can" - {
-    import debiki.onebox.engines.{InstagramPrevwRendrEng => insta}
+    import talkyard.server.linkpreviews.engines.{InstagramPrevwRendrEng => insta}
     import InstagramLinks._
 
     "match real Instagram url:s" in {
@@ -261,7 +260,7 @@ class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
   }
 
   "RedditPrevwRendrEng can" - {
-    import debiki.onebox.engines.{RedditPrevwRendrEng => reddit}
+    import talkyard.server.linkpreviews.engines.{RedditPrevwRendrEng => reddit}
     import RedditLinks._
 
     "match Reddit urls" in {
@@ -318,7 +317,7 @@ class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
   }
 
   "TikTokPrevwRendrEng can" - {
-    import debiki.onebox.engines.{TikTokPrevwRendrEng => tiktok}
+    import talkyard.server.linkpreviews.engines.{TikTokPrevwRendrEng => tiktok}
     import TikTokLinks._
 
     "match TikTok urls" in {
@@ -370,7 +369,7 @@ class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
   }
 
   "TwitterPrevwRendrEng can" - {
-    import TwitterPrevwRendrEng.{regex => rgx}
+    import talkyard.server.linkpreviews.engines.TwitterPrevwRendrEng.{regex => rgx}
     import TwitterLinks._
 
     "regex match tweet urls" in {
@@ -431,7 +430,7 @@ class LinkPreviewMatchersSpec extends AnyFreeSpec with must.Matchers {
   }
 
   "YouTubePrevwRendrEngOEmbed can" - {
-    import debiki.onebox.engines.{YouTubePrevwRendrEngOEmbed => youtube}
+    import talkyard.server.linkpreviews.engines.{YouTubePrevwRendrEngOEmbed => youtube}
     import YouTubeLinks._
 
     "match YouTube urls" in {
