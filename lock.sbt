@@ -122,7 +122,6 @@ Compile / dependencyOverrides ++= {
       "javax.cache" % "cache-api" % "1.1.1",
       "javax.inject" % "javax.inject" % "1",
       "joda-time" % "joda-time" % "2.10.1",
-      "log4j" % "log4j" % "1.2.17",
       "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
       "net.minidev" % "accessors-smart" % "1.2",
       "net.minidev" % "json-smart" % "2.3",
@@ -135,8 +134,8 @@ Compile / dependencyOverrides ++= {
       "org.apache.httpcomponents" % "httpclient" % "4.5.2",
       "org.apache.httpcomponents" % "httpcore" % "4.4.5",
       "org.apache.httpcomponents" % "httpcore-nio" % "4.4.5",
-      "org.apache.logging.log4j" % "log4j-api" % "2.9.1",
-      "org.apache.logging.log4j" % "log4j-core" % "2.9.1",
+      "org.apache.logging.log4j" % "log4j-api" % "2.15.0",
+      "org.apache.logging.log4j" % "log4j-core" % "2.15.0",
       "org.apache.lucene" % "lucene-analyzers-common" % "7.2.1",
       "org.apache.lucene" % "lucene-backward-codecs" % "7.2.1",
       "org.apache.lucene" % "lucene-core" % "7.2.1",
@@ -200,4 +199,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 8679dbad02eb53ea5e8c4904b48676ee36b6b08b
+// LIBRARY_DEPENDENCIES_HASH 7393bdf41bbc926ee4b1f7b0168a4a3b75e9c025
