@@ -74,7 +74,7 @@ val appDependencies = Seq(
   Dependencies.Libs.rediscala,
   // Search engine, in https://mvnrepository.com.
   "org.elasticsearch" % "elasticsearch" % "6.2.4",          // newest 6.2 as of 18-07-17, there's 6.3.
-  "org.elasticsearch.client" % "transport" % "6.2.4",       // newest 6.2 as of 18-07-17, there's 6.3.
+  "org.elasticsearch.client" % "transport" % "6.8.21",       // newest 6.2 as of 18-07-17, there's 6.3.
 
   Dependencies.Libs.apacheCommonsEmail,
   Dependencies.Libs.guava,

@@ -166,7 +166,7 @@ Compile / dependencyOverrides ++= {
       "org.elasticsearch" % "jna" % "4.5.1",
       "org.elasticsearch" % "securesm" % "1.2",
       "org.elasticsearch.client" % "elasticsearch-rest-client" % "6.2.4",
-      "org.elasticsearch.client" % "transport" % "6.2.4",
+      "org.elasticsearch.client" % "transport" % "6.8.21",
       "org.elasticsearch.plugin" % "lang-mustache-client" % "6.2.4",
       "org.elasticsearch.plugin" % "parent-join-client" % "6.2.4",
       "org.elasticsearch.plugin" % "percolator-client" % "6.2.4",
