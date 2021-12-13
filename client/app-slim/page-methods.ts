@@ -64,7 +64,8 @@ export function page_findPostById(page: Page, postId: PostId): Post | undefined 
 
 export function page_mayChangeRole(pageRole: PageRole): boolean {
   // Sync with Scala [6KUW204]
-  return !isSection(pageRole) && !page_isChat(pageRole) && !page_isPrivateGroup(pageRole) &&
+  return !isSection(pageRole) && !page_isPrivateGroup(pageRole) &&
+      pageRole !== PageRole.PrivateChat && 
       pageRole !== PageRole.About &&
       pageRole !== PageRole.Code &&
       pageRole !== PageRole.SpecialContent;
@@ -97,6 +98,7 @@ export function pageRole_iconClass(pageRole: PageRole): string {
     case PageRole.MindMap: return 'icon-sitemap';
     case PageRole.Discussion: return 'icon-comment-empty';
     case PageRole.FormalMessage: return 'icon-mail';
+    case PageRole.JoinlessChat: // same icon
     case PageRole.OpenChat: return 'icon-chat';
     case PageRole.PrivateChat: return 'icon-lock';
     case PageRole.Form: return 'icon-th-list';

@@ -476,6 +476,13 @@ export function createPageInHtmlDirUnlessExists(pageSlug: St, html: St) {
   }
 
 
+export function page_isChat(pageRole: PageRole): Bo {
+  return pageRole === PageRole.JoinlessChat ||
+          pageRole === PageRole.OpenChat ||
+          pageRole === PageRole.PrivateChat;
+}
+
+
 export function checkNewPageFields(page, ps: {
      categoryId: CategoryId,
       authorId?: UserId,
@@ -506,7 +513,7 @@ export function checkNewPageFields(page, ps: {
     assert.eq(page.numPostsTotal, ps.numPostsTotal || 2);
     assert.eq(page.numRepliesTotal, numRepliesTotal);
     assert.eq(page.numRepliesVisible, numRepliesTotal);
-    if (page.pageType === PageRole.PrivateChat || page.pageType === PageRole.OpenChat) {
+    if (utils.page_isChat(page.pageType)) {
       // Chat messages don't reply to any particular post.
       assert.eq(page.numOrigPostRepliesVisible, 0);
     }

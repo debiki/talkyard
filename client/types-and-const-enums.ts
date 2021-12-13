@@ -407,6 +407,7 @@ const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]  RENAME to 
   MindMap = 11,
   Discussion = 12,
   FormalMessage = 17,
+  JoinlessChat = 22,   // [JoinlessChat]
   OpenChat = 18,
   PrivateChat = 19,
     // DirectMessage = 20,

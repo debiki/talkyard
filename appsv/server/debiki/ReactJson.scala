@@ -313,7 +313,13 @@ class JsonMaker(dao: SiteDao) {
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
     // than to lookup them each request.
-    val pageMemberIds = transaction.loadMessageMembers(page.id)
+    // However, if a chat was changed from OpenChat to JoinlessChat, in the database,
+    // there might already be page members (from when it was OpenChat). Then, don't
+    // load those members — JoinlessChat:s don't have any members. (But keep in the db,
+    // in case the page type gets changed back.)
+    val pageMemberIds: Set[UserId] =
+          if (!page.pageType.isGroupTalk) Set.empty
+          else transaction.loadMessageMembers(page.id)
 
     val userIdsToLoad = mut.Set[UserId]()
     userIdsToLoad ++= pageMemberIds

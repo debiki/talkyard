@@ -19,6 +19,7 @@ const TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
   MindMap: <PageRole> 11,
   Discussion: <PageRole> 12,
   FormalMessage: <PageRole> 17,
+  JoinlessChat: <PageRole> 22,
   OpenChat: <PageRole> 18,
   PrivateChat: <PageRole> 19,
     // DirectMessage: 20,

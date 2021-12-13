@@ -34,8 +34,14 @@ export function mayIndeed() {
 }
 
 
-export function page_isChat(pageRole: PageRole): boolean {
-  return pageRole === PageRole.OpenChat || pageRole === PageRole.PrivateChat;
+export function page_isOpenChat(pageRole: PageType): Bo {
+  return pageRole === PageRole.JoinlessChat ||
+          pageRole === PageRole.OpenChat;
+}
+
+
+export function page_isChat(pageRole: PageType): Bo {
+  return page_isOpenChat(pageRole) || pageRole === PageRole.PrivateChat;
 }
 
 // Hmm now there's a Discussion topic type (= page role), then page_isDiscussion is an a

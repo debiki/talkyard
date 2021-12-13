@@ -93,7 +93,11 @@ trait PagesDao {
 
     if (pageRole.isPrivateGroupTalk) {
       throwForbidden("EsE5FKE0I2", "Use MessagesDao instead")
-      // Perhaps OpenChat pages should be created via MessagesDao too? [5KTE02Z]
+      // Perhaps JoinlessChat/OpenChat pages should be created via MessagesDao too? [5KTE02Z]
+    }
+
+    if (pageRole.isChat && byWho.isGuest) {
+      throwForbidden("TyE7KFWY63", "Guests may not create chats")
     }
 
     if (pageRole.isGroupTalk && byWho.isGuest) {

@@ -401,9 +401,15 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         else if (!usersHere.areChatChannelMembers && !usersHere.areTopicContributors) {
           title = t.cb.UsersOnline;
         }
+        else if (page.pageRole === PageRole.JoinlessChat) {
+          // Then, list the most recent people who posted in the chat?
+          // Not impl though.
+          title = ''; // "People here recently:"  // I18N, unimplemented
+        }
         else {
+          const titleText = isChat ? t.cb.UsersInThisChat : t.cb.UsersInThisTopic;
           title = r.div({},
-            isChat ? t.cb.UsersInThisChat : t.cb.UsersInThisTopic,
+            titleText,
             r.span({ className: 'esCtxbar_onlineCol' }, t.Online));
           // Don't show num online strangers, when listing post authors for the current topic only.
           numOnlineStrangers = 0;
@@ -507,9 +513,9 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           adminGuideButton);
     }
     else {
-      let title = r.span({}, this.state.commentsType + ' ', r.span({ className: 'caret' }));
+      const title = r.span({}, this.state.commentsType + ' ', r.span({ className: 'caret' }));
       tabButtons =
-        ModalDropdownButton({ title: title, key: 'showRecent', pullRight: true },
+        ModalDropdownButton({ title, key: 'showRecent', pullRight: true },
           r.ul({ className: 'dropdown-menu' },
             recentButton,
             unreadButton,

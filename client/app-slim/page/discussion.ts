@@ -500,7 +500,7 @@ export const Title = createComponent({
         iconClass = 'icon-mail';
         tooltip = t.d.TooltipPersMsg;
       }
-      else if (page.pageRole === PageRole.OpenChat) {
+      else if (page.pageRole === PageRole.JoinlessChat || page.pageRole === PageRole.OpenChat) {
         iconClass = 'icon-chat';
         tooltip = t.d.TooltipChat;
       }
