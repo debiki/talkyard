@@ -1,10 +1,5 @@
-
--- unique? (per site) — so can just set author_id_c and created_by_id_c to null,
--- but still see which anon character created the post.
--- Maybe can add a pats_t.character_id_c field, so an anon character can optionally
--- get a name and bio (if the human controlling the anon character wants to give it a
--- description).
---create domain character_id_d i32_gz_d;
+-- In this migration: Anonymous posts, per page; discussion preferences;
+-- and some new datatype domains.
 
 
 -- New domains
@@ -17,7 +12,8 @@ alter  domain site_id_d add
 create domain pat_id_d i32_d;
 alter  domain pat_id_d add
    constraint pat_id_d_c_not_0 check (value <> 0);
--- Higher values are reserved.
+
+-- Higher absolute values are reserved, for now:
 alter  domain pat_id_d add
    constraint pat_id_d_c_lt_2e9 check (value < 2000000000);
 alter  domain pat_id_d add
@@ -33,26 +29,21 @@ create domain page_id_d__later i32_gz_d;
 create domain cat_id_d i32_gz_d;
 
 
--- Just a random value?
-create domain anonym_id_d i32_gz_d;
-
--- For now, always 50 = anon char, per discussion.
-create domain anon_level_d i16_d;
-alter  domain anon_level_d add
-   constraint anon_level_d_c_in check (value in (10, 50));
-
+create domain no_choose_yes_d i16_d;
+alter  domain no_choose_yes_d add
+   constraint no_choose_yes_d_c_in check (value in (1, 2, 3));
 
 create domain pat_type_d i16_d;
 alter  domain pat_type_d add
-   constraint pat_type_d_c_in_1_4_9_12 check (value in (1, 4, 9, 12));
+   constraint pat_type_d_c_in_1_4_9_12 check (value in (1, 2, 3, 4, 9, 12));
 
 create domain pat_type_user_d pat_type_d;
 alter  domain pat_type_user_d add
-   constraint pat_type_user_d_c_9 check (value = 9);
+   constraint pat_type_user_d_c_eq_9 check (value = 9);
 
 create domain pat_type_group_d pat_type_d;
 alter  domain pat_type_group_d add
-   constraint pat_type_group_d_c_12 check (value = 12);
+   constraint pat_type_group_d_c_eq_12 check (value = 12);
 
 create domain pat_type_user_group_d pat_type_d;
 alter  domain pat_type_user_group_d add
@@ -62,6 +53,7 @@ alter  domain pat_type_user_group_d add
 
 -- Privacy and participant type columns
 -------------------------------------------------
+
 
 alter table users3 rename column see_activity_min_trust_level to see_activity_min_tr_lv_c;
 alter table users3 add column see_profile_min_tr_lv_c  trust_level_or_staff_d;
@@ -76,26 +68,32 @@ alter table users3 add column see_stats_min_tr_lv_c    trust_level_or_staff_d;
 alter table users3 add column pat_type_c pat_type_d not null default 9;  -- user
 update users3
     set pat_type_c = case
+        when user_id = -3 then 3                -- unknown pat
         when user_id < 0 then 1                 -- guest
         when user_id = 1 or user_id = 2 then 4  -- system accounts
         else 12                                 -- group
     end
-    where user_id < 0 or is_group;
+    where user_id <= 2 or is_group;
 -- Ooops, need to insert on creation!
 
 -- Doesn't need to be unique — there's already the primary key. But Postgres
 -- wants it to be? So can foreign key link to it?
 create unique index pats_u_id_type on users3 (site_id, user_id, pat_type_c);
 
-alter table users3 add constraint pats_c_id_type check (
-    (user_id < 0 and pat_type_c = 1) or
-    (user_id in (1, 2) and pat_type_c = 4) or
-    (not is_group and pat_type_c = 9) or
-    (is_group and pat_type_c = 12));
+alter table users3 add constraint pats_c_id_type_guest_anon check (
+    user_id > -10 or pat_type_c in (1, 2));
 
--- alter table users3 add constraint pats_c_group_type check (
---   (is_group and pat_type_c = 12) or (not is_group and pat_type_c != 12));
+alter table users3 add constraint pats_c_id_type_unknown check (
+    user_id <> -3 or pat_type_c = 3);
 
+alter table users3 add constraint pats_c_id_type_sys_sysbot check (
+    user_id not in (1, 2) or pat_type_c = 4);
+
+alter table users3 add constraint pats_c_id_type_user check (
+    user_id <= 2 or is_group or pat_type_c = 9);
+
+alter table users3 add constraint pats_c_id_type_group check (
+    user_id <= 2 or not is_group or pat_type_c = 12);
 
 -- Later: drop  is_group, use instead: pat_type_c = 12
 
@@ -105,36 +103,62 @@ alter table users3 add constraint pats_c_id_type check (
 -------------------------------------------------
 
 
+alter table users3 add column anon_for_pat_id_c    pat_id_d;
+alter table users3 add column anon_on_page_id_st_c page_id_st_d;
+alter table users3 add column anon_on_page_id_c    page_id_d__later;
+alter table users3 add column still_anon_c         bool;   -- undef if was never anon
+
+alter table users3 add constraint pats_c_anon_cols check (
+    (still_anon_c is null) = (anon_for_pat_id_c is null) and
+    (still_anon_c is null) = (anon_on_page_id_st_c is null));
+
+-- fk ix: pats_u_anonforpatid_anononpageid
+alter table users3 add constraint pats_anonforpat_r_pats
+    foreign key (site_id, anon_for_pat_id_c)
+    references users3 (site_id, user_id) deferrable;
+
+-- fk ix: pats_u_anononpageid
+alter table users3 add constraint pats_anononpage_r_pages
+    foreign key (site_id, anon_on_page_id_st_c)
+    references pages3 (site_id, page_id) deferrable;
+
+create index pats_u_anonforpatid_anononpageid on users3 (
+    site_id, anon_for_pat_id_c, anon_on_page_id_st_c);
+
+create index pats_u_anononpageid on users3 (
+    site_id, anon_on_page_id_st_c);
+
+
 -- Later, drop: category_id, page_id.
 alter table settings3 add column enable_anon_posts_c bool;
 
+
+
+-- Discussion preferences
+-------------------------------------------------
 
 
 alter table page_notf_prefs3 rename to disc_notf_prefs_t;
 alter table disc_notf_prefs_t rename column people_id to pat_id_c;
 
 
-
 create table disc_prefs_t(
   site_id_c                site_id_d not null,
   pat_id_c                 pat_id_d not null,
   pat_type_c               pat_type_user_group_d not null,
-  discs_in_whole_site_c    bool,
-  discs_in_cat_id_c        cat_id_d,
-  page_id_st_c             page_id_st_d,
-  page_id_nr_c             page_id_d__later,
-  
-  anon_level_c             anon_level_d,
-  min_anon_level_c         anon_level_d, -- default 50. Per group, conf by adm
-  max_anon_level_c         anon_level_d, -- default 50. Per group, conf by adm
-  min_anon_mins_c          i32_gz_d,
-  deanon_post_aft_mins_c   i32_gz_d,
-  deanon_page_aft_mins_c   i32_gz_d,
-  -- anonym_id_c           anonym_id_d,  -- per user and cat/site
-  -- anonym_ttl_mins_c     i32_gz_d,
-  -- min_anonym_ttl_mins_c i32_gz_d,  -- for admins
 
-  -- ix: discprefs_i_pat_pattype
+  discs_in_whole_site_c    bool,
+  discs_in_cat_id_c        cat_id_d,  -- ren to just:  cat_id_c
+  page_id_st_c             page_id_st_d,
+  page_id_int_c            page_id_d__later,
+
+  posts_start_anon_c       no_choose_yes_d,
+  posts_stay_anon_c        no_choose_yes_d,
+  min_anon_mins_c          i32_gz_d,
+  deanon_pages_aft_mins_c  i32_gz_d,
+  deanon_posts_aft_mins_c  i32_gz_d,
+
+  -- ix: discprefs_i_patid_pattype
   constraint discprefs_r_pats foreign key (site_id_c, pat_id_c, pat_type_c)
       references users3 (site_id, user_id, pat_type_c) deferrable,
 
@@ -142,7 +166,7 @@ create table disc_prefs_t(
   constraint discprefs_r_pages foreign key (site_id_c, page_id_st_c)
       references pages3 (site_id, page_id) deferrable,
 
-  -- ix discprefs_i_cat
+  -- ix discprefs_i_catid
   constraint discprefs_r_cats foreign key (site_id_c, discs_in_cat_id_c)
       references categories3 (site_id, id) deferrable,
 
@@ -160,112 +184,13 @@ create table disc_prefs_t(
   -- True or null.
   constraint discprefs_c_wholesite_true check (discs_in_whole_site_c),
 
-  -- Only users (type 9) can have an anonym id — groups are just for
-  -- configuration, not for actually being anonymous.
-  -- constraint discprefs_c_only_for_users check (pat_type_c = 9 or anonym_id_c is null),
-
-  -- Max and min are for groups, type 12, configured by admins (or maybe group mods).
-  constraint discprefs_c_only_for_groups check (pat_type_c = 12 or (
-      min_anon_level_c is null and max_anon_level_c is null))
-         -- and min_anonym_ttl_mins_c is null))
+  -- Only users (type 9) and groups (type 12) can configure discussion preferences.
+  constraint discprefs_c_for_users_and_groups check (
+        pat_type_c = 9 or pat_type_c = 12)
 );
 
 
 
-create index discprefs_i_pat_pattype on disc_prefs_t (site_id_c, pat_id_c, pat_type_c);
+create index discprefs_i_patid_pattype on disc_prefs_t (site_id_c, pat_id_c, pat_type_c);
 create index discprefs_i_pageid on disc_prefs_t (site_id_c, page_id_st_c);
-create index discprefs_i_cat on disc_prefs_t (site_id_c, discs_in_cat_id_c);
-
-
-
-create table anonym_ids_t(
-  site_id_c    int not null,
-  anonym_id_c  anonym_id_d not null,
-  pat_id_c     pat_id_d not null,
-  pat_type_c   pat_type_user_d not null,
-
-  constraint anonymids_p_anonymid primary key (site_id_c, anonym_id_c),
-
-  -- ix: anonymids_i_patid_pattype
-  constraint anonymids_r_pats foreign key (site_id_c, pat_id_c, pat_type_c)
-     references users3 (site_id, user_id, pat_type_c) deferrable
-);
-
-create index anonymids_i_patid_pattype on anonym_ids_t (site_id_c, pat_id_c, pat_type_c);
-
-
-
-alter table posts3 add column author_id_c   pat_id_d;
-alter table posts3 add column owner_id_c    pat_id_d;  -- coudl do via perms_on_pages3 but more complicated, and original owner would get to keep hens perms.
-
-create index posts_i_authorid on posts3 (site_id, author_id_c) where author_id_c is not null;
-create index posts_i_ownerid  on posts3 (site_id, owner_id_c)  where owner_id_c  is not null;
-
-alter table posts3 add constraint posts_authorid_r_pats
-    foreign key (site_id, author_id_c)
-    references users3 (site_id, user_id) deferrable;
-alter table posts3 add constraint posts_ownerid_r_pats
-    foreign key (site_id, owner_id_c)
-    references users3 (site_id, user_id) deferrable;
-
-alter table posts3 add column anonym_id_c   anonym_id_d;
-alter table posts3 add column anon_level_c  anon_level_d;
-
-create index posts3_i_anonymid on posts3 (site_id, anonym_id_c);
-
--- ix:  posts3_i_anonymid  and  anonymids_p_anonymid
-alter table posts3 add constraint posts_anonymid_r_anonymids
-    foreign key (site_id, anonym_id_c)
-    references anonym_ids_t (site_id_c, anonym_id_c) deferrable;
-
-
-
-
-alter table post_revisions3 add column author_id_c   pat_id_d;
-alter table post_revisions3 add column owner_id_c    pat_id_d;
-
-create index postrevisions_i_authorid on post_revisions3 (site_id, author_id_c) where author_id_c is not null;
-create index postrevisions_i_ownerid  on post_revisions3 (site_id, owner_id_c)  where owner_id_c  is not null;
-
-alter table post_revisions3 add constraint postrevisions_authorid_r_pats
-    foreign key (site_id, author_id_c)
-    references users3 (site_id, user_id) deferrable;
-alter table post_revisions3 add constraint postrevisions_ownerid_r_pats
-    foreign key (site_id, owner_id_c)
-    references users3 (site_id, user_id) deferrable;
-
-alter table post_revisions3 add column anonym_id_c   anonym_id_d;
-alter table post_revisions3 add column anon_level_c  anon_level_d;
-
-create index post_revisions3_i_anonymid on post_revisions3 (site_id, anonym_id_c);
-
--- ix:  post_revisions3_i_anonymid  and  anonymids_p_anonymid
-alter table post_revisions3 add constraint postrevisions_anonymid_r_anonymids
-    foreign key (site_id, anonym_id_c)
-    references anonym_ids_t (site_id_c, anonym_id_c) deferrable;
-
-
-
-page_users3 has:             joined_by_id
-            would also need: joined_as_id  (or joined_as_pseudonym_id or show_penname_id_c?)
-
-group_participants3 has:
-  participant_id
-would also need:
-  pat_penname_id  or  show_penname_id_c ?
-
-pages3 has:        author_id,
-      would need:  owner_id   ?  by default the OP author
-
-
-Maybe new category permission: Change post author,  Change post owner ?
-
-
-post_actions3 has:  created_by_id_c
-      also needs:   show_penname_id_c
-                    anonym_id_c
-                    anon_level_c  ? so knows if ok to make less anonymous
-
-
-upload_refs3.added_by_id  ? hmm ?  maybe leave as is.
-
+create index discprefs_i_catid on disc_prefs_t (site_id_c, discs_in_cat_id_c);

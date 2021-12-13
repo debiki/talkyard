@@ -17,16 +17,21 @@
 --  comment on domain pat_type_d is $_$
 --
 --  Participant types:
---  ==== Not a real account:
+--  ==== Anon, per page
+--  3 = Unknown pat
+--  ==== Guests (semi anon blog commenters)
 --  1 = Guest or anonymous/unknown stranger.
---  ==== Cannot log in, is just a pseudonym:
---  2 = Pen name. Not impl.
+--  ==== Not a real account, cannot add to groups etc:
+--  2 = Anonyn, with real_user_id identifying the real user.
 --  ==== Cannot add to groups. Has all permisssions or gets in other ways:
 --  4 = System account (system, sysbot).
 --  5 = External management account: superbot, superadmin, superstaff (mod, dev/design help)
 --  k=== Cannot config UI prefs — doesn't use any UI:
---  (8 = Bot, e.g. CI system — can only do things via AIP.
---       A human + custom client should use type 6 User instead.)
+--  ? 6 = temporary just one-request user, via API secret.
+--  ? 7 = Only bot, e.g. CI system — cannot log in; can *only* do things via AIP.
+--       A human + custom client should use type 9 User instead.
+--  ==== Cannot log in, is just a pseudonym. But can add to groups etc:
+--  8 = Pen name. Not impl.
 --  ====
 --  9 = User (a human, maybe a bot, sometimes cannot know. Maybe an extrenal Matrix
 --      user who got an account auto generated).
