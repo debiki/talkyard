@@ -578,9 +578,14 @@ trait PostsDao {
       if (!page.pageType.isChat)
         throwForbidden("EsE5F0WJ2", s"Page $pageId is not a chat page; cannot insert chat message")
 
-      val pageMemberIds = tx.loadMessageMembers(pageId)
-      if (!pageMemberIds.contains(authorId))
-        throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
+      if (page.pageType == PageType.JoinlessChat) {
+        // Noop. No need to have joined the chat channel, to start chatting.
+      }
+      else {
+        val pageMemberIds = tx.loadMessageMembers(pageId)
+        if (!pageMemberIds.contains(authorId))
+          throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
+      }
 
       // Try to append to the last message, instead of creating a new one. That looks
       // better in the browser (fewer avatars & sent-by info), + we'll save disk and

@@ -2384,6 +2384,8 @@ export const Editor = createFactory<any, EditorState>({
         case PageRole.Problem: what = t.e.ReportProblem; break;
         case PageRole.Idea: what = t.e.SuggestIdea; break;
         case PageRole.ToDo: what = "Create a todo"; break;
+        // Show "Chat" for both these, and let one toggle need-to-join on/off later? UX SHOULD [JoinlessChat]
+        case PageRole.JoinlessChat:
         case PageRole.OpenChat: what = t.e.NewChat; break;
         case PageRole.PrivateChat: what = t.e.NewPrivChat; break;
         case PageRole.MindMap: what = "Create a mind map page"; break;
@@ -2501,6 +2503,7 @@ export const Editor = createFactory<any, EditorState>({
         case PageRole.Code:
           saveButtonTitle = makeSaveTitle(t.e.Create, t.e.page);
           break;
+        case PageRole.JoinlessChat:
         case PageRole.OpenChat:
         case PageRole.PrivateChat:
           saveButtonTitle = makeSaveTitle(t.e.Create, t.e.chat);

@@ -828,6 +828,8 @@ chat:
     self join, auto leave:
           - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+  joinless chat:
+            - TESTS_MISSING
   private chat:             ==
           - private-chat.3browsers.test.ts  TyT2ABKR045
     not searchable:

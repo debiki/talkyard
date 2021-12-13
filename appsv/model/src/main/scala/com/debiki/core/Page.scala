@@ -495,13 +495,15 @@ sealed abstract class PageType(
 
   def isChat: Boolean = false
 
+  def isOpenChat: Bo = isChat && !isPrivateGroupTalk
+
   /** If the topic is a discussion between a closed group of people, and visible only to them.
     */
   def isPrivateGroupTalk: Boolean = false
 
   /** If one needs to join the page before one can say anything.
     */
-  def isGroupTalk: Boolean = isChat || isPrivateGroupTalk
+  def isGroupTalk: Boolean = false
 
   // Also see [WHENFOLLOW].
   def shallFollowLinks: Boolean = false
@@ -609,18 +611,37 @@ object PageType {
   /** For discussions (non-questions) or announcements or blog posts, for example.  */
   case object Discussion extends PageType(12, staffOnly = false)
 
-  /** Any forum member who can see this chat (i.e. can see the category
-    * it is in), can join (add henself to the chat). It's open to join,
-    * for anyone who can see it. */
+  /** Like OpenChat, but one doesn't need to join the chat, to post a message.
+    * Can make sense for a global quick-questions support chat, where people
+    * come and go, num individuals who has participated grows ~ linearly with time
+    * (rather than proportional to the size of a team or group in an organization
+    * — then, OpenChat would be better, because it's nice to see who in the company
+    * are following the chat (is it?)).
+    * Can change page type to StandardChat only.
+    */
+  // Rename AnyoneChat — anyone may post, without having joined first
+  // Search for "Joinless" and "open chat" everywhere (in Typescript files too).
+  case object JoinlessChat extends PageType(22, staffOnly = false) {
+    override def isChat = true
+    // But not: isGroupTalk, because anyone can chat, no need to have joined the chat "group".
+    assert(!isGroupTalk)
+  }
+
+  /** An OpenChat is open to join for anyone who can see it (i.e. can see the category
+    * it is in).  Can change page type only to Chat.
+    */
+  // RENAME to StandardChat?  skip this:  JoinableChat? — one needs to join the chat channel,
+  // before posting. Maybe rename  page_isOpenChat (.ts) to .. to what?
   case object OpenChat extends PageType(18, staffOnly = false) {
     override def isChat = true
-    override def mayChangeRole = false
+    override def isGroupTalk = true
   }
 
   /** Users added explicitly.  Only visible to the members of this
     * specific chat. */
   case object PrivateChat extends PageType(19, staffOnly = false) {
     override def isChat = true
+    override def isGroupTalk = true
     override def isPrivateGroupTalk = true
     override def canClose = false // lock them instead
     override def mayChangeRole = false
@@ -634,6 +655,7 @@ object PageType {
     * with the "correct" permissions on this category has access to the topic. (Not yet impl.)
     */
   case object FormalMessage extends PageType(17, staffOnly = false) {
+    override def isGroupTalk = true
     override def isPrivateGroupTalk = true
     override def canClose = false // lock them instead
     override def mayChangeRole = false
@@ -663,6 +685,7 @@ object PageType {
     case MindMap.IntValue => MindMap
     case Discussion.IntValue => Discussion
     case FormalMessage.IntValue => FormalMessage
+    case JoinlessChat.IntValue => JoinlessChat
     case OpenChat.IntValue => OpenChat
     case PrivateChat.IntValue => PrivateChat
     case Form.IntValue => Form
