@@ -81,9 +81,9 @@ val appDependencies = Seq(
   Dependencies.Libs.jsoup,
   // Fluentd better understands json logs.
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-  "ch.qos.logback" % "logback-classic" % "1.2.3",           // newest as of 18-07-17
+  "ch.qos.logback" % "logback-classic" % "1.2.8",           // newest as of 18-07-17
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-  "ch.qos.logback" % "logback-core" % "1.2.3",              // newest as of 18-07-17
+  "ch.qos.logback" % "logback-core" % "1.2.8",              // newest as of 18-07-17
   // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
   "net.logstash.logback" % "logstash-logback-encoder" % "4.11",  // newest 4.x as of 18-07-17, there's 5.1
   //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
