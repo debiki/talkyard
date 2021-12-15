@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.search
+package talkyard.server.search
 
 import com.debiki.core._
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse

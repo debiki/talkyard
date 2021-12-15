@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki.dao.migrations
+package talkyard.server.migrations
 
 import com.debiki.core._
 import com.debiki.core.Prelude._

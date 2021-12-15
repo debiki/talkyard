@@ -472,8 +472,9 @@ case class SettingsToSave(
   }
 
   for (anyName <- outboundEmailsFromName; name <- anyName) {
-    throwBadReqIfAny(Validation.findEmailNameProblem(name),
-          "TyE5MW2Z8", "Weird email From name: ")
+    Validation.findEmailNameProblem(name) foreach { problem =>
+      throwBadReq3("TyE5MW2Z8", s"Weird email From name: $problem, the From name: '$name'")
+    }
   }
 }
 

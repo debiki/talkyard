@@ -19,7 +19,7 @@ package controllers
 
 import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
-import ed.server.search._
+import talkyard.server.search._
 import ed.server.http._
 import debiki.EdHttp._
 import scala.collection.immutable.Seq

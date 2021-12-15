@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.plugins.utx
+package talkyard.server.plugins.utx
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -30,8 +30,8 @@ import scala.collection.mutable
 
 /** Saves Usability Testing Exchange tasks, and picks the next task to do.  [plugin]
   */
-class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
+  extends EdController(cc, tyCtx) {
 
 
   def handleUsabilityTestingForm: Action[JsValue] = PostJsonAction(

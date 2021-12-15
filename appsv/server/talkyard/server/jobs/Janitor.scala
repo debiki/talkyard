@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.jobs
+package talkyard.server.jobs
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.debiki.core._

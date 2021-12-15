@@ -8,13 +8,14 @@
 # happens below), and use all Basic features at no cost, so, no problems
 # with using ES, right. Also see decisions.adoc.
 #
-# Can just bump to 6.8, right?
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.2.3
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.21
 
 # [ty_v1] mount these instead — in a conf.d?
 # In dev, mount the conf from  modules/ed-prod-one-test/conf/search/.
-COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
-COPY log4j2.properties /usr/share/elasticsearch/config/log4j2.properties
+COPY \
+      elasticsearch.yml  \
+      log4j2.properties  \
+  /usr/share/elasticsearch/config/
 
 # For troubleshooting. Oops, maybe rpm not apt?
 # RUN apt-get install -y net-tools tree

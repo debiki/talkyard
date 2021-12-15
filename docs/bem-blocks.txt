@@ -33,6 +33,7 @@ w_X   = wraps X. Always a class, not an id.
 
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
 Ab  = about
+Adm = admin
 Aft = after
 Alw = allow(ed)
 Ann, An = announcement, also see SAn: Server Announcement
@@ -112,6 +113,7 @@ Nw  = new
 Pat = participant
 Pb  = pagebar
 Pf  = preference, e.g. NfPfs = notification preferences
+Pnl = panel
 Py  = property?
 Pw  = password, e.g. NwPwI
 Perm,
@@ -131,13 +133,15 @@ SAn = Server Announcement, also see Ann = announcement
 Sch = Search
 SgU = sign up, also LgI/LgO = log in/out, and Au = Authentication, e.g. AuD
 Sm  = small (screen), also: Md, Lg, Xl
-Sub = "sub" as in "sub category"
-Sub = submit NO, CLEAN_UP, insetad:
-Sug = suggest
 Sbm = submit
 Snz = Snooze
 St = status or state
 Stc = static, Fxd = fixed
+Stf = staff
+Sub = "sub" as in "sub category"
+Sub = submit NO, CLEAN_UP, insetad:
+Sug = suggest
+Sup = super, like in superadmin
 Sz  = size
 T   = table, when at the end: TsT = topics *table*
 TH  = table header, i.e. <th> (so styles won't affect stuff in <td>)
