@@ -588,8 +588,10 @@ const LoginDialogContent = createClassAndFactory({
                 ExtIdpAuthnBtn(makeAuthnProps('icon-facebook', 'Facebook', rFragment({},
                   // Need to follow Facebook's brand guidelines. [FBBRAND]
                   FacebookLogoImage, "Facebook"))),
+            /* Twitter login won't work, until they support OAuth2. [0_twitter_aun]
             !ss.enableTwitterLogin ? null :
                 ExtIdpAuthnBtn(makeAuthnProps('icon-twitter', 'Twitter')),
+                */
             !ss.enableGitHubLogin ? null :
                 ExtIdpAuthnBtn(makeAuthnProps('icon-github-circled', 'GitHub')),
             !ss.enableLinkedInLogin ? null :
@@ -662,15 +664,19 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
       // Try-catch not needed, but anyway.
       try {
         const store: Store = ReactStore.allData();
-        useServerGlobalIdp =
+        /* Now use always, by default.
               debiki2.store_isFeatFlagOn(store, 'ffUseScribeJava') ||
               getMainWin().location.hash.indexOf('&tryScribeJava&') >= 0;
-        useServerGlobalIdp &&= !debiki2.store_isFeatFlagOn(store, 'ffNotScribeJava');
+        */
+        useServerGlobalIdp = !debiki2.store_isFeatFlagOn(store, 'ffNotScribeJava');
         // Twitter (OAuth1) doesn't yet work via ScribeJava; only these do (OAuth2):
+        /* And skip Twitter; there's been an admin notice about no more Twitter login,
+        // for many months.
         useServerGlobalIdp &&= providerLowercase === 'google' ||
                 providerLowercase === 'facebook' ||
                 providerLowercase === 'github' ||
                 providerLowercase === 'linkedin' ;
+        */
       }
       catch (ex) {
         logD(`Srv glob idp err [TyE406MRKD2]`, ex);

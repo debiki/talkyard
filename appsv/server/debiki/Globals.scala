@@ -28,8 +28,8 @@ import com.zaxxer.hikari.HikariDataSource
 import debiki.EdHttp._
 import ed.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
-import debiki.dao.migrations.ScalaBasedMigrations
-import ed.server.search.SearchEngineIndexer
+import talkyard.server.migrations.ScalaBasedMigrations
+import talkyard.server.search.SearchEngineIndexer
 import ed.server.notf.NotifierActor
 import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
@@ -45,7 +45,7 @@ import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
 import scala.util.matching.Regex
 import ed.server.EdContext
 import ed.server.http.GetRequest
-import ed.server.jobs.Janitor
+import talkyard.server.jobs.Janitor
 import play.api.http.{HeaderNames => p_HeaderNames}
 import play.api.mvc.RequestHeader
 import talkyard.server.TyLogging

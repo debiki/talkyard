@@ -19,7 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import ed.server.search.{PageAndHits, SearchHit}
+import talkyard.server.search.{PageAndHits, SearchHit}
 import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
 

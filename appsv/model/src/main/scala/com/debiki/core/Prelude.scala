@@ -192,6 +192,10 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     }
   }
 
+  def throwBadReq3(errCode: St, errMsg: => St = ""): U = {
+    throw new BadRequestEx(errMsg + s" [$errCode]")
+  }
+
   def throwUnimpl(msg: St): Nothing = {
     throw new UnimplementedEx(msg)
   }

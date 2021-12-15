@@ -154,7 +154,7 @@ ReactDispatcher.register(function(payload) {
       // see logoutClientSideOnly(). But let's keep this, in case we some day
       // in the future don't want to reload the page.
       // ---------
-      $h.removeClasses(htmlElem, 'dw-is-admin dw-is-staff dw-is-authenticated');
+      $h.removeClasses(htmlElem, 'c_IsSupAdm dw-is-admin dw-is-staff dw-is-authenticated');
       if (store.userIdsOnline) delete store.userIdsOnline[store.me.id];
       store.numOnlineStrangers += 1;
       store.me = makeStranger(store);
@@ -619,6 +619,9 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
 
   if (newMe.isAdmin) {
     $h.addClasses(htmlElem, 'dw-is-admin dw-is-staff');
+  }
+  if (newMe.id === SystemUserId) {
+    $h.addClasses(htmlElem, 'c_IsSupAdm');
   }
   if (newMe.isModerator) {
     $h.addClasses(htmlElem, 'dw-is-staff');

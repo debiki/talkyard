@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.search
+package talkyard.server.search
 
 import akka.actor._
 import com.debiki.core._
