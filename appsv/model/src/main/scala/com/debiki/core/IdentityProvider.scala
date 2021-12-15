@@ -16,8 +16,10 @@ object WellKnownIdpImpl {
   case object Twitter extends WellKnownIdpImpl("twitter")
 
   def fromName(protocol: St, name: St): Opt[WellKnownIdpImpl] = {
+    // Twitter won't work, unless using OAuth10a. [0_twitter_aun]
     unimplIf(name != Twitter.name && protocol != ProtoNameOAuth2, "TyE8B05MRKJT")
-    unimplIf(name == Twitter.name && protocol != ProtoNameOAuth10a, "TyE5X02RSMD4")
+    if (name == Twitter.name && protocol != ProtoNameOAuth10a)
+      return None  // was: throw "TyE5X02RSMD4"
 
     Some(name match {
       case Facebook.Name => Facebook

@@ -1217,7 +1217,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       "TyECUIDPDEFOAU", o"""Default OpenAuth authentication disabled,
         when using only site custom IDP""")
 
-    // This'll break Twitter authn, until they support OAuth2.
+    // This'll break Twitter authn, until they support OAuth2.  [0_twitter_aun]
     // (There's addAdminNotice() below, if Twitter used.)
     throwForbiddenIf(globals.config.featureFlags.contains("ffSilhouetteOff"),
            "TyEOLDAUTHNOFF",
@@ -1241,6 +1241,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         throwForbiddenIf(!settings.enableGoogleLogin, "TyE0GOOGLOGIN", "Google login disabled")
         googleProvider()
       case TwitterProvider.ID =>
+        // [0_twitter_aun]
         throwForbiddenIf(!settings.enableTwitterLogin, "TyE0TWTTRLOGIN", "Twitter login disabled")
         request.dao.addAdminNotice(Notice.TwitterLoginUsed)
         twitterProvider()
@@ -1388,6 +1389,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           loginToSiteId = NoSiteId, // we don't know
           loginToSiteOrigin = "",   // don't know
           protocol =
+                // [0_twitter_aun]
                 if (providerName == TwitterProvider.ID) ProtoNameOAuth10a
                 else ProtoNameOAuth2,
           providerAlias = providerName,
@@ -1493,7 +1495,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         if (authnState.usesServerGlobalIdp) {
           // Is it Twitter? No more Twitter accounts allowed, or linking a Twitter
           // account to any existing account.  Twitter uses OAuth 1.0a which Talkyard
-          // won't support once done migrating from Silhouette to ScribeJava.
+          // won't support once done migrating from Silhouette to ScribeJava. [0_twitter_aun]
           // Instead, let's wait for Twitter to start supporting OAuth2.
           if (authnState.providerAlias == TwitterProvider.ID) {
             throwForbiddenIf(globals.config.featureFlags.contains("ffTwitterSignUpOff"),
@@ -2273,8 +2275,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     var trustVerifiedEmailAddr = false
     var userInfoUrl: St = ""
 
-    val providerImpl = WellKnownIdpImpl.fromName(protocol, providerAlias)
-          .getOrDie("TyE3056MRKT2")
+    val providerImpl = WellKnownIdpImpl.fromName(protocol, providerAlias) getOrElse {
+      throwForbidden("TyE0SRVDEFIDP02", s"Login using $protocol and ${providerAlias
+            } isn't supported")
+    }
+
     dieIf(providerImpl.name != providerAlias, "TyE306MRKTD")  // for now
 
     val s: OAuth2Settings = providerImpl match {
@@ -2338,6 +2343,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         if (!siteSettings.enableTwitterLogin) return Bad("Twitter login not enabled")
         return Bad("Twitter authn not impl via ScribeJava [TyEAUTTWTSCRJVA]")
         // Won't work — Twitter uses OAuth1, but Ty only supports OAuth2 via ScribeJava:
+        // [0_twitter_aun]
         // twitterProvider().settings
 
       case _ =>

@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.search.SearchEngine
+import talkyard.server.search.SearchEngine
 import org.{elasticsearch => es}
 import redis.RedisClient
 import talkyard.server.dao._
@@ -33,7 +33,7 @@ import talkyard.server.authz.MayMaybe
 import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
-import ed.server.summaryemails.SummaryEmailsDao
+import talkyard.server.summaryemails.SummaryEmailsDao
 import org.scalactic.{ErrorMessage, Or}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
