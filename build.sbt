@@ -51,6 +51,11 @@ val appDependencies = Seq(
   play.sbt.Play.autoImport.filters,
   Dependencies.Play.json,
 
+  // For some reason, withouth this, an older version gets used which throws
+  // an error because some dependencies use jackson 2.13.0 (and the others too,
+  // older 2.X evicted), but the older -module-scala wants 2.10 or something.
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.0",
+
   // OAuth2 and OIDC authentication.
   Dependencies.Libs.scribeJava,
   Dependencies.Libs.auth0JavaJwt,
@@ -73,19 +78,19 @@ val appDependencies = Seq(
   caffeine,  // was: "com.github.ben-manes.caffeine" % "caffeine"
   Dependencies.Libs.rediscala,
   // Search engine, in https://mvnrepository.com.
-  "org.elasticsearch" % "elasticsearch" % "6.2.4",          // newest 6.2 as of 18-07-17, there's 6.3.
-  "org.elasticsearch.client" % "transport" % "6.2.4",       // newest 6.2 as of 18-07-17, there's 6.3.
+  "org.elasticsearch" % "elasticsearch" % "6.8.21",
+  "org.elasticsearch.client" % "transport" % "6.8.21",
 
   Dependencies.Libs.apacheCommonsEmail,
   Dependencies.Libs.guava,
   Dependencies.Libs.jsoup,
   // Fluentd better understands json logs.
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-  "ch.qos.logback" % "logback-classic" % "1.2.3",           // newest as of 18-07-17
+  "ch.qos.logback" % "logback-classic" % "1.2.8",
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-  "ch.qos.logback" % "logback-core" % "1.2.3",              // newest as of 18-07-17
+  "ch.qos.logback" % "logback-core" % "1.2.8",
   // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-  "net.logstash.logback" % "logstash-logback-encoder" % "4.11",  // newest 4.x as of 18-07-17, there's 5.1
+  "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
   //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
@@ -103,7 +108,7 @@ val appDependencies = Seq(
   //              why-do-i-need-jsr305-to-use-guava-in-scala
   "com.google.code.findbugs" % "jsr305" % "3.0.2" % "provided",
   // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
-  "org.mockito" % "mockito-all" % "1.9.5" % "test", // I use Mockito with Specs2...
+  "org.mockito" % "mockito-all" % "1.10.19" % "test", // I use Mockito with Specs2...
   Dependencies.Libs.scalaTest,
   Dependencies.Libs.scalaTestPlusPlay)
 
@@ -124,10 +129,10 @@ def mainSettings = List(
   version := appVersion,
   libraryDependencies ++= appDependencies,
 
-  // Pin to >= 2.15.
+  // Pin to >= 2.15, no, 2.16.
   dependencyOverrides ++= Seq(
-        "org.apache.logging.log4j" % "log4j-api" % "2.15.0",
-        "org.apache.logging.log4j" % "log4j-core" % "2.15.0"),
+        "org.apache.logging.log4j" % "log4j-api" % "2.16.0",
+        "org.apache.logging.log4j" % "log4j-core" % "2.16.0"),
 
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
