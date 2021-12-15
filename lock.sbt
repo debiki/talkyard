@@ -83,7 +83,7 @@ Compile / dependencyOverrides ++= {
       "com.typesafe.play" % "shaded-asynchttpclient" % "2.1.3",
       "com.typesafe.play" % "shaded-oauth" % "2.1.3",
       "com.typesafe.play" % "twirl-api_2.12" % "1.5.1",
-      "com.zaxxer" % "HikariCP" % "3.4.5",
+      "com.zaxxer" % "HikariCP" % "5.0.0",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
       "commons-codec" % "commons-codec" % "1.15",
       "commons-collections" % "commons-collections" % "3.2.2",
