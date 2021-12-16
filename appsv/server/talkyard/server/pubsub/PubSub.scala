@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.pubsub
+package talkyard.server.pubsub
 
 import akka.actor._
 import akka.pattern.ask

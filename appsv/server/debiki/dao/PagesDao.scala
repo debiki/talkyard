@@ -25,7 +25,7 @@ import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
 import talkyard.server.authz.Authz
-import ed.server.spam.SpamChecker
+import talkyard.server.spam.SpamChecker
 import java.{util => ju}
 import scala.collection.immutable
 import talkyard.server.dao._

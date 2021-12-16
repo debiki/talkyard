@@ -21,7 +21,7 @@ import com.debiki.core._
 import debiki.RateLimits
 import debiki.dao.SiteDao
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import controllers.Utils.OkApiJson
 import play.api.libs.json._
 import javax.inject.Inject
@@ -30,8 +30,8 @@ import talkyard.server.JsX._
 import debiki.JsonUtils._
 
 
-class SessionController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class SessionController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   def listSessions(patId: PatId): Action[U] = GetAction { req =>

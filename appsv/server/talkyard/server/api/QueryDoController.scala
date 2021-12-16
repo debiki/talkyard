@@ -20,12 +20,12 @@ package talkyard.server.api
 import com.debiki.core._
 import controllers.OkApiJson
 import debiki.RateLimits
-import ed.server.http._
+import talkyard.server.http._
 import debiki.EdHttp._
 import debiki.JsonUtils._
 import Prelude._
 import debiki.dao.SiteDao
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents, Result}
@@ -33,8 +33,8 @@ import play.api.mvc.{Action, ControllerComponents, Result}
 
 /** The Query API, Do API and Query-Do API, see: tests/e2e-wdio7/pub-api.ts
   */
-class QueryDoController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class QueryDoController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   def apiV0_query(): Action[JsValue] = ApiSecretPostJsonAction(  // [PUB_API]

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.security
+package talkyard.server.security
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{EdHttp, EffectiveSettings, Globals}
-import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
+import talkyard.server.http.{DebikiRequest, JsonOrFormDataBody}
 import play.api.mvc.{Cookie, DiscardingCookie, RequestHeader}
 import scala.util.Try
 import EdSecurity._
@@ -30,7 +30,7 @@ import play.api.libs.json.{JsObject, JsString, JsValue}
 import talkyard.server.TyLogger
 import talkyard.server.sess.SessionSiteDaoMixin
 import talkyard.server.http
-import ed.server.http.AuthnReqHeader
+import talkyard.server.http.AuthnReqHeader
 
 
 sealed abstract class XsrfStatus { def isOk = false }

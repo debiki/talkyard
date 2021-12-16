@@ -24,14 +24,14 @@ import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.EdHttp._
-import ed.server.pubsub.StorePatchMessage
+import talkyard.server.pubsub.StorePatchMessage
 import play.api.libs.json.{JsObject, JsValue}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
 import PostsDao._
 import talkyard.server.authz.Authz
-import ed.server.spam.SpamChecker
+import talkyard.server.spam.SpamChecker
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
 
@@ -392,7 +392,7 @@ trait PostsDao {
     // COULD add a users3 table status field instead, and update it on write, which says
     // if the user has too many pending comments / edits. Then could thow that status
     // client side, withouth having to run the below queries again and again.
-    // Also, would be simpler to move all this logic to ed.server.auth.Authz.
+    // Also, would be simpler to move all this logic to talkyard.server.auth.Authz.
 
     // Don't review, but auto-approve, user-to-user messages. Staff aren't supposed to read
     // those, unless the receiver reports the message.

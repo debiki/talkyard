@@ -21,8 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import org.owasp.encoder.Encode
 import play.api.libs.json._
@@ -32,8 +32,8 @@ import scala.util.Try
 
 /** Creates new empty sites, for forums, blogs or embedded comments.
   */
-class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security._
   import context.globals
@@ -125,7 +125,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       // This "cannot" happen — JS makes this impossible. So need not be a user friendly message.
       throwForbidden("DwE2JYK8", "The local hostname should be at least six chars")
 
-    if (ed.server.security.ReservedNames.isSubdomainReserved(localHostname))
+    if ( talkyard.server.security.ReservedNames.isSubdomainReserved(localHostname))
       throwForbidden("TyE5KWW02", s"Subdomain is reserved: '$localHostname'; choose another please")
 
     // Test sites have a certain prefix, so I know it's okay to delete them. [7UKPwF2]
@@ -248,7 +248,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   private def throwIfMayNotCreateSite(request: DebikiRequest[_], isTest: Boolean): Unit = {
-    import ed.server.Whatever
+    import talkyard.server.Whatever
     if (isTest && (
         globals.anyCreateTestSiteHostname.contains(Whatever) ||
         globals.anyCreateTestSiteHostname.contains(request.hostname))) {

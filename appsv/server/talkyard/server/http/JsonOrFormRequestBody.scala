@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.http
+package talkyard.server.http
 
 import com.debiki.core.Prelude._
 import debiki.EdHttp._

@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.{throwForbiddenIf, throwNotFound}
 import debiki.RateLimits
-import ed.server.http.ApiRequest
+import talkyard.server.http.ApiRequest
 
 
 /** Generates and caches Atom feeds for recent comments or recent topics.

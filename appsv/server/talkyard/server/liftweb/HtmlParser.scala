@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-package ed.server.liftweb
+package talkyard.server.liftweb
 
 import scala.xml.{PCData => _, _}
 import parsing._

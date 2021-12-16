@@ -28,11 +28,11 @@ import talkyard.server.dao._
 import talkyard.server.{PostRendererSettings, TyLogging}
 import scala.collection.immutable
 import scala.collection.mutable
-import ed.server.EdContext
+import talkyard.server.TyContext
 import talkyard.server.authz.MayMaybe
-import ed.server.notf.NotificationGenerator
-import ed.server.pop.PagePopularityDao
-import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
+import talkyard.server.notf.NotificationGenerator
+import talkyard.server.pop.PagePopularityDao
+import talkyard.server.pubsub.{PubSubApi, StrangerCounterApi}
 import talkyard.server.summaryemails.SummaryEmailsDao
 import org.scalactic.{ErrorMessage, Or}
 import java.util.concurrent.TimeUnit
@@ -62,7 +62,7 @@ case object UseCache extends CacheOrTx { def anyTx: Opt[SiteTx] = None}
 
 
 class SiteDaoFactory (
-  private val context: EdContext,
+  private val context: TyContext,
   private val _dbDaoFactory: DbDaoFactory,
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
@@ -111,7 +111,7 @@ trait ReadOnlySiteDao {
   */
 class SiteDao(
   val siteId: SiteId,
-  val context: EdContext,
+  val context: TyContext,
   private val dbDaoFactory: DbDaoFactory,
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
@@ -138,7 +138,7 @@ class SiteDao(
   with PostsDao
   with TagsDao
   with SearchDao
-  with ed.server.spam.QuickSpamCheckDao
+  with talkyard.server.spam.QuickSpamCheckDao
   with UploadsDao
   with UserDao
   with MessagesDao

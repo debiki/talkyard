@@ -20,12 +20,12 @@ package talkyard.server.api
 import com.debiki.core._
 import controllers.OkApiJson
 import debiki.RateLimits
-import ed.server.http._
+import talkyard.server.http._
 import talkyard.server.authz.MayMaybe
 import debiki.EdHttp._
 import Prelude._
 import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue, JsArray, Json}
 import play.api.mvc.{Action, ControllerComponents, Result}
@@ -35,8 +35,8 @@ import org.scalactic.{Bad, ErrorMessage, Good, Or}
 
 /** The ListQuery API, see: (project root)/tests/e2e/pub-api.ts
   */
-class GetController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
 

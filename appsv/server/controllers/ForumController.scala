@@ -22,13 +22,13 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.http._
+import talkyard.server.http._
 import play.api.libs.json._
 import play.api.mvc._
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import ForumController._
 import talkyard.server.JsX._
@@ -36,8 +36,8 @@ import talkyard.server.JsX._
 
 /** Handles requests related to forums and forum categories.
  */
-class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   def createForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 500) { request =>

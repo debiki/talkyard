@@ -53,8 +53,8 @@ POST  /-/impersonate            controllers.ImpersonateController.impersonate(us
 POST  /-/view-as-other          controllers.ImpersonateController.viewAsOther(userId: Int)
 POST  /-/stop-impersonating     controllers.ImpersonateController.stopImpersonating
 
-GET   /-/load-online-users      ed.server.pubsub.SubscriberController.loadOnlineUsers
-GET   /-/websocket              ed.server.pubsub.SubscriberController.webSocket
+GET   /-/load-online-users      talkyard.server.pubsub.SubscriberController.loadOnlineUsers
+GET   /-/websocket              talkyard.server.pubsub.SubscriberController.webSocket
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic(embeddingUrl, discussionId: Option[String], edPageId: Option[String], category: Option[String], scriptV: Option[String])
 GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(embeddingUrl, embeddingScriptV: Option[Int])

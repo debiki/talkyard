@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.notf
+package talkyard.server.notf
 
 import akka.actor._
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
-import ed.server.notf.NotifierActor._
+import talkyard.server.notf.NotifierActor._
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext
@@ -130,7 +130,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
   }
 
 
-  CLEAN_UP; REFACTOR // break out to ed.server.utx.SomeNewClass? Later...  UtxDao maybe?
+  CLEAN_UP; REFACTOR // break out to talkyard.server.utx.SomeNewClass? Later...  UtxDao maybe?
   // Answer: This can instead be an external bot / server [bot_api], which once a day
   // looks at new signups (queries Ty's API) and sends emails.
   private def createAndSendUtxReminderEmails(): Unit = {  // [plugin]

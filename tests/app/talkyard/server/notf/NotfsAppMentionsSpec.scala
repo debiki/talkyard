@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.notf
+package  talkyard.server.notf
 
 import com.debiki.core._
 import debiki.dao._

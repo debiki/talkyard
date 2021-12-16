@@ -23,8 +23,8 @@ import akka.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import ed.server.pubsub.UserConnected
-import ed.server.security.XsrfOk
+import talkyard.server.pubsub.UserConnected
+import talkyard.server.security.XsrfOk
 import play.{api => p}
 import p.libs.json.{JsString, JsValue}
 import scala.concurrent.Future

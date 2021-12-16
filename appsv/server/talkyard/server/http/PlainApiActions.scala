@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.http
+package talkyard.server.http
 
 import org.apache.commons.codec.{binary => acb}
 import com.debiki.core._
@@ -23,8 +23,8 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.RateLimits.NoRateLimits
 import debiki.dao.{LoginNotFoundException, SiteDao}
-import ed.server._
-import ed.server.security._
+import talkyard.server._
+import talkyard.server.security._
 import java.{util => ju}
 import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server
+package talkyard.server
 
 import akka.stream.Materializer
 import com.debiki.core._
@@ -30,7 +30,7 @@ import play.filters.gzip.{GzipFilter, GzipFilterConfig}
   * doesn't work with compile time dependency injection (with the config copied
   * from the docs). Instead, seems I need to create my own filter, as done here. (?)
   */
-object EdFilters {
+object TyFilters {
   def makeGzipFilter(materializer: Materializer) = new GzipFilter (
     new GzipFilterConfig(
       shouldGzip = (request, response) => {

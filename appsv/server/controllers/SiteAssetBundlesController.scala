@@ -19,8 +19,8 @@ package controllers
 
 import com.debiki.core._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import scala.util.matching.Regex
@@ -35,8 +35,8 @@ import SiteAssetBundlesController._
  * (So whenever the bundle contents changes, the URL also changes — and
  * we can ask the browser to cache forever. This is asset versioning.)
  */
-class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
 

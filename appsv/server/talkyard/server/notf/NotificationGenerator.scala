@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.notf
+package talkyard.server.notf
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki._
 import debiki.Globals.isDevOrTest
 import debiki.EdHttp.throwForbiddenIf
-import ed.server.notf.NotificationGenerator._
+import talkyard.server.notf.NotificationGenerator._
 import scala.collection.{immutable, mutable}
 import scala.util.matching.Regex
 

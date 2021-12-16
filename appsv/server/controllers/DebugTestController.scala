@@ -24,9 +24,9 @@ import debiki.{GetEndToEndTestEmail, Nashorn, NumEndToEndTestEmailsSent, RateLim
 import debiki.dao.PagePartsDao
 import debiki.EdHttp._
 import debiki.JsonUtils.{parseOptInt32, parseOptSt}
-import ed.server.{EdContext, EdController}
-import ed.server.pop.PagePopularityCalculator
-import ed.server.pubsub.WebSocketClient
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.pop.PagePopularityCalculator
+import talkyard.server.pubsub.WebSocketClient
 import java.lang.management.ManagementFactory
 import java.{io => jio, util => ju}
 import javax.inject.Inject
@@ -46,8 +46,8 @@ import talkyard.server.authn.MinAuthnStrength
 
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
   */
-class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) with TyLogging {
+class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) with TyLogging {
 
   import context.globals
   import context.safeActions.ExceptionAction

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.notf
+package talkyard.server.notf
 
 import com.debiki.core.Prelude._
 import com.debiki.core._

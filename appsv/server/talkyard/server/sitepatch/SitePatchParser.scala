@@ -25,7 +25,7 @@ import com.debiki.dao.rdb.PostsSiteDaoMixin
 import debiki.JsonUtils._
 import debiki._
 import debiki.EdHttp._
-import ed.server._
+import talkyard.server._
 import java.{util => ju}
 import org.scalactic._
 import play.api.libs.json._
@@ -44,7 +44,7 @@ import talkyard.server.JsX
   *
   * Search for [readlater] for stuff ignored right now.
   */
-case class SitePatchParser(context: EdContext) {
+case class SitePatchParser(context: TyContext) {
 
   import context.globals
   import context.security

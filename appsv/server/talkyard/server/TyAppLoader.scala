@@ -1,9 +1,9 @@
-package ed.server
+package talkyard.server
 
 import com.debiki.core._
 import debiki.{Globals, RateLimiter, Nashorn}
-import ed.server.http.{PlainApiActions, SafeActions}
-import ed.server.security.EdSecurity
+import talkyard.server.http.{PlainApiActions, SafeActions}
+import talkyard.server.security.EdSecurity
 import play.api._
 import play.api.http.FileMimeTypes
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import talkyard.server.TyLogger
 
 
-class EdAppLoader extends ApplicationLoader {
+class TyAppLoader extends ApplicationLoader {
 
   private val logger = TyLogger("TyAppLoader")
 
@@ -26,14 +26,14 @@ class EdAppLoader extends ApplicationLoader {
     Globals.setIsProdForever(isProd)
 
     logger.info("Starting... [TyMHELLO]")
-    val app = new EdAppComponents(context).application
+    val app = new TyAppComponents(context).application
     logger.info("Started. [TyMSTARTED]")
     app
   }
 
 }
 
-class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
+class TyAppComponents(appLoaderContext: ApplicationLoader.Context)
   extends BuiltInComponentsFromContext(appLoaderContext)
   with AhcWSComponents
   with _root_.controllers.AssetsComponents {
@@ -46,7 +46,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   // Could instead extend HttpFiltersComponents, but it adds a weird localhost-only filter.
   SECURITY // it adds some maybe-useful security related filters too, investigate if should use them.
-  override def httpFilters: Seq[EssentialFilter] = Seq(EdFilters.makeGzipFilter(materializer))
+  override def httpFilters: Seq[EssentialFilter] = Seq(TyFilters.makeGzipFilter(materializer))
 
   // Jaeger docs: https://github.com/yurishkuro/opentracing-tutorial/tree/master/java
   val tracer: io.jaegertracing.internal.JaegerTracer = {
@@ -58,13 +58,13 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   }
 
   val globals = new Globals(appLoaderContext, executionContext, wsClient, actorSystem, tracer)
-  val security = new ed.server.security.EdSecurity(globals)
+  val security = new talkyard.server.security.EdSecurity(globals)
   val rateLimiter = new RateLimiter(globals, security)
   val safeActions = new SafeActions(globals, security, controllerComponents.parsers)
   val plainApiActions = new PlainApiActions(safeActions, globals, security, rateLimiter)
   val nashorn = new Nashorn(globals)
 
-  val context = new EdContext(
+  val context = new TyContext(
         globals, security, safeActions, plainApiActions, nashorn,
         materializer, controllerComponents)
 
@@ -95,7 +95,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.LoginWithPasswordController(cc, context),
     loginWithOpenAuthController,
     new _root_.controllers.ImpersonateController(cc, context, loginController),
-    new ed.server.pubsub.SubscriberController(cc, context),
+    new talkyard.server.pubsub.SubscriberController(cc, context),
     new _root_.controllers.EmbeddedTopicsController(cc, context),
     new _root_.controllers.SearchController(cc, context),
     new _root_.controllers.ResetPasswordController(cc, context),
@@ -141,7 +141,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 }
 
 
-class EdContext(
+class TyContext(
   val globals: Globals,
   val security: EdSecurity,
   val safeActions: SafeActions,

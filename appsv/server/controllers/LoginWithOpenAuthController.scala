@@ -34,15 +34,15 @@ import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Servi
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
-import ed.server.spam.SpamChecker
+import talkyard.server.spam.SpamChecker
 import debiki._
 import debiki.dao.SiteDao
 import debiki.EdHttp._
 import debiki.JsonUtils._
 import talkyard.server._
-import ed.server._
-import ed.server.http._
-import ed.server.security.EdSecurity
+import talkyard.server._
+import talkyard.server.http._
+import talkyard.server.security.EdSecurity
 import IdentityProvider.{ProtoNameOidc, ProtoNameOAuth2, ProtoNameOAuth10a}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
@@ -161,8 +161,8 @@ private case class OngoingAuthnState(
   * by looking at a nonce in the URL.  "Nonce" means: a secret
   * 'N'umber used just 'Once'.)
   */
-class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) with TyLogging {
+class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) with TyLogging {
 
   REFACTOR // MOVE this file to package talkyard.server.authn
   RENAME // to  AuthnWithExtIdp
@@ -2036,7 +2036,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       }
     }
 
-    if (ed.server.security.ReservedNames.isUsernameReserved(username)) // [5LKKWA10]
+    if ( talkyard.server.security.ReservedNames.isUsernameReserved(username)) // [5LKKWA10]
       throwForbidden("EdE4SWWB9", s"Username is reserved: '$username'; choose another username")
 
     val spamCheckTask = SpamCheckTask(

@@ -24,7 +24,7 @@ import debiki.EdHttp.throwTooManyRequests
 import java.util.concurrent.atomic.AtomicReference
 import RateLimits._
 import talkyard.server.TyLogger
-import ed.server.security.EdSecurity
+import talkyard.server.security.EdSecurity
 
 
 trait SomethingToRateLimit {

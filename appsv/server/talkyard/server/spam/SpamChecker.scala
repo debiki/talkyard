@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.spam
+package talkyard.server.spam
 
 import com.debiki.core._
 import com.debiki.core.Prelude._

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.security
+package talkyard.server.security
 
 import com.debiki.core.Prelude._
 import com.debiki.core.Validation
