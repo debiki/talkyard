@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.http
+package talkyard.server.http
 
 import com.debiki.core._
 import com.debiki.core.DbDao.EmailAddressChangedException
 import com.debiki.core.Prelude._
 import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
 import debiki._
-import ed.server.security.EdSecurity
+import talkyard.server.security.EdSecurity
 import play.api.mvc._
 import play.api.libs.typedmap.TypedKey
 import scala.concurrent.{ExecutionContext, Future}

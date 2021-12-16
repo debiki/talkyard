@@ -16,7 +16,7 @@
  */
 
 
-package ed.server.security
+package  talkyard.server.security
 
 
 import org.scalatest.freespec.AnyFreeSpec

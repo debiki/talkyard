@@ -21,8 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
@@ -33,8 +33,8 @@ import play.api.mvc.{Action, ControllerComponents}
   * is automatically included on the terms-of-use page.
   */
 @deprecated("now?", "come up with something better instead?")
-class SpecialContentController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class SpecialContentController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   /** If the special content has not yet been edited, returns a default text (depending
     * on the page id). For example, if the forum owner hasn't edited the content license

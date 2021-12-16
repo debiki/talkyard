@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.http
+package talkyard.server.http
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -23,7 +23,7 @@ import controllers.Utils.ValidationImplicits._
 import debiki._
 import debiki.EdHttp._
 import debiki.dao.SiteDao
-import ed.server.security.{SidStatus, XsrfOk, BrowserId}
+import talkyard.server.security.{SidStatus, XsrfOk, BrowserId}
 import play.api.mvc.Request
 
 
@@ -63,7 +63,7 @@ class PageRequest[A](
 
 
   def pageId: Option[PageId] = pagePath.pageId
-  def theSitePageId = SitePageId(siteId, thePageId)
+  def theSitePageId: SitePageId = SitePageId(siteId, thePageId)
 
   /**
    * Throws 404 Not Found if id unknown. The page id is known if it

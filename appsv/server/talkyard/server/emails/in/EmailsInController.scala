@@ -25,18 +25,18 @@ import debiki.ParseText
 import debiki.RateLimits
 import debiki.dao.SiteDao
 import debiki.Globals.isDevOrTest
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import play.mvc.Http.{HeaderNames => play_HeaderNames}
 import talkyard.server.TyLogging
 import org.scalactic.{Good, Or, Bad}
-import ed.server.notf.NotfHtmlRenderer
+import talkyard.server.notf.NotfHtmlRenderer
 
 
-class EmailsInController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) with TyLogging {
+class EmailsInController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) with TyLogging {
 
   import context.safeActions.ExceptionAction
 

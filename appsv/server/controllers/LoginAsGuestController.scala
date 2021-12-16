@@ -21,9 +21,9 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.spam.SpamChecker
-import ed.server._
-import ed.server.security.EdSecurity
+import talkyard.server.spam.SpamChecker
+import talkyard.server._
+import talkyard.server.security.EdSecurity
 import javax.inject.Inject
 import play.api.mvc._
 import play.api.libs.json._
@@ -31,8 +31,8 @@ import play.api.libs.json._
 
 /** Logs in guest users, creates them first, if needed.
   */
-class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.security

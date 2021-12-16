@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{ReadOnlySiteDao, SiteDao}
 import debiki.{JsonMaker, Settings2}
-import ed.server._
+import talkyard.server._
 import play.api.libs.json._
 import scala.collection.mutable
 import scala.collection.immutable
@@ -35,7 +35,7 @@ import talkyard.server.JsX._
   *
   * Split into two: SitePatchMaker and ActionBatchResponseMaker? [ACTNPATCH]
   */
-case class SitePatchMaker(context: EdContext) {
+case class SitePatchMaker(context: TyContext) {
 
   import context.globals
 

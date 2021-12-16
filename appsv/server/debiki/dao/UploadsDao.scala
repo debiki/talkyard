@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import com.google.{common => guava}
 import debiki.{Globals, ImageUtils, TextAndHtmlMaker}
 import debiki.EdHttp._
-import ed.server.UploadsUrlBasePath
+import talkyard.server.UploadsUrlBasePath
 import java.{io => jio, lang => jl, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}

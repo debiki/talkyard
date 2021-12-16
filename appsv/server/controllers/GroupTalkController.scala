@@ -21,8 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.mvc._
 import play.api.libs.json.{JsString, JsValue}
@@ -33,8 +33,8 @@ import play.api.libs.json.{JsString, JsValue}
   * Read more about how to build a good message handling system here:
   *   https://meta.discourse.org/t/discourse-as-a-private-email-support-portal/34444
   */
-class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class GroupTalkController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   def sendMessage: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {

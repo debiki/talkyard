@@ -19,7 +19,7 @@ package controllers
 
 import com.debiki.core._
 import debiki.EdHttp._
-import ed.server.liftweb
+import talkyard.server.liftweb
 import java.{lang => jl}
 import play.api._
 import play.api.libs.json.{Json, JsValue, JsArray, JsObject}

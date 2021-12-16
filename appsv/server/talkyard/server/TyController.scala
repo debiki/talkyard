@@ -1,10 +1,10 @@
-package ed.server
+package talkyard.server
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.RateLimits.NoRateLimits
 import debiki.{RateLimits, TextAndHtmlMaker}
-import ed.server.http._
+import talkyard.server.http._
 import play.api._
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.json.JsValue
@@ -15,7 +15,7 @@ import talkyard.server.authn.MinAuthnStrength
 
 
 
-class EdController(cc: ControllerComponents, val context: EdContext)
+class TyController(cc: ControllerComponents, val context: TyContext)
   extends AbstractController(cc) {
 
   import context.globals

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.pubsub
+package talkyard.server.pubsub
 
 import akka.stream.scaladsl.Flow
 import com.debiki.core._
@@ -23,9 +23,9 @@ import com.debiki.core.Prelude._
 import debiki.EdHttp._
 import debiki._
 import talkyard.server.JsX
-import ed.server.{EdContext, EdController}
-import ed.server.http._
-import ed.server.security.CheckSidAndXsrfResult
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
+import talkyard.server.security.CheckSidAndXsrfResult
 import javax.inject.Inject
 import org.scalactic.{Bad, Good, Or}
 import play.{api => p}
@@ -40,8 +40,8 @@ import talkyard.server.pubsub.WebSocketMessageHandler
 
 /** Authorizes and subscribes a user to pubsub messages.
   */
-class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
-  extends EdController(cc, tyCtx) with TyLogging {
+class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: TyContext)
+  extends TyController(cc, tyCtx) with TyLogging {
 
   import context.globals
 

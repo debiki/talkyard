@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.pop
+package talkyard.server.pop
 
 import com.debiki.core._
 import scala.collection.{immutable, mutable}

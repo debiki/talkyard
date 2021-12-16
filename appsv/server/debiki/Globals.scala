@@ -26,14 +26,14 @@ import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
 import debiki.EdHttp._
-import ed.server.spam.{SpamCheckActor, SpamChecker}
+import talkyard.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
 import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
-import ed.server.notf.NotifierActor
+import talkyard.server.notf.NotifierActor
 import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
-import ed.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
+import talkyard.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
 import org.{elasticsearch => es}
 import org.scalactic._
 import play.{api => p}
@@ -43,8 +43,8 @@ import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
 import scala.util.matching.Regex
-import ed.server.EdContext
-import ed.server.http.GetRequest
+import talkyard.server.TyContext
+import talkyard.server.http.GetRequest
 import talkyard.server.jobs.Janitor
 import play.api.http.{HeaderNames => p_HeaderNames}
 import play.api.mvc.RequestHeader
@@ -106,7 +106,7 @@ class E2eTestCounters {
 
 
 class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name = appCtx
-                // But then rename EdContext  to ... what?
+                // But then rename TyContext  to ... what?
   private val appLoaderContext: p.ApplicationLoader.Context,
   val executionContext: scala.concurrent.ExecutionContext,
   val wsClient: WSClient,
@@ -117,12 +117,12 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
   import Globals._
 
-  def setEdContext(edContext: EdContext): Unit = {
+  def setEdContext(edContext: TyContext): Unit = {
     dieIf(this.edContext ne null, "EdE7UBR10")
     this.edContext = edContext
   }
 
-  var edContext: EdContext = _
+  var edContext: TyContext = _
 
   val e2eTestCounters = new E2eTestCounters
 
@@ -1268,7 +1268,7 @@ class Config(conf: play.api.Configuration) extends TyLogging {
 
   CLEAN_UP; REMOVE // this + the routes file entry [2KGLCQ4], use UploadsUrlBasePath instead only.
   val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
-  require(uploadsUrlPath == ed.server.UploadsUrlBasePath, "TyE2UKDU0")
+  require(uploadsUrlPath == talkyard.server.UploadsUrlBasePath, "TyE2UKDU0")
 
   val maxGroupMentionNotfs: Int =
     conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 25

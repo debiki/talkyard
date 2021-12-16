@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
-import ed.server.pubsub.StorePatchMessage
+import talkyard.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsObject
 import TagsDao._
 import scala.util.matching.Regex

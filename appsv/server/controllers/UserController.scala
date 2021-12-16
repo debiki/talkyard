@@ -24,14 +24,14 @@ import debiki._
 import debiki.JsonUtils._
 import debiki.dao.{LoadPostsResult, ReadMoreResult, SiteDao}
 import debiki.EdHttp._
-import ed.server.http._
+import talkyard.server.http._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
 import debiki.RateLimits.TrackReadingActivity
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
@@ -43,8 +43,8 @@ import talkyard.server.TyLogging
 
 /** Handles requests related to users.
  */
-class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) with TyLogging {
+class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) with TyLogging {
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
   import context.globals
@@ -1086,7 +1086,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Could be used to speed up the trust level transition from New to Basic to Member.
 
     import request.{siteId, dao, theRequester => requester}
-    import ed.server.{WhenFormat, OptWhenFormat}
+    import talkyard.server.{WhenFormat, OptWhenFormat}
 
     throwForbiddenIf(requester.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
     throwForbiddenIf(requester.isGroup, "EdE5QFVB5", "Not tracking groups' reading progress")

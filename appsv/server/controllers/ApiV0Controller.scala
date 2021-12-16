@@ -21,8 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
 import debiki.RateLimits
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc._
@@ -48,9 +48,9 @@ import Utils.OkXml
 //
 
 
-class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
+class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: TyContext,
   sitePatchController: talkyard.server.sitepatch.SitePatchController)
-  extends EdController(cc, edContext) {
+  extends TyController(cc, edContext) {
 
   private val logger = talkyard.server.TyLogger("ApiV0Controller")
 

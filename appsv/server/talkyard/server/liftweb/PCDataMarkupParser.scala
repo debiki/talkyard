@@ -22,7 +22,7 @@
 
 //package net.liftweb
 //package util
-package ed.server.liftweb
+package talkyard.server.liftweb
 //import net.liftweb.util._
 
 //import common._

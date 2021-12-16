@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.http
+package talkyard.server.http
 
 import com.debiki.core._
 import com.debiki.core.PageOrderOffset
@@ -24,11 +24,10 @@ import controllers.Utils.ValidationImplicits._
 import debiki._
 import debiki.dao.{SiteDao, SystemDao}
 import debiki.EdHttp._
-import ed.server.EdContext
+import talkyard.server.TyContext
 import talkyard.server.authz.ForumAuthzContext
-import ed.server.security.{BrowserId, SidOk, SidStatus, XsrfOk}
+import talkyard.server.security.{BrowserId, SidOk, SidStatus, XsrfOk}
 import java.{util => ju}
-import play.api.mvc
 import play.api.mvc._
 
 
@@ -46,7 +45,7 @@ abstract class DebikiRequest[A] extends AuthnReqHeader {
 // Rename RequestHeader to p_RequestHeader and Result to p_Result?
 abstract class AuthnReqHeader extends SomethingToRateLimit {
 
-  def context: EdContext = dao.context
+  def context: TyContext = dao.context
   private def security = dao.context.security
   private def globals = dao.context.globals
 

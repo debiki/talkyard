@@ -22,8 +22,8 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import debiki.dao.UploadsDao._
-import ed.server.{EdContext, EdController}
-import ed.server.http.ApiRequest
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http.ApiRequest
 import java.{io => jio}
 import javax.inject.Inject
 import play.api._
@@ -34,8 +34,8 @@ import play.api.mvc._
 
 /** Uploads files and serves uploaded files.
   */
-class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.safeActions.ExceptionAction
   import context.globals.config.uploads.maxBytesLargeFile

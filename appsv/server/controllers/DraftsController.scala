@@ -21,9 +21,9 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
-import ed.server.http._
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc._
@@ -33,8 +33,8 @@ import talkyard.server.authn.MinAuthnStrength
 
 
 
-class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
