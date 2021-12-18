@@ -16,31 +16,43 @@
 --  ------------------------------------------------------------------------
 --  comment on domain pat_type_d is $_$
 --
---  Participant types:
+--  Participant types:   — if null (the default), then, < 0 => Guest, > 0 => User?
+--     and incl extra flag fields if different somehow, e.g. isBot,
+--     isExtHelp, isSupRead, isSupAdm etc?
+--
+--  Maybe rename to specType?
+--
 --  ==== Anon, per page
---  3 = Unknown pat
+--  %% -3 = Unknown pat
 --  ==== Guests (semi anon blog commenters)
---  1 = Guest or anonymous/unknown stranger.
+--  %% 1 = Guest or anonymous/unknown stranger.
 --  ==== Not a real account, cannot add to groups etc:
---  2 = Anonyn, with real_user_id identifying the real user.
+--  %% 2 = Anonyn, with real_user_id identifying the real user.
 --  ==== Cannot add to groups. Has all permisssions or gets in other ways:
---  4 = System account (system, sysbot).
---  5 = External management account: superbot, superadmin, superstaff (mod, dev/design help)
---  k=== Cannot config UI prefs — doesn't use any UI:
---  ? 6 = temporary just one-request user, via API secret.
---  ? 7 = Only bot, e.g. CI system — cannot log in; can *only* do things via AIP.
---       A human + custom client should use type 9 User instead.
+--  1 = System user
+--  2 = System bot ?
 --  ==== Cannot log in, is just a pseudonym. But can add to groups etc:
---  8 = Pen name. Not impl.
+--  21  = Anon
 --  ====
---  9 = User (a human, maybe a bot, sometimes cannot know. Maybe an extrenal Matrix
---      user who got an account auto generated).
---  ====
---  12 = Group. Created by admins, top down. Can have security permissions
+--  <=  49 cannot have permissions?
+--  51 = Group. Created by admins, top down. Can have security permissions
 --      and config settings that get inherited by those in the group.
---  (? 13 = Circle, or bottom-up group. Created by ordinary members.
+--  (? 52 = Circle, or bottom-up group. Created by ordinary members.
 --      E.g. a study circle, or teacher circle. Doesn't have inheritable
 --      settings? Nor permissions. Not impl.)
+--  ==== Cannot config UI prefs — doesn't use any UI:
+--  61 = Only bot, e.g. CI system? — cannot log in; can *only* do things via AIP.
+--       A human + custom client should use type 9 User instead.
+--  71  = Pen name. Not impl.
+--  ====
+--  %% 31 = User (a human, maybe a bot, sometimes cannot know. Maybe an extrenal Matrix
+--      user who got an account auto generated).
+--  ====
+--  ? 101 = External management account: superbot, superadmin, superstaff (mod)
+--  ? 111 = External help account — if site admins ask for help, and want to give access
+--       only to some parts of their site? (e.g. dev/design help)
+--  ====
+--  ? 127 = temporary just one-request user, via API secret, mustn't store in db
 --  
 --  No!: Participant types:
 --  1 = Unknown stranger or user.  — skip

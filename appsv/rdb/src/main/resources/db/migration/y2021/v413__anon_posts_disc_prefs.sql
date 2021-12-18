@@ -5,53 +5,59 @@
 -- New domains
 -------------------------------------------------
 
-create domain site_id_d i32_d;
-alter  domain site_id_d add
-   constraint site_id_d_c_not_0 check (value <> 0);
+create domain i32_lt2e9_d i32_d;
+alter  domain i32_lt2e9_d add
+   constraint i32_lt2e9_d_c_lt_2e9 check (value < 2000000000);
 
-create domain pat_id_d i32_d;
-alter  domain pat_id_d add
-   constraint pat_id_d_c_not_0 check (value <> 0);
+create domain i32_abs_lt2e9_d i32_lt2e9_d;
+alter  domain i32_abs_lt2e9_d add
+   constraint i32_abs_lt2e9_d_c_gt_m2e9 check (value > -2000000000);
 
--- Higher absolute values are reserved, for now:
-alter  domain pat_id_d add
-   constraint pat_id_d_c_lt_2e9 check (value < 2000000000);
-alter  domain pat_id_d add
-   constraint pat_id_d_c_gt_min2e9 check (value > -2000000000);
+create domain i32_abs_lt2e9_nz_d i32_abs_lt2e9_d;
+alter  domain i32_abs_lt2e9_nz_d add
+   constraint i32_abs_lt2e9_nz_d_c_nz check (value <> 0);
+
+create domain i32_lt2e9_gz_d i32_lt2e9_d;
+alter  domain i32_lt2e9_gz_d add
+   constraint i32_lt2e9_gz_d_c_gz check (value > 0);
+
+create domain i32_lt2e9_gt1000_d i32_lt2e9_d;
+alter  domain i32_lt2e9_gt1000_d add
+   constraint i32_lt2e9_gt1000_d_c_gt1000 check (value > 1000);
+
 
 create domain page_id_st_d text_nonempty_ste60_d;
 alter  domain page_id_st_d add
    constraint page_id_st_d_c_chars check (value ~ '^[a-z0-9_]*$');
 
-create domain page_id_d__later i32_gz_d;
+create domain page_id_d__later  i64_gz_d;
 
+create domain site_id_d     i32_abs_lt2e9_nz_d;
+create domain cat_id_d      i32_lt2e9_gz_d;
+create domain tagtype_id_d  i32_lt2e9_gt1000_d;
 
-create domain cat_id_d i32_gz_d;
-
+create domain pat_id_d      i32_abs_lt2e9_nz_d;
+create domain member_id_d   pat_id_d;
+alter  domain member_id_d add
+   constraint member_id_d_c_gz check (value > 0);
 
 create domain no_choose_yes_d i16_d;
 alter  domain no_choose_yes_d add
    constraint no_choose_yes_d_c_in check (value in (1, 2, 3));
 
-create domain pat_type_d i16_d;
-alter  domain pat_type_d add
-   constraint pat_type_d_c_in_1_4_9_12 check (value in (1, 2, 3, 4, 9, 12));
 
-create domain pat_type_user_d pat_type_d;
-alter  domain pat_type_user_d add
-   constraint pat_type_user_d_c_eq_9 check (value = 9);
-
-create domain pat_type_group_d pat_type_d;
-alter  domain pat_type_group_d add
-   constraint pat_type_group_d_c_eq_12 check (value = 12);
-
-create domain pat_type_user_group_d pat_type_d;
-alter  domain pat_type_user_group_d add
-   constraint pat_type_user_group_d_c_in_9_12 check (value in (9, 12));
+create domain anon_status_d i16_d;
+alter  domain anon_status_d add
+   constraint anon_status_d_c_in_1_3 check (value in (1, 3));
+-- was never, is not anon = null
+-- was anon          = 0001  always set   = 1
+-- is anon           = 0010   = b01 + b10 = 3
+-- can auto deanon   = 0100               = 7
+-- was pub some time = 1000               = 9 | 11 | 15
 
 
 
--- Privacy and participant type columns
+-- Privacy columns
 -------------------------------------------------
 
 
@@ -61,41 +67,8 @@ alter table users3 add column see_profile_min_tr_lv_c  trust_level_or_staff_d;
 -- But by looking at last visit date-time, reading time, and comparing with
 -- anonymous posts, it could be possible to, in a small forum, knwo who posted an
 -- anonymous post.  So, sometimes the stats should be hidden
-alter table users3 add column see_stats_min_tr_lv_c    trust_level_or_staff_d;
-      -- or, but a bit long:  see_stats_and_dates_min_tr_lv_c
-
-
-alter table users3 add column pat_type_c pat_type_d not null default 9;  -- user
-update users3
-    set pat_type_c = case
-        when user_id = -3 then 3                -- unknown pat
-        when user_id < 0 then 1                 -- guest
-        when user_id = 1 or user_id = 2 then 4  -- system accounts
-        else 12                                 -- group
-    end
-    where user_id <= 2 or is_group;
--- Ooops, need to insert on creation!
-
--- Doesn't need to be unique — there's already the primary key. But Postgres
--- wants it to be? So can foreign key link to it?
-create unique index pats_u_id_type on users3 (site_id, user_id, pat_type_c);
-
-alter table users3 add constraint pats_c_id_type_guest_anon check (
-    user_id > -10 or pat_type_c in (1, 2));
-
-alter table users3 add constraint pats_c_id_type_unknown check (
-    user_id <> -3 or pat_type_c = 3);
-
-alter table users3 add constraint pats_c_id_type_sys_sysbot check (
-    user_id not in (1, 2) or pat_type_c = 4);
-
-alter table users3 add constraint pats_c_id_type_user check (
-    user_id <= 2 or is_group or pat_type_c = 9);
-
-alter table users3 add constraint pats_c_id_type_group check (
-    user_id <= 2 or not is_group or pat_type_c = 12);
-
--- Later: drop  is_group, use instead: pat_type_c = 12
+alter table users3 add column see_approx_stats_min_tr_lv_c   trust_level_or_staff_d;
+alter table users3 add column see_exact_stats_min_tr_lv_c    trust_level_or_staff_d;
 
 
 
@@ -103,18 +76,23 @@ alter table users3 add constraint pats_c_id_type_group check (
 -------------------------------------------------
 
 
-alter table users3 add column anon_for_pat_id_c    pat_id_d;
+alter table users3 add column anon_status_c anon_status_d;
+
+alter table users3 add constraint pats_c_isanonid_lt_m10 check (
+    user_id < -10 or anon_status_c is null);
+
+
+alter table users3 add column anon_for_memb_id_c   member_id_d;
 alter table users3 add column anon_on_page_id_st_c page_id_st_d;
 alter table users3 add column anon_on_page_id_c    page_id_d__later;
-alter table users3 add column still_anon_c         bool;   -- undef if was never anon
 
 alter table users3 add constraint pats_c_anon_cols check (
-    (still_anon_c is null) = (anon_for_pat_id_c is null) and
-    (still_anon_c is null) = (anon_on_page_id_st_c is null));
+    (anon_status_c is null) = (anon_for_memb_id_c is null) and
+    (anon_status_c is null) = (anon_on_page_id_st_c is null));
 
 -- fk ix: pats_u_anonforpatid_anononpageid
 alter table users3 add constraint pats_anonforpat_r_pats
-    foreign key (site_id, anon_for_pat_id_c)
+    foreign key (site_id, anon_for_memb_id_c)
     references users3 (site_id, user_id) deferrable;
 
 -- fk ix: pats_u_anononpageid
@@ -123,7 +101,7 @@ alter table users3 add constraint pats_anononpage_r_pages
     references pages3 (site_id, page_id) deferrable;
 
 create index pats_u_anonforpatid_anononpageid on users3 (
-    site_id, anon_for_pat_id_c, anon_on_page_id_st_c);
+    site_id, anon_for_memb_id_c, anon_on_page_id_st_c);
 
 create index pats_u_anononpageid on users3 (
     site_id, anon_on_page_id_st_c);
@@ -138,17 +116,56 @@ alter table settings3 add column enable_anon_posts_c bool;
 -------------------------------------------------
 
 
-alter table page_notf_prefs3 rename to disc_notf_prefs_t;
+alter table page_notf_prefs3  rename to disc_notf_prefs_t;
 alter table disc_notf_prefs_t rename column people_id to pat_id_c;
+
+alter table disc_notf_prefs_t rename column pages_in_whole_site  to discs_in_whole_site_c;
+alter table disc_notf_prefs_t rename column pages_in_category_id to discs_in_cat_id_c;
+alter table disc_notf_prefs_t rename column incl_sub_categories  to incl_sub_cats_c;
+alter table disc_notf_prefs_t rename column pages_pat_created    to discs_pat_created_c;
+alter table disc_notf_prefs_t rename column pages_pat_replied_to to discs_pat_replied_to;
+
+-- Denormalized tags?
+alter table disc_notf_prefs_t add column discs_with_tag_a_id_c tagtype_id_d;
+alter table disc_notf_prefs_t add column discs_with_tag_b_id_c tagtype_id_d;
+alter table disc_notf_prefs_t add column discs_with_tag_c_id_c tagtype_id_d;
+
+-- ix discnotfprefs_i_tagaid
+alter table disc_notf_prefs_t add constraint discnotfprefs_withtaga_r_tags
+    foreign key (site_id, discs_with_tag_a_id_c)
+    references tagtypes_t (site_id_c, id_c) deferrable;
+
+-- ix discnotfprefs_i_tagbid
+alter table disc_notf_prefs_t add constraint discnotfprefs_withtagb_r_tags
+    foreign key (site_id, discs_with_tag_b_id_c)
+    references tagtypes_t (site_id_c, id_c) deferrable;
+
+  -- ix discnotfprefs_i_tagcid
+alter table disc_notf_prefs_t add constraint discnotfprefs_withtagc_r_tags
+    foreign key (site_id, discs_with_tag_c_id_c)
+    references tagtypes_t (site_id_c, id_c) deferrable;
+
+create index discnotfprefs_i_tagaid on disc_notf_prefs_t (site_id, discs_with_tag_a_id_c);
+create index discnotfprefs_i_tagbid on disc_notf_prefs_t (site_id, discs_with_tag_b_id_c);
+create index discnotfprefs_i_tagcid on disc_notf_prefs_t (site_id, discs_with_tag_c_id_c);
+
+
+-- And simple expressions? Wait, NO. Use ES instead:
+--   https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-range-query.html
+-- e.g. tag_a.as_int > 7   or  tag_a.as_int between 5 and 8  ? hmm
+-- alter table disc_notf_prefs_t add column only_if_expr_c jsonb;  -- nope!
 
 
 create table disc_prefs_t(
   site_id_c                site_id_d not null,
-  pat_id_c                 pat_id_d not null,
-  pat_type_c               pat_type_user_group_d not null,
+  memb_id_c                member_id_d not null,
 
   discs_in_whole_site_c    bool,
   discs_in_cat_id_c        cat_id_d,  -- ren to just:  cat_id_c
+  -- Denormalized AND tag list:
+  discs_with_tag_a_id_c    tagtype_id_d,
+  discs_with_tag_b_id_c    tagtype_id_d,
+  discs_with_tag_c_id_c    tagtype_id_d,
   page_id_st_c             page_id_st_d,
   page_id_int_c            page_id_d__later,
 
@@ -158,21 +175,33 @@ create table disc_prefs_t(
   deanon_pages_aft_mins_c  i32_gz_d,
   deanon_posts_aft_mins_c  i32_gz_d,
 
-  -- ix: discprefs_i_patid_pattype
-  constraint discprefs_r_pats foreign key (site_id_c, pat_id_c, pat_type_c)
-      references users3 (site_id, user_id, pat_type_c) deferrable,
-
-  -- ix: discprefs_i_pageid
-  constraint discprefs_r_pages foreign key (site_id_c, page_id_st_c)
-      references pages3 (site_id, page_id) deferrable,
+  -- ix: discprefs_i_membid
+  constraint discprefs_r_pats foreign key (site_id_c, memb_id_c)
+      references users3 (site_id, user_id) deferrable,
 
   -- ix discprefs_i_catid
   constraint discprefs_r_cats foreign key (site_id_c, discs_in_cat_id_c)
       references categories3 (site_id, id) deferrable,
 
-  constraint discprefs_u_pat_wholesite unique (site_id_c, pat_id_c, discs_in_whole_site_c),
-  constraint discprefs_u_pat_incat     unique (site_id_c, pat_id_c, discs_in_cat_id_c),
-  constraint discprefs_u_pat_pageid    unique (site_id_c, pat_id_c, page_id_st_c),
+  -- ix discprefs_i_tagaid
+  constraint discprefs_withtaga_r_tags foreign key (site_id_c, discs_with_tag_a_id_c)
+      references tagtypes_t (site_id_c, id_c) deferrable,
+
+  -- ix discprefs_i_tagbid
+  constraint discprefs_withtagb_r_tags foreign key (site_id_c, discs_with_tag_b_id_c)
+      references tagtypes_t (site_id_c, id_c) deferrable,
+
+  -- ix discprefs_i_tagcid
+  constraint discprefs_withtagc_r_tags foreign key (site_id_c, discs_with_tag_c_id_c)
+      references tagtypes_t (site_id_c, id_c) deferrable,
+
+  -- ix: discprefs_i_pageid
+  constraint discprefs_r_pages foreign key (site_id_c, page_id_st_c)
+      references pages3 (site_id, page_id) deferrable,
+
+  constraint discprefs_u_memb_wholesite unique (site_id_c, memb_id_c, discs_in_whole_site_c),
+  constraint discprefs_u_memb_incat     unique (site_id_c, memb_id_c, discs_in_cat_id_c),
+  constraint discprefs_u_memb_pageid    unique (site_id_c, memb_id_c, page_id_st_c),
 
   -- The prefs must be for something.
   constraint discprefs_c_for_1_sth check(
@@ -184,13 +213,16 @@ create table disc_prefs_t(
   -- True or null.
   constraint discprefs_c_wholesite_true check (discs_in_whole_site_c),
 
-  -- Only users (type 9) and groups (type 12) can configure discussion preferences.
-  constraint discprefs_c_for_users_and_groups check (
-        pat_type_c = 9 or pat_type_c = 12)
+  -- Guests and anon users cannot configure discussion preferences — only groups
+  -- and real users can.
+  constraint discprefs_c_for_users_and_groups check (memb_id_c >= 10)
 );
 
 
 
-create index discprefs_i_patid_pattype on disc_prefs_t (site_id_c, pat_id_c, pat_type_c);
+create index discprefs_i_membid on disc_prefs_t (site_id_c, memb_id_c);
+create index discprefs_i_catid  on disc_prefs_t (site_id_c, discs_in_cat_id_c);
+create index discprefs_i_tagaid on disc_prefs_t (site_id_c, discs_with_tag_a_id_c);
+create index discprefs_i_tagbid on disc_prefs_t (site_id_c, discs_with_tag_b_id_c);
+create index discprefs_i_tagcid on disc_prefs_t (site_id_c, discs_with_tag_c_id_c);
 create index discprefs_i_pageid on disc_prefs_t (site_id_c, page_id_st_c);
-create index discprefs_i_catid on disc_prefs_t (site_id_c, discs_in_cat_id_c);
