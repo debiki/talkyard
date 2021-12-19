@@ -157,7 +157,7 @@ Compile / dependencyOverrides ++= {
       "org.bouncycastle" % "bcpkix-jdk15on" % "1.60",
       "org.bouncycastle" % "bcprov-jdk15on" % "1.60",
       "org.checkerframework" % "checker-qual" % "3.12.0",
-      "org.elasticsearch" % "elasticsearch" % "6.8.21",
+      "org.elasticsearch" % "elasticsearch" % "6.8.22",
       "org.elasticsearch" % "elasticsearch-cli" % "6.8.21",
       "org.elasticsearch" % "elasticsearch-core" % "6.8.21",
       "org.elasticsearch" % "elasticsearch-secure-sm" % "6.8.21",

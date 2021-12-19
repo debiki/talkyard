@@ -78,7 +78,7 @@ val appDependencies = Seq(
   caffeine,  // was: "com.github.ben-manes.caffeine" % "caffeine"
   Dependencies.Libs.rediscala,
   // Search engine, in https://mvnrepository.com.
-  "org.elasticsearch" % "elasticsearch" % "6.8.21",
+  "org.elasticsearch" % "elasticsearch" % "6.8.22",
   "org.elasticsearch.client" % "transport" % "6.8.21",
 
   Dependencies.Libs.apacheCommonsEmail,
