@@ -41,10 +41,10 @@ GET   /-/authn/verif-email-ask-if-link-accounts   controllers.LoginWithOpenAuthC
 POST  /-/authn/ans-link-accounts                  controllers.LoginWithOpenAuthController.answerLinkAccounts
 
 # Would like to remove, use /-/authn/oauth2/:name  instead:
-GET   /-/login-openauth/:providerName controllers.LoginWithOpenAuthController.startAuthentication(providerName, returnToUrl: Option[String])
+#ET   /-/login-openauth/:providerName controllers.LoginWithOpenAuthController.startAuthentication(providerName, returnToUrl: Option[String])
 GET   /-/login-auth-callback/:providerName  controllers.LoginWithOpenAuthController.finishAuthentication(providerName)
-GET   /-/login-oauth-then-return/:providerName controllers.LoginWithOpenAuthController.loginAtLoginOriginThenReturnToOriginalSite(providerName, returnToOrigin, xsrfToken)
-GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
+#ET   /-/login-oauth-then-return/:providerName controllers.LoginWithOpenAuthController.loginAtLoginOriginThenReturnToOriginalSite(providerName, returnToOrigin, xsrfToken)
+#ET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
 POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handleCreateUserDialog
 
 GET   /-/impersonate-at-other-site  controllers.ImpersonateController.impersonateAtOtherSite(siteId: Int, userId: Int, goToSiteById: Option[Boolean])

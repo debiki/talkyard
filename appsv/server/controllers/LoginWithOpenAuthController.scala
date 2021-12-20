@@ -1133,6 +1133,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   // ======================================================================
 
 
+  /*
   def startAuthentication(providerName: St, returnToUrl: Opt[St]): Action[U] =
         AsyncGetActionIsLogin { request =>
     //startAuthenticationImpl(providerName, returnToUrl.trimNoneIfBlank, request)
@@ -1140,7 +1141,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  /*
   private def startAuthenticationImpl(providerName: St, returnToUrl: Opt[St],
         request: GetRequest): Future[Result] = {
 
@@ -1179,7 +1179,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   def finishAuthentication(providerName: St): Action[U] = AsyncGetActionIsLogin { request =>
-    /*
     import controllers.Utils.ValidationImplicits._ // getFirst
 
     // Maybe we're migrating to ScribeJava? And use this endpoint only for
@@ -1198,10 +1197,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             request)
     }
     else {
-      startOrFinishAuthenticationWithSilhouette(providerName, request)
+      unimpl("Silhouette is gone")
+      // startOrFinishAuthenticationWithSilhouette(providerName, request)
     }
-    */
-    ???
   }
 
 
@@ -2164,7 +2162,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     (newXsrfToken, xsrfCookie)
   }
 
-
+  /*
   /** Redirects to and logs in via anyLoginOrigin; then redirects back to this site, with
     * a session id and xsrf token included in the GET request.
     */
@@ -2188,7 +2186,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   def loginAtLoginOriginThenReturnToOriginalSite(providerName: String,
           returnToOrigin: String, xsrfToken: String): Action[Unit] =
         AsyncGetActionIsLogin { request =>
-    /*
 
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
@@ -2202,9 +2199,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         SecureCookie(name = ReturnToSiteOriginTokenCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
           httpOnly = false))
     }
-    */
     ???
   }
+  */
 
 
   def checkAuthnXsrfToken(xsrfToken: St, request: GetRequest): U = {
@@ -2232,7 +2229,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
   }
 
-
+  /*
   def continueAtOriginalSite(oauthDetailsCacheKey: St, xsrfToken: St): Action[U] =
         GetActionIsLogin { request =>
 
@@ -2249,7 +2246,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     tryLoginOrShowCreateUserDialog(request, authnState)
       .discardingCookies(DiscardingSecureCookie(ReturnToThisSiteXsrfTokenCookieName))
-  }
+  } */
 
 
   def getIdentityProvider(authnState: OngoingAuthnState, dao: SiteDao)
