@@ -79,10 +79,10 @@ declare namespace debiki2.pagedialogs {
 }
 
 declare namespace debiki2.anon {
-  function openAnonDropdown(ps: any); //AnonLevelState);
-  function anonLevel_titleShort(level: AnonLevel): St;
-  function anonLevel_title(level: AnonLevel): St;
-  function anonLevel_descr(level: AnonLevel): St;
+  function openAnonDropdown(ps: any); //AnonStatusState);
+  function anonStatus_titleShort(level: AnonStatus, ps: { me: Me, pat?: Pat }): St;
+  function anonStatus_title(level: AnonStatus, ps: { me: Me, pat?: Pat }): St;
+  function anonStatus_descr(level: AnonStatus, ps: { me: Me, pat?: Pat }): St;
 }
 
 declare namespace debiki2.subcommunities {

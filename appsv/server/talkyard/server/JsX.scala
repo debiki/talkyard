@@ -190,7 +190,10 @@ object JsX {   RENAME // to JsonPaSe
       json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
     }
 
-    if (user.isGuest) {
+    if (user.isAnon) {
+      json += "isAnon" -> JsTrue
+    }
+    else if (user.isGuest) {
       json += "isGuest" -> JsTrue
     }
     else {

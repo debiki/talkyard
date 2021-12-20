@@ -119,7 +119,7 @@ interface EditorState {
   visible: boolean;
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
-  anonLevel?: AnonLevel;
+  anonStatus?: AnonStatus;
   authorId?: PatId;
   editorsCategories?: Category[];
   editorsPageId?: PageId;
@@ -1717,6 +1717,8 @@ export const Editor = createFactory<any, EditorState>({
       return;
     }
 
+    // Incl state.anonStatus in draft too
+
     const oldDraft: Draft | undefined = state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
     const draftStatus: DraftStatus = state.draftStatus;
@@ -1886,6 +1888,7 @@ export const Editor = createFactory<any, EditorState>({
   saveEdits: function() {
     this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
     const state: EditorState = this.state;
+    // ! anonStatus: state.anonStatus,
     Server.saveEdits(state.editorsPageId, state.editingPostNr, state.text,
           this.anyDraftNr(), () => {
       // BUG (harmless) poor UX: [JMPBCK] If we're no longer on the same page as
@@ -1902,6 +1905,7 @@ export const Editor = createFactory<any, EditorState>({
   saveNewPost: function() {
     this.throwIfBadTitleOrText(null, t.e.PleaseWriteSth);
     const state: EditorState = this.state;
+    // ! anonStatus: state.anonStatus,
     ReactActions.saveReply(state.editorsPageId, state.replyToPostNrs, state.text,
           state.anyPostType, state.draft, () => {
       // BUG (harmless) poor UX: See [JMPBCK] aboe.
@@ -1921,6 +1925,7 @@ export const Editor = createFactory<any, EditorState>({
       pageTitle: state.title,
       pageBody: state.text,
       deleteDraftNr: this.anyDraftNr(),
+      anonStatus: state.anonStatus,
     };
     // [DRAFTS_BUG] This doesn't delete the draft? (if any)
     Server.createPage(data, (newPageId: string) => {
@@ -2465,13 +2470,14 @@ export const Editor = createFactory<any, EditorState>({
       maybeAnonymously =
           Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
             const atRect = reactGetRefRect(this.refs.anonB);
-            anon.openAnonDropdown({ atRect, open: true, curLevel: state.anonLevel,
-                saveFn: (anonLevel) => {
-                  const newState: Partial<EditorState> = { anonLevel };
+            anon.openAnonDropdown({ atRect, open: true, curLevel: state.anonStatus,
+                me, saveFn: (anonStatus) => {
+                  const newState: Partial<EditorState> = { anonStatus };
                   this.setState(newState);
                 } });
           } },
-          anon.anonLevel_titleShort(state.anonLevel), ' ', r.span({ className: 'caret' }));
+          anon.anonStatus_titleShort(state.anonStatus, { me }),
+          ' ', r.span({ className: 'caret' }));
     }
 
     // ----- Save button

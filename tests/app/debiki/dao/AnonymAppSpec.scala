@@ -23,8 +23,7 @@ import debiki.EdHttp.ResultException
 import java.{util => ju}
 
 
-@org.scalatest.Ignore
-class __DaoAppSpecTemplate__ extends DaoAppSuite(
+class AnonymAppSpec extends DaoAppSuite(
         disableScripts = true, disableBackgroundJobs = true) {
 
   val site1 = new TestSiteAndDao(1, this)
@@ -42,6 +41,9 @@ class __DaoAppSpecTemplate__ extends DaoAppSuite(
   var ownerS1: Participant = _
   var userOneS1: Participant = _
   var userTwoS1: Participant = _
+
+  var createPageResult: CreatePageResult = _
+  var pageId: St = _
 
   "Something can do it" - {
 
@@ -70,6 +72,30 @@ class __DaoAppSpecTemplate__ extends DaoAppSuite(
       ownerS1 = createPasswordOwner("6mwe2tr0", site1.dao)
       userOneS1 = createPasswordUser("ff6622zz", site1.dao, trustLevel = TrustLevel.BasicMember)
       userTwoS1 = createPasswordUser("mm33ww77", site1.dao, trustLevel = TrustLevel.BasicMember)
+    }
+
+    "Try post anonymously — but anon posts are disabled, by default" in {
+      val dao = site1.dao
+      createPageResult = createPage2(PageType.Discussion, dao.textAndHtmlMaker.forTitle("Anon Test"),
+            bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Test anon post."),
+            authorId = userOneS1.id, browserIdData, dao, anyCategoryId = Some(catA.id),
+            anonStatus = Some(AnonStatus.IsAnonBySelf))
+      pageId = createPageResult.id
+    }
+
+    "Load an anon user" in {
+      val dao = site1.dao
+      dao.readTx { tx =>
+        val page = dao.newPageDao(pageId, tx)
+        val pageParts = page.parts
+        val relevantPosts = pageParts.allPosts // loads all posts, if needed
+        //val userIdsToLoad = mut.Set[UserId]()
+        //userIdsToLoad ++= relevantPosts.map(_.createdById)  // or relevantApprovedPosts? [iz01]
+        val userIdsToLoad = relevantPosts.map(_.createdById)
+
+        // Will this work
+        val usersById = tx.loadParticipantsAsMap(userIdsToLoad)
+      }
     }
 
     /*

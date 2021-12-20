@@ -175,6 +175,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           (json, memberOrGroup)
         }
         else {
+          ANON_UNIMPL // could get an Anonym not a Guest
           val guest = tx.loadTheGuest(userId)
           val json = jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
             callerIsAdmin = callerIsAdmin)
@@ -1088,6 +1089,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     import request.{siteId, dao, theRequester => requester}
     import talkyard.server.{WhenFormat, OptWhenFormat}
 
+    throwForbiddenIf(requester.isAnon, "TyE8LUHE1", "Not tracking anonyms' reading progress")
     throwForbiddenIf(requester.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
     throwForbiddenIf(requester.isGroup, "EdE5QFVB5", "Not tracking groups' reading progress")
 

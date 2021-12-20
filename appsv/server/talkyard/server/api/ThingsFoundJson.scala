@@ -211,6 +211,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
       "fullName" -> JsStringOrNull(pp.anyName),
       "tinyAvatarUrl" -> JsStringOrNull(
           pp.tinyAvatar.map(avatarUrlPrefix + _.hashPath)),
+      "isAnon" -> pp.isAnon,
       "isGroup" -> pp.isGroup,
       "isGuest" -> pp.isGuest)
   }

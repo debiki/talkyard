@@ -93,6 +93,7 @@ const AboutPatDialog = createComponent({
       ...newState,
     };
     this.setState(newState2);
+    // Needs [loadTheGuestOrAnon] server side.  ANON_UNIMPL
     this.loadPat(idOrUsername);
   },
 

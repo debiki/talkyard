@@ -712,6 +712,12 @@ export function pat_mayEditTags(me: Me, ps: { forPost?: Post, forPat?: Pat,
 }
 
 
+export function pat_name(pat: Pat | Me): St {
+  if (pat.username) return '@' + pat.username;
+  return pat.fullName;
+}
+
+
 
 // Settings
 //----------------------------------

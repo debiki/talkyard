@@ -370,6 +370,7 @@ declare namespace debiki2 {
   function user_isGuest(pat: UserInclDetails | Me | Pat): Bo;
   function pat_isSys(pat: Pat): Bo;
   function pat_isStaff(pat: Me | Pat): Bo;
+  function pat_name(pat: Pat | Me): St;
   function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean;
   var page_isGroupTalk;
 

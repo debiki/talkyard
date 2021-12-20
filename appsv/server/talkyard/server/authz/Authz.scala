@@ -58,8 +58,11 @@ case class ForumAuthzContext(
     if (requester.exists(_.isGroup)) {
       die("TyEs024HRS25", "Trying to authz as a group")  // [imp-groups]
     }
+    else if (requester.exists(_.isAnon)) {
+      die("TyEs024HRS28", "Trying to authz as an anonym")
+    }
     else if (groupIdsUserIdFirst.length >= 2) {
-      dieIf(requester.map(_.id) isNot groupIdsUserIdFirst(0), "TyE2AKBR05")
+      dieIf(requester.map(_.id) isNot groupIdsUserIdFirst.head, "TyE2AKBR05")
       groupIdsUserIdFirst.tail
     }
     else {

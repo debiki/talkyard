@@ -25,21 +25,21 @@ const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
-interface AnonLevelState {
+interface AnonStatusState {
   atRect: Rect;
   open?: Bo;
-  pat: PatVb;
+  pat?: Pat;
   me: Me,
-  curLevel?: AnonLevel;
-  saveFn: (newPref: AnonLevel) => Vo ;
+  curStatus?: AnonStatus;
+  saveFn: (newPref: AnonStatus) => Vo ;
 }
 
 
-let setStateExtFn: (_: AnonLevelState) => Vo;
+let setStateExtFn: (_: AnonStatusState) => Vo;
 
-export function openAnonDropdown(ps: AnonLevelState) {
+export function openAnonDropdown(ps: AnonStatusState) {
   if (!setStateExtFn) {
-    ReactDOM.render(AnonLevelModal(), utils.makeMountNode());  // or [use_portal] ?
+    ReactDOM.render(AnonStatusModal(), utils.makeMountNode());  // or [use_portal] ?
   }
   setStateExtFn(ps);
 }
@@ -53,17 +53,17 @@ export function openAnonDropdown(ps: AnonLevelState) {
 ///       if any?
 ///
 ///
-const AnonLevelModal = React.createFactory<{}>(function() {
-  //displayName: 'EmailNotfPrefsDiag',
+const AnonStatusModal = React.createFactory<{}>(function() {
+  //displayName: 'AnonStatusModal',
 
   // TESTS_MISSING
 
-  const [state, setState] = React.useState<AnonLevelState | N>(null);
+  const [state, setState] = React.useState<AnonStatusState | N>(null);
 
   setStateExtFn = setState;
 
   const atRect: Rect = (state?.atRect || {}) as Rect;
-  const isOpen = state && state.open; //  !!pat;
+  const isOpen = state && state.open;
 
   function close() {
     setState(null);
@@ -73,22 +73,24 @@ const AnonLevelModal = React.createFactory<{}>(function() {
   let anonymously: RElm | U;
 
   if (isOpen) {
-    const makeItem = (anonLevel: AnonLevel, e2eClass: St): RElm => {
-      const title = r.span({ className: e2eClass },
-              anonLevel_title(anonLevel, state.pat, state.me));
-      const text = anonLevel_descr(anonLevel, state.pat, state.me);
-      return ExplainingListItem({
-                title, text,
-                active: anonLevel === state.curLevel,
-                onSelect: () => {
-                  state.saveFn(anonLevel);
-                  close();
-                },
-              });
+    const me: Me = state.me;
+    const pat: Pat | U = state.pat;
+    const makeItem = (anonStatus: AnonStatus, e2eClass: St): RElm => {
+      const title = r.span({ className: e2eClass }, anonStatus_title(anonStatus, { me, pat }));
+      const text = anonStatus_descr(anonStatus, { me, pat });
+      return (
+          ExplainingListItem({
+            title, text,
+            active: anonStatus === state.curStatus,
+            onSelect: () => {
+              state.saveFn(anonStatus);
+              close();
+            },
+          }));
     }
 
-    asYourName = makeItem(AnonLevel.NotAnon, '');
-    anonymously = makeItem(AnonLevel.PerPage, '');
+    asYourName = makeItem(AnonStatus.NotAnon, '');
+    anonymously = makeItem(AnonStatus.PerPage, '');
 
     // Pen name?:  openAddPeopleDialog(alreadyAddedIds, onDone)
   }
@@ -96,33 +98,44 @@ const AnonLevelModal = React.createFactory<{}>(function() {
   return (
       DropdownModal({ show: isOpen, onHide: close, atX: atRect.left, atY: atRect.top,
           pullLeft: true, showCloseButton: true },
-        r.div({ className: 's_ExplDrp_Ttl' }, "Post as ..."),  // I18N
+        r.div({ className: 's_ExplDrp_Ttl' }, "Post ..."),  // I18N
         asYourName,
         anonymously));
 });
 
 
-export function anonLevel_titleShort(level: AnonLevel, pat: Pat, me: Me): St {
+export function anonStatus_titleShort(level: AnonStatus, ps: { me: Me, pat?: Pat }): St {
   switch (level) {
-    case 10: return "as yourself";
-    case 50: return "anonymously";
+    case AnonStatus.PerPage:
+      return "anonymously";
+    case AnonStatus.NotAnon:
+    default:
+      return "as " + pat_name(ps.pat || ps.me);
   }
 }
 
 
-export function anonLevel_title(level: AnonLevel, pat: Pat, me: Me): St {
+export function anonStatus_title(level: AnonStatus, ps: { me: Me, pat?: Pat }): St {
   switch (level) {
-    case 10: return "As you, " + pat.username;
-    case 50: return "Post anonymously";
+    case AnonStatus.PerPage:
+      return "Anonymously";
+    case AnonStatus.NotAnon:
+    default:
+      const pat = ps.pat;
+      return pat ? "As " + pat_name(pat)
+                  : "As you, " + pat_name(ps.me);
   }
 }
 
 
-export function anonLevel_descr(level: AnonLevel, pat: Pat, me: Me): St {
+export function anonStatus_descr(level: AnonStatus, ps: { me: Me, pat?: Pat }): St {
   switch (level) {
-    case 10: return "Others can see who you are — they see your username and picture.";
-    case 50: return "Your name and picture aren't shown. " +
+    case AnonStatus.PerPage:
+      return "Your name and picture won't be shown. " +
               "Admins can still check who you are, though.";
+    case AnonStatus.NotAnon:
+    default:
+      return "Others can see who you are — they'll see your username and picture.";
   }
 }
 

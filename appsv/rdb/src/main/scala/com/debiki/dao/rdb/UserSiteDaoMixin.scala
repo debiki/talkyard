@@ -222,7 +222,11 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
     runQueryFindMany(query, values.toList, rs => {
       val user = getParticipant(rs)
+      dieIf(user.isAnon, "TyE5ABK20A1")
       dieIf(user.isGuest, "TyE5ABK20A2")
+      // Cannot be a group? [.0_group_in_group]  Use  pat.toUserOrThrow ?
+      DO_AFTER // 2022-02-01 comment in this? Even later, remove isDevOrTest
+      //dieIf(user.isGroup && com.debiki.core.isDevOrTest, "TyE5ABK20A3")
       user
     })
   }
@@ -244,7 +248,11 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
     runQueryFindMany(query, values.toList, rs => {
       val user = getParticipant(rs)
+      dieIf(user.isAnon, "TyE5ABK20B1")
       dieIf(user.isGuest, "TyE603KRJL")
+      // Cannot be a group? [.0_group_in_group]
+      DO_AFTER // 2022-02-01 comment in this? Even later, remove isDevOrTest
+      //dieIf(user.isGroup && com.debiki.core.isDevOrTest, "TyE5ABK20B3")
       user
     })
   }
@@ -572,6 +580,25 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
+  def insertAnonym(anon: Anonym) {
+    val stmt = s"""
+          insert into users3(
+            site_id,
+            user_id,
+            created_at,
+            anon_status_c,
+            anon_for_memb_id_c,
+            anon_on_page_id_st_c)
+          values (?, ?, ?, ?, ?, ?)
+          """
+    val values = List(
+          siteId.asAnyRef, anon.id.asAnyRef,
+          anon.createdAt.asTimestamp, anon.anonStatus.toInt.asAnyRef,
+          anon.anonForPatId.asAnyRef, anon.anonOnPageId)
+    runUpdateSingleRow(stmt, values)
+  }
+
+
   def insertMember(user: UserInclDetails) {
     try {
       runUpdate("""
@@ -666,6 +693,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       """
     runQueryFindOneOrNone(query, values.toList, rs => {
       val user = getParticipant(rs)
+      // Use  pat.toMemberOrThrow instead of these dieIf?
+      dieIf(user.isAnon, "TyE2AKB7F2")
       dieIf(user.isGuest, "TyE2AKB7F3")
       user.asInstanceOf[Member]
     })

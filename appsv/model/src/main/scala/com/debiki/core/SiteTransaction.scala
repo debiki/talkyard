@@ -444,8 +444,11 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
   def deleteAllUsersIdentities(userId: UserId): Unit
 
+  RENAME // to nextGuestOrAnonId?
   def nextGuestId: UserId
   def insertGuest(guest: Guest): Unit   // should be: GuestDetailed
+
+  def insertAnonym(anonym: Anonym): U
 
   def nextMemberId: UserId
   def insertMember(user: UserInclDetails): Unit
@@ -538,11 +541,13 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadGuest(userId: UserId): Option[Guest] = {
     dieIf(userId > Participant.MaxGuestId, "EsE8FY032")
+    ANON_UNIMPL // could get an Anonym not a Guest
     loadParticipant(userId).map(_.asInstanceOf[Guest])
   }
 
   def loadTheGuest(userId: UserId): Guest = {
     dieIf(userId > Participant.MaxGuestId, "EsE6YKWU2", userId)
+    ANON_UNIMPL // could get an Anonym not a Guest  [loadTheGuestOrAnon]
     loadTheParticipant(userId).asInstanceOf[Guest]
   }
   def loadUser(userId: UserId): Option[User] = {
@@ -767,6 +772,9 @@ case class GotAGroupException(groupId: UserId) extends Exception(
 
 case class GotANotGroupException(groupId: UserId) extends Exception(
   s"Got a not-group when trying to load group $groupId [EdE4GW1WA9]")
+
+case class GotAnAnonEx(anonymId: PatId, wantedWhat: St) extends Exception(
+  s"Got an anonym when trying to load pat $anonymId, wanted $wantedWhat [TyEGOTANANON]")
 
 case class GotAGuestException(groupId: UserId) extends Exception(
   s"Got a guest when trying to load member $groupId [EdE4GAR0W1]")

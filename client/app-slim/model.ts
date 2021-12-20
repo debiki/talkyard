@@ -1370,6 +1370,7 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
   isAdmin?: boolean;
   isModerator?: boolean;
 
+  isAnon?: Bo;
   isGuest?: boolean;  // = !isAuthenticated
   isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
 
@@ -1437,6 +1438,7 @@ interface GroupStats {
 type ParticipantAnyDetails = MemberInclDetails | GuestDetailed;
 
 
+/// RENAME to MembVb?
 interface MemberInclDetails extends Member {
   avatarMediumHashPath?: string;
   // Only if requester is staff:
@@ -1458,6 +1460,7 @@ type UserInclDetails = PatVb; // old name, remove
 // ("Thin" and "Fat"? Maybe "PatFatStaff" isn't the best interface name
 // "PatVbStaff" better?)
 /// A Participant including verbose details, for the pat profile pages.
+// RENAME to UserVb? Isn't this alaways a user — not a group or guest.
 interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
@@ -1492,7 +1495,7 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   deletedAt?: number;
 }
 
-interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb?
+interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb? no UserVvb?
   // Mabye some old accounts lack stats?
   anyUserStats?: UserStats;
 }

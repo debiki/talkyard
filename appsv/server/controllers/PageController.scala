@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.JsonUtils.parseOptInt32
 import debiki.dao.SiteDao
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
@@ -56,6 +57,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+    val anonStatus = parseOptInt32(body, "anonStatus").flatMap(AnonStatus.fromInt)
 
     val postRenderSettings = dao.makePostRenderSettings(pageRole)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(bodyText,
@@ -89,7 +91,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
       anySlug, titleSourceAndHtml, bodyTextAndHtml, showId, deleteDraftNr = deleteDraftNr,
-      request.who, request.spamRelatedStuff)
+      request.who, request.spamRelatedStuff, anonStatus = anonStatus)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
   }

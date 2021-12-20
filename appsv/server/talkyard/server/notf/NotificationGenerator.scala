@@ -475,6 +475,10 @@ case class NotificationGenerator(
     if (sentToUserIds.contains(toUserMaybeGroup.id))
       return
 
+    ANON_UNIMPL // notify the underlying real user.
+    if (toUserMaybeGroup.isAnon)
+      return // for now. Later: Look up the real underlying user.
+
     if (toUserMaybeGroup.isGuest) {
       if (toUserMaybeGroup.emailNotfPrefs == EmailNotfPrefs.DontReceive ||
           toUserMaybeGroup.emailNotfPrefs == EmailNotfPrefs.ForbiddenForever ||
@@ -525,7 +529,7 @@ case class NotificationGenerator(
 
         var groupMembers = tx.loadGroupMembers(groupId).filter(_.id != newPost.createdById)
 
-        dieIf(groupMembers.exists(_.isGuest), "TyE7ABK402")
+        dieIf(groupMembers.exists(_.isGuestOrAnon), "TyE7ABK402")
 
         // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
         // because they're members of the AllMembers group. [NESTDGRPS]

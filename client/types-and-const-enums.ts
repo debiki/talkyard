@@ -263,9 +263,10 @@ const enum PostVoteType {
 }
 
 
-const enum AnonLevel {
-  NotAnon = 10,
-  PerPage = 50,
+const enum AnonStatus {
+  NotAnon = 0,      // was: 10,
+  PerPage = 5,      // was: PerPage = 50,   RENAME to IsAnonBySelf, see Scala?
+  DeanondBySelf = 37,
 }
 
 

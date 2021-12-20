@@ -225,6 +225,9 @@ object RdbUtil {
       |u.APPROVED_AT u_approved_at,
       |u.APPROVED_BY_ID u_approved_by_id,
       |u.SUSPENDED_TILL u_suspended_till,
+      |u.anon_status_c u_anon_status_c,
+      |u.anon_for_memb_id_c u_anon_for_pat_id_c,
+      |u.anon_on_page_id_st_c u_anon_on_page_id_st_c,
       |u.trust_level u_trust_level,
       |u.locked_trust_level u_locked_trust_level,
       |u.threat_level u_threat_level,
@@ -268,6 +271,9 @@ object RdbUtil {
     val userId = rs.getInt("u_id")
     val extImpId = getOptString(rs, "u_ext_id")
     val isGroup = rs.getBoolean("u_is_group")
+    val anonStatus: Opt[AnonStatus] = getOptInt32(rs, "u_anon_status_c")
+          .flatMap(AnonStatus.fromInt)
+
     def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
       if (isGuestId(userId))
@@ -275,16 +281,28 @@ object RdbUtil {
       else
         _toEmailNotfs(rs.getString("u_email_notfs"))
     }
+
     val lockedThreatLevel = getOptInt(rs, "u_locked_threat_level").flatMap(ThreatLevel.fromInt)
     def theUsername = rs.getString("u_username")
     val name = Option(rs.getString("u_full_name"))
     def tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path")
     def smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path")
     val anyTrustLevel = TrustLevel.fromInt(rs.getInt("u_trust_level"))
+
       // Use dn2e not n2e. ((So works if joined w/ DW1_IDS_SIMPLE, which
       // uses '-' instead of null to indicate absence of email address etc.
       // See usage of this function in RdbSystemTransaction.loadUsers(). ))
-    if (isGuestId(userId))
+
+    if (anonStatus.isDefined) {
+      Anonym(
+          id = userId,
+          createdAt = createdAt,
+          anonStatus = anonStatus.get,
+          anonForPatId = getInt32(rs, "u_anon_for_pat_id_c"),
+          anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"),
+      )
+    }
+    else if (isGuestId(userId)) {
       Guest(
         id = userId,
         extId = extImpId,
@@ -297,6 +315,7 @@ object RdbUtil {
         website = getOptString(rs, "u_website"),
         country = dn2e(rs.getString("u_country")).trimNoneIfEmpty,
         lockedThreatLevel = lockedThreatLevel)
+    }
     else if (isGroup) {
       val perms = PatPerms.create(IfBadDie,
             maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
@@ -378,6 +397,9 @@ object RdbUtil {
     |is_owner,
     |is_admin,
     |is_moderator,
+    |anon_status_c,
+    |anon_for_memb_id_c,
+    |anon_on_page_id_st_c,
     |deactivated_at,
     |deleted_at,
     |username,
@@ -414,6 +436,7 @@ object RdbUtil {
 
   def getParticipantInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet): ParticipantInclDetails = {
     val participantId = rs.getInt("user_id")
+    ANON_UNIMPL // fine, currently always disabled
     if (participantId <= MaxGuestId) {
       getGuestInclDetails_wrongGuestEmailNotfPerf(rs, participantId)
     }

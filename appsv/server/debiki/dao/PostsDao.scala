@@ -351,6 +351,10 @@ trait PostsDao {
     if (author.isStaff)
       return (Nil, true)
 
+    // When posting anonymously, one's real account (not the anon account) is used
+    // to find out if one's anon posts need to get reviewed.
+    dieIf(author.user.isAnon, "TyE7MW40GM")
+
     // Don't review direct messages — then all staff would see them. Instead, only non-threat
     // users with level >= Basic may post private messages to non-staff people.
     if (pageMeta.map(_.pageType).contains(PageType.FormalMessage))

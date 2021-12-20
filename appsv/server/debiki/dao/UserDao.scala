@@ -349,6 +349,7 @@ trait UserDao {
 
   def lockGuestThreatLevel(guestId: UserId, newThreatLevel: Option[ThreatLevel]): Unit = {
     readWriteTransaction { tx =>
+      ANON_UNIMPL // could get an Anonym not a Guest
       val guest = tx.loadTheGuest(guestId)
       ??? // lock both ips and guest cookie
     }
@@ -958,6 +959,7 @@ trait UserDao {
   }
 
 
+  RENAME // to getPatBySessionId
   /**
     * Loads a user from the database.
     * Verifies that the loaded id match the id encoded in the session identifier,
@@ -1132,8 +1134,10 @@ trait UserDao {
         // [ck_grp_ckl]
         throwForbidden("TyEGRINGR", s"Cannot add groups to groups. Is a group: ${group.nameParaId}")
       }
-      newMembers.find(_.isGuest) foreach { guest =>
-        throwForbidden("TyEGSTINGR", s"Cannot add guests to groups. Is a guest: ${guest.nameParaId}")
+
+      newMembers.find(_.isGuestOrAnon) foreach { guest =>
+        throwForbidden("TyEGSTINGR", s"Cannot add guests or anons to groups; this pat: ${
+              guest.nameParaId} is a ${guest.accountType}.")
       }
 
       val maxLimits = getMaxLimits(UseTx(tx))
