@@ -45,15 +45,10 @@ create domain no_choose_yes_d i16_d;
 alter  domain no_choose_yes_d add
    constraint no_choose_yes_d_c_in check (value in (1, 2, 3));
 
-
+-- See AnonStatus in the Scala code.
 create domain anon_status_d i16_d;
 alter  domain anon_status_d add
-   constraint anon_status_d_c_in_1_3 check (value in (1, 3));
--- was never, is not anon = null
--- was anon          = 0001  always set   = 1
--- is anon           = 0010   = b01 + b10 = 3
--- can auto deanon   = 0100               = 7
--- was pub some time = 1000               = 9 | 11 | 15
+   constraint anon_status_d_c_in_5_37 check (value in (5, 37));
 
 
 
@@ -76,19 +71,15 @@ alter table users3 add column see_exact_stats_min_tr_lv_c    trust_level_or_staf
 -------------------------------------------------
 
 
-alter table users3 add column anon_status_c anon_status_d;
-
-alter table users3 add constraint pats_c_isanonid_lt_m10 check (
-    user_id < -10 or anon_status_c is null);
+-- Later, drop: category_id, page_id.
+alter table settings3 add column enable_anon_posts_c bool;
 
 
+alter table users3 add column anon_status_c        anon_status_d;
 alter table users3 add column anon_for_memb_id_c   member_id_d;
 alter table users3 add column anon_on_page_id_st_c page_id_st_d;
 alter table users3 add column anon_on_page_id_c    page_id_d__later;
 
-alter table users3 add constraint pats_c_anon_cols check (
-    (anon_status_c is null) = (anon_for_memb_id_c is null) and
-    (anon_status_c is null) = (anon_on_page_id_st_c is null));
 
 -- fk ix: pats_u_anonforpatid_anononpageid
 alter table users3 add constraint pats_anonforpat_r_pats
@@ -100,6 +91,7 @@ alter table users3 add constraint pats_anononpage_r_pages
     foreign key (site_id, anon_on_page_id_st_c)
     references pages3 (site_id, page_id) deferrable;
 
+
 create index pats_u_anonforpatid_anononpageid on users3 (
     site_id, anon_for_memb_id_c, anon_on_page_id_st_c);
 
@@ -107,8 +99,58 @@ create index pats_u_anononpageid on users3 (
     site_id, anon_on_page_id_st_c);
 
 
--- Later, drop: category_id, page_id.
-alter table settings3 add column enable_anon_posts_c bool;
+alter table users3 add constraint pats_c_anonid_lt_m10 check (
+    anon_status_c is null or user_id <= -10);
+
+alter table users3 add constraint pats_c_anon_null_same check (
+    num_nonnulls(anon_status_c, anon_for_memb_id_c, anon_on_page_id_st_c) in (0, 3));
+
+alter table users3 add constraint pats_c_anon_not_approved check (
+    anon_status_c is null
+    or (created_at is not null and
+        is_approved is null and
+        approved_at is null and
+        approved_by_id is null));
+
+alter table users3 add constraint pats_c_anon_nulls check (
+    anon_status_c is null
+    or (guest_browser_id is null and
+        guest_email_addr is null and
+        sso_id is null and
+        ext_id is null and
+        full_name is null and
+        country is null and
+        website is null and
+        about is null and
+        ui_prefs is null and
+        see_activity_min_tr_lv_c is null and
+        email_notfs is null and
+        email_verified_at is null and
+        email_for_every_new_post is null and
+        summary_email_interval_mins is null and
+        summary_email_if_active is null and
+        max_upload_bytes_c is null and
+        allowed_upload_extensions_c is null and
+        see_profile_min_tr_lv_c is null and
+        see_approx_stats_min_tr_lv_c is null and
+        see_exact_stats_min_tr_lv_c is null));
+
+alter table users3 drop constraint pps_c_guest_not_nulls;
+alter table users3 add constraint pats_c_guest_non_nulls check (
+    -- Member or anonym?
+    (user_id > 0 or anon_status_c is not null)
+    -- Else, is a guest (or the Unknown user) and then:
+    or (created_at is not null and
+        full_name is not null and
+        guest_email_addr is not null));
+
+alter table users3 drop constraint pps_c_guest_w_no_browserid_has_extid;
+alter table users3 add constraint pats_c_guest_w_no_browserid_has_extid check (
+    -- Member or anonym?
+    (user_id > 0 or anon_status_c is not null)
+    -- Else, is guest (or the Unknown user); then needs a browser id or an ext id.
+    or guest_browser_id is not null
+    or ext_id is not null);
 
 
 
