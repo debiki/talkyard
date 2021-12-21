@@ -428,16 +428,20 @@ const PatTopPanel = createComponent({
       isAGroup = t.upp.isGroup;
     }
 
-    let isWhatInfo = null;
-    if (isGuest(user)) {
+    let isWhatInfo: St | N = null;
+    if (user.isAnon) {
+      isWhatInfo = t.Anonym || "Anonym";
+    }
+    else if (isGuest(user)) {
       isWhatInfo = t.upp.isGuest;
     }
-    if (user.isModerator) {
+    else if (user.isModerator) {
       isWhatInfo = t.upp.isMod;
     }
-    if (user.isAdmin) {
+    else if (user.isAdmin) {
       isWhatInfo = t.upp.isAdmin;
     }
+
     if (isWhatInfo) {
       isWhatInfo = r.span({ className: 'dw-is-what' }, isWhatInfo);
     }

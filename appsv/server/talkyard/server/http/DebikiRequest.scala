@@ -167,7 +167,6 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def anyRoleId: Option[UserId] = user.flatMap(_.anyMemberId)
   def theRoleId: UserId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
-  NEXT // find usages
   def isGuest: Boolean = user.exists(_.isGuest)
   def isStaff: Boolean = user.exists(_.isStaff)
 

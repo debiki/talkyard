@@ -162,6 +162,19 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  def JsAnon(anon: Anonym, callerIsAdmin: Bo = false, inclRealUserId: Bo = false): JsObject = {  // ts: Anon  ?
+    var json = Json.obj(
+          "id" -> JsNumber(anon.id),
+          "isAnon" -> JsTrue,
+          "anonStatus" -> JsNumber(anon.anonStatus.toInt),
+          "anonOnPageId" -> JsString(anon.anonOnPageId))
+    if (callerIsAdmin && inclRealUserId) {
+      json += "anonRealId" -> JsNumber(anon.anonForPatId) ; RENAME // anonForPatId to anonRealId?
+    }
+    json
+  }
+
+
   def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
     user.map(JsUser(_)).getOrElse(JsNull)
 

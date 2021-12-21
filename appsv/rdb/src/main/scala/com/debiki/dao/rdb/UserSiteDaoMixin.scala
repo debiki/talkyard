@@ -1002,7 +1002,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
       val user = getMemberInclDetails(rs) match {
         case m: UserInclDetails => m
-        case g: Group => throw GotAGroupException(g.id)
+        case g: Group => throw GotAGroupException(g.id, wantedWhat = "a user")
       }
 
       (user, anyStats)

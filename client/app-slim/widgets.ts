@@ -278,10 +278,15 @@ export function UserName(props: {
 
   const guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
 
-  let namePartOne;
-  let namePartTwo;
+  let namePartOne: St | RElm | U;
+  let namePartTwo: St | RElm | U;
 
-  if (showHow === ShowAuthorHow.UsernameOnly) {
+  if (user.isAnon) {
+    // There's already "By" before, and "anonym" isn't a name, so use lowercase.
+    namePartOne = r.span({className: 'esP_By_F esP_By_F-G' },
+          t.Anonym.toLowerCase());
+  }
+  else if (showHow === ShowAuthorHow.UsernameOnly) {
     // CLEAN_UP rename these CSS classes from ...By_F to By_1 and By_2 for part 1 (bold font)
     // and 2 (normal font) instead?
     // But for now, use By_F for the *username* just because it's bold, and By_U for the full name,

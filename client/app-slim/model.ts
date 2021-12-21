@@ -1371,6 +1371,10 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
   isModerator?: boolean;
 
   isAnon?: Bo;
+  anonStatus?: AnonStatus;
+  anonOnPageId?: PageId;
+  anonRealId?: PatId;
+
   isGuest?: boolean;  // = !isAuthenticated
   isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
 
@@ -1385,16 +1389,34 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
 type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
 
 
-interface Guest extends Participant {
+interface Anonym extends GuestOrAnon {
+  isAnon: true;
+  anonStatus: AnonStatus;
+  anonOnPageId: PageId;
+  anonRealId: PatId;
+
+  isGuest?: false;  // = !isAuthenticated — no!  BUG RISK ensure ~isGuest isn't relied on
+                                         // anywhere, to "know" it's a user / group
+}
+
+
+interface Guest extends GuestOrAnon {
   fullName: string;
   username?: undefined;
   email: string;
   isEmailUnknown?: boolean;
   isGuest: true;
+  isAnon?: false;
+}
+
+
+interface GuestOrAnon extends Pat {
   isAdmin?: false;
   isModerator?: false;
+  isAuthenticated?: false;
   avatarTinyHashPath?: undefined;
   avatarSmallHashPath?: undefined;
+  pubTags?: [];
 }
 
 

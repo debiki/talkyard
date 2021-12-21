@@ -175,11 +175,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           (json, memberOrGroup)
         }
         else {
-          ANON_UNIMPL // could get an Anonym not a Guest
-          val guest = tx.loadTheGuest(userId)
-          val json = jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
-            callerIsAdmin = callerIsAdmin)
-          (json, guest)
+          val pat = tx.loadTheParticipant(userId)
+          val json = pat match {
+            case anon: Anonym => JsAnon(anon)
+            case guest: Guest => jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
+                callerIsAdmin = callerIsAdmin)
+          }
+          (json, pat.asInstanceOf[ParticipantInclDetails])
         }
       dieIf(pat.id != userId, "TyE36WKDJ03")
       (pptJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), pat.noDetails)

@@ -436,8 +436,7 @@ object RdbUtil {
 
   def getParticipantInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet): ParticipantInclDetails = {
     val participantId = rs.getInt("user_id")
-    ANON_UNIMPL // fine, currently always disabled
-    if (participantId <= MaxGuestId) {
+    if (participantId <= MaxGuestOrAnonId) {
       getGuestInclDetails_wrongGuestEmailNotfPerf(rs, participantId)
     }
     else {
@@ -449,7 +448,7 @@ object RdbUtil {
   def getUserInclDetails(rs: js.ResultSet): UserInclDetails = {
     getMemberInclDetails(rs) match {
       case m: UserInclDetails => m
-      case g: Group => throw GotAGroupException(g.id)
+      case g: Group => throw GotAGroupException(g.id, wantedWhat = "a user")
     }
   }
 
@@ -465,11 +464,21 @@ object RdbUtil {
 
 
   /** Currently there's no GuestInclDetails, just a Guest and it includes everything. */
-  private def getGuestInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet, theGuestId: UserId): Guest = {
+  private def getGuestInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet, patId: PatId): GuestOrAnon = {
     // A bit dupl code. (703KWH4)
     val name = Option(rs.getString("full_name"))
+    val anonStatus = getOptInt32(rs, "anon_status_c") flatMap AnonStatus.fromInt
+    if (anonStatus.isDefined) {
+      return Anonym(
+          id = patId,
+          createdAt = getWhen(rs, "created_at"),
+          anonStatus = anonStatus.get,
+          anonForPatId = getInt32(rs, "u_anon_for_pat_id_c"),
+          anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"))
+    }
+
     Guest(
-      id = theGuestId,
+      id = patId,
       extId = getOptString(rs, "ext_id"),
       createdAt = getWhen(rs, "created_at"),
       guestName = dn2e(name.orNull),

@@ -349,7 +349,6 @@ trait UserDao {
 
   def lockGuestThreatLevel(guestId: UserId, newThreatLevel: Option[ThreatLevel]): Unit = {
     readWriteTransaction { tx =>
-      ANON_UNIMPL // could get an Anonym not a Guest
       val guest = tx.loadTheGuest(guestId)
       ??? // lock both ips and guest cookie
     }
@@ -859,8 +858,8 @@ trait UserDao {
     require(userId >= Participant.LowestMemberId, "EsE4GKX24")
     getParticipant(userId).map(_ match {
       case user: User => user
-      case _: Group => throw GotAGroupException(userId)
-      case _: Guest => die("TyE2AKBP067")
+      case _: Group => throw GotAGroupException(userId, wantedWhat = "a user")
+      case _ => die("TyE2AKBP067")
     })
   }
 
@@ -1213,7 +1212,7 @@ trait UserDao {
 
   def getOnesGroupIds(ppt: Participant): Vector[UserId] = {
     ppt match {
-      case _: Guest | UnknownParticipant => Vector(Group.EveryoneId)
+      case _: Guest | _: Anonym | UnknownParticipant => Vector(Group.EveryoneId)
       case _: User | _: Group =>
         memCache.lookup[Vector[UserId]](
           onesGroupIdsKey(ppt.id),

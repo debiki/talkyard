@@ -360,6 +360,8 @@ case object Participant {
   //assert(MaxGuestId == AnonymousUserId)
   assert(UnknownUserId.toInt <= MaxGuestId)
 
+  val MaxGuestOrAnonId: PatId = MaxGuestId
+
   /** Ids 1 .. 99 are reserved in case in the future I want to combine users and groups,
     * and then there'll be a few groups with hardcoded ids in the range 1..99.
     */
@@ -697,19 +699,31 @@ sealed trait Participant {    RENAME // to Pat, already started, in core/package
   def toMemberOrThrow: Member = {
     this match {
       case m: User => m
-      case a: Anonym => throw GotAnAnonEx(a.id, wantedWhat = "a user or group")
-      case g: Guest => throw GotAGuestException(g.id)
       case g: Group => g
-      case UnknownParticipant => throw GotUnknownUserException
+      case _ => throwWrongPatType(wantedWhat = "a user or group")
+    }
+  }
+
+  def asGuestOrThrow: Guest = {
+    this match {
+      case guest: Guest => guest
+      case _ => throwWrongPatType(wantedWhat = "a guest")
     }
   }
 
   def toUserOrThrow: User = {
     this match {
-      case m: User => m
-      case a: Anonym => throw GotAnAnonEx(a.id, wantedWhat = "a user")
-      case g: Guest => throw GotAGuestException(g.id)
-      case g: Group => throw GotAGroupException(g.id)
+      case user: User => user
+      case _ => throwWrongPatType(wantedWhat = "a user")
+    }
+  }
+
+  private def throwWrongPatType(wantedWhat: St): Nothing = {
+    this match {
+      case _: User => throw GotAUserEx(this.id, wantedWhat)
+      case _: Anonym => throw GotAnAnonEx(this.id, wantedWhat)
+      case _: Guest => throw GotAGuestException(this.id, wantedWhat)
+      case _: Group => throw GotAGroupException(this.id, wantedWhat)
       case UnknownParticipant => throw GotUnknownUserException
     }
   }
@@ -849,6 +863,9 @@ case class Anonym(
   override def anyName: Opt[St] = Some(nameOrUsername)
   override def usernameOrGuestName: St =  nameOrUsername
 
+  def extId: Opt[ExtId] = None
+  def noDetails: Pat = this
+
   def email: EmailAdr = ""
   def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.Unspecified
   def tinyAvatar: Opt[UploadRef] = None
@@ -859,6 +876,7 @@ case class Anonym(
   def isOwner: Bo = false
   def isModerator: Bo = false
   def isSuperAdmin: Bo = false
+  override def isBuiltIn: Bo = false
   override def isAnon: Bo = true
 
   // Never deactivate or delete. If the underlying real user deactivates hens account,
@@ -955,7 +973,7 @@ case class Guest( // [exp] ok   REFACTOR split into Guest and GuestDetailed
 }
 
 
-sealed trait GuestOrAnon
+sealed trait GuestOrAnon extends ParticipantInclDetails
 
 
 sealed trait ParticipantInclDetails {
