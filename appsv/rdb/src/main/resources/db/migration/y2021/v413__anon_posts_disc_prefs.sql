@@ -28,7 +28,7 @@ alter  domain i32_lt2e9_gt1000_d add
 
 create domain page_id_st_d text_nonempty_ste60_d;
 alter  domain page_id_st_d add
-   constraint page_id_st_d_c_chars check (value ~ '^[a-z0-9_]*$');
+   constraint page_id_st_d_c_chars check (value ~ '^[a-zA-Z0-9_]*$');
 
 create domain page_id_d__later  i64_gz_d;
 
