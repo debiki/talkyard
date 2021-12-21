@@ -728,13 +728,16 @@ package object core {
     * %% Was deanond by other = -1001     = 9
     * %% Was pub some time    = 1---1
     */
-  sealed abstract class AnonStatus(val IntVal: i32) { def toInt: i32 = IntVal }
+  sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
+    def toInt: i32 = IntVal
+  }
+
   object AnonStatus {
     // Cannot save in the database (that'd mean an anonymous user that wasn't anonymous)
     // — just means that pat intentionally wants to use hens real account.
-    case object NotAnon extends AnonStatus(0)
+    case object NotAnon extends AnonStatus(0, isAnon = false)
     case object IsAnonBySelf extends AnonStatus(5)
-    case object DeanondBySelf extends AnonStatus(37)
+    case object DeanondBySelf extends AnonStatus(37, isAnon = false)
 
     def fromInt(value: i32): Opt[AnonStatus] = Some(value match {
       case NotAnon.IntVal => return None // for now, simpler?
@@ -742,6 +745,14 @@ package object core {
       case DeanondBySelf.IntVal => DeanondBySelf
       case _ => return None
     })
+  }
+
+
+  sealed abstract class AnonHow() {}
+
+  object AnonHow {
+    case class AsNewAnon(anonStatus: AnonStatus) extends AnonHow
+    case class AsSameAnon(sameAnonId: PatId) extends AnonHow
   }
 
 

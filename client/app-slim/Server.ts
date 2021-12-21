@@ -1919,7 +1919,7 @@ export function unpinPage(success: () => void) {
 
 
 export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
-      anyPostType: number, deleteDraftNr: DraftNr | undefined,
+      anyPostType: number, deleteDraftNr: DraftNr | undefined, newAnonStatus: AnonStatus | U,
       success: (storePatch: StorePatch) => void) {
   postJson('/-/reply', {
     data: {
@@ -1935,6 +1935,8 @@ export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string
       postType: anyPostType || PostType.Normal,
       text: text,
       deleteDraftNr,
+      sameAnonId: undefined,
+      newAnonStatus,
     },
     success
   });

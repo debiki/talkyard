@@ -704,6 +704,13 @@ sealed trait Participant {    RENAME // to Pat, already started, in core/package
     }
   }
 
+  def asAnonOrThrow: Anonym = {
+    this match {
+      case anon: Anonym => anon
+      case _ => throwWrongPatType(wantedWhat = "an anonym")
+    }
+  }
+
   def asGuestOrThrow: Guest = {
     this match {
       case guest: Guest => guest

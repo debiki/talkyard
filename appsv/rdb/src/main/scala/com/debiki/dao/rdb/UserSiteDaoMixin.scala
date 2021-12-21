@@ -432,7 +432,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
   def loadGroupIdsMemberIdFirst(ppt: Participant): Vector[UserId] = {
     val builtInGroups = ppt match {
-      case _: Guest | UnknownParticipant => return Vector(Group.EveryoneId)
+      case _: Guest | _: Anonym | UnknownParticipant => return Vector(Group.EveryoneId)
       case u: User => getBuiltInGroupIdsForUser(u)
       case g: Group => getBuiltInGroupIdsForGroup(g)
     }

@@ -1907,7 +1907,7 @@ export const Editor = createFactory<any, EditorState>({
     const state: EditorState = this.state;
     // ! anonStatus: state.anonStatus,
     ReactActions.saveReply(state.editorsPageId, state.replyToPostNrs, state.text,
-          state.anyPostType, state.draft, () => {
+          state.anyPostType, state.draft, state.anonStatus, () => {
       // BUG (harmless) poor UX: See [JMPBCK] aboe.
       // Also, if we've navigaated away, seems any draft won't get deleted.
       this.callOnDoneCallback(true);

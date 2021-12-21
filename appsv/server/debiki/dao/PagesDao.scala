@@ -259,15 +259,16 @@ trait PagesDao {
     val bodyUniqueId = titleUniqueId + 1
 
     val (authorId, author) =
-          if (anonStatus isNot AnonStatus.IsAnonBySelf) {
+          if (!anonStatus.exists(_.isAnon)) {
             (realAuthorId, realAuthor)
           }
           else {
+            // Dupl code. [mk_new_anon]
             val anonymId = tx.nextGuestId
             val anonym = Anonym(
                   id = anonymId,
                   createdAt = tx.now,
-                  anonStatus = AnonStatus.IsAnonBySelf,
+                  anonStatus = anonStatus.getOrDie("TyE7MF26F"),
                   anonForPatId = realAuthorId,
                   anonOnPageId = pageId)
             // We'll insert the anonym before the page exists, but there's a

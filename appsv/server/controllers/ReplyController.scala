@@ -21,14 +21,17 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.JsonUtils.{asJsObject, parseOptInt32}
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
 import talkyard.server.http._
+
 import javax.inject.Inject
 import play.api._
-import play.api.libs.json.{JsObject, JsString, JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc._
 import talkyard.server.authn.MinAuthnStrength
+import org.scalactic.{Bad, Good, Or}
 
 
 /** Saves replies. Lazily creates pages for embedded discussions
@@ -40,10 +43,33 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
 
+  // Move to where?
+  def anonHowFromJson(jsOb: JsObject): Opt[AnonHow] Or ErrMsg = {
+    import debiki.JsonUtils.parseOptInt32
+    val sameAnonId = parseOptInt32(jsOb, "sameAnonId")
+    val newAnonStatus = parseOptInt32(jsOb, "newAnonStatus").flatMap(AnonStatus.fromInt)
+    if (sameAnonId.isDefined && newAnonStatus.isDefined) {
+      Bad("Both sameAnonId and newAnonStatus specified")
+    }
+    else Good {
+      if (sameAnonId.isDefined) {
+        Some(AnonHow.AsSameAnon(sameAnonId.get))
+      }
+      else if (newAnonStatus.isDefined) {
+        Some(AnonHow.AsNewAnon(newAnonStatus.get))
+      }
+      else {
+        None
+      }
+    }
+  }
+
+
   def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply,
         MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
-    import request.{body, dao, theRequester => requester}
+    import request.{dao, theRequester => requester}
+    val body = asJsObject(request.body, "request body")
     val anyPageId = (body \ "pageId").asOpt[PageId]
     val anyDiscussionId = (body \ "discussionId").asOpt[AltPageId] orElse (
           body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // deprecated name [058RKTJ64] 2020-06
@@ -54,6 +80,9 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+    val anonHow: Opt[AnonHow] = anonHowFromJson(body) getOrIfBad { prob =>
+      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+    }
 
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
     throwForbiddenIf(requester.isGroup, "EdE4GKRSR1", "Groups may not reply")
@@ -93,7 +122,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
       followLinks = false)
 
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
-      postType, deleteDraftNr, request.who, request.spamRelatedStuff)
+      postType, deleteDraftNr, request.who, request.spamRelatedStuff, anonHow)
 
     var responseJson: JsObject = result.storePatchJson
     if (newEmbPage.isDefined) {

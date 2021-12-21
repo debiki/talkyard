@@ -67,7 +67,8 @@ trait PostsDao {
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, deleteDraftNr: Option[DraftNr],
-        byWho: Who, spamRelReqStuff: SpamRelReqStuff)
+        byWho: Who, spamRelReqStuff: SpamRelReqStuff,
+        anonHow: Opt[AnonHow] = None)
         : InsertPostResult = {
 
     val authorId = byWho.id
@@ -91,7 +92,7 @@ trait PostsDao {
     val (newPost, author, notifications, anyReviewTask) = writeTx { (tx, staleStuff) =>
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
       insertReplyImpl(textAndHtml, pageId, replyToPostNrs, postType,
-            byWho, spamRelReqStuff, now, authorId, tx, staleStuff)
+            byWho, spamRelReqStuff, now, authorId, tx, staleStuff, anonHow)
     }
 
     refreshPageInMemCache(pageId)
@@ -100,6 +101,7 @@ trait PostsDao {
 
     // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
+          // This can be an anonym's id — fine. (Right?)
           byId = author.id)
 
     InsertPostResult(storePatchJson, newPost, anyReviewTask)
@@ -108,22 +110,49 @@ trait PostsDao {
 
   def insertReplyImpl(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff,
-        now: When, authorId: UserId, tx: SiteTx, staleStuff: StaleStuff,
+        now: When,
+        // Rename authorId to what? realAuthorId?  or rename  author  to  authorMaybeAnon?
+        authorId: UserId,
+        tx: SiteTx, staleStuff: StaleStuff,
+        anonHow: Opt[AnonHow] = None,
         skipNotfsAndAuditLog: Boolean = false)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
 
-    val authorAndLevels = loadUserAndLevels(byWho, tx)
+    val realAuthorAndLevels = loadUserAndLevels(byWho, tx)
     val page = newPageDao(pageId, tx)
     val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad  { missingPostNr =>
       throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
     }
 
-    val author = authorAndLevels.user
-    val authorAndGroupIds = tx.loadGroupIdsMemberIdFirst(author)
+    val realAuthor = realAuthorAndLevels.user
+    val realAuthorAndGroupIds = tx.loadGroupIdsMemberIdFirst(realAuthor)
 
-    dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, authorAndGroupIds,
+    val author =
+          if (anonHow.isEmpty) {
+            realAuthor
+          }
+          else anonHow.get match {
+            case AnonHow.AsSameAnon(anonId) =>
+              tx.loadTheParticipant(anonId).asAnonOrThrow
+            case AnonHow.AsNewAnon(anonStatus) =>
+              // Dupl code. [mk_new_anon]
+              val anonymId = tx.nextGuestId
+              val anonym = Anonym(
+                    id = anonymId,
+                    createdAt = tx.now,
+                    anonStatus = anonStatus,
+                    anonForPatId = realAuthor.id,
+                    anonOnPageId = pageId)
+              // We'll insert the anonym before the page exists, but there's a
+              // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
+              tx.deferConstraints()
+              tx.insertAnonym(anonym)
+              anonym
+          }
+
+    dieOrThrowNoUnless(Authz.mayPostReply(realAuthorAndLevels, realAuthorAndGroupIds,
       postType, page.meta, replyToPosts, tx.loadAnyPrivateGroupTalkMembers(page.meta),
       tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
       tx.loadPermsOnPages()), "EdEMAY0RE")
@@ -167,12 +196,12 @@ trait PostsDao {
     // then in a corrupt import file the posts on a page might form cycles. [ck_po_ckl])
 
     val (reviewReasons: Seq[ReviewReason], shallApprove) =
-      throwOrFindNewPostReviewReasons(page.meta, authorAndLevels, tx)
+          throwOrFindNewPostReviewReasons(page.meta, realAuthorAndLevels, tx)
 
     val approverId =
-      if (author.isStaff) {
+      if (realAuthor.isStaff) {
         dieIf(!shallApprove, "EsE5903")
-        Some(author.id)
+        Some(realAuthor.id)
       }
       else if (shallApprove) Some(SystemUserId)
       else None
@@ -185,7 +214,7 @@ trait PostsDao {
       multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
       postType = postType,
       createdAt = now.toJavaDate,
-      createdById = authorId,
+      createdById = author.id,
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
       approvedById = approverId)
@@ -195,7 +224,7 @@ trait PostsDao {
     val newFrequentPosterIds: Seq[UserId] =
       if (shallApprove)
         PageParts.findFrequentPosters(page.parts.allPosts, // skip newPost, since we ignore ...
-          ignoreIds = Set(page.meta.authorId, authorId))   // ... the author here anyway [3296KGP]
+          ignoreIds = Set(page.meta.authorId, author.id))   // ... the author here anyway [3296KGP]
       else
         page.meta.frequentPosterIds
 
@@ -203,7 +232,7 @@ trait PostsDao {
     val newMeta = oldMeta.copy(
       bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
       lastApprovedReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastApprovedReplyAt,
-      lastApprovedReplyById = shallApprove ? Option(authorId) | oldMeta.lastApprovedReplyById,
+      lastApprovedReplyById = shallApprove ? Option(author.id) | oldMeta.lastApprovedReplyById,
       frequentPosterIds = newFrequentPosterIds,
       numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
       numRepliesTotal = page.parts.numRepliesTotal + 1,
@@ -223,7 +252,7 @@ trait PostsDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewReply,
-      doerId = authorId,
+      doerId = author.id,
       doneAt = now.toJavaDate,
       browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
@@ -241,13 +270,13 @@ trait PostsDao {
       createdById = SystemUserId,
       createdAt = now.toJavaDate,
       createdAtRevNr = Some(newPost.currentRevisionNr),
-      maybeBadUserId = authorId,
+      maybeBadUserId = author.id,
       postId = Some(newPost.id),
       postNr = Some(newPost.nr)))
 
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
-      else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
+      else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None
       else Some(
         SpamCheckTask(
           createdAt = globals.now(),
@@ -261,11 +290,11 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
             htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
-          who = byWho,
+          who = byWho.copy(id = author.id, isAnon = author.isAnon),
           requestStuff = spamRelReqStuff))
 
     val stats = UserStats(
-      authorId,
+      author.id,
       lastSeenAt = now,
       lastPostedAt = Some(now),
       firstDiscourseReplyAt = Some(now),
@@ -287,10 +316,10 @@ trait PostsDao {
       updatePagePopularity(pagePartsInclNewPost, tx)
 
       staleStuff.addPageId(pageId)
-      saveDeleteLinks(newPost, textAndHtml, authorId, tx, staleStuff)
+      saveDeleteLinks(newPost, textAndHtml, author.id, tx, staleStuff)
     }
     uploadRefs foreach { uploadRef =>
-      tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
+      tx.insertUploadedFileReference(newPost.id, uploadRef, author.id)
     }
     if (!skipNotfsAndAuditLog) {
       insertAuditLogEntry(auditLogEntry, tx)
@@ -303,6 +332,7 @@ trait PostsDao {
     // on the Moderation page too.
     // Test:  modn-from-disc-page-review-after  TyTE2E603RKG4
     replyToPosts foreach { replyToPost =>
+      RENAME // moderator to maybeMod ?
       maybeReviewAcceptPostByInteracting(replyToPost, moderator = author,
             ReviewDecision.InteractReply)(tx, staleStuff)
     }
@@ -323,7 +353,7 @@ trait PostsDao {
     val ownPageNotfPrefs = tx.loadNotfPrefsForMemberAboutPage(pageId, authorAndGroupIds)
     val interactedNotfPrefs = tx.loadNotfPrefsAboutPagesInteractedWith(authorAndGroupIds)
     ... derive prefs, looking at own and groups ...
-    val oldPostsByAuthor = page.parts.postByAuthorId(authorId)
+    val oldPostsByAuthor = page.parts.postByAuthorId(author.id)
     if (oldPostsByAuthor.isEmpty) {
       savePageNotfPrefIfAuZ(PageNotfPref(
             peopleId = authorId,
