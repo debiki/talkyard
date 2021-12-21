@@ -584,16 +584,20 @@ html:not(.mouse) .dw-rr
   color: hsl(0, 0%, 11%);
   // Append a "?" to show that the user might be anyone, e.g. email not verified.
   // But ... (435465490)
+  /*
   &::after
     content: ' ?';
+    */
 
 // ... (435465490) But not for the Unknown user — currently, that'd be oneself,
 // when composing a new post without having logged in [305KGWGH2].
 .s_P_By-Unk .esP_By_F-G
   font-weight: bold;
   color: hsl(0, 0%, 8%);
+  /*
   &::after
     content: none;
+    */
 
 .esP_By_U
   font-weight: normal;
