@@ -103,7 +103,8 @@ case class PageToJsonResult(
   version: CachedPageVersion,
   pageTitleUnsafe: Option[String],
   customHeadTags: FindHeadTagsResult,
-  unapprovedPostAuthorIds: Set[UserId])
+  unapprovedPostAuthorIds: Set[UserId],
+  realUsersByAnonymIds: Map[PatId, User])
 
 case class FindHeadTagsResult(
   includesTitleTag: Boolean,
@@ -496,10 +497,12 @@ class JsonMaker(dao: SiteDao) {
       renderParams = renderParams,
       reactStoreJsonHash = hashSha1Base64UrlSafe(reactStoreJsonString))
 
+    COULD_OPTIMIZE // cache unapproved posts too?
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
-    PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags, unapprovedPostAuthorIds)
+    PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags,
+          unapprovedPostAuthorIds, realUsersByAnonymIds = Map.empty)
   }
 
 
@@ -943,6 +946,8 @@ class JsonMaker(dao: SiteDao) {
             // later: "flags" -> JsArray(...) [7KW20WY1]
             "unapprovedPosts" -> unapprovedPosts,
             "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
+            // ! Don't allow moving anon posts.
+            "anonsRealIds" -> JsObject(Nil),
             "postNrsAutoReadLongAgo" -> JsArray(Nil),      // should remove
             "postNrsAutoReadNow" -> JsArray(Nil),
             "marksByPostId" -> JsObject(Nil)))
