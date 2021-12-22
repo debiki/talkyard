@@ -1888,9 +1888,8 @@ export const Editor = createFactory<any, EditorState>({
   saveEdits: function() {
     this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
     const state: EditorState = this.state;
-    // ! anonStatus: state.anonStatus,
     Server.saveEdits(state.editorsPageId, state.editingPostNr, state.text,
-          this.anyDraftNr(), () => {
+          this.anyDraftNr(), state.anonStatus, () => {
       // BUG (harmless) poor UX: [JMPBCK] If we're no longer on the same page as
       // the post we were editing (e.g. because keeping the editor open and
       // navigating away) then, one won't see the edits appear. Probably should
@@ -1905,7 +1904,6 @@ export const Editor = createFactory<any, EditorState>({
   saveNewPost: function() {
     this.throwIfBadTitleOrText(null, t.e.PleaseWriteSth);
     const state: EditorState = this.state;
-    // ! anonStatus: state.anonStatus,
     ReactActions.saveReply(state.editorsPageId, state.replyToPostNrs, state.text,
           state.anyPostType, state.draft, state.anonStatus, () => {
       // BUG (harmless) poor UX: See [JMPBCK] aboe.
@@ -1938,6 +1936,7 @@ export const Editor = createFactory<any, EditorState>({
 
   postChatMessage: function() {
     const state: EditorState = this.state;
+    // ANON_UNIMPL: send state.anonStatus,
     ReactActions.insertChatMessage(state.text, state.draft, () => {
       this.callOnDoneCallback(true);
       this.clearAndCloseFineIfGone();

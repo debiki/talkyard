@@ -21,9 +21,11 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.JsonUtils.asJsObject
 import talkyard.server.linkpreviews.{LinkPreviewRenderer, PreviewResult, LinkPreviewProblem}
 import talkyard.server.http._
 import talkyard.server.{TyContext, TyController}
+import talkyard.server.parser
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
@@ -178,12 +180,16 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def edit: Action[JsValue] = PostJsonAction(RateLimits.EditPost,
         MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
-    import request.{dao, body}
+    import request.dao
+    val body = asJsObject(request.body, "request body")
     val pageId = (body \ "pageId").as[PageId]
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, in case moved to other page [idnotnr]
     val anyPostId: Option[PostId] = (body \ "postId").asOpt[PostId]
     val newText = (body \ "text").as[String]
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+    val anonHow: Opt[WhichAnon] = parser.parseAnonHowJson(body) getOrIfBad { prob =>
+      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+    }
 
     if (postNr == PageParts.TitleNr)
       throwForbidden("DwE5KEWF4", "Edit the title via /-/edit-title-save-settings instead")
@@ -227,7 +233,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
       followLinks = postNr == PageParts.BodyNr && pageMeta.pageType.shallFollowLinks)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, deleteDraftNr = deleteDraftNr,
-      request.who, request.spamRelatedStuff, newTextAndHtml)
+          request.who, request.spamRelatedStuff, newTextAndHtml, anonHow)
 
     OkSafeJson(dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
       includeUnapproved = true))

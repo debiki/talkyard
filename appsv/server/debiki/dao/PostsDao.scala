@@ -68,7 +68,7 @@ trait PostsDao {
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, deleteDraftNr: Option[DraftNr],
         byWho: Who, spamRelReqStuff: SpamRelReqStuff,
-        anonHow: Opt[AnonHow] = None)
+        anonHow: Opt[WhichAnon] = None)
         : InsertPostResult = {
 
     val authorId = byWho.id
@@ -114,7 +114,7 @@ trait PostsDao {
         // Rename authorId to what? realAuthorId?  or rename  author  to  authorMaybeAnon?
         authorId: UserId,
         tx: SiteTx, staleStuff: StaleStuff,
-        anonHow: Opt[AnonHow] = None,
+        whichAnon: Opt[WhichAnon] = None,
         skipNotfsAndAuditLog: Boolean = false)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
@@ -129,14 +129,15 @@ trait PostsDao {
     val realAuthor = realAuthorAndLevels.user
     val realAuthorAndGroupIds = tx.loadGroupIdsMemberIdFirst(realAuthor)
 
+    // Dupl code. [get_anon]
     val author =
-          if (anonHow.isEmpty) {
+          if (whichAnon.isEmpty) {
             realAuthor
           }
-          else anonHow.get match {
-            case AnonHow.AsSameAnon(anonId) =>
+          else whichAnon.get match {
+            case WhichAnon.SameAsBefore(anonId) =>
               tx.loadTheParticipant(anonId).asAnonOrThrow
-            case AnonHow.AsNewAnon(anonStatus) =>
+            case WhichAnon.NewAnon(anonStatus) =>
               // Dupl code. [mk_new_anon]
               val anonymId = tx.nextGuestId
               val anonym = Anonym(
@@ -909,8 +910,9 @@ trait PostsDao {
   /** Edits the post, if authorized to edit it.
     */
   def editPostIfAuth(pageId: PageId, postNr: PostNr, deleteDraftNr: Option[DraftNr],
-        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: SourceAndHtml): Unit = {
-    val editorId = who.id
+        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: SourceAndHtml,
+        whichAnon: Opt[WhichAnon] = None): U = {
+    val realEditorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
 
@@ -924,8 +926,8 @@ trait PostsDao {
     }
 
     val anyEditedCategory = writeTx { (tx, staleStuff) =>
-      val editorAndLevels = loadUserAndLevels(who, tx)
-      val editor = editorAndLevels.user
+      val realEditorAndLevels = loadUserAndLevels(who, tx)
+      val realEditor = realEditorAndLevels.user
       val page = newPageDao(pageId, tx)
       val settings = loadWholeSiteSettings(tx)
 
@@ -937,11 +939,36 @@ trait PostsDao {
       if (postToEdit.currentSource == newTextAndHtml.text)
         return
 
+      // Dupl code. [get_anon]
+      val editorMaybeAnon =
+            if (whichAnon.isEmpty) {
+              realEditor
+            }
+            else whichAnon.get match {
+              case WhichAnon.SameAsBefore(anonId) =>
+                tx.loadTheParticipant(anonId).asAnonOrThrow
+              case WhichAnon.NewAnon(anonStatus) =>
+                // Dupl code. [mk_new_anon]
+                val anonymId = tx.nextGuestId
+                val anonym = Anonym(
+                      id = anonymId,
+                      createdAt = tx.now,
+                      anonStatus = anonStatus,
+                      anonForPatId = realEditor.id,
+                      anonOnPageId = pageId)
+                // We'll insert the anonym before the page exists, but there's a
+                // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
+                tx.deferConstraints()
+                tx.insertAnonym(anonym)
+                anonym
+            }
+
       dieOrThrowNoUnless(Authz.mayEditPost(
-        editorAndLevels, tx.loadGroupIdsMemberIdFirst(editor),
-        postToEdit, page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
-        inCategoriesRootLast = tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
-        tooManyPermissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
+            realEditorAndLevels, tx.loadGroupIdsMemberIdFirst(realEditor),
+            postToEdit, page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
+            inCategoriesRootLast = tx.loadCategoryPathRootLast(
+                  page.meta.categoryId, inclSelfFirst = true),
+            tooManyPermissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
 
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
       // so won't create too many revs quickly because 2 edits.
@@ -974,7 +1001,7 @@ trait PostsDao {
           // Auto approve chat messages. Always SystemUserId for chat.
           Some(SystemUserId)  // [7YKU24]
         }
-        else if (editor.isStaff) {
+        else if (realEditor.isStaff) {
           if (!postToEdit.isSomeVersionApproved) {
             // Staff won't approve a not yet approved post, just by editing it.
             // Instead, they need to click a button to explicitly approve it  [in_pg_apr]
@@ -987,14 +1014,14 @@ trait PostsDao {
           else {
             // Older revision already approved and post already published.
             // Then, continue approving it.
-            Some(editor.id)
+            Some(realEditor.id)
           }
         }
         else {
           // Let people continue editing a post that has been approved already — unless
           // they're a moderate threat. A bit further below (7ALGJ2), we'll create
           // a review task (also for mild threat edits).
-          if (editorAndLevels.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt) {
+          if ( realEditorAndLevels.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt) {
             None  // [TyT7UQKBA2]
           }
           else if (postToEdit.isCurrentVersionApproved) {
@@ -1020,7 +1047,7 @@ trait PostsDao {
           (true,
           None,
           Some(tx.now.toJavaDate),
-          Some(editorId),
+          Some(editorMaybeAnon.id),
           Some(newTextAndHtml.text),
           Some(newTextAndHtml.safeHtml),
           Some(tx.now.toJavaDate))
@@ -1043,7 +1070,7 @@ trait PostsDao {
       }
 
       val isNinjaEdit = {
-        val sameAuthor = postToEdit.currentRevisionById == editorId
+        val sameAuthor = postToEdit.currentRevisionById == editorMaybeAnon.id
         val ninjaHardEndMs = postToEdit.currentRevStaredAt.getTime + HardMaxNinjaEditWindowMs
         val isInHardWindow = tx.now.millis < ninjaHardEndMs
         // If the current version has been approved, and one does an unapproved edit — then, shouldn't
@@ -1074,7 +1101,7 @@ trait PostsDao {
       var editedPost = postToEdit.copy(
         currentRevStaredAt = newStartedAt,
         currentRevLastEditedAt = Some(tx.now.toJavaDate),
-        currentRevisionById = editorId,
+        currentRevisionById = editorMaybeAnon.id,
         currentRevSourcePatch = newCurrentSourcePatch,
         currentRevisionNr = newRevisionNr,
         previousRevisionNr = newPrevRevNr,
@@ -1086,7 +1113,7 @@ trait PostsDao {
         approvedById = anyNewApprovedById orElse postToEdit.approvedById,
         approvedRevisionNr = newApprovedRevNr)
 
-      if (editorId != editedPost.createdById) {
+      if (editorMaybeAnon.id != editedPost.createdById) {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
@@ -1119,7 +1146,7 @@ trait PostsDao {
           AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =    // (7ALGJ2)
-        if (editor.isStaffOrTrustedNotThreat) {
+        if (realEditor.isStaffOrTrustedNotThreat) {
           // This means staff has had a look at the post, even edited it — so resolve
           // mod tasks about this posts. So staff won't be asked to review this post,
           // on the Moderation page.
@@ -1133,14 +1160,14 @@ trait PostsDao {
                   tx.loadTheOrigPost(postToEdit.pageId)
                 }
 
-          maybeReviewAcceptPostByInteracting(postWithModTasks, moderator = editor,
+          maybeReviewAcceptPostByInteracting(postWithModTasks, moderator = realEditor,
                 ReviewDecision.InteractEdit)(tx, staleStuff)
 
           // Don't review late edits by trusted members — trusting them is
           // the point with the >= TrustedMember trust levels. TyTLADEETD01
           None
         }
-        else if (postRecentlyCreated && !editorAndLevels.threatLevel.isThreat) {
+        else if (postRecentlyCreated && ! realEditorAndLevels.threatLevel.isThreat) {
           // Need not review a recently created post: it's new and the edits likely
           // happened before other people read it, so they'll notice any weird things
           // later when they read it, and can flag it. This is not totally safe,
@@ -1167,7 +1194,7 @@ trait PostsDao {
             // their old posts and change to spam links, undetected.
             reviewReasons :+= ReviewReason.LateEdit
           }
-          if (editorAndLevels.threatLevel.isThreat) {
+          if (realEditorAndLevels.threatLevel.isThreat) {
             reviewReasons :+= ReviewReason.Edit
             reviewReasons :+= ReviewReason.IsByThreatUser
           }
@@ -1178,7 +1205,7 @@ trait PostsDao {
 
       val anySpamCheckTask =
         if (!globals.spamChecker.spamChecksEnabled) None
-        else if (!SpamChecker.shallCheckSpamFor(editor)) None
+        else if (!SpamChecker.shallCheckSpamFor(realEditor)) None
         else Some(
           // This can get same prim key as earlier spam check task, if is ninja edit. [SPMCHKED]
           // Solution: Give each spam check task its own id field.
@@ -1201,7 +1228,7 @@ trait PostsDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.EditPost,
-        doerId = editorId,
+        doerId = editorMaybeAnon.id,
         doneAt = tx.now.toJavaDate,
         browserIdData = who.browserIdData,
         pageId = Some(pageId),
@@ -1214,7 +1241,7 @@ trait PostsDao {
       anySpamCheckTask.foreach(tx.insertSpamCheckTask)
       newRevision.foreach(tx.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, newTextAndHtml,
-            isAppending = false, isEditing = true, editorId, tx)
+            isAppending = false, isEditing = true, editorMaybeAnon.id, tx)
 
       insertAuditLogEntry(auditLogEntry, tx)
 
@@ -1234,14 +1261,14 @@ trait PostsDao {
 
       if (editedPost.isCurrentVersionApproved) {
         staleStuff.addPageId(editedPost.pageId)
-        saveDeleteLinks(editedPost, newTextAndHtml, editorId, tx, staleStuff)
+        saveDeleteLinks(editedPost, newTextAndHtml, editorMaybeAnon.id, tx, staleStuff)
         TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
         val notfs = notfGenerator(tx).generateForEdits(
               postToEdit, editedPost, Some(newTextAndHtml))
         tx.saveDeleteNotifications(notfs)
       }
 
-      deleteDraftNr.foreach(nr => tx.deleteDraft(editorId, nr))
+      deleteDraftNr.foreach(nr => tx.deleteDraft(realEditorId, nr))
 
       val oldMeta = page.meta
       var newMeta = oldMeta.copy(version = oldMeta.version + 1)

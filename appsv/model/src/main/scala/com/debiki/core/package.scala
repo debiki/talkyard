@@ -748,11 +748,11 @@ package object core {
   }
 
 
-  sealed abstract class AnonHow() {}
+  sealed abstract class WhichAnon() {}
 
-  object AnonHow {
-    case class AsNewAnon(anonStatus: AnonStatus) extends AnonHow
-    case class AsSameAnon(sameAnonId: PatId) extends AnonHow
+  object WhichAnon {
+    case class NewAnon(anonStatus: AnonStatus) extends WhichAnon
+    case class SameAsBefore(sameAnonId: PatId) extends WhichAnon
   }
 
 

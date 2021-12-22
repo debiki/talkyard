@@ -21,17 +21,17 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.JsonUtils.{asJsObject, parseOptInt32}
+import debiki.JsonUtils.asJsObject
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
 import talkyard.server.http._
+import talkyard.server.parser
 
 import javax.inject.Inject
 import play.api._
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc._
 import talkyard.server.authn.MinAuthnStrength
-import org.scalactic.{Bad, Good, Or}
 
 
 /** Saves replies. Lazily creates pages for embedded discussions
@@ -41,28 +41,6 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
   extends TyController(cc, edContext) {
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
-
-
-  // Move to where?
-  def anonHowFromJson(jsOb: JsObject): Opt[AnonHow] Or ErrMsg = {
-    import debiki.JsonUtils.parseOptInt32
-    val sameAnonId = parseOptInt32(jsOb, "sameAnonId")
-    val newAnonStatus = parseOptInt32(jsOb, "newAnonStatus").flatMap(AnonStatus.fromInt)
-    if (sameAnonId.isDefined && newAnonStatus.isDefined) {
-      Bad("Both sameAnonId and newAnonStatus specified")
-    }
-    else Good {
-      if (sameAnonId.isDefined) {
-        Some(AnonHow.AsSameAnon(sameAnonId.get))
-      }
-      else if (newAnonStatus.isDefined) {
-        Some(AnonHow.AsNewAnon(newAnonStatus.get))
-      }
-      else {
-        None
-      }
-    }
-  }
 
 
   def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply,
@@ -80,7 +58,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
-    val anonHow: Opt[AnonHow] = anonHowFromJson(body) getOrIfBad { prob =>
+    val anonHow: Opt[WhichAnon] = parser.parseAnonHowJson(body) getOrIfBad { prob =>
       throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
     }
 

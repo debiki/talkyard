@@ -1849,7 +1849,8 @@ export function loadVoters(postId: PostId, voteType: PostVoteType,
 
 
 export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
-      deleteDraftNr: DraftNr, onOK: () => Vo, sendToWhichFrame?: MainWin) {
+      deleteDraftNr: DraftNr, newAnonStatus: AnonStatus | U, onOK: () => Vo,
+      sendToWhichFrame?: MainWin) {
   postJson('/-/edit', {
     data: {
       pageId: editorsPageId ||
@@ -1858,6 +1859,8 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
       postNr: postNr,
       text: text,
       deleteDraftNr,
+      sameAnonId: undefined,
+      newAnonStatus,
     },
     success: (editedPost) => {
       // This hides the editor and places back the orig post [6027TKWAPJ5]
