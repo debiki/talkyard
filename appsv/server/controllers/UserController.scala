@@ -1029,8 +1029,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val res: MeAndStuff =
       if (pageRequest.user.isDefined) {
         val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
-        dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
-          "EdE4ZBXKG")
+        dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds,
+              renderedPage.anonIdsByRealId).getOrDie("EdE4ZBXKG")
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()

@@ -104,7 +104,7 @@ case class PageToJsonResult(
   pageTitleUnsafe: Option[String],
   customHeadTags: FindHeadTagsResult,
   unapprovedPostAuthorIds: Set[UserId],
-  realUsersByAnonymIds: Map[PatId, User])
+  anonIdsByRealId: Map[PatId, Seq[Anonym]])
 
 case class FindHeadTagsResult(
   includesTitleTag: Boolean,
@@ -384,6 +384,14 @@ class JsonMaker(dao: SiteDao) {
       idAndUser._1.toString -> JsPat(idAndUser._2, tagsAndBadges)
     })
 
+    //val anonIdsByRealId: mut.Map[PatId, Vec[PatId]] = mut.Map.empty
+    val anons: Seq[Anonym] = usersById.values.flatMap({
+      case a: Anonym => Some(a)
+      case _ => None
+    }).toSeq
+
+    val anonIdsByRealId = anons.groupBy(_.anonForPatId)
+
     // These don't change often, can use the cache.
     val tagTypes = dao.getTagTypes(tagTypeIdsToLoad.toSet)
 
@@ -502,7 +510,7 @@ class JsonMaker(dao: SiteDao) {
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
     PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags,
-          unapprovedPostAuthorIds, realUsersByAnonymIds = Map.empty)
+          unapprovedPostAuthorIds, anonIdsByRealId = anonIdsByRealId)
   }
 
 
@@ -767,8 +775,10 @@ class JsonMaker(dao: SiteDao) {
 
   RENAME // this function (i.e. userDataJson) so it won't come as a
   // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
-  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
+  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId],
+        anonIdsByRealId: Map[PatId, Seq[Anonym]])
         : Opt[MeAndStuff] = Some {
+
     require(pageRequest.dao == dao, "TyE4GKVRY3")
     val requester = pageRequest.user getOrElse {
       return None
@@ -807,7 +817,7 @@ class JsonMaker(dao: SiteDao) {
     dao.readOnlyTransaction { tx =>
       requestersJsonImpl(pageRequest.sid, requester, pageRequest.pageId, watchbarWithTitles,
             restrTopicsCatsLinks, permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds, myGroupsEveryoneLast, site, tx)
+            unapprovedPostAuthorIds, anonIdsByRealId, myGroupsEveryoneLast, site, tx)
     }
   }
 
@@ -831,7 +841,9 @@ class JsonMaker(dao: SiteDao) {
       requestersJsonImpl(request.sid, requester, anyPageId = None, watchbarWithTitles,
             RestrTopicsCatsLinks(JsArray(), Nil, Nil, Nil, Set.empty),
             permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, site, tx)
+            unapprovedPostAuthorIds = Set.empty,
+            anonIdsByRealId = Map.empty,
+            myGroupsEveryoneLast, site, tx)
     }
   }
 
@@ -840,7 +852,7 @@ class JsonMaker(dao: SiteDao) {
         sid: SidStatus, requester: Participant, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrTopicsCatsLinks: RestrTopicsCatsLinks,
         permissions: Seq[PermsOnPages], permsOnSiteTooMany: PermsOnSite,
-        unapprovedPostAuthorIds: Set[UserId],
+        unapprovedPostAuthorIds: Set[UserId], anonIdsByRealId: Map[PatId, Seq[Anonym]],
         myGroupsEveryoneLast: Seq[Group], site: Opt[Site], tx: SiteTransaction)
         : MeAndStuff = {
 
@@ -931,6 +943,9 @@ class JsonMaker(dao: SiteDao) {
     val anyReadingProgress = anyPageId.flatMap(tx.loadReadProgress(requester.id, _))
     val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
 
+    val ownAnonIds: Seq[Anonym] =  // later:  if (requester.isStaff) ... hmm ..
+          anonIdsByRealId.getOrElse(requester.id, Nil)
+
     val ownDataByPageId = anyPageId match {
       case None => Json.obj()
       case Some(pageId) =>
@@ -947,7 +962,8 @@ class JsonMaker(dao: SiteDao) {
             "unapprovedPosts" -> unapprovedPosts,
             "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
             // ! Don't allow moving anon posts.
-            "anonsRealIds" -> JsObject(Nil),
+            // "anonsRealIds" -> JsObject(Nil),
+            "ownAnons" -> JsArray(ownAnonIds.map(a => JsUser(a))),
             "postNrsAutoReadLongAgo" -> JsArray(Nil),      // should remove
             "postNrsAutoReadNow" -> JsArray(Nil),
             "marksByPostId" -> JsObject(Nil)))
