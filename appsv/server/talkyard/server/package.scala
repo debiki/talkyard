@@ -119,7 +119,7 @@ package object server {
     html: String,
     reactStoreJsonString: String,
     unapprovedPostAuthorIds: Set[UserId],
-    anonIdsByRealId: Map[PatId, Seq[Anonym]])
+    anonsByRealId: Map[PatId, Seq[Anonym]])
 
 
   REMOVE // ?

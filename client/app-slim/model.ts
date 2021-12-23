@@ -458,6 +458,8 @@ interface MyPageData {
   internalBacklinks?: Topic[];
   unapprovedPosts: { [id: number]: Post };
   unapprovedPostAuthors: Participant[];
+  knownAnons?: KnownAnonym[];
+  patsBehindAnons?: Pat[];
   postNrsAutoReadLongAgo: number[];
   postNrsAutoReadNow: number[];
 
@@ -1371,9 +1373,9 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
   isModerator?: boolean;
 
   isAnon?: Bo;
+  anonForId?: PatId;
   anonStatus?: AnonStatus;
   anonOnPageId?: PageId;
-  anonRealId?: PatId;
 
   isGuest?: boolean;  // = !isAuthenticated
   isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
@@ -1389,11 +1391,11 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
 type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
 
 
-interface Anonym extends GuestOrAnon {
+interface KnownAnonym extends GuestOrAnon {
   isAnon: true;
+  anonForId: PatId;
   anonStatus: AnonStatus;
   anonOnPageId: PageId;
-  anonRealId: PatId;
 
   isGuest?: false;  // = !isAuthenticated — no!  BUG RISK ensure ~isGuest isn't relied on
                                          // anywhere, to "know" it's a user / group

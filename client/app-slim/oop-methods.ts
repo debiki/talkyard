@@ -940,7 +940,8 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   const isMindMap = page.pageRole === PageRole.MindMap;
   const isWiki = post_isWiki(post);
   const isOwnPage = store_thisIsMyPage(store);
-  const isOwnPost = post.authorId === me.id;
+  const author: Pat | U = store.usersByIdBrief[post.authorId];
+  const isOwnPost = post.authorId === me.id || author && author.anonForId === me.id; // [is_own_post_fn]
   let isOwn = isEditPage ? isOwnPage :
       isOwnPost ||
         // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]

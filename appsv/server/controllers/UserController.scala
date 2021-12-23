@@ -177,7 +177,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         else {
           val pat = tx.loadTheParticipant(userId)
           val json = pat match {
-            case anon: Anonym => JsAnon(anon)
+            case anon: Anonym => JsAnon(anon, inclRealId = false)
             case guest: Guest => jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
                 callerIsAdmin = callerIsAdmin)
           }
@@ -1030,7 +1030,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       if (pageRequest.user.isDefined) {
         val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
         dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds,
-              renderedPage.anonIdsByRealId).getOrDie("EdE4ZBXKG")
+              renderedPage.anonsByRealId).getOrDie("EdE4ZBXKG")
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()

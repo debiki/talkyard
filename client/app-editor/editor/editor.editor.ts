@@ -120,7 +120,8 @@ interface EditorState {
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
   anonStatus?: AnonStatus;
-  authorId?: PatId;
+  doAsAnonId?: PatId;
+  authorId?: PatId; // remove?
   editorsCategories?: Category[];
   editorsPageId?: PageId;
   editingPostNr?: PostNr;
@@ -1717,7 +1718,7 @@ export const Editor = createFactory<any, EditorState>({
       return;
     }
 
-    // Incl state.anonStatus in draft too
+    // Incl state.anonStatus and doAsAnonId in draft too
 
     const oldDraft: Draft | undefined = state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();

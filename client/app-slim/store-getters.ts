@@ -34,9 +34,12 @@
 export function store_thisIsMyPage(store: Store): boolean {
   const page: Page = store.currentPage;
   if (!page || !store.me.id) return false;
+  const me: Me = store.me;
   const bodyOrTitle = page.postsByNr[BodyNr] || page.postsByNr[TitleNr];
+  const authorMaybeAnon = store.usersByIdBrief[bodyOrTitle.authorId];
   // If !bodyOrTitle, is an auto page, e.g. user profile or admin area.
-  return bodyOrTitle && store.me.id === bodyOrTitle.authorId;
+  return (bodyOrTitle && me.id === bodyOrTitle.authorId) ||
+            (authorMaybeAnon && authorMaybeAnon.anonForId === me.id);  // [is_own_post_fn]
 }
 
 

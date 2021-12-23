@@ -87,7 +87,7 @@ trait RenderedPageHtmlDao {
 
 
       RenderedPage(pageHtml, jsonResult.reactStoreJsonString, jsonResult.unapprovedPostAuthorIds,
-            jsonResult.anonIdsByRealId)
+            jsonResult.anonsByRealId)
     }
   }
 

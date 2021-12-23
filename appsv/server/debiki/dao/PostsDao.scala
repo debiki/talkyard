@@ -2422,6 +2422,8 @@ trait PostsDao {
       val newParentPost = tx.loadPost(newParent) getOrElse throwForbidden(
         "EsE7YKG42_", "New parent post not found")
 
+      val postAuthor = tx.loadTheUser(postToMove.createdById)
+
       throwForbiddenIf(postToMove.id == newParentPost.id,
             "TyE7SRJ2MG_", "A post cannot be its own parent post")
 
@@ -2452,6 +2454,15 @@ trait PostsDao {
                 — doing that, would create a cycle""")
         // Note that moving the post to one of its ancestors (instead of descendants),
         // cannot create a cycle.
+      }
+      else {
+        // If moving anonymous posts, it's higher risk that someone accidentally
+        // reveals who hen is, e.g. by making all posts by an anonym of hens,
+        // public, supposedly on a single page — but having forgotten / not-knowing-that
+        // others will be able to see / might-deduce-that hen also wrote [the post that got
+        // moved to another page].
+        // So, for now, disallow this. (Could allow, if the author deanonymizes the post.)
+        throwForbiddenIf(postAuthor.isAnon, "TyE4MW2LR5", "Cannot move anonymous posts")
       }
 
       val moveTreeAuditEntry = AuditLogEntry(
