@@ -25,21 +25,12 @@ const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
-interface AnonStatusState {
-  atRect: Rect;
-  open?: Bo;
-  pat?: Pat;
-  me: Me,
-  curStatus?: AnonStatus;
-  saveFn: (newPref: AnonStatus) => Vo ;
-}
 
+let setStateExtFn: (_: ChooseAnonDiagParams) => Vo;
 
-let setStateExtFn: (_: AnonStatusState) => Vo;
-
-export function openAnonDropdown(ps: AnonStatusState) {
+export function openAnonDropdown(ps: ChooseAnonDiagParams) {
   if (!setStateExtFn) {
-    ReactDOM.render(AnonStatusModal(), utils.makeMountNode());  // or [use_portal] ?
+    ReactDOM.render(ChooseAnonModal(), utils.makeMountNode());  // or [use_portal] ?
   }
   setStateExtFn(ps);
 }
@@ -53,12 +44,12 @@ export function openAnonDropdown(ps: AnonStatusState) {
 ///       if any?
 ///
 ///
-const AnonStatusModal = React.createFactory<{}>(function() {
-  //displayName: 'AnonStatusModal',
+const ChooseAnonModal = React.createFactory<{}>(function() {
+  //displayName: 'ChooseAnonModal',
 
   // TESTS_MISSING
 
-  const [state, setState] = React.useState<AnonStatusState | N>(null);
+  const [state, setState] = React.useState<ChooseAnonDiagParams | N>(null);
 
   setStateExtFn = setState;
 
@@ -75,22 +66,22 @@ const AnonStatusModal = React.createFactory<{}>(function() {
   if (isOpen) {
     const me: Me = state.me;
     const pat: Pat | U = state.pat;
-    const makeItem = (anonStatus: AnonStatus, e2eClass: St): RElm => {
-      const title = r.span({ className: e2eClass }, anonStatus_title(anonStatus, { me, pat }));
-      const text = anonStatus_descr(anonStatus, { me, pat });
+    const makeItem = (whichAnon: WhichAnon, e2eClass: St): RElm => {
+      const title = r.span({ className: e2eClass }, whichAnon_title(whichAnon, { me, pat }));
+      const text = whichAnon_descr(whichAnon, { me, pat });
       return (
           ExplainingListItem({
             title, text,
-            active: anonStatus === state.curStatus,
+            active: whichAnon === state.curAnon?.newAnonStatus,
             onSelect: () => {
-              state.saveFn(anonStatus);
+              state.saveFn(whichAnon);
               close();
             },
           }));
     }
 
-    asYourName = makeItem(AnonStatus.NotAnon, '');
-    anonymously = makeItem(AnonStatus.PerPage, '');
+    asYourName = makeItem({ newAnonStatus: AnonStatus.NotAnon }, '');
+    anonymously = makeItem({ newAnonStatus: AnonStatus.PerPage }, '');
 
     // Pen name?:  openAddPeopleDialog(alreadyAddedIds, onDone)
   }
@@ -104,7 +95,7 @@ const AnonStatusModal = React.createFactory<{}>(function() {
 });
 
 
-export function anonStatus_titleShort(level: AnonStatus, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_titleShort(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
   switch (level) {
     case AnonStatus.PerPage:
       return "anonymously";
@@ -115,7 +106,7 @@ export function anonStatus_titleShort(level: AnonStatus, ps: { me: Me, pat?: Pat
 }
 
 
-export function anonStatus_title(level: AnonStatus, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_title(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
   switch (level) {
     case AnonStatus.PerPage:
       return "Anonymously";
@@ -128,7 +119,7 @@ export function anonStatus_title(level: AnonStatus, ps: { me: Me, pat?: Pat }): 
 }
 
 
-export function anonStatus_descr(level: AnonStatus, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_descr(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
   switch (level) {
     case AnonStatus.PerPage:
       return "Your name and picture won't be shown. " +

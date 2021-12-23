@@ -119,8 +119,7 @@ interface EditorState {
   visible: boolean;
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
-  anonStatus?: AnonStatus;
-  doAsAnonId?: PatId;
+  doAsAnon?: WhichAnon;
   authorId?: PatId; // remove?
   editorsCategories?: Category[];
   editorsPageId?: PageId;
@@ -1718,7 +1717,7 @@ export const Editor = createFactory<any, EditorState>({
       return;
     }
 
-    // Incl state.anonStatus and doAsAnonId in draft too
+    // Incl state.doAsAnon in draft too
 
     const oldDraft: Draft | undefined = state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
@@ -1890,7 +1889,7 @@ export const Editor = createFactory<any, EditorState>({
     this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
     const state: EditorState = this.state;
     Server.saveEdits(state.editorsPageId, state.editingPostNr, state.text,
-          this.anyDraftNr(), state.anonStatus, () => {
+          this.anyDraftNr(), state.doAsAnon, () => {
       // BUG (harmless) poor UX: [JMPBCK] If we're no longer on the same page as
       // the post we were editing (e.g. because keeping the editor open and
       // navigating away) then, one won't see the edits appear. Probably should
@@ -1906,7 +1905,7 @@ export const Editor = createFactory<any, EditorState>({
     this.throwIfBadTitleOrText(null, t.e.PleaseWriteSth);
     const state: EditorState = this.state;
     ReactActions.saveReply(state.editorsPageId, state.replyToPostNrs, state.text,
-          state.anyPostType, state.draft, state.anonStatus, () => {
+          state.anyPostType, state.draft, state.doAsAnon, () => {
       // BUG (harmless) poor UX: See [JMPBCK] aboe.
       // Also, if we've navigaated away, seems any draft won't get deleted.
       this.callOnDoneCallback(true);
@@ -1924,7 +1923,7 @@ export const Editor = createFactory<any, EditorState>({
       pageTitle: state.title,
       pageBody: state.text,
       deleteDraftNr: this.anyDraftNr(),
-      anonStatus: state.anonStatus,
+      doAsAnon: state.doAsAnon,
     };
     // [DRAFTS_BUG] This doesn't delete the draft? (if any)
     Server.createPage(data, (newPageId: string) => {
@@ -1937,7 +1936,7 @@ export const Editor = createFactory<any, EditorState>({
 
   postChatMessage: function() {
     const state: EditorState = this.state;
-    // ANON_UNIMPL: send state.anonStatus,
+    // ANON_UNIMPL: send state.doAsAnon,
     ReactActions.insertChatMessage(state.text, state.draft, () => {
       this.callOnDoneCallback(true);
       this.clearAndCloseFineIfGone();
@@ -2470,13 +2469,13 @@ export const Editor = createFactory<any, EditorState>({
       maybeAnonymously =
           Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
             const atRect = reactGetRefRect(this.refs.anonB);
-            anon.openAnonDropdown({ atRect, open: true, curLevel: state.anonStatus,
-                me, saveFn: (anonStatus) => {
-                  const newState: Partial<EditorState> = { anonStatus };
+            anon.openAnonDropdown({ atRect, open: true, curAnon: state.doAsAnon,
+                me, saveFn: (doAsAnon: WhichAnon) => {
+                  const newState: Partial<EditorState> = { doAsAnon };
                   this.setState(newState);
                 } });
           } },
-          anon.anonStatus_titleShort(state.anonStatus, { me }),
+          anon.whichAnon_titleShort(state.doAsAnon, { me }),
           ' ', r.span({ className: 'caret' }));
     }
 

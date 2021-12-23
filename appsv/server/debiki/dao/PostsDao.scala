@@ -114,7 +114,7 @@ trait PostsDao {
         // Rename authorId to what? realAuthorId?  or rename  author  to  authorMaybeAnon?
         authorId: UserId,
         tx: SiteTx, staleStuff: StaleStuff,
-        whichAnon: Opt[WhichAnon] = None,
+        doAsAnon: Opt[WhichAnon] = None,
         skipNotfsAndAuditLog: Boolean = false)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
@@ -131,10 +131,10 @@ trait PostsDao {
 
     // Dupl code. [get_anon]
     val author =
-          if (whichAnon.isEmpty) {
+          if (doAsAnon.isEmpty) {
             realAuthor
           }
-          else whichAnon.get match {
+          else doAsAnon.get match {
             case WhichAnon.SameAsBefore(anonId) =>
               tx.loadTheParticipant(anonId).asAnonOrThrow
             case WhichAnon.NewAnon(anonStatus) =>
@@ -911,7 +911,7 @@ trait PostsDao {
     */
   def editPostIfAuth(pageId: PageId, postNr: PostNr, deleteDraftNr: Option[DraftNr],
         who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: SourceAndHtml,
-        whichAnon: Opt[WhichAnon] = None): U = {
+        doAsAnon: Opt[WhichAnon] = None): U = {
     val realEditorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
@@ -941,10 +941,10 @@ trait PostsDao {
 
       // Dupl code. [get_anon]
       val editorMaybeAnon =
-            if (whichAnon.isEmpty) {
+            if (doAsAnon.isEmpty) {
               realEditor
             }
-            else whichAnon.get match {
+            else doAsAnon.get match {
               case WhichAnon.SameAsBefore(anonId) =>
                 tx.loadTheParticipant(anonId).asAnonOrThrow
               case WhichAnon.NewAnon(anonStatus) =>

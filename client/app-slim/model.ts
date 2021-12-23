@@ -1402,6 +1402,20 @@ interface KnownAnonym extends GuestOrAnon {
 }
 
 
+interface WhichAnon {
+  sameAnonId?: PatId;
+  newAnonStatus?: AnonStatus;
+}
+interface SameAnon extends WhichAnon {
+  sameAnonId: PatId;
+  newAnonStatus?: U;
+}
+interface NewAnon extends WhichAnon {
+  sameAnonId?: U;
+  newAnonStatus: AnonStatus;
+}
+
+
 interface Guest extends GuestOrAnon {
   fullName: string;
   username?: undefined;
@@ -2049,6 +2063,19 @@ interface AuthnDlgIf {
         callback?: () => Vo, preventClose?: Bo) => Vo;
   getDoAfter: () => [() => U | U, St | U];
   close: () => Vo;
+}
+
+
+/// A dropdown for choosing which anonym to use (e.g. if posting anonymous comments).
+/// DlgPs = dialog parameters, hmm.
+///
+interface ChooseAnonDlgPs {
+  atRect: Rect;
+  open?: Bo;
+  pat?: Pat;
+  me: Me,
+  curAnon?: WhichAnon;
+  saveFn: (_: WhichAnon) => Vo ;
 }
 
 

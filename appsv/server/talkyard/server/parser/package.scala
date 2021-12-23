@@ -28,7 +28,7 @@ package object parser {
 
 
 
-  def parseAnonHowJson(jsOb: JsObject): Opt[WhichAnon] Or ErrMsg = {
+  def parseWhichAnonJson(jsOb: JsObject): Opt[WhichAnon] Or ErrMsg = {
     import debiki.JsonUtils.parseOptInt32
     val sameAnonId = parseOptInt32(jsOb, "sameAnonId")
     val newAnonStatus = parseOptInt32(jsOb, "newAnonStatus").flatMap(AnonStatus.fromInt)

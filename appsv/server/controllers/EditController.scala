@@ -187,7 +187,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val anyPostId: Option[PostId] = (body \ "postId").asOpt[PostId]
     val newText = (body \ "text").as[String]
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
-    val whichAnon: Opt[WhichAnon] = parser.parseAnonHowJson(body) getOrIfBad { prob =>
+    val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
       throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
     }
 
@@ -233,7 +233,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
       followLinks = postNr == PageParts.BodyNr && pageMeta.pageType.shallFollowLinks)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, deleteDraftNr = deleteDraftNr,
-          request.who, request.spamRelatedStuff, newTextAndHtml, whichAnon)
+          request.who, request.spamRelatedStuff, newTextAndHtml, doAsAnon)
 
     OkSafeJson(dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
       includeUnapproved = true))

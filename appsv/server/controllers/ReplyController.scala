@@ -26,7 +26,6 @@ import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
 import talkyard.server.http._
 import talkyard.server.parser
-
 import javax.inject.Inject
 import play.api._
 import play.api.libs.json.{JsObject, JsValue, Json}
@@ -58,7 +57,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
-    val anonHow: Opt[WhichAnon] = parser.parseAnonHowJson(body) getOrIfBad { prob =>
+    val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
       throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
     }
 
@@ -100,7 +99,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
       followLinks = false)
 
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
-      postType, deleteDraftNr, request.who, request.spamRelatedStuff, anonHow)
+      postType, deleteDraftNr, request.who, request.spamRelatedStuff, doAsAnon)
 
     var responseJson: JsObject = result.storePatchJson
     if (newEmbPage.isDefined) {

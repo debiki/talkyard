@@ -66,7 +66,7 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
-        anonStatus: Opt[AnonStatus] = None, // make non-optional?
+        doAsAnon: Opt[WhichAnon.NewAnon] = None, // make non-optional?
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
         extId: Option[ExtId] = None,
         ): PagePathWithId = {
@@ -76,7 +76,7 @@ trait PagesDao {
           bodyTextAndHtml = bodyTextAndHtml, showId = showId,
           deleteDraftNr = deleteDraftNr, byWho = byWho,
           spamRelReqStuff = spamRelReqStuff,
-          anonStatus = anonStatus,
+          doAsAnon = doAsAnon,
           discussionIds = discussionIds, embeddingUrl = embeddingUrl,
           extId = extId,
           ).path
@@ -87,7 +87,7 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
-        anonStatus: Opt[AnonStatus] = None, // make non-optional?
+        doAsAnon: Opt[WhichAnon.NewAnon] = None, // make non-optional?
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
         extId: Option[ExtId] = None,
         ): CreatePageResult = {
@@ -133,7 +133,7 @@ trait PagesDao {
                 pinWhere = None,
                 byWho,
                 Some(spamRelReqStuff),
-                anonStatus,
+                doAsAnon,
                 discussionIds = discussionIds,
                 embeddingUrl = embeddingUrl,
                 extId = extId)(tx, staleStuff)
@@ -151,6 +151,8 @@ trait PagesDao {
 
 
   /** Returns (PagePath, body-post, any-review-task)
+    *
+    * @param doAsAnon — must be a new anonym, since anons are per page, and this page is new.
     */
   def createPageImpl(pageRole: PageType,
       pageStatus: PageStatus,
@@ -164,7 +166,7 @@ trait PagesDao {
       pinWhere: Option[PinPageWhere] = None,
       byWho: Who,
       spamRelReqStuff: Option[SpamRelReqStuff],
-      anonStatus: Opt[AnonStatus] = None,
+      doAsAnon: Opt[WhichAnon.NewAnon] = None,
       hidePageBody: Boolean = false,
       layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
@@ -259,7 +261,7 @@ trait PagesDao {
     val bodyUniqueId = titleUniqueId + 1
 
     val (authorId, author) =
-          if (!anonStatus.exists(_.isAnon)) {
+          if (doAsAnon.forall(!_.anonStatus.isAnon)) {
             (realAuthorId, realAuthor)
           }
           else {
@@ -268,7 +270,7 @@ trait PagesDao {
             val anonym = Anonym(
                   id = anonymId,
                   createdAt = tx.now,
-                  anonStatus = anonStatus.getOrDie("TyE7MF26F"),
+                  anonStatus = doAsAnon.getOrDie("TyE7MF26F").anonStatus,
                   anonForPatId = realAuthorId,
                   anonOnPageId = pageId)
             // We'll insert the anonym before the page exists, but there's a

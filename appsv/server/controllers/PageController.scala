@@ -21,11 +21,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.JsonUtils.parseOptInt32
+import debiki.JsonUtils.asJsObject
 import debiki.dao.SiteDao
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
 import talkyard.server.http._
+import talkyard.server.parser
 import java.{util => ju}
 import javax.inject.Inject
 import play.api.libs.json.{JsArray, JsString, JsValue, Json}
@@ -42,10 +43,11 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def createPage: Action[JsValue] = PostJsonAction(RateLimits.CreateTopic, maxBytes = 20 * 1000) {
         request =>
-    import request.{body, dao, theRequester => requester}
+    import request.{dao, theRequester => requester}
 
     throwForbiddenIf(requester.isGroup, "EdE3FDK7M6", "Groups may not create pages")
 
+    val body = asJsObject(request.body, "request body")
     val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]
     val pageRoleInt = (body \ "pageRole").as[Int]
     val pageRole = PageType.fromInt(pageRoleInt) getOrElse throwBadArgument("DwE3KE04", "pageRole")
@@ -57,7 +59,15 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
-    val anonStatus = parseOptInt32(body, "anonStatus").flatMap(AnonStatus.fromInt)
+    val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
+      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+    }
+    val doAsNewAnon: Opt[WhichAnon.NewAnon] = doAsAnon map {
+      case _new: WhichAnon.NewAnon => _new
+      case _: WhichAnon.SameAsBefore => throwBadReq("TyE5MWE2J8", o"""Cannot keep
+            reusing an old anonym, when creating a new page. Anonyms are pre page.""")
+    }
+    // val anonStatus = parseOptInt32(body, "anonStatus").flatMap(AnonStatus.fromInt)
 
     val postRenderSettings = dao.makePostRenderSettings(pageRole)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(bodyText,
@@ -90,8 +100,8 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
       "EdE5KW20A")
 
     val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
-      anySlug, titleSourceAndHtml, bodyTextAndHtml, showId, deleteDraftNr = deleteDraftNr,
-      request.who, request.spamRelatedStuff, anonStatus = anonStatus)
+          anySlug, titleSourceAndHtml, bodyTextAndHtml, showId, deleteDraftNr = deleteDraftNr,
+          request.who, request.spamRelatedStuff, doAsAnon = doAsNewAnon)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
   }
