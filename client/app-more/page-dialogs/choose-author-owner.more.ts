@@ -26,9 +26,9 @@ const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
 
-let setStateExtFn: (_: ChooseAnonDiagParams) => Vo;
+let setStateExtFn: (_: ChooseAnonDlgPs) => Vo;
 
-export function openAnonDropdown(ps: ChooseAnonDiagParams) {
+export function openAnonDropdown(ps: ChooseAnonDlgPs) {
   if (!setStateExtFn) {
     ReactDOM.render(ChooseAnonModal(), utils.makeMountNode());  // or [use_portal] ?
   }
@@ -44,12 +44,12 @@ export function openAnonDropdown(ps: ChooseAnonDiagParams) {
 ///       if any?
 ///
 ///
-const ChooseAnonModal = React.createFactory<{}>(function() {
+const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
   //displayName: 'ChooseAnonModal',
 
   // TESTS_MISSING
 
-  const [state, setState] = React.useState<ChooseAnonDiagParams | N>(null);
+  const [state, setState] = React.useState<ChooseAnonDlgPs | N>(null);
 
   setStateExtFn = setState;
 
@@ -95,40 +95,75 @@ const ChooseAnonModal = React.createFactory<{}>(function() {
 });
 
 
-export function whichAnon_titleShort(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
-  switch (level) {
-    case AnonStatus.PerPage:
-      return "anonymously";
-    case AnonStatus.NotAnon:
-    default:
-      return "as " + pat_name(ps.pat || ps.me);
+export function whichAnon_titleShort(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+  return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.TitleShort);
+};
+
+
+export function whichAnon_title(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+  return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.TitleLong);
+};
+
+
+export function whichAnon_descr(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+  return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.DescrLong);
+};
+
+
+const enum TitleDescr {
+  TitleShort = 1,
+  TitleLong = 2,
+  DescrShort = 3,
+  DescrLong = 4,
+}
+
+
+function whichAnon_titleDescrImpl(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat },  // I18N
+        what: TitleDescr): St {
+  if (!doAs || !doAs.sameAnonId) {
+    const anonStatus = doAs ? doAs.newAnonStatus : AnonStatus.NotAnon;
+    switch (anonStatus) {
+      case AnonStatus.PerPage:
+        switch (what) {
+          case TitleDescr.TitleShort:
+          case TitleDescr.TitleLong:
+            return "anonymously";
+          default:
+            // Description:
+            return nameNotShownEtc;
+        }
+
+      default:
+        switch (what) {
+          case TitleDescr.TitleShort:
+            return "as " + pat_name(ps.pat || ps.me);
+          case TitleDescr.TitleLong:
+            const pat = ps.pat;
+            return pat ? "As " + pat_name(pat)
+                      : "As you, " + pat_name(ps.me);
+          default:
+            // Description:
+            return "Others can see who you are — they'll see your username and picture.";
+        }
+    }
+  }
+  else {
+    switch (what) {
+      case TitleDescr.TitleShort:
+      case TitleDescr.TitleLong:
+        return "anonymously";
+      default:
+        // Description:
+        return "Continue posting anonymously: " + nameNotShownEtc;
+    }
   }
 }
 
 
-export function whichAnon_title(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
-  switch (level) {
-    case AnonStatus.PerPage:
-      return "Anonymously";
-    case AnonStatus.NotAnon:
-    default:
-      const pat = ps.pat;
-      return pat ? "As " + pat_name(pat)
-                  : "As you, " + pat_name(ps.me);
-  }
-}
+const nameNotShownEtc =  // I18N
+        "Your name and picture won't be shown. " +
+        "Admins can still check who you are, though.";
 
-
-export function whichAnon_descr(doAsAnon: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
-  switch (level) {
-    case AnonStatus.PerPage:
-      return "Your name and picture won't be shown. " +
-              "Admins can still check who you are, though.";
-    case AnonStatus.NotAnon:
-    default:
-      return "Others can see who you are — they'll see your username and picture.";
-  }
-}
 
 //------------------------------------------------------------------------------
    }

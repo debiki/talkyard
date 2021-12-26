@@ -1,6 +1,7 @@
 package talkyard.server
 
 import com.debiki.core._
+import debiki.JsonUtils.parseOptJsObject
 import org.scalactic.{Bad, Good, Or}
 import play.api.libs.json.JsObject
 
@@ -30,8 +31,11 @@ package object parser {
 
   def parseWhichAnonJson(jsOb: JsObject): Opt[WhichAnon] Or ErrMsg = {
     import debiki.JsonUtils.parseOptInt32
-    val sameAnonId = parseOptInt32(jsOb, "sameAnonId")
-    val newAnonStatus = parseOptInt32(jsOb, "newAnonStatus").flatMap(AnonStatus.fromInt)
+    val doAsJsOb = parseOptJsObject(jsOb, "doAsAnon") getOrElse {
+      return Good(None)
+    }
+    val sameAnonId = parseOptInt32(doAsJsOb, "sameAnonId")
+    val newAnonStatus = parseOptInt32(doAsJsOb, "newAnonStatus").flatMap(AnonStatus.fromInt)
     if (sameAnonId.isDefined && newAnonStatus.isDefined) {
       Bad("Both sameAnonId and newAnonStatus specified")
     }

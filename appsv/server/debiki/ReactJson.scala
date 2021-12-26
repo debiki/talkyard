@@ -1262,19 +1262,19 @@ class JsonMaker(dao: SiteDao) {
 
 
   def makeStorePatchForPostIds(postIds: Set[PostId], showHidden: Bo,
-        inclUnapproved: Bo, dao: SiteDao): JsObject = {
+        inclUnapproved: Bo, dao: SiteDao, reqerId: Opt[PatId] = None): JsObject = {
     dieIf(Globals.isDevOrTest && dao != this.dao, "TyE602MWJL43") ; CLEAN_UP // remove dao param?
     dao.readTx { tx =>
       // This might render CommonMark, in a tx — slightly bad. [nashorn_in_tx]
       makeStorePatchForPostIds(postIds, showHidden = showHidden,
-            inclUnapproved = inclUnapproved, tx)
+            inclUnapproved = inclUnapproved, tx, reqerId = reqerId)
     }
   }
 
 
   private def makeStorePatchForPostIds(postIds: Set[PostId],
           showHidden: Bo, inclUnapproved: Bo,
-          transaction: SiteTx): JsObject = {
+          transaction: SiteTx, reqerId: Opt[PatId]): JsObject = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(postIds)
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
@@ -1285,13 +1285,14 @@ class JsonMaker(dao: SiteDao) {
     makeStorePatch3(pageIdVersions, posts,
           showHidden = showHidden, inclUnapproved = inclUnapproved,
           tagsAndBadges, tagTypes,
-          authors, appVersion = dao.globals.applicationVersion)(transaction)
+          authors, reqerId = reqerId, appVersion = dao.globals.applicationVersion)(transaction)
   }
 
 
-  def makeStorePatchForPost(post: Post, author: Pat, showHidden: Bo): JsObject = {
+  def makeStorePatchForPost(post: Post, showHidden: Bo, reqerId: PatId): JsObject = {
     makeStorePatchForPostIds(
-          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true, dao)
+          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true, dao,
+          reqerId = Some(reqerId))
   }
 
 
@@ -1306,7 +1307,7 @@ class JsonMaker(dao: SiteDao) {
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
           showHidden: Bo, inclUnapproved: Bo,
           tagsAndBadges: TagsAndBadges, tagTypes: Seq[TagType],
-          users: Iterable[Pat], appVersion: St)(
+          users: Iterable[Pat], reqerId: Opt[PatId] = None, appVersion: St)(
           tx: SiteTx): JsObject = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
 
@@ -1330,7 +1331,7 @@ class JsonMaker(dao: SiteDao) {
     Json.obj(
       "appVersion" -> appVersion,
       "pageVersionsByPageId" -> pageVersionsByPageIdJson,
-      "usersBrief" -> users.map(JsPat(_, tagsAndBadges)),
+      "usersBrief" -> users.map(JsPat(_, tagsAndBadges, toShowForPatId = reqerId)),
       "tagTypes" -> tagTypes.map(JsTagType),
       "postsByPageId" -> postsByPageIdJson)
   }

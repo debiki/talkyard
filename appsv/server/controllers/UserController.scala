@@ -177,7 +177,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         else {
           val pat = tx.loadTheParticipant(userId)
           val json = pat match {
-            case anon: Anonym => JsAnon(anon, inclRealId = false)
+            case anon: Anonym => JsPat(anon, TagsAndBadges.None)
             case guest: Guest => jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
                 callerIsAdmin = callerIsAdmin)
           }

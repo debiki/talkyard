@@ -275,6 +275,7 @@ interface DraftDeletor {
 
 interface Draft {
   byUserId: UserId;
+  doAsAnon?: U | WhichAnon;  // not yet impl [doAsAnon_draft]
   draftNr: DraftNr;
   forWhat: DraftLocator;
   createdAt: WhenMs;
@@ -1391,17 +1392,22 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
 type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
 
 
-interface KnownAnonym extends GuestOrAnon {
+interface Anonym extends GuestOrAnon {
   isAnon: true;
-  anonForId: PatId;
-  anonStatus: AnonStatus;
-  anonOnPageId: PageId;
-
   isGuest?: false;  // = !isAuthenticated — no!  BUG RISK ensure ~isGuest isn't relied on
                                          // anywhere, to "know" it's a user / group
 }
 
 
+interface KnownAnonym extends Anonym {
+  isAnon: true;
+  anonForId: PatId;
+  anonStatus: AnonStatus;
+  anonOnPageId: PageId;
+}
+
+
+// For choosing an anonym. Maybe rename to ChooseAnon? Or ChoosenAnon / SelectedAnon?
 interface WhichAnon {
   sameAnonId?: PatId;
   newAnonStatus?: AnonStatus;
@@ -1410,9 +1416,17 @@ interface SameAnon extends WhichAnon {
   sameAnonId: PatId;
   newAnonStatus?: U;
 }
+interface Deanonymized extends WhichAnon {
+  sameAnonId: PatId;
+  newAnonStatus: AnonStatus.DeanondBySelf;
+}
 interface NewAnon extends WhichAnon {
   sameAnonId?: U;
-  newAnonStatus: AnonStatus;
+  newAnonStatus: AnonStatus.PerPage;
+}
+interface NotAnon extends WhichAnon {
+  sameAnonId?: U;
+  newAnonStatus: AnonStatus.NotAnon;
 }
 
 

@@ -97,7 +97,8 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatchForPost(newPost, author, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(
+          newPost, showHidden = true, reqerId = byWho.id)
 
     // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
@@ -654,7 +655,8 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatchForPost(post, author, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(
+          post, showHidden = true, reqerId = byWho.id)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
@@ -738,6 +740,7 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
             htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
+          // ANON_UNIMPL specify the anonym, if anon post
           who = who,
           requestStuff = spamRelReqStuff))
 
@@ -876,6 +879,7 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
             htmlToSpamCheck = combinedTextAndHtml.safeHtml,
             language = settings.languageCode)),
+          // ANON_UNIMPL specify the anonym, if anon post
           who = byWho,
           requestStuff = spamRelReqStuff))
 
@@ -1221,6 +1225,7 @@ trait PostsDao {
               pageAvailableAt = When.fromDate(page.meta.publishedAt getOrElse page.meta.createdAt),
               htmlToSpamCheck = newTextAndHtml.safeHtml,
               language = settings.languageCode)),
+            // ANON_UNIMPL specify the anonym, if anon post
             who = who,
             requestStuff = spamRelReqStuff))
 
@@ -1766,6 +1771,7 @@ trait PostsDao {
 
     val postBefore = page.parts.thePostByNr(postNr)
     lazy val postAuthor = tx.loadTheParticipant(postBefore.createdById)
+    ANON_UNIMPL
 
     // Authorization.
     if (!user.isStaff) {

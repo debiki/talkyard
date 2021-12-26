@@ -1315,6 +1315,30 @@ export function store_makeDeletePostPatch(post: Post): StorePatch {
 
 
 
+// Current discussion
+//----------------------------------
+
+export function disc_findCurPageAnons(discStore: DiscStore, ps: {
+            forPatId?: PatId, replyToPostNr?: PostNr }): KnownAnonym[] {
+  const me: Me = discStore.me;
+  const forWhoId: PatId = ps.forPatId || me && me.id;
+  const curPage = discStore.currentPage;
+  const results: KnownAnonym[] = [];
+  if (!curPage) return [];
+  //for (const p of Object.values(curPage.postsByNr)) {
+  _.forEach(curPage.postsByNr, function(p) {
+    const author: Pat | U = discStore.usersByIdBrief[p.authorId];
+    if (author && author.anonForId === forWhoId) {
+      if (!_.find(results, function(r) { r.id === author.id })) {
+        results.push(author as KnownAnonym);
+      }
+    }
+  });
+  return results;
+}
+
+
+
 // Permissions
 //----------------------------------
 

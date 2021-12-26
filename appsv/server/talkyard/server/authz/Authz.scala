@@ -339,6 +339,7 @@ object Authz {
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0ED0SEE-${mayWhat.debugCode}")
 
+    ANON_UNIMPL
     val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
     if (isOwnPost) {
       // Fine, may edit.

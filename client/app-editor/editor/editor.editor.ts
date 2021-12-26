@@ -120,6 +120,7 @@ interface EditorState {
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
   doAsAnon?: WhichAnon;
+  myAnonsHere?: KnownAnonym[];
   authorId?: PatId; // remove?
   editorsCategories?: Category[];
   editorsPageId?: PageId;
@@ -942,16 +943,31 @@ export const Editor = createFactory<any, EditorState>({
       eds.lazyCreatePageInCatId = inFrame.eds.lazyCreatePageInCatId;
     }
 
+    const editorsPageId = discStore.currentPageId || eds.embeddedPageId;
+
+    // Annoying! Try to get rid of eds.embeddedPageId? So can remove discStore2.
+    const discStore2: DiscStore = { ...discStore, currentPageId: editorsPageId };
+    const myAnonsHere = disc_findCurPageAnons(discStore2, {
+            forPatId: discStore.me?.id }); //, replyToPostNr: postNrs[0] });
+
+    const doAsAnon: WhichAnon | U = myAnonsHere.length
+            ? { sameAnonId: myAnonsHere[0].id }
+            : { newAnonStatus: AnonStatus.PerPage }  // later, [anon_cats]  just testing
+            //: undefined;
+
     const newState: Partial<EditorState> = {
       inFrame,
       inFrameStore,
       anyPostType: postType,
       editorsCategories: discStore.currentCategories,
-      editorsPageId: discStore.currentPageId || eds.embeddedPageId,
+      editorsPageId,
       // [editorsNewLazyPageRole] = PageRole.EmbeddedComments if eds.isInEmbeddedEditor?
       replyToPostNrs: postNrs,
       text: state.text || makeDefaultReplyText(discStore, postNrs),
+      myAnonsHere,
+      doAsAnon,
     };
+
     this.showEditor(newState);
 
     if (!postNrs.length) {
@@ -1025,6 +1041,13 @@ export const Editor = createFactory<any, EditorState>({
       // gets a new postNr. Then do what? Show a "this post was moved to: ..." dialog?
       dieIf(postNr !== response.postNr, 'TyE23GPKG4');
 
+      const editorsDiscStore: DiscStore = { ...discStore, currentPageId: response.pageId };
+      const myAnonsHere = disc_findCurPageAnons(editorsDiscStore, {
+              forPatId: discStore.me?.id }); //, replyToPostNr: postNr });
+
+      const doAsAnon: WhichAnon | U = draft && draft.doAsAnon || (
+              !myAnonsHere.length ? undefined : { sameAnonId: myAnonsHere[0].id });
+
       const newState: Partial<EditorState> = {
         anyPostType: null,
         editorsCategories: discStore.currentCategories, // [many_embcom_iframes]
@@ -1036,6 +1059,8 @@ export const Editor = createFactory<any, EditorState>({
         onDone: onDone,
         draftStatus: DraftStatus.NothingHappened,
         draft,
+        myAnonsHere,
+        doAsAnon,
       };
 
       this.showEditor(newState);
@@ -1086,6 +1111,9 @@ export const Editor = createFactory<any, EditorState>({
       text: text,
       showSimilarTopics: true,
       searchResults: null,
+      // Skip: myAnonsHere — cannot yet be any anons; page not yet created.
+      // Later, for anonymous-by-default categories:  [anon_cats]
+      doAsAnon: { newAnonStatus: AnonStatus.PerPage },
     };
 
     this.showEditor(newState);
@@ -1223,7 +1251,7 @@ export const Editor = createFactory<any, EditorState>({
         pageRole?: PageRole, inFrameStore?: DiscStore) {
 
     const setDraftAndGuidelines = (anyDraft?, anyGuidelines?) => {
-      let draft = anyDraft ||
+      let draft: Draft | U = anyDraft ||
             // BUG harmleess: Use BrowserStorage.forEachDraft(page-id) instead?
             // So same algorithm for finding drafts to show in-page, as to load
             // in the editor.  [find_br_drafts]
@@ -1285,6 +1313,7 @@ export const Editor = createFactory<any, EditorState>({
         // For now, skip guidelines, for blog comments — they would break e2e tests,
         // and maybe are annoying?
         guidelines: eds.isInIframe ? undefined : anyGuidelines,
+        doAsAnon: draft && draft.doAsAnon,  // not yet impl [doAsAnon_draft]
       };
       this.setState(newState, () => {
         this.focusInputFields();
@@ -1787,7 +1816,12 @@ export const Editor = createFactory<any, EditorState>({
     }
 
     const me: Myself = this.getDiscStore().me;
-    const draftToSave: Draft = { ...draftOldOrEmpty, text, title };
+    const draftToSave: Draft = {
+      ...draftOldOrEmpty,
+      doAsAnon: state.doAsAnon,
+      text,
+      title,
+    };
 
     // If this is an embedded comments discussion, and the discussion page hasn't
     // yet been created, there's no page id to use as draft locator key. Then,
@@ -2469,8 +2503,8 @@ export const Editor = createFactory<any, EditorState>({
       maybeAnonymously =
           Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
             const atRect = reactGetRefRect(this.refs.anonB);
-            anon.openAnonDropdown({ atRect, open: true, curAnon: state.doAsAnon,
-                me, saveFn: (doAsAnon: WhichAnon) => {
+            anon.openAnonDropdown({ atRect, open: true, curAnon: state.doAsAnon, me,
+                saveFn: (doAsAnon: WhichAnon) => {
                   const newState: Partial<EditorState> = { doAsAnon };
                   this.setState(newState);
                 } });
