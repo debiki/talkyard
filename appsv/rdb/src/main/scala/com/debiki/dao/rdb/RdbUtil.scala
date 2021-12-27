@@ -225,8 +225,8 @@ object RdbUtil {
       |u.APPROVED_AT u_approved_at,
       |u.APPROVED_BY_ID u_approved_by_id,
       |u.SUSPENDED_TILL u_suspended_till,
-      |u.anon_status_c u_anon_status_c,
-      |u.anon_for_memb_id_c u_anon_for_pat_id_c,
+      |u.anonym_status_c u_anonym_status_c,
+      |u.true_id_c u_true_id_c,
       |u.anon_on_page_id_st_c u_anon_on_page_id_st_c,
       |u.trust_level u_trust_level,
       |u.locked_trust_level u_locked_trust_level,
@@ -271,7 +271,7 @@ object RdbUtil {
     val userId = rs.getInt("u_id")
     val extImpId = getOptString(rs, "u_ext_id")
     val isGroup = rs.getBoolean("u_is_group")
-    val anonStatus: Opt[AnonStatus] = getOptInt32(rs, "u_anon_status_c")
+    val anonStatus: Opt[AnonStatus] = getOptInt32(rs, "u_anonym_status_c")
           .flatMap(AnonStatus.fromInt)
 
     def createdAt = getWhen(rs, "u_created_at")
@@ -297,8 +297,8 @@ object RdbUtil {
       Anonym(
           id = userId,
           createdAt = createdAt,
+          anonForPatId = getInt32(rs, "u_true_id_c"),
           anonStatus = anonStatus.get,
-          anonForPatId = getInt32(rs, "u_anon_for_pat_id_c"),
           anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"),
       )
     }
@@ -397,8 +397,8 @@ object RdbUtil {
     |is_owner,
     |is_admin,
     |is_moderator,
-    |anon_status_c,
-    |anon_for_memb_id_c,
+    |anonym_status_c,
+    |true_id_c,
     |anon_on_page_id_st_c,
     |deactivated_at,
     |deleted_at,
@@ -467,13 +467,13 @@ object RdbUtil {
   private def getGuestInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet, patId: PatId): GuestOrAnon = {
     // A bit dupl code. (703KWH4)
     val name = Option(rs.getString("full_name"))
-    val anonStatus = getOptInt32(rs, "anon_status_c") flatMap AnonStatus.fromInt
+    val anonStatus = getOptInt32(rs, "anonym_status_c") flatMap AnonStatus.fromInt
     if (anonStatus.isDefined) {
       return Anonym(
           id = patId,
           createdAt = getWhen(rs, "created_at"),
+          anonForPatId = getInt32(rs, "u_true_id_c"),
           anonStatus = anonStatus.get,
-          anonForPatId = getInt32(rs, "u_anon_for_pat_id_c"),
           anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"))
     }
 

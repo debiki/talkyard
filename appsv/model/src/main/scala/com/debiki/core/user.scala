@@ -862,7 +862,7 @@ case class Anonym(
   id: PatId,
   createdAt: When,
   anonStatus: AnonStatus,
-  anonForPatId: PatId,
+  anonForPatId: PatId,   // rename to trueId
   anonOnPageId: PageId,
   ) extends Pat with GuestOrAnon {
 

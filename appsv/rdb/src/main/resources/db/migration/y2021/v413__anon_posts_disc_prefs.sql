@@ -37,9 +37,14 @@ create domain cat_id_d      i32_lt2e9_gz_d;
 create domain tagtype_id_d  i32_lt2e9_gt1000_d;
 
 create domain pat_id_d      i32_abs_lt2e9_nz_d;
+
 create domain member_id_d   pat_id_d;
 alter  domain member_id_d add
-   constraint member_id_d_c_gz check (value > 0);
+   constraint member_id_d_c_gtz check (value > 0);
+
+create domain anon_or_guest_id_d pat_id_d;
+alter  domain anon_or_guest_id_d add
+   constraint anon_or_guest_id_d_c_ltm10 check (value <= -10);
 
 create domain no_choose_yes_d i16_d;
 alter  domain no_choose_yes_d add
@@ -75,15 +80,33 @@ alter table users3 add column see_exact_stats_min_tr_lv_c    trust_level_or_staf
 alter table settings3 add column enable_anon_posts_c bool;
 
 
-alter table users3 add column anon_status_c        anon_status_d;
-alter table users3 add column anon_for_memb_id_c   member_id_d;
+-- Skip fks — no fks in this table.
+alter table spam_check_queue3 add column true_auhtor_id_c member_id_d;
+
+
+alter table drafts3 add column new_anon_status_c anon_status_d;
+alter table drafts3 add column same_anon_id_c anon_or_guest_id_d;
+
+-- fk ix: drafts_i_sameanonid
+alter table drafts3 add constraint drafts_sameanonid_r_pats
+    foreign key (site_id, same_anon_id_c)
+    references users3 (site_id, user_id) deferrable;
+
+create index drafts_i_sameanonid on drafts3 (site_id, same_anon_id_c);
+    -- where same_anon_id_c is not null; ?   [fk_ix_where_not_null]
+    -- and elsewhere in this file
+
+
+alter table users3 add column true_id_c            member_id_d;
+alter table users3 add column pseudonym_status_c   i32_d; -- later
+alter table users3 add column anonym_status_c      anon_status_d;
 alter table users3 add column anon_on_page_id_st_c page_id_st_d;
 alter table users3 add column anon_on_page_id_c    page_id_d__later;
 
 
--- fk ix: pats_u_anonforpatid_anononpageid
-alter table users3 add constraint pats_anonforpat_r_pats
-    foreign key (site_id, anon_for_memb_id_c)
+-- fk ix: pats_u_anonofpatid_anononpageid
+alter table users3 add constraint pats_trueid_r_pats
+    foreign key (site_id, true_id_c)
     references users3 (site_id, user_id) deferrable;
 
 -- fk ix: pats_u_anononpageid
@@ -92,28 +115,40 @@ alter table users3 add constraint pats_anononpage_r_pages
     references pages3 (site_id, page_id) deferrable;
 
 
-create index pats_u_anonforpatid_anononpageid on users3 (
-    site_id, anon_for_memb_id_c, anon_on_page_id_st_c);
+create index pats_u_trueid_anononpageid on users3 (
+    site_id, true_id_c, anon_on_page_id_st_c);
 
 create index pats_u_anononpageid on users3 (
     site_id, anon_on_page_id_st_c);
 
 
-alter table users3 add constraint pats_c_anonid_lt_m10 check (
-    anon_status_c is null or user_id <= -10);
+alter table users3 add constraint pats_c_pseudonymid_gte10 check (
+    pseudonym_status_c is null or user_id >= 10);
 
+alter table users3 add constraint pats_c_anonid_ltem10 check (
+    anonym_status_c is null or user_id <= -10);
+
+alter table users3 add constraint pats_c_not_both_anon_pseudo check (
+    num_nonnulls(pseudonym_status_c, anonym_status_c) <= 1);
+
+-- ! what if pseudonym_status_c is set, then true_id_c not null
 alter table users3 add constraint pats_c_anon_null_same check (
-    num_nonnulls(anon_status_c, anon_for_memb_id_c, anon_on_page_id_st_c) in (0, 3));
+    num_nonnulls(anonym_status_c, true_id_c, anon_on_page_id_st_c) in (0, 3));
 
+-- But pseudonyms might need to get approved? Since can have custom name and bio.
 alter table users3 add constraint pats_c_anon_not_approved check (
-    anon_status_c is null
+    anonym_status_c is null
     or (created_at is not null and
         is_approved is null and
         approved_at is null and
         approved_by_id is null));
 
+-- For now.
+alter table users3 add constraint pats_c_pseudonym_null check (
+    pseudonym_status_c is null);
+
 alter table users3 add constraint pats_c_anon_nulls check (
-    anon_status_c is null
+    anonym_status_c is null
     or (guest_browser_id is null and
         guest_email_addr is null and
         sso_id is null and
@@ -138,7 +173,7 @@ alter table users3 add constraint pats_c_anon_nulls check (
 alter table users3 drop constraint pps_c_guest_not_nulls;
 alter table users3 add constraint pats_c_guest_non_nulls check (
     -- Member or anonym?
-    (user_id > 0 or anon_status_c is not null)
+    (user_id > 0 or anonym_status_c is not null)
     -- Else, is a guest (or the Unknown user) and then:
     or (created_at is not null and
         full_name is not null and
@@ -147,7 +182,7 @@ alter table users3 add constraint pats_c_guest_non_nulls check (
 alter table users3 drop constraint pps_c_guest_w_no_browserid_has_extid;
 alter table users3 add constraint pats_c_guest_w_no_browserid_has_extid check (
     -- Member or anonym?
-    (user_id > 0 or anon_status_c is not null)
+    (user_id > 0 or anonym_status_c is not null)
     -- Else, is guest (or the Unknown user); then needs a browser id or an ext id.
     or guest_browser_id is not null
     or ext_id is not null);

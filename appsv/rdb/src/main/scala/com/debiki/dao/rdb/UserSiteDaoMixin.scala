@@ -586,15 +586,15 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
             site_id,
             user_id,
             created_at,
-            anon_status_c,
-            anon_for_memb_id_c,
+            true_id_c,
+            anonym_status_c,
             anon_on_page_id_st_c)
           values (?, ?, ?, ?, ?, ?)
           """
     val values = List(
           siteId.asAnyRef, anon.id.asAnyRef,
-          anon.createdAt.asTimestamp, anon.anonStatus.toInt.asAnyRef,
-          anon.anonForPatId.asAnyRef, anon.anonOnPageId)
+          anon.createdAt.asTimestamp, anon.anonForPatId.asAnyRef,
+          anon.anonStatus.toInt.asAnyRef, anon.anonOnPageId)
     runUpdateSingleRow(stmt, values)
   }
 
