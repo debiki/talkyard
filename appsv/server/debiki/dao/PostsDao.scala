@@ -1772,6 +1772,7 @@ trait PostsDao {
     val user = tx.loadParticipant(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
 
     SECURITY; COULD // check if may see post, not just the page?  [whispers] [staff_can_see]
+    // If doing that, then: TESTS_MISSING — namely deleting an anon post on may not see.
     throwIfMayNotSeePage(page, Some(user))(tx)
 
     val postBefore = page.parts.thePostByNr(postNr)
@@ -1780,7 +1781,12 @@ trait PostsDao {
 
     // Authorization.
     if (!user.isStaff) {
-      if (postBefore.createdById != userId)
+      val isOwn =  postBefore.createdById == userId || (postAuthor match {
+        case anon: Anonym => anon.anonForPatId == userId
+        case _ => false
+      })
+
+      if (!isOwn)
         throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
 
       if (!action.isInstanceOf[PSA.DeletePost] && action != PSA.CollapsePost)
@@ -1966,6 +1972,7 @@ trait PostsDao {
     if (postsDeleted.exists(_.id == postBefore.id)) {
       dieIf(!action.isInstanceOf[PostStatusAction.DeletePost] &&
           action != PostStatusAction.DeleteTree, "TyE205MKSD")
+      // + true_pat_id_c?
       updateSpamCheckTaskBecausePostDeleted(postBefore, postAuthor, deleter = user, tx)
     }
 
@@ -2338,6 +2345,8 @@ trait PostsDao {
 
       if (voteType == PostVoteType.Unwanted && !voter.isStaffOrCoreMember)  // [4DKWV9J2]
         throwForbidden("DwE5JUK0", "Only staff and core members may Unwanted-vote")
+
+      ANON_UNIMPL // Don't let people upvote their own anonymous/pseudonymous posts.
 
       if (voteType == PostVoteType.Like) {
         if (post.createdById == voterId)
