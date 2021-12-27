@@ -142,12 +142,15 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+    val anyOtherAuthor =
+          if (post.createdById == requester.id) None
+          else dao.getParticipant(post.createdById)
 
     CHECK_AUTHN_STRENGTH
 
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
-      post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      post, otherAuthor = anyOtherAuthor, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
@@ -180,7 +183,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def edit: Action[JsValue] = PostJsonAction(RateLimits.EditPost,
         MinAuthnStrength.EmbeddingStorageSid12, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
-    import request.dao
+    import request.{dao, theRequester => requester}
     val body = asJsObject(request.body, "request body")
     val pageId = (body \ "pageId").as[PageId]
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, in case moved to other page [idnotnr]
@@ -215,9 +218,13 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
+    val anyOtherAuthor =
+          if (post.createdById == requester.id) None
+          else dao.getParticipant(post.createdById)
+
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
-      post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      post, otherAuthor = anyOtherAuthor, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 

@@ -322,6 +322,7 @@ object Authz {
     userAndLevels: UserAndLevels,
     groupIds: immutable.Seq[GroupId],
     post: Post,
+    otherAuthor: Opt[Pat],
     pageMeta: PageMeta,
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
@@ -339,8 +340,11 @@ object Authz {
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0ED0SEE-${mayWhat.debugCode}")
 
-    ANON_UNIMPL
-    val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
+    val isOwnPost = user.id == post.createdById || otherAuthor.exists({ // [8UAB3WG2]
+      case anon: Anonym => anon.anonForPatId == user.id
+      case _ => false
+    })
+
     if (isOwnPost) {
       // Fine, may edit.
       // But shouldn't:  isOwnPost && mayWhat[.mayEditOwn] ?  (2020-07-17)

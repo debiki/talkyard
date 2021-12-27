@@ -84,16 +84,16 @@ alter table settings3 add column enable_anon_posts_c bool;
 alter table spam_check_queue3 add column true_auhtor_id_c member_id_d;
 
 
-alter table drafts3 add column new_anon_status_c anon_status_d;
-alter table drafts3 add column same_anon_id_c anon_or_guest_id_d;
+alter table drafts3 add column new_anon_status_c  anon_status_d;
+alter table drafts3 add column post_as_id_c       pat_id_d;
 
--- fk ix: drafts_i_sameanonid
-alter table drafts3 add constraint drafts_sameanonid_r_pats
-    foreign key (site_id, same_anon_id_c)
+-- fk ix: drafts_i_postasid
+alter table drafts3 add constraint drafts_postasid_r_pats
+    foreign key (site_id, post_as_id_c)
     references users3 (site_id, user_id) deferrable;
 
-create index drafts_i_sameanonid on drafts3 (site_id, same_anon_id_c);
-    -- where same_anon_id_c is not null; ?   [fk_ix_where_not_null]
+create index drafts_i_postasid on drafts3 (site_id, post_as_id_c);
+    -- where post_as_id_c is not null; ?   [fk_ix_where_not_null]
     -- and elsewhere in this file
 
 

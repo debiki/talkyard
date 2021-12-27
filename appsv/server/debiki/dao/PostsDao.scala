@@ -943,6 +943,10 @@ trait PostsDao {
       if (postToEdit.currentSource == newTextAndHtml.text)
         return
 
+      val anyOtherAuthor =
+            if (postToEdit.createdById == realEditor.id) None
+            else Some(tx.loadTheParticipant(postToEdit.createdById))
+
       // Dupl code. [get_anon]
       val editorMaybeAnon =
             if (doAsAnon.isEmpty) {
@@ -969,7 +973,8 @@ trait PostsDao {
 
       dieOrThrowNoUnless(Authz.mayEditPost(
             realEditorAndLevels, tx.loadGroupIdsMemberIdFirst(realEditor),
-            postToEdit, page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
+            postToEdit, otherAuthor = anyOtherAuthor,
+            page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
             inCategoriesRootLast = tx.loadCategoryPathRootLast(
                   page.meta.categoryId, inclSelfFirst = true),
             tooManyPermissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
