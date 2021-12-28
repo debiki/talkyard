@@ -1690,12 +1690,15 @@ trait PostsDao {
         // All normal users may do is to remove wiki status of their own posts.
         // What? Why not change *to* wiki status?
         if (postBefore.isWiki && postAfter.tyype == PostType.Normal) {
-          if (changer.id != author.id)
-            throwForbidden("DwE5KGPF2", o"""You are not the author and not staff,
-                so you cannot remove the Wiki status of this post""")
+          val isOwn =  changer.id == author.id || (getTheParticipant(author.id) match {
+            case anon: Anonym => anon.anonForPatId == changer.id
+            case _ => false
+          })
+          throwForbiddenIf(!isOwn, "TyE0OWN6MR", o"""You are not the author and not
+                staff, so you cannot change the Wiki status of this post""")
         }
         else {
-            throwForbidden("DwE4KXB2", s"""Cannot change post type from
+            throwForbidden("DwE4KXB2", o"""Cannot change post type from
                 ${postBefore.tyype} to ${postAfter.tyype}""")
         }
       }
