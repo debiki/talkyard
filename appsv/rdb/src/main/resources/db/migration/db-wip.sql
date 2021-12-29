@@ -197,14 +197,80 @@ alter table users3 add column group_default_prio int;
 --   incl_sub_tags boolean,
 --   incl_sub_threads boolean,
 
-create table perms_on_groups3 (
+
+-- Incl in MemberPrivacyPrefs (Scala class):
+-- and see:   docs/design-docs/tags.dd.adoc  [perms_thoughts]  too
+alter table pats_t add column may_see_username_min_tr_lv       trust_level_or_staff_d;
+alter table pats_t add column may_see_full_name_min_tr_lv      trust_level_or_staff_d;
+alter table pats_t add column may_see_bio_min_tr_lv            trust_level_or_staff_d;
+alter table pats_t add column may_see_small_avatar_min_tr_lv   trust_level_or_staff_d;
+alter table pats_t add column may_see_medium_avatar_min_tr_lv  trust_level_or_staff_d;
+--    table pats_t add column may_see_tags_min_tr_lv -- no, per tag type insetad.
+alter table pats_t add column may_send_dms_min_tr_lv           trust_level_or_staff_d;
+alter table pats_t add column may_mention_min_tr_lv            trust_level_or_staff_d;  -- ?
+
+alter table pats_t add column may_see_visit_stats_min_tr_lv    trust_level_or_staff_d;  -- ?
+alter table pats_t add column may_see_post_stats_min_tr_lv     trust_level_or_staff_d;  -- ?
+
+-- or maybe:   others_see_..._min_tr_lv ?  so clarifies it's reuqirements on *others*
+-- to see this pat.
+
+-- About user dialog maybe will be empty, just say: "Private user",
+-- and a Close button, if cannot see name, username, send DMs or anything ?
+-- And likewise, user profile page would say "Private user"
+-- Web scrapers blocked.
+-- Not listed in user directory (or listed as Private user? No why)
+
+
+-- Old field:
+alter table pats_t rename column see_activity_min_trust_level to may_see_activity_history_min_tr_lv_c;
+
+
+  -- and change type to trust_level_or_staff_d, clamp to [0, sth]
+
+-- New groups: Web scrapers? Anonymity network strangers? (e.g. Tor)
+-- See Git revision  b907273f7391e8a3,
+-- "websearch_prefs" — no webindex? webscrapers_prefs_d?
+create domain web_scraping_prefs_d i16_gz_d;  -- ?
+alter table pats_t add column web_scraping_prefs_c  web_scraping_prefs_d;
+
+-- Grants extra may-see-pat-details perms to for_pat_id_c:
+-- (So, group for_pat_id_c could see someone's bio, even though may_see_bio_min_tr_lv
+-- was higher)
+-- (This is for built-in perms. Perms on tgs has another table -- see perms_on_tagtypes_t
+--  in docs/design-docs/tags.dd.adoc )
+create table perms_on_pats_t (
+  site_id_c,
+  perm_id_c,
+  for_pat_id_c,
+  on_pat_id_c
+  may_see_ssoid_extid,  -- default: only admins & system users
+  may_see_email,        -- default: only admins & system users
+  -- default: all, for the below:
+  may_see_username_c,
+  may_see_full_name_c,
+  may_see_bio_c,
+  see_activity_min_trust_level,
+  may_see_small_avatar_c,
+  may_see_medium_avatar_c,
+  may_see_tags_c,  -- but which tags
+  may_send_dms_c,
+);
+
+
+create table perms_on_groups3 (   -- already created:   group_participants3
+  site_id,
   people_id int,
   group_id int,
-  is_group_admin boolean,
-  is_group_manager boolean,
-  is_bouncer boolean,
-  may_mention: boolean,
+  is_group_admin boolean,    -- a group admin and a group manager etc, needn't
+  is_group_manager boolean,  -- be group members. so they're in a different table.
+  is_bouncer boolean,        --
+  may_mention: boolean,      -- (E.g. to manage a group "Misbehaving Members" there's
+                             -- no need to have been added to that group oneself.)
 )
+   -- oh, already done. Next:
+   comment on table group_participants3 is '... sth like the comment above';
+
 
 create table group_members3 (
   group_id int,

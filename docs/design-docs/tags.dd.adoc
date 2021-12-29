@@ -97,16 +97,17 @@ create table tag_actions_t (  -- maybe never
 
 
 
-create table tagtype_perms_t(    -- much later
-  site_id_c int,
-  pat_id_c,
-  on_all_global_c bool,
-  on_all_global_and_priv_c bool,
+create table perms_on_tagtypes_t(    -- much later.
+           -- Also see: appsv/rdb/src/main/resources/db/migration/db-wip.sql  [perms_thoughts]
+  site_id_c,
+  for_pat_id_c,
+  on_global_tags_c bool,
+  on_global_and_priv_tags_c bool,
   on_tagtype_id_c int,
   may_edit_tagtype_name_slug_descr_looks_c,   ??
   may_edit_tagtype_name_descr_c,              ??
   may_edit_tagtype_other_c,
-  may_edit_tagtype_use_where,
+  may_edit_tagtype_use_where_c,
   may_see_others_c,      -- false —> becomes personal bookmark / star?
   may_add_c,
   may_edit_others_c,
@@ -123,6 +124,7 @@ create table tagtypes_use_where_t(    -- much later
   use_in_group_id_c,
   use_on_oneself_c,
   child_of_tagtype_id_c,
+  allowed_w_o_parent_c,  -- if is child, then, may be added if parent tag hasn't been added?
   needed_c  needed_d,
   auto_create_c,
   auto_create_child_c,   -- then, auto created with def value (if any), if creating parent tag

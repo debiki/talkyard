@@ -27,12 +27,16 @@ and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
 
 [wiki_links] — link to Ty page via its name, like at Wikipedia etc.
 
-[wiki_perms]
+[wiki_perms] [new_perms]
 Make page props, e.g. answer-post, doing-status, page type, etc wiki-editable?
 Rather than only individually, per post / comment.
 Wikifiable things: Title, properties (doing-status, answer-post etc), Orig Post, replies.
 What should be wiki-editable? Just the Orig Post? Or also replies, or page-props?
 Probably per post (e.g. per OP or comment) is a good default / what people expect?
+Maybe split "Wikify" into "Wikify text" and "Wikify properties" and "Wikify all"? Hmm
+
+There could be a separate: May-wikify-own-posts permission,  and May-wikify-others-posts?
+Indicating that somwhat granular permission control of a posts props can make sense?
 
 [page_props_perms]
 If pat 1) may edit the Orig Post text, and if pat 2) may change the page type, doing-status
