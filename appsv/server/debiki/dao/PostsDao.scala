@@ -1688,7 +1688,8 @@ trait PostsDao {
       }
       else {
         // All normal users may do is to remove wiki status of their own posts.
-        // What? Why not change *to* wiki status?
+        // Hmm, there could be a new permission: May wikify own posts, [new_perms][wiki_perms]
+        // and May-wikify-others'-posts?
         if (postBefore.isWiki && postAfter.tyype == PostType.Normal) {
           val isOwn =  changer.id == author.id || (getTheParticipant(author.id) match {
             case anon: Anonym => anon.anonForPatId == changer.id
