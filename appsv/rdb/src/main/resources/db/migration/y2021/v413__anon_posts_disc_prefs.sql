@@ -46,6 +46,10 @@ create domain anon_or_guest_id_d pat_id_d;
 alter  domain anon_or_guest_id_d add
    constraint anon_or_guest_id_d_c_ltm10 check (value <= -10);
 
+create domain choose_yes_d i16_d;
+alter  domain choose_yes_d add
+   constraint choose_yes_d_c_in check (value in (2, 3));
+
 create domain no_choose_yes_d i16_d;
 alter  domain no_choose_yes_d add
    constraint no_choose_yes_d_c_in check (value in (1, 2, 3));
@@ -232,10 +236,26 @@ create index discnotfprefs_i_tagcid on disc_notf_prefs_t (site_id, discs_with_ta
 -- e.g. tag_a.as_int > 7   or  tag_a.as_int between 5 and 8  ? hmm
 -- alter table disc_notf_prefs_t add column only_if_expr_c jsonb;  -- nope!
 
+create domain folder_path_d text_nonempty_ste60_d;
+alter  domain folder_path_d add
+   constraint folder_path_d_c_chars check (value ~ '^/([a-z0-9][a-z0-9_-]*/)+$');
 
+alter table categories3 add column base_folder_c        folder_path_d;
+alter table categories3 add column pages_start_wiki_c   choose_yes_d;
+alter table categories3 add column use_page_ids_c       i16_gz_d;
+alter table categories3 add column allow_comments_c     i16_gz_d; -- yes / no-but-may-reply-to-old / no-but-keep-old / no-and-hide-old  ?
+
+-- alter table categories3 add column default_markup_c         choose_yes_d;  -- no, instead, always https://github.com/foambubble/foam markup?
+-- alter table categories3 add column wiki_main_page_id_c      page_id_st_d;
+-- alter table categories3 add column wiki_main_page_id_int_c  page_id_d__later;
+
+-- Maybe later:
 create table disc_prefs_t(
   site_id_c                site_id_d not null,
   memb_id_c                member_id_d not null,
+
+  prefs_id_c               i32_abs_lt2e9_nz_d,
+  use_prefs_id_c           i32_abs_lt2e9_nz_d,
 
   discs_in_whole_site_c    bool,
   discs_in_cat_id_c        cat_id_d,  -- ren to just:  cat_id_c
@@ -245,6 +265,10 @@ create table disc_prefs_t(
   discs_with_tag_c_id_c    tagtype_id_d,
   page_id_st_c             page_id_st_d,
   page_id_int_c            page_id_d__later,
+
+  posts_start_wiki_c       choose_yes_d,
+  wiki_main_page_id_c      page_id_st_d,
+  wiki_main_page_id_int_c  page_id_d__later,
 
   posts_start_anon_c       no_choose_yes_d,
   posts_stay_anon_c        no_choose_yes_d,
