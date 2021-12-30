@@ -26,6 +26,16 @@ alter  domain i32_lt2e9_gt1000_d add
    constraint i32_lt2e9_gt1000_d_c_gt1000 check (value > 1000);
 
 
+create domain content_set_type_d int;
+alter  domain content_set_type_d add
+   constraint content_set_type_c_in_11 check (value in (11));
+  -- 1 = whole site, 4 = mixed (opt cat + opt tags + opt page ids),
+  -- 7 = tag(s) only, 11 = cat(s) only, 14 = page(s), 17 = replies?
+
+create domain folder_path_d text_nonempty_ste60_d;
+alter  domain folder_path_d add
+   constraint folder_path_d_c_chars check (value ~ '^/([a-z0-9][a-z0-9_-]*/)+$');
+
 create domain page_id_st_d text_nonempty_ste60_d;
 alter  domain page_id_st_d add
    constraint page_id_st_d_c_chars check (value ~ '^[a-zA-Z0-9_]*$');
@@ -193,137 +203,126 @@ alter table users3 add constraint pats_c_guest_w_no_browserid_has_extid check (
 
 
 
--- Discussion preferences
+-- Notification preferences
 -------------------------------------------------
 
+-- About new pages, replies, maybe edits to wiki pages.
 
-alter table page_notf_prefs3  rename to disc_notf_prefs_t;
-alter table disc_notf_prefs_t rename column people_id to pat_id_c;
 
-alter table disc_notf_prefs_t rename column pages_in_whole_site  to discs_in_whole_site_c;
-alter table disc_notf_prefs_t rename column pages_in_category_id to discs_in_cat_id_c;
-alter table disc_notf_prefs_t rename column incl_sub_categories  to incl_sub_cats_c;
-alter table disc_notf_prefs_t rename column pages_pat_created    to discs_pat_created_c;
-alter table disc_notf_prefs_t rename column pages_pat_replied_to to discs_pat_replied_to;
+alter table page_notf_prefs3  rename to page_notf_prefs_t;
+alter table page_notf_prefs_t rename column people_id to pat_id_c;
+
+alter table page_notf_prefs_t rename column pages_in_whole_site  to pages_in_whole_site_c;
+alter table page_notf_prefs_t rename column pages_in_category_id to pages_in_cat_id_c;
+alter table page_notf_prefs_t rename column incl_sub_categories  to incl_sub_cats_c;
+alter table page_notf_prefs_t rename column pages_pat_created    to pages_pat_created_c;
+alter table page_notf_prefs_t rename column pages_pat_replied_to to pages_pat_replied_to;
 
 -- Denormalized tags?
-alter table disc_notf_prefs_t add column discs_with_tag_a_id_c tagtype_id_d;
-alter table disc_notf_prefs_t add column discs_with_tag_b_id_c tagtype_id_d;
-alter table disc_notf_prefs_t add column discs_with_tag_c_id_c tagtype_id_d;
+alter table page_notf_prefs_t add column cont_with_tag_a_id_c tagtype_id_d;
+alter table page_notf_prefs_t add column cont_with_tag_b_id_c tagtype_id_d;
+alter table page_notf_prefs_t add column cont_with_tag_c_id_c tagtype_id_d;
 
--- ix discnotfprefs_i_tagaid
-alter table disc_notf_prefs_t add constraint discnotfprefs_withtaga_r_tags
-    foreign key (site_id, discs_with_tag_a_id_c)
+-- ix pagenotfprefs_i_tagaid
+alter table page_notf_prefs_t add constraint pagenotfprefs_withtaga_r_tags
+    foreign key (site_id, cont_with_tag_a_id_c)
     references tagtypes_t (site_id_c, id_c) deferrable;
 
--- ix discnotfprefs_i_tagbid
-alter table disc_notf_prefs_t add constraint discnotfprefs_withtagb_r_tags
-    foreign key (site_id, discs_with_tag_b_id_c)
+-- ix pagenotfprefs_i_tagbid
+alter table page_notf_prefs_t add constraint pagenotfprefs_withtagb_r_tags
+    foreign key (site_id, cont_with_tag_b_id_c)
     references tagtypes_t (site_id_c, id_c) deferrable;
 
-  -- ix discnotfprefs_i_tagcid
-alter table disc_notf_prefs_t add constraint discnotfprefs_withtagc_r_tags
-    foreign key (site_id, discs_with_tag_c_id_c)
+  -- ix pagenotfprefs_i_tagcid
+alter table page_notf_prefs_t add constraint pagenotfprefs_withtagc_r_tags
+    foreign key (site_id, cont_with_tag_c_id_c)
     references tagtypes_t (site_id_c, id_c) deferrable;
 
-create index discnotfprefs_i_tagaid on disc_notf_prefs_t (site_id, discs_with_tag_a_id_c);
-create index discnotfprefs_i_tagbid on disc_notf_prefs_t (site_id, discs_with_tag_b_id_c);
-create index discnotfprefs_i_tagcid on disc_notf_prefs_t (site_id, discs_with_tag_c_id_c);
+create index pagenotfprefs_i_tagaid on page_notf_prefs_t (site_id, cont_with_tag_a_id_c);
+create index pagenotfprefs_i_tagbid on page_notf_prefs_t (site_id, cont_with_tag_b_id_c);
+create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, cont_with_tag_c_id_c);
 
 
--- And simple expressions? Wait, NO. Use ES instead:
---   https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-range-query.html
--- e.g. tag_a.as_int > 7   or  tag_a.as_int between 5 and 8  ? hmm
--- alter table disc_notf_prefs_t add column only_if_expr_c jsonb;  -- nope!
 
-create domain folder_path_d text_nonempty_ste60_d;
-alter  domain folder_path_d add
-   constraint folder_path_d_c_chars check (value ~ '^/([a-z0-9][a-z0-9_-]*/)+$');
 
-alter table categories3 add column base_folder_c        folder_path_d;
-alter table categories3 add column pages_start_wiki_c   choose_yes_d;
-alter table categories3 add column use_page_ids_c       i16_gz_d;
-alter table categories3 add column allow_comments_c     i16_gz_d; -- yes / no-but-may-reply-to-old / no-but-keep-old / no-and-hide-old  ?
 
--- alter table categories3 add column default_markup_c         choose_yes_d;  -- no, instead, always https://github.com/foambubble/foam markup?
--- alter table categories3 add column wiki_main_page_id_c      page_id_st_d;
--- alter table categories3 add column wiki_main_page_id_int_c  page_id_d__later;
+-- Content settings/preferences
+-------------------------------------------------
 
--- Maybe later:
-create table disc_prefs_t(
-  site_id_c                site_id_d not null,
-  memb_id_c                member_id_d not null,
+-- For categories and tags. Can sometimes be overridden by groups or individual users.
 
-  prefs_id_c               i32_abs_lt2e9_nz_d,
-  use_prefs_id_c           i32_abs_lt2e9_nz_d,
 
-  discs_in_whole_site_c    bool,
-  discs_in_cat_id_c        cat_id_d,  -- ren to just:  cat_id_c
-  -- Denormalized AND tag list:
-  discs_with_tag_a_id_c    tagtype_id_d,
-  discs_with_tag_b_id_c    tagtype_id_d,
-  discs_with_tag_c_id_c    tagtype_id_d,
-  page_id_st_c             page_id_st_d,
-  page_id_int_c            page_id_d__later,
 
-  posts_start_wiki_c       choose_yes_d,
-  wiki_main_page_id_c      page_id_st_d,
-  wiki_main_page_id_int_c  page_id_d__later,
+create table cont_prefs_t(
+  -- Unique key, contprefs_u_prefsid:
+  site_id_c                        site_id_d not null,
+  prefs_id_c                       i32_abs_lt2e9_nz_d not null,
+  -- Null or unique, contprefs_u_membid_prefsid:
+  memb_id_c                        member_id_d,  -- REMOVE!?
 
-  posts_start_anon_c       no_choose_yes_d,
-  posts_stay_anon_c        no_choose_yes_d,
-  min_anon_mins_c          i32_gz_d,
-  deanon_pages_aft_mins_c  i32_gz_d,
-  deanon_posts_aft_mins_c  i32_gz_d,
+  cont_set_type_c                  content_set_type_d not null,
 
-  -- ix: discprefs_i_membid
-  constraint discprefs_r_pats foreign key (site_id_c, memb_id_c)
+  ops_start_anon_c                 no_choose_yes_d,
+  cmts_start_anon_c                no_choose_yes_d,
+  -- posts_stay_anon__unimpl_c        no_choose_yes_d,
+  -- min_anon_mins__unimpl_c          i32_gz_d,
+  -- deanon_pages_aft_mins__unimpl_c  i32_gz_d,
+  -- deanon_posts_aft_mins__unimpl_c  i32_gz_d,
+
+  -- sect_page_id__unimpl_c           page_id_st_d,
+  -- sect_page_id_int__unimpl_c       page_id_d__later,
+
+  -- pin_in_linksbar__unimpl_c        show_in_linksbar_d,
+  -- pin_in_linksbar_order__unimpl_c  i32_gz_d,
+  -- pin_in_cat_order__unimpl_c       i32_gz_d,
+  -- pin_in_globally__unimpl_c        i32_gz_d,
+
+  -- base_folder__unimpl_c            folder_path_d,
+  -- show_page_ids__unimpl_c          i16_gz_d,
+  -- ops_start_wiki__unimpl_c         choose_yes_d,
+  -- cmts_start_wiki__unimpl_c        choose_yes_d,
+  -- show_op_author__unimpl_c         i16_gz_d,
+  -- allow_cmts__unimpl_c             i16_gz_d, -- yes / no-but-may-reply-to-old / no-but-keep-old / no-and-hide-old  ?
+
+  -- constraint contprefs_p_membid_prefsid primary key (site_id_c, memb_id_c, prefs_id_c),
+
+  -- fk ix: contprefs_i_membid
+  constraint contprefs_r_pats foreign key (site_id_c, memb_id_c)
       references users3 (site_id, user_id) deferrable,
 
-  -- ix discprefs_i_catid
-  constraint discprefs_r_cats foreign key (site_id_c, discs_in_cat_id_c)
-      references categories3 (site_id, id) deferrable,
-
-  -- ix discprefs_i_tagaid
-  constraint discprefs_withtaga_r_tags foreign key (site_id_c, discs_with_tag_a_id_c)
-      references tagtypes_t (site_id_c, id_c) deferrable,
-
-  -- ix discprefs_i_tagbid
-  constraint discprefs_withtagb_r_tags foreign key (site_id_c, discs_with_tag_b_id_c)
-      references tagtypes_t (site_id_c, id_c) deferrable,
-
-  -- ix discprefs_i_tagcid
-  constraint discprefs_withtagc_r_tags foreign key (site_id_c, discs_with_tag_c_id_c)
-      references tagtypes_t (site_id_c, id_c) deferrable,
-
-  -- ix: discprefs_i_pageid
-  constraint discprefs_r_pages foreign key (site_id_c, page_id_st_c)
-      references pages3 (site_id, page_id) deferrable,
-
-  constraint discprefs_u_memb_wholesite unique (site_id_c, memb_id_c, discs_in_whole_site_c),
-  constraint discprefs_u_memb_incat     unique (site_id_c, memb_id_c, discs_in_cat_id_c),
-  constraint discprefs_u_memb_pageid    unique (site_id_c, memb_id_c, page_id_st_c),
-
-  -- The prefs must be for something.
-  constraint discprefs_c_for_1_sth check(
-    1 = num_nonnulls(
-            discs_in_whole_site_c,
-            discs_in_cat_id_c,
-            page_id_st_c)),
-
-  -- True or null.
-  constraint discprefs_c_wholesite_true check (discs_in_whole_site_c),
+  -- For specific users, id must be < 0 — so that there can be a > 0 constraint,
+  -- in cats_t and tagtypes_t, for the default prefs, to catch bugs (don't want the
+  -- default prefs to accidentally reference a specific user's/group's prefs).
+  constraint contprefs_c_id_gtz_iff_everyone check ((memb_id_c is null) = (prefs_id_c > 0)),
 
   -- Guests and anon users cannot configure discussion preferences — only groups
   -- and real users can.
-  constraint discprefs_c_for_users_and_groups check (memb_id_c >= 10)
+  constraint contprefs_c_for_users_and_groups check (memb_id_c >= 10),
+
+  -- Should use  memb_id_c = null, not 10, for everyone's prefs, otherwise
+  -- I think foreign keys won't work (Postgres wouldn't know the rows were unique?).
+  constraint contprefs_c_null_not_everyone check (memb_id_c <> 10)
 );
 
 
+create        index contprefs_i_prefsid on cont_prefs_t (site_id_c, prefs_id_c);
+create unique index contprefs_u_prefsid on cont_prefs_t (site_id_c, prefs_id_c)
+    where memb_id_c is null;
 
-create index discprefs_i_membid on disc_prefs_t (site_id_c, memb_id_c);
-create index discprefs_i_catid  on disc_prefs_t (site_id_c, discs_in_cat_id_c);
-create index discprefs_i_tagaid on disc_prefs_t (site_id_c, discs_with_tag_a_id_c);
-create index discprefs_i_tagbid on disc_prefs_t (site_id_c, discs_with_tag_b_id_c);
-create index discprefs_i_tagcid on disc_prefs_t (site_id_c, discs_with_tag_c_id_c);
-create index discprefs_i_pageid on disc_prefs_t (site_id_c, page_id_st_c);
+create        index contprefs_i_membid         on cont_prefs_t (site_id_c, memb_id_c);
+create unique index contprefs_u_membid_prefsid on cont_prefs_t (site_id_c, memb_id_c, prefs_id_c)
+    where memb_id_c is not null;
+
+
+
+-- Since id > 0, we can be sure we're linking to Everyone's prefs (rather than
+-- a specific user's or group's prefs).
+alter table categories3 add column cont_prefs_id_c  i32_gz_d;
+
+-- fk ix: cats_i_contprefsid
+-- unique ix: 
+alter table categories3 add constraint cats_contprefsid_r_contprefs
+    foreign key (site_id, cont_prefs_id_c)
+    references cont_prefs_t (site_id_c, prefs_id_c) deferrable;
+
+create index cats_i_contprefsid on categories3 (site_id, cont_prefs_id_c);

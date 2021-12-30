@@ -6,7 +6,7 @@
 --======================================================================
 --  Domains
 --======================================================================
---  pat_type_d
+--  pat_type_d  REMOVE
 --  ------------------------------------------------------------------------
 --  comment on domain page_id_st_d is $_$
 --  
@@ -108,16 +108,53 @@ $_$;
 
 
 --======================================================================
---  disc_prefs_t
+--  cont_prefs_t
 --======================================================================
 
 ------------------------------------------------------------------------
--- comment on column  disc_prefs_t.anon_by_def_c  is $_$
+comment on table  cont_prefs_t  is $_$
+
+Settings and preferences that make sense for all of categories, tags
+and specific pages. Usually they're default, for everyone in the forum;
+then, memb_id_c is 10 (Everyone) and prefs_id_c is > 0.
+
+But some preferences can be overridden by user groups or individual users
+themselves — then, prefs_id_c is < 0 and memb_id_c is the user/group id.
+Let's say you want to always post anonymously in a specific
+category. Then, you can (not impl though) set ops_start_anon_c and cmts_start_anon_c
+to true, for yourself only, in that category. And thereafter you cannot
+forget to be anonyomus, there. Whilst others are unaffected.
+Or maybe you're the teacher, and don't care about being anonymous in one
+specific category — whilst the default (for all students) is to be anonymous. 
+
+Maybe later, there'll be a table cont_mixed_prefs_t for specifying
+content preferences for many categories, optionally combined with tags,
+in one single row. But currently there's one cont_prefs_t per category,
+maybe "soon" per tag too.
+
+Wikis: cont_prefs_t lets you implement wikis by making a forum
+category a wiki category: set ops_start_wiki_c to true, and set
+base_folder_c to e.g. '/wiki/' and show_page_ids_c to false.
+Alternatively, you can create a *tag* named 'wiki', and configure the
+same settings for that tag (instaed of a category).
+Then wiki pages can be placed in the categories where it makes the most sense
+whilst still being part of a wiki — just tag them with the wiki tag.
+So, a wiki via a category, or a tag. What makes sense, is community
+specific I suppose.
+
+Docs: In a documentation / articles category, you might want to set
+show_op_author_c = false and allow_cmts_c = false,
+and maybe base_folder_c = '/docs/'.
+Or you can use a 'docs' tag, and have docs in different categories,
+whilst still appearing below the '/docs/' URL path'
+$_$;  -- '
+------------------------------------------------------------------------
+-- comment on column  cont_prefs_t.anon_by_def_c  is $_$
 -- 
 -- If posts in this category, are anonymous, by default.
 -- $_$;
 -- ------------------------------------------------------------------------
--- comment on column  disc_prefs_t.def_anon_level_c  is $_$
+-- comment on column  cont_prefs_t.def_anon_level_c  is $_$
 -- 
 -- Default anonymity level, in this category.
 -- $_$; -- '

@@ -37,13 +37,13 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
     if (notfPref.pageId.isDefined)
       "page_id" -> notfPref.pageId.get.asAnyRef
     else if (notfPref.pagesInCategoryId.isDefined)
-      "discs_in_cat_id_c" -> notfPref.pagesInCategoryId.get.asAnyRef
+      "pages_in_cat_id_c" -> notfPref.pagesInCategoryId.get.asAnyRef
     else if (notfPref.wholeSite)
-      "discs_in_whole_site_c" -> true.asAnyRef
+      "pages_in_whole_site_c" -> true.asAnyRef
     else if (notfPref.pagesPatCreated)
-      "discs_pat_created_c" -> true.asAnyRef
+      "pages_pat_created_c" -> true.asAnyRef
     else if (notfPref.pagesPatRepliedTo)
-      "discs_pat_replied_to" -> true.asAnyRef
+      "pages_pat_replied_to" -> true.asAnyRef
     else
       die("TyE2ABK057")
 
@@ -62,15 +62,15 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
     val (thingColumnName, _) = thingColumnNameValue(notfPref)
 
     val insertStatement = s"""
-      insert into disc_notf_prefs_t (
+      insert into page_notf_prefs_t (
         site_id,
         pat_id_c,
         notf_level,
         page_id,
-        discs_pat_created_c,
-        discs_pat_replied_to,
-        discs_in_cat_id_c,
-        discs_in_whole_site_c)
+        pages_pat_created_c,
+        pages_pat_replied_to,
+        pages_in_cat_id_c,
+        pages_in_whole_site_c)
         -- pages_with_tag_label_id,
       values (?, ?, ?, ?, ?, ?, ?, ?)
       -- There can be only one on-conflict clause.
@@ -97,7 +97,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
   override def deletePageNotfPref(notfPref: PageNotfPref): Boolean = {
     val (thingColumnName, thingColumnValue) = thingColumnNameValue(notfPref)
     val deleteStatement = s"""
-      delete from disc_notf_prefs_t
+      delete from page_notf_prefs_t
       where site_id = ?
         and pat_id_c = ?
         and $thingColumnName = ?
@@ -111,16 +111,16 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
         : PageNotfLevels = {
     def selectNotfLevelWhere(what: Int) = s"""
       select notf_level, $what as what
-      from disc_notf_prefs_t
+      from page_notf_prefs_t
       where site_id = ?
         and pat_id_c = ?"""
 
     val query = s"""
       ${selectNotfLevelWhere(111)} and page_id = ?
       union
-      ${selectNotfLevelWhere(222)} and discs_in_cat_id_c = ?
+      ${selectNotfLevelWhere(222)} and pages_in_cat_id_c = ?
       union
-      ${selectNotfLevelWhere(333)} and discs_in_whole_site_c
+      ${selectNotfLevelWhere(333)} and pages_in_whole_site_c
       """
 
     val values = List(
@@ -155,11 +155,11 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
   }
 
   def loadPageNotfPrefsOnCategory(categoryId: CategoryId): Seq[PageNotfPref] = {
-    loadPageNotfPrefsOnSth("discs_in_cat_id_c", categoryId.asAnyRef)
+    loadPageNotfPrefsOnSth("pages_in_cat_id_c", categoryId.asAnyRef)
   }
 
   def loadPageNotfPrefsOnSite(): Seq[PageNotfPref] = {
-    loadPageNotfPrefsOnSth("discs_in_whole_site_c", true.asAnyRef)
+    loadPageNotfPrefsOnSth("pages_in_whole_site_c", true.asAnyRef)
   }
 
   private def loadPageNotfPrefsOnSth(thingColumnName: String, thingColumnValue: AnyRef)
@@ -172,7 +172,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
         s"and $thingColumnName = ?"
       }
     val query = s"""
-      select * from disc_notf_prefs_t
+      select * from page_notf_prefs_t
       where site_id = ? $andThingEq
       """
     runQueryFindMany(query, values.toList, readNotfPref)
@@ -205,7 +205,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
     val andPageIdClause = pageId match {
       case None =>
         if (pagesRepliedTo)
-          "and discs_pat_replied_to"  // unimpl:  discs_pat_created_c
+          "and pages_pat_replied_to"  // unimpl:  pages_pat_created_c
         else
           "and page_id is null"
       case Some(id) =>
@@ -213,7 +213,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
         "and page_id = ?"
     }
     val query = s"""
-      select * from disc_notf_prefs_t
+      select * from page_notf_prefs_t
       where site_id = ?
         and pat_id_c in (${makeInListFor(memberIds)})
         $andPageIdClause
@@ -227,10 +227,10 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {  // RENAME  DiscNotPref
           peopleId = getInt(rs, "pat_id_c"),
           notfLevel = NotfLevel.fromInt(getInt(rs, "notf_level")).getOrElse(NotfLevel.Normal),
           pageId = getOptString(rs, "page_id"),
-          pagesPatCreated = getOptBool(rs, "discs_pat_created_c").getOrElse(false),
-          pagesPatRepliedTo = getOptBool(rs, "discs_pat_replied_to").getOrElse(false),
-          pagesInCategoryId = getOptInt(rs, "discs_in_cat_id_c"),
-          wholeSite = getOptBool(rs, "discs_in_whole_site_c").getOrElse(false))
+          pagesPatCreated = getOptBool(rs, "pages_pat_created_c").getOrElse(false),
+          pagesPatRepliedTo = getOptBool(rs, "pages_pat_replied_to").getOrElse(false),
+          pagesInCategoryId = getOptInt(rs, "pages_in_cat_id_c"),
+          wholeSite = getOptBool(rs, "pages_in_whole_site_c").getOrElse(false))
   }
 
 }
