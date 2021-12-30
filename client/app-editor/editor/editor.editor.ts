@@ -1313,8 +1313,11 @@ export const Editor = createFactory<any, EditorState>({
         // For now, skip guidelines, for blog comments — they would break e2e tests,
         // and maybe are annoying?
         guidelines: eds.isInIframe ? undefined : anyGuidelines,
-        doAsAnon: draft && draft.doAsAnon,  // not yet impl [doAsAnon_draft]
+        // doAsAnon: draft && draft.doAsAnon ? draft.doAsAnon : this.state.doAsAnon,  // not yet impl [doAsAnon_draft]
       };
+      if (draft && draft.doAsAnon) {
+        newState.doAsAnon = draft.doAsAnon;  // not yet impl [doAsAnon_draft]
+      }
       this.setState(newState, () => {
         this.focusInputFields();
         this.scrollToPreview = true;
