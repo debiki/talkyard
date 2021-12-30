@@ -216,31 +216,31 @@ alter table page_notf_prefs_t rename column pages_in_whole_site  to pages_in_who
 alter table page_notf_prefs_t rename column pages_in_category_id to pages_in_cat_id_c;
 alter table page_notf_prefs_t rename column incl_sub_categories  to incl_sub_cats_c;
 alter table page_notf_prefs_t rename column pages_pat_created    to pages_pat_created_c;
-alter table page_notf_prefs_t rename column pages_pat_replied_to to pages_pat_replied_to;
+alter table page_notf_prefs_t rename column pages_pat_replied_to to pages_pat_replied_to_c;
 
 -- Denormalized tags?
-alter table page_notf_prefs_t add column cont_with_tag_a_id_c tagtype_id_d;
-alter table page_notf_prefs_t add column cont_with_tag_b_id_c tagtype_id_d;
-alter table page_notf_prefs_t add column cont_with_tag_c_id_c tagtype_id_d;
+alter table page_notf_prefs_t add column pages_with_tag_a_id_c tagtype_id_d;
+alter table page_notf_prefs_t add column pages_with_tag_b_id_c tagtype_id_d;
+alter table page_notf_prefs_t add column pages_with_tag_c_id_c tagtype_id_d;
 
 -- ix pagenotfprefs_i_tagaid
 alter table page_notf_prefs_t add constraint pagenotfprefs_withtaga_r_tags
-    foreign key (site_id, cont_with_tag_a_id_c)
+    foreign key (site_id, pages_with_tag_a_id_c)
     references tagtypes_t (site_id_c, id_c) deferrable;
 
 -- ix pagenotfprefs_i_tagbid
 alter table page_notf_prefs_t add constraint pagenotfprefs_withtagb_r_tags
-    foreign key (site_id, cont_with_tag_b_id_c)
+    foreign key (site_id, pages_with_tag_b_id_c)
     references tagtypes_t (site_id_c, id_c) deferrable;
 
   -- ix pagenotfprefs_i_tagcid
 alter table page_notf_prefs_t add constraint pagenotfprefs_withtagc_r_tags
-    foreign key (site_id, cont_with_tag_c_id_c)
+    foreign key (site_id, pages_with_tag_c_id_c)
     references tagtypes_t (site_id_c, id_c) deferrable;
 
-create index pagenotfprefs_i_tagaid on page_notf_prefs_t (site_id, cont_with_tag_a_id_c);
-create index pagenotfprefs_i_tagbid on page_notf_prefs_t (site_id, cont_with_tag_b_id_c);
-create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, cont_with_tag_c_id_c);
+create index pagenotfprefs_i_tagaid on page_notf_prefs_t (site_id, pages_with_tag_a_id_c);
+create index pagenotfprefs_i_tagbid on page_notf_prefs_t (site_id, pages_with_tag_b_id_c);
+create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, pages_with_tag_c_id_c);
 
 
 
@@ -252,13 +252,20 @@ create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, cont_with_tag
 -- For categories and tags. Can sometimes be overridden by groups or individual users.
 
 
+-- create table cont_prefs_mixed_t(
+--   site_id_c                        site_id_d,    -- pk
+--   for_pat_id_c                     member_id_d,  -- pk
+--   cont_prefs_pat_id_c
+--   cont_prefs_nr_c
+--   cat_id_c
+--   tagtype_id_c
+--   page_id_c
+
 
 create table cont_prefs_t(
-  -- Unique key, contprefs_u_prefsid:
-  site_id_c                        site_id_d not null,
-  prefs_id_c                       i32_abs_lt2e9_nz_d not null,
-  -- Null or unique, contprefs_u_membid_prefsid:
-  memb_id_c                        member_id_d,  -- REMOVE!?
+  site_id_c                        site_id_d, -- pk
+  pat_id_c                         member_id_d,  -- pk
+  prefs_nr_c                       i16_gz_d,  -- pk
 
   cont_set_type_c                  content_set_type_d not null,
 
@@ -284,45 +291,36 @@ create table cont_prefs_t(
   -- show_op_author__unimpl_c         i16_gz_d,
   -- allow_cmts__unimpl_c             i16_gz_d, -- yes / no-but-may-reply-to-old / no-but-keep-old / no-and-hide-old  ?
 
-  -- constraint contprefs_p_membid_prefsid primary key (site_id_c, memb_id_c, prefs_id_c),
+  constraint contprefs_p_prefsid primary key (site_id_c, pat_id_c, prefs_nr_c),
 
-  -- fk ix: contprefs_i_membid
-  constraint contprefs_r_pats foreign key (site_id_c, memb_id_c)
+  -- fk ix: pk
+  constraint contprefs_r_pats foreign key (site_id_c, pat_id_c)
       references users3 (site_id, user_id) deferrable,
 
-  -- For specific users, id must be < 0 — so that there can be a > 0 constraint,
-  -- in cats_t and tagtypes_t, for the default prefs, to catch bugs (don't want the
-  -- default prefs to accidentally reference a specific user's/group's prefs).
-  constraint contprefs_c_id_gtz_iff_everyone check ((memb_id_c is null) = (prefs_id_c > 0)),
+  --  -- For specific users, id must be < 0 — so that there can be a > 0 constraint,
+  --  -- in cats_t and tagtypes_t, for the default prefs, to catch bugs (don't want the
+  --  -- default prefs to accidentally reference a specific user's/group's prefs).
+  --  constraint contprefs_c_id_gtz_iff_everyone check ((memb_id_c is null) = (prefs_id_c > 0)),
 
   -- Guests and anon users cannot configure discussion preferences — only groups
   -- and real users can.
-  constraint contprefs_c_for_users_and_groups check (memb_id_c >= 10),
+  constraint contprefs_c_for_users_and_groups check (pat_id_c >= 10)
 
-  -- Should use  memb_id_c = null, not 10, for everyone's prefs, otherwise
-  -- I think foreign keys won't work (Postgres wouldn't know the rows were unique?).
-  constraint contprefs_c_null_not_everyone check (memb_id_c <> 10)
+  -- -- Should use  memb_id_c = null, not 10, for everyone's prefs, otherwise
+  -- -- I think foreign keys won't work (Postgres wouldn't know the rows were unique?).
+  -- constraint contprefs_c_null_not_everyone check (memb_id_c <> 10)
 );
 
 
-create        index contprefs_i_prefsid on cont_prefs_t (site_id_c, prefs_id_c);
-create unique index contprefs_u_prefsid on cont_prefs_t (site_id_c, prefs_id_c)
-    where memb_id_c is null;
 
-create        index contprefs_i_membid         on cont_prefs_t (site_id_c, memb_id_c);
-create unique index contprefs_u_membid_prefsid on cont_prefs_t (site_id_c, memb_id_c, prefs_id_c)
-    where memb_id_c is not null;
+alter table categories3 add column cont_prefs_nr_c  i32_gz_d;
+alter table categories3 add column cont_pat_id_10_c i32_gz_d default 10;
+alter table categories3 add constraint cont_patid10_c_eq10 check (cont_pat_id_10_c = 10);
 
-
-
--- Since id > 0, we can be sure we're linking to Everyone's prefs (rather than
--- a specific user's or group's prefs).
-alter table categories3 add column cont_prefs_id_c  i32_gz_d;
-
--- fk ix: cats_i_contprefsid
+-- fk ix: cats_i_patid10_contprefsid
 -- unique ix: 
 alter table categories3 add constraint cats_contprefsid_r_contprefs
-    foreign key (site_id, cont_prefs_id_c)
-    references cont_prefs_t (site_id_c, prefs_id_c) deferrable;
+    foreign key (site_id, cont_pat_id_10_c, cont_prefs_nr_c)
+    references cont_prefs_t (site_id_c, pat_id_c, prefs_nr_c) deferrable;
 
-create index cats_i_contprefsid on categories3 (site_id, cont_prefs_id_c);
+create index cats_i_patid10_contprefsid on categories3 (site_id, cont_pat_id_10_c, cont_prefs_nr_c);

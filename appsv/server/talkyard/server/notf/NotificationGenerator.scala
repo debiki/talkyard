@@ -341,7 +341,7 @@ case class NotificationGenerator(
     //
     val pageRepliersPrefsOnPage: Set[PageNotfPrefAndWhy] = {  // [interact_notf_pref]
       if (page.meta.pageType.isChat) {
-        // Chats tend to be chatty? Maybe better let the pages_pat_replied_to
+        // Chats tend to be chatty? Maybe better let the pages_pat_replied_to_c
         // setting skip chats. And not impossible it'd be bad for performance
         // to notify / email hundreds of people in a chat "all the time"?
         Set.empty
