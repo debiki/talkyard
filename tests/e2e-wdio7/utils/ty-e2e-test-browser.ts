@@ -8494,6 +8494,15 @@ export class TyE2eTestBrowser {
         enabledUsersTabSelector: '.e_EnabledUsB',
         waitingUsersTabSelector: '.e_WaitingUsB',
 
+        goHere: async (origin?: St, opts: { loginAs? } = {}) => {
+          await this.go2((origin || '') + '/-/admin/users');
+          if (opts.loginAs) {
+            await this.loginDialog.loginWithPassword(opts.loginAs);
+          }
+          await this.adminArea.users.waitForLoaded();
+        },
+
+
         waitForLoaded: async () => {
           await this.waitForVisible('.e_AdminUsersList');
         },

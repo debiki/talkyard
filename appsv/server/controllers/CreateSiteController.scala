@@ -128,11 +128,15 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
     val okE2ePassword = hasOkE2eTestPassword(request.request)
 
     val (
+        ownerUsername,
+        ownerFullName,
         ownerEmailAddr,
         createForum,
         createEmbComs) =
-          if (!isPubApi) (None, false, false)
+          if (!isPubApi) (None, None, None, false, false)
           else (
+            JsonUtils.parseOptSt(body, "ownerUsername"),
+            JsonUtils.parseOptSt(body, "ownerFullName"),
             JsonUtils.parseOptSt(body, "ownerEmailAddress"),
             JsonUtils.parseOptBo(body, "createForum") getOrElse false,
             JsonUtils.parseOptBo(body, "createEmbeddedComments") getOrElse false)
@@ -214,7 +218,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
 
           val anyOwner = ownerEmailAddr map { ownerEmail =>
             val ownerUserData = NewPasswordUserData.create(
-                  name = None, username = "admin", // ?
+                  name = ownerFullName,
+                  username = ownerUsername.getOrElse("admin"),
                   email = ownerEmail,
                   emailVerifiedAt = Some(newSiteTx.now),  // or None
                   password = None,  // must set oneself

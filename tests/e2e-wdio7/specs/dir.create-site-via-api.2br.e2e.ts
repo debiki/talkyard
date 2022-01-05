@@ -16,14 +16,14 @@ let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
 let owen: Member;
 let owen_brA: TyE2eTestBrowser;
-let memah: Member;
-let memah_brB: TyE2eTestBrowser;
+let mei: Member;
+let mei_brB: TyE2eTestBrowser;
 
 let newSite: { id: SiteId, origin: St } | U;
 
 
 
-describe(`some-e2e-test  TyTE2E1234ABC`, () => {
+describe(`dir.create-site-via-api.2br  TyTE2ECREASITAPI`, () => {
 
   it(`Create browsers`, async () => {
     allBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
@@ -33,8 +33,8 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     owen = make.memberOwenOwner();
     owen_brA = brA;
     
-    //memah = forum.members.memah;
-    memah_brB = brB;
+    mei = make.memberMei();
+    mei_brB = brB;
   });
 
 
@@ -46,18 +46,20 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
       localHostname: 'e2e-test--site-via-api',
       //embeddingSiteAddress: '',
       organizationName: "E2E Test Create Site Via Api",
+      ownerUsername: owen.username,
       ownerEmailAddress: owen.emailAddress,
+      // Maybe later — so won't need to use Forgot-password link?
+      // ownerOneTimeLoginSecret: ___,
     }}).newSite;
   });
 
 
-  it(`? Skip rate limits`, async () => {
-    //  server.skipRateLimits(site.id);
+  it(`Skip rate limits`, async () => {
+    server.skipRateLimits(newSite.id);
   });
 
 
   it(`Owen goes to the admin area, ... `, async () => {
-console.log(JSON.stringify(newSite))
     await owen_brA.adminArea.goToUsersEnabled(newSite.origin);
   });
 
@@ -94,14 +96,35 @@ console.log(JSON.stringify(newSite))
   it("... he can login with the new password", async () => {
     await owen_brA.goAndWaitForNewUrl(newSite.origin);
     await owen_brA.topbar.clickLogout();
-    await owen_brA.complex.loginWithPasswordViaTopbar(owen.username, owen.password); // !
+    await owen_brA.complex.loginWithPasswordViaTopbar(owen.username, owen.password);
   });
 
 
-  it(`Owen logs in with his new password`, async () => {
+  it(`New members can sign up`, async () => {
+    await mei_brB.go2(newSite.origin);
+    await mei_brB.complex.signUpAsMemberViaTopbar(mei);
+  });
+
+
+  it(`Owen logs out ...`, async () => {
+    await owen_brA.topbar.clickLogout();
+  });
+
+  it(`... he can log in directly to the admin area`, async () => {
+    await owen_brA.topbar.clickLogout();
+    await owen_brA.adminArea.goToUsersEnabled();
     await owen_brA.loginDialog.loginWithPassword(owen);
   });
 
+
+  it(`Owen sees two users, in the active users tab`, async () => {
+    await owen_brA.adminArea.users.asserExactlyNumUsers(2);
+  });
+
+  it(`... namely he and Mei`, async () => {
+    await owen_brA.adminArea.users.assertUserListed(owen);
+    await owen_brA.adminArea.users.assertUserListed(mei);
+  });
 
 });
 
