@@ -1318,14 +1318,34 @@ export function store_makeDeletePostPatch(post: Post): StorePatch {
 // Current discussion
 //----------------------------------
 
+/// RENAME to disc_findAnonToReuse()?
 export function disc_findCurPageAnons(discStore: DiscStore, ps: {
-            forPatId?: PatId, replyToPostNr?: PostNr }): KnownAnonym[] {
+            forPatId?: PatId, startAtPostNr?: PostNr }): [NotAnon] | KnownAnonym[] {
   const me: Me = discStore.me;
   const forWhoId: PatId = ps.forPatId || me && me.id;
   const curPage = discStore.currentPage;
   const results: KnownAnonym[] = [];
   if (!curPage) return [];
-  //for (const p of Object.values(curPage.postsByNr)) {
+
+  // 1: First find out if pat was henself, or was anonymous, in any earlier
+  // post by hen, in the trail from ps.startAtPostNr and upwards
+  // towards the orig post.
+  const startAtPost: Post | U = ps.startAtPostNr && curPage.postsByNr[ps.startAtPostNr];
+  let nextPost: Post | U = startAtPost;
+  for (let i = 0; i < 100 && nextPost; ++i) {
+    const author: Pat | U = discStore.usersByIdBrief[nextPost.authorId];
+    if (!author) continue;
+    // If pat posted as henself (not anonymously) higher up in the sub thread,
+    // continue posting as henself — apparently pat has decided to use hens
+    // real username, in this sub thread.
+    if (author.id === forWhoId) return [{ newAnonStatus: AnonStatus.NotAnon }];
+    // But if pat posted anonymously, continue doing that.
+    if (author.anonForId === forWhoId) return [author as KnownAnonym];
+    nextPost = curPage.postsByNr[nextPost.parentNr];
+  }
+
+  // 2: If pat didn't post earlier in any sub thread ending at ps.startAtPostNr,
+  // then reues any anonym pat has used, elsewhere on the current page.
   _.forEach(curPage.postsByNr, function(p) {
     const author: Pat | U = discStore.usersByIdBrief[p.authorId];
     if (author && author.anonForId === forWhoId) {

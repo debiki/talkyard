@@ -948,7 +948,7 @@ export const Editor = createFactory<any, EditorState>({
     // Annoying! Try to get rid of eds.embeddedPageId? So can remove discStore2.
     const discStore2: DiscStore = { ...discStore, currentPageId: editorsPageId };
     const myAnonsHere = disc_findCurPageAnons(discStore2, {
-            forPatId: discStore.me?.id }); //, replyToPostNr: postNrs[0] });
+            forPatId: discStore.me?.id, startAtPostNr: postNrs[0] });
 
     const doAsAnon: WhichAnon | U = myAnonsHere.length
             ? { sameAnonId: myAnonsHere[0].id }
