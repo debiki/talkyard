@@ -286,7 +286,11 @@ const LoginDialog = createClassAndFactory({
         afterLoginCallback: state.afterLoginCallback,
         setChildDialog: this.setChildDialog,
         childDialog: state.childDialog,
-        closeDialog: this.close,
+        closeDialog: (closeAll?: 'CloseAllLoginDialogs') => {
+          if (!state.preventClose) {
+            this.close(closeAll);
+          }
+        },
         isLoggedIn: state.isLoggedIn,
         switchDialog: this.switchDialog,
         store: state.store } as LoginDialogContentProps);
@@ -656,7 +660,7 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
     // (This parameter tells the server to set a certain cookie. Setting it here
     // instead has no effect, don't know why.)
     const mayNotCreateUser =
-            props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
+            props.loginReason === LoginReason.LoginToAdministrate ? 'mayNotCreateUser&' : '';
 
     // A bit weird, just now when migrating to ScribeJava.
     let useServerGlobalIdp = false;
@@ -800,9 +804,19 @@ const PasswordLoginDialogContent = createClassAndFactory({
         r.a({ href: linkToResetPassword(),
             // Once the password has been reset, the user will be logged in automatically. Then
             // it's confusing if this dialog is still open, so close it on click. [5KWE02X]
+           // // Unless pat is in the admin area, because then there's nothing to see,
+           // // except for the login dialog (until logged in), and closing it would
+           // // leave the page completely empty. (Later: Also don't close if is a
+           // // must-login-to-see-anything forum)
             // UX COULD show reset-pwd input in a dialog directly here instead, don't want it
             // on a separate page.
             onClick: () => this.props.closeDialog('CloseAllLoginDialogs'),
+
+            /*() => {
+              if (!this.props.preventClose) {
+                this.props.closeDialog('CloseAllLoginDialogs');
+              }
+            }, */
             target: '_blank', className: 'dw-reset-pswd',
             style: { marginTop: '1ex', display: 'inline-block' }},
           t.ld.ForgotPwd)));

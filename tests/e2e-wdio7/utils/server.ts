@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as utils from './utils';
 import c from '../test-constants';
-import { j2s, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, dieIf,
+import { j2s, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, dieIf, logServerResponse,
         } from './log-and-die';
 
 const syncRequest = require('sync-request');
@@ -253,6 +253,26 @@ function showResponseBodyJson(body) {
   "———— Response body: ——————————————————————————————————————————————————————————————\n" +
   text +
   "\n——————————————————————————————————————————————————————————————————————————————————\n");
+}
+
+
+function createSiteViaPubApi(ps: { data: any,
+        wrongApiSecret?: true }): { newSite: { origin: St, id: SiteId }} {
+  // See CreateSiteController.apiV0_createSite.
+  const url = settings.mainSiteOrigin + '/-/v0/create-site';
+  const data = {
+    ...ps.data,
+  };
+  const apiSecret = ps.wrongApiSecret ? 'wrongCreateSiteApiSecret' :
+          'publicCreateSiteApiTestSecret';
+  const resp = postOrDie(url, data, { apiRequester: 'createsite', apiSecret,
+        fail: !!ps.wrongApiSecret,
+        hintIfErr:
+          `You need this in conf/my.conf:\n\n` +
+          'talkyard.createSiteApiSecret="publicCreateSiteApiTestSecret"' });
+  const respJson = resp.bodyJson();
+  logServerResponse(respJson);
+  return respJson;
 }
 
 
@@ -758,6 +778,7 @@ export default {
   lastEmailMatches,
   assertLastEmailMatches,
   apiV0: {
+    createSite: createSiteViaPubApi,
     fullTextSearch,
     listQuery,
     do_,

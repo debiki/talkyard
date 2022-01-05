@@ -280,9 +280,10 @@ class PlainApiActions(
       val secretKey = colonPassword.drop(1)
 
       // Could make username configurable in Play Fmw config, and on the API secrets
+      HACK // 1/2: Hardcoding the email webhooks endpoint below (dupl path).
       if (username == "emailwebhooks") {
         throwForbiddenIf(globals.config.emailWebhooksApiSecret.isNot(secretKey),
-              "TyE60MREH35", "Wrong password")
+              "TyE60MREH35", "Wrong handle-email API secret")
         throwForbiddenIf(request.path != "/-/handle-email", "TyE406MSE35", "Wrong path")
 
         val sysbot = dao.getTheUser(SysbotUserId)
@@ -290,6 +291,20 @@ class PlainApiActions(
               Some(TySession.singleApiCallSession(asPatId = SysbotUserId)),
               SidOk(TySession.ApiSecretPart12, 0, Some(SysbotUserId)),
               XsrfOk("_email_webhook_"), None, block)
+      }
+      HACK // 2/2: Hardcoding the create site API endpoint (dupl path).
+      if (username == "createsite") {
+        throwForbiddenIf(globals.config.createSiteApiSecret.isNot(secretKey),
+              "TyE70MREH36", "Wrong create site API secret")
+        val correctPath = "/-/v0/create-site"
+        throwForbiddenIf(request.path != correctPath, "TyE406MSE36", s"Wrong URL path, is: ${
+              request.path}, should be: $correctPath")
+
+        val sysbot = dao.getTheUser(SysbotUserId)
+        return runBlockIfAuthOk(request, site, dao, Some(sysbot),
+              Some(TySession.singleApiCallSession(asPatId = SysbotUserId)),
+              SidOk(TySession.ApiSecretPart12, 0, Some(SysbotUserId)),
+              XsrfOk("_create_site_"), None, block)
       }
 
       DO_AFTER // 2021-08-01 enable this always. Test in dev-test first, for now.

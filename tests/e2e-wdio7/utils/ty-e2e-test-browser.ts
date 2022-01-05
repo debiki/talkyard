@@ -4505,13 +4505,19 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('#te_WelcomeLoggedIn .btn');
       },
 
-      clickResetPasswordCloseDialogSwitchTab: async () => {
+      clickResetPasswordCloseDialogSwitchTab: async (ps: {
+            loginDialogWillClose?: false } = {}) => {
         // This click opens a new tab.
+        logBoring(`Click forgot-password link...`);
         await this.waitAndClick('.dw-reset-pswd');
         // The login dialog should close when we click the reset-password link. [5KWE02X]
-        await this.waitUntilModalGone();
-        await this.waitUntilLoadingOverlayGone();
+        if (ps.loginDialogWillClose !== false) {
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
+        }
+        logBoring(`Switch to other tab ...`);
         await this.swithToOtherTabOrWindow();
+        logBoring(`Wait for email input ...`);
         await this.waitForVisible('#e2eRPP_emailI');
       },
 

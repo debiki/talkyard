@@ -67,7 +67,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
       createSampleTopics = createSampleTopics,
       topicListStyle = topicListStyle)
 
-    request.dao.createForum(options, request.who)
+    request.dao.createForum2(options, request.who)
     Ok
   }
 

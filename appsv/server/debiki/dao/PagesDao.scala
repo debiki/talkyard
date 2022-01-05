@@ -182,6 +182,7 @@ trait PagesDao {
         (PagePathWithId, Post, Option[ReviewTask]) = {
 
     val now = globals.now()
+    val site = tx.loadSite() getOrDie "TyE8MWNP247"
     val realAuthorId = byWho.id
     val realAuthorAndLevels = loadUserAndLevels(byWho, tx)
     val realAuthor = realAuthorAndLevels.user
@@ -305,7 +306,7 @@ trait PagesDao {
 
     val uploadRefs = body.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2 = findUploadRefsInPost(bodyPost)
+      val uplRefs2 = findUploadRefsInPost(bodyPost, site = Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE7RTEGP04", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 

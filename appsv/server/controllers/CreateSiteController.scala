@@ -26,7 +26,7 @@ import talkyard.server.http._
 import javax.inject.Inject
 import org.owasp.encoder.Encode
 import play.api.libs.json._
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Result => p_Result}
 import scala.util.Try
 
 
@@ -88,20 +88,57 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
   }
 
 
+  def apiV0_createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
+        req =>
+    /*
+    import req.{theReqer => reqer}
+    val body: JsObject = JsonUtils.asJsObject(req.body, "The request body")
+    val ownerEmailAddr = JsonUtils.parseSt(body, "ownerEmailAddress")
+    val acceptTermsAndPrivacy = JsonUtils.parseBo(body, "acceptTermsAndPrivacy")
+    val localHostname = JsonUtils.parseSt(body, "localHostname")
+    val anyEmbeddingSiteAddress = JsonUtils.parseOptSt(body, "embeddingSiteAddress").trimNoneIfBlank
+    val organizationName = JsonUtils.parseSt(body, "organizationName").trim
+    */
+    createSiteImpl(req, isPubApi = true)
+  }
+
+
   def createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
         request =>
+    val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
+    throwIfMayNotCreateSite(request, isTestSiteOkayToDelete)
+    createSiteImpl(request, isPubApi = false)
+  }
+
+
+  private def createSiteImpl(request: JsonPostRequest, isPubApi: Bo): p_Result = {
     val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
     throwIfMayNotCreateSite(request, isTestSiteOkayToDelete)
 
     // In case we're running end-to-end tests:
     globals.testResetTime()
 
-    val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
-    val anyLocalHostname = (request.body \ "localHostname").asOpt[String]
-    val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
-    val organizationName = (request.body \ "organizationName").as[String].trim
+    // Note! These fields are part of Ty's public API. Don't change!
+    val body: JsObject = JsonUtils.asJsObject(request.body, "The request body")
+    val acceptTermsAndPrivacy = JsonUtils.parseBo(body, "acceptTermsAndPrivacy")
+    val anyLocalHostname = JsonUtils.parseOptSt(body, "localHostname")
+    val anyEmbeddingSiteAddress = JsonUtils.parseOptSt(body, "embeddingSiteAddress").trimNoneIfBlank
+    val organizationName = JsonUtils.parseSt(body, "organizationName").trim
     val okForbiddenPassword = hasOkForbiddenPassword(request)
     val okE2ePassword = hasOkE2eTestPassword(request.request)
+
+    val (
+        ownerEmailAddr,
+        createForum,
+        createEmbComs) =
+          if (!isPubApi) (None, false, false)
+          else (
+            JsonUtils.parseOptSt(body, "ownerEmailAddress"),
+            JsonUtils.parseOptBo(body, "createForum") getOrElse false,
+            JsonUtils.parseOptBo(body, "createEmbeddedComments") getOrElse false)
+
+    dieIf(createForum && createEmbComs, "TyE4MWE20R",
+          "Don't specify both createForum and createEmbeddedComments")
 
     val localHostname = anyLocalHostname getOrElse {
       val embAddr = anyEmbeddingSiteAddress getOrElse {
@@ -152,11 +189,11 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
           siteName = localHostname, hostnames = Set(hostname))
     }
 
-    val goToUrl: String =
+    val (goToUrl: St, newSite: SiteInclDetails) =
       try {
         COULD_OPTIMIZE // maybe can skip lock?
-        globals.systemDao.writeTxLockAllSites { sysTx =>
-          globals.systemDao.createAdditionalSite(
+        val newSite: SiteInclDetails = globals.systemDao.writeTxLockAllSites { sysTx =>
+          val newSite = globals.systemDao.createAdditionalSite(
             anySiteId = None,
             pubId = Site.newPubId(),
             name = localHostname,
@@ -170,6 +207,51 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
             skipMaxSitesCheck = okE2ePassword || okForbiddenPassword,
             createdFromSiteId = Some(request.siteId),
             anySysTx = Some(sysTx))
+
+          val staleStuff = new talkyard.server.dao.StaleStuff()
+          val newSiteTx = sysTx.siteTransaction(newSite.id)
+          val newSiteDao = request.dao.copyWithNewSiteId(newSite.id)
+
+          val anyOwner = ownerEmailAddr map { ownerEmail =>
+            val ownerUserData = NewPasswordUserData.create(
+                  name = None, username = "admin", // ?
+                  email = ownerEmail,
+                  emailVerifiedAt = Some(newSiteTx.now),  // or None
+                  password = None,  // must set oneself
+                  createdAt = newSiteTx.now,
+                  isAdmin = true, isOwner = true).get
+            newSiteDao.createPasswordUserImpl(ownerUserData, request.theBrowserIdData,
+                  newSiteTx).briefUser
+            //val adm = dao.createPasswordUserCheckPasswordStrong(, browserIdData)
+            /*
+            if (emailVerified) {
+
+              dao.verifyPrimaryEmailAddress(adm.id, theCreatedAt.toJavaDate, Some(newSiteTx)))
+            } */
+          }
+
+          val title = "title"
+          val newSiteWho = Who(SystemUserId, request.theBrowserIdData)
+          if (createForum) {
+            val options = debiki.dao.CreateForumOptions(
+                  isForEmbeddedComments = false,
+                  title = title,
+                  folder = "/",
+                  useCategories = true,
+                  createSupportCategory = true, // createSupportCategory,  // [NODEFCATS]
+                  createIdeasCategory = true, // createIdeasCategory,
+                  createSampleTopics = true, // createSampleTopics,
+                  topicListStyle = com.debiki.core.TopicListLayout.ExcerptBelowTitle)
+            newSiteDao.createForum2(options, newSiteWho, Some((newSiteTx, staleStuff)))
+          }
+
+          if (createEmbComs) {
+            newSiteDao.createForum(title = title, folder = "/", isForEmbCmts = true, newSiteWho,
+                  Some((newSiteTx, staleStuff)))
+          }
+
+          staleStuff
+          sysTx.loadSiteInclDetailsById(newSite.id) getOrDie "TyE2MSEJG0673"
         }
 
         if (!isTestSiteOkayToDelete) {
@@ -192,7 +274,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
           }
         }
 
-        newSiteOrigin
+        (newSiteOrigin, newSite)
       }
       catch {
         case DbDao.SiteAlreadyExistsException(site, details) =>
@@ -231,7 +313,13 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
           }
       }
 
-    OkSafeJson(Json.obj("nextUrl" -> goToUrl))
+    if (isPubApi)
+      OkSafeJson(Json.obj("newSite" -> Json.obj(
+        "id" -> newSite.id,
+        "origin" -> goToUrl,
+        )))
+    else
+      OkSafeJson(Json.obj("nextUrl" -> goToUrl))
   }
 
 
