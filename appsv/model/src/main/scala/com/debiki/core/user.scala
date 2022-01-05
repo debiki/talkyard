@@ -203,7 +203,8 @@ case class NewPasswordUserData(
   dieIfBad(Validation.checkEmail(email), "TyE4WKBJ7Z", identity)
   // Password: See security.throwErrorIfPasswordTooWeak, instead.
 
-  require(ssoId.isDefined != password.isDefined, "TyE5VAKBR02")
+  //require(ssoId.isDefined != password.isDefined, "TyE5VAKBR02")
+
   require(!firstSeenAt.exists(_.isBefore(createdAt)), "TyE2WVKF063")
 }
 
