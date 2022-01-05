@@ -133,7 +133,8 @@ export function logServerRequest(message: string) {
   console.log(serverRequestColor(message));
 }
 
-export function logServerResponse(text: string, ps: { boring: boolean } = { boring: true }) {
+export function logServerResponse(textOrObj, ps: { boring: Bo } = { boring: true }) {
+  const text = _.isString(textOrObj) ? textOrObj : JSON.stringify(textOrObj);
   console.log(
     serverResponseColor(`The server says:\n----\n` + `${text.trim()}` + `\n----`));
 }

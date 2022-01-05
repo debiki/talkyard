@@ -77,6 +77,7 @@ GET   /-/create-site                        controllers.CreateSiteController.sho
 GET   /-/create-site/embedded-comments      controllers.CreateSiteController.showPage(isTest = "false")
 GET   /-/create-test-site                   controllers.CreateSiteController.showPage(isTest = "true")
 GET   /-/create-test-site/embedded-comments controllers.CreateSiteController.showPage(isTest = "true")
+POST  /-/v0/create-site                     controllers.CreateSiteController.apiV0_createSite
 POST  /-/create-site                        controllers.CreateSiteController.createSite
 POST  /-/delete-test-site                   controllers.CreateSiteController.deleteTestSite
 GET   /-/_int_req/hostname-should-have-cert controllers.CreateSiteController.intReq_hostnameShouldHaveCert

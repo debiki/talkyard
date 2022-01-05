@@ -175,6 +175,8 @@ trait PagesDao {
     val authorId = byWho.id
     val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
+
+    val site = tx.loadSite() getOrDie "TyE8MWNP247"
     val categoryPath = tx.loadCategoryPathRootLast(anyCategoryId, inclSelfFirst = true)
     val groupIds = tx.loadGroupIdsMemberIdFirst(author)
     val permissions = tx.loadPermsOnPages()
@@ -275,7 +277,7 @@ trait PagesDao {
 
     val uploadRefs = body.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2 = findUploadRefsInPost(bodyPost)
+      val uplRefs2 = findUploadRefsInPost(bodyPost, site = Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE7RTEGP04", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 

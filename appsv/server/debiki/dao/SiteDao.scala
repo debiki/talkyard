@@ -91,6 +91,7 @@ trait ReadOnlySiteDao {
   def now(): When
 
   def nashorn: Nashorn
+  @deprecated // can create new tx
   def textAndHtmlMaker: TextAndHtmlMaker
   def makePostRenderSettings(pageType: PageType): PostRendererSettings
 }
@@ -158,6 +159,11 @@ class SiteDao(
 
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
 
+  def copyWithNewSiteId(siteId: SiteId): SiteDao =
+    new SiteDao(
+          siteId = siteId, context, dbDaoFactory, redisClient, cache,
+          usersOnlineCache, elasticSearchClient, config)
+
   def globals: debiki.Globals = context.globals
   def jsonMaker = new JsonMaker(this)
 
@@ -173,7 +179,9 @@ class SiteDao(
   // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,
   // so won't need to always use makePostRenderSettings() below before
   // using textAndHtmlMaker?
+  @deprecated // might create a new tx
   def textAndHtmlMaker = new TextAndHtmlMaker(theSite(), context.nashorn)
+  def textAndHtmlMakerNoTx(site: Site) = new TextAndHtmlMaker(site, context.nashorn)
 
   def makePostRenderSettings(pageType: PageType): PostRendererSettings = {
     val embeddedOriginOrEmpty =
@@ -241,14 +249,15 @@ class SiteDao(
   }
 
 
-  def writeTx[R](retry: Boolean = false, allowOverQuota: Boolean = false)(
+  def writeTx[R](retry: Bo = false, allowOverQuota: Bo = false)(
           // maybe incl  lims = getMaxLimits(UseTx(tx))  too? Always needed, right?
           // And a class  TxCtx(tx, maxLimits, rateLimits, staleStuff) ?
           fn: (SiteTransaction, StaleStuff) => R): R = {
     dieIf(retry, "TyE403KSDH46", "writeTx(retry = true) not yet impl")
 
     val staleStuff = new StaleStuff()
-    val result: R = readWriteTransaction(tx => {
+
+    val runFnUpdStaleStuff = (tx: SiteTx) => {
       val result = fn(tx, staleStuff)
 
 
@@ -268,7 +277,10 @@ class SiteDao(
       // when the counter was odd, must not be cached.
 
       result
-    }, allowOverQuota)
+    }
+
+    val result: R =
+          readWriteTransaction(runFnUpdStaleStuff, allowOverQuota)
 
 
     // ----- Refresh in-memory cache   [rm_cache_listeners]
@@ -344,8 +356,8 @@ class SiteDao(
     pageIds.foreach(refreshPageInMemCache)
   }
 
-  def clearDatabaseCacheAndMemCache(): U = {
-    readWriteTransaction(_.bumpSiteVersion())
+  def clearDatabaseCacheAndMemCache(anyTx: Opt[(SiteTx, StaleStuff)] = None): U = {
+    writeTxTryReuse(anyTx)((tx, _) => tx.bumpSiteVersion())
     memCache.clearThisSite()
   }
 

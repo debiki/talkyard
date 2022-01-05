@@ -215,7 +215,8 @@ trait PostsDao {
     // from the new textAndHtml only. [new_upl_refs]
     val uploadRefs = textAndHtml.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2 = findUploadRefsInPost(newPost)
+      val site = tx.loadSite getOrDie "TyE602MREJF"
+      val uplRefs2 = findUploadRefsInPost(newPost, Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE503SKH5", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
@@ -686,7 +687,8 @@ trait PostsDao {
     // New post, all refs in textAndHtml regardless of if approved or not. [new_upl_refs]
     val uploadRefs: Set[UploadRef] = textAndHtml.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2: Set[UploadRef] = findUploadRefsInPost(newPost)
+      val site = tx.loadSite getOrDie "TyE602MREJ7"
+      val uplRefs2: Set[UploadRef] = findUploadRefsInPost(newPost, Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE38RDHD4", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
@@ -1425,7 +1427,8 @@ trait PostsDao {
         val refs = approvedRefs ++ unapprRefs
 
         if (Globals.isDevOrTest) {
-          val r2 = findUploadRefsInPost(editedPost) // [nashorn_in_tx]
+          val site = tx.loadSite getOrDie "TyE602MREJ7"
+          val r2 = findUploadRefsInPost(editedPost, Some(site)) // [nashorn_in_tx]
           dieIf(refs != r2, "TyE306KSM233", s"refs: $refs, r2: $r2")
         }
 

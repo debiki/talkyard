@@ -635,7 +635,7 @@ trait UserDao {
   }
 
 
-  private def createPasswordUserImpl(userData: NewPasswordUserData, browserIdData: BrowserIdData,
+  def createPasswordUserImpl(userData: NewPasswordUserData, browserIdData: BrowserIdData,
         tx: SiteTransaction): UserInclDetails = {
     val now = userData.createdAt
     val userId = tx.nextMemberId
