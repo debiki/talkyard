@@ -54,7 +54,7 @@ val appDependencies = Seq(
   // For some reason, withouth this, an older version gets used which throws
   // an error because some dependencies use jackson 2.13.0 (and the others too,
   // older 2.X evicted), but the older -module-scala wants 2.10 or something.
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.0",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.1",
 
   // OAuth2 and OIDC authentication.
   Dependencies.Libs.scribeJava,
@@ -80,8 +80,8 @@ val appDependencies = Seq(
   caffeine,  // was: "com.github.ben-manes.caffeine" % "caffeine"
   Dependencies.Libs.rediscala,
   // Search engine, in https://mvnrepository.com.
-  "org.elasticsearch" % "elasticsearch" % "6.8.21",
-  "org.elasticsearch.client" % "transport" % "6.8.21",
+  "org.elasticsearch" % "elasticsearch" % "6.8.23",
+  "org.elasticsearch.client" % "transport" % "6.8.23",
 
   Dependencies.Libs.apacheCommonsEmail,
   Dependencies.Libs.apacheCommonsLang3,
@@ -89,18 +89,18 @@ val appDependencies = Seq(
   Dependencies.Libs.jsoup,
   // Fluentd better understands json logs.
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-  "ch.qos.logback" % "logback-classic" % "1.2.8",
+  "ch.qos.logback" % "logback-classic" % "1.2.10",
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-  "ch.qos.logback" % "logback-core" % "1.2.8",
+  "ch.qos.logback" % "logback-core" % "1.2.10",
   // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
   "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
   //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
   // Dependencies.Libs.apacheTika
-  "io.dropwizard.metrics" % "metrics-core" % "4.1.26",
-  "io.jaegertracing" % "jaeger-client" % "0.32.0",  // 1.6.0 exists now
-  "nl.grons" %% "metrics4-scala" % "4.1.19",
+  "io.dropwizard.metrics" % "metrics-core" % "4.2.7",
+  "io.jaegertracing" % "jaeger-client" % "0.35.1",  // 1.6.0 exists now
+  "nl.grons" %% "metrics4-scala" % "4.2.8",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"
   // so it won't be included in the JAR), or there's this weird error: """
   //   class file '...guava-13.0.1.jar(.../LocalCache.class)' is broken
@@ -134,8 +134,8 @@ def mainSettings = List(
 
   // Pin to >= 2.15, no, 2.16.
   dependencyOverrides ++= Seq(
-        "org.apache.logging.log4j" % "log4j-api" % "2.16.0",
-        "org.apache.logging.log4j" % "log4j-core" % "2.16.0"),
+        "org.apache.logging.log4j" % "log4j-api" % "2.17.1",
+        "org.apache.logging.log4j" % "log4j-core" % "2.17.1"),
 
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
