@@ -611,6 +611,7 @@ function runAllE2eTests {
   #r s/wdio       --only embcom.many-comment-iframes-click-load-more.2br $args TESTS_MISSING
   $r s/wdio       --only embedded-comments-discussion-id.test $args
   $r s/wdio       --only embedded-comments-discussion-id-old-name $args
+  $r s/wdio-7     --only embcom.ignore-query-params.2br --cd -i $args
 
   $r s/wdio       --only embedded-comments-guest-login-email-notf-unsbscribe $args
   $r s/wdio       --only embcom.all-idp-logins.1br.extidp $args

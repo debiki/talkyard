@@ -865,6 +865,8 @@ embedded comments:
           - embcom.vote-bef-page-exists.1br  TyT2AKBS056
           - embedded-comments-scroll  TyT2K4DHR49-02
   (50279460),
+  ignores query params:
+            - embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
   scroll and show #comment-n:
           - embedded-comments-scroll  TyT2K4DHR49-05
   scroll and load #comment-nnn:

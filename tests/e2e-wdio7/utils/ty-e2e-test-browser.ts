@@ -6057,6 +6057,7 @@ export class TyE2eTestBrowser {
       },
 
       waitForNumReplies: async (n: Partial<NumReplies>, ps: { skipWait?: Bo } = {}) => {
+        await this.switchToEmbCommentsIframeIfNeeded();
         if (!ps.skipWait) {
           await this.waitForMyDataAdded();
         }
