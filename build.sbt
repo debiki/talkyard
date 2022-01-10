@@ -73,7 +73,7 @@ val appDependencies = Seq(
   // see: https://mvnrepository.com/artifact/org.postgresql/postgresql/
   Dependencies.Libs.postgresqlJbcdClient,
   // HikariCP — "A solid high-performance JDBC connection pool at last"
-  "com.zaxxer" % "HikariCP" % "3.4.5",      // latest 3.x as of 2021-08.  5.0.0 latest version
+  "com.zaxxer" % "HikariCP" % "5.0.1",      // latest 3.x as of 2021-08.  5.0.0 latest version
   // We use both an in-the-JVM-memory cache, and Redis:
   caffeine,  // was: "com.github.ben-manes.caffeine" % "caffeine"
   Dependencies.Libs.rediscala,
