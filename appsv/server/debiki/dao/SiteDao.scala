@@ -263,13 +263,7 @@ class SiteDao(
 
       // ----- Refresh database cache
 
-      if (staleStuff.areAllPagesStale) {
-        tx.bumpSiteVersion()
-      }
-      else {
-        // Refresh database page cache:
-        tx.markPagesHtmlStale(staleStuff.stalePageIdsInDb)
-      }
+      staleStuff.clearStaleStuffInDatabase(tx)
 
       // [cache_race_counter] Maybe bump mem cache contents counter here,
       // just before this tx ends and the mem cache thus becomes stale?
@@ -285,19 +279,8 @@ class SiteDao(
 
     // ----- Refresh in-memory cache   [rm_cache_listeners]
 
-    if (staleStuff.areAllPagesStale) {
-      // Currently then need to: (although clears unnecessarily much)
-      memCache.clearThisSite()
-    }
-    else if (staleStuff.nonEmpty) {
-      staleStuff.staleParticipantIdsInMem foreach { ppId =>
-        removeUserFromMemCache(ppId)
-      }
-      staleStuff.stalePageIdsInMem foreach { pageId =>
-        refreshPageInMemCache(pageId)
-      }
-      uncacheLinks(staleStuff)
-    }
+    staleStuff.clearStaleStuffInMemory(this)
+
 
     // [cache_race_counter] Maybe somehow "mark as done" the bumping of the
     // mem cache contents counter?

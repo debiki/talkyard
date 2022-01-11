@@ -198,6 +198,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
     val (goToUrl: St, newSite: SiteInclDetails) =
       try {
         COULD_OPTIMIZE // maybe can skip lock?
+        var staleStuff: talkyard.server.dao.StaleStuff = null
+        var newSiteDao: debiki.dao.SiteDao = null
         val newSite: SiteInclDetails = globals.systemDao.writeTxLockAllSites { sysTx =>
           val newSite = globals.systemDao.createAdditionalSite(
             anySiteId = None,
@@ -214,9 +216,10 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
             createdFromSiteId = Some(request.siteId),
             anySysTx = Some(sysTx))
 
-          val staleStuff = new talkyard.server.dao.StaleStuff()
+          newSiteDao = request.dao.copyWithNewSiteId(newSite.id)
+
+          staleStuff = new talkyard.server.dao.StaleStuff()
           val newSiteTx = sysTx.siteTransaction(newSite.id)
-          val newSiteDao = request.dao.copyWithNewSiteId(newSite.id)
 
           ownerEmailAddr map { ownerEmail =>
             val ownerUserData = NewPasswordUserData.create(
@@ -253,9 +256,14 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
                   Some((newSiteTx, staleStuff)))
           }
 
-          staleStuff  // TODO!  uncache stale stuff,  see  def writeTx  in SiteDao.
+          staleStuff.clearStaleStuffInDatabase(newSiteTx)
+          // Also see: [cache_race_counter] but maybe not important here, since the
+          // site is completely new, no one can interact with it yet.
+
           sysTx.loadSiteInclDetailsById(newSite.id) getOrDie "TyE2MSEJG0673"
         }
+
+        staleStuff.clearStaleStuffInMemory(newSiteDao)
 
         if (!isTestSiteOkayToDelete) {
           val now = globals.now()

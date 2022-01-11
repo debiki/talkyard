@@ -196,5 +196,34 @@ class StaleStuff {
   def includesPageModified(pageId: PageId): Boolean = {
     _stalePages.get(pageId).exists(_.pageModified)
   }
+
+
+  def clearStaleStuffInDatabase(tx: SiteTx): U = {
+    if (areAllPagesStale) {
+      tx.bumpSiteVersion()
+    }
+    else {
+      // Refresh database page cache:
+      tx.markPagesHtmlStale(stalePageIdsInDb)
+    }
+  }
+
+
+  def clearStaleStuffInMemory(dao: debiki.dao.SiteDao): U = {
+    if (areAllPagesStale) {
+      // Currently then need to: (although clears unnecessarily much)
+      dao.memCache.clearThisSite()
+    }
+    else if (nonEmpty) {
+      staleParticipantIdsInMem foreach { ppId =>
+        dao.removeUserFromMemCache(ppId)
+      }
+      stalePageIdsInMem foreach { pageId =>
+        dao.refreshPageInMemCache(pageId)
+      }
+      dao.uncacheLinks(this)
+    }
+  }
+
 }
 
