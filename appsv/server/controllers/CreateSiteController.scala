@@ -129,22 +129,41 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
           if (!isPubApi) (None, None, None, false, None, false, false)
           else (
             // Ty's public API, don't change!
-            JsonUtils.parseOptSt(body, "ownerUsername"),
-            JsonUtils.parseOptSt(body, "ownerFullName"),
-            JsonUtils.parseOptSt(body, "ownerEmailAddr"),
+            JsonUtils.parseOptSt(body, "ownerUsername").trimNoneIfBlank,
+            JsonUtils.parseOptSt(body, "ownerFullName").trimNoneIfBlank,
+            JsonUtils.parseOptSt(body, "ownerEmailAddr").trimNoneIfBlank,
             JsonUtils.parseOptBo(body, "ownerEmailAddrVerified") getOrElse false,
-            JsonUtils.parseOptSt(body, "newSiteTitle"),
+            JsonUtils.parseOptSt(body, "newSiteTitle").trimNoneIfBlank,
             JsonUtils.parseOptBo(body, "createForum") getOrElse false,
             JsonUtils.parseOptBo(body, "createEmbeddedComments") getOrElse false)
 
-    dieIf(createForum && createEmbComs, "TyE4MWE20R",
-          "Don't specify both createForum and createEmbeddedComments")
+    if (createForum || createEmbComs) {
+      throwForbiddenIf(createForum && createEmbComs, "TyE4MWE20R",
+            "Don't specify both createForum and createEmbeddedComments")
 
-    throwForbiddenIf((createForum || createEmbComs) && (
-                        ownerUsername.isEmpty || ownerEmailAddr.isEmpty),
-          "TyE4MWE207", o"""You need to specify new site owner's username and email addr
-            (fields 'ownerUsername' and 'ownerEmailAddr' in the JSON),
-            since createForum or createEmbeddedComments is specified""")
+      throwForbiddenIf(ownerUsername.isEmpty || ownerEmailAddr.isEmpty,
+            "TyE4MWE207", o"""Please specify the new site owner's username and email
+              (fields 'ownerUsername' and 'ownerEmailAddr'),
+              since createForum or createEmbeddedComments is specified""")
+    }
+    else {
+      throwForbiddenIf(newSiteTitle.isDefined,
+            "TyE3MWE202", o"""Don't specify new site title, without setting one of
+              'createForum' or 'createEmbeddedComments' to true""")
+
+      throwForbiddenIf(ownerUsername.isDefined,
+            "TyE8ME24SRM", """Creating an owner account, but no forum or emb comments, has not
+              been tested, isn't allowed. But you can set 'createForum: true', that'll work""")
+    }
+
+    throwForbiddenIf(ownerUsername.isEmpty && (
+              ownerEmailAddr.isDefined || ownerFullName.isDefined),
+          "TyE6MRW4MJ6", o"""Specify owner username too (field 'ownerUsername'),
+             not just owner email addr or full name""")
+
+    throwForbiddenIf(ownerEmailAddrVerified && ownerEmailAddr.isEmpty,
+          "TyE6MRW4MJ7", o"""Owner email address missing (field 'ownerEmailAddr'),
+            but 'ownerEmailAddrVerified' is true""")
 
     val localHostname = anyLocalHostname getOrElse {
       val embAddr = anyEmbeddingSiteAddress getOrElse {

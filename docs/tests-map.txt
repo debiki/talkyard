@@ -45,6 +45,7 @@ full text search:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
 
 create site & forum -
+  via api: [.create_site_via_api]
   create:  create-site-all-logins
   not too many per ip / email:
   not too many in total:
@@ -81,6 +82,11 @@ authn:
           - password-login-reset.2browsers.test.ts  TyT5KAES20W
     via email verif email:
           - unsubscribe.2browsers.test.ts  [TyT2ABK5I0]
+    owner resets, before first login:
+            - dir.create-site-via-api.2br  TyTE2ECREASITAPI  incl type wrong pwd
+            - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
+    resets, but types wrong email:
+            - dir.create-site-via-api.2br  TyTE2ECREASITAPI.TyTERSTWRONGEML
   forgot password -
     reset it:
           - password-login-reset.2browsers.test.ts  TyT5KAES20W
@@ -1456,6 +1462,9 @@ server side rendering -
     category dropdown:
 
 api:
+  create site via api: [.create_site_via_api]
+            - dir.create-site-via-api.2br  TyTE2ECREASITAPI
+            - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
   enable API:
             - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyTENAAPI
             - dir.create-site-imp-json.2br  TyTEIMPJSON01.TyTENAAPI

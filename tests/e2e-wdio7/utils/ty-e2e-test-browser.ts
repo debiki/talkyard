@@ -447,6 +447,11 @@ export class TyE2eTestBrowser {
     }
 
 
+    async setWindowSize(width: Nr, height: Nr) {
+      await this.#br.setWindowSize(width, height);
+    }
+
+
     async newWindow(url: St, thenWhat: 'StayInCurWin' | 'SwitchToNewWin') {
       // It seemed as if different drivers had different opinions about which
       // window should be active, after having opened a new one.
@@ -3908,10 +3913,11 @@ export class TyE2eTestBrowser {
         await this.waitForVisible('#e2ePassword');
       },
 
+      // RENAME to switchToLoginIfNeeded() ?
       switchToLoginIfIsSignup: async () => {
         // Switch to login form, if we're currently showing the signup form.
         await this.waitUntil(async () => {
-          if (await this.isVisible('.esCreateUser')) {
+          if (await this.isVisible('.c_AuD_2LgI')) {
             await this.waitAndClick('.c_AuD_2LgI .c_AuD_SwitchB');
             // Don't waitForVisible('.dw-reset-pswd') — that can hang forever (weird?).
           }
@@ -3921,6 +3927,26 @@ export class TyE2eTestBrowser {
           }
         }, {
           message: `Switching to login dialog`
+        });
+      },
+
+      switchToSignupIfIsLogin: async () => {
+        // Switch to the signup form, if we're currently showing the login form or guest form.
+        let switched = false;
+        await this.waitUntil(async () => {
+          if (await this.isVisible('.c_AuD_2SgU')) {
+            logBoring(`switches to signup form ...`);
+            switched = true;
+            await this.waitAndClick('.c_AuD_2SgU .c_AuD_SwitchB');
+            // Loop another lap.
+          }
+          else if (await this.isVisible('.esCreateUser')) {
+            if (switched) logBoring(`... done switching to signup form`);
+            // The create account form is shown, fine.
+            return true;
+          }
+        }, {
+          message: `Switching from login to signup dialog`
         });
       },
 
@@ -9381,6 +9407,40 @@ export class TyE2eTestBrowser {
         await this.loginDialog.logInAsGuest(name, email);
       },
 
+      signUpAsMemberViaPagebar: async (
+            member: Member, ps: { siteId?: SiteId,
+              willNeedToVerifyEmail?: Bo } = {}) => {   // , doVerifyEmail?: Bo
+        await this.switchToEmbCommentsIframeIfNeeded();
+        logBoring(`clicks Log In ...`);
+        await this.metabar.clickLogin();
+        // When embedded, signup happens in a popup win.
+        const isEmbedded = this.#isWhere === IsWhere.EmbCommentsIframe;
+        if (isEmbedded) {
+          logBoring(`switches to other tab ...`);
+          await this.swithToOtherTabOrWindow();
+        }
+        await this.loginDialog.switchToSignupIfIsLogin();
+        logBoring(`creates a password account ...`);
+        await this.loginDialog.createPasswordAccount({
+          username: member.username,
+          emailAddress: member.emailAddress,
+          password: member.password,
+          willNeedToVerifyEmail: ps.willNeedToVerifyEmail || false,
+          // doVerifyEmail: ps.doVerifyEmail && !isEmbedded || false,
+        });
+        if (isEmbedded) {
+          // Popup win now closed.
+          await this.switchBackToFirstTabOrWindow();
+          await this.switchToEmbeddedCommentsIrame();
+        }
+        /*
+        if (ps.doVerifyEmail) {
+          const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+                  ps.siteId, member.emailAddress);
+          // click link ...
+        } */
+      },
+
       loginIfNeededViaMetabar: async (ps: NameAndPassword) => {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitForMyDataAdded();
@@ -9394,6 +9454,31 @@ export class TyE2eTestBrowser {
       loginWithPasswordViaMetabar: async (ps: NameAndPassword) => {
         await this.metabar.clickLogin();
         await this.loginDialog.loginWithPasswordInPopup(ps);
+      },
+
+      /// Dupl code elswhere; could replace with this fn.  [e2e_reset_pwd]
+      ///
+      resetPasswordFromLoginDialog: async (ps: { who: Member, newPassword: St,
+              site: { id: SiteId, origin: St } }) => {
+
+        logBoring(`${ps.who.username} clicks the Forgot Password link`);
+        await this.loginDialog.clickResetPasswordCloseDialogSwitchTab({
+                loginDialogWillClose: false });
+
+        logBoring(`... types hens email address`);
+        await this.resetPasswordPage.submitAccountOwnerEmailAddress(ps.who.emailAddress);
+
+        logBoring(`... gets an email with a password reset link`);
+        const resetPwdPageLink = await server.waitAndGetResetPasswordLinkEmailedTo(
+                ps.site.id, ps.who.emailAddress);
+
+        logBoring(`... follows the link`);
+        await this.rememberCurrentUrl();
+        await this.go2(resetPwdPageLink);
+        await this.waitForNewUrl();
+
+        logBoring(`... types a new password`);
+        await this.chooseNewPasswordPage.typeAndSaveNewPassword(ps.newPassword);
       },
 
       snoozeNotifications: async (ps: SnoozeTime = {}) => {
@@ -9516,8 +9601,24 @@ export class TyE2eTestBrowser {
         await this.topic.waitUntilPostTextMatches(postNr, newText);
       },
 
-      replyToOrigPost: async (text: string, whichButton?: 'DiscussionSection') => {
+      replyToOrigPost: async (text: string, whichButton?: 'DiscussionSection', ps: {
+              closeGuidelines?: Bo } = {}) => {
         await this.topic.clickReplyToOrigPost(whichButton);
+        if (ps.closeGuidelines) {
+          // Or break out fn?
+          // Is this a race? The dialog might take a short wile to appear? Maybe
+          // wait for a little while? And if it didn't appear (it won't, if the page
+          // is wide enough), try editing, and if that won't work, see if it's because
+          // the dialog might have just appeared?  But not now — this works fine in practice:
+          if (await this.isDisplayed('.e_CloseGuidelinesB')) {
+            logBoring(`Closing guidelines modal ...`);
+            await this.waitAndClick('.e_CloseGuidelinesB');
+            await this.waitForGone('.e_CloseGuidelinesB');
+          }
+          else {
+            logBoring(`No guidelines modal to close (at least not yet).`);
+          }
+        }
         await this.editor.editText(text);
         await this.editor.save();
       },

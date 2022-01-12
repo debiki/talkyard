@@ -2758,7 +2758,8 @@ const GuidelinesModal = createClassAndFactory({
       rb.Modal({ show: this.props.isOpen, onHide: this.props.close,
           dialogClassName: 'es-guidelines-modal' },
         rb.ModalBody({}, body),
-        rb.ModalFooter({}, Button({ onClick: this.props.close }, t.Okay))));
+        rb.ModalFooter({},
+          Button({ onClick: this.props.close, className: 'e_CloseGuidelinesB' }, t.Okay))));
   }
 });
 
