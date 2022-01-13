@@ -10,7 +10,7 @@ Compile / dependencyOverrides ++= {
       "ch.qos.logback" % "logback-core" % "1.2.8",
       "com.atlassian.jwt" % "jwt-api" % "2.0.5",
       "com.atlassian.jwt" % "jwt-core" % "2.0.5",
-      "com.auth0" % "java-jwt" % "3.18.2",
+      "com.auth0" % "java-jwt" % "3.18.3",
       "com.carrotsearch" % "hppc" % "0.7.1",
       "com.fasterxml.jackson.core" % "jackson-annotations" % "2.13.0",
       "com.fasterxml.jackson.core" % "jackson-core" % "2.13.0",
