@@ -21,9 +21,9 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp.{throwInternalError, throwNotFound}
-import ed.server.http.PageRequest
+import talkyard.server.http.PageRequest
 import RenderedPageHtmlDao._
-import ed.server.RenderedPage
+import talkyard.server.RenderedPage
 import java.{util => ju}
 
 

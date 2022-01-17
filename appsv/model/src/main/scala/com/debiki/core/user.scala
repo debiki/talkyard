@@ -203,7 +203,13 @@ case class NewPasswordUserData(
   dieIfBad(Validation.checkEmail(email), "TyE4WKBJ7Z", identity)
   // Password: See security.throwErrorIfPasswordTooWeak, instead.
 
-  require(ssoId.isDefined != password.isDefined, "TyE5VAKBR02")
+  // If SSO is enabled, then, cannot also have password login.
+  require(ssoId.isEmpty || password.isEmpty, "TyE5VAKBR02")
+
+  // If no SSO login and no password, then, an email addr is needed, so pat can get
+  // a password reset link, via that email addr.
+  require(ssoId.isDefined || password.isDefined || email.nonEmpty, "TyE5VAKBR04")
+
   require(!firstSeenAt.exists(_.isBefore(createdAt)), "TyE2WVKF063")
 }
 

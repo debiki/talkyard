@@ -22,8 +22,8 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import debiki.dao.SiteDao
-import ed.server._
-import ed.server.http.DebikiRequest
+import talkyard.server._
+import talkyard.server.http.DebikiRequest
 import javax.inject.Inject
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
@@ -43,8 +43,8 @@ import talkyard.server.JsX.{DateEpochOrNull, JsNumberOrNull, JsUser}
   * before logging in the next time. And, if it's a Gmail address, that she can login
   * via Gmail (not yet implemented, not yet possible, though (May 2015)).
   */
-class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.security.createSessionIdAndXsrfToken

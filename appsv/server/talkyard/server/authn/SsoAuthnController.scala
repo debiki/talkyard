@@ -22,8 +22,8 @@ import com.debiki.core.Prelude._
 import controllers.OkApiJson
 import debiki.EdHttp._
 import debiki.RateLimits
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import play.api.libs.json._
@@ -36,8 +36,8 @@ import dev.paseto.{jpaseto => pas}
 import dev.paseto.jpaseto.{Paseto => pas_Paseto}
 
 
-class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   private val logger = talkyard.server.TyLogger("SsoAuthnController")
 
@@ -143,7 +143,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: EdContex
        \n\tat controllers.LoginWithSecretController$.isAllowedRedirectUrl(ApiV0Controller.scala:453)
        \n\tat controllers.ApiV0Controller.$anonfun$getFromApi$8(ApiV0Controller.scala:190)
        ...
-       \n\tat ed.server.http.PlainApiActions$$anon$1.runBlockIfAuthOk(PlainApiActions.scala:573)
+       \n\tat talkyard.server.http.PlainApiActions$$anon$1.runBlockIfAuthOk(PlainApiActions.scala:573)
        ...
        \n\tat java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:157)
        \n","severity":"ERROR","serviceContext":{"service":"talkyard-app","version":"v0.2020.24"},"context":{"reportLocation":{"filePath":"SafeActions.scala","lineNumber":213,"functionName":"ed$server$http$SafeActions$$internalError","className":"ed.server.http.SafeActions"}}}

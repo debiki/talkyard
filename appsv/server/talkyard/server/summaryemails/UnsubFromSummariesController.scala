@@ -19,8 +19,8 @@ package talkyard.server.summaryemails
 
 import com.debiki.core._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import UnsubFromSummariesController._
@@ -51,8 +51,8 @@ object UnsubFromSummariesController {
  * web sites, in the Referer header. So only use each email id
  * for one distinct non-repeatable task?
  */
-class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.safeActions.ExceptionAction
   import context.globals

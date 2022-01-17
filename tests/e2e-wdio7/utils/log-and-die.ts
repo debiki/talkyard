@@ -3,8 +3,10 @@
 import * as _ from 'lodash';
 const ansiColors = require('ansi-colors');
 
+// (Don't use black text on a white background — that's for e2e test progress messages,
+// see:  [inv_e2e_progr_msg_cols].)
 const normalColor = ansiColors.white;
-const boringColor = ansiColors.gray;
+const boringColor = ansiColors.dim; // 'gray' is darker, hard to read agains a black bg
 const errorColor = ansiColors.bold.bgRed;
 const exceptionColor = ansiColors.bold.yellow;
 const warningColor = ansiColors.bold.red;
@@ -131,7 +133,8 @@ export function logServerRequest(message: string) {
   console.log(serverRequestColor(message));
 }
 
-export function logServerResponse(text: string, ps: { boring: boolean } = { boring: true }) {
+export function logServerResponse(textOrObj, ps: { boring: Bo } = { boring: true }) {
+  const text = _.isString(textOrObj) ? textOrObj : JSON.stringify(textOrObj);
   console.log(
     serverResponseColor(`The server says:\n----\n` + `${text.trim()}` + `\n----`));
 }

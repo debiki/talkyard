@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.mvc._
 import talkyard.server.authz.Authz
@@ -31,8 +31,8 @@ import talkyard.server.authn.MinAuthnStrength
 
 // Add  flagUser() fn, so can flag user with offensive username?
 //
-class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class FlagController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security._
 

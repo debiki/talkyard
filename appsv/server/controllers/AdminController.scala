@@ -21,9 +21,9 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server._
-import ed.server.http.{ApiRequest, JsonOrFormDataBody}
-import ed.server.security.EdSecurity
+import talkyard.server._
+import talkyard.server.http.{ApiRequest, JsonOrFormDataBody}
+import talkyard.server.security.EdSecurity
 import javax.inject.Inject
 import play.api.libs.json.Json
 import play.api.mvc.{Action, ControllerComponents, Result}
@@ -35,8 +35,8 @@ import talkyard.server.authn.LoginReason
 
 /** Loads the admin app page.
   */
-class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class AdminController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.security.SecureCookie

@@ -257,7 +257,7 @@ object Authz {
 
 
   def maySeePost(): MayMaybe = {
-    // Later. For now, can use ed.server.auth.AuthzSiteDaoMixin
+    // Later. For now, can use talkyard.server.auth.AuthzSiteDaoMixin
     // maySeePostUseCache.
     unimpl("maySeePost TyE28456rMP")
   }
