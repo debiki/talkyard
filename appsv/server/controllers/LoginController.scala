@@ -20,8 +20,8 @@ package controllers
 import com.debiki.core._
 import debiki.{Globals, RateLimits, SiteTpi}
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
@@ -32,8 +32,8 @@ import talkyard.server.JsX
 
 /** Logs in and out.
   */
-class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class LoginController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.security.DiscardingSessionCookies

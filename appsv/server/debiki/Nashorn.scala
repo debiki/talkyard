@@ -235,7 +235,7 @@ class Nashorn(
     val uploadsUrlPrefix =
       cdnOrigin.getOrElse(
         embeddedOriginOrEmpty) +
-          ed.server.UploadsUrlBasePath + pubSiteId + '/'
+           talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
 
     // This link preview renderer fetches previews from the database,
     // link_previews_t, but makes no external requests — cannot do that from inside

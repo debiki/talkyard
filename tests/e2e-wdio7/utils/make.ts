@@ -187,6 +187,21 @@ export function memberMemah(template: Partial<Member> = {}): Member {
 }
 
 
+export function memberMei(template: Partial<Member> = {}): Member {
+    return {
+      ...template,
+      id: getAndBumpNextUserId(),
+      username: "mei",
+      fullName: "Mei Xing",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--mei@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:pub-mei020",
+      password: "pub-mei020",
+    };
+}
+
+
 export function memberMaria(template: Partial<Member> = {}): Member {
     return {
       ...template,

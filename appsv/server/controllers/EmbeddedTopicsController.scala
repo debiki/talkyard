@@ -22,9 +22,9 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import debiki.dao.{NotYetCreatedEmbeddedPage, SiteDao}
-import ed.server.{EdContext, EdController, RenderedPage}
-import ed.server.http._
-import ed.server.security.EdSecurity
+import talkyard.server.{TyContext, TyController, RenderedPage}
+import talkyard.server.http._
+import talkyard.server.security.EdSecurity
 import javax.inject.Inject
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
@@ -32,8 +32,8 @@ import play.api.mvc.{Action, ControllerComponents}
 
 /** Shows embedded comments.
   */
-class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.security

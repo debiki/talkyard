@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import com.google.{common => guava}
 import debiki.{Globals, ImageUtils, TextAndHtmlMaker}
 import debiki.EdHttp._
-import ed.server.UploadsUrlBasePath
+import talkyard.server.UploadsUrlBasePath
 import java.{io => jio, lang => jl, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
@@ -224,15 +224,15 @@ trait UploadsDao {
 
   /** Do as part of  [[debiki.TextAndHtmlMaker.findLinksEtc]]  ? */
   @deprecated("now")
-  def findUploadRefsInPost(post: Post): Set[UploadRef] = {
-    val pubId = thePubSiteId()
+  def findUploadRefsInPost(post: Post, site: Opt[Site] = None): Set[UploadRef] = {
+    val pubId = site.map(_.pubId) getOrElse thePubSiteId()
     val approvedRefs = post.approvedHtmlSanitized.map(
           h => findUploadRefsInHtml(h, pubId)) getOrElse Set.empty
     val currentRefs =
       if (post.nr == PageParts.TitleNr) Nil
       else {
         val renderResult = context.nashorn.renderAndSanitizeCommonMark(  // [nashorn_in_tx]
-              post.currentSource, theSite(),
+              post.currentSource, site getOrElse theSite(),
               embeddedOriginOrEmpty = "",
               allowClassIdDataAttrs = false, followLinks = false)
         findUploadRefsInHtml(renderResult.safeHtml, pubId)

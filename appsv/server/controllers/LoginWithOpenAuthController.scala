@@ -17,6 +17,7 @@
 
 package controllers
 
+import talkyard.server.authn.OAuth2Settings
 import com.auth0.jwt.{JWT => a0_JWT}
 import com.auth0.jwt.interfaces.{Claim => a0_Claim, DecodedJWT => a0_DecodedJWT}
 import com.auth0.jwt.exceptions.{JWTDecodeException => a0_JWTDecodeException}
@@ -27,6 +28,7 @@ import com.github.scribejava.core.oauth.{OAuth20Service => sj_OAuth20Service, OA
 import com.github.scribejava.core.builder.api.{DefaultApi20 => sj_DefaultApi20}
 import com.github.scribejava.core.model.{OAuth2AccessToken => sj_OAuth2AccessToken, OAuth2AccessTokenErrorResponse => sj_OAuth2AccessTokenErrorResponse, OAuthAsyncRequestCallback => sj_OAuthAsyncReqCallback, OAuthRequest => sj_OAuthRequest, Response => sj_Response, Verb => sj_Verb}
 import com.github.scribejava.apis.openid.{OpenIdOAuth2AccessToken => sj_OpenIdOAuth2AccessToken}
+/*
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -34,24 +36,25 @@ import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Servi
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
-import ed.server.spam.SpamChecker
+ */
+import talkyard.server.spam.SpamChecker
 import debiki._
 import debiki.dao.SiteDao
 import debiki.EdHttp._
 import debiki.JsonUtils._
 import talkyard.server._
-import ed.server._
-import ed.server.http._
-import ed.server.security.EdSecurity
+import talkyard.server._
+import talkyard.server.http._
+import talkyard.server.security.EdSecurity
 import IdentityProvider.{ProtoNameOidc, ProtoNameOAuth2, ProtoNameOAuth10a}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.Configuration
 import talkyard.server.authn.{parseCustomUserInfo, parseOidcIdToken, parseOidcUserInfo, doAuthnServiceRequest, WellKnownIdps}
-import talkyard.server.{ProdConfFilePath, TyLogging}
+import talkyard.server.TyLogging
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration._
 import java.io.{IOException => j_IOException}
 import java.util.concurrent.{ExecutionException => j_ExecutionException}
@@ -161,8 +164,8 @@ private case class OngoingAuthnState(
   * by looking at a nonce in the URL.  "Nonce" means: a secret
   * 'N'umber used just 'Once'.)
   */
-class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) with TyLogging {
+class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) with TyLogging {
 
   REFACTOR // MOVE this file to package talkyard.server.authn
   RENAME // to  AuthnWithExtIdp
@@ -1129,10 +1132,15 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   //   Old, with Silhouette   =============================================
   // ======================================================================
 
+  CLEAN_UP // some day remove all out commented Silhouette code.
+  // Look at commit "Comment out Silhouette server side, remove dependencies"
+  // in Ty v2022.01.
 
+  /*
   def startAuthentication(providerName: St, returnToUrl: Opt[St]): Action[U] =
         AsyncGetActionIsLogin { request =>
-    startAuthenticationImpl(providerName, returnToUrl.trimNoneIfBlank, request)
+    //startAuthenticationImpl(providerName, returnToUrl.trimNoneIfBlank, request)
+    ???
   }
 
 
@@ -1170,6 +1178,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
     futureResult
   }
+  */
 
 
   def finishAuthentication(providerName: St): Action[U] = AsyncGetActionIsLogin { request =>
@@ -1191,11 +1200,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             request)
     }
     else {
-      startOrFinishAuthenticationWithSilhouette(providerName, request)
+      unimpl("Silhouette is gone")
+      // startOrFinishAuthenticationWithSilhouette(providerName, request)
     }
   }
 
 
+  /*
   /** Authenticates a user against e.g. Facebook or Google or Twitter, using OAuth 1 or 2.
     *
     * Confusingly enough (?), Silhouette uses the same method both for starting
@@ -1427,6 +1438,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     result
   }
+   */
 
 
 
@@ -1497,8 +1509,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // account to any existing account.  Twitter uses OAuth 1.0a which Talkyard
           // won't support once done migrating from Silhouette to ScribeJava. [0_twitter_aun]
           // Instead, let's wait for Twitter to start supporting OAuth2.
-          if (authnState.providerAlias == TwitterProvider.ID) {
-            throwForbiddenIf(globals.config.featureFlags.contains("ffTwitterSignUpOff"),
+          if (authnState.providerAlias == "twitter") { // TwitterProvider.ID) {
+            CLEAN_UP // rm feature flag from own servers?
+            throwForbidden(  // If(globals.config.featureFlags.contains("ffTwitterSignUpOff"),
                   "TyE0TWITTERACCTS", o"""You cannot sign up via Twitter,
                   until Twitter supports OAuth2. Might take years, sorry.""")
           }
@@ -2036,7 +2049,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       }
     }
 
-    if (ed.server.security.ReservedNames.isUsernameReserved(username)) // [5LKKWA10]
+    if ( talkyard.server.security.ReservedNames.isUsernameReserved(username)) // [5LKKWA10]
       throwForbidden("EdE4SWWB9", s"Username is reserved: '$username'; choose another username")
 
     val spamCheckTask = SpamCheckTask(
@@ -2153,7 +2166,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     (newXsrfToken, xsrfCookie)
   }
 
-
+  /*
   /** Redirects to and logs in via anyLoginOrigin; then redirects back to this site, with
     * a session id and xsrf token included in the GET request.
     */
@@ -2190,7 +2203,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         SecureCookie(name = ReturnToSiteOriginTokenCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
           httpOnly = false))
     }
+    ???
   }
+  */
 
 
   def checkAuthnXsrfToken(xsrfToken: St, request: GetRequest): U = {
@@ -2218,7 +2233,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
   }
 
-
+  /*
   def continueAtOriginalSite(oauthDetailsCacheKey: St, xsrfToken: St): Action[U] =
         GetActionIsLogin { request =>
 
@@ -2235,7 +2250,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     tryLoginOrShowCreateUserDialog(request, authnState)
       .discardingCookies(DiscardingSecureCookie(ReturnToThisSiteXsrfTokenCookieName))
-  }
+  } */
 
 
   def getIdentityProvider(authnState: OngoingAuthnState, dao: SiteDao)
@@ -2300,13 +2315,15 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                   "picture.type(small)" +
               // Tell Facebook to use HTTPS for pictures — so no mixed contents warnings.
               "&return_ssl_resources=1"
-        facebookProvider().settings
+        //facebookProvider().settings
+        getOrThrowDisabled(globals.socialLogin.facebookOAuthSettings)
 
       case WellKnownIdpImpl.GitHub =>
         if (!siteSettings.enableGitHubLogin) return Bad("GitHub login not enabled")
         // We fetch a verified email addr (if any) in an OAuth2 extra request.
         trustVerifiedEmailAddr = true // [gmail_verifd]
-        val s = githubProvider().settings
+        //val s = githubProvider().settings
+        val s = getOrThrowDisabled(globals.socialLogin.githubOAuthSettings)
         var url = s.apiURL getOrElse "https://api.github.com/user" // keep configurable
         url = url.trim()
         // Old uri param, nowadays Basic Auth header instead.
@@ -2330,24 +2347,26 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // Google's OAuth2 impl returns user info in OIDC format. [goog_oidc]
         userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo"
         trustVerifiedEmailAddr = true // [gmail_verifd]
-        googleProvider().settings
+        //googleProvider().settings
+        getOrThrowDisabled(globals.socialLogin.googleOAuthSettings)
 
       case WellKnownIdpImpl.LinkedIn =>
         // ScribeJava + LinkedIn example:
         // https://github.com/scribejava/scribejava/blob/master/scribejava-apis/src/test/java/com/github/scribejava/apis/examples/LinkedIn20Example.java
         if (!siteSettings.enableLinkedInLogin) return Bad("LinkedIn login not enabled")
         userInfoUrl = "https://api.linkedin.com/v2/me"
-        linkedinProvider().settings
+        //linkedinProvider().settings
+        getOrThrowDisabled(globals.socialLogin.linkedInOAuthSettings)
 
       case WellKnownIdpImpl.Twitter =>
-        if (!siteSettings.enableTwitterLogin) return Bad("Twitter login not enabled")
+        //if (!siteSettings.enableTwitterLogin) return Bad("Twitter login not enabled")
         return Bad("Twitter authn not impl via ScribeJava [TyEAUTTWTSCRJVA]")
         // Won't work — Twitter uses OAuth1, but Ty only supports OAuth2 via ScribeJava:
         // [0_twitter_aun]
         // twitterProvider().settings
 
       case _ =>
-        return Bad(s"IDP not yet impl with ScribeJava: $protoAlias  [TyEGLOBIDPUNSUP]")
+        return Bad(s"IDP not yet supported: $protoAlias  [TyEGLOBIDPUNSUP]")
     }
 
     // The dummy_TyE... below aren't needed — the correct endpoints are
@@ -2386,7 +2405,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-
+  /*
   private val HttpLayer =
     new silhouette.api.util.PlayHTTPLayer(globals.wsClient)(globals.executionContext)
 
@@ -2452,7 +2471,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private def instagramProvider(): InstagramProvider with CommonSocialProfileBuilder =
     new InstagramProvider(HttpLayer, socialStateHandler,
       getOrThrowDisabled(globals.socialLogin.instagramOAuthSettings))
-
+  */
 
   private def getOrThrowDisabled[A](anySettings: A Or ErrorMessage): A = anySettings match {
     case Good(settings) => settings
@@ -2469,6 +2488,8 @@ case class ExternalEmailAddr(
   isVerified: Boolean,
   isPublic: Boolean)
 
+
+/*
 
 sealed abstract class Gender
 object Gender {
@@ -2681,7 +2702,8 @@ class CustomGitHubProvider(
   }
 }
 
-
+*/
+/*
 
 // Silhouette doesn't yet support LinkedIn API v2 so using this class,
 // temporarily.
@@ -2814,3 +2836,5 @@ class LinkedInProfileParserApiV2(
     })(executionContext)
   }
 }
+
+ */

@@ -20,7 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
-import ed.server.http.{DebikiRequest, GetRequest, PageRequest}
+import talkyard.server.http.{DebikiRequest, GetRequest, PageRequest}
 import SiteAssetBundlesController.{StylesheetAssetBundleNameRegex, assetBundleFileName}
 import scala.xml.Unparsed
 
@@ -359,7 +359,7 @@ class SiteTpi protected (
     s"$cdnOrServerOrigin/-/fonts/$fileName"   // sync w Nginx [NGXSTC]
 
   def uploadsUrlPrefix: St =
-    cdnOrServerOrigin + ed.server.UploadsUrlBasePath + pubSiteId + '/'
+    cdnOrServerOrigin + talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
 
   def pubSiteIdOrigin: St =
     globals.siteByPubIdOrigin(pubSiteId)

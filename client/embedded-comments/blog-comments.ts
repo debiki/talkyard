@@ -29,10 +29,11 @@ declare function smoothScroll(elem: Element, x: number, y: number,
     durationMs?: number, onDone?: () => void);
 
 interface WindowWithTalkyardProps {
-  talkyardLogLevel: number | undefined;
+  talkyardLogLevel?: Nr;
   talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
-  talkyardAuthnToken: St | Ay | U;
-  talkyardManyCommentIframes: Bo | U;
+  talkyardAuthnToken?: St | Ay;
+  talkyardManyCommentIframes?: Bo;
+  talkyardConsiderQueryParams?: St[];
   edRemoveCommentsAndEditor: () => void;
   edReloadCommentsAndEditor: () => void;
   talkyardRemoveCommentsAndEditor: () => void;
@@ -69,11 +70,11 @@ const talkyardLogLevel: Nr | St = (typeof winLogLvl !== 'undefined') ? winLogLvl
 
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
-function makeTalkyardLogFn(isWarn: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
+function makeTalkyardLogFn(isWarnOrErr: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
   // For now, so at least 'warn' works, as per the "disable logging by ..."
   // comment below.
   const skipDebug = !talkyardLogLevel || talkyardLogLevel === 'warn';
-  if (skipDebug && !isWarn || !window.console)
+  if (skipDebug && !isWarnOrErr || !window.console)
     return function() {};
 
   return function logFn(..._arguments) {
@@ -93,6 +94,7 @@ function makeTalkyardLogFn(isWarn: Bo, consoleLogFn: (...data: Ay[]) => Vo) {
 const logD = makeTalkyardLogFn(false, console.debug);
 const logM = makeTalkyardLogFn(false, console.log);
 const logW = makeTalkyardLogFn(true, console.warn);
+const logE = makeTalkyardLogFn(true, console.error);
 
 // const j2s = JSON.stringify;
 
@@ -126,6 +128,7 @@ const insecureSomethingErrMsg = insecureTyIframeProbl ? (
     "— If this is your site, what if you get a LetsEncrypt cert? [TyEINSCBLG]"
         ) : */  '');
 
+const considerQueryParams = windowWithTalkyardProps.talkyardConsiderQueryParams;
 
 // For automatic Single Sign-On with PASETO authn tokens, either in a variable,
 // or a cookie (cookie better? So not incl in html, although encrypted).
@@ -442,10 +445,54 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
 
   logD(`intCommentIframe(..., iframeNr = ${iframeNr}, ...)`);
 
+  // Tests:  embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
+
   // The server wants the embedding URL, to know if it should add 'localhost'
   // to the allowed frame-ancestors, for development. [embng_url]
-  var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
-  var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
+  // Ignore the query string, by default. It's almost always just for tracking
+  // and analytics — but almost never for deciding what page to show.
+  let embeddingUrl = location.origin + location.pathname;
+
+  if (!considerQueryParams) {
+    // Noop: Leave embeddingUrl as is, without query params.
+  /* Maybe later:
+  }
+  else if (considerQueryParams === 'AllReally') {
+    // Consider all query params, mostly for backw compat.
+    embeddingUrl += location.search;
+  }
+  else if (considerQueryParams === 'SkipTracking') {
+    // Exclude:  &ref=  &campaign=... and utm_...= and ...
+    // see:  https://en.wikipedia.org/wiki/UTM_parameters
+    // and:  https://www.talkyard.io/-645#post-4
+    */
+  }
+  else if (considerQueryParams.length) {
+    // Consider only the specified query param(s).
+    const url = new URL(location.toString());
+    for (let i = 0; i < considerQueryParams.length; ++i) {
+      const paramName = considerQueryParams[i];
+      const unencVal = url.searchParams.get(paramName);
+      const encodedVal = encodeURIComponent(unencVal);
+      // For this to work with many query params, would need to call
+      // encodeURIComponent on the whole embeddingUrl afterwards [enc_aft],
+      // and unencode it server side. And to know that it's been encoded,
+      // could rename the param to embgUrl=... whilst the server would know that
+      // embeddingUrl hadn't been encoded (the blog comments script is cached
+      // for up to a day [embcom_script_cache_time]).
+      if (i >= 1) {
+        logW(`Only one query param supported, but talkyardConsiderQueryParams is: ${
+              JSON.stringify(considerQueryParams)} — ignoring all but ${
+              considerQueryParams[0]}`);
+        break;;
+      }
+      embeddingUrl += i === 0 ? '?' : '&';
+      embeddingUrl += `${paramName}=${encodedVal}`;
+    }
+  }
+
+  // Could rename param, and encode the value, see above [enc_aft].
+  const embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
   // NEXT:
   // + data-page      = places comments on that page / auto-creates it
@@ -508,7 +555,7 @@ function intCommentIframe(commentsElem, iframeNr: Nr, manyCommentsIframes: Bo) {
           htmlClassParam + logLevelParam + scriptVersionQueryParam;
 
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
-  loadWeinre = window.location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
+  loadWeinre = location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
   if (loadWeinre) {
     // Let's append the whole hash fragment — nice to see any client "name"
     // you can debug-include in the hash, in Weinre's debug targets list.
@@ -1238,7 +1285,7 @@ function sendToOneIframe(iframe, message: any | null, retryNr: Nr = 0) {
 function findOneTimeLoginSecret() {
   // This need not be at the start of the hash fragment — but if there's anything before
   // or after, needs to be separated with one of [#&].
-  var loginSecretHashMatch = window.location.hash.match(
+  var loginSecretHashMatch = location.hash.match(
       /[#&]talkyardOneTimeLoginSecret=([a-zA-Z0-9]+)([#&].*)?$/);
   if (loginSecretHashMatch) {
     oneTimeLoginSecret = loginSecretHashMatch[1];
@@ -1247,7 +1294,7 @@ function findOneTimeLoginSecret() {
     // will reply Error and Talkyard would show an error message in the browser.
     logM("Found one time login secret, removing from url: " + oneTimeLoginSecret);
     // Maybe use history.replaceState({}, '', '# ...') instead?
-    window.location.hash = window.location.hash.replace(
+    location.hash = location.hash.replace(
         'talkyardOneTimeLoginSecret=' + oneTimeLoginSecret, '');
   }
 }
@@ -1255,7 +1302,7 @@ function findOneTimeLoginSecret() {
 
 
 function findCommentToScrollTo() {
-  const commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)([#&].*)?$/);  // [2PAWC0]
+  const commentNrHashMatch = location.hash.match(/^#comment-(\d+)([#&].*)?$/);  // [2PAWC0]
   if (commentNrHashMatch) {
     const commentNrStr = commentNrHashMatch[1];
     const commentNr = parseInt(commentNrStr);

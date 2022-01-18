@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{MemCacheKey, SiteDao, CacheOrTx}
 import MayMaybe.{NoMayNot, NoNotFound, Yes}
-import ed.server.http._
+import talkyard.server.http._
 import scala.collection.immutable
 import scala.collection.immutable.Seq
 

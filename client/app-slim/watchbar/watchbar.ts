@@ -197,6 +197,7 @@ const ChatChannels = createComponent({
         store.allCategoriesHacky = categories;
         const category = store_getCurrOrDefaultCat(store);
         dieIf(!category, 'EsE4KPE02');
+        // COULD let pat choose between joinless, and join-first, chat types? [JoinlessChat]
         editor.editNewForumPage(category.id, PageRole.OpenChat);
       });
     });

@@ -19,7 +19,7 @@ package debiki
 
 import com.debiki.core._
 import debiki.dao.DaoAppSuite
-import ed.server.http.DebikiRequest
+import talkyard.server.http.DebikiRequest
 import org.mockito.Mockito._
 import org.mockito.Mockito
 import play.api.http.Status.TOO_MANY_REQUESTS

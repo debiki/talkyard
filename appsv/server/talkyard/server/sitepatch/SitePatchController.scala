@@ -21,8 +21,8 @@ import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki._
 import debiki.EdHttp._
-import ed.server._
-import ed.server.http.DebikiRequest
+import talkyard.server._
+import talkyard.server.http.DebikiRequest
 import javax.inject.Inject
 import play.api._
 import play.api.libs.json._
@@ -39,8 +39,8 @@ import talkyard.server.JsX.JsStringOrNull
   *
   * Search for [readlater] for stuff ignored right now.
   */
-class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class SitePatchController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.security

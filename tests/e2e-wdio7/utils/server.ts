@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as utils from './utils';
 import c from '../test-constants';
-import { j2s, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, dieIf,
+import { j2s, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, dieIf, logServerResponse,
         } from './log-and-die';
 
 const syncRequest = require('sync-request');
@@ -256,6 +256,26 @@ function showResponseBodyJson(body) {
 }
 
 
+function createSiteViaPubApi(ps: { data: any,
+        wrongApiSecret?: true }): { newSite: { origin: St, id: SiteId }} {
+  // See CreateSiteController.apiV0_createSite.
+  const url = settings.mainSiteOrigin + '/-/v0/create-site';
+  const data = {
+    ...ps.data,
+  };
+  const apiSecret = ps.wrongApiSecret ? 'wrongCreateSiteApiSecret' :
+          'publicCreateSiteApiTestSecret';
+  const resp = postOrDie(url, data, { apiRequester: 'createsite', apiSecret,
+        fail: !!ps.wrongApiSecret,
+        hintIfErr:
+          `You need this in conf/my.conf:\n\n` +
+          'talkyard.createSiteApiSecret="publicCreateSiteApiTestSecret"' });
+  const respJson = resp.bodyJson();
+  logServerResponse(respJson);
+  return respJson;
+}
+
+
 function importRealSiteData(siteData: SiteData2): IdAddress {
   // We're importing test data, to a "real" endpoint that works also
   // in Prod mode. [06KWFNDS2]
@@ -321,6 +341,9 @@ function addAdminNotice(ps: { siteId: SiteId, noticeId: Nr }) {
 
 async function getLastEmailSenTo(siteId: SiteId, email: St, dontWait?: 'DontWait')
         : Pr<EmailSubjectBody | Nl> {
+  if (!email || email.indexOf('@') <= 0 || email.indexOf('@') >= email.length - 2) {
+    die(`Not an email address: '${email}'  [TyE4MQEJ9MS2]`);
+  }
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const response = await getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
@@ -364,6 +387,16 @@ async function countLastEmailsSentTo(siteId: SiteId, email: St): Pr<Nr> {
 async function getEmailsSentToAddrs(siteId: SiteId): Pr<{ num: Nr, addrsByTimeAsc: St[] }> {
   const response = await getOrDie(settings.mainSiteOrigin + `/-/num-e2e-test-emails-sent?siteId=${siteId}`);
   return JSON.parse(response.body);
+}
+
+
+async function waitAndGetLastReplyNotfLinkEmailedTo(siteId: SiteId, emailAddress: St,
+          ps: { textInMessage: St, urlPart: St }): Pr<St> {
+  const matchRes = await waitUntilLastEmailMatches(siteId, emailAddress, ps.textInMessage);
+  const email = matchRes.matchedEmail;
+  dieIf(!email, `No email has been sent to ${emailAddress} with text: "${ps.textInMessage
+          }". [TyE2ABKF058]`);
+  return utils.findFirstLinkToUrlIn(ps.urlPart, email.bodyHtmlText);
 }
 
 
@@ -477,6 +510,7 @@ async function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
   if (opts?.isActivitySummary) {
     textsToMatch = [...textsToMatch, 'e_ActSumEm'];
   }
+  dieIf(!textsToMatch?.map, `No texts to match; textsToMatch is: ${j2s(textsToMatch)}`);
   const startMs = Date.now();
   let hasDebugLoggedLastEmail = false;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
@@ -741,6 +775,7 @@ export default {
   countLastEmailsSentTo,
   getEmailsSentToAddrs,
   sendIncomingEmailWebhook,
+  waitAndGetLastReplyNotfLinkEmailedTo,
   waitAndGetLastVerifyEmailAddressLinkEmailedTo,
   // no, worse name:
   // getVerifyEmailAddressLinkFromLastEmailTo: waitAndGetLastVerifyEmailAddressLinkEmailedTo,
@@ -758,6 +793,7 @@ export default {
   lastEmailMatches,
   assertLastEmailMatches,
   apiV0: {
+    createSite: createSiteViaPubApi,
     fullTextSearch,
     listQuery,
     do_,
