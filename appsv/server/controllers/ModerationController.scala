@@ -20,8 +20,8 @@ package controllers   // MOVE this file to  talkyard.server.modn
 import com.debiki.core._
 import debiki.JsonMaker
 import debiki.EdHttp._
-import ed.server.http.{ApiRequest, GetRequest}
-import ed.server.{EdContext, EdController}
+import talkyard.server.http.{ApiRequest, GetRequest}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc
@@ -40,8 +40,8 @@ import talkyard.server.JsX.{JsEmptyObj, JsPageMetaBrief, JsUser}
   * for guests, when not allowed. (Logging errors = letting people clutter the log files with
   * crap.)
   */
-class ModerationController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class ModerationController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
 

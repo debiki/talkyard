@@ -131,7 +131,7 @@ trait SessionSiteDaoMixin {
   def terminateSessionForCurReq(req: play.api.mvc.RequestHeader): U = {
     REFACTOR // Move these cookie names — and their whole file — to this pkg.
     // Thereafter, can remove this import.
-    import ed.server.security.EdSecurity._
+    import talkyard.server.security.EdSecurity._
 
     val sidPart12Maybe3FromHeader: Opt[St] = req.headers.get(SessionIdHeaderName)
     val sidPart123FromCookie: Opt[St] =

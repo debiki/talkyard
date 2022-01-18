@@ -21,19 +21,19 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.search.SearchEngine
+import talkyard.server.search.SearchEngine
 import org.{elasticsearch => es}
 import redis.RedisClient
 import talkyard.server.dao._
 import talkyard.server.{PostRendererSettings, TyLogging}
 import scala.collection.immutable
 import scala.collection.mutable
-import ed.server.EdContext
+import talkyard.server.TyContext
 import talkyard.server.authz.MayMaybe
-import ed.server.notf.NotificationGenerator
-import ed.server.pop.PagePopularityDao
-import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
-import ed.server.summaryemails.SummaryEmailsDao
+import talkyard.server.notf.NotificationGenerator
+import talkyard.server.pop.PagePopularityDao
+import talkyard.server.pubsub.{PubSubApi, StrangerCounterApi}
+import talkyard.server.summaryemails.SummaryEmailsDao
 import org.scalactic.{ErrorMessage, Or}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
@@ -62,7 +62,7 @@ case object UseCache extends CacheOrTx { def anyTx: Opt[SiteTx] = None}
 
 
 class SiteDaoFactory (
-  private val context: EdContext,
+  private val context: TyContext,
   private val _dbDaoFactory: DbDaoFactory,
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
@@ -91,6 +91,7 @@ trait ReadOnlySiteDao {
   def now(): When
 
   def nashorn: Nashorn
+  @deprecated // can create new tx
   def textAndHtmlMaker: TextAndHtmlMaker
   def makePostRenderSettings(pageType: PageType): PostRendererSettings
 }
@@ -111,7 +112,7 @@ trait ReadOnlySiteDao {
   */
 class SiteDao(
   val siteId: SiteId,
-  val context: EdContext,
+  val context: TyContext,
   private val dbDaoFactory: DbDaoFactory,
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
@@ -138,7 +139,7 @@ class SiteDao(
   with PostsDao
   with TagsDao
   with SearchDao
-  with ed.server.spam.QuickSpamCheckDao
+  with talkyard.server.spam.QuickSpamCheckDao
   with UploadsDao
   with UserDao
   with MessagesDao
@@ -158,6 +159,11 @@ class SiteDao(
 
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
 
+  def copyWithNewSiteId(siteId: SiteId): SiteDao =
+    new SiteDao(
+          siteId = siteId, context, dbDaoFactory, redisClient, cache,
+          usersOnlineCache, elasticSearchClient, config)
+
   def globals: debiki.Globals = context.globals
   def jsonMaker = new JsonMaker(this)
 
@@ -173,7 +179,9 @@ class SiteDao(
   // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,
   // so won't need to always use makePostRenderSettings() below before
   // using textAndHtmlMaker?
+  @deprecated // might create a new tx
   def textAndHtmlMaker = new TextAndHtmlMaker(theSite(), context.nashorn)
+  def textAndHtmlMakerNoTx(site: Site) = new TextAndHtmlMaker(site, context.nashorn)
 
   def makePostRenderSettings(pageType: PageType): PostRendererSettings = {
     val embeddedOriginOrEmpty =
@@ -241,26 +249,21 @@ class SiteDao(
   }
 
 
-  def writeTx[R](retry: Boolean = false, allowOverQuota: Boolean = false)(
+  def writeTx[R](retry: Bo = false, allowOverQuota: Bo = false)(
           // maybe incl  lims = getMaxLimits(UseTx(tx))  too? Always needed, right?
           // And a class  TxCtx(tx, maxLimits, rateLimits, staleStuff) ?
           fn: (SiteTransaction, StaleStuff) => R): R = {
     dieIf(retry, "TyE403KSDH46", "writeTx(retry = true) not yet impl")
 
     val staleStuff = new StaleStuff()
-    val result: R = readWriteTransaction(tx => {
+
+    val runFnUpdStaleStuff = (tx: SiteTx) => {
       val result = fn(tx, staleStuff)
 
 
       // ----- Refresh database cache
 
-      if (staleStuff.areAllPagesStale) {
-        tx.bumpSiteVersion()
-      }
-      else {
-        // Refresh database page cache:
-        tx.markPagesHtmlStale(staleStuff.stalePageIdsInDb)
-      }
+      staleStuff.clearStaleStuffInDatabase(tx)
 
       // [cache_race_counter] Maybe bump mem cache contents counter here,
       // just before this tx ends and the mem cache thus becomes stale?
@@ -268,24 +271,16 @@ class SiteDao(
       // when the counter was odd, must not be cached.
 
       result
-    }, allowOverQuota)
+    }
+
+    val result: R =
+          readWriteTransaction(runFnUpdStaleStuff, allowOverQuota)
 
 
     // ----- Refresh in-memory cache   [rm_cache_listeners]
 
-    if (staleStuff.areAllPagesStale) {
-      // Currently then need to: (although clears unnecessarily much)
-      memCache.clearThisSite()
-    }
-    else if (staleStuff.nonEmpty) {
-      staleStuff.staleParticipantIdsInMem foreach { ppId =>
-        removeUserFromMemCache(ppId)
-      }
-      staleStuff.stalePageIdsInMem foreach { pageId =>
-        refreshPageInMemCache(pageId)
-      }
-      uncacheLinks(staleStuff)
-    }
+    staleStuff.clearStaleStuffInMemory(this)
+
 
     // [cache_race_counter] Maybe somehow "mark as done" the bumping of the
     // mem cache contents counter?
@@ -344,8 +339,8 @@ class SiteDao(
     pageIds.foreach(refreshPageInMemCache)
   }
 
-  def clearDatabaseCacheAndMemCache(): U = {
-    readWriteTransaction(_.bumpSiteVersion())
+  def clearDatabaseCacheAndMemCache(anyTx: Opt[(SiteTx, StaleStuff)] = None): U = {
+    writeTxTryReuse(anyTx)((tx, _) => tx.bumpSiteVersion())
     memCache.clearThisSite()
   }
 

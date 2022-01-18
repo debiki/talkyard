@@ -286,7 +286,11 @@ const LoginDialog = createClassAndFactory({
         afterLoginCallback: state.afterLoginCallback,
         setChildDialog: this.setChildDialog,
         childDialog: state.childDialog,
-        closeDialog: this.close,
+        closeDialog: (closeAll?: 'CloseAllLoginDialogs') => {
+          if (!state.preventClose) {
+            this.close(closeAll);
+          }
+        },
         isLoggedIn: state.isLoggedIn,
         switchDialog: this.switchDialog,
         store: state.store } as LoginDialogContentProps);
@@ -588,8 +592,10 @@ const LoginDialogContent = createClassAndFactory({
                 ExtIdpAuthnBtn(makeAuthnProps('icon-facebook', 'Facebook', rFragment({},
                   // Need to follow Facebook's brand guidelines. [FBBRAND]
                   FacebookLogoImage, "Facebook"))),
+            /* Twitter login won't work, until they support OAuth2. [0_twitter_aun]
             !ss.enableTwitterLogin ? null :
                 ExtIdpAuthnBtn(makeAuthnProps('icon-twitter', 'Twitter')),
+                */
             !ss.enableGitHubLogin ? null :
                 ExtIdpAuthnBtn(makeAuthnProps('icon-github-circled', 'GitHub')),
             !ss.enableLinkedInLogin ? null :
@@ -654,7 +660,7 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
     // (This parameter tells the server to set a certain cookie. Setting it here
     // instead has no effect, don't know why.)
     const mayNotCreateUser =
-            props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
+            props.loginReason === LoginReason.LoginToAdministrate ? 'mayNotCreateUser&' : '';
 
     // A bit weird, just now when migrating to ScribeJava.
     let useServerGlobalIdp = false;
@@ -662,15 +668,19 @@ function ExtIdpAuthnBtn(props: ExtIdpAuthnBtnProps) {
       // Try-catch not needed, but anyway.
       try {
         const store: Store = ReactStore.allData();
-        useServerGlobalIdp =
+        /* Now use always, by default.
               debiki2.store_isFeatFlagOn(store, 'ffUseScribeJava') ||
               getMainWin().location.hash.indexOf('&tryScribeJava&') >= 0;
-        useServerGlobalIdp &&= !debiki2.store_isFeatFlagOn(store, 'ffNotScribeJava');
+        */
+        useServerGlobalIdp = !debiki2.store_isFeatFlagOn(store, 'ffNotScribeJava');
         // Twitter (OAuth1) doesn't yet work via ScribeJava; only these do (OAuth2):
+        /* And skip Twitter; there's been an admin notice about no more Twitter login,
+        // for many months.
         useServerGlobalIdp &&= providerLowercase === 'google' ||
                 providerLowercase === 'facebook' ||
                 providerLowercase === 'github' ||
                 providerLowercase === 'linkedin' ;
+        */
       }
       catch (ex) {
         logD(`Srv glob idp err [TyE406MRKD2]`, ex);
@@ -794,6 +804,8 @@ const PasswordLoginDialogContent = createClassAndFactory({
         r.a({ href: linkToResetPassword(),
             // Once the password has been reset, the user will be logged in automatically. Then
             // it's confusing if this dialog is still open, so close it on click. [5KWE02X]
+            // (Unless pat is in the admin area, or the site is private — because then there'd
+            // be nothing to see, if closing the login dialog. See:  preventClose: Bo, above.)
             // UX COULD show reset-pwd input in a dialog directly here instead, don't want it
             // on a separate page.
             onClick: () => this.props.closeDialog('CloseAllLoginDialogs'),

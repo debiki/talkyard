@@ -22,8 +22,8 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao._
 import talkyard.server.authz.{Authz, ForumAuthzContext}
-import ed.server.http._
-import ed.server.security.{SidStatus, SidOk}
+import talkyard.server.http._
+import talkyard.server.security.{SidStatus, SidOk}
 import java.{lang => jl, util => ju}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Element => jsoup_Element}
@@ -313,7 +313,13 @@ class JsonMaker(dao: SiteDao) {
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
     // than to lookup them each request.
-    val pageMemberIds = transaction.loadMessageMembers(page.id)
+    // However, if a chat was changed from OpenChat to JoinlessChat, in the database,
+    // there might already be page members (from when it was OpenChat). Then, don't
+    // load those members — JoinlessChat:s don't have any members. (But keep in the db,
+    // in case the page type gets changed back.)
+    val pageMemberIds: Set[UserId] =
+          if (!page.pageType.isGroupTalk) Set.empty
+          else transaction.loadMessageMembers(page.id)
 
     val userIdsToLoad = mut.Set[UserId]()
     userIdsToLoad ++= pageMemberIds

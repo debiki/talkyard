@@ -24,14 +24,14 @@ import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.EdHttp._
-import ed.server.pubsub.StorePatchMessage
+import talkyard.server.pubsub.StorePatchMessage
 import play.api.libs.json.{JsObject, JsValue}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
 import PostsDao._
 import talkyard.server.authz.Authz
-import ed.server.spam.SpamChecker
+import talkyard.server.spam.SpamChecker
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
 
@@ -215,7 +215,8 @@ trait PostsDao {
     // from the new textAndHtml only. [new_upl_refs]
     val uploadRefs = textAndHtml.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2 = findUploadRefsInPost(newPost)
+      val site = tx.loadSite getOrDie "TyE602MREJF"
+      val uplRefs2 = findUploadRefsInPost(newPost, Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE503SKH5", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
@@ -392,7 +393,7 @@ trait PostsDao {
     // COULD add a users3 table status field instead, and update it on write, which says
     // if the user has too many pending comments / edits. Then could thow that status
     // client side, withouth having to run the below queries again and again.
-    // Also, would be simpler to move all this logic to ed.server.auth.Authz.
+    // Also, would be simpler to move all this logic to talkyard.server.auth.Authz.
 
     // Don't review, but auto-approve, user-to-user messages. Staff aren't supposed to read
     // those, unless the receiver reports the message.
@@ -578,9 +579,14 @@ trait PostsDao {
       if (!page.pageType.isChat)
         throwForbidden("EsE5F0WJ2", s"Page $pageId is not a chat page; cannot insert chat message")
 
-      val pageMemberIds = tx.loadMessageMembers(pageId)
-      if (!pageMemberIds.contains(authorId))
-        throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
+      if (page.pageType == PageType.JoinlessChat) {
+        // Noop. No need to have joined the chat channel, to start chatting.
+      }
+      else {
+        val pageMemberIds = tx.loadMessageMembers(pageId)
+        if (!pageMemberIds.contains(authorId))
+          throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
+      }
 
       // Try to append to the last message, instead of creating a new one. That looks
       // better in the browser (fewer avatars & sent-by info), + we'll save disk and
@@ -681,7 +687,8 @@ trait PostsDao {
     // New post, all refs in textAndHtml regardless of if approved or not. [new_upl_refs]
     val uploadRefs: Set[UploadRef] = textAndHtml.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2: Set[UploadRef] = findUploadRefsInPost(newPost)
+      val site = tx.loadSite getOrDie "TyE602MREJ7"
+      val uplRefs2: Set[UploadRef] = findUploadRefsInPost(newPost, Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE38RDHD4", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
@@ -1420,7 +1427,8 @@ trait PostsDao {
         val refs = approvedRefs ++ unapprRefs
 
         if (Globals.isDevOrTest) {
-          val r2 = findUploadRefsInPost(editedPost) // [nashorn_in_tx]
+          val site = tx.loadSite getOrDie "TyE602MREJ7"
+          val r2 = findUploadRefsInPost(editedPost, Some(site)) // [nashorn_in_tx]
           dieIf(refs != r2, "TyE306KSM233", s"refs: $refs, r2: $r2")
         }
 

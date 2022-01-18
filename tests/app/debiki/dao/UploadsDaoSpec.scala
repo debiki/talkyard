@@ -93,7 +93,7 @@ class UploadsDaoSpec extends AnyFreeSpec with must.Matchers {
       val badPathSlashMissing = s"/-/u/$pubSiteIdOne/0/1/22444444444444444444444444444444.jpg"
 
       def mkRef(hashPath: String) = UploadRef(
-        ed.server.UploadsUrlBasePath, hashPath
+         talkyard.server.UploadsUrlBasePath, hashPath
             .replaceAllLiterally(s"/-/u/$pubSiteIdOne/", "")
             .replaceAllLiterally(s"/-/u/$pubSiteIdTwo/", "")
             .replaceAllLiterally("/-/u/", ""))

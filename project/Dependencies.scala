@@ -50,10 +50,11 @@ object Dependencies {
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.5"
+    val apacheCommonsLang3 = "org.apache.commons" % "commons-lang3" % "3.12.0"
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "1.27"  // 2.1.0 is newest, SHOULD SECURITY
+    val apacheTika = "org.apache.tika" % "tika-core" % "1.28"  // 2.1.0 is newest, SHOULD SECURITY
 
     val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
 
@@ -97,7 +98,7 @@ object Dependencies {
     //
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.18.2"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.18.3"
 
 
     // ----- PASETO tokens
@@ -117,7 +118,7 @@ object Dependencies {
     // Needed for v2.public, in Java 8:
     // But the BouncyCastle docs are not nice to read, plus ads.
     // Upgr to Java 11, so won't need to read.
-    //val jpasetoBouncyCastle = "dev.paseto" % "jpaseto-bouncy-castle" % "0.6.0" //% "runtime"
+    //val jpasetoBouncyCastle = "dev.paseto" % "jpaseto-bouncy-castle" % "0.7.0" //% "runtime"
     //val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15to18" % "1.68"
 
     // For v2.public — cannot get this working though.

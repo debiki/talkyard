@@ -22,9 +22,9 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import debiki.dao.SiteDao
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
-import ed.server.http._
+import talkyard.server.http._
 import java.{util => ju}
 import javax.inject.Inject
 import play.api.libs.json.{JsArray, JsString, JsValue, Json}
@@ -34,8 +34,8 @@ import talkyard.server.JsX.JsLongOrNull
 
 /** Creates pages, toggles is-done, deletes them.
   */
-class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security.throwNoUnless
 

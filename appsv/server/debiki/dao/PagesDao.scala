@@ -25,7 +25,7 @@ import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
 import talkyard.server.authz.Authz
-import ed.server.spam.SpamChecker
+import talkyard.server.spam.SpamChecker
 import java.{util => ju}
 import scala.collection.immutable
 import talkyard.server.dao._
@@ -93,7 +93,11 @@ trait PagesDao {
 
     if (pageRole.isPrivateGroupTalk) {
       throwForbidden("EsE5FKE0I2", "Use MessagesDao instead")
-      // Perhaps OpenChat pages should be created via MessagesDao too? [5KTE02Z]
+      // Perhaps JoinlessChat/OpenChat pages should be created via MessagesDao too? [5KTE02Z]
+    }
+
+    if (pageRole.isChat && byWho.isGuest) {
+      throwForbidden("TyE7KFWY63", "Guests may not create chats")
     }
 
     if (pageRole.isGroupTalk && byWho.isGuest) {
@@ -171,6 +175,8 @@ trait PagesDao {
     val authorId = byWho.id
     val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
+
+    val site = tx.loadSite() getOrDie "TyE8MWNP247"
     val categoryPath = tx.loadCategoryPathRootLast(anyCategoryId, inclSelfFirst = true)
     val groupIds = tx.loadGroupIdsMemberIdFirst(author)
     val permissions = tx.loadPermsOnPages()
@@ -271,7 +277,7 @@ trait PagesDao {
 
     val uploadRefs = body.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2 = findUploadRefsInPost(bodyPost)
+      val uplRefs2 = findUploadRefsInPost(bodyPost, site = Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE7RTEGP04", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 

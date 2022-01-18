@@ -23,8 +23,8 @@ import debiki.dao.{CatAlgs, UseTx}
 import debiki.EdHttp._
 import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PageDao, PagePartsDao, SettingsDao, SiteDao}
-import ed.server.notf.NotificationGenerator
-import ed.server.pop.PagePopularityDao
+import talkyard.server.notf.NotificationGenerator
+import talkyard.server.pop.PagePopularityDao
 import org.jsoup.Jsoup
 import scala.collection.immutable
 import scala.collection.mutable
@@ -326,6 +326,8 @@ case class SitePatcher(globals: debiki.Globals) {
             //  guestRealId
             //else
             guestInDb
+          case x =>
+            die("TyE57MWP2P", s"Guest is not a guest, it is a: ${classNameOf(x)}")
         }
         dieIf(upsertedGuestRealId.id <= -LowestTempImpId,
           "TyE305HKSD2", s"Guest id ${guestInPatch.id} got remapped to ${upsertedGuestRealId.id}")

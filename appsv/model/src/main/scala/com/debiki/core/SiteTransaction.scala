@@ -40,6 +40,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def deferConstraints(): Unit
 
+  // clearStaleStuffInDatabase(staleStuff)
 
   def loadSite(): Option[Site]
   def loadSiteInclDetails(): Option[SiteInclDetails]

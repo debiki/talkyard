@@ -26,7 +26,7 @@ import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.{ForgetEndToEndTestEmails, Globals}
 import debiki.EdHttp.{throwNotFound, throwBadReqIf, throwForbiddenIf}
-import ed.server.spam.ClearCheckingSpamNowCache
+import talkyard.server.spam.ClearCheckingSpamNowCache
 import java.util.concurrent.TimeUnit
 import play.api.libs.json.JsObject
 import talkyard.server.JsX

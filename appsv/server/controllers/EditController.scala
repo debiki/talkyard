@@ -22,8 +22,8 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import talkyard.server.linkpreviews.{LinkPreviewRenderer, PreviewResult, LinkPreviewProblem}
-import ed.server.http._
-import ed.server.{EdContext, EdController}
+import talkyard.server.http._
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
@@ -37,8 +37,8 @@ import org.scalactic.{Good, Or, Bad}
 
 /** Edits pages and posts.
   */
-class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
   def execCtx: ExecutionContext = context.executionContext

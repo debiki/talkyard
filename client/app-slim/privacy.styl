@@ -1,0 +1,50 @@
+
+// Hide people's names for superadmins — replace with gray rectangles.
+//
+html.c_IsSupAdm,
+html.c_IsSupStf
+
+  // Discussions
+  .esP_By_U,
+  .esP_By_F,
+  .dw-rr,
+  // Username menu, notifications therein
+  .s_MM .esNotf_by,
+  // Contextbar
+  .esCtxbar .esAvtrName_username,
+  .esCtxbar .esAvtrName_fullName,
+  // About dialog
+  .s_UD_Un,
+  .s_UD_FN,
+  .s_UD_Em samp,
+  // User profile page: about panel
+  .esUP_Un,
+  .esUP_FN,
+  // User profile page: prefs tab
+  .s_UP_Prefs samp,
+  .e_UP_Prefs_FN input,
+  // User profile page: notfs tab
+  .esNotfs .esNotf_by,
+  // User profile page: account tab
+  .s_UP_EmLg .s_UP_EmLg_EmL_It_Em,
+  .s_UP_EmLg .s_UP_EmLg_LgL_It_Em,
+  // Invites tab
+  .e_Inv_Em,  // email
+  .e_Inv_U,   // username
+  // Drafts tab — there's a name in text in this <p>; currently need to hide the whole <P>.
+  .c_Dfs_By
+    color: hsl(0 0% 93%) !important;
+    background: hsl(0 0% 93%) !important;
+
+  // User profile page: about panel, again — this looks better, because
+  // `display: block` would otherwise make any background box span the whole width.
+  .esUP_Un,
+  .esUP_FN
+    text-decoration-line: line-through;
+    text-decoration-thickness: 120%;
+    text-decoration-color: hsl(0 0% 82%);
+
+  .esMedAvtr
+    background: hsl(0 0% 87%);
+    img
+      visibility: hidden;

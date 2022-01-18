@@ -20,8 +20,8 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import org.scalactic.{Bad, Good, Or}
 import play.api._
@@ -37,9 +37,9 @@ import scala.concurrent.duration._
   * And 2) lets staff view the site, in read-only mode, as strangers, guests, normal members,
   * or member of some group. Only partly implemented (2017-01).
   */
-class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdContext,
+class ImpersonateController @Inject()(cc: ControllerComponents, edContext: TyContext,
     LoginController: LoginController)
-  extends EdController(cc, edContext) {
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.security._

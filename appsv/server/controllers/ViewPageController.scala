@@ -22,11 +22,11 @@ import com.debiki.core.Prelude._
 import debiki.RateLimits.NoRateLimits
 import debiki._
 import debiki.EdHttp._
-import ed.server.http._
+import talkyard.server.http._
 import play.api.libs.json._
 import play.api.mvc._
 import scala.concurrent.Future
-import ed.server.{EdContext, EdController, RenderedPage}
+import talkyard.server.{TyContext, TyController, RenderedPage}
 import javax.inject.Inject
 import ViewPageController._
 import debiki.dao.NoUsersOnlineStuff
@@ -44,8 +44,8 @@ import talkyard.server.JsX.JsObjOrNull
   * comments that are pending approval — although such unapproved comments
   * aren't loaded, when other people view the page.
   */
-class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security.throwIndistinguishableNotFound
   import context.globals

@@ -755,8 +755,11 @@ trait CategoriesDao {
 
     tx.insertCategoryMarkSectionPageStale(category)
 
+    COULD_OPTIMIZE // get as an arg instead?
+    val site: Site = tx.loadSite getOrDie "TyE0MWWNJ25"
+
     val titleSourceAndHtml = newCategoryData.makeAboutTopicTitle()
-    val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMaker)
+    val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMakerNoTx(site))
 
     val aboutPagePath = createPageImpl(
         PageType.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),

@@ -41,10 +41,11 @@ GET   /-/authn/verif-email-ask-if-link-accounts   controllers.LoginWithOpenAuthC
 POST  /-/authn/ans-link-accounts                  controllers.LoginWithOpenAuthController.answerLinkAccounts
 
 # Would like to remove, use /-/authn/oauth2/:name  instead:
-GET   /-/login-openauth/:providerName controllers.LoginWithOpenAuthController.startAuthentication(providerName, returnToUrl: Option[String])
+#ET   /-/login-openauth/:providerName controllers.LoginWithOpenAuthController.startAuthentication(providerName, returnToUrl: Option[String])
+# Keep this endpoint, for backwards compatibility, from before /-/authn/oauth2/:name was added.
 GET   /-/login-auth-callback/:providerName  controllers.LoginWithOpenAuthController.finishAuthentication(providerName)
-GET   /-/login-oauth-then-return/:providerName controllers.LoginWithOpenAuthController.loginAtLoginOriginThenReturnToOriginalSite(providerName, returnToOrigin, xsrfToken)
-GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
+#ET   /-/login-oauth-then-return/:providerName controllers.LoginWithOpenAuthController.loginAtLoginOriginThenReturnToOriginalSite(providerName, returnToOrigin, xsrfToken)
+#ET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
 POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handleCreateUserDialog
 
 GET   /-/impersonate-at-other-site  controllers.ImpersonateController.impersonateAtOtherSite(siteId: Int, userId: Int, goToSiteById: Option[Boolean])
@@ -53,8 +54,8 @@ POST  /-/impersonate            controllers.ImpersonateController.impersonate(us
 POST  /-/view-as-other          controllers.ImpersonateController.viewAsOther(userId: Int)
 POST  /-/stop-impersonating     controllers.ImpersonateController.stopImpersonating
 
-GET   /-/load-online-users      ed.server.pubsub.SubscriberController.loadOnlineUsers
-GET   /-/websocket              ed.server.pubsub.SubscriberController.webSocket
+GET   /-/load-online-users      talkyard.server.pubsub.SubscriberController.loadOnlineUsers
+GET   /-/websocket              talkyard.server.pubsub.SubscriberController.webSocket
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic(embeddingUrl, discussionId: Option[String], edPageId: Option[String], category: Option[String], scriptV: Option[String])
 GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(embeddingUrl, embeddingScriptV: Option[Int])
@@ -76,6 +77,7 @@ GET   /-/create-site                        controllers.CreateSiteController.sho
 GET   /-/create-site/embedded-comments      controllers.CreateSiteController.showPage(isTest = "false")
 GET   /-/create-test-site                   controllers.CreateSiteController.showPage(isTest = "true")
 GET   /-/create-test-site/embedded-comments controllers.CreateSiteController.showPage(isTest = "true")
+POST  /-/v0/create-site                     controllers.CreateSiteController.apiV0_createSite
 POST  /-/create-site                        controllers.CreateSiteController.createSite
 POST  /-/delete-test-site                   controllers.CreateSiteController.deleteTestSite
 GET   /-/_int_req/hostname-should-have-cert controllers.CreateSiteController.intReq_hostnameShouldHaveCert
@@ -171,9 +173,9 @@ GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(em
 POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)
 GET   /-/unsubscribed           controllers.UnsubscriptionController.showHasBeenUnsubscribed()
 
-GET   /-/unsub-from-summaries   ed.server.summaryemails.UnsubFromSummariesController.showUnsubForm(emailId)
-POST  /-/unsub-from-summaries   ed.server.summaryemails.UnsubFromSummariesController.handleForm
-GET   /-/unsub-summaries-done   ed.server.summaryemails.UnsubFromSummariesController.showHasBeenUnsubscribed()
+GET   /-/unsub-from-summaries   talkyard.server.summaryemails.UnsubFromSummariesController.showUnsubForm(emailId)
+POST  /-/unsub-from-summaries   talkyard.server.summaryemails.UnsubFromSummariesController.handleForm
+GET   /-/unsub-summaries-done   talkyard.server.summaryemails.UnsubFromSummariesController.showHasBeenUnsubscribed()
 
 GET   /-/load-invites           controllers.InviteController.loadInvites(sentById: Int)
 GET   /-/load-all-invites       controllers.InviteController.loadAllInvites
@@ -223,8 +225,8 @@ POST  /-/submit-custom-form-as-json-reply controllers.CustomFormController.handl
 POST  /-/submit-custom-form-as-new-topic  controllers.CustomFormController.handleNewTopic
 
 # UsabilityTestingExchangeController = [plugin]
-POST  /-/submit-usability-testing-form    ed.plugins.utx.UsabilityTestingExchangeController.handleUsabilityTestingForm
-GET   /-/utx-pick-a-task        ed.plugins.utx.UsabilityTestingExchangeController.pickTask(categorySlug)
+POST  /-/submit-usability-testing-form    talkyard.server.plugins.utx.UsabilityTestingExchangeController.handleUsabilityTestingForm
+GET   /-/utx-pick-a-task        talkyard.server.plugins.utx.UsabilityTestingExchangeController.pickTask(categorySlug)
 
 POST  /-/vote                   controllers.VoteController.handleVotes
 GET   /-/load-voters            controllers.VoteController.loadVoters(postId: Int, voteType: Int)

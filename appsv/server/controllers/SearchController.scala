@@ -19,13 +19,13 @@ package controllers
 
 import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
-import ed.server.search._
-import ed.server.http._
+import talkyard.server.search._
+import talkyard.server.http._
 import debiki.EdHttp._
 import scala.collection.immutable.Seq
 import Prelude._
 import debiki.dao.{SearchQuery, SiteDao}
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.mvc.{Action, ControllerComponents, Result}
@@ -36,8 +36,8 @@ import talkyard.server.api.ThingsFoundJson
 /** Full text search, for a whole site, or for a site section, e.g. a single
   * forum (including all sub forums and topics), a single blog, or wiki.
   */
-class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import SearchController._
 

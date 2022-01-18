@@ -21,7 +21,7 @@ import com.debiki.core._
 import controllers.OkApiJson
 import Prelude._
 import debiki.dao.{PageStuff, SiteDao}
-import ed.server.search.{PageAndHits, SearchHit}
+import talkyard.server.search.{PageAndHits, SearchHit}
 import play.api.libs.json._
 import play.api.libs.json.JsArray
 import play.api.mvc.Result
@@ -113,7 +113,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     val siteIdsOrigins = dao.theSiteIdsOrigins()
     val avatarUrlPrefix =
           siteIdsOrigins.uploadsOrigin +
-          ed.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
+           talkyard.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
 
     // --- The result
 
