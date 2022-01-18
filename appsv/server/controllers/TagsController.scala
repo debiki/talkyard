@@ -21,15 +21,15 @@ import com.debiki.core._
 import com.debiki.core.Prelude.{IfBadAbortReq, IfBadDie, throwUnimpl}
 import debiki.{JsonMaker, RateLimits, SiteTpi}
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import play.api.libs.json._
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX
 
 
-class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class TagsController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
 

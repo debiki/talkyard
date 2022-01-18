@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import debiki.EdHttp._
 import debiki.JsonMaker.NotfsAndCounts
-import ed.server.security.{BrowserId, ReservedNames, SidStatus}
+import talkyard.server.security.{BrowserId, ReservedNames, SidStatus}
 import java.{util => ju}
 import play.api.libs.json.{JsArray, JsObject}
 import play.{api => p}
@@ -635,7 +635,7 @@ trait UserDao {
   }
 
 
-  private def createPasswordUserImpl(userData: NewPasswordUserData, browserIdData: BrowserIdData,
+  def createPasswordUserImpl(userData: NewPasswordUserData, browserIdData: BrowserIdData,
         tx: SiteTransaction): UserInclDetails = {
     val now = userData.createdAt
     val userId = tx.nextMemberId

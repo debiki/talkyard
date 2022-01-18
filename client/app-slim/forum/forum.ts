@@ -2007,7 +2007,7 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
       title = r.span({}, r.span({ className: iconClass }, title));
     }
   }
-  else if (topic.pageRole === PageRole.OpenChat) {
+  else if (page_isOpenChat(topic.pageRole)) {
     if (showIcons) {
       tooltip = t.ft.TitleChat;
       title = r.span({}, r.span({ className: 'icon-chat' }), title);

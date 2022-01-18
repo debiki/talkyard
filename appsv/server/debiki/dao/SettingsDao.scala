@@ -132,15 +132,15 @@ trait SettingsDao {
         }
       }
 
-      import com.mohiva.play.silhouette.impl.providers
-      if (turnsOff(_.enableGoogleLogin)) throwIfLogsInWith(providers.oauth2.GoogleProvider.ID)
-      if (turnsOff(_.enableFacebookLogin)) throwIfLogsInWith(providers.oauth2.FacebookProvider.ID)
-      if (turnsOff(_.enableTwitterLogin)) throwIfLogsInWith(providers.oauth1.TwitterProvider.ID)
-      if (turnsOff(_.enableGitHubLogin)) throwIfLogsInWith(providers.oauth2.GitHubProvider.ID)
-      if (turnsOff(_.enableGitLabLogin)) throwIfLogsInWith(providers.oauth2.GitLabProvider.ID)
-      if (turnsOff(_.enableLinkedInLogin)) throwIfLogsInWith(providers.oauth2.LinkedInProvider.ID)
-      if (turnsOff(_.enableVkLogin)) throwIfLogsInWith(providers.oauth2.VKProvider.ID)
-      if (turnsOff(_.enableInstagramLogin)) throwIfLogsInWith(providers.oauth2.InstagramProvider.ID)
+      //import com.mohiva.play.silhouette.impl.providers
+      if (turnsOff(_.enableGoogleLogin)) throwIfLogsInWith("google") // providers.oauth2.GoogleProvider.ID)
+      if (turnsOff(_.enableFacebookLogin)) throwIfLogsInWith("facebook") // providers.oauth2.FacebookProvider.ID)
+      if (turnsOff(_.enableTwitterLogin)) throwIfLogsInWith("twitter") // providers.oauth1.TwitterProvider.ID)
+      if (turnsOff(_.enableGitHubLogin)) throwIfLogsInWith("github") // providers.oauth2.GitHubProvider.ID)
+      if (turnsOff(_.enableGitLabLogin)) throwIfLogsInWith("gitlab") // providers.oauth2.GitLabProvider.ID)
+      if (turnsOff(_.enableLinkedInLogin)) throwIfLogsInWith("linkedin") // providers.oauth2.LinkedInProvider.ID)
+      if (turnsOff(_.enableVkLogin)) throwIfLogsInWith("vk") // providers.oauth2.VKProvider.ID)
+      if (turnsOff(_.enableInstagramLogin)) throwIfLogsInWith("instagram") // providers.oauth2.InstagramProvider.ID)
 
       // Don't restrict login to only custom OIDC, unless custom IDPs enabled:
       if (turnsOn(_.useOnlyCustomIdps)) {

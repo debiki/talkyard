@@ -488,9 +488,11 @@ export const config = { // doesn't work: WebdriverIO.Config = {
     global.wdioBrowserC = global.browserC; //  — "" —
 
     // This won't resize any login popup though. Then, might need to scroll. [e2e_win_size]
+    // Doesn't always work? [invisible_br_width]
     global.wdioBrowserA.setWindowSize(1150, 1150);
     if (global.wdioBrowserB) global.wdioBrowserB.setWindowSize(1150, 1150);
     if (global.wdioBrowserC) global.wdioBrowserC.setWindowSize(1150, 1150);
+    if (global.wdioBrowserD) global.wdioBrowserD.setWindowSize(1150, 1150);
 
     // Extremely confusing if calling the wrong $, e.g.:
     //   $('#e_TermsL').getHTML();

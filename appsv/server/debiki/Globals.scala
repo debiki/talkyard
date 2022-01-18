@@ -26,14 +26,14 @@ import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
 import debiki.EdHttp._
-import ed.server.spam.{SpamCheckActor, SpamChecker}
+import talkyard.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
 import talkyard.server.migrations.ScalaBasedMigrations
 import talkyard.server.search.SearchEngineIndexer
-import ed.server.notf.NotifierActor
+import talkyard.server.notf.NotifierActor
 import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
-import ed.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
+import talkyard.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
 import org.{elasticsearch => es}
 import org.scalactic._
 import play.{api => p}
@@ -43,8 +43,8 @@ import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
 import scala.util.matching.Regex
-import ed.server.EdContext
-import ed.server.http.GetRequest
+import talkyard.server.TyContext
+import talkyard.server.http.GetRequest
 import talkyard.server.jobs.Janitor
 import play.api.http.{HeaderNames => p_HeaderNames}
 import play.api.mvc.RequestHeader
@@ -106,7 +106,7 @@ class E2eTestCounters {
 
 
 class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name = appCtx
-                // But then rename EdContext  to ... what?
+                // But then rename TyContext  to ... what?
   private val appLoaderContext: p.ApplicationLoader.Context,
   val executionContext: scala.concurrent.ExecutionContext,
   val wsClient: WSClient,
@@ -117,12 +117,12 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
   import Globals._
 
-  def setEdContext(edContext: EdContext): Unit = {
+  def setEdContext(edContext: TyContext): Unit = {
     dieIf(this.edContext ne null, "EdE7UBR10")
     this.edContext = edContext
   }
 
-  var edContext: EdContext = _
+  var edContext: TyContext = _
 
   val e2eTestCounters = new E2eTestCounters
 
@@ -397,7 +397,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
 
   object socialLogin {
-    import com.mohiva.play.silhouette.impl.providers.{OAuth1Settings, OAuth2Settings}
+    //import com.mohiva.play.silhouette.impl.providers.{OAuth1Settings, OAuth2Settings}
+    import talkyard.server.authn.OAuth2Settings
 
     val googleOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
@@ -421,6 +422,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         scope = getStringNoneIfBlank("silhouette.facebook.scope"))
     }
 
+    /*
     val twitterOAuthSettings: OAuth1Settings Or ErrorMessage = goodOrError {
       def getTwitter(confValName: String) = getConfValOrThrowDisabled(confValName, "Twitter")
       OAuth1Settings(
@@ -430,7 +432,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         callbackURL = makeRedirectUrl("twitter").get,
         consumerKey = getTwitter("silhouette.twitter.consumerKey"),
         consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
-    }
+    } */
 
     val githubOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
@@ -1268,7 +1270,7 @@ class Config(conf: play.api.Configuration) extends TyLogging {
 
   CLEAN_UP; REMOVE // this + the routes file entry [2KGLCQ4], use UploadsUrlBasePath instead only.
   val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
-  require(uploadsUrlPath == ed.server.UploadsUrlBasePath, "TyE2UKDU0")
+  require(uploadsUrlPath == talkyard.server.UploadsUrlBasePath, "TyE2UKDU0")
 
   val maxGroupMentionNotfs: Int =
     conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 25
@@ -1280,6 +1282,10 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   // FOR NOW
   val emailWebhooksApiSecret: Opt[St] =
     conf.getOptional[St]("talkyard.emailWebhooksApiSecret").noneIfBlank
+
+  // FOR NOW
+  val createSiteApiSecret: Opt[St] =
+    conf.getOptional[St]("talkyard.createSiteApiSecret").noneIfBlank
 
   object uploads {
     TESTS_MISSING // test that these conf vals work properly, by running UploadsDaoSpec twice,

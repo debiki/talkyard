@@ -397,7 +397,7 @@ object AllSettings {
     val allowGuestLogin = false
     val enableGoogleLogin: Boolean = globals.socialLogin.googleOAuthSettings.isGood
     val enableFacebookLogin: Boolean = globals.socialLogin.facebookOAuthSettings.isGood
-    val enableTwitterLogin: Boolean = globals.socialLogin.twitterOAuthSettings.isGood
+    val enableTwitterLogin: Boolean = false // globals.socialLogin.twitterOAuthSettings.isGood
     val enableGitHubLogin: Boolean = globals.socialLogin.githubOAuthSettings.isGood
     val enableGitLabLogin: Boolean = globals.socialLogin.gitlabOAuthSettings.isGood
     val enableLinkedInLogin: Boolean = globals.socialLogin.linkedInOAuthSettings.isGood

@@ -21,19 +21,19 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import org.owasp.encoder.Encode
 import play.api.libs.json._
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Result => p_Result}
 import scala.util.Try
 
 
 /** Creates new empty sites, for forums, blogs or embedded comments.
   */
-class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security._
   import context.globals
@@ -88,20 +88,82 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
+  def apiV0_createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
+        req =>
+    createSiteImpl(req, isPubApi = true)
+  }
+
+
   def createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
         request =>
-    val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
+    createSiteImpl(request, isPubApi = false)
+  }
+
+
+  private def createSiteImpl(request: JsonPostRequest, isPubApi: Bo): p_Result = {
+    import JsonUtils.{parseBo, parseOptBo, parseOptSt, parseSt, asJsObject}
+
+    val isTestSiteOkayToDelete = parseOptBo(request.body, "testSiteOkDelete") is true
     throwIfMayNotCreateSite(request, isTestSiteOkayToDelete)
 
     // In case we're running end-to-end tests:
     globals.testResetTime()
 
-    val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
-    val anyLocalHostname = (request.body \ "localHostname").asOpt[String]
-    val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
-    val organizationName = (request.body \ "organizationName").as[String].trim
+    // Note! These fields are part of Ty's public API. Don't change!
+    val body: JsObject = asJsObject(request.body, "The request body")
+    val acceptTermsAndPrivacy = parseBo(body, "acceptTermsAndPrivacy")
+    val anyLocalHostname = parseOptSt(body, "localHostname").trimNoneIfBlank
+    val anyEmbeddingSiteAddress = parseOptSt(body, "embeddingSiteAddress").trimNoneIfBlank
+    val organizationName = parseSt(body, "organizationName").trim
     val okForbiddenPassword = hasOkForbiddenPassword(request)
     val okE2ePassword = hasOkE2eTestPassword(request.request)
+
+    val (
+        ownerUsername,
+        ownerFullName,
+        ownerEmailAddr,
+        ownerEmailAddrVerified,
+        newSiteTitle,
+        createForum,
+        createEmbComs) =
+          if (!isPubApi) (None, None, None, false, None, false, false)
+          else (
+            // Ty's public API, don't change!
+            JsonUtils.parseOptSt(body, "ownerUsername").trimNoneIfBlank,
+            JsonUtils.parseOptSt(body, "ownerFullName").trimNoneIfBlank,
+            JsonUtils.parseOptSt(body, "ownerEmailAddr").trimNoneIfBlank,
+            JsonUtils.parseOptBo(body, "ownerEmailAddrVerified") getOrElse false,
+            JsonUtils.parseOptSt(body, "newSiteTitle").trimNoneIfBlank,
+            JsonUtils.parseOptBo(body, "createForum") getOrElse false,
+            JsonUtils.parseOptBo(body, "createEmbeddedComments") getOrElse false)
+
+    if (createForum || createEmbComs) {
+      throwForbiddenIf(createForum && createEmbComs, "TyE4MWE20R",
+            "Don't specify both createForum and createEmbeddedComments")
+
+      throwForbiddenIf(ownerUsername.isEmpty || ownerEmailAddr.isEmpty,
+            "TyE4MWE207", o"""Please specify the new site owner's username and email
+              (fields 'ownerUsername' and 'ownerEmailAddr'),
+              since createForum or createEmbeddedComments is specified""")
+    }
+    else {
+      throwForbiddenIf(newSiteTitle.isDefined,
+            "TyE3MWE202", o"""Don't specify new site title, without setting one of
+              'createForum' or 'createEmbeddedComments' to true""")
+
+      throwForbiddenIf(ownerUsername.isDefined,
+            "TyE8ME24SRM", """Creating an owner account, but no forum or emb comments, has not
+              been tested, isn't allowed. But you can set 'createForum: true', that'll work""")
+    }
+
+    throwForbiddenIf(ownerUsername.isEmpty && (
+              ownerEmailAddr.isDefined || ownerFullName.isDefined),
+          "TyE6MRW4MJ6", o"""Specify owner username too (field 'ownerUsername'),
+             not just owner email addr or full name""")
+
+    throwForbiddenIf(ownerEmailAddrVerified && ownerEmailAddr.isEmpty,
+          "TyE6MRW4MJ7", o"""Owner email address missing (field 'ownerEmailAddr'),
+            but 'ownerEmailAddrVerified' is true""")
 
     val localHostname = anyLocalHostname getOrElse {
       val embAddr = anyEmbeddingSiteAddress getOrElse {
@@ -125,7 +187,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       // This "cannot" happen — JS makes this impossible. So need not be a user friendly message.
       throwForbidden("DwE2JYK8", "The local hostname should be at least six chars")
 
-    if (ed.server.security.ReservedNames.isSubdomainReserved(localHostname))
+    if (talkyard.server.security.ReservedNames.isSubdomainReserved(localHostname))
       throwForbidden("TyE5KWW02", s"Subdomain is reserved: '$localHostname'; choose another please")
 
     // Test sites have a certain prefix, so I know it's okay to delete them. [7UKPwF2]
@@ -152,11 +214,13 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
           siteName = localHostname, hostnames = Set(hostname))
     }
 
-    val goToUrl: String =
+    val (goToUrl: St, newSite: SiteInclDetails) =
       try {
         COULD_OPTIMIZE // maybe can skip lock?
-        globals.systemDao.writeTxLockAllSites { sysTx =>
-          globals.systemDao.createAdditionalSite(
+        var staleStuff: talkyard.server.dao.StaleStuff = null
+        var newSiteDao: debiki.dao.SiteDao = null
+        val newSite: SiteInclDetails = globals.systemDao.writeTxLockAllSites { sysTx =>
+          val newSite = globals.systemDao.createAdditionalSite(
             anySiteId = None,
             pubId = Site.newPubId(),
             name = localHostname,
@@ -170,7 +234,55 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
             skipMaxSitesCheck = okE2ePassword || okForbiddenPassword,
             createdFromSiteId = Some(request.siteId),
             anySysTx = Some(sysTx))
+
+          newSiteDao = request.dao.copyWithNewSiteId(newSite.id)
+
+          staleStuff = new talkyard.server.dao.StaleStuff()
+          val newSiteTx = sysTx.siteTransaction(newSite.id)
+
+          ownerEmailAddr map { ownerEmail =>
+            val ownerUserData = NewPasswordUserData.create(
+                  name = ownerFullName,
+                  username = ownerUsername.getOrDie("TyE70MWQNT24"),
+                  email = ownerEmail,
+                  emailVerifiedAt = if (ownerEmailAddrVerified) Some(newSiteTx.now) else None,
+                  password = None,  // must set oneself
+                  createdAt = newSiteTx.now,
+                  isAdmin = true,
+                  isOwner = true).get
+            newSiteDao.createPasswordUserImpl(ownerUserData, request.theBrowserIdData,
+                  newSiteTx).briefUser
+          }
+
+          val title = newSiteTitle getOrElse "Your Site"
+          val newSiteWho = Who(SystemUserId, request.theBrowserIdData)
+          if (createForum) {
+            val options = debiki.dao.CreateForumOptions(
+                  isForEmbeddedComments = false,
+                  title = title,
+                  folder = "/",
+                  // For now, let's always create these default categories.  [NODEFCATS]
+                  useCategories = true,
+                  createSupportCategory = true,
+                  createIdeasCategory = true,
+                  createSampleTopics = true,
+                  topicListStyle = com.debiki.core.TopicListLayout.ExcerptBelowTitle)
+            newSiteDao.createForum2(options, newSiteWho, Some((newSiteTx, staleStuff)))
+          }
+
+          if (createEmbComs) {
+            newSiteDao.createForum(title = title, folder = "/", isForEmbCmts = true, newSiteWho,
+                  Some((newSiteTx, staleStuff)))
+          }
+
+          staleStuff.clearStaleStuffInDatabase(newSiteTx)
+          // Also see: [cache_race_counter] but maybe not important here, since the
+          // site is completely new, no one can interact with it yet.
+
+          sysTx.loadSiteInclDetailsById(newSite.id) getOrDie "TyE2MSEJG0673"
         }
+
+        staleStuff.clearStaleStuffInMemory(newSiteDao)
 
         if (!isTestSiteOkayToDelete) {
           val now = globals.now()
@@ -192,7 +304,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
           }
         }
 
-        newSiteOrigin
+        (newSiteOrigin, newSite)
       }
       catch {
         case DbDao.SiteAlreadyExistsException(site, details) =>
@@ -231,7 +343,16 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
           }
       }
 
-    OkSafeJson(Json.obj("nextUrl" -> goToUrl))
+    if (isPubApi) {
+      dieIf(goToUrl != newSiteOrigin, "TyE6B03MRE7")
+      OkSafeJson(Json.obj("newSite" -> Json.obj(
+        "id" -> newSite.id,
+        "origin" -> goToUrl,
+        )))
+    }
+    else {
+      OkSafeJson(Json.obj("nextUrl" -> goToUrl))
+    }
   }
 
 
@@ -248,7 +369,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   private def throwIfMayNotCreateSite(request: DebikiRequest[_], isTest: Boolean): Unit = {
-    import ed.server.Whatever
+    import talkyard.server.Whatever
     if (isTest && (
         globals.anyCreateTestSiteHostname.contains(Whatever) ||
         globals.anyCreateTestSiteHostname.contains(request.hostname))) {

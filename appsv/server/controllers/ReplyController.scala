@@ -21,9 +21,9 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
-import ed.server.http._
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api._
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
@@ -34,8 +34,8 @@ import talkyard.server.authn.MinAuthnStrength
 /** Saves replies. Lazily creates pages for embedded discussions
   * — such pages aren't created until the very first reply is posted.
   */
-class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 

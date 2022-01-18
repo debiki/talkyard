@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server._
+import talkyard.server._
 import javax.inject.Inject
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents, DiscardingCookie, Result}
@@ -30,8 +30,8 @@ import scala.collection.mutable
 
 /** Saves Usability Testing Exchange tasks, and picks the next task to do.  [plugin]
   */
-class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
-  extends EdController(cc, tyCtx) {
+class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyCtx: TyContext)
+  extends TyController(cc, tyCtx) {
 
 
   def handleUsabilityTestingForm: Action[JsValue] = PostJsonAction(

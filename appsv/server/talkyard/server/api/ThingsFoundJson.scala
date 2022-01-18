@@ -113,7 +113,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     val siteIdsOrigins = dao.theSiteIdsOrigins()
     val avatarUrlPrefix =
           siteIdsOrigins.uploadsOrigin +
-          ed.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
+           talkyard.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
 
     // --- The result
 

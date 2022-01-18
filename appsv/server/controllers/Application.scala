@@ -18,14 +18,14 @@
 package controllers
 
 import com.debiki.core.Prelude.unimplemented
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.mvc._
 
 
 
-class Application @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class Application @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   def mobileAppWebmanifest(): Action[Unit] = GetActionAllowAnyone { _ =>  // [sw]

@@ -82,46 +82,57 @@ export var PageRoleDropdown = createComponent({
     // Don't allow changing already existing topics, to chat topics, because chat
     // topics are "totally" different from "normal" topics like
     // discussions/ideas/questions etc. Chat topic types, may be selected only
-    // when creating a new page.
-    const canChangeToChat: boolean = !props.pageExists;
+    // 1) when creating a new page, or 2) toggling between AnyoneChat and StandardChat.
+    const isChatAlready: Bo = page_isChat(pageRole) && props.pageExists;
 
     const dropdownButton =
       Button({ onClick: this.open, ref: 'dropdownButton', className: 'esTopicType_dropdown' },
         pageRole_toIconString(pageRole), ' ', r.span({ className: 'caret' }));
 
-    const discussionOption =
+    const discussionOption = isChatAlready ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'te_DiscO',
         activeEventKey: pageRole, eventKey: PageRole.Discussion,
         title: PageRole_Discussion_IconString,
         text: t.pt.DiscussionExpl });
 
-    const questionOption =
+    const questionOption = isChatAlready ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_QuestionO',
         activeEventKey: pageRole, eventKey: PageRole.Question,
         title: PageRole_Question_IconString,
         text: r.span({}, t.pt.QuestionExpl) });
 
-    const problemOption =
+    const problemOption = isChatAlready ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_ProblemO',
         activeEventKey: pageRole, eventKey: PageRole.Problem,
         title: PageRole_Problem_IconString,
         text: t.pt.ProblExpl });
 
-    const ideaOption =
+    const ideaOption = isChatAlready ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_IdeaO',
         activeEventKey: pageRole, eventKey: PageRole.Idea,
         title: PageRole_Idea_IconString,
         text: t.pt.IdeaExpl });
 
-    const chatOption = !canChangeToChat ||
-      user_isGuest(me) || settings.enableChat === false ? null :
-      ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
-        activeEventKey: pageRole, eventKey: PageRole.OpenChat,
-        title: PageRole_OpenChat_IconString,
-        text: t.pt.ChatExpl });
+    // const wikiOption = ...
 
-    const privateChatOption = !canChangeToChat ||
-      !isStaff(me) || props.hideStaffOnly || settings.enableChat === false ? null :
+    // Toggling between the two open chat types, AnyoneChat and StandardChat, is fine.
+    const chatOptions = (props.pageExists && !page_isOpenChat(pageRole)) ||
+            user_isGuest(me) || settings.enableChat === false ? null :
+        rFr({},
+          ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
+            activeEventKey: pageRole, eventKey: PageRole.OpenChat,
+            title: PageRole_OpenChat_IconString,
+            text: t.pt.ChatExpl }),
+
+          ExplainingListItem({ onSelect: this.onSelect, id: 'e_JoinlessChatO',
+            activeEventKey: pageRole, eventKey: PageRole.JoinlessChat,
+            title: PageRole_JoinlessChat_IconString,
+            // Create t.pt.JoinlessChatExpl ?
+            text: "Anyone can post, without joining the chat channel " +  // I18N
+                  "— there's no list of channel members" }));
+
+    const privateChatOption = props.pageExists ||
+            !isStaff(me) || props.hideStaffOnly || settings.enableChat === false ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_PrivChatO',
         activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
         title: PageRole_PrivateChat_IconString,
@@ -137,7 +148,8 @@ export var PageRoleDropdown = createComponent({
 
     // ----- Staff only
 
-    const showMore = !isStaff(me) || props.hideStaffOnly || showAllOptions ? null :
+    const showMore =
+            !isStaff(me) || props.hideStaffOnly || showAllOptions || isChatAlready ?  null :
       ExplainingListItem({ onClick: this.showAllOptions,
         title: r.span({ className: 'esPageRole_showMore' }, t.MoreDots) });
 
@@ -145,7 +157,7 @@ export var PageRoleDropdown = createComponent({
     let staffOnlyDivider;
     let infoPageOption;
 
-    if (isStaff(me) && !props.hideStaffOnly) {
+    if (isStaff(me) && !props.hideStaffOnly && !isChatAlready) {
       staffOnlyDivider =
         r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
 
@@ -165,7 +177,7 @@ export var PageRoleDropdown = createComponent({
     let adminOnlyDivider;
     let formOption;
     let customHtmlPageOption;
-    if (me.isAdmin && showAllOptions) {
+    if (me.isAdmin && showAllOptions && !isChatAlready) {
       adminOnlyDivider = r.div({ className: 'esDropModal_header' }, "Only for admins:");
 
       formOption =  // [6JK8WHI3]
@@ -194,7 +206,7 @@ export var PageRoleDropdown = createComponent({
           questionOption,
           problemOption,
           ideaOption,
-          chatOption,
+          chatOptions,
           //wikiMindMap,
 
           staffOnlyDivider,
@@ -208,7 +220,7 @@ export var PageRoleDropdown = createComponent({
           customHtmlPageOption));
 
     return (
-      rFragment({},
+      rFr({},
         dropdownButton,
         dropdownModal));
   }
@@ -225,7 +237,8 @@ export function forumTopicType_toEnSingSt(pageType: PageType): St {
     case PageRole.Idea: return "idea";
     case PageRole.EmbeddedComments: // fall through
     case PageRole.Discussion: return "discussion";
-    case PageRole.OpenChat: return "chat";
+    case PageRole.JoinlessChat: return "joinless chat";
+    case PageRole.OpenChat: return "open chat";
     default:
       // @ifdef DEBUG
       die(`Bad page role: ${pageType} [TyE52PK75R]`);
@@ -259,6 +272,7 @@ export function pageRole_toIconString(pageRole: PageRole) {
     case PageRole.MindMap: return PageRole_MindMap_IconString;
     case PageRole.Discussion: return PageRole_Discussion_IconString;
     case PageRole.FormalMessage: return t.MessageN;
+    case PageRole.JoinlessChat: return PageRole_JoinlessChat_IconString;
     case PageRole.OpenChat: return PageRole_OpenChat_IconString;
     case PageRole.PrivateChat: return PageRole_PrivateChat_IconString;
     case PageRole.Form: return PageRole_Form_IconString;
@@ -278,6 +292,8 @@ var PageRole_Idea_IconString = r.span({ className: iconFor(PageRole.Idea) }, t.I
 var PageRole_MindMap_IconString = r.span({ className: iconFor(PageRole.MindMap) }, "Mind Map");
 
 var PageRole_Todo_IconString = r.span({ className: iconFor(PageRole.ToDo) }, "Todo");
+var PageRole_JoinlessChat_IconString = r.span({ className: iconFor(PageRole.JoinlessChat) },
+      "Anyone Chat");  // I18N
 var PageRole_OpenChat_IconString = r.span({ className: iconFor(PageRole.OpenChat) }, t.ChatN);
 var PageRole_PrivateChat_IconString = r.span({ className: iconFor(PageRole.PrivateChat) }, t.pt.PrivChat);
 
