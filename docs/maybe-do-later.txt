@@ -807,6 +807,16 @@ Offline builds on various Linux distros, not just Debian 10?
 
 [ty_v1] Things to fix before Ty stack version 1: 0.20YY.NR —> version 1.20YY.NR
 
+Ty v1 is a major release. Server admins will be required to install Ty v1
+on a new server, and verify that it works — before shutting down one's Ty v0.
+So, it'll be OK to make changes in Ty that otherwise would have been deemed too risky.
+
+Ty v1 removes some deprecated things, e.g.: Remove class ed.server.EdAppLoader (everyone
+needs to remove `play.application.loader= ed.server.EdAppLoader` from the Play conf file)
+
+Rename Silhouette authn settings to talkyard.authn.____  instead?
+Require that the old conf vals be removed (log helpful errors.)
+
 s/typ.ts script: Check mem before upgrading, warn if too little? balloon.txt file?
 
 Use firewalld instead of ufw  [firewalld_not_ufw]

@@ -10,7 +10,6 @@ import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import scala.concurrent.{ExecutionContext, Future}
-import talkyard.server.TyLogger
 
 
 class TyAppLoader extends ApplicationLoader {
