@@ -1029,6 +1029,7 @@ object JsX {   RENAME // to JsonPaSe
 
   def apiV0_parseExternalUser(jsObj: JsObject, ssoId: Opt[St] = None)
           : ExternalUser = {
+    // A bit dupl code — this is for parsing JSON, the other for PASETO. [dupl_parse_ext_user]
     ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
           ssoId = ssoId getOrElse parseSt(jsObj, "ssoId"),
           extId = (jsObj \ "extId").asOptStringNoneIfBlank,
@@ -1040,7 +1041,8 @@ object JsX {   RENAME // to JsonPaSe
           // BIO
           aboutUser = (jsObj \ "aboutUser").asOptStringNoneIfBlank,  // RENAME to 'bio', right
           isAdmin = (jsObj \ "isAdmin").asOpt[Boolean].getOrElse(false),
-          isModerator = (jsObj \ "isModerator").asOpt[Boolean].getOrElse(false))
+          isModerator = (jsObj \ "isModerator").asOpt[Boolean].getOrElse(false),
+          )(IfBadAbortReq)
   }
 
 }

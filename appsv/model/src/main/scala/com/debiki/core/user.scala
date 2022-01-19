@@ -830,30 +830,31 @@ trait MemberMaybeDetails {
 
 
 case class ExternalUser(   // sync with test code [7KBA24Y]
-  ssoId: String,
-  extId: Option[String],
-  primaryEmailAddress: String,
-  isEmailAddressVerified: Boolean,
-  username: Option[String],
-  fullName: Option[String],
-  avatarUrl: Option[String],
-  aboutUser: Option[String],
-  isAdmin: Boolean,
-  isModerator: Boolean) {
+  ssoId: St,
+  extId: Opt[St],
+  primaryEmailAddress: St,
+  isEmailAddressVerified: Bo,
+  username: Opt[St],
+  fullName: Opt[St],
+  avatarUrl: Opt[St],
+  aboutUser: Opt[St],
+  isAdmin: Bo,
+  isModerator: Bo)(mab: MessAborter) {
 
   // COULD somehow return Bad instead? Or throw Forbidden — then need to move to the server module
   extId.flatMap(Validation.findExtIdProblem) foreach { problem =>
-    throwIllegalArgument(s"Bad extId: $problem [TyE402TKUHR24]")
+    mab.abort(s"Bad extId: $problem [TyE402TKUHR24]")
   }
   Validation.findSsoIdProblem(ssoId) foreach { problem =>
-    throwIllegalArgument(s"Bad ssoId: $problem [TyE502WKDTTSR2]")
+    mab.abort(s"Bad ssoId: $problem [TyE502WKDTTSR2]")
   }
 
-  Validation.checkEmail(primaryEmailAddress).badMap(errorMessage =>
-    die("TyE5KBW02", s"Bad email: $primaryEmailAddress, for external user 'ssoid:$ssoId'"))
-  require(username.forall(_.isTrimmedNonEmpty), "TyE5KBW05")
-  require(fullName.forall(_.isTrimmedNonEmpty), "TyE5KBW06")
-  require(avatarUrl.forall(_.isTrimmedNonEmpty), "TyE5KBW07")
+  Validation.checkEmail(primaryEmailAddress).badMap(problem =>
+    mab.abort("TyE5KBW02", o"""Bad email: '$primaryEmailAddress', for external user
+          'ssoid:$ssoId', problem: $problem"""))
+  mab.check(username.forall(_.isTrimmedNonEmpty), "TyE5KBW05")
+  mab.check(fullName.forall(_.isTrimmedNonEmpty), "TyE5KBW06")
+  mab.check(avatarUrl.forall(_.isTrimmedNonEmpty), "TyE5KBW07")
 }
 
 

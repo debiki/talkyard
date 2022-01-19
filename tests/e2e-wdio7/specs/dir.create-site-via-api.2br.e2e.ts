@@ -6,6 +6,7 @@ import server from '../utils/server';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import * as make from '../utils/make';
 import * as utils from '../utils/utils';
+import settings from '../utils/settings';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
@@ -19,6 +20,12 @@ let newSite: { id: SiteId, origin: St } | U;
 
 
 describe(`dir.create-site-via-api.2br  TyTE2ECREASITAPI`, () => {
+
+  if (settings.prod) {
+    console.log(`Skipping this spec — needs:
+          talkyard.createSiteApiSecret="publicCreateSiteApiTestSecret"`);  // E2EBUG
+    return;
+  }
 
   it(`Create browsers`, async () => {
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
