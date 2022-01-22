@@ -139,7 +139,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.lucene" % "lucene-spatial3d" % "7.7.3",
       "org.apache.lucene" % "lucene-suggest" % "7.7.3",
       "org.apache.thrift" % "libthrift" % "0.12.0",
-      "org.apache.tika" % "tika-core" % "1.28",
+      "org.apache.tika" % "tika-core" % "2.2.1",
       "org.apache.tuweni" % "tuweni-bytes" % "0.10.0",
       "org.apache.tuweni" % "tuweni-crypto" % "0.10.0",
       "org.apache.tuweni" % "tuweni-io" % "0.10.0",
@@ -185,4 +185,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 06dac48052957314902aad3047e30f016af05e7d
+// LIBRARY_DEPENDENCIES_HASH 2982e8b996f54e391ba4c9bede08701b48d17b65

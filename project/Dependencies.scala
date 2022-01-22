@@ -44,6 +44,13 @@ object Dependencies {
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"
 
+    // HikariCP — "A solid high-performance JDBC connection pool at last"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "3.4.5"    // latest 3.x as of 2021-08.  5.0.0 latest version
+
+    // ElasticSearch client, in https://mvnrepository.com.
+    val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
+    val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
+
     // Play Framework 2.8.9 uses 31.0.1-jre
     val guava = "com.google.guava" % "guava" % "31.0.1-jre"
 
@@ -54,10 +61,11 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "1.28"  // 2.1.0 is newest, SHOULD SECURITY
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.2.1"
 
     val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
 
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.1"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
