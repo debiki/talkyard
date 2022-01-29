@@ -1587,3 +1587,9 @@ slow 3g connections:
 
 Tests to create:
   Login with pwd here: /-/users/id/109/activity, no .categories bug
+
+3rd party integrations:
+            - ghost.embcom.comments-basic.2br  TyTEGHOSTCOMBSC
+            - TESTS_MISSING: [move_a_ghost_post], verify the comments move along.
+              But how move it, automatically? Via the Ghost admin UI?
+

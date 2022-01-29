@@ -667,6 +667,15 @@ function runAllE2eTests {
 
 
   #------------------------------------------------------------
+  # Ghost embedded comments
+
+  # Ghost will listen on port 2368, see docker-compose.yml.
+  s/d up -d it-ghost
+  $r s/wdio-7     --only ghost.embcom.comments-basic.2br --cd -i $args
+  s/d stop it-ghost
+
+
+  #------------------------------------------------------------
   # dupl code (8BMFEW2)
   # Gatsby embedded comments
   # ------------

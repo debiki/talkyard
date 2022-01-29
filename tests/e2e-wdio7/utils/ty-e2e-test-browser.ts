@@ -6083,6 +6083,8 @@ export class TyE2eTestBrowser {
       },
 
       waitForNumReplies: async (n: Partial<NumReplies>, ps: { skipWait?: Bo } = {}) => {
+        dieIf(!_.isObject(n),
+              `Pass an object, like: waitForNumReplies({ numNormal: 123 }), not just 123`);
         await this.switchToEmbCommentsIframeIfNeeded();
         if (!ps.skipWait) {
           await this.waitForMyDataAdded();
@@ -6190,9 +6192,9 @@ export class TyE2eTestBrowser {
         await this.topic.clickPostActionButton(selector);
       },
 
-      clickReplyToEmbeddingBlogPost: async () => {
+      clickReplyToEmbeddingBlogPost: async (ps?: WaitAndClickPs) => {
         await this.switchToEmbCommentsIframeIfNeeded();
-        await this.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply');
+        await this.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply', ps);
       },
 
       clickReplyToPostNr: async (postNr: PostNr) => {
@@ -6743,7 +6745,7 @@ export class TyE2eTestBrowser {
 
       // Not needed? Just use  waitAndClick()  instead?
       clickPostActionButton: async (buttonSelector: St,
-            opts: { clickFirst?: Bo } = {}) => {   // RENAME to this.scrollAndClick?
+            opts: WaitAndClickPs = {}) => {   // RENAME to this.scrollAndClick?
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitAndClick(buttonSelector, opts);
         /*
@@ -9441,18 +9443,36 @@ export class TyE2eTestBrowser {
         } */
       },
 
-      loginIfNeededViaMetabar: async (ps: NameAndPassword) => {
+      loginIfNeededViaMetabar: async (ps: NameAndPassword, clickPs?: WaitAndClickPs) => {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitForMyDataAdded();
         if (!await this.metabar.isLoggedIn()) {
           logMessage(`Need to log in, as @${ps.username
                 } — session id cookie blocked? [TyM306MRKTJ]`);
-          await this.complex.loginWithPasswordViaMetabar(ps);
+          await this.complex.loginWithPasswordViaMetabar(ps, clickPs);
         }
       },
 
-      loginWithPasswordViaMetabar: async (ps: NameAndPassword) => {
-        await this.metabar.clickLogin();
+      loginWithPasswordViaMetabar: async (ps: NameAndPassword, clickPs?: WaitAndClickPs) => {
+        // [E2EBUG] [2_lgi_clk] Sometimes needs to click many times — if scrolling down
+        // to the bottom of a long blog post. Then, the first click might somehow fail.
+        // Probably related to scrolling somehow? (even with  maybeMoves: true  !)
+        // Update: I think the problem was that I was calling loginIfNeededViaMetabar()
+        // which ignored clickPs = { maybeMoves: true }, at the time.
+        // DO_AFTER 2023-01-01: Remove this comment and [2_lgi_clk].
+
+        await this.switchToEmbCommentsIframeIfNeeded();
+        const numWinsBefore: Nr = await this.numWindowsOpen();
+        let numWinsNow;
+        await this.waitUntil(async () => {
+          await this.metabar.clickLogin({ timeoutMs: 700, timeoutIsFine: true, ...clickPs });
+          numWinsNow = await this.numWindowsOpen();
+          return numWinsNow > numWinsBefore;
+        }, {
+          message: () => `Clicked Log In, but no login popup appeared? Then there'd be ${
+                numWinsBefore + 1} windows, but currently only: ${numWinsNow}. Trying again`,
+        });
+
         await this.loginDialog.loginWithPasswordInPopup(ps);
       },
 
@@ -9637,7 +9657,8 @@ export class TyE2eTestBrowser {
       },
 
       replyToEmbeddingBlogPost: async (text: string,
-            opts: { signUpWithPaswordAfterAs?, needVerifyEmail?: boolean } = {}) => {
+            opts: { signUpWithPaswordAfterAs?, needVerifyEmail?: Bo,
+                  waitAndClickPs?: WaitAndClickPs } = {}) => {
         // Apparently, if FF cannot click the Reply button, now when in an iframe,
         // then FF says "all fine I clicked the button", but in fact does nothing,
         // also won't log any error or anything, so that later on, we'll block
@@ -9645,7 +9666,7 @@ export class TyE2eTestBrowser {
         // So sometimes this neeeds to be in a retry loop, + timeoutMs below. [4RDEDA0]
         await this.switchToEmbeddedCommentsIrame();
         logMessage("comments iframe: Clicking Reply ...");
-        await this.topic.clickReplyToEmbeddingBlogPost();
+        await this.topic.clickReplyToEmbeddingBlogPost(opts.waitAndClickPs);
         //if (opts.loginWithPaswordBeforeAs) {
           //this.loginDialog.loginWithPasswordInPopup(opts.loginWithPaswordBeforeAs);
         //}

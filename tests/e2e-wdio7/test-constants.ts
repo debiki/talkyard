@@ -166,6 +166,10 @@ export default {
   SortOrderBestFirst: 1,
   SortOrderOldestFirst: 3,
 
+  thirdParty: {
+    ghostPort: 2368,
+  },
+
   serverErrorCodes: {
     notAuthenticated: 'TyE0AUTHN_',
     accountSuspended: 'TyESUSPENDED_',
