@@ -79,6 +79,27 @@ into the {body} tag of the default.hbs template --}}
         </section>
         --}}
 
+        <div class="gh-canvas">
+          <hr/>
+          <p>Talkyard test comments below, I hope:</p>
+        </div>
+
+        <section class="article-comments gh-canvas">
+          <script>talkyardServerUrl='http://e2e-test-ghost-comments.localhost';</script>
+          <script async defer src="http://e2e-test-ghost-comments.localhost/-/talkyard-comments.js"></script>
+          <!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
+          <div class="talkyard-comments" data-discussion-id="{{comment_id}}" style="margin-top: 45px;">
+          <noscript>Please enable Javascript to view comments.</noscript>
+          <p style="margin-top: 25px; opacity: 0.9; font-size: 96%">Comments powered by
+          <a href="https://www.talkyard.io">Talkyard</a>.</p>
+          </div>
+        </section>
+
+        <div class="gh-canvas">
+          <p>End of Talkyard test comments.</p>
+          <hr/>
+        </div>
+
     </article>
 </main>
 
