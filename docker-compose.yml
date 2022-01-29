@@ -301,4 +301,27 @@ services:
     # Only want to build (but not run) this container, in dev/test mode.
     command: 'echo'
 
+  # Integration test containers
+  # ---------------------------
+
+  # For testing integrations with 3rd party software. Prefixed by 'it-'.
+
+  # Ghost integration test. Docs, over at Ghost:
+  # https://ghost.org/integrations/talkyard/
+  #
+  # Can start like so:
+  # docker run -d --name ty-ghost-test -p 3001:2368 \
+  #      -v (this-repo-dir)/tests/int-w/ghost/content:/var/lib/ghost/content ghost:4.34.0
+  #
+  # But let's include here, and use Ghost's default port 2368?
+  it-ghost:
+    # Image docs: https://hub.docker.com/_/ghost/
+    image: ghost:4.34.0
+    volumes:
+      - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
+    ports:
+      # Why does Ghost like this port? Who knows
+      - '2368:2368'
+    # networks — don't use the internal net; Ghost is usually hosted elsewhere.
+
 # vim: et ts=2 sw=2
