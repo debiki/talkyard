@@ -153,7 +153,7 @@ Compile / dependencyOverrides ++= {
       "org.elasticsearch" % "elasticsearch-x-content" % "6.8.23",
       "org.elasticsearch" % "jna" % "5.5.0",
       "org.elasticsearch.client" % "elasticsearch-rest-client" % "6.8.23",
-      "org.elasticsearch.client" % "transport" % "6.8.23",
+      "org.elasticsearch.client" % "transport" % "7.17.0",
       "org.elasticsearch.plugin" % "lang-mustache-client" % "6.8.23",
       "org.elasticsearch.plugin" % "parent-join-client" % "6.8.23",
       "org.elasticsearch.plugin" % "percolator-client" % "6.8.23",
