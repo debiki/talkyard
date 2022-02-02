@@ -755,7 +755,7 @@ case class SitePatcher(globals: debiki.Globals) {
               parentId = anyParentCatRealId,
               defaultSubCatId = catWithTempId.defaultSubCatId.map(remappedCategoryTempId))
 
-            tx.insertCategoryMarkSectionPageStale(catRealIds)
+            tx.insertCategoryMarkSectionPageStale(catRealIds, IfBadAbortReq)
             wroteToDatabase = true
             catRealIds
 
@@ -810,7 +810,7 @@ case class SitePatcher(globals: debiki.Globals) {
               defaultSubCatId = catWithTempId.defaultSubCatId.map(remappedCategoryTempId))
 
             if (catRealIds != catInDb) {
-              tx.updateCategoryMarkSectionPageStale(catRealIds)
+              tx.updateCategoryMarkSectionPageStale(catRealIds, IfBadAbortReq)
               wroteToDatabase = true
             }
             catRealIds
@@ -1307,7 +1307,7 @@ case class SitePatcher(globals: debiki.Globals) {
 
       siteData.categories foreach { categoryMeta =>
         //val newId = transaction.nextCategoryId()
-        tx.insertCategoryMarkSectionPageStale(categoryMeta)
+        tx.insertCategoryMarkSectionPageStale(categoryMeta, IfBadAbortReq)
       }
 
       siteData.drafts foreach tx.upsertDraft

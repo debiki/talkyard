@@ -226,9 +226,11 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
   /// For internal errors.
+  RENAME // to IfMessDie ?
   object IfBadDie extends MessAborter
 
   /// For HTTP requests with bad data or that try to access forbidden things.
+  RENAME // to IfMessAbortReq ?
   object IfBadAbortReq extends MessAborter {
     override def abort(errCode: St, errMsg: St = ""): Nothing = {
       throw new BadRequestEx(s"$errMsg [$errCode]")

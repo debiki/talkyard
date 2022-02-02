@@ -79,8 +79,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadCategoryPathRootLast(categoryId: CatId, inclSelfFirst: Bo): ImmSeq[Cat]
 
   def nextCategoryId(): Int
-  def insertCategoryMarkSectionPageStale(category: Category): Unit
-  def updateCategoryMarkSectionPageStale(category: Category): Unit
+  def insertCategoryMarkSectionPageStale(cat: Cat, mab: MessAborter): U
+  def updateCategoryMarkSectionPageStale(cat: Cat, mab: MessAborter): U
   def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId]
 
   def loadPost(uniquePostId: PostId): Option[Post]   ; RENAME; QUICK // to loadPostById

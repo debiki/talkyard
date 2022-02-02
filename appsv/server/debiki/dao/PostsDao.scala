@@ -1067,7 +1067,7 @@ trait PostsDao {
       REFACTOR; CLEAN_UP // use a bool instead. & remove things: [502RKDJWF5]
       // Might still need to uncache the cat though: updateCategoryMarkSectionPageStale()
       val editsAboutCategoryPost = page.pageType == PageType.AboutCategory && editedPost.isOrigPost
-      val anyEditedCategory =
+      val anyEditedCategory: Opt[Cat] =
         if (!editsAboutCategoryPost || !editsApproved) {
           if (editsAboutCategoryPost && !editsApproved) {
             // Currently needn't fix this? Only staff can edit these posts, right now.
@@ -1192,7 +1192,10 @@ trait PostsDao {
       REFACTOR; CLEAN_UP; // only mark section page as stale, and uncache category.
       // Because categories on loonger  store a their description (well they don't use it anyway)
       // Note: We call uncacheAllCategories() below already, if anyEditedCategory.isDefined.
-      anyEditedCategory.foreach(tx.updateCategoryMarkSectionPageStale)
+      anyEditedCategory foreach { cat =>
+        // (Shouldn't fail; only the description got updated.)
+        tx.updateCategoryMarkSectionPageStale(cat, IfBadDie)
+      }
 
       reviewTask.foreach(tx.upsertReviewTask)
       SHOULD // generate review task notf?  [revw_task_notfs]
