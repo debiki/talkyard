@@ -112,7 +112,7 @@ trait PageStuffDao {
       anyStuff match {
         case Some(stuff) if idVersion.version <= stuff.pageVersion =>
           pageStuffById += pageId -> stuff
-        case None =>
+        case _ =>
           idsNotCached.append(pageId)
       }
     }
