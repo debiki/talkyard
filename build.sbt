@@ -102,7 +102,7 @@ val appDependencies = Seq(
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
   Dependencies.Libs.apacheTika,
 
-  "io.dropwizard.metrics" % "metrics-core" % "4.2.7",
+  "io.dropwizard.metrics" % "metrics-core" % "4.2.8",
   "io.jaegertracing" % "jaeger-client" % "0.35.1",  // 1.6.0 exists now
   "nl.grons" %% "metrics4-scala" % "4.2.8",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"

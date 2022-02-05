@@ -34,9 +34,9 @@ Compile / dependencyOverrides ++= {
       "org.apache.tika" % "tika-core" % "2.2.1",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.scalactic" % "scalactic_2.12" % "3.2.10",
+      "org.scalactic" % "scalactic_2.12" % "3.2.11",
       "org.slf4j" % "slf4j-api" % "1.7.32"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH d32b5bb61634b054448d15232072386b5724ee99
+// LIBRARY_DEPENDENCIES_HASH 912e38c2542770adbb433de1caf22a2059b60dbb

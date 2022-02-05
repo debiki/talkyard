@@ -39,13 +39,14 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.2.4"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.2.25"
 
     // Database migrations.
-    val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"
+    val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "3.4.5"    // latest 3.x as of 2021-08.  5.0.0 latest version
+    // Java 11 needs/can/should use "5.0.1"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "4.0.3"
 
     // ElasticSearch client, in https://mvnrepository.com.
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
@@ -74,15 +75,7 @@ object Dependencies {
     // https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-v2-libraries#compatible-client-libraries
     //
     // VENDOR_THIS — it'd be good to Maven-build via Makefile?
-    // 7.0.0 won't work: it depends on:
-    //   com.fasterxml.jackson.core:jackson-databind:2.11.2
-    //   and jackson-annotations and jackson-core  2.11.2
-    // but Play Framework requires version >= 2.10.0 and < 2.11.0,
-    // throws an error:
-    //  """...JsonMappingException: Scala module 2.10.3 requires
-    //     Jackson Databind version..."""
-    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"  //  8.3.1 newest
-                                // ... but no hurry with upgrading; it incl no security fixes
+    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.1"
 
 
     // ----- Decoding JWT:s
@@ -137,8 +130,8 @@ object Dependencies {
 
     // ----- Test
 
-    val scalactic = "org.scalactic" %% "scalactic" % "3.2.10"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.10" % "test"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.11"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.

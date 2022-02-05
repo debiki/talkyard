@@ -27,8 +27,9 @@ Compile / dependencyOverrides ++= {
       "com.github.jnr" % "jnr-a64asm" % "1.0.0",
       "com.github.jnr" % "jnr-ffi" % "2.1.9",
       "com.github.jnr" % "jnr-x86asm" % "1.0.2",
-      "com.github.scribejava" % "scribejava-apis" % "6.9.0",
-      "com.github.scribejava" % "scribejava-core" % "6.9.0",
+      "com.github.scribejava" % "scribejava-apis" % "8.3.1",
+      "com.github.scribejava" % "scribejava-core" % "8.3.1",
+      "com.github.scribejava" % "scribejava-java8" % "8.3.1",
       "com.github.spullara.mustache.java" % "compiler" % "0.9.3",
       "com.google.code.findbugs" % "jsr305" % "3.0.2",
       "com.google.code.gson" % "gson" % "2.8.8",
@@ -75,7 +76,7 @@ Compile / dependencyOverrides ++= {
       "com.typesafe.play" % "shaded-asynchttpclient" % "2.1.7",
       "com.typesafe.play" % "shaded-oauth" % "2.1.7",
       "com.typesafe.play" % "twirl-api_2.12" % "1.5.1",
-      "com.zaxxer" % "HikariCP" % "3.4.5",
+      "com.zaxxer" % "HikariCP" % "4.0.3",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
       "commons-codec" % "commons-codec" % "1.15",
       "commons-collections" % "commons-collections" % "3.2.2",
@@ -87,7 +88,7 @@ Compile / dependencyOverrides ++= {
       "dev.paseto" % "jpaseto-gson" % "0.7.0",
       "dev.paseto" % "jpaseto-impl" % "0.7.0",
       "dev.paseto" % "jpaseto-sodium" % "0.7.0",
-      "io.dropwizard.metrics" % "metrics-core" % "4.2.7",
+      "io.dropwizard.metrics" % "metrics-core" % "4.2.8",
       "io.dropwizard.metrics" % "metrics-healthchecks" % "4.2.7",
       "io.jaegertracing" % "jaeger-client" % "0.35.1",
       "io.jaegertracing" % "jaeger-core" % "0.35.1",
@@ -171,18 +172,18 @@ Compile / dependencyOverrides ++= {
       "org.ow2.asm" % "asm-tree" % "5.0.3",
       "org.ow2.asm" % "asm-util" % "5.0.3",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.2.4",
+      "org.postgresql" % "postgresql" % "42.2.25",
       "org.reactivestreams" % "reactive-streams" % "1.0.3",
       "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.9.1",
       "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.2",
       "org.scala-lang.modules" % "scala-xml_2.12" % "1.2.0",
       "org.scala-stm" % "scala-stm_2.12" % "0.9.1",
-      "org.scalactic" % "scalactic_2.12" % "3.2.10",
+      "org.scalactic" % "scalactic_2.12" % "3.2.11",
       "org.slf4j" % "jcl-over-slf4j" % "1.7.32",
       "org.slf4j" % "jul-to-slf4j" % "1.7.32",
-      "org.slf4j" % "slf4j-api" % "1.7.32",
+      "org.slf4j" % "slf4j-api" % "1.7.35",
       "org.yaml" % "snakeyaml" % "1.17"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 2982e8b996f54e391ba4c9bede08701b48d17b65
+// LIBRARY_DEPENDENCIES_HASH 1b0ed11833f3500f4f4f006a6c39a4e29a487a05
