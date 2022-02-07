@@ -31,7 +31,7 @@ Compile / dependencyOverrides ++= {
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "1.28",
+      "org.apache.tika" % "tika-core" % "2.3.0",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.owasp.encoder" % "encoder" % "1.2.3",
       "org.scalactic" % "scalactic_2.12" % "3.2.10",
