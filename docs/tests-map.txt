@@ -1545,6 +1545,15 @@ url frag action api,
 links like: http://site.localhost/forum/#composeTopic&category=slug:ideas
           - TESTS_MISSING,  search for  enum FragActionType.
 
+api,
+webhooks:
+            - webhooks-basic.2br  TyTE2EWBHKBASIC
+            - webhooks-retry.2br  TyTE2EWBHKRETRY
+            - TESTS_MISSING:  retry manually,  and both automatic + manally
+            - webhooks-enable-disable.2br  TyTE2EWBHKENADIS
+            - TESTS_MISSING:
+                # webhooks-fails-breaks-fixed.2br  TyTE2EWBHKBREAKS (file not created)
+                # and others, see [webhook_tests_missing]
 
 import,
 export and restore:  (impexp)

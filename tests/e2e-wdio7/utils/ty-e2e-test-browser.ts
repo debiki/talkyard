@@ -8707,6 +8707,23 @@ export class TyE2eTestBrowser {
       },
 
       apiTab: {
+        webhooks: {
+          getUrl: async (): Pr<St> => {
+            return await this.waitAndGetValue('.c_A_Api_Wh_Url input');
+          },
+          setUrl: async (url: St) => {
+            await this.waitAndSetValue('.c_A_Api_Wh_Url input', url);
+          },
+
+          setEnabled: async (enabled: Bo) => {
+            await this.setCheckbox('.c_A_Api_Wh_Ena input', enabled);
+          },
+
+          clickSave: async () => {
+            await this.waitAndClick('.e_Wh_SavB');
+          },
+        },
+
         waitUntilLoaded: async () => {
           await this.waitForVisible('.s_A_Api');
         },

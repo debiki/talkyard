@@ -1000,6 +1000,11 @@ case class SitePatcher(globals: debiki.Globals) {
         }
 
 
+      // ----- Links
+
+      // Fix later.  Need to remap page, post and pat ids — error prone, needs tests.
+
+
       // ----- Notifications
 
       REFACTOR // Change SimpleSitePatch to a ActionPatch — then, this Notifications
@@ -1046,6 +1051,12 @@ case class SitePatcher(globals: debiki.Globals) {
 
         tx.saveDeleteNotifications(notfGenerator.generatedNotifications)
       }
+
+
+      // ----- Webhooks
+
+      // Fix later.  Need to remap webhook ids and next event ids, and
+      // events-to-retry ids.
 
 
       // ----- Consistency checks
@@ -1332,6 +1343,10 @@ case class SitePatcher(globals: debiki.Globals) {
         tx.insertPostAction(postAction)
       }
 
+      siteData.links foreach { link =>
+        tx.upsertLink(link)
+      }
+
       siteData.permsOnPages foreach { permission =>
         tx.insertPermsOnPages(permission)
       }
@@ -1360,6 +1375,10 @@ case class SitePatcher(globals: debiki.Globals) {
 
       siteData.reviewTasks foreach { reviewTask: ReviewTask =>
         tx.upsertReviewTask(reviewTask)
+      }
+
+      siteData.webhooks foreach { webhook =>
+        tx.upsertWebhook(webhook)
       }
 
 

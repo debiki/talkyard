@@ -108,7 +108,7 @@ class E2eTestCounters {
 class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name = appCtx
                 // But then rename TyContext  to ... what?
   private val appLoaderContext: p.ApplicationLoader.Context,
-  val executionContext: scala.concurrent.ExecutionContext,
+  val executionContext: scala.concurrent.ExecutionContext,  // RENAME to execCtx, started, see below
   val wsClient: WSClient,
   val actorSystem: ActorSystem,
   val tracer: io.opentracing.Tracer) extends TyLogging {
@@ -126,7 +126,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
   val e2eTestCounters = new E2eTestCounters
 
-  private implicit def execCtc: ExecutionContext = executionContext
+  REMOVE // avoid implicit things! Just makes the code harder to understand
+  implicit def execCtx: ExecutionContext = executionContext
 
   val conf: p.Configuration = appLoaderContext.initialConfiguration
   def rawConf: p.Configuration = conf

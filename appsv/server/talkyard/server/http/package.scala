@@ -21,7 +21,8 @@ import com.debiki.core._
 import debiki.dao.SiteDao
 import talkyard.server.security.{BrowserId, SidStatus, XsrfOk}
 import play.api.http.{HeaderNames => play_HeaderNames}
-import play.api.libs.json.{JsValue, JsObject}
+import play.api.libs.json.{JsValue, JsObject, JsArray, JsString}
+import com.debiki.core.Prelude.JsEmptyObj2
 import play.api.mvc.{Request => p_Request, Result => p_Result, RequestHeader => p_RequestHeader}
 
 
@@ -119,5 +120,12 @@ package object http {
 
   type JsonPostRequest = ApiRequest[JsValue]
 
+  def headersToJsonSingleMap(headers: Map[String, String]): JsObject = {
+    JsObject(headers mapValues JsString)
+  }
+
+  def headersToJsonMultiMap(headers: Map[String, Seq[String]]): JsObject = {
+    JsObject(headers.mapValues(vs => JsArray(vs map JsString)))
+  }
 
 }

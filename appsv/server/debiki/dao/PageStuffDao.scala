@@ -29,6 +29,7 @@ import scala.collection.mutable.ArrayBuffer
   */
 case class PageStuff(
   pageId: PageId,
+  // But what about the page path? [incl_path_in_page_stuff]
   pageMeta: PageMeta,
   title: String,  // CLEAN_UP REMOVE
   approvedTitleSource: Option[String],

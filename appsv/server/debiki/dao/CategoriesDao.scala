@@ -247,8 +247,16 @@ trait CategoriesDao {
   }
 
 
+  RENAME // to getAllCatsById ?
   def getCatsById(): Map[CatId, Cat] = {
     getAndRememberCategories()._1
+  }
+
+
+  def getCatsById(ids: Set[CatId]): Map[CatId, Cat] = {
+    Map.apply(ids.flatMap(id => {
+      getCategory(id).map(id -> _)
+    }).toSeq : _*)
   }
 
 
@@ -349,6 +357,7 @@ trait CategoriesDao {
   }
 
 
+  MOVE // to PagesDao?  [move_list_pages]
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
   def loadMaySeePagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
@@ -403,6 +412,7 @@ trait CategoriesDao {
   }
 
 
+  MOVE // to PagesDao?  [move_list_pages]
   def listMaySeeTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery,
         includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext, limit: Int)
         : Seq[PagePathAndMeta] = {

@@ -2,52 +2,85 @@ import { serve } from "https://deno.land/std@0.130.0/http/server.ts";
 
 const port = 8090;
 
-const webhookReqs: Object[] = [];
+const webhookReqsBySiteId: { [siteId: number] : Object[] } = {};
 
-const handler = async (req: Request): Promise<Response> => {
+const statusCodesBySite: { [siteId: number]: number } = {};
+
+
+
+const requestHandler = async (req: Request): Promise<Response> => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+
   const url = new URL(req.url);
+
+  const siteIdSt: string | null = url.searchParams.get('siteId');
+  if (!siteIdSt) return errorBadReq("Query param '?siteId=__' missing");
+  const siteId = parseInt(siteIdSt);
+  if (isNaN(siteId)) return errorBadReq(`Query param '?siteId=${siteId}' is not a number`);
+
   switch (url.pathname) {
     case '/ping':
       return new Response("pong\n");
 
-    case '/webhooks':
+    case '/break-webhooks': {
+      if (req.method !== 'POST') return errorBadReq("The request method must be POST");
+      const returnStatusCode = toIntOrElse(url.searchParams.get('returnStatusCode'), 500);
+      statusCodesBySite[siteId] = returnStatusCode;
+      return ok(`s${siteId}: Will now return status ${returnStatusCode}.`);
+    }
+
+    case '/mend-webhooks': {
+      if (req.method !== 'POST') return errorBadReq("The request method must be POST");
+      delete statusCodesBySite[siteId];
+      return ok(`s${siteId}: Will now return 200 OK.`);
+    }
+
+    case '/webhooks': {
       if (req.method !== 'POST')
         return errorBadReq("The request method must be POST");
-
       if (!req.body)
         return errorBadReq("Request body missing");
 
       const json = await req.json();
-      const jsonSt = JSON.stringify(json);
-      console.log(`Got JSON: ${jsonSt}`);
+      console.log(`s${siteId}: Got a webhook with JSON: ${JSON.stringify(json)}`);
+      const webhookReqs = webhookReqsBySiteId[siteId] || [];
+      webhookReqsBySiteId[siteId] = webhookReqs;
       webhookReqs.push(json);
-      // + req.headers
 
-      // + save per site?:  url.searchParams
+      const babStatus = statusCodesBySite[siteId];
+      const resp = babStatus
+          ? fakeError(`s${siteId}: Faking failure, status code ${babStatus}`, babStatus)
+          : ok(`s${siteId}: Thanks for the webhook message.`);
+      return resp;
+    }
 
-      return new Response("Thanks, I saved the JSON: " + jsonSt);
-
-    case '/clear-webhook-reqs':
+    case '/clear-webhook-reqs': {
       if (req.method !== 'POST') return errorBadReq("The request method must be POST");
-      webhookReqs.length = 0;
-      return  jsonResp({ ok: true });
+      delete webhookReqsBySiteId[siteId];
+      return  jsonResp(`s${siteId}: Forgot all webhook requests`, { ok: true });
+    }
 
-    case '/list-webhook-reqs':
+    case '/list-webhook-reqs': {
       if (req.method !== 'GET') return errorBadReq("The request method must be GET");
-      return  jsonResp({ webhookReqs });
+      const webhookReqs = webhookReqsBySiteId[siteId] || [];
+      return  jsonResp(`s${siteId}: Returning ${webhookReqs.length} webhook requests:\n${
+            j2s(webhookReqs)}`, { webhookReqs });
+    }
 
     default:
       return errorBadReq(`Bad URL path: ${url.pathname}`);
   }
-
 };
 
-console.log(`HTTP webserver running. Access it at: http://localhost:8090/`);
 
-await serve(handler, { port });
+console.log(`Fakeweb HTTP server running at:  http://localhost:${port}/`);
+
+await serve(requestHandler, { port });
 
 
-function jsonResp(json: Object): Response {
+
+function jsonResp(logMsg: string, json: Object): Response {
+  console.log(logMsg);
   const jsonSt = JSON.stringify(json);
   return new Response(jsonSt, {
     status: 200,
@@ -57,6 +90,41 @@ function jsonResp(json: Object): Response {
   });
 }
 
+
+function ok(msg: string) {
+  console.log(msg);
+  return new Response(msg);
+}
+
 function errorBadReq(msg: string) {
+  console.error(msg);
   return new Response(msg, { status: 400 });
+}
+
+function fakeError(msg: string, status: number) {
+  console.log(msg); // not error(msg)
+  return new Response(msg, { status });
+}
+
+
+function toIntOrElse(value: string | null, orElse: number): number {
+  if (!value) return orElse;
+  const valAsNr = parseInt(value);
+  return isNaN(valAsNr) ? orElse : valAsNr;
+}
+
+/// Dupl code [dupl_j2s].
+function j2s(something: any, replacer = stringifyReplacer,
+        indentation?: number): string {
+  return JSON.stringify(something, replacer, indentation);
+}
+
+/// Dupl code [dupl_j2s].
+/// JSON.stringify() doesn't know how to serialize a Map, so we'll need to specify
+/// what JSON to generate, for a Map.
+function stringifyReplacer(key: any, value: any): any {
+  if (value instanceof Map) {
+    return { mapEntries: [...value.entries()] };
+  }
+  return value;
 }

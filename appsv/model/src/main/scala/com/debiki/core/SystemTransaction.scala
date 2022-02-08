@@ -118,6 +118,10 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   def loadReviewTaskIdsToExecute(): Map[SiteId, immutable.Seq[ReviewTaskId]]
 
+  // ----- The janitor: Webhooks
+
+  def loadPendingWebhooks(): Map[SiteId, ImmSeq[Webhook]]
+
   // ----- Testing
 
   /** Deletes all data from the database. For example, for a RDBMS,

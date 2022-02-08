@@ -418,6 +418,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def upsertLink(link: Link): Boolean
   def deleteLinksFromPost(postId: PostId, urls: Set[String]): Int
   def deleteAllLinksFromPost(postId: PostId): Int  // needed later, for hard delete?
+  def loadAllLinks(): ImmSeq[Link]
   def loadLinksFromPost(postId: PostId): Seq[Link]
   def loadLinksToPage(pageId: PageId): Seq[Link]  // not needed? only called in test suite
   def loadPageIdsLinkedFromPage(pageId: PageId): Set[PageId]
@@ -746,13 +747,32 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadCreatePostAuditLogEntry(postId: PostId): Option[AuditLogEntry]
   def loadCreatePostAuditLogEntriesBy(browserIdData: BrowserIdData, limit: Int, orderBy: OrderBy)
         : Seq[AuditLogEntry]
-  def loadAuditLogEntriesRecentFirst(userId: UserId, tyype: Option[AuditLogEntryType], limit: Int,
-        inclForgotten: Boolean): immutable.Seq[AuditLogEntry]
+
+  // For now. Later, own table?
+  def loadEventsFromAuditLog(limit: i32, newerOrAt: Opt[When] = None,
+        newerThanEventId: Opt[EventId] = None, olderOrAt: Opt[When] = None,
+        newestFirst: Bo)
+        : immutable.Seq[AuditLogEntry]
+
+  def loadAuditLogEntries(userId: Opt[PatId], types: ImmSeq[AuditLogEntryType],
+        newerOrAt: Opt[When], newerThanEventId: Opt[EventId],
+        olderOrAt: Opt[When], newestFirst: Bo, limit: i32,
+        inclForgotten: Bo): immutable.Seq[AuditLogEntry]
 
   def loadBlocks(ip: String, browserIdCookie: Option[String]): immutable.Seq[Block]
   def insertBlock(block: Block): Unit
   def unblockIp(ip: InetAddress): Unit
   def unblockBrowser(browserIdCookie: String): Unit
+
+  def loadWebhook(id: WebhookId): Opt[Webhook]
+  def loadAllWebhooks(): ImmSeq[Webhook]
+  def upsertWebhook(webhook: Webhook): U
+  def updateWebhookState(webhook: Webhook): U
+  def deleteWebhook(webhookId: WebhookId): U
+  def loadWebhookReqsOutRecentFirst(webhookId: WebhookId, limit: i32): ImmSeq[WebhookReqOut]
+  def loadWebhookReqsOutRecentFirst(limit: i32): ImmSeq[WebhookReqOut]
+  def insertWebhookReqOut(reqOut: WebhookReqOut): U
+  def updateWebhookReqOutWithResp(reqOut: WebhookReqOut): U
 
   def nextApiSecretNr(): DraftNr
   def insertApiSecret(secret: ApiSecret): Unit

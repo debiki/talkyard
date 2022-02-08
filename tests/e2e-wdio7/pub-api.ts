@@ -91,7 +91,12 @@ type TagRef = string;
 type BadgeRef = string;
 
 type PageSortOrder = 'PopularFirst' | 'ActiveFirst' | 'NewestFirst';
-type PageTypeSt = 'Question' | 'Problem' | 'Idea' | 'Discussion';
+type PageTypeSt = 'Question' | 'Problem' | 'Idea' | 'Discussion' | 'Other';
+type PageDoingStatusSt = null | 'Planned' | 'Doing' | 'Done';
+type PageClosedStatusSt = null | 'Closed' | 'Locked' | 'Frozen';
+type PageDeletedStatusSt = null | 'Deleted' | 'HardDeleted';
+
+type EventSortOrder = 'NewestFirst' | 'OldestFirst';
 
 type Unimplemented = undefined;
 
@@ -129,6 +134,9 @@ interface Participant_ {
 // The different things Search Queries and List Queries can find:
 
 type FindWhat =
+  // Info about  also be sent via webhoos (not yet impl)
+  'Events' |
+
   'Pages' |
 
   'Posts' |
@@ -155,6 +163,29 @@ type FindWhat =
 
   // If you want to find a user badge, by searching badge titles or about texts.
   'Badges';
+
+
+type WhatThing =
+  'Event' |
+  'Page'  |
+  'Post'  |
+  'Pat'; /*  // short for "Participant"
+  'Invite' |
+  'EmailOut' |
+  'Tag' |
+  'Category' |
+  'Badge';  */
+
+
+interface Thing {
+  // Not needed, if only one thing type allowed, e.g. a webhook request would
+  // only include Event:s — then, no need for `what: 'Event'`.
+  what?: WhatThing;
+
+  // Can be left out, if looking up one specific thing, by id. Then the caller
+  // already knows its id (e.g. in client/embedded-comments/comments-count.ts).
+  id?: St | Nr;
+}
 
 
 
@@ -222,12 +253,16 @@ type ThingFound = PageOptFields
                 | PageFound
                 | PageListed  // hmm, incl in  PageOptFields  above
                 | PostListed
+            //  | Event
                 | ParticipantFound | TagFound | CategoryFound;
 
 
 
-interface ParticipantFound {
-  ppId: ParticipantId;  // RENAME to patId
+// RENAME to Pat ?
+interface ParticipantFound extends Thing {
+  what?: 'Pat';
+  id: PatId;
+  ppId: ParticipantId;  // deprecated
   username?: string;
   fullName?: string;
   tinyAvatarUrl?: string;
@@ -258,8 +293,14 @@ interface GroupFound extends MemberFound {
 }
 
 
-interface PageOptFields {
+interface PageOptFields extends Thing {
+  what?: 'Page';
+  id?: PageId;
+
+  // Deprecated:
   pageId?: PageId;
+
+  //pageType: PageTypeSt; ... etc, see EventPageData
   title?: St;
   // Prefix with the origin (included in the response) to get the full URL.
   urlPath?: St;
@@ -273,7 +314,11 @@ interface PageOptFields {
 
 // Rename to PageDef(ault)Fields ?
 interface PageFoundOrListed extends PageOptFields {
+  id: PageId;
+
+  // Deprecated:
   pageId: PageId;
+
   title: string;
   // Prefix with the origin (included in the response) to get the full URL.
   urlPath: string;
@@ -290,7 +335,9 @@ type PageListed = PageFoundOrListed;
 
 
 
-interface PostFoundOrListed {
+// RENAME to just Post?
+interface PostFoundOrListed extends Thing {
+  what?: 'Post';
   isPageTitle?: boolean;
   isPageBody?: boolean;
   author?: ParticipantFound;
@@ -304,6 +351,7 @@ interface PostFound extends PostFoundOrListed {
   htmlWithMarks: string[];
 }
 
+// RENAME to PostAlone?  (not wrapped in page)
 interface PostListed extends PostFoundOrListed {
   id: number;
   nr: number;
@@ -313,6 +361,15 @@ interface PostListed extends PostFoundOrListed {
   urlPath: string;
   author: UserFound,
   approvedHtmlSanitized?: string;
+}
+
+// Page id not needed, since is in a page {} obj.
+interface PostWrappedInPage extends PostFoundOrListed {
+  id: Nr;
+  nr: Nr;
+  parentNr?: Nr;
+  author?: UserFound,
+  approvedHtmlSanitized: St;
 }
 
 
@@ -327,6 +384,140 @@ interface CategoryFound {
   urlPath: string;
 };
 
+// User  ^^\__.--  Individual?
+// Guest   |
+// Anon  __/
+//
+// UserCreated
+// UserUpdated
+//
+// GuestCreated
+// GuestUpdated (was that possible?)
+//
+// AnonymCreated
+// AnonymUpdated
+//
+// GroupCreated
+// GroupUpdated
+// GroupMembersChanged
+//
+// CircleCreated ?
+// CircleUpdated ?
+//
+// PageCreated
+// PageUpdated
+//
+// PostCreated
+// PostUpdated
+//
+// CategoryCreated
+// CategoryUpdated
+
+// Site.UserJoined
+// Group.Created | .Updated | .Deleted  | .MemberJoined | .MemberLeft
+// User.JoinedGroup | .LeftGroup
+// User.Deactivated | .Deleted
+// Page.Created | .Answered | .Done | .Closed | .Deleted
+// Post.Created | .Edited | .Changed | .Deleted
+
+interface EventDefaultFields__no {
+  id: Nr;
+  eventType: St; // ['Page.Created', 'Post.Created'],
+  //eventSubtypes: St[];
+  eventData: {
+    page?: {   // JsPageFound
+      title: St;
+      urlPath: St;
+      categoriesMainFirst: CategoryFound[]
+      author: UserFound; // JsParticipantFoundOrNull
+      postsByNr: {
+        '1': {
+          approvedHtmlSanitized: St;
+        }
+      }
+    };
+
+    post?: {
+      urlPath: St;
+      author: UserFound;
+      approvedHtmlSanitized: St;
+    }
+  }
+}
+
+
+type EventType =
+    'PageCreated' | 
+    'PageUpdated' | 
+    'PostCreated' | 
+    'PostUpdated' |
+    'PatCreated'  |    // subtype: 'User/Group/Guest/AnonCreated' ?
+    'PatUpdated';
+
+
+interface Event_ extends Thing {
+  what?: 'Event';
+  id: Nr;
+  when: WhenMs,
+  eventType: EventType;
+  //eventSubtypes: EventSubtype[];
+  eventData: Object;
+}
+
+interface PageCreatedEvent extends Event_ {
+  eventType: 'PageCreated';
+  eventData: {
+    page: EventPageData & { posts: PostWrappedInPage[] };
+  }
+}
+
+interface PageUpdatedEvent extends Event_ {
+  eventType: 'PageUpdated';
+  eventData: {
+    page: EventPageData;
+  }
+}
+
+interface PostCreatedEvent extends Event_ {
+  eventType: 'PostCreated';
+  eventData: {
+    post: PostListed;
+  }
+}
+
+interface PostUpdatedEvent extends Event_ {
+  eventType: 'PostUpdated';
+  eventData: {
+    post: PostListed;
+  }
+}
+
+interface PatCreatedEvent extends Event_ {
+  eventType: 'PatCreated';
+  eventData: {
+    pat: ParticipantFound;
+  }
+}
+
+interface PatUpdatedEvent extends Event_ {
+  eventType: 'PatUpdated';
+  eventData: {
+    pat: ParticipantFound;
+  }
+}
+
+
+interface EventPageData {
+  id: PageId;
+  title: St;
+  urlPath: St;
+  pageType: PageTypeSt;
+  answerPostId?: PostId;
+  doingStatus?: PageDoingStatusSt;
+  closedStatus?: PageClosedStatusSt;
+  deletedStatus?: PageDeletedStatusSt;
+  categoriesMainFirst: CategoryFound[];
+}
 
 
 // A  Get Query request
@@ -520,6 +711,12 @@ interface PageFilter {
 // }
 
 
+interface ListEventsQuery extends ListQuery {
+  listWhat: 'Events';
+  sortOrder?: EventSortOrder;
+}
+
+
 type ListQueryApiResponse<T extends ThingFound> = ApiResponse<ListQueryResults<T>>;
 
 interface ListQueryResults<T extends ThingFound> {
@@ -632,6 +829,76 @@ type ListResultsScrollCursor = Unimplemented;
 // Response ex:
 //
 //   { origin: "https://example.com", thingsFound: [...]  }
+//
+//   // or:  { origin: ..., pages: [...]  }
+//
+// List recent webhook events:
+//  curl --user tyid=2:14xubgffn4w1b3iluvd2uyntzm -X POST -H 'Content-Type: application/json' http://e2e-test-cid-0-0-now-6795.localhost/-/v0/list -d '{ "listQuery": { "listWhat": "Events" }}'
+//
+//  /-/v0/list  {    // or just  /-/v0/events  ?
+//    listQuery: {
+//      listWhat: 'Events',
+//      sortOrder: 'NewestFirst',
+//    }
+//  }
+//
+// Response ex:
+//
+// {
+//   jsonVersion: 1,
+//   origin: "https://talkyard.example.com",
+//   thingsFound: [{   //  or  events: ...  and skip 'what: ...'?
+//     what: 'Event',
+//     id: 1234,  // event id
+//     type: 'PageCreated',
+//     subTypes: [],
+//     data: {
+//       page: {   // JsPageFound
+//         id:
+//         title:
+//         urlPath:
+//         categoriesMainFirst: 
+//         author: {
+//           JsParticipantFoundOrNull
+//         },
+//         postsByNr: {
+//           '1': {
+//             body: "Orig post text",
+//             bodyFormat: "CommonMark",
+//           }
+//         }]
+//       },
+//     }
+//   }, {
+//     what: 'Event',
+//     id: 567,
+//     type: 'PagesMoved',    // cmp w the Do API: `doWhat: 'MovePages'`
+//     data: {
+//       whichPages: [...],
+//       toCategory: [...],
+//   }]
+// }
+//
+// No!:
+// {
+//   origin: "https://example.com",
+//   thingsFound: [{
+//     eventId: __,
+//     eventTypes: ['Page.Created', 'Post.Created'],
+//     eventData: {
+//       page: {   // JsPageFound
+//         title:
+//         urlPath:
+//         categoriesMainFirst: 
+//         author: {
+//           JsParticipantFoundOrNull
+//         }
+//       },
+//       posts: [{
+//       }]
+//     }
+//   }]
+// }
 //
 
 
@@ -976,6 +1243,12 @@ interface CreateMetaPostAction extends Action {
 //        whichUser: _,  // reference user above
 //        whichGroup: _,
 //      }
+//    }, {
+//      asWho: 'sysbot',
+//      doWhat: 'MovePages',
+//      doHow: {
+//        whichPages: _,
+//        toCategory: _,
 //    }, {
 //      // Nested — e.g. to run in single transaction. Not implemented (maybe never).
 //      inSingleTransaction: true;
