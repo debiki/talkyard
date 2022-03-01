@@ -45,7 +45,7 @@ object Dependencies {
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"
 
     // Play Framework 2.8.9 uses 31.0.1-jre
-    val guava = "com.google.guava" % "guava" % "31.0.1-jre"
+    val guava = "com.google.guava" % "guava" % "31.1-jre"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
