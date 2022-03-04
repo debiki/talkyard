@@ -301,6 +301,8 @@ services:
     # Only want to build (but not run) this container, in dev/test mode.
     command: 'echo'
 
+
+
   # Integration test containers
   # ---------------------------
 
@@ -386,6 +388,29 @@ services:
 
       #default:
         #ipv4_address: 10.10.10.4
+
+
+  # n8n, "source-available Zapier":
+  #
+  # https://hub.docker.com/r/n8nio/n8n
+  #
+  # docker run -it --rm \
+  #     --name n8n \
+  #     -p 5678:5678 \
+  #     -v ~/.n8n:/home/node/.n8n \
+  #     n8nio/n8n
+  #
+  ty-it-n8n:
+    image: n8nio/n8n
+    volumes:
+      - ./volumes/n8n/dot-n8n:/home/node/.n8n
+    ports:
+      - '5678:5678'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_N8N_IP}
+    #profiles:
+    #  - integration_tests
 
 
 # vim: et ts=2 sw=2
