@@ -245,6 +245,22 @@ services:
   #  # Don't want this container to start at all by default.
   #  command: 'exit 0'
 
+  # A fake external server, for e2e tests, when the Ty server sends its own HTTP
+  # requests to external things.
+  fakeweb:
+    build: images/fakeweb/docker/
+    image: ${DOCKER_REPOSITORY}/fakeweb
+    volumes:
+      - ./images/fakeweb/app/:/app/:ro
+      - ./volumes/fakeweb-deno-dir:/deno-dir
+    ports:
+      # So the Webdriverio e2e tests can ask this server what HTTP requests
+      # the Ty server has sent. E.g. outgoing webhooks, or anti spam service queries.
+      - '8090:8090'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_TEST_IP}
+
   # Dummy SMTP server, for testing.
   #  fakemail:
   #    build: images/fakemail/mailslurper
