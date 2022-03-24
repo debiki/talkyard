@@ -324,4 +324,68 @@ services:
       - '2368:2368'
     # networks — don't use the internal net; Ghost is usually hosted elsewhere.
 
+
+  # Matrix
+  #version: '2.3'
+  #services:
+  #mx-postgres:
+  #  image: postgres:14
+  #  #restart: unless-stopped
+  #  networks:
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_MX_PG_IP}
+  #    #default:
+  #    #  ipv4_address: 10.10.10.2
+  #  volumes:
+  #    - ./volumes/matrix-pg-data:/var/lib/postgresql/data
+  #    # These will be used in homeserver.yaml later on
+  #  environment:
+  #    - POSTGRES_DB=synapse
+  #    - POSTGRES_USER=synapse
+  #    - POSTGRES_PASSWORD=pub_mx_pg_pwd
+
+  # See: https://github.com/vector-im/element-web
+  # Also: https://cyberhost.uk/element-matrix-setup/#installmatrixandelement
+  # Access at:  http://ty-it-mx-element.localhost:8088
+  ty-it-mx-element:
+    image: vectorim/element-web:latest
+    #restart: unless-stopped
+    volumes:
+      - ./tests/int-w/matrix/element-web-config.json:/app/config.json
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_MX_ELEMENT_IP}
+    ports:
+      - '8088:80'
+      #networks:
+      #  default:
+      #    ipv4_address: 10.10.10.3
+
+  # Register new server admin user: (mxsrvadm)
+  #  d/c exec ty-it-mx-synapse /bin/bash
+  #  register_new_matrix_user -c /data/homeserver.yaml http://localhost:8008  \
+  #      --user mxsrvadm  --password pub-mxsr020  --admin
+  # See:  https://github.com/matrix-org/synapse/tree/master/docker
+  ty-it-mx-synapse:
+    image: matrixdotorg/synapse:latest
+         # matrixdotorg/synapse:v1.53.0
+         # see:  https://hub.docker.com/r/matrixdotorg/synapse/tags
+    restart: unless-stopped
+    volumes:
+      - ./volumes/matrix-synapse-data:/data
+      - ./tests/int-w/matrix/homeserver.yaml:/data/homeserver.yaml
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_MX_SYNAPSE_IP}
+    ports:
+      - '8008:8008'  # connections from end user clients, to send messages
+      - '8009:8009'  # This is a Websocket proxy, which turns the ws messages
+                     # into HTTP requests to port :8008?
+                     # See:  https://github.com/matrix-org/matrix-websockets-proxy/blob/master/main.go
+      # '8448:8448'  # connections from other servers, for federation
+
+      #default:
+        #ipv4_address: 10.10.10.4
+
+
 # vim: et ts=2 sw=2

@@ -1,8 +1,8 @@
 {
     "default_server_config": {
         "m.homeserver": {
-            "base_url": "https://matrix-client.matrix.org",
-            "server_name": "matrix.org"
+            "base_url": "http://ty-it-mx-synapse.localhost:8008",
+            "server_name": "ty-it-mx-synapse"
         },
         "m.identity_server": {
             "base_url": "https://vector.im"
