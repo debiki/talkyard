@@ -2245,7 +2245,7 @@ interface InputProps {
   defaultValue?;
 
   addonBefore?;
-  help?: St | RElm;
+  help?; // St | RElm;
 
   children?;
 }
