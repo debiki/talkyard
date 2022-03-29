@@ -784,6 +784,17 @@ class SystemDao(
   }
 
 
+  def sendWebhookRequests(): U = {
+    val pendingWebhooksBySiteId: Map[SiteId, ImmSeq[Webhook]] = readTx { tx =>
+      tx.loadPendingWebhooks()
+    }
+    for ((siteId, webhooks) <- pendingWebhooksBySiteId) {
+      val siteDao = globals.siteDao(siteId)
+      siteDao.sendPendingWebhookReqs(webhooks)
+    }
+  }
+
+
   // ----- Testing
 
   def emptyDatabase(): Unit = {

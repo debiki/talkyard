@@ -125,6 +125,7 @@ Prvw = preview
 Pv = Preview, e.g. LnPv = link preview
 Po = post
 Re  = reply  NO! Change to Ry — doesn't Re mean "rearding" as well?
+Req = request, e.g. c_WbhkReq = webhook request
 Rs  = risk, e.g. RsLv = risk level
 R   = table row,  NO, should be Rw, and Cl = column
 Rw, Row = row, Col = column
@@ -176,6 +177,7 @@ Wro = wrong
 X   = extra
 Xl  = extra large (screen), also: Lg, Sm, Md
 Wb  = Watchbar
+Wbhk = webhook
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
 
 ...    = B means Button

@@ -66,19 +66,19 @@ export const ApiPanel = createFactory({
 
     const store: Store = this.props.store;
 
-    let elems = this.state.secrets.map((apiSecret: ApiSecret, index: number) => {
-      return ApiSecretItem({ index, apiSecret, deleteSecret: this.deleteSecret });
+    let elems = this.state.secrets.map((apiSecret: ApiSecret, index: Nr) => {
+      return ApiSecretItem({ key: index, apiSecret, deleteSecret: this.deleteSecret });
     });
 
     const elemsList = elems.length
         ? r.table({ className: 's_A_Api_SecrT' },
-            r.thead({},
+            r.thead({}, r.tr({},
               r.th({}, "Nr"),
               r.th({}, "For user"),
               r.th({}, "Created"),
               r.th({}, "Deleted"),
               r.th({}, "Capabilities"),
-              r.th({}, "Value and actions")),
+              r.th({}, "Value and actions"))),
             r.tbody({},
               elems))
         : r.p({ className: 'e_NoApiSecrets' }, "No API secrets.");
@@ -89,6 +89,7 @@ export const ApiPanel = createFactory({
 
     return (
       r.div({ className: 's_A_Api' },
+        WebhooksApiPanel(),
         r.h3({}, "API Secrets"),
         r.p({}, "Recent first."),
         elemsList,
@@ -137,7 +138,7 @@ const ApiSecretItem = createComponent({
     const clazz = 's_ApiSecr';
     const clazzActiveOrDeleted = clazz + (secret.isDeleted ? '-Dd' : '-Active');
 
-    return r.tr({ key: this.props.index, className: clazz + ' ' + clazzActiveOrDeleted },
+    return r.tr({ className: clazz + ' ' + clazzActiveOrDeleted },
       r.td({}, secret.nr),
       r.td({}, "Any"),  // currently may call API using any user id
       r.td({}, timeExact(secret.createdAt)),
@@ -147,6 +148,206 @@ const ApiSecretItem = createComponent({
   }
 });
 
+
+
+interface WebhooksApiPanelProps {
+}
+
+
+const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(props) {
+  const isGone = React.useRef<Bo>(false);
+  const [webhooksBef, setWebhooksBef] = React.useState<Webhook[] | N>(null);
+  const [webhooksCur, setWebhooksCur] = React.useState<Webhook[] | N>(null);
+  const [message, setMessage] = React.useState<St | N>(null);
+
+  React.useEffect(() => {
+    Server.listWebhooks((whks: Webhook[]) => {
+      // If there's not yet any webhook, let's make a new one, which the admins
+      // can edit and save. It'll get to know about everything that happens
+      // (runs as sysbot).
+      const whks2: Webhook[] = whks.length ? whks : [{
+            id: 1, ownerId: Groups.AdminsId, runAsId: Users.SysbotId, sendToUrl: '' }];
+      setWebhooksBef(whks2);
+      setWebhooksCur(whks2);
+    });
+    return () => isGone.current = true;
+  }, []);
+
+  if (webhooksCur === null)
+    return r.p({}, "Loading webhooks ...");
+
+  const theCurHook = webhooksCur[0];
+
+  const unsavedChanges =  !_.isEqual(webhooksBef, webhooksCur);
+
+  function updWebhook(changes: Partial<Webhook>) {
+    const curHook = webhooksCur[0];
+    const updatedHook = {...curHook, ...changes };
+    setWebhooksCur([updatedHook]);   // currently there can be just one webhook
+    setMessage(null);
+  }
+
+  const urlElm =
+      Input({ label: "URL",
+          labelClassName: 'col-xs-2',
+          wrapperClassName: 'col-xs-offset-2 col-xs-10',
+          className: 'c_A_Api_Wh_Url',
+          value: theCurHook.sendToUrl,
+          onChange: (event) => {
+              updWebhook({ sendToUrl: event.target.value });
+            }
+          });
+
+  const enabledElm =
+      Input({ type: 'checkbox', label: "Enabled",
+          labelClassName: 'col-xs-2',
+          wrapperClassName: 'col-xs-offset-2 col-xs-10',
+          className: 'c_A_Api_Wh_Ena',
+          checked: theCurHook.enabled,
+          onChange: () => {
+            updWebhook({ enabled: !theCurHook.enabled });
+          }});
+
+  const retrySecs = null; /* later:
+      Input({ type: 'number', label: "Retry max seconds",
+          labelClassName: 'col-xs-2',
+          wrapperClassName: 'col-xs-offset-2 col-xs-10',
+          className: 'c_A_Api_Wh_RetrSecs',
+          value: theCurHook.retryMaxSecs,
+          onChange: () => {
+            updWebhook({ enabled: !theCurHook.enabled });
+          }}); */
+
+  // For now: (makes troubleshooting simpler)
+  const webhookDetailsElm =
+      r.pre({ className: 'col-xs-offset-2 col-xs-10' },
+        JSON.stringify(webhooksCur, undefined, 2));
+
+  const saveBtn =
+      Button({
+          className: 'e_Wh_SavB',
+          disabled: !unsavedChanges,
+          onClick: () => {
+            Server.upsertWebhooks(webhooksCur, (webhooks) => {
+              if (isGone.current) return;
+              setWebhooksBef(webhooks);
+              setWebhooksCur(webhooks);
+              setMessage("Saved.");
+            });
+          }, }, "Save");
+
+  const retryOnceBtn = !theCurHook.lastFailedHow || unsavedChanges ? null : rFr({},
+      r.span({ className: 'c_A_Api_Wh_BrknQ' }, "Is it broken? "),
+      Button({
+          onClick: () => {
+            Server.retryWebhook(theCurHook.id, () => {
+              setMessage("Will retry in a few seconds.");
+            });
+          }, }, "Retry once"));
+
+  const showLogBtn =
+      Button({
+          onClick: () => {
+            Server.listWebhookReqsOut(theCurHook.id, (reqsOut) => {
+              showReqs(reqsOut);
+            });
+          }, }, "View log");
+
+  return rFr({},
+      r.h3({}, "Webhooks"),
+      r.p({}, "You can configure one webhook endpoint only, currently. " +
+            "It'll get notified about new and edited pages and comments, " +
+            "and new users (but currently not about updated user)."),
+      urlElm,
+      enabledElm,
+      retrySecs,
+      showLogBtn,
+      saveBtn,
+      retryOnceBtn,
+      r.div({ className: 'c_A_Api_Wh_Msg' }, message),
+      webhookDetailsElm,
+      );
+});
+
+
+
+function showReqs(reqsOut: WebhookReqOut[]) {
+  util.openDefaultStupidDialog({
+    large: true,
+    body: WebhookReqsPanel({ reqsOut }),
+  });
+}
+
+
+
+const WebhookReqsPanel = React.createFactory(function(ps: { reqsOut: WebhookReqOut[] }) {
+  const [showOnlyFailed, setShowOnlyFailed] = React.useState<Bo>(false);
+  const reqstToShow = ps.reqsOut;  
+  const numFailed = _.filter(ps.reqsOut, (r: WebhookReqOut) => !!r.failedAt).length;
+
+  const filterCB =
+      Input({ type: 'checkbox',
+        label: `Show only failed requests (${numFailed} out of ${ps.reqsOut.length})`,
+        tabIndex: 1,
+        checked: showOnlyFailed, onChange: (event: CheckboxEvent) => {
+          setShowOnlyFailed(event.target.checked);
+        }});
+
+  // [wbhk_reqs_dlg_scroll]
+  return r.div({ className: 'c_WbhkReqs' },
+        r.p({}, r.b({}, "Webhook requests, the last 50, recent first:")),
+        filterCB,
+        r.ol({}, reqstToShow.map(reqOut => showOneReq({ reqOut, showOnlyFailed }))));
+});
+
+
+
+function showOneReq(ps: { reqOut: WebhookReqOut, showOnlyFailed: Bo }) {
+  const reqOut = ps.reqOut;
+  const isOk = 200 <= ps.reqOut.respStatus && ps.reqOut.respStatus <= 299;
+  const listItemClasses = 'c_WbhkReqs_Req c_WbhkReqs_Req' + (isOk ? '-Ok' : '-Err');
+
+  if (ps.showOnlyFailed && isOk) {
+    // Then "collapse" this reply.
+    return r.li({ className: listItemClasses }, "Ok.");
+  }
+
+  function boldLine(title: St | RElm, value: St | Nr | RElm) {
+    return r.div({}, r.b({}, title, ': '), r.samp({}, value));
+  }
+
+  const retryNr = !reqOut.retryNr ? null :
+      boldLine("Retry nr", reqOut.retryNr === -1 ? "Manual" : reqOut.retryNr);
+
+  const failInfo = !reqOut.failedAt ? null : rFr({},
+      boldLine("Failed after", `${reqOut.failedAt - reqOut.sentAt} millis`),
+      boldLine("Failed how", reqOut.failedHow),
+      boldLine("Error msg", reqOut.errMsg));
+
+  const respInfo = !reqOut.respAt ? null : rFr({},
+      boldLine("Response after", `${reqOut.respAt - reqOut.sentAt} millis`),
+      // Not so interesting:
+      // boldLine("Response at", whenMsToIsoDate(reqOut.respAt)),
+      boldLine("Response status", `${reqOut.respStatus} ${reqOut.respStatusText || ''}`));
+
+  return r.li({ className: listItemClasses },
+      boldLine("Request nr", reqOut.reqNr),
+      boldLine("Sent at", whenMsToIsoDate(reqOut.sentAt)),
+      boldLine("Sent to", reqOut.sentToUrl),
+      boldLine("Ty version", reqOut.sentByAppVer + ' API v' + reqOut.sentApiVersion),
+      boldLine("Event types", JSON.stringify(reqOut.sentEventTypes)),
+      boldLine("Event ids", JSON.stringify(reqOut.sentEventIds)),
+      retryNr,
+      failInfo,
+      respInfo,
+      r.div({},
+          r.b({}, "Sent JSON: "),
+          r.pre({}, JSON.stringify(reqOut.sentJson, undefined, 2))),
+      !reqOut.respAt ? r.div({}, "No response.") : rFr({},
+          boldLine("Response headers", JSON.stringify(reqOut.respHeaders, undefined, 2)),
+          boldLine("Response body", reqOut.respBody)),
+      );
+}
 
 
 //------------------------------------------------------------------------------

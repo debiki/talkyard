@@ -33,6 +33,7 @@ import scala.collection.mutable
 import scala.collection.immutable
 import scala.util.Try
 import talkyard.server.JsX
+import talkyard.server.events.WebhooksParSer
 
 
 /** Imports and exports dumps of websites.
@@ -48,7 +49,6 @@ case class SitePatchParser(context: TyContext) {
 
   import context.globals
   import context.security
-  import context.safeActions.ExceptionAction
 
   val MaxBytes = 1001000
 
@@ -173,7 +173,8 @@ case class SitePatchParser(context: TyContext) {
 
     val (permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
         pagePopularityScoresJson, pageParticipantsJson,
-        categoriesJson, draftsJson, postsJson, postActionsJson, reviewTasksJson,
+        categoriesJson, draftsJson, postsJson, postActionsJson, linksJson, reviewTasksJson,
+        webhooksJson,
         isTestSiteOkDelete, isTestSiteIndexAnyway) =
       try {
         (readJsArray(bodyJson, "permsOnPages", optional = true),
@@ -186,7 +187,9 @@ case class SitePatchParser(context: TyContext) {
           readJsArray(bodyJson, "drafts", optional = true),
           readJsArray(bodyJson, "posts", optional = true),
           readJsArray(bodyJson, "postActions", optional = true),
+          readJsArray(bodyJson, "links", optional = true),
           readJsArray(bodyJson, "reviewTasks", optional = true),
+          readJsArray(bodyJson, "webhooks", optional = true),
           readOptBool(bodyJson, "isTestSiteOkDelete").getOrElse(false),
           readOptBool(bodyJson, "isTestSiteIndexAnyway").getOrElse(false))
       }
@@ -401,6 +404,14 @@ case class SitePatchParser(context: TyContext) {
               the 'postActions' list: $error, json: $json"""))
     }
 
+    val links = linksJson.value.toVector.zipWithIndex map { case (json, index) =>
+      Try(JsX.parseJsLink(json, IfBadThrowBadJson)).recover({ case ex: BadJsonEx =>
+          throwBadReq(
+            "TyE50RTG72M", o"""Invalid Link json at index $index in the 'links' list:
+                ${ex.getMessage}, json: $json""")
+      }).get
+    }
+
     val permsOnPages: Seq[PermsOnPages] = permsOnPagesJson.value.toVector.zipWithIndex map {
           case (json, index) =>
       readPermsOnPageOrBad(json, isE2eTest).getOrIfBad(error =>
@@ -417,6 +428,14 @@ case class SitePatchParser(context: TyContext) {
               $error, json: $json"""))
     }
 
+    val webhooks = webhooksJson.value.toVector.zipWithIndex map { case (json, index) =>
+      Try(WebhooksParSer.parseWebhook(json, IfBadThrowBadJson)).recover({ case ex: BadJsonEx =>
+          throwBadReq(
+            "TyE507MSE4A", o"""Invalid Webhook json at index $index in the 'webhooks' list:
+                ${ex.getMessage}, json: $json""")
+      }).get
+    }
+
     SitePatch(upsertOptions = None, siteToSave, settings, apiSecrets,
       guests, guestEmailPrefs, groups,
       groupParticipants,
@@ -425,7 +444,8 @@ case class SitePatchParser(context: TyContext) {
       categoryPatches.toVector, categories.toVector,
       pages, paths, pageIdsByAltIds, pagePopularityScores,
       pageNotfPrefs, pageParticipants,
-      drafts, posts, postActions, permsOnPages, reviewTasks,
+      drafts, posts, postActions, links, permsOnPages, reviewTasks,
+      webhooks,
       isTestSiteOkDelete = isTestSiteOkDelete,
       isTestSiteIndexAnyway = isTestSiteIndexAnyway)
   }

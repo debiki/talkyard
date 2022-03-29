@@ -24,6 +24,7 @@ import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
 import play.api.libs.json._
 import play.api.mvc.Result
 import talkyard.server.JsX._
+import talkyard.server.parser.JsonConf
 
 
 
@@ -86,7 +87,8 @@ object PostsListFoundJson {
 
 
   def JsPostListFound(post: Post, pageStuff: PageStuff, ppsById: Map[UserId, Participant],
-          avatarUrlPrefix: String): JsObject = {
+          avatarUrlPrefix: St, isWrappedInPage: Bo = false,
+          jsonConf: JsonConf = JsonConf.v0_0): JsObject = {
 
     val anyAuthor = ppsById.get(post.createdById)
 
@@ -94,18 +96,25 @@ object PostsListFoundJson {
     val approvedHtmlSanitized = post.approvedHtmlSanitized.getOrDie(
           "TyE603RKDL4", s"Post not approved: ${post.id}")
 
-    Json.obj(  // Typescript: PostListed
+    var json = Json.obj(  // Typescript: PostListed
       "id" -> JsNumber(post.id),
       "nr" -> JsNumber(post.nr),
       "parentNr" -> JsNumberOrNull(post.parentNr),
-      "pageId" -> JsString(post.pageId),
-      "pageTitle" -> pageStuff.title,
       "isPageTitle" -> JsBoolean(post.nr == PageParts.TitleNr),
       "isPageBody" -> JsBoolean(post.nr == PageParts.BodyNr),
       // COULD use the page's actual path (folder + slug).
-      "urlPath" -> JsString(s"/-${post.pageId}#post-${post.nr}"),
-      "author" -> ThingsFoundJson.JsParticipantFoundOrNull(anyAuthor, avatarUrlPrefix),
+      "author" -> ThingsFoundJson.JsParticipantFoundOrNull(anyAuthor, avatarUrlPrefix, jsonConf),
       "approvedHtmlSanitized" -> JsString(approvedHtmlSanitized))
+
+    // If not in a page { ... } obj, with the page id and name, then, more context needed
+    // — so the remote server won't need to fetch the page via a separate request.
+    if (!isWrappedInPage) {
+      json += "pageId" -> JsString(post.pageId)
+      json += "pageTitle" -> JsString(pageStuff.title)
+      json += "urlPath" -> JsString(s"/-${post.pageId}#post-${post.nr}")
+    }
+
+    json
   }
 
 }

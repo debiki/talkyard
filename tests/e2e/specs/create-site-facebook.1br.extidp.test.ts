@@ -21,6 +21,11 @@ describe('create-site-facebook  @createsite @login @facebook  TyT8KA9AW3', () =>
     return;
   }
 
+  if (settings.skipFacebook) {
+    console.log("Skipping Facebook login tests.");
+    return;
+  }
+
   it('initialize', () => {
     browser = new TyE2eTestBrowser(wdioBrowser);
   });

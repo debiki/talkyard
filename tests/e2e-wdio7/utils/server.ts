@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as utils from './utils';
 import c from '../test-constants';
-import { j2s, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, dieIf, logServerResponse,
+import { j2s, boldNormalColor, logMessage, logWarning, logErrorNoTrace, logServerRequest, die, dieIf, logServerResponse,
         } from './log-and-die';
 
 const syncRequest = require('sync-request');
@@ -298,6 +298,7 @@ function importTestSiteData(siteData: SiteData): IdAddress {
   const idAddr = postOrDie(url, { ...siteData, isTestSiteOkDelete: true }).bodyJson();
   dieIf(!idAddr.id, "No site id in import-site response [TyE7UGK2]",
       showResponseBodyJson(idAddr));
+  logMessage(boldNormalColor(`Created e2e test site, id ${idAddr.id}.`));
   return idAddr;
 }
 

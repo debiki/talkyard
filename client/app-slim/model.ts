@@ -698,6 +698,7 @@ interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   closeButtonTitle?: any;
   primaryButtonTitle?: any;
   secondaryButonTitle?: any;
+  large?: Bo;
   small?: boolean;
   tiny?: boolean;
   // number = 1 if primary / okay button clicked, 2 if secondary button clicked, and
@@ -1952,6 +1953,83 @@ interface Host {
 }
 
 
+type WebhookId = Nr;
+type EventId = Nr;
+type EventType = Nr; // later, an enum, see Scala: AuditLogEntryType
+//pe EventSubtype = Nr;
+
+
+// Sync w Scala:  def JsWebhook(webhook: Webhook).
+//
+interface Webhook {
+  id: WebhookId,
+
+  ownerId: PatId;
+  runAsId?: PatId;
+
+  enabled?: Bo,
+  deleted?: Bo,
+
+  descr?: St;
+  sendToUrl: St;
+  // checkDestCert: Bo,
+  // sendEventTypes: EventType[];
+  // sendEventSubTypes: EventSubtype[];
+  apiVersion?: St;
+  //extAppVersion?: St;
+  //sendMaxReqsPerSec?: Nr;
+  sendMaxEventsPerReq?: Nr;
+  sendCustomHeaders?: Object;
+
+  retryMaxSecs?: Nr;
+  retryExtraTimes?: Nr;
+
+  failedSince?: WhenMs;
+  lastFailedHow?: Nr; // WebhookReqFailedHow
+  lastErrMsgOrResp?: St;
+  retriedNumTimes?: Nr;
+  retriedNumSecs?: Nr;
+  brokenReason?: Nr;  // WebhookBrokenReason
+
+  sentUpToWhen?: WhenMs,
+  sentUpToEventId?: EventId;
+  numPendingMaybe?: Nr;
+  doneForNow?: Bo;
+  //retryEventIds?: EventId[];
+}
+
+
+// Sync w Scala:  def JsWebhookReqOut(webhook: Webhook).
+//
+interface WebhookReqOut {
+  webhookId: Nr;
+  reqNr: Nr;
+
+  sentAt: WhenMs;
+  sentToUrl?: St;
+  sentByAppVer: St;  // talkyardVersion
+  sentApiVersion: St,
+  //sentToExtAppVersion?: St;
+  sentEventTypes: EventType[];
+  // sentEventSubTypes
+  sentEventIds: EventId[];
+  sentJson: Object;
+  sentHeaders?: Object;
+
+  retryNr?: Nr;
+
+  failedAt?: WhenMs;
+  failedHow?: St;
+  errMsg?: St;
+
+  respAt?: WhenMs;
+  respStatus?: Nr;
+  respStatusText?: St;
+  respBody?: St;
+  respHeaders?: Object;
+}
+
+
 interface ApiSecret {
   nr: ApiSecretNr;
   userId?: UserId;
@@ -2129,6 +2207,47 @@ interface TipsBoxProps {
   showUnhideTips?: Bo;
   className?: St;
   large?: Bo;
+}
+
+
+interface InputProps {
+  id?: St;
+  ref?;
+  type?: 'text' | 'textarea' | 'number' | 'checkbox' | 'radio' | 'select' | 'custom';
+  name?: St;
+  bsClass?: St;
+  className?: St;
+  wrapperClassName?: St;
+  disabled?: Bo;
+  inputRef?;
+  onChange?;
+  onFocus?;
+  onBlur?;
+  tabIndex?: Nr;
+
+  // Checkboxes and radio buttons:
+  inline?: Bo;
+  title?: Bo;
+  label?: St;
+  validationState?;
+  checked?: Bo;
+  defaultChecked?: Bo;
+
+  labelFirst?: Bo;
+
+  // Custom.
+  labelClassName?: St;
+
+  // Text and other inputs
+  bsSize?;
+  placeholder?: St;
+  value?;
+  defaultValue?;
+
+  addonBefore?;
+  help?: St | RElm;
+
+  children?;
 }
 
 
