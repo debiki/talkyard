@@ -193,6 +193,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // and SectProps, SectView, SectStats?   [disc_props_view_stats]
   // Because PageMeta is in fact 3 separate things:
   // 1) page properties: page type, answeredBy, plannedBy, closed/open, deleted, etc,
+  //    DoingStatus, ClosedStatus, DeletedStatus — see below.
   // 2) how it looks — Sect/DiscView, and  3) statistics (numLikes/Wrongs/...).
   // The stats gets auto updated, whilst the properties only changes when
   // the page e.g. gets closed or answered etc. And the view — the forum would
@@ -238,14 +239,18 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // ? Refactor: Change to enums. Remove timestamps (not used anyway). See model.ts [5RKT02].
   answeredAt: Option[ju.Date] = None,
   answerPostId: Option[PostId] = None,
+  // -- Change to DoingStatus enum, keep dates and who-did-it in the audit log. [page_statuses]
   plannedAt: Option[ju.Date] = None,
   startedAt: Option[ju.Date] = None,
   doneAt: Option[ju.Date] = None,
+  // -- Change to ClosedStatus enum. [page_statuses]
   closedAt: Option[ju.Date] = None,
+  // (soft locked?)
   lockedAt: Option[ju.Date] = None,
   frozenAt: Option[ju.Date] = None,
   // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
   hiddenAt: Option[When] = None,
+  // -- Maybe change to DeletedStatus enum: Deleted/HardDeleted? .... [page_statuses]
   deletedAt: Option[ju.Date] = None,
   deletedById: Opt[PatId] = None,
   htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited

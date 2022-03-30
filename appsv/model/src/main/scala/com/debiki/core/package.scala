@@ -118,6 +118,7 @@ package object core {
   val NoPostNr: PostNr = -1  // COULD change to 0, and set TitleNr = -1  [4WKBA20]
   val TitleNr: PostNr = PageParts.TitleNr
   val BodyNr: PostNr = PageParts.BodyNr
+  val BodyNrSt: St = PageParts.BodyNr.toString
   val FirstReplyNr: PostNr = PageParts.FirstReplyNr
 
   val PostHashPrefixNoHash   = "post-"
@@ -438,7 +439,11 @@ package object core {
 
   type EmailOut = Email  // renaming from Email to EmailOut
 
+  RENAME // to EventId. And, later: [Scala_3] opaque type
   type AuditLogEntryId = Int
+  type EventId = AuditLogEntryId
+
+  type WebhookId = i32
 
   type ApiSecretNr = Int
 
@@ -529,6 +534,7 @@ package object core {
     def hoursSince(other: When): Long = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60
     def hoursSince(other: ju.Date): i64 = (unixMillis - other.getTime) / OneMinuteInMillis / 60
     def minutesSince(other: When): Long = (unixMillis - other.unixMillis) / OneMinuteInMillis
+    def secondsSince(other: When): Long = (unixMillis - other.unixMillis) / 1000
     def millisSince(other: When): Long = unixMillis - other.unixMillis
     def minusMinutes(minutes: Int) = new When(unixMillis - minutes * OneMinuteInMillis)
     def minusSeconds(seconds: Int) = new When(unixMillis - seconds * 1000)
@@ -607,6 +613,10 @@ package object core {
 
     def earliestNot0(whenA: When, whenB: When): When =
       if (whenA.millis < whenB.millis && whenA.millis != 0) whenA else whenB
+
+    def earliestNot0(whenA: When, whenB: Opt[When]): When =
+      if (whenB.isEmpty) whenA
+      else earliestNot0(whenA, whenB.get)
 
     def anyEarliestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
       if (whenA.isDefined && whenB.isDefined)

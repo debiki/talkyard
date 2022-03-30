@@ -755,7 +755,7 @@ case class SitePatcher(globals: debiki.Globals) {
               parentId = anyParentCatRealId,
               defaultSubCatId = catWithTempId.defaultSubCatId.map(remappedCategoryTempId))
 
-            tx.insertCategoryMarkSectionPageStale(catRealIds)
+            tx.insertCategoryMarkSectionPageStale(catRealIds, IfBadAbortReq)
             wroteToDatabase = true
             catRealIds
 
@@ -810,7 +810,7 @@ case class SitePatcher(globals: debiki.Globals) {
               defaultSubCatId = catWithTempId.defaultSubCatId.map(remappedCategoryTempId))
 
             if (catRealIds != catInDb) {
-              tx.updateCategoryMarkSectionPageStale(catRealIds)
+              tx.updateCategoryMarkSectionPageStale(catRealIds, IfBadAbortReq)
               wroteToDatabase = true
             }
             catRealIds
@@ -1000,6 +1000,11 @@ case class SitePatcher(globals: debiki.Globals) {
         }
 
 
+      // ----- Links
+
+      // Fix later.  Need to remap page, post and pat ids — error prone, needs tests.
+
+
       // ----- Notifications
 
       REFACTOR // Change SimpleSitePatch to a ActionPatch — then, this Notifications
@@ -1046,6 +1051,12 @@ case class SitePatcher(globals: debiki.Globals) {
 
         tx.saveDeleteNotifications(notfGenerator.generatedNotifications)
       }
+
+
+      // ----- Webhooks
+
+      // Fix later.  Need to remap webhook ids and next event ids, and
+      // events-to-retry ids.
 
 
       // ----- Consistency checks
@@ -1307,7 +1318,7 @@ case class SitePatcher(globals: debiki.Globals) {
 
       siteData.categories foreach { categoryMeta =>
         //val newId = transaction.nextCategoryId()
-        tx.insertCategoryMarkSectionPageStale(categoryMeta)
+        tx.insertCategoryMarkSectionPageStale(categoryMeta, IfBadAbortReq)
       }
 
       siteData.drafts foreach tx.upsertDraft
@@ -1330,6 +1341,10 @@ case class SitePatcher(globals: debiki.Globals) {
       siteData.postActions foreach { postAction =>
         //val newId = transaction. ?
         tx.insertPostAction(postAction)
+      }
+
+      siteData.links foreach { link =>
+        tx.upsertLink(link)
       }
 
       siteData.permsOnPages foreach { permission =>
@@ -1360,6 +1375,10 @@ case class SitePatcher(globals: debiki.Globals) {
 
       siteData.reviewTasks foreach { reviewTask: ReviewTask =>
         tx.upsertReviewTask(reviewTask)
+      }
+
+      siteData.webhooks foreach { webhook =>
+        tx.upsertWebhook(webhook)
       }
 
 

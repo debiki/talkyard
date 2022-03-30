@@ -33,10 +33,15 @@ const gmailUser = {
 const fbUsersSiteHostname = 'fb.something.example.com';
 const fbUsersSiteInstrs = 'fbUsersSiteInstrs';
 const fbUsersFeedbackOne = 'fbUsersFeedbackOne';
-const fbUser = {
+const fbUser = !settings.skipFacebook ? {
   email: settings.facebookUserEmail,
   password: settings.facebookUserPassword,
   username: 'fbuser'
+} : {
+  email: '0facebook@example.com',
+  password: 'pub-0fa020',
+  username: 'not_fb',
+  fullName: 'Pwd Not Facebook',
 };
 
 const passwordUsersSiteHostname = 'pwd-user.example.com';
@@ -188,13 +193,19 @@ describe("usability testing exchange, all logins:", () => {
       utxImpl.checkIsNoMoreTasksPage(browser);
     });
 
-    it("sees own topic in test queue", () => {
+    it("goes to test queue", () => {
       utxImpl.goToQueue(browser, idAddress);
+    });
+
+    it("sees own topic", () => {
       browser.forumTopicList.waitForTopicVisible(gmailUsersSiteHostname);
+    });
+
+    it("... goes to own topic", () => {
       browser.forumTopicList.goToTopic(gmailUsersSiteHostname);
     });
 
-    it("opens it, looks ok", () => {
+    it("it's the right topic — the correct source text", () => {
       const source = browser.getSource();
       assert(source.indexOf('4GKR02QX') >= 0);
     });
@@ -215,10 +226,20 @@ describe("usability testing exchange, all logins:", () => {
       utxImpl.typeInstructionsSubmit(browser, fbUsersSiteHostname, fbUsersSiteInstrs);
     });
 
+    if (settings.skipFacebook) {  //---------------------------------------------
+      console.log("Skipping Facebook login tests.");
+      it("login with password", () => {
+        browser.loginDialog.createPasswordAccount(fbUser, undefined,
+            'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG');
+        browser.disableRateLimits();
+      });
+    }
+    else {  //-------------------------------------------------------------------
     it("login with Facebook", () => {
       browser.loginDialog.createFacebookAccount(fbUser, { mustVerifyEmail: false });
       browser.disableRateLimits();
     });
+    } // ------------------------------------------------------------------------
 
     it("sees thanks page", () => {
       utxImpl.checkIsThanksPageContinue(browser);

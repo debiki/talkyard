@@ -136,6 +136,11 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
       throw new ju.NoSuchElementException(
         if (message.nonEmpty) s"$message [$errorCode]"
         else s"Element missing: None.get [$errorCode]"))
+
+    def logBugIfEmpty(errorCode: String, message: => String = ""): Opt[A] = {
+      if (underlying.isEmpty) {} // log bug  [better_logging]
+      underlying
+    }
   }
 
   implicit class GetOrDieMap[K, V](val underlying: Map[K, V]) {
@@ -226,15 +231,22 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
   /// For internal errors.
+  RENAME // to IfMessDie ?
   object IfBadDie extends MessAborter
 
   /// For HTTP requests with bad data or that try to access forbidden things.
+  RENAME // to IfMessAbortReq ?
   object IfBadAbortReq extends MessAborter {
     override def abort(errCode: St, errMsg: St = ""): Nothing = {
       throw new BadRequestEx(s"$errMsg [$errCode]")
     }
   }
 
+  object IfBadThrowBadJson extends MessAborter {
+    override def abort(errCode: St, errMsg: St = ""): Nothing = {
+      throw new BadJsonEx(s"$errMsg [$errCode]")
+    }
+  }
 
   def die(errorCode: String, problem: => String = null, cause: => Throwable = null): Nothing = {
     // Don't throw AssertionError — that makes things like Akka's actor system shutdown

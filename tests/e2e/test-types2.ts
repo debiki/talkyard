@@ -56,6 +56,13 @@ interface TestSettings {
   include3rdPartyDependentTests?: boolean;
   // To test only one. E.g. 'google' (OAuth2) or 'reddit' (oEmbed link previews).
   only3rdParty?: string;
+  // Facebook recently broke all Facebook login tests, by requiring https also
+  // when running a localhost e2e test server. But one cannot get https certs for
+  // localhost. So stop testing FB login, for now.
+  // "Insecure Login Blocked: You can't get an access token or log in to
+  // this app from an insecure page. Try re-loading the page as https://"
+  // — Although I'm using a Facebook generated test user account, right.
+  skipFacebook?: Bo;
   grep: string;
   only: string;
   isInProjBaseDir?: boolean;
