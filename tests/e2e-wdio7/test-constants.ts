@@ -140,6 +140,9 @@ export default {
   JanitorThreadIntervalMs: 250,  // [2YPBJ6L]
   MagicTimeoutPollMs: 500,  // [4GKB93RA]
 
+  // The very first event is an AuditLogEntryType.ThisSiteCreated event.
+  StartEventId: 2,
+
   // Including this in the hostname, tells the server to add a 3 seconds fake latency.
   Slow3gHostnamePart: 'slow-3g',
 
@@ -165,6 +168,10 @@ export default {
 
   SortOrderBestFirst: 1,
   SortOrderOldestFirst: 3,
+
+  thirdParty: {
+    ghostPort: 2368,
+  },
 
   serverErrorCodes: {
     notAuthenticated: 'TyE0AUTHN_',

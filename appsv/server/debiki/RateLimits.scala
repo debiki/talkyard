@@ -250,6 +250,16 @@ object RateLimits {
   val ReadsFromCache = ReadsFromDb  // for now
 
 
+  object AdminWritesToDb extends RateLimits {
+    val key = "AdWr"
+    val what = "sent too many resource consuming HTTP requests"
+    def maxPerFifteenSeconds = 10            //  40/min
+    def maxPerFifteenMinutes: i32 = 12 * 15  //  12/min
+    def maxPerDay: i32 = Unlimited
+    def maxPerDayNewUser: i32 = Unlimited
+  }
+
+
   object TrackReadingActivity extends RateLimits {
     val IntervalSeconds = 30 // dupl constant, in js too [6AK2WX0G]
     // 4*  because: [UNIDEADL]

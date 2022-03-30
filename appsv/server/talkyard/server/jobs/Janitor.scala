@@ -44,9 +44,15 @@ import talkyard.server.TyLogger
   */
 object Janitor {
 
+  val WebhookIntervalSecs: i32 =
+    // It's boring to wait, when running tests.
+    if (Globals.isProd) 3 else 1
+
+
   def startNewActor(globals: Globals): ActorRef = {
     implicit val execCtx: ExecutionContext = globals.executionContext
-    import globals.isOrWasTest
+    //import globals.isOrWasTest
+    val isOrWasTest = !globals.isProd  // hmm
 
     val actorRef = globals.actorSystem.actorOf(
       Props(new JanitorActor(globals)), name = "JanitorActor")
@@ -67,12 +73,17 @@ object Janitor {
           isOrWasTest ? 2.seconds | 13.seconds,
           isOrWasTest ? delayIfTest | 3.seconds, actorRef, ExecuteReviewTasks)
 
+    globals.actorSystem.scheduler.scheduleWithFixedDelay(
+          isOrWasTest ? 2.seconds | 23.seconds,
+          isOrWasTest ? delayIfTest | WebhookIntervalSecs.seconds, actorRef, SendWebhooks)
+
     actorRef
   }
 
   object DeleteOldStuff
   object PurgeOldDeletedSites
   object ExecuteReviewTasks
+  object SendWebhooks
 }
 
 
@@ -106,6 +117,8 @@ class JanitorActor(val globals: Globals) extends Actor {
         dao.purgeOldDeletedSites()
       case ExecuteReviewTasks =>
         executePendingReviewTasks()
+      case SendWebhooks =>
+        sendWebhooks()
     }
   }
 
@@ -123,6 +136,12 @@ class JanitorActor(val globals: Globals) extends Actor {
     val dao = globals.systemDao
     dao.executePendingReviewTasks()
     dao.reportSpamClassificationMistakesBackToSpamCheckServices()
+  }
+
+
+  private def sendWebhooks(): U = {
+    val dao = globals.systemDao
+    dao.sendWebhookRequests()
   }
 
 }

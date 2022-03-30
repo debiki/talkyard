@@ -120,6 +120,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 5000) { request =>
     BUG // fairly harmless in this case: The lost update bug.
+
     import request.{dao, body, requester}
     val categoryJson = (body \ "category").as[JsObject]
     val permissionsJson = (body \ "permissions").as[JsArray]
@@ -211,7 +212,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val (category, permsWithIds) =
       if (categoryData.isNewCategory) {
         val result = request.dao.createCategory(
-          categoryData, permissions.to[immutable.Seq], request.who)
+          categoryData, permissions.to[immutable.Seq], request.who, IfBadAbortReq)
         (result.category, result.permissionsWithIds)
       }
       else {

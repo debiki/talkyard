@@ -484,7 +484,8 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
             // (Need some sanity checks so e.g. won't promote a suspended user.)
 
             val updatedUser = user.copyWithUpdatedExternalData(
-                  extUser.copy(username = anyNewOkUsername), now, tryFixBadValues = true)
+                  extUser.copy(username = anyNewOkUsername)(IfBadAbortReq),
+                  now, tryFixBadValues = true)
 
             if (updatedUser != user) {
               tx.updateUserInclDetails(updatedUser)

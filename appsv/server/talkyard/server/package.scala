@@ -43,11 +43,14 @@ package object server {
   // (Later, more logging?:  tysvweb = web server logs,
   // tybrapp = browser app logs, tyanapp = android app, tyioapp = iOS app logs)
   //
-  def TyLogger(name: String): play.api.Logger = play.api.Logger("tysvapp." + name)
+  def TyLogger(name: St, anySiteId: Opt[SiteId] = None): play.api.Logger =
+    play.api.Logger("tysvapp." + name)
 
 
   trait TyLogging {
     protected val logger: play.api.Logger = newLogger(getClass)
+
+    protected def anySiteId: Opt[SiteId] = None
 
     protected def bugWarnIf(condition: Boolean, errorCode: String,
           problem: => String = ""): Boolean = {
@@ -84,7 +87,7 @@ package object server {
   }
 
 
-  def newLogger(clazz: Class[_]): play.api.Logger =
+  def newLogger(clazz: Class[_], anySiteId: Opt[SiteId] = None): play.api.Logger =
     TyLogger(clazz.getName.stripSuffix("$"))
 
 

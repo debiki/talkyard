@@ -8,6 +8,7 @@ import * as utils from '../utils/utils';
 import * as make from '../utils/make';
 import c from '../test-constants';
 import { TyE2eTestBrowser, IsWhere } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
@@ -24,6 +25,12 @@ const embeddingOrigin = 'http://e2e-test-creembsit.localhost:8080';
 
 
 describe(`embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI`, () => {
+
+  if (settings.prod) {
+    console.log(`Skipping this spec — needs:
+          talkyard.createSiteApiSecret="publicCreateSiteApiTestSecret"`);  // E2EBUG
+    return;
+  }
 
   it(`Create browsers`, async () => {
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');

@@ -29,9 +29,27 @@ case class BrowserLocation(
   city: Option[String])
 
 
+// RENAME to  EventSubtype.
 sealed abstract class AuditLogEntryType(protected val IntVal: Int) { def toInt: Int = IntVal }
 object AuditLogEntryType {
-  // Let 1-999 be about content?
+  case class Unknown(badInt: i32) extends AuditLogEntryType(badInt)
+
+  // Let 1-999 be about content?  No, instead:  [event_id_nrs]
+  // Content:
+  //    nnn = new site, site read only, deleted, undeleted, etc?
+  //   1nnn = site sections, e.g. forum, blog, wiki sections?
+  //   2nnn = categories
+  //   3nnn = pages
+  //   4nnn = posts
+  //   6nnn = votes, flags  (not collapse-post/hide-replies — that's a post property)
+  //   8nnn = tags & badges  ?
+  // People:
+  //  10 nnn = pats
+  //  14 nnn = mod events
+  // Other:
+  //  17 nnn = admin events
+  //  30 nnn = meta events,  e.g. emails bouncing, indexin too slow, IDP problem,
+  //                            repeated webhook send failures
   case object CreateSite extends AuditLogEntryType(1)
   case object ThisSiteCreated extends AuditLogEntryType(2)
   case object CreateForum extends AuditLogEntryType(12)
@@ -42,10 +60,55 @@ object AuditLogEntryType {
   case object ChangePostSettings extends AuditLogEntryType(7)
   case object MovePost extends AuditLogEntryType(11)
   case object UploadFile extends AuditLogEntryType(8)
-  case object DeletePage extends AuditLogEntryType(9)
-  case object UndeletePage extends AuditLogEntryType(10)
+  //se object HardDeletePage extends AuditLogEntryType(3997)
 
-  // Let 1001-1999 be about people?
+  // PageApproved?
+
+  //se object PagePublished
+  //se object PagePublicationScheduled
+  //se object PageUnpublished extends AuditLogEntryType(3027)
+
+  //se object PageListed extends AuditLogEntryType(30nn)
+  //se object PageUnlisted extends AuditLogEntryType(30nn)
+
+  //se object PageUnhidden extends AuditLogEntryType(30nn)
+  //se object PageHidden extends AuditLogEntryType(30nn)
+
+  // PageMovedCat
+  // PageMovedUrlSlug
+
+  case object PageAnswered extends AuditLogEntryType(3143)
+  case object PageUnanswered extends AuditLogEntryType(3145)
+
+  case object PagePlanned extends AuditLogEntryType(3153)
+  case object PageStarted extends AuditLogEntryType(3155)
+  case object PageDone extends AuditLogEntryType(3157)
+  // Maybe maybe — let's say a software feature that's been implemented,
+  // but not released, then, one more Doing status could make sense?
+  //se object PageDelivered/Available/Released/Published, hmm, extends AuditLogEntryType(3048)
+
+  //se object PagePostponed extends AuditLogEntryType(3161)
+
+  // Maybe there'll be an array with events, e.g. [PageClosed, PageAnswered]?
+  // (Since a page gets closed, once an answer has been selected.)
+  // But that could be a client side thing?
+  // Here, should be enough to store actiosn by the users.
+  case object PageReopened extends AuditLogEntryType(3901)
+  case object PageClosed extends AuditLogEntryType(3903)
+  // SoftLocked: If replying, there's a popup that says "do you really want to ...
+  // .. better to start a new topic instead" ?
+  //case object PageSoftLocked extends AuditLogEntryType(3904)
+  //se object PageLocked extends AuditLogEntryType(3906)
+  //se object PageFrozen extends AuditLogEntryType(3908)
+
+  case object UndeletePage extends AuditLogEntryType(10)   // 3992
+  case object DeletePage extends AuditLogEntryType(9)      // 3994
+
+
+  // PostApproved?
+
+
+  // Let 1001-1999 be about people?   No, 10nnn, see above.
   case object CreateUser extends AuditLogEntryType(1001)
   // later ----
   case object ApproveUser extends AuditLogEntryType(1002)
@@ -59,7 +122,7 @@ object AuditLogEntryType {
   case object DeleteUser extends AuditLogEntryType(1999)
   // (Cannot undelete.)
 
-  // Let 2001-2999 be admin & staff actions?
+  // Let 2001-2999 be admin & staff actions? No. Change, se above.
   case object SaveSiteSettings extends AuditLogEntryType(2001)
   case object MakeReviewDecision extends AuditLogEntryType(2002)
   case object UndoReviewDecision extends AuditLogEntryType(2003)
@@ -76,8 +139,31 @@ object AuditLogEntryType {
     case ChangePostSettings.IntVal => ChangePostSettings
     case MovePost.IntVal => MovePost
     case UploadFile.IntVal => UploadFile
-    case DeletePage.IntVal => DeletePage
+
+    //se PagePublished ...
+
+    //se PageListed.IntVal => PageListed
+    //se PageUnlisted.IntVal => PageUnlisted
+
+    //se PageUnhidden.IntVal => PageUnhidden
+    //se PageHidden.IntVal => PageHidden
+
+    case PageAnswered.IntVal => PageAnswered
+    case PageUnanswered.IntVal => PageUnanswered
+
+    case PagePlanned.IntVal => PagePlanned
+    case PageStarted.IntVal => PageStarted
+    case PageDone.IntVal => PageDone
+
+    case PageClosed.IntVal => PageClosed
+    case PageReopened.IntVal => PageReopened
+    //se PageLocked.IntVal => PageLocked
+    //se PageFrozen.IntVal => PageFrozen
+
     case UndeletePage.IntVal => UndeletePage
+    case DeletePage.IntVal => DeletePage
+    //se HardDeletePage.IntVal => HardDeletePage
+
     case CreateUser.IntVal => CreateUser
     case ApproveUser.IntVal => ApproveUser
     case SuspendUser.IntVal => SuspendUser
@@ -117,12 +203,18 @@ case class AuditLogEntry(
   batchId: Option[AuditLogEntryId] = None,
   isLoading: Boolean = false) {
 
+  RENAME // to postId
+  def postId: Opt[PostId] = uniquePostId
+
+  CLEAN_UP // change doneAt to type When
+  def doneAtWhen: When = When.fromDate(doneAt)
+
   if (!isLoading) {
     val T = AuditLogEntryType
     emailAddress.foreach(Validation.requireOkEmail(_, "EsE5YJK2"))
     require(pageType.isEmpty || pageId.isDefined, "DwE4PFKW7")
     require(postNr.isEmpty || pageId.isDefined, "DwE3574FK2")
-    require(postNr.isDefined == uniquePostId.isDefined, "DwE2WKEFW8")
+    require(postNr.isEmpty || uniquePostId.isDefined, "DwE2WKEFW8")
     requireIf(didWhat == T.NewPage, pageId.isDefined && uniquePostId.isDefined, "EdE5PFK2")
     requireIf(didWhat == T.DeletePage || didWhat == T.UndeletePage,
                 pageId.isDefined && uniquePostId.isEmpty, "EdE7ZXCY4")

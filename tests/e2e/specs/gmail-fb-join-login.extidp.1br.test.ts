@@ -66,6 +66,10 @@ describe(testName, () => {
 
   // ---------- Facebook
 
+  if (settings.skipFacebook) {  //---------------------------------------------
+    console.log("Skipping Facebook login tests.");
+  }
+  else {
   it("can sign up and reply with Facebook @login @facebook", () => {
     browser.topbar.clickLogout();
     browser.topbar.clickSignUp();
@@ -90,6 +94,7 @@ describe(testName, () => {
     });
     browser.topbar.assertMyUsernameMatches('fb_user');
   });
+  } //---------------------------------------------------------------------------
 
 
   // ---------- All fine?
@@ -98,9 +103,11 @@ describe(testName, () => {
     browser.topic.waitForPostAssertTextMatches(2, 'the gmail_user');
   });
 
+  if (!settings.skipFacebook) {  //----------------------------------------------
   it("the facebook user's reply is visible @facebook", () => {
     browser.topic.waitForPostAssertTextMatches(3, 'the fb_user');
   });
+  } //---------------------------------------------------------------------------
 
 });
 

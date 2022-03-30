@@ -62,6 +62,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   with BlocksSiteDaoMixin
   with ReviewTasksSiteDaoMixin
   with PermsOnPagesRdbMixin
+  with WebhooksRdbMixin
   with ApiSecretsSiteDaoMixin
   with AuditLogSiteDaoMixin {
 
@@ -163,6 +164,11 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   def makeSqlArrayOfStringsUnique(values: Iterable[String]): js.Array = {
     val distinctValues = values.toVector.sorted.distinct
     theOneAndOnlyConnection.createArrayOf("varchar", distinctValues.toArray[Object])
+  }
+
+
+  def makeSqlArrayOfInt32(values: Iterable[i32]): js.Array = {
+    theOneAndOnlyConnection.createArrayOf("int", values.map(_.asAnyRef).toArray[Object])
   }
 
 
