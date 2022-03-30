@@ -2320,6 +2320,32 @@ export function markCurrentPageAsSeen() {
 }
 
 
+export function listWebhooks(onOk: (webhooks: Webhook[]) => Vo) {
+  get('/-/list-webhooks', resp => onOk(resp.webhooks));
+}
+
+
+export function upsertWebhooks(webhooks: Webhook[], onOk: (webhooks: Webhook[]) => Vo) {
+  postJsonSuccess('/-/upsert-webhooks', resp => onOk(resp.webhooks), { webhooks });
+}
+
+
+export function deleteWebhooks(webhooks: Webhook[], onOk: () => Vo) {
+  postJsonSuccess('/-/delete-webhooks', onOk, { webhooks });
+}
+
+
+export function retryWebhook(webhookId: WebhookId, onOk: () => Vo) {
+  postJsonSuccess('/-/retry-webhook', onOk, { webhookId });
+}
+
+
+export function listWebhookReqsOut(webhookId: WebhookId,
+        onOk: (reqsOut: WebhookReqOut[]) => Vo) {
+  get(`/-/list-webhook-reqs-out?webhookId=${webhookId}`, resp => onOk(resp.webhookReqsOut));
+}
+
+
 export function listApiSecrets(onOk: (secrets: ApiSecret[]) => void) {
   get('/-/list-api-secrets', onOk);
 }

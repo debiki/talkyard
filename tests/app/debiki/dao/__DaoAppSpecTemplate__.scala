@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021 Kaj Magnus Lindberg
+ * Copyright (c) 2022 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.ResultException
 import java.{util => ju}
+import debiki.dao.DaoAppSuite.Jan2020
 
 
 @org.scalatest.Ignore

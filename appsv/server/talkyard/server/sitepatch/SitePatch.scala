@@ -79,8 +79,10 @@ case class SitePatch(
   drafts: immutable.Seq[Draft],
   posts: immutable.Seq[Post],
   postActions: immutable.Seq[PostAction],
+  links: ImmSeq[Link],
   permsOnPages: immutable.Seq[PermsOnPages],
   reviewTasks: immutable.Seq[ReviewTask],
+  webhooks: ImmSeq[Webhook],
   // This is if the data in the dump, is just test data and can be deleted.
   // This might be different from if the server runs in Test mode, or if
   // we're upserting via an e2e test endpoint or not — see importRealSiteData()
@@ -149,8 +151,10 @@ case class SitePatch(
       drafts.length >= many ||
       posts.length >= many * 2 ||  // since at least 2 posts per page: title and body [SOMNYPSTS]
       postActions.length >= many ||
+      links.length >= many ||
       permsOnPages.length >= many ||
-      reviewTasks.length >= many
+      reviewTasks.length >= many ||
+      webhooks.length >= many
   }
 }
 
@@ -161,7 +165,7 @@ case class UpsertOptions(
 
 
 object SitePatch {
-  val empty = SitePatch(
+  val empty: SitePatch = SitePatch(
     upsertOptions = None,
     site = None,
     settings = None,
@@ -189,8 +193,10 @@ object SitePatch {
     drafts = Vector.empty,
     posts = Vector.empty,
     postActions = Vector.empty,
+    links = Vector.empty,
     permsOnPages = Vector.empty,
-    reviewTasks = Vector.empty)
+    reviewTasks = Vector.empty,
+    webhooks = Vector.empty)
 }
 
 

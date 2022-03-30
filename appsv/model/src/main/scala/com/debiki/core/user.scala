@@ -473,6 +473,8 @@ case object Participant {
   private val TwoOrMoreUnderscoresRegex =
     "_{2,}".r
 
+  SHOULD // move to server module, so won't need Apache Tika here.
+  // (I.e. so won't need Dependencies.Libs.apacheTika.)
   /** Comes up with a username that contains only valid characters, and is not already in use.
     * Does things like pads with numbers if too short, and, if already taken, appends
     * numbers to make it unique. And changes åäö to aao and replaces Unicode
@@ -1913,6 +1915,7 @@ case class BrowserIdData(ip: String, idCookie: Option[String], fingerprint: Int)
 
 object BrowserIdData {
   val NoFingerprint = 0
+  val Missing = BrowserIdData("0.0.0.0", None, NoFingerprint)
   val System = BrowserIdData("127.0.0.1", None, NoFingerprint)
   val Forgotten = BrowserIdData("127.0.0.2", None, NoFingerprint)
 }

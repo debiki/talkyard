@@ -38,6 +38,8 @@ import scala.util.Try
  */
 object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
 
+  // A Ty user agent string here?  [ty_user_agent]
+
 
   // ----- Limits
 

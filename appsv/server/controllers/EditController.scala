@@ -356,7 +356,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
-    val result = dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
+    val result = dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId,
+          request.theBrowserIdData)
 
     OkSafeJson(Json.obj(
       "answerGotDeleted" -> result.answerGotDeleted,
