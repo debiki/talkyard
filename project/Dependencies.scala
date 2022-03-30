@@ -46,7 +46,7 @@ object Dependencies {
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     // Java 11 needs/can/should use "5.0.1"
-    val hikariCp = "com.zaxxer" % "HikariCP" % "4.0.3"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "5.0.1"
 
     // ElasticSearch client, in https://mvnrepository.com.
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
