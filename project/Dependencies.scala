@@ -50,7 +50,7 @@ object Dependencies {
 
     // ElasticSearch client, in https://mvnrepository.com.
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
-    val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
+    val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "7.17.1"
 
     // Play Framework 2.8.9 uses 31.0.1-jre
     val guava = "com.google.guava" % "guava" % "31.0.1-jre"
