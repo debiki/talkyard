@@ -31,12 +31,12 @@ Compile / dependencyOverrides ++= {
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "1.28",
+      "org.apache.tika" % "tika-core" % "2.2.1",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.scalactic" % "scalactic_2.12" % "3.2.10",
+      "org.scalactic" % "scalactic_2.12" % "3.2.11",
       "org.slf4j" % "slf4j-api" % "1.7.32"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 8db44b671ff2939fe04f6a7b402414a1cc917785
+// LIBRARY_DEPENDENCIES_HASH 912e38c2542770adbb433de1caf22a2059b60dbb

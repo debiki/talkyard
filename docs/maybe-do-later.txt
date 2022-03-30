@@ -692,9 +692,13 @@ https://reacttraining.com/blog/react-router-v5-1/
 But rename useParams to useUrlParams !?
 
 
+[webhooks_todo]
+If endpoint seems broken, send emails to admins, after a while. [notf_adm_broken_webhook]
 [bot_api]  [plugin]
 Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange external
 server / bot.
+Custom headers.
+Sign.
 
 
 [extensions] [themes]
@@ -920,6 +924,9 @@ Upgr Webdriverio from 6 to 7.
 Add Typescript-ESLint warning: no-floating-promises!
 
 
+Better troubleshooting
+=====
+[better_logging]
 
 Bugs
 =====

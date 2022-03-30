@@ -1989,7 +1989,8 @@ function GhostInstructions(props: BlogInstrProps) {
         "In your Ghost blog's theme, insert the below HTML, " +
         "where you want comments to appear. Typically into ", r.code({}, "post.hbs"),
         ", e.g. ", r.code({}, "content/themes/casper/post.hbs"),
-        ", inside the section ", r.code({}, '<section class="post-full-comments">'), '.'),
+        ", inside the section ",
+        r.code({}, '<section class="article-comments gh-canvas">'), '.'),
       BlogCommentsHtmlTags(tagParams),
       ThenRestart());
 }

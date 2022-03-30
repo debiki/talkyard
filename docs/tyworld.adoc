@@ -235,3 +235,32 @@ for that blog post discussion.
 
 // first comment gets posted (or like vote or notf setting changed).
 // So, a draft for the very first comment, usually won't have any page id.)
+
+
+
+== Logging
+
+=== 3 logs: Debug, Audit and Event logs
+
+**Debug logs** include info of relevance to developers, and includes things
+both the _computer_ (source code) does, e.g. method requests, background jobs,
+failing over to another node. And includes if this was initiated by a human.
+Can be annoyingly detailed and noisy, for anyone not troubleshooting the
+computers. Could get shipped off-site.
+
+The **audit log** shows what the *humans* did, and is nice to read, for
+auditors.  But it might include sensitive info, e.g. personal details — and so
+should not be used for e.g. sending webhooks events. Could get shipped off-site.
+
+The **event log** includes events of interest to the Talkyard users, e.g. for
+sending as webhooks. But it would be too sparse, to use for auditing or
+debugging. — It's part of the Ty application, and would be exported and
+imported together with pages, posts, users etc. Not shipped off-site.
+Updates to the event log, might resul in >= 1 debug log messages.
+
+Then there are also **notifications**, which is almost like a log too, but they
+are per person, and can be marked as seen, by the person who got the
+notification. Whilst events are per whole Ty site.
+
+See e.g.:
+https://stackoverflow.com/questions/2492362/difference-in-auditing-and-logging

@@ -247,8 +247,16 @@ trait CategoriesDao {
   }
 
 
+  RENAME // to getAllCatsById ?
   def getCatsById(): Map[CatId, Cat] = {
     getAndRememberCategories()._1
+  }
+
+
+  def getCatsById(ids: Set[CatId]): Map[CatId, Cat] = {
+    Map.apply(ids.flatMap(id => {
+      getCategory(id).map(id -> _)
+    }).toSeq : _*)
   }
 
 
@@ -349,6 +357,7 @@ trait CategoriesDao {
   }
 
 
+  MOVE // to PagesDao?  [move_list_pages]
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
   def loadMaySeePagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
@@ -403,6 +412,7 @@ trait CategoriesDao {
   }
 
 
+  MOVE // to PagesDao?  [move_list_pages]
   def listMaySeeTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery,
         includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext, limit: Int)
         : Seq[PagePathAndMeta] = {
@@ -661,7 +671,7 @@ trait CategoriesDao {
       }
 
       // (Could skip marking page stale, if only newTopicTypes or ext id changed)
-      tx.updateCategoryMarkSectionPageStale(catAft)
+      tx.updateCategoryMarkSectionPageStale(catAft, IfBadAbortReq)
 
       // Check if any sub tree to deep. [.7M27J525]
       val catMapAft = tx.loadCategoryMap()
@@ -711,9 +721,9 @@ trait CategoriesDao {
 
 
   def createCategory(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
-        byWho: Who): CreateCategoryResult = {
+        byWho: Who, mab: MessAborter = IfBadDie): CreateCategoryResult = {
     val result = writeTx { (tx, staleStuff) =>
-      createCategoryImpl(newCategoryData, permissions, byWho)(tx, staleStuff)
+      createCategoryImpl(newCategoryData, permissions, byWho, mab)(tx, staleStuff)
     }
     // Need to reload permissions and categories, so this new category and its permissions
     // also get included.
@@ -726,7 +736,8 @@ trait CategoriesDao {
 
 
   def createCategoryImpl(newCategoryData: CategoryToSave, permissions: ImmSeq[PermsOnPages],
-        byWho: Who)(tx: SiteTx, staleStuff: StaleStuff): CreateCategoryResult = {
+        byWho: Who, mab: MessAborter = IfBadDie)
+        (tx: SiteTx, staleStuff: StaleStuff): CreateCategoryResult = {
 
     val limits = getMaxLimits(UseTx(tx))
 
@@ -753,7 +764,7 @@ trait CategoriesDao {
     val category = newCategoryData.makeCategory(categoryId, tx.now.toJavaDate)
     val ancCats = getAndCheckAncestorCatsThrowIfProblem(category, tx)  // [.920946]
 
-    tx.insertCategoryMarkSectionPageStale(category)
+    tx.insertCategoryMarkSectionPageStale(category, mab)
 
     COULD_OPTIMIZE // get as an arg instead?
     val site: Site = tx.loadSite getOrDie "TyE0MWWNJ25"
@@ -871,7 +882,10 @@ trait CategoriesDao {
     val categoryAfter = categoryBefore.copy(
           deletedAt = if (delete) Some(tx.now.toJavaDate) else None)
 
-    tx.updateCategoryMarkSectionPageStale(categoryAfter)
+    UX; COULD // When undeleting, if the slug is in use by another cat, then,
+    // append '_orig_undeleted' to this category?
+    // But currently cannot happen — deleted cats still occupy their URL slug.
+    tx.updateCategoryMarkSectionPageStale(categoryAfter, IfBadDie)
 
     // All pages in the category now needs to be rerendered.
     // And pages *linked from* pages in the categories — for the correct
@@ -891,7 +905,7 @@ trait CategoriesDao {
     val rootWithNewDefault = rootCategory.copy(defaultSubCatId = Some(category.id))
     // (The section page will be marked as stale anyway;
     // doesn't matter if we do it here too.)
-    tx.updateCategoryMarkSectionPageStale(rootWithNewDefault)
+    tx.updateCategoryMarkSectionPageStale(rootWithNewDefault, IfBadDie)
   }
 
 

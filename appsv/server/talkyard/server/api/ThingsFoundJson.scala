@@ -21,6 +21,7 @@ import com.debiki.core._
 import controllers.OkApiJson
 import Prelude._
 import debiki.dao.{PageStuff, SiteDao}
+import talkyard.server.parser.{JsonConf, PageParSer}
 import talkyard.server.search.{PageAndHits, SearchHit}
 import play.api.libs.json._
 import play.api.libs.json.JsArray
@@ -132,7 +133,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
 
   // Things needed by JsPageFound().
-  private class PageFoundStuff(
+  class PageFoundStuff(
     val pagePath: PagePathWithId,
     val pageStuff: PageStuff,
     val pageAndSearchHits: Option[PageAndHits]) {
@@ -147,28 +148,40 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
         authorIdsByPostId: Map[PostId, UserId],
         authorsById: Map[UserId, Participant],
         avatarUrlPrefix: String,
-        anyCategory: Option[Category]): JsObject = {
+        anyCategory: Option[Category],
+        jsonConf: JsonConf = JsonConf.v0_0): JsObject = {
 
     val pageStuff = pageFoundStuff.pageStuff
     val anyPageAuthor = authorsById.get(pageStuff.authorUserId)
+    val pageMeta = pageStuff.pageMeta
 
     var json = Json.obj(
-      "pageId" -> pageStuff.pageId,
+      "id" -> pageStuff.pageId,
       "title" -> pageStuff.title,
       // Unnecessary to include the origin everywhere.
       "urlPath" -> pageFoundStuff.pagePath.value,
       "excerpt" -> JsStringOrNull(pageStuff.bodyExcerpt),
-      "author" -> JsParticipantFoundOrNull(anyPageAuthor, avatarUrlPrefix),
-      // For now, only the leaf category — but later, also ancestor categories
-      // will be included — so this is an array.
-      "categoriesMainFirst" -> Json.arr(JsCategoryFoundOrNull(anyCategory)))
+      "author" -> JsParticipantFoundOrNull(anyPageAuthor, avatarUrlPrefix, jsonConf),
+      // For now, only the leaf category — but later, SHOULD incl ancestor categories
+      // too — so this is an array.
+      "categoriesMainFirst" -> Json.arr(JsCategoryFoundOrNull(anyCategory)),
+      "pageType" -> PageParSer.pageTypeSt_apiV0(pageMeta.pageType),
+      "answerPostId" -> JsNum32OrNull(pageMeta.answerPostId),
+      "doingStatus" -> PageParSer.pageDoingStatusSt_apiV0(pageMeta.doingStatus),
+      "closedStatus" -> PageParSer.pageClosedStatusSt_apiV0(pageMeta),
+      "deletedStatus" -> PageParSer.pageDeletedStatusSt_apiV0(pageMeta),
+      )
+
+    if (jsonConf.inclOldPageIdField) {
+      json += "pageId" -> JsString(pageStuff.pageId)
+    }
 
     // If this is a SearchQuery for posts, include those posts.
     pageFoundStuff.pageAndSearchHits.foreach { pageAndHits: PageAndHits =>
       json += "postsFound" -> JsArray(pageAndHits.hitsByScoreDesc map { hit =>
         val anyAuthor: Option[Participant] =
               authorIdsByPostId.get(hit.postId) flatMap authorsById.get
-        JsPostFound(hit, anyAuthor, avatarUrlPrefix)
+        JsPostFound(hit, anyAuthor, avatarUrlPrefix, jsonConf)
       })
     }
 
@@ -180,39 +193,46 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   def JsCategoryFoundOrNull(anyCategory: Option[Category]): JsValue = {
     val category = anyCategory getOrElse { return JsNull }
     // Later, with different forums or sub communities [subcomms] [4GWRQA28] in the same
-    // main site — would need to prefix the category's url path with the forum
+    // main site — would need to prefix the category's url path with the forum
     // page's url path.
     Json.obj(
-      "categoryId" -> JsNumber(category.id),
+      "id" -> JsNumber(category.id),
+      "categoryId" -> JsNumber(category.id),  // REMOVE  [ty_v1]
       "name" -> JsString(category.name),
       "urlPath" -> JsString(s"/latest/${category.slug}"))
   }
 
 
   // Typescript: PostFound
-  def JsPostFound(hit: SearchHit, anyAuthor: Option[Participant], avatarUrlPrefix: String)
+  def JsPostFound(hit: SearchHit, anyAuthor: Opt[Pat], avatarUrlPrefix: St,
+        jsonConf: JsonConf = JsonConf.v0_0)
         : JsObject = {
     Json.obj(
       "isPageTitle" -> JsBoolean(hit.postNr == PageParts.TitleNr),
       "isPageBody" -> JsBoolean(hit.postNr == PageParts.BodyNr),
-      "author" -> JsParticipantFoundOrNull(anyAuthor, avatarUrlPrefix),
+      "author" -> JsParticipantFoundOrNull(anyAuthor, avatarUrlPrefix, jsonConf),
       "htmlWithMarks" -> JsArray(hit.approvedTextWithHighligtsHtml map JsString))
   }
 
 
    // Typescript: ParticipantFound
-  def JsParticipantFoundOrNull(anyPp: Option[Participant], avatarUrlPrefix: String)
+  def JsParticipantFoundOrNull(anyPp: Opt[Pat], avatarUrlPrefix: St,
+        jsonConf: JsonConf = JsonConf.v0_0)
         : JsValue = {
     val pp = anyPp getOrElse { return JsNull }
     JsStringOrNull(pp.tinyAvatar.map(_.hashPath))
-    Json.obj(
-      "ppId" -> JsNumber(pp.id),
+    var res = Json.obj(
+      "id" -> JsNumber(pp.id),
       "username" -> JsStringOrNull(pp.anyUsername),
       "fullName" -> JsStringOrNull(pp.anyName),
       "tinyAvatarUrl" -> JsStringOrNull(
           pp.tinyAvatar.map(avatarUrlPrefix + _.hashPath)),
       "isGroup" -> pp.isGroup,
       "isGuest" -> pp.isGuest)
+    if (jsonConf.inclOldPpIdField) {
+      res += "ppId" -> JsNumber(pp.id)  // REMOVE  [ty_v1]
+    }
+    res
   }
 
 }

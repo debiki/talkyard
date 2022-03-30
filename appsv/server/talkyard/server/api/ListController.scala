@@ -20,9 +20,10 @@ package talkyard.server.api
 import com.debiki.core._
 import debiki.RateLimits
 import talkyard.server.http._
+import talkyard.server.events.EventsParSer
 import debiki.EdHttp._
 import Prelude._
-import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
+import debiki.dao.LoadPostsResult
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue, Json}
@@ -54,9 +55,10 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
           (listQueryJson \ "findWhat").as[St])  ; DEPRECATED
     val Pages = "Pages"
     val Posts = "Posts"
+    val Events = "Events"
 
-    throwUnimplementedIf(listWhat != Pages && listWhat != Posts,
-      "TyE3056KTM7", "'listWhat' must be 'Pages' or 'Posts' right now")
+    throwBadReqIf(listWhat != Pages && listWhat != Posts && listWhat != Events,
+      "TyE3056KTM7", "'listWhat' must be 'Pages' or 'Posts' or 'Events'")
 
     val lookWhere = (listQueryJson \ "lookWhere").asOpt[JsObject]
 
@@ -67,12 +69,15 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
     throwUnimplementedIf(lookInWhichCategories.size >= 2,
       "TyE205KDT53", "Currently at most one lookWhere.inCategories can be specified")
 
+    throwUnimplementedIf(lookInWhichCategories.nonEmpty && listWhat == Events,
+      "TyE205KDT54", "Currently lookWhere.inCategories not supported, for events")
+
     val anyCategoryRef = lookInWhichCategories.headOption
 
     val anyFilter = (listQueryJson \ "filter").asOpt[JsObject]
 
-    throwUnimplementedIf(anyFilter.isDefined && listWhat == Posts,
-          "TyE603MRD4", "No filters implemented for posts")
+    throwUnimplementedIf(anyFilter.isDefined && (listWhat == Posts || listWhat == Events),
+          "TyE603MRD4", "No filters implemented for posts and events")
 
     val (
       isAuthorWaitingFilter: Opt[Bo],
@@ -118,7 +123,9 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
         PageOrderOffset.ByScoreAndBumpTime(offset = None, TopTopicsPeriod.Week)
     }
 
-    //val limit = parseOptI32(listQueryJson, "limit")
+    val limitMax100: Opt[i32] = parseOptI32(listQueryJson, "limit", min = Some(1), max = Some(100))
+    val newerOrAt: Opt[When] = parseOptWhen(listQueryJson, "newerOrAt")
+    val olderOrAt: Opt[When] = parseOptWhen(listQueryJson, "olderOrAt")
 
     def nothingFound = ThingsFoundJson.makePagesFoundListResponse(Nil, dao, pretty)
 
@@ -141,9 +148,49 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
     }
 
+    // Site origin.  Dupl code [603RKDJL5]
+    val siteIdsOrigins = dao.theSiteIdsOrigins()
+    val avatarUrlPrefix =
+          siteIdsOrigins.uploadsOrigin +
+           talkyard.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
+
     lazy val authzCtx = dao.getForumAuthzContext(requester)
 
     listWhat match {
+      case Events =>
+        // Maybe break out to own fn?  Dao.loadEvents()?  [load_events_fn]
+        val events: ImmSeq[Event] = dao.readTx { tx =>
+          val limit = limitMax100 getOrElse 33
+          val newestFirst = parseOptSt(listQueryJson, "sortOrder").getOrElse("") match {
+            case "NewestFirst" => true
+            case "OldestFirst" => false
+            case _ =>
+              ( // 1) If pat wants events up to a date, hen probably wants those closest to
+                // that date, meaning, set newestFirst to true.
+                olderOrAt.isDefined || {
+                  // 2) But if pat wants events *after* a date, hen probably wants the *oldest*
+                  // ones after that date — since they're closest to that date.
+                  // 3) If nothing specified, the most recent events are probably more relevant,
+                  // that is, make newestFirst true.
+                  val wantOldestFirst = newerOrAt.isDefined
+                  !wantOldestFirst
+                })
+          }
+          val auditLogItems: ImmSeq[AuditLogEntry] =
+                tx.loadEventsFromAuditLog(newerOrAt = newerOrAt, olderOrAt = olderOrAt,
+                      limit = limit, newestFirst = newestFirst)
+          // Hmm, might yield an empty list, if all events are of the wrong types
+          // (then, fromAuditLogItem() returns None).
+          auditLogItems.flatMap(Event.fromAuditLogItem)
+        }
+        val eventsJson = EventsParSer.makeEventsListJson(
+              events, dao, reqer = requester, avatarUrlPrefix = avatarUrlPrefix)
+
+        // Typescript: SearchQueryResults, and ListQueryResults
+        controllers.Utils.OkApiJson(Json.obj(
+            "origin" -> siteIdsOrigins.siteOrigin,
+            "thingsFound" -> eventsJson.map(_.json)), pretty)
+
       case Pages =>
         val pageQuery = PageQuery(pageSortOrder,
               PageFilter(PageFilterType.AllTopics, includeDeleted = false),

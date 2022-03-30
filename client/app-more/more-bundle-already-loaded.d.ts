@@ -28,7 +28,7 @@ declare namespace rb {
 declare namespace debiki2 {
 
   var Expandable;
-  var Input;
+  function Input(props: InputProps, children?): RElm;
 
   namespace forum {
     function getEditCategoryDialog(handler: (dialog) => void);
