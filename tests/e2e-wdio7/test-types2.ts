@@ -178,6 +178,7 @@ interface SiteData2 {   // [3SD5PB7]
   meta: SiteMeta;
   settings: TestSiteSettings;
   apiSecrets: TestApiSecret[];
+  webhooks: any[]; // Webhook[];
   guests: TestGuest[];
   groups: GroupInclDetails[];
   groupPps: any[];
@@ -200,6 +201,7 @@ interface SiteData2 {   // [3SD5PB7]
   drafts: any[];
   posts: TestPost[];
   postActions: any[];
+  links: any[];
   emailsOut: any;
   notifications: any[];
   //uploads: any[];

@@ -2,6 +2,37 @@
 # Variables:
 #   $@  The file name of the target of the rule
 
+d_c             := sudo docker-compose
+d_c_logs        := $(d_c) logs --no-color
+d_c_logs_f0     := $(d_c) logs --no-color -f --tail 0
+
+# [magic_make_craziness]
+# When in nix-shell, if running `s/tyd u`, then, when s/tyd.ts does
+# `tyu.spawnInForeground('make debug_asset_bundles')` and thus calls
+# the debug_asset_bundles target — then, when building e.g.:
+# images/web/assets/talkyard-comments.js.gz,
+# then this:
+#     s/d-gulp  compileBlogCommentsTypescript-concatScripts
+# fails, with the error:
+#
+#     > s/d-gulp  compileBlogCommentsTypescript-concatScripts
+#     > make: s/d-gulp: No such file or directory
+#
+# But if doing *anything* more than just calling s/d-gulp, then,
+# magically works fine! For example, all these works:
+#
+#     s/d-gulp  compileBlogCommentsTypescript-concatScripts && echo pointleeeesss01
+#     s/d-gulp  compileBlogCommentsTypescript-concatScripts ;  echo pointleeeesss01
+#     echo pointleeeesss02 && s/d-gulp  compileBlogCommentsTypescript-concatScripts
+#     echo pointleeeesss02 ;  s/d-gulp  compileBlogCommentsTypescript-concatScripts
+#
+# Note that there's just '&&' or ';' and a pointless echo-nothing command.
+# No idea why  s/d-gulp  isn't found,  but   echo sth && s/d-gulp  works.
+# But why bother finding out what's happening?
+# Let's just use this d_c_nodejs_gulp macro instead:
+#
+d_c_nodejs_gulp := $(d_c) run --rm nodejs gulp
+
 
 # This needs:  apt install inotify-tools
 # Background?:
@@ -195,7 +226,7 @@ prod_asset_bundle_files:=\
 prod_asset_bundles: debug_asset_bundles $(prod_asset_bundle_files)
 
 $(prod_asset_bundle_files): $@
-	s/d-gulp build_release_dont_clean_before
+	$(d_c_nodejs_gulp) build_release_dont_clean_before
 
 
 # Use .js.gz, because .js files get deleted (aren't needed). [UNCOMPRAST]
@@ -246,7 +277,7 @@ images/app/assets/server-bundle.js: \
        client/app-editor/editor/mentions-markdown-it-plugin.ts \
        client/app-editor/editor/link-previews-markdown-it-plugin.editor.ts
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compileServerTypescriptConcatJavascript
+	$(d_c_nodejs_gulp) compileServerTypescriptConcatJavascript
 
 
 # Sync w gulpfile.js [embcmts_js_files]
@@ -257,7 +288,13 @@ images/web/assets/talkyard-comments.js.gz: \
        client/third-party/smoothscroll-tiny.js \
        client/app-slim/utils/calcScrollRectIntoViewCoords.js
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compileBlogCommentsTypescript-concatScripts
+	$(d_c_nodejs_gulp) compileBlogCommentsTypescript-concatScripts
+	@# [magic_make_craziness]
+	## This won't work if running Make from inside nix-shell; s/d-gulp then isn't found:
+	# s/d-gulp  compileBlogCommentsTypescript-concatScripts
+	## But these work fine: (it's the same! Just 'echo .. ;' and  'echo .. &&')
+	# echo pointless ;  s/d-gulp compileBlogCommentsTypescript-concatScripts
+	# echo pointless && s/d-gulp compileBlogCommentsTypescript-concatScripts
 
 
 # Sync w gulpfile.js. [sw_js_files]
@@ -265,7 +302,7 @@ images/web/assets/talkyard-service-worker.js.gz: \
        $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        client/types-and-const-enums.ts
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compileSwTypescript-concatScripts
+	$(d_c_nodejs_gulp) compileSwTypescript-concatScripts
 
 
 # Sync w gulpfile.js. [edr_js_files]
@@ -281,7 +318,7 @@ images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
        client/third-party/diff_match_patch.js \
        client/third-party/non-angular-slugify.js
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compileEditorTypescript-concatScripts
+	$(d_c_nodejs_gulp) compileEditorTypescript-concatScripts
 
 
 # Sync w gulpfile.js. [head_js_files]
@@ -289,7 +326,7 @@ images/web/assets/$(TALKYARD_VERSION)/head-bundle.js.gz: \
        $(shell find client/app-head/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        client/types-and-const-enums.ts
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compileHeadTypescript-concatScripts
+	$(d_c_nodejs_gulp) compileHeadTypescript-concatScripts
 
 
 # Sync with gulpfile.ts [more_js_files].
@@ -302,7 +339,7 @@ images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
        node_modules/react-select/dist/react-select.js \
        node_modules/moment/min/moment.min.js
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compileMoreTypescript-concatScripts
+	$(d_c_nodejs_gulp) compileMoreTypescript-concatScripts
 
 
 # Sync with gulpfile.ts [slim_js_files].
@@ -326,23 +363,23 @@ images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
        client/third-party/get-set-cookie.js \
        client/third-party/popuplib.js
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compileSlimTypescript-concatScripts
+	$(d_c_nodejs_gulp) compileSlimTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz: \
        $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
        client/types-and-const-enums.ts
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compileStaffTypescript-concatScripts
+	$(d_c_nodejs_gulp) compileStaffTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz: \
        node_modules/zxcvbn/dist/zxcvbn.js
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  bundleZxcvbn
+	$(d_c_nodejs_gulp) bundleZxcvbn
 
 images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz: \
        $(shell  find client/  -type f  \(  -name '*.styl'  -o  -name '*.css'  \)  )
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  compile-stylus
+	$(d_c_nodejs_gulp) compile-stylus
 
 
 # ----- ext-iframe.js
@@ -380,7 +417,7 @@ transl_dev_web_bundle_files := \
 $(transl_dev_app_bundle_files) $(transl_dev_web_bundle_files): \
         ${shell find translations/ -name '*.ts' }
 	@echo "Generating translation files: Transpiling .ts to .js"
-	s/d-gulp  buildTranslations
+	$(d_c_nodejs_gulp) buildTranslations
 
 transl_dev_bundles: ${transl_dev_web_bundle_files} ${transl_dev_app_bundle_files}
 
@@ -393,7 +430,7 @@ fonts: images/web/fonts/open-sans-v2/open-sans.min.css.gz
 
 images/web/fonts/open-sans-v2/open-sans.min.css.gz:
 	@echo "\nRegenerating: $@ ..."
-	s/d-gulp  bundleFonts
+	$(d_c_nodejs_gulp) bundleFonts
 
 
 
@@ -424,7 +461,7 @@ to-talkyard/dist/to-talkyard/src/to-talkyard.js: $(shell find to-talkyard/src/)
 
 clean_bundles:
 	@echo Delting script and style bundles:
-	s/d-gulp clean
+	$(d_c_nodejs_gulp) clean
 
 clean: clean_bundles
 	@# target/ sometimes includes files compilation-created and owned by root.
@@ -466,7 +503,7 @@ build:
 
 
 dev-images:  debug_asset_bundles
-	s/d build
+	$(d_c) build
 
 
 # Starts an SBT shell where you can run unit tests by typing 'test'.
@@ -489,69 +526,71 @@ db-cli:
 
 
 up: debug_asset_bundles
-	s/d up -d
+	$(d_c) up -d
 	@echo
 	@echo "Started. Now, tailing logs..."
 	@echo
-	@s/d-logsf0
+	@$(d_c_logs_f0)
 
 
 log: tail
 logs: tail
 tails: tail
 tail:
-	s/d-logsf0
+	$(d_c_logs_f0)
 
 restart:  debug_asset_bundles
+	@# Move to s/tyd? See comment in s/d-restart. Move all restart-* ?
 	s/d-restart
 
 
 restart-web:
-	s/d kill web ; s/d start web ; s/d-logsf0
+	$(d_c) kill web ; $(d_c) start web ; $(d_c_logs_f0)
 
 recreate-web:
-	s/d kill web ; s/d rm -f web ; s/d up -d web ; s/d-logsf0
+	$(d_c) kill web ; $(d_c) rm -f web ; $(d_c) up -d web ; $(d_c_logs_f0)
 
 rebuild-restart-web:
-	s/d kill web ; s/d rm -f web ; s/d build web ; s/d up -d web ; s/d-logsf0
+	$(d_c) kill web ; $(d_c) rm -f web ; $(d_c) build web ; $(d_c) up -d web ; $(d_c_logs_f0)
 
 
 rebuild-nodejs:
-	s/d kill nodejs ; s/d rm -f nodejs ; s/d build nodejs
+	$(d_c) kill nodejs ; $(d_c) rm -f nodejs ; $(d_c) build nodejs
 
 #rebuild-restart-nodejs: rebuild-nodejs
-#	 s/d up -d nodejs ; s/d-logsf0 nodejs
+#	 $(d_c) up -d nodejs ; $(d_c_logs_f0) nodejs
 #
 #restart-nodejs:
-#	s/d kill nodejs ; s/d start nodejs ; s/d-logsf0
+#	$(d_c) kill nodejs ; $(d_c) start nodejs ; $(d_c_logs_f0)
 
 
 restart-app:  debug_asset_bundles
-	s/d kill app ; s/d start app ; s/d-logsf0
+	$(d_c) kill app ; $(d_c) start app ; $(d_c_logs_f0)
 
 recreate-app:  debug_asset_bundles
-	s/d kill app ; s/d rm -f app ; s/d up -d app ; s/d-logsf0
+	$(d_c) kill app ; $(d_c) rm -f app ; $(d_c) up -d app ; $(d_c_logs_f0)
 
 rebuild-app:  debug_asset_bundles
-	s/d kill app ; s/d rm -f app ; s/d build app
+	$(d_c) kill app ; $(d_c) rm -f app ; $(d_c) build app
 
 rebuild-restart-app:  rebuild-app
-	 s/d up -d app ; s/d-logsf0
+	 $(d_c) up -d app ; $(d_c_logs_f0)
 
 dead-app:
-	s/d kill web app
+	$(d_c) kill web app
 
 
 restart-web-app:  debug_asset_bundles
-	s/d-restart-web-app
+	@# Move to s/tyd? See comment in s/d-restart.
+	$(d_c) kill web app gulp ; $(d_c) start web app gulp ; $(d_c_logs) | s/impl/unjson.sh
 
 
 down: dead
-	s/d down
+	$(d_c) down
 
 dead:
 	@# Kill the ones who are slow to stop.
-	s/d kill app search ; s/d stop
+	$(d_c) kill app search ; $(d_c) stop
 
 
 
@@ -561,8 +600,8 @@ dead:
 
 # Any old lingering prod build project, causes netw pool ip addr overlap error.
 _kill_old_prod_build_project:
-	s/d -pedt kill web app search cache rdb ;\
-	s/d -pedt down
+	$(d_c) -pedt kill web app search cache rdb ;\
+	$(d_c) -pedt down
 
 
 prod-images:  _kill_old_prod_build_project

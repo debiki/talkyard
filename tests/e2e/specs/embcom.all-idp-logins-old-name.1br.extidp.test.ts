@@ -110,9 +110,16 @@ describe("emb cmts all logins", () => {
 
   it("... it appears", () => {
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.waitForPostAssertTextMatches(2, majasComment); // the first reply nr = comment 1
+    majasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, majasComment);
   });
 
+  let nextReplyNr = c.FirstReplyNr + 1;
+
+
+  if (settings.skipFacebook) {  //---------------------------------------------
+    console.log("Skipping Facebook login tests.");
+  }
+  else {
   it("Michael signs up, with Facebook", () => {
     michaelsBrowser.waitAndClick('.dw-a-logout');
     // Now the page reloads. Wait.
@@ -139,9 +146,12 @@ describe("emb cmts all logins", () => {
 
   it("... it appears", () => {
     michaelsBrowser.switchToEmbeddedCommentsIrame();
-    michaelsBrowser.topic.waitForPostAssertTextMatches(2, majasComment);
-    michaelsBrowser.topic.waitForPostAssertTextMatches(3, michaelsComment);
+    michaelsBrowser.topic.waitForPostAssertTextMatches(nextReplyNr, majasComment);
+    nextReplyNr += 1;
+    michaelsBrowser.topic.waitForPostAssertTextMatches(nextReplyNr, michaelsComment);
+    nextReplyNr += 1;
   });
+  } //---------------------------------------------------------------------------
 
   it("Maja logs in again, with Gmail", () => {
     majasBrowser.waitAndClick('.dw-a-logout');
@@ -166,7 +176,8 @@ describe("emb cmts all logins", () => {
 
   it("... it appears, it too", () => {
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.waitForPostAssertTextMatches(4, majas2ndComment);
+    majasBrowser.topic.waitForPostAssertTextMatches(nextReplyNr, majas2ndComment);
+    nextReplyNr += 1;
   });
 
 });

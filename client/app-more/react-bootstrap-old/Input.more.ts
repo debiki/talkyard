@@ -47,7 +47,7 @@ export const Input = createComponent({
     dieIf(this.props.style, 'TyE4KKWBG20');
     // @endif
 
-    const props = this.props;
+    const props: InputProps = this.props;
     const childProps: any = {
       ref: 'theInput',
       id: props.id,

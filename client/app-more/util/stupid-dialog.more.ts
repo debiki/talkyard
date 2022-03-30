@@ -110,6 +110,7 @@ export const StupidDialog = createComponent({
           stuff.secondaryButonTitle)));
 
     const className = 'esStupidDlg ' +
+            (stuff.large ? 'esStupidDlg-Large ' : '') +
             (stuff.small ? 'esStupidDlg-Small ' : '') +
             (stuff.tiny ? 'esStupidDlg-Tiny ' : '') +
             (stuff.dialogClassName || '');
@@ -124,7 +125,16 @@ export const StupidDialog = createComponent({
         Modal({
             show: this.state.isOpen,
             onHide: maybeClose,
-            dialogClassName: className },
+            dialogClassName: className,
+            onEntered: () => {
+              // Show the top of the dialog. Otherwise, in the webhook requests dialog,
+              // for unknown reason the browser scrolls to the middle. [wbhk_reqs_dlg_scroll]
+              const modalParent = $first('.modal[role="dialog"]');
+              if (modalParent) {
+                modalParent.scrollTop = 0;
+              }
+            }
+          },
           body));
     }
     else {

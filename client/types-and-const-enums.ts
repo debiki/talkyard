@@ -523,6 +523,11 @@ const enum Pats {
   MaxGuestId = -2,
 }
 
+
+const enum Users {
+  SysbotId = 2,
+}
+
 const enum Groups {   // QUICK RENAME to Pats or PatIds?
   NoUserId = 0,
   EveryoneId = 10,

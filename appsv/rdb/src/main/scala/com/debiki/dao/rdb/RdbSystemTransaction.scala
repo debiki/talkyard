@@ -1001,6 +1001,24 @@ class RdbSystemTransaction(
   }
 
 
+  def loadPendingWebhooks(): Map[SiteId, ImmSeq[Webhook]] = {
+    val query = """
+          select * from webhooks_t
+          -- This'll use ix:  webhooks_ig_sentuptowhen_more
+          where enabled_c
+            and deleted_c is not true
+            and done_for_now_c is not true
+            and (broken_reason_c is null or retry_extra_times_c >= 1)
+          order by
+              site_id_c, webhook_id_c """
+    runQueryBuildMultiMap(query, List(), rs => {
+      val siteId = rs.getInt("site_id_c")
+      val webhook = WebhooksRdb.parseWebhook(rs)
+      siteId -> webhook
+    })
+  }
+
+
   /** Finds all evolution scripts below src/main/resources/db/migration and applies them.
     */
   def applyEvolutions() {
@@ -1041,6 +1059,8 @@ class RdbSystemTransaction(
     // Dupl code [7KUW0ZT2]
     s"""
       delete from audit_log3
+      delete from webhook_reqs_out_t
+      delete from webhooks_t
       delete from index_queue3
       delete from spam_check_queue3
       delete from tags_t
