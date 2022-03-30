@@ -528,6 +528,9 @@ function runAllE2eTests {
   $r s/wdio-7 --only embcom.create-site-via-api.2br --cd -i $args
   $r s/wdio-7 --only dir.create-site-imp-json.2br --cd -i $args
 
+  $r s/wdio-7 --only webhooks-basic.2br --cd -i $args
+  $r s/wdio-7 --only webhooks-retry.2br --cd -i $args
+  $r s/wdio-7 --only webhooks-enable-disable.2br --cd -i $args
 
   # wip:
   # settings-allow-local-signup
@@ -664,6 +667,15 @@ function runAllE2eTests {
     http_server_pid=''
   fi
   #------------------------------------------------------------
+
+
+  #------------------------------------------------------------
+  # Ghost embedded comments
+
+  # Ghost will listen on port 2368, see docker-compose.yml.
+  s/d up -d it-ghost
+  $r s/wdio-7     --only ghost.embcom.comments-basic.2br --cd -i $args
+  s/d stop it-ghost
 
 
   #------------------------------------------------------------

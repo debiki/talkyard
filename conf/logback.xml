@@ -43,7 +43,10 @@
   <logger name="tysvapp.MemCache" level="TRACE" />
   <logger name="org.elasticsearch" level="INFO" />
 
-  <root level="WARN">
+  <!-- [ty_v1] Remove.  -->
+  <logger name="ed.server" level="TRACE" />
+
+  <root level="INFO">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="FILE" />
   </root>

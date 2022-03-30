@@ -52,7 +52,8 @@ object Validation {  // rename // to Check, so:  Check.ifBadEmail( ...)  — loo
 
 
   def fixMaybeBadName(name: Opt[St]): Opt[St] = {
-    name map { n => n.trim.take(MaxFullNameLength).trim }
+    // (Trim needed twice, yes.)
+    name flatMap { n => n.trim.take(MaxFullNameLength).trimNoneIfEmpty }
   }
 
 
@@ -77,6 +78,10 @@ object Validation {  // rename // to Check, so:  Check.ifBadEmail( ...)  — loo
   def checkEmail(email: String): ParsedEmail Or ErrorMessage = {
     if (email.isEmpty)
       return Bad("No email address, length 0")
+
+    // Developer friendly error.
+    if (email contains " ")
+      return Bad("Invalid email address, it includes spaces ' ' [TyE35M0ABT5]")
 
     if (EmailOkCharsRegex.unapplySeq(email).isEmpty)
       return Bad("Invalid email address [TyE35M0ABT4]")

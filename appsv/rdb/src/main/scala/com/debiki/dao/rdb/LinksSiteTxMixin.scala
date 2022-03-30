@@ -165,6 +165,16 @@ trait LinksSiteTxMixin extends SiteTransaction {
   }
 
 
+  override def loadAllLinks(): ImmSeq[Link] = {
+    val query = s"""
+          select * from links_t
+          where site_id_c = ?
+          order by site_id_c, from_post_id_c, link_url_c  -- ix: pk
+          """
+    runQueryFindMany(query, List(siteId.asAnyRef), parseLink)
+  }
+
+
   override def loadLinksFromPost(postId: PostId): Seq[Link] = {
     val query = s"""
           select * from links_t

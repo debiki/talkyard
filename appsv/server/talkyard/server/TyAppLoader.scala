@@ -10,7 +10,6 @@ import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import scala.concurrent.{ExecutionContext, Future}
-import talkyard.server.TyLogger
 
 
 class TyAppLoader extends ApplicationLoader {
@@ -129,6 +128,7 @@ class TyAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.TagsController(cc, context),
     new _root_.talkyard.server.emails.in.EmailsInController(cc, context),
     new _root_.controllers.SuperAdminController(cc, context),
+    new _root_.talkyard.server.events.WebhooksController(cc, context),
     new _root_.controllers.ApiSecretsController(cc, context),
     new _root_.talkyard.server.authn.SsoAuthnController(cc, context),
     new _root_.talkyard.server.api.GetController(cc, context),

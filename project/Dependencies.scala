@@ -39,10 +39,18 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.2.4"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.2.25"
 
     // Database migrations.
-    val flywaydb = "org.flywaydb" % "flyway-core" % "5.2.4"
+    val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
+
+    // HikariCP — "A solid high-performance JDBC connection pool at last"
+    // Java 11 needs/can/should use "5.0.1"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "4.0.3"
+
+    // ElasticSearch client, in https://mvnrepository.com.
+    val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
+    val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
     // Play Framework 2.8.9 uses 31.0.1-jre
     val guava = "com.google.guava" % "guava" % "31.0.1-jre"
@@ -54,10 +62,11 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "1.28"  // 2.1.0 is newest, SHOULD SECURITY
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.2.1"
 
     val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
 
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.1"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -66,15 +75,7 @@ object Dependencies {
     // https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-v2-libraries#compatible-client-libraries
     //
     // VENDOR_THIS — it'd be good to Maven-build via Makefile?
-    // 7.0.0 won't work: it depends on:
-    //   com.fasterxml.jackson.core:jackson-databind:2.11.2
-    //   and jackson-annotations and jackson-core  2.11.2
-    // but Play Framework requires version >= 2.10.0 and < 2.11.0,
-    // throws an error:
-    //  """...JsonMappingException: Scala module 2.10.3 requires
-    //     Jackson Databind version..."""
-    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"  //  8.3.1 newest
-                                // ... but no hurry with upgrading; it incl no security fixes
+    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.1"
 
 
     // ----- Decoding JWT:s
@@ -129,8 +130,8 @@ object Dependencies {
 
     // ----- Test
 
-    val scalactic = "org.scalactic" %% "scalactic" % "3.2.10"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.10" % "test"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.11"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
