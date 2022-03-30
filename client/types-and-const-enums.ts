@@ -401,7 +401,8 @@ const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]  RENAME to 
   MindMap = 11,
   Discussion = 12,
   FormalMessage = 17,
-  OpenChat = 18,
+  JoinlessChat = 22,   // [JoinlessChat]   RENAME to AnyoneChat?
+  OpenChat = 18,  // RENAME to StandardChat?
   PrivateChat = 19,
     // DirectMessage = 20,
   Form = 20,  // try to remove?
@@ -520,6 +521,11 @@ const enum BlockedReason {  // [auto_block]
 
 const enum Pats {
   MaxGuestId = -2,
+}
+
+
+const enum Users {
+  SysbotId = 2,
 }
 
 const enum Groups {   // QUICK RENAME to Pats or PatIds?

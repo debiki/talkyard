@@ -49,9 +49,9 @@ trait ForumDao {
   self: SiteDao =>
 
 
-  def createForum(title: String, folder: String, isForEmbCmts: Boolean, byWho: Who)
-        : Option[CreateForumResult] = {
-    createForum(CreateForumOptions(
+  def createForum(title: St, folder: String, isForEmbCmts: Bo, byWho: Who,
+          anyTx: Opt[(SiteTx, StaleStuff)] = None): Opt[CreateForumResult] = {
+    createForum2(CreateForumOptions(
       isForEmbeddedComments = isForEmbCmts,
       title = title,
       folder = folder,
@@ -59,15 +59,16 @@ trait ForumDao {
       createSupportCategory = !isForEmbCmts,
       createIdeasCategory = !isForEmbCmts,
       createSampleTopics = !isForEmbCmts,
-      topicListStyle = TopicListLayout.TitleExcerptSameLine), byWho)
+      topicListStyle = TopicListLayout.TitleExcerptSameLine), byWho, anyTx)
   }
 
 
-  def createForum(options: CreateForumOptions, byWho: Who): Option[CreateForumResult] = {
+  def createForum2(options: CreateForumOptions, byWho: Who,
+          anyTx: Opt[(SiteTx, StaleStuff)] = None): Opt[CreateForumResult] = {
     val titleSourceAndHtml = TitleSourceAndHtml(options.title)
     val isForEmbCmts = options.isForEmbeddedComments
 
-    val result = writeTx { (tx, staleStuff) =>
+    val result = writeTxTryReuse(anyTx) { (tx, staleStuff) =>
       val oldForumPagePath = tx.checkPagePath(PagePath(
         siteId = siteId, folder = options.folder, pageId = None, showId = false, pageSlug = ""))
       if (oldForumPagePath.isDefined) {
@@ -167,7 +168,7 @@ trait ForumDao {
     }
 
     // So settings get refreshed (might have been changed above.)
-    clearDatabaseCacheAndMemCache()
+    clearDatabaseCacheAndMemCache(anyTx)
 
     Some(result)
   }
@@ -199,7 +200,7 @@ trait ForumDao {
       unlistTopics = false,
       includeInSummaries = IncludeInSummaries.Default,
       createdAt = tx.now.toJavaDate,
-      updatedAt = tx.now.toJavaDate))
+      updatedAt = tx.now.toJavaDate), IfBadDie)
 
     // Create the Staff category.
     createCategoryImpl(

@@ -20,8 +20,8 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc._
@@ -29,8 +29,8 @@ import scala.collection.immutable
 import talkyard.server.JsX.JsApiSecret
 
 
-class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   def listApiSecrets(): Action[Unit] = AdminGetAction { request: GetRequest =>

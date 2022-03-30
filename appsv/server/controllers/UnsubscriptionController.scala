@@ -22,7 +22,7 @@ import debiki.EdHttp._
 import play.api._
 import play.api.mvc.{Action, ControllerComponents}
 import Prelude._
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import talkyard.server.emails.out.MaxUnsubEmailAgeDays
 
@@ -37,8 +37,8 @@ import talkyard.server.emails.out.MaxUnsubEmailAgeDays
  * web sites, in the Referer header. So only use each email id
  * for one distinct non-repeatable task?
  */
-class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
   import context.safeActions.ExceptionAction

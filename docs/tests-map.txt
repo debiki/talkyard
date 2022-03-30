@@ -45,6 +45,7 @@ full text search:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
 
 create site & forum -
+  via api: [.create_site_via_api]
   create:  create-site-all-logins
   not too many per ip / email:
   not too many in total:
@@ -81,6 +82,11 @@ authn:
           - password-login-reset.2browsers.test.ts  TyT5KAES20W
     via email verif email:
           - unsubscribe.2browsers.test.ts  [TyT2ABK5I0]
+    owner resets, before first login:
+            - dir.create-site-via-api.2br  TyTE2ECREASITAPI  incl type wrong pwd
+            - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
+    resets, but types wrong email:
+            - dir.create-site-via-api.2br  TyTE2ECREASITAPI.TyTERSTWRONGEML
   forgot password -
     reset it:
           - password-login-reset.2browsers.test.ts  TyT5KAES20W
@@ -828,6 +834,8 @@ chat:
     self join, auto leave:
           - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+  joinless chat:
+            - TESTS_MISSING
   private chat:             ==
           - private-chat.3browsers.test.ts  TyT2ABKR045
     not searchable:
@@ -863,6 +871,8 @@ embedded comments:
           - embcom.vote-bef-page-exists.1br  TyT2AKBS056
           - embedded-comments-scroll  TyT2K4DHR49-02
   (50279460),
+  ignores query params:
+            - embcom.ignore-query-params.2br  TyTEEMCIGQPRMS
   scroll and show #comment-n:
           - embedded-comments-scroll  TyT2K4DHR49-05
   scroll and load #comment-nnn:
@@ -1452,6 +1462,9 @@ server side rendering -
     category dropdown:
 
 api:
+  create site via api: [.create_site_via_api]
+            - dir.create-site-via-api.2br  TyTE2ECREASITAPI
+            - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
   enable API:
             - embedded-comments-create-site-import-disqus.2br.test.ts  TyT5KFG0P75.TyTENAAPI
             - dir.create-site-imp-json.2br  TyTEIMPJSON01.TyTENAAPI
@@ -1532,6 +1545,15 @@ url frag action api,
 links like: http://site.localhost/forum/#composeTopic&category=slug:ideas
           - TESTS_MISSING,  search for  enum FragActionType.
 
+api,
+webhooks:
+            - webhooks-basic.2br  TyTE2EWBHKBASIC
+            - webhooks-retry.2br  TyTE2EWBHKRETRY
+            - TESTS_MISSING:  retry manually,  and both automatic + manally
+            - webhooks-enable-disable.2br  TyTE2EWBHKENADIS
+            - TESTS_MISSING:
+                # webhooks-fails-breaks-fixed.2br  TyTE2EWBHKBREAKS (file not created)
+                # and others, see [webhook_tests_missing]
 
 import,
 export and restore:  (impexp)
@@ -1574,3 +1596,9 @@ slow 3g connections:
 
 Tests to create:
   Login with pwd here: /-/users/id/109/activity, no .categories bug
+
+3rd party integrations:
+            - ghost.embcom.comments-basic.2br  TyTEGHOSTCOMBSC
+            - TESTS_MISSING: [move_a_ghost_post], verify the comments move along.
+              But how move it, automatically? Via the Ghost admin UI?
+

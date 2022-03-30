@@ -20,8 +20,8 @@ package controllers
 import com.debiki.core._
 import debiki._
 import debiki.EdHttp.throwForbidden
-import ed.server.http._
-import ed.server.{EdContext, EdController}
+import talkyard.server.http._
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api._
 import play.api.libs.json.JsValue
@@ -30,8 +30,8 @@ import play.api.mvc.{Action, ControllerComponents}
 
 /** Closes and collapses trees and posts.
   */
-class CloseCollapseController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class CloseCollapseController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   def hidePost: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
@@ -67,7 +67,8 @@ class CloseCollapseController @Inject()(cc: ControllerComponents, edContext: EdC
     val pageId = (apiReq.body \ "pageId").as[PageId]
     val postNr = (apiReq.body \ "postNr").as[PostNr]
 
-    dao.changePostStatus(postNr, pageId = pageId, action, userId = apiReq.theUserId)
+    dao.changePostStatus(postNr, pageId = pageId, action, userId = apiReq.theUserId,
+          apiReq.theBrowserIdData)
 
     OkSafeJson(dao.jsonMaker.postToJson2(postNr, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
       includeUnapproved = true))

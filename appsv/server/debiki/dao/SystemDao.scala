@@ -26,7 +26,7 @@ import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.{ForgetEndToEndTestEmails, Globals}
 import debiki.EdHttp.{throwNotFound, throwBadReqIf, throwForbiddenIf}
-import ed.server.spam.ClearCheckingSpamNowCache
+import talkyard.server.spam.ClearCheckingSpamNowCache
 import java.util.concurrent.TimeUnit
 import play.api.libs.json.JsObject
 import talkyard.server.JsX
@@ -780,6 +780,17 @@ class SystemDao(
               task.copy(misclassificationsReportedAt = someNow))
         }
       })(globals.executionContext)
+    }
+  }
+
+
+  def sendWebhookRequests(): U = {
+    val pendingWebhooksBySiteId: Map[SiteId, ImmSeq[Webhook]] = readTx { tx =>
+      tx.loadPendingWebhooks()
+    }
+    for ((siteId, webhooks) <- pendingWebhooksBySiteId) {
+      val siteDao = globals.siteDao(siteId)
+      siteDao.sendPendingWebhookReqs(webhooks)
     }
   }
 

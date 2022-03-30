@@ -447,6 +447,11 @@ export class TyE2eTestBrowser {
     }
 
 
+    async setWindowSize(width: Nr, height: Nr) {
+      await this.#br.setWindowSize(width, height);
+    }
+
+
     async newWindow(url: St, thenWhat: 'StayInCurWin' | 'SwitchToNewWin') {
       // It seemed as if different drivers had different opinions about which
       // window should be active, after having opened a new one.
@@ -3908,10 +3913,11 @@ export class TyE2eTestBrowser {
         await this.waitForVisible('#e2ePassword');
       },
 
+      // RENAME to switchToLoginIfNeeded() ?
       switchToLoginIfIsSignup: async () => {
         // Switch to login form, if we're currently showing the signup form.
         await this.waitUntil(async () => {
-          if (await this.isVisible('.esCreateUser')) {
+          if (await this.isVisible('.c_AuD_2LgI')) {
             await this.waitAndClick('.c_AuD_2LgI .c_AuD_SwitchB');
             // Don't waitForVisible('.dw-reset-pswd') — that can hang forever (weird?).
           }
@@ -3921,6 +3927,26 @@ export class TyE2eTestBrowser {
           }
         }, {
           message: `Switching to login dialog`
+        });
+      },
+
+      switchToSignupIfIsLogin: async () => {
+        // Switch to the signup form, if we're currently showing the login form or guest form.
+        let switched = false;
+        await this.waitUntil(async () => {
+          if (await this.isVisible('.c_AuD_2SgU')) {
+            logBoring(`switches to signup form ...`);
+            switched = true;
+            await this.waitAndClick('.c_AuD_2SgU .c_AuD_SwitchB');
+            // Loop another lap.
+          }
+          else if (await this.isVisible('.esCreateUser')) {
+            if (switched) logBoring(`... done switching to signup form`);
+            // The create account form is shown, fine.
+            return true;
+          }
+        }, {
+          message: `Switching from login to signup dialog`
         });
       },
 
@@ -4505,13 +4531,19 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('#te_WelcomeLoggedIn .btn');
       },
 
-      clickResetPasswordCloseDialogSwitchTab: async () => {
+      clickResetPasswordCloseDialogSwitchTab: async (ps: {
+            loginDialogWillClose?: false } = {}) => {
         // This click opens a new tab.
+        logBoring(`Click forgot-password link...`);
         await this.waitAndClick('.dw-reset-pswd');
         // The login dialog should close when we click the reset-password link. [5KWE02X]
-        await this.waitUntilModalGone();
-        await this.waitUntilLoadingOverlayGone();
+        if (ps.loginDialogWillClose !== false) {
+          await this.waitUntilModalGone();
+          await this.waitUntilLoadingOverlayGone();
+        }
+        logBoring(`Switch to other tab ...`);
         await this.swithToOtherTabOrWindow();
+        logBoring(`Wait for email input ...`);
         await this.waitForVisible('#e2eRPP_emailI');
       },
 
@@ -6051,6 +6083,9 @@ export class TyE2eTestBrowser {
       },
 
       waitForNumReplies: async (n: Partial<NumReplies>, ps: { skipWait?: Bo } = {}) => {
+        dieIf(!_.isObject(n),
+              `Pass an object, like: waitForNumReplies({ numNormal: 123 }), not just 123`);
+        await this.switchToEmbCommentsIframeIfNeeded();
         if (!ps.skipWait) {
           await this.waitForMyDataAdded();
         }
@@ -6157,9 +6192,9 @@ export class TyE2eTestBrowser {
         await this.topic.clickPostActionButton(selector);
       },
 
-      clickReplyToEmbeddingBlogPost: async () => {
+      clickReplyToEmbeddingBlogPost: async (ps?: WaitAndClickPs) => {
         await this.switchToEmbCommentsIframeIfNeeded();
-        await this.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply');
+        await this.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply', ps);
       },
 
       clickReplyToPostNr: async (postNr: PostNr) => {
@@ -6710,7 +6745,7 @@ export class TyE2eTestBrowser {
 
       // Not needed? Just use  waitAndClick()  instead?
       clickPostActionButton: async (buttonSelector: St,
-            opts: { clickFirst?: Bo } = {}) => {   // RENAME to this.scrollAndClick?
+            opts: WaitAndClickPs = {}) => {   // RENAME to this.scrollAndClick?
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitAndClick(buttonSelector, opts);
         /*
@@ -8488,6 +8523,15 @@ export class TyE2eTestBrowser {
         enabledUsersTabSelector: '.e_EnabledUsB',
         waitingUsersTabSelector: '.e_WaitingUsB',
 
+        goHere: async (origin?: St, opts: { loginAs? } = {}) => {
+          await this.go2((origin || '') + '/-/admin/users');
+          if (opts.loginAs) {
+            await this.loginDialog.loginWithPassword(opts.loginAs);
+          }
+          await this.adminArea.users.waitForLoaded();
+        },
+
+
         waitForLoaded: async () => {
           await this.waitForVisible('.e_AdminUsersList');
         },
@@ -8663,6 +8707,23 @@ export class TyE2eTestBrowser {
       },
 
       apiTab: {
+        webhooks: {
+          getUrl: async (): Pr<St> => {
+            return await this.waitAndGetValue('.c_A_Api_Wh_Url input');
+          },
+          setUrl: async (url: St) => {
+            await this.waitAndSetValue('.c_A_Api_Wh_Url input', url);
+          },
+
+          setEnabled: async (enabled: Bo) => {
+            await this.setCheckbox('.c_A_Api_Wh_Ena input', enabled);
+          },
+
+          clickSave: async () => {
+            await this.waitAndClick('.e_Wh_SavB');
+          },
+        },
+
         waitUntilLoaded: async () => {
           await this.waitForVisible('.s_A_Api');
         },
@@ -9365,19 +9426,96 @@ export class TyE2eTestBrowser {
         await this.loginDialog.logInAsGuest(name, email);
       },
 
-      loginIfNeededViaMetabar: async (ps: NameAndPassword) => {
+      signUpAsMemberViaPagebar: async (
+            member: Member, ps: { siteId?: SiteId,
+              willNeedToVerifyEmail?: Bo } = {}) => {   // , doVerifyEmail?: Bo
+        await this.switchToEmbCommentsIframeIfNeeded();
+        logBoring(`clicks Log In ...`);
+        await this.metabar.clickLogin();
+        // When embedded, signup happens in a popup win.
+        const isEmbedded = this.#isWhere === IsWhere.EmbCommentsIframe;
+        if (isEmbedded) {
+          logBoring(`switches to other tab ...`);
+          await this.swithToOtherTabOrWindow();
+        }
+        await this.loginDialog.switchToSignupIfIsLogin();
+        logBoring(`creates a password account ...`);
+        await this.loginDialog.createPasswordAccount({
+          username: member.username,
+          emailAddress: member.emailAddress,
+          password: member.password,
+          willNeedToVerifyEmail: ps.willNeedToVerifyEmail || false,
+          // doVerifyEmail: ps.doVerifyEmail && !isEmbedded || false,
+        });
+        if (isEmbedded) {
+          // Popup win now closed.
+          await this.switchBackToFirstTabOrWindow();
+          await this.switchToEmbeddedCommentsIrame();
+        }
+        /*
+        if (ps.doVerifyEmail) {
+          const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+                  ps.siteId, member.emailAddress);
+          // click link ...
+        } */
+      },
+
+      loginIfNeededViaMetabar: async (ps: NameAndPassword, clickPs?: WaitAndClickPs) => {
         await this.switchToEmbCommentsIframeIfNeeded();
         await this.waitForMyDataAdded();
         if (!await this.metabar.isLoggedIn()) {
           logMessage(`Need to log in, as @${ps.username
                 } — session id cookie blocked? [TyM306MRKTJ]`);
-          await this.complex.loginWithPasswordViaMetabar(ps);
+          await this.complex.loginWithPasswordViaMetabar(ps, clickPs);
         }
       },
 
-      loginWithPasswordViaMetabar: async (ps: NameAndPassword) => {
-        await this.metabar.clickLogin();
+      loginWithPasswordViaMetabar: async (ps: NameAndPassword, clickPs?: WaitAndClickPs) => {
+        // [E2EBUG] [2_lgi_clk] Sometimes needs to click many times — if scrolling down
+        // to the bottom of a long blog post. Then, the first click might somehow fail.
+        // Probably related to scrolling somehow? (even with  maybeMoves: true  !)
+        // Update: I think the problem was that I was calling loginIfNeededViaMetabar()
+        // which ignored clickPs = { maybeMoves: true }, at the time.
+        // DO_AFTER 2023-01-01: Remove this comment and [2_lgi_clk].
+
+        await this.switchToEmbCommentsIframeIfNeeded();
+        const numWinsBefore: Nr = await this.numWindowsOpen();
+        let numWinsNow;
+        await this.waitUntil(async () => {
+          await this.metabar.clickLogin({ timeoutMs: 700, timeoutIsFine: true, ...clickPs });
+          numWinsNow = await this.numWindowsOpen();
+          return numWinsNow > numWinsBefore;
+        }, {
+          message: () => `Clicked Log In, but no login popup appeared? Then there'd be ${
+                numWinsBefore + 1} windows, but currently only: ${numWinsNow}. Trying again`,
+        });
+
         await this.loginDialog.loginWithPasswordInPopup(ps);
+      },
+
+      /// Dupl code elswhere; could replace with this fn.  [e2e_reset_pwd]
+      ///
+      resetPasswordFromLoginDialog: async (ps: { who: Member, newPassword: St,
+              site: { id: SiteId, origin: St } }) => {
+
+        logBoring(`${ps.who.username} clicks the Forgot Password link`);
+        await this.loginDialog.clickResetPasswordCloseDialogSwitchTab({
+                loginDialogWillClose: false });
+
+        logBoring(`... types hens email address`);
+        await this.resetPasswordPage.submitAccountOwnerEmailAddress(ps.who.emailAddress);
+
+        logBoring(`... gets an email with a password reset link`);
+        const resetPwdPageLink = await server.waitAndGetResetPasswordLinkEmailedTo(
+                ps.site.id, ps.who.emailAddress);
+
+        logBoring(`... follows the link`);
+        await this.rememberCurrentUrl();
+        await this.go2(resetPwdPageLink);
+        await this.waitForNewUrl();
+
+        logBoring(`... types a new password`);
+        await this.chooseNewPasswordPage.typeAndSaveNewPassword(ps.newPassword);
       },
 
       snoozeNotifications: async (ps: SnoozeTime = {}) => {
@@ -9500,8 +9638,24 @@ export class TyE2eTestBrowser {
         await this.topic.waitUntilPostTextMatches(postNr, newText);
       },
 
-      replyToOrigPost: async (text: string, whichButton?: 'DiscussionSection') => {
+      replyToOrigPost: async (text: string, whichButton?: 'DiscussionSection', ps: {
+              closeGuidelines?: Bo } = {}) => {
         await this.topic.clickReplyToOrigPost(whichButton);
+        if (ps.closeGuidelines) {
+          // Or break out fn?
+          // Is this a race? The dialog might take a short wile to appear? Maybe
+          // wait for a little while? And if it didn't appear (it won't, if the page
+          // is wide enough), try editing, and if that won't work, see if it's because
+          // the dialog might have just appeared?  But not now — this works fine in practice:
+          if (await this.isDisplayed('.e_CloseGuidelinesB')) {
+            logBoring(`Closing guidelines modal ...`);
+            await this.waitAndClick('.e_CloseGuidelinesB');
+            await this.waitForGone('.e_CloseGuidelinesB');
+          }
+          else {
+            logBoring(`No guidelines modal to close (at least not yet).`);
+          }
+        }
         await this.editor.editText(text);
         await this.editor.save();
       },
@@ -9520,7 +9674,8 @@ export class TyE2eTestBrowser {
       },
 
       replyToEmbeddingBlogPost: async (text: string,
-            opts: { signUpWithPaswordAfterAs?, needVerifyEmail?: boolean } = {}) => {
+            opts: { signUpWithPaswordAfterAs?, needVerifyEmail?: Bo,
+                  waitAndClickPs?: WaitAndClickPs } = {}) => {
         // Apparently, if FF cannot click the Reply button, now when in an iframe,
         // then FF says "all fine I clicked the button", but in fact does nothing,
         // also won't log any error or anything, so that later on, we'll block
@@ -9528,7 +9683,7 @@ export class TyE2eTestBrowser {
         // So sometimes this neeeds to be in a retry loop, + timeoutMs below. [4RDEDA0]
         await this.switchToEmbeddedCommentsIrame();
         logMessage("comments iframe: Clicking Reply ...");
-        await this.topic.clickReplyToEmbeddingBlogPost();
+        await this.topic.clickReplyToEmbeddingBlogPost(opts.waitAndClickPs);
         //if (opts.loginWithPaswordBeforeAs) {
           //this.loginDialog.loginWithPasswordInPopup(opts.loginWithPaswordBeforeAs);
         //}

@@ -171,6 +171,53 @@ Therefore: domain thing_types_d, can be only 7 or 56, for now.
 
 == Tag values
 
+Idea: Store values in tags_t instead?
+
+either:
+tags_t: remove pk
+tags_t +=
+   has_extra_vals          bool
+   extra_val_for_tag_id_c  tag_id_d,
+
+or:
+tags_t: add val_nr: 0,1,2,... , 0 could be the main
+tags_t +=
+   has_extra_vals          bool
+   extra_val_for_tag_id_c  tag_id_d,
+   val_type_c     val_type_d,   -- e.g. date —> val_i64_c = unix time millis?
+                                -- date_range —> val_i64_end_c  = end date range?
+                                -- CVE score: (0, 10]
+                                -- SemVer2 —> regex check?
+                                -- etc etc
+
+and/or just inline all values, maybe:
+(Foreign keys won't work, but the simplicity and the higher performance and the
+lower bug risk (than if joining with a tag values table) is worth it I think!
+See: http://www.databasesoup.com/2015/01/tag-all-things.html & part 2 & 3.)
+
+    val_i64_c      i64_d,
+    val_i64_end_c  i64_d,
+    val_f64_c      f64_d,
+    val_f64_end_c  f64_d,
+
+    val_title_c    text w max len,
+    val_http_url_c http_url_d,
+
+    val_i32_arr_c   i32[],
+    val_i64_arr_c   i64[],
+    val_f64_arr_c   f64[],
+    val_text_arr_c  text[],
+
+    val_jsonb_c    jsonb_max_NNN_bytes,
+
+And tag_types_t:
+  allowed_val_types_c  User   for example    — maybe a bitfield?
+  max_num_vals_c      5   (0..=100 for example)   — e.g. assign sth to 5 ppl?
+
+
+Mat views are reealy slow, often out of sync:
+    https://stackoverflow.com/questions/29437650/how-can-i-ensure-that-a-materialized-view-is-always-up-to-date
+
 Later:
 
 In Talkyard, tags will be able to have values. E.g. an Assigned-To page tag,
@@ -199,6 +246,18 @@ but then it's cumbersome or even infeasible to change `happens-in-` to, say,
 `Happens in: ` or `Where: ` or `location-`
 — instead of just renaming one tag (the "Happens in city" tag),
 you'd have to rename _all_ tags with that prefix.
+
+What values would be nice to support?
+
+CVE numbers: float (0.0, 10.0].
+Software versions: string?
+Pat list.
+Page list.
+Date-time.
+Date-time range.
+Many date-time ranges? (a many evenings / days event)
+Cat list?
+Tag list? Hmm
 
 ----
 create table tag_vals_t(

@@ -28,7 +28,7 @@
   <logger name="tysvapp" level="TRACE" />
   <logger name="org.elasticsearch" level="INFO" />
 
-  <root level="WARN">
+  <root level="INFO">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="FILE" />
   </root>

@@ -116,7 +116,7 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
   val Leave: Remove.type = Remove
 
   object ServerDefIdpAliases {
-    import com.mohiva.play.silhouette.impl.providers.{oauth2 => si_oauth2}
+    //import com.mohiva.play.silhouette.impl.providers.{oauth2 => si_oauth2}
 
     val Facebook = "facebook"
     val GitHub = "github"
@@ -124,12 +124,14 @@ package object authn {   REFACTOR; MOVE // most of this to an object UserInfoPar
     val LinkedIn = "linkedin"
     //val Twitter = "twitter"
 
+    /*
     // Should be same ids as Silhouette, so migration to ScribeJava will be simpler:
     assert(si_oauth2.GoogleProvider.ID == Google)
     assert(si_oauth2.GitHubProvider.ID == GitHub)
     assert(si_oauth2.FacebookProvider.ID == Facebook)
     //assert(si_oauth2.TwitterProvider.ID == Twitter)  not OAuth2 yet?
     assert(si_oauth2.LinkedInProvider.ID == LinkedIn)
+    */
 
   }
 

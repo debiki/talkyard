@@ -217,7 +217,7 @@ trait SummaryEmailsDao {
         </ul>
         <p>This email is sent if we haven't seen you in a while.</p>
         {
-          ed.server.util.email.makeFooter(
+           talkyard.server.util.email.makeFooter(
             regardsFromName = siteName,
             regardsFromUrl = origin,
             unsubUrl = origin + routes.UnsubFromSummariesController.showUnsubForm(email.id).url)

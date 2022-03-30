@@ -22,9 +22,9 @@ import com.debiki.core.Prelude._
 import collection.immutable
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
-import ed.server.http._
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
@@ -35,8 +35,8 @@ import talkyard.server.authn.MinAuthnStrength
 
 /** Handles votes, e.g. "I like this comment" or "this comment is faulty" votes.
  */
-class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class VoteController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security.throwNoUnless
 

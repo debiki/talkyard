@@ -25,20 +25,20 @@ Compile / dependencyOverrides ++= {
       "commons-codec" % "commons-codec" % "1.15",
       "commons-collections" % "commons-collections" % "3.2.2",
       "commons-digester" % "commons-digester" % "2.1",
-      "commons-io" % "commons-io" % "2.10.0",
+      "commons-io" % "commons-io" % "2.11.0",
       "commons-logging" % "commons-logging" % "1.2",
       "commons-validator" % "commons-validator" % "1.7",
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "1.27",
+      "org.apache.tika" % "tika-core" % "2.2.1",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.2.4",
-      "org.scalactic" % "scalactic_2.12" % "3.2.10",
-      "org.slf4j" % "slf4j-api" % "1.7.30"
+      "org.postgresql" % "postgresql" % "42.2.25",
+      "org.scalactic" % "scalactic_2.12" % "3.2.11",
+      "org.slf4j" % "slf4j-api" % "1.7.32"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH db91d999f8a0019299ba7349370601d90eb41db4
+// LIBRARY_DEPENDENCIES_HASH 0055f4de990bf52f95deacd75619f940fd8921fe

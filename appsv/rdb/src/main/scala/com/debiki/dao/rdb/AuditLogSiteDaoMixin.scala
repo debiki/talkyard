@@ -142,32 +142,77 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadAuditLogEntriesRecentFirst(userId: UserId, tyype: Option[AuditLogEntryType], limit: Int,
-        inclForgotten: Boolean): immutable.Seq[AuditLogEntry] = {
-    tyype foreach { t =>
-      dieIf(t == AuditLogEntryType.NewPage, "EdE4WK023X", "Probably wants NewReply too")
-      dieIf(t == AuditLogEntryType.NewReply, "EdE3ZCM238", "Probably wants NewPage too")
+  def loadEventsFromAuditLog(limit: i32, newerOrAt: Opt[When] = None,
+        newerThanEventId: Opt[EventId] = None, olderOrAt: Opt[When] = None,
+        newestFirst: Bo): immutable.Seq[AuditLogEntry] = {
+    loadAuditLogEntries(userId = None, Event.RelevantAuditLogEntryTypes,
+          newerOrAt = newerOrAt, newerThanEventId = newerThanEventId,
+          olderOrAt = olderOrAt, newestFirst = newestFirst,
+          limit = limit, inclForgotten = true)
+  }
+
+
+  def loadAuditLogEntries(userId: Opt[PatId], types: ImmSeq[AuditLogEntryType],
+        newerOrAt: Opt[When], newerThanEventId: Opt[EventId],
+        olderOrAt: Opt[When], newestFirst: Bo, limit: i32,
+        inclForgotten: Bo): immutable.Seq[AuditLogEntry] = {
+
+    var sortCol = "audit_id"
+    val descOrAsc = if (newestFirst) "desc" else "asc"
+
+    val values = ArrayBuffer(siteId.asAnyRef)
+
+    val andDoerIdIs = userId match {
+      case None => ""
+      case Some(uId) =>
+        values.append(uId.asAnyRef)
+        "and doer_id = ?"
     }
 
-    val values = ArrayBuffer(siteId.asAnyRef, userId.asAnyRef)
-
-    val andDidWhatEqType = tyype match {
-      case None => ""
-      case Some(t) =>
-        values.append(t.toInt.asAnyRef)
-        "and did_what = ?"
+    val andDidWhatEqType = if (types.isEmpty) "" else {
+      values.appendAll(types.map(_.toInt.asAnyRef))
+      s"and did_what in (${makeInListFor(types)})"
     }
 
     // Non-anonymized entries have forgotten = 0 (instead of 1, 2)
     val andSkipForgotten = inclForgotten ? "" | "and forgotten = 0"
 
+    val andNewerOrAt = newerOrAt match {
+      case None => ""
+      case Some(when) =>
+        sortCol = "done_at"
+        values.append(when.asTimestamp)
+        "and done_at >= ?"
+    }
+
+    val andOlderOrAt = olderOrAt match {
+      case None => ""
+      case Some(when) =>
+        sortCol = "done_at"
+        values.append(when.asTimestamp)
+        "and done_at <= ?"
+    }
+
+    val andIdAbove = newerThanEventId match {
+      case None => ""
+      case Some(id) =>
+        // For now, prioritize sorting by id, if both dates and ids specified.
+        sortCol = "audit_id"
+        values.append(id.asAnyRef)
+        "and audit_id > ?"
+    }
+
     val query = s"""
       select * from audit_log3
-      where site_id = ? and doer_id = ?
-      $andDidWhatEqType
-      $andSkipForgotten
-      order by done_at desc limit $limit
-      """
+      where site_id = ?
+          $andDoerIdIs
+          $andDidWhatEqType
+          $andSkipForgotten
+          $andNewerOrAt
+          $andOlderOrAt
+          $andIdAbove
+      order by $sortCol $descOrAsc
+      limit $limit  """
 
     runQueryFindMany(query, values.toList, rs => {
       getAuditLogEntry(rs)
@@ -221,12 +266,15 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def getAuditLogEntry(rs: js.ResultSet) =
+  private def getAuditLogEntry(rs: js.ResultSet) = {
+    val didWhatNr = rs.getInt("did_what")
+    val didWhat = AuditLogEntryType.fromInt(didWhatNr
+                    ) getOrElse AuditLogEntryType.Unknown(didWhatNr)
     AuditLogEntry(
       siteId = siteId,
       id = rs.getInt("audit_id"),
       batchId = getOptInt(rs, "audit_id"),
-      didWhat = AuditLogEntryType.fromInt(rs.getInt("did_what")) getOrDie "EsE7YKG83",
+      didWhat = didWhat,
       doerId = rs.getInt("doer_id"),
       doneAt = getDate(rs, "done_at"),
       emailAddress = Option(rs.getString("email_address")),
@@ -245,7 +293,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       targetUserId = getOptInt(rs, "target_user_id"),
       targetSiteId = getOptInt(rs, "target_site_id"),
       isLoading = true)
-
+  }
 
   private def getBrowserIdData(rs: js.ResultSet) = {
     val idData = BrowserIdData(

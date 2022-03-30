@@ -22,13 +22,13 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.http._
+import talkyard.server.http._
 import play.api.libs.json._
 import play.api.mvc._
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import ForumController._
 import talkyard.server.JsX._
@@ -36,8 +36,8 @@ import talkyard.server.JsX._
 
 /** Handles requests related to forums and forum categories.
  */
-class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   def createForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 500) { request =>
@@ -67,7 +67,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       createSampleTopics = createSampleTopics,
       topicListStyle = topicListStyle)
 
-    request.dao.createForum(options, request.who)
+    request.dao.createForum2(options, request.who)
     Ok
   }
 
@@ -120,6 +120,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 5000) { request =>
     BUG // fairly harmless in this case: The lost update bug.
+
     import request.{dao, body, requester}
     val categoryJson = (body \ "category").as[JsObject]
     val permissionsJson = (body \ "permissions").as[JsArray]
@@ -211,7 +212,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val (category, permsWithIds) =
       if (categoryData.isNewCategory) {
         val result = request.dao.createCategory(
-          categoryData, permissions.to[immutable.Seq], request.who)
+          categoryData, permissions.to[immutable.Seq], request.who, IfBadAbortReq)
         (result.category, result.permissionsWithIds)
       }
       else {

@@ -245,6 +245,22 @@ services:
   #  # Don't want this container to start at all by default.
   #  command: 'exit 0'
 
+  # A fake external server, for e2e tests, when the Ty server sends its own HTTP
+  # requests to external things.
+  fakeweb:
+    build: images/fakeweb/docker/
+    image: ${DOCKER_REPOSITORY}/fakeweb
+    volumes:
+      - ./images/fakeweb/app/:/app/:ro
+      - ./volumes/fakeweb-deno-dir:/deno-dir
+    ports:
+      # So the Webdriverio e2e tests can ask this server what HTTP requests
+      # the Ty server has sent. E.g. outgoing webhooks, or anti spam service queries.
+      - '8090:8090'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_TEST_IP}
+
   # Dummy SMTP server, for testing.
   #  fakemail:
   #    build: images/fakemail/mailslurper
@@ -300,5 +316,117 @@ services:
     image: ${DOCKER_REPOSITORY}/talkyard-certgen
     # Only want to build (but not run) this container, in dev/test mode.
     command: 'echo'
+
+
+
+  # Integration test containers
+  # ---------------------------
+
+  # For testing integrations with 3rd party software. Prefixed by 'it-'.
+
+  # Ghost integration test. Docs, over at Ghost:
+  # https://ghost.org/integrations/talkyard/
+  #
+  # Can start like so:
+  # docker run -d --name ty-ghost-test -p 3001:2368 \
+  #      -v (this-repo-dir)/tests/int-w/ghost/content:/var/lib/ghost/content ghost:4.34.0
+  #
+  # But let's include here, and use Ghost's default port 2368?
+  it-ghost:
+    # Image docs: https://hub.docker.com/_/ghost/
+    image: ghost:4.34.0
+    volumes:
+      - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
+    ports:
+      # Why does Ghost like this port? Who knows
+      - '2368:2368'
+    # networks — don't use the internal net; Ghost is usually hosted elsewhere.
+
+
+  # Matrix
+  #version: '2.3'
+  #services:
+  #mx-postgres:
+  #  image: postgres:14
+  #  #restart: unless-stopped
+  #  networks:
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_MX_PG_IP}
+  #    #default:
+  #    #  ipv4_address: 10.10.10.2
+  #  volumes:
+  #    - ./volumes/matrix-pg-data:/var/lib/postgresql/data
+  #    # These will be used in homeserver.yaml later on
+  #  environment:
+  #    - POSTGRES_DB=synapse
+  #    - POSTGRES_USER=synapse
+  #    - POSTGRES_PASSWORD=pub_mx_pg_pwd
+
+  # See: https://github.com/vector-im/element-web
+  # Also: https://cyberhost.uk/element-matrix-setup/#installmatrixandelement
+  # Access at:  http://ty-it-mx-element.localhost:8088
+  ty-it-mx-element:
+    image: vectorim/element-web:latest
+    #restart: unless-stopped
+    volumes:
+      - ./tests/int-w/matrix/element-web-config.json:/app/config.json
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_MX_ELEMENT_IP}
+    ports:
+      - '8088:80'
+      #networks:
+      #  default:
+      #    ipv4_address: 10.10.10.3
+
+  # Register new server admin user: (mxsrvadm)
+  #  d/c exec ty-it-mx-synapse /bin/bash
+  #  register_new_matrix_user -c /data/homeserver.yaml http://localhost:8008  \
+  #      --user mxsrvadm  --password pub-mxsr020  --admin
+  # See:  https://github.com/matrix-org/synapse/tree/master/docker
+  ty-it-mx-synapse:
+    image: matrixdotorg/synapse:latest
+         # matrixdotorg/synapse:v1.53.0
+         # see:  https://hub.docker.com/r/matrixdotorg/synapse/tags
+    restart: unless-stopped
+    volumes:
+      - ./volumes/matrix-synapse-data:/data
+      - ./tests/int-w/matrix/homeserver.yaml:/data/homeserver.yaml
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_MX_SYNAPSE_IP}
+    ports:
+      - '8008:8008'  # connections from end user clients, to send messages
+      - '8009:8009'  # This is a Websocket proxy, which turns the ws messages
+                     # into HTTP requests to port :8008?
+                     # See:  https://github.com/matrix-org/matrix-websockets-proxy/blob/master/main.go
+      # '8448:8448'  # connections from other servers, for federation
+
+      #default:
+        #ipv4_address: 10.10.10.4
+
+
+  # n8n, "source-available Zapier":
+  #
+  # https://hub.docker.com/r/n8nio/n8n
+  #
+  # docker run -it --rm \
+  #     --name n8n \
+  #     -p 5678:5678 \
+  #     -v ~/.n8n:/home/node/.n8n \
+  #     n8nio/n8n
+  #
+  ty-it-n8n:
+    image: n8nio/n8n
+    volumes:
+      - ./volumes/n8n/dot-n8n:/home/node/.n8n
+    ports:
+      - '5678:5678'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_N8N_IP}
+    #profiles:
+    #  - integration_tests
+
 
 # vim: et ts=2 sw=2

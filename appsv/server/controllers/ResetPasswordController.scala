@@ -21,8 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import play.api.libs.json.{JsString, JsValue}
 import play.api.mvc.{Action, ControllerComponents}
@@ -31,8 +31,8 @@ import talkyard.server.TyLogging
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.
   */
-class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) with TyLogging {
+class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) with TyLogging {
 
   import context.globals
   import context.security.createSessionIdAndXsrfToken

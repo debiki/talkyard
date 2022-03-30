@@ -21,8 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import talkyard.server.security.PasetoSec
 import javax.inject.Inject
 import play.api.libs.json._
@@ -35,8 +35,8 @@ import talkyard.server.sitepatch.SitePatchParser
 /** Loads and saves settings, for the whole website, site sections,
   * and individual pages. In the future probably also for user roles.
   */
-class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class SettingsController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.globals
 

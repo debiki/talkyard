@@ -21,11 +21,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{ReadOnlySiteDao, SiteDao}
 import debiki.{JsonMaker, Settings2}
-import ed.server._
+import talkyard.server._
 import play.api.libs.json._
 import scala.collection.mutable
 import scala.collection.immutable
 import talkyard.server.JsX._
+import talkyard.server.events.WebhooksParSer.JsWebhook
 
 
 
@@ -35,7 +36,7 @@ import talkyard.server.JsX._
   *
   * Split into two: SitePatchMaker and ActionBatchResponseMaker? [ACTNPATCH]
   */
-case class SitePatchMaker(context: EdContext) {
+case class SitePatchMaker(context: TyContext) {
 
   import context.globals
 
@@ -75,7 +76,11 @@ case class SitePatchMaker(context: EdContext) {
 
       val postActions: immutable.Seq[PostAction] = tx.loadAllPostActions()
 
+      // val links = later
+
       val notfs = tx.loadAllNotifications()
+
+      val webhooks = tx.loadAllWebhooks()
 
       SitePatch.empty.copy(
         site = Some(site),
@@ -94,7 +99,9 @@ case class SitePatchMaker(context: EdContext) {
         permsOnPages = permsOnPages,
         drafts = drafts,
         posts = posts,
-        postActions = postActions)
+        postActions = postActions,
+        // links = ... later
+        webhooks = webhooks)
     }
   }
 }
@@ -281,9 +288,15 @@ object SitePatchMaker {
         anyDump.map(_.postActions) getOrElse tx.loadAllPostActions()
       fields("postActions") = JsArray(postsActions map JsPostAction)
 
+      val links: ImmSeq[Link] = anyDump.map(_.links) getOrElse tx.loadAllLinks()
+      fields("links") = JsArray(links map JsLink)
+
       val reviewTasks: Seq[ReviewTask] =
         anyDump.map(_.reviewTasks) getOrElse tx.loadAllReviewTasks()
       fields("reviewTasks") = JsArray(reviewTasks map JsReviewTask)
+
+    val webhooks: ImmSeq[Webhook] = anyDump.map(_.webhooks) getOrElse tx.loadAllWebhooks()
+    fields("webhooks") = JsArray(webhooks map JsWebhook)
 
     JsObject(fields.toSeq)
   }

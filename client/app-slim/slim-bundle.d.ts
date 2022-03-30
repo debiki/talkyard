@@ -320,6 +320,7 @@ declare namespace debiki2 {
 
   function event_isCtrlEnter(event): boolean;
   function event_isEscape(event): boolean;
+  function page_isOpenChat(pageRole: PageRole): Bo;
   function page_isChat(pageRole: PageRole): boolean;
   function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;

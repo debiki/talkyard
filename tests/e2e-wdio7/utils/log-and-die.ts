@@ -3,15 +3,20 @@
 import * as _ from 'lodash';
 const ansiColors = require('ansi-colors');
 
+// (Don't use black text on a white background — that's for e2e test progress messages,
+// see:  [inv_e2e_progr_msg_cols].)
 const normalColor = ansiColors.white;
-const boringColor = ansiColors.gray;
+export const boldNormalColor = ansiColors.bold.white;
+const boringColor = ansiColors.dim; // 'gray' is darker, hard to read agains a black bg
 const errorColor = ansiColors.bold.bgRed;
 const exceptionColor = ansiColors.bold.yellow;
 const warningColor = ansiColors.bold.red;
 const debugColor = ansiColors.bold.yellow;
 export const unusualColor = ansiColors.black.bgGreen;
-const serverRequestColor = ansiColors.bold.cyan;
-const serverResponseColor = ansiColors.bold.blue;
+const serverRequestColor = ansiColors.cyan; //bold.cyan;
+const serverResponseColor = ansiColors.bold.cyan; // bold.blue;
+const extServerRequestColor = ansiColors.magenta;
+const extServerResponseColor = ansiColors.bold.magenta;
 
 
 export function getOrCall<V>(valueOrFn: U | V | (() => V)): U | V {
@@ -23,7 +28,7 @@ export function prettyNum(num: Nr, digits: Nr = 2): Nr {
   return Number(num.toPrecision(digits));
 }
 
-/// JSON to string — 'j2s' is shorter than 'JSON.stringify'.
+/// JSON to string — 'j2s' is shorter than 'JSON.stringify'.  Dupl code [dupl_j2s].
 export function j2s(something: Ay, replacer = stringifyReplacer, indentation?: Nr): St {
   return JSON.stringify(something, replacer, indentation);
 }
@@ -131,9 +136,26 @@ export function logServerRequest(message: string) {
   console.log(serverRequestColor(message));
 }
 
-export function logServerResponse(text: string, ps: { boring: boolean } = { boring: true }) {
+export function logServerResponse(textOrObj, ps: { boring: Bo } = { boring: true }) {
+  const text = _.isString(textOrObj) ? textOrObj : JSON.stringify(textOrObj);
   console.log(
     serverResponseColor(`The server says:\n----\n` + `${text.trim()}` + `\n----`));
+}
+
+export function logExtServerRequest(message: St) {
+  console.log(extServerRequestColor(message));
+}
+
+export function logExtSrvResp(textOrObj) {
+  const text = _.isString(textOrObj) ? textOrObj : j2s(textOrObj);
+  console.log(extServerResponseColor(
+        `External server says:\n----\n${text.trim()}\n----`));
+}
+
+// Verbatim. (No "External server says: ..." extra line.)
+export function logExtSrvRespVerb(textOrObj) {
+  const text = _.isString(textOrObj) ? textOrObj : j2s(textOrObj);
+  console.log(extServerResponseColor(text));
 }
 
 export function printBoringToStdout(message: string) {

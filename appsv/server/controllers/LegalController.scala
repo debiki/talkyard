@@ -19,7 +19,7 @@ package controllers
 
 import com.debiki.core.CSP_MISSING
 import debiki._
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.mvc.ControllerComponents
 
@@ -27,8 +27,8 @@ import play.api.mvc.ControllerComponents
 
 /** Handles per website terms-of-use and privacy-policy pages.
   */
-class LegalController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class LegalController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
 
   /** Is visible to anyone, so people can agree to the terms, before they finish creation

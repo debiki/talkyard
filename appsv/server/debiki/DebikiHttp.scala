@@ -21,7 +21,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import ed.server.security.EdSecurity
+import talkyard.server.security.EdSecurity
 import controllers.{LoginController, routes}
 import java.{net => jn}
 import play.api.libs.json.{JsLookupResult, JsValue, JsObject}
@@ -37,6 +37,8 @@ import scala.util.Try
  * HTTP utilities.
  */
 object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
+
+  // A Ty user agent string here?  [ty_user_agent]
 
 
   // ----- Limits

@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{Globals, TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml}
-import ed.server.{EdAppComponents, EdContext}
+import talkyard.server.{TyAppComponents, TyContext}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory}
@@ -70,9 +70,9 @@ class DaoAppSuite(
 
   Globals.setIsProdForever(false)
 
-  private var edAppComponents: EdAppComponents = _
+  private var edAppComponents: TyAppComponents = _
 
-  lazy val context: EdContext = edAppComponents.context
+  lazy val context: TyContext = edAppComponents.context
   lazy val globals: Globals = context.globals
 
 
@@ -105,7 +105,7 @@ class DaoAppSuite(
       _.configure(env, totalConfig, optionalProperties = Map.empty)
     } */
 
-    edAppComponents = new EdAppComponents(appLoaderContext)
+    edAppComponents = new TyAppComponents(appLoaderContext)
     setTime(startTime) // now 'globals' is available
     edAppComponents.application
   }

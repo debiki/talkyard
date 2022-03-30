@@ -24,14 +24,14 @@ import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.EdHttp._
-import ed.server.pubsub.StorePatchMessage
+import talkyard.server.pubsub.StorePatchMessage
 import play.api.libs.json.{JsObject, JsValue}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
 import PostsDao._
 import talkyard.server.authz.Authz
-import ed.server.spam.SpamChecker
+import talkyard.server.spam.SpamChecker
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
 
@@ -215,7 +215,8 @@ trait PostsDao {
     // from the new textAndHtml only. [new_upl_refs]
     val uploadRefs = textAndHtml.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2 = findUploadRefsInPost(newPost)
+      val site = tx.loadSite getOrDie "TyE602MREJF"
+      val uplRefs2 = findUploadRefsInPost(newPost, Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE503SKH5", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
@@ -392,7 +393,7 @@ trait PostsDao {
     // COULD add a users3 table status field instead, and update it on write, which says
     // if the user has too many pending comments / edits. Then could thow that status
     // client side, withouth having to run the below queries again and again.
-    // Also, would be simpler to move all this logic to ed.server.auth.Authz.
+    // Also, would be simpler to move all this logic to talkyard.server.auth.Authz.
 
     // Don't review, but auto-approve, user-to-user messages. Staff aren't supposed to read
     // those, unless the receiver reports the message.
@@ -578,9 +579,14 @@ trait PostsDao {
       if (!page.pageType.isChat)
         throwForbidden("EsE5F0WJ2", s"Page $pageId is not a chat page; cannot insert chat message")
 
-      val pageMemberIds = tx.loadMessageMembers(pageId)
-      if (!pageMemberIds.contains(authorId))
-        throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
+      if (page.pageType == PageType.JoinlessChat) {
+        // Noop. No need to have joined the chat channel, to start chatting.
+      }
+      else {
+        val pageMemberIds = tx.loadMessageMembers(pageId)
+        if (!pageMemberIds.contains(authorId))
+          throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
+      }
 
       // Try to append to the last message, instead of creating a new one. That looks
       // better in the browser (fewer avatars & sent-by info), + we'll save disk and
@@ -681,7 +687,8 @@ trait PostsDao {
     // New post, all refs in textAndHtml regardless of if approved or not. [new_upl_refs]
     val uploadRefs: Set[UploadRef] = textAndHtml.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2: Set[UploadRef] = findUploadRefsInPost(newPost)
+      val site = tx.loadSite getOrDie "TyE602MREJ7"
+      val uplRefs2: Set[UploadRef] = findUploadRefsInPost(newPost, Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE38RDHD4", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
@@ -1060,7 +1067,7 @@ trait PostsDao {
       REFACTOR; CLEAN_UP // use a bool instead. & remove things: [502RKDJWF5]
       // Might still need to uncache the cat though: updateCategoryMarkSectionPageStale()
       val editsAboutCategoryPost = page.pageType == PageType.AboutCategory && editedPost.isOrigPost
-      val anyEditedCategory =
+      val anyEditedCategory: Opt[Cat] =
         if (!editsAboutCategoryPost || !editsApproved) {
           if (editsAboutCategoryPost && !editsApproved) {
             // Currently needn't fix this? Only staff can edit these posts, right now.
@@ -1185,7 +1192,10 @@ trait PostsDao {
       REFACTOR; CLEAN_UP; // only mark section page as stale, and uncache category.
       // Because categories on loonger  store a their description (well they don't use it anyway)
       // Note: We call uncacheAllCategories() below already, if anyEditedCategory.isDefined.
-      anyEditedCategory.foreach(tx.updateCategoryMarkSectionPageStale)
+      anyEditedCategory foreach { cat =>
+        // (Shouldn't fail; only the description got updated.)
+        tx.updateCategoryMarkSectionPageStale(cat, IfBadDie)
+      }
 
       reviewTask.foreach(tx.upsertReviewTask)
       SHOULD // generate review task notf?  [revw_task_notfs]
@@ -1420,7 +1430,8 @@ trait PostsDao {
         val refs = approvedRefs ++ unapprRefs
 
         if (Globals.isDevOrTest) {
-          val r2 = findUploadRefsInPost(editedPost) // [nashorn_in_tx]
+          val site = tx.loadSite getOrDie "TyE602MREJ7"
+          val r2 = findUploadRefsInPost(editedPost, Some(site)) // [nashorn_in_tx]
           dieIf(refs != r2, "TyE306KSM233", s"refs: $refs, r2: $r2")
         }
 
@@ -1668,11 +1679,12 @@ trait PostsDao {
   }
 
 
-  def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId)
+  def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId,
+        browserIdData: BrowserIdData)
         : ChangePostStatusResult = {
     val result = writeTx { (tx, staleStuff) =>
       changePostStatusImpl(postNr, pageId = pageId, action, userId = userId,
-            tx, staleStuff)
+            browserIdData = Some(browserIdData), tx, staleStuff)
     }
     refreshPageInMemCache(pageId)
     result
@@ -1687,7 +1699,8 @@ trait PostsDao {
     * and UI buttons? [deld_post_mod_tasks]
     */
   def changePostStatusImpl(postNr: PostNr, pageId: PageId, action: PostStatusAction,
-        userId: UserId, tx: SiteTransaction, staleStuff: StaleStuff)
+        userId: UserId, browserIdData: Opt[BrowserIdData],
+        tx: SiteTransaction, staleStuff: StaleStuff)
         : ChangePostStatusResult =  {
     import com.debiki.core.{PostStatusAction => PSA}
     import context.security.throwIndistinguishableNotFound
@@ -1858,6 +1871,18 @@ trait PostsDao {
         answerGotDeleted = true
         // Dupl line. [4UKP58B]
         newMeta = newMeta.copy(answeredAt = None, answerPostId = None, closedAt = None)
+        val auditLogEntry = AuditLogEntry(
+              siteId = siteId,
+              id = AuditLogEntry.UnassignedId,
+              didWhat = AuditLogEntryType.PageUnanswered,
+              doerId = userId,
+              doneAt = tx.now.toJavaDate,
+              browserIdData = browserIdData getOrElse BrowserIdData.Missing,
+              pageId = Some(pageId),
+              uniquePostId = Some(answerPostId))
+
+        tx.insertAuditLogEntry(auditLogEntry)
+
         // Need change from the Solved icon: ✓  to a question mark: (?) icon, in the topic list:
         markSectionPageStale = true
       }
@@ -2182,7 +2207,7 @@ trait PostsDao {
         tx: SiteTx, staleStuff: StaleStuff): ChangePostStatusResult = {
     val result = changePostStatusImpl(pageId = pageId, postNr = postNr,
           action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
-          tx = tx, staleStuff = staleStuff)
+          browserIdData = Some(browserIdData), tx = tx, staleStuff = staleStuff)
 
     BUG; SHOULD // delete notfs or mark deleted?  [notfs_bug]  [nice_notfs]
     // But don't delete any mod tasks — good if staff reviews, if a new member
@@ -2823,6 +2848,28 @@ trait PostsDao {
     }
 
 
+  def loadPostsMaySeeByIdOrNrs(requester: Opt[Pat], postIds: Opt[Set[PostId]],
+          pagePostNrs: Opt[Set[PagePostNr]]) : LoadPostsResult = {
+
+      require(postIds.isDefined != pagePostNrs.isDefined, "TyE023MAEJP6")
+
+      if (postIds.forall(_.isEmpty) && pagePostNrs.forall(_.isEmpty))
+        return LoadPostsResult(Nil, Map.empty)
+
+      val postsInclForbidden: ImmSeq[Post] = readTx { tx =>
+        if (postIds.isDefined) {
+          tx.loadPostsByUniqueId(postIds.get).values.to[Vec]
+        }
+        else {
+          tx.loadPostsByNrs(pagePostNrs.get)
+        }
+      }
+
+      filterMaySeeAddPages(
+            requester, postsInclForbidden, inclUnlistedPagePosts = true)
+    }
+
+
   def loadPostsMaySeeByQuery(
           requester: Option[Participant], orderBy: OrderBy, limit: Int,
           inclTitles: Boolean, onlyEmbComments: Boolean, inclUnapprovedPosts: Boolean,
@@ -2832,7 +2879,7 @@ trait PostsDao {
     unimplementedIf(orderBy != OrderBy.MostRecentFirst,
           "Only most recent first supported [TyE403RKTJ]")
 
-    val postsInclForbidden = readOnlyTransaction { tx =>
+    val postsInclForbidden: ImmSeq[Post] = readTx { tx =>
       if (onlyEmbComments) {
         dieIf(inclTitles, "TyE503RKDP5", "Emb cmts have no titles")
         dieIf(inclUnapprovedPosts, "TyE503KUTRT", "Emb cmts + unapproved")
@@ -2853,6 +2900,14 @@ trait PostsDao {
               inclUnlistedPagePosts_unimpl = inclUnlistedPagePosts)
       }
     }
+
+    filterMaySeeAddPages(
+          requester, postsInclForbidden, inclUnlistedPagePosts = inclUnlistedPagePosts)
+  }
+
+
+  private def filterMaySeeAddPages(requester: Opt[Pat], postsInclForbidden: ImmSeq[Post],
+        inclUnlistedPagePosts: Bo): LoadPostsResult = {
 
     val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
     val pageMetaById = getPageMetasAsMap(pageIdsInclForbidden)

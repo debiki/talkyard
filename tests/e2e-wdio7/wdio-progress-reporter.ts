@@ -15,15 +15,23 @@ type TestStatsState = 'pending' | 'passed' | 'skipped' | 'failed';
 
 
 function logProgr(message: string) {
-  console.log(ansiColors.whiteBright(message));
+  //console.log(ansiColors.whiteBright(message));
+  console.log(ansiColors.inverse.whiteBright(message));
 }
 
 function logProgrBold(message: string) {
-  console.log(ansiColors.bold.whiteBright(message));
+  // console.log(ansiColors.bold.whiteBright(message));
+  console.log(ansiColors.inverse.bold.whiteBright(message));
 }
 
 function logProgrBoldNormal(boldMsg: St, normalMsg: St) {
-  console.log(ansiColors.bold.whiteBright(boldMsg) + ansiColors.whiteBright(normalMsg));
+  // [inv_e2e_progr_msg_cols]
+  // console.log(ansiColors.bold.whiteBright(boldMsg) + ansiColors.whiteBright(normalMsg));
+  // This: inverse.bold.whiteBright gives a completely black background
+  // but:  bold.black.bgWhiteBright gives a black-gray background, making the text had to read
+  // (less contrast with the white text).
+  console.log(ansiColors.inverse.bold.whiteBright(boldMsg) + ansiColors.inverse.whiteBright(normalMsg));
+  // console.log(ansiColors.bold.black.bgWhiteBright(boldMsg) + ansiColors.black.bgWhite(normalMsg));
 }
 
 

@@ -25,7 +25,7 @@ import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
 import talkyard.server.authz.Authz
-import ed.server.spam.SpamChecker
+import talkyard.server.spam.SpamChecker
 import java.{util => ju}
 import scala.collection.immutable
 import talkyard.server.dao._
@@ -60,6 +60,7 @@ trait PagesDao {
     readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
   }
 
+  MOVE // loadMaySeePagesInCategory and listMaySeeTopicsInclPinned to here?  [move_list_pages]
 
   REMOVE; CLEAN_UP // use createPage2 instead, and rename it to createPage().
   def createPage(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
@@ -93,7 +94,11 @@ trait PagesDao {
 
     if (pageRole.isPrivateGroupTalk) {
       throwForbidden("EsE5FKE0I2", "Use MessagesDao instead")
-      // Perhaps OpenChat pages should be created via MessagesDao too? [5KTE02Z]
+      // Perhaps JoinlessChat/OpenChat pages should be created via MessagesDao too? [5KTE02Z]
+    }
+
+    if (pageRole.isChat && byWho.isGuest) {
+      throwForbidden("TyE7KFWY63", "Guests may not create chats")
     }
 
     if (pageRole.isGroupTalk && byWho.isGuest) {
@@ -171,6 +176,8 @@ trait PagesDao {
     val authorId = byWho.id
     val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
+
+    val site = tx.loadSite() getOrDie "TyE8MWNP247"
     val categoryPath = tx.loadCategoryPathRootLast(anyCategoryId, inclSelfFirst = true)
     val groupIds = tx.loadGroupIdsMemberIdFirst(author)
     val permissions = tx.loadPermsOnPages()
@@ -271,7 +278,7 @@ trait PagesDao {
 
     val uploadRefs = body.uploadRefs
     if (Globals.isDevOrTest) {
-      val uplRefs2 = findUploadRefsInPost(bodyPost)
+      val uplRefs2 = findUploadRefsInPost(bodyPost, site = Some(site))
       dieIf(uploadRefs != uplRefs2, "TyE7RTEGP04", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
@@ -479,6 +486,11 @@ trait PagesDao {
       throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
             "TyE8JGY3", "Only core members and the topic author can accept an answer")
 
+      // Pat might no longer be allowed to see the page — maybe it's been deleted,
+      // or moved to a private category. [may0_see_own]
+      SECURITY // minor: Should be may-not-see-post.
+      throwIfMayNotSeePage(oldMeta, Some(user))(tx)
+
       val post = tx.loadThePost(postUniqueId)
       throwBadRequestIf(post.isDeleted, "TyE4BQR20", "That post has been deleted, cannot mark as answer")
       throwBadRequestIf(post.pageId != pageId,
@@ -500,8 +512,22 @@ trait PagesDao {
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       staleStuff.addPageId(pageId, memCacheOnly = true)
 
-      AUDIT_LOG
-      // (COULD wait 5 minutes (in case the answer gets un-accepted) then send email
+      val auditLogEntry = AuditLogEntry(
+            siteId = siteId,
+            id = AuditLogEntry.UnassignedId,
+            didWhat = AuditLogEntryType.PageAnswered,
+            doerId = userId,
+            doneAt = tx.now.toJavaDate,
+            browserIdData = browserIdData,
+            pageId = Some(pageId),
+            uniquePostId = Some(post.id),
+            // Skip — the post might just have been moved to another page (a race condition).
+            // [no_ans_post_nr]
+            postNr = None)
+
+      insertAuditLogEntry(auditLogEntry, tx)
+
+      UX; COULD // wait 5 minutes (in case the answer gets un-accepted) then send email
       // to the author of the answer)
 
       // If a trusted member thinks the answer is ok, then, maybe resolving
@@ -531,12 +557,28 @@ trait PagesDao {
       throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
             "TyE2GKUB4", "Only core members and the topic author can unaccept an answer")
 
+      // Pat might no longer be allowed to see the page. [may0_see_own]
+      throwIfMayNotSeePage(oldMeta, Some(user))(tx)
+
       // Dupl line. [4UKP58B]
       val newMeta = oldMeta.copy(answeredAt = None, answerPostId = None, closedAt = None,
         version = oldMeta.version + 1)
 
+      val auditLogEntry = AuditLogEntry(
+            siteId = siteId,
+            id = AuditLogEntry.UnassignedId,
+            didWhat = AuditLogEntryType.PageUnanswered,
+            doerId = userId,
+            doneAt = tx.now.toJavaDate,
+            browserIdData = browserIdData,
+            pageId = Some(pageId),
+            uniquePostId = oldMeta.answerPostId,
+            // Skip — might have been moved to a different page; then, the postNr
+            // combined with pageId would be the wrong post.  [no_ans_post_nr]
+            postNr = None)
+
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      // (COULD update audit log)
+      tx.insertAuditLogEntry(auditLogEntry)
     }
     refreshPageInMemCache(pageId)
   }
@@ -568,9 +610,20 @@ trait PagesDao {
         version = oldMeta.version + 1,
         numPostsTotal = oldMeta.numPostsTotal + 1)
 
+      val auditLogEntry = AuditLogEntry(
+            siteId = siteId,
+            id = AuditLogEntry.UnassignedId,
+            didWhat =
+                  if (newMeta.isClosed) AuditLogEntryType.PageClosed
+                  else AuditLogEntryType.PageReopened,
+            doerId = userId,
+            doneAt = tx.now.toJavaDate,
+            browserIdData = browserIdData,
+            pageId = Some(pageId))
+
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      // Update audit log
       addMetaMessage(user, s" $didWhat this topic", pageId, tx)
+      tx.insertAuditLogEntry(auditLogEntry)
 
       newClosedAt
     }

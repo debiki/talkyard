@@ -23,8 +23,8 @@ import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.EdHttp._
 import debiki.JsonUtils.parseOptInt32
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import talkyard.server.authz.Authz
 import javax.inject.Inject
 import play.api.libs.json._
@@ -35,8 +35,8 @@ import talkyard.server.JsX.{JsStringOrNull, JsPageMeta}
 /** Edits the page title and changes settings like forum category, URL path,
   * which layout to use, <html><head><title> and description.
   */
-class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) {
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 

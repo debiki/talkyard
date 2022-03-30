@@ -24,14 +24,14 @@ import debiki._
 import debiki.JsonUtils._
 import debiki.dao.{LoadPostsResult, ReadMoreResult, SiteDao}
 import debiki.EdHttp._
-import ed.server.http._
+import talkyard.server.http._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
 import debiki.RateLimits.TrackReadingActivity
-import ed.server.{EdContext, EdController}
+import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
@@ -43,8 +43,8 @@ import talkyard.server.TyLogging
 
 /** Handles requests related to users.
  */
-class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) with TyLogging {
+class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) with TyLogging {
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
   import context.globals
@@ -383,7 +383,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // Later: Include current ip and cookie etc, if starts remembering for each request [6LKKEZW2]
       // (It'd be found in anyStats below, not in the audit log.)
       val auditLogEntries: Seq[AuditLogEntry] =
-        tx.loadAuditLogEntriesRecentFirst(userId, tyype = None, limit = 999, inclForgotten = false)
+        tx.loadAuditLogEntries(userId = Some(userId), types = Nil,
+              newerOrAt = None, newerThanEventId = None, olderOrAt = None, newestFirst = true,
+              limit = 999, inclForgotten = false)
       val uniqueBrowserIdData = auditLogEntries.map(_.browserIdData).distinct
       val browserIdDataJson = uniqueBrowserIdData map { (browserIdData: BrowserIdData) =>
         Json.obj(
@@ -1040,6 +1042,17 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
+  def apiv0_showApiSecretInfo: Action[U] = ApiSecretGetJsonAction(RateLimits.ReadsFromCache) {
+        req: GetRequest =>
+    // For now, only sysbot can do API requests, and sysbot can do anything.
+    OkApiJson(Json.obj(
+      "apiSecretInfo" -> Json.obj(
+        "user" -> JsUserApiV0(req.theMember, brief = true),
+        "capabilities" -> Json.arr("DoAnything", "SeeAnything"))))
+        // Later: Created at, expires at
+  }
+
+
   def trackReadingProgress: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
         MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 1000) { request =>
     import request.{dao, theRequester}
@@ -1086,7 +1099,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Could be used to speed up the trust level transition from New to Basic to Member.
 
     import request.{siteId, dao, theRequester => requester}
-    import ed.server.{WhenFormat, OptWhenFormat}
+    import talkyard.server.{WhenFormat, OptWhenFormat}
 
     throwForbiddenIf(requester.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
     throwForbiddenIf(requester.isGroup, "EdE5QFVB5", "Not tracking groups' reading progress")

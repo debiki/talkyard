@@ -62,6 +62,11 @@ class UnimplementedEx(message: ErrMsg) extends QuickException {
 }
 
 
+class BadJsonEx(message: St) extends QuickException {
+  override def getMessage: St = message
+}
+
+
 class DebikiException(val errorCode: String, val details: String)
   extends QuickException {
 

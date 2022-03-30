@@ -21,15 +21,15 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import ed.server.spam.SpamChecker
+import talkyard.server.spam.SpamChecker
 import debiki.dao.SiteDao
-import ed.server.{EdContext, EdController}
-import ed.server.http._
+import talkyard.server.{TyContext, TyController}
+import talkyard.server.http._
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import play.api.mvc._
 import play.api.libs.json._
-import ed.server.security.{EdSecurity, SidOk}
+import talkyard.server.security.{EdSecurity, SidOk}
 import org.owasp.encoder.Encode
 import talkyard.server.TyLogging
 import talkyard.server.authn.LoginWithSecretController
@@ -38,8 +38,8 @@ import talkyard.server.authn.LoginWithSecretController
 
 /** Logs in users via username and password.
   */
-class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) with TyLogging {
+class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext: TyContext)
+  extends TyController(cc, edContext) with TyLogging {
 
   RENAME // to  AuthnWithPassword
 
@@ -193,7 +193,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       }
     }
 
-    if (ed.server.security.ReservedNames.isUsernameReserved(username))  // [5LKKWA10]
+    if ( talkyard.server.security.ReservedNames.isUsernameReserved(username))  // [5LKKWA10]
       throwForbidden("EdE5PKW01", s"Username is reserved: '$username'; choose another username")
 
     val spamCheckTask = SpamCheckTask(
