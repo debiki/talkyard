@@ -140,7 +140,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.lucene" % "lucene-spatial3d" % "7.7.3",
       "org.apache.lucene" % "lucene-suggest" % "7.7.3",
       "org.apache.thrift" % "libthrift" % "0.12.0",
-      "org.apache.tika" % "tika-core" % "2.2.1",
+      "org.apache.tika" % "tika-core" % "2.3.0",
       "org.apache.tuweni" % "tuweni-bytes" % "0.10.0",
       "org.apache.tuweni" % "tuweni-crypto" % "0.10.0",
       "org.apache.tuweni" % "tuweni-io" % "0.10.0",
