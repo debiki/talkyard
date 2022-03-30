@@ -299,7 +299,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def insertCategoryMarkSectionPageStale(category: Category) {
+  override def insertCategoryMarkSectionPageStale(category: Cat, mab: MessAborter) {
     val statement = """
       insert into categories3 (
         site_id, id, ext_id, page_id, parent_id, default_category_id,
@@ -329,12 +329,14 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       category.includeInSummaries.toInt.asAnyRef,
       category.createdAt.asTimestamp, category.updatedAt.asTimestamp,
       category.deletedAt.orNullTimestamp)
-    runUpdateSingleRow(statement, values)
+    tryInsUpdCat(category, mab) {
+      runUpdateSingleRow(statement, values)
+    }
     markSectionPageContentHtmlAsStale(category.id)
   }
 
 
-  override def updateCategoryMarkSectionPageStale(category: Category) {
+  override def updateCategoryMarkSectionPageStale(category: Category, mab: MessAborter) {
     val statement = """
       update categories3 set
         page_id = ?, parent_id = ?, default_category_id = ?,
@@ -365,10 +367,40 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       category.createdAt.asTimestamp, category.updatedAt.asTimestamp,
       category.deletedAt.orNullTimestamp,
       siteId.asAnyRef, category.id.asAnyRef)
-    runUpdateSingleRow(statement, values)
+    tryInsUpdCat(category, mab) {
+      runUpdateSingleRow(statement, values)
+    }
     // In the future: mark any old section page html as stale too, if moving to new section.
     markSectionPageContentHtmlAsStale(category.id)
   }
+
+
+  private def tryInsUpdCat(cat: Cat, mab: MessAborter)(block: => U): U = {
+    try block
+    catch {
+      case ex: java.sql.SQLException if isUniqueConstrViolation(ex) =>
+        var errMsg = ""
+        val thereIs = "There is already a category with that "
+
+        if (uniqueConstrViolatedIs("categories_u_extid", ex)) {
+          errMsg = thereIs + s"external id, namely: '${cat.extImpId getOrElse ""}'"
+        }
+        else if (uniqueConstrViolatedIs("dw2_cats_page_slug__u", ex)) {
+          errMsg = thereIs + s"name, namely: '${cat.slug
+                }' (same URL slug as another category)"
+        }
+        else if (uniqueConstrViolatedIs("dw2_cats_parent_slug__u", ex)) {
+          // This currently cannot/doesn't happen — instead, the unique constraint
+          // just above: dw2_cats_page_slug__u, fails instead.
+          errMsg = thereIs + s"name, namely: '${cat.slug
+                }' (same URL slug as another sub category)"
+        }
+
+        if (errMsg.isEmpty) throw ex
+        else mab.abort("TyECATSLUG0UNQ", errMsg)
+    }
+  }
+
 
   def catSortOrderScoreAlg(cat: Cat): Opt[i32] = {
     cat.defaultSortOrder.flatMap({

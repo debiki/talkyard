@@ -333,30 +333,31 @@ how to use docker-compose already.
        sudo sysctl --system
 
 1. You need Git, Make, cURL, `jq` for viewing logs, `gpg2` for checking signatures,
-    and a file change notifier:
+    and a file change notifier:  (hmm maybe use `gpg` instead, it's the same as gpg2
+    at least in Debian 11?)
 
     ```
-    sudo apt install git make curl jq gpg2 inotify-tools
+    sudo apt install git make curl jq gpg gnupg2 inotify-tools
     ```
 
-1. (Optional step, for now.)
-    Install Nix-shell, see https://nixos.org/download.html#nix-verify-installation.
+1.  Install the Nix package manager 2.5.1 or a later 2.x,
+    see https://nixos.org/download.html#nix-verify-installation.
     Nix gives you all build tools, no need to modify your host OS.
     For example, Nodejs 14. And later, Deno, and Rust build stuff.
 
     Get the installation script and signature:
 
     ```
-    curl -o install-nix-2.3.15     https://releases.nixos.org/nix/nix-2.3.15/install
-    curl -o install-nix-2.3.15.asc https://releases.nixos.org/nix/nix-2.3.15/install.asc
+    curl -o install-nix-2.5.1      https://releases.nixos.org/nix/nix-2.5.1/install
+    curl -o install-nix-2.5.1.asc  https://releases.nixos.org/nix/nix-2.5.1/install.asc
     ```
 
     Import the public signing key:
     ```
     # Try this:
-    gpg2 --recv-keys B541D55301270E0BCF15CA5D8170B4726D7198DE
+    gpg2 --keyserver hkps://keyserver.ubuntu.com --recv-keys B541D55301270E0BCF15CA5D8170B4726D7198DE
 
-    # Or, if that won't work, the key is in the vendors/ dir:
+    # If that won't work, the key is in the vendors/ dir:
     gpg2 vendors/nixos-signing-pub-key.gpg
     # should print:  B541D55301270E0BCF15CA5D8170B4726D7198DE
     # then:
@@ -367,27 +368,19 @@ how to use docker-compose already.
     `Primary key fingerprint: B541 D553 0127 0E0B CF15  CA5D 8170 B472 6D71 98DE`:
 
     ```
-    gpg2 --verify ./install-nix-2.3.15.asc
+    gpg2 --verify ./install-nix-2.5.1.asc
     ```
 
-    Install Nix and, optionally, Niv.
-    Either **1/2:** First create the `/nix` directory for yourself,
-    and then install — no need to be root:
-    (see https://nixos.wiki/wiki/Nix_Installation_Guide)
+    Install Nix: (and, optionally, Niv) (this'll run sudo for you)
 
     ```
-    sudo install --directory --mode=755 --owner=$(id -u) --group=$(id -g) /nix
-    sh ./install-nix-2.3.15    # not root
+    sh ./install-nix-2.5.1
+
     # nix-env -iA nixpkgs.niv  # optionally, if you want to upgrade Ty's build tools
     ```
 
     (To uninstall Nix, remove `/nix`, a line in `~/.profile`, and:
     `~/{.nix-channels,.nix-defexpr,.nix-profile,.config/nixpkgs}`)
-
-    Or alternatively, **2/2:** Do a multi-user installation of Nix:
-    https://nixos.org/manual/nix/stable/#sect-multi-user-installation
-    (then I'd think it's best to use the above `./install-nix-...`
-    script whose signature you've verified).
 
 
 1. Clone the Talkyard repository:
@@ -484,16 +477,35 @@ the browser — otherwise the Typescript code might not yet have been transpiled
 
 ### Scala
 
-To edit Scala code (in `app/*`), you can use IntelliJ IDEA, the free community edition.
-Don't forget to install a Java Development Kit (JDK) — in Debian 9:
-
-    sudo apt install default-jdk  # installs JDK 8
+To edit Scala code (in `app/*`), you can use IntelliJ IDEA, the free community edition:
+https://www.jetbrains.com/idea/download/#section=linux
 
 There's a container, named *app*, which runs the Play Framework application server,
 and looks for changes to Scala files, recompiles and reloads.
 
+To start SBT in a docker container and jump into the SBT console:
+
+```
+s/tyd ca   # 'ca' means "Console for the App server"
+```
+
 Unfortunately, if you keep editing and reloading Scala files many many times, then eventually
 Play Framework runs out of memory. Restart it like so: `s/tyd ra` ('ra' means "restart app").
+
+### Database
+
+To delete and recreate an empty database:
+
+```
+s/drop-database-create-empty.sh
+```
+
+To jump into the PostgreSQL console: (maybe to try out SQL commands to put in
+a new database migration file — they're in `appsv/rdb/src/main/resources/db/migration/`)
+
+```
+s/tyd cd   # 'cd' means "Console for the Database server"
+```
 
 
 
@@ -598,18 +610,23 @@ This project looks like so:
 
     server/
      |
-     +-Makefile             <-- You can build Talkyard, using GNU Make
-     |                          (work in progress, as of Nov 2018)
+     +-Makefile        <-- You can build Talkyard, using GNU Make
      |
      +-docker-compose.yml   <-- Tells Docker how to run Talkyard
      |
-     +-client/         <-- Javascript, CSS, React.js components
-     | +-app/          <-- Client side code
+     +-client/         <-- A React.js web app, incl styles (Stylus, .styl files)
+     | +-app-slim/     <-- Scripts loaded on page load (in slim-bundle.min.js)
+     | +-app-more/     <-- Scripts loaded if interacting w page (more-bundle.min.js)
+     | +-app-editor/   <-- The editor
+     | +-app-staff/    <-- The admin area
      | +-server/       <-- React.js components rendered server side,
-     | :                   usually softlinks to ../app/
+     | :                   usually softlinks to ../app-slim/
      | :
      |
-     +-app/            <-- Scala code — a Play Framework 2 application
+     +-appsv/          <-- Application server
+     | +-model/        <-- Domain model (Scala case classes) and utility functions
+     | +-rdb/          <-- A Data Access Object (DAO) implementation for PostgreSQL
+     | +-server/       <-- The actual app server — a Play Framework 2 application
      |
      +-tests/
      | +-app/          <-- Unit tests and functional tests, for the app server
@@ -617,8 +634,6 @@ This project looks like so:
      | +-security/     <-- Security tests
      |
      +-modules/
-     | +-ty-dao-rdb/        <-- A database access object (DAO), for PostgreSQL
-     | +-ed-core/           <-- Code shared by the DAO and by the ./app/ code
      | +-ed-prod-one-test/  <-- A production installation, for automatic tests
      | |
      | ...Third party modules
@@ -630,9 +645,9 @@ This project looks like so:
      +-images/
      | +-web/          <-- For building the 'web' Docker image, runs Nginx
      | | +-Dockerfile
-     | | +-assets/     <-- Typescript and Stylus compiled to JS and CSS
+     | | +-assets/     <-- Bundled scripst and styles, from client/app-*/*
      | | +-modules/    <-- Nginx (OpenResty) and Lua modules
-     | | +-openresty/  <-- OpenResty source code (we build from soruce)
+     | | +-openresty/  <-- OpenResty source code (we build from source)
      | | ...
      | |
      | +-gulp/         <-- An image that runs Node.js and bundles JS and CSS
@@ -645,6 +660,11 @@ This project looks like so:
      | +-uploads       <-- Mounted read-write in the Play container, but
      | |                 read-only in Nginx (to serve static files)
      | ...
+     |
+     +-vendors/
+     | +-jars/         <-- JAR files needed to build and run Talkyard. (a Git
+     |                     submodule)
+     +-node_modules/   <-- Vendored Nodejs dependencies (a Git submodule)
      |
      +-d/         <-- Docker scripts, e.g. d/c is docker-compose, and
      |                'd/n a-script' runs a-script in a Nodejs Docker container

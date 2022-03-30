@@ -408,7 +408,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
 
             changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
                   PostStatusAction.UnhidePost, userId = decidedById,
-                  tx, staleStuff).updatedPost
+                  browserIdData = None, tx, staleStuff).updatedPost
           }
           else {
             None

@@ -251,8 +251,15 @@ trait UploadsDao {
         return
 
       val nowMs = transaction.now.millis
-      val entries = transaction.loadAuditLogEntriesRecentFirst(userId = uploaderId,
-        tyype = Some(AuditLogEntryType.UploadFile), limit = MaxUploadsLastWeek, inclForgotten = true)
+      val entries = transaction.loadAuditLogEntries(
+            userId = Some(uploaderId),
+            types = Vec(AuditLogEntryType.UploadFile),
+            newerOrAt = None,
+            newerThanEventId = None,
+            olderOrAt = None,
+            newestFirst = true,
+            limit = MaxUploadsLastWeek,
+            inclForgotten = true)
 
       // Check if the user has uploaded more than MaxUploadsLastWeek uploads the last 7 days
       // — that'd feel fishy.

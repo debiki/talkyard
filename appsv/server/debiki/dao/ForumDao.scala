@@ -200,7 +200,7 @@ trait ForumDao {
       unlistTopics = false,
       includeInSummaries = IncludeInSummaries.Default,
       createdAt = tx.now.toJavaDate,
-      updatedAt = tx.now.toJavaDate))
+      updatedAt = tx.now.toJavaDate), IfBadDie)
 
     // Create the Staff category.
     createCategoryImpl(

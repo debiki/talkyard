@@ -217,7 +217,7 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
-  def JsUserApiV0(user: User, brief: Bo): JsObject = {
+  def JsUserApiV0(user: Pat, brief: Bo): JsObject = {
     unimplIf(!brief, "TyE306RE5")
     Json.obj(
       "id" -> JsNumber(user.id),
@@ -634,6 +634,45 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  def JsLink(link: Link): JsObject = {
+    Json.obj(
+          "fromPostId" -> link.fromPostId,
+          "linkUrl" -> link.linkUrl,
+          "addedAt" -> JsWhenMs(link.addedAt),
+          "addedById" -> link.addedById,
+          "isExternal" -> link.isExternal,
+          //toStaffSpace
+          "toPageId" -> JsStringOrNull(link.toPageId),
+          "toPostId" -> JsNum32OrNull(link.toPostId),
+          "toPatId" -> JsNum32OrNull(link.toPpId),
+          "toTagId" -> JsNum32OrNull(link.toTagId),
+          "toCatId" -> JsNum32OrNull(link.toCategoryId))
+  }
+
+
+  def parseJsLink(jsVal: JsValue, mab: MessAborter): Link = {
+    try {
+      val jsOb = asJsObject(jsVal, "link")
+      Link(
+          fromPostId = parseInt32(jsOb, "fromPostId"),
+          linkUrl = parseSt(jsOb, "linkUrl"),
+          addedAt = parseWhen(jsOb, "addedAt"),
+          addedById = parseInt32(jsOb, "addedById"),
+          isExternal = parseOptBo(jsOb, "isExternal") getOrElse false,
+          //toStaffSpace =
+          toPageId = parseOptSt(jsOb, "toPageId"),
+          toPostId = parseOptInt32(jsOb, "toPostId"),
+          toPpId = parseOptInt32(jsOb, "toPatId"),
+          toTagId = parseOptInt32(jsOb, "toTagId"),
+          toCategoryId = parseOptInt32(jsOb, "toCatId"))
+    }
+    catch {
+      case ex: BadJsonException =>
+        mab.abort("TyEJSNLNK", s"Invalid link JSON: ${ex.getMessage}")
+    }
+  }
+
+
   def JsCategoryInclDetails(category: Category): JsObject = {
     Json.obj(
       "id" -> category.id,  // : CategoryId,
@@ -798,6 +837,9 @@ object JsX {   RENAME // to JsonPaSe
 
   def JsBoolOrNull(value: Option[Boolean]): JsValue =
     value.map(JsBoolean).getOrElse(JsNull)
+
+  def JsNum16OrNull(value: Opt[i16]): JsValue =
+    JsNumberOrNull(value.map(_.toInt))
 
   def JsNum32OrNull(value: Opt[i32]): JsValue =
     JsNumberOrNull(value)

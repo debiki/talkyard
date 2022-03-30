@@ -49,6 +49,9 @@ object Rdb {
   val NullFloat = Null(js.Types.FLOAT)
   val NullTimestamp = Null(js.Types.TIMESTAMP)
   val NullBytea = Null(js.Types.VARBINARY)
+  val NullArray = Null(js.Types.ARRAY)
+  val NullJson = Null(js.Types.OTHER)
+
 
   /**
    * Pimps `Option[String]` with `orNullVarchar`, which means
@@ -66,8 +69,13 @@ object Rdb {
     def orNullInt64: AnyRef = orNullI64
   }
 
+  implicit class PimpOptionWithNullInt16(opt: Opt[i16]) {
+    def orNullInt16: AnyRef = opt.map(_.asInstanceOf[Integer]).getOrElse(NullSmallInt)
+  }
+
   implicit class PimpOptionWithNullInt(opt: Option[Int]) {
-    def orNullInt: AnyRef = opt.map(_.asInstanceOf[Integer]).getOrElse(NullInt)
+    def orNullInt: AnyRef = opt.map(_.asInstanceOf[Integer]).getOrElse(NullInt)  ; RENAME // to 32
+    def orNullInt32: AnyRef = opt.map(_.asInstanceOf[Integer]).getOrElse(NullInt)
   }
 
   implicit class PimpOptionWithNullByte(opt: Option[Byte]) {
@@ -118,16 +126,15 @@ object Rdb {
   }
 
   implicit class PimpJsObjWithNullIfEmpty(jsOb: JsObject) {
-    def orNullIfEmpty: AnyRef = {
+    def orNullJsonIfEmpty: AnyRef = {
       if (jsOb.value.isEmpty) Null(js.Types.OTHER)
       else jsOb
     }
   }
 
-  /*
-  implicit class PimpOptionWithNullArray(opt: Option[ ? ]) {
+  implicit class PimpOptionWithNullArray[T](opt: Opt[Array[T]]) {
     def orNullArray: AnyRef = opt.getOrElse(Null(js.Types.ARRAY))
-  }*/
+  }
 
   implicit class PimpStringWithNullIfBlank(string: String) {
     def trimNullVarcharIfBlank: AnyRef = {
@@ -220,35 +227,49 @@ object Rdb {
 
   def getOptionalByte(rs: js.ResultSet, column: String): Option[Byte] = {
     // rs.getByte() returns 0 instead of null.
-    var value = rs.getByte(column)
+    val value = rs.getByte(column)
     if (rs.wasNull) None
     else Some(value)
   }
 
   def getOptFloat(rs: js.ResultSet, column: String): Option[Float] = {
     // rs.getFloat() returns 0 instead of null.
-    var value = rs.getFloat(column)
+    val value = rs.getFloat(column)
     if (rs.wasNull) None
     else Some(value)
+  }
+
+  def getInt16(rs: js.ResultSet, column: St): i16 = {
+    val res = getInt32(rs, column)
+    dieIf(res > Short.MaxValue, "TyE205MPLJ01", res)
+    dieIf(res < Short.MinValue, "TyE205MP5L01", res)
+    res.toShort
   }
 
   def getInt(rs: js.ResultSet, column: String): Int =
     getInt32(rs, column)
 
   def getInt32(rs: js.ResultSet, column: String): i32 = {
-    var value = rs.getInt(column)
-    dieIf(rs.wasNull, "TTyECOLINTISNL", s"Column int value is null: $column")
+    val value = rs.getInt(column)
+    dieIf(rs.wasNull, "TyECOLINTISNL", s"Column int value is null: $column")
     value
   }
 
   def getLong(rs: js.ResultSet, column: String): Long = {
-    var value = rs.getLong(column)
+    val value = rs.getLong(column)
     dieIf(rs.wasNull, "TyECOLLNGISNL", s"Column long value is null: $column")
     value
   }
 
   def getOptInt(rs: js.ResultSet, column: String): Option[Int] =
     getOptInt32(rs, column)
+
+  def getOptInt16(rs: js.ResultSet, column: St): Opt[i16] =
+    getOptInt32(rs, column) map { res =>
+      dieIf(res > Short.MaxValue, "TyE205MPLJ02", res)
+      dieIf(res < Short.MinValue, "TyE205MP5L02", res)
+      res.toShort
+    }
 
   def getOptInt32(rs: js.ResultSet, column: St): Opt[i32] =
     getResultSetIntOption(rs, column: St)
@@ -352,6 +373,18 @@ object Rdb {
     if (sqlArray eq null) return None
     val javaArray = sqlArray.getArray.asInstanceOf[Array[String]]
     Some(javaArray.to[Vector])
+  }
+
+  def getArrayOfInt32(rs: js.ResultSet, column: St): ImmSeq[i32] = {
+    getOptArrayOfInt32(rs, column) getOrDie(
+          "TyERSNULLINTARR", s"Column $column is null, should be an int array")
+  }
+
+  def getOptArrayOfInt32(rs: js.ResultSet, column: St): Opt[ImmSeq[i32]] = {
+    val sqlArray: js.Array = rs.getArray(column)
+    if (sqlArray eq null) return None
+    val javaArray = sqlArray.getArray.asInstanceOf[Array[Integer]]
+    Some(javaArray.to[Vec].map(_.toInt))
   }
 
   def isUniqueConstrViolation(sqlException: js.SQLException): Boolean = {
