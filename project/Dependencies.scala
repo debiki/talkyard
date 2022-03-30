@@ -99,7 +99,7 @@ object Dependencies {
     //
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.18.3"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.19.1"
 
 
     // ----- PASETO tokens
