@@ -54,7 +54,7 @@ val appDependencies = Seq(
   // For some reason, withouth this, an older version gets used which throws
   // an error because some dependencies use jackson 2.13.0 (and the others too,
   // older 2.X evicted), but the older -module-scala wants 2.10 or something.
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.2",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.1",
 
   // OAuth2 and OIDC authentication.
   Dependencies.Libs.scribeJava,
