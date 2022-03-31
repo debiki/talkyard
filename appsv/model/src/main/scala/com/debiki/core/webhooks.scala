@@ -77,6 +77,7 @@ case class Webhook(
   sendMaxEventsPerReq: Opt[i32],
   // How long to wait, between each batch.
   //sendMaxDelaySecs: i32,
+  // sendThingFields: Set[ThingField],  // e.g. if user.emailAddr or user.ssoId should be incld
   sendCustomHeaders: Opt[JsObject],
   retryMaxSecs: Opt[i32],
   // Maybe change to retryOnceMore: Bo  ?
@@ -249,6 +250,7 @@ case class WebhookReqOut(
   //sentEventSubtypes: Set[EventSubtype],
   sentEventIds: Set[EventId],
   sentJson: JsObject,
+  // sentThingFields: Set[ThingField],  — what details were included in the json
   sentHeaders: Opt[JsObject],
 
   retryNr: Opt[RetryNr],

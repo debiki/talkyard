@@ -266,7 +266,7 @@ object RdbUtil {
     // A bit dupl code. (703KWH4)
 
     val userId = rs.getInt("u_id")
-    val extImpId = getOptString(rs, "u_ext_id")
+    val anyExtId = getOptString(rs, "u_ext_id")
     val isGroup = rs.getBoolean("u_is_group")
     def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
@@ -287,7 +287,7 @@ object RdbUtil {
     if (isGuestId(userId))
       Guest(
         id = userId,
-        extId = extImpId,
+        extId = anyExtId,
         createdAt = createdAt,
         guestName = dn2e(name.orNull),
         guestBrowserId = Option(rs.getString("u_guest_browser_id")),
@@ -303,7 +303,7 @@ object RdbUtil {
             allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
       Group(
         id = userId,
-        extId = extImpId,
+        extId = anyExtId,
         createdAt = createdAt,
         theUsername = theUsername,
         name = name,
@@ -317,6 +317,8 @@ object RdbUtil {
     }
     else User(
       id = userId,
+      ssoId = getOptString(rs, "u_sso_id"),
+      extId = anyExtId,
       fullName = name,
       theUsername = theUsername,
       email = dn2e(rs.getString("u_primary_email_addr")),

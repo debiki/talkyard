@@ -157,6 +157,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
     var json = Json.obj(
       "id" -> pageStuff.pageId,
+      "extId" -> JsStringOrNull(pageMeta.extImpId),
       "title" -> pageStuff.title,
       // Unnecessary to include the origin everywhere.
       "urlPath" -> pageFoundStuff.pagePath.value,
@@ -164,7 +165,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
       "author" -> JsParticipantFoundOrNull(anyPageAuthor, avatarUrlPrefix, jsonConf),
       // For now, only the leaf category — but later, SHOULD incl ancestor categories
       // too — so this is an array.
-      "categoriesMainFirst" -> Json.arr(JsCategoryFoundOrNull(anyCategory)),
+      "categoriesMainFirst" -> Json.arr(JsCategoryFoundOrNull(anyCategory, jsonConf)),
       "pageType" -> PageParSer.pageTypeSt_apiV0(pageMeta.pageType),
       "answerPostId" -> JsNum32OrNull(pageMeta.answerPostId),
       "doingStatus" -> PageParSer.pageDoingStatusSt_apiV0(pageMeta.doingStatus),
@@ -190,16 +191,22 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
 
   // Typescript: CategoryFound
-  def JsCategoryFoundOrNull(anyCategory: Option[Category]): JsValue = {
+  def JsCategoryFoundOrNull(anyCategory: Option[Category], jsonConf: JsonConf): JsValue = {
     val category = anyCategory getOrElse { return JsNull }
     // Later, with different forums or sub communities [subcomms] [4GWRQA28] in the same
     // main site — would need to prefix the category's url path with the forum
     // page's url path.
-    Json.obj(
+    var res = Json.obj(
       "id" -> JsNumber(category.id),
-      "categoryId" -> JsNumber(category.id),  // REMOVE  [ty_v1]
+      "extId" -> JsStringOrNull(category.extImpId),
       "name" -> JsString(category.name),
       "urlPath" -> JsString(s"/latest/${category.slug}"))
+
+    if (jsonConf.inclOldCategoryIdField) {
+      res += "categoryId" -> JsNumber(category.id)  // REMOVE  [ty_v1]
+    }
+
+    res
   }
 
 
@@ -215,7 +222,8 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   }
 
 
-   // Typescript: ParticipantFound
+  // Typescript: ParticipantFound
+  // A bit dupl code. [dupl_pat_json_apiv0]
   def JsParticipantFoundOrNull(anyPp: Opt[Pat], avatarUrlPrefix: St,
         jsonConf: JsonConf = JsonConf.v0_0)
         : JsValue = {
@@ -223,15 +231,23 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
     JsStringOrNull(pp.tinyAvatar.map(_.hashPath))
     var res = Json.obj(
       "id" -> JsNumber(pp.id),
+      "extId" -> JsStringOrNull(pp.extId),
       "username" -> JsStringOrNull(pp.anyUsername),
       "fullName" -> JsStringOrNull(pp.anyName),
       "tinyAvatarUrl" -> JsStringOrNull(
           pp.tinyAvatar.map(avatarUrlPrefix + _.hashPath)),
       "isGroup" -> pp.isGroup,
       "isGuest" -> pp.isGuest)
+
+    pp match {
+      case user: User => res += "ssoId" -> JsStringOrNull(user.ssoId)
+      case _ => ()
+    }
+
     if (jsonConf.inclOldPpIdField) {
       res += "ppId" -> JsNumber(pp.id)  // REMOVE  [ty_v1]
     }
+
     res
   }
 

@@ -34,6 +34,7 @@ package object parser {
     dieIf(v0_0 && v0_1, "TyE7MRKRD3067B")
     def inclOldPageIdField: Bo = v0_0
     def inclOldPpIdField: Bo = v0_0
+    def inclOldCategoryIdField: Bo = v0_0
   }
 
   object JsonConf {

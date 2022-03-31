@@ -620,6 +620,7 @@ case object Participant {
 sealed trait Participant {    RENAME // to Pat, already started, in core/package.ts
 
   def id: PatId
+  def extId: Opt[ExtId]
   def email: EmailAdr  // COULD rename to emailAddr
   def emailNotfPrefs: EmailNotfPrefs
   def tinyAvatar: Opt[UploadRef]
@@ -753,6 +754,8 @@ object Member {
   */
 case class User(
   id: UserId,
+  ssoId: Opt[SsoId],
+  extId: Opt[ExtId],
   fullName: Option[String],
   theUsername: String,
   email: String,  // COULD RENAME to primaryEmailAddress
@@ -869,7 +872,7 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
   */
 case class Guest( // [exp] ok   REFACTOR split into Guest and GuestDetailed
   id: UserId,
-  override val extId: Option[ExtId],
+  extId: Option[ExtId],
   createdAt: When,
   guestName: String,
   guestBrowserId: Option[String],
@@ -1192,6 +1195,8 @@ case class UserInclDetails( // ok for export
 
   def briefUser = User(   // RENAME? to just noDetails? see above
     id = id,
+    ssoId = ssoId,
+    extId = extId,
     fullName = fullName,
     theUsername = username,
     email = primaryEmailAddress,
@@ -1333,6 +1338,7 @@ case class UsernameUsage(
 
 object UnknownParticipant extends Participant {  // RENAME to Stranger?
   override def id: UserId = UnknownUserId
+  override def extId: Opt[ExtId] = None
   override def email: String = ""
   override def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.DontReceive
   override def tinyAvatar: Option[UploadRef] = None
@@ -1360,7 +1366,7 @@ case class Group( // [exp] missing: createdAt, add to MemberInclDetails & Partic
   id: UserId,
   theUsername: String,
   name: Option[String],
-  extId: Option[ExtId] = None,
+  extId: Opt[ExtId] = None,
   createdAt: When = When.Genesis, // for now
   // emailAddr: String  <— if adding later, don't forget to update this: [306KWUSSJ24]
   tinyAvatar: Option[UploadRef] = None,
