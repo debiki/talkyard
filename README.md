@@ -249,25 +249,7 @@ Planned, not yet implemented: Let your students ask anonymous questions. Maybe t
 Contributing
 -----------------------------
 
-Say hello in the community: <https://www.talkyard.io/forum/>.
-<!--
-Good for you if you ask the people there what is currently being worked on, so you won't
-accidentally re-implement something that's almost done already — people
-might be working in their own work-in-progress topic branches that you
-don't know about. -->
-
-How to translate to a new language: [i18n-README](translations/i18n-README.md) (step 1 and 2 only). — Open any translations pull request to the ty-translations repo: https://github.com/debiki/ty-translations.
-
-You need to agree to [this Contributor License Agreement](./docs/CLA-v2.txt). You do that by
-reading it (there's a human friendly intro) and appending a single line
-paragraph with your real name (no pseudonyms) and the following text,
-to all your Git commit messages: (note: a _Git commit message_ is not the same thing as a _GitHub comment_)
-
-> I, Your Full Name \<your@<i></i>email.address\>, agree to the Contributor License Agreement, docs/CLA-v2.txt.
-
-Please squash your commits to just one (unless you're doing something that's easier
-to review in separate commits).
-
+See: [CONTRIBUTING.adoc](./CONTRIBUTING.adoc). There's a CLA (Contributor License Agreement) to sign.
 
 
 
