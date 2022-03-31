@@ -48,3 +48,9 @@ services:
       internal_net:
         ipv4_address: ${INTERNAL_NET_TEST_IP}
 
+
+  # This won't work; we're in the wrong dir:  [ghost_prod_test_img]
+  #it-ghost:
+  #  volumes:
+  #    - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
+  #  ...

@@ -336,6 +336,7 @@ services:
   it-ghost:
     # Image docs: https://hub.docker.com/_/ghost/
     image: ghost:4.34.0
+    # Won't work in Prod tests — so, incl in image instead of mounting?  [ghost_prod_test_img]
     volumes:
       - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
     ports:
