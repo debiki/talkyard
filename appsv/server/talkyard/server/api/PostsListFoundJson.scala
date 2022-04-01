@@ -98,19 +98,33 @@ object PostsListFoundJson {
 
     var json = Json.obj(  // Typescript: PostListed
       "id" -> JsNumber(post.id),
+      "extId" -> JsStringOrNull(post.extImpId),
       "nr" -> JsNumber(post.nr),
       "parentNr" -> JsNumberOrNull(post.parentNr),
-      "isPageTitle" -> JsBoolean(post.nr == PageParts.TitleNr),
-      "isPageBody" -> JsBoolean(post.nr == PageParts.BodyNr),
-      // COULD use the page's actual path (folder + slug).
-      "author" -> ThingsFoundJson.JsParticipantFoundOrNull(anyAuthor, avatarUrlPrefix, jsonConf),
       "approvedHtmlSanitized" -> JsString(approvedHtmlSanitized))
 
+    if (post.isTitle) {
+      json += "isPageTitle" -> JsTrue
+    }
+
+    if (post.isOrigPost) {
+      json += "isPageBody" -> JsTrue
+    }
+
+    if (isWrappedInPage && (post.isOrigPost || post.isTitle)) {
+      // The orig post author is incl in the page json already.
+    }
+    else {
+      json += "author" -> ThingsFoundJson.JsParticipantFoundOrNull(
+                                  anyAuthor, avatarUrlPrefix, jsonConf)
+    }
+
     // If not in a page { ... } obj, with the page id and name, then, more context needed
-    // — so the remote server won't need to fetch the page via a separate request.
+    // — so the remote server won't need to fetch page details via separate requests.
     if (!isWrappedInPage) {
       json += "pageId" -> JsString(post.pageId)
       json += "pageTitle" -> JsString(pageStuff.title)
+      // COULD use the page's actual path (folder + slug).
       json += "urlPath" -> JsString(s"/-${post.pageId}#post-${post.nr}")
     }
 

@@ -137,8 +137,18 @@ trait WebhooksSiteDaoMixin {
   * Otherwise there could e.g. be next-request-nr collisions, and things would get
   * more complicated for no good reason.
   */
-  def sendReqsForOneWebhook(webhook: Webhook): U = {
-    val (events: ImmSeq[Event], now_, reqNr: i32, anyRetryNr: Opt[RetryNr]) = readTx { tx =>
+  def sendReqsForOneWebhook(webhookMaybeStale: Webhook): U = {
+    val (webhook, events: ImmSeq[Event], now_, reqNr: i32, anyRetryNr: Opt[RetryNr]) =
+          readTx { tx =>
+
+      // Reload the webhook, so it's from the same transaction, as the last request
+      // also loaded below — otherwise, Webhook.sentUpToEventId might be stale
+      // — we'd send the same event twice (fine, but slightly bad for performance).
+      val webhook = tx.loadWebhook(webhookMaybeStale.id) getOrElse {
+        logger.warn(o"""s$siteId: Webhook ${webhookMaybeStale.id} just disappeared?
+               [TyEWHKGONE04356]""")
+        return ()
+      }
 
       // ----- Webhook broken?
 
@@ -168,9 +178,12 @@ trait WebhooksSiteDaoMixin {
             // e.g. because the Ty server shut down? Then, there'll be old requests
             // with no failure or done status. Let's ignore them.
             COULD // add status: SendFailedHow.Abandoned, so it'll be considered done (failed)?
+            val whatWebhookAndReq = o"Webhook ${webhook.id} has req ${req.reqNr
+                  } about event ids [${req.sentEventIds.mkString(", ")}] in-flight"
+
             val probablyFailed = secsSinceLastReq > WebhookRequestTimeoutSecs + 10
             if (probablyFailed) {
-              logger.debug(o"""s$siteId: Webhook ${webhook.id} has a req in-flight,
+              logger.debug(o"""s$siteId: $whatWebhookAndReq,
                     but it's old, probably failed. [TyMWHKREQRTY]""")
             }
             else {
@@ -178,7 +191,7 @@ trait WebhooksSiteDaoMixin {
               // same events, let's wait until this req is done.
               // This also helps us avoid updating the webhook tables from different threads
               // at once. [0_whks_out_db_race]
-              logger.debug(o"""s$siteId: Webhook ${webhook.id} has a req in-flight;
+              logger.debug(o"""s$siteId: $whatWebhookAndReq,
                     I'll wait until it's done. [TyMWHKREQONG]""")
               return ()
             }
@@ -224,7 +237,11 @@ trait WebhooksSiteDaoMixin {
             // We send older events, before more recent events.
             newestFirst = false)
 
-      (logEntries.flatMap(Event.fromAuditLogItem), tx.now, nextReqNr, anyRetryNr)
+      (webhook,
+          logEntries.flatMap(Event.fromAuditLogItem),
+          tx.now,
+          nextReqNr,
+          anyRetryNr)
     }
 
     COULD_OPTIMIZE // Mark webhooks as done_for_now_c, and mark dirty on new and edited posts.

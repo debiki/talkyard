@@ -30,3 +30,27 @@ services:
     environment:
       POSTGRES_PASSWORD: 'public'
 
+  # A fake external server, for e2e tests, when the Ty server sends its own HTTP
+  # requests to external things.
+  fakeweb:
+    image: ${DOCKER_REPOSITORY}/fakeweb
+    restart: always
+    # Won't work — we're not in Talkyard's main repo root. Instead, these would-have-
+    # been-mounted files are included in the image. [fakeweb_mount_nothing]
+    #volumes:
+    #  - ./images/fakeweb/app/:/app/:ro
+    #  - ./volumes/fakeweb-deno-dir:/deno-dir
+    ports:
+      # So the Webdriverio e2e tests can ask this server what HTTP requests
+      # the Ty server has sent. E.g. outgoing webhooks, or anti spam service queries.
+      - '8090:8090'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_TEST_IP}
+
+
+  # This won't work; we're in the wrong dir:  [ghost_prod_test_img]
+  #it-ghost:
+  #  volumes:
+  #    - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
+  #  ...

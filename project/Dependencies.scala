@@ -53,7 +53,7 @@ object Dependencies {
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
     // Play Framework 2.8.9 uses 31.0.1-jre
-    val guava = "com.google.guava" % "guava" % "31.0.1-jre"
+    val guava = "com.google.guava" % "guava" % "31.1-jre"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
@@ -62,11 +62,11 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.2.1"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.3.0"
 
     val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
 
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.1"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.2"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -77,6 +77,12 @@ object Dependencies {
     // VENDOR_THIS — it'd be good to Maven-build via Makefile?
     val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.1"
 
+
+    // ----- Metrics, tracing
+
+    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.9"
+    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"  // 1.6.0 exists now
+    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.8"
 
     // ----- Decoding JWT:s
 
@@ -99,7 +105,7 @@ object Dependencies {
     //
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.18.3"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.19.1"
 
 
     // ----- PASETO tokens

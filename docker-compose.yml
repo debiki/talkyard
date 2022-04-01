@@ -248,11 +248,12 @@ services:
   # A fake external server, for e2e tests, when the Ty server sends its own HTTP
   # requests to external things.
   fakeweb:
-    build: images/fakeweb/docker/
+    build: images/fakeweb/
     image: ${DOCKER_REPOSITORY}/fakeweb
-    volumes:
-      - ./images/fakeweb/app/:/app/:ro
-      - ./volumes/fakeweb-deno-dir:/deno-dir
+    # Now included in the image instead:  [fakeweb_mount_nothing]
+    #volumes:
+    #  - ./images/fakeweb/app/:/app/:ro
+    #  - ./volumes/fakeweb-deno-dir:/deno-dir
     ports:
       # So the Webdriverio e2e tests can ask this server what HTTP requests
       # the Ty server has sent. E.g. outgoing webhooks, or anti spam service queries.
@@ -335,6 +336,7 @@ services:
   it-ghost:
     # Image docs: https://hub.docker.com/_/ghost/
     image: ghost:4.34.0
+    # Won't work in Prod tests — so, incl in image instead of mounting?  [ghost_prod_test_img]
     volumes:
       - ./tests/int-w/ghost/casper-post.hbs:/var/lib/ghost/current/content/themes/casper/post.hbs
     ports:

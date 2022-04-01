@@ -217,12 +217,19 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
-  def JsUserApiV0(user: Pat, brief: Bo): JsObject = {
+  // A bit dupl code. [dupl_pat_json_apiv0]
+  def JsUserApiV0(pat: Pat, brief: Bo): JsObject = {
     unimplIf(!brief, "TyE306RE5")
-    Json.obj(
-      "id" -> JsNumber(user.id),
-      "username" -> JsStringOrNull(user.anyUsername),
-      "fullName" -> JsStringOrNull(user.anyName))
+    var json = Json.obj(
+        "id" -> JsNumber(pat.id),
+        "extId" -> JsStringOrNull(pat.extId),
+        "username" -> JsStringOrNull(pat.anyUsername),
+        "fullName" -> JsStringOrNull(pat.anyName))
+    pat match {
+      case u: User => json += "ssoId" -> JsStringOrNull(u.ssoId)
+      case _ => ()
+    }
+    json
   }
 
 

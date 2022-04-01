@@ -32,19 +32,23 @@ WORKDIR /app
 # recreate the container, to pick up any changes. Rather than having to
 # rebuild the image:
 # ------
-## Cache the dependencies as a layer (the following two steps are re-run only when deps.ts is modified).
-## Ideally cache deps.ts will download and compile _all_ external files used in main.ts.
-#COPY deps.ts .
-#RUN deno cache deps.ts
-#
-## These steps will be re-run upon each file change in your working directory:
-#ADD . .
-## Compile the main app so that it doesn't need to be compiled each startup/entry.
-#RUN deno cache main.ts
+# Let's do here in the Dockerfile anyway — so there'll be an image available,
+# no mounts needed, when running Prod tests. [fakeweb_mount_nothing]
+# ------
+# Cache the dependencies as a layer (the following two steps are re-run only when deps.ts is modified).
+# Ideally cache deps.ts will download and compile _all_ external files used in main.ts.
+COPY app/deps.ts .
+RUN deno cache deps.ts
+
+# These steps will be re-run upon each file change in your working directory:
+ADD app .
+# Compile the main app so that it doesn't need to be compiled each startup/entry.
+RUN deno cache main.ts
 # ------
 
 
-COPY docker-entrypoint.sh .
-ENTRYPOINT ["/tini", "--", "docker-entrypoint.sh"]
+# Comment in, if commenting out the above:
+#COPY docker-entrypoint.sh .
+#ENTRYPOINT ["/tini", "--", "docker-entrypoint.sh"]
 
 CMD ["run", "--allow-net", "main.ts"]

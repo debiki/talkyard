@@ -158,6 +158,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const isGone = React.useRef<Bo>(false);
   const [webhooksBef, setWebhooksBef] = React.useState<Webhook[] | N>(null);
   const [webhooksCur, setWebhooksCur] = React.useState<Webhook[] | N>(null);
+  const [badHeaders, setBadHeaders] = React.useState<Bo>(false);
   const [message, setMessage] = React.useState<St | N>(null);
 
   React.useEffect(() => {
@@ -190,7 +191,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const urlElm =
       Input({ label: "URL",
           labelClassName: 'col-xs-2',
-          wrapperClassName: 'col-xs-offset-2 col-xs-10',
+          wrapperClassName: 'col-xs-10',
           className: 'c_A_Api_Wh_Url',
           value: theCurHook.sendToUrl,
           onChange: (event) => {
@@ -198,9 +199,33 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             }
           });
 
+  /* Let's wait, next-next release.
+  const customHeadersElm =
+      Input({ label: "Custom HTTP Headers",
+          type: 'textarea',
+          labelClassName: 'col-xs-2',
+          wrapperClassName: 'col-xs-10',
+          className: 'c_A_Api_Wh_Hdrs',
+          defaultValue: !theCurHook.sendCustomHeaders ? null :
+              JSON.stringify(theCurHook.sendCustomHeaders, undefined, 2),
+          onChange: (event) => {
+              try {
+                const json = JSON.parse(event.target.value);
+                updWebhook({ sendCustomHeaders: json });
+                setBadHeaders(false);
+              }
+              catch (ex) {
+                setBadHeaders(true);
+              }
+            },
+          help: !badHeaders ? null :
+              r.div({ className: 'c_A_Api_Wh_BadHdrsJsn' },
+                r.span({}, `Error: Bad headers JSON, should be like:  `),
+                r.code({}, `{ "Header-Name": "Header value", ... }`))
+          });  */
+
   const enabledElm =
       Input({ type: 'checkbox', label: "Enabled",
-          labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-offset-2 col-xs-10',
           className: 'c_A_Api_Wh_Ena',
           checked: theCurHook.enabled,
@@ -211,7 +236,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const retrySecs = null; /* later:
       Input({ type: 'number', label: "Retry max seconds",
           labelClassName: 'col-xs-2',
-          wrapperClassName: 'col-xs-offset-2 col-xs-10',
+          wrapperClassName: 'col-xs-10',
           className: 'c_A_Api_Wh_RetrSecs',
           value: theCurHook.retryMaxSecs,
           onChange: () => {
@@ -226,7 +251,7 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
   const saveBtn =
       Button({
           className: 'e_Wh_SavB',
-          disabled: !unsavedChanges,
+          disabled: !unsavedChanges || badHeaders,
           onClick: () => {
             Server.upsertWebhooks(webhooksCur, (webhooks) => {
               if (isGone.current) return;
@@ -253,20 +278,23 @@ const WebhooksApiPanel = React.createFactory<WebhooksApiPanelProps>(function(pro
             });
           }, }, "View log");
 
-  return rFr({},
+  return r.div({ className: 'c_A_Api_Wh' },
       r.h3({}, "Webhooks"),
       r.p({}, "You can configure one webhook endpoint only, currently. " +
             "It'll get notified about new and edited pages and comments, " +
             "and new users (but currently not about updated user)."),
-      urlElm,
-      enabledElm,
-      retrySecs,
-      showLogBtn,
-      saveBtn,
-      retryOnceBtn,
-      r.div({ className: 'c_A_Api_Wh_Msg' }, message),
-      webhookDetailsElm,
-      );
+      r.div({ className: 'form-horizontal' },
+        urlElm,
+        //customHeadersElm,
+        enabledElm,
+        retrySecs,
+        r.div({ className: 'col-xs-offset-2 col-xs-10' },
+          saveBtn,
+          showLogBtn,
+          retryOnceBtn,
+          r.div({ className: 'c_A_Api_Wh_Msg' }, message)),
+        webhookDetailsElm,
+        ));
 });
 
 
