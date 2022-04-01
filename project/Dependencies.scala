@@ -81,7 +81,7 @@ object Dependencies {
     // ----- Metrics, tracing
 
     val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.9"
-    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"  // 1.6.0 exists now
+    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "1.8.0"  // 1.6.0 exists now
     val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.8"
 
     // ----- Decoding JWT:s
