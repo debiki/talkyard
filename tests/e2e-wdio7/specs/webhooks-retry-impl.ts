@@ -112,18 +112,18 @@ export function addWebhooksRetryStartSteps(ps: { postIdeaCheckWebhook?: Bo,
   });
 
   it(`Import site`, async () => {
-    site = server.importSiteData(forum.siteData);
+    site = await server.importSiteData(forum.siteData);
     testState.site = site;
     testState.forum = forum;
     testState.brA = brA;
     testState.brB = brB;
-    server.skipRateLimits(site.id);
+    await server.skipRateLimits(site.id);
   });
 
 
   it(`Clear saved webhook reqs, in case other old test w same site id`, async () => {
-    fakeweb.forgetWebhookReqsTalkyardHasSent(site.id);
-    fakeweb.mendWebhooks({ siteId: site.id });
+    await fakeweb.forgetWebhookReqsTalkyardHasSent({ siteId: site.id });
+    await fakeweb.mendWebhooks({ siteId: site.id });
   });
 
 
