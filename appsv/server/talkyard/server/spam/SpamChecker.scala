@@ -526,11 +526,8 @@ class SpamChecker(
           }
         }  */
 
-    val requestBody = requestJson.toString
-
     val request: WSRequest =
-      wsClient.url(safeBrowsingApiUrl).withHttpHeaders(
-        play.api.http.HeaderNames.CONTENT_LENGTH -> requestBody.length.toString)
+      wsClient.url(safeBrowsingApiUrl)
         .withRequestTimeout(7.seconds)
 
     /*
@@ -552,7 +549,10 @@ class SpamChecker(
         ...]
       }  */
 
-    Some(request.post(requestBody).map({ response: WSResponse =>
+    // Will fill in the content length header.
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
+    Some(request.post(requestJson).map({ response: WSResponse =>
       try { response.status match {
         case 200 =>
           val json = Json.parse(response.body)

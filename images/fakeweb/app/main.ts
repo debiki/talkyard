@@ -41,17 +41,29 @@ const requestHandler = async (req: Request): Promise<Response> => {
       if (!req.body)
         return errorBadReq("Request body missing");
 
-      const json = await req.json();
-      console.log(`s${siteId}: Got a webhook with JSON: ${JSON.stringify(json)}`);
-      const webhookReqs = webhookReqsBySiteId[siteId] || [];
-      webhookReqsBySiteId[siteId] = webhookReqs;
-      webhookReqs.push(json);
+      const text = await req.text();
 
-      const babStatus = statusCodesBySite[siteId];
-      const resp = babStatus
-          ? fakeError(`s${siteId}: Faking failure, status code ${babStatus}`, babStatus)
-          : ok(`s${siteId}: Thanks for the webhook message.`);
-      return resp;
+      try {
+        // Parsing the body as json, fails, if the app server sent it as a chunked
+        // request — then, the first chunk isn't all of the json, if there're many chunks.
+        const json = JSON.parse(text);
+        console.log(`s${siteId}: Got a webhook with JSON, ${text.length} chars:  ${text}`);
+        const webhookReqs = webhookReqsBySiteId[siteId] || [];
+        webhookReqsBySiteId[siteId] = webhookReqs;
+        webhookReqs.push(json);
+
+        const badStatus = statusCodesBySite[siteId];
+        const resp = badStatus
+            ? fakeError(`s${siteId}: Faking failure, status code ${badStatus}`, badStatus)
+            : ok(`s${siteId}: Thanks for the webhook message.`);
+        return resp;
+      }
+      catch (ex) {
+        console.error(`Invalid JSON:`, ex);
+        console.log(`The invalid JSON, ${text.length} chars, between -----:` +
+              `\n------------\n${text}\n-----------\n`);
+        return errorBadReq(`Bad JSON, ${text.length} chars, see fakeweb's log file.`);
+      }
     }
 
     case '/clear-webhook-reqs': {
