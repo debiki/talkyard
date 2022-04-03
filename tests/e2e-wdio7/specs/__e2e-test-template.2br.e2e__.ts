@@ -61,6 +61,7 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({ // or addTwoPagesForum, addEmptyForum, addLargeForum
       title: "Some E2E Test",
+      categoryAExtId: 'cat_a_ext_id',
       members: undefined, // default = everyone
         // ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory']
     });

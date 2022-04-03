@@ -232,7 +232,7 @@ object EventsParSer {
 
     Json.obj(  // ts: Event_, in tests/e2e-wdio7/pub-api.ts.
         "id" -> event.id,
-        "when" -> JsX.JsWhenMs(event.when),
+        "atMs" -> JsX.JsWhenMs(event.when),
         "eventType" -> JsPageEventTypeString_apiv0(event.eventType),
         //"eventSubtypes" ->
         "eventData" -> Json.obj(
@@ -249,7 +249,7 @@ object EventsParSer {
           isWrappedInPage = false, JsonConf.v0_1)
     Json.obj(  // ts: Event_, in tests/e2e-wdio7/pub-api.ts.
         "id" -> event.id,
-        "when" -> JsX.JsWhenMs(event.when),
+        "atMs" -> JsX.JsWhenMs(event.when),
         "eventType" -> JsPostEventTypeString_apiv0(event.eventType),
         "eventData" -> Json.obj(
           "post" -> postJson
@@ -262,7 +262,7 @@ object EventsParSer {
     import talkyard.server.JsX.JsUserApiV0
     Json.obj(  // ts: Event_, in tests/e2e-wdio7/pub-api.ts.
         "id" -> event.id,
-        "when" -> JsX.JsWhenMs(event.when),
+        "atMs" -> JsX.JsWhenMs(event.when),
         "eventType" -> JsPatEventTypeString_apiv0(event.eventType),
         "eventData" -> Json.obj(
           "pat" -> JsUserApiV0(pat, brief = true)

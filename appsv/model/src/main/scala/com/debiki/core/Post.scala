@@ -132,9 +132,15 @@ class PostBitFlags(val bits: Int) extends AnyVal {
 } */
 
 
-sealed abstract class PostType(protected val IntValue: Int) {
+sealed abstract class PostType(
+  protected val IntValue: Int,
+  val isChat: Bo = false,
+  val isComment: Bo = false,
+) {
   def toInt: Int = IntValue
   def isWiki = false
+
+  RENAME // to isForTimeline  ?
   def placeLast = false
 }
 
@@ -143,18 +149,20 @@ sealed abstract class PostType(protected val IntValue: Int) {
 //
 object PostType {
   /** A normal post, e.g. a forum topic or reply or blog post, whatever. */
-  case object Normal extends PostType(1)
+  case object Normal extends PostType(1, isComment = true)
 
   /** A comment in the flat section below the threaded discussion section. */
   @deprecated("now", "delete?")
-  case object Flat extends PostType(2)
+  case object Flat extends PostType(2, isComment = true)
 
   /** A chat message in a chat room. */
-  case object ChatMessage extends PostType(3)
+  case object ChatMessage extends PostType(3, isChat = true)
 
   /** A Normal post but appended to the bottom of the page, not sorted best-first. */
-  // RENAME to ProgressPost
-  case object BottomComment extends PostType(4) { override def placeLast = true }
+  // RENAME to ProgressPost,  no,  TimelinePost.
+  case object BottomComment extends PostType(4, isComment = true) {
+    override def placeLast = true
+  }
 
   CLEAN_UP // REMOVE StaffWiki, use the permission system instead.  [NOSTAFFWIKI]
   /** Any staff member can edit this post. No author name shown. */
@@ -170,6 +178,7 @@ object PostType {
     * Or 2) split PostType into separate fields:  isWiki: Boolean,  isProgressPost: Boolean.
     * And  isChatmessage could also be its own dedicated bit.
     */
+  @deprecated("This should be a flag instead, not a separate post type.")
   case object CommunityWiki extends PostType(12) {
     override def isWiki = true
   }

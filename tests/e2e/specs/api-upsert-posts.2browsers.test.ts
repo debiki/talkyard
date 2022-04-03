@@ -107,7 +107,9 @@ let upsSimpleParams;
 let numNotfEmailsSent = 0;
 
 
-describe("api-upsert-posts   TyT60RKNJF24C", () => {
+// Related test:  webhooks-for-api-upserts.2br  TyTE2EWBHK4API
+
+describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
 
   if (settings.prod) {
     console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG

@@ -1468,6 +1468,7 @@ server side rendering -
     category dropdown:
 
 api:
+  webhooks: see [.webhooks_api]
   create site via api: [.create_site_via_api]
             - dir.create-site-via-api.2br  TyTE2ECREASITAPI
             - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
@@ -1552,7 +1553,7 @@ links like: http://site.localhost/forum/#composeTopic&category=slug:ideas
           - TESTS_MISSING,  search for  enum FragActionType.
 
 api,
-webhooks:
+webhooks:  [.webhooks_api]
             - webhooks-basic.2br  TyTE2EWBHKBASIC
             - webhooks-retry.2br  TyTE2EWBHKRETRY
             - TESTS_MISSING:  retry manually,  and both automatic + manally
@@ -1560,6 +1561,11 @@ webhooks:
             - TESTS_MISSING:
                 # webhooks-fails-breaks-fixed.2br  TyTE2EWBHKBREAKS (file not created)
                 # and others, see [webhook_tests_missing]
+  get sent about API actions:
+    webhook sent if pages and posts upserted via API:
+            - webhooks-for-api-upserts.2br  TyTE2EWBHK4API
+    webhook sent if page updated (closed) via API:
+            - TESTS_MISSING  TyTE2EWBHK4API.TyTEWHKSAPICLS
 
 import,
 export and restore:  (impexp)
