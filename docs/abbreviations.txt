@@ -1,3 +1,55 @@
+Abbreviations. Makes it 1) take longer to get up to speed with contributing
+to Talkyard (Ty), and 2) make you faster, and less bored, once you've gotten used
+to the abbreviations (if ever).  It's a tradeoff :- )
+
+
+Git branches
+
+New Git branch names should have these prefixes: (this is Gitflow inspired)
+
+- p/<name>/*  = Someone's personal work-in-progress branches.
+                Note: History might get rewritten at any time (!). The <name> can be just
+                a letter, for example, KajMagnus (who started this project) is 'm' for
+                Magnus. So, p/m/a and p/m/b are Magnus' personal 'a' and 'b' branches.
+                (What about 'p/' as in Private branches? They would be in another repo,
+                a private repo, instead.)
+- t/*         = Topic branches. They're shared between contributors (not personal).
+                This includes new features, bug fixes, refactorings. (It's nice
+                to just call all these things "topic" branches, so there's no need to
+                spend time discussing more precisely what something is?)
+                (These can sometimes be merged into main, before they're finished
+                and work is still ongoing, with new functionality hidden behind feature
+                flags — for more continuous continuous integration.)
+- x/*         = Experimental branch. Something we're trying out and only maybe will merge.
+                Probably you'll know, when starting something, if it's experimental,
+                or if it's intended to get merged into main?
+- o/*         = Historical (old) branch. An experimental or topic branch that didn't
+                work out well, wasn't merged. Maybe it was a good idea, but for some
+                reason not possible (e.g. Ghost single sign on, we tried, but it won't
+                work currently, because Ghost's API does not yet support it). The code
+                might still be useful, for another attempt later, so, we kept the branch.
+- main        = The main branch, into which new features and fixes get added.
+                Others sometimes call this the "development" branch.
+                Should always be in a build & runnable state.
+- main-ci     = Topic branches get meregd into main-ci, and trigger a CI build. If the
+                build and auto tests work fine, the main branch is fast-forwarded
+                to main-ci. Thereafter, main-ci and main are the same,
+                until it's time to merge a new topic branch — then, again, main-ci will
+                be one step ahead of main, for a short while (until CI build succeeded).
+- release     = The last released version, production ready (might not incl hotfixes though).
+- r/*         = Release branches, e.g. for Q/A testing & stabilizing a release before
+                it's released, and for patching it after it got released.
+                Created only if needed. This far (April 2022) there are none.
+- h/*         = Hotfixes for release (r/*) branches.
+- d/*         = Branch should get deleted (incl any other branches at the same revision).
+                Maybe hen who pushed wanted to double check sth first, and pushed d/<sth>
+                just to remember to delete the branch later.
+- u/*         = Unknown. Something that doesn't fit the above. What's that? I don't know.
+
+
+
+CSS, BEM blocks
+
 BEM = Block-Element-Modifier (web-search it, if you don't know what it is).
 
 These short names are (for me at least) more readable than long not-abbreviated names.
