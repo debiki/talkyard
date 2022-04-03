@@ -78,7 +78,8 @@ trait WebhooksRdbMixin extends SiteTransaction {
               send_max_reqs_per_sec_c,
               send_max_events_per_req_c,
               send_max_delay_secs_c,
-              send_custom_headers_c,
+              send_header_names_c,
+              send_header_values_c,
               retry_max_secs_c,
               retry_extra_times_c,
               failed_since_c,
@@ -93,8 +94,16 @@ trait WebhooksRdbMixin extends SiteTransaction {
               done_for_now_c
               -- retry_event_ids_c,
               )
+<<<<<<< HEAD
           values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                   ?, ?, ?, ?, ?, ?, ?, ?, ?)
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                  ?, ?, ?, ?, ?, ?, ?, ?, ?)
+=======
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
           on conflict (site_id_c, webhook_id_c)   -- pk
           do update set
               owner_id_c = excluded.owner_id_c,
@@ -110,7 +119,8 @@ trait WebhooksRdbMixin extends SiteTransaction {
               send_max_reqs_per_sec_c = excluded.send_max_reqs_per_sec_c,
               send_max_events_per_req_c = excluded.send_max_events_per_req_c,
               send_max_delay_secs_c = excluded.send_max_delay_secs_c,
-              send_custom_headers_c = excluded.send_custom_headers_c,
+              send_header_names_c = excluded.send_header_names_c,
+              send_header_values_c = excluded.send_header_values_c,
               retry_max_secs_c = excluded.retry_max_secs_c,
               retry_extra_times_c = excluded.retry_extra_times_c,
               failed_since_c = excluded.failed_since_c,
@@ -141,7 +151,8 @@ trait WebhooksRdbMixin extends SiteTransaction {
           NullInt,      // webhook.sendMaxReqsPerSec
           webhook.sendMaxEventsPerReq.orNullInt32,
           NullInt,      // webhook.sendMaxDelaySecs
-          webhook.sendCustomHeaders.orNullJson,
+          makeSqlArrayOfStrings(webhook.sendCustomHeaders.keys),
+          makeSqlArrayOfStringsStrings(webhook.sendCustomHeaders.values),
           webhook.retryMaxSecs.orNullInt32,
           webhook.retryExtraTimes.orNullInt32,
 
@@ -246,9 +257,18 @@ trait WebhooksRdbMixin extends SiteTransaction {
               sent_event_subtypes_c,
               sent_event_ids_c,
               sent_json_c,
+<<<<<<< HEAD
               sent_headers_c,
               retry_nr_c)
           values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+              sent_headers_c)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
+=======
+              sent_header_names_c,
+              sent_header_values_c)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
     val values = List(
           siteId.asAnyRef,
@@ -264,8 +284,15 @@ trait WebhooksRdbMixin extends SiteTransaction {
           NullArray, //reqOut.sentEventSubTypes,
           makeSqlArrayOfInt32(reqOut.sentEventIds),
           reqOut.sentJson,
+<<<<<<< HEAD
           reqOut.sentHeaders.orNullJson,
           reqOut.retryNr.map(_.toInt).orNullInt32)
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+          reqOut.sentHeaders.orNullJson)
+=======
+          makeSqlArrayOfStrings(reqOut.sentHeaders.keys),
+          makeSqlArrayOfStringsStrings(reqOut.sentHeaders.values))
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
     runUpdateSingleRow(statement, values)
   }
@@ -274,14 +301,15 @@ trait WebhooksRdbMixin extends SiteTransaction {
   def updateWebhookReqOutWithResp(reqOut: WebhookReqOut): U = {
     val statement = s"""
           update webhook_reqs_out_t set
-              failed_at_c    = ?,
-              failed_how_c   = ?,
-              failed_msg_c   = ?,
-              resp_at_c      = ?,
-              resp_status_c  = ?,
-              resp_status_text_c = ?,
-              resp_body_c    = ?,
-              resp_headers_c = ?
+              failed_at_c          = ?,
+              failed_how_c         = ?,
+              failed_msg_c         = ?,
+              resp_at_c            = ?,
+              resp_status_c        = ?,
+              resp_status_text_c   = ?,
+              resp_body_c          = ?,
+              resp_header_names_c  = ?,
+              resp_header_values_c = ?,
           where
               -- ix: webhookreqsout_p_webhookid_reqnr
               site_id_c = ? and
@@ -294,9 +322,20 @@ trait WebhooksRdbMixin extends SiteTransaction {
           reqOut.errMsg.trimOrNullVarchar,
           reqOut.respAt.orNullTimestamp,
           reqOut.respStatus.orNullInt,
+<<<<<<< HEAD
           reqOut.respStatusText.trimOrNullVarchar,
           reqOut.respBody.trimOrNullVarchar,
           reqOut.respHeaders.orNullJson,
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+          reqOut.respStatusText.orNullVarchar,
+          reqOut.respBody.orNullVarchar,
+          reqOut.respHeaders.orNullJson,
+=======
+          reqOut.respStatusText.orNullVarchar,
+          reqOut.respBody.orNullVarchar,
+          reqOut.respHeaders.map(hs => makeSqlArrayOfStrings(hs.keys)) getOrElse NullArray,
+          reqOut.respHeaders.map(hs => makeSqlArrayOfStringsStrings(hs.values)) getOrElse NullArray,
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
           siteId.asAnyRef,
           reqOut.webhookId.asAnyRef,
           reqOut.reqNr.asAnyRef)
@@ -328,8 +367,17 @@ object WebhooksRdb {
           //sendMaxReqsPerSec = getOptInt32(rs, "send_max_reqs_per_sec_c"),
           sendMaxEventsPerReq = getOptInt32(rs, "send_max_events_per_req_c"),
           // sendMaxDelaySecs  = send_max_delay_secs_c
+<<<<<<< HEAD
           sendCustomHeaders = getOptJsObject(rs, "send_custom_headers_c"),
 
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+          sendCustomHeaders = getOptJsObject(rs, "send_custom_headers_c"),
+=======
+          sendCustomHeaders = getMapOfKeysAndValues2(
+                rs, "send_header_names_c", "send_header_values_c"),
+          //sendHeaderNames = getArrayOfStrings(rs, "send_header_names_c"),
+          //sendHeaderValues = getArrayOfStringsStrings(rs, "send_header_values_c"),
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
           retryMaxSecs = getOptInt32(rs, "retry_max_secs_c"),
           retryExtraTimes = getOptInt32(rs, "retry_extra_times_c"),
 
@@ -365,7 +413,10 @@ object WebhooksRdb {
           //sentEventSubTypes = sent_event_subtypes_c
           sentEventIds = getArrayOfInt32(rs, "sent_event_ids_c").toSet,
           sentJson = getJsObject(rs, "sent_json_c"),
-          sentHeaders = getOptJsObject(rs, "sent_headers_c"),
+          sentHeaders = getMapOfKeysAndValues2(
+                rs, "sent_header_names_c", "sent_header_values_c"),
+          //sentHeaderNames = getArrayOfStrings(rs, "sent_header_names_c"),
+          //sentHeaderValues = getArrayOfStringsStrings(rs, "sent_header_values_c"),
 
           retryNr = RetryNr.fromOptInt(getOptInt32(rs, "retry_nr_c")),
 
@@ -377,7 +428,8 @@ object WebhooksRdb {
           respStatus = getOptInt32(rs, "resp_status_c"),
           respStatusText = getOptString(rs, "resp_status_text_c"),
           respBody = getOptString(rs, "resp_body_c"),
-          respHeaders = getOptJsObject(rs, "resp_headers_c"),
+          respHeaders = getOptMapOfKeysAndValues2(
+                rs, "resp_header_names_c", "resp_header_values_c"),
           )
   }
 

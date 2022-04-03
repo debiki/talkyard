@@ -368,6 +368,29 @@ object Rdb {
     Opt(rs.getBytes(column))
   }
 
+  def getArrayOfStrings(rs: js.ResultSet, column: St): ImmSeq[St] = {
+    getOptArrayOfStrings(rs, column) getOrDie(
+          "TyERSEMPTTXTARR", s"Column $column is null, should be a text array")
+  }
+
+  def getMapOfKeysAndValues2(rs: js.ResultSet, keyCol: St, valsCol2: St)
+        : Map[St, ImmSeq[St]] = {
+    getOptMapOfKeysAndValues2(rs, keyCol, valsCol2) getOrElse die(
+          "TyE70MRPJ25", s"Keys an values Map columns are null: $keyCol, $valsCol2")
+  }
+
+  def getOptMapOfKeysAndValues2(rs: js.ResultSet, keyCol: St, valsCol2: St)
+        : Opt[Map[St, ImmSeq[St]]] = {
+    val anyKeys = getOptArrayOfStrings(rs, keyCol)
+    val anyVals = getOptArrayOfStringsStrings(rs, valsCol2)
+    dieIf(anyKeys.isDefined != anyVals.isDefined, "TyE06MFERGJ3", s"$keyCol, $valsCol2")
+    if (anyKeys.isEmpty) return None
+    val keys = anyKeys.get
+    val vals = anyVals.get
+    dieIf(keys.length != vals.length, "TyE06MFERGJ5", s"$keyCol, $valsCol2")
+    Some(Map(keys.zip(vals): _*))
+  }
+
   def getOptArrayOfStrings(rs: js.ResultSet, column: String): Option[immutable.Seq[String]] = {
     val sqlArray: js.Array = rs.getArray(column)
     if (sqlArray eq null) return None
@@ -375,9 +398,23 @@ object Rdb {
     Some(javaArray.to[Vector])
   }
 
+  def getArrayOfStringsStrings(rs: js.ResultSet, column: St): ImmSeq[ImmSeq[St]] = {
+    getOptArrayOfStringsStrings(rs, column).getOrDie(
+          "TyERSNULLTXTARR", s"Column $column is null, should be a text[][] array")
+  }
+
+  def getOptArrayOfStringsStrings(rs: js.ResultSet, column: St): Opt[ImmSeq[ImmSeq[St]]] = {
+    val sqlArray: js.Array = rs.getArray(column)
+    if (sqlArray eq null) return None
+    val javaArrayOfArrays = sqlArray.getArray.asInstanceOf[Array[Array[St]]]
+    val seqOfJavaArrays = javaArrayOfArrays.to[Vec]
+    val seqOfSeq = seqOfJavaArrays.map(_.to[Vec])
+    Some(seqOfSeq)
+  }
+
   def getArrayOfInt32(rs: js.ResultSet, column: St): ImmSeq[i32] = {
     getOptArrayOfInt32(rs, column) getOrDie(
-          "TyERSNULLINTARR", s"Column $column is null, should be an int array")
+          "TyERSNULLINTARR", s"Column $column is null, should be an int[] array")
   }
 
   def getOptArrayOfInt32(rs: js.ResultSet, column: St): Opt[ImmSeq[i32]] = {

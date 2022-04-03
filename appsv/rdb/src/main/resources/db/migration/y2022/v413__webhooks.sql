@@ -179,6 +179,7 @@ create table webhooks_t (
   api_version_c          api_version_d,
   to_ext_app_ver_c       text_nonempty_ste120_d,
   send_max_reqs_per_sec_c    f32_gz_d,
+<<<<<<< HEAD
   send_max_events_per_req_c  i16_gz_d,
   send_max_delay_secs_c      i16_gz_d,
   send_custom_headers_c      jsonb_ste4000_d,
@@ -199,6 +200,60 @@ create table webhooks_t (
   sent_up_to_event_id_c  event_id_d,
   num_pending_maybe_c    i16_gez_d,
   done_for_now_c         bool,
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+  -- see e.g.: https://doc.batch.com/api/webhooks, [10..=1000] 100 default.
+  send_max_events_per_req_c  i16_gz_d,   -- default 100? Max 500, Zapier limit
+  -- https://community.zapier.com/code-webhooks-52/putting-many-api-objects-into-one-zap-vs-one-zap-per-object-7697
+  --  —>  https://zapier.com/help/create/other-functions/loop-your-zap-actions
+  --  &  https://community.zapier.com/featured-articles-65/by-zapier-learn-about-looping-11670
+  --  &  https://community.zapier.com/featured-articles-65/how-to-repeat-action-s-in-your-zap-for-a-variable-number-of-values-3037
+  --         let data = []; ... data[i] = { ... }; output = data;
+  -- see e.g.: https://doc.batch.com/api/webhooks, [1..=30], 5s default.
+  send_max_delay_secs_c      i16_gz_d,  -- default 10?  [1..3600*24]?
+  send_custom_headers_c      jsonb_ste4000_d,
+
+  retry_max_secs_c      i32_gz_d,
+  retry_extra_times_c   i16_gz_d,
+
+  failed_reason_c       i16_gz_d,
+  failed_since_c        timestamp,
+  failed_message_c      text_nonempty_ste16000_d,
+  retried_num_times_c   i16_gez_d,
+  retried_num_secs_c    i32_gez_d,
+  broken_reason_c       i16_gz_d,
+
+  sent_up_to_when_c     timestamp,
+  sent_up_to_event_id_c event_id_d,
+  num_pending_maybe_c   i16_gez_d,
+  done_for_now_c        bool,
+=======
+  -- see e.g.: https://doc.batch.com/api/webhooks, [10..=1000] 100 default.
+  send_max_events_per_req_c  i16_gz_d,   -- default 100? Max 500, Zapier limit
+  -- https://community.zapier.com/code-webhooks-52/putting-many-api-objects-into-one-zap-vs-one-zap-per-object-7697
+  --  —>  https://zapier.com/help/create/other-functions/loop-your-zap-actions
+  --  &  https://community.zapier.com/featured-articles-65/by-zapier-learn-about-looping-11670
+  --  &  https://community.zapier.com/featured-articles-65/how-to-repeat-action-s-in-your-zap-for-a-variable-number-of-values-3037
+  --         let data = []; ... data[i] = { ... }; output = data;
+  -- see e.g.: https://doc.batch.com/api/webhooks, [1..=30], 5s default.
+  send_max_delay_secs_c  i16_gz_d,  -- default 10?  [1..3600*24]?
+  send_header_names_c    text[],
+  send_header_values_c   text[][],
+
+  retry_max_secs_c       i32_gz_d,
+  retry_extra_times_c    i16_gz_d,
+
+  failed_reason_c        i16_gz_d,
+  failed_since_c         timestamp,
+  failed_message_c       text_nonempty_ste16000_d,
+  retried_num_times_c    i16_gez_d,
+  retried_num_secs_c     i32_gez_d,
+  broken_reason_c        i16_gz_d,
+
+  sent_up_to_when_c      timestamp,
+  sent_up_to_event_id_c  event_id_d,
+  num_pending_maybe_c    i16_gez_d,
+  done_for_now_c         bool,
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
   -- Not needed, if batching, and one req at a time:
   -- retry_event_ids_c   int[], -- event_id_d[],
 
@@ -213,6 +268,7 @@ create table webhooks_t (
 
   -- fk ix: webhooks_i_runasid
   constraint webhooks_runasid_r_pats foreign key (site_id_c, run_as_id_c)
+<<<<<<< HEAD
       references users3 (site_id, user_id),
 
   -- Can only retry, if is failing.
@@ -236,6 +292,17 @@ create table webhooks_t (
 
   constraint webhooks_c_failed_brokenreason check (
       (failed_since_c is not null) or (broken_reason_c is null))
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+      references users3 (site_id, user_id)
+=======
+      references users3 (site_id, user_id),
+
+  constraint webhookreqsout_c_send_names_values check (
+      (send_header_names_c is null) = (send_header_values_c is null)),
+
+  constraint webhookreqsout_c_send_names_values_len check (
+      (array_length(send_header_names_c) = array_length(send_header_values_c))
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 );
 
 
@@ -268,19 +335,45 @@ create table webhook_reqs_out_t (
   sent_event_subtypes_c  int[],
   sent_event_ids_c       int[] not null,  -- event_id_d[],
   sent_json_c            jsonb not null,
-  sent_headers_c         jsonb_ste8000_d,
+  sent_header_names_c    text[] not null,
+  sent_header_values_c   text[][] not null,
 
+<<<<<<< HEAD
   retry_nr_c          retry_nr_d,
 
   failed_at_c         timestamp,
   failed_how_c        i16_gz_d,
   failed_msg_c        text_nonempty_ste16000_d,
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+  failed_at_c         timestamp,
+  failed_how_c        i16_gz_d,
+  failed_msg_c        text_nonempty_ste16000_d,
+=======
+  failed_at_c            timestamp,
+  failed_how_c           i16_gz_d,
+  failed_msg_c           text_nonempty_ste16000_d,
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
+<<<<<<< HEAD
   resp_at_c           timestamp,
   resp_status_c       i32_d,
   resp_status_text_c  text_nonempty_ste250_trimmed_d,
   resp_body_c         text_nonempty_ste16000_d,
   resp_headers_c      jsonb_ste8000_d,
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+  resp_at_c           timestamp,
+  resp_status_c       i16_gz_d,
+  resp_status_text_c  text_nonempty_ste120_trimmed_d,
+  resp_body_c         text_nonempty_ste16000_d,
+  resp_headers_c      jsonb_ste8000_d,
+=======
+  resp_at_c              timestamp,
+  resp_status_c          i16_gz_d,
+  resp_status_text_c     text_nonempty_ste120_trimmed_d,
+  resp_body_c            text_nonempty_ste16000_d,
+  resp_header_names_c    text[],
+  resp_header_values_c   text[][],
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
 
   constraint webhookreqsout_p_webhookid_reqnr primary key (site_id_c, webhook_id_c, req_nr_c),
@@ -300,6 +393,7 @@ create table webhook_reqs_out_t (
   constraint webhookreqsout_c_num_ev_types_lte_num_evs check (
       cardinality(sent_event_types_c) <= cardinality(sent_event_ids_c)),
 
+<<<<<<< HEAD
   -- At least one event type and one event must have been sent.
   constraint webhookreqsout_c_num_ev_types_gte1 check (
       cardinality(sent_event_types_c) >= 1),
@@ -308,6 +402,12 @@ create table webhook_reqs_out_t (
   constraint webhookreqsout_c_num_events_gte1 check (
       cardinality(sent_event_ids_c) >= 1),
 
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+=======
+  constraint webhookreqsout_c_sent_names_values_len check (
+      (array_length(sent_header_names_c) = array_length(sent_header_values_c)),
+
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
   constraint webhookreqsout_c_sent_bef_failed check (sent_at_c <= failed_at_c),
   constraint webhookreqsout_c_sent_bef_resp   check (sent_at_c <= resp_at_c),
 
@@ -327,7 +427,13 @@ create table webhook_reqs_out_t (
       (resp_at_c is not null) or (resp_body_c is null)),
 
   constraint webhookreqsout_c_resp_at_headers_null check (
-      (resp_at_c is not null) or (resp_headers_c is null))
+      (resp_at_c is not null) or (resp_header_names_c is null)),
+
+  constraint webhookreqsout_c_resp_names_values check (
+      (resp_header_names_c is null) = (resp_header_values_c is null)),
+
+  constraint webhookreqsout_c_resp_names_values_len check (
+      (array_length(resp_header_names_c) = array_length(resp_header_values_c))
 );
 
 

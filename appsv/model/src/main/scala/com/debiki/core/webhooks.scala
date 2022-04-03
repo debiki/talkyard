@@ -77,8 +77,14 @@ case class Webhook(
   sendMaxEventsPerReq: Opt[i32],
   // How long to wait, between each batch.
   //sendMaxDelaySecs: i32,
+<<<<<<< HEAD
   // sendThingFields: Set[ThingField],  // e.g. if user.emailAddr or user.ssoId should be incld
   sendCustomHeaders: Opt[JsObject],
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+  sendCustomHeaders: Opt[JsObject],
+=======
+  sendCustomHeaders: Map[St, ImmSeq[St]],
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
   retryMaxSecs: Opt[i32],
   // Maybe change to retryOnceMore: Bo  ?
   retryExtraTimes: Opt[i32],
@@ -250,8 +256,14 @@ case class WebhookReqOut(
   //sentEventSubtypes: Set[EventSubtype],
   sentEventIds: Set[EventId],
   sentJson: JsObject,
+<<<<<<< HEAD
   // sentThingFields: Set[ThingField],  — what details were included in the json
   sentHeaders: Opt[JsObject],
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+  sentHeaders: Opt[JsObject],
+=======
+  sentHeaders: Map[St, ImmSeq[St]],
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
   retryNr: Opt[RetryNr],
 
@@ -263,7 +275,7 @@ case class WebhookReqOut(
   respStatus: Opt[i32] = None,
   respStatusText: Opt[St] = None,
   respBody: Opt[St] = None,
-  respHeaders: Opt[JsObject] = None,
+  respHeaders: Opt[Map[St, ImmSeq[St]]] = None,
 ) {
 
   require(webhookId >= 1, "TyEWBHKSNC01")

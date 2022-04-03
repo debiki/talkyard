@@ -167,6 +167,20 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  def makeSqlArrayOfStrings(values: Iterable[St]): js.Array = {
+    theOneAndOnlyConnection.createArrayOf("text", values.toArray[Object])
+  }
+
+
+  def makeSqlArrayOfStringsStrings(values: Iterable[Iterable[St]]): js.Array = {
+    val seqOfArrays = values.map(_.toArray[Object])
+    val arrayOfArrays = seqOfArrays.toArray[Object]
+    // Although is a multi dim array, Postgres just wants to know the individual
+    // item type.
+    theOneAndOnlyConnection.createArrayOf("text", arrayOfArrays)
+  }
+
+
   def makeSqlArrayOfInt32(values: Iterable[i32]): js.Array = {
     theOneAndOnlyConnection.createArrayOf("int", values.map(_.asAnyRef).toArray[Object])
   }

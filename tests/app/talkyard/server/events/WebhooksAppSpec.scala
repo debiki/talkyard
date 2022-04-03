@@ -58,7 +58,7 @@ class WebhooksAppSpec extends DaoAppSuite(
         //sendMaxReqsPerSec
         sendMaxEventsPerReq = None,
         //sendMaxDelaySecs
-        sendCustomHeaders = Some(Json.obj("Cust-Hdr-Name" -> "Value")),
+        sendCustomHeaders = Map("Cust-Hdr-Name" -> Vec("Value")),
         retryMaxSecs = Some(123),
         retryExtraTimes = None,
         sentUpToWhen = When.Genesis,
@@ -124,15 +124,20 @@ class WebhooksAppSpec extends DaoAppSuite(
         sentEventTypes = Set(PageEventType.PageCreated),
         sentEventIds = Set(1001),
         sentJson = Json.obj("test" -> "event 1001"),
+<<<<<<< HEAD
         sentHeaders = Some(Json.obj("Hdr-A" -> "Hdr Value")),
         retryNr = None)
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+        sentHeaders = Some(Json.obj("Hdr-A" -> "Hdr Value")))
+=======
+        sentHeaders = Map("Hdr-A" -> Vec("Hdr value", "value 2")))
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
   val sentEvent1001AfterWithHeaders: WebhookReqOut = sentEvent1001WithHeaders.copy(
         respAt = Some(sentEvent1001WithHeaders.sentAt.plusSeconds(1)),
         respStatus = Some(200),
         respBody = Some("All went fine."),
-        respHeaders = Some(Json.obj("Resp-Hdr" -> Json.arr("Val 1", "Val 2"))))
-
+        respHeaders = Some(Map("Resp-Hdr" -> Vec("Respa value", "value 2"))))
 
   val sentEvents1021To23: WebhookReqOut = WebhookReqOut(
         webhookId = site1WebhookB.id,
@@ -146,8 +151,14 @@ class WebhooksAppSpec extends DaoAppSuite(
               PageEventType.PageUpdated, PostEventType.PostCreated),
         sentEventIds = Set(1021, 1022, 2013),
         sentJson = Json.obj("test" -> "event 1021, 1022, 1023"),
+<<<<<<< HEAD
         sentHeaders = None,
         retryNr = Some(RetryNr.Manual))
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+        sentHeaders = None)
+=======
+        sentHeaders = Map.empty)
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
   val sentEvent1021To23After: WebhookReqOut = sentEvents1021To23.copy(
         respAt = Some(sentEvents1021To23.sentAt.plusSeconds(1)),
@@ -161,8 +172,14 @@ class WebhooksAppSpec extends DaoAppSuite(
         sentEventTypes = Set(PageEventType.PageUpdated),
         sentEventIds = Set(1102),
         sentJson = Json.obj("test" -> "event 1102 will fail w 500 Int Srv Err"),
+<<<<<<< HEAD
         sentHeaders = None,
         retryNr = Some(RetryNr.Automatic(123)))
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+        sentHeaders = None)
+=======
+        sentHeaders = Map.empty)
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
   val sentEvent1102Failed500Resp: WebhookReqOut = sentEvent1102WillFail.copy(
         failedAt = Some(sentEvent1102WillFail.sentAt.plusSeconds(5)),
@@ -177,8 +194,14 @@ class WebhooksAppSpec extends DaoAppSuite(
         sentAt = Jan2020.plusHours(1103),
         sentEventIds = Set(1103),
         sentJson = Json.obj("test" -> "event 1103 will fail"),
+<<<<<<< HEAD
         sentHeaders = None,
         retryNr = None)
+||||||| parent of 6e054e27f... Try using text[] and text[][] instead of jsonb
+        sentHeaders = None)
+=======
+        sentHeaders = Map.empty)
+>>>>>>> 6e054e27f... Try using text[] and text[][] instead of jsonb
 
   val sentEvent1103CouldntConnect: WebhookReqOut = sentEvent1103WillFail.copy(
         failedAt = Some(sentEvent1103WillFail.sentAt.plusSeconds(5)),
