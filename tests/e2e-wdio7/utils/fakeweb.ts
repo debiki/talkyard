@@ -84,14 +84,14 @@ export async function getWebhookReqsTalkyardHasSent(params: { siteId: SiteId })
   // For now:
   logExtServerRequest(`Calling /list-webhook-reqs`);
   const resp = await axios.get(fakewebOrigin + `/list-webhook-reqs`, { params });
-  logExtSrvResp(`resp.status: ${resp.status} ${resp.statusText}`);
-  logExtSrvResp(`resp.headers: ${j2s(resp.headers)}`);
-  logExtSrvResp(`resp.data: ${j2s(resp.data)}`);
+  logExtSrvRespVerb(`Fakeweb resp.status: ${resp.status} ${resp.statusText}`);
+  //logExtSrvResp(`resp.headers: ${j2s(resp.headers)}`);
+  //logExtSrvResp(`resp.data: ${j2s(resp.data)}`);
   dieIf(resp.status !== 200, `Bad response HTTP status, not 200: ${resp.status}\n` +
         `resp body:\n${JSON.stringify(resp.data)}`);
   dieIf(!resp.data, 'TyE70MWEJXS0');
   dieIf(!resp.data.webhookReqs, 'No webhookReqs obj in response [TyE70MWEJXS4]')
-  logExtSrvResp(`Got back ${resp.data.webhookReqs.length} webhook reqs from fakeweb.`);
+  logExtSrvRespVerb(`Got ${resp.data.webhookReqs.length} webhook reqs from fakeweb.`);
   return resp.data.webhookReqs;
 }
 
@@ -192,7 +192,7 @@ export async function waitForMoreTalkyardWebhookReqs(siteId: SiteId,
       const newReqs = reqs.slice(startIx, endIx);
       numHandled = endIx;
       logMessage(`Returning ${newReqs.length} new webhook requests about event id ${
-            startEventId}.`);
+            startEventId}:\n${j2s(newReqs)}\n`);
       return newReqs;
     }
   }

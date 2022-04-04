@@ -22,10 +22,9 @@ import com.debiki.core._
 import debiki.dao.{CatAlgs, UseTx}
 import debiki.EdHttp._
 import debiki.{SpecialContentPages, TextAndHtml}
-import debiki.dao.{PageDao, PagePartsDao, SettingsDao, SiteDao}
+import debiki.dao.{PagePartsDao, SettingsDao, AuditDao}
 import talkyard.server.notf.NotificationGenerator
 import talkyard.server.pop.PagePopularityDao
-import org.jsoup.Jsoup
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -1005,16 +1004,26 @@ case class SitePatcher(globals: debiki.Globals) {
       // Fix later.  Need to remap page, post and pat ids — error prone, needs tests.
 
 
-      // ----- Notifications
+      // ----- Notifications and webhooks
 
       REFACTOR // Change SimpleSitePatch to a ActionPatch — then, this Notifications
-      // stuff here can be removed. [ACTNPATCH]
-
+      // stuff here can be removed. [ACTNPATCH]   [use_the_Do_API]
+      // No!  Instead, *stop* using patches for making real time changes in Ty.
+      // Instead, patches should be for *importing* things only
+      // — and then, no notifications or webhooks are sent.
+      // To do real time changes, e.g. a bot that posts a new page,
+      // then, the not-yet-implemented Do API should be used insetad.
+      // See:  tests/e2e-wdio7/pub-api.ts   search for "Do API" therein.
+      //
+      // Thereafter,
+      //    this if block should get removed: (but wait some year(s) so people will
+      // have had time to migrate to the new API. Show and admin notice, etc.)
+      //
       if (siteData.upsertOptions.exists(_.sendNotifications is true)) {
         val notfGenerator: NotificationGenerator = NotificationGenerator(
           tx, dao, dao.context.nashorn, globals.config)
 
-        // Replies and mentions:
+        // New pages, replies and mentions:
         for {
           post <- postsToMaybeNotfAbout
           if !post.isTitle // only gen for the body —> new page notf
@@ -1022,18 +1031,80 @@ case class SitePatcher(globals: debiki.Globals) {
           // COULD skip @mentions notifications here somehow, since not supported
           // here since we import html only, not CommonMark with @mentions syntax. [305TKRW24]
 
+          // ----- Notifications
+
+          // Tests:  api-upsert-page-notfs.2br  TyT502RKTLXM296
+
           // Ooops! remembers sentTo  :- /  [REMBSENTTO]
           // So won't generate notfs about > 1 post at a time, to the same member?
           // Has no effet as of now — currently only one new post / page at a time,
           // via /-/v0/upsert-simple.
-          notfGenerator.generateForNewPost(
-                dao.newPageDao(post.pageId, tx), post,
+          // And, everyone should [use_the_Do_API] instead — so, never need to fix this.
+          val page = dao.newPageDao(post.pageId, tx)
+          notfGenerator.generateForNewPost(page, post,
                 sourceAndHtml = None, anyNewModTask = None)
+
+          // ----- Webhooks
+
+          // Tests:  webhooks-for-api-upserts.2br  TyTE2EWBHK4API
+
+          val auditLogEntry: Opt[AuditLogEntry] = {
+            if (post.isOrigPost) {
+              Some(AuditLogEntry(
+                    siteId = siteId,
+                    id = AuditLogEntry.UnassignedId,
+                    didWhat = AuditLogEntryType.NewPage,
+                    doerId = post.createdById,
+                    doneAt = tx.now.toJavaDate,
+                    browserIdData = BrowserIdData.Missing,
+                    pageId = Some(page.id),
+                    pageType = Some(page.pageType),
+                    uniquePostId = Some(post.id),
+                    postNr = Some(post.nr)))
+            }
+            else if (post.tyype.isComment || post.tyype.isChat) {
+              // Skip finding common ancestors — multi replies disabled.  [3GTKYA02]
+              // Just look up the parent directly.
+              val anyParent =
+                    if (post.tyype.isChat) None
+                    else page.parts.postByNr(post.parentNr)
+
+              Some(AuditLogEntry(
+                    siteId = siteId,
+                    id = AuditLogEntry.UnassignedId,
+                    didWhat =
+                          if (post.tyype.isChat) AuditLogEntryType.NewChatMessage
+                          else AuditLogEntryType.NewReply,
+                    doerId = post.createdById,
+                    doneAt = tx.now.toJavaDate,
+                    browserIdData = BrowserIdData.Missing,
+                    pageId = Some(post.pageId),
+                    uniquePostId = Some(post.id),
+                    postNr = Some(post.nr),
+                    // So can see who replied to who:  [event_parent_post_nr]
+                    targetPageId = anyParent.map(_.pageId),
+                    targetUniquePostId = anyParent.map(_.id),
+                    targetPostNr = anyParent.map(_.nr),
+                    targetUserId = anyParent.map(_.createdById)))
+            }
+            else {
+              // Don't generate any event. This "cannot" happen anyway, since
+              // only new pages and replies get upserted via this API?
+              // And, everyone should [use_the_Do_API] instead anyway,
+              // this whole  `if (... sendNotifications...) ....`  block
+              // should one day get deleted.
+              None
+            }
+          }
+
+          auditLogEntry foreach { entry =>
+            AuditDao.insertAuditLogEntry(entry, tx)
+          }
         }
 
-        // Group chats, direct messages:
-        // But this is dead code? because notfGenerator.generateForNewPost() above [PATCHNOTF]
-        // happens first?
+        // If someone got added to a group chat or direct message page,
+        // hen should be notified about that (hen wasn't notified when that page
+        // got created, since hen wasn't a page member at that time).
         for {
           (pageId, pagePps) <- pagesToMaybeNotfAbout
           pageMeta = tx.loadThePageMeta(pageId)

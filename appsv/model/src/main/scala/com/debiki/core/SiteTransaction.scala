@@ -285,8 +285,6 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   @deprecated("", "")
   def loadAllTagsAsSet(): Set[TagLabel]
   @deprecated("", "")
-  def loadTagsAndStats(): Seq[TagAndStats]
-  @deprecated("", "")
   def loadTagsByPostId(postIds: Iterable[PostId]): Map[PostId, Set[TagLabel]]
   @deprecated("", "")
   def loadTagsForPost(postId: PostId): Set[TagLabel] =

@@ -85,6 +85,8 @@ trait MessagesDao {
           addedById = sentById)
       }
 
+      AUDIT_LOG // missing
+
       val notifications =
         if (pageRole.isChat) {
           unimplementedIf(toUserIds.nonEmpty, "EsE7PKW02")

@@ -358,6 +358,7 @@ function showOneReq(ps: { reqOut: WebhookReqOut, showOnlyFailed: Bo }) {
       // boldLine("Response at", whenMsToIsoDate(reqOut.respAt)),
       boldLine("Response status", `${reqOut.respStatus} ${reqOut.respStatusText || ''}`));
 
+  const sentJsonSt = JSON.stringify(reqOut.sentJson, undefined, 2);
   return r.li({ className: listItemClasses },
       boldLine("Request nr", reqOut.reqNr),
       boldLine("Sent at", whenMsToIsoDate(reqOut.sentAt)),
@@ -369,8 +370,8 @@ function showOneReq(ps: { reqOut: WebhookReqOut, showOnlyFailed: Bo }) {
       failInfo,
       respInfo,
       r.div({},
-          r.b({}, "Sent JSON: "),
-          r.pre({}, JSON.stringify(reqOut.sentJson, undefined, 2))),
+          r.b({}, `Sent JSON, ${sentJsonSt.length} chars:`),
+          r.pre({}, sentJsonSt)),
       !reqOut.respAt ? r.div({}, "No response.") : rFr({},
           boldLine("Response headers", JSON.stringify(reqOut.respHeaders, undefined, 2)),
           boldLine("Response body", reqOut.respBody)),

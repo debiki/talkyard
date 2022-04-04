@@ -28,7 +28,9 @@ completion.on('mainCmd', ({ reply }) => {
         'w', 'watch',
         'ps',
         'k', 'kill', 'ka', 'kw',
-        'r', 'restart', 'ra',
+        'r', 'restart',
+        'ra',  // restart app
+        'rr',  // rebuild and restart  <some container(s)>
         'down',
         'recreate',
         'rebuild',
@@ -311,7 +313,7 @@ function rebuild() {
 }
 
 
-if (mainCmd === 'rs' || mainCmd === 'rebuildrestart') {
+if (mainCmd === 'rr' || mainCmd === 'rebuildrestart') {   // was:  'rs' but 'rr' better?
   const cs = allSubCmdsSt;  // which containers
   rebuild();
   logMessage(`\n**Starting: ${cs} **`)

@@ -213,7 +213,8 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
 
 
     addEmptyForum: function(opts: { title: string, introText?: string,
-          members?: WellKnownMemberUsername[], categoryPerms?: 'FullMembersMayEditWiki' })
+          members?: WellKnownMemberUsername[], categoryAExtId?: St,
+          categoryPerms?: 'FullMembersMayEditWiki' })
           : EmptyTestForum {
       const members = opts.members ||
               ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory'];
@@ -283,6 +284,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
         name: "CategoryA",
         slug: 'category-a',
         aboutPageText: "Category A description.",
+        extId: opts.categoryAExtId,
       });
       api.addDefaultCatPerms(site, forum.categories.categoryA.id, 1, opts.categoryPerms);
 
@@ -291,7 +293,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
 
 
     addTwoCatsForum: function(opts: { title: string, introText?: string,
-          members?: WellKnownMemberUsername[], categoryExtId?: string,
+          members?: WellKnownMemberUsername[], categoryAExtId?: St, categoryExtId?: string,
           categoryPerms?: 'FullMembersMayEditWiki' }): TwoCatsTestForum {
 
       const forum: TwoCatsTestForum = <TwoCatsTestForum> api.addEmptyForum(opts);

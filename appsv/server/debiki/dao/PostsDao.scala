@@ -230,6 +230,9 @@ trait PostsDao {
       pageId = Some(pageId),
       uniquePostId = Some(newPost.id),
       postNr = Some(newPost.nr),
+      // Maybe good to see in the audit log, who replied to who?  [event_parent_post_nr]
+      // So include the parent post, as the target post:
+      // Mentions would be good too? Both for replies and chat msgs. [events_mentions]
       targetPageId = anyParent.map(_.pageId),
       targetUniquePostId = anyParent.map(_.id),
       targetPostNr = anyParent.map(_.nr),
@@ -733,6 +736,9 @@ trait PostsDao {
       pageId = Some(page.id),
       uniquePostId = Some(newPost.id),
       postNr = Some(newPost.nr),
+      // The chat is flat, one doesn't choose anyone to reply to — but it'd be nice
+      // to know if someone was *mentioned*?  [events_mentions]
+      targetPageId = None,  // or se to page.id?
       targetUniquePostId = None,
       targetPostNr = None,
       targetUserId = None)

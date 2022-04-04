@@ -65,7 +65,8 @@ describe(`webhooks-retry.2br  TyTE2EWBHKRETRY`, () => {
   });
 
   it(`Ty keeps trying to send webhook reqs about Owen's reply, won't work`, async () => {
-    await fakeweb.checkNewReq(site.id, nextEvent, { atLeastHowManyIdentical: 4,
+    // With >= 4, the 27 seconds default timeout won't be enough. Let's say 3 is enough.
+    await fakeweb.checkNewReq(site.id, nextEvent, { atLeastHowManyIdentical: 3,
           skipEventId: nextEvent.id - 1  });
   });
 

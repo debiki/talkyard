@@ -25,7 +25,7 @@ const apiSecret: TestApiSecret = {
   createdAt: c.MinUnixMillis,
   deletedAt: undefined,
   isDeleted: false,
-  secretKey: 'publicE2eTestSecretKeyFGH678',
+  secretKey: 'publicE2eTestSecretKey4Webhooks',
 };
 
 const webhook: any = {  // : Webhook
@@ -57,6 +57,7 @@ export interface WebhookRetryTestState {
   nextEventId: Nr;
   brA: TyE2eTestBrowser;
   brB: TyE2eTestBrowser;
+  apiSecret?: TestApiSecret;
 }
 
 
@@ -71,12 +72,13 @@ export function getTestState(): WebhookRetryTestState {
 
 
 export function addWebhooksRetryStartSteps(ps: { postIdeaCheckWebhook?: Bo,
-      leaveWebhooksDisabled?: Bo }) {
+      leaveWebhooksDisabled?: Bo, genApiSecret?: Bo, categoryAExtId?: St }) {
 
   it(`Construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Some Webhooks E2E Test",
+      categoryAExtId: ps.categoryAExtId,
       members: ['memah', 'maja']
     });
 
@@ -95,7 +97,10 @@ export function addWebhooksRetryStartSteps(ps: { postIdeaCheckWebhook?: Bo,
 
     // Enable API, so can fetch old events. And add a webhook.
     builder.settings({ enableApi: true });
-    builder.getSite().apiSecrets = [apiSecret];
+    if (ps.genApiSecret) {
+      builder.getSite().apiSecrets = [apiSecret];
+      testState.apiSecret = apiSecret;
+    }
     builder.getSite().webhooks = [webhook];
     webhook.enabled = !ps.leaveWebhooksDisabled;
 
@@ -112,18 +117,18 @@ export function addWebhooksRetryStartSteps(ps: { postIdeaCheckWebhook?: Bo,
   });
 
   it(`Import site`, async () => {
-    site = server.importSiteData(forum.siteData);
+    site = await server.importSiteData(forum.siteData);
     testState.site = site;
     testState.forum = forum;
     testState.brA = brA;
     testState.brB = brB;
-    server.skipRateLimits(site.id);
+    await server.skipRateLimits(site.id);
   });
 
 
   it(`Clear saved webhook reqs, in case other old test w same site id`, async () => {
-    fakeweb.forgetWebhookReqsTalkyardHasSent(site.id);
-    fakeweb.mendWebhooks({ siteId: site.id });
+    await fakeweb.forgetWebhookReqsTalkyardHasSent({ siteId: site.id });
+    await fakeweb.mendWebhooks({ siteId: site.id });
   });
 
 

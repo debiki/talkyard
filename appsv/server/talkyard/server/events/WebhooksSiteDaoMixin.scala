@@ -392,19 +392,19 @@ trait WebhooksSiteDaoMixin {
 
 
   private def sendWebhookRequest(reqOut: WebhookReqOut): Future[WebhookReqOut] = {
-    val jsonSt: St = reqOut.sentJson.toString()
     val wsClient: WSClient = globals.wsClient
     val request: WSRequest =
           wsClient.url(reqOut.sentToUrl).withHttpHeaders(
-              play.api.http.HeaderNames.CONTENT_TYPE -> play.api.http.ContentTypes.JSON,
               play.api.http.HeaderNames.USER_AGENT ->
                   // Move to TyHttp maybe?  [ty_user_agent]
-                  s"Talkyard / ${reqOut.sentByAppVer} API-v${reqOut.sentApiVersion}",
-              play.api.http.HeaderNames.CONTENT_LENGTH -> jsonSt.length.toString)
+                  s"Talkyard / ${reqOut.sentByAppVer} API-v${reqOut.sentApiVersion}")
               .withRequestTimeout(WebhookRequestTimeoutSecs.seconds)
               // .withConnectionTimeout(2.seconds)  // configured in Play's conf files?
 
-    request.post(jsonSt).map({ response: WSResponse =>
+    // So Play will send the json as json, not as text in small chunks one at a time.
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
+    request.post(reqOut.sentJson).map({ response: WSResponse =>
       // Now we're in a different thread.
       try {
         var webhookReqAfter = reqOut.copy(

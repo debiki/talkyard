@@ -806,10 +806,10 @@ case class User(
   override def canPromoteToBasicMember: Boolean =
     // If trust level locked, promoting the this.trustLevel has no effect — but we'll still
     // do it, so we know what it would have been, had it not been locked.
-    trustLevel == TrustLevel.NewMember
+    !isBuiltIn && trustLevel == TrustLevel.NewMember
 
   override def canPromoteToFullMember: Boolean =
-    trustLevel == TrustLevel.BasicMember
+    !isBuiltIn && trustLevel == TrustLevel.BasicMember
 
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
   require(Participant.isOkayUserId(id), "DwE02k12R5")

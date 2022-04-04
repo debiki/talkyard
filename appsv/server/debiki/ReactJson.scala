@@ -34,6 +34,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 import talkyard.server.{IfCached, PostRenderer, PostRendererSettings}
 import JsonMaker._
+import talkyard.server.JsX
 import talkyard.server.JsX._
 
 
@@ -510,7 +511,7 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeSpecialPageJson(request: DebikiRequest[_]): JsObject = {
+  def makeSpecialPageJson(request: DebikiRequest[_], inclCatsTagsSects_unimpl: Bo): JsObject = {
     require(request.dao == dao, "TyE4JKTWQ0")
     val globals = request.context.globals
     val siteSettings = dao.getWholeSiteSettings()
@@ -542,6 +543,9 @@ class JsonMaker(dao: SiteDao) {
       "strangersWatchbar" -> makeStrangersWatcbarJson(),
       "pagesById" -> Json.obj(),
       // Special pages / the admin area don't need categories. [6TKQ20]
+      // But the search page does!  if (inclCatsTagsSects_unimpl) ...  ?
+      // SHOULD incl cats here? But currently loaded via an extra req instead,
+      // see:  [search_page_cats_tags]  maybe can just leave it at that.
       "publicCategories" -> JsArray())
 
     result
@@ -2141,6 +2145,17 @@ object JsonMaker {
       imageUrls :+= elem.attr("src")
     }
     imageUrls
+  }
+
+
+  def makeCatsAndTagsPatch(catsJsArr: JsArray, tagTypes: ImmSeq[TagType],
+        appVersion: St): JsObject = {
+    // We haven't checked which cats are public and which are access restricted,
+    // so just include all in the restrictedCategories list.
+    makeStorePatch(Json.obj(
+        "publicCategories" -> JsArray(Nil), // to enter an if [upd_store_cats_hack]
+        "restrictedCategories" -> catsJsArr,
+        "allTagTypes" -> JsArray(tagTypes map JsX.JsTagType)), appVersion)
   }
 
 

@@ -39,6 +39,7 @@ trait TagsSiteDaoMixin extends SiteTransaction {  // CLEAN_UP REMOVE this whole 
   }
 
 
+  /*
   def loadTagsAndStats(): Seq[TagAndStats] = {
     val query = """
       select
@@ -55,7 +56,7 @@ trait TagsSiteDaoMixin extends SiteTransaction {  // CLEAN_UP REMOVE this whole 
         numSubscribers = -1,
         numMuted = -1)
     })
-  }
+  } */
 
 
   def loadTagsByPostId(postIds: Iterable[PostId]): Map[PostId, Set[TagLabel]] = {
