@@ -933,3 +933,7 @@ Bugs
 Can double submit a reply by double clicking Ctrl+Enter. Then, error TyE6QSADTH04
 happens.
 
+Select an answer or solution to a question / problem. Then, change topic type to Discussion.
+Then back to Question or Problem. Now, in the topic list, the icon will incorrectly be
+the *unsolved* question or problem — although the answer is still selected (after
+having changed the topic type back) and the page is solved.
