@@ -33,6 +33,24 @@ const tyAssert = {
     assert.deepStrictEqual<T>(actual, expected, message);
   },
 
+  partialEq: function<T>(actual: T, expected: Partial<T>, message?: St) {
+    tyAssert.that(_.isObject(actual), `Actual value is not an object: ${j2s(actual)}`);
+    tyAssert.that(_.isObject(expected), `Expected value is not an object: ${j2s(expected)}`);
+    const entries = Object.entries(expected);
+    tyAssert.that(entries.length, `Expected object is empty, pointless test: ${j2s(expected)}`);
+
+    for (let [field, expectedValue] of entries) {
+      const actualValue = actual[field];
+        tyAssert.deepEq(actualValue, expectedValue,
+            message +
+            `\n  Field '${field}', actual != expected:  ${
+                  j2s(actualValue)}  !=  ${j2s(expectedValue)}   [TyET40MPGQ27]` +
+            `\n  --- Complete actual obj: -----------------------` +
+            `\n  ${j2s(actual)}` +
+            `\n  ------------------------------------------------`);
+    }
+  },
+
   not: (what, message?) => {
     assert.ok(!what, message);
   },

@@ -24,6 +24,9 @@ import play.api.libs.json._
 
 package object server {
 
+  type JsonConf = parser.JsonConf
+  val JsonConf: parser.JsonConf.type = parser.JsonConf
+
   type p_Result = play.api.mvc.Result
   val p_Results: play.api.mvc.Results.type = play.api.mvc.Results
   val p_Status: play.api.http.Status.type = play.api.http.Status

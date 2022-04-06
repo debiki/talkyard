@@ -521,6 +521,13 @@ function runAllE2eTests {
   $r s/wdio --only api-list-query-for-topics-popular-first $args
   $r s/wdio --only api-list-query-for-topics-recent-etc-first $args
   $r s/wdio --only api-list-query-for-posts $args
+ #$r s/wdio --only api-list-query-for-events $args
+
+  $r s/wdio-7 --only api-get-query-for-pats.2br --cd -i $args
+ #$r s/wdio-7 --only api-get-query-for-cats.2br --cd -i $args
+ #$r s/wdio-7 --only api-get-query-for-pages.2br --cd -i $args
+ #$r s/wdio-7 --only api-get-query-for-posts.2br --cd -i $args
+ #$r s/wdio-7 --only api-get-query-for-tags.2br --cd -i $args
 
   $r s/wdio-7 --only do-api-like-and-subscribe.2br --cd -i $args
 

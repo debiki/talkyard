@@ -19,6 +19,7 @@ package talkyard.server.events
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import talkyard.server.authz.{AuthzCtxOnForum, AuthzCtxOnPats}
 import talkyard.server.JsX
 import talkyard.server.parser.JsonConf
 import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
@@ -35,7 +36,7 @@ object EventsParSer {
 
 
   def makeEventsListJson(events: ImmSeq[Event], dao: SiteDao, reqer: Opt[Pat],
-          avatarUrlPrefix: St): ImmSeq[EventAndJson] = {
+          avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum): ImmSeq[EventAndJson] = {
 
     // --- Load posts and pages
 
@@ -128,7 +129,7 @@ object EventsParSer {
         }
         yield {
           val json = JsPageEvent_apiv0(pageEvent, page, cat, anyOrigPost = Some(post),
-                pagePathsById, authorsById, avatarUrlPrefix = avatarUrlPrefix)
+                pagePathsById, authorsById, avatarUrlPrefix = avatarUrlPrefix, authzCtx)
           EventAndJson(pageEvent, json)
         }
 
@@ -139,7 +140,7 @@ object EventsParSer {
         }
         yield {
           val json = JsPageEvent_apiv0(pageEvent, page, cat, anyOrigPost = None,
-                pagePathsById, authorsById, avatarUrlPrefix = avatarUrlPrefix)
+                pagePathsById, authorsById, avatarUrlPrefix = avatarUrlPrefix, authzCtx)
           EventAndJson(pageEvent, json)
         }
 
@@ -150,7 +151,7 @@ object EventsParSer {
         }
         yield {
           val json = JsPostEvent_apiv0(postEvent, post, page, authorsById,
-                avatarUrlPrefix = avatarUrlPrefix)
+                avatarUrlPrefix = avatarUrlPrefix, authzCtx)
           EventAndJson(postEvent, json)
         }
 
@@ -159,7 +160,7 @@ object EventsParSer {
           pat: Pat <- authorsById.get(patEvent.patId).logBugIfEmpty("TyEPARSEV0PAT")
         }
         yield {
-          val json = JsPatEvent_apiv0(patEvent, pat)
+          val json = JsPatEvent_apiv0(patEvent, pat, authzCtx)
           EventAndJson(patEvent, json)
         }
     }
@@ -204,7 +205,8 @@ object EventsParSer {
 
   def JsPageEvent_apiv0(event: PageEvent, page: PageStuff, anyCat: Opt[Cat],
           anyOrigPost: Opt[Post], pagePathsById: Map[PageId, PagePathWithId],
-          authorsById: Map[PatId, Pat], avatarUrlPrefix: St): JsObject = {
+          authorsById: Map[PatId, Pat], avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum,
+          ): JsObject = {
     import talkyard.server.api.ThingsFoundJson
     import talkyard.server.api.PostsListFoundJson.JsPostListFound
 
@@ -221,12 +223,12 @@ object EventsParSer {
           authorsById = authorsById,
           avatarUrlPrefix = avatarUrlPrefix,
           anyCategory = anyCat,
-          JsonConf.v0_1)
+          JsonConf.v0_1(), authzCtx)
 
     anyOrigPost foreach { origPost =>
       val origPostJson = JsPostListFound(
             origPost, page, authorsById, avatarUrlPrefix = avatarUrlPrefix,
-            isWrappedInPage = true, JsonConf.v0_1)
+            JsonConf.v0_1(), authzCtx, isWrappedInPage = true)
       pageJson += "posts" -> Json.arr(origPostJson)
     }
 
@@ -243,10 +245,11 @@ object EventsParSer {
 
 
   def JsPostEvent_apiv0(event: PostEvent, post: Post, page: PageStuff,
-        authorsById: Map[PatId, Pat], avatarUrlPrefix: St): JsObject = {
+        authorsById: Map[PatId, Pat], avatarUrlPrefix: St, authzCtx: AuthzCtxOnForum,
+        ): JsObject = {
     import talkyard.server.api.PostsListFoundJson.JsPostListFound
     val postJson = JsPostListFound(post, page, authorsById, avatarUrlPrefix = avatarUrlPrefix,
-          isWrappedInPage = false, JsonConf.v0_1)
+          JsonConf.v0_1(), authzCtx, isWrappedInPage = false)
     Json.obj(  // ts: Event_, in tests/e2e-wdio7/pub-api.ts.
         "id" -> event.id,
         "atMs" -> JsX.JsWhenMs(event.when),
@@ -258,14 +261,13 @@ object EventsParSer {
 
 
 
-  def JsPatEvent_apiv0(event: PatEvent, pat: Pat): JsObject = {
-    import talkyard.server.JsX.JsUserApiV0
+  def JsPatEvent_apiv0(event: PatEvent, pat: Pat, authzCtx: AuthzCtxOnPats): JsObject = {
     Json.obj(  // ts: Event_, in tests/e2e-wdio7/pub-api.ts.
         "id" -> event.id,
         "atMs" -> JsX.JsWhenMs(event.when),
         "eventType" -> JsPatEventTypeString_apiv0(event.eventType),
         "eventData" -> Json.obj(
-          "pat" -> JsUserApiV0(pat, brief = true)
+          "pat" -> JsX.JsUserApiV0(pat, brief = true, authzCtx)
         ))
   }
 

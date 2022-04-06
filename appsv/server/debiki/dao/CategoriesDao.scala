@@ -216,7 +216,7 @@ trait CategoriesDao {
   }
 
   def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage = {
-    parseRef(ref, allowParticipantRef = false) map getCategoryByParsedRef
+    parseRef(ref, allowPatRef = false) map getCategoryByParsedRef
   }
 
   def getOrThrowAnyCategoryByRef(catRef: Ref): Category = {

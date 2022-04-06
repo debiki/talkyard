@@ -25,6 +25,7 @@ import play.api.libs.json._
 import play.api.mvc.Result
 import talkyard.server.JsX._
 import talkyard.server.parser.JsonConf
+import talkyard.server.authz.AuthzCtxOnPats
 
 
 
@@ -32,9 +33,9 @@ object PostsListFoundJson {
 
 
   def makePostsListFoundResponse(postsFound: LoadPostsResult, dao: SiteDao,
-          pretty: Boolean): Result = {
+        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Result = {
     makePostsFoundResponseImpl(
-          Some(postsFound), anySearchResults = None, dao, pretty = pretty)
+          Some(postsFound), anySearchResults = None, dao, jsonConf, authzCtx)
   }
 
 
@@ -50,7 +51,7 @@ object PostsListFoundJson {
 
   private def makePostsFoundResponseImpl(
       anyPostsFound: Option[LoadPostsResult], anySearchResults: Option[_],
-      dao: SiteDao, pretty: Boolean): Result = {
+      dao: SiteDao, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Result = {
 
     dieIf(anyPostsFound.nonEmpty && anySearchResults.nonEmpty, "TyE60WKTH5")
 
@@ -76,19 +77,21 @@ object PostsListFoundJson {
       pageStuff <- pageStuffById.get(post.pageId)
     }
     yield {
-      JsPostListFound(post, pageStuff, authorsById, avatarUrlPrefix = avatarUrlPrefix)
+      JsPostListFound(post, pageStuff, authorsById, avatarUrlPrefix = avatarUrlPrefix,
+            jsonConf, authzCtx)
     }
 
     // Typescript: SearchQueryResults, and ListQueryResults
     OkApiJson(Json.obj(
       "origin" -> siteIdsOrigins.siteOrigin,
-      "thingsFound" -> jsPostsFound), pretty)
+      "thingsFound" -> jsPostsFound), jsonConf.pretty)
   }
 
 
   def JsPostListFound(post: Post, pageStuff: PageStuff, ppsById: Map[UserId, Participant],
-          avatarUrlPrefix: St, isWrappedInPage: Bo = false,
-          jsonConf: JsonConf = JsonConf.v0_0): JsObject = {
+          avatarUrlPrefix: St, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats,
+          isWrappedInPage: Bo = false
+          ): JsObject = {
 
     val anyAuthor = ppsById.get(post.createdById)
 
@@ -98,10 +101,13 @@ object PostsListFoundJson {
 
     var json = Json.obj(  // Typescript: PostListed
       "id" -> JsNumber(post.id),
-      "extId" -> JsStringOrNull(post.extImpId),
       "nr" -> JsNumber(post.nr),
       "parentNr" -> JsNumberOrNull(post.parentNr),
       "approvedHtmlSanitized" -> JsString(approvedHtmlSanitized))
+
+    if (authzCtx.maySeeExtIds) {
+      post.extImpId.foreach(json += "extId" -> JsString(_))
+    }
 
     if (post.isTitle) {
       json += "isPageTitle" -> JsTrue
@@ -115,8 +121,8 @@ object PostsListFoundJson {
       // The orig post author is incl in the page json already.
     }
     else {
-      json += "author" -> ThingsFoundJson.JsParticipantFoundOrNull(
-                                  anyAuthor, avatarUrlPrefix, jsonConf)
+      json += "author" -> ThingsFoundJson.JsPatFoundOrNull(
+            anyAuthor, avatarUrlPrefix = Some(avatarUrlPrefix), jsonConf, authzCtx)
     }
 
     // If not in a page { ... } obj, with the page id and name, then, more context needed

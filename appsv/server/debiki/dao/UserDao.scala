@@ -31,6 +31,7 @@ import scala.collection.mutable.ArrayBuffer
 import talkyard.server._
 import talkyard.server.dao.StaleStuff
 import talkyard.server.authn.{Join, Leave, JoinOrLeave, StayIfMaySee}
+import talkyard.server.authz.AuthzCtxOnPats
 
 
 case class LoginNotFoundException(siteId: SiteId, userId: UserId)
@@ -831,6 +832,12 @@ trait UserDao {
   }
 
 
+  def loadMembersVbMaySeeByRef(refs: Iterable[PatRef], authzCtx: AuthzCtxOnPats): ImmSeq[MemberVb] = {
+    // Currently everyone may see all participants, so, ignore authzCtx for now.  [private_pats]
+    readTx(_.loadMembersVbByRef(refs))
+  }
+
+
   def loadUsersWithUsernamePrefix(prefix: String, caseSensitive: Boolean, limit: Int)
         : immutable.Seq[User] = {
     COULD_OPTIMIZE // cache, sth like:
@@ -865,7 +872,7 @@ trait UserDao {
 
 
   def getParticipantByRef(ref: String): Option[Participant] Or ErrorMessage = {
-    parseRef(ref, allowParticipantRef = true) map getParticipantByParsedRef
+    parseRef(ref, allowPatRef = true) map getParticipantByParsedRef
   }
 
 

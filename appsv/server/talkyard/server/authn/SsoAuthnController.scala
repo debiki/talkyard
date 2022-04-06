@@ -312,7 +312,7 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
   def apiV0_upsertUser: Action[JsValue] =
         PostJsonAction(RateLimits.Login, maxBytes = 5000) { request: JsonPostRequest =>
 
-    import debiki.JsonUtils.{asJsObject, parseSt}
+    import debiki.JsonUtils.asJsObject
 
     throwForbiddenIf(!request.isViaApiSecret,
         "TyEAPI0SECR04", "The API may be called only via Basic Auth and an API secret")
@@ -325,12 +325,15 @@ class SsoAuthnController @Inject()(cc: ControllerComponents, edContext: TyContex
 
     val extUser: ExternalUser = JsX.apiV0_parseExternalUser(bodyObj)
 
+    // The API secret might let us edit *some* pat info only.
+    val authzCtx = request.dao.getAuthzContextOnPats(request.requester)
+
     // Send back the user incl username — we might have changed it: removed forbidden
     // punctuation, for example, and the requester might want to know about that so it can
     // generate a user profile link.
     val (user, isNew) = upsertUser(extUser, request, mayUpdate = true)
     OkSafeJson(Json.obj(
-      "user" -> JsX.JsUserApiV0(user.briefUser, brief = true)))
+      "user" -> JsX.JsUserApiV0(user.briefUser, brief = true, authzCtx)))
   }
 
 

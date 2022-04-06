@@ -1533,8 +1533,14 @@ api:
   full text search:
             - api-search-full-text.test.ts   TyT70ADNEFTD36
   get api:
+            - api-get-query-for-pats.2br  TyTEAPIGETQPATS
             - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
+    specify same ref twice — not allowed? (wastes resources)
+            - TESTS_MISSING  & unimpl
+    specifies same thing via 2 different refs — then:  { seeIx: ___ }  instead of incl twice:
+            - TESTS_MISSING  & unimpl
+
   do api:
             - do-api-like-and-subscribe.2br  TyTEAPILIKESUBS
   atom feed:
@@ -1566,6 +1572,8 @@ webhooks:  [.webhooks_api]
             - webhooks-for-api-upserts.2br  TyTE2EWBHK4API
     webhook sent if page updated (closed) via API:
             - TESTS_MISSING  TyTE2EWBHK4API.TyTEWHKSAPICLS
+  list old events, so ext softw can catch up:
+            - TESTS_MISSING
 
 import,
 export and restore:  (impexp)

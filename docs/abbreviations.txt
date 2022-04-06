@@ -97,6 +97,8 @@ Enb = enabled, Dsb? Disb? = disabled
 B   = button, e.g. ReplyB
 Br  = brief. Also, Tn  = tiny, Vb = verbose, Vvb = very verbose.
 It  = list item
+C,
+Cat = category
 Cb  = Contextbar
 CB  = checkbox, e.g. s_SthCB
 Cm, Cmt = comment
@@ -176,8 +178,9 @@ Pop = popular
 Prvw = preview
 Pv = Preview, e.g. LnPv = link preview
 Po = post
-Re  = reply  NO! Change to Ry — doesn't Re mean "rearding" as well?
+Re  = reply  NO! Change to Ry — doesn't Re mean "regarding" as well?
 Req = request, e.g. c_WbhkReq = webhook request
+Reqer = requester ("req" = request, + "er")
 Rs  = risk, e.g. RsLv = risk level
 R   = table row,  NO, should be Rw, and Cl = column
 Rw, Row = row, Col = column

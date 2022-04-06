@@ -315,7 +315,7 @@ object RdbUtil {
         summaryEmailIfActive = None,
         grantsTrustLevel = None) // later:  grants_trust_level)
     }
-    else User(
+    else UserBr(
       id = userId,
       ssoId = getOptString(rs, "u_sso_id"),
       extId = anyExtId,
@@ -361,7 +361,7 @@ object RdbUtil {
   }
 
 
-  // (But not groups only fields.)
+  // (But not groups only fields  — what's that, grantsTrustLevel? not impl though)
   val CompleteUserSelectListItemsNoUserId: St = i"""
     |ext_id,
     |is_group,

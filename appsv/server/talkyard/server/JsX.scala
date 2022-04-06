@@ -23,6 +23,7 @@ import debiki.JsonUtils
 import debiki.JsonUtils._
 import debiki.EdHttp._
 import java.{util => ju}
+import talkyard.server.authz.AuthzCtxOnPats
 
 import com.debiki.core.Notification.NewPost
 import play.api.libs.json._
@@ -218,16 +219,19 @@ object JsX {   RENAME // to JsonPaSe
 
 
   // A bit dupl code. [dupl_pat_json_apiv0]
-  def JsUserApiV0(pat: Pat, brief: Bo): JsObject = {
+  def JsUserApiV0(pat: Pat, brief: Bo, authzCtx: AuthzCtxOnPats): JsObject = {
     unimplIf(!brief, "TyE306RE5")
     var json = Json.obj(
         "id" -> JsNumber(pat.id),
-        "extId" -> JsStringOrNull(pat.extId),
         "username" -> JsStringOrNull(pat.anyUsername),
         "fullName" -> JsStringOrNull(pat.anyName))
-    pat match {
-      case u: User => json += "ssoId" -> JsStringOrNull(u.ssoId)
-      case _ => ()
+
+    if (authzCtx.maySeeExtIds) {
+      pat.extId.foreach(json += "extId" -> JsString(_))
+      pat match {
+        case u: UserBase => u.ssoId.foreach(json += "ssoId" -> JsString(_))
+        case _ => ()
+      }
     }
     json
   }

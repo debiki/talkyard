@@ -33,12 +33,12 @@ object MayMaybe {
 
 
 
-sealed abstract class AuthzContext {
+sealed trait AuthzCtx {
   def requester: Option[Participant]
   def groupIdsUserIdFirst: immutable.Seq[GroupId]
-  def tooManyPermissions: immutable.Seq[PermsOnPages]
-  def isStaff: Boolean = requester.exists(_.isStaff)
-  def isAdmin: Boolean = requester.exists(_.isAdmin)
+
+  final def isStaff: Bo = requester.exists(_.isStaff)
+  final def isAdmin: Bo = requester.exists(_.isAdmin)
 
   if (requester.isEmpty) {
     // Strangers cannot be members of any group except for the Everyone group.
@@ -47,14 +47,8 @@ sealed abstract class AuthzContext {
     // It's fine, though, if tooManyPermissions includes permissions for
     // other groups — such permissions get excluded, later [7RBBRY2].
   }
-}
 
-case class ForumAuthzContext(
-  requester: Option[Participant],
-  groupIdsUserIdFirst: immutable.Seq[GroupId],
-  tooManyPermissions: immutable.Seq[PermsOnPages]) extends AuthzContext {
-
-  def groupIdsEveryoneLast: immutable.Seq[GroupId] = {
+  final def groupIdsEveryoneLast: immutable.Seq[GroupId] = {
     if (requester.exists(_.isGroup)) {
       die("TyEs024HRS25", "Trying to authz as a group")  // [imp-groups]
     }
@@ -70,10 +64,55 @@ case class ForumAuthzContext(
       groupIdsUserIdFirst
     }
   }
+
+  final def maySeeExtIds: Bo = requester.exists(_.isAdmin)
 }
 
 
-/*
+/** Says what details about a person, the requester may see — maybe only username,
+  * or also full name? Bio? Location? Posting history? Etc.
+  * That is, members will be able to configure how visible their user profile should be
+  * e.g. one can let only >= Trusted members see one's full name or bio.
+  * Currently not so very implemented.  [perms_thoughts] [private_pats]
+  * Will use the  perms_on_pats_t  table, which doesn't yet exist.
+  */
+trait AuthzCtxOnPats extends AuthzCtx {
+}
+
+
+/** Quicker to create than a full AuthzCtxOnForum, but lacks info about what cats
+  * and pages the reqer may see,
+  */
+case class AuthzCtxOnPatsOnly(
+  requester: Opt[Pat],
+  groupIdsUserIdFirst: ImmSeq[GroupId],
+  // tooManyPermsOnPats: ImmSeq[PermsOnPats], — later
+  )
+  extends AuthzCtx with AuthzCtxOnPats {
+
+  //def maySeeOthersEmailAddrs: Bo = requester.exists(_.isAdmin)
+}
+
+
+trait AuthzCtxOnPages extends AuthzCtx {
+  def tooManyPermissions: ImmSeq[PermsOnPages]
+}
+
+
+/** Includes permission info about all types of things in the community,
+  * e.g. not just pages, but also pats and tags/badges.
+  */
+case class AuthzCtxOnForum(   // maybe rename to AuthzCtxOnAll ?
+  requester: Opt[Pat],
+  groupIdsUserIdFirst: immutable.Seq[GroupId],
+  // rename to tooManyPermsOnPages? Will also be a tooManyPermsOnPats, see above.
+  tooManyPermissions: immutable.Seq[PermsOnPages],
+  )
+  extends AuthzCtx with AuthzCtxOnPats with AuthzCtxOnPages {
+}
+
+
+/*  Delete this?
 case class CategoryAuthzContext(
   requester: Option[User],
   permissions: immutable.Seq[PermsOnPages],
@@ -248,7 +287,7 @@ object Authz {
   }
 
 
-  def maySeeCategory(authzCtx: AuthzContext, catsRootLast: immutable.Seq[Category])
+  def maySeeCategory(authzCtx: ForumAuthzContext, catsRootLast: immutable.Seq[Category])
         : MayWhat = {
     checkPermsOnPages(authzCtx.requester, authzCtx.groupIdsUserIdFirst,
           pageMeta = None, pageMembers = None, catsRootLast = catsRootLast,

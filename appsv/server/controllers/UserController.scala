@@ -1045,9 +1045,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def apiv0_showApiSecretInfo: Action[U] = ApiSecretGetJsonAction(RateLimits.ReadsFromCache) {
         req: GetRequest =>
     // For now, only sysbot can do API requests, and sysbot can do anything.
+    val authzCtx = req.dao.getAuthzContextOnPats(req.requester)
     OkApiJson(Json.obj(
       "apiSecretInfo" -> Json.obj(
-        "user" -> JsUserApiV0(req.theMember, brief = true),
+        "user" -> JsUserApiV0(req.theMember, brief = true, authzCtx),
         "capabilities" -> Json.arr("DoAnything", "SeeAnything"))))
         // Later: Created at, expires at
   }

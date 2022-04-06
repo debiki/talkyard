@@ -254,14 +254,16 @@ type ThingFound = PageOptFields
                 | PageListed  // hmm, incl in  PageOptFields  above
                 | PostListed
             //  | Event
-                | ParticipantFound | TagFound | CategoryFound;
+                | TyPat | TagFound | CategoryFound;
 
 
 
 // RENAME to Pat ?
-interface ParticipantFound extends Thing {
+interface TyPat extends Thing {
   what?: 'Pat';
   id: PatId;
+  ssoId?: St;
+  extId?: St;
   ppId: ParticipantId;  // deprecated
   username?: string;
   fullName?: string;
@@ -270,14 +272,14 @@ interface ParticipantFound extends Thing {
   isGuest?: boolean;
 }
 
-interface GuestFound extends ParticipantFound {
+interface GuestFound extends TyPat {
   username?: undefined; // guests don't have real accounts
   fullName: string;  // they always have a name or alias though
   isGroup?: false;
   isGuest: true;
 }
 
-interface MemberFound extends ParticipantFound {
+interface MemberFound extends TyPat {
   username: string;  // members always have usernames
   isGuest?: false;
 }
@@ -305,7 +307,7 @@ interface PageOptFields extends Thing {
   // Prefix with the origin (included in the response) to get the full URL.
   urlPath?: St;
   excerpt?: St;
-  author?: ParticipantFound;
+  author?: TyPat;
   categoriesMainFirst?: CategoryFound[];
   numOpLikeVotes?: Nr;
   numTotRepliesVisible?: Nr;
@@ -323,7 +325,7 @@ interface PageFoundOrListed extends PageOptFields {
   // Prefix with the origin (included in the response) to get the full URL.
   urlPath: string;
   excerpt?: string;
-  author?: ParticipantFound;
+  author?: TyPat;
   categoriesMainFirst?: CategoryFound[];
 }
 
@@ -340,7 +342,7 @@ interface PostFoundOrListed extends Thing {
   what?: 'Post';
   isPageTitle?: boolean;
   isPageBody?: boolean;
-  author?: ParticipantFound;
+  author?: TyPat;
 }
 
 interface PostFound extends PostFoundOrListed {
@@ -495,14 +497,14 @@ interface PostUpdatedEvent extends Event_ {
 interface PatCreatedEvent extends Event_ {
   eventType: 'PatCreated';
   eventData: {
-    pat: ParticipantFound;
+    pat: TyPat;
   }
 }
 
 interface PatUpdatedEvent extends Event_ {
   eventType: 'PatUpdated';
   eventData: {
-    pat: ParticipantFound;
+    pat: TyPat;
   }
 }
 
@@ -541,6 +543,7 @@ interface EventPageData {
 interface GetQueryApiRequest extends ApiRequest, GetQueryApiTask {
 }
 
+
 interface GetQueryApiTask extends ApiTask {
   getQuery: GetPagesQuery | GetPatsQuery;
 }
@@ -556,6 +559,9 @@ interface GetPagesQuery extends GetQuery {
   getWhat: 'Pages',
   getRefs: PageRef[];
   inclFields: {
+    tyId?: Bo;   // unimpl
+    extId?: Bo;  // unimpl
+
     // Only the orig post:
     //numOpRepliesVisible?: Bo;
     numOpLikeVotes?: Bo;
@@ -563,6 +569,27 @@ interface GetPagesQuery extends GetQuery {
     // Whole page:
     numTotRepliesVisible?: Bo;
     //numTotLikeVotesVisible?: Bo;
+
+    title?: Bo;
+    origPost?: Bo;  // unimpl
+
+    /* Later — and this would be the same as some render page UX settings?  [get_what_fields]
+    replies?: {  — maybe not
+      numTop?: Nr;
+      numFirst?: Nr;
+      numLast?: Nr;
+      numNested?: ... hmm ...,  how many 2nd level replies to incl, of each top level
+         reply. And 3rd level etc. And how many to max incl, if "too many" replies
+         in a sub tree.
+    }
+    Or maybe there could be different algorithms, for deciding what replies to
+    include — and one would specify an algorithm, and parameters?
+    So, maybe instead:
+
+    replies: {
+      asPerAlg: St;  // algorithm name and version, e.g. 'TopReplies/v0.1'
+      algParams: Object;
+    */
   };
 }
 
@@ -570,7 +597,11 @@ interface GetPagesQuery extends GetQuery {
 interface GetPatsQuery extends GetQuery {   // not impl
   getWhat: 'Pats',
   getRefs: PatRef[];
-  inclFields: {
+  inclFields: {   // Later.  [get_what_fields]
+    tyId?: Bo;
+    extId?: Bo;
+    ssoId?: Bo;
+
     fullName?: Bo;
     username?: Bo;
     isGuest?: Bo;

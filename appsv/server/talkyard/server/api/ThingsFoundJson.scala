@@ -21,6 +21,7 @@ import com.debiki.core._
 import controllers.OkApiJson
 import Prelude._
 import debiki.dao.{PageStuff, SiteDao}
+import talkyard.server.authz.{AuthzCtx, AuthzCtxOnPats}
 import talkyard.server.parser.{JsonConf, PageParSer}
 import talkyard.server.search.{PageAndHits, SearchHit}
 import play.api.libs.json._
@@ -34,16 +35,16 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
 
   def makePagesFoundListResponse(topics: Seq[PagePathAndMeta], dao: SiteDao,
-        pretty: Boolean): Result = {
+        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Result = {
     makePagesFoundResponseImpl(
-        topics, anySearchResults = Nil, dao, pretty = pretty)
+        topics, anySearchResults = Nil, dao, jsonConf, authzCtx)
   }
 
 
   def makePagesFoundSearchResponse(searchResults: Seq[PageAndHits], dao: SiteDao,
-        pretty: Boolean): Result = {
+        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Result = {
     makePagesFoundResponseImpl(
-        anyPagePathsMetas = Nil, searchResults, dao, pretty = pretty)
+        anyPagePathsMetas = Nil, searchResults, dao, jsonConf, authzCtx)
   }
 
 
@@ -51,7 +52,7 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   //
   private def makePagesFoundResponseImpl(
       anyPagePathsMetas: Seq[PagePathAndMeta], anySearchResults: Seq[PageAndHits],
-      dao: SiteDao, pretty: Boolean): Result = {
+      dao: SiteDao, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Result = {
 
     dieIf(anyPagePathsMetas.nonEmpty && anySearchResults.nonEmpty, "TyE40RKUPJR2")
 
@@ -122,13 +123,13 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
       val anyCategory = stuff.pageMeta.categoryId.flatMap(categoriesById.get)
       JsPageFound(
             stuff, authorIdsByPostId, authorsById,
-            avatarUrlPrefix = avatarUrlPrefix, anyCategory)
+            avatarUrlPrefix = avatarUrlPrefix, anyCategory, jsonConf, authzCtx)
     }
 
     // Typescript: SearchQueryResults, and ListQueryResults
     OkApiJson(Json.obj(
       "origin" -> siteIdsOrigins.siteOrigin,
-      "thingsFound" -> jsPagesFound), pretty)
+      "thingsFound" -> jsPagesFound), jsonConf.pretty)
   }
 
 
@@ -145,11 +146,12 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
   // Vaguely similar code: ForumController.topicToJson()  [4026RKCN2]
   def JsPageFound(
         pageFoundStuff: PageFoundStuff,
-        authorIdsByPostId: Map[PostId, UserId],
-        authorsById: Map[UserId, Participant],
-        avatarUrlPrefix: String,
-        anyCategory: Option[Category],
-        jsonConf: JsonConf = JsonConf.v0_0): JsObject = {
+        authorIdsByPostId: Map[PostId, PatId],
+        authorsById: Map[PatId, Pat],
+        avatarUrlPrefix: St,
+        anyCategory: Opt[Cat],
+        jsonConf: JsonConf,
+        authzCtx: AuthzCtxOnPats): JsObject = {
 
     val pageStuff = pageFoundStuff.pageStuff
     val anyPageAuthor = authorsById.get(pageStuff.authorUserId)
@@ -157,15 +159,14 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
     var json = Json.obj(
       "id" -> pageStuff.pageId,
-      "extId" -> JsStringOrNull(pageMeta.extImpId),
       "title" -> pageStuff.title,
       // Unnecessary to include the origin everywhere.
       "urlPath" -> pageFoundStuff.pagePath.value,
       "excerpt" -> JsStringOrNull(pageStuff.bodyExcerpt),
-      "author" -> JsParticipantFoundOrNull(anyPageAuthor, avatarUrlPrefix, jsonConf),
+      "author" -> JsPatFoundOrNull(anyPageAuthor, Some(avatarUrlPrefix), jsonConf, authzCtx),
       // For now, only the leaf category — but later, SHOULD incl ancestor categories
       // too — so this is an array.
-      "categoriesMainFirst" -> Json.arr(JsCategoryFoundOrNull(anyCategory, jsonConf)),
+      "categoriesMainFirst" -> Json.arr(JsCategoryFoundOrNull(anyCategory, jsonConf, authzCtx)),
       "pageType" -> PageParSer.pageTypeSt_apiV0(pageMeta.pageType),
       "answerPostId" -> JsNum32OrNull(pageMeta.answerPostId),
       "doingStatus" -> PageParSer.pageDoingStatusSt_apiV0(pageMeta.doingStatus),
@@ -177,12 +178,16 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
       json += "pageId" -> JsString(pageStuff.pageId)
     }
 
+    if (authzCtx.maySeeExtIds) {
+      pageMeta.extImpId foreach { json += "extId" -> JsString(_) }
+    }
+
     // If this is a SearchQuery for posts, include those posts.
     pageFoundStuff.pageAndSearchHits.foreach { pageAndHits: PageAndHits =>
       json += "postsFound" -> JsArray(pageAndHits.hitsByScoreDesc map { hit =>
         val anyAuthor: Option[Participant] =
               authorIdsByPostId.get(hit.postId) flatMap authorsById.get
-        JsPostFound(hit, anyAuthor, avatarUrlPrefix, jsonConf)
+        JsPostFound(hit, anyAuthor, avatarUrlPrefix, jsonConf, authzCtx)
       })
     }
 
@@ -191,16 +196,20 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
 
   // Typescript: CategoryFound
-  def JsCategoryFoundOrNull(anyCategory: Option[Category], jsonConf: JsonConf): JsValue = {
+  def JsCategoryFoundOrNull(anyCategory: Option[Category], jsonConf: JsonConf,
+          authzCtx: AuthzCtx): JsValue = {
     val category = anyCategory getOrElse { return JsNull }
     // Later, with different forums or sub communities [subcomms] [4GWRQA28] in the same
     // main site — would need to prefix the category's url path with the forum
     // page's url path.
     var res = Json.obj(
       "id" -> JsNumber(category.id),
-      "extId" -> JsStringOrNull(category.extImpId),
       "name" -> JsString(category.name),
       "urlPath" -> JsString(s"/latest/${category.slug}"))
+
+    if (authzCtx.maySeeExtIds) {
+      category.extImpId foreach { res += "extId" -> JsString(_) }
+    }
 
     if (jsonConf.inclOldCategoryIdField) {
       res += "categoryId" -> JsNumber(category.id)  // REMOVE  [ty_v1]
@@ -212,43 +221,48 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
   // Typescript: PostFound
   def JsPostFound(hit: SearchHit, anyAuthor: Opt[Pat], avatarUrlPrefix: St,
-        jsonConf: JsonConf = JsonConf.v0_0)
-        : JsObject = {
+        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): JsObject = {
     Json.obj(
       "isPageTitle" -> JsBoolean(hit.postNr == PageParts.TitleNr),
       "isPageBody" -> JsBoolean(hit.postNr == PageParts.BodyNr),
-      "author" -> JsParticipantFoundOrNull(anyAuthor, avatarUrlPrefix, jsonConf),
+      "author" -> JsPatFoundOrNull(anyAuthor, Some(avatarUrlPrefix), jsonConf, authzCtx),
       "htmlWithMarks" -> JsArray(hit.approvedTextWithHighligtsHtml map JsString))
   }
 
 
   // Typescript: ParticipantFound
   // A bit dupl code. [dupl_pat_json_apiv0]
-  def JsParticipantFoundOrNull(anyPp: Opt[Pat], avatarUrlPrefix: St,
-        jsonConf: JsonConf = JsonConf.v0_0)
-        : JsValue = {
-    val pp = anyPp getOrElse { return JsNull }
-    JsStringOrNull(pp.tinyAvatar.map(_.hashPath))
-    var res = Json.obj(
-      "id" -> JsNumber(pp.id),
-      "extId" -> JsStringOrNull(pp.extId),
-      "username" -> JsStringOrNull(pp.anyUsername),
-      "fullName" -> JsStringOrNull(pp.anyName),
-      "tinyAvatarUrl" -> JsStringOrNull(
-          pp.tinyAvatar.map(avatarUrlPrefix + _.hashPath)),
-      "isGroup" -> pp.isGroup,
-      "isGuest" -> pp.isGuest)
+  def JsPatFoundOrNull(anyPat: Opt[Pat], avatarUrlPrefix: Opt[St],
+        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): JsValue = {
 
-    pp match {
-      case user: User => res += "ssoId" -> JsStringOrNull(user.ssoId)
-      case _ => ()
+    val pat = anyPat getOrElse { return JsNull }
+    var json = Json.obj("id" -> JsNumber(pat.id))
+
+    if (authzCtx.maySeeExtIds) {
+      pat.extId.foreach(json += "extId" -> JsString(_))
+      pat match {
+        case user: UserBase => user.ssoId.foreach(json += "ssoId" -> JsString(_))
+        case _ => ()
+      }
+    }
+
+    pat.anyUsername.foreach(json += "username" -> JsString(_))
+    pat.anyName.foreach(json += "fullName" -> JsString(_))
+
+    if (pat.isGroup) json += "isGroup" -> JsTrue
+    if (pat.isGuest) json += "isGuest" -> JsTrue
+
+    avatarUrlPrefix foreach { avUrlPerf =>
+      pat.tinyAvatar foreach { tinyAv =>
+        json += "tinyAvatarUrl" -> JsString(avUrlPerf + tinyAv.hashPath)
+      }
     }
 
     if (jsonConf.inclOldPpIdField) {
-      res += "ppId" -> JsNumber(pp.id)  // REMOVE  [ty_v1]
+      json += "ppId" -> JsNumber(pat.id)  // REMOVE  [ty_v1]
     }
 
-    res
+    json
   }
 
 }

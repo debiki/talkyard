@@ -25,6 +25,7 @@ import debiki.EdHttp._
 import scala.collection.immutable.Seq
 import Prelude._
 import debiki.dao.{SearchQuery, SiteDao}
+import talkyard.{server => tysv}
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue}
@@ -148,7 +149,9 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // relies on those classes.
     dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
           addMarkTagClasses = false) map { searchResults: Seq[PageAndHits] =>
-      ThingsFoundJson.makePagesFoundSearchResponse(searchResults, dao, pretty)
+      val authzCtx = dao.getAuthzContextOnPats(request.reqer)
+      ThingsFoundJson.makePagesFoundSearchResponse(searchResults, dao,
+            tysv.JsonConf.v0_0(pretty = pretty), authzCtx)
     }
   }
 

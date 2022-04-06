@@ -28,7 +28,7 @@ import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents, Result}
-import talkyard.server.JsX
+import talkyard.server.parser.JsonConf
 import debiki.JsonUtils._
 
 
@@ -127,10 +127,15 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val newerOrAt: Opt[When] = parseOptWhen(listQueryJson, "newerOrAt")
     val olderOrAt: Opt[When] = parseOptWhen(listQueryJson, "olderOrAt")
 
-    def nothingFound = ThingsFoundJson.makePagesFoundListResponse(Nil, dao, pretty)
+    COULD_OPTIMIZE // currently needlessly created again, when checking page perms.
+    // Could reuse this one.  [reuse_authz_ctx]
+    val authzCtx = dao.getForumAuthzContext(requester)
+
+    def nothingFound = ThingsFoundJson.makePagesFoundListResponse(
+          Nil, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
 
     val anyCategory: Option[Category] = anyCategoryRef map { catRef =>
-      val parsedRef = parseRef(catRef, allowParticipantRef = false) getOrIfBad { problem =>
+      val parsedRef = parseRef(catRef, allowPatRef = false) getOrIfBad { problem =>
         throwForbidden("TyE603KSJL3", s"Bad category ref: $problem")
       }
       dao.getCategoryByParsedRef(parsedRef) getOrElse {
@@ -153,8 +158,6 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val avatarUrlPrefix =
           siteIdsOrigins.uploadsOrigin +
            talkyard.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
-
-    lazy val authzCtx = dao.getForumAuthzContext(requester)
 
     listWhat match {
       case Events =>
@@ -184,7 +187,7 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
           auditLogItems.flatMap(Event.fromAuditLogItem)
         }
         val eventsJson = EventsParSer.makeEventsListJson(
-              events, dao, reqer = requester, avatarUrlPrefix = avatarUrlPrefix)
+              events, dao, reqer = requester, avatarUrlPrefix = avatarUrlPrefix, authzCtx)
 
         // Typescript: SearchQueryResults, and ListQueryResults
         controllers.Utils.OkApiJson(Json.obj(
@@ -215,7 +218,8 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
           else true
         }
 
-        ThingsFoundJson.makePagesFoundListResponse(topics, dao, pretty)
+        ThingsFoundJson.makePagesFoundListResponse(
+              topics, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
 
       case Posts =>
         val result: LoadPostsResult = dao.loadPostsMaySeeByQuery(
@@ -230,7 +234,8 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
               inclTitles = true, onlyEmbComments = false,
               writtenById = None)
 
-        PostsListFoundJson.makePostsListFoundResponse(result, dao, pretty)
+        PostsListFoundJson.makePostsListFoundResponse(result, dao,
+              JsonConf.v0_0(pretty = pretty), authzCtx)
 
       case _ =>
         die("TyE502AKTUDT5", s"listWhat: $listWhat")
