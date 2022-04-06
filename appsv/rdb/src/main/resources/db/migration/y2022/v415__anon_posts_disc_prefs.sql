@@ -5,26 +5,6 @@
 -- New domains
 -------------------------------------------------
 
-create domain i32_lt2e9_d i32_d;
-alter  domain i32_lt2e9_d add
-   constraint i32_lt2e9_d_c_lt_2e9 check (value < 2000000000);
-
-create domain i32_abs_lt2e9_d i32_lt2e9_d;
-alter  domain i32_abs_lt2e9_d add
-   constraint i32_abs_lt2e9_d_c_gt_m2e9 check (value > -2000000000);
-
-create domain i32_abs_lt2e9_nz_d i32_abs_lt2e9_d;
-alter  domain i32_abs_lt2e9_nz_d add
-   constraint i32_abs_lt2e9_nz_d_c_nz check (value <> 0);
-
-create domain i32_lt2e9_gz_d i32_lt2e9_d;
-alter  domain i32_lt2e9_gz_d add
-   constraint i32_lt2e9_gz_d_c_gz check (value > 0);
-
-create domain i32_lt2e9_gt1000_d i32_lt2e9_d;
-alter  domain i32_lt2e9_gt1000_d add
-   constraint i32_lt2e9_gt1000_d_c_gt1000 check (value > 1000);
-
 
 create domain content_set_type_d int;
 alter  domain content_set_type_d add
@@ -35,22 +15,6 @@ alter  domain content_set_type_d add
 create domain folder_path_d text_nonempty_ste60_d;
 alter  domain folder_path_d add
    constraint folder_path_d_c_chars check (value ~ '^/([a-z0-9][a-z0-9_-]*/)+$');
-
-create domain page_id_st_d text_nonempty_ste60_d;
-alter  domain page_id_st_d add
-   constraint page_id_st_d_c_chars check (value ~ '^[a-zA-Z0-9_]*$');
-
-create domain page_id_d__later  i64_gz_d;
-
-create domain site_id_d     i32_abs_lt2e9_nz_d;
-create domain cat_id_d      i32_lt2e9_gz_d;
-create domain tagtype_id_d  i32_lt2e9_gt1000_d;
-
-create domain pat_id_d      i32_abs_lt2e9_nz_d;
-
-create domain member_id_d   pat_id_d;
-alter  domain member_id_d add
-   constraint member_id_d_c_gtz check (value > 0);
 
 create domain anon_or_guest_id_d pat_id_d;
 alter  domain anon_or_guest_id_d add
@@ -65,10 +29,11 @@ alter  domain no_choose_yes_d add
    constraint no_choose_yes_d_c_in check (value in (1, 2, 3));
 
 -- See AnonStatus in the Scala code.
-create domain anon_status_d i16_d;
-alter  domain anon_status_d add
-   constraint anon_status_d_c_in_5_37 check (value in (5, 37));
+create domain anonym_status_d i16_d;
+alter  domain anonym_status_d add
+   constraint anonym_status_d_c_in_5_37 check (value in (5, 37));
 
+create domain pseudonym_status_d i16_d; -- will add constraints later
 
 
 -- Privacy columns
@@ -95,10 +60,11 @@ alter table settings3 add column enable_anon_posts_c bool;
 
 
 -- Skip fks — no fks in this table.
-alter table spam_check_queue3 add column true_auhtor_id_c member_id_d;
+alter table spam_check_queue3 rename column author_id to auhtor_true_id_c;
+alter table spam_check_queue3    add column              auhtor_false_id_c  pat_id_d;
 
 
-alter table drafts3 add column new_anon_status_c  anon_status_d;
+alter table drafts3 add column new_anon_status_c  anonym_status_d;
 alter table drafts3 add column post_as_id_c       pat_id_d;
 
 -- fk ix: drafts_i_postasid
@@ -112,8 +78,8 @@ create index drafts_i_postasid on drafts3 (site_id, post_as_id_c);
 
 
 alter table users3 add column true_id_c            member_id_d;
-alter table users3 add column pseudonym_status_c   i32_d; -- later
-alter table users3 add column anonym_status_c      anon_status_d;
+alter table users3 add column pseudonym_status_c   pseudonym_status_d;
+alter table users3 add column anonym_status_c      anonym_status_d;
 alter table users3 add column anon_on_page_id_st_c page_id_st_d;
 alter table users3 add column anon_on_page_id_c    page_id_d__later;
 
@@ -129,15 +95,15 @@ alter table users3 add constraint pats_anononpage_r_pages
     references pages3 (site_id, page_id) deferrable;
 
 
-create index pats_u_trueid_anononpageid on users3 (
+create index pats_i_trueid_anononpageid on users3 (
     site_id, true_id_c, anon_on_page_id_st_c);
 
-create index pats_u_anononpageid on users3 (
+create index pats_i_anononpageid on users3 (
     site_id, anon_on_page_id_st_c);
 
 
 alter table users3 add constraint pats_c_pseudonymid_gte10 check (
-    pseudonym_status_c is null or user_id >= 10);
+    pseudonym_status_c is null or user_id >= 100);
 
 alter table users3 add constraint pats_c_anonid_ltem10 check (
     anonym_status_c is null or user_id <= -10);
@@ -145,11 +111,30 @@ alter table users3 add constraint pats_c_anonid_ltem10 check (
 alter table users3 add constraint pats_c_not_both_anon_pseudo check (
     num_nonnulls(pseudonym_status_c, anonym_status_c) <= 1);
 
--- ! what if pseudonym_status_c is set, then true_id_c not null
 alter table users3 add constraint pats_c_anon_null_same check (
-    num_nonnulls(anonym_status_c, true_id_c, anon_on_page_id_st_c) in (0, 3));
+    ((true_id_c is null) and
+      (anonym_status_c is null) and
+      (anon_on_page_id_st_c is null) and
+      (pseudonym_status_c is null)
+      )
+    or ((true_id_c is not null)
+      and (
+        ((anonym_status_c is not null) and
+         (anon_on_page_id_st_c is not null) and
+         (pseudonym_status_c is null)
+         )
+        or
+        ((anonym_status_c is null) and
+         (anon_on_page_id_st_c is null) and
+         (pseudonym_status_c is not null)
+         )
+        )));
 
 -- But pseudonyms might need to get approved? Since can have custom name and bio.
+-- Anons (and pseudonyms too) can get suspended, I think, so if someone behaves
+-- via an anon account, then, suspending just that anon account, is a bit more
+-- friendly than suspending the user's real account — like, a first small warning,
+-- suitable in some cases (but sometimes better suspend the real account directly).
 alter table users3 add constraint pats_c_anon_not_approved check (
     anonym_status_c is null
     or (created_at is not null and
@@ -161,34 +146,67 @@ alter table users3 add constraint pats_c_anon_not_approved check (
 alter table users3 add constraint pats_c_pseudonym_null check (
     pseudonym_status_c is null);
 
-alter table users3 add constraint pats_c_anon_nulls check (
+alter table users3 add constraint pats_c_anon_no_email check (
     anonym_status_c is null
-    or (guest_browser_id is null and
-        guest_email_addr is null and
-        sso_id is null and
-        ext_id is null and
-        full_name is null and
-        country is null and
-        website is null and
-        about is null and
-        ui_prefs is null and
-        see_activity_min_tr_lv_c is null and
+    or (guest_email_addr is null and
+        primary_email_addr is null and
         email_notfs is null and
         email_verified_at is null and
         email_for_every_new_post is null and
         summary_email_interval_mins is null and
-        summary_email_if_active is null and
+        summary_email_if_active is null));
+
+alter table users3 add constraint pats_c_anon_nulls check (
+    anonym_status_c is null
+    or (guest_browser_id is null and
+        sso_id is null and
+        ext_id is null and
+        username is null and
+        password_hash is null and
+        full_name is null and
+        country is null and
+        website is null and
+        about is null and
+        is_moderator is null and
+        is_admin is null and
+        is_superadmin is null and
+        is_owner is null and
+        is_group = false and
+        ui_prefs is null and
+        see_activity_min_tr_lv_c is null and
         max_upload_bytes_c is null and
         allowed_upload_extensions_c is null and
+        -- Maybe there should be an anon user group, where these are configured?:
+        -- Or would that be the Everyone group?
+        see_activity_min_trust_level is null and
         see_profile_min_tr_lv_c is null and
         see_approx_stats_min_tr_lv_c is null and
         see_exact_stats_min_tr_lv_c is null));
+
+-- Better lock the real user account's levels instead?
+alter table users3 add constraint pats_c_anon_no_levels check (
+    anonym_status_c is null
+    or (trust_level is null and
+        locked_trust_level is null and
+        threat_level is null and
+        locked_threat_level is null));
+
+alter table users3 add constraint pats_c_anon_no_avatar check (
+    anonym_status_c is null
+    or (avatar_tiny_base_url is null and
+        avatar_tiny_hash_path is null and
+        avatar_small_base_url is null and
+        avatar_small_hash_path is null and
+        avatar_medium_base_url is null and
+        avatar_medium_hash_path is null));
+
 
 alter table users3 drop constraint pps_c_guest_not_nulls;
 alter table users3 add constraint pats_c_guest_non_nulls check (
     -- Member or anonym?
     (user_id > 0 or anonym_status_c is not null)
-    -- Else, is a guest (or the Unknown user) and then:
+    -- Else, is a guest (or the Unknown user) and then, add back the constr
+    -- deleted above:  (guest email is '-' if absent, so, never null)
     or (created_at is not null and
         full_name is not null and
         guest_email_addr is not null));
@@ -201,6 +219,50 @@ alter table users3 add constraint pats_c_guest_w_no_browserid_has_extid check (
     or guest_browser_id is not null
     or ext_id is not null);
 
+
+-- Or maybe:
+alter table audit_log3  rename column doer_id             to doer_true_id_c;
+alter table audit_log3  rename column target_user_id      to target_pat_true_id_c;
+alter table audit_log3  add    column doer_false_id_c       pat_id_d;
+alter table audit_log3  add    column target_pat_false_id_c pat_id_d;
+
+alter table audit_log3  add column doer_sess_created_at_c timestamp;
+
+
+-- Later, delete this fk? So old sessions can be deleted, without having to upd the audit log.
+-- But keep it for a while, to discover bugs.
+alter table audit_log3 add constraint auditlog_r_sessions
+    foreign key (site_id, doer_true_id_c, doer_sess_created_at_c)
+    references sessions_t (site_id_c, pat_id_c, created_at_c);
+
+create index auditlog_i_doertrueid_session
+    on audit_log3 (site_id, doer_true_id_c, doer_sess_created_at_c);
+
+
+
+-- Could do, but I think this is too error prone — I will or have already forgotten
+-- some columns below, or will forget to always update all columns when needed.
+-- Also, importing patches gets more complicated. Instead of the below,
+-- the anon/pseudo user account's id will be stored. And one would use the
+-- event / audit log to ... audit what the real people behind the anon/pseudonyms,
+-- have done. (Or lookup the true id in the users table, pats_t, but the audit log
+-- should be enough.)
+--
+-- alter table post_actions3    add column true_id_c             member_id_d;
+-- alter table links_t          add column added_by_true_id_c    member_id_d;
+-- alter table link_previews_t  add column first_linked_by_id_c  member_id_d;
+-- alter table post_revisions3  add composed_by_true_id_c        member_id_d;
+-- alter table posts3           add created_by_true_id_c         member_id_d;
+-- alter table posts3           add author_id_c                  pat_id_d;
+-- alter table posts3           add author_true_id_c             member_id_d;
+-- 
+-- alter table pages3           add author_true_id_c             member_id_d;
+-- -- But leave last_reply_by_id as is — don't add any  last_reply_by_true_id,
+-- -- not that interesting.
+-- 
+-- alter table upload_refs3     add  added_by_true_id_c          member_id_d;
+-- 
+-- alter table user_visit_stats3 add true_user_id_c              member_id_d;
 
 
 -- Notification preferences
