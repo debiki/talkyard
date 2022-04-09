@@ -95,7 +95,7 @@ val appDependencies = Seq(
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
   "ch.qos.logback" % "logback-core" % "1.2.10",
   // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-  "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
+  "net.logstash.logback" % "logstash-logback-encoder" % "7.1",
   //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
