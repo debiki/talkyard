@@ -163,7 +163,7 @@ class WebSocketMessageHandler(
             logger.trace(s"$prefix $who sent: $jsValue [TyEWSGOTMSG]")
 
             val rateLimitData = SomethingToRateLimitImpl(
-              siteId = site.id,
+              site,
               user = Some(requester),
               ip = theBrowserIdData.ip,
               ctime = globals.now().toJavaDate,

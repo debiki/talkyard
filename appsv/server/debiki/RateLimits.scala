@@ -19,7 +19,7 @@ package debiki
 
 import RateLimits._
 import com.debiki.core._
-import com.debiki.core.Prelude.clampToInt
+import com.debiki.core.Prelude._
 
 
 /** There should be a Max-X-per-site restriction for each X that can be saved in
@@ -81,20 +81,53 @@ case class MaxLimits(
 
 
 
-
-abstract class RateLimits {
-  def key: String
-  def what: String
-  def maxPerFifteenSeconds: Int
-  def maxPerFifteenMinutes: Int
-  def maxPerDay: Int
-  def maxPerDayNewUser: Int
+// CLEAN
+abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete limits to vals instead of objects [rate_lims_case_cl]
+  def key: St
+  def what: St
+  def maxPerFifteenSeconds: i32
+  def maxPerFifteenMinutes: i32
+  def maxPerDay: i32
+  def maxPerDayNewUser: i32
+  def isReadLimits: Opt[Bo] = None  // only partly impl
 
   assert(maxPerDay >= maxPerDayNewUser || maxPerDayNewUser == Unlimited)
   assert(maxPerDay >= maxPerFifteenMinutes || maxPerFifteenMinutes == Unlimited)
   assert(maxPerDay >= maxPerFifteenSeconds || maxPerFifteenSeconds == Unlimited)
   assert(maxPerFifteenMinutes >= maxPerFifteenSeconds || maxPerFifteenSeconds == Unlimited)
 
+
+  def multBy(siteLimits: SiteLimitsMultipliers): RateLimits = {
+    val anyMultiplier: Opt[f32] =
+          if (isReadLimits is true) {
+            siteLimits.readLimitsMultiplier
+          }
+          else {
+            // Later, would mult by write limits or log limits?
+            None
+          }
+
+    val m = anyMultiplier getOrElse {
+      return this // unchanged
+    }
+
+    // Later, when is case class:   [rate_lims_case_cl]
+    // copy(maxPerFifteenSeconds = math.floor(maxPerFifteenSeconds * m),
+    //       maxPerFifteenMinutes = math.floor(maxPerFifteenMinutes * m),
+    //       maxPerDay = math.floor(maxPerDay * m),
+    //       maxPerDayNewUser = math.floor(maxPerDayNewUser * m))
+    //
+    // But for now:
+    new RateLimits {
+      val key: St = this.key
+      val what: St = this.what
+      // Better round up, so won't accidentally get zero, if a multiplier is 0<..<1.
+      val maxPerFifteenSeconds: i32 = math.ceil(maxPerFifteenSeconds * m).toInt
+      val maxPerFifteenMinutes: i32 = math.ceil(maxPerFifteenMinutes * m).toInt
+      val maxPerDay: i32 = math.ceil(maxPerDay * m).toInt
+      val maxPerDayNewUser: i32 = math.ceil(maxPerDayNewUser * m).toInt
+    }
+  }
 
   def isUnlimited(isNewUser: Boolean): Boolean =
     maxPerFifteenSeconds == Unlimited &&
@@ -675,6 +708,7 @@ object RateLimits {
     def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
+    override def isReadLimits: Opt[Bo] = Some(true)
   }
 }
 

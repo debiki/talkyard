@@ -51,6 +51,9 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def site: SiteBrief
 
+  // Same as 'site' but with fewer fields exposed.
+  def siteLimits: SiteLimitsMultipliers = site
+
   def anyTySession: Opt[TySession]
   def tySession: TySession = anyTySession getOrElse throwForbidden("TyE0SESS", "Not logged in")
 

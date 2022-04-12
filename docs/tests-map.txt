@@ -1609,6 +1609,14 @@ export and restore:  (impexp)
     - guestEmailPrefs, not yet incl in export
     - Include category ext id in imported dump. Also speeds up test. TyT60FKTEXK53
 
+
+limits,
+rate limits:
+            - tests/app/debiki/RateLimiterSpec.scala
+  per site limits multipliers:
+            - TESTS_MISSING
+
+
 latency,
 3g,
 slow 3g connections:

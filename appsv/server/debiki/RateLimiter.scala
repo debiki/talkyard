@@ -28,22 +28,23 @@ import talkyard.server.security.EdSecurity
 
 
 trait SomethingToRateLimit {
-  def siteId: SiteId
-  def user: Option[Participant]
+  def siteLimits: SiteLimitsMultipliers
+  def user: Opt[Pat]
   def ip: IpAddress
   def ctime: java.util.Date
-  def shallSkipRateLimitsBecauseIsTest: Boolean
-  def hasOkE2eTestPassword: Boolean
+  def shallSkipRateLimitsBecauseIsTest: Bo
+  def hasOkE2eTestPassword: Bo
 }
 
 
 case class SomethingToRateLimitImpl(
-  siteId: SiteId,
-  user: Option[Participant],
+  siteLimits: SiteLimitsMultipliers,
+  user: Opt[Pat],
   ip: IpAddress,
   ctime: java.util.Date,
-  shallSkipRateLimitsBecauseIsTest: Boolean,
-  hasOkE2eTestPassword: Boolean) extends SomethingToRateLimit
+  shallSkipRateLimitsBecauseIsTest: Bo,
+  hasOkE2eTestPassword: Bo) extends SomethingToRateLimit {
+}
 
 
 
@@ -98,7 +99,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
 
     // If authenticated, the user gets his/her own rate limit entry, otherwise s/he
     // has to share resources with everyone on the same ip.
-    val roleIdOrIp = request.user.flatMap(_.anyMemberId).map(request.siteId + "|" + _)
+    val roleIdOrIp = request.user.flatMap(_.anyMemberId).map(request.siteLimits.id + "|" + _)
       .getOrElse(request.ip)
     val key = s"$roleIdOrIp|${rateLimits.key}"
 
@@ -110,16 +111,18 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
 
     var requestTimestamps: Array[UnixTime] = timestampsHolder.timestamps.get
 
+    val effectiveLimits = rateLimits multBy request.siteLimits
+
     // If the rate limits have been changed, we need a new properly sized cache elem.
-    if (requestTimestamps.length != rateLimits.numRequestsToRemember(isNewUser = false)) {
-      timestampsHolder = makeCacheItem(key, rateLimits)
+    if (requestTimestamps.length != effectiveLimits.numRequestsToRemember(isNewUser = false)) {
+      timestampsHolder = makeCacheItem(key, effectiveLimits)
       timestampsCache.put(key, timestampsHolder)
       requestTimestamps = timestampsHolder.timestamps.get
     }
 
     val now: UnixTime = (request.ctime.getTime / 1000).toInt // change before year 2038
 
-    throwIfTooManyRequests(rateLimits, now, requestTimestamps, key)
+    throwIfTooManyRequests(effectiveLimits, now, requestTimestamps, key)
 
     // Ignore race conditions. Other parts of the architecture ought to ensure we
     // don't get to here more than at most a few times each second, for each key.

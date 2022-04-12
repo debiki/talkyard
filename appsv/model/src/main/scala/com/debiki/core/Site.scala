@@ -109,7 +109,10 @@ case class SiteBrief(
   hostname: Opt[St],
   status: SiteStatus,
   featureFlags: St,
-) extends SiteTrait {
+  readLimitsMultiplier: Opt[f32],
+  logLimitsMultiplier: Opt[f32],
+  createLimitsMultiplier: Opt[f32],
+) extends SiteTrait with SiteLimitsMultipliers {
 }
 
 
@@ -226,6 +229,7 @@ trait SiteIdHostnames {
 
 
 trait SiteLimitsMultipliers {
+  def id: SiteId
   def readLimitsMultiplier: Opt[f32]
   def logLimitsMultiplier: Opt[f32]
   def createLimitsMultiplier: Opt[f32]
@@ -256,7 +260,10 @@ case class Site(  // Remove? Use SiteBrief or SiteDetailed instead?
 
   def brief: SiteBrief =
     SiteBrief(id, pubId, canonicalHostname.map(_.hostname), status,
-          featureFlags = featureFlags)
+          featureFlags = featureFlags,
+          readLimitsMultiplier = readLimitsMultiplier,
+          logLimitsMultiplier = logLimitsMultiplier,
+          createLimitsMultiplier = createLimitsMultiplier)
 }
 
 
