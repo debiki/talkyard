@@ -135,7 +135,14 @@ describe(`api-get-query-for-pats.2br  TyTEAPIGETQPATS`, () => {
 
   // ----- Look up by username
 
+  let errResp: St;
 
+  it(`A stranger calls /-/get  username:trillian,  but w/o any API secret`, async () => {
+    errResp = await getPatsButFail(['username:trillian']);
+    logMessage(j2s(errResp));
+  });
+
+  /* No, not allowed:  [get_pat_api_secr]
   it(`A stranger calls /-/get  username:trillian,  but w/o any API secret`, async () => {
     response = await getPatsOk(['username:trillian']);
     logMessage(j2s(response));
@@ -144,10 +151,10 @@ describe(`api-get-query-for-pats.2br  TyTEAPIGETQPATS`, () => {
 
   it(`... gets back 1 thing-or-err`, async () => {
     assert.eq(response.thingsOrErrs.length, 1);
-  });
+  }); */
 
 
-  it(`... namely Trillian`, async () => {
+  it(`... namely Trillian — no, there was an error`, async () => {
     const tri = forum.members.trillian;
     expectedTrillianNoSsoId = {
       id: tri.id,
@@ -161,7 +168,9 @@ describe(`api-get-query-for-pats.2br  TyTEAPIGETQPATS`, () => {
       // TESTS_MISSING instead of the line above, do sth like:
       //    assert.noFieldNameLike(/email/i)  ?
     };
-    assert.partialEq(response.thingsOrErrs[0], expectedTrillianNoSsoId);
+
+    assert.includes(errResp, 'TyE0APISECR_');
+    //assert.partialEq(response.thingsOrErrs[0], expectedTrillianNoSsoId);
   });
 
 
@@ -197,11 +206,15 @@ describe(`api-get-query-for-pats.2br  TyTEAPIGETQPATS`, () => {
     responseSt = await getPatsButFail(['ssoid:memah_ssoid']);
   });
   it(`... the error response says something about sso id and ext id`, async () => {
+    // Now this is even more restricted:  [get_pat_api_secr]
+    assert.includes(errResp, 'TyE0APISECR_');
+    /*
     // Could add a special error code for this?
     logServerResponse(responseSt);
     assert.includes(responseSt, 'only admins and sysbot');
     assert.includes(responseSt, 'sso id');
     assert.includes(responseSt, 'ext id');
+    */
   });
 
 

@@ -63,10 +63,18 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val thingsOrErrsJsArr = getWhat match {
       case "Pages" =>
+        // Currently allowed, so blog comment Like vote counts can be shown.
         getPagesImpl(req, refs, pretty = pretty)
+
       case "Posts" =>
         throwUnimpl("Getting posts hasn'b been implemenetd [TyE02MSRD37]")
+
       case "Pats" =>
+        // For now.  [get_pat_api_secr]
+        // In private communities, names are private, so it's simpler to just
+        // disallow these requests always, unless there's an API secret.
+        throwForbiddenIf(!req.isViaApiSecret, "TyE0APISECR_", "API secret missing")
+
         GetPatsImpl.getPats(req, getQueryJson, refs) getOrIfBad { problem =>
           return BadReqResult("TyEGETPATS", problem)
         }
@@ -141,6 +149,10 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
             topicsOrErrs.map({
               case Good(pagePathAndMeta) =>
                 Json.obj(
+                    // NOTE: if adding anything more here, don't include that in
+                    // responses to public API requests. But these are ok,
+                    // for blog comments:
+                    // Could allow only if page type is EmbeddedDiscussion?
                     "numOpDoItVotes" -> pagePathAndMeta.meta.numOrigPostDoItVotes,
                     "numOpDoNotVotes" -> pagePathAndMeta.meta.numOrigPostDoNotVotes,
                     "numOpLikeVotes" -> pagePathAndMeta.meta.numOrigPostLikeVotes,
