@@ -24,7 +24,7 @@
     "watch-debug": "concurrently -k -p \"[{name}]\" -n \"TypeScript\" -c \"yellow.bold,cyan.bold,green.bold\" \"npm run watch-ts\""
   },
   "dependencies": {
-    "async": "^2.6.0",
+    "async": "^3.2.2",
     "chalk": "^2.2.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.5",
