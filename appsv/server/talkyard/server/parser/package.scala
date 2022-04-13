@@ -29,16 +29,25 @@ package object parser {
     *
     * @param v0_1 — just "id" instead of "pageId" and "ppId".
     */
-  case class JsonConf(v0_0: Bo = false, v0_1: Bo = false) {
+  case class JsonConf(v0_0: Bo = false, v0_1: Bo = false, pretty: Bo = false) {
     dieIf(!v0_0 && !v0_1, "TyE7MRKRD3067A")
     dieIf(v0_0 && v0_1, "TyE7MRKRD3067B")
+
     def inclOldPageIdField: Bo = v0_0
     def inclOldPpIdField: Bo = v0_0
     def inclOldCategoryIdField: Bo = v0_0
   }
 
   object JsonConf {
-    val v0_0: JsonConf = JsonConf(v0_0 = true)
-    val v0_1: JsonConf = JsonConf(v0_1 = true)
+    private val _v0_0: JsonConf = JsonConf(v0_0 = true)
+    private val _v0_1: JsonConf = JsonConf(v0_1 = true)
+
+    def v0_0(pretty: Bo = false): JsonConf =
+      if (!pretty) _v0_0
+      else _v0_0.copy(pretty = pretty)
+
+    def v0_1(pretty: Bo = false): JsonConf =
+      if (!pretty) _v0_1
+      else _v0_1.copy(pretty = pretty)
   }
 }

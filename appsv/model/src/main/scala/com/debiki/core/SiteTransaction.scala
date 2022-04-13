@@ -618,8 +618,9 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
       case group: Group => throw GotAGroupException(group.id)
     }
 
-  def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
-        : immutable.Seq[MemberInclDetails]
+  def loadMembersVbByRef(refs: Iterable[PatRef]): ImmSeq[MemberVb]
+
+  def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId]): ImmSeq[MemberVb]
 
   def loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(ids: Iterable[UserId])
         : immutable.Map[UserId, ParticipantInclDetails]

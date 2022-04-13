@@ -45,6 +45,13 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  def getAuthzContextOnPats(pat: Opt[Pat]): AuthzCtxOnPats = {
+    val groupIds = getGroupIdsOwnFirst(pat)
+    AuthzCtxOnPatsOnly(pat, groupIds)
+  }
+
+
+  RENAME // to  ... getPublicAuthzCtxOnAll maybe?
   def getForumPublicAuthzContext(): ForumAuthzContext = {
     getForumAuthzContext(None)
   }
@@ -53,7 +60,7 @@ trait AuthzSiteDaoMixin {
   def getForumAuthzContext(pat: Opt[Pat]): ForumAuthzContext = {
     val groupIds = getGroupIdsOwnFirst(pat)
     val permissions = getPermsForPeople(groupIds)
-    ForumAuthzContext(pat, groupIds, permissions)
+    AuthzCtxOnForum(pat, groupIds, permissions)
   }
 
 
@@ -86,7 +93,7 @@ trait AuthzSiteDaoMixin {
     maySeePageImpl(pageMeta, user, anyTx = None, maySeeUnlisted = maySeeUnlisted)
   }
 
-  def maySeePageUseCacheAndAuthzCtx(pageMeta: PageMeta, authzContext: AuthzContext,
+  def maySeePageUseCacheAndAuthzCtx(pageMeta: PageMeta, authzContext: AuthzCtxOnPages,
         maySeeUnlisted: Bo = true): (Bo, St) = {
     maySeePageWhenAuthContext(pageMeta, authzContext, anyTx = None,
         maySeeUnlisted = maySeeUnlisted)
@@ -172,13 +179,14 @@ trait AuthzSiteDaoMixin {
       getPermsForPeople(groupIds)
     }
 
-    val authContext = ForumAuthzContext(user, groupIds, permissions)
+    // This gets reconstructed a bit much. [reuse_authz_ctx]
+    val authContext = AuthzCtxOnForum(user, groupIds, permissions)
     maySeePageWhenAuthContext(pageMeta, authContext, anyTx,
           maySeeUnlisted = maySeeUnlisted)
   }
 
 
-  private def maySeePageWhenAuthContext(pageMeta: PageMeta, authzContext: AuthzContext,
+  private def maySeePageWhenAuthContext(pageMeta: PageMeta, authzContext: AuthzCtxOnPages,
         anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): (Bo, St) = {
 
     if (authzContext.requester.exists(_.isAdmin))

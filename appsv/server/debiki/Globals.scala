@@ -740,13 +740,19 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           "EdEDEFSITEID", o"""There's no site with id $defaultSiteId, which is the configured
             default site id (config value: $DefaultSiteIdConfValName)""")
         SiteBrief(defaultSiteId, site.pubId, Some(hostname), site.status,
-              featureFlags = site.featureFlags)
+              featureFlags = site.featureFlags,
+              readLimitsMultiplier = None,
+              logLimitsMultiplier = None,
+              createLimitsMultiplier = None)
       }
       else {
         // Lazy-create the very first site, with id 1, if doesn't yet exist.
         val firstSite = systemDao.getOrCreateFirstSite()
         SiteBrief(FirstSiteId, firstSite.pubId, Some(hostname), firstSite.status,
-              featureFlags = firstSite.featureFlags)
+              featureFlags = firstSite.featureFlags,
+              readLimitsMultiplier = None,
+              logLimitsMultiplier = None,
+              createLimitsMultiplier = None)
       }
     }
 

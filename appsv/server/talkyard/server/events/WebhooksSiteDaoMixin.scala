@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SiteDao
 import talkyard.{server => tys}
+import talkyard.server.authz.AuthzCtxOnForum
 
 import play.api.libs.ws._
 import play.api.libs.json.Json
@@ -248,10 +249,19 @@ trait WebhooksSiteDaoMixin {
     if (events.isEmpty)
       return ()
 
+    // ----- Access control
+
+    // Currently all events are sent as sysbot. [webhook_alw_sysbot]
+    val sysbot = getTheUser(SysbotUserId)
+
+    val authzCtx = AuthzCtxOnForum(Some(sysbot),
+          groupIdsUserIdFirst = getGroupIdsOwnFirst(Some(sysbot)),
+          tooManyPermissions = Nil) // sysbot can do anything anyway
+
     // ----- Prepare a request
 
-    val reqToSend = generateWebhookRequest(webhook, events, reqNr = reqNr, anyRetryNr
-          ) getOrIfBad { problem =>
+    val reqToSend = generateWebhookRequest(webhook, events, reqNr = reqNr, anyRetryNr,
+          authzCtx) getOrIfBad { problem =>
       // Webhook broken — we'll stop sending; seems the config is invalid somehow,
       // since we couldn't even construct a request.
       val webhookAfter = webhook.copy(
@@ -336,7 +346,7 @@ trait WebhooksSiteDaoMixin {
 
 
   private def generateWebhookRequest(webhook: Webhook, events: ImmSeq[Event],
-        reqNr: i32, retryNr: Opt[RetryNr]): WebhookReqOut Or ErrMsg = {
+        reqNr: i32, retryNr: Opt[RetryNr], authzCtx: AuthzCtxOnForum): WebhookReqOut Or ErrMsg = {
     dieIf(events.isEmpty, "TyE502MREDL6", "No events to send")
 
     val runAsUser = webhook.runAsId match {
@@ -358,7 +368,7 @@ trait WebhooksSiteDaoMixin {
             talkyard.server.UploadsUrlBasePath + siteIdsOrigins.pubId + '/'
 
     val eventsJsonList: ImmSeq[EventAndJson] = EventsParSer.makeEventsListJson(
-          events, dao = this, reqer = runAsUser, avatarUrlPrefix)
+          events, dao = this, reqer = runAsUser, avatarUrlPrefix, authzCtx)
 
     val webhookReqBodyJson = Json.obj(
           "origin" -> siteIdsOrigins.siteOrigin,

@@ -112,7 +112,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
     Redirect(routes.ResetPasswordController.showEmailSentPage(isEmailAddress.toString).url)
   }
 
-  private def toWho(member: MemberMaybeDetails) =
+  private def toWho(member: UserBase): St =
     s"to ${member.usernameHashId}, addr: ${member.primaryEmailAddress}"
 
 

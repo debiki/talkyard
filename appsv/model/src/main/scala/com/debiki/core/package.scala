@@ -160,8 +160,12 @@ package object core {
 
   type LoginId = String
 
-  type Pat = Participant
+  type Participant = com.debiki.core.Pat
   val Pat: Participant.type = Participant
+  type User = UserBr  // backw compat, renaming [trait_user]
+
+  type PatVb = ParticipantInclDetails
+  type MemberVb = MemberInclDetails
 
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
@@ -221,10 +225,29 @@ package object core {
   // ext ids, could estimate the number of people in the organization.)
   type ExtId = String
 
-  type Ref = String  ; RENAME // to RawRef, and rename ParsedRef to just Ref
+  type Ref = String  ; RENAME // to RawRef, and ... or not: rename ParsedRef to just Ref
   type RawRef = Ref  //  ... started
 
-  sealed trait PatRef
+  sealed trait PatRef {
+    def isSsoOrExtId: Bo  // break out to base trait 'Ref'? Also see comment above
+
+    def findMatchingPat(pats: Iterable[PatVb]): Opt[PatVb] = {
+      pats find { pat =>
+        this match {
+          case ParsedRef.UserId(userId) => pat.id == userId
+          case ParsedRef.TalkyardId(_) => die("TyE5MAT20M", "tyid:__ refs shouldn't be here")
+          case ParsedRef.SingleSignOnId(ssoId) =>
+            pat match {
+              case u: UserBase => u.ssoId is ssoId
+              case _ => false
+            }
+          case ParsedRef.ExternalId(extId) => pat.extId is extId
+          case ParsedRef.Username(username) => pat.anyUsername.is(username) && pat.isUserNotGuest
+          case ParsedRef.Groupname(username) => pat.anyUsername.is(username) && pat.isGroup
+        }
+      }
+    }
+  }
 
   sealed trait PageRef { self: ParsedRef =>
     // Why this needed, I thought the compiler would deduce this itself?
@@ -238,14 +261,16 @@ package object core {
   sealed abstract class ParsedRef(
     val canBeToPat: Bo = true,
     val canOnlyBeToPat: Bo = false,
-    val canBeToPage: Bo = true)
+    val canBeToPage: Bo = true,
+    val isSsoOrExtId: Bo = false)
 
   object ParsedRef {
     case class ExternalId(value: ExtId)
-      extends ParsedRef with PatRef with PageRef with PostRef
+      extends ParsedRef(isSsoOrExtId = true) with PatRef with PageRef with PostRef
 
     case class SingleSignOnId(value: St)
-      extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef
+      extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false, isSsoOrExtId = true)
+      with PatRef
 
     case class TalkyardId(value: St)
       extends ParsedRef with PatRef with PageRef with PostRef
@@ -256,8 +281,13 @@ package object core {
     case class PagePath(value: St)
       extends ParsedRef(canBeToPat = false) with PageRef
 
+    // case class PatId(value: core.PatId)  — also for guests and anons, pat id <= -10.
+
+    RENAME // to MemberId?  So works for groups too?
     case class UserId(value: core.UserId)
-      extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef
+      extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef {
+      dieIf(value <= 0, "TyE60MSPL2", s"User id ref <= 0: $value")
+    }
 
     case class Username(value: St)
       extends ParsedRef(canOnlyBeToPat = true, canBeToPage = false) with PatRef
@@ -306,20 +336,21 @@ package object core {
   }
 
   def parsePatRef(ref: Ref): PatRef Or ErrMsg = {
-    parseRef(ref, allowParticipantRef = true) map { parsedRef =>
+    parseRef(ref, allowPatRef = true, allowTyId = false) map {
+          parsedRef =>
       if (!parsedRef.canBeToPat) return Bad(s"Not a participant ref: $ref")
       parsedRef.asInstanceOf[PatRef]
     }
   }
 
   def parsePageRef(ref: Ref): PageRef Or ErrMsg = {
-    parseRef(ref, allowParticipantRef = false) map { parsedRef =>
+    parseRef(ref, allowPatRef = false) map { parsedRef =>
       if (!parsedRef.canBeToPage) return Bad(s"Not a page ref: $ref")
       parsedRef.asInstanceOf[PageRef]
     }
   }
 
-  def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrMsg = {
+  def parseRef(ref: Ref, allowPatRef: Bo, allowTyId: Bo = true): ParsedRef Or ErrMsg = {
     if (ref.isEmpty)
       return Bad("Empty ref: Neither prefix, nor value [TyEEMPTREF]")
 
@@ -331,8 +362,9 @@ package object core {
     */
 
     val returnBadIfDisallowParticipant = () =>
-      if (!allowParticipantRef)
-        return Bad("Refs to participants not allowed here, got: " + ref)
+      if (!allowPatRef)
+        return Bad(s"Refs to participants not allowed here, got: '$ref' [TyEISPATERF]")
+
     // Usernames and Talkyard internal ids don't contain '@'.
     val returnBadIfContainsAt = (value: String) =>
       if (value contains '@')
@@ -348,10 +380,14 @@ package object core {
       Good(ParsedRef.SingleSignOnId(ssoId))
     }
     else if (ref startsWith "tyid:") {
-      val tyId = ref drop "tyid:".length
-      returnBadIfContainsAt(tyId)
-      Good(ParsedRef.TalkyardId(tyId))
+      if (!allowTyId) Bad("These refs not allowed here: 'tyid:...' [TyEREFTYIDREF]")
+      else {
+        val tyId = ref drop "tyid:".length
+        returnBadIfContainsAt(tyId)
+        Good(ParsedRef.TalkyardId(tyId))
+      }
     }
+    // Later:  membid:__  also for groups,  and patid:__ also for guests & anons
     else if (ref startsWith "userid:") {
       returnBadIfDisallowParticipant()
       val idSt = ref drop "userid:".length

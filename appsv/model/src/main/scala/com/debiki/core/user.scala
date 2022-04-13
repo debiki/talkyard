@@ -612,16 +612,20 @@ case object Participant {
 }
 
 
-// Try to remove all fields unique for only Member and only Guest.
-// Participant = Guest or Member
-// Member = User Or Group
-// trait Someone = Guest or User  = just 1 person (or bot), not a group.
-// Abbreviate 'ppts' and 'ppt' in db constr names.
-sealed trait Participant {    RENAME // to Pat, already started, in core/package.ts
+/** A participant, which is a Guest, a User or a Group, or (soon) an Anonym.
+  * Or (later) a Pseudonym or (much later) a Circle (a bottom-up created group,
+  * i.e. not created by the mods, but by ordinary members).
+  *
+  * Member = User or Group (but not Guest).
+  *
+  * Someone = Guest or User, that is, just 1 person or bot (called "Someone" not
+  * "Person" since could be a bot).
+  */
+sealed trait Pat {
 
   def id: PatId
   def extId: Opt[ExtId]
-  def email: EmailAdr  // COULD rename to emailAddr
+  def email: EmailAdr  // COULD rename to emailAddr and change to Opt[EmailAdr] (instead of "")
   def emailNotfPrefs: EmailNotfPrefs
   def tinyAvatar: Opt[UploadRef]
   def smallAvatar: Opt[UploadRef]
@@ -629,70 +633,73 @@ sealed trait Participant {    RENAME // to Pat, already started, in core/package
   def isAdmin: Bo
   def isOwner: Bo
   def isModerator: Bo
-  def isSuperAdmin: Bo
+
+  // Later: Impl for Guest users too?
   def isDeactivated: Bo = false
   def isDeleted: Bo = false
 
-  def isAuthenticated: Bo = isRoleId(id)
-  def isApprovedOrStaff: Bo = false
-  def isSystemUser: Bo = id == SystemUserId
-  def isSystemOrSysbot: Bo = id == SystemUserId || id == SysbotUserId
-  def isStaff: Bo = isAdmin || isModerator || isSystemUser
-  def isHuman: Bo = id >= LowestTalkToMemberId || id <= MaxGuestId
-  def isBuiltIn: Bo = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
-  def isGone: Bo = isDeactivated || isDeleted
+  final def isAuthenticated: Bo = isRoleId(id)
+  def isApprovedOrStaff: Bo
+  final def isSystemUser: Bo = id == SystemUserId
+  final def isSystemOrSysbot: Bo = id == SystemUserId || id == SysbotUserId
+  final def isStaff: Bo = isAdmin || isModerator || isSystemUser
+  final def isHuman: Bo = id >= LowestTalkToMemberId || id <= MaxGuestId
+  final def isBuiltIn: Bo = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
+  final def isGone: Bo = isDeactivated || isDeleted
 
-  def isStaffOrCoreMember: Bo =  // but what about threat level?
+  final def isStaffOrCoreMember: Bo =  // but what about threat level?
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.CoreMember.toInt
 
-  def isStaffOrTrustedNotThreat: Bo =
+  final def isStaffOrTrustedNotThreat: Bo =
     isStaffOrMinTrustNotThreat(TrustLevel.TrustedMember)
 
-  def isStaffOrFullMember: Bo =
+  final def isStaffOrFullMember: Bo =
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.FullMember.toInt
 
-  /** Guests have no trust level, so default = false */
-  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel) = false
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo
 
-  def isMember: Bo = Participant.isMember(id)
-  def isGuest: Bo = Participant.isGuestId(id)
+  final def isMember: Bo = Participant.isMember(id)
+  final def isGuest: Bo = Participant.isGuestId(id)
   // Rename to jus isUser later when "user" means "user not guest" everywhere anyway.
-  def isUserNotGuest: Bo = isMember && !isGroup && !isBuiltIn
-  def isGroup: Bo = false
-  def anyMemberId: Opt[MembId] = if (isRoleId(id)) Some(id) else None
+  final def isUserNotGuest: Bo = isMember && !isGroup && !isBuiltIn
 
-  def accountType: St = if (isGuest) "guest" else if (isGroup) "group" else "user"
+  def isGroup: Bo
+  final def anyMemberId: Opt[MembId] = if (isRoleId(id)) Some(id) else None
 
-  def isSuspendedAt(when: When): Bo = isSuspendedAt(when.toJavaDate)
-  def isSuspendedAt(when: ju.Date): Bo =
+  final def accountType: St = if (isGuest) "guest" else if (isGroup) "group" else "user"
+
+  final def isSuspendedAt(when: When): Bo = isSuspendedAt(when.toJavaDate)
+  final def isSuspendedAt(when: ju.Date): Bo =
     Participant.isSuspendedAt(when, suspendedTill = suspendedTill)
 
   def effectiveTrustLevel: TrustLevel
+
   def canPromoteToBasicMember: Bo = false
   def canPromoteToFullMember: Bo = false
 
   /** A member's full name, or guest's guest name. */
-  def anyName: Opt[St] = None
+  def anyName: Opt[St]
 
   /** Only for members, not guests. */
-  def anyUsername: Opt[St] = None
+  def anyUsername: Opt[St]
 
   def usernameOrGuestName: St
-  def usernameSpaceOtherName: St =
+
+  final def usernameSpaceOtherName: St =
     (anyUsername.getOrElse("") + " " + anyName.getOrElse("")).trim
 
   def nameOrUsername: St
 
-  def idSpaceName: St =
+  final def idSpaceName: St =
     anyUsername.map(un => s"$id @$un") getOrElse s"$id '$usernameOrGuestName'"
 
-  def nameParaId: St =
+  final def nameParaId: St =
     anyUsername.map(un => s"@$un (id $id)") getOrElse s"'$usernameOrGuestName' (id $id)"
 
-  def nameHashId: St =
+  final def nameHashId: St =
     anyUsername.map(un => s"@$un #$id") getOrElse s"'$usernameOrGuestName' #$id"
 
-  def toMemberOrThrow: Member = {
+  final def toMemberOrThrow: Member = {
     this match {
       case m: User => m
       case g: Guest => throw GotAGuestException(g.id)
@@ -701,7 +708,7 @@ sealed trait Participant {    RENAME // to Pat, already started, in core/package
     }
   }
 
-  def toUserOrThrow: User = {
+  final def toUserOrThrow: User = {
     this match {
       case m: User => m
       case g: Guest => throw GotAGuestException(g.id)
@@ -712,15 +719,60 @@ sealed trait Participant {    RENAME // to Pat, already started, in core/package
 }
 
 
-trait Member extends Participant {
-  def theUsername: String
-  //def fullName: String
+
+sealed trait Member extends Pat {
+  def theUsername: St
+  final def anyUsername: Opt[St] = Some(theUsername)
+  final def usernameOrGuestName: St = theUsername
+  final def nameOrUsername: St = anyName getOrElse theUsername
+
+  final def usernameParensFullName: St = anyName match {
+    case Some(name) => s"$theUsername ($name)"
+    case None => theUsername
+  }
+
+  def isApproved: Opt[Bo]
+  final def isApprovedOrStaff: Bo = isApproved.is(true) || isStaff
 }
 
 
 object Member {
   val DeletedUsernameSuffix = "_deleted"
 }
+
+
+sealed trait Someone extends Pat {
+  assert(!isGroup, "TyE05MKFS56")
+}
+
+
+trait UserBase extends Member with Someone {  RENAME // to User, and remove type User = UserBr  [trait_user]
+  // Later: Move more fns from User and UserVb, to here.
+
+  final def usernameHashId: String = s"@$theUsername#$id"
+  def primaryEmailAddress: St
+
+  final def isGroup = false
+
+  def ssoId: Opt[SsoId]
+  def trustLevel: TrustLevel
+  def effectiveThreatLevel: ThreatLevel
+
+  final def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo =
+    isStaff || (
+      effectiveTrustLevel.toInt >= trustLevel.toInt && !effectiveThreatLevel.isThreat)
+
+  final override def canPromoteToBasicMember: Bo =
+    // If trust level locked, promoting the this.trustLevel has no effect — but we'll still
+    // do it, so we know what it would have been, had it not been locked.
+    !isBuiltIn && trustLevel == TrustLevel.NewMember
+
+  final override def canPromoteToFullMember: Bo =
+    !isBuiltIn && trustLevel == TrustLevel.BasicMember
+
+}
+
+
 
 
 /**
@@ -748,11 +800,10 @@ object Member {
   * @param isAdmin
   * @param isOwner
   * @param isModerator
-  * @param isSuperAdmin
   * @param isDeactivated
   * @param isDeleted
   */
-case class User(
+case class UserBr(
   id: UserId,
   ssoId: Opt[SsoId],
   extId: Opt[ExtId],
@@ -774,9 +825,10 @@ case class User(
   isAdmin: Boolean = false,
   isOwner: Boolean = false,
   isModerator: Boolean = false,
-  isSuperAdmin: Boolean = false,
   override val isDeactivated: Boolean = false,
-  override val isDeleted: Boolean = false) extends Member with MemberMaybeDetails {
+  override val isDeleted: Boolean = false,
+  )
+  extends UserBase {
 
   def primaryEmailAddress: String = email
 
@@ -785,11 +837,8 @@ case class User(
   def canReceiveEmail: Boolean =  // dupl (603RU430)
     primaryEmailAddress.nonEmpty && emailVerifiedAt.isDefined
 
-  override def anyName: Option[String] = fullName
-  override def anyUsername: Option[String] = username
+  def anyName: Option[String] = fullName
   def username: Option[String] = Some(theUsername)
-  def usernameOrGuestName: String = theUsername
-  def usernameHashId: String = s"@$username#$id"
 
   def nameAndUsername: NameAndUsername =
     NameAndUsername(id = id, fullName = fullName.getOrElse(""), username = theUsername)
@@ -797,40 +846,11 @@ case class User(
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 
-  override def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
-
-  override def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Boolean =  // dupl code [5WKABY0]
-    isStaff || (
-      effectiveTrustLevel.toInt >= trustLevel.toInt && !effectiveThreatLevel.isThreat)
-
-  override def canPromoteToBasicMember: Boolean =
-    // If trust level locked, promoting the this.trustLevel has no effect — but we'll still
-    // do it, so we know what it would have been, had it not been locked.
-    !isBuiltIn && trustLevel == TrustLevel.NewMember
-
-  override def canPromoteToFullMember: Boolean =
-    !isBuiltIn && trustLevel == TrustLevel.BasicMember
-
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
   require(Participant.isOkayUserId(id), "DwE02k12R5")
   require(theUsername.length >= 2, "EsE7YKW3")
   require(!isEmailLocalPartHidden(email), "DwE6kJ23")
   require(tinyAvatar.isDefined == smallAvatar.isDefined, "EdE5YPU2")
-}
-
-
-trait MemberMaybeDetails {
-  def theUsername: String
-  def fullName: Option[String]
-  def usernameHashId: String
-  def primaryEmailAddress: String
-  def emailVerified: Bo
-  def nameOrUsername: String = fullName getOrElse theUsername
-
-  def usernameParensFullName: String = fullName match {
-    case Some(name) => s"$theUsername ($name)"
-    case None => theUsername
-  }
 }
 
 
@@ -870,33 +890,39 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
   * Guests don't have any trust level, cannot get more than completely-new-user access.
   * However if a guest behaves well, hens *threat level* decreases (not yet implemented).
   */
-case class Guest( // [exp] ok   REFACTOR split into Guest and GuestDetailed
+case class Guest( // [exp] ok   REFACTOR split into GuestBr and GuestVb [guest_br_vb]
   id: UserId,
   extId: Option[ExtId],
-  createdAt: When,
+  createdAt: When,  // only in GuestVb?
   guestName: String,
   guestBrowserId: Option[String],
-  email: String, // COULD rename to emailAddr
+  email: String, // COULD rename to emailAdr
+  // Only in GuestVb: ------
   emailNotfPrefs: EmailNotfPrefs,
   override val about: Option[String] = None,
   override val website: Option[String] = None,
   override val country: Option[String] = None,
-  lockedThreatLevel: Option[ThreatLevel] = None) extends Participant with ParticipantInclDetails {
+  // -----------------------
+  lockedThreatLevel: Option[ThreatLevel] = None,
+  )
+  extends Participant with ParticipantInclDetails with Someone {
 
+  def isApprovedOrStaff = false
   def emailVerifiedAt: Option[ju.Date] = None
   def passwordHash: Option[String] = None
   def tinyAvatar: Option[UploadRef] = None
   def smallAvatar: Option[UploadRef] = None
   def isApproved: Option[Boolean] = None
+  def isGroup = false
   def isAdmin: Boolean = false
   def isOwner: Boolean = false
   def isModerator: Boolean = false
-  def isSuperAdmin: Boolean = false
-  override def isBuiltIn: Boolean = super.isBuiltIn
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
   def suspendedTill: Option[ju.Date] = None
   def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember ; SHOULD // CHANGE to TrustLevel.Stranger
 
-  override def anyName = Some(guestName)
+  def anyName: Opt[St] = Some(guestName)
+  def anyUsername: Opt[St] = None
   def usernameOrGuestName: String = guestName
   def nameOrUsername: String = guestName
 
@@ -911,11 +937,10 @@ case class Guest( // [exp] ok   REFACTOR split into Guest and GuestDetailed
 }
 
 
-sealed trait ParticipantInclDetails {
-  def id: UserId
-  def extId: Option[ExtId]
+/** Includes info about the pat that's usually not needed.
+  */
+sealed trait ParticipantInclDetails extends Pat {    RENAME   // to PatVb
   def createdAt: When
-  def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
   def noDetails: Participant
   def about: Option[String] = None    ; RENAME // to bio
   def website: Option[String] = None  ; RENAME // to websiteUrl
@@ -929,11 +954,7 @@ sealed trait ParticipantInclDetails {
 
 
 
-sealed trait MemberInclDetails extends ParticipantInclDetails {
-  def isAdmin: Boolean
-  def isModerator: Boolean
-  def isStaff: Boolean
-
+sealed trait MemberInclDetails extends ParticipantInclDetails {  RENAME // to MemberVb
   def summaryEmailIntervalMins: Option[Int]
   def summaryEmailIfActive: Option[Boolean]
   def seeActivityMinTrustLevel: Option[TrustLevel]
@@ -996,7 +1017,9 @@ case class UserInclDetails( // ok for export
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe, // RENAME to autoThreatLevel?
   lockedThreatLevel: Option[ThreatLevel] = None,
   deactivatedAt: Option[When] = None,
-  deletedAt: Option[When] = None) extends MemberInclDetails with MemberMaybeDetails {
+  deletedAt: Option[When] = None,
+  )
+  extends MemberInclDetails with UserBase {
 
   COULD; REFACTOR; QUICK // break out some of these tests to a fn shared with Group?
 
@@ -1035,35 +1058,23 @@ case class UserInclDetails( // ok for export
   require(!deactivatedAt.exists(_.isBefore(createdAt)), "TyE2GKDU0")
   require(!deletedAt.exists(_.isBefore(createdAt)), "TyE1PUF054")
 
-  def isStaff: Boolean = isAdmin || isModerator
-  def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
 
-  def isGroup: Boolean = false
-  def isGuest: Boolean = false
-
-  def isSuspendedAt(when: ju.Date): Boolean =
-    Participant.isSuspendedAt(when, suspendedTill = suspendedTill)
-
-  def isDeactivated: Boolean = deactivatedAt.isDefined
-  def isDeleted: Boolean = deletedAt.isDefined
-  def isGone: Boolean = isDeactivated || isDeleted
+  override def isDeactivated: Boolean = deactivatedAt.isDefined
+  override def isDeleted: Boolean = deletedAt.isDefined
 
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 
-  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Boolean =  // dupl code [5WKABY0]
-    isStaff || (
-      effectiveTrustLevel.toInt >= trustLevel.toInt && !effectiveThreatLevel.isThreat)
-
+  def anyName: Opt[St] = fullName
   def theUsername: String = username
   def usernameLowercase: String = username.toLowerCase
   //def canonicalUsername: String = User.makeUsernameCanonical(username)  // [CANONUN]
 
-  def idSpaceName: String = s"$id @$username"
-  def usernameHashId: String = s"@$username#$id"
-
   def extIdAsRef: Option[ParsedRef.ExternalId] = extId.map(ParsedRef.ExternalId)
   def ssoIdAsRef: Option[ParsedRef.SingleSignOnId] = ssoId.map(ParsedRef.SingleSignOnId)
+
+  RENAME // to primaryEmailAddress?
+  def email: St = primaryEmailAddress
 
   def emailVerified: Bo = emailVerifiedAt.isDefined
 
@@ -1193,7 +1204,7 @@ case class UserInclDetails( // ok for export
   def noDetails: Participant = briefUser
 
 
-  def briefUser = User(   // RENAME? to just noDetails? see above
+  def briefUser = UserBr(   // RENAME? to just noDetails? see above
     id = id,
     ssoId = ssoId,
     extId = extId,
@@ -1336,7 +1347,7 @@ case class UsernameUsage(
 
 
 
-object UnknownParticipant extends Participant {  // RENAME to Stranger?
+object UnknownParticipant extends Participant {  // RENAME to Stranger?, and break out GuestAnonOrStranger?
   override def id: UserId = UnknownUserId
   override def extId: Opt[ExtId] = None
   override def email: String = ""
@@ -1344,13 +1355,17 @@ object UnknownParticipant extends Participant {  // RENAME to Stranger?
   override def tinyAvatar: Option[UploadRef] = None
   override def smallAvatar: Option[UploadRef] = None
   override def suspendedTill: Option[Date] = None
-  override def isAdmin: Boolean = false
-  override def isOwner: Boolean = false
-  override def isModerator: Boolean = false
-  override def isSuperAdmin: Boolean = false
+  def isApprovedOrStaff = false
+  def isAdmin = false
+  def isOwner = false
+  def isModerator = false
+  def isGroup = false
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
   override def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember ; SHOULD // CHANGE to TrustLevel.Stranger
-  override def usernameOrGuestName: String = UnknownUserName
-  override def nameOrUsername: String = UnknownUserName
+  def usernameOrGuestName: String = UnknownUserName
+  def nameOrUsername: String = UnknownUserName
+  def anyName: Opt[St] = Some(UnknownUserName)
+  def anyUsername: Opt[St] = None
 }
 
 
@@ -1400,27 +1415,26 @@ case class Group( // [exp] missing: createdAt, add to MemberInclDetails & Partic
   def isModerator: Boolean = id == Group.ModeratorsId
   def isAdmin: Boolean = id == Group.AdminsId
   def isOwner: Boolean = false
-  def isSuperAdmin: Boolean = false
-  override def isBuiltIn: Boolean = super.isBuiltIn
   def isApproved: Option[Boolean] = Some(true)
   def suspendedTill: Option[ju.Date] = None
 
   def noDetails: Participant = this
 
-  override def isGroup = true
+  def isGroup = true
+
+  // Or maybe true for mod & admin groups? Currently doesn't matter.
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
+
   override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
 
   def usernameLowercase: String = theUsername.toLowerCase
-  override def usernameOrGuestName: String = theUsername
-  override def nameOrUsername: String = name getOrElse theUsername
 
   //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)   [CANONUN]
 
   // Not yet incl in Group, but could be. For now, let be core members & staff only.
   def seeActivityMinTrustLevel: Option[TrustLevel] = Some(TrustLevel.CoreMember)
 
-  override def anyName: Option[String] = name
-  override def anyUsername: Option[String] = Some(theUsername)
+  def anyName: Option[String] = name
 
   def preferences: AboutGroupPrefs =
     AboutGroupPrefs(

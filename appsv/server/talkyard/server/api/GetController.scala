@@ -24,13 +24,11 @@ import talkyard.server.http._
 import talkyard.server.authz.MayMaybe
 import debiki.EdHttp._
 import Prelude._
-import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
-import play.api.libs.json.{JsObject, JsValue, JsArray, Json}
+import play.api.libs.json.{JsValue, JsArray, Json}
 import play.api.mvc.{Action, ControllerComponents, Result}
-import talkyard.server.JsX
-import org.scalactic.{Bad, ErrorMessage, Good, Or}
+import org.scalactic.{Bad, Good, Or}
 
 
 /** The ListQuery API, see: (project root)/tests/e2e/pub-api.ts
@@ -46,26 +44,52 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  private def getThingsImpl(request: JsonPostRequest): Result = {
-    import request.body
-    val pretty = (body \ "pretty").asOpt[Bo].getOrElse(false)
-    val getQueryJson = (body \ "getQuery").as[JsObject]
-    val anyGetWhat = (getQueryJson \ "getWhat").asOpt[Ref]
-    throwUnimplementedIf(anyGetWhat.isNot("Pages"),
-          "TyE2R502MWD", "Can only get pages as of now; 'getWhat' must be 'Pages'")
-    val refs = (getQueryJson \ "getRefs").asOpt[Seq[Ref]] getOrElse Nil
-    getPagesImpl(request, refs, pretty = pretty)
+  private def getThingsImpl(req: JsonPostRequest): Result = {
+    import debiki.JsonUtils._
+    val body = asJsObject(req.body, "The request body")
+    val pretty = parseOptBo(body, "pretty") getOrElse false
+    val getQueryJson = parseJsObject(body, "getQuery")
+    val getWhat: RawRef = parseSt(getQueryJson, "getWhat")
+
+    val refsArr = parseOptJsArray(getQueryJson, "getRefs") getOrElse Nil
+    val refs = refsArr.map(asString(_, "getRefs list item"))
+
+    // There's an O(n^2) loop, and db queries, let's set a max length. [get_req_max_items].
+    throwBadReqIf(refs.size > 50,
+          "TyE603MRT4", "Currently you can include at most 50 refs")
+
+    // Later: Look at  inclFields: { ... } to find out what info to include about
+    // the things requested. See:  interface GetPagesQuery  in  pub-api.ts  [get_what_fields]
+
+    val thingsOrErrsJsArr = getWhat match {
+      case "Pages" =>
+        getPagesImpl(req, refs, pretty = pretty)
+      case "Posts" =>
+        throwUnimpl("Getting posts hasn'b been implemenetd [TyE02MSRD37]")
+      case "Pats" =>
+        GetPatsImpl.getPats(req, getQueryJson, refs) getOrIfBad { problem =>
+          return BadReqResult("TyEGETPATS", problem)
+        }
+      case _ =>
+        throwBadReq("TyE2R502MWD", "Bad 'getWhat', must be one of: 'Pages', 'Posts', 'Pats'")
+    }
+
+    val siteIdsOrigins = req.dao.theSiteIdsOrigins()
+    OkApiJson(Json.obj(
+          "origin" -> siteIdsOrigins.siteOrigin,
+          "thingsOrErrs" -> thingsOrErrsJsArr,
+          ), pretty)
   }
 
 
+  // Break out to file  GetPagesImpl? Like GetPatsImpl, see above.
   private def getPagesImpl(request: JsonPostRequest, pageRefs: Seq[Ref], pretty: Bo)
-          : Result = {
+          : JsArray = {
     import request.{dao, requester}
 
     val authzCtx = dao.getForumAuthzContext(requester)
 
-    throwUnimplementedIf(pageRefs.size > 50,
-          "TyE603MRT4", "Currently at most 50 at a time")
+    dieIf(pageRefs.length > 50, "TyE4MREJ703")
 
     def notFoundMsg(embUrl: St, pageId: PageId = NoPageId): St = {
       s"No page with that embedding url or discussion id: $embUrl"
@@ -73,7 +97,7 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     type PageRefAndId = (St, PageId)
     val refsAndIds: Seq[PageRefAndId Or ErrMsg] = pageRefs map { rawRef: St =>
-      parseRef(rawRef, allowParticipantRef = false) flatMap {
+      parseRef(rawRef, allowPatRef = false) flatMap {
         case parsedRef @ (_: ParsedRef.DiscussionId | _: ParsedRef.EmbeddingUrl) =>
           val anyPageId: Opt[PageId] = dao.getRealPageIdByDiidOrEmbUrl(parsedRef)
           anyPageId match {
@@ -108,14 +132,12 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
     }
 
+    // Default:  extId, title, author, excerpt, orig post   ?
+    // But currently the emb comments get and need only the below (num likes & votes), hmm.
+
     // Later, reuse?:
     // ThingsFoundJson.makePagesFoundListResponse(topicsOrErrs, dao, pretty)
-    // For now:
-    // Typescript: SearchQueryResults, and ListQueryResults
-    val siteIdsOrigins = dao.theSiteIdsOrigins()
-    OkApiJson(Json.obj(
-          "origin" -> siteIdsOrigins.siteOrigin,
-          "thingsOrErrs" -> JsArray(
+    val thingsOrErrsJson = JsArray(
             topicsOrErrs.map({
               case Good(pagePathAndMeta) =>
                 Json.obj(
@@ -126,7 +148,7 @@ class GetController @Inject()(cc: ControllerComponents, edContext: TyContext)
               case Bad(errMsg) =>
                 Json.obj("errMsg" -> errMsg, "errCode" -> "TyEPGNF")
             }))
-          ), pretty)
+    thingsOrErrsJson
   }
 
 }

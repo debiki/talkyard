@@ -7,6 +7,7 @@ import * as fakeweb from '../utils/fakeweb';
 import * as webhooksRetryImpl from './webhooks-retry-impl';
 import type { WebhookRetryTestState } from './webhooks-retry-impl';
 import server from '../utils/server';
+import settings from '../utils/settings';
 
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
@@ -56,6 +57,11 @@ const replyOne = {
 
 
 describe(`webhooks-for-api-upserts.2br  TyTE2EWBHK4API`, () => {
+
+  if (settings.prod) {
+    console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
+    return;
+  }
 
   webhooksRetryImpl.addWebhooksRetryStartSteps({ genApiSecret: true, categoryAExtId });
 

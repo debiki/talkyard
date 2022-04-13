@@ -429,6 +429,10 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       case g: Group => getBuiltInGroupIdsForGroup(g)
     }
 
+    // The system users cannot be placed in custom groups.
+    if (ppt.isSystemOrSysbot)
+      return ppt.id +: builtInGroups
+
     val customGroups = loadCustomGroupsFor(ppt.id)
     // More specific first: the user henself, then custom groups. And AllMembers and Everyone
     // last — the least specific groups.
@@ -900,6 +904,72 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
     runQueryBuildMap(query, values, rs => {
       val pp = getParticipantInclDetails_wrongGuestEmailNotfPerf(rs)
       idFn(pp) -> pp
+    })
+  }
+
+
+
+  def loadMembersVbByRef(refs: Iterable[PatRef]): ImmSeq[MemberVb] = {
+    if (refs.isEmpty) return Vec.empty
+
+    val membIds = MutHashSet[PatId]()
+    val membSsoIds = MutHashSet[SsoId]()
+    val membExtIds = MutHashSet[ExtId]()
+    val usernames = MutHashSet[St]()
+
+    refs foreach {
+      case ParsedRef.UserId(id) => membIds.add(id)
+      case ParsedRef.TalkyardId(id) => () // membIds.add(id) — not allowed here. Also, is a str
+      case ParsedRef.SingleSignOnId(ssoId) => membSsoIds.add(ssoId)
+      case ParsedRef.ExternalId(extId) => membExtIds.add(extId)
+      case ParsedRef.Username(name) => usernames.add(name)
+      case ParsedRef.Groupname(name) => usernames.add(name)
+      case _ => // log warning, and ref type. Currently cannot happen though.
+    }
+
+    val values = MutArrBuf[AnyRef]()
+    values.append(siteId.asAnyRef)
+
+    var or = ""
+
+    val membIdIn: St = if (membIds.isEmpty) "" else {
+      or = " or "
+      values.appendAll(membIds.map(_.asAnyRef))
+      s"user_id in (${makeInListFor(membIds)})"
+    }
+
+    val membSsoIdsIn: St = if (membSsoIds.isEmpty) "" else {
+      values.appendAll(membSsoIds)
+      val sql = or + s"sso_id in (${makeInListFor(membSsoIds)})"
+      or = " or " ; sql
+    }
+
+    val membExtIdsIn: St = if (membExtIds.isEmpty) "" else {
+      values.appendAll(membExtIds)
+      val sql = or + s"ext_id in (${makeInListFor(membExtIds)})"
+      or = " or " ; sql
+    }
+
+    val usernamesIn: St = if (usernames.isEmpty) "" else {
+      values.appendAll(usernames)
+      val sql = or + s"username in (${makeInListFor(usernames)})"
+      or = " or " ; sql
+    }
+
+    val membIdsIn = membIdIn + membSsoIdsIn + membExtIdsIn + usernamesIn
+    if (membIdsIn.isEmpty)
+      return Vec.empty
+
+    val query = s"""
+          select $CompleteUserSelectListItemsWithUserId
+          from users3
+          where site_id = ?
+            and ( $membIdsIn )
+            -- for now:  (later, return a GuestBr  [guest_br_vb])
+            and user_id > 0 """
+
+    runQueryFindMany(query, values.toList, rs => {
+      getMemberInclDetails(rs)
     })
   }
 

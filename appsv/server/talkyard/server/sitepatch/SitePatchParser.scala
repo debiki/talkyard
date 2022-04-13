@@ -1180,7 +1180,7 @@ case class SitePatchParser(context: TyContext) {
 
       val pageMemberRefs = readJsArray(jsValue, "pageMemberRefs", optional = true).value.map {
         case JsString(ref) =>
-          parseRef(ref, allowParticipantRef = true) getOrIfBad { problem =>
+          parseRef(ref, allowPatRef = true) getOrIfBad { problem =>
             return Bad(s"Bad page participant ref: '$ref', problem: $problem [TyE306WMTR6")
           }
         case v => return Bad(s"Page extId '$extId' has bad page member ref: $v  [TyE406KSTJ3]")
@@ -1518,9 +1518,9 @@ case class SitePatchParser(context: TyContext) {
       Good(SimplePostPatch(
         extId = extId,
         postType = postType,
-        pageRef = readParsedRef(jsObj, "pageRef", allowParticipantRef = false),
+        pageRef = readParsedRef(jsObj, "pageRef", allowPatRef = false),
         parentNr = readOptInt(jsObj, "parentNr"),
-        authorRef = readParsedRef(jsObj, "authorRef", allowParticipantRef = true),
+        authorRef = readParsedRef(jsObj, "authorRef", allowPatRef = true),
         bodySource = readString(jsObj, "body"),
         bodyMarkupLang = markupLang))
     }

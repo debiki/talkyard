@@ -95,6 +95,13 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     json match {
       case a: JsArray => a.value
       case x => throwBadJson("TyE0JSARR", s"$what is not a JsArray, it is a: ${classNameOf(x)}")
+  }
+
+  def asString(json: JsValue, what: St): St =
+    json match {
+      case n: JsString => n.value
+      case x =>
+        throwBadJson("TyE0JSSTR", s"$what is not a string, it is a: ${classNameOf(x)}")
     }
 
   def asInt64(json: JsValue, what: St): i64 =
@@ -256,7 +263,8 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
       return None
     }
     core.parsePageRef(rawRef) getOrIfBad { errMsg =>
-      throwBadJson("TyEJSBADPGREF", s"Not a page ref: '$rawRef', problem: $errMsg")
+      throwBadJson("TyEJSBADPGREF",
+            s"Field '$fieldName': Not a page ref: '$rawRef', problem: $errMsg")
     }
   }
 
@@ -278,10 +286,11 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
 
 
   // RENAME! to just parseRef
-  def readParsedRef(json: JsObject, fieldName: St, allowParticipantRef: Bo): ParsedRef = {
+  def readParsedRef(json: JsObject, fieldName: St, allowPatRef: Bo): ParsedRef = {
     val refStr = readString(json, fieldName)
-    core.parseRef(refStr, allowParticipantRef = allowParticipantRef) getOrIfBad { problem =>
-      throwBadJson("TyEBADREFFLD", s"Field '$fieldName': Bad ref: '$refStr', the problem: $problem")
+    core.parseRef(refStr, allowPatRef = allowPatRef) getOrIfBad { problem =>
+      throwBadJson("TyEBADREFFLD",
+            s"Field '$fieldName': Bad ref: '$refStr', the problem: $problem")
     }
   }
 

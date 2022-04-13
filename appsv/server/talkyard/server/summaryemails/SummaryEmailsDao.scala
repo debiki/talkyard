@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao._
-import talkyard.server.authz.ForumAuthzContext
+import talkyard.server.authz.AuthzCtxOnForum
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 import SummaryEmailsDao._
@@ -76,7 +76,7 @@ trait SummaryEmailsDao {
       val (authzCtx, groups) = readOnlyTransaction { tx =>
         val groupIds = tx.loadGroupIdsMemberIdFirst(member.briefUser)
         val permissions = tx.loadPermsOnPages()
-        val authCtx = ForumAuthzContext(Some(member.briefUser), groupIds, permissions)
+        val authCtx = AuthzCtxOnForum(Some(member.briefUser), groupIds, permissions)
         val groups = groupIds.flatMap(allGroups.get)
         (authCtx, groups)
       }

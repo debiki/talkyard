@@ -53,6 +53,15 @@ class RateLimiterSpec
       if (roleId == 0) None
       else Some(mockUser(roleId = roleId))
     val theSiteId = if (siteId != NoSiteId) siteId else 1234567
+
+    val siteLimits = new SiteLimitsMultipliers {
+      def id: SiteId = siteId
+      def readLimitsMultiplier: Opt[f32] = None
+      def logLimitsMultiplier: Opt[f32] = None
+      def createLimitsMultiplier: Opt[f32] = None
+    }
+
+    when(requestMock.siteLimits).thenReturn(siteLimits)
     when(requestMock.ctime).thenReturn(new ju.Date(now * 1000 + fourMonthsSeconds*1000))
     when(requestMock.ip).thenReturn(theIp)
     when(requestMock.user).thenReturn(anyUser)

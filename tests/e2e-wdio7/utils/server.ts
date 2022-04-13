@@ -663,6 +663,33 @@ function fullTextSearch<T extends ThingFound>(ps: {
 }
 
 
+async function getQuery<T extends ThingFound>(
+      ps: { origin: St, getQuery: GetPatsQuery },
+      postPs: { fail?: Bo, apiRequesterId?: UserId, apiSecret?: St } = {})
+      : Pr<GetQueryResults<T> | St> {
+  const url = ps.origin + '/-/v0/get';
+  const requestBody: GetQueryApiRequest = {
+    getQuery: ps.getQuery,
+    pretty: true,
+  };
+
+  const responseObj = await postOrDie(url, requestBody, postPs);
+
+  if (postPs.fail)
+    return responseObj.bodyText;
+
+  const responseBody = responseObj.bodyJson() as GetQueryApiResponse<T>;
+  const result = responseObj.statusCode === 200 && !isApiErrorResponse(responseBody)
+      ? responseBody
+      : die(`POST request failed to ${url} [TyE0WJHLS8M]`, showResponse(responseObj));
+
+  assert.ok(result.thingsOrErrs);
+  assert.ok(_.isArray(result.thingsOrErrs));
+
+  return result;
+}
+
+
 function listQuery<T extends ThingFound>(
       ps: { origin: string, listQuery: ListQuery, sortOrder?: PageSortOrder },
       postPs: { fail?: boolean, apiRequesterId?: UserId, apiSecret?: string } = {})
@@ -796,6 +823,7 @@ export default {
   apiV0: {
     createSite: createSiteViaPubApi,
     fullTextSearch,
+    getQuery,
     listQuery,
     do_,
     upsertUser,
