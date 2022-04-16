@@ -298,8 +298,9 @@ function runAllE2eTests {
   $r s/wdio --only create-site-admin-guide.2browsers $args
   $r s/wdio --only gmail-fb-join-login.extidp.1br $args
 
-  $r s/wdio --only oidc-azure-login-required.2br.extidp $args
-  $r s/wdio --only oidc-azure-pub-site.2br.extidp $args
+  # Needs HTTPS (dummy localhost cert is ok).
+  $r s/wdio-7 --only oidc-azure-login-required.2br.extidp --cd -i $args
+  $r s/wdio-7 --only oidc-azure-pub-site.2br.extidp --cd -i $args
 
   $r s/wdio --only login-expire-idle-after.2br.mtime $args
 
