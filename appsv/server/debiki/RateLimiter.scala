@@ -100,7 +100,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
     // If authenticated, the user gets his/her own rate limit entry, otherwise s/he
     // has to share resources with everyone on the same ip.
     val roleIdOrIp = request.user.flatMap(_.anyMemberId).map(request.siteLimits.id + "|" + _)
-      .getOrElse(request.ip)
+          .getOrElse(request.ip)
     val key = s"$roleIdOrIp|${rateLimits.key}"
 
     var timestampsHolder: TimestampsHolder =
@@ -113,7 +113,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
 
     val effectiveLimits = rateLimits multBy request.siteLimits
 
-    // If the rate limits have been changed, we need a new properly sized cache elem.
+    // If the rate limits have been changed, resize the req timestamp cache:  [rez_req_ts_cache]
     if (requestTimestamps.length != effectiveLimits.numRequestsToRemember(isNewUser = false)) {
       timestampsHolder = makeCacheItem(key, effectiveLimits)
       timestampsCache.put(key, timestampsHolder)

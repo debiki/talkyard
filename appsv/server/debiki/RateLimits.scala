@@ -91,6 +91,13 @@ abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete 
   def maxPerDayNewUser: i32
   def isReadLimits: Opt[Bo] = None  // only partly impl
 
+  override def toString(): St =
+    (s"RateLimits($key, $what, maxPerFifteenSeconds: $maxPerFifteenSeconds, " +
+        s"maxPerFifteenMinutes: $maxPerFifteenMinutes, " +
+        s"maxPerDay: $maxPerDay, " +
+        s"maxPerDayNewUser: $maxPerDayNewUser, " +
+        s"isReadLimits: $isReadLimits")
+
   assert(maxPerDay >= maxPerDayNewUser || maxPerDayNewUser == Unlimited)
   assert(maxPerDay >= maxPerFifteenMinutes || maxPerFifteenMinutes == Unlimited)
   assert(maxPerDay >= maxPerFifteenSeconds || maxPerFifteenSeconds == Unlimited)
@@ -111,6 +118,17 @@ abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete 
       return this // unchanged
     }
 
+    def multByM(lim: i32): i32 = {
+      if (lim == Unlimited) Unlimited
+      else {
+        // Better round up, so won't accidentally get zero, if a multiplier is 0 < _ < 1.
+        val next64: f64 = math.ceil(lim.toLong * m.toDouble)
+        if (next64 > MaxReqsToRemember) Unlimited
+        else if (next64 <= 0.0) 0
+        else next64.toInt
+      }
+    }
+
     // Later, when is case class:   [rate_lims_case_cl]
     // copy(maxPerFifteenSeconds = math.floor(maxPerFifteenSeconds * m),
     //       maxPerFifteenMinutes = math.floor(maxPerFifteenMinutes * m),
@@ -118,29 +136,29 @@ abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete 
     //       maxPerDayNewUser = math.floor(maxPerDayNewUser * m))
     //
     // But for now:
+    val _this = this
     new RateLimits {
-      val key: St = this.key
-      val what: St = this.what
-      // Better round up, so won't accidentally get zero, if a multiplier is 0<..<1.
-      val maxPerFifteenSeconds: i32 = math.ceil(maxPerFifteenSeconds * m).toInt
-      val maxPerFifteenMinutes: i32 = math.ceil(maxPerFifteenMinutes * m).toInt
-      val maxPerDay: i32 = math.ceil(maxPerDay * m).toInt
-      val maxPerDayNewUser: i32 = math.ceil(maxPerDayNewUser * m).toInt
+      val key: St = _this.key
+      val what: St = _this.what
+      val maxPerFifteenSeconds: i32 = multByM(_this.maxPerFifteenSeconds)
+      val maxPerFifteenMinutes: i32 = multByM(_this.maxPerFifteenMinutes)
+      val maxPerDay: i32 = multByM(_this.maxPerDay)
+      val maxPerDayNewUser: i32 = multByM(_this.maxPerDayNewUser)
     }
   }
 
-  def isUnlimited(isNewUser: Boolean): Boolean =
+  def isUnlimited(isNewUser: Bo): Bo =
     maxPerFifteenSeconds == Unlimited &&
       maxPerFifteenMinutes == Unlimited &&
       (if (isNewUser) maxPerDayNewUser == Unlimited else maxPerDay == Unlimited)
 
 
-  def noRequestsAllowed(isNewUser: Boolean): Boolean =
+  def noRequestsAllowed(isNewUser: Bo): Bo =
     maxPerFifteenSeconds == 0 || maxPerFifteenMinutes == 0 ||
       (if (isNewUser) maxPerDayNewUser == 0 else maxPerDay == 0)
 
 
-  def numRequestsToRemember(isNewUser: Boolean): Int = {
+  def numRequestsToRemember(isNewUser: Bo): i32 = {
     if (isNewUser && maxPerDayNewUser != Unlimited) {
       maxPerDayNewUser
     }
@@ -157,27 +175,16 @@ abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete 
       0
     }
   }
-
-
-  def numSecondsToRemember: Int = {
-    if (maxPerDay != Unlimited || maxPerDayNewUser != Unlimited) {
-      24 * 3600
-    }
-    else  if (maxPerFifteenMinutes != Unlimited) {
-      15 * 60
-    }
-    else if (maxPerFifteenSeconds != Unlimited) {
-      15
-    }
-    else {
-      1 // not 0 because that means unlimited
-    }
-  }
 }
 
 
 
 object RateLimits {
+
+  // If a rate limit is higher than this, it'll behave like Unlimited.
+  // (So as not to allocate an a too big array.)
+  val MaxReqsToRemember: i32 = 1000
+
   val Unlimited: Int = Int.MaxValue
 
   // COULD add more types of limits, these: (supported by Discourse as of Feb 2015)
