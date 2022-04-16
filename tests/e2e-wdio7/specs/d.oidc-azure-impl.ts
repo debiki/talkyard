@@ -1,18 +1,12 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-// import fs = require('fs');  EMBCMTS
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
 
-
-let everyonesBrowsers: TyAllE2eTestBrowsers;
 let richBrowserA: TyE2eTestBrowser;
 let richBrowserB: TyE2eTestBrowser;
 
@@ -53,7 +47,7 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
     return;
   }
 
-  it(`construct site`, () => {
+  it(`construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Some E2E Test",
@@ -62,9 +56,8 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
 
     builder.getSite().meta.localHostname = localHostname;
 
-    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers);
-    richBrowserA = new TyE2eTestBrowser(wdioBrowserA);
-    richBrowserB = new TyE2eTestBrowser(wdioBrowserB);
+    richBrowserA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    richBrowserB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     // Azure user 01
     owen = forum.members.owen;
@@ -97,31 +90,31 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`import site`, () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+  it(`import site`, async () => {
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
   });
 
 
-  it(`Owen logs in to admin area, using password, OIDC not yet configured`, () => {
-    owen_brA.adminArea.settings.login.goHere(site.origin, { loginAs: owen });
+  it(`Owen logs in to admin area, using password, OIDC not yet configured`, async () => {
+    await owen_brA.adminArea.settings.login.goHere(site.origin, { loginAs: owen });
   });
 
 
   if (variants.loginRequired) {
-    it(`Owen makes the site login-required`, () => {
-      owen_brA.adminArea.settings.login.setLoginRequired(true);
+    it(`Owen makes the site login-required`, async () => {
+      await owen_brA.adminArea.settings.login.setLoginRequired(true);
     });
   }
 
 
-  it(`Owen enbles OIDC`, () => {
-    owen_brA.adminArea.settings.login.setEnableOidcDontSave(true);
+  it(`Owen enbles OIDC`, async () => {
+    await owen_brA.adminArea.settings.login.setEnableOidcDontSave(true);
   });
 
 
-  it(`... configures an Azure AD ID provider, saves the config`, () => {
-    owen_brA.adminArea.settings.login.configureIdps(`[{
+  it(`... configures an Azure AD ID provider, saves the config`, async () => {
+    await owen_brA.adminArea.settings.login.configureIdps(`[{
   "protocol": "oidc",
   "alias": "azure_test_alias",
   "enabled": true,
@@ -153,79 +146,79 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
 
 
 
-  it(`... saves the settings too`, () => {
+  it(`... saves the settings too`, async () => {
     // Maybe bad UX to require 2 clicks, fix later [nice_oidc_conf_ux].
-    owen_brA.adminArea.settings.clickSaveAll();
+    await owen_brA.adminArea.settings.clickSaveAll();
   });
 
 
-  it(`Owen now tries to enable OIDC SSO   TyTOIDCSSO`, () => {
-    owen_brA.adminArea.settings.login.setOnlyOidc(true);
+  it(`Owen now tries to enable OIDC SSO   TyTOIDCSSO`, async () => {
+    await owen_brA.adminArea.settings.login.setOnlyOidc(true);
   });
-  it(`... tries to save`, () => {
-    owen_brA.adminArea.settings.clickSaveAll({ willFail: true });
+  it(`... tries to save`, async () => {
+    await owen_brA.adminArea.settings.clickSaveAll({ willFail: true });
   });
   it(`... but not allowed — he hasn't yet logged in with OIDC,
-              and might lock himself out`, () => {
-    owen_brA.serverErrorDialog.waitAndAssertTextMatches('TyEADM0LGI2_');
-    owen_brA.serverErrorDialog.close();
+              and might lock himself out`, async () => {
+    await owen_brA.serverErrorDialog.waitAndAssertTextMatches('TyEADM0LGI2_');
+    await owen_brA.serverErrorDialog.close();
   });
 
 
 
-  it(`Owen logs out`, () => {
-    owen_brA.topbar.clickLogout({ waitForLoginDialog });
+  it(`Owen logs out`, async () => {
+    await owen_brA.topbar.clickLogout({ waitForLoginDialog });
     // Redirects to /   [.6022563]
-    assert.eq(owen_brA.urlPath(), afterLogoutPath);
+    assert.eq(await owen_brA.urlPath(), afterLogoutPath);
   });
-  it(`... logs in via Azure AD OIDC`, () => {
+  it(`... logs in via Azure AD OIDC`, async () => {
     if (!variants.loginRequired) {
       // No login required — Owen needs to click Log In.
       // This tests linking accounts, from in a login popup.
-      owen_brA.topbar.clickLogin();
+      await owen_brA.topbar.clickLogin();
     }
     else {
       // Login dialog already visible.
       // This tests linking accounts, from in a "full screen" main win login.
     }
-    owen_brA.loginDialog.clickLoginWithOidcAzureAd();
-    owen_brA.loginDialog.loginWithOidcAzureAd({
+    await owen_brA.loginDialog.clickLoginWithOidcAzureAd();
+    await owen_brA.loginDialog.loginWithOidcAzureAd({
           email: settings.azureUser01UsernameAndEmail,
           password: settings.azureUser01Password,
           fullScreenLogin: variants.loginRequired,
           stayInPopup: !variants.loginRequired });
   });
   it(`... since in Azure he has the same email address, he can link his Azure account
-            to his Talkyard account  TyTOIDCLNVERACT`, () => {
+            to his Talkyard account  TyTOIDCLNVERACT`, async () => {
     // Check that email addr and username etc is correct  TyTLNIDP2TY043.
-    owen_brA.loginDialog.checkLinkAccountsTextOk({
+    await owen_brA.loginDialog.checkLinkAccountsTextOk({
       matchingEmail: settings.azureUser01UsernameAndEmail,
       talkyardUsername: owen.username,
       azureFullName: settings.azureUser01FullName,
       idpName: "Azure AD Test",
     });
   });
-  it(`... he links the accounts`, () => {
-    owen_brA.loginDialog.clickYesLinkAccounts();
+  it(`... he links the accounts`, async () => {
+    await owen_brA.loginDialog.clickYesLinkAccounts();
   });
 
-  it(`... clicks Log In Again`, () => {
-    owen_brA.loginDialog.clickLogInAgain({
+  it(`... clicks Log In Again`, async () => {
+    await owen_brA.loginDialog.clickLogInAgain({
           isInPopupThatWillClose: !variants.loginRequired });
   });
 
   if (!variants.loginRequired) {
-    it(`... the login popup closes`, () => {
-      owen_brA.switchBackToFirstTabOrWindow();
+    it(`... the login popup closes`, async () => {
+      await owen_brA.switchBackToFirstTabOrWindow();
     });
   }
 
-  it(`... thereafter he's logged in as Owen again`, () => {
-    owen_brA.topbar.assertMyUsernameMatches(owen.username);
+  it(`... thereafter he's logged in as Owen again`, async () => {
+    await owen_brA.topbar.assertMyUsernameMatches(owen.username);
   });
-  it(`... he jumps to the admin area — was redirected to '/', at logout`, () => {
+  it(`... he jumps to the admin area — was redirected to '/', at logout`, async () => {
     // Owen got redirected to / above.  [.6022563]
-    owen_brA.adminArea.settings.login.goHere(site.origin);
+    await owen_brA.adminArea.settings.login.goHere(site.origin);
   });
 
 
@@ -258,7 +251,7 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
 
 
   // IDP email *un*verified, no Ty acct
-  it(`Azure user  tyaz13  with no Ty account arrives`, () => {});
+  it(`Azure user  tyaz13  with no Ty account arrives`, async () => {});
   addSignUpViaAzureTestSteps({
         br: () => azure_brB,
         resetBrowser: true,
@@ -271,7 +264,7 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
 
 
   // IDP email *un*verified, Ty acct w verified email
-  it(`Maria arrives; she has a Ty account already and Azure acct 12`, () => {});
+  it(`Maria arrives; she has a Ty account already and Azure acct 12`, async () => {});
   addLoginAndLinkAzureAccountTestSteps({
         br: () => maria_brB,
         resetBrowser: true,
@@ -288,35 +281,35 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
 
 
 
-  it(`Owen enables OIDC SSO — works now, when has tested login   TyTOIDCSSO`, () => {
-    owen_brA.adminArea.settings.login.setOnlyOidc(true);
+  it(`Owen enables OIDC SSO — works now, when has tested login   TyTOIDCSSO`, async () => {
+    await owen_brA.adminArea.settings.login.setOnlyOidc(true);
   });
-  it(`... and save, no problems`, () => {
-    owen_brA.adminArea.settings.clickSaveAll();
+  it(`... and save, no problems`, async () => {
+    await owen_brA.adminArea.settings.clickSaveAll();
   });
 
   // Verify that login works for an account created before SSO got enabled.
   // (Maybe an "unnecessary" test but ... Thinking in that way, all tests are :-))
-  it(`Owen logs out`, () => {
-    owen_brA.topbar.clickLogout({ waitForLoginDialog });
+  it(`Owen logs out`, async () => {
+    await owen_brA.topbar.clickLogout({ waitForLoginDialog });
   });
-  it(`... can log in again, also now with SSO enabled`, () => {
+  it(`... can log in again, also now with SSO enabled`, async () => {
     if (!variants.loginRequired) {
-      owen_brA.topbar.clickLogin();
+      await owen_brA.topbar.clickLogin();
       // Will get redirected and logged in directly. [insta_sso_redir]
     }
     else {
-      owen_brA.loginDialog.clickSingleSignOnButton();
+      await owen_brA.loginDialog.clickSingleSignOnButton();
     }
   });
-  it(`... he gets logged in directly — accounts already linked`, () => {
-    owen_brA.topbar.assertMyUsernameMatches(owen.username);
+  it(`... he gets logged in directly — accounts already linked`, async () => {
+    await owen_brA.topbar.assertMyUsernameMatches(owen.username);
   });
 
 
 
   // IDP email verified, no Ty acct
-  it(`Azure user  tyaz04  arrives, has no Ty account`, () => {});
+  it(`Azure user  tyaz04  arrives, has no Ty account`, async () => {});
   addSignUpViaAzureTestSteps({
         br: () => azure_brB,
         resetBrowser: true,
@@ -327,7 +320,7 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
 
 
   // IDP email verified, Ty acct w verified email
-  it(`Michael arrives; he has a Ty account already, and Azure acct 06`, () => {});
+  it(`Michael arrives; he has a Ty account already, and Azure acct 06`, async () => {});
   addLoginAndLinkAzureAccountTestSteps({
         br: () => michael_brB,
         resetBrowser: true,
@@ -343,7 +336,7 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
 
 
   // IDP email *un*verified, no Ty acct
-  it(`Azure user  tyaz11  with no Ty account arrives`, () => {});
+  it(`Azure user  tyaz11  with no Ty account arrives`, async () => {});
   addSignUpViaAzureTestSteps({
         br: () => azure_brB,
         resetBrowser: true,
@@ -357,7 +350,7 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
 
 
   // IDP email *un*verified, Ty acct w verified email
-  it(`Maja arrives; she has a Ty account already, and Azure acct 14`, () => {});
+  it(`Maja arrives; she has a Ty account already, and Azure acct 14`, async () => {});
   addLoginAndLinkAzureAccountTestSteps({
         br: () => maja_brB,
         resetBrowser: true,
@@ -379,26 +372,26 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
         isSingleSignOn: Bo }) {
 
     if (!variants.loginRequired) {
-      it(`... clicks Log In`, () => {
-        ps.br().topbar.clickLogin();
+      it(`... clicks Log In`, async () => {
+        await ps.br().topbar.clickLogin();
       });
       if (ps.isSingleSignOn) {
         // auto redirected
       }
       else {
-        it(`... picks Azure`, () => {
-          ps.br().loginDialog.clickLoginWithOidcAzureAd();
+        it(`... picks Azure`, async () => {
+          await ps.br().loginDialog.clickLoginWithOidcAzureAd();
         });
       }
     }
     else if (ps.isSingleSignOn) {
-      it(`... clicks the Single Sign-On button`, () => {
-        ps.br().loginDialog.clickSingleSignOnButton();
+      it(`... clicks the Single Sign-On button`, async () => {
+        await ps.br().loginDialog.clickSingleSignOnButton();
       });
     }
     else {
-      it(`... picks Azure`, () => {
-        ps.br().loginDialog.clickLoginWithOidcAzureAd();
+      it(`... picks Azure`, async () => {
+        await ps.br().loginDialog.clickLoginWithOidcAzureAd();
       });
     }
   }
@@ -415,76 +408,77 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
         isSingleSignOn?: Bo,
         resetBrowser?: Bo }) {
 
-    it(`Azure user ${ps.azureUsername} arrives`, () => {
+    it(`Azure user ${ps.azureUsername} arrives`, async () => {
       // Delete cookies so won't be already logged in as the previous Azure user.
       if (ps.resetBrowser) {
-        ps.br().reloadSession();
+        await ps.br().reloadSession();
       }
-      ps.br().go2(site.origin);
+      await ps.br().go2(site.origin);
     });
 
     addStartAzureLoginSteps({ br: ps.br, isSingleSignOn: ps.isSingleSignOn });
 
-    it(`... logs in via Azure — hen has no Ty account, so one will get created`, () => {
-      ps.br().loginDialog.loginWithOidcAzureAd({
+    it(`... logs in via Azure — hen has no Ty account, so one will get created`, async () => {
+      await ps.br().loginDialog.loginWithOidcAzureAd({
             email: ps.azureUsername,
             password: ps.azurePassword,
             fullScreenLogin: variants.loginRequired });
     });
 
     if (ps.azureFullName) {
-      it(`... the full name from Azure is: '${ps.azureFullName}'`, () => {
-        ps.br().assertValueIs('#e2eFullName', ps.azureFullName);
+      it(`... the full name from Azure is: '${ps.azureFullName}'`, async () => {
+        await ps.br().assertValueIs('#e2eFullName', ps.azureFullName);
       });
     }
     if (ps.azureEmail) {
-      it(`... the email from Azure is: '${ps.azureEmail}'`, () => {
-        ps.br().assertValueIs('#e2eEmail', ps.azureEmail);
+      it(`... the email from Azure is: '${ps.azureEmail}'`, async () => {
+        await ps.br().assertValueIs('#e2eEmail', ps.azureEmail);
       });
     }
 
     it(`... Hen types a Ty username — Azure apparently doesn't include any username
-              and sets the OIDC 'sub' field to just an opaque string`, () => {
-      ps.br().waitAndSetValue('.esCreateUserDlg #e2eUsername',
+              and sets the OIDC 'sub' field to just an opaque string`, async () => {
+      await ps.br().waitAndSetValue('.esCreateUserDlg #e2eUsername',
             ps.newTalkyardUsername, { checkAndRetry: true });
     });
-    it(`... saves`, () => {
-      ps.br().loginDialog.clickSubmit();
+    it(`... saves`, async () => {
+      await ps.br().loginDialog.clickSubmit();
     });
-    it(`... accepts terms`, () => {
-      ps.br().loginDialog.acceptTerms();
+    it(`... accepts terms`, async () => {
+      await ps.br().loginDialog.acceptTerms();
     });
 
     if (ps.azureEmailVerified === false) {
-      it(`... clicks an email addr verification email`, () => {
-        const url = server.getLastVerifyEmailAddressLinkEmailedTo(site.id, ps.azureEmail);
-        ps.br().go2(url);
+      it(`... clicks an email addr verification email`, async () => {
+        const url = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+                site.id, ps.azureEmail);
+        await ps.br().go2(url);
       });
-      it(`... email now verified, continues`, () => {
-        ps.br().hasVerifiedSignupEmailPage.clickContinue();
+      it(`... email now verified, continues`, async () => {
+        await ps.br().hasVerifiedSignupEmailPage.clickContinue();
       });
     }
     else if (!variants.loginRequired && !ps.isSingleSignOn) {
       // UX: Maybe could show this dialog also if login-required or if needed to verify
       // the email addr? Oh well.
-      it(`... there's a welcome dialog`, () => {
-        ps.br().loginDialog.waitAndClickOkInWelcomeDialog();
+      it(`... there's a welcome dialog`, async () => {
+        await ps.br().loginDialog.waitAndClickOkInWelcomeDialog();
       });
     }
 
-    it(`... username shown in topbar: '${ps.newTalkyardUsername}'`, () => {
-      ps.br().topbar.assertMyUsernameMatches(ps.newTalkyardUsername);
+    it(`... username shown in topbar: '${ps.newTalkyardUsername}'`, async () => {
+      await ps.br().topbar.assertMyUsernameMatches(ps.newTalkyardUsername);
     });
 
-    it(`... logs out`, () => {
-      ps.br().topbar.clickLogout({ waitForLoginDialog });
+    it(`... logs out`, async () => {
+      await ps.br().topbar.clickLogout({ waitForLoginDialog });
     });
 
-    it(`... logs in again — gets logged in directly`, () => {});
+    it(`... logs in again — gets logged in directly`, async () => {});
     addStartAzureLoginSteps({ br: ps.br, isSingleSignOn: ps.isSingleSignOn });
 
-    it(`... correct username shown in topbar: '${ps.newTalkyardUsername}'`, () => {
-      ps.br().topbar.assertMyUsernameMatches(ps.newTalkyardUsername);
+    it(`... correct username shown in topbar: '${ps.newTalkyardUsername}'`, async () => {
+      await ps.br().topbar.assertMyUsernameMatches(ps.newTalkyardUsername);
     });
   }
 
@@ -502,18 +496,18 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
         azureFullName?: St,
         isSingleSignOn?: Bo }) {
 
-    it(`${ps.who} arrives`, () => {
+    it(`${ps.who} arrives`, async () => {
       if (ps.resetBrowser) {
-        ps.br().reloadSession();
+        await ps.br().reloadSession();
       }
-      ps.br().go2(site.origin);
+      await ps.br().go2(site.origin);
     });
 
     addStartAzureLoginSteps({ br: ps.br, isSingleSignOn: ps.isSingleSignOn });
 
     it(`... logs in via Azure — hen has a Ty account, and
-              wants to link it to hens Azure account`, () => {
-      ps.br().loginDialog.loginWithOidcAzureAd({
+              wants to link it to hens Azure account`, async () => {
+      await ps.br().loginDialog.loginWithOidcAzureAd({
             email: ps.azureUsername,
             password: ps.azurePassword,
             fullScreenLogin: variants.loginRequired,
@@ -521,41 +515,41 @@ export function addOidcAzureTestSteps(variants: { loginRequired: Bo }) {
     });
 
     if (ps.azureEmailVerified === false) {
-      it(`... clicks an email addr verification email`, () => {
-        const url = server.getLastVerifyEmailAddressLinkEmailedTo(
-          site.id, ps.azureEmail, 'LINKING_IDP_ACCT');
-        ps.br().go2(url);
+      it(`... clicks an email addr verification email`, async () => {
+        const url = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+                site.id, ps.azureEmail, 'LINKING_IDP_ACCT');
+        await ps.br().go2(url);
       });
     }
 
-    it(`... ${ps.who} says Yes to linking to the Ty account`, () => {
-      ps.br().loginDialog.clickYesLinkAccounts();
+    it(`... ${ps.who} says Yes to linking to the Ty account`, async () => {
+      await ps.br().loginDialog.clickYesLinkAccounts();
     });
 
-    it(`... clicks Log In Again`, () => {
-      ps.br().loginDialog.clickLogInAgain({
+    it(`... clicks Log In Again`, async () => {
+      await ps.br().loginDialog.clickLogInAgain({
           isInPopupThatWillClose: !variants.loginRequired });
     });
 
     if (!variants.loginRequired) {
-      it(`... the login popup closes`, () => {
-        ps.br().switchBackToFirstTabOrWindow();
+      it(`... the login popup closes`, async () => {
+        await ps.br().switchBackToFirstTabOrWindow();
       });
     }
 
-    it(`... ${ps.who}'s username appears in the topbar`, () => {
-      ps.br().topbar.assertMyUsernameMatches(ps.tyUser().username);
+    it(`... ${ps.who}'s username appears in the topbar`, async () => {
+      await ps.br().topbar.assertMyUsernameMatches(ps.tyUser().username);
     });
 
-    it(`... logs out`, () => {
-      ps.br().topbar.clickLogout({ waitForLoginDialog });
+    it(`... logs out`, async () => {
+      await ps.br().topbar.clickLogout({ waitForLoginDialog });
     });
 
-    it(`... logs in again — gets logged in directly`, () => {});
+    it(`... logs in again — gets logged in directly`, async () => {});
     addStartAzureLoginSteps({ br: ps.br, isSingleSignOn: ps.isSingleSignOn });
 
-    it(`... ${ps.who}'s username again shown in topbar`, () => {
-      ps.br().topbar.assertMyUsernameMatches(ps.tyUser().username);
+    it(`... ${ps.who}'s username again shown in topbar`, async () => {
+      await ps.br().topbar.assertMyUsernameMatches(ps.tyUser().username);
     });
   }
 

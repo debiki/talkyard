@@ -804,7 +804,7 @@ export default {
   getEmailsSentToAddrs,
   sendIncomingEmailWebhook,
   waitAndGetLastReplyNotfLinkEmailedTo,
-  waitAndGetLastVerifyEmailAddressLinkEmailedTo,
+  waitAndGetLastVerifyEmailAddressLinkEmailedTo,  // was: getLastVerifyEmailAddressLinkEmailedTo
   // no, worse name:
   // getVerifyEmailAddressLinkFromLastEmailTo: waitAndGetLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
