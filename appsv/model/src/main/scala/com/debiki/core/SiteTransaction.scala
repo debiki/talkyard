@@ -108,7 +108,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     loadOrigPost(pageId).getOrDie("TyE204RKT1J", s"s$siteId: OP missing, page $pageId")
 
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
-  def loadPostsOnPage(pageId: PageId): immutable.Seq[Post]
+  def loadPostsOnPage(pageId: PageId): Vec[Post]
   def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]     ; RENAME; QUICK // to loadPostsByIds
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]

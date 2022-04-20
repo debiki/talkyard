@@ -254,6 +254,10 @@ ReactDispatcher.register(function(payload) {
       const parent: Ancestor = <Ancestor> _.last(action.newAncestorsRootFirst);
       currentPage.categoryId = parent ? parent.categoryId : null;
       const was2dTree = currentPage.horizontalLayout;
+
+      const layoutBefore = page_deriveLayout(
+              currentPage, store, LayoutFor.PageNoTweaks);
+
       currentPage.pageRole = newMeta.pageType;
       currentPage.doingStatus = newMeta.doingStatus;
       currentPage.pagePlannedAtMs = newMeta.plannedAt;
@@ -261,8 +265,25 @@ ReactDispatcher.register(function(payload) {
       currentPage.pageDoneAtMs = newMeta.doneAt;
       currentPage.pageClosedAtMs = newMeta.closedAt;
 
+      currentPage.comtOrder = newMeta.comtOrder;
+      currentPage.comtNesting = newMeta.comtNesting;
+
+      // Clear any page tweaks — otherwise it'll look as if the changes had no effect.
+      if (store.curPageTweaks) {
+        _.each(action.changes, (value, key: St) => {
+          delete store.curPageTweaks[key];
+        });
+      }
+
+      const layoutAfter = page_deriveLayout(
+              currentPage, store, LayoutFor.PageNoTweaks);
+
+      if (layoutAfter.comtOrder !== layoutBefore.comtOrder) {  // or [max_nesting]
+        store_relayoutPageInPlace(store, currentPage, layoutAfter);
+      }
+
       // [2D_LAYOUT]
-      //currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
+      //currentPage.horizontalLayout = action.newPageMeta.page type === PageRole.MindMap || currentPage.is2dTreeDefault;
       //const is2dTree = currentPage.horizontalLayout;
 
       updatePost(action.newTitlePost, currentPage.pageId);
@@ -966,6 +987,8 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   // Add or update the post itself.
   page.postsByNr[post.nr] = post;
 
+  const layout = page_deriveLayout(page, store, LayoutFor.PageWithTweaks);
+
   // In case this is a new post, update its parent's child id list.
   const parentPost = page.postsByNr[post.parentNr];
   if (parentPost) {
@@ -978,8 +1001,11 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
       else {
         childNrsSorted.push(post.nr);
       }
+      const sortOrder = layout_sortOrderForChildsOf(layout, parentPost);
       sortPostNrsInPlace(
-            childNrsSorted, page.postsByNr, page.discPostSortOrder);
+            childNrsSorted, page.postsByNr, sortOrder);
+            // layout.comtOrder);
+         // page.discPostSortOrder
     }
   }
 
@@ -999,8 +1025,10 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   //  ... What? There is. But it's still not in use here, for embedded comments.)
   if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
     page.parentlessReplyNrsSorted = findParentlessReplyIds(page.postsByNr);
+    const sortOrder = layout_sortOrderForChildsOf(layout, { nr: BodyNr });
     sortPostNrsInPlace(
-        page.parentlessReplyNrsSorted, page.postsByNr, page.discPostSortOrder);
+        page.parentlessReplyNrsSorted, page.postsByNr, sortOrder); // layout.comtOrder);
+                                                    // page.discPostSortOrder);
   }
 
   rememberPostsToQuickUpdate(post.nr);
@@ -1275,6 +1303,28 @@ function findParentlessReplyIds(postsByNr): number[] {
     }
   });
   return ids;
+}
+
+
+
+function store_relayoutPageInPlace(store, page, layout: DiscPropsDerived) {
+  _.each(page.postsByNr, (post: Post) => {
+    const sortOrder = layout_sortOrderForChildsOf(layout, post);
+    /*
+    let sortOrder: PostSortOrder;
+    switch(layout.comtOrder) {
+      case PostSortOrder.NewestThenBest:
+        sortOrder = post.nr === BodyNr ? PostSortOrder.NewestFirst : PostSortOrder.BestFirst;
+        break;
+      case PostSortOrder.NewestThenOldest:
+        sortOrder = post.nr === BodyNr ? PostSortOrder.NewestFirst : PostSortOrder.OldestFirst;
+        break;
+      default:
+        sortOrder = layout.comtOrder;
+    } */
+    sortPostNrsInPlace(
+          post.childNrsSorted, page.postsByNr, sortOrder);
+  });
 }
 
 
@@ -1655,14 +1705,26 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
 
   const currentPage: Page | U = store.currentPage;
 
+  let changesComtSortOrder: U | Bo;
+
   if (!currentPage) {
     delete store.curPageTweaks;
   }
   else if (storePatch.curPageTweaks) {
+    changesComtSortOrder = isDef(storePatch.curPageTweaks.comtOrder);
     store.curPageTweaks = {
       ...store.curPageTweaks,
       ...storePatch.curPageTweaks,
     };
+    if (store.curPageTweaks.comtOrder === PostSortOrder.Default) {
+      // The Default value supposed to be remembered — just means that we should
+      // delete any comtOrder value, so the parent category's or site settings value
+      // gets used instead.
+      delete store.curPageTweaks.comtOrder;
+    }
+    if (store.curPageTweaks.comtNesting === InfiniteNesting) {
+      delete store.curPageTweaks.comtNesting;
+    }
   }
 
   // If we just posted the very first reply on an embedded discussion, a page for the discussion
@@ -1738,6 +1800,12 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
       });
     });
   });
+
+  if (changesComtSortOrder) {
+    const layoutAfter = page_deriveLayout(
+            currentPage, store, LayoutFor.PageWithTweaks);
+    store_relayoutPageInPlace(store, currentPage, layoutAfter); //storePatch.curPageTweaks);
+  }
 
   // Update the current page.
   if (!storePatch.pageVersionsByPageId) {

@@ -758,7 +758,7 @@ interface StaffTours {
 
 type Category = Cat; // Too long name!
 
-interface Cat {
+interface Cat extends DiscPropsSource {
   id: CategoryId;
   parentId?: CategoryId;  // RENAME to parCatId? simpler to grep and [concice_is_nice].
   sectionPageId?: any; // only when saving to server?   // RENAME to ixPgId? (index page id)
@@ -964,7 +964,7 @@ interface Page
     // So we can see from where a setting comes — is it from some ancestor category
     // or group? Or the whole forum? Otherwise, hard to troubleshoot unexpected
     // effective settings.
-    extends TopicInterfaceSettings {
+    extends TopicInterfaceSettings, DiscPropsSource {
   dbgSrc: string;
   pageId: PageId;
   pageVersion: PageVersion;
@@ -977,7 +977,9 @@ interface Page
   pageRole: PageRole;
   pagePath: PagePath;
   //--------
-  pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings
+  pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings,
+                            // no, let's have Page and Cat extend DiscLayout
+                            // instead — done, see above.
       // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
   forumSearchBox?: ShowSearchBox;
   forumMainView?: Nr;
@@ -1040,7 +1042,7 @@ interface PageMetaBrief {
 }
 
 
-interface PageMeta {
+interface PageMeta extends DiscPropsSource {
   id: PageId;
   pageType: PageRole;
   version: number;
@@ -1055,6 +1057,8 @@ interface PageMeta {
   authorId: UserId;
   frequentPosterIds: number[];
   layout: PageLayout;
+  //comtOrder?: PostSortOrder; — in DiscPropsSource
+  //comtNesting?: NestingDepth;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   numLikes: number;
@@ -1256,19 +1260,46 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
 }
 
 
-// interface ForumInterfaceSettings {   — move some things from above to here?
-// ...
-// }
+// Move some things from above to DiscLayout?
+//
+// Currently configured for all categories, and(optionally) per category and page.
+// Maybe later: disc_layout_t.
+// RENAME to DiscLayoutSource?
+interface DiscPropsSource {
+  comtOrder?: PostSortOrder;
+  comtNesting?: NestingDepth;
+}
+
+// RENAME to DiscLayoutDerived?  There's an interface Layout too (below) merging all layouts.
+interface DiscPropsDerived {
+  comtOrder: PostSortOrder;
+  // Says what thing (e.g. the current page, or the parent category) the comtOrder
+  // layout setting is from, so the edit-layout dialog can tell the admin
+  // where the default value is from, in case the admin would want to edit the
+  // default setting. And ... makes it simpler for the Ty devs to troubleshoot any
+  // layout inheritance bugs.
+  comtOrderFrom: Ref; // LayoutFor;
+  comtNesting: NestingDepth;   // not yet in use [max_nesting]
+  comtNestingFrom: Ref; // LayoutFor;  //
+}
+
+// And extends TopicListLayout, KnowledgeBaseLayout etc, all layouts.
+interface Layout extends DiscPropsDerived {
+}
+
 
 
 interface TopicInterfaceSettings {
+  // --- Hmm these will be in DiscLayout instead: ------
   discussionLayout?: DiscussionLayout;  // default: threaded
   discPostNesting?: NestingDepth;       // default: infinite nesting depth
   discPostSortOrder?: PostSortOrder;    // default: oldest first
+  // ---------------------------------------------------
 
+  // And this is deprecated:
   progressLayout?: ProgressLayout;      // default: Visible
 
-  // Currently for embedded comments: (later, per page type?)
+  // Currently for embedded comments: (later, can configure in disc_props_t.)
   origPostReplyBtnTitle?: string;       // default: t.AddComment
   origPostVotes?: OrigPostVotes;
 
@@ -1294,7 +1325,7 @@ interface PagePath {
 }
 
 
-interface Ancestor {  // server side: [6FK02QFV]
+interface Ancestor {  // server side: [6FK02QFV].
   categoryId: number;
   title: string;
   path: string;
@@ -2192,6 +2223,27 @@ interface TagDiagProps {
 }
 
 
+interface DiscLayoutDropdownBtnProps {
+  page?: Page;  // either...
+  cat?: Cat;    // ...or.
+  store: Store;
+  layoutFor: LayoutFor;
+  forCat?: Bo;  // isn't this.cat above enough?
+  forEveryone?: Bo;
+  onSelect: (newLayout: DiscPropsSource) => Vo;
+}
+
+
+interface DiscLayoutDiagState {
+  atRect: Rect;
+  layout: DiscPropsSource;
+  default: DiscPropsDerived; // ? DiscPropsSource;
+  forCat?: Bo;
+  forEveryone?: Bo;
+  onSelect: (newLayout: DiscPropsSource) => Vo ;
+}
+
+
 interface ExplainingTitleText {
   iconUrl?: St;
   title: St;
@@ -2447,8 +2499,10 @@ interface ResponseObj {
   responseText: string;
 }
 
-
-interface EditPageRequestData {
+// RENAME to AlterPageReqData?  "Edit" sounds wrong, since the Orig Post isn't edited.
+// "Alter" means: "to make different without changing into something else"
+// (so "alter" is also better thant "change", here).
+interface EditPageRequestData extends DiscPropsSource {
     //pageId: PageId; — filled in By Server.ts
     newTitle?: string;
     categoryId?: CategoryId;

@@ -76,7 +76,12 @@ describe("embedded-comments-conf-notf-pref-first  TyT502HMSJP3", () => {
 
   it("... the notf prefs button now reads 'Every Post'  TyT305MHRTDP23", () => {
     michaelsBrowser.waitAndAssertVisibleTextMatches(
-        '.dw-cmts-tlbr-details .dw-notf-level', "Every Post");
+        '.dw-page-notf-level .dw-notf-level', "Every Post");
+  });
+
+  it(`... which is level ${c.TestPageNotfLevel.EveryPost}`, () => {
+    michaelsBrowser.waitForDisplayed(
+          `.dw-page-notf-level button.s_NfLv-${c.TestPageNotfLevel.EveryPost}`);
   });
 
   it("Michael leaves, Owen arrives", () => {

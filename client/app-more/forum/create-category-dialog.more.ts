@@ -388,6 +388,21 @@ const CatSettings = createClassAndFactory({
               `shows number of votes.` });
 
     const rootCatId = sectPage.categoryId;
+
+    //nst parentCatIdObj = { parentCatId: category.parentId || sectPage.categoryId };
+
+    const commentOrder =
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label', style: { display: 'block' }},
+          "Comment sort order:"),
+        widgets.DiscLayoutDropdownBtn({ cat: category, store,
+            // Don't show [temp sort order changes ("tweaks") done in this browser]
+            // — instead, now, we're saving server side, for everyone.
+            layoutFor: LayoutFor.PageNoTweaks, forEveryone: true, forCat: true,
+            onSelect: (newLayout: DiscPropsSource) => {
+              this.props.updateCategory(newLayout);
+            }}));
+
     const parentCatDropdown =
         r.div({ className: 'form-group' },
           r.label({ className: 'control-label', style: { display: 'block' }},
@@ -429,7 +444,7 @@ const CatSettings = createClassAndFactory({
                 r.samp({}, location.origin + sectPage.pagePath.value + RoutePathLatest + '/',
                   r.span({ className: 'esCatDlg_slug_help_addr_slug' }, category.slug))) }));
 
-    let sortPositionText = "Click to set sort position";
+    let sortPositionText = "Click to set category sort position";
     if (category.position !== DefaultPosition) {
       sortPositionText += ": " + category.position;
     }
@@ -521,6 +536,7 @@ const CatSettings = createClassAndFactory({
             editDescriptionLink,
             defaultTopicTypeInput,
             doItVotes,
+            commentOrder,
             parentCatDropdown,
             isDefaultInput,
             slugInput,

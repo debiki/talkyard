@@ -392,6 +392,18 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     }
   } */
 
+  private val ZeroNone = 0
+
+  def parseOptZeroNone[R](json: JsValue, field: St, altField: St = "")(fn: Opt[i32] => Opt[R])
+          : Opt[Opt[R]] = {
+    val anyValue = parseOptInt32(json, field = field, altField = altField)
+    if (anyValue is ZeroNone) Some(None)
+    else {
+      val anyResult = fn(anyValue)
+      anyResult.map(Some(_))
+    }
+  }
+
 
   def parseInt32(json: JsValue, field: St, alt: St = "", default: Opt[i32] = None,
         min: Opt[i32] = None, max: Opt[i32] = None): i32 =

@@ -318,7 +318,10 @@ function runAllE2eTests {
   $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
   $r s/wdio --only sanitize-posts.2browsers $args
 
-  $r s/wdio --only votes-and-best-first $args
+  $r s/wdio-7 --only votes-and-best-first.d.2br --cd -i $args
+  $r s/wdio-7 --only comment-sort-order.d.2br --cd -i $args
+  $r s/wdio-7 --only comment-sort-order-inherited.d.2br --cd -i $args
+  $r s/wdio-7 --only dir.summarize-squash-siblings.2br --cd -i $args
 
   # RENAME to internal-inline-link-previews-and-backlinks.2br?
   $r s/wdio --only links-internal.2browsers $args

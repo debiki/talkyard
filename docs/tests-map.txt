@@ -656,6 +656,10 @@ topics -
   load more posts:
           - MISSING  but for embedded comments: TyT603MRKH592S
           - For embedded comments: (50279460)
+  squash siblings:
+            - dir.summarize-squash-siblings.2br  TyTESQUASHSIBL
+  summarize comments:
+            - TESTS_MISSING
 
 
 topic navigation,

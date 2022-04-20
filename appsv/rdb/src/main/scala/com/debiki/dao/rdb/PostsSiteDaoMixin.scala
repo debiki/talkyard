@@ -41,12 +41,11 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     loadPostsOnPageImpl(pageId, postNr = Some(postNr)).headOption
 
 
-  override def loadPostsOnPage(pageId: PageId): immutable.Seq[Post] =
+  override def loadPostsOnPage(pageId: PageId): Vec[Post] =
     loadPostsOnPageImpl(pageId, postNr = None)
 
 
-  private def loadPostsOnPageImpl(pageId: PageId, postNr: Option[PostNr])
-        : immutable.Seq[Post] = {
+  private def loadPostsOnPageImpl(pageId: PageId, postNr: Opt[PostNr]): Vec[Post] = {
     // Similar to:  loadPostsByNrs(_: Iterable[PagePostNr])
     var query = "select * from posts3 where SITE_ID = ? and PAGE_ID = ?"
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId)

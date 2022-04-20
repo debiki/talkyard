@@ -604,6 +604,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.frequentPosterIds.drop(2).headOption.orNullInt,
       newMeta.frequentPosterIds.drop(3).headOption.orNullInt,
       newMeta.layout.toInt.asAnyRef,
+      newMeta.comtOrder.map(_.toInt).orNullInt,
+      NullInt,  // later: newMeta.comtNesting.orNullInt,
       newMeta.forumSearchBox.orNullInt,
       newMeta.forumMainView.orNullInt,
       newMeta.forumCatsTopics.orNullInt,
@@ -658,6 +660,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         frequent_poster_3_id = ?,
         frequent_poster_4_id = ?,
         layout = ?,
+        comt_order_c = ?,
+        comt_nesting_c = ?,
         forum_search_box_c = ?,
         forum_main_view_c = ?,
         forum_cats_topics_c = ?,
@@ -1409,6 +1413,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         frequent_poster_3_id,
         frequent_poster_4_id,
         layout,
+        comt_order_c,
+        comt_nesting_c,
         forum_search_box_c,
         forum_main_view_c,
         forum_cats_topics_c,
@@ -1449,7 +1455,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?)"""
+        ?, ?, ?, ?, ?)"""
 
     // Dulp code, see the update query [5RKS025].
     val values = List(
@@ -1473,6 +1479,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.frequentPosterIds.drop(2).headOption.orNullInt,
       pageMeta.frequentPosterIds.drop(3).headOption.orNullInt,
       pageMeta.layout.toInt.asAnyRef,
+      pageMeta.comtOrder.map(_.toInt).orNullInt,
+      pageMeta.comtNesting.map(_.toInt).orNullInt,
       pageMeta.forumSearchBox.orNullInt,
       pageMeta.forumMainView.orNullInt,
       pageMeta.forumCatsTopics.orNullInt,

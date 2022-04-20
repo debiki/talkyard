@@ -132,6 +132,13 @@ export function openPageToolsDialog() {
 }
 
 
+export function openDiscLayoutDiag(state: DiscLayoutDiagState) {
+  Server.loadMoreScriptsBundle(() => {
+    debiki2.pagedialogs['openDiscLayoutDiag'](state);
+  });
+}
+
+
 export function getEditCategoryDialog(handler: (dialog) => void) {
   // We need the editor-bundle.js, because it contains window.debikiSlugify [5FK2W08].
   // And the more-bundle.js too. This loads both.

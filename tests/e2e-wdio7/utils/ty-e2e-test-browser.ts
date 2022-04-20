@@ -5882,9 +5882,37 @@ export class TyE2eTestBrowser {
             `#post-${maybeParentNr} + .dw-p-as + .dw-single-and-multireplies #post-${postNr}`);
       },
 
-      isPostNrVisible: async (postNr: PostNr): Pr<Bo> => {
+      isPostNrVisible: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
+              squashed?: Bo } = {}): Pr<Bo> => {
         await this.switchToEmbCommentsIframeIfNeeded();
-        return await this.isVisible('#post-' + postNr);
+        return await this.isVisible(this.topic.__mkPostSelector(postNr, ps));
+      },
+
+      assertPostNrDisplayed: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
+              squashed?: Bo } = {}): Pr<Vo> => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.assertDisplayed(this.topic.__mkPostSelector(postNr, ps));
+      },
+
+      assertPostNrSquashed: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr } = {})
+              : Pr<Vo> => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.isVisible(this.topic.__mkPostSelector(
+              postNr, { ...ps, squashed: true }));
+      },
+
+      __mkPostSelector: (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
+              squashed?: Bo } = {}): St => {
+        let selector: St = (ps.squashed ? '.s_X_Show-PostNr-' : '#post-') + postNr;
+        if (ps.atDepth) {
+          selector = `.dw-depth-${ps.atDepth} > ${selector}`;
+        }
+        if (ps.childOfNr) {
+          selector = `#post-${ps.childOfNr
+                          } + .dw-p-as + .dw-single-and-multireplies > .dw-res > ` +
+                        selector;
+        }
+        return selector;
       },
 
       clickShowMorePosts: async (ps: { nextPostNr: PostNr }) => {
@@ -5908,10 +5936,12 @@ export class TyE2eTestBrowser {
         });
       },
 
-      waitForPostNrVisible: async (postNr: PostNr, ps: { timeoutMs?: Nr,  // RENAME to ...VisibleText?
-              timeoutIsFine?: Bo } = {}): Pr<Bo> => {
+      // RENAME to ...VisibleText?
+      waitForPostNrVisible: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
+              timeoutMs?: Nr, timeoutIsFine?: Bo } = {}): Pr<Bo> => {
         await this.switchToEmbCommentsIframeIfNeeded();
-        return await this.waitForVisibleText('#post-' + postNr, ps);
+        const selector = this.topic.__mkPostSelector(postNr, ps);
+        return await this.waitForVisibleText(selector, ps);
       },
 
       waitForPostAssertTextMatches: async (postNr: PostNr, text: St | RegExp) => {

@@ -323,18 +323,18 @@ export function unacceptAnswerClientSideOnly() {
 }
 
 
-export function editTitleAndSettings(settings: EditPageRequestData, onDone: () => void,
+// RENAME to alterPage
+export function editTitleAndSettings(changes: EditPageRequestData, onDone: () => void,
       error?: () => void) {
-  Server.savePageTitleAndSettings(settings, (response: EditPageResponse) => {
+  Server.savePageTitleAndSettings(changes, (response: EditPageResponse) => {
     if (onDone) onDone();
     ReactDispatcher.handleViewAction({
       ... response,
+      changes,
       actionType: actionTypes.EditTitleAndSettings,
-      newPageRole: settings.pageRole,
-      newDoingStatus: settings.doingStatus,
-      htmlTagCssClasses: settings.htmlTagCssClasses,
-      htmlHeadTitle: settings.htmlHeadTitle,
-      htmlHeadDescription: settings.htmlHeadDescription,
+      htmlTagCssClasses: changes.htmlTagCssClasses,
+      htmlHeadTitle: changes.htmlHeadTitle,
+      htmlHeadDescription: changes.htmlHeadDescription,
     });
   }, error);
 }

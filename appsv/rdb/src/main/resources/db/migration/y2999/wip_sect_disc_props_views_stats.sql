@@ -4,8 +4,16 @@ create table pages_t (  -- [disc_props_view_stats]
   id_c,
   old_id_st_c, -- legacy textual id
   page_type_c,
+  category_id_c,
+
   created_by_id_c,
   author_id_c,
+
+  answered_by_id_c,
+  planned_by_id_c,
+  started_by_id_c,
+  done_by_id_c,
+
   closed_by_id_c,
   locked_by_id_c,  -- cannot post new replies
   frozen_by_id_c,  -- cannot even edit one's old replies
@@ -13,11 +21,17 @@ create table pages_t (  -- [disc_props_view_stats]
   may_undelete_c,  -- ? if page deleted by non-staff author, and staff wants to prevent
                     -- the author from undeleting it. Null (default) means yes, may.
   purged_by_id_c,  -- ?
-  category_id_c,
+
+  pin_where_c,
+  pin_order_c,
 
   -- Only for section pages: (e.g. forum topics & cats list page, or wiki main page)
+  -- Why not in cats_t? Because now, with this in pages_t, one can
+  -- 
   sect_props_c references sect_props_t (site_id_c, Everyone.id, props_id_c),
   sect_view_c  references sect_views_t (site_id_c, Everyone.id, view_id_c),
+  -- No, reference from cats_t, the root cat, instead? because there should
+  -- be just one stats entry, not one per "view" page.
   sect_stats_c references sect_stats_c (site_id_c, Everyone.id, stats_id_c),
 
   -- For a section page, this'd be the defaults for all pages in the section
@@ -44,8 +58,8 @@ create table pages_t (  -- [disc_props_view_stats]
 -- Can be overridden in categories, and individual pages.
 create table sect_props_t (  -- or: forum_props_t?
   site_id_c,
-  props_id_c
-  ---- No, use a props_id_c instead, (the row above), ------
+  id_c
+  ---- No, use a props id instead, (the row above), ------
   -- and magic id 1 could be the site defaults?
   --forum_page_id_c  page_id_st_d,   -- if null, is the default for all forums in the Ty site
   -- cat_id_c -- if should look different in a category
@@ -55,10 +69,16 @@ create table sect_props_t (  -- or: forum_props_t?
   -- pages3.column forum_search_box_c  i16_gz_d;
   -- pages3.column forum_main_view_c   i16_gz_d;
   -- pages3.column forum_cats_topics_c i32_gz_d;
+
+  -- Hmm but shouldn't these (the above & the below) be in  sect_view_t  instead?
+  -- they're related to how to layout & show the section, not to
+  -- how it functions?  Maybe how it functions, is in fact defined by
+  -- the permissions tables? Who may do what?  perms_on_pages_t.
+
   show_categories            bool,
   show_topic_filter          bool,
   show_topic_types           bool,
-  select_topic_type          bool,
+  select_topic_type          bool, 
   forum_main_view            text,
   forum_topics_sort_buttons  text,
   forum_category_links       text,
@@ -68,53 +88,68 @@ create table sect_props_t (  -- or: forum_props_t?
 
   -- Move from categories3 to here? So simpler to share same settings,
   -- in different categories.
-  def_sort_order_c        page_sort_order_d,
-  def_score_alg_c         i16_gez_d,
-  def_score_period_c      trending_period_d,
+  def_page_sort_order_c        page_sort_order_d,
+  def_page_score_alg_c         i16_gez_d,
+  def_page_score_period_c      trending_period_d,
   do_vote_style_c         do_vote_style_d,
   do_vote_in_topic_list_c bool
+
+  -- If is a wiki, wiki props would be here, right?
+  -- I think there wouldn't be a separate wiki_props_t.
+  -- Or if is a blog, there wouldn't be a blog_props_t — instead,
+  -- any such props would be here in sect_props_t.
+  -- And knowledge base props, e.g. "index squares" layout,
+  -- also would be in this table.
 );
 
 create table sect_view_t (
   -- ...
+  forumSearchBox: Opt[i32] = None,
+  forumMainView: Opt[i32] = None,
+  forumCatsTopics: Opt[i32] = None,
 );
 
 create table sect_stats_t (
   -- ...
 );
 
-create table disc_props_t (
+create table disc_props_t (   -- Scala:  DiscProps
   site_id,
   props_id_c,
-  -- Most by staff & author changeable things from pages3?
-
-  pin_where_c,
-  pin_order_c,
-
-  answered_by_id_c,
-  planned_by_id_c,
-  started_by_id_c,
+  -- Most by staff & author changeable things from pages3
+  -- that aren't specific to one single page, but make more sense to
+  -- configure for groups of pages? (in a cat, or site siction)
+  ---------------------------------------------
 
   orig_post_reply_btn_title  text.  -- max len?
   orig_post_votes            int,
   enable_disagree_vote_c
+  ...other-votes-&-reactions...
   ...
 );
 
-create table disc_view_t (   -- people can configure their own view
+-- or name it  disc_layout_t  instead?
+-- Or skip for now, incl in  disc_props_t  instead?  then, not configurable per pat.
+create table disc_view_t (   -- people can configure their own ~~view~~ layout (distant future)
   site_id,
-  pat_id_c,  -- if someone's personal view. Default everyone.id
+  pat_id_c,  -- if someone's personal view. Default Everyone.Id
   view_nr_c,
 
   discussion_layout          int,
-  disc_post_nesting          int,
-  disc_post_sort_order       int,
+  comt_order,
+  comt_nesting,
+
+  -- Skip?:
   --progress_layout          int,
-  --progr_post_nesting       int,
-  --progr_post_sort_order    int,
-  
-  emb_com_sort_order_c       int,
-  emb_com_nesting_c          int,
+  --timeline_comt_nesting    int,
+  --timeline_comt_order      int,
+
+  emb_comt_order_c           int,  -- or could be a nibble in comt_ordr?
+  emb_comt_nesting_c         int,  -- this too?   And if nibble is 0, then
+                                   -- use the not-embedded config.
+
+  SquashSiblingIndexLimit
+  SummarizeNumRepliesVisibleLimit
 );
 
 create table disc_stats_t (   -- updated automatically
