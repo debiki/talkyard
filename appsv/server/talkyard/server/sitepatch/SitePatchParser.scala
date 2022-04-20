@@ -1116,6 +1116,8 @@ case class SitePatchParser(context: TyContext) {
         authorId = readInt(jsObj, "authorId"),
         frequentPosterIds = frequentPosterIds,
         layout = layout,
+        comtOrder = PostSortOrder.fromOptVal(parseOptInt32(jsObj, "comtOrder")),
+        comtNesting = None, // ...later
         forumSearchBox = parseOptInt32(jsObj, "forumSearchBox"),
         forumMainView = parseOptInt32(jsObj, "forumMainView"),
         forumCatsTopics = parseOptInt32(jsObj, "forumCatsTopics"),

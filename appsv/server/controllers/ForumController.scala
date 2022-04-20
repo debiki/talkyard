@@ -22,12 +22,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.JsonUtils.parseOptInt32
 import talkyard.server.http._
 import play.api.libs.json._
 import play.api.mvc._
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Try
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import ForumController._
@@ -95,7 +95,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
         "defaultCategoryId" -> JsNumberOrNull(rootCat.defaultSubCatId),
         "rootCategoryId" -> rootCat.id)
     }
-    OkSafeJson(JsArray(forumJsObjs))
+    OkSafeJson(JsArray(forumJsObjs))  // ?? needs JsObject
   }
 
 
@@ -138,6 +138,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // For now, do-it-votes just on or off:  [do_it_on_off]
     val doItVotesPopFirst = (categoryJson \ "doItVotesPopFirst").asOpt[Bo] getOrElse false
 
+    val anyComtOrder = // parseOptZeroNone(body, "comtOrder")(PostSortOrder.fromOptVal)
+                      PostSortOrder.fromOptVal(parseOptInt32(categoryJson, "comtOrder"))
+    val anyComtNesting = None // later: parseOptZeroNone(body, "comtNesting")(x => x.map(_.toShort))
+
     val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
     val categoryId = (categoryJson \ "id").as[Int]
     if (categoryId == NoCategoryId)
@@ -159,6 +163,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
             if (!doItVotesPopFirst) None
             else Some(PageOrderOffset.ByScoreAndBumpTime(
                   offset = None, TopTopicsPeriod.Year)),
+      comtOrder = anyComtOrder,
+      comtNesting = anyComtNesting,
       doVoteStyle =
             if (!doItVotesPopFirst) None
             else Some(DoVoteStyle.Likes),
@@ -302,7 +308,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def listCategoriesAllSections(): Action[Unit] = GetActionRateLimited() { request =>
     // Tested here: TyT5WKB2QR0
     val jsArr = loadCatsJsArrayMaySee(request)
-    OkSafeJson(jsArr)
+    OkSafeJson(jsArr)  // ?? obj
   }
 
 
@@ -341,7 +347,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
           recentTopicsByCategoryId(catStuff.category.id), pageStuffById)
     }))
 
-    OkSafeJson(json)
+    OkSafeJson(json)   // ?? obj
   }
 }
 

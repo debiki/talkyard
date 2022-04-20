@@ -30,14 +30,15 @@ import debiki.AllSettings
   * whole pages.)
   */
 // REFACTOR  combine PageDao and PagePartsDao into the same class, "PageDao". [ONEPAGEDAO]
-case class PageDao(override val id: PageId, settings: AllSettings, transaction: SiteTransaction)
+case class PageDao(override val id: PageId, settings: AllSettings,
+      transaction: SiteTransaction, anyDao: Opt[SiteDao])
   extends Page {
 
   def sitePageId = SitePageId(transaction.siteId, id)
 
   var _path: Option[PagePathWithId] = null
 
-  val parts = PagePartsDao(id, settings, transaction)
+  val parts = PagePartsDao(id, settings, transaction, anyDao)
 
   override def siteId: SiteId = transaction.siteId
 
@@ -83,7 +84,7 @@ case class NotYetCreatedEmbeddedPage(
   override def path: Option[PagePathWithId] =
     Some(PagePathWithId.fromIdOnly(pageId = EmptyPageId, canonical = true))
 
-  override def parts: PageParts = PreLoadedPageParts(meta, allPosts = Nil)
+  override def parts: PageParts = PreLoadedPageParts(meta, allPosts = Vec.empty)
 
   override def version: PageVersion = 1
 }
@@ -93,7 +94,9 @@ case class NotYetCreatedEmbeddedPage(
 case class PagePartsDao(
   override val pageId: PageId,
   settings: AllSettings,
-  transaction: SiteTransaction) extends PageParts {
+  transaction: SiteTx,
+  anyDao: Opt[SiteDao] = None,
+  ) extends PageParts {
 
 
   private var _meta: Option[PageMeta] = null
@@ -143,12 +146,36 @@ case class PagePartsDao(
     val sortOrder =
       if (pageMeta.pageType == PageType.EmbeddedComments)
         settings.embComSortOrder
-      else
-        settings.discPostSortOrder
+      else {
+        discPropsDerived.comtOrder   // was:  settings.discPostSortOrder
+      }
     PostsOrderNesting(sortOrder, settings.discPostNesting)
   }
 
-  private var _allPosts: immutable.Seq[Post] = _
+  private var _discPropsDerived: DiscPropsDerived = _
+  private def discPropsDerived: DiscPropsDerived = {
+    if (_discPropsDerived eq null) {
+      _discPropsDerived = deriveDiscProps
+    }
+    _discPropsDerived
+  }
+
+  private def deriveDiscProps: DiscPropsDerived = {
+    val cats = ancestorCatsRootLast
+    DiscProps.derive(
+          selfSource = Some(pageMeta),
+          ancestorSourcesSpecificFirst = cats,
+          defaults = settings)
+  }
+
+  private def ancestorCatsRootLast: ImmSeq[Cat] = {
+    anyDao match {
+      case Some(dao) => dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+      case None => transaction.loadCategoryPathRootLast(pageMeta.categoryId, inclSelfFirst = true)
+    }
+  }
+
+  private var _allPosts: Vec[Post] = _
 
   def loadAllPosts(): Unit = {
     if (_allPosts eq null) {
@@ -156,7 +183,7 @@ case class PagePartsDao(
     }
   }
 
-  override def allPosts: immutable.Seq[Post] = {
+  override def allPosts: Vec[Post] = {
     if (_allPosts eq null) {
       loadAllPosts()
     }

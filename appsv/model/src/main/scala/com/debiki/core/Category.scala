@@ -105,7 +105,9 @@ case class Category(  // [exp] ok use   too long name! use Cat instead
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageType],
   // None —> inherited from parent cat (not impl though)
-  defaultSortOrder: Opt[PageOrderOffset] = None,
+  defaultSortOrder: Opt[PageOrderOffset] = None,  // RENAME to pageSortOrder
+  comtOrder: Opt[PostSortOrder] = None,
+  comtNesting: Opt[ComtNesting_later] = None,
   doVoteStyle: Opt[DoVoteStyle] = None,
   // Not impl though. [vote_from_tp_ls]
   doVoteInTopicList: Opt[Bo] = None,
@@ -119,7 +121,9 @@ case class Category(  // [exp] ok use   too long name! use Cat instead
   updatedAt: ju.Date,
   lockedAt: Option[ju.Date] = None,
   frozenAt: Option[ju.Date] = None,
-  deletedAt: Option[ju.Date] = None) {
+  deletedAt: Option[ju.Date] = None,
+  )
+  extends DiscPropsSource with SectPropsSource {
 
   import Category._
 
@@ -138,6 +142,8 @@ case class Category(  // [exp] ok use   too long name! use Cat instead
   require(!lockedAt.exists(_.getTime < createdAt.getTime), "EsE5MPK2")
   require(!frozenAt.exists(_.getTime < createdAt.getTime), "EsE2KPU4c")
   require(!deletedAt.exists(_.getTime < createdAt.getTime), "EsE7GUM4")
+
+  require(comtNesting.isEmpty, "TyE60MREG26")
 
   def isRoot: Boolean = parentId.isEmpty
   def isLocked: Boolean = lockedAt.isDefined

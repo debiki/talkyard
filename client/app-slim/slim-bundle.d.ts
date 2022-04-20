@@ -514,6 +514,12 @@ declare namespace debiki2 {
     const Email;
   }
 
+  namespace widgets {
+    function DiscLayoutDropdownBtn(props: DiscLayoutDropdownBtnProps);
+    function comtOrder_title(comtOrder: PostSortOrder): St;
+    //function comtOrder_descr — is in the more-bundle
+  }
+
   var SelectCategoryDropdown: any;
 
   // From widgets.ts:

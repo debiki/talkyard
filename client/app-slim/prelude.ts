@@ -457,6 +457,9 @@ export function isDefined2(x): boolean {   // RENAME to isDef
 export function isDef(x): Bo {
   return !isUndef(x);
 }
+export function isDefButNot(x, y): Bo {
+  return isDef(x) && x !== y;
+}
 // REMOVE  use  notDef(x) instead
 export function isUndef(x): Bo {
   return _.isUndefined(x);

@@ -815,6 +815,13 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     def isEmptyOr(value: T): Bo = underlying.isEmpty || underlying.contains(value)
   }
 
+  implicit class RichIntOption[T](underlying: Opt[i32]) {
+    def ifZeroNoneOrElse(other: Opt[i32]): Opt[i32] = {
+      if (underlying is 0) None
+      else underlying.orElse(other)
+    }
+  }
+
   implicit class RichOptionEq[T <: AnyRef](underlying: Option[T]) {
     def isEq(value: T): Boolean = underlying.exists(_ eq value)
     def isNotEq(value: T): Boolean = underlying.forall(_ ne value)

@@ -544,6 +544,8 @@ object JsX {   RENAME // to JsonPaSe
       "authorId" -> pageMeta.authorId,
       "frequentPosterIds" -> pageMeta.frequentPosterIds,
       "layout" -> pageMeta.layout.toInt,
+      "comtOrder" -> JsNum32OrNull(pageMeta.comtOrder.map(_.toInt)),
+      //"comtNesting" -> pageMeta.comtNesting,
       "forumSearchBox" -> JsNum32OrNull(pageMeta.forumSearchBox),
       "forumMainView" -> JsNum32OrNull(pageMeta.forumMainView),
       "forumCatsTopics" -> JsNum32OrNull(pageMeta.forumCatsTopics),

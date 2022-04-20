@@ -101,7 +101,7 @@ C,
 Cat = category
 Cb  = Contextbar
 CB  = checkbox, e.g. s_SthCB
-Cm, Cmt = comment
+Cm, Cmt, Comt = comment
 Co, Col = column, Rw or Row = row
 Cr  = create
 Cu  = Custom, e.g. CuNav = custom navigation links
@@ -138,6 +138,8 @@ Gt  = greater than, Lt = less than
 Hi  = high
 Hz  = horizontal, also Vl: vertical
 Ifr = iframe
+It  = item
+Inh = inherit
 L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list, ..T = table
 Ls  = list, when not at the end, e.g LsPgsB = list pages button
 Ld  = load, Ldng = loading
@@ -164,6 +166,7 @@ Nm  = name
 Nf  = notification,  e.g. e_NfEm_NwTp = notification email, about a new topic
 Nv  = navigation, e.g. NvLs_Ln = Navigation-List Link
 Nw  = new
+Ord = order
 Pat = participant
 Pb  = pagebar
 Pf  = preference, e.g. NfPfs = notification preferences
@@ -191,9 +194,11 @@ SgU = sign up, also LgI/LgO = log in/out, and Au = Authentication, e.g. AuD
 Sm  = small (screen), also: Md, Lg, Xl
 Sbm = submit
 Snz = Snooze
+SStg = Site Setting
 St = status or state
 Stc = static, Fxd = fixed
 Stf = staff
+Stg = setting, sstg = site setting.
 Sub = "sub" as in "sub category"
 Sub = submit NO, CLEAN_UP, insetad:
 Sug = suggest

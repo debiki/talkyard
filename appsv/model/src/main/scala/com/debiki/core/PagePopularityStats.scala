@@ -57,14 +57,18 @@ case class PagePopularityScores(
 }
 
 
-// RENAME to TrendingPeriod
+// RENAME to [TrendingPeriod]
 sealed abstract class TopTopicsPeriod(val IntVal: Int) { def toInt = IntVal }
 
 object TopTopicsPeriod {
+  // later, maybe: Now = 6 hours?
   case object Day extends TopTopicsPeriod(1)
-  // later: 2Days
+  // later: 2Days or 3Days?
+  // Or change Day to  1.5  days?
+  // Then:  1.5 * 4 = 6  ~ 1 week,  1 w * 4 = 28 ~ 1 month,  1 mo * 3 = 1 quarter,  * 4 = 1y
+  // that is, each period is 3 – 4 times the previous period.
   case object Week extends TopTopicsPeriod(2)
-  // later: 2Weeks
+  // later: 2Weeks  — makes sense since there's every-2nd-week summary emails.
   case object Month extends TopTopicsPeriod(3)
   case object Quarter extends TopTopicsPeriod(4)
   // later: HalfYear

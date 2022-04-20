@@ -167,6 +167,8 @@ object PageMeta {
   * @param forumMainView: 1 for topics, 2 for cats.
   * @param forumCatsTopics: 1 for cats only, 2 for cats to the left, and active & popular
   *   to the right.
+  * @param comtOrder — default is None, meaning, the setting of the parent category.
+  * @param comtNesting
   * @param numLikes
   * @param numWrongs
   * @param numBurys
@@ -189,7 +191,7 @@ object PageMeta {
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
   */
 case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
-  // No, better: Split into 0) PageMeta, 1) DiscProps, 2) DiscView, 3) DiscStats,
+  // No, better: Split into 0) PageMeta, 1) DiscProps, 2) DiscView, 3) DiscStats,  HHHMM
   // and SectProps, SectView, SectStats?   [disc_props_view_stats]
   // Because PageMeta is in fact 3 separate things:
   // 1) page properties: page type, answeredBy, plannedBy, closed/open, deleted, etc,
@@ -216,8 +218,12 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   authorId: UserId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
   // -----
-  // REFACTOR move to disc_views_t   [disc_props_view_stats]  [PAGETYPESETTNG]
+  // REFACTOR move to DiscViewProps and disc_views_t [disc_props_view_stats]  [PAGETYPESETTNG]
+  //          or just DiscProps     and disc_props_t.
   layout: PageLayout = PageLayout.Default,
+  comtOrder: Opt[PostSortOrder] = None,
+  comtNesting: Opt[ComtNesting_later] = None,
+  // Move to SectProps and sect_props_t
   forumSearchBox: Opt[i32] = None,
   forumMainView: Opt[i32] = None,
   forumCatsTopics: Opt[i32] = None,
@@ -258,7 +264,9 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited
   htmlHeadTitle: String = "",
   htmlHeadDescription: String = "",
-  numChildPages: Int = 0) { // <-- CLEAN_UP remove, replace with category table
+  numChildPages: Int = 0,   // <-- CLEAN_UP remove, replace with category table
+  ) // wait:  (mab: MessAborter = IfBadDie)
+  extends DiscPropsSource {
 
 
   extImpId.flatMap(Validation.findExtIdProblem) foreach { problem =>
@@ -296,6 +304,10 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   require(pageType != PageType.AboutCategory || categoryId.isDefined, s"[DwE5PKI8] $wp")
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), s"[DwE4kEYF2] $wp")
   require(pinOrder.isEmpty == pinWhere.isEmpty, s"[DwE36FK2] $wp")
+
+  require(comtNesting.forall(n => n == -1 || 1 <= n  && n <= 10), // "TyECOMTNST023",
+        s"Bad comment nesting, should be -1 or between 1 and 10: $comtNesting [TyECOMTNST023]")
+
   require(numLikes >= 0, s"[DwE6PKF3] $wp")
   require(numWrongs >= 0, s"[DwE9KEFW2] $wp")
   require(numBurys >= 0, s"[DwE2KEP4] $wp")
@@ -471,6 +483,105 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   }
 
 }
+
+
+// Sync w Typescript, & break out to own file?   [disc_props_js_scala]
+
+case class SectPropsDerived(
+  doVoteStyle: DoVoteStyle,
+  doVoteInTopicList: Bo,
+) {
+}
+
+
+
+trait SectPropsSource {
+  val doVoteStyle: Opt[DoVoteStyle]
+  val doVoteInTopicList: Opt[Bo]
+  // Later, but these are Bo not Opt[Bo] currently in class Cat:
+  // val unlistCategory: Opt[Bo]
+  // val unlistTopics: Opt[Bo]
+}
+
+
+
+trait DiscProps {
+  val comtOrder: PostSortOrder
+  val comtNesting: ComtNesting_later
+}
+
+
+
+case class DiscPropsDerived(
+  //origPostReplyBtnTitle: St,
+  //origPostVotes: OrigPostVotes,
+  //enableDisagreeVote: Bo,
+  comtOrder: PostSortOrder,
+  comtNesting: ComtNesting_later,
+  // comts2dLayout: Bo = false,  — later. horizontalComments, horizontal_comments
+) extends DiscProps {
+
+}
+
+
+object DiscProps {
+
+  def derive(selfSource: Opt[DiscPropsSource],
+             ancestorSourcesSpecificFirst: ImmSeq[DiscPropsSource],
+             defaults: DiscProps): DiscPropsDerived = {
+    var merged = selfSource.map(DiscPropsMerged.fromSource) getOrElse DiscPropsMerged.Empty
+    for (source <- ancestorSourcesSpecificFirst) {
+      merged = merged.mergeWith(source)
+    }
+    merged.toDerivedWithDefaults(defaults)
+  }
+}
+
+
+trait DiscPropsSource {
+  // These are currently in settings_t, not in pages_t and cats_t:
+  //val origPostReplyBtnTitle: Opt[St]
+  //val origPostVotes: Opt[OrigPostVotes]
+  //val enableDisagreeVote: Opt[Bo]
+  val comtOrder: Opt[PostSortOrder]
+  val comtNesting: Opt[ComtNesting_later]
+  // comts2dLayout: Opt[Bo] = None
+}
+
+
+private case class DiscPropsMerged(
+  //origPostReplyBtnTitle: Opt[St]
+  //origPostVotes: Opt[OrigPostVotes]
+  //enableDisagreeVote: Opt[Bo]
+  comtOrder: Opt[PostSortOrder],
+  comtNesting: Opt[ComtNesting_later],
+  // comts2dLayout: Opt[Bo] = None
+  )
+  extends DiscPropsSource {
+
+  def mergeWith(source: DiscPropsSource): DiscPropsMerged =
+    // Same as: discProps_mergeWith() in Typescript.  [disc_props_js_scala]
+    DiscPropsMerged(
+          comtOrder = this.comtOrder.orElse(source.comtOrder),
+          comtNesting = this.comtNesting.orElse(source.comtNesting))
+
+  def toDerivedWithDefaults(defaults: DiscProps): DiscPropsDerived = DiscPropsDerived(
+        comtOrder = comtOrder getOrElse defaults.comtOrder,
+        comtNesting = comtNesting getOrElse defaults.comtNesting,
+        )
+}
+
+
+private object DiscPropsMerged {
+  def Empty: DiscPropsMerged = DiscPropsMerged(None, None)
+
+  def fromSource(source: DiscPropsSource): DiscPropsMerged = {
+    DiscPropsMerged(
+          source.comtOrder,
+          source.comtNesting)
+  }
+}
+
 
 
 case class SimplePagePatch(
@@ -806,6 +917,7 @@ sealed abstract class ProgressLayout(val IntVal: Int) {
   def toInt: Int = IntVal
 }
 
+@deprecated("This was too complicated?")
 object ProgressLayout {
   object Default extends ProgressLayout(0)
   object Enabled extends ProgressLayout(1)
@@ -1048,4 +1160,59 @@ case class PagePostNr(pageId: PageId, postNr: PostNr) {
 
 case class PagePostNrId(pageId: PageId, postNr: PostNr, postId: PostId) {
 }
+
+
+
+/*
+sealed abstract class ComtSortOrder(val IntVal: i32) { def toInt: i32 = IntVal }
+
+object ComtSortOrder {
+  // (A nibble is 4 bits: 0x00 – 0xff.)
+  private val InheritNibble = 0x00
+  private val OldestFirstNibble = 0x01
+  private val NewestFirstNibble = 0x02
+  private val BestFirstNibble = 0x03
+  // Trending — but what time period? That could be a separate field, see [TrendingPeriod].
+  private val TrendingFirstNibble = 0x04
+  // Also: ControversialFirst — both many Likes and Disagrees
+  //       ProblematicFirst  — for mods, to see flagged and unwanted things first
+
+  //case object Inherit extends ComtSortOrder(InheritNibble)
+  case object OldestFirst extends ComtSortOrder(OldestFirstNibble)
+  case object NewestFirst extends ComtSortOrder(NewestFirstNibble)
+  case object BestFirst extends ComtSortOrder(BestFirstNibble)
+  case object TrendingFirst extends ComtSortOrder(TrendingFirstNibble)
+  case object NewestThenBestFirst extends ComtSortOrder(NewestFirstNibble + (BestFirstNibble << 4))
+  case object BestThenNewestFirst extends ComtSortOrder(BestFirstNibble + (NewestFirstNibble << 4))
+
+  val Default: ComtSortOrder = OldestFirst
+
+  /*
+  def clearOrFirstOf(a: Opt[ComtSortOrder], b: Opt[ComtSortOrder]): Opt[ComtSortOrder] = {
+    if (a is Inherit) None  // clears it
+    else a orElse b
+  }
+
+  val ZeroClear = 0
+
+  def newFromOptVal(anyValue: Opt[i32]): Opt[Opt[ComtSortOrder]] = {
+    if (anyValue is ZeroClear) Some(None)
+    else {
+      val order = fromOptVal(anyValue)
+      order.map(Some(_))
+    }
+  } */
+
+  def fromOptVal(anyValue: Opt[i32]): Opt[ComtSortOrder] = anyValue map {
+    // case Inherit.IntVal => Inherit
+    case OldestFirst.IntVal => OldestFirst
+    case NewestFirst.IntVal => NewestFirst
+    case BestFirst.IntVal => BestFirst
+    case TrendingFirst.IntVal => TrendingFirst
+    case NewestThenBestFirst.IntVal => NewestThenBestFirst
+    case BestThenNewestFirst.IntVal => BestThenNewestFirst
+    case _ => return None
+  }
+
+} */
 

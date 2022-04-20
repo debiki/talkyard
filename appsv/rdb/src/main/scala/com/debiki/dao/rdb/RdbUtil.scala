@@ -706,6 +706,8 @@ object RdbUtil {
       |g.frequent_poster_2_id,
       |g.frequent_poster_3_id,
       |g.layout,
+      |g.comt_order_c,
+      |g.comt_nesting_c,
       |g.forum_search_box_c,
       |g.forum_main_view_c,
       |g.forum_cats_topics_c,
@@ -780,6 +782,8 @@ object RdbUtil {
       authorId = resultSet.getInt("AUTHOR_ID"),
       frequentPosterIds = frequentPosterIds,
       layout = PageLayout.fromInt(resultSet.getInt("layout")) getOrElse PageLayout.Default,
+      comtOrder = PostSortOrder.fromOptVal(getOptInt32(resultSet, "comt_order_c")),
+      comtNesting = None, // later
       forumSearchBox = getOptInt32(resultSet, "forum_search_box_c"),
       forumMainView = getOptInt32(resultSet, "forum_main_view_c"),
       forumCatsTopics = getOptInt32(resultSet, "forum_cats_topics_c"),

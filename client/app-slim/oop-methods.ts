@@ -717,6 +717,40 @@ export function pat_mayEditTags(me: Me, ps: { forPost?: Post, forPat?: Pat,
 //----------------------------------
 
 
+export function discProps_pluckFrom(what: DiscPropsSource | SettingsVisibleClientSide)
+      : DiscPropsSource {
+  // @ifdef DEBUG
+  dieIf(!what, `No 'what' [TyE70W3MR8M]`);
+  // @endif
+  const source = what as DiscPropsSource;
+  const settings = what as SettingsVisibleClientSide;
+
+  // Don't set any field to undefined. [unintened_undefined_bug]
+  const result: DiscPropsSource = {};
+
+  const comtOrder   = source.comtOrder   || settings.discPostSortOrder;
+  if (comtOrder) result.comtOrder = comtOrder;
+
+  const comtNesting = source.comtNesting || settings.discPostNesting;
+  if (comtNesting) result.comtNesting = comtNesting;
+
+  return result;
+}
+
+
+/// Merges other into self; mutates self (_inPl = in-place).
+///
+export function discProps_mergeWith_inPl(self: DiscPropsSource, other: DiscPropsSource) {
+  // Same as: DiscPropsMerged.mergeWith() in Scala.  [disc_props_js_scala]
+  // Don't set any field to undefined. [unintened_undefined_bug]
+  if (!self.comtOrder && other.comtOrder) {
+    self.comtOrder = other.comtOrder;
+  }
+  if (!self.comtNesting && other.comtNesting) {
+    self.comtNesting = other.comtNesting;
+  }
+}
+
 export function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself) {
   // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
   return settings.showCategories !== false;
@@ -1062,7 +1096,27 @@ export function store_findCatByRefOrId(store: Store, refOrId: RefOrId): Category
 }
 
 
+/// Getting the current cat first in the ancestor cats list, is good
+/// when deriving page properties — then we start with the most
+/// specific thing (the page), and continue "upwards" to less specific
+/// things: the parent cat, grandparent, the root cat,
+/// and finally the whole site settings.
+///
+export function store_ancestorCatsCurFirst(store: Store, catId: CatId): Cat[] {
+  return store_ancestorCatsImpl(store, catId, false);
+}
+
+
+/// Getting the root cat and base cat first in the ancestor cats list,
+/// is good when looking at permissions — because if there's something pat
+/// may not access, we shouldn't look into its descendants (sub cats).
+///
 export function store_ancestorCatsCurLast(store: Store, categoryId: CatId): Cat[] {
+  return store_ancestorCatsImpl(store, categoryId, true);
+}
+
+
+function store_ancestorCatsImpl(store: Store, categoryId: CatId, curLast: Bo): Cat[] {
   const ancestors = [];
   const cats: Category[] = store.currentCategories;
   let nextCatId = categoryId;
@@ -1074,13 +1128,23 @@ export function store_ancestorCatsCurLast(store: Store, categoryId: CatId): Cat[
       // json sent to the browser, so we won't find the root cat. However
       // the root cat's id should be one of the SiteSection's root cat ids.
       // @ifdef DEBUG
+      /*  need to update warmup json
       const siteSection = _.find(store.siteSections, s => s.rootCategoryId === nextCatId);
-      dieIf(!siteSection, `No site section root cat found for cat ${categoryId}, ` +
-          `root cat id ${nextCatId} [TyE036RKTHF2]`);
+      dieIf(!siteSection, `No site section root cat found for cat ${categoryId},` +
+          `\n   root cat id: ${nextCatId} [TyE036RKTHF2]` +
+          `\n   site sections: ${JSON.stringify(store.siteSections)}` +
+          `\n   ancestor cats found: ${JSON.stringify(ancestors)}` +
+          `\n   store.currentCategories: ${JSON.stringify(store.currentCategories)}`);
+          */
       // @endif
       break;
     }
-    ancestors.unshift(nextCat);
+    if (curLast) {
+      ancestors.unshift(nextCat);
+    }
+    else {
+      ancestors.push(nextCat);
+    }
     nextCatId = nextCat.parentId;
     if (!nextCatId)
       break;
@@ -1509,8 +1573,125 @@ let numTagTypeMissingWarnings = 0;
 
 
 
+
+// Layout
+//----------------------------------
+
+
+export function layout_sortOrderForChildsOf(layout: DiscPropsDerived, post: { nr: PostNr }) {
+  switch(layout.comtOrder) {
+    case PostSortOrder.NewestThenBest:
+      return post.nr === BodyNr ? PostSortOrder.NewestFirst : PostSortOrder.BestFirst;
+    case PostSortOrder.NewestThenOldest:
+      return post.nr === BodyNr ? PostSortOrder.NewestFirst : PostSortOrder.OldestFirst;
+    default:
+      return layout.comtOrder;
+  }
+}
+
+
+
+
 // Page
 //----------------------------------
+
+
+/// Discussion properties. For each unspecified page property, e.g. sort order,
+/// look at the ancestor categories, to find out what value to use.
+/// And if unspecified everywhere, uses the global site settings.
+///
+/// RENAME to page_deriveLayout ?
+export function page_deriveLayout(page: Page, store: Store, layoutFor: LayoutFor)
+      : DiscPropsDerived {   // RENAME to DiscLayoutDerived?
+  return deriveLayoutImpl(page, null, store, layoutFor);
+}
+
+
+export function cat_deriveLayout(cat: Cat, store: Store, layoutFor: LayoutFor)
+      : DiscPropsDerived {
+  return deriveLayoutImpl(null, cat, store, layoutFor);
+}
+
+
+/// Layout props can be specified on a specific page, a category,
+/// or whole site settings. Layout props set on a cat or the whole site, are
+/// inherited by things inside (sub cats, and pages in those cats).
+///
+/// The most specific props, have precedence — that is, props set on the
+/// page or cat itself, override parent cat props and site settings.
+/// If unspecified everywhere, Ty's built-in defaults gets used.
+///
+function deriveLayoutImpl(page: Page, cat: Cat, store: Store, layoutFor: LayoutFor)
+      : DiscPropsDerived {
+
+  // ----- The page/cat itself
+
+  let discProps: DiscPropsSource = layoutFor === LayoutFor.Ancestors ?
+        {} : discProps_pluckFrom(page || cat);
+
+  const selfRef = () => page ? `pageid:${page.pageId}` : `catid:${cat.id}`;
+
+  let comtOrderFrom   = discProps.comtOrder && selfRef();
+  let comtNestingFrom = discProps.comtNesting && selfRef();
+
+  // ----- Ancestor cats
+
+  // Start with the parent cat, since it's the most specific cat. Then the
+  // grandparent, and so on. Finally, the whole site settings.
+  //
+  // These: page.ancestorsRootFirst  don't include the comtOrder etc fields.
+  // Maybe they should? For now, call this fn instead:
+  const ancCatId = page ? page.categoryId : cat.parentId;
+  const ancCats: Cat[] = store_ancestorCatsCurFirst(store, ancCatId);
+
+  for (const cat of ancCats) {
+    discProps_mergeWith_inPl(discProps, cat);
+    const catRef = () => `catid:${cat.id}`;
+    if (!comtOrderFrom && discProps.comtOrder) comtOrderFrom = catRef();
+    if (!comtNestingFrom && discProps.comtNesting) comtNestingFrom = catRef();
+  }
+
+  // ----- Site settings
+
+  const settingsDiscProps: DiscPropsSource = discProps_pluckFrom(store.settings);
+  discProps = { ...settingsDiscProps, ...discProps };
+
+  // sstg = setting, see docs/abbreviations.txt.
+  if (!comtOrderFrom && discProps.comtOrder) comtOrderFrom = 'sstg:comtOrder';
+  if (!comtNestingFrom && discProps.comtNesting) comtNestingFrom = 'sstg:comtNesting';
+
+  // ----- Hardcoded defaults
+
+  if (!discProps.comtOrder) {
+    discProps.comtOrder = PostSortOrder.OldestFirst;
+    comtOrderFrom = `BuiltIn`;
+  }
+
+  if (!discProps.comtNesting) {
+    discProps.comtNesting = -1;
+    comtNestingFrom = `BuiltIn`;
+  }
+
+  // ----- Temp tweaks
+
+  const anyTweaks = layoutFor === LayoutFor.PageWithTweaks
+                    && page && page.pageId === store.currentPageId ?
+          store.curPageTweaks : undefined;
+
+  if (anyTweaks) {
+    discProps = { ...discProps, ...anyTweaks };
+    if (anyTweaks.comtOrder) comtOrderFrom = `CurPageTweaks`;
+    if (anyTweaks.comtNesting) comtNestingFrom = `CurPageTweaks`;
+  }
+
+  const result = {
+    ...discProps,
+    comtOrderFrom,
+    comtNestingFrom,
+  };
+
+  return result as DiscPropsDerived;
+}
 
 
 export function page_authorId(page: Page): PatId | U {

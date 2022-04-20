@@ -28,7 +28,7 @@ import talkyard.server.JsX._
 
 
 
-trait AllSettings {
+trait AllSettings extends DiscProps {
   self =>
 
   def userMustBeAuthenticated: Boolean  ; RENAME // to mustLoginToRead ?
@@ -133,7 +133,8 @@ trait AllSettings {
 
 
 
-  // UX settings (could add a UserId column so people can override some (not all) of these?)
+  // UX settings (could add a UserId column so people can override
+  // some (not all) of these?) — Yes, in the distant future, see:  [disc_props_view_stats]
   // -----------------------------
   def forumMainView: String
   def forumTopicsSortButtons: String
@@ -150,12 +151,19 @@ trait AllSettings {
 
   // ----- Topics — hmm these could / should? be per topic type,
   // or per category —  see cont_sets_t  in  db-refactor.txt.
+  // Hmm, seems this'll be in pages and cats, and trait DiscPropsSource,
+  // see [disc_props_view_stats].
   def discussionLayout: DiscussionLayout
+
+  val comtOrder: PostSortOrder = discPostSortOrder // renaming
+  val comtNesting: ComtNesting_later = discPostNesting  // later
+
   def discPostSortOrder: PostSortOrder
   def discPostNesting: NestingDepth
   def progressLayout: ProgressLayout
   def embComSortOrder: PostSortOrder  // later, could add a topic type field instead
   def embComNesting: NestingDepth
+  // + horizontalComments  below
   // These are for embedded comments actually, COULD rename:
   def origPostReplyBtnTitle: St
   def origPostVotes: OrigPostVotes
@@ -434,14 +442,19 @@ object AllSettings {
     val selectTopicType = true
     val showAuthorHow: ShowAuthorHow = ShowAuthorHow.FullNameThenUsername
     val watchbarStartsOpen = true
+    // ----------------------------
+    // These defaults should be specified here instead?  [appsv_layout_defs]
+    // But then they wouldn't be accessible to the core module. So for now they're there,
+    // instead.
     val discussionLayout: DiscussionLayout = DiscussionLayout.Default
-    val discPostSortOrder: PostSortOrder = PostSortOrder.Default
+    val discPostSortOrder: PostSortOrder = PostsOrderNesting.Default.sortOrder
     val discPostNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
     val progressLayout: ProgressLayout = ProgressLayout.Default
     val embComSortOrder: PostSortOrder = PostSortOrder.DefaultForEmbComs
     val embComNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
     val origPostReplyBtnTitle: String = ""  // will then use the i18n field
     val origPostVotes: OrigPostVotes = OrigPostVotes.Default
+    // ----------------------------
     val enableDisagreeVote: Bo = true
     val requireApprovalIfTrustLte = TrustLevel.Stranger
     val reviewAfterIfTrustLte = TrustLevel.Stranger

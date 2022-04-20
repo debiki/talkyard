@@ -73,6 +73,7 @@ declare namespace debiki2.pagedialogs {
   function openTagsDialog(ps: TagDiagProps);
   function openWikifyDialog(post: Post);
   function openLikesDialog(post: Post, voteType: PostVoteType, at: Rect)
+  function openDiscLayoutDiag(state: DiscLayoutDiagState);
 
   function getAboutUserDialog();
   function getProgressBarDialog();
