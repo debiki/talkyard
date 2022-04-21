@@ -99,47 +99,63 @@ esac
 
 
 
+echo
 echo "Pulling debiki/talkyard-*:$wip_version_tag ..."
+echo
+
+set -x
 sudo docker pull debiki/talkyard-app:$wip_version_tag
 sudo docker pull debiki/talkyard-web:$wip_version_tag
 sudo docker pull debiki/talkyard-rdb:$wip_version_tag
 sudo docker pull debiki/talkyard-cache:$wip_version_tag
 sudo docker pull debiki/talkyard-search:$wip_version_tag
 sudo docker pull debiki/talkyard-certgen:$wip_version_tag
+set +x
 
+echo
 echo "Done pulling."
 
 # Here and below, Enter is enough, no need to confirm y/n again.
 echo "Tag with debiki/talkyard-*:$release_version_tag?  Press Enter (or CTRL+C to exit)"
 read -s -p ''
+echo
 
+set -x
 sudo docker tag debiki/talkyard-app:$wip_version_tag debiki/talkyard-app:$release_version_tag
 sudo docker tag debiki/talkyard-web:$wip_version_tag debiki/talkyard-web:$release_version_tag
 sudo docker tag debiki/talkyard-rdb:$wip_version_tag debiki/talkyard-rdb:$release_version_tag
 sudo docker tag debiki/talkyard-cache:$wip_version_tag debiki/talkyard-cache:$release_version_tag
 sudo docker tag debiki/talkyard-search:$wip_version_tag debiki/talkyard-search:$release_version_tag
 sudo docker tag debiki/talkyard-certgen:$wip_version_tag debiki/talkyard-certgen:$release_version_tag
+set +x
 
 
+echo
 echo "Done. Publish to the official Docker image registry, debiki/talkyard-*:$release_version_tag?  Press Enter"
 read -s -p ''
 
 echo "Publishing..."
+echo
 
+set -x
 sudo docker push debiki/talkyard-app:$release_version_tag
 sudo docker push debiki/talkyard-web:$release_version_tag
 sudo docker push debiki/talkyard-rdb:$release_version_tag
 sudo docker push debiki/talkyard-cache:$release_version_tag
 sudo docker push debiki/talkyard-search:$release_version_tag
 sudo docker push debiki/talkyard-certgen:$release_version_tag
+set +x
 
 
 echo "Lastly, publish version tag $release_version_tag to GitHub?  Press Enter"
 read -s -p ''
 
 
+echo
 echo "Publishing version tag $release_version_tag to GitHub..."
+echo
 
+set -x
 pushd .
 cd relchans/$promote_to_chan
   git fetch origin $promote_to_chan
@@ -150,8 +166,10 @@ cd relchans/$promote_to_chan
   release_version_tag_w_ed_chan="tyse-$release_version_tag-regular"
   git add $versions_file
   git commit -m "Release $release_version_tag_w_ed_chan."
+  set +x
   echo
   echo "In $(pwd):"
+  echo
   set -x
   git push origin $promote_to_chan
   # 'master' is for backw compat. Don't incl in v1. [ty_v1]
@@ -173,5 +191,6 @@ git tag $release_version_tag_w_ed_chan tyse-$wip_version_tag-dev
 git push origin $release_version_tag_w_ed_chan
 
 set +x
+echo
 echo "Done, released $release_version_tag_w_ed_chan. Bye."
 echo

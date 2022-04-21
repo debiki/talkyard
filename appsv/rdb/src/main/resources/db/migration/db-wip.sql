@@ -1,3 +1,11 @@
+-- BUG: fk not deferrable:  pagepopscores_r_pages
+alter table page_popularity_scores3 alter constraint pagepopscores_r_pages deferrable;
+alter table perms_on_pages3 alter constraint permsonpages_r_cats deferrable;
+alter table perms_on_pages3 alter constraint permsonpages_r_pages deferrable;
+alter table perms_on_pages3 alter constraint permsonpages_r_people deferrable;
+alter table perms_on_pages3 alter constraint permsonpages_r_posts deferrable;
+
+
 -- Also see: docs/maybe-refactor.txt
 --  — move some / most-of ?  this db-wip stuff to there instead?
 --
