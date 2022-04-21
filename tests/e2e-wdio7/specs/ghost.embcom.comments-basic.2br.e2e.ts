@@ -18,8 +18,9 @@ let maria_brB: TyE2eTestBrowser;
 let memah: Member;
 let memah_brB: TyE2eTestBrowser;
 
+
 const localHostname = 'e2e-test-ghost-comments';
-const embeddingOrigin =  `http://localhost:${c.thirdParty.ghostPort}`;
+const embeddingOrigin = `${settings.scheme}://localhost:${c.thirdParty.ghostPort}`;
 
 let site: IdAddress;
 let forum: TwoCatsTestForum;
@@ -29,6 +30,11 @@ const timeoutMs = 4000;
 
 
 describe(`ghost.embcom.comments-basic.2br  TyTEGHOSTCOMBSC`, () => {
+
+  if (settings.secure) {
+    console.log("Skipping Ghost comments test — the Ghost image uses only HTTP.");
+    return;
+  }
 
   it(`Construct site`, async () => {
     const builder = buildSite();

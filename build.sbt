@@ -89,14 +89,10 @@ val appDependencies = Seq(
   Dependencies.Libs.apacheCommonsLang3,
   Dependencies.Libs.guava,
   Dependencies.Libs.jsoup,
-  // Fluentd better understands json logs.
-  // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-  "ch.qos.logback" % "logback-classic" % "1.2.10",
-  // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-  "ch.qos.logback" % "logback-core" % "1.2.10",
-  // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-  "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1",
-  //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
+
+  Dependencies.Libs.logbackClassic,
+  Dependencies.Libs.logbackCore,
+  Dependencies.Libs.logstashLogbackEncoder,
 
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.

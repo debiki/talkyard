@@ -82,3 +82,6 @@ Plus all uploaded files, e.g. images.
 
 (Details: Probably one will be able to export a .tar.gz file, which includes a JSON file with all topics & comments & users etcetera, and all uploaded files (images etcetera). I've started a little bit: The end-to-end tests import JSON files to create test communities.)
 
+
+
+Exporting & Importing a per site SQL & uploads dump
