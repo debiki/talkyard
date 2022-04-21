@@ -12,9 +12,9 @@ Compile / dependencyOverrides ++= {
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.10.5",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.10.5",
       "com.google.code.findbugs" % "jsr305" % "3.0.2",
-      "com.google.errorprone" % "error_prone_annotations" % "2.7.1",
+      "com.google.errorprone" % "error_prone_annotations" % "2.11.0",
       "com.google.guava" % "failureaccess" % "1.0.1",
-      "com.google.guava" % "guava" % "31.0.1-jre",
+      "com.google.guava" % "guava" % "31.1-jre",
       "com.google.guava" % "listenablefuture" % "9999.0-empty-to-avoid-conflict-with-guava",
       "com.google.j2objc" % "j2objc-annotations" % "1.3",
       "com.lambdaworks" % "scrypt" % "1.4.0",
@@ -31,14 +31,14 @@ Compile / dependencyOverrides ++= {
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "2.2.1",
+      "org.apache.tika" % "tika-core" % "2.3.0",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.2.25",
+      "org.postgresql" % "postgresql" % "42.3.4",
       "org.scalactic" % "scalactic_2.12" % "3.2.11",
-      "org.slf4j" % "slf4j-api" % "1.7.32"
+      "org.slf4j" % "slf4j-api" % "1.7.35"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 0055f4de990bf52f95deacd75619f940fd8921fe
+// LIBRARY_DEPENDENCIES_HASH 6e324e8921cfc461a7595505100fba5918787dc2
