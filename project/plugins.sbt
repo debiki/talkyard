@@ -18,10 +18,10 @@ resolvers ++= Seq(
   Resolver.sbtPluginRepo("releases")) // =  https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.12")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.15")
 
 // A refactoring and linting tool for Scala
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.34")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.0")
 
 // Pin dependencies.
 addSbtPlugin("com.github.tkawachi" % "sbt-lock" % "0.8.0")
@@ -38,5 +38,5 @@ addDependencyTreePlugin
 
 // Makes e.g. Git SHA1 available to the Scala code at runtime.
 // ---------------------------------------------------------------
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.8.0")  // 0.10.0 exists now
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
 

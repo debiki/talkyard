@@ -39,7 +39,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.2.25"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.3.4"
 
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
@@ -78,10 +78,27 @@ object Dependencies {
     val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.1"
 
 
+    // ----- Logging
+
+    // Fluentd better understands json logs.
+    // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.11"
+
+    // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.2.11"
+
+    // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1"
+    //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
+
+
     // ----- Metrics, tracing
 
     val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.9"
-    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"  // 1.6.0 exists now
+
+    // Deprecated. Should migrate to OpenTelemetry, they say, https://opentelemetry.io/.
+    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"  // 1.8.0 exists now
+
     val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.8"
 
     // ----- Decoding JWT:s
@@ -141,7 +158,7 @@ object Dependencies {
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
-    val specs2 = "org.specs2" %% "specs2-core" % "3.9.4" % "test"
+    val specs2 = "org.specs2" %% "specs2-core" % "3.9.5" % "test"
   }
 
 }
