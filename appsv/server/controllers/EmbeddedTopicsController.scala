@@ -200,6 +200,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
     // (The callee needs to know the embedding origin, so the callee can know if
     // the request is to localhost — then we allow embedding (from localhost),
     // so techies can test on localhost.)
+    UX; SHOULD // not auto allow localhost. Add it explicitly instead.
     ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
         unapprovedPostAuthorIds = Set.empty, request, embeddingUrl = Some(embeddingUrl))
   }
