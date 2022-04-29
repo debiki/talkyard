@@ -182,6 +182,9 @@ GET   /-/unsub-summaries-done   talkyard.server.summaryemails.UnsubFromSummaries
 GET   /-/load-invites           controllers.InviteController.loadInvites(sentById: Int)
 GET   /-/load-all-invites       controllers.InviteController.loadAllInvites
 POST  /-/send-invites           controllers.InviteController.sendInvites
+GET   /-/consider-invite         controllers.InviteController.considerAcceptingInvite(secretKey)
+POST  /-/accept-invite          controllers.InviteController.acceptInvite(secretKey)
+# Deprecated — email server bots sometimes auto follow links:
 GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
 
 POST  /-/create-embedded-comments-site  controllers.EmbeddedTopicsController.createEmbeddedCommentsForum

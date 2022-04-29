@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import debiki.dao.SiteDao
+import talkyard.{server => tys}
 import talkyard.server._
 import talkyard.server.http.DebikiRequest
 import javax.inject.Inject
@@ -242,10 +243,31 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  SECURITY // send as query param, so less risk accidentally ends up in sth that logs URL paths
-  // This logs in via a GET request. [GETLOGIN]
-  //
-  def acceptInvite(secretKey: String): Action[Unit] = GetActionIsLogin { request =>
+  def considerAcceptingInvite(secretKey: St): Action[U] = GetActionIsLogin { req =>
+    // For now:
+    controllers.Utils.OkHtml(
+        <body>
+        <h1>Join this site?</h1>
+        <p>Click Join, if you'd like to join this community, as user __</p>
+        <button>Join</button>
+        </body>)
+  }
+
+
+  def acceptInvite(secretKey: St): Action[JsValue] = PostJsonAction(RateLimits.Login, maxBytes = 500,
+        allowAnyone = true, isLogin = true) { req =>
+    acceptInviteImpl(secretKey = secretKey, req)
+  }
+
+
+  /** Param via URL path — but better to incl in query param, see below. */
+  @deprecated
+  def acceptInviteOld(secretKey: St): Action[U] = GetActionIsLogin { req =>
+    acceptInviteImpl(secretKey = secretKey, req)
+  }
+
+
+  private def acceptInviteImpl(secretKey: St, request: tys.http.DebikiRequest[_]): p_Result = {
     import request.dao
     // Below, we accept invites already sent, even if SSO now enabled. (Makes sense? Or not?
     // Or config option?) However, rejected here: (4RBKA20).
