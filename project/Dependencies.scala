@@ -62,7 +62,7 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.3.0"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.4.0"
 
     val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
 
