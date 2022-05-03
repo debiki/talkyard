@@ -1188,10 +1188,10 @@ chrome-launcher@^0.15.0:
     is-wsl "^2.2.0"
     lighthouse-logger "^1.0.0"
 
-chromedriver@^100.0.0:
-  version "100.0.0"
-  resolved "https://registry.yarnpkg.com/chromedriver/-/chromedriver-100.0.0.tgz#1b4bf5c89cea12c79f53bc94d8f5bb5aa79ed7be"
-  integrity sha512-oLfB0IgFEGY9qYpFQO/BNSXbPw7bgfJUN5VX8Okps9W2qNT4IqKh5hDwKWtpUIQNI6K3ToWe2/J5NdpurTY02g==
+chromedriver@^101.0.0:
+  version "101.0.0"
+  resolved "https://registry.yarnpkg.com/chromedriver/-/chromedriver-101.0.0.tgz#ad19003008dd5df1770a1ad96059a9c5fe78e365"
+  integrity sha512-LkkWxy6KM/0YdJS8qBeg5vfkTZTRamhBfOttb4oic4echDgWvCU1E8QcBbUBOHqZpSrYMyi7WMKmKMhXFUaZ+w==
   dependencies:
     "@testim/chrome-version" "^1.1.2"
     axios "^0.24.0"
@@ -3998,14 +3998,15 @@ wcwidth@>=1.0.1, wcwidth@^1.0.1:
   dependencies:
     defaults "^1.0.3"
 
-wdio-chromedriver-service@^7.2.2:
-  version "7.2.2"
-  resolved "https://registry.yarnpkg.com/wdio-chromedriver-service/-/wdio-chromedriver-service-7.2.2.tgz#5e56cdd0b71e7030e782057c81bc7f90354736c8"
-  integrity sha512-fj1R6yTgcr52g1wANdBc1KH+aXjazN81WhweAc1Y6Cfm1KVehSDbrVj2BJImU+6R/7sQKRX6fqtuA4Nsc0HUXQ==
+wdio-chromedriver-service@^7.3.2:
+  version "7.3.2"
+  resolved "https://registry.yarnpkg.com/wdio-chromedriver-service/-/wdio-chromedriver-service-7.3.2.tgz#569053df4ceaf6ce9e43bebcdd540197f516e313"
+  integrity sha512-4M3OqFzBSC4FdbqkfwOrUMeroMEuyIFCHfcUebkU6tJ1w5GenWO61YweJ8NKlhPZx9nkO8223+20MpvBjv+fTg==
   dependencies:
     "@wdio/logger" "^7.5.3"
     fs-extra "^9.1.0"
     split2 "^3.2.2"
+    tcp-port-used "^1.0.1"
 
 webdriver@7.19.3:
   version "7.19.3"
