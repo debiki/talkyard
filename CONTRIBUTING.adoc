@@ -1,6 +1,7 @@
 
 = Contributing
 
+Nice docs!: https://github.com/elastic/elasticsearch/blob/master/CONTRIBUTING.md
 
 Say hello in the community: <https://www.talkyard.io/forum/>.
 
