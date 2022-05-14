@@ -295,7 +295,7 @@ class JsonMaker(dao: SiteDao) {
 
       post.nr.toString ->
           postToJsonImpl(post, page, tagsAndBadges,
-                includeUnapproved = false, showHidden = false)
+                includeUnapproved = false, showHidden = false, dao.getSite())
     }
 
     if (Globals.isDevOrTest) {
@@ -625,7 +625,7 @@ class JsonMaker(dao: SiteDao) {
       // [tags_and_badges_missing]  but don't fix? Instead, start using
       // makeStorePatchForPostIds instead?
       val json = postToJsonImpl(post, page, theTagsAndBadges,
-        includeUnapproved = includeUnapproved, showHidden = showHidden)
+        includeUnapproved = includeUnapproved, showHidden = showHidden, dao.getSite())
       (json, page.version)
     }
   }
@@ -639,9 +639,29 @@ class JsonMaker(dao: SiteDao) {
   /** Private, so it cannot be called outside a transaction.
     */
   private def postToJsonImpl(post: Post, page: Page, tagsAndBadges: TagsAndBadges,
-        includeUnapproved: Bo, showHidden: Bo): JsObject = {
+        includeUnapproved: Bo, showHidden: Bo, anySite: Opt[Site]): JsObject = {
 
     val depth = page.parts.depthOf(post.nr)
+
+    // For now. Later, these will be conf vals. Per site or cat? Maybe on blog post pages,
+    // it's a better reading experience for most people, if the page is shorter, and
+    // they see primarily the more interesting comments. And important for saving bandwidth!
+    // Whilst in a forum, there'd be fewer page views generally, and less important to
+    // save bandwidth — maybe the limits there, would be higher.
+    // So, it seems, these should be configurable per *category* (emb comments cat), possibly
+    // also per page type (so emb comments can have lower limits).
+    val maxLim = 250 // or pages too large, takes annoyingly long to load. Better have
+    // *some* limit, for now. Later, can instead remember what threads to auto-un-squash.
+
+    // Tests:
+    //  - dir.summarize-squash-siblings.2br  TyTESQUASHSIBL
+
+    val summarizeLimit =
+          if (anySite.exists(_.featureFlags.contains("ffDoNotSummarize"))) maxLim
+          else SummarizeNumRepliesVisibleLimit
+    val squashLimit =
+          if (anySite.exists(_.featureFlags.contains("ffDoNotSquash"))) maxLim
+          else SquashSiblingIndexLimit
 
     COULD; UX; BUG // ? what if there're really many progress comments — then don't want
     // to load all of those.
@@ -656,12 +676,12 @@ class JsonMaker(dao: SiteDao) {
     // are or if they are trolls. Cannot include that in JSON sent to the browser, privacy issue.)
     //
     val (summarize, jsSummary, squash) =
-      if (page.parts.numRepliesVisible < SummarizeNumRepliesVisibleLimit) {
+      if (page.parts.numRepliesVisible < summarizeLimit) {
         (false, JsNull, false)
       }
       else {
         val (siblingIndex, hasNonDeletedSiblingTreesAfter) = page.parts.siblingIndexOf(post)
-        val siblingsLimit = SquashSiblingIndexLimit / math.max(depth, 1)
+        val siblingsLimit = squashLimit / math.max(depth, 1)
 
         // If the previous sibling got squashed, then, squash this one too —
         // otherwise there'd be a "Click to show more replies" button [306UDRPJ24]
@@ -1309,7 +1329,7 @@ class JsonMaker(dao: SiteDao) {
         val postsJson = posts map { p =>
           // We're in a tx, and postToJsonImpl renders CommonMark, slightly bad. [nashorn_in_tx]
           postToJsonImpl(p, page, tagsAndBadges,
-                includeUnapproved = inclUnapproved, showHidden = showHidden)
+                includeUnapproved = inclUnapproved, showHidden = showHidden, anySite = None)
         }
         pageId -> JsArray(postsJson.toSeq)
       }))
