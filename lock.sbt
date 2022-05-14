@@ -8,7 +8,7 @@ Compile / dependencyOverrides ++= {
     Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.11",
       "ch.qos.logback" % "logback-core" % "1.2.11",
-      "com.auth0" % "java-jwt" % "3.19.1",
+      "com.auth0" % "java-jwt" % "3.19.2",
       "com.carrotsearch" % "hppc" % "0.7.1",
       "com.fasterxml.jackson.core" % "jackson-annotations" % "2.13.2",
       "com.fasterxml.jackson.core" % "jackson-core" % "2.13.2",
@@ -140,7 +140,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.lucene" % "lucene-spatial3d" % "7.7.3",
       "org.apache.lucene" % "lucene-suggest" % "7.7.3",
       "org.apache.thrift" % "libthrift" % "0.12.0",
-      "org.apache.tika" % "tika-core" % "2.3.0",
+      "org.apache.tika" % "tika-core" % "2.4.0",
       "org.apache.tuweni" % "tuweni-bytes" % "0.10.0",
       "org.apache.tuweni" % "tuweni-crypto" % "0.10.0",
       "org.apache.tuweni" % "tuweni-io" % "0.10.0",
@@ -172,13 +172,13 @@ Compile / dependencyOverrides ++= {
       "org.ow2.asm" % "asm-tree" % "5.0.3",
       "org.ow2.asm" % "asm-util" % "5.0.3",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.3.4",
+      "org.postgresql" % "postgresql" % "42.3.5",
       "org.reactivestreams" % "reactive-streams" % "1.0.3",
       "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.9.1",
       "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.2",
       "org.scala-lang.modules" % "scala-xml_2.12" % "1.2.0",
       "org.scala-stm" % "scala-stm_2.12" % "0.9.1",
-      "org.scalactic" % "scalactic_2.12" % "3.2.11",
+      "org.scalactic" % "scalactic_2.12" % "3.2.12",
       "org.slf4j" % "jcl-over-slf4j" % "1.7.36",
       "org.slf4j" % "jul-to-slf4j" % "1.7.36",
       "org.slf4j" % "slf4j-api" % "1.7.36",
@@ -186,4 +186,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH a86d4423a70fa97296c0a6533f201d9a4de5453c
+// LIBRARY_DEPENDENCIES_HASH dfc8546232a17b794dc36389e6fa0307dcdc7325
