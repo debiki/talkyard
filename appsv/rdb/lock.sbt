@@ -31,14 +31,14 @@ Compile / dependencyOverrides ++= {
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "2.3.0",
+      "org.apache.tika" % "tika-core" % "2.4.0",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.3.4",
-      "org.scalactic" % "scalactic_2.12" % "3.2.11",
-      "org.slf4j" % "slf4j-api" % "1.7.35"
+      "org.postgresql" % "postgresql" % "42.3.5",
+      "org.scalactic" % "scalactic_2.12" % "3.2.12",
+      "org.slf4j" % "slf4j-api" % "1.7.36"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 6e324e8921cfc461a7595505100fba5918787dc2
+// LIBRARY_DEPENDENCIES_HASH 59f9a81c571c96352130dd37cbc1cf2123f5d6c9
