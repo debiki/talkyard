@@ -142,12 +142,12 @@ fi
 # Derive version number
 # ----------------------
 
-# WIP means "work in progress" and tells prod servers, e.g. self hosted Talkyard
+# SKIP:   WIP means "work in progress" and tells prod servers, e.g. self hosted Talkyard
 # servers, to *not* auto-self-upgrade to this new version. Instead, they'll wait
 # until we've run  s/release-current-wip.sh  — when the current WIP has been
 # tested for a while at canary server(s).
 
-version="$(cat version.txt)-WIP"
+version="$(cat version.txt)"
 version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala and gulpfile.js [8GKB4W2]
 
 # COULD: verify the year in the version number is the current year (calendar versioning)
@@ -165,7 +165,7 @@ version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala and g
 echo
 echo "I'll build Talkyard version:  $version_tag   (see version.txt),"
 echo "    and push to Docker repo:  $REPO    (see .env),"
-echo "            release channel:  tyse-v0-dev  (always)"
+echo "        NOT release channel:  tyse-v0-dev  (always)"
 echo
 # dupl code [bashutils]
 read -p "Continue [y/n]?  " choice
