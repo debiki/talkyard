@@ -106,7 +106,7 @@ describe(`ghost.embcom.comments-basic.2br  TyTEGHOSTCOMBSC`, () => {
 
   it(`... posts an insightful thought`, async () => {
     await owen_brA.complex.replyToEmbeddingBlogPost("Are writing ghosts ghost_writers",
-          { waitAndClickPs: { timeoutMs }});
+          { waitAndClickPs: { timeoutMs, maybeMoves: true }});
   });
 
   it(`Maria goes to /write/ too`, async () => {
