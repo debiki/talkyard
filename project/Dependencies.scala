@@ -66,7 +66,7 @@ object Dependencies {
 
     val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
 
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.2"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
