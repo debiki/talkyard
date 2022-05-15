@@ -64,7 +64,7 @@ object Dependencies {
     // extra checks in module ty-core. [5AKR20]
     val apacheTika = "org.apache.tika" % "tika-core" % "2.3.0"
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
+    val jsoup = "org.jsoup" % "jsoup" % "1.15.1"   // newest as of 2021-11
 
     val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.2"
 
