@@ -216,8 +216,11 @@ echo 'Buid completed.'
 echo "You can now tag and publish the images to the '$REPO' Docker repository:"
 echo ""
 echo "    make  tag-and-push-latest-images  tag=$version_tag"
-echo "    make  push-tag-to-git  tag=$version_tag"
-echo "    s/bump-versions.sh"
+echo ""
+echo "    # And, DO MANUALLY for now:"
+echo ""
+echo "    # make  push-tag-to-git  tag=$version_tag"
+echo "    # s/bump-versions.sh  — edit manually"
 echo ""
 
 
