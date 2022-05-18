@@ -186,13 +186,17 @@ echo "I'll build Talkyard version:  $version_tag   (see version.txt),"
 echo "    and push to Docker repo:  $REPO    (see .env),"
 echo "            release channel:  tyse-v0-dev  (always)"
 echo
+
+echo " ... Continuing automatically, this is a script, testing CI ..."
+echo
+
 # dupl code [bashutils]
-read -p "Continue [y/n]?  " choice
-case "$choice" in
-  y|Y|yes|Yes|YES ) echo "Ok, continuing."; echo ;;
-  n|N|no|No|NO ) echo "Bye then. Doing nothing."; exit 1;;
-  * ) echo "What? Bye."; exit 1;;
-esac
+#read -p "Continue [y/n]?  " choice
+#case "$choice" in
+#  y|Y|yes|Yes|YES ) echo "Ok, continuing."; echo ;;
+#  n|N|no|No|NO ) echo "Bye then. Doing nothing."; exit 1;;
+#  * ) echo "What? Bye."; exit 1;;
+#esac
 
 
 
