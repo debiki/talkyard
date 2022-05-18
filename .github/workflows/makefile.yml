@@ -44,8 +44,11 @@ jobs:
 
     #- name: configure
     #  run: ./configure
+
+    - name: Start Selenium
+      run: d/selenium &
       
-    - name: Install dependencies
+    - name: Build and test images
       run: make prod-images
       
     #- name: Run check
