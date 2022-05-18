@@ -125,7 +125,7 @@ if [ -z "$skip_build" ]; then
   # Build the app server prod image.
   # First run tests though. All this needs lots of memory.
   PLAY_HEAP_MEMORY_MB=7168 IS_PROD_TEST=true s/d-cli clean compile
-  PLAY_HEAP_MEMORY_MB=7168 IS_PROD_TEST=true s/d-cli test dist
+  PLAY_HEAP_MEMORY_MB=7168 IS_PROD_TEST=true s/d-cli dist   # Skip tests, just testing CI:  test dist
   s/d kill web app
   s/d down
   # This will use the prod package built with 'dist' above.

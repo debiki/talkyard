@@ -19,15 +19,15 @@ mv talkyard-server-$version app
 
 # ( &> redirects both stderr and stdout.)
 mkdir build-info
-date --utc --iso-8601=seconds > build-info/docker-image-build-date.txt
-git rev-parse HEAD &> build-info/git-revision.txt
-git log --oneline -n100 &> build-info/git-log-oneline.txt
-git status &> build-info/git-status.txt
-git diff &> build-info/git-diff.txt
-git describe --tags &> build-info/git-describe-tags.txt
+date --utc --iso-8601=seconds | tee build-info/docker-image-build-date.txt
+git rev-parse HEAD | tee build-info/git-revision.txt
+git log --oneline -n100 | tee build-info/git-log-oneline.txt
+git status | tee build-info/git-status.txt
+git diff | tee -a build-info/git-diff.txt
+git describe --tags | tee build-info/git-describe-tags.txt
 # This fails if there is no tag, so disable exit-on-error.
 set +e
-git describe --exact-match --tags &> build-info/git-describe-exact-tags.txt
+git describe --exact-match --tags | tee build-info/git-describe-exact-tags.txt
 set -e
 
 # Move our own JARs do a separate folder, so they can be copied in a separate Dockerfile
