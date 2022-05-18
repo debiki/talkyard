@@ -13,7 +13,7 @@ jobs:
     steps:
     - name: config-system
       run: |
-        tee -a /etc/sysctl.conf <<EOF
+        sudo tee -a /etc/sysctl.conf <<EOF
 
         ###################################################################
         # Talkyard settings
@@ -35,7 +35,7 @@ jobs:
         sudo sysctl --system
 
     - name: build-deps
-      run: apt install inotify-tools
+      run: sudo apt install inotify-tools
 
     - uses: actions/checkout@v3
     
