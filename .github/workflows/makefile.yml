@@ -1,0 +1,55 @@
+name: Makefile CI test
+
+on:
+  push:
+    branches: [ main-ci-test ]
+  pull_request:
+    branches: [ main-ci-test ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: config-system
+      run: |
+        tee -a /etc/sysctl.conf <<EOF
+
+        ###################################################################
+        # Talkyard settings
+
+        # Up the max backlog queue size (num connections per port), default = 128
+        net.core.somaxconn=8192
+
+        # ElasticSearch requires (at least) this, default = 65530
+        # Docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt
+        vm.max_map_count=262144
+
+        # VSCode and IntelliJ Idea want to watch many files — without this, there'll be
+        # a "Unable to watch for file changes in this large workspace" error in VSCode.
+        # Also an "User limit of inotify watches reached" error can happen, when
+        # tailing logs, if too few watches. (The default is sometimes only 8192.)
+        fs.inotify.max_user_watches=524288
+        EOF
+
+        sudo sysctl --system
+
+    - name: build-deps
+      run: apt install inotify-tools
+
+    - uses: actions/checkout@v3
+    
+    - name: submods
+      run: git submodule update --init
+
+    #- name: configure
+    #  run: ./configure
+      
+    - name: Install dependencies
+      run: make prod-images
+      
+    #- name: Run check
+    #  run: make check
+      
+    #- name: Run distcheck
+    #  run: make distcheck
