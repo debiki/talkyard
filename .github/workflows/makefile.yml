@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: config-system
+    - name: Configure OS
       run: |
         sudo tee -a /etc/sysctl.conf <<EOF
 
@@ -34,13 +34,26 @@ jobs:
 
         sudo sysctl --system
 
-    - name: build-deps
+    - name: Install build deps
       run: sudo apt install inotify-tools
 
     - uses: actions/checkout@v3
     
-    - name: submods
+    - name: Fetch Git submodules
       run: git submodule update --init
+
+    # Hmm this should be in the Makefile? No, instaed, better: Vendor these deps.
+    - name: Fetch non-vendored Nodejs deps
+      run: |
+        cd to-talkyard/
+        yarn
+        cd ../tests/e2e/
+        yarn
+        cd ../e2e-wdio7/
+        yarn
+        # Shouldn't be needed? These deps already vendored:
+        #cd ../..
+        #yarn
 
     #- name: configure
     #  run: ./configure
