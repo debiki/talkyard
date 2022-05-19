@@ -632,10 +632,10 @@ function runAllE2eTests {
 # $r s/wdio       --only embedded-comments-guest-login-email-notf-unsbscribe $args
 # $r s/wdio       --only embcom.all-idp-logins.1br.extidp $args
 # $r s/wdio       --only embcom.all-idp-logins-old-name.1br.extidp $args
-  $r s/wdio --b3c --only embcom.b3c.verif-email.1br $args
-  $r s/wdio --b3c --only embcom.b3c.guest.1br $args
-  $r s/wdio --b3c --only embcom.b3c.verif-gmail.1br.extidp $args
-  $r s/wdio --b3c --only embcom.b3c.unverif-gmail.1br.extidp $args
+# $r s/wdio --b3c --only embcom.b3c.verif-email.1br $args
+# $r s/wdio --b3c --only embcom.b3c.guest.1br $args
+# $r s/wdio --b3c --only embcom.b3c.verif-gmail.1br.extidp $args
+# $r s/wdio --b3c --only embcom.b3c.unverif-gmail.1br.extidp $args
 # $r s/wdio       --only embedded-comments-edit-and-vote.test $args
 # $r s/wdio       --only embedded-comments-edit-and-vote-old-name $args
   $r s/wdio-7     --only embcom.vote-bef-page-exists.1br --cd -i $args
