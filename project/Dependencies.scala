@@ -88,7 +88,7 @@ object Dependencies {
     val logbackCore = "ch.qos.logback" % "logback-core" % "1.2.11"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.2"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
 
