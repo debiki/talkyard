@@ -1545,7 +1545,8 @@ export const Post = createComponent({
     if (isWikiPost(post))
       extraClasses += ' dw-wiki';
 
-    if (page.pageRole === PageRole.Question && post.uniqueId === page.pageAnswerPostUniqueId)
+    const isSolution = page_canBeSolved(page) && post.uniqueId === page.pageAnswerPostUniqueId;
+    if (isSolution)
       extraClasses += ' esP-solution';
 
     if (isFlat)
