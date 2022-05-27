@@ -23,8 +23,8 @@
 
 const r = ReactDOMFactories;
 
-// Allow '-'. '@' is checked elsewhere.
-const BadSymbolsRegex = /[!$%^&*()+|~=`{}\[\]:";<>?,.\/#]/;
+// Allow '-' and '.'. '@' is checked elsewhere.
+const BadSymbolsRegex = /[!$%^&*()+|~=`{}\[\]:";<>?,\/#]/;
 
 
 export var FullNameInput = createClassAndFactory({
