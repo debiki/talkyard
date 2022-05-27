@@ -5,6 +5,7 @@ import assert from '../utils/ty-assert';
 import * as fs from 'fs';
 import server from '../utils/server';
 import * as utils from '../utils/utils';
+import * as make from '../utils/make';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
 import settings from '../utils/settings';
