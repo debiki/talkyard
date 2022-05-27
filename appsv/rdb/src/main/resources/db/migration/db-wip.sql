@@ -521,6 +521,7 @@ OpenAuthDetails(   // [exp] ok use, country, createdAt
 -- Replace w separate email login-secrets table?  [EMLLGISCRT]
 
 -- ?? delete page_id post_nr  from  post_actions ??
+-- And consider splitting into post_votes_t and post_flags_t  [split_post_actions]  ?
 
 -- Add fk  posts3.parent_nr —> posts3.nr  ?? or no?  better w/o, so can hard delete / purge?
 

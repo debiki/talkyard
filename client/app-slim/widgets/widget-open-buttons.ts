@@ -68,7 +68,7 @@ export const DiscLayoutDropdownBtn = React.createFactory<DiscLayoutDropdownBtnPr
           : cat_deriveLayout(props.cat, props.store, layoutForParent);
 
   return (
-      Button({ className: 'esTopicType_dropdown', onClick: (event) => {
+      Button({ className: 'e_DscLayB', onClick: (event) => {
           const atRect = cloneEventTargetRect(event);
           morebundle.openDiscLayoutDiag({
               atRect, layout: layoutSource,

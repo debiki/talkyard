@@ -141,6 +141,7 @@ Ifr = iframe
 It  = item
 Inh = inherit
 L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list, ..T = table
+Lay = layout
 Ls  = list, when not at the end, e.g LsPgsB = list pages button
 Ld  = load, Ldng = loading
 LD  = Log in Dialog, RENAME to AuD = Authn Dialog

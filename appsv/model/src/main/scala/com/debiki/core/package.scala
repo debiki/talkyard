@@ -1108,7 +1108,7 @@ package object core {
 
     case object NewestThenBest extends PostSortOrder(
       NewestFirstNibble + (BestFirstNibble << 4), true) {
-
+      assert(IntVal == 18)  // 2 + 1 * 16
       override def atDepth(depth: i32): ComtOrderAtDepth =
         if (depth <= 1) NewestFirst
         else BestFirst
@@ -1116,7 +1116,7 @@ package object core {
 
     case object NewestThenOldest extends PostSortOrder(
       NewestFirstNibble + (OldestFirstNibble << 4), true) {
-
+      assert(IntVal == 50)  // 2 + 3 * 16
       override def atDepth(depth: i32): ComtOrderAtDepth =
         if (depth <= 1) NewestFirst
         else OldestFirst

@@ -1060,4 +1060,10 @@ object PostsSiteDaoMixin {
     tyype.asInstanceOf[PostFlagType]
   }
 
+  def postActionTypeIntToOptVoteType(value: i32): Opt[PostVoteType] = {
+    val tyype = fromActionTypeInt(value)
+    if (!tyype.isInstanceOf[PostVoteType]) return None
+    Some(tyype.asInstanceOf[PostVoteType])
+  }
+
 }

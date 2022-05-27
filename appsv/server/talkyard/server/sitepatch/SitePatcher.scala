@@ -1478,10 +1478,29 @@ case class SitePatcher(globals: debiki.Globals) {
       theNewSite
     }
 
+
+    val newSiteDao = globals.siteDao(newSite.id)
+
+    REFACTOR // use the Do API for this instead:
+    siteData.postVotes foreach { vote =>
+      val post = siteData.posts.find(p =>   // [On2]: O(num-votes * num-posts)
+        p.pageId == vote.pageId && p.nr == vote.postNr) getOrElse {
+        // Or lookup in the db?
+        throwBadRequest("TyE0POST2VOTE", s"Trying to insert a vote on page id '${
+          vote.pageId}' post nr ${vote.postNr} but there's no such post")
+      }
+      // This wouldn't update post vote counts, and user data votes-received counts,
+      // and would result in db inconsistencies, which later would fail
+      // assertions e.g. each pat's [numLikesReceived]:
+      // tx.insertPostAction(vote.toPostAction(postId = post.id))
+      // Instead:  (and this is more like the Do API, should use instead)
+      newSiteDao.addVoteIfAuZ(pageId = vote.pageId, postNr = vote.postNr, vote.voteType,
+            voterId = vote.voterId, voterIp = None, postNrsRead = Set.empty)
+    }
+
     // If we restored a site, then there're already things in the mem cache and Redis cache,
     // for the site we're overwriting when restoring. Remove any such stuff — or Talkyard
     // might do surprising things.
-    val newSiteDao = globals.siteDao(newSite.id)
     newSiteDao.memCache.clearThisSite()
     newSiteDao.redisCache.clearThisSite()
 

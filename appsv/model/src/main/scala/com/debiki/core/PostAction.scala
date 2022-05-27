@@ -224,6 +224,25 @@ case class PostVote(  // [exp] ok to use
   def doerId: UserId = voterId
 }
 
+/** Post id missing — nice to not have to specify, when constructing tests, since the post id is
+  * undecided, when importing the site.  */
+case class PostVoteToInsert(
+  // postId: Opt[PostId], // later not now
+  pageId: PageId,
+  postNr: PostNr,
+  doneAt: When,
+  voterId: UserId,
+  voteType: PostVoteType) {
+
+  def toPostAction(postId: PostId): PostVote = PostVote(
+    uniqueId = postId,
+    pageId = pageId,
+    postNr = postNr,
+    doneAt = doneAt,
+    voterId = voterId,
+    voteType = voteType)
+}
+
 
 case class PostFlag(  // [exp] ok to use
   uniqueId: PostId,   // RENAME to postId

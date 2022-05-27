@@ -92,17 +92,17 @@ const DiscLayoutDiag = React.createFactory<{}>(function() {
             } });
     }
 
-    defaultItem = makeItem(PostSortOrder.Default, '');
-    bestFirstItem = makeItem(PostSortOrder.BestFirst, '');
-    oldestFirstItem = makeItem(PostSortOrder.OldestFirst, '');
-    newestFirstItem = makeItem(PostSortOrder.NewestFirst, '');
-    newestThenBestItem = makeItem(PostSortOrder.NewestThenBest, '');
-    newestThenOldestItem = makeItem(PostSortOrder.NewestThenOldest, '');
+    defaultItem = makeItem(PostSortOrder.Default, 'e_DefOrd');
+    bestFirstItem = makeItem(PostSortOrder.BestFirst, 'e_Best1st');
+    oldestFirstItem = makeItem(PostSortOrder.OldestFirst, 'e_Old1st');
+    newestFirstItem = makeItem(PostSortOrder.NewestFirst, 'e_New1st');
+    newestThenBestItem = makeItem(PostSortOrder.NewestThenBest, 'e_NewThenBest1st');
+    newestThenOldestItem = makeItem(PostSortOrder.NewestThenOldest, 'e_NewThenOld1st');
   }
 
   return (
       DropdownModal({ show: isOpen, onHide: close, atX: atRect.left, atY: atRect.top,
-            pullLeft: true, showCloseButton: true },
+            pullLeft: true, showCloseButton: true, dialogClassName2: 'e_CmtOrdD' },
         r.div({ className: 's_ExplDrp_Ttl' },
           forCat
               ? // Should be obvious that this is for everyone, since everything else

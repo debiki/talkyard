@@ -16,7 +16,7 @@ create domain comt_order_d i16_nz_d;
 -- See: [ComtSortOrder], in client/types-and-const-enums.ts.
 -- But ComtSortOrder.Default = 0 is never saved in the database.
 alter  domain comt_order_d add
-   constraint comt_order_d_c_in check (value in (1, 2, 3, 18, 48));
+   constraint comt_order_d_c_in check (value in (1, 2, 3, 18, 50));
 
 create domain max_nesting_d i16_d;
 alter  domain max_nesting_d add
