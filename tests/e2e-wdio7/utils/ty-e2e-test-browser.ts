@@ -5008,6 +5008,15 @@ export class TyE2eTestBrowser {
         await this.waitUntilTextIs('.s_CD .e_SelCatB', "None");
       },
 
+      openDiscLayout: async () => {
+        await this.waitAndClick('.s_CD .e_DscLayB');
+      },
+
+      getDiscLayoutAsPerBtn: async (): Pr<Nr> => {
+        const title = await this.getText('.s_CD .e_DscLayB');
+        return discLayoutTitleToEnum(title);
+      },
+
       submit: async () => {
         // ---- Some scroll-to-Save-button problem. So do a bit double scrolling.
         await this.scrollIntoViewInPageColumn('#e2eSaveCatB')
@@ -5695,6 +5704,15 @@ export class TyE2eTestBrowser {
         }
         await this.waitForVisible('.esMetabar');
         await this.waitForGone(this.metabar.__myName);  // later, move to above 'return',  [hide_authn_btns]
+      },
+
+      openDiscLayout: async () => {
+        await this.waitAndClick('.esMetabar .e_DscLayB');
+      },
+
+      getDiscLayoutAsPerBtn: async (): Pr<Nr> => {
+        const title = await this.getText('.esMetabar .e_DscLayB');
+        return discLayoutTitleToEnum(title);
       },
 
       openMetabar: async () => {
@@ -6582,6 +6600,11 @@ export class TyE2eTestBrowser {
           message: `Waiting for Change Page dialog to close`,
         });
         await this.waitUntilModalGone();
+      },
+
+      openDiscLayout: async () => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick('.s_ChPgD .e_DscLayB');
       },
 
       closeTopic: async () => {
@@ -9109,6 +9132,38 @@ export class TyE2eTestBrowser {
     };
 
 
+    discLayoutD = {
+      selectCommentsSortOrder: async (order: Nr) => {
+        let selector: St | U;
+        switch (order) {
+          case c.TestPostSortOrder.Default:
+            selector = '.e_DefOrd';
+            break;
+          case c.TestPostSortOrder.BestFirst:
+            selector = '.e_Best1st';
+            break;
+          case c.TestPostSortOrder.NewestFirst:
+            selector = '.e_New1st';
+            break;
+          case c.TestPostSortOrder.OldestFirst:
+            selector = '.e_Old1st';
+            break;
+          case c.TestPostSortOrder.NewestThenBest:
+            selector = '.e_NewThenBest1st';
+            break;
+          case c.TestPostSortOrder.NewestThenOldest:
+            selector = '.e_NewThenOld1st';
+            break;
+          default:
+            die(`Bad comment sort order: ${order}, should be a TestPostSortOrder [TyE60DFJ24]`);
+        }
+        await this.waitAndClick(selector);
+        await this.waitForGone('.e_CmtOrdD');
+        //await this.waitForGone('.modal-backdrop');
+      },
+    };
+
+
     movePostDialog = {
       moveToOtherSection: async () => {
         await this.waitAndClick('.s_MPD_OtrSct .btn');
@@ -10135,4 +10190,14 @@ export class TyE2eTestBrowser {
     },
   };
 
+}
+
+
+function discLayoutTitleToEnum(title: St): Nr {
+  if (title === "Popular first") return c.TestPostSortOrder.BestFirst;
+  if (title === "Newest first") return c.TestPostSortOrder.NewestFirst;
+  if (title === "Oldest first") return c.TestPostSortOrder.OldestFirst;
+  if (title === "Newest then Popular") return c.TestPostSortOrder.NewestThenBest;
+  if (title === "Newest then Oldest") return c.TestPostSortOrder.NewestThenOldest;
+  die("Unexpected sort order name [TyE603RML25]", title);
 }

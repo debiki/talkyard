@@ -59,6 +59,8 @@ function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
   pages: [],
   pagePaths: [],
   posts: [],
+  postActions: [],  // incl both votes and flags
+  postVotes_forTests: [],    // only votes, for e2e tests
   emailsOut: [],
   notifications: [],
   uploads: [],

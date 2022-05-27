@@ -86,6 +86,24 @@ const TestPostType = {  // sync with real code [26BKA01]
   MetaMessage: 31,
 };
 
+const TestPostSortOrder = {   // sync w real code [ComtSortOrder]
+  Default: 0,
+  BestFirst: 1,
+  NewestFirst: 2,
+  OldestFirst: 3,
+  NewestThenBest: 18,   // NewestFirst + (BestFirst << 4)
+  NewestThenOldest: 48, // NewestFirst + (OldestFirst << 4)
+}
+
+
+const TestVoteType = {
+  Like: 41,
+  Wrong: 42,
+  Bury: 43,
+  Unwanted: 44,
+}
+
+
 const TestPageNotfLevel = {
   EveryPostAllEdits: 9,
   EveryPost: 8,
@@ -107,6 +125,8 @@ export default {
   TestTopicListLayout,
   TestPageNotfLevel,
   TestPostType,
+  TestPostSortOrder,
+  TestVoteType,
   TestTrustLevel,
   TestDraftStatus,
   MaxUsernameLength: 20,  // sync with Scala [6AKBR20Q]

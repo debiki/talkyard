@@ -77,6 +77,7 @@ case class SitePatch(
   drafts: immutable.Seq[Draft],
   posts: immutable.Seq[Post],
   postActions: immutable.Seq[PostAction],
+  postVotes: immutable.Seq[PostVoteToInsert] = Nil,
   links: ImmSeq[Link],
   permsOnPages: immutable.Seq[PermsOnPages],
   reviewTasks: immutable.Seq[ReviewTask],

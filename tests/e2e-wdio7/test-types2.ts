@@ -200,7 +200,7 @@ interface SiteData2 {   // [3SD5PB7]
   permsOnPages: any[]; // PermsOnPage[];
   drafts: any[];
   posts: TestPost[];
-  postActions: any[];
+  postActions: TestPostAction[];
   links: any[];
   emailsOut: any;
   notifications: any[];
@@ -590,6 +590,31 @@ interface TestPost {  // later: try to unify with Post?
 }
 
 
+export interface NewTestVote {
+  /*
+  // Post id, or ...
+  postId?: PostId;
+  // ... ref or ...
+  postRef?: Ref;
+  */
+  // ... page id and post nr needed:
+  onPageId?: PageId
+  onPostNr?: PostNr;  // If absent, would mean the OrigPost?
+
+  votedAtMs: WhenMs;
+  voterId: PatId;
+  voteType: Nr; // TestVoteType;
+}
+
+
+export const TestVoteType = {
+  Like: 41,
+  Wrong: 42,
+  Bury: 43,
+  Unwanted: 44,
+}
+
+
 interface NumReplies {
   numNormal: number;
   numPreviews: number;
@@ -708,6 +733,23 @@ interface CatABTrustedTestForum extends CatABTestForum {
     categoryA: CategoryJustAdded;
     catB: CategoryJustAdded;
     trustedCat: CategoryJustAdded;
+    staffCat: CategoryJustAdded;
+    staffOnlyCategory: CategoryJustAdded;
+  };
+}
+
+
+interface SubCatsTestForum extends CatABTestForum {
+  categories: {
+    rootCat: { id: Nr },
+    rootCategory: { id: number },
+    catA: CategoryJustAdded;
+    subCatAA: CategoryJustAdded;
+    subCatAB: CategoryJustAdded;
+    categoryA: CategoryJustAdded;
+    catB: CategoryJustAdded;
+    subCatBA: CategoryJustAdded;
+    subCatBB: CategoryJustAdded;
     staffCat: CategoryJustAdded;
     staffOnlyCategory: CategoryJustAdded;
   };
