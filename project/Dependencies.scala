@@ -39,7 +39,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.3.5"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.3.6"
 
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
@@ -64,9 +64,9 @@ object Dependencies {
     // extra checks in module ty-core. [5AKR20]
     val apacheTika = "org.apache.tika" % "tika-core" % "2.4.0"
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
+    val jsoup = "org.jsoup" % "jsoup" % "1.15.1"
 
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.2"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -88,7 +88,7 @@ object Dependencies {
     val logbackCore = "ch.qos.logback" % "logback-core" % "1.2.11"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.2"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
 

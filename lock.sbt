@@ -10,16 +10,16 @@ Compile / dependencyOverrides ++= {
       "ch.qos.logback" % "logback-core" % "1.2.11",
       "com.auth0" % "java-jwt" % "3.19.2",
       "com.carrotsearch" % "hppc" % "0.7.1",
-      "com.fasterxml.jackson.core" % "jackson-annotations" % "2.13.2",
-      "com.fasterxml.jackson.core" % "jackson-core" % "2.13.2",
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.2.2",
+      "com.fasterxml.jackson.core" % "jackson-annotations" % "2.13.3",
+      "com.fasterxml.jackson.core" % "jackson-core" % "2.13.3",
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.3",
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.11.4",
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-smile" % "2.8.11",
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.8.11",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.11.4",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.11.4",
       "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % "2.11.4",
-      "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.13.2",
+      "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % "2.13.3",
       "com.github.ben-manes.caffeine" % "caffeine" % "2.8.8",
       "com.github.ben-manes.caffeine" % "jcache" % "2.8.8",
       "com.github.etaty" % "rediscala_2.12" % "1.9.0",
@@ -113,7 +113,7 @@ Compile / dependencyOverrides ++= {
       "javax.cache" % "cache-api" % "1.1.1",
       "javax.inject" % "javax.inject" % "1",
       "joda-time" % "joda-time" % "2.10.10",
-      "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1",
+      "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
       "net.sf.jopt-simple" % "jopt-simple" % "5.0.2",
       "nl.grons" % "metrics4-scala_2.12" % "4.2.8",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
@@ -163,7 +163,7 @@ Compile / dependencyOverrides ++= {
       "org.elasticsearch.plugin" % "transport-netty4-client" % "6.8.23",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.hdrhistogram" % "HdrHistogram" % "2.1.9",
-      "org.jsoup" % "jsoup" % "1.14.3",
+      "org.jsoup" % "jsoup" % "1.15.1",
       "org.lz4" % "lz4-java" % "1.8.0",
       "org.osgi" % "org.osgi.service.component.annotations" % "1.4.0",
       "org.ow2.asm" % "asm" % "5.0.3",
@@ -172,7 +172,7 @@ Compile / dependencyOverrides ++= {
       "org.ow2.asm" % "asm-tree" % "5.0.3",
       "org.ow2.asm" % "asm-util" % "5.0.3",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.3.5",
+      "org.postgresql" % "postgresql" % "42.3.6",
       "org.reactivestreams" % "reactive-streams" % "1.0.3",
       "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.9.1",
       "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.2",
@@ -186,4 +186,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH dfc8546232a17b794dc36389e6fa0307dcdc7325
+// LIBRARY_DEPENDENCIES_HASH 8f1c4b5993b5c3747ce95674069deaf28be45373

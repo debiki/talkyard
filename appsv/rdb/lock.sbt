@@ -35,10 +35,10 @@ Compile / dependencyOverrides ++= {
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.3.5",
+      "org.postgresql" % "postgresql" % "42.3.6",
       "org.scalactic" % "scalactic_2.12" % "3.2.12",
       "org.slf4j" % "slf4j-api" % "1.7.36"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 59f9a81c571c96352130dd37cbc1cf2123f5d6c9
+// LIBRARY_DEPENDENCIES_HASH 1b9a5754dd7a84fc109c2afccee76af5b0d18ca6
