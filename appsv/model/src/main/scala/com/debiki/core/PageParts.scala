@@ -161,11 +161,11 @@ abstract class PageParts {
         case Some(node: AncestorsChildsAndDepth) =>
           node.copy(childsSorted = node.childsSorted :+ post)
         case None =>
-          val ancestorPosts = post.parentNr.map(ancestorsParentFirstOf)
+          val ancestorPosts = ancestorsParentFirstOf(post)  // no — excludes the parent:  post.parentNr.map(ancestorsParentFirstOf)
           // The title post and orig post are at depth 0. Top level replies at depth 1.
-          val depth = ancestorPosts.map(_.length) getOrElse 1
+          val depth = ancestorPosts.length // .map(_.length) getOrElse 1
           AncestorsChildsAndDepth(
-                ancestors = ancestorPosts getOrElse Nil,
+                ancestors = ancestorPosts, // getOrElse Nil,
                 // Not yet sorted, but soon; see sortPosts() just below.
                 childsSorted = Vec(post),
                 depth = depth)
