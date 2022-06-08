@@ -31,6 +31,7 @@ object RenderedPageHtmlDao {
 
   private def renderedPageKey(sitePageId: SitePageId, pageRenderParams: PageRenderParams) = {
     val pageId = sitePageId.pageId
+    val comtOrder = pageRenderParams.comtOrder.toInt
     val mobile = if (pageRenderParams.widthLayout == WidthLayout.Tiny) "tny" else "med"
     val embedded = if (pageRenderParams.isEmbedded) "emb" else "dir"
     // Here the origin matters (don't use .embeddedOriginOrEmpty) because it's used
@@ -39,7 +40,7 @@ object RenderedPageHtmlDao {
     val origin = pageRenderParams.origin
     val cdnOrigin = pageRenderParams.cdnOriginOrEmpty // could skip, change requires restart —> cache gone
     // Skip page query and page root. Won't cache, if they're not default, anyway. [5V7ZTL2]
-    MemCacheKey(sitePageId.siteId, s"$pageId|$mobile|$embedded|$origin|$cdnOrigin|PageHtml")
+    MemCacheKey(sitePageId.siteId, s"$pageId|$comtOrder|$mobile|$embedded|$origin|$cdnOrigin|PageHtml")
   }
 }
 
@@ -105,7 +106,8 @@ trait RenderedPageHtmlDao {
     // don't use the mem cache (which post to use as the root isn't incl in the cache key). [5V7ZTL2]
     useMemCache &= pageRequest.pageRoot.contains(PageParts.BodyNr)
 
-
+    val renderParams = pageRequest.renderParams
+    /*
     val renderParams = PageRenderParams(
       widthLayout = if (pageRequest.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
       isEmbedded = pageRequest.embeddingUrl.nonEmpty,
@@ -113,6 +115,7 @@ trait RenderedPageHtmlDao {
       anyCdnOrigin = globals.anyCdnOrigin,
       anyPageRoot = pageRequest.pageRoot,
       anyPageQuery = pageRequest.parsePageQuery())
+     */
 
     if (!useMemCache) {
       // Bypassing the cache is rather expensive.
@@ -189,16 +192,17 @@ trait RenderedPageHtmlDao {
         // used to generate the cached page. We ignore page version and site version.
         // Hash sums are always correct, so we'll never rerender unless we actually need to.
         if (cachedHtmlVersion.appVersion != currentReactStoreJsonVersion.appVersion ||
-            cachedHtmlVersion.reactStoreJsonHash != currentReactStoreJsonVersion.reactStoreJsonHash) {
-          // The browser will make cachedhtml up-to-date by running React.js with up-to-date
+            cachedHtmlVersion.storeJsonHash != currentReactStoreJsonVersion.storeJsonHash) {
+          // The browser will make cachedHtml up-to-date by running React.js with up-to-date
           // json, so it's okay to return cachedHtml. However, we'd rather send up-to-date
           // html, and this page is being accessed, so regenerate html. [4KGJW2]
           logger.debug(o"""s$siteId: Page $pageId requested, db cache stale,
                will rerender soon, $versionsString [TyMRENDRSOON]""")
-          // COULD wait 150 ms for the background thread to finish rendering the page?
+          UX; COULD // wait 150 ms for the background thread to finish rendering the page?
           // Then timeout and return the old cached page.
           globals.renderPageContentInBackground(SitePageId(siteId, pageId), Some(
-              PageRenderParamsAndHash(renderParams, currentReactStoreJsonVersion.reactStoreJsonHash)))
+              RenderParamsAndFreshHash(renderParams,
+                    freshStoreJsonHash = currentReactStoreJsonVersion.storeJsonHash)))
         }
         else {
           logger.trace(o"""s$siteId: Page found in db cache, reusing: $pageId,
@@ -283,7 +287,7 @@ trait RenderedPageHtmlDao {
     // So don't:
     //    removeFromCache(contentKey(sitePageId))
     // Instead:  [7BWTWR2]
-    globals.renderPageContentInBackground(sitePageId, customParams = None)
+    globals.renderPageContentInBackground(sitePageId, paramsAndHash = None)
 
     // BUG race condition: What if anotoher thread started rendering a page
     // just before the invokation of this function, and is finished
@@ -314,11 +318,19 @@ trait RenderedPageHtmlDao {
 
 
   private def removePageFromMemCacheForOrigin(origin: String, sitePageId: SitePageId): Unit = {
+    for (comtOrder <- PostSortOrder.All) {
+      removeOneSortOrder(origin, sitePageId, comtOrder)
+    }
+  }
+
+
+  private def removeOneSortOrder(origin: String, sitePageId: SitePageId, comtOrder: PostSortOrder): U = {
     // Try uncache, for all combinations of embedded = true/false and page widths = tiny/medium
     // — we don't remember which requests we've gotten and what we've cached.
 
     // A bit dupl code. [2FKBJAL3]
     var renderParams = PageRenderParams(
+      comtOrder,
       widthLayout = WidthLayout.Tiny,
       isEmbedded = false,
       origin = origin,

@@ -851,8 +851,8 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
       val authzContext = getForumAuthzContext(Some(requester)) // (5DE4A28)
 
       for (pageMeta <- pageMetaById.values) {
-        val (maySee, debugCode) = maySeePageUseCacheAndAuthzCtx(pageMeta, authzContext) // (5DE4A28)
-        if (!maySee) {
+        val maySeeResult = maySeePageUseCacheAndAuthzCtx(pageMeta, authzContext) // (5DE4A28)
+        if (!maySeeResult.maySee) {
           forbiddenPageIds.add(pageMeta.pageId)
         }
       }

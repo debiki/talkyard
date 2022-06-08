@@ -95,7 +95,7 @@ case class SitePatch(
  public | blocks3                 | table    | edc
  public | emails_out3             | table    | edc  [4023SRKG5]
  public | index_queue3            | table    | edc
- public | page_html3              | table    | edc
+ public | page_html_cache_t       | table    | edc
  public | post_read_stats3        | table    | edc
  public | post_revisions3         | table    | edc
  public | post_tags3              | table    | edc

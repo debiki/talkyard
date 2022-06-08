@@ -46,8 +46,7 @@ trait WatchbarDao {
         readOnlyTransaction { tx =>
           val globalChatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
           val globalChatsMaySee = globalChatsInclForbidden filter { chatPageMeta =>
-            val (maySee, debugCode) = maySeePageUseCache(chatPageMeta, user = None)
-            maySee
+            maySeePageUseCache(chatPageMeta, user = None).maySee
           }
           val globalChatIds = globalChatsMaySee.map(_.pageId)
           Some(BareWatchbar.withChatChannelAndDirectMessageIds(globalChatIds, Nil))
@@ -81,8 +80,8 @@ trait WatchbarDao {
           // Dupl code, also done when promoting a user. [auto_join_chats]
           val defaultChatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
           val defaultChats = defaultChatsInclForbidden filter { defChat =>
-            val (may, _) = maySeePageUseCacheAndAuthzCtx(defChat, authzCtx)
-            may
+            val result = maySeePageUseCacheAndAuthzCtx(defChat, authzCtx)
+            result.maySee
           }
           val defaultChatIds = defaultChats.map(_.pageId)
 

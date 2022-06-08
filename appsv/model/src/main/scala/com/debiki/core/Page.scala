@@ -24,6 +24,30 @@ import scala.collection.mutable
 
 
 
+sealed abstract class SeePageResult {
+  def maySee: Bo
+  def debugCode: St
+  def ifMayNot(errorFn: St => Nothing): PageCtx
+}
+
+
+case class PageCtx(
+  ancCatsRootLast: ImmSeq[Cat],
+) extends SeePageResult {
+  val maySee = true
+  val debugCode = ""
+  def ifMayNot(errorFn: St => Nothing): PageCtx = this
+}
+
+
+case class NotSeePage(debugCode: St) extends SeePageResult {
+  val maySee = false
+  def ifMayNot(errorFn: St => Nothing): PageCtx = {
+    errorFn(debugCode)
+  }
+}
+
+
 /** A Page can be a blog post, a forum topic, a forum topic list, a Wiki page,
   * a Wiki main page, or a site's homepage, for example.
   */

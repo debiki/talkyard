@@ -48,6 +48,7 @@ class PageRequest[A](
   /** If the requested page does not exist, pagePath.pageId is empty. */
   val pagePath: PagePath,
   val pageMeta: Option[PageMeta],
+  val ancCatsRootLast: ImmSeq[Cat],
   val embeddingUrl: Option[String],
   val altPageId: Option[String],
   val dao: SiteDao,
@@ -119,6 +120,22 @@ class PageRequest[A](
   }
 
 
+  def renderParams: PageRenderParams = {
+    val discProps = DiscProps.derive(
+          selfSource = pageMeta,
+          ancestorSourcesSpecificFirst = ancCatsRootLast,
+          defaults = siteSettings)
+    PageRenderParams(
+          discProps.comtOrder,
+          widthLayout = if (isMobile) WidthLayout.Tiny else WidthLayout.Medium,
+          isEmbedded = embeddingUrl.nonEmpty,
+          origin = origin,
+          anyCdnOrigin = dao.globals.anyCdnOrigin,
+          anyPageRoot = pageRoot,
+          anyPageQuery = parsePageQuery())
+  }
+
+
   /** If we should include comment vote and read count statistics in the html.
     */
   def debugStats: Boolean =
@@ -149,10 +166,11 @@ class DummyPageRequest[A](
   pageExists: Boolean,
   pagePath: PagePath,
   pageMeta: PageMeta,
+  ancCatsRootLast: ImmSeq[Cat],
   dao: SiteDao,
   request: Request[A]) extends PageRequest[A](
     siteIdAndCanonicalHostname, anyTySession, sid, xsrfToken, browserId, user, pageExists,
-    pagePath, Some(pageMeta), altPageId = None, embeddingUrl = None,
+    pagePath, Some(pageMeta), ancCatsRootLast, altPageId = None, embeddingUrl = None,
     dao = dao, request = request) {
 
 }

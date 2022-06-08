@@ -957,19 +957,29 @@ object RdbUtil {
   }
 
 
-  def getCachedPageVersion(rs: js.ResultSet) = CachedPageVersion(
-    siteVersion = rs.getInt("site_version"),
-    pageVersion = rs.getInt("page_version"),
-    appVersion = rs.getString("app_version"),
-    renderParams = PageRenderParams(
-      widthLayout = WidthLayout.fromInt(rs.getInt("width_layout")),
-      isEmbedded = rs.getBoolean("is_embedded"),
-      origin = rs.getString("origin"),
-      anyCdnOrigin = getOptString(rs, "cdn_origin"),
-      // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
-      anyPageRoot = None,
-      anyPageQuery = None),
-    reactStoreJsonHash = rs.getString("react_store_json_hash"))
+  def getCachedPageVersion(rs: js.ResultSet, params: Opt[PageRenderParams])
+        : CachedPageVersion = {
+    CachedPageVersion(
+          siteVersion = rs.getInt("cached_site_version_c"),
+          pageVersion = rs.getInt("cached_page_version_c"),
+          appVersion = rs.getString("cached_app_version_c"),
+          renderParams = params getOrElse getRenderParams(rs),
+          storeJsonHash = rs.getString("cached_store_json_hash_c"))
+  }
+
+
+  private def getRenderParams(rs: js.ResultSet): PageRenderParams = {
+    PageRenderParams(
+          PostSortOrder.fromInt(getInt32(rs, "param_comt_order_c")).getOrDie("TyE703MRKJL5"),
+          // comtNesting =  param_comt_nesting_c  — later
+          widthLayout = WidthLayout.fromInt(rs.getInt("param_width_layout_c")),
+          isEmbedded = rs.getBoolean("param_is_embedded_c"),
+          origin = rs.getString("param_origin_c"),
+          anyCdnOrigin = getOptString(rs, "param_cdn_origin_c"),
+          // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
+          anyPageRoot = None,
+          anyPageQuery = None)
+  }
 
 
   // COULD do this:

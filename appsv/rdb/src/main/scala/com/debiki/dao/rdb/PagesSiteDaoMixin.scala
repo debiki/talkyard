@@ -76,21 +76,21 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   def markPagesHtmlStale(pageIds: Set[PageId]): Unit = {
     if (pageIds.isEmpty) return
     val statement = s"""
-          update page_html3
-          set page_version = -1, updated_at = ?
-          where site_id = ?
-            and page_version <> -1
-            and page_id in (${ makeInListFor(pageIds) }) """
+          update page_html_cache_t
+          set cached_page_version_c = -1, updated_at_c = ?
+          where site_id_c = ?
+            and cached_page_version_c <> -1
+            and page_id_c in (${ makeInListFor(pageIds) }) """
     runUpdate(statement, now.asTimestamp :: siteId.asAnyRef :: pageIds.toList)
   }
 
 
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId) {
     val statement = s"""
-      update page_html3 h
-        set page_version = -1, updated_at = ?
-        where site_id = ?
-          and page_id = (
+      update page_html_cache_t h
+        set cached_page_version_c = -1, updated_at_c = ?
+        where site_id_c = ?
+          and page_id_c = (
             select page_id from categories3
             where site_id = ? and id = ?)"""
     val values = List(now.asTimestamp, siteId.asAnyRef, siteId.asAnyRef, categoryId.asAnyRef)
@@ -102,29 +102,29 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         : Option[(String, CachedPageVersion)] = {
     val query = s"""
       select
-        width_layout,
-        is_embedded,
-        origin,
-        cdn_origin,
-        site_version,
-        page_version,
-        app_version,
-        react_store_json_hash,
-        react_store_json,
-        cached_html
-      from page_html3
-      where site_id = ?
-        and page_id = ?
-        and width_layout = ?
-        and is_embedded = ?
-        and origin = ?
-        and cdn_origin = ?
+        cached_site_version_c,
+        cached_page_version_c,
+        cached_app_version_c,
+        cached_store_json_hash_c,
+        cached_store_json_c,
+        cached_html_c
+      from page_html_cache_t
+      where site_id_c = ?
+        and page_id_c = ?
+        and param_comt_order_c = ?
+        and param_comt_nesting_c = ?
+        and param_width_layout_c = ?
+        and param_is_embedded_c = ?
+        and param_origin_c = ?
+        and param_cdn_origin_c = ?
       """
-    val values = List(siteId.asAnyRef, pageId.asAnyRef, params.widthLayout.toInt.asAnyRef,
-      params.isEmbedded.asAnyRef, params.embeddedOriginOrEmpty, params.cdnOriginOrEmpty)
+    val values = List(siteId.asAnyRef, pageId.asAnyRef,
+          params.comtOrder.toInt.asAnyRef, params.comtNesting.asAnyRef,
+          params.widthLayout.toInt.asAnyRef,
+          params.isEmbedded.asAnyRef, params.embeddedOriginOrEmpty, params.cdnOriginOrEmpty)
     runQueryFindOneOrNone(query, values, rs => {
-      val cachedHtml = rs.getString("cached_html")
-      val cachedVersion = getCachedPageVersion(rs)
+      val cachedHtml = rs.getString("cached_html_c")
+      val cachedVersion = getCachedPageVersion(rs, Some(params))
       (cachedHtml, cachedVersion)
     })
   }
@@ -134,39 +134,80 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         reactStorejsonString: String, html: String) {
     // Not impossible that we'll overwrite a new version with an older,
     // but unlikely. And harmless anyway. Don't worry about it.
+    COULD // edit the on-conflict part and use the highest site_version + page_version?
     val insertStatement = s"""
-      insert into page_html3 (
-        site_id,
-        page_id,
-        width_layout,
-        is_embedded,
-        origin,
-        cdn_origin,
-        site_version,
-        page_version,
-        app_version,
-        react_store_json_hash,
-        updated_at,
-        react_store_json,
-        cached_html)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now_utc(), ?::jsonb, ?)
-      on conflict (site_id, page_id, width_layout, is_embedded, origin, cdn_origin) do update set
-        site_version = excluded.site_version,
-        page_version = excluded.page_version,
-        app_version = excluded.app_version,
-        react_store_json_hash = excluded.react_store_json_hash,
-        updated_at = now_utc(),
-        react_store_json = excluded.react_store_json,
-        cached_html = excluded.cached_html
-      """
+          insert into page_html_cache_t (
+              site_id_c,
+              page_id_c,
+              param_comt_order_c,
+              param_comt_nesting_c,
+              param_width_layout_c,
+              param_is_embedded_c,
+              param_origin_c,
+              param_cdn_origin_c,
+              cached_site_version_c,
+              cached_page_version_c,
+              cached_app_version_c,
+              cached_store_json_hash_c,
+              updated_at_c,
+              cached_store_json_c,
+              cached_html_c)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now_utc(), ?::jsonb, ?)
+          on conflict (
+              site_id_c,
+              page_id_c,
+              param_comt_order_c,
+              param_comt_nesting_c,
+              param_width_layout_c,
+              param_is_embedded_c,
+              param_origin_c,
+              param_cdn_origin_c)
+          do update set
+              cached_site_version_c = excluded.cached_site_version_c,
+              cached_page_version_c = excluded.cached_page_version_c,
+              cached_app_version_c = excluded.cached_app_version_c,
+              cached_store_json_hash_c = excluded.cached_store_json_hash_c,
+              updated_at_c = now_utc(),
+              cached_store_json_c = excluded.cached_store_json_c,
+              cached_html_c = excluded.cached_html_c
+          """
 
     val params = version.renderParams
     runUpdateSingleRow(insertStatement, List(
       siteId.asAnyRef, pageId,
+      params.comtOrder.toInt.asAnyRef, params.comtNesting.asAnyRef,
       params.widthLayout.toInt.asAnyRef, params.isEmbedded.asAnyRef,
       params.embeddedOriginOrEmpty, params.cdnOriginOrEmpty,
       version.siteVersion.asAnyRef, version.pageVersion.asAnyRef, version.appVersion,
-      version.reactStoreJsonHash, reactStorejsonString, html))
+      version.storeJsonHash, reactStorejsonString, html))
+  }
+
+
+  override def deleteCachedPageContentHtml(pageId: PageId, version: CachedPageVersion): U = {
+    val statement = s"""
+          delete from page_html_cache_t
+          where
+              site_id_c = ? and
+              page_id_c = ? and
+              param_comt_order_c = ? and
+              param_comt_nesting_c = ? and
+              param_width_layout_c = ? and
+              param_is_embedded_c = ? and
+              param_origin_c = ? and
+              param_cdn_origin_c = ? and
+              cached_site_version_c = ? and
+              cached_page_version_c = ? and
+              cached_app_version_c = ? and
+              cached_store_json_hash_c = ?  """
+
+    val ps = version.renderParams
+    runUpdateSingleRow(statement, List(
+          siteId.asAnyRef, pageId,
+          ps.comtOrder.toInt.asAnyRef, ps.comtNesting.asAnyRef,
+          ps.widthLayout.toInt.asAnyRef, ps.isEmbedded.asAnyRef,
+          ps.embeddedOriginOrEmpty, ps.cdnOriginOrEmpty,
+          version.siteVersion.asAnyRef, version.pageVersion.asAnyRef, version.appVersion,
+          version.storeJsonHash))
   }
 
 

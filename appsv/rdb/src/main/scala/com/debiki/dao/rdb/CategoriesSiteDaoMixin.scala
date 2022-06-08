@@ -338,7 +338,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
       category.defaultSortOrder.map(_.toInt).orNullInt,
-      category.comtOrder.map(_.toInt).orNullInt,  //
+      category.comtOrder.map(_.toInt).orNullInt,
       category.comtNesting.orNullInt,
       catSortOrderScoreAlg(category).orNullInt,
       catSortOrderScorePeriodInt(category).orNullInt,

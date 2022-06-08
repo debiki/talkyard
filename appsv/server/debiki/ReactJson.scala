@@ -525,7 +525,7 @@ class JsonMaker(dao: SiteDao) {
       pageVersion = page.version,
       appVersion = globals.applicationVersion,
       renderParams = renderParams,
-      reactStoreJsonHash = hashSha1Base64UrlSafe(reactStoreJsonString))
+      storeJsonHash = hashSha1Base64UrlSafe(reactStoreJsonString))
 
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
@@ -851,10 +851,23 @@ class JsonMaker(dao: SiteDao) {
 
           // Double check we may see the page(s) we're adding to the watchbar. [WATCHSEC]
           SEC_TESTS_MISSING // TyT602KRGJG
+/*
+<<<<<<< HEAD
           val (maySee, debugCode) = dao.maySeePageUseCacheAndAuthzCtx(
                 pageRequest.thePageMeta, authzCtx)
           if (!maySee)
+||||||| parent of 410fc44ec (Derive and cache comment sort order, when rendering page)
+          val (maySee, debugCode) = dao.maySeePageUseCache(
+                pageRequest.thePageMeta, Some(requester))
+          if (!maySee)
+=======
+          val pageCtx = dao.maySeePageUseCache(pageRequest.thePageMeta, Some(requester)) ifMayNot { debugCode =>
+>>>>>>> 410fc44ec (Derive and cache comment sort order, when rendering page)
+*/
+          val pageCtx = dao.maySeePageUseCacheAndAuthzCtx(pageRequest.thePageMeta, authzCtx)
+                .ifMayNot { debugCode =>
             dao.context.security.throwIndistinguishableNotFound(debugCode)
+          }
 
           watchbar = modifiedWatchbar
           dao.saveWatchbar(requester.id, watchbar)
@@ -1326,10 +1339,9 @@ class JsonMaker(dao: SiteDao) {
               dao.getPageStuffById(linkerIds)
         val linkersOkSee: Iterable[PageStuff] =
               linkersMaybeSee.values.filter { page: PageStuff =>
-                val (maySee, _) = dao.maySeePageUseCacheAndAuthzCtx(
+                dao.maySeePageUseCacheAndAuthzCtx(
                       page.pageMeta, authzCtx,
-                      maySeeUnlisted = false)  // [staff_can_see]
-                maySee
+                      maySeeUnlisted = false).maySee  // [staff_can_see]
               }
         val linksJson = linkersOkSee map { page =>
           ForumController.topicStuffToJson(page, s"/-${page.pageId}")
@@ -1344,8 +1356,8 @@ class JsonMaker(dao: SiteDao) {
               tx.loadPageIdsLinkingTo(toPageId, inclDeletedHidden = false)
         val linkedFromPageMetas: Seq[PageMeta] = tx.loadPageMetas(linkedFromPageIds)
         val linkedFromMaySee = linkedFromPageMetas flatMap { pageMeta =>
-          val (maySee, _) = dao.maySeePageUseCache(pageMeta, None, maySeeUnlisted = false)
-          if (!maySee) None
+          val maySeeResult = dao.maySeePageUseCache(pageMeta, None, maySeeUnlisted = false)
+          if (!maySeeResult.maySee) None
           else Some(pageMeta)
         }
 

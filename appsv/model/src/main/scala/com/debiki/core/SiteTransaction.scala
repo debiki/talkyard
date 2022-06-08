@@ -340,7 +340,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadCachedPageContentHtml(pageId: PageId, renderParams: PageRenderParams)
         : Option[(String, CachedPageVersion)]
   def upsertCachedPageContentHtml(
-        pageId: PageId, version: CachedPageVersion, reactStorejsonString: String, html: String): Unit
+        pageId: PageId, version: CachedPageVersion, storeJsonString: St, html: St): U
+  def deleteCachedPageContentHtml(pageId: PageId, version: CachedPageVersion): U
 
 
   def insertAltPageId(altPageId: AltPageId, realPageId: PageId): Unit
