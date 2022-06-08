@@ -1255,8 +1255,8 @@ trait UserDao {
 
     /* Skip this — just add the chat to the watchbar instead.
     chatsInclForbidden foreach { chatPageMeta =>
-      val (maySee, debugCode) = maySeePageUseCache(chatPageMeta, Some(user.noDetails))
-      if (maySee) {
+      val maySeeResult = maySeePageUseCache(chatPageMeta, Some(user.noDetails))
+      if (maySeeResult) {
         val couldntAdd = mutable.Set[UserId]()
 
         joinLeavePage(Set(user.id), chatPageMeta.pageId, add = true,
@@ -1434,8 +1434,7 @@ trait UserDao {
               else {
                 // AuthZ check 3/3.
                 val user = usersById.getOrDie(userId, "TyE305MRKD24")
-                val (maysee, _) = maySeePage(pageMeta, Some(user), UseTx(tx))
-                !maysee
+                !maySeePage(pageMeta, Some(user), UseTx(tx)).maySee
               }
             }
             else {
@@ -1470,7 +1469,8 @@ trait UserDao {
     val oldWatchbar = getOrCreateWatchbar(pat.id)
     var newWatchbar = oldWatchbar
     for (page: PageMeta <- pages) {
-      val (maySee, _) = maySeePage(page, Some(pat), cacheOrTx)
+      val maySeeResult = maySeePage(page, Some(pat), cacheOrTx)
+      val maySee = maySeeResult.maySee
       if (addOrRemove == Remove) {
         newWatchbar = newWatchbar.removePage(page, tryKeepInRecent = maySee)
       }

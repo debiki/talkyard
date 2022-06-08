@@ -299,7 +299,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val topicsInclForbidden = dao.loadPagesByUser(
       userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
-      dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf)._1
+      dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf).maySee
     }
     ForumController.makeTopicsResponse(topics, dao)
   }
@@ -955,7 +955,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // Load a few topics, in case some were deleted.
     val topicsInclForbidden = dao.loadPagesByUser(requester.id, isStaffOrSelf = true, limit = 5)
     val latestTopic = topicsInclForbidden find { page: PagePathAndMeta =>
-      !page.meta.isDeleted && dao.maySeePageUseCache(page.meta, Some(requester))._1
+      !page.meta.isDeleted && dao.maySeePageUseCache(page.meta, Some(requester)).maySee
     }
     val redirectToUrl = latestTopic.map(_.path.value) getOrElse "/"
     TemporaryRedirect(redirectToUrl)
@@ -1006,9 +1006,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       return dao.jsonMaker.userNoPageToJson(request)
     }
 
-    val (maySee, _) = request.dao.maySeePageUseCache(pageMeta, request.user)
-    if (!maySee)
+    val pageCtx = request.dao.maySeePageUseCache(pageMeta, request.user) ifMayNot { debugCode =>
       return dao.jsonMaker.userNoPageToJson(request)
+    }
 
     val pageRequest = new PageRequest(
       request.site,
@@ -1020,6 +1020,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       pageExists = true,
       pagePath = pagePath,
       pageMeta = Some(pageMeta),
+      ancCatsRootLast = pageCtx.ancCatsRootLast,
       altPageId = None,
       embeddingUrl = None,
       dao = request.dao,

@@ -678,8 +678,16 @@ trait CategoriesDao {
         setDefaultCat(catAft, ancCats, tx)
       }
 
-      // (Could skip marking page stale, if only newTopicTypes or ext id changed)
+      COULD_OPTIMIZE // Don't mark forum page stale, if only newTopicTypes, ext id
+      // or comments sort order got changed.
       tx.updateCategoryMarkSectionPageStale(catAft, IfBadAbortReq)
+
+      BUG ; SHOULD // mark all pages as stale, if > 1 comment, and comments sort order changed.
+      // But I dont' want to run a big tx that updates maybe 9999 pages
+      // — if there's that many pages in this cat tree.
+      // Instead: The page html cache would store the render settings, and, when
+      // fetching the cached html, Ty checks if the render settings have changed,
+      // and *then* lazy rerenders the page.
 
       // Check if any sub tree to deep. [.7M27J525]
       val catMapAft = tx.loadCategoryMap()

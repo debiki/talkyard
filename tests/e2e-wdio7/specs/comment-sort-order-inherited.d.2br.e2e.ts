@@ -114,8 +114,9 @@ describe(`comment-sort-order-inherited.d.2br  TyTECOMSORTORDINH`, () => {
   it(`... and sees the new sort order: Newest First, on the sort button`, async () => {
     assert.eq(await memah_brB.metabar.getDiscLayoutAsPerBtn(), c.TestPostSortOrder.NewestFirst);
   });
-  it(`... comments are sorted correctly  LATER`, async () => {
-    // await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestFirst);
+  it(`... comments are sorted correctly`, async () => {
+//await memah_brB.debug();
+    await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestFirst);
   });
 
 
@@ -187,11 +188,12 @@ describe(`comment-sort-order-inherited.d.2br  TyTECOMSORTORDINH`, () => {
   it(`Memah goes to the cat AA page`, async () => {
     await memah_brB.go2('/' + sortedPageAA.slug);
   });
-  it(`... but it still uses Newest First — a sub cat ovrrides parent cats`, async () => {
+  it(`... but it still uses Newest First — a sub cat overrides parent cats`, async () => {
     assert.eq(await memah_brB.metabar.getDiscLayoutAsPerBtn(), c.TestPostSortOrder.NewestFirst);
   });
-  it(`... comments actually sorted Newest First  LATER`, async () => {
-    //await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestFirst);
+  it(`... comments actually sorted Newest First`, async () => {
+//await memah_brB.debug();
+    await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestFirst);
   });
 
 
@@ -213,7 +215,7 @@ describe(`comment-sort-order-inherited.d.2br  TyTECOMSORTORDINH`, () => {
     await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestThenBest);
   });
 
-  // ----- One's own temp changes also override cat
+  // ----- Own temp change overrides cat
 
   it(`Memah changes to Newest then Oldest for herself only`, async () => {
     await memah_brB.metabar.openDiscLayout();
@@ -224,7 +226,7 @@ describe(`comment-sort-order-inherited.d.2br  TyTECOMSORTORDINH`, () => {
   });
   it(`... comments correctly sorted`, async () => {
     await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestThenOldest);
-settings.debugEachStep=true;
+//settings.debugEachStep=true;
   });
   it(`After reload`, async () => {
     await memah_brB.refresh2();
@@ -256,7 +258,7 @@ settings.debugEachStep=true;
     await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestFirst);
   });
 
-  // Unset cat:
+  // Unset sub cat:
 
   it(`Owen goes to cat AA, opens the settings`, async () => {
     await owen_brA.go2('/latest/sub-cat-aa')
@@ -267,20 +269,17 @@ settings.debugEachStep=true;
     await owen_brA.discLayoutD.selectCommentsSortOrder(c.TestPostSortOrder.Default);
   });
   it(`... the sort order button now shows Best First, inherited from parent cat A`, async () => {
-    assert.eq(await memah_brB.categoryDialog.getDiscLayoutAsPerBtn(),
+    assert.eq(await owen_brA.categoryDialog.getDiscLayoutAsPerBtn(),
             c.TestPostSortOrder.BestFirst);
   });
   it(`.. Owen saves`, async () => {
-    /* Ops, bug!
-    org.postgresql.util.PSQLException: ERROR: value for domain comt_order_d violates check constraint "i16gz_c_nz"
-    */
     await owen_brA.categoryDialog.submit();
   });
 
   it(`Memah reloads`, async () => {
     await memah_brB.refresh2();
   });
-  it(`... now base category A's sort order is in use: Best Fisrt`, async () => {
+  it(`... now base cat A's sort order is in use: Best Fisrt`, async () => {
     assert.eq(await memah_brB.metabar.getDiscLayoutAsPerBtn(), c.TestPostSortOrder.BestFirst);
   });
   it(`... comments correctly sorted`, async () => {
@@ -289,14 +288,95 @@ settings.debugEachStep=true;
 
 
 
-  // Clear page
-  // Clear cat
+  // ===== Whole site sort order
+
+  it(`Memah looks at page BA`, async () => {
+    await memah_brB.go2('/page-ba');
+  });
+  it(`The sort order is Oldest First — the forum default`, async () => {
+    assert.eq(await memah_brB.metabar.getDiscLayoutAsPerBtn(), c.TestPostSortOrder.OldestFirst);
+  });
+  it(`... comments correctly sorted`, async () => {
+    await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.OldestFirst);
+  });
+
+  it(`But Owen goes to the site settings`, async () => {
+    await owen_brA.go2('/-/admin/customize/basic')
+  });
+  it(`... sets the site default order to Newest First`, async () => {
+    await owen_brA.waitAndSetValue('.e_FrmSrtOdr input', c.TestPostSortOrder.NewestFirst);
+  });
+  it(`... save`, async () => {
+    await owen_brA.adminArea.settings.clickSaveAll();
+  });
+
+  it(`Memah reloads`, async () => {
+    await memah_brB.refresh2();
+  });
+  it(`Now the sort order is Newest First`, async () => {
+    assert.eq(await memah_brB.metabar.getDiscLayoutAsPerBtn(), c.TestPostSortOrder.NewestFirst);
+  });
+  it(`... comments correctly sorted`, async () => {
+    await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestFirst);
+  });
 
 
-  // Move page to other cat
+  // ===== Move page
 
-  // Move other page to this cat
+  it(`Owen goes to page BA too`, async () => {
+    await owen_brA.go2('/page-ba');
+  });
 
-  // ?
+  it(`He sees sort order Newest First, just like Memah  ttt`, async () => {
+    assert.eq(await owen_brA.metabar.getDiscLayoutAsPerBtn(), c.TestPostSortOrder.NewestFirst);
+    await comtSortUtil.checkSortOrder(owen_brA, c.TestPostSortOrder.NewestFirst);
+  });
+
+  it(`Owen moves page BA to sub cat AB`, async () => {
+    await owen_brA.topic.movePageToOtherCategory('SubCatAB');
+  });
+
+
+  it(`Now the sort order is Best First — base cat A overrides the site default`, async () => {
+    assert.eq(await owen_brA.metabar.getDiscLayoutAsPerBtn(), c.TestPostSortOrder.BestFirst);
+  });
+  it(`(Need to reload, for the comment sort order to update)`, async () => {
+    await owen_brA.refresh2();
+  });
+  it(`... comments correctly sorted`, async () => {
+    await comtSortUtil.checkSortOrder(owen_brA, c.TestPostSortOrder.BestFirst);   // VF
+  });
+
+
+  // ===== Unset base cat
+
+  it(`Owen goes to cat A, opens the settings`, async () => {
+    await owen_brA.go2('/latest/category-a')
+    await owen_brA.forumButtons.clickEditCategory();
+  });
+  it(`... clears A's sort order`, async () => {
+    await owen_brA.categoryDialog.openDiscLayout();
+    await owen_brA.discLayoutD.selectCommentsSortOrder(c.TestPostSortOrder.Default);
+  });
+  it(`... the sort order button now shows Newest First, the site default`, async () => {
+    assert.eq(await owen_brA.categoryDialog.getDiscLayoutAsPerBtn(),
+            c.TestPostSortOrder.NewestFirst);
+  });
+  it(`.. Owen saves`, async () => {
+    await owen_brA.categoryDialog.submit();
+  });
+
+  it(`Memah reloads — still at page BA, but in cat AB`, async () => {
+    assert.eq(await memah_brB.urlPath(), '/page-ba');
+    await memah_brB.refresh2();
+  });
+  it(`Now the sort order is Newest First — the forum default`, async () => {
+    assert.eq(await memah_brB.metabar.getDiscLayoutAsPerBtn(), c.TestPostSortOrder.NewestFirst);
+  });
+  it(`... comments correctly sorted`, async () => {
+    await comtSortUtil.checkSortOrder(memah_brB, c.TestPostSortOrder.NewestFirst);
+  });
+
+
 
 });

@@ -911,11 +911,11 @@ package object core {
     pageVersion: PageVersion,
     appVersion: String,
     renderParams: PageRenderParams,
-    reactStoreJsonHash: String) {
+    storeJsonHash: String) {
 
     /** Interpreted by the computer (startup.js looks for the '|'). */
     def computerString =
-      s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $reactStoreJsonHash"
+      s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $storeJsonHash"
   }
 
 
@@ -923,7 +923,8 @@ package object core {
     *
     * COULD incl forum topic list sort order too, and discussion topic comments sort order.  [7TMW4ZJ5]
     *
-    * @param widthLayout — the HTML strucure, and maybe avatar and image urls, are different,
+    * @param comtOrder — how the comments are sorted (best first? oldest first? etc).
+    * @param widthLayout — the HTML structure, and maybe avatar and image urls, are different,
     * for tiny mobile screens, and laptop screens. So, need to render separately, for mobile and laptop.
     * @param isEmbedded — in embedded discussions, links need to include the server origin, otherwise
     * they'll resolve relative the embedd*ing* page. However, non-embedded pages, then
@@ -947,6 +948,8 @@ package object core {
     * Javascript diabled, and one wants to list topics on topic list page 2, 3, 4 ...)
     */
   case class PageRenderParams(
+    comtOrder: PostSortOrder,
+    //comtNesting: NestingDepth,
     widthLayout: WidthLayout,
     isEmbedded: Boolean,
     origin: String,
@@ -954,14 +957,15 @@ package object core {
     anyPageRoot: Option[PostNr],
     anyPageQuery: Option[PageQuery]) {
 
+    def comtNesting: i32 = -1  // means unlimited
     def thePageRoot: PostNr = anyPageRoot getOrElse BodyNr
     def embeddedOriginOrEmpty: String = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
     def cdnOriginOrEmpty: String = anyCdnOrigin getOrElse ""
   }
 
-  case class PageRenderParamsAndHash(
-    pageRenderParams: PageRenderParams,
-    reactStoreJsonHash: String)
+  case class RenderParamsAndFreshHash(
+    renderParams: PageRenderParams,
+    freshStoreJsonHash: St)
 
   sealed abstract class WidthLayout(val IntVal: Int) { def toInt: Int = IntVal }
 
@@ -996,9 +1000,12 @@ package object core {
   }
 
 
-  val WrongCachedPageVersion = CachedPageVersion(siteVersion = -1, pageVersion = -1, appVersion = "wrong",
-    PageRenderParams(WidthLayout.Tiny, isEmbedded = false, "https://example.com", None, None, None),
-    reactStoreJsonHash = "wrong")
+  val WrongCachedPageVersion: CachedPageVersion =
+    CachedPageVersion(
+          siteVersion = -1, pageVersion = -1, appVersion = "wrong",
+          PageRenderParams(PostSortOrder.OldestFirst, WidthLayout.Tiny,
+                isEmbedded = false, "https://example.com", None, None, None),
+          storeJsonHash = "wrong")
 
 
   case class TagTypeStats(
@@ -1120,6 +1127,11 @@ package object core {
     // object NewAndBestFirst extends PostsSortOrder(5)
     // object RandomAndBestFirst extends PostsSortOrder(6)
     // object NewRandomAndBestFirst extends PostsSortOrder(7)
+
+    // No idea why, but this has to be a fn, because OldestFirs is otherwise null
+    // — although it's a val defined *above*. The others (BestFirst etc) aren't null.
+    def All: ImmSeq[PostSortOrder] = Vec(
+          BestFirst, NewestFirst, OldestFirst, NewestThenBest, NewestThenOldest)
 
     def fromInt(value: Int): Option[PostSortOrder] = Some(value match {
       //case Default.IntVal => Default

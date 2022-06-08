@@ -80,9 +80,9 @@ trait SearchDao {
     val pageStuffByPageIdInclForbidden = getPageStuffById(hitsByPageId.keys)
     val pageStuffByPageId = pageStuffByPageIdInclForbidden filter { case (pageId, pageStuff) =>
       val isStaffOrAuthor = user.exists(u => u.isStaff || u.id == pageStuff.pageMeta.authorId)
-      val (maySee, _) = maySeePageUseCache(pageStuff.pageMeta, user,
-        maySeeUnlisted = isStaffOrAuthor)
-      maySee
+      val maySeeResult = maySeePageUseCache(pageStuff.pageMeta, user,
+            maySeeUnlisted = isStaffOrAuthor)
+      maySeeResult.maySee
     }
 
     // Add page meta and also sort hits by score, desc.

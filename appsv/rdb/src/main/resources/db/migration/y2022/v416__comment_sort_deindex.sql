@@ -33,6 +33,43 @@ alter table categories3 add column comt_order_c   comt_order_d;
 alter table categories3 add column comt_nesting_c max_nesting_d;
 
 
+-- So can lookup cached page html with the correct comment sort order and nesting params.
+alter table page_html3  add column param_comt_order_c   comt_order_d  not null default  3; -- oldest first
+alter table page_html3  add column param_comt_nesting_c max_nesting_d not null default -1; -- unlim
+
+
+alter table page_html3 rename column site_id               to site_id_c;
+alter table page_html3 rename column page_id               to page_id_c;
+alter table page_html3 rename column width_layout          to param_width_layout_c;
+alter table page_html3 rename column is_embedded           to param_is_embedded_c;
+alter table page_html3 rename column origin                to param_origin_c;
+alter table page_html3 rename column cdn_origin            to param_cdn_origin_c;
+alter table page_html3 rename column site_version          to cached_site_version_c;
+alter table page_html3 rename column page_version          to cached_page_version_c;
+alter table page_html3 rename column app_version           to cached_app_version_c;
+alter table page_html3 rename column updated_at            to updated_at_c;
+alter table page_html3 rename column react_store_json      to cached_store_json_c;
+alter table page_html3 rename column react_store_json_hash to cached_store_json_hash_c;
+alter table page_html3 rename column cached_html           to cached_html_c;
+
+alter table page_html3 drop constraint pagehtml_p;
+alter table page_html3 add constraint pagehtmlcache_p primary key (
+   site_id_c,
+   page_id_c,
+   param_comt_order_c,
+   param_comt_nesting_c,
+   param_width_layout_c,
+   param_is_embedded_c,
+   param_origin_c,
+   param_cdn_origin_c);
+
+alter table page_html3 rename to page_html_cache_t;
+
+
+
+
+-- & edit PK
+
 -- De-prioritizes this page (or sub thread) among the search results.
 -- Say, a question or idea about something, before there were any docs
 -- — and later on, docs are written, and the original question is no longer

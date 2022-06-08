@@ -76,11 +76,11 @@ class RenderContentActor(
     // COULD SECURITY DoS attack: Want to enqueue this case last-in-first-out, per page & params, so won't
     // rerender the page more than once, even if is in the queue many times (with different hashes).
     // Can that be done with Akka actors in some simple way?
-    case (sitePageId: SitePageId, customParamsAndHash: Option[PageRenderParamsAndHash]) =>
+    case (sitePageId: SitePageId, paramsAndHash: Opt[RenderParamsAndFreshHash]) =>
       // The page has been modified, or accessed and was out-of-date. [4KGJW2]
       // Or edited, and uncached, and now being rerendered (no render params). [7BWTWR2]
       try {
-        rerenderContentHtmlUpdateCache(sitePageId, customParamsAndHash)
+        rerenderContentHtmlUpdateCache(sitePageId, staleCachedVersion = None, paramsAndHash)
       }
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
@@ -165,10 +165,12 @@ class RenderContentActor(
   }
 
 
-  private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId,
-        customParamsAndHash: Option[PageRenderParamsAndHash]): Boolean Or ErrorMessage = {
+  private def rerenderContentHtmlUpdateCache(
+        sitePageId: SitePageId,
+        staleCachedVersion: Opt[CachedPageVersion],
+        paramsAndHash: Opt[RenderParamsAndFreshHash]): Bo Or ErrMsg = {
     try {
-      renderImpl(sitePageId, customParamsAndHash)
+      renderImpl(sitePageId, staleCachedVersion, paramsAndHash)
     }
     catch {
       case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
@@ -181,31 +183,45 @@ class RenderContentActor(
   }
 
 
-  private def renderImpl(sitePageId: SitePageId, anyCustomParams: Option[PageRenderParamsAndHash])
-      : Boolean Or ErrorMessage = {
+  private def renderImpl(
+        sitePageId: SitePageId,
+        staleCachedVersion: Opt[CachedPageVersion],
+        anyParamsHash: Opt[RenderParamsAndFreshHash]): Bo Or ErrMsg = {
 
     // COULD add Metrics that times this.
 
     val dao = globals.siteDao(sitePageId.siteId)
-    logger.debug(s"Background rendering ${sitePageId.toPrettyString}, $anyCustomParams... [TyMBGRSTART]")
+    val pageMeta = dao.getPageMeta(sitePageId.pageId)
+    val ancCatsRootLast = dao.getAncestorCategoriesRootLast(pageMeta.flatMap(_.categoryId))
+    val siteSettings = dao.getWholeSiteSettings()
+    val discProps = DiscProps.derive(pageMeta, ancCatsRootLast, siteSettings)
 
-    // If we got custom params, rerender only for those params (maybe other param combos = up-to-date).
-    anyCustomParams foreach { paramsHash =>
+    logger.debug(s"Background rendering ${sitePageId.toPrettyString
+          }, $discProps, $anyParamsHash, stale cached: $staleCachedVersion ... [TyMBGRSTART]")
+
+    // If we got render params, rerender only for those params.
+    // (Other param combos might be up-to-date already, or no one is looking at the page
+    // with such params (device width).)
+    anyParamsHash foreach { paramsHash =>
       val result = renderIfNeeded(
-        sitePageId, paramsHash.pageRenderParams, dao, Some(paramsHash.reactStoreJsonHash))
+            sitePageId,
+            // For now: (later, make comtOrder overridable by anyCustomParams)
+            paramsHash.renderParams.copy(comtOrder = discProps.comtOrder),
+            dao, Some(paramsHash.freshStoreJsonHash))
       if (result == Good(true)) {
-        dao.removePageFromMemCache(sitePageId, Some(paramsHash.pageRenderParams))
+        dao.removePageFromMemCache(sitePageId, Some(paramsHash.renderParams))
       }
       return result
     }
 
-    val isEmbedded = dao.getPageMeta(sitePageId.pageId).exists(_.pageType == PageType.EmbeddedComments)
+    val isEmbedded = pageMeta.exists(_.pageType == PageType.EmbeddedComments)
 
     // Render for tiny width
     // A bit dupl code. [2FKBJAL3]
     // These render params must match the load-pages-to-rerender query [RERENDERQ], otherwise
     // the query will continue saying the page should be rerendered, forever.
-    val renderParams = PageRenderParams(
+    val tinyParams = PageRenderParams(
+      comtOrder = discProps.comtOrder,
       widthLayout = WidthLayout.Tiny,
       isEmbedded = isEmbedded,
       origin = dao.theSiteOrigin(),
@@ -215,15 +231,29 @@ class RenderContentActor(
       anyPageRoot = None,
       anyPageQuery = None)
 
-    var result = renderIfNeeded(sitePageId, renderParams, dao, freshStoreJsonHash = None)
+    var result = renderIfNeeded(sitePageId, tinyParams, dao, freshStoreJsonHash = None)
     if (result.isBad)
       return result
 
     // Render for medium width.
-    val mediumParams = renderParams.copy(widthLayout = WidthLayout.Medium)
+    val mediumParams = tinyParams.copy(widthLayout = WidthLayout.Medium)
     result = renderIfNeeded(sitePageId, mediumParams, dao, freshStoreJsonHash = None)
     if (result.isBad)
       return result
+
+    // If we're rerendering an old stale cache entry, but the render params, e.g.
+    // comment sort order, has changed — then delete the cache entry.
+    // (Otherise we'll just try to rerender the stale entry again and again, but
+    // when rerendering, we'd be using the new and different params, so the old
+    // stale entry would never get updated (different primary key).)
+    staleCachedVersion foreach { staleVer =>
+      if (staleVer.renderParams != tinyParams && staleVer.renderParams != mediumParams) {
+        dao.writeTx { (tx, _) =>
+          tx.deleteCachedPageContentHtml(sitePageId.pageId, staleCachedVersion.get)
+          // What about mem cach? Hmm, uncached below, right.
+        }
+      }
+    }
 
     // Remove cached whole-page-html, so we'll generate a new page (<html><head> etc) that
     // includes the new content we generated above. [7UWS21]
@@ -254,12 +284,13 @@ class RenderContentActor(
         cachedHtmlVersion.siteVersion != currentPageVersion.siteVersion ||
         cachedHtmlVersion.pageVersion != currentPageVersion.pageVersion ||
         cachedHtmlVersion.appVersion != globals.applicationVersion ||
-        freshStoreJsonHash.isSomethingButNot(cachedHtmlVersion.reactStoreJsonHash)
+        freshStoreJsonHash.isSomethingButNot(cachedHtmlVersion.storeJsonHash)
     }
 
     if (!isOutOfDate) {
-      logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
-             is up-to-date, ignoring re-render message. [DwE4KPL8]""")
+      logger.debug(o"""s${sitePageId.siteId}: Page ${sitePageId.pageId} with render params
+             $renderParams and fresh hash $freshStoreJsonHash
+             is up-to-date, ignoring re-render message. TyMBGRSKIP]""")
       return Good(false)
     }
 
@@ -316,7 +347,8 @@ class RenderContentActor(
 
     val toRerender = nextIdsToRerender.head
     val result = rerenderContentHtmlUpdateCache(
-          toRerender.sitePageId, customParamsAndHash = None)
+          toRerender.sitePageId, staleCachedVersion = toRerender.cachedVersion,
+          paramsAndHash = None)
 
     val anyError = if (result.isBad) Some(result.swap.get) else None
     (anyError, nextIdsToRerender.tail, nextLoadedAt)

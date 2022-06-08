@@ -45,8 +45,7 @@ trait WatchbarDao {
         readOnlyTransaction { tx =>
           val globalChatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
           val globalChatsMaySee = globalChatsInclForbidden filter { chatPageMeta =>
-            val (maySee, debugCode) = maySeePageUseCache(chatPageMeta, user = None)
-            maySee
+            maySeePageUseCache(chatPageMeta, user = None).maySee
           }
           val globalChatIds = globalChatsMaySee.map(_.pageId)
           Some(BareWatchbar.withChatChannelAndDirectMessageIds(globalChatIds, Nil))

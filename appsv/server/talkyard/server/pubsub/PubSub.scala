@@ -604,8 +604,7 @@ class PubSubActor(val globals: Globals) extends Actor {
               false
             case Some(pageMeta) =>
               SEC_TESTS_MISSING  // [WATCHSEC]
-              val (maySee, _) = siteDao.maySeePageUseCache(pageMeta, Some(user))
-              maySee
+              siteDao.maySeePageUseCache(pageMeta, Some(user)).maySee
           }
         }
 
