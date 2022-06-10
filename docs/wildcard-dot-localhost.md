@@ -28,6 +28,9 @@ Then restart NetworkManager:
 
     sudo service network-manager restart
 
+    # Hmm seems now it's instead: (Debian 11)
+    sudo systemctl restart NetworkManager
+
 Wait half a minute, then this should work: `ping whatever.localhost`.
 
 #### Debian
@@ -41,16 +44,26 @@ Like Ubuntu, plus, you need this, to tell NetworkManager to use dnsmasq:
     [main]
     dns=dnsmasq
 
-#### Qubes OS
+#### Qubes OS Standalone VM
 
 Assuming you use a stand-alone Debian qube (i.e. VM) for developing
-Talkyard, then, follow the instructions for Debian just above. And, you also need
-to tell Qubes OS to actually start NetworkManager in the qube — starting it from
+Talkyard, then, **follow the instructions** for **Debian** (!) just above.
+
+Hmm, but edit: `/etc/NetworkManager/NetworkManager.conf`, which already exists,
+instead of `/etc/NetworkManager/conf.d/00-use-dnsmasq.conf`.
+
+And, you also need to tell Qubes OS to actually start NetworkManager
+in the qube — starting it from
 inside the qube itself won't work. In dom0, do this:
 
     qvm-service --enable YOUR_DEBIAN_QUBE_NAME network-manager
 
 And apparently you need to reboot the qube too.
+
+#### Qubes OS AppVM
+
+You need to run the `sudo sh -c 'echo ...'` command above in the template VM
+(not the AppVM) so the changes in `/etc/` won't disappear on restart.
 
 
 Mac
