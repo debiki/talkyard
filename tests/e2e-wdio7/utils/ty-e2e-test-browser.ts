@@ -5770,8 +5770,11 @@ export class TyE2eTestBrowser {
 
       setPageNotfLevel: async (notfLevel: PageNotfLevel) => {
         await this.switchToEmbCommentsIframeIfNeeded();
-        await this.metabar.openMetabarIfNeeded();
-        await this.waitAndClick('.dw-notf-level');
+        // To open the metabar and click the notf button therein:
+        //await this.metabar.openMetabarIfNeeded();
+        //await this.waitAndClick('.dw-notf-level');
+        // But now it's clickable directly instead:
+        await this.waitAndClick('.dw-page-notf-level button');
         await this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
 
