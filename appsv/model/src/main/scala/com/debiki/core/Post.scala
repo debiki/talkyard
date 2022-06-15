@@ -339,6 +339,12 @@ case class Post(   // [exp] ok use
   tyype: PostType,
   createdAt: ju.Date,
   createdById: UserId,
+  // Also need:
+  // pubSubmittedAt — the publicly shown submission date, if different from createdAt.
+  // addedToPageAt — if moved from one page to another, this is when it got added to the new page,
+  //                  helpful for debugging dates (and for bumping the page-bump-time).
+  // pubAuthorId — if the publicly shown author should be different from the person who created the post.
+  // ownedById — who may edit the pubAuthorId. Because if it's one's own anon post, one can change  .. hmm.
   currentRevisionById: UserId,
   currentRevStaredAt: ju.Date,
   currentRevLastEditedAt: Option[ju.Date],
