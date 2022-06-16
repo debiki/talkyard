@@ -1391,7 +1391,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    async scrollToBottom() {
+    async scrollToBottom(ps: { tryUntilSeesLoadMore?: Bo } = {}) {
       //this.#br.scroll('body', 0, 999*1000);
       //this.#br.scroll('html', 0, 999*1000);
       //if (this.isVisible('#esPageColumn')) {
@@ -1399,14 +1399,24 @@ export class TyE2eTestBrowser {
       //    document.getElementById('esPageColumn').scrollTop = 999*1000;
       //  });
       //}
-      await this.#br.execute(function() {
+      const scrollFn = async function() {
         window.scrollTo(0, 999*1000);
         document.documentElement.scrollTop = 999*1000; // not needed? but why not
         // If we're on a Talkyard page, scroll to its bottom too.
         var pageElem = document.getElementById('esPageColumn');
         if (pageElem) pageElem.scrollTop = 999*1000;
-      });
+      };
 
+      if (ps.tryUntilSeesLoadMore) {
+        await utils.tryUntilTrue("Scroll down until sees Load More", 3, async () => {
+          await this.#br.execute(scrollFn);
+          return await this.waitForDisplayedInViewport('.load-more', {
+                  timeoutMs: 1000, timeoutIsFine: true });
+        });
+        return;
+      }
+
+      await this.#br.execute(scrollFn);
       // Need to wait for the scroll to actually happen. COULD instead maybe
       // waitUntil scrollTop = document height - viewport height?  but will probably be
       // one-pixel-too-litle-too-much errors? For now:
@@ -1577,8 +1587,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitForDisplayedInViewport(selector: St, ps: WaitPs = {}) {
-      await this.waitUntil(async () => await this.isDisplayedInViewport(selector), {
+    async waitForDisplayedInViewport(selector: St, ps: WaitPs = {}): Pr<Bo> {
+      return await this.waitUntil(async () => await this.isDisplayedInViewport(selector), {
         ...ps,
         message: `Waiting for dispalyed in viewport:  ${selector}`,
       });
@@ -4794,8 +4804,8 @@ export class TyE2eTestBrowser {
         await this.waitUntilAnyTextMatches(this.forumTopicList.titleSelector, title);
       },
 
-      clickLoadMore: async (opts: { mayScroll?: Bo } = {}) => {
-        await this.waitAndClick('.load-more', opts);
+      clickLoadMore: async (opts: WaitAndClickPs = {}): Pr<ClickResult> => {
+        return await this.waitAndClick('.load-more', opts);
       },
 
       switchToCategory: async (toCatName: St) => {

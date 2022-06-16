@@ -482,7 +482,7 @@ forum -
     only one category:
     change category:
             - navigation-as-impl.ts  TyT4BKAFE5GA  MISSING
-            - forum-sort-and-scroll  TyT5ABK2WL4   MISSING
+            - forum-sort-and-scroll.d.2br  TyT5ABK2WL4   MISSING
             - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
     show waiting:
     show deleted -
@@ -497,13 +497,13 @@ forum -
   live updates:  (4FE2)
   load more topics, all topics listed -
     via js:
-        - forum-sort-and-scroll.2browsers.test.ts  TyT5ABK2WL4
+        - forum-sort-and-scroll.d.2br  TyT5ABK2WL4
     js disabled:
     'active' sort order:
-        - forum-sort-and-scroll.2browsers.test.ts  TyT5ABK2WL4
+        - forum-sort-and-scroll.d.2br  TyT5ABK2WL4
     'newest' and
     'active' sort orders:
-        - forum-sort-and-scroll.2browsers.test.ts  TyT5ABK2WL4
+        - forum-sort-and-scroll.d.2br  TyT5ABK2WL4
     'newest' and a category:
     click load-more twice:
 

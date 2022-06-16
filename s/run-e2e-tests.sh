@@ -302,7 +302,7 @@ function runAllE2eTests {
 
   $r s/wdio --only login-expire-idle-after.2br.mtime $args
 
-  $r s/wdio --only forum-sort-and-scroll.2browsers $args
+  $r s/wdio-7 --only forum-sort-and-scroll.d.2br --cd -i $args
 
   $r s/wdio --only navigation-as-admin $args
   $r s/wdio --only navigation-as-member $args

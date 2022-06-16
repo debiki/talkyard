@@ -1,20 +1,15 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
+import { dieIf } from '../utils/log-and-die';
+import c from '../test-constants';
 
-
-
-
-
-let everyonesBrowsers;
 let richBrowserA;
 let richBrowserB;
 let owen: Member;
@@ -40,9 +35,10 @@ const page1079LinkSelector = '[href^="/-1079"]';
 const page1080LinkSelector = '[href^="/-1080"]';
 const page1099LinkSelector = '[href^="/-1099"]';
 
-describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
 
-  it("import a site", () => {
+describe(`forum-sort-and-scroll.d.2br  TyT5ABK2WL4`, () => {
+
+  it("import a site", async () => {
     const builder = buildSite();
     forum = builder.addLargeForum({
       title: "Some E2E Test",
@@ -67,14 +63,13 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
       });
     }
     assert.eq(builder.getSite(), forum.siteData);
-    siteIdAddress = server.importSiteData(forum.siteData);
+    siteIdAddress = await server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
   });
 
-  it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
+  it("initialize people", async () => {
+    richBrowserA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    richBrowserB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;
@@ -83,174 +78,177 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
     strangersBrowser = richBrowserB;
   });
 
-  it("A stranger goes to the home page", () => {
-    strangersBrowser.go(siteIdAddress.origin);
+  it("A stranger goes to the home page", async () => {
+    await strangersBrowser.go2(siteIdAddress.origin);
   });
 
-  it("Sees page 1001, because sorted by recent activity", () => {
-    strangersBrowser.waitForVisible(page1001LinkSelector);
+  it("Sees page 1001, because sorted by recent activity", async () => {
+    await strangersBrowser.waitForVisible(page1001LinkSelector);
   });
 
-  it("... sees pages up to 1040", () => {
-    strangersBrowser.waitForVisible(page1040LinkSelector);
+  it("... sees pages up to 1040", async () => {
+    await strangersBrowser.waitForVisible(page1040LinkSelector);
   });
 
-  it("... but not 1041", () => {
-    assert.ok(!strangersBrowser.isVisible(page1041LinkSelector));
-  });
-
-  it("Scrolls down to page id 1040, at the bottom of the topic list", () => {
-    strangersBrowser.scrollToBottom();
+  it("... but not 1041", async () => {
+    assert.not(await strangersBrowser.isVisible(page1041LinkSelector));
   });
 
   let scrollPosAtBottom;
 
-  it("Clicks 'Load more ...'", () => {
-    scrollPosAtBottom = strangersBrowser.getPageScrollY();
-    assert.greaterThan(scrollPosAtBottom, 1000); // else test broken
-    // The scroll button is already visible, thanks to scrollToBottom() above. Don't
-    // scroll it even more into view — that'd break the scroll position test below (2AD4J0).
-    strangersBrowser.forumTopicList.clickLoadMore({ mayScroll: false });
+  it("Scrolls down to page id 1040 at the bottom, clicks 'Load more ...'", async () => {
+    // There's a race — there's [.sometimes_a_relayout] making the page taller,
+    // after getPageScrollY() — then Load More disappears off screen. So, retry
+    await utils.tryUntilTrue("222 Scroll down until sees Load More", 3, async (): Pr<Bo> => {
+      await strangersBrowser.scrollToBottom();
+      scrollPosAtBottom = await strangersBrowser.getPageScrollY();
+      assert.greaterThan(scrollPosAtBottom, 1000); // else test broken
+      // The scroll button is already visible, thanks to scrollToBottom() above. Don't
+      // scroll it even more into view — that'd break the scroll position test below (2AD4J0).
+      // However, [.sometimes_a_relayout] here so the click might fail, see above.
+      const res = await strangersBrowser.forumTopicList.clickLoadMore({ mayScroll: false, timeoutMs: 1000, timeoutIsFine: true });
+      return res === 'Clicked';
+    });
   });
 
-  it("... More topics appear, 1041", () => {
-    strangersBrowser.waitForVisible(page1041LinkSelector);
+  it("... More topics appear, 1041", async () => {
+    await strangersBrowser.waitForVisible(page1041LinkSelector);
   });
 
-  it("... to 1079, because loads 40 topics at a time, by default, and no. 1040 incl again", () => {
-    strangersBrowser.waitForVisible(page1079LinkSelector);
+  it("... to 1079, because loads 40 topics at a time, by default, and no. 1040 incl again", async () => {
+    await strangersBrowser.waitForVisible(page1079LinkSelector);
   });
 
-  it("... but not 1080", () => {
-    assert.ok(!strangersBrowser.isVisible(page1080LinkSelector));
+  it("... but not 1080", async () => {
+    assert.not(await strangersBrowser.isVisible(page1080LinkSelector));
   });
 
-  it("... The scroll position didn't change, 1", () => {
-    const scrollPosAfterMoreTopics = strangersBrowser.getPageScrollY();
+  it("... The scroll position didn't change, 1", async () => {
+    const scrollPosAfterMoreTopics = await strangersBrowser.getPageScrollY();
     assert.eq(scrollPosAfterMoreTopics, scrollPosAtBottom);  // (2AD4J0)
   });
 
-  it("Hen scrolls up to topic 1015", () => {
-    strangersBrowser.scrollIntoViewInPageColumn(page1015LinkSelector);
+  it("Hen scrolls up to topic 1015", async () => {
+    await strangersBrowser.scrollIntoViewInPageColumn(page1015LinkSelector);
   });
 
   let scrollPosByActivityTopic1015;
 
-  it("... opens it", () => {
-    scrollPosByActivityTopic1015 = strangersBrowser.getPageScrollY();
+  it("... opens it", async () => {
+    scrollPosByActivityTopic1015 = await strangersBrowser.getPageScrollY();
     // In Chrome, we're always at scroll pos > 1000, but in FF, we're at
     // scroll pos 995. Why? Maybe doesn't matter? I suppose somehow FF
     // scrolls up a tiny bit more, in the step just above?
     const minScroll = settings.browserName === 'firefox' ? 990 : 1000;
     assert.greaterThan(scrollPosByActivityTopic1015, minScroll); // else test broken
-    strangersBrowser.forumTopicList.goToTopic('1015')
+    await strangersBrowser.forumTopicList.goToTopic('1015')
   });
 
-  it("... And navigates back", () => {
-    strangersBrowser.topbar.clickHome();
+  it("... And navigates back", async () => {
+    await strangersBrowser.topbar.clickHome();
   });
 
-  function wait5SecondsUntilHasResetScroll() {
+  async function wait5SecondsUntilHasResetScroll() {
     let scrollPosAfterBack;
     for (let i = 0; i < 4800; i += 400) {
-      scrollPosAfterBack = strangersBrowser.getPageScrollY();
+      scrollPosAfterBack = await strangersBrowser.getPageScrollY();
       // Accept small differences.
       if (Math.abs(scrollPosAfterBack - scrollPosByActivityTopic1015) < 10) {
         return;
       }
-      browser.pause(400);
+      await browser.pause(400);
     }
     // This'll fail.
     assert.eq(scrollPosAfterBack, scrollPosByActivityTopic1015);
   }
 
-  it("... the scroll position didn't change, 2", () => {
-    strangersBrowser.waitForVisible(page1015LinkSelector);
-    wait5SecondsUntilHasResetScroll();
+  it("... the scroll position didn't change, 2", async () => {
+    await strangersBrowser.waitForVisible(page1015LinkSelector);
+    await wait5SecondsUntilHasResetScroll();
   });
 
-  it("Try mess up the scroll pos a few more times — there was a bug before  TyT5WG7AB02", () => {
+  it("Try mess up the scroll pos a few more times — there was a bug before  TyT5WG7AB02", async () => {
     for (let i = 0; i < 3; ++i) {
-      strangersBrowser.scrollIntoViewInPageColumn(page1015LinkSelector);
-      scrollPosByActivityTopic1015 = strangersBrowser.getPageScrollY();
-      strangersBrowser.forumTopicList.goToTopic('1015');
-      strangersBrowser.topbar.clickHome();
-      strangersBrowser.waitForVisible(page1015LinkSelector);
-      wait5SecondsUntilHasResetScroll();
+      await strangersBrowser.scrollIntoViewInPageColumn(page1015LinkSelector);
+      scrollPosByActivityTopic1015 = await strangersBrowser.getPageScrollY();
+      await strangersBrowser.forumTopicList.goToTopic('1015');
+      await strangersBrowser.topbar.clickHome();
+      await strangersBrowser.waitForVisible(page1015LinkSelector);
+      await wait5SecondsUntilHasResetScroll();
     }
   });
 
-  it("Hen views the New topics instead of Active", () => {
-    strangersBrowser.scrollToTop();
-    strangersBrowser.forumTopicList.viewNewest();
+  it("Hen views the New topics instead of Active", async () => {
+    await strangersBrowser.scrollToTop();
+    await strangersBrowser.forumTopicList.viewNewest();
   });
 
-  it("... now different topics are visible: topic 1099", () => {
-    strangersBrowser.waitForVisible(page1099LinkSelector);
+  it("... now different topics are visible: topic 1099", async () => {
+    await strangersBrowser.waitForVisible(page1099LinkSelector);
   });
 
-  it("... to 1060", () => {
-    strangersBrowser.waitForVisible(page1060LinkSelector);
+  it("... to 1060", async () => {
+    await strangersBrowser.waitForVisible(page1060LinkSelector);
   });
 
-  it("... but not 1059", () => {
-    assert.ok(!strangersBrowser.isVisible(page1059LinkSelector));
+  it("... but not 1059", async () => {
+    assert.ok(!await strangersBrowser.isVisible(page1059LinkSelector));
   });
 
-  it("Scrolling down and clicking Load More", () => {
-    strangersBrowser.scrollToBottom();
-    strangersBrowser.forumTopicList.clickLoadMore();
+  it("Scrolling down and clicking Load More", async () => {
+    await strangersBrowser.scrollToBottom({ tryUntilSeesLoadMore: true });
+    await strangersBrowser.forumTopicList.clickLoadMore();
   });
 
-  it("... loads topics 1059", () => {
-    strangersBrowser.waitForVisible(page1059LinkSelector);
+  it("... loads topics 1059", async () => {
+    await strangersBrowser.waitForVisible(page1059LinkSelector);
  });
 
-  it("... to 1021", () => {
-    strangersBrowser.waitForVisible(page1021LinkSelector);
+  it("... to 1021", async () => {
+    await strangersBrowser.waitForVisible(page1021LinkSelector);
   });
 
-  it("... but not 1020", () => {
-    assert.ok(!strangersBrowser.isVisible(page1020LinkSelector));
+  it("... but not 1020", async () => {
+    assert.ok(!await strangersBrowser.isVisible(page1020LinkSelector));
   });
 
-  it("Loading topics once more, shows the remaining topics", () => {
-    strangersBrowser.scrollToBottom();
-    strangersBrowser.forumTopicList.clickLoadMore();
+  it("Loading topics once more, shows the remaining topics", async () => {
+    await strangersBrowser.scrollToBottom({ tryUntilSeesLoadMore: true });
+    await strangersBrowser.forumTopicList.clickLoadMore();
   });
 
-  it("... topic 1001", () => {
-    strangersBrowser.waitForVisible(page1001LinkSelector);
+  it("... topic 1001", async () => {
+    await strangersBrowser.waitForVisible(page1001LinkSelector);
 });
 
-  it("... and Michael's topic", () => {
-    strangersBrowser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryA.title);
+  it("... and Michael's topic", async () => {
+    await strangersBrowser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryA.title);
 });
 
-  it("... and Maria's topic", () => {
-    strangersBrowser.forumTopicList.waitForTopicVisible(forum.topics.byMichaelCategoryA.title);
+  it("... and Maria's topic", async () => {
+    await strangersBrowser.forumTopicList.waitForTopicVisible(forum.topics.byMichaelCategoryA.title);
   });
 
 
   /*
-  it("Hen views a user's profile", () => {
+  it("Hen views a user's profile", async () => {
   });
 
-  it("... and navigates back", () => {
+  it("... and navigates back", async () => {
   });
 
-  it("... The scroll position didn't change, 3", () => {
+  it("... The scroll position didn't change, 3", async () => {
   });  */
 
   // Later:
   /*
-  it("Maria creates a topic", () => {
+  it("Maria creates a topic", async () => {
   });
 
-  it("... Owen's topic list auto updates with the new topic", () => {
+  it("... Owen's topic list auto updates with the new topic", async () => {
   });
 
-  it("... The scroll position doesn't change though, 4", () => {
+  it("... The scroll position doesn't change though, 4", async () => {
   }); */
 
 });
