@@ -434,8 +434,8 @@ function runAllE2eTests {
   $r s/wdio --only notfs-mark-all-as-read.2browsers $args  # REANME append -manually
   $r s/wdio --only notfs-snooze-talk.2br.mtime $args
   $r s/wdio --only notf-override-group-prefs.2browsers $args
-  $r s/wdio --only notfs-prefs-inherit-own.2browsers $args
-  $r s/wdio --only notfs-prefs-inherit-group.2browsers $args
+  $r s/wdio-7 --only notfs-prefs-inherit-own.d.2br --cd -i $args
+  $r s/wdio-7 --only notfs-prefs-inherit-group.d.2br --cd -i $args
   $r s/wdio --only notf-prefs-custom-groups.2browsers $args
   $r s/wdio --only notf-prefs-private-groups.2browsers $args
   $r s/wdio --only notf-prefs-pages-replied-to.2br $args
@@ -453,7 +453,7 @@ function runAllE2eTests {
   #$r s/wdio --only notfs-for-priv-group-page.2browsers $args
   #$r s/wdio --only notfs-for-dir-message.2browsers $args
 
-  $r s/wdio --only notfs-mark-seen-as-seen.2browsers $args  # RENAME append -automatically
+  $r s/wdio-7 --only notfs-mark-seen-as-seen.d.2br --cd -i $args  # RENAME append -automatically
 
   # RENAME these to  modn-... ,  and MOVE to (4862065) below?
   $r s/wdio --only new-user-review-ok.2br.mtime $args

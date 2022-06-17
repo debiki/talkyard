@@ -1,27 +1,20 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
+import * as make from '../utils/make';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import c from '../test-constants';
 
 let browser: TyE2eTestBrowser;
 
-
-
-
-let richBrowserA;
-let richBrowserB;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 
 let owen;
 let owensBrowser: TyE2eTestBrowser;
 let modya;
-let modyasBrowser: TyE2eTestBrowser;
 let maria;
 let mariasBrowser: TyE2eTestBrowser;
 let trillian;
@@ -63,15 +56,14 @@ const TopicFourReplyThreeMariaModya = 'TopicFourReplyThreeMariaModya';
 const TopicFourReplyFourTrillanModya = 'TopicFourReplyFourTrillanModya';
 
 
-describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
+describe(`notfs-prefs-inherit-group.d.2br  TyT5RKT2WJ04`, () => {
 
-  it("initialize people", () => {
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
-    owensBrowser = richBrowserA;
-    modyasBrowser = richBrowserB;
-    mariasBrowser = richBrowserB;
-    trilliansBrowser = richBrowserB;
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+    owensBrowser = brA;
+    mariasBrowser = brB;
+    trilliansBrowser = brB;
 
     owen = make.memberOwenOwner();
     modya = make.memberModeratorModya();
@@ -80,27 +72,27 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     trillian = make.memberTrillian();
   });
 
-  it("import a site", () => {
+  it("import a site", async () => {
     const site: SiteData = make.forumOwnedByOwen('notf-inh-grp', { title: forumTitle });
     site.members.push(modya);
     site.members.push(maria);
     site.members.push(trillian);
-    idAddress = server.importSiteData(site);
+    idAddress = await server.importSiteData(site);
     siteId = idAddress.id;
   });
 
 
-  it("Owen logs in", () => {
-    owensBrowser.go(idAddress.origin + '/categories');
-    owensBrowser.complex.loginWithPasswordViaTopbar(owen);
+  it("Owen logs in", async () => {
+    await owensBrowser.go2(idAddress.origin + '/categories');
+    await owensBrowser.complex.loginWithPasswordViaTopbar(owen);
   });
 
-  it("Creates a Specific category", () => {
-    owensBrowser.complex.createCategory({ name: SpecificCatName });
+  it("Creates a Specific category", async () => {
+    await owensBrowser.complex.createCategory({ name: SpecificCatName });
   });
 
-  it("... and an Other category", () => {
-    owensBrowser.complex.createCategory({ name: OtherCatName });
+  it("... and an Other category", async () => {
+    await owensBrowser.complex.createCategory({ name: OtherCatName });
   });
 
 
@@ -112,69 +104,69 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   // ----- Trusted members group subscribes to New Topics
 
   it("Owen configs New Topics subscr, Trusted members, whole site: " +
-      "goes to the Trusted group", () => {
-    owensBrowser.adminArea.goToUsersEnabled();
-    owensBrowser.adminArea.navToGroups();
+      "goes to the Trusted group", async () => {
+    await owensBrowser.adminArea.goToUsersEnabled();
+    await owensBrowser.adminArea.navToGroups();
   });
 
-  it("... click click", () => {
-    owensBrowser.groupListPage.openTrustedMembersGroup();
+  it("... click click", async () => {
+    await owensBrowser.groupListPage.openTrustedMembersGroup();
   });
 
-  it("... to notf settings", () => {
-    owensBrowser.userProfilePage.clickGoToPreferences();
-    owensBrowser.userProfilePage.preferences.switchToNotifications();
+  it("... to notf settings", async () => {
+    await owensBrowser.userProfilePage.clickGoToPreferences();
+    await owensBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... and configs notfs", () => {
-    owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
+  it("... and configs notfs", async () => {
+    await owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
   });
 
-  it("Owen posts a topic", () => {
-    owensBrowser.go('/latest')
-    owensBrowser.complex.createAndSaveTopic({
+  it("Owen posts a topic", async () => {
+    await owensBrowser.go2('/latest')
+    await owensBrowser.complex.createAndSaveTopic({
         title: TitleOneTrilliianNotfd, body: BodyOneTrilliianNotfd });
     numEmailsToTrillian += 1;  // trusted member
     numEmailsToModya += 1;     // is staff, incl in the trusted members group
     numEmailsTotal += 2;
   });
 
-  it("Trillian get notified", () => {
+  it("Trillian get notified", async () => {
     const titleBody = [TitleOneTrilliianNotfd, BodyOneTrilliianNotfd];
-    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody, browser);
+    await server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody);
   });
 
-  it("... once, exactly", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+  it("... once, exactly", async () => {
+    assert.eq(await server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
   });
 
-  it("... but not Maria", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+  it("... but not Maria", async () => {
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
-  it("... and yes, Modya, because is staff", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+  it("... and yes, Modya, because is staff", async () => {
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... num emails sent is correct", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... num emails sent is correct", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- All members group subscribes to New Topics
 
   it("Owen configs New Topics subscr, All Members, whole site: " +
-      "goes to the All Members group", () => {
-    owensBrowser.userProfilePage.openNotfPrefsFor(c.AllMembersId);
+      "goes to the All Members group", async () => {
+    await owensBrowser.userProfilePage.openNotfPrefsFor(c.AllMembersId);
   });
 
-  it("... and configs notfs", () => {
-    owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
+  it("... and configs notfs", async () => {
+    await owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
   });
 
-  it("Owen posts another topic", () => {
-    owensBrowser.go('/latest')
-    owensBrowser.complex.createAndSaveTopic({
+  it("Owen posts another topic", async () => {
+    await owensBrowser.go2('/latest')
+    await owensBrowser.complex.createAndSaveTopic({
         title: TitleTwoEveryoneNotfd, body: BodyTwoEveryoneNotfd });
     numEmailsToTrillian += 1;
     numEmailsToMaria += 1;
@@ -182,156 +174,156 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     numEmailsTotal += 3;
   });
 
-  it("Trillian get notified, once", () => {
+  it("Trillian get notified, once", async () => {
     const titleBody = [TitleTwoEveryoneNotfd, BodyTwoEveryoneNotfd];
-    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    await server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody);
+    assert.eq(await server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
   });
 
-  it("... and Maria", () => {
+  it("... and Maria", async () => {
     const titleBody = [TitleTwoEveryoneNotfd, BodyTwoEveryoneNotfd];
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, titleBody, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    await server.waitUntilLastEmailMatches(siteId, maria.emailAddress, titleBody);
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
-  it("... and Modya", () => {
+  it("... and Modya", async () => {
     const titleBody = [TitleTwoEveryoneNotfd, BodyTwoEveryoneNotfd];
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleBody, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleBody);
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... num emails sent is correct now too", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... num emails sent is correct now too", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- No one notfd about a reply
 
-  it("Owen posts a reply", () => {
-    owensBrowser.complex.replyToOrigPost(TopicTwoReplyNoNotfs);
+  it("Owen posts a reply", async () => {
+    await owensBrowser.complex.replyToOrigPost(TopicTwoReplyNoNotfs);
   });
 
-  it("... another, mentions @mod_modya", () => {
-    owensBrowser.complex.replyToOrigPost("Hi @mod_modya");
-    url = owensBrowser.getUrl();
+  it("... another, mentions @mod_modya", async () => {
+    await owensBrowser.complex.replyToOrigPost("Hi @mod_modya");
+    url = await owensBrowser.getUrl();
     numEmailsToModya += 1;
     numEmailsTotal += 1;
   });
 
-  it("Modya gets notified about the mention, only", () => {
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, 'Hi @mod_modya', browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+  it("Modya gets notified about the mention, only", async () => {
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, 'Hi @mod_modya');
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("The others didn't get notfd about anything", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("The others didn't get notfd about anything", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- Trusted members subscribes to Every Post, notfd about a reply
 
   it("Owen subscrs Trusted members to Every Post, whole site: " +
-      "goes to the Trusted Members group", () => {
-    owensBrowser.userProfilePage.openNotfPrefsFor(c.TrustedMembersId);
+      "goes to the Trusted Members group", async () => {
+    await owensBrowser.userProfilePage.openNotfPrefsFor(c.TrustedMembersId);
   });
 
-  it("... and configs notfs", () => {
-    owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.EveryPost);
+  it("... and configs notfs", async () => {
+    await owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.EveryPost);
   });
 
-  it("Returns and posts a reply", () => {
-    owensBrowser.go(url);
-    owensBrowser.complex.replyToOrigPost(TopicTwoReplyTrillianEveryPost);
+  it("Returns and posts a reply", async () => {
+    await owensBrowser.go2(url);
+    await owensBrowser.complex.replyToOrigPost(TopicTwoReplyTrillianEveryPost);
     numEmailsToTrillian += 1;
     numEmailsToModya += 1;    // staff incl in Trusted Members group
     numEmailsTotal += 2;
   });
 
-  it("Trillian gets notified — more chatty prefs 'wins' (EveryPost vs NewTopics)  TyT20MRPG2", () => {
+  it("Trillian gets notified — more chatty prefs 'wins' (EveryPost vs NewTopics)  TyT20MRPG2", async () => {
     const reply = [TopicTwoReplyTrillianEveryPost];
-    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    await server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
   });
 
-  it("... and Modya", () => {
+  it("... and Modya", async () => {
     const reply = [TopicTwoReplyTrillianEveryPost];
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... Maria didn't get notfd about anything", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... Maria didn't get notfd about anything", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- Trillian mutes site; Mara subscrs to Every Post
 
   // A user's prefs are more specific, than a group's prefs, and have precedence.
 
-  it("Trillian  goes to her notf prefs", () => {
-    trilliansBrowser.go(idAddress.origin);
-    trilliansBrowser.complex.loginWithPasswordViaTopbar(trillian);
-    trilliansBrowser.userProfilePage.openPreferencesFor(trillian.username);
-    trilliansBrowser.userProfilePage.preferences.switchToNotifications();
+  it("Trillian  goes to her notf prefs", async () => {
+    await trilliansBrowser.go2(idAddress.origin);
+    await trilliansBrowser.complex.loginWithPasswordViaTopbar(trillian);
+    await trilliansBrowser.userProfilePage.openPreferencesFor(trillian.username);
+    await trilliansBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... mutes the whole site (12564)", () => {
-    trilliansBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.Muted);
+  it("... mutes the whole site (12564)", async () => {
+    await trilliansBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.Muted);
   });
 
-  it("Maria goes to her notfs prefs", () => {
-    trilliansBrowser.topbar.clickLogout();
-    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    mariasBrowser.userProfilePage.openPreferencesFor(maria.username);
-    mariasBrowser.userProfilePage.preferences.switchToNotifications();
+  it("Maria goes to her notfs prefs", async () => {
+    await trilliansBrowser.topbar.clickLogout();
+    await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+    await mariasBrowser.userProfilePage.openPreferencesFor(maria.username);
+    await mariasBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... subscrs to Every Post", () => {
-    mariasBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.EveryPost);
+  it("... subscrs to Every Post", async () => {
+    await mariasBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.EveryPost);
   });
 
-  it("Owen posts yet another reply", () => {
-    owensBrowser.complex.replyToOrigPost(TopicTwoReplyMariaEveryPost);
+  it("Owen posts yet another reply", async () => {
+    await owensBrowser.complex.replyToOrigPost(TopicTwoReplyMariaEveryPost);
     numEmailsToMaria += 1;
     numEmailsToModya += 1;
     numEmailsTotal += 2;
   });
 
-  it("... this time, Maria gets notified", () => {
+  it("... this time, Maria gets notified", async () => {
     const reply = [TopicTwoReplyMariaEveryPost];
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    await server.waitUntilLastEmailMatches(siteId, maria.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
-  it("... and Modya", () => {
+  it("... and Modya", async () => {
     const reply = [TopicTwoReplyMariaEveryPost];
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... not Trillian", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... not Trillian", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
-  it("Maria mutes the whole site", () => {
-    mariasBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.Muted);
+  it("Maria mutes the whole site", async () => {
+    await mariasBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.Muted);
   });
 
-  it("Owen posts yet another reply, mentions Modya again", () => {
-    owensBrowser.complex.replyToOrigPost("Hi again @mod_modya");
+  it("Owen posts yet another reply, mentions Modya again", async () => {
+    await owensBrowser.complex.replyToOrigPost("Hi again @mod_modya");
     numEmailsToModya += 1;
     numEmailsTotal += 1;
   });
 
-  it("... Modya gets notified, again", () => {
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, "Hi again @mod_modya", browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+  it("... Modya gets notified, again", async () => {
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, "Hi again @mod_modya");
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("The others didn't get notfd: both Maria and Trillian have muted the site", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("The others didn't get notfd: both Maria and Trillian have muted the site", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
@@ -342,23 +334,23 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   // ----- Trusted members group subscribes to Spec Cat: New Topics
 
-  it ("Owen opens the Trusted Members notfs prefs", () => {
-    owensBrowser.userProfilePage.openPreferencesFor(c.TrustedMembersId);
-    owensBrowser.userProfilePage.preferences.switchToNotifications();
+  it ("Owen opens the Trusted Members notfs prefs", async () => {
+    await owensBrowser.userProfilePage.openPreferencesFor(c.TrustedMembersId);
+    await owensBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... and sets Spec Cat to New Topics", () => {
-    owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
+  it("... and sets Spec Cat to New Topics", async () => {
+    await owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
           SpecificCatId, c.TestPageNotfLevel.NewTopics);
   });
 
-  it("Owen creates a topic: opens the Specific category", () => {
-    owensBrowser.go('/categories');
-    owensBrowser.forumCategoryList.openCategory(SpecificCatName);
+  it("Owen creates a topic: opens the Specific category", async () => {
+    await owensBrowser.go2('/categories');
+    await owensBrowser.forumCategoryList.openCategory(SpecificCatName);
   });
 
-  it("... and posts the topic", () => {
-    owensBrowser.complex.createAndSaveTopic({
+  it("... and posts the topic", async () => {
+    await owensBrowser.complex.createAndSaveTopic({
         title: TitleThreeNotfsTrillian, body: BodyThreeNotfsTrillian });
     numEmailsToTrillian += 1;
     numEmailsToModya += 1;
@@ -366,166 +358,166 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("... Trillian gets notified: the Trusted group is subscr to the cat, New Topics, " +
-       "and that's more specific than Trillian's mute-whole-site setting (12564)", () => {
+       "and that's more specific than Trillian's mute-whole-site setting (12564)", async () => {
     const titleBody = [TitleThreeNotfsTrillian, BodyThreeNotfsTrillian];
-    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    await server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody);
+    assert.eq(await server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
   });
 
-  it("... and Modya, since is staff", () => {
+  it("... and Modya, since is staff", async () => {
     const titleBody = [TitleThreeNotfsTrillian, BodyThreeNotfsTrillian];
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleBody, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleBody);
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... not Maria", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... not Maria", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
     // Double check:
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
 
   // ----- All members subscribes to Spec Cat: New Topics
 
-  it ("Owen opens notf prefs for All Members", () => {
-    owensBrowser.userProfilePage.openPreferencesFor(c.AllMembersId);
-    owensBrowser.userProfilePage.preferences.switchToNotifications();
+  it ("Owen opens notf prefs for All Members", async () => {
+    await owensBrowser.userProfilePage.openPreferencesFor(c.AllMembersId);
+    await owensBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... configs notfd-of-New-Topics for Spec Cat, this overrides whole-site-Muted setting", () => {
-    owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
+  it("... configs notfd-of-New-Topics for Spec Cat, this overrides whole-site-Muted setting", async () => {
+    await owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
           SpecificCatId, c.TestPageNotfLevel.NewTopics);
   });
 
-  it("Owen creates a topic: opens the Specific category", () => {
-    owensBrowser.go('/categories');
-    owensBrowser.forumCategoryList.openCategory(SpecificCatName);
+  it("Owen creates a topic: opens the Specific category", async () => {
+    await owensBrowser.go2('/categories');
+    await owensBrowser.forumCategoryList.openCategory(SpecificCatName);
   });
 
-  it("... and posts the topic", () => {
-    owensBrowser.complex.createAndSaveTopic({ title: TitleFourNotfsAll, body: BodyFourNotfsAll });
+  it("... and posts the topic", async () => {
+    await owensBrowser.complex.createAndSaveTopic({ title: TitleFourNotfsAll, body: BodyFourNotfsAll });
     numEmailsToTrillian += 1;
     numEmailsToMaria += 1;
     numEmailsToModya += 1;
     numEmailsTotal += 3;
   });
 
-  it("... Trillian gets notified", () => {
+  it("... Trillian gets notified", async () => {
     const titleBody = [TitleFourNotfsAll, BodyFourNotfsAll];
-    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    await server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody);
+    assert.eq(await server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
   });
 
-  it("... and Modya, since is staff", () => {
+  it("... and Modya, since is staff", async () => {
     const titleBody = [TitleFourNotfsAll, BodyFourNotfsAll];
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleBody, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleBody);
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... and Maria, since All Members listens for new topics now", () => {
+  it("... and Maria, since All Members listens for new topics now", async () => {
     const titleBody = [TitleFourNotfsAll, BodyFourNotfsAll];
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, titleBody, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    await server.waitUntilLastEmailMatches(siteId, maria.emailAddress, titleBody);
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
-  it("... and num emails sent is correct", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... and num emails sent is correct", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(await num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
-  it("Owen posts a reply, mentions Modya for the 3rd time", () => {
-    owensBrowser.complex.replyToOrigPost("Hi 3rd time @mod_modya");
-    url = owensBrowser.getUrl();
+  it("Owen posts a reply, mentions Modya for the 3rd time", async () => {
+    await owensBrowser.complex.replyToOrigPost("Hi 3rd time @mod_modya");
+    url = await owensBrowser.getUrl();
     numEmailsToModya += 1;
     numEmailsTotal += 1;
   });
 
-  it("... Modya gets notified, for the 3rd time", () => {
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, "Hi 3rd time @mod_modya", browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+  it("... Modya gets notified, for the 3rd time", async () => {
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, "Hi 3rd time @mod_modya");
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... but no one else — they only get notfd about new topics, in Spec Cat", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... but no one else — they only get notfd about new topics, in Spec Cat", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
     // Double check:
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    assert.eq(await server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
   // ----- Trusted members subscribes to Every Topic, Spec Cat
 
-  it ("Owen configs Full Members, Spec Cat: Every Topics: Opens the group's notf prefs", () => {
-    owensBrowser.userProfilePage.openPreferencesFor(c.FullMembersId);
-    owensBrowser.userProfilePage.preferences.switchToNotifications();
+  it ("Owen configs Full Members, Spec Cat: Every Topics: Opens the group's notf prefs", async () => {
+    await owensBrowser.userProfilePage.openPreferencesFor(c.FullMembersId);
+    await owensBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... and sets Spec Cat to Every Post", () => {
-    owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
+  it("... and sets Spec Cat to Every Post", async () => {
+    await owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
           SpecificCatId, c.TestPageNotfLevel.EveryPost);
   });
 
-  it("Owen replies, now when Full Members subscribed to Every Post", () => {
-    owensBrowser.go(url);
-    owensBrowser.complex.replyToOrigPost(TopicFourReplyTrillianModyaNotfd);
+  it("Owen replies, now when Full Members subscribed to Every Post", async () => {
+    await owensBrowser.go2(url);
+    await owensBrowser.complex.replyToOrigPost(TopicFourReplyTrillianModyaNotfd);
     numEmailsToTrillian += 1;   // Trusted member, incl in Full Members group
     numEmailsToModya += 1;      // Staff, also included
     numEmailsTotal += 2;
   });
 
-  it("... Trillian gets notified", () => {
+  it("... Trillian gets notified", async () => {
     const reply = [TopicFourReplyTrillianModyaNotfd];
-    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    await server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
   });
 
-  it("... Modya gets notified", () => {
+  it("... Modya gets notified", async () => {
     const reply = [TopicFourReplyTrillianModyaNotfd];
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... not Maria — she's a Basic member only, not in the Full Members group", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... not Maria — she's a Basic member only, not in the Full Members group", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- Members override per cat nots
 
-  it ("Maria subscr to Every Post in Spec Cat", () => {
-    mariasBrowser.go('/categories');
-    mariasBrowser.forumCategoryList.setCatNrNotfLevel(2, c.TestPageNotfLevel.EveryPost);
+  it ("Maria subscr to Every Post in Spec Cat", async () => {
+    await mariasBrowser.go2('/categories');
+    await mariasBrowser.forumCategoryList.setCatNrNotfLevel(2, c.TestPageNotfLevel.EveryPost);
   });
 
-  it ("Trillian mutes Spec Cat", () => {
-    mariasBrowser.topbar.clickLogout();
-    trilliansBrowser.complex.loginWithPasswordViaTopbar(trillian);
-    trilliansBrowser.forumCategoryList.setCatNrNotfLevel(2, c.TestPageNotfLevel.Muted);
+  it ("Trillian mutes Spec Cat", async () => {
+    await mariasBrowser.topbar.clickLogout();
+    await trilliansBrowser.complex.loginWithPasswordViaTopbar(trillian);
+    await trilliansBrowser.forumCategoryList.setCatNrNotfLevel(2, c.TestPageNotfLevel.Muted);
   });
 
-  it("Owen replies, again, now when Maria and Trillian have overridden the cat notf prefs", () => {
-    owensBrowser.complex.replyToOrigPost(TopicFourReplyThreeMariaModya);
+  it("Owen replies, again, now when Maria and Trillian have overridden the cat notf prefs", async () => {
+    await owensBrowser.complex.replyToOrigPost(TopicFourReplyThreeMariaModya);
     numEmailsToMaria += 1;   // Has subsribed to Every post
     numEmailsToModya += 1;   // Staff, incl in Full Members, which is cat-subscr
     numEmailsTotal += 2;
   });
 
-  it("... Maria gets notified", () => {
+  it("... Maria gets notified", async () => {
     const reply = [TopicFourReplyThreeMariaModya];
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    await server.waitUntilLastEmailMatches(siteId, maria.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
-  it("... Modya gets notified", () => {
+  it("... Modya gets notified", async () => {
     const reply = [TopicFourReplyThreeMariaModya];
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... not Trillian — she muted the category", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... not Trillian — she muted the category", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
@@ -533,46 +525,46 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   // Page
   // =======================================================
 
-  it("Trillian goes to the page", () => {
-    trilliansBrowser.go(url);
+  it("Trillian goes to the page", async () => {
+    await trilliansBrowser.go2(url);
   });
 
-  it("... configs replies for every post", () => {
-    trilliansBrowser.metabar.setPageNotfLevel(c.TestPageNotfLevel.EveryPost);
+  it("... configs replies for every post", async () => {
+    await trilliansBrowser.metabar.setPageNotfLevel(c.TestPageNotfLevel.EveryPost);
   });
 
-  it("Maria mutes the page", () => {
-    trilliansBrowser.topbar.clickLogout();
-    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    mariasBrowser.metabar.setPageNotfLevel(c.TestPageNotfLevel.Muted);
+  it("Maria mutes the page", async () => {
+    await trilliansBrowser.topbar.clickLogout();
+    await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+    await mariasBrowser.metabar.setPageNotfLevel(c.TestPageNotfLevel.Muted);
   });
 
-  it("Owen replies. Maria has muted the page, Trillian listens Every Post", () => {
-    owensBrowser.complex.replyToOrigPost(TopicFourReplyFourTrillanModya);
+  it("Owen replies. Maria has muted the page, Trillian listens Every Post", async () => {
+    await owensBrowser.complex.replyToOrigPost(TopicFourReplyFourTrillanModya);
     numEmailsToTrillian += 1;  // Has subsribed to Every post on the page
     numEmailsToModya += 1;     // Staff, incl in Full Members, which is cat-subscr
     numEmailsTotal += 2;
   });
 
-  it("... Trillian gets notified", () => {
+  it("... Trillian gets notified", async () => {
     const reply = [TopicFourReplyFourTrillanModya];
-    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    await server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
   });
 
-  it("... Modya gets notified, via Full Memebrs category Every Post subscr", () => {
+  it("... Modya gets notified, via Full Memebrs category Every Post subscr", async () => {
     const reply = [TopicFourReplyFourTrillanModya];
-    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply, browser);
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+    await server.waitUntilLastEmailMatches(siteId, modya.emailAddress, reply);
+    assert.eq(await server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... not Maria — she muted the page", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+  it("... not Maria — she muted the page", async () => {
+    assert.eq(await server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
-  it("... lastly, num emails sent is correct", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  it("... lastly, num emails sent is correct", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 });
