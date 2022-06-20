@@ -23,8 +23,18 @@
 
 const r = ReactDOMFactories;
 
-// Allow '-' and '.'. '@' is checked elsewhere.
-const BadSymbolsRegex = /[!$%^&*()+|~=`{}\[\]:";<>?,\/#]/;
+// Allow '-' and '.' (e.g. for "C.S. Lewis"), and '&' for company names that include '&'
+// e.g. 'AT&T'. '@' is not allowed though — and checked elsewhere.
+//
+// These tests are client side — the server is more permissive, because
+// when using SSO, it sometimes receives a bit odd looking full names
+// from external software systems, and it's been better if that just works,
+// rather than the server returning errors during SSO.
+//
+const BadSymbolsRegex       = /[!$%^*()+|~=`{}\[\]:";<>?,\/#]/;
+const AllSymbolsRegexSt: St = '[!$%^*()+|~=`{}\\[\\]:";<>?,\\/#&@\'.-]';
+const StartEndDuplSymbRegex = new RegExp(
+      `^${AllSymbolsRegexSt}|${AllSymbolsRegexSt}{2,}|${AllSymbolsRegexSt}$`);
 
 
 export var FullNameInput = createClassAndFactory({
@@ -49,6 +59,8 @@ export var FullNameInput = createClassAndFactory({
         notRegex: /^\s+$/, notMessage: t.inp.NotOnlSpcs,
         notRegexTwo: /@/, notMessageTwo: t.inp.NoAt,
         notRegexThree: BadSymbolsRegex, notMessageThree: t.inp.NoBadChrs, // "No weird characters please"
+        // I18N change to sth like "Don't start and end with symbols or use many in a row":
+        notRegexFour: StartEndDuplSymbRegex, notMessageFour: t.inp.NoBadChrs,
         error: this.props.error,
         onChange: this.props.onChangeValueOk, disabled: this.props.disabled,
         defaultValue: this.props.defaultValue }));
