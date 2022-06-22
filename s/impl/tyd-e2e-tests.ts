@@ -225,7 +225,7 @@ function runE2eTests(): U | ExitCode | 'TestsCancelled' {
   function runWdioInForeground(specs: St[], wdioArgs: St): Nr {
     // Need to escape the backslask, like this:  `sh -c "...\\n..."`,
     // so that  sh   gets "...\n..." instead of a real line break.
-    const specsOnePerLine = specs.join('\\n');
+    const specsOnePerLine = specs.join('\n');
     const wdioConfFile = ps.wdioVersion === 6
           ? `${testProjDir}/wdio.conf.js`  // wdio 6, in tests/e2e/.  [wdio_6_to_7]
           : `${testProjDir}/wdio.conf.ts`; // wdio 7, in tests/e2e-wdio7/
