@@ -5760,7 +5760,7 @@ export class TyE2eTestBrowser {
         else return `#post-${postNr} .dw-p-bd .dw-p-bd-blk`;
       },
 
-      forAllPostIndexNrElem: async (fn: (index: Nr, postNr: PostNr, elem) => Pr<Vo>) => {
+      forAllPostIndexNrElem: async (fn: (index: Nr, postNr: PostNr, elem?: WElm) => Pr<Vo>) => {
         const postElems: WElm[] = await this.$$('[id^="post-"]');
         for (let index = 0; index < postElems.length; ++index) {
           const elem: WElm = postElems[index];

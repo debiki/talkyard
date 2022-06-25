@@ -786,12 +786,12 @@ really large:
 post -
   share dialog,
   copy address:
-          - move-posts-same-page.2browsers.test.ts  TyT03946HET3
-          - move-posts-other-page.2browsers.test.ts  TyT7038286BR3
+          - move-posts-same-page.2br.d  TyT03946HET3
+          - move-posts-other-page.2br.d  TyT7038286BR3
   move post:
     move to different page section,
     move to differen parent, same page:
-          - move-posts-same-page.2browsers.test.ts  TyT03946HET3
+          - move-posts-same-page.2br.d  TyT03946HET3
     move to differen parent, other page:
           - move-posts-other-page.2browsers.test.ts  TyT7038286BR3
   view edit history:
