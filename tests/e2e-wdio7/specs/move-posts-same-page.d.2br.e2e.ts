@@ -1,28 +1,20 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import c from '../test-constants';
 
-
-
-
-
-let richBrowserA;
-let richBrowserB;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser: TyE2eTestBrowser;
+let owen_brA: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser: TyE2eTestBrowser;
+let maria_brB: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
-let siteId;
 
 let forum: TwoPagesTestForum;
 
@@ -42,7 +34,7 @@ const otherOpDiscReplyNr = c.FirstReplyNr + 6;
 
 describe("move posts  TyT03946HET3", () => {
 
-  it("import a site", () => {
+  it("import a site", async () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({
       title: "Some E2E Test",
@@ -71,74 +63,73 @@ describe("move posts  TyT03946HET3", () => {
     assert.eq(c.FirstReplyNr + 6, otherOpDiscReplyNr);
     addOnePost(otherOpDiscReplyNr, c.BodyNr, discPostTwo);
 
-    addOnePost(c.FirstReplyNr + 7, c.BodyNr, progrPostOne, PostType.BottomComment);
+    addOnePost(c.FirstReplyNr + 7, c.BodyNr, progrPostOne, c.TestPostType.BottomComment);
 
     assert.refEq(builder.getSite(), forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
-    siteId = siteIdAddress.id;
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
-  it("initialize people", () => {
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
-    owensBrowser = richBrowserA;
+    owen_brA = brA;
     maria = forum.members.maria;
-    mariasBrowser = richBrowserB;
+    maria_brB = brB;
   });
 
-  it("Owen logs in", () => {
-    owensBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
-    owensBrowser.complex.loginWithPasswordViaTopbar(owen);
-    owensBrowser.disableRateLimits();
+  it("Owen logs in", async () => {
+    await owen_brA.go2(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
+    await owen_brA.complex.loginWithPasswordViaTopbar(owen);
+    await owen_brA.disableRateLimits();
   });
 
-  it("Sees the posts in the initial order", () => {
-    owensBrowser.topic.forAllPostIndexNrElem((index, nr) => {
+  it("Sees the posts in the initial order", async () => {
+    await owen_brA.topic.forAllPostIndexNrElem(async (index, nr) => {
       // Originally, all post got so that their post nr is also their position from the top.
       assert.eq(nr, index);
     })
   });
 
-  it("Copies the link to the 2nd OP discussion reply (the one without any replies)", () => {
-    owensBrowser.topic.openShareDialogForPostNr(otherOpDiscReplyNr);
-    owensBrowser.shareDialog.copyLinkToPost();
-    owensBrowser.shareDialog.close();
+  it("Copies the link to the 2nd OP discussion reply (the one without any replies)", async () => {
+    await owen_brA.topic.openShareDialogForPostNr(otherOpDiscReplyNr);
+    await owen_brA.shareDialog.copyLinkToPost();
+    await owen_brA.shareDialog.close();
   });
 
-  it(`Post ${theReplyToMoveNr} is not below ${otherOpDiscReplyNr}`, () => {
+  it(`Post ${theReplyToMoveNr} is not below ${otherOpDiscReplyNr}`, async () => {
     // This tests the test.  (062TADH46)
     assert.not(
-        owensBrowser.topic.isPostNrDescendantOf(
+        await owen_brA.topic.isPostNrDescendantOf(
           theReplyToMoveNr, otherOpDiscReplyNr));
   });
 
-  it("Moves three replies to the other discussion OP reply: 1) Opens Move dialog", () => {
-    owensBrowser.topic.openMoveDialogForPostNr(c.FirstReplyNr + 3);
+  it("Moves three replies to the other discussion OP reply: 1) Opens Move dialog", async () => {
+    await owen_brA.topic.openMoveDialogForPostNr(c.FirstReplyNr + 3);
   });
 
-  it("... and 2) fills in destination, clicks Move", () => {
-    owensBrowser.movePostDialog.pastePostLinkMoveToThere();
+  it("... and 2) fills in destination, clicks Move", async () => {
+    await owen_brA.movePostDialog.pastePostLinkMoveToThere();
   });
 
-  it("Now the replies appear below OP reply 2 (instead of above)", () => {
+  it("Now the replies appear below OP reply 2 (instead of above)", async () => {
     // Wait until the post we moved, appears below the other Orig Post reply.
     // Might need to refresh a few times — otherwise, the page reloads
     // before the server is done moving the post.
-    owensBrowser.refreshUntil(() => {
+    await owen_brA.refreshUntil(async () => {
       // Test tested above, (062TADH46).
-      return owensBrowser.topic.isPostNrDescendantOf(theReplyToMoveNr, otherOpDiscReplyNr);
+      return await owen_brA.topic.isPostNrDescendantOf(theReplyToMoveNr, otherOpDiscReplyNr);
     });
 
     // Wait until all posts have appeared:
-    owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 7);
-    verifyAfterFirstMoveOrder();
+    await owen_brA.topic.waitForPostNrVisible(c.FirstReplyNr + 7);
+    await verifyAfterFirstMoveOrder();
   });
 
-  function verifyAfterFirstMoveOrder() {
-    owensBrowser.topic.forAllPostIndexNrElem((index, nr) => {
+  async function verifyAfterFirstMoveOrder() {
+    await owen_brA.topic.forAllPostIndexNrElem(async (index, nr) => {
       switch (index) {
         case 2:  assert.eq(nr, c.FirstReplyNr + 0);  break;
         case 3:  assert.eq(nr, c.FirstReplyNr + 1);  break;
@@ -152,16 +143,16 @@ describe("move posts  TyT03946HET3", () => {
     })
   }
 
-  it("Moves the three first replies to the Progress section: 1) Opens Move dialog", () => {
-    owensBrowser.topic.openMoveDialogForPostNr(c.FirstReplyNr + 0);
+  it("Moves the three first replies to the Progress section: 1) Opens Move dialog", async () => {
+    await owen_brA.topic.openMoveDialogForPostNr(c.FirstReplyNr + 0);
   });
 
-  it("... and 2)  , clicks Move", () => {
-    owensBrowser.movePostDialog.moveToOtherSection();
+  it("... and 2)  , clicks Move", async () => {
+    await owen_brA.movePostDialog.moveToOtherSection();
   });
 
-  it("Now the first 3 replies are instead first in the Progress section", () => {
-    owensBrowser.topic.forAllPostIndexNrElem((index, nr) => {
+  it("Now the first 3 replies are instead first in the Progress section", async () => {
+    await owen_brA.topic.forAllPostIndexNrElem(async (index, nr) => {
       switch (index) {
         case 2:  assert.eq(nr, c.FirstReplyNr + 6);  break;
         case 3:  assert.eq(nr, c.FirstReplyNr + 3);  break;
@@ -175,16 +166,16 @@ describe("move posts  TyT03946HET3", () => {
     });
   });
 
-  it("Owen moves them back: 1) Opens Move dialog", () => {
-    owensBrowser.topic.openMoveDialogForPostNr(c.FirstReplyNr + 0);
+  it("Owen moves them back: 1) Opens Move dialog", async () => {
+    await owen_brA.topic.openMoveDialogForPostNr(c.FirstReplyNr + 0);
   });
 
-  it("... and 2) clicks Move To Other Section", () => {
-    owensBrowser.movePostDialog.moveToOtherSection();
+  it("... and 2) clicks Move To Other Section", async () => {
+    await owen_brA.movePostDialog.moveToOtherSection();
   });
 
-  it("Now the firs replies appear first again", () => {
-    verifyAfterFirstMoveOrder();
+  it("Now the firs replies appear first again", async () => {
+    await verifyAfterFirstMoveOrder();
   });
 
 });
