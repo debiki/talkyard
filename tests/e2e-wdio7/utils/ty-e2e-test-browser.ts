@@ -3454,12 +3454,18 @@ export class TyE2eTestBrowser {
       pageTools: {
         pinPage: async (where: 'Globally' | 'InCategory', ps: { willBeTipsAfter: Bo }) => {
           await this.topbar.pageTools.__openPinPageDialog();
-          const pinWhereRadioBtn = where === 'Globally' ? '.e_PinGlb' : '.e_PinCat';
+          const pinWhereRadioBtn = where === 'Globally' ? '.e_PinGlb' : '.e_PinInCat';
           await this.waitAndClick(pinWhereRadioBtn + ' input');
           await this.waitAndClick('.e_SavPinB');
           if (ps.willBeTipsAfter !== false) {
             await this.helpDialog.waitForThenClose({ shallHaveBodyClass: '.esPinnedOk' });
           }
+          await this.waitUntilModalGone();
+        },
+
+        unpinPage: async () => {
+          await this.waitAndClick('.dw-a-tools');
+          await this.waitAndClick('.e_UnpinPg');
           await this.waitUntilModalGone();
         },
 
@@ -9104,8 +9110,18 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.esStupidDlg a');
       },
 
+      typePostLinkMoveToThere: async (link: St) => {
+        await this.waitAndSetValueForId('te_MvPI', link);
+        await this.waitAndClick('.e_MvPB');
+      },
+
       pastePostLinkMoveToThere: async () => {
-        await this.waitAndPasteClipboard('#te_MvPI');
+        await this.waitAndPasteClipboard('#te_MvPI');  //, { maybeMoves: true });
+        //const v = await this.waitAndGetValue('#te_MvPI');
+        //console.log(`Pasted:  '${v}'`);
+        // Timed out sometimes:  23746 ms elapsed: Waiting for visible:  .e_MvPB ...
+        // is maybeMoves:true needed? But no longer times out, weird.
+        // DO_AFTER: 2023-01-01 remove this comment.
         await this.waitAndClick('.e_MvPB');
       }
     };

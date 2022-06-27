@@ -365,6 +365,8 @@ function runAllE2eTests {
 
   $r s/wdio-7 --only move-posts-same-page.d.2br --cd -i $args
   $r s/wdio-7 --only move-posts-other-page.d.2br --cd -i $args
+  $r s/wdio-7 --only move-posts-newer-page-reply.d.2br --cd -i $args
+  $r s/wdio-7 --only move-posts-newer-page-pin-delete.d.2br --cd -i $args
   # + delete-posts
 
   $r s/wdio --only settings-allowed-email-domains.extidp.2br $args
