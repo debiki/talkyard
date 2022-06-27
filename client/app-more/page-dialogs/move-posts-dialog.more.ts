@@ -115,6 +115,10 @@ const MovePostsDialog = createComponent({
       const otherSection = post.postType === PostType.BottomComment ? "discussion" : "progress";
       const orSpecify = showMoveToOtherSection ? "Or specify" : "Specify";
 
+      const postPathRegex =
+          //  scheme       host        page id           any slug         post nr
+          /^((https?:\/\/)?([^/]+))?\/-([a-zA-Z0-9_]+)(\/[a-zA-Z0-9-_]+)?(#post-([0-9]+))?$/;
+
       content = r.div({},
           !showMoveToOtherSection ? null : r.div({ className: 's_MPD_OtrSct' },
             PrimaryButton({ onClick: (event) => this.moveToOtherSection() },
@@ -128,7 +132,7 @@ const MovePostsDialog = createComponent({
             help: r.span({}, "Tips: Click the ", r.span({ className: 'icon-link' }), " link " +
               "below the destination post, to copy its URL"),
             onChangeValueOk: (value, ok) => {
-              const matches = value.match(/((https?:\/\/)?([^/]+))?\/-([a-zA-Z0-9_]+)(#post-([0-9]+))?$/);
+              const matches = value.match(postPathRegex);
               if (!matches) {
                 this.setState({ ok: false });
                 return;
@@ -137,13 +141,13 @@ const MovePostsDialog = createComponent({
                 newParentUrl: value,
                 newHost: matches[3],
                 newPageId: matches[4],
-                newParentNr: parseInt(matches[6]), // might be null —> the orig post, BodyNr
+                newParentNr: parseInt(matches[7]), // might be null —> the orig post, BodyNr
                 ok: ok
               });
             },
-            regex: /^((https?:\/\/)?[^/]+)?\/-[a-zA-Z0-9_]+(#post-[0-9]+)?$/,
+            regex: postPathRegex,
             message: "Invalid new parent post link, should be like: " + location.hostname +
-                "/-[page_id]/#post-[post_nr]" }),
+                "/-[page_id]#post-[post_nr]" }),
           PrimaryButton({ onClick: this.doMove, disabled: !this.state.ok, className: 'e_MvPB' },
             "Move"),
           Button({ onClick: this.previewNewParent }, "Preview"));

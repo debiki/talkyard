@@ -606,6 +606,7 @@ topics -
           - login-required-join-global-chat.2br.test.ts  TyTE2E603MAT53
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
     in category:
+            - move-posts-pin-delete.2br.d  TyTMOPOPINDEL.TyTPININCAT
   close -
     close:  page-type-question-closed.2browsers.test.ts
     can leave bottom comment afterwards:  page-type-question-closed.2browsers.test.ts
@@ -794,6 +795,8 @@ post -
           - move-posts-same-page.2br.d  TyT03946HET3
     move to differen parent, other page:
           - move-posts-other-page.2browsers.test.ts  TyT7038286BR3
+          - move-posts-newer-page-reply.2br.d  TyTMOPONEPG
+          - move-posts-pin-delete.2br.d  TyTMOPOPINDEL
   view edit history:
   votes -
     cast all types:      votes-and-best-first.test.ts
@@ -1219,6 +1222,8 @@ delete posts:  [.delposts]
 
 delete pages,
 undelete pages:
+  admin deletes, undeletes:
+            - move-posts-pin-delete.2br.d  TyTMOPOPINDEL.TyTEUNDELPG
   delete and undelete own page,
   cannot delete other's pages,
   cannot delete own pages with other's replies,
