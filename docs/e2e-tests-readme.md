@@ -21,16 +21,10 @@ talkyard.cdn.origin="https://site-1.localhost"
 #talkyard.cdn.origin="..."  (commented out)
 ```
 
-We use Webdriver.io and write the tests in Typescript. API for v4 (haven't upgraded to v5): http://v4.webdriver.io/api.html
-
-To run the e2e tests, you currently need Java 8 and Node.js, not just Docker-Compose:
-
-    java -version  # the Java version should be >= 1.8, I have never tested Java 1.9
-    node -v   #  >= 10.0
-    npm -v    #  6.7 works for me, and more recent versions too I would think
+We use Webdriver.io: https://webdriver.io/docs/api and Typescript.
 
 And you need Yarn: https://yarnpkg.com/en/docs/install
-And a compiler so you can build Fibers:
+And a compiler so you can build Fibers: (which Webdriver.io v6 sync mode uses)
 
     sudo apt-get install g++ build-essential  # do once only
 
