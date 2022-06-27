@@ -1831,10 +1831,10 @@ fd-slicer@~1.1.0:
   dependencies:
     pend "~1.2.0"
 
-fibers@^4.0.1:
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/fibers/-/fibers-4.0.3.tgz#dda5918280a48507f5d8a96dd9a525e8f4a532e2"
-  integrity sha512-MW5VrDtTOLpKK7lzw4qD7Z9tXaAhdOmOED5RHzg3+HjUk+ibkjVW0Py2ERtdqgTXaerLkVkBy2AEmJiT6RMyzg==
+fibers@5.0.1, fibers@^4.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/fibers/-/fibers-5.0.1.tgz#bb9b02aa022685185d21aed227363e456d87660d"
+  integrity sha512-VMC7Frt87Oo0AOJ6EcPFbi+tZmkQ4tD85aatwyWL6I9cYMJmm2e+pXUJsfGZ36U7MffXtjou2XIiWJMtHriErw==
   dependencies:
     detect-libc "^1.0.3"
 

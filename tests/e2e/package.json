@@ -16,7 +16,13 @@
     "@wdio/static-server-service": "=6.10.10",
     "@wdio/sync": "=6.10.10",
     "chromedriver": "^93.0.1",
+    "fibers": "v4.x doesn't work with Nodejs 14, which Ty uses — v12 is EOL (and odd versions like v13 are unstable).",
+    "fibers": "5.0.1",
     "paseto.js": "^0.1.7",
     "wdio-chromedriver-service": "=6.0.4"
+  },
+  "resolutions": {
+    "fibers": "Webdriver.io 6 tries to use Fibers 4.x.",
+    "fibers": "5.0.1"
   }
 }
