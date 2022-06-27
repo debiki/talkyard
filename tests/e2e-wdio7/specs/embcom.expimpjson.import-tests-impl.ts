@@ -134,7 +134,7 @@ function constructEmbCommentsImportTest(testName: string, variants: {
 
       function postCommentsToTalkyard(filePath: string) {
         const cmd =
-            'nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
+            'node to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
               `--talkyardJsonPatchFile=${filePath} ` +
               `--sysbotApiSecret=${apiSecret} ` +
               `--sendTo=${talkyardSiteOrigin}`

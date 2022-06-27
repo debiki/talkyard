@@ -62,7 +62,7 @@ export async function postJsonPatchToTalkyard(ps: {
         filePath: St, apiSecret: St, talkyardSiteOrigin: St, fail?: true,
         expectedErrors?: St[] }) {
   const cmd =
-      `nodejs ${toTalkyardScript} ` +
+      `node ${toTalkyardScript} ` +
         `--talkyardJsonPatchFile=${ps.filePath} ` +
         `--sysbotApiSecret=${ps.apiSecret} ` +
         `--sendTo=${ps.talkyardSiteOrigin}`
