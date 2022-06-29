@@ -176,15 +176,7 @@ function runE2eTest {
         # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
         # (But first add a cname entry for -manual.)
         cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl [5WAKEF02]
-        # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
-        # root first su:s to another user. Check the --is-root command line flag instead.
-        #if [ -z "$is_root" ]; then
-          echo "  $cmd_with_debug"
-        #else
-        #  echo "  su $my_username -c '$cmd_with_debug'"
-        #  echo
-        #  echo "Note: you are root. Don't forget 'su $my_username' (included above already)."
-        #fi
+        echo "  $cmd_with_debug"
         echo
         echo
         echo "Once it works, run it 33 times, and if it's flaky and fails once, that's ok:"
@@ -212,11 +204,6 @@ function runE2eTest {
     rm -f $test_log_file
   fi
 }
-
-if [ "$1" = '--is-root' ]; then
-  is_root=yes
-  shift
-fi
 
 
 #------------------------------------------------------------
