@@ -3,9 +3,7 @@
 # Abort on any error
 set -e
 
-my_username="$1"
-version_tag="$2"
-shift
+version_tag="$1"
 shift
 
 if [ -z "$version_tag" ]; then
@@ -16,7 +14,8 @@ fi
 
 # Docker-compose will mount $HOME/.ivy2 and $HOME/.m2, and we want to mount
 # $my_username's Ivy and Maven cache dirs, so change $HOME from /root/ to:
-export HOME=/home/$my_username
+#export HOME=/home/$my_username
+# — no longer needed, now building as the same user who starts the script.
 
 echo "
 Building: $version_tag
@@ -77,8 +76,8 @@ done
 
 # Dupl kill-down prod test code. [KLLPRDTST]  [prod_test_docker_conf]
 test_containers='docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
-$test_containers kill web app search cache rdb
-$test_containers down
+sudo $test_containers kill web app search cache rdb
+sudo $test_containers down
 
 s/d kill web app
 s/d down
@@ -90,14 +89,14 @@ function containers_running_test() {
   # because it's fine to run a local Docker registry, if testing images on localhost.
   # And we exclude any container started via s/selenium ('tye2ebrowser')
   # or that runs the e2e Bash scripts ('tynodejs').
-  docker ps | tail -n +2 | grep -v registry | grep -v tye2ebrowser | grep -v tynodejs
+  sudo docker ps | tail -n +2 | grep -v registry | grep -v tye2ebrowser | grep -v tynodejs
 }
 
 if [ -n "`containers_running_test`" ]; then
   echo
   echo "Docker containers are running, PLEASE STOP THEM, thanks. Look:"
   echo
-  docker ps
+  sudo docker ps
   echo
   die_if_in_script
 fi
@@ -110,6 +109,8 @@ if [ -z "$skip_build" ]; then
   # Build to-talkyard, needed in e2e tests.
   pushd .
   cd to-talkyard
+  # For this, Yarn needs to be installed. [build_needs_yarn] Nix-shell is a good way
+  # to get Nodejs and Yarn.
   yarn build
   popd
 
@@ -140,18 +141,21 @@ if [ -z "$skip_e2e_tests" ]; then
   # If there's a development Docker network, there'll be an IP address space clash
   # when creating a prodution test network later below. Delete any dev network.
   set +e
-  docker network rm tyd_internal_net
+  sudo docker network rm tyd_internal_net
   set -e
 
   # Run the 'latest' tag — it's for the images we just built above.
   # '-p edt' = EffectiveDiscussions Test project.
   # Use the -no-limits.yml file, because we'll run performance tests.
-  export VERSION_TAG=latest
-  export POSTGRES_PASSWORD=public
-  export DOCKER_REPOSITORY=debiki
-  $test_containers down
-  rm -fr modules/ed-prod-one-test/data
-  $test_containers up -d
+  latest_test_containers=" \
+      VERSION_TAG=latest \
+      POSTGRES_PASSWORD=public \
+      DOCKER_REPOSITORY=debiki \
+      $test_containers"
+
+  sudo $latest_test_containers down
+  sudo rm -fr modules/ed-prod-one-test/data
+  sudo $latest_test_containers up -d
 
   if [ -n "`jobs`" ]; then
     echo 'Other jobs running:'
@@ -164,11 +168,12 @@ if [ -z "$skip_e2e_tests" ]; then
   exit_code_file='./target/e2e-tests-exit-code'
   rm -f $exit_code_file
 
-  # Run Webdrier.io e2e tests, but not as root.
-  # To stop these e2e tests, you need to 'sudo -i' in another shell, then 'ps aux | grep e2e'
-  # and then kill the right stuff.
-  echo "Running E2E tests ..."
-  su $my_username -c "s/run-e2e-tests.sh --is-root --prod $all_orig_options ; echo \$? > $exit_code_file"
+  echo
+  echo "Running Webdrier.io E2E tests ..."
+  echo
+
+  s/run-e2e-tests.sh --prod $all_orig_options
+  echo $? | tee $exit_code_file
 
   e2e_tests_exit_code=$(cat $exit_code_file)
 
@@ -181,12 +186,12 @@ if [ -z "$skip_e2e_tests" ]; then
     die_if_in_script
   fi
 
-  $test_containers kill web app
-  $test_containers down
+  sudo $test_containers kill web app
+  sudo $test_containers down
 fi
 
 
-# # Test performance
+# # Performance tests
 # # -----------------
 # 
 # # (The perf test repo is currenty private)
@@ -204,7 +209,7 @@ fi
 
 
 
-# # Test rate & bandwidth limits
+# # Rate & bandwidth limit tests
 # # ----------------------
 # 
 # # Start the containers, but *with* rate limits this time.
@@ -224,7 +229,7 @@ if [ -n "`containers_running_test`" ]; then
   echo
   echo "Some Docker stuff is still running. Why? Weird. Aborting. Look:"
   echo
-  docker ps
+  sudo docker ps
   echo
   die_if_in_script
 fi
