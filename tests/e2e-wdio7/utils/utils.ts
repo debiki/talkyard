@@ -483,9 +483,9 @@ export function createPageInHtmlDirUnlessExists(pageSlug: St, html: St) {
 
 
 export function page_isChat(pageRole: PageRole): Bo {
-  return pageRole === PageRole.JoinlessChat ||
-          pageRole === PageRole.OpenChat ||
-          pageRole === PageRole.PrivateChat;
+  return pageRole === c.TestPageRole.JoinlessChat ||
+          pageRole === c.TestPageRole.OpenChat ||
+          pageRole === c.TestPageRole.PrivateChat;
 }
 
 
