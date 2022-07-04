@@ -6064,7 +6064,7 @@ export class TyE2eTestBrowser {
       topLevelReplySelector: '.dw-depth-1 > .dw-p',
       replySelector: '.dw-depth-1 .dw-p',
       allRepliesTextSelector: '.dw-depth-0 > .dw-single-and-multireplies > .dw-res',
-      anyCommentSelector: '.dw-p',
+      anyCommentSelector: '.dw-single-and-multireplies .dw-p',
       anyReplyButtonSelector: '.dw-a-reply',
       addProgressReplySelector: '.s_OpReB-Prg',
       previewSelector: '.dw-depth-1 .s_P-Prvw:not(.s_P-Prvw-NotEd)',
@@ -6126,7 +6126,12 @@ export class TyE2eTestBrowser {
         return { numNormal, numPreviews, numDrafts, numUnapproved, numDeleted };
       },
 
-      assertNumRepliesVisible: async (num: Nr) => {
+      assertNumCommentsVisible: async (num: Nr) => {
+        await this.waitForMyDataAdded();
+        await this.assertExactly(num, this.topic.anyCommentSelector);
+      },
+
+      assertNumPostsVisible: async (num: Nr) => {
         await this.waitForMyDataAdded();
         await this.assertExactly(num, this.topic.replySelector);
       },

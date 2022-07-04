@@ -121,7 +121,7 @@ describe(`webhooks-for-api-upserts.2br  TyTE2EWBHK4API`, () => {
 
   // ----- Upsert post via API, webhook sent
 
-  // Related test:  api-upsert-posts.2br  TyT60RKNJF24C
+  // Related test:  api-upsert-posts.d.2br  TyT60RKNJF24C
 
   it("Upsert a reply", () => {
     upsertResponse = server.apiV0.upsertSimple({
