@@ -6131,7 +6131,7 @@ export class TyE2eTestBrowser {
         await this.assertExactly(num, this.topic.anyCommentSelector);
       },
 
-      assertNumPostsVisible: async (num: Nr) => {
+      assertNumRepliesVisible: async (num: Nr) => {
         await this.waitForMyDataAdded();
         await this.assertExactly(num, this.topic.replySelector);
       },
