@@ -1,16 +1,15 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import * as make from '../utils/make';
+import c from '../test-constants';
 
-let browser: TyE2eTestBrowser;
+
+let brA: TyE2eTestBrowser;
 
 let owen;
 let owensBrowser: TyE2eTestBrowser;
@@ -28,178 +27,181 @@ const tweetPrevwError = `.s_LnPv-Twitter${brokenPreview}`;
 
 describe("Twitter link previews  TyT0JSM8PF68", () => {
 
-  it("initialize people", () => {
-    browser = new TyE2eTestBrowser(wdioBrowser);
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
     owen = make.memberOwenOwner();
-    owensBrowser = browser;
+    owensBrowser = brA;
     maria = make.memberMaria();
-    mariasBrowser = browser;
+    mariasBrowser = brA;
   });
 
-  it("import a site", () => {
+  it("import a site", async () => {
     let site: SiteData = make.forumOwnedByOwen('tweets-forum', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
     site.members.push(maria);
-    idAddress = server.importSiteData(site);
+    idAddress = await server.importSiteData(site);
   });
 
-  it("Owen goes to the homepage and logs in", () => {
-    owensBrowser.go2(idAddress.origin);
-    owensBrowser.assertPageTitleMatches(forumTitle);
-    owensBrowser.complex.loginWithPasswordViaTopbar(owen);
+  it("Owen goes to the homepage and logs in", async () => {
+    await owensBrowser.go2(idAddress.origin);
+    await owensBrowser.assertPageTitleMatches(forumTitle);
+    await owensBrowser.complex.loginWithPasswordViaTopbar(owen);
   });
 
-  it("Owen opens the create-topic editor", () => {
-    owensBrowser.forumButtons.clickCreateTopic();
+  it("Owen opens the create-topic editor", async () => {
+    await owensBrowser.forumButtons.clickCreateTopic();
   });
 
-  it("... types a title", () => {
-    owensBrowser.editor.editTitle(tweetTopicTitle);
+  it("... types a title", async () => {
+    await owensBrowser.editor.editTitle(tweetTopicTitle);
   });
 
 
   // ----- Tweet preview in Editor
 
-  it("... and a Twitter tweet link", () => {
-    owensBrowser.editor.editText(
+  it("... and a Twitter tweet link", async () => {
+    await owensBrowser.editor.editText(
           'https://twitter.com/jacindaardern/status/1057100751955222530');
           // 'https://twitter.com/jacindaardern/status/1106397870628847617'
   });
 
-  it("The tweet link becomes a Twitter Tweet preview", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor' });
+  it("The tweet link becomes a Twitter Tweet preview", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor' });
   });
 
-  it("Wait until any editor pending refresh done, otherwise can mess up test", () => {
-    owensBrowser.pause(333 + 100);  // [upd_ed_pv_delay]
+  it("Wait until any editor pending refresh done, otherwise can mess up test", async () => {
+    await owensBrowser.pause(333 + 100);  // [upd_ed_pv_delay]
   });
 
 
   // ----- Broken tweet
 
-  it("... there's no broken tweet", () => {
+  it("... there's no broken tweet", async () => {
     // Test the test:
-    assert.ok(owensBrowser.preview.exists(tweetPrevwOk, { where: 'InEditor' }));
+    assert.ok(await owensBrowser.preview.exists(tweetPrevwOk, { where: 'InEditor' }));
     // The real test:
-    assert.not(owensBrowser.preview.exists(tweetPrevwError, { where: 'InEditor' }));
+    assert.not(await owensBrowser.preview.exists(tweetPrevwError, { where: 'InEditor' }));
   });
 
-  it("Owen types a broken tweet link", () => {
-    owensBrowser.editor.editText('\n\n' +
+  it("Owen types a broken tweet link", async () => {
+    await owensBrowser.editor.editText('\n\n' +
           // Seems the username can be whatever — only the tweet nuumber matters.
           // But there aren't 9999... tweets yet.
           'https://twitter.com/someusername/status/9999999999999991234',
           { append: true });
   });
 
-  it("That tweet becomes a 'Tweet not found' message", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwError, { where: 'InEditor' });
+  it("That tweet becomes a 'Tweet not found' message", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwError, { where: 'InEditor' });
   });
 
-  it("The ok tweet is still there", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor' });
+  it("The ok tweet is still there", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor' });
   });
 
 
   // ----- Tweets in real topic
 
-  it("Owen saves the page", () => {
-    owensBrowser.rememberCurrentUrl();
-    owensBrowser.editor.save();
-    owensBrowser.waitForNewUrl();
-    owensBrowser.assertPageTitleMatches(tweetTopicTitle);
+  it("Owen saves the page", async () => {
+    await owensBrowser.rememberCurrentUrl();
+    await owensBrowser.editor.save();
+    await owensBrowser.waitForNewUrl();
+    await owensBrowser.assertPageTitleMatches(tweetTopicTitle);
   });
 
-  it("The tweet appears in the new topic", () => {
-    owensBrowser.topic.waitForExistsInPost(c.BodyNr, tweetPrevwOk);
+  it("The tweet appears in the new topic", async () => {
+    await owensBrowser.topic.waitForExistsInPost(c.BodyNr, tweetPrevwOk);
   });
 
-  it("... and the broken tweet too", () => {
-    owensBrowser.topic.waitForExistsInPost(c.BodyNr, tweetPrevwError);
+  it("... and the broken tweet too", async () => {
+    await owensBrowser.topic.waitForExistsInPost(c.BodyNr, tweetPrevwError);
   });
 
-  it("The editor and the in-editor previews, are gone", () => {
-    assert.not(owensBrowser.preview.exists(tweetPrevwOk, { where: 'InEditor' }));
-    assert.not(owensBrowser.preview.exists(tweetPrevwError, { where: 'InEditor' }));
+  it("The editor and the in-editor previews, are gone", async () => {
+    assert.not(await owensBrowser.preview.exists(tweetPrevwOk, { where: 'InEditor' }));
+    assert.not(await owensBrowser.preview.exists(tweetPrevwError, { where: 'InEditor' }));
   });
 
 
   // ----- In Page tweet previews
 
-  it("Owen edits the page", () => {
-    owensBrowser.topic.clickEditOrigPost();
+  it("Owen edits the page", async () => {
+    await owensBrowser.topic.clickEditOrigPost();
   });
 
-  it("... now the broken tween preview appears in the page", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwError, { where: 'InPage' });
+  it("... now the broken tween preview appears in the page", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwError, { where: 'InPage' });
   });
 
-  it("... and the ok tweet preview too", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InPage' });
+  it("... and the ok tweet preview too", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InPage' });
   });
 
 
   // ----- Tweet previews in Maximized editor   TyT033SKHWW73M
 
-  it("Owen maximizes the editor", () => {
-    owensBrowser.waitAndClick('.esEdtr_cycleMaxHzBtn');
+  it("Owen maximizes the editor", async () => {
+    await utils.tryManyTimes("Maximize_editor link", 3, async () => {
+      await owensBrowser.waitAndClick('.esEdtr_cycleMaxHzBtn');
+      await owensBrowser.waitForVisible('.c_EdLayout-4', { timeoutMs: 500 });
+    });
   });
 
-  it("... an in-editor preview appears, for the Ok tweet", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor' });
+  it("... an in-editor preview appears, for the Ok tweet", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor' });
   });
 
-  it("... and for the broken tweet", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwError, { where: 'InEditor' });
+  it("... and for the broken tweet", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwError, { where: 'InEditor' });
   });
 
   /* No they're still there, doesn't really matter.
-  it("... but the in-page previews are gone", () => {
+  it("... but the in-page previews are gone", async () => {
     assert.not(owensBrowser.preview.exists(tweetPrevwOk, { where: 'InPage' }));
     assert.not(owensBrowser.preview.exists(tweetPrevwError, { where: 'InPage' }));
   }); */
 
-  it("Owen tiles the editor horizontally", () => {
-    owensBrowser.waitAndClick('.esEdtr_cycleMaxHzBtn');
+  it("Owen tiles the editor horizontally", async () => {
+    await owensBrowser.waitAndClick('.esEdtr_cycleMaxHzBtn');
   });
 
-  it("... the in-editor Ok tweet preview is still there", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor' });
+  it("... the in-editor Ok tweet preview is still there", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor' });
   });
 
-  it("... and the broken tweet preview too", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwError, { where: 'InEditor' });
+  it("... and the broken tweet preview too", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwError, { where: 'InEditor' });
   });
 
 
   // ----- Two tweets
 
-  it("Owen adds text and a 2nd not-broken tweet", () => {
-    owensBrowser.editor.editText('\n\n' +
+  it("Owen adds text and a 2nd not-broken tweet", async () => {
+    await owensBrowser.editor.editText('\n\n' +
           'Wow_wow!\n\n' +
           'https://twitter.com/GreatOzGovTweet/status/707747970695962624',
           { append: true });
   });
 
-  it("... the new tweet appears in the preview, so now 2 ok tweets", () => {
-    owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor', howMany: 2 });
+  it("... the new tweet appears in the preview, so now 2 ok tweets", async () => {
+    await owensBrowser.preview.waitForExist(tweetPrevwOk, { where: 'InEditor', howMany: 2 });
   });
 
-  it("Owne saves", () => {
-    owensBrowser.editor.save();
+  it("Owne saves", async () => {
+    await owensBrowser.editor.save();
   });
 
-  it("The new text appears in the page", () => {
-    owensBrowser.topic.waitUntilPostTextMatches(c.BodyNr, "Wow_wow");
+  it("The new text appears in the page", async () => {
+    await owensBrowser.topic.waitUntilPostTextMatches(c.BodyNr, "Wow_wow");
   });
 
-  it("... The two ok tweets appear", () => {
-    owensBrowser.topic.waitForExistsInPost(c.BodyNr, tweetPrevwOk, { howMany: 2 });
+  it("... The two ok tweets appear", async () => {
+    await owensBrowser.topic.waitForExistsInPost(c.BodyNr, tweetPrevwOk, { howMany: 2 });
   });
 
-  it("... and the broken tweet too", () => {
-    owensBrowser.topic.waitForExistsInPost(c.BodyNr, tweetPrevwError, { howMany: 1 });
+  it("... and the broken tweet too", async () => {
+    await owensBrowser.topic.waitForExistsInPost(c.BodyNr, tweetPrevwError, { howMany: 1 });
   });
 
 });

@@ -1,16 +1,13 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import tyZssert = require('../utils/ty-assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
-import * as tyAssert from '../utils/ty-assert';
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
+import * as make from '../utils/make';
+import c from '../test-constants';
+
 
 let browser: TyE2eTestBrowser;
 
@@ -92,8 +89,8 @@ const inEditorPreviewSelector = '#debiki-editor-controller .preview ';
 
 describe("link-previews-images-mp4-youtube.1br.extln  TyTE2E2G3MAWKT4", () => {
 
-  it("initialize people", () => {
-    browser = new TyE2eTestBrowser(wdioBrowser);
+  it("initialize people", async () => {
+    browser = new TyE2eTestBrowser(wdioBrowserA, 'brA');
     everyone = browser;
     owen = make.memberOwenOwner();
     owensBrowser = browser;
@@ -101,165 +98,165 @@ describe("link-previews-images-mp4-youtube.1br.extln  TyTE2E2G3MAWKT4", () => {
     mariasBrowser = browser;
   });
 
-  it("import a site", () => {
+  it("import a site", async () => {
     let site: SiteData = make.forumOwnedByOwen('edr-ln-pv', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
     site.members.push(maria);
-    idAddress = server.importSiteData(site);
+    idAddress = await server.importSiteData(site);
   });
 
-  it("Owen goes to the homepage and logs in", () => {
-    owensBrowser.go2(idAddress.origin);
-    owensBrowser.assertPageTitleMatches(forumTitle);
-    owensBrowser.complex.loginWithPasswordViaTopbar(owen);
+  it("Owen goes to the homepage and logs in", async () => {
+    await owensBrowser.go2(idAddress.origin);
+    await owensBrowser.assertPageTitleMatches(forumTitle);
+    await owensBrowser.complex.loginWithPasswordViaTopbar(owen);
   });
 
-  it("Owen opens the create-topic editor", () => {
-    owensBrowser.forumButtons.clickCreateTopic();
+  it("Owen opens the create-topic editor", async () => {
+    await owensBrowser.forumButtons.clickCreateTopic();
   });
 
-  it("Owen types a title and an image url", () => {
-    owensBrowser.editor.editTitle(oneboxTopicTitle);
+  it("Owen types a title and an image url", async () => {
+    await owensBrowser.editor.editTitle(oneboxTopicTitle);
     assert.ok(httpImageJpgUrl.startsWith('http://'))
-    owensBrowser.editor.editText(httpImageJpgUrl);  // will change to https
+    await owensBrowser.editor.editText(httpImageJpgUrl);  // will change to https
   });
 
-  it("The image url gets converted to a .s_LnPv tag", () => {
-    owensBrowser.preview.waitForExist(dotOneboxClass, { where: 'InEditor' });
-    owensBrowser.waitForExist(inEditorPreviewSelector + dotOneboxClass);  // CLEAN_UP remove
+  it("The image url gets converted to a .s_LnPv tag", async () => {
+    await owensBrowser.preview.waitForExist(dotOneboxClass, { where: 'InEditor' });
+    await owensBrowser.waitForExist(inEditorPreviewSelector + dotOneboxClass);  // CLEAN_UP remove
   });
 
-  it("... with an a[href=...] and img[src=...]", () => {
+  it("... with an a[href=...] and img[src=...]", async () => {
     // httpImageJpgUrl should have gotten changed to https, iff the server uses https:
     if (settings.scheme === 'https:') {
       assert.ok(imageJpgOnebox.includes('https:'));
       assert.ok(!imageJpgOnebox.includes('http:'));
     }
-    owensBrowser.preview.waitForExist(imageJpgOnebox, { where: 'InEditor' });
-    owensBrowser.waitForExist(inEditorPreviewSelector + imageJpgOnebox);  // CLEAN_UP remove
+    await owensBrowser.preview.waitForExist(imageJpgOnebox, { where: 'InEditor' });
+    await owensBrowser.waitForExist(inEditorPreviewSelector + imageJpgOnebox);  // CLEAN_UP remove
   });
 
-  it("Owen saves the page", () => {
-    owensBrowser.rememberCurrentUrl();
-    owensBrowser.editor.save();
-    owensBrowser.waitForNewUrl();
-    owensBrowser.assertPageTitleMatches(oneboxTopicTitle);
+  it("Owen saves the page", async () => {
+    await owensBrowser.rememberCurrentUrl();
+    await owensBrowser.editor.save();
+    await owensBrowser.waitForNewUrl();
+    await owensBrowser.assertPageTitleMatches(oneboxTopicTitle);
   });
 
-  it("... and sees the link preview <img> tag", () => {
-    owensBrowser.waitForExist('.esOrigPost ' + dotOneboxClass);
-    owensBrowser.waitForExist('.esOrigPost ' + imageJpgOnebox);
+  it("... and sees the link preview <img> tag", async () => {
+    await owensBrowser.waitForExist('.esOrigPost ' + dotOneboxClass);
+    await owensBrowser.waitForExist('.esOrigPost ' + imageJpgOnebox);
   });
 
-  it("Owen edits the page, adds a video url", () => {
-    owensBrowser.topic.clickEditOrigPost();
-    owensBrowser.editor.editText(videoMp4Url, { checkAndRetry: true });
+  it("Owen edits the page, adds a video url", async () => {
+    await owensBrowser.topic.clickEditOrigPost();
+    await owensBrowser.editor.editText(videoMp4Url, { checkAndRetry: true });
   });
 
-  it("It appears as a link preview <video> tag in the preview", () => {
-    owensBrowser.preview.waitForExist(dotOneboxClass, { where: 'InPage' });
-    owensBrowser.waitForExist(inPagePreviewSelector + dotOneboxClass);  // CLEAN_UP remove
+  it("It appears as a link preview <video> tag in the preview", async () => {
+    await owensBrowser.preview.waitForExist(dotOneboxClass, { where: 'InPage' });
+    await owensBrowser.waitForExist(inPagePreviewSelector + dotOneboxClass);  // CLEAN_UP remove
 
-    owensBrowser.preview.waitForExist(videoMp4Onebox, { where: 'InPage' });
-    owensBrowser.waitForExist(inPagePreviewSelector + videoMp4Onebox);  // CLEAN_UP remove
+    await owensBrowser.preview.waitForExist(videoMp4Onebox, { where: 'InPage' });
+    await owensBrowser.waitForExist(inPagePreviewSelector + videoMp4Onebox);  // CLEAN_UP remove
   });
 
-  it("Owen saves the edits, sees both the preview <img> and the <video> tags", () => {
-    owensBrowser.editor.save();
-    owensBrowser.waitForExist('.esOrigPost ' + videoMp4Onebox);
+  it("Owen saves the edits, sees both the preview <img> and the <video> tags", async () => {
+    await owensBrowser.editor.save();
+    await owensBrowser.waitForExist('.esOrigPost ' + videoMp4Onebox);
   });
 
   // Let's do the remaining tests as a non-staff member.
-  it("Owen leaves; Maria logs in", () => {
-    owensBrowser.topbar.clickLogout();
-    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    mariasBrowser.disableRateLimits();
+  it("Owen leaves; Maria logs in", async () => {
+    await owensBrowser.topbar.clickLogout();
+    await mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+    await mariasBrowser.disableRateLimits();
   });
 
-  it("She can also post image urls, which get converted to preview <img> tags", () => {
+  it("She can also post image urls, which get converted to preview <img> tags", async () => {
     const nr = c.FirstReplyNr;
-    mariasBrowser.complex.replyToOrigPost(imageJpgUrl);
-    mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /\.jpg/);
-    mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
+    await mariasBrowser.complex.replyToOrigPost(imageJpgUrl);
+    await mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /\.jpg/);
+    await mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass);
+    await mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
   });
 
   it(`Links get changed to https: if the server uses https:
-       — but http: outside any links, is left as is`, () => {
+       — but http: outside any links, is left as is`, async () => {
     const nr = 3;
-    tyAssert.eq(nr, c.FirstReplyNr + 1);
-    mariasBrowser.complex.replyToOrigPost(httpButNotALinkSource);
-    mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /Don't change http/);
-    const postHtml = mariasBrowser.topic.getPostHtml(nr);
+    assert.eq(nr, c.FirstReplyNr + 1);
+    await mariasBrowser.complex.replyToOrigPost(httpButNotALinkSource);
+    await mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /Don't change http/);
+    const postHtml = await mariasBrowser.topic.getPostHtml(nr);
     httpButNotALinkRegexs.forEach(substrWithHttp => {
-      tyAssert.includes(postHtml, substrWithHttp);
+      assert.includes(postHtml, substrWithHttp);
     });
     // This was a real link:
-    mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
-    tyAssert.includes(postHtml, settings.secure ? httpsImageJpgUrl : httpImageJpgUrl);
-    tyAssert.excludes(postHtml, settings.secure ? httpImageJpgUrl : httpsImageJpgUrl);
+    await mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
+    assert.includes(postHtml, settings.secure ? httpsImageJpgUrl : httpImageJpgUrl);
+    assert.excludes(postHtml, settings.secure ? httpImageJpgUrl : httpsImageJpgUrl);
   });
 
-  it("But unknown links won't get converted to oneboxes", () => {
+  it("But unknown links won't get converted to oneboxes", async () => {
     const nr = 4;
     const weirdUrl = 'https://www.example.com/what.is.this.weirdweird';
-    mariasBrowser.complex.replyToOrigPost(weirdUrl);
-    mariasBrowser.topic.waitUntilPostTextMatches(nr, 'weirdweird');
-    mariasBrowser.topic.assertPostNrNotContains(nr, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(nr, `a[href="${weirdUrl}"]`);
+    await mariasBrowser.complex.replyToOrigPost(weirdUrl);
+    await mariasBrowser.topic.waitUntilPostTextMatches(nr, 'weirdweird');
+    await mariasBrowser.topic.assertPostNrNotContains(nr, dotOneboxClass);
+    await mariasBrowser.topic.assertPostNrContains(nr, `a[href="${weirdUrl}"]`);
   });
 
-  it("A media url inside a text paragraph is converted to a plain link", () => {
+  it("A media url inside a text paragraph is converted to a plain link", async () => {
     const nr = 5;
-    mariasBrowser.complex.replyToOrigPost('zzz ' + imageJpgUrl + ' qqq');
-    mariasBrowser.topic.waitUntilPostTextMatches(nr, 'zzz .* qqq');
-    mariasBrowser.topic.assertPostNrNotContains(nr, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(nr, `a[href="${imageJpgUrl}"]`);
+    await mariasBrowser.complex.replyToOrigPost('zzz ' + imageJpgUrl + ' qqq');
+    await mariasBrowser.topic.waitUntilPostTextMatches(nr, 'zzz .* qqq');
+    await mariasBrowser.topic.assertPostNrNotContains(nr, dotOneboxClass);
+    await mariasBrowser.topic.assertPostNrContains(nr, `a[href="${imageJpgUrl}"]`);
   });
 
-  it("A link preview can be inserted between two text paragraphs", () => {
+  it("A link preview can be inserted between two text paragraphs", async () => {
     const nr = 6;
-    mariasBrowser.complex.replyToOrigPost("Paragraph one.\n\n" + imageJpgUrl + "\n\nPara two.");
-    mariasBrowser.topic.waitUntilPostTextMatches(nr, "Paragraph one");
-    mariasBrowser.topic.assertPostTextMatches(nr, "Para two");
+    await mariasBrowser.complex.replyToOrigPost("Paragraph one.\n\n" + imageJpgUrl + "\n\nPara two.");
+    await mariasBrowser.topic.waitUntilPostTextMatches(nr, "Paragraph one");
+    await mariasBrowser.topic.assertPostTextMatches(nr, "Para two");
     // Failed once.
-    mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass);
-    mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
+    await mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass);
+    await mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox);
   });
 
   const nr7 = 7;
 
-  it("Jpg, png, gif, mp4 link previews work fine", () => {
+  it("Jpg, png, gif, mp4 link previews work fine", async () => {
     const nr = nr7;
     // This happens to be 5 x 2 links, = 10, < max which is 11 [TyT603RTDJ43].
     // (Each link preview has a widget link, and also a "View at ..." clickable link.)
-    mariasBrowser.complex.replyToOrigPost(
+    await mariasBrowser.complex.replyToOrigPost(
         httpImageJpgUrl + '\n\n' + // <— should get changed to https -.
         imagePngUrl + '\n\n' +     //                                  |
         imageGifUrl + '\n\n' +     //                                  |
         videoMp4Url + '\n\n' +     //                                  |
         videoYouTubeUrl);          //                                  |
-    mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /\.jpg/);    //   |
-    mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass); //   |
-    mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox); // <-'  here
-    mariasBrowser.topic.assertPostNrContains(nr, imagePngOnebox);
-    mariasBrowser.topic.assertPostNrContains(nr, imageGifOnebox);
-    mariasBrowser.topic.assertPostNrContains(nr, videoMp4Onebox);
+    await mariasBrowser.topic.waitUntilPostHtmlMatches(nr, /\.jpg/);    //   |
+    await mariasBrowser.topic.assertPostNrContains(nr, dotOneboxClass); //   |
+    await mariasBrowser.topic.assertPostNrContains(nr, imageJpgOnebox); // <-'  here
+    await mariasBrowser.topic.assertPostNrContains(nr, imagePngOnebox);
+    await mariasBrowser.topic.assertPostNrContains(nr, imageGifOnebox);
+    await mariasBrowser.topic.assertPostNrContains(nr, videoMp4Onebox);
   });
 
-  it("... and YouTube links too", () => {
-    mariasBrowser.topic.assertPostNrContains(nr7, videoYouTubeOnebox);
+  it("... and YouTube links too", async () => {
+    await mariasBrowser.topic.assertPostNrContains(nr7, videoYouTubeOnebox);
   });
 
-  it("The server survives an invalid YouTube video id", () => {
+  it("The server survives an invalid YouTube video id", async () => {
     const nr = 8;
     // Reply to the previous post because we've now scrolled down so the orig post isn't visible.
-    mariasBrowser.complex.replyToPostNr(6, videoYouTubeUrlInvalidId + '\n\n\nPlain text.');
-    mariasBrowser.topic.waitUntilPostTextMatches(nr, "Plain text");
-    mariasBrowser.topic.assertPostNrContains(nr, '.s_LnPv-Err');
-    mariasBrowser.topic.assertPostNrContains(nr, `a[href="${videoYouTubeUrlInvalidId}"]`);
-    mariasBrowser.topic.assertPostTextMatches(nr, 'TyEYOUTBID_');
+    await mariasBrowser.complex.replyToPostNr(6, videoYouTubeUrlInvalidId + '\n\n\nPlain text.');
+    await mariasBrowser.topic.waitUntilPostTextMatches(nr, "Plain text");
+    await mariasBrowser.topic.assertPostNrContains(nr, '.s_LnPv-Err');
+    await mariasBrowser.topic.assertPostNrContains(nr, `a[href="${videoYouTubeUrlInvalidId}"]`);
+    await mariasBrowser.topic.assertPostTextMatches(nr, 'TyEYOUTBID_');
   });
 
 });
