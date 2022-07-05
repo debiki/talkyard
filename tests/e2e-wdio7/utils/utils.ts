@@ -619,13 +619,17 @@ export function checkNewPostFields(post, ps: {
 }
 
 
-export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>): Pr<R> {
+export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>,
+          ps: { afterErr?: () => Pr<Vo> } = {}): Pr<R> {
     for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {
       try {
         return await fn();
       }
       catch (error) {
-        logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
+        logUnusual(`RETRYING: ${ what}  [TyME2ERETRY], because error: ${error.toString()}`);
+        if (ps.afterErr) {
+          await ps.afterErr();
+        }
       }
     }
     return await fn();
