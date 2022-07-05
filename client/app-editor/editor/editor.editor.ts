@@ -2666,15 +2666,17 @@ export const Editor = createFactory<any, EditorState>({
     const previewStyles = state.showOnlyPreview ? { display: 'block' } : null;
 
     // [.cycle_editor_layout]
-    const maximizeAndHorizSplitBtnTitle =
+    const editorLayoutIndexAndName =
         !state.showMaximized
             ? (state.canPlaceLeft && !state.placeLeft
-                  ? t.e.PlaceLeft || "Place left"
-                  : t.e.Maximize)
+                  ? [2, t.e.PlaceLeft || "Place left"]
+                  : [3, t.e.Maximize])
             : (state.splitHorizontally
-                  ? t.e.ToNormal
-                  : t.e.TileHorizontally);
+                  ? [1, t.e.ToNormal]
+                  : [4, t.e.TileHorizontally]);
 
+    const editorLayoutIndex = editorLayoutIndexAndName[0];
+    const maximizeAndHorizSplitBtnTitle = editorLayoutIndexAndName[1];
 
     // ----- Draft status
 
@@ -2726,7 +2728,8 @@ export const Editor = createFactory<any, EditorState>({
                 saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1, className: 'e_EdCancelB' },
                 cancelButtonTitle),
-              Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',
+              Button({ onClick: this.cycleMaxHorizBack,
+                  className: 'esEdtr_cycleMaxHzBtn c_EdLayout-' + editorLayoutIndex,
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
               // These two buttons are hidden via CSS if the window is wide. Higher tabIndex
               // because float right.

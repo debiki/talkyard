@@ -1,15 +1,13 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-// import fs = require('fs');  EMBCMTS
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
+import c from '../test-constants';
 
 
 ///
@@ -18,9 +16,7 @@ import c = require('../test-constants');
 ///
 
 
-let everyonesBrowsers: TyAllE2eTestBrowsers;
-let richBrowserA: TyE2eTestBrowser;
-let owen: Member;
+let brA: TyE2eTestBrowser;
 let maria: Member;
 let maria_brA: TyE2eTestBrowser;
 
@@ -96,7 +92,7 @@ const expectedReplyLinkPreviewBlockquoteHtml =
 
 describe(`link-previews-http-to-https.1br.test.ts  TyTE2ELNPVHTTPS`, () => {
 
-  it(`construct site`, () => {
+  it(`construct site`, async () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Internal Link Previews E2E Test",
@@ -123,33 +119,30 @@ describe(`link-previews-http-to-https.1br.test.ts  TyTE2ELNPVHTTPS`, () => {
       approvedSource: owensReply,
     });
 
-    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers);
-    richBrowserA = new TyE2eTestBrowser(wdioBrowserA);
-
-    owen = forum.members.owen;
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
 
     maria = forum.members.maria;
-    maria_brA = richBrowserA;
+    maria_brA = brA;
 
     assert.refEq(builder.getSite(), forum.siteData);
   });
 
-  it(`import site`, () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+  it(`import site`, async () => {
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
     owensTopicUrl = site.origin + '/owens-http-text-page';
   });
 
 
-  it(`Maria logs in to the topic index page`, () => {
-    maria_brA.go2(site.origin);
-    maria_brA.complex.loginWithPasswordViaTopbar(maria);
+  it(`Maria logs in to the topic index page`, async () => {
+    await maria_brA.go2(site.origin);
+    await maria_brA.complex.loginWithPasswordViaTopbar(maria);
   });
 
 
-  it(`Maria starts composing a new topic`, () => {
-    maria_brA.forumButtons.clickCreateTopic();
-    maria_brA.editor.editTitle(mariasTopicTitle);
+  it(`Maria starts composing a new topic`, async () => {
+    await maria_brA.forumButtons.clickCreateTopic();
+    await maria_brA.editor.editTitle(mariasTopicTitle);
   });
 
 
@@ -158,22 +151,22 @@ describe(`link-previews-http-to-https.1br.test.ts  TyTE2ELNPVHTTPS`, () => {
 
 
   it(`She adds a link to Owen's topic — but http not https;
-          the server will change to https iff it uses https`, () => {
+          the server will change to https iff it uses https`, async () => {
     const owensTopicUrlButHttp = owensTopicUrl.replace('https:', 'http:'); // (to_http)
     assert.ok(owensTopicUrlButHttp.startsWith('http:')); // ttt
-    maria_brA.editor.editText(owensTopicUrlButHttp);
+    await maria_brA.editor.editText(owensTopicUrlButHttp);
   });
 
 
-  it(`... a link preview appears, in the new topic preview`, () => {
+  it(`... a link preview appears, in the new topic preview`, async () => {
     const previewOkSelector = utils.makeLinkPreviewSelector('InternalLink');
-    maria_brA.preview.waitForExist(previewOkSelector, { where: 'InEditor' });
+    await maria_brA.preview.waitForExist(previewOkSelector, { where: 'InEditor' });
   });
 
   let linkPreviewHtml: St;
 
-  it(`... the http: plain text in the preview wasn't changed to https:`, () => {
-    linkPreviewHtml = maria_brA.waitAndGetVisibleHtml(
+  it(`... the http: plain text in the preview wasn't changed to https:`, async () => {
+    linkPreviewHtml = await maria_brA.waitAndGetVisibleHtml(
           utils.makePreviewOkSelector('InternalLink'));
 
     assert.includes(linkPreviewHtml, expectedTopicLinkPreviewTitleHtml(c.BodyNr));
@@ -181,7 +174,7 @@ describe(`link-previews-http-to-https.1br.test.ts  TyTE2ELNPVHTTPS`, () => {
   });
 
 
-  it(`... but the link to the topic got changed to https: — iff https in use`, () => {
+  it(`... but the link to the topic got changed to https: — iff https in use`, async () => {
     // owensTopicUrl is https already, if the server runs https
     // — although we saved it as http see: (to_http).
     assert.ok(owensTopicUrl.startsWith('https:') === !!settings.secure, // ttt
@@ -194,26 +187,26 @@ describe(`link-previews-http-to-https.1br.test.ts  TyTE2ELNPVHTTPS`, () => {
   // ----- Test http —> https in new topic
 
 
-  it(`Maria submits the new topic`, () => {
-    maria_brA.complex.saveTopic({ title: mariasTopicTitle });
+  it(`Maria submits the new topic`, async () => {
+    await maria_brA.complex.saveTopic({ title: mariasTopicTitle });
   });
 
 
-  it(`In the new topic, there're 1 ok internal link previews`, () => {
+  it(`In the new topic, there're 1 ok internal link previews`, async () => {
     const previewOkSelector = utils.makeLinkPreviewSelector('InternalLink');
-    maria_brA.topic.waitForExistsInPost(c.BodyNr, previewOkSelector, { howMany: 1 });
+    await maria_brA.topic.waitForExistsInPost(c.BodyNr, previewOkSelector, { howMany: 1 });
   });
 
 
   it(`... and there's the previewed topic's title and body — with any http: inside
-        unchanged, since that's plain text, not links`, () => {
-    linkPreviewHtml = maria_brA.topic.getPostHtml(c.BodyNr);
+        unchanged, since that's plain text, not links`, async () => {
+    linkPreviewHtml = await maria_brA.topic.getPostHtml(c.BodyNr);
     assert.includes(linkPreviewHtml, expectedTopicLinkPreviewTitleHtml(c.BodyNr));
     assert.includes(linkPreviewHtml, expectedTopicLinkPreviewBlockquoteHtml);
   });
 
 
-  it(`... the actual link to the topic got changed to https (if server https)`, () => {
+  it(`... the actual link to the topic got changed to https (if server https)`, async () => {
     assert.includes(linkPreviewHtml, `<a href="${owensTopicUrl}"`);
   });
 
@@ -222,16 +215,16 @@ describe(`link-previews-http-to-https.1br.test.ts  TyTE2ELNPVHTTPS`, () => {
   // ----- Test http —> https in new reply
 
 
-  it(`Maria posts a http (not https) link to Owen's reply`, () => {
+  it(`Maria posts a http (not https) link to Owen's reply`, async () => {
     const replyUrlHttp = owensReplyUrl().replace('https:', 'http:'); // (to_http)
     assert.ok(replyUrlHttp.startsWith('http:')); // ttt
-    maria_brA.complex.replyToOrigPost(replyUrlHttp);
+    await maria_brA.complex.replyToOrigPost(replyUrlHttp);
   });
 
 
   it(`In Maria's reply, there's a preview of the linked page title and Owen's reply
-        — with any http: inside unchanged, since is plain text`, () => {
-    const html = maria_brA.topic.getPostHtml(c.FirstReplyNr);
+        — with any http: inside unchanged, since is plain text`, async () => {
+    const html = await maria_brA.topic.getPostHtml(c.FirstReplyNr);
     assert.includes(html, expectedTopicLinkPreviewTitleHtml(c.FirstReplyNr));
     assert.includes(html, expectedReplyLinkPreviewBlockquoteHtml);
 
@@ -244,15 +237,15 @@ describe(`link-previews-http-to-https.1br.test.ts  TyTE2ELNPVHTTPS`, () => {
 
   const owensReplyHttps = (): St => owensReplyUrl().replace('http:', 'https:');
 
-  it(`Maria posts a https link to Owen's reply`, () => {
+  it(`Maria posts a https link to Owen's reply`, async () => {
     assert.ok(owensReplyHttps().startsWith('https:'), owensReplyHttps()); // ttt
-    maria_brA.complex.replyToOrigPost(owensReplyHttps());
+    await maria_brA.complex.replyToOrigPost(owensReplyHttps());
   });
 
 
   it(`... the resulting reply html uses https: (not changed to http:
-            even if the server uses http not https)`, () => {
-    const html = maria_brA.topic.getPostHtml(c.FirstReplyNr + 1);
+            even if the server uses http not https)`, async () => {
+    const html = await maria_brA.topic.getPostHtml(c.FirstReplyNr + 1);
     // (Owen's reply is FirstReplyNr — but Maria's, on this different page, is +1).
     assert.includes(html, expectedTopicLinkPreviewTitleHtml(c.FirstReplyNr));
     assert.includes(html, expectedReplyLinkPreviewBlockquoteHtml);
