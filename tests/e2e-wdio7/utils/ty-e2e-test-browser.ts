@@ -9712,6 +9712,7 @@ export class TyE2eTestBrowser {
         logMessage("editor iframe: Composing a reply ...");
         // Previously, before retrying scroll-to-top, this could hang forever in FF.
         // Add a timeout here so the retry (see comment above) will work.
+        // Now fails instead in the Ghost comments e2e test, why? (Fixed by retrying.)
         await this.editor.editText(text, { timeoutMs: 3000 });
         logMessage("editor iframe: Saving ...");
         await this.editor.save();

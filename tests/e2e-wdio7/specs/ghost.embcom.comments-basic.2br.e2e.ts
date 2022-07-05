@@ -3,6 +3,7 @@
 import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { IsWhere } from '../test-types';
@@ -105,8 +106,14 @@ describe(`ghost.embcom.comments-basic.2br  TyTEGHOSTCOMBSC`, () => {
   });
 
   it(`... posts an insightful thought`, async () => {
-    await owen_brA.complex.replyToEmbeddingBlogPost("Are writing ghosts ghost_writers",
-          { waitAndClickPs: { timeoutMs, maybeMoves: true }});
+    await utils.tryManyTimes('Owen_post_a_thought', 3, async () => {
+      await owen_brA.complex.replyToEmbeddingBlogPost("Are writing ghosts ghost_writers",
+            { waitAndClickPs: { timeoutMs, maybeMoves: true }});
+    }, {
+      afterErr: () => {
+        owen_brA.refresh2();
+      }
+    });
   });
 
   it(`Maria goes to /write/ too`, async () => {
