@@ -249,7 +249,7 @@ describe(`tags-badges-not-missing.2br  TyTETAGS0MISNG`, () => {
   addPubPageTests();
 
   it(`... also alfter reload:`, async () => {
-    owen_brA.refresh2();
+    await owen_brA.refresh2();
   });
 
   addPubPageTests();
@@ -354,7 +354,7 @@ describe(`tags-badges-not-missing.2br  TyTETAGS0MISNG`, () => {
   addStaffPageTests();
 
   it(`Owen sees the tags after reload too: ...`, async () => {
-    owen_brA.refresh2();
+    await owen_brA.refresh2();
   });
 
   addStaffPageTests();

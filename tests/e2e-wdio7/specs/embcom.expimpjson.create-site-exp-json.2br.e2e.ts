@@ -44,7 +44,7 @@ describe(`embedded comments export json  TyT7FKDJF3`, async () => {
 
 
   it('Owen creates an embedded comments site as a Password user  @login @password', async () => {
-    const newSiteData: NewSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
+    const newSiteData: NewSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments_sync({
         shortName: 'emb-exp', longName: "Emb Cmts Exp" });
     const result = await owensBrowser.newSite.createNewSite(newSiteData);
     await owensBrowser.newSite.signUpAsOwner(result);

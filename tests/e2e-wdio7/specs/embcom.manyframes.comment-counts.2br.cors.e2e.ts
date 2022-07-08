@@ -125,8 +125,8 @@ describe(`embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS`, () => 
   });
 
   it(`Import site`, async () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
   });
 
 
@@ -167,7 +167,7 @@ describe(`embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS`, () => 
 
   it(`Owen enables CORS: He goes to admin area`, async () => {
     await owen_brA.adminArea.settings.features.goHere(site.origin);
-    owen_brA.loginDialog.loginWithPassword(owen);
+    await owen_brA.loginDialog.loginWithPassword(owen);
   });
   it(`... enables AIP`, async () => {
     await owen_brA.adminArea.settings.features.setEnableApi(true);
@@ -204,7 +204,7 @@ describe(`embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS`, () => 
 
 
   it(`Maria logs in to discussion 222 with 2 comments`, async () => {
-    await maria_brB.useCommentsIframe({ discussionId: '222' });
+    maria_brB.useCommentsIframe_sync({ discussionId: '222' });
     await maria_brB.complex.loginIfNeededViaMetabar(maria);
   });
   it("... posts a comment", async () => {

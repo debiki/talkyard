@@ -786,11 +786,11 @@ export class TyE2eTestBrowser {
     }
 
     user = {
-      genDownloadPersonalDataUrl: (userId: PatId): St => {
+      genDownloadPersonalDataUrl_sync: (userId: PatId): St => {
         return '/-/download-personal-data?userId=' + userId;
       },
 
-      genDownloadPersonalContentUrl: (userId: PatId): St => {
+      genDownloadPersonalContentUrl_sync: (userId: PatId): St => {
         return '/-/download-my-content?authorId=' + userId;
       },
     }
@@ -883,7 +883,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    makeNewSiteDataForEmbeddedComments(ps: { shortName: string, longName: string })
+    makeNewSiteDataForEmbeddedComments_sync(ps: { shortName: string, longName: string })
           : NewSiteData {
       // Dupl code [502KGAWH0]
       // Need to generate new local hostname, since we're going to create a new site.
@@ -1197,10 +1197,10 @@ export class TyE2eTestBrowser {
     }
 
 
-    useCommentsIframe(ps: { discussionId: St }) {
+    useCommentsIframe_sync(ps: { discussionId: St }) {
       this.#useCommentsIframe = ps;
     }
-    useFirstCommentsIframe() {
+    useFirstCommentsIframe_sync() {
       this.#useCommentsIframe = null;
     }
 
@@ -1219,10 +1219,10 @@ export class TyE2eTestBrowser {
             waitForContent?: false, discId?: St, theresOnlyOne?: true,
             theSessionIdIframe?: true } = {}) {
       if (ps.discId) {
-        this.useCommentsIframe({ discussionId: ps.discId });
+        this.useCommentsIframe_sync({ discussionId: ps.discId });
       }
       else if (ps.theresOnlyOne) {
-        this.useFirstCommentsIframe();
+        this.useFirstCommentsIframe_sync();
       }
       await this.switchToAnyParentFrame();
       // Let's wait for the editor iframe, so Reply buttons etc will work.
@@ -3454,12 +3454,18 @@ export class TyE2eTestBrowser {
       pageTools: {
         pinPage: async (where: 'Globally' | 'InCategory', ps: { willBeTipsAfter: Bo }) => {
           await this.topbar.pageTools.__openPinPageDialog();
-          const pinWhereRadioBtn = where === 'Globally' ? '.e_PinGlb' : '.e_PinCat';
+          const pinWhereRadioBtn = where === 'Globally' ? '.e_PinGlb' : '.e_PinInCat';
           await this.waitAndClick(pinWhereRadioBtn + ' input');
           await this.waitAndClick('.e_SavPinB');
           if (ps.willBeTipsAfter !== false) {
             await this.helpDialog.waitForThenClose({ shallHaveBodyClass: '.esPinnedOk' });
           }
+          await this.waitUntilModalGone();
+        },
+
+        unpinPage: async () => {
+          await this.waitAndClick('.dw-a-tools');
+          await this.waitAndClick('.e_UnpinPg');
           await this.waitUntilModalGone();
         },
 
@@ -5760,7 +5766,7 @@ export class TyE2eTestBrowser {
         else return `#post-${postNr} .dw-p-bd .dw-p-bd-blk`;
       },
 
-      forAllPostIndexNrElem: async (fn: (index: Nr, postNr: PostNr, elem) => Pr<Vo>) => {
+      forAllPostIndexNrElem: async (fn: (index: Nr, postNr: PostNr, elem?: WElm) => Pr<Vo>) => {
         const postElems: WElm[] = await this.$$('[id^="post-"]');
         for (let index = 0; index < postElems.length; ++index) {
           const elem: WElm = postElems[index];
@@ -6058,7 +6064,7 @@ export class TyE2eTestBrowser {
       topLevelReplySelector: '.dw-depth-1 > .dw-p',
       replySelector: '.dw-depth-1 .dw-p',
       allRepliesTextSelector: '.dw-depth-0 > .dw-single-and-multireplies > .dw-res',
-      anyCommentSelector: '.dw-p',
+      anyCommentSelector: '.dw-single-and-multireplies .dw-p',
       anyReplyButtonSelector: '.dw-a-reply',
       addProgressReplySelector: '.s_OpReB-Prg',
       previewSelector: '.dw-depth-1 .s_P-Prvw:not(.s_P-Prvw-NotEd)',
@@ -6118,6 +6124,11 @@ export class TyE2eTestBrowser {
 
         numNormal = numNormal - numPreviews - numDrafts - numUnapproved - numDeleted;
         return { numNormal, numPreviews, numDrafts, numUnapproved, numDeleted };
+      },
+
+      assertNumCommentsVisible: async (num: Nr) => {
+        await this.waitForMyDataAdded();
+        await this.assertExactly(num, this.topic.anyCommentSelector);
       },
 
       assertNumRepliesVisible: async (num: Nr) => {
@@ -9104,8 +9115,18 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.esStupidDlg a');
       },
 
+      typePostLinkMoveToThere: async (link: St) => {
+        await this.waitAndSetValueForId('te_MvPI', link);
+        await this.waitAndClick('.e_MvPB');
+      },
+
       pastePostLinkMoveToThere: async () => {
-        await this.waitAndPasteClipboard('#te_MvPI');
+        await this.waitAndPasteClipboard('#te_MvPI');  //, { maybeMoves: true });
+        //const v = await this.waitAndGetValue('#te_MvPI');
+        //console.log(`Pasted:  '${v}'`);
+        // Timed out sometimes:  23746 ms elapsed: Waiting for visible:  .e_MvPB ...
+        // is maybeMoves:true needed? But no longer times out, weird.
+        // DO_AFTER: 2023-01-01 remove this comment.
         await this.waitAndClick('.e_MvPB');
       }
     };
@@ -9691,6 +9712,7 @@ export class TyE2eTestBrowser {
         logMessage("editor iframe: Composing a reply ...");
         // Previously, before retrying scroll-to-top, this could hang forever in FF.
         // Add a timeout here so the retry (see comment above) will work.
+        // Now fails instead in the Ghost comments e2e test, why? (Fixed by retrying.)
         await this.editor.editText(text, { timeoutMs: 3000 });
         logMessage("editor iframe: Saving ...");
         await this.editor.save();

@@ -2517,8 +2517,11 @@ trait PostsDao {
           auditEntries foreach tx.insertAuditLogEntry
           tx.movePostsReadStats(fromPage.id, toPage.id, Map(newNrsMap.toSeq: _*))
           // Mark both fromPage and toPage sections as stale, in case they're different forums.
-          refreshPageMetaBumpVersion(fromPage.id, markSectionPageStale = true, tx)
-          refreshPageMetaBumpVersion(toPage.id, markSectionPageStale = true, tx)
+          refreshPageMetaBumpVersion(fromPage.id, markSectionPageStale = true)(tx)
+          refreshPageMetaBumpVersion(toPage.id, markSectionPageStale = true,
+                // And people interested in the moved-to page might not have seen
+                // the comment being moved, so move the page to the top of the activity list:
+                newBumpedAt = Some(tx.now))(tx)
 
           postAfter
         }

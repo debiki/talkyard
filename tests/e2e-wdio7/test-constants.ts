@@ -116,6 +116,7 @@ export default {
   FirstReplyNr: 2,  // [5FKF0F2]
   SecondReplyNr: 3,
   ThirdReplyNr: 4,
+  FourthReplyNr: 5,
   UnknownUserId: -3,
   NoUserId: 0,
   SystemUserId: 1,

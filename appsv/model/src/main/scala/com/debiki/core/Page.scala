@@ -207,6 +207,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   updatedAt: ju.Date,
   publishedAt: Option[ju.Date] = None,
   bumpedAt: Option[ju.Date] = None,
+  // RENAME to lastApprReplyWrittenAt  and lastApprReplyWrittenById.
+  // Also add: lastApprReplyInsertedAt and lastApprReplyInsertedById?  [post_page_written_added_at]
   lastApprovedReplyAt: Option[ju.Date] = None,
   lastApprovedReplyById: Option[UserId] = None,
   categoryId: Option[CategoryId] = None,
@@ -267,23 +269,25 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 
   require(lastApprovedReplyAt.isDefined == lastApprovedReplyById.isDefined, s"[DwE5JGY1] $wp")
 
-  BUG // when importing blog comments from elsewhere, they might have been creted
+  // Skip this check, because:
+  // When importing blog comments from elsewhere, they might have been creted
   // before the Talkyard page, and can have earlier replied-at tmestamps.
-  // (They were posted earlier, but not created *in Talkyard* until later.)
-  SHOULD // remove this constraint? And also the dw1_pages_createdat_replyat__c_le
+  // Or when moving an old comment from an old page, to a new page.
+  // So, has now removed this constraint. And also the dw1_pages_createdat_replyat__c_le
   // database constraint.
-  // Real solution: Split this timestamp into two:  writtenAt, and insertedAt.
+  // Real solution: Split this timestamp into two:  writtenAt, and insertedAt,
+  // see lastApprReplyInsertedAt above.   [post_page_written_added_at]
   // And, writtenAt can be older than the page creation time, and is what's shown
   // as written-at date on the html page.  Whilst  insertedAt must be more recent
   // than the page, and is what's used for sorting comments so one finds those
-  // one hasn't read yet. (Like Git's authored-at date and commited-at dates.)
+  // one hasn't read yet? (Like Git's authored-at date and commited-at dates.)
   // See this branch:  b6fb20d4880cbf2c861  "W author & insertion date."
   //
-  require(lastApprovedReplyAt.forall(_.getTime >= createdAt.getTime), s"[TyE7WKG2AG4] $wp")
+  // require(lastApprovedReplyAt.forall(_.getTime >= createdAt.getTime), s"[TyE7WKG2AG4] $wp")
 
-  require(updatedAt.getTime >= createdAt.getTime, s"[TyE7WKG05KS] $wp")
-  require(publishedAt.forall(_.getTime >= createdAt.getTime), s"[TyE8GK405KS] $wp")
-  require(bumpedAt.forall(_.getTime >= createdAt.getTime), s"[TyE0NFATI3D] $wp")
+  require(updatedAt.getTime >= createdAt.getTime, s"[TyEOLDUPDAT] $wp")
+  require(publishedAt.forall(_.getTime >= createdAt.getTime), s"[TyEOLDPUBAT] $wp")
+  require(bumpedAt.forall(_.getTime >= createdAt.getTime), s"[TyEOLDBUMPAT] $wp")
   // If there are no replies, then there are no frequent posters.
   require(lastApprovedReplyById.isDefined || frequentPosterIds.isEmpty, s"[TyE306HMSJ24] $wp")
   require(frequentPosterIds.length <= 3, s"[DwE6UMW3] $wp") // for now — change if needed
@@ -435,13 +439,13 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
       closedAt = newClosedAt)
   }
 
-  def copyWithUpdatedStats(page: Page): PageMeta = {
+  def copyWithUpdatedStats(page: Page, newBumpedAt: Opt[When] = None): PageMeta = {
     val body = page.parts.body
     def bodyVotes(fn: Post => Int): Int = body.map(fn) getOrElse 0
 
     val newMeta = copy(
-      bumpedAt = When.anyJavaDateLatestOf(
-        bumpedAt, page.parts.lastVisibleReply.map(_.createdAt)),
+      bumpedAt = newBumpedAt.map(_.toJavaDate) orElse When.anyJavaDateLatestOf(
+            bumpedAt, page.parts.lastVisibleReply.map(_.createdAt)),
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
       lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
       frequentPosterIds = page.parts.frequentPosterIds,

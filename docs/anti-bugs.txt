@@ -1,0 +1,8 @@
+
+
+[unintened_undefined_bug]
+In this: `{ ...objA, ...objB }`, any fields in objA with actual values,
+get overwritten by any `field: undefined` fields in objB. But that's often not
+what was intended.
+Therefore, avoid setting any fields to `undefined` (unless the above is the intended
+behavior, but then maybe using `null` makes the intention more clear).

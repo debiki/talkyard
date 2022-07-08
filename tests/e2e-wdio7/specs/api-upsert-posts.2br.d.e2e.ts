@@ -1,29 +1,24 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('../utils/ty-assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
+import * as utils from '../utils/utils';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import lad = require('../utils/log-and-die');
-import c = require('../test-constants');
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import settings from '../utils/settings';
+import c from '../test-constants';
 
 
-
-
-
-let richBrowserA;
-let richBrowserB;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser: TyE2eTestBrowser;
+let owen_brB: TyE2eTestBrowser;
 let maja: Member;
-let majasBrowser: TyE2eTestBrowser;
+let maja_brA: TyE2eTestBrowser;
 let maria: Member;
 let michael: Member;
-let michaelsBrowser: TyE2eTestBrowser;
-let strangersBrowser: TyE2eTestBrowser;
+let michael_brB: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let siteId;
@@ -53,7 +48,7 @@ const majasApiTopicUpsData = {
 const majasUiTopic = {
   title: 'majasUiTopic_title',
   body: 'majasUiTopic_body',
-  type: PageRole.Problem,
+  type: c.TestPageRole.Problem,
 };
 
 const michaelsReplyToMajasApiTopic = {
@@ -106,10 +101,12 @@ const majasReplyTextToMichaelOnUiCreatedPage = 'majasReplyTextToMichaelOnUiCreat
 let upsSimpleParams;
 let numNotfEmailsSent = 0;
 
+let michaelsTopicIdUrl: St;
+
 
 // Related test:  webhooks-for-api-upserts.2br  TyTE2EWBHK4API
 
-describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
+describe(`api-upsert-posts.2br.d  TyT60RKNJF24C`, () => {
 
   if (settings.prod) {
     console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
@@ -119,7 +116,7 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
 
   // ----- Create site, with API enabled
 
-  it("import a site", () => {
+  it("import a site", async () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({
       categoryExtId,  // instead of: [05KUDTEDW24]
@@ -141,23 +138,26 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
       wholeSite: true,
     }];
 
-    siteIdAddress = server.importSiteData(forum.siteData);
+    siteIdAddress = await server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
-    server.skipRateLimits(siteId);
+    await server.skipRateLimits(siteId);
+
+    michaelsTopicIdUrl = siteIdAddress.origin + '/-' + forum.topics.byMichaelCatA.id;
   });
 
-  it("initialize people", () => {
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
-    owensBrowser = richBrowserA;
+    owen_brB = brB;
+
     maja = forum.members.maja;
-    majasBrowser = richBrowserA;
+    maja_brA = brA;
+
     maria = forum.members.maria;
     michael = forum.members.michael;
-    michaelsBrowser = richBrowserB;
-    strangersBrowser = richBrowserB;
+    michael_brB = brB;
 
     upsSimpleParams = {
       origin: siteIdAddress.origin,
@@ -169,31 +169,31 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
 
   // ----- Create topics: One via the UI, one via the API
 
-  it("Maja logs in", () => {
-    majasBrowser.go2(siteIdAddress.origin);
-    majasBrowser.complex.loginWithPasswordViaTopbar(maja);
+  it("Maja logs in", async () => {
+    await maja_brA.go2(siteIdAddress.origin);
+    await maja_brA.complex.loginWithPasswordViaTopbar(maja);
   });
 
-  it("... posts a topic", () => {
-    majasBrowser.complex.createAndSaveTopic(majasUiTopic);
+  it("... posts a topic", async () => {
+    await maja_brA.complex.createAndSaveTopic(majasUiTopic);
   });
 
   let majasUiTopicId: PageId;
 
-  it("... remembers its Talkyard id", () => {
-    majasUiTopicId = majasBrowser.getPageId();
+  it("... remembers its Talkyard id", async () => {
+    majasUiTopicId = await maja_brA.getPageId();
     assert.eq(majasUiTopicId, '2');
   });
 
-  it("... returns to the topic list", () => {
-    majasBrowser.topbar.clickHome();
+  it("... returns to the topic list", async () => {
+    await maja_brA.topbar.clickHome();
   });
 
   let upsertResponse;
   let majasApiTopic: any;
 
-  it("Maja upserts a topic via the API too", () => {
-    upsertResponse = server.apiV0.upsertSimple({
+  it("Maja upserts a topic via the API too", async () => {
+    upsertResponse = await server.apiV0.upsertSimple({
       ...upsSimpleParams,
       data: {
         upsertOptions: { sendNotifications: true },
@@ -202,17 +202,17 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
     });
   });
 
-  it("... gets back the upserted page in the server's response", () => {
+  it("... gets back the upserted page in the server's response", async () => {
     console.log("Page ups resp:\n\n:" + JSON.stringify(upsertResponse));
 
-    assert.equal(upsertResponse.pages.length, 1);
+    assert.eq(upsertResponse.pages.length, 1);
     majasApiTopic = upsertResponse.pages[0];
 
-    assert.equal(majasApiTopic.urlPaths.canonical,
+    assert.eq(majasApiTopic.urlPaths.canonical,
         `/-3/${majasApiTopicUpsData.title.toLowerCase().replace(/ /g, '-')}`);
 
-    assert.equal(majasApiTopic.id, "3");
-    assert.equal(majasApiTopic.pageType, c.TestPageRole.Idea);
+    assert.eq(majasApiTopic.id, "3");
+    assert.eq(majasApiTopic.pageType, c.TestPageRole.Idea);
     utils.checkNewPageFields(majasApiTopic, {
       categoryId: forum.categories.specificCategory.id,
       authorId: maja.id,
@@ -222,9 +222,9 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
 
   // ----- Upsert posts, page autor gets notified
 
-  it("Michael API upserts a ProgressNote to Maja's UI created topic", () => {
+  it("Michael API upserts a ProgressNote to Maja's UI created topic", async () => {
     michaelsProgrReplyToMajasUiTopic.pageRef = `tyid:${majasUiTopicId}`;  // (3909682)   e2e map +=
-    upsertResponse = server.apiV0.upsertSimple({
+    upsertResponse = await server.apiV0.upsertSimple({
       ...upsSimpleParams,
       data: {
         upsertOptions: { sendNotifications: true },
@@ -236,16 +236,16 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
 
   let majasUiTopicNotfEmail: EmailSubjectBody;
 
-  it("... Maja gets notified", () => {
-    majasUiTopicNotfEmail = server.waitUntilLastEmailMatches(
+  it("... Maja gets notified", async () => {
+    majasUiTopicNotfEmail = (await server.waitUntilLastEmailMatches(
         siteIdAddress.id, maja.emailAddress,
         // Line 2 contains magic regex chars, won't match.
-        [maja.username, michaelsProgrReplyToMajasUiTopic_lineOne], browserA).matchedEmail;
+        [maja.username, michaelsProgrReplyToMajasUiTopic_lineOne])).matchedEmail;
   });
 
   let bodyHtmlText: string;
 
-  it("... The email has no double escaped '&amp;' and '&quot;'", () => {
+  it("... The email has no double escaped '&amp;' and '&quot;'", async () => {
     bodyHtmlText = majasUiTopicNotfEmail.bodyHtmlText;
     //console.log('\n\nEMLBDY:\n\n' + bodyHtmlText + '\n\n-------------------');
     // Dupl match list. (69723056)
@@ -260,7 +260,7 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
     assert.includes(bodyHtmlText, link_text_02);
   });
 
-  it("... script tags not in email  TyT0RKDL5MW", () => {
+  it("... script tags not in email  TyT0RKDL5MW", async () => {
     // Test the tests:
     assert.includes(michaelsProgrReplyToMajasUiTopic.body, c.ScriptTagName);
     assert.includes(michaelsProgrReplyToMajasUiTopic.body, danger);
@@ -269,14 +269,14 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
     assert.excludes(bodyHtmlText, danger);
   });
 
-  it("No one else got notified (1 email sent in total)", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
-    assert.equal(numNotfEmailsSent, 1);  // ttt
+  it("No one else got notified (1 email sent in total)", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
+    assert.eq(numNotfEmailsSent, 1);  // ttt
   });
 
-  it("Michael API upserts a reply to Maja's API created topic", () => {
-    upsertResponse = server.apiV0.upsertSimple({
+  it("Michael API upserts a reply to Maja's API created topic", async () => {
+    upsertResponse = await server.apiV0.upsertSimple({
       ...upsSimpleParams,
       data: {
         upsertOptions: { sendNotifications: true },
@@ -286,23 +286,23 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
     numNotfEmailsSent += 1;
   });
 
-  it("... Maja gets notified", () => {
-    server.waitUntilLastEmailMatches(
+  it("... Maja gets notified", async () => {
+    await server.waitUntilLastEmailMatches(
         siteIdAddress.id, maja.emailAddress,
-        [maja.username, michaelsReplyToMajasApiTopic.body], browserA);
+        [maja.username, michaelsReplyToMajasApiTopic.body]);
   });
 
-  it("But no one else  (2 emails sent in total)", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
-    assert.equal(numNotfEmailsSent, 2);  // ttt
+  it("But no one else  (2 emails sent in total)", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
+    assert.eq(numNotfEmailsSent, 2);  // ttt
   });
 
 
   // ----- Can API reply to API reply
 
-  it("Maja API replies to Michael's API reply", () => {
-    upsertResponse = server.apiV0.upsertSimple({
+  it("Maja API replies to Michael's API reply", async () => {
+    upsertResponse = await server.apiV0.upsertSimple({
       ...upsSimpleParams,
       data: {
         upsertOptions: { sendNotifications: true },
@@ -314,20 +314,19 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
 
   let michaelsReplyNotfEmail;
 
-  it("... Michael gets notified", () => {
-    michaelsReplyNotfEmail = server.waitUntilLastEmailMatches(
-        siteIdAddress.id, michael.emailAddress, [majasApiReplyToMichael.body],
-        browserA).matchedEmail;
+  it("... Michael gets notified", async () => {
+    michaelsReplyNotfEmail = (await server.waitUntilLastEmailMatches(
+        siteIdAddress.id, michael.emailAddress, [majasApiReplyToMichael.body])).matchedEmail;
   });
 
-  it("... but no one else  (3 emails sent in total)", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
-    assert.equal(numNotfEmailsSent, 3);  // ttt
+  it("... but no one else  (3 emails sent in total)", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
+    assert.eq(numNotfEmailsSent, 3);  // ttt
   });
 
-  it("Maja API replies to her own UI created page, @mentions Maria", () => {
-    upsertResponse = server.apiV0.upsertSimple({
+  it("Maja API replies to her own UI created page, @mentions Maria", async () => {
+    upsertResponse = await server.apiV0.upsertSimple({
       ...upsSimpleParams,
       data: {
         upsertOptions: { sendNotifications: true },
@@ -337,16 +336,16 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
     numNotfEmailsSent += 1;
   });
 
-  it("... Maria gets notified", () => {
-    server.waitUntilLastEmailMatches(
+  it("... Maria gets notified", async () => {
+    await server.waitUntilLastEmailMatches(
         siteIdAddress.id, maria.emailAddress,
-        [maria.username, majasReplyMentionsMaria.body], browserA);
+        [maria.username, majasReplyMentionsMaria.body]);
   });
 
-  it("But no one else  (4 emails sent in total)", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
-    assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
-    assert.equal(numNotfEmailsSent, 4);  // ttt
+  it("But no one else  (4 emails sent in total)", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
+    assert.eq(numNotfEmailsSent, 4);  // ttt
   });
 
 
@@ -354,7 +353,7 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
 
   let replyNotfLink: string;
 
-  it("Maja finds a page link in the notf email about Michael's reply", () => {
+  it("Maja finds a page link in the notf email about Michael's reply", async () => {
     assert.eq(majasUiTopicId, c.SecondPageId);
     replyNotfLink = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
@@ -363,17 +362,17 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
         'https?://.*/-' + majasUiTopicId, majasUiTopicNotfEmail.bodyHtmlText);
   });
 
-  it("she clicks the link", () => {
-    majasBrowser.go2(replyNotfLink);
+  it("she clicks the link", async () => {
+    await maja_brA.go2(replyNotfLink);
   });
 
-  it("... sees Michael's reply", () => {
-    majasBrowser.topic.waitForPostAssertTextMatches(
+  it("... sees Michael's reply", async () => {
+    await maja_brA.topic.waitForPostAssertTextMatches(
         c.FirstReplyNr, michaelsProgrReplyToMajasUiTopic_lineOne);
   });
 
-  it("... it's been sanitized: script tags gone  TyT0RKDL5MW", () => {
-    const bodyHtmlText = majasBrowser.topic.getPostHtml(c.FirstReplyNr);
+  it("... it's been sanitized: script tags gone  TyT0RKDL5MW", async () => {
+    const bodyHtmlText = await maja_brA.topic.getPostHtml(c.FirstReplyNr);
 
     // Test the test:
     assert.includes(michaelsProgrReplyToMajasUiTopic.body, link_text_02);
@@ -396,7 +395,7 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
     assert.excludes(bodyHtmlText, danger);
   });
 
-  it("Michael fins a notf link to Maja's reply", () => {
+  it("Michael fins a notf link to Maja's reply", async () => {
     replyNotfLink = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical
@@ -404,39 +403,39 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
         'https?://.*/-' + majasApiTopic.id, michaelsReplyNotfEmail.bodyHtmlText);
   });
 
-  it("... clicks the link", () => {
-    michaelsBrowser.go2(replyNotfLink);
+  it("... clicks the link", async () => {
+    await michael_brB.go2(replyNotfLink);
   });
 
-  it("... sees Maja's reply", () => {
-    michaelsBrowser.topic.waitForPostAssertTextMatches(
+  it("... sees Maja's reply", async () => {
+    await michael_brB.topic.waitForPostAssertTextMatches(
         c.FirstReplyNr + 1, majasApiReplyToMichael.body);
   });
 
 
   // ----- The upserted posts work: Can reply via the UI
 
-  it("Maja post a reply to Michael's reply", () => {
-    majasBrowser.complex.replyToPostNr(
+  it("Maja post a reply to Michael's reply", async () => {
+    await maja_brA.complex.replyToPostNr(
         c.FirstReplyNr, majasReplyTextToMichaelOnUiCreatedPage);
     numNotfEmailsSent += 1;
   });
 
-  it("... Michael gets notified", () => {
-    server.waitUntilLastEmailMatches(
-        siteIdAddress.id, michael.emailAddress, [majasReplyTextToMichaelOnUiCreatedPage], browserA);
+  it("... Michael gets notified", async () => {
+    await server.waitUntilLastEmailMatches(
+        siteIdAddress.id, michael.emailAddress, [majasReplyTextToMichaelOnUiCreatedPage]);
   });
 
-  it("But no one else", () => {
-    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+  it("But no one else", async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(siteId);
     assert.eq(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
   // ----- Notfs when upserting many posts: Not allowed
 
-  it("Upsert with notfs enabled isn't allowed, when upserting many things", () => {
-    const responseText = upsertResponse = server.apiV0.upsertSimple({
+  it("Upsert with notfs enabled isn't allowed, when upserting many things", async () => {
+    const responseText = upsertResponse = await server.apiV0.upsertSimple({
       fail: true,
       origin: siteIdAddress.origin,
       apiRequesterId: c.SysbotUserId,
@@ -454,6 +453,48 @@ describe(`api-upsert-posts.2br  TyT60RKNJF24C`, () => {
       },
     });
     assert.includes(responseText, 'TyEUPSMNYNTFS_');
+  });
+
+
+  // ----- The upserted posts work: Can move to other page
+
+  it(`Owen logs in`, async () => {
+    await owen_brB.go2(siteIdAddress.origin + '/-' + majasUiTopicId);
+    await owen_brB.complex.loginWithPasswordViaTopbar(owen);
+  });
+
+  it(`Owen moves the API upserted reply on the UI page to another page`, async () => {
+    await owen_brB.topic.openMoveDialogForPostNr(c.FirstReplyNr);
+    await owen_brB.movePostDialog.typePostLinkMoveToThere(michaelsTopicIdUrl);
+  });
+
+  it(`... confirms`, async () => {
+    await owen_brB.waitAndClick('.esStupidDlg a');
+  });
+
+  it(`Owen moves the API upserted reply on the API page to another page`, async () => {
+    await owen_brB.go2(majasApiTopic.urlPaths.canonical);
+    await owen_brB.topic.openMoveDialogForPostNr(c.FirstReplyNr);
+    await owen_brB.movePostDialog.typePostLinkMoveToThere(michaelsTopicIdUrl);
+  });
+
+  it(`... confirms again`, async () => {
+    await owen_brB.waitAndClick('.esStupidDlg a');
+  });
+
+  it(`Now Michael's page has four comments
+        — because the replies to the replies were moved too`, async () => {
+    await owen_brB.topic.assertNumCommentsVisible(4);
+  });
+
+  it(`... and the UI page has none`, async () => {
+    await owen_brB.go2('/-' + majasUiTopicId);
+    await owen_brB.topic.waitForReplyButtonAssertNoComments();
+  });
+
+  it(`... and the API page has one: the extra @mention reply`, async () => {
+    await owen_brB.go2(majasApiTopic.urlPaths.canonical);
+    await owen_brB.topic.assertNumCommentsVisible(1);
   });
 
 });

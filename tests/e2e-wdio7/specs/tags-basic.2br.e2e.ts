@@ -301,7 +301,7 @@ describe(`tags-basic.2br  TyTE2ETAGSBSC`, () => {
   });
 
   it(`... also after reload`, async () => {
-    owen_brA.refresh2();
+    await owen_brA.refresh2();
     const tags = await owen_brA.topic.getTags({ howManyTags: 1 });
     assert.deepEq(tags, [tagOneDash]);
   });

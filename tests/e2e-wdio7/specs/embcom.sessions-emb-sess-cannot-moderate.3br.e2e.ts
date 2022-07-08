@@ -278,8 +278,8 @@ describe(`embcom.sessions-emb-sess-cannot-moderate.3br  TyTEECSESS0MOD`, () => {
   let monsContentUrl: St | U;
 
   it(`Mallory constructs links to Mons' personal data and Mons' posts`, async () => {
-    monsDataUrl = mallory_brB.user.genDownloadPersonalDataUrl(monsUserId);
-    monsContentUrl = mallory_brB.user.genDownloadPersonalContentUrl(monsUserId);
+    monsDataUrl = mallory_brB.user.genDownloadPersonalDataUrl_sync(monsUserId);
+    monsContentUrl = mallory_brB.user.genDownloadPersonalContentUrl_sync(monsUserId);
   });
 
   it(`Mallory then tries to fetch Mons' personal data`, async () => {

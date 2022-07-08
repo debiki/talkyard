@@ -473,7 +473,7 @@ ${htmlToPaste}
 
   function convertDisqusFileToTalkyardFile(src: string, dst: string) {
     execSync(
-        `nodejs ${toTalkyardScript} ` +
+        `node ${toTalkyardScript} ` +
           `--disqusXmlExportFile=${src} ` +
           `--writeTo=${dst}`);
   }
@@ -488,7 +488,7 @@ ${htmlToPaste}
 
   function postCommentsToTalkyard(filePath: string) {  // postJsonPatchToTalkyard in wdio-7
     const cmd =
-        `nodejs ${toTalkyardScript} ` +
+        `node ${toTalkyardScript} ` +
           `--talkyardJsonPatchFile=${filePath} ` +
           `--sysbotApiSecret=${apiSecret} ` +
           `--sendTo=${talkyardSiteOrigin}`

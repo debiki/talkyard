@@ -788,10 +788,12 @@ trait PagesDao {
     // Don't mark the section page as stale — total posts count not shown (only total replies).
     // Don't index — meta messages shouldn't be found, when searching.
 
-    // The caller must have remembered to update numPostsTotal.
+    // The caller must have remembered to update numPostsTotal. There might,
+    // however, be fewer than postNr + 1 posts, in case an old post was moved to
+    // another page. But never more.
     val pageMeta = tx.loadThePageMeta(pageId)
-    dieIf(pageMeta.numPostsTotal != postNr + 1, "EdE3PFK2W0", o"""pageMeta.numPostsTotal
-        is ${pageMeta.numPostsTotal} but should be = postNr + 1 = ${postNr + 1}""")
+    dieIf(pageMeta.numPostsTotal > postNr + 1, "EdE3PFK2W0", o"""pageMeta.numPostsTotal
+        is ${pageMeta.numPostsTotal} but should be <= postNr + 1 = ${postNr + 1}""")
 
     tx.insertPost(metaMessage)
 
@@ -799,10 +801,10 @@ trait PagesDao {
   }
 
 
-  def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Boolean,
-        tx: SiteTransaction): Unit = {
+  def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Bo,
+          newBumpedAt: Opt[When] = None)(tx: SiteTx): U = {
     val page = newPageDao(pageId, tx)
-    var newMeta = page.meta.copyWithUpdatedStats(page)
+    val newMeta = page.meta.copyWithUpdatedStats(page, newBumpedAt)
     tx.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)
   }

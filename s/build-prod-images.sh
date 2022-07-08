@@ -31,6 +31,25 @@ function die_if_in_script {
 # COULD: Check is in project root, & is git repository, & no outstanding changes.
 # COULD: Check all required ports open: 80, 443, 900, 9443, 9999, 3333
 
+# Docker installed?
+#
+if [ -z "$(which docker)" ]; then
+  echo
+  echo "Docker not installed? Please have a look in docs/getting-started.md."
+  echo
+  die_if_in_script
+fi
+
+# Yarn? [build_needs_yarn]
+#
+if [ -z "$(which yarn)" ]; then
+  echo
+  echo "Yarn not installed. Please run this script using Nix-shell,"
+  echo "then, Nix will download Yarn for you."
+  echo
+  die_if_in_script
+fi
+
 # Disk full?
 #
 # This: 'df .' prints sth like:
@@ -180,17 +199,12 @@ esac
 # Build and run tests
 # ----------------------
 
-current_dir=`pwd`
-
-sudo -i bash << EOF_SUDO
-
-cd $current_dir
 rm -f ./target/build-exit-status
 
-./s/impl/build-prod-images.sh $my_username $version_tag $@
-echo "\$?" | tee ./target/build-exit-code
-
-EOF_SUDO
+set -x
+nix-shell --run "./s/impl/build-prod-images.sh $version_tag $*"
+echo $? | tee ./target/build-exit-code
+set +x
 
 build_exit_status=`cat ./target/build-exit-status`
 #build_exit_code=`cat ./target/build-exit-code`

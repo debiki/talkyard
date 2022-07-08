@@ -82,7 +82,7 @@ describe(`embcom.manyframes.drafts-repl-to.2br  TyTEMANYCOMIFR02`, () => {
 
 
   it(`... logs in`, async () => {
-    maria_brB.useCommentsIframe({ discussionId: '222' });
+    maria_brB.useCommentsIframe_sync({ discussionId: '222' });
     await maria_brB.complex.loginIfNeededViaMetabar(maria);
   });
 

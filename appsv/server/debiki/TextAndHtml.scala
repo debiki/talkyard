@@ -26,7 +26,7 @@ import scala.util.matching.Regex
 import TextAndHtmlMaker._
 import debiki.dao.UploadsDao
 import org.jsoup.Jsoup
-import org.jsoup.safety.Whitelist
+import org.jsoup.safety.Safelist
 
 
 /** Immutable.
@@ -159,8 +159,8 @@ object TextAndHtml {
 
   /** More restrictive than Jsoup's basic() whitelist.
     */
-  private def titleHtmlTagsWhitelist: org.jsoup.safety.Whitelist = {
-    new Whitelist().addTags(
+  private def titleHtmlTagsWhitelist: org.jsoup.safety.Safelist = {
+    new Safelist().addTags(
           "b", "code", "em",
           "i", "q", "small", "span", "strike", "strong", "sub",
           "sup", "u")
@@ -168,14 +168,14 @@ object TextAndHtml {
 
   def sanitizeInternalLinksAndQuotes(unsafeHtml: String): String = {
     // TyT7J03SKD5
-    compactClean(unsafeHtml,  new Whitelist()
+    compactClean(unsafeHtml, new Safelist()
           .addTags("a", "div", "blockquote")
           .addAttributes("a", "href"))
   }
 
   def sanitizeAllowIframeOnly(unsafeHtml: String): String = {
     // TyT603RKDL56
-    compactClean(unsafeHtml, new org.jsoup.safety.Whitelist()
+    compactClean(unsafeHtml, new org.jsoup.safety.Safelist()
           .addTags("iframe")
           .addAttributes("iframe", "src", "srcdoc", "sandbox"))
   }
@@ -183,8 +183,8 @@ object TextAndHtml {
   /** Links will have rel="nofollow noopener". Images, pre, div allowed.
     */
   def sanitizeAllowLinksAndBlocks(unsafeHtml: String,
-        amendWhitelistFn: Whitelist => Whitelist = x => x): String = {
-    var whitelist = org.jsoup.safety.Whitelist.basic()
+        amendWhitelistFn: Safelist => Safelist = x => x): String = {
+    var whitelist = org.jsoup.safety.Safelist.basic()
     whitelist = addRelNofollowNoopener(amendWhitelistFn(whitelist))
     compactClean(unsafeHtml, whitelist)
   }
@@ -205,24 +205,24 @@ object TextAndHtml {
     * the  already-sanitized-html  via Jsoup is ok fast and still good to do?
     */
   def sanitizeRelaxed(unsafeHtml: String,
-        amendWhitelistFn: Whitelist => Whitelist = x => x): String = {
+        amendWhitelistFn: Safelist => Safelist = x => x): String = {
     // Tested here: TyT03386KTDGR
-    var whitelist = org.jsoup.safety.Whitelist.relaxed()
+    var whitelist = org.jsoup.safety.Safelist.relaxed()
           // .removeTags("h1", "h2") // [disallow_h1_h2] — wait, breaks tests.
     whitelist = addRelNofollowNoopener(amendWhitelistFn(whitelist))
     compactClean(unsafeHtml, whitelist)
   }
 
-  private def addRelNofollowNoopener(whitelist: Whitelist): Whitelist = {
+  private def addRelNofollowNoopener(whitelist: Safelist): Safelist = {
     // rel=nofollow not included by default, in the relaxed() whitelist,
-    // see: https://jsoup.org/apidocs/org/jsoup/safety/Whitelist.html#relaxed()
+    // see: https://jsoup.org/apidocs/org/jsoup/safety/Safelist.html#relaxed()
     // Also add rel="noopener", in case of target="_blank" links.
     COULD_OPTIMIZE // only nofollow for external links, and noopener only if target=_blank.
-    // And don't remove target="_blank"  (Whitelist.relaxed() removes target=... ).
+    // And don't remove target="_blank"  (Safelist.relaxed() removes target=... ).
     whitelist.addEnforcedAttribute("a", "rel", "nofollow noopener")
   }
 
-  private def compactClean(unsafeHtml: String, whitelist: Whitelist): String = {
+  private def compactClean(unsafeHtml: String, whitelist: Safelist): String = {
     Jsoup.clean(unsafeHtml, "", whitelist, compactJsoupOutputSettings).trim()
   }
 

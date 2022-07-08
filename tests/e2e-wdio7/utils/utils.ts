@@ -62,7 +62,7 @@ export async function postJsonPatchToTalkyard(ps: {
         filePath: St, apiSecret: St, talkyardSiteOrigin: St, fail?: true,
         expectedErrors?: St[] }) {
   const cmd =
-      `nodejs ${toTalkyardScript} ` +
+      `node ${toTalkyardScript} ` +
         `--talkyardJsonPatchFile=${ps.filePath} ` +
         `--sysbotApiSecret=${ps.apiSecret} ` +
         `--sendTo=${ps.talkyardSiteOrigin}`
@@ -483,9 +483,9 @@ export function createPageInHtmlDirUnlessExists(pageSlug: St, html: St) {
 
 
 export function page_isChat(pageRole: PageRole): Bo {
-  return pageRole === PageRole.JoinlessChat ||
-          pageRole === PageRole.OpenChat ||
-          pageRole === PageRole.PrivateChat;
+  return pageRole === c.TestPageRole.JoinlessChat ||
+          pageRole === c.TestPageRole.OpenChat ||
+          pageRole === c.TestPageRole.PrivateChat;
 }
 
 
@@ -619,13 +619,17 @@ export function checkNewPostFields(post, ps: {
 }
 
 
-export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>): Pr<R> {
+export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>,
+          ps: { afterErr?: () => Pr<Vo> } = {}): Pr<R> {
     for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {
       try {
         return await fn();
       }
       catch (error) {
-        logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
+        logUnusual(`RETRYING: ${ what}  [TyME2ERETRY], because error: ${error.toString()}`);
+        if (ps.afterErr) {
+          await ps.afterErr();
+        }
       }
     }
     return await fn();

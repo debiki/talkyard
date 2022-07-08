@@ -39,7 +39,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.3.4"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.3.6"
 
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
@@ -62,11 +62,11 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.3.0"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.4.0"
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.14.3"   // newest as of 2021-11
+    val jsoup = "org.jsoup" % "jsoup" % "1.15.1"
 
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.2"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -88,7 +88,7 @@ object Dependencies {
     val logbackCore = "ch.qos.logback" % "logback-core" % "1.2.11"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.1.1"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.2"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
 
@@ -122,7 +122,7 @@ object Dependencies {
     //
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.19.1"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.19.2"
 
 
     // ----- PASETO tokens
@@ -153,12 +153,12 @@ object Dependencies {
 
     // ----- Test
 
-    val scalactic = "org.scalactic" %% "scalactic" % "3.2.11"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11" % "test"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.12"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.12" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
-    val specs2 = "org.specs2" %% "specs2-core" % "3.9.5" % "test"
+    val specs2 = "org.specs2" %% "specs2-core" % "3.10.0" % "test"
   }
 
 }

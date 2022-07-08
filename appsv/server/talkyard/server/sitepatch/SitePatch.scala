@@ -22,8 +22,6 @@ import com.debiki.core.Prelude._
 import debiki.dao.{ForumDao, ReadOnlySiteDao, SiteDao}
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
 import debiki.TextAndHtml
-import org.jsoup.Jsoup
-import org.jsoup.safety.Whitelist
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json.JsObject
 import scala.collection.mutable

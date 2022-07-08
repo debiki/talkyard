@@ -16,6 +16,17 @@ if [ `id -u` -eq 0 ]; then
   exit 1
 fi
 
+await_maybe_missing=$(egrep -n -r '[a-z]_br.*\(' tests/e2e-wdio7/specs/ | grep -v '\bawait '  | grep -v '\bnew ' | grep -v '_sync\b')
+if [ ! -z "$await_maybe_missing" ]; then
+  echo
+  echo "Maybe E2E bugs — could await be missing? Check these lines:"
+  echo
+  echo "$await_maybe_missing"
+  echo
+  echo "Bye."
+  exit 1
+fi
+
 # Make `command | tee -a logfile` preserve the command's exit status.
 set -o pipefail
 
@@ -176,15 +187,7 @@ function runE2eTest {
         # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
         # (But first add a cname entry for -manual.)
         cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl [5WAKEF02]
-        # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
-        # root first su:s to another user. Check the --is-root command line flag instead.
-        #if [ -z "$is_root" ]; then
-          echo "  $cmd_with_debug"
-        #else
-        #  echo "  su $my_username -c '$cmd_with_debug'"
-        #  echo
-        #  echo "Note: you are root. Don't forget 'su $my_username' (included above already)."
-        #fi
+        echo "  $cmd_with_debug"
         echo
         echo
         echo "Once it works, run it 33 times, and if it's flaky and fails once, that's ok:"
@@ -212,11 +215,6 @@ function runE2eTest {
     rm -f $test_log_file
   fi
 }
-
-if [ "$1" = '--is-root' ]; then
-  is_root=yes
-  shift
-fi
 
 
 #------------------------------------------------------------
@@ -325,12 +323,12 @@ function runAllE2eTests {
   # RENAME to internal-inline-link-previews-and-backlinks.2br?
   $r s/wdio --only links-internal.2browsers $args
 
-  $r s/wdio --only link-previews-internal-may-see.2br $args
-  $r s/wdio --only link-previews-internal-not-see-cat.2br $args
-  $r s/wdio --only link-previews-http-to-https.1br $args
-  $r s/wdio --only link-previews-images-mp4-youtube.1br.extln $args
-  $r s/wdio --only link-previews-twitter-max-editor.1br.extln $args
-  $r s/wdio --only link-previews-all-others.1br.extln $args
+  $r s/wdio-7 --only link-previews-internal-may-see.2br.d --cd -i $args
+  $r s/wdio-7 --only link-previews-internal-not-see-cat.2br.d --cd -i $args
+  $r s/wdio-7 --only link-previews-http-to-https.1br.d --cd -i $args
+  $r s/wdio-7 --only link-previews-images-mp4-youtube.1br.d.extln --cd -i $args
+  $r s/wdio-7 --only link-previews-twitter-max-editor.1br.d.extln --cd -i $args
+  $r s/wdio-7 --only link-previews-all-others.1br.d.extln --cd -i $args
 
 
   $r s/wdio --only view-edit-history.2br.mtime $args
@@ -363,8 +361,10 @@ function runAllE2eTests {
 
   $r s/wdio --only delete-pages.2br $args
 
-  $r s/wdio --only move-posts-same-page.2browsers $args
-  $r s/wdio --only move-posts-other-page.2browsers $args
+  $r s/wdio-7 --only move-posts-same-page.2br.d --cd -i $args
+  $r s/wdio-7 --only move-posts-other-page.2br.d --cd -i $args
+  $r s/wdio-7 --only move-posts-newer-page-reply.2br.d --cd -i $args
+  $r s/wdio-7 --only move-posts-pin-delete.2br.d --cd -i $args
   # + delete-posts
 
   $r s/wdio --only settings-allowed-email-domains.extidp.2br $args
@@ -516,7 +516,7 @@ function runAllE2eTests {
   $r s/wdio --only api-upsert-categories.2browsers $args
   $r s/wdio --only api-upsert-pages.2browsers $args
   $r s/wdio --only api-upsert-page-notfs.2browsers $args
-  $r s/wdio --only api-upsert-posts.2browsers $args
+  $r s/wdio-7 --only api-upsert-posts.2br.d --cd -i $args
 
   $r s/wdio --only api-search-full-text $args
   $r s/wdio --only api-list-query-for-topics-popular-first $args

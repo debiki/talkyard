@@ -63,8 +63,8 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
   });
 
   it(`Import site`, async () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
   });
 
 
@@ -147,10 +147,10 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
 
 
   it(`Memah follows the reply link in the email`, async () => {
-    memah_brB.go2(replyUrlInCannotReplyEmail);
+    await memah_brB.go2(replyUrlInCannotReplyEmail);
   });
   it(`... arrives at Owen's page in the forum`, async () => {
-    memah_brB.assertPageTitleMatches(owensPageTitle)
+    await memah_brB.assertPageTitleMatches(owensPageTitle);
   });
 
 
