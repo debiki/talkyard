@@ -786,11 +786,11 @@ export class TyE2eTestBrowser {
     }
 
     user = {
-      genDownloadPersonalDataUrl: (userId: PatId): St => {
+      genDownloadPersonalDataUrl_sync: (userId: PatId): St => {
         return '/-/download-personal-data?userId=' + userId;
       },
 
-      genDownloadPersonalContentUrl: (userId: PatId): St => {
+      genDownloadPersonalContentUrl_sync: (userId: PatId): St => {
         return '/-/download-my-content?authorId=' + userId;
       },
     }
@@ -883,7 +883,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    makeNewSiteDataForEmbeddedComments(ps: { shortName: string, longName: string })
+    makeNewSiteDataForEmbeddedComments_sync(ps: { shortName: string, longName: string })
           : NewSiteData {
       // Dupl code [502KGAWH0]
       // Need to generate new local hostname, since we're going to create a new site.
@@ -1197,10 +1197,10 @@ export class TyE2eTestBrowser {
     }
 
 
-    useCommentsIframe(ps: { discussionId: St }) {
+    useCommentsIframe_sync(ps: { discussionId: St }) {
       this.#useCommentsIframe = ps;
     }
-    useFirstCommentsIframe() {
+    useFirstCommentsIframe_sync() {
       this.#useCommentsIframe = null;
     }
 
@@ -1219,10 +1219,10 @@ export class TyE2eTestBrowser {
             waitForContent?: false, discId?: St, theresOnlyOne?: true,
             theSessionIdIframe?: true } = {}) {
       if (ps.discId) {
-        this.useCommentsIframe({ discussionId: ps.discId });
+        this.useCommentsIframe_sync({ discussionId: ps.discId });
       }
       else if (ps.theresOnlyOne) {
-        this.useFirstCommentsIframe();
+        this.useFirstCommentsIframe_sync();
       }
       await this.switchToAnyParentFrame();
       // Let's wait for the editor iframe, so Reply buttons etc will work.

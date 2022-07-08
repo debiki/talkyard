@@ -81,7 +81,7 @@ describe(`embcom.many-comment-iframes-same-page.2br  TyTE2E50RMF24S`, () => {
   });
 
   it("... logs in", async () => {
-    await maria_brB.useCommentsIframe({ discussionId: '222' });
+    maria_brB.useCommentsIframe_sync({ discussionId: '222' });
     await maria_brB.complex.loginIfNeededViaMetabar(maria);
   });
 

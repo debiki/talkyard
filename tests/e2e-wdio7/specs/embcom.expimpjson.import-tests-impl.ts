@@ -163,7 +163,7 @@ function constructEmbCommentsImportTest(testName: string, variants: {
       let testId;
 
       it(`Owen creates a 2nd embedded comments site`, async () => {
-        const newSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
+        const newSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments_sync({
             shortName: 'emb-rst', longName: "Emb Restore Site" });
         const result: NewSiteResult = await owensBrowser.newSite.createNewSite(newSiteData);
         await owensBrowser.newSite.signUpAsOwner(result);

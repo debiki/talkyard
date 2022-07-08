@@ -99,7 +99,7 @@ describe(`embcom.manyframes.basic.2br  TyTEMANYCOMIFR01`, () => {
 
 
   it("... logs in", async () => {
-    maria_brB.useCommentsIframe({ discussionId: '222' });
+    maria_brB.useCommentsIframe_sync({ discussionId: '222' });
     await maria_brB.complex.loginIfNeededViaMetabar(maria);
   });
 
@@ -196,7 +196,7 @@ describe(`embcom.manyframes.basic.2br  TyTEMANYCOMIFR01`, () => {
   let numReplies: NumReplies | U;
 
   it(`In discussion 111, there's one comment and 1 draft`, async () => {
-    maria_brB.useCommentsIframe({ discussionId: '111' });
+    maria_brB.useCommentsIframe_sync({ discussionId: '111' });
     await maria_brB.switchToEmbeddedCommentsIrame();
     numReplies = await maria_brB.topic.countReplies();
     assert.eq(numReplies.numNormal, 1);
@@ -210,7 +210,7 @@ describe(`embcom.manyframes.basic.2br  TyTEMANYCOMIFR01`, () => {
 
   it(`In discussion 222 there're two comments`, async () => {
     await maria_brB.switchToTheParentFrame();
-    maria_brB.useCommentsIframe({ discussionId: '222' });
+    maria_brB.useCommentsIframe_sync({ discussionId: '222' });
     await maria_brB.switchToEmbeddedCommentsIrame();
     numReplies = await maria_brB.topic.countReplies();
     assert.eq(numReplies.numNormal, 2);
