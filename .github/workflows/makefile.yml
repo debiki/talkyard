@@ -1,0 +1,71 @@
+name: Makefile CI test
+
+on:
+  push:
+    branches: [ main-ci-test ]
+  pull_request:
+    branches: [ main-ci-test ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Configure OS
+      run: |
+        sudo tee -a /etc/sysctl.conf <<EOF
+
+        ###################################################################
+        # Talkyard settings
+
+        # Up the max backlog queue size (num connections per port), default = 128
+        net.core.somaxconn=8192
+
+        # ElasticSearch requires (at least) this, default = 65530
+        # Docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt
+        vm.max_map_count=262144
+
+        # VSCode and IntelliJ Idea want to watch many files — without this, there'll be
+        # a "Unable to watch for file changes in this large workspace" error in VSCode.
+        # Also an "User limit of inotify watches reached" error can happen, when
+        # tailing logs, if too few watches. (The default is sometimes only 8192.)
+        fs.inotify.max_user_watches=524288
+        EOF
+
+        sudo sysctl --system
+
+    - name: Install build deps
+      run: sudo apt install inotify-tools
+
+    - uses: actions/checkout@v3
+    
+    - name: Fetch Git submodules
+      run: git submodule update --init
+
+    # Hmm this should be in the Makefile? No, instaed, better: Vendor these deps.
+    - name: Fetch non-vendored Nodejs deps
+      run: |
+        cd to-talkyard/
+        yarn
+        cd ../tests/e2e/
+        yarn
+        cd ../e2e-wdio7/
+        yarn
+        # Shouldn't be needed? These deps already vendored:
+        #cd ../..
+        #yarn
+
+    #- name: configure
+    #  run: ./configure
+
+    - name: Start Selenium
+      run: d/selenium &
+      
+    - name: Build and test images
+      run: make prod-images
+      
+    #- name: Run check
+    #  run: make check
+      
+    #- name: Run distcheck
+    #  run: make distcheck
