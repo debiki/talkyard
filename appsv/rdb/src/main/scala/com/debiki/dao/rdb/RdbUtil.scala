@@ -626,7 +626,7 @@ object RdbUtil {
       createdAt = getWhen(rs, "created_at"),
       postToSpamCheck = anyPostToCheck,
       who = Who(
-        id = rs.getInt("author_id"),
+        id = rs.getInt("auhtor_true_id_c"),
         BrowserIdData(
           ip = rs.getString("req_ip"),
           idCookie = getOptString(rs, "browser_id_cookie"),

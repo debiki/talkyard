@@ -649,7 +649,7 @@ sealed trait Pat {
   def isDeleted: Bo = false
   def isAnon: Bo = false
 
-  final def isAuthenticated: Bo = isRoleId(id)
+  def isAuthenticated: Bo = isRoleId(id)
   def isApprovedOrStaff: Bo
   final def isSystemUser: Bo = id == SystemUserId
   final def isSystemOrSysbot: Bo = id == SystemUserId || id == SysbotUserId
@@ -911,11 +911,12 @@ case class Anonym(
   anonStatus: AnonStatus,
   anonForPatId: PatId,   // rename to trueId
   anonOnPageId: PageId,
-  ) extends Pat with GuestOrAnon {
+  ) extends Pat with GuestOrAnon with Someone {
 
+  def anyUsername: Opt[St] = None
   def nameOrUsername: St = "Anonym"
   override def anyName: Opt[St] = Some(nameOrUsername)
-  override def usernameOrGuestName: St =  nameOrUsername
+  override def usernameOrGuestName: St = nameOrUsername
 
   def extId: Opt[ExtId] = None
   def noDetails: Pat = this
@@ -930,8 +931,9 @@ case class Anonym(
   def isOwner: Bo = false
   def isModerator: Bo = false
   def isSuperAdmin: Bo = false
-  override def isBuiltIn: Bo = false
+  def isGroup: Bo = false
   override def isAnon: Bo = true
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
 
   // Never deactivate or delete. If the underlying real user deactivates hens account,
   // don't deactivate the anonym — that'd make it simpler to know who the anonym is
@@ -940,8 +942,11 @@ case class Anonym(
   override def isDeleted: Bo = false
 
   // Currently only approved users may use anonyms, so, for now:
-  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
   override def isAuthenticated: Bo = true
+
+  // Or use the real user's levels? But then it can be simpler to know how hen is?
+  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
+  //def effectiveThreatLevel: ThreatLevel = ThreatLevel.SeemsSafe
 
   // But the accounts haven't been approved?
   override def isApprovedOrStaff: Bo = false
@@ -1012,9 +1017,9 @@ case class Guest( // [exp] ok   REFACTOR split into GuestBr and GuestVb [guest_b
   def isAdmin: Boolean = false
   def isOwner: Boolean = false
   def isModerator: Boolean = false
-  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
+  override def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
   def suspendedTill: Option[ju.Date] = None
-  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember ; SHOULD // CHANGE to TrustLevel.Stranger
+  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember ; SHOULD // CHANGE to TrustLevel.Stranger and remove isStaffOrMinTrustNotThreat above which then no longer is needed
 
   def anyName: Opt[St] = Some(guestName)
   def anyUsername: Opt[St] = None
