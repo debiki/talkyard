@@ -173,12 +173,11 @@ alter table users3 add constraint pats_c_anon_nulls check (
         is_owner is null and
         is_group = false and
         ui_prefs is null and
-        see_activity_min_tr_lv_c is null and
         max_upload_bytes_c is null and
         allowed_upload_extensions_c is null and
         -- Maybe there should be an anon user group, where these are configured?:
         -- Or would that be the Everyone group?
-        see_activity_min_trust_level is null and
+        see_activity_min_tr_lv_c is null and
         see_profile_min_tr_lv_c is null and
         see_approx_stats_min_tr_lv_c is null and
         see_exact_stats_min_tr_lv_c is null));

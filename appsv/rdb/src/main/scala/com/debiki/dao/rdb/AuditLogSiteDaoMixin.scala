@@ -75,7 +75,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
         site_id,
         audit_id,
         batch_id,
-        doer_id,
+        doer_true_id_c,
         done_at,
         did_what,
         details,
@@ -99,7 +99,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
         target_page_id,
         target_post_id,
         target_post_nr,
-        target_user_id,
+        target_pat_true_id_c,
         target_site_id)
       values (
         ?, ?, ?, ?, ? at time zone 'UTC',
@@ -166,7 +166,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       case None => ""
       case Some(uId) =>
         values.append(uId.asAnyRef)
-        "and doer_id = ?"
+        "and doer_true_id_c = ?"
     }
 
     val andDidWhatEqType = if (types.isEmpty) "" else {
@@ -275,7 +275,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       id = rs.getInt("audit_id"),
       batchId = getOptInt(rs, "audit_id"),
       didWhat = didWhat,
-      doerId = rs.getInt("doer_id"),
+      doerId = rs.getInt("doer_true_id_c"),
       doneAt = getDate(rs, "done_at"),
       emailAddress = Option(rs.getString("email_address")),
       browserIdData = getBrowserIdData(rs),
@@ -290,7 +290,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       targetUniquePostId = getOptInt(rs, "target_post_id"),
       targetPageId = Option(rs.getString("target_page_id")),
       targetPostNr = getOptInt(rs, "target_post_nr"),
-      targetUserId = getOptInt(rs, "target_user_id"),
+      targetUserId = getOptInt(rs, "target_pat_true_id_c"),
       targetSiteId = getOptInt(rs, "target_site_id"),
       isLoading = true)
   }
