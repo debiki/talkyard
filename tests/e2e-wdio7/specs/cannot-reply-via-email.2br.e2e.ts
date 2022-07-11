@@ -165,6 +165,10 @@ describe(`cannot-reply-via-email.2br  TyTE0REVIAEML`, () => {
     await memah_brB.complex.replyToOrigPost(memahsReplyToOwen);
   });
   it(`... Owen gets a reply notification`, async () => {
+    // Ooops, instead he gets a notf of his own reply as anon!
+    // ANON_UNIMPL, TESTS_MISSING: Won't get notified about reply to own anon reply,
+    // or own anon reply to own real-id reply.
+    //
     replyNotfEmailToOwen = await server.getLastEmailSenTo(site.id, owen.emailAddress);
     const body = replyNotfEmailToOwen.bodyHtmlText;
     assert.includes(body, memahsReplyToOwen);
