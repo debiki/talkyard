@@ -862,7 +862,8 @@ trait UserDao {
 
 
   def getUser(userId: UserId): Option[User] = {
-    require(userId >= Participant.LowestMemberId, "EsE4GKX24")
+    dieIf(userId < Participant.LowestMemberId, "TyE2LOWUID", s"Too low user id: $userId < ${
+          Participant.LowestMemberId}")
     getParticipant(userId).map(_ match {
       case user: User => user
       case _: Group => throw GotAGroupException(userId, wantedWhat = "a user")
