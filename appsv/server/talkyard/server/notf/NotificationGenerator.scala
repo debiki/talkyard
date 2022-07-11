@@ -146,7 +146,7 @@ case class NotificationGenerator(
           newPost.id, NotificationType.NewPostReviewTask)
     avoidDuplEmailToUserIds ++= oldNotfsToStaff.map(_.toUserId)
 
-    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
+    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))  // anon author?
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -164,7 +164,9 @@ case class NotificationGenerator(
           : Unit = {
       for {
         replyingToPost <- ancestorsCloseFirst
+        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         if replyingToPost.createdById != newPost.createdById // not replying to oneself
+        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         if approverId != replyingToPost.createdById // the approver has already read newPost
         replyingToUser <- tx.loadParticipant(replyingToPost.createdById)
       } {
@@ -217,6 +219,7 @@ case class NotificationGenerator(
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
         // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
+        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         if userOrGroup.id != newPost.createdById  // poster mentions henself?
         if !notfCreatedAlreadyTo(userOrGroup.id)
         // Authz checks that we won't notify people outside a private chat
@@ -450,6 +453,7 @@ case class NotificationGenerator(
   def generateForMessage(sender: Participant, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
+    // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
     anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
     tx.loadParticipants(toUserIds.filter(_ != sender.id)) foreach { user =>
       makeAboutPostNotfs(
@@ -469,15 +473,15 @@ case class NotificationGenerator(
         minNotfLevel: NotfLevel = NotfLevel.Hushed): Unit = {
 
     // legacy variable names CLEAN_UP but not now
-    val toUserMaybeGroup = sendTo
+    val toUserMaybeGroup = sendTo match {
+      case a: Anonym => dao.getTheParticipant(a.anonForPatId)
+      case o => o
+    }
+
     val newPost = post
 
     if (sentToUserIds.contains(toUserMaybeGroup.id))
       return
-
-    ANON_UNIMPL // notify the underlying real user.
-    if (toUserMaybeGroup.isAnon)
-      return // for now. Later: Look up the real underlying user.
 
     if (toUserMaybeGroup.isGuest) {
       if (toUserMaybeGroup.emailNotfPrefs == EmailNotfPrefs.DontReceive ||
@@ -527,8 +531,10 @@ case class NotificationGenerator(
 
         // Find ids of group members to notify, and excl the sender henself:  (5ABKRW2)
 
+        ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         var groupMembers = tx.loadGroupMembers(groupId).filter(_.id != newPost.createdById)
 
+        // Only users and groups can be gruop members.
         dieIf(groupMembers.exists(_.isGuestOrAnon), "TyE7ABK402")
 
         // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
@@ -684,6 +690,7 @@ case class NotificationGenerator(
         return
       }
 
+      ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
       if (member.id == newPost.createdById)
         return
 
@@ -735,6 +742,7 @@ case class NotificationGenerator(
         return Notifications.None  // or: return generatedNotifications? the same?
     }
 
+    // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
     anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
@@ -845,6 +853,7 @@ case class NotificationGenerator(
     anyAuthor = Some(tx.loadTheParticipant(post.createdById))
     for {
       user <- usersToNotify
+      // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
       if user.id != post.createdById
     } {
       // This is about the new (from the notf recipient's point of view) post,
@@ -872,7 +881,7 @@ case class NotificationGenerator(
 
     val aboutPost = about
     val toPat = to
-    val fromPatId = from.map(_.id) getOrElse aboutPost.createdById
+    val fromPatId = from.map(_.id) getOrElse aboutPost.createdById    // REN to fromPatIdMaybeAnon?
 
     dieIf(toPat.id == fromPatId, "TyE4S602MRD5",
           s"s$siteId: Notf to self, id: ${toPat.id}, about post id ${aboutPost.id}")
