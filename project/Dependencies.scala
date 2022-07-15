@@ -99,7 +99,7 @@ object Dependencies {
     // Deprecated. Should migrate to OpenTelemetry, they say, https://opentelemetry.io/.
     val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"  // 1.8.0 exists now
 
-    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.8"
+    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.9"
 
     // ----- Decoding JWT:s
 
