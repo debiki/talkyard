@@ -276,7 +276,7 @@ discovery of pages & people by iterating through all ids in the url.
 [custom-groups]
 Search for that tag.
 
-[subcomms]
+[subcomms] [sub_communities]
 Improve sub communities, e.g. selecting a category across all sub communities,
 not only the current one.
 
@@ -681,7 +681,8 @@ Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
 COULD_OPTIMIZE
 https://web.dev/content-visibility/
 https://developer.mozilla.org/en-US/docs/Web/CSS/contain
-
+Replace HashSet and HashMap w sth like C#'s HybridDictionary. [hybr_dict]
+Can just search for HashSet and find lots of occurrences?
 
 [macro-bug]
 Find a better macro lib that won't "destroy" the file if @endif is on the line just above '}'.

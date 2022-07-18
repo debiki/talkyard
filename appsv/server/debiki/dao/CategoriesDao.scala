@@ -27,11 +27,52 @@ import org.scalactic.{Good, ErrorMessage, Or, Bad}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.dao._
+import talkyard.server.authz.AuthzCtxOnForum
 
 
-case class SectionCategories(
-  rootCategory: Category,
-  catStuffsExclRoot: immutable.Seq[CategoryStuff]) {
+/** Pages pat may see, permission checked already.
+  *
+  * Not thread safe.
+  */
+case class PagesCanSee(   // [Scala_3] opaque type with extension methods?
+  pages: Vec[PagePathAndMeta]) {
+
+  private var _pagesByCatId: Map[CatId, ImmSeq[PagePathAndMeta]] = _
+
+  def pagesByCatId: Map[CatId, ImmSeq[PagePathAndMeta]] = {
+    if (_pagesByCatId eq null) {
+      _pagesByCatId = pages.groupBy(_.categoryId getOrElse NoCategoryId).withDefaultValue(Nil)
+    }
+    _pagesByCatId
+  }
+
+  def pageIds: ImmSeq[PageId] = pages.map(_.pageId)
+
+  def filter(p: PagePathAndMeta => Bo): PagesCanSee = {
+    PagesCanSee(pages filter p)
+  }
+}
+
+
+object PagesCanSee {
+  val empty: PagesCanSee = PagesCanSee(Vec.empty)
+}
+
+
+/** Categories pat may see, available as a tree, and as a list. Both the tree
+  * and list includes descendant cats of any other cat in this CatsCanSee
+  * one can see, given the authzCtx
+  * (so there's no need to load e.g. sub cats separately).
+  */
+case class CatsCanSee(
+  authzCtx: AuthzCtxOnForum,
+  catsTree: CategoryStuff,
+  catStuffsExclRoot: Vec[CategoryStuff],
+  // Just for debugging (for now).
+  includesDeleted: Bo,
+  ) {
+
+  def rootCategory: Cat = catsTree.category
 
   if (!rootCategory.isRoot) throwIllegalArgument(
     "TyE5AKP036SSD", s"The root category thinks it's not a root category: $rootCategory")
@@ -65,6 +106,77 @@ case class SectionCategories(
 
   def sectionPageId: PageId = rootCategory.sectionPageId
   def defaultCategoryId: CategoryId = rootCategory.defaultSubCatId getOrDie "TyE306RD57"
+
+
+  def catIds(inSubTree: Opt[CatId]): Vec[CatId] = {
+    catsInSubTree(inSubTree).map(_.category.id)
+  }
+
+  /** If this is a whole site section (the root category is a site section cat root),
+    * then, returns all base cats (namely, childs of the cat root).
+    * Otherwise returns the root cat (which is then a base cat or a sub cat).
+    */
+  def baseCatIdsOrOnlyId: ImmSeq[CatId] = {
+    if (catsTree.category.isRoot) catsTree.childCats.map(_.category.id)
+    else Vec(catsTree.category.id)
+  }
+
+
+  /** Any root cat isn't included in the result.
+    */
+  def catsInSubTree(subTreeRootId: Opt[CatId]): Vec[CategoryStuff] = {
+    // Unit tests:
+    TESTS_MISSING
+
+    subTreeRootId match {
+      case None =>
+        catStuffsExclRoot
+      case Some(startCatId) =>
+        WOULD_OPTIMIZE // use a MutArrBuf if fewer than around ... 20 cats?
+        // C# has HybridDictionary for this. [hybr_dict]
+        val idsSeen = mutable.HashSet[CatId](startCatId)
+
+        // (But not 500! there're forums w 500 cats.)
+        val startIsRoot = startCatId == catsTree.category.id && catsTree.category.isRoot
+        val startCat: CategoryStuff =
+              if (startIsRoot) catsTree
+              else {
+                catStuffsExclRoot.find(_.category.id == startCatId) getOrElse {
+                  return Vec.empty
+                }
+              }
+
+        val result = MutArrBuf[CategoryStuff]()
+
+        // Don't incl the root cat in the sub tree. (There're never any pages in a root cat
+        // so would just result in pointless db lookups).
+        // (However, if we're looking at a base cat, it should be included — otherwise
+        // bugs like [only topics in sub cats get listed] happen.)
+        if (!startIsRoot) {
+          result.append(startCat)
+        }
+
+        // [Scala_3] use ArrayDeque instead,
+        // https://www.scala-lang.org/api/2.13.x/scala/collection/mutable/ArrayDeque.html
+        val remainingCats = MutArrBuf[CategoryStuff](startCat.childCats: _*)
+        while (remainingCats.nonEmpty) {
+          val nextCat: CategoryStuff = remainingCats.last  // last, so no need to shuffle all
+          remainingCats.trimEnd(1)
+          if (idsSeen contains nextCat.category.id) {
+            // Skip this cat. Cycles not allowed — there's a bug somewhere, since this cycle
+            // exists. Shouldn't even be allowed when *importing* contents.
+            COULD_LOG // a warning, so a developer can investigate
+          }
+          else {
+            result.append(nextCat)
+            idsSeen.add(nextCat.category.id)
+            remainingCats ++= nextCat.childCats
+          }
+        }
+
+        result.to[Vec]
+    }
+  }
 }
 
 
@@ -263,27 +375,26 @@ trait CategoriesDao {
   /** List categories in the site section (forum/blog/whatever) at page pageId.
     * Sorts by Category.position (hmm doesn't make much sense if there are sub categories [subcats]).
     */
-  def listMaySeeCategoriesInSection(sectionPageId: PageId, includeDeleted: Boolean,
-        authzCtx: ForumAuthzContext): Option[SectionCategories] = {
+  def listMaySeeCategoriesInSection(sectionPageId: PageId, inclDeleted: Bo,
+        authzCtx: AuthzCtxOnForum): Opt[CatsCanSee] = {
     getRootCategoryForSectionPageId(sectionPageId) map { rootCategory =>
-      makeSectCatStuffs(rootCategory, includeDeleted, authzCtx)
+      makeSectCatStuffs(rootCategory, inclDeleted = inclDeleted, authzCtx)
     }
   }
 
 
-  def listMaySeeCategoriesAllSections(includeDeleted: Boolean, authzCtx: ForumAuthzContext)
-        : Seq[Category] = {
+  def listMaySeeCategoriesAllSections(inclDeleted: Bo, authzCtx: AuthzCtxOnForum): Seq[Cat] = {
     listMaySeeCategoryStuffAllSections(
-      includeDeleted = false, authzCtx).flatMap(_.catStuffsExclRoot.map(_.category))
+          inclDeleted = inclDeleted, authzCtx).flatMap(_.catStuffsExclRoot.map(_.category))
   }
 
 
-  def listMaySeeCategoryStuffAllSections(includeDeleted: Boolean, authzCtx: ForumAuthzContext)
-        : Seq[SectionCategories] = {
+  def listMaySeeCategoryStuffAllSections(inclDeleted: Bo, authzCtx: AuthzCtxOnForum)
+        : Seq[CatsCanSee] = {
     getAndRememberCategories()
-    val result = ArrayBuffer[SectionCategories]()
+    val result = ArrayBuffer[CatsCanSee]()
     for (rootCategory <- rootCategories) {
-      val sectCats = makeSectCatStuffs(rootCategory, includeDeleted = includeDeleted, authzCtx)
+      val sectCats = makeSectCatStuffs(rootCategory, inclDeleted = inclDeleted, authzCtx)
       result.append(sectCats)
     }
     result
@@ -292,111 +403,108 @@ trait CategoriesDao {
 
   /** Returns (categories, root-category).
     */
-  def listMaySeeCategoriesInSameSectionAs(categoryId: CategoryId, authzCtx: ForumAuthzContext)
-        : Option[SectionCategories] = {
+  def listMaySeeCategoriesInSameSectionAs(categoryId: CatId, authzCtx: AuthzCtxOnForum,
+          inclDeleted: Bo, exclPubCats: Bo = false)
+          : Opt[CatsCanSee] = {
     getAndRememberCategories()
     if (rootCategories.isEmpty)
       return None
 
     val rootCategory = getRootCategoryForCategoryId(categoryId) getOrDie "TyEPKDRW0"
-    val sectCats = makeSectCatStuffs(rootCategory, includeDeleted = authzCtx.isStaff, authzCtx)
+    val sectCats = makeSectCatStuffs(rootCategory,
+          inclDeleted = inclDeleted && authzCtx.isStaff, authzCtx)
     Some(sectCats)
   }
 
 
-  private def makeSectCatStuffs(rootCategory: Category, includeDeleted: Bo,
-        authzCtx: ForumAuthzContext): SectionCategories = {
-    COULD_OPTIMIZE // why not cache this? Or this [cache_cats_stuff]?
-    // Doesn't include recent topics,
-    // so should be fine? With whole server feature flag, in case of bugs.
-    // But first find out if this actually takes time. Usually no db access anyway.
+  private def makeSectCatStuffs(rootCategory: Category, inclDeleted: Bo,
+          authzCtx: AuthzCtxOnForum): CatsCanSee = {
+    COULD_OPTIMIZE // cache this? Used a lot.  Can use here too: [cache_cats_stuff].
 
-    val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-      includeDeleted = includeDeleted, inclCatsWithTopicsUnlisted = true, authzCtx).sortBy(_.position)
+    val (anyTree: Opt[CategoryStuff], catsStuffExclRoot: Vec[CategoryStuff]) =
+          _buildCatCanSeeTree(rootCategory.id,
+              inclDeleted = inclDeleted,
+              inclCatsWithTopicsUnlisted = true, authzCtx)
 
-    val catStuffs = categories map { category =>
-      makeCatStuff(category)
-    }
-
-    SectionCategories(
-      rootCategory = rootCategory,
-      catStuffsExclRoot = catStuffs)
+    CatsCanSee(
+          authzCtx,
+          anyTree.get,
+          catStuffsExclRoot = catsStuffExclRoot,
+          includesDeleted = inclDeleted)
   }
 
 
   /** Loads info about the category: its description [502RKDJWF5], any thumbnail url.
     * Maybe activity statistics later?
     */
-  private def makeCatStuff(category: Category): CategoryStuff = {
-    COULD_OPTIMIZE // cache this or that: [cache_cats_stuff]?
-    val anyAboutPageId = getAboutCategoryPageId(category.id)
+  private def makeCatStuff(cat: Cat, childCats: Vec[CategoryStuff]): CategoryStuff = {
+    // Include the about & section page stuff in  CatsCanSee?  [cache_cats_stuff]
+    val anyAboutPageId = getAboutCategoryPageId(cat.id)
     val anyAboutPageStuff = getPageStuffById(anyAboutPageId).values.headOption
     val excerpt = anyAboutPageStuff.flatMap(_.bodyExcerpt) getOrElse ""
     val imageUrls = anyAboutPageStuff.map(_.bodyImageUrls) getOrElse Nil
-    CategoryStuff(category, excerpt, imageUrls)
+    CategoryStuff(cat, childCats, excerpt, imageUrls)
   }
 
 
-  /** List all categories in the sub tree with categoryId as root.
-    */
-  private def listDescendantMaySeeCategories(categoryId: CategoryId, includeRoot: Boolean,
-        includeDeleted: Boolean, inclCatsWithTopicsUnlisted: Boolean,
-        authzCtx: ForumAuthzContext): immutable.Seq[Category] = {
-    val categories = ArrayBuffer[Category]()
-    appendMaySeeCategoriesInTree(categoryId, includeRoot = includeRoot, includeDeleted = includeDeleted,
-        inclCatsWithTopicsUnlisted = inclCatsWithTopicsUnlisted, authzCtx, categories)
-    categories.to[immutable.Seq]
-  }
-
-
+  COULD; MOVE // to new class PagesInCatsDao?  [move_list_pages]
   /** Lists pages placed directly in one of categoryIds.
     */
-  private def loadPagesDirectlyInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery,
-        limit: Int): Seq[PagePathAndMeta] = {
-    readOnlyTransaction(_.loadPagesInCategories(categoryIds, pageQuery, limit))
+  private def _loadPagesInCatIds(catIds: Seq[CatId], pageQuery: PageQuery, limit: i32)
+          : Vec[PagePathAndMeta] = {
+    COULD_OPTIMIZE // cache this?: [cache_pages_in_cats]
+    readTx(_.loadPagesInCategories(catIds, pageQuery, limit))
   }
 
 
-  MOVE // to PagesDao?  [move_list_pages]
+  COULD; MOVE // to PagesInCatsDao?  [move_list_pages]
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
-  def loadMaySeePagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
-        authzCtx: ForumAuthzContext, pageQuery: PageQuery, limit: Int)
-        : Seq[PagePathAndMeta] = {
-    val maySeeCategoryIds =
-      if (includeDescendants) {
-        // (Include the start ("root") category because it might not be the root of the
-        // whole section (e.g. the whole forum) but only the root of a sub section (e.g.
-        // a category in the forum, wich has sub categories). The top root shouldn't
-        // contain any pages, but subtree roots usually contain pages.)
-        listDescendantMaySeeCategories(categoryId, includeRoot = true,
-            includeDeleted = pageQuery.pageFilter.includeDeleted,
-            inclCatsWithTopicsUnlisted = false, authzCtx).map(_.id)
-      }
-      else {
-        SECURITY // double-think-through this:
-        // No this is fine, we're nowadays testing below, with Authz.maySeePage(..).
-        // unimplementedIf(!authzCtx.isStaff, "!incl hidden in forum [EsE2PGJ4]")
-        Seq(categoryId)
-      }
+  def loadPagesCanSeeInCatIds(catIds: Seq[CatId], pageQuery: PageQuery, limit: i32,
+          authzCtx: AuthzCtxOnForum): Vec[PagePathAndMeta] = {
+    COULD_OPTIMIZE // Could cache. Or cache instead here: [cache_pages_in_cats].
+    // Lookup by cat ids *and* AuthzCtxOnForum fields.
+    // However, Authz.checkPermsOnPages(..) looks at the requester's user id,
+    // so maybe not.  (Or, maybe makes sense to not show deleted or hidden pages
+    // in the forum topic lists even if they're one's own? Only if one accesses them
+    // directly (that's not via this fn), or ticks "show hidden and deleted" (then,
+    // pageQuery.pageFilter.includeDeleted is true), would one get to see them?
+    // Then, can cache, since the user id isn't used. Or maybe cache only for
+    // people who have been inactive the last time — then there's no personal stuff
+    // to include, for them?)
+    //
+    // But when uncache? That'd depend on the page query? Entries with
+    // pageQuery.orderOffset PageOrderOffset.ByCreatedAt, would get uncached whenever
+    // a new page in any of their categories, was created.
+    // And entries with ByBumpTime, whenever a page or comment was created.
+    // And pinned topics, only when a topic got pinned, or a pinned topic got
+    // deleted or unpinned.
+    // So, would need to be able to lookup all cache *keys*, by category id and
+    // sort order. Tricky! And there'd be race conditions. Either 1) some kind of
+    // transactional memory that can be synced with the db transactions? (don't!),
+    // or 2) just expire these cache entries after say 15 seconds — because
+    // this cache is only important under higher load, and then typically
+    // many people make use of the cache also in a short period of time. (Then,
+    // caching just 15 can have lots of effect?)
 
     val okCategoryIds =
       if (pageQuery.pageFilter.filterType != PageFilterType.ForActivitySummaryEmail)
-        maySeeCategoryIds
+        catIds
       else
-        maySeeCategoryIds filter { id =>
+        catIds filter { id =>
           val category = categoriesById.get(id)
           category.map(_.includeInSummaries) isNot IncludeInSummaries.NoExclude
         }
 
     // Although we may see these categories, we might not be allowed to see all pages therein.
     // So, both per-category and per-page authz checks.
-    val pagesInclForbidden = loadPagesDirectlyInCategories(okCategoryIds, pageQuery, limit)
+    val pagesInclForbidden = _loadPagesInCatIds(okCategoryIds, pageQuery, limit = limit)
 
     // For now. COULD do some of filtering in the db query instead, so won't find 0 pages
     // just because all most-recent-pages are e.g. hidden.
     val filteredPages = pagesInclForbidden filter { page =>
       val categories = getAncestorCategoriesRootLast(page.categoryId)
+      COULD_OPTIMIZE // Do for all pages in the same cat at once?  [authz_chk_mny_pgs]
       val may = talkyard.server.authz.Authz.maySeePage(
             page.meta,
             user = authzCtx.requester,
@@ -413,40 +521,58 @@ trait CategoriesDao {
 
 
   MOVE // to PagesDao?  [move_list_pages]
-  def listMaySeeTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery,
-        includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext, limit: Int)
-        : Seq[PagePathAndMeta] = {
-    COULD_OPTIMIZE // could cache
+  def listPagesCanSeeInCatsCanSee(catsCanSee: CatsCanSee, pageQuery: PageQuery,
+          inclPinned: Bo, limit: i32, inSubTree: Opt[CatId] = None)
+          : PagesCanSee = {
+    // Tests:
+    //  - category-perms.2br.d
+
+    COULD_OPTIMIZE // could cache, per groups of categories, and per page query & limit,
+    // & sub tree. But I think it's better to instead cache here: [cache_pages_in_cats],
+    // because which topics are still pinned, will be per person, in the future,
+    // depending on if one has read them already or not. And then,
+    // caching in this fn, listPagesCanSeeInCatsCanSee(..., inclPinned = true, ...)
+    // wouldn't work. Hmm but if  inclPinned = false?  However then this fn is
+    // almost the same as loadPagesCanSeeInCatIds() so might as well cache there.
 
     // COULD instead of PagePathAndMeta use some "ListedPage" class that also includes  [7IKA2V]
     // the popularity score, + doesn't include stuff not needed to render forum topics etc.
-    SECURITY; TESTS_MISSING  // securified
 
-    val topics: Seq[PagePathAndMeta] = loadMaySeePagesInCategory(
-      categoryId, includeDescendantCategories, authzCtx,
-      pageQuery, limit)
+    val catIds = catsCanSee.catIds(inSubTree)
 
-    // If sorting by bump time, sort pinned topics first. Otherwise, don't.
-    // (Could maybe show pinned topics if sorting by newest-first? Flarum & Discourse don't though.)
-    val topicsInclPinned = pageQuery.orderOffset match {
-      case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
-        val pinnedTopics = loadMaySeePagesInCategory(
-          categoryId, includeDescendantCategories, authzCtx,
-          pageQuery.copy(orderOffset = PageOrderOffset.ByPinOrderLoadOnlyPinned), limit)
-        val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
+    // Load pages in cats.
+    val topics: Vec[PagePathAndMeta] = loadPagesCanSeeInCatIds(
+          catIds, pageQuery, limit = limit, catsCanSee.authzCtx)
+
+    // Load pinned pages, same cats.
+    // For now, only if sorting by bump time (otherwise, currently won't show pinned topics).
+    // Later, maybe show, iff pat hasn't changed the sort order?
+    // So, if Best First is the default topic sort order, then, that's where pinned topics
+    // would appear?
+    val pagesInclPinned: Vec[PagePathAndMeta] = pageQuery.orderOffset match {
+      case orderOffset: PageOrderOffset.ByBumpTime
+            if inclPinned && orderOffset.offset.isEmpty =>
+        val pinnedQuery = pageQuery.copy(orderOffset = PageOrderOffset.ByPinOrderLoadOnlyPinned)
+        val pinnedTopics: Vec[PagePathAndMeta] =
+              loadPagesCanSeeInCatIds(
+                  catIds, pinnedQuery, limit = limit, catsCanSee.authzCtx)
+        // Don't list pinned topics twice.
+        val notPinned: Vec[PagePathAndMeta] = topics.filterNot(
+              t => pinnedTopics.exists(_.id == t.id))
         val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>
           val meta = topic.meta
           val pinnedGlobally = meta.pinWhere.contains(PinPageWhere.Globally)
-          val pinnedInThisCategory = meta.isPinned && meta.categoryId.contains(categoryId)
+          val pinnedInThisCategory = meta.isPinned && meta.categoryId.exists(inSubTree.is)
           val isPinned = pinnedGlobally || pinnedInThisCategory
           if (isPinned) topic.meta.pinOrder.get // 1..100
           else Long.MaxValue - topic.meta.bumpedOrPublishedOrCreatedAt.getTime // much larger
         }
         topicsSorted
-      case _ => topics
+      case _ =>
+        topics
     }
 
-    topicsInclPinned
+    PagesCanSee(pagesInclPinned)
   }
 
 
@@ -492,10 +618,11 @@ trait CategoriesDao {
   }
 
 
-  def getTheCategoryStuffAndRoot(id: CategoryId): (CategoryStuff, Category) = {
+  /** Does not include any child cats. */
+  def getTheCategoryStuffAndRootSkipChilds(id: CategoryId): (CategoryStuff, Category) = {
     val (cat, rootCat) = getCategoryAndRoot(id) getOrElse throwNotFound(
       "TyE830DLYUF0", s"s$siteId: No category with id $id")
-    val catStuff = makeCatStuff(cat)
+    val catStuff = makeCatStuff(cat, childCats = Vec.empty)
     (catStuff, rootCat)
   }
 
@@ -538,51 +665,74 @@ trait CategoriesDao {
   }
 
 
-  private def appendMaySeeCategoriesInTree(rootCategoryId: CatId, includeRoot: Bo,
-      includeDeleted: Bo,
-      inclCatsWithTopicsUnlisted: Bo,
-      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]): Unit = {
+  /** Returns a pair:
+    *    - start-CatStuff,
+    *    - start-and-descendant-CatStuff:s
+    *         but excl start if it's a cat tree root
+    */
+  private def _buildCatCanSeeTree(
+        startCatId: CatId, inclDeleted: Bo, inclCatsWithTopicsUnlisted: Bo,
+        authzCtx: AuthzCtxOnForum)
+        : (Opt[CategoryStuff], Vec[CategoryStuff]) = {
 
-    if (categoryList.exists(_.id == rootCategoryId)) {
-      // COULD log cycle error
-      return
+    val (_, catsByParentId: Map[CatId, Vec[Cat]]) = getAndRememberCategories()
+
+    val startCatsRootLast = getAncestorCategoriesRootLast(startCatId, inclSelfFirst = true)
+
+    val catIdsSeen = mutable.Set[CatId]()
+    val catStuffsNoRoot = MutArrBuf[CategoryStuff]()
+
+    def build(catThenAncestors: Vec[Cat]): Opt[CategoryStuff] = {
+      val cat: Cat = catThenAncestors.headOption getOrElse {
+        return None
+      }
+
+      if (catIdsSeen contains cat.id) {
+        // Cat cycle in db? How did that happen, not allowed.
+        COULD_LOG // a warning
+        return None
+      }
+
+      catIdsSeen.add(cat.id)
+
+      // May we see this category?
+      COULD_OPTIMIZE // If we've checked the ancestors already, only check the current cat
+      // — currently we're re-checking all ancestors.
+      // (Skip the root category in this check; cannot set permissions on it. [0YWKG21])
+      if (!cat.isTreeRoot) {
+        val may = Authz.maySeeCategory(authzCtx, catsRootLast = catThenAncestors)
+        if (may.maySee isNot true)
+          return None
+      }
+
+      if (!inclDeleted && cat.isDeleted)
+        return None
+
+      COULD // add a [maySeeUnlisted] permission? If in a cat, a certain group should see unlisted topics.
+      val onlyForStaff = cat.unlistCategory || cat.isDeleted  // [5JKWT42]
+      if (onlyForStaff && !authzCtx.isStaff)
+        return None
+
+      if (cat.unlistTopics && !inclCatsWithTopicsUnlisted)
+        return None
+
+      val childs: Vec[CategoryStuff] =
+            catsByParentId.getOrElse(cat.id, Vec.empty) flatMap { childCat =>
+              val childCatThenAncestors: Vec[Cat] = childCat +: catThenAncestors
+              build(childCatThenAncestors)
+            } sortBy(_.category.position)
+
+      val catStuff = makeCatStuff(cat, childs)
+
+      if (!cat.isTreeRoot) {
+        catStuffsNoRoot.append(catStuff)
+      }
+
+      Some(catStuff)
     }
 
-    val (categoriesById, categoriesByParentId) = getAndRememberCategories()
-    val startCategory = categoriesById.getOrElse(rootCategoryId, {
-      return
-    })
-
-    val catsRootLast = getAncestorCategoriesRootLast(rootCategoryId)
-
-    // May we see this category?
-    // (Could skip checking the ancestors again, when we've recursed into a child category.)
-    // (Skip the root category in this check; cannot set permissions on it. [0YWKG21])
-    if (!catsRootLast.head.isRoot) {
-      val may = Authz.maySeeCategory(authzCtx, catsRootLast = catsRootLast)
-      if (may.maySee isNot true)
-        return
-    }
-
-    if (!includeDeleted && startCategory.isDeleted)
-      return
-
-    COULD // add a [maySeeUnlisted] permission? If in a cat, a certain group should see unlisted topics.
-    val onlyForStaff = startCategory.unlistCategory || startCategory.isDeleted  // [5JKWT42]
-    if (onlyForStaff && !authzCtx.isStaff)
-      return
-
-    if (includeRoot)
-      categoryList.append(startCategory)
-
-    val childCategories = categoriesByParentId.getOrElse(rootCategoryId, {
-      return
-    })
-    for (childCategory <- childCategories;
-         if !childCategory.unlistTopics || inclCatsWithTopicsUnlisted) {
-      appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true, includeDeleted = includeDeleted,
-        inclCatsWithTopicsUnlisted = inclCatsWithTopicsUnlisted, authzCtx, categoryList)
-    }
+    val startCatStuff = build(startCatsRootLast)
+    (startCatStuff, catStuffsNoRoot.sortBy(_.category.position).to[Vec])
   }
 
 
@@ -601,7 +751,7 @@ trait CategoriesDao {
     val result: (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = memCache.lookup(
       allCategoriesKey,
       orCacheAndReturn = Some({
-        loadCategories()
+        _loadAllCategories()
       })).get
 
     // Remember.
@@ -612,20 +762,21 @@ trait CategoriesDao {
   }
 
 
-  private def loadCategories()
-        : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {
-    val catsById: Map[CategoryId, Category] = readOnlyTransaction(tx => {
+  private def _loadAllCategories(): (Map[CatId, Cat], Map[CatId, Vec[Cat]]) = {
+    val catsById: Map[CatId, Cat] = readTx { tx =>
       tx.loadCategoryMap()
-    })
-
-    val catsByParentId = mutable.HashMap[CategoryId, ArrayBuffer[Category]]()
-
-    for ((_, category) <- catsById; parentId <- category.parentId) {
-      val siblings = catsByParentId.getOrElseUpdate(parentId, ArrayBuffer[Category]())
-      siblings.append(category)
     }
 
-    val catsByParentIdImmutable = Map.apply(catsByParentId.mapValues(_.toVector).toSeq: _*)
+    val catsByParentId = mutable.HashMap[CatId, ArrayBuffer[Cat]]()
+
+    for ((_, cat) <- catsById; parentId <- cat.parentId) {
+      val siblings = catsByParentId.getOrElseUpdate(parentId, ArrayBuffer[Cat]())
+      siblings.append(cat)
+    }
+
+    val catsByParentIdImmutable = Map.apply(
+          catsByParentId.mapValues(_.sortBy(_.position).toVector).toBuffer: _*)
+
     (catsById, catsByParentIdImmutable)
   }
 

@@ -22,6 +22,8 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import talkyard.server._
+import talkyard.server.http.ApiRequest
+import talkyard.server.authz.Authz
 import javax.inject.Inject
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents, DiscardingCookie, Result}
@@ -34,9 +36,16 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
   extends TyController(cc, tyCtx) {
 
 
+  private def checkIsUtx(req: ApiRequest[_]): U = {
+    throwForbiddenIf(!req.site.featureFlags.contains("ffIsUtx"), "TyENOTUTXEX",
+          "This endpoint is for Usability Testing Exchange only")
+  }
+
+
   def handleUsabilityTestingForm: Action[JsValue] = PostJsonAction(
         RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
     import request.dao
+    checkIsUtx(request)
 
     val pageTypeIdString = (request.body \ "pageTypeId").as[String]
     val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
@@ -83,6 +92,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
     */
   def pickTask(categorySlug: String): Action[Unit] =
         GetActionRateLimited(RateLimits.FullTextSearch) { request =>
+    checkIsUtx(request)
     doPickTask(categorySlug, request)
   }
 
@@ -117,6 +127,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
     */
   private def doPickTask(categorySlug: String, request: http.GetRequest): Result = {
     import request.{dao, theRequester}
+
     val category = dao.getCategoryBySlug(categorySlug).getOrThrowBadArgument(
       "EsE0FYK42", s"No category with slug: $categorySlug")
 
@@ -128,14 +139,22 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
     }
 
     val authzCtx = dao.getForumAuthzContext(Some(theRequester))
+
+    // Def-in-depth extra access check.  (dao.loadPagesCanSeeInCatIds() below does too.)
+    {
+      val catsRootLast = dao.getAncestorCategoriesRootLast(category.id, inclSelfFirst = true)
+      val may = Authz.maySeeCategory(authzCtx, catsRootLast = catsRootLast)
+      throwForbiddenIf(may.maySee isNot true, "TyEUTXBADCAT", "Bad UTX category slug")
+    }
+
     // (Don't include deleted topics, to mitigate the below DoS attack. Ban people who post stuff
     // that the staff then deletes.)
     val pageQuery = PageQuery(PageOrderOffset.ByCreatedAt(None),
       PageFilter(PageFilterType.AllTopics, includeDeleted = false),
       includeAboutCategoryPages = false)
-    val topicsWithAboutPage = dao.loadMaySeePagesInCategory(
-      category.id, includeDescendants = false, authzCtx,
-      pageQuery, limit = 1000) ;SECURITY // UTX DoS attack, fairly harmless. If topics created too fast.
+
+    val topicsWithAboutPage = dao.loadPagesCanSeeInCatIds(
+          Vec(category.id), pageQuery, limit = 1000, authzCtx) ;SECURITY // UTX DoS attack, fairly harmless. If topics created too fast.
 
     // Filter away any topics that for some reason are of the wrong type (maybe was moved manually).
     val usabilityTestingTopics =

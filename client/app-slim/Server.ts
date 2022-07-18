@@ -1662,13 +1662,14 @@ export function createEmbCmtsSiteGoToInstrs() {
 }
 
 
-export function loadForumCategoriesTopics(forumPageId: string, topicFilter: string,
-      success: (categories: Category[]) => void) {
+export function loadForumCategoriesTopics(forumPageId: St, topicFilter: St,
+      onOk: (categories: Cat[]) => Vo) {
   let url = '/-/list-categories-topics?forumId=' + forumPageId;
+  // Would be nice to be able to change topic sort order too. [cats_topics_order]
   if (topicFilter) {
     url += '&filter=' + topicFilter;
   }
-  get(url, success);
+  get(url, r => onOk(r.catsWithTopics));
 }
 
 
@@ -2245,8 +2246,8 @@ export function loadCategory(id: number, success: (response: LoadCategoryRespons
 }
 
 
-export function listCategoriesAllSections(success: (response: Category[]) => void)  {
-  get('/-/list-categories-all-sections', success);
+export function listCategoriesAllSections(onOk: (cats: Cat[]) => Vo)  {
+  get('/-/list-categories-all-sections', resp => onOk(resp.catsAllSects));
 }
 
 

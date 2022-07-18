@@ -1121,7 +1121,8 @@ interface SessWinStore {
 interface DiscStore extends SessWinStore {
   currentPage?: Page;
   currentPageId?: PageId;
-  currentCategories: Cat[];   // RENAME [concice_is_nice] curCats
+  currentCategories: Cat[];   // RENAME [concice_is_nice] curCats — or remove, use curCatsById.values instead?
+  curCatsById: { [catId: CatId]: Cat };
   usersByIdBrief: { [userId: number]: Pat };  // = PatsById
   pagesById: { [pageId: string]: Page };
 }
@@ -2109,11 +2110,22 @@ interface CatsTree {
   baseCats: CatsTreeCat[];
   catsById: { [id: number]: CatsTreeCat };
 }
+
 interface CatsTreeCat extends Category {
-  isRootCat?: Bo;
-  isBaseCat?: Bo;
-  isSubCat?: Bo;
-  // isSubSubCat?: Bo; — later
+  /// Each site section, e.g. a forum, or blog, or wiki, has its own root category.
+  // RENAME to isTreeRoot, since there are category tree sub roots too (for sub trees).
+  isRootCat?: true;
+
+  /// Children of a tree root cat, are base cats.
+  isBaseCat?: true;
+
+  /// Children of base cats, are sub cats.
+  isSubCat?: true;
+
+  // Later, remove isRootCat, isBaseCat etc, and instead:
+  // catDepth: 0 (cat tree root), 1 (base cat), 2 (sub cat), 3 (sub sub cat)?
+  // and enum CatDepth { TreeRoot = 0, BaseCat = 1, ... }
+
   subCats?: CatsTreeCat[];
 }
 

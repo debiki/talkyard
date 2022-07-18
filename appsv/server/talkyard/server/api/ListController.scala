@@ -19,6 +19,7 @@ package talkyard.server.api
 
 import com.debiki.core._
 import debiki.RateLimits
+import debiki.dao.PagesCanSee  // MOVE to core?
 import talkyard.server.http._
 import talkyard.server.events.EventsParSer
 import debiki.EdHttp._
@@ -36,7 +37,6 @@ import debiki.JsonUtils._
   */
 class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
   extends TyController(cc, edContext) {
-
 
 
   def apiV0_list(): Action[JsValue] = PostJsonAction(  // [PUB_API]
@@ -132,7 +132,7 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val authzCtx = dao.getForumAuthzContext(requester)
 
     def nothingFound = ThingsFoundJson.makePagesFoundListResponse(
-          Nil, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
+          PagesCanSee.empty, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
 
     val anyCategory: Option[Category] = anyCategoryRef map { catRef =>
       val parsedRef = parseRef(catRef, allowPatRef = false) getOrIfBad { problem =>
@@ -205,11 +205,24 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
         val limit = (isAuthorWaitingFilter.isDefined
               || isOpenFilter.isDefined || pageTypeFilter.nonEmpty) ? 62 | 18
 
-        var topics = dao.listMaySeeTopicsInclPinned(catOrRootCat.id, pageQuery,
-              includeDescendantCategories = true, authzCtx, limit = limit)
+
+        val anyCatsCanSee: Opt[debiki.dao.CatsCanSee] =
+              dao.listMaySeeCategoriesInSameSectionAs(catOrRootCat.id, authzCtx,
+              // An admin needs to undelete a deleted category, for the API
+              // to include it in the responses. (Over complicated with HTTP request
+              // params that specifies if to include or not?)
+              inclDeleted = false)
+        val catsCanSee = anyCatsCanSee getOrElse {
+          return nothingFound
+        }
+
+        val topicsUnfiltered: PagesCanSee =
+              dao.listPagesCanSeeInCatsCanSee(
+                  catsCanSee, pageQuery, inclPinned = true, limit = limit,
+                  inSubTree = Some(catOrRootCat.id))
 
         // For simplicity, just this for now:
-        topics = topics filter { topic =>
+        val topicsFiltered: PagesCanSee = topicsUnfiltered filter { topic =>
           if (isOpenFilter.isSomethingButNot(topic.meta.isOpen)) false
           // else if (isAuthorWaitingFilter.isSomethingButNot(
           //       topic.meta.isAuthorWaiting)) false
@@ -219,7 +232,7 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
         }
 
         ThingsFoundJson.makePagesFoundListResponse(
-              topics, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
+              topicsFiltered, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
 
       case Posts =>
         val result: LoadPostsResult = dao.loadPostsMaySeeByQuery(

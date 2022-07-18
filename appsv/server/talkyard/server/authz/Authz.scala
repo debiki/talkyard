@@ -109,6 +109,8 @@ case class AuthzCtxOnForum(   // maybe rename to AuthzCtxOnAll ?
   tooManyPermissions: immutable.Seq[PermsOnPages],
   )
   extends AuthzCtx with AuthzCtxOnPats with AuthzCtxOnPages {
+
+  def isPublic: Bo = requester.isEmpty
 }
 
 
@@ -216,6 +218,9 @@ object Authz {
   }
 
 
+  COULD_OPTIMIZE // Check many pages in the same cat at once?  [authz_chk_mny_pgs]
+  // That is, pageMeta —> pageMetas: Seq[PageMeta]. But they must all be in
+  // the same cat (or no cat).
   def maySeePage(
     pageMeta: PageMeta,
     user: Opt[Pat],

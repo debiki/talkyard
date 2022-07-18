@@ -1620,8 +1620,12 @@ package object core {
   def ANNOYING = ()       // Something annoying that would be good to fix, not important though
   def INFO_LOG = ()       // Somehow change log message severity to Info only.
   def ADMIN_LOG = ()      // Info log for site admins — e.g. custom OIDC conf problems.
-  def SHOULD_LOG_STH = () // If an info/debug message ought to be logged here.
-  def COULD_LOG_STH = ()  // If an info/debug message ought to be logged here.
+  @deprecated
+  def SHOULD_LOG_STH = ()
+  def SHOULD_LOG = ()     // If an info/debug message ought to be logged here.
+  @deprecated
+  def COULD_LOG_STH = ()
+  def COULD_LOG = ()      // Could log sth, but less important.
   def AUDIT_LOG = ()      // Should add audit log entry
   def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // Something ought to be renamed.

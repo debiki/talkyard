@@ -501,7 +501,7 @@ ReactStore.initialize = function() {
     ReactStore.emitChange();
   });
 
-  store.currentCategories = _.clone(store.publicCategories);
+  store_initCurCatsFromPubCats(store);
 };
 
 
@@ -605,7 +605,6 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
 
   if (!anyNewMe) {
     debiki2.pubsub.subscribeToServerEvents(store.me);
-    this.emitChange();
     return;
   }
 
@@ -676,7 +675,9 @@ ReactStore.activateMyself = function(anyNewMe: Myself | NU, stuffForMe?: StuffFo
 
   // Absent on about-user pages. CLEAN_UP no it's always present? Need not test for that.
   if (store.currentCategories) {
-    addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
+    store_addRestrictedCurCatsInPl(store, store.me.restrictedCategories);
+    // Clone, so other code knows it's changed. [new_cur_cat_arr]
+    store.currentCategories = [...store.currentCategories];
   }
 
   // Scroll to last reading position?
@@ -718,18 +719,57 @@ function store_addUnapprovedPosts(store: Store, myPageData: MyPageData) {
 };
 
 
-function addRestrictedCategories(restrictedCategories: Category[], categories: Category[]) {
-  _.each(restrictedCategories, (category:Category) => {
-    // Avoid adding cats twice. Currently, me.restrictedCategories might incl publ cats. [4KQSEF08]
-    const index = _.findIndex(categories, { id: category.id });
+function store_initCurCatsFromPubCats(store: Store) {
+  store.currentCategories = _.clone(store.publicCategories);  // [new_cur_cat_arr]
+  store.curCatsById = groupByKeepOne(store.currentCategories, c => c.id);
+}
+
+
+function store_addRestrictedCurCatsInPl(store: Store, restrictedCategories: Cat[]) {
+  const curCats: Cat[] = store.currentCategories;
+  _.each(restrictedCategories, (restrCat: Cat) => {
+    // Avoid adding cats twice. Currently, me.restrictedCategories might incl
+    // publ cats [4KQSEF08] — or maybe access permissions just got edited by an admin,
+    // somehow resulting in a cat being included in both the publ and restricted cat lists.
+    const index = _.findIndex(curCats, { id: restrCat.id });
     if (index >= 0) {
-      categories.splice(index, 1, category);
+      // Use the restricted version — it might include interesting data pat may see, but
+      // that's missing in the publ version.
+      // Hmm maybe good to double-include publ cats? (that's how it works currently [4KQSEF08])
+      curCats.splice(index, 1, restrCat);
     }
     else {
-      categories.push(category);
+      curCats.push(restrCat);
     }
+    // Use the restricted version here too.
+    store.curCatsById[restrCat.id] = restrCat;
   });
-  categories.sort((c:Category, c2:Category) => c.position - c2.position);
+  curCats.sort((c: Cat, c2: Cat) => c.position - c2.position);
+}
+
+
+/// Remembers recent topics also if cats get updated:
+/// If we get an updated cat from the server, but which doesn't include any
+/// recent topics list, *and* we have an old version of the same cat *with*
+/// recent topics — then this fn copies the recent topics to the updated cat.
+///
+function addBackRecentTopicsInPl(oldCurCats: Cat[], curCatsById: { [catId: CatId]: Cat }) {
+  for (let oldCat of oldCurCats) {
+    if (!oldCat.recentTopics)
+      continue;
+
+    const curCat = curCatsById[oldCat.id];
+
+    // Is cat now access restricted, or gone?
+    if (!curCat)
+      continue;
+
+    // Don't overwrite a more recent topic list, with an older list.
+    if (curCat.recentTopics)
+      continue;
+
+    curCat.recentTopics = oldCat.recentTopics;
+  }
 }
 
 
@@ -1573,11 +1613,12 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
   if (storePatch.publicCategories) {   // [upd_store_cats_hack]
     dieIf(!storePatch.restrictedCategories, 'TyEK2WP49');
     // [redux] modifying the store in place, again.
-    // Hmm what if the patch contains fever categories? Currently (2016-12), won't happen, though.
-    store.publicCategories = storePatch.publicCategories;
     store.me.restrictedCategories = storePatch.restrictedCategories;
-    store.currentCategories = _.clone(store.publicCategories);
-    addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
+    store.publicCategories = storePatch.publicCategories;
+    const oldCurCats = store.currentCategories;
+    store_initCurCatsFromPubCats(store);
+    store_addRestrictedCurCatsInPl(store, store.me.restrictedCategories);
+    addBackRecentTopicsInPl(oldCurCats, store.curCatsById);
   }
 
   // ----- Tag types
@@ -1773,7 +1814,6 @@ function store_patchTagTypesInPl(store: Store, tagTypes: TagType[] | NU) {
 
 function showNewPage(ps: ShowNewPageParams) {
   const newPage = ps.newPage;
-  const newPublicCategories = ps.pubCats;
   const history = ps.history;
 
   // Upload any current reading progress, before changing page id.
@@ -1794,10 +1834,6 @@ function showNewPage(ps: ShowNewPageParams) {
   // @endif
 
   delete store.curPageTweaks;
-
-  // Update categories — maybe this page is in a different sub community with different categories.
-  store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories
-  store.currentCategories = _.clone(newPublicCategories);
 
   // Forget any topics from the original page load. Maybe we're now in a different sub community,
   // or some new topics have been created. Better reload.
@@ -1825,6 +1861,26 @@ function showNewPage(ps: ShowNewPageParams) {
     document.title = titlePost.unsafeSource;
   }
 
+  // ----- Update categories
+
+  // Better do this early (here), in case any subsequent code looks at the
+  // categoreis, to determine settings or access permissions?
+
+  // Maybe this page is in a different sub community with different categories,
+  // or the new page is a PageType.Forum and then the categories also
+  // include recent topics?  [per_cat_topics]
+  store.publicCategories = ps.pubCats;
+  const oldCurCats = store.currentCategories;
+  store_initCurCatsFromPubCats(store);
+
+  if (ps.me) {
+    store_addRestrictedCurCatsInPl(store, ps.me.restrictedCategories);
+    // Not needed? But anyway, less confusing if is updated too:
+    store.me.restrictedCategories = ps.me.restrictedCategories;
+  }
+
+  addBackRecentTopicsInPl(oldCurCats, store.curCatsById);
+
   // ----- Add public things
 
   // Add users on the new page, to the global users-by-id map.
@@ -1844,9 +1900,6 @@ function showNewPage(ps: ShowNewPageParams) {
 
   if (myData) {
     store_addUnapprovedPosts(store, myData);  // TyTE2E603SKD
-  }
-  if (ps.me) {
-    addRestrictedCategories(ps.me.restrictedCategories, store.currentCategories);
   }
 
   // And more things needed for rendering things the current user can see,

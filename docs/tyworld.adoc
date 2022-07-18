@@ -182,6 +182,32 @@ that the staff wanted to move downwards (curating the discussion).
 than something everyone agrees about? [tywd_disagree_fine]
 
 
+== Site Sections and Category Trees
+
+[subcoms_and_cats]
+
+A single Talkyard site can have different site sections, a.k.a. sub communities.
+E.g. a forum, another forum, a blog, a wiki.
+A bit like there's subreddits / sub communities, over at Reddit.
+
+Not yet, but in the future, there will be category specific moderators. Then
+it'll be possible to assign some people to moderate a site section (or parts of it).
+
+A site section consists of 1) a category tree, consisting of a root category, and its
+descendant categories (child cats, grandchild cats and so on);
+and 2) all pages in those categories.
+(A page can be in exactly one category, or no category (e.g. private messages).)
+
+A site section root category is called the **tree root** category, whilst
+sub tree roots are called **sub root**. "Root category" can refer to both a tree root,
+or a sub root.
+
+Children of a tree root are called **base categories** (they're at depth 1 in the tree),
+Grandchilds are called "sub categories" (tree depth 2).
+Currently (Aug 2022) sub sub categories aren't supported.
+
+
+
 == Categories and permissions
 
 

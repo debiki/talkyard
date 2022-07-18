@@ -103,14 +103,21 @@ trait SummaryEmailsDao {
           // About-category pages can be interesting? E.g. new category created & everyone clicks Like.
           includeAboutCategoryPages = settings.showCategories)
 
-        val topTopicsInclTooOld =
-          listMaySeeTopicsInclPinned(categoryId, pageQuery,
-            includeDescendantCategories = true, authzCtx = authzCtx,
-            limit = ForumController.NumTopicsToList)
+        // Use listMaySeeCategoryStuffAllSections(), if many site sections? [sub_communities]
+        // (We'd like to find all cats one may see.)
+        val anyCatsCanSee: Opt[CatsCanSee] =
+              listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx, inclDeleted = false)
+
+        val topTopicsInclTooOld: PagesCanSee = anyCatsCanSee map { catsCanSee =>
+          listPagesCanSeeInCatsCanSee(
+                catsCanSee, pageQuery,
+                // No special treatment of pinned topics, in summary emails.
+                inclPinned = false, limit = ForumController.NumTopicsToList)
+        } getOrElse PagesCanSee.empty
 
         // Don't include in this summary email, topics that would have been included in the
         // *last* summary email (if we didn't have the max-topics-per-email limit).
-        val topTopics = topTopicsInclTooOld filterNot { topic =>
+        val topTopics: Seq[PagePathAndMeta] = topTopicsInclTooOld.pages filterNot { topic =>
           stats.lastSummaryEmailAt.exists(_.millis > topic.meta.createdAt.getTime)
         }
 
