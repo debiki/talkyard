@@ -39,7 +39,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.3.6"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.4.0"
 
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
@@ -62,9 +62,9 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.4.0"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.4.1"
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.15.1"
+    val jsoup = "org.jsoup" % "jsoup" % "1.15.2"
 
     val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
 
@@ -94,12 +94,13 @@ object Dependencies {
 
     // ----- Metrics, tracing
 
-    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.9"
+    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.10"
 
-    // Deprecated. Should migrate to OpenTelemetry, they say, https://opentelemetry.io/.
-    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"  // 1.8.0 exists now
+    // Deprecated. SHOULD migrate to OpenTelemetry, they say, https://opentelemetry.io/.
+    // 1.8.1 exists now.
+    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"   // scala-steward:off
 
-    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.8"
+    val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.9"
 
     // ----- Decoding JWT:s
 
