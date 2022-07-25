@@ -27,6 +27,7 @@ import scala.concurrent.duration._
 import debiki.Globals
 import scala.concurrent.{ExecutionContext, Future}
 import talkyard.server.TyLogger
+import talkyard.server.jobs.BackgroundJobsActor
 
 
 
@@ -55,10 +56,9 @@ case class ClearCheckingSpamNowCache(siteIds: Set[SiteId])
 
 
 class SpamCheckActor(
-  private val batchSize: Int,
-  private val systemDao: SystemDao) extends Actor {
+  private val batchSize: i32,
+  private val systemDao: SystemDao) extends BackgroundJobsActor("SpamCheckActor") {
 
-  private val logger = TyLogger("SpamCheckActor")
 
   // Here we remember which spam check tasks we've started checking — so we won't
   // re-check the same things many times (if a request is still in-flight, when
@@ -75,15 +75,9 @@ class SpamCheckActor(
 
   private val execCtx: ExecutionContext = globals.executionContext
 
-  def receive: PartialFunction[Any, Unit] = {
+  def tryReceive(message: Any, paused: Bo): U = if (!paused) message match {
     case CheckForSpam =>
-      try {
-        checkMorePostsForSpam()
-      }
-      catch {
-        case ex: Exception =>
-          logger.error(s"Error processing spam check queue [EdE5GPKS2]", ex)
-      }
+      checkMorePostsForSpam()
     case ClearCheckingSpamNowCache(siteIds) =>
       COULD_OPTIMIZE // remove items only for siteIds — no need to clear
       // the whole queue, if running smoke tests against a live production server.

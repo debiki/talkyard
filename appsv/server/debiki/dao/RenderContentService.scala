@@ -26,6 +26,7 @@ import RenderContentService._
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.concurrent.ExecutionContext
 import talkyard.server.TyLogger
+import talkyard.server.jobs.BackgroundJobsActor
 
 
 /** Renders page contents using React.js and Nashorn. Is done in background threads
@@ -56,9 +57,7 @@ object RenderContentService {
   */
 class RenderContentActor(
   val globals: Globals,
-  val nashorn: Nashorn) extends Actor {
-
-  private val logger = TyLogger("RenderContentActor")
+  val nashorn: Nashorn) extends BackgroundJobsActor("RenderContentActor") {
 
   def execCtx: ExecutionContext = globals.executionContext
 
@@ -68,7 +67,7 @@ class RenderContentActor(
 
   var numBackgroundRenderErrorsInARow = 0
 
-  override def receive: Receive = {
+  override def tryReceive(message: Any, paused: Bo): U = if (!paused) message match {
     case PauseThreeSeconds =>
       // Would be better with just [one-db-writer], then woudn't need this.
       pauseUntilNanos = Some(System.nanoTime() + 3L * 1000L * 1000L * 1000L)

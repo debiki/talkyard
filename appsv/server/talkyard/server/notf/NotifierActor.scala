@@ -20,7 +20,6 @@ package talkyard.server.notf
 import akka.actor._
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import talkyard.server.notf.NotifierActor._
 import scala.collection.{immutable, mutable}
@@ -28,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import talkyard.server.TyLogger
+import talkyard.server.jobs.BackgroundJobsActor
 
 
 
@@ -84,16 +84,13 @@ object NotifierActor {
  * Thread safe.
  */
 class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
-  extends Actor {
+  extends BackgroundJobsActor("NotifierActor") {
 
-  import systemDao.globals
-
-  private val logger = TyLogger("Notifier")
+  val globals: debiki.Globals = systemDao.globals
 
 
-  def receive: PartialFunction[Any, Unit] = {
+  def tryReceive(message: Any, paused: Bo): U = if (!paused) message match {
     case whatever: String if globals.isInitialized =>
-      try {
         whatever match {
           case "SendNotfs" =>
             loadAndSendNotifications()
@@ -102,17 +99,6 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
           case "SendUtxReminders" =>
             createAndSendUtxReminderEmails()  // [plugin]
         }
-      }
-      catch {
-        case ex: java.sql.SQLException =>
-          if (!isConnectionClosedBecauseTestsDone(ex, globals)) {
-            logger.error("SQL error when sending notfs or summaries [EdE2WPFR1]", ex)
-            throw ex
-          }
-        case throwable: Throwable =>
-          logger.error("Error when sending notfs or summaries [EdE2WPFR2]", throwable)
-          throw throwable
-      }
   }
 
 

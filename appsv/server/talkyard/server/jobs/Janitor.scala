@@ -21,7 +21,6 @@ import akka.actor.{Actor, ActorRef, Props}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{DatabaseUtils, Globals}
-import play.{api => p}
 import scala.concurrent.duration._
 import Janitor._
 import scala.concurrent.ExecutionContext
@@ -87,28 +86,42 @@ object Janitor {
 }
 
 
+abstract class BackgroundJobsActor(actorName: St) extends Actor {
+  def globals: Globals
 
-class JanitorActor(val globals: Globals) extends Actor {
-
-  private val logger = TyLogger("JanitorActor")
-
-  def execCtx: ExecutionContext = globals.executionContext
-
+  protected val logger: play.api.Logger = TyLogger(actorName)
 
   override def receive: Receive = {
     case message =>
-      def errorPrefix: St = s"Error in janitor when handling ${classNameOf(message)}"
-      try receiveImpl(message)
+      def errorPrefix: St = s"Error in actor $actorName when handling ${classNameOf(message)}"
+      try tryReceive(message, globals.jobsArePaused)
       catch {
-        case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
-          logger.warn(s"$errorPrefix: Database connection closed [TyEJANCON]")
+        case ex: java.sql.SQLException =>
+          if (DatabaseUtils.isConnectionClosed(ex)) {
+            if (DatabaseUtils.isConnectionClosedBecauseTestsDone(ex, globals)) {
+              // Fine, ignore.
+            }
+            else {
+              logger.warn(s"$errorPrefix: Database connection closed [TyEACTCON]")
+            }
+          }
+          else {
+            logger.error(s"$errorPrefix: SQL error [TyEACTSQL]", ex)
+          }
         case throwable: Throwable =>
           logger.error(s"$errorPrefix [TyEJANTHR]", throwable)
       }
   }
 
+  def tryReceive(message: Any, paused: Bo): U
+}
 
-  private def receiveImpl(message: Any): U = {
+
+
+class JanitorActor(val globals: Globals) extends BackgroundJobsActor("JanitorActor") {
+
+  def tryReceive(message: Any, paused: Bo): U = {
+    if (paused) return ()
     message match {
       case DeleteOldStuff =>
         findAndDeleteOldStuff()
