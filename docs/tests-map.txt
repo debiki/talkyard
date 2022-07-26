@@ -528,6 +528,8 @@ categories -
   edit slug —> old name redirects to new:
           - api-upsert-categories.2browsers.test.ts  TyT503KRDH24  (not impl)
   unlist:
+  sort order:
+            - cats-perf-many.2br.d  TyTECATPREFMNY.TyTCATORDR
   delete:
           - categories-delete.2br   TyTE2ECATDEL01
     gets marked as deleted for staff:
@@ -538,9 +540,16 @@ categories -
     can undelete:
     backlinks from topics inside disappear:
           - links-internal.2browsers.test.ts  TyTINTLNS54824.TyTDELCATBLNS
-  permissions:   see (1QRY7)  no? tag gone?
-          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
-          - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+  permissions:   (1QRY7)
+            - category-perms.2br.d  TyTE2ECATPREMS01
+            - cats-perf-many.2br.d  TyTECATPREFMNY.TyTPRIVCATS
+            - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+            - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+    topics on cats list page:
+            - category-perms.2br.d  TyTE2ECATPREMS01.TyTSEECATTOPS
+            - cats-perf-many.2br.d  TyTECATPREFMNY.TyTSEECATTOPS
+    padlock icon:
+            - category-perms.2br.d  TyTE2ECATPREMS01.TyTCATLOCK
     sub cats:
           - category-permissions.2br   TyTE2ECATPREMS01
           - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
@@ -1621,6 +1630,10 @@ rate limits:
   per site limits multipliers:
             - TESTS_MISSING
 
+performance:
+  categories list page:
+    not too many db queries and writes:
+            - cats-perf-many.2br.d  TyTECATPREFMNY.checkServerStats
 
 latency,
 3g,

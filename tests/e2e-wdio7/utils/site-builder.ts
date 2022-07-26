@@ -79,6 +79,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       description: string,
       unlistCategory?: boolean,
       unlistTopics?: boolean,
+      position?: Nr,
       deletedAtMs?: number,
     }): CategoryJustAdded {
       assert.ok(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
@@ -87,6 +88,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       category.parentId = opts.parentCategoryId;  // note: different name
       category.name = opts.name;
       category.slug = opts.slug;
+      category.position = opts.position;
       category.description = opts.description;
       category.unlistCategory = opts.unlistCategory;
       category.unlistTopics = opts.unlistTopics;
@@ -96,17 +98,8 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
     },
 
 
-    addCategoryWithAboutPage: function(forumPage: PageJustAdded, opts: {
-      id: number,
-      extId?: ExtId,
-      parentCategoryId: number,
-      name: string,
-      slug: string,
-      unlistCategory?: boolean,
-      unlistTopics?: boolean,
-      deletedAtMs?: number,
-      aboutPageText: string,
-    }): CategoryJustAdded {
+    addCategoryWithAboutPage: function(forumPage: PageJustAdded, opts: CatToAdd)
+            : CatJustAdded {
       // REMOVE optsWithDescr, instead, will load category description via PageStuff. [502RKDJWF5]
       const optsWithDescr: any = _.assign({ description: opts.aboutPageText }, opts);
       const category = api.addCategoryNoAboutPage(forumPage, optsWithDescr);
@@ -128,6 +121,14 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
 
       category.aboutPage = page;
       return <CategoryJustAdded> category;
+    },
+
+
+    addCategoryWithAboutPageAndPerms: function(forumPage: PageJustAdded, catToAdd: CatToAdd,
+            permsOpts?: 'FullMembersMayEditWiki'): CatJustAdded {
+      const cat = api.addCategoryWithAboutPage(forumPage, catToAdd);
+      api.addDefaultCatPerms(site, cat.id, -1, permsOpts);
+      return <CatJustAdded> cat;
     },
 
 
@@ -672,10 +673,13 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       return forum;
     },
 
-    addDefaultCatPerms: (site: SiteData, categoryId: CategoryId, startPermissionId: PermissionId,
+    addDefaultCatPerms: (site: SiteData, categoryId: CatId, startPermissionId: PermissionId,
             categoryPerms?: 'FullMembersMayEditWiki') => {
+
+      let nextPermId = startPermissionId === -1 ? site.lastPermId + 1 : startPermissionId;
+
       const everyonesPerms = {
-        id: startPermissionId,
+        id: nextPermId,
         forPeopleId: c.EveryoneId,
         onCategoryId: categoryId,
         mayEditOwn: true,
@@ -686,20 +690,20 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       };
       site.permsOnPages.push(everyonesPerms);
 
-      let nextPerm = startPermissionId + 1;
+      nextPermId += 1;
 
       if (categoryPerms === 'FullMembersMayEditWiki') {
         site.permsOnPages.push({
           ...everyonesPerms,
-          id: nextPerm,
+          id: nextPermId,
           forPeopleId: c.FullMembersId,
           mayEditWiki: true,
         });
-        nextPerm += 1;
+        nextPermId += 1;
       }
 
       site.permsOnPages.push({
-        id: nextPerm,
+        id: nextPermId,
         forPeopleId: c.StaffId,
         onCategoryId: categoryId,
         mayEditPage: true,
@@ -713,6 +717,8 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
         maySee: true,
         maySeeOwn: true,
       });
+
+      site.lastPermId = nextPermId;
     },
 
   };
