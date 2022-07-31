@@ -641,7 +641,7 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
     var pstmt: js.PreparedStatement = null
     var committed = false
     // Nice for verifying if using the cache, only:
-    // System.out.println(o"${if (resultSetHandler ne null) "DB_QUERY" else "DB_STMT"}:***:  ${
+    //System.out.println(o"${if (resultSetHandler ne null) "DB_QUERY" else "DB_STMT"}:  ${
     //    query.replaceAll("\n", " ")}  ")
     try {
       conn2 =

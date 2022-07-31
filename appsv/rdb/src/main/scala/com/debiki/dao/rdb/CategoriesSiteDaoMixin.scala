@@ -40,7 +40,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
 
   def loadCategoryMap(): Map[CategoryId, Category] = {
-    val query = """
+    val query = """ -- loadCategoryMap
       select * from categories3 where site_id = ?
       """
     runQueryBuildMap(query, List(siteId.asAnyRef), rs => {
@@ -68,7 +68,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
   def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
     val andNotGone = isStaffOrSelf ? "" | "and hidden_at is null and deleted_at is null"
-    val query = i"""
+    val query = i""" -- loadPagesByUser
         select
           t.parent_folder,
           t.page_id,
@@ -139,7 +139,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
     val pageFilterAnd = makePageFilterTestsAnd(pageQuery)
 
-    val sql = s"""
+    val sql = s""" -- loadPagesInCategoriesByScore
         select
           t.parent_folder,
           t.page_id,
@@ -232,6 +232,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       pageQuery.pageFilter.includeDeleted ? "" | " and g.deleted_at is null"
 
     val sql = s"""
+    val sql = s""" -- loadPagesInCategoriesNoScore
         select
           t.parent_folder,
           t.page_id,
@@ -288,7 +289,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
 
   override def nextCategoryId(): PostId = {
-    val query = """
+    val query = """ -- nextCategoryId
       select max(id) max_id from categories3 where site_id = ?
       """
     runQuery(query, List(siteId.asAnyRef), rs => {
@@ -417,7 +418,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
   override def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId] = {
-    val query = s"""
+    val query = s""" -- loadAboutCategoryPageId
       select page_id from pages3
       where site_id = ?
         and category_id = ?
