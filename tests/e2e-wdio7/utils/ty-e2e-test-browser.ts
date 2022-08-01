@@ -2471,6 +2471,20 @@ export class TyE2eTestBrowser {
     }
 
 
+    async waitAndGetListTexts(selector: St): Pr<St[]> {
+      return await this.__waitAndGetThingsInList(selector, async (e) => await e.getText());
+    }
+
+
+    async __waitAndGetThingsInList<T>(listItemSelector: St, fn: (e: WElm) => Pr<T>): Pr<T[]> {
+      const elms: WElm[] = await this.$$(listItemSelector);
+      const promises: Pr<T>[] = elms.map(async (e: WElm) => {
+        return await fn(e);
+      });
+      const items: T[] = await Promise.all(promises);
+      return items;
+    }
+
     async waitAndGetNthText(selector, n: Nr, ps: { notEmpty?: Bo } = {}): Pr<St> {
       let text = '';
       await this.waitUntil(async () => {
@@ -4781,13 +4795,20 @@ export class TyE2eTestBrowser {
       clickEditCategory: () => die('TyE59273',
             "Use forumButtons.clickEditCategory() instead"),
 
-      waitForCategoryName: async (name: St, ps: { isSubCat?: true } = {}) => {
+      waitForCategoryName: async (name: St, ps: { isSubCat?: true,
+              shallBeAccessRestricted?: Bo } = {}) => {
         const selector = ps.isSubCat ? '.s_F_Ts_Cat_Ttl-SubCat' : '.s_F_Ts_Cat_Ttl';
-        await this.waitAndGetElemWithText(selector, name);
+        const elem = await this.waitAndGetElemWithText(selector, name);
+        if (ps.shallBeAccessRestricted) {
+          tyAssert.that(await (await elem.$('.icon-lock')).isDisplayed());
+        }
+        else if (ps.shallBeAccessRestricted === false) {
+          tyAssert.not(await (await elem.$('.icon-lock')).isExisting());
+        }
       },
 
-      waitForTopics: async (ps: { timeoutMs?: Nr, timeoutIsFine?: Bo } = {}) => {
-        await this.waitForVisible('.e2eF_T', ps);  // was timeoutMs: 1000 why?
+      waitForTopics: async (ps: WaitPs = {}) => {
+        await this.waitForDisplayed('.e2eF_T', ps);
       },
 
       waitForTopicVisible: async (title: St) => {
@@ -4840,11 +4861,16 @@ export class TyE2eTestBrowser {
         await this.assertPageTitleMatches(title);
       },
 
-      assertNumVisible: async (howMany: Nr, ps: { wait?: Bo } = {}) => {
+      numVisible: async (ps: { wait?: Bo } = {}): Pr<Nr> => {
         if (ps.wait) {
           await this.forumTopicList.waitForTopics();
         }
-        await this.assertExactly(howMany, '.e2eTopicTitle');
+        return await this.count('.e2eTopicTitle');
+      },
+
+      assertNumVisible: async (howMany: Nr, ps: { wait?: Bo } = {}) => {
+        tyAssert.eq(await this.forumTopicList.numVisible(ps), howMany,
+              "Wrong num topics (selector: .e2eTopicTitle)");
       },
 
       assertTopicTitlesAreAndOrder: async (titles: St[]) => {
@@ -4920,6 +4946,7 @@ export class TyE2eTestBrowser {
       },
 
       namesOfVisibleCategories: async (): Pr<St[]> => {
+        // REFACTOR use instead: this.waitAndGetListTexts(selector);
         const elms: WElm[] = await this.$$(this.forumCategoryList.categoryNameSelector);
         const namesPromises: Pr<St>[] = elms.map(async (e: WElm) => {
           return await e.getText();
@@ -4942,6 +4969,13 @@ export class TyE2eTestBrowser {
       isSubCategoryVisible: async (categoryName: St): Pr<Bo> => {
         return await this.isDisplayedWithText(
             this.forumCategoryList.subCategoryNameSelector, categoryName);
+      },
+
+      getTopicTitles: async (nthCat?: Nr): Pr<St[]> => {
+        dieIf(nthCat <= 0, `nthCat is ${nthCat} but should be >= 1  [TyEEIX0]`);
+        const nthChild = !_.isNumber(nthCat) ? '' : `:nth-child(${nthCat})`;
+        return await this.waitAndGetListTexts(
+              `.esForum_cats_cat${nthChild} .topic-table-excerpt .c_TpcTtl`);
       },
 
       openCategory: async (categoryName: St) => {
@@ -9616,8 +9650,11 @@ export class TyE2eTestBrowser {
               }
             }
           }
+          await this.waitUntilLoadingOverlayGone();
         }
-        await this.waitUntilLoadingOverlayGone();
+        else {
+          // An error dialog might be visible (with an overlay behind it).
+        }
       },
 
       editPageTitle: async (newTitle: string) => {
