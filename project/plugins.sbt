@@ -21,7 +21,7 @@ resolvers ++= Seq(
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.16")
 
 // A refactoring and linting tool for Scala
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.0")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.1")
 
 // Pin dependencies.
 addSbtPlugin("com.github.tkawachi" % "sbt-lock" % "0.8.0")

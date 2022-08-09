@@ -80,6 +80,7 @@ export function logUnusual(message: StringOrFn) {
 
 export function logBitHappy(message: St) {
   const m = ansiColors.bold.green(message);
+  console.log(m);
 }
 
 export function logMuchHappy(message: St) {

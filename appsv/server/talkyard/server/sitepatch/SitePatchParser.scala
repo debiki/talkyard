@@ -490,6 +490,8 @@ case class SitePatchParser(context: TyContext) {
           stats = ResourceUse(
                 quotaLimitMbs = parseOptInt32(jsObject, "rdbQuotaMiBs"),
                 fileSysQuotaMiBs = parseOptInt32(jsObject, "fileQuotaMiBs")),
+          featureFlags = parseOptSt(jsObject, "featureFlags", throwIfLongerThan = 100
+                                    ) getOrElse "",
           readLimitsMultiplier = readOptFloat(jsObject, "readLimsMult"),
           logLimitsMultiplier = readOptFloat(jsObject, "logLimsMult"),
           createLimitsMultiplier = readOptFloat(jsObject, "createLimsMult"),

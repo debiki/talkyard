@@ -210,19 +210,26 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
           "EsE7JTB3", fieldName)
 
 
-  /** If noneIfLongerThan is >= 0, returns None if the value is longer than that.
+  /** If noneIfLongerThan or throwIfLongerThan is >= 0, and the value is longer than that,
+    * returns None or throws a BadJsonException, respectively.
+    * If cutAt specified, only that many chars are kept, even if the value is longer.
     */
   def parseOptSt(json: JsValue, fieldName: St, altName: St = "",
-        noneIfLongerThan: i32 = -1, cutAt: i32 = -1): Opt[St] = {
+           noneIfLongerThan: i32 = -1, cutAt: i32 = -1, throwIfLongerThan: i32 = -1)
+           : Opt[St] = {
+    require((noneIfLongerThan >= 0).toZeroOne + (throwIfLongerThan >= 0).toZeroOne +
+          (cutAt >= 0).toZeroOne <= 1, o""""More than one of noneIfLongerThan,
+              throwIfLongerThan and cutAt specified [TyE7PM506RP]""")
     var anySt = readOptString(json, fieldName, altName)
-    dieIf(noneIfLongerThan >= 0 && cutAt >= 0,
-          "TyE7PM506RP", "Both noneIfLongerThan and cutAt specified")
     if (cutAt >= 0) {
       anySt = anySt.map(_.take(cutAt))
     }
-    if (noneIfLongerThan >= 0) {
+    if (noneIfLongerThan >= 0 || throwIfLongerThan >= 0) {
       anySt foreach { value =>
-        if (value.length > noneIfLongerThan)
+        val len = value.length
+        throwBadJsonIf(len > throwIfLongerThan && throwIfLongerThan >= 0, "TyE2LONGJSSTR",
+              s"Field '$fieldName' too long: $len chars, max is: $throwIfLongerThan")
+        if (len > noneIfLongerThan && noneIfLongerThan >= 0)
           return None
       }
     }

@@ -1548,15 +1548,28 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val myCatsTagsSiteNotfPrefs = prefs.filter(_.peopleId == memberId)
     val groupsCatsTagsSiteNotfPrefs = prefs.filter(_.peopleId != memberId)
 
+    // ----- Cats the *member* can see
+
+    // This request is about memberId — what cats may hen see?
+
     val authContextForMember = dao.getForumAuthzContext(Some(member))
 
     val categoriesMemberMaySee = dao.listMaySeeCategoriesAllSections(
-      includeDeleted = false, authContextForMember)
+          inclDeleted = false, authContextForMember)
 
     val categoryIdsMemberMaySee = categoriesMemberMaySee.map(_.id)  // (or use a set?)
 
+    // ----- Cats the *requester* can see
+
+    // The person that sent the HTTP request might be someone else than memberId.
+    // What cats may the requester see? Could be more, if is admin; or fewer, if,
+    // say, memberId is an admin, and the requester is a moderator, and there are
+    // admin-only categories.
+
     val categoriesRequesterMaySee = dao.listMaySeeCategoriesAllSections(
-      includeDeleted = false, request.authzContext)
+          inclDeleted = false, request.authzContext)
+
+    // ----- Merge the cat lists
 
     val (
       categoriesBothMaySee: Seq[Category],

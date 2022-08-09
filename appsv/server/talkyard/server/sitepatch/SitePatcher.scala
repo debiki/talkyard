@@ -1238,6 +1238,7 @@ case class SitePatcher(globals: debiki.Globals) {
         siteToSave.name,
         siteToSave.status,
         hostname = siteToSave.canonicalHostname.map(_.hostname),
+        featureFlags = siteToSave.featureFlags,
         // Any embedding url and org name get updated below (0296537).
         embeddingSiteUrl = None,
         organizationName = "Organization name missing [TyM8YKWP3]",
@@ -1372,7 +1373,14 @@ case class SitePatcher(globals: debiki.Globals) {
       }
 
       siteData.pagePaths foreach { path =>
-        tx.insertPagePath(path)
+        try {
+          tx.insertPagePath(path)
+        }
+        catch {
+          case _: com.debiki.core.DbDao.PathClashException =>
+            throwBadRequest("TyEIMPPAGES",
+                  s"Tow pages have the same URL path $path, the last one: $path")
+        }
       }
 
       siteData.pageIdsByAltIds foreach { case (altPageId: AltPageId, pageId: PageId) =>

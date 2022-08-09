@@ -144,8 +144,8 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
   });
 
   it(`Import site`, async () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
     michaelsTopicUrl = site.origin + '/' + forum.topics.byMichaelCategoryA.slug;
     mariasTopicUrl = site.origin + '/' + forum.topics.byMariaCategoryA.slug;
   });

@@ -774,6 +774,15 @@ trait UserBase extends Member with Someone {  RENAME // to User, and remove type
 
 
 
+/** Maybe later. Could be more readable than Opt[Pat]? Because None
+  * sounds as if there's no user — but there is: a stranger.
+  *  /
+sealed abstract class PatOrStranger
+object PatOrStranger {
+  case class Pat(pat: com.debiki.core.Pat) extends PatOrStranger
+  case object Stranger extends PatOrStranger
+} */
+
 
 /**
   *

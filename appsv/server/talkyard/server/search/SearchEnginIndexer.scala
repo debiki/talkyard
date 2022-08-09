@@ -27,6 +27,7 @@ import org.{elasticsearch => es}
 import scala.concurrent.duration._
 import Prelude._
 import talkyard.server.{TyLogger, TyLogging}
+import talkyard.server.jobs.BackgroundJobsActor
 import org.elasticsearch.common.xcontent.XContentType
 import org.postgresql.util.PSQLException
 import scala.concurrent.ExecutionContext
@@ -146,16 +147,16 @@ case object ReplyWhenDoneIndexing
 
 
 class IndexingActor(
-  private val batchSize: Int,
+  private val batchSize: i32,
   private val client: es.client.Client,
-  private val systemDao: SystemDao) extends Actor {
+  private val systemDao: SystemDao) extends BackgroundJobsActor("IndexActor") {
 
-  private val logger = TyLogger("IndexingActor")
+  val globals: debiki.Globals = systemDao.globals
 
   val indexCreator = new IndexCreator()
   val postsRecentlyIndexed = new java.util.concurrent.ConcurrentLinkedQueue[SiteIdAndPost]
 
-  def receive: PartialFunction[Any, Unit] = {
+  def tryReceive(message: Any, paused: Bo): U = if (!paused) message match {
     case IndexStuff =>
       // BUG race condition. Could instead: 1) find out in which languages indexes are missing.
       // 2) insert into the index queue entries for stuff in those languages. 3) create indexes.

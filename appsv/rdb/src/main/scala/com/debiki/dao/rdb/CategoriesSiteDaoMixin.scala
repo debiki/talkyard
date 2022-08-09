@@ -40,7 +40,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
 
   def loadCategoryMap(): Map[CategoryId, Category] = {
-    val query = """
+    val query = """ -- loadCategoryMap
       select * from categories3 where site_id = ?
       """
     runQueryBuildMap(query, List(siteId.asAnyRef), rs => {
@@ -68,7 +68,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
   def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
     val andNotGone = isStaffOrSelf ? "" | "and hidden_at is null and deleted_at is null"
-    val query = i"""
+    val query = i""" -- loadPagesByUser
         select
           t.parent_folder,
           t.page_id,
@@ -95,7 +95,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
 
   def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
-        : Seq[PagePathAndMeta] = {
+        : Vec[PagePathAndMeta] = {
     pageQuery.orderOffset match {
       case _: ByScoreAndBumpTime =>
         loadPagesInCategoriesByScore(categoryIds, pageQuery, limit)
@@ -105,10 +105,10 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def loadPagesInCategoriesByScore(categoryIds: Seq[CategoryId], pageQuery: PageQuery,
-        limit: Int) : Seq[PagePathAndMeta] = {
+  private def loadPagesInCategoriesByScore(categoryIds: Seq[CatId], pageQuery: PageQuery,
+        limit: i32) : Vec[PagePathAndMeta] = {
     if (categoryIds.isEmpty || limit <= 0)
-      return Nil
+      return Vec.empty
 
     // Some dupl code. (8KREQY0)
 
@@ -139,7 +139,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
     val pageFilterAnd = makePageFilterTestsAnd(pageQuery)
 
-    val sql = s"""
+    val sql = s""" -- loadPagesInCategoriesByScore
         select
           t.parent_folder,
           t.page_id,
@@ -173,13 +173,13 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def loadPagesInCategoriesNoScore(categoryIds: Seq[CategoryId], pageQuery: PageQuery,
-        limit: Int) : Seq[PagePathAndMeta] = {
+  private def loadPagesInCategoriesNoScore(categoryIds: Seq[CatId], pageQuery: PageQuery,
+        limit: i32) : Vec[PagePathAndMeta] = {
     // Some dupl code. (8KREQY0)
 
     require(limit >= 1, "DwE5KGW2")
     if (categoryIds.isEmpty)
-      return Nil
+      return Vec.empty
 
     var values = Vector[AnyRef]()
 
@@ -231,7 +231,22 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
     val andNotDeleted =
       pageQuery.pageFilter.includeDeleted ? "" | " and g.deleted_at is null"
 
-    val sql = s"""
+    WOULD_OPTIMIZE // Could do this for all categories in just one query, by using PARTITION BY:
+    // with q as (
+    //   select
+    //     ...
+    //     row_number() over (partition by base_cat_id_t $orderBy, t.page_id desc) as row_num
+    // )
+    // select * from q ... where row_num < $limit
+    //
+    // However, then a new category_t column, base_cat_id_t, is needed — because
+    // this query is used to look up all topics in a base category incl its sub, sub sub
+    // etc categories.
+    //
+    // Not important, currently. Simply in-memory caching the result is better.
+    // But maybe some day.
+
+    val sql = s""" -- loadPagesInCategoriesNoScore
         select
           t.parent_folder,
           t.page_id,
@@ -288,7 +303,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
 
   override def nextCategoryId(): PostId = {
-    val query = """
+    val query = """ -- nextCategoryId
       select max(id) max_id from categories3 where site_id = ?
       """
     runQuery(query, List(siteId.asAnyRef), rs => {
@@ -417,7 +432,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
   override def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId] = {
-    val query = s"""
+    val query = s""" -- loadAboutCategoryPageId
       select page_id from pages3
       where site_id = ?
         and category_id = ?

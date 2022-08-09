@@ -31,7 +31,7 @@ Compile / dependencyOverrides ++= {
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "2.4.0",
+      "org.apache.tika" % "tika-core" % "2.4.1",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.owasp.encoder" % "encoder" % "1.2.3",
       "org.scalactic" % "scalactic_2.12" % "3.2.12",
@@ -39,4 +39,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH dab105a5445e773d17d32341aee814fd29ca6139
+// LIBRARY_DEPENDENCIES_HASH 44e720e1a1d4f1a620e06b31ba614a9cb8b396a9

@@ -23,7 +23,7 @@ import com.debiki.core.Prelude._
 import debiki.{GetEndToEndTestEmail, Nashorn, NumEndToEndTestEmailsSent, RateLimits}
 import debiki.dao.PagePartsDao
 import debiki.EdHttp._
-import debiki.JsonUtils.{parseOptInt32, parseOptSt}
+import debiki.JsonUtils.{parseOptInt32, parseOptSt, parseOptBo}
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.pop.PagePopularityCalculator
 import talkyard.server.pubsub.WebSocketClient
@@ -140,11 +140,15 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
 
 
   def getE2eTestCounters: Action[Unit] = GetAction { _ =>
-    throwForbiddenIf(globals.isProd, "TyE0MAGIC", "Show me magic and you'll get the numbers")
+    throwForbiddenIf(globals.isProdLive, "TyE0MAGIC", o"""Wave a magic wand, and include in
+          the request payload a video recording of the result, in mp4 format, to get access""")
+    val dbCounts = com.debiki.dao.rdb.Rdb.getRequestCounts()
     val responseJson = Json.obj(
       "numReportedSpamFalsePositives" -> globals.e2eTestCounters.numReportedSpamFalsePositives,
       "numReportedSpamFalseNegatives" -> globals.e2eTestCounters.numReportedSpamFalseNegatives,
-    )
+      "numQueriesDone" -> dbCounts.numQueriesDone,
+      "numWritesDone" -> dbCounts.numWritesDone,
+      )
     OkApiJson(responseJson)
   }
 
@@ -298,7 +302,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
 
   def deleteRedisKey: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) {
         request =>
-    throwForbiddenIf(globals.isProd, "TyE502KUJ5",
+    throwForbiddenIf(globals.isProdLive, "TyE502KUJ5",
         "I only do this, in Prod mode, when an odd number of " +
           "Phoenix birds sleep at my fireplace, and more than one")
     val key = (request.body \ "key").as[String]
@@ -307,29 +311,65 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
   }
 
 
-  def skipRateLimitsForThisSite: Action[JsValue] = PostJsonAction(
+  def skipLimitsForThisSite: Action[JsValue] = PostJsonAction(
         RateLimits.BrowserError, MinAuthnStrength.E2eTestPassword, maxBytes = 150) {
             request =>
     val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
-    throwForbiddenIf(globals.isProd && !okE2ePassword,
+    throwForbiddenIf(globals.isProdLive && !okE2ePassword,
       "TyE8WTHFJ25", "I only do this, in Prod mode, if I can see two moons from " +
         "my kitchen window and at least two of my pigeons tell me I should.")
     val anySiteId: Opt[i32] = parseOptInt32(request.body, "siteId")
     val anySiteOrigin: Opt[St] = parseOptSt(request.body, "siteOrigin")
     throwBadReqIf(anySiteId.isDefined == anySiteOrigin.isDefined, "TyE0J5MWSG24",
           "Specify only one of siteId and siteOrigin")
+
+    val skipRateLimits: Bo = parseOptBo(request.body, "rateLimits") is true
+    val skipDiskQuotaLimits: Bo = parseOptBo(request.body, "diskQuotaLimits") is true
+
+    throwBadReqIf(!skipRateLimits && !skipDiskQuotaLimits, "TyE496MSKD35",
+          "Specify at least one type of limit to skip")
+
     val siteId = anySiteId getOrElse {
       val site = request.context.globals.lookupSiteOrThrow(anySiteOrigin.get)
       site.id
     }
 
-    globals.siteDao(siteId).skipRateLimitsBecauseIsTest()
+    if (skipRateLimits) {
+      globals.siteDao(siteId).skipRateLimitsBecauseIsTest()
+    }
+
+    if (skipDiskQuotaLimits) {
+      val patch = SuperAdminSitePatch(
+            siteId = siteId,
+            SiteStatus.Active,
+            newNotes = None,
+            rdbQuotaMiBs = Some(99),    //  <––
+            fileQuotaMiBs = Some(99),   //  <––
+            readLimitsMultiplier = None,
+            logLimitsMultiplier = None,
+            createLimitsMultiplier = None,
+            featureFlags = "")
+      globals.systemDao.updateSites(Vec(patch))
+    }
+
     Ok
   }
 
 
+  def pauseJobs: Action[JsValue] = PostJsonAction(RateLimits.BrowserError,
+          MinAuthnStrength.E2eTestPassword, maxBytes = 150) { request =>
+    throwForbiddenIf(globals.isProdLive, "TyE0DOVE001", "Not an avian carrier")
+    val howManySeconds = parseOptInt32(request.body, "howManySeconds") getOrElse {
+      throwBadReq("TyEHOWMNYSEC", "Specify howManySeconds to pause")
+    }
+    val pause = parseOptBo(request.body, "pause") getOrElse true
+    globals.pauseJobs(howManySeconds, pause = pause)
+    OkApiJson(Json.obj("paused" -> pause, "howManySeconds" -> howManySeconds))
+  }
+
+
   def createDeadlock: Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
-    throwForbiddenIf(globals.isProd, "DwE5K7G4", "You didn't say the magic word")
+    throwForbiddenIf(globals.isProdLive, "DwE5K7G4", "You didn't say the magic word")
     debiki.DeadlockDetector.createDebugTestDeadlock()
     Ok("Deadlock created, current time: " + toIso8601NoT(new ju.Date)) as TEXT
   }
@@ -338,7 +378,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
   def addAdminNotice: Action[JsValue] = PostJsonAction(
         RateLimits.BrowserError, MinAuthnStrength.E2eTestPassword, maxBytes = 50) { request =>
     val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
-    throwForbiddenIf(globals.isProd && !okE2ePassword, "TyE60MRGP35", "E2e pwd missing")
+    throwForbiddenIf(globals.isProdLive && !okE2ePassword, "TyE60MRGP35", "E2e pwd missing")
     import request.body
     val siteId = (body \ "siteId").as[SiteId]
     val noticeId = (body \ "noticeId").as[NoticeId]

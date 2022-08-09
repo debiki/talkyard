@@ -51,6 +51,11 @@ import play.api.mvc.RequestHeader
 import talkyard.server.TyLogging
 
 
+case class JobsPaused(til: When, paused: Bo) {
+  def unpaused: Bo = !paused
+}
+
+
 object Globals extends TyLogging {
 
   class NoStateError extends AssertionError(
@@ -160,6 +165,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   val isDev: Boolean = appLoaderContext.environment.mode == play.api.Mode.Dev
   val isOrWasTest: Boolean = appLoaderContext.environment.mode == play.api.Mode.Test
   val isProd: Boolean = Globals.isProd
+  val isProdTest: Bo = Globals.isProd && getBoolOrFalse("isProdTest")
+  val isProdLive: Bo = Globals.isProd && !isProdTest
 
   // This helps with shutting down when running tests — might not work properly now
   // with Play 2.8 but seems the test shutdown properly anyway.
@@ -331,6 +338,28 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     if (isTestDisableBackgroundJobs) return
     state.renderContentActorRef ! RenderContentService.PauseThreeSeconds
   }
+
+
+  COULD_LOG_STH // log config error if pauseJobs && isProdLive?
+  // When testing on localhost.
+  private val pauseJobsByDefault: Bo = getBoolOrFalse("pauseJobs") && !isProdLive
+
+  @volatile private var _pauseJobsTil: Opt[JobsPaused] = None
+
+  def jobsArePaused: Bo = {
+    val pj = _pauseJobsTil getOrElse {
+      return pauseJobsByDefault
+    }
+    val inTheFuture = pj.til.isAfter(now())
+    if (inTheFuture) pj.paused
+    else pj.unpaused  // hmm
+  }
+
+  def pauseJobs(seconds: i32, pause: Bo): U = {
+    val tilWhen = now().plusSeconds(seconds)
+    _pauseJobsTil = Some(JobsPaused(til = tilWhen, paused = pause))
+  }
+
 
   def spamChecker: SpamChecker = state.spamChecker
 

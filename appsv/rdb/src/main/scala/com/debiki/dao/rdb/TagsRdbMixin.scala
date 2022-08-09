@@ -58,7 +58,7 @@ trait TagsRdbMixin extends SiteTransaction {
           where tt.site_id_c = ?
           group by tt.tagtype_id_c
           """ */
-    val query = """
+    val query = """ -- loadTagTypeStats
           select
             tagtype_id_c,
             count(*) num_total,
@@ -157,7 +157,7 @@ trait TagsRdbMixin extends SiteTransaction {
 
   def loadTagsForPages(pageIds: Iterable[PageId]): Map[PageId, ImmSeq[Tag]] = {
     val values = siteId.asAnyRef :: pageIds.toList
-    val query = s"""
+    val query = s""" -- loadTagsForPages
           select po.page_id, t.* from tags_t t
               inner join posts3 po
                   on po.site_id = t.site_id_c
@@ -179,7 +179,7 @@ trait TagsRdbMixin extends SiteTransaction {
     // Small page, we can load all tags. [large_pages]
     // But if page large, say, 10 000+ posts, then maybe not.
     // Load both post tags and pat tags (post author user badges).
-    val query = """
+    val query = """ -- loadTagsToRenderSmallPage
           select t.* from tags_t t
               inner join posts3 po
                   on po.site_id = t.site_id_c
@@ -199,7 +199,7 @@ trait TagsRdbMixin extends SiteTransaction {
             Map.empty.withDefaultValue(Nil),
             Map.empty.withDefaultValue(Nil))
 
-    val query = s"""
+    val query = s""" -- loadPostTagsAndAuthorBadges
           -- Post tags
           select * from tags_t
           where site_id_c = ?
