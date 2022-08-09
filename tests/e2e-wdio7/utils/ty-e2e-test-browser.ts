@@ -4247,7 +4247,9 @@ export class TyE2eTestBrowser {
         // renames the ok-cookies button.
         //const cookieYesSelector = '[data-testid="cookie-policy-banner-accept"]';
         // (There's yet another cookie button, cookieYesBtn2, below.)
-        const cookieYesBtn1 = '[data-testid="cookie-policy-dialog-accept-button"]';
+        //nst cookieYesBtn1 = '[data-testid="cookie-policy-dialog-accept-button"]';  // old
+        const cookieYesBtn1 = '[data-cookiebanner="accept_only_essential_button"]';  // new
+        //nst cookieYesBtn2 = '[data-cookiebanner="accept_button"]';  // then optional cookies
         if (await this.isExisting(cookieYesBtn1)) {
           logMessage("Accepting cookies 1 ...");
           await this.waitAndClick(cookieYesBtn1);
