@@ -26,7 +26,32 @@ import javax.{sql => jxs}
 import play.api.libs.json.{JsObject, Json}
 
 
+/** "Writes" means all of updates, inserts, deletes.
+  */
+case class RequestCount(numQueriesDone: i32, numWritesDone: i32)
+
+
 object Rdb {
+
+  def isProdLive: Bo = _isProdLive != 1
+
+  private var _isProdLive = -1
+
+  def setIsProdLiveForever(isIt: Bo): U = {
+    if (_isProdLive != -1) die("TyE503MR5JKH", "Can set isProdLive just once.")
+    _isProdLive = if (isIt) 2 else 1
+  }
+
+
+  import java.util.concurrent.atomic.{AtomicInteger => j_AtomicInteger}
+
+  private val numQueriesDone = new j_AtomicInteger(0)
+  private val numWritesDone = new j_AtomicInteger(0)
+
+  def getRequestCounts(): RequestCount =
+    RequestCount(
+          numQueriesDone = numQueriesDone.get(),
+          numWritesDone = numWritesDone.get())
 
 
   // Calendar is very thread unsafe, and reportedly slow, because of creation of
@@ -616,7 +641,8 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
     var pstmt: js.PreparedStatement = null
     var committed = false
     // Nice for verifying if using the cache, only:
-    // System.out.println(o"***DB EXEC***: ${query.replaceAll("\n", " ")}")
+    //System.out.println(o"${if (resultSetHandler ne null) "DB_QUERY" else "DB_STMT"}:  ${
+    //    query.replaceAll("\n", " ")}  ")
     try {
       conn2 =
         if (conn ne null) conn
@@ -626,9 +652,13 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
       //s.setPoolable(false)  // don't cache infrequently used statements
       val result: Any = (if (resultSetHandler ne null) {
         val rs = pstmt.executeQuery()
+        //if (!isProdLive)
+        numQueriesDone.incrementAndGet()
         resultSetHandler(rs)
       } else {
         val updateCount = pstmt.executeUpdate()
+        //if (!isProdLive)
+        numWritesDone.incrementAndGet()
         if (isAutonomous) {
           conn2.commit()
           committed = true

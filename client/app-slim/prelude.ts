@@ -521,9 +521,16 @@ export function firstDefinedOf(x, y, z?) {
     RENAME to arr_groupByKeepOne ?
   */
 export function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V } {
-  const manyById: { [key: number]: V[] } = _.groupBy(vs, fn);
-  const oneById:  { [key: number]: V   } = _.mapValues(manyById, many => many[0]);
-  return oneById;
+  const result = {};
+  for (let v of vs) {
+    const key = fn(v);
+    if (notVal(key)) continue;
+    // Keep the first value only.
+    if (!result.hasOwnProperty(key)) {
+      result[key] = v;
+    }
+  }
+  return result;
 }
 
 

@@ -501,7 +501,8 @@ function runAllE2eTests {
 
   # Do after the search and access permission tests above.  [.more_cat_tests]
   $r s/wdio --only categories-delete.2br $args
-  $r s/wdio --only category-permissions.2br $args
+  $r s/wdio-7 --only category-perms.2br.d --cd -i $args
+  $r s/wdio-7 --only cats-perf-many.2br.d --cd -i $args
 
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 

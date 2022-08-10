@@ -308,8 +308,17 @@ function deleteOldTestSite(localHostname: string) {
 }
 
 
+// DEPRECATED use skipLimits(..) instead?
 function skipRateLimits(siteId: SiteId) {
-  postOrDie(settings.mainSiteOrigin + '/-/skip-rate-limits', { siteId });
+  skipLimits(siteId, { rateLimits: true });
+}
+
+function skipLimits(siteId: SiteId, ps: { rateLimits?: Bo, diskQuotaLimits?: Bo }) {
+  postOrDie(settings.mainSiteOrigin + '/-/skip-limits', { ...ps, siteId });
+}
+
+async function pauseJobs(ps: { howManySeconds: Nr }) {
+  await postOrDie(settings.mainSiteOrigin + '/-/pause-jobs', ps);
 }
 
 
@@ -792,6 +801,8 @@ export default {
   importSiteData: importTestSiteData,
   deleteOldTestSite,
   skipRateLimits,
+  skipLimits,
+  pauseJobs,
   playTimeSeconds,
   playTimeMinutes,
   playTimeHours,

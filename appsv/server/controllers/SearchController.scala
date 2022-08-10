@@ -67,10 +67,10 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
     })
 
     dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
-          addMarkTagClasses = true) map { searchResults: Seq[PageAndHits] =>
-        import play.api.libs.json._
-        OkSafeJson(Json.obj(
-          "pagesAndHits" -> searchResults.map((pageAndHits: PageAndHits) => {
+          addMarkTagClasses = true) map { results: SearchResultsCanSee =>
+      import play.api.libs.json._
+      OkSafeJson(Json.obj(
+          "pagesAndHits" -> results.pagesAndHits.map((pageAndHits: PageAndHits) => {
             Json.obj(
               "pageId" -> pageAndHits.pageId,
               "pageTitle" -> pageAndHits.pageTitle,
@@ -148,9 +148,9 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // that is, don't:  <mark class="...">  — so people cannot write code that
     // relies on those classes.
     dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
-          addMarkTagClasses = false) map { searchResults: Seq[PageAndHits] =>
+          addMarkTagClasses = false) map { results: SearchResultsCanSee =>
       val authzCtx = dao.getAuthzContextOnPats(request.reqer)
-      ThingsFoundJson.makePagesFoundSearchResponse(searchResults, dao,
+      ThingsFoundJson.makePagesFoundSearchResponse(results, dao,
             tysv.JsonConf.v0_0(pretty = pretty), authzCtx)
     }
   }

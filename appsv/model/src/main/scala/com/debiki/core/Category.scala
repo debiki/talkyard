@@ -66,7 +66,19 @@ object IncludeInSummaries {
 }
 
 
-/** [exp] In the db, but not needed:
+/** A category. Each page is placed in exactly one, or no, category.
+  *
+  * Does not know if it's a base category, sub cat or sub sub cat
+  * — because if a cat gets moved to another depth, that field would have had
+  * to get updated in all descendant cats, but doing that for a whole
+  * tree of cats could be bad for performance (sometimes 500+ sub cats).
+  *
+  * But does know if its a root cat — then, parentId is None. There can be
+  * many root cats in a Talkyard site. Each cat tree is then a different
+  * "site section", e.g. a forum, or a wiki, or blog, or another forum,
+  * a bit like you can have subreddits over at Reddit.
+  *
+  * [exp] In the db, but not needed:
   *  - updatedAt — who cares
   *  - staff_only — use page perms instead
   *  - only_staff_may_create_topics  — use page perms instead
@@ -139,7 +151,11 @@ case class Category(  // [exp] ok use   too long name! use Cat instead
   require(!frozenAt.exists(_.getTime < createdAt.getTime), "EsE2KPU4c")
   require(!deletedAt.exists(_.getTime < createdAt.getTime), "EsE7GUM4")
 
-  def isRoot: Boolean = parentId.isEmpty
+  /** Each site section has its own category tree, starting with a "tree root category",
+    * which itself has no parent category. See tyworld.adoc [subcoms_and_cats]
+    */
+  def isTreeRoot: Bo = parentId.isEmpty
+  def isRoot: Boolean = parentId.isEmpty  ; RENAME // to isTreeRoot above
   def isLocked: Boolean = lockedAt.isDefined
   def isFrozen: Boolean = frozenAt.isDefined
   def isDeleted: Boolean = deletedAt.isDefined
@@ -158,8 +174,10 @@ object Category {
 }
 
 
+// For root cats, could also remember rootCat.sectionPageId & path & role, & def cat id?
 case class CategoryStuff(
   category: Category,
+  childCats: ImmSeq[CategoryStuff],
   descriptionBriefPlainText: String,
   // Later: Don't allow external urls? Those could point to large images, making the page slow.
   anyThumbnails: immutable.Seq[String]  // later: Seq[UploadRef] — then cannot be external.

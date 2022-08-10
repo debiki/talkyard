@@ -1739,28 +1739,61 @@ interface LoadAndListCatsProps {
   forumPath: St;
 }
 
+interface LoadAndListCatsState {
+  categories: Cat[];
+  myId?: PatId;
+}
 
 const LoadAndListCategories = createFactory({
   displayName: 'LoadAndListCategories',
+  mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    return {};
+    const props: LoadAndListCatsProps = this.props;
+    const store = props.store;
+    return {
+      // The server has included recent topics in each cat, because the current page
+      // is of PageType.Forum.  [per_cat_topics]  (So no need for a separate request)
+      categories: store.currentCategories,
+      myId: store.me.id,
+    } as LoadAndListCatsState;
+  },
+
+  onChange: function() {
+    const catsNow = debiki2.ReactStore.allData().currentCategories;
+    const state: LoadAndListCatsState = this.state;
+    // If cats got updated, catsNow will point to a different array. [new_cur_cat_arr]
+    if (state.categories !== catsNow) {
+      this.setState({ categories: catsNow } as LoadAndListCatsState);
+    }
   },
 
   componentDidMount: function() {
-    this.loadCategories(this.props);
+    processTimeAgo();
+    // (No data fetch request needed — cats and topics are in the page JSON already.)
   },
 
   componentWillUnmount: function() {
     this.isGone = true;
   },
 
-  UNSAFE_componentWillReceiveProps: function(nextProps: LoadAndListCatsProps) {
-    this.loadCategories(nextProps);
-  },
+  componentDidUpdate: function(prevProps: LoadAndListCatsProps,
+        prevState: LoadAndListCatsState) {
+    const curProps: LoadAndListCatsProps = this.props;
+    const curState: LoadAndListCatsState = this.state;
+    const curMe: Me = curProps.store.me;
+    const prevMe: Me = prevProps.store.me;
 
-  componentDidUpdate: function() {
-    processTimeAgo();
+    const paramsChanged = curProps.queryParams.filter !== prevProps.queryParams.filter;
+    const patChanged = curMe.id !== prevMe.id;
+
+    if (paramsChanged || patChanged) {
+      this.loadCategories(curProps);
+    }
+
+    if (curState.categories !== prevState.categories) {
+      processTimeAgo();
+    }
   },
 
   loadCategories: function(props: LoadAndListCatsProps) {
@@ -1768,14 +1801,15 @@ const LoadAndListCategories = createFactory({
     Server.loadForumCategoriesTopics(store.currentPageId, props.queryParams.filter,
         (categories: Category[]) => {
       if (this.isGone) return;
-      this.setState({ categories: categories });
+      this.setState({ categories } as LoadAndListCatsState);
     });
   },
 
   render: function() {
     const props: LoadAndListCatsProps = this.props;
     const store: Store = props.store;
-    const categories: Category[] = this.state.categories;
+    const state: LoadAndListCatsState = this.state;
+    const categories: Cat[] = state.categories;
     if (!categories)
       return r.p({}, t.Loading);
 
@@ -1842,7 +1876,9 @@ const CategoryRow = createComponent({
         CatLink({ category: childCat, forumPath, location,
             className: 's_F_Cs_C_ChildCs_C' })));
 
-    const recentTopicRows = category.recentTopics.map((topic: Topic) => {
+    // For each category, show recently active topics. [per_cat_topics]
+    const recentTopics = category.recentTopics || []; // missing in newly created cat
+    const recentTopicRows = recentTopics.map((topic: Topic) => {
       const pinIconClass = topic.pinWhere ? ' icon-pin' : '';
       const numReplies = topic.numPosts - 1;
       return (

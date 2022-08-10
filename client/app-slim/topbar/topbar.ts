@@ -109,7 +109,7 @@ export const TopBar = createComponent({
         fixed: rect.top < -FixedTopDist,
       });
     });
-    // Dupl code [5KFEWR7]
+    // Dupl code [5KFEWR7]  — maybe move to inside doNextFrameOrNow()?
     this.timerHandle = setInterval(this.checkSizeChangeLayout, 500);
   },
 
@@ -759,8 +759,10 @@ export const SearchForm = createComponent({
     // causing a "Illegal invocation" error:
     //   setTimeout(this.refs.input.focus, 900);
     // This works:
-    this.refs.input.focus();
-    // Let's try again soon, in case the above didn't work when fading in:
+    // Oops! But forces the browser to recalculate styles and layout, takes 6ms. [FORCED_REFLOW]
+    // this.refs.input.focus();
+    // So let's do only from setTimeout:
+    // (also good to try later anyway, in case doing directly didn't work when fading in)
     setTimeout(() => {
       if (this.isGone) return;
       this.refs.input.focus();

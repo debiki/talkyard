@@ -225,6 +225,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
             pubId = Site.newPubId(),
             name = localHostname,
             SiteStatus.NoAdmin,
+            featureFlags = "",
             hostname = Some(hostname),
             embeddingSiteUrl = anyEmbeddingSiteAddress,
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,

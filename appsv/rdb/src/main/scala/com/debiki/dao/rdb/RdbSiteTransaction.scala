@@ -482,7 +482,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     val values: List[AnyRef] =
       if (all) List(anySiteId.getOrElse(siteId).asAnyRef)
       else anySiteId.getOrElse(siteId).asAnyRef :: pageIds.toList
-    var sql = s"""
+    var sql = s""" -- loadPageMetaImpl
         select g.PAGE_ID, ${_PageMetaSelectListItems}
         from pages3 g
         where g.SITE_ID = ?
@@ -523,7 +523,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       return Map.empty
 
     val values: List[AnyRef] = siteId.asAnyRef :: extImpIds.toList
-    var sql = s"""
+    var sql = s""" -- loadPageMetasByExtIdAsMap
         select g.page_id, ${_PageMetaSelectListItems}
         from pages3 g
         where g.site_id = ?
@@ -540,7 +540,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       return Map.empty
 
     val values: List[AnyRef] = siteId.asAnyRef :: altIds.toList
-    val sql = s"""
+    val sql = s""" -- loadPageMetasByAltIdAsMap
         select a.alt_page_id, g.page_id, ${_PageMetaSelectListItems}
         from alt_page_ids3 a inner join pages3 g
           on a.site_id = g.site_id and
