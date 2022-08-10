@@ -110,7 +110,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       return Nil
 
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
-    val queryBuilder = new StringBuilder(256, "select * from posts3 where SITE_ID = ? and (")
+    val queryBuilder = new StringBuilder(256,
+          """ -- loadPostsByNrs
+          select * from posts3 where SITE_ID = ? and (""")
     var nr = 0
     for (pagePostNr: PagePostNr <- pagePostNrs.toSet) {
       if (nr >= 1) queryBuilder.append(" or ")
@@ -141,7 +143,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     if (someIds.isEmpty)
       return Map.empty
 
-    val query = i"""
+    val query = i""" -- loadPostsBySomeId
       select * from posts3 where site_id = ? and $fieldName in (${makeInListFor(someIds)})
       """
     val values = siteId.asAnyRef :: someIds.map(_.asAnyRef).toList
@@ -153,7 +155,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def loadAllPosts(): immutable.Seq[Post] = {
-    val query = i"""
+    val query = i""" -- loadAllPosts
       select * from posts3 where site_id = ?
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => readPost(rs, pageId = None))
@@ -172,7 +174,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   private def loadUnapprovedPostsImpl(pageId: PageId, by: Option[UserId], limit: Int)
         : immutable.Seq[Post] = {
-    var query = s"""
+    var query = s""" -- loadUnapprovedPostsImpl
       select * from posts3
       where site_id = ?
         and page_id = ?
@@ -304,7 +306,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       return Map.empty
 
     // Finds the `limitPerPage` most like-voted replies on each page.
-    val query = s"""
+    val query = s""" -- loadPopularPostsByPage
       select * from (
         select
           row_number() over (partition by page_id order by num_like_votes desc) as rownum,

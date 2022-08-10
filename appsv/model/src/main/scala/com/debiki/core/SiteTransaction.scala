@@ -364,7 +364,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     orderOffset: PageOrderOffset, limit: Int): Seq[PagePathAndMeta]
 
   def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
-        : Seq[PagePathAndMeta]
+        : Vec[PagePathAndMeta]
 
   /** Orders by most recent first. */
   def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta]

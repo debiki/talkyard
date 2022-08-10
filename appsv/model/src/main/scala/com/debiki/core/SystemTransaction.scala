@@ -42,7 +42,7 @@ trait SystemTransaction {  RENAME // to SysTx, started already
     * (from the same IP or email address).
     */
   def createSite(id: Option[SiteId], pubId: PubSiteId,
-    name: String, status: SiteStatus, creatorIp: String,
+    name: String, status: SiteStatus, featureFlags: St, creatorIp: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, createdAt: When): Site
 

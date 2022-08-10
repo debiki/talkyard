@@ -30,17 +30,17 @@ full text search:
     found by admins:
             navigation-as-admin.test.ts  TyT7WAAR2J4 TyT85WABR0
     not found by non-staff:
-          - api-search-full-text.test.ts  TyT60KTSJ35J
+            - api-search-full-text.test.ts  TyT60KTSJ35J
   custom groups private pages not found:
-          - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
+            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
   direct message,
   private chat,
   restricted category:
-          - api-search-full-text.test.ts  TyT60KTSJ35J
+            - api-search-full-text.test.ts  TyT60KTSJ35J
   sub cat in access restricted base category:
-          - category-permissions.2br   TyTE2ECATPREMS01
+            - category-perms.2br.d  TyTE2ECATPREMS01.TyTSEARCHPRIVCAT
   deleted cat:
-          - categories-delete.2br   TyTE2ECATDEL01
+            - categories-delete.2br   TyTE2ECATDEL01
   from external backend server:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
   advanced search:
@@ -402,6 +402,7 @@ security:
             - api-search-ext-site-and-server.2br.cors  TyTEAPIEXTSRV
             - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
+  categories: see (1QRY7)
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -528,6 +529,8 @@ categories -
   edit slug —> old name redirects to new:
           - api-upsert-categories.2browsers.test.ts  TyT503KRDH24  (not impl)
   unlist:
+  sort order:
+            - cats-perf-many.2br.d  TyTECATPREFMNY.TyTCATORDR
   delete:
           - categories-delete.2br   TyTE2ECATDEL01
     gets marked as deleted for staff:
@@ -538,12 +541,19 @@ categories -
     can undelete:
     backlinks from topics inside disappear:
           - links-internal.2browsers.test.ts  TyTINTLNS54824.TyTDELCATBLNS
-  permissions:   see (1QRY7)  no? tag gone?
-          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
-          - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+  permissions:   (1QRY7)
+            - category-perms.2br.d  TyTE2ECATPREMS01
+            - cats-perf-many.2br.d  TyTECATPREFMNY.TyTPRIVCATS
+            - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+            - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyT0ACSPG043
+    topics on cats list page:
+            - category-perms.2br.d  TyTE2ECATPREMS01.TyTSEECATTOPS
+            - cats-perf-many.2br.d  TyTECATPREFMNY.TyTSEECATTOPS
+    padlock icon:
+            - category-perms.2br.d  TyTE2ECATPREMS01.TyTCATLOCK
     sub cats:
-          - category-permissions.2br   TyTE2ECATPREMS01
-          - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
+            - category-perms.2br.d  TyTE2ECATPREMS01.TyTPRIVSUBCA
+            - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
   upsert categories:  (upscats)
   move topic to new category:
           - link-previews-internal-may-not-see-cat.2br  TyTE2ELNPVIN4837.TyTMVPG2OTRCAT
@@ -552,14 +562,16 @@ categories -
   sub categories:
     create,
     move base cat to other cat so becomes sub cat:
-          - CategoriesDaoAppSpec.scala
-          - category-permissions.2br   TyTE2ECATPREMS01
+            - CategoriesDaoAppSpec.scala
+            - category-perms.2br.d  TyTE2ECATPREMS01.TyTMOBACAT
     move sub cat to other base cat:
           - CategoriesDaoAppSpec.scala
           - TESTS_MISSING: UX tests   [TyTE2E305TMP24Z]
     permissions:
-          - category-permissions.2br   TyTE2ECATPREMS01
-          - TESTS_MISSING  link to access-denied sub category,  TyTE2ELNSUBCAT
+      see:  (1QRY7)
+    find sub tree categories:
+      CatsCanSee.catsInSubTree():
+            - TESTS_MISSING
 
 tags, post tags, content tags,
 badges, user badges, user flairs:
@@ -577,12 +589,13 @@ badges, user badges, user flairs:
   server side tag tests:
             - TESTS_MISSING see:   TyTIT_TAGS
 
+# Move to ^security:  ?
 access permissions,
 permissions -
   category -
     change to staff-only —> globally pinned chat dissappears from stranger's watchbar  (6KWQ2)
     change back —> globally pinned chat reappears in watchbar  (6KWQ2)
-    ... much more ...
+    see: (1QRY7)
 
 topics -
   go back to forum:
@@ -1621,6 +1634,10 @@ rate limits:
   per site limits multipliers:
             - TESTS_MISSING
 
+performance:
+  categories list page:
+    not too many db queries and writes:
+            - cats-perf-many.2br.d  TyTECATPREFMNY.checkServerStats
 
 latency,
 3g,

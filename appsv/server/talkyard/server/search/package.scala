@@ -137,6 +137,14 @@ package object search {
   }
 
 
+  /** The requester can see these pages (permission control has been done).
+    */
+  case class SearchResultsCanSee(
+    pagesAndHits: Seq[PageAndHits],
+    // catsCanSeeById: Map[..]  //  [search_results_extra_cat_lookup]  ?
+    )
+
+
   def makeElasticSearchJsonDocFor(siteId: SiteId, post: Post, categoryId: Option[CategoryId],
         tags: Set[TagLabel]): JsObject = {
     val Fields = PostDocFields

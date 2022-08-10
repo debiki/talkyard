@@ -33,7 +33,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
 
 
   def createSite(id: Option[SiteId], pubId: PubSiteId,
-    name: String, status: SiteStatus, creatorIp: String,
+    name: String, status: SiteStatus, featureFlags: St, creatorIp: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, createdAt: When): Site = {
 
@@ -58,7 +58,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
     }
 
     val newSiteNoId = Site(theId, pubId = pubId, status, name = name,
-          createdAt = createdAt, creatorIp = creatorIp, featureFlags = "",
+          createdAt = createdAt, creatorIp = creatorIp, featureFlags = featureFlags,
           hostnames = Vector.empty,
           readLimitsMultiplier = None,
           logLimitsMultiplier = None,
@@ -127,10 +127,11 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
     val site = siteNoId.copy(id = newId)
     runUpdateSingleRow("""
         insert into sites3 (
-          ID, publ_id, status, NAME, ctime, CREATOR_IP,
+          ID, publ_id, status, feature_flags_c, NAME, ctime, CREATOR_IP,
           rdb_quota_mibs_c, file_quota_mibs_c)
-        values (?, ?, ?, ?, ?, ?, ?, ?)""",
-      List[AnyRef](site.id.asAnyRef, site.pubId, site.status.toInt.asAnyRef, site.name,
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+      List[AnyRef](site.id.asAnyRef, site.pubId, site.status.toInt.asAnyRef,
+        site.featureFlags.trimNullVarcharIfBlank, site.name,
         site.createdAt.asTimestamp, site.creatorIp,
         databaseQuotaMiB.orNullInt,
         fileSysQuotaMiB.orNullInt))

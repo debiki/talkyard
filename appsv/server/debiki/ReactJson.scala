@@ -86,6 +86,11 @@ private case class RestrTopicsCatsLinks(
   tagTypeIdsNeeded: Set[TagTypeId])
 
 
+case class CatsWithTopics(
+  catsAndTopicsJson: JsArray,
+  pageStuffById: Map[PageId, PageStuff])
+
+
 private case class UnapprovedPostsAndAuthors(
   posts: JsObject, // why object? try to change to JsArray instead
   authors: JsArray,
@@ -221,7 +226,7 @@ class JsonMaker(dao: SiteDao) {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and the requester must be a stranger (user = None):
-    val authzCtx = dao.getForumPublicAuthzContext()
+    val pubAuthzCtx = dao.getForumPublicAuthzContext()
     val everyoneGroup = dao.getTheGroup(Group.EveryoneId)
     def globals = dao.globals
 
@@ -343,33 +348,53 @@ class JsonMaker(dao: SiteDao) {
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta)
 
-    val categories = page.meta.categoryId.map(
-      makeCategoriesJson(_, authzCtx, exclPublCats = false)) getOrElse JsArray()
+    val anyCurCatId = page.meta.categoryId
+    val anyCatsCanSee: Opt[CatsCanSee] = anyCurCatId.flatMap(
+          dao.listMaySeeCategoriesInSameSectionAs(_, pubAuthzCtx, inclDeleted = false))
+
+    val pubCatsJson: JsArray = anyCatsCanSee.map({ catsCanSee =>
+        // Forum pages need per-category recently active topics, to show on
+        // the categories list page, next to each category title.  [per_cat_topics]
+        if (page.meta.pageType != PageType.Forum) {
+          makeCategoriesJsonNoDbAccess(catsCanSee, recentTopicsJson = None)
+        }
+        else {
+          // Should this be configurable, maybe want popular-first instead of active-first?
+          // [cats_topics_order]
+          val pageQuery = activePagesPerCatQuery
+          COULD_OPTIMIZE // Remember cats, so can skip lookup below?  [2_many_cat_queries]
+          val catsWithTopics = makeForumPageCatsAndTopicsJson(catsCanSee, pageQuery)
+          catsWithTopics.catsAndTopicsJson
+        }
+    }) getOrElse JsArray()
+
     val siteSettings = dao.getWholeSiteSettings()
 
-    val internalBacklinksJson = makeInternalBacklinksJson(page.id, authzCtx, dao)
+    val internalBacklinksJson = makeInternalBacklinksJson(page.id, pubAuthzCtx, dao)
 
     val tagTypeIdsToLoad = mut.Set[TagTypeId]()
     tagsAndBadges.tagTypeIds foreach tagTypeIdsToLoad.add
 
     val anyLatestTopicsJsVal: JsValue =
       if (page.pageType == PageType.Forum) {
-        val rootCategoryId = page.meta.categoryId.getOrDie(
+        val catsCanSee = anyCatsCanSee.getOrDie(
           // Constraint `dw1_pages__c_has_category` ensures there's a category id.
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
         val orderOffset = renderParams.anyPageQuery getOrElse defaultPageQuery(siteSettings)
-        val topics = dao.listMaySeeTopicsInclPinned(rootCategoryId, orderOffset,
-          includeDescendantCategories = true,
-          authzCtx,
-          limit = ForumController.NumTopicsToList)
+        // Reuse results from above?  [2_many_cat_queries]
+        val topicsCanSee: PagesCanSee =
+              dao.listPagesCanSeeInCatsCanSee(
+                  catsCanSee, orderOffset, inclPinned = true,
+                  limit = ForumController.NumTopicsToList)
         RACE // got an 1 version old page stuff. So, now looking up by id *and version*,
         // instead.
+        val topics = topicsCanSee.pages
         val pageStuffById = dao.getPageStuffsByIdVersion(topics.map(_.idAndVersion))
         topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
         for (stuff <- pageStuffById.values; tag <- stuff.pageTags) {
           tagTypeIdsToLoad.add(tag.tagTypeId)
         }
-        JsArray(topics.map(controllers.ForumController.topicToJson(_, pageStuffById)))
+        JsArray(topics.map(controllers.ForumController.topicToJson(_, pageStuffById)).toArray)
       }
       else {
         JsNull
@@ -473,9 +498,9 @@ class JsonMaker(dao: SiteDao) {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
-      "publicCategories" -> categories,
+      "publicCategories" -> pubCatsJson,
       "topics" -> anyLatestTopicsJsVal,
-      "me" -> noUserSpecificData(authzCtx.tooManyPermissions, everyoneGroup).meJsOb,
+      "me" -> noUserSpecificData(pubAuthzCtx.tooManyPermissions, everyoneGroup).meJsOb,
       "rootPostId" -> JsNumber(renderParams.thePageRoot),
       "usersByIdBrief" -> usersByIdJson,
       "pageMetaBriefById" -> JsObject(Nil),
@@ -574,8 +599,9 @@ class JsonMaker(dao: SiteDao) {
 
 
   private def makeSiteSectionsJson(): JsValue = {
-    COULD_OPTIMIZE // get root CategoryStuff instead,
-    // with an 'isSectionPageDeleted' field?   [cache_cats_stuff]
+    COULD_OPTIMIZE // use CategoriesDao.listMaySeeCategoryStuffAllSections() instead,
+    // then we'll get  CategoryStuff:s which includes all we need,   [cache_cats_stuff]
+    // with an 'isSectionPageDeleted' field?
     SECURITY; COULD // not show any hidden/private site sections. Currently harmless though:
     // there can be only 1 section and it always has the same id. (unless adds more manually via SQL)
     SECURITY; COULD // not show any section, if not logged in, and login-required-to-read.
@@ -1042,41 +1068,62 @@ class JsonMaker(dao: SiteDao) {
     val authzCtx = request.authzContext
     val siteSettings = dao.getWholeSiteSettings()
 
-    val categoryId = request.thePageMeta.categoryId getOrElse {
-      // Not a forum topic. Could instead show an option to add the page to the / a forum?
+    // If not a forum topic. Could instead show an option to add the page to the / a forum?
+    def onlyBacklinks = {
       val internalBacklinksJson = Nil // later
-      return RestrTopicsCatsLinks(JsArray(), Nil, Nil, internalBacklinksJson, Set.empty)
+      RestrTopicsCatsLinks(JsArray(), Nil, Nil, internalBacklinksJson, Set.empty)
     }
+
+    val categoryId = request.thePageMeta.categoryId getOrElse {
+      return onlyBacklinks
+    }
+
+    val pageQuery = request.parsePageQuery() getOrElse defaultPageQuery(siteSettings)
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
-    val categoriesJson = makeCategoriesJson(categoryId, authzCtx, exclPublCats = true)
+    val catsCanSee: CatsCanSee = dao.listMaySeeCategoriesInSameSectionAs(
+          categoryId, authzCtx, exclPubCats = true,
+          inclDeleted = pageQuery.pageFilter.includeDeleted) getOrElse {
+      return onlyBacklinks
+    }
 
-    val (topics: Seq[PagePathAndMeta], pageStuffById, internalBacklinksJson) =
+    val (
+        categoriesJson: JsArray,
+        pagesCanSee: PagesCanSee,
+        pageStuffById,
+        internalBacklinksJson,
+        ) =
       if (request.thePageRole != PageType.Forum) {
-        // Don't list topics; instead, show backlinks.
+        // Not a forum page, so need not include any topic lists.
+        val catsJson = makeCategoriesJsonNoDbAccess(catsCanSee, recentTopicsJson = None)
         val internalBacklinksJson: Seq[JsObject] = request.pageId.map(id =>
               makeInternalBacklinksJson(id, authzCtx, dao)) getOrElse Nil
-        (Nil, Map[PageId, PageStuff](), internalBacklinksJson)
+        (catsJson, PagesCanSee.empty, Map[PageId, PageStuff](), internalBacklinksJson)
       }
       else {
-        // List forum topics.
-        // BUG (minor): To include restricted categories & topics, sorted in the correct order, need
+        BUG // (minor): To include restricted categories & topics, sorted in the correct order, need
         // to know topic sort order & topic filter — but that's not incl in the url params. [2KBLJ80]
-        val pageQuery = request.parsePageQuery() getOrElse defaultPageQuery(siteSettings)
+
+        // List forum topics per category. [per_cat_topics]
+        COULD_OPTIMIZE // Remember cats, use below.  [2_many_cat_queries]
+        val catsWithTopics = makeForumPageCatsAndTopicsJson(catsCanSee, pageQuery)
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
         // (We're passing dao to ForumController below.)
-        val topics = dao.listMaySeeTopicsInclPinned(
-          categoryId, pageQuery,
-          includeDescendantCategories = true,
-          authzCtx,
-          limit = ForumController.NumTopicsToList)
-        val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
-        (topics, pageStuffById, Nil)
+
+        // List forum topics in the base category.
+        // (Reuse parts of the results from above?  [2_many_cat_queries])
+        val topicsInBaseCat: PagesCanSee =
+              dao.listPagesCanSeeInCatsCanSee(
+                  catsCanSee, pageQuery, inclPinned = true,
+                  limit = ForumController.NumTopicsToList, inSubTree = Some(categoryId))
+        COULD_OPTIMIZE // reuse pageStuff in catsWithTopics.pageStuffById. [2_many_cat_queries]
+        val pageStuffById = dao.getPageStuffById(topicsInBaseCat.pageIds)
+        (catsWithTopics.catsAndTopicsJson, topicsInBaseCat, pageStuffById, Nil)
       }
 
     val userIds = mut.Set[UserId]()
-    topics.foreach(_.meta.addUserIdsTo(userIds))
+    pagesCanSee.pages.foreach(_.meta.addUserIdsTo(userIds))
     val users = dao.getUsersAsSeq(userIds)
 
     val tagTypeIdsNeeded = mut.Set[TagTypeId]()
@@ -1084,12 +1131,52 @@ class JsonMaker(dao: SiteDao) {
       tagTypeIdsNeeded.add(tag.tagTypeId)
     }
 
+    val topicJson = pagesCanSee.pages map { p: PagePathAndMeta =>
+      ForumController.topicToJson(p, pageStuffById)
+    }
+
     RestrTopicsCatsLinks(
           categoriesJson = categoriesJson,
-          topicsJson = topics.map(ForumController.topicToJson(_, pageStuffById)),
+          topicsJson = topicJson,
           topicParticipantsJson = users.map(JsPatNameAvatar),
           internalBacklinksJson = internalBacklinksJson,
           tagTypeIdsNeeded = tagTypeIdsNeeded.toSet)
+  }
+
+
+  def makeForumPageCatsAndTopicsJson(catsCanSee: CatsCanSee,
+          pageQuery: PageQuery): CatsWithTopics = {
+    // Tests:
+    //  - category-perms.2br.d
+
+    val recentTopicsByBaseCatId = mut.Map[CatId, Seq[PagePathAndMeta]]()
+    val pageIds = MutArrBuf[PageId]()
+
+    // We'll load recent topics, for [each base cats and its descendant cats].
+    val catIds = catsCanSee.baseCatIdsOrOnlyId
+    for (catId <- catIds) {
+      val pagesInCats: PagesCanSee =
+            dao.listPagesCanSeeInCatsCanSee(
+                catsCanSee, pageQuery,
+                // Or maybe excl pinned topics, on the cats list page?
+                inclPinned = true,
+                limit = ForumController.NumTopicsToListPerCat, inSubTree = Some(catId))
+      recentTopicsByBaseCatId(catId) = pagesInCats.pages
+      pageIds.append(pagesInCats.pageIds: _*)
+    }
+
+    val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
+          dao.getPageStuffById(pageIds)
+
+    import ForumController.categoryToJson  // move to here somewhere?
+
+    val json = JsArray(catsCanSee.catStuffsExclRoot.map({ catStuff =>
+      categoryToJson(catStuff, catsCanSee.rootCategory,
+            topicsInTree = recentTopicsByBaseCatId.get(catStuff.category.id),
+            pageStuffById)
+    }))
+
+    CatsWithTopics(json, pageStuffById)
   }
 
 
@@ -1098,6 +1185,13 @@ class JsonMaker(dao: SiteDao) {
       PageOrderOffset.ByBumpTime(None),
       PageFilter(PageFilterType.AllTopics, includeDeleted = false),
       includeAboutCategoryPages = siteSettings.showCategories)
+
+
+  private def activePagesPerCatQuery =
+    PageQuery(
+          PageOrderOffset.ByBumpTime(None),
+          PageFilter(PageFilterType.AllTopics, includeDeleted = false),
+          includeAboutCategoryPages = false)
 
 
   private def unapprovedPostsAndAuthorsJson(reqer: Pat, pageId: PageId,
@@ -1158,13 +1252,13 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeCategoriesStorePatch(categoryId: CategoryId, authzCtx: ForumAuthzContext)
+  def makeCatsPatchExclTopics(categoryId: CategoryId, authzCtx: ForumAuthzContext)
         : JsObject = {
-    // 2 dupl lines [7UXAI1]
-    val restrCategoriesJson =
-      makeCategoriesJson(categoryId, authzCtx, exclPublCats = true)
-    val publCategoriesJson =
-      makeCategoriesJson(categoryId, dao.getForumPublicAuthzContext(), exclPublCats = false)
+    val restrCategoriesJson = makeCategoriesJson(
+          categoryId, authzCtx, exclPublCats = true, recentTopicsJson = None)
+    val pubAuthCtx = if (authzCtx.isPublic) authzCtx else dao.getForumPublicAuthzContext()
+    val publCategoriesJson = makeCategoriesJson(
+          categoryId, pubAuthCtx, exclPublCats = false, recentTopicsJson = None)
     Json.obj(
       "appVersion" -> dao.globals.applicationVersion,
       "restrictedCategories" -> restrCategoriesJson,
@@ -1172,11 +1266,15 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext,
-        exclPublCats: Boolean): JsArray = {
+  REFACTOR // move into above fn, only used there
+  private def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext,
+        exclPublCats: Bo, recentTopicsJson: Opt[Seq[JsObject]]): JsArray = {
     COULD_OPTIMIZE // exclPublCats currently ignored — but would result in less json generated
-    val sectCats = dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)
-    makeCategoriesJsonNoDbAccess(sectCats)
+    val sectCatsCanSee = dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx,
+          exclPubCats = exclPublCats, inclDeleted = true) getOrElse {
+      return JsArray()
+    }
+    makeCategoriesJsonNoDbAccess(sectCatsCanSee, recentTopicsJson)
   }
 
 
@@ -1197,7 +1295,7 @@ class JsonMaker(dao: SiteDao) {
                 maySee
               }
         val linksJson = linkersOkSee map { page =>
-          ForumController.topicToJson(page, s"/-${page.pageId}")
+          ForumController.topicStuffToJson(page, s"/-${page.pageId}")
         }
         linksJson.toSeq
     }
@@ -1786,20 +1884,16 @@ object JsonMaker {
   }
 
 
-  private def makeCategoriesJsonNoDbAccess(anySectCats: Option[SectionCategories]): JsArray = {
-    val sectCats = anySectCats getOrElse {
-      return JsArray()
-    }
-
-    val categoriesJson = JsArray(sectCats.catStuffsExclRoot map { categoryStuff =>
-      makeCategoryJson(categoryStuff, sectCats.rootCategory)
+  private def makeCategoriesJsonNoDbAccess(sectCats: CatsCanSee,
+          recentTopicsJson: Opt[Seq[JsObject]]): JsArray = {
+    JsArray(sectCats.catStuffsExclRoot map { categoryStuff =>
+      makeCategoryJson(categoryStuff, sectCats.rootCategory, topicsInTreeJson = recentTopicsJson)
     })
-    categoriesJson
   }
 
 
-  def makeCategoryJson(categoryStuff: CategoryStuff, rootCategory: Category,
-        recentTopicsJson: Seq[JsObject] = null, includeDetails: Boolean = false): JsObject = {
+  def makeCategoryJson(categoryStuff: CategoryStuff, rootCategory: Cat,
+        topicsInTreeJson: Opt[Seq[JsObject]], includeDetails: Bo = false): JsObject = {
     val category = categoryStuff.category
     var json = Json.obj(
       "id" -> category.id,
@@ -1819,8 +1913,8 @@ object JsonMaker {
       "position" -> category.position,
       "description" -> JsStringOrNull(category.description), // [502RKDJWF5] repl w categoryStuff.descriptionBriefPlainText
       "thumbnailUrl" -> JsStringOrNull(categoryStuff.anyThumbnails.headOption))
-    if (recentTopicsJson ne null) {
-      json += "recentTopics" -> JsArray(recentTopicsJson)
+    topicsInTreeJson foreach {
+      json += "recentTopics" -> JsArray(_)  // RENAME to topicsInTree
     }
     if (rootCategory.defaultSubCatId is category.id) {
       json += "isDefaultCategory" -> JsTrue  // REMOVE do client side instead? SiteSectino.defaultCategoryId

@@ -207,15 +207,26 @@ export function MenuItemsMany(props, ...children) {
 
 
 export function MenuItem(props: { id?: St, className?: St, active?: Bo,
-        href?: St, onClick?, onSelect?, tabIndex?: Nr, key?: Nr | St }, ...children) {
+        href?: St, onClick?: () => Vo, onSelect?, tabIndex?: Nr, key?: Nr | St }, ...children) {
   let className = props.className || '';
   if (props.active) {
     className += ' active';
   }
+
+  // If there's both a href and a click handler, then that's so that by mouse-middle-
+  // clicking, one can open the link in a new tab. And then, if clicking normally
+  // (left mouse button), the href should be ignored (otherwise, would trigger a page
+  // navigation).
+  const onClickFn = props.onClick || props.onSelect;
+  const onClick = onClickFn && function(event) {
+    event.preventDefault();
+    onClickFn();
+  };
+
   // Don't do  r.a(props, children)  because that'd result in an """an array or iterator
   // should have a unique "key" prop""" React.js warning.
   const linkProps = { role: 'button', id: props.id, href: props.href,
-    onClick: props.onClick || props.onSelect, tabIndex: props.tabIndex || -1 };
+    onClick, tabIndex: props.tabIndex || -1 };
   return (
     r.li({ role: 'presentation', className: className, key: props.key },
       r.a.apply(null, [linkProps, ...children])));
