@@ -35,7 +35,7 @@ Compile / dependencyOverrides ++= {
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.4.1",
+      "org.postgresql" % "postgresql" % "42.3.6",
       "org.scalactic" % "scalactic_2.12" % "3.2.12",
       "org.slf4j" % "slf4j-api" % "1.7.36"
     )
