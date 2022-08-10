@@ -1,26 +1,21 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
-import c = require('../test-constants');
+import assert from '../utils/ty-assert';
+import server from '../utils/server';
+import * as make from '../utils/make';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
+import c from '../test-constants';
 
-declare let browserA: any;
-declare let browserB: any;
-declare let browserC: any;
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
+let brC: TyE2eTestBrowser;
 
-let everyone;
 let owen;
 let michael;
 let maria;
 let memberAlice;
 let alicesBrowser: TyE2eTestBrowser;
-let guest;
 let stranger;
 
 let idAddress;
@@ -38,35 +33,39 @@ const mariasQuestionSearchQuery = "ask questions";
 let siteId;
 
 
-describe("private chat direct message notfs  TyT602RKDL42", () => {
+/// Tests private chat direct message notifications.
+///
+describe(`direct-messages-notfs.3br.d  TyT602RKDL42`, () => {
 
-  it("initialize people", () => {
-    everyone = new TyE2eTestBrowser(wdioBrowser);
-    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
-    michael = _.assign(new TyE2eTestBrowser(browserB), make.memberMichael());
-    maria = _.assign(new TyE2eTestBrowser(browserC), make.memberMaria());
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+    brC = new TyE2eTestBrowser(wdioBrowserC, 'brC');
+
+    owen = _.assign(brA, make.memberOwenOwner());
+    michael = _.assign(brB, make.memberMichael());
+    maria = _.assign(brC, make.memberMaria());
     // Let's reuse the same browser.
     alicesBrowser = maria;
-    guest = michael;
     stranger = michael;
   });
 
-  it("import a site", () => {
+  it("import a site", async () => {
     let site: SiteData = make.forumOwnedByOwen('formal-priv-msg', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
 
     const owen = site.members[0];
-    assert.equal(owen.username, 'owen_owner');
-    owen.emailNotfPrefs = EmailNotfPrefs.ReceiveAlways;  // [6029WKHU4]
+    assert.eq(owen.username, 'owen_owner');
+    owen.emailNotfPrefs = c.TestEmailNotfPrefs.ReceiveAlways;  // [6029WKHU4]
 
     memberAlice = make.memberAdminAlice();
     site.members.push(memberAlice);
     site.members.push(make.memberMichael());
     site.members.push(make.memberMaria({
-      emailNotfPrefs: EmailNotfPrefs.ReceiveAlways, // [6029WKHU4]
+      emailNotfPrefs: c.TestEmailNotfPrefs.ReceiveAlways, // [6029WKHU4]
     }));
-    idAddress = server.importSiteData(site);
+    idAddress = await server.importSiteData(site);
     siteId = idAddress.id;
   });
 
@@ -74,82 +73,82 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
   // Generate private message discussion
   // ------------------------------------------------------
 
-  it("Maria opens Owen's user page", () => {
-    maria.userProfilePage.openActivityFor(owen.username, idAddress.origin);
-    //maria.assertPageTitleMatches(forumTitle);
-    maria.complex.loginWithPasswordViaTopbar(maria);
+  it("Maria opens Owen's user page", async () => {
+    await maria.userProfilePage.openActivityFor(owen.username, idAddress.origin);
+    //await maria.assertPageTitleMatches(forumTitle);
+    await maria.complex.loginWithPasswordViaTopbar(maria);
   });
 
-  it("... sends a formal private message", () => {
-    maria.userProfilePage.clickSendMessage();
-    maria.editor.editTitle(messageTitle);
-    maria.editor.editText(messageText);
-    maria.editor.saveWaitForNewPage();
-    maria.assertPageTitleMatches(messageTitle);
-    maria.assertPageBodyMatches(messageText);
-    messageUrl = maria.getUrl();
+  it("... sends a formal private message", async () => {
+    await maria.userProfilePage.clickSendMessage();
+    await maria.editor.editTitle(messageTitle);
+    await maria.editor.editText(messageText);
+    await maria.editor.saveWaitForNewPage();
+    await maria.assertPageTitleMatches(messageTitle);
+    await maria.assertPageBodyMatches(messageText);
+    messageUrl = await maria.getUrl();
   });
 
-  it("Owen logs in", () => {
-    owen.go(idAddress.origin);
-    owen.complex.loginWithPasswordViaTopbar(owen);
+  it("Owen logs in", async () => {
+    await owen.go2(idAddress.origin);
+    await owen.complex.loginWithPasswordViaTopbar(owen);
   });
 
-  it("... he doesn't see the message in the topic list", () => {
-    owen.forumTopicList.waitUntilKnowsIsEmpty();
+  it("... he doesn't see the message in the topic list", async () => {
+    await owen.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("... but sees a notification", () => {
-    owen.topbar.assertNotfToMe();
+  it("... but sees a notification", async () => {
+    await owen.topbar.assertNotfToMe();
   });
 
-  it("... opens the message via the notf icon", () => {
-    owen.topbar.openNotfToMe();
+  it("... opens the message via the notf icon", async () => {
+    await owen.topbar.openNotfToMe();
   });
 
-  it("... and replies", () => {
-    owen.complex.replyToOrigPost(owensAnswer);
-    owen.topic.waitForPostNrVisible(c.FirstReplyNr);
+  it("... and replies", async () => {
+    await owen.complex.replyToOrigPost(owensAnswer);
+    await owen.topic.waitForPostNrVisible(c.FirstReplyNr);
   });
 
-  it("... he also got an email notf about this new topic", () => {
+  it("... he also got an email notf about this new topic", async () => {
     // This tests notfs when one clicks the append-bottom-comment button.
-    server.waitUntilLastEmailMatches(
+    await server.waitUntilLastEmailMatches(
         siteId, owen.emailAddress, [messageTitle, messageText], browser);
   });
 
-  it("Maria sees the reply", () => {
-    maria.topic.waitForPostAssertTextMatches(c.FirstReplyNr, owensAnswer);
+  it("Maria sees the reply", async () => {
+    await maria.topic.waitForPostAssertTextMatches(c.FirstReplyNr, owensAnswer);
   });
 
-  it("... and replies", () => {
-    maria.complex.replyToPostNr(2, mariasQuestion);
-    maria.topic.waitForPostAssertTextMatches(3, mariasQuestion);
+  it("... and replies", async () => {
+    await maria.complex.replyToPostNr(2, mariasQuestion);
+    await maria.topic.waitForPostAssertTextMatches(3, mariasQuestion);
   });
 
-  it("... she got a notification, dismisses it", () => {
-    maria.topbar.openNotfToMe();
+  it("... she got a notification, dismisses it", async () => {
+    await maria.topbar.openNotfToMe();
   });
 
-  it("... she got a notf email too", () => {
-    server.waitUntilLastEmailMatches(
+  it("... she got a notf email too", async () => {
+    await server.waitUntilLastEmailMatches(
         siteId, maria.emailAddress, [messageTitle, owensAnswer], browser);
   });
 
-  it("... goes to another page", () => {
-    maria.go('/');
+  it("... goes to another page", async () => {
+    await maria.go2('/');
   });
 
-  it("Owen sees Maria reply", () => {
-    owen.topic.waitForPostAssertTextMatches(3, mariasQuestion);
+  it("Owen sees Maria reply", async () => {
+    await owen.topic.waitForPostAssertTextMatches(3, mariasQuestion);
   });
 
-  it("... and replies", () => {
-    owen.complex.addProgressReply(owensQuestionAnswer);
-    owen.topic.waitForPostNrVisible(4);
+  it("... and replies", async () => {
+    await owen.complex.addProgressReply(owensQuestionAnswer);
+    await owen.topic.waitForPostNrVisible(4);
   });
 
-  it("... he also got an email about Maria's reply", () => {
+  it("... he also got an email about Maria's reply", async () => {
     // This tests notfs when one replies to a particular post.
 
     // This can break, unless Owen always gets notified via email,
@@ -160,24 +159,24 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
     // he wouldn't get notified via email since the browser notices
     // that he has read it already.)
 
-    server.waitUntilLastEmailMatches(
+    await server.waitUntilLastEmailMatches(
         siteId, owen.emailAddress, [messageTitle, mariasQuestion], browser);
   });
 
-  it("Maria gets an email with Owen's reply", () => {
+  it("Maria gets an email with Owen's reply", async () => {
     // This tests notfs when one clicks the append-bottom-comment button.
     // TESTS_MISSING No? Instead, should  be Maria that clicks append-bottom to Owen because
     // Maria is the orig-poster, she'll always get a notf, everything is a reply to her.
-    server.waitUntilLastEmailMatches(
+    await server.waitUntilLastEmailMatches(
         siteId, maria.emailAddress, [messageTitle, owensQuestionAnswer], browser);
   });
 
-  it("... and she gets an in-browser notifiction too, opens it", () => {
-    maria.topbar.openNotfToMe();
+  it("... and she gets an in-browser notifiction too, opens it", async () => {
+    await maria.topbar.openNotfToMe();
   });
 
-  it("... she sees the question answer", () => {
-    maria.topic.waitForPostAssertTextMatches(4, owensQuestionAnswer);
+  it("... she sees the question answer", async () => {
+    await maria.topic.waitForPostAssertTextMatches(4, owensQuestionAnswer);
   });
 
 
@@ -186,13 +185,13 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
 
   // Also if they aren't replied to or mentioned explicitly.
 
-  it("Maria replies to the Orig Post — that's *not* Owen's post", () => {
-    maria.complex.replyToOrigPost(mariasOwnOpReply);
-    maria.topic.waitForPostAssertTextMatches(5, mariasOwnOpReply);
+  it("Maria replies to the Orig Post — that's *not* Owen's post", async () => {
+    await maria.complex.replyToOrigPost(mariasOwnOpReply);
+    await maria.topic.waitForPostAssertTextMatches(5, mariasOwnOpReply);
   });
 
-  it("... Owen gets notified, because he's a page member", () => {
-    server.waitUntilLastEmailMatches(
+  it("... Owen gets notified, because he's a page member", async () => {
+    await server.waitUntilLastEmailMatches(
         siteId, owen.emailAddress, [messageTitle, mariasOwnOpReply], browser);
   });
 
@@ -200,190 +199,190 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
   // Strangers have no access
   // ------------------------------------------------------
 
-  it("A stranger doesn't see the topic in the forum topic list", () => {
-    stranger.go(idAddress.origin);
-    stranger.forumTopicList.waitUntilKnowsIsEmpty();
+  it("A stranger doesn't see the topic in the forum topic list", async () => {
+    await stranger.go2(idAddress.origin);
+    await stranger.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("... and the stranger won't find it when searching", () => {
-    stranger.topbar.searchFor(mariasQuestionSearchQuery);
-    stranger.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
+  it("... and the stranger won't find it when searching", async () => {
+    await stranger.topbar.searchFor(mariasQuestionSearchQuery);
+    await stranger.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
   });
 
-  it("... and cannot accesss it via a direct link", () => {
-    stranger.go(messageUrl);
-    stranger.assertNotFoundError();
+  it("... and cannot accesss it via a direct link", async () => {
+    await stranger.go2(messageUrl);
+    await stranger.assertNotFoundError();
   });
 
 
   // Other members have no access
   // ------------------------------------------------------
 
-  it("Michael logs in", () => {
-    assert(michael === stranger);
-    michael.go(idAddress.origin);
-    michael.complex.loginWithPasswordViaTopbar(michael);
+  it("Michael logs in", async () => {
+    assert.refEq(michael, stranger);
+    await michael.go2(idAddress.origin);
+    await michael.complex.loginWithPasswordViaTopbar(michael);
   });
 
 
-  it("Michael cannot access the topic, doesn't see the topic in the forum topic list", () => {
-    michael.forumTopicList.waitUntilKnowsIsEmpty();
+  it("Michael cannot access the topic, doesn't see the topic in the forum topic list", async () => {
+    await michael.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("... not even after a refresh", () => {
-    michael.refresh();
-    michael.forumTopicList.waitUntilKnowsIsEmpty();
+  it("... not even after a refresh", async () => {
+    await michael.refresh2();
+    await michael.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("... and cannot access via direct link", () => {
-    michael.go(messageUrl);
-    michael.assertNotFoundError();
+  it("... and cannot access via direct link", async () => {
+    await michael.go2(messageUrl);
+    await michael.assertNotFoundError();
   });
 
-  it("... and does not see it in his profile page, the messages section", () => {
-    michael.userProfilePage.openNotfsFor(michael.username, idAddress.origin);
-    michael.userProfilePage.notfs.waitUntilKnowsIsEmpty();
+  it("... and does not see it in his profile page, the messages section", async () => {
+    await michael.userProfilePage.openNotfsFor(michael.username, idAddress.origin);
+    await michael.userProfilePage.notfs.waitUntilKnowsIsEmpty();
   });
 
-  it("... and does not see it in the watchbar", () => {
-    michael.watchbar.openIfNeeded();
-    michael.watchbar.asserExactlyNumTopics(1); // the forum, but no priv-message
+  it("... and does not see it in the watchbar", async () => {
+    await michael.watchbar.openIfNeeded();
+    await michael.watchbar.asserExactlyNumTopics(1); // the forum, but no priv-message
   });
 
-  it("... and won't find it when searching", () => {
-    michael.topbar.searchFor(mariasQuestionSearchQuery);
-    michael.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
+  it("... and won't find it when searching", async () => {
+    await michael.topbar.searchFor(mariasQuestionSearchQuery);
+    await michael.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
   });
 
 
   // The participants have access
   // ------------------------------------------------------
 
-  it("Maria also doesn't see it listed in the forum", () => {
-    maria.go(idAddress.origin);
-    maria.forumTopicList.waitUntilKnowsIsEmpty();
+  it("Maria also doesn't see it listed in the forum", async () => {
+    await maria.go2(idAddress.origin);
+    await maria.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("... but she can access it via a direct link", () => {
-    maria.go(messageUrl);
-    maria.waitForMyDataAdded();
-    maria.assertPageTitleMatches(messageTitle);
-    maria.assertPageBodyMatches(messageText);
+  it("... but she can access it via a direct link", async () => {
+    await maria.go2(messageUrl);
+    await maria.waitForMyDataAdded();
+    await maria.assertPageTitleMatches(messageTitle);
+    await maria.assertPageBodyMatches(messageText);
   });
 
-  it("... and via her profile page, the messages section", () => {
-    maria.userProfilePage.openNotfsFor(maria.username, idAddress.origin);
-    maria.userProfilePage.notfs.waitUntilSeesNotfs();
-    maria.userProfilePage.notfs.openPageNotfWithText(messageTitle);
-    maria.waitForMyDataAdded();
-    maria.assertPageTitleMatches(messageTitle);
-    maria.assertPageBodyMatches(messageText);
+  it("... and via her profile page, the messages section", async () => {
+    await maria.userProfilePage.openNotfsFor(maria.username, idAddress.origin);
+    await maria.userProfilePage.notfs.waitUntilSeesNotfs();
+    await maria.userProfilePage.notfs.openPageNotfWithText(messageTitle);
+    await maria.waitForMyDataAdded();
+    await maria.assertPageTitleMatches(messageTitle);
+    await maria.assertPageBodyMatches(messageText);
   });
 
-  it("... and via the watchbar", () => {
-    maria.go(idAddress.origin);
-    maria.watchbar.openIfNeeded();
-    maria.watchbar.asserExactlyNumTopics(2); // forum + priv-message
-    maria.watchbar.assertTopicVisible(messageTitle);
-    maria.watchbar.goToTopic(messageTitle);
-    maria.assertPageTitleMatches(messageTitle);
-    maria.assertPageBodyMatches(messageText);
+  it("... and via the watchbar", async () => {
+    await maria.go2(idAddress.origin);
+    await maria.watchbar.openIfNeeded();
+    await maria.watchbar.asserExactlyNumTopics(2); // forum + priv-message
+    await maria.watchbar.assertTopicVisible(messageTitle);
+    await maria.watchbar.goToTopic(messageTitle);
+    await maria.assertPageTitleMatches(messageTitle);
+    await maria.assertPageBodyMatches(messageText);
   });
 
-  it("... and search for it and find it", () => {
-    maria.topbar.searchFor(mariasQuestionSearchQuery);
-    maria.searchResultsPage.waitForAssertNumPagesFound(mariasQuestionSearchQuery, 1);
+  it("... and search for it and find it", async () => {
+    await maria.topbar.searchFor(mariasQuestionSearchQuery);
+    await maria.searchResultsPage.waitForAssertNumPagesFound(mariasQuestionSearchQuery, 1);
   });
 
 
   // Cannot access after logged out
   // ------------------------------------------------------
 
-  it("Maria logs out", () => {
-    maria.topbar.clickLogout(
+  it("Maria logs out", async () => {
+    await maria.topbar.clickLogout(
         // Needed because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? [E2EBUG]
         // Without, there's a stale-elem-exception for a totally unrelated elem:
         { waitForLoginButton: false });
   });
 
-  it("... and can access the priv message no more, not in the topic list", () => {
-    maria.go(idAddress.origin);
-    maria.forumTopicList.waitUntilKnowsIsEmpty();
+  it("... and can access the priv message no more, not in the topic list", async () => {
+    await maria.go2(idAddress.origin);
+    await maria.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("not in the watchbar", () => {
-    maria.watchbar.openIfNeeded();
+  it("not in the watchbar", async () => {
+    await maria.watchbar.openIfNeeded();
     // [E2EBUG] failed:
     // FAIL: AssertionError: Selector '.esWB_T_Title' matches 2 elems, but there should be exactly 1
     // ... but this didn't break the test suite :-/  could look into this later... seems harmless.
-    maria.watchbar.asserExactlyNumTopics(1); // the forum, but no priv-message
+    await maria.watchbar.asserExactlyNumTopics(1); // the forum, but no priv-message
   });
 
-  it("not via direct link", () => {
-    maria.go(messageUrl);
-    maria.assertNotFoundError();
+  it("not via direct link", async () => {
+    await maria.go2(messageUrl);
+    await maria.assertNotFoundError();
   });
 
-  it("not via profile page", () => {
-    maria.userProfilePage.openNotfsFor(maria.username, idAddress.origin);
-    maria.userProfilePage.notfs.assertMayNotSeeNotfs();
+  it("not via profile page", async () => {
+    await maria.userProfilePage.openNotfsFor(maria.username, idAddress.origin);
+    await maria.userProfilePage.notfs.assertMayNotSeeNotfs();
   });
 
-  it("not when searching", () => {
-    maria.topbar.searchFor(mariasQuestionSearchQuery);
-    maria.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
+  it("not when searching", async () => {
+    await maria.topbar.searchFor(mariasQuestionSearchQuery);
+    await maria.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
   });
 
 
   // Admins can access the topic
   // ------------------------------------------------------
 
-  it("Alice logs in", () => {
-    assert(alicesBrowser === maria); // same browser
-    alicesBrowser.complex.loginWithPasswordViaTopbar(memberAlice);
+  it("Alice logs in", async () => {
+    assert.refEq(alicesBrowser, maria); // same browser
+    await alicesBrowser.complex.loginWithPasswordViaTopbar(memberAlice);
   });
 
-  it("... finds the topic when searching", () => {
-    alicesBrowser.topbar.searchFor(mariasQuestionSearchQuery);
-    alicesBrowser.searchResultsPage.waitForAssertNumPagesFound(mariasQuestionSearchQuery, 1);
+  it("... finds the topic when searching", async () => {
+    await alicesBrowser.topbar.searchFor(mariasQuestionSearchQuery);
+    await alicesBrowser.searchResultsPage.waitForAssertNumPagesFound(mariasQuestionSearchQuery, 1);
   });
 
-  it("... can click link and see it", () => {
-    alicesBrowser.searchResultsPage.goToSearchResult();
-    alicesBrowser.assertPageTitleMatches(messageTitle);
-    alicesBrowser.assertPageBodyMatches(messageText);
+  it("... can click link and see it", async () => {
+    await alicesBrowser.searchResultsPage.goToSearchResult();
+    await alicesBrowser.assertPageTitleMatches(messageTitle);
+    await alicesBrowser.assertPageBodyMatches(messageText);
   });
 
-  it("... sees it in Maria's notf section", () => {
-    alicesBrowser.userProfilePage.openNotfsFor(maria.username, idAddress.origin);
-    alicesBrowser.userProfilePage.notfs.waitUntilSeesNotfs();
-    alicesBrowser.userProfilePage.notfs.openPageNotfWithText(messageTitle);
-    alicesBrowser.waitForMyDataAdded();
-    alicesBrowser.assertPageTitleMatches(messageTitle);
-    alicesBrowser.assertPageBodyMatches(messageText);
+  it("... sees it in Maria's notf section", async () => {
+    await alicesBrowser.userProfilePage.openNotfsFor(maria.username, idAddress.origin);
+    await alicesBrowser.userProfilePage.notfs.waitUntilSeesNotfs();
+    await alicesBrowser.userProfilePage.notfs.openPageNotfWithText(messageTitle);
+    await alicesBrowser.waitForMyDataAdded();
+    await alicesBrowser.assertPageTitleMatches(messageTitle);
+    await alicesBrowser.assertPageBodyMatches(messageText);
   });
 
 
   /*
-  it("Owen also doesn't see it listed in the forum", () => {
+  it("Owen also doesn't see it listed in the forum", async () => {
     owen.debug();
-    owen.go(idAddress.origin);
-    owen.forumTopicList.waitUntilKnowsIsEmpty();
+    await owen.go2(idAddress.origin);
+    await owen.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("... but he too can access it via a direct link", () => {
+  it("... but he too can access it via a direct link", async () => {
   });
 
-  it("... and via his profile page, the messages section", () => {
+  it("... and via his profile page, the messages section", async () => {
   });
 
-  it("Michael leaves, a guest logs in", () => {
+  it("Michael leaves, a guest logs in", async () => {
   });
 
-  it("The guest doesn't see the topic in the topic list", () => {
+  it("The guest doesn't see the topic in the topic list", async () => {
   });
 
-  it("... and cannot access it via a direct link", () => {
+  it("... and cannot access it via a direct link", async () => {
   });
   */
 

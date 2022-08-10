@@ -333,21 +333,20 @@ function runAllE2eTests {
 
   $r s/wdio --only view-edit-history.2br.mtime $args
   $r s/wdio --only upload-images-and-files.2br $args
-
-  $r s/wdio --only direct-messages-notfs.3browsers $args
+  $r s/wdio-7 --only direct-messages-notfs.3br.d --cd -i $args
   $r s/wdio --only direct-messages-delete.2browsers $args
   $r s/wdio --only chat-basic.2br.mtime $args  #  broken [DRAFTS_BUG]
   $r s/wdio --only chat-create-from-direct-message.2browsers $args
   $r s/wdio --only chat-create-from-profile-pages.2browsers $args
 
-  $r s/wdio --only categories-basic.3browsers $args
+  $r s/wdio-7 --only categories-basic.3br.d --cd -i $args
   # There're more category tests below. [.more_cat_tests]
 
   $r s/wdio-7 --only badges-basic.2br --cd -i $args
   $r s/wdio-7 --only tags-basic.2br --cd -i $args
   $r s/wdio-7 --only tags-badges-not-missing.2br --cd -i $args
 
-  $r s/wdio --only private-chat.3browsers $args
+  $r s/wdio-7 --only private-chat.3br.d --cd -i $args
 
   # Is named 'forum-' because there's another test with 'drafts-not-logged-in' in the name.
   # But now that one got renamed, so remove 'forum-' from here — should be 'dir.' instead for "direct".
@@ -368,7 +367,7 @@ function runAllE2eTests {
   # + delete-posts
 
   $r s/wdio --only settings-allowed-email-domains.extidp.2br $args
-  $r s/wdio --only settings-toggle-login-required.3browsers $args
+  $r s/wdio-7 --only settings-toggle-login-required.3br.d --cd -i $args
   $r s/wdio --only login-required-ext-signup-login.1br.extidp $args
   $r s/wdio --only login-required-join-global-chat.2br $args
 
@@ -416,7 +415,7 @@ function runAllE2eTests {
   #$r s/wdio --only many-groups.2browsers $args
   #$r s/wdio --only many-users-many-large-groups.2browsers $args
 
-  $r s/wdio --only custom-forms.3browsers $args
+  $r s/wdio-7 --only custom-forms.3br.d --cd -i $args
 
   $r s/wdio --only authz-view-as-stranger $args
   $r s/wdio --only authz-basic-see-reply-create $args

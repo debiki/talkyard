@@ -98,6 +98,16 @@ const TestPageNotfLevel = {
   Muted: 1,
 };
 
+const TestEmailNotfPrefs = {
+  ReceiveAlways: 5,
+  Receive: 1,
+  DirectMessagesFromStaff: 6,
+  // OnlyAboutAccount =
+  DontReceive: 2,
+  ForbiddenForever: 3,
+  Unspecified: 4,
+}
+
 
 export default {
   MinUnixMillis: 100000000000,  // [MINMILLIS]
@@ -106,6 +116,7 @@ export default {
   TestPageRole,
   TestTopicListLayout,
   TestPageNotfLevel,
+  TestEmailNotfPrefs,
   TestPostType,
   TestTrustLevel,
   TestDraftStatus,
