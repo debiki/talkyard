@@ -97,7 +97,7 @@ object Dependencies {
     val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.9"
 
     // Deprecated. Should migrate to OpenTelemetry, they say, https://opentelemetry.io/.
-    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "1.8.1"  // 1.8.0 exists now
+    val jaegertracing = "io.jaegertracing" % "jaeger-client" % "0.35.5"  // 1.8.0 exists now
 
     val metrics4Scala = "nl.grons" %% "metrics4-scala" % "4.2.8"
 
