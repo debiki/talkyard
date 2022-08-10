@@ -708,8 +708,10 @@ push-tag-to-git:
 	  tail -n5 version-tags.log
 
 	@echo ""
-	@echo "Done. Now, bump the version number:"
+	@echo "Done. Now, push 'release' and bump the version number:"
 	@echo ""
+	@echo "    git push origin release"
+	@echo "    git checkout -B main"
 	@echo "    s/bump-versions.sh"
 	@echo "    git add version.txt relchans/tyse-v0-dev"
 	@echo '    git commit -m "Bump version to `cat version.txt`."'
