@@ -8,7 +8,7 @@ set -x
 version="`cat version.txt | sed s/WIP/SNAPSHOT/`"
 repo=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 
-rm -fr target/docker-app-prod
+sudo rm -fr target/docker-app-prod
 mkdir -p target/docker-app-prod
 cp -a images/app/{Dockerfile.prod,assets} target/docker-app-prod/
 cp version.txt target/docker-app-prod/

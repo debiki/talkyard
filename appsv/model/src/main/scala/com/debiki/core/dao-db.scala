@@ -88,6 +88,8 @@ object DbDao {
       s"Found no page at ${pagePath.siteId}:${pagePath.value}" +
         prettyDetails(details))
 
+  REFACTOR // don't throw, return errors instead so cannot forget to handle!
+  @deprecated
   case class PathClashException(newPagePath: PagePathWithId)
     extends RuntimeException(s"newPagePath: $newPagePath, value: ${newPagePath.value}")
 

@@ -18,15 +18,16 @@
 package talkyard.server.api
 
 import com.debiki.core._
+import debiki.dao.PagesCanSee  // MOVE to core?
 import controllers.OkApiJson
 import Prelude._
 import debiki.dao.{PageStuff, SiteDao}
 import talkyard.server.authz.{AuthzCtx, AuthzCtxOnPats}
 import talkyard.server.parser.{JsonConf, PageParSer}
-import talkyard.server.search.{PageAndHits, SearchHit}
+import talkyard.server.search.{PageAndHits, SearchHit, SearchResultsCanSee}
 import play.api.libs.json._
 import play.api.libs.json.JsArray
-import play.api.mvc.Result
+import play.api.mvc.{Result => p_Result}
 import talkyard.server.JsX._
 
 
@@ -34,25 +35,25 @@ import talkyard.server.JsX._
 object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
 
-  def makePagesFoundListResponse(topics: Seq[PagePathAndMeta], dao: SiteDao,
-        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Result = {
-    makePagesFoundResponseImpl(
-        topics, anySearchResults = Nil, dao, jsonConf, authzCtx)
+  def makePagesFoundListResponse(pagesCanSee: PagesCanSee, dao: SiteDao,
+        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): p_Result = {
+    _makePagesFoundResponseImpl(
+          pagesCanSee.pages, anySearchResults = Nil, dao, jsonConf, authzCtx)
   }
 
 
-  def makePagesFoundSearchResponse(searchResults: Seq[PageAndHits], dao: SiteDao,
-        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Result = {
-    makePagesFoundResponseImpl(
-        anyPagePathsMetas = Nil, searchResults, dao, jsonConf, authzCtx)
+  def makePagesFoundSearchResponse(searchResults: SearchResultsCanSee, dao: SiteDao,
+        jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): p_Result = {
+    _makePagesFoundResponseImpl(
+          anyPagePathsMetas = Nil, searchResults.pagesAndHits, dao, jsonConf, authzCtx)
   }
 
 
   // Vaguely similar code: ForumController.makeTopicsResponse()  [406RKD2JB]
   //
-  private def makePagesFoundResponseImpl(
+  private def _makePagesFoundResponseImpl(
       anyPagePathsMetas: Seq[PagePathAndMeta], anySearchResults: Seq[PageAndHits],
-      dao: SiteDao, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): Result = {
+      dao: SiteDao, jsonConf: JsonConf, authzCtx: AuthzCtxOnPats): p_Result = {
 
     dieIf(anyPagePathsMetas.nonEmpty && anySearchResults.nonEmpty, "TyE40RKUPJR2")
 
@@ -87,6 +88,9 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
       }
 
     // --- Load categories
+
+    COULD_OPTIMIZE // We've loaded the cats already, when doing access control.
+    // Could remember, so need not lookup here too.  [search_results_extra_cat_lookup]
 
     val categoryIdsToLoad: Set[CategoryId] =
           pageFoundStuffs.flatMap(_.pageMeta.categoryId).toSet

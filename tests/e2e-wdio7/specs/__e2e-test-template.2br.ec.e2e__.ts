@@ -60,8 +60,8 @@ describe(`some-e2e-test.2br  TyTE1234ABC`, () => {
   });
 
   it(`Import site`, async () => {
-    site = server.importSiteData(forum.siteData);
-    server.skipRateLimits(site.id);
+    site = await server.importSiteData(forum.siteData);
+    await server.skipRateLimits(site.id);
   });
 
 

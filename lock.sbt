@@ -88,8 +88,8 @@ Compile / dependencyOverrides ++= {
       "dev.paseto" % "jpaseto-gson" % "0.7.0",
       "dev.paseto" % "jpaseto-impl" % "0.7.0",
       "dev.paseto" % "jpaseto-sodium" % "0.7.0",
-      "io.dropwizard.metrics" % "metrics-core" % "4.2.9",
-      "io.dropwizard.metrics" % "metrics-healthchecks" % "4.2.7",
+      "io.dropwizard.metrics" % "metrics-core" % "4.2.10",
+      "io.dropwizard.metrics" % "metrics-healthchecks" % "4.2.9",
       "io.jaegertracing" % "jaeger-client" % "0.35.5",
       "io.jaegertracing" % "jaeger-core" % "0.35.5",
       "io.jaegertracing" % "jaeger-thrift" % "0.35.5",
@@ -115,7 +115,7 @@ Compile / dependencyOverrides ++= {
       "joda-time" % "joda-time" % "2.10.10",
       "net.logstash.logback" % "logstash-logback-encoder" % "7.2",
       "net.sf.jopt-simple" % "jopt-simple" % "5.0.2",
-      "nl.grons" % "metrics4-scala_2.12" % "4.2.8",
+      "nl.grons" % "metrics4-scala_2.12" % "4.2.9",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
       "org.apache.commons" % "commons-lang3" % "3.12.0",
@@ -140,7 +140,7 @@ Compile / dependencyOverrides ++= {
       "org.apache.lucene" % "lucene-spatial3d" % "7.7.3",
       "org.apache.lucene" % "lucene-suggest" % "7.7.3",
       "org.apache.thrift" % "libthrift" % "0.12.0",
-      "org.apache.tika" % "tika-core" % "2.4.0",
+      "org.apache.tika" % "tika-core" % "2.4.1",
       "org.apache.tuweni" % "tuweni-bytes" % "0.10.0",
       "org.apache.tuweni" % "tuweni-crypto" % "0.10.0",
       "org.apache.tuweni" % "tuweni-io" % "0.10.0",
@@ -163,7 +163,7 @@ Compile / dependencyOverrides ++= {
       "org.elasticsearch.plugin" % "transport-netty4-client" % "6.8.23",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.hdrhistogram" % "HdrHistogram" % "2.1.9",
-      "org.jsoup" % "jsoup" % "1.15.1",
+      "org.jsoup" % "jsoup" % "1.15.2",
       "org.lz4" % "lz4-java" % "1.8.0",
       "org.osgi" % "org.osgi.service.component.annotations" % "1.4.0",
       "org.ow2.asm" % "asm" % "5.0.3",
@@ -172,7 +172,7 @@ Compile / dependencyOverrides ++= {
       "org.ow2.asm" % "asm-tree" % "5.0.3",
       "org.ow2.asm" % "asm-util" % "5.0.3",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.3.6",
+      "org.postgresql" % "postgresql" % "42.4.0",
       "org.reactivestreams" % "reactive-streams" % "1.0.3",
       "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.9.1",
       "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.2",
@@ -186,4 +186,4 @@ Compile / dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 443fd46b2624e26a268baac088f1a779177cf1cc
+// LIBRARY_DEPENDENCIES_HASH 512b69de24946b8407e8a3c470772cd0add63e10

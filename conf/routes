@@ -320,7 +320,8 @@ GET  /-/ping-cache-db-10        controllers.DebugTestController.pingCacheAndData
 GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
 POST /-/delete-redis-key        controllers.DebugTestController.deleteRedisKey
-POST /-/skip-rate-limits        controllers.DebugTestController.skipRateLimitsForThisSite
+POST /-/skip-limits             controllers.DebugTestController.skipLimitsForThisSite
+POST /-/pause-jobs              controllers.DebugTestController.pauseJobs
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 POST /-/add-admin-notice        controllers.DebugTestController.addAdminNotice
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)

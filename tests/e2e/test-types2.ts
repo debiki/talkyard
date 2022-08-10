@@ -304,6 +304,7 @@ interface SiteMeta {
   localHostname: string;
   creatorEmailAddress: string;
   status: SiteStatus;
+  featureFlags?: St;
   createdAtMs: number;
 }
 

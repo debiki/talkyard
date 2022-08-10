@@ -226,7 +226,7 @@ class SystemDao(
           else Site.newPubId()
     writeTxLockAllSites { sysTx =>
       val firstSite = sysTx.createSite(Some(FirstSiteId),
-        pubId = pubId, name = "Main Site", SiteStatus.NoAdmin,
+        pubId = pubId, name = "Main Site", SiteStatus.NoAdmin, featureFlags = "",
         creatorIp = "0.0.0.0",
         quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
         isTestSiteOkayToDelete = false, createdAt = sysTx.now)
@@ -356,6 +356,7 @@ class SystemDao(
     name: String,
     status: SiteStatus,
     hostname: Option[String],
+    featureFlags: St,
     embeddingSiteUrl: Option[String],
     organizationName: String,
     creatorId: UserId,   // change to Option, present iff createdFromSiteId ?
@@ -402,6 +403,7 @@ class SystemDao(
         pubId = pubId,
         name = name,
         status,
+        featureFlags = featureFlags,
         creatorIp = browserIdData.ip,
         quotaLimitMegabytes = maxQuota,
         maxSitesPerIp = maxSitesPerIp,

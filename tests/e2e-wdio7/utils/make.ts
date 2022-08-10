@@ -64,6 +64,7 @@ function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
   uploads: [],
   auditLog: [],
   reviewTasks: [],
+  lastPermId: 0,
 }};
 
 

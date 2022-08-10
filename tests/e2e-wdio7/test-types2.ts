@@ -127,8 +127,10 @@ interface TestSettings {
 
 
 interface TestCounters {
-  numReportedSpamFalsePositives: number;
-  numReportedSpamFalseNegatives: number;
+  numQueriesDone: Nr;
+  numWritesDone: Nr;
+  numReportedSpamFalsePositives: Nr;
+  numReportedSpamFalseNegatives: Nr;
 }
 
 
@@ -428,7 +430,8 @@ interface PageToMake {
 }
 
 
-interface CategoryJustAdded {
+type CategoryJustAdded = CatJustAdded;
+interface CatJustAdded {
   id: number;
   extId?: ExtId;
   parentId: number;
@@ -440,6 +443,20 @@ interface CategoryJustAdded {
   aboutPageText?: string;
   aboutPage?: PageJustAdded;
   defaultTopicType?: PageRole;
+}
+
+
+interface CatToAdd {
+  id: CatId,
+  extId?: ExtId,
+  parentCategoryId: CatId,
+  name: St,
+  slug: St,
+  unlistCategory?: true,
+  unlistTopics?: true,
+  deletedAtMs?: WhenMs,
+  aboutPageText: St,
+  position?: Nr,
 }
 
 

@@ -101,9 +101,9 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def loadCategoryToEdit(categoryId: CategoryId): Action[Unit] = AdminGetAction { request =>
     import request.dao
-    val (catStuff, rootCat) = dao.getTheCategoryStuffAndRoot(categoryId)
+    val (catStuff, rootCat) = dao.getTheCategoryStuffAndRootSkipChilds(categoryId)
     val catJson = categoryToJson(
-      catStuff, rootCat, recentTopics = Nil, pageStuffById = Map.empty, includeDetails = true)
+          catStuff, rootCat, topicsInTree = None, pageStuffById = Map.empty, includeDetails = true)
     val (allPerms, groups) = dao.readOnlyTransaction { tx =>
       (tx.loadPermsOnPages(), tx.loadAllGroupsAsSeq())
     }
@@ -224,17 +224,14 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val callersGroupIds = request.authzContext.groupIdsUserIdFirst
     val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
 
-    OkSafeJson(Json.obj(  // Typescript: SaveCategoryResponse
-      // 2 dupl lines [7UXAI1]
-      "publicCategories" ->
-        dao.jsonMaker.makeCategoriesJson(
-          category.id, dao.getForumPublicAuthzContext(), exclPublCats = false),
-      "restrictedCategories" ->
-        dao.jsonMaker.makeCategoriesJson(
-          category.id, dao.getForumAuthzContext(requester), exclPublCats = true),
-      "myNewPermissions" -> JsArray(callersNewPerms map JsonMaker.permissionToJson),
-      "newCategoryId" -> category.id,
-      "newCategorySlug" -> category.slug))
+    var json = dao.jsonMaker.makeCatsPatchExclTopics(
+          category.id, dao.getForumAuthzContext(requester))
+
+    json += "myNewPermissions" -> JsArray(callersNewPerms map JsonMaker.permissionToJson)
+    json += "newCategoryId" -> JsNumber(category.id)
+    json += "newCategorySlug" -> JsString(category.slug)
+
+    OkSafeJson(json)  // Typescript: SaveCategoryResponse
   }
 
 
@@ -252,8 +249,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     import request.{dao, requester}
     val categoryId = (request.body \ "categoryId").as[CategoryId]
     request.dao.deleteUndeleteCategory(categoryId, delete = delete, request.who)
-    val patch = dao.jsonMaker.makeCategoriesStorePatch(
-      categoryId, dao.getForumAuthzContext(requester))
+    val patch = dao.jsonMaker.makeCatsPatchExclTopics(
+          categoryId, dao.getForumAuthzContext(requester))
     OkSafeJson(patch)
   }
 
@@ -275,7 +272,9 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   def listTopics(categoryId: CatId): Action[U] = GetAction { request =>
-    SECURITY; TESTS_MISSING  // securified
+    // Tests:
+    //  - category-perms.2br.d
+
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
     var pageQuery: PageQuery = request.parseThePageQuery()
@@ -291,57 +290,58 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
       pageQuery = pageQuery.copy(pageFilter = pageQuery.pageFilter.copy(includeDeleted = true))
     }
 
-    val topics = dao.listMaySeeTopicsInclPinned(categoryId, pageQuery,
-      includeDescendantCategories = true, authzCtx, limit = NumTopicsToList)
+    val anyCatsCanSee: Opt[CatsCanSee] =
+          dao.listMaySeeCategoriesInSameSectionAs(
+              categoryId, authzCtx, inclDeleted = pageQuery.pageFilter.includeDeleted)
 
-    makeTopicsResponse(topics, dao)
+    val catsCanSee = anyCatsCanSee getOrElse {
+      throwOkJson(
+            noTopicsJson())
+    }
+
+    val pagesCanSee: PagesCanSee =
+          dao.listPagesCanSeeInCatsCanSee(
+              catsCanSee, pageQuery, inclPinned = true,
+              limit = NumTopicsToList, inSubTree = Some(categoryId))
+
+    makeTopicsResponse(pagesCanSee.pages, dao)
   }
 
 
+  /** Doesn't include per category recent topics.
+    */
   // Break out to [CatsAndTagsController]?
   def listCategoriesAllSections(): Action[Unit] = GetActionRateLimited() { request =>
     // Tested here: TyT5WKB2QR0
     val jsArr = loadCatsJsArrayMaySee(request)
-    OkSafeJson(jsArr)
+    OkSafeJson(Json.obj("catsAllSects" -> jsArr))
   }
 
 
+  /** Includes the per category most recently active topics. [per_cat_topics]
+    */
   def listCategoriesAndTopics(forumId: PageId): Action[Unit] = GetAction { request =>
-    TESTS_MISSING
+    // Tests:
+    //  - category-perms.2br.d
+
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
 
+    UX // Would be nice if this was configurable? If one could choose to show e.g.
+    // Trending topics per category?  But for now, recently-active (bump time) first.
+    // [cats_topics_order]
     val pageQuery = PageQuery(
-      PageOrderOffset.ByBumpTime(None), request.parsePageFilter(), includeAboutCategoryPages = false)
+          PageOrderOffset.ByBumpTime(None), request.parsePageFilter(),
+          includeAboutCategoryPages = false)
 
-    val sectionCategories = dao.listMaySeeCategoriesInSection(
-        forumId, includeDeleted = pageQuery.pageFilter.includeDeleted, authzCtx) getOrElse {
-      throwOkSafeJson(JsArray())
+    val catsInSection = dao.listMaySeeCategoriesInSection(
+          forumId, inclDeleted = pageQuery.pageFilter.includeDeleted, authzCtx) getOrElse {
+      throwOkJson(Json.obj("catsWithTopics" -> JsArray()))
     }
 
-    val catStuffs: Seq[CategoryStuff] = sectionCategories.catStuffsExclRoot
+    val catsAndTopics = dao.jsonMaker.makeForumPageCatsAndTopicsJson(catsInSection, pageQuery)
 
-    val recentTopicsByCategoryId =
-      mutable.Map[CategoryId, Seq[PagePathAndMeta]]()
-
-    val pageIds = ArrayBuffer[PageId]()
-
-    for (catStuff <- catStuffs) {
-      val recentTopics = dao.listMaySeeTopicsInclPinned(catStuff.category.id, pageQuery,
-        includeDescendantCategories = true, authzCtx, limit = 6)
-      recentTopicsByCategoryId(catStuff.category.id) = recentTopics
-      pageIds.append(recentTopics.map(_.pageId): _*)
-    }
-
-    val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
-      dao.getPageStuffById(pageIds)
-
-    val json = JsArray(catStuffs.map({ catStuff =>
-      categoryToJson(catStuff, sectionCategories.rootCategory,
-          recentTopicsByCategoryId(catStuff.category.id), pageStuffById)
-    }))
-
-    OkSafeJson(json)
+    OkSafeJson(Json.obj("catsWithTopics" -> catsAndTopics.catsAndTopicsJson))
   }
 }
 
@@ -351,33 +351,37 @@ object ForumController {
   /** Keep synced with client/forum/list-topics/ListTopicsController.NumNewTopicsPerRequest. */
   val NumTopicsToList = 40
 
+  val NumTopicsToListPerCat = 6
 
   def loadCatsJsArrayMaySee(request: GetRequest): JsArray = {
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
-    val sectCats: Seq[SectionCategories] =
-          request.dao.listMaySeeCategoryStuffAllSections(includeDeleted = false, authzCtx)
+    val sectCats: Seq[CatsCanSee] =
+          request.dao.listMaySeeCategoryStuffAllSections(inclDeleted = false, authzCtx)
     val rootCats = sectCats.map(_.rootCategory)
     val catsNotRoot = sectCats.flatMap(_.catStuffsExclRoot)
     val jsArr = JsArray(catsNotRoot.map({ catStuff: CategoryStuff =>
       val category = catStuff.category
       val rootCat = rootCats.find(_.sectionPageId == category.sectionPageId).getOrDie(
         "TyE305RMGH5", s"No root cat with matching sect page id, for category $category")
-      categoryToJson(catStuff, rootCat, recentTopics = Nil, pageStuffById = Map.empty)
+      categoryToJson(catStuff, rootCat, topicsInTree = None, pageStuffById = Map.empty)
     }))
     jsArr
   }
 
 
-  private def categoryToJson(categoryStuff: CategoryStuff, rootCategory: Category,  // [JsObj]
-        recentTopics: Seq[PagePathAndMeta], pageStuffById: Map[PageId, debiki.dao.PageStuff],
-        includeDetails: Boolean = false)
+  MOVE // next to JsonMaker.makeCategoryJson in ReactJson.scala?
+  def categoryToJson(categoryStuff: CategoryStuff, rootCategory: Cat,  // [JsObj]
+        topicsInTree: Opt[Seq[PagePathAndMeta]], pageStuffById: Map[PageId, PageStuff],
+        includeDetails: Bo = false)
         : JsObject = {
-    require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
-    val topicsNoAboutCategoryPage = recentTopics.filter(_.pageType != PageType.AboutCategory)
-    val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
+    require(topicsInTree.forall(_.isEmpty) || pageStuffById.nonEmpty, "DwE8QKU2")
+    val topicsInTreeJson: Opt[Seq[JsObject]] = topicsInTree map { topics =>
+      val topicsNoAboutCategoryPage = topics.filter(_.pageType != PageType.AboutCategory)
+      topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
+    }
     JsonMaker.makeCategoryJson(
-        categoryStuff, rootCategory, recentTopicsJson, includeDetails = includeDetails)
+        categoryStuff, rootCategory, topicsInTreeJson, includeDetails = includeDetails)
   }
 
 
@@ -405,6 +409,13 @@ object ForumController {
   }
 
 
+  def noTopicsJson(): JsObject = {
+    Json.obj(   // ts: LoadTopicsResponse
+      "topics" -> JsArray(),
+      "storePatch" -> Json.obj())
+  }
+
+
   // Vaguely similar code: ThingsFoundJson.JsPageFound()  [4026RKCN2]
   //
   def topicToJson(topic: PagePathAndMeta, pageStuffById: Map[PageId, PageStuff]): JsObject = {
@@ -413,7 +424,7 @@ object ForumController {
   }
 
 
-  def topicToJson(topicStuff: PageStuff, urlPath: String): JsObject = {
+  def topicStuffToJson(topicStuff: PageStuff, urlPath: String): JsObject = {
     topicToJsonImpl(topicStuff.pageMeta, topicStuff, urlPath)
   }
 

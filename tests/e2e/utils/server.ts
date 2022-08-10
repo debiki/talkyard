@@ -252,7 +252,7 @@ function deleteOldTestSite(localHostname: string) {
 
 
 function skipRateLimits(siteId: SiteId) {
-  postOrDie(settings.mainSiteOrigin + '/-/skip-rate-limits', { siteId });
+  postOrDie(settings.mainSiteOrigin + '/-/skip-limits', { siteId, rateLimits: true });
 }
 
 

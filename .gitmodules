@@ -135,21 +135,18 @@
 	path = node_modules
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-node_modules
-	shallow = true
 
 # App server: Scala, JARs.
 [submodule "vendors/jars"]
 	path = vendors/jars
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-vendors-jars
-	shallow = true
 
 # OpenResty.
 [submodule "images/web/openresty"]
 	path = images/web/openresty
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-openresty
-	shallow = true
 
 # OpenResty Lua packages.
 [submodule "images/web/lua-packages/inspect.lua"]
@@ -168,7 +165,6 @@
 	path = images/web/node_modules
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-images-web-node_modules
-	shallow = true
 
 # Scala Build Tool.
 # For building the app server (Play Framework) from inside the 'app' Docker image.
@@ -176,4 +172,3 @@
 	path = images/app/sbt
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-images-app-sbt-1.4.5
-	shallow = true

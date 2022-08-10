@@ -67,6 +67,7 @@ describe("usability testing exchange, all logins:", () => {
   it("import a site", () => {
     const builder = buildSite();
     forum = builder.addEmptyForum({ title: forumTitle });
+    builder.getSite().meta.featureFlags = 'ffIsUtx';
 
     builder.addPage({
       id: '_javascript',
