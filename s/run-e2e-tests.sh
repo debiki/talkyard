@@ -295,7 +295,7 @@ function runAllE2eTests {
   $r s/wdio --only create-site-facebook.1br.extidp $args
   $r s/wdio --only create-site-github-uppercase-email.1br.extidp $args
   $r s/wdio --only create-site-linkedin.1br.extidp $args
-  $r s/wdio --only create-site-admin-guide.2browsers $args
+  $r s/wdio-7 --only create-site-admin-guide.2br.d --cd -i $args   # create-site-admin-guide.2browsers
   $r s/wdio --only gmail-fb-join-login.extidp.1br $args
 
   # Needs HTTPS (dummy localhost cert is ok).

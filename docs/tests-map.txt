@@ -518,7 +518,7 @@ forum page layout:
 categories -
   create -
     custom name, default everything:
-          - create-site-admin-guide.2browsers.test.ts  TyT62RJHLPK4
+          - create-site-admin-guide.2br.d  TyT62RJHLPK4
     custom name and ext id:
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
     custom name, custom everything:

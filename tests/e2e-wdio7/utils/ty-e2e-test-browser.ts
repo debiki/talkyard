@@ -2251,8 +2251,8 @@ export class TyE2eTestBrowser {
           }
       }, {
         message: () =>
-            `   Couldn't set value to:  ${desiredValue}\n` +
-            `   got back when reading:  ${oldText}\n` +
+            `   Couldn't set value to: "${desiredValue}"\n` +
+            `   got back when reading: "${oldText}"\n` +
             `                selector:  ${selector}   — trying again... [TyME2E5MKSRJ2]`,
       });
     }

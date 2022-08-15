@@ -1,19 +1,15 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
-import server = require('../utils/server');
-import utils = require('../utils/utils');
-import { TyE2eTestBrowser } from '../utils/pages-for';
-import settings = require('../utils/settings');
-import make = require('../utils/make');
+import server from '../utils/server';
+import * as utils from '../utils/utils';
+import * as make from '../utils/make';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { logMessage } from '../utils/log-and-die';
 
+let brA: TyE2eTestBrowser;
+let brB: TyE2eTestBrowser;
 
-
-
-
-let everyone;
 let owen;
 let maria;
 
@@ -33,17 +29,18 @@ let siteUrl: string;
 const mariasTopicTitle = "mariasTopicTitle";
 const mariasTopicText = "mariasTopicText";
 
-describe("create site, follow the admin guide  TyT62RJHLPK4", function() {
+describe(`create-site-admin-guide.2br.d  TyT62RJHLPK4`, () => {
 
-  it("initialize people", function() {
-    everyone = new TyE2eTestBrowser(wdioBrowser);
-    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
+  it("initialize people", async () => {
+    brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+    owen = _.assign(brA, make.memberOwenOwner());
     // Use an unique address so won't run into max-sites-per-email limit.
     owen.emailAddress = "e2e-test--owen-" + testId + "@example.com";
-    maria = _.assign(new TyE2eTestBrowser(browserB), make.memberMaria());
+    maria = _.assign(brB, make.memberMaria());
   });
 
-  it("Owen creates a site", function() {
+  it("Owen creates a site", async () => {
     const localHostname = utils.getLocalHostname('create-site-' + testId);
     logMessage(`Generated local hostname: ${localHostname}`);
 
@@ -57,132 +54,134 @@ describe("create site, follow the admin guide  TyT62RJHLPK4", function() {
       fullName: 'E2E Test ' + testId,
       email: owen.emailAddress,
     };
-    owen.go(utils.makeCreateSiteWithFakeIpUrl());
-    console.log("Fills in fields and submits");
-    owen.createSite.fillInFieldsAndSubmit(newSiteData);
-    console.log("Clicks login");
-    owen.createSite.clickOwnerSignupButton();
-    owen.disableRateLimits();
-    console.log("Creates password account");
-    owen.loginDialog.createPasswordAccount(owen);
-    siteId = owen.getSiteId();
-    console.log("Gets a verification email");
-    var link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, owen.emailAddress);
-    owen.go(link);
-    console.log("Clicks continue");
-    owen.waitAndClick('#e2eContinue');
-    console.log("Creates a forum");
-    owen.createSomething.createForum(forumTitle);
-    siteUrl = owen.getUrl();
+    await owen.go2(utils.makeCreateSiteWithFakeIpUrl());
+    logMessage("Fills in fields and submits");
+    await owen.createSite.fillInFieldsAndSubmit(newSiteData);
+    logMessage("Clicks login");
+    await owen.createSite.clickOwnerSignupButton();
+    await owen.disableRateLimits();
+    logMessage("Creates password account");
+    await owen.loginDialog.createPasswordAccount(owen);
+    siteId = await owen.getSiteId();
+    logMessage("Gets a verification email");
+    const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+            siteId, owen.emailAddress);
+    await owen.go2(link);
+    logMessage("Clicks continue");
+    await owen.waitAndClick('#e2eContinue');
+    logMessage("Creates a forum");
+    await owen.createSomething.createForum(forumTitle);
+    siteUrl = await owen.getUrl();
   });
 
-  it("Maria sees it", function() {
-    maria.go(siteUrl);
-    maria.assertPageTitleMatches(forumTitle);
-    maria.disableRateLimits();
+  it("Maria sees it", async () => {
+    await maria.go2(siteUrl);
+    await maria.assertPageTitleMatches(forumTitle);
+    await maria.disableRateLimits();
   });
 
-  it("Owen edits settings: requires people to login", function() {
-    owen.topbar.clickGoToAdmin();
-    owen.complex.closeSidebars(); // otherwise might open later and bump setting positions
-    owen.adminArea.settings.legal.editOrgName(newOrgName);
-    owen.adminArea.settings.clickLoginNavLink();
-    owen.adminArea.settings.login.setLoginRequired(true);
-    owen.adminArea.settings.clickSaveAll();
+  it("Owen edits settings: requires people to login", async () => {
+    await owen.topbar.clickGoToAdmin();
+    await owen.complex.closeSidebars(); // otherwise might open later and bump setting positions
+    await owen.adminArea.settings.legal.editOrgName(newOrgName);
+    await owen.adminArea.settings.clickLoginNavLink();
+    await owen.adminArea.settings.login.setLoginRequired(true);
+    await owen.adminArea.settings.clickSaveAll();
   });
 
-  it("Now Maria needs to create an account", function() {
-    maria.loginDialog.refreshUntilFullScreen();
+  it("Now Maria needs to create an account", async () => {
+    await maria.loginDialog.refreshUntilFullScreen();
   });
 
-  it("... she creates an account", function() {
-    maria.loginDialog.createPasswordAccount(maria);
+  it("... she creates an account", async () => {
+    await maria.loginDialog.createPasswordAccount(maria);
   });
 
-  it("... clicks an email confirmation link", function() {
-    var link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, maria.emailAddress);
-    maria.go(link);
+  it("... clicks an email confirmation link", async () => {
+    const link = await server.waitAndGetLastVerifyEmailAddressLinkEmailedTo(
+            siteId, maria.emailAddress);
+    await maria.go2(link);
   });
 
-  it("... and can see the homepage again", function() {
-    maria.go(siteUrl);
-    maria.assertPageTitleMatches(forumTitle);
+  it("... and can see the homepage again", async () => {
+    await maria.go2(siteUrl);
+    await maria.assertPageTitleMatches(forumTitle);
   });
 
-  it("... and the new organization name, on the ToU page", function() {
+  it("... and the new organization name, on the ToU page", async () => {
   });
 
-  it("Owen leaves the admin area, goes back to the forum", function() {
-    owen.adminArea.clickLeaveAdminArea();
-    owen.assertPageTitleMatches(forumTitle);
+  it("Owen leaves the admin area, goes back to the forum", async () => {
+    await owen.adminArea.clickLeaveAdminArea();
+    await owen.assertPageTitleMatches(forumTitle);
   });
 
-  it("... he edits the forum title", function() {
-    owen.pageTitle.clickEdit();
-    owen.pageTitle.editTitle(editedForumTitle);
-    owen.pageTitle.save();
-    owen.assertPageTitleMatches(editedForumTitle);
+  it("... he edits the forum title", async () => {
+    await owen.pageTitle.clickEdit();
+    await owen.pageTitle.editTitle(editedForumTitle);
+    await owen.pageTitle.save();
+    await owen.assertPageTitleMatches(editedForumTitle);
   });
 
-  it("... and the forum intro text", function() {
-    owen.forumButtons.clickEditIntroText();
-    owen.editor.editText(newIntroText);
-    owen.editor.save();
-    owen.waitAndAssertVisibleTextMatches('.esForumIntro', newIntroText);
+  it("... and the forum intro text", async () => {
+    await owen.forumButtons.clickEditIntroText();
+    await owen.editor.editText(newIntroText);
+    await owen.editor.save();
+    await owen.waitAndAssertVisibleTextMatches('.esForumIntro', newIntroText);
   });
 
-  it("... opens the Welcome topic", function() {
-    owen.forumTopicList.goToTopic("Welcome");
+  it("... opens the Welcome topic", async () => {
+    await owen.forumTopicList.goToTopic("Welcome");
   });
 
-  it("... edits title and text", function() {
-    owen.topic.clickEditOrigPost();
-    owen.editor.editText(newWelcomeTopicText);
-    owen.editor.save();
-    owen.pageTitle.clickEdit();
-    owen.pageTitle.editTitle(newWelcomeTopicTitle);
-    owen.pageTitle.save();
-    owen.assertPageTitleMatches(newWelcomeTopicTitle);
+  it("... edits title and text", async () => {
+    await owen.topic.clickEditOrigPost();
+    await owen.editor.editText(newWelcomeTopicText);
+    await owen.editor.save();
+    await owen.pageTitle.clickEdit();
+    await owen.pageTitle.editTitle(newWelcomeTopicTitle);
+    await owen.pageTitle.save();
+    await owen.assertPageTitleMatches(newWelcomeTopicTitle);
   });
 
-  it("... returns to the forum", function() {
-    owen.topic.clickHomeNavLink();
+  it("... returns to the forum", async () => {
+    await owen.topic.clickHomeNavLink();
   });
 
-  it("... views categories", function() {
-    owen.forumButtons.clickViewCategories();
+  it("... views categories", async () => {
+    await owen.forumButtons.clickViewCategories();
   });
 
-  it("... creates a category", function() {
-    owen.forumButtons.clickCreateCategory();
-    owen.categoryDialog.fillInFields({ name: newCategoryName });
-    owen.categoryDialog.submit();
+  it("... creates a category", async () => {
+    await owen.forumButtons.clickCreateCategory();
+    await owen.categoryDialog.fillInFields({ name: newCategoryName });
+    await owen.categoryDialog.submit();
   });
 
-  it("... and a topic in that category", function() {
-    owen.forumCategoryList.openCategory(newCategoryName);
-    owen.complex.createAndSaveTopic({ title: newTopicTitle, body: newTopicText });
+  it("... and a topic in that category", async () => {
+    await owen.forumCategoryList.openCategory(newCategoryName);
+    await owen.complex.createAndSaveTopic({ title: newTopicTitle, body: newTopicText });
   });
 
-  it("... returns to the topic list", function() {
-    owen.topic.clickHomeNavLink();
+  it("... returns to the topic list", async () => {
+    await owen.topic.clickHomeNavLink();
   });
 
-  it("Now both Owen and Maria see all changes Owen did", function() {
-    maria.refresh();
-    maria.assertPageTitleMatches(editedForumTitle);
-    owen.assertPageTitleMatches(editedForumTitle);
+  it("Now both Owen and Maria see all changes Owen did", async () => {
+    await maria.refresh2();
+    await maria.assertPageTitleMatches(editedForumTitle);
+    await owen.assertPageTitleMatches(editedForumTitle);
     // ...
   });
 
-  it("Maria creates a topic", function() {
-    maria.complex.createAndSaveTopic({ title: mariasTopicTitle, body: mariasTopicText });
+  it("Maria creates a topic", async () => {
+    await maria.complex.createAndSaveTopic({ title: mariasTopicTitle, body: mariasTopicText });
   });
 
   // This is for email + password users. [7LERTA1]
-  it("Owen gets a notification (site owners get notified about everything)", function() {
-    server.waitUntilLastEmailMatches(
-        siteId, owen.emailAddress, [mariasTopicTitle, mariasTopicText], browser);
+  it("Owen gets a notification (site owners get notified about everything)", async () => {
+    await server.waitUntilLastEmailMatches(
+        siteId, owen.emailAddress, [mariasTopicTitle, mariasTopicText]);
   });
 
 });
