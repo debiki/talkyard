@@ -49,12 +49,24 @@ sealed abstract class TrustLevel(val IntVal: Int) {
   */
 object TrustLevel {
   case object Stranger extends TrustLevel(0)   ; REFACTOR // bump all 1, so won't start at 0
-  case object NewMember extends TrustLevel(1)
+  //se object Guest — same as Stranger, except for private communities that have invited a stranger
+  //                  as a guest? Such an invited person would have trust level Guest and
+  //                  could see "public" topics in the community although the community was private.
+  case object NewMember extends TrustLevel(1)   // has created a real account
   case object BasicMember extends TrustLevel(2)
   case object FullMember extends TrustLevel(3)
+  //se object BitTrustedMember or WellBehavedMember?  — the software promotes up to here only
   case object TrustedMember extends TrustLevel(4)
-  case object RegularMember extends TrustLevel(5)   ; RENAME // to Trusted Regular
+  case object RegularMember extends TrustLevel(5)   ; RENAME // to Trusted Regular, no, remove, and let visit frequency be another dimension, don't conflate with trust level
   case object CoreMember extends TrustLevel(6)
+
+  // + Mod,
+  // + ModOfMods (can resolve disagreements between mods)
+  // + Admin,
+  // + AdminOfAdmins — the site owner is *by default* AdminOfAdmins? (Other admins cannot depose hen)
+
+  // But Owner is a flag?
+
 
   // Not real trust levels, but sometimes simpler to remember just one digit, say 7,
   // instead of 3 things: level + isStaff + isModerator.
