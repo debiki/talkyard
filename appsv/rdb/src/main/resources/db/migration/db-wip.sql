@@ -385,3 +385,43 @@ alter table page_popularity_scores3 add column two_weeks_score f64_d;
 alter table page_popularity_scores3 add column two_days_score f64_d;
 -- + custom time, maybe two arrays:  AlgorithmParams[], score[], last_calculated_at[] ?
 
+
+
+-----------------------------------------------------------------------
+-- Remember mentions in posts_t:
+
+create or replace function contains_bad_link_char(txt text) returns boolean
+language plpgsql as $_$
+begin
+    return txt ~ '.*\s.*' || txt !~ '^[[:graph:]]+$';   -- ?
+end;
+$_$;
+
+create domain link_arr_d text[];
+alter domain  link_arr_d add
+   constraint link_arr_d_c_chars check (
+     not contains_bad_link_char(array_to_string(value, ' ', ' ')));
+
+
+
+create or replace function contains_bad_username_char(txt text) returns boolean
+language plpgsql as $_$
+begin
+    return txt ~ '.*[\s\n\r\t@#,!?/\\=%\&].*' || txt !~ '^[[:graph:]]+$';   -- ?
+end;
+$_$;
+
+create domain username_arr_d text[];
+alter domain  username_arr_d add
+   constraint username_arr_d_c_chars check (
+     not contains_bad_username_char(array_to_string(value, ' ', ' ')));
+
+
+alter table posts3 add column approved_mentions_ok_c     username_arr_d;
+alter table posts3 add column approved_mentions_bad_c    username_arr_d;
+alter table posts3 add column approved_links_ok_bad_c    link_arr_d;
+alter table posts3 add column current_mentions_ok_c      username_arr_d;
+alter table posts3 add column current_mentions_bad_c     username_arr_d;
+alter table posts3 add column current_links_ok_bad_c     link_arr_d;
+-----------------------------------------------------------------------
+
