@@ -623,20 +623,6 @@ alter table users3 add column group_default_prio int;
 --   incl_sub_threads boolean,
 
 
--- Incl in MemberPrivacyPrefs (Scala class):
--- and see:   docs/design-docs/tags.dd.adoc  [perms_thoughts]  too
-alter table pats_t add column may_see_username_min_tr_lv       trust_level_or_staff_d;
-alter table pats_t add column may_see_full_name_min_tr_lv      trust_level_or_staff_d;
-alter table pats_t add column may_see_bio_min_tr_lv            trust_level_or_staff_d;
-alter table pats_t add column may_see_small_avatar_min_tr_lv   trust_level_or_staff_d;
-alter table pats_t add column may_see_medium_avatar_min_tr_lv  trust_level_or_staff_d;
---    table pats_t add column may_see_tags_min_tr_lv -- no, per tag type insetad.
-alter table pats_t add column may_send_dms_min_tr_lv           trust_level_or_staff_d;
-alter table pats_t add column may_mention_min_tr_lv            trust_level_or_staff_d;  -- ?
-
-alter table pats_t add column may_see_visit_stats_min_tr_lv    trust_level_or_staff_d;  -- ?
-alter table pats_t add column may_see_post_stats_min_tr_lv     trust_level_or_staff_d;  -- ?
-
 -- or maybe:   others_see_..._min_tr_lv ?  so clarifies it's reuqirements on *others*
 -- to see this pat.
 
@@ -694,14 +680,14 @@ create table perms_on_pats_t (    -- can be a group or a person
   may_see_ssoid_extid,  -- default: only admins & system users
   may_see_email,        -- default: only admins & system users
   -- default: all, for the below:
-  may_see_username_c,
-  may_see_full_name_c,
-  may_see_bio_c,
-  see_activity_min_trust_level,
-  may_see_small_avatar_c,
-  may_see_medium_avatar_c,
-  may_see_tags_c,  -- but which tags
-  may_send_dms_c,
+  may_see_my_username_c,
+  may_see_my_full_name_c,
+  may_see_my_bio_c,
+  see_activity_min_trust_level,  -- ?  not  may_see_activity_c  ?
+  may_see_my_tiny_avatar_c,
+  may_see_my_medium_avatar_c,
+  ...
+  ... same as in pats_t, the ..._tr_lv_c coulmns
 );
 
 
@@ -709,12 +695,14 @@ create table perms_on_groups3 (   -- already created:   group_participants3
   site_id,
   people_id int,
   group_id int,
+  is_member/manager/adder/bouncer — already created
+  -- ? Group admins can addd managers. And managers can add/remove bouncers and members.
+  -- Bouncers can remove members (but not add). Addders can add but not remove.
+  -- (Different use cases.)
   is_group_admin boolean,    -- a group admin and a group manager etc, needn't
   is_group_manager boolean,  -- be group members. so they're in a different table.
-  is_bouncer boolean,        --
-  may_mention: boolean,      -- (E.g. to manage a group "Misbehaving Members" there's
+  is_bouncer boolean,        -- (E.g. to manage a group "Misbehaving Members" there's
                              -- no need to have been added to that group oneself.)
-)
    -- oh, already done. Next:
    comment on table group_participants3 is '... sth like the comment above';
 

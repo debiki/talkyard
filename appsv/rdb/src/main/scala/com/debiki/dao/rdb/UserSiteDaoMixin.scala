@@ -426,6 +426,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
     val builtInGroups = ppt match {
       case _: Guest | UnknownParticipant => return Vector(Group.EveryoneId)
       case u: User => getBuiltInGroupIdsForUser(u)
+      case u: UserInclDetails => getBuiltInGroupIdsForUser(u)
+      case _: UserBase => die("TyE26MP431", "Should see User or UserInclDetails before UserBase")
       case g: Group => getBuiltInGroupIdsForGroup(g)
     }
 
@@ -454,7 +456,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  private def getBuiltInGroupIdsForUser(member: User): Vector[UserId] = {
+  private def getBuiltInGroupIdsForUser(member: UserBase): Vector[UserId] = {
     val G = Group
 
     if (member.isAdmin)
@@ -585,12 +587,14 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
             IS_APPROVED, APPROVED_AT, APPROVED_BY_ID,
             IS_OWNER, IS_ADMIN, IS_MODERATOR,
             about, website, country,
+            ui_prefs,
             may_see_my_activity_tr_lv_c,
+            may_mention_me_tr_lv_c, may_dir_msg_me_tr_lv_c,
             trust_level, locked_trust_level, threat_level, locked_threat_level,
             deactivated_at, deleted_at)
         values (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         List[AnyRef](
           siteId.asAnyRef,
@@ -614,7 +618,10 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
           user.about.trimOrNullVarchar,
           user.website.trimOrNullVarchar,
           user.country.trimOrNullVarchar,
-          user.seeActivityMinTrustLevel.map(_.toInt).orNullInt,
+          user.uiPrefs.orNullJson,
+          user.privPrefs.seeActivityMinTrustLevel.map(_.toInt).orNullInt,
+          user.privPrefs.mayMentionMeTrLv.map(_.toInt).orNullInt,
+          user.privPrefs.maySendMeDmsTrLv.map(_.toInt).orNullInt,
           user.trustLevel.toInt.asAnyRef,
           user.lockedTrustLevel.map(_.toInt).orNullInt,
           user.threatLevel.toInt.asAnyRef,
@@ -638,14 +645,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Option[User] = {
+  def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Opt[UserBr] = {
     loadMemberByPrimaryEmailOrUsernameImpl(emailOrUsername, maybeEmail = true).map(_.toUserOrThrow)
-  }
-
-
-  def loadMemberByUsername(username: String): Option[Member] = {
-    dieIf(username contains '@', "TyE2ABKJ40", s"Got an email address")
-    loadMemberByPrimaryEmailOrUsernameImpl(username, maybeEmail = false)
   }
 
 
@@ -676,29 +677,30 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def loadUserInclDetailsBySsoId(ssoId: String): Option[UserInclDetails] = {
-    loadMemberInclDetailsImpl("sso_id", ssoId)
+  def loadUserInclDetailsBySsoId(ssoId: St): Opt[UserVb] = {
+    loadMemberInclDetailsImpl("sso_id", ssoId).map(_.toUserVbOrThrow)
   }
 
 
-  def loadUserInclDetailsByExtId(externalId: String): Option[UserInclDetails] = {
-    loadMemberInclDetailsImpl("ext_id", externalId)
+  def loadUserInclDetailsByExtId(externalId: St): Opt[UserVb] = {
+    loadMemberInclDetailsImpl("ext_id", externalId).map(_.toUserVbOrThrow)
   }
 
 
-  def loadUserInclDetailsByEmailAddr(emailAddress: String): Option[UserInclDetails] = {
-    loadMemberInclDetailsImpl("primary_email_addr", emailAddress)
+  def loadUserInclDetailsByEmailAddr(emailAddress: St): Opt[UserVb] = {
+    loadMemberInclDetailsImpl("primary_email_addr", emailAddress).map(_.toUserVbOrThrow)
   }
 
 
-  def loadMemberInclDetailsImpl(columnName: String, value: AnyRef): Option[UserInclDetails] = {
+  def loadMemberInclDetailsImpl(columnName: St, value: AnyRef): Opt[MemberVb] = {
     val query = s"""
       select $CompleteUserSelectListItemsWithUserId
-      from users3 u
-      where u.site_id = ?
-        and u.$columnName = ?
-        and u.user_id >= $LowestTalkToMemberId"""
-    runQueryFindOneOrNone(query, List(siteId.asAnyRef, value.asAnyRef), getUserInclDetails)
+      from users3
+      where site_id = ?
+        and $columnName = ?
+        and user_id >= $LowestTalkToMemberId"""
+    runQueryFindOneOrNone(query, List(siteId.asAnyRef, value.asAnyRef), rs =>
+          getMemberInclDetails(rs))
   }
 
 
@@ -828,31 +830,33 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def loadMemberInclDetailsByUsername(username: String): Option[MemberInclDetails] = {
-    loadMemberOrGroupInclDetailsImpl("lower(username)", username.toLowerCase)
+  def loadMemberVbByUsername(username: Un): Opt[MemberVb] = {
+    // This other fn is a bit similar: [.two_load_member_vb]
+    dieIf(username contains '@', "TyEUSRNMISEML", s"Got an email address, not a username")
+    _loadMemberVbByFieldValue("lower(username)", username.toLowerCase)
   }
 
 
-  def loadMemberInclDetailsById(userId: UserId): Option[MemberInclDetails] = {
+  def loadMemberInclDetailsById(userId: UserId): Option[MemberVb] = {
     require(Participant.isRoleId(userId), "DwE5FKE2")
-    loadMemberOrGroupInclDetailsImpl("user_id", userId.asAnyRef)
+    _loadMemberVbByFieldValue("user_id", userId.asAnyRef)
   }
 
 
-  def loadOwner(): Option[UserInclDetails] = {
-    loadMemberOrGroupInclDetailsImpl("is_owner", true.asAnyRef) map {
-      case member: UserInclDetails => member
-      case group: Group => die("EdE2QYTK05", s"Owner ${group.id}@$siteId is a group")
+  SHOULD // allow many owners, and load many instead of just one here.
+  def loadOwner(): Opt[UserVb] = {
+    _loadMemberVbByFieldValue("is_owner", true.asAnyRef) map {
+      case u: UserVb => u
+      case x => die("TyEOWNRTYPE", s"Owner ${x.id}@$siteId is a ${classNameOf(x)}")
     }
   }
 
 
-  private def loadMemberOrGroupInclDetailsImpl(field: String, value: AnyRef)
-        : Option[MemberInclDetails] = {
+  private def _loadMemberVbByFieldValue(field: St, value: AnyRef): Opt[MemberVb] = {
     val sql = s"""
       select $CompleteUserSelectListItemsWithUserId
       from users3
-      where site_id = ? and $field = ?
+      where site_id = ? and $field = ? and user_id >= $LowestNonGuestId
       """
     runQueryFindOneOrNone(sql, List(siteId.asAnyRef, value), rs => {
       getMemberInclDetails(rs)
@@ -860,8 +864,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
-        : immutable.Seq[MemberInclDetails] = {
+  def loadMembersVbById(userIds: Iterable[MembId]): immutable.Seq[MemberVb] = {
     if (userIds.isEmpty) return Nil
     val query = s"""
       select $CompleteUserSelectListItemsWithUserId
@@ -872,6 +875,13 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
     runQueryFindMany(query, values, rs => {
       getMemberInclDetails(rs)
     })
+  }
+
+  def loadMembersVbByUsername(usernames: Iterable[Username]): Map[Username, MemberVb] = {
+    // This other fn is a bit similar: [.two_load_member_vb]
+    loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[Username](
+          usernames.map(_.toLowerCase.asAnyRef), "lower(username)", _.usernameOrGuestName)
+          .mapValues(_.toMemberVbOrDie)
   }
 
 
@@ -1069,7 +1079,6 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         country = ?,
         website = ?,
         about = ?,
-        may_see_my_activity_tr_lv_c = ?,
         avatar_tiny_base_url = ?,
         avatar_tiny_hash_path = ?,
         avatar_small_base_url = ?,
@@ -1077,6 +1086,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         avatar_medium_base_url = ?,
         avatar_medium_hash_path = ?,
         ui_prefs = ?,
+        may_see_my_activity_tr_lv_c = ?,
+        may_mention_me_tr_lv_c = ?,
+        may_dir_msg_me_tr_lv_c = ?,
         is_approved = ?,
         approved_at = ?,
         approved_by_id = ?,
@@ -1111,7 +1123,6 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       user.country.trimOrNullVarchar,
       user.website.trimOrNullVarchar,
       user.about.trimOrNullVarchar,
-      user.seeActivityMinTrustLevel.map(_.toInt).orNullInt,
       user.tinyAvatar.map(_.baseUrl).orNullVarchar,
       user.tinyAvatar.map(_.hashPath).orNullVarchar,
       user.smallAvatar.map(_.baseUrl).orNullVarchar,
@@ -1119,6 +1130,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       user.mediumAvatar.map(_.baseUrl).orNullVarchar,
       user.mediumAvatar.map(_.hashPath).orNullVarchar,
       user.uiPrefs.orNullJson,
+      user.privPrefs.seeActivityMinTrustLevel.map(_.toInt).orNullInt,
+      user.privPrefs.mayMentionMeTrLv.map(_.toInt).orNullInt,
+      user.privPrefs.maySendMeDmsTrLv.map(_.toInt).orNullInt,
       user.isApproved.orNullBoolean,
       user.reviewedAt.orNullTimestamp,
       user.reviewedById.orNullInt,
@@ -1175,24 +1189,28 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   //
   def listUsernamesOnPage(pageId: PageId): Seq[NameAndUsername] = {
     val sql = """
-      select distinct u.user_id, u.full_name, u.USERNAME
+      select distinct
+          u.user_id,
+          u.full_name,
+          u.USERNAME,
+          u.may_mention_me_tr_lv_c,
+          u.why_may_not_mention_msg_me_html_c
       from posts3 p inner join users3 u
          on p.SITE_ID = u.SITE_ID
         and p.CREATED_BY_ID = u.USER_ID
         and u.USERNAME is not null
       where p.SITE_ID = ? and p.PAGE_ID = ?"""
     val values = List(siteId.asAnyRef, pageId)
-    val result = ArrayBuffer[NameAndUsername]()
-    db.queryAtnms(sql, values, rs => {
-      while (rs.next()) {
-        val userId = rs.getInt("user_id")
-        val fullName = Option(rs.getString("full_name")) getOrElse ""
-        val username = rs.getString("USERNAME")
-        dieIf(username eq null, "DwE5BKG1")
-        result += NameAndUsername(userId, fullName = fullName, username = username)
-      }
+    runQueryFindMany(sql, values, rs => {
+      val userId = rs.getInt("user_id")
+      val fullName = Option(rs.getString("full_name")) getOrElse ""
+      val username = rs.getString("USERNAME")
+      val mayMentionMeTrLv = getOptTrustLevel(rs, "may_mention_me_tr_lv_c")
+      val _whyMayNot = getOptString(rs, "why_may_not_mention_msg_me_html_c")
+      dieIf(username eq null, "DwE5BKG1")
+      NameAndUsername(
+            id = userId, fullName = fullName, username = username, mayMentionMeTrLv)
     })
-    result.to[immutable.Seq]
   }
 
 

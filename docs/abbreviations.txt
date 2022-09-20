@@ -211,12 +211,12 @@ Tl  = title, no, Ttl instead, see below.
 Tn  = tiny. Also Vvb and Vb = (very) verbose, Br = brief.
 Tp, Tpc = topic  [.TsT_to_TpT]
 Trt = threat
-Tru = trust
+Tr,
+Tru = trust   eg. TrLv = trust level
 Tsk = task
 Ttl = title
 Top = top (as in popular)
 Txt = text
-Tr  = Trust,  eg. TrLv = trust level NO change to Tru & Trt
 Tx  = text (tx = transaction is only server side)
 Typ = type
 U   = user

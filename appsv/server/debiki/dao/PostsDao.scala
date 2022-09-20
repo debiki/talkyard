@@ -525,7 +525,9 @@ trait PostsDao {
 
     if (alwaysReviewAfter) {
       TESTS_MISSING
-      reviewReasons.append(ReviewReason.IsByLowTrustLevel)
+      if (!alwaysReqAppr) {
+        reviewReasons.append(ReviewReason.IsByLowTrustLevel)
+      }
       if (maxPostsPendRevwAftr > 0 && numPending + 1 > maxPostsPendRevwAftr)
         throwForbidden("TyE2MNYPNDRVW_", o"""You cannot post more posts until
               your previous posts have been reviewed by staff""")

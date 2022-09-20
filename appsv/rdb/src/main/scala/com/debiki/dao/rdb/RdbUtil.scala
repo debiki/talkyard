@@ -241,6 +241,10 @@ object RdbUtil {
       |u.avatar_small_base_url,
       |u.avatar_small_hash_path,
       |u.ui_prefs, ${"" /* WOULD exclude here, if had time to micro optimize */}
+      |u.may_see_my_activity_tr_lv_c,
+      |u.may_mention_me_tr_lv_c,
+      |u.may_dir_msg_me_tr_lv_c,
+      |u.why_may_not_mention_msg_me_html_c,
       |u.max_upload_bytes_c,${""          /* would excl  */}
       |u.allowed_upload_extensions_c,${"" /* would excl  */}
       |u.is_owner u_is_owner,
@@ -325,6 +329,7 @@ object RdbUtil {
       emailNotfPrefs = emailNotfPrefs,
       emailVerifiedAt = getOptionalDate(rs, "u_email_verified_at"),
       passwordHash = Option(rs.getString("u_password_hash")),
+      privPrefs = getPrivPrefs(rs),
       tinyAvatar = tinyAvatar,
       smallAvatar = smallAvatar,
       isApproved = getOptBool(rs, "u_is_approved"),
@@ -386,7 +391,6 @@ object RdbUtil {
     |email_verified_at,
     |password_hash,
     |email_for_every_new_post,
-    |may_see_my_activity_tr_lv_c,
     |avatar_tiny_base_url,
     |avatar_tiny_hash_path,
     |avatar_small_base_url,
@@ -394,6 +398,27 @@ object RdbUtil {
     |avatar_medium_base_url,
     |avatar_medium_hash_path,
     |ui_prefs,
+    |may_search_engines_index_me_c,
+    |may_see_my_username_tr_lv_c,
+    |may_see_my_full_name_tr_lv_c,
+    |may_see_my_tiny_avatar_tr_lv_c,
+    |may_see_my_medium_avatar_tr_lv_c,
+    |may_see_my_brief_bio_tr_lv_c,
+    |may_see_my_full_bio_tr_lv_c,
+    |may_see_my_profile_tr_lv_c,
+    |may_see_me_in_lists_tr_lv_c,
+    |may_see_if_im_online_tr_lv_c,
+    |may_see_my_activity_tr_lv_c,
+    |may_see_my_visit_stats_tr_lv_c,
+    |may_see_my_post_stats_tr_lv_c,
+    |may_see_my_approx_stats_tr_lv_c,
+    |may_see_my_exact_stats_tr_lv_c,
+    |may_find_me_by_email_tr_lv_c,
+    |may_follow_me_tr_lv_c,
+    |may_mention_me_tr_lv_c,
+    |may_mention_me_same_disc_tr_lv_c,
+    |may_dir_msg_me_tr_lv_c,
+    |why_may_not_mention_msg_me_html_c,
     |is_approved,
     |approved_at,
     |approved_by_id,
@@ -486,7 +511,7 @@ object RdbUtil {
       country = getOptString(rs, "country"),
       website = getOptString(rs, "website"),
       about = getOptString(rs, "about"),
-      seeActivityMinTrustLevel = getOptInt(rs, "may_see_my_activity_tr_lv_c").flatMap(TrustLevel.fromInt),
+      privPrefs = getPrivPrefs(rs),
       isApproved = getOptionalBoolean(rs, "is_approved"),
       reviewedAt = getOptionalDate(rs, "approved_at"),
       reviewedById = getOptInt(rs, "approved_by_id"),
@@ -504,6 +529,16 @@ object RdbUtil {
       deactivatedAt = getOptWhen(rs, "deactivated_at"),
       deletedAt = getOptWhen(rs, "deleted_at"))
   }
+
+
+  def getPrivPrefs(rs: js.ResultSet): MemberPrivacyPrefs = {
+    MemberPrivacyPrefs(
+          seeActivityMinTrustLevel = getOptTrustLevel(rs, "may_see_my_activity_tr_lv_c"),
+          maySendMeDmsTrLv = getOptTrustLevel(rs, "may_dir_msg_me_tr_lv_c"),
+          mayMentionMeTrLv = getOptTrustLevel(rs, "may_mention_me_tr_lv_c"),
+          )
+  }
+
 
   val UserStatsSelectListItems: String = i"""
     |snooze_notfs_until,

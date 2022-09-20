@@ -86,6 +86,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // throwNoUnless(Authz.mayPostReply(authzContext, postType, "EdEZBXK3M2")
 
     // For now, don't follow links in replies. COULD rel=follow if all authors + editors = trusted.
+    // (Here, and at other calls to forBodyOrComment(), is a better place to remember
+    // whom to mention — so the author will know for sure; compare with: [filter_mentions].)
     val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
     val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
       text,

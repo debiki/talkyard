@@ -481,13 +481,22 @@ html.es-watchbar-open.es-forum #debiki-editor-controller
 // username selector if typing '@...'  ?  Maybe no need for any extra
 // component like rta.
 .rta__autocomplete
-  max-width: 340px;
+  max-width: 360px;
 
 .rta__entity
   font-size: 14px;
   padding: 5px 0 5px 5px !important;
 html.mouse .rta__entity
   padding: 3px 0 3px 5px !important;
+
+
+// Hack. Make disabled items (e.g. usernames one cannot mention) unclickable, and gray.
+.rta__entity .c_Disabled
+  background: #fff;
+  color: #777;
+  margin: -3px 0 -3px -6px;
+  padding: 5px 0 5px 6px;
+  //pointer-events: none; — using event.stopPropagation() instead. [mention_disabled]
 
 
 // Compact buttons if narrow screen, so won't wrap to 2nd line.

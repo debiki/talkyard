@@ -497,6 +497,23 @@ const enum DummyTrustLevel {
   Admin = 8,
 }
 
+/// Any way to avoid repetition? (See TrustLevel above.)
+/// Note that Max is different here though!
+const enum TrustLevelOrStaff {
+  Min = 0,
+  Stranger = Min,
+  New = 1,
+  Basic = 2,
+  FullMember = 3,
+  Trusted = 4,
+  Regular = 5,
+  CoreMember = 6,
+  Staff = 7,
+  Admin = 8,
+  Max = Admin,
+}
+
+
 const enum ThreatLevel {
   SuperSafe = 1,
   SeemsSafe = 2,

@@ -452,6 +452,8 @@ function runAllE2eTests {
 
   $r s/wdio --only notfs-mark-seen-as-seen.2browsers $args  # RENAME append -automatically
 
+  $r s/wdio-7 --only block-mentions.2br.d --cd -i $args
+
   # RENAME these to  modn-... ,  and MOVE to (4862065) below?
   $r s/wdio --only new-user-review-ok.2br.mtime $args
   #$r s/wdio --only new-user-review-bad.2browsers $args

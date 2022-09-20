@@ -755,7 +755,7 @@ case class SitePatchParser(context: TyContext) {
         about = readOptString(jsObj, "bio", "about"),
         website = readOptString(jsObj, "websiteUrl", "website"),
         country = readOptString(jsObj, "location", "country"),
-        seeActivityMinTrustLevel = readOptInt(jsObj, "seeActivityMinTrustLevel").flatMap(TrustLevel.fromInt),
+        privPrefs = JsX.memberPrivacyPrefsFromJson(jsObj),
         tinyAvatar = None, // [readlater]
         smallAvatar = None, // [readlater]
         mediumAvatar = None, // [readlater]

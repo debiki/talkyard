@@ -163,19 +163,26 @@ package object core {
   type Participant = com.debiki.core.Pat
   val Pat: Participant.type = Participant
   type User = UserBr  // backw compat, renaming [trait_user]
+  type UserVb = UserInclDetails
 
   type PatVb = ParticipantInclDetails
   type MemberVb = MemberInclDetails
+
+  // Later, these will be different?
+  type GroupBr = Group
+  type GroupVb = Group
 
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
   type GuestId = PatId
   type MemberId = PatId   ; RENAME // to MembId
-  type MembId = PatId
+  type MembId = PatId     // but hard to read: '...bI..', two lines next to each other. Instead:
+  type MemId = PatId      // ... is this better?
   type UserId = PatId
   type GroupId = PatId
 
-  type Username = St
+  type Un = St  // is this nice?
+  type Username = St   // a bit long?
   type FullName = St
 
   // Use MemberId instead.
@@ -483,6 +490,13 @@ package object core {
 
   type ApiSecretNr = Int
 
+  type LinkMaybeBad = St
+  sealed trait MayLink
+  object MayLink {
+    case object YesRelFollow extends MayLink
+    case object YesNoFollow extends MayLink
+    case object No extends MayLink
+  }
 
   type Hopefully[R] = R Or Problem
 

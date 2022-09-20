@@ -658,6 +658,11 @@ export function member_isBuiltIn(member: Member): boolean {
 //----------------------------------
 
 
+// Dupl code [disp_name]
+export function pat_name(pat: Me | Pat): St {
+  return pat.fullName || (pat.username ? '@' + pat.username : "_no_name_");
+}
+
 // Returns 0 if not snoozing or time's up.
 //
 export function pp_snoozeLeftMs(me: Myself): number {
@@ -688,6 +693,23 @@ export function user_isTrustMinNotThreat(user: UserInclDetails | Myself, trustLe
   // UX COULD check threat level too, that's done server side, not doing here can result in [5WKABY0]
   // annoying error messages (security though = server side).  Add a Myself.isThreat field?
   return user_trustLevel(user) >= trustLevel;
+}
+
+
+/// If a bit advanced functionality should be shown to this user (or group members).
+///
+export function pat_isBitAdv(pat: PatVb | Me): Bo {
+  // For now, let's assume people who have become full members, are "advanced".
+  // Later, this will probably instead be a checkbox in one's user settings.
+  return user_trustLevel(pat) >= TrustLevel.FullMember || isStaff(pat);
+}
+
+
+/// If more advanced functionality should be shown.
+///
+export function pat_isMoreAdv(pat: PatVb | Me): Bo {
+  // For now.
+  return user_trustLevel(pat) >= TrustLevel.CoreMember || isStaff(pat);
 }
 
 

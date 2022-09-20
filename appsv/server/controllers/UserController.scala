@@ -202,8 +202,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       throwNotImplemented("EsE5KY02", "Lookup by email not implemented")
 
     request.dao.readOnlyTransaction { tx =>
-      val memberOrGroup =
-            tx.loadMemberInclDetailsByUsername(emailOrUsername) getOrElse {
+      val member = tx.loadMemberVbByUsername(emailOrUsername) getOrElse {
         if (isEmail)
           throwNotFound("EsE4PYW20", "User not found")
 
@@ -226,18 +225,20 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         }) getOrElse throwNotFound("EsE8PKU02", "User not found")
       }
 
-      val groups = tx.loadGroups(memberOrGroup)
+      // Later, check if the requester may see the member. [private_pats]
 
-      memberOrGroup match {
-        case member: UserInclDetails =>
-          val stats = includeStats ? tx.loadUserStats(member.id) | None
-          val callerIsUserHerself = request.user.exists(_.id == member.id)
+      val groups = tx.loadGroups(member)
+
+      member match {
+        case user: UserVb =>
+          val stats = includeStats ? tx.loadUserStats(user.id) | None
+          val callerIsUserHerself = request.user.exists(_.id == user.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
           val userJson = JsUserInclDetails(
-            member, Map.empty, groups, callerIsAdmin = callerIsAdmin,
+            user, Map.empty, groups, callerIsAdmin = callerIsAdmin,
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
-          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), member.noDetails)
-        case group: Group =>
+          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), user.noDetails)
+        case group: GroupVb =>
           val groupJson = jsonForGroupInclDetails(
             group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
           (groupJson, JsNull, group)
@@ -479,7 +480,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       return true
 
     val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)
-    memberInclDetails.seeActivityMinTrustLevel match {
+    memberInclDetails.privPrefs.seeActivityMinTrustLevel match {
       case None => true
       case Some(minLevel) =>
         requester.exists(_.effectiveTrustLevel.toInt >= minLevel.toInt)
@@ -1421,6 +1422,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   private def listAllUsersImpl(usernamePrefix: String, request: ApiRequest[_]): JsArray = {
+    import request.requester
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
     // ... stop doing that?
     val members = request.dao.loadUsersWithUsernamePrefix(
@@ -1428,10 +1430,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     JsArray(
       members map { member =>
         // [PUB_API] .ts: ListUsersApiResponse, ListGroupsApiResponse, ListMembersApiResponse
-        Json.obj(
-          "id" -> member.id,
-          "username" -> member.username,
-          "fullName" -> member.fullName)
+        val jOb = Json.obj(
+              "id" -> member.id,
+              "username" -> member.username,
+              "fullName" -> member.fullName)
+        _plusAnyNotMention(requester, member.privPrefs.mayMentionMeTrLv, jOb)
       })
   }
 
@@ -1441,7 +1444,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     */
   def listUsernames(pageId: PageId, prefix: St): Action[U] = GetActionRateLimited(
           RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
-    import request.dao
+    import request.{dao, requester}
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
@@ -1464,12 +1467,30 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     val json = JsArray(
       names map { nameAndUsername =>
-        Json.obj(
-          "id" -> nameAndUsername.id,
-          "username" -> nameAndUsername.username,
-          "fullName" -> nameAndUsername.fullName)
+        val jOb = Json.obj(
+              "id" -> nameAndUsername.id,
+              "username" -> nameAndUsername.username,
+              "fullName" -> nameAndUsername.fullName)
+        _plusAnyNotMention(requester, nameAndUsername.mayMentionMeTrLv, jOb)
       })
     OkSafeJson(json)
+  }
+
+
+  /** This is just for client side UX. The server side checks are here: [filter_mentions].
+    */
+  private def _plusAnyNotMention(reqer: Opt[Pat], mayMentionMeTrLv: Opt[TrustLevel],
+          jOb: JsObject): JsObject = {
+    // Later: [private_pats] If the requester may not see the listed member, remove hen
+    // from the list instead of adding mayMention: flase.
+    var res = jOb
+    mayMentionMeTrLv foreach { minLevel =>
+      if (!reqer.exists(_.effectiveTrustLevel.isAtLeast(minLevel))) {
+        res += "mayMention" -> JsFalse
+        //s += "whyNotMention" -> " ..." // later
+      }
+    }
+    res
   }
 
 
@@ -1590,13 +1611,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def saveMemberPrivacyPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
         maxBytes = 100) { request =>
-    val prefs: MemberPrivacyPrefs = memberPrivacyPrefsFromJson(request.body)
-    throwUnlessMayEditPrefs(prefs.userId, request.theRequester)
-    request.dao.saveMemberPrivacyPrefs(prefs, request.who)
+    val userId = parseInt32(request.body, "userId")
+    val prefs: MemberPrivacyPrefs = JsX.memberPrivacyPrefsFromJson(request.body)
+    throwUnlessMayEditPrefs(userId, request.theRequester)
+    request.dao.saveMemberPrivacyPrefs(forUserId = userId, prefs, byWho = request.who)
 
     // Try to reuse: [load_pat_stats_grps]
-    val (patJson, _, _) = loadPatJsonAnyDetailsById(
-          prefs.userId, includeStats = false, request)
+    val (patJson, _, _) = loadPatJsonAnyDetailsById(userId, includeStats = false, request)
     OkSafeJson(Json.obj("patNoStatsNoGroupIds" -> patJson))
   }
 
@@ -1690,14 +1711,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
       summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean])
     // ----------------------------------------------------
-  }
-
-
-  private def memberPrivacyPrefsFromJson(json: JsValue): MemberPrivacyPrefs = {
-    val anySeeActivityInt = (json \ "seeActivityMinTrustLevel").asOpt[Int]
-    MemberPrivacyPrefs(
-      userId = (json \ "userId").as[UserId],
-      seeActivityMinTrustLevel = anySeeActivityInt.flatMap(TrustLevel.fromInt))
   }
 
 }

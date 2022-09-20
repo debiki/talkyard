@@ -1883,10 +1883,23 @@ trait UserDao {
   }
 
 
-  def saveMemberPrivacyPrefs(preferences: MemberPrivacyPrefs, byWho: Who): MemberInclDetails = {
-    editMemberThrowUnlessSelfStaff(preferences.userId, byWho, "TyE4AKT2W", "edit privacy prefs") { tx =>
-      val memberBefore = tx.loadTheUserInclDetails(preferences.userId)  // [7FKFA20]
-      val memberAfter = memberBefore.copyWithNewPrivacyPrefs(preferences)
+  def saveMemberPrivacyPrefs(forUserId: UserId, preferences: MemberPrivacyPrefs, byWho: Who)
+          : MemberInclDetails = {
+    editMemberThrowUnlessSelfStaff(forUserId, byWho, "TyE4AKT2W", "edit privacy prefs") { tx =>
+      val memberBefore = tx.loadTheUserInclDetails(forUserId)  // [7FKFA20]
+
+      // Later: Could let only full members (or people who knows how the software works)
+      // change their who-may-mention-or-message-me settings?
+      // For now, just hide that, client side, doesn't really matter anyway. And >= core members
+      // can always mention everyone anyway.  [can_config_what_priv_prefs]
+      /* Don't / wait with:
+      throwForbiddenIff(!memberBefore.isStaffOrCoreMember,
+            "TyEM0EDPRFS1", "May not edit these prefs")
+      throwForbiddenIff(!memberBefore.isStaffOrCoreMember,
+            "TyEM0EDPRFS2", "May not edit ...")
+       */
+
+      val memberAfter = memberBefore.copy(privPrefs = preferences)
       tx.updateUserInclDetails(memberAfter)
 
       // Privacy preferences aren't cached, currently need not:
@@ -2241,7 +2254,7 @@ trait UserDao {
         reviewedById = memberBefore.reviewedById,
         primaryEmailAddress = anonEmail,
         emailNotfPrefs = EmailNotfPrefs.DontReceive,
-        seeActivityMinTrustLevel = memberBefore.seeActivityMinTrustLevel,
+        privPrefs = memberBefore.privPrefs,
         suspendedAt = memberBefore.suspendedAt,
         suspendedTill = memberBefore.suspendedTill,
         suspendedById = memberBefore.suspendedById,

@@ -263,7 +263,9 @@ object JsX {   RENAME // to JsonPaSe
       "bio" -> JsStringOrNull(user.about),
       "websiteUrl" -> JsStringOrNull(user.website),
       "location" -> JsStringOrNull(user.country),
-      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
+      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
+      "maySendMeDmsTrLv" -> JsNumberOrNull(user.privPrefs.maySendMeDmsTrLv.map(_.toInt)),
+      "mayMentionMeTrLv" -> JsNumberOrNull(user.privPrefs.mayMentionMeTrLv.map(_.toInt)),
       "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
       "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
@@ -318,6 +320,19 @@ object JsX {   RENAME // to JsonPaSe
     }
 
     userJson
+  }
+
+
+  def memberPrivacyPrefsFromJson(json: JsValue): MemberPrivacyPrefs = {
+    MemberPrivacyPrefs(
+          seeActivityMinTrustLevel =
+              parseOptInt32(json, "seeActivityTrLv", altField = "seeActivityMinTrustLevel")
+                  .flatMap(TrustLevel.fromInt),
+          maySendMeDmsTrLv =
+              parseOptInt32(json, "maySendMeDmsTrLv").flatMap(TrustLevel.fromInt),
+          mayMentionMeTrLv =
+              parseOptInt32(json, "mayMentionMeTrLv").flatMap(TrustLevel.fromInt),
+          )
   }
 
 

@@ -476,7 +476,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     loadGroupInclDetails(groupId) // right now, Group already includes all details
 
   def loadGroupInclDetails(groupId: UserId): Option[Group] =
-    loadMembersAndGroupsInclDetailsById(Seq(groupId)).headOption map {
+    loadMembersVbById(Seq(groupId)).headOption map {
       case m: UserInclDetails => throw GotANotGroupException(m.id)
       case g: Group => g
     }
@@ -484,8 +484,6 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadAllUsersInclDetails(): immutable.Seq[UserInclDetails]
 
   def loadMemberInclDetailsById(userId: UserId): Option[MemberInclDetails]
-
-  def loadMemberInclDetailsByUsername(username: String): Option[MemberInclDetails]
 
   def loadTheUserInclDetails(userId: UserId): UserInclDetails =
     loadUserInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
@@ -580,7 +578,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   }
 
   def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Option[User]
-  def loadMemberByUsername(username: String): Option[Member]
+  def loadMemberVbByUsername(username: St): Opt[MemberVb]
+  def loadMembersVbByUsername(usernames: Iterable[Username]): Map[Username, MemberVb]
   def loadUserInclDetailsBySsoId(ssoId: String): Option[UserInclDetails]
   def loadUserInclDetailsByExtId(externalId: String): Option[UserInclDetails]
   def loadUserInclDetailsByEmailAddr(email: String): Option[UserInclDetails]
@@ -613,14 +612,14 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   }
 
   def loadUsersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[UserInclDetails] =
-    loadMembersAndGroupsInclDetailsById(userIds) map {
+    loadMembersVbById(userIds) map {
       case user: UserInclDetails => user
       case group: Group => throw GotAGroupException(group.id)
     }
 
   def loadMembersVbByRef(refs: Iterable[PatRef]): ImmSeq[MemberVb]
 
-  def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId]): ImmSeq[MemberVb]
+  def loadMembersVbById(userIds: Iterable[MembId]): ImmSeq[MemberVb]
 
   def loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(ids: Iterable[UserId])
         : immutable.Map[UserId, ParticipantInclDetails]

@@ -84,7 +84,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def deleteNotf(notfToDelete: NotificationToDelete) {
+  private def deleteNotf(notfToDelete: NotificationToDelete): U = {
     import NotificationType._
     val (sql, values: List[AnyRef]) = notfToDelete match {
       case toDelete: NotificationToDelete.ToOneMember =>
@@ -109,6 +109,9 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         (sql, values)
     }
 
+    // Don't require any row to get deleted. For example, if a user had mentions disabled,
+    // then, no notification would have been generated, when trying to mention hen,
+    // and there would be nothing to delete now. [filter_mentions]
     runUpdate(sql, values)
   }
 

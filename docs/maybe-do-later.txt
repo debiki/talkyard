@@ -149,6 +149,10 @@ Rename "indie" to user" and "people" to "members"
 So cannot see / list users unless has access to the same categories, or is in
 the same group(s) or high enough trust level or sth like that?
 
+[inherit_group_priv_prefs]
+One should inherit privacy and noise settings from one's closest trust level group,
+and from any custom group one is in? But one's own settings should override.
+
 [user_version] [tag_versions]
 Add a version field to pats_t and an in-mem user? So knows if the in-mem one is stale;
 then, the browser shouldn't use it, if it already has a newer version.
@@ -540,6 +544,28 @@ When composing a message, see who will get notified — e.g. if mentioning a gro
 or editing a message, can be unclar if a newly edit-added @username gets notified or not
 (they do get notified).
 
+[mentions_prio]
+Maybe let  0@username generate a link, but no (zero) notification? or ...
+       ... [@username]? no that's harder to type?
+           =@username could be a looower prio notification, the software won't send any
+                      email notf, only show if one visits the forum?
+           -@username be a lower prio notification, deliver in a batch per daily
+            @username be a low prio notification, deliver every <custom> hours
+           +@username or ...
+       ... !@username could be an urgent notification, like, "I'm blocked until answered"
+          !!@username be a really urgent notification, like, "Server is down"
+
+        or 9@username could be high prio? hmm but '!' is maybe more intuitive.
+
+    (skip: ?@username be a question  — maybe it'd be better with marking comments as to-do?
+          !?@username be an urgent question )
+
+           @@username (two '@') could be a group notification?
+                      E.g. Hi @@support, what [...]?  and probably @@support have
+                      configued <custom> (see above) to be quick?
+                      Ty would auto add the 2nd '@' even if one typed just 1, if it's a group?
+
+
 [power_admin]
 Various fancy admin features, disabled by default.
 
@@ -566,6 +592,8 @@ Add group visibility settings, e.g. no one (incl members in the group) can see
 members in the group — except for some specific groups, e.g. staff.
 And who-may-join feautre, and Join/Leave group buttons.
 Don't let one self-join groups that grants a trust level higher than one's current level.
+
+[sub_groups]
 
 [cont_settings_t]
 Per group and content set settings.
