@@ -6,11 +6,11 @@ Compile / dependencyOverrides ++= {
     Seq.empty
   } else {
     Seq(
-      "com.fasterxml.jackson.core" % "jackson-annotations" % "2.10.5",
-      "com.fasterxml.jackson.core" % "jackson-core" % "2.10.5",
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.5.1",
-      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.10.5",
-      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.10.5",
+      "com.fasterxml.jackson.core" % "jackson-annotations" % "2.11.4",
+      "com.fasterxml.jackson.core" % "jackson-core" % "2.11.4",
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.4",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.11.4",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.11.4",
       "com.google.code.findbugs" % "jsr305" % "3.0.2",
       "com.google.errorprone" % "error_prone_annotations" % "2.11.0",
       "com.google.guava" % "failureaccess" % "1.0.1",
@@ -19,8 +19,8 @@ Compile / dependencyOverrides ++= {
       "com.google.j2objc" % "j2objc-annotations" % "1.3",
       "com.lambdaworks" % "scrypt" % "1.4.0",
       "com.sun.mail" % "javax.mail" % "1.5.6",
-      "com.typesafe.play" % "play-functional_2.12" % "2.9.2",
-      "com.typesafe.play" % "play-json_2.12" % "2.9.2",
+      "com.typesafe.play" % "play-functional_2.12" % "2.9.3",
+      "com.typesafe.play" % "play-json_2.12" % "2.9.3",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
       "commons-codec" % "commons-codec" % "1.15",
       "commons-collections" % "commons-collections" % "3.2.2",
@@ -31,14 +31,14 @@ Compile / dependencyOverrides ++= {
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "2.4.1",
+      "org.apache.tika" % "tika-core" % "2.6.0",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.4.0",
-      "org.scalactic" % "scalactic_2.12" % "3.2.12",
-      "org.slf4j" % "slf4j-api" % "1.7.36"
+      "org.postgresql" % "postgresql" % "42.4.2",
+      "org.scalactic" % "scalactic_2.12" % "3.2.13",
+      "org.slf4j" % "slf4j-api" % "2.0.3"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH dc3fac021fc349c5e0135c9d8366124e4482201c
+// LIBRARY_DEPENDENCIES_HASH cd2996bd71e22ca7abedb8fafa6282c133d37a91

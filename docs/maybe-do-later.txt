@@ -982,6 +982,8 @@ https://docusaurus.io/docs/markdown-features/code-blocks#syntax-highlighting )
 Upgr Webdriverio from 6 to 7.
 Add Typescript-ESLint warning: no-floating-promises!
 
+[java_8_to_11]
+
 
 Better troubleshooting
 =====
