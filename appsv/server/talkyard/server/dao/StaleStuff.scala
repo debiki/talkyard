@@ -214,14 +214,19 @@ class StaleStuff {
       // Currently then need to: (although clears unnecessarily much)
       dao.memCache.clearThisSite()
     }
-    else if (nonEmpty) {
-      staleParticipantIdsInMem foreach { ppId =>
-        dao.removeUserFromMemCache(ppId)
-      }
+    else if (_stalePages.nonEmpty) {
       stalePageIdsInMem foreach { pageId =>
         dao.refreshPageInMemCache(pageId)
       }
       dao.uncacheLinks(this)
+    }
+
+    // dao.memCache.clearThisSite() above doesn't uncache pats — because pat cache items
+    // ignore the site version. [pat_cache]
+    if (_stalePpIdsMemCacheOnly.nonEmpty) {
+      staleParticipantIdsInMem foreach { ppId =>
+        dao.removeUserFromMemCache(ppId)
+      }
     }
   }
 

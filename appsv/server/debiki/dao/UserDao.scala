@@ -43,6 +43,12 @@ case class ReadMoreResult(
   gotPromoted: Boolean)
 
 
+case class EditMemberCtx(
+  tx: SiteTx,
+  statleStuff: StaleStuff,
+  member: MemberInclDetails,
+  reqer: User)
+
 
 trait UserDao {
   self: SiteDao =>
@@ -703,6 +709,7 @@ trait UserDao {
         guest.id, firstSeenAtOr0 = tx.now, lastSeenAt = tx.now))
       guest
     }
+    // Ignore site version, see [pat_cache].
     memCache.put(
           patKey(user.id),
           MemCacheValueIgnoreVersion(user))
@@ -753,7 +760,7 @@ trait UserDao {
     }
 
     // Don't save any site cache version, because user specific data doesn't change
-    // when site specific data changes.
+    // when site specific data changes. [pat_cache]
     memCache.put(
           patKey(loginGrant.user.id),
           MemCacheValueIgnoreVersion(loginGrant.user))
@@ -1870,14 +1877,18 @@ trait UserDao {
 
 
   def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): U = {
-    editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") { tx =>
+    editMemberThrowUnlessSelfStaff2(
+          pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") {
+            case EditMemberCtx(tx, _, _, _) =>
       tx.upsertPageNotfPref(pageNotfPref)
     }
   }
 
 
   def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
-    editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") { tx =>
+    editMemberThrowUnlessSelfStaff2(
+          pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") {
+            case EditMemberCtx(tx, _, _, _) =>
       tx.deletePageNotfPref(pageNotfPref)
     }
   }
@@ -1885,7 +1896,9 @@ trait UserDao {
 
   def saveMemberPrivacyPrefs(forUserId: UserId, preferences: MemberPrivacyPrefs, byWho: Who)
           : MemberInclDetails = {
-    editMemberThrowUnlessSelfStaff(forUserId, byWho, "TyE4AKT2W", "edit privacy prefs") { tx =>
+    editMemberThrowUnlessSelfStaff2(
+          forUserId, byWho, "TyE4AKT2W", "edit privacy prefs") {
+            case EditMemberCtx(tx, staleStuff, _, _) =>
       val memberBefore = tx.loadTheUserInclDetails(forUserId)  // [7FKFA20]
 
       // Later: Could let only full members (or people who knows how the software works)
@@ -1902,8 +1915,7 @@ trait UserDao {
       val memberAfter = memberBefore.copy(privPrefs = preferences)
       tx.updateUserInclDetails(memberAfter)
 
-      // Privacy preferences aren't cached, currently need not:
-      //removeUserFromMemCache(memberAfter.id)
+      staleStuff.addPatIds(Set(forUserId))
     }
   }
 
@@ -1916,7 +1928,7 @@ trait UserDao {
 
     val membAft = editMemberThrowUnlessSelfStaff2(
           preferences.userId, byWho, "TyE2WK7G4", "configure about prefs") {
-              (tx, _, me) =>
+            case EditMemberCtx(tx, staleStuff, _, me) =>
 
       val user = tx.loadTheUserInclDetails(preferences.userId)  // [7FKFA20]
 
@@ -1953,21 +1965,27 @@ trait UserDao {
         tx.reconsiderSendingSummaryEmailsTo(user.id)  // related: [5KRDUQ0]
       }
 
+      staleStuff.addPatIds(Set(user.id))
+
       // Clear the page cache (by clearing all caches), if we changed the user's name.
       // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
       // uncache only those pages.
       if (preferences.changesStuffIncludedEverywhere(user)) {
-        // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something.
+        // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something
+        // that's been cached.
         // Use markPagesWithUserAvatarAsStale ?
-        emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
-        clearMemCacheAfterTx = true
+        staleStuff.addAllPages() ; COULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
+        //emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
+        //clearMemCacheAfterTx = true
       }
     }
 
+    /*
     if (clearMemCacheAfterTx) {
       memCache.clearThisSite()
     }
     removeUserFromMemCache(preferences.userId)
+    */
 
     membAft
   }
@@ -2066,7 +2084,7 @@ trait UserDao {
 
   def savePatPerms(patId: PatId, perms: PatPerms, byWho: Who): U = {
     editMemberThrowUnlessSelfStaff2(patId, byWho, "TyE3ASHW6703", "edit pat perms") {
-        (tx, memberInclDetails, _) =>
+          case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
       val groupBef: Group = memberInclDetails.asGroupOr(IfBadAbortReq)
       val groupAft = groupBef.copy(perms = perms)
       tx.updateMemberInclDetails(groupAft)
@@ -2078,7 +2096,7 @@ trait UserDao {
 
   def saveUiPrefs(memberId: UserId, prefs: JsObject, byWho: Who): Unit = {
     editMemberThrowUnlessSelfStaff2(memberId, byWho, "TyE3ASHWB67", "change UI prefs") {
-        (tx, memberInclDetails, _) =>
+          case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
       tx.updateMemberInclDetails(memberInclDetails.copyTrait(uiPrefs = Some(prefs)))
     }
     removeUserFromMemCache(memberId)
@@ -2368,14 +2386,6 @@ trait UserDao {
   }
 
 
-  private def editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: St,
-        mayNotWhat: St)(block: SiteTx => U): MemberInclDetails = {
-    editMemberThrowUnlessSelfStaff2[R](userId, byWho, errorCode, mayNotWhat) { (tx, _, _) =>
-      block(tx)
-    }
-  }
-
-
   /** Loads useId and byWho in a read-write transaction, and checks if they are
     * the same person (that is, one edits one's own settings) or if byWho is staff.
     * If isn't the same preson, or isn't staff, then, throws 403 Forbidden.
@@ -2385,8 +2395,7 @@ trait UserDao {
     * block = (tx, member-to-edit, me) => side effects...  .
     */
   private def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: St,
-        mayNotWhat: St)(block: (SiteTransaction, MemberInclDetails, User) => U)
-        : MemberInclDetails = {
+        mayNotWhat: St)(block: EditMemberCtx => U): MemberVb = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
 
@@ -2397,7 +2406,7 @@ trait UserDao {
     throwForbiddenIf(userId < Participant.LowestNormalMemberId,
       errorCode + "-ISBTI", s"May not $mayNotWhat for special built-in users")
 
-    readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       val me = tx.loadTheUser(byWho.id)
       throwForbiddenIf(me.id != userId && !me.isStaff,
           errorCode + "-ISOTR", s"May not $mayNotWhat for others")
@@ -2408,7 +2417,7 @@ trait UserDao {
       throwForbiddenIf(member.isAdmin && !me.isAdmin,
           errorCode + "-ISADM", s"May not $mayNotWhat for admins") // [mod_0_conf_adm]
 
-      block(tx, member, me)
+      block(EditMemberCtx(tx, staleStuff, member, reqer = me))
 
       tx.loadTheMemberInclDetails(userId)
     }
