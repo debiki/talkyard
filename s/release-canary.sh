@@ -2,14 +2,15 @@
 
 # BUG this module no longer in use:
 git_lock_file='.git/modules/modules/ed-versions/index.lock'
+git_lock_file2='.git/modules/relchans/tyse-v0-regular/index.lock'
 versions_file='version-tags.log'
 
 promote_from_chan='tyse-v0-dev'
 promote_to_chan='tyse-v0-regular'   #  [.must_be_dev_regular]
 
-if [ -f $git_lock_file ]; then
+if [ -f $git_lock_file2 ]; then
   echo
-  echo "Error: Git lock file exists: $git_lock_file"
+  echo "Error: Git lock file exists: $git_lock_file2"
   echo
   echo "Some Git tool running, or crashed?"
   exit 1

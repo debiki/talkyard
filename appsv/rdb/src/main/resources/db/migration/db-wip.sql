@@ -1,10 +1,3 @@
--- BUG: fk not deferrable:  pagepopscores_r_pages
-alter table page_popularity_scores3 alter constraint pagepopscores_r_pages deferrable;
-alter table perms_on_pages3 alter constraint permsonpages_r_cats deferrable;
-alter table perms_on_pages3 alter constraint permsonpages_r_pages deferrable;
-alter table perms_on_pages3 alter constraint permsonpages_r_people deferrable;
-alter table perms_on_pages3 alter constraint permsonpages_r_posts deferrable;
-
 
 -- Also see: docs/maybe-refactor.txt
 --  — move some / most-of ?  this db-wip stuff to there instead?
@@ -230,12 +223,6 @@ alter table pats_t add column may_see_post_stats_min_tr_lv     trust_level_or_st
 -- Not listed in user directory (or listed as Private user? No why)
 
 
--- Old field:
-alter table pats_t rename column see_activity_min_trust_level to may_see_activity_history_min_tr_lv_c;
-
-
-  -- and change type to trust_level_or_staff_d, clamp to [0, sth]
-
 -- New groups: Web scrapers? Anonymity network strangers? (e.g. Tor)
 -- See Git revision  b907273f7391e8a3,
 -- "websearch_prefs" — no webindex? webscrapers_prefs_d?
@@ -294,9 +281,8 @@ create table group_members3 (
 --  https://stackoverflow.com/a/10136019/694469 — if works, upvote
 )
 
--- later:
-alter table users3 add column default_group_prio int default 10;
-alter table users3 add column show_group_membership boolean;  ?
+-- later?:
+alter table pats_t add column default_group_prio int default 10;  -- for groups
 
 
 
@@ -384,4 +370,44 @@ alter domain key_pem_d add constraint key_pem_d_c_maxlen check (
 alter table page_popularity_scores3 add column two_weeks_score f64_d;
 alter table page_popularity_scores3 add column two_days_score f64_d;
 -- + custom time, maybe two arrays:  AlgorithmParams[], score[], last_calculated_at[] ?
+
+
+
+-----------------------------------------------------------------------
+-- Remember mentions in posts_t:
+
+create or replace function contains_bad_link_char(txt text) returns boolean
+language plpgsql as $_$
+begin
+    return txt ~ '.*\s.*' || txt !~ '^[[:graph:]]+$';   -- ?
+end;
+$_$;
+
+create domain link_arr_d text[];
+alter domain  link_arr_d add
+   constraint link_arr_d_c_chars check (
+     not contains_bad_link_char(array_to_string(value, ' ', ' ')));
+
+
+
+create or replace function contains_bad_username_char(txt text) returns boolean
+language plpgsql as $_$
+begin
+    return txt ~ '.*[\s\n\r\t@#,!?/\\=%\&].*' || txt !~ '^[[:graph:]]+$';   -- ?
+end;
+$_$;
+
+create domain username_arr_d text[];
+alter domain  username_arr_d add
+   constraint username_arr_d_c_chars check (
+     not contains_bad_username_char(array_to_string(value, ' ', ' ')));
+
+
+alter table posts3 add column approved_mentions_ok_c     username_arr_d;
+alter table posts3 add column approved_mentions_bad_c    username_arr_d;
+alter table posts3 add column approved_links_ok_bad_c    link_arr_d;
+alter table posts3 add column current_mentions_ok_c      username_arr_d;
+alter table posts3 add column current_mentions_bad_c     username_arr_d;
+alter table posts3 add column current_links_ok_bad_c     link_arr_d;
+-----------------------------------------------------------------------
 
