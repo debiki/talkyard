@@ -331,35 +331,42 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
   def insertGroup(group: Group) {
     val sql = """
-      insert into users3(
-        site_id,
-        user_id,
-        ext_id,
-        username,
-        full_name,
-        created_at,
-        summary_email_interval_mins,
-        summary_email_if_active,
-        -- grants_trust_level,  — later
-        ui_prefs,
-        max_upload_bytes_c,
-        allowed_upload_extensions_c,
-        is_group)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true)
-      """
+          insert into users3(
+            site_id,
+            user_id,
+            ext_id,
+            username,
+            full_name,
+            created_at,
+            summary_email_interval_mins,
+            summary_email_if_active,
+            -- grants_trust_level,  — later
+            ui_prefs,
+            may_see_my_activity_tr_lv_c,
+            may_mention_me_tr_lv_c,
+            may_dir_msg_me_tr_lv_c,
+            max_upload_bytes_c,
+            allowed_upload_extensions_c,
+            is_group)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true) """
+
     val values = List(
-      siteId.asAnyRef,
-      group.id.asAnyRef,
-      group.extId.orNullVarchar,
-      group.theUsername,
-      group.name.orNullVarchar,
-      group.createdAt.asTimestamp,
-      group.summaryEmailIntervalMins.orNullInt,
-      group.summaryEmailIfActive.orNullBoolean,
-      //group.grantsTrustLevel.map(_.toInt).orNullInt,
-      group.uiPrefs.orNullJson,
-      group.perms.maxUploadBytes.orNullInt,
-      group.perms.allowedUplExts.orNullVarchar)
+          siteId.asAnyRef,
+          group.id.asAnyRef,
+          group.extId.orNullVarchar,
+          group.theUsername,
+          group.name.orNullVarchar,
+          group.createdAt.asTimestamp,
+          group.summaryEmailIntervalMins.orNullInt,
+          group.summaryEmailIfActive.orNullBoolean,
+          //group.grantsTrustLevel.map(_.toInt).orNullInt,
+          group.uiPrefs.orNullJson,
+          group.privPrefs.seeActivityMinTrustLevel.map(_.toInt).orNullInt,
+          group.privPrefs.mayMentionMeTrLv.map(_.toInt).orNullInt,
+          group.privPrefs.maySendMeDmsTrLv.map(_.toInt).orNullInt,
+          group.perms.maxUploadBytes.orNullInt,
+          group.perms.allowedUplExts.orNullVarchar)
+
     runUpdateExactlyOneRow(sql, values)
   }
 
@@ -394,6 +401,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         summary_email_if_active = ?,
         -- grants_trust_level = ?,  — later
         ui_prefs = ?,
+        may_see_my_activity_tr_lv_c = ?,
+        may_mention_me_tr_lv_c = ?,
+        may_dir_msg_me_tr_lv_c = ?,
         max_upload_bytes_c = ?,
         allowed_upload_extensions_c = ?
       where site_id = ?
@@ -401,17 +411,20 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       """
 
     val values = List(
-      group.extId.orNullVarchar,
-      group.anyName.orNullVarchar,
-      group.theUsername,
-      group.summaryEmailIntervalMins.orNullInt,
-      group.summaryEmailIfActive.orNullBoolean,
-      //group.grantsTrustLevel.map(_.toInt).orNullInt,
-      group.uiPrefs.orNullJson,
-      group.perms.maxUploadBytes.orNullInt,
-      group.perms.allowedUplExts.orNullVarchar,
-      siteId.asAnyRef,
-      group.id.asAnyRef)
+          group.extId.orNullVarchar,
+          group.anyName.orNullVarchar,
+          group.theUsername,
+          group.summaryEmailIntervalMins.orNullInt,
+          group.summaryEmailIfActive.orNullBoolean,
+          //group.grantsTrustLevel.map(_.toInt).orNullInt,
+          group.uiPrefs.orNullJson,
+          group.privPrefs.seeActivityMinTrustLevel.map(_.toInt).orNullInt,
+          group.privPrefs.mayMentionMeTrLv.map(_.toInt).orNullInt,
+          group.privPrefs.maySendMeDmsTrLv.map(_.toInt).orNullInt,
+          group.perms.maxUploadBytes.orNullInt,
+          group.perms.allowedUplExts.orNullVarchar,
+          siteId.asAnyRef,
+          group.id.asAnyRef)
 
     try runUpdateSingleRow(statement, values)
     catch {

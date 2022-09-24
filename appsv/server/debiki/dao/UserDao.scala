@@ -1898,8 +1898,7 @@ trait UserDao {
           : MemberInclDetails = {
     editMemberThrowUnlessSelfStaff2(
           forUserId, byWho, "TyE4AKT2W", "edit privacy prefs") {
-            case EditMemberCtx(tx, staleStuff, _, _) =>
-      val memberBefore = tx.loadTheUserInclDetails(forUserId)  // [7FKFA20]
+            case EditMemberCtx(tx, staleStuff, memberBefore, _) =>
 
       // Later: Could let only full members (or people who knows how the software works)
       // change their who-may-mention-or-message-me settings?
@@ -1912,8 +1911,8 @@ trait UserDao {
             "TyEM0EDPRFS2", "May not edit ...")
        */
 
-      val memberAfter = memberBefore.copy(privPrefs = preferences)
-      tx.updateUserInclDetails(memberAfter)
+      val memberAfter = memberBefore.copyPrefs(privPrefs = preferences)
+      tx.updateMemberInclDetails(memberAfter)
 
       staleStuff.addPatIds(Set(forUserId))
     }
@@ -2097,7 +2096,7 @@ trait UserDao {
   def saveUiPrefs(memberId: UserId, prefs: JsObject, byWho: Who): Unit = {
     editMemberThrowUnlessSelfStaff2(memberId, byWho, "TyE3ASHWB67", "change UI prefs") {
           case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
-      tx.updateMemberInclDetails(memberInclDetails.copyTrait(uiPrefs = Some(prefs)))
+      tx.updateMemberInclDetails(memberInclDetails.copyPrefs(uiPrefs = Some(prefs)))
     }
     removeUserFromMemCache(memberId)
   }

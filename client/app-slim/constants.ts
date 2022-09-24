@@ -58,14 +58,15 @@ const MaxVirtPostNr = -1000 * 1000;
 const MinRealPostNr = TitleNr;
 
 // COULD_OPTIMIZE SMALLER_BUNDLE MOVE to  const enum PatIds or Pats?
+//  — Doing, see client/types-and-const-enums.ts, const enum Pats.
 const NoUserId = 0;
 const SystemUserId = 1;
 const SysbotUserId = 2;
 //const SuperAdminId = 3;  ?
 //const SuperStaffId = 4;  ?
 const MinMemberId = SystemUserId;
-const LowestAuthenticatedUserId = 100;   // also in scala  [8PWK1Q2W]
-const LowestNormalMemberId = 10;         // also in scala  [S7KPWG42]
+const LowestAuthenticatedUserId = 100;   // also in scala  [8PWK1Q2W] RENAMING to Pats.MinAuthnMemberId
+const LowestNormalMemberId = 10;         // also in scala  [S7KPWG42] RENAMING to Pats.MinNotSysMemberId?
 
 const MaxUsernameLength = 20;            // in scala [6AKBR20Q]
 

@@ -19,8 +19,11 @@ package com.debiki.core
 
 import com.debiki.core.ThreatLevel.{MildThreat, SevereThreat}
 
+trait HasInt32 {
+  def toInt: i32
+}
 
-sealed abstract class TrustLevel(val IntVal: Int) {
+sealed abstract class TrustLevel(val IntVal: Int) extends HasInt32 {
   def toInt: Int = IntVal
 
   def isBelow(other: TrustLevel): Bo =

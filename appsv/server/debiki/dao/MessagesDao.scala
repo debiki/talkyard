@@ -19,7 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.EdHttp.throwForbidden
+import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
 import talkyard.server.pubsub
 import debiki.{TextAndHtml, TitleSourceAndHtml}
 
@@ -57,6 +57,7 @@ trait MessagesDao {
 
     val (pagePath, notfs, sender) = writeTx { (tx, staleStuff) =>
       val sender = loadUserAndLevels(sentByWho, tx)
+      val toUsers = tx.loadParticipants(toUserIds)
 
       // 1) Don't let unpolite users start private-messaging other well behaved users.
       // But do let them talk with staff, e.g. ask "why am I not allowed to ...".
@@ -64,10 +65,15 @@ trait MessagesDao {
       // let them start sending PMs directly.
       if ((sender.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt ||
           sender.trustLevel.isStrangerOrNewMember) && !sender.isStaff) {
-        val toUsers = tx.loadParticipants(toUserIds)
         if (toUsers.exists(!_.isStaff))
           throwForbidden("EsE8GY2F4_", "You may send direct messages to staff only")
       }
+
+      TESTS_MISSING // [server_blocks_dms]
+      val mayNotMessage = toUsers.filter(!sender.user.mayMessage(_))
+      throwForbiddenIf(mayNotMessage.nonEmpty, "EsEMAY0MSG",
+            s"You cannot send direct messages to: ${
+            mayNotMessage.map(_.atUsernameOrFullName).mkString(", ")}")
 
       // This generates no review task — staff aren't asked to review and approve
       // direct messages; such messages can be semi private.

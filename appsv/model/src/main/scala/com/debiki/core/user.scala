@@ -680,6 +680,16 @@ sealed trait Pat {
   def canPromoteToBasicMember: Bo = false
   def canPromoteToFullMember: Bo = false
 
+  def mayMessage(pat: Pat): Bo = {
+    if (isStaffOrCoreMember) return true
+    pat match {
+      case other: Member =>
+        other.privPrefs.maySendMeDmsTrLv.forall(othersMinLevel =>
+          this.effectiveTrustLevel isAtLeast othersMinLevel)
+      case _ => false
+    }
+  }
+
   def mayMention(pat: Pat): Bo = {
     if (isStaffOrCoreMember) return true
     pat match {
@@ -698,6 +708,9 @@ sealed trait Pat {
   def anyUsername: Opt[St]
 
   def usernameOrGuestName: St
+
+  def atUsernameOrFullName: St =
+    anyUsername.map('@' + _) orElse anyName getOrElse UnknownUserName
 
   final def usernameSpaceOtherName: St =
     (anyUsername.getOrElse("") + " " + anyName.getOrElse("")).trim
@@ -1016,14 +1029,17 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {  RENAME // to Me
     */
   def uiPrefs: Option[JsObject]
 
-  def copyTrait(uiPrefs: Option[JsObject] = null): MemberInclDetails = {
+  def copyPrefs(uiPrefs: Opt[JsObject] = null, privPrefs: MemberPrivacyPrefs = null): MemberVb = {
     this match {
-      case g: Group =>
+      case g: GroupVb =>
         g.copy(
-          uiPrefs = if (uiPrefs ne null) uiPrefs else g.uiPrefs)
-      case u: UserInclDetails =>
+              uiPrefs = if (uiPrefs ne null) uiPrefs else g.uiPrefs,
+              privPrefs = if (privPrefs ne null) privPrefs else g.privPrefs,
+              )
+      case u: UserVb =>
         u.copy(
-          uiPrefs = if (uiPrefs ne null) uiPrefs else u.uiPrefs)
+              uiPrefs = if (uiPrefs ne null) uiPrefs else u.uiPrefs,
+              privPrefs = if (privPrefs ne null) privPrefs else u.privPrefs)
     }
   }
 }
@@ -1049,11 +1065,11 @@ case class UserInclDetails( // ok for export
   override val about: Option[String] = None,
   override val website: Option[String] = None,
   override val country: Option[String] = None,
-  privPrefs: MemberPrivacyPrefs = MemberPrivacyPrefs.empty,
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   mediumAvatar: Option[UploadRef] = None,
   uiPrefs: Option[JsObject] = None,
+  privPrefs: MemberPrivacyPrefs = MemberPrivacyPrefs.empty,
   isOwner: Boolean = false,
   isAdmin: Boolean = false,
   isModerator: Boolean = false,
@@ -1433,17 +1449,18 @@ case class GroupAndStats(group: Group, stats: Option[GroupStats])
   */
 case class Group( // [exp] missing: createdAt, add to MemberInclDetails & ParticipantInclDetails?
   id: UserId,
-  theUsername: String,
-  name: Option[String],
+  theUsername: Username,
+  name: Opt[St],
   extId: Opt[ExtId] = None,
   createdAt: When = When.Genesis, // for now
   // emailAddr: String  <— if adding later, don't forget to update this: [306KWUSSJ24]
-  tinyAvatar: Option[UploadRef] = None,
-  smallAvatar: Option[UploadRef] = None,
-  summaryEmailIntervalMins: Option[Int] = None,  // REFACTOR break out to EmailPrefs [REFACTORNOTFS] -----
-  summaryEmailIfActive: Option[Boolean] = None,  //
-  grantsTrustLevel: Option[TrustLevel] = None,
-  uiPrefs: Option[JsObject] = None,
+  tinyAvatar: Opt[UploadRef] = None,
+  smallAvatar: Opt[UploadRef] = None,
+  summaryEmailIntervalMins: Opt[i32] = None,  // REFACTOR break out to EmailPrefs [REFACTORNOTFS] -----
+  summaryEmailIfActive: Opt[Bo] = None,  //
+  grantsTrustLevel: Opt[TrustLevel] = None,
+  uiPrefs: Opt[JsObject] = None,
+  privPrefs: MemberPrivacyPrefs = MemberPrivacyPrefs.empty,
   perms: PatPerms = PatPerms.empty,
 )
   extends Member with MemberInclDetails {  // COULD split into two? One without, one with details
@@ -1501,9 +1518,6 @@ case class Group( // [exp] missing: createdAt, add to MemberInclDetails & Partic
       theUsername = preferences.username,
       summaryEmailIntervalMins = preferences.summaryEmailIntervalMins,
       summaryEmailIfActive = preferences.summaryEmailIfActive)
-
-  // For now
-  def privPrefs: MemberPrivacyPrefs = MemberPrivacyPrefs.empty
 
 }
 

@@ -82,8 +82,8 @@ export const UserPreferences = createFactory({
           );
 
     const isGuest = user_isGuest(user);
-    const isNormalMember = user.id >= LowestNormalMemberId;
-    const isBuiltInUser = user.id < LowestAuthenticatedUserId;
+    const isNormalMember = user.id >= Pats.MinNotSysMemberId;
+    const isBuiltInUser = user.id < Pats.MinAuthnMemberId;
     const isGuestOrBuiltIn = isGuest || isBuiltInUser;
     const isGroupGuestOrBuiltIn = user.isGroup || isGuestOrBuiltIn;
 
@@ -97,7 +97,7 @@ export const UserPreferences = createFactory({
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
               !isNormalMember ? null: LiNavLink({
                   to: prefsPathSlash + notfsPathSeg, className: 's_UP_Prf_Nav_NtfsL' }, t.Notifications),
-              isGroupGuestOrBuiltIn ? null : LiNavLink({
+              !isNormalMember ? null : LiNavLink({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
               isGroupGuestOrBuiltIn ? null : LiNavLink({
                   to: securityPath, className: 'e_UP_Prf_Nav_SecL' }, t.upp.Security),
@@ -773,6 +773,7 @@ const PrivacyPrefsTab = createFactory({
     const state: PrivacyPrefsTabState = this.state;
     const me: Me = props.store.me;
     const user: UserInclDetails = props.user;
+    const isSelf = user.id === me.id;
 
     // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
@@ -785,18 +786,19 @@ const PrivacyPrefsTab = createFactory({
 
     // Maybe most new members would mess up these settings? [can_config_what_priv_prefs]
     // Currently these settings have no effect, for groups. [inherit_group_priv_prefs]
-    const canConfigWhoMayMessage = !user.isGroup && pat_isBitAdv(user);
+    const canConfigWhoMayMessage = isSelf && pat_isBitAdv(me) || pat_isStaff(me);
     const you =
             user.isGroup ? "members of this group" : (    // I18N
             user.id === me.id ? "you" : "this user");
 
 
     return (
-      r.form({ role: 'form', onSubmit: this.savePrivacyPrefs },
+      r.form({ role: 'form', className: 'e_PrivPrefsF', onSubmit: this.savePrivacyPrefs },
 
         // If in the future, adding options for being a bit invisible and not receiving
         // messages from others — then, stop publishing presence here: [PRESPRIV].
 
+        user.isGroup ? null : rFr({},
         Input({ type: 'checkbox', className: 'e_HideActivityStrangersCB',
             label: rFragment({},
               t.upp.HideActivityStrangers_1, r.br(),
@@ -817,7 +819,7 @@ const PrivacyPrefsTab = createFactory({
               hideActivityForStrangers: event.target.checked || state.hideActivityForStrangers,
               hideActivityForAll: event.target.checked,
               savingStatus: null,
-            }) }),
+            }) })),
 
         // This is notf prefs, rather than privacy? Maybe should move
         // to tne notf prefs tab? Not important, let's wait.

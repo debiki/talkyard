@@ -7669,7 +7669,7 @@ export class TyE2eTestBrowser {
 
         switchToPrivacy: async () => {
           await this.waitAndClick('.e_UP_Prf_Nav_PrivL');
-          await this.waitForVisible('.e_HideActivityAllCB');
+          await this.waitForVisible('.e_PrivPrefsF');
         },
 
         // ---- Should be wrapped in `about { .. }`:

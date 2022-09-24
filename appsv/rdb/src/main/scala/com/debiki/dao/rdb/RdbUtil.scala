@@ -203,13 +203,21 @@ object RdbUtil {
       primary_email_addr,
       summary_email_interval_mins,
       summary_email_if_active,
+      about,
+      website,
       avatar_tiny_base_url,
       avatar_tiny_hash_path,
       avatar_small_base_url,
       avatar_small_hash_path,
       ui_prefs,
+      may_see_my_activity_tr_lv_c,
+      may_mention_me_tr_lv_c,
+      may_dir_msg_me_tr_lv_c,
+      why_may_not_mention_msg_me_html_c,
       max_upload_bytes_c,
-      allowed_upload_extensions_c
+      allowed_upload_extensions_c,
+      deactivated_at,
+      deleted_at
       """
 
 
@@ -314,6 +322,7 @@ object RdbUtil {
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
         uiPrefs = getOptJsObject(rs, "ui_prefs"),
+        privPrefs = getPrivPrefs(rs),
         perms = perms,
         summaryEmailIntervalMins = None,
         summaryEmailIfActive = None,
@@ -359,6 +368,7 @@ object RdbUtil {
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),
       smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path"),
       uiPrefs = getOptJsObject(rs, "ui_prefs"),
+      privPrefs = getPrivPrefs(rs),
       perms = perms,
       summaryEmailIntervalMins = getOptInt(rs, "summary_email_interval_mins"),
       summaryEmailIfActive = getOptBool(rs, "summary_email_if_active"),

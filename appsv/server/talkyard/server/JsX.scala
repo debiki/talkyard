@@ -264,14 +264,16 @@ object JsX {   RENAME // to JsonPaSe
       "websiteUrl" -> JsStringOrNull(user.website),
       "location" -> JsStringOrNull(user.country),
       "seeActivityMinTrustLevel" -> JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
-      "maySendMeDmsTrLv" -> JsNumberOrNull(user.privPrefs.maySendMeDmsTrLv.map(_.toInt)),
-      "mayMentionMeTrLv" -> JsNumberOrNull(user.privPrefs.mayMentionMeTrLv.map(_.toInt)),
       "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
       "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),  // REMOVE
       "suspendedTillMs" -> DateEpochOrNull(user.suspendedTill),  // RENAME
       "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
+
+    // Currently needs to be public, see [some_pub_priv_prefs].
+    userJson = userJson.anyNum("maySendMeDmsTrLv", user.privPrefs.maySendMeDmsTrLv)
+    userJson = userJson.anyNum("mayMentionMeTrLv", user.privPrefs.mayMentionMeTrLv)
 
     if (callerIsStaff_ || callerIsUserHerself) {
       val anyReviewer = user.reviewedById.flatMap(usersById.get)

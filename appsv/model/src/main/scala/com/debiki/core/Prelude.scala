@@ -957,6 +957,31 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     size
   } */
 
+
+  implicit class JsObjectHelpers(jOb: JsObject) {
+    def anyBo(fieldName: St, anyValue: Opt[Bo]): JsObject = {
+      val value: Bo = anyValue getOrElse {
+        return jOb
+      }
+      jOb + (fieldName -> JsBoolean(value))
+    }
+
+    def anyNum(fieldName: St, anyValue: Opt[HasInt32]): JsObject = {
+      val value: HasInt32 = anyValue getOrElse {
+        return jOb
+      }
+      jOb + (fieldName -> JsNumber(value.toInt))
+    }
+
+    def anySt(fieldName: St, anyValue: Opt[St]): JsObject = {
+      val value: St = anyValue getOrElse {
+        return jOb
+      }
+      jOb + (fieldName -> JsString(value))
+    }
+  }
+
+
   /**
    * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
    * and `dropRightWhile(Char => Boolean)` and `takeRightWhile`.

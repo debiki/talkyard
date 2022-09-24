@@ -4,14 +4,14 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 
-let allBrowsers: TyAllE2eTestBrowsers;
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
 let owen: Member;
 let owen_brA: TyE2eTestBrowser;
+let modya: Member;
 let maria: Member;
 let memah: Member;
 let memah_brB: TyE2eTestBrowser;
@@ -29,7 +29,7 @@ describe(`block-mentions.2br.d  TyTMAYMENTION`, () => {
     forum = builder.addTwoCatsForum({
       title: "Some E2E Test",
       categoryAExtId: 'cat_a_ext_id',
-      members: ['corax', 'memah', 'maria']
+      members: ['modya', 'corax', 'memah', 'maria']
     });
 
     // Disable review notifications, or notf email counts will be off.
@@ -45,17 +45,15 @@ describe(`block-mentions.2br.d  TyTMAYMENTION`, () => {
       wholeSite: true,
     }];
 
-    allBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
     brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owen_brA = brA;
-    corax = forum.members.corax;
-    corax_brA = brA;
 
+    modya = forum.members.modya;
     maria = forum.members.maria;
-    maria_brB = brB;
+
     memah = forum.members.memah;
     memah_brB = brB;
 
@@ -221,7 +219,7 @@ describe(`block-mentions.2br.d  TyTMAYMENTION`, () => {
     await owen_brA.userProfilePage.preferences.privacy.savePrivacySettings();
   });
 
-  it(`Maria mentions @staff again`, async () => {
+  it(`Memah mentions @staff again`, async () => {
     numEmailsTotal += 0;
     await memah_brB.complex.replyToOrigPost(
           `Ok, @staff — some important to say I have`);
@@ -232,9 +230,20 @@ describe(`block-mentions.2br.d  TyTMAYMENTION`, () => {
           `And @${maria.username} — hello lets try again`);
   });
 
+  it(`Maria gets @mention-notified`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, maria.emailAddress, "try again");
+  });
+  it(`... but no staff member`, async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(site.id);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  });
 
-  // TESTS_MISSING — the above, but with a custom @group,
-  // in addition to a built-in (above).
+
+
+  // ----- Group mentions: Custom groups
+
+  // TESTS_MISSING. the above, but with a custom @group, too? Construct a group &
+  // memberships when creating the site? So this test won't take so long to run.
 
 
 });

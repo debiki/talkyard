@@ -255,6 +255,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       //"createdAtEpoch" -> JsWhen(group.createdAt),
       "username" -> group.theUsername,
       "fullName" -> JsStringOrNull(group.name))
+
+    // These currently needs to be public, so others get to know if they cannot
+    // mention or message this user. [some_pub_priv_prefs]
+    val privPrefs = group.privPrefs
+    json = json.anyNum("maySendMeDmsTrLv", privPrefs.maySendMeDmsTrLv)
+    json = json.anyNum("mayMentionMeTrLv", privPrefs.mayMentionMeTrLv)
+    json = json.anyNum("seeActivityMinTrustLevel", privPrefs.seeActivityMinTrustLevel)
+
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
@@ -1462,6 +1470,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
+    COULD // load groups too, so it'll be simpler to e.g. mention @support.
+    // But this lists names on a page, but groups won't reply, so won't get listed. Hmm.
+    // Maybe if one has typed >= 3 chars matching any group's or user's username, then,
+    // show that group/user, also if hen hasn't replied on this page?
+    // Or maybe two lists: People on this page, and all others?
     val names = dao.listUsernames(
       pageId = pageId, prefix = prefix, caseSensitive = false, limit = 50)
 

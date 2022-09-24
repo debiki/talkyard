@@ -538,6 +538,9 @@ const enum BlockedReason {  // [auto_block]
 
 const enum Pats {
   MaxGuestId = -2,
+  NoPatId = 0,
+  MinNotSysMemberId = 10,
+  MinAuthnMemberId = 100,
 }
 
 

@@ -672,6 +672,7 @@ case class SitePatchParser(context: TyContext) {
         // RENAME to extId here and everywhere else ... Done, can soon remove 'orElse ...'.
         extId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
+        privPrefs = JsX.memberPrivacyPrefsFromJson(jsObj),
         tinyAvatar = None,   // [readlater] Option[UploadRef]  "avatarTinyHashPath"
         smallAvatar = None,  // [readlater] Option[UploadRef]
         summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
