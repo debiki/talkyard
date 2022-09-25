@@ -182,6 +182,18 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
 
     runUpdate("set constraints all deferred")
 
+    // This doesn't work for deleting tens of thousands of rows from huge tables —
+    // there are read timeouts.  Instead, can try:
+    //
+    // delete from some_table_t where ctid in (
+    //     select ctid
+    //     from some_table_t
+    //     where site_id_c = ?
+    //     order by some_col_c
+    //     limit 5000)
+    // See: https://stackoverflow.com/questions/5170546/
+    //         how-do-i-delete-a-fixed-number-of-rows-with-sorting-in-postgresql
+
     // Dupl code [7KUW0ZT2]
     val statements = (s"""
       delete from audit_log3 where site_id = ?
@@ -241,10 +253,28 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       statements.append("delete from hosts3 where site_id = ?")
     }
 
+    val numTablesToDelete = statements.length + (keepHostname ? -1 | +1)
+    System.out.println(s"Deleting site $siteId from $numTablesToDelete tables ...")
+
+    // These db updates can take ... how long?, for large sites.
+    setNetworkTimeoutSecs(60)
+
     var foundAnything = false
-    statements foreach { statement =>
-      val numRowsChanged = runUpdate(statement, List(siteId.asAnyRef))
+    try statements foreach { statement =>
+      // Relly big tables can cause SocketTimeoutException, maybe other errors as well?
+      System.out.println(s"Deleting site $siteId:  $statement")
+      val numRowsChanged =
+            try runUpdate(statement, List(siteId.asAnyRef))
+            catch {
+              case t: Throwable =>
+                System.err.println(s"Error deleting site $siteId, this failed: ${statement
+                      } because: ${t.getMessage}")
+                throw t
+            }
       foundAnything ||= numRowsChanged > 0
+    }
+    finally {
+      resetNetworkTimeout()
     }
 
     // Now all tables are empty, but there's still an entry for the site itself in sites3.
@@ -264,6 +294,9 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
               "delete from sites3 where id = ?", List(siteId.asAnyRef))
       }
     }
+
+    System.out.println(s"Done deleting site $siteId from ${numTablesToDelete
+          } tables (not yet committed)")
 
     runUpdate("set constraints all immediate")
     isSiteGone

@@ -668,8 +668,13 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
       COULD // handle errors, throw exception
       result
     } catch {
+      case ex: java.net.SocketTimeoutException =>
+        System.out.println(s"Database timeout: ${ex.getMessage.trim}  [TyEDBTIMEOUT]")
+        System.out.println(s"The network timeout was: ${conn2.getNetworkTimeout()
+              } — too little?")
+        throw ex
       case ex: js.SQLException =>
-        //warn("Database error [error DwE83ikrK9]: "+ ex.getMessage.trim) LOG
+        System.out.println(s"Database error: ${ex.getMessage.trim}  [TyEDBERR]")
         //warn("{}: {}", errmsg, ex.printStackTrace)
        throw ex
     } finally {

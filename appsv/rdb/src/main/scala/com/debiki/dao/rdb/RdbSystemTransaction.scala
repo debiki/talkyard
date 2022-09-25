@@ -58,6 +58,8 @@ class RdbSystemTransaction(
   // COULD move to new superclass?
   private var transactionEnded = false
 
+  private var _oldTimeoutMillis = -2
+
   def setTheOneAndOnlyConnection(connection: js.Connection) {
     require(_theOneAndOnlyConnection.isEmpty, "DwE7PKF2")
     _theOneAndOnlyConnection = Some(connection)
@@ -69,6 +71,27 @@ class RdbSystemTransaction(
           db.getConnection(readOnly, mustBeSerializable = true))
   }
 
+  def setNetworkTimeoutSecs(seconds: i32): U = {
+    if (seconds < 1)
+      throw new IllegalArgumentException("Network timeout must be at least 1 second")
+    if (_oldTimeoutMillis >= 0)
+      throw new IllegalArgumentException("Network timeout already changed, reset first")
+
+    val executorNotNeeded: java.util.concurrent.Executor = null
+    _oldTimeoutMillis = _theOneAndOnlyConnection.get.getNetworkTimeout
+    _theOneAndOnlyConnection.get.setNetworkTimeout(executorNotNeeded, seconds * 1000)
+  }
+
+  def resetNetworkTimeout(): U = {
+    val executorNotNeeded: java.util.concurrent.Executor = null
+    if (_oldTimeoutMillis == -2)
+      throw new IllegalStateException("Network timeout hasn't been changed, nothing to reset")
+    if (_oldTimeoutMillis == -1)
+      throw new IllegalStateException("Network timeout has already been reset")
+
+    _theOneAndOnlyConnection.get.setNetworkTimeout(executorNotNeeded, _oldTimeoutMillis)
+    _oldTimeoutMillis = -1
+  }
 
   // COULD move to new superclass?
   def commit() {

@@ -71,7 +71,8 @@ class SystemDao(
   // dao and site specific transactions — they do the database writes under mutex,
   // and so avoids any tx rollbacks.
   // Edit: Now instead we just write lock all sites instead.
-  def writeTxLockManySites[R](siteIds_ignored: Set[SiteId])(fn: SysTx => R): R = {
+  def writeTxLockManySites[R](siteIds_ignored: Set[SiteId], reuseTx: Opt[SysTx] = None)(
+        fn: SysTx => R): R = {
     // For now:
     writeTxLockAllSites(fn)
     // Earlier, but can cause rollbacks: (see comment above)
@@ -284,21 +285,32 @@ class SystemDao(
     val siteIdsToDelete = sitesToDeleteMaybeDupls.map(_.id).toSet
     logger.info(s"Deleting sites: $siteIdsToDelete")  ; AUDIT_LOG
 
-    globals.systemDao.writeTxLockManySites(siteIdsToDelete) { sysTx =>
-      deleteSites(siteIdsToDelete, sysTx, mayDeleteRealSite = false, keepHostname = false)
+    deleteSites(siteIdsToDelete, mayDeleteRealSite = false, keepHostname = false)
+  }
+
+
+  def deleteSites(siteIdsToDelete: Set[SiteId],
+        mayDeleteRealSite: Bo, keepHostname: Bo, sysTx: Opt[SysTx] = None): U = {
+    if (siteIdsToDelete.isEmpty) return
+    siteIdsToDelete foreach { siteId: SiteId =>
+      globals.withJobsPaused(upToSecs = 300) {
+        _deleteOneSite(siteId = siteId, mayDeleteRealSite = mayDeleteRealSite,
+              keepHostname = keepHostname, sysTx)
+      }
     }
   }
 
 
-  def deleteSites(siteIdsToDelete: Set[SiteId], sysTx: SysTx,
-        mayDeleteRealSite: Bo, keepHostname: Bo): U = {
+  private def _deleteOneSite(siteId: SiteId, mayDeleteRealSite: Bo, keepHostname: Bo,
+          anySysTx: Opt[SysTx]): U = {
 
     val deletedHostnames = mutable.Set[String]()
 
     // ----- Delete the site
 
-    siteIdsToDelete foreach { siteId: SiteId =>
+    val canonHostname: St = writeTxLockManySites(Set(siteId), reuseTx = anySysTx) { sysTx =>
       val site = sysTx.loadSite(siteId)
+      val canonHostname = site.flatMap(_.canonicalHostnameStr) getOrElse "unknown-host"
       deletedHostnames ++= site.map(_.hostnames.map(_.hostname)) getOrElse Nil
 
       val gotDeleted =
@@ -306,11 +318,18 @@ class SystemDao(
                 keepHostname = keepHostname)
 
       dieIf(!gotDeleted,
-        "TyE2ABK493U4", o"""Could not delete site $siteId, this site: $site
-          — another thread or server deleted it already? A race condition?""")
+            "TyE2ABK493U4", o"""Could not delete site $siteId ($canonHostname), this site:
+                $site — another thread or server deleted it already? A race condition?""")
+      canonHostname
     }
 
+    logger.info(s"Deleting site $siteId ($canonHostname): Done.  Now clearing caches")  ; AUDIT_LOG
+
     // ----- Clear caches
+
+    // We might still be in a tx, see: [clear_cache_outside_sys_tx],
+    COULD // use StaleStuff to clear the caches after the tx instead. But not important
+    // currently, only affects tests?
 
     deletedHostnames.toSet foreach this.forgetHostname
 
@@ -324,22 +343,22 @@ class SystemDao(
     // If there is still stuff in the Redis cache, for any of the now deleted sites,
     // that could make weird things happen, when site ids get reused — e.g. in
     // tests or when restoring a backup. (2PKF05Y)
-    siteIdsToDelete foreach { siteId =>
-      val redisCache = new RedisCache(siteId, globals.redisClient, globals.now)
-      redisCache.clearThisSite()
-    }
+    val redisCache = new RedisCache(siteId, globals.redisClient, globals.now)
+    redisCache.clearThisSite()
 
-    logger.info(s"Done deleting sites: $siteIdsToDelete")  ; AUDIT_LOG
+    logger.info(s"Deleted site $siteId ($canonHostname): Done clearing caches")  ; AUDIT_LOG
 
     // ----- Cancel any background jobs
 
-    val testSiteIds = siteIdsToDelete.filter(_ <= MaxTestSiteId)
-    if (testSiteIds.nonEmpty)
+    if (siteId <= MaxTestSiteId) {
       globals.endToEndTestMailer.tell(
-        ForgetEndToEndTestEmails(testSiteIds), Actor.noSender)
+            ForgetEndToEndTestEmails(Set(siteId)), Actor.noSender)
+    }
 
     globals.spamCheckActor.foreach(_.tell(
-      ClearCheckingSpamNowCache(siteIdsToDelete), Actor.noSender))
+          ClearCheckingSpamNowCache(Set(siteId)), Actor.noSender))
+
+    logger.info(s"Deleted site $siteId ($canonHostname): Done cancelling jobs")  ; AUDIT_LOG
   }
 
 
@@ -744,9 +763,7 @@ class SystemDao(
       else {
         logger.info(s"Purging deleted site: ${site.toLogSt}")
         val siteIdSet = Set(site.id)
-        writeTxLockManySites(siteIdSet) { sysTx =>
-          deleteSites(siteIdSet, sysTx, mayDeleteRealSite = true, keepHostname = true)
-        }
+        deleteSites(siteIdSet, mayDeleteRealSite = true, keepHostname = true)
       }
     }
   }

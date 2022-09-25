@@ -360,6 +360,17 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     _pauseJobsTil = Some(JobsPaused(til = tilWhen, paused = pause))
   }
 
+  def withJobsPaused(upToSecs: i32)(block: => U): U = {
+    val before = _pauseJobsTil
+    pauseJobs(seconds = upToSecs, pause = true)
+    try {
+      block
+    }
+    finally {
+      _pauseJobsTil = before
+    }
+  }
+
 
   def spamChecker: SpamChecker = state.spamChecker
 

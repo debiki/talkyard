@@ -1208,10 +1208,10 @@ case class SitePatcher(globals: debiki.Globals) {
       // It's good to delete the old site and create the new one, in the same
       // transaction — so we won't be left without any site at all, if something
       // errors out when creating the new site (e.g. Postgres serialization errors).
-      globals.systemDao.deleteSites(siteIdToOverwrite, sysTx,
+      globals.systemDao.deleteSites(siteIdToOverwrite,
             // CLEAN_UP isn't this always true, in Prod? Then just use 'true' instead?
             mayDeleteRealSite = !isTest && !siteData.isTestSiteOkDelete,
-            keepHostname = false)
+            keepHostname = false, Some(sysTx))
 
       // Keep the hostname of the site we're overwriting. Otherwise, once we've imported
       // the new site, and the hostname changes to whatever is in the dump — then,
@@ -1469,6 +1469,8 @@ case class SitePatcher(globals: debiki.Globals) {
 
       theNewSite
     }
+
+    COULD // Use StaleStuff, clear caches? [clear_cache_outside_sys_tx]
 
     // If we restored a site, then there're already things in the mem cache and Redis cache,
     // for the site we're overwriting when restoring. Remove any such stuff — or Talkyard

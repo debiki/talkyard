@@ -21,7 +21,8 @@ package debiki
 object DatabaseUtils {
 
   def isConnectionClosed(exception: java.sql.SQLException) =
-    exception.getMessage.endsWith("has been closed.")
+    exception.getMessage.endsWith("has been closed.") ||
+        exception.getMessage.contains("Connection is closed")
 
   def isConnectionClosedBecauseTestsDone(exception: java.sql.SQLException, globals: Globals) =
     isConnectionClosed(exception) && globals.testsDoneServerGone
