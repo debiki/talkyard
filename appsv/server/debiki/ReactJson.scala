@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao._
-import talkyard.server.authz.{Authz, ForumAuthzContext}
+import talkyard.server.authz.{Authz, ForumAuthzContext, AuthzCtxOnAllWithReqer}
 import talkyard.server.http._
 import talkyard.server.security.{SidStatus, SidOk}
 import java.{lang => jl, util => ju}
@@ -804,7 +804,8 @@ class JsonMaker(dao: SiteDao) {
     val permissions = pageRequest.authzContext.tooManyPermissions
     val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()
 
-    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(requester.id)
+    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(dao.getAuthzCtxWithReqer(requester))
+
     if (pageRequest.pageExists) {
       // (See comment above about ought-to-rename this whole function / stuff.)
       RACE // if the user opens a page, and someone adds her to a chat at the same time.
@@ -840,14 +841,14 @@ class JsonMaker(dao: SiteDao) {
 
 
   def userNoPageToJson(request: DebikiRequest[_]): Opt[MeAndStuff] = Some {
-    import request.authzContext
     require(request.dao == dao, "TyE4JK5WS2")
-    val requester = request.user getOrElse {
+    val authzContext: AuthzCtxOnAllWithReqer = request.authzCtxOnAllWithReqer getOrElse {
       return None
     }
+    val requester = authzContext.theReqer
     val permissions = authzContext.tooManyPermissions
     val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()
-    val watchbar = dao.getOrCreateWatchbar(requester.id)
+    val watchbar = dao.getOrCreateWatchbar(authzContext)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val myGroupsEveryoneLast: Seq[Group] =
       request.authzContext.groupIdsEveryoneLast map dao.getTheGroup

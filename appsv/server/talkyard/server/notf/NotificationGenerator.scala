@@ -54,7 +54,7 @@ case class NotificationGenerator(
   tx: SiteTransaction,
   dao: debiki.dao.SiteDao,
   nashorn: Nashorn,
-  config: debiki.Config) {
+  config: debiki.Config) extends talkyard.server.TyLogging {
 
   dieIf(Globals.isDevOrTest && tx.siteId != dao.siteId, "TyE603RSKHAN3")
 
@@ -82,6 +82,7 @@ case class NotificationGenerator(
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
+  override def anySiteId = Some(tx.siteId)
   private lazy val site: SiteIdHostnames = dao.theSite()
 
   def generatedNotifications: Notifications =
@@ -239,14 +240,14 @@ case class NotificationGenerator(
     maybeGenReplyNotf(NotificationType.IndirectReply, ancestorsParentFirst drop 1)
 
     // People watching this topic or category
-    genWatchingSomethingNotfs(page, newPost, pageMemberIds)
+    genWatchingSomethingNotfs(page, newPost, pageMemberIds, sentFrom = author)
 
     generatedNotifications
   }
 
 
   private def genWatchingSomethingNotfs(page: Page, newPost: Post,
-          pageMemberIds: Set[UserId]): U = {
+          pageMemberIds: Set[UserId], sentFrom: Pat): U = {
 
     val isEmbDiscFirstReply =
           page.pageType == PageType.EmbeddedComments &&
@@ -398,7 +399,8 @@ case class NotificationGenerator(
 
     makeNewPostSubscrNotfFor(
           allPrefsOnPage, newPost, isEmbDiscFirstReply, minNotfLevel,
-          memberIdsHandled, wantSilencePatIds)
+          memberIdsHandled, wantSilencePatIds,
+          sentFrom = sentFrom)
 
     // If private page, skip cat & whole site notf prefs
     // — only page members and people (like moderators) who explicitly follow
@@ -416,7 +418,8 @@ case class NotificationGenerator(
             addWhy(notfPrefsOnCategory,
                   s"You're subscribed to category '${ancCat.name}'"),
             newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled,
-            wantSilencePatIds)
+            wantSilencePatIds,
+            sentFrom = sentFrom)
     }
 
     // ----- Tags
@@ -435,7 +438,8 @@ case class NotificationGenerator(
     makeNewPostSubscrNotfFor(
           addWhy(notfPrefsOnSite, "You've subscribed to the whole site"),
           newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled,
-          wantSilencePatIds)
+          wantSilencePatIds,
+          sentFrom = sentFrom)
   }
 
 
@@ -448,7 +452,7 @@ case class NotificationGenerator(
   }*/
 
 
-  /** Private messages are sent to all toUserIds, but not to any user mentioned in the
+  /** Direct messages are sent to all toUserIds, but not to any user mentioned in the
     * message.
     */
   def generateForMessage(sender: Participant, pageBody: Post, toUserIds: Set[UserId])
@@ -457,8 +461,9 @@ case class NotificationGenerator(
     anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
     tx.loadParticipants(toUserIds.filter(_ != sender.id)) foreach { user =>
       makeAboutPostNotfs(
-          // But what if is 2 ppl chat — then would want to incl 1st message instead.
-          NotificationType.Message, pageBody, inCategoryId = None, user)
+          // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
+          // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
+          NotificationType.Message, pageBody, inCategoryId = None, sendTo = user)
     }
     generatedNotifications
   }
@@ -488,6 +493,7 @@ case class NotificationGenerator(
     }
 
     val isMention = notfType == NotificationType.Mention
+    val isDirMsg = notfType == NotificationType.Message
 
     // [filter_mentions] Could be better to do this when saving a post, so that the author
     // will know for sure that the people hen could mention when composing the post,
@@ -495,6 +501,13 @@ case class NotificationGenerator(
     // priv prefs before the post gets approved, then, the mention might get removed here.
     if (isMention && !author.mayMention(toUserMaybeGroup))
       return
+
+    // [filter_dms]
+    if (isDirMsg && !author.mayMessage(toUserMaybeGroup)) {
+      bugWarn("TyEBADMSG39546", s"Message sent although wasn't allowed to? From: ${
+            author.id}, to: ${toUserMaybeGroup.id}.")
+      return
+    }
 
     // Access control.
     // Sync w [2069RSK25]. Test: [2069RSK25-A]
@@ -572,6 +585,7 @@ case class NotificationGenerator(
       // — but maybe only via the group, might not want to get mentioned individually.
       // Later, this could be a per user and group setting. [inherit_group_priv_prefs])
       if !isMention || author.mayMention(toPat) // [filter_mentions] here too
+      if !isDirMsg || author.mayMessage(toPat)  // [filter_dms]
     } {
       // Generate notifications, regardless of email settings, so shown in the user's inbox.
       // We won't send any *email* though, if the user has unsubscribed from such emails.
@@ -611,7 +625,8 @@ case class NotificationGenerator(
   private def makeNewPostSubscrNotfFor(
         notfPrefs: Seq[PageNotfPrefAndWhy], newPost: Post,
         isEmbDiscFirstReply: Bo, minNotfLevel: NotfLevel,
-        memberIdsHandled: MutSet[PatId], wantSilencePatIds: MutSet[PatId]): U = {
+        memberIdsHandled: MutSet[PatId], wantSilencePatIds: MutSet[PatId],
+        sentFrom: Pat): U = {
 
     val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
@@ -654,7 +669,21 @@ case class NotificationGenerator(
       groupMaySee = maySeePost(group)
       if groupMaySee  // or ...
       groupMembers = tx.loadGroupMembers(group.id)
+
+      // Skip unwanted DMs. [filter_dms] If this is a DM sent to a group, some
+      // group members might not want DM:s from this sender — for example, an admin
+      // who is short of time, and wants hents other co-workers to answer questions
+      // from new members sent to @staff,
+      // However, in some cases one might want to get notified via a group but not
+      // directly — e.g. if one is in a @support group, but don't want to be messaged
+      // about support privately (only via the group). This can be a group membership
+      // setting. [inherit_group_priv_prefs]
       member <- groupMembers
+      isDirMsg = pageMeta.pageType.isPrivateGroupTalk
+      if !isDirMsg || sentFrom.mayMessage(member)
+      // Later, maybe:  sentFrom.mayMessage(member, viaGroup = group)
+      // and then the member's group membership settings matter too.
+
       // ... or what if a group has enabled site wide notfs, and cannot see category C,
       // but user U is in that group *can* see C (because of other group hen is in)
       // — then, should U get notified about topics in C or not?

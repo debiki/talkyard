@@ -325,7 +325,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
           request =>
     import request.{dao, theRequesterId}
     val pageId = (request.body \ "removePageIdFromRecent").as[PageId]
-    val anyChangedWatchbar = dao.removeFromWatchbarRecent(Set(pageId), theRequesterId)
+    val anyChangedWatchbar = dao.removeFromWatchbarRecent(Set(pageId), request.authzCtxWithReqer)
     replyWithWatchbar(anyChangedWatchbar, dao)
   }
 

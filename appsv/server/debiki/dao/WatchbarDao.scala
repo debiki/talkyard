@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import talkyard.server.authz.AuthzCtxWithReqer
 
 
 /** Returns an empty watchbar. Only the CachingWatchbarDao does something useful.
@@ -55,16 +56,18 @@ trait WatchbarDao {
   }
 
 
-  def getOrCreateWatchbar(userId: UserId): BareWatchbar = {
+  def getOrCreateWatchbar(authzCtx: AuthzCtxWithReqer): BareWatchbar = {
     // Hmm, double caching? Mem + Redis. This doesn't make sense? Let's keep it like this for
     // a while and see what'll happen. At least it's fast. And lasts across Play app restarts.
+    val userId = authzCtx.theReqer.id
     memCache.lookup[BareWatchbar](
       key(userId),
       orCacheAndReturn = redisCache.loadWatchbar(userId) orElse Some({
         readOnlyTransaction { transaction =>
           val chatChannelIds = transaction.loadPageIdsUserIsMemberOf(
-            userId, Set(PageType.OpenChat, PageType.PrivateChat))
-          val directMessageIds = transaction.loadPageIdsUserIsMemberOf(userId, Set(PageType.FormalMessage))
+                authzCtx.groupIdsUserIdFirst, Set(PageType.OpenChat, PageType.PrivateChat))
+          val directMessageIds = transaction.loadPageIdsUserIsMemberOf(
+                authzCtx.groupIdsUserIdFirst, Set(PageType.FormalMessage))
           BareWatchbar.withChatChannelAndDirectMessageIds(chatChannelIds, directMessageIds)
         }
       }),
@@ -83,10 +86,11 @@ trait WatchbarDao {
   }
 
 
-  def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId): Unit = {
-    val watchbar = getOrCreateWatchbar(userId)
+  def markPageAsUnreadInWatchbar(user: User, pageId: PageId): U = {
+    val authzCtx = getAuthzCtxWithReqer(user)
+    val watchbar = getOrCreateWatchbar(authzCtx)
     val newWatchbar = watchbar.markPageAsUnread(pageId)
-    saveWatchbar(userId, newWatchbar)
+    saveWatchbar(user.id, newWatchbar)
   }
 
 

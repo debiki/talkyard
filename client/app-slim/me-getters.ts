@@ -84,8 +84,8 @@ export function store_maySendDirectMessageTo(store: Store, user: PatVb): Bo {
   if (me.id === user.id)
     return false;
 
-  if (user.isGroup) // group messages not yet impl
-    return false;
+  //if (user.isGroup) // group messages not yet impl
+  //  return false;
 
   const myTrustLevel = user_trustLevel(me);
 

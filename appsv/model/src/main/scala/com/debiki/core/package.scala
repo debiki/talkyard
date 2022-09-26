@@ -68,6 +68,15 @@ package object core {
   type ErrCode = String
   type ErrMsg = ErrorMessage // = String
 
+  def dashErr(errCode: ErrCode): St = {
+    if (errCode.isEmpty) ""
+    else "-" + errCode
+  }
+
+  def dash(errCode: ErrCode): St = {
+    if (errCode.isEmpty) ""
+    else "-" + errCode
+  }
   type Opt[+A] = Option[A]
   val Opt: Option.type = Option
 

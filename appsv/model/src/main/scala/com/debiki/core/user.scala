@@ -726,10 +726,12 @@ sealed trait Pat {
   final def nameHashId: St =
     anyUsername.map(un => s"@$un #$id") getOrElse s"'$usernameOrGuestName' #$id"
 
-  final def toMemberOrThrow: Member = {
+  final def toMemberOrThrow: Member = toMemberOrThrowCode("")
+
+  final def toMemberOrThrowCode(errCode: ErrCode): Member = {
     this match {
       case m: UserBase => m
-      case g: Guest => throw GotAGuestException(g.id)
+      case g: Guest => throw GotAGuestException(g.id, errCode)
       case g: Group => g
       case UnknownParticipant => throw GotUnknownUserException
     }

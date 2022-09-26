@@ -187,7 +187,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   // Returns recently active pages first.
   def loadPagePostNrsByPostIds(postIds: Iterable[PostId]): Map[PostId, PagePostNr]
   def loadPageIdsWithVisiblePostsBy(patIds: Set[PatId], limit: i32): Set[PageId]
-  def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageType]): immutable.Seq[PageId]
+  def loadPageIdsUserIsMemberOf(userAndGroupIds: Seq[MemId], onlyPageRoles: Set[PageType]): ImmSeq[PageId]
   def loadReadProgress(userId: UserId, pageId: PageId): Option[PageReadingProgress]
   def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)
         : (Option[PageReadingProgress], Boolean)
@@ -629,7 +629,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadOwner(): Option[UserInclDetails]
 
-  def loadGroupMembers(groupId: UserId): Vector[Participant]
+  def loadGroupMembers(groupId: GroupId): Vec[Member]
   def loadGroupParticipantsAllCustomGroups(): Vector[GroupParticipant]
   /** Returns the ids of the members that got added (i.e. who were not already members). */
   def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]): Set[UserId]
@@ -787,9 +787,10 @@ case class GotAGroupException(groupId: UserId) extends Exception(
 case class GotANotGroupException(groupId: UserId) extends Exception(
   s"Got a not-group when trying to load group $groupId [EdE4GW1WA9]")
 
-case class GotAGuestException(groupId: UserId) extends Exception(
-  s"Got a guest when trying to load member $groupId [EdE4GAR0W1]")
+case class GotAGuestException(groupId: UserId, errCode: St = "") extends Exception(
+  s"Got a guest when trying to load member $groupId [TyEGOTGST${dashErr(errCode)}]")
 
+// COULD incl errCode
 case object GotUnknownUserException extends Exception
 
 case class UserNotFoundException(userId: UserId) extends QuickMessageException(

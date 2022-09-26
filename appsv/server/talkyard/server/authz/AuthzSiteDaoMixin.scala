@@ -51,6 +51,12 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  def getAuthzCtxWithReqer(reqer: Pat): AuthzCtxWithReqer = {
+    val groupIds = getGroupIdsOwnFirst(Some(reqer))
+    AuthzCtxWithReqerImpl(reqer, groupIds)
+  }
+
+
   RENAME // to  ... getPublicAuthzCtxOnAll maybe?
   def getForumPublicAuthzContext(): ForumAuthzContext = {
     getForumAuthzContext(None)
@@ -61,6 +67,16 @@ trait AuthzSiteDaoMixin {
     val groupIds = getGroupIdsOwnFirst(pat)
     val permissions = getPermsForPeople(groupIds)
     AuthzCtxOnForum(pat, groupIds, permissions)
+  }
+
+
+  def getAuthCtxOnAllWithReqer(anyMember: Opt[Pat]): Opt[AuthzCtxOnAllWithReqer] = Some {
+    val pat = anyMember getOrElse {
+      return None
+    }
+    val groupIds = getGroupIdsOwnFirst(Some(pat))
+    val permissions = getPermsForPeople(groupIds)
+    AuthzCtxOnAllWithReqer(pat, groupIds, permissions)
   }
 
 

@@ -154,7 +154,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def loadGroupMembers(groupId: UserId): Vector[Participant] = {
+  def loadGroupMembers(groupId: UserId): Vector[Member] = {
     // In e2e test: TyT4AWJL208R
     groupId match {
       case Group.AdminsId =>
@@ -179,9 +179,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
 
   private def loadMembersOfBuiltInGroup(
-        adminsOnly: Boolean = false, modsOnly: Boolean = false, staffOnly: Boolean = false,
-        everyone: Boolean = false,
-        builtInGroup: Option[UserId] = None): Vector[Participant] = {
+        adminsOnly: Bo = false, modsOnly: Bo = false, staffOnly: Bo = false,
+        everyone: Bo = false,
+        builtInGroup: Opt[GroupId] = None): Vec[Member] = {
 
     import Group.{AdminsId, ModeratorsId => ModsId}
 
@@ -221,14 +221,12 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         and ($conditions)"""
 
     runQueryFindMany(query, values.toList, rs => {
-      val user = getParticipant(rs)
-      dieIf(user.isGuest, "TyE5ABK20A2")
-      user
+      getParticipant(rs).toMemberOrThrowCode("TyE5ABK20A2")
     })
   }
 
 
-  private def loadMembersOfCustomGroup(groupId: UserId): Vector[Participant] = {
+  private def loadMembersOfCustomGroup(groupId: GroupId): Vector[Member] = {
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef, groupId.asAnyRef)
 
     val query = s"""
@@ -243,9 +241,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       """
 
     runQueryFindMany(query, values.toList, rs => {
-      val user = getParticipant(rs)
-      dieIf(user.isGuest, "TyE603KRJL")
-      user
+      getParticipant(rs).toMemberOrThrowCode("TyE603KRJL")
     })
   }
 

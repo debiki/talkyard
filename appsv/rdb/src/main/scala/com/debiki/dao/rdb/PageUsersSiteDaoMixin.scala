@@ -136,8 +136,9 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageType])
+  override def loadPageIdsUserIsMemberOf(userAndGroupIds: Seq[MemId], onlyPageRoles: Set[PageType])
         : immutable.Seq[PageId] = {
+    if (userAndGroupIds.isEmpty) return Nil
     require(onlyPageRoles.nonEmpty, "EsE4G8U1")
     // Inline the page roles (rather than (?, ?, ?, ...)) because they'll always be the same
     // for each caller (hardcoded somewhere).
@@ -147,10 +148,10 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
       from page_users3 tu inner join pages3 p
         on tu.site_id = p.site_id and tu.page_id = p.page_id and p.page_role in (
             ${ onlyPageRoles.map(_.toInt).mkString(",") })
-      where tu.site_id = ? and tu.user_id = ?
+      where tu.site_id = ? and tu.user_id in (${ makeInListFor(userAndGroupIds) })
       order by p.last_reply_at desc
       """
-    runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef), rs => {
+    runQueryFindMany(query, siteId.asAnyRef :: userAndGroupIds.map(_.asAnyRef).toList, rs => {
       rs.getString("page_id")
     })
   }

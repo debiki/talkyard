@@ -31,7 +31,7 @@ import scala.collection.mutable.ArrayBuffer
 import talkyard.server._
 import talkyard.server.dao.StaleStuff
 import talkyard.server.authn.{Join, Leave, JoinOrLeave, StayIfMaySee}
-import talkyard.server.authz.AuthzCtxOnPats
+import talkyard.server.authz.{AuthzCtxOnPats, AuthzCtxWithReqer}
 
 
 case class LoginNotFoundException(siteId: SiteId, userId: UserId)
@@ -1473,8 +1473,8 @@ trait UserDao {
     // a page henself, and another member adds hen to the page,
     // or another page, at the same time. Then, possibly the lost update bug
     // — harmless, just the watchbar.
-
-    val oldWatchbar = getOrCreateWatchbar(pat.id)
+    val authzCtx = getAuthzCtxWithReqer(pat.toMemberOrThrow)
+    val oldWatchbar = getOrCreateWatchbar(authzCtx)
     var newWatchbar = oldWatchbar
     for (page: PageMeta <- pages) {
       val (maySee, _) = maySeePage(page, Some(pat), cacheOrTx)
@@ -1502,15 +1502,15 @@ trait UserDao {
   }
 
 
-  def removeFromWatchbarRecent(pageIds: Iterable[PageId], requesterId: PatId)
+  def removeFromWatchbarRecent(pageIds: Iterable[PageId], authzCtx: AuthzCtxWithReqer)
           : Opt[BareWatchbar] = {
     TESTS_MISSING
-    val oldWatchbar = getOrCreateWatchbar(requesterId)
+    val oldWatchbar = getOrCreateWatchbar(authzCtx)
     var newWatchbar = oldWatchbar
     for (pageId <- pageIds) {
       newWatchbar = newWatchbar.removeFromRecent(pageId)
     }
-    saveWatchbarPublPresence(oldWatchbar, newWatchbar = newWatchbar, requesterId)
+    saveWatchbarPublPresence(oldWatchbar, newWatchbar = newWatchbar, authzCtx.theReqer.id)
   }
 
 
