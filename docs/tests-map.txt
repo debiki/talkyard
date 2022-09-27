@@ -852,7 +852,7 @@ direct messages:
   not searchable by the wrong people:
             - api-search-full-text.test.ts  TyT5027KRUTP
   may direct-message me trust level:
-            - may-mention.2br.d  TyTMAYMENTION
+            - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
 
 chat:
   create channel:  chat.2browsers.test.ts  (4FE2)
