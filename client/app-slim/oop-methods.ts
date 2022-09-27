@@ -641,6 +641,21 @@ export function me_uiPrefs(me: Myself): UiPrefs {
 }
 
 
+function me_isPageMember(me: Me, page: Page): Bo {
+  if (page.pageMemberIds.indexOf(me.id) >= 0)
+    return true;
+
+  // Has any group one is in, been added to the page?
+  for (let i = 0; i < me.myGroupIds.length; ++i) {
+    const groupId = me.myGroupIds[i];
+    if (page.pageMemberIds.indexOf(groupId) >= 0)
+      return true;
+  }
+
+  return false;
+}
+
+
 // Groups
 //----------------------------------
 
@@ -903,14 +918,21 @@ export function store_mayIReply(store: Store, post: Post): boolean {
   const ancestorCategories: Ancestor[] = page.ancestorsRootFirst;
   const me = store.me;
 
+  if (me.isAdmin)
+    return true;
+
   // Later: [8PA2WFM] Perhaps let staff reply, although not approved. So staff can say
   // "If you please remove <sth that violates the site guidelines>, I'll approve the comment".
   // Or "I won't approve this comment. It's off-topic because ...".
   if (post_isDeletedOrCollapsed(post) || !post.isApproved)
     return false;
 
-  if (page.pageMemberIds.indexOf(me.id) >= 0)
+  // ----- Page member?
+
+  if (me_isPageMember(me, page))
     may = true;
+
+  // ----- Whole site perms?
 
   me.permsOnPages.forEach((p: PermsOnPage) => {
     if (p.onWholeSite) {
@@ -919,6 +941,8 @@ export function store_mayIReply(store: Store, post: Post): boolean {
       }
     }
   });
+
+  // ----- Category perms?
 
   // Here we loop through the cats in the correct order though, [0GMK2WAL].
   for (let i = 0; i < ancestorCategories.length; ++i) {
@@ -951,8 +975,11 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   if (post_isDeletedOrCollapsed(post))
     return false;
 
-  const page: Page = store.currentPage;
   const me = store.me;
+  if (me.isAdmin)
+    return true;
+
+  const page: Page = store.currentPage;
   const isMindMap = page.pageRole === PageRole.MindMap;
   const isWiki = post_isWiki(post);
   const isOwnPage = store_thisIsMyPage(store);
@@ -970,7 +997,7 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 
   // Direct messages aren't placed in any category and thus aren't affected by permissions.
   // Need this extra 'if':
-  if (page.pageMemberIds.indexOf(me.id) >= 0 && isOwn)
+  if (me_isPageMember(me, page) && isOwn)
     may = true;
 
   // Least specific: Whole site permissions. Can be overridden per category and

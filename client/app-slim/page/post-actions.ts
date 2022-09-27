@@ -298,7 +298,7 @@ export const PostActions = createComponent({
     const replyingToClass = store_isReplyingTo(store, post)  ? ' s_PA_B-Active' : '';
     const disabledClass = isEditorOpenAlready ? ' s_PA_B-Disabled' : '';
 
-    const replyButton = !store_mayIReply(store, post) ? null :
+    const replyButton = !store_mayIReply(store, post) ? null :   // nnn
           r.a({ className: 'dw-a dw-a-reply ' + makeReplyBtnIcon(store)
                 + disabledClass + replyingToClass,
               // Highlight the post this Reply button replies to.
