@@ -286,21 +286,38 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
         staleStuff.clearStaleStuffInMemory(newSiteDao)
 
         if (!isTestSiteOkayToDelete) {
+          // Let's group "New site created" in email threads with 25 sites in each?
+          // Thereafter, a new thread. So won't be so many emails, and also, not
+          // too long threads or too long References headers.
+          def makeMsgId(siteId: SiteId): St = s"new-site-$siteId@${globals.baseDomainNoPort}"
+          val refStart = (newSite.id % 25) * 25  // a multiple of 25
+          val refEnd = newSite.id - 1
+          val thisSmtpId = makeMsgId(newSite.id)
+          val (inReplyToSmtpMsgId: Opt[SmtpMsgId], referencesSmtpMsgIds: ImmSeq[SmtpMsgId]) =
+                if (refEnd < refStart) (None, Nil)  // new email thread
+                else (Some(makeMsgId(refEnd)),      // continue old thread
+                      (refStart to refEnd).map(n => makeMsgId(newSite.id - n)))
+
           val now = globals.now()
           globals.config.superAdmin.emailAddresses foreach { superAdminEmailAddress =>
             val email = Email.newWithId(
-              Email.generateRandomId(),
-              EmailType.SiteCreatedSuperAdminNotf,
-              createdAt = now,
-              sendTo = superAdminEmailAddress,
-              toUserId = None,
-              subject = s"[Talkyard] New site created",
-              bodyHtmlText = i"""
-                |newSiteOrigin: ${ Encode.forHtmlContent(newSiteOrigin) }<br>
-                |embeddingUrl: ${ anyEmbeddingSiteAddress map Encode.forHtmlContent }<br>
-                |organizationName: ${ Encode.forHtmlContent(organizationName) }<br>
-                |createdAt: ${ toIso8601T(now.toJavaDate) }<br>
-                |""")
+                  Email.generateRandomId(),
+                  EmailType.SiteCreatedSuperAdminNotf,
+                  createdAt = now,
+                  sendTo = superAdminEmailAddress,
+                  toUserId = None,
+                  subject = s"[Talkyard] Sites created, ids $refStart ...",
+                  bodyHtmlText = i"""
+                    |newSiteOrigin: ${ Encode.forHtmlContent(newSiteOrigin) }<br>
+                    |id, pub id: ${newSite.id}, ${newSite.pubId}<br>
+                    |embeddingUrl: ${ anyEmbeddingSiteAddress map Encode.forHtmlContent }<br>
+                    |organizationName: ${ Encode.forHtmlContent(organizationName) }<br>
+                    |createdAt: ${ toIso8601T(now.toJavaDate) }<br>
+                    |""",
+                  smtpMsgId = Some(thisSmtpId),
+                  inReplyToSmtpMsgId = inReplyToSmtpMsgId,
+                  referencesSmtpMsgIds = referencesSmtpMsgIds,
+                  )
             globals.sendEmail(email, request.siteId)
           }
         }
