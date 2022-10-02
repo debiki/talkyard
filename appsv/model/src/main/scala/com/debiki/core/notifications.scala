@@ -136,19 +136,38 @@ object Notification {
   /** A notification about a post. Could be a reply to you, a @mention of you,
     * or a new post in a topic you're watching,
     * or a post of yours got Like voted or tagged.
+    *
+    * @param id  SITE_PRIVACY  [avoid_glob_seq_nrs]: Change to a *per user* sequential notf nr?
+    *   So no one can estimate community size & activity by looking at a site global seq nr.
+    *   Also, seems nice to get notf nr 1, 2, 3, 4 to oneself?
+    *   Or maybe use createdAt millis or a rand nr?  Because if using a seq nr, and forwarding
+    *   a notf email to someone, then that person could look at the seq nr and guesstimate
+    *   one's activity in the community.
+    * @param smtpMsgIdPrefix  If set, then the value is:  "$pageId.$postNr.$patId.$notfId".
+    *   That's unnecessarily long; currently, the notfId is per site unique. But it'll get
+    *   changed to a per user seq nr (see param `id` above)? Then, this Message-ID format
+    *   will be nice? Or not. See param `id` again.
     */
   case class NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_id
     notfType: NotificationType,
     id: NotificationId,
     createdAt: ju.Date,     // RENAME to generatedAt
     generatedWhy: St = "",  // later: save in db, incl expl about why notfd in email
-    uniquePostId: PostId,
+    uniquePostId: PostId,        // RENAME to aboutPostId?
     byUserId: UserId,
     toUserId: UserId,
+    smtpMsgIdPrefix: Opt[SmtpMsgIdPrefix],
     emailId: Option[EmailId] = None,
     emailStatus: NotfEmailStatus = NotfEmailStatus.Undecided,
-    seenAt: Option[ju.Date] = None) extends Notification {
+    seenAt: Option[ju.Date] = None,
+    )
+    extends Notification {
+
     override def tyype: NotificationType = notfType
+
+    def makeSmtpMsgId(host: St): Opt[SmtpMsgId] = {
+      smtpMsgIdPrefix.map(prfx => s"$prfx@$host")
+    }
   }
 
 }

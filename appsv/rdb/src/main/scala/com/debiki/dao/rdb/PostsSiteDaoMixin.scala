@@ -469,8 +469,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         num_wrong_votes,
         num_bury_votes,
         num_unwanted_votes,
-        num_times_read)
+        num_times_read,
 
+        smtp_msg_id_prefix_c
+        )
       values (
         ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?,
@@ -483,7 +485,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         ?, ?, ?,
         ?, ?,
         ?, ?, ?,
-        ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?,
+        ?)"""
 
     val values = List[AnyRef](
       siteId.asAnyRef, post.id.asAnyRef, post.extImpId.orNullVarchar, post.pageId, post.nr.asAnyRef,
@@ -537,7 +540,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       post.numWrongVotes.asAnyRef,
       post.numBuryVotes.asAnyRef,
       post.numUnwantedVotes.asAnyRef,
-      post.numTimesRead.asAnyRef)
+      post.numTimesRead.asAnyRef,
+
+      post.smtpMsgIdPrefix.orNullVarchar,
+      )
 
     runUpdate(statement, values)
   }
@@ -597,7 +603,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         num_wrong_votes = ?,
         num_bury_votes = ?,
         num_unwanted_votes = ?,
-        num_times_read = ?
+        num_times_read = ?,
+
+        smtp_msg_id_prefix_c = ?
 
       where site_id = ? and unique_post_id = ?"""
 
@@ -655,6 +663,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       post.numUnwantedVotes.asAnyRef,
       post.numTimesRead.asAnyRef,
 
+      post.smtpMsgIdPrefix.orNullVarchar,
+
       siteId.asAnyRef, post.id.asAnyRef)
 
     runUpdate(statement, values)
@@ -708,7 +718,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       numWrongVotes = rs.getInt("NUM_WRONG_VOTES"),
       numBuryVotes = rs.getInt("NUM_BURY_VOTES"),
       numUnwantedVotes = rs.getInt("NUM_UNWANTED_VOTES"),
-      numTimesRead = rs.getInt("NUM_TIMES_READ"))
+      numTimesRead = rs.getInt("NUM_TIMES_READ"),
+      smtpMsgIdPrefix = getOptString(rs, "smtp_msg_id_prefix_c"),
+      )
   }
 
 

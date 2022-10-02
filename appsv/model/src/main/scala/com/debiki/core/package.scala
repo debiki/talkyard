@@ -488,6 +488,9 @@ package object core {
 
   type EmailOut = Email  // renaming from Email to EmailOut
 
+  type SmtpMsgId = St       // [Scala_3] opaque type
+  type SmtpMsgIdPrefix = St // [Scala_3] opaque type
+
   RENAME // to EventId. And, later: [Scala_3] opaque type
   type AuditLogEntryId = Int
   type EventId = AuditLogEntryId
@@ -1632,6 +1635,8 @@ package object core {
   def SELF_DOS = ()
   def ASTROTURFING = ()   // Someone creates many accounts and pretends to be many people
   def PRIVACY = ()        // Could make things a bit more private
+  def SITE_PRIVACY = ()   // Not related to any single person, but the Ty site as a whole, e.g.
+                          // sequential numbers that make it possible to estimate frequency.
   def BUG = ()            // Need not be a terribly important bug.
   def RACE = ()           // A race condition bug / situation.
   def MUST = ()           // Fix before next release.

@@ -987,6 +987,7 @@ case class NotificationGenerator(
           byUserId = fromPatId,
           createdAt = aboutPost.createdAt,
           uniquePostId = aboutPost.id,
+          smtpMsgIdPrefix = aboutPost.smtpMsgIdPrefix.map(_ + s".${toPat.id}.$newNotfId"),
           emailStatus = emailStatus)
   }
 
@@ -994,6 +995,8 @@ case class NotificationGenerator(
   private def bumpAndGetNextNotfId(): NotificationId = {
     nextNotfId match {
       case None =>
+        // Generate random 64 bit number instead?  Or a timestamp.  [avoid_glob_seq_nrs]
+        // And have a look in the db so there's no collision.
         nextNotfId = Some(tx.nextNotificationId())
       case Some(id) =>
         nextNotfId = Some(id + 1)

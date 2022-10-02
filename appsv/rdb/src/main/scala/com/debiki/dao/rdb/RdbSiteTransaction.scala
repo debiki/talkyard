@@ -161,6 +161,12 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  def makeSqlArrayOfStringsUniqueNullIfEmpty(values: Iterable[St]): AnyRef = {
+    if (values.isEmpty) NullArray
+    else makeSqlArrayOfStringsUnique(values)
+  }
+
+
   def makeSqlArrayOfStringsUnique(values: Iterable[String]): js.Array = {
     val distinctValues = values.toVector.sorted.distinct
     theOneAndOnlyConnection.createArrayOf("varchar", distinctValues.toArray[Object])
@@ -958,28 +964,67 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     require(email.secretStatus.isEmptyOr(SecretStatus.Valid))
     require(email.numRepliesBack.isEmptyOr(0))
 
-    val vals = List(
+    val vals = ArrayBuffer(
           siteId.asAnyRef,
           email.id,
           email.tyype.toInt.asAnyRef,
           email.sentTo,
           email.toUserId.orNullInt,
           email.sentFrom.orNullVarchar,
+          NullInt, // later: byPatId
           d2ts(email.createdAt),
           email.subject,
           email.bodyHtmlText,
+          email.smtpMsgId.orNullVarchar,
+          email.inReplyToSmtpMsgId.orNullVarchar,
+          makeSqlArrayOfStringsUniqueNullIfEmpty(email.referencesSmtpMsgIds),
           email.secretValue.orNullVarchar,
           email.secretStatus.map(_.toInt).orNullInt)
 
-    runUpdateSingleRow("""
-      insert into emails_out3(
-        SITE_ID, ID, TYPE, SENT_TO, TO_USER_ID,
-        sent_from_c,
-        CREATED_AT, SUBJECT, BODY_HTML,
-        secret_value_c, secret_status_c)
-      values (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      """, vals)
+    val aboutFields: St = email.aboutWhat match {
+      case None => ""
+      case Some(aboutWhat) => aboutWhat match {
+        case aboutPost: EmailAbout.Post =>
+          vals += aboutPost.catId.orNullInt32
+          vals += aboutPost.pageId
+          vals += aboutPost.postId.asAnyRef
+          vals += aboutPost.postNr.asAnyRef
+          vals += aboutPost.parentNr.orNullInt32
+          """,
+              about_cat_id_c,
+              about_page_id_str_c,
+              about_post_id_c,
+              about_post_nr_c,
+              about_parent_nr_c"""
+
+        // case ... =>  // later, also:
+        //    about_pat_id_c,
+        //    about_tag_id_c,
+      }
+    }
+
+    val statement = s"""
+          insert into emails_out3(
+              SITE_ID,
+              ID,
+              TYPE,
+              SENT_TO,
+              TO_USER_ID,
+              sent_from_c,
+              by_pat_id_c,
+              CREATED_AT,
+              subject,
+              body_html,
+              smtp_msg_id_c,
+              smtp_in_reply_to_c,
+              smtp_references_c,
+              secret_value_c,
+              secret_status_c${
+              aboutFields})
+          values (
+              ${ makeInListFor(vals) }) """
+
+      runUpdateSingleRow(statement, vals.toList)
   }
 
 
@@ -1074,6 +1119,27 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  def loadEmailsToPatAboutThread(toPatId: PatId, pageId: PageId,
+        parentPostNr: Opt[PostNr], limit: i32): ImmSeq[EmailOut] = {
+    // For now, just load all emails about the page, starting with oldest first so
+    // we'll for sure load the notf about the page itself.
+    SHOULD // always load the first email, and the, say, last 9 — so that the SMTP
+    // 'References' header can refer to the first email about the page, and
+    // the last 9 (but not the maybe 100 in between, could be many, if is a chat).
+    val query = s"""
+          select * from emails_out3
+          where site_id = ?
+            and to_user_id = ?
+            and about_page_id_str_c = ?
+          order by created_at
+          limit $limit """
+
+    val values = List(siteId.asAnyRef, toPatId.asAnyRef, pageId)
+
+    runQueryFindMany(query, values, getEmail)
+  }
+
+
   private def getEmail(rs: ResultSet): Email = {
     val emailId = rs.getString("id")
     val emailTypeInt = rs.getInt("type")
@@ -1087,14 +1153,37 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       sentOn = getOptionalDate(rs, "sent_on"),
       sentFrom = getOptString(rs, "sent_from_c"),
       createdAt = getDate(rs, "created_at"),
+      aboutWhat = _getEmailAbout(rs),
       subject = rs.getString("subject"),
       bodyHtmlText = rs.getString("body_html"),
-      providerEmailId = Option(rs.getString("provider_email_id")),
-      failureText = Option(rs.getString("failure_text")),
+      smtpMsgId = getOptString(rs, "smtp_msg_id_c"),
+      inReplyToSmtpMsgId = getOptString(rs, "smtp_in_reply_to_c"),
+      referencesSmtpMsgIds = getOptArrayOfStrings(rs, "smtp_references_c") getOrElse Nil,
+      providerEmailId = getOptString(rs, "provider_email_id"),
+      failureText = getOptString(rs, "failure_text"),
       secretValue = getOptString(rs, "secret_value_c"),
       secretStatus = getOptInt(rs, "secret_status_c").flatMap(SecretStatus.fromInt),
       numRepliesBack = getOptInt(rs, "num_replies_back_c"),
       canLoginAgain = getOptBool(rs, "can_login_again"))
+  }
+
+
+  private def _getEmailAbout(rs: ResultSet): Opt[EmailAbout] = Some {
+    val pageId: PageId = getOptString(rs, "about_page_id_str_c") getOrElse {
+      return None
+    }
+    // Then this email is about a post — since  about_page_id_str_c was defined
+    // (the way Ty works now).
+    val postId: PostId = getOptInt32(rs, "about_post_id_c") getOrDie "TyE0POSTNR0385"
+    val postNr: PostNr = getOptInt32(rs, "about_post_nr_c") getOrDie "TyE0POSID0385"
+    val parentNr: Opt[PostNr] = getOptInt32(rs, "about_parent_nr_c")
+    val catId: Opt[CatId] = getOptInt32(rs, "about_cat_id_c")
+    EmailAbout.Post(
+          pageId = pageId,
+          postId = postId,
+          postNr = postNr,
+          parentNr = parentNr,
+          catId = catId)
   }
 
 

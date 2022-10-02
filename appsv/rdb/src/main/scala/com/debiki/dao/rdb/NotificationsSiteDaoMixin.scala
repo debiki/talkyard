@@ -59,10 +59,8 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         about_post_id_c, about_page_id_str_c,
         ACTION_TYPE, ACTION_SUB_ID,
         BY_USER_ID, TO_USER_ID,
-        email_id, email_status, seen_at)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      """
-
+        smtp_msg_id_prefix_c, email_id, email_status, seen_at)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
 
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef, notf.id.asAnyRef, d2ts(notf.createdAt),
       notf.tyype.toInt.asAnyRef)
@@ -75,6 +73,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         values += NullInt //
         values += postNotf.byUserId.asAnyRef
         values += postNotf.toUserId.asAnyRef
+        values += postNotf.smtpMsgIdPrefix.orNullVarchar
         values += postNotf.emailId.orNullVarchar
         values += postNotf.emailStatus.toInt.asAnyRef  // [306RDLA4]
         values += postNotf.seenAt.orNullTimestamp
@@ -175,8 +174,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
     } getOrElse ""
 
     val query = s"""
-      select *
-      from notifications3
+      select * from notifications3
       where site_id = ?
         and about_post_id_c = ?
         and ${

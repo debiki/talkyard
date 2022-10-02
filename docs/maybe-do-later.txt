@@ -719,6 +719,12 @@ Also see:   [sec_tst_rscs] in sanitize-posts.2browsers.test.ts.
 
 SECURITY  [br_authn_nonce]
 
+SITE_PRIVACY  [avoid_glob_seq_nrs]
+Generate publicly visible ids that aren't enumerable, e.g. let browser side visible
+user ids and post ids, notification ids, etc, be short random strings, or
+random 64 bit ints, rather than sequential numbers.
+What notf ids and SMTP Message-ID to use instead? [older_notfs_emails]
+
 [emb_login_req]
 Make  login-required work also for embeded comments.
 
@@ -813,6 +819,9 @@ Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange extern
 server / bot.
 Custom headers.
 Sign.
+
+[improve_imp_exp]
+Remove fk from notfs_t to emails_out_t?
 
 
 [extensions] [themes]

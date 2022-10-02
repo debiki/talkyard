@@ -687,6 +687,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadEmailBySecretOrId(emailId: St): Opt[Email]
   def loadEmailsSentTo(userIds: Set[UserId], after: When,
         emailType: EmailType): Map[UserId, Seq[Email]]
+  def loadEmailsToPatAboutThread(toPatId: PatId, pageId: PageId,
+        parentPostNr: Opt[PostNr], limit: i32): ImmSeq[EmailOut]
   def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit
 
   def nextReviewTaskId(): ReviewTaskId

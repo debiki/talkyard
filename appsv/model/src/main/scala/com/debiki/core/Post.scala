@@ -378,9 +378,9 @@ case class Draft(
   * SHOULD: If a post has been flagged, it gets hidden. People can click to view it anyway, so that
   * they can notify moderators if posts are being flagged and hidden inappropriately.
   *
-  * @safeRevisionNr — The highest rev nr that got reviewed by a >= TrustedMember human.
+  * @param safeRevisionNr — The highest rev nr that got reviewed by a >= TrustedMember human.
   *
-  * @privatePatsId — If defined, this comment is private [priv_comts], and
+  * @param privatePatsId — If defined, this comment is private [priv_comts], and
   *     only its owner and the person, or people in the list or group, with id
   *     privatePatsId, can see it.
   *     --- This'll be a group or pat list setting instead: ----
@@ -395,6 +395,10 @@ case class Draft(
   *     4 = can add more, with everyone's permission. I guess all these details won't
   *     get implemented the nearest 7 years? Today is November 3 2022.
   *     ---------------------------------------------------------
+  *
+  * @param smtpMsgIdPrefix — For emails, the SMTP Message-ID starts with: "$pageId.$postNr"
+  *     in posts created in Ty v0.2022.15 and later, but missing, in older posts.
+  *     [init_smtp_msg_id]
   */
 case class Post(   // [exp] ok use
   id: PostId,
@@ -453,7 +457,9 @@ case class Post(   // [exp] ok use
   numWrongVotes: Int,
   numBuryVotes: Int,
   numUnwantedVotes: Int,
-  numTimesRead: Int) {
+  numTimesRead: Int,
+  smtpMsgIdPrefix: Opt[SmtpMsgIdPrefix],  // SHOULD incl in patch json? Later.
+  ) {
 
   require(id >= 1, "DwE4WEKQ8")
 
@@ -836,6 +842,8 @@ object Post {
     require(multireplyPostNrs.isEmpty || parent.isDefined ||
       postType == PostType.Flat || postType == PostType.BottomComment, "DwE4KFK28")
 
+    val smtpMsgIdPrefix = s"$pageId.$postNr"  // [init_smtp_msg_id]
+
     val currentSourcePatch: Option[String] =
       if (approvedById.isDefined) None
       else Some(makePatch(from = "", to = source))
@@ -912,7 +920,9 @@ object Post {
       numWrongVotes = 0,
       numBuryVotes = 0,
       numUnwantedVotes = 0,
-      numTimesRead = 0)
+      numTimesRead = 0,
+      smtpMsgIdPrefix = Some(smtpMsgIdPrefix),
+      )
   }
 
   def createTitle(

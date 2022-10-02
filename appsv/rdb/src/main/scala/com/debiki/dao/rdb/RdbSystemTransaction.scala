@@ -588,6 +588,7 @@ class RdbSystemTransaction(
         n.site_id, n.notf_id, n.notf_type, n.created_at,
         n.about_post_id_c, n.about_page_id_str_c, n.action_type, n.action_sub_id,
         n.by_user_id, n.to_user_id,
+        n.smtp_msg_id_prefix_c,
         n.email_id, n.email_status, n.seen_at
       from notifications3 n inner join users3 u
         on n.site_id = u.site_id
@@ -618,10 +619,16 @@ class RdbSystemTransaction(
         (where, "", vals)
       case (None, None) =>
         // Load notfs for which emails perhaps are to be sent, for all tenants.
+        // Need to sort by oldest first, so, when a newer notf is considered,
+        // we know for which older notfs emails were sent, and can reference
+        // such emails in the SMTP 'References' header.  [older_notfs_emails]
+        // But maybe should [avoid_glob_seq_nrs].
         val where =
           o"""n.email_status = ${NotfEmailStatus.Undecided.toInt}
              and n.created_at <= ?"""
-        val orderBy = "order by n.created_at asc"
+        // n.created_at might be the same for many? If using a start-of transaction timestamp.
+        // But notf_id is 1, 2, 3, ... .
+        val orderBy = "order by n.notf_id asc"
         val someMinsAgo = new ju.Date(now.millis - delayMinsOpt.get.toLong * 60 * 1000)
         val vals = someMinsAgo::Nil
         (where, orderBy, vals)
@@ -630,19 +637,18 @@ class RdbSystemTransaction(
     }
 
     val query = s"$baseQueryOpenPara $moreWhere ) $orderBy limit $limit"
-    var notfsByTenant =
-       Map[SiteId, Vector[Notification]]().withDefaultValue(Vector.empty)
+    var notfsBySiteId = Map[SiteId, Vec[Notification]]().withDefaultValue(Vector.empty)
 
     runQuery(query, values, rs => {
       while (rs.next) {
         val siteId = rs.getInt("site_id")
         val notf = getNotification(rs)
-        val notfsForTenant: Vector[Notification] = notfsByTenant(siteId)
-        notfsByTenant = notfsByTenant + (siteId -> (notfsForTenant :+ notf))
+        val notfsForSite: Vec[Notification] = notfsBySiteId(siteId)
+        notfsBySiteId = notfsBySiteId + (siteId -> (notfsForSite :+ notf))
       }
     })
 
-    notfsByTenant
+    notfsBySiteId
   }
 
 

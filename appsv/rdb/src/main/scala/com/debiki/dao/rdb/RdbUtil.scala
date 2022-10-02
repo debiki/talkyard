@@ -675,6 +675,7 @@ object RdbUtil {
     val actionSubId = getOptionalInt(rs, "action_sub_id")
     val byUserId = rs.getInt("by_user_id")
     val toUserId = rs.getInt("to_user_id")
+    val smtpMsgIdPrefix = getOptString(rs, "smtp_msg_id_prefix_c")
     val emailId = Option(rs.getString("email_id"))
     val emailStatusInt = rs.getInt("email_status")
     val emailStatus = NotfEmailStatus.fromInt(emailStatusInt).getOrDie(
@@ -695,6 +696,7 @@ object RdbUtil {
           uniquePostId = uniquePostId,
           byUserId = byUserId,
           toUserId = toUserId,
+          smtpMsgIdPrefix = smtpMsgIdPrefix,
           emailId = emailId,
           emailStatus = emailStatus,
           seenAt = seenAt)

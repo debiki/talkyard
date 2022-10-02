@@ -648,6 +648,13 @@ class SiteDao(
   }
 
 
+  def loadEmailsToPatAboutThread(toPatId: PatId, pageId: PageId, parentPostNr: Opt[PostNr],
+          limit: i32): ImmSeq[EmailOut] = {
+    readTx(_.loadEmailsToPatAboutThread(toPatId = toPatId, pageId = pageId,
+          parentPostNr = parentPostNr, limit = limit))
+  }
+
+
   def loadEmailByIdOrErr(emailId: St, maxAgeDays: Opt[i32] = None)
           : EmailOut Or ErrMsg = {
     val email = readOnlyTransaction(_.loadEmailByIdOnly(emailId)) getOrElse {
