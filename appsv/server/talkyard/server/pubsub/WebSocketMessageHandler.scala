@@ -146,7 +146,7 @@ class WebSocketMessageHandler(
                   val dao = globals.siteDao(site.id)
                   val watchbar = requester match {
                     case member: Member =>
-                      val authzCtx = dao.getAuthzCtxWithReqer(member)
+                      val authzCtx = dao.getAuthzCtxOnPagesForPat(member)
                       dao.getOrCreateWatchbar(authzCtx)
                     case _ =>
                       dao.getStrangersWatchbar()

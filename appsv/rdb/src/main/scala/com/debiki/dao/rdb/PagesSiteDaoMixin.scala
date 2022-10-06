@@ -39,6 +39,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
       select g.page_id, ${_PageMetaSelectListItems}
       from pages3 g
       where g.site_id = ?
+        -- [open_chat_dupl]
         and g.page_role in (${PageType.JoinlessChat.toInt}, ${PageType.OpenChat.toInt})
         and g.pin_order is not null
         and g.pin_where = ${PinPageWhere.Globally.toInt}

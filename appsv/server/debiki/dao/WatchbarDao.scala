@@ -19,7 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import talkyard.server.authz.AuthzCtxWithReqer
+import talkyard.server.authz.{AuthzCtxOnAllWithReqer, AuthzCtxWithReqer}
 
 
 /** Returns an empty watchbar. Only the CachingWatchbarDao does something useful.
@@ -56,19 +56,47 @@ trait WatchbarDao {
   }
 
 
-  def getOrCreateWatchbar(authzCtx: AuthzCtxWithReqer): BareWatchbar = {
+  def getAnyWatchbar(userId: UserId): Opt[BareWatchbar] = {
+    memCache.lookup[BareWatchbar](
+        key(userId),
+        orCacheAndReturn = {
+          // [weird_dbl_cache]
+          redisCache.loadWatchbar(userId)
+        })
+  }
+
+
+  RENAME // to getOrCreateCacheWatchbar?
+  def getOrCreateWatchbar(authzCtx: AuthzCtxOnAllWithReqer): BareWatchbar = {
     // Hmm, double caching? Mem + Redis. This doesn't make sense? Let's keep it like this for
     // a while and see what'll happen. At least it's fast. And lasts across Play app restarts.
+    // [weird_dbl_cache]
     val userId = authzCtx.theReqer.id
     memCache.lookup[BareWatchbar](
       key(userId),
       orCacheAndReturn = redisCache.loadWatchbar(userId) orElse Some({
-        readOnlyTransaction { transaction =>
-          val chatChannelIds = transaction.loadPageIdsUserIsMemberOf(
+        readTx { tx =>
+          val defaultChatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
+          val defaultChats = defaultChatsInclForbidden filter { defChat =>
+            val (may, _) = maySeePageUseCacheAndAuthzCtx(defChat, authzCtx)
+            may
+          }
+          val defaultChatIds = defaultChats.map(_.pageId)
+          val chatChannelIdsTooMany = tx.loadPageIdsUserIsMemberOf(
                 authzCtx.groupIdsUserIdFirst, Set(PageType.OpenChat, PageType.PrivateChat))
-          val directMessageIds = transaction.loadPageIdsUserIsMemberOf(
+          // A PageType.OpenChat might be both a default chat, and one pat has joined,
+          // so remove them from the has-joined list. [open_chat_dupl]
+          val chatChannelIds = chatChannelIdsTooMany.filterNot(defaultChatIds contains _)
+
+          // Let's show the default chats first — they can be things like "Support" or "Welcome",
+          // which makes sense to show first, before one's own more specific chats?
+          // Ok to `++` concatenate here — different page types: JoinlessChat vs PrivateChat,
+          // whilst OpenChat is de-duplicated above. So there won't be any duplicates.
+          val allPatsChatIds = defaultChatIds ++ chatChannelIds
+
+          val directMessageIds = tx.loadPageIdsUserIsMemberOf(
                 authzCtx.groupIdsUserIdFirst, Set(PageType.FormalMessage))
-          BareWatchbar.withChatChannelAndDirectMessageIds(chatChannelIds, directMessageIds)
+          BareWatchbar.withChatChannelAndDirectMessageIds(allPatsChatIds, directMessageIds)
         }
       }),
       ignoreSiteCacheVersion = true) getOrDie "EsE4UYKF5"
@@ -78,7 +106,7 @@ trait WatchbarDao {
   /* BUG race conditions, if e.g. saveWatchbar & markPageAsUnreadInWatchbar called at the
   * same time. Could perhaps solve by creating a Watchbar actor that serializes access?
   */
-  def saveWatchbar(userId: UserId, watchbar: Watchbar): Unit = {
+  def saveWatchbar(userId: UserId, watchbar: Watchbar): Unit = {   RENAME // to ...InMem? or cacheWatchbar?
     memCache.put(
       key(userId),
       MemCacheValueIgnoreVersion(watchbar))
@@ -87,8 +115,8 @@ trait WatchbarDao {
 
 
   def markPageAsUnreadInWatchbar(user: User, pageId: PageId): U = {
-    val authzCtx = getAuthzCtxWithReqer(user)
-    val watchbar = getOrCreateWatchbar(authzCtx)
+    val authzCtx = getAuthzCtxOnPagesForPat(user)
+    val watchbar = getOrCreateWatchbar(authzCtx)  // or just skip if not created
     val newWatchbar = watchbar.markPageAsUnread(pageId)
     saveWatchbar(user.id, newWatchbar)
   }

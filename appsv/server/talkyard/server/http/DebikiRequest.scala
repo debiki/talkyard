@@ -119,7 +119,8 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def authzCtxWithReqer: AuthzCtxWithReqer = dao.getAuthzCtxWithReqer(theRequester)
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
-  lazy val authzCtxOnAllWithReqer: Opt[AuthzCtxOnAllWithReqer] = dao.getAuthCtxOnAllWithReqer(reqer)
+  lazy val authzCtxOnAllWithReqer: Opt[AuthzCtxOnAllWithReqer] =
+    dao.anyAuthCtxOnPagesForPat(reqer)
 
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
     fingerprint = 0) // skip for now

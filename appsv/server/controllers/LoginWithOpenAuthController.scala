@@ -2078,7 +2078,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         }
 
       val result = try {
-        val (identity, userInclDetails) = dao.saveIdentityCreateUser(
+        val (identity, userInclDetails) = dao.saveIdentityCreateUser(  // Don't publ presence, might need to click email adr verif link first!  do in createCookiesAndFinishLogin() below instead?
               userData, request.theBrowserIdData)
 
         val newMember = userInclDetails.briefUser

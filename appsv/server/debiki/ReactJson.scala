@@ -801,10 +801,12 @@ class JsonMaker(dao: SiteDao) {
       return None
     }
 
-    val permissions = pageRequest.authzContext.tooManyPermissions
+    val authzCtx: AuthzCtxOnAllWithReqer = pageRequest.authzCtxOnAllWithReqer.get //   authzContext.tooManyPermissions
+    val permissions = authzCtx.tooManyPermissions
+    // Hmm can't we use permissions from just above?
     val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()
 
-    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(dao.getAuthzCtxWithReqer(requester))
+    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(authzCtx) // dao.getAuthzCtxWithReqer(requester))
 
     if (pageRequest.pageExists) {
       // (See comment above about ought-to-rename this whole function / stuff.)
@@ -815,8 +817,8 @@ class JsonMaker(dao: SiteDao) {
 
           // Double check we may see the page(s) we're adding to the watchbar. [WATCHSEC]
           SEC_TESTS_MISSING // TyT602KRGJG
-          val (maySee, debugCode) = dao.maySeePageUseCache(
-                pageRequest.thePageMeta, Some(requester))
+          val (maySee, debugCode) = dao.maySeePageUseCacheAndAuthzCtx(
+                pageRequest.thePageMeta, authzCtx) // Some(requester))
           if (!maySee)
             dao.context.security.throwIndistinguishableNotFound(debugCode)
 
@@ -851,7 +853,7 @@ class JsonMaker(dao: SiteDao) {
     val watchbar = dao.getOrCreateWatchbar(authzContext)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val myGroupsEveryoneLast: Seq[Group] =
-      request.authzContext.groupIdsEveryoneLast map dao.getTheGroup
+          authzContext.groupIdsEveryoneLast map dao.getTheGroup
 
     val site = if (requester.isStaffOrCoreMember) dao.getSite else None
 

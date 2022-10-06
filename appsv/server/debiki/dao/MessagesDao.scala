@@ -125,15 +125,37 @@ trait MessagesDao {
     val toMemsAndSender: Set[Member] = toMemsInclGroupMems + sender.user.toMemberOrThrow
     toMemsAndSender foreach { member: Member =>
       RACE // [WATCHBRACE]
-      val authzCtx = getAuthzCtxWithReqer(member)
+      val authzCtx = getAuthzCtxOnPagesForPat(member)
       var watchbar: BareWatchbar = getOrCreateWatchbar(authzCtx)
       val isSender = member.id == sender.id
       watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = isSender)
       saveWatchbar(member.id, watchbar)
 
+      /*
+      val anyWatchbar =
+        if (!isSender) getAnyWatchbar(member.id)
+        else {
+          val authzCtx = getAuthzCtxWithReqer(member)
+          getOrCreateWatchbar(authzCtx)
+        }
+      if (!isSender) {
+        getAnyWatchbar(member.id) foreach { watchbar =>
+          val watchbarAfter = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = isSender)
+          saveWatchbar(member.id, watchbarAfter)
+        }
+      }   */
+
       // We know that the sender is online currently, so s/he should start watching the
       // page immediately. Other page members, however, might be offline. Ignore them.
       if (isSender) {
+        /*
+        val authzCtx = getAuthzCtxWithReqer(member)
+        var watchbar: BareWatchbar = getOrCreateWatchbar(authzCtx)
+
+          val authzCtx = getAuthzCtxWithReqer(member)
+              watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = isSender)
+        saveWatchbar(member.id, watchbar)  */
+
         logger.debug(s"s$siteId: Telling PubSubActor: ${
               sender.nameHashId} starts watching page ${pagePath.pageId} [TyM50AKTG3]")
 

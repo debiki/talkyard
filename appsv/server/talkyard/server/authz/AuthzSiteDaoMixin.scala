@@ -70,10 +70,13 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def getAuthCtxOnAllWithReqer(anyMember: Opt[Pat]): Opt[AuthzCtxOnAllWithReqer] = Some {
-    val pat = anyMember getOrElse {
-      return None
-    }
+  def anyAuthCtxOnPagesForPat(anyPat: Opt[Pat]): Opt[AuthzCtxOnAllWithReqer] = Some {
+    val pat = anyPat getOrElse { return None }
+    getAuthzCtxOnPagesForPat(pat)
+  }
+
+
+  def getAuthzCtxOnPagesForPat(pat: Pat): AuthzCtxOnAllWithReqer = {
     val groupIds = getGroupIdsOwnFirst(Some(pat))
     val permissions = getPermsForPeople(groupIds)
     AuthzCtxOnAllWithReqer(pat, groupIds, permissions)

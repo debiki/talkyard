@@ -1330,7 +1330,9 @@ case class SitePatcher(globals: debiki.Globals) {
         }
         else {
           tx.insertMember(user) // [UPSMEMBRNOW]
-          newDao.joinPinnedGlobalChats(user, tx)
+          // Skip — the user isn't online (this site is getting *imported*
+          // and also, we clear the mem cache and Redis at the end of this fn anyway.
+          // newDao.joinPinnedGlobalChats(user, tx)  —  don't
         }
       }
 
