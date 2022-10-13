@@ -51,7 +51,7 @@ if (fs.existsSync(e2eLogsDirOld)) {
 if (fs.existsSync(e2eLogsDir)) {
   tyu.spawnInForeground(`mv -f ${e2eLogsDir} ${e2eLogsDirOld}`);
 }
-tyu.spawnInForeground(`mkdir ${e2eLogsDirOld}`);
+tyu.spawnInForeground(`mkdir ${e2eLogsDir}`);
 
 
 

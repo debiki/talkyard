@@ -42,7 +42,7 @@ mkShell {
     #export PS1="\[\e[00;33m\]\# \[\e[01;34m\]\w\[\033[0;33m\] \[\033[1;32m\]Ty \[\e[00;33m\]\$(__git_ps1 \"%s\")\[\033[0m\]\[\e[01;36m\]\$\[\e[00m\] "
     export PS1="\[\e[00;32m\]\t \[\e[01;34m\]\w\[\033[0;33m\] \[\e[00;33m\]\$(__git_ps1 \"%s\" )\[\033[1;32m\] ty\[\033[0m\]\[\e[01;36m\]\$\[\e[00m\] "
     echo
-    echo "Welcome to the Talkyard shell. It's Nix-shell. Apparently time is in UTC."
+    echo "Welcome to Talkyard's Nix shell."
     echo
   '';
 

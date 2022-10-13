@@ -381,6 +381,10 @@ if (useHttps) {
       // Fall through.
     case 'e7':
     case 'e2e7':
+      // Download e2e tests Nodejs deps if not yet done, and build To-Talkyard,
+      // which is needed by some tests.
+      tyu.spawnInForeground('make e2e_node_modules to-talkyard');
+
       runE2eTestsExitIfErr({ wdioVersion, allSubCmdsSt, allSubCmds, opts });
       process.exit(0);
     default:
@@ -423,6 +427,6 @@ if (mainCmd === 'tapi' || mainCmd === 'testapi') {
 
 
 if (!mainCmdIsOk) {
-  console.error(`Werid main command: ${mainCmd}. Error. Bye.  [TyE30598256]`);
+  console.error(`Weird main command: ${mainCmd}. Error. Bye.  [TyE30598256]`);
   process.exit(1);
 }

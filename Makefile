@@ -83,6 +83,10 @@ watch-what:
   debug_asset_bundles_files \
   git-subm-init-upd \
   node_modules \
+  to-talkyard \
+  e2e_node_modules \
+  e2e_wdio6_node_modules \
+  e2e_wdio7_node_modules \
   play-cli \
   watch \
   watch-debug_asset_bundles
@@ -171,16 +175,38 @@ $(git_modules): $@
 
 
 
+# ----- E2E test dependencies
+
+
+e2e_node_modules: \
+        e2e_wdio6_node_modules \
+        e2e_wdio7_node_modules
+
+# Old Webdriverio 6 test dependencies. [wdio_6_to_7]
+e2e_wdio6_node_modules: \
+            tests/e2e/node_modules/.bin/wdio
+
+tests/e2e/node_modules/.bin/wdio:
+	cd tests/e2e && yarn
+
+# Webdriverio 7 test dependencies.
+e2e_wdio7_node_modules: \
+            tests/e2e-wdio7/node_modules/.bin/wdio
+
+tests/e2e-wdio7/node_modules/.bin/wdio:
+	cd tests/e2e-wdio7 && yarn
+
+
+
 # ----- Javascript and CSS bundles
 
 
+# App server, client, build scripts dependencies.
 # If these are present, probably all js modules have been installed?
 node_modules: \
-            node_modules/.bin/gulp
-            #node_modules/react/umd/react.development.js \
-            #node_modules/zxcvbn/dist/zxcvbn.js
+            node_modules/.bin/ts-node
 
-node_modules/.bin/gulp: git-subm-init-upd
+node_modules/.bin/ts-node:
 	s/yarn
 
 # BUG RISK sync with Gulp so won't accidentally forget to (re)build? [GZPATHS]
@@ -435,7 +461,9 @@ images/web/fonts/open-sans-v2/open-sans.min.css.gz:
 
 
 debug_asset_bundles: \
+        git-subm-init-upd \
         node_modules \
+        to-talkyard \
         debug_asset_bundles_files  \
         fonts \
         ext_iframe_js \
@@ -489,6 +517,9 @@ pristine: clean
 	@echo "    rm -fr .ensime_cache/"
 	@echo
 	@echo "    rm -fr modules/*/node_modules/"
+	@echo "    rm -fr to-talkyard/node_modules/"
+	@echo "    rm -fr tests/e2e/node_modules/"
+	@echo "    rm -fr tests/e2e-wdio7/node_modules/"
 	@echo
 	@echo
 
