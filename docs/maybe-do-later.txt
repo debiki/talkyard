@@ -156,7 +156,7 @@ Reproducible builds.
 [rate_limits][to_rate_lim]
 Configurable rate limits.
 
-[precompile_luajit]  COULD_OPTIMIZE
+[precompile_luajit]  COULD_OPTIMIZE  SKIP, instead [use_pingora]
 See: https://blog.openresty.com/en/luajit-bytecode/
 Many times faster startup time, hopefully uses less memory too?
 
@@ -781,10 +781,16 @@ And cannot be 100% there are no bugs causing problems when running DDL data-def-
 https://news.ycombinator.com/item?id=20760324
 TimescaleDB = pg extentsion, nice, no need to learn a completely new db & storage type.
 
-[lua_conf]
+[use_pingora]
+Some time after Pingora has been open sourced, stop using Nginx and Lua,
+start using Pingora instead (for performance, security and developer friendliness reasons).
+https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/
+via: https://news.ycombinator.com/item?id=32836661
+
+[lua_conf]  SKIP, instead [use_pingora]
 Conf settings for Lua plugins.
 
-[typesafe_lua]
+[typesafe_lua]  SKIP, instead [use_pingora]
 Maybe: https://github.com/teal-language/tl  Teal, a typed dialect of Lua  ?
   by https://github.com/hishamhm  works at Kong. FOSDEM2020, VSCode & Vim support.
 https://github.com/emilk/sol — no longer in active development
