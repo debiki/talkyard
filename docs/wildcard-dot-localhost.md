@@ -1,14 +1,18 @@
-Making *.localhost addresses work
+Making \*.localhost addresses work
 =============================
+
+The e2e tests generate website addresses like: `e2e-test-site-random_id.localhost` and we need
+to make them resolve to localhost, 127.0.0.1.
 
 Chrome seems to handle `*.localhost` addresses in a good way, i.e. it sends the HTTP request
 to 127.0.0.1. However, for other browsers, and for test suites that send API requests
-outside the browser, you need to make `*.localhost` addresses work (resolve to localhost).
+outside the browser, we need to make `*.localhost` addresses work (resolve to localhost).
 
-Why? Because the tests generates website addresses like: `e2e-test-site-random_id.localhost`.
+Try this: `ping abc.localhost`, probably it won't work — yet.
 
 It'd been great if we could just have added a `127.0.0.1  *.localhost` entry to `/etc/hosts`,
 But wildcard `/etc/hosts` entries are not allowed. Instead, we can ...
+
 
 
 Linux
@@ -22,7 +26,7 @@ Use dnsmasq (see http://serverfault.com/a/118589/44112 ).
 NetworkManager already runs its own instance of
 dnsmasq. You can make `*.localhost` work like so: (do this only once)
 
-    sudo sh -c 'echo "address=/localhost/127.0.0.1" >> /etc/NetworkManager/dnsmasq.d/wildcard.localhost.conf'
+    echo 'address=/localhost/127.0.0.1' | sudo tee -a /etc/NetworkManager/dnsmasq.d/wildcard.localhost.conf
 
 Then restart NetworkManager:
 
@@ -35,22 +39,22 @@ Wait half a minute, then this should work: `ping whatever.localhost`.
 
 #### Debian
 
-Like Ubuntu, plus, you need this, to tell NetworkManager to use dnsmasq:
+1\. Add `wildcard.localhost.conf` as described in the Ubuntu section just above.
+2\. Tell NetworkManager to use dnsmasq:
 
-    $ cat /etc/NetworkManager/conf.d/00-use-dnsmasq.conf
+```
+sudo tee /etc/NetworkManager/conf.d/00-use-dnsmasq.conf << 'EOF'
 
-    # Start a local dnsmasq DNS server that we can configure to resolve *.localhost.
-    # On Ubuntu, Netw-Mgr uses dnsmasq by default, but on Debian, we need this:
-    [main]
-    dns=dnsmasq
+# Start a local dnsmasq DNS server that we can configure to resolve *.localhost.
+[main]
+dns=dnsmasq
+EOF
+```
 
-#### Qubes OS Standalone VM
+#### Qubes OS, Debian 11 Standalone VM
 
 Assuming you use a stand-alone Debian qube (i.e. VM) for developing
 Talkyard, then, **follow the instructions** for **Debian** (!) just above.
-
-Hmm, but edit: `/etc/NetworkManager/NetworkManager.conf`, which already exists,
-instead of `/etc/NetworkManager/conf.d/00-use-dnsmasq.conf`.
 
 And, you also need to tell Qubes OS to actually start NetworkManager
 in the qube — starting it from
@@ -61,10 +65,29 @@ inside the qube itself won't work. In dom0, do this:
 
 And apparently you need to reboot the qube too.
 
-#### Qubes OS AppVM
+#### Qubes OS, Debian 11 AppVM
 
-You need to run the `sudo sh -c 'echo ...'` command above in the template VM
-(not the AppVM) so the changes in `/etc/` won't disappear on restart.
+In the relevant Debian 11 TemplateVM:
+
+- Add the file `/etc/NetworkManager/dnsmasq.d/wildcard.localhost.conf` ans shown in the Ubuntu section above.
+- Add the file `/etc/NetworkManager/conf.d/00-use-dnsmasq.conf` ans shown in the Debian section above.
+
+In dom0, type this: (type, since you cannot cross-VM-paste to dom0)
+
+    qvm-service --enable YOUR_APPVM_QUBE_NAME network-manager
+    qvm-service YOUR_APPVM_QUBE_NAME network-manager on
+    # It worked? Should show:  network-manager  on
+    qvm-service YOUR_APPVM_QUBE_NAME
+
+Shut down the TemplateVM. Restart the AppVM.
+
+### Afterwards
+
+(Do this in the AppVM if you're using a Qubes AppVM.)
+
+This should show NetworkManager running: `sudo systemctl status NetworkManager` — this text should appear: `Active: active (running)`.
+
+Also, try this again: `ping abc.localhost` — should work now.
 
 
 Mac
