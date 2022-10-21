@@ -82,10 +82,10 @@ object Dependencies {
 
     // Fluentd better understands json logs.
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.11"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.4.4"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.2.11"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.4.4"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
     val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.2"
