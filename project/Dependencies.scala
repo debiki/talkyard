@@ -49,7 +49,7 @@ object Dependencies {
     val hikariCp = "com.zaxxer" % "HikariCP" % "4.0.3"
 
     // ElasticSearch client, in https://mvnrepository.com.
-    val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
+    val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "8.4.3"
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
     // Play Framework 2.8.9 uses 31.0.1-jre
