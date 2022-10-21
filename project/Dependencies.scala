@@ -155,7 +155,7 @@ object Dependencies {
     // ----- Test
 
     val scalactic = "org.scalactic" %% "scalactic" % "3.2.12"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.12" % "test"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.14" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
