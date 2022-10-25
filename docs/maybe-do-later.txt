@@ -88,6 +88,10 @@ But missing: Search in sub cats, if searching in base cat.
 [forum_page]
 More configurable, & discussions too, see:  y2999/wip_sect_disc_props_views_stats.sql
 
+[watchbar_to_linkbar]
+RENAME the "watchbar" to "linkbar", the page meta bar to "pagebar", and the right
+sidebar to "contextbar" ?
+
 [propagate_cat_perms]
 It'd be nice if there was a way to get an overview of sub cat permissions,
 when looking at a base cat. And if one could propagate the base category's
