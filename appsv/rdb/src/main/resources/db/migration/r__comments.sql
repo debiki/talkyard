@@ -3,9 +3,69 @@
 -- maybe primary key first?
 
 
---======================================================================
+--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 --  Domains
---======================================================================
+--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+------------------------------------------------------------------------
+comment on domain  dormant_status_d  is $_$
+If not null, shows why a relationship (from a post or pat to something)
+should be ignored. Then, indexes can exclude these relationships, e.g.
+not looking up Assigned-To for a post that's been closed or
+deleted. But if the post is reopened, the relationships are activated
+again (which wouldn't be possible if they'd been deleted instead of
+marked as dormant).
+  Let this be a bitfield? An AssignedTo relationship could get bits
+DormantBits.PostDone and PostClosed set, if the post got done.
+Or if postponed, could get DormantBits.Postponed set?
+$_$;  -- '
+
+------------------------------------------------------------------------
+comment on domain  pat_rel_type_d  is $_$
+Says what a relationship from a pat to a post (or sth else) means. Ex:
+PatRelType.AssignedTo or VotedOn, from a pat to a post.
+Is a thing_type_d.
+$_$;
+
+------------------------------------------------------------------------
+comment on domain  post_nr_d  is $_$
+On each page, the Orig Post is nr 1, the first reply is nr 2, and so on.
+Title posts currently have nr = 0. Comments in private sub threads will have nrs < 0?
+$_$;
+
+------------------------------------------------------------------------
+comment on domain  post_rel_type_d  is $_$
+Says what a relationship from a post to somehting means, e.g.
+PostRelType.AnswerTo (other post) / FlagOf (posts or pats) / DuplicateOf (other post).
+Is a thing_type_d.
+$_$;
+
+------------------------------------------------------------------------
+comment on domain  rev_nr_d  is $_$
+Post revision number (if it's been edited).
+ $_$;  --'
+
+------------------------------------------------------------------------
+comment on domain smtp_msg_ids_out_d is $_$
+Talkyard generated SMTP Message-IDs, e.g. ["aa@b.c", "dd-11+22@ff.gg"].
+ $_$;
+
+------------------------------------------------------------------------
+comment on domain  sub_type_d  is $_$
+Clarifies what this thing is, in more detail. E.g. for a PostType.Flag thing,
+the sub type clarifies why the post was flagged — e.g. FlagType.Spam.
+Or if the type of a relationship is PatRelType.AssignedTo, then, the sub type
+can mean assigned-to-do-what. See Scala PatRelType.
+$_$;
+
+------------------------------------------------------------------------
+comment on domain  thing_type_d  is $_$
+What is something — e.g. a flag, or a comment, or a Like vote, or a group.
+In the types_t table, this is the thing_type_c.
+PostType.* and PatRelType.* and PostRelType.* are all thing types
+so e.g. PostType and PatRelType ids must not overlap (if they did, in types_t,
+they'd try to use the same table row).
+$_$; -- '
 
 ------------------------------------------------------------------------
 comment on domain trust_level_or_staff_d is $_$
@@ -14,7 +74,11 @@ Trust levels from Stranger = 0 to Core Member = 6, plus dummy trust levels
 for staff, i.e. mods = 7 and admins = 8.
 $_$;
 
-------------------------------------------------------------------------
+
+
+--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+--  Tables
+--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 --======================================================================
@@ -28,7 +92,107 @@ and who to contact instead.
 $_$;
 
 
+--======================================================================
+--  pat_rels_t
+--======================================================================
+
 ------------------------------------------------------------------------
+comment on table  post_actions3 is $_$
+To be renamed to  pat_rels_t.  Later, will store AssignedTo,
+votes, and who knows what more. Currently stores
+votes and flags, but later, flags will be kept in posts_t instead,
+linked to the flagged things via the upcoming table post_rels_t.
+$_$;
+
+
+--======================================================================
+--  perms_on_pages_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  perms_on_pages3 is $_$
+Permissions on categories and pages.
+
+But not one private comments, except for  may_see_private_flagged,
+which says if someone can see a private comment *if it got flagged*
+— because then someone needs to have a look.
+
+A future  [can_post_private_c]  setting would apply to both private
+comments and private messages, and would be for a pat and *the whole site*.
+Maybe it'd be in  pats_t  not  prems_on_pats_t.
+Reasoning: Private comments don't disturb anyone, so, if one may post
+private *messages* (on new pages), one might as well be allowed to post
+private comments sub threads too, since otherwise one could just
+start a new private message page and link to the comments page.
+
+RENAME to perms_on_pages_t.
+$_$;  -- '
+
+
+--======================================================================
+--  posts_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  posts3  is $_$
+To be renamed to  posts_t.  Stores the actuall discussions:
+the Original Post, a title post, reply/comment posts, meta posts,
+chat messages, any private comments.
+
+Later, other things too: Flags. Flags are nicely represented as posts of
+type PostType.Flag on pages of type PageType.Flag, visible to oneself and mods
+— since a text is often needed, to describe the reason one flagged something?
+And it's nice if this text can be edited afterwards, with edit revisions,
+hence, storing it, and thereby flags, in posts_t makes sense?
+The staff can ask the flagging user for clarifications, and staff can post
+private comments if they want to discuss the flag privately (without the flagger).
+For flags, posts_t.sub_type_c is the flag types, e.g.
+FlagType.Inappropriate/Spam/Astroturfing/... See Scala, PostType.Flag_later.
+
+And bookmarks. Later.
+$_$;  -- '
+
+------------------------------------------------------------------------
+comment on column  posts3.authors_id_c  is $_$
+The person who posted a post, is shown as author by default.  [post_authors]
+But this can be changed, by specifying a member or a list of members
+if there's more than one author.
+$_$; -- '
+
+------------------------------------------------------------------------
+comment on column  posts3.owners_id_c  is $_$
+The person who posted a post, is the owner of the post — *unless*  [post_owners]
+owners_id_c is set to someone else. Can be set to a member or a list of
+members. The owners of a post, may edit it, change the authors, make it
+private (but not make a private post public), add/remove owners, etc.
+
+Changing the owner, can be good if 1) someone starts working on an article,
+and leaves for vacation, and another person is to finish the article,
+publish it etc.  Or if 2) mods have deleted a post, and want to prevent
+the original author from un-deleting it or editing it any further. Then,
+the mods can make the Moderators group the owner of the post —
+thereafter the original author cannot edit it, un/delete it or anything.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  posts3.private_pats_id_c  is $_$
+If non-null, the post is private. Then, all descendants (the whole sub thread
+or page if the Orig Post is private) should be too, otherwise it's a bug.
+private_pats_id_c points to a pat or a list of pats (pats_t.is_pat_list_c = true).
+Comments in private sub threads have nr:s < 0, so there's a quick way for Ty
+to skip them when loading comments to show by default on a page, *and*
+so there won't be any gaps in the not-private comment nr sequence (> 0).
+Comments on private *pages* though, have positive nrs — because anyone who can
+see the private page, can see those comments, so we want to load all of them.
+It's not allowed to start new private sub threads inside private threads
+or on private pages, because then the permission system would become
+unnecessarily complicated. ('New' here means that a different set of
+pats could see those private sub threads.)
+$_$;  -- '
+
+------------------------------------------------------------------------
+
+
 
 
 --======================================================================
@@ -53,7 +217,7 @@ $_$;
 comment on table  idps_t  is $_$
 
 OIDC and OAuth2 providers, e.g. a company's private Keycloak server.
-$_$;
+$_$;  -- '
 
 
 ------------------------------------------------------------------------
@@ -132,9 +296,18 @@ $_$;
 ------------------------------------------------------------------------
 comment on table  links_t  is $_$
 
+The start page id is left out — only the start post id is included,
+because otherwise, if moving a post to another page, all links would
+have to be updated, easy to forget somewhere. And, performance
+wise, on large pages, we wouldn't want to load all posts anyway, 
+only the ones to shown in the browser. (E.g. in a chat we might load
+the most recent 100 posts). And to do this, we'd specify
+ids of *posts* for which links should get loaded — no need to store any
+page id in links_t.
+
 There's no foreign key to link_previews_t, because maybe no preview has
 been fetched yet (or maybe never — maybe broken external link).
-$_$;
+$_$;  -- '
 
 
 
@@ -232,6 +405,35 @@ comment on column  link_previews_t.content_json_c  is $_$
 Null if the request failed, got no response json. E.g. an error status code,
 or a request timeout or TCP RST?   [ln_pv_fetch_errs]
 $_$;
+
+
+--======================================================================
+--  types_t   (currently named tagtypes_t)
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  tagtypes_t  is $_$
+(Will rename to types_t.)
+Types, for 1) content tags. Content tags: E.g. issue tracking tags,
+or blog article content tags. And 2) for user badges.
+
+Also 3) for plugins who want their own types and sub types. Example:
+Ty has Vote relationship and Vote sub types Like, Disagree, Do-It etc.
+And in types_t, plugins can store their own Vote sub types, which would
+correspond to custom "reactions" in other software. — Or a plugin
+can create a new base type, and use for who knows what.
+
+Why support sub types (or "enumerations", if you want), not just types?
+Sub types are used often in Ty: Votes, and what type of vote.
+Or flags, and what type of flag. Or assigned-to, and assigned-to-
+-do-what.  *Sub sub*  types have never been needed though.
+So, types and sub types, will be good enough for future plugins, too?
+
+(Note that there's (will be) custom values too: each post, participant,
+tag, relationship, etc can have its own custom integer or jsonb value.)
+$_$;  -- '
+
+------------------------------------------------------------------------
 
 
 --======================================================================

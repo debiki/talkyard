@@ -25,7 +25,32 @@ Primary button colors, secondary, background, arrows, fonts,
 and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
                             and  theme=light/dark.
 
+[post_owners] posts_t.owners_id_c — if ownership of a post has been transferred.
+The new owner can, but the original author can't, edit it and delete it etc.
+
+[post_authors] if many authors, or different from the creator.
+
+[post_rels_t] New table, will store relationships between posts and whatever, e.g.
+post A is-answer-to post Q (could be many answers), multireplies, here.
+
+[drafts_as_posts] Move drafts from drafts3 to posts_t?
+
+[flags_as_posts] Move flags from  post_actions3 to  posts_t, and use a future
+table  post_rels_t  to link to flagged posts or user accounts.
+Why? See <./tyworld.adoc>, the Flag Pages and Posts section.
+
+[pat_rels_t]  Rename & change post_actions3  to  pat_rels_t, and store
+votes and AssignedTo there.
+
+[perms_on_pats_t] Rename group_participants3 to perms_on_pats_t, for consistency.
+
+[cluster_tables] Cluster posts_t on page id, and *_rels_t on the from_.. or to_.. id?
+So all posts and links needed to render a page can get loaded quickly.
+https://www.postgresql.org/docs/current/sql-cluster.html 
+
+
 [wiki_links] — link to Ty page via its name, like at Wikipedia etc.
+Stored in links_t, just like "text text  <a href=...>" text links.
 
 [wiki_perms] [new_perms]
 Make page props, e.g. answer-post, doing-status, page type, etc wiki-editable?
@@ -464,24 +489,48 @@ Assign topics and posts to people. (Not only whole topics, but also comments/sub
 Why assign a post? Because someone might ask a good question, in a longer discussion, and nice
 to know & remember who will try to answer it, later.
 
-[whispers]
-(Much later. Not within -18.)
-Inspired by Discourse. Read a bit more about how they do it.
-Add whisper_to_user_id  post3 column. Default is to staff.
-Already added:  drafts3.reply_whisper_to_user_id  column.
-Trusted members? (full memers?) can whisper to any group (or person?) not only to staff.
-  E.g. whisper to a group of category moderators for dealing with issues in that category.
-Or a staff member whispers to the question asker, in a support topic: the staff asks for tech
-  details; then the maybe new-member can reply, and no one else sees hens tech details.
-  (The UX would need to make it very clear that no one but staff can see the reply.)
-Staff always see all whispers.
-All whisper post nrs have negative ids? And are never incld when rendering & caching a page.
-Only loaded lazily when the current user happen to be some kind of staff (e.g. global mod,
-or spceific category moderator) or for some reason may see the whisper.
-Do not add any special post type, for whispers. The whisper_to_user_id field is enough? If adds, then, always show reply-to-op whispers as Progr type message?
-A whole topic cannot be a whisper. Instead, group direct-message the staff, or category mods.
-Don't bump page if whisper post. Do send notfs to receivers though (e.g. staff members).
-A user's first few whispers to non-staff: Maybe should never be shown, until reviewed by staff. High risk for weird messages?
+[priv_comts] Private comments:
+(Aka "whispers" in Discourse and "private items" in Basecamp long ago, and "private comments"
+in other software.)
+Add posts_t.private_status_c, and pat_rels_t.rel_type_c = PatLinkType.CanSeePrivate
+to remember who can see private comments.
+New permissions:  Who may post/reply-to/delete private comments.
+          Or no?  Instead, this'll be *the same* as who may post direct messages (DMs)
+                  because private comments are *the same*, it's just that they
+                  appear inline in another discussion, instead of on a separate page.
+                  Who may add, remove, manage users from/in private comment threads?
+            So,  a single Who-may-post-private-messages setting that applies
+            to both DMs and private comment sub threads.  [can_post_private_c]
+Ex: Privately talk with mods, directly next to the comment being discussed.
+    Or a support group asks the Original Poster,
+      in a support topic for tech details; then the maybe new-member can reply,
+      and only other support staff can see hens tech details.
+      (The UX would need to make it very clear that no one but staff can see the reply.)
+
+Yes?: Private comments nrs can be big & random & < 0?
+    Otherwise, people can look at post nrs and look after gaps in the number
+    sequence (if > 0) and know that maybe there're private comment sub threads.
+
+    And a private_status_c:  is private, and: may add more who can see? May never? etc.
+
+Don't add any special post type, for priv comts? Their post_t.private_status_c is enough?
+
+Don't incl priv comts when caching a page — only load lazily if current user can see.
+
+Skip: Should there be a priv_comt_root_id so, if loading a descentant privt comt,
+    it'd be immediately clear what post id to specify, to look up who can see that
+    descendant priv comt? — Or load & look at all ancestors? Probably better,
+    if a private thread is moved to another private thread but with different who-may-see
+    — then, need to compute the intersection of who-can-see, to find out who can see
+    the thread at its new location. Just looking at a single ancestor, wouldn't be enough.
+
+Later, use private comments also for direct messages?
+    Then can remove: page_users3.joined_by_id,  kicked_by_id  and lots of app server code?
+
+Don't bump page if private comments — or do, for those who can see? Hmm.
+      Do send notifications about priv comts to those who can see them & want though.
+      Same notf level as for direct messages — instead of the page's notf level?
+
 
 [cat_mods]
 Category moderators.
@@ -700,7 +749,7 @@ But rename useParams to useUrlParams !?
 
 [webhooks_todo]
 If endpoint seems broken, send emails to admins, after a while. [notf_adm_broken_webhook]
-[bot_api]  [plugin]
+[bot_api]  [plugin]  [review_plugin]
 Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange external
 server / bot.
 Custom headers.

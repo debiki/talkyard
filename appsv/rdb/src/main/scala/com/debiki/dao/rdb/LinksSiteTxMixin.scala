@@ -190,6 +190,8 @@ trait LinksSiteTxMixin extends SiteTransaction {
 
 
   override def loadLinksToPage(pageId: PageId): Seq[Link] = {
+    // No need to check  from-post.approved_rev_nr >=  ls.from_post_rev_nr_c — a link
+    // isn't added until the linking post has been approved.
     val query = s"""
         select * from (
           -- Post to page links.
@@ -203,6 +205,8 @@ trait LinksSiteTxMixin extends SiteTransaction {
             and po.unique_post_id = ls.to_post_id_c
           where po.site_id = ?
             and po.page_id = ?
+            -- Access control done elsewhere, e.. can see deleted or not? So, not needed?:
+            -- and po.deleted_status is null
           ) as lns
           order by
             lns.from_post_id_c, lns.link_url_c """

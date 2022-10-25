@@ -56,7 +56,8 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
     val sql = """
       insert into notifications3(
         SITE_ID, notf_id, CREATED_AT, NOTF_TYPE,
-        UNIQUE_POST_ID, PAGE_ID, ACTION_TYPE, ACTION_SUB_ID,
+        about_post_id_c, about_page_id_str_c,
+        ACTION_TYPE, ACTION_SUB_ID,
         BY_USER_ID, TO_USER_ID,
         email_id, email_status, seen_at)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -91,7 +92,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
           delete from notifications3
           where SITE_ID = ?
             and NOTF_TYPE = ?
-            and unique_post_id = ?
+            and about_post_id_c = ?
             and TO_USER_ID = ?"""
         val values = List(siteId.asAnyRef, toDelete.notfType.toInt.asAnyRef,
               toDelete.uniquePostId.asAnyRef, toDelete.toUserId.asAnyRef)
@@ -103,7 +104,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
             and NOTF_TYPE in (
               ${Mention.toInt}, ${DirectReply.toInt}, ${IndirectReply.toInt}, ${
                   NewPost.toInt}, ${PostTagged.toInt}, ${OneLikeVote.toInt})
-            and unique_post_id = ?"""
+            and about_post_id_c = ?"""
         val values = List(siteId.asAnyRef, postToDelete.uniquePostId.asAnyRef)
         (sql, values)
     }
@@ -171,14 +172,10 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
     } getOrElse ""
 
     val query = s"""
-      select
-        site_id, notf_id, notf_type, created_at,
-        unique_post_id, page_id, action_type, action_sub_id,
-        by_user_id, to_user_id,
-        email_id, email_status, seen_at
+      select *
       from notifications3
       where site_id = ?
-        and unique_post_id = ?
+        and about_post_id_c = ?
         and ${
           if (maxNotfType.isDefined) "notf_type between ? and ?"
           else "notf_type = ?"
@@ -196,7 +193,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
       select to_user_id, notf_type
       from notifications3
       where site_id = ?
-        and unique_post_id = ?
+        and about_post_id_c = ?
       """
     runQueryFindManyAsSet(query, List(siteId.asAnyRef, postId.asAnyRef), rs => {
       val userId = rs.getInt("to_user_id")
@@ -279,7 +276,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
         return 0
       // Tested here:  notfs-mark-seen-as-seen  TyT2AKBR0T
       values.appendAll(postIds.map(_.asAnyRef))
-      s"unique_post_id in (${ makeInListFor(postIds) })"
+      s"about_post_id_c in (${ makeInListFor(postIds) })"
     })).getOrElse({
       // This marks all one's notf as read. Tested here: [TyT4KA2PU6]
       "true"

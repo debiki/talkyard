@@ -1718,7 +1718,7 @@ trait PostsDao {
 
     val user = tx.loadParticipant(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
 
-    SECURITY; COULD // check if may see post, not just the page?  [whispers] [staff_can_see]
+    SECURITY; COULD // check if may see post, not just the page?  [priv_comts] [staff_can_see]
     throwIfMayNotSeePage(page, Some(user))(tx)
 
     val postBefore = page.parts.thePostByNr(postNr)
@@ -2390,6 +2390,15 @@ trait PostsDao {
 
       val newParentPost = tx.loadPost(newParent) getOrElse throwForbidden(
         "EsE7YKG42_", "New parent post not found")
+
+      // [priv_comts]
+      // If a post is private, don't allow moving it to any parent post that *more* peolpe can see.
+      // If creating a placeholder like: "Sub thread moved to: ...", then, copy the who-can-see
+      // list to that placeholder, so only the same people can see it.
+
+      // Anyone assigned to the post, will stay [assigned_to] it also after it's been moved.
+      // (AssignedTo relationships are (will be) in  pat_rels_t  whose  to_post_id_c  points to
+      // the post id, which stays the same.)
 
       throwForbiddenIf(postToMove.id == newParentPost.id,
             "TyE7SRJ2MG_", "A post cannot be its own parent post")

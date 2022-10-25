@@ -324,7 +324,7 @@ case object Participant {
   // 60...68 could be ViewAsStranger, ViewAsNewMember, ... ViewAsCoreMember, ViewAsModerator?
   // Or  ViewAsStranger/NewMember/... = 20,21 ... 29, + caps=ViewOnly/Delete/Purge/Edit/EditSettings?
 
-  // val SuperPrivMod = 5 ?
+  // val SuperMod = 5 ?
   // val SuperPupbMod = 6 ?
 
   // ?? If a member chooses to post anonymously:
@@ -344,7 +344,6 @@ case object Participant {
   assert(LowestTalkToMemberId == 10)
 
   // ?? val UnknownBotId = -2  // bots that accesses any public api endpoints, no api secret
-
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId: UserId = -3
@@ -1468,7 +1467,8 @@ object Group {
 
   /** Includes not-logged-in people (a.k.a. strangers) and guests, and all members. */
   val EveryoneId = 10
-
+  // Everyone   (incl people w/o any account)
+  // EveryoneWithAccount
 
   /** All higher trust level members are members of this group too. And so on:
     * members >= Basic are all members of Basic, too. So this group includes all
@@ -1482,17 +1482,17 @@ object Group {
 
   val BasicMembersId = 12
   val FullMembersId = 13
+  //  GoodMembersId = ?
   val TrustedMembersId = 14
-  val RegularMembersId = 15  ; RENAME // to TrustedRegulars. In typescript  model.ts  too
+  val RegularMembersId = 15  ; RENAME // to TrustedVeterans? In typescript  model.ts  too
   val CoreMembersId = 16
-
   /** Includes all admins and all moderators. */
   val StaffId = 17
 
   COULD // add db constraint that verifies not both admin & mod.
   /** A person is either an admin or a moderator, won't be in both groups. */
   val ModeratorsId = 18
-
+  //  ModManagers = ?  // mods who may add/remove mods
   val AdminsId = 19
 
   val NumBuiltInGroups: Int = AdminsId - EveryoneId + 1

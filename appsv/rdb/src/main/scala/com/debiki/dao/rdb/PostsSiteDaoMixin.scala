@@ -738,7 +738,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         : Boolean = {
     val statement = """
       delete from post_actions3
-      where site_id = ? and page_id = ? and post_nr = ? and type = ? and created_by_id = ?
+      where site_id = ? and page_id = ? and post_nr = ? and rel_type_c = ? and from_pat_id_c = ?
       """
     val values = List[AnyRef](siteId.asAnyRef, pageId, postNr.asAnyRef, toActionTypeInt(voteType),
       voterId.asAnyRef)
@@ -751,13 +751,13 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId] = {
     TESTS_MISSING
     val query = """
-      select created_by_id
+      select from_pat_id_c
       from post_actions3
-      where site_id = ? and unique_post_id = ? and type = ?
+      where site_id = ? and to_post_id_c = ? and rel_type_c = ?
       """
     val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, voteType.toInt.asAnyRef)
     runQueryFindMany(query, values, rs => {
-      rs.getInt("created_by_id")
+      rs.getInt("from_pat_id_c")
     })
   }
 
@@ -790,41 +790,41 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       case None => ""
       case Some(id) =>
         values.append(id.asAnyRef)
-        "and created_by_id = ?"
+        "and from_pat_id_c = ?"
     }
     val query = s"""
-      select unique_post_id, page_id, post_nr, type, created_at, created_by_id
+      select to_post_id_c, page_id, post_nr, rel_type_c, created_at, from_pat_id_c
       from post_actions3
       where site_id = ? $andPageIdEq $andCreatedBy
       """
     runQueryFindMany(query, values.toList, rs => {
-      val theUserId = rs.getInt("created_by_id")
+      val theUserId = rs.getInt("from_pat_id_c")
       PostAction(
-        uniqueId = rs.getInt("unique_post_id"),
+        uniqueId = rs.getInt("to_post_id_c"),
         pageId = rs.getString("page_id"),
         postNr = rs.getInt("post_nr"),
         doneAt = getWhen(rs, "created_at"),
         doerId = theUserId,
-        actionType = fromActionTypeInt(rs.getInt("type")))
+        actionType = fromActionTypeInt(rs.getInt("rel_type_c")))
     })
   }
 
 
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction] = {
     val query = """
-      select unique_post_id, type, created_at, created_by_id
+      select to_post_id_c, rel_type_c, created_at, from_pat_id_c
       from post_actions3
       where site_id = ? and page_id = ? and post_nr = ?
       """
     val values = List[AnyRef](siteId.asAnyRef, pageId, postNr.asAnyRef)
     runQueryFindMany(query, values, rs => {
       PostAction(
-        uniqueId = rs.getInt("unique_post_id"),
+        uniqueId = rs.getInt("to_post_id_c"),
         pageId = pageId,
         postNr = postNr,
         doneAt = getWhen(rs, "created_at"),
-        doerId = rs.getInt("created_by_id"),
-        actionType = fromActionTypeInt(rs.getInt("type")))
+        doerId = rs.getInt("from_pat_id_c"),
+        actionType = fromActionTypeInt(rs.getInt("rel_type_c")))
     })
   }
 
@@ -834,10 +834,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       return Nil
 
     val queryBuilder = new StringBuilder(256, s"""
-      select unique_post_id, page_id, post_nr, type, created_at, created_by_id
+      select to_post_id_c, page_id, post_nr, rel_type_c, created_at, from_pat_id_c
       from post_actions3
       where site_id = ?
-        and type in ($FlagValueSpam, $FlagValueInapt, $FlagValueOther)
+        and rel_type_c in ($FlagValueSpam, $FlagValueInapt, $FlagValueOther)
         and (
       """)
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
@@ -853,12 +853,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     val query = queryBuilder.append(")").toString
     runQueryFindMany(query, values.toList, rs => {
       val postAction = PostFlag(
-        uniqueId = rs.getInt("unique_post_id"),
+        uniqueId = rs.getInt("to_post_id_c"),
         pageId = rs.getString("page_id"),
         postNr = rs.getInt("post_nr"),
         doneAt = getWhen(rs, "created_at"),
-        flaggerId = rs.getInt("created_by_id"),
-        flagType = fromActionTypeIntToFlagType(rs.getInt("type")))
+        flaggerId = rs.getInt("from_pat_id_c"),
+        flagType = fromActionTypeIntToFlagType(rs.getInt("rel_type_c")))
       dieIf(!postAction.actionType.isInstanceOf[PostFlagType], "DwE2dpg4")
       postAction
     })
@@ -866,6 +866,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId) {
+    BUG // Doesn't this delete votes and other things too? See deleteVote(), use instead?
+    // Need to incl:  and rel_type_c = Flag?
     val statement = s"""
       update post_actions3
       set deleted_at = now_utc(), deleted_by_id = ?, updated_at = now_utc()
@@ -893,8 +895,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   private def insertPostActionImpl(postId: PostId, pageId: PageId, postNr: PostNr,
         actionType: PostActionType, doerId: UserId, doneAt: When) {
     val statement = """
-      insert into post_actions3(site_id, unique_post_id, page_id, post_nr, type, created_by_id,
-          created_at, sub_id)
+      insert into post_actions3(site_id, to_post_id_c, page_id, post_nr, rel_type_c, from_pat_id_c,
+          created_at, sub_type_c)
       values (?, ?, ?, ?, ?, ?, ?, 1)
       """
     val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, pageId, postNr.asAnyRef,
