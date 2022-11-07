@@ -128,7 +128,6 @@ describe("invites-by-core-try-login-after TyT2WKF5PF30", () => {
   it("... types her email address", () => {
     janesBrowser.swithToOtherTabOrWindow();
     janesBrowser.resetPasswordPage.submitAccountOwnerEmailAddress(janesEmailAddress);
-    janesBrowser.switchBackToFirstTabOrWindow();
   });
 
   let resetLink;
@@ -137,7 +136,11 @@ describe("invites-by-core-try-login-after TyT2WKF5PF30", () => {
     resetLink = server.waitAndGetResetPasswordLinkEmailedTo(siteId, janesEmailAddress, browserA);
   });
 
-  it("... clicks the reset link", () => {
+  it("... closes the Create Password browser tab", () => {
+    janesBrowser.closeWindowSwitchToOther();
+  });
+
+  it("... clicks the reset link (in the original browser tab)", () => {
     janesBrowser.go(resetLink);
   });
 
