@@ -74,7 +74,7 @@ sealed trait AuthzCtx {
   * That is, members will be able to configure how visible their user profile should be
   * e.g. one can let only >= Trusted members see one's full name or bio.
   * Currently not so very implemented.  [perms_thoughts] [private_pats]
-  * Will use the  perms_on_pats_t  table, which doesn't yet exist.
+  * Will use the  group_participants3  table renamed to  perms_on_pats_t.
   */
 trait AuthzCtxOnPats extends AuthzCtx {
 }

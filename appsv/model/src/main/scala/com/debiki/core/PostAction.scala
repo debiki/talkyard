@@ -17,11 +17,102 @@
 
 package com.debiki.core
 
-import java.{util => ju}
-import collection.{immutable => imm, mutable => mut}
 import Prelude._
 
+//  RENAME  this file to  PatRelType.scala,  later.
 
+
+/** Relationships ("rel"s) between a pat and whatever, e.g. a user VotedOn a post,
+  * or hen is AssignedTo do the stuff described in a post.
+  * Will be stored in  post_actions3, but renamed to [pat_rels_t].
+  *
+  * (This corresponds to edges in a graph database, from nodes of type Pat.)
+  */
+sealed abstract class PatRelType_later(val IntVal: i32) { def toInt: i32 = IntVal }
+
+object PatRelType_later {
+
+  /** Like votes, Disagree votes etc.
+    *  - Sub type is vote type.
+    *  - There could be a Gerrit style Review vote type, with an optional amount:
+    *      +1, +2, -1, -2,  and, optionally a custom type too, so can add
+    *      custom Review vote types, e.g. Code-Style or Verified a la Gerrit,
+    *      see:  https://docs.google.com/presentation/d/1C73UgQdzZDw0gzpaEqIC6SPujZJhqamyqO1XOHjH-uk/edit#slide=id.g4d6c16487b_1_508
+    *  - For Do-It votes, the value could mean how important is it to the voter that the thing
+    *      gets done — if each person has, say, 10 Do-It votes to distribute among the
+    *      ideas/bugs hen cares about.
+    */
+  case object VotedOn extends PatRelType_later(-1)
+
+  /** If a user (or group) is assigned to do something related to a post or category.
+    *  - Sub type could be assigned-to-do-*what*?
+    *     - AssignedTo.DoIt (the default) — To do the work described in a post, or
+    *     - AssignedTo.ReviewIt — To review the results afterwards, or maybe
+    *     - AssignedTo.Verify — To compile the code, run all tests (a la Gerrit).
+    *     - AssignedTo.Publish — To e.g. make an article visible after it's been reviewed,
+    *         or to merge source code into the main branch?
+    *     - AssignedTo.AnswerQuestions — Responsible for answering questions appearing
+    *         in a category or page?  Or is this is maybe better kept in  notf_prefs_t,
+    *         no, maybe not? I think notf_prefs_t is something one edits oneself primarily,
+    *         whilst AssignedTo.* is something someone else can do.
+    *         And if one is AssignedTo.AnswerQuestions, Ty would send notifications, also
+    *         if one hadn't subscribed to notifications oneself?  Unless one mutes
+    *         or snoozes such notifications (maybe away on vacation)?
+    *     - AssignedTo.Moderate —
+    *         Let's say there're 20 moderators in a Ty community. They could get
+    *         annoyed if they all got notified immediately about something to moderate.
+    *         Instead, Ty could start with notifying mods who has been  AssignedTo.Moderate,
+    *         and if many, start with those with the highest  priority (link numeric value).
+    *         (Unlike AssignedTo.AnswerQuestions, they don't need to reply to anyone
+    *         — instead, just review and moderate).
+    *     - Custom type:  pat_rels_t.rel_type_c  values > 1000 could be foreign keys to
+    *         types_t  with site specific types and meanings.
+    *         Type ids < 1000 would be built-in types. This requires (I think)
+    *             PostgreSQL *generated columns* [pg_15] which can be set to null
+    *             for built-in types, so they won't have to link to types_t (there'd be
+    *             no custom type to foreign-key link to, for a built-in type).
+    *         E.g. custom-type AssignedTo Review-Code, or custom-type Check-Code-Style
+    *         or Review-Dependencies maybe? — Then, if using Gerrit,
+    *         Ty can understand and show all Gerrit pull request states?
+   *          (Gerrit has custom review vote types, e.g. Code-Style above.)
+    *         But should there then be sub sub types: AssignedTo.Review.Code or
+    *         AssignedTo.Review.Dependencies — Ty might treat Review and all sub
+    *         types differently: not notifying any AssignedTo.Publish person until
+    *         all AssignedTo.Review.* have been completed?
+    *         Or is Review.Deps an enumeration value, in a AssignedTo.Review value field?
+    *         No, I think AssignedTo.Review is the type & a verb, and
+    *         e.g. Code or Dependencies is another enum value, could be stored in
+    *         a relationship property. Then would need new tables?
+    *         Or Review could be a property of the type? types_t could have an
+    *         is_review_c: bool column. — Maybe better with custom jsonb fields and
+    *         plugins [review_plugin], and then see what works or not.
+    *         New tables?: reviews_required_t: cat_id_c, type_c,
+    *         and  reviews_done_t: post_id_c, type_c, vote_c in [-2, +2]
+    *         But let's wait.
+    *
+    *  - Value can optionally be amount of responsibility?  E.g. Alice 20, Bob 10,
+    *      Clara 10, means it's Alice who's primarily responsible to get a task done,
+    *      or should be notified first about new comments to moderate, etc.
+    *      Some external scheduling software, could update these links via Ty's API —
+    *      when Alice isn't working, her links are deleted or priority is lowered,
+    *      so Bob and Clara gets notified instead.
+    *
+    *  - A custom value could be e.g. AssignedTo.Review { what = dependencies }, or
+    *      AssignedTo.Review what = code. And VotedOn.Review { what = dependencies },
+    *      for custom plugins [review_plugin]
+    */
+  case object AssignedTo extends PatRelType_later(-1)
+
+  /** If a pat wants to get notified about posts from another pat.  Hmm but
+    * shouldn't this be in  notf_prefs_t?  So can follow someone *in a specific cat* only,
+    * and choose how often to get notified, other notf prefs things.
+    */
+  // object FollowerOf extends PatRelType_later(-1)
+}
+
+
+
+// This'll get replaced by PatRelType.
 sealed abstract class PostActionType { def toInt: Int }
 // fromInt: see  [402KTHRNPQw]
 

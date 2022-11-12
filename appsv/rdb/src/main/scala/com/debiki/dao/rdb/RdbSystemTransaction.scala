@@ -575,7 +575,7 @@ class RdbSystemTransaction(
         """
          left join posts3 po on
             n.site_id = po.site_id and
-            n.unique_post_id = po.unique_post_id
+            n.about_post_id_c = po.unique_post_id
           left join pages3 pg on
             po.site_id = pg.site_id and
             po.page_id = pg.page_id""",
@@ -586,7 +586,7 @@ class RdbSystemTransaction(
     val baseQueryOpenPara = s"""
       select
         n.site_id, n.notf_id, n.notf_type, n.created_at,
-        n.unique_post_id, n.page_id, n.action_type, n.action_sub_id,
+        n.about_post_id_c, n.about_page_id_str_c, n.action_type, n.action_sub_id,
         n.by_user_id, n.to_user_id,
         n.email_id, n.email_status, n.seen_at
       from notifications3 n inner join users3 u

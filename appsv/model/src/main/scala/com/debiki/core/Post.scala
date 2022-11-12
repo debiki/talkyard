@@ -148,6 +148,18 @@ sealed abstract class PostType(
 // REFACTOR. See harmless bug below. Should change to a bit field, or split into separate fields.
 //
 object PostType {
+
+  // Maybe could be the same as PageType, + a higher bit set, if is a chat message, and another,
+  // if is a timeline message?  — CompletedForm can be a post, and also a page,
+  // if each form reply —> a page?
+  case object Question_later // extends PostType(PageType.Question.toInt, isComment = true)
+  case object Problem_later // extends PostType(PageType.Problem.toInt, isComment = true)
+  case object Idea_later // extends PostType(PageType.Idea.toInt, isComment = true)
+  case object Discussion_later // extends PostType(PageType.Discussion.toInt, isComment = true)
+
+  // No, instead, nr < 0 and privateStaus set to something;
+  //se object Private extends PostType(PageType.FormalMessage.toInt, isComment = true)
+
   /** A normal post, e.g. a forum topic or reply or blog post, whatever. */
   case object Normal extends PostType(1, isComment = true)
 
@@ -155,17 +167,24 @@ object PostType {
   @deprecated("now", "delete?")
   case object Flat extends PostType(2, isComment = true)
 
-  /** A chat message in a chat room. */
+  /** A chat message in a chat room.
+    *
+    * REFACTOR: Can't these be type Normal, and the page of type chat, and the OP of
+    * type About, instead? Because if changing the page type from Chat to Discussion,
+    * it's pointless to have to update all posts in the chat.
+    */
   case object ChatMessage extends PostType(3, isChat = true)
 
   /** A Normal post but appended to the bottom of the page, not sorted best-first. */
   // RENAME to ProgressPost,  no,  TimelinePost.
+  // Or should  isTimeline be a bool field?
   case object BottomComment extends PostType(4, isComment = true) {
     override def placeLast = true
   }
 
   CLEAN_UP // REMOVE StaffWiki, use the permission system instead.  [NOSTAFFWIKI]
   /** Any staff member can edit this post. No author name shown. */
+  @deprecated("Use the permission system instead of StaffWiki post type.")
   case object StaffWiki extends PostType(11) {
     override def isWiki = true
   }
@@ -199,7 +218,37 @@ object PostType {
   // Later:
   // - FormSubmission(21)? Shown only to the page author(s) + admins? Cannot be voted on. Sorted by
   //    date. For FormSubmission pages only.
-  // - PrivateMessage(31)? Shown to the receiver only plus admins.
+  // ? But isn't this CompletedForm above ?
+
+  /** Later:
+    *
+    * Flags of posts and pats, will in the future be posts themselves [flags_as_posts] —
+    * because when reporting (flagging) something, one can write a text, and this text
+    * is best stored in a post — then it can be edited later, and staff can
+    * *reply* to the flag text and maybe talk with the flagger about it, or
+    * with each other in private comments.
+    *
+    * Such flag posts will point to the things they flag, via post_rels_t. Possibly many
+    * things — can be good to be able to report e.g. many astroturfer accounts at once?
+    * Or many spam posts apparently by the same person.
+    *
+    * Sub type:  Maybe a bitfield, each bit toggling a flag reason on-off?
+    * E.g. both astroturfer and says 5G towers radiate covid viruses.
+    * Ex:  0b0011 =  not-spammer, not-toxic, yes-astroturfer, yes-manipulator
+    * or could be a json obj. But if updating the flagged-reasons, then, should that be under
+    * version control? Should  posts_t  include a val_json_c  or  val_i32_c  (and maybe a  title_c),
+    * in addition to  current_source_c?  And editing any, creates a new post revision?
+    */
+  case object Flag_later extends PostType(-1)   // probably not 51
+
+  /** Later: Bookmarks.
+    *
+    * A tree of bookmarks would be nicely stored as posts? Posts form a tree already,
+    * have edit history, sub threads can be moved to other places in the tree.
+    * And can be shared with each other, by changing visibility.
+    */
+  case object Bookmark_later extends PostType(-1)
+
 
   def fromInt(value: Int): Option[PostType] = Some(value match {
     case Normal.IntValue => Normal
@@ -210,6 +259,8 @@ object PostType {
     case CommunityWiki.IntValue => CommunityWiki
     case CompletedForm.IntValue => CompletedForm
     case MetaMessage.IntValue => MetaMessage
+    case Flag_later.IntValue => Flag_later
+    case Bookmark_later.IntValue => Bookmark_later
     case _ => return None
   })
 }
@@ -328,6 +379,18 @@ case class Draft(
   * they can notify moderators if posts are being flagged and hidden inappropriately.
   *
   * @safeRevisionNr — The highest rev nr that got reviewed by a >= TrustedMember human.
+  *
+  * @privateStatus — Says if a private comment thread, or private message, may be made
+  *     *less* private, by 1) adding more private thread members, and 2) if any new
+  *     private members are allowed to see earlier private comments or not (if not,
+  *     they'll see only comments posted after they were added).
+  *     This is stored in Post, not in PermsOnPages, because this setting is outside
+  *     the permission system, sort of — instead,the one who starts the private thread,
+  *     decides. Admins can make private threads *more* private only, not less.
+  *     Maybe 1 = may add more can-see people, incl see history, 2 = may add more,
+  *     but cannot see history, 3 = can add more, with the thread starter's permission,
+  *     4 = can add more, with everyone's permission. I guess all these details won't
+  *     get implemented the nearest 7 years? Today is November 3 2022.
   */
 case class Post(   // [exp] ok use
   id: PostId,
@@ -362,6 +425,7 @@ case class Post(   // [exp] ok use
   approvedAt: Option[ju.Date],   // RENAME to lastApprovedAt  [first_last_apr_at]
   approvedById: Option[UserId],  // RENAME to lastApproved...
   approvedRevisionNr: Option[Int],
+  // privateStatus: Opt[PrivateStatus],  // later  [priv_comts]
   collapsedStatus: CollapsedStatus,
   collapsedAt: Option[ju.Date],
   collapsedById: Option[UserId],
@@ -388,7 +452,15 @@ case class Post(   // [exp] ok use
   numTimesRead: Int) {
 
   require(id >= 1, "DwE4WEKQ8")
-  require(nr == PageParts.TitleNr || nr >= PageParts.BodyNr, s"Post nr: $nr [TyE4AKB28]")
+
+  if (isPrivate) {
+    require(nr == PageParts.TitleNr || nr <= PageParts.MaxPrivateNr, s"Private post nr is: ${nr
+          } but should be < ${PageParts.MaxPrivateNr} [TyEPRIVPONR]")
+  }
+  else {
+    require(nr == PageParts.TitleNr || nr >= PageParts.BodyNr, s"Post nr: $nr [TyE4AKB28]")
+  }
+
   require(!parentNr.contains(nr), "DwE5BK4")
   require(!multireplyPostNrs.contains(nr), "DwE4kWW2")
   require(multireplyPostNrs.size != 1, "DwE2KFE7") // size 1 = does not reply to many people
@@ -474,6 +546,7 @@ case class Post(   // [exp] ok use
   def isOrigPostReply: Boolean = isReply && parentNr.contains(PageParts.BodyNr) && !isBottomComment
   def isMultireply: Boolean = isReply && multireplyPostNrs.nonEmpty
   def isFlat: Boolean = tyype == PostType.Flat
+  def isPrivate: Bo = false // privateStatus.isDefined  [priv_comts]
   def isMetaMessage: Boolean = tyype == PostType.MetaMessage
   def isBottomComment: Boolean = tyype == PostType.BottomComment   // RENAME to isProgressReply
   def shallAppendLast: Boolean = isMetaMessage || isBottomComment

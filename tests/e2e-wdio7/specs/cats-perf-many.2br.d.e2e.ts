@@ -7,6 +7,7 @@ import { buildSite } from '../utils/site-builder';
 import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
 import { logBitHappy, j2s, logError, die, logBoring } from '../utils/log-and-die';
 import c from '../test-constants';
+import settings = require('../utils/settings');
 
 let allBrowsers: TyAllE2eTestBrowsers;
 let brA: TyE2eTestBrowser;
@@ -30,6 +31,11 @@ let tooManyQueriesWrites = false;
 
 
 describe(`cats-perf-many.2br.d  TyTECATPREFMNY`, () => {
+
+  if (settings.prod) {
+    console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
+    return;
+  }
 
   it(`Construct site`, async () => {
     const builder = buildSite();

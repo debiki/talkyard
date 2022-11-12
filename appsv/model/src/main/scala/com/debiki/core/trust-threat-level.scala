@@ -49,27 +49,35 @@ sealed abstract class TrustLevel(val IntVal: Int) {
   */
 object TrustLevel {
   case object Stranger extends TrustLevel(0)   ; REFACTOR // bump all 1, so won't start at 0
+                                      // 0 is easily buggy-mistaken for undefined, in Javascript.
   //se object Guest — same as Stranger, except for private communities that have invited a stranger
   //                  as a guest? Such an invited person would have trust level Guest and
   //                  could see "public" topics in the community although the community was private.
   case object NewMember extends TrustLevel(1)   // has created a real account
   case object BasicMember extends TrustLevel(2)
   case object FullMember extends TrustLevel(3)
-  //se object BitTrustedMember or WellBehavedMember?  — the software promotes up to here only
-  case object TrustedMember extends TrustLevel(4)
+  //se object [GoodMember] extends TrustLevel(_)   — the software promotes up to here only
+  //       or DecentMember or WellBehavedMember or Soft(ware)Trusted or BitTrustedMember?
+  case object TrustedMember extends TrustLevel(4)  // requires manual review, maybe not much but a bit
   case object RegularMember extends TrustLevel(5)   ; RENAME // to Trusted Regular, no, remove, and let visit frequency be another dimension, don't conflate with trust level
+  //se object TrustedVeteran extends TrustLevel(_) — trusted members who have been around for long,
+  //                and know the community and domain inside and out?
+  //                (Most people who have been along for long, would be FullMembers
+  //                or GoodMembers,  not Trusted-*.)
   case object CoreMember extends TrustLevel(6)
 
   // + Mod,
   // + ModOfMods (can resolve disagreements between mods)
   // + Admin,
-  // + AdminOfAdmins — the site owner is *by default* AdminOfAdmins? (Other admins cannot depose hen)
+  // (AdminOfAdmins — the site owner is *by default* AdminOfAdmins? Other admins cannot depose hen)
 
-  // But Owner is a flag?
+  // But let is-site-owner be a flag, not visible to others. Not  trust level. — Better not
+  // needlessly show which account to hack, to try to take control over the site.
 
 
   // Not real trust levels, but sometimes simpler to remember just one digit, say 7,
   // instead of 3 things: level + isStaff + isModerator.
+  REFACTOR // Actually, *do* change to real trust levels — see Mod, ModOfMods, Admin above.
   val StrangerDummyLevel = 0
   val ModeratorDummyLevel = 7
   val AdminDummyLevel = 8

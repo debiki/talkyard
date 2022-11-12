@@ -443,3 +443,67 @@ to users and groups?
 Summary: Group member titles, and user titles, would make sense, if there
 wasn't also group member badges and user badges. But one solution is enough.
 
+
+
+=== Use Deno for server side rendering?
+
+Java 17: Nashorn gone, was deprecated in Java 11.
+
+Talkyard uses Nashorn for server side rendering. So, right now, cannot upgrade
+past Java 11.
+
+Later, one alternative would be to switch to GraalVM and try to call the render-page
+script bundles from the Scala code, using Graal's polygot features.
+
+However, when rewriting / redoing this anyway, it'd be better to move the server
+side rendering, to a separate process — and I suppose it'll run in a
+separate Docker container then, with Deno. Then, the script bundles + Deno can be
+compiled into an executable — making Ty quicker to restart.
+And if there's really lots of things to server-side-(re)render, then, only the Deno
+container gets affected — other parts of Ty (e.g. already rendered and cached HTML)
+can continue working unaffected.
+
+(The app server would send a HTTP? WebSocket? message
+to the Deno server, with the CommonMark source to render. Would Deno need to
+ask the app server for page names and excerpts, to show in link previews? Maybe two phases:
+1) app server sends CommonMark to Deno, which looks at it and replies with what
+link previews, user names etc it needs. Then the app server fetchest this from the
+database (doing access permission control), or even external websites, e.g. a Twitter
+tweet link preview, and does a 2nd request to Deno, this time including all that's
+needed for Deno to render the whole thing. [ext_markup_processor])
+
+See: https://deno.land/manual@v1.15.3/tools/compiler
+
+Don't try to compile the script bundles to WASM and run inside a Rust server
+— it's a bit complicated, different memory management, see e.g.:
+https://paulbutler.org/2021/calling-webassembly-from-rust/
+
+
+
+== Year 2022
+
+
+=== Unify pages and posts
+
+Move most state fields from pages, to posts. Then, things one can do with pages,
+e.g. marking as a task to be done, becomes possible also with comments on a page.
+So, can use comments & sub threads, as lightweight tasks, instead of having to
+create new pages for everything (and remembering which pages belong together).
+
+(In Ty, users and groups are already "unified" — they use the same Pat (short for
+Participant) Scala base type, and `users3` table (to be renamed to `pats_t`).
+This has worked out fine — e.g. can toggle settings on both a user and group level.)
+
+=== Postgres a bit as a graph database?
+
+Change-rename tables `post_actions3` to `pat_rels_t` and create a new `post_rels_t`
+table ("rel" for relationship, graph db terminology: nodes and relationships).
+See `[graph_database]` in <./docs/tyworld.adoc>.
+
+Using these links tables will make it possible for e.g. a single flag to flag
+many things, e.g. all astroturfing accounts the flagger thinks belong to the same
+real world person. Or a post can be PostRelType.AssignedTo more than one person.
+Or a private comments sub thread can be made visible to more than one other group
+or person. Or having two people listed as co-authors of an article. — Instead of,
+as in most other software, always just one of whatever it is.
+

@@ -945,8 +945,10 @@ export class TyE2eTestBrowser {
       }, {
         message: () => `Waiting for any loging popup to auto close, to avoid ` +
               `invalid window ID errors. Num windows open: ${numWindows}`,
-        timeoutMs: 3000,
-        timeoutIsFine: true,
+        // Skip this timeout — otherwise impossible to have time to manually provide
+        // "2FA" details for Gmail, GitHub etc test accounts:
+        // timeoutMs: 3000,
+        // timeoutIsFine: true,
         serverErrorDialogIsFine: true,
       });
 

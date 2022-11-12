@@ -1446,7 +1446,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
-    SECURITY // Later: skip authors of hidden / deleted / whisper posts.  [whispers]
+    SECURITY // Later: skip authors of hidden / deleted / private comments.  [priv_comts]
     // Or if some time in the future there will be "hidden" accounts  [hdn_acts]
     // — someone who don't want strangers and new members to see hens profile —
     // then, would need to exclude those accounts here.

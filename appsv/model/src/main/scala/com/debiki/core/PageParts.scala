@@ -26,6 +26,7 @@ import org.scalactic.{Bad, Good, One, Or}
 
 object PageParts {
 
+  val MaxPrivateNr: i32 = -1001
 
   // Letting the page body / original post be number 1 is compatible with Discourse.
   // COULD change to TitleNr = -1. That'd *reduce bug risk* because right now,

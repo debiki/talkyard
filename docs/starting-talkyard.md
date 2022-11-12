@@ -16,7 +16,7 @@ On Linux, you can:
 sudo -i
 curl -fsSL https://get.docker.com -o install-docker.sh
 sh install-docker.sh
-curl -L "https://github.com/docker/compose/releases/download/1.28.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version  # should print "docker-compose version ... build ..."
 ```
@@ -113,22 +113,18 @@ how to use docker-compose already.
     cd talkyard
     ```
 
-1. Download dependencies — they're in Git submodules:
-    (this might take long — you'll be downloading about 1 GB files)
+1. Start Talkyard from inside Nix-shell: (`s/tyd` is a Talkyard development helper script)
 
     ```
-    git submodule update --init
-    ```
-
-1. Start Talkyard: (`s/tyd` is a Talkyard development helper script)
-
-    ```
+    nix-shell
     s/tyd up
     ```
 
     And have a coffee — it takes a while before Talkyard starts the first time:
+    Git submodules and Nodejs modules get downloaded,
     Typescript, Stylus and Scala code gets compiled and packaged, Docker images get built.
-    To view log messages, type `s/tyd logs -f` (or `docker-compose logs -f`).
+
+    Look at the log messages — type `s/tyd logs -f` (or `docker-compose logs -f`).
 
     Wait for these "Server started" log messages to appear:
 

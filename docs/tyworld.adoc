@@ -20,7 +20,7 @@ Wiki Page = a wiki page.
 Wiki Comment = a comment on a wiki page.
 
 
-== Three kinds of pages
+== Different types of pages
 
 Index pages a.k.a. site section pages: Currently only of type Forum,
 to list forum topics. Later, maybe Wiki main pages too, or Blog post index pages.
@@ -30,6 +30,8 @@ Description pages: Meta pages that describes categories and tags and their purpo
 Topic pages: The actual contents in the community. E.g. ideas, questions,
 open-ended discussions. Or articles or documentation. — The things end users
 visit the community for.
+
+Other pages, e.g. flag pages — for reporting a post.
 
 Index pages and description pages are just there to help the end users
 find the actual topic pages.
@@ -105,6 +107,26 @@ People both in and outside the organization discuss something. These types:
 - Link pages: For just posting a link and discussing it, like at Reddit or HackerNews.
   Slightly makes Talkyard work like a news aggregator.
 
+=== Flag Pages and Posts
+
+In Ty, flags (e.g. someone reporting a comment) will "soon" be stored as
+posts of PostType.Flag `[flags_as_posts]`,
+and linked to the things they flag, via `post_rels_t`. So, one flag can flag
+many things at once — say, comments claiming that 5G towers spread covid virus,
+then, could be nice to report all those posts at once (rather than one flag for each).
+Also less work for mods to handle.
+Or, astroturfing, then one would want to report an astroturfer's all 999 possible
+accounts at the same time, rather than individually 999 times?
+
+When each flag is its own post of PostType.Flag on a page of PageType.Flag, then,
+staff can reply to the flagger and ask hen to clarify,
+if anyhting is unclear. And staff can post private comments on the flag page,
+and have a staff-only discussion about the flag.
+
+The links to flagged things are form the flag post, not the person — because
+the same person might flag the same thing many times (say, a text that gets edited).
+A new post gets a new id and can work as the new id for a new flag of the same thing.
+(But a person's id stays the same.)
 
 
 == Forum post statuses
@@ -263,6 +285,39 @@ for that blog post discussion.
 
 // first comment gets posted (or like vote or notf setting changed).
 // So, a draft for the very first comment, usually won't have any page id.)
+
+
+== Graph theory
+
+In a way, Ty uses PostgreSQL as a `[graph_database]`, with nodes being rows in
+tables that store people, pages, comments, categories, tags, notifications,
+permissions, etc.
+
+And edges are stored in `post_rels_t` and `pat_rels_t` ("rel" is for
+"relationship", as in nodes and relationships, graph terminology).
+
+The eges in the `...rels_t` tables consist of just a start, an end,
+a type, and (optionally) a single integer value.
+
+More complicated edges get their own relationship tables. E.g. `perms_on_pats_t`
+which can be seen as graph edges from [users or groups] to groups (e.g. group
+member or manager)  — but these edges have so many properties, so they're
+in their own table, not in `pat_rels_t`.
+
+Generally, Postgres tables _with_ an id primary key would be _nodes_ in a graph.
+Whilst tables that _lack_ its own id primary key, would be edges. In Ty, edges don't
+need their own ids; instead, they use the primary keys of the start and
+end node, and the relationship type, as primary key.
+
+Postgres as a semi graph database, seems nice: Postgres makes it easy
+to add indexes and extra unique keys, foreign keys as needed, and custom
+datatypes and check constraints. And Postgres is stable & relatively bug free,
+open source (not just open core), and has been around for decades —
+which cannot be said about any graph database?
+
+And Postgres can `[cluster_tables]`, which makes it possible to fetch
+all edges by fetching fewer table blocks from disk (by clustering
+on edge start or endpoint as appropriate).
 
 
 

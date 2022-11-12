@@ -1,8 +1,35 @@
-#!/usr/bin/env node
+#!/usr/bin/bash
 
-require('ts-node').register({ transpileOnly: true });
+if [ ! -d  ~/.nix-profile ]; then
+  echo
+  echo "First install Nix — see docs/starting-talkyard.md.  Bye for now."
+  echo
+  exit 1
+fi
 
-// Include the '.ts' suffix, otherwise apparently any '.js' file with the same
-// name (excl suffix) gets loaded.
-exports.config = require('./tyd.ts');
+if [ -z "$IN_NIX_SHELL" ]; then
+  echo
+  echo "First start Nix shell:"
+  echo
+  echo "    nix-shell"
+  echo
+  echo "Then try this script again (inside the Nix shell).  Bye."
+  echo
+  exit 1
+fi
 
+if [ -z "$(which yarn)" ]; then
+  echo
+  echo "Wrong Nix-shell? I don't see any 'yarn' executable, but I need"
+  echo "Yarn sometimes, to transpile Typescript.  Error.  Bye."
+  echo
+  exit 1
+fi
+
+# Download any missing Git submodules.
+make git-subm-init-upd
+
+# Download ts-node — s/tyd.js (below) calls tyd.ts (Typescript).
+make node_modules
+
+s/tyd.js "$@"
