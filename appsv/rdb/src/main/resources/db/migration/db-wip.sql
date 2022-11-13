@@ -290,6 +290,8 @@ $_$;
 --     paused_by_id_c, done_by_id_c, closed_by_id_c, locked_by_id_c,
 --     frozen_by_id_c, unwanted_by_id_c, hidden_by_id_c, deleted_by_id_c
 -- with:  private_status_c
+--   [edit] No, using private_pats_id_c instead. And the following might be
+--   a user list/group setting instead: [/edit]
 --            null or 0 = not private,
 --            1 = yes, can make public,
 --            2 = yes, can*not* make public, but can add more who can see it,
@@ -657,6 +659,7 @@ alter table pats_t add column web_scraping_prefs_c  web_scraping_prefs_d;
 -- *** No, don't, let's not store CanSeePrivate in pat_rels_t ***
 update posts_t set nr_c = -nr_c, private_status_c = ...   -- sth like this, because
     where page_type is private-message;      -- private comments have negative post nrs.
+    [edit] NO, using posts_t.private_pats_id_c instead [/edit]
 insert into pat_rels_t (from_pat_id_c, rel_type_c, ...)
     select user_id, PatRelType.CanSeePrivate, ... from page_users3
     where joined_by_id is not null and kicked_by_id is null;

@@ -157,7 +157,7 @@ object PostType {
   case object Idea_later // extends PostType(PageType.Idea.toInt, isComment = true)
   case object Discussion_later // extends PostType(PageType.Discussion.toInt, isComment = true)
 
-  // No, instead, nr < 0 and privateStaus set to something;
+  // No, instead, is private if privatePatsId defined.  [priv_comts]
   //se object Private extends PostType(PageType.FormalMessage.toInt, isComment = true)
 
   /** A normal post, e.g. a forum topic or reply or blog post, whatever. */
@@ -380,7 +380,10 @@ case class Draft(
   *
   * @safeRevisionNr — The highest rev nr that got reviewed by a >= TrustedMember human.
   *
-  * @privateStatus — Says if a private comment thread, or private message, may be made
+  * @privatePatsId — If defined, this comment is private [priv_comts], and
+  *     only its owner and the person, or people in the list or group, with id
+  *     privatePatsId, can see it.
+  *     --- This'll be a group or pat list setting instead: ----
   *     *less* private, by 1) adding more private thread members, and 2) if any new
   *     private members are allowed to see earlier private comments or not (if not,
   *     they'll see only comments posted after they were added).
@@ -391,6 +394,7 @@ case class Draft(
   *     but cannot see history, 3 = can add more, with the thread starter's permission,
   *     4 = can add more, with everyone's permission. I guess all these details won't
   *     get implemented the nearest 7 years? Today is November 3 2022.
+  *     ---------------------------------------------------------
   */
 case class Post(   // [exp] ok use
   id: PostId,
@@ -425,7 +429,7 @@ case class Post(   // [exp] ok use
   approvedAt: Option[ju.Date],   // RENAME to lastApprovedAt  [first_last_apr_at]
   approvedById: Option[UserId],  // RENAME to lastApproved...
   approvedRevisionNr: Option[Int],
-  // privateStatus: Opt[PrivateStatus],  // later  [priv_comts]
+  // privatePatsId: Opt[PatId],  // later  [priv_comts]
   collapsedStatus: CollapsedStatus,
   collapsedAt: Option[ju.Date],
   collapsedById: Option[UserId],
@@ -546,7 +550,7 @@ case class Post(   // [exp] ok use
   def isOrigPostReply: Boolean = isReply && parentNr.contains(PageParts.BodyNr) && !isBottomComment
   def isMultireply: Boolean = isReply && multireplyPostNrs.nonEmpty
   def isFlat: Boolean = tyype == PostType.Flat
-  def isPrivate: Bo = false // privateStatus.isDefined  [priv_comts]
+  def isPrivate: Bo = false // privatePatsId.isDefined  [priv_comts]
   def isMetaMessage: Boolean = tyype == PostType.MetaMessage
   def isBottomComment: Boolean = tyype == PostType.BottomComment   // RENAME to isProgressReply
   def shallAppendLast: Boolean = isMetaMessage || isBottomComment

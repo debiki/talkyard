@@ -492,15 +492,17 @@ to know & remember who will try to answer it, later.
 [priv_comts] Private comments:
 (Aka "whispers" in Discourse and "private items" in Basecamp long ago, and "private comments"
 in other software.)
-Add posts_t.private_status_c, and pat_rels_t.rel_type_c = PatLinkType.CanSeePrivate
+Add posts_t.private_pats_id_c, and a new participant type:  lists of pats,
 to remember who can see private comments.
-New permissions:  Who may post/reply-to/delete private comments.
-          Or no?  Instead, this'll be *the same* as who may post direct messages (DMs)
+New permissions
+        - Who may post/reply-to/delete private comments.
+            Or no?  Instead, this'll be *the same* as who may post direct messages (DMs)
                   because private comments are *the same*, it's just that they
                   appear inline in another discussion, instead of on a separate page.
-                  Who may add, remove, manage users from/in private comment threads?
             So,  a single Who-may-post-private-messages setting that applies
             to both DMs and private comment sub threads.  [can_post_private_c]
+        - Who may add, remove, manage users from/in private comment threads? Hmm.
+          That'll be a  pats_t.how_private_c setting?
 Ex: Privately talk with mods, directly next to the comment being discussed.
     Or a support group asks the Original Poster,
       in a support topic for tech details; then the maybe new-member can reply,
@@ -510,10 +512,6 @@ Ex: Privately talk with mods, directly next to the comment being discussed.
 Yes?: Private comments nrs can be big & random & < 0?
     Otherwise, people can look at post nrs and look after gaps in the number
     sequence (if > 0) and know that maybe there're private comment sub threads.
-
-    And a private_status_c:  is private, and: may add more who can see? May never? etc.
-
-Don't add any special post type, for priv comts? Their post_t.private_status_c is enough?
 
 Don't incl priv comts when caching a page — only load lazily if current user can see.
 
