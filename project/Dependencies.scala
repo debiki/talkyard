@@ -159,7 +159,7 @@ object Dependencies {
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.
-    val specs2 = "org.specs2" %% "specs2-core" % "3.10.0" % "test"
+    val specs2 = "org.specs2" %% "specs2-core" % "4.19.0" % "test"
   }
 
 }
