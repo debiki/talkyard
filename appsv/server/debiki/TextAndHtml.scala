@@ -298,14 +298,14 @@ object TextAndHtmlMaker {   MOVE // to just  TextAndHtml
   * and another to process the commonmark whilst *using* that info. See [filter_mentions].
   *
   * And a link map too — to show which ones should be rel=follow, nofollow,
-  * or not links at all (if suspicious).
+  * or not links at all (if suspicious). [filter_links]
   */
 class TextAndHtmlMaker(
   val site: SiteIdHostnames,
   nashorn: Nashorn,
   val mayMention: Set[Username] => Map[Username, Bo] = _ => Map.empty.withDefaultValue(true)
   // Later:
-  // val mayLink: LinkMaybeBad => MayLink, — as a map?
+  // val mayLink: LinkMaybeBad => MayLink_unused, — as a map?
   ) {
 
   private class TextAndHtmlImpl(
@@ -408,7 +408,8 @@ class TextAndHtmlMaker(
     // and links, and looking up those usernames and see which names
     // the post author may mention, and looking up the linked-to domains
     // and see which links should be no/follow or even just plain text, and
-    // then 2) a second pass with mayMention and mayLinkTo included. [filter_mentions]
+    // then 2) a second pass with mayMention and mayLinkTo included.
+    // [filter_mentions] [filter_links]
     val renderResult = nashorn.renderAndSanitizeCommonMark(
           text, NashornParams(
                   site,

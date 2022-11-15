@@ -839,8 +839,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def loadMemberVbByUsername(username: Un): Opt[MemberVb] = {
-    // This other fn is a bit similar: [.two_load_member_vb]
+  def loadMemberVbByUsername(username: Username): Opt[MemberVb] = {
     dieIf(username contains '@', "TyEUSRNMISEML", s"Got an email address, not a username")
     _loadMemberVbByFieldValue("lower(username)", username.toLowerCase)
   }
@@ -862,35 +861,36 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
 
   private def _loadMemberVbByFieldValue(field: St, value: AnyRef): Opt[MemberVb] = {
-    val sql = s"""
-      select $CompleteUserSelectListItemsWithUserId
-      from users3
-      where site_id = ? and $field = ? and user_id >= $LowestNonGuestId
-      """
-    runQueryFindOneOrNone(sql, List(siteId.asAnyRef, value), rs => {
-      getMemberInclDetails(rs)
-    })
+    val membs = _loadMembersVbByFieldValues(field, Vec(value))
+    dieIf(membs.size > 1, "TyE603JSEJWQ", o"""Column pats_t.$field isn't unique,
+          found ${membs.size} members, expected 0 or 1""")
+    membs.headOption
   }
 
 
   def loadMembersVbById(userIds: Iterable[MembId]): immutable.Seq[MemberVb] = {
-    if (userIds.isEmpty) return Nil
+    dieIf(userIds exists Participant.isGuestId, "TyE54032RKJ56")
+    _loadMembersVbByFieldValues("user_id", userIds.map(_.asAnyRef))
+  }
+
+
+  private def _loadMembersVbByFieldValues(field: St, values: Iterable[AnyRef]): ImmSeq[MemberVb] = {
+    if (values.isEmpty) return Vec.empty
     val query = s"""
       select $CompleteUserSelectListItemsWithUserId
       from users3
-      where site_id = ? and user_id in (${makeInListFor(userIds)})
-      """
-    val values = siteId.asAnyRef :: userIds.toList.map(_.asAnyRef)
-    runQueryFindMany(query, values, rs => {
+      where site_id = ?
+        and $field in (${makeInListFor(values)})
+        and user_id >= $LowestNonGuestId """
+
+    runQueryFindMany(query, siteId.asAnyRef :: values.toList, rs => {
       getMemberInclDetails(rs)
     })
   }
 
-  def loadMembersVbByUsername(usernames: Iterable[Username]): Map[Username, MemberVb] = {
-    // This other fn is a bit similar: [.two_load_member_vb]
-    loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[Username](
-          usernames.map(_.toLowerCase.asAnyRef), "lower(username)", _.usernameOrGuestName)
-          .mapValues(_.toMemberVbOrDie)
+
+  def loadMembersVbByUsername(usernames: Iterable[Username]): ImmSeq[MembVb] = {
+    _loadMembersVbByFieldValues("lower(username)", usernames.map(_.toLowerCase))
   }
 
 

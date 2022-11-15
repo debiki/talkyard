@@ -83,7 +83,7 @@ export const UserPreferences = createFactory({
 
     const isGuest = user_isGuest(user);
     const isNormalMember = user.id >= Pats.MinNotSysMemberId;
-    const isBuiltInUser = user.id < Pats.MinAuthnMemberId;
+    const isBuiltInUser = member_isBuiltIn(user);
     const isGuestOrBuiltIn = isGuest || isBuiltInUser;
     const isGroupGuestOrBuiltIn = user.isGroup || isGuestOrBuiltIn;
 
@@ -95,6 +95,7 @@ export const UserPreferences = createFactory({
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
+              // It's possible to configure built-in groups (which are "normal" members).
               !isNormalMember ? null: LiNavLink({
                   to: prefsPathSlash + notfsPathSeg, className: 's_UP_Prf_Nav_NtfsL' }, t.Notifications),
               !isNormalMember ? null : LiNavLink({
@@ -786,7 +787,7 @@ const PrivacyPrefsTab = createFactory({
 
     // Maybe most new members would mess up these settings? [can_config_what_priv_prefs]
     // Currently these settings have no effect, for groups. [inherit_group_priv_prefs]
-    const canConfigWhoMayMessage = isSelf && pat_isBitAdv(me) || pat_isStaff(me);
+    const canConfigWhoMayMessage = isSelf && pat_isBitAdv(me) || pat_isStaff(me);  // UX BUG but not if me is mod, and user is admin
     const you =
             user.isGroup ? "members of this group" : (    // I18N
             user.id === me.id ? "you" : "this user");

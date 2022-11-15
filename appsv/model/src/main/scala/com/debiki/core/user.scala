@@ -680,21 +680,27 @@ sealed trait Pat {
   def canPromoteToBasicMember: Bo = false
   def canPromoteToFullMember: Bo = false
 
+  /** Sync w Typescript: store_maySendDirectMessageTo().  */
   def mayMessage(pat: Pat): Bo = {
+    // It's ok to message oneself? Maybe for some kind of personal journal
+    if (pat.isSystemOrSysbot || pat.isGuest || pat.isGone) return false
     if (isStaffOrCoreMember) return true
+    SHOULD // prevent problematic users from messaging anyone but the mods? [bad_pat_dms]
+    // if (threatLevel > ... && !pat.isStaff ) return false  // currently only client side
     pat match {
-      case other: Member =>
-        other.privPrefs.maySendMeDmsTrLv.forall(othersMinLevel =>
-          this.effectiveTrustLevel isAtLeast othersMinLevel)
+      case m: Member =>
+        m.privPrefs.maySendMeDmsTrLv.forall(othersMinLevel =>
+              this.effectiveTrustLevel isAtLeast othersMinLevel)
       case _ => false
     }
   }
 
   def mayMention(pat: Pat): Bo = {
+    if (pat.id == this.id || pat.isSystemOrSysbot || pat.isGuest || pat.isGone) return false
     if (isStaffOrCoreMember) return true
     pat match {
-      case other: Member =>
-        other.privPrefs.mayMentionMeTrLv.forall(othersMinLevel =>
+      case m: Member =>
+        m.privPrefs.mayMentionMeTrLv.forall(othersMinLevel =>
               this.effectiveTrustLevel isAtLeast othersMinLevel)
       case _ => false
     }
@@ -983,7 +989,7 @@ case class Guest( // [exp] ok   REFACTOR split into GuestBr and GuestVb [guest_b
   def isModerator: Boolean = false
   def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
   def suspendedTill: Option[ju.Date] = None
-  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember  // should add a new level: Guest?
+  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember  // or sometimes [StrangerWithSecret] or should that be another class?
 
   def anyName: Opt[St] = Some(guestName)
   def anyUsername: Opt[St] = None
@@ -1033,15 +1039,15 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {  RENAME // to Me
 
   def copyPrefs(uiPrefs: Opt[JsObject] = null, privPrefs: MemberPrivacyPrefs = null): MemberVb = {
     this match {
-      case g: GroupVb =>
-        g.copy(
-              uiPrefs = if (uiPrefs ne null) uiPrefs else g.uiPrefs,
-              privPrefs = if (privPrefs ne null) privPrefs else g.privPrefs,
+      case thiz: GroupVb =>
+        thiz.copy(
+              uiPrefs = if (uiPrefs ne null) uiPrefs else thiz.uiPrefs,
+              privPrefs = if (privPrefs ne null) privPrefs else thiz.privPrefs,
               )
-      case u: UserVb =>
-        u.copy(
-              uiPrefs = if (uiPrefs ne null) uiPrefs else u.uiPrefs,
-              privPrefs = if (privPrefs ne null) privPrefs else u.privPrefs)
+      case thiz: UserVb =>
+        thiz.copy(
+              uiPrefs = if (uiPrefs ne null) uiPrefs else thiz.uiPrefs,
+              privPrefs = if (privPrefs ne null) privPrefs else thiz.privPrefs)
     }
   }
 }

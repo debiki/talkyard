@@ -47,13 +47,16 @@ trait AuthzSiteDaoMixin {
 
   def getAuthzContextOnPats(pat: Opt[Pat]): AuthzCtxOnPats = {
     val groupIds = getGroupIdsOwnFirst(pat)
-    AuthzCtxOnPatsOnly(pat, groupIds)
+    pat match {
+      case None => AuthzCtxOnPatsNoReqer(groupIds)
+      case Some(thePat) => AuthzCtxOnPatsWithReqer(thePat, groupIds)
+    }
   }
 
 
   def getAuthzCtxWithReqer(reqer: Pat): AuthzCtxWithReqer = {
     val groupIds = getGroupIdsOwnFirst(Some(reqer))
-    AuthzCtxWithReqerImpl(reqer, groupIds)
+    AuthzCtxOnPatsWithReqer(reqer, groupIds)
   }
 
 

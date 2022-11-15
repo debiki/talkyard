@@ -173,8 +173,8 @@ case class NotificationGenerator(
         // (If the replying-to-post is by a group (currently cannot happen), and someone in the group
         // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
         // do about that.)
-        makeAboutPostNotfs(
-              notfType, newPost, inCategoryId = page.categoryId, replyingToUser)
+        _makeAboutPostNotfs(
+              notfType, about = newPost, inCategoryId = page.categoryId, replyingToUser)
       }
     }
 
@@ -198,25 +198,29 @@ case class NotificationGenerator(
             anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(  // [nashorn_in_tx] [save_post_lns_mentions]
                 newPost.approvedSource getOrDie "DwE82FK4", site, nashorn)
 
-      var mentionedMembers = tx.loadMembersVbByUsername(mentionedUsernames).values
+      var mentionedMembers: Set[MemberVb] = tx.loadMembersVbByUsername(mentionedUsernames).toSet
 
       // Can create more mention aliases, like @new-members (= trust levels new & basic only),
       // and @guests and @here-now and @everyone (= all members)
       val allMentioned = mentionsAllInChannel(mentionedUsernames)
       if (allMentioned) {
-        if (mayMentionGroups(author)) {
+        if (mayMentionGroups(author)) {  // [who_may_mention_all]
+          // Notify all page members including members of [groups that are page members],
+          // except for anyone who is also mentioned directly via hens @username — hen
+          // will be @username-mentioned only.
           // ((If user U is a page member, and also mentioned via group G,
-          // then, removing G.id here, won't remove U from moreToAdd.
-          // Instead, U is added to moreToAdd, and will be @channel mentioned,
+          // that is, U is mentioned indirectly both via '@all' and via '@group_name',
+          // then, removing G.id here, won't remove U from moreIds.
+          // Instead, U is added to moreIds, and will be @channel mentioned,
           // instead of @group_name mentioned. Doesn't matter?))
-          val moreToAdd: Set[UserId] = pageMemberIds -- mentionedMembers.map(_.id)
-          val moreMentions = tx.loadUsersInclDetailsById(moreToAdd).toSet
+          val moreIds: Set[UserId] = pageMemberIds -- mentionedMembers.map(_.id)
+          val moreMentions: ImmSeq[MemberVb] = tx.loadMembersVbById(moreIds)
           mentionedMembers ++= moreMentions
         }
       }
 
       for {
-        userOrGroup <- mentionedMembers
+        userOrGroup: MembVb <- mentionedMembers
         // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
@@ -226,10 +230,12 @@ case class NotificationGenerator(
         // Authz checks that we won't notify people outside a private chat
         // about any mentions (because they cannot see the chat). [PRIVCHATNOTFS]
       } {
-        makeAboutPostNotfs(
-            NotificationType.Mention, newPost, inCategoryId = page.categoryId,
-            sendTo = userOrGroup,
-            sentFrom = Some(author))
+        _makeAboutPostNotfs(
+              NotificationType.Mention,
+              about = newPost,
+              inCategoryId = page.categoryId,
+              sendTo = userOrGroup,
+              sentFrom = Some(author))
       }
     }
 
@@ -237,17 +243,21 @@ case class NotificationGenerator(
     // If the post @mentions some of those indirectly replied to, then we've won't
     // generate any indirect reply notfs to them — they'll get a Mention
     // notf only (generated above).
-    maybeGenReplyNotf(NotificationType.IndirectReply, ancestorsParentFirst drop 1)
+    maybeGenReplyNotf(
+          NotificationType.IndirectReply, ancestorsParentFirst drop 1)
 
     // People watching this topic or category
-    genWatchingSomethingNotfs(page, newPost, pageMemberIds, sentFrom = author)
+    _genWatchingSomethingNotfs(
+          page, about = newPost, pageMemberIds, sentFrom = author)
 
     generatedNotifications
   }
 
 
-  private def genWatchingSomethingNotfs(page: Page, newPost: Post,
+  private def _genWatchingSomethingNotfs(page: Page, about: Post,
           pageMemberIds: Set[UserId], sentFrom: Pat): U = {
+
+    val newPost = about
 
     val isEmbDiscFirstReply =
           page.pageType == PageType.EmbeddedComments &&
@@ -460,18 +470,18 @@ case class NotificationGenerator(
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
     anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
     tx.loadParticipants(toUserIds.filter(_ != sender.id)) foreach { user =>
-      makeAboutPostNotfs(
+      _makeAboutPostNotfs(
           // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
           // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
-          NotificationType.Message, pageBody, inCategoryId = None, sendTo = user)
+          NotificationType.Message, about = pageBody, inCategoryId = None, sendTo = user)
     }
     generatedNotifications
   }
 
 
-  private def makeAboutPostNotfs(
+  private def _makeAboutPostNotfs(
         notfType: NotificationType,
-        post: Post,
+        about: Post,
         inCategoryId: Option[CategoryId],
         sendTo: Participant,
         sentFrom: Option[Participant] = None, // default is post author
@@ -479,7 +489,7 @@ case class NotificationGenerator(
 
     // legacy variable names CLEAN_UP but not now
     val toUserMaybeGroup = sendTo
-    val newPost = post
+    val newPost = about
 
     if (sentToUserIds.contains(toUserMaybeGroup.id))
       return
@@ -533,7 +543,7 @@ case class NotificationGenerator(
         throwForbiddenIf(isMention && groupId == Group.EveryoneId,
           "TyEBDGRPMT01", s"May not mention ${toGroup.idSpaceName}")
 
-        // Hmm remove this later? There's another check above [filter_mentions].
+        CLEAN_UP; REMOVE // this later? There's another check above [filter_mentions].
         if (isMention && !mayMentionGroups(author)) {
           // For now, may still mention core members, staff and admins, so can ask how the site works.
           throwForbiddenIf(
@@ -554,7 +564,8 @@ case class NotificationGenerator(
         dieIf(groupMembers.exists(_.isGuest), "TyE7ABK402")
 
         // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
-        // because they're members of the AllMembers group. [NESTDGRPS]
+        // because they're members of the AllMembers group. But later, if [sub_groups] supported,
+        // then, recursively expand any group tree?
         groupMembers = groupMembers.filter(!_.isGroup)
         // Alternatively:
         /*
@@ -568,6 +579,9 @@ case class NotificationGenerator(
         throwForbiddenIf(isMention && groupMembers.size > maxMentions, "TyEMNYMBRS",
           s"${groupMembers.size} group members — but may not group-mention more than $maxMentions")
 
+        // Could filter away group members who the author may not mention,
+        // here instead?  [.move_may]
+
         // UX SHOULD use a group notf type instead, it'll look a bit different: look less important.
         (groupMembers, notfType)
       }
@@ -578,14 +592,19 @@ case class NotificationGenerator(
       // Later: Could recursively expand [sub_groups], notify everyone in a "group tree".
       if toUserId <= MaxGuestId || Participant.LowestNormalMemberId <= toUserId
       if !sentToUserIds.contains(toUserId)
+
+      // Move these may-mention and may-message tests to the  toUserMaybeGroup.isGroup
+      // if branch above? No need to be done here again if is not-a-group? [.move_may]
+      // -------
       // (If sendTo is a group, and author may mention that group, but author may not
       // mention group member toPat, then what? For now, skip such mentions.
-      // Maybe depends: sometimes, if pat is an overloaded admin, hen wants no notification.
+      // Maybe depends: sometimes, if pat is an overworked admin, hen wants no notification.
       // But maybe if hen is in a Support group, then, hen might want to get notified
       // — but maybe only via the group, might not want to get mentioned individually.
       // Later, this could be a per user and group setting. [inherit_group_priv_prefs])
       if !isMention || author.mayMention(toPat) // [filter_mentions] here too
       if !isDirMsg || author.mayMessage(toPat)  // [filter_dms]
+      // -------
     } {
       // Generate notifications, regardless of email settings, so shown in the user's inbox.
       // We won't send any *email* though, if the user has unsubscribed from such emails.
@@ -683,6 +702,10 @@ case class NotificationGenerator(
       if !isDirMsg || sentFrom.mayMessage(member)
       // Later, maybe:  sentFrom.mayMessage(member, viaGroup = group)
       // and then the member's group membership settings matter too.
+      //
+      // But no need to:
+      //   if !isDirMsg || sentFrom.mayMessage(group)
+      // because the group itself is already explicitly subscribed to notifications.
 
       // ... or what if a group has enabled site wide notfs, and cannot see category C,
       // but user U is in that group *can* see C (because of other group hen is in)
@@ -801,10 +824,10 @@ case class NotificationGenerator(
     val createdMentions: Set[Username] = newMentions -- oldMentions
 
     var mentionsDeletedForUsers: Set[MemberVb] =
-          tx.loadMembersVbByUsername(deletedMentions).values.toSet
+          tx.loadMembersVbByUsername(deletedMentions).toSet
 
     var mentionsCreatedForUsers: Set[MemberVb] =
-          tx.loadMembersVbByUsername(createdMentions).values.toSet
+          tx.loadMembersVbByUsername(createdMentions).toSet
 
     val newMentionsIncludesAll: Bo = mentionsAllInChannel(newMentions)
     val oldMentionsIncludesAll: Bo = mentionsAllInChannel(oldMentions)
@@ -822,7 +845,7 @@ case class NotificationGenerator(
 
     if (mentionsForAllDeleted) {
       // CLEAN_UP COULD simplify this whole function — needn't load mentionsDeletedForUsers above.
-      val usersMentionedAfter = tx.loadMembersVbByUsername(newMentions).values.toSet
+      val usersMentionedAfter = tx.loadMembersVbByUsername(newMentions).toSet
       val toDelete: Set[UserId] = previouslyMentionedUserIds -- usersMentionedAfter.map(_.id)
       // (COULD_OPTIMIZE: needn't load anything here — we have the user ids already.)
       // But better skip loading above instead, see CLEAN_UP above.
@@ -834,9 +857,9 @@ case class NotificationGenerator(
       mentionsDeletedForUsers = mentionsDeletedForUsers.filterNot(u => pageMemberIds.contains(u.id))
       BUG; REFACTOR // [5BKR03] in rare cases, people might get two notfs: if they're a page member,
       // and also if they're in a group that gets @group_mentioned now, when editing.
-      val moreToAdd: Set[UserId] =
+      val moreIds: Set[UserId] =
             pageMemberIds -- previouslyMentionedUserIds -- mentionsCreatedForUsers.map(_.id)
-      mentionsCreatedForUsers ++= tx.loadMembersVbById(moreToAdd)
+      mentionsCreatedForUsers ++= tx.loadMembersVbById(moreIds)
     }
 
     // Delete mentions.
@@ -859,8 +882,10 @@ case class NotificationGenerator(
       // and now again via a @group_mention. See REFACTOR above.
       BUG // harmless:  Notf.NewPost.createdAt should be the date of the edit,
       // not the post creation date
-      makeAboutPostNotfs(
-            NotificationType.Mention, newPost, inCategoryId = pageMeta.flatMap(_.categoryId),
+      _makeAboutPostNotfs(
+            NotificationType.Mention,
+            about = newPost,
+            inCategoryId = pageMeta.flatMap(_.categoryId),
             sendTo = mentionedMember,
             sentFrom = Some(author))
     }
@@ -880,8 +905,8 @@ case class NotificationGenerator(
       return generatedNotifications
     }
 
-    makeAboutPostNotfs(
-          NotificationType.OneLikeVote, post, inCategoryId = inCategoryId,
+    _makeAboutPostNotfs(
+          NotificationType.OneLikeVote, about = post, inCategoryId = inCategoryId,
           sendTo = upvotedPostAuthor, sentFrom = Some(voter))
 
     generatedNotifications
@@ -902,8 +927,8 @@ case class NotificationGenerator(
       // This is about the new (from the notf recipient's point of view) post,
       // so the notf is from the post author, not from the one who added the tag
       // (unless hen is the author).
-      makeAboutPostNotfs(
-            NotificationType.PostTagged, post,
+      _makeAboutPostNotfs(
+            NotificationType.PostTagged, about = post,
             inCategoryId = pageMeta.flatMap(_.categoryId),
             sendTo = user)
     }
@@ -986,6 +1011,8 @@ object NotificationGenerator {
 
 
   def mayMentionGroups(user: Participant): Boolean = {
+    REMOVE // Using the permission system instead: pats_t.may_mention_me_tr_lv_c.
+    // But how is that going to work for "virtual" groups like @all and @here? [who_may_mention_all]
     user.isStaffOrMinTrustNotThreat(TrustLevel.BasicMember)
   }
 
@@ -1007,7 +1034,7 @@ object NotificationGenerator {
       return Set.empty
 
     // Do twice? First to find all mentions, then, find out which ones one may not mention,
-    // then, do again but excl those one may not mention? [filter_mentions]
+    // then, do again but color @someone_one_may_not_mention in gray not blue? [filter_mentions]
     val result = nashorn.renderAndSanitizeCommonMark(
       // BUG? COULD incl origin here, so links won't be interpreted relative any
       // web browser client's address? — Right now, no images incl in reply notf emails

@@ -272,8 +272,9 @@ const AboutUser = createComponent({
               target: '_blank' },
           t.aud.ViewProfl);
 
-    const userIsPageMember = page_isGroupTalk(page.pageRole) &&
-        _.includes(page.pageMemberIds, user.id);
+    const userIsPageMember = (page_isGroupTalk(page.pageRole) &&
+        // Use [me_isPageMember] instead, in case any group user is in, is a member?
+        _.includes(page.pageMemberIds, user.id));
     const removeFromPageButton = userIsPageMember &&
         (isStaff(me) || store_thisIsMyPage(store)) && !userIsMe
       ? Button({ onClick: this.removeFromPage, id: 'e2eUD_RemoveB' }, t.aud.RmFromTpc)

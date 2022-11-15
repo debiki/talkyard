@@ -65,6 +65,8 @@ export function me_hasVoted(me: Me, postId: PostId, what: St): Bo {
 }
 
 
+/// Sync w Scala: Pat.mayMessage().
+///
 export function store_maySendDirectMessageTo(store: Store, user: PatVb): Bo {
   const settings: SettingsVisibleClientSide = store.settings;
   const me: Me = store.me;
@@ -84,18 +86,15 @@ export function store_maySendDirectMessageTo(store: Store, user: PatVb): Bo {
   if (me.id === user.id)
     return false;
 
-  //if (user.isGroup) // group messages not yet impl
-  //  return false;
-
   const myTrustLevel = user_trustLevel(me);
 
   if (user.maySendMeDmsTrLv && myTrustLevel < user.maySendMeDmsTrLv)
     return false;
 
-  if (isStaff(me) || isStaff(user))
+  if (user_isStaffOrCoreMember(me))
     return true;
 
-  return myTrustLevel >= TrustLevel.Basic && me.threatLevel <= ThreatLevel.HopefullySafe;
+  return me.threatLevel <= ThreatLevel.HopefullySafe || isStaff(user); // [bad_pat_dms]
 }
 
 //------------------------------------------------------------------------------

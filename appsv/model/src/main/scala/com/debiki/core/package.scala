@@ -73,10 +73,6 @@ package object core {
     else "-" + errCode
   }
 
-  def dash(errCode: ErrCode): St = {
-    if (errCode.isEmpty) ""
-    else "-" + errCode
-  }
   type Opt[+A] = Option[A]
   val Opt: Option.type = Option
 
@@ -175,6 +171,7 @@ package object core {
   type UserVb = UserInclDetails
 
   type PatVb = ParticipantInclDetails
+  type MembVb = MemberInclDetails
   type MemberVb = MemberInclDetails
 
   // Later, these will be different?
@@ -186,7 +183,7 @@ package object core {
   type GuestId = PatId
   type MemberId = PatId   ; RENAME // to MembId
   type MembId = PatId     // but hard to read: '...bI..', two lines next to each other. Instead:
-  type MemId = PatId      // ... is this better?
+  type MemId = PatId      // ... is this better?  NO, REMOVE.
   type UserId = PatId
   type GroupId = PatId
 
@@ -500,11 +497,11 @@ package object core {
   type ApiSecretNr = Int
 
   type LinkMaybeBad = St
-  sealed trait MayLink
-  object MayLink {
-    case object YesRelFollow extends MayLink
-    case object YesNoFollow extends MayLink
-    case object No extends MayLink
+  sealed trait MayLink_unused
+  object MayLink_unused {
+    case object YesRelFollow extends MayLink_unused
+    case object YesNoFollow extends MayLink_unused
+    case object No extends MayLink_unused
   }
 
   type Hopefully[R] = R Or Problem
@@ -1657,7 +1654,7 @@ package object core {
   def OPTIMIZE = ()
   def SLOW_QUERY = ()
   def SHOULD_OPTIMIZE = ()
-  def COULD_OPTIMIZE = () // Also see [On2] but typically O(n^2) is intentional (because simpler).
+  def COULD_OPTIMIZE = () // Also see [On2] or [OnLogn] but typically that's intentional (because simpler).
   def COULD_OPTIMIZE_TESTS = () // Less important
   def WOULD_OPTIMIZE = () // Unimportant thing that could be optimized.
   def BLOCKING_REQ = ()

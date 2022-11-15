@@ -619,7 +619,7 @@ class PubSubActor(val globals: Globals) extends Actor {
         }
 
         usersWhoMaySeePage foreach { user =>
-          siteDao.markPageAsUnreadInWatchbar(user, pageId = pageId)
+          siteDao.markPageAsUnreadInWatchbar(user.id, pageId = pageId)
         }
 
         def lazyMessage = s"Sending page $pageId 'storePatch' to: [${

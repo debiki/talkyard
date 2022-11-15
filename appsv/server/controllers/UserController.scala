@@ -116,8 +116,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     var (userJson, anyStatsJson, pat) = Try(who.toInt).toOption match {
       case Some(id) => loadPatJsonAnyDetailsById(id, includeStats = true, request)
-      case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
-        who, includeStats = true, request)
+      case None => loadMemberJsonInclDetailsByEmailOrUsername(
+                                who, includeStats = true, request)
     }
     val groupsMaySee = dao.getGroupsReqrMaySee(requesterOrUnknown)
     val pptGroupIdsMaybeRestr = dao.getOnesGroupIds(pat)
@@ -187,7 +187,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   // A tiny bit dupl code [5YK02F4]
-  private def loadMemberOrGroupJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
+  private def loadMemberJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
         includeStats: Boolean, request: DebikiRequest[_])
         : (JsObject, JsValue, Participant) = {
     val callerIsStaff = request.user.exists(_.isStaff)
@@ -259,9 +259,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // These currently needs to be public, so others get to know if they cannot
     // mention or message this user. [some_pub_priv_prefs]
     val privPrefs = group.privPrefs
-    json = json.anyNum("maySendMeDmsTrLv", privPrefs.maySendMeDmsTrLv)
-    json = json.anyNum("mayMentionMeTrLv", privPrefs.mayMentionMeTrLv)
-    json = json.anyNum("seeActivityMinTrustLevel", privPrefs.seeActivityMinTrustLevel)
+    json = json.addAnyInt32("maySendMeDmsTrLv", privPrefs.maySendMeDmsTrLv)
+    json = json.addAnyInt32("mayMentionMeTrLv", privPrefs.mayMentionMeTrLv)
+    json = json.addAnyInt32("seeActivityMinTrustLevel", privPrefs.seeActivityMinTrustLevel)
 
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
@@ -472,7 +472,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   private def throwForbiddenIfActivityPrivate(
           userId: UserId, requester: Opt[Pat], dao: SiteDao): U = {
     // Also browser side [THRACTIPRV]
-    // Related idea: [unlist_users].
+    // Related idea: [private_pats].
     throwForbiddenIf(!maySeeActivity(userId, requester, dao),
           "TyE4JKKQX3", "Not allowed to list activity for this user")
   }
@@ -1475,6 +1475,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // Maybe if one has typed >= 3 chars matching any group's or user's username, then,
     // show that group/user, also if hen hasn't replied on this page?
     // Or maybe two lists: People on this page, and all others?
+    // There could even be a group setting: [mentions_prio_c], which admins can raise,
+    // for their @support group — maybe then it'd get listed directly if just typing ' @'?
     val names = dao.listUsernames(
       pageId = pageId, prefix = prefix, caseSensitive = false, limit = 50)
 
@@ -1512,8 +1514,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def saveAboutMemberPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
         maxBytes = 3000) { request =>
     val prefs = aboutMemberPrefsFromJson(request.body)
-    throwUnlessMayEditPrefs(prefs.userId, request.theRequester)
-    request.dao.saveAboutMemberPrefs(prefs, request.who)
+    _quickThrowUnlessMayEditPrefs(prefs.userId, request.theRequester)
+    request.dao.saveAboutMemberPrefsIfAuZ(prefs, request.who)
 
     // Try to reuse: [load_pat_stats_grps]
     val (patJson, _, _) = loadPatJsonAnyDetailsById(
@@ -1626,8 +1628,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         maxBytes = 100) { request =>
     val userId = parseInt32(request.body, "userId")
     val prefs: MemberPrivacyPrefs = JsX.memberPrivacyPrefsFromJson(request.body)
-    throwUnlessMayEditPrefs(userId, request.theRequester)
-    request.dao.saveMemberPrivacyPrefs(forUserId = userId, prefs, byWho = request.who)
+    _quickThrowUnlessMayEditPrefs(userId, request.theRequester)
+    request.dao.saveMemberPrivacyPrefsIfAuZ(forUserId = userId, prefs, byWho = request.who)
 
     // Try to reuse: [load_pat_stats_grps]
     val (patJson, _, _) = loadPatJsonAnyDetailsById(userId, includeStats = false, request)
@@ -1635,9 +1637,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  private def throwUnlessMayEditPrefs(userId: UserId, requester: Participant): Unit = {
-    // There's a check elsewhere  [mod_0_conf_adm] that mods cannot
-    // change admins' preferences.
+  private def _quickThrowUnlessMayEditPrefs(userId: UserId, requester: Participant): Unit = {
+    // There's a check elsewhere  [mod_0_conf_adm] that mods cannot change admins' preferences.
     val staffOrSelf = requester.isStaff || requester.id == userId
     throwForbiddenIf(!staffOrSelf, "TyE5KKQSFW0", "May not edit other people's preferences")
     throwForbiddenIf(userId < LowestTalkToMemberId,

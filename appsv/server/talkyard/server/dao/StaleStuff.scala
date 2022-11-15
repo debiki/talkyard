@@ -60,11 +60,6 @@ class StaleStuff {
   private val _stalePages = mut.Map[PageId, StalePage]()
   private val _stalePpIdsMemCacheOnly = mut.Set[PatId]()
 
-  def nonEmpty: Bo =
-    _allPagesStale ||
-    _stalePages.nonEmpty ||
-    _stalePpIdsMemCacheOnly.nonEmpty
-
 
   // ----- Participants
 
@@ -210,6 +205,9 @@ class StaleStuff {
 
 
   def clearStaleStuffInMemory(dao: debiki.dao.SiteDao): U = {
+
+    // ----- Pages
+
     if (areAllPagesStale) {
       // Currently then need to: (although clears unnecessarily much)
       dao.memCache.clearThisSite()
@@ -220,6 +218,8 @@ class StaleStuff {
       }
       dao.uncacheLinks(this)
     }
+
+    // ----- Pats
 
     // dao.memCache.clearThisSite() above doesn't uncache pats — because pat cache items
     // ignore the site version. [pat_cache]

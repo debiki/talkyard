@@ -248,9 +248,11 @@ class Nashorn(
     val (safeHtmlNoPreviews, mentions) = withJavascriptEngine(engine => {
       val resultObj: Object = engine.invokeFunction("renderAndSanitizeCommonMark",
             commonMarkSource,
-            true.asInstanceOf[Object],
-                // was: renderParams.allowClassIdDataAttrs.asInstanceOf[Object],
+            true.asInstanceOf[Object],  // was: renderParams.allowClassIdDataAttrs
             renderParams.followLinks.asInstanceOf[Object],
+            // renderParams.mayMention  // Later? [filter_mentions] @Mentions that didn't
+                                        // generate any notifications could get another
+                                        // color, e.g. dark gray not blue?
             prevwRenderer, uploadsUrlPrefix)
 
       val result: ScriptObjectMirror = resultObj match {

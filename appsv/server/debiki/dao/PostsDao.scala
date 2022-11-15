@@ -511,10 +511,10 @@ trait PostsDao {
 
     // ----- Trust level
 
-    val alwaysReqAppr = author.trustLevel.isAtMost(settings.requireApprovalIfTrustLte)
+    val alwaysReqApprBef = author.trustLevel.isAtMost(settings.requireApprovalIfTrustLte)
     val alwaysReviewAfter = author.trustLevel.isAtMost(settings.reviewAfterIfTrustLte)
 
-    if (alwaysReqAppr) {
+    if (alwaysReqApprBef) {
       // Tests: TyT305RKTH205
       autoApprove = false
       reviewReasons.append(ReviewReason.IsByLowTrustLevel)
@@ -525,7 +525,7 @@ trait PostsDao {
 
     if (alwaysReviewAfter) {
       TESTS_MISSING
-      if (!alwaysReqAppr) {
+      if (!alwaysReqApprBef) {
         reviewReasons.append(ReviewReason.IsByLowTrustLevel)
       }
       if (maxPostsPendRevwAftr > 0 && numPending + 1 > maxPostsPendRevwAftr)

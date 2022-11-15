@@ -641,6 +641,8 @@ export function me_uiPrefs(me: Myself): UiPrefs {
 }
 
 
+/// Oops should use at more places. [me_isPageMember]
+///
 function me_isPageMember(me: Me, page: Page): Bo {
   if (page.pageMemberIds.indexOf(me.id) >= 0)
     return true;
@@ -663,8 +665,11 @@ function me_isPageMember(me: Me, page: Page): Bo {
 // Members
 //----------------------------------
 
-export function member_isBuiltIn(member: Member): boolean {
-  return member.id < LowestAuthenticatedUserId;
+// RENAME to pat_isBuiltIn
+export function member_isBuiltIn(member: Member): Bo {
+  return (MaxGuestId < member.id && member.id < Pats.MinAuthnMemberId
+          // The Unknown user is both a guest and built-in.
+          || member.id === UnknownUserId);
 }
 
 
@@ -715,7 +720,7 @@ export function user_isTrustMinNotThreat(user: UserInclDetails | Myself, trustLe
 ///
 export function pat_isBitAdv(pat: PatVb | Me): Bo {
   // For now, let's assume people who have become full members, are "advanced".
-  // Later, this will probably instead be a checkbox in one's user settings.
+  // Later, there could be a checkbox in one's user settings. [tech_level]
   return user_trustLevel(pat) >= TrustLevel.FullMember || isStaff(pat);
 }
 
@@ -724,7 +729,7 @@ export function pat_isBitAdv(pat: PatVb | Me): Bo {
 ///
 export function pat_isMoreAdv(pat: PatVb | Me): Bo {
   // For now.
-  return user_trustLevel(pat) >= TrustLevel.CoreMember || isStaff(pat);
+  return user_trustLevel(pat) >= TrustLevel.Trusted || isStaff(pat);
 }
 
 
@@ -906,7 +911,9 @@ export function store_mayICreateTopics(store: Store, category: Cat | U): Bo {
 }
 
 
-// Some dupl code! (8FUZWY02Q60)
+/// Sync w Scala: Authz.mayPostReply()
+/// Some dupl code! (8FUZWY02Q60)
+///
 export function store_mayIReply(store: Store, post: Post): boolean {
   const page: Page = store.currentPage;
   // Each reply on a mind map page is a mind map node. Thus, by replying, one modifies the mind map
@@ -918,7 +925,9 @@ export function store_mayIReply(store: Store, post: Post): boolean {
   const ancestorCategories: Ancestor[] = page.ancestorsRootFirst;
   const me = store.me;
 
-  if (me.isAdmin)
+  // It's ok to reply to deleted comments? E.g. if you had in mind to write
+  // "The above comment was deleted because: ..." but you happened to delete it first.
+  if (isStaff(me))
     return true;
 
   // Later: [8PA2WFM] Perhaps let staff reply, although not approved. So staff can say

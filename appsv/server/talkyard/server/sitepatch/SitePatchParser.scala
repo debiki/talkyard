@@ -760,7 +760,7 @@ case class SitePatchParser(context: TyContext) {
         tinyAvatar = None, // [readlater]
         smallAvatar = None, // [readlater]
         mediumAvatar = None, // [readlater]
-        uiPrefs = None,   // [readlater]
+        uiPrefs = (jsObj \ "uiPrefs").asOpt[JsObject],
         isOwner = readOptBool(jsObj, "isOwner") getOrElse false,
         isAdmin = readOptBool(jsObj, "isAdmin") getOrElse false,
         isModerator = readOptBool(jsObj, "isModerator") getOrElse false,

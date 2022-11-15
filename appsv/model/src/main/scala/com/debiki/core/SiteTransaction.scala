@@ -579,7 +579,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Option[User]
   def loadMemberVbByUsername(username: St): Opt[MemberVb]
-  def loadMembersVbByUsername(usernames: Iterable[Username]): Map[Username, MemberVb]
+  def loadMembersVbByUsername(usernames: Iterable[Username]): ImmSeq[MemberVb]
   def loadUserInclDetailsBySsoId(ssoId: String): Option[UserInclDetails]
   def loadUserInclDetailsByExtId(externalId: String): Option[UserInclDetails]
   def loadUserInclDetailsByEmailAddr(email: String): Option[UserInclDetails]

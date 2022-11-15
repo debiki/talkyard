@@ -232,7 +232,7 @@ trait UploadsDao {
     * version can be a new version the author has started editing
     * — and if hen has e.g. added and removed images, the upload refs will be
     * different in the current version. We need to remember also images in the current
-    * version, otherwise they could disappear, gone before the edits gets published.
+    * version, otherwise they could disappear, be gone before edits published.
     */
   @deprecated("now")
   def findUploadRefsInPost(post: Post, site: Opt[Site] = None): Set[UploadRef] = {

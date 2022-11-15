@@ -40,13 +40,13 @@ case class LoginNotFoundException(siteId: SiteId, userId: UserId)
 
 case class ReadMoreResult(
   numMoreNotfsSeen: Int,
-  ) // gotPromoted: Boolean)
+  )
 
 
 case class EditMemberCtx(
   tx: SiteTx,
   statleStuff: StaleStuff,
-  member: MemberInclDetails,
+  member: MemberVb,
   reqer: User)
 
 
@@ -90,6 +90,7 @@ trait UserDao {
     */
   def acceptInviteCreateUser(secretKey: String, browserIdData: BrowserIdData)
         : (UserInclDetails, Invite, Boolean) = {
+
     val result = readWriteTransaction { tx =>
       var invite = tx.loadInviteBySecretKey(secretKey) getOrElse throwForbidden(
         "DwE6FKQ2", "Bad invite key")
@@ -169,15 +170,11 @@ trait UserDao {
         inUseFrom = tx.now, userId = newUser.id))
       tx.upsertUserStats(UserStats.forNewUser(
         newUser.id, firstSeenAt = tx.now, emailedAt = Some(invite.createdWhen)))
-      //joinPinnedGlobalChats(newUser, tx) // hmm will use other tx??  or can just skip?
       anyGroups.foreach { group =>
         tx.addGroupMembers(group.id, Set(newUser.id))
       }
       tx.updateInvite(invite)
       tx.insertAuditLogEntry(makeCreateUserAuditEntry(newUser, browserIdData, tx.now))
-
-      // Need not — happens lazily on first access:
-      // joinPinnedGlobalChats(newUser, tx)
 
       (newUser, invite, false)
     }
@@ -191,8 +188,8 @@ trait UserDao {
       memCache.remove(groupMembersKey(groupId))  // [inv2groups]
     }
 
-    //val newUserId: UserId = result._1.id
-    //uncacheOnesGroupIds(Seq(newUserId)) // = MemCacheKey(siteId, s"$userId|GIdsByPp")
+    // Need not — happens lazily on first access:  [auto_join_chats]
+    // _addPinnedGlobalChatsToWatchbar(newUser, tx)
 
     result
   }
@@ -336,6 +333,9 @@ trait UserDao {
 
 
   def lockUserTrustLevel(memberId: UserId, newTrustLevel: Opt[TrustLevel]): U = {
+
+    // ----- Step 1/3:  Update database
+
     val (membAft, promoted, chatsPatLeft) = writeTx { (tx, staleStuff) =>
       val membBef = tx.loadTheUserInclDetails(memberId)
       val membAft = membBef.copy(lockedTrustLevel = newTrustLevel)
@@ -343,32 +343,41 @@ trait UserDao {
       val promoted = membAft.effectiveTrustLevel.isAbove(membBef.effectiveTrustLevel)
       val demoted = membAft.effectiveTrustLevel.isBelow(membBef.effectiveTrustLevel)
       if (promoted) {
-        // joinPinnedGlobalChats(membAft, tx)
         (membAft, true, Nil)
       }
       else if (demoted) {
-        val chatsPatLeft = _leaveChatsMayNotSee_updateDb(membAft)(tx, staleStuff)   // [leave_opn_cht]
+        val chatsPatLeft = _leavePagesMayNotSee_updateDb(membAft)(tx, staleStuff)   // [leave_opn_cht]
         (membAft, false, chatsPatLeft)
       }
       else {
         // Nothing changed — trust level locked at the current trust level, right.
+        // (But better continue below, so the mem cache gets updated, although
+        // theoretically shouldn't matter.)
         (membAft, false, Nil)
       }
     }
+
+    // ----- Step 2/3:  Update mem cache
+
+    COULD // use staleStuff above instead? (Then this step 2/3 disappears.)
 
     removeUserFromMemCache(memberId)
     // Now the user might have joined / left trust level groups.
     uncacheOnesGroupIds(Seq(memberId))
     uncacheBuiltInGroups()
 
+    // ----- Step 3/3:  Update watchbar
+
     // Do this outside the tx and after having refreshed the cache above.
     if (promoted) {
-      joinPinnedGlobalChats(membAft)    // [join_opn_cht]  Oops publishes presence
+      // [join_opn_cht]
+      BUG // Harmless. Publishes presence, although the user might be away. [presence_bug]
+      _addPinnedGlobalChatsToWatchbar(membAft)
     }
     else if (chatsPatLeft.nonEmpty) {
       for (pageMeta <- chatsPatLeft) {
         _joinLeavePage_updateWatchbar(
-            userIds = Set(memberId), couldntAdd = Set.empty, Remove, pageMeta)
+            userIds = Set(memberId), couldntAdd = Set.empty, Remove, pageToJoinLeave = pageMeta)
       }
     }
   }
@@ -591,8 +600,6 @@ trait UserDao {
 
       tx.insertIdentity(identity)  // use saveIdentityLinkToUser() instead somehow?
 
-      // joinPinnedGlobalChats(user, tx)   // CAN SKIP? or do outside tx
-
       // Dupl code [2ABKS03R]
       if (newUserData.isOwner) {
         tx.upsertPageNotfPref(PageNotfPref(userId, NotfLevel.WatchingAll, wholeSite = true))
@@ -687,7 +694,6 @@ trait UserDao {
         inUseFrom = now, userId = user.id))
     tx.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = userData.firstSeenAt.getOrElse(now), emailedAt = None))
-    // joinPinnedGlobalChats(user, tx)  // not here!?
 
     // Dupl code [2ABKS03R]
     // Initially, when the forum / comments site is tiny, it's good to be notified
@@ -1114,7 +1120,7 @@ trait UserDao {
 
 
   private def getGroupStatsIfReqrMaySee(group: Group, requester: Participant): Option[GroupStats] = {
-    // Hmm this counts not only users, but child groups too. [NESTDGRPS]
+    // Hmm this counts not only users, but child groups too. [sub_groups]
     val members = listGroupMembersIfReqrMaySee(group.id, requester) getOrElse {
       return None
     }
@@ -1173,7 +1179,7 @@ trait UserDao {
       val newMembers = tx.loadParticipants(memberIdsToAdd)
       newMembers.find(_.isGroup) foreach { group =>
         // Currently trust level groups are already nested in each other — but let's
-        // wait with allowing nesting custom groups in each other. [NESTDGRPS]
+        // wait with allowing nesting custom groups in each other. [sub_groups]
         // [ck_grp_ckl]
         throwForbidden("TyEGRINGR", s"Cannot add groups to groups. Is a group: ${group.nameParaId}")
       }
@@ -1281,7 +1287,7 @@ trait UserDao {
 
     val watchbarsByUserId = _joinLeavePage_updateWatchbar(
           userIds = Set(who.id), couldntAdd = databaseResult.patIdsCouldntJoin,
-          joinOrLeave, databaseResult.pageMeta)
+          joinOrLeave, pageToJoinLeave = databaseResult.pageMeta)
 
     val anyNewWatchbar = watchbarsByUserId.get(who.id)
     anyNewWatchbar
@@ -1294,9 +1300,10 @@ trait UserDao {
     * (e.g. visible only to Trusted users) — and then those are added to the
     * watchbar, those too.
     */
-  private def joinPinnedGlobalChats(user: UserBase): U = {
+  private def _addPinnedGlobalChatsToWatchbar(user: UserBase): U = {
     // Tests:  promote-demote-by-staff-join-leave-chats.2br  TyTE2E5H3GFRVK
 
+    // Dupl code, also done when creating a watchbar. [auto_join_chats]
     val chatsInclForbidden = readTx(_.loadOpenChatsPinnedGlobally())
     BUG // Don't join a chat again, if has left it. Needn't fix now, barely matters.
     val joinedChats = chatsInclForbidden // ArrayBuffer[PageMeta]()
@@ -1307,7 +1314,7 @@ trait UserDao {
       if (maySee) {
         val couldntAdd = mutable.Set[UserId]()
 
-        joinLeavePageOrThrow(Set(user.id), chatPageMeta.pageId, add = true,
+        _joinLeavePageOrThrow(Set(user.id), chatPageMeta.pageId, add = true,
             byWho = Who.System, couldntAdd, tx)
 
         if (!couldntAdd.contains(user.id)) {
@@ -1318,16 +1325,18 @@ trait UserDao {
 
     // This will do access permission checks.
     val userAuthzCtx = getAuthzCtxOnPagesForPat(user)
-    _addRemovePagesToWatchbar(joinedChats, userAuthzCtx, Add) //, UseTx(tx))
+    _addRemovePagesToWatchbar(joinedChats, userAuthzCtx, Add)
   }
 
 
-  private def _leaveChatsMayNotSee_updateDb(user: UserInclDetails)(
+  private def _leavePagesMayNotSee_updateDb(user: UserVb)(
           tx: SiteTx, staleStuff: StaleStuff): ImmSeq[PageMeta] = {
-    // Remove [chat channels pat may no longer see] from hens watchbar,
-    // otherwise hen will get confused if clicking them and getting
-    // access permission errors?
-    // (But don't remove pat from private chats.)
+    // Remove [chat channels pat may no longer see] from hens watchbar, otherwise hen
+    // will get confused if clicking them and getting access permission errors.
+
+    SHOULD // Remove pat from [private_chats] too, once private chats have been implemented.
+    // Hmm but they won't work like that? They aren't tied to trust levels and category
+    // permissions, instead, created outside any cat and a few pats added explicitly.
 
     // Tests:  promote-demote-by-staff-join-leave-chats.2br  TyTE2E5H3GFRVK.TyTE2ELWRTRU38
     UX; COULD // remove also non-pinned open chats pat may no longer see.
@@ -1347,9 +1356,10 @@ trait UserDao {
   def addUsersToPage(userIds: Set[UserId], pageId: PageId, byWho: Who): U = {
     val result = _joinLeavePage_updateDb(userIds, pageId, Add, byWho, anyTx = None)
     if (result.anyChange) {
-      dieIf(result.patIdsCouldntJoin.nonEmpty, "TyE603MRDL")
+      dieIf(result.patIdsCouldntJoin.size >= userIds.size, "TyE603MRDL",
+            "No user added, but still anyChange is true")
       _joinLeavePage_updateWatchbar(
-            userIds = userIds, couldntAdd = Set.empty, Add, result.pageMeta)
+            userIds = userIds, couldntAdd = Set.empty, Add, pageToJoinLeave = result.pageMeta)
     }
   }
 
@@ -1358,16 +1368,14 @@ trait UserDao {
     val result = _joinLeavePage_updateDb(userIds, pageId, Remove, byWho, anyTx = None)
     if (result.anyChange) {
       _joinLeavePage_updateWatchbar(
-            userIds = userIds, couldntAdd = Set.empty, Remove, result.pageMeta)
+            userIds = userIds, couldntAdd = Set.empty, Remove, pageToJoinLeave = result.pageMeta)
     }
   }
 
 
-  // Don't upd watchbar here! Not in a tx
   private def _joinLeavePage_updateDb(userIds: Set[UserId], pageId: PageId,
-          joinOrLeave: JoinOrLeave, byWho: Who, anyTx: Opt[(SiteTx, StaleStuff)])
-          : JoinLeavePageDbResult = {   // couldntAdd, page
-       // : Map[UserId, BareWatchbar] = {
+          joinOrLeave: JoinOrLeave, byWho: Who, anyTx: Opt[(SiteTx, StaleStuff)])  // REFACTOR use TxCtx
+          : JoinLeavePageDbResult = {
 
     if (byWho.isGuest)
       throwForbidden("EsE2GK7S", "Guests cannot add/remove people to pages")
@@ -1380,12 +1388,12 @@ trait UserDao {
 
     val couldntAdd = mutable.Set[UserId]()
 
-    COULD_OPTIMIZE  // return pats from joinLeavePageOrThrow(), or load here.
-    // So won't need to load again, in PinnedGlobaladdRemovePagesToWatchbar().
+    COULD_OPTIMIZE  // return pats from _joinLeavePageOrThrow(), or load here.
+    // So won't need to load again, in PinnedGlobaladdRemovePagesToWatchbar() [.2x_load_memb]
 
     val (pageMeta, anyChange) = writeTxTryReuse(anyTx) { (tx, _) =>
       // This checks if byWho may see the page, and may add userIds to it.
-      joinLeavePageOrThrow(userIds, pageId, joinOrLeave, byWho, couldntAdd, tx)
+      _joinLeavePageOrThrow(userIds, pageId, joinOrLeave, byWho, couldntAdd, tx)
     }
 
     SHOULD // push new member notf to browsers, so that this gets updated: [5FKE0WY2]
@@ -1402,11 +1410,9 @@ trait UserDao {
   }
 
 
-  // Don't upd watchbar here! Not in a tx
   private def _joinLeavePage_updateWatchbar(userIds: Set[UserId], couldntAdd: Set[UserId],
-        joinOrLeave: JoinOrLeave, pageMeta: PageMeta): Map[UserId, BareWatchbar] = {
+        joinOrLeave: JoinOrLeave, pageToJoinLeave: PageMeta): Map[UserId, BareWatchbar] = {
 
-    // Don't do here? Do outside tx?
     var watchbarsByUserId = Map[UserId, BareWatchbar]()
     userIds foreach { userId =>
       if (couldntAdd.contains(userId)) {
@@ -1415,11 +1421,12 @@ trait UserDao {
       else {
         COULD_OPTIMIZE  // needn't do access control again in _addRemovePagesToWatchbar(),
         // already done above, but results currently forgotten — pass back from
-        // joinLeavePageOrThrow() to here?
+        // _joinLeavePageOrThrow() to here?
 
+        COULD_OPTIMIZE  // Pass on pat from _joinLeavePage_updateDb() to here.  [.2x_load_memb]
         val pat = getTheUser(userId, anyTx = None)
         val patAuthzCtx = getAuthzCtxOnPagesForPat(pat)
-        _addRemovePagesToWatchbar(Some(pageMeta), patAuthzCtx, addOrRemove = joinOrLeave
+        _addRemovePagesToWatchbar(Some(pageToJoinLeave), patAuthzCtx, addOrRemove = joinOrLeave
               ) foreach { newWatchbar =>
           watchbarsByUserId += userId -> newWatchbar
         }
@@ -1429,9 +1436,14 @@ trait UserDao {
   }
 
 
-  private def joinLeavePageOrThrow(userIds: Set[UserId], pageId: PageId, joinOrLeave: JoinOrLeave,
-        byWho: Who, couldntAdd: mutable.Set[UserId], tx: SiteTx): (PageMeta, Bo) = {
+  /** Returns:  (PageMeta, anyChange: Bo)
+    */
+  private def _joinLeavePageOrThrow(
+        userIdsToJoinLeave: Set[UserId], pageIdToJoinLeave: PageId,
+        joinOrLeave: JoinOrLeave, byWho: Who, couldntAdd: mutable.Set[UserId],
+        tx: SiteTx): (PageMeta, Bo) = {
 
+    val userIds = userIdsToJoinLeave
     // Tests:  promote-demote-by-staff-join-leave-chats.2br  TyTE2E5H3GFRVK.TyT502RKTJF4
     //          — trying to join a page one may not see
 
@@ -1440,18 +1452,18 @@ trait UserDao {
     val me = usersById.getOrElse(byWho.id, throwForbidden(
           "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
 
-    val pageMeta = tx.loadPageMeta(pageId) getOrElse
+    val pageMeta = tx.loadPageMeta(pageIdToJoinLeave) getOrElse
           security.throwIndistinguishableNotFound("42PKD0")
 
-    // AuthZ check 1/3.
+    // AuthZ check 1/3:  May the *requester* see the page? (Hen might be sbd else than userIds.)
     throwIfMayNotSeePage(pageMeta, Some(me))(tx)
 
-    // Right now, to join a forum page = sub community, one just adds it to one's watchbar.
+    // Right now, to join a forum page =  [sub_communities], one just adds it to one's watchbar.
     // But we don't add/remove the user from the page members list, so nothing to do here.
     if (pageMeta.pageType == PageType.Forum)
       return (pageMeta, false)
 
-    lazy val numMembersAlready = tx.loadMessageMembers(pageId).size
+    lazy val numMembersAlready = tx.loadMessageMembers(pageIdToJoinLeave).size
     if (add && numMembersAlready + userIds.size > 400) {
       // I guess something, not sure what?, would break if too many people join
       // the same page.
@@ -1484,7 +1496,8 @@ trait UserDao {
 
       userIds foreach { id =>
         COULD_OPTIMIZE // batch insert all users at once (would slightly speed up imports)
-        val wasAdded = tx.insertMessageMember(pageId, userId = id, addedById = me.id)
+        val wasAdded = tx.insertMessageMember(
+              pageIdToJoinLeave, userId = id, addedById = me.id)
         if (wasAdded) {
           anyChange = true
         }
@@ -1516,7 +1529,7 @@ trait UserDao {
               die("TyE0MRG603MR", s"Weird joinOrLeave: $joinOrLeave")
             }
       userIdsToRemove foreach { id: UserId =>
-        tx.removePageMember(pageId, userId = id, removedById = byWho.id)
+        tx.removePageMember(pageIdToJoinLeave, userId = id, removedById = byWho.id)
       }
       anyChange = userIdsToRemove.nonEmpty
     }
@@ -1540,7 +1553,7 @@ trait UserDao {
     // a page henself, and another member adds hen to the page,
     // or another page, at the same time. Then, possibly the lost update bug
     // — harmless, just the watchbar.
-    //val authzCtx = anyAuthzCtx getOrElse getAuthzCtxOnPagesForPat(pat.toMemberOrThrow)  // why to mem?
+
     val oldWatchbar = getOrCreateWatchbar(patAuthzCtx)
     var newWatchbar = oldWatchbar
     for (page: PageMeta <- pages) {
@@ -1577,7 +1590,7 @@ trait UserDao {
     getAnyWatchbar(authzCtx.theReqer.id) flatMap { oldWatchbar =>
       var newWatchbar = oldWatchbar
       for (pageId <- pageIds) {
-        newWatchbar = newWatchbar.removeFromRecent(pageId)  // or just skip if not created
+        newWatchbar = newWatchbar.removeFromRecent(pageId)
       }
       _saveWatchbar_updateWatchedPages(
             oldWatchbar, newWatchbar = newWatchbar, authzCtx.theReqer.id)
@@ -1599,6 +1612,8 @@ trait UserDao {
     // If pages were added to the watchbar, we should start watching them. If we left
     // a private page, it'll disappear from the watchbar — then we should stop watching it.
     if (oldWatchbar.watchedPageIds != newWatchbar.watchedPageIds) {
+      BUG // This sends a Presence.Active about the user — sometimes hen isn't. [presence_bug]
+      // Move the Presence.Active part of this, to higher up the stack?
       pubSub.userWatchesPages(siteId, userId, newWatchbar.watchedPageIds)
     }
 
@@ -1621,10 +1636,9 @@ trait UserDao {
 
     // Don't track system, superadmins, deleted users — they aren't real members.
     if (user.id < LowestTalkToMemberId)
-      return ReadMoreResult(0) // , gotPromoted = false)
+      return ReadMoreResult(0)
 
-    //var gotMoreEffectiveTrust = false
-    var updatedUser: Opt[UserVb] = None
+    var promotedUser: Opt[UserVb] = None
     var numMoreNotfsSeen = 0
 
     COULD_OPTIMIZE // use Dao instead, so won't touch db. Also: (5ABKR20L)
@@ -1678,54 +1692,45 @@ trait UserDao {
       // so won't write to the db so very often.  (5ABKR20L)
 
       numMoreNotfsSeen = tx.markNotfsForPostIdsAsSeen(
-        user.id, postIdsSeen, skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways)
+            user.id, postIdsSeen,
+            skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways)
 
       tx.upsertReadProgress(userId = user.id, pageId = pageId, resultingProgress)
       tx.upsertUserStats(statsAfter)
 
-      var gotPromoted = false
-
       if (user.canPromoteToBasicMember) {
         if (statsAfter.meetsBasicMemberRequirements) {
-          updatedUser = _promoteUser(user.id, TrustLevel.BasicMember, tx)
-          // gotPromoted = true  // no effect though, if level locked
+          promotedUser = _promoteUser(user.id, TrustLevel.BasicMember, tx)
         }
       }
       else if (user.canPromoteToFullMember) {
         if (statsAfter.meetsFullMemberRequirements) {
-          updatedUser =_promoteUser(user.id, TrustLevel.FullMember, tx)
-          // gotPromoted = true  // no effect though, if level locked
+          promotedUser =_promoteUser(user.id, TrustLevel.FullMember, tx)
         }
       }
       else {
         // Higher trust levels require running expensive queries; don't do that here.
         // Instead, will be done once a day in some background job.
       }
-
-      /*
-      ReadMoreResult(numMoreNotfsSeen = numMoreNotfsSeen,
-            gotPromoted = gotMoreEffectiveTrust)  // ?? not:  gotPromoted)
-            */
     }
 
-    updatedUser foreach { user =>  // if (gotMoreEffectiveTrust) { // result.gotPromoted) {
+    promotedUser foreach { user =>
       // Has now joined a higher trust level group.
       uncacheOnesGroupIds(Seq(user.id))
       uncacheBuiltInGroups()
 
-      // Only needed if hens watchbar alredy exists
-      joinPinnedGlobalChats(user)  // [now_moved]
+      WOULD_OPTIMIZE // Only needed if hens watchbar alredy exists
+      _addPinnedGlobalChatsToWatchbar(user)
     }
 
-    ReadMoreResult(numMoreNotfsSeen = numMoreNotfsSeen,
-        ) //gotPromoted = ???) // <— remove, not in use.  updatedUser.isDefine  // gotMoreEffectiveTrust)  // ?? not:  gotPromoted)
+    ReadMoreResult(numMoreNotfsSeen = numMoreNotfsSeen)
   }
 
 
   def rememberVisit(user: Participant, lastVisitedAt: When): ReadMoreResult = {
     require(user.isMember, "TyEBZSR27") // see above [8PLKW46]
     if (user.id < LowestTalkToMemberId)
-      return ReadMoreResult(0)  // , gotPromoted = false)
+      return ReadMoreResult(0)
     readWriteTransaction { tx =>
       val statsBefore = tx.loadUserStats(user.id) getOrDie "EdE2FPJR9"
       val statsAfter = statsBefore.addMoreStats(UserStats(
@@ -1733,7 +1738,7 @@ trait UserDao {
         lastSeenAt = lastVisitedAt))
       tx.upsertUserStats(statsAfter)
     }
-    ReadMoreResult(numMoreNotfsSeen = 0)  //, gotPromoted = false)
+    ReadMoreResult(numMoreNotfsSeen = 0)
   }
 
 
@@ -1786,13 +1791,6 @@ trait UserDao {
     val gotMoreTrust = userAft.effectiveTrustLevel.isAbove(userBef.effectiveTrustLevel)
     if (gotMoreTrust) Some(userAft)
     else None
-    /*
-    if (gotMoreTrust) {
-      // ONly needed if hens watchbar alredy exists
-      // Do outside tx! [now_moved]
-      joinPinnedGlobalChats(userAft, tx)
-    }
-    */
   }
 
 
@@ -1969,7 +1967,7 @@ trait UserDao {
 
 
   def savePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): U = {
-    editMemberThrowUnlessSelfStaff2(
+    _editMemberThrowUnlessSelfStaff(
           pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") {
             case EditMemberCtx(tx, _, _, _) =>
       tx.upsertPageNotfPref(pageNotfPref)
@@ -1978,7 +1976,7 @@ trait UserDao {
 
 
   def deletePageNotfPrefIfAuZ(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
-    editMemberThrowUnlessSelfStaff2(
+    _editMemberThrowUnlessSelfStaff(
           pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") {
             case EditMemberCtx(tx, _, _, _) =>
       tx.deletePageNotfPref(pageNotfPref)
@@ -1986,22 +1984,21 @@ trait UserDao {
   }
 
 
-  def saveMemberPrivacyPrefs(forUserId: UserId, preferences: MemberPrivacyPrefs, byWho: Who)
+  def saveMemberPrivacyPrefsIfAuZ(forUserId: UserId, preferences: MemberPrivacyPrefs, byWho: Who)
           : MemberInclDetails = {
-    editMemberThrowUnlessSelfStaff2(
+    _editMemberThrowUnlessSelfStaff(
           forUserId, byWho, "TyE4AKT2W", "edit privacy prefs") {
             case EditMemberCtx(tx, staleStuff, memberBefore, _) =>
 
       // Later: Could let only full members (or people who knows how the software works)
-      // change their who-may-mention-or-message-me settings?
+      // change their who-may-mention-or-message-me settings?  [tech_level]
       // For now, just hide that, client side, doesn't really matter anyway. And >= core members
       // can always mention everyone anyway.  [can_config_what_priv_prefs]
       /* Don't / wait with:
       throwForbiddenIff(!memberBefore.isStaffOrCoreMember,
             "TyEM0EDPRFS1", "May not edit these prefs")
       throwForbiddenIff(!memberBefore.isStaffOrCoreMember,
-            "TyEM0EDPRFS2", "May not edit ...")
-       */
+            "TyEM0EDPRFS2", "May not edit ...")  */
 
       val memberAfter = memberBefore.copyPrefs(privPrefs = preferences)
       tx.updateMemberInclDetails(memberAfter)
@@ -2011,13 +2008,12 @@ trait UserDao {
   }
 
 
-  def saveAboutMemberPrefs(preferences: AboutUserPrefs, byWho: Who): MemberInclDetails = {
+  def saveAboutMemberPrefsIfAuZ(preferences: AboutUserPrefs, byWho: Who): MemberInclDetails = {
     // Similar to saveAboutGroupPrefs below. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
-    var clearMemCacheAfterTx = false
 
-    val membAft = editMemberThrowUnlessSelfStaff2(
+    val membAft = _editMemberThrowUnlessSelfStaff(
           preferences.userId, byWho, "TyE2WK7G4", "configure about prefs") {
             case EditMemberCtx(tx, staleStuff, _, me) =>
 
@@ -2058,25 +2054,15 @@ trait UserDao {
 
       staleStuff.addPatIds(Set(user.id))
 
-      // Clear the page cache (by clearing all caches), if we changed the user's name.
-      // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
-      // uncache only those pages.
+      // Clear the page cache, if we changed the user's name.
+      COULD_OPTIMIZE // Have above markPagesWithUserAvatarAsStale() return a page id list and
+      // uncache only those pages / bump only page versions for the pages on which the user
+      // has posted something that's been cached.
+      // Or use staleStuff.markPagesWithUserAvatarAsStale() or addPagesWithVisiblePostsBy()?
       if (preferences.changesStuffIncludedEverywhere(user)) {
-        // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something
-        // that's been cached.
-        // Use markPagesWithUserAvatarAsStale ?
-        staleStuff.addAllPages() ; COULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
-        //emptyCacheImpl(tx)  ; SHOULD_OPTIMIZE // use staleStuff.addPagesWithVisiblePostsBy() instead
-        //clearMemCacheAfterTx = true
+        staleStuff.addAllPages()
       }
     }
-
-    /*
-    if (clearMemCacheAfterTx) {
-      memCache.clearThisSite()
-    }
-    removeUserFromMemCache(preferences.userId)
-    */
 
     membAft
   }
@@ -2174,23 +2160,23 @@ trait UserDao {
 
 
   def savePatPerms(patId: PatId, perms: PatPerms, byWho: Who): U = {
-    editMemberThrowUnlessSelfStaff2(patId, byWho, "TyE3ASHW6703", "edit pat perms") {
+    _editMemberThrowUnlessSelfStaff(patId, byWho, "TyE3ASHW6703", "edit pat perms") {
           case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
       val groupBef: Group = memberInclDetails.asGroupOr(IfBadAbortReq)
       val groupAft = groupBef.copy(perms = perms)
       tx.updateMemberInclDetails(groupAft)
+      staleStuff.addPatIds(Set(patId))
     }
-    removeUserFromMemCache(patId)
-    memCache.remove(allGroupsKey)
+    memCache.remove(allGroupsKey) ; CLEAN_UP // use staleStuff instead, new fn needed?
   }
 
 
   def saveUiPrefs(memberId: UserId, prefs: JsObject, byWho: Who): Unit = {
-    editMemberThrowUnlessSelfStaff2(memberId, byWho, "TyE3ASHWB67", "change UI prefs") {
+    _editMemberThrowUnlessSelfStaff(memberId, byWho, "TyE3ASHWB67", "change UI prefs") {
           case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
       tx.updateMemberInclDetails(memberInclDetails.copyPrefs(uiPrefs = Some(prefs)))
+      staleStuff.addPatIds(Set(memberId))
     }
-    removeUserFromMemCache(memberId)
   }
 
 
@@ -2477,15 +2463,15 @@ trait UserDao {
   }
 
 
-  /** Loads useId and byWho in a read-write transaction, and checks if they are
+  /** Loads userId and byWho in a read-write transaction, and checks if they are
     * the same person (that is, one edits one's own settings) or if byWho is staff.
     * If isn't the same preson, or isn't staff, then, throws 403 Forbidden.
-    * Plus, staff users who are moderators only, may not edit admin users — that also
-    * results in 403 Forbidden.
+    * Plus, staff users who are moderators only, may not edit admins — that also
+    * throws 403 Forbidden.
     *
-    * block = (tx, member-to-edit, me) => side effects...  .
+    * @param block — EditMemberCtx(tx, staleStuff, member-to-edit, reqer) => side effects...  .
     */
-  private def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: St,
+  private def _editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: St,
         mayNotWhat: St)(block: EditMemberCtx => U): MemberVb = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...

@@ -286,6 +286,12 @@ sessions:
             - TESTS_MISSING
 
 
+privacy:  [.noise_and_privacy]
+  can cannot:
+    see email:
+    see username:
+    see if I'm online:
+
 navigation:
   from anywhere, to anywhere:
           - navigation-as-stranger.test.ts  TyT5WKAB024
@@ -722,6 +728,10 @@ mentions:
   group mentions:
           - group-mentions.2browsers  TyT4AWJL208R
   channel mentions:
+    mention @all in DM:
+            - TESTS_MISSING  was a bug but fixed
+                  (notfCreatedAlreadyTo() didn't want groups as message members)
+    mention @all in chat:
   no dupl mentions when combining @channel, @member, @group:
   when really many members:
           - many-users-mention-list-join-group.2browsers.test.ts  TyT2602SKJJ356

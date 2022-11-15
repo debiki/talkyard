@@ -32,6 +32,7 @@ trait MessagesDao {
     * gets auto added to the page? [5KTE02Z]
     */
   def startGroupTalk(title: TitleSourceAndHtml, body: TextAndHtml, pageRole: PageType,
+        // RENAME toMemIds to toMemberIds, and  MemId  to MembId
         toMemIds: Set[MemId], sentByWho: Who, spamRelReqStuff: SpamRelReqStuff,
         deleteDraftNr: Option[DraftNr]): PagePathWithId = {
 
@@ -59,6 +60,8 @@ trait MessagesDao {
 
     quickCheckIfSpamThenThrow(sentByWho, body, spamRelReqStuff)
 
+    // ----- Database
+
     val (pagePath, notfs, sender, toMemsInclGroupMems: Set[Member]) = writeTx { (tx, staleStuff) =>
       val sender = loadUserAndLevels(sentByWho, tx)
       val toMembers = tx.loadParticipants(toMemIds).map(_.toMemberOrThrowCode("DM-MEMB"))
@@ -73,7 +76,9 @@ trait MessagesDao {
           throwForbidden("EsE8GY2F4_", "You may send direct messages to staff only")
       }
 
-      TESTS_MISSING // [server_blocks_dms]
+      TESTS_MISSING // [server_blocks_dms]  — No, now impl? Here:
+      // Tests:
+      //  - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
       val mayNotMessage = toMembers.filter(!sender.user.mayMessage(_))
       throwForbiddenIf(mayNotMessage.nonEmpty, "EsEMAY0MSG",
             s"You cannot send direct messages to: ${
@@ -97,6 +102,8 @@ trait MessagesDao {
 
       // If this is a private topic, they'll get notified about all posts,
       // by default, although no notf pref configured here. [PRIVCHATNOTFS]
+      // Soome of toMemIds might be groups — then, the group members can see
+      // the private topic, and get notified about replies.
       (toMemIds + sentById) foreach { memId =>
         tx.insertMessageMember(pagePath.pageId, memId, addedById = sentById)
       }
@@ -110,6 +117,7 @@ trait MessagesDao {
         }
         else {
           // This skips users who have blocked DM:s.
+          COULD_OPTIMIZE // Somehow reuse toMemsInclGroupMems?
           notfGenerator(tx).generateForMessage(sender.user, bodyPost, toMemIds)
         }
 
@@ -119,53 +127,44 @@ trait MessagesDao {
       (pagePath, notifications, sender, toMemsInclGroupMems)
     }
 
-    // Notify receivers about this new message — except for those who have disabled
+    // ----- Watchbar
+
+    // Update watchbars for those who got added to this new dir msg, including
+    // those added indirectly via groups.  But not those who have disabled
     // DM:s from this sender [filter_dms] (e.g. admins in large forums who are short
     // of time, and don't want to get notified just becaus someone messages Staff).
-    val toMemsAndSender: Set[Member] = toMemsInclGroupMems + sender.user.toMemberOrThrow
-    toMemsAndSender foreach { member: Member =>
-      RACE // [WATCHBRACE]
-      val authzCtx = getAuthzCtxOnPagesForPat(member)
-      var watchbar: BareWatchbar = getOrCreateWatchbar(authzCtx)
-      val isSender = member.id == sender.id
-      watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = isSender)
-      saveWatchbar(member.id, watchbar)
+    RACE // [WATCHBRACE]
 
-      /*
-      val anyWatchbar =
-        if (!isSender) getAnyWatchbar(member.id)
-        else {
-          val authzCtx = getAuthzCtxWithReqer(member)
-          getOrCreateWatchbar(authzCtx)
-        }
-      if (!isSender) {
-        getAnyWatchbar(member.id) foreach { watchbar =>
-          val watchbarAfter = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = isSender)
-          saveWatchbar(member.id, watchbarAfter)
-        }
-      }   */
+    // 1/2: We know that the sender is online currently — hen should start watching
+    // the page immediately.
+    {
+      val senderAuthzCtx = getAuthzCtxOnPagesForPat(sender.user)
+      var watchbar: BareWatchbar = getOrCreateWatchbar(senderAuthzCtx)
+      watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = true)
+      saveWatchbar(sender.id, watchbar)
+      logger.debug(s"s$siteId: Telling PubSubActor: ${
+            sender.nameHashId} created & starts watching page ${pagePath.pageId} [TyM50AKTG3]")
+      pubSub.userWatchesPages(siteId, sentById, watchbar.watchedPageIds)
+    }
 
-      // We know that the sender is online currently, so s/he should start watching the
-      // page immediately. Other page members, however, might be offline. Ignore them.
-      if (isSender) {
-        /*
-        val authzCtx = getAuthzCtxWithReqer(member)
-        var watchbar: BareWatchbar = getOrCreateWatchbar(authzCtx)
-
-          val authzCtx = getAuthzCtxWithReqer(member)
-              watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = isSender)
-        saveWatchbar(member.id, watchbar)  */
-
-        logger.debug(s"s$siteId: Telling PubSubActor: ${
-              sender.nameHashId} starts watching page ${pagePath.pageId} [TyM50AKTG3]")
-
-        pubSub.userWatchesPages(siteId, sentById, watchbar.watchedPageIds)
+    // 2/2: Others might not even have visited the site before, and might not yet have
+    // any watchbar to update. Then, nothing to do here. This new private message will
+    // get lazy-added to their watchbar on creation. [lazy_watchbar]
+    for {
+      member: Member <- toMemsInclGroupMems
+      // The sender might have messaged a group hen is in:
+      if member.id != sender.id
+      if !member.isGroup && !member.isBuiltIn
+    } {
+      getAnyWatchbar(member.id) foreach { watchbar =>
+        val watchbarAfter = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = false)
+        saveWatchbar(member.id, watchbarAfter)
       }
     }
 
     // (Tested here: [TyTPAGENOTF])
     pubSub.publish(
-      pubsub.NewPageMessage(siteId, notfs), byId = sentById)
+          pubsub.NewPageMessage(siteId, notfs), byId = sentById)
 
     pagePath
   }

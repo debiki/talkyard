@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Kaj Magnus Lindberg
+ * Copyright (c) 2022 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -59,13 +59,13 @@ interface TrustLevelDiagState {
 }
 
 
-let dialogSetState: (_: TrustLevelDiagState) => Vo;
+let setDiagState: (_: TrustLevelDiagState) => Vo;
 
 function openTrustLevelDiag(ps: TrustLevelDiagState) {
-  if (!dialogSetState) {
+  if (!setDiagState) {
     ReactDOM.render(TrustLevelDiag(), utils.makeMountNode());  // or [use_portal] ?
   }
-  dialogSetState(ps);
+  setDiagState(ps);
 }
 
 
@@ -74,10 +74,10 @@ function openTrustLevelDiag(ps: TrustLevelDiagState) {
 const TrustLevelDiag = React.createFactory<{}>(function() {
   //displayName: 'TrustLevelDiag',
 
-  const [diagState, setDiagState] =
-        React.useState<TrustLevelDiagState | Nl>(null);
+  const [diagState, setDiagState2] =
+        React.useState<TrustLevelDiagState | N>(null);
 
-  dialogSetState = setDiagState;
+  setDiagState = setDiagState2;
 
   const isOpen = !!diagState;
   const atRect: Rect = (isOpen ? diagState.atRect : {}) as Rect;
@@ -105,7 +105,7 @@ const TrustLevelDiag = React.createFactory<{}>(function() {
                 active: diagState.curLevel === level,
                 title: r.span({ className: 'e_TrLv-' + level  },
                           trustLevel_toString(level as any)),
-                // text: trustLevel_descr(level),
+                // text: trustLevel_descr(level),  — later?
                 onSelect: () => {
                   diagState.saveFn(level);
                   close();

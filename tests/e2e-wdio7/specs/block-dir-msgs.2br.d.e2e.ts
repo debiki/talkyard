@@ -280,7 +280,7 @@ describe(`block-dir-msgs.2br.d  TyTBLOCKDIRMSGS`, () => {
     numEmailsTotal += 2;
     await memah_brB.userProfilePage.clickSendMessage();
     await memah_brB.editor.editTitle("If I was a cat");
-    await memah_brB.editor.editText("and kept my current weight, would that be a lot");
+    await memah_brB.editor.editText("and could keep my current weight, would that be a lot");
     await memah_brB.editor.saveWaitForNewPage();
   });
 

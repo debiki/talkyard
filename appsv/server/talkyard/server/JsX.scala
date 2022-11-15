@@ -272,8 +272,8 @@ object JsX {   RENAME // to JsonPaSe
       "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
 
     // Currently needs to be public, see [some_pub_priv_prefs].
-    userJson = userJson.anyNum("maySendMeDmsTrLv", user.privPrefs.maySendMeDmsTrLv)
-    userJson = userJson.anyNum("mayMentionMeTrLv", user.privPrefs.mayMentionMeTrLv)
+    userJson = userJson.addAnyInt32("maySendMeDmsTrLv", user.privPrefs.maySendMeDmsTrLv)
+    userJson = userJson.addAnyInt32("mayMentionMeTrLv", user.privPrefs.mayMentionMeTrLv)
 
     if (callerIsStaff_ || callerIsUserHerself) {
       val anyReviewer = user.reviewedById.flatMap(usersById.get)

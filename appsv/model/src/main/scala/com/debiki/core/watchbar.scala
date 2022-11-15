@@ -339,6 +339,7 @@ object BareWatchbar {
   def withChatChannelAndDirectMessageIds(channelIds: immutable.Seq[PageId],
         messageIds: immutable.Seq[PageId]) =
     BareWatchbar(Nil, Nil,
+      // Or should unread be true, how do we know?
       chatChannels = channelIds.map(WatchbarTopic(_, unread = false)),
       directMessages = messageIds.map(WatchbarTopic(_, unread = false)))
 

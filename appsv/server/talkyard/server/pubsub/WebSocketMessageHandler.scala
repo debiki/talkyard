@@ -149,6 +149,7 @@ class WebSocketMessageHandler(
                       val authzCtx = dao.getAuthzCtxOnPagesForPat(member)
                       dao.getOrCreateWatchbar(authzCtx)
                     case _ =>
+                      // All strangers start with the same watchbar.
                       dao.getStrangersWatchbar()
                   }
 
