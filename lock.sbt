@@ -27,7 +27,7 @@ Compile / dependencyOverrides ++= {
       "com.github.jnr" % "jnr-a64asm" % "1.0.0",
       "com.github.jnr" % "jnr-ffi" % "2.1.9",
       "com.github.jnr" % "jnr-x86asm" % "1.0.2",
-      "com.github.scribejava" % "scribejava-apis" % "8.3.1",
+      "com.github.scribejava" % "scribejava-apis" % "8.3.3",
       "com.github.scribejava" % "scribejava-core" % "8.3.1",
       "com.github.scribejava" % "scribejava-java8" % "8.3.1",
       "com.github.spullara.mustache.java" % "compiler" % "0.9.3",

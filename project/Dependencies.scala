@@ -75,7 +75,7 @@ object Dependencies {
     // https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-v2-libraries#compatible-client-libraries
     //
     // VENDOR_THIS — it'd be good to Maven-build via Makefile?
-    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.1"
+    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.3"
 
 
     // ----- Logging
