@@ -21,7 +21,6 @@ let staffsBrowser: TyE2eTestBrowser;
 let othersBrowser: TyE2eTestBrowser;
 let owen: Member;
 let owensBrowser: TyE2eTestBrowser;
-let janesBrowser: TyE2eTestBrowser;
 
 let siteId;
 let siteIdAddress: IdAddress;
@@ -46,14 +45,25 @@ const fidosSiblingsUsername = 'e2e_test_fido_wiffw[\\d]';
 const fidosSiblingsPassword = 'publ-fi020';
 
 /*  oops, this addr got rejected by Apace Commons Email (but accepted by Apache's validator)
-    Incl below as  invalidEmailAddress4  instead, hmm.
+  Incl below as  invalidEmailAddress4  instead, hmm.
+  ... But now year 2022 it's suddenly allowed (a library upgrade?). [.unicode_started_working]
+  However, Nodejs errors out when trying to access:
+    http://localhost/-/last-e2e-test-email?sentTo=e2e-test--så_漢字_❤_é@example.com&siteId=...
+  so let's wait with testing this addr.
+
 const unicondasEmailAddress = 'e2e-test--så_漢字_❤_é@example.com';
 const unicondasUsername = 'e2e_test_sa_zz_z_e'; */
 
 const invalidEmailAddress = 'e2e-test--double..dot@example.com';
 const invalidEmailAddress2 = 'e2e-test--end-dot.@example.com';
 const invalidEmailAddress3 = 'e2e-test--co,mma@example.com';
+/*
+This suddenly works:  [.unicode_started_working]
 const invalidEmailAddress4 = 'e2e-test--så_漢字_❤_é@example.com';
+// ... But Unicode still not allowed in the @domain.name:
+// No, this addr works too! Does Apache Commons Email convert it to punycode?
+const invalidEmailAddress4 = 'e2e-test--unicode-inet-addr@så-漢字-❤-é.com';
+*/
 
 describe("invites-werd-email-addrs  TyT7KBAJ2AD4", () => {
 
@@ -74,7 +84,6 @@ describe("invites-werd-email-addrs  TyT7KBAJ2AD4", () => {
     othersBrowser = new TyE2eTestBrowser(browserB);
     owen = forum.members.owen;
     owensBrowser = staffsBrowser;
-    janesBrowser = othersBrowser;
   });
 
   it("Owen goes to the Invites tab", () => {
@@ -114,10 +123,12 @@ describe("invites-werd-email-addrs  TyT7KBAJ2AD4", () => {
     owensBrowser.serverErrorDialog.waitForBadEmailAddressError();
     owensBrowser.serverErrorDialog.close();
 
+    /*  Not invalid any more.
     owensBrowser.inviteDialog.typeInvite(invalidEmailAddress4);
     owensBrowser.inviteDialog.clickSubmit();
     owensBrowser.serverErrorDialog.waitForBadEmailAddressError();
     owensBrowser.serverErrorDialog.close();
+    */
   });
 
   let inviteLinkJane;
@@ -185,6 +196,7 @@ describe("invites-werd-email-addrs  TyT7KBAJ2AD4", () => {
       owensBrowser.debug();
       othersBrowser.go(inviteLinkUniconda);
       othersBrowser.topbar.waitForMyMenuVisible();
+      // What will this be, what username got generated:
       othersBrowser.topbar.assertMyUsernameMatches(unicondasUsername);
     });*/
   //});
