@@ -486,9 +486,10 @@ const PatTopPanel = createComponent({
         LinkButton({ href: linkToUserInAdminArea(user), className: 's_UP_AdminB' },
           "View in Admin Area");
 
-    const sendMessageButton = !store_maySendDirectMessageTo(store, user) ? null :
-        PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
-          t.SendMsg);
+    const sendMessageButton = store_maySendDirectMessageTo(store, user)
+        ? PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
+              t.SendMsg)
+        : r.span({ className: 'e_CantDirMsg' });
 
     const groupList = GroupList(
         user, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group');

@@ -88,6 +88,10 @@ But missing: Search in sub cats, if searching in base cat.
 [forum_page]
 More configurable, & discussions too, see:  y2999/wip_sect_disc_props_views_stats.sql
 
+[watchbar_to_linkbar]
+RENAME the "watchbar" to "linkbar", the page meta bar to "pagebar", and the right
+sidebar to "contextbar" ?
+
 [propagate_cat_perms]
 It'd be nice if there was a way to get an overview of sub cat permissions,
 when looking at a base cat. And if one could propagate the base category's
@@ -144,10 +148,22 @@ Rename User to Participant and User to Member.  Participant = Guest or Member, M
 Rename variables named like "member" to "user", "memberOrGroup" to "member", "user" to "participant"
 Rename "indie" to user" and "people" to "members"
 
+[private_chats] Later.
 
-[private_pats][unlist_users]  Unlisted / less-visible / "hidden"? users?
+[private_pats][some_pub_priv_prefs]  Unlisted / less-visible / "hidden"? users?
 So cannot see / list users unless has access to the same categories, or is in
 the same group(s) or high enough trust level or sth like that?
+The opposite: Easy to find pats, e.g.:
+      type ' @' and the '@support' group is suggested [mentions_prio_c].
+
+[tech_level] Let users configure their tech level — let's say sbd who knows all about
+Ty joins a new forum. Then, although a New Member, hen can up hens tech level and get
+access to features the software otherwise would have thought were too complicated.
+Store in pats_t.tech_level_c.
+
+[inherit_group_priv_prefs]
+One should inherit privacy and noise settings from one's closest trust level group,
+and from any custom group one is in? But one's own settings should override.
 
 [user_version] [tag_versions]
 Add a version field to pats_t and an in-mem user? So knows if the in-mem one is stale;
@@ -492,15 +508,17 @@ to know & remember who will try to answer it, later.
 [priv_comts] Private comments:
 (Aka "whispers" in Discourse and "private items" in Basecamp long ago, and "private comments"
 in other software.)
-Add posts_t.private_status_c, and pat_rels_t.rel_type_c = PatLinkType.CanSeePrivate
+Add posts_t.private_pats_id_c, and a new participant type:  lists of pats,
 to remember who can see private comments.
-New permissions:  Who may post/reply-to/delete private comments.
-          Or no?  Instead, this'll be *the same* as who may post direct messages (DMs)
+New permissions
+        - Who may post/reply-to/delete private comments.
+            Or no?  Instead, this'll be *the same* as who may post direct messages (DMs)
                   because private comments are *the same*, it's just that they
                   appear inline in another discussion, instead of on a separate page.
-                  Who may add, remove, manage users from/in private comment threads?
             So,  a single Who-may-post-private-messages setting that applies
             to both DMs and private comment sub threads.  [can_post_private_c]
+        - Who may add, remove, manage users from/in private comment threads? Hmm.
+          That'll be a  pats_t.how_private_c setting?
 Ex: Privately talk with mods, directly next to the comment being discussed.
     Or a support group asks the Original Poster,
       in a support topic for tech details; then the maybe new-member can reply,
@@ -510,10 +528,6 @@ Ex: Privately talk with mods, directly next to the comment being discussed.
 Yes?: Private comments nrs can be big & random & < 0?
     Otherwise, people can look at post nrs and look after gaps in the number
     sequence (if > 0) and know that maybe there're private comment sub threads.
-
-    And a private_status_c:  is private, and: may add more who can see? May never? etc.
-
-Don't add any special post type, for priv comts? Their post_t.private_status_c is enough?
 
 Don't incl priv comts when caching a page — only load lazily if current user can see.
 
@@ -542,6 +556,49 @@ When composing a message, see who will get notified — e.g. if mentioning a gro
 or editing a message, can be unclar if a newly edit-added @username gets notified or not
 (they do get notified).
 
+[filter_mentions] Render usernames that couldn't be mentioned in gray?
+[filter_links] Don't link to bad places, e.g. malware site — show such links in plain text
+               maybe with a warning? (depends on the community)
+
+
+[mentions_prio][mentions_prio_c]
+Maybe let  0@username generate a link, but no (zero) notification? or ...
+       ... [@username]? no that's harder to type?
+           =@username could be a looower prio notification, the software won't send any
+                      email notf, only show if one visits the forum?
+           -@username be a lower prio notification, deliver in a batch per daily
+            @username be a low prio notification, deliver every <custom> hours
+  no ——>   +@username or ...
+  |    ... !@username could be an urgent notification, like, "I'm blocked until answered"
+  |       !!@username be a really urgent notification, like, "Server is down"
+  |        @@username alternatively?  But '@@' almost looks like just: '@'.
+  |               '!@' is more clear?
+  |     or 9@username could be high prio? hmm but '!' is maybe more intuitive.
+  `\
+    `—— Instead, maybe:
+        +@username  could subscribe that user to notifications about new comments on that page?
+            Some communities relies on mention-to-subscribe quite a lot.
+            If it's a private chat, @username gets added to the chat members and can
+            thereafter see the chat (& gets notified about new messages).
+            But @username only links to hens profile, won't add to the chat.
+            And maybe:
+        ++@username  could *assign* the page to that user. (Would assign
+           the user to the closest ancestor post that is a *task* — in the future,
+           also comments can be tasks (mini tasks).)
+
+           Would  --@username  un-assign, then?
+           What would  -@username do? Doesn't make sense to unsubscribe sbd else from notfs?
+
+
+    (skip: ?@username be a question  — maybe it'd be better with marking comments as to-do?
+          !?@username be an urgent question )
+
+           @@username (two '@') could be a group notification?
+                      E.g. Hi @@support, what [...]?  and probably @@support have
+                      configued <custom> (see above) to be quick?
+                      Ty would auto add the 2nd '@' even if one typed just 1, if it's a group?
+
+
 [power_admin]
 Various fancy admin features, disabled by default.
 
@@ -568,6 +625,8 @@ Add group visibility settings, e.g. no one (incl members in the group) can see
 members in the group — except for some specific groups, e.g. staff.
 And who-may-join feautre, and Join/Leave group buttons.
 Don't let one self-join groups that grants a trust level higher than one's current level.
+
+[sub_groups]
 
 [cont_settings_t]
 Per group and content set settings.
@@ -659,6 +718,12 @@ SECURITY tests: https://github.com/beefproject/beef  ?
 Also see:   [sec_tst_rscs] in sanitize-posts.2browsers.test.ts.
 
 SECURITY  [br_authn_nonce]
+
+SITE_PRIVACY  [avoid_glob_seq_nrs]
+Generate publicly visible ids that aren't enumerable, e.g. let browser side visible
+user ids and post ids, notification ids, etc, be short random strings, or
+random 64 bit ints, rather than sequential numbers.
+What notf ids and SMTP Message-ID to use instead? [older_notfs_emails]
 
 [emb_login_req]
 Make  login-required work also for embeded comments.
@@ -754,6 +819,9 @@ Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange extern
 server / bot.
 Custom headers.
 Sign.
+
+[improve_imp_exp]
+Remove fk from notfs_t to emails_out_t?
 
 
 [extensions] [themes]
@@ -983,6 +1051,8 @@ https://docusaurus.io/docs/markdown-features/code-blocks#syntax-highlighting )
 [wdio_6_to_7]
 Upgr Webdriverio from 6 to 7.
 Add Typescript-ESLint warning: no-floating-promises!
+
+[java_8_to_11]
 
 
 Better troubleshooting

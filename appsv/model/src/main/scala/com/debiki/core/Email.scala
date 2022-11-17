@@ -45,6 +45,36 @@ object SecretStatus {
 }
 
 
+/** For grouping emails about the same thing, in the same email thread.
+  */
+sealed abstract class EmailAbout
+
+object EmailAbout {
+  /* Later:
+   case class Pat(patId: PatId)
+   case class Cat(catId: CatId)
+   case class Tag(tagId: TagId)
+   */
+
+  /** An email about a page (orig post) or comment.
+    *
+    * @param pageId — the page id, as of when the email was sent (comments
+    *   might get moved to other pages later).
+    * @param postId — stays the same also if post moved to another page.
+    * @param postNr — the post nr, as of when the email was sent (might change,
+    *   if moved to another page)
+    * @param parentNr — as of when the email was sent. None, for Orig Posts.
+    * @param catId — as of when the email was sent.
+    */
+  case class Post(
+    pageId: PageId,
+    postId: PostId,
+    postNr: PostNr,
+    parentNr: Opt[PostNr],
+    catId: Opt[CatId]) extends EmailAbout
+}
+
+
 object Email {   RENAME // to EmailOut?
 
 
@@ -57,7 +87,13 @@ object Email {   RENAME // to EmailOut?
     toUserId: Option[UserId],
     subject: String,
     bodyHtmlText: String,
-    secretValue: Opt[St] = None): Email = {
+    aboutWhat: Opt[EmailAbout] = None,
+    smtpMsgId: Opt[SmtpMsgId] = None,
+    inReplyToSmtpMsgId: Opt[SmtpMsgId] = None,
+    referencesSmtpMsgIds: ImmSeq[SmtpMsgId] = Nil,
+    secretValue: Opt[St] = None,
+    ): Email = {
+
     Email(
           id = emailId,
           tyype = tyype,
@@ -68,6 +104,10 @@ object Email {   RENAME // to EmailOut?
           createdAt = createdAt.toJavaDate,
           subject = subject,
           bodyHtmlText = bodyHtmlText,
+          aboutWhat = aboutWhat,
+          smtpMsgId = smtpMsgId,
+          inReplyToSmtpMsgId = inReplyToSmtpMsgId,
+          referencesSmtpMsgIds = referencesSmtpMsgIds,
           providerEmailId = None,
           failureText = None,
           secretValue = secretValue,
@@ -82,17 +122,26 @@ object Email {   RENAME // to EmailOut?
         sendFrom: Opt[St] = None,
         toUserId: Option[UserId],
         subject: String,
-        bodyHtml: St): Email = {
+        bodyHtml: St,
+        aboutWhat: Opt[EmailAbout] = None,
+        smtpMsgId: Opt[SmtpMsgId] = None,
+        inReplyToSmtpMsgId: Opt[SmtpMsgId] = None,
+        referencesSmtpMsgIds: ImmSeq[SmtpMsgId] = Nil,
+        ): Email = {
     val emailId = generateRandomId()
     newWithId(
-      emailId,
-      tyype,
-      createdAt,
-      sendTo = sendTo,
-      sendFrom = sendFrom,
-      toUserId = toUserId,
-      subject = subject,
-      bodyHtmlText = bodyHtml)
+          emailId,
+          tyype,
+          createdAt,
+          sendTo = sendTo,
+          sendFrom = sendFrom,
+          toUserId = toUserId,
+          subject = subject,
+          bodyHtmlText = bodyHtml,
+          aboutWhat = aboutWhat,
+          smtpMsgId = smtpMsgId,
+          inReplyToSmtpMsgId = inReplyToSmtpMsgId,
+          referencesSmtpMsgIds = referencesSmtpMsgIds)
   }
 
 
@@ -102,7 +151,9 @@ object Email {   RENAME // to EmailOut?
         sendTo: St,
         toUserId: Opt[UserId],
         subject: St,
-        bodyHtmlWithSecret: St => St): Email = {
+        bodyHtmlWithSecret: St => St,
+        aboutWhat: Opt[EmailAbout] = None,
+        ): Email = {
     val emailId = generateRandomId()
     val secretValue = generateSecret()
     newWithId(
@@ -113,7 +164,12 @@ object Email {   RENAME // to EmailOut?
           toUserId = toUserId,
           subject = subject,
           bodyHtmlText = bodyHtmlWithSecret(secretValue),
-          secretValue = Some(secretValue))
+          aboutWhat = aboutWhat,
+          secretValue = Some(secretValue),
+          // These not needed outside discussions, at least not now:
+          smtpMsgId = None,
+          inReplyToSmtpMsgId = None,
+          referencesSmtpMsgIds = Nil)
   }
 
 
@@ -140,13 +196,17 @@ object Email {   RENAME // to EmailOut?
 case class Email(
   id: String,
   tyype: EmailType,
-  sentTo: String,  // sometimes not used [305RMDG2]
+  sentTo: EmailAdr,  // sometimes not used [305RMDG2]
   toUserId: Option[UserId],
   sentFrom: Opt[St],
   sentOn: Option[ju.Date],
   createdAt: ju.Date,
+  aboutWhat: Opt[EmailAbout],
   subject: String,
   bodyHtmlText: String,
+  smtpMsgId: Opt[SmtpMsgId],
+  inReplyToSmtpMsgId: Opt[SmtpMsgId],
+  referencesSmtpMsgIds: ImmSeq[SmtpMsgId],
   providerEmailId: Option[String],
   failureText: Option[String] = None,
   secretValue: Opt[St] = None,

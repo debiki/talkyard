@@ -249,9 +249,10 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
   def markPageAsSeen(pageId: PageId): Action[JsValue] = PostJsonAction(NoRateLimits,
         MinAuthnStrength.EmbeddingStorageSid12, maxBytes = 2) { request =>
     CHECK_AUTHN_STRENGTH
-    val watchbar = request.dao.getOrCreateWatchbar(request.theUserId)
-    val newWatchbar = watchbar.markPageAsSeen(pageId)
-    request.dao.saveWatchbar(request.theUserId, newWatchbar)
+    request.dao.getAnyWatchbar(request.theReqerId) foreach { watchbar =>
+      val newWatchbar = watchbar.markPageAsSeen(pageId)
+      request.dao.saveWatchbar(request.theUserId, newWatchbar)
+    }
     Ok
   }
 

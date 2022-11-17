@@ -161,6 +161,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
         createdAt = now,
         sendTo = user.email,
         toUserId = Some(userId),
+        aboutWhat = None,
         subject = s"[usability.testing.exchange] Reminder about giving feedback",
         bodyHtmlText = i"""
           |<p>Hi $userName,</p>
@@ -196,11 +197,12 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
           |-- the open source software that powers Usability Testing Exchange.)
           |</p>
           |""")
-      dao.readWriteTransaction { tx =>
+
+      dao.writeTx { (tx, _) =>
         tx.saveUnsentEmail(email)
       }
       globals.sendEmail(email, dao.siteId)
-      dao.readWriteTransaction { tx =>
+      dao.writeTx { (tx, _) =>
         tx.updateSentEmail(
           email.copy(sentOn = Some(globals.now().toJavaDate)))
       }
@@ -301,7 +303,20 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     }
 
     val site = siteDao.theSite()
-    constructAndSendEmail(siteDao, site, user, notfs.take(MaxNotificationsPerEmail))
+    val siteId = site.id
+
+    // Should have been sorted already. [older_notfs_emails]
+    val notfsSorted = notfs.sortBy(_.id)
+    warnDevDieIf(notfsSorted.map(_.id) != notfs.map(_.id), "TyE502RKGL5",
+          s"s$siteId: Notfs sort order appears random")
+
+    // Currently sending [one_email_at_a_time], for threaded emails.
+    COULD // group by page id, and send one email for all notfs about post on one page?
+    val notfsToSendNow = notfsSorted.take(MaxNotificationsPerEmail)
+    for (notf <- notfsToSendNow) {
+      constructAndSendEmail(siteDao, site, user, Seq(notf))
+    }
+
     None
   }
 
@@ -315,11 +330,16 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
     val anyOrigin = globals.originOf(site)
 
+    // Note that, since notfs are sorted chronologically, when we generate this email,
+    // then, emails about earlier posts (if any) on the same page have already been
+    // generated, and we know their SMTP Message-ID:s,  [older_notfs_emails]
+    // so we can include those ids in the 'In-Reply-To' and 'References' headers.
     val email = constructEmail(siteDao, anyOrigin, user, userNotfs) getOrElse {
       logger.debug(o"""Not sending any email to ${user.usernameOrGuestName} because the page
         or the comment is gone or not approved or something like that.""")
       return
     }
+
     siteDao.saveUnsentEmailConnectToNotfs(email, userNotfs)
 
     logger.debug("About to send email to "+ email.sentTo)
@@ -338,7 +358,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
     // Always use the same subject line, even if only 1 comment, so ends up in the same
     // email thread. Include site name, so simpler for people to find the email.
-    val subject = s"[$siteName] New notifications"   // I18N
+    var subject = ""
 
     // The following creates different and more specific email titles — but results
     // in email clients creating many different email threads, making people annoyed
@@ -380,9 +400,64 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
         subjText.toString
       } */
 
+    // This helps email clients create an email thread per Talkyard discussion page.
+    // Later on, even comment sub threads so Mutt will work well.
+    val (aboutWhat: Opt[EmailAbout], thisMsgId: Opt[SmtpMsgId],
+         inReplyToMsgId: Opt[SmtpMsgId], refsMsgIds: ImmSeq[SmtpMsgId]) = {
+      if (notfs.length != 1) {
+        // If many notfs, then, what should the SMTP Message-ID be?  But this cannot
+        // happen currently — we send [one_email_at_a_time], nowadays (Nov 2022).
+        (None, None, None, Nil)
+      }
+      else notfs.head match {
+        case notf: Notification.NewPost =>
+          // Incl page title in subject line.
+          val anyPost = dao.loadPostByUniqueId(notf.uniquePostId)
+          val anyPageStuff = anyPost.flatMap(post => dao.getOnePageStuffById(post.pageId))
+
+          val (aboutWhat: Opt[EmailAbout], referencesMsgIds: ImmSeq[SmtpMsgId])
+                  = anyPageStuff match {
+            case None => (None, Nil)
+            case Some(page) =>
+              subject = s"[$siteName] ${page.title}"
+              val post = anyPost getOrDie "TyE603MRSKD64"
+
+              val earlierEmailsSamePage: ImmSeq[EmailOut] = dao.loadEmailsToPatAboutThread(
+                    toPatId = notf.toUserId, pageId = page.pageId,
+                    parentPostNr = post.parentNr, limit = 30)
+
+              val aboutWhat = EmailAbout.Post(
+                    postId = post.id,
+                    pageId = page.pageId,
+                    postNr = post.nr,
+                    parentNr = post.parentNr,
+                    catId = page.categoryId)
+
+              (Some(aboutWhat), earlierEmailsSamePage.flatMap(_.smtpMsgId))
+          }
+
+          // For now. Some day, could try to reply to the closest ancestor post instead
+          // (since Ty is threaded).
+          val inReplyToMsgId: Opt[SmtpMsgId] = referencesMsgIds.lastOption
+
+          val host = origin.dropWhile(_ != ':').drop(3)  // removes "http(s)://"
+          val thisMsgId: Opt[SmtpMsgId] = notf.makeSmtpMsgId(host)
+
+          (aboutWhat, thisMsgId, inReplyToMsgId, referencesMsgIds)
+
+        case _ =>
+          (None, None, Nil, Nil)
+      }
+    }
+
+    if (subject.isEmpty)
+      subject = s"[$siteName] New notifications"   // I18N
+
     val email = Email.createGenId(EmailType.Notification, createdAt = globals.now(),
-      sendTo = user.email, toUserId = Some(user.id),
-      subject = subject, bodyHtml = "?")
+          sendTo = user.email, toUserId = Some(user.id),
+          aboutWhat = aboutWhat, subject = subject, bodyHtml = "?",
+          smtpMsgId = thisMsgId, inReplyToSmtpMsgId = inReplyToMsgId,
+          referencesSmtpMsgIds = refsMsgIds)
 
     // If this is an embedded discussion, there is no Debiki canonical host address to use.
     // So use the site-by-id origin, e.g. https://site-123.debiki.com, which always works.

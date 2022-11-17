@@ -412,6 +412,12 @@ object Rdb {
     Some(javaArray.to[Vec].map(_.toInt))
   }
 
+  def getOptTrustLevel(rs: js.ResultSet, column: St): Opt[TrustLevel] = {
+    val asInt = rs.getInt(column)
+    if (rs.wasNull()) None
+    else TrustLevel.fromInt(asInt)
+  }
+
   def isUniqueConstrViolation(sqlException: js.SQLException): Boolean = {
     // This status code means "A violation of the constraint imposed
     // by a unique index or a unique constraint occurred".

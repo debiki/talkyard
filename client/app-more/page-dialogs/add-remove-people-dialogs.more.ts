@@ -123,6 +123,7 @@ function makeLabelValues(users: MemberIdName[], pageMemberIds: UserId[]): ReactS
     if (user.fullName) {
       prettyName += ' (' + user.fullName + ')';
     }
+    // Use [me_isPageMember] instead, in case any group user is in, is a member?
     const alreadyMember =  _.includes(pageMemberIds, user.id);
     if (alreadyMember) {
       prettyName += " — already added";

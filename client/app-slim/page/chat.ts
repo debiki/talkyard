@@ -53,6 +53,7 @@ export const ChatMessages = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
+    // Use [me_isPageMember] instead, in case any group user is in, is a member?
     const isChatMember = _.some(store.currentPage.pageMemberIds, id => id === store.me.id);
     const editorOrJoinButton = isChatMember || page.pageRole === PageRole.JoinlessChat
         ? ChatMessageEditor({ store: store, scrollDownToViewNewMessage: this.scrollDown })

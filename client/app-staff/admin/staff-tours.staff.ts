@@ -30,6 +30,7 @@ function closeSidebarFn() {
   debiki2.sidebar.contextBar.closeSidebar();
 }
 
+// Dupl code [disp_name]
 function displayName(me: Myself): string {
   return me.fullName || me.username;
 }

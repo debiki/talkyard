@@ -93,7 +93,7 @@ export function store_maySendInvites(store: Store, user: Myself | UserInclDetail
   if (store.settings.ssoUrl) {
     return mayMayNot(false, "SSO enabled");
   }
-  // Currently only staff and core members may send invites. [5WBJAF2]
+  // Currently only staff and core members may send invites. [who_may_invite]
   if (!user_isStaffOrCoreMember(user) || user.isGroup) {
     return mayMayNot(false, "is not staff or core member");
   }
@@ -131,6 +131,7 @@ export function pat_isStaff(user: Me | Pat): Bo {
 // Old name  CLEAN_UP REMOVE
 export const isStaff: (user: Me | Pat) => Bo = pat_isStaff;
 
+// RENAME to pat_isStaffOrCore
 export function user_isStaffOrCoreMember(user: Myself | UserInclDetails): boolean {
   return isStaff(user) || user_trustLevel(user) >= TrustLevel.CoreMember;
 }

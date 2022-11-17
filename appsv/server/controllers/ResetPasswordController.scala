@@ -99,7 +99,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: TyC
         }
         else {
           // Usernames are publicly visible.
-          // Unless user is unlisted?  [unlist_users]  Not impl.
+          // Unless user is private / name hidden?  [private_pats]  Not impl.
           val settings = dao.getWholeSiteSettings()
           val notify = !settings.userMustBeAuthenticated
           logger.info(o"""s$siteId: Not sending password reset email to non-existing

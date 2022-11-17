@@ -19,6 +19,7 @@
 /// <reference path="../more-prelude.more.ts" />
 /// <reference path="../util/UsernameInput.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
+/// <reference path="../util/trust-level-dialog.more.ts" />
 /// <reference path="./ActivitySummaryEmailsInterval.more.ts" />
 
 //------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ const accountPathSeg = 'account';  // [4JKT28TS]
 
 
 export const UserPreferences = createFactory({
- displayName: 'UserPreferences',
+  displayName: 'UserPreferences',
 
   render: function() {
     const user: UserInclDetails = this.props.user;
@@ -81,8 +82,8 @@ export const UserPreferences = createFactory({
           );
 
     const isGuest = user_isGuest(user);
-    const isNormalMember = user.id >= LowestNormalMemberId;
-    const isBuiltInUser = user.id < LowestAuthenticatedUserId;
+    const isNormalMember = user.id >= Pats.MinNotSysMemberId;
+    const isBuiltInUser = member_isBuiltIn(user);
     const isGuestOrBuiltIn = isGuest || isBuiltInUser;
     const isGroupGuestOrBuiltIn = user.isGroup || isGuestOrBuiltIn;
 
@@ -94,9 +95,10 @@ export const UserPreferences = createFactory({
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
+              // It's possible to configure built-in groups (which are "normal" members).
               !isNormalMember ? null: LiNavLink({
                   to: prefsPathSlash + notfsPathSeg, className: 's_UP_Prf_Nav_NtfsL' }, t.Notifications),
-              isGroupGuestOrBuiltIn ? null : LiNavLink({
+              !isNormalMember ? null : LiNavLink({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
               isGroupGuestOrBuiltIn ? null : LiNavLink({
                   to: securityPath, className: 'e_UP_Prf_Nav_SecL' }, t.upp.Security),
@@ -708,16 +710,35 @@ const NotfPrefsTab = createFactory({
 });
 
 
+interface PrivacyPrefsTabProps {
+  store: Store;
+  user: UserInclDetails;
+  updatePat: (patNoStatsNoGroupIds: PatVb) => Vo;
+}
+
+
+interface PrivacyPrefsTabState {
+  savingStatus?: St;
+  hideActivityForStrangers: Bo;
+  hideActivityForAll: Bo;
+  maySendMeDmsTrLv?: TrustLevelOrStaff;
+  mayMentionMeTrLv?: TrustLevelOrStaff;
+}
+
 
 const PrivacyPrefsTab = createFactory({
   displayName: 'PrivacyPrefsTab',
 
   getInitialState: function() {
-    const user: UserInclDetails = this.props.user;
-    return {
+    const props: PrivacyPrefsTabProps = this.props;
+    const user: UserInclDetails = props.user;
+    const state: PrivacyPrefsTabState = {
       hideActivityForStrangers: user.seeActivityMinTrustLevel >= TrustLevel.FullMember,
       hideActivityForAll: user.seeActivityMinTrustLevel >= TrustLevel.CoreMember,
+      maySendMeDmsTrLv: user.maySendMeDmsTrLv,
+      mayMentionMeTrLv: user.mayMentionMeTrLv,
     };
+    return state;
   },
 
   componentWillUnmount: function() {
@@ -726,12 +747,16 @@ const PrivacyPrefsTab = createFactory({
 
   savePrivacyPrefs: function(event) {
     event.preventDefault();
-    const seeActivityMinTrustLevel = this.state.hideActivityForAll ? TrustLevel.CoreMember : (
-        this.state.hideActivityForStrangers ? TrustLevel.FullMember : null);
-    const user: UserInclDetails = this.props.user;
+    const props: PrivacyPrefsTabProps = this.props;
+    const state: PrivacyPrefsTabState = this.state;
+    const seeActivityMinTrustLevel = state.hideActivityForAll ? TrustLevel.CoreMember : (
+        state.hideActivityForStrangers ? TrustLevel.FullMember : null);
+    const user: UserInclDetails = props.user;
     const prefs = {
       userId: user.id,
-      seeActivityMinTrustLevel: seeActivityMinTrustLevel,
+      seeActivityMinTrustLevel,
+      maySendMeDmsTrLv: state.maySendMeDmsTrLv,
+      mayMentionMeTrLv: state.mayMentionMeTrLv,
     };
     // Dupl code [save_pat_pref].
     Server.saveMemberPrivacyPrefs(prefs, (r: { patNoStatsNoGroupIds: PatVb }) => {
@@ -739,31 +764,42 @@ const PrivacyPrefsTab = createFactory({
       this.setState({
         savingStatus: 'Saved',
       });
-      this.props.updatePat(r.patNoStatsNoGroupIds);
+      props.updatePat(r.patNoStatsNoGroupIds);
     });
     this.setState({ savingStatus: 'Saving' });
   },
 
   render: function() {
-    const state = this.state;
-    const me: Myself = this.props.store.me;
-    const user: UserInclDetails = this.props.user;
+    const props: PrivacyPrefsTabProps = this.props;
+    const state: PrivacyPrefsTabState = this.state;
+    const me: Me = props.store.me;
+    const user: UserInclDetails = props.user;
+    const isSelf = user.id === me.id;
 
     // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
-    if (this.state.savingStatus === 'Saving') {
+    if (state.savingStatus === 'Saving') {
       savingInfo = r.i({}, ' ' + t.SavingDots);
     }
-    else if (this.state.savingStatus === 'Saved') {
+    else if (state.savingStatus === 'Saved') {
       savingInfo = r.i({ className: 'e_Saved' }, ' ' + t.SavedDot);
     }
 
+    // Maybe most new members would mess up these settings? [can_config_what_priv_prefs]
+    // Currently these settings have no effect, for groups. [inherit_group_priv_prefs]
+    const canConfigWhoMayMessage = isSelf && pat_isBitAdv(me) || pat_isStaff(me);  // UX BUG but not if me is mod, and user is admin
+    const you =
+            user.isGroup ? "members of this group" : (    // I18N
+            user.id === me.id ? "you" : "this user");
+
+
     return (
-      r.form({ role: 'form', onSubmit: this.savePrivacyPrefs },
+      r.form({ role: 'form', className: 'e_PrivPrefsF', onSubmit: this.savePrivacyPrefs },
 
         // If in the future, adding options for being a bit invisible and not receiving
         // messages from others — then, stop publishing presence here: [PRESPRIV].
 
+        user.isGroup ? null : rFr({},
         Input({ type: 'checkbox', className: 'e_HideActivityStrangersCB',
             label: rFragment({},
               t.upp.HideActivityStrangers_1, r.br(),
@@ -772,6 +808,7 @@ const PrivacyPrefsTab = createFactory({
             onChange: (event: CheckboxEvent) => this.setState({
               hideActivityForStrangers: event.target.checked,
               hideActivityForAll: false,
+              savingStatus: null,
             }) }),
 
         Input({ type: 'checkbox', className: 'e_HideActivityAllCB',
@@ -782,9 +819,43 @@ const PrivacyPrefsTab = createFactory({
             onChange: (event: CheckboxEvent) => this.setState({
               hideActivityForStrangers: event.target.checked || state.hideActivityForStrangers,
               hideActivityForAll: event.target.checked,
-            }) }),
+              savingStatus: null,
+            }) })),
 
-        InputTypeSubmit({ className: 'e_SavePrivacy', style: { marginTop: '11px' }, value: t.Save }),
+        // This is notf prefs, rather than privacy? Maybe should move
+        // to tne notf prefs tab? Not important, let's wait.
+        //
+        !canConfigWhoMayMessage ? null : rFr({},
+          r.div({ className: 'e_WhoMayMention' },
+            r.span({}, `Min trust level to @mention ${you}: `),  // I18N
+            TrustLevelBtn({
+                diagTitle: rFr({},
+                    `Min trust level to get to notify ${you} by typing `,  // I18N
+                    r.code({}, `@${user.username}`), ':'),
+                curLevel: firstValOf(
+                      state.mayMentionMeTrLv, user.mayMentionMeTrLv, TrustLevelOrStaff.New),
+                minLevel: TrustLevelOrStaff.New,
+                maxLevel: TrustLevelOrStaff.CoreMember,
+                saveFn: (newLevel) => {
+                  this.setState({ mayMentionMeTrLv: newLevel, savingStatus: null });
+                }})),
+
+          r.div({ className: 'e_WhoMayDm' },
+            r.span({}, `Min trust level to direct-message (DM) ${you}: `),  // I18N
+            TrustLevelBtn({
+                diagTitle: `Min trust level to get to direct-message ${you}:`,  // I18N
+                curLevel: firstValOf(
+                      state.maySendMeDmsTrLv, user.maySendMeDmsTrLv, TrustLevelOrStaff.New),
+                minLevel: TrustLevelOrStaff.New,
+                maxLevel: TrustLevelOrStaff.CoreMember,
+                saveFn: (newLevel) => {
+                  this.setState({ maySendMeDmsTrLv: newLevel, savingStatus: null });
+                }})),
+        ),
+
+        InputTypeSubmit({ className: 'e_SavePrivacy', style: { marginTop: '11px' },
+              value: t.Save }),
+
         savingInfo));
   }
 });

@@ -117,30 +117,11 @@ print_help:
 	@echo "Running a development server"
 	@echo "--------------------------"
 	@echo
-	@echo "  Start a dev server:       make up"
-	@echo "  Stop the dev server:      make dead"
-	@echo "  View logs:                make logs"
-	@echo
-	@echo "  Open PostgreSQL prompt:   make db-cli"
-	@echo
-	@echo "  Start a Scala CLI:        make dead-app ; make play-cli"
-	@echo
-	@echo "Running tests"
-	@echo "--------------------------"
-	@echo
-	@echo "End-to-End tests:"
-	@echo "  Start Talkyard:           make up
-	@echo "  Start Selenium:           d/selenium chrome"
-	@echo "  Run the tests:            s/run-e2e-tests   # or:  d/n s/run-e2e-tests ?"
-	@echo "  Stop Selenium:            d/selenium kill"
-	@echo
-	@echo "Unit tests:"
-	@echo "  Stop the app server:      make dead-app"
-	@echo "  Start a Scala CLI:        make play-cli"
-	@echo "  Run tests:                test  # in the CLI"
+	@echo "Use the script s/tyd instead of make, e.g.:  s/tyd up"
+	@echo "Type  s/tyd help  to find out more."
 	@echo
 	@echo "What more do you want to know? Talk with us at"
-	@echo "https://www.talkyard.io/forum/."
+	@echo "https://forum.talkyard.io."
 	@echo
 
 

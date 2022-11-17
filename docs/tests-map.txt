@@ -286,6 +286,12 @@ sessions:
             - TESTS_MISSING
 
 
+privacy:  [.noise_and_privacy]
+  can cannot:
+    see email:
+    see username:
+    see if I'm online:
+
 navigation:
   from anywhere, to anywhere:
           - navigation-as-stranger.test.ts  TyT5WKAB024
@@ -373,6 +379,7 @@ groups:
   permissions, custom groups:
           - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
+
 
 security:
   access denied,
@@ -721,9 +728,16 @@ mentions:
   group mentions:
           - group-mentions.2browsers  TyT4AWJL208R
   channel mentions:
+    mention @all in DM:
+            - TESTS_MISSING  was a bug but fixed
+                  (notfCreatedAlreadyTo() didn't want groups as message members)
+    mention @all in chat:
   no dupl mentions when combining @channel, @member, @group:
   when really many members:
           - many-users-mention-list-join-group.2browsers.test.ts  TyT2602SKJJ356
+
+  may mention me trust level:
+            - block-mentions.2br.d  TyTMAYMENTION
 
 
 link previews:
@@ -839,6 +853,7 @@ post -
 
 messages,
 private messages,
+DM:s,
 direct messages:
             - direct-messages-notfs.3br.d  TyT602RKDL42
   delete posts,  [.delposts]
@@ -846,7 +861,8 @@ direct messages:
             - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
   not searchable by the wrong people:
             - api-search-full-text.test.ts  TyT5027KRUTP
-
+  may direct-message me trust level:
+            - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
 
 chat:
   create channel:  chat.2browsers.test.ts  (4FE2)
@@ -975,6 +991,8 @@ users online -
     I go on/off:
     other on/off:
   unchanged after server restart:
+  not see if I'm online:
+            - see [.noise_and_privacy]
 
 watchbar -
   recent list:
@@ -1470,7 +1488,8 @@ email notifications:  (5ABKR024)
 custom forms:
             - custom-forms.3br.d  TyTCUSTFORMS
 
-terms and privacy:
+terms of use,
+privacy policy:
   read after have signed up:
   read when signing up:
     public community:

@@ -263,13 +263,17 @@ object JsX {   RENAME // to JsonPaSe
       "bio" -> JsStringOrNull(user.about),
       "websiteUrl" -> JsStringOrNull(user.website),
       "location" -> JsStringOrNull(user.country),
-      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
+      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.privPrefs.seeActivityMinTrustLevel.map(_.toInt)),
       "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
       "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),  // REMOVE
       "suspendedTillMs" -> DateEpochOrNull(user.suspendedTill),  // RENAME
       "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
+
+    // Currently needs to be public, see [some_pub_priv_prefs].
+    userJson = userJson.addAnyInt32("maySendMeDmsTrLv", user.privPrefs.maySendMeDmsTrLv)
+    userJson = userJson.addAnyInt32("mayMentionMeTrLv", user.privPrefs.mayMentionMeTrLv)
 
     if (callerIsStaff_ || callerIsUserHerself) {
       val anyReviewer = user.reviewedById.flatMap(usersById.get)
@@ -318,6 +322,19 @@ object JsX {   RENAME // to JsonPaSe
     }
 
     userJson
+  }
+
+
+  def memberPrivacyPrefsFromJson(json: JsValue): MemberPrivacyPrefs = {
+    MemberPrivacyPrefs(
+          seeActivityMinTrustLevel =
+              parseOptInt32(json, "seeActivityTrLv", altField = "seeActivityMinTrustLevel")
+                  .flatMap(TrustLevel.fromInt),
+          maySendMeDmsTrLv =
+              parseOptInt32(json, "maySendMeDmsTrLv").flatMap(TrustLevel.fromInt),
+          mayMentionMeTrLv =
+              parseOptInt32(json, "mayMentionMeTrLv").flatMap(TrustLevel.fromInt),
+          )
   }
 
 

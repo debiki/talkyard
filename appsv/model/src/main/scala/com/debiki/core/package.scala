@@ -68,6 +68,11 @@ package object core {
   type ErrCode = String
   type ErrMsg = ErrorMessage // = String
 
+  def dashErr(errCode: ErrCode): St = {
+    if (errCode.isEmpty) ""
+    else "-" + errCode
+  }
+
   type Opt[+A] = Option[A]
   val Opt: Option.type = Option
 
@@ -163,19 +168,27 @@ package object core {
   type Participant = com.debiki.core.Pat
   val Pat: Participant.type = Participant
   type User = UserBr  // backw compat, renaming [trait_user]
+  type UserVb = UserInclDetails
 
   type PatVb = ParticipantInclDetails
+  type MembVb = MemberInclDetails
   type MemberVb = MemberInclDetails
+
+  // Later, these will be different?
+  type GroupBr = Group
+  type GroupVb = Group
 
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
   type GuestId = PatId
   type MemberId = PatId   ; RENAME // to MembId
-  type MembId = PatId
+  type MembId = PatId     // but hard to read: '...bI..', two lines next to each other. Instead:
+  type MemId = PatId      // ... is this better?  NO, REMOVE.
   type UserId = PatId
   type GroupId = PatId
 
-  type Username = St
+  type Un = St  // is this nice?
+  type Username = St   // a bit long?
   type FullName = St
 
   // Use MemberId instead.
@@ -475,6 +488,9 @@ package object core {
 
   type EmailOut = Email  // renaming from Email to EmailOut
 
+  type SmtpMsgId = St       // [Scala_3] opaque type
+  type SmtpMsgIdPrefix = St // [Scala_3] opaque type
+
   RENAME // to EventId. And, later: [Scala_3] opaque type
   type AuditLogEntryId = Int
   type EventId = AuditLogEntryId
@@ -483,6 +499,13 @@ package object core {
 
   type ApiSecretNr = Int
 
+  type LinkMaybeBad = St
+  sealed trait MayLink_unused
+  object MayLink_unused {
+    case object YesRelFollow extends MayLink_unused
+    case object YesNoFollow extends MayLink_unused
+    case object No extends MayLink_unused
+  }
 
   type Hopefully[R] = R Or Problem
 
@@ -1612,6 +1635,8 @@ package object core {
   def SELF_DOS = ()
   def ASTROTURFING = ()   // Someone creates many accounts and pretends to be many people
   def PRIVACY = ()        // Could make things a bit more private
+  def SITE_PRIVACY = ()   // Not related to any single person, but the Ty site as a whole, e.g.
+                          // sequential numbers that make it possible to estimate frequency.
   def BUG = ()            // Need not be a terribly important bug.
   def RACE = ()           // A race condition bug / situation.
   def MUST = ()           // Fix before next release.
@@ -1634,7 +1659,7 @@ package object core {
   def OPTIMIZE = ()
   def SLOW_QUERY = ()
   def SHOULD_OPTIMIZE = ()
-  def COULD_OPTIMIZE = () // Also see [On2] but typically O(n^2) is intentional (because simpler).
+  def COULD_OPTIMIZE = () // Also see [On2] or [OnLogn] but typically that's intentional (because simpler).
   def COULD_OPTIMIZE_TESTS = () // Less important
   def WOULD_OPTIMIZE = () // Unimportant thing that could be optimized.
   def BLOCKING_REQ = ()

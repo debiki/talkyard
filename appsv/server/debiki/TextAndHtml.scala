@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import talkyard.server.rendr.{RenderParams, NashornParams}
 import org.scalactic.{ErrorMessage, Or}
 import play.api.libs.json.JsArray
 import scala.collection.{immutable, mutable}
@@ -288,8 +289,24 @@ object TextAndHtmlMaker {   MOVE // to just  TextAndHtml
 
 
 /** Thread safe.
+  *
+  * COULD pass mayMention: Map[Username, Bo] to here, and render usernames that
+  * couldn't be mentioned in bold gray link color, and those who were mentioned
+  * and notified, in blue?  So the reader sees at a glance, if the @mentioned_person
+  * was notified or not?  But let's wait, is a bit complicated (since would
+  * require 2 passes over the commonmark: one to find mentions and and lookup may-mention,
+  * and another to process the commonmark whilst *using* that info. See [filter_mentions].
+  *
+  * And a link map too — to show which ones should be rel=follow, nofollow,
+  * or not links at all (if suspicious). [filter_links]
   */
-class TextAndHtmlMaker(val site: SiteIdHostnames, nashorn: Nashorn) {
+class TextAndHtmlMaker(
+  val site: SiteIdHostnames,
+  nashorn: Nashorn,
+  val mayMention: Set[Username] => Map[Username, Bo] = _ => Map.empty.withDefaultValue(true)
+  // Later:
+  // val mayLink: LinkMaybeBad => MayLink_unused, — as a map?
+  ) {
 
   private class TextAndHtmlImpl(
     val text: String,
@@ -306,9 +323,9 @@ class TextAndHtmlMaker(val site: SiteIdHostnames, nashorn: Nashorn) {
 
     def append(text: String): TextAndHtml = {
       append(new TextAndHtmlMaker(site = site, nashorn).apply(
-        text, embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-        followLinks = followLinks,
-        allowClassIdDataAttrs = allowClassIdDataAttrs))
+        text, RenderParams(embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+                followLinks = followLinks,
+                allowClassIdDataAttrs = allowClassIdDataAttrs)))
     }
 
     def append(moreTextAndHtml: TextAndHtml): TextAndHtml = {
@@ -370,13 +387,14 @@ class TextAndHtmlMaker(val site: SiteIdHostnames, nashorn: Nashorn) {
 
   def forBodyOrComment(text: String, embeddedOriginOrEmpty: String = "",
         followLinks: Boolean = false, allowClassIdDataAttrs: Boolean = false): TextAndHtml =
-    apply(text, embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-          followLinks = followLinks, allowClassIdDataAttrs = allowClassIdDataAttrs)
+    apply(text, RenderParams(
+          embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+          followLinks = followLinks, allowClassIdDataAttrs = allowClassIdDataAttrs))
 
   // COULD escape all CommonMark so becomes real plain text
   def forBodyOrCommentAsPlainTextWithLinks(text: String): TextAndHtml =
-    apply(text, embeddedOriginOrEmpty = "",
-          followLinks = false, allowClassIdDataAttrs = false)
+    apply(text, RenderParams(embeddedOriginOrEmpty = "",
+          followLinks = false, allowClassIdDataAttrs = false))
 
   def forHtmlAlready(html: String): TextAndHtml = {
     findLinksEtc(html, RenderCommonmarkResult(html, Set.empty),
@@ -384,17 +402,24 @@ class TextAndHtmlMaker(val site: SiteIdHostnames, nashorn: Nashorn) {
         followLinks = false, allowClassIdDataAttrs = false)
   }
 
-  private def apply(
-    text: String,
-    embeddedOriginOrEmpty: String,
-    followLinks: Boolean,
-    allowClassIdDataAttrs: Boolean): TextAndHtml = {
-
+  private def apply(text: St, renderParams: RenderParams): TextAndHtml = {
+    // Later, if doing this in an external process / VM,  [ext_markup_processor]
+    // then, might need to do two passes: 1) first to find all @mentioned_usernames
+    // and links, and looking up those usernames and see which names
+    // the post author may mention, and looking up the linked-to domains
+    // and see which links should be no/follow or even just plain text, and
+    // then 2) a second pass with mayMention and mayLinkTo included.
+    // [filter_mentions] [filter_links]
     val renderResult = nashorn.renderAndSanitizeCommonMark(
-          text, site, embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-          allowClassIdDataAttrs = allowClassIdDataAttrs, followLinks = followLinks)
-    findLinksEtc(text, renderResult, embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-          followLinks = followLinks, allowClassIdDataAttrs = allowClassIdDataAttrs)
+          text, NashornParams(
+                  site,
+                  embeddedOriginOrEmpty = renderParams.embeddedOriginOrEmpty,
+                  allowClassIdDataAttrs = renderParams.allowClassIdDataAttrs,
+                  followLinks = renderParams.followLinks,
+                  mayMention))  // later: mayLinkTo, too
+    findLinksEtc(text, renderResult, embeddedOriginOrEmpty = renderParams.embeddedOriginOrEmpty,
+          followLinks = renderParams.followLinks,
+          allowClassIdDataAttrs = renderParams.allowClassIdDataAttrs)
   }
 
 

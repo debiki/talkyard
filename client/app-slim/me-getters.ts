@@ -40,12 +40,12 @@ export function me_hasSid(): Bo {
 }
 
 
-export function me_isAuthenticated(me: Myself): boolean {
+export function me_isAuthenticated(me: Me): Bo {
   return me.id && me.id >= MinMemberId;
 }
 
 
-export function me_toBriefUser(me: Myself): BriefUser {
+export function me_toBriefUser(me: Me): Pat {
   return {
     id: me.id,
     fullName: me.fullName,
@@ -59,20 +59,22 @@ export function me_toBriefUser(me: Myself): BriefUser {
   }
 }
 
-export function me_hasVoted(me: Myself, postId: PostId, what: string): boolean {
+export function me_hasVoted(me: Me, postId: PostId, what: St): Bo {
   const votes = me.myCurrentPageData.votes[postId] || [];
   return votes.indexOf(what) !== -1;
 }
 
 
-export function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean {
+/// Sync w Scala: Pat.mayMessage().
+///
+export function store_maySendDirectMessageTo(store: Store, user: PatVb): Bo {
   const settings: SettingsVisibleClientSide = store.settings;
-  const me: Myself = store.me;
+  const me: Me = store.me;
 
   if (settings.enableDirectMessages === false)
     return false;
 
-  if (user_isGone(user))   // compilation error?
+  if (user_isGone(user))
     return false;
 
   if (!user_isMember(me) || !user_isMember(user))
@@ -84,13 +86,15 @@ export function store_maySendDirectMessageTo(store: Store, user: UserInclDetails
   if (me.id === user.id)
     return false;
 
-  if (user.isGroup) // group messages not yet impl
+  const myTrustLevel = user_trustLevel(me);
+
+  if (user.maySendMeDmsTrLv && myTrustLevel < user.maySendMeDmsTrLv)
     return false;
 
-  if (isStaff(me) || isStaff(user))
+  if (user_isStaffOrCoreMember(me))
     return true;
 
-  return me.trustLevel >= TrustLevel.Basic && me.threatLevel <= ThreatLevel.HopefullySafe;
+  return me.threatLevel <= ThreatLevel.HopefullySafe || isStaff(user); // [bad_pat_dms]
 }
 
 //------------------------------------------------------------------------------

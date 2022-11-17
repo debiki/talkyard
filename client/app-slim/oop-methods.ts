@@ -641,6 +641,23 @@ export function me_uiPrefs(me: Myself): UiPrefs {
 }
 
 
+/// Oops should use at more places. [me_isPageMember]
+///
+function me_isPageMember(me: Me, page: Page): Bo {
+  if (page.pageMemberIds.indexOf(me.id) >= 0)
+    return true;
+
+  // Has any group one is in, been added to the page?
+  for (let i = 0; i < me.myGroupIds.length; ++i) {
+    const groupId = me.myGroupIds[i];
+    if (page.pageMemberIds.indexOf(groupId) >= 0)
+      return true;
+  }
+
+  return false;
+}
+
+
 // Groups
 //----------------------------------
 
@@ -648,8 +665,11 @@ export function me_uiPrefs(me: Myself): UiPrefs {
 // Members
 //----------------------------------
 
-export function member_isBuiltIn(member: Member): boolean {
-  return member.id < LowestAuthenticatedUserId;
+// RENAME to pat_isBuiltIn
+export function member_isBuiltIn(member: Member): Bo {
+  return (MaxGuestId < member.id && member.id < Pats.MinAuthnMemberId
+          // The Unknown user is both a guest and built-in.
+          || member.id === UnknownUserId);
 }
 
 
@@ -657,6 +677,11 @@ export function member_isBuiltIn(member: Member): boolean {
 // Users
 //----------------------------------
 
+
+// Dupl code [disp_name]
+export function pat_name(pat: Me | Pat): St {
+  return pat.fullName || (pat.username ? '@' + pat.username : "_no_name_");
+}
 
 // Returns 0 if not snoozing or time's up.
 //
@@ -688,6 +713,23 @@ export function user_isTrustMinNotThreat(user: UserInclDetails | Myself, trustLe
   // UX COULD check threat level too, that's done server side, not doing here can result in [5WKABY0]
   // annoying error messages (security though = server side).  Add a Myself.isThreat field?
   return user_trustLevel(user) >= trustLevel;
+}
+
+
+/// If a bit advanced functionality should be shown to this user (or group members).
+///
+export function pat_isBitAdv(pat: PatVb | Me): Bo {
+  // For now, let's assume people who have become full members, are "advanced".
+  // Later, there could be a checkbox in one's user settings. [tech_level]
+  return user_trustLevel(pat) >= TrustLevel.FullMember || isStaff(pat);
+}
+
+
+/// If more advanced functionality should be shown.
+///
+export function pat_isMoreAdv(pat: PatVb | Me): Bo {
+  // For now.
+  return user_trustLevel(pat) >= TrustLevel.Trusted || isStaff(pat);
 }
 
 
@@ -869,7 +911,9 @@ export function store_mayICreateTopics(store: Store, category: Cat | U): Bo {
 }
 
 
-// Some dupl code! (8FUZWY02Q60)
+/// Sync w Scala: Authz.mayPostReply()
+/// Some dupl code! (8FUZWY02Q60)
+///
 export function store_mayIReply(store: Store, post: Post): boolean {
   const page: Page = store.currentPage;
   // Each reply on a mind map page is a mind map node. Thus, by replying, one modifies the mind map
@@ -881,14 +925,23 @@ export function store_mayIReply(store: Store, post: Post): boolean {
   const ancestorCategories: Ancestor[] = page.ancestorsRootFirst;
   const me = store.me;
 
+  // It's ok to reply to deleted comments? E.g. if you had in mind to write
+  // "The above comment was deleted because: ..." but you happened to delete it first.
+  if (isStaff(me))
+    return true;
+
   // Later: [8PA2WFM] Perhaps let staff reply, although not approved. So staff can say
   // "If you please remove <sth that violates the site guidelines>, I'll approve the comment".
   // Or "I won't approve this comment. It's off-topic because ...".
   if (post_isDeletedOrCollapsed(post) || !post.isApproved)
     return false;
 
-  if (page.pageMemberIds.indexOf(me.id) >= 0)
+  // ----- Page member?
+
+  if (me_isPageMember(me, page))
     may = true;
+
+  // ----- Whole site perms?
 
   me.permsOnPages.forEach((p: PermsOnPage) => {
     if (p.onWholeSite) {
@@ -897,6 +950,8 @@ export function store_mayIReply(store: Store, post: Post): boolean {
       }
     }
   });
+
+  // ----- Category perms?
 
   // Here we loop through the cats in the correct order though, [0GMK2WAL].
   for (let i = 0; i < ancestorCategories.length; ++i) {
@@ -929,8 +984,11 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   if (post_isDeletedOrCollapsed(post))
     return false;
 
-  const page: Page = store.currentPage;
   const me = store.me;
+  if (me.isAdmin)
+    return true;
+
+  const page: Page = store.currentPage;
   const isMindMap = page.pageRole === PageRole.MindMap;
   const isWiki = post_isWiki(post);
   const isOwnPage = store_thisIsMyPage(store);
@@ -948,7 +1006,7 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 
   // Direct messages aren't placed in any category and thus aren't affected by permissions.
   // Need this extra 'if':
-  if (page.pageMemberIds.indexOf(me.id) >= 0 && isOwn)
+  if (me_isPageMember(me, page) && isOwn)
     may = true;
 
   // Least specific: Whole site permissions. Can be overridden per category and

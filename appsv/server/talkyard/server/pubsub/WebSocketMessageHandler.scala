@@ -144,7 +144,15 @@ class WebSocketMessageHandler(
                   // What if the client has opened another page, during this handshake?
                   // Then the watchbar might not include that page. Fairly harmless.
                   val dao = globals.siteDao(site.id)
-                  val watchbar = dao.getOrCreateWatchbar(requester.id)
+                  val watchbar = requester match {
+                    case member: Member =>
+                      val authzCtx = dao.getAuthzCtxOnPagesForPat(member)
+                      dao.getOrCreateWatchbar(authzCtx)
+                    case _ =>
+                      // All strangers start with the same watchbar.
+                      dao.getStrangersWatchbar()
+                  }
+
                   val clientWithPages = client.copy(watchedPageIds = watchbar.watchedPageIds)
 
                   logger.debug(o"""$prefix $who connected, telling PubSubActor, it'll

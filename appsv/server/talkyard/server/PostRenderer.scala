@@ -20,6 +20,7 @@ package talkyard.server
 import com.debiki.core._
 import com.debiki.core.Prelude.die
 import debiki.{Nashorn, TextAndHtml}
+import talkyard.server.rendr.NashornParams
 
 
 case class PostRendererSettings(
@@ -65,13 +66,13 @@ class PostRenderer(private val nashorn: Nashorn) {
       }
     }
     else {
-      // Reuse @mentions? [4WKAB02]
+      // Reuse @mentions? [4WKAB02] [filter_mentions]
+      val renderParams = NashornParams(site,
+            embeddedOriginOrEmpty = settings.embeddedOriginOrEmpty,
+            allowClassIdDataAttrs = isBody, followLinks = followLinks,
+            mayMention = _ => Map.empty.withDefaultValue(true))
       val renderResult = nashorn.renderAndSanitizeCommonMark(
-          post.currentSource,
-          site,
-          embeddedOriginOrEmpty = settings.embeddedOriginOrEmpty,
-          allowClassIdDataAttrs = isBody,
-          followLinks = followLinks)
+            post.currentSource, renderParams)
       renderResult.safeHtml
     }
   }

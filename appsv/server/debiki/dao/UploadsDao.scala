@@ -23,6 +23,7 @@ import com.google.{common => guava}
 import debiki.{Globals, ImageUtils, TextAndHtmlMaker}
 import debiki.EdHttp._
 import talkyard.server.UploadsUrlBasePath
+import talkyard.server.rendr.NashornParams
 import java.{io => jio, lang => jl, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
@@ -222,7 +223,17 @@ trait UploadsDao {
   }
 
 
-  /** Do as part of  [[debiki.TextAndHtmlMaker.findLinksEtc]]  ? */
+  /** Do as part of  [[debiki.TextAndHtmlMaker.findLinksEtc]]  ?
+    *
+    * Finds upload refs for the current version of the post — but also
+    * for the most recent *approved* version, which might be different.
+    *
+    * Details: The approved version is the one shown to others, whilst the current
+    * version can be a new version the author has started editing
+    * — and if hen has e.g. added and removed images, the upload refs will be
+    * different in the current version. We need to remember also images in the current
+    * version, otherwise they could disappear, be gone before edits published.
+    */
   @deprecated("now")
   def findUploadRefsInPost(post: Post, site: Opt[Site] = None): Set[UploadRef] = {
     val pubId = site.map(_.pubId) getOrElse thePubSiteId()
@@ -232,9 +243,10 @@ trait UploadsDao {
       if (post.nr == PageParts.TitleNr) Nil
       else {
         val renderResult = context.nashorn.renderAndSanitizeCommonMark(  // [nashorn_in_tx]
-              post.currentSource, site getOrElse theSite(),
+              post.currentSource, NashornParams(site getOrElse theSite(),
               embeddedOriginOrEmpty = "",
-              allowClassIdDataAttrs = false, followLinks = false)
+              allowClassIdDataAttrs = false, followLinks = false,
+              mayMention = _ => Map.empty.withDefaultValue(true)))
         findUploadRefsInHtml(renderResult.safeHtml, pubId)
       }
     approvedRefs ++ currentRefs

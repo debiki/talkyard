@@ -290,6 +290,8 @@ $_$;
 --     paused_by_id_c, done_by_id_c, closed_by_id_c, locked_by_id_c,
 --     frozen_by_id_c, unwanted_by_id_c, hidden_by_id_c, deleted_by_id_c
 -- with:  private_status_c
+--   [edit] No, using private_pats_id_c instead. And the following might be
+--   a user list/group setting instead: [/edit]
 --            null or 0 = not private,
 --            1 = yes, can make public,
 --            2 = yes, can*not* make public, but can add more who can see it,
@@ -401,19 +403,6 @@ create table trees_t (  --  NO, instead, use posts_t for bookmarks?
 --   about_post_id_c,
 --   about_tag_id_c,
 -- )
-
-alter table post_actions3 drop column action_id; -- already noted below in "delete: ...".
-
-alter table post_actions3 rename to post_pats_t; -- no, post_act(ion)s_t?
-alter table post_actions3 rename column created_by_id to pat_id_c;
-alter table post_actions3 rename column created_at to at_c:  -- or added_at_c;
-alter table post_actions3 rename column type to how_c;
-alter table post_actions3 rename column sub_id to sub_how_c;
-
--- Audit log, instead:
-alter table post_actions3 drop column updated_at;
-alter table post_actions3 drop column deleted_at;
-alter table post_actions3 drop column deleted_by_id;
 
 
 
@@ -590,22 +579,22 @@ alter table page_users3 rename to user_pages3;
 alter table page_users3 drop column notf_level;
 alter table page_users3 drop column notf_reason; -- weird, why did I add it, and why here?
 
-users3             —> pats_t
-user_stats3        —> pat_dyn_data_t         -- frequently changes
-user_visit_stats3  —> pat_visits_t
-page_users3    __.——> pat_page_visits_t      --
-                  `—> pat_page_dyn_data_t    --
-
-post_read_stats3   —> posts_read_t
-           user_id —> posts_read_t.read_by_id_c
+alter table users3             rename to pats_t;
+alter table user_stats3        rename to pat_dyn_data_t;    -- frequently changes
+alter table user_visit_stats3  rename to pat_visits_t;
+alter table page_users3        rename to pat_page_visits_t;
+--                                    or `pat_page_dyn_data_t  ?
+-- 
+alter table post_read_stats3   rename to posts_read_t;
+alter table posts_read_t rename user_id to read_by_id_c;  -- ?
 
 
 alter table users3 add column separate_email_for_every smallint;
 update users3 set separate_email_for_every = 3 where email_for_every_new_post;  -- NO
 alter table users3 drop column email_for_every_new_post;
 
-alter table users3 add column watch_level_after_posted smallint;
-alter table users3 add column watch_level_after_do_it_voted smallint;
+alter table users3 add column notf_level_after_posted smallint;
+alter table users3 add column notf_level_after_do_it_voted smallint;
 -- What's this?
 alter table users3 add column notify_if_voted_up int;
 alter table users3 add column notify_if_voted_other int;
@@ -620,20 +609,6 @@ alter table users3 add column group_default_prio int;
 --   incl_sub_tags boolean,
 --   incl_sub_threads boolean,
 
-
--- Incl in MemberPrivacyPrefs (Scala class):
--- and see:   docs/design-docs/tags.dd.adoc  [perms_thoughts]  too
-alter table pats_t add column may_see_username_min_tr_lv       trust_level_or_staff_d;
-alter table pats_t add column may_see_full_name_min_tr_lv      trust_level_or_staff_d;
-alter table pats_t add column may_see_bio_min_tr_lv            trust_level_or_staff_d;
-alter table pats_t add column may_see_small_avatar_min_tr_lv   trust_level_or_staff_d;
-alter table pats_t add column may_see_medium_avatar_min_tr_lv  trust_level_or_staff_d;
---    table pats_t add column may_see_tags_min_tr_lv -- no, per tag type insetad.
-alter table pats_t add column may_send_dms_min_tr_lv           trust_level_or_staff_d;
-alter table pats_t add column may_mention_min_tr_lv            trust_level_or_staff_d;  -- ?
-
-alter table pats_t add column may_see_visit_stats_min_tr_lv    trust_level_or_staff_d;  -- ?
-alter table pats_t add column may_see_post_stats_min_tr_lv     trust_level_or_staff_d;  -- ?
 
 -- or maybe:   others_see_..._min_tr_lv ?  so clarifies it's reuqirements on *others*
 -- to see this pat.
@@ -657,6 +632,7 @@ alter table pats_t add column web_scraping_prefs_c  web_scraping_prefs_d;
 -- *** No, don't, let's not store CanSeePrivate in pat_rels_t ***
 update posts_t set nr_c = -nr_c, private_status_c = ...   -- sth like this, because
     where page_type is private-message;      -- private comments have negative post nrs.
+    [edit] NO, using posts_t.private_pats_id_c instead [/edit]
 insert into pat_rels_t (from_pat_id_c, rel_type_c, ...)
     select user_id, PatRelType.CanSeePrivate, ... from page_users3
     where joined_by_id is not null and kicked_by_id is null;
@@ -694,31 +670,98 @@ create table perms_on_pats_t (    -- can be a group or a person
   may_see_username_c,
   may_see_full_name_c,
   may_see_bio_c,
-  see_activity_min_trust_level,
-  may_see_small_avatar_c,
+  may_see_activity_c,
+  may_see_tiny_avatar_c,
   may_see_medium_avatar_c,
-  may_see_tags_c,  -- but which tags
-  may_send_dms_c,
+  ...
+  ... same as in pats_t, the ..._tr_lv_c coulmns
 );
 
 
+alter perms_on_pages3 (
+  for_pat_id
+  on_category_id
+  ...
+  may_moderate       -- can approve and reject comments. Category moderator, [cat_mods]. Hmm?
+  may_administrate?  -- Can give & revoke category access & edit permissions,
+      or  _manage?   -- to groups, and ... also to individuals? Or should perms always
+                     -- be configured on groups, and user access by adding user to group?
+                     -- The former is more orderly? The later more flexible & chaotic?
+)
+
 create table perms_on_groups3 (   -- already created:   group_participants3
+
+    -- ACTUALLY maybe CHANGE  group_participants3
+    --                    to  perms_on_pats_t,
+    --
+    -- and if it's a group, then is_member/manager/adder/bouncer
+    -- has effect, otherwise ignored.
+    --
+    -- And all  pats_t.may_mention_me_tr_lv_c, may_see_my_...
+    -- would be here too. If configured on a group, then,
+    -- inherited, and can be overridden by individual users.
+    --
+    -- *This also lets users block each other*
+    -- (which can be needed for big public communities)
+    -- by configuring:
+    --   perms_on_pats_t.for_pat_id         = oneself
+    --   perms_on_pats_t.on_pat_id          = annoying person
+    --   perms_on_pats_t.may_dir_msg_me_c          = false
+    --   perms_on_pats_t.may_see_my_profile_page_c = false
+    --   perms_on_pats_t.may ...                   = false
+    --
+    -- and once could always edit others' perms on oneself,
+    -- unless they're admins, or site wide mods?
+    -- Or category mods in a category one is in.
+
+    -- (This'd be similar to:  page_notf_prefs3  and  perms_on_pages3
+    -- in which one inherits settings from one's groups, and can override oneself.)
+    --
+    -- By default, when creating a group, maybe add this  perms_on_pats_t  entry:
+    --   perms_on_pats_t.for_pat_id = the group
+    --   perms_on_pats_t.on_pat_id  = the group itself
+    --   perms_on_pats_t.may_see_ ...  = true
+    --   perms_on_pats_t.may_mention.. = true
+    --   ...
+    -- so that, by default, group members can see each other? Even if this is disabled
+    -- site wide?  Or, that's a pretty rare situation. So maybe "power admins"
+    -- had better do manually.
+
+    -- And to disable a mentions-misbehaving user from @mentioning others:
+    --   perms_on_pats_t.for_pat_id = the misbehaving user
+    --   perms_on_pats_t.on_pat_id  = everyone
+    --   perms_on_pats_t.may_mention_c = false  -- or could even be a per-day number 0-9, hmm,
+                                                -- so it's a softer limit rather than
+                                                -- never never never.
+
+    -- Hmm, that softer limit mentioned just above could be made a forum default, for newbies?
+    --   perms_on_pats_t.for_pat_id = new_members
+    --   perms_on_pats_t.on_pat_id  = everyone
+    --   perms_on_pats_t.may_mention_per_day_c = 5   -- or week
+    -- Could start with supporting only 0 or unset (no limit).
+    -- Or should rate limits be in pats_t, and inherited?
+    --   pats_t
+    --        pat_id_c = ...   mentions_per_day_c = ...
+
+
   site_id,
   people_id int,
   group_id int,
+  is_member/manager/adder/bouncer — already created
+  -- ? Group admins can addd managers. And managers can add/remove bouncers and members.
+  -- Bouncers can remove members (but not add). Addders can add but not remove.
+  -- (Different use cases.)
   is_group_admin boolean,    -- a group admin and a group manager etc, needn't
   is_group_manager boolean,  -- be group members. so they're in a different table.
-  is_bouncer boolean,        --
-  may_mention: boolean,      -- (E.g. to manage a group "Misbehaving Members" there's
+  is_bouncer boolean,        -- (E.g. to manage a group "Misbehaving Members" there's
                              -- no need to have been added to that group oneself.)
-)
    -- oh, already done. Next:
    comment on table group_participants3 is '... sth like the comment above';
 
 
-create table group_members3 (
+alter table group_participants3 (
   group_id int,
-  member_id int,
+  pat_id int,
   -- later:
   show_membership boolean,  -- if the group title should be shown next to the username
                             --  e.g.   "@pelle  Pelle Svanslös  staff" — if is a staff group memebr.
@@ -728,6 +771,27 @@ create table group_members3 (
  -- is_group_true boolean, references people3(id, is_group)  + index  deferrable
  --  instead: is_group does a select from people3.
 --  https://stackoverflow.com/a/10136019/694469 — if works, upvote
+
+
+  notify_pat_prio_c
+      -- if the group is @mentioned or DM:d, then, should pat get notified?:
+      -- by making this configurable, workload can be distributed between
+      -- support staff. Or would it be better to use some bot for this?
+      -- which knows about people's schedules.
+      -- Let's say there's a Support team with 20 members. If someone writes
+      -- "Help, @support, do you know ..." it's unnecessary to notify all 20 people.
+      -- Better start with maybe 3, and then, if no one replies, 3 others a bit later.
+      -- Some thoughts:
+      always, directly
+      always, batched
+      always, if pat is online/working
+      round-robin
+      round-robin, if pat is online/working
+      later if no one else replies
+      later if no one else replies, and pat is online/working
+      much later  -''-
+      much later  -''-
+      never
 )
 
 -- later?:
@@ -735,10 +799,11 @@ alter table pats_t add column default_group_prio int default 10;  -- for groups
 
 
 
-create table group_notf_prefs3 (
+
+create table pat_notf_prefs3 (
   site_id int,
-  people_id int,  -- typically  = group_id, i.e. configs group members
-  group_id int,   -- null —> for the whole community
+  for_pat_id_c int,  -- typically  = group_id, i.e. configs group members
+  on_pat_id_c int,   -- null —> for the whole community. What, why? Instead, the Everyone group?
   notify_if_sb_joins boolean,
   notify_if_sb_leaves boolean,
   notify_of_staff_changes boolean,

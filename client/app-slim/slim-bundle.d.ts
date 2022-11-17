@@ -336,6 +336,7 @@ declare namespace debiki2 {
 
   function uppercaseFirst(text: string): string;
   function firstDefinedOf(x, y, z?): any;
+  function firstValOf(x, y, z?): any;
   function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V };
   function isNullOrUndefined(x): boolean;  // REMOVE  use  notVal(x)  instead
   function isVal(x): Bo;
@@ -364,13 +365,17 @@ declare namespace debiki2 {
   function user_isTrustMinNotThreat(me: UserInclDetails | Myself, trustLevel: TrustLevel): boolean;
   //function threatLevel_toString(threatLevel: ThreatLevel): [St, St];
   function threatLevel_toElem(threatLevel: ThreatLevel);
+  function pat_name(pat: Me | Pat): St;
   function pat_isMember(pat: UserInclDetails | Me | Pat | PatId): Bo;
   var isGuest;
   function pat_isGuest(pat: UserInclDetails | Me | Pat): Bo;
   function user_isGuest(pat: UserInclDetails | Me | Pat): Bo;
   function pat_isSys(pat: Pat): Bo;
   function pat_isStaff(pat: Me | Pat): Bo;
+  function user_isStaffOrCoreMember(pat: Me | UserInclDetails): Bo;
   function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean;
+  function pat_isBitAdv(pat: PatVb | Me): Bo;
+  function pat_isMoreAdv(pat: PatVb | Me): Bo;
   var page_isGroupTalk;
 
   function store_getAuthorOrMissing(store: DiscStore, post: Post): Pat;

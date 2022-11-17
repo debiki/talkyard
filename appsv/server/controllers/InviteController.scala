@@ -76,6 +76,10 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
       "TyE703SKHFLD2", o"""Can only invite to one single group, for now —
       but you specified ${addToGroupsAtUsernames.length} groups.""")
 
+    // For now, only admins can add to groups. Also see [who_may_invite] below.
+    throwForbiddenIf(addToGroupsAtUsernames.nonEmpty && !requester.isAdmin,
+          "TyEMAY0ADDGRP", "Only admins can add users to groups, via invites")
+
     // (Min length + 1 for the '@'.)
     addToGroupsAtUsernames.find(_.length < Participant.MinUsernameLength + 1).foreach(atName =>
       throwForbidden("TyE393RKR4", s"Bad group name: $atName"))
@@ -86,12 +90,10 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
         "TyE06RKHZHN3", s"Group usernames should be prefixed by '@', but this is not: '$atUsername'")
       val username = atUsername drop 1
       dao.readOnlyTransaction { tx =>
-        val member = tx.loadMemberByUsername(username).getOrThrowBadArgument(
+        val member = tx.loadMemberVbByUsername(username).getOrThrowBadArgument(
           "TyE204KARTGF_", "addToGroup", s"Group not found: @$username")
         member match {
-          case u: User =>
-            throwForbidden("TyE305MKSTR2_", s"User @$username is a user, not a group")
-          case g: Group =>
+          case g: GroupVb =>
             // Later, do allow this? Need to write a bit extra code to properly init
             // trust levels and is-admin and is-mod flags, then. [305FDF4R]
             def cannotInviteTo(what: String) =
@@ -99,6 +101,9 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
             throwForbiddenIf(g.isBuiltIn, "TyE6WG20GV_", cannotInviteTo("built-in"))
             throwForbiddenIf(g.isStaff, "TyE4FKS2PDHJ", cannotInviteTo("staff"))
             g
+          case x =>
+            throwForbidden("TyE305MKSTR2_",
+                  s"User @$username is a ${classNameOf(x)}, but should be a group")
         }
       }
     }
@@ -145,7 +150,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
     }
 
-    // Right now, only for staff and core members. [5WBJAF2]
+    // Right now, only for staff and core members. [who_may_invite]
     throwForbiddenIf(!requester.isStaffOrCoreMember,
        "TyE403INA0", "Currently only staff and core members may send invites")
 

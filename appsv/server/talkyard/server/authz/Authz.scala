@@ -32,9 +32,8 @@ object MayMaybe {
 }
 
 
-
 sealed trait AuthzCtx {
-  def requester: Option[Participant]
+  def requester: Opt[Pat]
   def groupIdsUserIdFirst: immutable.Seq[GroupId]
 
   final def isStaff: Bo = requester.exists(_.isStaff)
@@ -81,17 +80,31 @@ trait AuthzCtxOnPats extends AuthzCtx {
 
 
 /** Quicker to create than a full AuthzCtxOnForum, but lacks info about what cats
-  * and pages the reqer may see,
+  * and forum pages the reqer may see. However, enough for access checking DM:s
+  * (then, having been added to a DM, or being member of a group that's been
+  * added to the DM, is enough).
   */
-case class AuthzCtxOnPatsOnly(
-  requester: Opt[Pat],
+case class AuthzCtxOnPatsNoReqer(
   groupIdsUserIdFirst: ImmSeq[GroupId],
   // tooManyPermsOnPats: ImmSeq[PermsOnPats], — later
   )
   extends AuthzCtx with AuthzCtxOnPats {
 
-  //def maySeeOthersEmailAddrs: Bo = requester.exists(_.isAdmin)
+  def requester: Opt[Pat] = None
 }
+
+
+sealed trait WithReqer {
+  def theReqer: Pat
+}
+
+
+trait AuthzCtxWithReqer extends AuthzCtx with AuthzCtxOnPats with WithReqer {
+  def requester: Opt[Pat] = Some(theReqer)
+}
+
+case class AuthzCtxOnPatsWithReqer(theReqer: Pat, groupIdsUserIdFirst: ImmSeq[MemId])
+  extends AuthzCtxWithReqer {}
 
 
 trait AuthzCtxOnPages extends AuthzCtx {
@@ -99,19 +112,35 @@ trait AuthzCtxOnPages extends AuthzCtx {
 }
 
 
+/** AuthZ info about the requester (if any) on both contents and other participants.
+  */
+trait AuthzCtxOnAll extends AuthzCtx with AuthzCtxOnPats with AuthzCtxOnPages {
+  def isPublic: Bo = requester.isEmpty
+}
+
 /** Includes permission info about all types of things in the community,
   * e.g. not just pages, but also pats and tags/badges.
   */
-case class AuthzCtxOnForum(   // maybe rename to AuthzCtxOnAll ?
+// REFACTOR: Change to AuthzCtxOnAllNoReqer and use AuthzCtxOnAllWithReqer if there is a requer?
+// And use trait AuthzCtxOnAll at other places, insetad of this impl class.
+// groupIdsUserIdFirst would be just Some(EveryoneId)? (a list of len 1)
+case class AuthzCtxOnForum(
   requester: Opt[Pat],
   groupIdsUserIdFirst: immutable.Seq[GroupId],
   // rename to tooManyPermsOnPages? Will also be a tooManyPermsOnPats, see above.
   tooManyPermissions: immutable.Seq[PermsOnPages],
   )
-  extends AuthzCtx with AuthzCtxOnPats with AuthzCtxOnPages {
+  extends AuthzCtxOnAll {}
 
-  def isPublic: Bo = requester.isEmpty
+
+case class AuthzCtxOnAllWithReqer(
+  theReqer: Pat,
+  groupIdsUserIdFirst: ImmSeq[GroupId],
+  tooManyPermissions: ImmSeq[PermsOnPages],
+  )
+  extends AuthzCtxOnAll with AuthzCtxWithReqer {
 }
+
 
 
 /*  Delete this?
@@ -307,6 +336,8 @@ object Authz {
   }
 
 
+  /** Sync w ts:  store_mayIReply()
+    */
   def mayPostReply(
     userAndLevels: UserAndLevels,
     groupIds: immutable.Seq[GroupId],
@@ -539,7 +570,7 @@ object Authz {
 
       // Only page participants may see things like private chats. [PRIVCHATNOTFS]
       if (meta.pageType.isPrivateGroupTalk) {
-        val thePageMembers = pageMembers getOrDie "EdE2SUH5G"
+        val thePageMembers: Set[MembId] = pageMembers getOrDie "EdE2SUH5G"
         val theUser = user getOrElse {
           return MayWhat.mayNotSee("EdE0SEE0USER")
         }
@@ -547,7 +578,10 @@ object Authz {
         if (!theUser.isMember)
           return MayWhat.mayNotSee("EdE0SEE0MBR")
 
-        if (!thePageMembers.contains(theUser.id))
+        val userIsMember: Bo = thePageMembers contains theUser.id
+        // This is O(n) if `contains` is O(1), otherwise O(n log m), right. [OnLogn]
+        val groupIsMember = () => groupIds.exists(gId => thePageMembers contains gId)
+        if (!userIsMember && !groupIsMember())
           return MayWhat.mayNotSee("EdE0SEE0PAGEMBR")
 
         isPageMember = true

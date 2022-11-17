@@ -4,20 +4,15 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import { logBitHappy, j2s, logError, die, logBoring } from '../utils/log-and-die';
 import c from '../test-constants';
-import settings = require('../utils/settings');
+import settings from '../utils/settings';
 
-let allBrowsers: TyAllE2eTestBrowsers;
 let brA: TyE2eTestBrowser;
 let brB: TyE2eTestBrowser;
 let owen: Member;
 let owen_brA: TyE2eTestBrowser;
-let maja: Member;
-let maja_brB: TyE2eTestBrowser;
-let memah: Member;
-let memah_brB: TyE2eTestBrowser;
 let stranger_brB: TyE2eTestBrowser;
 
 // For embedded comments:  EMBCMTS
@@ -136,17 +131,12 @@ describe(`cats-perf-many.2br.d  TyTECATPREFMNY`, () => {
       wholeSite: true,
     }];
 
-    allBrowsers = new TyE2eTestBrowser(allWdioBrowsers, 'brAll');
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
     brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
 
     owen = forum.members.owen;
     owen_brA = brA;
 
-    maja = forum.members.maja;
-    maja_brB = brB;
-    memah = forum.members.memah;
-    memah_brB = brB;
     stranger_brB = brB;
 
     assert.refEq(builder.getSite(), forum.siteData);

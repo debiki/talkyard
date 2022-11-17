@@ -489,6 +489,24 @@ class MailerActor(
         apacheCommonsEmail.setFrom(fromAddr, fromName, "UTF-8")
     }
 
+    // (We generate these message ids ourselves; they don't include any weird chars.)
+    email.smtpMsgId.foreach(id => apacheCommonsEmail.addHeader("Message-ID", s"<$id>"))
+    email.inReplyToSmtpMsgId.foreach(id => apacheCommonsEmail.addHeader("In-Reply-To", s"<$id>"))
+    if (email.referencesSmtpMsgIds.nonEmpty) {
+      // There's a max header length: 998 chars, see https://www.rfc-editor.org/rfc/rfc5322
+      // from year 2008:
+      //   > Each line of characters MUST be no more than 998 characters, and
+      //   > SHOULD be no more than 78 characters
+      // (That RFC supersedes RFC 2822 from year 2001, which supersedes RFC 822
+      // from year 1982 about ARPA Internet text messages.)
+      //
+      // Let's wrap the lines, so we won't run into that 998 limit. To show that a line
+      // is the continuation of the header value on the previous line, one adds
+      // some leading whitespace — that's what  "\r\n  " does, here:
+      val refSt = email.referencesSmtpMsgIds.mkString(start = "<", sep = ">\r\n  <", end = ">")
+      apacheCommonsEmail.addHeader("References", refSt)
+    }
+
     // The address a human (hens email client) should reply to.  This is different
     // from the address the SMTP servers would return the email to, if there are
     // problems: they instead return the email to the 'MAIL FROM:some@addr.ess'

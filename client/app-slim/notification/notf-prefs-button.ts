@@ -23,6 +23,7 @@
 //------------------------------------------------------------------------------
 
 
+// Bit dupl code? [open_diag_btn]
 export function PageNotfPrefButton(props: {
       target: PageNotfPrefTarget, store: Store, className?: St,
       ownPrefs: OwnPageNotfPrefs,  // RENAME to membersPrefs

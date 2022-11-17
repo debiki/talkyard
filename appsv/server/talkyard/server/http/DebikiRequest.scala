@@ -25,7 +25,7 @@ import debiki._
 import debiki.dao.{SiteDao, SystemDao}
 import debiki.EdHttp._
 import talkyard.server.TyContext
-import talkyard.server.authz.ForumAuthzContext
+import talkyard.server.authz.{AuthzCtxWithReqer, ForumAuthzContext, AuthzCtxOnAllWithReqer}
 import talkyard.server.security.{BrowserId, SidOk, SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc._
@@ -117,7 +117,10 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def whoOrUnknown: Who = Who(requesterIdOrUnknown, theBrowserIdData)
 
+  def authzCtxWithReqer: AuthzCtxWithReqer = dao.getAuthzCtxWithReqer(theRequester)
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
+  lazy val authzCtxOnAllWithReqer: Opt[AuthzCtxOnAllWithReqer] =
+    dao.anyAuthCtxOnPagesForPat(reqer)
 
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
     fingerprint = 0) // skip for now

@@ -672,6 +672,7 @@ case class SitePatchParser(context: TyContext) {
         // RENAME to extId here and everywhere else ... Done, can soon remove 'orElse ...'.
         extId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
+        privPrefs = JsX.memberPrivacyPrefsFromJson(jsObj),
         tinyAvatar = None,   // [readlater] Option[UploadRef]  "avatarTinyHashPath"
         smallAvatar = None,  // [readlater] Option[UploadRef]
         summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
@@ -755,11 +756,11 @@ case class SitePatchParser(context: TyContext) {
         about = readOptString(jsObj, "bio", "about"),
         website = readOptString(jsObj, "websiteUrl", "website"),
         country = readOptString(jsObj, "location", "country"),
-        seeActivityMinTrustLevel = readOptInt(jsObj, "seeActivityMinTrustLevel").flatMap(TrustLevel.fromInt),
+        privPrefs = JsX.memberPrivacyPrefsFromJson(jsObj),
         tinyAvatar = None, // [readlater]
         smallAvatar = None, // [readlater]
         mediumAvatar = None, // [readlater]
-        uiPrefs = None,   // [readlater]
+        uiPrefs = (jsObj \ "uiPrefs").asOpt[JsObject],
         isOwner = readOptBool(jsObj, "isOwner") getOrElse false,
         isAdmin = readOptBool(jsObj, "isAdmin") getOrElse false,
         isModerator = readOptBool(jsObj, "isModerator") getOrElse false,
@@ -1056,15 +1057,19 @@ case class SitePatchParser(context: TyContext) {
         return Bad(s"Bad not email status: $notfEmailStatusInt")
       }
       Good(Notification.NewPost(
-        notfType,
-        id = notfId,
-        createdAt = readDateMs(jsObj, "createdAtMs"),
-        uniquePostId = readInt(jsObj, "postId"),
-        byUserId = readInt(jsObj, "byUserId"),
-        toUserId = readInt(jsObj, "toUserId"),
-        emailId = readOptString(jsObj, "emailId"), // OOPS, FK :- (
-        emailStatus = notfEmailStatus,
-        seenAt = readOptDateMs(jsObj, "seenAt")))
+            notfType,
+            id = notfId,
+            createdAt = readDateMs(jsObj, "createdAtMs"),
+            uniquePostId = readInt(jsObj, "postId"),
+            byUserId = readInt(jsObj, "byUserId"),
+            toUserId = readInt(jsObj, "toUserId"),
+            smtpMsgIdPrefix = readOptString(jsObj, "smtpMsgIdPrefix"),
+            // OOPS, there's a foreign key, 'ntfs_r_emails' from notfs_t to emails_out_t.
+            // Any email must be included in the patch (so the FK to emails_out_t won't
+            // break). — Maybe notfs_t.email_id_c shouldn't be an FK?  [improve_imp_exp]
+            emailId = readOptString(jsObj, "emailId"),
+            emailStatus = notfEmailStatus,
+            seenAt = readOptDateMs(jsObj, "seenAt")))
     }
     catch {
       case ex: IllegalArgumentException =>
@@ -1485,7 +1490,9 @@ case class SitePatchParser(context: TyContext) {
         numWrongVotes = readOptInt(jsObj, "numWrongVotes").getOrElse(0)  ,
         numBuryVotes = readOptInt(jsObj, "numBuryVotes").getOrElse(0),
         numUnwantedVotes = readOptInt(jsObj, "numUnwantedVotes").getOrElse(0)  ,
-        numTimesRead = readOptInt(jsObj, "numTimesRead").getOrElse(0)))
+        numTimesRead = readOptInt(jsObj, "numTimesRead").getOrElse(0),
+        smtpMsgIdPrefix = readOptString(jsObj, "smtpMsgIdPrefix"),
+        ))
     }
     catch {
       case ex: IllegalArgumentException =>

@@ -116,8 +116,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     var (userJson, anyStatsJson, pat) = Try(who.toInt).toOption match {
       case Some(id) => loadPatJsonAnyDetailsById(id, includeStats = true, request)
-      case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
-        who, includeStats = true, request)
+      case None => loadMemberJsonInclDetailsByEmailOrUsername(
+                                who, includeStats = true, request)
     }
     val groupsMaySee = dao.getGroupsReqrMaySee(requesterOrUnknown)
     val pptGroupIdsMaybeRestr = dao.getOnesGroupIds(pat)
@@ -187,7 +187,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   // A tiny bit dupl code [5YK02F4]
-  private def loadMemberOrGroupJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
+  private def loadMemberJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
         includeStats: Boolean, request: DebikiRequest[_])
         : (JsObject, JsValue, Participant) = {
     val callerIsStaff = request.user.exists(_.isStaff)
@@ -202,8 +202,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       throwNotImplemented("EsE5KY02", "Lookup by email not implemented")
 
     request.dao.readOnlyTransaction { tx =>
-      val memberOrGroup =
-            tx.loadMemberInclDetailsByUsername(emailOrUsername) getOrElse {
+      val member = tx.loadMemberVbByUsername(emailOrUsername) getOrElse {
         if (isEmail)
           throwNotFound("EsE4PYW20", "User not found")
 
@@ -226,18 +225,20 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         }) getOrElse throwNotFound("EsE8PKU02", "User not found")
       }
 
-      val groups = tx.loadGroups(memberOrGroup)
+      // Later, check if the requester may see the member. [private_pats]
 
-      memberOrGroup match {
-        case member: UserInclDetails =>
-          val stats = includeStats ? tx.loadUserStats(member.id) | None
-          val callerIsUserHerself = request.user.exists(_.id == member.id)
+      val groups = tx.loadGroups(member)
+
+      member match {
+        case user: UserVb =>
+          val stats = includeStats ? tx.loadUserStats(user.id) | None
+          val callerIsUserHerself = request.user.exists(_.id == user.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
           val userJson = JsUserInclDetails(
-            member, Map.empty, groups, callerIsAdmin = callerIsAdmin,
+            user, Map.empty, groups, callerIsAdmin = callerIsAdmin,
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
-          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), member.noDetails)
-        case group: Group =>
+          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), user.noDetails)
+        case group: GroupVb =>
           val groupJson = jsonForGroupInclDetails(
             group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
           (groupJson, JsNull, group)
@@ -254,6 +255,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       //"createdAtEpoch" -> JsWhen(group.createdAt),
       "username" -> group.theUsername,
       "fullName" -> JsStringOrNull(group.name))
+
+    // These currently needs to be public, so others get to know if they cannot
+    // mention or message this user. [some_pub_priv_prefs]
+    val privPrefs = group.privPrefs
+    json = json.addAnyInt32("maySendMeDmsTrLv", privPrefs.maySendMeDmsTrLv)
+    json = json.addAnyInt32("mayMentionMeTrLv", privPrefs.mayMentionMeTrLv)
+    json = json.addAnyInt32("seeActivityMinTrustLevel", privPrefs.seeActivityMinTrustLevel)
+
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
@@ -463,7 +472,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   private def throwForbiddenIfActivityPrivate(
           userId: UserId, requester: Opt[Pat], dao: SiteDao): U = {
     // Also browser side [THRACTIPRV]
-    // Related idea: [unlist_users].
+    // Related idea: [private_pats].
     throwForbiddenIf(!maySeeActivity(userId, requester, dao),
           "TyE4JKKQX3", "Not allowed to list activity for this user")
   }
@@ -479,7 +488,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       return true
 
     val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)
-    memberInclDetails.seeActivityMinTrustLevel match {
+    memberInclDetails.privPrefs.seeActivityMinTrustLevel match {
       case None => true
       case Some(minLevel) =>
         requester.exists(_.effectiveTrustLevel.toInt >= minLevel.toInt)
@@ -1421,6 +1430,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   private def listAllUsersImpl(usernamePrefix: String, request: ApiRequest[_]): JsArray = {
+    import request.requester
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
     // ... stop doing that?
     val members = request.dao.loadUsersWithUsernamePrefix(
@@ -1428,10 +1438,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     JsArray(
       members map { member =>
         // [PUB_API] .ts: ListUsersApiResponse, ListGroupsApiResponse, ListMembersApiResponse
-        Json.obj(
-          "id" -> member.id,
-          "username" -> member.username,
-          "fullName" -> member.fullName)
+        val jOb = Json.obj(
+              "id" -> member.id,
+              "username" -> member.username,
+              "fullName" -> member.fullName)
+        _plusAnyNotMention(requester, member.privPrefs.mayMentionMeTrLv, jOb)
       })
   }
 
@@ -1441,7 +1452,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     */
   def listUsernames(pageId: PageId, prefix: St): Action[U] = GetActionRateLimited(
           RateLimits.ReadsFromDb, MinAuthnStrength.EmbeddingStorageSid12) { request =>
-    import request.dao
+    import request.{dao, requester}
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
@@ -1459,17 +1470,42 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
+    COULD // load groups too, so it'll be simpler to e.g. mention @support.
+    // But this lists names on a page, but groups won't reply, so won't get listed. Hmm.
+    // Maybe if one has typed >= 3 chars matching any group's or user's username, then,
+    // show that group/user, also if hen hasn't replied on this page?
+    // Or maybe two lists: People on this page, and all others?
+    // There could even be a group setting: [mentions_prio_c], which admins can raise,
+    // for their @support group — maybe then it'd get listed directly if just typing ' @'?
     val names = dao.listUsernames(
       pageId = pageId, prefix = prefix, caseSensitive = false, limit = 50)
 
     val json = JsArray(
       names map { nameAndUsername =>
-        Json.obj(
-          "id" -> nameAndUsername.id,
-          "username" -> nameAndUsername.username,
-          "fullName" -> nameAndUsername.fullName)
+        val jOb = Json.obj(
+              "id" -> nameAndUsername.id,
+              "username" -> nameAndUsername.username,
+              "fullName" -> nameAndUsername.fullName)
+        _plusAnyNotMention(requester, nameAndUsername.mayMentionMeTrLv, jOb)
       })
     OkSafeJson(json)
+  }
+
+
+  /** This is just for client side UX. The server side checks are here: [filter_mentions].
+    */
+  private def _plusAnyNotMention(reqer: Opt[Pat], mayMentionMeTrLv: Opt[TrustLevel],
+          jOb: JsObject): JsObject = {
+    // Later: [private_pats] If the requester may not see the listed member, remove hen
+    // from the list instead of adding mayMention: flase.
+    var res = jOb
+    mayMentionMeTrLv foreach { minLevel =>
+      if (!reqer.exists(_.effectiveTrustLevel.isAtLeast(minLevel))) {
+        res += "mayMention" -> JsFalse
+        //s += "whyNotMention" -> " ..." // later
+      }
+    }
+    res
   }
 
 
@@ -1478,8 +1514,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def saveAboutMemberPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
         maxBytes = 3000) { request =>
     val prefs = aboutMemberPrefsFromJson(request.body)
-    throwUnlessMayEditPrefs(prefs.userId, request.theRequester)
-    request.dao.saveAboutMemberPrefs(prefs, request.who)
+    _quickThrowUnlessMayEditPrefs(prefs.userId, request.theRequester)
+    request.dao.saveAboutMemberPrefsIfAuZ(prefs, request.who)
 
     // Try to reuse: [load_pat_stats_grps]
     val (patJson, _, _) = loadPatJsonAnyDetailsById(
@@ -1590,20 +1626,19 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   def saveMemberPrivacyPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
         maxBytes = 100) { request =>
-    val prefs: MemberPrivacyPrefs = memberPrivacyPrefsFromJson(request.body)
-    throwUnlessMayEditPrefs(prefs.userId, request.theRequester)
-    request.dao.saveMemberPrivacyPrefs(prefs, request.who)
+    val userId = parseInt32(request.body, "userId")
+    val prefs: MemberPrivacyPrefs = JsX.memberPrivacyPrefsFromJson(request.body)
+    _quickThrowUnlessMayEditPrefs(userId, request.theRequester)
+    request.dao.saveMemberPrivacyPrefsIfAuZ(forUserId = userId, prefs, byWho = request.who)
 
     // Try to reuse: [load_pat_stats_grps]
-    val (patJson, _, _) = loadPatJsonAnyDetailsById(
-          prefs.userId, includeStats = false, request)
+    val (patJson, _, _) = loadPatJsonAnyDetailsById(userId, includeStats = false, request)
     OkSafeJson(Json.obj("patNoStatsNoGroupIds" -> patJson))
   }
 
 
-  private def throwUnlessMayEditPrefs(userId: UserId, requester: Participant): Unit = {
-    // There's a check elsewhere  [mod_0_conf_adm] that mods cannot
-    // change admins' preferences.
+  private def _quickThrowUnlessMayEditPrefs(userId: UserId, requester: Participant): Unit = {
+    // There's a check elsewhere  [mod_0_conf_adm] that mods cannot change admins' preferences.
     val staffOrSelf = requester.isStaff || requester.id == userId
     throwForbiddenIf(!staffOrSelf, "TyE5KKQSFW0", "May not edit other people's preferences")
     throwForbiddenIf(userId < LowestTalkToMemberId,
@@ -1690,14 +1725,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
       summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean])
     // ----------------------------------------------------
-  }
-
-
-  private def memberPrivacyPrefsFromJson(json: JsValue): MemberPrivacyPrefs = {
-    val anySeeActivityInt = (json \ "seeActivityMinTrustLevel").asOpt[Int]
-    MemberPrivacyPrefs(
-      userId = (json \ "userId").as[UserId],
-      seeActivityMinTrustLevel = anySeeActivityInt.flatMap(TrustLevel.fromInt))
   }
 
 }

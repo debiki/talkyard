@@ -505,7 +505,13 @@ case class SitePatcher(globals: debiki.Globals) {
                     collapsedById = postInPatch.collapsedById.map(remappedPpTempId),
                     closedById = postInPatch.closedById.map(remappedPpTempId),
                     bodyHiddenById = postInPatch.bodyHiddenById.map(remappedPpTempId),
-                    deletedById = postInPatch.deletedById.map(remappedPpTempId))
+                    deletedById = postInPatch.deletedById.map(remappedPpTempId),
+
+                    // Now this page and post have real ids, so we know what the
+                    // SMTP Message-ID should be.  [init_smtp_msg_id]
+                    smtpMsgIdPrefix = postInPatch.smtpMsgIdPrefix orElse Some(
+                          s"$realPageId.$realNr"),
+                    )
 
                   nextPostId += 1
                   postTempIdsToInsert += postInPatch.id
@@ -1330,7 +1336,9 @@ case class SitePatcher(globals: debiki.Globals) {
         }
         else {
           tx.insertMember(user) // [UPSMEMBRNOW]
-          newDao.joinPinnedGlobalChats(user, tx)
+          // Skip — the user isn't online (this site is getting *imported*
+          // and also, we clear the mem cache and Redis at the end of this fn anyway.
+          // newDao.joinPinnedGlobalChats(user, tx)  —  don't
         }
       }
 

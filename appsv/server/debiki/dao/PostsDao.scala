@@ -511,10 +511,10 @@ trait PostsDao {
 
     // ----- Trust level
 
-    val alwaysReqAppr = author.trustLevel.isAtMost(settings.requireApprovalIfTrustLte)
+    val alwaysReqApprBef = author.trustLevel.isAtMost(settings.requireApprovalIfTrustLte)
     val alwaysReviewAfter = author.trustLevel.isAtMost(settings.reviewAfterIfTrustLte)
 
-    if (alwaysReqAppr) {
+    if (alwaysReqApprBef) {
       // Tests: TyT305RKTH205
       autoApprove = false
       reviewReasons.append(ReviewReason.IsByLowTrustLevel)
@@ -525,7 +525,9 @@ trait PostsDao {
 
     if (alwaysReviewAfter) {
       TESTS_MISSING
-      reviewReasons.append(ReviewReason.IsByLowTrustLevel)
+      if (!alwaysReqApprBef) {
+        reviewReasons.append(ReviewReason.IsByLowTrustLevel)
+      }
       if (maxPostsPendRevwAftr > 0 && numPending + 1 > maxPostsPendRevwAftr)
         throwForbidden("TyE2MNYPNDRVW_", o"""You cannot post more posts until
               your previous posts have been reviewed by staff""")
@@ -2392,9 +2394,10 @@ trait PostsDao {
         "EsE7YKG42_", "New parent post not found")
 
       // [priv_comts]
-      // If a post is private, don't allow moving it to any parent post that *more* peolpe can see.
-      // If creating a placeholder like: "Sub thread moved to: ...", then, copy the who-can-see
-      // list to that placeholder, so only the same people can see it.
+      // If a private post gets moved, its Post.privatePatsId won't change just because of
+      // that — it'll stay private.
+      // If creating a placeholder like: "Sub thread moved to: ...", then, copy
+      // Post.privatePatsId to that placeholder, so it's private too.
 
       // Anyone assigned to the post, will stay [assigned_to] it also after it's been moved.
       // (AssignedTo relationships are (will be) in  pat_rels_t  whose  to_post_id_c  points to

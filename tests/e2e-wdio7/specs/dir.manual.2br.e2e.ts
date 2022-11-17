@@ -29,7 +29,7 @@ describe("some-e2e-test  TyT1234ABC", () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({  // or: builder.addLargeForum
       title: "Some E2E Test",
-      members: ['maria', 'memah', 'michael'],
+      members: ['alice', 'mons', 'corax', 'trillian', 'maria', 'memah', 'michael'],
     });
     assert.refEq(builder.getSite(), forum.siteData);
 

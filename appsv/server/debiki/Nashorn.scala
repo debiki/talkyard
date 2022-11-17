@@ -28,6 +28,7 @@ import Nashorn._
 import jdk.nashorn.api.scripting.ScriptObjectMirror
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import talkyard.server.TyLogging
+import talkyard.server.rendr.NashornParams
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -197,15 +198,11 @@ class Nashorn(
   }
 
 
-  def renderAndSanitizeCommonMark(
-        commonMarkSource: String,
-        siteIdHostnames: SiteIdHostnames,
-        embeddedOriginOrEmpty: String,
-        allowClassIdDataAttrs: Boolean,
-        followLinks: Boolean): RenderCommonmarkResult = {
+  def renderAndSanitizeCommonMark(commonMarkSource: St, renderParams: NashornParams)
+          : RenderCommonmarkResult = {
 
-    val siteId = siteIdHostnames.id
-    val pubSiteId = siteIdHostnames.pubId
+    val siteId = renderParams.siteIdHostnames.id
+    val pubSiteId = renderParams.siteIdHostnames.pubId
 
     if (isTestSoDisableScripts)
       return RenderCommonmarkResult("Scripts disabled [EsM5GY52]", Set.empty)
@@ -234,7 +231,7 @@ class Nashorn(
 
     val uploadsUrlPrefix =
       cdnOrigin.getOrElse(
-        embeddedOriginOrEmpty) +
+        renderParams.embeddedOriginOrEmpty) +
            talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
 
     // This link preview renderer fetches previews from the database,
@@ -251,8 +248,11 @@ class Nashorn(
     val (safeHtmlNoPreviews, mentions) = withJavascriptEngine(engine => {
       val resultObj: Object = engine.invokeFunction("renderAndSanitizeCommonMark",
             commonMarkSource,
-            true.asInstanceOf[Object], // allowClassIdDataAttrs.asInstanceOf[Object],
-            followLinks.asInstanceOf[Object],
+            true.asInstanceOf[Object],  // was: renderParams.allowClassIdDataAttrs
+            renderParams.followLinks.asInstanceOf[Object],
+            // renderParams.mayMention  // Later? [filter_mentions] @Mentions that didn't
+                                        // generate any notifications could get another
+                                        // color, e.g. dark gray not blue?
             prevwRenderer, uploadsUrlPrefix)
 
       val result: ScriptObjectMirror = resultObj match {

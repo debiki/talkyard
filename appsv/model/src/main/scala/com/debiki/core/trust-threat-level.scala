@@ -19,8 +19,11 @@ package com.debiki.core
 
 import com.debiki.core.ThreatLevel.{MildThreat, SevereThreat}
 
+trait HasInt32 {
+  def toInt: i32
+}
 
-sealed abstract class TrustLevel(val IntVal: Int) {
+sealed abstract class TrustLevel(val IntVal: Int) extends HasInt32 {
   def toInt: Int = IntVal
 
   def isBelow(other: TrustLevel): Bo =
@@ -50,9 +53,13 @@ sealed abstract class TrustLevel(val IntVal: Int) {
 object TrustLevel {
   case object Stranger extends TrustLevel(0)   ; REFACTOR // bump all 1, so won't start at 0
                                       // 0 is easily buggy-mistaken for undefined, in Javascript.
-  //se object Guest — same as Stranger, except for private communities that have invited a stranger
-  //                  as a guest? Such an invited person would have trust level Guest and
-  //                  could see "public" topics in the community although the community was private.
+  //se object [StrangerWithSecret] — if someone doesn't yet have a real account, but via a secret link
+  //      has been invited to look at an otherwise private discussion?
+  //      Or has been invited to a private community, and then can view "public" topics, there.
+  //      Should id be < 0? And if creating a real account, gets a > 0 id?
+  //      Maybe different secret links, some let one create a real account,
+  //      others just lets one view sth, for a limited time maybe. And could have a link-max-use-count.
+
   case object NewMember extends TrustLevel(1)   // has created a real account
   case object BasicMember extends TrustLevel(2)
   case object FullMember extends TrustLevel(3)

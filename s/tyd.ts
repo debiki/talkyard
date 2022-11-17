@@ -99,8 +99,57 @@ logDebug(`opts str: ${tyu.stringifyOpts(opts)}`);
 const yarnOfflineSt = opts.offline || opts.o ? '--offline' : '';
 
 
+function logHelpText() {
+  logMessage(`
+
+Starting a development server
+--------------------------
+
+  Start a dev server:       s/tyd u   # 'u' for 'up', runs 'docker-compose up'
+  Restart app container:    s/tyd r   # 'restart', e.g.:  s/tyd r app
+  Rebuild imgs and restart: s/tyd rr  # 'rebuild restart'
+  Stop containers:          s/tyd k   # 'kill', e.g.  s/tyd kill app
+  Remove containers:        s/tyd d   # 'down'
+  View logs:                s/tyd l   # 'logs'
+  View recent app logs:     s/tyd lra # 'logs, recent, app'
+
+Console
+--------------------------
+
+  Open PostgreSQL prompt:   s/tyd cd  # for 'console, database'
+  Start a Scala CLI:        s/tyd ca  # for 'console, app server'
+
+Running tests
+--------------------------
+
+End-to-End tests:
+  We're slowly migrating from Webdriverio 6 to 7. The Wdio 6 test files are in
+  tests/e2e/ and the Wdio 7 files are in tests/e2e-wdio7/.
+
+  First start Talkyard:     s/tyd u
+
+  Run Webdriverio 7 tests:  s/tyd e7 --retry 2 --skipFacebook --cd  # uses Chromedriver
+
+  Run Webdriverio 6 tests:  s/tyd e6 --retry 2 --skipFacebook   # start Selenium first
+  Start Selenium:           d/selenium chrome
+  Stop Selenium:            d/selenium kill
+
+  Testing external login:   The s/tyd ... above but add '--3 --secretsPath ../e2e-secrets.json'
+                            to include login credentials. You need to create
+                            e2e-secrets.json yourself, and create Gmail and GitHub etc
+                            test accounts yourself. Docs missing, sorry.
+
+  Run all tests:            s/run-e2e-tests  # done automatically when building prod images
+
+Unit tests:
+  Start a Scala CLI:        s/tyd ca  # this first stops any app container
+  Run tests (in the CLI):   test
+`);
+}
+
+
 if (mainCmd === 'h' || mainCmd === 'help') {
-  logMessage(`You help me or I help you? Open  s/tyd.ts  and read`);
+  logHelpText();
   process.exit(0);
 }
 

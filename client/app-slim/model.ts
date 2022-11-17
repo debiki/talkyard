@@ -1469,7 +1469,11 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   emailNotfPrefs: EmailNotfPrefs,
   // mailingListMode: undefined | true;  // default false  — later
   hasPassword?: boolean;
+  // ------- (Could break out interface? Or maybe pointless.)
   seeActivityMinTrustLevel?: TrustLevel;
+  maySendMeDmsTrLv?: TrustLevelOrStaff;
+  mayMentionMeTrLv?: TrustLevelOrStaff;
+  // -------
   uiPrefs: UiPrefs;
   isAdmin: boolean;
   isModerator: boolean;

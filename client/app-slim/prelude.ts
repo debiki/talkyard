@@ -517,6 +517,11 @@ export function firstDefinedOf(x, y, z?) {
 }
 
 
+export function firstValOf(x, y, z?) {
+  return isVal(x) ? x : (isVal(y) ? y : z);
+}
+
+
 /** Like _.groupBy but keeps just one value per key.
     RENAME to arr_groupByKeepOne ?
   */

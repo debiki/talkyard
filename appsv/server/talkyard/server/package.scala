@@ -55,6 +55,13 @@ package object server {
 
     protected def anySiteId: Opt[SiteId] = None
 
+    protected def anySiteIdPrefix: St = {
+      val id = anySiteId getOrElse {
+        return ""
+      }
+      s"s{id}: "
+    }
+
     protected def bugWarnIf(condition: Boolean, errorCode: String,
           problem: => String = ""): Boolean = {
       bugWarnDieIfThen(condition, errorCode, problem, thenDo = null)
@@ -74,7 +81,7 @@ package object server {
     protected def bugWarn(errorCode: String, problem: => String = "") {
       Prelude.dieIf(Globals.isDevOrTest, errorCode, problem)
       val message = Prelude.formatErrorMessage(errorCode, problem)
-      logger.warn(s"BUG: $message")
+      logger.warn(anySiteIdPrefix + s"BUG: $message")
     }
 
 

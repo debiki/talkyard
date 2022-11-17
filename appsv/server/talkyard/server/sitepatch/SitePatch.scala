@@ -506,7 +506,12 @@ case class SimpleSitePatch(
         numWrongVotes = 0,
         numBuryVotes = 0,
         numUnwantedVotes = 0,
-        numTimesRead = 0)
+        numTimesRead = 0,
+        // SHOULD maybe init smtpMsgIdPrefix here? But isn't nextPageId a temp id,
+        // so too early to do?  So skip, for now:  [init_smtp_msg_id]
+        // smtpMsgIdPrefix = Some(s"${nextPageId.toString}.${PageParts.TitleNr}")
+        smtpMsgIdPrefix = None,
+        )
 
       nextPostId += 1
       val bodyPost = titlePost.copy(

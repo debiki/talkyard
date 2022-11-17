@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao._
-import talkyard.server.authz.{Authz, ForumAuthzContext}
+import talkyard.server.authz.{Authz, ForumAuthzContext, AuthzCtxOnAllWithReqer}
 import talkyard.server.http._
 import talkyard.server.security.{SidStatus, SidOk}
 import java.{lang => jl, util => ju}
@@ -801,10 +801,12 @@ class JsonMaker(dao: SiteDao) {
       return None
     }
 
-    val permissions = pageRequest.authzContext.tooManyPermissions
-    val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()
+    val authzCtx: AuthzCtxOnAllWithReqer = pageRequest.authzCtxOnAllWithReqer.get
+    val permissions = authzCtx.tooManyPermissions
+    val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()  // backw compat
 
-    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(requester.id)
+    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(authzCtx)
+
     if (pageRequest.pageExists) {
       // (See comment above about ought-to-rename this whole function / stuff.)
       RACE // if the user opens a page, and someone adds her to a chat at the same time.
@@ -814,8 +816,8 @@ class JsonMaker(dao: SiteDao) {
 
           // Double check we may see the page(s) we're adding to the watchbar. [WATCHSEC]
           SEC_TESTS_MISSING // TyT602KRGJG
-          val (maySee, debugCode) = dao.maySeePageUseCache(
-                pageRequest.thePageMeta, Some(requester))
+          val (maySee, debugCode) = dao.maySeePageUseCacheAndAuthzCtx(
+                pageRequest.thePageMeta, authzCtx)
           if (!maySee)
             dao.context.security.throwIndistinguishableNotFound(debugCode)
 
@@ -840,17 +842,17 @@ class JsonMaker(dao: SiteDao) {
 
 
   def userNoPageToJson(request: DebikiRequest[_]): Opt[MeAndStuff] = Some {
-    import request.authzContext
     require(request.dao == dao, "TyE4JK5WS2")
-    val requester = request.user getOrElse {
+    val authzContext: AuthzCtxOnAllWithReqer = request.authzCtxOnAllWithReqer getOrElse {
       return None
     }
+    val requester = authzContext.theReqer
     val permissions = authzContext.tooManyPermissions
-    val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()
-    val watchbar = dao.getOrCreateWatchbar(requester.id)
+    val permsOnSiteTooMany = dao.getPermsOnSiteForEveryone()  // backw compat
+    val watchbar = dao.getOrCreateWatchbar(authzContext)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val myGroupsEveryoneLast: Seq[Group] =
-      request.authzContext.groupIdsEveryoneLast map dao.getTheGroup
+          authzContext.groupIdsEveryoneLast map dao.getTheGroup
 
     val site = if (requester.isStaffOrCoreMember) dao.getSite else None
 

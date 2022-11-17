@@ -288,7 +288,11 @@ object NewOauthUserData {
 
 
 
-case class NameAndUsername(id: UserId, fullName: String, username: String)
+case class NameAndUsername(
+  id: UserId,
+  fullName: St,
+  username: St,
+  mayMentionMeTrLv: Opt[TrustLevel])
 
 
 
@@ -676,6 +680,33 @@ sealed trait Pat {
   def canPromoteToBasicMember: Bo = false
   def canPromoteToFullMember: Bo = false
 
+  /** Sync w Typescript: store_maySendDirectMessageTo().  */
+  def mayMessage(pat: Pat): Bo = {
+    // It's ok to message oneself? Maybe for some kind of personal journal
+    if (pat.isSystemOrSysbot || pat.isGuest || pat.isGone) return false
+    if (isStaffOrCoreMember) return true
+    SHOULD // prevent problematic users from messaging anyone but the mods? [bad_pat_dms]
+    // if (threatLevel > ... && !pat.isStaff ) return false  // currently only client side
+    pat match {
+      case m: Member =>
+        m.privPrefs.maySendMeDmsTrLv.forall(othersMinLevel =>
+              this.effectiveTrustLevel isAtLeast othersMinLevel)
+      case _ => false
+    }
+  }
+
+  def mayMention(pat: Pat): Bo = {
+    if (pat.id == this.id || pat.isSystemOrSysbot || pat.isGuest || pat.isGone) return false
+    if (isStaffOrCoreMember) return true
+    pat match {
+      case m: Member =>
+        m.privPrefs.mayMentionMeTrLv.forall(othersMinLevel =>
+              this.effectiveTrustLevel isAtLeast othersMinLevel)
+      case _ => false
+    }
+  }
+
+
   /** A member's full name, or guest's guest name. */
   def anyName: Opt[St]
 
@@ -683,6 +714,9 @@ sealed trait Pat {
   def anyUsername: Opt[St]
 
   def usernameOrGuestName: St
+
+  def atUsernameOrFullName: St =
+    anyUsername.map('@' + _) orElse anyName getOrElse UnknownUserName
 
   final def usernameSpaceOtherName: St =
     (anyUsername.getOrElse("") + " " + anyName.getOrElse("")).trim
@@ -698,18 +732,42 @@ sealed trait Pat {
   final def nameHashId: St =
     anyUsername.map(un => s"@$un #$id") getOrElse s"'$usernameOrGuestName' #$id"
 
-  final def toMemberOrThrow: Member = {
+  final def toMemberOrThrow: Member = toMemberOrThrowCode("")
+
+  final def toMemberOrThrowCode(errCode: ErrCode): Member = {
     this match {
-      case m: User => m
-      case g: Guest => throw GotAGuestException(g.id)
+      case m: UserBase => m
+      case g: Guest => throw GotAGuestException(g.id, errCode)
       case g: Group => g
       case UnknownParticipant => throw GotUnknownUserException
     }
   }
 
+  final def toMemberVbOrDie: MemberVb = {
+    this match {
+      case u: UserVb => u
+      case g: Group => g
+      case x => die("TyENOTVB3963", s"Not a MemberVb: ${classNameOf(x)}")
+    }
+  }
+
+  COULD_OPTIMIZE // return UserBase instead?
   final def toUserOrThrow: User = {
     this match {
       case m: User => m
+      case u: UserVb => u.briefUser // or just return UserBase instead of converting
+      case _: UserBase => die("TyE59RKTJ1", "Should see UserBr or UserVb before UserBase")
+      case g: Guest => throw GotAGuestException(g.id)
+      case g: Group => throw GotAGroupException(g.id)
+      case UnknownParticipant => throw GotUnknownUserException
+    }
+  }
+
+  final def toUserVbOrThrow: UserVb = {
+    this match {
+      case _: UserBr => die("TyE59RKTJ2", "Got a UserBr not a UserVb")
+      case u: UserVb => u
+      case _: UserBase => die("TyE59RKTJ3", "Should see UserBr or UserVb before UserBase")
       case g: Guest => throw GotAGuestException(g.id)
       case g: Group => throw GotAGroupException(g.id)
       case UnknownParticipant => throw GotUnknownUserException
@@ -732,6 +790,8 @@ sealed trait Member extends Pat {
 
   def isApproved: Opt[Bo]
   final def isApprovedOrStaff: Bo = isApproved.is(true) || isStaff
+
+  def privPrefs: MemberPrivacyPrefs
 }
 
 
@@ -821,6 +881,7 @@ case class UserBr(
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
   passwordHash: Option[String] = None,  // OPTIMIZE no need to always load? Move to MemberInclDetails?
+  privPrefs: MemberPrivacyPrefs,
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   isApproved: Option[Boolean],
@@ -849,7 +910,8 @@ case class UserBr(
   def username: Option[String] = Some(theUsername)
 
   def nameAndUsername: NameAndUsername =
-    NameAndUsername(id = id, fullName = fullName.getOrElse(""), username = theUsername)
+    NameAndUsername(id = id, fullName = fullName.getOrElse(""), username = theUsername,
+          mayMentionMeTrLv = privPrefs.mayMentionMeTrLv)
 
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
@@ -927,7 +989,7 @@ case class Guest( // [exp] ok   REFACTOR split into GuestBr and GuestVb [guest_b
   def isModerator: Boolean = false
   def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
   def suspendedTill: Option[ju.Date] = None
-  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember ; SHOULD // CHANGE to TrustLevel.Stranger
+  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember  // or sometimes [StrangerWithSecret] or should that be another class?
 
   def anyName: Opt[St] = Some(guestName)
   def anyUsername: Opt[St] = None
@@ -965,7 +1027,7 @@ sealed trait ParticipantInclDetails extends Pat {    RENAME   // to PatVb
 sealed trait MemberInclDetails extends ParticipantInclDetails {  RENAME // to MemberVb
   def summaryEmailIntervalMins: Option[Int]
   def summaryEmailIfActive: Option[Boolean]
-  def seeActivityMinTrustLevel: Option[TrustLevel]
+  def privPrefs: MemberPrivacyPrefs
 
   def usernameLowercase: String
 
@@ -975,14 +1037,17 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {  RENAME // to Me
     */
   def uiPrefs: Option[JsObject]
 
-  def copyTrait(uiPrefs: Option[JsObject] = null): MemberInclDetails = {
+  def copyPrefs(uiPrefs: Opt[JsObject] = null, privPrefs: MemberPrivacyPrefs = null): MemberVb = {
     this match {
-      case g: Group =>
-        g.copy(
-          uiPrefs = if (uiPrefs ne null) uiPrefs else g.uiPrefs)
-      case u: UserInclDetails =>
-        u.copy(
-          uiPrefs = if (uiPrefs ne null) uiPrefs else u.uiPrefs)
+      case thiz: GroupVb =>
+        thiz.copy(
+              uiPrefs = if (uiPrefs ne null) uiPrefs else thiz.uiPrefs,
+              privPrefs = if (privPrefs ne null) privPrefs else thiz.privPrefs,
+              )
+      case thiz: UserVb =>
+        thiz.copy(
+              uiPrefs = if (uiPrefs ne null) uiPrefs else thiz.uiPrefs,
+              privPrefs = if (privPrefs ne null) privPrefs else thiz.privPrefs)
     }
   }
 }
@@ -1008,11 +1073,11 @@ case class UserInclDetails( // ok for export
   override val about: Option[String] = None,
   override val website: Option[String] = None,
   override val country: Option[String] = None,
-  seeActivityMinTrustLevel: Option[TrustLevel] = None,
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   mediumAvatar: Option[UploadRef] = None,
   uiPrefs: Option[JsObject] = None,
+  privPrefs: MemberPrivacyPrefs = MemberPrivacyPrefs.empty,
   isOwner: Boolean = false,
   isAdmin: Boolean = false,
   isModerator: Boolean = false,
@@ -1165,12 +1230,6 @@ case class UserInclDetails( // ok for export
   }
 
 
-  def copyWithNewPrivacyPrefs(preferences: MemberPrivacyPrefs): UserInclDetails = {
-    copy(
-      seeActivityMinTrustLevel = preferences.seeActivityMinTrustLevel)
-  }
-
-
   def copyWithMaxThreatLevel(newThreatLevel: ThreatLevel): UserInclDetails =
     if (this.threatLevel.toInt >= newThreatLevel.toInt) this
     else copy(threatLevel = newThreatLevel)
@@ -1212,7 +1271,7 @@ case class UserInclDetails( // ok for export
   def noDetails: Participant = briefUser
 
 
-  def briefUser = UserBr(   // RENAME? to just noDetails? see above
+  def briefUser: UserBr = UserBr(   // RENAME? to just noDetails? see above ... No, to toBrief?
     id = id,
     ssoId = ssoId,
     extId = extId,
@@ -1221,6 +1280,7 @@ case class UserInclDetails( // ok for export
     email = primaryEmailAddress,
     emailNotfPrefs = emailNotfPrefs,
     emailVerifiedAt = emailVerifiedAt,
+    privPrefs = privPrefs,
     passwordHash = passwordHash,
     isApproved = isApproved,
     suspendedTill = suspendedTill,
@@ -1316,10 +1376,20 @@ case class AboutGroupPrefs(
 
 
 
+/** Currently ignore if configured for a Group. Later, will get inherited to group
+  * members — then, among custom groups, most private settings wins (since privacy
+  * is important).
+  */
 case class MemberPrivacyPrefs(
-  userId: UserId,
-  seeActivityMinTrustLevel: Option[TrustLevel])
+  seeActivityMinTrustLevel: Opt[TrustLevel],
+  maySendMeDmsTrLv: Opt[TrustLevel],
+  mayMentionMeTrLv: Opt[TrustLevel],
+)
 
+
+object MemberPrivacyPrefs {
+  val empty: MemberPrivacyPrefs = MemberPrivacyPrefs(None, None, None)
+}
 
 
 case class UserEmailAddress(  // RENAME to MemberEmailAAddres (also groups can have email addrs)
@@ -1387,17 +1457,18 @@ case class GroupAndStats(group: Group, stats: Option[GroupStats])
   */
 case class Group( // [exp] missing: createdAt, add to MemberInclDetails & ParticipantInclDetails?
   id: UserId,
-  theUsername: String,
-  name: Option[String],
+  theUsername: Username,
+  name: Opt[St],
   extId: Opt[ExtId] = None,
   createdAt: When = When.Genesis, // for now
   // emailAddr: String  <— if adding later, don't forget to update this: [306KWUSSJ24]
-  tinyAvatar: Option[UploadRef] = None,
-  smallAvatar: Option[UploadRef] = None,
-  summaryEmailIntervalMins: Option[Int] = None,  // REFACTOR break out to EmailPrefs [REFACTORNOTFS] -----
-  summaryEmailIfActive: Option[Boolean] = None,  //
-  grantsTrustLevel: Option[TrustLevel] = None,
-  uiPrefs: Option[JsObject] = None,
+  tinyAvatar: Opt[UploadRef] = None,
+  smallAvatar: Opt[UploadRef] = None,
+  summaryEmailIntervalMins: Opt[i32] = None,  // REFACTOR break out to EmailPrefs [REFACTORNOTFS] -----
+  summaryEmailIfActive: Opt[Bo] = None,  //
+  grantsTrustLevel: Opt[TrustLevel] = None,
+  uiPrefs: Opt[JsObject] = None,
+  privPrefs: MemberPrivacyPrefs = MemberPrivacyPrefs.empty,
   perms: PatPerms = PatPerms.empty,
 )
   extends Member with MemberInclDetails {  // COULD split into two? One without, one with details
@@ -1438,9 +1509,6 @@ case class Group( // [exp] missing: createdAt, add to MemberInclDetails & Partic
   def usernameLowercase: String = theUsername.toLowerCase
 
   //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)   [CANONUN]
-
-  // Not yet incl in Group, but could be. For now, let be core members & staff only.
-  def seeActivityMinTrustLevel: Option[TrustLevel] = Some(TrustLevel.CoreMember)
 
   def anyName: Option[String] = name
 

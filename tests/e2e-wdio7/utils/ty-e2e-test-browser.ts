@@ -7333,6 +7333,11 @@ export class TyE2eTestBrowser {
         await this.waitAndClick('.s_UP_SendMsgB');
       },
 
+      canSendDirectMessageTo: async (): Pr<Bo> => {
+        await this.isVisible('.s_UP_SendMsgB, .e_CantDirMsg'); // maybe can return elm instead?
+        return await this.isVisible('.s_UP_SendMsgB');
+      },
+
       _goHere: async (username: St, ps: { isGroup?: true, origin?: St }, suffix: St) => {
         await this.go((ps.origin || '') +
                 `/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
@@ -7664,7 +7669,7 @@ export class TyE2eTestBrowser {
 
         switchToPrivacy: async () => {
           await this.waitAndClick('.e_UP_Prf_Nav_PrivL');
-          await this.waitForVisible('.e_HideActivityAllCB');
+          await this.waitForVisible('.e_PrivPrefsF');
         },
 
         // ---- Should be wrapped in `about { .. }`:
@@ -7738,8 +7743,21 @@ export class TyE2eTestBrowser {
             await this.setCheckbox('.e_HideActivityAllCB input', enabled);
           },
 
+          setMayMentionMeTrustLevel: async (level: Nr) => {
+            await this.waitAndClick('.e_WhoMayMention .btn');
+            await this.waitAndClick(`.e_TruLvD .e_TrLv-${level}`);
+            await this.waitForVisible(`.e_WhoMayMention .e_TrLv-${level}.btn`);
+          },
+
+          setMayDirMsgMeTrustLevel: async (level: Nr) => {
+            await this.waitAndClick('.e_WhoMayDm .btn');
+            await this.waitAndClick(`.e_TruLvD .e_TrLv-${level}`);
+            await this.waitForVisible(`.e_WhoMayDm .e_TrLv-${level}.btn`);
+          },
+
           savePrivacySettings: async () => {
-            dieIf(await this.isVisible('.e_Saved'), 'TyE6UKHRQP4'); // unimplemented
+            dieIf(await this.isVisible('.e_Saved'),
+                  "E2e bug? No changes to save? [TyEE496MRKT]");
             await this.waitAndClick('.e_SavePrivacy');
             await this.waitForVisible('.e_Saved');
           },

@@ -47,7 +47,16 @@ trait AuthzSiteDaoMixin {
 
   def getAuthzContextOnPats(pat: Opt[Pat]): AuthzCtxOnPats = {
     val groupIds = getGroupIdsOwnFirst(pat)
-    AuthzCtxOnPatsOnly(pat, groupIds)
+    pat match {
+      case None => AuthzCtxOnPatsNoReqer(groupIds)
+      case Some(thePat) => AuthzCtxOnPatsWithReqer(thePat, groupIds)
+    }
+  }
+
+
+  def getAuthzCtxWithReqer(reqer: Pat): AuthzCtxWithReqer = {
+    val groupIds = getGroupIdsOwnFirst(Some(reqer))
+    AuthzCtxOnPatsWithReqer(reqer, groupIds)
   }
 
 
@@ -61,6 +70,19 @@ trait AuthzSiteDaoMixin {
     val groupIds = getGroupIdsOwnFirst(pat)
     val permissions = getPermsForPeople(groupIds)
     AuthzCtxOnForum(pat, groupIds, permissions)
+  }
+
+
+  def anyAuthCtxOnPagesForPat(anyPat: Opt[Pat]): Opt[AuthzCtxOnAllWithReqer] = Some {
+    val pat = anyPat getOrElse { return None }
+    getAuthzCtxOnPagesForPat(pat)
+  }
+
+
+  def getAuthzCtxOnPagesForPat(pat: Pat): AuthzCtxOnAllWithReqer = {
+    val groupIds = getGroupIdsOwnFirst(Some(pat))
+    val permissions = getPermsForPeople(groupIds)
+    AuthzCtxOnAllWithReqer(pat, groupIds, permissions)
   }
 
 

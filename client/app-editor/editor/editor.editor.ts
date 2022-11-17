@@ -89,9 +89,23 @@ export const listUsernamesTrigger = {
         }
       })
     },
-    component: ({ entity: { id, username, fullName }}) =>
-      r.div({}, `${username} (${fullName})`),
-    output: (item, trigger) => '@' + item.username
+    component: ({ entity: { id, username, fullName, mayMention }}) => {
+      const text = `${username} (${fullName})`;
+      return mayMention !== false
+          ? r.div({}, text)
+          : r.div({ className: 'c_Disabled',
+                    onClick: (event) => event.stopPropagation() }, // [mention_disabled]
+              // Later: Show any  pats_t.why_may_not_mention_msg_me_html_c  info here.
+              text, r.i({}, "  — mentions disabled"));    // I18N
+    },
+    output: (item, trigger) => {
+      // Also see: [mentions_prio]
+      if (item.mayMention === false) {
+        // Then skip the '@' so this won't becoem a @mention.
+        return item.username;
+      }
+      return '@' + item.username;
+    },
   },
 
   // Emojis. List: https://unicode.org/emoji/charts/full-emoji-list.html
