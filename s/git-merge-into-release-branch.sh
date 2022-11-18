@@ -85,4 +85,5 @@ echo
 
 echo git checkout release
 echo git merge --no-ff main -m "\"Merge $next_version into 'release'.\""
+echo 'git branch -f main release'
 echo 'git branch -f master main  # backw compat'

@@ -66,6 +66,7 @@ object MailerActor {
     val anyFromAddress = getStringNoneIfBlank("talkyard.smtp.fromAddress")
     val anyFromName = getStringNoneIfBlank("talkyard.smtp.fromName")
     val anyBounceAddress = getStringNoneIfBlank("talkyard.smtp.bounceAddress")
+    val anySmtpExtraHeader = getStringNoneIfBlank("talkyard.smtp.extraHeader")
     val debug = getBoolOr("talkyard.smtp.debug", default = false)
 
     // About STARTTLS and TLS/SSL and ports 25, 587, 465:
@@ -139,7 +140,9 @@ object MailerActor {
             userName = None, password = None,
             fromAddress = anyFromAddress.getOrElse(""),
             anyFromName = anyFromName,
-            debug = debug, bounceAddress = None, broken = true, isProd = isProd)),
+            debug = debug, bounceAddress = None,
+            anySmtpExtraHeader = None,
+            broken = true, isProd = isProd)),
           name = s"BrokenMailerActor-$testInstanceCounter")
       }
       else {
@@ -182,6 +185,7 @@ object MailerActor {
             anyFromName = anyFromName,
             debug = debug,
             bounceAddress = anyBounceAddress,
+            anySmtpExtraHeader = anySmtpExtraHeader,
             broken = false,
             isProd = isProd)),
           name = s"MailerActor-$testInstanceCounter")
@@ -228,6 +232,7 @@ class MailerActor(
   val fromAddress: String,
   val anyFromName: Opt[St],
   val bounceAddress: Option[String],
+  val anySmtpExtraHeader: Opt[St],
   val debug: Boolean,
   val broken: Boolean,
   val isProd: Boolean) extends Actor {
@@ -518,6 +523,15 @@ class MailerActor(
     val replyTo = new java.util.ArrayList[j_InetAdr]()
     replyTo.add(new j_InetAdr(fromInclEmailId));
     apacheCommonsEmail.setReplyTo(replyTo)   */
+
+    ADD_TO_DOCS // Postmarkapp overwrites SMTP Message-ID headers with its own ids,
+    // unless we incl a header 'X-PM-KeepID: true' — and that's what anySmtpExtraHeader
+    // is for.  (Amazon SES always overwrites, cannot tell it to stop — so don't use SES?)
+    anySmtpExtraHeader foreach { nameValue =>
+      val (headerNameMaybeSpace, colonSpaceValue) = nameValue.span(_ != ':')
+      val value = colonSpaceValue.drop(1).trim
+      apacheCommonsEmail.addHeader(headerNameMaybeSpace.trim, value)
+    }
 
     // Is this the 'MAIL FROM:<some@addr.ess>' email address? If so, the SMTP servers
     // will add it in a Return-Path SMTP header. — This might not be needed, since
