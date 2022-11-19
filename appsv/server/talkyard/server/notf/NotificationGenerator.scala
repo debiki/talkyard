@@ -519,6 +519,10 @@ case class NotificationGenerator(
       return
     }
 
+    // (What about may-Notify-About-Votes? Might anyone ever want to suppress Like vote
+    // notifications but only from certain people or groups?  Let's wait. I guess a
+    // bach-vote-notfs setting is enough almost always, more granular settings not needed.)
+
     // Access control.
     // Sync w [2069RSK25]. Test: [2069RSK25-A]
     // (If this is a group and it may not see the post, then don't generate any
