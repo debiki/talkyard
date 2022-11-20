@@ -66,7 +66,7 @@ object Dependencies {
 
     val jsoup = "org.jsoup" % "jsoup" % "1.15.3"
 
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.4"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.14.0"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -75,7 +75,7 @@ object Dependencies {
     // https://docs.microsoft.com/en-us/azure/active-directory/develop/reference-v2-libraries#compatible-client-libraries
     //
     // VENDOR_THIS — it'd be good to Maven-build via Makefile?
-    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.2"
+    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "8.3.3"
 
 
     // ----- Logging
