@@ -598,16 +598,20 @@ class MailerActor(
 class SensibleHtmlEmail extends acm.HtmlEmail {
   import javax.mail.internet.{ MimeMessage => jm_MimeMessage }
 
-  override def createMimeMessage(sess: javax.mail.Session): jm_MimeMessage = {
-    return new jm_MimeMessage(sess) {
+  override def createMimeMessage(sess: javax.mail.Session): jm_MimeMessage =
+    new jm_MimeMessage(sess) {
       override def updateHeaders(): U = {
         // super.updateHeaders() overwrites Message-ID, so let's remember the id and restore
         // it.  That super fn() does other things too, so can't just skip calling it?
-        val messageId = getHeader("Message-ID")
+        val anyMessageIds: Opt[Array[St]] = Option(getHeader("Message-ID"))
         super.updateHeaders()
-        dieIf(messageId.length != 1, "TyEMANYMSGIDS")
-        setHeader("Message-ID", messageId.head)
+        anyMessageIds foreach { messageIds =>
+          dieIf(messageIds.length >= 2, "TyEMANYMSGIDS", s"There're ${messageIds.length} Message-ID:s")
+          messageIds.headOption foreach { id =>
+            setHeader("Message-ID", id)
+          }
+        }
       }
     }
+
   }
-}
