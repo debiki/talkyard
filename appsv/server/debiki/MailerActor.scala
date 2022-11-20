@@ -455,7 +455,7 @@ class MailerActor(
 
   private def makeApacheCommonsEmail(email: Email, fromInclEmailId: St,
           perSiteFromName: Opt[St]): acm.HtmlEmail = {
-    val apacheCommonsEmail = new acm.HtmlEmail()
+    val apacheCommonsEmail = new SensibleHtmlEmail()
     apacheCommonsEmail.setDebug(debug)
     apacheCommonsEmail.setHostName(serverName)
     apacheCommonsEmail.setCharset("utf8")
@@ -590,4 +590,24 @@ class MailerActor(
     }
   }
 
+}
+
+
+/** Doesn't overwrite the Message-ID header.
+  */
+class SensibleHtmlEmail extends acm.HtmlEmail {
+  import javax.mail.internet.{ MimeMessage => jm_MimeMessage }
+
+  override def createMimeMessage(sess: javax.mail.Session): jm_MimeMessage = {
+    return new jm_MimeMessage(sess) {
+      override def updateHeaders(): U = {
+        // super.updateHeaders() overwrites Message-ID, so let's remember the id and restore
+        // it.  That super fn() does other things too, so can't just skip calling it?
+        val messageId = getHeader("Message-ID")
+        super.updateHeaders()
+        dieIf(messageId.length != 1, "TyEMANYMSGIDS")
+        setHeader("Message-ID", messageId.head)
+      }
+    }
+  }
 }
