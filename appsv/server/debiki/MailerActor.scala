@@ -455,7 +455,7 @@ class MailerActor(
 
   private def makeApacheCommonsEmail(email: Email, fromInclEmailId: St,
           perSiteFromName: Opt[St]): acm.HtmlEmail = {
-    val apacheCommonsEmail = new SensibleHtmlEmail()
+    val apacheCommonsEmail = new SensibleHtmlEmail(anySmtpMsgId = email.smtpMsgId)
     apacheCommonsEmail.setDebug(debug)
     apacheCommonsEmail.setHostName(serverName)
     apacheCommonsEmail.setCharset("utf8")
@@ -595,23 +595,26 @@ class MailerActor(
 
 /** Doesn't overwrite the Message-ID header.
   */
-class SensibleHtmlEmail extends acm.HtmlEmail {
+class SensibleHtmlEmail(val anySmtpMsgId: Opt[St]) extends acm.HtmlEmail {
   import javax.mail.internet.{ MimeMessage => jm_MimeMessage }
 
   override def createMimeMessage(sess: javax.mail.Session): jm_MimeMessage =
     new jm_MimeMessage(sess) {
       override def updateHeaders(): U = {
-        // super.updateHeaders() overwrites Message-ID, so let's remember the id and restore
+        // 1/2: super.updateHeaders() overwrites Message-ID, so let's remember the id and restore
         // it.  That super fn() does other things too, so can't just skip calling it?
-        val anyMessageIds: Opt[Array[St]] = Option(getHeader("Message-ID"))
+        //
+        // 2/2: getHeader("Message-ID") oddly enough returns two headers. No idea how javax.mail
+        // manages to add another one? It just calls  setHeader() which supposedly replaces all
+        // with one. Who cares, just call remove() set(), see below.
         super.updateHeaders()
-        anyMessageIds foreach { messageIds =>
-          dieIf(messageIds.length >= 2, "TyEMANYMSGIDS", s"There're ${messageIds.length} Message-ID:s")
-          messageIds.headOption foreach { id =>
-            setHeader("Message-ID", id)
-          }
+        anySmtpMsgId foreach { id =>
+          // I hope this removes all headers javax.mail might have added or overwritten:
+          removeHeader("Message-ID")
+          // And the one we want:
+          setHeader("Message-ID", id)
         }
       }
     }
 
-  }
+}
