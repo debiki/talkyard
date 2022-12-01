@@ -5,8 +5,8 @@ git_lock_file='.git/modules/modules/ed-versions/index.lock'
 git_lock_file2='.git/modules/relchans/tyse-v0-regular/index.lock'
 versions_file='version-tags.log'
 
-promote_from_chan='tyse-v0-dev'
-promote_to_chan='tyse-v0-regular'   #  [.must_be_dev_regular]
+promote_from_branch='tyse-v0-dev'
+promote_to_branch='tyse-v0-regular'   #  [.must_be_dev_regular]
 
 if [ -f $git_lock_file2 ]; then
   echo
@@ -33,65 +33,51 @@ set -e
 
 # (Don't use <root>/version.txt — that's the *next* version, not yet released.)
 pushd .
-cd relchans/$promote_from_chan
-  git fetch origin $promote_from_chan
-  git merge --ff-only origin/$promote_from_chan
+cd relchans/$promote_from_branch
+  git fetch origin $promote_from_branch
+  git merge --ff-only origin/$promote_from_branch
   old_versions=$(cat $versions_file)
-  wip_version_tag=$(echo "$old_versions" | tail -n1)
+  release_version_tag=$(echo "$old_versions" | tail -n1)
 popd
 next_version=$(cat version.txt)
-
-if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
-  echo "Not a WIP version tag: $wip_version_tag, no '-WIP-'."
-  exit 1
-fi
-
-release_version_tag=$( echo "$wip_version_tag" | sed -r -e 's/WIP-//' )
-
 
 
 # Sanity check version numbers
 
-# version.txt should be newer than $wip_version_tag and
-# $release_version_tag.
+# $next_version (which is the next version, from version.txt) should be newer than
+# $release_version_tag (which we're promoting now) — it should appear after,
+# when sorted:
 
-next_release_wip_sorted=$(echo \
+versions_sorted=$(echo \
 "$next_version
-$release_version_tag
-$wip_version_tag" | sort -V)
+$release_version_tag" | sort -V)
 
-# 'WIP' starts with uppercase, gets sorted before Git revision hashes.
-# :-/ unless the rev starts with a number?  (9758964)
-wip_release_next_expected=\
-"$wip_version_tag
-$release_version_tag
+versions_expected=\
+"$release_version_tag
 $next_version"
 
-if [ "$next_release_wip_sorted" != "$wip_release_next_expected" ]; then
+if [ "$versions_sorted" != "$versions_expected" ]; then
   echo "Is something amiss? When sorting versions, I get this:"
   echo
-  echo "$next_release_wip_sorted"
+  echo "$versions_sorted"
   echo
   echo "But I expected:"
   echo
-  echo "$wip_release_next_expected"
+  echo "$versions_expected"
   echo
-# exit 1  (9758964)
+  exit 1
 fi
 
 
 
-echo "Promote latest version from: $promote_from_chan"
-echo "                         to: $promote_to_chan ?  [y/n] — yes always, currently"
-echo
-
-echo "Latest version, to promote: $wip_version_tag   (in $promote_from_chan)"
-echo "             Once promoted: $release_version_tag   (in $promote_to_chan)"
-echo "    (Upcoming next version: $next_version)"
+echo "  Do you want to promote:  $release_version_tag"
+echo "     from release branch:  $promote_from_branch"
+echo "       to release branch:  $promote_to_branch"
+echo "  (Upcoming next version:  $next_version)"
 echo
 
 # dupl code [bashutils]
-read -p "Release WIP as debiki/talkyard-*:$release_version_tag? [y/n]  " choice
+read -p "Promote? [y/n]  " choice
 case "$choice" in
   y|Y|yes|Yes|YES ) echo "Ok, will do:"; echo ;;
   n|N|no|No|NO ) echo "Ok, doing nothing, bye."; exit 1;;
@@ -101,80 +87,59 @@ esac
 
 
 echo
-echo "Pulling debiki/talkyard-*:$wip_version_tag ..."
+echo "First, let's verify that all debiki/talkyard-*:$release_version_tag images exist:"
 echo
 
 set -x
-sudo docker pull debiki/talkyard-app:$wip_version_tag
-sudo docker pull debiki/talkyard-web:$wip_version_tag
-sudo docker pull debiki/talkyard-rdb:$wip_version_tag
-sudo docker pull debiki/talkyard-cache:$wip_version_tag
-sudo docker pull debiki/talkyard-search:$wip_version_tag
-sudo docker pull debiki/talkyard-certgen:$wip_version_tag
+sudo docker pull debiki/talkyard-app:$release_version_tag
+sudo docker pull debiki/talkyard-web:$release_version_tag
+sudo docker pull debiki/talkyard-rdb:$release_version_tag
+sudo docker pull debiki/talkyard-cache:$release_version_tag
+sudo docker pull debiki/talkyard-search:$release_version_tag
+sudo docker pull debiki/talkyard-certgen:$release_version_tag
 set +x
 
 echo
-echo "Done pulling."
+echo "All images found, fine."
 
-# Here and below, Enter is enough, no need to confirm y/n again.
-echo "Tag with debiki/talkyard-*:$release_version_tag?  Press Enter (or CTRL+C to exit)"
-read -s -p ''
-echo
-
-set -x
-sudo docker tag debiki/talkyard-app:$wip_version_tag debiki/talkyard-app:$release_version_tag
-sudo docker tag debiki/talkyard-web:$wip_version_tag debiki/talkyard-web:$release_version_tag
-sudo docker tag debiki/talkyard-rdb:$wip_version_tag debiki/talkyard-rdb:$release_version_tag
-sudo docker tag debiki/talkyard-cache:$wip_version_tag debiki/talkyard-cache:$release_version_tag
-sudo docker tag debiki/talkyard-search:$wip_version_tag debiki/talkyard-search:$release_version_tag
-sudo docker tag debiki/talkyard-certgen:$wip_version_tag debiki/talkyard-certgen:$release_version_tag
-set +x
-
-
-echo
-echo "Done. Publish to the official Docker image registry, debiki/talkyard-*:$release_version_tag?  Press Enter"
-read -s -p ''
-
-echo "Publishing..."
-echo
-
-set -x
-sudo docker push debiki/talkyard-app:$release_version_tag
-sudo docker push debiki/talkyard-web:$release_version_tag
-sudo docker push debiki/talkyard-rdb:$release_version_tag
-sudo docker push debiki/talkyard-cache:$release_version_tag
-sudo docker push debiki/talkyard-search:$release_version_tag
-sudo docker push debiki/talkyard-certgen:$release_version_tag
-set +x
-
-
-echo "Lastly, publish version tag $release_version_tag to GitHub?  Press Enter"
-read -s -p ''
-
-
-echo
-echo "Publishing version tag $release_version_tag to GitHub..."
-echo
-
-set -x
 pushd .
-cd relchans/$promote_to_chan
-  git fetch origin $promote_to_chan
-  git checkout $promote_to_chan
-  git merge --ff-only origin/$promote_to_chan
+cd relchans/$promote_to_branch
+
+  # `git remote -v` prints e.g.:  (with tabs as first separator)
+  #   origin	https://github.com/debiki/talkyard-versions.git (fetch)
+  #   origin	https://github.com/debiki/talkyard-versions.git (push)
+  # Let's store the URL in $push_dest:
+  push_dest="$(git remote -v | grep push | sed -nr 's/\S+\s+(\S+)\s+.*/\1/p')"
+
+  # dupl code [bashutils]
+  read -p "Publish version tag $release_version_tag to branch: $promote_to_branch, repo: $push_dest? [y/n]  " choice
+  case "$choice" in
+    y|Y|yes|Yes|YES ) echo "Ok, will do:"; echo ;;
+    n|N|no|No|NO ) echo "Ok, doing nothing, bye."; exit 1;;
+    * ) echo "What? Bye."; exit 1;;
+  esac
+
+  echo
+  echo "Publishing $release_version_tag ..."
+  echo
+
+  set -x
+  git fetch origin $promote_to_branch
+  git checkout $promote_to_branch
+  git merge --ff-only origin/$promote_to_branch
   echo "$release_version_tag" >> $versions_file
   # The tag: edition (tyse), version and channel (regular).  [.must_be_dev_regular]
-  release_version_tag_w_ed_chan="tyse-$release_version_tag-regular"
+  release_version_tag_w_branch="tyse-$release_version_tag-regular"
   git add $versions_file
-  git commit -m "Release $release_version_tag_w_ed_chan."
+  git commit -m "Release $release_version_tag_w_branch."
   set +x
   echo
   echo "In $(pwd):"
   echo
   set -x
-  git push origin $promote_to_chan
+  git push origin $promote_to_branch
   # 'master' is for backw compat. Don't incl in v1. [ty_v1]
-  if [ "$promote_to_chan" = 'tyse-v0-regular' ]; then
+  if [ "$promote_to_branch" = 'tyse-v0-regular' ]; then
     git branch -f master
     git push origin master
   fi
@@ -183,15 +148,15 @@ popd
 # Future tag name:
 # Need to include release channel in the Git tag, otherwise we'd try to push the
 # same tag to different branches, e.g. push  tyse-v0.2021.04-abc123def
-# to both the $promote_from_chan and $promote_to_chan branches — but then the last push
+# to both the $promote_from_branch and $promote_to_branch branches — but then the last push
 # would overwrite the first.  Instead, we push two different tags:
 # tyse-v0.2021.04-abc123def-dev  and  tyse-v0.2021.04-abc123def-regular.
 # [.must_be_dev_regular]
-git tag $release_version_tag_w_ed_chan tyse-$wip_version_tag-dev
+git tag $release_version_tag_w_branch tyse-$release_version_tag-dev
 
-git push origin $release_version_tag_w_ed_chan
+git push origin $release_version_tag_w_branch
 
 set +x
 echo
-echo "Done, released $release_version_tag_w_ed_chan. Bye."
+echo "Done, released $release_version_tag_w_branch. Bye."
 echo
