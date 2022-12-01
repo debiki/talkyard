@@ -559,3 +559,17 @@ the "official" operators language — see the Rust K8s Operators links above.
 == Year 2023
 
 
+
+== Version numbers
+
+Change from `tyse-v0.2022.123` to something like: (although it's longer)
+`tyse-v0.22001.2211001.0`, see docs/tyworld.adoc, the [Version numbers] section.
+
+Hmm or instead:
+
+`tyse-ts0-app-v0.2211001.0-dbs-v22001.0`
+
+(Or: `tyse-ts0-app0.2211001.0-db22001.0` ?)
+
+And skip the '-WIP' suffix, it's more confusing than helpful. Use release branches
+instead.

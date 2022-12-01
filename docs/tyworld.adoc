@@ -347,3 +347,59 @@ notification. Whilst events are per whole Ty site.
 
 See e.g.:
 https://stackoverflow.com/questions/2492362/difference-in-auditing-and-logging
+
+
+
+== Version numbers
+
+Semantic versioning doesn't make sense for a platform like Talkyard (it's a
+platform with different components with their own versions, not a single libraray).
+Instead, Talkyard uses a flavor of calendar versioning, which shows:
+
+- Edition: tyse = Talkyard Standard Edition.
+- Tech stack version. Currently always 0. Changes every few years, and upgrading
+  requires a reinstallation.
+- The database structure version, gets its own version number component, because if
+  rolling back to an older structure, and a table column is not present in that
+  older structure, then data in that column disappears — good to know.
+  Mabye also bumped if there're major API changes for already existing APIs. ?
+- The software version. Year and month is nice to see, plus a whithin-the-month counter.
+  A higher version means new features or bug fixes.
+- Any bug fix patch number.
+
+This leads us to sth like: `tyse-v0.22001.2211001.0-SHA_HASH`, where leftmost 0 is
+the tech stack version; 22001 is database structure: 22 for year 2022,
+and a within-the-year counter (001).
+2211001 is the software version: year (2022), month (11, November) and
+a per month counter (001). The last number: 0, is the patch level,
+bumbed to 1, 2, 3.
+
+API versoining? Older versoins of the API generally stay available at
+`https:// server addr /-/v0/...` and `/-/v1` and `v2` etc.
+
+As of 2022-11, the versions look like: `tyse-v0.2022.123` — and the new version
+numbering scheme (i.e. `v0.22001.2211001.0` instead`) is compatible with this
+(because 22001 > 2022).
+
+These new version numbers can work for semantic versioning too, if 22001 is also
+bumbed if there's some backwards incompatible public API change (not only if the
+database structure changes).
+
+Hmm I think this, instead:
+
+```
+tyse-ts0-app-v0.2301001.0-dbs-v22001.0
+
+tyse              Talkyard Standard Edition
+ts0               Tech stack 0
+app-v0.2301001.0  App version (YYMM + NNN counter, .0 is patch), works w semantic versioning
+dbs-v22001.0      Database structure version (YY + NNN counter)
+
+Hmm or:
+    talkyard standard edition
+         tech stack 0
+              database structure 22001.0
+                          application (app server, client code) version 0.2301001.0
+    tyse-ts-0-dbs-22001.0-app-0.2301001.0
+```
+
