@@ -1,0 +1,17 @@
+[package]
+name = "maint-server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+axum = "0.6"
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.4", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true

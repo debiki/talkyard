@@ -1,3 +1,6 @@
+# Use Bash, not /bin/sh, so `set -o pipefail` works.
+SHELL=/bin/bash
+
 # GNU Make tips:
 # Variables:
 #   $@  The file name of the target of the rule
@@ -124,6 +127,10 @@ print_help:
 	@echo "https://forum.talkyard.io."
 	@echo
 
+# Keeps track of what targets we've built ("made") already, although they
+# didn't generate any easy to find files.
+targets_made: target/made
+	mkdir -p target/made
 
 DOCKER_REPOSITORY := \
   $(shell sed -nr 's/^DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env)
@@ -136,6 +143,9 @@ DEV_RELEASE_CHANNEL_SUFFIX := dev
 
 TALKYARD_VERSION := \
   $(shell cat version.txt)
+
+GIT_REVISION := \
+  $(shell git rev-parse --short HEAD)
 
 define ask_for_root_password
   sudo echo
@@ -482,6 +492,7 @@ clean: clean_bundles
 	rm -fr logs/
 	rm -f  ensime-langserver.log
 	rm -f  chromedriver.log
+	rm -f  images/maint/target
 
 pristine: clean
 	@echo
@@ -502,7 +513,6 @@ pristine: clean
 	@echo "    rm -fr tests/e2e/node_modules/"
 	@echo "    rm -fr tests/e2e-wdio7/node_modules/"
 	@echo
-	@echo
 
 
 # ----- Development
@@ -514,7 +524,7 @@ build:
 	@echo "   make prod-images"
 
 
-dev-images:  debug_asset_bundles
+dev-images:  debug_asset_bundles maint_img
 	$(d_c) build
 
 
@@ -611,21 +621,21 @@ dead:
 
 
 # Any old lingering prod build project, causes netw pool ip addr overlap error.
-_kill_old_prod_build_project:
+_kill_any_ongoing_build:
 	$(d_c) -pedt kill web app search cache rdb ;\
 	$(d_c) -pedt down
 
 
-prod-images:  _kill_old_prod_build_project
+prod-images:  _kill_any_ongoing_build   maint_img
 	@# This cleans and builds prod_asset_bundles. [PRODBNDLS]
 	s/build-prod-images.sh
 
 
-prod-images-only-e2e-tests:  _kill_old_prod_build_project
+prod-images-only-e2e-tests:  _kill_any_ongoing_build
 	@# This runs the e2e tests only.
 	s/build-prod-images.sh --skip-build
 
-prod-images-skip-build-and-e2e-test:  _kill_old_prod_build_project
+prod-images-skip-build-and-e2e-test:  _kill_any_ongoing_build
 	@# This runs the e2e tests only.
 	s/build-prod-images.sh --skip-build --skip-e2e-tests
 
@@ -737,6 +747,56 @@ define die_unless_tag_specified
     exit 1  ;\
   fi
 endef
+
+
+
+.PHONY: push_maint_img
+push_maint_img: maint_img target/made/push_maint_img-$(TALKYARD_VERSION)-$(GIT_REVISION).done
+	@$(call ask_for_root_password)
+	set -euo pipefail ;\
+	sudo docker push debiki/ty-maint:latest  ;\
+	sudo docker push debiki/ty-maint:tyse0-v22001.0.0  ;\
+	touch target/made/push_maint_img-$(TALKYARD_VERSION)-$(GIT_REVISION).done
+
+
+.PHONY: maint_img
+maint_img: target/made/maint_img-$(TALKYARD_VERSION)-$(GIT_REVISION).done
+
+# Builds Docker image images/maint; names and tags it like:  maint:v0.2022.21-365dd38b3.
+#
+# Any way to tell make it's been built, if this prints anything:
+#  docker image ls --quiet maint:$(TALKYARD_VERSION)-$(GIT_REVISION)
+# Or ditch that — might as well rely on Docker's build cache making the
+# build finish directly anyway. And good to tell Docker to rebuild for sure,
+# if ./target/ has been deleted.
+#
+target/made/maint_img-$(TALKYARD_VERSION)-$(GIT_REVISION).done: \
+        images/maint/target/release/maint-server \
+        images/maint/Dockerfile
+	@echo "Building image: maint"  ;\
+			mkdir -p target/made  ;\
+	    set -euo pipefail ;\
+			cd images/maint/  ;\
+					rm -fr build.d  ;\
+					mkdir -p build.d  ;\
+					cp -a Dockerfile  \
+					      maint-msg.html  \
+					      target/release/maint-server  \
+					      build.d/  ;\
+					docker build  -t debiki/ty-maint:$(TALKYARD_VERSION)-$(GIT_REVISION)  \
+					              -t debiki/ty-maint:tyse0-v22001.0.0  \
+					              -t debiki/ty-maint:latest  \
+					              build.d  \
+							| tee ../../target/made/maint_img-$(TALKYARD_VERSION)-$(GIT_REVISION).log  ;\
+			cd ../..  ;\
+			touch target/made/maint_img-$(TALKYARD_VERSION)-$(GIT_REVISION).done
+
+images/maint/target/release/maint-server:  \
+        images/maint/src/*  images/maint/Cargo.toml  images/maint/Cargo.lock
+	@echo "Building binary: maint-server"  ;\
+	    set -eux  ;\
+	    cd images/maint/  ;\
+	    cargo build --release
 
 
 
