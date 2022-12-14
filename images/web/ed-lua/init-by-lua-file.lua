@@ -1,5 +1,14 @@
 ngx.log(ngx.INFO, 'Running: init_by_lua_file')
 
+function file_exists(path)
+    local file = io.open(path, 'r')
+    if f ~= nil then
+        io.close(f)
+        return true
+    else
+        return false
+    end
+end
 
 -- Bandwidth limiting
 --
@@ -49,8 +58,37 @@ require("resty.acme.autossl").init({
     -- number of certificate cache, per type
     cache_size = 200,
 
-    domain_whitelist_callback = function(domain)
-        ngx.log(ngx.DEBUG, "Checking if should have cert: " .. domain
+    domain_whitelist_callback = function(domain) --, is_new_cert_needed)
+        local maint_mode_env = os.getenv('TY_MAINT_MODE')
+        if maint_mode_env ~= nil then
+          -- Since under maintenance, no new sites can get created right now. So,
+          -- don't generate any new certs. For existing sites, though, we already
+          -- have generated certs to use.
+          ngx.log(ngx.DEBUG, "Maint mode, checking if already has HTTP cert for: " .. domain
+                .. " [TyMOLDCRTCK]")
+
+          -- No. Certs are stored in Redis, so won't work:
+          --   local path_to_cert = '/etc/certbot/' .. domain .. '.conf'
+          --   local has_cert = file_exists(path_to_cert)
+          --
+          -- Instead:
+          --   local has_cert = !is_new_cert_needed  -- but will that work?
+          -- Or is a newer version of resty.acme.autossl needed?
+          --
+          -- Instead, for now:
+          ngx.log(ngx.INFO, "Skipping check, just trying to reuse any cert for: "
+                .. domain .. " [TyMHASCRTMBY]")
+          return true
+
+          -- if has_cert then
+          --   ngx.log(ngx.INFO, "Has cert: " .. domain .. ", reusing [TyMHASCRTYES]")
+          -- else
+          --   ngx.log(ngx.INFO, "No cert: " .. domain .. ", won't generate new [TyMHASCRTNO]")
+          -- end
+          -- return has_cert
+        end
+
+        ngx.log(ngx.DEBUG, "Asking app server if should have cert: " .. domain
               .. " [TyMGENCRTCK]")
 
         -- This might work for avoiding trying to get certs for IP addrs
@@ -89,7 +127,7 @@ require("resty.acme.autossl").init({
         if not con_ok then
             ngx.log(ngx.WARN, "Cannot connect to 'app', so cannot check " ..
                   "if should have cert: " .. domain ..
-                  ", err: " .. con_err .. " [TyMGENCRTERR]")
+                  ", err: `" .. con_err .. "' [TyMGENCRTERR]")
             return false
         end
 
@@ -103,7 +141,7 @@ require("resty.acme.autossl").init({
 
         if not req_res then
             ngx.log(ngx.WARN, "Error checking if should have cert: " .. domain
-                  .. ", err: " .. req_err .. " [TyMGENCRTERR]")
+                  .. ", err: `" .. req_err .. "' [TyMGENCRTERR]")
             return false
         end
 
