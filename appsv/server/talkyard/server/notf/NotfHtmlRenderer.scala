@@ -272,7 +272,16 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       { whatHappened }, <a href={url}>here</a>, on page "<i>{pageTitle}</i>"{dotOrComma}
       { inPostWrittenBy } <i>{byUserName}</i>, on {date}:
     </p>
-    <blockquote>{html}</blockquote>
+    <hr/>
+    <p style="padding-left: 2em">{
+      // Don't wrap this in a <blockquote>. FastMail thinks any <blockquote> is part of
+      // some previous email in an email thread, and collapses the quote, one needs to click
+      // to open. But the text is the *main* part of the message, shouldn't be collapsed.
+      // FastMail is somewhat popular as of 2022-12, so let's care about FastMail.
+      // (Gmail doesn't collapse <blockquote>.)
+      html
+    }</p>
+    <hr/>
     <div>{
     if (showReplyButton)
       <a href={url} style={replyBtnStyles} class="e_EmReB" >Reply</a>
