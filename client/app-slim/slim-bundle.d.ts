@@ -526,6 +526,7 @@ declare namespace debiki2 {
   var PrimaryButton;
   var Button;
   var PrimaryLinkButton;
+  function ExtVerbLink(url: St): RElm;
   var ExtLinkButton;
   var LinkUnstyled;
   var LinkButton;

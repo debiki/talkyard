@@ -537,6 +537,7 @@ const SettingsPanel = createFactory({
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
           LiNavLink({ to: sr + 'legal', id: 'e2eAA_Ss_LegalL' }, "Legal"),
           LiNavLink({ to: sr + 'login', id: 'e2eAA_Ss_LoginL' }, "Signup and Login"),
+          LiNavLink({ to: sr + 'permissions', id: 'e_AA_Ss_PermsL' }, "Groups and Permissions"),
           LiNavLink({ to: sr + 'moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
           LiNavLink({ to: sr + 'spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
           LiNavLink({ to: sr + 'features', id: 'e_A_Ss_Features' }, "Features"),
@@ -550,6 +551,7 @@ const SettingsPanel = createFactory({
             Route({ path: sr + 'legal', render: () => LegalSettings(ps) }),
             Route({ path: sr + 'login', render: () => LoginAndSignupSettings(ps) }),
             Route({ path: sr + 'moderation', render: () => ModerationSettings(ps) }),
+            Route({ path: sr + 'permissions', render: () => GroupsAndPermissionLinks() }),
             Route({ path: sr + 'spam-flags', render: () => SpamFlagsSettings(ps) }),
             Route({ path: sr + 'features', render: () => FeatureSettings(ps) }),
             Route({ path: sr + 'embedded-comments', render: () => EmbeddedCommentsSettings(ps) }), // [8UP4QX0]
@@ -1451,6 +1453,46 @@ const ModerationSettings = createFactory({
         ));
   }
 });
+
+
+
+
+const GroupsAndPermissionLinks = function() {
+  const allMembersPermsPath = '/-/groups/all_members/permissions';
+  const allMembersPrefsPath = '/-/groups/all_members/preferences/notifications';
+  const categoriesPath = '/categories';
+  return r.div({ className: 'c_AA_Ss_Perms' },
+      r.h3({}, "Group permissions and settings"),
+
+      r.p({},
+        "To configure a group's ", r.b({}, "permissions"),
+        ", go to that group's profile page, the Permissions tab.", r.br(),
+        "For example, go here: ",
+        ExtVerbLink(allMembersPermsPath),
+        " to configure what file types and file sizes All Members can upload."),
+      r.p({},
+        "To configure a group's ", r.b({}, "notification settings"),
+        ", go to that group's profile page, the Notifications tab.", r.br(),
+        "For example, go here: ",
+        ExtVerbLink(allMembersPrefsPath),
+        " to configure All Members' per category notification settings."),
+      r.p({},
+        "Group members can configure their own preferences which then take precedence."),
+      r.p({},
+        "Click your username in the upper right corner, then ",
+        r.b({}, "View groups"), ", to see all groups."),
+
+      r.h3({}, "Category permissions"),
+
+      r.p({}, "To edit category permissions, e.g. who can see or post to a category, " +
+        "go to the categories list: ",
+        ExtVerbLink(categoriesPath),
+        ". Click a category, then click ",
+        r.b({}, "Edit Category"),
+        ", and then the ",
+        r.b({}, "Security"), " tab."));
+};
+
 
 
 
