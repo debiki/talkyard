@@ -105,6 +105,7 @@ class PageRequest[A](
     "DwE3ES58", s"No page meta found, page id: $pageId")
 
 
+  CLEAN_UP; REMOVE /* Use DiscProps intstead.  [2D_LAYOUT]
   lazy val thePageSettings: EffectiveSettings = {
     if (false) { // pageExists) {
       ??? // dao.loadSinglePageSettings(thePageId)
@@ -115,18 +116,22 @@ class PageRequest[A](
       dao.loadPageTreeSettings(theParentPageId.get)
     } */
     else {
-      dao.getWholeSiteSettings()
+      this.siteSettings  // same as old code: dao.getWholeSiteSettings()
     }
-  }
+  } */
 
 
   def renderParams: PageRenderParams = {
     val discProps = DiscProps.derive(
           selfSource = pageMeta,
           ancestorSourcesSpecificFirst = ancCatsRootLast,
-          defaults = siteSettings)
+          defaults = siteSettings.discPropsFor(
+                // If props per page type, and the page doesn't yet exist, then,
+                // later, we'll show a Create-page-here question?  But for now:
+                pageMeta.map(_.pageType).getOrElse(PageType.Discussion)))
     PageRenderParams(
           discProps.comtOrder,
+          //discProps.comtNesting — later
           widthLayout = if (isMobile) WidthLayout.Tiny else WidthLayout.Medium,
           isEmbedded = embeddingUrl.nonEmpty,
           origin = origin,

@@ -78,7 +78,8 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     // If some posts got hidden, then rerender them as hidden, so the flagger sees they got hidden.
     val json = dao.jsonMaker.makeStorePatchForPostIds(
-          postsHidden.map(_.id).toSet, showHidden = false, inclUnapproved = false, dao)
+          postsHidden.map(_.id).toSet, showHidden = false, inclUnapproved = false,
+          maySquash = true, dao)
     OkSafeJson(json)
   }
 

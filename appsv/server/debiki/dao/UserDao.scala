@@ -1449,14 +1449,14 @@ trait UserDao {
 
     val add = joinOrLeave == Join
     val usersById = tx.loadUsersAsMap(userIds + byWho.id)
-    val me = usersById.getOrElse(byWho.id, throwForbidden(
-          "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
+    val reqer = usersById.getOrElse(byWho.id, throwForbidden(
+          "EsE6KFE0X", s"s${siteId}: The requester cannot be found, id: ${byWho.id}"))
 
     val pageMeta = tx.loadPageMeta(pageIdToJoinLeave) getOrElse
           security.throwIndistinguishableNotFound("42PKD0")
 
     // AuthZ check 1/3:  May the *requester* see the page? (Hen might be sbd else than userIds.)
-    throwIfMayNotSeePage(pageMeta, Some(me))(tx)
+    throwIfMayNotSeePage(pageMeta, Some(reqer))(tx)
 
     // Right now, to join a forum page =  [sub_communities], one just adds it to one's watchbar.
     // But we don't add/remove the user from the page members list, so nothing to do here.
@@ -1471,16 +1471,16 @@ trait UserDao {
             isn't allowed. There are $numMembersAlready page members already""")
     }
 
-    val addingRemovingMyselfOnly = userIds.size == 1 && userIds.head == me.id
+    val addingRemovingMyselfOnly = userIds.size == 1 && userIds.head == reqer.id
 
     // AuthZ check 2/3.
     // A mod can add/remove members to pages hen can see — and we've checked above
-    // that 'me' can see the page (in Authz check 1).
+    // that reqer can see the page (in Authz check 1).
     //
     // Later: Sometimes / most-of-the-time? each member in a private chat
     // should be able to add more people to join that private chat?
     //
-    if (!me.isStaff && me.id != pageMeta.authorId && !addingRemovingMyselfOnly)
+    if (!reqer.isStaff && reqer.id != pageMeta.authorId && !addingRemovingMyselfOnly)
       throwForbidden(
         "EsE28PDW9", "Only staff and the page author may add/remove people to/from the page")
 
@@ -1497,7 +1497,7 @@ trait UserDao {
       userIds foreach { id =>
         COULD_OPTIMIZE // batch insert all users at once (would slightly speed up imports)
         val wasAdded = tx.insertMessageMember(
-              pageIdToJoinLeave, userId = id, addedById = me.id)
+              pageIdToJoinLeave, userId = id, addedById = reqer.id)
         if (wasAdded) {
           anyChange = true
         }
@@ -1513,13 +1513,15 @@ trait UserDao {
       val userIdsToRemove =
             if (joinOrLeave == Leave) userIds
             else if (joinOrLeave == StayIfMaySee) userIds.filter { userId =>
-              if (userId == me.id) {
+              if (userId == reqer.id) {
                 // we've checked above already, in AuthZ check 1, that
                 // the requester may see the page.
-                true
+                false // don't incl in userIdsToRemove
               }
               else {
                 // AuthZ check 3/3.
+                COULD // Instead of getOrDie, if not found, can we just remove hen from
+                // the page? And log a bug warning maybe.
                 val user = usersById.getOrDie(userId, "TyE305MRKD24")
                 !maySeePage(pageMeta, Some(user), UseTx(tx)).maySee
               }
@@ -1556,16 +1558,6 @@ trait UserDao {
     val oldWatchbar = getOrCreateWatchbar(patAuthzCtx)
     var newWatchbar = oldWatchbar
     for (page: PageMeta <- pages) {
-/*
-<<<<<<< HEAD
-      val (maySee, _) = maySeePageUseCacheAndAuthzCtx(page, patAuthzCtx)
-||||||| parent of 410fc44ec (Derive and cache comment sort order, when rendering page)
-      val (maySee, _) = maySeePage(page, Some(pat), cacheOrTx)
-=======
-      val maySeeResult = maySeePage(page, Some(pat), cacheOrTx)
-      val maySee = maySeeResult.maySee
->>>>>>> 410fc44ec (Derive and cache comment sort order, when rendering page)
-*/
       val maySeeResult = maySeePageUseCacheAndAuthzCtx(page, patAuthzCtx)
       val maySee = maySeeResult.maySee
       if (addOrRemove == Remove) {

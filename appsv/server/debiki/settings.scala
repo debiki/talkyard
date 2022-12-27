@@ -158,10 +158,18 @@ trait AllSettings extends DiscProps {
   val comtOrder: PostSortOrder = discPostSortOrder // renaming
   val comtNesting: ComtNesting_later = discPostNesting  // later
 
-  def discPostSortOrder: PostSortOrder
-  def discPostNesting: NestingDepth
+  def discPostSortOrder: PostSortOrder  ; RENAME // to comtOrder
+  def discPostNesting: NestingDepth     ; RENAME // to comtNesting
+
+  // Will disappear, when per topic type props is generally configurable. [per_page_type_props]
+  def discPropsFor(pageType: PageType): DiscProps = {
+    if (pageType != PageType.EmbeddedComments) this
+    else DiscPropsDerived(comtOrder = embComSortOrder, comtNesting = embComNesting)
+  }
+
   def progressLayout: ProgressLayout
-  def embComSortOrder: PostSortOrder  // later, could add a topic type field instead
+  // Later, could add a topic type field instead of these two: [per_page_type_props]
+  def embComSortOrder: PostSortOrder
   def embComNesting: NestingDepth
   // + horizontalComments  below
   // These are for embedded comments actually, COULD rename:

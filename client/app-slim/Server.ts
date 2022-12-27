@@ -1651,8 +1651,8 @@ export function createForum(options: { title, folder, useCategories, createSuppo
 }
 
 
-export function listForums(success: (forums: Forum[]) => void) {
-  get('/-/list-forums', success);
+export function listForums(onOk: (forums: Forum[]) => Vo) {
+  get('/-/list-forums', resp => onOk(resp.forums));
 }
 
 

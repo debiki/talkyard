@@ -72,6 +72,7 @@ export var Metabar = createComponent({
   },
 
   onToggleDetailsClick: function() {
+    // [redux] modifying in place :-/
     this.state.ui.showDetails = !this.state.ui.showDetails;
     this.setState(this.state);
   },
@@ -95,11 +96,11 @@ export var Metabar = createComponent({
 
     let notfLevelElem: RElm | Nl = null;
     if (me.isAuthenticated && !ui.showDetails) {
+      // Add a notf level button — so won't need to expand the metabar, to click it.
       const effPref = pageNotfPrefTarget_findEffPref({ pageId: page.pageId }, store, me);
       const level = notfPref_level(effPref);
-      notfLevelElem = r.span({ className: `dw-page-notf-level n_NfLv-${level}`,
-              }, // onClick: this.onToggleDetailsClick },
-          t.Notifications + ': ', // + notfPref_title(effPref));
+      notfLevelElem = r.span({ className: `dw-page-notf-level n_NfLv-${level}` },
+          t.Notifications + ': ',
           notfs.PageNotfPrefButton({ target: { pageId: store.currentPageId },
                   store, ownPrefs: me }));
     }
@@ -128,7 +129,7 @@ export var Metabar = createComponent({
                       });
                     } })),
               nameLoginBtns,
-              r.li({}, notfLevelElem)), //NotfPrefBtn(store, me))),
+              r.li({}, notfLevelElem)),
           toggleDetailsBtn);
 
     const detailsElem = ui.showDetails
@@ -187,16 +188,7 @@ const MetabarDetails = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
-    const notificationsElem = NotfPrefBtn(store, me); /*
-
-    const userAuthenticated = me && me.isAuthenticated;
-
-    const notificationsElem = !userAuthenticated ? null :
-      r.div({},
-        r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, t.mb.NotfsAbtThisC),
-        notfs.PageNotfPrefButton({ target: { pageId: store.currentPageId }, store, ownPrefs: me }));
-        */
-
+    const notificationsElem = NotfPrefBtn(store, me);
     return (
       r.div({ className: 'dw-cmts-tlbr-details' },
           notificationsElem));
@@ -209,8 +201,8 @@ function NotfPrefBtn(store: Store, me: Me) {
   return !userAuthenticated ? null :
       r.div({},
         r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, t.mb.NotfsAbtThisC),
-        notfs.PageNotfPrefButton({ target: { pageId: store.currentPageId }, store, ownPrefs: me }));
-
+        notfs.PageNotfPrefButton({
+            target: { pageId: store.currentPageId }, store, ownPrefs: me }));
 }
 
 

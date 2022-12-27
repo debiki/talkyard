@@ -394,8 +394,12 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
 
   private val ZeroNone = 0
 
-  def parseOptZeroNone[R](json: JsValue, field: St, altField: St = "")(fn: Opt[i32] => Opt[R])
-          : Opt[Opt[R]] = {
+  /** If the field value is 0, then, returns Some(None) which typically means that
+    * some value should be cleared (set to null in the database),
+    * whilst the value being absent, results in None, no action taken (value left as is).
+    */
+  def parseOptZeroSomeNone[R](json: JsValue, field: St, altField: St = "")(
+          fn: Opt[i32] => Opt[R]): Opt[Opt[R]] = {
     val anyValue = parseOptInt32(json, field = field, altField = altField)
     if (anyValue is ZeroNone) Some(None)
     else {

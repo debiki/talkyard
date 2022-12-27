@@ -464,21 +464,27 @@ const enum DiscussionLayout {
 }
 
 type NestingDepth = number;
+const InheritNesting: NestingDepth = 0;    // not stored (Null is stored instead in Postgres)
 const InfiniteNesting: NestingDepth = -1;  // sync with Scala
 
+
+/// Sync with Scala [PostSortOrder].
+///
 /// The 1st nibble says how replies to the orig post should be sorted,
 /// the 2nd nibble says how to sort replies to replies (depth 2),
 /// the 3rd nibble  says how to sort replies to replies to replies.
 /// If 0 (unspecified), then, the prev nibble is used instead.
-/// If all 0, then, any sort order specified in the ancestor cats,
-/// is used, and if unspecified there too, then, the site settings,
-/// or OldestFirst if unspecified everywhere.
+/// (For example, for NewestThenBest, the 1st and 2nd nibbles are set — and the
+/// 2nd nibble, i.e. BestFirst, gets used for depth 2 and also 3, 4, 5 etc.)
+/// If all nibbles are 0, then, any ancestor cat sort order is used,
+/// and if unspecified there too, then, the site settings,
+/// or, if unspecified everywhere: OldestFirst, but BestFirst for embedded comments.
 ///
-const enum PostSortOrder {  // rename to [ComtSortOrder]? Since not for orig post and title post.
-  Default = 0,   // Inherit from parent category
+const enum PostSortOrder {  // rename to [ComtOrder]? Since not for orig post and title post.
+  Inherit = 0,   // Inherit from parent category or site settings or built-in default.
   BestFirst = 1, // Q&A sites, Reddit, StackOverflow
   NewestFirst = 2,
-  OldestFirst = 3,  // all traditional forum software does this
+  OldestFirst = 3,  // all traditional forum software does this (e.g. phpBB, Discourse)
   //BestForMeFirst = _,   // what the current visitor likely wants to see
   //TrendingFirst = _,
   //ControversialFirst = _,
@@ -487,7 +493,7 @@ const enum PostSortOrder {  // rename to [ComtSortOrder]? Since not for orig pos
   //BestThenOldest = BestFirst + (OldestFirst << 4),  // StackOverflow, if max nesting = 2
   NewestThenBest = NewestFirst + (BestFirst << 4),  // == 18
   // New flavor of theraded chat? Also, is what FB sometimes uses, but not for chatting.
-  NewestThenOldest = NewestFirst + (OldestFirst << 4),  // = 48
+  NewestThenOldest = NewestFirst + (OldestFirst << 4),  // 2 + 3*16 = 50
 }
 
 const enum ProgressLayout {

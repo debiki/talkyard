@@ -182,7 +182,7 @@ const ChangePageDialog = createComponent({
                   savePage({ pageRole: newType });
                 }})));
 
-      changeComtOrderListItem = !isStaff(me) ? null : rFr({},
+      changeComtOrderListItem = !isStaff(me) ? null : rFr({}, // [onl_staff_set_comt_ord]
           r.div({ className: 's_ExplDrp_Ttl' }, "Comment sort order:"),
           r.div({ className: 's_ExplDrp_ActIt' },
             widgets.DiscLayoutDropdownBtn({ page, store,
@@ -282,6 +282,7 @@ const ChangePageDialog = createComponent({
         undeletePageListItem,
         // Almost never used, could be hidden behind an Advnced button?:
         changeComtOrderListItem,
+        changeComtNestingListItem,
         ));
   }
 });

@@ -19,8 +19,5 @@ they otherwise would be unable to access. Expire access after X days
 by default, or at a date-time, or if they leave the community
 or category access permissions change (less access) or trust level demoted.)
 
-
-[split_post_actions]
-Maybe split post_actions_t into post_votes_t and post_flags_t ?
-More type safe. And more future-flexible?
-But wait w this.
+[flags_as_posts]
+Move flags from post_actions_t to posts_t instead, with PostType.Flag.

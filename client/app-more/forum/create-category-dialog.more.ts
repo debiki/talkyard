@@ -389,16 +389,12 @@ const CatSettings = createClassAndFactory({
 
     const rootCatId = sectPage.categoryId;
 
-    //nst parentCatIdObj = { parentCatId: category.parentId || sectPage.categoryId };
-
     const commentOrder =
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label', style: { display: 'block' }},
           "Comment sort order:"),
         widgets.DiscLayoutDropdownBtn({ cat: category, store,
-            // Don't show [temp sort order changes ("tweaks") done in this browser]
-            // — instead, now, we're saving server side, for everyone.
-            layoutFor: LayoutFor.PageNoTweaks, forEveryone: true, forCat: true,
+            layoutFor: LayoutFor.PageNoTweaks, forEveryone: true,
             onSelect: (newLayout: DiscPropsSource) => {
               this.props.updateCategory(newLayout);
             }}));

@@ -106,7 +106,7 @@ case class PreLoadedPageParts(
 
 private case class AncestorsChildsAndDepth(
   depth: i32,
-  ancestors: ImmSeq[Post],
+  ancestors: Vec[Post],
   childsSorted: Vec[Post],
   )
 
@@ -145,7 +145,8 @@ abstract class PageParts {
 
 
   private lazy val childrenSortedByParentNr: collection.Map[PostNr, AncestorsChildsAndDepth] = {
-    COULD_OPTIMIZE // specify the capacity, both the sibling arrays and the map But how?
+    WOULD_OPTIMIZE // specify the capacity, both the sibling arrays and the map But how?
+    WOULD_OPTIMIZE // use a MutArrBuf for the children lists, until done sorting?
     val childMap = mutable.HashMap[PostNr, AncestorsChildsAndDepth]()
     for {
       post <- allPosts
@@ -153,20 +154,27 @@ abstract class PageParts {
       if post.parentNr isNot post.nr
     } {
       val parentNrOrNoNr = post.parentNr getOrElse PageParts.NoNr
-      /*
-      var siblings = childMap.getOrElse(parentNrOrNoNr, Vector[Post]())
-      siblings = siblings :+ post
-       */
       val node: AncestorsChildsAndDepth = childMap.get(parentNrOrNoNr) match {
         case Some(node: AncestorsChildsAndDepth) =>
           node.copy(childsSorted = node.childsSorted :+ post)
         case None =>
-          val ancestorPosts = ancestorsParentFirstOf(post)  // no — excludes the parent:  post.parentNr.map(ancestorsParentFirstOf)
+          val ancestorPosts = ancestorsParentFirstOf(post)
           // The title post and orig post are at depth 0. Top level replies at depth 1.
-          val depth = ancestorPosts.length // .map(_.length) getOrElse 1
+          val ancLen = ancestorPosts.length
+          val depth =
+                if (ancestorPosts.lastOption.exists(_.isOrigPost)) {
+                  assert(ancLen >= 1, "TyE7MJ4XT4")
+                  ancLen
+                }
+                else {
+                  // This comment thread doesn't start at the Orig Post.
+                  // Let's let its topmost comment have depth 1 anyway, since only
+                  // the title and orig post are supposed to have depth 0, right.
+                  ancLen + 1
+                }
           AncestorsChildsAndDepth(
-                ancestors = ancestorPosts, // getOrElse Nil,
-                // Not yet sorted, but soon; see sortPosts() just below.
+                ancestors = ancestorPosts,
+                // Not yet sorted, but soon; see Post.sortPosts() just below.
                 childsSorted = Vec(post),
                 depth = depth)
       }
@@ -200,9 +208,7 @@ abstract class PageParts {
   def titlePost: Option[Post] = postByNr(PageParts.TitleNr)
 
   def parentlessRepliesSorted: immutable.Seq[Post] =
-    childrenSortedOf(PageParts.NoNr) /* was:
-    childrenSortedByParentNr.getOrElse(PageParts.NoNr, Nil)
-    */
+    childrenSortedOf(PageParts.NoNr)
 
   lazy val progressPostsSorted: immutable.Seq[Post] = {
     val progressPosts = allPosts filter { post =>
@@ -354,15 +360,15 @@ abstract class PageParts {
 
 
   /** The post must exist. */
-  def ancestorsParentFirstOf(postNr: PostNr): immutable.Seq[Post] = {
+  def ancestorsParentFirstOf(postNr: PostNr): Vec[Post] = {
     ancestorsParentFirstOf(thePostByNr(postNr))
   }
 
 
   /** Starts with postNr's parent. Dies if cycle. */
-  def ancestorsParentFirstOf(post: Post): immutable.Seq[Post] = {
-    val ancestors = mutable.ArrayBuffer[Post]()
-    var curPost: Option[Post] = Some(post)
+  def ancestorsParentFirstOf(post: Post): Vec[Post] = {
+    val ancestors = MutArrBuf[Post]()
+    var curPost: Opt[Post] = Some(post)
     var numLaps = 0
     while ({
       curPost = parentOf(curPost.get)
@@ -373,13 +379,13 @@ abstract class PageParts {
       // To mostly avoid O(n^2) time, don't check for cycles so very often. [On2]
       if ((numLaps % 1000) == 0) {
         val cycleFound = ancestors.exists(_.nr == theCurPost.nr)
-        SHOULD // use bugWarn instead
+        SHOULD // use bugWarn instead, and return Vec.empty?
         dieIf(cycleFound, "TyEPOSTCYCL",
               s"Post cycle on page $pageId around post nr ${theCurPost.nr}")
       }
       ancestors.append(theCurPost)
     }
-    ancestors.to[immutable.Seq]
+    ancestors.to[Vec]
   }
 
 

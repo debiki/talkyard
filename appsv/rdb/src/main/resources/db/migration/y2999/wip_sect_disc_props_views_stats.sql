@@ -6,13 +6,21 @@ create table pages_t (  -- [disc_props_view_stats]
   page_type_c,
   category_id_c,
 
+  --- Maybe skip all these? Use posts_t.* instead from the Orig Post?
+  --- Or can it make sense to mark a page Done, independently of if
+  --- all mini tasks therein are done or not? I suppose so, yes,
+  --- so maybe these fields should be *both* in posts_t and pages_t?
   created_by_id_c,
   author_id_c,
 
-  answered_by_id_c,
-  planned_by_id_c,
-  started_by_id_c,
-  done_by_id_c,
+  answered_by_id_c,  -- Or use only posts_t.answered_status_c etc instead,
+                     --   and maybe this caches the Orig Posts statuses,
+                     --   for rendering the topic list faster?
+  planned_by_id_c,   -- No? doing_status_c instead,
+  --  assigned_to_id_c ? No, see PatRelType_later  instead — relationships
+                                  --   from pats to posts of type AssignedTo.
+  started_by_id_c,   --    with details in the audit log:  when, by who
+  done_by_id_c,      --
 
   closed_by_id_c,
   locked_by_id_c,  -- cannot post new replies
@@ -21,6 +29,7 @@ create table pages_t (  -- [disc_props_view_stats]
   may_undelete_c,  -- ? if page deleted by non-staff author, and staff wants to prevent
                     -- the author from undeleting it. Null (default) means yes, may.
   purged_by_id_c,  -- ?
+  -------------------------------------------------------------------
 
   pin_where_c,
   pin_order_c,
@@ -130,6 +139,7 @@ create table disc_props_t (   -- Scala:  DiscProps
 
 -- or name it  disc_layout_t  instead?
 -- Or skip for now, incl in  disc_props_t  instead?  then, not configurable per pat.
+-- Can customize individually: (just how discussions *look*)
 create table disc_view_t (   -- people can configure their own ~~view~~ layout (distant future)
   site_id,
   pat_id_c,  -- if someone's personal view. Default Everyone.Id
@@ -144,7 +154,7 @@ create table disc_view_t (   -- people can configure their own ~~view~~ layout (
   --timeline_comt_nesting    int,
   --timeline_comt_order      int,
 
-  emb_comt_order_c           int,  -- or could be a nibble in comt_ordr?
+  emb_comt_order_c           int,  -- or could be a (or two?) nibble(s) in comt_ordr?
   emb_comt_nesting_c         int,  -- this too?   And if nibble is 0, then
                                    -- use the not-embedded config.
 

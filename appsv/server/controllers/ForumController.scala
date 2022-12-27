@@ -78,7 +78,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val rootCats = dao.getRootCategories()
     val sectionPageIds = rootCats.map(_.sectionPageId)
     val pageStuffById = dao.getPageStuffById(sectionPageIds)
-    val forumJsObjs = for {
+    val forumJsObjs: Seq[JsObject] = for {
       rootCat <- rootCats
       pageId = rootCat.sectionPageId
       // (We're not in a transaction, the page might just have been deleted.)
@@ -95,7 +95,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
         "defaultCategoryId" -> JsNumberOrNull(rootCat.defaultSubCatId),
         "rootCategoryId" -> rootCat.id)
     }
-    OkSafeJson(JsArray(forumJsObjs))  // ?? needs JsObject
+    OkSafeJson(Json.obj("forums" -> JsArray(forumJsObjs)))
   }
 
 
@@ -138,9 +138,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // For now, do-it-votes just on or off:  [do_it_on_off]
     val doItVotesPopFirst = (categoryJson \ "doItVotesPopFirst").asOpt[Bo] getOrElse false
 
-    val anyComtOrder = // parseOptZeroNone(body, "comtOrder")(PostSortOrder.fromOptVal)
-                      PostSortOrder.fromOptVal(parseOptInt32(categoryJson, "comtOrder"))
-    val anyComtNesting = None // later: parseOptZeroNone(body, "comtNesting")(x => x.map(_.toShort))
+    val anyComtOrder = PostSortOrder.fromOptVal(parseOptInt32(categoryJson, "comtOrder"))
+    val anyComtNesting = None // later: parseOptInt32("comtNesting").map(x => x.map(_.toShort)) ?
 
     val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
     val categoryId = (categoryJson \ "id").as[Int]

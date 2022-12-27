@@ -582,11 +582,17 @@ trait CategoriesDao {
   }
 
 
-  def getAncestorCategoriesRootLast(anyCategoryId: Option[CategoryId]): Vector[Category] = {
+  def getAncestorCategoriesSelfFirst(anyCatId: Opt[CatId]): Vec[Cat] = {
+    getAncestorCategoriesRootLast(anyCatId)
+  }
+
+  @deprecated("RENAME to getAncestorCategoriesSelfFirst, see above")
+  def getAncestorCategoriesRootLast(anyCategoryId: Opt[CatId])
+          : Vec[Cat] = {
     val id = anyCategoryId getOrElse {
       return Vector.empty
     }
-    getAncestorCategoriesRootLast(id)
+    getAncestorCategoriesRootLast(id, inclSelfFirst = true)
   }
 
 
@@ -812,8 +818,8 @@ trait CategoriesDao {
             position = editsToDo.position,
             newTopicTypes = editsToDo.newTopicTypes,
             defaultSortOrder = editsToDo.defaultSortOrder,
-            comtOrder = editsToDo.comtOrder, // orElse catBef.comtOrder,
-            comtNesting = editsToDo.comtNesting, // orElse catBef.comtNesting,
+            comtOrder = editsToDo.comtOrder,
+            comtNesting = editsToDo.comtNesting,
             doVoteStyle = editsToDo.doVoteStyle,
             doVoteInTopicList = editsToDo.doVoteInTopicList,
             unlistCategory = editsToDo.unlistCategory,
@@ -833,12 +839,12 @@ trait CategoriesDao {
       // or comments sort order got changed.
       tx.updateCategoryMarkSectionPageStale(catAft, IfBadAbortReq)
 
-      BUG ; SHOULD // mark all pages as stale, if > 1 comment, and comments sort order changed.
-      // But I dont' want to run a big tx that updates maybe 9999 pages
-      // — if there's that many pages in this cat tree.
-      // Instead: The page html cache would store the render settings, and, when
-      // fetching the cached html, Ty checks if the render settings have changed,
-      // and *then* lazy rerenders the page.
+      // If comments sort order changed. could mark all pages with >= 2 comments as stale.
+      // But that's bad, if there are thousands of pages. Instead, the page html cache
+      // remembers the render settings, and, when fetching the cached html, we check if
+      // the render settings have changed, and if so, lazy rerender the page.
+      // See:  RenderedPageHtmlDao.renderWholePageHtmlMaybeUseMemCache()
+      // and RenderedPageHtmlDao.renderedPageKey().
 
       // Check if any sub tree to deep. [.7M27J525]
       val catMapAft = tx.loadCategoryMap()

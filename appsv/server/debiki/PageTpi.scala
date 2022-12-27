@@ -418,8 +418,8 @@ class PageTpi(
   override def currentVersionString: String = jsonVersion.computerString
   override def cachedVersionString: String = cachedVersion.computerString
 
-  private val horizontalComments =
-    pageReq.thePageRole == PageType.MindMap || pageReq.thePageSettings.horizontalComments
+  // Was:  pageReq.thePageRole == PageType.MindMap || pageReq.thePageSettings.horizontalComments
+  private val horizontalComments = false  // [2D_LAYOUT]
 
 
   override def debikiHtmlTagClasses: String =

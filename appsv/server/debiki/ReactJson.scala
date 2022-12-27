@@ -301,7 +301,10 @@ class JsonMaker(dao: SiteDao) {
       post.nr.toString ->
           postToJsonImpl(post, page, tagsAndBadges,
                 includeUnapproved = false, showHidden = false,
-                justThisPost = false, dao.getSite())
+                // We're rendering a whole page at once, not a single comment. Then,
+                // we'll summarize and squash comments as needed so as not to show too
+                // many on page load.
+                maySquash = true, dao.getSite())
     }
 
     if (Globals.isDevOrTest) {
@@ -334,9 +337,8 @@ class JsonMaker(dao: SiteDao) {
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
-    // Oops, sort by page.meta.comtOrder:
     val parentlessReplyNrsSorted =
-      pageParts.parentlessRepliesSorted.map(reply => JsNumber(reply.nr))
+          pageParts.parentlessRepliesSorted.map(reply => JsNumber(reply.nr))
 
     if (page.pageType == PageType.EmbeddedComments) {
       allPostsJson +:=
@@ -344,9 +346,8 @@ class JsonMaker(dao: SiteDao) {
           embeddedCommentsDummyRootPost(parentlessReplyNrsSorted)
     }
 
-    // Always by time? Never by page.meta.comtOrder?
-    val progressPostNrsSorted =
-      pageParts.progressPostsSorted.map(reply => JsNumber(reply.nr))
+    val progressPostNrsSorted =  // [timeline_comts]
+          pageParts.progressPostsSorted.map(reply => JsNumber(reply.nr))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta)
@@ -441,13 +442,7 @@ class JsonMaker(dao: SiteDao) {
       "forumSearchBox" -> JsNum32OrNull(page.meta.forumSearchBox),
       "forumMainView" -> JsNum32OrNull(page.meta.forumMainView),
       "forumCatsTopics" -> JsNum32OrNull(page.meta.forumCatsTopics),
-      // "discussionLayout" -> JsNumber(siteSettings.discussionLayout.toInt),
-      // "discPostSortOrder" -> JsNumber(page.parts.postsOrderNesting.sortOrder.toInt),
-      // "discPostNesting" -> JsNumber(page.parts.postsOrderNesting.nestingDepth),
       "progressLayout" -> JsNumber(siteSettings.progressLayout.toInt),
-      // Not needed, discPostSortOrder and discPostNesting in use:
-      // "embComSortOrder" -> ..
-      // "embComNesting" -> ..
       "origPostVotes" -> JsNumber(page.parts.origPostVotes.toInt),
       "enableDisagreeVote" -> JsBoolean(page.parts.enableDisagreeVote),
       "origPostReplyBtnTitle" -> JsStringOrNull(page.parts.origPostReplyBtnTitle),
@@ -642,13 +637,13 @@ class JsonMaker(dao: SiteDao) {
     postToJson(postNr, pageId, includeUnapproved = includeUnapproved,
           showHidden = showHidden,
           // Currently only called w one post, not for a sub thread or whole page.
-          justThisPost = true)._1
+          maySquash = false)._1
 
 
   @deprecated("now", "use makeStorePatchForPostIds instead?")
   private def postToJson(postNr: PostNr, pageId: PageId,
         tagsAndBadges: Opt[TagsAndBadges] = None, includeUnapproved: Bo = false,
-        showHidden: Bo = false, justThisPost: Bo): (JsObject, PageVersion) = {
+        showHidden: Bo = false, maySquash: Bo): (JsObject, PageVersion) = {
     dao.readTx { tx =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = dao.newPageDao(pageId, tx, useMemCache = true)
@@ -659,7 +654,7 @@ class JsonMaker(dao: SiteDao) {
       // makeStorePatchForPostIds instead?
       val json = postToJsonImpl(post, page, theTagsAndBadges,
             includeUnapproved = includeUnapproved, showHidden = showHidden,
-            justThisPost = justThisPost, dao.getSite())
+            maySquash = maySquash, dao.getSite())
       (json, page.version)
     }
   }
@@ -673,11 +668,11 @@ class JsonMaker(dao: SiteDao) {
   /** Private, so it cannot be called outside a transaction.
     */
   private def postToJsonImpl(post: Post, page: Page, tagsAndBadges: TagsAndBadges,
-        includeUnapproved: Bo, showHidden: Bo, justThisPost: Bo, anySite: Opt[Site]): JsObject = {
+        includeUnapproved: Bo, showHidden: Bo, maySquash: Bo, anySite: Opt[Site]): JsObject = {
 
     val depth = page.parts.depthOf(post.nr)
 
-    // Max comments limits above which we'll summarize and collapse.
+    // Max comments limits above which we'll summarize and collapse.  [sum_squash_lims]
     //
     // Hardcoded for now. Later, will be conf vals. Per site or cat? Maybe on blog post pages,
     // it's a better reading experience for most people, if the page is shorter, and
@@ -712,9 +707,9 @@ class JsonMaker(dao: SiteDao) {
     // are or if they are trolls. Cannot include that in JSON sent to the browser, privacy issue.)
     //
     val (summarize, jsSummary, squash) =
-      if (justThisPost) {
-        // We're returning a single comment, maybe to show a hidden one to the mods.
-        // Then don't summarize or squas it.
+      if (!maySquash) {
+        // Typically if rendering one specific comment, e.g. to show a hidden one to the mods,
+        // then, the requester wants to see it in full, not summarized or squashed.
         (false, JsNull, false)
       }
       else if (page.parts.numRepliesVisible < summarizeLimit) {
@@ -851,21 +846,8 @@ class JsonMaker(dao: SiteDao) {
 
           // Double check we may see the page(s) we're adding to the watchbar. [WATCHSEC]
           SEC_TESTS_MISSING // TyT602KRGJG
-/*
-<<<<<<< HEAD
-          val (maySee, debugCode) = dao.maySeePageUseCacheAndAuthzCtx(
-                pageRequest.thePageMeta, authzCtx)
-          if (!maySee)
-||||||| parent of 410fc44ec (Derive and cache comment sort order, when rendering page)
-          val (maySee, debugCode) = dao.maySeePageUseCache(
-                pageRequest.thePageMeta, Some(requester))
-          if (!maySee)
-=======
-          val pageCtx = dao.maySeePageUseCache(pageRequest.thePageMeta, Some(requester)) ifMayNot { debugCode =>
->>>>>>> 410fc44ec (Derive and cache comment sort order, when rendering page)
-*/
           val pageCtx = dao.maySeePageUseCacheAndAuthzCtx(pageRequest.thePageMeta, authzCtx)
-                .ifMayNot { debugCode =>
+                              .ifNot { debugCode =>
             dao.context.security.throwIndistinguishableNotFound(debugCode)
           }
 
@@ -1391,23 +1373,24 @@ class JsonMaker(dao: SiteDao) {
       return None
     }
     makeStorePatchForPostIds(
-          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true, dao)
+          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true,
+          maySquash = false, dao)
   }
 
 
   def makeStorePatchForPostIds(postIds: Set[PostId], showHidden: Bo,
-        inclUnapproved: Bo, dao: SiteDao): JsObject = {
+        inclUnapproved: Bo, maySquash: Bo, dao: SiteDao): JsObject = {
     dieIf(Globals.isDevOrTest && dao != this.dao, "TyE602MWJL43") ; CLEAN_UP // remove dao param?
     dao.readTx { tx =>
       // This might render CommonMark, in a tx — slightly bad. [nashorn_in_tx]
       makeStorePatchForPostIds(postIds, showHidden = showHidden,
-            inclUnapproved = inclUnapproved, tx)
+            inclUnapproved = inclUnapproved, maySquash = maySquash, tx)
     }
   }
 
 
   private def makeStorePatchForPostIds(postIds: Set[PostId],
-          showHidden: Bo, inclUnapproved: Bo,
+          showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
           transaction: SiteTx): JsObject = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(postIds)
@@ -1418,14 +1401,15 @@ class JsonMaker(dao: SiteDao) {
     val authors = transaction.loadParticipants(authorIds)
     makeStorePatch3(pageIdVersions, posts,
           showHidden = showHidden, inclUnapproved = inclUnapproved,
-          tagsAndBadges, tagTypes,
+          maySquash = maySquash, tagsAndBadges, tagTypes,
           authors, appVersion = dao.globals.applicationVersion)(transaction)
   }
 
 
   def makeStorePatchForPost(post: Post, author: Pat, showHidden: Bo): JsObject = {
     makeStorePatchForPostIds(
-          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true, dao)
+          postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true,
+          maySquash = false, dao)
   }
 
 
@@ -1438,7 +1422,7 @@ class JsonMaker(dao: SiteDao) {
 
   ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove [nashorn_in_tx]
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
-          showHidden: Bo, inclUnapproved: Bo,
+          showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
           tagsAndBadges: TagsAndBadges, tagTypes: Seq[TagType],
           users: Iterable[Pat], appVersion: St)(
           tx: SiteTx): JsObject = {
@@ -1457,7 +1441,9 @@ class JsonMaker(dao: SiteDao) {
           // We're in a tx, and postToJsonImpl renders CommonMark, slightly bad. [nashorn_in_tx]
           postToJsonImpl(p, page, tagsAndBadges,
                 includeUnapproved = inclUnapproved, showHidden = showHidden,
-                justThisPost = false, anySite = None)
+                maySquash = maySquash,
+                // (COULD specify anySite, to get the right summarize & squash feature flags.)
+                anySite = None)
         }
         pageId -> JsArray(postsJson.toSeq)
       }))

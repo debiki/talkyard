@@ -1481,18 +1481,19 @@ case class SitePatcher(globals: debiki.Globals) {
 
     val newSiteDao = globals.siteDao(newSite.id)
 
-    REFACTOR // use the Do API for this instead:
+    REFACTOR // use the Do API for this instead.
+    // Currently just for tests anyway. [patch_test_votes]
     siteData.postVotes foreach { vote =>
       val post = siteData.posts.find(p =>   // [On2]: O(num-votes * num-posts)
         p.pageId == vote.pageId && p.nr == vote.postNr) getOrElse {
-        // Or lookup in the db?
+        // Later: Look up in the db, too, before replying error.
         throwBadRequest("TyE0POST2VOTE", s"Trying to insert a vote on page id '${
-          vote.pageId}' post nr ${vote.postNr} but there's no such post")
+              vote.pageId}' post nr ${vote.postNr} but there's no such post")
       }
       // This wouldn't update post vote counts, and user data votes-received counts,
-      // and would result in db inconsistencies, which later would fail
-      // assertions e.g. each pat's [numLikesReceived]:
-      // tx.insertPostAction(vote.toPostAction(postId = post.id))
+      // and would result in db inconsistencies, which later would fail assertions, e.g.
+      // each pat's [numLikesReceived]:
+      //    tx.insertPostAction(vote.toPostAction(postId = post.id))
       // Instead:  (and this is more like the Do API, should use instead)
       newSiteDao.addVoteIfAuZ(pageId = vote.pageId, postNr = vote.postNr, vote.voteType,
             voterId = vote.voterId, voterIp = None, postNrsRead = Set.empty)

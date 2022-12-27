@@ -696,10 +696,11 @@ class RdbSystemTransaction(
   }
 
 
-  /* Each page might be included many times in the result — once per sort order
-   * and screen width combination.
-   * The caller could delete cache entries with the wrong sort order? (In case
-   * the admins changed the page sort orders.)
+  /* Each page might be included many times in the result — once per comment sort order
+   * and screen width combination, for example; see the stale pages query [rerndr_stale_q].
+   *
+   * RenderContentService calls this fn and deletes stale cache entries, e.g. if
+   * the admins changed the page sort orders. See [rm_stale_html].
    */
   override def loadPageIdsToRerender(limit: Int): Seq[PageIdToRerender] = {
     // In the distant future, will need to optimize the queries here,
@@ -743,7 +744,7 @@ class RdbSystemTransaction(
     //
     val pagesStale = mutable.Set[PageIdToRerender]()
     if (pagesNotCached.size < limit) {
-      val outOfDateQuery = s""" -- SLOW_QUERY: 9 ms @ Ty.io  [rerndr_qry]
+      val outOfDateQuery = s""" -- SLOW_QUERY: 9 ms @ Ty.io  [rerndr_qry]  [rerndr_stale_q]
         select
           p.site_id,
           p.page_id,
@@ -758,9 +759,12 @@ class RdbSystemTransaction(
           h.cached_page_version_c,
           h.cached_app_version_c,
           h.cached_store_json_hash_c
+          -- cached_store_json_c   -- Not needed — we're looking up not to use, but
+          -- cached_html_c         -- to delete this page_html_cache_t row.
         from pages3 p inner join page_html_cache_t h
             on p.site_id = h.site_id_c
             and p.page_id = h.page_id_c
+            -- Is the cached html stale?
             and p.version > h.cached_page_version_c
         -- Don't rerender embedded comments pages. It's a bit tricky to lookup their origin,
         -- which needs to be included [EMBCMTSORIG]. And it's ok if it takes a second extra to

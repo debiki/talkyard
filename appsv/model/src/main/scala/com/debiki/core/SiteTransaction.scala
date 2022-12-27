@@ -336,6 +336,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def markPagesHtmlStaleIfVisiblePostsBy(patId: PatId): i32
   def markPagesHtmlStale(pageIds: Set[PageId]): Unit
+  /** Looks up the forum main page (or wiki/blog/... main page), and marks it as stale. */
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId): Unit
   def loadCachedPageContentHtml(pageId: PageId, renderParams: PageRenderParams)
         : Option[(String, CachedPageVersion)]

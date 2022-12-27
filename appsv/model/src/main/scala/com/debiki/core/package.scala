@@ -141,49 +141,31 @@ package object core {
     *
     * null = 0 = default.
     *
-    * 0b00..:  (not impl)
-    * -0x01 – -0x03 = deprioritize this post only, not replies,
-    * -1 = a bit ... -3 = most.
+    * 0b0000 0000  Inherit or the default (normal)
+    * 0b0000 0001  Normal (don't inherit)
     *
-    * 0b...0  (not impl)
-    * -4, -8, -12 = deprioritize replies (sub thread) but not this post.
-    *         Could be useful for docs pages if comments are usually less important?
-    *         So someone who searches for sth, primarily finds the orig posts = the docs,
-    *         not comments?
+    * 0b0000 0010  Boost a bit
+    * 0b0000 0011  Boost medium much
+    * 0b0000 0100  Boost much
     *
-    * -4 + -1 deprioritize whole page and replies, or comment and sub thread.
-    * -8 + -2 deprioritize medium much
-    * = -10  — implemented?
+    * 0b0000 0101  De-prio a bit
+    * 0b0000 0110  De-prio medium much
+    * 0b0000 0111  De-prio much
+    * 0b0000 1111  Don't index at all
     *
-    * 0x01-3 = boost post  = let's *not* implement for now
-    * 0x04-6 = de-prio post,  5 = medium much, let's implement
-    * 0x07   = don't index
-    *
-    * 0b0000 0000  normal (stored as null)
-    *
-    * 0b0000 0001  boost a bit
-    * 0b0000 0010  boost medium much
-    * 0b0000 0011  boost much
-    *
-    * 0b0000 0101  de-prio a bit
-    * 0b0000 0110  de-prio medium much
-    * 0b0000 0111  de-prio much
-    *
-    * 0b0000 1111  don't index at all
-    *
-    * 0b0110 0110  de-prio page and comments medium much
+    * 0b0110 0110  De-prio page and comments medium much
     *          = 102
     *
     * So for now:
     */
-  type IndexPrio = i16
+  type IndexPrio = i16   // [Scala_3] Opaque type
   val IndexDePrioPage: IndexPrio = 102.toShort
 
   /** At what depth the replies won't be threaded any more, but flat.
     * 1 means no nesting, like in phpBB and Discourse.
     * If unspecified, then, unlimited nesting depth.
     */
-  type ComtNesting_later = NestingDepth  // for now // oops use  NestingDepth  instead?
+  type ComtNesting_later = NestingDepth  // for now // oops RENAME, use  NestingDepth  instead?
   val ComtNestingDefaultInherit_later: ComtNesting_later = -1 // later?: 0.toShort
 
   REFACTOR // change page id to Int (not String) — is always an Int anyway,
@@ -973,18 +955,18 @@ package object core {
     */
   case class PageRenderParams(
     comtOrder: PostSortOrder,
-    //comtNesting: NestingDepth,
+    //comtNesting: NestingDepth, — later, for now, `def comtNesting` below instead
     widthLayout: WidthLayout,
-    isEmbedded: Boolean,
-    origin: String,
-    anyCdnOrigin: Option[String],
-    anyPageRoot: Option[PostNr],
-    anyPageQuery: Option[PageQuery]) {
+    isEmbedded: Bo,
+    origin: St,
+    anyCdnOrigin: Opt[St],
+    anyPageRoot: Opt[PostNr],
+    anyPageQuery: Opt[PageQuery]) {
 
-    def comtNesting: i32 = -1  // means unlimited
+    def comtNesting: NestingDepth = -1  // means unlimited
     def thePageRoot: PostNr = anyPageRoot getOrElse BodyNr
-    def embeddedOriginOrEmpty: String = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
-    def cdnOriginOrEmpty: String = anyCdnOrigin getOrElse ""
+    def embeddedOriginOrEmpty: St = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
+    def cdnOriginOrEmpty: St = anyCdnOrigin getOrElse ""
   }
 
   case class RenderParamsAndFreshHash(
@@ -1081,10 +1063,10 @@ package object core {
 
     // Move these to appsv/server/debiki/settings.scala?  [appsv_layout_defs]
     val Default: PostsOrderNesting =
-      PostsOrderNesting(PostSortOrder.OldestFirst, InfiniteNesting)  // was: Default
+      PostsOrderNesting(PostSortOrder.OldestFirst, InfiniteNesting)
 
     val DefaultForEmbComs: PostsOrderNesting =
-      PostsOrderNesting(PostSortOrder.BestFirst, InfiniteNesting)  // was: DefaultForEmbComs
+      PostsOrderNesting(PostSortOrder.BestFirst, InfiniteNesting)
 
   }
 
@@ -1092,23 +1074,40 @@ package object core {
 
   sealed trait ComtOrderAtDepth
 
-  sealed abstract class PostSortOrder(val IntVal: Int, val isByTime: Bo) {
+  RENAME // to ComtOrder?
+  sealed abstract class PostSortOrder(val IntVal: Int, val isByTime__remove: Bo) {
     def toInt: Int = IntVal
+    // Overridden by subclasses.
     def atDepth(_depth: i32): ComtOrderAtDepth = this.asInstanceOf[ComtOrderAtDepth]
   }
 
+  /// Sync with Typescript [PostSortOrder].
+  ///
   object PostSortOrder {
     // (A nibble is 4 bits: 0x00 – 0xff.)
+    // Stored as Null, means inherit ancestor categories or whole site setting.
     private val InheritNibble = 0x00
     private val BestFirstNibble = 0x01
     private val NewestFirstNibble = 0x02
     private val OldestFirstNibble = 0x03
+
     // Trending — but what time period? That could be a separate field, see [TrendingPeriod].
     // private val TrendingFirstNibble = 0x04
-    // Also: ControversialFirst — both many Likes and Disagrees
-    //       ProblematicFirst  — for mods, to see flagged and unwanted things first
 
-    //case object Default extends PostSortOrder(0, false) ; RENAME // to Inherit  ?
+    // Comments with both many Likes and Disagrees.
+    //private val ControversialFirst
+
+    // For mods, to see flagged and unwanted things sorted first, and so be able to handle most
+    // problems on a big page at once, without jumping back and forth to the mod task list.
+    //private val ProblematicFirst
+
+    // If one is following some people, then, boost their comments so they get shown first.
+    // Each person then might see a slightly different page, depending of whom hen follows.
+    // private val FriendsAndBestFirst
+
+    // Like FriendsAndBestFirst but sort by Trending not by Best.
+    // private val FriendsAndTrendingFirst
+
     case object BestFirst extends PostSortOrder(BestFirstNibble, false) with ComtOrderAtDepth
     case object NewestFirst extends PostSortOrder(NewestFirstNibble, true) with ComtOrderAtDepth
     case object OldestFirst extends PostSortOrder(OldestFirstNibble, true) with ComtOrderAtDepth
@@ -1130,7 +1129,7 @@ package object core {
     }
 
     // Move to the default settings file insetad. [appsv_layout_defs]
-    val DefaultForEmbComs: PostSortOrder = BestFirst
+    def DefaultForEmbComs: PostSortOrder = PostsOrderNesting.DefaultForEmbComs.sortOrder
 
     // Maybe: Random?
     // How would Random work, combined with performance and caching? Pick
@@ -1139,26 +1138,28 @@ package object core {
     // Or maybe max(1, 60 min / num-orig-post-replies)?
     // Or 100 different "cache slots" for 100 different random seeds?
     // Wait with this ... for quite a while (!).
+    // — No, that's not good enough. Imagine a discussion with 60 top-level replies, which gets
+    // submitted to say Reddit during busy hours. Then, 20 000 from Reddit go there, most of them
+    // within 10 minutes, and most of them upvote the topmost comments. This means the comments
+    // who happened to be at the top in the beginning, get many more upvotes, than the bad luck
+    // comments who didn't by chance appear at the top until an hour later. Not good.
+    // Instead, maybe this'll need to be ... Round robin "random"? Looks random to everyone,
+    // whilst being fair, vote wise? But then, is another page_html_t column needed:
+    // comt_order_c: post_nr[] specifying the top-level comment sort order?
+    // Wait with Random.
     //
     // object Random extends PostsSortOrder(4)
 
     // These give new posts (and old posts further down) a chance to be seen,
     // rather than old upvoted post at the top getting most attention:
     // Also see [LIKESCORE].
-    //
-    // /* Shows a few new posts first, then, below, post sorted by popularity. */
-    // No, skip these. Use nibbles instead — see NewestThenBest above.
-    // object NewAndBestFirst extends PostsSortOrder(5)
-    // object RandomAndBestFirst extends PostsSortOrder(6)
-    // object NewRandomAndBestFirst extends PostsSortOrder(7)
 
-    // No idea why, but this has to be a fn, because OldestFirs is otherwise null
+    // No idea why, but this has to be a fn, because OldestFirst is otherwise null
     // — although it's a val defined *above*. The others (BestFirst etc) aren't null.
     def All: ImmSeq[PostSortOrder] = Vec(
           BestFirst, NewestFirst, OldestFirst, NewestThenBest, NewestThenOldest)
 
     def fromInt(value: Int): Option[PostSortOrder] = Some(value match {
-      //case Default.IntVal => Default
       case BestFirst.IntVal => BestFirst
       case NewestFirst.IntVal => NewestFirst
       case OldestFirst.IntVal => OldestFirst
@@ -1168,7 +1169,7 @@ package object core {
     })
 
     def fromOptVal(anyValue: Opt[i32]): Opt[PostSortOrder] = {
-      if (anyValue is 0) None
+      if (anyValue is InheritNibble) None
       else anyValue flatMap fromInt
     }
   }

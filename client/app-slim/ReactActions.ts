@@ -329,12 +329,9 @@ export function editTitleAndSettings(changes: EditPageRequestData, onDone: () =>
   Server.savePageTitleAndSettings(changes, (response: EditPageResponse) => {
     if (onDone) onDone();
     ReactDispatcher.handleViewAction({
-      ... response,
+      response,
       changes,
       actionType: actionTypes.EditTitleAndSettings,
-      htmlTagCssClasses: changes.htmlTagCssClasses,
-      htmlHeadTitle: changes.htmlHeadTitle,
-      htmlHeadDescription: changes.htmlHeadDescription,
     });
   }, error);
 }

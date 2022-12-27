@@ -23,7 +23,7 @@ import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.EdHttp._
 import debiki.JsonUtils.parseOptInt32
-import debiki.JsonUtils.parseOptZeroNone
+import debiki.JsonUtils.parseOptZeroSomeNone
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http._
 import talkyard.server.authz.Authz
@@ -60,11 +60,13 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val anyForumMainView = parseOptInt32(body, "forumMainView")
     val anyForumCatsTopics = parseOptInt32(body, "forumCatsTopics")
 
-    // These are unspecified, unless we're staff.
+    // If the requester isn't staff, these aren't sent, become None.  [onl_staff_set_comt_ord]
+    // If is staff, then can be Some(Some(value)), or Some(None) to clear and inherit instead
+    // from anc cats.
     val anyComtOrder: Opt[Opt[PostSortOrder]] =
-          parseOptZeroNone(request.body, "comtOrder")(PostSortOrder.fromOptVal)
+          parseOptZeroSomeNone(request.body, "comtOrder")(PostSortOrder.fromOptVal)
     val anyComtNesting: Opt[Opt[ComtNesting_later]] =
-          parseOptZeroNone(request.body, "comtNesting")(x => x.map(_.toShort))
+          parseOptZeroSomeNone(request.body, "comtNesting")(x => x.map(_.toShort))
 
     val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringNoneIfBlank
     val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringNoneIfBlank

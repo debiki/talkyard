@@ -95,6 +95,7 @@ case class PagePartsDao(
   override val pageId: PageId,
   settings: AllSettings,
   transaction: SiteTx,
+  // COULD_OPTIMIZE Use any dao instead of the tx always if possible?
   anyDao: Opt[SiteDao] = None,
   ) extends PageParts {
 
@@ -118,7 +119,7 @@ case class PagePartsDao(
   }
 
   def origPostReplyBtnTitle: Option[String] = {
-    // For now, this is for embedded comments only  [POSTSORDR].
+    // For now, this is for embedded comments only  [POSTSORDR].  [per_page_type_props]
     if (pageMeta.pageType != PageType.EmbeddedComments)
       return None
     if (settings.origPostReplyBtnTitle.isEmpty)
@@ -127,7 +128,7 @@ case class PagePartsDao(
   }
 
   def origPostVotes: OrigPostVotes = {
-    // For now, this is for embedded comments only  [POSTSORDR].
+    // For now, this is for embedded comments only  [POSTSORDR].  [per_page_type_props]
     if (pageMeta.pageType != PageType.EmbeddedComments)
       return OrigPostVotes.Default
     settings.origPostVotes
@@ -141,36 +142,30 @@ case class PagePartsDao(
   }
 
   def postsOrderNesting: PostsOrderNesting = {
-    // Later, will use discPostSortOrder for embedded comments too, [POSTSORDR].
-    // but will then lookup emb comments settings by page type.
-    val sortOrder =
-      if (pageMeta.pageType == PageType.EmbeddedComments)
-        settings.embComSortOrder
-      else {
-        discPropsDerived.comtOrder   // was:  settings.discPostSortOrder
-      }
-    PostsOrderNesting(sortOrder, settings.discPostNesting)
+    PostsOrderNesting(discPropsDerived.comtOrder, discPropsDerived.comtNesting)
   }
 
   private var _discPropsDerived: DiscPropsDerived = _
   private def discPropsDerived: DiscPropsDerived = {
     if (_discPropsDerived eq null) {
-      _discPropsDerived = deriveDiscProps
+      _discPropsDerived = deriveDiscProps()
     }
     _discPropsDerived
   }
 
-  private def deriveDiscProps: DiscPropsDerived = {
-    val cats = ancestorCatsRootLast
+  private def deriveDiscProps(): DiscPropsDerived = {
+    val cats = ancestorCatsRootLast()
     DiscProps.derive(
           selfSource = Some(pageMeta),
           ancestorSourcesSpecificFirst = cats,
-          defaults = settings)
+          // One can specify a different emb commments default sort order.
+          // [per_page_type_props] [POSTSORDR]
+          defaults = settings.discPropsFor(pageMeta.pageType))
   }
 
-  private def ancestorCatsRootLast: ImmSeq[Cat] = {
+  private def ancestorCatsRootLast(): ImmSeq[Cat] = {
     anyDao match {
-      case Some(dao) => dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
+      case Some(dao) => dao.getAncestorCategoriesSelfFirst(pageMeta.categoryId)
       case None => transaction.loadCategoryPathRootLast(pageMeta.categoryId, inclSelfFirst = true)
     }
   }

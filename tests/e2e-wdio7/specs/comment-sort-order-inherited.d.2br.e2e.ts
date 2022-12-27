@@ -245,7 +245,7 @@ describe(`comment-sort-order-inherited.d.2br  TyTECOMSORTORDINH`, () => {
 
   it(`Owen clears the page's own sort order`, async () => {
     await owen_brA.topic.openDiscLayout();
-    await owen_brA.discLayoutD.selectCommentsSortOrder(c.TestPostSortOrder.Default);
+    await owen_brA.discLayoutD.selectCommentsSortOrder(c.TestPostSortOrder.Inherit);
   });
 
   it(`Memah reloads`, async () => {
@@ -266,7 +266,7 @@ describe(`comment-sort-order-inherited.d.2br  TyTECOMSORTORDINH`, () => {
   });
   it(`... clears AA's own sort order`, async () => {
     await owen_brA.categoryDialog.openDiscLayout();
-    await owen_brA.discLayoutD.selectCommentsSortOrder(c.TestPostSortOrder.Default);
+    await owen_brA.discLayoutD.selectCommentsSortOrder(c.TestPostSortOrder.Inherit);
   });
   it(`... the sort order button now shows Best First, inherited from parent cat A`, async () => {
     assert.eq(await owen_brA.categoryDialog.getDiscLayoutAsPerBtn(),
@@ -356,7 +356,7 @@ describe(`comment-sort-order-inherited.d.2br  TyTECOMSORTORDINH`, () => {
   });
   it(`... clears A's sort order`, async () => {
     await owen_brA.categoryDialog.openDiscLayout();
-    await owen_brA.discLayoutD.selectCommentsSortOrder(c.TestPostSortOrder.Default);
+    await owen_brA.discLayoutD.selectCommentsSortOrder(c.TestPostSortOrder.Inherit);
   });
   it(`... the sort order button now shows Newest First, the site default`, async () => {
     assert.eq(await owen_brA.categoryDialog.getDiscLayoutAsPerBtn(),

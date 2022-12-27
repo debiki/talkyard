@@ -175,7 +175,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       throwIndistinguishableNotFound("LoadJson-NoMeta")
     }
 
-    val pageCtx = dao.maySeePageUseCache(pageMeta, request.user) ifMayNot { debugCode =>
+    val pageCtx = dao.maySeePageUseCache(pageMeta, request.user) ifNot { debugCode =>
       throwIndistinguishableNotFound("LoadJson-" + debugCode)
     }
 
@@ -342,7 +342,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       throwIndistinguishableNotFound()
     }
 
-    val pageCtx = dao.maySeePageUseCache(pageMeta, request.user) ifMayNot { debugCode =>
+    val pageCtx = dao.maySeePageUseCache(pageMeta, request.user) ifNot { debugCode =>
       // Don't indicate that the page exists, because the page slug might tell strangers
       // what it is about. [7C2KF24]
       throwIndistinguishableNotFound(debugCode)

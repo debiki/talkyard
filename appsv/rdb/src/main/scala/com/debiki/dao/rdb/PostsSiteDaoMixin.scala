@@ -1044,7 +1044,10 @@ object PostsSiteDaoMixin {
 
 
   REFACTOR // move to:  PostActionType.from(Int): PostActionType  [402KTHRNPQw]
-  def fromActionTypeInt(value: Int): PostActionType = value match {
+  def fromActionTypeInt(value: Int, mab: MessAborter = IfBadDie): PostActionType =
+    fromAnyActionTypeInt(value).getOrAbort(mab, "TyE0ACTTYPE", s"Not a post action type: $value")
+
+  def fromAnyActionTypeInt(value: Int): Opt[PostActionType] = Some(value match {
     case VoteValueLike => PostVoteType.Like
     case VoteValueWrong => PostVoteType.Wrong
     case VoteValueBury => PostVoteType.Bury
@@ -1052,8 +1055,10 @@ object PostsSiteDaoMixin {
     case FlagValueSpam => PostFlagType.Spam
     case FlagValueInapt => PostFlagType.Inapt
     case FlagValueOther => PostFlagType.Other
-  }
+    case _ => return None
+  })
 
+  COULD // use MessAborter, if wrong type?
   def fromActionTypeIntToFlagType(value: Int): PostFlagType = {
     val tyype = fromActionTypeInt(value)
     require(tyype.isInstanceOf[PostFlagType], "DwE4GKP52")
@@ -1061,7 +1066,7 @@ object PostsSiteDaoMixin {
   }
 
   def postActionTypeIntToOptVoteType(value: i32): Opt[PostVoteType] = {
-    val tyype = fromActionTypeInt(value)
+    val tyype = fromAnyActionTypeInt(value) getOrElse { return None }
     if (!tyype.isInstanceOf[PostVoteType]) return None
     Some(tyype.asInstanceOf[PostVoteType])
   }

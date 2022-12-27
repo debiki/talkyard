@@ -87,7 +87,7 @@ const TestPostType = {  // sync with real code [26BKA01]
 };
 
 const TestPostSortOrder = {   // sync w real code [ComtSortOrder]
-  Default: 0,
+  Inherit: 0,
   BestFirst: 1,
   NewestFirst: 2,
   OldestFirst: 3,

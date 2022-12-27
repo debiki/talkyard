@@ -27,23 +27,32 @@ import scala.collection.mutable
 sealed abstract class SeePageResult {
   def maySee: Bo
   def debugCode: St
-  def ifMayNot(errorFn: St => Nothing): PageCtx
+
+  /** If may not see the page, then do what? For example, throw a Not-Found exception.
+    * If may see, we get back a PageCtx with some data about the page, which was needed
+    * for accesss control, and typically will be needed soon again.
+    */
+  def ifNot(thenWhat: St => Nothing): PageCtx
 }
 
 
+/** The result of an access permission test, when the requester may see the page.
+  */
 case class PageCtx(
   ancCatsRootLast: ImmSeq[Cat],
 ) extends SeePageResult {
   val maySee = true
   val debugCode = ""
-  def ifMayNot(errorFn: St => Nothing): PageCtx = this
+  /** Since pat may see the page, ignore `thenWhat`. */
+  def ifNot(thenWhat: St => Nothing): PageCtx = this
 }
 
 
 case class NotSeePage(debugCode: St) extends SeePageResult {
   val maySee = false
-  def ifMayNot(errorFn: St => Nothing): PageCtx = {
-    errorFn(debugCode)
+  def ifNot(thenWhat: St => Nothing): PageCtx = {
+    // Typically, `thenWhat` throws a Not Found exception.
+    thenWhat(debugCode)
   }
 }
 
@@ -215,8 +224,9 @@ object PageMeta {
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
   */
 case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
-  // No, better: Split into 0) PageMeta, 1) DiscProps, 2) DiscView, 3) DiscStats,  HHHMM
+  // No, better: Split into 0) PageMeta, 1) DiscProps, 2) DiscView, 3) DiscStats
   // and SectProps, SectView, SectStats?   [disc_props_view_stats]
+  //    [Edit:  Hmm, now there's DiscPropsSource and SectPropsSource, that's enough for a while]]
   // Because PageMeta is in fact 3 separate things:
   // 1) page properties: page type, answeredBy, plannedBy, closed/open, deleted, etc,
   //    DoingStatus, ClosedStatus, DeletedStatus — see below.
@@ -511,6 +521,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 
 // Sync w Typescript, & break out to own file?   [disc_props_js_scala]
 
+// Or maybe  CatPropsDerived instead of SectProps...?
 case class SectPropsDerived(
   doVoteStyle: DoVoteStyle,
   doVoteInTopicList: Bo,
@@ -523,8 +534,15 @@ trait SectPropsSource {
   val doVoteStyle: Opt[DoVoteStyle]
   val doVoteInTopicList: Opt[Bo]
   // Later, but these are Bo not Opt[Bo] currently in class Cat:
+  // defaultSortOrder: Opt[PageOrderOffset] = None,  // RENAME to pageOrder
   // val unlistCategory: Opt[Bo]
   // val unlistTopics: Opt[Bo]
+  // These as well?:
+  // newTopicTypes
+  // includeInSummaries
+  // lockedAt
+  // frozenAt
+  // deletedAt
 }
 
 
@@ -555,13 +573,17 @@ object DiscProps {
              defaults: DiscProps): DiscPropsDerived = {
     var merged = selfSource.map(DiscPropsMerged.fromSource) getOrElse DiscPropsMerged.Empty
     for (source <- ancestorSourcesSpecificFirst) {
-      merged = merged.mergeWith(source)
+      merged = merged.addMissing(source)
     }
     merged.toDerivedWithDefaults(defaults)
   }
 }
 
 
+
+/** E.g. comment sort order, configured in a category — otherwise None, for that category
+  * (and then instead inherited from any parent category, or site defaults).
+  */
 trait DiscPropsSource {
   // These are currently in settings_t, not in pages_t and cats_t:
   //val origPostReplyBtnTitle: Opt[St]
@@ -583,8 +605,8 @@ private case class DiscPropsMerged(
   )
   extends DiscPropsSource {
 
-  def mergeWith(source: DiscPropsSource): DiscPropsMerged =
-    // Same as: discProps_mergeWith() in Typescript.  [disc_props_js_scala]
+  def addMissing(source: DiscPropsSource): DiscPropsMerged =
+    // Same as: discProps_addMissing_inPl() in Typescript.  [disc_props_js_scala]
     DiscPropsMerged(
           comtOrder = this.comtOrder.orElse(source.comtOrder),
           comtNesting = this.comtNesting.orElse(source.comtNesting))
@@ -1185,58 +1207,4 @@ case class PagePostNr(pageId: PageId, postNr: PostNr) {
 case class PagePostNrId(pageId: PageId, postNr: PostNr, postId: PostId) {
 }
 
-
-
-/*
-sealed abstract class ComtSortOrder(val IntVal: i32) { def toInt: i32 = IntVal }
-
-object ComtSortOrder {
-  // (A nibble is 4 bits: 0x00 – 0xff.)
-  private val InheritNibble = 0x00
-  private val OldestFirstNibble = 0x01
-  private val NewestFirstNibble = 0x02
-  private val BestFirstNibble = 0x03
-  // Trending — but what time period? That could be a separate field, see [TrendingPeriod].
-  private val TrendingFirstNibble = 0x04
-  // Also: ControversialFirst — both many Likes and Disagrees
-  //       ProblematicFirst  — for mods, to see flagged and unwanted things first
-
-  //case object Inherit extends ComtSortOrder(InheritNibble)
-  case object OldestFirst extends ComtSortOrder(OldestFirstNibble)
-  case object NewestFirst extends ComtSortOrder(NewestFirstNibble)
-  case object BestFirst extends ComtSortOrder(BestFirstNibble)
-  case object TrendingFirst extends ComtSortOrder(TrendingFirstNibble)
-  case object NewestThenBestFirst extends ComtSortOrder(NewestFirstNibble + (BestFirstNibble << 4))
-  case object BestThenNewestFirst extends ComtSortOrder(BestFirstNibble + (NewestFirstNibble << 4))
-
-  val Default: ComtSortOrder = OldestFirst
-
-  /*
-  def clearOrFirstOf(a: Opt[ComtSortOrder], b: Opt[ComtSortOrder]): Opt[ComtSortOrder] = {
-    if (a is Inherit) None  // clears it
-    else a orElse b
-  }
-
-  val ZeroClear = 0
-
-  def newFromOptVal(anyValue: Opt[i32]): Opt[Opt[ComtSortOrder]] = {
-    if (anyValue is ZeroClear) Some(None)
-    else {
-      val order = fromOptVal(anyValue)
-      order.map(Some(_))
-    }
-  } */
-
-  def fromOptVal(anyValue: Opt[i32]): Opt[ComtSortOrder] = anyValue map {
-    // case Inherit.IntVal => Inherit
-    case OldestFirst.IntVal => OldestFirst
-    case NewestFirst.IntVal => NewestFirst
-    case BestFirst.IntVal => BestFirst
-    case TrendingFirst.IntVal => TrendingFirst
-    case NewestThenBestFirst.IntVal => NewestThenBestFirst
-    case BestThenNewestFirst.IntVal => BestThenNewestFirst
-    case _ => return None
-  }
-
-} */
 

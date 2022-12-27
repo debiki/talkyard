@@ -965,20 +965,15 @@ object Post {
     * in client/app/ReactStore.ts.
     */
   def sortPosts(posts: Vec[Post], sortOrder: ComtOrderAtDepth): Vec[Post] = {
-
-    // The default is oldest first, see decisions.adoc  [why_sort_by_time].
-    var sortFn: (Post, Post) => Bo = sortPostsOldestFirst
-
-    if (sortOrder == PostSortOrder.BestFirst) {
-      sortFn = sortPostsBestFirstFn
+    val sortFn: (Post, Post) => Bo = sortOrder match {
+      case PostSortOrder.BestFirst => sortPostsBestFirstFn
+      case PostSortOrder.NewestFirst => sortPostsNewestFirst
+      case PostSortOrder.OldestFirst => sortPostsOldestFirst
+      case _ =>
+        warnDevDie("TyE4MSRKHW9", s"Forgotten sortOrder case: ${classNameOf(sortOrder)}")
+        // The default is oldest first, see decisions.adoc  [why_sort_by_time].
+        sortPostsOldestFirst
     }
-    else if (sortOrder == PostSortOrder.NewestFirst) {
-      sortFn = sortPostsNewestFirst
-    }
-    else {
-      // Keep the default, oldest first.
-    }
-
     posts.sortWith(sortFn)
   }
 

@@ -5304,8 +5304,10 @@ export class TyE2eTestBrowser {
 
       setPageNotfLevel: (notfLevel: PageNotfLevel) => {
         this.switchToEmbCommentsIframeIfNeeded();
-        this.metabar.openMetabarIfNeeded();
-        this.waitAndClick('.dw-notf-level');
+        //this.metabar.openMetabarIfNeeded();
+        //this.waitAndClick('.dw-notf-level');
+        // But now it's clickable directly instead:
+        this.waitAndClick('.dw-page-notf-level button');
         this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
     };

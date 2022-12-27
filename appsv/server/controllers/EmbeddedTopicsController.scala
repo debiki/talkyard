@@ -90,15 +90,17 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
               dao.siteId, PageType.EmbeddedComments, anyCategoryId = Some(lazyCreateInCatId),
               embeddingUrl = embeddingUrl, globals.now())
 
-        val pageCtx = dao.maySeePageUseCache(lazyPage.meta, request.requester) ifMayNot { debugCode =>
+        val pageCtx = dao.maySeePageUseCache(lazyPage.meta, request.requester) ifNot { debugCode =>
           // Happens e.g. if placed in an access restricted category.
           security.throwIndistinguishableNotFound(debugCode)
         }
 
         val siteSettings = dao.getWholeSiteSettings()
-        val discProps = DiscProps.derive(selfSource = None, pageCtx.ancCatsRootLast, siteSettings)
+        val discProps = DiscProps.derive(selfSource = None, pageCtx.ancCatsRootLast,
+              siteSettings.discPropsFor(PageType.EmbeddedComments))
 
         val pageRenderParams = PageRenderParams(
+              // (Later, pass a discProps.renderProps — all relevant disc props in one line?)
               comtOrder = discProps.comtOrder,
               widthLayout = if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
               isEmbedded = true,
@@ -144,7 +146,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
         // and (if answering Yes), one would get logged in directly, if there were
         // cookies already?  [ios_itp]
 
-        val pageCtx = dao.maySeePageUseCache(pageMeta, request.requester) ifMayNot { debugCode =>
+        val pageCtx = dao.maySeePageUseCache(pageMeta, request.requester) ifNot { debugCode =>
           security.throwIndistinguishableNotFound(debugCode)
         }
 

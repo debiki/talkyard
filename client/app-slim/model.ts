@@ -471,6 +471,7 @@ interface MyPageData {
  * permissions configured for the page's ancestor categories, and groups
  * the user is in — so we can find out, client side, from where a setting
  * got inherited.  [DBLINHERIT]
+ * Edit: What!?? This isn't any permissions, this looks like notf prefs!
  */
 interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
   id?: UserId;
@@ -958,6 +959,8 @@ interface AutoPage {
 }
 
 // A page with real user written content, e.g. a discussion, chat, info page or homepage.
+// (Should Page instead extend PageMeta? There's lots of dupl fields!
+// Or should Page have a PageMeta field (delegation)? Let's wait.)
 interface Page
     // For now, "inline" settings in the page. Later, keep separately,
     // like OwnPageNotfPrefs? [DBLINHERIT]
@@ -979,7 +982,7 @@ interface Page
   //--------
   pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings,
                             // no, let's have Page and Cat extend DiscLayout
-                            // instead — done, see above.
+                            // instead, I mean extend DiscPropsSource, — done, see above.
       // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
   forumSearchBox?: ShowSearchBox;
   forumMainView?: Nr;
@@ -1210,7 +1213,7 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
 
 
 // Default settings: [8L4KWU02]
-interface SettingsVisibleClientSide extends TopicInterfaceSettings {
+interface SettingsVisibleClientSide extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   termsOfUseUrl?: string;               // default: undefined —> built-in
   privacyUrl?: string;                  // default: undefined —> built-in
   languageCode?: string;                // default: 'en_US'
@@ -1268,35 +1271,45 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
 interface DiscPropsSource {
   comtOrder?: PostSortOrder;
   comtNesting?: NestingDepth;
+
+  // Later: [sum_squash_lims]
+  // summarizeLimit;
+  // squashLimit;
+  // horizontalLayout;  // move to here
 }
 
-// RENAME to DiscLayoutDerived?  There's an interface Layout too (below) merging all layouts.
+// RENAME to DiscLayoutDerived?  There's an interface Layout_not_in_use too (below) merging all layouts.
 interface DiscPropsDerived {
   comtOrder: PostSortOrder;
   // Says what thing (e.g. the current page, or the parent category) the comtOrder
   // layout setting is from, so the edit-layout dialog can tell the admin
-  // where the default value is from, in case the admin would want to edit the
-  // default setting. And ... makes it simpler for the Ty devs to troubleshoot any
-  // layout inheritance bugs.
-  comtOrderFrom: Ref; // LayoutFor;
+  // from where the comment order is getting inherited, in case the admin would want
+  // to go there and change it.  And makes it simpler for the Ty devs to troubleshoot
+  // any inheritance bugs.
+  comtOrderFrom: Ref;
   comtNesting: NestingDepth;   // not yet in use [max_nesting]
-  comtNestingFrom: Ref; // LayoutFor;  //
+  comtNestingFrom: Ref;        //
 }
 
 // And extends TopicListLayout, KnowledgeBaseLayout etc, all layouts.
-interface Layout extends DiscPropsDerived {
+interface Layout_not_in_use extends DiscPropsDerived {
 }
 
 
-
-interface TopicInterfaceSettings {
-  // --- Hmm these will be in DiscLayout instead: ------
+interface SettingsDiscPropsOldNames {
   discussionLayout?: DiscussionLayout;  // default: threaded
+  // Rename to comtNesting and comtOrder, and then use DiscPropsSource instead.
   discPostNesting?: NestingDepth;       // default: infinite nesting depth
   discPostSortOrder?: PostSortOrder;    // default: oldest first
-  // ---------------------------------------------------
+  // Embedded comments:
+  embComNesting?: NestingDepth;         // default: infinite nesting depth
+  embComSortOrder?: PostSortOrder;      // default: best first
+}
 
-  // And this is deprecated:
+
+// Try move to DiscPropsSource.
+interface TopicInterfaceSettings {
+  // Deprecated:
   progressLayout?: ProgressLayout;      // default: Visible
 
   // Currently for embedded comments: (later, can configure in disc_props_t.)
@@ -1304,10 +1317,6 @@ interface TopicInterfaceSettings {
   origPostVotes?: OrigPostVotes;
 
   enableDisagreeVote?: Bo;              // default: true
-
-  // Embedded comments:
-  embComNesting?: NestingDepth;         // default: infinite nesting depth
-  embComSortOrder?: PostSortOrder;      // default: best first
 }
 
 
@@ -1325,7 +1334,7 @@ interface PagePath {
 }
 
 
-interface Ancestor {  // server side: [6FK02QFV].
+interface Ancestor {  // server side: [6FK02QFV]
   categoryId: number;
   title: string;
   path: string;
@@ -1828,7 +1837,7 @@ interface PageTweaksStorePatch {
 }
 
 
-interface Settings extends TopicInterfaceSettings {
+interface Settings extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   // Signup and Login
   expireIdleAfterMins: number;
   userMustBeAuthenticated: boolean;
@@ -1915,7 +1924,7 @@ interface Settings extends TopicInterfaceSettings {
   showAuthorHow: ShowAuthorHow;
 
   // Topics — hmm these could be per category and topic type too:
-  // Inherited from: TopicInterfaceSettings
+  // Inherited from: TopicInterfaceSettings and SettingsDiscPropsOldNames
 
   // Spam
   numFlagsToHidePost: number;
@@ -2228,7 +2237,6 @@ interface DiscLayoutDropdownBtnProps {
   cat?: Cat;    // ...or.
   store: Store;
   layoutFor: LayoutFor;
-  forCat?: Bo;  // isn't this.cat above enough?
   forEveryone?: Bo;
   onSelect: (newLayout: DiscPropsSource) => Vo;
 }
@@ -2237,9 +2245,9 @@ interface DiscLayoutDropdownBtnProps {
 interface DiscLayoutDiagState {
   atRect: Rect;
   layout: DiscPropsSource;
-  default: DiscPropsDerived; // ? DiscPropsSource;
-  forCat?: Bo;
-  forEveryone?: Bo;
+  default: DiscPropsDerived;
+  forCat?: Bo;       // these just change the
+  forEveryone?: Bo;  // .. dialog title
   onSelect: (newLayout: DiscPropsSource) => Vo ;
 }
 
@@ -2512,6 +2520,8 @@ interface EditPageRequestData extends DiscPropsSource {
     slug?: string;
     showId?: boolean;
     pageLayout?: PageLayout;
+    // comtOrder  — incl via DiscPropsSource
+    // comtNesting  — via DiscPropsSource
     htmlTagCssClasses?: string;
     htmlHeadTitle?: string;
     htmlHeadDescription?: string;

@@ -173,6 +173,7 @@ class SiteDao(
 
   REFACTOR // rename to anyPageDao and return a Some(PageDao) with PageMeta pre-loaded
   // if the page exist, otherwise None? — If callers "always" want a PageMeta.
+  COULD_OPTIMIZE // get loadWholeSiteSettings(tx) from cache too?
   def newPageDao(pageId: PageId, tx: SiteTransaction, useMemCache: Bo = false  ): PageDao =
     PageDao(pageId, loadWholeSiteSettings(tx), tx, if (useMemCache) Some(this) else None)
 

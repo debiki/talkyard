@@ -90,6 +90,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
       update page_html_cache_t h
         set cached_page_version_c = -1, updated_at_c = ?
         where site_id_c = ?
+          and cached_page_version_c <> -1
           and page_id_c = (
             select page_id from categories3
             where site_id = ? and id = ?)"""
@@ -106,7 +107,8 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         cached_page_version_c,
         cached_app_version_c,
         cached_store_json_hash_c,
-        cached_store_json_c,
+        -- Not used, no need to load. (Need only the hash)
+        -- cached_store_json_c,
         cached_html_c
       from page_html_cache_t
       where site_id_c = ?
@@ -195,6 +197,8 @@ trait PagesSiteDaoMixin extends SiteTransaction {
               param_is_embedded_c = ? and
               param_origin_c = ? and
               param_cdn_origin_c = ? and
+              -- Include these too, so we won't delete, if a fresh cache entry has
+              -- just been added (a race).  [rerndr_stale_q]
               cached_site_version_c = ? and
               cached_page_version_c = ? and
               cached_app_version_c = ? and

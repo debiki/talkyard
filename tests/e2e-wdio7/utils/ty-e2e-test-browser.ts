@@ -9233,7 +9233,7 @@ export class TyE2eTestBrowser {
       selectCommentsSortOrder: async (order: Nr) => {
         let selector: St | U;
         switch (order) {
-          case c.TestPostSortOrder.Default:
+          case c.TestPostSortOrder.Inherit:
             selector = '.e_DefOrd';
             break;
           case c.TestPostSortOrder.BestFirst:

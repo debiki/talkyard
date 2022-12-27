@@ -86,8 +86,8 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  /** Returns (may-see, debug-code) where debug-code is any
-    * why-forbidden reason code..
+  /** Returns 1) NotSeePage, or 2) if may see it, a PageCtx, which includes
+    * page ancestor categories, which typically are needed again in the same request.
     *
     * One may see a page if one has PermsOnPages.maySee on the page's
     * category or tags, or if the page is a private group talk and one was
@@ -108,9 +108,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  /** Returns (may-see: Bo, debug-code: St)
-    *
-    *   + ViewPageCtx  ?
+  /** Looks up permissions and categories in the mem cache.
     */
   def maySeePageUseCache(pageMeta: PageMeta, user: Opt[Pat], maySeeUnlisted: Bo = true)
         : SeePageResult = {
@@ -216,7 +214,7 @@ trait AuthzSiteDaoMixin {
     // Here we load some stuff that might not be needed, e.g. we don't need to load all page
     // members, if we may not see the page anyway because of in which category it's placed.
     // But almost always we need both, anyway, so that's okay, performance wise. And
-    // loading everything first, makes it possible to implement AuthzmaySeePage() as
+    // loading everything first, makes it possible to implement Authz.maySeePage() as
     // a pure function, easy to test.
 
     val categories: immutable.Seq[Category] = anyCats(pageMeta, anyTx)
@@ -244,7 +242,7 @@ trait AuthzSiteDaoMixin {
   private def anyCats(pageMeta: PageMeta, anyTx: Opt[SiteTx]): ImmSeq[Cat] =
     pageMeta.categoryId map { categoryId =>
       anyTx.map(_.loadCategoryPathRootLast(categoryId, inclSelfFirst = true)) getOrElse {
-        getAncestorCategoriesRootLast(categoryId)
+        getAncestorCategoriesRootLast(categoryId, inclSelfFirst = true)
       }
     } getOrElse Nil
 

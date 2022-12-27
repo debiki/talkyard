@@ -507,20 +507,11 @@ case class PageIdVersion(pageId: PageId, version: PageVersion)
 case class PageIdToRerender(
   siteId: SiteId,
   pageId: PageId,
-  currentVersion: Int,
+  currentVersion: i32,
   cachedVersion: Opt[CachedPageVersion]) {
 
-  def sitePageId = SitePageId(siteId, pageId)
+  def sitePageId: SitePageId = SitePageId(siteId, pageId)
 }
-
-
-/*
-case class StalePageVersion(
-   cachedVersion: i32,
-   cachedWidth: WidthLayout,
-   cachedComtOrder: PostSortOrder,
-   cachedComtNesting: NestingDepth)
-   */
 
 
 

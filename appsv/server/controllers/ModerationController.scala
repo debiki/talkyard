@@ -113,7 +113,11 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: TyCont
       if (modResult.updatedPosts.nonEmpty) {
         val postIds = modResult.updatedPosts.map(_.id).toSet
         dao.jsonMaker.makeStorePatchForPostIds(
-              postIds, showHidden = true, inclUnapproved = true, dao)
+              postIds, showHidden = true, inclUnapproved = true,
+              // Or can this in some rare cases accidentally un-squash some squashed comments
+              // on a large page? Pretty harmless. [in_full_or_not]
+              maySquash = false,
+              dao)
       }
       else if (modResult.deletedPageId.nonEmpty) {  // [62AKDN46]
         dao.jsonMaker.makeStorePatchDeletePages(

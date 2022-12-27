@@ -187,7 +187,7 @@ case class SitePatchParser(context: TyContext) {
           readJsArray(bodyJson, "drafts", optional = true),
           readJsArray(bodyJson, "posts", optional = true),
           readJsArray(bodyJson, "postActions", optional = true),
-          readJsArray(bodyJson, "postVotes_forTests", optional = true),
+          readJsArray(bodyJson, "postVotes_forTests", optional = true),  // [patch_test_votes]
           readJsArray(bodyJson, "links", optional = true),
           readJsArray(bodyJson, "reviewTasks", optional = true),
           readJsArray(bodyJson, "webhooks", optional = true),
@@ -407,12 +407,14 @@ case class SitePatchParser(context: TyContext) {
           "TyE205KRU", o"""Invalid PostActio json at index $index in
               the 'postActions' list: $error, json: $json"""))
     }
-    // Newer: Treat flags & votes separately. [split_post_actions] -------------
-    val postVotesToInsert: Seq[PostVoteToInsert] = postVotesJson.value.toVector.zipWithIndex map { case (json, ix) =>
+    // Newer: Treat flags & votes separately. [flags_as_posts] ----------------
+    // (Will some day move flags to posts_t instead.)
+    val postVotesToInsert: Seq[PostVoteToInsert] =
+            postVotesJson.value.toVector.zipWithIndex map { case (json, ix) =>
       parsePostVoteOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
-          "TyE205KRU", o"""Invalid PostActio json at index $ix in
-              the 'postVotesToInsert' list: $error, json: $json"""))
+              "TyE805KR7F", o"""Invalid vote json at index $ix in
+              the 'postVotes_forTests' list: $error, json: $json"""))
     }
     // -------------------------------------------------------------------------
 
@@ -1569,7 +1571,7 @@ case class SitePatchParser(context: TyContext) {
 
     try {
       val actionTypeInt  = readInt(jsObj, "actionType")
-      val actionType  = PostsSiteDaoMixin.fromActionTypeInt(actionTypeInt)
+      val actionType  = PostsSiteDaoMixin.fromActionTypeInt(actionTypeInt, IfBadThrowBadJson)
       Good(PostAction(
         postId,
         pageId = readString(jsObj, "pageId"),
@@ -1586,9 +1588,13 @@ case class SitePatchParser(context: TyContext) {
 
 
   def parsePostVoteOrBad(jsValue: JsValue, isE2eTest: Bo): PostVoteToInsert Or ErrMsg = {
-    if (!isE2eTest) return Bad("Inserting a VoteToInsert is currently only for e2e tests")
+    if (!isE2eTest)
+      return Bad("Inserting VoteToInsert is currently only for e2e tests") // [patch_test_votes]
 
-    val jsObj = asJsObject(jsValue, "vote")
+    val jsObj = jsValue match {
+      case obj: JsObject => obj
+      case _ => return Bad(s"Bad vote, it's not a json obj, but a ${classNameOf(jsValue)}")
+    }
 
     val postNr = try parseInt32(jsObj, "onPostNr") catch {
       case ex: IllegalArgumentException =>
@@ -1598,7 +1604,7 @@ case class SitePatchParser(context: TyContext) {
     try {
       val voteTypeInt  = readInt(jsObj, "voteType")
       val voteType  = PostsSiteDaoMixin.postActionTypeIntToOptVoteType(voteTypeInt) getOrElse {
-        return Bad(s"A vote on post nr $postNr: Not a vote type: $voteTypeInt")
+        return Bad(s"Bad vote on post nr $postNr: Not a vote type: $voteTypeInt")
       }
       Good(PostVoteToInsert(
         // postId = None, // for now

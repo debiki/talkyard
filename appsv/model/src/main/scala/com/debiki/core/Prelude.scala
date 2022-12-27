@@ -137,6 +137,11 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
         if (message.nonEmpty) s"$message [$errorCode]"
         else s"Element missing: None.get [$errorCode]"))
 
+    def getOrAbort(mab: MessAborter, errCode: St, msg: => St = ""): A =
+      underlying getOrElse {
+        mab.abort(errCode, msg)
+      }
+
     def logBugIfEmpty(errorCode: String, message: => String = ""): Opt[A] = {
       if (underlying.isEmpty) {} // log bug  [better_logging]
       underlying
@@ -818,12 +823,13 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     def isEmptyOr(value: T): Bo = underlying.isEmpty || underlying.contains(value)
   }
 
+  /*
   implicit class RichIntOption[T](underlying: Opt[i32]) {
-    def ifZeroNoneOrElse(other: Opt[i32]): Opt[i32] = {
+    def ifZeroNoneOrElse(other: Opt[i32]): Opt[i32] = {   — confusing name? Better inline the if-else?
       if (underlying is 0) None
       else underlying.orElse(other)
     }
-  }
+  } */
 
   implicit class RichOptionEq[T <: AnyRef](underlying: Option[T]) {
     def isEq(value: T): Boolean = underlying.exists(_ eq value)

@@ -117,7 +117,7 @@ case class Category(  // [exp] ok use   too long name! use Cat instead
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageType],
   // None —> inherited from parent cat (not impl though)
-  defaultSortOrder: Opt[PageOrderOffset] = None,  // RENAME to pageSortOrder
+  defaultSortOrder: Opt[PageOrderOffset] = None,  // RENAME to pageOrder
   comtOrder: Opt[PostSortOrder] = None,
   comtNesting: Opt[ComtNesting_later] = None,
   doVoteStyle: Opt[DoVoteStyle] = None,

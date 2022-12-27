@@ -671,7 +671,7 @@ object RdbUtil {
     val createdAt = getDate(rs, "created_at")
     val uniquePostId = rs.getInt("about_post_id_c")
     val maybeNull = rs.getString("about_page_id_str_c")
-    val actionType = getOptionalInt(rs, "action_type").map(fromActionTypeInt)
+    val actionType = getOptionalInt(rs, "action_type").map(fromActionTypeInt(_))
     val actionSubId = getOptionalInt(rs, "action_sub_id")
     val byUserId = rs.getInt("by_user_id")
     val toUserId = rs.getInt("to_user_id")
