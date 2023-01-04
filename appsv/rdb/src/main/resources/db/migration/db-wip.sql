@@ -290,8 +290,8 @@ $_$;
 --     paused_by_id_c, done_by_id_c, closed_by_id_c, locked_by_id_c,
 --     frozen_by_id_c, unwanted_by_id_c, hidden_by_id_c, deleted_by_id_c
 -- with:  private_status_c
---   [edit] No, using private_pats_id_c instead. And the following might be
---   a user list/group setting instead: [/edit]
+--                 [edit] No, using private_pats_id_c instead. And the following might be
+--                 a user list/group setting instead: [/edit]
 --            null or 0 = not private,
 --            1 = yes, can make public,
 --            2 = yes, can*not* make public, but can add more who can see it,
@@ -487,7 +487,6 @@ comment on domain page_id_st_d is
     'and there''l be numeric ids instead?';
 ---------------
 
--- RENAME page_html3 to  page_html_t  or  html_cache_t
 -- RENAME pages3 to  page_meta_t?
 -- RENAME  default_category_id  to def_sub_cat_id, no, def_descendant_cat_id
 -- RENAME  users3.last_reply_at/by_id  to  last_appr_repl_at/by_id
@@ -516,11 +515,29 @@ SiteInclDetails(  // [exp] ok use. delete: price_plan
 NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_id
 OpenAuthDetails(   // [exp] ok use, country, createdAt
 
+Rename: categories3
+    def_sort_order_c   —> page_sort_order_c
+    def_score_alg_c    —> page_...
+    def_score_period_c —> page_...
+
+Add?:
+   Maybe not now, but later, more cat settings?:
+   cats? SquashSiblingIndexLimit
+   or SummarizeNumRepliesVisibleLimit
+   Feature flags for now.
+
+   orig post votes?   (if can vote on OP or not. Sometimes, for blog comments, not desireable.)
+   other votes
+
+
+page_html_cache_t   —  restrict col lengths
+
 
 -- Remove email "identities" from identities3?
 -- Replace w separate email login-secrets table?  [EMLLGISCRT]
 
 -- ?? delete page_id post_nr  from  post_actions ??
+-- And move flags to posts_t, since they can include editable text. [flags_as_posts]
 
 -- Add fk  posts3.parent_nr —> posts3.nr  ?? or no?  better w/o, so can hard delete / purge?
 
@@ -629,10 +646,10 @@ alter table pats_t add column web_scraping_prefs_c  web_scraping_prefs_d;
 
 -- Use  private comments  for implementing private messages  [priv_comts],
 -- so can reuse the same code for both things. And thereafter:
--- *** No, don't, let's not store CanSeePrivate in pat_rels_t ***
+-- *** No, don't, let's not store CanSeePrivate in pat_rels_t. NO, see below. ***
 update posts_t set nr_c = -nr_c, private_status_c = ...   -- sth like this, because
     where page_type is private-message;      -- private comments have negative post nrs.
-    [edit] NO, using posts_t.private_pats_id_c instead [/edit]
+    [edit] NO, using posts_t.private_pats_id_c instead, done  [/edit]
 insert into pat_rels_t (from_pat_id_c, rel_type_c, ...)
     select user_id, PatRelType.CanSeePrivate, ... from page_users3
     where joined_by_id is not null and kicked_by_id is null;

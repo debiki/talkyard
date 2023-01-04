@@ -137,6 +137,11 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
         if (message.nonEmpty) s"$message [$errorCode]"
         else s"Element missing: None.get [$errorCode]"))
 
+    def getOrAbort(mab: MessAborter, errCode: St, msg: => St = ""): A =
+      underlying getOrElse {
+        mab.abort(errCode, msg)
+      }
+
     def logBugIfEmpty(errorCode: String, message: => String = ""): Opt[A] = {
       if (underlying.isEmpty) {} // log bug  [better_logging]
       underlying
@@ -514,12 +519,15 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     sdf.format(date) + "Z"
   }
 
+  /* javax.xml.bind not incl in Java 11. This fn not needed anyway.
+     Use the "new" java.time instead?:   [can_use_java_time]
+     https://docs.oracle.com/javase/tutorial/datetime/index.html
   def parseIso8601DateTime(dateTime: String): ju.Date = {
     val calendar: ju.Calendar =
        javax.xml.bind.DatatypeConverter.parseDateTime(dateTime)
     val calendarUtc = _convertToUtc(calendar)
     calendarUtc.getTime
-  }
+  } */
 
   private val _timezoneUtc = ju.TimeZone.getTimeZone("UTC")
 
@@ -814,6 +822,14 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
     def isSomethingButNot(value: T): Bo = underlying.isDefined && !underlying.contains(value)
     def isEmptyOr(value: T): Bo = underlying.isEmpty || underlying.contains(value)
   }
+
+  /*
+  implicit class RichIntOption[T](underlying: Opt[i32]) {
+    def ifZeroNoneOrElse(other: Opt[i32]): Opt[i32] = {   — confusing name? Better inline the if-else?
+      if (underlying is 0) None
+      else underlying.orElse(other)
+    }
+  } */
 
   implicit class RichOptionEq[T <: AnyRef](underlying: Option[T]) {
     def isEq(value: T): Boolean = underlying.exists(_ eq value)

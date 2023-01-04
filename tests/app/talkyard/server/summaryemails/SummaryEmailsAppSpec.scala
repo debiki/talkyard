@@ -156,6 +156,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
         position = 11,
         newTopicTypes = List(PageType.Discussion),
         defaultSortOrder = None,
+        comtOrder = None,
+        comtNesting = None,
         doVoteStyle = None,
         doVoteInTopicList = None,
         shallBeDefaultCategory = false,

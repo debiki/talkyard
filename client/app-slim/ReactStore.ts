@@ -238,22 +238,30 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.EditTitleAndSettings:
-      // Could clean up: Currently using action.* fields — should instead use newMeta.*,
-      // those fields are directly from the server. [7RGEF24]
-      const newData: EditPageResponse = action;
+      // Good to use: newMeta.* — those fields are directly from the server. [7RGEF24]
+      const newData: EditPageResponse = action.response;
       const newMeta: PageMeta = newData.newPageMeta;
-      if (action.htmlTagCssClasses) {
+
+      const layoutBefore = page_deriveLayout(
+              currentPage, store, LayoutFor.PageNoTweaks);
+
+      if (currentPage.pageHtmlTagCssClasses !== newMeta.htmlTagCssClasses) {
         $h.removeClasses(htmlElem, currentPage.pageHtmlTagCssClasses);
-        $h.addClasses(htmlElem, action.htmlTagCssClasses);
-        currentPage.pageHtmlTagCssClasses = action.htmlTagCssClasses;
+        $h.addClasses(htmlElem, newMeta.htmlTagCssClasses);
+        currentPage.pageHtmlTagCssClasses = newMeta.htmlTagCssClasses;
       }
-      currentPage.pageHtmlHeadTitle = firstDefinedOf(action.htmlHeadTitle, currentPage.pageHtmlHeadTitle);
-      currentPage.pageHtmlHeadDescription =
-        firstDefinedOf(action.htmlHeadDescription, currentPage.pageHtmlHeadDescription);
-      currentPage.ancestorsRootFirst = action.newAncestorsRootFirst;
-      const parent: Ancestor = <Ancestor> _.last(action.newAncestorsRootFirst);
+
+      currentPage.pageHtmlHeadTitle = firstDefinedOf(
+            newMeta.htmlHeadTitle, currentPage.pageHtmlHeadTitle);
+
+      currentPage.pageHtmlHeadDescription = firstDefinedOf(
+            newMeta.htmlHeadDescription, currentPage.pageHtmlHeadDescription);
+
+      currentPage.ancestorsRootFirst = newData.newAncestorsRootFirst;
+      const parent: Ancestor = <Ancestor> _.last(newData.newAncestorsRootFirst);
       currentPage.categoryId = parent ? parent.categoryId : null;
       const was2dTree = currentPage.horizontalLayout;
+
       currentPage.pageRole = newMeta.pageType;
       currentPage.doingStatus = newMeta.doingStatus;
       currentPage.pagePlannedAtMs = newMeta.plannedAt;
@@ -261,11 +269,30 @@ ReactDispatcher.register(function(payload) {
       currentPage.pageDoneAtMs = newMeta.doneAt;
       currentPage.pageClosedAtMs = newMeta.closedAt;
 
+      currentPage.comtOrder = newMeta.comtOrder;
+      currentPage.comtNesting = newMeta.comtNesting;
+
+      // Clear any page tweaks, e.g. if pat has temporarily canged the comment sort order.
+      // Otherwise it can look as if the changes pat saved, have no effect.
+      if (store.curPageTweaks) {
+        const changes: EditPageRequestData = action.changes;
+        _.each(changes, (value, key: St) => {
+          delete store.curPageTweaks[key];
+        });
+      }
+
+      const layoutAfter = page_deriveLayout(
+              currentPage, store, LayoutFor.PageNoTweaks);
+
+      if (layoutAfter.comtOrder !== layoutBefore.comtOrder) {  // or [max_nesting]
+        store_relayoutPageInPlace(store, currentPage, layoutAfter);
+      }
+
       // [2D_LAYOUT]
-      //currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
+      //currentPage.horizontalLayout = newMeta.page type === PageRole.MindMap || currentPage.is2dTreeDefault;
       //const is2dTree = currentPage.horizontalLayout;
 
-      updatePost(action.newTitlePost, currentPage.pageId);
+      updatePost(newData.newTitlePost, currentPage.pageId);
 
       /*
       if (was2dTree !== is2dTree) {   // [2D_LAYOUT]
@@ -966,20 +993,26 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   // Add or update the post itself.
   page.postsByNr[post.nr] = post;
 
+  const layout: DiscPropsDerived = page_deriveLayout(page, store, LayoutFor.PageWithTweaks);
+
   // In case this is a new post, update its parent's child id list.
   const parentPost = page.postsByNr[post.parentNr];
   if (parentPost) {
     const childNrsSorted = parentPost.childNrsSorted;
     const alreadyAChild = _.find(childNrsSorted, nr => nr === post.nr);
     if (!alreadyAChild) {
-      if (page.discPostSortOrder === PostSortOrder.NewestFirst) {
+      const sortOrder = layout_sortOrderForChildsOf(layout, parentPost);
+      if (sortOrder === PostSortOrder.NewestFirst) {
+        // (Could avoid unshift(), it allocates new memory!)
         childNrsSorted.unshift(post.nr);
       }
       else {
+        // This works for Oldest-First, and probably works ok also for Best-First,
+        // since new comments haven't yet gotten any upvotes and would end up last?
         childNrsSorted.push(post.nr);
       }
       sortPostNrsInPlace(
-            childNrsSorted, page.postsByNr, page.discPostSortOrder);
+            childNrsSorted, page.postsByNr, sortOrder);
     }
   }
 
@@ -999,8 +1032,9 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   //  ... What? There is. But it's still not in use here, for embedded comments.)
   if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
     page.parentlessReplyNrsSorted = findParentlessReplyIds(page.postsByNr);
+    const sortOrder = layout_sortOrderForChildsOf(layout, { nr: BodyNr });
     sortPostNrsInPlace(
-        page.parentlessReplyNrsSorted, page.postsByNr, page.discPostSortOrder);
+        page.parentlessReplyNrsSorted, page.postsByNr, sortOrder);
   }
 
   rememberPostsToQuickUpdate(post.nr);
@@ -1278,18 +1312,35 @@ function findParentlessReplyIds(postsByNr): number[] {
 }
 
 
+
+function store_relayoutPageInPlace(store, page, layout: DiscPropsDerived) {
+  _.each(page.postsByNr, (post: Post) => {
+    const sortOrder = layout_sortOrderForChildsOf(layout, post);
+    sortPostNrsInPlace(
+          post.childNrsSorted, page.postsByNr, sortOrder);
+  });
+}
+
+
 /**
  * NOTE: Keep in sync with  sortPosts(posts, sortOrder)   [SAMESORT]
  * in modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
  */
 function sortPostNrsInPlace(postNrs: PostNr[], postsByNr: { [nr: number]: Post },
       postSortOrder: PostSortOrder | U) {
-  switch (postSortOrder || PostSortOrder.Default) {
+  switch (postSortOrder || PostSortOrder.Inherit) {
+    // @ifdef DEBUG
+    case PostSortOrder.NewestThenBest:
+    case PostSortOrder.NewestThenOldest:
+      die(`Got a composite sort order: ${postSortOrder}. First call ` +
+          `layout_sortOrderForChildsOf(..) to get the exact sort order ` +
+          `for the current depth. [TyE70KJRN4]`);
+    // @endif
     case PostSortOrder.BestFirst:
       sortPostNrsInPlaceBestFirst(postNrs, postsByNr);
       break;
     default:
-      // By time, oldest first, is the default sort order. [POSTSORDR] [why_sort_by_time]
+      // By time, oldest first, is the built-in default order. [POSTSORDR] [why_sort_by_time]
       const oldestFirst = postSortOrder !== PostSortOrder.NewestFirst;
       sortPostNrsInPlaceByTime(postNrs, postsByNr, oldestFirst);
   }
@@ -1655,14 +1706,29 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
 
   const currentPage: Page | U = store.currentPage;
 
+  let changesComtSortOrder: U | Bo;
+
   if (!currentPage) {
     delete store.curPageTweaks;
   }
   else if (storePatch.curPageTweaks) {
+    // (Or  isDefButNot(storePatch.curPageTweaks.comtOrder, store.curPageTweaks.comtOrder)?
+    // But might not matter — we wouldn't get a store patch, if wasn't changed?)
+    changesComtSortOrder = isDef(storePatch.curPageTweaks.comtOrder);
     store.curPageTweaks = {
       ...store.curPageTweaks,
       ...storePatch.curPageTweaks,
     };
+    if (store.curPageTweaks.comtOrder === PostSortOrder.Inherit) {
+      // No need to remember Inherit — that value just means that we should delete
+      // any comtOrder value, so a value from the page or its parent categories
+      // gets used instead.
+      delete store.curPageTweaks.comtOrder;
+    }
+    if (store.curPageTweaks.comtNesting === InheritNesting) {
+      // (See comment above about comtOrder.)
+      delete store.curPageTweaks.comtNesting;
+    }
   }
 
   // If we just posted the very first reply on an embedded discussion, a page for the discussion
@@ -1738,6 +1804,12 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
       });
     });
   });
+
+  if (changesComtSortOrder) {
+    const layoutAfter = page_deriveLayout(
+            currentPage, store, LayoutFor.PageWithTweaks);
+    store_relayoutPageInPlace(store, currentPage, layoutAfter);
+  }
 
   // Update the current page.
   if (!storePatch.pageVersionsByPageId) {

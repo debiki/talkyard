@@ -19,3 +19,5 @@ they otherwise would be unable to access. Expire access after X days
 by default, or at a date-time, or if they leave the community
 or category access permissions change (less access) or trust level demoted.)
 
+[flags_as_posts]
+Move flags from post_actions_t to posts_t instead, with PostType.Flag.

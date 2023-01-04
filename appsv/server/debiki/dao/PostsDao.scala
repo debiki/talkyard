@@ -1588,7 +1588,8 @@ trait PostsDao {
     }
 
     val patch = jsonMaker.makeStorePatchForPostIds(
-          Set(post.id), showHidden = true, inclUnapproved = true, dao = this)
+          Set(post.id), showHidden = true, inclUnapproved = true,
+          maySquash = false, dao = this)
 
     refreshPageInMemCache(post.pageId)
     patch
@@ -2552,7 +2553,8 @@ trait PostsDao {
     }
 
     val storePatch = jsonMaker.makeStorePatchForPostIds(
-          Set(postAfter.id), showHidden = true, inclUnapproved = true, dao = this)
+          Set(postAfter.id), showHidden = true, inclUnapproved = true,
+          maySquash = false, dao = this)
 
     (postAfter, storePatch)
   }

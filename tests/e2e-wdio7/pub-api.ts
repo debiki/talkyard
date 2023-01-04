@@ -132,6 +132,7 @@ interface Participant_ {
 // -------------------------
 
 // The different things Search Queries and List Queries can find:
+// (Ty devs: Also see enum ThingType in client/types-and-const-enums.ts. [ty_things_types])
 
 type FindWhat =
   // Info about  also be sent via webhoos (not yet impl)

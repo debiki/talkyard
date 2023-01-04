@@ -673,7 +673,7 @@ _print_push_git_tag_command:
 push-tag-to-git:
 	@echo
 	@echo "Publishing to GitHub, version tag: $(tag)"
-	@echo "     release channel (Git branch): $(DEV_RELEASE_CHANNEL)..."
+	@echo "                   release branch: $(DEV_RELEASE_CHANNEL)..."
 	@echo
 
 	@$(call die_unless_tag_specified, Push)
@@ -698,12 +698,12 @@ push-tag-to-git:
 	@# Note that this version might not be included in all release channels.
 	@# Example: If this new version includes some not-well-tested things — then,
 	@# we'd want to push it only to tyse-v0-dev, fix bugs, and later, push a more
-	@# well tested version to tyse-v0-regular.
+	@# well tested version first to tyse-v0-dev and then to tyse-v0-regular.
 	@#
-	@# It's nice to see directly in the main repo, in which channels a certain
-	@# Ty version (Git revision) has been included?  So let's incl the channel
+	@# It's nice to see directly in the main repo, in which release branches a
+	@# Ty version (Git revision) has been included?  So let's incl the branch
 	@# name in the version tag.  Then, a version (Git revision) that got incl in
-	@# many channels, gets one tag per channel, e.g. both
+	@# many branches, gets one tag per branch, e.g. both
 	@# tyse-v0.2021.04-abc123def-dev  and  tyse-v0.2021.04-abc123def-regular,  i.e.
 	@# same version nr and Git revision hash, but different -dev/-regular suffix.
 	@#

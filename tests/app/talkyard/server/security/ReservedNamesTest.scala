@@ -18,7 +18,6 @@
 
 package  talkyard.server.security
 
-
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must
 

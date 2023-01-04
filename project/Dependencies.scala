@@ -46,7 +46,7 @@ object Dependencies {
 
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     // Java 11 needs/can/should use "5.0.1". [java_8_to_11]
-    val hikariCp = "com.zaxxer" % "HikariCP" % "4.0.3"
+    val hikariCp = "com.zaxxer" % "HikariCP" % "5.0.1"
 
     // ElasticSearch client, in https://mvnrepository.com.
     val elasticsearchClient = "org.elasticsearch" % "elasticsearch" % "6.8.23"
@@ -84,9 +84,22 @@ object Dependencies {
 
     // Fluentd better understands json logs.
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+
+    /*
+    // This:  [java_8_to_11]
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.11"  // switch to "1.3.1" soon
+    // and Java 11, results in:
+    app_1      | SLF4J: No SLF4J providers were found.
+    app_1      | SLF4J: Defaulting to no-operation (NOP) logger implementation
+    app_1      | SLF4J: See http://www.slf4j.org/codes.html#noProviders for further details.
+    app_1      | SLF4J: Class path contains SLF4J bindings targeting slf4j-api versions prior to 1.8.
+    app_1      | SLF4J: Ignoring binding found at [jar:file:/home/owner/.cache/coursier/v1/https/repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.2.11/logback-classic-1.2.11.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+    app_1      | SLF4J: See http://www.slf4j.org/codes.html#ignoredBindings for an explanation.
+    */
     val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.4"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
+    // 1.3.x is for Java EE, 1.4.x is for Jakarta (which I don't think we use), otherwise identical.
     val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.4"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9

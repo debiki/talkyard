@@ -23,6 +23,7 @@ import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.EdHttp._
 import debiki.JsonUtils.parseOptInt32
+import debiki.JsonUtils.parseOptZeroSomeNone
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http._
 import talkyard.server.authz.Authz
@@ -58,6 +59,15 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val anyForumSearchBox = parseOptInt32(body, "forumSearchBox")
     val anyForumMainView = parseOptInt32(body, "forumMainView")
     val anyForumCatsTopics = parseOptInt32(body, "forumCatsTopics")
+
+    // If the requester isn't staff, these aren't sent, become None.  [onl_staff_set_comt_ord]
+    // If is staff, then can be Some(Some(value)), or Some(None) to clear and inherit instead
+    // from anc cats.
+    val anyComtOrder: Opt[Opt[PostSortOrder]] =
+          parseOptZeroSomeNone(request.body, "comtOrder")(PostSortOrder.fromOptVal)
+    val anyComtNesting: Opt[Opt[ComtNesting_later]] =
+          parseOptZeroSomeNone(request.body, "comtNesting")(x => x.map(_.toShort))
+
     val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringNoneIfBlank
     val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringNoneIfBlank
     val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringNoneIfBlank
@@ -118,6 +128,14 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           anyForumMainView.isDefined || anyForumCatsTopics.isDefined
     throwForbiddenIf(forumViewChanged && pageTypeAfter != PageType.Forum,
           "TyE0FORMPGE", "Can only edit these properties for forum pages")
+
+    throwForbiddenIf(
+          !request.theUser.isStaff && anyComtOrder.isSomethingButNot(oldMeta.comtOrder),
+          "TyEXCMTORD", "You may not change the comment sort order")
+
+    throwForbiddenIf(
+          !request.theUser.isStaff && anyComtNesting.isSomethingButNot(oldMeta.comtNesting),
+          "TyEXCMTNST", "You may not change the comment nesting max depth")
 
     if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
       throwForbidden("TyECHOTRPGS", "You may not change other people's pages")
@@ -216,6 +234,8 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           forumSearchBox = anyForumSearchBox.orElse(oldMeta.forumSearchBox),
           forumMainView = anyForumMainView.orElse(oldMeta.forumMainView),
           forumCatsTopics = anyForumCatsTopics.orElse(oldMeta.forumCatsTopics),
+          comtOrder = anyComtOrder getOrElse oldMeta.comtOrder,
+          comtNesting = anyComtNesting getOrElse oldMeta.comtNesting,
           // A meta post about changing the doingStatus.
           numPostsTotal = oldMeta.numPostsTotal + (addsNewDoingStatusMetaPost ? 1 | 0),
           version = oldMeta.version + 1)

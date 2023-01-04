@@ -504,11 +504,16 @@ case class SitePageIdVersion(siteId: String, pageId: PageId, version: PageVersio
 
 case class PageIdVersion(pageId: PageId, version: PageVersion)
 
-case class PageIdToRerender(siteId: SiteId, pageId: PageId, currentVersion: Int,
-  cachedVersion: Option[Int]) {
+case class PageIdToRerender(
+  siteId: SiteId,
+  pageId: PageId,
+  currentVersion: i32,
+  cachedVersion: Opt[CachedPageVersion]) {
 
-  def sitePageId = SitePageId(siteId, pageId)
+  def sitePageId: SitePageId = SitePageId(siteId, pageId)
 }
+
+
 
 /** An URL path, relative a certain site.
   */

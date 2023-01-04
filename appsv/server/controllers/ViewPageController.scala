@@ -175,8 +175,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       throwIndistinguishableNotFound("LoadJson-NoMeta")
     }
 
-    val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.user)
-    if (!maySee) {
+    val pageCtx = dao.maySeePageUseCache(pageMeta, request.user) ifNot { debugCode =>
       throwIndistinguishableNotFound("LoadJson-" + debugCode)
     }
 
@@ -186,7 +185,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
     // ?? maybe: if (request.user.isEmpty)
     //  globals.strangerCounter.strangerSeen(request.siteId, request.theBrowserIdData)
 
-    val pageRequest = new PageRequest[Unit](
+    val pageRequest = new PageRequest[U](
       request.site,
       request.anyTySession,
       sid = request.sid,
@@ -196,6 +195,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       pageExists = true,
       pagePath = correctPagePath,
       pageMeta = Some(pageMeta),
+      ancCatsRootLast = pageCtx.ancCatsRootLast,
       altPageId = None,
       embeddingUrl = None,
       dao = dao,
@@ -342,8 +342,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       throwIndistinguishableNotFound()
     }
 
-    val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.user)
-    if (!maySee) {
+    val pageCtx = dao.maySeePageUseCache(pageMeta, request.user) ifNot { debugCode =>
       // Don't indicate that the page exists, because the page slug might tell strangers
       // what it is about. [7C2KF24]
       throwIndistinguishableNotFound(debugCode)
@@ -360,7 +359,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
     if (request.user.isEmpty)
       globals.strangerCounter.strangerSeen(request.siteId, request.theBrowserIdData)
 
-    val pageRequest = new PageRequest[Unit](
+    val pageRequest = new PageRequest[U](
       request.site,
       request.anyTySession,
       sid = request.sid,
@@ -370,6 +369,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: TyContex
       pageExists = true,
       pagePath = correctPagePath,
       pageMeta = Some(pageMeta),
+      ancCatsRootLast = pageCtx.ancCatsRootLast,
       altPageId = None,
       embeddingUrl = None,
       dao = dao,
@@ -565,6 +565,7 @@ object ViewPageController {
       pageExists = false,  // CLEAN_UP REMOVE? use pageId == EmptyPageId instead?
       pagePath = pagePath,
       pageMeta = newTopicMeta,
+      ancCatsRootLast = Nil,
       dao = request.dao,
       request = request.request)
   }

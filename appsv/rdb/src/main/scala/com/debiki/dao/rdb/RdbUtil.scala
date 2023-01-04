@@ -671,7 +671,7 @@ object RdbUtil {
     val createdAt = getDate(rs, "created_at")
     val uniquePostId = rs.getInt("about_post_id_c")
     val maybeNull = rs.getString("about_page_id_str_c")
-    val actionType = getOptionalInt(rs, "action_type").map(fromActionTypeInt)
+    val actionType = getOptionalInt(rs, "action_type").map(fromActionTypeInt(_))
     val actionSubId = getOptionalInt(rs, "action_sub_id")
     val byUserId = rs.getInt("by_user_id")
     val toUserId = rs.getInt("to_user_id")
@@ -753,6 +753,8 @@ object RdbUtil {
       |g.frequent_poster_2_id,
       |g.frequent_poster_3_id,
       |g.layout,
+      |g.comt_order_c,
+      |g.comt_nesting_c,
       |g.forum_search_box_c,
       |g.forum_main_view_c,
       |g.forum_cats_topics_c,
@@ -827,6 +829,8 @@ object RdbUtil {
       authorId = resultSet.getInt("AUTHOR_ID"),
       frequentPosterIds = frequentPosterIds,
       layout = PageLayout.fromInt(resultSet.getInt("layout")) getOrElse PageLayout.Default,
+      comtOrder = PostSortOrder.fromOptVal(getOptInt32(resultSet, "comt_order_c")),
+      comtNesting = None, // later
       forumSearchBox = getOptInt32(resultSet, "forum_search_box_c"),
       forumMainView = getOptInt32(resultSet, "forum_main_view_c"),
       forumCatsTopics = getOptInt32(resultSet, "forum_cats_topics_c"),
@@ -953,19 +957,29 @@ object RdbUtil {
   }
 
 
-  def getCachedPageVersion(rs: js.ResultSet) = CachedPageVersion(
-    siteVersion = rs.getInt("site_version"),
-    pageVersion = rs.getInt("page_version"),
-    appVersion = rs.getString("app_version"),
-    renderParams = PageRenderParams(
-      widthLayout = WidthLayout.fromInt(rs.getInt("width_layout")),
-      isEmbedded = rs.getBoolean("is_embedded"),
-      origin = rs.getString("origin"),
-      anyCdnOrigin = getOptString(rs, "cdn_origin"),
-      // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
-      anyPageRoot = None,
-      anyPageQuery = None),
-    reactStoreJsonHash = rs.getString("react_store_json_hash"))
+  def getCachedPageVersion(rs: js.ResultSet, params: Opt[PageRenderParams])
+        : CachedPageVersion = {
+    CachedPageVersion(
+          siteVersion = rs.getInt("cached_site_version_c"),
+          pageVersion = rs.getInt("cached_page_version_c"),
+          appVersion = rs.getString("cached_app_version_c"),
+          renderParams = params getOrElse getRenderParams(rs),
+          storeJsonHash = rs.getString("cached_store_json_hash_c"))
+  }
+
+
+  private def getRenderParams(rs: js.ResultSet): PageRenderParams = {
+    PageRenderParams(
+          PostSortOrder.fromInt(getInt32(rs, "param_comt_order_c")).getOrDie("TyE703MRKJL5"),
+          // comtNesting =  param_comt_nesting_c  — later
+          widthLayout = WidthLayout.fromInt(rs.getInt("param_width_layout_c")),
+          isEmbedded = rs.getBoolean("param_is_embedded_c"),
+          origin = rs.getString("param_origin_c"),
+          anyCdnOrigin = getOptString(rs, "param_cdn_origin_c"),
+          // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
+          anyPageRoot = None,
+          anyPageQuery = None)
+  }
 
 
   // COULD do this:

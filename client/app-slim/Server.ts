@@ -1651,8 +1651,8 @@ export function createForum(options: { title, folder, useCategories, createSuppo
 }
 
 
-export function listForums(success: (forums: Forum[]) => void) {
-  get('/-/list-forums', success);
+export function listForums(onOk: (forums: Forum[]) => Vo) {
+  get('/-/list-forums', resp => onOk(resp.forums));
 }
 
 
@@ -1871,6 +1871,13 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
 }
 
 
+// RENAME to alterPage.
+// Alter = change in character or composition, typically in a small but significant way.
+// Modify = make partial or minor changes.
+// But "change" can mean replace. So "alter" is more clear.
+// Also, SQL uses "alter tale ... alter column ... new datatype",
+// so using "alter page" to change its type from e.q. Question to Idea,
+// makes sense. (Note that in that example, page is altered, and the page type is changed.)
 export function savePageTitleAndSettings(settings: EditPageRequestData,
       success: (response: EditPageResponse) => void, onError: () => void) {
   const data = {

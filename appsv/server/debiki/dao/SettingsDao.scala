@@ -209,7 +209,7 @@ trait SettingsDao {
       //
       // However, if  oldSettings.headerHtml  and other custom html fields got changed,
       // or custom CSS, then, need not re-render — that html and CSS isn't cached,
-      // isn't included in the html_cache_t (page_html3).  [cust_html_not_db_cached]
+      // isn't included in the page_html_cache_t.  [cust_html_not_db_cached]
       //
       bumpSiteVersion ||= oldSettings.navConf != newSettings.navConf
 

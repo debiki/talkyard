@@ -9,6 +9,7 @@ import * as _ from 'lodash';
 import c from '../test-constants';
 import { dieIf } from './log-and-die';
 
+import { NewTestVote as VoteToInsert, TestVoteType } from '../test-types2';
 
 export function makeSiteOwnedByOwenBuilder() {
   return buildSite();
@@ -172,6 +173,11 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
 
     addPost: function(testPostData: NewTestPost) {
       site.posts.push(make.post(testPostData));
+    },
+
+
+    addVote: function(testVoteData: VoteToInsert) {
+      site.postVotes_forTests.push({ ...testVoteData });
     },
 
 
@@ -415,6 +421,63 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
         maySee: true,
         maySeeOwn: true,
       });
+
+      return forum;
+    },
+
+
+    addSubCatsForum: function(opts: { title: St, introText?: St,
+          members?: WellKnownMemberUsername[], categoryAExtId?: St,
+          categoryPerms?: 'FullMembersMayEditWiki' }): SubCatsTestForum {
+
+      const forum: SubCatsTestForum = api.addCatABForum({
+        ...opts, categoryPerms: 'FullMembersMayEditWiki' }) as SubCatsTestForum;
+
+      const forumPage: PageJustAdded = forum.forumPage;
+
+      // Cat A —> { Sub Cat AA, Sub Cat AB }
+
+      forum.categories.subCatAA = api.addCategoryWithAboutPage(forumPage, {
+        id: api.nextPermId(),
+        parentCategoryId: forum.categories.catA.id,
+        name: "SubCatAA",
+        slug: 'sub-cat-aa',
+        aboutPageText: "Sub Cat AA descr.",
+      });
+      api.addDefaultCatPerms(site, forum.categories.subCatAA.id,
+            api.nextPermId(), opts.categoryPerms);
+
+      forum.categories.subCatAB = api.addCategoryWithAboutPage(forumPage, {
+        id: api.nextPermId(),
+        parentCategoryId: forum.categories.catA.id,
+        name: "SubCatAB",
+        slug: 'sub-cat-ab',
+        aboutPageText: "Sub Cat AB descr.",
+      });
+      api.addDefaultCatPerms(site, forum.categories.subCatAB.id,
+            api.nextPermId(), opts.categoryPerms);
+
+      // Cat B —> { Sub Cat BA, Sub Cat BB }
+
+      forum.categories.subCatBA = api.addCategoryWithAboutPage(forumPage, {
+        id: api.nextPermId(),
+        parentCategoryId: forum.categories.catB.id,
+        name: "SubCatBA",
+        slug: 'sub-cat-ba',
+        aboutPageText: "Sub Cat BA descr.",
+      });
+      api.addDefaultCatPerms(site, forum.categories.subCatBA.id,
+            api.nextPermId(), opts.categoryPerms);
+
+      forum.categories.subCatBB = api.addCategoryWithAboutPage(forumPage, {
+        id: api.nextPermId(),
+        parentCategoryId: forum.categories.catB.id,
+        name: "SubCatBB",
+        slug: 'sub-cat-bb',
+        aboutPageText: "Sub Cat BB descr.",
+      });
+      api.addDefaultCatPerms(site, forum.categories.subCatBB.id,
+            api.nextPermId(), opts.categoryPerms);
 
       return forum;
     },
@@ -719,6 +782,16 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       });
 
       site.lastPermId = nextPermId;
+    },
+
+    nextPermId: (): Nr => {
+      let nextId = 1;
+      for (let perms of api.getSite().permsOnPages) {
+        if (perms.id >= nextId) {
+          nextId = perms.id + 1;
+        }
+      }
+      return nextId;
     },
 
   };

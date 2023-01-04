@@ -81,7 +81,7 @@ object PageParts {
 
 case class PreLoadedPageParts(
   override val pageMeta: PageMeta,
-  allPosts: immutable.Seq[Post],
+  allPosts: Vec[Post],
   override val origPostReplyBtnTitle: Opt[St] = None,
   override val origPostVotes: OrigPostVotes = OrigPostVotes.Default,
   anyPostOrderNesting: Option[PostsOrderNesting] = None,
@@ -102,6 +102,13 @@ case class PreLoadedPageParts(
     }
 
 }
+
+
+private case class AncestorsChildsAndDepth(
+  depth: i32,
+  ancestors: Vec[Post],
+  childsSorted: Vec[Post],
+  )
 
 
 /** The parts of a page are 1) posts: any title post, any body post, and any comments,
@@ -136,24 +143,56 @@ abstract class PageParts {
 
   def enableDisagreeVote: Bo = true
 
-  private lazy val childrenSortedByParentNr: collection.Map[PostNr, immutable.Seq[Post]] = {
-    // COULD find out how to specify the capacity?
-    val childMap = mutable.HashMap[PostNr, Vector[Post]]()
+
+  private lazy val childrenSortedByParentNr: collection.Map[PostNr, AncestorsChildsAndDepth] = {
+    WOULD_OPTIMIZE // specify the capacity, both the sibling arrays and the map But how?
+    WOULD_OPTIMIZE // use a MutArrBuf for the children lists, until done sorting?
+    val childMap = mutable.HashMap[PostNr, AncestorsChildsAndDepth]()
     for {
       post <- allPosts
       if !post.isTitle && !post.isOrigPost
       if post.parentNr isNot post.nr
     } {
       val parentNrOrNoNr = post.parentNr getOrElse PageParts.NoNr
-      var siblings = childMap.getOrElse(parentNrOrNoNr, Vector[Post]())
-      siblings = siblings :+ post
-      childMap.put(parentNrOrNoNr, siblings)
+      val node: AncestorsChildsAndDepth = childMap.get(parentNrOrNoNr) match {
+        case Some(node: AncestorsChildsAndDepth) =>
+          node.copy(childsSorted = node.childsSorted :+ post)
+        case None =>
+          val ancestorPosts = ancestorsParentFirstOf(post)
+          // The title post and orig post are at depth 0. Top level replies at depth 1.
+          val ancLen = ancestorPosts.length
+          val depth =
+                if (ancestorPosts.lastOption.exists(_.isOrigPost)) {
+                  assert(ancLen >= 1, "TyE7MJ4XT4")
+                  ancLen
+                }
+                else {
+                  // This comment thread doesn't start at the Orig Post.
+                  // Let's let its topmost comment have depth 1 anyway, since only
+                  // the title and orig post are supposed to have depth 0, right.
+                  ancLen + 1
+                }
+          AncestorsChildsAndDepth(
+                ancestors = ancestorPosts,
+                // Not yet sorted, but soon; see Post.sortPosts() just below.
+                childsSorted = Vec(post),
+                depth = depth)
+      }
+
+      childMap.put(parentNrOrNoNr, node)
     }
-    childMap.mapValues(posts => Post.sortPosts(posts, postsOrderNesting.sortOrder))
+
+    childMap.mapValues { node =>
+      val sortOrder = postsOrderNesting.sortOrder.atDepth(node.depth)
+      val childsSortedForReal = Post.sortPosts(node.childsSorted, sortOrder)
+      node.copy(childsSorted = childsSortedForReal)
+    }
   }
+
 
   def lastPostButNotOrigPost: Option[Post] =
     postByNr(highestReplyNr)
+
 
   // Could rename to highestPostNrButNotOrigPost? Because includes chat comments & messages too.
   def highestReplyNr: Option[PostNr] = {
@@ -169,7 +208,7 @@ abstract class PageParts {
   def titlePost: Option[Post] = postByNr(PageParts.TitleNr)
 
   def parentlessRepliesSorted: immutable.Seq[Post] =
-    childrenSortedByParentNr.getOrElse(PageParts.NoNr, Nil)
+    childrenSortedOf(PageParts.NoNr)
 
   lazy val progressPostsSorted: immutable.Seq[Post] = {
     val progressPosts = allPosts filter { post =>
@@ -179,7 +218,7 @@ abstract class PageParts {
     Post.sortPosts(progressPosts, PostSortOrder.OldestFirst)
   }
 
-  def allPosts: immutable.Seq[Post]
+  def allPosts: Vec[Post]
 
   def postByNr(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
   def postByNr(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
@@ -279,11 +318,12 @@ abstract class PageParts {
 
 
   def childrenSortedOf(postNr: PostNr): immutable.Seq[Post] =
-    childrenSortedByParentNr.getOrElse(postNr, Nil)
+    childrenSortedByParentNr.get(postNr).map(_.childsSorted) getOrElse Nil
 
 
   def descendantsOf(postNr: PostNr): immutable.Seq[Post] = {
-    val pending = ArrayBuffer[Post](childrenSortedByParentNr.getOrElse(postNr, Nil): _*)
+    val childs = childrenSortedOf(postNr)
+    val pending = ArrayBuffer[Post](childs: _*)
     val successors = ArrayBuffer[Post]()
     while (pending.nonEmpty) {
       val next = pending.remove(0)
@@ -320,15 +360,15 @@ abstract class PageParts {
 
 
   /** The post must exist. */
-  def ancestorsParentFirstOf(postNr: PostNr): immutable.Seq[Post] = {
+  def ancestorsParentFirstOf(postNr: PostNr): Vec[Post] = {
     ancestorsParentFirstOf(thePostByNr(postNr))
   }
 
 
   /** Starts with postNr's parent. Dies if cycle. */
-  def ancestorsParentFirstOf(post: Post): immutable.Seq[Post] = {
-    val ancestors = mutable.ArrayBuffer[Post]()
-    var curPost: Option[Post] = Some(post)
+  def ancestorsParentFirstOf(post: Post): Vec[Post] = {
+    val ancestors = MutArrBuf[Post]()
+    var curPost: Opt[Post] = Some(post)
     var numLaps = 0
     while ({
       curPost = parentOf(curPost.get)
@@ -339,13 +379,13 @@ abstract class PageParts {
       // To mostly avoid O(n^2) time, don't check for cycles so very often. [On2]
       if ((numLaps % 1000) == 0) {
         val cycleFound = ancestors.exists(_.nr == theCurPost.nr)
-        SHOULD // use bugWarn instead
+        SHOULD // use bugWarn instead, and return Vec.empty?
         dieIf(cycleFound, "TyEPOSTCYCL",
               s"Post cycle on page $pageId around post nr ${theCurPost.nr}")
       }
       ancestors.append(theCurPost)
     }
-    ancestors.to[immutable.Seq]
+    ancestors.to[Vec]
   }
 
 

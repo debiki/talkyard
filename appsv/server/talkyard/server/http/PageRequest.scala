@@ -48,6 +48,7 @@ class PageRequest[A](
   /** If the requested page does not exist, pagePath.pageId is empty. */
   val pagePath: PagePath,
   val pageMeta: Option[PageMeta],
+  val ancCatsRootLast: ImmSeq[Cat],
   val embeddingUrl: Option[String],
   val altPageId: Option[String],
   val dao: SiteDao,
@@ -104,6 +105,7 @@ class PageRequest[A](
     "DwE3ES58", s"No page meta found, page id: $pageId")
 
 
+  CLEAN_UP; REMOVE /* Use DiscProps intstead.  [2D_LAYOUT]
   lazy val thePageSettings: EffectiveSettings = {
     if (false) { // pageExists) {
       ??? // dao.loadSinglePageSettings(thePageId)
@@ -114,8 +116,28 @@ class PageRequest[A](
       dao.loadPageTreeSettings(theParentPageId.get)
     } */
     else {
-      dao.getWholeSiteSettings()
+      this.siteSettings  // same as old code: dao.getWholeSiteSettings()
     }
+  } */
+
+
+  def renderParams: PageRenderParams = {
+    val discProps = DiscProps.derive(
+          selfSource = pageMeta,
+          ancestorSourcesSpecificFirst = ancCatsRootLast,
+          defaults = siteSettings.discPropsFor(
+                // If props per page type, and the page doesn't yet exist, then,
+                // later, we'll show a Create-page-here question?  But for now:
+                pageMeta.map(_.pageType).getOrElse(PageType.Discussion)))
+    PageRenderParams(
+          discProps.comtOrder,
+          //discProps.comtNesting — later
+          widthLayout = if (isMobile) WidthLayout.Tiny else WidthLayout.Medium,
+          isEmbedded = embeddingUrl.nonEmpty,
+          origin = origin,
+          anyCdnOrigin = dao.globals.anyCdnOrigin,
+          anyPageRoot = pageRoot,
+          anyPageQuery = parsePageQuery())
   }
 
 
@@ -149,10 +171,11 @@ class DummyPageRequest[A](
   pageExists: Boolean,
   pagePath: PagePath,
   pageMeta: PageMeta,
+  ancCatsRootLast: ImmSeq[Cat],
   dao: SiteDao,
   request: Request[A]) extends PageRequest[A](
     siteIdAndCanonicalHostname, anyTySession, sid, xsrfToken, browserId, user, pageExists,
-    pagePath, Some(pageMeta), altPageId = None, embeddingUrl = None,
+    pagePath, Some(pageMeta), ancCatsRootLast, altPageId = None, embeddingUrl = None,
     dao = dao, request = request) {
 
 }

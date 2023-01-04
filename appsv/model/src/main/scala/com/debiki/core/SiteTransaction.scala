@@ -108,7 +108,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     loadOrigPost(pageId).getOrDie("TyE204RKT1J", s"s$siteId: OP missing, page $pageId")
 
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
-  def loadPostsOnPage(pageId: PageId): immutable.Seq[Post]
+  def loadPostsOnPage(pageId: PageId): Vec[Post]
   def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]     ; RENAME; QUICK // to loadPostsByIds
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
@@ -336,11 +336,13 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def markPagesHtmlStaleIfVisiblePostsBy(patId: PatId): i32
   def markPagesHtmlStale(pageIds: Set[PageId]): Unit
+  /** Looks up the forum main page (or wiki/blog/... main page), and marks it as stale. */
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId): Unit
   def loadCachedPageContentHtml(pageId: PageId, renderParams: PageRenderParams)
         : Option[(String, CachedPageVersion)]
   def upsertCachedPageContentHtml(
-        pageId: PageId, version: CachedPageVersion, reactStorejsonString: String, html: String): Unit
+        pageId: PageId, version: CachedPageVersion, storeJsonString: St, html: St): U
+  def deleteCachedPageContentHtml(pageId: PageId, version: CachedPageVersion): U
 
 
   def insertAltPageId(altPageId: AltPageId, realPageId: PageId): Unit

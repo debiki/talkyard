@@ -1391,7 +1391,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    async scrollToBottom() {
+    async scrollToBottom(ps: { tryUntilSeesLoadMore?: Bo } = {}) {
       //this.#br.scroll('body', 0, 999*1000);
       //this.#br.scroll('html', 0, 999*1000);
       //if (this.isVisible('#esPageColumn')) {
@@ -1399,14 +1399,24 @@ export class TyE2eTestBrowser {
       //    document.getElementById('esPageColumn').scrollTop = 999*1000;
       //  });
       //}
-      await this.#br.execute(function() {
+      const scrollFn = async function() {
         window.scrollTo(0, 999*1000);
         document.documentElement.scrollTop = 999*1000; // not needed? but why not
         // If we're on a Talkyard page, scroll to its bottom too.
         var pageElem = document.getElementById('esPageColumn');
         if (pageElem) pageElem.scrollTop = 999*1000;
-      });
+      };
 
+      if (ps.tryUntilSeesLoadMore) {
+        await utils.tryUntilTrue("Scroll down until sees Load More", 3, async () => {
+          await this.#br.execute(scrollFn);
+          return await this.waitForDisplayedInViewport('.load-more', {
+                  timeoutMs: 1000, timeoutIsFine: true });
+        });
+        return;
+      }
+
+      await this.#br.execute(scrollFn);
       // Need to wait for the scroll to actually happen. COULD instead maybe
       // waitUntil scrollTop = document height - viewport height?  but will probably be
       // one-pixel-too-litle-too-much errors? For now:
@@ -1577,8 +1587,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitForDisplayedInViewport(selector: St, ps: WaitPs = {}) {
-      await this.waitUntil(async () => await this.isDisplayedInViewport(selector), {
+    async waitForDisplayedInViewport(selector: St, ps: WaitPs = {}): Pr<Bo> {
+      return await this.waitUntil(async () => await this.isDisplayedInViewport(selector), {
         ...ps,
         message: `Waiting for dispalyed in viewport:  ${selector}`,
       });
@@ -4817,8 +4827,8 @@ export class TyE2eTestBrowser {
         await this.waitUntilAnyTextMatches(this.forumTopicList.titleSelector, title);
       },
 
-      clickLoadMore: async (opts: { mayScroll?: Bo } = {}) => {
-        await this.waitAndClick('.load-more', opts);
+      clickLoadMore: async (opts: WaitAndClickPs = {}): Pr<ClickResult> => {
+        return await this.waitAndClick('.load-more', opts);
       },
 
       switchToCategory: async (toCatName: St) => {
@@ -5042,6 +5052,15 @@ export class TyE2eTestBrowser {
       clearParentCategory: async () => {
         await this.waitAndClick('.s_CD_0SubCat');
         await this.waitUntilTextIs('.s_CD .e_SelCatB', "None");
+      },
+
+      openDiscLayout: async () => {
+        await this.waitAndClick('.s_CD .e_DscLayB');
+      },
+
+      getDiscLayoutAsPerBtn: async (): Pr<Nr> => {
+        const title = await this.getText('.s_CD .e_DscLayB');
+        return discLayoutTitleToEnum(title);
       },
 
       submit: async () => {
@@ -5733,6 +5752,15 @@ export class TyE2eTestBrowser {
         await this.waitForGone(this.metabar.__myName);  // later, move to above 'return',  [hide_authn_btns]
       },
 
+      openDiscLayout: async () => {
+        await this.waitAndClick('.esMetabar .e_DscLayB');
+      },
+
+      getDiscLayoutAsPerBtn: async (): Pr<Nr> => {
+        const title = await this.getText('.esMetabar .e_DscLayB');
+        return discLayoutTitleToEnum(title);
+      },
+
       openMetabar: async () => {
         await this.waitAndClick('.dw-page-notf-level');
         await this.waitForVisible('.esMB_Dtls_Ntfs_Lbl');
@@ -5752,8 +5780,11 @@ export class TyE2eTestBrowser {
 
       setPageNotfLevel: async (notfLevel: PageNotfLevel) => {
         await this.switchToEmbCommentsIframeIfNeeded();
-        await this.metabar.openMetabarIfNeeded();
-        await this.waitAndClick('.dw-notf-level');
+        // To open the metabar and click the notf button therein:
+        //await this.metabar.openMetabarIfNeeded();
+        //await this.waitAndClick('.dw-notf-level');
+        // But now it's clickable directly instead:
+        await this.waitAndClick('.dw-page-notf-level button');
         await this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
 
@@ -5882,9 +5913,37 @@ export class TyE2eTestBrowser {
             `#post-${maybeParentNr} + .dw-p-as + .dw-single-and-multireplies #post-${postNr}`);
       },
 
-      isPostNrVisible: async (postNr: PostNr): Pr<Bo> => {
+      isPostNrVisible: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
+              squashed?: Bo } = {}): Pr<Bo> => {
         await this.switchToEmbCommentsIframeIfNeeded();
-        return await this.isVisible('#post-' + postNr);
+        return await this.isVisible(this.topic.__mkPostSelector(postNr, ps));
+      },
+
+      assertPostNrDisplayed: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
+              squashed?: Bo } = {}): Pr<Vo> => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.assertDisplayed(this.topic.__mkPostSelector(postNr, ps));
+      },
+
+      assertPostNrSquashed: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr } = {})
+              : Pr<Vo> => {
+        await this.switchToEmbCommentsIframeIfNeeded();
+        await this.isVisible(this.topic.__mkPostSelector(
+              postNr, { ...ps, squashed: true }));
+      },
+
+      __mkPostSelector: (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
+              squashed?: Bo } = {}): St => {
+        let selector: St = (ps.squashed ? '.s_X_Show-PostNr-' : '#post-') + postNr;
+        if (ps.atDepth) {
+          selector = `.dw-depth-${ps.atDepth} > ${selector}`;
+        }
+        if (ps.childOfNr) {
+          selector = `#post-${ps.childOfNr
+                          } + .dw-p-as + .dw-single-and-multireplies > .dw-res > ` +
+                        selector;
+        }
+        return selector;
       },
 
       clickShowMorePosts: async (ps: { nextPostNr: PostNr }) => {
@@ -5908,10 +5967,12 @@ export class TyE2eTestBrowser {
         });
       },
 
-      waitForPostNrVisible: async (postNr: PostNr, ps: { timeoutMs?: Nr,  // RENAME to ...VisibleText?
-              timeoutIsFine?: Bo } = {}): Pr<Bo> => {
+      // RENAME to ...VisibleText?
+      waitForPostNrVisible: async (postNr: PostNr, ps: { atDepth?: Nr, childOfNr?: Nr,
+              timeoutMs?: Nr, timeoutIsFine?: Bo } = {}): Pr<Bo> => {
         await this.switchToEmbCommentsIframeIfNeeded();
-        return await this.waitForVisibleText('#post-' + postNr, ps);
+        const selector = this.topic.__mkPostSelector(postNr, ps);
+        return await this.waitForVisibleText(selector, ps);
       },
 
       waitForPostAssertTextMatches: async (postNr: PostNr, text: St | RegExp) => {
@@ -6618,6 +6679,11 @@ export class TyE2eTestBrowser {
           message: `Waiting for Change Page dialog to close`,
         });
         await this.waitUntilModalGone();
+      },
+
+      openDiscLayout: async () => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick('.s_ChPgD .e_DscLayB');
       },
 
       closeTopic: async () => {
@@ -9163,6 +9229,38 @@ export class TyE2eTestBrowser {
     };
 
 
+    discLayoutD = {
+      selectCommentsSortOrder: async (order: Nr) => {
+        let selector: St | U;
+        switch (order) {
+          case c.TestPostSortOrder.Inherit:
+            selector = '.e_DefOrd';
+            break;
+          case c.TestPostSortOrder.BestFirst:
+            selector = '.e_Best1st';
+            break;
+          case c.TestPostSortOrder.NewestFirst:
+            selector = '.e_New1st';
+            break;
+          case c.TestPostSortOrder.OldestFirst:
+            selector = '.e_Old1st';
+            break;
+          case c.TestPostSortOrder.NewestThenBest:
+            selector = '.e_NewThenBest1st';
+            break;
+          case c.TestPostSortOrder.NewestThenOldest:
+            selector = '.e_NewThenOld1st';
+            break;
+          default:
+            die(`Bad comment sort order: ${order}, should be a TestPostSortOrder [TyE60DFJ24]`);
+        }
+        await this.waitAndClick(selector);
+        await this.waitForGone('.e_CmtOrdD');
+        //await this.waitForGone('.modal-backdrop');
+      },
+    };
+
+
     movePostDialog = {
       moveToOtherSection: async () => {
         await this.waitAndClick('.s_MPD_OtrSct .btn');
@@ -10192,4 +10290,14 @@ export class TyE2eTestBrowser {
     },
   };
 
+}
+
+
+function discLayoutTitleToEnum(title: St): Nr {
+  if (title === "Popular first") return c.TestPostSortOrder.BestFirst;
+  if (title === "Newest first") return c.TestPostSortOrder.NewestFirst;
+  if (title === "Oldest first") return c.TestPostSortOrder.OldestFirst;
+  if (title === "Newest then Popular") return c.TestPostSortOrder.NewestThenBest;
+  if (title === "Newest then Oldest") return c.TestPostSortOrder.NewestThenOldest;
+  die("Unexpected sort order name [TyE603RML25]", title);
 }

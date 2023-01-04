@@ -28,7 +28,7 @@ import talkyard.server.JsX._
 
 
 
-trait AllSettings {
+trait AllSettings extends DiscProps {
   self =>
 
   def userMustBeAuthenticated: Boolean  ; RENAME // to mustLoginToRead ?
@@ -133,7 +133,8 @@ trait AllSettings {
 
 
 
-  // UX settings (could add a UserId column so people can override some (not all) of these?)
+  // UX settings (could add a UserId column so people can override
+  // some (not all) of these?) — Yes, in the distant future, see:  [disc_props_view_stats]
   // -----------------------------
   def forumMainView: String
   def forumTopicsSortButtons: String
@@ -150,12 +151,27 @@ trait AllSettings {
 
   // ----- Topics — hmm these could / should? be per topic type,
   // or per category —  see cont_sets_t  in  db-refactor.txt.
+  // Hmm, seems this'll be in pages and cats, and trait DiscPropsSource,
+  // see [disc_props_view_stats].
   def discussionLayout: DiscussionLayout
-  def discPostSortOrder: PostSortOrder
-  def discPostNesting: NestingDepth
+
+  val comtOrder: PostSortOrder = discPostSortOrder // renaming
+  val comtNesting: ComtNesting_later = discPostNesting  // later
+
+  def discPostSortOrder: PostSortOrder  ; RENAME // to comtOrder
+  def discPostNesting: NestingDepth     ; RENAME // to comtNesting
+
+  // Will disappear, when per topic type props is generally configurable. [per_page_type_props]
+  def discPropsFor(pageType: PageType): DiscProps = {
+    if (pageType != PageType.EmbeddedComments) this
+    else DiscPropsDerived(comtOrder = embComSortOrder, comtNesting = embComNesting)
+  }
+
   def progressLayout: ProgressLayout
-  def embComSortOrder: PostSortOrder  // later, could add a topic type field instead
+  // Later, could add a topic type field instead of these two: [per_page_type_props]
+  def embComSortOrder: PostSortOrder
   def embComNesting: NestingDepth
+  // + horizontalComments  below
   // These are for embedded comments actually, COULD rename:
   def origPostReplyBtnTitle: St
   def origPostVotes: OrigPostVotes
@@ -434,14 +450,19 @@ object AllSettings {
     val selectTopicType = true
     val showAuthorHow: ShowAuthorHow = ShowAuthorHow.FullNameThenUsername
     val watchbarStartsOpen = true
+    // ----------------------------
+    // These defaults should be specified here instead?  [appsv_layout_defs]
+    // But then they wouldn't be accessible to the core module. So for now they're there,
+    // instead.
     val discussionLayout: DiscussionLayout = DiscussionLayout.Default
-    val discPostSortOrder: PostSortOrder = PostSortOrder.Default
+    val discPostSortOrder: PostSortOrder = PostsOrderNesting.Default.sortOrder
     val discPostNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
     val progressLayout: ProgressLayout = ProgressLayout.Default
     val embComSortOrder: PostSortOrder = PostSortOrder.DefaultForEmbComs
     val embComNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
     val origPostReplyBtnTitle: String = ""  // will then use the i18n field
     val origPostVotes: OrigPostVotes = OrigPostVotes.Default
+    // ----------------------------
     val enableDisagreeVote: Bo = true
     val requireApprovalIfTrustLte = TrustLevel.Stranger
     val reviewAfterIfTrustLte = TrustLevel.Stranger
@@ -754,9 +775,9 @@ object EffectiveSettings {
   def isEmailAddressAllowed(address: St, allowListText: St, blockListText: St,
         allowByDefault: Bo): Bo = {
 
-    def canBeDomain(line: St): Bo = line.nonEmpty && line.headOption.isNot('#')
-    val allowedDomains = allowListText.lines.map(_.trim).filter(canBeDomain)
-    val blockedDomains = blockListText.lines.map(_.trim).filter(canBeDomain)
+    def canBeDomain(line: St): Bo = line.headOption isSomethingButNot '#'
+    val allowedDomains = allowListText.linesIterator.map(_.trim).filter(canBeDomain)
+    val blockedDomains = blockListText.linesIterator.map(_.trim).filter(canBeDomain)
 
     def addrEndsWith(domain: St): Bo = {
       if (domain.contains("@") && domain.head != '@') {

@@ -214,6 +214,8 @@ Snowpack 2.0 and 3.0:
 https://news.ycombinator.com/item?id=23331099
 https://www.snowpack.dev/posts/2020-12-03-snowpack-3-release-candidate
 
+[edit, 2022-12] Don't use Snowpack — use Deno instead? [/edit]
+
 
 
 === It's ok to continue using ElasticSearch
@@ -494,6 +496,7 @@ create new pages for everything (and remembering which pages belong together).
 Participant) Scala base type, and `users3` table (to be renamed to `pats_t`).
 This has worked out fine — e.g. can toggle settings on both a user and group level.)
 
+
 === Postgres a bit as a graph database?
 
 Change-rename tables `post_actions3` to `pat_rels_t` and create a new `post_rels_t`
@@ -508,4 +511,51 @@ or person.  Or having two people listed as co-authors of an article.
 [Edit] Private comments and post owner(s) and many-authors will be implemented
 differently: Post.* fields pointing by id to a person/group/list-of-people. [/Edit]
 — Instead of, as in most other software, always just one of whatever it is.
+
+
+=== Debian instead of Alpine
+
+Use Debian as Docker base image, instead of Alpine. Debian is more widely
+used, that's good for security, e.g. Debian at Google: gLinux, and libc means
+no exotic musl-not-libc bug risk.  And most official images are based on
+Debian — we'd be downloading a Debian base image anyway.  [alp_2_deb]
+
+
+=== Kubernetes, Skaffold, Minikube
+
+Stick to Docker Compose as the main way of deploying Ty. At the same time, K8s
+looks nice, they've thought about everything (!). In Ty v1, maybe start adding
+experimental support for running Ty on localhost in 1) Minikube, using 2)
+Skaffold and 3) Kpt.  (Stay away from Helm — look, how error prone, a program
+written in Yaml + Go templates: (where? I lost the link)
+And this: Bash scripts, in Go templates, in Yaml:
+https://github.com/kudobuilder/operators/blob/master/repository/kafka/operator/templates/kafka-connect-setup.yaml )
+
+Minikube on localhost can be a way to enable everyone to contribute to Ty, also
+if they use Windows or MacOS?  Currently, though, some development scripts
+assume that one uses Debian (or Ubuntu). But with Minikube and Skaffold, it'll
+be not-that-much-work to re-think/fix this?  Look: _"Skaffold enabled us to
+develop independently of the platform on Linux, OSX, and Windows, with no
+platform specific logic required"_, said TNG GmbH in a testimonial on
+https://skaffold.dev.
+
+K8s Operators. The ./scripts/ dir in talkyard-prod-one, in a way does the same
+as a K8s operator.  And, in the distant future, there could be auto-upgrade,
+auto-backup, panic-power-off operators for [Ty running in K8s] written in Rust:
+https://old.reddit.com/r/rust/comments/mjsfcu/writing_kubernetes_operators_in_rust/.
+https://kubernetes.io/docs/reference/using-api/client-libraries/ — e.g.
+kube.rs.  But not in Go.
+
+
+=== Go is not allowed. Only Scala, Typescript and Rust
+
+It's good to keep down the number of languages Ty uses, so there're fewer
+things to learn, for new contributors.  And, apparently there isn't ever going
+to be a need for writing anything in Go? Not even K8s operators, although Go is
+the "official" operators language — see the Rust K8s Operators links above.
+
+
+
+== Year 2023
+
 

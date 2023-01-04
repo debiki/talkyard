@@ -171,11 +171,36 @@ const enum TopicFilters {
 }
 
 
-const enum ThingType {
+// Also see type FindWhat in tests/e2e-wdio7/pub-api.ts. [ty_things_types]
+//
+const enum ThingType {  // or RENAME to TaggableThingType?
+  // How was I thinking? These numbers? Some kind of bitmasks, hmm.
+  // Pats = 1 + 2 + 4 = guests, users, groups (but which order?).
   Pats = 7,
+  // Posts = Orig Posts (pages) + comments + ...what? + hmm. 32 + 16 + 8 = 56
   Posts = 56,
-  All = Pats + Posts,
+  // And: Post tags = 64? Pat tags = 128?
+  // And cats 256, then? For now.
+  //Cats = 256,
+
+  All = Pats + Posts,  // RENAME to AllThatCanBeTagged
 }
+
+
+/*
+const enum AllThingTypes {
+  //Pats = 7,
+  // 8  = meta posts (comments)
+  // 16 = comments by pats
+  // 32 = OrigPost = Pages,
+  Pages    = 32,  // ?
+  //Posts = 56,
+  // And: Post tags = 64? Pat tags = 128?
+  // And cats 256, then? For now.
+  Cats = 256,
+} */
+
+
 
 const enum No {
   PageIdSt = '0',
@@ -439,15 +464,36 @@ const enum DiscussionLayout {
 }
 
 type NestingDepth = number;
+const InheritNesting: NestingDepth = 0;    // not stored (Null is stored instead in Postgres)
 const InfiniteNesting: NestingDepth = -1;  // sync with Scala
 
-const enum PostSortOrder {
-  Default = 0,
-  BestFirst = 1,
+
+/// Sync with Scala [PostSortOrder].
+///
+/// The 1st nibble says how replies to the orig post should be sorted,
+/// the 2nd nibble says how to sort replies to replies (depth 2),
+/// the 3rd nibble  says how to sort replies to replies to replies.
+/// If 0 (unspecified), then, the prev nibble is used instead.
+/// (For example, for NewestThenBest, the 1st and 2nd nibbles are set — and the
+/// 2nd nibble, i.e. BestFirst, gets used for depth 2 and also 3, 4, 5 etc.)
+/// If all nibbles are 0, then, any ancestor cat sort order is used,
+/// and if unspecified there too, then, the site settings,
+/// or, if unspecified everywhere: OldestFirst, but BestFirst for embedded comments.
+///
+const enum PostSortOrder {  // rename to [ComtOrder]? Since not for orig post and title post.
+  Inherit = 0,   // Inherit from parent category or site settings or built-in default.
+  BestFirst = 1, // Q&A sites, Reddit, StackOverflow
   NewestFirst = 2,
-  OldestFirst = 3,
-  // Random = 4 ?
-  // NewAndBestFirst = 5,
+  OldestFirst = 3,  // all traditional forum software does this (e.g. phpBB, Discourse)
+  //BestForMeFirst = _,   // what the current visitor likely wants to see
+  //TrendingFirst = _,
+  //ControversialFirst = _,
+  //ProblematicFirst = _,
+  //Random = _
+  //BestThenOldest = BestFirst + (OldestFirst << 4),  // StackOverflow, if max nesting = 2
+  NewestThenBest = NewestFirst + (BestFirst << 4),  // == 18
+  // New flavor of theraded chat? Also, is what FB sometimes uses, but not for chatting.
+  NewestThenOldest = NewestFirst + (OldestFirst << 4),  // 2 + 3*16 = 50
 }
 
 const enum ProgressLayout {
@@ -591,6 +637,14 @@ const enum HostRole {
   Redirect = 2,
   Link = 3,
   Duplicate = 4,
+}
+
+
+const enum LayoutFor {   // or maybe ..From?
+  PageWithTweaks = 1,
+  PageNoTweaks   = PageWithTweaks + 1,
+  Ancestors      = PageNoTweaks + 1,   // RENAME to Cats?
+  SiteSettings   = Ancestors + 1,
 }
 
 
