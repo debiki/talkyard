@@ -86,6 +86,24 @@ const TestPostType = {  // sync with real code [26BKA01]
   MetaMessage: 31,
 };
 
+const TestPostSortOrder = {   // sync w real code [ComtSortOrder]
+  Inherit: 0,
+  BestFirst: 1,
+  NewestFirst: 2,
+  OldestFirst: 3,
+  NewestThenBest: 18,   // NewestFirst + (BestFirst << 4)
+  NewestThenOldest: 48, // NewestFirst + (OldestFirst << 4)
+}
+
+
+const TestVoteType = {
+  Like: 41,
+  Wrong: 42,
+  Bury: 43,
+  Unwanted: 44,
+}
+
+
 const TestPageNotfLevel = {
   EveryPostAllEdits: 9,
   EveryPost: 8,
@@ -118,6 +136,8 @@ export default {
   TestPageNotfLevel,
   TestEmailNotfPrefs,
   TestPostType,
+  TestPostSortOrder,
+  TestVoteType,
   TestTrustLevel,
   TestDraftStatus,
   MaxUsernameLength: 20,  // sync with Scala [6AKBR20Q]
@@ -128,6 +148,9 @@ export default {
   SecondReplyNr: 3,
   ThirdReplyNr: 4,
   FourthReplyNr: 5,
+  SquashSiblingIndexLimitDepth1: 12,
+  SquashSiblingIndexLimitDepth2: 12 / 2,
+  SquashSiblingIndexLimitDepth3: 12 / 4,
   UnknownUserId: -3,
   NoUserId: 0,
   SystemUserId: 1,

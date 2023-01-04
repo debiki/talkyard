@@ -471,6 +471,7 @@ interface MyPageData {
  * permissions configured for the page's ancestor categories, and groups
  * the user is in — so we can find out, client side, from where a setting
  * got inherited.  [DBLINHERIT]
+ * Edit: What!?? This isn't any permissions, this looks like notf prefs!
  */
 interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
   id?: UserId;
@@ -758,7 +759,7 @@ interface StaffTours {
 
 type Category = Cat; // Too long name!
 
-interface Cat {
+interface Cat extends DiscPropsSource {
   id: CategoryId;
   parentId?: CategoryId;  // RENAME to parCatId? simpler to grep and [concice_is_nice].
   sectionPageId?: any; // only when saving to server?   // RENAME to ixPgId? (index page id)
@@ -958,13 +959,15 @@ interface AutoPage {
 }
 
 // A page with real user written content, e.g. a discussion, chat, info page or homepage.
+// (Should Page instead extend PageMeta? There's lots of dupl fields!
+// Or should Page have a PageMeta field (delegation)? Let's wait.)
 interface Page
     // For now, "inline" settings in the page. Later, keep separately,
     // like OwnPageNotfPrefs? [DBLINHERIT]
     // So we can see from where a setting comes — is it from some ancestor category
     // or group? Or the whole forum? Otherwise, hard to troubleshoot unexpected
     // effective settings.
-    extends TopicInterfaceSettings {
+    extends TopicInterfaceSettings, DiscPropsSource {
   dbgSrc: string;
   pageId: PageId;
   pageVersion: PageVersion;
@@ -977,7 +980,9 @@ interface Page
   pageRole: PageRole;
   pagePath: PagePath;
   //--------
-  pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings
+  pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings,
+                            // no, let's have Page and Cat extend DiscLayout
+                            // instead, I mean extend DiscPropsSource, — done, see above.
       // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
   forumSearchBox?: ShowSearchBox;
   forumMainView?: Nr;
@@ -1040,7 +1045,7 @@ interface PageMetaBrief {
 }
 
 
-interface PageMeta {
+interface PageMeta extends DiscPropsSource {
   id: PageId;
   pageType: PageRole;
   version: number;
@@ -1055,6 +1060,8 @@ interface PageMeta {
   authorId: UserId;
   frequentPosterIds: number[];
   layout: PageLayout;
+  //comtOrder?: PostSortOrder; — in DiscPropsSource
+  //comtNesting?: NestingDepth;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   numLikes: number;
@@ -1206,7 +1213,7 @@ interface Store extends Origins, DiscStore, PartialEditorStoreState {
 
 
 // Default settings: [8L4KWU02]
-interface SettingsVisibleClientSide extends TopicInterfaceSettings {
+interface SettingsVisibleClientSide extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   termsOfUseUrl?: string;               // default: undefined —> built-in
   privacyUrl?: string;                  // default: undefined —> built-in
   languageCode?: string;                // default: 'en_US'
@@ -1256,27 +1263,60 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
 }
 
 
-// interface ForumInterfaceSettings {   — move some things from above to here?
-// ...
-// }
+// Move some things from above to DiscLayout?
+//
+// Currently configured for all categories, and(optionally) per category and page.
+// Maybe later: disc_layout_t.
+// RENAME to DiscLayoutSource?
+interface DiscPropsSource {
+  comtOrder?: PostSortOrder;
+  comtNesting?: NestingDepth;
+
+  // Later: [sum_squash_lims]
+  // summarizeLimit;
+  // squashLimit;
+  // horizontalLayout;  // move to here
+}
+
+// RENAME to DiscLayoutDerived?  There's an interface Layout_not_in_use too (below) merging all layouts.
+interface DiscPropsDerived {
+  comtOrder: PostSortOrder;
+  // Says what thing (e.g. the current page, or the parent category) the comtOrder
+  // layout setting is from, so the edit-layout dialog can tell the admin
+  // from where the comment order is getting inherited, in case the admin would want
+  // to go there and change it.  And makes it simpler for the Ty devs to troubleshoot
+  // any inheritance bugs.
+  comtOrderFrom: Ref;
+  comtNesting: NestingDepth;   // not yet in use [max_nesting]
+  comtNestingFrom: Ref;        //
+}
+
+// And extends TopicListLayout, KnowledgeBaseLayout etc, all layouts.
+interface Layout_not_in_use extends DiscPropsDerived {
+}
 
 
-interface TopicInterfaceSettings {
+interface SettingsDiscPropsOldNames {
   discussionLayout?: DiscussionLayout;  // default: threaded
+  // Rename to comtNesting and comtOrder, and then use DiscPropsSource instead.
   discPostNesting?: NestingDepth;       // default: infinite nesting depth
   discPostSortOrder?: PostSortOrder;    // default: oldest first
+  // Embedded comments:
+  embComNesting?: NestingDepth;         // default: infinite nesting depth
+  embComSortOrder?: PostSortOrder;      // default: best first
+}
 
+
+// Try move to DiscPropsSource.
+interface TopicInterfaceSettings {
+  // Deprecated:
   progressLayout?: ProgressLayout;      // default: Visible
 
-  // Currently for embedded comments: (later, per page type?)
+  // Currently for embedded comments: (later, can configure in disc_props_t.)
   origPostReplyBtnTitle?: string;       // default: t.AddComment
   origPostVotes?: OrigPostVotes;
 
   enableDisagreeVote?: Bo;              // default: true
-
-  // Embedded comments:
-  embComNesting?: NestingDepth;         // default: infinite nesting depth
-  embComSortOrder?: PostSortOrder;      // default: best first
 }
 
 
@@ -1797,7 +1837,7 @@ interface PageTweaksStorePatch {
 }
 
 
-interface Settings extends TopicInterfaceSettings {
+interface Settings extends TopicInterfaceSettings, SettingsDiscPropsOldNames {
   // Signup and Login
   expireIdleAfterMins: number;
   userMustBeAuthenticated: boolean;
@@ -1884,7 +1924,7 @@ interface Settings extends TopicInterfaceSettings {
   showAuthorHow: ShowAuthorHow;
 
   // Topics — hmm these could be per category and topic type too:
-  // Inherited from: TopicInterfaceSettings
+  // Inherited from: TopicInterfaceSettings and SettingsDiscPropsOldNames
 
   // Spam
   numFlagsToHidePost: number;
@@ -2192,6 +2232,26 @@ interface TagDiagProps {
 }
 
 
+interface DiscLayoutDropdownBtnProps {
+  page?: Page;  // either...
+  cat?: Cat;    // ...or.
+  store: Store;
+  layoutFor: LayoutFor;
+  forEveryone?: Bo;
+  onSelect: (newLayout: DiscPropsSource) => Vo;
+}
+
+
+interface DiscLayoutDiagState {
+  atRect: Rect;
+  layout: DiscPropsSource;
+  default: DiscPropsDerived;
+  forCat?: Bo;       // these just change the
+  forEveryone?: Bo;  // .. dialog title
+  onSelect: (newLayout: DiscPropsSource) => Vo ;
+}
+
+
 interface ExplainingTitleText {
   iconUrl?: St;
   title: St;
@@ -2447,8 +2507,10 @@ interface ResponseObj {
   responseText: string;
 }
 
-
-interface EditPageRequestData {
+// RENAME to AlterPageReqData?  "Edit" sounds wrong, since the Orig Post isn't edited.
+// "Alter" means: "to make different without changing into something else"
+// (so "alter" is also better thant "change", here).
+interface EditPageRequestData extends DiscPropsSource {
     //pageId: PageId; — filled in By Server.ts
     newTitle?: string;
     categoryId?: CategoryId;
@@ -2458,6 +2520,8 @@ interface EditPageRequestData {
     slug?: string;
     showId?: boolean;
     pageLayout?: PageLayout;
+    // comtOrder  — incl via DiscPropsSource
+    // comtNesting  — via DiscPropsSource
     htmlTagCssClasses?: string;
     htmlHeadTitle?: string;
     htmlHeadDescription?: string;

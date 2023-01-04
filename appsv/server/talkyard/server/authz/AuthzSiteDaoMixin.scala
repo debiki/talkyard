@@ -86,8 +86,8 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  /** Returns (may-see, debug-code) where debug-code is any
-    * why-forbidden reason code..
+  /** Returns 1) NotSeePage, or 2) if may see it, a PageCtx, which includes
+    * page ancestor categories, which typically are needed again in the same request.
     *
     * One may see a page if one has PermsOnPages.maySee on the page's
     * category or tags, or if the page is a private group talk and one was
@@ -102,21 +102,21 @@ trait AuthzSiteDaoMixin {
     * members of that chat topic if they can see it, depending on access perms.)
     */
   def maySeePage(pageMeta: PageMeta, pat: Opt[Pat], cacheOrTx: CacheOrTx,
-          maySeeUnlisted: Bo = true): (Bo, St) = {
+          maySeeUnlisted: Bo = true): SeePageResult = {
     maySeePageImpl(pageMeta, pat, anyTx = cacheOrTx.anyTx,
           maySeeUnlisted = maySeeUnlisted)
   }
 
 
-  /** Returns (may-see: Bo, debug-code: St)
+  /** Looks up permissions and categories in the mem cache.
     */
   def maySeePageUseCache(pageMeta: PageMeta, user: Opt[Pat], maySeeUnlisted: Bo = true)
-        : (Bo, St) = {
+        : SeePageResult = {
     maySeePageImpl(pageMeta, user, anyTx = None, maySeeUnlisted = maySeeUnlisted)
   }
 
   def maySeePageUseCacheAndAuthzCtx(pageMeta: PageMeta, authzContext: AuthzCtxOnPages,
-        maySeeUnlisted: Bo = true): (Bo, St) = {
+        maySeeUnlisted: Bo = true): SeePageResult = {
     maySeePageWhenAuthContext(pageMeta, authzContext, anyTx = None,
         maySeeUnlisted = maySeeUnlisted)
   }
@@ -156,8 +156,8 @@ trait AuthzSiteDaoMixin {
       return false
     }
 
-    val (maySee, debugCode) = maySeePageUseCache(pageMeta, user = None, maySeeUnlisted = true)
-    maySee
+    val result = maySeePageUseCache(pageMeta, user = None, maySeeUnlisted = true)
+    result.maySee
   }
 
 
@@ -167,9 +167,9 @@ trait AuthzSiteDaoMixin {
 
 
   def throwIfMayNotSeePage(pageMeta: PageMeta, pat: Opt[Pat])(tx: SiteTx): U = {
-    val (may, debugCode) = maySeePageImpl(pageMeta, pat, Some(tx))
-    if (!may)
-      throwIndistinguishableNotFound(s"TyEM0SEEPG_-$debugCode")
+    val result = maySeePageImpl(pageMeta, pat, Some(tx))
+    if (!result.maySee)
+      throwIndistinguishableNotFound(s"TyEM0SEEPG_-${result.debugCode}")
   }
 
 
@@ -177,18 +177,18 @@ trait AuthzSiteDaoMixin {
     * database, otherwise uses the mem cache.
     */
   private def maySeePageImpl(pageMeta: PageMeta, user: Opt[Pat],
-          anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): (Bo, St) = {
+          anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): SeePageResult = {
 
     if (user.exists(_.isAdmin))
-      return (true, "")
+      return PageCtx(anyCats(pageMeta, anyTx))
 
     val settings = getWholeSiteSettings()
     if (settings.userMustBeAuthenticated) {
       if (!user.exists(u => u.isAuthenticated))
-        return (false, "TyMLOGINREQ")
+        return NotSeePage("TyMLOGINREQ")
 
       if (settings.userMustBeApproved && !user.exists(_.isApprovedOrStaff))
-        return (false, "TyMNOTAPPR")
+        return NotSeePage("TyMNOTAPPR")
     }
 
     val groupIds: immutable.Seq[UserId] =
@@ -209,23 +209,18 @@ trait AuthzSiteDaoMixin {
 
 
   private def maySeePageWhenAuthContext(pageMeta: PageMeta, authzContext: AuthzCtxOnPages,
-        anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): (Bo, St) = {
-
-    if (authzContext.requester.exists(_.isAdmin))
-      return (true, "")
+        anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): SeePageResult = {
 
     // Here we load some stuff that might not be needed, e.g. we don't need to load all page
     // members, if we may not see the page anyway because of in which category it's placed.
     // But almost always we need both, anyway, so that's okay, performance wise. And
-    // loading everything first, makes it possible to implement AuthzmaySeePage() as
+    // loading everything first, makes it possible to implement Authz.maySeePage() as
     // a pure function, easy to test.
 
-    val categories: immutable.Seq[Category] =
-      pageMeta.categoryId map { categoryId =>
-        anyTx.map(_.loadCategoryPathRootLast(categoryId, inclSelfFirst = true)) getOrElse {
-          getAncestorCategoriesRootLast(categoryId)
-        }
-      } getOrElse Nil
+    val categories: immutable.Seq[Category] = anyCats(pageMeta, anyTx)
+
+    if (authzContext.requester.exists(_.isAdmin))
+      return PageCtx(categories)
 
     // (Could optionally also let [someone added to a page by a staff user]
     // see that page, also if it's an open chat (not a private group talk page)
@@ -237,11 +232,19 @@ trait AuthzSiteDaoMixin {
 
     Authz.maySeePage(pageMeta, authzContext.requester, authzContext.groupIdsUserIdFirst, memberIds,
         categories, authzContext.tooManyPermissions, maySeeUnlisted) match {
-      case Yes => (true, "")
-      case mayNot: NoMayNot => (false, mayNot.code)
-      case mayNot: NoNotFound => (false, mayNot.debugCode)
+      case Yes => PageCtx(categories)
+      case mayNot: NoMayNot => NotSeePage(mayNot.code)
+      case mayNot: NoNotFound => NotSeePage(mayNot.debugCode)
     }
   }
+
+
+  private def anyCats(pageMeta: PageMeta, anyTx: Opt[SiteTx]): ImmSeq[Cat] =
+    pageMeta.categoryId map { categoryId =>
+      anyTx.map(_.loadCategoryPathRootLast(categoryId, inclSelfFirst = true)) getOrElse {
+        getAncestorCategoriesRootLast(categoryId, inclSelfFirst = true)
+      }
+    } getOrElse Nil
 
 
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
@@ -291,10 +294,10 @@ trait AuthzSiteDaoMixin {
       }
     }
 
-    val (maySeePage, debugCode) = maySeePageImpl(pageMeta, ppt, anyTx,
+    val seePageResult = maySeePageImpl(pageMeta, ppt, anyTx,
           maySeeUnlisted = maySeeUnlistedPages)
-    if (!maySeePage)
-      return (MaySeeOrWhyNot.NopeUnspecified, s"$debugCode-ABX94WN")
+    if (!seePageResult.maySee)
+      return (MaySeeOrWhyNot.NopeUnspecified, s"${seePageResult.debugCode}-ABX94WN")
 
     CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
 

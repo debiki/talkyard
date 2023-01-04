@@ -86,7 +86,7 @@ object EventsParSer {
             dao.getPageStuffById(otherPageIds)
 
       pageStuffByIdInclForbidden.foreach({ case (_, pageStuff: PageStuff) =>
-        if (dao.maySeePageUseCache(pageStuff.pageMeta, reqer)._1) {
+        if (dao.maySeePageUseCache(pageStuff.pageMeta, reqer).maySee) {
           pageStuffById += pageStuff.pageId -> pageStuff
         }
       })

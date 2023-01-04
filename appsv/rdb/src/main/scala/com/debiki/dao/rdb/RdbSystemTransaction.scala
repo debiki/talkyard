@@ -658,39 +658,50 @@ class RdbSystemTransaction(
       select
           (select version from sites3 where id = ?) current_site_version,
           p.version current_page_version,
-          h.site_version,
-          h.page_version,
-          h.app_version,
-          h.is_embedded,
-          h.width_layout,
-          h.origin,
-          h.cdn_origin,
-          h.react_store_json_hash
-      from pages3 p left join page_html3 h
-          on p.site_id = h.site_id and p.page_id = h.page_id
+          h.cached_site_version_c,
+          h.cached_page_version_c,
+          h.cached_app_version_c,
+          h.cached_store_json_hash_c
+      from pages3 p left join page_html_cache_t h
+          on p.site_id = h.site_id_c
+          and p.page_id = h.page_id_c
       where p.site_id = ?
         and p.page_id = ?
-        and h.is_embedded = ?
-        and h.width_layout = ?
-        and h.origin = ?
-        and h.cdn_origin = ?
+        and h.param_comt_order_c = ?
+        and h.param_comt_nesting_c = ?
+        and h.param_is_embedded_c = ?
+        and h.param_width_layout_c = ?
+        and h.param_origin_c = ?
+        and h.param_cdn_origin_c = ?
       """
 
-    val values = List(sitePageId.siteId.asAnyRef, sitePageId.siteId.asAnyRef,
-        sitePageId.pageId.asAnyRef, renderParams.isEmbedded.asAnyRef,
-        renderParams.widthLayout.toInt.asAnyRef, renderParams.embeddedOriginOrEmpty,
-        renderParams.cdnOriginOrEmpty)
+    val values = List(
+          sitePageId.siteId.asAnyRef,
+          sitePageId.siteId.asAnyRef,
+          sitePageId.pageId.asAnyRef,
+          renderParams.comtOrder.toInt.asAnyRef,
+          renderParams.comtNesting.asAnyRef,
+          renderParams.isEmbedded.asAnyRef,
+          renderParams.widthLayout.toInt.asAnyRef,
+          renderParams.embeddedOriginOrEmpty,
+          renderParams.cdnOriginOrEmpty)
 
     runQueryFindOneOrNone(query, values, rs => {
       val currentSitePageVersion = SitePageVersion(
         rs.getInt("current_site_version"),
         rs.getInt("current_page_version"))
-      val cachedPageVersion = getCachedPageVersion(rs)
+      val cachedPageVersion = getCachedPageVersion(rs, Some(renderParams))
       (cachedPageVersion, currentSitePageVersion)
     })
   }
 
 
+  /* Each page might be included many times in the result — once per comment sort order
+   * and screen width combination, for example; see the stale pages query [rerndr_stale_q].
+   *
+   * RenderContentService calls this fn and deletes stale cache entries, e.g. if
+   * the admins changed the page sort orders. See [rm_stale_html].
+   */
   override def loadPageIdsToRerender(limit: Int): Seq[PageIdToRerender] = {
     // In the distant future, will need to optimize the queries here,
     // e.g. add a pages-to-rerender queue table. Or just indexes somehow.
@@ -701,54 +712,76 @@ class RdbSystemTransaction(
     // they're requested, the first time. See debiki.dao.RenderedPageHtmlDao [5KWC58].
     val pagesNotCached = mutable.Set[PageIdToRerender]()
     val neverRenderedQuery = s""" -- SLOW_QUERY: 4 ms @ Ty.io [rerndr_qry]
-      select p.site_id, p.page_id, p.version current_version, h.page_version cached_version
-      from pages3 p left join page_html3 h
-          on p.site_id = h.site_id and p.page_id = h.page_id
+      select p.site_id, p.page_id, p.version current_version
+      from pages3 p left join page_html_cache_t h
+          on p.site_id = h.site_id_c
+          and p.page_id = h.page_id_c
           -- Skip pages that for some (weird) reason aren't reachable via a page path.
           -- (But do include any such pages in the `outOfDateQuery` below? Feels better
           -- to regenerate the html then, since something is there already.)
           inner join page_paths3 pp
               on p.site_id = pp.site_id and p.page_id = pp.page_id and pp.canonical = 'C'
-      where h.page_id is null
+      where h.page_id_c is null -- page not in cache
       and p.created_at < now_utc() - interval '2' minute
       and p.page_role != ${PageType.SpecialContent.toInt}
       limit $limit
       """
     runQuery(neverRenderedQuery, Nil, rs => {
       while (rs.next()) {
-        pagesNotCached += getPageIdToRerender(rs)
+        pagesNotCached += getPageIdToRerender(rs, hasCachedVersion = false)
       }
     })
 
     // Then pages for which there is cached content html, but it's stale.  [RERENDERQ]
     // Skip pages that should be rerendered because of changed site settings
-    // (i.e. site_version differs) or different app_version, because otherwise
-    // we'd likely constantly be rerendering exactly all pages and we'd never
-    // get done. — Only rerender a page with different site_version or app_version
+    // (i.e. site_version differs) or different app_version, and if comment sort
+    // order changed, because otherwise we might constantly be rerendering
+    // lots of pages and never get done.
+    //
+    // Only rerender a page with different site_version or app_version
     // if someone actually views it. This is done by RenderedPageHtmlDao sending
     // a message to the RenderContentService, if the page gets accessed. [4KGJW2]
+    //
     val pagesStale = mutable.Set[PageIdToRerender]()
     if (pagesNotCached.size < limit) {
-      val outOfDateQuery = s""" -- SLOW_QUERY: 9 ms @ Ty.io  [rerndr_qry]
-        select p.site_id, p.page_id, p.version current_version, h.page_version cached_version
-        from pages3 p inner join page_html3 h
-            on p.site_id = h.site_id and p.page_id = h.page_id and p.version > h.page_version
+      val outOfDateQuery = s""" -- SLOW_QUERY: 9 ms @ Ty.io  [rerndr_qry]  [rerndr_stale_q]
+        select
+          p.site_id,
+          p.page_id,
+          p.version  current_version,
+          h.param_comt_order_c,
+          h.param_comt_nesting_c,
+          h.param_width_layout_c,
+          h.param_is_embedded_c,
+          h.param_origin_c,
+          h.param_cdn_origin_c,
+          h.cached_site_version_c,
+          h.cached_page_version_c,
+          h.cached_app_version_c,
+          h.cached_store_json_hash_c
+          -- cached_store_json_c   -- Not needed — we're looking up not to use, but
+          -- cached_html_c         -- to delete this page_html_cache_t row.
+        from pages3 p inner join page_html_cache_t h
+            on p.site_id = h.site_id_c
+            and p.page_id = h.page_id_c
+            -- Is the cached html stale?
+            and p.version > h.cached_page_version_c
         -- Don't rerender embedded comments pages. It's a bit tricky to lookup their origin,
         -- which needs to be included [EMBCMTSORIG]. And it's ok if it takes a second extra to
         -- load an embedded comments page because it gets rendered on demand: the user will start
         -- with looking at the blog post/article, won't care about the comments until later, right.
         -- Do need to match the cdn origin though.
         where p.page_role <> ${PageType.EmbeddedComments.toInt}
-          and h.is_embedded = false
-          and width_layout in (${WidthLayout.Tiny.toInt}, ${WidthLayout.Medium.toInt})
+          and h.param_is_embedded_c = false
+          and h.param_width_layout_c in (${WidthLayout.Tiny.toInt}, ${WidthLayout.Medium.toInt})
           -- The server's origin needs to be specified only for embedded pages. [REMOTEORIGIN]
-          and h.origin = ''
-          and h.cdn_origin = ?
+          and h.param_origin_c = ''
+          and h.param_cdn_origin_c = ?
         limit $limit
         """
       runQuery(outOfDateQuery, List(daoFactory.cdnOrigin.getOrElse("")), rs => {
         while (rs.next()) {
-          pagesStale += getPageIdToRerender(rs)
+          pagesStale += getPageIdToRerender(rs, hasCachedVersion = true)
         }
       })
     }
@@ -757,12 +790,14 @@ class RdbSystemTransaction(
   }
 
 
-  private def getPageIdToRerender(rs: js.ResultSet): PageIdToRerender = {
+  private def getPageIdToRerender(rs: js.ResultSet, hasCachedVersion: Bo): PageIdToRerender = {
     PageIdToRerender(
-      siteId = rs.getInt("site_id"),
-      pageId = rs.getString("page_id"),
-      currentVersion = rs.getInt("current_version"),
-      cachedVersion = getOptInt(rs, "cached_version"))
+          siteId = rs.getInt("site_id"),
+          pageId = rs.getString("page_id"),
+          currentVersion = rs.getInt("current_version"),
+          cachedVersion = if (!hasCachedVersion) None else Some {
+            getCachedPageVersion(rs, params = None)
+          })
   }
 
 
@@ -1092,7 +1127,7 @@ class RdbSystemTransaction(
       delete from posts3
       delete from page_popularity_scores3
       delete from page_paths3
-      delete from page_html3
+      delete from page_html_cache_t
       delete from alt_page_ids3
       delete from pages3
       delete from categories3

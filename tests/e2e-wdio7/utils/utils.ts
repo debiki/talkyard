@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import assert from './ty-assert';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
-import { j2s, logMessage, logUnusual, dieIf } from './log-and-die';
+import { j2s, logMessage, logUnusual, logError, dieIf } from './log-and-die';
 import settings from './settings';
 import c from '../test-constants';
 import * as utils from './utils';
@@ -621,18 +621,29 @@ export function checkNewPostFields(post, ps: {
 
 export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>,
           ps: { afterErr?: () => Pr<Vo> } = {}): Pr<R> {
-    for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {
-      try {
-        return await fn();
-      }
-      catch (error) {
-        logUnusual(`RETRYING: ${ what}  [TyME2ERETRY], because error: ${error.toString()}`);
+  let res: any;
+  for (let retryCount = 1; retryCount <= maxNumTimes; ++retryCount) {
+    try {
+      res = await fn();
+      break;
+    }
+    catch (ex) {
+      if (retryCount < maxNumTimes) {
+        logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${ex.toString()}`);
         if (ps.afterErr) {
           await ps.afterErr();
         }
       }
+      else {
+        logError(`Failed too many times: ${what}  [TyEE2ERETRY], error: ${ex.toString()}`);
+        throw ex;
+      }
     }
-    return await fn();
+  }
+
+  dieIf(res === false, `Don't use tryManyTimes() with a fn that returns false —
+              did you mean to use tryUntilTrue() instead? [TyE8RDK256]`)
+  return res;
 }
 
 

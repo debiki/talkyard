@@ -24,6 +24,39 @@ import scala.collection.mutable
 
 
 
+sealed abstract class SeePageResult {
+  def maySee: Bo
+  def debugCode: St
+
+  /** If may not see the page, then do what? For example, throw a Not-Found exception.
+    * If may see, we get back a PageCtx with some data about the page, which was needed
+    * for accesss control, and typically will be needed soon again.
+    */
+  def ifNot(thenWhat: St => Nothing): PageCtx
+}
+
+
+/** The result of an access permission test, when the requester may see the page.
+  */
+case class PageCtx(
+  ancCatsRootLast: ImmSeq[Cat],
+) extends SeePageResult {
+  val maySee = true
+  val debugCode = ""
+  /** Since pat may see the page, ignore `thenWhat`. */
+  def ifNot(thenWhat: St => Nothing): PageCtx = this
+}
+
+
+case class NotSeePage(debugCode: St) extends SeePageResult {
+  val maySee = false
+  def ifNot(thenWhat: St => Nothing): PageCtx = {
+    // Typically, `thenWhat` throws a Not Found exception.
+    thenWhat(debugCode)
+  }
+}
+
+
 /** A Page can be a blog post, a forum topic, a forum topic list, a Wiki page,
   * a Wiki main page, or a site's homepage, for example.
   */
@@ -167,6 +200,8 @@ object PageMeta {
   * @param forumMainView: 1 for topics, 2 for cats.
   * @param forumCatsTopics: 1 for cats only, 2 for cats to the left, and active & popular
   *   to the right.
+  * @param comtOrder — default is None, meaning, the setting of the parent category.
+  * @param comtNesting
   * @param numLikes
   * @param numWrongs
   * @param numBurys
@@ -189,8 +224,9 @@ object PageMeta {
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
   */
 case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
-  // No, better: Split into 0) PageMeta, 1) DiscProps, 2) DiscView, 3) DiscStats,
+  // No, better: Split into 0) PageMeta, 1) DiscProps, 2) DiscView, 3) DiscStats
   // and SectProps, SectView, SectStats?   [disc_props_view_stats]
+  //    [Edit:  Hmm, now there's DiscPropsSource and SectPropsSource, that's enough for a while]]
   // Because PageMeta is in fact 3 separate things:
   // 1) page properties: page type, answeredBy, plannedBy, closed/open, deleted, etc,
   //    DoingStatus, ClosedStatus, DeletedStatus — see below.
@@ -216,8 +252,12 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   authorId: UserId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
   // -----
-  // REFACTOR move to disc_views_t   [disc_props_view_stats]  [PAGETYPESETTNG]
+  // REFACTOR move to DiscViewProps and disc_views_t [disc_props_view_stats]  [PAGETYPESETTNG]
+  //          or just DiscProps     and disc_props_t.
   layout: PageLayout = PageLayout.Default,
+  comtOrder: Opt[PostSortOrder] = None,
+  comtNesting: Opt[ComtNesting_later] = None,
+  // Move to SectProps and sect_props_t
   forumSearchBox: Opt[i32] = None,
   forumMainView: Opt[i32] = None,
   forumCatsTopics: Opt[i32] = None,
@@ -258,7 +298,9 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited
   htmlHeadTitle: String = "",
   htmlHeadDescription: String = "",
-  numChildPages: Int = 0) { // <-- CLEAN_UP remove, replace with category table
+  numChildPages: Int = 0,   // <-- CLEAN_UP remove, replace with category table
+  ) // wait:  (mab: MessAborter = IfBadDie)
+  extends DiscPropsSource {
 
 
   extImpId.flatMap(Validation.findExtIdProblem) foreach { problem =>
@@ -296,6 +338,10 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   require(pageType != PageType.AboutCategory || categoryId.isDefined, s"[DwE5PKI8] $wp")
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), s"[DwE4kEYF2] $wp")
   require(pinOrder.isEmpty == pinWhere.isEmpty, s"[DwE36FK2] $wp")
+
+  require(comtNesting.forall(n => n == -1 || 1 <= n  && n <= 10), // "TyECOMTNST023",
+        s"Bad comment nesting, should be -1 or between 1 and 10: $comtNesting [TyECOMTNST023]")
+
   require(numLikes >= 0, s"[DwE6PKF3] $wp")
   require(numWrongs >= 0, s"[DwE9KEFW2] $wp")
   require(numBurys >= 0, s"[DwE2KEP4] $wp")
@@ -471,6 +517,117 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   }
 
 }
+
+
+// Sync w Typescript, & break out to own file?   [disc_props_js_scala]
+
+// Or maybe  CatPropsDerived instead of SectProps...?
+case class SectPropsDerived(
+  doVoteStyle: DoVoteStyle,
+  doVoteInTopicList: Bo,
+) {
+}
+
+
+
+trait SectPropsSource {
+  val doVoteStyle: Opt[DoVoteStyle]
+  val doVoteInTopicList: Opt[Bo]
+  // Later, but these are Bo not Opt[Bo] currently in class Cat:
+  // defaultSortOrder: Opt[PageOrderOffset] = None,  // RENAME to pageOrder
+  // val unlistCategory: Opt[Bo]
+  // val unlistTopics: Opt[Bo]
+  // These as well?:
+  // newTopicTypes
+  // includeInSummaries
+  // lockedAt
+  // frozenAt
+  // deletedAt
+}
+
+
+
+trait DiscProps {
+  val comtOrder: PostSortOrder
+  val comtNesting: ComtNesting_later
+}
+
+
+
+case class DiscPropsDerived(
+  //origPostReplyBtnTitle: St,
+  //origPostVotes: OrigPostVotes,
+  //enableDisagreeVote: Bo,
+  comtOrder: PostSortOrder,
+  comtNesting: ComtNesting_later,
+  // comts2dLayout: Bo = false,  — later. horizontalComments, horizontal_comments
+) extends DiscProps {
+
+}
+
+
+object DiscProps {
+
+  def derive(selfSource: Opt[DiscPropsSource],
+             ancestorSourcesSpecificFirst: ImmSeq[DiscPropsSource],
+             defaults: DiscProps): DiscPropsDerived = {
+    var merged = selfSource.map(DiscPropsMerged.fromSource) getOrElse DiscPropsMerged.Empty
+    for (source <- ancestorSourcesSpecificFirst) {
+      merged = merged.addMissing(source)
+    }
+    merged.toDerivedWithDefaults(defaults)
+  }
+}
+
+
+
+/** E.g. comment sort order, configured in a category — otherwise None, for that category
+  * (and then instead inherited from any parent category, or site defaults).
+  */
+trait DiscPropsSource {
+  // These are currently in settings_t, not in pages_t and cats_t:
+  //val origPostReplyBtnTitle: Opt[St]
+  //val origPostVotes: Opt[OrigPostVotes]
+  //val enableDisagreeVote: Opt[Bo]
+  val comtOrder: Opt[PostSortOrder]
+  val comtNesting: Opt[ComtNesting_later]
+  // comts2dLayout: Opt[Bo] = None
+}
+
+
+private case class DiscPropsMerged(
+  //origPostReplyBtnTitle: Opt[St]
+  //origPostVotes: Opt[OrigPostVotes]
+  //enableDisagreeVote: Opt[Bo]
+  comtOrder: Opt[PostSortOrder],
+  comtNesting: Opt[ComtNesting_later],
+  // comts2dLayout: Opt[Bo] = None
+  )
+  extends DiscPropsSource {
+
+  def addMissing(source: DiscPropsSource): DiscPropsMerged =
+    // Same as: discProps_addMissing_inPl() in Typescript.  [disc_props_js_scala]
+    DiscPropsMerged(
+          comtOrder = this.comtOrder.orElse(source.comtOrder),
+          comtNesting = this.comtNesting.orElse(source.comtNesting))
+
+  def toDerivedWithDefaults(defaults: DiscProps): DiscPropsDerived = DiscPropsDerived(
+        comtOrder = comtOrder getOrElse defaults.comtOrder,
+        comtNesting = comtNesting getOrElse defaults.comtNesting,
+        )
+}
+
+
+private object DiscPropsMerged {
+  def Empty: DiscPropsMerged = DiscPropsMerged(None, None)
+
+  def fromSource(source: DiscPropsSource): DiscPropsMerged = {
+    DiscPropsMerged(
+          source.comtOrder,
+          source.comtNesting)
+  }
+}
+
 
 
 case class SimplePagePatch(
@@ -806,6 +963,7 @@ sealed abstract class ProgressLayout(val IntVal: Int) {
   def toInt: Int = IntVal
 }
 
+@deprecated("This was too complicated?")
 object ProgressLayout {
   object Default extends ProgressLayout(0)
   object Enabled extends ProgressLayout(1)
@@ -1048,4 +1206,5 @@ case class PagePostNr(pageId: PageId, postNr: PostNr) {
 
 case class PagePostNrId(pageId: PageId, postNr: PostNr, postId: PostId) {
 }
+
 

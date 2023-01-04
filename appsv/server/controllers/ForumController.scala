@@ -22,12 +22,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.JsonUtils.parseOptInt32
 import talkyard.server.http._
 import play.api.libs.json._
 import play.api.mvc._
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Try
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
 import ForumController._
@@ -78,7 +78,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val rootCats = dao.getRootCategories()
     val sectionPageIds = rootCats.map(_.sectionPageId)
     val pageStuffById = dao.getPageStuffById(sectionPageIds)
-    val forumJsObjs = for {
+    val forumJsObjs: Seq[JsObject] = for {
       rootCat <- rootCats
       pageId = rootCat.sectionPageId
       // (We're not in a transaction, the page might just have been deleted.)
@@ -95,7 +95,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
         "defaultCategoryId" -> JsNumberOrNull(rootCat.defaultSubCatId),
         "rootCategoryId" -> rootCat.id)
     }
-    OkSafeJson(JsArray(forumJsObjs))
+    OkSafeJson(Json.obj("forums" -> JsArray(forumJsObjs)))
   }
 
 
@@ -138,6 +138,9 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // For now, do-it-votes just on or off:  [do_it_on_off]
     val doItVotesPopFirst = (categoryJson \ "doItVotesPopFirst").asOpt[Bo] getOrElse false
 
+    val anyComtOrder = PostSortOrder.fromOptVal(parseOptInt32(categoryJson, "comtOrder"))
+    val anyComtNesting = None // later: parseOptInt32("comtNesting").map(x => x.map(_.toShort)) ?
+
     val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
     val categoryId = (categoryJson \ "id").as[Int]
     if (categoryId == NoCategoryId)
@@ -159,6 +162,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
             if (!doItVotesPopFirst) None
             else Some(PageOrderOffset.ByScoreAndBumpTime(
                   offset = None, TopTopicsPeriod.Year)),
+      comtOrder = anyComtOrder,
+      comtNesting = anyComtNesting,
       doVoteStyle =
             if (!doItVotesPopFirst) None
             else Some(DoVoteStyle.Likes),

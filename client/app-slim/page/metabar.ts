@@ -22,6 +22,7 @@
 /// <reference path="../notification/notf-prefs-button.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../oop-methods.ts" />
+/// <reference path="../widgets/widget-open-buttons.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.page {
@@ -71,6 +72,7 @@ export var Metabar = createComponent({
   },
 
   onToggleDetailsClick: function() {
+    // [redux] modifying in place :-/
     this.state.ui.showDetails = !this.state.ui.showDetails;
     this.setState(this.state);
   },
@@ -94,11 +96,13 @@ export var Metabar = createComponent({
 
     let notfLevelElem: RElm | Nl = null;
     if (me.isAuthenticated && !ui.showDetails) {
+      // Add a notf level button — so won't need to expand the metabar, to click it.
       const effPref = pageNotfPrefTarget_findEffPref({ pageId: page.pageId }, store, me);
       const level = notfPref_level(effPref);
-      notfLevelElem = r.span({ className: `dw-page-notf-level n_NfLv-${level}`,
-              onClick: this.onToggleDetailsClick },
-          t.Notifications + ': ' + notfPref_title(effPref));
+      notfLevelElem = r.span({ className: `dw-page-notf-level n_NfLv-${level}` },
+          t.Notifications + ': ',
+          notfs.PageNotfPrefButton({ target: { pageId: store.currentPageId },
+                  store, ownPrefs: me }));
     }
 
     const toggleDetailsBtn = !me.isLoggedIn ? null :
@@ -115,6 +119,15 @@ export var Metabar = createComponent({
               r.li({ className: 'dw-cmts-count' },
                 page.numRepliesVisible + ' ' + (
                     isBlogComments ? (t.comments || t.replies) : t.replies)),  // I18N t.comments missing
+              r.li({},
+                widgets.DiscLayoutDropdownBtn({ page, store,
+                    layoutFor: LayoutFor.PageWithTweaks,
+                    onSelect: (newLayout: DiscPropsSource) => {
+                      // This'll change the layout in this browser only (not saved server side).
+                      ReactActions.patchTheStore({
+                        curPageTweaks: newLayout,
+                      });
+                    } })),
               nameLoginBtns,
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);
@@ -175,19 +188,22 @@ const MetabarDetails = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
-    const userAuthenticated = me && me.isAuthenticated;
-
-    const notificationsElem = !userAuthenticated ? null :
-      r.div({},
-        r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, t.mb.NotfsAbtThisC),
-        notfs.PageNotfPrefButton({ target: { pageId: store.currentPageId }, store, ownPrefs: me }));
-
+    const notificationsElem = NotfPrefBtn(store, me);
     return (
       r.div({ className: 'dw-cmts-tlbr-details' },
           notificationsElem));
   }
 });
 
+
+function NotfPrefBtn(store: Store, me: Me) {
+  const userAuthenticated = me && me.isAuthenticated;
+  return !userAuthenticated ? null :
+      r.div({},
+        r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, t.mb.NotfsAbtThisC),
+        notfs.PageNotfPrefButton({
+            target: { pageId: store.currentPageId }, store, ownPrefs: me }));
+}
 
 
 function estimateReadingTimeMinutesSkipOrigPost(posts: Post[]): number {

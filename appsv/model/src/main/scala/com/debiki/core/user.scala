@@ -2094,7 +2094,7 @@ case class UserStats(   // RENAME  to PatDynData
     require(numChatTopicsRepliedIn >= 0, "EdE4GKWL013")
     require(numChatTopicsCreated >= 0, "EdE4GKWL014")
     require(numLikesGiven >= 0, "EdE4GKWL015")
-    require(numLikesReceived >= 0, "TyE4GKWL016")
+    require(numLikesReceived >= 0, "TyE4GKWL016")  // [numLikesReceived]
     require(numSolutionsProvided >= 0, "TyE4GKWL017")
   }
 

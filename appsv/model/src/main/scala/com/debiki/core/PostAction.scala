@@ -48,6 +48,8 @@ object PatRelType_later {
     *  - Sub type could be assigned-to-do-*what*?
     *     - AssignedTo.DoIt (the default) — To do the work described in a post, or
     *     - AssignedTo.ReviewIt — To review the results afterwards, or maybe
+    *         But don't we want more fields, then:
+    *           Did review or not? How much? When? See "Value can ..." below.
     *     - AssignedTo.Verify — To compile the code, run all tests (a la Gerrit).
     *     - AssignedTo.Publish — To e.g. make an article visible after it's been reviewed,
     *         or to merge source code into the main branch?
@@ -96,6 +98,11 @@ object PatRelType_later {
     *      Some external scheduling software, could update these links via Ty's API —
     *      when Alice isn't working, her links are deleted or priority is lowered,
     *      so Bob and Clara gets notified instead.
+    *  - Do we want more values? Namely, what actually happened:  How much did Alice
+    *      review, and Bob, maybe in the end 15 & 15.  And when?
+    *      And did they have any comments — where are they? (As replies to the post?)
+    *      Maybe assignments could be in a separate table, even, if they're this
+    *      special. ?
     *
     *  - A custom value could be e.g. AssignedTo.Review { what = dependencies }, or
     *      AssignedTo.Review what = code. And VotedOn.Review { what = dependencies },
@@ -222,6 +229,25 @@ case class PostVote(  // [exp] ok to use
 
   def actionType: PostVoteType = voteType
   def doerId: UserId = voterId
+}
+
+/** Post id missing — nice to not have to specify, when constructing tests, since the post id is
+  * undecided, when importing the site.  */
+case class PostVoteToInsert(
+  // postId: Opt[PostId], // later not now
+  pageId: PageId,
+  postNr: PostNr,
+  doneAt: When,
+  voterId: UserId,
+  voteType: PostVoteType) {
+
+  def toPostAction(postId: PostId): PostVote = PostVote(
+    uniqueId = postId,
+    pageId = pageId,
+    postNr = postNr,
+    doneAt = doneAt,
+    voterId = voterId,
+    voteType = voteType)
 }
 
 

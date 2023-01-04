@@ -116,6 +116,10 @@ object Rdb {
     def orNullBo: AnyRef = opt.map(_.asAnyRef).getOrElse(NullBoolean)
   }
 
+  implicit class PimpInt32WithNullInt(value: i32) {
+    def nullIfZero: AnyRef = if (value == 0) NullInt else value.asAnyRef
+  }
+
   implicit class PimpBooleanWithNull(boolean: Boolean) {
     def asTrueOrNull: AnyRef = if (boolean) boolean.asAnyRef else NullBoolean
   }

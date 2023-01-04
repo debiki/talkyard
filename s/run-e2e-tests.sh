@@ -302,7 +302,7 @@ function runAllE2eTests {
 
   $r s/wdio --only login-expire-idle-after.2br.mtime $args
 
-  $r s/wdio --only forum-sort-and-scroll.2browsers $args
+  $r s/wdio-7 --only forum-sort-and-scroll.d.2br --cd -i $args
 
   $r s/wdio --only navigation-as-admin $args
   $r s/wdio --only navigation-as-member $args
@@ -318,7 +318,10 @@ function runAllE2eTests {
   $r s/wdio-7 --only editor-toolbar-preview.1br --cd -i $args
   $r s/wdio --only sanitize-posts.2browsers $args
 
-  $r s/wdio --only votes-and-best-first $args
+  $r s/wdio-7 --only votes-and-best-first.d.2br --cd -i $args
+  $r s/wdio-7 --only comment-sort-order.d.2br --cd -i $args
+  $r s/wdio-7 --only comment-sort-order-inherited.d.2br --cd -i $args
+  $r s/wdio-7 --only dir.summarize-squash-siblings.2br --cd -i $args
 
   # RENAME to internal-inline-link-previews-and-backlinks.2br?
   $r s/wdio --only links-internal.2browsers $args
@@ -431,8 +434,8 @@ function runAllE2eTests {
   $r s/wdio --only notfs-mark-all-as-read.2browsers $args  # REANME append -manually
   $r s/wdio --only notfs-snooze-talk.2br.mtime $args
   $r s/wdio --only notf-override-group-prefs.2browsers $args
-  $r s/wdio --only notfs-prefs-inherit-own.2browsers $args
-  $r s/wdio --only notfs-prefs-inherit-group.2browsers $args
+  $r s/wdio-7 --only notfs-prefs-inherit-own.d.2br --cd -i $args
+  $r s/wdio-7 --only notfs-prefs-inherit-group.d.2br --cd -i $args
   $r s/wdio --only notf-prefs-custom-groups.2browsers $args
   $r s/wdio --only notf-prefs-private-groups.2browsers $args
   $r s/wdio --only notf-prefs-pages-replied-to.2br $args
@@ -450,7 +453,7 @@ function runAllE2eTests {
   #$r s/wdio --only notfs-for-priv-group-page.2browsers $args
   #$r s/wdio --only notfs-for-dir-message.2browsers $args
 
-  $r s/wdio --only notfs-mark-seen-as-seen.2browsers $args  # RENAME append -automatically
+  $r s/wdio-7 --only notfs-mark-seen-as-seen.d.2br --cd -i $args  # RENAME append -automatically
 
   $r s/wdio-7 --only block-mentions.2br.d --cd -i $args
   $r s/wdio-7 --only block-dir-msgs.2br.d --cd -i $args

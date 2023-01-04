@@ -88,6 +88,8 @@ const ChangePageDialog = createComponent({
     let setDoneListItem;
     let changeCategoryListItem;
     let changeTopicTypeListItem;
+    let changeComtOrderListItem;
+    let changeComtNestingListItem;;
     let closeListItem;
     let reopenListItem;
     let deletePageListItem;
@@ -180,6 +182,19 @@ const ChangePageDialog = createComponent({
                   savePage({ pageRole: newType });
                 }})));
 
+      changeComtOrderListItem = !isStaff(me) ? null : rFr({}, // [onl_staff_set_comt_ord]
+          r.div({ className: 's_ExplDrp_Ttl' }, "Comment sort order:"),
+          r.div({ className: 's_ExplDrp_ActIt' },
+            widgets.DiscLayoutDropdownBtn({ page, store,
+                // Don't show [temp sort order changes ("tweaks") done in this browser]
+                // — instead, now, we're saving server side, for everyone.
+                layoutFor: LayoutFor.PageNoTweaks, forEveryone: true,
+                onSelect: (newLayout: DiscPropsSource) => {
+                  savePage(newLayout);
+                }})));
+
+      changeComtNestingListItem = null;  // later
+
       // Show a Close button for unanswered questions and not-yet-done ideas/problems,
       // and a Reopen button if closed already.
       if (page.doingStatus === PageDoingStatus.Done || page.pageAnswerPostUniqueId) {
@@ -265,6 +280,9 @@ const ChangePageDialog = createComponent({
         closeListItem,
         deletePageListItem,
         undeletePageListItem,
+        // Almost never used, could be hidden behind an Advnced button?:
+        changeComtOrderListItem,
+        changeComtNestingListItem,
         ));
   }
 });

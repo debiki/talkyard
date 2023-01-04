@@ -325,9 +325,9 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   def spamCheckActor: Option[ActorRef] = state.spamCheckActorRef
 
   def renderPageContentInBackground(
-        sitePageId: SitePageId, customParams: Option[PageRenderParamsAndHash]): Unit = {
+        sitePageId: SitePageId, paramsAndHash: Opt[RenderParamsAndFreshHash]): U = {
     if (!isTestDisableBackgroundJobs) {
-      state.renderContentActorRef ! (sitePageId, customParams)
+      state.renderContentActorRef ! (sitePageId, paramsAndHash)
     }
   }
 

@@ -197,6 +197,8 @@ case class CategoryToSave(
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageType],
   defaultSortOrder: Opt[PageOrderOffset],
+  comtOrder: Opt[PostSortOrder],
+  comtNesting: Opt[ComtNesting_later],
   doVoteStyle: Opt[DoVoteStyle],
   doVoteInTopicList: Opt[Bo],
   shallBeDefaultCategory: Boolean,
@@ -250,6 +252,8 @@ case class CategoryToSave(
     },
     newTopicTypes = newTopicTypes,
     defaultSortOrder = defaultSortOrder,
+    comtOrder = comtOrder,
+    comtNesting = comtNesting,
     doVoteStyle = doVoteStyle,
     doVoteInTopicList = doVoteInTopicList,
     unlistCategory = unlistCategory,
@@ -271,6 +275,8 @@ object CategoryToSave {
           position = cat.position,
           newTopicTypes = cat.newTopicTypes,
           defaultSortOrder = cat.defaultSortOrder,
+          comtOrder = cat.comtOrder,
+          comtNesting = cat.comtNesting,
           doVoteStyle = cat.doVoteStyle,
           doVoteInTopicList = cat.doVoteInTopicList,
           shallBeDefaultCategory = makeDefault,
@@ -576,11 +582,17 @@ trait CategoriesDao {
   }
 
 
-  def getAncestorCategoriesRootLast(anyCategoryId: Option[CategoryId]): Vector[Category] = {
+  def getAncestorCategoriesSelfFirst(anyCatId: Opt[CatId]): Vec[Cat] = {
+    getAncestorCategoriesRootLast(anyCatId)
+  }
+
+  @deprecated("RENAME to getAncestorCategoriesSelfFirst, see above")
+  def getAncestorCategoriesRootLast(anyCategoryId: Opt[CatId])
+          : Vec[Cat] = {
     val id = anyCategoryId getOrElse {
       return Vector.empty
     }
-    getAncestorCategoriesRootLast(id)
+    getAncestorCategoriesRootLast(id, inclSelfFirst = true)
   }
 
 
@@ -806,6 +818,8 @@ trait CategoriesDao {
             position = editsToDo.position,
             newTopicTypes = editsToDo.newTopicTypes,
             defaultSortOrder = editsToDo.defaultSortOrder,
+            comtOrder = editsToDo.comtOrder,
+            comtNesting = editsToDo.comtNesting,
             doVoteStyle = editsToDo.doVoteStyle,
             doVoteInTopicList = editsToDo.doVoteInTopicList,
             unlistCategory = editsToDo.unlistCategory,
@@ -821,8 +835,16 @@ trait CategoriesDao {
         setDefaultCat(catAft, ancCats, tx)
       }
 
-      // (Could skip marking page stale, if only newTopicTypes or ext id changed)
+      COULD_OPTIMIZE // Don't mark forum page stale, if only newTopicTypes, ext id
+      // or comments sort order got changed.
       tx.updateCategoryMarkSectionPageStale(catAft, IfBadAbortReq)
+
+      // If comments sort order changed. could mark all pages with >= 2 comments as stale.
+      // But that's bad, if there are thousands of pages. Instead, the page html cache
+      // remembers the render settings, and, when fetching the cached html, we check if
+      // the render settings have changed, and if so, lazy rerender the page.
+      // See:  RenderedPageHtmlDao.renderWholePageHtmlMaybeUseMemCache()
+      // and RenderedPageHtmlDao.renderedPageKey().
 
       // Check if any sub tree to deep. [.7M27J525]
       val catMapAft = tx.loadCategoryMap()

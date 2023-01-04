@@ -46,7 +46,7 @@ case class StalePage(
 
 
 /** Remembers things that got out-of-date and should be uncached, e.g. html
-  * for a page cached in page_html_t (page_html3).
+  * for a page cached in page_html_cache_t.
   *
   * Since we 1) pass a StaleStuff to "all" functions (well, soon, getting started
   * now), forgetting it, causes a compilation error.

@@ -133,6 +133,41 @@ package object core {
 
   type PostRevNr = Int
 
+  /**
+    * De-prioritizes this page (or sub thread) among the search results.
+    * Say, a question or idea about something, before there were any docs
+    * — and later on, docs are written, and the original question is no longer
+    * that interesting (because the docs are shorter and better).
+    *
+    * null = 0 = default.
+    *
+    * 0b0000 0000  Inherit or the default (normal)
+    * 0b0000 0001  Normal (don't inherit)
+    *
+    * 0b0000 0010  Boost a bit
+    * 0b0000 0011  Boost medium much
+    * 0b0000 0100  Boost much
+    *
+    * 0b0000 0101  De-prio a bit
+    * 0b0000 0110  De-prio medium much
+    * 0b0000 0111  De-prio much
+    * 0b0000 1111  Don't index at all
+    *
+    * 0b0110 0110  De-prio page and comments medium much
+    *          = 102
+    *
+    * So for now:
+    */
+  type IndexPrio = i16   // [Scala_3] Opaque type
+  val IndexDePrioPage: IndexPrio = 102.toShort
+
+  /** At what depth the replies won't be threaded any more, but flat.
+    * 1 means no nesting, like in phpBB and Discourse.
+    * If unspecified, then, unlimited nesting depth.
+    */
+  type ComtNesting_later = NestingDepth  // for now // oops RENAME, use  NestingDepth  instead?
+  val ComtNestingDefaultInherit_later: ComtNesting_later = -1 // later?: 0.toShort
+
   REFACTOR // change page id to Int (not String) — is always an Int anyway,
   // except for the forum main page at Ty .io.
   type PageId = String  // Int better
@@ -882,11 +917,11 @@ package object core {
     pageVersion: PageVersion,
     appVersion: String,
     renderParams: PageRenderParams,
-    reactStoreJsonHash: String) {
+    storeJsonHash: String) {
 
     /** Interpreted by the computer (startup.js looks for the '|'). */
     def computerString =
-      s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $reactStoreJsonHash"
+      s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $storeJsonHash"
   }
 
 
@@ -894,7 +929,8 @@ package object core {
     *
     * COULD incl forum topic list sort order too, and discussion topic comments sort order.  [7TMW4ZJ5]
     *
-    * @param widthLayout — the HTML strucure, and maybe avatar and image urls, are different,
+    * @param comtOrder — how the comments are sorted (best first? oldest first? etc).
+    * @param widthLayout — the HTML structure, and maybe avatar and image urls, are different,
     * for tiny mobile screens, and laptop screens. So, need to render separately, for mobile and laptop.
     * @param isEmbedded — in embedded discussions, links need to include the server origin, otherwise
     * they'll resolve relative the embedd*ing* page. However, non-embedded pages, then
@@ -918,21 +954,24 @@ package object core {
     * Javascript diabled, and one wants to list topics on topic list page 2, 3, 4 ...)
     */
   case class PageRenderParams(
+    comtOrder: PostSortOrder,
+    //comtNesting: NestingDepth, — later, for now, `def comtNesting` below instead
     widthLayout: WidthLayout,
-    isEmbedded: Boolean,
-    origin: String,
-    anyCdnOrigin: Option[String],
-    anyPageRoot: Option[PostNr],
-    anyPageQuery: Option[PageQuery]) {
+    isEmbedded: Bo,
+    origin: St,
+    anyCdnOrigin: Opt[St],
+    anyPageRoot: Opt[PostNr],
+    anyPageQuery: Opt[PageQuery]) {
 
+    def comtNesting: NestingDepth = -1  // means unlimited
     def thePageRoot: PostNr = anyPageRoot getOrElse BodyNr
-    def embeddedOriginOrEmpty: String = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
-    def cdnOriginOrEmpty: String = anyCdnOrigin getOrElse ""
+    def embeddedOriginOrEmpty: St = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
+    def cdnOriginOrEmpty: St = anyCdnOrigin getOrElse ""
   }
 
-  case class PageRenderParamsAndHash(
-    pageRenderParams: PageRenderParams,
-    reactStoreJsonHash: String)
+  case class RenderParamsAndFreshHash(
+    renderParams: PageRenderParams,
+    freshStoreJsonHash: St)
 
   sealed abstract class WidthLayout(val IntVal: Int) { def toInt: Int = IntVal }
 
@@ -967,9 +1006,12 @@ package object core {
   }
 
 
-  val WrongCachedPageVersion = CachedPageVersion(siteVersion = -1, pageVersion = -1, appVersion = "wrong",
-    PageRenderParams(WidthLayout.Tiny, isEmbedded = false, "https://example.com", None, None, None),
-    reactStoreJsonHash = "wrong")
+  val WrongCachedPageVersion: CachedPageVersion =
+    CachedPageVersion(
+          siteVersion = -1, pageVersion = -1, appVersion = "wrong",
+          PageRenderParams(PostSortOrder.OldestFirst, WidthLayout.Tiny,
+                isEmbedded = false, "https://example.com", None, None, None),
+          storeJsonHash = "wrong")
 
 
   case class TagTypeStats(
@@ -1019,27 +1061,75 @@ package object core {
   object PostsOrderNesting {
     val InfiniteNesting: NestingDepth = -1  // sync with Typescript
 
+    // Move these to appsv/server/debiki/settings.scala?  [appsv_layout_defs]
     val Default: PostsOrderNesting =
-      PostsOrderNesting(PostSortOrder.Default, InfiniteNesting)
+      PostsOrderNesting(PostSortOrder.OldestFirst, InfiniteNesting)
 
     val DefaultForEmbComs: PostsOrderNesting =
-      PostsOrderNesting(PostSortOrder.DefaultForEmbComs, InfiniteNesting)
+      PostsOrderNesting(PostSortOrder.BestFirst, InfiniteNesting)
 
   }
 
   // ----- PostsSortOrder
 
-  sealed abstract class PostSortOrder(val IntVal: Int, val isByTime: Bo) {
+  sealed trait ComtOrderAtDepth
+
+  RENAME // to ComtOrder?
+  sealed abstract class PostSortOrder(val IntVal: Int, val isByTime__remove: Bo) {
     def toInt: Int = IntVal
+    // Overridden by subclasses.
+    def atDepth(_depth: i32): ComtOrderAtDepth = this.asInstanceOf[ComtOrderAtDepth]
   }
 
+  /// Sync with Typescript [PostSortOrder].
+  ///
   object PostSortOrder {
-    case object Default extends PostSortOrder(0, false)
-    case object BestFirst extends PostSortOrder(1, false)
-    case object NewestFirst extends PostSortOrder(2, true)
-    case object OldestFirst extends PostSortOrder(3, true)
+    // (A nibble is 4 bits: 0x00 – 0xff.)
+    // Stored as Null, means inherit ancestor categories or whole site setting.
+    private val InheritNibble = 0x00
+    private val BestFirstNibble = 0x01
+    private val NewestFirstNibble = 0x02
+    private val OldestFirstNibble = 0x03
 
-    val DefaultForEmbComs: PostSortOrder = BestFirst
+    // Trending — but what time period? That could be a separate field, see [TrendingPeriod].
+    // private val TrendingFirstNibble = 0x04
+
+    // Comments with both many Likes and Disagrees.
+    //private val ControversialFirst
+
+    // For mods, to see flagged and unwanted things sorted first, and so be able to handle most
+    // problems on a big page at once, without jumping back and forth to the mod task list.
+    //private val ProblematicFirst
+
+    // If one is following some people, then, boost their comments so they get shown first.
+    // Each person then might see a slightly different page, depending of whom hen follows.
+    // private val FriendsAndBestFirst
+
+    // Like FriendsAndBestFirst but sort by Trending not by Best.
+    // private val FriendsAndTrendingFirst
+
+    case object BestFirst extends PostSortOrder(BestFirstNibble, false) with ComtOrderAtDepth
+    case object NewestFirst extends PostSortOrder(NewestFirstNibble, true) with ComtOrderAtDepth
+    case object OldestFirst extends PostSortOrder(OldestFirstNibble, true) with ComtOrderAtDepth
+
+    case object NewestThenBest extends PostSortOrder(
+      NewestFirstNibble + (BestFirstNibble << 4), true) {
+      assert(IntVal == 18)  // 2 + 1 * 16
+      override def atDepth(depth: i32): ComtOrderAtDepth =
+        if (depth <= 1) NewestFirst
+        else BestFirst
+    }
+
+    case object NewestThenOldest extends PostSortOrder(
+      NewestFirstNibble + (OldestFirstNibble << 4), true) {
+      assert(IntVal == 50)  // 2 + 3 * 16
+      override def atDepth(depth: i32): ComtOrderAtDepth =
+        if (depth <= 1) NewestFirst
+        else OldestFirst
+    }
+
+    // Move to the default settings file insetad. [appsv_layout_defs]
+    def DefaultForEmbComs: PostSortOrder = PostsOrderNesting.DefaultForEmbComs.sortOrder
 
     // Maybe: Random?
     // How would Random work, combined with performance and caching? Pick
@@ -1048,25 +1138,40 @@ package object core {
     // Or maybe max(1, 60 min / num-orig-post-replies)?
     // Or 100 different "cache slots" for 100 different random seeds?
     // Wait with this ... for quite a while (!).
+    // — No, that's not good enough. Imagine a discussion with 60 top-level replies, which gets
+    // submitted to say Reddit during busy hours. Then, 20 000 from Reddit go there, most of them
+    // within 10 minutes, and most of them upvote the topmost comments. This means the comments
+    // who happened to be at the top in the beginning, get many more upvotes, than the bad luck
+    // comments who didn't by chance appear at the top until an hour later. Not good.
+    // Instead, maybe this'll need to be ... Round robin "random"? Looks random to everyone,
+    // whilst being fair, vote wise? But then, is another page_html_t column needed:
+    // comt_order_c: post_nr[] specifying the top-level comment sort order?
+    // Wait with Random.
     //
     // object Random extends PostsSortOrder(4)
 
     // These give new posts (and old posts further down) a chance to be seen,
     // rather than old upvoted post at the top getting most attention:
     // Also see [LIKESCORE].
-    //
-    // /* Shows a few new posts first, then, below, post sorted by popularity. */
-    // object NewAndBestFirst extends PostsSortOrder(5)
-    // object RandomAndBestFirst extends PostsSortOrder(6)
-    // object NewRandomAndBestFirst extends PostsSortOrder(7)
+
+    // No idea why, but this has to be a fn, because OldestFirst is otherwise null
+    // — although it's a val defined *above*. The others (BestFirst etc) aren't null.
+    def All: ImmSeq[PostSortOrder] = Vec(
+          BestFirst, NewestFirst, OldestFirst, NewestThenBest, NewestThenOldest)
 
     def fromInt(value: Int): Option[PostSortOrder] = Some(value match {
-      case Default.IntVal => Default
       case BestFirst.IntVal => BestFirst
       case NewestFirst.IntVal => NewestFirst
       case OldestFirst.IntVal => OldestFirst
+      case NewestThenBest.IntVal => NewestThenBest
+      case NewestThenOldest.IntVal => NewestThenOldest
       case _ => return None
     })
+
+    def fromOptVal(anyValue: Opt[i32]): Opt[PostSortOrder] = {
+      if (anyValue is InheritNibble) None
+      else anyValue flatMap fromInt
+    }
   }
 
 

@@ -20,6 +20,8 @@ when exceeded 50%, so can review and bump. And warnings if exceeds 75%, 90%.
 [first_last_apr_at]
 Fix sort order bug: Add Post.firstApprovedAt.
 
+[timeline_comts] Maybe. Rename "progress posts" to "timeline comments"?
+
 [ty_themes]
 Primary button colors, secondary, background, arrows, fonts,
 and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
@@ -263,6 +265,7 @@ For some reason I disabled Akismet (why? when refactoring to save time?). Enable
 Conf vals for enable/disable: check ip addr, country, sign-up email addr, aksimet,
 toxicity/content-filter, image scan, other uploads / check hashsums, outgoing links.
 
+[hard_deletes]
 
 [undel_pages]
 DONE: Should remember who deleted it, so can see one's own deleted pages and undelete them,
@@ -549,8 +552,6 @@ Don't bump page if private comments — or do, for those who can see? Hmm.
 [cat_mods]
 Category moderators.
 
-[hdn_acts]
-
 [see_who_notfd]
 When composing a message, see who will get notified — e.g. if mentioning a group,
 or editing a message, can be unclar if a newly edit-added @username gets notified or not
@@ -791,6 +792,8 @@ Do outside tx.
 
 [double_tx]  COULD_OPTIMIZE
 Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
+
+[update_warmup_json]
 
 COULD_OPTIMIZE
 https://web.dev/content-visibility/

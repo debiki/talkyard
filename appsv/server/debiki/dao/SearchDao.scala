@@ -92,9 +92,9 @@ trait SearchDao {
     val pageStuffByIdCanSee = pageStuffByIdInclForbidden filter { case (_, pageStuff) =>
       val isStaffOrAuthor = user.exists(u => u.isStaff || u.id == pageStuff.pageMeta.authorId)
       COULD_OPTIMIZE // Do for all pages in the same cat, at once?  [authz_chk_mny_pgs]
-      val (maySee, _) = maySeePageUseCache(pageStuff.pageMeta, user,
+      val maySeeResult = maySeePageUseCache(pageStuff.pageMeta, user,
             maySeeUnlisted = isStaffOrAuthor)
-      maySee
+      maySeeResult.maySee
     }
 
     // ----- Sort

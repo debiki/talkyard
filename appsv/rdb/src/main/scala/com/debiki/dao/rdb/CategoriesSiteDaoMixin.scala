@@ -321,6 +321,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
         name, slug, position,
         description, new_topic_types,
         def_sort_order_c,
+        comt_order_c,
+        comt_nesting_c,
         def_score_alg_c,
         def_score_period_c,
         do_vote_style_c,
@@ -328,7 +330,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
         unlist_category, unlist_topics, incl_in_summaries,
         created_at, updated_at, deleted_at)
       values (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val values = List[AnyRef](
       siteId.asAnyRef, category.id.asAnyRef, category.extImpId.orNullVarchar,
       category.sectionPageId, category.parentId.orNullInt,
@@ -336,6 +338,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
       category.defaultSortOrder.map(_.toInt).orNullInt,
+      category.comtOrder.map(_.toInt).orNullInt,
+      category.comtNesting.orNullInt,
       catSortOrderScoreAlg(category).orNullInt,
       catSortOrderScorePeriodInt(category).orNullInt,
       category.doVoteStyle.map(_.toInt).orNullInt,
@@ -360,6 +364,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
         description = ?,   -- REFACTOR CLEAN_UP no longer needed, instead: [502RKDJWF5]
         new_topic_types = ?,
         def_sort_order_c = ?,
+        comt_order_c = ?,
+        comt_nesting_c = ?,
         def_score_alg_c = ?,
         def_score_period_c = ?,
         do_vote_style_c = ?,
@@ -374,6 +380,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
       category.defaultSortOrder.map(_.toInt).orNullInt,
+      category.comtOrder.map(_.toInt).orNullInt,
+      category.comtNesting.orNullInt,
       catSortOrderScoreAlg(category).orNullInt,
       catSortOrderScorePeriodInt(category).orNullInt,
       category.doVoteStyle.map(_.toInt).orNullInt,
@@ -460,6 +468,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
             orderInt = getOptInt32(rs, "def_sort_order_c"),
             scoreAlgInt = getOptInt32(rs, "def_score_alg_c"),
             scorePeriodInt = getOptInt32(rs, "def_score_period_c")),
+      comtOrder = PostSortOrder.fromOptVal(getOptInt32(rs, "comt_order_c")),
+      comtNesting = getOptInt32(rs, "comt_nesting_c"),
       doVoteStyle = DoVoteStyle.fromOptInt32(getOptInt32(rs, "do_vote_style_c")),
       doVoteInTopicList = getOptBool(rs, "do_vote_in_topic_list_c"),
       unlistCategory = rs.getBoolean("unlist_category"),

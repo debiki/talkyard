@@ -30,14 +30,15 @@ import debiki.AllSettings
   * whole pages.)
   */
 // REFACTOR  combine PageDao and PagePartsDao into the same class, "PageDao". [ONEPAGEDAO]
-case class PageDao(override val id: PageId, settings: AllSettings, transaction: SiteTransaction)
+case class PageDao(override val id: PageId, settings: AllSettings,
+      transaction: SiteTransaction, anyDao: Opt[SiteDao])
   extends Page {
 
   def sitePageId = SitePageId(transaction.siteId, id)
 
   var _path: Option[PagePathWithId] = null
 
-  val parts = PagePartsDao(id, settings, transaction)
+  val parts = PagePartsDao(id, settings, transaction, anyDao)
 
   override def siteId: SiteId = transaction.siteId
 
@@ -83,7 +84,7 @@ case class NotYetCreatedEmbeddedPage(
   override def path: Option[PagePathWithId] =
     Some(PagePathWithId.fromIdOnly(pageId = EmptyPageId, canonical = true))
 
-  override def parts: PageParts = PreLoadedPageParts(meta, allPosts = Nil)
+  override def parts: PageParts = PreLoadedPageParts(meta, allPosts = Vec.empty)
 
   override def version: PageVersion = 1
 }
@@ -93,7 +94,10 @@ case class NotYetCreatedEmbeddedPage(
 case class PagePartsDao(
   override val pageId: PageId,
   settings: AllSettings,
-  transaction: SiteTransaction) extends PageParts {
+  transaction: SiteTx,
+  // COULD_OPTIMIZE Use any dao instead of the tx always if possible?
+  anyDao: Opt[SiteDao] = None,
+  ) extends PageParts {
 
 
   private var _meta: Option[PageMeta] = null
@@ -115,7 +119,7 @@ case class PagePartsDao(
   }
 
   def origPostReplyBtnTitle: Option[String] = {
-    // For now, this is for embedded comments only  [POSTSORDR].
+    // For now, this is for embedded comments only  [POSTSORDR].  [per_page_type_props]
     if (pageMeta.pageType != PageType.EmbeddedComments)
       return None
     if (settings.origPostReplyBtnTitle.isEmpty)
@@ -124,7 +128,7 @@ case class PagePartsDao(
   }
 
   def origPostVotes: OrigPostVotes = {
-    // For now, this is for embedded comments only  [POSTSORDR].
+    // For now, this is for embedded comments only  [POSTSORDR].  [per_page_type_props]
     if (pageMeta.pageType != PageType.EmbeddedComments)
       return OrigPostVotes.Default
     settings.origPostVotes
@@ -138,17 +142,35 @@ case class PagePartsDao(
   }
 
   def postsOrderNesting: PostsOrderNesting = {
-    // Later, will use discPostSortOrder for embedded comments too, [POSTSORDR].
-    // but will then lookup emb comments settings by page type.
-    val sortOrder =
-      if (pageMeta.pageType == PageType.EmbeddedComments)
-        settings.embComSortOrder
-      else
-        settings.discPostSortOrder
-    PostsOrderNesting(sortOrder, settings.discPostNesting)
+    PostsOrderNesting(discPropsDerived.comtOrder, discPropsDerived.comtNesting)
   }
 
-  private var _allPosts: immutable.Seq[Post] = _
+  private var _discPropsDerived: DiscPropsDerived = _
+  private def discPropsDerived: DiscPropsDerived = {
+    if (_discPropsDerived eq null) {
+      _discPropsDerived = deriveDiscProps()
+    }
+    _discPropsDerived
+  }
+
+  private def deriveDiscProps(): DiscPropsDerived = {
+    val cats = ancestorCatsRootLast()
+    DiscProps.derive(
+          selfSource = Some(pageMeta),
+          ancestorSourcesSpecificFirst = cats,
+          // One can specify a different emb commments default sort order.
+          // [per_page_type_props] [POSTSORDR]
+          defaults = settings.discPropsFor(pageMeta.pageType))
+  }
+
+  private def ancestorCatsRootLast(): ImmSeq[Cat] = {
+    anyDao match {
+      case Some(dao) => dao.getAncestorCategoriesSelfFirst(pageMeta.categoryId)
+      case None => transaction.loadCategoryPathRootLast(pageMeta.categoryId, inclSelfFirst = true)
+    }
+  }
+
+  private var _allPosts: Vec[Post] = _
 
   def loadAllPosts(): Unit = {
     if (_allPosts eq null) {
@@ -156,7 +178,7 @@ case class PagePartsDao(
     }
   }
 
-  override def allPosts: immutable.Seq[Post] = {
+  override def allPosts: Vec[Post] = {
     if (_allPosts eq null) {
       loadAllPosts()
     }

@@ -286,7 +286,7 @@ export const TitleBodyComments = createComponent({
     let anyAboutCategoryTitle;
     if (page.pageRole === PageRole.About) {
       const ancestors = page.ancestorsRootFirst;
-      const parentCategory = _.last(ancestors);
+      const parentCategory: Ancestor = _.last(ancestors);
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' },
