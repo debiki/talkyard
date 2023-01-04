@@ -509,3 +509,10 @@ or person.  Or having two people listed as co-authors of an article.
 differently: Post.* fields pointing by id to a person/group/list-of-people. [/Edit]
 — Instead of, as in most other software, always just one of whatever it is.
 
+
+=== Debian instead of Alpine
+
+Use Debian as Docker base image, instead of Alpine. Debian is more widely
+used, that's good for security, e.g. Debian at Google: gLinux, and libc means
+no exotic musl-not-libc bug risk.  And most official images are based on
+Debian — we'd be downloading a Debian base image anyway.  [alp_2_deb]

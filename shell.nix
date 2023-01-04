@@ -1,5 +1,16 @@
-#{ pkgs ? import <nixpkgs> {} }:
+# How use Niv:
+#   First install Nix, then create Niv files:
+#     nix-env -iA nixpkgs.niv # download Niv
+#     niv init                # creates ./niv/sources.{nix,json}
+#   Switch to newer Nix channel, e.g.:
+#     nix-env -iA nixpkgs.niv            # add Niv to $PATH
+#     niv update nixpkgs -b nixos-22.11  # use newer branch
+#     # And sometimes also update niv/sources.nix:
+#     niv init  # (updates instead of inits)
 
+# This would import [whatever nixpkgs is defined to in ~/.nix-channels]?
+#{ pkgs ? import <nixpkgs> {} }:
+# But we want the nixpkgs specified in ./nix/sources.json, so:
 { sources ? import ./nix/sources.nix }:
 
 with (import <nixpkgs> {});
@@ -21,6 +32,28 @@ mkShell {
     #pkgconfig
     #libxml2
     #libxslt
+
+    ## This'll give everyone the same version of Rust — reproducible builds.
+    ## But don't! Because Rust will generate a binary that depends on libc 2.32, .33 or .34
+    ## — however, Debian 11 (the current stable release) has 2.31 installed,
+    ## so the binary will exit with a "no such file" error when it cannot
+    ## dyn link to libc:  ("maint" was the name of the binary)
+    ##    $ docker run --rm -it e72476584e2b       <—— runs /maint
+    ##    exec /maint: no such file or directory   <—— libc not found
+    ##    $ docker run --rm -it e72476584e2b bash
+    ##    root@e0f6b47be653:/# ./maint
+    ##    bash: ./maint: No such file or directory
+    ##    root@e0f6b47be653:/# ldd maint
+    ##    ./maint: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.33' not found (required by ./maint)
+    ##    ./maint: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.32' not found (required by ./maint)
+    ##    ./maint: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found (required by ./maint)
+    ##    ...
+    ## So skip, for now: (later, cross-build somehow)
+    #
+    #cargo
+    #rustc
+    #rustfmt
+    #libclang
   ];
 
   shellHook = ''

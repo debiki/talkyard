@@ -1,15 +1,32 @@
-FROM openjdk:8u212-alpine3.9
+# See: https://hub.docker.com/_/eclipse-temurin
+FROM  eclipse-temurin:11.0.17_8-jdk-jammy
+
+# There's no longer any JRE-only image.
+# COULD use Dockerfile.dev as build vm, and do away with the
+# s/impl/build-prod-app-image.sh script.  [appsv_build_image]
+
+# COULD create a Debian 11 slim JRE [slim_jre], fewer Java modules, see
+# the Docker Hub link above. To find out what deps are needed:
+#     d/c exec app bash
+#     cd /opt/sbt/bin
+#     jdeps --print-module-deps *.jar
+# And run jdeps on the generated Talkyard Play Framework JAR too?
+# Also see:  https://medium.com/azulsystems/using-jlink-to-build-java-runtimes-for-non-modular-applications-9568c5e70ef4
 
 # SECURITY SHOULD not be root (in Docker container)
 #RUN groupadd -r play && useradd -r -g play play
 
-# Nice to have:
-RUN apk add --no-cache \
-  curl tree less wget net-tools bash \
-  # For PASETO v2.local tokens, needs XChaCha20Poly1305:
-  libsodium \
-  # Telnet, nice for troubleshooting SMTP problems for example.
-  busybox-extras
+RUN \
+  apt-get update && \
+  apt-get install -y \
+    # Nice to have:
+    curl tree less wget net-tools bash \
+    # For 'ps':
+    procps \
+    # For PASETO v2.local tokens, needs XChaCha20Poly1305:
+    libsodium-dev \
+    # Telnet, nice for troubleshooting SMTP problems for example.
+    telnet
 
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
@@ -33,12 +50,18 @@ COPY build-info      /opt/talkyard/build-info/
 COPY assets /opt/talkyard/app/assets
 
 
-ENV PLAY_HEAP_MEMORY_MB 1000
+ENV PLAY_HEAP_MEMORY_MB 1024
 
 # Play will search for app-prod-override.conf in the same dir. See [4WDKPU2] in talkyard-prod-one.
 ENV CONFIG_FILE /opt/talkyard/app/conf/app-prod.conf
 
 WORKDIR /opt/talkyard/app
+
+RUN \
+    # Add Java to $PATH not just for root, but for other users too — so we can
+    # use another user to start Ty.
+    sed --in-place 's#^PATH="#PATH="/opt/java/openjdk/bin:#' /etc/environment && \
+    echo 'JAVA_HOME=/opt/java/openjdk\n'          >>         /etc/environment
 
 # # this —> "Bad root server path: /opt/talkyard/app/-jvm-debug 9999", no idea why...
 # CMD ["/opt/talkyard/app/bin/talkyard-server", \
@@ -60,7 +83,7 @@ WORKDIR /opt/talkyard/app
 CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-server \
   -J-Xms${PLAY_HEAP_MEMORY_MB}m \
   -J-Xmx${PLAY_HEAP_MEMORY_MB}m \
-  -jvm-debug 9999 \
+  -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
   -Dcom.sun.management.jmxremote.port=3333 \
   -Dcom.sun.management.jmxremote.ssl=false \
   -Dcom.sun.management.jmxremote.authenticate=false \

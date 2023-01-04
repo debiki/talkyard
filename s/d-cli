@@ -39,7 +39,7 @@ sudo PLAY_HEAP_MEMORY_MB=$PLAY_HEAP_MEMORY_MB \
   docker-compose run --rm --service-ports $set_is_prod_test_env_var app \
   /opt/sbt/bin/sbt \
   --mem $PLAY_HEAP_MEMORY_MB \
-  -jvm-debug 9999 \
+  -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
   -J-Xss30m \
   -Duser.home=/home/owner \
   -Dcom.sun.management.jmxremote.port=3333 \
@@ -52,6 +52,10 @@ sudo PLAY_HEAP_MEMORY_MB=$PLAY_HEAP_MEMORY_MB \
   -Ddeployment.security.SSLv3=false \
   -Dhttps.protocols=TLSv1.1,TLSv1.2 \
   -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
+  `# Otherwise ignored (really!?), although as per the docs it should be found since it's on the classpath.` \
+  -Dlogback.configurationFile=/opt/talkyard/app/conf/logback.xml \
+  `# log4j2 problem, disable this:` \
+  -Dlog4j2.formatMsgNoLookups=true \
   -Dconfig.file=/opt/talkyard/app/conf/app-dev.conf \
   "$@"
 

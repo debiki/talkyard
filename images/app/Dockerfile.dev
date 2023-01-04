@@ -1,27 +1,38 @@
-FROM openjdk:8u212-jdk-alpine3.9
+# Scala supports Java 8, 11 and 17. Ty uses Debian 11 and Java 11, currently.
+# Cannot upgrade to Java 17, because Nashorn has been removed.
 
-RUN apk add --no-cache \
+# This is Ubuntu though. Could create a Debian 11 slim JRE, see: [slim_jre].
+FROM  eclipse-temurin:11.0.17_8-jdk-jammy
+
+RUN \
+  apt-get update && \
+  apt-get install -y \
   # Required:
   # (git needed so can include Git revision in the build,
   # and show at http://server/-/build-info.)
   curl unzip git \
   # For PASETO v2.local tokens, needs XChaCha20Poly1305:
-  libsodium \
+  libsodium-dev \
   # Nice to have:
   tree less wget net-tools bash \
+  # For 'ps':
+  procps \
   # tput, needed by Coursier somehow
-  ncurses \
+  #ncurses \
   # Telnet, nice for troubleshooting SMTP problems for example.
-  busybox-extras
+  telnet
+  #busybox-extras
 
 # ADD extracts tar archives; this .tgz gets unpacked at /opt/sbt/{bin/,conf/}.
 ADD  sbt/sbt-1.4.5.tgz  /opt/
 
 # Install 'gosu' so we can use it instead of 'su'.
 # For unknown reasons, '  exec su ...' no longer works, but 'exec gosu ...' works fine.
-RUN apk add --no-cache \
-  --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
-  gosu
+# Edit: Not in use, see  entrypoint.dev.sh  [su_or_gosu].
+#       Also, this is old, for Alpine:  [alp_2_deb]
+#RUN apk add --no-cache \
+#  --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
+#  gosu
 
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
@@ -32,12 +43,19 @@ RUN mkdir -p /opt/talkyard/uploads/ && \
 # Add a self signed dummy cert for the dummy SMTP server (the 'fakemail' Docker container),
 # so one can test connecting to it with TLS and see if the TLS conf vals work. [26UKWD2]
 # ("changeit" = default keystore password)
-COPY fakemail-publ-test-self-signed.crt /smtp-server.crt
-RUN cd $JAVA_HOME/jre/lib/security && \
-    keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts \
-        -importcert -alias ldapcert -file /smtp-server.crt
+# This is for Alpine. What do in Debian instead? [alp_2_deb]
+#COPY fakemail-publ-test-self-signed.crt /smtp-server.crt
+#RUN cd $JAVA_HOME/jre/lib/security && \
+#    keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts \
+#        -importcert -alias ldapcert -file /smtp-server.crt
 
 WORKDIR /opt/talkyard/app/
+
+RUN \
+    # Add Java to $PATH not just for root, but for user 'owner' too — that's the
+    # user that calls Java and starts Ty.
+    sed --in-place 's#^PATH="#PATH="/opt/java/openjdk/bin:#' /etc/environment && \
+    echo 'JAVA_HOME=/opt/java/openjdk\n'          >>         /etc/environment
 
 # Don't do until now, so won't need to rebuild whole image if editing entrypoint.
 COPY entrypoint.dev.sh /docker-entrypoint.sh
@@ -45,7 +63,7 @@ RUN  chmod ugo+x   /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Overriden in docker-compose.yml
-ENV PLAY_HEAP_MEMORY_MB 1048
+ENV PLAY_HEAP_MEMORY_MB 2048
 
 
 
@@ -110,9 +128,11 @@ ENV PLAY_HEAP_MEMORY_MB 1048
 # sbt then downloads things to /root/.sbt and /root/.ivy2 if running as root inside a vm.
 # Maybe because of 'exec'?
 #
-CMD cd /opt/talkyard/app/ && exec /opt/sbt/bin/sbt \
+CMD \
+ cd /opt/talkyard/app/ && \
+ exec /opt/sbt/bin/sbt \
   --mem $PLAY_HEAP_MEMORY_MB \
-  -jvm-debug 9999 \
+  -J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999 \
   # Avoid SBT compilation java.lang.StackOverflowError in
   # scala.tools.nsc.transform.Erasure.
   -J-Xss30m \
@@ -129,6 +149,8 @@ CMD cd /opt/talkyard/app/ && exec /opt/sbt/bin/sbt \
   -Ddeployment.security.SSLv3=false \
   -Dhttps.protocols=TLSv1.1,TLSv1.2 \
   -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
+  # Otherwise ignored, although as per the docs it should be found since it's on the classpath.
+  -Dlogback.configurationFile=/opt/talkyard/app/conf/logback.xml \
   # log4j2 problem, disable this:
   -Dlog4j2.formatMsgNoLookups=true \
   #
