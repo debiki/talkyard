@@ -681,11 +681,10 @@ push-tag-to-git:
 	@# Do Not push to master — doing that would include this version in tyse-v0-regular.
 	@# Exit on any error, so won't push something broken to the versions repo.
 	@#
-	@# Old: git checkout -B $(DEV_RELEASE_CHANNEL) --track origin/$(DEV_RELEASE_CHANNEL)
-	@#
 	@set -e  ;\
 	cd relchans/$(DEV_RELEASE_CHANNEL)/  ;\
 	  git fetch origin $(DEV_RELEASE_CHANNEL)  ;\
+	  git checkout -B $(DEV_RELEASE_CHANNEL) --track origin/$(DEV_RELEASE_CHANNEL)  ;\
 	  git merge --ff-only origin/$(DEV_RELEASE_CHANNEL)  ;\
 	  echo $(tag) >> version-tags.log  ;\
 	  git add version-tags.log  ;\
