@@ -103,6 +103,8 @@ object PatRelType_later {
     *      And did they have any comments — where are they? (As replies to the post?)
     *      Maybe assignments could be in a separate table, even, if they're this
     *      special. ?
+    *      But that'd be another rel, type VotedOn, sub type Review, and value +-1, +-2 ?
+    *      And thereafter the AssignedTo maybe would become dormant?
     *
     *  - A custom value could be e.g. AssignedTo.Review { what = dependencies }, or
     *      AssignedTo.Review what = code. And VotedOn.Review { what = dependencies },
@@ -115,6 +117,15 @@ object PatRelType_later {
     * and choose how often to get notified, other notf prefs things.
     */
   // object FollowerOf extends PatRelType_later(-1)
+
+  /** If pat has been added as author of a post.  (Value could maybe say if is
+    * primary author, or secondary author?)
+    */
+  case object AuthorOf extends PatRelType_later(-1)
+
+  /** If pat has been added as owner of a post.
+    */
+  case object OwnerOf extends PatRelType_later(-1)
 }
 
 
@@ -195,6 +206,8 @@ object PostStatusAction {
 }
 
 
+// RENAME to  PatPostRel
+// Stored in  post_actions3, will rename to pat_rels_t, no to  pat_post_rels_t?
 abstract class PostAction {
   def uniqueId: PostId
   def pageId: PageId

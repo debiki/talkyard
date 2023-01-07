@@ -308,6 +308,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     throwForbiddenIfActivityPrivate(userId, requester, dao)
 
+    // MUST: Excl anon posts. [excl_anon_posts]
     val topicsInclForbidden = dao.loadPagesByUser(
       userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
@@ -331,6 +332,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val requesterIsStaffOrAuthor = requesterIsStaff || requester.exists(_.id == authorId)
     val author = dao.getParticipant(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
 
+    // MUST: Excl anon posts. [excl_anon_posts]
     throwForbiddenIfActivityPrivate(authorId, requester, dao)
 
     // For now. LATER: if really many posts, generate an archive in the background.

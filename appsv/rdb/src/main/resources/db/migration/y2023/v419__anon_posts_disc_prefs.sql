@@ -2,6 +2,19 @@
 -- and some new datatype domains.
 
 
+-- Old mistakes
+-------------------------------------------------
+
+-- These will be in  pat_rels_t  instead, so can look up post ids directly
+-- by pat id, relationship type and time.  Otherwise, if having many post authors,
+-- by pointing  authors_id_c  to a pats_t user list group,  the database
+-- would need to do one lookup, for each user list group one is a member of.
+-- (These have never been used, ok to drop.)
+--
+alter table posts3 drop column  owners_id_c;
+alter table posts3 drop column  authors_id_c;
+
+
 -- New domains
 -------------------------------------------------
 
@@ -24,30 +37,21 @@ create domain choose_yes_d i16_d;
 alter  domain choose_yes_d add
    constraint choose_yes_d_c_in check (value in (2, 3));
 
-create domain no_choose_yes_d i16_d;
-alter  domain no_choose_yes_d add
-   constraint no_choose_yes_d_c_in check (value in (1, 2, 3));
+create domain never_allow_recmd_always_d i16_d;
+alter  domain never_allow_recmd_always_d add
+   constraint never_allow_recmd_always_d_c_in check (value in (1, 2, 3, 4));
 
 -- See AnonStatus in the Scala code.
 create domain anonym_status_d i16_d;
 alter  domain anonym_status_d add
    constraint anonym_status_d_c_in_5_37 check (value in (5, 37));
 
+-- Says if the poster is still author and owner. And if others have been
+-- added as authors or owners, or assigned to do this post — then, they'd
+-- be looked up in pat_post_rels_t.
+create domain post_pat_status_d i16_d;
+
 create domain pseudonym_status_d i16_d; -- will add constraints later
-
-
--- Privacy columns
--------------------------------------------------
-
-
-alter table users3 rename column see_activity_min_trust_level to see_activity_min_tr_lv_c;
-alter table users3 add column see_profile_min_tr_lv_c  trust_level_or_staff_d;
-
--- But by looking at last visit date-time, reading time, and comparing with
--- anonymous posts, it could be possible to, in a small forum, knwo who posted an
--- anonymous post.  So, sometimes the stats should be hidden
-alter table users3 add column see_approx_stats_min_tr_lv_c   trust_level_or_staff_d;
-alter table users3 add column see_exact_stats_min_tr_lv_c    trust_level_or_staff_d;
 
 
 
@@ -102,7 +106,7 @@ create index pats_i_anononpageid on users3 (
     site_id, anon_on_page_id_st_c);
 
 
-alter table users3 add constraint pats_c_pseudonymid_gte10 check (
+alter table users3 add constraint pats_c_pseudonymid_gte100 check (
     pseudonym_status_c is null or user_id >= 100);
 
 alter table users3 add constraint pats_c_anonid_ltem10 check (
@@ -142,12 +146,20 @@ alter table users3 add constraint pats_c_anon_not_approved check (
         approved_at is null and
         approved_by_id is null));
 
--- For now.
+-- For now — since pseudonyms haven't been implemented.
 alter table users3 add constraint pats_c_pseudonym_null check (
     pseudonym_status_c is null);
 
+-- Maybe later it'll be possible for pseudonyms to configure a different
+-- notifications email address — in case one wants discussions related to
+-- the pseudonym, to get sent elsewhere. But is that a can of worms? Because
+-- then it could also make sense with *per category* notification email adrs,
+-- maybe better avoid.
+--
 alter table users3 add constraint pats_c_anon_no_email check (
-    anonym_status_c is null
+    (anonym_status_c is null and
+      pseudonym_status_c is null
+      )
     or (guest_email_addr is null and
         primary_email_addr is null and
         email_notfs is null and
@@ -156,6 +168,21 @@ alter table users3 add constraint pats_c_anon_no_email check (
         summary_email_interval_mins is null and
         summary_email_if_active is null));
 
+-- These: is_approved, approved_at, approved_by_id
+-- are not listed here, because anon users don't need to get approved.
+-- Instead, if the real user is approved, the annon is approved too.
+--
+-- These: suspended_at, suspe/nded_till, suspended_by_id, suspended_reason
+-- also aren't listed, because anons *can* get suspended. Can be
+-- better than blocking the real account, and, if someone
+-- misbehaves repeatedly, when being anon, then, after some of those
+-- anon users have gotten suspended, the real user can automatically
+-- get prevented from posting anonymously, *without* the mods knowing
+-- who hen is (good for privacy & staying anon).
+--
+-- These: deactivated_at, deleted_at
+-- also aren't included. Can make sense to delete an anon account?
+--
 alter table users3 add constraint pats_c_anon_nulls check (
     anonym_status_c is null
     or (guest_browser_id is null and
@@ -177,10 +204,35 @@ alter table users3 add constraint pats_c_anon_nulls check (
         allowed_upload_extensions_c is null and
         -- Maybe there should be an anon user group, where these are configured?:
         -- Or would that be the Everyone group?
-        see_activity_min_tr_lv_c is null and
-        see_profile_min_tr_lv_c is null and
-        see_approx_stats_min_tr_lv_c is null and
-        see_exact_stats_min_tr_lv_c is null));
+        may_search_engines_index_me_c is null and
+        may_see_my_activity_tr_lv_c is null and
+        may_see_my_username_tr_lv_c is null and
+        may_see_my_full_name_tr_lv_c is null and
+        may_see_my_tiny_avatar_tr_lv_c is null and
+        may_see_my_medium_avatar_tr_lv_c is null and
+        may_see_my_brief_bio_tr_lv_c is null and
+        may_see_my_full_bio_tr_lv_c is null and
+        may_see_my_memberships_tr_lv_c is null and
+        may_see_my_profile_tr_lv_c is null and
+        may_see_me_in_lists_tr_lv_c is null and
+        may_see_if_im_online_tr_lv_c is null and
+        may_see_my_visit_stats_tr_lv_c is null and
+        may_see_my_post_stats_tr_lv_c is null and
+        may_see_my_approx_stats_tr_lv_c is null and
+        may_see_my_exact_stats_tr_lv_c is null and
+        may_find_me_by_email_tr_lv_c is null and
+        may_follow_me_tr_lv_c is null and
+        may_mention_me_tr_lv_c is null and
+        may_mention_me_same_disc_tr_lv_c is null and
+        may_dir_msg_me_tr_lv_c is null and
+        why_may_not_mention_msg_me_html_c is null and
+        may_see_my_account_email_adrs_tr_lv_c is null and
+        may_see_my_contact_email_adrs_tr_lv_c is null and
+        may_assign_me_tr_lv_c is null and
+        may_see_my_assignments_tr_lv_c is null and
+        email_threading_c is null and
+        email_notf_details_c is null
+        ));
 
 -- Better lock the real user account's levels instead?
 alter table users3 add constraint pats_c_anon_no_levels check (
@@ -188,7 +240,9 @@ alter table users3 add constraint pats_c_anon_no_levels check (
     or (trust_level is null and
         locked_trust_level is null and
         threat_level is null and
-        locked_threat_level is null));
+        locked_threat_level is null and
+        tech_level_c is null
+        ));
 
 alter table users3 add constraint pats_c_anon_no_avatar check (
     anonym_status_c is null
@@ -247,14 +301,36 @@ create index auditlog_i_doertrueid_session
 -- have done. (Or lookup the true id in the users table, pats_t, but the audit log
 -- should be enough.)
 --
+-- Actually, can be better to add  post_actions3 [pat_rels_t]  rows of type:
+--    AuhtorOf, with val_i32_c being a type-of-author bitfield? (anon, pseudonym, co-author),
+-- linking to one's anon & pseudonym posts,
+-- when and only when  posts_t.created_by_id  doesn't point directly to one's
+-- true id (but instead points to an anon/pseudonym/user-list-pats_t row).
+-- No! Skip. Instead, let  created_by_id  be the real id.
+--                 and "just" add a   pat_rels_t.rel_type_c = AuthorOf for the anon?
+--                 and excl such posts everywhere, as long as the anon is anon.
+--      Also, can have a
+--         pat_rels_t.show_pats_id  to show an anonym as voter,
+--                                     instead of the real user account.
+--
 -- alter table post_actions3    add column true_id_c             member_id_d;
 -- alter table links_t          add column added_by_true_id_c    member_id_d;
 -- alter table link_previews_t  add column first_linked_by_id_c  member_id_d;
 -- alter table post_revisions3  add composed_by_true_id_c        member_id_d;
 -- alter table posts3           add created_by_true_id_c         member_id_d;
+
+-- But I've added  author_id_c  already!
+-- Now removing. Instead:   pat_rels_t.rel_type_c = AuthorOf
+--
 -- alter table posts3           add author_id_c                  pat_id_d;
 -- alter table posts3           add author_true_id_c             member_id_d;
--- 
+-- alter table post_read_stats3 add true_id_c                    member_id_d;
+-- alter table review_tasks3    add true_id_c
+-- alter table upload_refs3     add added_by_true_id_c ?
+--
+-- user_stats3, hmm?
+--
+-- pages_t — no, instead, the orig post in posts_t?  Old:
 -- alter table pages3           add author_true_id_c             member_id_d;
 -- -- But leave last_reply_by_id as is — don't add any  last_reply_by_true_id,
 -- -- not that interesting.
@@ -262,6 +338,14 @@ create index auditlog_i_doertrueid_session
 -- alter table upload_refs3     add  added_by_true_id_c          member_id_d;
 -- 
 -- alter table user_visit_stats3 add true_user_id_c              member_id_d;
+
+
+-- Let's add a  pat_rels_t.rel_type_c = AuthorOf from the anon to the anon posts?
+-- Whilst created_by_id_c would keep pointing to the true author.
+-- Then, looking up all one's posts, that just works.
+-- And anon posts can easily be filtered away, by checking anon_status_c (because
+-- other)
+
 
 
 -- Notification preferences
@@ -305,83 +389,9 @@ create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, pages_with_ta
 
 
 
-
-
--- Content settings/preferences
--------------------------------------------------
-
--- For categories and tags. Can sometimes be overridden by groups or individual users.
-
-
--- create table cont_prefs_mixed_t(
---   site_id_c                        site_id_d,    -- pk
---   for_pat_id_c                     member_id_d,  -- pk
---   cont_prefs_pat_id_c
---   cont_prefs_nr_c
---   cat_id_c
---   tagtype_id_c
---   page_id_c
-
-
-create table cont_prefs_t(
-  site_id_c                        site_id_d, -- pk
-  pat_id_c                         member_id_d,  -- pk
-  prefs_nr_c                       i16_gz_d,  -- pk
-
-  cont_set_type_c                  content_set_type_d not null,
-
-  ops_start_anon_c                 no_choose_yes_d,
-  cmts_start_anon_c                no_choose_yes_d,
-  -- posts_stay_anon__unimpl_c        no_choose_yes_d,
-  -- min_anon_mins__unimpl_c          i32_gz_d,
-  -- deanon_pages_aft_mins__unimpl_c  i32_gz_d,
-  -- deanon_posts_aft_mins__unimpl_c  i32_gz_d,
-
-  -- sect_page_id__unimpl_c           page_id_st_d,
-  -- sect_page_id_int__unimpl_c       page_id_d__later,
-
-  -- pin_in_linksbar__unimpl_c        show_in_linksbar_d,
-  -- pin_in_linksbar_order__unimpl_c  i32_gz_d,
-  -- pin_in_cat_order__unimpl_c       i32_gz_d,
-  -- pin_in_globally__unimpl_c        i32_gz_d,
-
-  -- base_folder__unimpl_c            folder_path_d,
-  -- show_page_ids__unimpl_c          i16_gz_d,
-  -- ops_start_wiki__unimpl_c         choose_yes_d,
-  -- cmts_start_wiki__unimpl_c        choose_yes_d,
-  -- show_op_author__unimpl_c         i16_gz_d,
-  -- allow_cmts__unimpl_c             i16_gz_d, -- yes / no-but-may-reply-to-old / no-but-keep-old / no-and-hide-old  ?
-
-  constraint contprefs_p_prefsid primary key (site_id_c, pat_id_c, prefs_nr_c),
-
-  -- fk ix: pk
-  constraint contprefs_r_pats foreign key (site_id_c, pat_id_c)
-      references users3 (site_id, user_id) deferrable,
-
-  --  -- For specific users, id must be < 0 — so that there can be a > 0 constraint,
-  --  -- in cats_t and tagtypes_t, for the default prefs, to catch bugs (don't want the
-  --  -- default prefs to accidentally reference a specific user's/group's prefs).
-  --  constraint contprefs_c_id_gtz_iff_everyone check ((memb_id_c is null) = (prefs_id_c > 0)),
-
-  -- Guests and anon users cannot configure discussion preferences — only groups
-  -- and real users can.
-  constraint contprefs_c_for_users_and_groups check (pat_id_c >= 10)
-
-  -- -- Should use  memb_id_c = null, not 10, for everyone's prefs, otherwise
-  -- -- I think foreign keys won't work (Postgres wouldn't know the rows were unique?).
-  -- constraint contprefs_c_null_not_everyone check (memb_id_c <> 10)
-);
-
-
-
-alter table categories3 add column cont_prefs_nr_c  i32_gz_d;
-alter table categories3 add column cont_pat_id_10_c i32_gz_d default 10;
-alter table categories3 add constraint cont_patid10_c_eq10 check (cont_pat_id_10_c = 10);
-
--- fk ix: cats_i_patid10_contprefsid
--- unique ix: 
-alter table categories3 add constraint cats_contprefsid_r_contprefs
-    foreign key (site_id, cont_pat_id_10_c, cont_prefs_nr_c)
-    references cont_prefs_t (site_id_c, pat_id_c, prefs_nr_c) deferrable;
-
-create index cats_i_patid10_contprefsid on categories3 (site_id, cont_pat_id_10_c, cont_prefs_nr_c);
+-- Later, create table cont_prefs_t, and move this to there? See db-wip.sql.
+--
+alter table categories3 add column  anon_ops_c               never_allow_recmd_always_d;
+alter table categories3 add column  anon_comts_c             never_allow_recmd_always_d;
+alter table categories3 add column  deanon_pages_aft_mins_c  i16_gz_d;
+alter table categories3 add column  deanon_posts_aft_mins_c  i16_gz_d;

@@ -131,6 +131,8 @@ trait PostsDao {
     val realAuthorAndGroupIds = tx.loadGroupIdsMemberIdFirst(realAuthor)
 
     // Dupl code. [get_anon]
+    // Hmm, rename to  otherAuthor,  and None by default.  And set  createdById
+    // to the real account, always,  and  author_id_c  to any anonym's id.   [mk_new_anon]
     val author =
           if (doAsAnon.isEmpty) {
             realAuthor
@@ -216,7 +218,8 @@ trait PostsDao {
       multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
       postType = postType,
       createdAt = now.toJavaDate,
-      createdById = author.id,
+      createdById = author.id,  // no, set to real user instead, and:
+      // authorsId = Some(author.id) if anon, else None  (then, same as poster)
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
       approvedById = approverId)
@@ -255,7 +258,10 @@ trait PostsDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewReply,
+      // Change to the real author id?
       doerId = author.id,
+      // And add:
+      // doer_false_id = ...
       doneAt = now.toJavaDate,
       browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
