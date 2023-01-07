@@ -559,3 +559,6 @@ the "official" operators language — see the Rust K8s Operators links above.
 == Year 2023
 
 
+=== Anonyms and Pseudonyms
+
+See tyworld.adoc: 

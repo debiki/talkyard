@@ -1120,7 +1120,6 @@ class RdbSystemTransaction(
       delete from uploads3
       delete from page_users3
       delete from page_notf_prefs_t
-      delete from cont_prefs_t
       delete from tag_notf_levels3
       delete from post_tags3
       delete from post_actions3

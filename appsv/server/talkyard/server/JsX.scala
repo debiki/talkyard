@@ -240,7 +240,7 @@ object JsX {   RENAME // to JsonPaSe
     }
     else {
       require(user.isAuthenticated, "EdE8GPY4")
-      json += "isAuthenticated" -> JsTrue  // COULD remove this, client side, use !isGuest instead
+      json += "isAuthenticated" -> JsTrue  // COULD_OPTIMIZE remove this, client side, use !isGuest instead
     }
 
     if (user.email.isEmpty) {

@@ -681,6 +681,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       tyype = PostType.fromInt(rs.getInt("TYPE")).getOrElse(PostType.Normal),
       createdAt = getDate(rs, "CREATED_AT"),
       createdById = rs.getInt("CREATED_BY_ID"),
+      // +=  authors_id_c = ...  e..g anonym id
       currentRevStaredAt = getDate(rs, "curr_rev_started_at"),
       currentRevisionById = rs.getInt("curr_rev_by_id"),
       currentRevLastEditedAt = getOptionalDate(rs, "curr_rev_last_edited_at"),
@@ -899,6 +900,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         insertPostActionImpl(
           postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
           actionType = flag.flagType, doerId = flag.doerId, doneAt = flag.doneAt)
+      // case AuthorOf => ...
+      // case OwnerOf => ...
     }
   }
 

@@ -1,4 +1,10 @@
 
+-- Bit manipulation in Postgres, e.g.:
+--   select (12::bit(31) & (1::bit(31) << 3))::integer  ——>  8::int4
+-- Also:
+--   https://medium.com/developer-rants/bitwise-magic-in-postgresql-1a05284e4017
+
+
 --==== Circles and User Lists =================================================
 
 -- User lists, so can assign many to something. Or have more than one author,
@@ -25,19 +31,6 @@ Or 3) If adding more people, a new private page gets created, with the
 original people and the ones added.
 $_$;
 
-
-alter table users3 add column is_pat_list_c  bool;
-comment on column  users3.is_pat_list_c  is $_$
-If non-null, this pats_t row is not a real group, but a help construction
-that lists users or groups, and wherever this list-of-pats appear, the pats
-are to be listed. For example, if  posts_t.author_id_c  is a list,
-and Alice and Bob are in the list, then Alice's and Bob's usernames are shown
-instead of the lists username (it has none), e.g.:
-"By Alice and Bob on 2022-03-04: ....", if authors_id_c points to
-that list with Alice and Bob. But if authors_id_c is a non-list group,
-e.g. Support Team, then the text would read "By Support Team", instead
-of listing all members.
-$_$;
 
 alter table users3 add column is_circle_c    bool;
 comment on column  users3.is_circle_c  is $_$
@@ -1034,3 +1027,154 @@ alter table posts3 add constraint posts_c_draft_where_eq_pagetype_null check (
 -- & no cat or pat,  if is edits.
 -- & ... ?
 
+
+
+--======================================================================
+--======================================================================
+--======================================================================
+--  cont_prefs_t
+--======================================================================
+--======================================================================
+
+
+-- Content settings/preferences
+-------------------------------------------------
+
+-- For categories and tags. Can sometimes be overridden by groups or individual users.
+
+
+-- create table cont_prefs_mixed_t(
+--   site_id_c                        site_id_d,    -- pk
+--   for_pat_id_c                     member_id_d,  -- pk
+--   cont_prefs_pat_id_c
+--   cont_prefs_nr_c
+--   cat_id_c
+--   tagtype_id_c
+--   page_id_c
+
+-- Scala +=
+delete from cont_prefs_t  ;
+delete from cont_prefs_t where site_id_c = ?  ;
+
+-- Wait with this. Instead, add categories3 (cats_t) cols for now,
+-- see:  ./y2023/v419__anon_posts_disc_prefs.sql
+--
+create table cont_prefs_t(
+  site_id_c                        site_id_d, -- pk
+  pat_id_c                         member_id_d,  -- pk
+  prefs_nr_c                       i16_gz_d,  -- pk
+
+  content_set_type_c               content_set_type_d not null,
+
+-- ren to  anon_ops_c
+  ops_start_anon_c                 never_alowd_recd_always_d,
+-- ren to  anon_comts_c
+  cmts_start_anon_c                never_alowd_recd_always_d,
+  -- posts_stay_anon__unimpl_c        never_alowd_recd_always_d,
+  -- min_anon_mins__unimpl_c          i32_gz_d,
+  -- deanon_pages_aft_mins__unimpl_c  i32_gz_d,
+  -- deanon_posts_aft_mins__unimpl_c  i32_gz_d,
+
+  -- sect_page_id__unimpl_c           page_id_st_d,
+  -- sect_page_id_int__unimpl_c       page_id_d__later,
+
+  -- pin_in_linksbar__unimpl_c        show_in_linksbar_d,
+  -- pin_in_linksbar_order__unimpl_c  i32_gz_d,
+  -- pin_in_cat_order__unimpl_c       i32_gz_d,
+  -- pin_in_globally__unimpl_c        i32_gz_d,
+
+  -- base_folder__unimpl_c            folder_path_d,
+  -- show_page_ids__unimpl_c          i16_gz_d,
+  -- ops_start_wiki__unimpl_c         choose_yes_d,
+  -- cmts_start_wiki__unimpl_c        choose_yes_d,
+  -- show_op_author__unimpl_c         i16_gz_d,
+  -- allow_cmts__unimpl_c             i16_gz_d, -- yes / no-but-may-reply-to-old / no-but-keep-old / no-and-hide-old  ?
+
+  constraint contprefs_p_prefsid primary key (site_id_c, pat_id_c, prefs_nr_c),
+
+  -- fk ix: pk
+  constraint contprefs_r_pats foreign key (site_id_c, pat_id_c)
+      references users3 (site_id, user_id) deferrable,
+
+  --  -- For specific users, id must be < 0 — so that there can be a > 0 constraint,
+  --  -- in cats_t and tagtypes_t, for the default prefs, to catch bugs (don't want the
+  --  -- default prefs to accidentally reference a specific user's/group's prefs).
+  --  constraint contprefs_c_id_gtz_iff_everyone check ((memb_id_c is null) = (prefs_id_c > 0)),
+
+  -- Guests and anon users cannot configure discussion preferences — only groups
+  -- and real users can.
+  constraint contprefs_c_for_users_and_groups check (pat_id_c >= 10)
+
+  -- -- Should use  memb_id_c = null, not 10, for everyone's prefs, otherwise
+  -- -- I think foreign keys won't work (Postgres wouldn't know the rows were unique?).
+  -- constraint contprefs_c_null_not_everyone check (memb_id_c <> 10)
+);
+
+
+-- Default prefs, for Everyone, id 10, per category.
+alter table categories3 add column cont_prefs_nr_c  i32_gz_d;
+alter table categories3 add column cont_pat_id_10_c i32_gz_d default 10;
+alter table categories3 add constraint cont_patid10_c_eq10 check (cont_pat_id_10_c = 10);
+
+-- fk ix: cats_i_patid10_contprefsid
+-- unique ix: 
+alter table categories3 add constraint cats_contprefsid_r_contprefs
+    foreign key (site_id, cont_pat_id_10_c, cont_prefs_nr_c)
+    references cont_prefs_t (site_id_c, pat_id_c, prefs_nr_c) deferrable;
+
+create index cats_i_patid10_contprefsid on categories3 (site_id, cont_pat_id_10_c, cont_prefs_nr_c);
+
+
+
+--======================================================================
+--  cont_prefs_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  cont_prefs_t  is $_$
+
+Settings and preferences that make sense for all of categories, tags
+and specific pages. Usually they're default, for everyone in the forum;
+then, memb_id_c is 10 (Everyone) and prefs_id_c is > 0.
+
+But some preferences can be overridden by user groups or individual users
+themselves — then, prefs_id_c is < 0 and memb_id_c is the user/group id.
+Let's say you want to always post anonymously in a specific
+category. Then, you can (not impl though) set ops_start_anon_c and cmts_start_anon_c
+to true, for yourself only, in that category. And thereafter you cannot
+forget to be anonyomus, there. Whilst others are unaffected.
+Or maybe you're the teacher, and don't care about being anonymous in one
+specific category — whilst the default (for all students) is to be anonymous. 
+
+Maybe later, there'll be a table cont_mixed_prefs_t for specifying
+content preferences for many categories, optionally combined with tags,
+in one single row. But currently there's one cont_prefs_t per category,
+maybe "soon" per tag too.
+
+Wikis: cont_prefs_t lets you implement wikis by making a forum
+category a wiki category: set ops_start_wiki_c to true, and set
+base_folder_c to e.g. '/wiki/' and show_page_ids_c to false.
+Alternatively, you can create a *tag* named 'wiki', and configure the
+same settings for that tag (instaed of a category).
+Then wiki pages can be placed in the categories where it makes the most sense
+whilst still being part of a wiki — just tag them with the wiki tag.
+So, a wiki via a category, or a tag. What makes sense, is community
+specific I suppose.
+
+Docs: In a documentation / articles category, you might want to set
+show_op_author_c = false and allow_cmts_c = false,
+and maybe base_folder_c = '/docs/'.
+Or you can use a 'docs' tag, and have docs in different categories,
+whilst still appearing below the '/docs/' URL path'
+$_$;  -- '
+
+-- comment on column  cont_prefs_t.anon_by_def_c  is $_$
+-- 
+-- If posts in this category, are anonymous, by default.
+-- $_$;
+-- ---------------------------------------------------------------------
+-- comment on column  cont_prefs_t.def_anon_level_c  is $_$
+-- 
+-- Default anonymity level, in this category.
+-- $_$; -- '
+------------------------------------------------------------------------

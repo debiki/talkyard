@@ -808,30 +808,21 @@ package object core {
     *
     * None or 0  = it not anon, was never anon
     * 000---01  = made anon by oneself
-    * 000---10  = made anon by staff   (might not have been pub for any time —
+    * 000---10  = made anon by other user  (might not have been pub for any time —
     *             if been in a staff-only category all the time)
     * 000---11  = made anon automatically (e.g. auto anon category)
     *
     * ---000--  = cannot be deanonymized
     * -----1--  = can deanonymized oneself
-    * ----1---  = can be deanonymized by staff
-    * ---1----  = was deanonymized automatically (after page anonym ttl)
+    * ----1---  = can be deanonymized by others with deanon permission in the category?
+    * ---1----  = gets deanonymized automatically (after page anonym ttl)
     *
     * -00-----  = is still anonymous
     * -01-----  = 32, was deanonymized by oneself (no longer anonymous)
-    * -10-----  = 64, was deanonymized by staff
+    * -10-----  = 64, was deanonymized by sbd else
     * -11-----  = 96, was deanonymized automatically (after page anonym ttl)
     *
     * 1--- ----  = was public for some time
-    *
-    * %% Was never anon, is not anon  = 0  (all bits 0)
-    * %% Was anon             = ----1     = 1  (lowest bit set, other bits can be whatever)
-    * %% Is anon              = -0-11     = 3
-    * %% Was, but isn't       = ---01
-    * %% Can auto deanon      = -0111     = 7
-    * %% Was auto deanon      = -0101     = 5  (automatically deanonymized)
-    * %% Was deanond by other = -1001     = 9
-    * %% Was pub some time    = 1---1
     */
   sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
     def toInt: i32 = IntVal

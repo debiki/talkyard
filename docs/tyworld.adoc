@@ -129,6 +129,113 @@ A new post gets a new id and can work as the new id for a new flag of the same t
 (But a person's id stays the same.)
 
 
+
+
+== Anonyms and Pseudonyms
+
+=== Anonyms posts
+
+When you anonymously, then, a new anonym (anonymous user) is created, for you,
+to use on that particular page. You can't use it outside that page
+(instead, another then gets created).  Anon comments cannot be moved to
+other pages, and aren't visible to others (only to yourself) in the activity
+list on your user profile page, or in your posts counts. [excl_anon_posts]
+
+The software remembers if you want to be anonymous or not, per
+discussion page, by looking at your previous comments in that discussion
+and sub thread you're replying in — because maybe you're using using your
+real account, in one sub thread, but replying anonymously in another
+(on the same page).
+
+So, you're unlikely to accidentally post using the wrong anonymous account
+since the software does the right thing automatically.
+
+=== Anonymous votes
+
+If you've commented anonymously on a page, or the page is anon-by default,
+then, your votes on that page are anon by default, too
+(using the same anon account).
+
+[anon_votes]
+
+=== Anonymous categories
+
+Categories can be 1) always-anonymous, or 2) anon by default, or
+3) real account by default but anon posts allowed. Or 4) anon posts
+not allowed (only real accounts).
+
+A category can be configured to get _de-anonymized_ after a while (!).
+That is, after say two weeks, the real usernames are shown so everyone
+can see who wrote what.
+
+In such categories, before posting, there's an obtrusive info box about this,
+so everyone will know how it works.
+
+=== For the workplace
+
+Anonymous categories and de-anonymizing be helpful in the workplace: Posts can
+start anonymous, for better decision making (when people judge an idea more for
+what it is, not knowing if it's from a friend or their boss or the CEO).
+
+And the posts can get deanonymized after some weeks,
+when the discussion has ended — so people can get recognized, eventually,
+for good ideas they had.
+
+=== Pseudonyms
+
+Pseudonyms (not implemented) will work differently:
+
+You can have only a few pseudonym account, and you switch to one of them,
+and use it, until you switch back to your real user account.
+Not so different from signing up using different email addresses
+— however, you don't need to create lots of email addresses and sign up
+many times and log in and out "all the time". Instead, you just click your
+username menu, and choose "Switch to pseudonym".
+
+And you get to see notifications for all your pseudonyms, at once
+(and if you click one, the software suggests that you switch to the related
+pseudonym, if you want to reply).
+
+=== Tech notes
+
+Implementation wise, to show notifications from all one's pseudonyms,
+Talkyard does one lookup per pseudonym. So that's why you cannot
+have hundereds of pseudonyms (because then this'd be slow).
+But one's anon comments point directly to your real account, only the
+`author_id_c` field points to the anonym. Then it's just one lookup,
+to list all one's anon posts. Hence, no need to restrict how many anon users
+one can have.
+
+Anon posts are implemented by assigning authorship to your anonym user account,
+for the page in question. But your main account remains the owner, and keeps
+getting notified of replies.
+
+
+
+
+== Post Owners and Authors
+
+(Not implemented.)
+
+You can assign authorship of a post to someone else.
+Then, that person's (or people's, or group's) name is shown as the author,
+and no one sees you originally wrote that post.
+When doing this, you get to choose if you still want to get notified of replies or not.
+
+You can also assign ownership of a post of yours, to someone else.
+Thereafter, you cannot edit or delete or do anything with the post — it's as
+if that other person had posted it, originally.
+When doing this, you get to choose if you want to keep getting notified of replies.
+
+But when assigning authorship or ownership to someone else,
+then, for this to take effect, first that other person needs to agree:
+hen gets a notification, and gets to click a Yes or No button,
+and gets to choose if hen wants to start getting notified of replies
+(by default, yes).
+
+
+
+
 == Forum post statuses
 
 

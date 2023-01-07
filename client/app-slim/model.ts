@@ -368,6 +368,10 @@ interface Post {
   parentNr?: PostNr; // undefined, for chat messages and sometimes embedded comments [CHATPRNT]
   multireplyPostNrs: PostNr[];
   postType?: PostType;
+  // Would be set to  pats_t.autohr_id_c, rather than  created_by_id_c?
+  // Then, maybe "just works" for anonyms?
+  // But the post creator or owner — if the requester is any of those or staff,
+  // that field can be included too?
   authorId: UserId;
   createdAtMs: WhenMs;
   approvedAtMs?: WhenMs;

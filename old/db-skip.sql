@@ -334,3 +334,54 @@ create index postlinks_i_frompost on links_t (site_id_c, from_post_id_c);
 -- -- For looking up links from-to posts of which none has been deleted. But is this needed?
 -- create index postlinks_i_frompost_linktype_isup on links_t (
 --     site_id, post_id_c, link_type_c, created_at) where down_bits_c is null;
+
+
+
+-- Skip, too complicated. Use pseudonyms insetad, if one wants to reuse the same
+-- "anonymous" account accross different pages and categories.
+--
+comment on domain  anon_level_d  is $_$
+
+10: Not anon, even if would have been by default. For example, a moderator
+or maybe a school teacher who wants to say something more officially.
+
+(20, not impl: Anon post, by an a bit traceable "virtual anon account":
+The poster would use the same account accross different categories and pages,
+during anon_incarnation_ttl_mins_c minutes. Then hen gets a new anon acct.
+Except for when posting more on the same page — then hen will reuse hen's
+last annon acct on that page.)
+
+(30, not impl: Anon account, less traceable: The same in the same category only;
+it cannot follow accross categories. After anon_incarnation_ttl_mins_c,
+the poster will get a new virtual annon acct. Except for when posting more on
+the same page; see above.  — Maybe skip forever? Things get complicated,
+if moving a page to a different category, and continuing posting there.)
+
+(40, not impl: Anon account, less traceable: The same in the same category,
+excl sub categories.)
+
+50: Anon account: Same on the same page only.
+
+(60: Anon account, even less less traceable: Same on the same page only,
+and only during anon_incarnation_ttl_mins_c.)
+
+(70: Anon account, unique per post / same-for-all-users-and-posts.)
+$_$;  -- '
+
+
+
+-- Skip, instead will use  pat_rels_t,  so can look up posts directly
+-- by  pat id, rel type  and sort by time. Rather than having to do this
+-- once per pat lis one is in.
+alter table users3 add column is_pat_list_c  bool;
+comment on column  users3.is_pat_list_c  is $_$
+If non-null, this pats_t row is not a real group, but a help construction
+that lists users or groups, and wherever this list-of-pats appear, the pats
+are to be listed. For example, if  posts_t.author_id_c  is a list,
+and Alice and Bob are in the list, then Alice's and Bob's usernames are shown
+instead of the lists username (it has none), e.g.:
+"By Alice and Bob on 2022-03-04: ....", if authors_id_c points to
+that list with Alice and Bob. But if authors_id_c is a non-list group,
+e.g. Support Team, then the text would read "By Support Team", instead
+of listing all members.
+$_$;
