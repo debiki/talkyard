@@ -79,7 +79,7 @@ class AnonymAppSpec extends DaoAppSuite(
       createPageResult = createPage2(PageType.Discussion, dao.textAndHtmlMaker.forTitle("Anon Test"),
             bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Test anon post."),
             authorId = userOneS1.id, browserIdData, dao, anyCategoryId = Some(catA.id),
-            doAsAnon = Some(WhichAnon.NewAnon(AnonStatus.IsAnonBySelf)))
+            doAsAnon = Some(WhichAnon.NewAnon(AnonStatus.IsAnonOnlySelfCanDeanon)))
       pageId = createPageResult.id
     }
 

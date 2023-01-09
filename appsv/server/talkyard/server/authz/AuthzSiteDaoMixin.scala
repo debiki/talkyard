@@ -332,6 +332,9 @@ trait AuthzSiteDaoMixin {
     TESTS_MISSING // add security test, not e2e test?
     val postId = task.postId getOrElse { return }
     val post = loadPostByUniqueId(postId) getOrDie "TyE5WKBGP"  // there's a foreign key
+    // If one has activated a pseudonym, one might need to activate one's main user account
+    // instead, to get to review this. — But won't the access-denied error message confusing?
+    // Should also lookup one's true account and check if it has access. [pseudonyms_later]
     val requester = getTheParticipant(forWho.id)
     val (result, debugCode) =
       maySeePostImpl(post.pageId, postNr = PageParts.NoNr, Some(requester), anyPost = Some(post),

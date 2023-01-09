@@ -61,19 +61,21 @@ t_ = the_Whatever (for ids)  NO (because looks like "test"), instead:
 i_ = id
 n_ = a class with No styles unless there's another selector before.
      They're widget layout helpers, e.g. n_Row1 or n_Col1, 2, 3.
-     This is ok:
+     These CSS styles are ok:
         .c_Widget .n_Row1 { ... styles ... }   // other selector before
-     but this is not :
+     but these are not:
         .n_Row1 { ... styles ... }
         .n_Row1 .c_Something { ... styles ... }
      Should *not* be included in Ty's BEM block names.
      So, *not*:  c_Widget_Row2_Part
      instead: c_Widegt .n_Row2 .c_Widegt_Part
-     But why? Because otherwise the BEM block names can get annoyingly long.
+
+     But why?  Because otherwise the BEM block names can get annoyingly long.
      It's nice to have a *safe* way to arrange the parts of a widget in rows and columns,
      without then having to rename all parts of the widget — just adding, say,
      n_Row1 and n_Row2, and editing the .c_Sth .n_Row1/2 CSS, but nothing else
      (not having to rename c_Sth_...Sub... to c_Sth_Row1_...Sub... everywhere).
+
 e_ = end-to-end-test_Whatever (classes only, for widgets to click in End-to-End tests)
 p_ = public api (classes only, not ids)
 
@@ -89,6 +91,9 @@ Adm = admin
 Aft = after
 Alw = allow(ed)
 Ann, An = announcement, also see SAn: Server Announcement
+Asg  = assign
+Asgd = assigned, Asgd2 assigned to
+Asgs = assignees
 AuD = authentication dialog (create account / log in / just type a name)
 Bef = before
 Bitf = bitfield
@@ -140,6 +145,7 @@ Hz  = horizontal, also Vl: vertical
 Ifr = iframe
 It  = item
 Inh = inherit
+Jo  = Javascipt or json object: { ... } or (in Scala) JsObject
 L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list, ..T = table
 Lay = layout
 Ls  = list, when not at the end, e.g LsPgsB = list pages button

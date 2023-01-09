@@ -2,56 +2,96 @@
 -- and some new datatype domains.
 
 
--- Old mistakes
--------------------------------------------------
-
--- These will be in  pat_rels_t  instead, so can look up post ids directly
--- by pat id, relationship type and time.  Otherwise, if having many post authors,
--- by pointing  authors_id_c  to a pats_t user list group,  the database
--- would need to do one lookup, for each user list group one is a member of.
--- (These have never been used, ok to drop.)
---
-alter table posts3 drop column  owners_id_c;
-alter table posts3 drop column  authors_id_c;
-
 
 -- New domains
 -------------------------------------------------
 
 
-create domain content_set_type_d int;
-alter  domain content_set_type_d add
-   constraint content_set_type_c_in_11 check (value in (11));
-  -- 1 = whole site, 4 = mixed (opt cat + opt tags + opt page ids),
-  -- 7 = tag(s) only, 11 = cat(s) only, 14 = page(s), 17 = replies?
-
-create domain folder_path_d text_nonempty_ste60_d;
-alter  domain folder_path_d add
-   constraint folder_path_d_c_chars check (value ~ '^/([a-z0-9][a-z0-9_-]*/)+$');
-
-create domain anon_or_guest_id_d pat_id_d;
-alter  domain anon_or_guest_id_d add
-   constraint anon_or_guest_id_d_c_ltm10 check (value <= -10);
-
-create domain choose_yes_d i16_d;
-alter  domain choose_yes_d add
-   constraint choose_yes_d_c_in check (value in (2, 3));
-
-create domain never_allow_recmd_always_d i16_d;
-alter  domain never_allow_recmd_always_d add
-   constraint never_allow_recmd_always_d_c_in check (value in (1, 2, 3, 4));
+create domain never_always_d i16_d;
+alter  domain never_always_d add
+   constraint never_always_d_c_in_2_3_7_8 check (value in (2, 3, 7, 8));
 
 -- See AnonStatus in the Scala code.
-create domain anonym_status_d i16_d;
+create domain anonym_status_d i32_d;
 alter  domain anonym_status_d add
-   constraint anonym_status_d_c_in_5_37 check (value in (5, 37));
+   constraint anonym_status_d_c_in_8191_65535 check (value in (8191, 65535));
+
+-- For now, always null. Will drop that constr, and add other constraints later.
+create domain pseudonym_status_d i32_d;
+alter  domain pseudonym_status_d add
+   constraint pseudonym_status_d_c_null check (value is null);
 
 -- Says if the poster is still author and owner. And if others have been
 -- added as authors or owners, or assigned to do this post — then, they'd
 -- be looked up in pat_post_rels_t.
-create domain post_pat_status_d i16_d;
+create domain creator_status_d i16_gz_lt1024_d;
 
-create domain pseudonym_status_d i16_d; -- will add constraints later
+-- If not null, the page or post and all descendants, are private.
+-- The value shows if more private pats can bee added.
+create domain private_status_d i16_gz_lt1024_d;
+alter  domain private_status_d add
+   constraint private_status_d_c_null_1 check ((value is null) or (value = 1));
+
+create domain can_see_private_d i16_d;
+alter  domain can_see_private_d add
+   constraint can_see_private_d_c_null_123 check (
+            (value is null) or (value between 1 and 5));
+
+create domain can_see_assigned_d i16_d;
+alter  domain can_see_assigned_d add
+   constraint can_see_assigned_d_c_null_123 check (
+            (value is null) or (value between 1 and 4));
+
+
+
+-- New permissions
+-------------------------------------------------
+
+alter table settings3
+    -- For site admins or cat mods. Lets them change moderation settings.
+    -- If can change:  approve before,  review after,  pending review.
+    add column  can_remove_mod_reqmts_c  i32_gz_d,
+    add column  enable_anon_posts_c      bool;
+
+alter table perms_on_pages3
+    add column  can_see_others_priv_c  can_see_private_d,
+    add column  can_see_priv_aft_c     timestamp,
+    add column  can_delete_own_c       bool,
+
+    add column  can_alter_c            i64_gz_d,  -- [alterPage]
+    add column  is_owner_c             bool,
+    add column  on_pats_id_c           pat_id_d, -- default = anyone
+    add column  can_manage_pats_c      i64_gz_d,
+    add column  can_invite_pats_c      i64_gz_d,  -- instead of adder
+    add column  can_suspend_pats_c     i64_gz_d,  -- instead of bouncer
+
+    add column  can_assign_pats_c      bool,
+    add column  can_see_assigned_c     can_see_assigned_d;
+
+
+-- Authors and Anonymous votes
+-------------------------------------------------
+
+
+alter table post_actions3
+    add column  as_pat_id_c    pat_id_d,
+    add column  added_by_id_c  member_id_d,
+
+    -- fk ix: patnoderels_i_aspatid
+    add constraint patnoderels_aspatid_r_pats
+    foreign key (site_id, as_pat_id_c)
+    references users3 (site_id, user_id) deferrable,
+
+    -- fk ix: patnoderels_i_addedbyid
+    add constraint patnoderels_addedbyid_r_pats
+    foreign key (site_id, added_by_id_c)
+    references users3 (site_id, user_id) deferrable;
+
+create index patnoderels_i_aspatid on post_actions3 (site_id, as_pat_id_c)
+    where as_pat_id_c is not null;
+
+create index patnoderels_i_addedbyid on post_actions3 (site_id, added_by_id_c)
+    where added_by_id_c is not null;
 
 
 
@@ -59,63 +99,105 @@ create domain pseudonym_status_d i16_d; -- will add constraints later
 -------------------------------------------------
 
 
--- Later, drop: category_id, page_id.
-alter table settings3 add column enable_anon_posts_c bool;
+-- Dupl cols: both on categories3, and posts3. Won't be dupl, after nodes_t
+-- in use. [dupl_nodes_t_cols]
+alter table categories3
+    add column  comts_start_hidden_c  never_always_d,
+    add column  comts_start_anon_c    never_always_d,
+    add column  op_starts_anon_c      never_always_d,
+    add column  new_anon_status_c     anonym_status_d;
 
 
--- Skip fks — no fks in this table.
-alter table spam_check_queue3 rename column author_id to auhtor_true_id_c;
-alter table spam_check_queue3    add column              auhtor_false_id_c  pat_id_d;
+alter table pages3
+    -- Dupl, almost same cols as above, for categories3:  [dupl_nodes_cols]
+    add column  comts_start_hidden_c  never_always_d,
+    add column  comts_start_anon_c    never_always_d,
+    add column  new_anon_status_c     anonym_status_d;
+
+alter table posts3
+    -- Private sub threads
+    -- There's already hidden_status_c.
+    add column  private_status_c      private_status_d,
+    add column  creator_status_c      creator_status_d,
+
+    -- Old mistakes
+    -- These will be in  pat_node_rels_t  instead, so can look up post ids directly
+    -- by pat id, relationship type ordered by time.  Otherwise, if having many
+    -- post authors, by pointing  authors_id_c  to a pats_t user list group,
+    -- the database would need to do one lookup, for each user list group one is
+    -- a member of. (These have never been used, ok to drop.)
+    drop column  owners_id_c,
+    drop column  authors_id_c;
 
 
-alter table drafts3 add column new_anon_status_c  anonym_status_d;
-alter table drafts3 add column post_as_id_c       pat_id_d;
 
--- fk ix: drafts_i_postasid
-alter table drafts3 add constraint drafts_postasid_r_pats
-    foreign key (site_id, post_as_id_c)
-    references users3 (site_id, user_id) deferrable;
-
-create index drafts_i_postasid on drafts3 (site_id, post_as_id_c);
-    -- where post_as_id_c is not null; ?   [fk_ix_where_not_null]
-    -- and elsewhere in this file
+alter table links_t  rename column  to_pp_id_c  to  to_pat_id_c;
 
 
-alter table users3 add column true_id_c            member_id_d;
-alter table users3 add column pseudonym_status_c   pseudonym_status_d;
-alter table users3 add column anonym_status_c      anonym_status_d;
-alter table users3 add column anon_on_page_id_st_c page_id_st_d;
-alter table users3 add column anon_on_page_id_c    page_id_d__later;
+
+alter table drafts3
+    add column new_anon_status_c  anonym_status_d,
+    add column post_as_id_c       pat_id_d,
+
+    -- fk ix: drafts_i_postasid
+    add constraint drafts_postasid_r_pats
+        foreign key (site_id, post_as_id_c)
+        references users3 (site_id, user_id) deferrable;
+
+create index drafts_i_postasid on drafts3 (site_id, post_as_id_c)
+    where post_as_id_c is not null;
 
 
--- fk ix: pats_u_anonofpatid_anononpageid
-alter table users3 add constraint pats_trueid_r_pats
-    foreign key (site_id, true_id_c)
-    references users3 (site_id, user_id) deferrable;
 
--- fk ix: pats_u_anononpageid
-alter table users3 add constraint pats_anononpage_r_pages
-    foreign key (site_id, anon_on_page_id_st_c)
-    references pages3 (site_id, page_id) deferrable;
+alter table users3
+    add column true_id_c                 member_id_d,
+    add column pseudonym_status_c        pseudonym_status_d,
+    add column anonym_status_c           anonym_status_d,
+    -- Will change to  tree node id, [add_nodes_t].
+    add column anon_on_page_id_st_c      page_id_st_d,
+    add column anon_in_tree_id__later_c  post_id_d,
+
+    -- fk ix: pats_i_trueid_anononpageid
+    add constraint pats_trueid_r_pats
+        foreign key (site_id, true_id_c)
+        references users3 (site_id, user_id) deferrable,
+
+    -- fk ix: pats_i_anononpageid
+    add constraint pats_anononpage_r_pages
+        foreign key (site_id, anon_on_page_id_st_c)
+        references pages3 (site_id, page_id) deferrable,
+
+    -- fk ix: pats_i_anonintreeid
+    add constraint pats_anonintree_r_nodes
+        foreign key (site_id, anon_in_tree_id__later_c)
+        references posts3 (site_id, unique_post_id) deferrable;
 
 
+-- Good to be able to look up if a pat (true_id_c) has any anonymous
+-- comments on a given page.
 create index pats_i_trueid_anononpageid on users3 (
     site_id, true_id_c, anon_on_page_id_st_c);
 
 create index pats_i_anononpageid on users3 (
     site_id, anon_on_page_id_st_c);
 
+create index pats_i_anonintreeid on users3 (
+    site_id, anon_in_tree_id__later_c);
 
-alter table users3 add constraint pats_c_pseudonymid_gte100 check (
-    pseudonym_status_c is null or user_id >= 100);
 
-alter table users3 add constraint pats_c_anonid_ltem10 check (
-    anonym_status_c is null or user_id <= -10);
 
-alter table users3 add constraint pats_c_not_both_anon_pseudo check (
-    num_nonnulls(pseudonym_status_c, anonym_status_c) <= 1);
+alter table users3
+    add constraint pats_c_pseudonymid_gte100 check (
+          pseudonym_status_c is null or user_id >= 100),
+
+    add constraint pats_c_anonid_ltem10 check (
+          anonym_status_c is null or user_id <= -10),
+
+    add constraint pats_c_not_both_anon_pseudo check (
+          num_nonnulls(pseudonym_status_c, anonym_status_c) <= 1);
 
 alter table users3 add constraint pats_c_anon_null_same check (
+    -- Either not an aonym or pseudonym:
     ((true_id_c is null) and
       (anonym_status_c is null) and
       (anon_on_page_id_st_c is null) and
@@ -123,11 +205,12 @@ alter table users3 add constraint pats_c_anon_null_same check (
       )
     or ((true_id_c is not null)
       and (
+        -- or an aonym:
         ((anonym_status_c is not null) and
          (anon_on_page_id_st_c is not null) and
          (pseudonym_status_c is null)
          )
-        or
+        or -- pseudonym:
         ((anonym_status_c is null) and
          (anon_on_page_id_st_c is null) and
          (pseudonym_status_c is not null)
@@ -139,22 +222,20 @@ alter table users3 add constraint pats_c_anon_null_same check (
 -- via an anon account, then, suspending just that anon account, is a bit more
 -- friendly than suspending the user's real account — like, a first small warning,
 -- suitable in some cases (but sometimes better suspend the real account directly).
-alter table users3 add constraint pats_c_anon_not_approved check (
+alter table users3 add constraint pats_c_anons_need_no_approval check (
     anonym_status_c is null
     or (created_at is not null and
         is_approved is null and
         approved_at is null and
         approved_by_id is null));
 
--- For now — since pseudonyms haven't been implemented.
-alter table users3 add constraint pats_c_pseudonym_null check (
-    pseudonym_status_c is null);
-
 -- Maybe later it'll be possible for pseudonyms to configure a different
 -- notifications email address — in case one wants discussions related to
--- the pseudonym, to get sent elsewhere. But is that a can of worms? Because
+-- the pseudonym, to get sent elsewhere. But is that over complicated? Because
 -- then it could also make sense with *per category* notification email adrs,
 -- maybe better avoid.
+-- For now, neither anonyms nor pseudonyms can have any own email addr
+-- (so cannot be different from their true account).
 --
 alter table users3 add constraint pats_c_anon_no_email check (
     (anonym_status_c is null and
@@ -177,8 +258,9 @@ alter table users3 add constraint pats_c_anon_no_email check (
 -- better than blocking the real account, and, if someone
 -- misbehaves repeatedly, when being anon, then, after some of those
 -- anon users have gotten suspended, the real user can automatically
--- get prevented from posting anonymously, *without* the mods knowing
--- who hen is (good for privacy & staying anon).
+-- get prevented from posting anonymously — and this'd happen *without*
+-- the mods having to know who hen is, that is, the misbehaving user got
+-- blocked and identity remained private.
 --
 -- These: deactivated_at, deleted_at
 -- also aren't included. Can make sense to delete an anon account?
@@ -273,78 +355,45 @@ alter table users3 add constraint pats_c_guest_w_no_browserid_has_extid check (
     or ext_id is not null);
 
 
--- Or maybe:
-alter table audit_log3  rename column doer_id             to doer_true_id_c;
-alter table audit_log3  rename column target_user_id      to target_pat_true_id_c;
-alter table audit_log3  add    column doer_false_id_c       pat_id_d;
-alter table audit_log3  add    column target_pat_false_id_c pat_id_d;
 
-alter table audit_log3  add column doer_sess_created_at_c timestamp;
+alter table review_tasks3     rename column  user_id         to  about_pat_id_c;
 
+alter table spam_check_queue3 rename column  author_id       to  author_id_c;
 
--- Later, delete this fk? So old sessions can be deleted, without having to upd the audit log.
--- But keep it for a while, to discover bugs.
-alter table audit_log3 add constraint auditlog_r_sessions
-    foreign key (site_id, doer_true_id_c, doer_sess_created_at_c)
-    references sessions_t (site_id_c, pat_id_c, created_at_c);
+alter table audit_log3        rename column  doer_id         to  doer_id_c;
+alter table audit_log3        rename column  target_user_id  to  target_pat_id_c;
 
-create index auditlog_i_doertrueid_session
-    on audit_log3 (site_id, doer_true_id_c, doer_sess_created_at_c);
+alter table audit_log3
+    add column  doer_true_id_c        member_id_d,
+    add column  target_pat_true_id_c  member_id_d,
+    add column  sess_id_part_1        base64us_len16_d,
 
+    add constraint auditlog_c_doer_trueid_null check (
+        (doer_true_id_c is null) or (doer_id_c is not null)),
 
+    add constraint auditlog_c_targetpat_trueid_null check (
+        (target_pat_true_id_c is null) or (target_pat_id_c is not null)),
 
--- Could do, but I think this is too error prone — I will or have already forgotten
--- some columns below, or will forget to always update all columns when needed.
--- Also, importing patches gets more complicated. Instead of the below,
--- the anon/pseudo user account's id will be stored. And one would use the
--- event / audit log to ... audit what the real people behind the anon/pseudonyms,
--- have done. (Or lookup the true id in the users table, pats_t, but the audit log
--- should be enough.)
---
--- Actually, can be better to add  post_actions3 [pat_rels_t]  rows of type:
---    AuhtorOf, with val_i32_c being a type-of-author bitfield? (anon, pseudonym, co-author),
--- linking to one's anon & pseudonym posts,
--- when and only when  posts_t.created_by_id  doesn't point directly to one's
--- true id (but instead points to an anon/pseudonym/user-list-pats_t row).
--- No! Skip. Instead, let  created_by_id  be the real id.
---                 and "just" add a   pat_rels_t.rel_type_c = AuthorOf for the anon?
---                 and excl such posts everywhere, as long as the anon is anon.
---      Also, can have a
---         pat_rels_t.show_pats_id  to show an anonym as voter,
---                                     instead of the real user account.
---
--- alter table post_actions3    add column true_id_c             member_id_d;
--- alter table links_t          add column added_by_true_id_c    member_id_d;
--- alter table link_previews_t  add column first_linked_by_id_c  member_id_d;
--- alter table post_revisions3  add composed_by_true_id_c        member_id_d;
--- alter table posts3           add created_by_true_id_c         member_id_d;
+    -- fk ix: auditlog_i_doertrueid
+    add constraint auditlog_doertrueid_r_pats
+        foreign key (site_id, doer_true_id_c)
+        references users3 (site_id, user_id) deferrable,
 
--- But I've added  author_id_c  already!
--- Now removing. Instead:   pat_rels_t.rel_type_c = AuthorOf
---
--- alter table posts3           add author_id_c                  pat_id_d;
--- alter table posts3           add author_true_id_c             member_id_d;
--- alter table post_read_stats3 add true_id_c                    member_id_d;
--- alter table review_tasks3    add true_id_c
--- alter table upload_refs3     add added_by_true_id_c ?
---
--- user_stats3, hmm?
---
--- pages_t — no, instead, the orig post in posts_t?  Old:
--- alter table pages3           add author_true_id_c             member_id_d;
--- -- But leave last_reply_by_id as is — don't add any  last_reply_by_true_id,
--- -- not that interesting.
--- 
--- alter table upload_refs3     add  added_by_true_id_c          member_id_d;
--- 
--- alter table user_visit_stats3 add true_user_id_c              member_id_d;
+    -- fk ix: auditlog_i_targetpattrueid
+    add constraint auditlog_targetpattrueid_r_pats
+        foreign key (site_id, target_pat_true_id_c)
+        references users3 (site_id, user_id) deferrable,
+
+    -- For now, to find bugs. Delete constraint later?
+    -- fk ix: auditlog_i_sid_part1
+    add constraint auditlog_sid_part1_r_sessions
+        foreign key (site_id, sess_id_part_1)
+        references sessions_t (site_id_c, part_1_comp_id_c) deferrable;
 
 
--- Let's add a  pat_rels_t.rel_type_c = AuthorOf from the anon to the anon posts?
--- Whilst created_by_id_c would keep pointing to the true author.
--- Then, looking up all one's posts, that just works.
--- And anon posts can easily be filtered away, by checking anon_status_c (because
--- other)
+create index  auditlog_i_doertrueid       on audit_log3 (site_id, doer_true_id_c);
+create index  auditlog_i_targetpattrueid  on audit_log3 (site_id, target_pat_true_id_c);
+create index  auditlog_i_sid_part1        on audit_log3 (site_id, sess_id_part_1);
 
 
 
@@ -353,8 +402,7 @@ create index auditlog_i_doertrueid_session
 
 -- About new pages, replies, maybe edits to wiki pages.
 
-
-alter table page_notf_prefs3  rename to page_notf_prefs_t;
+alter table page_notf_prefs3  rename to page_notf_prefs_t;  -- OR node/content_notf_prefs_t?
 alter table page_notf_prefs_t rename column people_id to pat_id_c;
 
 alter table page_notf_prefs_t rename column pages_in_whole_site  to pages_in_whole_site_c;
@@ -363,35 +411,3 @@ alter table page_notf_prefs_t rename column incl_sub_categories  to incl_sub_cat
 alter table page_notf_prefs_t rename column pages_pat_created    to pages_pat_created_c;
 alter table page_notf_prefs_t rename column pages_pat_replied_to to pages_pat_replied_to_c;
 
--- Denormalized tags?
-alter table page_notf_prefs_t add column pages_with_tag_a_id_c tagtype_id_d;
-alter table page_notf_prefs_t add column pages_with_tag_b_id_c tagtype_id_d;
-alter table page_notf_prefs_t add column pages_with_tag_c_id_c tagtype_id_d;
-
--- ix pagenotfprefs_i_tagaid
-alter table page_notf_prefs_t add constraint pagenotfprefs_withtaga_r_tags
-    foreign key (site_id, pages_with_tag_a_id_c)
-    references tagtypes_t (site_id_c, id_c) deferrable;
-
--- ix pagenotfprefs_i_tagbid
-alter table page_notf_prefs_t add constraint pagenotfprefs_withtagb_r_tags
-    foreign key (site_id, pages_with_tag_b_id_c)
-    references tagtypes_t (site_id_c, id_c) deferrable;
-
-  -- ix pagenotfprefs_i_tagcid
-alter table page_notf_prefs_t add constraint pagenotfprefs_withtagc_r_tags
-    foreign key (site_id, pages_with_tag_c_id_c)
-    references tagtypes_t (site_id_c, id_c) deferrable;
-
-create index pagenotfprefs_i_tagaid on page_notf_prefs_t (site_id, pages_with_tag_a_id_c);
-create index pagenotfprefs_i_tagbid on page_notf_prefs_t (site_id, pages_with_tag_b_id_c);
-create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, pages_with_tag_c_id_c);
-
-
-
--- Later, create table cont_prefs_t, and move this to there? See db-wip.sql.
---
-alter table categories3 add column  anon_ops_c               never_allow_recmd_always_d;
-alter table categories3 add column  anon_comts_c             never_allow_recmd_always_d;
-alter table categories3 add column  deanon_pages_aft_mins_c  i16_gz_d;
-alter table categories3 add column  deanon_posts_aft_mins_c  i16_gz_d;

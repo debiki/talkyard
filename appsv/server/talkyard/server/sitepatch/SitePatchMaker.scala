@@ -72,7 +72,7 @@ case class SitePatchMaker(context: TyContext) {
 
       val drafts = tx.loadAllDrafts()
 
-      val posts = tx.loadAllPosts().sortBy(_.id)
+      val posts = tx.loadAllPostsForExport().sortBy(_.id)
 
       val postActions: immutable.Seq[PostAction] = tx.loadAllPostActions()
 
@@ -269,7 +269,7 @@ object SitePatchMaker {
       val drafts: Seq[Draft] = anyDump.map(_.drafts) getOrElse tx.loadAllDrafts()
       fields("drafts") = JsArray(drafts map JsDraft)
 
-      val posts: Seq[Post] = anyDump.map(_.posts) getOrElse tx.loadAllPosts()
+      val posts: Seq[Post] = anyDump.map(_.posts) getOrElse tx.loadAllPostsForExport()
       fields("posts") = JsArray(
         posts.map((post: Post) => {
           var json = JsPostInclDetails(post)

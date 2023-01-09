@@ -399,6 +399,16 @@ const CatSettings = createClassAndFactory({
               this.props.updateCategory(newLayout);
             }}));
 
+    const anonymsAllowed =
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label', style: { display: 'block' }},
+          "Anonymous comments:"),
+        debiki2.pagedialogs.AnonsAllowedDropdownBtn({ cat: category, store,
+            layoutFor: LayoutFor.PageNoTweaks,
+            onSelect: (newProps: DiscPropsSource) => {
+              this.props.updateCategory(newProps);
+            }}));
+
     const parentCatDropdown =
         r.div({ className: 'form-group' },
           r.label({ className: 'control-label', style: { display: 'block' }},
@@ -533,6 +543,7 @@ const CatSettings = createClassAndFactory({
             defaultTopicTypeInput,
             doItVotes,
             commentOrder,
+            anonymsAllowed,
             parentCatDropdown,
             isDefaultInput,
             slugInput,

@@ -304,8 +304,10 @@ object DraftType {
   *   writing (rather than pageId and postNr). Still, nice to have pageId, in case staff
   *   moves the post to a page one may not access — then, good to know on which page it was
   *   located, originally, when starting typing the draft (so one knows what topic it concerns).
-  * @param postNr
-  * @param postId
+  * @param postNr — Which post, on pageId, we're replying to.
+  * @param postId — 1) If editing an already existing post. Or 2) which post we're
+  *   replying to, might then be different from page id + post nr, if got moved to other
+  *   page. (Then where does the draft appear? I forgot. Oh well.)
   */
 case class DraftLocator(
   draftType: DraftType,
@@ -349,6 +351,7 @@ case class Draft(
   deletedAt: Option[When] = None,
   topicType: Option[PageType] = None,
   postType: Option[PostType] = None,
+  doAsAnon: Opt[WhichAnon],
   title: String,
   text: String) {
 
@@ -410,6 +413,9 @@ case class Post(   // [exp] ok use
   tyype: PostType,
   createdAt: ju.Date,
   createdById: UserId,
+  // Don't incl in export — are already in post_actions3 (pat_rels_t)
+  // Maybe create an interface PostToExpImp with these excluded?
+  // .move_later to here, but for now, at the end, so can have defaults.
   // Also need:  [post_page_written_added_at]
   // pubSubmittedAt — the publicly shown submission date, if different from createdAt.
   // addedToPageAt — if moved from one page to another, this is when it got added to the new page,
@@ -433,7 +439,7 @@ case class Post(   // [exp] ok use
   approvedAt: Option[ju.Date],   // RENAME to lastApprovedAt  [first_last_apr_at]
   approvedById: Option[UserId],  // RENAME to lastApproved...
   approvedRevisionNr: Option[Int],
-  // privatePatsId: Opt[PatId],  // later  [priv_comts]
+  // privatePatsId: Opt[PatId],   // later  [priv_comts] — no, will remove
   collapsedStatus: CollapsedStatus,
   collapsedAt: Option[ju.Date],
   collapsedById: Option[UserId],
@@ -460,6 +466,10 @@ case class Post(   // [exp] ok use
   numUnwantedVotes: Int,
   numTimesRead: Int,
   smtpMsgIdPrefix: Opt[SmtpMsgIdPrefix],  // SHOULD incl in patch json? Later.
+  // .move_later
+  ownerIds: Vec[PatId] = Vec.empty,
+  authorIds: Vec[PatId] = Vec.empty,
+  assigneeIds: Vec[PatId] = Vec.empty,
   ) {
 
   require(id >= 1, "DwE4WEKQ8")
@@ -480,6 +490,9 @@ case class Post(   // [exp] ok use
   require(currentRevStaredAt.getTime >= createdAt.getTime, "DwE8UFYM5")
   require(!currentRevLastEditedAt.exists(_.getTime < currentRevStaredAt.getTime), "DwE7KEF3")
   require(currentRevisionById == createdById || currentRevisionNr > FirstRevisionNr, "DwE0G9W2")
+
+  require(assigneeIds.forall(_ >= Participant.LowestTalkToMemberId), "TyE206AKSE6")
+
 
   require(lastApprovedEditAt.isEmpty == lastApprovedEditById.isEmpty, "DwE9JK3")
   if (lastApprovedEditAt.isDefined && currentRevLastEditedAt.isDefined) {
@@ -600,6 +613,15 @@ case class Post(   // [exp] ok use
     else Some(currentSource)
   }
 
+  def addVisiblePatIdsTo(mutSet: MutSet[PatId]): U = {
+    // Later: Incl authorIds too, but then maybe don't incl createdById, so that
+    // info won't be leaked. (If the author is set to sbd else, then, it can be
+    // off-topic for site visitors to know who created a post in the first place.)
+    // And, don't include [private_pats], once impl.
+    // Skip this.ownerIds — not needed for rendering a page, and might not be public.
+    mutSet ++= assigneeIds
+    mutSet += createdById
+  }
 
   def numEditsToReview: Int = currentRevisionNr - approvedRevisionNr.getOrElse(0)
 

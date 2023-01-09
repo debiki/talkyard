@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Kaj Magnus Lindberg
+ * Copyright (c) 2023 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -12,26 +12,28 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../more-bundle-not-yet-loaded.ts" />
+/// <reference path="../more-prelude.more.ts" />
+/// //eference path="../more-bundle-already-loaded.d.ts" />
+/// <reference path="./anons-allowed-diag.more.ts" />
 
 
 // Buttons that open lazy loaded dialogs.
 //
 //------------------------------------------------------------------------------
-   namespace debiki2.widgets {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
 
 
 
-export const DiscLayoutDropdownBtn = React.createFactory<DiscLayoutDropdownBtnProps>(
+export const AnonsAllowedDropdownBtn = React.createFactory<DiscLayoutDropdownBtnProps>(
         function(props: DiscLayoutDropdownBtnProps) {
 
-  // Oooops! Dupl code. [derive_disc_props]
+  // ----- Oooops! Dupl code. [derive_disc_props] -----------------
 
   // The dialog is either for a specific page, or a category (and all pages therein).
   dieIf(!!props.cat == !!props.page, 'TyE604MWJJ34');
@@ -69,10 +71,12 @@ export const DiscLayoutDropdownBtn = React.createFactory<DiscLayoutDropdownBtnPr
           ? page_deriveLayout(props.page, props.store, layoutForParent)
           : cat_deriveLayout(props.cat, props.store, layoutForParent);
 
+  // ----- / End dupl code ----------------------------------------
+
   return (
-      Button({ className: 'e_DscLayB', onClick: (event) => {
+      Button({ className: 'e_ComtAnoB', onClick: (event) => {
           const atRect = cloneEventTargetRect(event);
-          morebundle.openDiscLayoutDiag({
+          openAnonsAllowedDiag({
               atRect,
               // This is what's being edited.
               layout: layoutSource,
@@ -84,24 +88,28 @@ export const DiscLayoutDropdownBtn = React.createFactory<DiscLayoutDropdownBtnPr
               forEveryone: props.forEveryone,
               onSelect: props.onSelect });
         }},
-        comtOrder_title(actualLayout.comtOrder), ' ', r.span({ className: 'caret' })));
+        neverAlways_title(actualLayout.comtsStartAnon), ' ', r.span({ className: 'caret' })));
+            // +  Deanonymize after:
+            //    N mins / N hours / N days / N weeks /
+            //       first NNN-day N weeks later /
+            //       first NNN-day N months later / Never
 });
 
 
 
-export function comtOrder_title(comtOrder: PostSortOrder): St {
-  switch (comtOrder) {
+// Move to where?
+export function neverAlways_title(neverAlways: NeverAlways): St {
+  switch (neverAlways) {
     // case PostSortOrder.Inherit:
     //  Not supposed to happen. Instead the DiscLayoutDiag constructs a list item
     //  for the admins. [def_disc_layout_title]
     //  Using `default:` case, below.
-    case PostSortOrder.OldestFirst: return "Oldest first";  // I18N here and below
-    case PostSortOrder.NewestFirst: return "Newest first";
-    case PostSortOrder.BestFirst: return "Popular first";
-    case PostSortOrder.NewestThenBest: return "Newest then Popular";
-    case PostSortOrder.NewestThenOldest: return "Newest then Oldest";
+    case NeverAlways.NeverButCanContinue: return "Never";  // I18N here and below
+    case NeverAlways.Allowed: return "Allowed";
+    case NeverAlways.Recommended: return "Recommended";
+    case NeverAlways.AlwaysButCanContinue: return "Always";
     default:
-      return `Bad: ${comtOrder} TyECMTORDR`;
+      return `Bad: ${neverAlways} TyENEVRALW`;
   }
 }
 

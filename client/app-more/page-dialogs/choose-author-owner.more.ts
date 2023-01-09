@@ -72,7 +72,7 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
       return (
           ExplainingListItem({
             title, text,
-            active: whichAnon === state.curAnon?.newAnonStatus,
+            active: _.isEqual(whichAnon, state.curAnon),  //  new fn: deepEqIgnUndef instead?
             onSelect: () => {
               state.saveFn(whichAnon);
               close();
@@ -80,10 +80,20 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
           }));
     }
 
-    asYourName = makeItem({ newAnonStatus: AnonStatus.NotAnon }, '');
-    anonymously = makeItem({ newAnonStatus: AnonStatus.PerPage }, '');
+    // Later: True if one has already posted something on the current page,
+    // using one's real account.
+    const alreadyTalkingAsSelf = false;
+    if (state.discProps.comtsStartAnon < NeverAlways.AlwaysButCanContinue ||
+          // It's ok to *continue* posting, using one's real account, on
+          // this page, because NeverButCan**Continue**. (But not *starting*.)
+          alreadyTalkingAsSelf) {
+      asYourName = makeItem({ newAnonStatus: AnonStatus.NotAnon }, 'e_AtrSelf');
+    }
+    anonymously = makeItem({ newAnonStatus: AnonStatus.IsAnonCanAutoDeanon }, 'e_AtrAnon');
 
-    // Pen name?:  openAddPeopleDialog(alreadyAddedIds, onDone)
+    // Distant future: [pseudonyms_later]
+    // usingPseudonym = ...
+    // and also a way to: openAddPseudonymsDialog(alreadyAddedIds, onDone) ?
   }
 
   return (
@@ -95,17 +105,18 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
 });
 
 
-export function whichAnon_titleShort(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_titleShort(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat })
+      : St | RElm {
   return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.TitleShort);
 };
 
 
-export function whichAnon_title(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_title(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St | RElm {
   return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.TitleLong);
 };
 
 
-export function whichAnon_descr(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_descr(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St | RElm {
   return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.DescrLong);
 };
 
@@ -119,50 +130,95 @@ const enum TitleDescr {
 
 
 function whichAnon_titleDescrImpl(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat },  // I18N
-        what: TitleDescr): St {
-  if (!doAs || !doAs.sameAnonId) {
-    const anonStatus = doAs ? doAs.newAnonStatus : AnonStatus.NotAnon;
-    switch (anonStatus) {
-      case AnonStatus.PerPage:
-        switch (what) {
-          case TitleDescr.TitleShort:
-          case TitleDescr.TitleLong:
-            return "anonymously";
-          default:
-            // Description:
-            return nameNotShownEtc;
-        }
+        what: TitleDescr): St | RElm {
+  const anonStatus = doAs ? doAs.anonStatus || doAs.newAnonStatus : AnonStatus.NotAnon;
+  // UX SHOULD if doAs.sameAnonId, then, show which anon (one might have > 1 on the
+  // same page) pat will continue posting as / using.
 
-      default:
-        switch (what) {
-          case TitleDescr.TitleShort:
-            return "as " + pat_name(ps.pat || ps.me);
-          case TitleDescr.TitleLong:
-            const pat = ps.pat;
-            return pat ? "As " + pat_name(pat)
-                      : "As you, " + pat_name(ps.me);
-          default:
-            // Description:
-            return "Others can see who you are — they'll see your username and picture.";
-        }
+  // if (!doAs || !doAs.sameAnonId) {
+    // Then, either as a new anon, or not anonymously.
+  switch (anonStatus) {
+    case AnonStatus.IsAnonCanAutoDeanon: {
+      switch (what) {
+        case TitleDescr.TitleShort:
+        case TitleDescr.TitleLong:
+          return rFr({},
+              // To capitalize via CSS, where needed.
+              r.span({ className: 'c_TtlCap',
+                  // It's good to never let this be bold — so "temporarily" below
+                  // becomes more prominent.
+                  style: { fontWeight: 'normal' }}, "anonymously, "),
+              r.b({}, "temporarily"));
+        default:
+          // TitleDescr.DescrShort and Long:
+          return rFr({}, r.i({}, "For a while: "), nameNotShownEtc,
+              r.b({}, " Later"), ", everyone's ", r.b({}, "real"),
+              " user names will (might) get ", r.b({}, "shown"), ".");
+      }
+    }
+
+    case AnonStatus.IsAnonOnlySelfCanDeanon: {
+      switch (what) {
+        case TitleDescr.TitleShort:
+        case TitleDescr.TitleLong:
+          return r.span({ className: 'c_TtlCap' }, "anonymously");
+        default:
+          // TitleDescr.DescrShort and Long:
+          return nameNotShownEtc;
+      }
+    }
+
+    default: {
+      // Not anonymously.
+      switch (what) {
+        case TitleDescr.TitleShort:
+          return "as " + pat_name(ps.pat || ps.me);
+        case TitleDescr.TitleLong:
+          const pat = ps.pat;
+          return pat ? "As " + pat_name(pat)
+                    : "As you, " + pat_name(ps.me);
+        default:
+          // TitleDescr.DescrShort and Long:
+          return "Others can see who you are — they'll see your username and picture.";
+      }
     }
   }
+  /*
+  }
   else {
+    // Continue using an existing anon.
+    // It's important (I think) to incl "temporarily", if the anon can/will
+    // get deanonymized later. In case one has forgotten.
+    switch (anonStatus) {
+      case AnonStatus.IsAnonCanAutoDeanon:
+        switch (what) {
+          case TitleDescr.TitleShort:
+            return rFr({}, "anon, ", r.b({}, "temporarily"));
+          case TitleDescr.TitleLong:
+            return rFr({}, "anonymously, ", r.b({}, "temporarily"));
+          // TitleDescr.Descr*:
+          default:
+            return "For a little while: " + nameNotShownEtc +
+                "AND, later, everyone's REAL user accounts will/might get REVEALED.";
+        }
+      case AnonStatus.IsAnonOnlySelfCanDeanon:
     switch (what) {
       case TitleDescr.TitleShort:
       case TitleDescr.TitleLong:
         return "anonymously";
+      // TitleDescr.Descr*:
       default:
-        // Description:
         return "Continue posting anonymously: " + nameNotShownEtc;
     }
+      }
   }
+  */
 }
 
 
 const nameNotShownEtc =  // I18N
         "Your name and picture won't be shown. " +
-        "Admins can still check who you are, though.";
+        "Admins and moderators can still check who you are, though.";
 
 
 //------------------------------------------------------------------------------

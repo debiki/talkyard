@@ -1081,7 +1081,7 @@ export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: Dis
     const postType = ps.anyPostType || PostType.ChatMessage;
     // Show an inline preview, where the reply will appear.
     patch = store_makeNewPostPreviewPatch(
-        store, page, ps.replyToNr, ps.safeHtml, postType);
+        store, page, ps.replyToNr, ps.safeHtml, postType, ps.doAsAnon);
     patch.replyingToPostNr = ps.replyToNr;
   }
 

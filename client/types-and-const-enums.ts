@@ -208,6 +208,27 @@ const enum No {
   TagId = 0,
 }
 
+
+/// Sync w Typescript [NeverAlways] and database.
+/// Same as the  never_always_d  PostgreSQL custom domain.
+///
+const enum NeverAlways {
+  /// Inherit from parent category or site settings or built-in default.
+  /// (Not saved in the database, instead, field set to null.)
+  Inherit = 0,
+
+  //Never = 1,
+  NeverButCanContinue = 2,
+  Allowed = 3,
+  //AllowedMustChoose = 4,
+  //MustChoose = 5,
+  //RecommendedMustChoose = 6,
+  Recommended = 7,
+  AlwaysButCanContinue = 8,
+  //Always = 9,
+}
+
+
 const enum ReviewDecision {
   // 1nnn = Accept.
   Accept = 1001,
@@ -288,10 +309,11 @@ const enum PostVoteType {
 }
 
 
+/// See, and sync with, AnonStatus in Scala.
 const enum AnonStatus {
-  NotAnon = 0,      // was: 10,
-  PerPage = 5,      // was: PerPage = 50,   RENAME to IsAnonBySelf, see Scala?
-  DeanondBySelf = 37,
+  NotAnon = 0,
+  IsAnonOnlySelfCanDeanon = 8191,
+  IsAnonCanAutoDeanon = 65535,
 }
 
 

@@ -297,7 +297,7 @@ function constructEmbCommentsImportTest(testName: string, variants: {
     });
 
 
-    it(`Maria goes to ${embPages.slugs.guestReplyPageSlug}`, async () => {
+    it(`Maria goes to ${embPages.slugs.guestReplyPageSlug}  (not logged in)`, async () => {
       await mariasBrowser.go2(embeddingOrigin + embPages.slugs.guestReplyPageSlug);
     });
 
@@ -360,7 +360,7 @@ function constructEmbCommentsImportTest(testName: string, variants: {
     });
 
 
-    it(`... sees a Like vote`, async () => {
+    it(`... sees a Like vote  (still not logged in)`, async () => {
       await mariasBrowser.switchToEmbeddedCommentsIrame();
       await mariasBrowser.topic.waitForLikeVote(c.BodyNr);
     });

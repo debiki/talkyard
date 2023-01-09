@@ -87,7 +87,7 @@ const DiscLayoutDiag = React.createFactory<{}>(function() {
       return ExplainingListItem({
             active,
             title: r.span({ className: e2eClass  }, title),
-            text: comtOrder_descr(itemComtOrder, diagState.default.comtOrderFrom),
+            text: comtOrder_descr(itemComtOrder, diagState.default.from.comtOrder),
             onSelect: () => {
               if (active) {
                 // Noop. Already using this comment sort order.
@@ -114,7 +114,9 @@ const DiscLayoutDiag = React.createFactory<{}>(function() {
           forCat
               ? // Need not mention that this is for everyone — everything in
                 // the category edit dialog affects everyone.
-                `Comments sort order, in this category:` // 0I18N, is for staff
+                rFr({}, `Comments sort order, in this category: `, // 0I18N, is for staff
+                  r.small({ style: { marginLeft: '1ex' }},
+                    `(and subcategories)`))
               : (
                 // But when changing sort order, on a specific page, then,
                 // one button is for everyone — the [Change...] page button.
@@ -135,6 +137,7 @@ function comtOrder_descr(comtOrder: PostSortOrder, inheritedFrom: Ref): St | REl
   // 0I18N here; this is for staff.
   switch (comtOrder) {
     case PostSortOrder.Inherit:
+      // Dupl code. [inh_from_where]
       let fromWhere = '';
       if (inheritedFrom.startsWith('pageid:')) fromWhere = ", for this page";
       if (inheritedFrom.startsWith('catid:')) fromWhere = ", inherited from a category";

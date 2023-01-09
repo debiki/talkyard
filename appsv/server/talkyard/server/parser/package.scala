@@ -56,19 +56,27 @@ package object parser {
 
 
 
+  /** Sync w Rdb.parseWhichAnon */
   def parseWhichAnonJson(jsOb: JsObject): Opt[WhichAnon] Or ErrMsg = {
     import debiki.JsonUtils.parseOptInt32
+
     val doAsJsOb = parseOptJsObject(jsOb, "doAsAnon") getOrElse {
       return Good(None)
     }
-    val sameAnonId = parseOptInt32(doAsJsOb, "sameAnonId")
-    val newAnonStatus = parseOptInt32(doAsJsOb, "newAnonStatus").flatMap(AnonStatus.fromInt)
-    if (sameAnonId.isDefined && newAnonStatus.isDefined) {
-      Bad("Both sameAnonId and newAnonStatus specified")
-    }
-    else Good {
+    val sameAnonId: Opt[AnonId] = parseOptInt32(doAsJsOb, "sameAnonId")
+    val newAnonStatus: Opt[AnonStatus] =
+          parseOptInt32(doAsJsOb, "newAnonStatus").flatMap(AnonStatus.fromInt)
+
+    if (sameAnonId.isDefined && newAnonStatus.isDefined)
+      return Bad("Both sameAnonId and newAnonStatus specified")
+
+    Good {
       if (sameAnonId.isDefined) {
-        Some(WhichAnon.SameAsBefore(sameAnonId.get))
+        val id = sameAnonId.get
+        if (Pat.MaxAnonId < id)
+          return Bad(s"Bad anon id: $id [TyEBADANIDJSN]")
+
+        Some(WhichAnon.SameAsBefore(id))
       }
       else if (newAnonStatus.isDefined) {
         Some(WhichAnon.NewAnon(newAnonStatus.get))

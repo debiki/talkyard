@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.JsonUtils.asJsObject
+import debiki.JsonUtils._
 import debiki.dao.SiteDao
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
@@ -29,7 +29,7 @@ import talkyard.server.http._
 import talkyard.server.parser
 import java.{util => ju}
 import javax.inject.Inject
-import play.api.libs.json.{JsArray, JsString, JsValue, Json}
+import play.api.libs.json.{JsObject, JsArray, JsString, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX.JsLongOrNull
 
@@ -60,7 +60,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
     val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
-      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+      throwBadReq("TyEANONPARCRPG", s"Bad anon params: $prob")
     }
     val doAsNewAnon: Opt[WhichAnon.NewAnon] = doAsAnon map {
       case _new: WhichAnon.NewAnon => _new
@@ -242,12 +242,36 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
+  MOVE // to UserController maybe?
+  def changePatNodeRels: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething,
+          maxBytes = 200) { req =>
+    import req.dao
+    val bodyJo: JsObject = asJsObject(req.body, "the request body")
+    val addPatIds = parseOptInt32Array(bodyJo, "addPatIds").getOrElse(Nil).toSet
+    val removePatIds = parseOptInt32Array(bodyJo, "removePatIds").getOrElse(Nil).toSet
+    val postId = parseInt32(bodyJo, "postId")
+    val relTypeInt =  parseInt32(bodyJo, "relType")
+    throwUnimplIf(relTypeInt != PatRelType_later.AssignedTo.toInt,
+          "Only AssignedTo has been implemented [TyEUNIMPLRELTYP]")
+    val storePatch = dao.addRemovePatNodeRelsIfAuZ(
+          addPatIds = addPatIds, removePatIds = removePatIds,
+          postId = postId, relType = PatRelType_later.AssignedTo,
+          generateMetaComt = true, notifyPats = true,
+          req.who, IfBadAbortReq)
+    OkSafeJson(storePatch)
+  }
+
+  /* Later?:  For now, part of  DraftsController.listDrafts
+  def listPatNodeRels: Action[JsValue] = ...
+  */
+
+
   def acceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
         request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postUniqueId = (request.body \ "postId").as[PostId]   // id not nr
     val acceptedAt: Option[ju.Date] = request.dao.ifAuthAcceptAnswer(
-      pageId, postUniqueId, userId = request.theUserId, request.theBrowserIdData)
+          pageId, postUniqueId, request.theReqerTrueId, request.theBrowserIdData)
     OkSafeJsValue(JsLongOrNull(acceptedAt.map(_.getTime)))
   }
 
@@ -255,7 +279,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def unacceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
         request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    request.dao.ifAuthUnacceptAnswer(pageId, userId = request.theUserId, request.theBrowserIdData)
+    request.dao.ifAuthUnacceptAnswer(pageId, request.theReqerTrueId, request.theBrowserIdData)
     Ok
   }
 
@@ -264,23 +288,21 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
         request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val closedAt: Option[ju.Date] = request.dao.ifAuthTogglePageClosed(
-      pageId, userId = request.theUserId, request.theBrowserIdData)
+          pageId, request.reqrIds)
     OkSafeJsValue(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
   def deletePages: Action[JsValue] = PostJsonAction(
           RateLimits.TogglePage, maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId,
-          request.theBrowserIdData, undelete = false)
+    request.dao.deletePagesIfAuth(pageIds, request.reqrIds, undelete = false)
     Ok
   }
 
   def undeletePages: Action[JsValue] = PostJsonAction(
           RateLimits.TogglePage, maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId,
-          request.theBrowserIdData, undelete = true)
+    request.dao.deletePagesIfAuth(pageIds, request.reqrIds, undelete = true)
     Ok
   }
 

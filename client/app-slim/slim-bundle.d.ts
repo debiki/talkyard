@@ -422,7 +422,7 @@ declare namespace debiki2 {
   function store_canPinPage(store: Store): boolean;
 
   function disc_findCurPageAnons(discStore: DiscStore, ps: {
-      forPatId?: PatId, startAtPostNr?: PostNr }): KnownAnonym[];
+      forPatId?: PatId, startAtPostNr?: PostNr }): MyPatsOnPage;
 
   function siteStatusToString(siteStatus: SiteStatus);
   var cloneRect;
@@ -473,6 +473,10 @@ declare namespace debiki2 {
   function page_canBeSolved(page: Page | Topic): Bo;
   function page_canChangeCategory(page: Page): boolean;
   function page_mostRecentPostNr(page: Page): number;
+
+  function discProps_pluckFrom(source: DiscPropsSource): DiscPropsSource;
+  function page_deriveLayout(page: PageDiscPropsSource, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
+  function cat_deriveLayout(cat: Cat, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
 
   function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself): boolean;
   function settings_showFilterButton(settings: SettingsVisibleClientSide, me: Myself): boolean;
@@ -550,8 +554,10 @@ declare namespace debiki2 {
       user: Pat, store: Store, onClick?: Ay, avoidFullName?: Bo });
 
   function UserName(props: {
-      user: Pat, store?: Store, settings?: SettingsVisibleClientSide,
-      makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo });
+      user?: Pat, patId?: PatId, // either or
+      store?: Store, settings?: SettingsVisibleClientSide,
+      makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo,
+      key?: St | Nr });
 
   function TagListLive(ps: TagListLiveProps): RElm | U;
   function TagList(ps: TagListProps): RElm | U;

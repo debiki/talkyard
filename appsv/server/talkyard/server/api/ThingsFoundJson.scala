@@ -102,6 +102,8 @@ object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
     // --- Load authors
 
+    COULD // also [incl_topic_assignees], not just authors.
+
     val pageAuthorIds = pageFoundStuffs.map(_.pageStuff.authorUserId).toSet
 
     val postIdsFound: Set[PostId] =

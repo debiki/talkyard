@@ -1111,6 +1111,7 @@ export const TopicsList = createComponent({
     const isLoading = !props.topics;
     const topics: Topic[] = props.topics || [];
     const activeCategory: Cat | U = props.activeCategory;
+    let slashAssigned = '';
 
     const useTable: Bo = props.useTable;
     const orderOffset: OrderOffset = props.orderOffset;
@@ -1118,6 +1119,13 @@ export const TopicsList = createComponent({
     const doItVotesPopFirst = activeCategory && activeCategory.doItVotesPopFirst;
 
     const topicElems = topics.map((topic: Topic) => {
+      // If this is an a bit more "technical" or work oriented forum, where people
+      // get assigned to do stuff, show "Users / Assigned" instead of only "Users".
+      // Otherwise, excl "/ Assigned", since maybe mildly confusing.
+      if (topic.assigneeIds)
+        slashAssigned = ` / Assigned`;  // I18N. What about rtl? Maybe two I18N
+                                        // strings: "Users" and "Users / Assigned"?
+
       const topicRowProps: TopicRowProps = {
           store, topic,
           activeCatId: activeCategory?.id, orderOffset,
@@ -1218,7 +1226,7 @@ export const TopicsList = createComponent({
               doItVotesPopFirst ? r.th({ className: 'c_F_TsT_T_DvoTH' }, "Votes") : null,    // I18N
               r.th({}, topicsHeaderText),
               categoryHeader,
-              r.th({ className: 's_F_Ts_T_Avs' }, t.Users),
+              r.th({ className: 's_F_Ts_T_Avs' }, t.Users + slashAssigned),
               r.th({ className: 'num dw-tpc-replies' }, t.Replies),
               r.th({ className: 'num' }, activityHeaderText))),
               // skip for now:  r.th({ className: 'num' }, "Feelings"))),  [8PKY25]
@@ -1626,6 +1634,19 @@ const TopicRow = createComponent({
             title: t.ft.mostRecentPoster }));
     }
 
+    // If there are many, could create & activate some CSS that moves the avatars closer,
+    // could even slightly overlap, so won't need more than NNN pixels. [pack_avatars_closer]
+    if (topic.assigneeIds) {
+      // UX COULD change to "assigned:" instead of '/', on small screens, since then
+      // there's no "Users / Assigned" table column.
+      userAvatars.push(r.span({ key: '/', className: 'n_AvsL_AsgSep' }, '/'));
+      for (let id of topic.assigneeIds)  {
+        const lastReplyer = store_getUserOrMissing(store, id, 'TyE0PATASG');
+        userAvatars.push(avatar.Avatar({ key: 'a' + id, user: lastReplyer, origins: store,
+              title: "assigned" })); // t.ft.assigned  I18N
+      }
+    }
+
     // DO_AFTER 2021-12-01: CLEAN_UP: Nowadays always Link and r.div, can move into makeTitle;
     // and contentLinkUrl no longer in use.
     let titleLinkTag = Link;
@@ -1944,6 +1965,7 @@ function CatLink(props: { category: Category, forumPath: string, location,
 }
 
 
+// [same_title_everywhere]
 function makeTitle(topic: Topic, className: string, settings: SettingsVisibleClientSide,
       me: Myself, reactTag?) {
   let title: any = topic.title;

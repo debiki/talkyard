@@ -78,10 +78,19 @@ access restricted topics.
 Make site specific errors visible to site admins — so no need
 to have Linux root access.
 
+[logger_everywhere]
+Pass loggers to the models and rdb Scala modules, so they don't need to use
+System.stdout/stderr directly.
+
 [immutable]
 Make all js objs "light weight immutable", via Typescript's 'readonly' properties:
 https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
 (React wants immutable.)
+
+[add_nodes_t]
+Merge  posts3, pages3, categories3 and some settings3 columns into:  nodes_t
+(which will actually be posts3 but renamed, and with some new columns).
+See: docs/everything-is-a-node.txt .
 
 [subcats] [sub_cats]
 DONE: Implement sub categories.
@@ -291,6 +300,8 @@ Need an approvalStatus [ApprovedStatus] field?
 Or:  0,1,2 = undec, apr, rej by sys.  4,8,16 by trusted,  core member,  32,64,128 by staff  ?
    bits 1,2                           3,4                 5,6           7,8
 
+[7YKU24] Stop auto approving chat messages.
+
 [flat-comments]:
 Change layout of problem type topics to traditional forum flat comments layout.
 & use for formal messages too, or maybe repl w chat?
@@ -319,6 +330,18 @@ discovery of pages & people by iterating through all ids in the url.
 
 [custom-groups]
 Search for that tag.
+
+[pseudonyms_later][pseudonyms_trust]
+
+[auto_deanon]
+[auto_show_replies]
+Needs: [add_triggers_t]
+
+[anon_priv_msgs][anon_chats]
+Not now.
+
+[sql_true_id_eq]
+Look at later, realted to anonyms and pseudonyms.
 
 [subcomms] [sub_communities]
 Improve sub communities, e.g. selecting a category across all sub communities,
@@ -507,6 +530,9 @@ Make it possible to change the author of a post to someone else. Or change edite
 Assign topics and posts to people. (Not only whole topics, but also comments/sub-threads inside topics.)
 Why assign a post? Because someone might ask a good question, in a longer discussion, and nice
 to know & remember who will try to answer it, later.
+
+[can_see_assigned]
+New permission.
 
 [priv_comts] Private comments:
 (Aka "whispers" in Discourse and "private items" in Basecamp long ago, and "private comments"
@@ -792,6 +818,8 @@ Do outside tx.
 
 [double_tx]  COULD_OPTIMIZE
 Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
+
+[cache in tx] USE_StaleStuff_INSTEAD
 
 [update_warmup_json]
 

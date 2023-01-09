@@ -58,7 +58,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: TyContext)
       "DwE6KG4", "Bad post type")
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
     val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
-      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+      throwBadReq("TyEANONPARRE", s"Bad anon params: $prob")
     }
 
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")

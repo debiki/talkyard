@@ -1860,7 +1860,7 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
       postNr: postNr,
       text: text,
       deleteDraftNr,
-      sameAnonId: undefined,
+      //sameAnonId: undefined,
       doAsAnon,
     },
     success: (editedPost) => {
@@ -1874,7 +1874,7 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
 }
 
 
-// RENAME to alterPage.
+// RENAME to [alterPage].
 // Alter = change in character or composition, typically in a small but significant way.
 // Modify = make partial or minor changes.
 // But "change" can mean replace. So "alter" is more clear.
@@ -1946,7 +1946,7 @@ export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string
       postType: anyPostType || PostType.Normal,
       text: text,
       deleteDraftNr,
-      sameAnonId: undefined,
+      // sameAnonId: undefined,
       doAsAnon,
     },
     success
@@ -2107,9 +2107,14 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
 
 
 // SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead.  [.get_n_patch]
-export function loadPostsByAuthor(authorId: UserId, onOk: (resp) => Vo) {
-  get(`/-/list-posts?authorId=${authorId}`, function (resp) {
-    ReactActions.patchTheStore({ tagTypes: resp.tagTypes });
+export function loadPostsByAuthor(authorId: UserId, showWhat: 'Tasks' | U,
+          onlyOpen: Bo, onOk: (resp) => Vo) {
+  const showWhatParam = showWhat ? '&relType=11' : ''; // for now. 11 = AssignedTo.
+  const onlyOpenParam = onlyOpen ? '&which=678' : '';  // for now.
+  // RENAME 'authorId' to 'relToPatId'?
+  const url = `/-/list-posts?authorId=${authorId}${showWhatParam}${onlyOpenParam}`
+  get(url, function (resp: LoadPostsResponse) {
+    ReactActions.patchTheStore({ tagTypes: resp.tagTypes, usersBrief: resp.patsBrief });
     onOk(resp);
   });
 }
@@ -2121,6 +2126,16 @@ export function makeDownloadMyContentUrl(authorId: UserId) {
 
 export function makeDownloadPersonalDataUrl(authorId: UserId) {
   return `/-/download-personal-data?userId=${authorId}`;
+}
+
+
+export function changeAssignees(ps: { addPatIds: PatId[], removePatIds: PatId[],
+          postId: PostId }, onOk: () => Vo) {
+  postJsonSuccess('/-/change-pat-node-rels', (storePatch: StorePatch) => {
+    ReactActions.patchTheStore(storePatch);
+    onOk();
+  }, { ...ps, relType: 11 });  // 11 = AssignedTo
+
 }
 
 

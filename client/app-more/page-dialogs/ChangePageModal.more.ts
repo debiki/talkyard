@@ -86,6 +86,7 @@ const ChangePageDialog = createComponent({
     let setPlannedListItem;
     let setStartedListItem;
     let setDoneListItem;
+    let assignBtn: RElm | U;
     let changeCategoryListItem;
     let changeTopicTypeListItem;
     let changeComtOrderListItem;
@@ -114,6 +115,8 @@ const ChangePageDialog = createComponent({
       dieIf(page !== store.currentPage, 'TyE50MSED257');
       // @endif
 
+      const origPost = page.postsByNr[BodyNr];
+
       // Ideas and Problems can be solved [tpc_typ_solv], and then
       // pat cannot change their doing status, unless un-selecting
       // the solution post.
@@ -124,6 +127,8 @@ const ChangePageDialog = createComponent({
           store.currentCategories.length;
       const canChangePageType = isOwnOrStaff && page_mayChangeRole(page.pageRole) &&
           settings_selectTopicType(settings, me);
+      const alreadyDoneOrAnswered =
+          page.doingStatus === PageDoingStatus.Done || page.pageAnswerPostUniqueId;
 
       anyViewAnswerButton = !page.pageAnsweredAtMs || !state.showViewAnswerButton ? null :
           r.div({ className: 's_ExplDrp_ActIt' },
@@ -165,6 +170,26 @@ const ChangePageDialog = createComponent({
             text: page.pageRole === PageRole.Problem ? t.d.TooltipProblFixed : t.d.TooltipDone,
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Done }) });
 
+      // If it can be closed, it can also be assigned?
+      const canAssign = page_canToggleClosed(page) &&
+          // Also if it's been colsed already? — To show who was previously assigned?
+          // So don't:  !alreadyDoneOrAnswered || 
+          // (Later, will use the permission system: can_assign_others_c.)
+          isOwnOrStaff;
+      assignBtn = !canAssign ? null : rFr({},
+          r.div({ className: 's_ExplDrp_Ttl' }, "Assigned to: "),   // I18N
+          r.div({ className: 's_ExplDrp_ActIt' },
+            !origPost.assigneeIds ? r.span({ className: 'esP_By' }, `(None)`) :
+                  origPost.assigneeIds.map(patId =>
+                    UserName({ patId, store, avoidFullName: true, key: patId })),
+            Button({ onClick: () => {
+                openAddPeopleDialog({
+                      curPats: origPost.assigneeIds?.map(id => store.usersByIdBrief[id]),
+                      onChanges: (res: PatsToAddRemove) => {
+                  Server.changeAssignees({ ...res, postId: origPost.uniqueId }, this.close);
+                }}) }}, t.ChangeDots),
+              ));
+
       changeCategoryListItem = !canChangeCategory ? null : rFragment({},
           r.div({ className: 's_ExplDrp_Ttl' }, t.cpd.ChangeCatC),
           r.div({ className: 's_ExplDrp_ActIt' },
@@ -197,7 +222,7 @@ const ChangePageDialog = createComponent({
 
       // Show a Close button for unanswered questions and not-yet-done ideas/problems,
       // and a Reopen button if closed already.
-      if (page.doingStatus === PageDoingStatus.Done || page.pageAnswerPostUniqueId) {
+      if (alreadyDoneOrAnswered) {
         // Page already done / has-an-accepted-answer; then, it's closed already. [5AKBS2]
       }
       else if (!page_canToggleClosed(page)) {
@@ -274,6 +299,7 @@ const ChangePageDialog = createComponent({
         setPlannedListItem,
         setStartedListItem,
         setDoneListItem,
+        assignBtn,
         changeCategoryListItem,
         changeTopicTypeListItem,
         reopenListItem,

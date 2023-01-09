@@ -62,7 +62,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
           and page_id in (
             select distinct page_id from posts3
             where site_id = ?
-              and created_by_id = ?
+              and created_by_id = ?   -- + pat_post_rels_t [AuthorOf] !
               and approved_at is not null
               and deleted_status = 0
               and hidden_at is null)

@@ -403,7 +403,7 @@ case class SimpleSitePatch(
       pageExtId: Option[ExtId],
       pageType: PageType,
       pageSlug: String,
-      authorId: UserId,
+      authorId: PatId,
       pageMemberRefs: Seq[ParsedRef],
       categoryId: Option[CategoryId],
       titleHtmlUnsafe: String,

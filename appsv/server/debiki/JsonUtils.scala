@@ -143,6 +143,28 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
             "TyE2YMP73T", s"'$fieldName' is not an object, but a ${classNameOf(bad)}")
     }
 
+  def parseInt32Array(json: JsValue, fieldName: St): Vec[i32] = {
+    parseOptInt32Array(json, fieldName) getOrElse {
+      throwBadJson("TyEJSINTARRMISNG", s"Intger array $fieldName is missing")
+    }
+  }
+
+  def parseOptInt32Array(json: JsValue, fieldName: St): Opt[Vec[i32]] = {
+    parseOptJsArray(json, fieldName) map { arr: IndexedSeq[JsValue] =>
+      arr.map({
+        case JsNumber(num: BigDecimal) =>
+          try num.toIntExact catch {
+            case ex: java.lang.ArithmeticException =>
+              throwBadJson("TyEJSINTARRNUM",
+                    s"Bad i32 json array item, not a 32 bit integer: $num, exception: $ex")
+          }
+        case bad =>
+          throwBadJson("TyEJSINTARRELMTYP",
+                s"Bad i32 json array item, not a number, but a: ${classNameOf(bad)}")
+      }).toVector
+    }
+  }
+
   def parseJsArray(json: JsValue, fieldName: St, optional: Bo = false): Seq[JsValue] =
     readJsArray(json, fieldName, optional).value
 

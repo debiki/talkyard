@@ -190,7 +190,7 @@ case class CatsCanSee(
   */
 case class CategoryToSave(
   sectionPageId: PageId,
-  parentId: CategoryId,   // RENAME to parentCategoryId ?
+  parentId: CategoryId, // RENAME to parentCategoryId ?
   name: String,
   slug: String,
   position: Int,
@@ -199,6 +199,10 @@ case class CategoryToSave(
   defaultSortOrder: Opt[PageOrderOffset],
   comtOrder: Opt[PostSortOrder],
   comtNesting: Opt[ComtNesting_later],
+  comtsStartHidden: Opt[NeverAlways],
+  comtsStartAnon: Opt[NeverAlways],
+  opStartsAnon: Opt[NeverAlways],
+  newAnonStatus: Opt[AnonStatus],
   doVoteStyle: Opt[DoVoteStyle],
   doVoteInTopicList: Opt[Bo],
   shallBeDefaultCategory: Boolean,
@@ -254,6 +258,10 @@ case class CategoryToSave(
     defaultSortOrder = defaultSortOrder,
     comtOrder = comtOrder,
     comtNesting = comtNesting,
+    comtsStartHidden = comtsStartHidden,
+    comtsStartAnon = comtsStartAnon,
+    opStartsAnon = opStartsAnon,
+    newAnonStatus = newAnonStatus,
     doVoteStyle = doVoteStyle,
     doVoteInTopicList = doVoteInTopicList,
     unlistCategory = unlistCategory,
@@ -277,6 +285,10 @@ object CategoryToSave {
           defaultSortOrder = cat.defaultSortOrder,
           comtOrder = cat.comtOrder,
           comtNesting = cat.comtNesting,
+          comtsStartHidden = cat.comtsStartHidden,
+          comtsStartAnon = cat.comtsStartAnon,
+          opStartsAnon = cat.opStartsAnon,
+          newAnonStatus = cat.newAnonStatus,
           doVoteStyle = cat.doVoteStyle,
           doVoteInTopicList = cat.doVoteInTopicList,
           shallBeDefaultCategory = makeDefault,
@@ -820,6 +832,10 @@ trait CategoriesDao {
             defaultSortOrder = editsToDo.defaultSortOrder,
             comtOrder = editsToDo.comtOrder,
             comtNesting = editsToDo.comtNesting,
+            comtsStartHidden = editsToDo.comtsStartHidden,
+            comtsStartAnon = editsToDo.comtsStartAnon,
+            opStartsAnon = editsToDo.opStartsAnon,
+            newAnonStatus = editsToDo.newAnonStatus,
             doVoteStyle = editsToDo.doVoteStyle,
             doVoteInTopicList = editsToDo.doVoteInTopicList,
             unlistCategory = editsToDo.unlistCategory,
@@ -1048,6 +1064,12 @@ trait CategoriesDao {
   def deleteUndelCategoryImpl(categoryId: CategoryId, delete: Boolean, who: Who)(
         tx: SiteTx): Unit = {
 
+    // What if one is admin, but has currently activated a non-admin pseudonym?
+    // Then this error message might be confusing.  [pseudonyms_later]
+    // And if letting the pseudonym proceed, just because we know hen is actually
+    // an admin — then, to others, it seem look as if the category got deleted
+    // by a non-admin, which would be surprising, look like a bug.
+    // And could give away the true identity of the pseudonym.
     throwForbiddenIf(!tx.isAdmin(who.id), "EdEGEF239S", "Not admin")
 
     val categoryBefore = tx.loadCategory(categoryId) getOrElse throwNotFound(

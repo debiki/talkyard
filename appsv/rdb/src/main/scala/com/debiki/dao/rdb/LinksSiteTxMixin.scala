@@ -116,7 +116,7 @@ trait LinksSiteTxMixin extends SiteTransaction {
               is_external_c,
               to_page_id_c,
               to_post_id_c,
-              to_pp_id_c,
+              to_pat_id_c,
               to_tag_id_c,
               to_category_id_c)
           values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -323,7 +323,7 @@ trait LinksSiteTxMixin extends SiteTransaction {
           //to_staff_page: getOptBool(rs, "to_staff_page") is true,
           toPageId = getOptString(rs, "to_page_id_c"),
           toPostId = getOptInt(rs, "to_post_id_c"),
-          toPpId = getOptInt(rs, "to_pp_id_c"),
+          toPpId = getOptInt(rs, "to_pat_id_c"),
           toTagId = getOptInt(rs, "to_tag_id_c"),
           toCategoryId = getOptInt(rs, "to_category_id_c"))
   }

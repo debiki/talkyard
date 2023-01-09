@@ -374,7 +374,7 @@ class SpamChecker(
 
       if (spamFoundResults.nonEmpty) {
         logger.debug(i"""Text spam detected [TyM8YKF0]:
-            | - who: ${spamCheckTask.who}
+            | - reqrId: ${spamCheckTask.reqrId}
             | - post: $postToSpamCheck
             | - req: ${spamCheckTask.requestStuff}
             | - siteId: ${spamCheckTask.siteId}
@@ -395,7 +395,7 @@ class SpamChecker(
   def checkViaStopForumSpam(spamCheckTask: SpamCheckTask): Future[SpamCheckResult] = {
     // StopForumSpam doesn't support ipv6.
     // See: https://www.stopforumspam.com/forum/viewtopic.php?id=6392
-    val ipAddr = spamCheckTask.who.ip
+    val ipAddr = spamCheckTask.requestStuff.browserIdData.ip
     val anyIpParam =
       if (ipAddr.startsWith("[") || ipAddr.contains(":")) ""
       else  "&ip=" + encode(ipAddr)
@@ -845,7 +845,7 @@ class SpamChecker(
     body.append("blog=" + encode(siteOrigin))
 
     // (required) IP address of the comment submitter.
-    body.append("&user_ip=" + encode(spamCheckTask.who.ip))
+    body.append("&user_ip=" + encode(spamCheckTask.requestStuff.browserIdData.ip))
 
     // (required) User agent string of the web browser submitting the comment - typically
     // the HTTP_USER_AGENT cgi variable. Not to be confused with the user agent

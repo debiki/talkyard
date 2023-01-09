@@ -27,20 +27,22 @@ const Post = page.Post;
 const SlashActivitySlash = '/activity/';
 
 
-export const UsersActivity = createFactory<any, any>({
+export const UsersActivity = createFactory<PatStatsPanelProps, any>({
   displayName: 'UsersActivity',
 
   render: function() {
-    const store: Store = this.props.store;
-    const user: UserInclDetails = this.props.user;
+    const props: PatStatsPanelProps = this.props;
+    const store: Store = props.store;
+    const user: UserDetailsStatsGroups = props.user;
     const me: Myself = store.me;
 
-    const childProps = {
+    const childProps: PatStatsPanelProps = {
       store,
       user,
       me,
-      stats: this.props.stats, // for the Summary page
-      reloadUser: this.props.loadCompleteUser,
+      stats: props.stats, // for the Summary page (UserSummary() below)
+      // CLEAN_UP, REMOVE, not needed here?
+      //reloadUser: props.loadCompleteUser,
     };
 
     const childRoute = Switch({},
@@ -62,6 +64,7 @@ export const UsersActivity = createFactory<any, any>({
 
     const uap = pathTo(user) + SlashActivitySlash;
 
+    // REFACTOR, break out fn, dupl code. [post_list_dupl_html]
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
       // default layout is width = as wide as the widest cell wants to be.
@@ -114,7 +117,9 @@ function makeMaybeHiddenInfo(me: Myself, user: UserInclDetails) {
 
 
 
-const UsersPosts = createFactory<any, any>({
+// MOVE to new file: PostList, which takes a PostQuery.
+//
+export const UsersPosts = createFactory<any, any>({
   displayName: 'UsersPosts',
 
   getInitialState: function() {
@@ -122,30 +127,34 @@ const UsersPosts = createFactory<any, any>({
   },
 
   componentDidMount: function() {
-    const me: Myself = this.props.store.me;
-    const user: UserInclDetails = this.props.user;
-    this.loadPosts(me, user);
+    this.loadPosts(); //me, user);
   },
 
   componentWillUnmount: function() {
     this.isGone = true;
   },
 
-  UNSAFE_componentWillReceiveProps: function(nextProps) {
+  componentDidUpdate: function(prevProps: PatPostsPanelProps) {
     // a bit dupl code [5AWS2E9]
-    const store: Store = this.props.store;
+    //nst props: PatPostsPanelProps = this.props;
+    const nextProps = this.props;
     const nextStore: Store = nextProps.store;
-    const me: Myself = this.props.me;  // not store.me, it's been modif in-place [redux]
-    const user: UserInclDetails = this.props.user;
-    const nextMe: Myself = nextStore.me;
-    const nextUser: UserInclDetails = nextProps.user;
+    const prevMe: Myself = prevProps.me;  // not store.me, it's been modif in-place [redux]
+    const prevPat: UserInclDetails = prevProps.user;
+    const nextMe: Myself = nextStore.me;   // (... would be the same as this `me`?)
+    const nextPat: UserInclDetails = nextProps.user;
     // If we log in as someone else, which posts we may see might change.
-    if (me.id !== nextMe.id || user.id !== nextUser.id) {
-      this.loadPosts(nextMe, nextUser);
+    if (prevMe.id !== nextMe.id ||
+        prevPat.id !== nextPat.id ||
+        prevProps.onlyOpen !== nextProps.onlyOpen) {
+      this.loadPosts();
     }
   },
 
-  loadPosts: function(me: Myself, user: UserInclDetails) {
+  loadPosts: function() {
+    const props: PatPostsPanelProps = this.props;
+    const me: Myself = props.store.me;
+    const user: UserInclDetails = props.user;
     // a bit dupl code [5AWS2E8]
     const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
     if (hiddenForMe) {
@@ -154,12 +163,14 @@ const UsersPosts = createFactory<any, any>({
     }
     if (this.nowLoading === user.id) return;
     this.nowLoading = user.id;
-    Server.loadPostsByAuthor(user.id, (response: any) => {
+    Server.loadPostsByAuthor(user.id, props.showWhat, props.onlyOpen,
+            (response: LoadPostsResponse) => {
       this.nowLoading = null;
       if (this.isGone) return;
       this.setState({
         posts: response.posts,
-        author: response.author,
+        // author, // backw compat, rm later. Was:  response.author  now gone, ?  TODO server side
+        //patsById: response.patsById,
       }, () => {
         // BUG but rather harmless. Runs processPosts (e.g. MathJax) also on topic titles,
         // although that's not done in the forum topic list or full page title.
@@ -173,11 +184,12 @@ const UsersPosts = createFactory<any, any>({
   },
 
   render: function() {
-    const store: Store = this.props.store;
-    const me: Myself = this.props.me;
-    const user: UserInclDetails = this.props.user;
+    const props: PatPostsPanelProps = this.props;
+    const state = this.state;
+    const store: Store = props.store;
+    const me: Myself = props.me;
+    const user: UserInclDetails = props.user;
     const posts: PostWithPage[] = this.state.posts;
-    const author: BriefUser = this.state.author;
     if (!_.isArray(posts))
       return (
         r.p({}, t.Loading));
@@ -185,9 +197,13 @@ const UsersPosts = createFactory<any, any>({
     const noPostsClass = _.isEmpty(posts) ? ' e_NoPosts' : '';
 
     const postElems = posts.map((post: PostWithPage) => {
+      //const author = state.patsById[post.authorId];
+      const author = store.usersByIdBrief[post.authorId];
       return (
         r.li({ key: post.uniqueId, className: 's_UP_Act_Ps_P' },
           Link({ to: linkToPostNr(post.pageId, post.nr),
+              // UX SHOULD use  makeTitle() from forum.ts  instead, [same_title_everywhere]
+              // so planned-doing-done/answerded/closed icons are shown.
               className: 's_UP_Act_Ps_P_Link ' + pageRole_iconClass(post.pageRole) },
             post.pageTitle),
           avatar.Avatar({ user: author, origins: store, size: AvatarSize.Small }),
