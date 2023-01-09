@@ -1,0 +1,33 @@
+Need to upgr docker to >= 20.10.10
+
+How to:  https://docs.docker.com/engine/install/ubuntu/
+That is:  "To upgrade Docker Engine, follow the installation instructions", which is just:  (and this worked)
+
+    sudo apt-get update
+    sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+
+Alternatively, don't use Ubuntu Jammy images?  Instead, Debian 11?
+glibc 2.34 and newer contain this commit, which defaults to using clone3. Ubuntu Jammy ships with 2.35, and thus contains this change in behavior. This was not available for Docker until PR 42681 (fix for 42680). Which is available starting with version 20.10.10.
+
+Or use Ubuntu 20.04.5 LTS Focal Fossa:  11.0.17_8-jre-focal  — doesn't use clone3, right (but 22.04 does).
+And add a warning:  Don't upgrade to  Jammy, 11.0.17_8-jdk-jammy  just yet. Instead, wait until ... Ubuntu 18 has gone EOL and/or  show an admin notice for a month, and not until then switch to Jammy?
+
+
+Because:
+
+https://stackoverflow.com/questions/72841549/container-fails-to-start-insufficient-memory-for-the-java-runtime-environment-t/73970043#73970043
+
+https://github.com/adoptium/containers/issues/215#issuecomment-1142046045
+
+via:  https://stackoverflow.com/questions/74443957/insufficient-memory-while-running-eclipse-temurin17-jdk-docker-image
+via:  https://www.google.com/search?q=Failed+to+start+thread+%22GC+Thread%230%22+-+pthread_create+failed+(EPERM)+for+attributes%3A+stacksize%3A+1024k%2C+guardsize%3A+4k%2C+detached.&oq=Failed+to+start+thread+%22GC+Thread%230%22+-+pthread_create+failed+(EPERM)+for+attributes%3A+stacksize%3A+1024k%2C+guardsize%3A+4k%2C+detached.&aqs=chrome..69i57.1225j0j1&sourceid=chrome&ie=UTF-8
+
+
+(Also see:  https://docs.docker.com/engine/security/seccomp/
+
+
+Email about some clone3 wrapper:
+https://sourceware.org/git/?p=glibc.git;a=commit;h=d8ea0d0168b190bdf138a20358293c939509367f
+
+
