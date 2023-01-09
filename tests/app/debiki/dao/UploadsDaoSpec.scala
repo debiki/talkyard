@@ -210,9 +210,9 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         browserIdData)
 
       info("upload avatar images, no quota used")
-      dao.addUploadedFile(tinyAvatar.name, tinyAvatar.file, user.id, browserIdData)
-      dao.addUploadedFile(smallAvatar.name, smallAvatar.file, user.id, browserIdData)
-      dao.addUploadedFile(mediumAvatar.name, mediumAvatar.file, user.id, browserIdData)
+      dao.addUploadedFile(tinyAvatar.name, tinyAvatar.file, user.trueId2, browserIdData)
+      dao.addUploadedFile(smallAvatar.name, smallAvatar.file, user.trueId2, browserIdData)
+      dao.addUploadedFile(mediumAvatar.name, mediumAvatar.file, user.trueId2, browserIdData)
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
       resourceUsage.numUploadBytes mustBe 0
@@ -255,19 +255,19 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe 0
 
       info("upload tiny image")
-      dao.addUploadedFile(tinyAvatar.name, tinyAvatar.file, user.id, browserIdData)
+      dao.addUploadedFile(tinyAvatar.name, tinyAvatar.file, user.trueId2, browserIdData)
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 1
       resourceUsage.numUploadBytes mustBe 1020
 
       info("upload small image")
-      dao.addUploadedFile(smallAvatar.name, smallAvatar.file, user.id, browserIdData)
+      dao.addUploadedFile(smallAvatar.name, smallAvatar.file, user.trueId2, browserIdData)
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 2
       resourceUsage.numUploadBytes mustBe (1020 + 2030)
 
       info("upload medium image")
-      dao.addUploadedFile(mediumAvatar.name, mediumAvatar.file, user.id, browserIdData)
+      dao.addUploadedFile(mediumAvatar.name, mediumAvatar.file, user.trueId2, browserIdData)
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 3
       resourceUsage.numUploadBytes mustBe (1020 + 2030 + 3040)
@@ -295,8 +295,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         browserIdData)
 
       info("upload files, no quota used")
-      dao.addUploadedFile(sunImage.name, sunImage.file, user.id, browserIdData)
-      dao.addUploadedFile(moonImage.name, moonImage.file, user.id, browserIdData)
+      dao.addUploadedFile(sunImage.name, sunImage.file, user.trueId2, browserIdData)
+      dao.addUploadedFile(moonImage.name, moonImage.file, user.trueId2, browserIdData)
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
       resourceUsage.numUploadBytes mustBe 0
@@ -307,7 +307,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         title = titleSourceAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-        showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
+        showId = true, deleteDraftNr = None, Who(user.trueId2, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 1
@@ -316,7 +316,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       info("edit page: add second file, more quota used")
       val newTextAndHtml = bodyTextAndHtml.append(s"\n[The moon](${moonImage.ref.url})")
       dao.editPostIfAuth(pagePath.pageId, PageParts.BodyNr, deleteDraftNr = None,
-        Who(user.id, browserIdData),
+        Who(user.trueId2, browserIdData),
         dummySpamRelReqStuff, newTextAndHtml)
 
       resourceUsage = dao.loadResourceUsage()
@@ -325,7 +325,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit page: remove second file, quota freed")
       dao.editPostIfAuth(pagePath.pageId, PageParts.BodyNr, deleteDraftNr = None,
-        Who(user.id, browserIdData),
+        Who(user.trueId2, browserIdData),
         dummySpamRelReqStuff, bodyTextAndHtml)
 
       resourceUsage = dao.loadResourceUsage()
@@ -334,7 +334,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit page: remove the first file, remaining quota freed")
       dao.editPostIfAuth(pagePath.pageId, PageParts.BodyNr, deleteDraftNr = None,
-        Who(user.id, browserIdData),
+        Who(user.trueId2, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao.loadResourceUsage()
@@ -361,21 +361,21 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         title = titleSourceAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-        showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
+        showId = true, deleteDraftNr = None, Who(user.trueId2, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
       resourceUsage.numUploadBytes mustBe 0
 
       info("upload the file, now quota gets used")
-      dao.addUploadedFile(sunImage.name, sunImage.file, user.id, browserIdData)
+      dao.addUploadedFile(sunImage.name, sunImage.file, user.trueId2, browserIdData)
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 1
       resourceUsage.numUploadBytes mustBe 1060
 
       info("edit page: remove link, quota freed")
       dao.editPostIfAuth(pagePath.pageId, PageParts.BodyNr, deleteDraftNr = None,
-        Who(user.id, browserIdData),
+        Who(user.trueId2, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao.loadResourceUsage()
@@ -419,9 +419,9 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("upload files, no quota used")
 
-      dao.addUploadedFile(sharedFile.name, sharedFile.file, user.id, browserIdData)
-      dao.addUploadedFile(site1File.name, site1File.file, user.id, browserIdData)
-      dao2.addUploadedFile(site2File.name, site2File.file, user2.id, browserIdData)
+      dao.addUploadedFile(sharedFile.name, sharedFile.file, user.trueId2, browserIdData)
+      dao.addUploadedFile(site1File.name, site1File.file, user.trueId2, browserIdData)
+      dao2.addUploadedFile(site2File.name, site2File.file, user2.trueId2, browserIdData)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
@@ -444,12 +444,12 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath1 = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         title = titleSourceAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite1,
-        showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
+        showId = true, deleteDraftNr = None, Who(user.trueId2, browserIdData), dummySpamRelReqStuff)
 
       dao2.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         title = titleSourceAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite2,
-        showId = true, deleteDraftNr = None, Who(user2.id, browserIdData), dummySpamRelReqStuff)
+        showId = true, deleteDraftNr = None, Who(user2.trueId2, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 2
@@ -462,7 +462,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       info("edit site 1 page: remove links, remaining quota freed, site 1 only")
 
       dao.editPostIfAuth(pagePath1.pageId, PageParts.BodyNr, deleteDraftNr = None,
-        Who(user.id, browserIdData),
+        Who(user.trueId2, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao2.loadResourceUsage()
@@ -493,8 +493,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         browserIdData)
 
       info("upload files, as long as haven't uploaded too much")
-      dao.addUploadedFile(fileOne.name, fileOne.file, user.id, browserIdData)
-      dao.addUploadedFile(fileTwo.name, fileTwo.file, user.id, browserIdData)
+      dao.addUploadedFile(fileOne.name, fileOne.file, user.trueId2, browserIdData)
+      dao.addUploadedFile(fileTwo.name, fileTwo.file, user.trueId2, browserIdData)
 
       // The audit log is used to detect too-many-big-files-uploaded. Not the quota system.
       resourceUsage = dao.loadResourceUsage()
@@ -503,12 +503,12 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("not be allowed to upload too much data")
       val exception = intercept[ResultException] {
-        dao.addUploadedFile(fileThree.name, fileThree.file, user.id, browserIdData)
+        dao.addUploadedFile(fileThree.name, fileThree.file, user.trueId2, browserIdData)
       }
       exception.statusCode mustBe play.api.http.Status.REQUEST_ENTITY_TOO_LARGE
 
       info("but may upload one more file, if it's small enough")
-      dao.addUploadedFile(fileTiny.name, fileTiny.file, user.id, browserIdData)
+      dao.addUploadedFile(fileTiny.name, fileTiny.file, user.trueId2, browserIdData)
     }
   }
 

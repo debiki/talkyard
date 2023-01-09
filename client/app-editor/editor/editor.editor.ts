@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../editor-prelude.editor.ts" />
+/// <reference path="./oop.editor.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.editor {
@@ -134,7 +135,8 @@ interface EditorState {
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
   doAsAnon?: WhichAnon;
-  myAnonsHere?: KnownAnonym[];
+  myAnonsHere?: MyPatsOnPage;
+  discProps?: DiscPropsDerived;
   authorId?: PatId; // remove?
   editorsCategories?: Category[];
   editorsPageId?: PageId;
@@ -963,13 +965,23 @@ export const Editor = createFactory<any, EditorState>({
 
     // Annoying! Try to get rid of eds.embeddedPageId? So can remove discStore2.
     const discStore2: DiscStore = { ...discStore, currentPageId: editorsPageId };
-    const myAnonsHere = disc_findCurPageAnons(discStore2, {
-            forPatId: discStore.me?.id, startAtPostNr: postNrs[0] });
 
-    const doAsAnon: WhichAnon | U = myAnonsHere.length
-            ? { sameAnonId: myAnonsHere[0].id }
-            : { newAnonStatus: AnonStatus.PerPage }  // later, [anon_cats]  just testing
-            //: undefined;
+    const discProps: DiscPropsDerived = page_deriveLayout(
+            discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
+
+    const myAnonsHere: MyPatsOnPage = disc_findAnonsToReuse(discStore2, {
+            forWho: discStore.me, startAtPostNr: postNrs[0] });
+    const lastAnon: KnownAnonym | U =
+            myAnonsHere.byThreadLatest.find(p => p.isAnon) as KnownAnonym | U;
+
+    // Continue replying using the same anon as last time in the same thread.
+    // If none, then, depending on the page / cat settings, use a new anonym,
+    // or use your real account [.use_which_anon].
+    const doAsAnon: WhichAnon | U = lastAnon
+        ? { sameAnonId: lastAnon.id, anonStatus: lastAnon.anonStatus } as SameAnon
+        : (discProps.comtsStartAnon >= NeverAlways.Recommended
+            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
+            : undefined);
 
     const newState: Partial<EditorState> = {
       inFrame,
@@ -982,6 +994,7 @@ export const Editor = createFactory<any, EditorState>({
       text: state.text || makeDefaultReplyText(discStore, postNrs),
       myAnonsHere,
       doAsAnon,
+      discProps,
     };
 
     this.showEditor(newState);
@@ -1058,11 +1071,21 @@ export const Editor = createFactory<any, EditorState>({
       dieIf(postNr !== response.postNr, 'TyE23GPKG4');
 
       const editorsDiscStore: DiscStore = { ...discStore, currentPageId: response.pageId };
-      const myAnonsHere = disc_findCurPageAnons(editorsDiscStore, {
-              forPatId: discStore.me?.id }); //, replyToPostNr: postNr });
+      const discProps: DiscPropsDerived = page_deriveLayout(
+              discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
 
+      const myAnonsHere = disc_findAnonsToReuse(editorsDiscStore, {
+              forWho: discStore.me, startAtPostNr: postNr });
+      const lastAnon: KnownAnonym | U =
+            myAnonsHere.byThreadLatest.find(p => p.isAnon) as KnownAnonym | U;
+
+      // See [.use_which_anon] above.
       const doAsAnon: WhichAnon | U = draft && draft.doAsAnon || (
-              !myAnonsHere.length ? undefined : { sameAnonId: myAnonsHere[0].id });
+          lastAnon
+            ? { sameAnonId: lastAnon.id, anonStatus: lastAnon.anonStatus } as SameAnon
+            : (discProps.comtsStartAnon >= NeverAlways.Recommended
+                ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
+                : undefined));
 
       const newState: Partial<EditorState> = {
         anyPostType: null,
@@ -1077,6 +1100,7 @@ export const Editor = createFactory<any, EditorState>({
         draft,
         myAnonsHere,
         doAsAnon,
+        discProps,
       };
 
       this.showEditor(newState);
@@ -1117,6 +1141,20 @@ export const Editor = createFactory<any, EditorState>({
 
     const text = state.text || '';
 
+    const futurePage: PageDiscPropsSource = {
+      categoryId,
+      pageRole: newPageRole,
+    };
+
+    const discProps: DiscPropsDerived = page_deriveLayout(
+            futurePage, store, LayoutFor.PageNoTweaks);
+
+    // Also see [.use_which_anon] above.
+    const doAsAnon: WhichAnon | U =
+        discProps.comtsStartAnon >= NeverAlways.Recommended
+            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
+            : undefined;
+
     const newState: Partial<EditorState> = {
       anyPostType: null,
       editorsCategories: store.currentCategories,
@@ -1128,8 +1166,7 @@ export const Editor = createFactory<any, EditorState>({
       showSimilarTopics: true,
       searchResults: null,
       // Skip: myAnonsHere — cannot yet be any anons; page not yet created.
-      // Later, for anonymous-by-default categories:  [anon_cats]
-      doAsAnon: { newAnonStatus: AnonStatus.PerPage },
+      doAsAnon,
     };
 
     this.showEditor(newState);
@@ -1329,10 +1366,10 @@ export const Editor = createFactory<any, EditorState>({
         // For now, skip guidelines, for blog comments — they would break e2e tests,
         // and maybe are annoying?
         guidelines: eds.isInIframe ? undefined : anyGuidelines,
-        // doAsAnon: draft && draft.doAsAnon ? draft.doAsAnon : this.state.doAsAnon,  // not yet impl [doAsAnon_draft]
       };
       if (draft && draft.doAsAnon) {
-        newState.doAsAnon = draft.doAsAnon;  // not yet impl [doAsAnon_draft]
+        // TESTS_MISSING  TyTANONDFLOAD
+        newState.doAsAnon = draft.doAsAnon;
       }
       this.setState(newState, () => {
         this.focusInputFields();
@@ -1534,6 +1571,7 @@ export const Editor = createFactory<any, EditorState>({
           scrollToPreview,
           safeHtml,
           editorsPageId: state.editorsPageId,
+          doAsAnon: state.doAsAnon,
         };
         const postNrs: PostNr[] = state.replyToPostNrs;
         if (postNrs.length === 1) {
@@ -1764,8 +1802,6 @@ export const Editor = createFactory<any, EditorState>({
       logD("isSavingDraft already.");
       return;
     }
-
-    // Incl state.doAsAnon in draft too
 
     const oldDraft: Draft | undefined = state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
@@ -2517,15 +2553,35 @@ export const Editor = createFactory<any, EditorState>({
           ':');
     }
 
+    // ----- Anon comments
+
+    // By default, anon posts are disabled, and the "post as ..." dropdown left out.
+
     let maybeAnonymously: RElm | U;
-    {
+    if (!me.isAuthenticated) {
+      // Only logged in users can post anonymously. (At least for now.)
+    }
+    else if (state.discProps?.comtsStartAnon >= NeverAlways.Allowed ||
+          // If pat 1) is already talking, using an anonym, or 2) has started composing
+          // a draft, as anon, but then an admin changed the settings, so cannot
+          // be anon any more.  Then it's nevertheless ok to continue, anonymously.
+          // (That's what "continue" in NeverAlways.NeverButCanContinue means.)
+          // ANON_UNIMPL, UNPOLITE, SHOULD add some server side check, so no one toggles
+          // this in the browser only, and the server accepts?  [derive_node_props_on_server]
+          // But pretty harmless.
+          state.doAsAnon) {
       maybeAnonymously =
           Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
             const atRect = reactGetRefRect(this.refs.anonB);
             anon.openAnonDropdown({ atRect, open: true, curAnon: state.doAsAnon, me,
+                discProps: state.discProps,
                 saveFn: (doAsAnon: WhichAnon) => {
                   const newState: Partial<EditorState> = { doAsAnon };
                   this.setState(newState);
+                  // The avatar we're showing, might need to change.
+                  // (WOULD_OPTIMIZE: Only do if in-page preview, otherwise one's
+                  // avatar & name isn't shown anyway.)
+                  this.updatePreviewSoon();
                 } });
           } },
           anon.whichAnon_titleShort(state.doAsAnon, { me }),

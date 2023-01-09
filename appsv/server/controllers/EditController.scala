@@ -191,7 +191,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val newText = (body \ "text").as[String]
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
     val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
-      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+      throwBadReq("TyEANONPARED", s"Bad anon params: $prob")
     }
 
     if (postNr == PageParts.TitleNr)
@@ -341,8 +341,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val newTypeInt = (request.body \ "newType").as[Int]
     val newType = PostType.fromInt(newTypeInt) getOrElse throwBadArgument("DwE4EWL3", "newType")
 
-    request.dao.changePostType(pageId = pageId, postNr = postNr, newType,
-      changerId = request.theUser.id, request.theBrowserIdData)
+    request.dao.changePostType(pageId = pageId, postNr = postNr, newType, request.reqrIds)
     Ok
   }
 
@@ -369,8 +368,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
-    val result = dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId,
-          request.theBrowserIdData)
+    val result = dao.changePostStatus(postNr, pageId = pageId, action, request.reqrIds)
 
     OkSafeJson(Json.obj(
       "answerGotDeleted" -> result.answerGotDeleted,
@@ -394,7 +392,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     CHECK_AUTHN_STRENGTH
 
     val (_, storePatch) = request.dao.movePostIfAuth(PagePostId(pageId, postId),
-      newParent = PagePostNr(newPageId, newParentNr), moverId = request.theMember.id,
+      newParent = PagePostNr(newPageId, newParentNr), moverId = request.theReqerTrueId,
       request.theBrowserIdData)
 
     OkSafeJson(storePatch)

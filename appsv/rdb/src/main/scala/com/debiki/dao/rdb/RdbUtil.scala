@@ -667,30 +667,29 @@ object RdbUtil {
     val anyIsMisclassified = getOptBool(rs, "is_misclassified")
 
     val result = SpamCheckTask(
-      siteId = rs.getInt("site_id"),
-      createdAt = getWhen(rs, "created_at"),
-      postToSpamCheck = anyPostToCheck,
-      who = Who(
-        id = rs.getInt("auhtor_true_id_c"),
-        BrowserIdData(
-          ip = rs.getString("req_ip"),
-          idCookie = getOptString(rs, "browser_id_cookie"),
-          fingerprint = rs.getInt("browser_fingerprint"))),
-      requestStuff = SpamRelReqStuff(
-        userAgent = getOptString(rs, "req_user_agent"),
-        referer = getOptString(rs, "req_referer"),
-        uri = rs.getString("req_uri"),
-        userName = getOptString(rs, "author_name"),
-        userEmail = getOptString(rs, "author_email_addr"),
-        userUrl = getOptString(rs, "author_url"),
-        userTrustLevel = getOptInt(rs, "author_trust_level").flatMap(TrustLevel.fromInt)),
-      resultsAt = getOptWhen(rs, "results_at"),
-      resultsJson = getOptJsObject(rs, "results_json"),
-      resultsText = getOptString(rs, "results_text"),
-      numIsSpamResults = getOptInt(rs, "num_is_spam_results"),
-      numNotSpamResults = getOptInt(rs, "num_not_spam_results"),
-      humanSaysIsSpam = getOptBool(rs, "human_says_is_spam"),
-      misclassificationsReportedAt = getOptWhen(rs, "misclassifications_reported_at"))
+          siteId = rs.getInt("site_id"),
+          createdAt = getWhen(rs, "created_at"),
+          postToSpamCheck = anyPostToCheck,
+          reqrId = getInt(rs, "author_id_c"),
+          requestStuff = SpamRelReqStuff(
+              BrowserIdData(
+                  ip = rs.getString("req_ip"),
+                  idCookie = getOptString(rs, "browser_id_cookie"),
+                  fingerprint = rs.getInt("browser_fingerprint")),
+              userAgent = getOptString(rs, "req_user_agent"),
+              referer = getOptString(rs, "req_referer"),
+              uri = rs.getString("req_uri"),
+              userName = getOptString(rs, "author_name"),
+              userEmail = getOptString(rs, "author_email_addr"),
+              userUrl = getOptString(rs, "author_url"),
+              userTrustLevel = getOptInt(rs, "author_trust_level").flatMap(TrustLevel.fromInt)),
+          resultsAt = getOptWhen(rs, "results_at"),
+          resultsJson = getOptJsObject(rs, "results_json"),
+          resultsText = getOptString(rs, "results_text"),
+          numIsSpamResults = getOptInt(rs, "num_is_spam_results"),
+          numNotSpamResults = getOptInt(rs, "num_not_spam_results"),
+          humanSaysIsSpam = getOptBool(rs, "human_says_is_spam"),
+          misclassificationsReportedAt = getOptWhen(rs, "misclassifications_reported_at"))
 
     dieIf(result.isMisclassified != anyIsMisclassified, "TyE068TDGW2")
     result
@@ -786,6 +785,9 @@ object RdbUtil {
       |g.frequent_poster_3_id,
       |g.layout,
       |g.comt_order_c,
+      |g.comts_start_hidden_c,
+      |g.comts_start_anon_c,
+      |g.new_anon_status_c,
       |g.comt_nesting_c,
       |g.forum_search_box_c,
       |g.forum_main_view_c,
@@ -863,6 +865,9 @@ object RdbUtil {
       layout = PageLayout.fromInt(resultSet.getInt("layout")) getOrElse PageLayout.Default,
       comtOrder = PostSortOrder.fromOptVal(getOptInt32(resultSet, "comt_order_c")),
       comtNesting = None, // later
+      comtsStartHidden = NeverAlways.fromOptInt(getOptInt32(resultSet, "comts_start_hidden_c")),
+      comtsStartAnon = NeverAlways.fromOptInt(getOptInt32(resultSet, "comts_start_anon_c")),
+      newAnonStatus = AnonStatus.fromOptInt(getOptInt32(resultSet, "new_anon_status_c")),
       forumSearchBox = getOptInt32(resultSet, "forum_search_box_c"),
       forumMainView = getOptInt32(resultSet, "forum_main_view_c"),
       forumCatsTopics = getOptInt32(resultSet, "forum_cats_topics_c"),

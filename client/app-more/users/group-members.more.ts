@@ -65,10 +65,11 @@ export const GroupMembers = React.createFactory<GroupMembersProps>(function(prop
 
   function showAddMembersDialog() {
     const currentMemberIds = members.map(m => m.id);
-    pagedialogs.openAddPeopleDialog(currentMemberIds, (newIds: UserId[]) => {
+    pagedialogs.openAddPeopleDialog({ curPatIds: currentMemberIds,
+          onChanges: (res: PatsToAddRemove) => {
       if (myId.current !== me.id) return;
-      Server.addGroupMembers(group.id, newIds, listAndSetMembers);
-    });
+      Server.addGroupMembers(group.id, res.addPatIds, listAndSetMembers);
+    }});
   }
 
   function removeMember(memberId: UserId) {

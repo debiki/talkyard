@@ -41,11 +41,14 @@ object MaxLimits {
     maxPermsPerSite = 1000, // was: 200
     maxCustomGroups = 21,
     maxGroupsMemberCanJoin = 25,
-    maxMembersPerCustomGroup = 1000)
+    maxMembersPerCustomGroup = 1000,
+    )
 
   // There are many other limits but they're hardcoded here and there ...
   // COULD move them all to here. A nice first step, to later on making it
   // possible to bump the restrictions, per site.
+
+  // (Most of) these limits don't make much sense to scale with site size?
 
   /** Db constr:  dw1_emlot_sentto__c_len.  But users3.primary_email_addr is max 100 anyway */
   val MaxEmailSendToAdrLen_200_unused: i32 = 200 - 2
@@ -55,6 +58,12 @@ object MaxLimits {
 
   /** Max 20 000, db constr:  emailsout_c_bodyhtml_len. */
   val MaXEmailBodyLength_20k: i32 = 20000 - 2
+
+  // Let's start with at most 5 — need to make changes to the UI, to allow more,
+  // or the forum topic list would get messed up (the avatars colulmn would/could
+  // get too vide, [pack_avatars_closer]).
+  val MaxAssigneesPerPost: i32 = 5
+
 }
 
 

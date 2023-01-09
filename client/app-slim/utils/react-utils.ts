@@ -56,22 +56,27 @@ export function whenMsToIsoDate(whenMs: WhenMs): string {
  * the fixed ISO date with something like "5 hours ago" — see processTimeAgo
  * just below.  The server inculdes only ISO dates, not "x time ago", in its HTML,
  * so that it can be cached.
+ *
+ * CLEAN_UP: Nowadays, jQuery is gone.
  */
-export function timeAgo(whenMs: number, clazz?: string) {
-  var isoDate = whenMsToIsoDate(whenMs);
+export function timeAgo(whenMs: Nr, clazz?: St) {
+  const isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'dw-ago ' + (clazz || '') }, isoDate);
 }
 
 /**
  * Like timeAgo(isoDate) but results in just "5h" instead of "5 hours ago".
  * That is, uses only one single letter, instead of many words.
+ *
+ * CLEAN_UP: For whatever reason, this fn is nowadays the same as timeAgo()
+ * just above, minus the '-ltr' CSS class suffix.
  */
-export function prettyLetterTimeAgo(whenMs: number, clazz?: string) {
-  var isoDate = whenMsToIsoDate(whenMs);
+export function prettyLetterTimeAgo(whenMs: Nr, clazz?: St) {
+  const isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'dw-ago-ltr ' + (clazz || '') }, isoDate);
 }
 
-export function timeExact(whenMs: number, clazz?: string) {
+export function timeExact(whenMs: Nr, clazz?: St) {
   return timeAgo(whenMs, clazz); /*
   // This no longer works, because moment.js was moved to more-bundle.js, so    [E5F29V]
   // cannot convert to e.g. "Yesterday 05:30 PM". Instead, show "4 hours ago" or sth like that.

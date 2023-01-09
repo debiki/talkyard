@@ -179,11 +179,37 @@ object AuditLogEntryType {
 }
 
 
+/**
+  *
+  * @param siteId
+  * @param id
+  * @param didWhat
+  * @param doerTrueId
+  * @param doneAt
+  * @param browserIdData
+  * @param browserLocation
+  * @param emailAddress
+  * @param pageId
+  * @param pageType
+  * @param uniquePostId
+  * @param postNr
+  * @param uploadHashPathSuffix
+  * @param uploadFileName
+  * @param sizeBytes
+  * @param targetUniquePostId
+  * @param targetSiteId
+  * @param targetPageId
+  * @param targetPostNr
+  * @param targetPatTrueId — If same as doerTrueId, then, include,
+  *      or let be None? [audit_log_tgt_self]
+  * @param batchId
+  * @param isLoading
+  */
 case class AuditLogEntry(
   siteId: SiteId,
   id: AuditLogEntryId,
   didWhat: AuditLogEntryType,
-  doerId: UserId,
+  doerTrueId: TrueId,
   doneAt: ju.Date,
   browserIdData: BrowserIdData,
   browserLocation: Option[BrowserLocation] = None,
@@ -199,12 +225,15 @@ case class AuditLogEntry(
   targetSiteId: Option[SiteId] = None, // CLEAN_UP ought to RENAME to otherSiteId, rename db column too
   targetPageId: Option[PageId] = None,
   targetPostNr: Option[PostNr] = None,
-  targetUserId: Option[UserId] = None,
+  targetPatTrueId: Option[TrueId] = None,
   batchId: Option[AuditLogEntryId] = None,
   isLoading: Boolean = false) {
 
   RENAME // to postId
   def postId: Opt[PostId] = uniquePostId
+
+  def doerId: PatId = doerTrueId.curId
+  def targetUserId: Opt[PatId] = targetPatTrueId.map(_.curId)
 
   CLEAN_UP // change doneAt to type When
   def doneAtWhen: When = When.fromDate(doneAt)

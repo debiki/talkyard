@@ -323,7 +323,7 @@ export function unacceptAnswerClientSideOnly() {
 }
 
 
-// RENAME to alterPage
+// RENAME to [alterPage]
 export function editTitleAndSettings(changes: EditPageRequestData, onDone: () => void,
       error?: () => void) {
   Server.savePageTitleAndSettings(changes, (response: EditPageResponse) => {
@@ -1010,6 +1010,7 @@ let origPostBeforeEdits: Post | undefined;
 let lastFlashPostNr: PostNr | undefined;
 
 
+// SMALLER_BUNDLE: Move to the editor.editor.ts bundle? (Maybe move some other fns too?)
 export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: DiscWin) {
   // @ifdef DEBUG
   dieIf(ps.replyToNr && ps.editingPostNr, 'TyE73KGTD02');
@@ -1081,7 +1082,7 @@ export function showEditsPreviewInPage(ps: ShowEditsPreviewParams, inFrame?: Dis
     const postType = ps.anyPostType || PostType.ChatMessage;
     // Show an inline preview, where the reply will appear.
     patch = store_makeNewPostPreviewPatch(
-        store, page, ps.replyToNr, ps.safeHtml, postType);
+        store, page, ps.replyToNr, ps.safeHtml, postType, ps.doAsAnon);
     patch.replyingToPostNr = ps.replyToNr;
   }
 

@@ -89,7 +89,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.MakeReviewDecision,
-        doerId = requester.id,
+        doerTrueId = requester.trueId,
         doneAt = globals.now().toJavaDate,
         browserIdData = requester.browserIdData,
         pageId = pageId,
@@ -139,7 +139,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.UndoReviewDecision,
-        doerId = requester.id,
+        doerTrueId = requester.trueId,
         doneAt = globals.now().toJavaDate,
         browserIdData = requester.browserIdData,
         pageId = pageId,
@@ -407,8 +407,14 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
             UX; TESTS_MISSING; BUG // ? will this un-hide the whole page if needed?
 
             changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
-                  PostStatusAction.UnhidePost, userId = decidedById,
-                  browserIdData = None, tx, staleStuff).updatedPost
+                  PostStatusAction.UnhidePost,
+                  Who(TrueId.forMember(decidedById),
+                        // When called from SystemDao.executePendingReviewTasks(),
+                        // we don't have any info about the browser available.
+                        // So it's missing [save_mod_br_inf]. But not missing when called
+                        // from this.moderatePostInstantly(). Oh well.
+                        browserIdData = BrowserIdData.Missing),
+                  tx, staleStuff).updatedPost
           }
           else {
             None
@@ -502,6 +508,7 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
         (tx: SiteTx, staleStuff: StaleStuff): ModResult = {
 
     val taskIsForBothTitleAndBody = isPageModTask(post, modTasks)
+    val reqr = Who(TrueId.forMember(decidedById), browserIdData)
 
     dieIf(modTasks.exists(_.postId isSomethingButNot post.id), "TyE50WKDL6")
 
@@ -518,16 +525,14 @@ trait ReviewsDao {   // RENAME to ModerationDao,  MOVE to  talkyard.server.modn
             // If staff deletes many posts by this user, mark it as a moderate threat?
             // That'll be done from inside update-because-deleted fn below. [DETCTHR]
             else if (taskIsForBothTitleAndBody) {
-              deletePagesImpl(Seq(pageId), deleterId = decidedById,
-                    browserIdData)(tx, staleStuff)
+              deletePagesImpl(Seq(pageId), reqr)(tx, staleStuff)
               // Posts not individually deleted, instead, whole page gone // [62AKDN46]
               (Seq.empty, Some(pageId))
             }
             else {
               val updPost =
-                    deletePostImpl(post.pageId, postNr = post.nr, deletedById = decidedById,
-                        browserIdData, tx, staleStuff)
-                      .updatedPost
+                    deletePostImpl(pageId = post.pageId, postNr = post.nr, deletedBy = reqr,
+                          tx, staleStuff).updatedPost
 
               // It's annoying if [other review tasks for the same post] would
               // need to be handled too.

@@ -1,4 +1,4 @@
-
+alter table post_actions3
 -- Private comments, don't do like this:
 -- [ EDIT:  ... Actually, yes — for private comments but *not* assigned-to.
 --   Because they're different: for private comments, there's just one list of people,
@@ -63,6 +63,77 @@
   case object AuthorOf extends PatRelType_later(-1)
 
   case object OwnerOf extends PatRelType_later(-1)
+
+
+-- Don't do like this:
+--     instead,  this'll be in  perms_on_pages3  = perms_on_nodes_t ?
+-- 0b0001 = Member / has-it-henself,
+-- 0b0010 = Bouncer,  *no*,  Revoker, instead?
+-- 0b0100 = Adder,    *no*,  Granter, instead?
+-- 0b1000 = Manager,
+-- create domain rel_perms_d i32_d;
+-- alter  domain rel_perms_d add
+--    constraint rel_perms_d_c_bitfield check (value between 1 and 9);
+      --   1,   -- member / has rel henself
+      --   2,   -- bouncer  (can remove members)
+      --   3,   -- bouncer and member
+      --   4,   -- adder  (can add members)
+      --   5,   -- adder and member
+      --   6,   -- adder and bouncer
+      --   7,   -- adder, bouncer and member
+      --   8,   -- manager  (can add & remove members)
+      --   9);  -- manager and member
+
+      --   ?    -- group mod? Can moderate comments by others in the group
+      --   ?    -- group admin? That is, can change group settigns
+
+      --   ?    -- see relationship, e.g. see group members?
+      --   ?    -- see anons? No, cat perm instead?
+
+-- Pat-post-rels ex
+--   Can see private.
+--     Is private = posts_t (!) status flag.
+--     Adder/remover = adds private comments thread participants.
+--
+--   VotedOn
+--     Cat perms and page perms determines who can vote?
+--
+--   AssignedTo
+--     Cat perms determines who may assign?
+--
+--   AuthorOf
+--     Adder/remover N/A, instead,  OwnerOf  decides?
+--
+--   OwnerOf  *No*. Instead in:  perms_on_pages3 (later renamed to: perms_on_nodes_t)
+--     No,  perms_on_conts_t — for "content".  Content? Too long. Let's use "cont"
+--                           short enough, and is a standard abbreviation for content.
+--         No, "cont" is so hard to read, I get confused.
+--         Instead, "node" directly makes me think of a node in the tree structure
+--         formed by the categories, pages and discussins. Good name. I think. As of now.
+--         So,  nodes_t.
+--     Compare:
+--           pat_node_rels_t   pat_pat_rels_t
+--         with:
+--           participant_node_relationships_t   participant_participant_relationships_t
+--         I think the latter is too long! Takes 3 eye movements to read each of those
+--         long table names Abbreviations are needed.  And, when abbreviating, why not
+--         keep it really short? People need to look up the abbreviations once anyway
+--         in any case (probably not more, since these words are "everywhere", hard to
+--         forget, when getting reminded constantly). So let's go with "pat" for
+--         "participant" (already done, in use)  and "node" is short already.
+--         Now, just 1 eye movement needed :- ) (for you too?)
+--         (I mean, you see the whole table name, if glancing just once in the middle.
+--         of the table name.)
+--     Can change author, close, delete, change post type, edit, etc.
+--     Or should this be in  perms_on_pages3? No, is *per post* always,
+--     not cat or page or whole site?
+--     Or, hmm, actually makes sense for those others too? Yes.
+--     E.g. a package maintainer, being the owner of a cat about that package?
+--     and free to grant permissions in that cat?
+--     Or a project page, with sub pages representing tasks — the page
+--     owners could be the project owners.
+--
+--
 
 
 
@@ -189,6 +260,15 @@ alter table posts3 add column parent_id_c post_id_d;
 alter table post_actions3 add column  added_by_other_id_c  pat_id_d;  -- + fk & ix
 
 
+-- No:
+alter table post_actions3 add column  rel_perms_c    rel_perms_d;
+--
+-- Instead: perms_on_nodes_t  node_id_c = _  pat_id_c = _
+--                              .may_grant_c: bool for now, later: perms bitfield?
+--                              .may_revoke_c: bool
+
+
+
 -- Don't, we're using  pat_rels_t  instead:
 create table post_pats_t (
   site_id_c,
@@ -248,6 +328,14 @@ create index postpats_i_patid_postid_how_subhow on post_pats_t (
 -- alter table perms_on_pages3 add column  can_make_less_private_c  bool; 
 -- alter table perms_on_pages3 add column  can_new_see_history_c    bool;
 
+-- So can have categories with stricter requirements?  DON'T DO NOW!
+alter table perms_on_pages3 add column  num_first_posts_to_review   i16_gz_d;
+alter table perms_on_pages3 add column  num_first_posts_to_approve  i16_gz_d;
+alter table perms_on_pages3 add column  max_posts_pend_appr_before  i16_gz_lt100_d;
+
+alter table perms_on_pages3 add column  appr_before_if_trust_lte    trust_level;
+alter table perms_on_pages3 add column  review_after_if_trust_lte   trust_level;
+alter table perms_on_pages3 add column  max_posts_pend_revw_aftr    i16_gz_lt128_d;
 
 
 
@@ -369,10 +457,33 @@ and only during anon_incarnation_ttl_mins_c.)
 $_$;  -- '
 
 
+-- Never needed? Instead, pats_t.anon_status_c and a value < -N
+-- check: pats_c_anonid_ltem10
+create domain anon_or_guest_id_d pat_id_d;
+alter  domain anon_or_guest_id_d add
+   constraint anon_or_guest_id_d_c_ltm10 check (value <= -10);
 
--- Skip, instead will use  pat_rels_t,  so can look up posts directly
--- by  pat id, rel type  and sort by time. Rather than having to do this
--- once per pat lis one is in.
+
+---------------------------------------------------------------
+-- Skip, instead will use  perms_on_pages3.{may_post_comment, may_see},
+-- so can look up posts directly by  pat id, perm type (e.g. added to priv comt tree)
+-- and sort by time.
+-- Rather than having to do this once per pat lis one is in.
+--
+alter table users3 add column  is_pat_list_c  bool;  -- no.
+alter table users3 add constraint  pats_c_patlist_is_group check (
+    (is_pat_list_c is not true) or (is_group is true));
+alter table users3 add constraint  pats_c_not_patlist_circle check (
+    (is_pat_list_c is not true) or (is_circle_c is not true));
+alter table users3 add constraint  pats_c_private_is_patlist check (
+    (how_private_c is null) or (is_pat_list_c is true));
+-- Lists don't have any username, so need to drop this constraint, was:
+--    check (user_id < 0 or created_at is not null and username is not null)
+-- OR let lists have ids < 0, is that better?
+alter table users3 drop constraint people_member_c_nn;
+alter table users3 add constraint pats_c_members_have_username check (
+    (user_id < 0) or is_pat_list_c or (username is not null));
+
 alter table users3 add column is_pat_list_c  bool;
 comment on column  users3.is_pat_list_c  is $_$
 If non-null, this pats_t row is not a real group, but a help construction
@@ -385,3 +496,198 @@ that list with Alice and Bob. But if authors_id_c is a non-list group,
 e.g. Support Team, then the text would read "By Support Team", instead
 of listing all members.
 $_$;
+---------------------------------------------------------------
+
+
+-- Skip:  New  anon_id_c  or true_id_c  everywhere.
+-- Instead:
+-- Let's add a  pat_rels_t.rel_type_c = AuthorOf from the anon to the anon posts?
+-- Whilst created_by_id_c would keep pointing to the true author.
+-- Then, looking up all one's posts, that just works.
+-- And anon posts can easily be filtered away, by checking anon_status_c (because
+-- other)
+--
+-- But skip the below:
+-------------------------------------------------------------------------
+-- I think this is too error prone — I will or have already forgotten
+-- some columns below, or will forget to always update all columns when needed.
+-- Also, importing patches gets more complicated. Instead of the below,
+-- the anon/pseudo user account's id will be stored. And one would use the
+-- event / audit log to ... audit what the real people behind the anon/pseudonyms,
+-- have done. (Or lookup the true id in the users table, pats_t, but the audit log
+-- should be enough.)
+--
+-- Actually, can be better to add  post_actions3 [pat_rels_t]  rows of type:
+--    AuhtorOf, with val_i32_c being a type-of-author bitfield? (anon, pseudonym, co-author),
+-- linking to one's anon & pseudonym posts,
+-- when and only when  posts_t.created_by_id  doesn't point directly to one's
+-- true id (but instead points to an anon/pseudonym/user-list-pats_t row).
+-- No! Skip. Instead, let  created_by_id  be the real id.
+--                 and "just" add a   pat_rels_t.rel_type_c = AuthorOf for the anon?
+--                 and excl such posts everywhere, as long as the anon is anon.
+--      Also, can have a
+--         pat_rels_t.show_pats_id  to show an anonym as voter,
+--                                     instead of the real user account.
+
+alter table post_actions3    add column true_id_c             member_id_d;
+alter table links_t          add column added_by_true_id_c    member_id_d;
+alter table link_previews_t  add column first_linked_by_id_c  member_id_d;
+alter table post_revisions3  add composed_by_true_id_c        member_id_d;
+alter table posts3           add created_by_true_id_c         member_id_d;
+
+-- But I've added  author_id_c  already!
+-- Now removing. Instead:   pat_rels_t.rel_type_c = AuthorOf
+
+alter table posts3           add author_id_c                  pat_id_d;
+alter table posts3           add author_true_id_c             member_id_d;
+alter table post_read_stats3 add true_id_c                    member_id_d;
+alter table review_tasks3    add true_id_c
+alter table upload_refs3     add added_by_true_id_c ?
+
+user_stats3, hmm?
+
+pages_t — no, instead, the orig post in posts_t?  Old:
+alter table pages3           add author_true_id_c             member_id_d;
+-- But leave last_reply_by_id as is — don't add any  last_reply_by_true_id,
+-- not that interesting.
+
+alter table upload_refs3     add  added_by_true_id_c          member_id_d;
+
+alter table user_visit_stats3 add true_user_id_c              member_id_d;
+-------------------------------------------------------------------------
+
+
+
+---------------------------------------------------------------
+-- Skip: Bookmarks table
+--
+-- Don't create a separate bookmarks or menu or tree table,  [bookmarks]
+-- like below. Instead,  posts in posts3 already for a tree, and include
+-- almost all that's needed for bookmarks — just a links field, or
+-- entries in node_node_rels_t needed too?
+-- (It'll all will be in [add_nodes_t] instead?)
+--
+create table trees_t (
+      --
+      -- Such an odd, & good!?, idea.
+      -- Posts & bookmarks, the same table?
+      -- Just like persons and groups, same table? (Which worked out great.)
+      --
+      -- A new page & post type:  PageType.Linkbar / Bookmarks?
+      -- And type Linkbar, for Everyone, appears in the linkbar,
+      -- and post_t.visible_only_to_id can hide some links.
+      --
+      -- And  posts_t.doing_status_c then automatically works
+      -- for bookmarks too! And one can create a bookmark,
+      -- and transfer it to someone else's personal bookmarks page,
+      -- maybe continue seeing it, via visible_only_to_c?
+      -- and have it linked from one's own bookmarks page?
+
+
+  -- Pk: (these 4 cols)
+  site_id_c,
+  for_pat_id_c,   -- Everyone + TreeType.Linkbar => appears in the linkbar (watchbar)
+  tree_type_c,    -- TreeType.Linkbar or Bookmarks
+  node_id_c,
+
+  parent_id_c,    -- Null unless nested? FK to:
+                  --    (site_id_c, for_pat_id_c, tree_type_c, node_id_c).
+  created_by_id_c, -- An admin might give a bookmark "task" to sbd else?
+  owner_id_c,     -- Who may edit this tree, if different from for_pat_id_c.
+  visible_to_id_c, --- gah gets complicated
+
+  node_title_c,   -- To override title of page or category or tag below.
+  node_descr_c,   -- Optional personal comment about an assignment?
+  node_order_c,
+  -- A node can be collapsed by default.
+  -- And a pat can collapse or hide a default node: (site_id, pat_id, node_id, hide = true)
+  node_collapsed_c,
+  node_hidden_c
+
+  -- At most one of these:
+  node_page_id_c,  -- shows assignees, doing status
+  node_post_id_c,  --       —""—
+  node_cat_id_c,
+  node_tag_id_c,
+  node_pat_id_c,
+  node_url_c,
+
+  -- To insert another tree node into one's own bookmarks?
+  -- (It cannot link back, because parent_id_c must be to the same tree.)
+  other_tree_for_pat_id_c,
+  other_tree_type_c,
+  other_tree_node_id_c,
+
+  -- Optional:
+  children_order_c,
+  children_what_c,  -- e.g. top 3 pages in cat, if this is a cat
+
+  created_at_c,   -- If sorting children by date
+  archived_c,      -- then not loaded by default
+  reminder_at_c,
+  reminder_interval_c,
+  my_doing_status_c, -- if someone wants hens own task related to a post,
+                     -- not visible to others (assuming TreeType is Bookmarks).
+);
+
+
+
+-- Maybe later: ----------------------------------------
+-- But unlikely? So better keep here in db-skip.sql not -wip.
+-- Denormalized tags?
+alter table page_notf_prefs_t add column pages_with_tag_a_id_c tagtype_id_d;
+alter table page_notf_prefs_t add column pages_with_tag_b_id_c tagtype_id_d;
+alter table page_notf_prefs_t add column pages_with_tag_c_id_c tagtype_id_d;
+
+-- ix pagenotfprefs_i_tagaid
+alter table page_notf_prefs_t add constraint pagenotfprefs_withtaga_r_tags
+    foreign key (site_id, pages_with_tag_a_id_c)
+    references tagtypes_t (site_id_c, id_c) deferrable;
+
+-- ix pagenotfprefs_i_tagbid
+alter table page_notf_prefs_t add constraint pagenotfprefs_withtagb_r_tags
+    foreign key (site_id, pages_with_tag_b_id_c)
+    references tagtypes_t (site_id_c, id_c) deferrable;
+
+  -- ix pagenotfprefs_i_tagcid
+alter table page_notf_prefs_t add constraint pagenotfprefs_withtagc_r_tags
+    foreign key (site_id, pages_with_tag_c_id_c)
+    references tagtypes_t (site_id_c, id_c) deferrable;
+
+create index pagenotfprefs_i_tagaid on page_notf_prefs_t (site_id, pages_with_tag_a_id_c);
+create index pagenotfprefs_i_tagbid on page_notf_prefs_t (site_id, pages_with_tag_b_id_c);
+create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, pages_with_tag_c_id_c);
+-- / Maybe later ---------------------------------------
+
+
+-- Skip, instead there'll be a table, triggers_t, with conditions, [add_triggers_t]
+-- e.g. a date-time, or everyone-in-a-group-has-replied, or 90%-has-replied,
+-- which makes things like reveal-the-replies or deanon-comments happen.
+alter table posts3 & categories3
+    add column  auto_show_replies_how_c            i32_gz_d,  -- e.g when everyone in a group has replied
+                                                              -- or at YYMMDD HH:MM
+    add column  auto_show_replies_mins_c           i32_gz_d,
+
+    add column  auto_show_replies_mins_aft_publ_c  i32_gz_d,
+    add column  auto_show_replies_at_c             timestamp,
+
+    add column  auto_deanon_mins_aft_first_c       i32_gz_d,
+    add column  auto_deanon_mins_aft_last_c        i32_gz_d,
+    add column  auto_deanon_tree_mins_aft_first_c  i32_gz_d,
+    add column  auto_deanon_tree_mins_aft_last_c   i32_gz_d,
+    add column  auto_deanon_only_score_gte_c       f32_d,
+
+    add column  auto_deanon_tree_at_c              timestamp;
+
+
+create index nodes_i_autoshowrepliesat on posts3 (site_id, auto_show_replies_at_c)
+    where auto_show_replies_at_c is not null;
+
+create index nodes_i_autodeanontreeat on posts3 (site_id, auto_deanon_tree_at_c)
+    where auto_deanon_tree_at_c is not null;
+
+
+alter table users3
+    add column auto_deanon_at_c          timestamp,
+create index pats_i_autodeanonat on users3 (site_id, auto_deanon_at_c)
+    where auto_deanon_at_c is not null;

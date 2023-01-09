@@ -393,6 +393,14 @@ object Authz {
   }
 
 
+  /* Maybe later:
+  def mayAlterPost((    [alterPage]
+        ...
+        ): MayMaybe = {
+  }
+  */
+
+
   def mayEditPost(
     userAndLevels: UserAndLevels,
     groupIds: immutable.Seq[GroupId],

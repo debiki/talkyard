@@ -59,7 +59,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         invalidated_at,
         decided_at,
         decision,
-        user_id,
+        about_pat_id_c,
         page_id,
         post_id,
         post_nr)
@@ -76,7 +76,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         invalidated_at = excluded.invalidated_at,
         decided_at = excluded.decided_at,
         decision = excluded.decision,
-        user_id = excluded.user_id,
+        about_pat_id_c = excluded.about_pat_id_c,
         page_id = excluded.page_id,
         post_id = excluded.post_id,
         post_nr = excluded.post_nr  """
@@ -113,7 +113,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
 
   override def loadUndecidedPostReviewTask(postId: PostId, taskCreatedById: UserId)
         : Option[ReviewTask] = {
-    loadReviewTaskImpl(o"""
+    loadReviewTaskImpl(s"""
         completed_at is null and
         decided_at is null and
         invalidated_at is null and
@@ -171,7 +171,9 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         : Seq[ReviewTask] = {
     val desc = orderBy.isDescending ? "desc" | ""
     val query = i"""
-      select * from review_tasks3 where site_id = ? and user_id = ?
+      select * from review_tasks3
+      where site_id = ? and
+            about_pat_id_c = ?
       order by created_at $desc, id $desc limit ?
       """
     runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef, limit.asAnyRef), rs => {
@@ -247,7 +249,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
       invalidatedAt = getOptionalDate(rs, "invalidated_at"),
       decidedAt = getOptionalDate(rs, "decided_at"),
       decision = getOptInt(rs, "decision").flatMap(ReviewDecision.fromInt),
-      maybeBadUserId = getOptInt(rs, "user_id").getOrElse(UnknownUserId),
+      maybeBadUserId = getOptInt(rs, "about_pat_id_c").getOrElse(UnknownUserId),
       pageId = Option(rs.getString("page_id")),
       postId = getOptInt(rs, "post_id"),
       postNr = getOptInt(rs, "post_nr"))

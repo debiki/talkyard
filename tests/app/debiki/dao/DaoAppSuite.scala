@@ -131,8 +131,9 @@ class DaoAppSuite(
   def browserIdData: BrowserIdData =
     BrowserIdData("1.2.3.4", idCookie = Some("dummy_id_cookie"), fingerprint = 334455)
 
-  def dummySpamRelReqStuff: SpamRelReqStuff =
-    SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy",
+  def dummySpamRelReqStuff: SpamRelReqStuff = SpamRelReqStuff(
+          browserIdData,
+          userAgent = None, referer = None, uri = "/dummy",
           userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
 
 
@@ -322,6 +323,10 @@ class DaoAppSuite(
           defaultSortOrder = None,
           comtOrder = None,
           comtNesting = None,
+          comtsStartHidden = None,
+          comtsStartAnon = None,
+          opStartsAnon = None,
+          newAnonStatus = None,
           doVoteStyle = None,
           doVoteInTopicList = None,
           shallBeDefaultCategory = false,
@@ -386,7 +391,7 @@ class DaoAppSuite(
       else textAndHtmlMaker.forBodyOrComment(text)
     dao.insertReply(textAndHtml, pageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
-      Who(memberId, browserIdData), dummySpamRelReqStuff).post
+      Who(TrueId(memberId), browserIdData), dummySpamRelReqStuff).post
   }
 
 

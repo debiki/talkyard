@@ -53,7 +53,7 @@ trait FeedsDao {
     // So won't need to add complicated clear-cache code now.  (CACHHHEE)
     if (anyRequester.exists(_.id != SysbotUserId)) {
       self.context.rateLimiter.rateLimit(RateLimits.ExpensiveGetRequest, request)
-      return loadAtomFeedXml(anyRequester, onlyEmbComments = onlyEmbeddedComments)
+      return loadAtomFeedXml(request.reqrInf, onlyEmbComments = onlyEmbeddedComments)
     }
 
     // This'll be NoUserId or SysbotUserId, see above.
@@ -67,20 +67,19 @@ trait FeedsDao {
     val key = onlyEmbeddedComments ? commentsFeedKey(pptId) | siteFeedKey(pptId)
 
     memCache.lookup[xml.Node](key, orCacheAndReturn = Some {
-      loadAtomFeedXml(anyRequester, onlyEmbComments = onlyEmbeddedComments)
+      loadAtomFeedXml(request.reqrInf, onlyEmbComments = onlyEmbeddedComments)
     }) getOrDie "TyE5KBR7JQ0"
   }
 
 
-  def loadAtomFeedXml(anyRequester: Option[Participant], onlyEmbComments: Boolean)
+  private def loadAtomFeedXml(reqrInf: ReqrInf, onlyEmbComments: Boolean)
         : xml.Node = {
     val LoadPostsResult(postsOneMaySee, pageStuffById) =
-          loadPostsMaySeeByQuery(
-                anyRequester, OrderBy.MostRecentFirst, limit = 25,
-                inclUnapprovedPosts = false, inclTitles = false,
+          loadPostsMaySeeByQuery(PostQuery.AllPosts(
+                reqrInf, orderBy = OrderBy.MostRecentFirst, limit = 25,
+                inclUnapproved = false, inclTitles = false,
                 onlyEmbComments = onlyEmbComments,
-                inclUnlistedPagePosts = onlyEmbComments,
-                writtenById = None)
+                inclUnlistedPagePosts = onlyEmbComments))
 
     if (postsOneMaySee.isEmpty)
       throwNotFound("TyE0FEEDPOSTS", "No posts found, or they are private")

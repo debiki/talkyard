@@ -272,6 +272,11 @@ ReactDispatcher.register(function(payload) {
       currentPage.comtOrder = newMeta.comtOrder;
       currentPage.comtNesting = newMeta.comtNesting;
 
+      currentPage.comtsStartHidden = newMeta.comtsStartHidden;
+      currentPage.comtsStartAnon = newMeta.comtsStartAnon;
+      currentPage.opStartsAnon = newMeta.opStartsAnon;
+      currentPage.newAnonStatus = newMeta.newAnonStatus;
+
       // Clear any page tweaks, e.g. if pat has temporarily canged the comment sort order.
       // Otherwise it can look as if the changes pat saved, have no effect.
       if (store.curPageTweaks) {
@@ -1017,8 +1022,8 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     }
   }
 
-  // Insert into progress reply list, if needed.
-  if (post.postType === PostType.BottomComment) {
+  // Insert into progress reply list, if needed.  BREAK OUT [comt_isForTimeline]  FN
+  if (post.postType === PostType.BottomComment || post.postType === PostType.MetaMessage) {
     const alreadyIncl = _.find(page.progressPostNrsSorted, nr => nr === post.nr);
     if (!alreadyIncl) {
       page.progressPostNrsSorted.push(post.nr);
@@ -1039,10 +1044,16 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   }
 
   rememberPostsToQuickUpdate(post.nr);
+
   stopGifsPlayOnClick();
   setTimeout(() => {
     debiki2.page.Hacks.processPosts();
-    if (!oldVersion && post.authorId === store.me.id && !post.isPreview) {
+    if (!oldVersion && post.authorId === store.me.id && !post.isPreview &&
+        // Need not flash these — if one does sth that results in a meta comment,
+        // then one is aware about that already (since one did it oneself).
+        // And if sbd else did — then I think that's typically not that interesting,
+        // would be distracting to scroll-and-flash-&-show?
+        post.postType !== PostType.MetaMessage) {
       // Scroll to and highligt this new / edited post.
       // BUG (harmless) skip if we just loaded it because we're staff or the author,
       // and it's deleted so only we can see it
@@ -1819,7 +1830,7 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
     return;
   }
 
-  // ----- Posts, edited?
+  // ----- Posts, new or edited?
 
   _.each(store.pagesById, patchPage);
 
@@ -1842,6 +1853,7 @@ function patchTheStore(storePatch: StorePatch) {  // REFACTOR just call directly
 
     const patchedPosts = storePatch.postsByPageId[page.pageId];
     _.each(patchedPosts || [], (patchedPost: Post) => {
+      // RENAME to  upsertPost?
       updatePost(patchedPost, page.pageId);
     });
 

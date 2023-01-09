@@ -41,6 +41,8 @@ export function openDiscLayoutDiag(ps: DiscLayoutDiagState) {
 const DiscLayoutDiag = React.createFactory<{}>(function() {
   //displayName: 'DiscLayoutDiag',
 
+  // Dupl code [node_props_diag], similar to  ./anons-allowed-diag.more.ts .
+
   const [diagState, setDiagState] =
       React.useState<DiscLayoutDiagState | N>(null);
 
@@ -87,7 +89,7 @@ const DiscLayoutDiag = React.createFactory<{}>(function() {
       return ExplainingListItem({
             active,
             title: r.span({ className: e2eClass  }, title),
-            text: comtOrder_descr(itemComtOrder, diagState.default.comtOrderFrom),
+            text: comtOrder_descr(itemComtOrder, diagState.default.from.comtOrder),
             onSelect: () => {
               if (active) {
                 // Noop. Already using this comment sort order.
@@ -114,7 +116,9 @@ const DiscLayoutDiag = React.createFactory<{}>(function() {
           forCat
               ? // Need not mention that this is for everyone — everything in
                 // the category edit dialog affects everyone.
-                `Comments sort order, in this category:` // 0I18N, is for staff
+                rFr({}, `Comments sort order, in this category: `, // 0I18N, is for staff
+                  r.small({ style: { marginLeft: '1ex' }},
+                    `(and subcategories)`))
               : (
                 // But when changing sort order, on a specific page, then,
                 // one button is for everyone — the [Change...] page button.
@@ -131,18 +135,11 @@ const DiscLayoutDiag = React.createFactory<{}>(function() {
 });
 
 
-function comtOrder_descr(comtOrder: PostSortOrder, inheritedFrom: Ref): St | RElm | N {
+function comtOrder_descr(comtOrder: PostSortOrder, inheritedFrom: Ref | Cat): St | RElm | N {
   // 0I18N here; this is for staff.
   switch (comtOrder) {
     case PostSortOrder.Inherit:
-      let fromWhere = '';
-      if (inheritedFrom.startsWith('pageid:')) fromWhere = ", for this page";
-      if (inheritedFrom.startsWith('catid:')) fromWhere = ", inherited from a category";
-      if (inheritedFrom.startsWith('sstg:')) fromWhere = ", inherited from the site settings";
-      if (inheritedFrom.startsWith('BuiltIn')) fromWhere = '';
-      // UX COULD write "Category [Cat Name]" instead of just `cat:1234`.
-      return rFr({},
-              `The default${fromWhere}. `, r.small({}, `(${inheritedFrom})`));
+      return utils.showDefaultFrom(inheritedFrom);
 
     case PostSortOrder.BestFirst:
       return "Comments many have liked, in comparison to how many have read them, " +

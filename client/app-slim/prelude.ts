@@ -525,6 +525,49 @@ export function firstValOf(x, y, z?) {
 }
 
 
+/** Says if `a` and `b` are the same, ignoring keys with `undefined` values,
+  * and ignoring key order. Uses _.isEqual() under the hood.
+  * Avoids the: [unintened_undefined_bug].
+  */
+export function obj_isDeepEqIgnUndef(a: Object, b: Object): Bo {
+  // @ifdef DEBUG
+  dieIf(isVal(a) && !_.isObject(a), "a is not an object [TyE502RMH6A]");
+  dieIf(isVal(b) && !_.isObject(b), "b is not an object [TyE502RMH6B]");
+  dieIf(!a && !b && (a === null) != (b === null),
+        "One of a and b is null, the other is undefined, " +
+        "this'll evaluate to not-equal — is that what we want?  [TyE502RMH6U]");
+  // @endif
+
+  function findUndefKeys(obj: Object) {
+    const undefKeys = [];
+    for (const key in obj) {
+      const val = obj[key];
+      if (isUndef(val)) undefKeys.push(key);
+    }
+    return undefKeys;
+  }
+
+  const undefKeysInA = findUndefKeys(a);
+  const undefKeysInB = findUndefKeys(b);
+
+  // Small optimization for the common case when there're no undef values,
+  // to avoid { ... } spread-copying a and b (further below).
+  if (_.isEqual(undefKeysInA, undefKeysInB))
+    return _.isEqual(a, b);
+
+  const a2 = { ...a };
+  const b2 = { ...b };
+
+  for (const key of undefKeysInA)
+    delete a2[key];
+
+  for (const key of undefKeysInB)
+    delete b2[key];
+
+  return _.isEqual(a2, b2);
+}
+
+
 /** Like _.groupBy but keeps just one value per key.
     RENAME to arr_groupByKeepOne ?
   */

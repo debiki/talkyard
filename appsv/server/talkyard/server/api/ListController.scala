@@ -46,7 +46,7 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   private def listThingsImpl(request: JsonPostRequest): Result = {
-    import request.{body, dao, requester}
+    import request.{body, dao, requester, reqrInf}
 
     val pretty = (body \ "pretty").asOpt[Bo].getOrElse(false)
     val listQueryJson = (body \ "listQuery").as[JsObject]
@@ -235,17 +235,17 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
               topicsFiltered, dao, JsonConf.v0_0(pretty = pretty), authzCtx)
 
       case Posts =>
-        val result: LoadPostsResult = dao.loadPostsMaySeeByQuery(
-              requester, OrderBy.MostRecentFirst, limit = 25,
+        val result: LoadPostsResult = dao.loadPostsMaySeeByQuery(PostQuery.AllPosts(
+              reqrInf, orderBy = OrderBy.MostRecentFirst, limit = 25,
               // API consumers probably want only approved posts. [4946RKTT2]
-              inclUnapprovedPosts = false,
+              inclUnapproved = false,
               // But they do want unlisted post, probably? Only if is staff.
               inclUnlistedPagePosts = requester.map(_.isStaff) is true,
               // Or maybe not include title posts? The fact that titles are posts, is an
               // implementation detail? Not impossible this'll change, and there'll
               // be a posts3 title field, instead. [DONTLISTTTL]
               inclTitles = true, onlyEmbComments = false,
-              writtenById = None)
+              ))
 
         PostsListFoundJson.makePostsListFoundResponse(result, dao,
               JsonConf.v0_0(pretty = pretty), authzCtx)

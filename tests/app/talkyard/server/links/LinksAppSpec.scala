@@ -64,6 +64,7 @@ class LinksAppSpec extends DaoAppSuite {
   lazy val userMmm: User = createPasswordUser("u_mmm234", daoSite1)
   lazy val userOoo: User = createPasswordOwner("u_ooo567", daoSite1)
 
+  lazy val systemWho: Who = Who(TrueId(SystemUserId), browserIdData)
 
 
   // ----- External links, oEmbed
@@ -400,7 +401,7 @@ class LinksAppSpec extends DaoAppSuite {
     "Links from deleted *pages* are ignored  TyT7RD3LM5" - {
       "Delete page A".inWriteTx(daoSite1) { (tx, staleStuff) =>
         daoSite1.deletePagesImpl(
-              Seq(pageA.id), SystemUserId, browserIdData)(tx, staleStuff)
+              Seq(pageA.id), systemWho)(tx, staleStuff)
       }
 
       "Now only pages B, C and D links to Z".inReadTx(daoSite1) { tx =>
@@ -416,8 +417,7 @@ class LinksAppSpec extends DaoAppSuite {
       "Delete page C's category".inWriteTx(daoSite1) { (tx, staleStuff) =>
         pageC.anyCategoryId mustBe Some(defCatId) // page C will get deleted, implicitly, ttt
         pageB.anyCategoryId mustBe Some(category2.id) // page B not affected, ttt
-        daoSite1.deleteUndelCategoryImpl(defCatId, delete = true,
-              Who(SystemUserId, browserIdData))(tx)
+        daoSite1.deleteUndelCategoryImpl(defCatId, delete = true, systemWho)(tx)
       }
 
       "Now only page B and D links to Z".inReadTx(daoSite1) { tx =>
@@ -433,12 +433,11 @@ class LinksAppSpec extends DaoAppSuite {
 
     "Undelete page A".inWriteTx(daoSite1) { (tx, staleStuff) =>
       daoSite1.deletePagesImpl(
-            Seq(pageA.id), SystemUserId, browserIdData, undelete = true)(tx, staleStuff)
+            Seq(pageA.id), systemWho, undelete = true)(tx, staleStuff)
     }
 
     "Undelete category".inWriteTx(daoSite1) { (tx, staleStuff) =>
-      daoSite1.deleteUndelCategoryImpl(defCatId, delete = false,
-            Who(SystemUserId, browserIdData))(tx)
+      daoSite1.deleteUndelCategoryImpl(defCatId, delete = false, systemWho)(tx)
     }
 
     "Now page A and C link to Z again, and B and D link too".inReadTx(daoSite1) { tx =>
@@ -468,7 +467,7 @@ class LinksAppSpec extends DaoAppSuite {
 
     "Delete page Z".inWriteTx(daoSite1) { (tx, staleStuff) =>
       daoSite1.deletePagesImpl(
-            Seq(pageZ.id), SystemUserId, browserIdData, undelete = true)(tx, staleStuff)
+            Seq(pageZ.id), systemWho, undelete = true)(tx, staleStuff)
     }
 
     "Can find links to deleted page Z".inReadTx(daoSite1) { tx =>
@@ -537,8 +536,7 @@ class LinksAppSpec extends DaoAppSuite {
 
       "Delete reply One".inWriteTx(daoSite1) { (tx, staleStuff) =>
         daoSite1.deletePostImpl(
-              pageEReplyOne.pageId, pageEReplyOne.nr, deletedById = SystemUserId,
-              browserIdData, tx, staleStuff)
+              pageEReplyOne.pageId, pageEReplyOne.nr, systemWho, tx, staleStuff)
       }
 
       "Reply Two links to Q, and Re One too although post deleted".inReadTx(daoSite1) { tx =>
@@ -550,8 +548,7 @@ class LinksAppSpec extends DaoAppSuite {
 
       "Delete reply Two too".inWriteTx(daoSite1) { (tx, staleStuff) =>
         daoSite1.deletePostImpl(
-              pageEReplyTwo.pageId, pageEReplyTwo.nr, deletedById = SystemUserId,
-              browserIdData, tx, staleStuff)
+              pageEReplyTwo.pageId, pageEReplyTwo.nr, systemWho, tx, staleStuff)
       }
 
       "Now the posts still link to Q".inReadTx(daoSite1) { tx =>

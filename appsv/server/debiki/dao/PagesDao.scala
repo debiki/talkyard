@@ -185,6 +185,7 @@ trait PagesDao {
     val now = globals.now()
     val realAuthorId = byWho.id
     val realAuthorAndLevels = loadUserAndLevels(byWho, tx)
+    // Currently is the real auhtor. But with [pseudonyms_later], then maybe not.
     val realAuthor = realAuthorAndLevels.user
 
     val site = tx.loadSite() getOrDie "TyE8MWNP247"
@@ -263,9 +264,9 @@ trait PagesDao {
     val titleUniqueId = tx.nextPostId()
     val bodyUniqueId = titleUniqueId + 1
 
-    val (authorId, author) =
+    val authorMaybeAnon =
           if (doAsAnon.forall(!_.anonStatus.isAnon)) {
-            (realAuthorId, realAuthor)
+            realAuthor
           }
           else {
             // Dupl code. [mk_new_anon]
@@ -280,14 +281,14 @@ trait PagesDao {
             // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
             tx.deferConstraints()
             tx.insertAnonym(anonym)
-            (anonymId, anonym)
+            anonym
           }
 
     val titlePost = Post.createTitle(
       uniqueId = titleUniqueId,
       pageId = pageId,
       createdAt = now.toJavaDate,
-      createdById = authorId,
+      createdById = authorMaybeAnon.id,
       source = title.source,
       htmlSanitized = title.safeHtml,
       approvedById = approvedById)
@@ -296,14 +297,14 @@ trait PagesDao {
       uniqueId = bodyUniqueId,
       pageId = pageId,
       createdAt = now.toJavaDate,
-      createdById = authorId,
+      createdById = authorMaybeAnon.id,
       source = body.source,
       htmlSanitized = body.safeHtml,
       postType = bodyPostType,
       approvedById = approvedById)
       .copy(
         bodyHiddenAt = ifThenSome(hidePageBody, now.toJavaDate),
-        bodyHiddenById = ifThenSome(hidePageBody, authorId),
+        bodyHiddenById = ifThenSome(hidePageBody, authorMaybeAnon.id), 
         bodyHiddenReason = None) // add `hiddenReason` function parameter?
 
     val uploadRefs = body.uploadRefs
@@ -312,7 +313,10 @@ trait PagesDao {
       dieIf(uploadRefs != uplRefs2, "TyE7RTEGP04", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
-    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId,
+    val pageMeta = PageMeta.forNewPage(
+      pageId = pageId,
+      pageRole,
+      authorId = authorMaybeAnon.id,
       extId = extId,
       creationDati = now.toJavaDate,
       deletedAt = if (createAsDeleted) Some(now) else None,
@@ -340,10 +344,7 @@ trait PagesDao {
         createdById = SystemUserId,
         createdAt = now.toJavaDate,
         createdAtRevNr = Some(bodyPost.currentRevisionNr),
-        // Show the anonym, not the real user — so staff won't accidentally learn
-        // who the anonyms are. Only if a post is really problematic, can the staff
-        // choose to have a look and consider suspending the real post author.
-        maybeBadUserId = authorId,
+        maybeBadUserId = authorMaybeAnon.id,
         pageId = Some(pageId),
         postId = Some(bodyPost.id),
         postNr = Some(bodyPost.nr)))
@@ -368,12 +369,14 @@ trait PagesDao {
               pageAvailableAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
               htmlToSpamCheck = body.safeHtml,
               language = settings.languageCode)),
-            who = byWho.copy(id = authorId, isAnon = author.isAnon),
+            reqrId = authorMaybeAnon.id,
             requestStuff = spamStuffPageUri))
       }
 
     val stats = UserStats(
-      authorId,
+      // If is a pseudo/anonym, add stats to the pseudo/anon account only,
+      // not to the true user — otherwise others might be able to guess who hen is.
+      authorMaybeAnon.id,
       lastSeenAt = now,
       lastPostedAt = Some(now),
       firstNewTopicAt = Some(now),
@@ -402,11 +405,11 @@ trait PagesDao {
       // Add links, and uncache linked pages — need to rerender them, with
       // a backlink to this new page.
       // Need not: staleStuff.addPageId(new-page-id) — page didn't exist before.
-      saveDeleteLinks(bodyPost, body, authorId, tx, staleStuff, skipBugWarn = true)
+      saveDeleteLinks(bodyPost, body, authorMaybeAnon.trueId2, tx, staleStuff, skipBugWarn = true)
     }
 
     uploadRefs foreach { hashPathSuffix =>
-      tx.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
+      tx.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorMaybeAnon.id)
     }
 
     discussionIds.foreach(id => tx.insertAltPageId("diid:" + id, realPageId = pageId))
@@ -434,7 +437,8 @@ trait PagesDao {
     if (!skipNotfsAndAuditLog) {
       val notifications = notfGenerator(tx).generateForNewPost(
             newPageDao(pagePath.pageId, tx), bodyPost,
-            Some(body), anyNewModTask = anyReviewTask)
+            Some(body), anyNewModTask = anyReviewTask,
+            postAuthor = Some(authorMaybeAnon))
 
       tx.saveDeleteNotifications(notifications)
 
@@ -442,7 +446,7 @@ trait PagesDao {
             siteId = siteId,
             id = AuditLogEntry.UnassignedId,
             didWhat = AuditLogEntryType.NewPage,
-            doerId = authorId,
+            doerTrueId = authorMaybeAnon.trueId2,
             doneAt = now.toJavaDate,
             browserIdData = byWho.browserIdData,
             pageId = Some(pageId),
@@ -510,14 +514,16 @@ trait PagesDao {
   }
 
 
-  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, userId: UserId,
+  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, reqerTrueId: TrueId,
         browserIdData: BrowserIdData): Option[ju.Date] = {
     val answeredAt = writeTx { (tx, staleStuff) =>
-      val user = tx.loadTheParticipant(userId)
+      val user = tx.loadTheParticipant(reqerTrueId.curId)
       val oldMeta = tx.loadThePageMeta(pageId)
       if (!oldMeta.pageType.canBeSolved)
         throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
 
+      ANON_UNIMPL; BUG // This prevents anons from accepting answers to their own
+      // questions? [anon_pages]
       throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
             "TyE8JGY3", "Only core members and the topic author can accept an answer")
 
@@ -551,7 +557,7 @@ trait PagesDao {
             siteId = siteId,
             id = AuditLogEntry.UnassignedId,
             didWhat = AuditLogEntryType.PageAnswered,
-            doerId = userId,
+            doerTrueId = reqerTrueId,
             doneAt = tx.now.toJavaDate,
             browserIdData = browserIdData,
             pageId = Some(pageId),
@@ -585,10 +591,12 @@ trait PagesDao {
   }
 
 
-  def ifAuthUnacceptAnswer(pageId: PageId, userId: UserId, browserIdData: BrowserIdData): Unit = {
+  def ifAuthUnacceptAnswer(pageId: PageId, reqerTrueId: TrueId,
+          browserIdData: BrowserIdData): U = {
     readWriteTransaction { tx =>
-      val user = tx.loadTheParticipant(userId)
+      val user = tx.loadTheParticipant(reqerTrueId.curId)
       val oldMeta = tx.loadThePageMeta(pageId)
+      ANON_UNIMPL; BUG // This prevents anons from un-accepting answers? [anon_pages]
       throwForbiddenIf(!user.isStaffOrCoreMember && user.id != oldMeta.authorId,
             "TyE2GKUB4", "Only core members and the topic author can unaccept an answer")
 
@@ -603,7 +611,7 @@ trait PagesDao {
             siteId = siteId,
             id = AuditLogEntry.UnassignedId,
             didWhat = AuditLogEntryType.PageUnanswered,
-            doerId = userId,
+            doerTrueId = reqerTrueId,
             doneAt = tx.now.toJavaDate,
             browserIdData = browserIdData,
             pageId = Some(pageId),
@@ -619,12 +627,12 @@ trait PagesDao {
   }
 
 
-  def ifAuthTogglePageClosed(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
-        : Option[ju.Date] = {
+  def ifAuthTogglePageClosed(pageId: PageId, reqr: ReqrId): Opt[ju.Date] = {
     val now = globals.now()
     val newClosedAt = readWriteTransaction { tx =>
-      val user = tx.loadTheParticipant(userId)
+      val user = tx.loadTheParticipant(reqr.id)
       val oldMeta = tx.loadThePageMeta(pageId)
+      ANON_UNIMPL // This prevents anons from closing their page? [anon_pages]
       throwIfMayNotSeePage(oldMeta, Some(user))(tx)
 
       throwBadRequestIf(oldMeta.isDeleted,
@@ -651,9 +659,9 @@ trait PagesDao {
             didWhat =
                   if (newMeta.isClosed) AuditLogEntryType.PageClosed
                   else AuditLogEntryType.PageReopened,
-            doerId = userId,
+            doerTrueId = reqr.trueId,
             doneAt = tx.now.toJavaDate,
-            browserIdData = browserIdData,
+            browserIdData = reqr.browserIdData,
             pageId = Some(pageId))
 
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
@@ -667,21 +675,19 @@ trait PagesDao {
   }
 
 
-  def deletePagesIfAuth(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
-        undelete: Boolean): Unit = {
+  def deletePagesIfAuth(pageIds: Seq[PageId], reqr: ReqrId, undelete: Bo): U = {
     writeTx { (tx, staleStuff) =>
       // SHOULD LATER: [4GWRQA28] If is sub community (= forum page), delete the root category too,
       // so all topics in the sub community will get deleted.
       // And remove the sub community from the watchbar's Communities section.
       // (And if undeleting the sub community, undelete the root category too.)
-      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete)(tx, staleStuff)
+      deletePagesImpl(pageIds, reqr, undelete = undelete)(tx, staleStuff)
     }
     refreshPagesInMemCache(pageIds.toSet)
   }
 
 
-  def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId,
-          browserIdData: BrowserIdData, undelete: Bo = false)(
+  def deletePagesImpl(pageIds: Seq[PageId], reqr: ReqrId, undelete: Bo = false)(
           tx: SiteTx, staleStuff: StaleStuff): U = {
 
     BUG; SHOULD // delete notfs or mark deleted?  [notfs_bug]  [nice_notfs]
@@ -689,7 +695,7 @@ trait PagesDao {
     // member posts something trollish, people react, then hen deletes hens page.
     // Later, if undeleting, then restore the notfs? [undel_posts]
 
-    val deleter = tx.loadTheParticipant(deleterId)
+    val deleter = tx.loadTheParticipant(reqr.id)
 
     for {
       pageId <- pageIds
@@ -703,15 +709,17 @@ trait PagesDao {
 
       // Ordinary members may only delete their own pages, before others have replied.
       // Sync with client side. [who_del_pge]
+      ANON_UNIMPL // This prevents anons from deleting their pages? [anon_pages]  (authorId
+      // is the anon, reqr.id is the true id != the anon.)
       if (!deleter.isStaff) {
-        throwForbiddenIf(pageMeta.authorId != deleterId,
+        throwForbiddenIf(pageMeta.authorId != reqr.id,
                 "TyEDELOTRSPG_", "May not delete other people's pages")
 
         // Shouldn't have been allowed to see sbd else's deleted page.
-        val deletedOwn = pageMeta.deletedById.is(deleterId) &&
-                pageMeta.authorId == deleterId
+        val deletedOwn = pageMeta.deletedById.is(reqr.id) &&
+                pageMeta.authorId == reqr.id
         dieIf(undelete && !deletedOwn, "TyEUNDELOTRS",
-              s"s$siteId: User $deleterId may not undelete sbd else's page $pageId")
+              s"s$siteId: User ${reqr.id} may not undelete sbd else's page $pageId")
 
         // When there are replies, the UX should send a request to delete the
         // orig post only — but not the whole page. (Unless is staff, then can delete
@@ -730,9 +738,9 @@ trait PagesDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.DeletePage,
-        doerId = deleterId,
+        doerTrueId = reqr.trueId,
         doneAt = tx.now.toJavaDate,
-        browserIdData = browserIdData,
+        browserIdData = reqr.browserIdData,
         pageId = Some(pageId),
         pageType = Some(pageMeta.pageType))
 
@@ -801,7 +809,8 @@ trait PagesDao {
 
 
   REFACTOR // Move to PostsDao? This fn creates a post, not a whole page operation.
-  def addMetaMessage(doer: Participant, message: String, pageId: PageId, tx: SiteTransaction): Unit = {
+  def addMetaMessage(doer: Participant, message: String, pageId: PageId,
+                     tx: SiteTransaction, notifyMentioned: Bo = false): Post = {
     // Some dupl code [3GTKYA02]
     val page = newPageDao(pageId, tx)
     val postId = tx.nextPostId()
@@ -830,9 +839,20 @@ trait PagesDao {
     dieIf(pageMeta.numPostsTotal > postNr + 1, "EdE3PFK2W0", o"""pageMeta.numPostsTotal
         is ${pageMeta.numPostsTotal} but should be <= postNr + 1 = ${postNr + 1}""")
 
+    // (Later: How handle [private_pats]?)
     tx.insertPost(metaMessage)
 
     SHOULD // send back json so the satus message gets shown, without reloading the page. [2PKRRSZ0]
+
+    if (notifyMentioned) {
+      // For now. Later, somehow use  NotificationType.PostAssigneesChanged.
+      notfGenerator(tx).generateForNewPost(
+            page, metaMessage, sourceAndHtml = None,
+            postAuthor = None, // Some(doer) — but `doer` might be from another tx?
+            anyNewModTask = None)
+    }
+
+    metaMessage
   }
 
 

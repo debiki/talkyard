@@ -23,6 +23,7 @@ import debiki._
 import debiki.EdHttp._
 import SpecialContentPages._
 import org.owasp.encoder.Encode
+import talkyard.server.dao.StaleStuff
 
 
 /** Loads special content pages, e.g. a page with a user-content-license text
@@ -59,8 +60,8 @@ trait SpecialContentDao {
   }
 
 
-  def saveSpecialContent(rootPageId: PageId, contentId: PageId, anyNewSource: Option[String],
-        resetToDefaultContent: Boolean, editorId: UserId): Unit = {
+  def saveSpecialContent(rootPageId: PageId, contentId: PageId, anyNewSource: Opt[St],
+        resetToDefaultContent: Bo, reqr: ReqrId): U = {
 
     if (contentId != SpecialContentPages.StylesheetId &&
         contentId != SpecialContentPages.JavascriptId)
@@ -79,7 +80,7 @@ trait SpecialContentDao {
     // This is currently either Javascript or CSS. Show it verbatim.
     val approvedHtmlSanitized = s"<pre>${Encode.forHtmlContent(newSource)}</pre>"
 
-    readWriteTransaction { transaction =>
+    writeTx { (tx, staleStuff) =>
       // BUG: Race condition, lost update bug -- but it's mostly harmless,
       // admins will be active only one at a time? Solve by passing body version to server,
       // so we can detect if someone else has changed it in between.
@@ -87,27 +88,28 @@ trait SpecialContentDao {
       // Verify that root page id exists and is a section.
       if (rootPageId.nonEmpty) {
         def theRootPage = s"Root page '$rootPageId', site '$siteId',"
-        val meta = transaction.loadPageMeta(rootPageId) getOrElse
+        val meta = tx.loadPageMeta(rootPageId) getOrElse
           throwForbidden("Dw0FfR1", s"$theRootPage does not exist")
         if (!meta.pageType.isSection)
           throwForbidden("Dw7GBR8", s"$theRootPage is not a section")
       }
 
-      transaction.loadPost(pageId, PageParts.BodyNr) match {
+      tx.loadPost(pageId, PageParts.BodyNr) match {
         case None =>
-          createSpecialContentPage(pageId, authorId = editorId, newSource,
-            htmlSanitized = approvedHtmlSanitized, transaction)
+          createSpecialContentPage(pageId, reqr, newSource,
+                htmlSanitized = approvedHtmlSanitized, tx, staleStuff)
         case Some(oldPost) =>
           updateSpecialContentPage(oldPost, newSource, htmlSanitized = approvedHtmlSanitized,
-            editorId, transaction)
+                reqr, tx, staleStuff)
       }
     }
   }
 
 
-  protected def createSpecialContentPage(pageId: PageId, authorId: UserId,
-      source: String, htmlSanitized: String, transaction: SiteTransaction): Unit = {
-    val pageMeta = PageMeta.forNewPage(pageId, PageType.SpecialContent, authorId,
+  private def createSpecialContentPage(pageId: PageId, reqr: ReqrId,
+        source: St, htmlSanitized: St, transaction: SiteTx, staleStuff: StaleStuff): U = {
+
+    val pageMeta = PageMeta.forNewPage(pageId, PageType.SpecialContent, reqr.id,
       transaction.now.toJavaDate,
       numPostsTotal = 1, // no title post, only body
       categoryId = None, embeddingUrl = None, publishDirectly = true)
@@ -118,27 +120,31 @@ trait SpecialContentDao {
       uniqueId = uniqueId,
       pageId = pageId,
       createdAt = transaction.now.toJavaDate,
-      createdById = authorId,
+      createdById = reqr.id,
       source = source,
       htmlSanitized = htmlSanitized,
-      approvedById = Some(authorId))
+      approvedById = Some(reqr.id))
 
     transaction.insertPageMetaMarkSectionPageStale(pageMeta)(IfBadDie)
     transaction.insertPost(bodyPost)
 
+    AUDIT_LOG
+
     val dummyPagePath = PagePathWithId(
           "/", pageId = pageId, showId = true, pageSlug = "dummy", canonical = true)
+
     if (affectsWholeSite(pageId)) {
-      emptyCacheImpl(transaction)
+      staleStuff.addAllPages()
     }
     else {
+      CLEAN_UP // Can skip this?
       memCache.firePageCreated(siteId, dummyPagePath)
     }
   }
 
 
-  protected def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
-        editorId: UserId, transaction: SiteTransaction): Unit = {
+  private def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: St,
+        reqr: ReqrId, transaction: SiteTx, staleStuff: StaleStuff): U = {
     if (oldPost.currentSource == newSource)
       return
 
@@ -156,22 +162,29 @@ trait SpecialContentDao {
       approvedSource = Some(newSource),
       approvedHtmlSanitized = Some(htmlSanitized),
       approvedAt = Some(transaction.now.toJavaDate),
-      approvedById = Some(editorId),
+      approvedById = Some(reqr.id),
       approvedRevisionNr = Some(nextRevisionNr))
 
     transaction.updatePost(editedPost)
 
+    AUDIT_LOG
+
     if (affectsWholeSite(oldPost.pageId)) {
-      emptyCacheImpl(transaction)
+      staleStuff.addAllPages()
     }
     else {
+      CLEAN_UP // Can skip this?
       memCache.firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))
     }
   }
 
 
-  private def affectsWholeSite(pageId: PageId) =
-    true // currently always
+  private def affectsWholeSite(pageId: PageId) = {
+    // Currently always.
+    // .. Because an asset-versioned link to custom js and css, is included on each page?
+    // Or what was the reason.
+    true
+  }
 
 }
 

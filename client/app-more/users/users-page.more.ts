@@ -22,6 +22,7 @@
 /// <reference path="user-drafts-etc.more.ts" />
 /// <reference path="user-preferences.more.ts" />
 /// <reference path="user-activity.more.ts" />
+/// <reference path="user-tasks.more.ts" />
 /// <reference path="groups-page.more.ts" />
 
 //------------------------------------------------------------------------------
@@ -226,6 +227,9 @@ const UserPageComponent = createReactClass(<any> {
     const draftsEtcNavItem = !showPrivateStuff || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'drafts-etc', className: 'e_UP_DrftsB' }, t.upp.DraftsEtc);
 
+    const tasksNavItem = !showPrivateStuff || user.isGroup ? null :
+      LiNavLink({ to: linkStart + 'tasks', className: 'e_UP_TsksB' }, "Tasks"); // I18N
+
     const preferencesNavItem = !showPrivateStuff ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);
 
@@ -236,7 +240,7 @@ const UserPageComponent = createReactClass(<any> {
         LiNavLink({ to: linkStart + 'permissions', className: 'e_PermsTabB' },
           "Permissions"); // I18N
 
-    const childProps: PatTopPanelProps = {
+    const childProps: PatTopPanelProps & PatStatsPanelProps = {
       store: store,
       me: me, // CLEAN_UP try to remove, incl already in `store`
       user: user,
@@ -257,6 +261,7 @@ const UserPageComponent = createReactClass(<any> {
       Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
       Route({ path: u + 'drafts-etc', render: () => UserDrafts(childProps) }),
+      Route({ path: u + 'tasks', render: (ps) => UserTasks({ ...childProps, ...ps }) }),
 
       Route({ path: u + 'preferences', render: (ps) => {
         return UserPreferences({ ...childProps, updatePat: this.updatePat, ...ps });
@@ -281,6 +286,7 @@ const UserPageComponent = createReactClass(<any> {
           activityNavItem,
           notificationsNavItem,
           draftsEtcNavItem,
+          tasksNavItem,
           invitesNavItem,
           preferencesNavItem,
           patPermsNavItem),
@@ -288,16 +294,6 @@ const UserPageComponent = createReactClass(<any> {
   }
 });
 
-
-
-interface PatTopPanelProps {
-  me: Me;
-  store: Store;
-  user: UserDetailsStatsGroups;
-  stats: UserStats | U;
-  groupsMaySee: Group[];
-  reloadUser: () => Vo;
-}
 
 
 interface PatTopPanelState {

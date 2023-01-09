@@ -1,0 +1,792 @@
+[add_nodes_t]
+
+alter table posts3 rename to nodes_t
+
+alter table post_actions3 rename to  pat_node_rels_t
+— if it's interesting to know when and by who a relationship was added, e.g.:
+Assigned to Alice by Bob on 2023-04-05. Or post revision nr, or any rel specific
+value (pat_node_rels_t.val_i32_c).
+
+alter table perms_on_pages3 rename to  pat_node_multi_rels_t
+
+Move from  categories_t, pages3, posts3  to pat_node_multi_rels_t:
+    comts_start_hidden_c  never_always_d
+    comts_start_anon_c    never_always_d
+    op_starts_anon_c      never_always_d
+    new_anon_status_c     anonym_status_d
+    -- alreade there: (but maybe rename to: private_comts_c ?)
+    can_post_private_c    never_always_d  -- if always, then, may_post_comment has
+                                          -- no effect, meaning, cannot post publ comts.
+
+Because, just like  may_post_comment, may_edit_comment etc,  it's sometimes
+good to let those be per person.  Consider a university & class & students:
+Sometimes, it can be good if the students by default post private comments,
+so only the teacher can see.  Whilst the teacher by default posts public comments,
+so all students in the class can see  (unless of course if the teacher replies to
+a private comment — then that reply is private too).
+
+Older thoughts follow:
+
+
+Change  site settings, categories, pages and posts  to  *nodes*:
+
+Site node (id 1? But it's already in use everyywhere :-/
+            namely the 1st root cat about page title?  Maybe 0  (or null or -1?)  instead)
+  Root category node  (for sub communities, a la subreddits)
+   *  Base category node
+              can use the About page title post & id as category node & id,
+              and orig post nr 1 = optional descr?
+
+     (*  Sub, subsub category nodes)
+
+          *  Page node
+                  can use the title post?  Which will remain the page title:
+                      nodes_t.approved_source_c = posts3.approved_source, renamed.
+                  page node id = title post id.  Title post nr stays 0?
+            1  Orig Post node,  node nr 1  (but a different *id*)
+            *  Comment nodes,  node nr 2, 3, 4
+
+Categories:
+  - NodeType.Category
+  - Node text = category title, nr = 0.
+  - Child node nr 1  = category description.
+  - Child node nr 2, 3, 4: N/A.
+  - Page child nodes = pages in that category.
+  - Category child nodes = sub cats.
+
+Pages:
+  - NodeType.Page
+  - Node text = page title, nr = 0.
+  - Child node nr 1  = orig post text.
+  - Child node nr 2, 3, 4: Comments.
+  - *Page* child nodes = typially sub tasks or comment trees important enough
+      to be moved to their own child page?
+      (That is, pages with sub pages — or, you could say: tasks with sub tasks.)
+  - Category child nodes: Sub tasks grouped in categories?
+      For really big projects?
+    Don't appear on any category list page. Instead, only if clicking [+]
+    to expand the page (in any list of pages where it appears).
+
+Comments:
+  - NodeType.Comment.
+  - Node text = comment text.
+  - Child nodes = replies.
+  And, helpful for a bookmarks tree or to specify sidebar contents?:
+  - Page child nodes: Show as a list below the comment? (When would that be useful?)
+  - Category child nodes: Show as a list, too?
+  Hmm but it's all a tree, currently — can't have many parent nodes.
+  Need new table, maybe node_node_rels_t with column  other_parent_id_c  ?
+
+Then can:
+  - Delete duplicated settings in:
+      settings3,  cats_t (categories3),  pages_t (pages3),
+      posts_t (posts3)  <—— but will get renamed to  nodes_t.
+
+  - Comment owners:  One owns comments one has posted, and can make
+    them anonymous (change to an anon author). Or make them private,
+    and then add others who can then see the private comment and
+    comment sub tree starting at that comment (at that node).
+
+  - Page owners:  A person who creates an ideation page with different
+    steps, by default manages that ideation page:  asks people to
+    submitt ideas (as comment repiles)  decides when that's been done
+    and makes the replies visible.  Decides if replies are anonymous and for
+    how long.   Can add sbd else as page manager — then that person
+    can add/remove people from that particular ideation page.
+
+  - Projects: Hybrid page-category nodes — project pages
+    which have their own sub pages. The project main page, is sort of
+    both a category and a page.
+
+  - Project owners. Owners make sense, not only for orig-posts and comments,
+    but also for project pages.  The person who creates a new project,
+    by default is the project owner.  And can add a node manager = project manager,
+    who can in turn assign people to the node (project) or sub nodes (project
+    sub tasks)?
+  
+  - Project (& page & category) managers.
+    See just above (the end of the above paragraph).
+
+  - Category owners. Makes sense too. A Talkyard community has members who
+    create packages for the related software, and each such package
+    gets its own sub category, and the package author replies to questions
+    there. It'd be nice if the package author, was the category owner?
+    So hen could edit the category description, maybe rename the category,
+    if the package gets renamed? Without having to aske the forum admins.
+    And add others who can help out with answering questions? light weight moderation?,
+    in that catepory only.
+
+  - Root category / sub community owners. Makes sense — would correspond to
+    sbd who creates & moderators a subreddit (over at Reddit).
+    And can grant Manage & delete-comments pemrission to sbd else
+    who then starts functioning as a moderator of that sub community.
+
+  - Site node owners.  That'd be the person who created the forum (unless
+    hen removes henself and adds sbd else as site owner).
+
+  - Permissions don't need to link to either a category, page or post,
+    or the whole-site boolean.  Instead, there's just nodes.
+
+  - Fields dupl in  settings3, cats_t, pages_t, posts_t  disappear.
+
+  - If you add a feature to a category, it automatically works also
+    for pages and comment sub trees — which starts looking nice/important,
+    now with hidden and anonymous comments, where you'd often want
+    the person who created, say, an ideation page, to manage that page
+    and discussion (e.g. decide when to move on to the next step in an
+    ideation process).
+    But that'd be a bit more work, as things look now,  when permissions
+    would have to be dupl between cats, pages,  comment trees.
+    Instead, with nodes,  it'd just work: Add settings for cats,
+    and they'd be there also for pages  — since both are the same thing: nodes.
+
+  - Already did this for groups and users: they're the same thing, in the
+    same table, pats_t (currently named users3), just different account types:
+    a participant of type User, or type Group, or Guest etc.
+    And this was a good (!) idea. (Thanks PostgreSQL for the idea — they once
+    merged users and groups into one thing, "roles" they call it.)
+    Seems this would be the right thing not only for people (pats_t) but
+    also for content (nodes_t currently posts3, categories3, pages3), in Ty.
+
+
+Below are thoughts about what'll happen with each relevant table & column.
+(Some of the thoughts are old & out-of-date?)
+
+
+perms_on_pages3  ——> perms_on_nodes_t (& perms_on_pats_t)  NO,  pat_node_multi_rels_t  instead.
+--------------------------------------------------------------------------
+ site_id                 | integer           |           | not null | 
+ perm_id                 | integer           |           | not null | 
+ for_people_id           | integer           |           | not null | 
+ on_whole_site           | boolean           |           |          | 
+ on_category_id          | integer       ^^^\
+ on_page_id              | character varying >——>  on_node_id  —>  nodes_t  (currently "posts3")
+ on_post_id              | integer       ___/
+ on_tag_id               | integer           |           |          | 
+ may_edit_page           | boolean           |           |          | 
+ may_edit_comment        | boolean           |           |          | 
+ may_edit_wiki           | boolean           |           |          | 
+ may_edit_own            | boolean           |           |          | 
+ may_delete_page         | boolean           |           |          | 
+ may_delete_comment      | boolean           |           |          | 
+ may_create_page         | boolean           |           |          | 
+ may_post_comment        | boolean           |           |          | 
+ may_see                 | boolean           |           |          | 
+ may_see_own             | boolean           |           |          | 
+ may_see_private_flagged | boolean           |           |          | 
+
+NEXT: Add these fields to perms_on_pages3  (to be renamed to  pat_node_multi_rels_t):
+
+  - is_owner_c bool:  DONE, added  — May add managers and granters/revokers,
+                     and edit the node and ... what about child nodes
+                     of the same type?
+       (but is-author stored in:  pat_node_rels_t.rel_type = AuthorOf)
+
+    Private comments:
+        may_see,  may_see_own,  may_post_comment,  may_edit_own,  may_edit_wiki
+        and root comt owner  can add more people,
+        and those with  can_manage_c  or  can_grant  on the private root,
+           can add more people (with fewer or as much perms as themselves).
+
+        but  nodes_t (posts3) .private_status_c  says if a comment tree is private.
+        Hmm, need to look at all ancestor comments, pages and cats. (that's fine)
+
+  - can_assign_c   DONE, added
+       (but is-assigned stored in:  pat_node_rels_t.rel_type = AssignedTo)
+
+  - can_see_assigned_c   DONE, added
+
+  - can_alter_c  DONE, added  — may open/close, change doing status?
+                     (but not change owner, author, private-status, delete).
+
+  - can_manage_c bool:  May grant & revoke others' perms, on a content node
+                          and descendant nodes.  // *of the same type* (e.g. child cats).
+           (later?: bitfield that says  *what* perms?
+            All perms could be a bitfield too actually?
+            But for now, one can grant only the perms one has oneself?
+            And revoke ... What?  Perms one granted oneself?)
+  - can_grant_c bool, or  can_invite_c — invite to join a category / group?
+          May grant permissions to others, but only those hen
+          has henself already.  And may undo, until the grantee
+          has used the new perms for a while or until some time has elapsed.
+
+          Some bits could say if the grantee first needs to accept?
+          So e.g. not auto added to a cat or group you don't want to be in.
+
+  - can_revoke_c bool,  or  can_suspend_c — can suspend/ban pats from a cat?
+                                1: can prevent editing others' stuff e.g. wikis,
+                                2: can prevent posting,
+                                3: can prevent seeing others' posts (only one's own)
+                                4: can prevent seeing others' and own posts.
+          may revoke permissions, and undo, but not add new people.
+
+ (- granted_by_id_c  ? so a manager can un-grant perms or un-invite someone hen
+                        granted-perms-to or invited, recently?
+  - granted_at_c  ?   Or is it better to look up in the audit log ?
+  )
+
+
+ (s = site)
+
+group_participants3  ——>  pat_rels_t   (or  pat_pat_rels_t ?)
+--------------------------------------------------------------------------
+        site_id        | integer
+        group_id       | integer
+        participant_id | integer
+       (true_id_c ?)
+
+ pat    is_member      | boolean
+        —> member_status_c?:  null/0 = not member, 1 = invited, 2 = member,
+                              3 = suspended, 4 = banned?
+                (or better keep in separate columns, or the invites_t (invites3).)
+
+ pat    is_manager     | boolean   REN to  can_manage ?
+ pat    is_adder       | boolean   REN to  can_invite ?
+ pat    is_bouncer     | boolean   REN to  can_suspend (from group) ?
+
+
+invites3
+--------------------------------------------------------------------------
+          site_id         | integer
+          secret_key      | character varying
+          email_address   | character varying
+          created_by_id   | integer
+          created_at      | timestamp without time zone
+          accepted_at     | timestamp without time zone
+          user_id         | integer
+          (true_id_c ?)
+          deleted_at      | timestamp without time zone
+          deleted_by_id   | integer
+          invalidated_at  | timestamp without time zone
+          start_at_url    | character varying
+          add_to_group_id | integer
+
+
+notifications3
+--------------------------------------------------------------------------
+          site_id              | integer
+          notf_type            | smallint
+          created_at           | timestamp without time zone
+          about_page_id_str_c  | character varying
+          by_user_id           | integer
+          to_user_id           | integer
+             for anons:  to_user_id = one's true id.
+             for pseudonyms, then what?
+             Will want to look up sometimes by pseudonym, sometimes by true id and see all notfs.
+             add: to_ false_id_c/ If to an anon or pseudonym?
+             or:  via_pat_id_c = ... this'd be the anon or pseudonym id
+                      — or group id? (if got a notf because of being a member of a group)
+             But what if the notf is to one's pseudonym which has been added to a group?
+             Therefore, maybe:
+                  to_ true_id_c = __    — one's main account
+                  to_false_id_c (or "to_pseudonym_id_c"?) = __    — one's anon/pseudonym account
+                  via_group_id_c =      — if got it e.g. because in a group that was @mentioned?
+
+                  ("Via"? — "'Sender Name' via Group-Name"  is standard terminology, used by Gmail
+                  e.g. if there's some sender email domain mismatch:
+                  https://support.google.com/mail/answer/1311182?hl=en#zippy=%2Ci-see-via-and-a-website-name-next-to-the-senders-name
+                  )
+
+          email_id             | character varying
+          email_status         | smallint
+          seen_at              | timestamp without time zone
+          about_post_id_c      | integer
+          action_type          | smallint
+          action_sub_id        | smallint
+          notf_id              | integer
+          smtp_msg_id_prefix_c | smtp_msg_id_out_prefix_d
+          about_page_id_int_c  | page_id_d__later
+          about_pat_id_c       | pat_id_d
+          about_cat_id_c       | cat_id_d
+          about_tag_id_c       | tag_id_d
+          about_thing_type_c   | thing_type_d
+          about_sub_type_c     | sub_type_d
+
+
+
+users3 ——> pats_t
+--------------------------------------------------------------------------
+ s      is_admin                              | boolean
+ s      is_owner                              | boolean
+ server is_superadmin                         | boolean
+ rm     email_for_every_new_post              | boolean
+ s,c?   is_approved                           | boolean
+ s,c?   suspended_at                          | timestamp
+        is_moderator —> trust_level: mod
+        locked_trust_level
+ s,c    knowledle_level_c — how much hen knows about whatever is in a category or sub community.
+            trust_level is different: the combo of good judgement (sometimes
+            saying "I don't know") and good intentions.
+            Trust level is a personality trait, whilst knowledle_level_c
+            can be knowledge area specific.
+        threat_level,  locked_threat_level  —  lack-of-a-good-judgement + bad-intentions combo.
+                                               site wide / personality trait.
+        tech_level_c — personal, site wide.
+
+ s,c    may_see_my_activity_tr_lv_c           | integer
+
+ s,c    max_upload_bytes_c                    | integer
+ s,c    allowed_upload_extensions_c           | character
+
+ s      may_search_engines_index_me_c         | boolean
+ s,g+c? may_see_my_username_tr_lv_c           | trust_level_or_staff_d
+ s,g+c? may_see_my_full_name_tr_lv_c          | trust_level_or_staff_d
+ s,g+c? may_see_my_tiny_avatar_tr_lv_c        | trust_level_or_staff_d
+ s,g+c? may_see_my_medium_avatar_tr_lv_c      | trust_level_or_staff_d
+ s,g    may_see_my_brief_bio_tr_lv_c          | trust_level_or_staff_d
+ s,g    may_see_my_full_bio_tr_lv_c           | trust_level_or_staff_d
+ s,g    may_see_my_memberships_tr_lv_c        | trust_level_or_staff_d
+ s,g    may_see_my_profile_tr_lv_c            | trust_level_or_staff_d
+ s,g+c? may_see_me_in_lists_tr_lv_c           | trust_level_or_staff_d
+ s      may_see_if_im_online_tr_lv_c          | trust_level_or_staff_d
+ s,g+c? may_see_my_visit_stats_tr_lv_c        | trust_level_or_staff_d
+ s,g+c? may_see_my_post_stats_tr_lv_c         | trust_level_or_staff_d
+ s,g+c? may_see_my_approx_stats_tr_lv_c       | trust_level_or_staff_d
+ s,g+c? may_see_my_exact_stats_tr_lv_c        | trust_level_or_staff_d
+ s      may_find_me_by_email_tr_lv_c          | trust_level_or_staff_d
+ s,g+c? may_follow_me_tr_lv_c                 | trust_level_or_staff_d
+ s,g+c? may_mention_me_tr_lv_c                | trust_level_or_staff_d
+ s,g+c? may_mention_me_same_disc_tr_lv_c      | trust_level_or_staff_d
+ s      may_dir_msg_me_tr_lv_c                | trust_level_or_staff_d
+ s      why_may_not_mention_msg_me_html_c     | text_nonempty_ste500_trimmed_d
+ s      may_see_my_account_email_adrs_tr_lv_c | trust_level_or_staff_d
+ s      may_see_my_contact_email_adrs_tr_lv_c | trust_level_or_staff_d
+ g+c    may_assign_me_tr_lv_c                 | trust_level_or_staff_d
+ g+c    may_see_my_assignments_tr_lv_c        | trust_level_or_staff_d
+ s      email_threading_c                     | i16_gz_lt1024_d
+ s,c?   email_notf_details_c                  | i16_gz_lt1024_d
+ s      true_id_c                             | member_id_d
+ s      pseudonym_status_c                    | pseudonym_status_d
+ page   anonym_status_c                       | anonym_status_d
+ page   anon_on_page_id_st_c                  | page_id_st_d
+ page   anon_on_page_id_c                     | page_id_d__later
+
+
+ŵ  ŗ  ŵ  ŵ  ¯̅     ‾‾‾‾‾‾¯‾ ‾   a‾b¯  ¯
+‾  = ctrl+shift+u203e
+
+
+perms_on_pages3  ——>  perms_on_nodes_t
+--------------------------------------------------------------------------
+         site_id                 | integer
+         perm_id                 | integer
+         for_people_id    (? rename to `for_ true_id_c` ?)
+       + as_pseudonym_id  (permission to do sth, iff one has this pseudonym activated)
+
+       /‾on_whole_site           | boolean
+ node /  on_category_id          | integer
+  id? \  on_page_id              | character varying
+       \_on_post_id              | integer
+         on_tag_id               | integer
+
+ c,p     may_edit_page           | boolean
+ c,p,po  may_edit_comment        | boolean
+ c,p,po  may_edit_wiki           | boolean
+ c,p,po  may_edit_own            | boolean
+ c,p     may_delete_page         | boolean
+ c,p,po  may_delete_comment      | boolean
+ c,proj  may_create_page         | boolean
+ c,p     may_post_comment        | boolean
+ c,p,po  may_see                 | boolean
+ c,p,po  may_see_own             | boolean
+ c,p,po  may_see_private_flagged | boolean
+
+
+
+settings3
+--------------------------------------------------------------------------
+        site_id                               | integer not null
+        category_id                           | integer
+        page_id                               | character
+ s      user_must_be_auth                     | boolean
+ s      user_must_be_approved                 | boolean
+ s      allow_guest_login                     | boolean
+ s,c?   num_first_posts_to_review             | smallint
+ s,c?   num_first_posts_to_approve            | smallint
+ s,c?   max_posts_pend_appr_before            | smallint
+ s,c?   head_styles_html                      | character
+ s,c?   head_scripts_html                     | character
+ s,c?   end_of_body_html                      | character
+ s,c?   header_html                           | character
+ s,c?   footer_html                           | character
+ s,cat  horizontal_comments                   | boolean
+ s,c?   social_links_html                     | character
+ s      logo_url_or_html                      | character
+ s      org_domain                            | character
+ s      org_full_name                         | character
+ s      org_short_name                        | character
+ s      contrib_agreement                     | smallint
+ s      content_license                       | smallint
+ s      google_analytics_id                   | character
+ s      experimental                          | boolean
+ s      many_sections                         | boolean
+ s,c?   html_tag_css_classes                  | character
+ s,c?   num_flags_to_hide_post                | integer
+ s      cooldown_minutes_after_flagged_hidden | integer
+ s      num_flags_to_block_new_user           | integer
+ s      num_flaggers_to_block_new_user        | integer
+ s      notify_mods_if_user_blocked           | boolean
+ rm     regular_member_flag_weight            | real
+ rm     core_member_flag_weight               | real
+ s      invite_only                           | boolean
+ s      allow_signup                          | boolean
+ s      allow_local_signup                    | boolean
+ s,c?   show_categories                       | boolean
+ s,c?   show_topic_filter                     | boolean
+ s,c?   show_topic_types                      | boolean
+ s,c?   select_topic_type                     | boolean
+ s,cat  forum_main_view                       | character
+ s,cat  forum_topics_sort_buttons             | character
+ s,cat  forum_category_links                  | character
+ s,cat  forum_topics_layout                   | integer
+ s,cat  forum_categories_layout               | integer
+ s      require_verified_email                | boolean
+ s      may_compose_before_signup             | boolean
+ s      may_login_before_email_verified       | boolean
+ s      double_type_email_address             | boolean
+ s      double_type_password                  | boolean
+ s      beg_for_email_address                 | boolean
+ s      allow_embedding_from                  | character
+ s      show_sub_communities                  | boolean
+ s      language_code                         | character
+ s      enable_google_login                   | boolean
+ s      enable_facebook_login                 | boolean
+ s      enable_twitter_login                  | boolean
+ s      enable_github_login                   | boolean
+ s      email_domain_blacklist                | character
+ s      email_domain_whitelist                | character
+ s      show_author_how                       | smallint
+ s,c?   watchbar_starts_open                  | boolean
+ s      favicon_url                           | character
+ s,c?   enable_chat                           | boolean
+ s      enable_direct_messages                | boolean
+ s      feature_flags                         | character
+ s      enable_sso                            | boolean
+ s      sso_url                               | character
+ s      sso_not_approved_url                  | character
+ s      expire_idle_after_mins                | integer
+ s      enable_gitlab_login                   | boolean
+ s      enable_linkedin_login                 | boolean
+ s      enable_vk_login                       | boolean
+ s      enable_instagram_login                | boolean
+ s      enable_forum                          | boolean
+ s      enable_api                            | boolean
+ s      enable_tags                           | boolean
+ rm     embedded_comments_category_id         | integer
+ s      terms_of_use_url                      | character
+ s      privacy_url                           | character
+ s,subc rules_url                             | character
+ s      contact_email_addr                    | character
+ s      contact_url                           | character
+ s,c?   enable_stop_forum_spam                | boolean
+ s      send_email_to_stop_forum_spam         | boolean
+ s      enable_akismet                        | boolean
+ s      send_email_to_akismet                 | boolean
+ s      akismet_api_key                       | character
+ s,c?   enable_similar_topics                 | boolean
+ s      sso_login_required_logout_url         | character
+ s,cat  discussion_layout                     | integer        pers_pref: layout
+ s,cat  disc_post_nesting                     | integer        pers_pref: layout
+ s,cat  disc_post_sort_order                  | integer        pers_pref: layout
+ s,cat  progress_layout                       | integer
+ s,cat  progr_post_nesting                    | integer
+ s,cat  progr_post_sort_order                 | integer
+ s,cat  orig_post_reply_btn_title             | character
+ s,cat  orig_post_votes                       | integer
+ s      enable_cors                           | boolean
+ s      allow_cors_from                       | character
+ s      allow_cors_creds                      | boolean
+ s      cache_cors_prefl_secs                 | integer
+ s,c?   nav_conf                              | jsonb
+ s,c?   start_of_body_html                    | character
+ s,c?   appr_before_if_trust_lte              | smallint
+ s,c?   review_after_if_trust_lte             | smallint
+ s,c?   max_posts_pend_revw_aftr              | smallint
+ s      enable_custom_idps                    | boolean
+ s      use_only_custom_idps                  | boolean
+ s,c?   emb_com_sort_order_c                  | integer
+ s,c?   emb_com_nesting_c                     | integer
+ s,c?   enable_disagree_vote_c                | boolean
+ s      sso_logout_redir_url_c                | http_url_d
+ s      sso_show_emb_authn_btns_c             | i16_gez_d
+ s      sso_paseto_v2_loc_secret_c            | key_hex_b64us_d
+ s      sso_paseto_v2_pub_pub_key_c           | key_hex_b64us_d
+ s      sso_refresh_authn_token_url_c         | http_url_d
+ s      remember_emb_sess_c                   | i16_gez_d        pers_pref: security. Move to  pats_t?
+ s      expire_idle_emb_sess_after_mins_c     | i32_gez_d
+ s      outbound_emails_from_name_c           | email_name_d
+ s      outbound_emails_from_addr_c           | email_d
+ s      outbound_emails_reply_to_c            | email_d
+ s      outbound_emails_smtp_conf_c           | jsonb
+ s      commonmark_conf_c                     | jsonb_ste4000_d
+ s,cat  enable_anon_posts_c                   | boolean
+        Indexes:
+            "settings3_site_category" UNIQUE, btree (site_id, category_id) WHERE category_id IS NOT NULL
+            "settings3_site_page" UNIQUE, btree (site_id, page_id) WHERE page_id IS NOT NULL
+            "settings3_siteid__u" UNIQUE, btree (site_id) WHERE page_id IS NULL AND category_id IS NULL
+            "settings3_site__i" btree (site_id)
+
+
+categories3
+--------------------------------------------------------------------------
+        site_id                      | integer
+        id                           | integer
+        page_id                      | character varying
+        parent_id                    | integer
+        name                         | character varying
+        slug                         | character varying
+        position                     | integer
+        description                  | character varying
+ cat    new_topic_types              | character varying
+        created_at                   | timestamp
+        updated_at                   | timestamp
+ s,c,p  locked_at                    | timestamp
+ s,c,p  frozen_at                    | timestamp
+ c,p    deleted_at                   | timestamp
+ c,p    unlist_category              | boolean
+ rm     staff_only                   | boolean
+ rm     only_staff_may_create_topics | boolean
+ c,proj default_topic_type           | smallint
+ c,proj default_category_id          | integer
+ c,p    incl_in_summaries            | smallint            pers_pref: excl/incl cat in summaries
+ c,proj unlist_topics                | boolean
+        ext_id                       | character varying
+ c,proj def_sort_order_c             | page_sort_order_d   pers_pref: layout
+ c,proj def_score_alg_c              | i16_gez_d
+ c,proj def_score_period_c           | trending_period_d
+ c,proj do_vote_style_c              | do_vote_style_d
+ c,proj do_vote_in_topic_list_c      | boolean
+ c,p    comt_order_c                 | comt_order_d        pers_pref: layout
+ c,p    comt_nesting_c               | max_nesting_d       pers_pref: layout
+ x      anon_ops_c                   | never_alowd_recd_always_d
+ x      anon_comts_c                 | never_alowd_recd_always_d
+ x      deanon_pages_aft_mins_c      | i16_gz_d
+ x      deanon_posts_aft_mins_c      | i16_gz_d
+
+
+
+pages3
+--------------------------------------------------------------------------
+          site_id                | integer
+          page_id                | character varying(32)
+          page_role              | smallint
+ s,c,p    category_id            | integer
+          created_at             | timestamp
+          updated_at             | timestamp
+ c?,p     published_at           | timestamp
+          bumped_at              | timestamp
+          author_id              | integer
+ c-,proj  -stat  num_child_pages | integer
+ p        embedding_page_url     | character varying
+ pstat    num_likes              | integer
+ pstat    num_wrongs             | integer
+ c,p      deleted_at             | timestamp
+ pstat    num_replies_visible    | integer
+ pstat    num_replies_to_review  | integer
+ pstat    num_replies_total      | integer
+ c,p      num-replies-last-NN-days
+ pstat    num_bury_votes         | integer
+ pstat    num_unwanted_votes     | integer
+ pstat    last_reply_at          | timestamp
+ c,p      pin_order              | smallint
+ c,p      pin_where              | smallint          pers_pref: unpin
+ pstat    num_op_like_votes      | integer
+ pstat    num_op_wrong_votes     | integer
+ pstat    num_op_bury_votes      | integer
+ pstat    num_op_unwanted_votes  | integer
+ pstat    num_op_replies_visible | integer
+ pstat    answered_at            | timestamp
+ pstat    answer_post_id         | integer
+ c,p      done_at                | timestamp
+ c,p      closed_at              | timestamp
+ c,p      locked_at              | timestamp
+ c,p      frozen_at              | timestamp
+ p        unwanted_at            | timestamp
+ p        planned_at             | timestamp
+ p        version                | integer
+ pstat    last_reply_by_id       | integer
+ pstat    frequent_poster_1_id   | integer
+ pstat    frequent_poster_2_id   | integer
+ pstat    frequent_poster_3_id   | integer
+ pstat    frequent_poster_4_id   | integer
+ c,p      html_tag_css_classes   | character varying
+ c,p      html_head_title        | character varying
+ c,p      html_head_description  | character varying
+ c,p      layout                 | bigint              pers_pref: layout
+ p        hidden_at              | timestamp
+ c,p      incl_in_summaries      | smallint            pers_pref: emails
+ p        started_at             | timestamp
+ p        postponed_til_c        | timestamp
+ p        num_posts_total        | integer
+ c,p      ext_id                 | character varying
+ pstat    num_op_do_it_votes_c   | i32_gez_d
+ pstat    num_op_do_not_votes_c  | i32_gez_d
+ p,po     answered_by_id_c       | integer  —> solved_status_c: solved_status_d
+ p,po     published_by_id_c      | integer  — change to  not_yet_published_c: bool ?
+ p,po     postponed_by_id_c      | integer
+ p,po     planned_by_id_c ‾‾\
+ p,po     started_by_id_c    >  doing_status_c: planned, started, paused, done?
+ p,po     paused_by_id_c    /
+ p,po     done_by_id_c   __/
+ c?,p,po  closed_by_id_c ‾‾‾\
+ c?,p,po  locked_by_id_c     >  closed_status_c:  colsed, locked, frozen
+ c?,p,po  frozen_by_id_c ___/
+ p        unwanted_by_id_c       | integer
+ p        hidden_by_id_c         | integer
+ c,p      deleted_by_id_c        | integer
+ s,c,p    forum_search_box_c     | i16_gz_d
+ s,c,p    forum_main_view_c      | i16_gz_d
+ s,c,p    forum_cats_topics_c    | i32_gz_d
+ s,c,p    comt_order_c           | comt_order_d
+ s,c,p    comt_nesting_c         | max_nesting_d
+
+
+page_users3
+--------------------------------------------------------------------------
+           site_id                       | integer
+           page_id                       | character varying
+           user_id                       | integer
+ rm:c,p,po joined_by_id — instead, perms_on_nodes_t.can_see_c = true
+ rm        kicked_by_id                  | integer
+ rm        notf_level                    | smallint      pers_pref: notf
+ rm        notf_reason                   | smallint      pers_pref: notf
+ stat      num_seconds_reading           | integer
+ stat      num_low_posts_read            | smallint
+ stat      first_visited_at_mins         | integer
+ stat      last_visited_at_mins          | integer
+ stat      last_viewed_post_nr           | integer
+ stat      last_read_at_mins             | integer
+ stat      last_read_post_nr             | integer
+ stat      recently_read_nrs             | bytea
+ stat      low_post_nrs_read             | bytea
+ c,p,po    incl_in_summary_email_at_mins | integer       pers_pref: emails
+
+
+posts3
+--------------------------------------------------------------------------
+        site_id                  | integer
+        unique_post_id           | integer
+        page_id                  | character varying
+ po     post_nr                  | integer
+ po     parent_nr                | integer
+ po     multireply               | character varying
+        created_at               | timestamp
+        created_by_id            | integer
+ jn     curr_rev_started_at      | timestamp
+ jn     curr_rev_last_edited_at  | timestamp
+ po     curr_rev_by_id           | integer
+ jn     last_approved_edit_at    | timestamp
+ po     last_approved_edit_by_id | integer
+ postat num_distinct_editors     | integer
+ postat num_edit_suggestions     | smallint
+ jn     last_edit_suggestion_at  | timestamp
+ po     safe_rev_nr              | integer
+ po     approved_source          | text
+ po     approved_html_sanitized  | text
+ jn     approved_at              | timestamp
+ po     approved_by_id           | integer
+ po     approved_rev_nr          | integer
+ po     curr_rev_source_patch    | text
+ po     curr_rev_nr              | integer
+ po     collapsed_status         | smallint           pers_pref
+ jn     collapsed_at             | timestamp
+ jn     collapsed_by_id          | integer
+ c,p,po closed_status            | smallint
+ jn     closed_at                | timestamp
+ jn     closed_by_id             | integer
+ jn     hidden_at                | timestamp
+ jn     hidden_by_id             | integer
+ p,po   hidden_reason            | character varying
+ p,po   deleted_status           | smallint
+ jn     deleted_at               | timestamp
+ jn     deleted_by_id            | integer
+ c,p,po pinned_position          | smallint           pers_pref: unpin?
+ jn     pinned_at                | timestamp
+ jn     pinned_by_id             | integer
+ postat num_pending_flags        | smallint
+ postat num_handled_flags        | smallint
+ postat num_like_votes           | integer
+ postat num_wrong_votes          | integer
+ postat num_times_read           | integer
+ postat num_bury_votes           | integer
+ postat num_unwanted_votes       | integer
+ po     type                     | post_type_d
+ po     prev_rev_nr              | integer
+ po     branch_sideways          | smallint           pers_pref: layout. But depends on one's device
+        ext_id                   | character varying
+ po     smtp_msg_id_prefix_c     | smtp_msg_id_out_prefix_d
+ rm     owners_id_c              | pat_id_d
+ rm     authors_id_c             | pat_id_d
+ rm     private_pats_id_c        | pat_id_d
+ po     sub_type_c               | sub_type_d
+ p?,po  val_i32_c                | i32_d
+ p,po   postponed_status_c       | postponed_status_d
+ p,po   answered_status_c        | answered_status_d
+ p,po   doing_status_c           | doing_status_d
+ p,po   review_status_c          | review_status_d
+ p,po   unwanted_status_c        | unwanted_status_d
+ p,po   flagged_status_c         | flagged_status_d
+ p,po   hidden_status_c          | hidden_status_d
+ c,p,po index_prio_c             | index_prio_d
+
+
+ c,p,po anon:  pers_pref   privacy
+
+
+
+post_actions3
+--------------------------------------------------------------------------
+          site_id          | integer
+ rm       action_id        | integer
+ rel      to_post_id_c     | integer
+ rel      page_id          | character varying
+ rel      post_nr          | integer
+ rel      rel_type_c       | pat_rel_type_d
+ rel      sub_type_c       | smallint
+ rel      from_pat_id_c    | integer
+ rename   created_at  to  added_at_c
+ jn       updated_at       | timestamp
+ *        deleted_at       | timestamp
+ jn       deleted_by_id    | integer
+ rel      to_post_rev_nr_c | rev_nr_d
+ p,po,rel dormant_status_c | dormant_status_d
+          val_i32_c        | i32_d
+ p,rel    show_pat_id_c    | pat_id_d
+ rel      added_by_id_c    | pat_id_d
+
+
+
+tagtypes_t  — better of staying in their own table? (don't incl in nodes_t)
+--------------------------------------------------------------------------
+              site_id_c                | integer
+              id_c                     | i32_gz_d
+ tty          can_tag_what_c           | thing_types_d
+ tty          scoped_to_pat_id_c       | integer
+ tty          is_personal              | boolean
+ tty,cat,page url_slug_c               | url_slug_60_d
+ tty,cat      disp_name_c              | tag_name_60_d
+ tty          long_name_c              | tag_name_120_d
+ tty,cat?     abbr_name_c              | tag_name_15_d
+ self         descr_page_id_c          | text
+ self         descr_url_c              | http_url_d
+ tty,cat,pat  text_color_c             | color_d
+ tty          handle_color_c           | color_d
+ tty,cat,pat  background_color_c       | color_d
+ tty,cat,pat  css_class_suffix_c       | html_class_suffix_30_d
+ tty,cat      sort_order_c             | i16_d
+ tty,jn       created_by_id_c          | integer
+ tty,jn       deleted_by_id_c          | integer
+ tty          merged_into_tagtype_id_c | integer
+ tty          merged_by_id_c           | integer
+
+
+tags_t
+--------------------------------------------------------------------------
+            site_id_c       | integer
+            id_c            | i32_gz_d
+ tag,post   tagtype_id_c    | integer
+ tag,post   parent_tag_id_c | integer
+ tag        on_pat_id_c     | integer
+ tag        on_post_id_c    | integer
+
+
