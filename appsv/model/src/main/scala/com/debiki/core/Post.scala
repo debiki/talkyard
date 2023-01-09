@@ -410,6 +410,9 @@ case class Post(   // [exp] ok use
   tyype: PostType,
   createdAt: ju.Date,
   createdById: UserId,
+  // Don't incl in export — are already in post_actions3 (pat_rels_t)
+  // Maybe create an interface PostToExpImp with these excluded?
+  // .move_later to here, but for now, at the end, so can have defaults.
   // Also need:  [post_page_written_added_at]
   // pubSubmittedAt — the publicly shown submission date, if different from createdAt.
   // addedToPageAt — if moved from one page to another, this is when it got added to the new page,
@@ -460,6 +463,10 @@ case class Post(   // [exp] ok use
   numUnwantedVotes: Int,
   numTimesRead: Int,
   smtpMsgIdPrefix: Opt[SmtpMsgIdPrefix],  // SHOULD incl in patch json? Later.
+  // .move_later
+  ownerIds: Vec[PatId] = Vec.empty,
+  authorids: Vec[PatId] = Vec.empty,
+  assignedToIds: Vec[PatId] = Vec.empty,
   ) {
 
   require(id >= 1, "DwE4WEKQ8")

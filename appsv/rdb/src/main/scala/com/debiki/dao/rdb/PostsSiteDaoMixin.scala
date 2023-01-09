@@ -47,14 +47,34 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   private def loadPostsOnPageImpl(pageId: PageId, postNr: Opt[PostNr]): Vec[Post] = {
     // Similar to:  loadPostsByNrs(_: Iterable[PagePostNr])
-    var query = "select * from posts3 where SITE_ID = ? and PAGE_ID = ?"
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId)
-    postNr foreach { id =>
-      query += " and post_nr = ?"
+    val andPostNrEq = postNr foreach { id =>
       values.append(id.asAnyRef)
+      "and post_nr = ?"
     }
+    var query = o"""
+          select po.*,
+                 array_agg(array[pa.rel_type_c, pa.from_pat_id_c]
+                            ) filter (where pa.rel_type_c is not null
+                            ) pat_rels
+          from posts3 po
+          left join post_actions3 pa
+              on  pa.site_id = po.site_id
+              and pa.to_post_id_c = po.unique_post_id
+              and pa.rel_type_c in (  ${
+                    PatRelType_later.VotedOn}, ${  // just for now, testing
+                    PatRelType_later.AuthorOf}, ${
+                    PatRelType_later.OwnerOf}, ${
+                    PatRelType_later.AssignedTo})
+          where po.site_id = ? and
+                po.page_id = ?
+                $andPostNrEq
+          -- It's enough to specify the posts3 primary key.
+          group by po.site_id, po.unique_post_id
+          order by po.site_id, po.unique_post_id
+          """
     runQueryFindMany(query, values.toList, rs => {
-      readPost(rs, pageId = Some(pageId))
+      readPost(rs, pageId = Some(pageId), inclAggs = true)
     })
   }
 
@@ -65,12 +85,29 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     // then its created_at might be long-ago, although its post_nr will become the highest
     // on this page once it's been added. Also 2) there's an index on pageid, post_nr.
     val query = s"""
-      select * from posts3 where site_id = ? and page_id = ? and
-          post_nr in (${PageParts.TitleNr}, ${PageParts.BodyNr})
+      with po as (
+      select * from posts3 where site_id = -11 and page_id = 'byMariaCategoryA'  -- ? and page_id = ? and
+          and
+          post_nr in (0, 1) -- (${PageParts.TitleNr}, ${PageParts.BodyNr})
       union
       select * from (
-        select * from posts3 where site_id = ? and page_id = ?
-        order by post_nr desc limit $limit) required_subquery_alias
+        select * from posts3 where site_id = -11 and page_id = 'byMariaCategoryA' -- ? and page_id = ?
+        order by post_nr desc limit 123) required_subquery_alias  --  $limit) required_subquery_alias
+      )
+      select po.*,
+                 array_agg(array[pa.rel_type_c, pa.from_pat_id_c]
+                            ) filter (where pa.rel_type_c is not null
+                            ) pat_rels
+          from po
+          left join post_actions3 pa
+              on  pa.site_id = po.site_id
+              and pa.to_post_id_c = po.unique_post_id
+              and pa.rel_type_c in (
+                  -1)
+                -- $andPostNrEq
+          -- It's enough to specify the posts3 primary key.
+          group by po.site_id, po.page_id, po.unique_post_id
+          order by po.site_id, po.page_id, po.unique_post_id
       """
     runQueryFindMany(query, List(siteId.asAnyRef, pageId.asAnyRef, siteId.asAnyRef,
         pageId.asAnyRef), rs => {
@@ -670,7 +707,41 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def readPost(rs: js.ResultSet, pageId: Option[PageId] = None): Post = {
+  private def readPost(rs: js.ResultSet, pageId: Option[PageId] = None,
+          inclAggs: Bo = false): Post = {
+
+    val anyVecOfPatRelVecs: Opt[Vec[Vec[Int]]] =
+          if (!inclAggs) None
+          else getOptArrayOfArrayOfInt32(rs, "pat_rels")
+
+    val (ownerIds: Vec[Int], authorIds: Vec[Int], assignedToIds: Vec[Int]) =
+            anyVecOfPatRelVecs match {
+      case None =>
+         (Vec.empty, Vec.empty, Vec.empty)
+      case Some(vecOfPatRelVecs: Vec[Vec[Int]]) =>
+        val ownerIds = MutArrBuf[Int]()  // why won't PatId work, it's just type = i32 = Int
+        val authorIds = MutArrBuf[Int]()
+        val assignedToIds = MutArrBuf[Int]()
+        for (patRelVec: Vec[Int] <- vecOfPatRelVecs) {
+          dieIf(patRelVec.size != 2, "TyE50MTEAKR2", s"Pat rel vec len: ${patRelVec.size}")
+          val relTypeInt = patRelVec(0)
+          val patId = patRelVec(1)
+          // Or, hmm, move to object PatRelType_later?
+          relTypeInt match {
+            case PatRelType_later.OwnerOf.IntVal =>
+              ownerIds.append(patId)
+            case PatRelType_later.AuthorOf.IntVal |
+                      /* just testing: */ PatRelType_later.VotedOn.IntVal =>
+              authorIds.append(patId)
+            case PatRelType_later.AssignedTo.IntVal =>
+              assignedToIds.append(patId)
+            case x =>
+              die("TyE7MWJC21", s"Unexpected rel_type_c: $x")
+          }
+        }
+        (ownerIds.to[Vec], authorIds.to[Vec], assignedToIds.to[Vec])
+    }
+
     Post(
       id = rs.getInt("UNIQUE_POST_ID"),
       extImpId = getOptString(rs, "ext_id"),
@@ -681,7 +752,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       tyype = PostType.fromInt(rs.getInt("TYPE")).getOrElse(PostType.Normal),
       createdAt = getDate(rs, "CREATED_AT"),
       createdById = rs.getInt("CREATED_BY_ID"),
-      // +=  authors_id_c = ...  e..g anonym id
+      ownerIds = ownerIds,
+      authorids = authorIds,
+      assignedToIds = assignedToIds,
       currentRevStaredAt = getDate(rs, "curr_rev_started_at"),
       currentRevisionById = rs.getInt("curr_rev_by_id"),
       currentRevLastEditedAt = getOptionalDate(rs, "curr_rev_last_edited_at"),

@@ -416,6 +416,32 @@ object Rdb {
     Some(javaArray.to[Vec].map(_.toInt))
   }
 
+  /** Make sure no array contayns any null — just because I then don't know what'll
+    * happen. Will an i32 become a null Integer, or 0, or what?
+    *
+    * You can do that, by using:  array_agg(...) filter (where some_agg_col is not nuLL)
+    * — then, instead the whole field will be null (rather than an array that contains
+    * null).  There's also:  array_remove(..., null).
+    */
+  def getOptArrayOfArrayOfInt32(rs: js.ResultSet, column: St): Opt[Vec[Vec[i32]]] = {
+    val sqlArray: js.Array = rs.getArray(column)
+    if (sqlArray eq null) return None
+    val javaArrayOfArrays = sqlArray.getArray.asInstanceOf[Array[Array[i32]]]
+    val vecOfJavaArrays = javaArrayOfArrays.to[Vec]
+    val vecOfVec = vecOfJavaArrays.map(_.to[Vec].map(_.toInt))  // is toInt needed?
+    Some(vecOfVec)
+  }
+
+/*
++  def getOptArrayOfStringsStrings(rs: js.ResultSet, column: St): Opt[ImmSeq[ImmSeq[St]]] = {
++    val sqlArray: js.Array = rs.getArray(column)
++    if (sqlArray eq null) return None
++    val javaArrayOfArrays = sqlArray.getArray.asInstanceOf[Array[Array[St]]]
++    val seqOfJavaArrays = javaArrayOfArrays.to[Vec]
++    val seqOfSeq = seqOfJavaArrays.map(_.to[Vec])
++    Some(seqOfSeq)
++  }
+*/
   def getOptTrustLevel(rs: js.ResultSet, column: St): Opt[TrustLevel] = {
     val asInt = rs.getInt(column)
     if (rs.wasNull()) None
