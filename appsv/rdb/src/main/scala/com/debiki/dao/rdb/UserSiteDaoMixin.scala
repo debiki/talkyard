@@ -760,7 +760,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
     unimplIf(!usersOnly, "Must be usersOnly [TyE7AMT05MRKT]")
     val sql = s"""
           select distinct $UserSelectListItemsNoGuests
-          from posts3 p inner join users3 u
+          from posts3 p inner join users3 u  -- + pat_node_rels_t [AuthorOf]
             on p.site_id = u.site_id
             and p.created_by_id = u.user_id
             and not u.is_group
@@ -1225,7 +1225,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
           u.USERNAME,
           u.may_mention_me_tr_lv_c,
           u.why_may_not_mention_msg_me_html_c
-      from posts3 p inner join users3 u
+      from posts3 p inner join users3 u    -- + pat_node_rels_t [AuthorOf]
          on p.SITE_ID = u.SITE_ID
         and p.CREATED_BY_ID = u.USER_ID
         and u.USERNAME is not null

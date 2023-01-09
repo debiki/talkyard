@@ -1,5 +1,21 @@
+-- SKIP all this?
+-- For example, instead of pages_t, there'll be a  nodes_t,
+-- which will replace: pages3, categories3 and posts3 (it'd be posts3 renamed to nodes_t)
+--
+-- However maybe do create:
+--
+--   pat_node_prefs_t   with personal settings for pages and cats
+--
+-- Or maybe instead use:
+--
+--   pat_node_multi_rels_t  ?
+--
 
-create table pages_t (  -- [disc_props_view_stats]
+
+-- SKIP the rest of this file?  Move to  (proj-root)/old/don-t/ ?
+--
+
+create table pages_t (  -- [disc_props_view_stats].  nodes_t  instead of  pages_t?
   site_id_c,
   id_c,
   old_id_st_c, -- legacy textual id
@@ -10,7 +26,14 @@ create table pages_t (  -- [disc_props_view_stats]
   --- Or can it make sense to mark a page Done, independently of if
   --- all mini tasks therein are done or not? I suppose so, yes,
   --- so maybe these fields should be *both* in posts_t and pages_t?
+
   created_by_id_c,
+  -------------------------------------------------------------------
+  -- MOSTLY DON'T this,  insetad, there's pat_node_rels_t with RelType.AuthorOf,
+  -- and  node_node_rels_t wiht RelType.AnswerTo, etc.
+  -- And  nodes_t.doing_status_c = planned/started/paused/done.
+  --              closed_status ...
+
   author_id_c,
 
   answered_by_id_c,  -- Or use only posts_t.answered_status_c etc instead,
@@ -36,8 +59,13 @@ create table pages_t (  -- [disc_props_view_stats]
 
   -- Only for section pages: (e.g. forum topics & cats list page, or wiki main page)
   -- Why not in cats_t? Because now, with this in pages_t, one can
+  --  ... [Edit, 2023-01] can what? What was I going to write? Share the same
+  --  props, between different categories?  But that's not so important, is it?
+  --  can be better to have a way to configure many cats together,
+  --  or copy props from one to another, instead?
+  --  So maybe skip sect_props_c and sect_props_t, store directly in  nodes_t instead?
   -- 
-  sect_props_c references sect_props_t (site_id_c, Everyone.id, props_id_c),
+  sect_props_c references sect_props_t (site_id_c, Everyone.id, props_id_c), -- or skip
   sect_view_c  references sect_views_t (site_id_c, Everyone.id, view_id_c),
   -- No, reference from cats_t, the root cat, instead? because there should
   -- be just one stats entry, not one per "view" page.
@@ -46,7 +74,7 @@ create table pages_t (  -- [disc_props_view_stats]
   -- For a section page, this'd be the defaults for all pages in the section
   -- (or if navigating to those pages, via this section page).
   -- And the stats would be the aggregate stats, for the whole section.
-  disc_props_c references disc_props_t (site_id_c, Everyone.id, props_id_c),
+  disc_props_c references disc_props_t (site_id_c, Everyone.id, props_id_c), -- or skip
   disc_view_c  references disc_view_t  (site_id_c, Everyone.id, props_id_c),
   disc_stats_c references disc_stats_c (site_id_c, Everyone.id, stats_id_c),
 );
@@ -65,6 +93,8 @@ create table pages_t (  -- [disc_props_view_stats]
 
 -- Site section config table — how a forum / wiki / blog section should look and function.
 -- Can be overridden in categories, and individual pages.
+-- SKIP, not needed,  now when there'll be  nodes_t which stores cats, pages, posts,
+--       and where settings get inherited from cats to child cats and pages.
 create table sect_props_t (  -- or: forum_props_t?
   site_id_c,
   id_c
@@ -97,6 +127,8 @@ create table sect_props_t (  -- or: forum_props_t?
 
   -- Move from categories3 to here? So simpler to share same settings,
   -- in different categories.
+  -- SKIP, such a rare use case! Never heard anyone ask for or any forum supporting it.
+  --    (However, copying and syncing settings between cats, maybe can be useful sometimes.)
   def_page_sort_order_c        page_sort_order_d,
   def_page_score_alg_c         i16_gez_d,
   def_page_score_period_c      trending_period_d,
@@ -118,10 +150,17 @@ create table sect_view_t (
   forumCatsTopics: Opt[i32] = None,
 );
 
+
+-- SKIP. Currently in  page_users3 — or no, doesn't yet exist?.
+-- Will use  pages3  renamed to node_stats_t?  for both cats & pages.
+--
 create table sect_stats_t (
   -- ...
 );
 
+
+-- SKIP, for same reason as not needing sect_props_t above.
+---
 create table disc_props_t (   -- Scala:  DiscProps
   site_id,
   props_id_c,
@@ -141,7 +180,8 @@ create table disc_props_t (   -- Scala:  DiscProps
 -- Or skip for now, incl in  disc_props_t  instead?  then, not configurable per pat.
 -- Can customize individually: (just how discussions *look*)
 --
--- Maybe: Add these columns to disc_prefs_t, and to reuse layout settings,
+-- Maybe: Add these columns to disc_prefs_t (will be named:  node_prefs_t  instead),
+-- and to reuse layout settings,
 -- instead create a layouts_t with layout settings, and then one can choose from those
 -- predefined settings?  Hmm but if an admin edits a layouts_t row, then,
 -- should those changes take effect in the cats that used those templates, or not?
@@ -169,6 +209,8 @@ create table disc_view_t (   -- people can configure their own ~~view~~ layout (
   SummarizeNumRepliesVisibleLimit
 );
 
+
+-- SKIP, will use  pages3  renamed to node_stats_t?  for both cats & pages.
 create table disc_stats_t (   -- updated automatically
   site_id,
   -- Auto updated fields from pages3
@@ -191,6 +233,7 @@ create table disc_stats_t (   -- updated automatically
 alter table disc_prefs_t add column view_id_c; -- or inline in table?
 alter table disc_prefs_t add column incl_in_summaries;
 alter table disc_prefs_t add column unlist_topics; -- ?
+                             column unpinned; -- can individually unpin a topic one has read?
 -- create table cat_pat_props_t (   -- or  per_pat_cat_props_t   or  cat_per_pat_props_t?
 --                                 -- no, instead, incl in disc_prefs_t, see above
 --   site_id_c,

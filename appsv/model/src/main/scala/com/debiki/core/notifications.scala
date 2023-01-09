@@ -91,6 +91,10 @@ object NotificationType {
   // + TopicDone
   // + TopicClosed
 
+  // case object PostOwnersChanged extends NotificationType(401 or 451)
+  // case object PostAuthorsChanged extends NotificationType(..2 ?)
+  // case object PostAssigneesChanged extends NotificationType(..3 ?)
+
   case object OneLikeVote extends NotificationType(501)
   // What about WrongVote, OffTopic, Unwanted?
   // Not so interesting? Could cause flame wars?
@@ -112,6 +116,7 @@ object NotificationType {
     case Message.IntValue => Message
     case NewPost.IntValue => NewPost
     case PostTagged.IntValue => PostTagged
+    //case PostAssigneesChanged.IntVal => PostAssigneesChanged
     case OneLikeVote.IntValue => OneLikeVote
     case _ => return None
   })

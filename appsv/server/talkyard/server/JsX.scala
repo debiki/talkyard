@@ -213,6 +213,12 @@ object JsX {   RENAME // to JsonPaSe
     json
   }
 
+  /** If 'user' is an anonym or pseudonym, then, hens true id is *not* included, unless
+    * toShowForPatId is hens true id  (or, later, if toShowForPatId has permission to
+    * see anonyms ANON_UNIMPL).  That is, if the person requesting to see a page,
+    * is the the same the ano/pseudony, then, the ano/pseudonym's true id is included
+    * so that that person can see hens own anonym(s).
+    */
   def JsUser(user: Pat, tags: Seq[Tag] = Nil, toShowForPatId: Opt[PatId] = None): JsObject = {  //RENAME to JsPat, ts: Pat
     var json = JsPatNameAvatar(user)
     user.smallAvatar foreach { uploadRef =>
@@ -606,6 +612,9 @@ object JsX {   RENAME // to JsonPaSe
       "frequentPosterIds" -> pageMeta.frequentPosterIds,
       "layout" -> pageMeta.layout.toInt,
       "comtOrder" -> JsNum32OrNull(pageMeta.comtOrder.map(_.toInt)),
+      "comtsStartHidden" -> JsNum32OrNull(pageMeta.comtsStartHidden.map(_.toInt)),
+      "comtsStartAnon" -> JsNum32OrNull(pageMeta.comtsStartAnon.map(_.toInt)),
+      "newAnonStatus" -> JsNum32OrNull(pageMeta.newAnonStatus.map(_.toInt)),
       //"comtNesting" -> pageMeta.comtNesting,
       "forumSearchBox" -> JsNum32OrNull(pageMeta.forumSearchBox),
       "forumMainView" -> JsNum32OrNull(pageMeta.forumMainView),
@@ -645,6 +654,7 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  RENAME // add suffix:  JsPostVb_butNoPatRels  ?
   def JsPostInclDetails(post: Post): JsObject = {
     COULD_OPTIMIZE // Skip null / false fields, so less json.
     // E.g. excl currRevSourcePatch, instead of 'currRevSourcePatch: null'.

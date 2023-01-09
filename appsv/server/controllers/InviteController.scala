@@ -273,7 +273,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: TyContext)
       val inviter = dao.getParticipant(invite.createdById) getOrDie "DwE4KDEP0"
       val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(
             request.host, newUser, inviter, langCode = settings.languageCode)
-      globals.sendEmail(inviteAcceptedEmail, request.siteId)
+      globals.sendEmail(inviteAcceptedEmail, request.siteId)  ; SHOULD // [save_email]
       // COULD create a notification instead / too.
     }
 

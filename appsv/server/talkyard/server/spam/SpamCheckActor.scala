@@ -94,7 +94,7 @@ class SpamCheckActor(
 
     val manyFutureResults: Seq[(SpamCheckTask, Future[SpamCheckResults])] = spamCheckTasks flatMap {
         task =>
-      val key = task.key
+      val key: SpamCheckTask.Key = task.taskKey
       if (checkingNowCache.getIfPresent(key) ne null) None   // [205FKPJ096]
       else {
         checkingNowCache.put(key, DummyObject)

@@ -253,6 +253,21 @@ impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
           - impersonate-restricted-areas.test.ts  TyT6502PKSNR57
 
+anonymous comments,
+anons:
+  partly impl:
+            - tests/app/debiki/dao/AnonymAppSpec.scala
+  TESTS_MISSING:
+            - Anons for drafts, UNTSETED.
+            - Load anon drafts, restore as anon. TyTANONDFLOAD
+            - Cannot move anon post to other page.  TyTMOVANONCOMT
+            - Notfs from anons, don't include real user name  TyTNOTFFROMANON
+            - UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps?
+            - Different anon statuses: Comts start anon / NeverAlways.AlwaysButCanContinue / etc
+            - Edit & update the draft.  TyTEDUPDDFT04
+            - Save anon draft, reuse an anon.  TyTDFTREUSEANON.
+            - ... and more
+
 different users -
   login, logout, switch user:  almost all tests
 
@@ -1312,6 +1327,8 @@ draft: [7WKABZP2]
   works also if not logged in:
             - forum-drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
             - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048
+  anonymous drafts: 
+            - TESTS_MISSING
 
   draft previews, resume and delete: [.dft_pvs]
     - some TESTS_MISSING if [many_ifr_my_page_data]
@@ -1329,6 +1346,8 @@ draft: [7WKABZP2]
     - go to drafts page w editor open, try open other draft:
     - edit post, save draft, submit edits from other page — draft not deleted?
     - –""– but for new reply
+    - anonymous author preview: 
+            - TESTS_MISSING
 
   # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
   # EditController.edit
@@ -1340,6 +1359,15 @@ draft: [7WKABZP2]
   # MessagesDao.startGroupTalk
   # PagesDao.createPage
   # PostsDao.insertReply, insertChatMessage, editPostIfAuth
+
+
+tasks,
+assign posts:
+  TESTS_MISSING:
+            - Can see all assignees, also in per pat task list?
+            - Try assigning sbd who cannot see that page or post.  TyTASGN0SEEPG
+            - ... and many more
+
 
 superadmin -
   ... lots of stuff ...
@@ -1380,6 +1408,9 @@ notifications:
             - private-chat.3br.d  TyT2ABKR045
   about like votes:
             - notfs-like-votes.2browsers.test.ts  TyTE2E703KDH
+  about tasks,
+  about assigned:
+            - TESTS_MISSING
   via email:  (5ABKR024)
   mute topic:
   mute category:
@@ -1484,6 +1515,9 @@ email notifications:  (5ABKR024)
             - ... more, which?
   like votes:
             - notfs-like-votes.2browsers.test.ts  TyTE2E703KDH
+  tasks,
+  assigned:
+            - TESTS_MISSING
   unsubscribe:
             -  (7ABKR023)
   cannot reply via email to email notifications:

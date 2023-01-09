@@ -273,12 +273,13 @@ export function UserNameLink(props: {
 
 
 export function UserName(props: {
-    user: BriefUser, store?: Store, settings?: SettingsVisibleClientSide,
-    makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo }) {
+    user?: Pat, patId?: PatId, // either or
+    store?: Store, settings?: SettingsVisibleClientSide,
+    makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo, key?: St | Nr }) {
 
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
   const settings: SettingsVisibleClientSide = props.settings || props.store.settings;
-  const user: BriefUser = props.user;
+  const user: Pat = props.user || props.store.usersByIdBrief[props.patId];
   const showHow: ShowAuthorHow = settings.showAuthorHow;
 
   // (All StackExchange demo sites use ShowAuthorHow.FullNameThenUsername, so
@@ -297,7 +298,7 @@ export function UserName(props: {
     namePartOne = r.span({className: 'esP_By_F esP_By_F-G' }, t.Anonym);
     if (props.store && user.anonForId) {  // maybe always take a DiscStore as fn props?
       const store = props.store;
-      if (store.me.id === user.anonForId) {  // [is_own_post_fn]
+      if (store.me.id === user.anonForId) {
         // For now: ...
         namePartTwo = rFr({}, " ", r.span({ className: 'c_P_By_AnonYou' }, "you"));  // I18N
       }
@@ -360,6 +361,9 @@ export function UserName(props: {
   const newProps: any = {
     className: 'dw-p-by esP_By' + (isUnknown ? ' s_P_By-Unk' : ''),
   };
+  if (isVal(props.key)) {
+    newProps.key = props.key;
+  }
 
   // Talkyard demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
   // '__sx_[subdomain]_[user-id]' where [subdomain] is a StackExchange subdomain, and

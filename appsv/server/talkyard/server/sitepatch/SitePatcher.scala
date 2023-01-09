@@ -1047,7 +1047,10 @@ case class SitePatcher(globals: debiki.Globals) {
           // via /-/v0/upsert-simple.
           // And, everyone should [use_the_Do_API] instead — so, never need to fix this.
           val page = dao.newPageDao(post.pageId, tx)
-          notfGenerator.generateForNewPost(page, post,
+          val doer: Pat = tx.loadTheParticipant(post.createdById)
+
+          // (These notfs are inserted into the db, furhter below.)
+          notfGenerator.generateForNewPost(page, post, postAuthor = Some(doer),
                 sourceAndHtml = None, anyNewModTask = None)
 
           // ----- Webhooks
@@ -1060,7 +1063,7 @@ case class SitePatcher(globals: debiki.Globals) {
                     siteId = siteId,
                     id = AuditLogEntry.UnassignedId,
                     didWhat = AuditLogEntryType.NewPage,
-                    doerId = post.createdById,
+                    doerTrueId = doer.trueId2,
                     doneAt = tx.now.toJavaDate,
                     browserIdData = BrowserIdData.Missing,
                     pageId = Some(page.id),
@@ -1071,9 +1074,12 @@ case class SitePatcher(globals: debiki.Globals) {
             else if (post.tyype.isComment || post.tyype.isChat) {
               // Skip finding common ancestors — multi replies disabled.  [3GTKYA02]
               // Just look up the parent directly.
-              val anyParent =
+              val anyParent: Opt[Post]  =
                     if (post.tyype.isChat) None
                     else page.parts.postByNr(post.parentNr)
+
+              val anyParentOrigAuthor: Opt[Pat] =
+                    anyParent.map(post => tx.loadTheParticipant(post.createdById))
 
               Some(AuditLogEntry(
                     siteId = siteId,
@@ -1081,7 +1087,7 @@ case class SitePatcher(globals: debiki.Globals) {
                     didWhat =
                           if (post.tyype.isChat) AuditLogEntryType.NewChatMessage
                           else AuditLogEntryType.NewReply,
-                    doerId = post.createdById,
+                    doerTrueId = doer.trueId2,
                     doneAt = tx.now.toJavaDate,
                     browserIdData = BrowserIdData.Missing,
                     pageId = Some(post.pageId),
@@ -1091,7 +1097,7 @@ case class SitePatcher(globals: debiki.Globals) {
                     targetPageId = anyParent.map(_.pageId),
                     targetUniquePostId = anyParent.map(_.id),
                     targetPostNr = anyParent.map(_.nr),
-                    targetUserId = anyParent.map(_.createdById)))
+                    targetPatTrueId = anyParentOrigAuthor.map(_.trueId2)))
             }
             else {
               // Don't generate any event. This "cannot" happen anyway, since
@@ -1134,6 +1140,8 @@ case class SitePatcher(globals: debiki.Globals) {
 
       // Fix later.  Need to remap webhook ids and next event ids, and
       // events-to-retry ids.
+      //
+      // ... NO, don't send webhooks from here. But yes, do, from the Do API.
 
 
       // ----- Consistency checks

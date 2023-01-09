@@ -21,3 +21,8 @@ or category access permissions change (less access) or trust level demoted.)
 
 [flags_as_posts]
 Move flags from post_actions_t to posts_t instead, with PostType.Flag.
+
+Everything is a node: Comments, pages, categories, root categories,
+and category 0, the site itself.
+
+See ./everything-is-a-node.txt .

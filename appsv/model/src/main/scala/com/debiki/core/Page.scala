@@ -130,7 +130,7 @@ object PageMeta {
   def forNewPage(
         pageId: PageId,
         pageRole: PageType,
-        authorId: UserId,
+        authorId: PatId,
         creationDati: ju.Date,  // RENAME to createdAt
         numPostsTotal: Int,
         extId: Option[ExtId] = None,
@@ -192,7 +192,7 @@ object PageMeta {
   * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
   *            Currently only needed and used for embedded comments, and then it
   *            is the URL of the embedding page.
-  * @param authorId
+  * @param authorId The original post author. Or an anonym or pseudonym of hens.
   * @param frequentPosterIds: Most frequent poster listed first. Author & last-reply-by excluded.
   * @param layout: A bitmask that tells JS code how to render the page
   * @param forumSearchBox: 2 if should show a prominent search box, on forum homepage.
@@ -235,6 +235,10 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // the page e.g. gets closed or answered etc. And the view — the forum would
   // provide a default, but everyone can override it, e.g. change sort order
   // or 1D/2D layout etc, for themselves.
+  // HOWEVER the above, 0) 1) 2) 3), is overdoing it.  Instead, nodes_t which will
+  // store cats, pages and posts, is more flexible thany *any* other discussion software
+  // already. And copying/syncing settings between cats, would be simpler to implement
+  // and give all (?) of the benefits with 0) 1) 2) 3) anyway (?).
   pageId: String,
   extImpId: Option[ExtId] = None,  // RENAME to extId
   pageType: PageType,
@@ -249,7 +253,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   lastApprovedReplyById: Option[UserId] = None,
   categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
-  authorId: UserId,
+  authorId: PatId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
   // -----
   // REFACTOR move to DiscViewProps and disc_views_t [disc_props_view_stats]  [PAGETYPESETTNG]
@@ -257,6 +261,9 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   layout: PageLayout = PageLayout.Default,
   comtOrder: Opt[PostSortOrder] = None,
   comtNesting: Opt[ComtNesting_later] = None,
+  comtsStartHidden: Opt[NeverAlways] = None,
+  comtsStartAnon: Opt[NeverAlways] = None,
+  newAnonStatus: Opt[AnonStatus] = None,
   // Move to SectProps and sect_props_t
   forumSearchBox: Opt[i32] = None,
   forumMainView: Opt[i32] = None,
@@ -413,11 +420,6 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 
   def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
 
-  def addUserIdsTo(ids: mutable.Set[UserId]): Unit = {
-    ids += authorId
-    ids ++= frequentPosterIds
-    lastApprovedReplyById.foreach(ids += _)
-  }
 
   def idVersion: PageIdVersion = PageIdVersion(pageId, version = version)
 
@@ -553,7 +555,12 @@ trait DiscProps {
 }
 
 
-
+/** Later, derive:  comtsStartHidden, comtsStartAnon, opStartsAnon, newAnonStatus
+  *  too, but better wait until moved to  pat_node_multi_rels_t ?  [add_nodes_t]
+  * [derive_node_props_on_server]
+  * @param comtOrder
+  * @param comtNesting
+  */
 case class DiscPropsDerived(
   //origPostReplyBtnTitle: St,
   //origPostVotes: OrigPostVotes,
@@ -833,6 +840,9 @@ object PageType {
   case object UsabilityTesting extends PageType(21, staffOnly = false) { // [plugin]
     override def hasDoingStatus = true
   }
+
+  // Later — links to show in the sidebar, or for one's personal [bookmarks]?
+  // case object MenuTree extends PageType(?, staffOnly = false)
 
 
   def fromInt(value: Int): Option[PageType] = Some(value match {
@@ -1118,10 +1128,87 @@ object PinPageWhere {
 
 
 
+// MOVE these two (PageQuery, PostQuery) to their own file,  queries.scala?
+// And add more, e.g. user queries.
+
 case class PageQuery(  // also see PeopleQuery
   orderOffset: PageOrderOffset,
   pageFilter: PageFilter,
   includeAboutCategoryPages: Boolean)
+
+
+/**
+  * @param reqrInf — info about who's doing this request.
+  */
+sealed trait PostQuery {
+  def reqrInf: ReqrInf
+  def reqr: Pat = reqrInf.reqr
+  def inclAnonPosts: Bo
+  def inclTitles: Bo
+  def inclUnapproved: Bo
+  def inclUnlistedPagePosts: Bo
+  def onlyEmbComments: Bo = false
+  def limit: i32
+  def orderBy: OrderBy
+
+  /** If this query is by someone about henself. Or if is by a mod or admin. */
+  def reqrIsStaffOrObject: Bo = reqr.isStaff
+}
+
+
+object PostQuery {
+  case class AllPosts(
+    reqrInf: ReqrInf,
+    inclAnonPosts: Bo,
+    inclTitles: Bo,
+    inclUnapproved: Bo,
+    inclUnlistedPagePosts: Bo,
+    override val onlyEmbComments: Bo,
+    limit: i32,
+    orderBy: OrderBy,
+  ) extends PostQuery {
+
+    unimplIf(!inclAnonPosts, "Excluding anon posts when listing all [TyEANONUNIMPL02]");  ANON_UNIMPL
+
+  }
+
+  case class PostsRelatedToPat[T <: PatNodeRelType](
+    reqrInf: ReqrInf,
+    relatedPatId: PatId,
+    relType: T,
+    onlyOpen: Bo,
+    inclAnonPosts: Bo,
+    inclTitles: Bo,
+    inclUnapproved: Bo,
+    inclUnlistedPagePosts: Bo,
+    limit: i32,
+    orderBy: OrderBy,
+  ) extends PostQuery {
+
+    unimplIf(inclAnonPosts, "Listing related anon posts [TyEANONUNIMPL09]");  ANON_UNIMPL
+
+    override def reqrIsStaffOrObject: Bo = reqr.isStaff || reqr.id == relatedPatId
+  }
+
+  // Later, replace w PostsRelatedToPat and relType AuthorOf.
+  case class PostsByAuthor(
+    reqrInf: ReqrInf,
+    authorId: PatId,
+    inclAnonPosts: Bo,
+    inclTitles: Bo,
+    inclUnapproved: Bo,
+    inclUnlistedPagePosts: Bo,
+    limit: i32,
+    orderBy: OrderBy,
+  ) extends PostQuery {
+
+    unimplIf(inclAnonPosts, "Listing an author's anon posts [TyEANONUNIMPL08]");  ANON_UNIMPL
+
+    override def reqrIsStaffOrObject: Bo = reqr.isStaff || reqr.id == authorId
+  }
+
+}
+
 
 /** How to sort pages, and where to start listing them, e.g. if fetching additional
   * pages after the user has scrolled down to the end of a page list.

@@ -107,21 +107,27 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadTheOrigPost(pageId: PageId): Post =
     loadOrigPost(pageId).getOrDie("TyE204RKT1J", s"s$siteId: OP missing, page $pageId")
 
+  /** Useful for chats — then, we want to show the chat description, which is
+    * in the orig post. And the most recent chat messsages, to show.  */
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId): Vec[Post]
   def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
+  /** The result is shorter, if some posts weren't found. */
+  def loadPostsByIdKeepOrder(postIds: Iterable[PostId]): ImmSeq[Post]
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]     ; RENAME; QUICK // to loadPostsByIds
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
 
-  def loadAllPosts(): immutable.Seq[Post]
+  def loadAllPostsForExport(): immutable.Seq[Post]
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
   def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
 
   /** Loads the most Like voted posts, per page.
+    * Does *not* load assignee or additional author ids (that's why the name is "...ExclAggs").
+    * Would be nice with type safety for that. [Scala_3]?
     * (Excluding posts with Unwanted votes or pending flags, and collapsed/hidden/deleted posts.)
     */
-  def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int, exclOrigPost: Boolean)
+  def loadPopularPostsByPageExclAggs(pageIds: Iterable[PageId], limitPerPage: Int, exclOrigPost: Boolean)
         : Map[PageId, immutable.Seq[Post]]
 
   def loadApprovedOrigPostAndRepliesByPage(pageIds: Iterable[PageId]): Map[PageId, immutable.Seq[Post]]
@@ -132,9 +138,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   // Also, these params:  includeDeleted,  includeHidden.
   //    includeChatMessages: Boolean,  onlyUnapproved: Boolean,
   //    onPageId: Option[PageId]
-  def loadPostsByQuery(limit: Int, orderBy: OrderBy, byUserId: Option[UserId],
-        includeTitlePosts: Boolean, inclUnapprovedPosts: Boolean,
-        inclUnlistedPagePosts_unimpl: Boolean): immutable.Seq[Post]
+  def loadPostsByQuery(query: PostQuery): immutable.Seq[Post]
 
   def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 
@@ -214,8 +218,13 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction]
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
-  def loadAllPostActions(): immutable.Seq[PostAction]
-  def insertPostAction(postAction: PostAction): Unit
+  def loadPatPostRels[T <: PatNodeRelType](forPatId: PatId, relType: T, onlyOpenPosts: Bo,
+                                           limit: i32): ImmSeq[PatNodeRel[T]]
+  def loadAllPostActionsForExport(): immutable.Seq[PostAction]
+
+  def insertPostAction(postAction: PostAction): U
+  def deletePatNodeRels(fromPatIds: Set[PatId], toPostId: PostId,
+        relTypes: Set[PatNodeRelType]): i32
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
   /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02]

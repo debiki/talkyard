@@ -102,9 +102,9 @@ object IncludeInSummaries {
   * @param frozenAt
   * @param deletedAt
   */
-case class Category(  // [exp] ok use   too long name! use Cat instead
+case class Category( // [exp] ok use   too long name! use Cat instead
   id: CategoryId,
-  extImpId: Option[ExtId] = None,  // RENAME to extId
+  extImpId: Option[ExtId] = None, // RENAME to extId
   sectionPageId: PageId,
   // Later when adding child categories, see all: [0GMK2WAL] (currently parentId is just for the
   // root category).
@@ -113,18 +113,22 @@ case class Category(  // [exp] ok use   too long name! use Cat instead
   name: String,
   slug: String,
   position: Int,
-  description: Option[String],  // REMOVE [502RKDJWF5]
+  description: Option[String], // REMOVE [502RKDJWF5]
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageType],
   // None —> inherited from parent cat (not impl though)
-  defaultSortOrder: Opt[PageOrderOffset] = None,  // RENAME to pageOrder
+  defaultSortOrder: Opt[PageOrderOffset] = None, // RENAME to pageOrder
   comtOrder: Opt[PostSortOrder] = None,
   comtNesting: Opt[ComtNesting_later] = None,
+  comtsStartHidden: Opt[NeverAlways] = None,
+  comtsStartAnon: Opt[NeverAlways] = None,
+  opStartsAnon: Opt[NeverAlways] = None,
+  newAnonStatus: Opt[AnonStatus] = None,
   doVoteStyle: Opt[DoVoteStyle] = None,
   // Not impl though. [vote_from_tp_ls]
   doVoteInTopicList: Opt[Bo] = None,
   // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?
-  unlistCategory: Boolean,  // also unlists topics
+  unlistCategory: Boolean, // also unlists topics
   unlistTopics: Boolean,
   //  -----------
 

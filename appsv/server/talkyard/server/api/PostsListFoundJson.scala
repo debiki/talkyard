@@ -60,6 +60,8 @@ object PostsListFoundJson {
 
     // --- Load authors
 
+    // Later also load assignees, not just authors?  [incl_assignees]
+    // For that, use  addVisiblePatIdsTo().  Should that be a param?
     val authorIds = postsFound.map(_.createdById).toSet
     val authorsById: Map[UserId, Participant] = dao.getParticipantsAsMap(authorIds)
 

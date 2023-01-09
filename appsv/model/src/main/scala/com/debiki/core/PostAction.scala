@@ -28,9 +28,11 @@ import Prelude._
   *
   * (This corresponds to edges in a graph database, from nodes of type Pat.)
   */
-sealed abstract class PatRelType_later(val IntVal: i32) { def toInt: i32 = IntVal }
+sealed abstract class PatNodeRelType(val IntVal: i32) extends PostActionType {
+  def toInt: i32 = IntVal
+}
 
-object PatRelType_later {
+object PatNodeRelType {
 
   /** Like votes, Disagree votes etc.
     *  - Sub type is vote type.
@@ -42,7 +44,7 @@ object PatRelType_later {
     *      gets done — if each person has, say, 10 Do-It votes to distribute among the
     *      ideas/bugs hen cares about.
     */
-  case object VotedOn extends PatRelType_later(-1)
+  case object VotedOn_later extends PatNodeRelType(-1)
 
   /** If a user (or group) is assigned to do something related to a post or category.
     *  - Sub type could be assigned-to-do-*what*?
@@ -110,22 +112,43 @@ object PatRelType_later {
     *      AssignedTo.Review what = code. And VotedOn.Review { what = dependencies },
     *      for custom plugins [review_plugin]
     */
-  case object AssignedTo extends PatRelType_later(-1)
+  case object AssignedTo extends PatNodeRelType(11)
 
   /** If a pat wants to get notified about posts from another pat.  Hmm but
     * shouldn't this be in  notf_prefs_t?  So can follow someone *in a specific cat* only,
     * and choose how often to get notified, other notf prefs things.
+    * Or should be in  pat_pat_rels_t?
     */
-  // object FollowerOf extends PatRelType_later(-1)
+  case object FollowerOf_later extends PatNodeRelType(-1)
 
   /** If pat has been added as author of a post.  (Value could maybe say if is
     * primary author, or secondary author?)
-    */
-  case object AuthorOf extends PatRelType_later(-1)
 
-  /** If pat has been added as owner of a post.
+    * The person who posted a post, is the author, by default.  [post_authors]
+    * But others can be made authors instead, by adding this AuthorOf relationship.
     */
-  case object OwnerOf extends PatRelType_later(-1)
+  case object AuthorOf_later extends PatNodeRelType(-1)  // maybe IntVal 2?
+
+  /** If pat has been added as owner of a post. The owners of a post,
+    * can edit it, change the authors, make it  private (but not make a private
+    * post public), add/remove owners, etc — as if it was their post (it is).
+    *
+    *  Changing the owner, can be good if 1) someone starts working on an article,
+    *  and leaves for vacation, and another person is to finish the article,
+    *  publish it etc.  Or if 2) mods have deleted a post, and want to prevent
+    *  the original author from un-deleting it or editing it any further. Then,
+    *  the mods can make the Moderators group the owner of the post —
+    *  thereafter the original author cannot edit it, un/delete it or anything.
+    *
+    * Or, probably never, actually?  Instead:  pat_node_multi_rels_t.is_owner_c?
+    */
+  case object OwnerOf_later extends PatNodeRelType(-1)  // maybe IntVal 1?  or delete? Will be in  perms table ?
+
+
+  def fromInt(value: i32): Opt[PatNodeRelType] = Some(value match {
+    case AssignedTo.IntVal => AssignedTo
+    case _ => return None
+  })
 }
 
 
@@ -206,15 +229,43 @@ object PostStatusAction {
 }
 
 
-// RENAME to  PatPostRel
-// Stored in  post_actions3, will rename to pat_rels_t, no to  pat_post_rels_t?
-abstract class PostAction {
+// RENAME to  PatNodeRel
+// Stored in  post_actions3, will rename to  pat_node_rels_t?
+sealed abstract class PostAction {
+  RENAME // to toNodeId
   def uniqueId: PostId
-  def pageId: PageId
-  def postNr: PostNr
+  def pageId: PageId  // deprecated?
+  def postNr: PostNr  //
+  RENAME // to fromPatId
   def doerId: UserId
+  RENAME // to addedAt
   def doneAt: When
+  RENAME // to relType
   def actionType: PostActionType
+}
+
+
+case class PatNodeRel[T <: PatNodeRelType](
+  toNodeId: PostId,
+  fromPatId: PatId,
+  @deprecated
+  pageId: PageId,
+  @deprecated
+  postNr: PostNr,
+  addedAt: When,
+  relType: T,
+) extends PostAction {
+  def uniqueId: PostId = toNodeId
+  def doerId: UserId = fromPatId
+  def doneAt: When = addedAt
+  def actionType: T = relType
+
+  // For now.
+  require(relType.toInt == PatNodeRelType.AssignedTo.toInt,
+        s"Bad rel type: ${relType}, only AssignedTo implemented [TyEPATNODERELTYP]")
+
+  require(fromPatId >= Pat.LowestTalkToMemberId,
+        s"Bad pat id to assign: ${fromPatId}, is < ${Pat.LowestTalkToMemberId} [TyEASGNPATID]")
 }
 
 
@@ -226,7 +277,15 @@ object PostAction {
       PostVote(uniqueId, pageId, postNr, doneAt, voterId = doerId, voteType = voteType)
     case flagType: PostFlagType =>
       PostFlag(uniqueId, pageId, postNr, doneAt, flaggerId = doerId, flagType = flagType)
-    case x =>
+    case patNodeRelType: PatNodeRelType =>
+      PatNodeRel(
+            fromPatId = doerId,
+            toNodeId = uniqueId,
+            pageId = pageId,
+            postNr = postNr,
+            addedAt = doneAt,
+            relType = patNodeRelType)
+    case _ =>
       die("DwE7GPK2", s"Bad action type: '$actionType'")
   }
 }

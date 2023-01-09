@@ -24,16 +24,27 @@
 
 const r = ReactDOMFactories;
 
+interface UserDraftProps {
+  user: UserInclDetails;
+  store: Store;
+}
+
+interface UserDraftState {
+  error?: St | true;
+  work?: ListDraftsResponse;
+}
+
 
 export const UserDrafts = createFactory({
   displayName: 'UserDrafts',
 
   getInitialState: function() {
-    return { drafts: null, error: null };
+    return {};
   },
 
   componentDidMount: function() {
-    const user: UserInclDetails = this.props.user;
+    const props: UserDraftProps = this.props;
+    const user: UserInclDetails = props.user;
     this.listDrafts(user.id);
   },
 
@@ -42,10 +53,11 @@ export const UserDrafts = createFactory({
   },
 
   // SHOULD Switch to componentDidUpdate instead, see  users-page.more.ts  for how.
-  UNSAFE_componentWillReceiveProps: function(nextProps: any) {
+  UNSAFE_componentWillReceiveProps: function(nextProps: UserDraftProps) {
     // Dupl code, also in view notfs. [7WUBKZ0]
-    const me: Myself = this.props.store.me;
-    const user: UserInclDetails = this.props.user;
+    const props: UserDraftProps = this.props;
+    const me: Myself = props.store.me;
+    const user: UserInclDetails = props.user;
     const nextLoggedInUser: Myself = nextProps.store.me;
     const nextUser: UserInclDetails = nextProps.user;
     if (me.id !== nextLoggedInUser.id || user.id !== nextUser.id) {
@@ -55,42 +67,46 @@ export const UserDrafts = createFactory({
 
   listDrafts: function(userId: UserId) {
     // Dupl code, also in view notfs. [7WUBKZ0]
-    const me: Myself = this.props.store.me;
+    const props: UserDraftProps = this.props;
+    const me: Myself = props.store.me;
+
     if (me.id !== userId && !isStaff(me)) {
       this.setState({
         error: "May not list an other user's drafts. [TyE5ARBK2]",
-        drafts: null,
-      });
+        work: null,
+      }); // satisfies UserDraftState);
       return;
     }
+
     Server.listDrafts(userId, (response: ListDraftsResponse) => {
       if (this.isGone) return;
       this.setState({
         error: null,
-        drafts: response.drafts,
-        pageTitlesById: response.pageTitlesById,
-        pagePostNrsByPostId: response.pagePostNrsByPostId,
-      });
+        work: response,
+      }); // satisfies UserDraftState);
     }, () => {
-      // Clear state.drafts, in case we're no longer allowed to view the drafts.
-      this.setState({ error: true, drafts: null });
+      // Clear drafts, in case we're no longer allowed to view the drafts.
+      this.setState({ error: true, work: null }); // satisfies UserDraftState);
     });
   },
 
   render: function() {
+    const props: UserDraftProps = this.props;
+    const state: UserDraftState = this.state;
+
     // Dupl code, also in view notfs. [7WUBKZ0]
-    if (this.state.error)
+    if (state.error)
       return (
         r.p({ className: 'e_Dfs-Err' },
-          _.isString(this.state.error) ? this.state.error : "Error [EsE7YKW2]."));
+          _.isString(state.error) ? state.error : "Error [EsE7YKW2]."));
 
-    const drafts: Draft[] = this.state.drafts;
-
-    if (!drafts)
+    const work: ListDraftsResponse | NU = state.work;
+    if (!work)
       return r.p({}, t.Loading);
 
-    const user: UserInclDetails = this.props.user;
-    const store: Store = this.props.store;
+    const drafts: Draft[] = work.drafts;
+    const user: UserInclDetails = props.user;
+    const store: Store = props.store;
     const me: Myself = store.me;
     const isMe = user.id === me.id;
 
@@ -99,8 +115,8 @@ export const UserDrafts = createFactory({
 
     const draftElems = drafts.map((draft: Draft) =>
         r.li({ key: draft.draftNr },
-          Draft({ draft, pageTitlesById: this.state.pageTitlesById,
-            pagePostNrsByPostId: this.state.pagePostNrsByPostId })));
+          Draft({ draft, pageTitlesById: work.pageTitlesById,
+            pagePostNrsByPostId: work.pagePostNrsByPostId })));
 
     return (
       r.div({ className: 'c_Dfs' },

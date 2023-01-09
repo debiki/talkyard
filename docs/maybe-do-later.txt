@@ -78,10 +78,20 @@ access restricted topics.
 Make site specific errors visible to site admins — so no need
 to have Linux root access.
 
+[logger_everywhere]
+Pass loggers to the models and rdb Scala modules, so they don't need to use
+System.stdout/stderr directly.
+
 [immutable]
 Make all js objs "light weight immutable", via Typescript's 'readonly' properties:
 https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
 (React wants immutable.)
+
+[add_nodes_t]
+Merge  posts3, pages3, categories3 and some settings3 columns into:  nodes_t
+(which will actually be posts3 but renamed, and with some new columns).
+But most such settings should instead be in:  pat_node_multi_rels_t  (!).
+See: ./everything-is-a-node.txt
 
 [subcats] [sub_cats]
 DONE: Implement sub categories.
@@ -259,6 +269,8 @@ And when logging in via email, one gets to choose which account to login to.
 Refactor a bit.
 Search for:  [4KDPREU2], break out fn.
 
+[save_email]
+Save invitation emails sent (and other types I forgot?), & any SMTP erors.
 
 [reenable-akismet]:
 For some reason I disabled Akismet (why? when refactoring to save time?). Enable it again.
@@ -291,9 +303,15 @@ Need an approvalStatus [ApprovedStatus] field?
 Or:  0,1,2 = undec, apr, rej by sys.  4,8,16 by trusted,  core member,  32,64,128 by staff  ?
    bits 1,2                           3,4                 5,6           7,8
 
+[7YKU24] UNPOLITE SHOULD stop auto approving chat messages.
+
 [flat-comments]:
 Change layout of problem type topics to traditional forum flat comments layout.
 & use for formal messages too, or maybe repl w chat?
+
+[threaded_chat]
+A chat with indentation depth  > 1, would be threaded? Not yet supported, but why would be
+interesting to try.
 
 [editor-drafts]:
 When starting a new topic, or editing a post, ask "Continue editing draft? [Yes, resume draft] [No, ignore draft (but keep it)]"
@@ -319,6 +337,28 @@ discovery of pages & people by iterating through all ids in the url.
 
 [custom-groups]
 Search for that tag.
+
+[pseudonyms_later][pseudonyms_trust]
+
+[auto_deanon]
+[auto_show_replies]
+Needs: [add_triggers_t]
+
+[deanon_risk]
+
+[anon_pages]
+
+[anon_priv_msgs][anon_chats]
+Not now.
+
+[many_anons_per_page]
+
+[sql_true_id_eq]
+Look at later, realted to anonyms and pseudonyms (looking up on both true id & anon id).
+
+[assign_anon]
+
+[assign_comments]
 
 [subcomms] [sub_communities]
 Improve sub communities, e.g. selecting a category across all sub communities,
@@ -507,6 +547,12 @@ Make it possible to change the author of a post to someone else. Or change edite
 Assign topics and posts to people. (Not only whole topics, but also comments/sub-threads inside topics.)
 Why assign a post? Because someone might ask a good question, in a longer discussion, and nice
 to know & remember who will try to answer it, later.
+
+[assignees_badges]
+If listing assignees, should any badges of theirs be shown too? (Currently aren't.)
+
+[can_see_assigned_c]
+New permission.
 
 [priv_comts] Private comments:
 (Aka "whispers" in Discourse and "private items" in Basecamp long ago, and "private comments"
@@ -793,6 +839,8 @@ Do outside tx.
 [double_tx]  COULD_OPTIMIZE
 Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
 
+[cache in tx] USE_StaleStuff_INSTEAD
+
 [update_warmup_json]
 
 COULD_OPTIMIZE
@@ -814,6 +862,8 @@ Migrate unnecessary Route({ ... render: ({ match }) => ...) to hooks:
 https://reacttraining.com/blog/react-router-v5-1/
 But rename useParams to useUrlParams !?
 
+[react_components]
+Migrate from se https://mantine.dev/?
 
 [webhooks_todo]
 If endpoint seems broken, send emails to admins, after a while. [notf_adm_broken_webhook]
@@ -951,6 +1001,9 @@ So, it'll be OK to make changes in Ty that otherwise would have been deemed too 
 
 Ty v1 removes some deprecated things, e.g.: Remove class ed.server.EdAppLoader (everyone
 needs to remove `play.application.loader= ed.server.EdAppLoader` from the Play conf file)
+
+Docker volumes instead of bind mounts, see e.g.:
+  https://stackoverflow.com/questions/23544282/what-is-the-best-way-to-manage-permissions-for-docker-shared-volumes
 
 Rename Silhouette authn settings to talkyard.authn.____  instead?
 Require that the old conf vals be removed (log helpful errors.)

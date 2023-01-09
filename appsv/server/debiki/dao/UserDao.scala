@@ -205,6 +205,7 @@ trait UserDao {
       val byMember = tx.loadTheUser(byWho.id)
       val memberBefore = tx.loadTheUserInclDetails(memberId)
 
+      // (Later: Better err msg if is in fact staff. [pseudonyms_later])
       throwForbiddenIf(!byMember.isStaff,
             "TyENSTFF5026", "Only staff can do this")
 
@@ -247,12 +248,12 @@ trait UserDao {
           // Noop.
       }
 
-      SHOULD /* val auditLogEntry = AuditLogEntry(
+      AUDIT_LOG /* val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.   ... what? new AuditLogEntryType enums, or one single EditUser enum,
                                               with an int val = the EditMemberAction int val ?
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = now.toJavaDate,
         browserIdData = byWho.browserIdData,
         browserLocation = None)*/
@@ -549,8 +550,10 @@ trait UserDao {
   }
 
 
+  /** Loads the true user, which might be a pseudonym (but never an anonym).
+    */
   def loadUserAndLevels(who: Who, tx: SiteTransaction): UserAndLevels = {
-    val user = tx.loadTheParticipant(who.id)
+    val user: Pat = tx.loadTheParticipant(who.id)
     val trustLevel = user.effectiveTrustLevel
     val threatLevel = user match {
       case member: User => member.effectiveThreatLevel
@@ -564,6 +567,10 @@ trait UserDao {
         ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY2511"
       case group: Group =>
         ThreatLevel.HopefullySafe // for now
+      case _ : Anonym =>
+        // Should never do things directly as an anonym, only via one's real account.
+        // Higher up the stack, we should have replied Forbidden already.
+        die("TyE206MRAKG", s"Got an anon: $who")
     }
     UserAndLevels(user, trustLevel, threatLevel)
   }
@@ -713,7 +720,7 @@ trait UserDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.CreateUser,
-      doerId = member.id,
+      doerTrueId = member.trueId2,
       doneAt = now.toJavaDate,
       browserIdData = browserIdData,
       browserLocation = None)
@@ -1280,8 +1287,9 @@ trait UserDao {
 
 
   def joinOrLeavePageIfAuth(pageId: PageId, join: Bo, who: Who): Opt[BareWatchbar] = {
-    if (Participant.isGuestId(who.id))
-      throwForbidden("EsE3GBS5", "Guest users cannot join/leave pages")
+    // (Later, maybe optionally allow anons (conf val). [anon_priv_msgs])
+    if (who.isGuestOrAnon)
+      throwForbidden("EsE3GBS5", "Guest and anonymous users cannot join/leave pages")
 
     val joinOrLeave = if (join) Join else Leave
 
@@ -1383,8 +1391,9 @@ trait UserDao {
           joinOrLeave: JoinOrLeave, byWho: Who, anyTx: Opt[(SiteTx, StaleStuff)])  // REFACTOR use TxCtx
           : JoinLeavePageDbResult = {
 
-    if (byWho.isGuest)
-      throwForbidden("EsE2GK7S", "Guests cannot add/remove people to pages")
+    // (Later, maybe allow anons (conf val). [anon_priv_msgs])
+    if (byWho.isGuestOrAnon)
+      throwForbidden("EsE2GK7S", "Guests and anons cannot add/remove people to pages")
 
     if (userIds.size > 50)
       throwForbidden("EsE5DKTW02", "Cannot add/remove more than 50 people at a time")
@@ -2373,10 +2382,10 @@ trait UserDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.DeleteUser,
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = tx.now.toJavaDate,
         browserIdData = byWho.browserIdData,
-        targetUserId = Some(userId))
+        targetPatTrueId = Some(memberBefore.trueId2))
 
       // Right now, members must have email addresses. Later, don't require this, and
       // skip inserting any dummy email here. [no-email]

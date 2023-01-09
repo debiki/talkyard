@@ -256,7 +256,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: TyCont
           }
 
           val title = newSiteTitle getOrElse "Your Site"
-          val newSiteWho = Who(SystemUserId, request.theBrowserIdData)
+          val newSiteWho = Who(TrueId(SystemUserId), request.theBrowserIdData)
           if (createForum) {
             val options = debiki.dao.CreateForumOptions(
                   isForEmbeddedComments = false,

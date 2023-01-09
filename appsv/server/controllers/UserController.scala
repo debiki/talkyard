@@ -30,6 +30,7 @@ import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
+import scala.collection.{mutable => mut}
 import debiki.RateLimits.TrackReadingActivity
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
@@ -308,9 +309,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     throwForbiddenIfActivityPrivate(userId, requester, dao)
 
-    // MUST: Excl anon posts. [excl_anon_posts]
+    // Later, include, if reqr is the author henself. [list_anon_posts]
+    val inclAnonPosts = false
+
     val topicsInclForbidden = dao.loadPagesByUser(
-      userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
+      userId, isStaffOrSelf = isStaffOrSelf, inclAnonPosts = inclAnonPosts, limit = 200)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
       dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf).maySee
     }
@@ -318,52 +321,116 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def listPostsByUser(authorId: UserId): Action[Unit] = GetAction { request: GetRequest =>
-    listPostsImpl(authorId, all = false, request)
+  def listPostsByUser(authorId: UserId, relType: Opt[Int], which: Opt[Int]): Action[U] =
+          GetActionRateLimited() { req: GetRequest =>
+    relType match {
+      case None =>
+        // Later, will use PostQuery here too, just like below (and this match-case
+        // branch maybe then no longer needed).
+        listPostsImpl(authorId, all = false, req)
+      case Some(relTypeInt) =>
+        RENAME // authorId param to: relToPatId, later.
+        val relToPatId = authorId
+        val relType = PatNodeRelType.fromInt(relTypeInt).getOrThrowBadRequest(
+              "TyE502SMJ", "Only Assigned-To has been implemented")
+
+        val reqrIsStaff = req.requester.exists(_.isStaff)
+        val reqrIsStaffOrSelf = reqrIsStaff || req.requester.exists(_.id == relToPatId)
+
+        val onlyOpen = which is 678321  // for now
+
+        val query = PostQuery.PostsRelatedToPat(
+              reqrInf = req.reqrInf,
+              relatedPatId = relToPatId,
+              relType = relType,
+              onlyOpen = onlyOpen,
+              // Later, incl anon posts, if is PatNodeRelType.AssignedTo? [list_anon_posts]
+              inclAnonPosts = false,
+              inclTitles = false,
+              inclUnapproved = reqrIsStaffOrSelf,
+              inclUnlistedPagePosts =
+                    // Not listing pat's assignments, would be confusing? [.incl_unl]
+                    relType == PatNodeRelType.AssignedTo || reqrIsStaffOrSelf,
+              limit = 100,
+              orderBy = OrderBy.MostRecentFirst)
+
+        _listPostsImpl2(query, req.dao)
+    }
   }
 
 
   private def listPostsImpl(authorId: UserId, all: Boolean, request: GetRequest): mvc.Result = {
+    import request.dao
     import request.{dao, requester}
-
-    request.context
 
     val requesterIsStaff = requester.exists(_.isStaff)
     val requesterIsStaffOrAuthor = requesterIsStaff || requester.exists(_.id == authorId)
-    val author = dao.getParticipant(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
 
-    // MUST: Excl anon posts. [excl_anon_posts]
+     /*/ Later: Throw if the reqr may not see `authorId`. [private_pats]
+    val author = dao.getParticipant(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
+     */
+
     throwForbiddenIfActivityPrivate(authorId, requester, dao)
 
     // For now. LATER: if really many posts, generate an archive in the background.
     // And if !all, and > 100 posts, add a load-more button.
     val limit = all ? 9999 | 100
 
-    val LoadPostsResult(postsOneMaySee, pageStuffById) =
-          dao.loadPostsMaySeeByQuery(
-                requester, OrderBy.MostRecentFirst, limit = limit,
+    _listPostsImpl2(
+          PostQuery.PostsByAuthor(
+                reqrInf = request.reqrInf,
+                orderBy = OrderBy.MostRecentFirst,
+                limit = limit,
+                // Later, include, if reqr is the author henself. [list_anon_posts]
+                inclAnonPosts = false,
                 // One probably wants to see one's own not-yet-approved posts.
-                inclUnapprovedPosts = requesterIsStaffOrAuthor,
-                inclTitles = false, onlyEmbComments = false,
+                inclUnapproved = requesterIsStaffOrAuthor,
+                inclTitles = false,
+                // Can this cause confusion? But unlisted posts aren't supposed
+                // to be listed. Also see [.incl_unl] above.
                 inclUnlistedPagePosts = requesterIsStaffOrAuthor,
-                writtenById = Some(authorId))
+                authorId = authorId), dao)
+  }
+
+
+  private def _listPostsImpl2(query: PostQuery, dao: SiteDao): mvc.Result = {
+    val LoadPostsResult(postsOneMaySee, pageStuffById) =
+          // This excludes any stuff the requester may not see. [downl_own_may_see]
+          dao.loadPostsMaySeeByQuery(query)
 
     val posts = postsOneMaySee
-    COULD_OPTIMIZE // cache tags per post?
+
+    val patIds = mut.Set[PatId]()
+    posts.foreach(_.addVisiblePatIdsTo(patIds))
+
+    // Bit dupl code. [pats_by_id_json]
+    val patsById: Map[PatId, Pat] = dao.getParticipantsAsMap(patIds)
+
+
+    COULD_OPTIMIZE // cache tags per post? And badges per pat?
+    // What about [assignees_badges]? Currently not shown.
     val tagsAndBadges: TagsAndBadges = dao.readTx(_.loadPostTagsAndAuthorBadges(posts.map(_.id)))
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
+
+    val patsJsArr = JsArray(patsById.values.toSeq map { pat =>
+      JsPat(pat, tagsAndBadges,
+            toShowForPatId = Some(query.reqr.id))  // Maybe use Opt[Pat] instead, hmm
+    })
 
     val postsJson = posts flatMap { post =>
       val pageStuff = pageStuffById.get(post.pageId) getOrDie "EdE2KW07E"
       val pageMeta = pageStuff.pageMeta
       var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
-            showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tagsAndBadges)
+            showHidden = true,
+            // Really need to specify this again?
+            includeUnapproved = query.reqrIsStaffOrObject,
+            tagsAndBadges)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)
         postJson += "pageTitle" -> JsString(pageStuff.title)
         postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
-        if (requesterIsStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
+        if (query.reqr.isStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
           postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
           postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
         }
@@ -371,9 +438,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
     }
 
-    OkSafeJson(Json.obj(
-      "author" -> JsUser(author),
+    OkSafeJson(Json.obj(  // Typescript: LoadPostsResponse
       "posts" -> JsArray(postsJson),
+      "patsBrief" -> patsJsArr,
       "tagTypes" -> JsArray(tagTypes map JsTagType)))
   }
 
@@ -492,6 +559,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     if (requester.exists(r => r.isStaff || r.id == userId))
       return true
 
+    COULD_OPTIMIZE // Use cache
     val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)
     memberInclDetails.privPrefs.seeActivityMinTrustLevel match {
       case None => true

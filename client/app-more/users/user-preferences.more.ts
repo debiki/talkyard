@@ -1034,7 +1034,7 @@ const AccountTab = createFactory<any, any>({
   },
 
   UNSAFE_componentWillReceiveProps: function(nextProps) {
-    // a bit dupl code [5AWS2E9]
+    // a bit dupl code [5AWS2E9]  (UNSAFE_.. fixed in one of the other occurrences)
     const me: Myself = this.props.store.me;
     const user: UserInclDetails = this.props.user;
     const nextMe: Myself = nextProps.store.me;

@@ -43,16 +43,34 @@ trait MessagesDao {
     if (toMemIds.contains(SystemUserId))
       throwForbidden("EsE2WUY0", "Cannot send messages to the System user")
 
-    if (toMemIds.exists(_ <= MaxGuestId))
-      throwForbidden("EsE6UPY2", "Cannot send messages to guests")
+    // Can actually make sense to send priv msgs to anonyms — why not? Why not talk privately
+    // with someone who wrote something interesting, even if hen is anonymous?  On online
+    // forums, you typically don't know who the people are anyway, even if you see their
+    // online names.  [anon_priv_msgs]
+    if (toMemIds.exists(_ <= MaxGuestOrAnonId))
+      throwForbidden("EsE6UPY2", "Cannot send messages to guests or anonyms")
 
     val sentById = sentByWho.id
-    if (sentById <= MaxGuestId)
-      throwForbidden("EsE5JGKU9", "Guests cannot send messages")
+    if (sentByWho.isAnon)  // [anon_priv_msgs]
+      throwForbidden("TyE0ANONMSG", s"Anonymous private messages not yet implemented")
 
+    if (sentByWho.isGuest)
+      throwForbidden("EsE5JGKU9", "Guests cannot send private messages")
+
+    dieIf(sentById <= MaxGuestOrAnonId, "TyE5267JGKU9",
+          s"Bad sentById: $sentById, it's <= $MaxGuestOrAnonId")
+
+    // One cannot message oneself. However:
+    // Sending anon messages to one's real user — yes can make sense. [anon_priv_msgs]
+    // Let's say you're a group manager. You want to report something anonymously
+    // to the other group managers. Then, if you couldn't message yourself (as one of
+    // the others), you might need to list the other group managers, but exclude yourself
+    //  — Then the others might guess that your anonym is actually you (when they see
+    // that the anonym has messaged all managers except for one).
+    // So, don't compare with trueId — it's fine for an anon to message hens true id.
     if (toMemIds.contains(sentById))
-      throwForbidden("EsE6GK0I2", o"""Cannot send a message to yourself. You are: $sentById,
-          sending to: ${ toMemIds.mkString(", ") }""")
+      throwForbidden("EsE6GK0I2", o"""Cannot send a message to yourself. You are: ${
+            sentByWho.id}, sending to: ${ toMemIds.mkString(", ") }""")
 
     throwForbiddenIf(toMemIds.exists(id => Group.EveryoneId <= id && id <= Group.FullMembersId),
           "TyEMSGMANY", o"""Cannot direct-message groups Everyone, Basic and Full Members.
@@ -102,7 +120,7 @@ trait MessagesDao {
 
       // If this is a private topic, they'll get notified about all posts,
       // by default, although no notf pref configured here. [PRIVCHATNOTFS]
-      // Soome of toMemIds might be groups — then, the group members can see
+      // Some of toMemIds might be groups — then, the group members can see
       // the private topic, and get notified about replies.
       (toMemIds + sentById) foreach { memId =>
         tx.insertMessageMember(pagePath.pageId, memId, addedById = sentById)
@@ -141,9 +159,13 @@ trait MessagesDao {
       val senderAuthzCtx = getAuthzCtxOnPagesForPat(sender.user)
       var watchbar: BareWatchbar = getOrCreateWatchbar(senderAuthzCtx)
       watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = true)
+      // [pseudonyms_later] Should update the true user's watchbar, trueId.
       saveWatchbar(sender.id, watchbar)
       logger.debug(s"s$siteId: Telling PubSubActor: ${
             sender.nameHashId} created & starts watching page ${pagePath.pageId} [TyM50AKTG3]")
+      // Later, if anon private message: Send  trueId,  and announce
+      // the precense of the anonym / pseudonym (but not the true user, if it's
+      // anonymous!).  And send websocket messages to the true user.  [anon_priv_msgs]
       pubSub.userWatchesPages(siteId, sentById, watchbar.watchedPageIds)
     }
 
@@ -152,7 +174,7 @@ trait MessagesDao {
     // get lazy-added to their watchbar on creation. [lazy_watchbar]
     for {
       member: Member <- toMemsInclGroupMems
-      // The sender might have messaged a group hen is in:
+      // The sender might have messaged a group hen is in, so member might be == sender.
       if member.id != sender.id
       if !member.isGroup && !member.isBuiltIn
     } {

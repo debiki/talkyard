@@ -80,6 +80,7 @@ export function page_canToggleClosed(page: Page): boolean {
 }
 
 
+// REMOVE, use  makeTitle() from forum.ts  instead. [same_title_everywhere]
 export function pageRole_iconClass(pageRole: PageRole): string {
   switch (pageRole) {
     case PageRole.CustomHtmlPage: return '';
