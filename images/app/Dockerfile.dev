@@ -2,7 +2,40 @@
 # Cannot upgrade to Java 17, because Nashorn has been removed.
 
 # This is Ubuntu though. Could create a Debian 11 slim JRE, see: [slim_jre].
-FROM  eclipse-temurin:11.0.17_8-jdk-jammy
+FROM  eclipse-temurin:11.0.18_10-jdk-focal
+
+# Don't:
+#     eclipse-temurin:11.0.17_8-jdk-jammy
+#
+# — then there can be a misleading "insufficient memory" error, because Ubuntu 22
+# (JDK-Jammy) ships with glibc 2.35, which uses clone3 (>= 2.34 does),
+# but Docker doesn't work with clone3, until PR 42681 (fix for 42680). Which
+# is available starting with Docker v20.10.10, but I'd rather not force people
+# to upgrade their Docker installation. (Debian 11 should be ok too, doesn't use clone3.)
+# See:
+#  A misleading "insufficient memory for the Java Runtime [...]" error:
+#  https://stackoverflow.com/questions/72841549/container-fails-to-start-insufficient-memory-for-the-java-runtime-environment-t/73970043#73970043
+#
+# https://github.com/adoptium/containers/issues/215#issuecomment-1142046045
+#
+# via:  https://stackoverflow.com/questions/74443957/insufficient-memory-while-running-eclipse-temurin17-jdk-docker-image
+# via:  https://www.google.com/search?q=Failed+to+start+thread+%22GC+Thread%230%22+-+pthread_create+failed+(EPERM)+for+attributes%3A+stacksize%3A+1024k%2C+guardsize%3A+4k%2C+detached.&oq=Failed+to+start+thread+%22GC+Thread%230%22+-+pthread_create+failed+(EPERM)+for+attributes%3A+stacksize%3A+1024k%2C+guardsize%3A+4k%2C+detached.&aqs=chrome..69i57.1225j0j1&sourceid=chrome&ie=UTF-8
+#
+#
+# (Also see:  https://docs.docker.com/engine/security/seccomp/ )
+#
+# Email about some clone3 wrapper:
+# https://sourceware.org/git/?p=glibc.git;a=commit;h=d8ea0d0168b190bdf138a20358293c939509367f
+#
+# Anyway, to upgr Docker, if needed:
+#
+# How to:  https://docs.docker.com/engine/install/ubuntu/
+# That is:  "To upgrade Docker Engine, follow the installation instructions", which is just:  (and this worked)
+#
+#     sudo apt-get update
+#     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+#
+
 
 RUN \
   apt-get update && \
