@@ -51,7 +51,10 @@ alter  domain anonym_status_d add
 -- be looked up in pat_post_rels_t.
 create domain post_pat_status_d i16_d;
 
-create domain pseudonym_status_d i16_d; -- will add constraints later
+-- For now, always null. Will drop that constr, and add other constraints later.
+create domain pseudonym_status_d i16_d;
+alter  domain pseudonym_status_d add
+   constraint pseudonym_status_d_c_null check (value is null);
 
 
 
@@ -61,6 +64,15 @@ create domain pseudonym_status_d i16_d; -- will add constraints later
 
 -- Later, drop: category_id, page_id.
 alter table settings3 add column enable_anon_posts_c bool;
+
+
+-- Later, create table cont_prefs_t, and move this to there? See db-wip.sql.
+--
+alter table categories3 add column  comts_hidden_mins_c      array[i16_gz_d];  -- ???
+alter table categories3 add column  anon_ops_c               never_allow_recmd_always_d;
+alter table categories3 add column  anon_comts_c             never_allow_recmd_always_d;
+alter table categories3 add column  deanon_pages_aft_mins_c  i16_gz_d;
+alter table categories3 add column  deanon_anons_aft_mins_c  i16_gz_d;
 
 
 -- Skip fks — no fks in this table.
@@ -82,6 +94,7 @@ create index drafts_i_postasid on drafts3 (site_id, post_as_id_c);
 
 
 alter table users3 add column true_id_c            member_id_d;
+alter table users3 add column deanon_status_c      deanon_status_d;   -- ?
 alter table users3 add column pseudonym_status_c   pseudonym_status_d;
 alter table users3 add column anonym_status_c      anonym_status_d;
 alter table users3 add column anon_on_page_id_st_c page_id_st_d;
@@ -293,61 +306,6 @@ create index auditlog_i_doertrueid_session
 
 
 
--- Could do, but I think this is too error prone — I will or have already forgotten
--- some columns below, or will forget to always update all columns when needed.
--- Also, importing patches gets more complicated. Instead of the below,
--- the anon/pseudo user account's id will be stored. And one would use the
--- event / audit log to ... audit what the real people behind the anon/pseudonyms,
--- have done. (Or lookup the true id in the users table, pats_t, but the audit log
--- should be enough.)
---
--- Actually, can be better to add  post_actions3 [pat_rels_t]  rows of type:
---    AuhtorOf, with val_i32_c being a type-of-author bitfield? (anon, pseudonym, co-author),
--- linking to one's anon & pseudonym posts,
--- when and only when  posts_t.created_by_id  doesn't point directly to one's
--- true id (but instead points to an anon/pseudonym/user-list-pats_t row).
--- No! Skip. Instead, let  created_by_id  be the real id.
---                 and "just" add a   pat_rels_t.rel_type_c = AuthorOf for the anon?
---                 and excl such posts everywhere, as long as the anon is anon.
---      Also, can have a
---         pat_rels_t.show_pats_id  to show an anonym as voter,
---                                     instead of the real user account.
---
--- alter table post_actions3    add column true_id_c             member_id_d;
--- alter table links_t          add column added_by_true_id_c    member_id_d;
--- alter table link_previews_t  add column first_linked_by_id_c  member_id_d;
--- alter table post_revisions3  add composed_by_true_id_c        member_id_d;
--- alter table posts3           add created_by_true_id_c         member_id_d;
-
--- But I've added  author_id_c  already!
--- Now removing. Instead:   pat_rels_t.rel_type_c = AuthorOf
---
--- alter table posts3           add author_id_c                  pat_id_d;
--- alter table posts3           add author_true_id_c             member_id_d;
--- alter table post_read_stats3 add true_id_c                    member_id_d;
--- alter table review_tasks3    add true_id_c
--- alter table upload_refs3     add added_by_true_id_c ?
---
--- user_stats3, hmm?
---
--- pages_t — no, instead, the orig post in posts_t?  Old:
--- alter table pages3           add author_true_id_c             member_id_d;
--- -- But leave last_reply_by_id as is — don't add any  last_reply_by_true_id,
--- -- not that interesting.
--- 
--- alter table upload_refs3     add  added_by_true_id_c          member_id_d;
--- 
--- alter table user_visit_stats3 add true_user_id_c              member_id_d;
-
-
--- Let's add a  pat_rels_t.rel_type_c = AuthorOf from the anon to the anon posts?
--- Whilst created_by_id_c would keep pointing to the true author.
--- Then, looking up all one's posts, that just works.
--- And anon posts can easily be filtered away, by checking anon_status_c (because
--- other)
-
-
-
 -- Notification preferences
 -------------------------------------------------
 
@@ -387,11 +345,3 @@ create index pagenotfprefs_i_tagaid on page_notf_prefs_t (site_id, pages_with_ta
 create index pagenotfprefs_i_tagbid on page_notf_prefs_t (site_id, pages_with_tag_b_id_c);
 create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, pages_with_tag_c_id_c);
 
-
-
--- Later, create table cont_prefs_t, and move this to there? See db-wip.sql.
---
-alter table categories3 add column  anon_ops_c               never_allow_recmd_always_d;
-alter table categories3 add column  anon_comts_c             never_allow_recmd_always_d;
-alter table categories3 add column  deanon_pages_aft_mins_c  i16_gz_d;
-alter table categories3 add column  deanon_posts_aft_mins_c  i16_gz_d;

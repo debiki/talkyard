@@ -385,3 +385,61 @@ that list with Alice and Bob. But if authors_id_c is a non-list group,
 e.g. Support Team, then the text would read "By Support Team", instead
 of listing all members.
 $_$;
+
+
+-- Skip:  New  anon_id_c  or true_id_c  everywhere.
+-- Instead:
+-- Let's add a  pat_rels_t.rel_type_c = AuthorOf from the anon to the anon posts?
+-- Whilst created_by_id_c would keep pointing to the true author.
+-- Then, looking up all one's posts, that just works.
+-- And anon posts can easily be filtered away, by checking anon_status_c (because
+-- other)
+--
+-- But skip the below:
+-------------------------------------------------------------------------
+-- I think this is too error prone — I will or have already forgotten
+-- some columns below, or will forget to always update all columns when needed.
+-- Also, importing patches gets more complicated. Instead of the below,
+-- the anon/pseudo user account's id will be stored. And one would use the
+-- event / audit log to ... audit what the real people behind the anon/pseudonyms,
+-- have done. (Or lookup the true id in the users table, pats_t, but the audit log
+-- should be enough.)
+--
+-- Actually, can be better to add  post_actions3 [pat_rels_t]  rows of type:
+--    AuhtorOf, with val_i32_c being a type-of-author bitfield? (anon, pseudonym, co-author),
+-- linking to one's anon & pseudonym posts,
+-- when and only when  posts_t.created_by_id  doesn't point directly to one's
+-- true id (but instead points to an anon/pseudonym/user-list-pats_t row).
+-- No! Skip. Instead, let  created_by_id  be the real id.
+--                 and "just" add a   pat_rels_t.rel_type_c = AuthorOf for the anon?
+--                 and excl such posts everywhere, as long as the anon is anon.
+--      Also, can have a
+--         pat_rels_t.show_pats_id  to show an anonym as voter,
+--                                     instead of the real user account.
+
+alter table post_actions3    add column true_id_c             member_id_d;
+alter table links_t          add column added_by_true_id_c    member_id_d;
+alter table link_previews_t  add column first_linked_by_id_c  member_id_d;
+alter table post_revisions3  add composed_by_true_id_c        member_id_d;
+alter table posts3           add created_by_true_id_c         member_id_d;
+
+-- But I've added  author_id_c  already!
+-- Now removing. Instead:   pat_rels_t.rel_type_c = AuthorOf
+
+alter table posts3           add author_id_c                  pat_id_d;
+alter table posts3           add author_true_id_c             member_id_d;
+alter table post_read_stats3 add true_id_c                    member_id_d;
+alter table review_tasks3    add true_id_c
+alter table upload_refs3     add added_by_true_id_c ?
+
+user_stats3, hmm?
+
+pages_t — no, instead, the orig post in posts_t?  Old:
+alter table pages3           add author_true_id_c             member_id_d;
+-- But leave last_reply_by_id as is — don't add any  last_reply_by_true_id,
+-- not that interesting.
+
+alter table upload_refs3     add  added_by_true_id_c          member_id_d;
+
+alter table user_visit_stats3 add true_user_id_c              member_id_d;
+-------------------------------------------------------------------------

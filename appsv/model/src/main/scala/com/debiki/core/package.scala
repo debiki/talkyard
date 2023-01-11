@@ -806,23 +806,38 @@ package object core {
   /** A bitfield. Currently only None, 5 (made anon by oneself, can deanon oneself)
     * and 5 + 32 (deanonymized by oneself) = 37 are supported:
     *
-    * None or 0  = it not anon, was never anon
-    * 000---01  = made anon by oneself
-    * 000---10  = made anon by other user  (might not have been pub for any time —
-    *             if been in a staff-only category all the time)
-    * 000---11  = made anon automatically (e.g. auto anon category)
+    * None, SQL null, 0: it not anon, was never anon
     *
-    * ---000--  = cannot be deanonymized
-    * -----1--  = can deanonymized oneself
-    * ----1---  = can be deanonymized by others with deanon permission in the category?
-    * ---1----  = gets deanonymized automatically (after page anonym ttl)
+    * ------------1  = started as not anonymous, then made anonymous
+    *               
+    * ----------01-  =  1: made anon by oneself
+    * ----------10-  =  2: made anon by other user  (might not have been pub for any time —
+    *                    if been in a staff-only category all the time)
+    * ----------11-  =  3: made anon automatically (e.g. auto anon category)
     *
-    * -00-----  = is still anonymous
-    * -01-----  = 32, was deanonymized by oneself (no longer anonymous)
-    * -10-----  = 64, was deanonymized by sbd else
-    * -11-----  = 96, was deanonymized automatically (after page anonym ttl)
+    * -----0000----  = no one can see who you are
+    * --------1----  =  4: DBA can see who you are (by running SQL queries)
+    * -------1-----  =  4: you can see who you are
+    * ------1------  =  4: admins can see who you are
+    * -----1-------  =  8: others with see-anon permissions in the category, can see who you are
+    *                  (typically mods, so they can know who a problematic anon is,
+    *                  without having to de-anonymize the account).
     *
-    * 1--- ----  = was public for some time
+    * 00000--------  = cannot be deanonymized (not even by DBAs, info not stored)
+    * ----1--------  =  4: can be deanonymize by DBAs
+    * ---1---------  =  4: can deanonymize oneself
+    * --1----------  =  8: can be deanonymized by admins
+    * -1-----------  =  8: can be deanonymized by others with deanon permission in the category?
+    * 1------------  = 16: gets deanonymized automatically (after page anonym ttl)
+    *
+    * 00 + 2^16      = is still anonymous
+    * 01 + 2^16      =  1: was deanonymized by oneself (no longer anonymous)
+    * 10 + 2^16      =  2: was deanonymized by sbd else
+    * 11 + 2^16      =  3: was deanonymized automatically (after page anonym ttl)
+    *
+    * If deanonymized, made anonymous again,
+    * and deanonymized in another way — then, many of these
+    * bits would be set?
     */
   sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
     def toInt: i32 = IntVal
