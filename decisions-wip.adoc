@@ -1,0 +1,29 @@
+https://github.com/Pscheidl/rust-kubernetes-operator-example
+https://javaoperatorsdk.io/
+https://github.com/java-operator-sdk/java-operator-sdk/graphs/contributors
+
+https://web.archive.org/web/20170129131616/https://coreos.com/blog/introducing-operators.html
+https://github.com/k8s-operatorhub/community-operators/tree/main/operators
+https://cert-manager.io/
+
+https://operatorhub.io/
+https://github.com/Pscheidl/rust-kubernetes-operator-example
+
+
+I've been using Pull based GitOps, without knowing there was such a thing. Hmm, "invented" independently of all those other people
+https://www.gitops.tech/
+Interesting:
+https://github.com/bitnami-labs/sealed-secrets/issues
+
+https://kube.rs/
+
+The horror! Bash scripts, in Go templates, in Yaml:
+https://github.com/kudobuilder/operators/blob/master/repository/kafka/operator/templates/bootstrap.yaml
+via: https://kudo.dev/docs/, avoid.
+Nice descr of what Operators are though:
+>  Operators let you [automate] application tasks like taking backups, rebalancing data, scaling, or changing configuration. Any tasks you might want to do during operation of an application can be automated using an Operator.
+
+
+
+
+
