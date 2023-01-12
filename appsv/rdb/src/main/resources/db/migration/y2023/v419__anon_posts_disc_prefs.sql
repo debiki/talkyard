@@ -66,13 +66,40 @@ alter  domain pseudonym_status_d add
 alter table settings3 add column enable_anon_posts_c bool;
 
 
+-- Interessant!  Via ws: "discussion replies hidden for a while"
+-- https://community.canvaslms.com/t5/Canvas-Question-Forum/Is-there-a-way-to-hide-threaded-replies-in-a-graded-discussion/td-p/222165
+-- I am having the students reply to a graded discussion.  I am also having the students respond to two student discussion replies.  I would like the students to see the replies to the graded discussion post (so they can select two to reply) but not see the threaded replies.
+-- & hide replies until a user posts a reply himself/herself
+-- Idea docs:
+-- https://community.canvaslms.com/t5/Community/How-do-idea-conversations-work-in-the-Instructure-Community/ta-p/2980
+
+-- https://blog.lucidmeetings.com/blog/25-tools-for-online-brainstorming-and-decision-making-in-meetings
+
 -- Later, create table cont_prefs_t, and move this to there? See db-wip.sql.
 --
-alter table categories3 add column  comts_hidden_mins_c      array[i16_gz_d];  -- ???
-alter table categories3 add column  anon_ops_c               never_allow_recmd_always_d;
-alter table categories3 add column  anon_comts_c             never_allow_recmd_always_d;
-alter table categories3 add column  deanon_pages_aft_mins_c  i16_gz_d;
-alter table categories3 add column  deanon_anons_aft_mins_c  i16_gz_d;
+alter table categories3 add column  comts_hidden_anon_mins_c array[i32_gz_d];  -- ???
+
+-- er table categories3 add column  hidden_comts_c               never_allow_recmd_always_d;
+-- er table categories3 add column  show_comts_aft_mins_c        i16_gz_d;
+-- er table categories3 add column  show_all_aft_mins_c          i16_gz_d;
+
+alter table categories3 add column  comts_start_hidden_c         never_allow_recmd_always_d;
+alter table categories3 add column  comts_shown_aft_mins_c       i32_gz_d;
+
+alter table categories3 add column  op_starts_anon_c             never_allow_recmd_always_d;
+alter table categories3 add column  comts_start_anon_c           never_allow_recmd_always_d;
+alter table categories3 add column  anons_deanond_aft_mins_c     i32_gz_d;
+alter table categories3 add column  anons_deanond_aft_mins_individually_c     i32_gz_d;
+alter table categories3 add column  whole_pages_deanond_aft_mins_c i32_gz_d;
+
+--ter table categories3 add column  each_anon_shown_aft_mins_c  never_allow_recmd_always_d;
+--ter table categories3 add column  all_anons_shown_aft_mins_c  never_allow_recmd_always_d;
+--ter table categories3 add column  page_deanond_aft_mins_c  i16_gz_d;
+
+-- er table categories3 add column  anon_ops_c               never_allow_recmd_always_d;
+-- er table categories3 add column  anon_comts_c             never_allow_recmd_always_d;
+-- er table categories3 add column  deanon_pages_aft_mins_c  i16_gz_d;
+-- er table categories3 add column  deanon_anons_aft_mins_c  i16_gz_d;
 
 
 -- Skip fks — no fks in this table.
