@@ -8,6 +8,36 @@
 --@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 ------------------------------------------------------------------------
+comment on domain  can_see_assigned_d  is $_$"
+null, 1 = no, 2 = see if at all assigned,
+                        3 = see which group(s) assigned to,
+                        4 = see which individuals?
+Null means Yes, is the default, same as 4.
+1 means No, and overrides any default that would otherwise have been inherited
+  from ancestor content nodes.
+2 means Yes, if at all assigned, but not to whom.
+3 means Yes, but can see only the primary group(s) of those assigned, not the individuals.
+4 means Yes and can see each person's name, same as Null.
+$_$";
+
+------------------------------------------------------------------------
+comment on domain  can_see_private_d  is $_$"
+Null means No, is the default, same as 1.
+1 means No too, and overrides any defaults that would otherwise have
+  been inherited from ancestor content nodes.
+2 means Yes and show the others that someone else can see too but not who.
+3 means Yes and list my primary group but not my own name  (in parenthesis if
+  cannot reply, only read?).
+4 means Yes and list me as can-see (in parenthesis if cannot reply, only read?).
+5 means Yes but don't list me as can-see (then, there's instead a one
+  time message that private posts can in fact be seen by NNN, when starting 
+  a new private message.
+
+TODO PRIVACY: Show info message also when joining!  Not only to the person starting
+a private discussion.
+$_$";
+
+------------------------------------------------------------------------
 comment on domain  dormant_status_d  is $_$
 If not null, shows why a relationship (from a post or pat to something)
 should be ignored. Then, indexes can exclude these relationships, e.g.

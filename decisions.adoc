@@ -503,6 +503,14 @@ Change-rename tables `post_actions3` to `pat_rels_t` and create a new `post_rels
 table ("rel" for relationship, graph db terminology: nodes and relationships).
 See `[graph_database]` in <./docs/tyworld.adoc>.
 
+Edit: Not `pat_rels_t`, instead: `pat_post_rels_t`?
+And rename `group_participants3` to `pat_pat_rels_t`
+— relationships between pats and other pats.
+E.g. member of group. Or follows, or friends, or ... what more? `PseudonymOf`?
+And add `PatPatRelType` with value e.g. `MemberOf`, or `ManagerOf` etc,
+of relevance for groups. And `SubscribedTo`, if one wants to know about
+new posts by someone or by anyone in a group.
+
 Using these links tables will make it possible for e.g. a single flag to flag
 many things, e.g. all astroturfing accounts the flagger thinks belong to the same
 real world person. Or a post can be PostRelType.AssignedTo more than one person.

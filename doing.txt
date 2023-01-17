@@ -1,0 +1,264 @@
+In  private def loadMembersOfCustomGroup,  skip:
+      dieIf(user.isAnon, "TyE5ABK20B1")
+      // Cannot be a group? [.0_group_in_group]
+      DO_AFTER // 2022-02-01 comment in this? Even later, remove isDevOrTest
+      //dieIf(user.isGroup && com.debiki.core.isDevOrTest, "TyE5ABK20B3")
+
+In    skip:
+      dieIf(user.isAnon, "TyE5ABK20A1")
+      // Cannot be a group? [.0_group_in_group]  Use  pat.toUserOrThrow ?
+      DO_AFTER // 2022-02-01 comment in this? Even later, remove isDevOrTest
+      //dieIf(user.isGroup && com.debiki.core.isDevOrTest, "TyE5ABK20A3")
+      user
+
+
+
+Change  site settings, categories, pages and posts  to  *nodes*:
+
+Site node (id 1? But it's already in use everyywhere :-/
+            namely the 1st root cat about page title?  Maybe 0 or null or -1 instead)
+  Root category node  (for sub communities, a la subreddits)
+   *  Base category node
+             (can use the About page title post = title,
+              and orig post nr 1 = descr?)
+
+     (*  Sub, subsub category nodes)
+
+          *  Page node
+                  (can use the title post?  Which will remain the page title:
+                      nodes_t.approved_source_c = posts3.approved_source, renamed)
+            1  Orig Post node,  node nr 1
+            *  Comment nodes,  node nr 2, 3, 4
+
+Categories:
+  - NodeType.Category
+  - Node text = category title.
+  - Child node nr 1  = category description.
+  - Child node nr 2, 3, 4: N/A.
+  - Page child nodes = pages in that category.
+  - Category child nodes = sub cats.
+
+Pages:
+  - NodeType.Page
+  - Node text = page title.
+  - Child node nr 1  = orig post text.
+  - Child node nr 2, 3, 4: Comments.
+  - Page child nodes = typially sub tasks or comment trees "impotant enough"
+      to be moved to their own child page?
+  - Category child nodes: Sub tasks grouped in categories?
+      For really big projects?
+    Don't appear on any category list page. Instead, only if clicking [+]
+    to expand the page (in any list of pages where it appears).
+
+Comments:
+  - NodeType.Comment.
+  - Node text = comment text.
+  - Child nodes = replies.
+  And, helpful for a bookmarks tree or to specify sidebar contents?:
+  - Page child nodes: Show as a list below the comment? (When would that be useful?)
+  - Category child nodes: Show as a list, too?
+
+Then can:
+  - Delete duplicated settings in:
+      settings3,  cats_t (categories3),  pages_t (pages3),
+      posts_t (posts3)  <—— but will get renamed to  nodes_t.
+
+  - Comment owners:  One owns comments one has posted, and can make
+    them anonymous (change to an anon author). Or make them private,
+    and then add others who can then see the private comment and
+    comment sub tree starting at that comment (at that node).
+
+  - Page owners:  A person who creates an ideation page with different
+    steps, by default manages that ideation page:  asks people to
+    submitt ideas (as comment repiles)  decides when that's been done
+    and makes the replies visible.  Decides if replies are anonymous and for
+    how long.   Can add sbd else as page manager — then that person
+    can add/remove people from that particular ideation page.
+
+  - Projects: Hybrid page-category nodes — project pages
+    which have their own sub pages. The project main page, is sort of
+    both a category and a page.
+
+  - Project owners. Owners make sense, not only for orig-posts and comments,
+    but also for project pages.  The person who creates a new project,
+    by default is the project owner.  And can add a node manager = project manager,
+    who can in turn assign people to the node (project) or sub nodes (project
+    sub tasks).
+
+  - Category owners. Makes sense too. A Talkyard community has members who
+    create packages for the related software, and each such package
+    gets its own sub category, and the package author replies to questions
+    there. It'd be nice if the package author, was the category owner?
+    So hen could edit the category description, maybe rename the category,
+    if the package gets renamed? Without having to aske the forum admins.
+
+  - Root category / sub community owners. Makes sense — would correspond to
+    sbd who creates & moderators a subreddit (over at Reddit).
+    And can grant Manage & delete-comments pemrission to sbd else
+    who then starts functioning as a moderator of that sub community.
+
+  - Site node owners.  That'd be the person who created the forum (unless
+    hen removes henself and adds sbd else as site owner.)
+
+  - Permissions don't need to link to either a category, page or post,
+    or the whole-site boolean.
+    Instead, there's just nodes.
+  - Fields dupl in  settings3, cats_t, pages_t, posts_t  disappear.
+  - If you add a feature to a category, it automatically works also
+    for pages and comment sub trees — which starts looking nice/important,
+    now with hidden and anonymous comments, where you'd often want
+    the person who created, say, an ideation page, to manage that page
+    and discussion (e.g. decide when to move on to the next step in an
+    ideation process).
+    But that'd be a bit more work, as things look now,  when permissions
+    would have to be dupl between cats, pages,  comment trees.
+    Instead, with nodes,  it'd just work: Add settings for cats,
+    and they'd be there also for pages  — since both are the same thing: nodes.
+  - Already did this for groups and users: they're the same thing, in the
+    same table, pats_t (currently users3), just different "sub types":
+    a participant of type user, or type group.
+    And this was a good (!) idea. (Thanks PostgreSQL for the idea.)
+    Presumably would be the right thing not just for people (pats_t) but
+    also for content (nodes_t currently posts3).
+
+
+
+perms_on_pages3  ——> perms_on_conts_t
+                     (& perms_on_pats_t)
+
+                        Table "public.perms_on_pages3"
+         Column          |       Type        | Collation | Nullable | Default 
+-------------------------+-------------------+-----------+----------+---------
+ site_id                 | integer           |           | not null | 
+ perm_id                 | integer           |           | not null | 
+ for_people_id           | integer           |           | not null | 
+ on_whole_site           | boolean           |           |          | 
+ on_category_id          | integer       ^^^\
+ on_page_id              | character varying >——>  on_cont_id  —>  conts_t  (currently "posts3")
+ on_post_id              | integer       ___/
+ on_tag_id               | integer           |           |          | 
+ may_edit_page           | boolean           |           |          | 
+ may_edit_comment        | boolean           |           |          | 
+ may_edit_wiki           | boolean           |           |          | 
+ may_edit_own            | boolean           |           |          | 
+ may_delete_page         | boolean           |           |          | 
+ may_delete_comment      | boolean           |           |          | 
+ may_create_page         | boolean           |           |          | 
+ may_post_comment        | boolean           |           |          | 
+ may_see                 | boolean           |           |          | 
+ may_see_own             | boolean           |           |          | 
+ may_see_private_flagged | boolean           |           |          | 
+
+NEXT: Add these fields to perms_on_pages3  (to be renamed to perms_on_cons_t):
+
+  - is_owner_c bool:  May add managers and granters/revokers,
+                     and edit the node and ... what about child nodes
+                     of the same type?
+       (but is-author stored in:  pat_node_rels_t.rel_type = AuthorOf)
+
+    Private comments:
+        may_see,  may_see_own,  may_post_comment,  may_edit_own,  may_edit_wiki
+        and root comt owner  can add more people,
+        and those with  can_manage_c  or  can_grant  on the private root,
+           can add more people (with fewer or as much perms as themselves).
+
+        but  nodes_t (posts3) .private_status_c  says if a comment tree is private.
+        Hmm, need to look at all ancestor comments, pages and cats. (that's fine)
+
+  - can_assign_c
+       (but is-assigned stored in:  pat_node_rels_t.rel_type = AssignedTo)
+
+  - can_see_assigned_c  
+
+  - can_alter_c  — may open/close, change doing status?
+                     (but not change owner, author, private-status, delete).
+
+  - can_manage_c bool:  May grant & revoke others' perms, on a cont node
+                          and descendant nodes.  // *of the same type* (e.g. child cats).
+           (later?: bitfield that says  *what* perms?
+            All perms could be a bitfield too actually?
+            But for now, one can grant only the perms one has oneself?
+            And revoke ... What?  Perms one granted oneself?)
+  - can_grant_c bool, or  can_invite_c — invite to join a category / group?
+          May grant permissions to others, but only those hen
+          has henself already.  And may undo, until the grantee
+          has used the new perms for a while or until some time has elapsed.
+
+          Some bits could say if the grantee first needs to accept?
+          So e.g. not auto added to a cat or group you don't want to be in.
+
+  - can_revoke_c bool,  or  can_suspend_c — can suspend/ban pats from a cat?
+                                1: can prevent editing others' stuff e.g. wikis,
+                                2: can prevent posting,
+                                3: can prevent seeing others' posts (only one's own)
+                                4: can prevent seeing others' and own posts.
+          may revoke permissions, and undo, but not add new people.
+
+ (- granted_by_id_c  ? so a manager can un-grant perms or un-invite someone hen
+                        granted-perms-to or invited, recently?
+  - granted_at_c  ?   Or is it better to look up in the audit log ?
+  )
+
+
+ (s = site)
+pats_t (users3) as of now:
+ s      is_admin                              | boolean                        |           |          | 
+ s      is_owner                              | boolean                        |           |          | 
+ server is_superadmin                         | boolean                        |           |          | 
+ rm     email_for_every_new_post              | boolean                        |           |          | 
+ s/c?   is_approved                           | boolean                        |           |          | 
+ s/c?   suspended_at                          | timestamp without time zone    |           |          | 
+        is_moderator —> trust_level: mod
+        locked_trust_level
+ s/c    knowledle_level_c — how much hen knows about whatever is in a category or sub community.
+            trust_level is different: the combo of good judgement (sometimes
+            saying "I don't know") and good intentions.
+            Trust level is a personality trait, whilst knowledle_level_c
+            can be knowledge area specific.
+        threat_level,  locked_threat_level  —  lack-of-a-good-judgement + bad-intentions combo.
+                                               site wide / personality trait.
+        tech_level_c — personal, site wide.
+
+ s/c    may_see_my_activity_tr_lv_c           | integer                        |           |          | 
+
+ s/c    max_upload_bytes_c                    | integer                        |           |          | 
+ s/c    allowed_upload_extensions_c           | character varying              |           |          | 
+
+ s      may_search_engines_index_me_c         | boolean                        |           |          | 
+ s/c    may_see_my_username_tr_lv_c           | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_full_name_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_tiny_avatar_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_medium_avatar_tr_lv_c      | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_brief_bio_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_full_bio_tr_lv_c           | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_memberships_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_profile_tr_lv_c            | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_me_in_lists_tr_lv_c           | trust_level_or_staff_d         |           |          | 
+ s      may_see_if_im_online_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_visit_stats_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_post_stats_tr_lv_c         | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_approx_stats_tr_lv_c       | trust_level_or_staff_d         |           |          | 
+ s/c    may_see_my_exact_stats_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ s      may_find_me_by_email_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ s/c    may_follow_me_tr_lv_c                 | trust_level_or_staff_d         |           |          | 
+ s/c    may_mention_me_tr_lv_c                | trust_level_or_staff_d         |           |          | 
+ s/c    may_mention_me_same_disc_tr_lv_c      | trust_level_or_staff_d         |           |          | 
+ s      may_dir_msg_me_tr_lv_c                | trust_level_or_staff_d         |           |          | 
+ s      why_may_not_mention_msg_me_html_c     | text_nonempty_ste500_trimmed_d |           |          | 
+ s      may_see_my_account_email_adrs_tr_lv_c | trust_level_or_staff_d         |           |          | 
+ s      may_see_my_contact_email_adrs_tr_lv_c | trust_level_or_staff_d         |           |          | 
+ cat    may_assign_me_tr_lv_c                 | trust_level_or_staff_d         |           |          | 
+ cat    may_see_my_assignments_tr_lv_c        | trust_level_or_staff_d         |           |          | 
+ s      email_threading_c                     | i16_gz_lt1024_d                |           |          | 
+ s/c?   email_notf_details_c                  | i16_gz_lt1024_d                |           |          | 
+ s      see_profile_min_tr_lv_c               | trust_level_or_staff_d         |           |          | 
+ s/c?   see_approx_stats_min_tr_lv_c          | trust_level_or_staff_d         |           |          | 
+ s/c?   see_exact_stats_min_tr_lv_c           | trust_level_or_staff_d         |           |          | 
+ s      true_id_c                             | member_id_d                    |           |          | 
+ s      pseudonym_status_c                    | pseudonym_status_d             |           |          | 
+ page   anonym_status_c                       | anonym_status_d                |           |          | 
+ page   anon_on_page_id_st_c                  | page_id_st_d                   |           |          | 
+ page   anon_on_page_id_c                     | page_id_d__later    
+
+                  
+

@@ -1874,7 +1874,7 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
 }
 
 
-// RENAME to alterPage.
+// RENAME to [alterPage].
 // Alter = change in character or composition, typically in a small but significant way.
 // Modify = make partial or minor changes.
 // But "change" can mean replace. So "alter" is more clear.

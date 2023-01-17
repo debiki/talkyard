@@ -115,6 +115,7 @@ object PatRelType_later {
   /** If a pat wants to get notified about posts from another pat.  Hmm but
     * shouldn't this be in  notf_prefs_t?  So can follow someone *in a specific cat* only,
     * and choose how often to get notified, other notf prefs things.
+    * Or should be in  pat_pat_rels_t?
     */
   // object FollowerOf extends PatRelType_later(-1)
 

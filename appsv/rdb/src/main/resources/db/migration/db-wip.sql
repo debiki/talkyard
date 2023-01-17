@@ -282,9 +282,12 @@ $_$;
 --     postponed_by_id_c, planned_by_id_c, started_by_id_c,
 --     paused_by_id_c, done_by_id_c, closed_by_id_c, locked_by_id_c,
 --     frozen_by_id_c, unwanted_by_id_c, hidden_by_id_c, deleted_by_id_c
--- with:  private_status_c
+-- with:  private_status_c  YES doing.
 --                 [edit] No, using private_pats_id_c instead. And the following might be
 --                 a user list/group setting instead: [/edit]
+--                 [edit 2] No,  don't use  private_pats_id_c.
+--                          Instead: posts3.private_status_c
+--                                  + perms_on_pages3.can_see & can_see_private_c.
 --            null or 0 = not private,
 --            1 = yes, can make public,
 --            2 = yes, can*not* make public, but can add more who can see it,
