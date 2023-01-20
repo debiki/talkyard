@@ -202,6 +202,16 @@ votes and flags, but later, flags will be kept in posts_t instead,
 linked to the flagged things via the upcoming table post_rels_t.
 $_$;
 
+------------------------------------------------------------------------
+comment on column  post_actions3.added_by_id_c  is $_$
+If one pat assigns another to a task.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  post_actions3.show_pat_id_c  is $_$
+For anonymous votes: points to the anonym to show instead of oneself.
+$_$;
+
 
 --======================================================================
 --  perms_on_pages_t
@@ -233,9 +243,10 @@ $_$;  -- '
 
 ------------------------------------------------------------------------
 comment on table  posts3  is $_$
-To be renamed to  posts_t.  Stores the actuall discussions:
+To be renamed to  posts_t.  No, to nodes_t.  Stores the actuall discussions:
 the Original Post, a title post, reply/comment posts, meta posts,
 chat messages, any private comments.
+Later, categories and pages will be here too. [all_in_nodes_t]
 
 Later, other things too: Flags. Flags are nicely represented as posts of
 type PostType.Flag on pages of type PageType.Flag, visible to oneself and mods
@@ -273,19 +284,48 @@ thereafter the original author cannot edit it, un/delete it or anything.
 $_$;
 
 ------------------------------------------------------------------------
-comment on column  posts3.private_pats_id_c  is $_$
-If non-null, the post is private. Then, all descendants (the whole sub thread
-or page if the Orig Post is private) should be too, otherwise it's a bug.
-private_pats_id_c points to a pat or a list of pats (pats_t.is_pat_list_c = true).
-Comments in private sub threads have nr:s < 0, so there's a quick way for Ty
+comment on column  posts3.private_status_c  is $_$
+If non-null, the post is private, and all descendants (the whole
+comments tree or page if it's the orig post) are private too.
+
+In  perms_on_pages3.{may_post_comment, may_see}  we see who may
+reply to (or only see) the private tree.
+
+The private_status_c value says if it's ok to add more people to this private
+tree, and if someone added, can see already existing private comments
+(otherwise they can see new, only).
+These things can only be changed in the more-private direction,
+once the private tree has been created.  Maybe values could be:
+
+0 or null: Not private.
+1: Can add more private members, and make it public. The default.
+   All other values below, won't be implemented the nearest ... years?:
+2: Can add more people to the private tree, that is, make it less private, sort of.
+   And they get to see the alreday existing comments.
+3: Can add more people to a private tree, but they don't get to see any
+   already existing comments; they can see only comments posted after they
+   (the new people) got added. Will use  perms_on_posts3.can_see_priv_aft_c
+   to remember when?
+4: If adding more people to a private page, instead, a new private page
+   gets created, with the original people plus the ones now added.
+   (And you can keep adding people, until a comment has been posted on this
+   new page — thereafter, adding more, cerates yet another page.)
+   Then new people won't see that there was an earlier discussion,
+   with fewer participants.
+5: Cannot add more private pats (except for by adding to a group who can see).
+6: Cannot add more private pats, not even by adding sbd to a group.
+   (How's that going to get implemented? And does it ever make sense)
+
+Comments in private comment trees have nr:s < 0, so there's a quick way for Ty
 to skip them when loading comments to show by default on a page, *and*
 so there won't be any gaps in the not-private comment nr sequence (> 0).
-Comments on private *pages* though, have positive nrs — because anyone who can
+Comments on private *pages* though, can have nrs > 0? Because anyone who can
 see the private page, can see those comments, so we want to load all of them.
-It's not allowed to start new private sub threads inside private threads
+
+It's not allowed to start new private sub trees inside private trees
 or on private pages, because then the permission system would become
-unnecessarily complicated. ('New' here means that a different set of
-pats could see those private sub threads.)
+unnecessarily complicated? ('New' here means that a different group of
+people could see those private-tree-in-tree.)
 $_$;  -- '
 
 ------------------------------------------------------------------------
@@ -510,19 +550,39 @@ $_$;
 -- --======================================================================
 -- 
 -- ------------------------------------------------------------------------
--- comment on column  posts3.anon_level_c  is $_$
+-- RM:  comment on column  posts3.anon_level_c  is $_$
 -- 
 -- If this post was done anonymously, by a member (not a guest), and how
 -- much it is anonymized.
 -- $_$;
 -- ------------------------------------------------------------------------
--- comment on column  posts3.anonym_nr_c  is $_$
+-- RM:  comment on column  posts3.anonym_nr_c  is $_$
 -- 
 -- Others can see that one's anonymous posts with the same virtual anon
 -- account incarnation, were made by the same anonymous person (but of course
 -- not who hen is).
 -- $_$; -- '
 -- ------------------------------------------------------------------------
+
+
+-- ------------------------------------------------------------------------
+comment on column  posts3.answered_status_c  is $_$
+
+1: Waiting for solutions. 2: There's some solutions, still waiting for more.
+3: There's a solution, no more needed (and then page typically closed).
+$_$; -- '
+
+-- ------------------------------------------------------------------------
+comment on column  posts3.closed_status_c  is $_$
+
+1: Closed, 2: Locked, 3: Frozen.
+$_$;
+
+-- ------------------------------------------------------------------------
+comment on column  posts3.doing_status_c  is $_$
+
+1: Planned, 2: Started, 3: Paused, 4: Done.
+$_$;
 
 
 --======================================================================

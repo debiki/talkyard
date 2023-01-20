@@ -235,6 +235,10 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // the page e.g. gets closed or answered etc. And the view — the forum would
   // provide a default, but everyone can override it, e.g. change sort order
   // or 1D/2D layout etc, for themselves.
+  // HOWEVER the above, 0) 1) 2) 3), is overdoing it.  Instead, nodes_t which will
+  // store cats, pages and posts, is more flexible thany *any* other discussion software
+  // already. And copying/syncing settings between cats, would be simpler to implement
+  // and give all (?) of the benefits with 0) 1) 2) 3) anyway (?).
   pageId: String,
   extImpId: Option[ExtId] = None,  // RENAME to extId
   pageType: PageType,
@@ -833,6 +837,9 @@ object PageType {
   case object UsabilityTesting extends PageType(21, staffOnly = false) { // [plugin]
     override def hasDoingStatus = true
   }
+
+  // Later — links to show in the sidebar, or for one's personal [bookmarks]?
+  // case object MenuTree extends PageType(?, staffOnly = false)
 
 
   def fromInt(value: Int): Option[PageType] = Some(value match {

@@ -20,24 +20,6 @@ alter table posts3 drop column  authors_id_c;
 -------------------------------------------------
 
 
-create domain content_set_type_d int;
-alter  domain content_set_type_d add
-   constraint content_set_type_c_in_11 check (value in (11));
-  -- 1 = whole site, 4 = mixed (opt cat + opt tags + opt page ids),
-  -- 7 = tag(s) only, 11 = cat(s) only, 14 = page(s), 17 = replies?
-
-create domain folder_path_d text_nonempty_ste60_d;
-alter  domain folder_path_d add
-   constraint folder_path_d_c_chars check (value ~ '^/([a-z0-9][a-z0-9_-]*/)+$');
-
-create domain anon_or_guest_id_d pat_id_d;
-alter  domain anon_or_guest_id_d add
-   constraint anon_or_guest_id_d_c_ltm10 check (value <= -10);
-
-create domain choose_yes_d i16_d;
-alter  domain choose_yes_d add
-   constraint choose_yes_d_c_in check (value in (2, 3));
-
 create domain never_allow_recmd_always_d i16_d;
 alter  domain never_allow_recmd_always_d add
    constraint never_allow_recmd_always_d_c_in check (value in (1, 2, 3, 4));
@@ -54,80 +36,14 @@ create domain creator_status_d i16_gz_lt1024_d;
 
 -- Says if a page or post, and all descendants, are private. Bitfield.
 create domain private_status_d i16_gz_lt1024_d;
---ter  domain private_status_d add
--- constraint private_status_d_c_null_123 check (
---          (value is null) or (value between 1 and 5));
+alter  domain private_status_d add
+   constraint private_status_d_c_null_1 check ((value is null) or (value = 1));
 
 
 -- For now, always null. Will drop that constr, and add other constraints later.
 create domain pseudonym_status_d i16_d;
 alter  domain pseudonym_status_d add
    constraint pseudonym_status_d_c_null check (value is null);
-
--- NO,  instead,  this'll be in  perms_on_pages3  = perms_on_cont_t ?
--- 0b0001 = Member / has-it-henself,
--- 0b0010 = Bouncer,  *no*,  Revoker, instead?
--- 0b0100 = Adder,    *no*,  Granter, instead?
--- 0b1000 = Manager,
-create domain rel_perms_d i32_d;
-alter  domain rel_perms_d add
-   constraint rel_perms_d_c_bitfield check (value between 1 and 9);
-      --   1,   -- member / has rel henself
-      --   2,   -- bouncer  (can remove members)
-      --   3,   -- bouncer and member
-      --   4,   -- adder  (can add members)
-      --   5,   -- adder and member
-      --   6,   -- adder and bouncer
-      --   7,   -- adder, bouncer and member
-      --   8,   -- manager  (can add & remove members)
-      --   9);  -- manager and member
-
-      --   ?    -- group mod? Can moderate comments by others in the group
-      --   ?    -- group admin? That is, can change group settigns
-
-      --   ?    -- see relationship, e.g. see group members?
-      --   ?    -- see anons? No, cat perm instead?
-
--- Pat-post-rels ex
---   Can see private.
---     Is private = posts_t (!) status flag.
---     Adder/remover = adds private comments thread participants.
---
---   VotedOn
---     Cat perms and page perms determines who can vote?
---
---   AssignedTo
---     Cat perms determines who may assign?
---
---   AuthorOf
---     Adder/remover N/A, instead,  OwnerOf  decides?
---
---   OwnerOf  *No*. Instead in:  perms_on_pages3 (later renamed to: perms_on_nodes_t)
---     No,  perms_on_conts_t — for "content".  Content? Too long. Let's use "cont"
---                           short enough, and is a standard abbreviation for content.
---     Compare:
---           pat_cont_rels_t   pat_pat_rels_t
---         with:
---           participan_contents_relationships_t   participan_participants_relationships_t
---         I think the latter is too long! Takes 3 eye movements to read each of those
---         long table names Abbreviations are needed.  And, when abbreviating, why not
---         keep it really short? People need to look up the abbreviations once anyway
---         in any case (probably not more, since these words are "everywhere", hard to
---         forget, when getting reminded constantly). So let's go with "pat" for
---         "participant" (already done, in use)  and "cont" for "content".
---         Now, just 1 eye movement needed :- ) (for you too?)
---         (I mean, you see the whole table name, if glancing just once in the middle.
---         of the table name.)
---     Can change author, close, delete, change post type, edit, etc.
---     Or should this be in  perms_on_pages3? No, is *per post* always,
---     not cat or page or whole site?
---     Or, hmm, actually makes sense for those others too? Yes.
---     E.g. a package maintainer, being the owner of a cat about that package?
---     and free to grant permissions in that cat?
---     Or a project page, with sub pages representing tasks — the page
---     owners could be the project owners.
---
---
 
 create domain can_see_private_d i16_d;
 alter  domain can_see_private_d add
@@ -144,25 +60,35 @@ alter  domain can_see_assigned_d add
 -- New permissions
 -------------------------------------------------
 
-alter table perms_on_pages3 add column  can_see_private_c      can_see_private_d;
+-- For site admins or cat mods. Lets them change moderation settings.
+-- If can change:  approve before,  review after,  pending review.
+alter table settings3       add column  can_remove_mod_reqmts_c  i32_gz_d;
+
+alter table perms_on_pages3 add column  can_see_others_priv_c  can_see_private_d;
 alter table perms_on_pages3 add column  can_see_priv_aft_c     timestamp;
-alter table perms_on_pages3 add column  can_see_priv_from_nr_c post_nr_d;
 alter table perms_on_pages3 add column  can_delete_own_c       bool;
 
-alter table perms_on_pages3 add column  can_post_anon_c        can_see_private_d;
-alter table perms_on_pages3 add column  can_post_hidden_c      can_see_private_d;
-
-
-alter table perms_on_pages3 add column  can_alter_c            bool;  -- [alterPage]
+alter table perms_on_pages3 add column  can_alter_c            i64_gz_d;  -- [alterPage]
 alter table perms_on_pages3 add column  is_owner_c             bool;
-alter table perms_on_pages3 add column  can_manage_pats_c      bool;
-alter table perms_on_pages3 add column  can_invite_pats_c      bool;  -- instead of adder
-alter table perms_on_pages3 add column  can_suspend_pats_c     bool;  -- instead of bouncer
+alter table perms_on_pages3 add column  on_pats_id_c           pat_id_d; -- default = anyone
+alter table perms_on_pages3 add column  can_manage_pats_c      i64_gz_d;
+alter table perms_on_pages3 add column  can_invite_pats_c      i64_gz_d;  -- instead of adder
+alter table perms_on_pages3 add column  can_suspend_pats_c     i64_gz_d;  -- instead of bouncer
 
 alter table perms_on_pages3 add column  can_assign_pats_c      bool;
 alter table perms_on_pages3 add column  can_see_assigned_c     can_see_assigned_d;
 
+-- So can have categories with stricter requirements?  DON'T DO NOW!
+alter table perms_on_pages3 add column  num_first_posts_to_review   i16_gz_d;
+alter table perms_on_pages3 add column  num_first_posts_to_approve  i16_gz_d;
+alter table perms_on_pages3 add column  max_posts_pend_appr_before  i16_gz_lt100_d;
 
+alter table perms_on_pages3 add column  appr_before_if_trust_lte    trust_level;
+alter table perms_on_pages3 add column  review_after_if_trust_lte   trust_level;
+alter table perms_on_pages3 add column  max_posts_pend_revw_aftr    i16_gz_lt128_d;
+
+-- Måttligt intressant, redan bra db-struktur:
+--   https://stackoverflow.com/questions/846201/fast-relational-method-of-storing-tree-data-for-instance-threaded-comments-on-a 
 
 
 -- Private sub threads
@@ -225,36 +151,30 @@ alter table settings3 add column enable_anon_posts_c bool;
 
 -- https://blog.lucidmeetings.com/blog/25-tools-for-online-brainstorming-and-decision-making-in-meetings
 
--- Later, create table cont_prefs_t, and move this to there? See db-wip.sql.
---
-alter table categories3 add column  comts_hidden_anon_mins_c array[i32_gz_d];  -- ???
+-- Later, create table  cont_prefs_t,  and move this to there?  See db-wip.sql.
 
--- er table categories3 add column  hidden_comts_c               never_allow_recmd_always_d;
--- er table categories3 add column  show_comts_aft_mins_c        i16_gz_d;
--- er table categories3 add column  show_all_aft_mins_c          i16_gz_d;
-
+-- Dupl cols: both on categories3, and posts3.
+-- Need the content nodes table, [conts_t], for all of:  cats, pages, comments.
 alter table categories3 add column  comts_start_hidden_c         never_allow_recmd_always_d;
 alter table categories3 add column  comts_shown_aft_mins_c       i32_gz_d;
 
 alter table categories3 add column  op_starts_anon_c             never_allow_recmd_always_d;
 alter table categories3 add column  comts_start_anon_c           never_allow_recmd_always_d;
-alter table categories3 add column  deanon_aft_mins_c            i32_gz_d;
+alter table categories3 add column  deanon_mins_aft_first_c      i32_gz_d;
 alter table categories3 add column  deanon_mins_aft_last_c       i32_gz_d;
-alter table categories3 add column  deanon_page_aft_mins_c       i32_gz_d;
+alter table categories3 add column  deanon_page_mins_aft_first_c i32_gz_d;
 alter table categories3 add column  deanon_page_mins_aft_last_c  i32_gz_d;
 
--- er table categories3 add column  anons_deanond_aft_mins_c     i32_gz_d;
--- er table categories3 add column  anons_deanond_aft_mins_individually_c     i32_gz_d;
--- er table categories3 add column  whole_pages_deanond_aft_mins_c i32_gz_d;
+-- (Same as above, for categories3.)
+alter table posts3      add column  comts_start_hidden_c         never_allow_recmd_always_d;
+alter table posts3      add column  comts_shown_aft_mins_c       i32_gz_d;
 
---ter table categories3 add column  each_anon_shown_aft_mins_c  never_allow_recmd_always_d;
---ter table categories3 add column  all_anons_shown_aft_mins_c  never_allow_recmd_always_d;
---ter table categories3 add column  page_deanond_aft_mins_c  i16_gz_d;
-
--- er table categories3 add column  anon_ops_c               never_allow_recmd_always_d;
--- er table categories3 add column  anon_comts_c             never_allow_recmd_always_d;
--- er table categories3 add column  deanon_pages_aft_mins_c  i16_gz_d;
--- er table categories3 add column  deanon_anons_aft_mins_c  i16_gz_d;
+alter table posts3      add column  op_starts_anon_c             never_allow_recmd_always_d;
+alter table posts3      add column  comts_start_anon_c           never_allow_recmd_always_d;
+alter table posts3      add column  deanon_mins_aft_first_c      i32_gz_d;
+alter table posts3      add column  deanon_mins_aft_last_c       i32_gz_d;
+alter table posts3      add column  deanon_page_mins_aft_first_c i32_gz_d;
+alter table posts3      add column  deanon_page_mins_aft_last_c  i32_gz_d;
 
 
 -- Skip fks — no fks in this table.
@@ -493,8 +413,7 @@ create index auditlog_i_doertrueid_session
 
 -- About new pages, replies, maybe edits to wiki pages.
 
-
-alter table page_notf_prefs3  rename to page_notf_prefs_t;  -- or node/content_notf_prefs_t?
+alter table page_notf_prefs3  rename to page_notf_prefs_t;  -- OR node/content_notf_prefs_t?
 alter table page_notf_prefs_t rename column people_id to pat_id_c;
 
 alter table page_notf_prefs_t rename column pages_in_whole_site  to pages_in_whole_site_c;
@@ -502,30 +421,4 @@ alter table page_notf_prefs_t rename column pages_in_category_id to pages_in_cat
 alter table page_notf_prefs_t rename column incl_sub_categories  to incl_sub_cats_c;
 alter table page_notf_prefs_t rename column pages_pat_created    to pages_pat_created_c;
 alter table page_notf_prefs_t rename column pages_pat_replied_to to pages_pat_replied_to_c;
-
--- SKIP for now: ---------------------------------------
--- Denormalized tags?
-alter table page_notf_prefs_t add column pages_with_tag_a_id_c tagtype_id_d;
-alter table page_notf_prefs_t add column pages_with_tag_b_id_c tagtype_id_d;
-alter table page_notf_prefs_t add column pages_with_tag_c_id_c tagtype_id_d;
-
--- ix pagenotfprefs_i_tagaid
-alter table page_notf_prefs_t add constraint pagenotfprefs_withtaga_r_tags
-    foreign key (site_id, pages_with_tag_a_id_c)
-    references tagtypes_t (site_id_c, id_c) deferrable;
-
--- ix pagenotfprefs_i_tagbid
-alter table page_notf_prefs_t add constraint pagenotfprefs_withtagb_r_tags
-    foreign key (site_id, pages_with_tag_b_id_c)
-    references tagtypes_t (site_id_c, id_c) deferrable;
-
-  -- ix pagenotfprefs_i_tagcid
-alter table page_notf_prefs_t add constraint pagenotfprefs_withtagc_r_tags
-    foreign key (site_id, pages_with_tag_c_id_c)
-    references tagtypes_t (site_id_c, id_c) deferrable;
-
-create index pagenotfprefs_i_tagaid on page_notf_prefs_t (site_id, pages_with_tag_a_id_c);
-create index pagenotfprefs_i_tagbid on page_notf_prefs_t (site_id, pages_with_tag_b_id_c);
-create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, pages_with_tag_c_id_c);
--- /SKIP -----------------------------------------------
 

@@ -991,6 +991,7 @@ interface Page
                             // no, let's have Page and Cat extend DiscLayout
                             // instead, I mean extend DiscPropsSource, — done, see above.
       // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
+      // No, instead, everything wil be in  nodes_t ?
   forumSearchBox?: ShowSearchBox;
   forumMainView?: Nr;
   forumCatsTopics?: Nr;
