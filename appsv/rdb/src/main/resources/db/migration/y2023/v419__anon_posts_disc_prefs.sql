@@ -106,32 +106,25 @@ alter table posts3 add column  creator_status_c  creator_status_d;
 -------------------------------------------------
 
 
-alter table post_actions3 add column  show_pat_id_c  pat_id_d;
+alter table post_actions3 add column  as_pat_id_c  pat_id_d;
 alter table post_actions3 add column  added_by_id_c  pat_id_d;
 
--- No:  alter table post_actions3 add column  rel_perms_c    rel_perms_d;
---
--- Instead: perms_on_contst  cont_id_c = _  pat_id_c = _ 
---                              .may_grant_c: bool for now, later: perms bitfield?
---                              .may_revoke_c: bool
---   — see below.
 
-
--- fk ix: patpostrels_i_showpatid
-alter table post_actions3 add constraint patpostrels_showpatid_r_pats
-    foreign key (site_id, show_pat_id_c)
+-- fk ix: patpostrels_i_aspatid
+alter table post_actions3 add constraint patpostrels_aspatid_r_pats
+    foreign key (site_id, as_pat_id_c)
     references users3 (site_id, user_id) deferrable;
 
-create index patpostrels_i_showpatid on post_actions3 (site_id, show_pat_id_c);
-    where show_pat_id_c is not null;  --   [fk_ix_where_not_null]
+create index patpostrels_i_aspatid on post_actions3 (site_id, as_pat_id_c);
+    where as_pat_id_c is not null;  --   [fk_ix_where_not_null]
 
 -- fk ix: patpostrels_i_addedbyid
 alter table post_actions3 add constraint patpostrels_addedbyid_r_pats
-    foreign key (site_id, show_pat_id_c)
+    foreign key (site_id, as_pat_id_c)
     references users3 (site_id, user_id) deferrable;
 
-create index patpostrels_i_addedbyid on post_actions3 (site_id, show_pat_id_c);
-    where show_pat_id_c is not null;  --   [fk_ix_where_not_null]
+create index patpostrels_i_addedbyid on post_actions3 (site_id, as_pat_id_c);
+    where as_pat_id_c is not null;  --   [fk_ix_where_not_null]
 
 
 -- Anonymous posts
