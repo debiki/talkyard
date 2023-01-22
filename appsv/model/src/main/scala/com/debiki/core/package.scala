@@ -810,18 +810,22 @@ package object core {
     *
     * ------------1  = started as not anonymous, then made anonymous
     *               
-    * ----------01-  =  1: made anon by oneself
-    * ----------10-  =  2: made anon by other user  (might not have been pub for any time —
-    *                    if been in a staff-only category all the time)
-    * ----------11-  =  3: made anon automatically (e.g. auto anon category)
+    * ----------01-  =   2: made anon by oneself
+    * ----------10-  =   4: made anon by other user  (might not have been pub for
+    *                       any time — if been in a staff-only category all the time)
+    * ----------11-  =   6: made anon automatically (e.g. auto anon category)
     *
-    * -----0000----  = no one can see who you are
-    * --------1----  =  4: DBA can see who you are (by running SQL queries)
-    * -------1-----  =  4: you can see who you are
-    * ------1------  =  4: admins can see who you are
-    * -----1-------  =  8: others with see-anon permissions in the category, can see who you are
-    *                  (typically mods, so they can know who a problematic anon is,
-    *                  without having to de-anonymize the account).
+    * // ------1---  =   8: now, in the db, one can see who this anon was (but
+    * //                     maybe in HTTP server log files, looking at IPs.
+    * //                     Or maybe in backups.)
+    * //                    — but that'ts the same as 00000 cannot-be-deanonymized below.
+    * ---------1---  =   8: True id info will get deleted, in a while.
+    * --------1----  =  16: DBA can (could) see who you are (by running SQL queries)
+    * -------1-----  =  32: you can (could) see who you are
+    * ------1------  =  64: admins can see who you are
+    * -----1-------  = 128: others with see-anon permissions in the category,
+    *         can see who you are (typically mods, so they can know who
+    *         a problematic anon is, without having to de-anonymize the account).
     *
     * 00000--------  = cannot be deanonymized (not even by DBAs, info not stored)
     * ----1--------  =  4: can be deanonymize by DBAs

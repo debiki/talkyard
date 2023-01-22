@@ -324,6 +324,7 @@ $_$;
 --   disc_props_t, disc_views_t, disc_stats_t,
 -- see: y2999/wip_sect_disc_props_views_stats.sql
 
+-- Later, drop: category_id, page_id.
 
 -- Tags:
 create domain show_tag_how_d as i16_d;
@@ -350,6 +351,8 @@ alter domain show_tag_how_d add constraint show_tag_how_d_c_vals_in check (
 
 -- what's this:  logo_url_or_html
 
+-- No, this should be a per category setting instead. — Fine, will automatically be,
+-- once  nodes_t  is in use.
 alter table settings3 add column media_in_posts int;
 alter table settings3 add constraint settings_c_mediainposts check (
     media_in_posts between 0 and 100);
@@ -396,6 +399,7 @@ rename table alt_page_ids3 to discussion_keys;
 -- RENAME  users3.last_reply_at/by_id  to  last_appr_repl_at/by_id
 
 -- RENAME settings3.many_sections  —> enable_sub_sites_c?
+--           DROP:  category_id,  page_id  — will be only in  nodes_t  instead.
 -- RENAME users3 -> pats_t
 -- change users3.email_notfs to int, remove _toFlag [7KABKF2]
 

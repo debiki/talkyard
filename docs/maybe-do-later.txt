@@ -83,6 +83,11 @@ Make all js objs "light weight immutable", via Typescript's 'readonly' propertie
 https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
 (React wants immutable.)
 
+[nodes_t]
+Merge  posts3, pages3, categories3 and some settings3 columns into:  nodes_t
+(which will actually be posts3 but renamed, and with some new columns).
+See: docs/everything-is-a-node.txt .
+
 [subcats] [sub_cats]
 DONE: Implement sub categories.
 But missing: Search in sub cats, if searching in base cat.

@@ -208,8 +208,9 @@ If one pat assigns another to a task.
 $_$;
 
 ------------------------------------------------------------------------
-comment on column  post_actions3.show_pat_id_c  is $_$
-For anonymous votes: points to the anonym to show instead of oneself.
+comment on column  post_actions3.as_pat_id_c  is $_$
+Done as another user, e.g. for anonymous votes, points to the anonym
+to show instead of oneself.
 $_$;
 
 

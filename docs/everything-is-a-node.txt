@@ -123,14 +123,14 @@ Then can:
 
 
 
-perms_on_pages3  ——> perms_on_conts_t (& perms_on_pats_t)
+perms_on_pages3  ——> perms_on_nodes_t (& perms_on_pats_t)
 --------------------------------------------------------------------------
  site_id                 | integer           |           | not null | 
  perm_id                 | integer           |           | not null | 
  for_people_id           | integer           |           | not null | 
  on_whole_site           | boolean           |           |          | 
  on_category_id          | integer       ^^^\
- on_page_id              | character varying >——>  on_cont_id  —>  conts_t  (currently "posts3")
+ on_page_id              | character varying >——>  on_node_id  —>  nodes_t  (currently "posts3")
  on_post_id              | integer       ___/
  on_tag_id               | integer           |           |          | 
  may_edit_page           | boolean           |           |          | 
@@ -169,7 +169,7 @@ NEXT: Add these fields to perms_on_pages3  (to be renamed to perms_on_cons_t):
   - can_alter_c  — may open/close, change doing status?
                      (but not change owner, author, private-status, delete).
 
-  - can_manage_c bool:  May grant & revoke others' perms, on a cont node
+  - can_manage_c bool:  May grant & revoke others' perms, on a content node
                           and descendant nodes.  // *of the same type* (e.g. child cats).
            (later?: bitfield that says  *what* perms?
             All perms could be a bitfield too actually?
@@ -198,11 +198,12 @@ NEXT: Add these fields to perms_on_pages3  (to be renamed to perms_on_cons_t):
 
  (s = site)
 
-group_participants3  
+group_participants3  ——>  pat_rels_t
 --------------------------------------------------------------------------
         site_id        | integer
         group_id       | integer
         participant_id | integer
+       (true_id_c ?)
 
  pat    is_member      | boolean
         —> member_status_c?:  null/0 = not member, 1 = invited, 2 = member,
@@ -214,7 +215,66 @@ group_participants3
  pat    is_bouncer     | boolean   REN to  can_suspend (from group) ?
 
 
-pats_t (users3) as of now:
+invites3
+--------------------------------------------------------------------------
+          site_id         | integer
+          secret_key      | character varying
+          email_address   | character varying
+          created_by_id   | integer
+          created_at      | timestamp without time zone
+          accepted_at     | timestamp without time zone
+          user_id         | integer
+          (true_id_c ?)
+          deleted_at      | timestamp without time zone
+          deleted_by_id   | integer
+          invalidated_at  | timestamp without time zone
+          start_at_url    | character varying
+          add_to_group_id | integer
+
+
+notifications3
+--------------------------------------------------------------------------
+          site_id              | integer
+          notf_type            | smallint
+          created_at           | timestamp without time zone
+          about_page_id_str_c  | character varying
+          by_user_id           | integer
+          to_user_id           | integer
+             for anons:  to_user_id = one's true id.
+             for pseudonyms, then what?
+             Will want to look up sometimes by pseudonym, sometimes by true id and see all notfs.
+             add: to_ false_id_c/ If to an anon or pseudonym?
+             or:  via_pat_id_c = ... this'd be the anon or pseudonym id
+                      — or group id? (if got a notf because of being a member of a group)
+             But what if the notf is to one's pseudonym which has been added to a group?
+             Therefore, maybe:
+                  to_ true_id_c = __    — one's main account
+                  to_false_id_c (or "to_pseudonym_id_c"?) = __    — one's anon/pseudonym account
+                  via_group_id_c =      — if got it e.g. because in a group that was @mentioned?
+
+                  ("Via"? — "'Sender Name' via Group-Name"  is standard terminology, used by Gmail
+                  e.g. if there's some sender email domain mismatch:
+                  https://support.google.com/mail/answer/1311182?hl=en#zippy=%2Ci-see-via-and-a-website-name-next-to-the-senders-name
+                  )
+
+          email_id             | character varying
+          email_status         | smallint
+          seen_at              | timestamp without time zone
+          about_post_id_c      | integer
+          action_type          | smallint
+          action_sub_id        | smallint
+          notf_id              | integer
+          smtp_msg_id_prefix_c | smtp_msg_id_out_prefix_d
+          about_page_id_int_c  | page_id_d__later
+          about_pat_id_c       | pat_id_d
+          about_cat_id_c       | cat_id_d
+          about_tag_id_c       | tag_id_d
+          about_thing_type_c   | thing_type_d
+          about_sub_type_c     | sub_type_d
+
+
+
+users3 ——> pats_t
 --------------------------------------------------------------------------
  s      is_admin                              | boolean
  s      is_owner                              | boolean
@@ -276,16 +336,19 @@ pats_t (users3) as of now:
 ‾  = ctrl+shift+u203e
 
 
-perms_on_pages3
+perms_on_pages3  ——>  perms_on_nodes_t
 --------------------------------------------------------------------------
          site_id                 | integer
          perm_id                 | integer
-         for_people_id           | integer
+         for_people_id    (? rename to `for_ true_id_c` ?)
+       + as_pseudonym_id  (permission to do sth, iff one has this pseudonym activated)
+
        /‾on_whole_site           | boolean
- cont /  on_category_id          | integer
- node \  on_page_id              | character varying
-  id?  \_on_post_id              | integer
+ node /  on_category_id          | integer
+  id? \  on_page_id              | character varying
+       \_on_post_id              | integer
          on_tag_id               | integer
+
  c,p     may_edit_page           | boolean
  c,p,po  may_edit_comment        | boolean
  c,p,po  may_edit_wiki           | boolean

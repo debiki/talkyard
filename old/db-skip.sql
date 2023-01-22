@@ -1,4 +1,4 @@
-
+alter table post_actions3
 -- Private comments, don't do like this:
 -- [ EDIT:  ... Actually, yes — for private comments but *not* assigned-to.
 --   Because they're different: for private comments, there's just one list of people,
@@ -110,17 +110,17 @@
 --         No, "cont" is so hard to read, I get confused.
 --         Instead, "node" directly makes me think of a node in the tree structure
 --         formed by the categories, pages and discussins. Good name. I think. As of now.
+--         So,  nodes_t.
 --     Compare:
---           pat_cont_rels_t   pat_pat_rels_t
+--           pat_node_rels_t   pat_pat_rels_t
 --         with:
---           participan_contents_relationships_t   participan_participants_relationships_t
---           [edit:] participan_*nodes*_relationships_t   ... [/edit]
+--           participant_node_relationships_t   participant_participant_relationships_t
 --         I think the latter is too long! Takes 3 eye movements to read each of those
 --         long table names Abbreviations are needed.  And, when abbreviating, why not
 --         keep it really short? People need to look up the abbreviations once anyway
 --         in any case (probably not more, since these words are "everywhere", hard to
 --         forget, when getting reminded constantly). So let's go with "pat" for
---         "participant" (already done, in use)  and "cont" for "content".
+--         "participant" (already done, in use)  and "node" is short already.
 --         Now, just 1 eye movement needed :- ) (for you too?)
 --         (I mean, you see the whole table name, if glancing just once in the middle.
 --         of the table name.)
@@ -260,6 +260,15 @@ alter table posts3 add column parent_id_c post_id_d;
 alter table post_actions3 add column  added_by_other_id_c  pat_id_d;  -- + fk & ix
 
 
+-- No:
+alter table post_actions3 add column  rel_perms_c    rel_perms_d;
+--
+-- Instead: perms_on_nodes_t  node_id_c = _  pat_id_c = _
+--                              .may_grant_c: bool for now, later: perms bitfield?
+--                              .may_revoke_c: bool
+
+
+
 -- Don't, we're using  pat_rels_t  instead:
 create table post_pats_t (
   site_id_c,
@@ -319,6 +328,14 @@ create index postpats_i_patid_postid_how_subhow on post_pats_t (
 -- alter table perms_on_pages3 add column  can_make_less_private_c  bool; 
 -- alter table perms_on_pages3 add column  can_new_see_history_c    bool;
 
+-- So can have categories with stricter requirements?  DON'T DO NOW!
+alter table perms_on_pages3 add column  num_first_posts_to_review   i16_gz_d;
+alter table perms_on_pages3 add column  num_first_posts_to_approve  i16_gz_d;
+alter table perms_on_pages3 add column  max_posts_pend_appr_before  i16_gz_lt100_d;
+
+alter table perms_on_pages3 add column  appr_before_if_trust_lte    trust_level;
+alter table perms_on_pages3 add column  review_after_if_trust_lte   trust_level;
+alter table perms_on_pages3 add column  max_posts_pend_revw_aftr    i16_gz_lt128_d;
 
 
 
