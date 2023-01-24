@@ -107,7 +107,7 @@ case class PatEvent(
   underlying: AuditLogEntry) extends Event {
 
   def id: EventId = underlying.id
-  def patId: PatId = underlying.targetUserId getOrElse underlying.doerId
+  def patId: PatId = underlying.targetUserId.map(_.curId) getOrElse underlying.doerId.curId
 }
 
 

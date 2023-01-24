@@ -265,7 +265,8 @@ trait PagesDao {
 
     val (authorId, author) =
           if (doAsAnon.forall(!_.anonStatus.isAnon)) {
-            (realAuthorId, realAuthor)
+            (TrueFalseId(realAuthorId),
+              realAuthor)
           }
           else {
             // Dupl code. [mk_new_anon]
@@ -280,7 +281,8 @@ trait PagesDao {
             // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
             tx.deferConstraints()
             tx.insertAnonym(anonym)
-            (anonymId, anonym)
+            (TrueFalseId(anonymId, anyTrueId = Some(realAuthor.id)),
+              anonym)
           }
 
     val titlePost = Post.createTitle(
@@ -303,7 +305,7 @@ trait PagesDao {
       approvedById = approvedById)
       .copy(
         bodyHiddenAt = ifThenSome(hidePageBody, now.toJavaDate),
-        bodyHiddenById = ifThenSome(hidePageBody, authorId),
+        bodyHiddenById = ifThenSome(hidePageBody, authorId.curId),
         bodyHiddenReason = None) // add `hiddenReason` function parameter?
 
     val uploadRefs = body.uploadRefs
@@ -337,7 +339,7 @@ trait PagesDao {
       else Some(ReviewTask(
         id = tx.nextReviewTaskId(),
         reasons = reviewReasons.to[immutable.Seq],
-        createdById = SystemUserId,
+        createdById = TrueId(SystemUserId),
         createdAt = now.toJavaDate,
         createdAtRevNr = Some(bodyPost.currentRevisionNr),
         // Show the anonym, not the real user — so staff won't accidentally learn
@@ -815,7 +817,7 @@ trait PagesDao {
       multireplyPostNrs = Set.empty,
       postType = PostType.MetaMessage,
       createdAt = tx.now.toJavaDate,
-      createdById = doer.id,
+      createdById = TrueFalseId.of(doer),
       source = message,
       htmlSanitized = Encode.forHtmlContent(message),
       approvedById = Some(SystemUserId))

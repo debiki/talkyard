@@ -637,6 +637,9 @@ case object Participant {
 sealed trait Pat {
 
   def id: PatId
+  def trueId: PatId = id                 // this or
+  def trueId2: TrueId = TrueId(id)  // this?
+
   def extId: Opt[ExtId]
   def email: EmailAdr  // COULD rename to emailAddr and change to Opt[EmailAdr] (instead of "")
   def emailNotfPrefs: EmailNotfPrefs
@@ -800,7 +803,7 @@ sealed trait Pat {
 
   private def throwWrongPatType(wantedWhat: St): Nothing = {
     this match {
-      case _: User => throw GotAUserEx(this.id, wantedWhat)
+      case _: UserBase => throw GotAUserEx(this.id, wantedWhat)
       case _: Anonym => throw GotAnAnonEx(this.id, wantedWhat)
       case _: Guest => throw GotAGuestException(this.id, wantedWhat)
       case _: Group => throw GotAGroupException(this.id, wantedWhat)
@@ -982,6 +985,10 @@ case class Anonym(
   anonForPatId: PatId,   // rename to trueId
   anonOnPageId: PageId,
   ) extends Pat with GuestOrAnon with Someone {
+
+  override def trueId: PatId = anonForPatId
+  override def trueId2: TrueId = TrueId(id, anyTrueId = Some(trueId))
+  // def trueFalseId: TrueFalseId = TrueFalseId(id, anyTrueId = Some(trueId))
 
   def anyUsername: Opt[St] = None
   def nameOrUsername: St = "Anonym"

@@ -134,7 +134,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
             PageFilter(PageFilterType.WaitingTopics, includeDeleted = false),
             includeAboutCategoryPages = false),
           limit = 100)
-      val createdByUserIds = topics.map(_.meta.authorId).toSet
+      val createdByUserIds = topics.map(_.meta.authorId.trueId).toSet
       usersById = tx.loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(createdByUserIds)
       val emailsSentToAuthors: Map[UserId, Seq[Email]] = tx.loadEmailsSentTo(
         createdByUserIds, after = aWeekAgo, emailType = EmailType.HelpExchangeReminder)

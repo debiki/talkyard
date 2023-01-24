@@ -143,8 +143,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
     val anyOtherAuthor =
-          if (post.createdById == requester.id) None
-          else dao.getParticipant(post.createdById)
+          if (post.createdById.curId == requester.id.curId) None
+          else dao.getParticipant(post.createdById.curId)
 
     CHECK_AUTHN_STRENGTH
 
@@ -219,8 +219,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     CHECK_AUTHN_STRENGTH
 
     val anyOtherAuthor =
-          if (post.createdById == requester.id) None
-          else dao.getParticipant(post.createdById)
+          if (post.createdById.curId == requester.id.curId) None
+          else dao.getParticipant(post.createdById.curId)
 
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),

@@ -135,7 +135,7 @@ trait PostsDao {
     // to the real account, always,  and  author_id_c  to any anonym's id.   [mk_new_anon]
     val author =
           if (doAsAnon.isEmpty) {
-            realAuthor
+            (realAuthor, None)
           }
           else doAsAnon.get match {
             case WhichAnon.SameAsBefore(anonId) =>
@@ -218,8 +218,7 @@ trait PostsDao {
       multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
       postType = postType,
       createdAt = now.toJavaDate,
-      createdById = author.id,  // no, set to real user instead, and:
-      // authorsId = Some(author.id) if anon, else None  (then, same as poster)
+      createdById = TrueFalseId.of(author)
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
       approvedById = approverId)
@@ -708,7 +707,7 @@ trait PostsDao {
       multireplyPostNrs = Set.empty,
       postType = PostType.ChatMessage,
       createdAt = tx.now.toJavaDate,
-      createdById = authorId,
+      createdById = TrueFalseId.of(authorAndLevels.user)
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
       // Chat messages are currently auto approved. [7YKU24]

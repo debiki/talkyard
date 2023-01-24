@@ -334,7 +334,7 @@ class JsonMaker(dao: SiteDao) {
 
     val userIdsToLoad = mut.Set[UserId]()
     userIdsToLoad ++= pageMemberIds
-    userIdsToLoad ++= relevantPosts.map(_.createdById)  // or relevantApprovedPosts? [iz01]
+    userIdsToLoad ++= relevantPosts.map(_.createdById.curId)  // or relevantApprovedPosts? [iz01]
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
@@ -528,7 +528,7 @@ class JsonMaker(dao: SiteDao) {
 
     COULD_OPTIMIZE // cache unapproved posts too?
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
-    val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
+    val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById.curId).toSet
 
     PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags,
           unapprovedPostAuthorIds, anonsByRealId = anonsByRealId)
@@ -1292,7 +1292,7 @@ class JsonMaker(dao: SiteDao) {
     }
 
     // Tests:  tags-badges-not-missing.2br  TyTETAGS0MISNG.TyTTAGUNAPRPO
-    val authors = tx.loadParticipants(posts.map(_.createdById).toSet)
+    val authors = tx.loadParticipants(posts.map(_.createdById.curId).toSet)
     val authorsJson = JsArray(authors.map(JsPat(_, tagsAndBadges)))
     UnapprovedPostsAndAuthors(
           posts = JsObject(postIdsAndJson),
@@ -1415,7 +1415,7 @@ class JsonMaker(dao: SiteDao) {
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
     val pageIds = posts.map(_.pageId).toSet
     val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
-    val authorIds = posts.map(_.createdById).toSet
+    val authorIds = posts.map(_.createdById.curId).toSet
     val authors = transaction.loadParticipants(authorIds)
     makeStorePatch3(pageIdVersions, posts,
           showHidden = showHidden, inclUnapproved = inclUnapproved,
@@ -1998,7 +1998,8 @@ object JsonMaker {
           "pageId" -> post.pageId,
           "nr" -> post.nr,
           "uniqueId" -> post.id,
-          "createdById" -> post.createdById,
+          // Don't reveal the true id, if is an anon.
+          "createdById" -> post.createdById.curId,
           "currentSource" -> post.currentSource,
           "currRevNr" -> post.currentRevisionNr,
           "currRevComposedById" -> post.currentRevisionById,
@@ -2021,7 +2022,7 @@ object JsonMaker {
       "id" -> stuff.id,
       "reasonsLong" -> ReviewReason.toLong(stuff.reasons),
       "createdAtMs" -> stuff.createdAt.getTime,
-      "createdById" -> stuff.createdBy.id,
+      "createdById" -> stuff.createdBy.id, // don't incl any true id
       "moreReasonsAtMs" -> JsDateMsOrNull(stuff.moreReasonsAt),
       "completedAtMs" -> JsDateMsOrNull(stuff.completedAt),
       "decidedById" -> JsNumberOrNull(stuff.decidedBy.map(_.id)),
@@ -2080,7 +2081,7 @@ object JsonMaker {
       "parentNr" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostNrs" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
       "postType" -> JsNumber(post.tyype.toInt),
-      "authorId" -> JsNumber(authorId),
+      "authorId" -> JsNumber(authorId.curId),
       "createdAtMs" -> JsDateMs(post.createdAt),
       "approvedAtMs" -> JsDateMsOrNull(post.approvedAt),
       "lastApprovedEditAtMs" -> JsDateMsOrNull(lastApprovedEditAtNoNinja),

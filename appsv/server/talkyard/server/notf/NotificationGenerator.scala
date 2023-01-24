@@ -79,6 +79,7 @@ case class NotificationGenerator(
   private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
 
   private var nextNotfId: Option[NotificationId] = None
+  // Might be an anon.  ANON_UNIMPL. Make sure won't get notf to henself.
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
@@ -148,7 +149,9 @@ case class NotificationGenerator(
           newPost.id, NotificationType.NewPostReviewTask)
     avoidDuplEmailToUserIds ++= oldNotfsToStaff.map(_.toUserId)
 
-    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))  // anon author?
+    // (If the author is anonymous, we're loading the anonym, no the true pat. That is,
+    // we're using createdById.curId not trueId)
+    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById.curId))
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -170,7 +173,7 @@ case class NotificationGenerator(
         if replyingToPost.createdById != newPost.createdById // not replying to oneself
         // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         if approverId != replyingToPost.createdById // the approver has already read newPost
-        replyingToUser <- tx.loadParticipant(replyingToPost.createdById)
+        replyingToUser <- tx.loadParticipant(replyingToPost.createdById.trueId)
       } {
         // (If the replying-to-post is by a group (currently cannot happen), and someone in the group
         // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
@@ -470,10 +473,12 @@ case class NotificationGenerator(
     */
   def generateForMessage(sender: Participant, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
+    warnDevDieIf(sender.trueId != pageBody.createdById.trueId, "TyE50wMPEPG",
+          s"${sender.trueId} != ${pageBody.createdById.trueId}")
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
-    // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-    anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
-    tx.loadParticipants(toUserIds.filter(_ != sender.id)) foreach { user =>
+    // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.  — Fixed?
+    anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById.curId))
+    tx.loadParticipants(toUserIds.filter(_ != sender.trueId)) foreach { user =>
       _makeAboutPostNotfs(
           // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
           // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
@@ -820,7 +825,7 @@ case class NotificationGenerator(
     }
 
     // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
+    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById.curId))
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -935,7 +940,7 @@ case class NotificationGenerator(
     val userIdsToNotify = userIdsWatching -- userIdsNotified
     val usersToNotify = tx.loadParticipants(userIdsToNotify.to[immutable.Seq])
     val pageMeta = tx.loadPageMeta(post.pageId)
-    anyAuthor = Some(tx.loadTheParticipant(post.createdById))
+    anyAuthor = Some(tx.loadTheParticipant(post.createdById.curId))
     for {
       user <- usersToNotify
       // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
@@ -965,10 +970,11 @@ case class NotificationGenerator(
         ): U = {
 
     val aboutPost = about
-    val toPat = to
-    val fromPatId = from.map(_.id) getOrElse aboutPost.createdById    // REN to fromPatIdMaybeAnon?
+    val toPat = to  // ! might be an anon
+    // REN to fromPatIdMaybeAnon?
+    val fromPatId: TrueFalseId = from.map(TrueFalseId(_.id)) getOrElse aboutPost.createdById
 
-    dieIf(toPat.id == fromPatId, "TyE4S602MRD5",
+    dieIf(toPat.id == fromPatId.trueId, "TyE4S602MRD5",
           s"s$siteId: Notf to self, id: ${toPat.id}, about post id ${aboutPost.id}")
 
     // One cannot talk with deactivated or deleted pats, or System or Sysbot.
@@ -1000,8 +1006,10 @@ case class NotificationGenerator(
     notfsToCreate += Notification.NewPost(
           notfType,
           id = newNotfId,
-          toUserId = toPat.id,
-          byUserId = fromPatId,
+          // Need to send notf to one's true account, not to any anonym. So use trueId.
+          toUserId = toPat.trueId,
+          // But the message author might be anonymous. So use curId.
+          byUserId = fromPatId.curId,
           createdAt = aboutPost.createdAt,
           uniquePostId = aboutPost.id,
           smtpMsgIdPrefix = aboutPost.smtpMsgIdPrefix.map(_ + s".${toPat.id}.$newNotfId"),

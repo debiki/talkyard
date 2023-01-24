@@ -274,7 +274,8 @@ class EmailsInController @Inject()(cc: ControllerComponents, edContext: TyContex
       return Bad(s"s$siteId: Page ${post.pageId} missing for AboutPost notf ${notf.id}")
     }
 
-    val anyAuthor = dao.getParticipant(post.createdById)
+    // (Email the real person — use createdById.trueId — rather than any anonym of hens.)
+    val anyAuthor = dao.getParticipant(post.createdById.trueId)
     val byAuthorName = anyAuthor map { a => s"by ${a.usernameOrGuestName}," } getOrElse ""
     val notfRenderer = NotfHtmlRenderer(dao, Some(origin))
     val url = notfRenderer.postUrl(pageMeta, post)

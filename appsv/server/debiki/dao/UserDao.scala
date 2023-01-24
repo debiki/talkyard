@@ -202,7 +202,7 @@ trait UserDao {
     val lang = getWholeSiteSettings().languageCode
 
     writeTx { (tx, _) =>
-      val byMember = tx.loadTheUser(byWho.id)
+      val byMember = tx.loadTheUser(byWho.id.trueId)
       val memberBefore = tx.loadTheUserInclDetails(memberId)
 
       throwForbiddenIf(!byMember.isStaff,
@@ -450,7 +450,7 @@ trait UserDao {
         throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, so no ip and id cookie")
       }
 
-      blockGuestImpl(auditLogEntry.browserIdData, auditLogEntry.doerId,
+      blockGuestImpl(auditLogEntry.browserIdData, auditLogEntry.doerId.curIdCheckGuest,
           numDays, threatLevel, blockerId)(tx)
     }
     anyChangedGuest.foreach(g => removeUserFromMemCache(g.id))
@@ -518,7 +518,7 @@ trait UserDao {
       }
       tx.unblockIp(auditLogEntry.browserIdData.inetAddress)
       auditLogEntry.browserIdData.idCookie foreach tx.unblockBrowser
-      val anyGuest = tx.loadGuest(auditLogEntry.doerId)
+      val anyGuest = tx.loadGuest(auditLogEntry.doerId.curIdCheckGuest)
       anyGuest flatMap { guest =>
         if (guest.lockedThreatLevel.isEmpty) None
         else {
@@ -549,8 +549,13 @@ trait UserDao {
   }
 
 
+  /** Loads the true user (not any anon or pseudonym).
+    *
+    * RENAME to what, to indicate this?
+    * And/or rename UserAndLevels.id to trueId?
+    */
   def loadUserAndLevels(who: Who, tx: SiteTransaction): UserAndLevels = {
-    val user = tx.loadTheParticipant(who.id)
+    val user: Pat = tx.loadTheParticipant(who.id.trueId)
     val trustLevel = user.effectiveTrustLevel
     val threatLevel = user match {
       case member: User => member.effectiveThreatLevel
@@ -713,7 +718,7 @@ trait UserDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.CreateUser,
-      doerId = member.id,
+      doerId = TrueId(member.id),
       doneAt = now.toJavaDate,
       browserIdData = browserIdData,
       browserLocation = None)
@@ -1280,22 +1285,23 @@ trait UserDao {
 
 
   def joinOrLeavePageIfAuth(pageId: PageId, join: Bo, who: Who): Opt[BareWatchbar] = {
-    if (Participant.isGuestId(who.id))
-      throwForbidden("EsE3GBS5", "Guest users cannot join/leave pages")
+    if (who.isGuestOrAnon)
+      throwForbidden("EsE3GBS5", "Guest and anonymous users cannot join/leave pages")
 
     val joinOrLeave = if (join) Join else Leave
+    val membId = who.id.curIdCheckMember
 
-    val databaseResult = _joinLeavePage_updateDb(Set(who.id), pageId,
-          joinOrLeave, who, anyTx = None)
+    val databaseResult = _joinLeavePage_updateDb(Set(membId),
+          pageId, joinOrLeave, who, anyTx = None)
 
     if (!databaseResult.anyChange)
       return None
 
     val watchbarsByUserId = _joinLeavePage_updateWatchbar(
-          userIds = Set(who.id), couldntAdd = databaseResult.patIdsCouldntJoin,
+          userIds = Set(membId), couldntAdd = databaseResult.patIdsCouldntJoin,
           joinOrLeave, pageToJoinLeave = databaseResult.pageMeta)
 
-    val anyNewWatchbar = watchbarsByUserId.get(who.id)
+    val anyNewWatchbar = watchbarsByUserId.get(membId)
     anyNewWatchbar
   }
 
@@ -1383,8 +1389,8 @@ trait UserDao {
           joinOrLeave: JoinOrLeave, byWho: Who, anyTx: Opt[(SiteTx, StaleStuff)])  // REFACTOR use TxCtx
           : JoinLeavePageDbResult = {
 
-    if (byWho.isGuest)
-      throwForbidden("EsE2GK7S", "Guests cannot add/remove people to pages")
+    if (byWho.isGuestOrAnon)
+      throwForbidden("EsE2GK7S", "Guests and anons cannot add/remove people to pages")
 
     if (userIds.size > 50)
       throwForbidden("EsE5DKTW02", "Cannot add/remove more than 50 people at a time")
@@ -1450,13 +1456,15 @@ trait UserDao {
         tx: SiteTx): (PageMeta, Bo) = {
 
     val userIds = userIdsToJoinLeave
+
     // Tests:  promote-demote-by-staff-join-leave-chats.2br  TyTE2E5H3GFRVK.TyT502RKTJF4
     //          — trying to join a page one may not see
 
     val add = joinOrLeave == Join
-    val usersById = tx.loadUsersAsMap(userIds + byWho.id)
-    val reqer = usersById.getOrElse(byWho.id, throwForbidden(
-          "EsE6KFE0X", s"s${siteId}: The requester cannot be found, id: ${byWho.id}"))
+    val reqerId = byWho.id.curIdCheckMember
+    val usersById = tx.loadUsersAsMap(userIds + reqerId)
+    val reqer = usersById.getOrElse(reqerId, throwForbidden(
+          "EsE6KFE0X", s"s${siteId}: The requester cannot be found, id: ${reqerId}"))
 
     val pageMeta = tx.loadPageMeta(pageIdToJoinLeave) getOrElse
           security.throwIndistinguishableNotFound("42PKD0")
@@ -1536,7 +1544,7 @@ trait UserDao {
               die("TyE0MRG603MR", s"Weird joinOrLeave: $joinOrLeave")
             }
       userIdsToRemove foreach { id: UserId =>
-        tx.removePageMember(pageIdToJoinLeave, userId = id, removedById = byWho.id)
+        tx.removePageMember(pageIdToJoinLeave, userId = id, removedById = reqerId)
       }
       anyChange = userIdsToRemove.nonEmpty
     }
@@ -2134,7 +2142,7 @@ trait UserDao {
 
     readWriteTransaction { tx =>
       val group = tx.loadTheGroupInclDetails(preferences.groupId)
-      val me = tx.loadTheUser(byWho.id)
+      val me = tx.loadTheUser(byWho.id.curIdCheckMember)
       require(me.isStaff, "EdE5LKWV0")
       dieIf(group.id == Group.AdminsId && !me.isAdmin, "TyE30HMTR24")
 
@@ -2326,7 +2334,7 @@ trait UserDao {
     val (user, usersGroupIds) = writeTx { (tx, staleStuff) =>
       tx.deferConstraints()
 
-      val deleter = tx.loadTheParticipant(byWho.id)
+      val deleter = tx.loadTheParticipant(byWho.id.curIdCheckMember)
       require(userId == deleter.id || deleter.isAdmin, "TyE7UKBW1")
 
       val anonUsername = "anon" + nextRandomLong().toString.take(10)

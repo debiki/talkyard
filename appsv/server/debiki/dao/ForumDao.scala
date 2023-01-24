@@ -180,7 +180,7 @@ trait ForumDao {
 
     val staffCategoryId = rootCategoryId + 1
     val defaultCategoryId = rootCategoryId + 2
-    val bySystem = Who(SystemUserId, byWho.browserIdData)
+    val bySystem = Who(TrueId(SystemUserId), byWho.browserIdData)
 
     // Create forum root category.
     tx.insertCategoryMarkSectionPageStale(Category(

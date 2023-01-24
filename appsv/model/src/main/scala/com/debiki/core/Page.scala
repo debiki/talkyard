@@ -130,7 +130,7 @@ object PageMeta {
   def forNewPage(
         pageId: PageId,
         pageRole: PageType,
-        authorId: UserId,
+        authorId: TrueFalseId,
         creationDati: ju.Date,  // RENAME to createdAt
         numPostsTotal: Int,
         extId: Option[ExtId] = None,
@@ -192,7 +192,7 @@ object PageMeta {
   * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
   *            Currently only needed and used for embedded comments, and then it
   *            is the URL of the embedding page.
-  * @param authorId
+  * @param authorId The original post author. Or an anonym or pseudonym of hens.
   * @param frequentPosterIds: Most frequent poster listed first. Author & last-reply-by excluded.
   * @param layout: A bitmask that tells JS code how to render the page
   * @param forumSearchBox: 2 if should show a prominent search box, on forum homepage.
@@ -253,7 +253,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   lastApprovedReplyById: Option[UserId] = None,
   categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
-  authorId: UserId,
+  authorId: TrueFalseId, // oops rename?
   frequentPosterIds: Seq[UserId] = Seq.empty,
   // -----
   // REFACTOR move to DiscViewProps and disc_views_t [disc_props_view_stats]  [PAGETYPESETTNG]
@@ -418,7 +418,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
 
   def addUserIdsTo(ids: mutable.Set[UserId]): Unit = {
-    ids += authorId
+    ids += authorId.curId
     ids ++= frequentPosterIds
     lastApprovedReplyById.foreach(ids += _)
   }
@@ -497,7 +497,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
       bumpedAt = newBumpedAt.map(_.toJavaDate) orElse When.anyJavaDateLatestOf(
             bumpedAt, page.parts.lastVisibleReply.map(_.createdAt)),
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
-      lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
+      lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById.curId),
       frequentPosterIds = page.parts.frequentPosterIds,
       numLikes = page.parts.numLikes,
       numWrongs = page.parts.numWrongs,

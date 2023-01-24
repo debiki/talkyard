@@ -43,14 +43,27 @@ trait MessagesDao {
     if (toMemIds.contains(SystemUserId))
       throwForbidden("EsE2WUY0", "Cannot send messages to the System user")
 
-    if (toMemIds.exists(_ <= MaxGuestId))
-      throwForbidden("EsE6UPY2", "Cannot send messages to guests")
+    // Can actually make sense to send priv msgs to anonyms — why not? Why not talk privately
+    // with someone who wrote something interesting, even if hen is anonymous?  On online
+    // forums, you typically don't know who the people are anyay, even if you see their
+    // online names.  [anon_priv_msgs]
+    if (toMemIds.exists(_ <= MaxGuestOrAnonId))
+      throwForbidden("EsE6UPY2", "Cannot send messages to guests or anonyms")
+
+    if (sentByWho.isAnon)  // [anon_priv_msgs]
+      throwForbidden("TyE0ANONMSG", s"Anonymous private messages not yet implemented")
 
     val sentById = sentByWho.id
-    if (sentById <= MaxGuestId)
-      throwForbidden("EsE5JGKU9", "Guests cannot send messages")
+    if (sentById.isGuestOrAnon)
+      throwForbidden("EsE5JGKU9", "Guests cannot send private messages")
 
-    if (toMemIds.contains(sentById))
+    // Sending anon messages to oneself — yes can make sense. [anon_priv_msgs]  Let's say
+    // you're a group manager. You want to report something anonymously to the other group
+    // managers. Then, if you couldn't message oneself (among the others), you might need
+    // to list the other group managers, exept for oneself. — Then the others can guess.
+    // So, don't let one message oneself — unless it's from one's anonym or pseudonym
+    // (compare with sentById.curId not trueId).
+    if (toMemIds.contains(sentById.curId))
       throwForbidden("EsE6GK0I2", o"""Cannot send a message to yourself. You are: $sentById,
           sending to: ${ toMemIds.mkString(", ") }""")
 
@@ -104,8 +117,8 @@ trait MessagesDao {
       // by default, although no notf pref configured here. [PRIVCHATNOTFS]
       // Soome of toMemIds might be groups — then, the group members can see
       // the private topic, and get notified about replies.
-      (toMemIds + sentById) foreach { memId =>
-        tx.insertMessageMember(pagePath.pageId, memId, addedById = sentById)
+      (toMemIds + sentById.curId) foreach { memId =>
+        tx.insertMessageMember(pagePath.pageId, memId, addedById = sentById.curId)
       }
 
       AUDIT_LOG // missing
@@ -121,7 +134,7 @@ trait MessagesDao {
           notfGenerator(tx).generateForMessage(sender.user, bodyPost, toMemIds)
         }
 
-      deleteDraftNr.foreach(nr => tx.deleteDraft(sentByWho.id, nr))
+      deleteDraftNr.foreach(nr => tx.deleteDraft(sentByWho.id.trueId, nr))
 
       tx.saveDeleteNotifications(notifications)
       (pagePath, notifications, sender, toMemsInclGroupMems)
@@ -144,7 +157,9 @@ trait MessagesDao {
       saveWatchbar(sender.id, watchbar)
       logger.debug(s"s$siteId: Telling PubSubActor: ${
             sender.nameHashId} created & starts watching page ${pagePath.pageId} [TyM50AKTG3]")
-      pubSub.userWatchesPages(siteId, sentById, watchbar.watchedPageIds)
+      // Later, if anon private message: Send sentById: TrueId? So the presence of
+      // one's true user won't get announced?  [anon_priv_msgs]
+      pubSub.userWatchesPages(siteId, sentById.curId, watchbar.watchedPageIds)
     }
 
     // 2/2: Others might not even have visited the site before, and might not yet have
@@ -152,7 +167,7 @@ trait MessagesDao {
     // get lazy-added to their watchbar on creation. [lazy_watchbar]
     for {
       member: Member <- toMemsInclGroupMems
-      // The sender might have messaged a group hen is in:
+      // The sender might have messaged a group hen is in, so member might be == sender.
       if member.id != sender.id
       if !member.isGroup && !member.isBuiltIn
     } {
@@ -164,7 +179,7 @@ trait MessagesDao {
 
     // (Tested here: [TyTPAGENOTF])
     pubSub.publish(
-          pubsub.NewPageMessage(siteId, notfs), byId = sentById)
+          pubsub.NewPageMessage(siteId, notfs), byId = sentById.curId)
 
     pagePath
   }

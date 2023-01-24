@@ -671,7 +671,8 @@ object RdbUtil {
       createdAt = getWhen(rs, "created_at"),
       postToSpamCheck = anyPostToCheck,
       who = Who(
-        id = rs.getInt("auhtor_true_id_c"),
+        TrueId(rs.getInt("author_id_c"),
+              anyTrueId = getOptInt(rs, "author_true_id_c")),
         BrowserIdData(
           ip = rs.getString("req_ip"),
           idCookie = getOptString(rs, "browser_id_cookie"),
@@ -781,6 +782,8 @@ object RdbUtil {
       |g.LAST_REPLY_AT,
       |g.last_reply_by_id,
       |g.AUTHOR_ID,
+      |g.author_true_id_c,
+      |g.old_false_id_c,
       |g.frequent_poster_1_id,
       |g.frequent_poster_2_id,
       |g.frequent_poster_3_id,
@@ -828,6 +831,7 @@ object RdbUtil {
 
 
   def _PageMeta(resultSet: js.ResultSet, pageId: String = null): PageMeta = {
+    val rs = resultSet
     // We always write to bumped_at so order by queries work, but if in fact the page
     // hasn't been modified since it was created or published, it has not been bumped.
     var bumpedAt: Option[ju.Date] = Some(getDate(resultSet, "BUMPED_AT"))
@@ -858,7 +862,9 @@ object RdbUtil {
       bumpedAt = bumpedAt,
       lastApprovedReplyAt = getOptionalDate(resultSet, "LAST_REPLY_AT"),
       lastApprovedReplyById = getOptionalInt(resultSet, "last_reply_by_id"),
-      authorId = resultSet.getInt("AUTHOR_ID"),
+      authorId = TrueFalseId(rs.getInt("AUTHOR_ID"),
+                    anyTrueId = getOptInt32(rs, "author_true_id_c"),
+                    oldFalseId = getOptInt32(rs, "old_false_id_c")),
       frequentPosterIds = frequentPosterIds,
       layout = PageLayout.fromInt(resultSet.getInt("layout")) getOrElse PageLayout.Default,
       comtOrder = PostSortOrder.fromOptVal(getOptInt32(resultSet, "comt_order_c")),

@@ -115,8 +115,10 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
       else {
         val anyOtherAuthor =
+              //if (post.createdById isSameAs requester.id) None
+              //if (requester canDoThingsAs post.createdById) None
               if (post.createdById == requester.id) None
-              else dao.getParticipant(post.createdById)
+              else dao.getParticipant(post.createdById.curId)
         throwNoUnless(Authz.mayEditPost(
           request.theUserAndLevels, dao.getOnesGroupIds(requester),
           post, otherAuthor = anyOtherAuthor, pageMeta,

@@ -160,7 +160,7 @@ case class ReviewTask(  //  RENAME to ModTask
                         // (else confusing with  approve-before and *review*-after)
   id: ReviewTaskId,
   reasons: immutable.Seq[ReviewReason],
-  createdById: UserId,
+  createdById: TrueId,
   createdAt: ju.Date,
   createdAtRevNr: Option[Int] = None,
   moreReasonsAt: Option[ju.Date] = None,
@@ -171,10 +171,11 @@ case class ReviewTask(  //  RENAME to ModTask
   decidedById: Option[UserId] = None,
   invalidatedAt: Option[ju.Date] = None,
   decision: Option[ReviewDecision] = None,
-  // COULD change to a Set[UserId] and include editors too, hmm. [6KW02QS]  Or just the author +
-  // the 10? most recent editors, or the 10 most recent editors (not the author) for wiki posts.
+  // COULD change to a Set[TrueId] and include editors too, hmm. [6KW02QS]
+  // Or just the author + the 10? most recent editors, or the 10 most recent editors
+  // (not the author) for wiki posts.
   // Or the ones who edited the post, since it was last reviewed & any flags disagreed with?
-  maybeBadUserId: UserId,
+  maybeBadUserId: TrueId,  // RENAME to aboutUserId
   // Only if is for both title and body (cannot currently be moved to different page).
   pageId: Option[PageId] = None,
   postId: Option[PostId] = None,
@@ -236,10 +237,10 @@ case class ReviewTask(  //  RENAME to ModTask
     }
     require(oldTask.id == this.id, "EsE4GPMU0")
     require(oldTask.completedAt.isEmpty, "EsE4FYC2")
-    require(oldTask.createdById == this.createdById, "EsE6GU20")
+    require(oldTask.createdById.trueId == this.createdById.trueId, "EsE6GU20")
     require(oldTask.createdAt.getTime <= this.createdAt.getTime, "EsE7JGYM2")
     require(!oldTask.moreReasonsAt.exists(_.getTime > this.createdAt.getTime), "EsE2QUX4")
-    require(oldTask.maybeBadUserId == this.maybeBadUserId, "EsE5JMU1")
+    require(oldTask.maybeBadUserId.trueId == this.maybeBadUserId.trueId, "EsE5JMU1")
     require(oldTask.postId == this.postId, "EsE2UYF7")
     // Cannot add more review reasons to an already completed task.
     require(oldTask.completedAt.isEmpty, "EsE1WQC3")

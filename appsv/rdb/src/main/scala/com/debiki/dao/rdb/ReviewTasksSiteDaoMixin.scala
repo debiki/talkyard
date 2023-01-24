@@ -50,6 +50,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         id,
         reasons,
         created_by_id,
+        created_by_true_id_c,
         created_at,
         created_at_rev_nr,
         more_reasons_at,
@@ -59,14 +60,16 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         invalidated_at,
         decided_at,
         decision,
-        user_id,
+        about_pat_id_c,
+        about_true_id_c,
         page_id,
         post_id,
         post_nr)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       on conflict (site_id, id) do update set
         reasons = excluded.reasons,
         created_by_id = excluded.created_by_id,
+        created_by_true_id_c = excluded.created_by_true_id_c,
         created_at = excluded.created_at,
         created_at_rev_nr = excluded.created_at_rev_nr,
         more_reasons_at = excluded.more_reasons_at,
@@ -76,7 +79,8 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         invalidated_at = excluded.invalidated_at,
         decided_at = excluded.decided_at,
         decision = excluded.decision,
-        user_id = excluded.user_id,
+        about_pat_id_c = excluded.about_pat_id_c,
+        about_true_id_c = excluded.about_true_id_c,
         page_id = excluded.page_id,
         post_id = excluded.post_id,
         post_nr = excluded.post_nr  """
@@ -85,7 +89,8 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
       siteId.asAnyRef,
       reviewTask.id.asAnyRef,
       ReviewReason.toLong(reviewTask.reasons).asAnyRef,
-      reviewTask.createdById.asAnyRef,
+      reviewTask.createdById.curId.asAnyRef,
+      reviewTask.createdById.anyTrueId.orNullInt,
       reviewTask.createdAt,
       reviewTask.createdAtRevNr.orNullInt,
       reviewTask.moreReasonsAt.orNullTimestamp,
@@ -95,7 +100,8 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
       reviewTask.invalidatedAt.orNullTimestamp,
       reviewTask.decidedAt.orNullTimestamp,
       reviewTask.decision.map(_.toInt).orNullInt,
-      reviewTask.maybeBadUserId.asAnyRef,
+      reviewTask.maybeBadUserId.curId.asAnyRef,
+      reviewTask.maybeBadUserId.anyTrueId.orNullInt,
       reviewTask.pageId.orNullVarchar,
       reviewTask.postId.orNullInt,
       reviewTask.postNr.orNullInt)
@@ -117,7 +123,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         completed_at is null and
         decided_at is null and
         invalidated_at is null and
-        created_by_id = ? and
+        created_by_id = ? and   -- or true id?
         post_id = ?""",
       Seq(taskCreatedById.asAnyRef, postId.asAnyRef))
   }
@@ -171,7 +177,9 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
         : Seq[ReviewTask] = {
     val desc = orderBy.isDescending ? "desc" | ""
     val query = i"""
-      select * from review_tasks3 where site_id = ? and user_id = ?
+      select * from review_tasks3
+      where site_id = ? and
+            about_pat_id_c = ?  -- if has permissions, can also [incl_true_id]
       order by created_at $desc, id $desc limit ?
       """
     runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef, limit.asAnyRef), rs => {
@@ -237,7 +245,8 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
     ReviewTask(
       id = rs.getInt("id"),
       reasons = ReviewReason.fromLong(rs.getLong("reasons")),
-      createdById = rs.getInt("created_by_id"),
+      createdById = TrueId(rs.getInt("created_by_id"),
+                          anyTrueId = getOptInt32(rs, "created_by_true_id_c")),
       createdAt = getDate(rs, "created_at"),
       createdAtRevNr = getOptInt(rs, "created_at_rev_nr"),
       moreReasonsAt = getOptionalDate(rs, "more_reasons_at"),
@@ -247,7 +256,8 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
       invalidatedAt = getOptionalDate(rs, "invalidated_at"),
       decidedAt = getOptionalDate(rs, "decided_at"),
       decision = getOptInt(rs, "decision").flatMap(ReviewDecision.fromInt),
-      maybeBadUserId = getOptInt(rs, "user_id").getOrElse(UnknownUserId),
+      maybeBadUserId = TrueId(getOptInt(rs, "about_pat_id_c").getOrElse(UnknownUserId),
+                              anyTrueId = getOptInt32(rs, "about_true_id_c")),
       pageId = Option(rs.getString("page_id")),
       postId = getOptInt(rs, "post_id"),
       postNr = getOptInt(rs, "post_nr"))

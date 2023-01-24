@@ -247,13 +247,14 @@ trait TagsDao {
     })
 
     val (post, notifications, postAuthor) = readWriteTransaction { tx =>
-      val me = tx.loadTheParticipant(who.id)
+      val me = tx.loadTheParticipant(who.id.curId)
       val pageMeta = tx.loadThePageMeta(pageId)
       val post = tx.loadThePost(postId)
-      val postAuthor = tx.loadTheParticipant(post.createdById)
+      val postAuthor = tx.loadTheParticipant(post.createdById.curId)
 
       throwForbiddenIf(post.nr == PageParts.TitleNr, "EsE5JK8S4", "Cannot tag page titles")
 
+      // [pseudonyms_later] Better err msg if one's true user may do this.
       throwForbiddenIf(post.createdById != me.id && !me.isStaff,
         "EsE2GKY5", "Not your post and you're not staff, so you may not edit tags")
 

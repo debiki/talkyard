@@ -60,7 +60,8 @@ object PostsListFoundJson {
 
     // --- Load authors
 
-    val authorIds = postsFound.map(_.createdById).toSet
+    // (Load any anons, not the true users, so the anons stay anonymous.)
+    val authorIds = postsFound.map(_.createdById.curId).toSet
     val authorsById: Map[UserId, Participant] = dao.getParticipantsAsMap(authorIds)
 
     // --- Site origin   dupl code [603RKDJL5]
@@ -93,7 +94,8 @@ object PostsListFoundJson {
           isWrappedInPage: Bo = false
           ): JsObject = {
 
-    val anyAuthor = ppsById.get(post.createdById)
+    // (Show any anons, not their true users.)
+    val anyAuthor = ppsById.get(post.createdById.curId)
 
     // Currently always approved. [4946RKTT2]
     val approvedHtmlSanitized = post.approvedHtmlSanitized.getOrDie(

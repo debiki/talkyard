@@ -168,7 +168,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, tyC
 
     val topicsOldestFirst = usabilityTestingTopics.sortBy(_.meta.createdAt.getTime)
     for (topic <- topicsOldestFirst) {
-      val authorId = topic.meta.authorId
+      val authorId = topic.meta.authorId.curIdCheckMember  // IfBadAbortReq ?
       val authorCredits: Float = creditsByUserId.getOrElse(authorId, 0f)
       val feedbacks: Seq[Post] = feedbackByPageId.getOrElse(topic.pageId, Nil).filter(_.isOrigPostReply)
       //System.out.println(s"Topic ${topic.pageId}, num feedbacks: ${feedbacks.length}, author $authorId with credits: $authorCredits")

@@ -30,7 +30,8 @@ import play.api.libs.json._
 case class EventAndJson(event: Event, json: JsObject)
 
 
-/** Parses and serializes JSON for events.
+/** Parses and serializes JSON for events  (software events, e.g. a new comment,
+  * or a user joined etc. Not in-real-life events).
   */
 object EventsParSer {
 
@@ -102,8 +103,9 @@ object EventsParSer {
     // --- Load authors
 
     val authorIds = MutHashSet[PatId]()
-    authorIds ++= postsById.values.map(_.createdById)
-    authorIds ++= origPostsByPageId.values.map(_.createdById)
+    // (Loading anonyms, not the real users, so they'll stay anonymous.)
+    authorIds ++= postsById.values.map(_.createdById.curId)
+    authorIds ++= origPostsByPageId.values.map(_.createdById.curId)
     authorIds ++= pageStuffById.values.map(_.authorUserId)
     authorIds ++= patIds
 

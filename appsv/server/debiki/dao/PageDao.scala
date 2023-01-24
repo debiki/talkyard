@@ -74,7 +74,7 @@ case class NotYetCreatedEmbeddedPage(
   override def meta: PageMeta = PageMeta.forNewPage(
     pageId = EmptyPageId,
     pageRole,
-    authorId = SystemUserId,
+    authorId = TrueFalseId(SystemUserId),
     creationDati = now.toJavaDate,
     numPostsTotal = 0,
     categoryId = anyCategoryId,

@@ -495,6 +495,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
         created_at,
         created_by_id,
+        created_by_true_id,
+        old_false_id,
 
         curr_rev_started_at,
         curr_rev_by_id,
@@ -546,7 +548,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         )
       values (
         ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?,
+        ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?, ?, ?, ?,
@@ -565,7 +567,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       (post.tyype != PostType.Normal) ? post.tyype.toInt.asAnyRef | NullInt,
 
       d2ts(post.createdAt),
-      post.createdById.asAnyRef,
+      post.createdById.curId.asAnyRef,
+      post.createdById.anyTrueId.orNullInt,
+      post.createdById.oldFalseId.orNullInt,
 
       post.currentRevStaredAt,
       post.currentRevisionById.asAnyRef,
@@ -786,9 +790,11 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       multireplyPostNrs = fromDbMultireply(rs.getString("MULTIREPLY")),
       tyype = PostType.fromInt(rs.getInt("TYPE")).getOrElse(PostType.Normal),
       createdAt = getDate(rs, "CREATED_AT"),
-      createdById = rs.getInt("CREATED_BY_ID"),
+      createdById = TrueFalseId(rs.getInt("CREATED_BY_ID"),
+            anyTrueId = getOptInt32(rs, "created_by_true_id_c"),
+            oldFalseId = getOptInt32(rs, "old_false_id_c")),
       ownerIds = ownerIds,
-      authorids = authorIds,
+      authorIds = authorIds,
       assignedToIds = assignedToIds,
       currentRevStaredAt = getDate(rs, "curr_rev_started_at"),
       currentRevisionById = rs.getInt("curr_rev_by_id"),

@@ -183,7 +183,7 @@ case class AuditLogEntry(
   siteId: SiteId,
   id: AuditLogEntryId,
   didWhat: AuditLogEntryType,
-  doerId: UserId,
+  doerId: TrueId,
   doneAt: ju.Date,
   browserIdData: BrowserIdData,
   browserLocation: Option[BrowserLocation] = None,
@@ -199,7 +199,7 @@ case class AuditLogEntry(
   targetSiteId: Option[SiteId] = None, // CLEAN_UP ought to RENAME to otherSiteId, rename db column too
   targetPageId: Option[PageId] = None,
   targetPostNr: Option[PostNr] = None,
-  targetUserId: Option[UserId] = None,
+  targetUserId: Option[TrueId] = None,
   batchId: Option[AuditLogEntryId] = None,
   isLoading: Boolean = false) {
 

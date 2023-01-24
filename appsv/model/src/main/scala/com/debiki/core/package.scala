@@ -194,7 +194,7 @@ package object core {
   type SiteId = Int
   val NoSiteId = 0
 
-  type SiteVersion = Int
+  type SiteVersion = i32 // Int
 
   type LangCode = St  // [Scala_3] opaque type
 
@@ -216,6 +216,7 @@ package object core {
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
   type GuestId = PatId
+  type AnonId = PatId
   type MemberId = PatId   ; RENAME // to MembId
   type MembId = PatId     // but hard to read: '...bI..', two lines next to each other. Instead:
   type MemId = PatId      // ... is this better?  NO, REMOVE.
@@ -776,16 +777,19 @@ package object core {
 
   RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
   // I find "who" being confusing as to whom it refers to.
-  case class Who(id: UserId, browserIdData: BrowserIdData, isAnon: Bo = false) {
+
+  REMOVE // isAnon? Now with TrueId, isAnon no longer needed?
+  case class Who(id: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
-    def isGuest: Bo = !isAnon && Participant.isGuestId(id)
-    def isSystem: Boolean = id == SystemUserId
+    def isGuest: Bo = !isAnon && Participant.isGuestId(id.trueId) ; REFACTOR // this can now be a TrueId memb fn?
+    def isGuestOrAnon: Bo = id.isGuestOrAnon
+    def isSystem: Bo = id.trueId == SystemUserId
   }
 
   object Who {
-    val System = Who(SystemUserId, BrowserIdData.System)
+    val System = Who(TrueId(SystemUserId), BrowserIdData.System)
   }
 
 
@@ -871,6 +875,7 @@ package object core {
   }
 
 
+  RENAME // UserAndLevels.user to truePat, to show it's not an annonym or pseudonym?
   case class UserAndLevels(user: Participant, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
@@ -1400,7 +1405,7 @@ package object core {
         p.copy(htmlToSpamCheck = p.htmlToSpamCheck.take(600))
       }
 
-    def siteUserId = SiteUserId(siteId, who.id)
+    def siteUserId = SiteUserId(siteId, who.id.trueId)  // later:  keep id, not id.trueId?
 
     def sitePostIdRevOrUser: String = s"s$siteId, " + (postToSpamCheck match {
       case Some(thePostToSpamCheck) =>
