@@ -89,21 +89,22 @@ trait UploadsSiteDaoMixin extends SiteTransaction {
 
 
   def insertUploadedFileReference(postId: PostId, uploadRef: UploadRef,
-        addedById: UserId) {
+        addedByTrueId: TrueId) {
     val siteIdsUsingUploadBefore = loadSiteIdsUsingUpload(uploadRef)
 
     // COULD use `insert ... on conflict do nothing` here once have upgraded to Postgres 9.5.
     // Then remove `where not exists`
     val statement = """
       insert into upload_refs3(
-        site_id, post_id, base_url, hash_path, added_by_id, added_at)
-      select ?, ?, ?, ?, ?, now_utc()
+        site_id, post_id, base_url, hash_path, added_by_id, added_by_true_id_c, added_at)
+      select ?, ?, ?, ?, ?, ?, now_utc()
       where not exists (
         select 1 from upload_refs3
         where site_id = ? and post_id = ? and base_url = ? and hash_path = ?)
       """
     val values = List(
-      siteId.asAnyRef, postId.asAnyRef, uploadRef.baseUrl, uploadRef.hashPath, addedById.asAnyRef,
+      siteId.asAnyRef, postId.asAnyRef, uploadRef.baseUrl, uploadRef.hashPath,
+      addedByTrueId.curId.asAnyRef, addedByTrueId.anyTrueId.orNullInt,
       siteId.asAnyRef, postId.asAnyRef, uploadRef.baseUrl, uploadRef.hashPath)
 
     try runUpdateSingleRow(statement, values)

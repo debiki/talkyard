@@ -87,7 +87,7 @@ trait ForumDao {
         siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.CreateForum,
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = tx.now.toJavaDate,
         // Incl email, so will remember forever the created-by-email, even if the user
         // changes hens email later.
@@ -180,7 +180,7 @@ trait ForumDao {
 
     val staffCategoryId = rootCategoryId + 1
     val defaultCategoryId = rootCategoryId + 2
-    val bySystem = Who(SystemUserId, byWho.browserIdData)
+    val bySystem = Who(TrueId(SystemUserId), byWho.browserIdData)
 
     // Create forum root category.
     tx.insertCategoryMarkSectionPageStale(Category(

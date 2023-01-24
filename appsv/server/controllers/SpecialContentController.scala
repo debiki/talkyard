@@ -71,13 +71,17 @@ class SpecialContentController @Inject()(cc: ControllerComponents, edContext: Ty
 
   def saveContent: Action[JsValue] = AdminPostJsonAction(maxBytes = MaxPostSizeJsCss) {
         request: JsonPostRequest =>
+    import request.theReqer
     val rootPageId = (request.body \ "rootPageId").as[PageId]
     val contentId = (request.body \ "contentId").as[PageId]
     val useDefaultText = (request.body \ "useDefaultText").as[Boolean]
     val anyNewText = (request.body \ "anyCustomText").asOptStringNoneIfBlank
+    val requerId: TrueIdOnly = theReqer.trueId2.toTrueIdOnly getOrElse {
+      throwForbidden("TyEISPSEUDON627", "Cannot do this as a pseudonym or audonym")
+    }
 
     request.dao.saveSpecialContent(rootPageId, contentId, anyNewText, useDefaultText,
-      editorId = request.theUserId)
+          editorId = requerId)
     Ok
   }
 

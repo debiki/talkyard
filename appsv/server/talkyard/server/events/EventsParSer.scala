@@ -30,7 +30,8 @@ import play.api.libs.json._
 case class EventAndJson(event: Event, json: JsObject)
 
 
-/** Parses and serializes JSON for events.
+/** Parses and serializes JSON for events  (software events, e.g. a new comment,
+  * or a user joined etc. Not in-real-life events).
   */
 object EventsParSer {
 

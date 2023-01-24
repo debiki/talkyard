@@ -254,6 +254,7 @@ trait TagsDao {
 
       throwForbiddenIf(post.nr == PageParts.TitleNr, "EsE5JK8S4", "Cannot tag page titles")
 
+      // [pseudonyms_later] Better err msg if one's true user may do this.
       throwForbiddenIf(post.createdById != me.id && !me.isStaff,
         "EsE2GKY5", "Not your post and you're not staff, so you may not edit tags")
 

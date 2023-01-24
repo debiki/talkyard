@@ -342,7 +342,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val newType = PostType.fromInt(newTypeInt) getOrElse throwBadArgument("DwE4EWL3", "newType")
 
     request.dao.changePostType(pageId = pageId, postNr = postNr, newType,
-      changerId = request.theUser.id, request.theBrowserIdData)
+          changerTrueId = request.theUser.trueId2, request.theBrowserIdData)
     Ok
   }
 
@@ -394,7 +394,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     CHECK_AUTHN_STRENGTH
 
     val (_, storePatch) = request.dao.movePostIfAuth(PagePostId(pageId, postId),
-      newParent = PagePostNr(newPageId, newParentNr), moverId = request.theMember.id,
+      newParent = PagePostNr(newPageId, newParentNr), moverId = request.theReqerTrueId,
       request.theBrowserIdData)
 
     OkSafeJson(storePatch)

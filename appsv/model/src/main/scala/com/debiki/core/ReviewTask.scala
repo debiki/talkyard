@@ -160,7 +160,7 @@ case class ReviewTask(  //  RENAME to ModTask
                         // (else confusing with  approve-before and *review*-after)
   id: ReviewTaskId,
   reasons: immutable.Seq[ReviewReason],
-  createdById: UserId,
+  createdByTrueId: TrueId,
   createdAt: ju.Date,
   createdAtRevNr: Option[Int] = None,
   moreReasonsAt: Option[ju.Date] = None,
@@ -171,10 +171,11 @@ case class ReviewTask(  //  RENAME to ModTask
   decidedById: Option[UserId] = None,
   invalidatedAt: Option[ju.Date] = None,
   decision: Option[ReviewDecision] = None,
-  // COULD change to a Set[UserId] and include editors too, hmm. [6KW02QS]  Or just the author +
-  // the 10? most recent editors, or the 10 most recent editors (not the author) for wiki posts.
+  // COULD change to a Set[TrueId] and include editors too, hmm. [6KW02QS]
+  // Or just the author + the 10? most recent editors, or the 10 most recent editors
+  // (not the author) for wiki posts.
   // Or the ones who edited the post, since it was last reviewed & any flags disagreed with?
-  maybeBadUserId: UserId,
+  aboutPatTrueId: TrueId,
   // Only if is for both title and body (cannot currently be moved to different page).
   pageId: Option[PageId] = None,
   postId: Option[PostId] = None,
@@ -210,6 +211,8 @@ case class ReviewTask(  //  RENAME to ModTask
   require(postId.isEmpty || (
       decidedAt.isDefined || completedAt.isDefined) == decidedAtRevNr.isDefined, "EsE4PU2")
 
+  def createdById: PatId = createdByTrueId.curId
+  def maybeBadUserId: PatId = aboutPatTrueId.curId // RENAME to aboutPatId
 
   /** If a staff member has decided what to do. However there's an undo timeout
     * — not until after that, will the decision get carried out (so doneOrGone
@@ -240,6 +243,8 @@ case class ReviewTask(  //  RENAME to ModTask
     require(oldTask.createdAt.getTime <= this.createdAt.getTime, "EsE7JGYM2")
     require(!oldTask.moreReasonsAt.exists(_.getTime > this.createdAt.getTime), "EsE2QUX4")
     require(oldTask.maybeBadUserId == this.maybeBadUserId, "EsE5JMU1")
+    // If curId the same, trueId will be the same too.
+    dieIf(oldTask.aboutPatTrueId.trueId != this.aboutPatTrueId.trueId, "TyEMX52P9")
     require(oldTask.postId == this.postId, "EsE2UYF7")
     // Cannot add more review reasons to an already completed task.
     require(oldTask.completedAt.isEmpty, "EsE1WQC3")

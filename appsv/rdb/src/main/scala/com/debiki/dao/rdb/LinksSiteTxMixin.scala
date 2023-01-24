@@ -43,8 +43,10 @@ trait LinksSiteTxMixin extends SiteTransaction {
               status_code_c,
               preview_type_c,
               first_linked_by_id_c,
+              first_linked_by_true_id_c,
+              first_linked_by_old_false_id_c,
               content_json_c)
-          values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           on conflict (site_id_c, link_url_c, fetched_from_url_c)
           do update set
               fetched_at_c = excluded.fetched_at_c,
@@ -61,7 +63,9 @@ trait LinksSiteTxMixin extends SiteTransaction {
           NullInt, // linkPreview.cache_max_secs_c, — later
           linkPreview.statusCode.asAnyRef,
           linkPreview.previewType.asAnyRef,
-          linkPreview.firstLinkedById.asAnyRef,
+          linkPreview.firstLinkedByTrueId.curId.asAnyRef,
+          linkPreview.firstLinkedByTrueId.anyTrueId.orNullInt,
+          linkPreview.firstLinkedByTrueId.oldFalseId.asAnyRef,
           linkPreview.contentJson)
 
     runUpdateSingleRow(upsertStatement, values)
@@ -113,13 +117,17 @@ trait LinksSiteTxMixin extends SiteTransaction {
               link_url_c,
               added_at_c,
               added_by_id_c,
+              added_by_true_id_c,
+              added_by_old_false_id_c,
               is_external_c,
               to_page_id_c,
               to_post_id_c,
-              to_pp_id_c,
+              to_pat_id_c,
+              to_pat_true_id_c,
+              to_pat_old_false_id_c,
               to_tag_id_c,
               to_category_id_c)
-          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           on conflict (site_id_c, from_post_id_c, link_url_c)
              do nothing """
 
@@ -128,11 +136,15 @@ trait LinksSiteTxMixin extends SiteTransaction {
       link.fromPostId.asAnyRef,
       link.linkUrl,
       link.addedAt.asTimestamp,
-      link.addedById.asAnyRef,
+      link.addedByTrueId.curId.asAnyRef,
+      link.addedByTrueId.anyTrueId.orNullInt,
+      link.addedByTrueId.oldFalseId.orNullInt,
       link.isExternal.asTrueOrNull,
       link.toPageId.orNullVarchar,
       link.toPostId.orNullInt,
-      link.toPpId.orNullInt,
+      link.toPatTrueId.map(_.curId).orNullInt,
+      link.toPatTrueId.flatMap(_.anyTrueId).orNullInt,
+      link.toPatTrueId.flatMap(_.oldFalseId).orNullInt,
       link.toTagId.orNullInt,
       link.toCategoryId.orNullInt)
 
@@ -308,7 +320,10 @@ trait LinksSiteTxMixin extends SiteTransaction {
           // cache_max_secs_c = ... — later
           statusCode = getInt(rs, "status_code_c"),
           previewType = getInt(rs, "preview_type_c"),
-          firstLinkedById = getInt(rs, "first_linked_by_id_c"),
+          firstLinkedByTrueId = TrueFalseId(
+                getInt(rs, "first_linked_by_id_c"),
+                anyTrueId = getOptInt(rs, "first_linked_by_true_id_c"),
+                oldFalseId = getOptInt(rs, "first_linked_by_old_false_id_c")),
           contentJson = getOptJsObject(rs, "content_json_c").getOrElse(JsNull))
   }
 
@@ -318,12 +333,18 @@ trait LinksSiteTxMixin extends SiteTransaction {
           fromPostId = getInt(rs, "from_post_id_c"),
           linkUrl = getString(rs, "link_url_c"),
           addedAt = getWhen(rs, "added_at_c"),
-          addedById = getInt(rs, "added_by_id_c"),
+          addedByTrueId = TrueFalseId(
+                getInt(rs, "added_by_id_c"),
+                anyTrueId = getOptInt(rs, "added_by_true_id_c"),
+                oldFalseId = getOptInt(rs, "added_by_old_false_id_c")),
           isExternal = getOptBool(rs, "is_external_c") is true,
           //to_staff_page: getOptBool(rs, "to_staff_page") is true,
           toPageId = getOptString(rs, "to_page_id_c"),
           toPostId = getOptInt(rs, "to_post_id_c"),
-          toPpId = getOptInt(rs, "to_pp_id_c"),
+          toPatTrueId = getOptInt(rs, "to_pat_id_c").map(curId => TrueFalseId(
+                curId,
+                anyTrueId = getOptInt(rs, "to_pat_true_id_c"),
+                oldFalseId = getOptInt(rs, "to_pat_old_false_id_c"))),
           toTagId = getOptInt(rs, "to_tag_id_c"),
           toCategoryId = getOptInt(rs, "to_category_id_c"))
   }

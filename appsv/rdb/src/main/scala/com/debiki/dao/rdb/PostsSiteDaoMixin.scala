@@ -495,6 +495,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
         created_at,
         created_by_id,
+        created_by_true_id,
+        old_false_id,
 
         curr_rev_started_at,
         curr_rev_by_id,
@@ -546,7 +548,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         )
       values (
         ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?,
+        ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?, ?, ?, ?,
@@ -565,7 +567,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       (post.tyype != PostType.Normal) ? post.tyype.toInt.asAnyRef | NullInt,
 
       d2ts(post.createdAt),
-      post.createdById.asAnyRef,
+      post.createdByTrueId.curId.asAnyRef,
+      post.createdByTrueId.anyTrueId.orNullInt,
+      post.createdByTrueId.oldFalseId.orNullInt,
 
       post.currentRevStaredAt,
       post.currentRevisionById.asAnyRef,
@@ -786,9 +790,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       multireplyPostNrs = fromDbMultireply(rs.getString("MULTIREPLY")),
       tyype = PostType.fromInt(rs.getInt("TYPE")).getOrElse(PostType.Normal),
       createdAt = getDate(rs, "CREATED_AT"),
-      createdById = rs.getInt("CREATED_BY_ID"),
+      createdByTrueId = TrueFalseId(
+            rs.getInt("CREATED_BY_ID"),
+            anyTrueId = getOptInt32(rs, "created_by_true_id_c"),
+            oldFalseId = getOptInt32(rs, "created_by_old_false_id_c")),
       ownerIds = ownerIds,
-      authorids = authorIds,
+      authorIds = authorIds,
       assignedToIds = assignedToIds,
       currentRevStaredAt = getDate(rs, "curr_rev_started_at"),
       currentRevisionById = rs.getInt("curr_rev_by_id"),
@@ -914,18 +921,18 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         "and from_pat_id_c = ?"
     }
     val query = s"""
-      select to_post_id_c, page_id, post_nr, rel_type_c, created_at, from_pat_id_c
+      select to_post_id_c, page_id, post_nr, rel_type_c, created_at,
+            from_pat_id_c, from_true_id_c, from_old_false_id_c
       from post_actions3
       where site_id = ? $andPageIdEq $andCreatedBy
       """
     runQueryFindMany(query, values.toList, rs => {
-      val theUserId = rs.getInt("from_pat_id_c")
       PostAction(
         uniqueId = rs.getInt("to_post_id_c"),
         pageId = rs.getString("page_id"),
         postNr = rs.getInt("post_nr"),
         doneAt = getWhen(rs, "created_at"),
-        doerId = theUserId,
+        doerTrueId = _getTrueId(rs)),
         actionType = fromActionTypeInt(rs.getInt("rel_type_c")))
     })
   }
@@ -944,7 +951,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         pageId = pageId,
         postNr = postNr,
         doneAt = getWhen(rs, "created_at"),
-        doerId = rs.getInt("from_pat_id_c"),
+        doerTrueId = _getTrueId(rs)),
         actionType = fromActionTypeInt(rs.getInt("rel_type_c")))
     })
   }
@@ -978,7 +985,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         pageId = rs.getString("page_id"),
         postNr = rs.getInt("post_nr"),
         doneAt = getWhen(rs, "created_at"),
-        flaggerId = rs.getInt("from_pat_id_c"),
+        flaggerId = _getTrueId(rs)),
         flagType = fromActionTypeIntToFlagType(rs.getInt("rel_type_c")))
       dieIf(!postAction.actionType.isInstanceOf[PostFlagType], "DwE2dpg4")
       postAction
@@ -1003,12 +1010,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     postAction match {
       case vote: PostVote =>
         insertPostActionImpl(
-          postId = vote.uniqueId, pageId = vote.pageId, postNr = vote.postNr,
-          actionType = vote.voteType, doerId = vote.doerId, doneAt = vote.doneAt)
+              postId = vote.uniqueId, pageId = vote.pageId, postNr = vote.postNr,
+              vote.voteType, vote.doerTrueId, doneAt = vote.doneAt)
       case flag: PostFlag =>
         insertPostActionImpl(
-          postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
-          actionType = flag.flagType, doerId = flag.doerId, doneAt = flag.doneAt)
+              postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
+              flag.flagType, flag.doerTrueId, doneAt = flag.doneAt)
       // case AuthorOf => ...
       // case OwnerOf => ...
     }
@@ -1016,14 +1023,31 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   private def insertPostActionImpl(postId: PostId, pageId: PageId, postNr: PostNr,
-        actionType: PostActionType, doerId: UserId, doneAt: When) {
+        actionType: PostActionType, doerTrueId: TrueId, doneAt: When) {
     val statement = """
-      insert into post_actions3(site_id, to_post_id_c, page_id, post_nr, rel_type_c, from_pat_id_c,
-          created_at, sub_type_c)
-      values (?, ?, ?, ?, ?, ?, ?, 1)
-      """
-    val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, pageId, postNr.asAnyRef,
-      toActionTypeInt(actionType), doerId.asAnyRef, doneAt.asTimestamp)
+          insert into post_actions3(
+              site_id,
+              to_post_id_c,
+              page_id,
+              post_nr,
+              rel_type_c,
+              from_pat_id_c,
+              from_true_id_c,
+              from_old_false_id_c,
+              created_at,
+              sub_type_c)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  """
+
+    val values = List[AnyRef](
+          siteId.asAnyRef,
+          postId.asAnyRef,
+          pageId,
+          postNr.asAnyRef,
+          toActionTypeInt(actionType),
+          doerTrueId.curId.asAnyRef,
+          doerTrueId.anyTrueId.orNullInt,
+          doerTrueId.oldFalseId.orNullInt,
+          doneAt.asTimestamp)
     val numInserted =
       try { runUpdate(statement, values) }
       catch {
@@ -1046,7 +1070,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     var query = s"""
       select
         revision_nr, previous_nr, source_patch, full_source, title,
-        composed_at, composed_by_id,
+        composed_at, composed_by_id, composed_by_true_id_c, composed_by_old_false_id_c,
         approved_at, approved_by_id,
         hidden_at, hidden_by_id
       from post_revisions3
@@ -1077,7 +1101,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         fullSource = Option(rs.getString("full_source")),
         title = Option(rs.getString("title")),
         composedAt = getDate(rs, "composed_at"),
-        composedById = rs.getInt("composed_by_id"),
+        composedByTrueId = TrueFalseId(
+              rs.getInt("composed_by_id"),
+              anyTrueId = getOptInt(rs, "composed_by_true_id_c"),
+              oldFalseId = getOptInt(rs, "composed_by_old_false_id_c")),
         approvedAt = getOptionalDate(rs, "approved_at"),
         approvedById = getOptInt(rs, "approved_by_id"),
         hiddenAt = getOptionalDate(rs, "hidden_at"),
@@ -1088,23 +1115,29 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   def insertPostRevision(revision: PostRevision) {
     val statement = """
-      insert into post_revisions3(
-        site_id, post_id,
-        revision_nr, previous_nr,
-        source_patch, full_source, title,
-        composed_at, composed_by_id,
-        approved_at, approved_by_id,
-        hidden_at, hidden_by_id)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      """
+          insert into post_revisions3(
+            site_id, post_id,
+            revision_nr, previous_nr,
+            source_patch, full_source, title,
+            composed_at,
+            composed_by_id,
+            composed_by_true_id_c,
+            composed_by_old_false_id_c,
+            approved_at, approved_by_id,
+            hidden_at, hidden_by_id)
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """
+
     val values = List[AnyRef](
-      siteId.asAnyRef, revision.postId.asAnyRef,
-      revision.revisionNr.asAnyRef, revision.previousNr.orNullInt,
-      revision.sourcePatch.orNullVarchar, revision.fullSource.orNullVarchar,
-      revision.title.orNullVarchar,
-      revision.composedAt, revision.composedById.asAnyRef,
-      revision.approvedAt.orNullTimestamp, revision.approvedById.orNullInt,
-      revision.hiddenAt.orNullTimestamp, revision.hiddenById.orNullInt)
+          siteId.asAnyRef, revision.postId.asAnyRef,
+          revision.revisionNr.asAnyRef, revision.previousNr.orNullInt,
+          revision.sourcePatch.orNullVarchar, revision.fullSource.orNullVarchar,
+          revision.title.orNullVarchar,
+          revision.composedAt,
+          revision.composedByTrueId.curId.asAnyRef,
+          revision.composedByTrueId.anyTrueId.orNullInt,
+          revision.composedByTrueId.oldFalseId.orNullInt,
+          revision.approvedAt.orNullTimestamp, revision.approvedById.orNullInt,
+          revision.hiddenAt.orNullTimestamp, revision.hiddenById.orNullInt)
     runUpdateExactlyOneRow(statement, values)
   }
 
@@ -1129,6 +1162,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     runUpdateExactlyOneRow(statement, values)
   }
 
+  private def _getTrueId(rs: js.ResultSet): TrueId = {
+    TrueFalseId(
+          curId = rs.getInt("from_pat_id_c"),
+          anyTrueId = getOptInt(rs, "from_true_id_c"),
+          oldFalseId = getOptInt(rs, "from_old_false_id_c")
+  }
 }
 
 

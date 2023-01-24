@@ -127,13 +127,14 @@ trait PostsDao {
       throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
     }
 
-    val realAuthor = realAuthorAndLevels.user
+    // Might be a [pseudonyms_later] though, if ever implemented.
+    val realAuthor = realAuthorAndLevels.patOrPseudonym
     val realAuthorAndGroupIds = tx.loadGroupIdsMemberIdFirst(realAuthor)
 
     // Dupl code. [get_anon]
     // Hmm, rename to  otherAuthor,  and None by default.  And set  createdById
     // to the real account, always,  and  author_id_c  to any anonym's id.   [mk_new_anon]
-    val author =
+    val authorMaybeAnon =
           if (doAsAnon.isEmpty) {
             realAuthor
           }
@@ -218,8 +219,7 @@ trait PostsDao {
       multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
       postType = postType,
       createdAt = now.toJavaDate,
-      createdById = author.id,  // no, set to real user instead, and:
-      // authorsId = Some(author.id) if anon, else None  (then, same as poster)
+      createdById = authoMaybeAnonr.trueId2,
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
       approvedById = approverId)
@@ -229,7 +229,7 @@ trait PostsDao {
     val newFrequentPosterIds: Seq[UserId] =
       if (shallApprove)
         PageParts.findFrequentPosters(page.parts.allPosts, // skip newPost, since we ignore ...
-          ignoreIds = Set(page.meta.authorId, author.id))   // ... the author here anyway [3296KGP]
+          ignoreIds = Set(page.meta.authorId, authorMaybeAnon.id))   // ... the author here anyway [3296KGP]
       else
         page.meta.frequentPosterIds
 
@@ -237,7 +237,7 @@ trait PostsDao {
     val newMeta = oldMeta.copy(
       bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
       lastApprovedReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastApprovedReplyAt,
-      lastApprovedReplyById = shallApprove ? Option(author.id) | oldMeta.lastApprovedReplyById,
+      lastApprovedReplyById = shallApprove ? Option(authorMaybeAnon.id) | oldMeta.lastApprovedReplyById,
       frequentPosterIds = newFrequentPosterIds,
       numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
       numRepliesTotal = page.parts.numRepliesTotal + 1,
@@ -258,8 +258,7 @@ trait PostsDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewReply,
-      // Change to the real author id?
-      doerId = author.id,
+      doerTrueId = authorMaybeAnon.trueId2,
       // And add:
       // doer_false_id = ...
       doneAt = now.toJavaDate,
@@ -282,7 +281,7 @@ trait PostsDao {
       createdById = SystemUserId,
       createdAt = now.toJavaDate,
       createdAtRevNr = Some(newPost.currentRevisionNr),
-      maybeBadUserId = author.id,
+      aboutPatTrueId = authorMaybeAnon.trueId2,
       postId = Some(newPost.id),
       postNr = Some(newPost.nr)))
 
@@ -302,11 +301,11 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
             htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
-          who = byWho.copy(id = author.id, isAnon = author.isAnon),
+          who = byWho.copy(authorMaybeAnon.trueId2, isAnon = authorMaybeAnon.isAnon),
           requestStuff = spamRelReqStuff))
 
     val stats = UserStats(
-      author.id,
+      authorMaybeAnon.id,
       lastSeenAt = now,
       lastPostedAt = Some(now),
       firstDiscourseReplyAt = Some(now),
@@ -328,10 +327,10 @@ trait PostsDao {
       updatePagePopularity(pagePartsInclNewPost, tx)
 
       staleStuff.addPageId(pageId)
-      saveDeleteLinks(newPost, textAndHtml, author.id, tx, staleStuff)
+      saveDeleteLinks(newPost, textAndHtml, authorMaybeAnon.trueId2, tx, staleStuff)
     }
     uploadRefs foreach { uploadRef =>
-      tx.insertUploadedFileReference(newPost.id, uploadRef, author.id)
+      tx.insertUploadedFileReference(newPost.id, uploadRef, authorMaybeAnon.trueId2)
     }
     if (!skipNotfsAndAuditLog) {
       insertAuditLogEntry(auditLogEntry, tx)
@@ -345,7 +344,9 @@ trait PostsDao {
     // Test:  modn-from-disc-page-review-after  TyTE2E603RKG4
     replyToPosts foreach { replyToPost =>
       RENAME // moderator to maybeMod ?
-      maybeReviewAcceptPostByInteracting(replyToPost, moderator = author,
+      // Use authorMaybeAnon, so won't accidentally reveal one's true id,
+      // by approving exactly at the same time as replying.
+      maybeReviewAcceptPostByInteracting(replyToPost, moderator = authorMaybeAnon,
             ReviewDecision.InteractReply)(tx, staleStuff)
     }
 
@@ -373,7 +374,7 @@ trait PostsDao {
             pageId = Some(pageId)), byWho = Who.System)
     } */
 
-    (newPost, author, notifications, anyReviewTask)
+    (newPost, authorMaybeAnon, notifications, anyReviewTask)
   }
 
 
@@ -609,7 +610,7 @@ trait PostsDao {
 
     val (post, author, notifications) = writeTx { (tx, staleStuff) =>
       val authorAndLevels = loadUserAndLevels(byWho, tx)
-      val author = authorAndLevels.user
+      val author = authorAndLevels.patOrPseudonym
 
       SHOULD_OPTIMIZE // don't load all posts [2GKF0S6], because this is a chat, could be too many.
       val page = newPageDao(pageId, tx)
@@ -686,9 +687,12 @@ trait PostsDao {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE592MWP2")
 
+    // Chat messages currently cannot be anonymous. [anon_chats]
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
-    val authorId = who.id
+    val authorId = who.id  ; REMOVE
     val authorAndLevels = loadUserAndLevels(who, tx)
+    val author: Pat = authorAndLevels.patOrPseudonym
+    dieIf(author.isAnon, "TyE5982sKTYNJ4")
 
     val settings = loadWholeSiteSettings(tx)
 
@@ -708,7 +712,7 @@ trait PostsDao {
       multireplyPostNrs = Set.empty,
       postType = PostType.ChatMessage,
       createdAt = tx.now.toJavaDate,
-      createdById = authorId,
+      createdByTrueId = authorAndLevels.user.trueId2,
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
       // Chat messages are currently auto approved. [7YKU24]
@@ -728,7 +732,7 @@ trait PostsDao {
       numPostsTotal = oldMeta.numPostsTotal + 1,
       //numOrigPostRepliesVisible <— leave as is — chat messages aren't orig post replies.
       lastApprovedReplyAt = Some(tx.now.toJavaDate),
-      lastApprovedReplyById = Some(authorId),
+      lastApprovedReplyById = Some(author.id),
       frequentPosterIds = newFrequentPosterIds,
       version = oldMeta.version + 1)
 
@@ -768,7 +772,7 @@ trait PostsDao {
                 createdById = SystemUserId,
                 createdAt = tx.now.toJavaDate,
                 createdAtRevNr = Some(newPost.currentRevisionNr),
-                maybeBadUserId = authorId,
+                maybeBadUserTrueId = author.trueId2,
                 postId = Some(newPost.id),
                 postNr = Some(newPost.nr)))
 
@@ -776,7 +780,7 @@ trait PostsDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewChatMessage,
-      doerId = authorId,
+      doerTrueId = author.trueId2,
       doneAt = tx.now.toJavaDate,
       browserIdData = who.browserIdData,
       pageId = Some(page.id),
@@ -790,7 +794,7 @@ trait PostsDao {
       targetUserId = None)
 
     val userStats = UserStats(
-      authorId,
+      author.id,
       lastSeenAt = tx.now,
       lastPostedAt = Some(tx.now),
       firstChatMessageAt = Some(tx.now),
@@ -802,11 +806,11 @@ trait PostsDao {
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
     updatePagePopularity(page.parts, tx)
     uploadRefs foreach { uploadRef =>
-      tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
+      tx.insertUploadedFileReference(newPost.id, uploadRef, author.trueId2)
     }
 
     staleStuff.addPageId(page.id)
-    saveDeleteLinks(newPost, textAndHtml, authorId, tx, staleStuff)
+    saveDeleteLinks(newPost, textAndHtml, author.trueId2, tx, staleStuff)
 
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     anyModTask.foreach(tx.upsertReviewTask)
@@ -837,12 +841,14 @@ trait PostsDao {
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
     val authorId = byWho.id
     val authorAndLevels = loadUserAndLevels(byWho, tx)
+    val author = authorAndLevels.patOrPseudonym
+    dieIf(author.isAnon, "TyE5982sKTYNJ5")
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE8FPZE2P")
     require(lastPost.tyype == PostType.ChatMessage, o"""Post id ${lastPost.id}
           is not a chat message, it is: ${lastPost.tyype} [TyE6YUW28]""")
 
-    require(lastPost.currentRevisionById == authorId, "EsE5JKU0")
+    require(lastPost.currentRevisionById == author.id, "EsE5JKU0")
     require(lastPost.currentRevSourcePatch.isEmpty, "EsE7YGKU2")
     require(lastPost.currentRevisionNr == FirstRevisionNr, "EsE2FWY2")
     require(lastPost.isCurrentVersionApproved, "EsE4GK7Y2")
@@ -877,7 +883,7 @@ trait PostsDao {
       // Leave approvedById = SystemUserId and approvedRevisionNr = FirstRevisionNr unchanged.
       currentRevLastEditedAt = Some(tx.now.toJavaDate),
       lastApprovedEditAt = Some(tx.now.toJavaDate),
-      lastApprovedEditById = Some(authorId))
+      lastApprovedEditById = Some(author.id))
 
     // For now, don't generate any ModTask here.  [03RMDl6J]
     // (But we do, when starting a new chat message.)
@@ -906,10 +912,10 @@ trait PostsDao {
     tx.indexPostsSoon(editedPost)
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, textAndHtml,
-          isAppending = true, isEditing = false, authorId, tx)
+          isAppending = true, isEditing = false, author.trueId2, tx)
 
     staleStuff.addPageId(editedPost.pageId)
-    saveDeleteLinks(editedPost, combinedTextAndHtml, authorId, tx, staleStuff)
+    saveDeleteLinks(editedPost, combinedTextAndHtml, author.trueId2, tx, staleStuff)
 
     val oldMeta = tx.loadThePageMeta(lastPost.pageId)
     val newMeta = oldMeta.copy(version = oldMeta.version + 1)
@@ -950,7 +956,7 @@ trait PostsDao {
 
     val anyEditedCategory = writeTx { (tx, staleStuff) =>
       val realEditorAndLevels = loadUserAndLevels(who, tx)
-      val realEditor = realEditorAndLevels.user
+      val realEditor = realEditorAndLevels.patOrPseudonym
       val page = newPageDao(pageId, tx)
       val settings = loadWholeSiteSettings(tx)
 
@@ -1116,7 +1122,8 @@ trait PostsDao {
             postToEdit.previousRevisionNr)
         }
         else {
-          val revision = PostRevision.createFor(postToEdit, previousRevision = anyLastRevision)
+          val revision = PostRevision.createFor(
+                postToEdit, previousRevision = anyLastRevision, thisRevBy = editorMaybeAnon)
           (Some(revision), tx.now.toJavaDate, postToEdit.currentRevisionNr + 1,
             Some(postToEdit.currentRevisionNr))
         }
@@ -1257,20 +1264,20 @@ trait PostsDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.EditPost,
-        doerId = editorMaybeAnon.id,
+        doerTrueId = editorMaybeAnon.trueId2,
         doneAt = tx.now.toJavaDate,
         browserIdData = who.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postToEdit.id),
         postNr = Some(postNr),
-        targetUserId = Some(postToEdit.createdById))
+        targetPatTrueId = Some(postToEdit.createdByTrueId))
 
       tx.updatePost(editedPost)
       tx.indexPostsSoon(editedPost)
       anySpamCheckTask.foreach(tx.insertSpamCheckTask)
       newRevision.foreach(tx.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, newTextAndHtml,
-            isAppending = false, isEditing = true, editorMaybeAnon.id, tx)
+            isAppending = false, isEditing = true, editorMaybeAnon.trueId2, tx)
 
       insertAuditLogEntry(auditLogEntry, tx)
 
@@ -1349,7 +1356,7 @@ trait PostsDao {
     *
     * staleStuff must include post.pageId already.
     */
-  def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerId: PatId,
+  def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerTrueId: TrueId,
           tx: SiteTx, staleStuff: StaleStuff, skipBugWarn: Bo = false): U = {
     // Some e2e tests: backlinks-basic.2browsers.test.ts  TyTINTLNS54824
 
@@ -1376,11 +1383,11 @@ trait PostsDao {
       return
     }
 
-    COULD // remove param writerId? It's in the post already, right?:
+    COULD // remove param writerTrueId? It's in the post already, right?:
     // (Or use  post.currentRevisionById — no, a new lastApprovedRevisionById ?)
-    if (post.lastApprovedEditById.getOrElse(post.createdById) != writerId) {
-      bugWarn("TyE63WKDJ356", s"s$siteId: post last writer id != writerId = ${
-            writerId}:  $post")
+    if (post.lastApprovedEditById.getOrElse(post.createdById) != writerTrueId.curId) {
+      bugWarn("TyE63WKDJ356", s"s$siteId: post last writer id != writerId, ${
+            writerTrueId}:  $post")
       return
     }
 
@@ -1406,7 +1413,7 @@ trait PostsDao {
         Link(fromPostId = post.id,
               linkUrl = linkUrl,
               addedAt = approvedAt,
-              addedById = writerId,
+              addedByTrueId = writerTrueId,
               isExternal = false,
               toPageId = Some(path.pageId))
       }
@@ -1442,7 +1449,7 @@ trait PostsDao {
 
   private def saveDeleteUploadRefs(postToEdit: Post, editedPost: Post,
         sourceAndHtml: SourceAndHtml, isAppending: Boolean, isEditing: Boolean,
-        editorId: UserId, tx: SiteTransaction): Unit = {
+        editorTrueId: TrueFalseId, tx: SiteTransaction): Unit = {
     // Use findUploadRefsInPost (not ...InText) so we'll find refs both in the hereafter
     // 1) approved version of the post, and 2) the current possibly unapproved version.
     // Because if any of the approved or the current version links to an uploaded file,
@@ -1455,13 +1462,14 @@ trait PostsDao {
     }
 
     if (isEditing && editedPost.isCurrentVersionApproved &&
-          editedPost.lastApprovedEditById.isNot(editorId)) {
-      bugWarn("TyE205AKT3", s"s$siteId: editedPost last editor id != editorId = ${
-            editorId}:  $editedPost")
+          editedPost.lastApprovedEditById.isNot(editorTrueId.curId)) {
+      bugWarn("TyE205AKT3", s"s$siteId: editedPost last editor id != editorId, editorTrueId: ${
+            editorTrueId},  editedPost: $editedPost")
       // Don't return, didn't before (2020-07).
     }
-    // Or use  post.currentRevisionById?:
-    dieIf(Globals.isDevOrTest && editedPost.currentRevisionById != editorId, "TyE3056KTD")
+
+    dieIf(Globals.isDevOrTest && editedPost.currentRevisionById != editorTrueId.curId,
+          "TyE3056KTD")
 
     val oldUploadRefs = tx.loadUploadedFileReferences(postToEdit.id)
 
@@ -1537,7 +1545,7 @@ trait PostsDao {
     val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
 
     uploadRefsAdded foreach { hashPathSuffix =>
-      tx.insertUploadedFileReference(postToEdit.id, hashPathSuffix, editorId)
+      tx.insertUploadedFileReference(postToEdit.id, hashPathSuffix, editorTrueId)
     }
 
     uploadRefsRemoved foreach { hashPathSuffix =>
@@ -1562,9 +1570,11 @@ trait PostsDao {
       throwIfMayNotSeePost(post, user)(tx)
 
       loadSomeRevisionsWithSourceImpl(postId, revisionNr, revisionsRecentFirst, atLeast, tx)
-      if (revisionNr == PostRevision.LastRevisionMagicNr) {
+      if (revisionNr == PostRevision.LastRevisionMagicNr) {  // ??
         val postNow = tx.loadThePost(postId)
-        val currentRevision = PostRevision.createFor(postNow, revisionsRecentFirst.headOption)
+        val thisRevBy = tx.loadTheParticipant(postNow.currentRevisionById)
+        val currentRevision = PostRevision.createFor(
+              postNow, revisionsRecentFirst.headOption, thisRevBy = thisRevBy)
           .copy(fullSource = Some(postNow.currentSource))
         revisionsRecentFirst.push(currentRevision)
       }
@@ -1643,7 +1653,7 @@ trait PostsDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.ChangePostSettings,
-        doerId = me.id,
+        doerTrueId = me.trueId,
         doneAt = tx.now.toJavaDate,
         browserIdData = me.browserIdData,
         pageId = Some(postBefore.pageId),
@@ -1674,11 +1684,12 @@ trait PostsDao {
 
 
   def changePostType(pageId: PageId, postNr: PostNr, newType: PostType,
-        changerId: UserId, browserIdData: BrowserIdData): Unit = {
+        changerTrueId: TrueId, browserIdData: BrowserIdData): Unit = {
     writeTx { (tx, staleStuff) =>
       val page = newPageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)
-      val Seq(author, changer) = tx.loadTheParticipants(postBefore.createdById, changerId)
+      val Seq(author, changer) = tx.loadTheParticipants(
+            postBefore.createdById, changerTrueId.curId)
       throwIfMayNotSeePage(page, Some(changer))(tx)
 
       val postAfter = postBefore.copy(tyype = newType)
@@ -1732,13 +1743,13 @@ trait PostsDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.ChangePostSettings,
-        doerId = changerId,
+        doerTrueId = changerTrueId,
         doneAt = tx.now.toJavaDate,
         browserIdData = browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postBefore.id),
         postNr = Some(postNr),
-        targetUserId = Some(postBefore.createdById))
+        targetPatTrueId = Some(postBefore.createdByTrueId))
 
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(version = oldMeta.version + 1)
@@ -1972,7 +1983,7 @@ trait PostsDao {
               siteId = siteId,
               id = AuditLogEntry.UnassignedId,
               didWhat = AuditLogEntryType.PageUnanswered,
-              doerId = userId,
+              doerTrueId = user.trueId2,
               doneAt = tx.now.toJavaDate,
               browserIdData = browserIdData getOrElse BrowserIdData.Missing,
               pageId = Some(pageId),
@@ -2121,7 +2132,7 @@ trait PostsDao {
 
 
     staleStuff.addPageId(pageId, memCacheOnly = true) // page version bumped below
-    saveDeleteLinks(postAfter, sourceAndHtml, postAfter.createdById, tx, staleStuff)
+    saveDeleteLinks(postAfter, sourceAndHtml, postAfter.createdByTrueId, tx, staleStuff)
 
 
     // ------ The page
@@ -2243,7 +2254,7 @@ trait PostsDao {
       tx.updatePost(postAfter)
       tx.indexPostsSoon(postAfter)
 
-      saveDeleteLinks(postAfter, sourceAndHtml, post.createdById, tx, staleStuff)
+      saveDeleteLinks(postAfter, sourceAndHtml, post.createdByTrueId, tx, staleStuff)
 
       // ------ Notifications
 
@@ -2464,7 +2475,7 @@ trait PostsDao {
 
 
   RENAME // all ... IfAuth to IfAuZ (if authorized)
-  def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: UserId,
+  def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: TrueId,
         browserIdData: BrowserIdData): (Post, JsObject) = {
 
     if (newParent.postNr == PageParts.TitleNr)
@@ -2473,7 +2484,7 @@ trait PostsDao {
     val now = globals.now()
 
     val postAfter = writeTx { (tx, staleStuff) =>
-      val mover = tx.loadTheUser(moverId)
+      val mover = tx.loadTheUser(moverId.curId)
       if (!mover.isStaff)
         throwForbidden("EsE6YKG2_", "Only staff may move posts")
 
@@ -2542,7 +2553,7 @@ trait PostsDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.MovePost,
-        doerId = moverId,
+        doerTrueId = moverId,
         doneAt = now.toJavaDate,
         browserIdData = browserIdData,
         pageId = Some(postToMove.pageId),
@@ -2593,7 +2604,7 @@ trait PostsDao {
               siteId = siteId,
               id = AuditLogEntry.UnassignedId,
               didWhat = AuditLogEntryType.MovePost,
-              doerId = moverId,
+              doerTrueId = moverId,
               doneAt = now.toJavaDate,
               browserIdData = browserIdData,
               pageId = Some(descendant.pageId),

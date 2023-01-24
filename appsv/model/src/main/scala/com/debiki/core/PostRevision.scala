@@ -35,7 +35,7 @@ case class PostRevision(  // [exp] ok
   fullSource: Option[String],
   title: Option[String],
   composedAt: ju.Date,
-  composedById: UserId,
+  composedByTrueId: TrueFalseId,
   approvedAt: Option[ju.Date],
   approvedById: Option[UserId],
   hiddenAt: Option[ju.Date] = None,
@@ -51,6 +51,8 @@ case class PostRevision(  // [exp] ok
   require(!hiddenAt.exists(_.getTime < composedAt.getTime), "DwE4GUB9")
   require(approvedAt.isDefined == approvedById.isDefined, "DwE5UPM2")
   require(hiddenAt.isDefined == hiddenById.isDefined, "DwE3WFB5")
+
+  def composedById: PatId = composedByTrueId.curId
 
   def isHidden = hiddenAt.isDefined
 
@@ -77,7 +79,7 @@ object PostRevision {
   val LastRevisionMagicNr: Int = Int.MaxValue
 
 
-  def createFor(post: Post, previousRevision: Option[PostRevision]): PostRevision = {
+  def createFor(post: Post, previousRevision: Opt[PostRevision], thisRevBy: Pat): PostRevision = {
     require(!previousRevision.exists(_.postId != post.id), "DwE5G5K2")
     require(post.previousRevisionNr == previousRevision.map(_.revisionNr), "DwE5PYF6")
 
@@ -114,7 +116,7 @@ object PostRevision {
       fullSource = anySource,
       title = None,
       composedAt = post.currentRevStaredAt,
-      composedById = post.currentRevisionById,
+      composedByTrueId = thisRevBy.trueId2,
       approvedAt = approvedAt,
       approvedById = approvedById)
   }

@@ -237,9 +237,10 @@ abstract class PageParts {
   def theBody: Post = thePostByNr(BodyNr)
   def theTitle: Post = thePostByNr(TitleNr)
 
+  /*
   def postByAuthorId(authorId: UserId): Seq[Post] = {
     allPosts.filter(_.createdById == authorId)
-  }
+  } */
 
   /** Finds all of postNrs. If any single one (or more) is missing, returns Error. */
   def getPostsAllOrError(postNrs: Set[PostNr]): immutable.Seq[Post] Or One[PostNr] = {
@@ -286,7 +287,8 @@ abstract class PageParts {
     // Ignore the page creator and the last replyer, because they have their own first-&-last
     // entries in the Users column in the forum topic list. [7UKPF26], and a test [206K94QTD]
     PageParts.findFrequentPosters(this.allPosts,
-      ignoreIds = body.map(_.createdById).toSet ++ lastVisibleReply.map(_.createdById).toSet)
+      ignoreIds = body.map(_.createdById).toSet ++
+                    lastVisibleReply.map(_.createdById).toSet)
   }
 
 

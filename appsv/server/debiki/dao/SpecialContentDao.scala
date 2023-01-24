@@ -60,7 +60,7 @@ trait SpecialContentDao {
 
 
   def saveSpecialContent(rootPageId: PageId, contentId: PageId, anyNewSource: Option[String],
-        resetToDefaultContent: Boolean, editorId: UserId): Unit = {
+        resetToDefaultContent: Boolean, editorId: TrueIdOnly): Unit = {
 
     if (contentId != SpecialContentPages.StylesheetId &&
         contentId != SpecialContentPages.JavascriptId)
@@ -99,13 +99,13 @@ trait SpecialContentDao {
             htmlSanitized = approvedHtmlSanitized, transaction)
         case Some(oldPost) =>
           updateSpecialContentPage(oldPost, newSource, htmlSanitized = approvedHtmlSanitized,
-            editorId, transaction)
+            editorId.curId, transaction)
       }
     }
   }
 
 
-  protected def createSpecialContentPage(pageId: PageId, authorId: UserId,
+  private def createSpecialContentPage(pageId: PageId, authorId: TrueIdOnly,
       source: String, htmlSanitized: String, transaction: SiteTransaction): Unit = {
     val pageMeta = PageMeta.forNewPage(pageId, PageType.SpecialContent, authorId,
       transaction.now.toJavaDate,
@@ -121,7 +121,7 @@ trait SpecialContentDao {
       createdById = authorId,
       source = source,
       htmlSanitized = htmlSanitized,
-      approvedById = Some(authorId))
+      approvedById = Some(authorId.curId))
 
     transaction.insertPageMetaMarkSectionPageStale(pageMeta)(IfBadDie)
     transaction.insertPost(bodyPost)
@@ -137,8 +137,8 @@ trait SpecialContentDao {
   }
 
 
-  protected def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
-        editorId: UserId, transaction: SiteTransaction): Unit = {
+  private def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
+        editorId: MembId, transaction: SiteTransaction): Unit = {
     if (oldPost.currentSource == newSource)
       return
 

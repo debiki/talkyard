@@ -190,7 +190,7 @@ trait SettingsDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.SaveSiteSettings,
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = tx.now.toJavaDate,
         browserIdData = byWho.browserIdData))
 

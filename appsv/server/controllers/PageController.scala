@@ -247,7 +247,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageId = (request.body \ "pageId").as[PageId]
     val postUniqueId = (request.body \ "postId").as[PostId]   // id not nr
     val acceptedAt: Option[ju.Date] = request.dao.ifAuthAcceptAnswer(
-      pageId, postUniqueId, userId = request.theUserId, request.theBrowserIdData)
+          pageId, postUniqueId, request.theReqerTrueId, request.theBrowserIdData)
     OkSafeJsValue(JsLongOrNull(acceptedAt.map(_.getTime)))
   }
 
@@ -255,7 +255,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def unacceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
         request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    request.dao.ifAuthUnacceptAnswer(pageId, userId = request.theUserId, request.theBrowserIdData)
+    request.dao.ifAuthUnacceptAnswer(pageId, request.theReqerTrueId, request.theBrowserIdData)
     Ok
   }
 
@@ -264,14 +264,14 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
         request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val closedAt: Option[ju.Date] = request.dao.ifAuthTogglePageClosed(
-      pageId, userId = request.theUserId, request.theBrowserIdData)
+      pageId, userId = request.theReqerTrueId, request.theBrowserIdData)
     OkSafeJsValue(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
   def deletePages: Action[JsValue] = PostJsonAction(
           RateLimits.TogglePage, maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId,
+    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theReqerTrueId,
           request.theBrowserIdData, undelete = false)
     Ok
   }
@@ -279,7 +279,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   def undeletePages: Action[JsValue] = PostJsonAction(
           RateLimits.TogglePage, maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
-    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId,
+    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theReqerTrueId,
           request.theBrowserIdData, undelete = true)
     Ok
   }

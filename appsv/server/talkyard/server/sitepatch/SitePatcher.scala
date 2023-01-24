@@ -1060,7 +1060,7 @@ case class SitePatcher(globals: debiki.Globals) {
                     siteId = siteId,
                     id = AuditLogEntry.UnassignedId,
                     didWhat = AuditLogEntryType.NewPage,
-                    doerId = post.createdById,
+                    doerTrueId = post.createdByTrueId,
                     doneAt = tx.now.toJavaDate,
                     browserIdData = BrowserIdData.Missing,
                     pageId = Some(page.id),
@@ -1081,7 +1081,7 @@ case class SitePatcher(globals: debiki.Globals) {
                     didWhat =
                           if (post.tyype.isChat) AuditLogEntryType.NewChatMessage
                           else AuditLogEntryType.NewReply,
-                    doerId = post.createdById,
+                    doerTrueId = post.createdByTrueId,
                     doneAt = tx.now.toJavaDate,
                     browserIdData = BrowserIdData.Missing,
                     pageId = Some(post.pageId),

@@ -1048,6 +1048,12 @@ trait CategoriesDao {
   def deleteUndelCategoryImpl(categoryId: CategoryId, delete: Boolean, who: Who)(
         tx: SiteTx): Unit = {
 
+    // What if one is admin, but has currently activated a non-admin pseudonym?
+    // Then this error message might be confusing.  [pseudonyms_later]
+    // And if letting the pseudonym proceed, just because we know hen is actually
+    // an admin — then, to others, it seem look as if the category got deleted
+    // by a non-admin, which would be surprising, look like a bug.
+    // And could give away the true identity of the pseudonym.
     throwForbiddenIf(!tx.isAdmin(who.id), "EdEGEF239S", "Not admin")
 
     val categoryBefore = tx.loadCategory(categoryId) getOrElse throwNotFound(

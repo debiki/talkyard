@@ -147,7 +147,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
     _throwForbiddenMaybe(Some(file.filename), sizeBytes = file.fileSize, request)
 
     val uploadRef = dao.addUploadedFile(
-      file.filename, file.ref.file, request.theUserId, request.theBrowserIdData)
+      file.filename, file.ref.file, request.theReqerTrueId, request.theBrowserIdData)
 
     // Delete the temporary file. (It will be gone already, if we couldn't optimize it,
     // i.e. make it smaller, because then we've moved it to the uploads dir (rather than
@@ -160,7 +160,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
 
 
   def removeAvatar: Action[JsValue] = PostJsonAction(RateLimits.UploadFile, maxBytes = 200) { request =>
-    request.dao.setUserAvatar(request.theUserId, tinyAvatar = None, smallAvatar = None,
+    request.dao.setUserAvatar(request.theReqerTrueId, tinyAvatar = None, smallAvatar = None,
       mediumAvatar = None, request.theBrowserIdData)
     Ok
   }
@@ -226,13 +226,13 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: TyContext
     // (since they're unused) — deleting them is not yet implemented though [9YMU2Y].
 
     val tinyAvatarRef = request.dao.addUploadedFile(
-      tinyFile.filename, tinyFile.ref.file, request.theUserId, request.theBrowserIdData)
+      tinyFile.filename, tinyFile.ref.file, request.theReqerTrueId, request.theBrowserIdData)
 
     val smallAvatarRef = request.dao.addUploadedFile(
-      smallFile.filename, smallFile.ref.file, request.theUserId, request.theBrowserIdData)
+      smallFile.filename, smallFile.ref.file, request.theReqerTrueId, request.theBrowserIdData)
 
     val mediumAvatarRef = request.dao.addUploadedFile(
-      mediumFile.filename, mediumFile.ref.file, request.theUserId, request.theBrowserIdData)
+      mediumFile.filename, mediumFile.ref.file, request.theReqerTrueId, request.theBrowserIdData)
 
     // Delete the temporary files.
     tinyFile.ref.delete()

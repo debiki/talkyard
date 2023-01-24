@@ -390,7 +390,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
     * This needs to be done also for not-yet-approved posts — otherwise,
     * the uploaded things will seem unused, and get deleted and would
     * then be missing, if the post gets approved, later.  */
-  def insertUploadedFileReference(postId: PostId, uploadRef: UploadRef, addedById: UserId): Unit
+  def insertUploadedFileReference(postId: PostId, uploadRef: UploadRef, addedByTrueId: TrueId): U
   def deleteUploadedFileReference(postId: PostId, uploadRef: UploadRef): Boolean
   def loadUploadedFileReferences(postId: PostId): Set[UploadRef]
 

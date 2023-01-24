@@ -183,7 +183,7 @@ case class AuditLogEntry(
   siteId: SiteId,
   id: AuditLogEntryId,
   didWhat: AuditLogEntryType,
-  doerId: UserId,
+  doerTrueId: TrueId,
   doneAt: ju.Date,
   browserIdData: BrowserIdData,
   browserLocation: Option[BrowserLocation] = None,
@@ -199,12 +199,15 @@ case class AuditLogEntry(
   targetSiteId: Option[SiteId] = None, // CLEAN_UP ought to RENAME to otherSiteId, rename db column too
   targetPageId: Option[PageId] = None,
   targetPostNr: Option[PostNr] = None,
-  targetUserId: Option[UserId] = None,
+  targetPatTrueId: Option[TrueId] = None,
   batchId: Option[AuditLogEntryId] = None,
   isLoading: Boolean = false) {
 
   RENAME // to postId
   def postId: Opt[PostId] = uniquePostId
+
+  def doerId: PatId = doerTrueId.curId
+  def targetUserId: Option[PatId] = targetPatTrueId.map(_.curId)
 
   CLEAN_UP // change doneAt to type When
   def doneAtWhen: When = When.fromDate(doneAt)

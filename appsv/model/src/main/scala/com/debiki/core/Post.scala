@@ -409,7 +409,8 @@ case class Post(   // [exp] ok use
   multireplyPostNrs: immutable.Set[PostNr],
   tyype: PostType,
   createdAt: ju.Date,
-  createdById: UserId,
+  createdByTrueId: TrueFalseId,
+
   // Don't incl in export — are already in post_actions3 (pat_rels_t)
   // Maybe create an interface PostToExpImp with these excluded?
   // .move_later to here, but for now, at the end, so can have defaults.
@@ -465,7 +466,7 @@ case class Post(   // [exp] ok use
   smtpMsgIdPrefix: Opt[SmtpMsgIdPrefix],  // SHOULD incl in patch json? Later.
   // .move_later
   ownerIds: Vec[PatId] = Vec.empty,
-  authorids: Vec[PatId] = Vec.empty,
+  authorIds: Vec[PatId] = Vec.empty,
   assignedToIds: Vec[PatId] = Vec.empty,
   ) {
 
@@ -586,6 +587,7 @@ case class Post(   // [exp] ok use
       else None
     }
 
+  def createdById: PatId = createdByTrueId.curId
   def createdAtUnixSeconds: UnixMillis = createdAt.getTime / 1000
   def createdAtMillis: UnixMillis = createdAt.getTime
   def createdWhen: When = When.fromMillis(createdAt.getTime)
@@ -843,7 +845,7 @@ object Post {
         multireplyPostNrs: Set[PostNr],
         postType: PostType,
         createdAt: ju.Date,
-        createdById: UserId,
+        createdByTrueId: TrueFalseId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post = {
@@ -892,8 +894,8 @@ object Post {
       multireplyPostNrs = multireplyPostNrs,
       tyype = postType,
       createdAt = createdAt,
-      createdById = createdById,
-      currentRevisionById = createdById,
+      createdByTrueId = createdByTrueId,
+      currentRevisionById = createdByTrueId.curId,
       currentRevStaredAt = createdAt,
       currentRevLastEditedAt = None,
       currentRevSourcePatch = currentSourcePatch,
@@ -939,13 +941,13 @@ object Post {
         extImpId: Option[ExtId] = None,
         pageId: PageId,
         createdAt: ju.Date,
-        createdById: UserId,
+        createdByTrueId: TrueFalseId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
     create(uniqueId, extImpId = extImpId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
       multireplyPostNrs = Set.empty, postType = PostType.Normal,
-      createdAt = createdAt, createdById = createdById,
+      createdAt = createdAt, createdByTrueId = createdByTrueId,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
   def createBody(
@@ -953,14 +955,14 @@ object Post {
         extImpId: Option[ExtId] = None,
         pageId: PageId,
         createdAt: ju.Date,
-        createdById: UserId,
+        createdByTrueId: TrueFalseId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId],
         postType: PostType = PostType.Normal): Post =
     create(uniqueId, extImpId = extImpId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
       multireplyPostNrs = Set.empty, postType,
-      createdAt = createdAt, createdById = createdById,
+      createdAt = createdAt, createdByTrueId = createdByTrueId,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
 

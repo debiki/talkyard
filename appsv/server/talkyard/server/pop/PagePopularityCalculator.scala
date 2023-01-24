@@ -242,6 +242,7 @@ object PagePopularityCalculator {
     } {
       // No visit might have been recorded, if the visitor didn't stay long enough (a few seconds).
       // COULD load those users explicitly.
+      // ANON_UNIMPL — look at the true id instead? action.doerTrueId.trueId?
       val visit = visitsByUserId.getOrElse(action.doerId, VisitTrust.UnknownMember)
       val isOrigPost = action.postNr == PageParts.BodyNr
       val isByTrusted = visit.trustLevelInt >= TrustLevel.TrustedMember.toInt

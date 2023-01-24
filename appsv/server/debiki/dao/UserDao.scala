@@ -205,6 +205,7 @@ trait UserDao {
       val byMember = tx.loadTheUser(byWho.id)
       val memberBefore = tx.loadTheUserInclDetails(memberId)
 
+      // (Later: Better err msg if is in fact staff. [pseudonyms_later])
       throwForbiddenIf(!byMember.isStaff,
             "TyENSTFF5026", "Only staff can do this")
 
@@ -252,7 +253,7 @@ trait UserDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.   ... what? new AuditLogEntryType enums, or one single EditUser enum,
                                               with an int val = the EditMemberAction int val ?
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = now.toJavaDate,
         browserIdData = byWho.browserIdData,
         browserLocation = None)*/
@@ -549,8 +550,10 @@ trait UserDao {
   }
 
 
+  /** Loads the true user, which might be a pseudonym (but never an anonym).
+    */
   def loadUserAndLevels(who: Who, tx: SiteTransaction): UserAndLevels = {
-    val user = tx.loadTheParticipant(who.id)
+    val user: Pat = tx.loadTheParticipant(who.id)  // ? or just the author ?
     val trustLevel = user.effectiveTrustLevel
     val threatLevel = user match {
       case member: User => member.effectiveThreatLevel
@@ -564,6 +567,10 @@ trait UserDao {
         ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY2511"
       case group: Group =>
         ThreatLevel.HopefullySafe // for now
+      case _ : Anonym =>
+        // Should never do things directly as an anonym, only via one's real account.
+        // (Higher up the stack, we should have replied Forbidden already.)
+        die("TyE206MRAKG", s"Got an anon: $who")
     }
     UserAndLevels(user, trustLevel, threatLevel)
   }
@@ -713,7 +720,7 @@ trait UserDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.CreateUser,
-      doerId = member.id,
+      doerTrueId = member.trueId2,
       doneAt = now.toJavaDate,
       browserIdData = browserIdData,
       browserLocation = None)
@@ -1280,13 +1287,13 @@ trait UserDao {
 
 
   def joinOrLeavePageIfAuth(pageId: PageId, join: Bo, who: Who): Opt[BareWatchbar] = {
-    if (Participant.isGuestId(who.id))
-      throwForbidden("EsE3GBS5", "Guest users cannot join/leave pages")
+    if (who.isGuestOrAnon)
+      throwForbidden("EsE3GBS5", "Guest and anonymous users cannot join/leave pages")
 
     val joinOrLeave = if (join) Join else Leave
 
-    val databaseResult = _joinLeavePage_updateDb(Set(who.id), pageId,
-          joinOrLeave, who, anyTx = None)
+    val databaseResult = _joinLeavePage_updateDb(Set(who.id),
+          pageId, joinOrLeave, who, anyTx = None)
 
     if (!databaseResult.anyChange)
       return None
@@ -1383,8 +1390,8 @@ trait UserDao {
           joinOrLeave: JoinOrLeave, byWho: Who, anyTx: Opt[(SiteTx, StaleStuff)])  // REFACTOR use TxCtx
           : JoinLeavePageDbResult = {
 
-    if (byWho.isGuest)
-      throwForbidden("EsE2GK7S", "Guests cannot add/remove people to pages")
+    if (byWho.isGuestOrAnon)
+      throwForbidden("EsE2GK7S", "Guests and anons cannot add/remove people to pages")
 
     if (userIds.size > 50)
       throwForbidden("EsE5DKTW02", "Cannot add/remove more than 50 people at a time")
@@ -1450,13 +1457,15 @@ trait UserDao {
         tx: SiteTx): (PageMeta, Bo) = {
 
     val userIds = userIdsToJoinLeave
+
     // Tests:  promote-demote-by-staff-join-leave-chats.2br  TyTE2E5H3GFRVK.TyT502RKTJF4
     //          — trying to join a page one may not see
 
     val add = joinOrLeave == Join
-    val usersById = tx.loadUsersAsMap(userIds + byWho.id)
-    val reqer = usersById.getOrElse(byWho.id, throwForbidden(
-          "EsE6KFE0X", s"s${siteId}: The requester cannot be found, id: ${byWho.id}"))
+    val reqerId = byWho.id
+    val usersById = tx.loadUsersAsMap(userIds + reqerId)
+    val reqer = usersById.getOrElse(reqerId, throwForbidden(
+          "EsE6KFE0X", s"s${siteId}: The requester cannot be found, id: ${reqerId}"))
 
     val pageMeta = tx.loadPageMeta(pageIdToJoinLeave) getOrElse
           security.throwIndistinguishableNotFound("42PKD0")
@@ -1536,7 +1545,7 @@ trait UserDao {
               die("TyE0MRG603MR", s"Weird joinOrLeave: $joinOrLeave")
             }
       userIdsToRemove foreach { id: UserId =>
-        tx.removePageMember(pageIdToJoinLeave, userId = id, removedById = byWho.id)
+        tx.removePageMember(pageIdToJoinLeave, userId = id, removedById = reqerId)
       }
       anyChange = userIdsToRemove.nonEmpty
     }
@@ -2373,7 +2382,7 @@ trait UserDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.DeleteUser,
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = tx.now.toJavaDate,
         browserIdData = byWho.browserIdData,
         targetUserId = Some(userId))

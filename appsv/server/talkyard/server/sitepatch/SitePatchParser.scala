@@ -1470,7 +1470,8 @@ case class SitePatchParser(context: TyContext) {
         multireplyPostNrs = Set.empty, // later
         tyype = postTypeDefaultNormal,
         createdAt = readDateMs(jsObj, "createdAtMs"),
-        createdById = readInt(jsObj, "createdById"),
+        createdByTrueId = TrueFalseId(readInt(jsObj, "createdById"),
+                              anyTrueId = readOptInt(jsObj, "createdByTrueId")),
         currentRevisionById = readInt(jsObj, "currRevById"),
         currentRevStaredAt = readDateMs(jsObj, "currRevStartedAtMs"),
         currentRevLastEditedAt = readOptDateMs(jsObj, "currRevLastEditedAtMs"),
@@ -1576,7 +1577,7 @@ case class SitePatchParser(context: TyContext) {
         postId,
         pageId = readString(jsObj, "pageId"),
         postNr = readInt(jsObj, "postNr"),
-        doerId = readInt(jsObj, "doerId"),
+        doerTrueId = readInt(jsObj, "doerId"),   // TrueId? !!
         doneAt = readWhen(jsObj, "doneAt"),
         actionType))
     }
@@ -1683,7 +1684,8 @@ case class SitePatchParser(context: TyContext) {
       Good(ReviewTask(
         id = id,
         reasons = reviewReasons,
-        createdById = readInt(jsObj, "createdById"),
+        createdByTrueId = TrueId(readInt(jsObj, "createdById"),
+                              anyTrueId = readOptInt(jsObj, "createdByTrueId")),
         createdAt = readDateMs(jsObj, "createdAtMs"),
         createdAtRevNr = readOptInt(jsObj, "createdAtRevNr"),
         moreReasonsAt = readOptDateMs(jsObj, "moreReasonsAt"),
@@ -1694,7 +1696,8 @@ case class SitePatchParser(context: TyContext) {
         decidedById = readOptInt(jsObj, "decidedById"),
         invalidatedAt = readOptDateMs(jsObj, "invalidatedAt"),
         decision = reviewDecision,
-        maybeBadUserId = readInt(jsObj, "maybeBadUserId"),
+        aboutPatTrueId = TrueId(readInt(jsObj, "aboutPatId", "maybeBadUserId"),
+                              anyTrueId = readOptInt(jsObj, "aboutTrueId")),
         pageId = readOptString(jsObj, "pageId"),
         postId = readOptInt(jsObj, "postId"),
         postNr = readOptInt(jsObj, "postNr")))

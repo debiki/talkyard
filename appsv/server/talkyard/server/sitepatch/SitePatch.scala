@@ -403,7 +403,7 @@ case class SimpleSitePatch(
       pageExtId: Option[ExtId],
       pageType: PageType,
       pageSlug: String,
-      authorId: UserId,
+      authorId: PatId,
       pageMemberRefs: Seq[ParsedRef],
       categoryId: Option[CategoryId],
       titleHtmlUnsafe: String,
@@ -628,7 +628,7 @@ case class SimpleSitePatch(
             multireplyPostNrs = Set.empty,
             postType = postPatch.postType,
             createdAt = now.toJavaDate,
-            createdById = author.id,
+            createdByTrueId = author.trueId2,
             source = postPatch.bodySource,
             htmlSanitized = htmlSanitized,
             approvedById = Some(SysbotUserId))
