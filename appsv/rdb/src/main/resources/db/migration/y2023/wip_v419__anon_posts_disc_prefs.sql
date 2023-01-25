@@ -106,7 +106,8 @@ create index patpostrels_i_addedbyid on post_actions3 (site_id, added_by_id_c)
 
 
 
--- Dupl cols: both on categories3, and posts3. Won't be dupl, after [nodes_t] in use.
+-- Dupl cols: both on categories3, and posts3. Won't be dupl, after nodes_t
+-- in use. [dupl_nodes_t_cols]
 alter table categories3
     add column  comts_start_hidden_c         never_allow_recmd_always_d,
     add column  comts_shown_aft_mins_c       i32_gz_d,
@@ -120,33 +121,7 @@ alter table categories3
 
 
 
--- Dupl cols, also in posts3, as created_by_true_id_c. [nodes_t]
-alter table pages3
-    add column  author_true_id_c            member_id_d,
-
-    -- fk ix: pages_i_authortrueid
-    add constraint nodes_authortrueid_r_pats
-          foreign key (site_id, author_true_id_c)
-          references users3 (site_id, user_id) deferrable,
-
-    add column  old_false_id_c                member_id_d,
-
-    -- fk ix: pages_i_oldfalseid
-    add constraint nodes_oldfalseid_r_pats
-          foreign key (site_id, old_false_id_c)
-          references users3 (site_id, user_id) deferrable;
-
-
-create index pages_i_authortrueid on pages3 (site_id, author_true_id_c)
-    where author_true_id_c is not null;  -- [fk_ix_where_not_null]
-
-create index pages_i_oldfalseid on pages3 (site_id, old_false_id_c)
-    where old_false_id_c is not null;  -- [fk_ix_where_not_null]
-
-
-
 alter table posts3
-    -- Dupl col, also in pages, as author_true_id_c. [nodes_t]
     add column  created_by_true_id_c            member_id_d,
 
     -- fk ix: nodes_i_createdbytrueid
@@ -165,7 +140,7 @@ alter table posts3
           foreign key (site_id, old_false_id_c)
           references users3 (site_id, user_id) deferrable,
 
-    -- Dupl, same cols as above, for categories3: [nodes_t]
+    -- Dupl, same cols as above, for categories3:  [dupl_nodes_cols]
     add column  comts_start_hidden_c         never_allow_recmd_always_d,
     add column  comts_shown_aft_mins_c       i32_gz_d,
 
