@@ -448,31 +448,32 @@ alter table spam_check_queue3  add    column               author_true_id_c  mem
 
 alter table audit_log3 rename column  doer_id            to doer_id_c;
 alter table audit_log3 rename column  target_user_id     to target_pat_id_c;
--- Not yet in use, to do:
+
 alter table audit_log3
-    add column  doer_true_id_c         member_id_d,
-    add column  target_true_id_c  pat_id_d;  -- likewise
-    add column  sess_id_part_1         base64us_len16_d;
+    add column  doer_true_id_c    member_id_d,
+    add column  target_true_id_c  member_id_d,
+    add column  sess_id_part_1    base64us_len16_d,
 
--- For now, to find bugs. Delete constraints later?
--- fk ix: 
-alter table audit_log3 add constraint auditlog_sid_part1_r_sessions
-    foreign key (site_id, sess_id_part_1)
-    references sessions_t (site_id_c, part_1_comp_id_c) deferrable;
-create index auditlog_i_sid_p1
-    on audit_log3 (site_id, sess_id_part_1);
+    -- fk ix: auditlog_i_doertrueid
+    add constraint auditlog_doertrueid_r_pats
+        foreign key (site_id, doer_true_id_c)
+        references users3 (site_id, user_id) deferrable,
 
+    -- fk ix: auditlog_i_targettrueid
+    add constraint auditlog_targettrueid_r_pats
+        foreign key (site_id, target_true_id_c)
+        references users3 (site_id, user_id) deferrable,
 
--- Later, delete this col and fk? So old sessions can be deleted,
--- without having to upd the audit log.
--- But keep it for a while, to discover bugs.
-alter table audit_log3  add column doer_sess_created_at_c timestamp;  -- delete later?
-alter table audit_log3 add constraint auditlog_r_sessions
-    foreign key (site_id, doer_true_id_c, doer_sess_created_at_c)
-    references sessions_t (site_id_c, pat_id_c, created_at_c) deferrable;
+    -- For now, to find bugs. Delete constraint later?
+    -- fk ix: auditlog_i_sid_part1
+    add constraint auditlog_sid_part1_r_sessions
+        foreign key (site_id, sess_id_part_1)
+        references sessions_t (site_id_c, part_1_comp_id_c) deferrable;
 
-create index auditlog_i_doertrueid_session
-    on audit_log3 (site_id, doer_true_id_c, doer_sess_created_at_c);
+create index  auditlog_i_doertrueid    on audit_log3 (site_id, doer_true_id_c);
+create index  auditlog_i_targettrueid  on audit_log3 (site_id, target_true_id_c);
+create index  auditlog_i_sid_part1     on audit_log3 (site_id, sess_id_part_1);
+
 
 
 
