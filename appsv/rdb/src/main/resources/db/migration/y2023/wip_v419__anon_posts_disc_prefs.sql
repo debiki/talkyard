@@ -72,32 +72,38 @@ alter table perms_on_pages3
     add column  can_see_assigned_c     can_see_assigned_d;
 
 
-
-
-
--- Authors? Or Anonymous votes?
+-- Authors and Anonymous votes
 -------------------------------------------------
 
 
 alter table post_actions3
+    add column  from_true_id_c memb_id_c, -- not updated
     add column  as_pat_id_c    pat_id_d,
-    add column  added_by_id_c  pat_id_d,
+    add column  added_by_id_c  memb_id_c,
 
-    -- fk ix: patpostrels_i_aspatid
-    add constraint patpostrels_aspatid_r_pats
+    -- fk ix: patnoderels_i_fromtrueid
+    add constraint patnoderels_fromtrueid_r_pats
+    foreign key (site_id, from_true_id_c)
+    references users3 (site_id, user_id) deferrable,
+
+    -- fk ix: patnoderels_i_aspatid
+    add constraint patnoderels_aspatid_r_pats
     foreign key (site_id, as_pat_id_c)
     references users3 (site_id, user_id) deferrable,
 
-    -- fk ix: patpostrels_i_addedbyid
-    add constraint patpostrels_addedbyid_r_pats
+    -- fk ix: patnoderels_i_addedbyid
+    add constraint patnoderels_addedbyid_r_pats
     foreign key (site_id, added_by_id_c)
     references users3 (site_id, user_id) deferrable;
 
-create index patpostrels_i_aspatid on post_actions3 (site_id, as_pat_id_c)
-    where as_pat_id_c is not null;  --   [fk_ix_where_not_null]
+create index patnoderels_i_fromtrueid on post_actions3 (site_id, from_true_id_c)
+    where from_true_id_c is not null;
 
-create index patpostrels_i_addedbyid on post_actions3 (site_id, added_by_id_c)
-    where as_pat_id_c is not null;  --   [fk_ix_where_not_null]
+create index patnoderels_i_aspatid on post_actions3 (site_id, as_pat_id_c)
+    where as_pat_id_c is not null;
+
+create index patnoderels_i_addedbyid on post_actions3 (site_id, added_by_id_c)
+    where added_by_id_c is not null;
 
 
 
@@ -114,6 +120,7 @@ alter table categories3
 
     add column  op_starts_anon_c             never_allow_recmd_always_d,
     add column  comts_start_anon_c           never_allow_recmd_always_d,
+    add column  initial_anon_status_c        anonym_status_d,
     add column  deanon_mins_aft_first_c      i32_gz_d,
     add column  deanon_mins_aft_last_c       i32_gz_d,
     add column  deanon_page_mins_aft_first_c i32_gz_d,
@@ -122,7 +129,7 @@ alter table categories3
 
 
 alter table posts3
-    add column  created_by_true_id_c            member_id_d,
+    add column  created_by_true_id_c  member_id_d,
 
     -- fk ix: nodes_i_createdbytrueid
     add constraint nodes_createdbytrueid_r_pats
@@ -133,7 +140,7 @@ alter table posts3
     -- true id of the creator, and deanond_id_c gets set to the anon's id
     -- (and that anon is no longer anonymous), and created_by_true_id_c to null?
     -- Dupl col, also in pages. [nodes_t]
-    add column  old_false_id_c                member_id_d,
+    add column  old_false_id_c   member_id_d,
 
     -- fk ix: nodes_i_oldfalseid
     add constraint nodes_oldfalseid_r_pats
@@ -173,6 +180,56 @@ create index nodes_i_createdbytrueid on posts3 (site_id, created_by_true_id_c)
 
 create index nodes_i_oldfalseid on posts3 (site_id, old_false_id_c)
     where old_false_id_c is not null;  -- [fk_ix_where_not_null]
+
+
+
+alter table post_revisions3
+    add column  composed_by_true_id_c  memb_id_d,
+
+    -- fk ix: noderevs_i_composedbytrueid
+    add constraint noderevs_composedbytrueid_r_pats
+    foreign key (site_id, composed_by_true_id_c)
+    references users3 (site_id, user_id) deferrable;
+
+
+create index  noderevs_i_composedbytrueid  on post_revisions3 (site_id, composed_by_true_id_c)
+    where composed_by_true_id_c is not null;
+
+
+
+alter table upload_refs3
+    add column added_by_true_id_c member_id_d,
+    -- fk ix: uploadrefs_i_addedbytrueid
+    add constraint uploadrefs_addedbytrueid_r_pats
+        foreign key (site_id, added_by_true_id_c)
+        references users3 (site_id, user_id) deferrable;
+
+create index  uploadrefs_i_addedbytrueid  on upload_refs3 (site_id, added_by_true_id_c)
+    where added_by_true_id_c is not null;
+
+
+
+alter table links_t
+    add column added_by_true_id_c member_id_d,
+    -- fk ix: links_i_addedbytrueid
+    add constraint links_addedbytrueid_r_pats
+        foreign key (site_id_c, added_by_true_id_c)
+        references users3 (site_id, user_id) deferrable;
+
+create index  links_i_addedbytrueid  on links_t (site_id_c, added_by_true_id_c)
+    where added_by_true_id_c is not null;
+
+
+
+alter table link_previews_t
+    add column first_linked_by_true_id_c member_id_d,
+    -- fk ix: linkpreviews_i_firstlinkedbytrueid
+    add constraint linkpreviews_addedbytrueid_r_pats
+        foreign key (site_id_c, first_linked_by_true_id_c)
+        references users3 (site_id, user_id) deferrable;
+
+create index  linkpreviews_i_firstlinkedbytrueid
+    on link_previews_t (site_id_c, first_linked_by_true_id_c);
 
 
 
@@ -448,7 +505,6 @@ alter table audit_log3
 create index  auditlog_i_doertrueid    on audit_log3 (site_id, doer_true_id_c);
 create index  auditlog_i_targettrueid  on audit_log3 (site_id, target_true_id_c);
 create index  auditlog_i_sid_part1     on audit_log3 (site_id, sess_id_part_1);
-
 
 
 
