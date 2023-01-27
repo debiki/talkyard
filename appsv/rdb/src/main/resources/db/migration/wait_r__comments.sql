@@ -263,26 +263,31 @@ And bookmarks. Later.
 $_$;  -- '
 
 ------------------------------------------------------------------------
-comment on column  posts3.authors_id_c  is $_$
-The person who posted a post, is shown as author by default.  [post_authors]
-But this can be changed, by specifying a member or a list of members
-if there's more than one author.
+comment on column  posts3.created_by_id  is $_$
+If created by an anon, is the id of the anon, and created_by_true_id_c
+is the anon's true user account id. But after having been deanonymized
+(if ever), gets updated to point to the true id (for faster lookups of
+all one's posts), created_by_true_id_c is set to null, and
+created_by_old_false_id_c gets updated to point to the anon  (because
+still good to remember, e.g. to undo and anonymize again).
 $_$; -- '
 
 ------------------------------------------------------------------------
-comment on column  posts3.owners_id_c  is $_$
-The person who posted a post, is the owner of the post — *unless*  [post_owners]
-owners_id_c is set to someone else. Can be set to a member or a list of
-members. The owners of a post, may edit it, change the authors, make it
-private (but not make a private post public), add/remove owners, etc.
+comment on column  posts3.created_by_true_id_c  is $_$
+For anonymous posts. Is the true id of the person who created the post.
+But only until (if ever) the post has been deanonymized. After that,
+this field is set to null, and created_by_id is set to the true id.
+$_$; -- '
 
-Changing the owner, can be good if 1) someone starts working on an article,
-and leaves for vacation, and another person is to finish the article,
-publish it etc.  Or if 2) mods have deleted a post, and want to prevent
-the original author from un-deleting it or editing it any further. Then,
-the mods can make the Moderators group the owner of the post —
-thereafter the original author cannot edit it, un/delete it or anything.
+------------------------------------------------------------------------
+comment on column  posts3.created_by_old_false_id_c  is $_$
+If an anonym has now been deanonymized, created_by_id gets set to the
+true id of the creator, and created_by_old_false_id_c gets set to the
+anon's id (and that anon is no longer anonymous),
+and created_by_true_id_c to null.
 $_$;
+
+
 
 ------------------------------------------------------------------------
 comment on column  posts3.private_status_c  is $_$
