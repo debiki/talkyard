@@ -87,7 +87,7 @@ trait ForumDao {
         siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.CreateForum,
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = tx.now.toJavaDate,
         // Incl email, so will remember forever the created-by-email, even if the user
         // changes hens email later.

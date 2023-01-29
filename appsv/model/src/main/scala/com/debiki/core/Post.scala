@@ -409,10 +409,7 @@ case class Post(   // [exp] ok use
   multireplyPostNrs: immutable.Set[PostNr],
   tyype: PostType,
   createdAt: ju.Date,
-  createdById: TrueFalseId,
-  //createdByTrueId: Opt[MembId], // = None,
-  // If deanonymized.
-  //oldAnonId: Opt[AnonId] = None,
+  createdByTrueId: TrueFalseId,
 
   // Don't incl in export — are already in post_actions3 (pat_rels_t)
   // Maybe create an interface PostToExpImp with these excluded?
@@ -490,7 +487,7 @@ case class Post(   // [exp] ok use
 
   require(currentRevStaredAt.getTime >= createdAt.getTime, "DwE8UFYM5")
   require(!currentRevLastEditedAt.exists(_.getTime < currentRevStaredAt.getTime), "DwE7KEF3")
-  require(currentRevisionById == createdById.curId || currentRevisionNr > FirstRevisionNr, "DwE0G9W2")
+  require(currentRevisionById == createdById || currentRevisionNr > FirstRevisionNr, "DwE0G9W2")
 
   require(lastApprovedEditAt.isEmpty == lastApprovedEditById.isEmpty, "DwE9JK3")
   if (lastApprovedEditAt.isDefined && currentRevLastEditedAt.isDefined) {
@@ -590,6 +587,7 @@ case class Post(   // [exp] ok use
       else None
     }
 
+  def createdById: PatId = createdByTrueId.curId
   def createdAtUnixSeconds: UnixMillis = createdAt.getTime / 1000
   def createdAtMillis: UnixMillis = createdAt.getTime
   def createdWhen: When = When.fromMillis(createdAt.getTime)
@@ -847,7 +845,7 @@ object Post {
         multireplyPostNrs: Set[PostNr],
         postType: PostType,
         createdAt: ju.Date,
-        createdById: TrueFalseId,
+        createdByTrueId: TrueFalseId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post = {
@@ -896,8 +894,8 @@ object Post {
       multireplyPostNrs = multireplyPostNrs,
       tyype = postType,
       createdAt = createdAt,
-      createdById = createdById,
-      currentRevisionById = createdById.curId,
+      createdByTrueId = createdByTrueId,
+      currentRevisionById = createdByTrueId.curId,
       currentRevStaredAt = createdAt,
       currentRevLastEditedAt = None,
       currentRevSourcePatch = currentSourcePatch,
@@ -943,13 +941,13 @@ object Post {
         extImpId: Option[ExtId] = None,
         pageId: PageId,
         createdAt: ju.Date,
-        createdById: TrueFalseId,
+        createdByTrueId: TrueFalseId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
     create(uniqueId, extImpId = extImpId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
       multireplyPostNrs = Set.empty, postType = PostType.Normal,
-      createdAt = createdAt, createdById = createdById,
+      createdAt = createdAt, createdByTrueId = createdByTrueId,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
   def createBody(
@@ -957,14 +955,14 @@ object Post {
         extImpId: Option[ExtId] = None,
         pageId: PageId,
         createdAt: ju.Date,
-        createdById: TrueFalseId,
+        createdByTrueId: TrueFalseId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId],
         postType: PostType = PostType.Normal): Post =
     create(uniqueId, extImpId = extImpId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
       multireplyPostNrs = Set.empty, postType,
-      createdAt = createdAt, createdById = createdById,
+      createdAt = createdAt, createdByTrueId = createdByTrueId,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
 

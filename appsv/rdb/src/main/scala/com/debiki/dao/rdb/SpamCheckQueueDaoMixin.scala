@@ -41,6 +41,7 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
         page_available_at,
         html_to_spam_check,
         language,
+        author_id_c,
         auhtor_true_id_c,
         browser_id_cookie,
         browser_fingerprint,
@@ -52,7 +53,7 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
         author_email_addr,
         author_trust_level,
         author_url)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       -- can happen if appending to same chat message? or ninja editing post [SPMCHKED]
       on conflict (site_id, post_id, post_rev_nr) do nothing
       """
@@ -68,7 +69,8 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
       // There's a constraint, spamcheckqueue_c_texttospamcheck_len, 20200 chars. Maybe 15 000 enough?
       spamCheckTask.postToSpamCheck.map(_.htmlToSpamCheck.take(15*1000)).trimOrNullVarchar,
       spamCheckTask.postToSpamCheck.map(_.language).orNullVarchar,
-      spamCheckTask.who.id.asAnyRef,
+      spamCheckTask.who.trueId.curId.asAnyRef,
+      spamCheckTask.who.trueId.anyTrueId.orNullInt,
       spamCheckTask.who.idCookie.trimOrNullVarchar,
       spamCheckTask.who.browserFingerprint.asAnyRef,
       spamCheckTask.requestStuff.userAgent.trimOrNullVarchar,

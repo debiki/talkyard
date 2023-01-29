@@ -183,7 +183,7 @@ for good ideas they had.
 
 === Pseudonyms
 
-Pseudonyms (not implemented) will work differently:
+Pseudonyms (not implemented `[pseudonyms_later]`) will work differently:
 
 You can have only a few pseudonym account, and you switch to one of them,
 and use it, until you switch back to your real user account.
@@ -195,6 +195,14 @@ username menu, and choose "Switch to pseudonym".
 And you get to see notifications for all your pseudonyms, at once
 (and if you click one, the software suggests that you switch to the related
 pseudonym, if you want to reply).
+
+Oddly enough, a pseudonym of yours, can have a different knowledge / reputation /
+trust level than your real account. Consider a large community, with
+sub communities and moderators. If you use your pseudonym in one sub community,
+and the people there are unreasonably happy or upset with what your pseudonym
+writes, and upvotes your comments surprisingly often or infrequently — then,
+this can result in your pseudonym getting a different trust level — although
+you're the same person. `[pseudonyms_trust]`
 
 === Tech notes
 

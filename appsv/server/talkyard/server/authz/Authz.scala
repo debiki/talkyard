@@ -415,7 +415,6 @@ object Authz {
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0ED0SEE-${mayWhat.debugCode}")
 
-    // Or use TrueFalseId.isSameAs instead?
     val isOwnPost = user.id == post.createdById || otherAuthor.exists({ // [8UAB3WG2]
       case anon: Anonym => anon.anonForPatId == user.id
       case _ => false

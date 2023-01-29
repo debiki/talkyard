@@ -704,6 +704,7 @@ object JsX {   RENAME // to JsonPaSe
       "postNr" -> postAction.postNr,
       "doneAt" -> JsWhenMs(postAction.doneAt),
       "doerId" -> postAction.doerId,
+      // "doerTrueId" -> postAction.doerId, Only incl if exporting backup. Hmm but is denormalized
       "actionType" -> postAction.actionType.toInt)
   }
 

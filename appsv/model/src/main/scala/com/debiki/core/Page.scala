@@ -130,7 +130,7 @@ object PageMeta {
   def forNewPage(
         pageId: PageId,
         pageRole: PageType,
-        authorId: TrueFalseId,
+        authorId: PatId,
         creationDati: ju.Date,  // RENAME to createdAt
         numPostsTotal: Int,
         extId: Option[ExtId] = None,
@@ -253,7 +253,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   lastApprovedReplyById: Option[UserId] = None,
   categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
-  authorId: TrueFalseId, // oops rename?
+  authorId: PatId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
   // -----
   // REFACTOR move to DiscViewProps and disc_views_t [disc_props_view_stats]  [PAGETYPESETTNG]
@@ -418,7 +418,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
 
   def addUserIdsTo(ids: mutable.Set[UserId]): Unit = {
-    ids += authorId.curId
+    ids += authorId
     ids ++= frequentPosterIds
     lastApprovedReplyById.foreach(ids += _)
   }
@@ -497,7 +497,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
       bumpedAt = newBumpedAt.map(_.toJavaDate) orElse When.anyJavaDateLatestOf(
             bumpedAt, page.parts.lastVisibleReply.map(_.createdAt)),
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
-      lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById.curId),
+      lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
       frequentPosterIds = page.parts.frequentPosterIds,
       numLikes = page.parts.numLikes,
       numWrongs = page.parts.numWrongs,

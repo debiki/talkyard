@@ -45,7 +45,7 @@ trait MessagesDao {
 
     // Can actually make sense to send priv msgs to anonyms — why not? Why not talk privately
     // with someone who wrote something interesting, even if hen is anonymous?  On online
-    // forums, you typically don't know who the people are anyay, even if you see their
+    // forums, you typically don't know who the people are anyway, even if you see their
     // online names.  [anon_priv_msgs]
     if (toMemIds.exists(_ <= MaxGuestOrAnonId))
       throwForbidden("EsE6UPY2", "Cannot send messages to guests or anonyms")
@@ -53,8 +53,7 @@ trait MessagesDao {
     if (sentByWho.isAnon)  // [anon_priv_msgs]
       throwForbidden("TyE0ANONMSG", s"Anonymous private messages not yet implemented")
 
-    val sentById = sentByWho.id
-    if (sentById.isGuestOrAnon)
+    if (sentByWho.isGuest)
       throwForbidden("EsE5JGKU9", "Guests cannot send private messages")
 
     // Sending anon messages to oneself — yes can make sense. [anon_priv_msgs]  Let's say
@@ -62,10 +61,9 @@ trait MessagesDao {
     // managers. Then, if you couldn't message oneself (among the others), you might need
     // to list the other group managers, exept for oneself. — Then the others can guess.
     // So, don't let one message oneself — unless it's from one's anonym or pseudonym
-    // (compare with sentById.curId not trueId).
-    if (toMemIds.contains(sentById.curId))
-      throwForbidden("EsE6GK0I2", o"""Cannot send a message to yourself. You are: $sentById,
-          sending to: ${ toMemIds.mkString(", ") }""")
+    if (toMemIds.contains(sentByWho.id))
+      throwForbidden("EsE6GK0I2", o"""Cannot send a message to yourself. You are: ${
+            sentByWho.id}, sending to: ${ toMemIds.mkString(", ") }""")
 
     throwForbiddenIf(toMemIds.exists(id => Group.EveryoneId <= id && id <= Group.FullMembersId),
           "TyEMSGMANY", o"""Cannot direct-message groups Everyone, Basic and Full Members.
@@ -92,7 +90,7 @@ trait MessagesDao {
       TESTS_MISSING // [server_blocks_dms]  — No, now impl? Here:
       // Tests:
       //  - block-dir-msgs.2br.d  TyTBLOCKDIRMSGS
-      val mayNotMessage = toMembers.filter(!sender.user.mayMessage(_))
+      val mayNotMessage = toMembers.filter(!sender.patOrPseudonym.mayMessage(_))
       throwForbiddenIf(mayNotMessage.nonEmpty, "EsEMAY0MSG",
             s"You cannot send direct messages to: ${
             mayNotMessage.map(_.atUsernameOrFullName).mkString(", ")}")
@@ -115,10 +113,11 @@ trait MessagesDao {
 
       // If this is a private topic, they'll get notified about all posts,
       // by default, although no notf pref configured here. [PRIVCHATNOTFS]
-      // Soome of toMemIds might be groups — then, the group members can see
+      // Some of toMemIds might be groups — then, the group members can see
       // the private topic, and get notified about replies.
-      (toMemIds + sentById.curId) foreach { memId =>
-        tx.insertMessageMember(pagePath.pageId, memId, addedById = sentById.curId)
+      // (Later, save the sender's true id too?  [anon_priv_msgs])
+      (toMemIds + sentByWho.id) foreach { memId =>
+        tx.insertMessageMember(pagePath.pageId, memId, addedById = sentByWho.id)
       }
 
       AUDIT_LOG // missing
@@ -131,10 +130,10 @@ trait MessagesDao {
         else {
           // This skips users who have blocked DM:s.
           COULD_OPTIMIZE // Somehow reuse toMemsInclGroupMems?
-          notfGenerator(tx).generateForMessage(sender.user, bodyPost, toMemIds)
+          notfGenerator(tx).generateForMessage(sender.patOrPseudonym, bodyPost, toMemIds)
         }
 
-      deleteDraftNr.foreach(nr => tx.deleteDraft(sentByWho.id.trueId, nr))
+      deleteDraftNr.foreach(nr => tx.deleteDraft(sentByWho.id, nr))
 
       tx.saveDeleteNotifications(notifications)
       (pagePath, notifications, sender, toMemsInclGroupMems)
@@ -151,15 +150,17 @@ trait MessagesDao {
     // 1/2: We know that the sender is online currently — hen should start watching
     // the page immediately.
     {
-      val senderAuthzCtx = getAuthzCtxOnPagesForPat(sender.user)
+      val senderAuthzCtx = getAuthzCtxOnPagesForPat(sender.patOrPseudonym)
       var watchbar: BareWatchbar = getOrCreateWatchbar(senderAuthzCtx)
       watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt = true)
+      // [pseudonyms_later] Should update the true user's watchbar, trueId.
       saveWatchbar(sender.id, watchbar)
       logger.debug(s"s$siteId: Telling PubSubActor: ${
             sender.nameHashId} created & starts watching page ${pagePath.pageId} [TyM50AKTG3]")
-      // Later, if anon private message: Send sentById: TrueId? So the presence of
-      // one's true user won't get announced?  [anon_priv_msgs]
-      pubSub.userWatchesPages(siteId, sentById.curId, watchbar.watchedPageIds)
+      // Later, if anon private message: Send  trueId,  and announce
+      // the precense of the anonym / pseudonym (but not the true user, if it's
+      // anonymous!).  And send websocket messages to the true user.  [anon_priv_msgs]
+      pubSub.userWatchesPages(siteId, sentByWho.id, watchbar.watchedPageIds)
     }
 
     // 2/2: Others might not even have visited the site before, and might not yet have
@@ -179,7 +180,7 @@ trait MessagesDao {
 
     // (Tested here: [TyTPAGENOTF])
     pubSub.publish(
-          pubsub.NewPageMessage(siteId, notfs), byId = sentById.curId)
+          pubsub.NewPageMessage(siteId, notfs), byId = sentByWho.id)
 
     pagePath
   }

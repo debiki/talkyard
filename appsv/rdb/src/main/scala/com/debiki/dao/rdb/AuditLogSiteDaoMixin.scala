@@ -113,8 +113,8 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       entry.siteId.asAnyRef,
       entry.id.asAnyRef,
       entry.batchId.orNullInt,
-      entry.doerId.curId.asAnyRef,
-      entry.doerId.anyTrueId.orNullInt,
+      entry.doerTrueId.curId.asAnyRef,
+      entry.doerTrueId.anyTrueId.orNullInt,
       entry.doneAt.asTimestamp,
       entry.didWhat.toInt.asAnyRef,
       NullVarchar,
@@ -138,8 +138,8 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       entry.targetPageId.orNullVarchar,
       entry.targetUniquePostId.orNullInt,
       entry.targetPostNr.orNullInt,
-      entry.targetUserId.map(_.curId).orNullInt,
-      entry.targetUserId.flatMap(_.anyTrueId).orNullInt,
+      entry.targetPatTrueId.map(_.curId).orNullInt,
+      entry.targetPatTrueId.flatMap(_.anyTrueId).orNullInt,
       entry.targetSiteId.orNullInt)
 
     runUpdateSingleRow(statement, values)
@@ -170,7 +170,8 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       case None => ""
       case Some(uId) =>
         values.append(uId.asAnyRef)
-        "and (doer_id_c = ? or doer_true_id_c = ?)"   // ?  [true_id]
+        "and doer_id_c = ?"
+        // Later, but only sometimes:  or doer_true_id_c = ?)   [sql_true_id_eq]
     }
 
     val andDidWhatEqType = if (types.isEmpty) "" else {
@@ -270,7 +271,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def getAuditLogEntry(rs: js.ResultSet) = {
+  private def getAuditLogEntry(rs: js.ResultSet): AuditLogEntry = {
     val didWhatNr = rs.getInt("did_what")
     val didWhat = AuditLogEntryType.fromInt(didWhatNr
                     ) getOrElse AuditLogEntryType.Unknown(didWhatNr)
@@ -279,8 +280,8 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       id = rs.getInt("audit_id"),
       batchId = getOptInt(rs, "audit_id"),
       didWhat = didWhat,
-      doerId = TrueId(getInt32(rs, "doer_id_c"),
-                    anyTrueId = getOptInt(rs, "doer_true_id_c")),
+      doerTrueId = TrueId(getInt32(rs, "doer_id_c"),
+                      anyTrueId = getOptInt(rs, "doer_true_id_c")),
       doneAt = getDate(rs, "done_at"),
       emailAddress = Option(rs.getString("email_address")),
       browserIdData = getBrowserIdData(rs),
@@ -295,7 +296,7 @@ trait AuditLogSiteDaoMixin extends SiteTransaction {
       targetUniquePostId = getOptInt(rs, "target_post_id"),
       targetPageId = Option(rs.getString("target_page_id")),
       targetPostNr = getOptInt(rs, "target_post_nr"),
-      targetUserId = getOptInt(rs, "target_pat_id_c").map(id =>
+      targetPatTrueId = getOptInt(rs, "target_pat_id_c").map(id =>
             TrueId(id, anyTrueId = getOptInt(rs, "target_pat_true_id_c"))),
       targetSiteId = getOptInt(rs, "target_site_id"),
       isLoading = true)

@@ -637,8 +637,7 @@ case object Participant {
 sealed trait Pat {
 
   def id: PatId
-  def trueId: PatId = id                 // this or
-  def trueId2: TrueId = TrueId(id)  // this?
+  def trueId2: TrueId = TrueId(id)  ; RENAME // to  trueId.
 
   def extId: Opt[ExtId]
   def email: EmailAdr  // COULD rename to emailAddr and change to Opt[EmailAdr] (instead of "")
@@ -979,16 +978,14 @@ trait MemberMaybeDetails {
 
 
 case class Anonym(
-  id: PatId,
+  id: AnonId,
   createdAt: When,
   anonStatus: AnonStatus,
-  anonForPatId: PatId,   // rename to trueId
+  anonForPatId: MembId,
   anonOnPageId: PageId,
   ) extends Pat with GuestOrAnon with Someone {
 
-  override def trueId: PatId = anonForPatId
-  override def trueId2: TrueId = TrueId(id, anyTrueId = Some(trueId))
-  // def trueFalseId: TrueFalseId = TrueFalseId(id, anyTrueId = Some(trueId))
+  override def trueId2: TrueId = TrueId(id, anyTrueId = Some(anonForPatId))
 
   def anyUsername: Opt[St] = None
   def nameOrUsername: St = "Anonym"

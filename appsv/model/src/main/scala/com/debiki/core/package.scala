@@ -779,13 +779,16 @@ package object core {
   // I find "who" being confusing as to whom it refers to.
 
   REMOVE // isAnon? Now with TrueId, isAnon no longer needed?
-  case class Who(id: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
+  // Isn't  isAnon always false, hmmm ?
+  case class Who(trueId: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
+    def id: PatId = trueId.curId
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
-    def isGuest: Bo = !isAnon && Participant.isGuestId(id.trueId) ; REFACTOR // this can now be a TrueId memb fn?
-    def isGuestOrAnon: Bo = id.isGuestOrAnon
-    def isSystem: Bo = id.trueId == SystemUserId
+    def isGuest: Bo = !isAnon && isGuestOrAnon ; REFACTOR // this can now be a TrueId memb fn?
+    def isGuestOrAnon: Bo = trueId.isGuestOrAnon
+    def isSystem: Bo = id == SystemUserId
+    def isBuiltInUser: Bo = id == SystemUserId
   }
 
   object Who {
@@ -838,6 +841,7 @@ package object core {
     * -1-----------  =  8: can be deanonymized by others with deanon permission in the category?
     * 1------------  = 16: gets deanonymized automatically (after page anonym ttl)
     *
+    * Separate value?:
     * 00 + 2^16      = is still anonymous
     * 01 + 2^16      =  1: was deanonymized by oneself (no longer anonymous)
     * 10 + 2^16      =  2: was deanonymized by sbd else
@@ -846,6 +850,12 @@ package object core {
     * If deanonymized, made anonymous again,
     * and deanonymized in another way — then, many of these
     * bits would be set?
+    *
+    * Or:  deanond_by_id: -1 = oneself, otherwise sbd else's id? (always > 0)
+    *
+    * Or:  deanond_c: bool, and who in the audit log.  +3 = unknown memebr?  -3 guest or memb
+    *                               or  -1 = oneself,  -2 = unknown memebr,  -3 guest or memb  ?
+    *
     */
   sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
     def toInt: i32 = IntVal
@@ -875,11 +885,24 @@ package object core {
   }
 
 
-  RENAME // UserAndLevels.user to truePat, to show it's not an annonym or pseudonym?
-  case class UserAndLevels(user: Participant, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
-    def id: UserId = user.id
-    def isStaff: Boolean = user.isStaff
-    def nameHashId: String = user.nameHashId
+  /**
+    * @param patOrPseudonym — the id of the requester, can be a pseudonym. But not an anonym.
+    * @param trustLevel — if patOrPseudonym is a pseudonym, then this is the pseudonym's
+    *   trust level, which can be different from the true member's trust level?
+    *   (See tyworld.adoc, [pseudonyms_trust].)
+    */
+  case class UserAndLevels(
+    patOrPseudonym: Pat,
+    trustLevel: TrustLevel,
+    threatLevel: ThreatLevel,
+  ) {
+    def user: Pat = patOrPseudonym  ; RENAME // to patOrPseudonym? Started above
+    def id: UserId = patOrPseudonym.id
+    def isStaff: Boolean = patOrPseudonym.isStaff
+    def nameHashId: String = patOrPseudonym.nameHashId
+
+    // But .isPseudonym is fine.
+    dieIf(patOrPseudonym.isAnon, "TyE6092RSMDJ")
   }
 
   case class AnyUserAndThreatLevel(user: Option[Participant], threatLevel: ThreatLevel)
@@ -1394,7 +1417,7 @@ package object core {
     require((resultsAt.isDefined && humanSaysIsSpam.isDefined) ||
       misclassificationsReportedAt.isEmpty, "TyE4RBK6RS55")
 
-    def key: SpamCheckTask.Key =
+    def key_hmm_rename: SpamCheckTask.Key =
       postToSpamCheck match {
         case None => Right(siteUserId)
         case Some(p) => Left((siteId, p.postId, p.postRevNr))
@@ -1405,7 +1428,7 @@ package object core {
         p.copy(htmlToSpamCheck = p.htmlToSpamCheck.take(600))
       }
 
-    def siteUserId = SiteUserId(siteId, who.id.trueId)  // later:  keep id, not id.trueId?
+    def siteUserId: SiteUserId = SiteUserId(siteId, who.id)
 
     def sitePostIdRevOrUser: String = s"s$siteId, " + (postToSpamCheck match {
       case Some(thePostToSpamCheck) =>

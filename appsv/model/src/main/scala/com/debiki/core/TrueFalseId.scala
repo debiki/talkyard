@@ -30,6 +30,11 @@ sealed trait TrueFalseId {
         o"""Bad ids: $this, anyTrueId is for a guest or anon — it's < 0.
         But guests and anons can't have their own anons. [TyEANONWANON]""")
 
+  final def toTrueIdOnly: Opt[TrueIdOnly] = Some {
+    if (anyTrueId isSomethingButNot curId) return None
+    TrueIdOnly(curId)
+  }
+
   final def trueId: PatId = anyTrueId getOrElse curId
   final def isGuestOrAnon: Bo = curId <= MaxGuestOrAnonId
 
@@ -42,20 +47,20 @@ sealed trait TrueFalseId {
   final def isPseudonym: Bo = LowestTalkToMemberId <= curId && anyTrueId.isDefined
 
   /** Assert that the id is indeed for a member (but not a guest or anon). */
-  final def curIdCheckMember: MembId = {  // IfBadAbortReq, default IfBadDie?
+  final def curIdCheckMember__not_in_use__remove: MembId = {  // IfBadAbortReq, default IfBadDie?
     dieIf(curId < Pat.LowestNormalMemberId, "TyE0MEMBID", s"Not a member id: $this")
     dieIf(anyTrueId.isDefined, "TyEPSEUDON", s"Pseudonyms not yet supported: $this")
     curId
   }
 
   /** Assert that the id is a guest id. */
-  final def curIdCheckGuest: PatId = {
+  final def curIdCheckGuest__not_in_use__remove: PatId = {
     dieIf(curId > MaxGuestOrAnonId || anyTrueId.isDefined, "TyE0GUESTID",
           s"Not a guest id: $this")
     curId
   }
 
-  final def isSameAs(other: TrueFalseId): Bo = {
+  final def isSameAs__not_in_use__remove(other: TrueFalseId): Bo = {
     if (trueId != other.trueId)
       return false
 
@@ -104,7 +109,7 @@ object TrueFalseId {
         : TrueFalseId =
     TrueFalseIdImpl(curId, anyTrueId = anyTrueId, oldFalseId = oldFalseId)
 
-  def of(pat: Pat): TrueFalseId = pat match {
+  def of___not_needed_delete(pat: Pat): TrueFalseId = pat match {
     case a: Anonym =>
       TrueFalseId(a.id, anyTrueId = Some(a.anonForPatId))
     case _ =>
@@ -142,14 +147,4 @@ case class TrueId(curId: PatId, override val anyTrueId: Opt[MembId] = None)
 /** For doing things where one may not use an anonym or pseudonym. */
 case class TrueIdOnly(curId: PatId) extends TrueFalseId {
 }
-
-
-/* object TrueIdConversions {
-  import scala.language.implicitConversions
-  implicit def fromTrueIdToCurId(id: TrueId): PatId = id.curId
-  implicit def fromTrueIdToCurIdBigDec(id: TrueId): BigDecimal = BigDecimal(id.curId)
-  implicit def fromTrueFalseIdToCurId(id: TrueFalseId): PatId = id.curId
-  implicit def fromTrueFalseIdToCurIdBigDec(id: TrueFalseId): BigDecimal = BigDecimal(id.curId)
-} */
-
 

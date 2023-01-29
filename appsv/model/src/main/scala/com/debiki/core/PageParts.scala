@@ -66,10 +66,10 @@ object PageParts {
     for {
       post <- posts
       if post.isReply && post.isVisible  // (96502764)
-      if !ignoreIds.contains(post.createdById.curId)  // [3296KGP]
+      if !ignoreIds.contains(post.createdById)  // [3296KGP]
     } {
-      val numPosts = numPostsByUserId(post.createdById.curId)
-      numPostsByUserId(post.createdById.curId) = numPosts + 1
+      val numPosts = numPostsByUserId(post.createdById)
+      numPostsByUserId(post.createdById) = numPosts + 1
     }
     val userIdsAndNumPostsSortedDesc =
       numPostsByUserId.toSeq.sortBy(userIdAndNumPosts => userIdAndNumPosts._2)
@@ -239,8 +239,7 @@ abstract class PageParts {
 
   /*
   def postByAuthorId(authorId: UserId): Seq[Post] = {
-    // Or trueId? It depends?
-    allPosts.filter(_.createdById.curId == authorId)
+    allPosts.filter(_.createdById == authorId)
   } */
 
   /** Finds all of postNrs. If any single one (or more) is missing, returns Error. */
@@ -288,8 +287,8 @@ abstract class PageParts {
     // Ignore the page creator and the last replyer, because they have their own first-&-last
     // entries in the Users column in the forum topic list. [7UKPF26], and a test [206K94QTD]
     PageParts.findFrequentPosters(this.allPosts,
-      ignoreIds = body.map(_.createdById.curId).toSet ++
-                    lastVisibleReply.map(_.createdById.curId).toSet)
+      ignoreIds = body.map(_.createdById).toSet ++
+                    lastVisibleReply.map(_.createdById).toSet)
   }
 
 

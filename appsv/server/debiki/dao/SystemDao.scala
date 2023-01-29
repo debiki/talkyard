@@ -424,7 +424,7 @@ class SystemDao(
           siteId = oldSiteId,
           id = AuditLogEntry.UnassignedId,
           didWhat = AuditLogEntryType.CreateSite,
-          doerId = TrueId(creatorId),
+          doerTrueId = TrueId(creatorId),
           doneAt = oldSiteTx.now.toJavaDate,
           browserIdData = browserIdData,
           browserLocation = None,
@@ -484,7 +484,7 @@ class SystemDao(
         siteId = newSite.id,
         id = AuditLogEntry.FirstId,
         didWhat = AuditLogEntryType.ThisSiteCreated,
-        doerId = TrueId(SystemUserId), // no admin account yet created
+        doerTrueId = TrueId(SystemUserId), // no admin account yet created
         doneAt = newSiteTx.now.toJavaDate,
         browserIdData = browserIdData,
         browserLocation = None,

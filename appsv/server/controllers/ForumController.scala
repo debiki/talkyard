@@ -463,7 +463,7 @@ object ForumController {
       "numOrigPostDoNotVotes" -> page.numOrigPostDoNotVotes,
       "numOrigPostLikes" -> page.numOrigPostLikeVotes,
       "numOrigPostReplies" -> page.numOrigPostRepliesVisible,
-      "authorId" -> JsNumber(page.authorId.curId),
+      "authorId" -> JsNumber(page.authorId),
       "createdAtMs" -> JsDateMs(page.createdAt),
       "bumpedAtMs" -> JsDateMsOrNull(page.bumpedAt),
       "lastReplyAtMs" -> JsDateMsOrNull(page.lastApprovedReplyAt),

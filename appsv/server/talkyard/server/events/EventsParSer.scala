@@ -103,9 +103,8 @@ object EventsParSer {
     // --- Load authors
 
     val authorIds = MutHashSet[PatId]()
-    // (Loading anonyms, not the real users, so they'll stay anonymous.)
-    authorIds ++= postsById.values.map(_.createdById.curId)
-    authorIds ++= origPostsByPageId.values.map(_.createdById.curId)
+    authorIds ++= postsById.values.map(_.createdById)
+    authorIds ++= origPostsByPageId.values.map(_.createdById)
     authorIds ++= pageStuffById.values.map(_.authorUserId)
     authorIds ++= patIds
 

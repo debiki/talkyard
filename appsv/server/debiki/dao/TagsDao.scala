@@ -247,10 +247,10 @@ trait TagsDao {
     })
 
     val (post, notifications, postAuthor) = readWriteTransaction { tx =>
-      val me = tx.loadTheParticipant(who.id.curId)
+      val me = tx.loadTheParticipant(who.id)
       val pageMeta = tx.loadThePageMeta(pageId)
       val post = tx.loadThePost(postId)
-      val postAuthor = tx.loadTheParticipant(post.createdById.curId)
+      val postAuthor = tx.loadTheParticipant(post.createdById)
 
       throwForbiddenIf(post.nr == PageParts.TitleNr, "EsE5JK8S4", "Cannot tag page titles")
 

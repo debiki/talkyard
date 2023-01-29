@@ -553,7 +553,7 @@ object ViewPageController {
     val newTopicMeta = PageMeta.forNewPage(
       pageId = pageId,
       pageRole = pageRole,
-      authorId = TrueFalseId(SystemUserId),
+      authorId = SystemUserId,
       creationDati = now.toJavaDate,
       numPostsTotal = 0,
       categoryId = None,

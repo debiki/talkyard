@@ -78,7 +78,7 @@ alter table perms_on_pages3
 
 alter table post_actions3
     add column  from_true_id_c       member_id_c,
-    add column  from_old_false_id_c  member_id_d,
+    add column  from_old_false_id_c  pat_id_d,
 
     add column  as_pat_id_c          pat_id_d,
     add column  added_by_id_c        member_id_c,
@@ -139,7 +139,7 @@ alter table categories3
 
 alter table posts3
     add column  created_by_true_id_c              member_id_d,
-    add column  created_by_old_false_id_c         member_id_d,
+    add column  created_by_old_false_id_c         pat_id_d,
 
     -- Dupl, same cols as above, for categories3:  [dupl_nodes_cols]
     add column  comts_start_hidden_c              never_allow_recmd_always_d,
@@ -186,10 +186,10 @@ create index nodes_i_createdbyoldfalseid on posts3 (site_id, created_by_old_fals
     where created_by_old_false_id_c is not null;  -- [fk_ix_where_not_null]
 
 
-
+-- Scala_ok
 alter table post_revisions3
     add column  composed_by_true_id_c       member_id_d,
-    add column  composed_by_old_false_id_c  member_id_d,
+    add column  composed_by_old_false_id_c  pat_id_d,
 
     -- fk ix: noderevs_i_composedbytrueid
     add constraint noderevs_composedbytrueid_r_pats
@@ -209,10 +209,10 @@ create index  noderevs_i_composedbyoldfalseid  on post_revisions3 (
     where composed_by_old_false_id_c is not null;
 
 
-
+-- Scala_ok
 alter table upload_refs3
     add column  added_by_true_id_c      member_id_d,
-    add column  added_by_old_false_id_c member_id_d,
+    add column  added_by_old_false_id_c pat_id_d,
 
     -- fk ix: uploadrefs_i_addedbytrueid
     add constraint uploadrefs_addedbytrueid_r_pats
@@ -232,10 +232,14 @@ create index  uploadrefs_i_addedbyoldfalseid  on upload_refs3 (
     where added_by_old_false_id_c is not null;
 
 
-
+-- Scala_ok
+alter table links_t  rename column  to_pp_id_c  to  to_pat_id_c;
 alter table links_t
     add column  added_by_true_id_c      member_id_d,
-    add column  added_by_old_false_id_c member_id_d,
+    add column  added_by_old_false_id_c pat_id_d,
+    add column  to_pat_true_id_c        member_id_d,
+    add column  to_pat_old_false_id_c   pat_id_d,
+    
 
     -- fk ix: links_i_addedbytrueid
     add constraint links_addedbytrueid_r_pats
@@ -254,10 +258,10 @@ create index  links_i_addedbyoldfalseid  on links_t (site_id_c, added_by_old_fal
     where added_by_old_false_id_c is not null;
 
 
-
+-- Scala_ok
 alter table link_previews_t
     add column  first_linked_by_true_id_c       member_id_d,
-    add column  first_linked_by_old_false_id_c  member_id_d,
+    add column  first_linked_by_old_false_id_c  pat_id_d,
 
     -- fk ix: linkpreviews_i_firstlinkedbytrueid
     add constraint linkpreviews_addedbytrueid_r_pats
@@ -491,7 +495,7 @@ alter table users3 add constraint pats_c_guest_w_no_browserid_has_extid check (
     or ext_id is not null);
 
 
-
+-- Scala_ok
 alter table review_tasks3  rename column  user_id  to about_user_id_c;
 alter table review_tasks3
     add column  created_by_true_id_c  member_id_d,
@@ -516,13 +520,13 @@ create index reviewtasks_i_abouttrueid on review_tasks3 (site_id, about_true_id_
 
 
 
-
+-- Scala_ok
 -- Skip fks — no fks in this table.
 alter table spam_check_queue3  rename column  author_id to author_id_c;
 alter table spam_check_queue3  add    column               author_true_id_c  member_id_d;
 
 
-
+-- Scala_ok
 alter table audit_log3 rename column  doer_id            to doer_id_c;
 alter table audit_log3 rename column  target_user_id     to target_pat_id_c;
 

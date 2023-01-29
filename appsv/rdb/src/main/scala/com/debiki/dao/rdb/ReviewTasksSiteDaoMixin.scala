@@ -89,8 +89,8 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
       siteId.asAnyRef,
       reviewTask.id.asAnyRef,
       ReviewReason.toLong(reviewTask.reasons).asAnyRef,
-      reviewTask.createdById.curId.asAnyRef,
-      reviewTask.createdById.anyTrueId.orNullInt,
+      reviewTask.createdByTrueId.curId.asAnyRef,
+      reviewTask.createdByTrueId.anyTrueId.orNullInt,
       reviewTask.createdAt,
       reviewTask.createdAtRevNr.orNullInt,
       reviewTask.moreReasonsAt.orNullTimestamp,
@@ -100,8 +100,8 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
       reviewTask.invalidatedAt.orNullTimestamp,
       reviewTask.decidedAt.orNullTimestamp,
       reviewTask.decision.map(_.toInt).orNullInt,
-      reviewTask.maybeBadUserId.curId.asAnyRef,
-      reviewTask.maybeBadUserId.anyTrueId.orNullInt,
+      reviewTask.aboutPatTrueId.curId.asAnyRef,
+      reviewTask.aboutPatTrueId.anyTrueId.orNullInt,
       reviewTask.pageId.orNullVarchar,
       reviewTask.postId.orNullInt,
       reviewTask.postNr.orNullInt)
@@ -119,11 +119,12 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
 
   override def loadUndecidedPostReviewTask(postId: PostId, taskCreatedById: UserId)
         : Option[ReviewTask] = {
-    loadReviewTaskImpl(o"""
+    loadReviewTaskImpl(s"""
         completed_at is null and
         decided_at is null and
         invalidated_at is null and
-        created_by_id = ? and   -- or true id?
+        created_by_id = ? and
+        -- Later, but only sometimes:  or created_by_true_id_c = ?   [sql_true_id_eq]
         post_id = ?""",
       Seq(taskCreatedById.asAnyRef, postId.asAnyRef))
   }
@@ -245,7 +246,7 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
     ReviewTask(
       id = rs.getInt("id"),
       reasons = ReviewReason.fromLong(rs.getLong("reasons")),
-      createdById = TrueId(rs.getInt("created_by_id"),
+      createdByTrueId = TrueId(rs.getInt("created_by_id"),
                           anyTrueId = getOptInt32(rs, "created_by_true_id_c")),
       createdAt = getDate(rs, "created_at"),
       createdAtRevNr = getOptInt(rs, "created_at_rev_nr"),
@@ -256,8 +257,8 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
       invalidatedAt = getOptionalDate(rs, "invalidated_at"),
       decidedAt = getOptionalDate(rs, "decided_at"),
       decision = getOptInt(rs, "decision").flatMap(ReviewDecision.fromInt),
-      maybeBadUserId = TrueId(getOptInt(rs, "about_pat_id_c").getOrElse(UnknownUserId),
-                              anyTrueId = getOptInt32(rs, "about_true_id_c")),
+      aboutPatTrueId = TrueId(getOptInt(rs, "about_pat_id_c").getOrElse(UnknownUserId),
+                            anyTrueId = getOptInt32(rs, "about_true_id_c")),
       pageId = Option(rs.getString("page_id")),
       postId = getOptInt(rs, "post_id"),
       postNr = getOptInt(rs, "post_nr"))

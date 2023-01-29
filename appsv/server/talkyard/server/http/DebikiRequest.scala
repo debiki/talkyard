@@ -99,7 +99,6 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def reqer: Opt[Pat] = user  // shorter, nicer. "Req" = request, + "er" = "requester"
                         RENAME // to  anyReqer?
   def requesterOrUnknown: Participant = user getOrElse UnknownParticipant
-  //f requesterIdOrUnknown: TrueId = user.map(_.trueId2) getOrElse TrueId(UnknownUserId)
   def theRequester: Participant = theUser
   def theReqer: Pat = theUser  // shorter, better
 
@@ -142,6 +141,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def theUserId: UserId = theUser.id
   def theRequesterId: UserId = theUser.id
   def theReqerId: PatId = theRequesterId // shorter, nice
+  def theReqerTrueId: TrueId = theUser.trueId2
 
   def userAndLevels: AnyUserAndThreatLevel = {
     val threatLevel = user match {

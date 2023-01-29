@@ -57,7 +57,7 @@ case class LinkPreview(
   // cache_max_secs_c: Option[Int] — later
   statusCode: Int,
   previewType: Int, // always oEmbed, for now
-  firstLinkedById: UserId,
+  firstLinkedByTrueId: TrueFalseId,
   contentJson: JsValue) {
 
   // For now:
@@ -74,14 +74,17 @@ case class Link(
   fromPostId: PostId,
   linkUrl: String,
   addedAt: When,
-  addedById: UserId,
+  addedByTrueId: TrueFalseId,
   isExternal: Boolean,
   toStaffSpace: Boolean = false,
   toPageId: Option[PageId] = None,
   toPostId: Option[PostId] = None,
-  toPpId: Option[UserId] = None,
+  toPatTrueId: Opt[TrueFalseId] = None,
   toTagId: Option[TagDefId] = None,
   toCategoryId: Option[CategoryId] = None) {
+
+  def addedById: PatId = addedByTrueId.curId
+  def toPpId: Opt[PatId] = toPatTrueId.map(_.curId)  ; RENAME // to toPatId
 
   // Not impl (only to-page links impl)
   dieIf(toStaffSpace, "Staff/admin area links not impl [TyE5SKDJ02]")

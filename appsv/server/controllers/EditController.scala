@@ -143,8 +143,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
     val anyOtherAuthor =
-          if (post.createdById.curId == requester.id.curId) None
-          else dao.getParticipant(post.createdById.curId)
+          if (post.createdById == requester.id) None
+          else dao.getParticipant(post.createdById)
 
     CHECK_AUTHN_STRENGTH
 
@@ -219,8 +219,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     CHECK_AUTHN_STRENGTH
 
     val anyOtherAuthor =
-          if (post.createdById.curId == requester.id.curId) None
-          else dao.getParticipant(post.createdById.curId)
+          if (post.createdById == requester.id) None
+          else dao.getParticipant(post.createdById)
 
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
@@ -342,7 +342,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val newType = PostType.fromInt(newTypeInt) getOrElse throwBadArgument("DwE4EWL3", "newType")
 
     request.dao.changePostType(pageId = pageId, postNr = postNr, newType,
-      changerId = request.theUser.id, request.theBrowserIdData)
+          changerTrueId = request.theUser.trueId2, request.theBrowserIdData)
     Ok
   }
 
@@ -394,7 +394,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     CHECK_AUTHN_STRENGTH
 
     val (_, storePatch) = request.dao.movePostIfAuth(PagePostId(pageId, postId),
-      newParent = PagePostNr(newPageId, newParentNr), moverId = request.theMember.id,
+      newParent = PagePostNr(newPageId, newParentNr), moverId = request.theReqerTrueId,
       request.theBrowserIdData)
 
     OkSafeJson(storePatch)

@@ -592,9 +592,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.pageType.toInt.asAnyRef,
       newMeta.categoryId.orNullInt,
       newMeta.embeddingPageUrl.orNullVarchar,
-      newMeta.authorId.curId.asAnyRef,
-      newMeta.authorId.anyTrueId.orNullInt,
-      newMeta.authorId.oldFalseId.orNullInt,
+      newMeta.authorId.asAnyRef,
       now.asTimestamp,
       newMeta.publishedAt.orNullTimestamp,
       // Always write to bumped_at so SQL queries that sort by bumped_at works.
@@ -652,8 +650,6 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         category_id = ?,
         EMBEDDING_PAGE_URL = ?,
         author_id = ?,
-        author_true_id_c = ?,
-        old_false_id_c = ?,
         UPDATED_AT = greatest(created_at, ?),
         PUBLISHED_AT = ?,
         BUMPED_AT = ?,
@@ -1406,8 +1402,6 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         category_id,
         embedding_page_url,
         author_id,
-        author_true_id_c,
-        old_false_id_c,
         created_at,
         updated_at,
         published_at,
@@ -1461,7 +1455,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?)"""
 
     // Dulp code, see the update query [5RKS025].
     val values = List(
@@ -1472,9 +1466,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.pageType.toInt.asAnyRef,
       pageMeta.categoryId.orNullInt,
       pageMeta.embeddingPageUrl.orNullVarchar,
-      pageMeta.authorId.curId.asAnyRef,
-      pageMeta.authorId.anyTrueId.orNullInt,
-      pageMeta.authorId.oldFalseId.orNullInt,
+      pageMeta.authorId.asAnyRef,
       pageMeta.createdAt.asTimestamp,
       pageMeta.updatedAt.asTimestamp,
       pageMeta.publishedAt.orNullTimestamp,

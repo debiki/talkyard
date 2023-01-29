@@ -49,7 +49,7 @@ trait UploadsDao {
     * directory, if stored on localhost (some file systems don't want 99999 files in a
     * single directory).
     */
-  def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: UserId,
+  def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: TrueId,
         browserIdData: BrowserIdData): UploadRef = {
 
     // Over quota? [fs_quota]
@@ -170,7 +170,7 @@ trait UploadsDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.UploadFile,
-        doerId = uploadedById,
+        doerTrueId = uploadedById,
         doneAt = transaction.now.toJavaDate,
         browserIdData = browserIdData,
         uploadHashPathSuffix = Some(hashPathSuffix),
@@ -253,7 +253,16 @@ trait UploadsDao {
   }
 
 
-  private def throwIfUploadedTooMuchRecently(uploaderId: UserId, sizeBytes: Int): Unit = {
+  /** If is an anonym or pseudonym, we'll first verify that the real user is allowed
+    * to upload anything.
+    */
+  private def throwIfUploadedTooMuchRecently(uploaderId: TrueId, sizeBytes: Int): U = {
+    uploaderId.anyTrueId foreach throwIfUploadedTooMuchImpl(_, sizeBytes = sizeBytes)
+    throwIfUploadedTooMuchImpl(uploaderId.curId, sizeBytes = sizeBytes)
+  }
+
+
+  private def throwIfUploadedTooMuchImpl(uploaderId: PatId, sizeBytes: Int): Unit = {
     readOnlyTransaction { transaction =>
       val user = transaction.loadParticipant(uploaderId) getOrElse throwForbidden(
         "EsE7KMW2", "Strangely enough, your user account just disappeared")
