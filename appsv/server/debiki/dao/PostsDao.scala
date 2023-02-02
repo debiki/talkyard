@@ -357,7 +357,7 @@ trait PostsDao {
     val notifications =
       if (skipNotfsAndAuditLog) Notifications.None
       else notfGenerator(tx).generateForNewPost(
-            page, newPost, Some(textAndHtml), anyNewModTask = anyReviewTask)
+            page, newPost, Some(textAndHtml), anyNewModTask = anyReviewTask) ; authorMaybeAnon
     tx.saveDeleteNotifications(notifications)
 
     // Could save the poster's topics-replied-to notf pref as  [interact_notf_pref]
@@ -828,7 +828,7 @@ trait PostsDao {
 
     // If anyModTask: TyTIT50267MT
     val notfs = notfGenerator(tx).generateForNewPost(
-          page, newPost, sourceAndHtml = Some(textAndHtml), anyNewModTask = anyModTask)
+          page, newPost, sourceAndHtml = Some(textAndHtml), anyNewModTask = anyModTask) ; author //= author
     tx.saveDeleteNotifications(notfs)
 
     (newPost, notfs)
@@ -2192,7 +2192,7 @@ trait PostsDao {
       }
       else if (isApprovingNewPost) {
         notfGenerator(tx).generateForNewPost(page, postAfter, Some(sourceAndHtml),
-              anyNewModTask = None, doingModTasks = doingModTasks)
+              anyNewModTask = None, doingModTasks = doingModTasks)  ; author // = author
       }
       else {
         notfGenerator(tx).generateForEdits(postBefore, postAfter, Some(sourceAndHtml))
@@ -2273,7 +2273,7 @@ trait PostsDao {
               // But approver might get notfd about post! [notfs_bug]
               // However this whole cascade-approval idea should be deleted.
               // Then this whole fn, autoApprovePendingEarlyPosts(), gone.
-              doingModTasks = Nil)
+              doingModTasks = Nil)  ; author // = author
         tx.saveDeleteNotifications(notfs)
       }
     }
@@ -2664,7 +2664,7 @@ trait PostsDao {
       // Would be good to [save_post_lns_mentions], so wouldn't need to recompute here.
       val notfs = notfGenerator(tx).generateForNewPost(
             toPage, postAfter, sourceAndHtml = None,
-            anyNewModTask = None, skipMentions = true)
+            anyNewModTask = None, skipMentions = true)  ; postAuthor
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 
       postAfter

@@ -437,7 +437,7 @@ trait PagesDao {
     if (!skipNotfsAndAuditLog) {
       val notifications = notfGenerator(tx).generateForNewPost(
             newPageDao(pagePath.pageId, tx), bodyPost,
-            Some(body), anyNewModTask = anyReviewTask)
+            Some(body), anyNewModTask = anyReviewTask)  ; authorMaybeAnon // too
 
       tx.saveDeleteNotifications(notifications)
 

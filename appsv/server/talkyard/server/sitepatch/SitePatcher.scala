@@ -1047,8 +1047,10 @@ case class SitePatcher(globals: debiki.Globals) {
           // via /-/v0/upsert-simple.
           // And, everyone should [use_the_Do_API] instead — so, never need to fix this.
           val page = dao.newPageDao(post.pageId, tx)
+
+          // (These notfs are inserted into the db, furhter below.)
           notfGenerator.generateForNewPost(page, post,
-                sourceAndHtml = None, anyNewModTask = None)
+                sourceAndHtml = None, anyNewModTask = None)  // + author = doer (below)
 
           // ----- Webhooks
 
@@ -1128,7 +1130,7 @@ case class SitePatcher(globals: debiki.Globals) {
           val memberIdsToNotify = pagePpsExclAuthr.map(_.userId)
           // Ooops! remembers sentTo  :- /  [REMBSENTTO]
           notfGenerator.generateForMessage(
-            sender, pageBody, memberIdsToNotify.toSet)
+            sender, pageBody, memberIdsToNotify.toSet)    // author?
         }
 
         tx.saveDeleteNotifications(notfGenerator.generatedNotifications)

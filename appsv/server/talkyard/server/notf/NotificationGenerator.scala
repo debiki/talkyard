@@ -91,13 +91,25 @@ case class NotificationGenerator(
       toCreate = notfsToCreate.toVector,
       toDelete = notfsToDelete.toVector)
 
-// authorMaybeAnon: Pat  — might not yet have been saved.  Verify id = newPost.createdById
+  /**
+    * @param page
+    * @param newPost
+    * @param sourceAndHtml
+    * @param anyNewModTask
+    * @param doingModTasks
+    * @param skipMentions
+    * @param postAuthor — If this is a new anonym's first post, the db tx inserting the anonym,
+    *    is still ongoing — then, it's good to get the author.
+    * @return
+    */
   def generateForNewPost(page: Page, newPost: Post, sourceAndHtml: Option[SourceAndHtml],
         anyNewModTask: Option[ModTask], doingModTasks: Seq[ModTask] = Nil,
-        skipMentions: Boolean = false): Notifications = {
+        skipMentions: Bo = false,
+        postAuthor: Opt[Pat] = None): Notifications = {
 
     require(page.id == newPost.pageId, "TyE74KEW9")
     require(anyNewModTask.isEmpty || doingModTasks.isEmpty, "TyE056KWH5")
+    require(postAuthor.forall(_.id = newPost.createdById), "TyEAUTID69256")
 
     if (newPost.isTitle)
       return generatedNotifications  // [no_title_notfs]
@@ -128,6 +140,7 @@ case class NotificationGenerator(
         genOneNotfMaybe(
               NotificationType.NewPostReviewTask,
               to = staffUser,
+              from = postAuthor,
               about = newPost,
               isAboutModTask = true)
       }
@@ -149,7 +162,7 @@ case class NotificationGenerator(
           newPost.id, NotificationType.NewPostReviewTask)
     avoidDuplEmailToUserIds ++= oldNotfsToStaff.map(_.toUserId)
 
-    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
+    anyAuthor = postAuthor orElse Some(tx.loadTheParticipant(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -177,7 +190,8 @@ case class NotificationGenerator(
         // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
         // do about that.)
         _makeAboutPostNotfs(
-              notfType, about = newPost, inCategoryId = page.categoryId, replyingToUser)
+              notfType, about = newPost, inCategoryId = page.categoryId, replyingToUser,
+              sentFrom = postAuthor)
       }
     }
 
@@ -201,7 +215,8 @@ case class NotificationGenerator(
             anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(  // [nashorn_in_tx] [save_post_lns_mentions]
                 newPost.approvedSource getOrDie "DwE82FK4", site, nashorn)
 
-      var mentionedMembers: Set[MemberVb] = tx.loadMembersVbByUsername(mentionedUsernames).toSet
+      var mentionedMembers: Set[MemberVb] =
+            tx.loadMembersVbByUsername(mentionedUsernames).toSet
 
       // Can create more mention aliases, like @new-members (= trust levels new & basic only),
       // and @guests and @here-now and @everyone (= all members)
@@ -483,11 +498,13 @@ case class NotificationGenerator(
           id != sender.id &&
           // But if is an anonym, compare true id too.  ?? ANON_UNIMPL, rethink / review
           id != sender.trueId2.trueId)
-    tx.loadParticipants(patIdsToLoad) foreach { user =>
+    val patsToNotify = tx.loadParticipants(patIdsToLoad)
+    patsToNotify foreach { user =>
       _makeAboutPostNotfs(
           // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
           // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
           NotificationType.Message, about = pageBody, inCategoryId = None, sendTo = user)
+                  //  + sentFrom = sender  ?
     }
     generatedNotifications
   }
@@ -577,6 +594,7 @@ case class NotificationGenerator(
         genOneNotfMaybe(
               notfType,
               to = toGroup,
+              from = sentFrom,  // why not incl here too?
               about = newPost)
 
         // Find ids of group members to notify, and excl the sender henself:  (5ABKRW2)
@@ -784,6 +802,7 @@ case class NotificationGenerator(
       UX; COULD // NotificationType.NewPage instead? Especially if: isEmbDiscFirstReply.
       genOneNotfMaybe(
             NotificationType.NewPost,
+            from = ???,  // why not load once for all recipients
             to = member,
             about = newPost,
             generatedWhy = notfPref.why)
@@ -976,13 +995,13 @@ case class NotificationGenerator(
 
     val aboutPost = about
     val toPat = to  // ! might be an anon
-    // REN to fromPatIdMaybeAnon?
-    val fromPat: Pat = from getOrElse dao.getTheParticipant(aboutPost.createdById)
+    val fromPat: Pat = from getOrElse tx.loadTheParticipant(aboutPost.createdById)
     val fromPatTrueId: TrueId = fromPat.trueId2
 
     dieIf(toPat.id == fromPat.id, "TyE4S602MRD5",
           s"s$siteId: Notf to self, id: ${toPat.id}, about post id ${aboutPost.id}")
 
+    // Or just return () instead?
     dieIf(toPat.trueId2.trueId == fromPatTrueId.trueId, "TyE4S602MRD6",
           s"s$siteId: Notf to one's own true user, id: ${toPat.trueId2}, from: ${
           fromPatTrueId.trueId}, about post id ${aboutPost.id}")
