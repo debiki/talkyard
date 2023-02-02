@@ -263,26 +263,13 @@ And bookmarks. Later.
 $_$;  -- '
 
 ------------------------------------------------------------------------
-comment on column  posts3.authors_id_c  is $_$
-The person who posted a post, is shown as author by default.  [post_authors]
-But this can be changed, by specifying a member or a list of members
-if there's more than one author.
+comment on column  posts3.created_by_id  is $_$
+If created by an anonym or pseudonym, is the id of that anonym or pseudonym.
+And to find the true author, one looks up that anon/pseudonym in pats_t,
+and looks at the true_id_c column.
 $_$; -- '
 
-------------------------------------------------------------------------
-comment on column  posts3.owners_id_c  is $_$
-The person who posted a post, is the owner of the post — *unless*  [post_owners]
-owners_id_c is set to someone else. Can be set to a member or a list of
-members. The owners of a post, may edit it, change the authors, make it
-private (but not make a private post public), add/remove owners, etc.
 
-Changing the owner, can be good if 1) someone starts working on an article,
-and leaves for vacation, and another person is to finish the article,
-publish it etc.  Or if 2) mods have deleted a post, and want to prevent
-the original author from un-deleting it or editing it any further. Then,
-the mods can make the Moderators group the owner of the post —
-thereafter the original author cannot edit it, un/delete it or anything.
-$_$;
 
 ------------------------------------------------------------------------
 comment on column  posts3.private_status_c  is $_$

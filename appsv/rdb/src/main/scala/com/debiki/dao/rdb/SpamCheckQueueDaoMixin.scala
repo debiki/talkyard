@@ -41,7 +41,7 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
         page_available_at,
         html_to_spam_check,
         language,
-        auhtor_true_id_c,
+        author_id_c,
         browser_id_cookie,
         browser_fingerprint,
         req_user_agent,

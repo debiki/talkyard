@@ -121,10 +121,22 @@ object PatRelType_later {
 
   /** If pat has been added as author of a post.  (Value could maybe say if is
     * primary author, or secondary author?)
+
+    * The person who posted a post, is the author, by default.  [post_authors]
+    * But others can be made authors instead, by adding this AuthorOf relationship.
     */
   case object AuthorOf extends PatRelType_later(-1)
 
-  /** If pat has been added as owner of a post.
+  /** If pat has been added as owner of a post. The owners of a post,
+    * can edit it, change the authors, make it  private (but not make a private
+    * post public), add/remove owners, etc.
+    *
+    *  Changing the owner, can be good if 1) someone starts working on an article,
+    *  and leaves for vacation, and another person is to finish the article,
+    *  publish it etc.  Or if 2) mods have deleted a post, and want to prevent
+    *  the original author from un-deleting it or editing it any further. Then,
+    *  the mods can make the Moderators group the owner of the post —
+    *  thereafter the original author cannot edit it, un/delete it or anything.
     */
   case object OwnerOf extends PatRelType_later(-1)
 }
@@ -207,7 +219,7 @@ object PostStatusAction {
 }
 
 
-// RENAME to  PatPostRel
+// RENAME to  PatNodeRel
 // Stored in  post_actions3, will rename to pat_rels_t, no to  pat_post_rels_t?
 abstract class PostAction {
   def uniqueId: PostId

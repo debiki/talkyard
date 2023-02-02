@@ -424,7 +424,7 @@ class SystemDao(
           siteId = oldSiteId,
           id = AuditLogEntry.UnassignedId,
           didWhat = AuditLogEntryType.CreateSite,
-          doerId = creatorId,
+          doerTrueId = TrueId.forMember(creatorId),
           doneAt = oldSiteTx.now.toJavaDate,
           browserIdData = browserIdData,
           browserLocation = None,
@@ -484,7 +484,7 @@ class SystemDao(
         siteId = newSite.id,
         id = AuditLogEntry.FirstId,
         didWhat = AuditLogEntryType.ThisSiteCreated,
-        doerId = SystemUserId, // no admin account yet created
+        doerTrueId = TrueId(SystemUserId), // no admin account yet created
         doneAt = newSiteTx.now.toJavaDate,
         browserIdData = browserIdData,
         browserLocation = None,
@@ -753,6 +753,7 @@ class SystemDao(
 
   def executePendingReviewTasks(): U =  {
     val taskIdsBySite: Map[SiteId, immutable.Seq[ReviewTaskId]] = readTx { tx =>
+      // Browser info not saved, not loaded here. [save_mod_br_inf]
       tx.loadReviewTaskIdsToExecute()
     }
     taskIdsBySite foreach { case (siteId, taskIds) =>

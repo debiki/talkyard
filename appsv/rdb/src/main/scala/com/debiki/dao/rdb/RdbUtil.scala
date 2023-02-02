@@ -671,7 +671,8 @@ object RdbUtil {
       createdAt = getWhen(rs, "created_at"),
       postToSpamCheck = anyPostToCheck,
       who = Who(
-        id = rs.getInt("auhtor_true_id_c"),
+        TrueId(rs.getInt("author_id_c"),
+              getOptInt(rs, "author_true_id_c")),  // col doesn't yet exist
         BrowserIdData(
           ip = rs.getString("req_ip"),
           idCookie = getOptString(rs, "browser_id_cookie"),

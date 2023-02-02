@@ -79,7 +79,7 @@ case class Link(
   toStaffSpace: Boolean = false,
   toPageId: Option[PageId] = None,
   toPostId: Option[PostId] = None,
-  toPpId: Option[UserId] = None,
+  toPpId: Opt[PatId] = None,   // RENAME to toPatId
   toTagId: Option[TagDefId] = None,
   toCategoryId: Option[CategoryId] = None) {
 

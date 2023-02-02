@@ -565,7 +565,7 @@ alter table user_visit_stats3 add true_user_id_c              member_id_d;
 -- like below. Instead,  posts in posts3 already for a tree, and include
 -- almost all that's needed for bookmarks — just a links field, or
 -- entries in node_node_rels_t needed too?
--- (It'll all will be in [nodes_t] instead?)
+-- (It'll all will be in [add_nodes_t] instead?)
 --
 create table trees_t (
       --

@@ -1054,13 +1054,15 @@ case class SitePatcher(globals: debiki.Globals) {
 
           // Tests:  webhooks-for-api-upserts.2br  TyTE2EWBHK4API
 
+          val doer: Pat = tx.loadTheParticipant(post.createdById)
+
           val auditLogEntry: Opt[AuditLogEntry] = {
             if (post.isOrigPost) {
               Some(AuditLogEntry(
                     siteId = siteId,
                     id = AuditLogEntry.UnassignedId,
                     didWhat = AuditLogEntryType.NewPage,
-                    doerId = post.createdById,
+                    doerTrueId = doer.trueId2,
                     doneAt = tx.now.toJavaDate,
                     browserIdData = BrowserIdData.Missing,
                     pageId = Some(page.id),
@@ -1071,9 +1073,12 @@ case class SitePatcher(globals: debiki.Globals) {
             else if (post.tyype.isComment || post.tyype.isChat) {
               // Skip finding common ancestors — multi replies disabled.  [3GTKYA02]
               // Just look up the parent directly.
-              val anyParent =
+              val anyParent: Opt[Post]  =
                     if (post.tyype.isChat) None
                     else page.parts.postByNr(post.parentNr)
+
+              val anyParentOrigAuthor: Opt[Pat] =
+                    anyParent.map(post => tx.loadTheParticipant(post.createdById))
 
               Some(AuditLogEntry(
                     siteId = siteId,
@@ -1081,7 +1086,7 @@ case class SitePatcher(globals: debiki.Globals) {
                     didWhat =
                           if (post.tyype.isChat) AuditLogEntryType.NewChatMessage
                           else AuditLogEntryType.NewReply,
-                    doerId = post.createdById,
+                    doerTrueId = doer.trueId2,
                     doneAt = tx.now.toJavaDate,
                     browserIdData = BrowserIdData.Missing,
                     pageId = Some(post.pageId),
@@ -1091,7 +1096,7 @@ case class SitePatcher(globals: debiki.Globals) {
                     targetPageId = anyParent.map(_.pageId),
                     targetUniquePostId = anyParent.map(_.id),
                     targetPostNr = anyParent.map(_.nr),
-                    targetUserId = anyParent.map(_.createdById)))
+                    targetPatTrueId = anyParentOrigAuthor.map(_.trueId2)))
             }
             else {
               // Don't generate any event. This "cannot" happen anyway, since

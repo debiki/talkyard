@@ -194,7 +194,7 @@ package object core {
   type SiteId = Int
   val NoSiteId = 0
 
-  type SiteVersion = Int
+  type SiteVersion = i32 // Int
 
   type LangCode = St  // [Scala_3] opaque type
 
@@ -216,6 +216,7 @@ package object core {
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
   type GuestId = PatId
+  type AnonId = PatId
   type MemberId = PatId   ; RENAME // to MembId
   type MembId = PatId     // but hard to read: '...bI..', two lines next to each other. Instead:
   type MemId = PatId      // ... is this better?  NO, REMOVE.
@@ -776,16 +777,32 @@ package object core {
 
   RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
   // I find "who" being confusing as to whom it refers to.
-  case class Who(id: UserId, browserIdData: BrowserIdData, isAnon: Bo = false) {
+  // Is isAnon always false, hmmm?
+  case class Who(trueId: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
+    def id: PatId = trueId.curId
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
     def isGuest: Bo = !isAnon && Participant.isGuestId(id)
     def isSystem: Boolean = id == SystemUserId
+    /*
+    def isGuest: Bo = !isAnon && isGuestOrAnon ; REFACTOR // this can now be a TrueId memb fn?
+    */
+    def isGuestOrAnon: Bo = trueId.isGuestOrAnon
+    /*
+    def isSystem: Bo = id == SystemUserId
+    def isBuiltInUser: Bo = id == SystemUserId
+    */
+
+    dieIf(isAnon != trueId.anyTrueId.isDefined, "TyE40MADEW35",
+          s"isAnon: $isAnon but trueId: ${trueId.trueId}")
   }
 
   object Who {
-    val System = Who(SystemUserId, BrowserIdData.System)
+    def apply(patId: PatId, browserIdData: BrowserIdData): Who =
+      Who(TrueId(patId), browserIdData)
+
+    val System = Who(TrueId(SystemUserId), BrowserIdData.System)
   }
 
 
@@ -834,6 +851,7 @@ package object core {
     * -1-----------  =  8: can be deanonymized by others with deanon permission in the category?
     * 1------------  = 16: gets deanonymized automatically (after page anonym ttl)
     *
+    * Separate value?:
     * 00 + 2^16      = is still anonymous
     * 01 + 2^16      =  1: was deanonymized by oneself (no longer anonymous)
     * 10 + 2^16      =  2: was deanonymized by sbd else
@@ -842,6 +860,14 @@ package object core {
     * If deanonymized, made anonymous again,
     * and deanonymized in another way — then, many of these
     * bits would be set?
+    *
+    * Or:  deanond_by_id: -1 = oneself, otherwise sbd else's id? (always > 0)
+    *             and if after timeout +3?  +9?  could be a new user, the "Timer" user?
+    *             Better than using the System user?
+    *
+    * Or:  deanond_c: bool, and who in the audit log.  +3 = unknown memebr?  -3 guest or memb
+    *                               or  -1 = oneself,  -2 = unknown memebr,  -3 guest or memb  ?
+    *
     */
   sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
     def toInt: i32 = IntVal
@@ -871,7 +897,17 @@ package object core {
   }
 
 
-  case class UserAndLevels(user: Participant, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
+  /**
+    * @param patOrPseudonym — the id of the requester, can be a pseudonym. But not an anonym.
+    * @param trustLevel — if patOrPseudonym is a pseudonym, then this is the pseudonym's
+    *   trust level, which can be different from the true member's trust level?
+    *   (See tyworld.adoc, [pseudonyms_trust].)
+    */
+  case class UserAndLevels(
+    user: Pat,
+    trustLevel: TrustLevel,
+    threatLevel: ThreatLevel,
+  ) {
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
     def nameHashId: String = user.nameHashId
@@ -1389,7 +1425,7 @@ package object core {
     require((resultsAt.isDefined && humanSaysIsSpam.isDefined) ||
       misclassificationsReportedAt.isEmpty, "TyE4RBK6RS55")
 
-    def key: SpamCheckTask.Key =
+    def taskKey: SpamCheckTask.Key =
       postToSpamCheck match {
         case None => Right(siteUserId)
         case Some(p) => Left((siteId, p.postId, p.postRevNr))
@@ -1400,7 +1436,7 @@ package object core {
         p.copy(htmlToSpamCheck = p.htmlToSpamCheck.take(600))
       }
 
-    def siteUserId = SiteUserId(siteId, who.id)
+    def siteUserId: SiteUserId = SiteUserId(siteId, who.id)
 
     def sitePostIdRevOrUser: String = s"s$siteId, " + (postToSpamCheck match {
       case Some(thePostToSpamCheck) =>
@@ -1874,6 +1910,7 @@ package object core {
   def REMOVE = ()
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.
+  def USE_StaleStuff_INSTEAD = ()
   def DEPRECATED = ()     // Consider removing some time later
   def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions
   def UNPOLITE = ()       // Vuln that lets a user be unpolite to someone else

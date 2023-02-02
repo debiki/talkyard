@@ -79,6 +79,7 @@ case class NotificationGenerator(
   private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
 
   private var nextNotfId: Option[NotificationId] = None
+  // Might be an anon.  ANON_UNIMPL. Make sure won't get notf to henself.
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
@@ -90,7 +91,7 @@ case class NotificationGenerator(
       toCreate = notfsToCreate.toVector,
       toDelete = notfsToDelete.toVector)
 
-
+// authorMaybeAnon: Pat  — might not yet have been saved.  Verify id = newPost.createdById
   def generateForNewPost(page: Page, newPost: Post, sourceAndHtml: Option[SourceAndHtml],
         anyNewModTask: Option[ModTask], doingModTasks: Seq[ModTask] = Nil,
         skipMentions: Boolean = false): Notifications = {
@@ -148,7 +149,7 @@ case class NotificationGenerator(
           newPost.id, NotificationType.NewPostReviewTask)
     avoidDuplEmailToUserIds ++= oldNotfsToStaff.map(_.toUserId)
 
-    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))  // anon author?
+    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -470,10 +471,19 @@ case class NotificationGenerator(
     */
   def generateForMessage(sender: Participant, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
+    /* No
+    warnDevDieIf(sender.trueId2 != pageBody.createdById.trueId, "TyE50JMPEPG",
+          s"${sender.trueId} != ${pageBody.createdById.trueId}")
+          */
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
     // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
     anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
-    tx.loadParticipants(toUserIds.filter(_ != sender.id)) foreach { user =>
+    val patIdsToLoad = toUserIds.filter(id =>
+          // Normally enough.
+          id != sender.id &&
+          // But if is an anonym, compare true id too.  ?? ANON_UNIMPL, rethink / review
+          id != sender.trueId2.trueId)
+    tx.loadParticipants(patIdsToLoad) foreach { user =>
       _makeAboutPostNotfs(
           // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
           // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
@@ -965,11 +975,17 @@ case class NotificationGenerator(
         ): U = {
 
     val aboutPost = about
-    val toPat = to
-    val fromPatId = from.map(_.id) getOrElse aboutPost.createdById    // REN to fromPatIdMaybeAnon?
+    val toPat = to  // ! might be an anon
+    // REN to fromPatIdMaybeAnon?
+    val fromPat: Pat = from getOrElse dao.getTheParticipant(aboutPost.createdById)
+    val fromPatTrueId: TrueId = fromPat.trueId2
 
-    dieIf(toPat.id == fromPatId, "TyE4S602MRD5",
+    dieIf(toPat.id == fromPat.id, "TyE4S602MRD5",
           s"s$siteId: Notf to self, id: ${toPat.id}, about post id ${aboutPost.id}")
+
+    dieIf(toPat.trueId2.trueId == fromPatTrueId.trueId, "TyE4S602MRD6",
+          s"s$siteId: Notf to one's own true user, id: ${toPat.trueId2}, from: ${
+          fromPatTrueId.trueId}, about post id ${aboutPost.id}")
 
     // One cannot talk with deactivated or deleted pats, or System or Sysbot.
     // (But one can mention e.g. @admins or @core_members — built-in pats.)
@@ -1000,8 +1016,12 @@ case class NotificationGenerator(
     notfsToCreate += Notification.NewPost(
           notfType,
           id = newNotfId,
-          toUserId = toPat.id,
-          byUserId = fromPatId,
+          // Need to send notf to one's true account, not to any anonym. So use trueId.
+          // But if is pseudonym, then, send to the pseudonym? [pseudonyms_later]
+          toUserId = toPat.trueId2.trueId,
+          // Do *not* use trueId here though, because then any anonymous sender,
+          // would get revealed.
+          byUserId = fromPat.id,
           createdAt = aboutPost.createdAt,
           uniquePostId = aboutPost.id,
           smtpMsgIdPrefix = aboutPost.smtpMsgIdPrefix.map(_ + s".${toPat.id}.$newNotfId"),

@@ -153,6 +153,10 @@ object ReviewDecision {
   * @param maybeBadUserId A user that did something possibly harmful and therefore what s/he did
   *   should be reviewed. E.g. wrote a post that got flagged. Or changed his/her avatar
   *   and his/her profile, which therefore should be reviewed.
+  *   If the user is anonymous, then, this is the id of the anonym, not the real user
+  *   — so staff won't accidentally learn who the anonyms are. Only if a post is
+  *   really problematic, can the staff choose to have a look and consider suspending
+  *   the real post author.
   * @param pageId A new page that should be reviewed.
   * @param postId A post that should be reviewed, it might be spam for example.
   */
@@ -174,7 +178,7 @@ case class ReviewTask(  //  RENAME to ModTask
   // COULD change to a Set[UserId] and include editors too, hmm. [6KW02QS]  Or just the author +
   // the 10? most recent editors, or the 10 most recent editors (not the author) for wiki posts.
   // Or the ones who edited the post, since it was last reviewed & any flags disagreed with?
-  maybeBadUserId: UserId,
+  maybeBadUserId: PatId,  // RENAME to aboutPatId
   // Only if is for both title and body (cannot currently be moved to different page).
   pageId: Option[PageId] = None,
   postId: Option[PostId] = None,

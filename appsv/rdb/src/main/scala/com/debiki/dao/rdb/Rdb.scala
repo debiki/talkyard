@@ -290,7 +290,7 @@ object Rdb {
     value
   }
 
-  def getOptInt(rs: js.ResultSet, column: String): Option[Int] =
+  def getOptInt(rs: js.ResultSet, column: String): Option[i32] =
     getOptInt32(rs, column)
 
   def getOptInt16(rs: js.ResultSet, column: St): Opt[i16] =

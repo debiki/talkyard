@@ -465,7 +465,7 @@ case class Post(   // [exp] ok use
   smtpMsgIdPrefix: Opt[SmtpMsgIdPrefix],  // SHOULD incl in patch json? Later.
   // .move_later
   ownerIds: Vec[PatId] = Vec.empty,
-  authorids: Vec[PatId] = Vec.empty,
+  authorIds: Vec[PatId] = Vec.empty,
   assignedToIds: Vec[PatId] = Vec.empty,
   ) {
 

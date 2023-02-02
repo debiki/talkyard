@@ -99,7 +99,6 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def reqer: Opt[Pat] = user  // shorter, nicer. "Req" = request, + "er" = "requester"
                         RENAME // to  anyReqer?
   def requesterOrUnknown: Participant = user getOrElse UnknownParticipant
-  def requesterIdOrUnknown: UserId = user.map(_.id) getOrElse UnknownUserId
   def theRequester: Participant = theUser
   def theReqer: Pat = theUser  // shorter, better
 
@@ -111,11 +110,12 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   lazy val siteSettings: EffectiveSettings = dao.getWholeSiteSettings()
 
+  def reqrIds: ReqrId = who  // better to end w 's'? Since incl many ids: pat id, session id.
   def reqrId: ReqrId = who
   @deprecated("use reqrId: ReqrId instead", "now")
-  def who = Who(theUserId, theBrowserIdData)
+  def who = Who(theUser.trueId2, theBrowserIdData)
 
-  def whoOrUnknown: Who = Who(requesterIdOrUnknown, theBrowserIdData)
+  def whoOrUnknown: Who = Who(requesterOrUnknown.trueId2, theBrowserIdData)
 
   def authzCtxWithReqer: AuthzCtxWithReqer = dao.getAuthzCtxWithReqer(theRequester)
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
@@ -142,6 +142,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def theUserId: UserId = theUser.id
   def theRequesterId: UserId = theUser.id
   def theReqerId: PatId = theRequesterId // shorter, nice
+  def theReqerTrueId: TrueId = theUser.trueId2
 
   def userAndLevels: AnyUserAndThreatLevel = {
     val threatLevel = user match {

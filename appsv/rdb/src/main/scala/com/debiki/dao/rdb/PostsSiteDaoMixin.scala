@@ -788,7 +788,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       createdAt = getDate(rs, "CREATED_AT"),
       createdById = rs.getInt("CREATED_BY_ID"),
       ownerIds = ownerIds,
-      authorids = authorIds,
+      authorIds = authorIds,
       assignedToIds = assignedToIds,
       currentRevStaredAt = getDate(rs, "curr_rev_started_at"),
       currentRevisionById = rs.getInt("curr_rev_by_id"),
@@ -1003,11 +1003,11 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     postAction match {
       case vote: PostVote =>
         insertPostActionImpl(
-          postId = vote.uniqueId, pageId = vote.pageId, postNr = vote.postNr,
+              postId = vote.uniqueId, pageId = vote.pageId, postNr = vote.postNr,
           actionType = vote.voteType, doerId = vote.doerId, doneAt = vote.doneAt)
       case flag: PostFlag =>
         insertPostActionImpl(
-          postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
+              postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
           actionType = flag.flagType, doerId = flag.doerId, doneAt = flag.doneAt)
       // case AuthorOf => ...
       // case OwnerOf => ...
@@ -1088,23 +1088,23 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   def insertPostRevision(revision: PostRevision) {
     val statement = """
-      insert into post_revisions3(
-        site_id, post_id,
-        revision_nr, previous_nr,
-        source_patch, full_source, title,
+          insert into post_revisions3(
+            site_id, post_id,
+            revision_nr, previous_nr,
+            source_patch, full_source, title,
         composed_at, composed_by_id,
-        approved_at, approved_by_id,
-        hidden_at, hidden_by_id)
+            approved_at, approved_by_id,
+            hidden_at, hidden_by_id)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List[AnyRef](
-      siteId.asAnyRef, revision.postId.asAnyRef,
-      revision.revisionNr.asAnyRef, revision.previousNr.orNullInt,
-      revision.sourcePatch.orNullVarchar, revision.fullSource.orNullVarchar,
-      revision.title.orNullVarchar,
+          siteId.asAnyRef, revision.postId.asAnyRef,
+          revision.revisionNr.asAnyRef, revision.previousNr.orNullInt,
+          revision.sourcePatch.orNullVarchar, revision.fullSource.orNullVarchar,
+          revision.title.orNullVarchar,
       revision.composedAt, revision.composedById.asAnyRef,
-      revision.approvedAt.orNullTimestamp, revision.approvedById.orNullInt,
-      revision.hiddenAt.orNullTimestamp, revision.hiddenById.orNullInt)
+          revision.approvedAt.orNullTimestamp, revision.approvedById.orNullInt,
+          revision.hiddenAt.orNullTimestamp, revision.hiddenById.orNullInt)
     runUpdateExactlyOneRow(statement, values)
   }
 
