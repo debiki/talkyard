@@ -1,0 +1,51 @@
+        hmm  M appsv/model/src/main/scala/com/debiki/core/AuditLogEntry.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/Page.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/PageParts.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/Post.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/PostAction.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/PostRevision.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/ReviewTask.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/SiteTransaction.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/links.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/package.scala
+        ok   M appsv/model/src/main/scala/com/debiki/core/user.scala
+        ok   M appsv/rdb/src/main/resources/db/migration/wait_r__comments.sql
+        ok   M appsv/rdb/src/main/resources/db/migration/y2023/wip_v419__anon_posts_disc_prefs.sql
+        ok   M appsv/rdb/src/main/scala/com/debiki/dao/rdb/AuditLogSiteDaoMixin.scala
+        ok   M appsv/rdb/src/main/scala/com/debiki/dao/rdb/LinksSiteTxMixin.scala
+        ok   M appsv/rdb/src/main/scala/com/debiki/dao/rdb/PostsSiteDaoMixin.scala
+        ok   M appsv/rdb/src/main/scala/com/debiki/dao/rdb/Rdb.scala
+        ok   M appsv/rdb/src/main/scala/com/debiki/dao/rdb/RdbUtil.scala
+        ok   M appsv/rdb/src/main/scala/com/debiki/dao/rdb/ReviewTasksSiteDaoMixin.scala
+        ok   M appsv/rdb/src/main/scala/com/debiki/dao/rdb/SpamCheckQueueDaoMixin.scala
+        ok   M appsv/rdb/src/main/scala/com/debiki/dao/rdb/UploadsSiteDaoMixin.scala
+             M appsv/server/controllers/CreateSiteController.scala
+             M appsv/server/controllers/EditController.scala
+             M appsv/server/controllers/InviteController.scala
+             M appsv/server/controllers/PageController.scala
+             M appsv/server/controllers/SpecialContentController.scala
+             M appsv/server/controllers/UploadsController.scala
+        ok   M appsv/server/debiki/dao/CategoriesDao.scala
+        ok   M appsv/server/debiki/dao/ForumDao.scala
+        ok   M appsv/server/debiki/dao/MessagesDao.scala
+        ok   M appsv/server/debiki/dao/PagesDao.scala
+        ok   M appsv/server/debiki/dao/PostsDao.scala        lost of changes
+        ok   M appsv/server/debiki/dao/ReviewsDao.scala
+        ok   M appsv/server/debiki/dao/SettingsDao.scala
+        ok   M appsv/server/debiki/dao/SpecialContentDao.scala
+        ok   M appsv/server/debiki/dao/SystemDao.scala
+        ok   M appsv/server/debiki/dao/TagsDao.scala
+        ok   M appsv/server/debiki/dao/UploadsDao.scala
+        ok   M appsv/server/debiki/dao/UserDao.scala
+        ok   M appsv/server/talkyard/server/JsX.scala
+        ok   M appsv/server/talkyard/server/authz/AuthzSiteDaoMixin.scala
+        ok   M appsv/server/talkyard/server/events/EventsParSer.scala
+        ok   M appsv/server/talkyard/server/http/DebikiRequest.scala
+        ok   M appsv/server/talkyard/server/notf/NotificationGenerator.scala
+        ok   M appsv/server/talkyard/server/pop/PagePopularityCalculator.scala
+        ok   M appsv/server/talkyard/server/sitepatch/SitePatch.scala
+        ok   M appsv/server/talkyard/server/sitepatch/SitePatchParser.scala
+        ok   M appsv/server/talkyard/server/sitepatch/SitePatcher.scala
+        ok   M docs/maybe-do-later.txt
+        ok   M docs/tyworld.adoc
+            ?? appsv/model/src/main/scala/com/debiki/core/TrueFalseId.scala
