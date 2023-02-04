@@ -357,7 +357,8 @@ trait PostsDao {
     val notifications =
       if (skipNotfsAndAuditLog) Notifications.None
       else notfGenerator(tx).generateForNewPost(
-            page, newPost, Some(textAndHtml), anyNewModTask = anyReviewTask) ; authorMaybeAnon
+            page, newPost, Some(textAndHtml), postAuthor = Some(authorMaybeAnon),
+            anyNewModTask = anyReviewTask)
     tx.saveDeleteNotifications(notifications)
 
     // Could save the poster's topics-replied-to notf pref as  [interact_notf_pref]
@@ -696,7 +697,7 @@ trait PostsDao {
     val authorAndLevels = loadUserAndLevels(who, tx)
     val author: Pat = authorAndLevels.user
 
-    // This'd be a bug?
+    // This'd be a bug? [anon_chats]
     throwForbiddenIf(author.isAnon, "TyE5982sKTYNJ4", "Anons cannot post chat messages")
 
     val settings = loadWholeSiteSettings(tx)
@@ -705,9 +706,6 @@ trait PostsDao {
     val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
     if (!page.pageType.isChat)
       throwForbidden("EsE6JU04", s"Page '${page.id}' is not a chat page")
-
-    // This is better than some database foreign key error.
-    tx.loadParticipant(author.id) getOrElse throwNotFound("EsE2YG8", "Bad user")
 
     val newPost = Post.create(
       uniqueId = uniqueId,
@@ -828,7 +826,8 @@ trait PostsDao {
 
     // If anyModTask: TyTIT50267MT
     val notfs = notfGenerator(tx).generateForNewPost(
-          page, newPost, sourceAndHtml = Some(textAndHtml), anyNewModTask = anyModTask) ; author //= author
+          page, newPost, postAuthor = Some(author), sourceAndHtml = Some(textAndHtml),
+          anyNewModTask = anyModTask)
     tx.saveDeleteNotifications(notfs)
 
     (newPost, notfs)
@@ -2192,7 +2191,8 @@ trait PostsDao {
       }
       else if (isApprovingNewPost) {
         notfGenerator(tx).generateForNewPost(page, postAfter, Some(sourceAndHtml),
-              anyNewModTask = None, doingModTasks = doingModTasks)  ; author // = author
+              postAuthor = Some(author),
+              anyNewModTask = None, doingModTasks = doingModTasks)
       }
       else {
         notfGenerator(tx).generateForEdits(postBefore, postAfter, Some(sourceAndHtml))
@@ -2268,12 +2268,12 @@ trait PostsDao {
 
       if (!post.isTitle) {
         val notfs = notfGenerator(tx).generateForNewPost(page, postAfter,
-              Some(sourceAndHtml),
+              Some(sourceAndHtml), postAuthor = Some(author),
               anyNewModTask = None,
               // But approver might get notfd about post! [notfs_bug]
               // However this whole cascade-approval idea should be deleted.
               // Then this whole fn, autoApprovePendingEarlyPosts(), gone.
-              doingModTasks = Nil)  ; author // = author
+              doingModTasks = Nil)
         tx.saveDeleteNotifications(notfs)
       }
     }
@@ -2663,8 +2663,8 @@ trait PostsDao {
 
       // Would be good to [save_post_lns_mentions], so wouldn't need to recompute here.
       val notfs = notfGenerator(tx).generateForNewPost(
-            toPage, postAfter, sourceAndHtml = None,
-            anyNewModTask = None, skipMentions = true)  ; postAuthor
+            toPage, postAfter, sourceAndHtml = None, postAuthor = Some(postAuthor),
+            anyNewModTask = None, skipMentions = true)
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 
       postAfter

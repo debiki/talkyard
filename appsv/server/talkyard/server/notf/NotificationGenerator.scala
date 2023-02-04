@@ -102,14 +102,16 @@ case class NotificationGenerator(
     *    is still ongoing — then, it's good to get the author.
     * @return
     */
-  def generateForNewPost(page: Page, newPost: Post, sourceAndHtml: Option[SourceAndHtml],
-        anyNewModTask: Option[ModTask], doingModTasks: Seq[ModTask] = Nil,
+  def generateForNewPost(page: Page, newPost: Post, sourceAndHtml: Opt[SourceAndHtml],
+        anyNewModTask: Opt[ModTask], doingModTasks: Seq[ModTask] = Nil,
         skipMentions: Bo = false,
         postAuthor: Opt[Pat] = None): Notifications = {
 
     require(page.id == newPost.pageId, "TyE74KEW9")
     require(anyNewModTask.isEmpty || doingModTasks.isEmpty, "TyE056KWH5")
-    require(postAuthor.forall(_.id = newPost.createdById), "TyEAUTID69256")
+    require(postAuthor.forall(_.id == newPost.createdById),
+          o"""s$siteId: Wrong postAuthor id: ${postAuthor.map(_.id)}, but
+          newPost.createdById is ${newPost.createdById}) [TyEAUTID69256]""")
 
     if (newPost.isTitle)
       return generatedNotifications  // [no_title_notfs]
@@ -484,8 +486,13 @@ case class NotificationGenerator(
   /** Direct messages are sent to all toUserIds, but not to any user mentioned in the
     * message.
     */
-  def generateForMessage(sender: Participant, pageBody: Post, toUserIds: Set[UserId])
+  def generateForMessage(sender: Pat, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
+
+    warnDevDieIf(sender.id != pageBody.createdById, "TyESENDR0AUTR", o"""Priv msg sender
+          != pageBody author: sender.trueId2: ${sender.trueId2},
+          pageBody.createdById: ${pageBody.createdById}""")
+
     /* No
     warnDevDieIf(sender.trueId2 != pageBody.createdById.trueId, "TyE50JMPEPG",
           s"${sender.trueId} != ${pageBody.createdById.trueId}")
@@ -503,8 +510,8 @@ case class NotificationGenerator(
       _makeAboutPostNotfs(
           // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
           // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
-          NotificationType.Message, about = pageBody, inCategoryId = None, sendTo = user)
-                  //  + sentFrom = sender  ?
+          NotificationType.Message, about = pageBody, inCategoryId = None, sendTo = user,
+                  sentFrom = Some(sender))
     }
     generatedNotifications
   }
@@ -594,7 +601,7 @@ case class NotificationGenerator(
         genOneNotfMaybe(
               notfType,
               to = toGroup,
-              from = sentFrom,  // why not incl here too?
+              from = sentFrom,
               about = newPost)
 
         // Find ids of group members to notify, and excl the sender henself:  (5ABKRW2)
@@ -701,6 +708,11 @@ case class NotificationGenerator(
       maySee.may
     }
 
+    val newPostAuthor: Pat = tx.loadTheParticipant(newPost.createdById)
+    // Later, [private_pats]: Load privacy settings for the newPostAuthor (incl for
+    // hens groups), so we'll know if hens name should be included in the notification
+    // texts or not. — Do elsewhere in this file too, not just here.
+
     // Individual users' preferences override group preferences, on the same
     // specificity level (prefs per page,  or per category,  or whole site).
     for {
@@ -802,7 +814,7 @@ case class NotificationGenerator(
       UX; COULD // NotificationType.NewPage instead? Especially if: isEmbDiscFirstReply.
       genOneNotfMaybe(
             NotificationType.NewPost,
-            from = ???,  // why not load once for all recipients
+            from = Some(newPostAuthor),
             to = member,
             about = newPost,
             generatedWhy = notfPref.why)
@@ -982,6 +994,9 @@ case class NotificationGenerator(
   }
 
 
+  /**
+    * @param from — From who. Default is ${about.createdById}.
+    */
   private def genOneNotfMaybe(
         notfType: NotfType,
         to: Pat,
@@ -1001,10 +1016,17 @@ case class NotificationGenerator(
     dieIf(toPat.id == fromPat.id, "TyE4S602MRD5",
           s"s$siteId: Notf to self, id: ${toPat.id}, about post id ${aboutPost.id}")
 
-    // Or just return () instead?
+    /* Or just return () instead? ...
     dieIf(toPat.trueId2.trueId == fromPatTrueId.trueId, "TyE4S602MRD6",
           s"s$siteId: Notf to one's own true user, id: ${toPat.trueId2}, from: ${
           fromPatTrueId.trueId}, about post id ${aboutPost.id}")
+    ... like so?: */
+    // If the notification is to or from an anon, the anon(s) might be the sender's
+    // own anonym(s). Then, don't generate any notf.
+    if (toPat.trueId2.trueId == fromPatTrueId.trueId) {
+      avoidDuplEmailToUserIds += toPat.id   ; RENAME // avoidDuplEmailToUserIds to skipPatIds or patIdsDone?
+      return ()
+    }
 
     // One cannot talk with deactivated or deleted pats, or System or Sysbot.
     // (But one can mention e.g. @admins or @core_members — built-in pats.)
