@@ -369,7 +369,7 @@ trait PagesDao {
               pageAvailableAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
               htmlToSpamCheck = body.safeHtml,
               language = settings.languageCode)),
-            who = byWho.copy(trueId = authorMaybeAnon.trueId2, isAnon = authorMaybeAnon.isAnon),
+            reqrId = authorMaybeAnon.id,
             requestStuff = spamStuffPageUri))
       }
 

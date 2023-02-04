@@ -304,7 +304,7 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
             htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
-          who = byWho.copy(authorMaybeAnon.trueId2, isAnon = authorMaybeAnon.isAnon),
+          reqrId = authorMaybeAnon.id,
           requestStuff = spamRelReqStuff))
 
     val stats = UserStats(
@@ -763,8 +763,7 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
             htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
-          // ANON_UNIMPL specify the anonym, if anon post
-          who = who,
+          reqrId = author.id,
           requestStuff = spamRelReqStuff))
 
     val anyModTask =
@@ -911,7 +910,7 @@ trait PostsDao {
             htmlToSpamCheck = combinedTextAndHtml.safeHtml,
             language = settings.languageCode)),
           // ANON_UNIMPL specify the anonym, if anon post
-          who = byWho,
+          reqrId = author.id,
           requestStuff = spamRelReqStuff))
 
     tx.updatePost(editedPost)
@@ -1261,8 +1260,7 @@ trait PostsDao {
               pageAvailableAt = When.fromDate(page.meta.publishedAt getOrElse page.meta.createdAt),
               htmlToSpamCheck = newTextAndHtml.safeHtml,
               language = settings.languageCode)),
-            // ANON_UNIMPL specify the anonym, if anon post
-            who = who,
+            reqrId = editorMaybeAnon.id,
             requestStuff = spamRelReqStuff))
 
       val auditLogEntry = AuditLogEntry(

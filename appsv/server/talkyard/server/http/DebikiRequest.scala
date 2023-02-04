@@ -128,6 +128,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   // Hmm will need this also for WebSocket? [WSSPAM] Remember this, from
   // the initial HTTP upgrade request?
   def spamRelatedStuff = SpamRelReqStuff(
+    browserIdData = theBrowserIdData,
     userAgent = headers.get("User-Agent"),
     referer = request.headers.get("referer"),
     uri = uri,

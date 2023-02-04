@@ -995,8 +995,9 @@ package object core {
   def FirstSiteId: SiteId = Site.FirstSiteId
   val NoUserId = 0
   def SystemUserId: UserId = Participant.SystemUserId
-  def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy",
-    userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
+  def SystemSpamStuff = SpamRelReqStuff(
+        BrowserIdData.System, userAgent = None, referer = None, uri = "/dummy",
+        userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
   def SystemUserFullName: String = Participant.SystemUserFullName
   def SystemUserUsername: String = Participant.SystemUserUsername
   def SysbotUserId: UserId = Participant.SysbotUserId
@@ -1349,6 +1350,7 @@ package object core {
     * reports to include all original data. [AKISMET].
     */
   case class SpamRelReqStuff(
+    browserIdData: BrowserIdData,
     userAgent: Option[String],
     referer: Option[String],
     uri: String,
@@ -1406,7 +1408,7 @@ package object core {
     createdAt: When,
     siteId: SiteId,
     postToSpamCheck: Option[PostToSpamCheck],
-    who: Who,
+    reqrId: PatId,
     requestStuff: SpamRelReqStuff,
     resultsAt: Option[When] = None,
     resultsJson: Option[JsObject] = None,
@@ -1436,13 +1438,13 @@ package object core {
         p.copy(htmlToSpamCheck = p.htmlToSpamCheck.take(600))
       }
 
-    def siteUserId: SiteUserId = SiteUserId(siteId, who.id)
+    def siteUserId: SiteUserId = SiteUserId(siteId, reqrId)
 
     def sitePostIdRevOrUser: String = s"s$siteId, " + (postToSpamCheck match {
       case Some(thePostToSpamCheck) =>
         s"post ${thePostToSpamCheck.postId} rev nr ${thePostToSpamCheck.postRevNr}"
       case None =>
-        s"user ${who.id} request stuff $requestStuff"
+        s"user ${reqrId} request stuff $requestStuff"
     })
 
     def isMisclassified: Option[Boolean] =

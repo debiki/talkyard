@@ -667,31 +667,29 @@ object RdbUtil {
     val anyIsMisclassified = getOptBool(rs, "is_misclassified")
 
     val result = SpamCheckTask(
-      siteId = rs.getInt("site_id"),
-      createdAt = getWhen(rs, "created_at"),
-      postToSpamCheck = anyPostToCheck,
-      who = Who(
-        TrueId(rs.getInt("author_id_c"),
-              getOptInt(rs, "author_true_id_c")),  // col doesn't yet exist
-        BrowserIdData(
-          ip = rs.getString("req_ip"),
-          idCookie = getOptString(rs, "browser_id_cookie"),
-          fingerprint = rs.getInt("browser_fingerprint"))),
-      requestStuff = SpamRelReqStuff(
-        userAgent = getOptString(rs, "req_user_agent"),
-        referer = getOptString(rs, "req_referer"),
-        uri = rs.getString("req_uri"),
-        userName = getOptString(rs, "author_name"),
-        userEmail = getOptString(rs, "author_email_addr"),
-        userUrl = getOptString(rs, "author_url"),
-        userTrustLevel = getOptInt(rs, "author_trust_level").flatMap(TrustLevel.fromInt)),
-      resultsAt = getOptWhen(rs, "results_at"),
-      resultsJson = getOptJsObject(rs, "results_json"),
-      resultsText = getOptString(rs, "results_text"),
-      numIsSpamResults = getOptInt(rs, "num_is_spam_results"),
-      numNotSpamResults = getOptInt(rs, "num_not_spam_results"),
-      humanSaysIsSpam = getOptBool(rs, "human_says_is_spam"),
-      misclassificationsReportedAt = getOptWhen(rs, "misclassifications_reported_at"))
+          siteId = rs.getInt("site_id"),
+          createdAt = getWhen(rs, "created_at"),
+          postToSpamCheck = anyPostToCheck,
+          reqrId = getInt(rs, "author_id_c"),
+          requestStuff = SpamRelReqStuff(
+              BrowserIdData(
+                  ip = rs.getString("req_ip"),
+                  idCookie = getOptString(rs, "browser_id_cookie"),
+                  fingerprint = rs.getInt("browser_fingerprint")),
+              userAgent = getOptString(rs, "req_user_agent"),
+              referer = getOptString(rs, "req_referer"),
+              uri = rs.getString("req_uri"),
+              userName = getOptString(rs, "author_name"),
+              userEmail = getOptString(rs, "author_email_addr"),
+              userUrl = getOptString(rs, "author_url"),
+              userTrustLevel = getOptInt(rs, "author_trust_level").flatMap(TrustLevel.fromInt)),
+          resultsAt = getOptWhen(rs, "results_at"),
+          resultsJson = getOptJsObject(rs, "results_json"),
+          resultsText = getOptString(rs, "results_text"),
+          numIsSpamResults = getOptInt(rs, "num_is_spam_results"),
+          numNotSpamResults = getOptInt(rs, "num_not_spam_results"),
+          humanSaysIsSpam = getOptBool(rs, "human_says_is_spam"),
+          misclassificationsReportedAt = getOptWhen(rs, "misclassifications_reported_at"))
 
     dieIf(result.isMisclassified != anyIsMisclassified, "TyE068TDGW2")
     result
