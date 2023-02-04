@@ -329,6 +329,8 @@ Search for that tag.
 
 [pseudonyms_later][pseudonyms_trust]
 
+[anon_cats]
+
 [anon_priv_msgs][anon_chats]
 Not now.
 

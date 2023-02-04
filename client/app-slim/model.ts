@@ -1463,13 +1463,10 @@ interface SameAnon extends WhichAnon {
   sameAnonId: PatId;
   newAnonStatus?: U;
 }
-interface Deanonymized extends WhichAnon {
-  sameAnonId: PatId;
-  newAnonStatus: AnonStatus.DeanondBySelf;
-}
+
 interface NewAnon extends WhichAnon {
   sameAnonId?: U;
-  newAnonStatus: AnonStatus.PerPage;
+  newAnonStatus: AnonStatus.IsAnon;
 }
 interface NotAnon extends WhichAnon {
   sameAnonId?: U;

@@ -823,50 +823,42 @@ package object core {
   /** A bitfield. Currently only None, 5 (made anon by oneself, can deanon oneself)
     * and 5 + 32 (deanonymized by oneself) = 37 are supported:
     *
-    * None, SQL null, 0: it not anon, was never anon
+    * None, SQL null, 0: it not anon.
     *
-    * ------------1  = started as not anonymous, then made anonymous
-    *               
-    * ----------01-  =   2: made anon by oneself
-    * ----------10-  =   4: made anon by other user  (might not have been pub for
-    *                       any time — if been in a staff-only category all the time)
-    * ----------11-  =   6: made anon automatically (e.g. auto anon category)
+    * Default value:  i32 w 22 lowest bits set:  2^22 - 1 = 4194303, upper 10 bits are 0.
+    * Then, with some unused bits being 0, others 1, one can choose if a new flag
+    * is going to be by default 0 (off) or 1 (on), by picking a reseved bit that's
+    * already 0 or 1.
     *
-    * // ------1---  =   8: now, in the db, one can see who this anon was (but
-    * //                     maybe in HTTP server log files, looking at IPs.
-    * //                     Or maybe in backups.)
-    * //                    — but that'ts the same as 00000 cannot-be-deanonymized below.
-    * ---------1---  =   8: True id info will get deleted, in a while.
-    * --------1----  =  16: DBA can (could) see who you are (by running SQL queries)
-    * -------1-----  =  32: you can (could) see who you are
-    * ------1------  =  64: admins can see who you are
-    * -----1-------  = 128: others with see-anon permissions in the category,
-    *         can see who you are (typically mods, so they can know who
-    *         a problematic anon is, without having to de-anonymize the account).
+    * Bits 1-8:
+    *   -------1  =   1: is anonymous
     *
-    * 00000--------  = cannot be deanonymized (not even by DBAs, info not stored)
-    * ----1--------  =  4: can be deanonymize by DBAs
-    * ---1---------  =  4: can deanonymize oneself
-    * --1----------  =  8: can be deanonymized by admins
-    * -1-----------  =  8: can be deanonymized by others with deanon permission in the category?
-    * 1------------  = 16: gets deanonymized automatically (after page anonym ttl)
+    *   -----00-  =   0: don't store true id info in the db
+    *   -----01-  =   2: can keep true id info briefly, to review and spam check, then delete
+    *   -----10-  =   4: can keep in db for a while, but delete after a time (a conf val)
+    *   -----11-  =   6: can keep in db permanently (the default)
     *
-    * Separate value?:
-    * 00 + 2^16      = is still anonymous
-    * 01 + 2^16      =  1: was deanonymized by oneself (no longer anonymous)
-    * 10 + 2^16      =  2: was deanonymized by sbd else
-    * 11 + 2^16      =  3: was deanonymized automatically (after page anonym ttl)
+    *   ----1---  =   8: DBA can (could) see who you are (by running SQL queries)
+    *   ---1----  =  16: you can (could) see who you are
+    *   --1-----  =  32: admins can see who you are
+    *   -1------  =  64: others with see-anon permissions in the category,
+    *           can see who you are (typically mods, so they can know who
+    *           a problematic anon is, without having to de-anonymize the account).
+    *   1-------  =  128: reserved
     *
-    * If deanonymized, made anonymous again,
-    * and deanonymized in another way — then, many of these
-    * bits would be set?
+    * Bits 9-16:
+    *   --00000-  =    0: cannot be deanonymized (not even by DBAs, info not stored)
+    *   -------1  =  256: reserved
+    *   ------1-  =  512: can be deanonymize by DBAs
+    *   -----1--  = 1024: may deanonymize oneself
+    *   ----1---  = 2048: may be deanonymized by admins
+    *   ---1----  = 4096: may be deanonymized by others with deanon permission in the category?
+    *   --1-----  = 8192: may get deanonymized automatically (by timer,
+    *                       see e.g.: posts3.auto_deanon_mins_aft_first_c)
+    *   11------  reserved
     *
-    * Or:  deanond_by_id: -1 = oneself, otherwise sbd else's id? (always > 0)
-    *             and if after timeout +3?  +9?  could be a new user, the "Timer" user?
-    *             Better than using the System user?
-    *
-    * Or:  deanond_c: bool, and who in the audit log.  +3 = unknown memebr?  -3 guest or memb
-    *                               or  -1 = oneself,  -2 = unknown memebr,  -3 guest or memb  ?
+    * Bits 17-24 and 25-32:
+    *   0000000000111111  reserved
     *
     */
   sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
@@ -874,17 +866,21 @@ package object core {
   }
 
   object AnonStatus {
-    // Cannot save in the database (that'd mean an anonymous user that wasn't anonymous)
-    // — just means that pat intentionally wants to use hens real account.
+    /** Cannot save in the database (that'd mean an anonymous user that wasn't anonymous)
+      * — just means that pat intentionally wants to use hens real account.
+      * (And then that real user would get saved as post author, instead, not 0 anywhere.)
+      */
     case object NotAnon extends AnonStatus(0, isAnon = false)
-    case object IsAnonBySelf extends AnonStatus(5)
-    case object DeanondBySelf extends AnonStatus(37, isAnon = false)
+
+    /** For now, all 22 lower bits set. See the AnonStatus descr above. Sync w Typescript. */
+    case object IsAnon extends AnonStatus(4194303)
 
     def fromInt(value: i32): Opt[AnonStatus] = Some(value match {
-      case NotAnon.IntVal => return None // for now, simpler?
-      case IsAnonBySelf.IntVal => IsAnonBySelf
-      case DeanondBySelf.IntVal => DeanondBySelf
-      case _ => return None
+      case NotAnon.IntVal => return None
+      case IsAnon.IntVal => IsAnon
+      case _ =>
+        // warnDevDie() — later?
+        return None
     })
   }
 

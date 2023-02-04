@@ -72,7 +72,7 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
       return (
           ExplainingListItem({
             title, text,
-            active: whichAnon === state.curAnon?.newAnonStatus,
+            active: _.isEqual(whichAnon, state.curAnon),  //  new fn: deepEqIgnUndef instead?
             onSelect: () => {
               state.saveFn(whichAnon);
               close();
@@ -81,7 +81,7 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
     }
 
     asYourName = makeItem({ newAnonStatus: AnonStatus.NotAnon }, '');
-    anonymously = makeItem({ newAnonStatus: AnonStatus.PerPage }, '');
+    anonymously = makeItem({ newAnonStatus: AnonStatus.IsAnon }, '');
 
     // Pen name?:  openAddPeopleDialog(alreadyAddedIds, onDone)
   }
@@ -123,7 +123,7 @@ function whichAnon_titleDescrImpl(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }
   if (!doAs || !doAs.sameAnonId) {
     const anonStatus = doAs ? doAs.newAnonStatus : AnonStatus.NotAnon;
     switch (anonStatus) {
-      case AnonStatus.PerPage:
+      case AnonStatus.IsAnon:
         switch (what) {
           case TitleDescr.TitleShort:
           case TitleDescr.TitleLong:

@@ -966,7 +966,7 @@ export const Editor = createFactory<any, EditorState>({
 
     const doAsAnon: WhichAnon | U = myAnonsHere.length
             ? { sameAnonId: myAnonsHere[0].id }
-            : { newAnonStatus: AnonStatus.PerPage }  // later, [anon_cats]  just testing
+            : { newAnonStatus: AnonStatus.IsAnon }  // later, [anon_cats]  just testing
             //: undefined;
 
     const newState: Partial<EditorState> = {
@@ -1127,7 +1127,7 @@ export const Editor = createFactory<any, EditorState>({
       searchResults: null,
       // Skip: myAnonsHere — cannot yet be any anons; page not yet created.
       // Later, for anonymous-by-default categories:  [anon_cats]
-      doAsAnon: { newAnonStatus: AnonStatus.PerPage },
+      doAsAnon: { newAnonStatus: AnonStatus.IsAnon },
     };
 
     this.showEditor(newState);

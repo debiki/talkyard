@@ -12,9 +12,9 @@ alter  domain never_allow_recmd_always_d add
    constraint never_allow_recmd_always_d_c_in check (value in (1, 2, 3, 4));
 
 -- See AnonStatus in the Scala code.
-create domain anonym_status_d i16_d;
--- er  domain anonym_status_d add
--- constraint anonym_status_d_c_in_ hmm what check (value in (?, ?, ...));
+create domain anonym_status_d i32_d;
+alter  domain anonym_status_d add
+   constraint anonym_status_d_c_eq_4194303 check (value = 4194303);
 
 -- create domain deanon_status_d i16_d;
 
@@ -106,34 +106,33 @@ create index patnoderels_i_addedbyid on post_actions3 (site_id, added_by_id_c)
 -- in use. [dupl_nodes_t_cols]
 alter table categories3
     add column  comts_start_hidden_c              never_allow_recmd_always_d,
+    add column  auto_show_comts_aft_mins_c        i32_gz_d,
     add column  op_starts_anon_c                  never_allow_recmd_always_d,
     add column  comts_start_anon_c                never_allow_recmd_always_d,
-    add column  initial_anon_status_c             anonym_status_d,
-    add column  auto_show_comts_aft_mins_c        i32_gz_d,
+    add column  new_anon_status_c                 anonym_status_d,
     add column  auto_deanon_mins_aft_first_c      i32_gz_d,
     add column  auto_deanon_mins_aft_last_c       i32_gz_d,
     add column  auto_deanon_page_mins_aft_first_c i32_gz_d,
     add column  auto_deanon_page_mins_aft_last_c  i32_gz_d,
-    add column  auto_deanon_only_score_gte_c      i32_gz_d;
+    add column  auto_deanon_only_score_gte_c      f32_d;
 
 
 alter table posts3
-    -- Dupl, same cols as above, for categories3:  [dupl_nodes_cols]
+    -- Dupl, almost same cols as above, for categories3:  [dupl_nodes_cols]
     add column  comts_start_hidden_c              never_allow_recmd_always_d,
+    add column  auto_show_comts_aft_mins_c        i32_gz_d,
     add column  op_starts_anon_c                  never_allow_recmd_always_d,
     add column  comts_start_anon_c                never_allow_recmd_always_d,
-    add column  initial_anon_status_c             anonym_status_d,
-    add column  auto_show_comts_aft_mins_c        i32_gz_d,
+    add column  new_anon_status_c                 anonym_status_d,
     add column  auto_deanon_mins_aft_first_c      i32_gz_d,
     add column  auto_deanon_mins_aft_last_c       i32_gz_d,
     add column  auto_deanon_page_mins_aft_first_c i32_gz_d,
     add column  auto_deanon_page_mins_aft_last_c  i32_gz_d,
-    add column  auto_deanon_only_score_gte_c      i32_gz_d,
+    add column  auto_deanon_only_score_gte_c      f32_d,
 
     -- Private sub threads
     -- There's already hidden_status_c.
     add column  private_status_c  private_status_d,
-    add column  anonym_status_c   anonym_status_d,
     add column  creator_status_c  creator_status_d,
 
     -- Old mistakes
@@ -166,13 +165,12 @@ create index drafts_i_postasid on drafts3 (site_id, post_as_id_c)
 
 
 alter table users3
-    add column true_id_c            member_id_d,
-    -- add column deanon_status_c   deanon_status_d, -- or skip?
-    add column deanond_by_id_c      member_id_d,      -- need a Timer user? What id
-    add column pseudonym_status_c   pseudonym_status_d,
-    add column anonym_status_c      anonym_status_d,
-    add column anon_on_page_id_st_c page_id_st_d,
-    add column anon_on_page_id_c    page_id_d__later,
+    add column true_id_c                 member_id_d,
+    add column pseudonym_status_c        pseudonym_status_d,
+    add column anonym_status_c           anonym_status_d,
+    -- Will change to  tree node id, [add_nodes_t].
+    add column anon_on_page_id_st_c      page_id_st_d,
+    add column anon_in_tree_id__later_c  post_id_d,
 
     -- fk ix: pats_i_trueid_anononpageid
     add constraint pats_trueid_r_pats
@@ -182,7 +180,12 @@ alter table users3
     -- fk ix: pats_i_anononpageid
     add constraint pats_anononpage_r_pages
         foreign key (site_id, anon_on_page_id_st_c)
-        references pages3 (site_id, page_id) deferrable;
+        references pages3 (site_id, page_id) deferrable,
+
+    -- fk ix: pats_i_anonintreeid
+    add constraint pats_anonintree_r_nodes
+        foreign key (site_id, anon_in_tree_id__later_c)
+        references posts3 (site_id, unique_post_id) deferrable;
 
 
 -- Good to be able to look up if a pat (true_id_c) has any anonymous
@@ -192,6 +195,9 @@ create index pats_i_trueid_anononpageid on users3 (
 
 create index pats_i_anononpageid on users3 (
     site_id, anon_on_page_id_st_c);
+
+create index pats_i_anonintreeid on users3 (
+    site_id, anon_in_tree_id__later_c);
 
 
 
