@@ -474,6 +474,10 @@ declare namespace debiki2 {
   function page_canChangeCategory(page: Page): boolean;
   function page_mostRecentPostNr(page: Page): number;
 
+  function discProps_pluckFrom(source: DiscPropsSource): DiscPropsSource;
+  function page_deriveLayout(page: Page, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
+  function cat_deriveLayout(cat: Cat, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
+
   function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself): boolean;
   function settings_showFilterButton(settings: SettingsVisibleClientSide, me: Myself): boolean;
   function settings_showTopicTypes(settings: SettingsVisibleClientSide, me: Myself): boolean;

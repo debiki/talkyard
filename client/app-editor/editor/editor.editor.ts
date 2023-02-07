@@ -135,6 +135,7 @@ interface EditorState {
   anyPostType?: PostType;
   doAsAnon?: WhichAnon;
   myAnonsHere?: KnownAnonym[];
+  discProps?: DiscPropsDerived;
   authorId?: PatId; // remove?
   editorsCategories?: Category[];
   editorsPageId?: PageId;
@@ -269,9 +270,11 @@ export const Editor = createFactory<any, EditorState>({
         currentPage: discFrameStore.currentPage,
         currentPageId: discFrameStore.currentPageId,
         currentCategories: discFrameStore.currentCategories,
+        curCatsById: {}, // updated below (actually not needed? feels better, oh well)
         usersByIdBrief: discFrameStore.usersByIdBrief || {},
         pagesById: {},  // updated below
       });
+      storeClone.curCatsById = groupByKeepOne(storeClone.currentCategories, c => c.id);
     }
     catch (ex) {
       // Don't think this can happen, but let's wait and see for a while?
@@ -961,13 +964,18 @@ export const Editor = createFactory<any, EditorState>({
 
     // Annoying! Try to get rid of eds.embeddedPageId? So can remove discStore2.
     const discStore2: DiscStore = { ...discStore, currentPageId: editorsPageId };
-    const myAnonsHere = disc_findCurPageAnons(discStore2, {
+    const myAnonsHere: KnownAnonym[] = disc_findCurPageAnons(discStore2, {
             forPatId: discStore.me?.id, startAtPostNr: postNrs[0] });
 
-    const doAsAnon: WhichAnon | U = myAnonsHere.length
-            ? { sameAnonId: myAnonsHere[0].id }
-            : { newAnonStatus: AnonStatus.IsAnon }  // later, [anon_cats]  just testing
-            //: undefined;
+    const discProps: DiscPropsDerived = page_deriveLayout(
+            discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
+
+    const myCurAnon = myAnonsHere.length && myAnonsHere[0];
+    const doAsAnon: WhichAnon | U = myCurAnon
+        ? { sameAnonId: myCurAnon.id, anonStatus: myCurAnon.anonStatus } as SameAnon
+        : (discProps.comtsStartAnon >= NeverAlways.Recommended
+            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon  // [anon_cats]
+            : undefined);   // or NotAnon  ?
 
     const newState: Partial<EditorState> = {
       inFrame,
@@ -980,6 +988,7 @@ export const Editor = createFactory<any, EditorState>({
       text: state.text || makeDefaultReplyText(discStore, postNrs),
       myAnonsHere,
       doAsAnon,
+      discProps,
     };
 
     this.showEditor(newState);
@@ -1059,8 +1068,17 @@ export const Editor = createFactory<any, EditorState>({
       const myAnonsHere = disc_findCurPageAnons(editorsDiscStore, {
               forPatId: discStore.me?.id }); //, replyToPostNr: postNr });
 
+      const discProps: DiscPropsDerived = page_deriveLayout(
+              discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
+
+      const myCurAnon = myAnonsHere.length && myAnonsHere[0];
+
       const doAsAnon: WhichAnon | U = draft && draft.doAsAnon || (
-              !myAnonsHere.length ? undefined : { sameAnonId: myAnonsHere[0].id });
+          myCurAnon
+            ? { sameAnonId: myCurAnon.id, anonStatus: myCurAnon.anonStatus } as SameAnon
+            : (discProps.comtsStartAnon >= NeverAlways.Recommended
+                ? { newAnonStatus: discProps.newAnonStatus } as NewAnon  // [anon_cats]
+                : undefined));
 
       const newState: Partial<EditorState> = {
         anyPostType: null,
@@ -1127,7 +1145,7 @@ export const Editor = createFactory<any, EditorState>({
       searchResults: null,
       // Skip: myAnonsHere — cannot yet be any anons; page not yet created.
       // Later, for anonymous-by-default categories:  [anon_cats]
-      doAsAnon: { newAnonStatus: AnonStatus.IsAnon },
+      doAsAnon: { newAnonStatus: AnonStatus.IsAnonCanAutoDeanon },
     };
 
     this.showEditor(newState);

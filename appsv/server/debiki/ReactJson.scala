@@ -443,6 +443,9 @@ class JsonMaker(dao: SiteDao) {
       "pageLayout" -> JsNumber(page.meta.layout.toInt),
       "comtOrder" -> JsNum32OrNull(page.meta.comtOrder.map(_.toInt)),
       //"comtNesting" -> later
+      "comtsStartHidden" -> JsNum32OrNull(page.meta.comtsStartHidden.map(_.toInt)),
+      "comtsStartAnon" -> JsNum32OrNull(page.meta.comtsStartAnon.map(_.toInt)),
+      "newAnonStatus" -> JsNum32OrNull(page.meta.newAnonStatus.map(_.toInt)),
       "forumSearchBox" -> JsNum32OrNull(page.meta.forumSearchBox),
       "forumMainView" -> JsNum32OrNull(page.meta.forumMainView),
       "forumCatsTopics" -> JsNum32OrNull(page.meta.forumCatsTopics),
@@ -1961,6 +1964,10 @@ object JsonMaker {
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "comtOrder" -> JsNum32OrNull(category.comtOrder.map(_.toInt)),
       "comtNesting" -> JsNum32OrNull(category.comtNesting),
+      "comtsStartHidden" -> JsNum32OrNull(category.comtsStartHidden.map(_.toInt)),
+      "comtsStartAnon" -> JsNum32OrNull(category.comtsStartAnon.map(_.toInt)),
+      "opStartsAnon" -> JsNum32OrNull(category.opStartsAnon.map(_.toInt)),
+      "newAnonStatus" -> JsNum32OrNull(category.newAnonStatus.map(_.toInt)),
       // For now, this cannot be configured in any more detail. [do_it_on_off]
       "doItVotesPopFirst" -> JsBoolOrNull(category.doVoteStyle.map(_ => true)),
       "unlistCategory" -> JsBoolean(category.unlistCategory),

@@ -81,7 +81,7 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
     }
 
     asYourName = makeItem({ newAnonStatus: AnonStatus.NotAnon }, '');
-    anonymously = makeItem({ newAnonStatus: AnonStatus.IsAnon }, '');
+    anonymously = makeItem({ newAnonStatus: AnonStatus.IsAnonCanAutoDeanon }, '');
 
     // Pen name?:  openAddPeopleDialog(alreadyAddedIds, onDone)
   }
@@ -95,17 +95,18 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
 });
 
 
-export function whichAnon_titleShort(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_titleShort(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat })
+      : St | RElm {
   return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.TitleShort);
 };
 
 
-export function whichAnon_title(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_title(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St | RElm {
   return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.TitleLong);
 };
 
 
-export function whichAnon_descr(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St {
+export function whichAnon_descr(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }): St | RElm {
   return whichAnon_titleDescrImpl(doAs, ps, TitleDescr.DescrLong);
 };
 
@@ -119,17 +120,28 @@ const enum TitleDescr {
 
 
 function whichAnon_titleDescrImpl(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat },  // I18N
-        what: TitleDescr): St {
+        what: TitleDescr): St | RElm {
+  const anonStatus = doAs ? doAs.newAnonStatus : AnonStatus.NotAnon;
   if (!doAs || !doAs.sameAnonId) {
-    const anonStatus = doAs ? doAs.newAnonStatus : AnonStatus.NotAnon;
     switch (anonStatus) {
-      case AnonStatus.IsAnon:
+      case AnonStatus.IsAnonCanAutoDeanon:
+        switch (what) {
+          case TitleDescr.TitleShort:
+            return "anon, TEMPORARILY";
+          case TitleDescr.TitleLong:
+            return "anonymously, TEMPORARILY";
+          // TitleDescr.Descr*:
+          default:
+            return "For a little while: " + nameNotShownEtc +
+                "AND, later, everyone's REAL user accounts will/might get REVEALED.";
+        }
+      case AnonStatus.IsAnonOnlySelfCanDeanon:
         switch (what) {
           case TitleDescr.TitleShort:
           case TitleDescr.TitleLong:
             return "anonymously";
+          // TitleDescr.Descr*:
           default:
-            // Description:
             return nameNotShownEtc;
         }
 
@@ -148,21 +160,37 @@ function whichAnon_titleDescrImpl(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }
     }
   }
   else {
+    // Would be good to incl "temporarily", if the anons can/will get deanonymized
+    // later? In case one has forgotten.
+    switch (anonStatus) {
+      case AnonStatus.IsAnonCanAutoDeanon:
+        switch (what) {
+          case TitleDescr.TitleShort:
+            return "anon, TEMPORARILY";
+          case TitleDescr.TitleLong:
+            return "anonymously, TEMPORARILY";
+          // TitleDescr.Descr*:
+          default:
+            return "For a little while: " + nameNotShownEtc +
+                "AND, later, everyone's REAL user accounts will/might get REVEALED.";
+        }
+      case AnonStatus.IsAnonOnlySelfCanDeanon:
     switch (what) {
       case TitleDescr.TitleShort:
       case TitleDescr.TitleLong:
         return "anonymously";
+      // TitleDescr.Descr*:
       default:
-        // Description:
         return "Continue posting anonymously: " + nameNotShownEtc;
     }
+      }
   }
 }
 
 
 const nameNotShownEtc =  // I18N
         "Your name and picture won't be shown. " +
-        "Admins can still check who you are, though.";
+        "Admins and moderators can still check who you are, though.";
 
 
 //------------------------------------------------------------------------------

@@ -7,16 +7,19 @@
 -------------------------------------------------
 
 
-create domain never_allow_recmd_always_d i16_d;
-alter  domain never_allow_recmd_always_d add
-   constraint never_allow_recmd_always_d_c_in check (value in (1, 2, 3, 4));
+create domain never_always_d i16_d;
+alter  domain never_always_d add
+   constraint never_always_d_c_in_2_3_7_8 check (value in (2, 3, 7, 8));
 
 -- See AnonStatus in the Scala code.
 create domain anonym_status_d i32_d;
 alter  domain anonym_status_d add
-   constraint anonym_status_d_c_eq_4194303 check (value = 4194303);
+   constraint anonym_status_d_c_in_8191_65535 check (value in (8191, 65535));
 
--- create domain deanon_status_d i16_d;
+-- For now, always null. Will drop that constr, and add other constraints later.
+create domain pseudonym_status_d i32_d;
+alter  domain pseudonym_status_d add
+   constraint pseudonym_status_d_c_null check (value is null);
 
 -- Says if the poster is still author and owner. And if others have been
 -- added as authors or owners, or assigned to do this post — then, they'd
@@ -28,12 +31,6 @@ create domain creator_status_d i16_gz_lt1024_d;
 create domain private_status_d i16_gz_lt1024_d;
 alter  domain private_status_d add
    constraint private_status_d_c_null_1 check ((value is null) or (value = 1));
-
-
--- For now, always null. Will drop that constr, and add other constraints later.
-create domain pseudonym_status_d i16_d;
-alter  domain pseudonym_status_d add
-   constraint pseudonym_status_d_c_null check (value is null);
 
 create domain can_see_private_d i16_d;
 alter  domain can_see_private_d add
@@ -105,35 +102,23 @@ create index patnoderels_i_addedbyid on post_actions3 (site_id, added_by_id_c)
 -- Dupl cols: both on categories3, and posts3. Won't be dupl, after nodes_t
 -- in use. [dupl_nodes_t_cols]
 alter table categories3
-    add column  comts_start_hidden_c              never_allow_recmd_always_d,
-    add column  auto_show_comts_aft_mins_c        i32_gz_d,
-    add column  op_starts_anon_c                  never_allow_recmd_always_d,
-    add column  comts_start_anon_c                never_allow_recmd_always_d,
-    add column  new_anon_status_c                 anonym_status_d,
-    add column  auto_deanon_mins_aft_first_c      i32_gz_d,
-    add column  auto_deanon_mins_aft_last_c       i32_gz_d,
-    add column  auto_deanon_page_mins_aft_first_c i32_gz_d,
-    add column  auto_deanon_page_mins_aft_last_c  i32_gz_d,
-    add column  auto_deanon_only_score_gte_c      f32_d;
+    add column  comts_start_hidden_c  never_always_d,
+    add column  comts_start_anon_c    never_always_d,
+    add column  op_starts_anon_c      never_always_d,
+    add column  new_anon_status_c     anonym_status_d;
 
+
+alter table pages3
+    -- Dupl, almost same cols as above, for categories3:  [dupl_nodes_cols]
+    add column  comts_start_hidden_c  never_always_d,
+    add column  comts_start_anon_c    never_always_d,
+    add column  new_anon_status_c     anonym_status_d;
 
 alter table posts3
-    -- Dupl, almost same cols as above, for categories3:  [dupl_nodes_cols]
-    add column  comts_start_hidden_c              never_allow_recmd_always_d,
-    add column  auto_show_comts_aft_mins_c        i32_gz_d,
-    add column  op_starts_anon_c                  never_allow_recmd_always_d,
-    add column  comts_start_anon_c                never_allow_recmd_always_d,
-    add column  new_anon_status_c                 anonym_status_d,
-    add column  auto_deanon_mins_aft_first_c      i32_gz_d,
-    add column  auto_deanon_mins_aft_last_c       i32_gz_d,
-    add column  auto_deanon_page_mins_aft_first_c i32_gz_d,
-    add column  auto_deanon_page_mins_aft_last_c  i32_gz_d,
-    add column  auto_deanon_only_score_gte_c      f32_d,
-
     -- Private sub threads
     -- There's already hidden_status_c.
-    add column  private_status_c  private_status_d,
-    add column  creator_status_c  creator_status_d,
+    add column  private_status_c      private_status_d,
+    add column  creator_status_c      creator_status_d,
 
     -- Old mistakes
     -- These will be in  pat_node_rels_t  instead, so can look up post ids directly

@@ -543,6 +543,35 @@ package object core {
     case object No extends MayLink_unused
   }
 
+
+  /** Sync w Typescript [NeverAlways].
+    * Sync w db, the  never_always_d  PostgreSQL custom domain.
+    */
+  sealed abstract class NeverAlways(val IntVal: i32) { def toInt: i32 = IntVal }
+  object NeverAlways {
+    //se object Never extends NeverAlways(1)
+    case object NeverButCanContinue extends NeverAlways(2)
+    case object Allowed extends NeverAlways(3)
+    //se object AllowedMustChoose extends NeverAlways(4)
+    //se object MustChoose extends NeverAlways(5)
+    //se object RecommendedMustChoose extends NeverAlways(6)
+    case object Recommended extends NeverAlways(7)
+    case object AlwaysButCanContinue extends NeverAlways(8)
+    //se object Always extends NeverAlways(9)
+
+    def fromOptInt(value: Opt[i32]): Opt[NeverAlways] =
+      value flatMap fromInt32
+
+    def fromInt32(value: i32): Opt[NeverAlways] = Some(value match {
+      case NeverButCanContinue.IntVal => NeverButCanContinue
+      case Allowed.IntVal => Allowed
+      case Recommended.IntVal => Recommended
+      case AlwaysButCanContinue.IntVal => AlwaysButCanContinue
+      case _ => return None
+    })
+  }
+
+
   type Hopefully[R] = R Or Problem
 
   sealed abstract class AnyProblem {
@@ -825,7 +854,7 @@ package object core {
     *
     * None, SQL null, 0: it not anon.
     *
-    * Default value:  i32 w 22 lowest bits set:  2^22 - 1 = 4194303, upper 10 bits are 0.
+    * Default value:  i32 w 22 lowest bits set:  2^22 - 1 = 65535, upper 10 bits are 0.
     * Then, with some unused bits being 0, others 1, one can choose if a new flag
     * is going to be by default 0 (off) or 1 (on), by picking a reseved bit that's
     * already 0 or 1.
@@ -847,18 +876,20 @@ package object core {
     *   1-------  =  128: reserved
     *
     * Bits 9-16:
-    *   --00000-  =    0: cannot be deanonymized (not even by DBAs, info not stored)
-    *   -------1  =  256: reserved
-    *   ------1-  =  512: can be deanonymize by DBAs
-    *   -----1--  = 1024: may deanonymize oneself
-    *   ----1---  = 2048: may be deanonymized by admins
-    *   ---1----  = 4096: may be deanonymized by others with deanon permission in the category?
-    *   --1-----  = 8192: may get deanonymized automatically (by timer,
-    *                       see e.g.: posts3.auto_deanon_mins_aft_first_c)
-    *   11------  reserved
+    *   -----111  =   256, 512, 1024: reserved
+    *   00000---  =     0: cannot be deanonymized (not even by DBAs, info not stored)
+    *   ----1---  =  2048: can be deanonymize by DBAs
+    *   ---1----  =  4096: may deanonymize oneself
+    *   --1-----  =  8192: may be deanonymized by admins
+    *   -1------  = 16384: may be deanonymized by others with deanon permission in the category?
+    *   1-------  = 32768: may get deanonymized automatically (by trigger, e.g. date)
     *
     * Bits 17-24 and 25-32:
-    *   0000000000111111  reserved
+    *   0000000000000000  reserved
+    *     could be e.g.:
+    *       - May any of the anon's posts be moved to other pages? By default, no.
+    *       - May the anon comment on other pages? (But then, couldn't anon_on_page_id_st_c
+    *         just be set to null instead)
     *
     */
   sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
@@ -872,12 +903,17 @@ package object core {
       */
     case object NotAnon extends AnonStatus(0, isAnon = false)
 
-    /** For now, all 22 lower bits set. See the AnonStatus descr above. Sync w Typescript. */
-    case object IsAnon extends AnonStatus(4194303)
+    case object IsAnonOnlySelfCanDeanon extends AnonStatus(8191)
+
+    /** For now, all 16 lower bits set. See the AnonStatus descr above. Sync w Typescript. */
+    case object IsAnonCanAutoDeanon extends AnonStatus(65535)
+
+    def fromOptInt(value: Opt[i32]): Opt[AnonStatus] = value flatMap fromInt
 
     def fromInt(value: i32): Opt[AnonStatus] = Some(value match {
       case NotAnon.IntVal => return None
-      case IsAnon.IntVal => IsAnon
+      case IsAnonOnlySelfCanDeanon.IntVal => IsAnonOnlySelfCanDeanon
+      case IsAnonCanAutoDeanon.IntVal => IsAnonCanAutoDeanon
       case _ =>
         // warnDevDie() — later?
         return None
@@ -888,7 +924,9 @@ package object core {
   sealed abstract class WhichAnon() {}
 
   object WhichAnon {
-    case class NewAnon(anonStatus: AnonStatus) extends WhichAnon
+    case class NewAnon(anonStatus: AnonStatus) extends WhichAnon {
+      require(anonStatus != AnonStatus.NotAnon, "WhichAnon is NotAnon [TyE2MC06Y8G]")
+    }
     case class SameAsBefore(sameAnonId: PatId) extends WhichAnon
   }
 

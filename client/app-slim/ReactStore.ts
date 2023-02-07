@@ -272,6 +272,11 @@ ReactDispatcher.register(function(payload) {
       currentPage.comtOrder = newMeta.comtOrder;
       currentPage.comtNesting = newMeta.comtNesting;
 
+      currentPage.comtsStartHidden = newMeta.comtsStartHidden;
+      currentPage.comtsStartAnon = newMeta.comtsStartAnon;
+      currentPage.opStartsAnon = newMeta.opStartsAnon;
+      currentPage.newAnonStatus = newMeta.newAnonStatus;
+
       // Clear any page tweaks, e.g. if pat has temporarily canged the comment sort order.
       // Otherwise it can look as if the changes pat saved, have no effect.
       if (store.curPageTweaks) {

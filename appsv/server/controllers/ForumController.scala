@@ -123,6 +123,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     import request.{dao, body, requester}
     val categoryJson = (body \ "category").as[JsObject]
+    val catJo = categoryJson ; RENAME // to catJo
     val permissionsJson = (body \ "permissions").as[JsArray]
 
     val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
@@ -138,8 +139,14 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // For now, do-it-votes just on or off:  [do_it_on_off]
     val doItVotesPopFirst = (categoryJson \ "doItVotesPopFirst").asOpt[Bo] getOrElse false
 
+    // Dupl code, will remove after [add_nodes_t].
     val anyComtOrder = PostSortOrder.fromOptVal(parseOptInt32(categoryJson, "comtOrder"))
     val anyComtNesting = None // later: parseOptInt32("comtNesting").map(x => x.map(_.toShort)) ?
+
+    val repliesStartHidden = NeverAlways.fromOptInt(parseOptInt32(catJo, "comtsStartHidden"))
+    val repliesStartAnon = NeverAlways.fromOptInt(parseOptInt32(catJo, "comtsStartAnon"))
+    val opStartsAnon = NeverAlways.fromOptInt(parseOptInt32(catJo, "opStartsAnon"))
+    val newAnonStatus = AnonStatus.fromOptInt(parseOptInt32(catJo, "newAnonStatus"))
 
     val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
     val categoryId = (categoryJson \ "id").as[Int]
@@ -164,6 +171,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
                   offset = None, TopTopicsPeriod.Year)),
       comtOrder = anyComtOrder,
       comtNesting = anyComtNesting,
+      comtsStartHidden = repliesStartHidden,
+      comtsStartAnon = repliesStartAnon,
+      opStartsAnon = opStartsAnon,
+      newAnonStatus = newAnonStatus,
       doVoteStyle =
             if (!doItVotesPopFirst) None
             else Some(DoVoteStyle.Likes),

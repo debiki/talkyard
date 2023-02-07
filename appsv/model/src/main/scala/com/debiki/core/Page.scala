@@ -261,6 +261,9 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   layout: PageLayout = PageLayout.Default,
   comtOrder: Opt[PostSortOrder] = None,
   comtNesting: Opt[ComtNesting_later] = None,
+  comtsStartHidden: Opt[NeverAlways] = None,
+  comtsStartAnon: Opt[NeverAlways] = None,
+  newAnonStatus: Opt[AnonStatus] = None,
   // Move to SectProps and sect_props_t
   forumSearchBox: Opt[i32] = None,
   forumMainView: Opt[i32] = None,

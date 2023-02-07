@@ -331,6 +331,10 @@ Search for that tag.
 
 [anon_cats]
 
+[auto_deanon]
+[auto_show_replies]
+Needs: [add_triggers_t]
+
 [anon_priv_msgs][anon_chats]
 Not now.
 

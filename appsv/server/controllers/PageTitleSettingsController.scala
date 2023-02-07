@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.EdHttp._
-import debiki.JsonUtils.parseOptInt32
+import debiki.JsonUtils.{parseOptInt32, asJsObject}
 import debiki.JsonUtils.parseOptZeroSomeNone
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http._
@@ -45,6 +45,8 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
 
+    val pageJo = asJsObject(request.body, "the request body")
+    CLEAN_UP // use JsonUtils below, not '\'.
     val pageId = (request.body \ "pageId").as[PageId]
     val anyNewTitle = (request.body \ "newTitle").asOptStringNoneIfBlank
     val anyNewCategoryId = (request.body \ "categoryId").asOpt[CategoryId]
@@ -60,6 +62,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val anyForumMainView = parseOptInt32(body, "forumMainView")
     val anyForumCatsTopics = parseOptInt32(body, "forumCatsTopics")
 
+    // Dupl code, will remove after [add_nodes_t].
     // If the requester isn't staff, these aren't sent, become None.  [onl_staff_set_comt_ord]
     // If is staff, then can be Some(Some(value)), or Some(None) to clear and inherit instead
     // from anc cats.
@@ -67,6 +70,10 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           parseOptZeroSomeNone(request.body, "comtOrder")(PostSortOrder.fromOptVal)
     val anyComtNesting: Opt[Opt[ComtNesting_later]] =
           parseOptZeroSomeNone(request.body, "comtNesting")(x => x.map(_.toShort))
+
+    val comtsStartHidden = NeverAlways.fromOptInt(parseOptInt32(pageJo, "comtsStartHidden"))
+    val comtsStartAnon = NeverAlways.fromOptInt(parseOptInt32(pageJo, "comtsStartAnon"))
+    val newAnonStatus = AnonStatus.fromOptInt(parseOptInt32(pageJo, "newAnonStatus"))
 
     val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringNoneIfBlank
     val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringNoneIfBlank
@@ -236,6 +243,9 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           forumCatsTopics = anyForumCatsTopics.orElse(oldMeta.forumCatsTopics),
           comtOrder = anyComtOrder getOrElse oldMeta.comtOrder,
           comtNesting = anyComtNesting getOrElse oldMeta.comtNesting,
+          comtsStartHidden = comtsStartHidden,
+          comtsStartAnon = comtsStartAnon,
+          newAnonStatus = newAnonStatus,
           // A meta post about changing the doingStatus.
           numPostsTotal = oldMeta.numPostsTotal + (addsNewDoingStatusMetaPost ? 1 | 0),
           version = oldMeta.version + 1)

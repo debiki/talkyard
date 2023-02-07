@@ -1140,6 +1140,9 @@ case class SitePatchParser(context: TyContext) {
         layout = layout,
         comtOrder = PostSortOrder.fromOptVal(parseOptInt32(jsObj, "comtOrder")),
         comtNesting = None, // ...later
+        comtsStartHidden = NeverAlways.fromOptInt(parseOptInt32(jsObj, "comtsStartHidden")),
+        comtsStartAnon = NeverAlways.fromOptInt(parseOptInt32(jsObj, "comtsStartAnon")),
+        newAnonStatus = AnonStatus.fromOptInt(parseOptInt32(jsObj, "newAnonStatus")),
         forumSearchBox = parseOptInt32(jsObj, "forumSearchBox"),
         forumMainView = parseOptInt32(jsObj, "forumMainView"),
         forumCatsTopics = parseOptInt32(jsObj, "forumCatsTopics"),

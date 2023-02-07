@@ -1860,7 +1860,7 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
       postNr: postNr,
       text: text,
       deleteDraftNr,
-      sameAnonId: undefined,
+      //sameAnonId: undefined,
       doAsAnon,
     },
     success: (editedPost) => {
@@ -1946,7 +1946,7 @@ export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string
       postType: anyPostType || PostType.Normal,
       text: text,
       deleteDraftNr,
-      sameAnonId: undefined,
+      // sameAnonId: undefined,
       doAsAnon,
     },
     success

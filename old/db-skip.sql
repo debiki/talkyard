@@ -658,3 +658,36 @@ create index pagenotfprefs_i_tagaid on page_notf_prefs_t (site_id, pages_with_ta
 create index pagenotfprefs_i_tagbid on page_notf_prefs_t (site_id, pages_with_tag_b_id_c);
 create index pagenotfprefs_i_tagcid on page_notf_prefs_t (site_id, pages_with_tag_c_id_c);
 -- / Maybe later ---------------------------------------
+
+
+-- Skip, instead there'll be a table, triggers_t, with conditions, [add_triggers_t]
+-- e.g. a date-time, or everyone-in-a-group-has-replied, or 90%-has-replied,
+-- which makes things like reveal-the-replies or deanon-comments happen.
+alter table posts3 & categories3
+    add column  auto_show_replies_how_c            i32_gz_d,  -- e.g when everyone in a group has replied
+                                                              -- or at YYMMDD HH:MM
+    add column  auto_show_replies_mins_c           i32_gz_d,
+
+    add column  auto_show_replies_mins_aft_publ_c  i32_gz_d,
+    add column  auto_show_replies_at_c             timestamp,
+
+    add column  auto_deanon_mins_aft_first_c       i32_gz_d,
+    add column  auto_deanon_mins_aft_last_c        i32_gz_d,
+    add column  auto_deanon_tree_mins_aft_first_c  i32_gz_d,
+    add column  auto_deanon_tree_mins_aft_last_c   i32_gz_d,
+    add column  auto_deanon_only_score_gte_c       f32_d,
+
+    add column  auto_deanon_tree_at_c              timestamp;
+
+
+create index nodes_i_autoshowrepliesat on posts3 (site_id, auto_show_replies_at_c)
+    where auto_show_replies_at_c is not null;
+
+create index nodes_i_autodeanontreeat on posts3 (site_id, auto_deanon_tree_at_c)
+    where auto_deanon_tree_at_c is not null;
+
+
+alter table users3
+    add column auto_deanon_at_c          timestamp,
+create index pats_i_autodeanonat on users3 (site_id, auto_deanon_at_c)
+    where auto_deanon_at_c is not null;

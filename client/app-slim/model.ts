@@ -1271,14 +1271,41 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings, SettingsDisc
 }
 
 
+
 // Move some things from above to DiscLayout?
 //
 // Currently configured for all categories, and(optionally) per category and page.
 // Maybe later: disc_layout_t.
 // RENAME to DiscLayoutSource?
-interface DiscPropsSource {
-  comtOrder?: PostSortOrder;
-  comtNesting?: NestingDepth;
+type DiscPropsSource = Partial<DiscPropsBase>;
+
+
+// Says what thing (e.g. the current page, or the parent category) the comtOrder
+// layout setting is from, so the edit-layout dialog can tell the admin
+// from where the comment order is getting inherited, in case the admin would want
+// to go there and change it.  And makes it simpler for the Ty devs to troubleshoot
+// any inheritance bugs.
+type DiscPropsComesFrom = PropsFromRefs<DiscPropsBase>;
+
+/// So we won't need to repeat all field names in DiscPropsDerived.
+type PropsFromRefs<Type> = {
+  [Property in keyof Type]: Ref;
+};
+
+
+// RENAME to DiscLayoutDerived?  There's an interface Layout_not_in_use too (below) merging all layouts.
+interface DiscPropsDerived extends DiscPropsBase {
+  from: DiscPropsComesFrom;
+}
+
+
+interface DiscPropsBase {
+  comtOrder: PostSortOrder;
+  comtNesting: NestingDepth;   // not yet in use [max_nesting]
+  comtsStartHidden: NeverAlways;
+  comtsStartAnon: NeverAlways;
+  opStartsAnon: NeverAlways;
+  newAnonStatus: AnonStatus;
 
   // Later: [sum_squash_lims]
   // summarizeLimit;
@@ -1286,22 +1313,12 @@ interface DiscPropsSource {
   // horizontalLayout;  // move to here
 }
 
-// RENAME to DiscLayoutDerived?  There's an interface Layout_not_in_use too (below) merging all layouts.
-interface DiscPropsDerived {
-  comtOrder: PostSortOrder;
-  // Says what thing (e.g. the current page, or the parent category) the comtOrder
-  // layout setting is from, so the edit-layout dialog can tell the admin
-  // from where the comment order is getting inherited, in case the admin would want
-  // to go there and change it.  And makes it simpler for the Ty devs to troubleshoot
-  // any inheritance bugs.
-  comtOrderFrom: Ref;
-  comtNesting: NestingDepth;   // not yet in use [max_nesting]
-  comtNestingFrom: Ref;        //
-}
+
 
 // And extends TopicListLayout, KnowledgeBaseLayout etc, all layouts.
-interface Layout_not_in_use extends DiscPropsDerived {
+interface Layout_not_in_use extends DiscPropsBase {
 }
+
 
 
 interface SettingsDiscPropsOldNames {
@@ -1456,17 +1473,19 @@ interface KnownAnonym extends Anonym {
 
 // For choosing an anonym. Maybe rename to ChooseAnon? Or ChoosenAnon / SelectedAnon?
 interface WhichAnon {
-  sameAnonId?: PatId;
-  newAnonStatus?: AnonStatus;
+  sameAnonId?: PatId;  // Either ...
+  newAnonStatus?: AnonStatus; // ...or.
 }
+
 interface SameAnon extends WhichAnon {
   sameAnonId: PatId;
+  anonStatus: AnonStatus.IsAnonOnlySelfCanDeanon | AnonStatus.IsAnonCanAutoDeanon;
   newAnonStatus?: U;
 }
 
 interface NewAnon extends WhichAnon {
   sameAnonId?: U;
-  newAnonStatus: AnonStatus.IsAnon;
+  newAnonStatus: AnonStatus.IsAnonOnlySelfCanDeanon | AnonStatus.IsAnonCanAutoDeanon;
 }
 interface NotAnon extends WhichAnon {
   sameAnonId?: U;
@@ -2319,6 +2338,15 @@ interface DiscLayoutDiagState {
   forCat?: Bo;       // these just change the
   forEveryone?: Bo;  // .. dialog title
   onSelect: (newLayout: DiscPropsSource) => Vo ;
+}
+
+
+interface AnonsAllowedDropdownBtnProps {
+  page?: Page;  // either...
+  cat?: Cat;    // ...or.
+  store: Store;
+  allowed: NeverAlways;
+  onSelect: (newLayout: DiscPropsSource) => Vo;
 }
 
 
