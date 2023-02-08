@@ -921,13 +921,22 @@ package object core {
   }
 
 
-  sealed abstract class WhichAnon() {}
+  sealed abstract class WhichAnon() {
+    // Either ...
+    def anyNewAnonStatus: Opt[AnonStatus] = None
+    // ... or.
+    def anySameAnonId: Opt[AnonId] = None
+  }
 
   object WhichAnon {
     case class NewAnon(anonStatus: AnonStatus) extends WhichAnon {
       require(anonStatus != AnonStatus.NotAnon, "WhichAnon is NotAnon [TyE2MC06Y8G]")
+      override def anyNewAnonStatus: Opt[AnonStatus] = Some(anonStatus)
     }
-    case class SameAsBefore(sameAnonId: PatId) extends WhichAnon
+
+    case class SameAsBefore(sameAnonId: PatId) extends WhichAnon {
+      override def anySameAnonId: Opt[AnonId] = Some(sameAnonId)
+    }
   }
 
 

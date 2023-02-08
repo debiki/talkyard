@@ -191,7 +191,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val newText = (body \ "text").as[String]
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
     val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
-      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+      throwBadReq("TyEANONPARED", s"Bad anon params: $prob")
     }
 
     if (postNr == PageParts.TitleNr)

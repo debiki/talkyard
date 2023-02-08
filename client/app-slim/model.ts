@@ -299,6 +299,7 @@ interface ShowEditsPreviewParams extends EditorIframeHeight {
   anyPostType?: PostType;
   replyToNr?: PostNr;
   editingPostNr?: PostNr;
+  doAsAnon?: WhichAnon;
   highlightPreview?: boolean; // default: true
 }
 
@@ -965,6 +966,14 @@ interface AutoPage {
   pagePath: {};
 }
 
+
+interface PageDiscPropsSource extends DiscPropsSource {
+  pageId?: PageId;
+  categoryId?: number;
+  pageRole: PageRole;
+}
+
+
 // A page with real user written content, e.g. a discussion, chat, info page or homepage.
 // (Should Page instead extend PageMeta? There's lots of dupl fields!
 // Or should Page have a PageMeta field (delegation)? Let's wait.)
@@ -974,7 +983,7 @@ interface Page
     // So we can see from where a setting comes — is it from some ancestor category
     // or group? Or the whole forum? Otherwise, hard to troubleshoot unexpected
     // effective settings.
-    extends TopicInterfaceSettings, DiscPropsSource {
+    extends TopicInterfaceSettings, PageDiscPropsSource {
   dbgSrc: string;
   pageId: PageId;
   pageVersion: PageVersion;
@@ -1473,7 +1482,8 @@ interface KnownAnonym extends Anonym {
 
 // For choosing an anonym. Maybe rename to ChooseAnon? Or ChoosenAnon / SelectedAnon?
 interface WhichAnon {
-  sameAnonId?: PatId;  // Either ...
+  sameAnonId?: PatId;  // Either this ...
+  anonStatus?: AnonStatus; // and this, ...
   newAnonStatus?: AnonStatus; // ...or.
 }
 

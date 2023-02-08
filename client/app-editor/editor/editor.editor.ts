@@ -1065,14 +1065,12 @@ export const Editor = createFactory<any, EditorState>({
       dieIf(postNr !== response.postNr, 'TyE23GPKG4');
 
       const editorsDiscStore: DiscStore = { ...discStore, currentPageId: response.pageId };
-      const myAnonsHere = disc_findCurPageAnons(editorsDiscStore, {
-              forPatId: discStore.me?.id }); //, replyToPostNr: postNr });
-
       const discProps: DiscPropsDerived = page_deriveLayout(
               discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
 
+      const myAnonsHere = disc_findCurPageAnons(editorsDiscStore, {
+              forPatId: discStore.me?.id }); //, replyToPostNr: postNr });
       const myCurAnon = myAnonsHere.length && myAnonsHere[0];
-
       const doAsAnon: WhichAnon | U = draft && draft.doAsAnon || (
           myCurAnon
             ? { sameAnonId: myCurAnon.id, anonStatus: myCurAnon.anonStatus } as SameAnon
@@ -1093,6 +1091,7 @@ export const Editor = createFactory<any, EditorState>({
         draft,
         myAnonsHere,
         doAsAnon,
+        discProps,
       };
 
       this.showEditor(newState);
@@ -1133,6 +1132,19 @@ export const Editor = createFactory<any, EditorState>({
 
     const text = state.text || '';
 
+    const futurePage: PageDiscPropsSource = {
+      categoryId,
+      pageRole: newPageRole,
+    };
+
+    const discProps: DiscPropsDerived = page_deriveLayout(
+            futurePage, store, LayoutFor.PageNoTweaks);
+
+    const doAsAnon: WhichAnon | U =
+        discProps.comtsStartAnon >= NeverAlways.Recommended
+            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon  // [anon_cats]
+            : undefined;
+
     const newState: Partial<EditorState> = {
       anyPostType: null,
       editorsCategories: store.currentCategories,
@@ -1144,8 +1156,7 @@ export const Editor = createFactory<any, EditorState>({
       showSimilarTopics: true,
       searchResults: null,
       // Skip: myAnonsHere — cannot yet be any anons; page not yet created.
-      // Later, for anonymous-by-default categories:  [anon_cats]
-      doAsAnon: { newAnonStatus: AnonStatus.IsAnonCanAutoDeanon },
+      doAsAnon,
     };
 
     this.showEditor(newState);
@@ -1345,10 +1356,9 @@ export const Editor = createFactory<any, EditorState>({
         // For now, skip guidelines, for blog comments — they would break e2e tests,
         // and maybe are annoying?
         guidelines: eds.isInIframe ? undefined : anyGuidelines,
-        // doAsAnon: draft && draft.doAsAnon ? draft.doAsAnon : this.state.doAsAnon,  // not yet impl [doAsAnon_draft]
       };
       if (draft && draft.doAsAnon) {
-        newState.doAsAnon = draft.doAsAnon;  // not yet impl [doAsAnon_draft]
+        newState.doAsAnon = draft.doAsAnon;  // not yet impl [doAsAnon_draft]  yes now?
       }
       this.setState(newState, () => {
         this.focusInputFields();
@@ -1550,6 +1560,7 @@ export const Editor = createFactory<any, EditorState>({
           scrollToPreview,
           safeHtml,
           editorsPageId: state.editorsPageId,
+          doAsAnon: state.doAsAnon,
         };
         const postNrs: PostNr[] = state.replyToPostNrs;
         if (postNrs.length === 1) {
@@ -1780,8 +1791,6 @@ export const Editor = createFactory<any, EditorState>({
       logD("isSavingDraft already.");
       return;
     }
-
-    // Incl state.doAsAnon in draft too
 
     const oldDraft: Draft | undefined = state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
@@ -2533,8 +2542,19 @@ export const Editor = createFactory<any, EditorState>({
           ':');
     }
 
+    // ----- Anon comments
+
+    // By default, anon posts are disabled, and the "post as ..." dropdown left out.
+
     let maybeAnonymously: RElm | U;
-    {
+    if (state.discProps?.comtsStartAnon >= NeverAlways.Allowed ||
+          // If pat is already talking, using an anonym Or has started composing
+          // a draft, as anon, but then an admin changed the settings, so cannot
+          // be anon any more. — Then it's neverthelss ok to continue, anonymously.
+          // (That's what "continue" in NeverAlways.NeverButCanContinue means.)
+          // SHOULD add some server side check, so no one toggles this in
+          // the browser only, and the server accepts? But pretty harmless.
+          state.doAsAnon) {
       maybeAnonymously =
           Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
             const atRect = reactGetRefRect(this.refs.anonB);
@@ -2542,6 +2562,9 @@ export const Editor = createFactory<any, EditorState>({
                 saveFn: (doAsAnon: WhichAnon) => {
                   const newState: Partial<EditorState> = { doAsAnon };
                   this.setState(newState);
+                  //if (in-page preview)
+                  // The avatar we're showing, might need to change.
+                  this.updatePreviewSoon();
                 } });
           } },
           anon.whichAnon_titleShort(state.doAsAnon, { me }),

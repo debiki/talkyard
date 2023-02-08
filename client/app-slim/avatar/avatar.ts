@@ -114,9 +114,11 @@ export const Avatar = createComponent({
 
     // Append a number to make the letters unique on this page.
     // Possibly different numbers on different pages, for the same user.
-    const isUnknownHiddenOrGone = user.id === UnknownUserId || hidden || user_isGone(user);
+    const isUnknownHiddenOrGone =
+            user.id === UnknownUserId || user.id == -4 ||  // [new_built_in_pat]
+            hidden || user_isGone(user);
     let number = 1;
-    let text = isUnknownHiddenOrGone ? '?' : firstLetterInName;
+    let text = user.id == -4 ? 'A?' : (isUnknownHiddenOrGone ? '?' : firstLetterInName);
     let textAndColor = text + colorIndex;
     let alreadyInUse = !isUnknownHiddenOrGone && textAvatarsTaken[textAndColor];
     while (alreadyInUse) {

@@ -60,7 +60,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
     val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(body) getOrIfBad { prob =>
-      throwBadReq("TyE9MWG46R", s"Bad anon params: $prob")
+      throwBadReq("TyEANONPARCRPG", s"Bad anon params: $prob")
     }
     val doAsNewAnon: Opt[WhichAnon.NewAnon] = doAsAnon map {
       case _new: WhichAnon.NewAnon => _new

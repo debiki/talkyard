@@ -1305,9 +1305,14 @@ export function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft)
 
 export function store_makeNewPostPreviewPatch(store: Store, page: Page,
       parentPostNr: PostNr | undefined, safePreviewHtml: string,
-      newPostType?: PostType): StorePatch {
+      newPostType?: PostType, doAsAnon?: WhichAnon): StorePatch {
+  // If this is an anon post, and one's first on this page, then, the anonym
+  // who will be used in place of oneself, hasn't yet been created.
+  // Then use the magic built-in user -4  [new_built_in_pat] which will
+  // make an anonym with '?' as sequence number appear.
+  const authorId = doAsAnon.sameAnonId || (doAsAnon.newAnonStatus ? -4 : store.me.id);
   const previewPost = store_makePreviewPost({
-      authorId: store.me.id, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
+      authorId, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
   return page_makePostPatch(page, previewPost);
 }
 
@@ -1787,7 +1792,7 @@ export function cat_deriveLayout(cat: Cat, store: DiscStore, layoutFor: LayoutFo
 /// page or cat itself, override parent cat props and site settings.
 /// If unspecified everywhere, Ty's built-in defaults gets used.
 ///
-function deriveLayoutImpl(page: Page, cat: Cat, store: DiscStore,
+function deriveLayoutImpl(page: PageDiscPropsSource, cat: Cat, store: DiscStore,
       layoutFor: LayoutFor): DiscPropsDerived {
 
   // ----- The page/cat itself

@@ -65,6 +65,16 @@ export function store_getAuthorOrMissing(store: DiscStore, post: Post): Pat {
     };
   }
 
+  if (post.authorId === -4) {
+    return {
+       id: -4,   // [new_built_in_pat] ?
+       // We don't know for sure what name sequence number this anonym will get,
+       // so let's use '?' instead of A1 or A2 etc.
+       fullName: "Anonym (you)",
+       isAnon: true,
+    };
+  }
+
   const user = store_getUserOrMissing(store, post.authorId);
   if (user.isMissing) {
     logError("Author " + post.authorId + " missing, page: " +

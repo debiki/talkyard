@@ -475,7 +475,7 @@ declare namespace debiki2 {
   function page_mostRecentPostNr(page: Page): number;
 
   function discProps_pluckFrom(source: DiscPropsSource): DiscPropsSource;
-  function page_deriveLayout(page: Page, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
+  function page_deriveLayout(page: PageDiscPropsSource, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
   function cat_deriveLayout(cat: Cat, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
 
   function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself): boolean;

@@ -1405,11 +1405,16 @@ case class SitePatchParser(context: TyContext) {
         return Bad(s"Bad DraftLocator json: ${ex.getMessage} [TyE603KUTDGJ]")
       }
 
+      val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(jsObj) getOrIfBad { prob =>
+        return Bad(s"Bad anon params: $prob [TyEANONPARDFT]")
+      }
+
       Draft(
         byUserId = readInt(jsObj, "byUserId",
           // For now, because currently not always incl when upserting from editor.
           // Gets filled in by the server anyway [602KDGRE20]
           default = Some(NoUserId)),
+        doAsAnon = doAsAnon,
         draftNr = draftNr,
         forWhat = draftLocator,
         createdAt =

@@ -121,54 +121,71 @@ const enum TitleDescr {
 
 function whichAnon_titleDescrImpl(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat },  // I18N
         what: TitleDescr): St | RElm {
-  const anonStatus = doAs ? doAs.newAnonStatus : AnonStatus.NotAnon;
-  if (!doAs || !doAs.sameAnonId) {
-    switch (anonStatus) {
-      case AnonStatus.IsAnonCanAutoDeanon:
-        switch (what) {
-          case TitleDescr.TitleShort:
-            return "anon, TEMPORARILY";
-          case TitleDescr.TitleLong:
-            return "anonymously, TEMPORARILY";
-          // TitleDescr.Descr*:
-          default:
-            return "For a little while: " + nameNotShownEtc +
-                "AND, later, everyone's REAL user accounts will/might get REVEALED.";
-        }
-      case AnonStatus.IsAnonOnlySelfCanDeanon:
-        switch (what) {
-          case TitleDescr.TitleShort:
-          case TitleDescr.TitleLong:
-            return "anonymously";
-          // TitleDescr.Descr*:
-          default:
-            return nameNotShownEtc;
-        }
+  const anonStatus = doAs ? doAs.anonStatus || doAs.newAnonStatus : AnonStatus.NotAnon;
+  // UX SHOULD if doAs.sameAnonId, then, show which anon (one might have > 1 on the
+  // same page) pat will continue posting as / using.
 
-      default:
-        switch (what) {
-          case TitleDescr.TitleShort:
-            return "as " + pat_name(ps.pat || ps.me);
-          case TitleDescr.TitleLong:
-            const pat = ps.pat;
-            return pat ? "As " + pat_name(pat)
-                      : "As you, " + pat_name(ps.me);
-          default:
-            // Description:
-            return "Others can see who you are — they'll see your username and picture.";
-        }
+  // if (!doAs || !doAs.sameAnonId) {
+    // Then, either as a new anon, or not anonymously.
+  switch (anonStatus) {
+    case AnonStatus.IsAnonCanAutoDeanon: {
+      switch (what) {
+        case TitleDescr.TitleShort:
+        case TitleDescr.TitleLong:
+          return rFr({},
+              // To capitalize via CSS, where needed.
+              r.span({ className: 'c_TtlCap',
+                  // It's good to never let this be bold — so "temporarily" below
+                  // becomes more prominent.
+                  fontWeight: 'normal' }, "anonymously, "),
+              r.b({}, "temporarily"));
+        default:
+          // TitleDescr.DescrShort and Long:
+          return rFr({}, r.i({}, "For a while: "), nameNotShownEtc,
+              r.b({}, " Later"), ", everyone's ", r.b({}, "real"),
+              " user names will (might) get ", r.b({}, "shown"), ".");
+      }
+    }
+
+    case AnonStatus.IsAnonOnlySelfCanDeanon: {
+      switch (what) {
+        case TitleDescr.TitleShort:
+        case TitleDescr.TitleLong:
+          return r.span({ className: 'c_TtlCap' }, "anonymously");
+        default:
+          // TitleDescr.DescrShort and Long:
+          return nameNotShownEtc;
+      }
+    }
+
+    default: {
+      // Not anonymously.
+      switch (what) {
+        case TitleDescr.TitleShort:
+          return "as " + pat_name(ps.pat || ps.me);
+        case TitleDescr.TitleLong:
+          const pat = ps.pat;
+          return pat ? "As " + pat_name(pat)
+                    : "As you, " + pat_name(ps.me);
+        default:
+          // TitleDescr.DescrShort and Long:
+          return "Others can see who you are — they'll see your username and picture.";
+      }
     }
   }
+  /*
+  }
   else {
-    // Would be good to incl "temporarily", if the anons can/will get deanonymized
-    // later? In case one has forgotten.
+    // Continue using an existing anon.
+    // It's important (I think) to incl "temporarily", if the anon can/will
+    // get deanonymized later. In case one has forgotten.
     switch (anonStatus) {
       case AnonStatus.IsAnonCanAutoDeanon:
         switch (what) {
           case TitleDescr.TitleShort:
-            return "anon, TEMPORARILY";
+            return rFr({}, "anon, ", r.b({}, "temporarily"));
           case TitleDescr.TitleLong:
-            return "anonymously, TEMPORARILY";
+            return rFr({}, "anonymously, ", r.b({}, "temporarily"));
           // TitleDescr.Descr*:
           default:
             return "For a little while: " + nameNotShownEtc +
@@ -185,6 +202,7 @@ function whichAnon_titleDescrImpl(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }
     }
       }
   }
+  */
 }
 
 
