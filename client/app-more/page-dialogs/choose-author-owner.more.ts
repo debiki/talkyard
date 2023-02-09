@@ -80,10 +80,20 @@ const ChooseAnonModal = React.createFactory<{ChooseAnonDlgPs}>(function() {
           }));
     }
 
-    asYourName = makeItem({ newAnonStatus: AnonStatus.NotAnon }, '');
-    anonymously = makeItem({ newAnonStatus: AnonStatus.IsAnonCanAutoDeanon }, '');
+    // Later: True if one has already posted something on the current page,
+    // using one's real account.
+    const alreadyTalkingAsSelf = false;
+    if (state.discProps.comtsStartAnon < NeverAlways.AlwaysButCanContinue ||
+          // It's ok to *continue* posting, using one's real account, on
+          // this page, because NeverButCan**Continue**. (But not *starting*.)
+          alreadyTalkingAsSelf) {
+      asYourName = makeItem({ newAnonStatus: AnonStatus.NotAnon }, 'e_AtrSelf');
+    }
+    anonymously = makeItem({ newAnonStatus: AnonStatus.IsAnonCanAutoDeanon }, 'e_AtrAnon');
 
-    // Pen name?:  openAddPeopleDialog(alreadyAddedIds, onDone)
+    // Distant future: [pseudonyms_later]
+    // usingPseudonym = ...
+    // and also a way to: openAddPseudonymsDialog(alreadyAddedIds, onDone) ?
   }
 
   return (
@@ -137,7 +147,7 @@ function whichAnon_titleDescrImpl(doAs: WhichAnon | U, ps: { me: Me, pat?: Pat }
               r.span({ className: 'c_TtlCap',
                   // It's good to never let this be bold — so "temporarily" below
                   // becomes more prominent.
-                  fontWeight: 'normal' }, "anonymously, "),
+                  style: { fontWeight: 'normal' }}, "anonymously, "),
               r.b({}, "temporarily"));
         default:
           // TitleDescr.DescrShort and Long:

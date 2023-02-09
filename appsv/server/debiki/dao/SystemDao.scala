@@ -424,7 +424,7 @@ class SystemDao(
           siteId = oldSiteId,
           id = AuditLogEntry.UnassignedId,
           didWhat = AuditLogEntryType.CreateSite,
-          doerTrueId = TrueId.forMember(creatorId),
+          doerTrueId = TrueId(creatorId),
           doneAt = oldSiteTx.now.toJavaDate,
           browserIdData = browserIdData,
           browserLocation = None,

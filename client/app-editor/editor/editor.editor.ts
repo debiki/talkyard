@@ -2559,6 +2559,7 @@ export const Editor = createFactory<any, EditorState>({
           Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
             const atRect = reactGetRefRect(this.refs.anonB);
             anon.openAnonDropdown({ atRect, open: true, curAnon: state.doAsAnon, me,
+                discProps: state.discProps,
                 saveFn: (doAsAnon: WhichAnon) => {
                   const newState: Partial<EditorState> = { doAsAnon };
                   this.setState(newState);

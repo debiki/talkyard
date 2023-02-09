@@ -2243,6 +2243,7 @@ interface ChooseAnonDlgPs {
   pat?: Pat;
   me: Me,
   curAnon?: WhichAnon;
+  discProps: DiscPropsDerived;
   saveFn: (_: WhichAnon) => Vo ;
 }
 

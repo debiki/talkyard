@@ -110,9 +110,9 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       locator.postNr.orNullInt,
       locator.postId.orNullInt,
       draft.postType.map(_.toInt).orNullInt,
+      locator.toUserId.orNullInt,
       draft.doAsAnon.flatMap(_.anySameAnonId.map(_.toInt)).orNullInt,
       draft.doAsAnon.flatMap(_.anyNewAnonStatus.map(_.toInt)).orNullInt,
-      locator.toUserId.orNullInt,
       draft.title,
       draft.text))
   }
