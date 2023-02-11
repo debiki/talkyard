@@ -1071,8 +1071,7 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   const isMindMap = page.pageRole === PageRole.MindMap;
   const isWiki = post_isWiki(post);
   const isOwnPage = store_thisIsMyPage(store);
-  const author: Pat | U = store.usersByIdBrief[post.authorId];
-  const isOwnPost = post.authorId === me.id || author && author.anonForId === me.id; // [is_own_post_fn]
+  const isOwnPost = pat_isAuthorOf(me, post, store.usersByIdBrief);
   let isOwn = isEditPage ? isOwnPage :
       isOwnPost ||
         // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
@@ -1486,14 +1485,15 @@ export function store_makeDeletePostPatch(post: Post): StorePatch {
 // Current discussion
 //----------------------------------
 
-/// RENAME to disc_findAnonToReuse()?
+/// RENAME to disc_findAnonToReuse()?  MOVE to more-bundle.
 export function disc_findCurPageAnons(discStore: DiscStore, ps: {
-            forPatId?: PatId, startAtPostNr?: PostNr }): [NotAnon] | KnownAnonym[] {
+            forPatId?: PatId, startAtPostNr?: PostNr }): MyPatsOnPage {
   const me: Me = discStore.me;
   const forWhoId: PatId = ps.forPatId || me && me.id;
   const curPage = discStore.currentPage;
-  const results: KnownAnonym[] = [];
-  if (!curPage) return [];
+  const result: MyPatsOnPage = { myLastAnons: [], myAnonsById: {} };
+  if (!forWhoId || !curPage)
+    return result;
 
   // 1: First find out if pat was henself, or was anonymous, in any earlier
   // post by hen, in the trail from ps.startAtPostNr and upwards
@@ -1502,27 +1502,53 @@ export function disc_findCurPageAnons(discStore: DiscStore, ps: {
   let nextPost: Post | U = startAtPost;
   for (let i = 0; i < 100 && nextPost; ++i) {
     const author: Pat | U = discStore.usersByIdBrief[nextPost.authorId];
-    if (!author) continue;
+    if (!author || result.myAnonsById[author.id])
+      continue;
     // If pat posted as henself (not anonymously) higher up in the sub thread,
     // continue posting as henself — apparently pat has decided to use hens
     // real username, in this sub thread.
-    if (author.id === forWhoId) return [{ newAnonStatus: AnonStatus.NotAnon }];
+    if (author.id === forWhoId && !isVal(result.myAnonsById[author.id])) {
+      result.hasUsedTrueId = true;
+      result.myLastAnons.push(false);
+    }
     // But if pat posted anonymously, continue doing that.
-    if (author.anonForId === forWhoId) return [author as KnownAnonym];
+    else if (author.anonForId === forWhoId) {
+      result.myLastAnons.push(author as KnownAnonym);
+      result.myAnonsById[author.id] = author;
+    }
     nextPost = curPage.postsByNr[nextPost.parentNr];
   }
 
   // 2: If pat didn't post earlier in any sub thread ending at ps.startAtPostNr,
-  // then reues any anonym pat has used, elsewhere on the current page.
-  _.forEach(curPage.postsByNr, function(p) {
-    const author: Pat | U = discStore.usersByIdBrief[p.authorId];
-    if (author && author.anonForId === forWhoId) {
-      if (!_.find(results, function(r) { r.id === author.id })) {
-        results.push(author as KnownAnonym);
+  // then reuse any anonym pat posted as last time, elsewhere on the current page.
+  // (And remember all pat's anonyms, if hen wants to reuse some other of them.)
+  let lastAt: WhenMs = -1;
+  let updLast = !result.myLastAnons.length;
+  _.forEach(curPage.postsByNr, function(post: Post) {
+    const isMyTrueId = post.authorId === forWhoId;
+    if (isMyTrueId) {
+      result.hasUsedTrueId = true;
+      if (lastAt < post.createdAtMs) {
+        lastAt = post.createdAtMs;
+      }
+    }
+    else {
+      const author: Pat | U = discStore.usersByIdBrief[post.authorId];
+      if (author && author.anonForId === forWhoId) {
+        if (!result.myAnonsById[author.id]) {
+          result.myAnonsById[author.id] = author as KnownAnonym;
+        }
+        if (lastAt < post.createdAtMs) {
+          lastAt = post.createdAtMs;
+          if (updLast) {
+            result.myLastAnons[0] = author as KnownAnonym;
+          }
+        }
       }
     }
   });
-  return results;
+
+  return result;
 }
 
 

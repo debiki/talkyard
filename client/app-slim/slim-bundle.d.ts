@@ -422,7 +422,7 @@ declare namespace debiki2 {
   function store_canPinPage(store: Store): boolean;
 
   function disc_findCurPageAnons(discStore: DiscStore, ps: {
-      forPatId?: PatId, startAtPostNr?: PostNr }): KnownAnonym[];
+      forPatId?: PatId, startAtPostNr?: PostNr }): MyPatsOnPage;
 
   function siteStatusToString(siteStatus: SiteStatus);
   var cloneRect;

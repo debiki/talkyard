@@ -31,22 +31,31 @@
 //------------------------------------------------------------------------------
 
 
+export function pat_isAuthorOf(pat: Me | Pat, post: Post, patsById: PpsById): Bo {
+  // @ifdef DEBUG
+  dieIf(!post, 'TyE2065MRTJ3');
+  // @endif
+  // If pat typeof Me, and not logged in, .id is undefined.
+  if (!pat.id || !post) return false;
+  // If pat used hens real account.
+  if (pat.id === post.authorId) return true;
+  // Is pat used an anonym or [pseudonyms_later].
+  const author: Pat | U = patsById[post.authorId];
+  return !!author && author.anonForId === pat.id;
+}
+
+
 export function store_thisIsMyPage(store: Store): boolean {
   const page: Page = store.currentPage;
   if (!page || !store.me.id) return false;
   const me: Me = store.me;
-  const bodyOrTitle = page.postsByNr[BodyNr] || page.postsByNr[TitleNr];
+  const bodyOrTitle: Post | U = page.postsByNr[BodyNr] || page.postsByNr[TitleNr];
 
   // If !bodyOrTitle, we're on an auto page, e.g. a user profile page, or in the admin area.
   if (!bodyOrTitle)
     return false;
 
-  if (me.id === bodyOrTitle.authorId)
-    return true;
-
-  // Maybe it's me, but posted anonymously?
-  const authorMaybeAnon = store.usersByIdBrief[bodyOrTitle.authorId];
-  return authorMaybeAnon && authorMaybeAnon.anonForId === me.id;  // [is_own_post_fn]
+  return pat_isAuthorOf(me, bodyOrTitle, store.usersByIdBrief);
 }
 
 

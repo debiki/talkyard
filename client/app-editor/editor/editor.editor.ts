@@ -134,7 +134,7 @@ interface EditorState {
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
   doAsAnon?: WhichAnon;
-  myAnonsHere?: KnownAnonym[];
+  myAnonsHere?: MyPatsOnPage;
   discProps?: DiscPropsDerived;
   authorId?: PatId; // remove?
   editorsCategories?: Category[];
@@ -964,18 +964,19 @@ export const Editor = createFactory<any, EditorState>({
 
     // Annoying! Try to get rid of eds.embeddedPageId? So can remove discStore2.
     const discStore2: DiscStore = { ...discStore, currentPageId: editorsPageId };
-    const myAnonsHere: KnownAnonym[] = disc_findCurPageAnons(discStore2, {
-            forPatId: discStore.me?.id, startAtPostNr: postNrs[0] });
 
     const discProps: DiscPropsDerived = page_deriveLayout(
             discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
 
-    const myCurAnon = myAnonsHere.length && myAnonsHere[0];
-    const doAsAnon: WhichAnon | U = myCurAnon
-        ? { sameAnonId: myCurAnon.id, anonStatus: myCurAnon.anonStatus } as SameAnon
+    const myAnonsHere: MyPatsOnPage = disc_findCurPageAnons(discStore2, {
+            forPatId: discStore.me?.id, startAtPostNr: postNrs[0] });
+    const lastAnon: KnownAnonym | false | U = myAnonsHere.myLastAnons[0];
+
+    const doAsAnon: WhichAnon | U = lastAnon
+        ? { sameAnonId: lastAnon.id, anonStatus: lastAnon.anonStatus } as SameAnon
         : (discProps.comtsStartAnon >= NeverAlways.Recommended
-            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon  // [anon_cats]
-            : undefined);   // or NotAnon  ?
+            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
+            : undefined);
 
     const newState: Partial<EditorState> = {
       inFrame,
@@ -1069,13 +1070,14 @@ export const Editor = createFactory<any, EditorState>({
               discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
 
       const myAnonsHere = disc_findCurPageAnons(editorsDiscStore, {
-              forPatId: discStore.me?.id }); //, replyToPostNr: postNr });
-      const myCurAnon = myAnonsHere.length && myAnonsHere[0];
+              forPatId: discStore.me?.id, startAtPostNr: postNr });
+      const lastAnon: KnownAnonym | false | U = myAnonsHere.myLastAnons[0];
+
       const doAsAnon: WhichAnon | U = draft && draft.doAsAnon || (
-          myCurAnon
-            ? { sameAnonId: myCurAnon.id, anonStatus: myCurAnon.anonStatus } as SameAnon
+          lastAnon
+            ? { sameAnonId: lastAnon.id, anonStatus: lastAnon.anonStatus } as SameAnon
             : (discProps.comtsStartAnon >= NeverAlways.Recommended
-                ? { newAnonStatus: discProps.newAnonStatus } as NewAnon  // [anon_cats]
+                ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
                 : undefined));
 
       const newState: Partial<EditorState> = {
@@ -1142,7 +1144,7 @@ export const Editor = createFactory<any, EditorState>({
 
     const doAsAnon: WhichAnon | U =
         discProps.comtsStartAnon >= NeverAlways.Recommended
-            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon  // [anon_cats]
+            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
             : undefined;
 
     const newState: Partial<EditorState> = {
@@ -2547,7 +2549,10 @@ export const Editor = createFactory<any, EditorState>({
     // By default, anon posts are disabled, and the "post as ..." dropdown left out.
 
     let maybeAnonymously: RElm | U;
-    if (state.discProps?.comtsStartAnon >= NeverAlways.Allowed ||
+    if (!me.isAuthenticated) {
+      // Only logged in users can post anonymously. (At least for now.)
+    }
+    else if (state.discProps?.comtsStartAnon >= NeverAlways.Allowed ||
           // If pat is already talking, using an anonym Or has started composing
           // a draft, as anon, but then an admin changed the settings, so cannot
           // be anon any more. — Then it's neverthelss ok to continue, anonymously.

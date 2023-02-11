@@ -75,7 +75,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: TyCo
       createdAt = globals.now(),
       siteId = request.siteId,
       postToSpamCheck = None,
-      reqrId = request.theReqerId,
+      reqrId = request.requesterOrUnknown.id,
       requestStuff = request.spamRelatedStuff.copy(
         userName = Some(name).noneIfBlank,
         userEmail = Some(email).noneIfBlank,

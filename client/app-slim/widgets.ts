@@ -297,7 +297,7 @@ export function UserName(props: {
     namePartOne = r.span({className: 'esP_By_F esP_By_F-G' }, t.Anonym);
     if (props.store && user.anonForId) {  // maybe always take a DiscStore as fn props?
       const store = props.store;
-      if (store.me.id === user.anonForId) {  // [is_own_post_fn]
+      if (store.me.id === user.anonForId) {
         // For now: ...
         namePartTwo = rFr({}, " ", r.span({ className: 'c_P_By_AnonYou' }, "you"));  // I18N
       }

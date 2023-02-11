@@ -232,7 +232,6 @@ export const PostActions = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const post: Post = this.props.post;
-    const postAuthor = store.usersByIdBrief[post.authorId];
     const page: Page = store.currentPage;
     const isThisPageDeleted = !!page.pageDeletedAtMs;  // ignore deleted categories
     const canBeSolved = page_canBeSolved(page);
@@ -240,7 +239,7 @@ export const PostActions = createComponent({
 
     const me: Myself = store.me;
     const myPageData: MyPageData = me.myCurrentPageData;
-    const isOwnPost = me.id === post.authorId || postAuthor?.anonForId === me.id;  // [is_own_post_fn]
+    const isOwnPost = pat_isAuthorOf(me, post, store.usersByIdBrief);
     const isOwnPage = store_thisIsMyPage(store);
     const isPageBody = post.nr === BodyNr;
     const votes = myPageData.votes[post.nr] || [];
@@ -797,10 +796,9 @@ const MoreDropdownModal = createComponent({
     const isPageBody = post.nr === BodyNr;
     const isPostDeleted = post_isDeleted(post);
     const isPageDeleted = page.pageDeletedAtMs;
-    const postAuthor = store.usersByIdBrief[post.authorId];
 
     const moreLinks = [];
-    const isOwnPost = post.authorId === me.id || postAuthor?.anonForId === me.id;  // [is_own_post_fn]
+    const isOwnPost = pat_isAuthorOf(me, post, store.usersByIdBrief);
     const isMindMap = page.pageRole === PageRole.MindMap;
 
     // ----- Report

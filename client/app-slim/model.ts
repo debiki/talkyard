@@ -1499,7 +1499,15 @@ interface NewAnon extends WhichAnon {
 }
 interface NotAnon extends WhichAnon {
   sameAnonId?: U;
-  newAnonStatus: AnonStatus.NotAnon;
+  //newAnonStatus: AnonStatus.NotAnon;
+  anonStatus: AnonStatus.NotAnon;
+}
+
+interface MyPatsOnPage {
+  hasUsedTrueId?: true;
+  // False means pat was using hen's true id (was not, 'false', anon)).
+  myLastAnons: (KnownAnonym | false)[];
+  myAnonsById: { [anonId: number] : Pat}
 }
 
 

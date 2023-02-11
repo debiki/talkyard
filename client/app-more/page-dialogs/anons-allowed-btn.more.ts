@@ -74,7 +74,7 @@ export const AnonsAllowedDropdownBtn = React.createFactory<DiscLayoutDropdownBtn
   // ----- / End dupl code ----------------------------------------
 
   return (
-      Button({ className: 'e_DscLayB', onClick: (event) => {
+      Button({ className: 'e_ComtAnoB', onClick: (event) => {
           const atRect = cloneEventTargetRect(event);
           openAnonsAllowedDiag({
               atRect,

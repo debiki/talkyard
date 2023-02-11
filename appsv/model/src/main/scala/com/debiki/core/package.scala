@@ -888,8 +888,14 @@ package object core {
     *   0000000000000000  reserved
     *     could be e.g.:
     *       - May any of the anon's posts be moved to other pages? By default, no.
-    *       - May the anon comment on other pages? (But then, couldn't anon_on_page_id_st_c
-    *         just be set to null instead)
+    *       - May the anon comment on other pages or anywhere in a category? (But then,
+    *         couldn't anon_on_page_id_st_c just be set to null instead, meaning anywhere.
+    *         Or after [add_nodes_t] to a cateory, meaning, anywhere therein?)
+    *       - May one switch to another anonym, in the same sub thread?
+    *         Let's say, reply as anon MyAnA to the orig post, then, sbd repiles to
+    *         MyAnA, and then one relpies as MyAn*B* to that other person?
+    *         Or, one then needs to reply as MyAnA? Or needs to use the same anon
+    *         on the whole page?
     *
     */
   sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
