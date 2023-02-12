@@ -231,7 +231,6 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         and po.page_id = ?
         and po.approved_at is null
         and (po.type is null or po.type <> ${PostType.CompletedForm.toInt})
-      $groupBy__siteId_postId
       """
 
     var values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId.asAnyRef)
@@ -241,7 +240,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       values += by.get.asAnyRef
     }
 
-    query += s" order by po.created_at desc limit $limit"
+    query += s"""
+          $groupBy__siteId_postId
+          order by po.created_at desc limit $limit """
 
     runQueryFindMany(query, values.toList, rs => {
       readPost(rs, pageId = Some(pageId))
