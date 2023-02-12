@@ -41,6 +41,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
   var draftThreeNewest: Draft = _
   var draftFourNewTopic: Draft = _
   var draftFiveForEdits: Draft = _
+  var draftSixAnonReply: Draft = _
 
   val DraftOneText = "DraftOneText"
   val DraftTwoTitleOrig = "DraftTwoTitleOrig"
@@ -50,6 +51,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
   val DraftThreeText = "DraftThreeText"
   val DraftFourText = "DraftFourText"
   val DraftFiveTextForEdits = "DraftFiveTextForEdits"
+  val DraftSixAnonReplyText = "DraftSixAnonReplyText"
 
   lazy val now: When = globals.now()
 
@@ -93,6 +95,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         createdAt = now,
         forWhat = locator,
         postType = Some(PostType.Normal),
+        doAsAnon = None,
         title = "",
         text = DraftOneText)
 
@@ -131,6 +134,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         forWhat = locator,
         createdAt = now.plusMillis(1000),  // newer
         topicType = Some(PageType.Discussion),
+        doAsAnon = None,
         title = "New topic title",
         text = DraftTwoTextOrig)
 
@@ -150,6 +154,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         forWhat = locator,
         createdAt = now.minusMillis(1000),  // older
         topicType = Some(PageType.Discussion),
+        doAsAnon = None,
         title = "Direct message title",
         text = DraftThreeText)
 
@@ -328,6 +333,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         forWhat = locator,
         createdAt = now.plusMillis(9000),  // newest, but older than the edits (4BKARE2)
         topicType = Some(PageType.Question),
+        doAsAnon = None,
         title = "Is this a good question to ask?",
         text = DraftTwoTextOrig)
 
@@ -367,6 +373,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         createdAt = now,
         forWhat = locator,
         postType = Some(PostType.Normal),
+        doAsAnon = None,
         title = "",
         text = DraftFiveTextForEdits)
 
@@ -394,6 +401,37 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         tx.loadDraftsByLocator(userOne.id, draftOne.forWhat.copy(postId = badId)) mustBe Nil
       }
     }
+
+    "save a draft for an anonymous reply, as a new anon" in {
+      val post = dao.loadPost(pageId, PageParts.BodyNr) getOrDie "TyE2ABKS40L"
+      val locator = DraftLocator(
+            DraftType.Reply,
+            pageId = Some(pageId),
+            postNr = Some(PageParts.BodyNr),
+            postId = Some(post.id))
+
+      draftSixAnonReply = Draft(
+            byUserId = userOne.id,
+            draftNr = 6,
+            createdAt = now,
+            forWhat = locator,
+            postType = Some(PostType.Normal),
+            doAsAnon = Some(WhichAnon.NewAnon(AnonStatus.IsAnonCanAutoDeanon)),
+            title = "",
+            text = DraftSixAnonReplyText)
+
+      dao.writeTx { (tx, _) =>
+        tx.upsertDraft(draftSixAnonReply)
+      }
+    }
+
+    "find the anon reply draft nr" in {
+      dao.readOnlyTransaction { tx =>
+        tx.loadDraftsByLocator(userOne.id, draftOne.forWhat) mustBe Vec(
+              draftOne, draftSixAnonReply)
+      }
+    }
+
 
   }
 

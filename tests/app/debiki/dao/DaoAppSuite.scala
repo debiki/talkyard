@@ -323,6 +323,10 @@ class DaoAppSuite(
           defaultSortOrder = None,
           comtOrder = None,
           comtNesting = None,
+          comtsStartHidden = None,
+          comtsStartAnon = None,
+          opStartsAnon = None,
+          newAnonStatus = None,
           doVoteStyle = None,
           doVoteInTopicList = None,
           shallBeDefaultCategory = false,
@@ -387,7 +391,7 @@ class DaoAppSuite(
       else textAndHtmlMaker.forBodyOrComment(text)
     dao.insertReply(textAndHtml, pageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
-      Who(memberId, browserIdData), dummySpamRelReqStuff).post
+      Who(TrueId(memberId), browserIdData), dummySpamRelReqStuff).post
   }
 
 
