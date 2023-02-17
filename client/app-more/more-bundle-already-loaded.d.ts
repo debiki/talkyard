@@ -64,7 +64,8 @@ declare namespace debiki2 {
 
 declare namespace debiki2.pagedialogs {
 
-  function openAddPeopleDialog(alreadyAddedIds: UserId[], onDone: (newIds: UserId[]) => void);
+  function openAddPeopleDialog(ps: { curPatIds?: PatId[], curPats?: Pat[],
+        mayClear?: Bo, onChanges: (PatsToAddRemove) => Vo });
   function openDeletePostDialog(post: Post, at: Rect);
   function openFlagDialog(postId: PostId, at: Rect);
   function openMovePostsDialog(store: Store, post: Post, closeCaller, at: Rect);

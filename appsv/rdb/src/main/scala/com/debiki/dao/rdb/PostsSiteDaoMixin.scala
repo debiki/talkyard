@@ -48,15 +48,14 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         select po.*,
                array_agg(array[pa.rel_type_c, pa.from_pat_id_c])
                     filter (where pa.rel_type_c is not null)
-                    pat_rels
+                    pat_post_rels_array
         from posts3 po
         left outer join post_actions3 pa   -- pat_post_rels_t [AuthorOf]
             on  pa.site_id = po.site_id
             and pa.to_post_id_c = po.unique_post_id
             and pa.rel_type_c in (  ${
-                PatRelType_later.VotedOn.toInt}, ${  // just for now, testing
-                PatRelType_later.AuthorOf.toInt}, ${
-                PatRelType_later.OwnerOf.toInt}, ${
+                PatRelType_later.AuthorOf_later.toInt}, ${
+                PatRelType_later.OwnerOf_later.toInt}, ${
                 PatRelType_later.AssignedTo.toInt}) """
 
   // It's enough to specify the posts3 primary key.
@@ -83,7 +82,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           $groupBy_orderBy__siteId_postId """
 
     runQueryFindMany(query, values.toList, rs => {
-      readPost(rs, pageId = Some(pageId), inclAggs = true)
+      readPost(rs, pageId = Some(pageId))
     })
   }
 
@@ -201,14 +200,16 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadAllPosts(): immutable.Seq[Post] = {
-    val query = i""" -- loadAllPosts
-      $select__posts_po__leftJoin__patPostRels_pa
-      -- select * from posts3
-      where po.site_id = ?   -- + pat_post_rels_t [AuthorOf]
-      $groupBy__siteId_postId
+  def loadAllPostsForExport(): immutable.Seq[Post] = {
+    // Since this is for including in a site dump, we don't need the pat-to-node
+    // relationships here. Instead, they'll be exported separately.
+    val query = i""" -- loadAllPostsForExport
+      select * from posts3
+      where po.site_id = ?
       """
-    runQueryFindMany(query, List(siteId.asAnyRef), rs => readPost(rs, pageId = None))
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      readPost(rs, pageId = None, inclAggs = false)
+    })
   }
 
 
@@ -363,7 +364,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     })
   }
 
-
+  RENAME // to ...ExclAggs ?  Since not needed.  Would be good w type safety for that!
   def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int, exclOrigPost: Boolean)
         : Map[PageId, immutable.Seq[Post]] = {
     if (pageIds.isEmpty)
@@ -372,7 +373,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     // Finds the `limitPerPage` most like-voted replies on each page.
     val query = s""" -- loadPopularPostsByPage
       select * from (
-        -- select__posts_po__leftJoin__patPostRels_pa
+        -- select__posts_po__leftJoin__patPostRels_pa  — not needed.
         select
           row_number() over (partition by page_id order by num_like_votes desc) as rownum,
           p.*
@@ -393,7 +394,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     val values = siteId.asAnyRef :: pageIds.toList
 
     runQueryBuildMultiMap(query, values, rs => {
-      val post = readPost(rs)
+      val post = readPost(rs, inclAggs = false)
       (post.pageId, post)
     })
   }
@@ -744,11 +745,15 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   private def readPost(rs: js.ResultSet, pageId: Option[PageId] = None,
-          inclAggs: Bo = false): Post = {
+          inclAggs: Bo = true): Post = {
 
+    // (Simpler to debug, if can see this directly.)
+    val postId = rs.getInt("UNIQUE_POST_ID")
+
+    // An array of [PatPostRel.Type, from-pat-id].
     val anyVecOfPatRelVecs: Opt[Vec[Vec[Int]]] =
           if (!inclAggs) None
-          else getOptArrayOfArrayOfInt32(rs, "pat_rels")
+          else getOptArrayOfArrayOfInt32(rs, "pat_post_rels_array")
 
     val (ownerIds: Vec[Int], authorIds: Vec[Int], assignedToIds: Vec[Int]) =
             anyVecOfPatRelVecs match {
@@ -764,22 +769,21 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           val patId = patRelVec(1)
           // Or, hmm, move to object PatRelType_later?
           relTypeInt match {
-            case PatRelType_later.OwnerOf.IntVal =>
+            case PatRelType_later.OwnerOf_later.IntVal =>
               ownerIds.append(patId)
-            case PatRelType_later.AuthorOf.IntVal |
-                      /* just testing: */ PatRelType_later.VotedOn.IntVal =>
+            case PatRelType_later.AuthorOf_later.IntVal =>
               authorIds.append(patId)
             case PatRelType_later.AssignedTo.IntVal =>
               assignedToIds.append(patId)
             case x =>
-              die("TyE7MWJC21", s"Unexpected rel_type_c: $x")
+              die("TyE7MWJC21", s"Unexpected pat-to-node rel_type_c: $x")
           }
         }
         (ownerIds.to[Vec], authorIds.to[Vec], assignedToIds.to[Vec])
     }
 
     Post(
-      id = rs.getInt("UNIQUE_POST_ID"),
+      id = postId,
       extImpId = getOptString(rs, "ext_id"),
       pageId = pageId.getOrElse(rs.getString("PAGE_ID")),
       nr = rs.getInt("post_nr"),
@@ -790,7 +794,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       createdById = rs.getInt("CREATED_BY_ID"),
       ownerIds = ownerIds,
       authorIds = authorIds,
-      assignedToIds = assignedToIds,
+      assigneeIds = assignedToIds,
       currentRevStaredAt = getDate(rs, "curr_rev_started_at"),
       currentRevisionById = rs.getInt("curr_rev_by_id"),
       currentRevLastEditedAt = getOptionalDate(rs, "curr_rev_last_edited_at"),
@@ -990,6 +994,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId) {
     BUG // Doesn't this delete votes and other things too? See deleteVote(), use instead?
     // Need to incl:  and rel_type_c = Flag?
+    // Maybe fix this now ...
     val statement = s"""
       update post_actions3
       set deleted_at = now_utc(), deleted_by_id = ?, updated_at = now_utc()
@@ -1010,8 +1015,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         insertPostActionImpl(
               postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
           actionType = flag.flagType, doerId = flag.doerId, doneAt = flag.doneAt)
-      // case AuthorOf => ...
-      // case OwnerOf => ...
+      case rel: PatNodeRel =>
+        // This covers owner-of, author-of, assigned-to.
+        // (The other approach: PostVote and PostFlag, above, is deprecated.)
+        insertPostActionImpl(
+              postId = rel.uniqueId, pageId = rel.pageId, postNr = rel.postNr,
+              actionType = rel.relType, doerId = rel.fromPatId, doneAt = rel.addedAt)
     }
   }
 
@@ -1032,6 +1041,24 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           throw DbDao.DuplicateVoteException
       }
     dieIf(numInserted != 1, "DwE9FKw2", s"Error inserting action: numInserted = $numInserted")
+  }
+
+
+  def deletePatNodeRels(fromPatIds: Set[PatId], toPostId: PostId,
+        relTypes: Set[PatRelType_later]): i32 = {
+    if (fromPatIds.isEmpty) return 0
+    val statement = s"""
+          delete from post_actions3
+          where site_id = ? and
+                to_post_id_c = ? and
+                from_pat_id_c in (${makeInListFor(fromPatIds)}) and
+                rel_type_c in (${makeInListFor(relTypes)}) """
+    val values = ArrayBuffer[AnyRef](
+          siteId.asAnyRef,
+          toPostId.asAnyRef)
+    values.appendAll(fromPatIds.map(_.asAnyRef))
+    values.appendAll(relTypes.map(_.toInt.asAnyRef))
+    runUpdate(statement, values.toList)
   }
 
 
@@ -1146,6 +1173,9 @@ object PostsSiteDaoMixin {
 
 
   def toActionTypeInt(actionType: PostActionType): AnyRef = (actionType match {
+    case PatRelType_later.OwnerOf_later => PatRelType_later.OwnerOf_later.IntVal
+    case PatRelType_later.AuthorOf_later => PatRelType_later.AuthorOf_later.IntVal
+    case PatRelType_later.AssignedTo => PatRelType_later.AssignedTo.IntVal
     case PostVoteType.Like => VoteValueLike
     case PostVoteType.Wrong => VoteValueWrong
     case PostVoteType.Bury => VoteValueBury
@@ -1156,11 +1186,15 @@ object PostsSiteDaoMixin {
   }).asAnyRef
 
 
-  REFACTOR // move to:  PostActionType.from(Int): PostActionType  [402KTHRNPQw]
+  REFACTOR // move to:  PatRelType_later.fromInt32(Int): PatRelType_later  [402KTHRNPQw]
   def fromActionTypeInt(value: Int, mab: MessAborter = IfBadDie): PostActionType =
     fromAnyActionTypeInt(value).getOrAbort(mab, "TyE0ACTTYPE", s"Not a post action type: $value")
 
+  // Move this one too.
   def fromAnyActionTypeInt(value: Int): Opt[PostActionType] = Some(value match {
+    case PatRelType_later.OwnerOf_later.IntVal => PatRelType_later.OwnerOf_later
+    case PatRelType_later.AuthorOf_later.IntVal => PatRelType_later.AuthorOf_later
+    case PatRelType_later.AssignedTo.IntVal => PatRelType_later.AssignedTo
     case VoteValueLike => PostVoteType.Like
     case VoteValueWrong => PostVoteType.Wrong
     case VoteValueBury => PostVoteType.Bury

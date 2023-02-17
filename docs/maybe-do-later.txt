@@ -527,6 +527,9 @@ Assign topics and posts to people. (Not only whole topics, but also comments/sub
 Why assign a post? Because someone might ask a good question, in a longer discussion, and nice
 to know & remember who will try to answer it, later.
 
+[can_see_assigned]
+New permission.
+
 [priv_comts] Private comments:
 (Aka "whispers" in Discourse and "private items" in Basecamp long ago, and "private comments"
 in other software.)

@@ -437,7 +437,7 @@ case class Post(   // [exp] ok use
   approvedAt: Option[ju.Date],   // RENAME to lastApprovedAt  [first_last_apr_at]
   approvedById: Option[UserId],  // RENAME to lastApproved...
   approvedRevisionNr: Option[Int],
-  // privatePatsId: Opt[PatId],  // later  [priv_comts]
+  // privatePatsId: Opt[PatId],   // later  [priv_comts] — no, will remove
   collapsedStatus: CollapsedStatus,
   collapsedAt: Option[ju.Date],
   collapsedById: Option[UserId],
@@ -467,7 +467,7 @@ case class Post(   // [exp] ok use
   // .move_later
   ownerIds: Vec[PatId] = Vec.empty,
   authorIds: Vec[PatId] = Vec.empty,
-  assignedToIds: Vec[PatId] = Vec.empty,
+  assigneeIds: Vec[PatId] = Vec.empty,
   ) {
 
   require(id >= 1, "DwE4WEKQ8")
@@ -488,6 +488,9 @@ case class Post(   // [exp] ok use
   require(currentRevStaredAt.getTime >= createdAt.getTime, "DwE8UFYM5")
   require(!currentRevLastEditedAt.exists(_.getTime < currentRevStaredAt.getTime), "DwE7KEF3")
   require(currentRevisionById == createdById || currentRevisionNr > FirstRevisionNr, "DwE0G9W2")
+
+  require(assigneeIds.forall(_ >= Participant.LowestTalkToMemberId), "TyE206AKSE6")
+
 
   require(lastApprovedEditAt.isEmpty == lastApprovedEditById.isEmpty, "DwE9JK3")
   if (lastApprovedEditAt.isDefined && currentRevLastEditedAt.isDefined) {

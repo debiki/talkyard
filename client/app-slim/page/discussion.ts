@@ -1623,7 +1623,9 @@ const ReplyReceivers = createComponent({
     const elem = this.props.comma ? 'span' : 'div';
     return (
       r[elem]({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
-        this.props.comma ? t.d.repliesTo : t.d.InReplyTo, receivers, ':'));
+        this.props.comma ? t.d.repliesTo : t.d.InReplyTo, ':', receivers,
+        this.props.append));
+        // What? Shouldn't ':' be before 'receivers
   }
 });
 
@@ -1668,8 +1670,15 @@ export const PostHeader = createComponent({
     const me: Myself = store.me;
     const post: Post = this.props.post;
     const abbreviate = this.props.abbreviate;
+
     if (!post)
       return r.p({}, '(Post missing [DwE7IKW2])');
+
+    const assignees = !post.assigneeIds ? null :
+        r.span({ className: 'n_Asgd2'},
+          r.span({ className: 'n_Asgd2_Ttl' }, "assigned to "),
+          post.assigneeIds.map(patId =>
+            UserName({ patId, store, avoidFullName: true })));
 
     if (isWikiPost(post)) {
       if (abbreviate) {
@@ -1680,7 +1689,11 @@ export const PostHeader = createComponent({
       }
       // Show a collapse button for this wiki post, but no author name because this is
       // a wiki post contributed to by everyone.
-      return r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick });
+      // (Still, if it's been assigned to someone, should be shown.)
+      return rFr({},
+            r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick }),
+            // UX COULD change 'a' in "assign" to uppercase.
+            assignees);
     }
 
     const linkFn = abbreviate ? 'span' : 'a';
@@ -1788,6 +1801,7 @@ export const PostHeader = createComponent({
                 timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass)),
             editInfo),
           inReplyTo,
+          assignees,
           toggleCollapsedButton,
           bookmark,
           unreadMark,

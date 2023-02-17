@@ -41,11 +41,15 @@ object MaxLimits {
     maxPermsPerSite = 1000, // was: 200
     maxCustomGroups = 21,
     maxGroupsMemberCanJoin = 25,
-    maxMembersPerCustomGroup = 1000)
+    maxMembersPerCustomGroup = 1000,
+    )
 
   // There are many other limits but they're hardcoded here and there ...
   // COULD move them all to here. A nice first step, to later on making it
   // possible to bump the restrictions, per site.
+
+  // These don't make much sense to scale with site size.
+  val MaxAssignedPerPost: i32 = 10
 }
 
 

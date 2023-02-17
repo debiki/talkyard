@@ -62,9 +62,10 @@ export function openAboutUserDialogForAuthor(post: Post, at) {
 }
 
 
-export function openAddPeopleDialog(alreadyAddedIds: UserId[], onDone: (newIds: UserId[]) => void) {
+export function openAddPeopleDialog(ps: { curPatIds?: PatId[], curPats?: Pat[],
+          onChanges: (res: PatsToAddRemove) => Vo }) {
   Server.loadMoreScriptsBundle(() => {
-    debiki2.pagedialogs.openAddPeopleDialog(alreadyAddedIds, onDone);
+    debiki2.pagedialogs.openAddPeopleDialog(ps);
   });
 }
 

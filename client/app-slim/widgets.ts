@@ -273,12 +273,13 @@ export function UserNameLink(props: {
 
 
 export function UserName(props: {
-    user: BriefUser, store?: Store, settings?: SettingsVisibleClientSide,
+    user?: Pat, patId?: PatId, // either or
+    store?: Store, settings?: SettingsVisibleClientSide,
     makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo }) {
 
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
   const settings: SettingsVisibleClientSide = props.settings || props.store.settings;
-  const user: BriefUser = props.user;
+  const user: Pat = props.user || props.store.usersByIdBrief[props.patId];
   const showHow: ShowAuthorHow = settings.showAuthorHow;
 
   // (All StackExchange demo sites use ShowAuthorHow.FullNameThenUsername, so

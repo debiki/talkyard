@@ -426,9 +426,17 @@ object Rdb {
   def getOptArrayOfArrayOfInt32(rs: js.ResultSet, column: St): Opt[Vec[Vec[i32]]] = {
     val sqlArray: js.Array = rs.getArray(column)
     if (sqlArray eq null) return None
-    val javaArrayOfArrays = sqlArray.getArray.asInstanceOf[Array[Array[i32]]]
-    val vecOfJavaArrays = javaArrayOfArrays.to[Vec]
-    val vecOfVec = vecOfJavaArrays.map(_.to[Vec].map(_.toInt))  // is toInt needed?
+    // val num: Int = sqlArray.getArray  // sqlArray.getArray + 3 —> type String
+    System.out.println(s"classNameOf(sqlArray.getArray): ${classNameOf(sqlArray.getArray)}")
+    // Oddly enough returns a java.lang.Object not a Java array.
+    val javaArrayAsObj: Object = sqlArray.getArray
+    val javaArrayAsArr: Array[_] = javaArrayAsObj.asInstanceOf[Array[_]]
+    for (item <- javaArrayAsArr) {
+      System.out.println(s"classNameOf(item): ${classNameOf(item)}")
+    }
+    // val javaArrayOfArrays = javaArrayAsArr // .asInstanceOf[Array[Array[i32]]]
+    val vecOfJavaArrays = javaArrayAsArr.to[Vec]
+    val vecOfVec = vecOfJavaArrays.map(_.asInstanceOf[Array[_]].to[Vec].map(_.asInstanceOf[Int]))  // is toInt needed?
     Some(vecOfVec)
   }
 

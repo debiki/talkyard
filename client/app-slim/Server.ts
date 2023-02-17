@@ -2124,6 +2124,16 @@ export function makeDownloadPersonalDataUrl(authorId: UserId) {
 }
 
 
+export function changeAssignees(ps: { addPatIds: PatId[], removePatIds: PatId[],
+          postId: PostId }, onOk: () => Vo) {
+  postJsonSuccess('/-/change-pat-node-rels', (storePatch: StorePatch) => {
+    ReactActions.patchTheStore(storePatch);
+    onOk();
+  }, { ...ps, relType: 11 });  // 11 = AssignedTo
+
+}
+
+
 export function flagPost(postNr: string, flagType: string, reason: string, success: () => void) {
   postJsonSuccess('/-/flag', (storePatch: StorePatch) => {
     ReactActions.patchTheStore(storePatch);

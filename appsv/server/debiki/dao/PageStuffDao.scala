@@ -39,7 +39,9 @@ case class PageStuff(
   bodyImageUrls: immutable.Seq[String],
   pageTags: ImmSeq[Tag], // but not page author tags (badges)
   popularRepliesImageUrls: immutable.Seq[String],
+  //authorIds: Vec[...]  — later
   authorUserId: UserId,  // RENAME to just authorId
+  assigneeIds: Vec[MembId],
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId]) extends PageTitleRole {
 
@@ -58,6 +60,8 @@ case class PageStuff(
 
   def userIds: immutable.Seq[UserId] = {
     var ids = frequentPosterIds.toVector :+ authorUserId
+    ids ++= assigneeIds
+    //ids ++= authorIds
     if (lastReplyerId.isDefined) ids :+= lastReplyerId.get
     ids
   }
@@ -185,6 +189,7 @@ trait PageStuffDao {
         pageTags = tagsByPageId.getOrElse(pageId, Nil),
         popularRepliesImageUrls = popularImageUrls,
         authorUserId = pageMeta.authorId,
+        assigneeIds = anyBody.map(_.assigneeIds).getOrElse(Vec.empty),
         lastReplyerId = pageMeta.lastApprovedReplyById,
         frequentPosterIds = pageMeta.frequentPosterIds)
 

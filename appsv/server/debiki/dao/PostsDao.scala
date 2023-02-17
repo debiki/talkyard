@@ -2477,6 +2477,65 @@ trait PostsDao {
   }
 
 
+  def addRemovePatNodeRelsIfAuZ(addPatIds: Set[PatId], removePatIds: Set[PatId],
+        postId: PostId, relType: PatRelType_later, reqrInf: Who, mab: MessAborter): JsObject = {
+    import context.security.throwIndistinguishableNotFound
+
+    writeTx { (tx, staleStuff) =>
+      val postBef = tx.loadPost(postId) getOrElse {
+        // mab.abortIf( ... , MessType.NotFound, ... )  ?
+        throwIndistinguishableNotFound(s"TyEASGN0POST")
+      }
+
+      val reqr = tx.loadTheParticipant(reqrInf.id)
+
+      // Later:  throwIfMayNotChangePostRels(postBef, relType, reqr)(tx)
+      // For now:
+      throwIfMayNotSeePost(postBef, Some(reqr))(tx)
+      dieIf(relType != PatRelType_later.AssignedTo, "TyE6X0wMSHUw5")
+      throwForbiddenIf(!reqr.isStaffOrTrustedNotThreat,
+            "TyECAN0ASGN", s"You cannot assign people.")
+
+      // Only works for type AssignedTo (since we look at assigneeIds).
+      dieIf(relType != PatRelType_later.AssignedTo, "TyE6X0wMSHUw5")
+      val idsToAdd = addPatIds -- postBef.assigneeIds
+      val idsToRemove = removePatIds intersect postBef.assigneeIds.toSet
+      if (idsToAdd.nonEmpty && idsToRemove.nonEmpty)
+        return ()
+
+      // mab.abortIf( ... , MessType.Forbidden, ... )
+      val numAfter = postBef.assigneeIds.size + idsToAdd.size
+      // What should other limits be? (for OwnerOf and AuthorOf)
+      dieIf(relType != PatRelType_later.AssignedTo, "TyE603MRG5")
+      throwForbiddenIf(numAfter > MaxLimits.MaxAssignedPerPost,
+            "TyEASGNMAX", s"Cannot assign more than ${MaxLimits.MaxAssignedPerPost
+              } people to a post — would have assigned $numAfter people.")
+
+      tx.deletePatNodeRels(fromPatIds = idsToRemove, toPostId = postId,
+            relTypes = Set(relType))
+
+      for (patId <- idsToAdd) {
+        tx.insertPostAction(PatNodeRel(
+              toNodeId = postBef.id,
+              fromPatId = patId,
+              pageId = postBef.pageId,
+              postNr = postBef.nr,
+              addedAt = tx.now,
+              relType = relType))
+      }
+
+      SHOULD // also upd topic index page, is there any fn for that? I forgot.
+      staleStuff.addPageId(postBef.pageId)
+    }
+
+    val storePatchJo: JsObject = jsonMaker.makeStorePatchForPostIds(
+          Set(postAfter.id), showHidden = true, inclUnapproved = true,
+          maySquash = false, dao = this)
+
+    storePatchJo
+  }
+
+
   RENAME // all ... IfAuth to IfAuZ (if authorized)
   def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: TrueId,
         browserIdData: BrowserIdData): (Post, JsObject) = {

@@ -35,6 +35,9 @@ import talkyard.server.JsX.{JsStringOrNull, JsPageMeta}
 
 /** Edits the page title and changes settings like forum category, URL path,
   * which layout to use, <html><head><title> and description.
+  *
+  * MOVE to PageController, right?  It's confusing to have 2 controllers that do
+  * almos the same things.
   */
 class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext: TyContext)
   extends TyController(cc, edContext) {

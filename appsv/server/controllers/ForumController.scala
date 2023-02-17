@@ -450,7 +450,9 @@ object ForumController {
     // Try to remove 'page' or topicStuff.pageMeta? Don't need both.
     dieIf(Globals.isDevOrTest && page != topicStuff.pageMeta, "TyE305DRJ24")
 
-    Json.obj(
+    COULD_OPTIMIZE; SAVE_BANDWIDTH // Exclude all zero (0) fields? E.g. 0 like votes.
+    // And use an ArrayBuffer, pass to a JsObject.
+    var result = Json.obj(
       "pageId" -> page.pageId,
       "pageRole" -> page.pageType.toInt,
       // If a person may know a certain unapproved topic exists, it's ok to show
@@ -491,6 +493,14 @@ object ForumController {
       "hiddenAtMs" -> JsWhenMsOrNull(page.hiddenAt),
       "deletedAtMs" -> JsDateMsOrNull(page.deletedAt))
       // Could incl deletedById but only if requester is staff?
+
+    // Later: And check permissions:
+    // - Don't incl any [private_pats] reqr may not see.
+    // - Don't incl any, if cannot see assignees. [can_see_assigned]
+    if (topicStuff.assigneeIds.nonEmpty)
+      result += "assigneeIds" -> JsArray(topicStuff.assigneeIds.map(JsNumber(_)))
+
+    result
   }
 
 }

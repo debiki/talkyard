@@ -374,6 +374,12 @@ interface Post {
   // But the post creator or owner — if the requester is any of those or staff,
   // that field can be included too?
   authorId: UserId;
+  // --- Only included when loading, not saving, a post: -----
+  ownerIds?: PatId[];
+  authorIds?: PatId[];
+  assigneeIds?: PatId[];
+  // ---------------------------------------------------------
+
   createdAtMs: WhenMs;
   approvedAtMs?: WhenMs;
   lastApprovedEditAtMs?: WhenMs;
@@ -2366,6 +2372,20 @@ interface AnonsAllowedDropdownBtnProps {
   store: Store;
   allowed: NeverAlways;
   onSelect: (newLayout: DiscPropsSource) => Vo;
+}
+
+
+interface AssigneesProps {
+  page: Page;
+  store: Store;
+  onChange: (assignees: Pat[]) => Vo;
+}
+
+
+/// For showing a list of people, and adding more. Or, if  adding and removing.
+interface PatsToAddRemove {
+  addPatIds?: PatId[];
+  removePatIds?: PatId[];
 }
 
 

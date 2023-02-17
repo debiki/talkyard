@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.JsonUtils.asJsObject
+import debiki.JsonUtils._
 import debiki.dao.SiteDao
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
@@ -29,7 +29,7 @@ import talkyard.server.http._
 import talkyard.server.parser
 import java.{util => ju}
 import javax.inject.Inject
-import play.api.libs.json.{JsArray, JsString, JsValue, Json}
+import play.api.libs.json.{JsObject, JsArray, JsString, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX.JsLongOrNull
 
@@ -239,6 +239,24 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val pageId = (request.body \ "pageId").as[PageId]
     request.dao.unpinPage(pageId, request.theRequester)
     Ok
+  }
+
+
+  def changePatNodeRels: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething,
+          maxBytes = 200) { req =>
+    import req.dao
+    val bodyJo: JsObject = asJsObject(req.body, "the request body")
+    val addPatIds = parseOptInt32Array(bodyJo, "addPatIds").getOrElse(Nil).toSet
+    val removePatIds = parseOptInt32Array(bodyJo, "removePatIds").getOrElse(Nil).toSet
+    val postId = parseInt32(bodyJo, "postId")
+    val relTypeInt =  parseInt32(bodyJo, "relType")
+    throwUnimplIf(relTypeInt != PatRelType_later.AssignedTo.toInt,
+          "Only AssignedTo has been implemented [TyEUNIMPLRELTYP]")
+    val storePatch = dao.addRemovePatNodeRelsIfAuZ(
+          addPatIds = addPatIds, removePatIds = removePatIds,
+          postId = postId, relType = PatRelType_later.AssignedTo,
+          req.who, IfBadAbortReq)
+    OkSafeJson(storePatch)
   }
 
 

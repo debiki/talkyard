@@ -566,6 +566,8 @@ html:not(.mouse) .dw-rr
   margin-right: 12px;
 .dw-p-hd .dw-ago
   margin-right: 7px;
+.dw-p-hd:has(.icon-edit) .dw-ago  // ... but if there's an edit pencil icon just after,
+  margin-right: 3px; // ... then, less magin (so the icon won't be far away)
 .dw-p-hd .n_EdAt
   white-space: nowrap;
 .esP_viewHist
@@ -728,14 +730,28 @@ html:not(.mouse) .dw-rr
 .DW .dw-ar-p-hd
   border: none
   background-color: transparent
-  // Dim username and date (but not the post tags — the text therein is already gray).
+  // Dim username, date and assignees.
+  // (But not the post tags — the text therein is already gray.)
   .n_ByAt
     opacity: 0.8;
   // "By" is an uninteresting word.
-  .n_By
+  .n_By,
+  .n_Asgd2_Ttl
     color: hsl(0 0% 31%);
   font-size: $postFontSize;
   margin: 6px 0 0;
+
+.dw-p-hd:has(.n_Asgd2):not(:has(.esP_viewHist)) .esP_H_At.dw-ago,
+.dw-p-hd:has(.n_Asgd2)                    .esP_viewHist  .dw-ago-ltr
+  &::after
+    content: ', ';
+
+.dw-p-hd:has(.n_Asgd2) .esP_viewHist
+  margin-right: 0.8ex;  // don't push "assigned to ..." too far away
+
+// Some space between "Assigned to" and the username.
+.n_Asgd2_Ttl
+  margin-right: 0.8ex;
 
 .dw-ar-p-hd:hover
   opacity: 1

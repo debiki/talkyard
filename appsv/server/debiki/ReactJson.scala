@@ -334,7 +334,14 @@ class JsonMaker(dao: SiteDao) {
 
     val userIdsToLoad = mut.Set[UserId]()
     userIdsToLoad ++= pageMemberIds
-    userIdsToLoad ++= relevantPosts.map(_.createdById)  // or relevantApprovedPosts? [iz01]
+    for (post <- relevantPosts) {  // or relevantApprovedPosts? [iz01]
+      userIdsToLoad += post.createdById
+      userIdsToLoad ++= post.authorIds
+      userIdsToLoad ++= post.assigneeIds
+      // But skip post.ownerIds — not needed for rendering a page, and might
+      // not be public info.
+    }
+
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
@@ -396,6 +403,8 @@ class JsonMaker(dao: SiteDao) {
         val topics = topicsCanSee.pages
         val pageStuffById = dao.getPageStuffsByIdVersion(topics.map(_.idAndVersion))
         topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
+        // TODO: Load orig post assignees too?
+
         for (stuff <- pageStuffById.values; tag <- stuff.pageTags) {
           tagTypeIdsToLoad.add(tag.tagTypeId)
         }
@@ -411,7 +420,9 @@ class JsonMaker(dao: SiteDao) {
 
     val usersById = transaction.loadParticipantsAsMap(userIdsToLoad)
     val usersByIdJson = JsObject(usersById map { idAndUser =>
-      idAndUser._1.toString -> JsPat(idAndUser._2, tagsAndBadges)
+      idAndUser._1.toString -> JsPat(idAndUser._2, tagsAndBadges,
+            // Let anonyms stay anonymous; don't show their true ids on public pages:
+            toShowForPatId = None)
     })
 
     val anons: Seq[Anonym] = usersById.values.collect({ case a: Anonym => a }).toSeq
@@ -2081,6 +2092,8 @@ object JsonMaker {
 
     val postTags: Seq[Tag] = tagsAndBadges.tags(post.id)
 
+    COULD_OPTIMIZE; SAVE_BANDWIDTH // Exclude all zero (0) fields? E.g. 0 like votes.
+    // And use an ArrayBuffer instead of a Vector.
     var fields = Vector(
       "uniqueId" -> JsNumber(post.id),
       "nr" -> JsNumber(post.nr),
@@ -2129,6 +2142,15 @@ object JsonMaker {
 
     // For now. So can edit the title without extra loading the title post's source. [5S02MR4]
     if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(unsafeSource)
+
+    // Later: Don't incl any private members. [private_pats]
+    if (post.authorIds.nonEmpty)
+      fields :+= "authorIds" -> JsArray(post.authorIds.map(JsNumber(_)))
+
+    // Also check permissions — may one see who's assigned? [can_see_assigned]
+    // And if one may see these people at all. [private_pats]
+    if (post.assigneeIds.nonEmpty)
+      fields :+= "assigneeIds" -> JsArray(post.assigneeIds.map(JsNumber(_)))
 
     JsObject(fields)
   }
