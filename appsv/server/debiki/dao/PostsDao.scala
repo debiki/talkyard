@@ -2478,16 +2478,17 @@ trait PostsDao {
 
 
   def addRemovePatNodeRelsIfAuZ(addPatIds: Set[PatId], removePatIds: Set[PatId],
-        postId: PostId, relType: PatRelType_later, reqrInf: Who, mab: MessAborter): JsObject = {
+        postId: PostId, relType: PatRelType_later, generateMetaComt: Bo,
+        notifyPats: Bo, reqrInf: Who, mab: MessAborter): JsObject = {
     import context.security.throwIndistinguishableNotFound
 
-    writeTx { (tx, staleStuff) =>
+    val metaComt = writeTx { (tx, staleStuff) =>
       val postBef = tx.loadPost(postId) getOrElse {
         // mab.abortIf( ... , MessType.NotFound, ... )  ?
         throwIndistinguishableNotFound(s"TyEASGN0POST")
       }
 
-      val reqr = tx.loadTheParticipant(reqrInf.id)
+      val reqr: Pat = tx.loadTheParticipant(reqrInf.id)
 
       // Later:  throwIfMayNotChangePostRels(postBef, relType, reqr)(tx)
       // For now:
@@ -2500,8 +2501,8 @@ trait PostsDao {
       dieIf(relType != PatRelType_later.AssignedTo, "TyE6X0wMSHUw5")
       val idsToAdd = addPatIds -- postBef.assigneeIds
       val idsToRemove = removePatIds intersect postBef.assigneeIds.toSet
-      if (idsToAdd.nonEmpty && idsToRemove.nonEmpty)
-        return ()
+      if (idsToAdd.isEmpty && idsToRemove.isEmpty)
+        return JsObject.empty
 
       // mab.abortIf( ... , MessType.Forbidden, ... )
       val numAfter = postBef.assigneeIds.size + idsToAdd.size
@@ -2514,6 +2515,10 @@ trait PostsDao {
       tx.deletePatNodeRels(fromPatIds = idsToRemove, toPostId = postId,
             relTypes = Set(relType))
 
+      val patsById = tx.loadParticipantsAsMap(idsToAdd ++ idsToRemove)
+      val patsToAdd = idsToAdd.flatMap(patsById.get)
+      val patsToRemove = idsToRemove.flatMap(patsById.get)
+
       for (patId <- idsToAdd) {
         tx.insertPostAction(PatNodeRel(
               toNodeId = postBef.id,
@@ -2524,13 +2529,50 @@ trait PostsDao {
               relType = relType))
       }
 
-      SHOULD // also upd topic index page, is there any fn for that? I forgot.
+      // Skip, for now. Need to fix:
+      // 1) Use HTML source but verify cannot be xss'ed. Or, no, instead: In slim-bundle
+      // or more-bundle, incl code that shows:
+      //    "sbd assigned this to sbd-2 and sbd-3".  But should Ty remember a list of ids?
+      // — then, need another table, so foreign keys will work. Or a list of usernames?
+      // But then, incorrect if names changed. And,
+      // 2) Use new NotificationType.PostAssigneesAdded/Removed ... or Changed?
+      // 3) Generate i18n emails for those notifications (or, can wait).
+      // 4) What if some assignees, or the assignor, are [private_pats]?
+      val metaComt: Opt[Post] =  None  /* if (!generateMetaComt) None else Some {
+        val assignedUsernames: St = patsToAdd.map(_.atUsernameOrFullName).mkString(", ")
+        val assignedSbd = if (assignedUsernames.isEmpty) ""
+                          else s" assigned $assignedUsernames"
+
+        val unassignedUsernames: St = patsToRemove.map(_.atUsernameOrFullName).mkString(", ")
+        val unassignedSbd = if (unassignedUsernames.isEmpty) ""
+                            else s" unassigned <b> $unassignedUsernames </b>"
+
+        val and = if (assignedSbd.isEmpty || unassignedSbd.isEmpty) ""
+                  else ", and"
+
+        addMetaMessage(reqr,  NO: message = assignedSbd + and + unassignedSbd,
+              pageId = postBef.pageId, tx,  NO:  notifyMentioned = true,
+              Instead:  NotificationType.PostAssigneesChanged ?)
+      } */
+
+      if (notifyPats) {
+        UX; SHOULD // notify pats who got assigned / unassigned.
+        // Can derive the NotificationType, from the  e.g. PatNodeRelType.AssignedTo —>
+        // NotificationType.PostAssigneesChanged?
+      }
+
+      REFACTOR // somehow let this update any topic list page too — see [2F5HZM7].
+      // For now, calling uncacheForums() manually below.  [make_salestuff_uncache_forums]
       staleStuff.addPageId(postBef.pageId)
+
+      metaComt
     }
 
+    uncacheForums(siteId)
+
     val storePatchJo: JsObject = jsonMaker.makeStorePatchForPostIds(
-          Set(postAfter.id), showHidden = true, inclUnapproved = true,
-          maySquash = false, dao = this)
+          metaComt.map(_.id).toSet + postId,
+          showHidden = true, inclUnapproved = true, maySquash = false, dao = this)
 
     storePatchJo
   }
@@ -2883,9 +2925,21 @@ trait PostsDao {
       // (The whole page gets hidden by hidePostsOnPage() below, if all posts get hidden.)
       val postsToMaybeHide =
         if (user.isMember) {
-          tx.loadPostsByQuery(limit = numThings, OrderBy.MostRecentFirst,
+          tx.loadPostsByQuery(
+              PostQuery.PostsByAuthor(
+                // Or, if using Who:  Who.System
+                reqrInf = ReqrInf(Participant.SystemUserBr, BrowserIdData.System),
+                authorId = userId,
+                inclTitles = false,
+                inclUnapproved = true,
+                inclUnlistedPagePosts = true,
+                limit = numThings,
+                orderBy = OrderBy.MostRecentFirst,
+                )) /*
+                limit = numThings, OrderBy.MostRecentFirst,
                 byUserId = Some(userId), includeTitlePosts = false,
                 inclUnapprovedPosts = true, inclUnlistedPagePosts_unimpl = true)
+                */
                 .filter(!_.isBodyHidden)
         }
         else {
@@ -3070,38 +3124,58 @@ trait PostsDao {
 
 
   def loadPostsMaySeeByQuery(
+          query: PostQuery /*
           requester: Option[Participant], orderBy: OrderBy, limit: Int,
           inclTitles: Boolean, onlyEmbComments: Boolean, inclUnapprovedPosts: Boolean,
           inclUnlistedPagePosts: Boolean,
           writtenById: Option[UserId]): LoadPostsResult = {
+          */
+          ): LoadPostsResult = {
 
-    unimplementedIf(orderBy != OrderBy.MostRecentFirst,
+    unimplementedIf(query.orderBy != OrderBy.MostRecentFirst,
           "Only most recent first supported [TyE403RKTJ]")
 
     val postsInclForbidden: ImmSeq[Post] = readTx { tx =>
-      if (onlyEmbComments) {
-        dieIf(inclTitles, "TyE503RKDP5", "Emb cmts have no titles")
-        dieIf(inclUnapprovedPosts, "TyE503KUTRT", "Emb cmts + unapproved")
-        dieIf(writtenById.isDefined, "TyE703RKT3M", "Emb cmts + writtenBy unimpl")
+      if (query.onlyEmbComments) {
+        dieIf(query.inclTitles, "TyE503RKDP5", "Emb cmts have no titles")
+        dieIf(query.inclUnapproved, "TyE503KUTRT", "Emb cmts + unapproved")
+        dieIf(!query.isInstanceOf[PostQuery.AllPosts],
+              "TyE703RKT3M", s"Emb comts query must be of type PostQuery.AllPosts but is type ${
+                  classNameOf(query)}")
         // Embedded discussions are typically unlisted, so strangers
         // cannot super easily list all discussions over at the Talkyard site
         // (but via the Atom feed, it's ok to list the most recent comments).
-        dieIf(!inclUnlistedPagePosts, "TyE520ATJ3", "Emb cmts + *no* unlisted")
+        dieIf(!query.inclUnlistedPagePosts, "TyE520ATJ3", "Emb cmts + *no* unlisted")
 
-        tx.loadEmbeddedCommentsApprovedNotDeleted(limit = limit, orderBy)
+        tx.loadEmbeddedCommentsApprovedNotDeleted(limit = query.limit, query.orderBy)
       }
       else {
-        tx.loadPostsByQuery(
+        query match {
+          case q: PostQuery.PostsRelatedToPat[_] =>
+            COULD_OPTIMIZE // Load unique post ids, so won't see the same post
+            // many times, if a pat has multiple relationships to it
+            // (is possible, if sub_type_c is different).
+            val rels: ImmSeq[PatNodeRel[_]] = tx.loadPatPostRels(
+                  forPatId = q.relatedPatId, relType = q.relType,
+                  onlyOpenPosts = q.onlyOpen, limit = q.limit)
+            val postIds = rels.map(_.toNodeId)
+            tx.loadPostsByIdKeepOrder(postIds)
+          case _ =>
+            tx.loadPostsByQuery(query) /*
               limit = limit, orderBy, byUserId = writtenById,
               includeTitlePosts = inclTitles, inclUnapprovedPosts = inclUnapprovedPosts,
               // inclUnlistedPagePosts_unimpl here has no effect, not implemented,
               // but there's a filter below in the for { ... }.
               inclUnlistedPagePosts_unimpl = inclUnlistedPagePosts)
+              */
+        }
       }
     }
 
     filterMaySeeAddPages(
-          requester, postsInclForbidden, inclUnlistedPagePosts = inclUnlistedPagePosts)
+          Some(query.reqr),
+          postsInclForbidden,
+          inclUnlistedPagePosts = query.inclUnlistedPagePosts)
   }
 
 

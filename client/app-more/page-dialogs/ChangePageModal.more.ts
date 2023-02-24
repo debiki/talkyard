@@ -181,15 +181,12 @@ const ChangePageDialog = createComponent({
           r.div({ className: 's_ExplDrp_ActIt' },
             !origPost.assigneeIds ? r.span({ className: 'esP_By' }, `(None)`) :
                   origPost.assigneeIds.map(patId =>
-                    UserName({ patId, store, avoidFullName: true })),  // KEY!
+                    UserName({ patId, store, avoidFullName: true, key: patId })),
             Button({ onClick: () => {
                 openAddPeopleDialog({
                       curPats: origPost.assigneeIds?.map(id => store.usersByIdBrief[id]),
                       onChanges: (res: PatsToAddRemove) => {
-                  Server.changeAssignees({ ...res, postId: origPost.uniqueId }, () => {
-                    util.openDefaultStupidDialog({ body:
-                      `New ids: ${JSON.stringify(res)}.` });
-                  });
+                  Server.changeAssignees({ ...res, postId: origPost.uniqueId }, this.close);
                 }}) }}, t.ChangeDots),
               ));
 

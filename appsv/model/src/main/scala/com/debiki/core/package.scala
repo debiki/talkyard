@@ -799,13 +799,26 @@ package object core {
   }
 
 
-  type ReqrId = Who // RENAME to ReqrIds? (with an ...s)
+  type ReqrId = Who // RENAME to ReqrIds? (with an ...s),  [edit] NO, instead, to ReqrInf. [/edit]
                     // ... because is more than one id (user id, ip, bowser id cookie, etc)
+
+  case class ReqrInf( // better
+    reqr: Pat,
+    browserIdData: BrowserIdData,
+  ) {
+    def toWho: Who = Who(reqr.trueId2, browserIdData, reqr.isAnon)
+  }
+
 
   type BrowserIdSt = St  // [Scala_3] opaque type
 
   RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
   // I find "who" being confusing as to whom it refers to.
+  // [edit] No, rename to ReqrInf instead?!  (Requester information)
+  // But not to ReqInf, because it's not info about the *request*, but about
+  // the *requester* (the person). E.g. url path and query param names, should *not*
+  // be exposed to internal parts of Ty (would increase the coupling, in a bad way).
+  // So, not ReqInf, but ReqrInf.  [/edit]
   // Is isAnon always false, hmmm?
   case class Who(trueId: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
     def id: PatId = trueId.curId

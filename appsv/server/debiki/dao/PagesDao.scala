@@ -802,7 +802,8 @@ trait PagesDao {
 
 
   REFACTOR // Move to PostsDao? This fn creates a post, not a whole page operation.
-  def addMetaMessage(doer: Participant, message: String, pageId: PageId, tx: SiteTransaction): Unit = {
+  def addMetaMessage(doer: Participant, message: String, pageId: PageId,
+                     tx: SiteTransaction, notifyMentioned: Bo = false): Post = {
     // Some dupl code [3GTKYA02]
     val page = newPageDao(pageId, tx)
     val postId = tx.nextPostId()
@@ -831,9 +832,19 @@ trait PagesDao {
     dieIf(pageMeta.numPostsTotal > postNr + 1, "EdE3PFK2W0", o"""pageMeta.numPostsTotal
         is ${pageMeta.numPostsTotal} but should be <= postNr + 1 = ${postNr + 1}""")
 
+    // (Later: How handle [private_pats]?)
     tx.insertPost(metaMessage)
 
     SHOULD // send back json so the satus message gets shown, without reloading the page. [2PKRRSZ0]
+
+    if (notifyMentioned) {
+      // For now. Later, somehow use  NotificationType.PostAssigneeAdded
+      notfGenerator(tx).generateForNewPost(
+            page, metaMessage, sourceAndHtml = None, postAuthor = None, // Some(authorMaybeAnon),
+            anyNewModTask = None) // anyReviewTask)
+    }
+
+    metaMessage
   }
 
 

@@ -304,8 +304,10 @@ object DraftType {
   *   writing (rather than pageId and postNr). Still, nice to have pageId, in case staff
   *   moves the post to a page one may not access — then, good to know on which page it was
   *   located, originally, when starting typing the draft (so one knows what topic it concerns).
-  * @param postNr
-  * @param postId
+  * @param postNr — Which post, on pageId, we're replying to.
+  * @param postId — 1) If editing an already existing post. Or 2) which post we're
+  *   replying to, might then be different from page id + post nr, if got moved to other
+  *   page. (Then where does the draft appear? I forgot. Oh well.)
   */
 case class DraftLocator(
   draftType: DraftType,
@@ -611,6 +613,15 @@ case class Post(   // [exp] ok use
     else Some(currentSource)
   }
 
+  def addVisiblePatIdsTo(mutSet: MutSet[PatId]): U = {
+    // Later: Incl authorIds too, but then maybe don't incl createdById, so that
+    // info won't be leaked. (If the author is set to sbd else, then, it can be
+    // off-topic for site visitors to know who created a post in the first place.)
+    // And, don't include [private_pats], once impl.
+    // Skip this.ownerIds — not needed for rendering a page, and might not be public.
+    mutSet ++= assigneeIds
+    mutSet += createdById
+  }
 
   def numEditsToReview: Int = currentRevisionNr - approvedRevisionNr.getOrElse(0)
 

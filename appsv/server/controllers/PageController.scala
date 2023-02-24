@@ -242,6 +242,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
+  MOVE // to UserController maybe?
   def changePatNodeRels: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething,
           maxBytes = 200) { req =>
     import req.dao
@@ -255,9 +256,14 @@ class PageController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val storePatch = dao.addRemovePatNodeRelsIfAuZ(
           addPatIds = addPatIds, removePatIds = removePatIds,
           postId = postId, relType = PatRelType_later.AssignedTo,
+          generateMetaComt = true, notifyPats = true,
           req.who, IfBadAbortReq)
     OkSafeJson(storePatch)
   }
+
+  /* Later?:  For now, part of  DraftsController.listDrafts
+  def listPatNodeRels: Action[JsValue] = ...
+  */
 
 
   def acceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {

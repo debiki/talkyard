@@ -112,6 +112,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId): Vec[Post]
   def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
+  /** The result is shorter, if some posts weren't found. */
+  def loadPostsByIdKeepOrder(postIds: Iterable[PostId]): ImmSeq[Post]
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]     ; RENAME; QUICK // to loadPostsByIds
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
 
@@ -134,9 +136,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   // Also, these params:  includeDeleted,  includeHidden.
   //    includeChatMessages: Boolean,  onlyUnapproved: Boolean,
   //    onPageId: Option[PageId]
-  def loadPostsByQuery(limit: Int, orderBy: OrderBy, byUserId: Option[UserId],
-        includeTitlePosts: Boolean, inclUnapprovedPosts: Boolean,
-        inclUnlistedPagePosts_unimpl: Boolean): immutable.Seq[Post]
+  def loadPostsByQuery(query: PostQuery): immutable.Seq[Post]
 
   def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 
@@ -216,7 +216,10 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction]
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
+  def loadPatPostRels[T <: PatRelType_later](forPatId: PatId, relType: T, onlyOpenPosts: Bo,
+        limit: i32): ImmSeq[PatNodeRel[T]]
   def loadAllPostActions(): immutable.Seq[PostAction]
+
   def insertPostAction(postAction: PostAction): U
   def deletePatNodeRels(fromPatIds: Set[PatId], toPostId: PostId,
         relTypes: Set[PatRelType_later]): i32

@@ -850,6 +850,8 @@ interface Topic {
   authorId: UserId;
   lastReplyerId?: UserId;
   frequentPosterIds: UserId[];
+  /// Not empty, undefined instead.
+  assigneeIds?: PatId[];
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;
@@ -2237,6 +2239,30 @@ interface ShowNewPageParams {
 }
 
 
+interface PatPanelProps {
+  me: Me;
+  store: Store;
+  user: UserDetailsStatsGroups;
+}
+
+
+interface PatStatsPanelProps extends PatPanelProps {
+  stats: UserStats | U; // for the Summary page
+}
+
+
+interface PatPostsPanelProps extends PatPanelProps {
+  showWhat?: 'Posts' | 'Tasks';  // Posts is the default
+  onlyOpen?: Bo;
+}
+
+
+interface PatTopPanelProps extends PatStatsPanelProps {
+  groupsMaySee: Group[];
+  reloadUser: () => Vo;
+}
+
+
 /// Authentication dialog
 interface AuthnDlgIf {
   openToLogIn: (loginReason: LoginReason,
@@ -2710,6 +2736,15 @@ type LoadPageIdsUrlsResponse = PageIdsUrls[];
 
 type TagTypesById = { [tagTypeId: number]: TagType };
 
+
+interface LoadPostsResponse {
+  posts: Post[];
+  // COULD_OPTIMIZE: Send back an array instead, bit less json.
+  patsBrief: Pat[]; // patsById: { [patId: Nr]: Pat };
+  tagTypes: TagType[];
+}
+
+
 interface LoadTopicsResponse {
   topics: Topic[];
   storePatch: TagTypesStorePatch & PatsStorePatch;
@@ -2797,6 +2832,7 @@ interface LoadDraftAndTextResponse {
   draft?: Draft;
 }
 
+// Maybe rename to  List*Work*Response?
 interface ListDraftsResponse {
   drafts: Draft[];
   pagePostNrsByPostId: { [postId: string]: [PageId, PostNr] };

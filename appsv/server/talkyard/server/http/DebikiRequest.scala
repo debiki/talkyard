@@ -117,6 +117,9 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def whoOrUnknown: Who = Who(requesterOrUnknown.trueId2, theBrowserIdData)
 
+  // Better than Who — the latter just discards requesterOrUnknown, why?
+  def reqrInf: ReqrInf = ReqrInf(requesterOrUnknown, theBrowserIdData)
+
   def authzCtxWithReqer: AuthzCtxWithReqer = dao.getAuthzCtxWithReqer(theRequester)
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
   lazy val authzCtxOnAllWithReqer: Opt[AuthzCtxOnAllWithReqer] =

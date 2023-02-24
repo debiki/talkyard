@@ -172,6 +172,21 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val (drafts: immutable.Seq[Draft], pagePostNrsByPostId: Map[PostId, PagePostNr], pageIds) =
         dao.readOnlyTransaction { tx =>
       val ds = tx.listDraftsRecentlyEditedFirst(userId, limit = 500)
+      /*
+      // tx.loadPatPostRels(forPatId = userId, PatRelType_later.AssignedTo, limit = 51)
+      //val taskPosts = tx.loadPostsByQuery(
+            limit = 123, orderBy = OrderBy.MostRecentFirst, byUserId = None,
+            relatedToPat = Some(userId, PatRelType_later.AssignedTo),
+            includeTitlePosts = false,
+            // If one has started writing a post, and assigned it to oneself before
+            // it got approved? If that is at all doable, then probably such posts should
+            // be included.
+            inclUnapprovedPosts = true,
+            // inclUnlistedPagePosts_unimpl  Hmm. Has no effect, not implemented,
+            // but there's   no, *not*   a filter below in the for { ... }.
+            inclUnlistedPagePosts_unimpl = false)
+            */
+
       val postIds = ds.flatMap(_.forWhat.postId).toSet
       val pagePostNrsByPostId = tx.loadPagePostNrsByPostIds(postIds)
       val pageIdsToReplyTo = ds.flatMap(_.forWhat.pageId).toSet
@@ -180,6 +195,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     }
 
     val pageStuffById = dao.getPageStuffById(pageIds)
+     // +  addTo = loadTaskPostsResult
 
     val pagePostNrs: Seq[(String, JsValue)] = pagePostNrsByPostId.map({
         case (postId, ppnr) => (postId.toString, Json.arr(ppnr.pageId, ppnr.postNr))
@@ -188,6 +204,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // Typescript: ListDraftsResponse.
     OkSafeJson(Json.obj(
       "drafts" -> JsArray(drafts map JsDraft),
+      //"tasks" -> JsArray(tasks map JsTask),
       "pagePostNrsByPostId" -> JsObject(pagePostNrs),
       "pageTitlesById" -> JsObject(pageStuffById.mapValues(stuff => JsString(stuff.title)))))
   }

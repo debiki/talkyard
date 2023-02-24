@@ -2107,9 +2107,14 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
 
 
 // SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead.  [.get_n_patch]
-export function loadPostsByAuthor(authorId: UserId, onOk: (resp) => Vo) {
-  get(`/-/list-posts?authorId=${authorId}`, function (resp) {
-    ReactActions.patchTheStore({ tagTypes: resp.tagTypes });
+export function loadPostsByAuthor(authorId: UserId, showWhat: 'Tasks' | U,
+          onlyOpen: Bo, onOk: (resp) => Vo) {
+  const showWhatParam = showWhat ? '&relType=11' : ''; // for now. 11 = AssignedTo.
+  const onlyOpenParam = onlyOpen ? '&which=678' : '';  // for now.
+  // RENAME 'authorId' to 'relToPatId'?
+  const url = `/-/list-posts?authorId=${authorId}${showWhatParam}${onlyOpenParam}`
+  get(url, function (resp: LoadPostsResponse) {
+    ReactActions.patchTheStore({ tagTypes: resp.tagTypes, usersBrief: resp.patsBrief });
     onOk(resp);
   });
 }

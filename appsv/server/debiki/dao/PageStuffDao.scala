@@ -24,6 +24,19 @@ import debiki._
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 
+case class PatPostRelStuff[T <: PatRelType_later](
+  fromPatId: PatId, // or skip?
+  toPost: Post,
+  relType: PatNodeRel[T],
+  //pageTitle: St,
+  //pageMeta: St,
+  //patsById: Map[PatId, Pat]
+) {
+  //def fromPat: Pat = patsById.getOrDie(patId, "TyEPAPOREL0PAT",
+  //      s"Pat missing: patsById($fromPatId)")
+  def pageId = toPost.pageId
+}
+
 
 /** Page stuff, e.g. title, body excerpt (for pinned topics), user ids.
   */
@@ -58,12 +71,13 @@ case class PageStuff(
 
   def categoryId: Option[CategoryId] = pageMeta.categoryId
 
-  def userIds: immutable.Seq[UserId] = {
-    var ids = frequentPosterIds.toVector :+ authorUserId
-    ids ++= assigneeIds
-    //ids ++= authorIds
-    if (lastReplyerId.isDefined) ids :+= lastReplyerId.get
-    ids
+  def addVisiblePatIdsTo(set: MutSet[PatId]): U = {
+    // Later, don't include [private_pats], once impl.
+    set.add(authorUserId)   // or +=
+    //ids ++= authorIds later, if many
+    frequentPosterIds.foreach(set.add)   // or ++= ?
+    lastReplyerId.foreach(set.add)
+    assigneeIds.foreach(set.add)
   }
 }
 

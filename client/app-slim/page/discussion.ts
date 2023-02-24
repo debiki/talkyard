@@ -757,7 +757,7 @@ const RootPostAndComments = createComponent({
       const child: Post = postsByNr[childNr];
       if (!child)
         return; // deleted
-      const isProgrPost =
+      const isProgrPost =  // break out:  [comt_isForTimeline]  ?
           child.postType === PostType.BottomComment || child.postType === PostType.MetaMessage;
       if (isProgrPost !== inProgrSect) {
         return;
@@ -1678,7 +1678,7 @@ export const PostHeader = createComponent({
         r.span({ className: 'n_Asgd2'},
           r.span({ className: 'n_Asgd2_Ttl' }, "assigned to "),
           post.assigneeIds.map(patId =>
-            UserName({ patId, store, avoidFullName: true })));
+            UserName({ patId, store, avoidFullName: true, key: patId })));
 
     if (isWikiPost(post)) {
       if (abbreviate) {

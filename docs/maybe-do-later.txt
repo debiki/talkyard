@@ -78,6 +78,10 @@ access restricted topics.
 Make site specific errors visible to site admins — so no need
 to have Linux root access.
 
+[logger_everywhere]
+Pass loggers to the models and rdb Scala modules, so they don't need to use
+System.stdout/stderr directly.
+
 [immutable]
 Make all js objs "light weight immutable", via Typescript's 'readonly' properties:
 https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties

@@ -26,7 +26,7 @@ import debiki.JsonUtils.parseOptInt32
 import talkyard.server.http._
 import play.api.libs.json._
 import play.api.mvc._
-import scala.collection.{immutable, mutable}
+import scala.collection.{immutable, mutable => mut}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
@@ -401,13 +401,16 @@ object ForumController {
   }
 
 
-  // Vaguely similar code: ThingsFoundJson.makePagesFoundResponseImpl()  [406RKD2JB]
+  // Vaguely similar code: ThingsFoundJson._makePagesFoundResponseImpl()  [406RKD2JB]
   //
   def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
     val pageStuffList: Iterable[PageStuff] = pageStuffById.values
 
-    val users = dao.getUsersAsSeq(pageStuffList.flatMap(_.userIds).toSet)
+    // [incl_topic_assignees]
+    val patIdsNeeded = mut.Set[PatId]()
+    pageStuffList.foreach(_.addVisiblePatIdsTo(patIdsNeeded))
+    val users = dao.getUsersAsSeq(patIdsNeeded)  // pageStuffList.flatMap(_.userIds).toSet)
 
     // In the topic list, we show only post tags (not author badges),
     // so we don't need any pat tags (user badges).

@@ -622,6 +622,27 @@ case object Participant {
 
     None
   }
+
+
+  /** A `val` would cause null pointer exceptions (because accessed too soon). */
+  def SystemUserBr = UserBr(
+        id = SystemUserId,
+        ssoId = None,
+        extId = None,
+        fullName = Some("System"),
+        theUsername = "system",
+        email = "",
+        emailNotfPrefs = EmailNotfPrefs.ForbiddenForever,
+        emailVerifiedAt = None,
+        passwordHash = None,
+        privPrefs = MemberPrivacyPrefs.empty,
+        isApproved = Some(true),
+        suspendedTill = None,
+        trustLevel = TrustLevel.CoreMember,
+        threatLevel = ThreatLevel.SuperSafe,
+        isAdmin = true,
+        isModerator = true,
+        )
 }
 
 

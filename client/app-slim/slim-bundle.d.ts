@@ -556,7 +556,8 @@ declare namespace debiki2 {
   function UserName(props: {
       user?: Pat, patId?: PatId, // either or
       store?: Store, settings?: SettingsVisibleClientSide,
-      makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo });
+      makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo,
+      key?: St | Nr });
 
   function TagListLive(ps: TagListLiveProps): RElm | U;
   function TagList(ps: TagListProps): RElm | U;

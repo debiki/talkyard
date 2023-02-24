@@ -191,6 +191,9 @@ export function linkToPatsProfile(patOrStore: Me | Pat | Store): St {
 
 // --- / CLEAN_UP  --------------------------------------------
 
+/// COULD_OPTIMIZE, SMALLER_BUNDLE: Move to more-bundle?
+/// And many other link fns?
+///
 export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr): string {
   const locator = draft.forWhat;
 

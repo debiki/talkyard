@@ -275,7 +275,7 @@ export function UserNameLink(props: {
 export function UserName(props: {
     user?: Pat, patId?: PatId, // either or
     store?: Store, settings?: SettingsVisibleClientSide,
-    makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo }) {
+    makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo, key?: St | Nr }) {
 
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
   const settings: SettingsVisibleClientSide = props.settings || props.store.settings;
@@ -361,6 +361,9 @@ export function UserName(props: {
   const newProps: any = {
     className: 'dw-p-by esP_By' + (isUnknown ? ' s_P_By-Unk' : ''),
   };
+  if (isVal(props.key)) {
+    newProps.key = props.key;
+  }
 
   // Talkyard demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
   // '__sx_[subdomain]_[user-id]' where [subdomain] is a StackExchange subdomain, and

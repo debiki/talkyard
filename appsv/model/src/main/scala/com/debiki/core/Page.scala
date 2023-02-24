@@ -420,11 +420,6 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 
   def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
 
-  def addUserIdsTo(ids: mutable.Set[UserId]): Unit = {
-    ids += authorId
-    ids ++= frequentPosterIds
-    lastApprovedReplyById.foreach(ids += _)
-  }
 
   def idVersion: PageIdVersion = PageIdVersion(pageId, version = version)
 
@@ -1128,10 +1123,76 @@ object PinPageWhere {
 
 
 
+// MOVE these two (PageQuery, PostQuery) to their own file,  queries.scala?
+// And add more, e.g. user queries.
+
 case class PageQuery(  // also see PeopleQuery
   orderOffset: PageOrderOffset,
   pageFilter: PageFilter,
   includeAboutCategoryPages: Boolean)
+
+
+/**
+  * @param reqrInf — info about who's doing this request.
+  */
+sealed trait PostQuery {
+  def reqrInf: ReqrInf
+  def reqr: Pat = reqrInf.reqr
+  def inclTitles: Bo
+  def inclUnapproved: Bo
+  def inclUnlistedPagePosts: Bo
+  def onlyEmbComments: Bo = false
+  def limit: i32
+  def orderBy: OrderBy
+
+  /** If this query is by someone about henself. Or if is by a mod or admin. */
+  def reqrIsStaffOrSubject: Bo = reqr.isStaff
+}
+
+
+object PostQuery {
+  case class AllPosts(
+    reqrInf: ReqrInf,
+    inclTitles: Bo,
+    inclUnapproved: Bo,
+    inclUnlistedPagePosts: Bo,
+    override val onlyEmbComments: Bo,
+    limit: i32,
+    orderBy: OrderBy,
+  ) extends PostQuery {
+  }
+
+  case class PostsRelatedToPat[T <: PatRelType_later](
+    reqrInf: ReqrInf,
+    relatedPatId: PatId,
+    relType: T,
+    onlyOpen: Bo,
+    inclTitles: Bo,
+    inclUnapproved: Bo,
+    inclUnlistedPagePosts: Bo,
+    limit: i32,
+    orderBy: OrderBy,
+  ) extends PostQuery {
+
+    override def reqrIsStaffOrSubject: Bo = reqr.isStaff || reqr.id == relatedPatId
+  }
+
+  // Later, replace w PostsRelatedToPat and relType AuthorOf.
+  case class PostsByAuthor(
+    reqrInf: ReqrInf,
+    authorId: PatId,
+    inclTitles: Bo,
+    inclUnapproved: Bo,
+    inclUnlistedPagePosts: Bo,
+    limit: i32,
+    orderBy: OrderBy,
+  ) extends PostQuery {
+
+    override def reqrIsStaffOrSubject: Bo = reqr.isStaff || reqr.id == authorId
+  }
+
+}
+
 
 /** How to sort pages, and where to start listing them, e.g. if fetching additional
   * pages after the user has scrolled down to the end of a page list.

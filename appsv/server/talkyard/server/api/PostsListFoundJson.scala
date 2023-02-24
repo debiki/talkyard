@@ -60,6 +60,7 @@ object PostsListFoundJson {
 
     // --- Load authors
 
+    // Bit dupl, also:
     val authorIds = postsFound.map(_.createdById).toSet
     val authorsById: Map[UserId, Participant] = dao.getParticipantsAsMap(authorIds)
 

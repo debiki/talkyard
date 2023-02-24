@@ -297,9 +297,11 @@ trait RenderedPageHtmlDao {
   /** Forums list other pages sorted by modification time, so whenever any
     * page is modified, it's likely that a forum page should be rerendered.
     * Also, if a new category is added, the parent forum should be rerendered.
-    * For simplicity, we here uncache all forums.
+    * For simplicity, we here uncache all forums in this site (there's currently
+    * just one per site, until [sub_communities] implemented).
+    * [make_salestuff_uncache_forums]
     */
-  private def uncacheForums(siteId: SiteId): Unit = {
+  def uncacheForums(siteId: SiteId): Unit = {
     val forumIds = memCache.lookup[List[String]](forumsKey(siteId)) getOrElse Nil
     forAllAccessedOrigins { origin =>
       forumIds foreach { forumId =>

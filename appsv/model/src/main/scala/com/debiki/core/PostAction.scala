@@ -142,6 +142,11 @@ object PatRelType_later {
     *  thereafter the original author cannot edit it, un/delete it or anything.
     */
   case object OwnerOf_later extends PatRelType_later(-1)  // maybe 1?
+
+  def fromInt(value: i32): Opt[PatRelType_later] = Some(value match {
+    case AssignedTo.IntVal => AssignedTo
+    case _ => return None
+  })
 }
 
 
@@ -238,18 +243,20 @@ sealed abstract class PostAction {
 }
 
 
-case class PatNodeRel(
+case class PatNodeRel[T <: PatRelType_later](
   toNodeId: PostId,
   fromPatId: PatId,
-  pageId: PageId,  // deprecated?
-  postNr: PostNr,  //
+  @deprecated
+  pageId: PageId,
+  @deprecated
+  postNr: PostNr,
   addedAt: When,
-  relType: PostActionType,
+  relType: T,
 ) extends PostAction {
   def uniqueId: PostId = toNodeId
   def doerId: UserId = fromPatId
   def doneAt: When = addedAt
-  def actionType: PostActionType = relType
+  def actionType: T = relType
 
   // For now.
   require(relType.toInt == PatRelType_later.AssignedTo.toInt,
@@ -265,14 +272,14 @@ object PostAction {
       PostVote(uniqueId, pageId, postNr, doneAt, voterId = doerId, voteType = voteType)
     case flagType: PostFlagType =>
       PostFlag(uniqueId, pageId, postNr, doneAt, flaggerId = doerId, flagType = flagType)
-    case patNodeRelType: PostActionType =>
+    case patNodeRelType: PatRelType_later =>
       PatNodeRel(
             fromPatId = doerId,
             toNodeId = uniqueId,
             pageId = pageId,
             postNr = postNr,
             addedAt = doneAt,
-            relType = actionType)
+            relType = patNodeRelType)
     case _ =>
       die("DwE7GPK2", s"Bad action type: '$actionType'")
   }
