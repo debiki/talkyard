@@ -181,17 +181,20 @@ object Authz {
 
     var maxUpl: Opt[i32] = Some(0)
     val uplExts = MutHashSet[St]()
+    var canSeeOthersEmailAdrs = false
     for (group <- groupsAnyOrder) {
       val perms = group.perms
       maxUpl = maxOfAnyInt32(maxUpl, perms.maxUploadBytes)
       uplExts ++= perms.allowedUplExtensionsAsSet
+      canSeeOthersEmailAdrs ||= perms.canSeeOthersEmailAdrs.is(true) || group.isAdmin
     }
 
     maxUpl = minOfAnyInt32(maxUpl, Some(permsOnSite.maxUploadSizeBytes))
 
     EffPatPerms(
           maxUploadSizeBytes = maxUpl.get,
-          allowedUploadExtensions = uplExts.toSet)
+          allowedUploadExtensions = uplExts.toSet,
+          canSeeOthersEmailAdrs = canSeeOthersEmailAdrs)
   }
 
 

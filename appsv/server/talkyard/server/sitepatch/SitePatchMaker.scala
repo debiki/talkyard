@@ -173,7 +173,7 @@ object SitePatchMaker {
           _, groups = Nil, usersById = Map.empty, callerIsAdmin = true, inclPasswordHash = true)))
 
       val pptStats: Seq[UserStats] = anyDump.map(_.pptStats) getOrElse tx.loadAllUserStats()
-      fields("ppStats") = JsArray(pptStats.map(JsUserStats(_, isStaffOrSelf = true)))
+      fields("ppStats") = JsArray(pptStats.map(JsUserStats(_, isStaffOrSelf = true, reqrPerms = None)))
 
       val pptVisitStats: Seq[UserVisitStats] =
         anyDump.map(_.pptVisitStats) getOrElse tx.loadAllUserVisitStats()

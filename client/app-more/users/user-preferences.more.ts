@@ -52,8 +52,10 @@ export const UserPreferences = createFactory({
     const location = this.props.location;
     const store: Store = this.props.store;
     const me: Myself = store.me;
+    const isSelf = me.isAuthenticated && me.id === user.id;
+    const isSelfOrAdmin = isSelf || me.isAdmin;
 
-    const mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
+    const mayViewPrefs = isStaff(me) || isSelf || user.email;
     if (!mayViewPrefs)
       return null;
 
@@ -86,6 +88,7 @@ export const UserPreferences = createFactory({
     const isBuiltInUser = member_isBuiltIn(user);
     const isGuestOrBuiltIn = isGuest || isBuiltInUser;
     const isGroupGuestOrBuiltIn = user.isGroup || isGuestOrBuiltIn;
+    const isSelfOrStaff = isSelfOrAdmin || isStaff(me);
 
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
@@ -95,15 +98,20 @@ export const UserPreferences = createFactory({
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
+
               // It's possible to configure built-in groups (which are "normal" members).
-              !isNormalMember ? null: LiNavLink({
+              !isNormalMember || !isSelfOrAdmin ? null: LiNavLink({
                   to: prefsPathSlash + notfsPathSeg, className: 's_UP_Prf_Nav_NtfsL' }, t.Notifications),
+
               !isNormalMember ? null : LiNavLink({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
-              isGroupGuestOrBuiltIn ? null : LiNavLink({
+
+              isGroupGuestOrBuiltIn || !isSelfOrStaff ? null : LiNavLink({
                   to: securityPath, className: 'e_UP_Prf_Nav_SecL' }, t.upp.Security),
-              isGuestOrBuiltIn ? null : LiNavLink({
+
+              isGuestOrBuiltIn || !(isSelfOrAdmin || user.email) ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account),
+
               !isNormalMember ? null : LiNavLink({
                   to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, t.upp.Interface))),
          r.div({ className: 's_UP_Act_List' },
@@ -124,11 +132,16 @@ export const AboutTab = createFactory({
 
     let anyNotYourPrefsInfo;
     if (me.id !== user.id && !isSystemUser) {
-      // (This is for admins, don't translate. [5JKBWS2])
-      const prefsAndCanBecause = " preferences. You can do that, because you're an administrator.";
+      // (This is for admins, don't translate. [5JKBWS2]  0I18N)
+      const prefs = " preferences.";
+      const YouCanBecause = me.isAdmin
+              ? " You can do that, because you're an administrator."
+              : '';  // mod or core member, but which
+      const youAreWhat = me.isAdmin ? "You are editing " : "You are viewing ";
+
       anyNotYourPrefsInfo = user.isGroup
-        ? r.p({}, "You are editing a ", r.b({}, "group's"), prefsAndCanBecause)
-        : r.p({}, "You are editing ", r.b({}, "another"), " user's" + prefsAndCanBecause);
+        ? r.p({}, youAreWhat + "a ", r.b({}, "group's"), prefs + YouCanBecause)
+        : r.p({}, youAreWhat, r.b({}, "another"), " user's" + prefs + YouCanBecause);
     }
 
     const preferences = isGuest(user)
@@ -422,9 +435,12 @@ const AboutMember = createComponent({
             r.label({}, t.EmailAddress),
             r.div({},
               r.samp({}, user.email),
+              // HMMMM
               NavLink({ to: this.props.emailsLoginsPath,
                   className: 'btn s_UP_Prefs_ChangeEmailB' }, t.ChangeDots)),
             r.p({ className: 'help-block' }, t.upp.NotShown)),
+
+          patPlusChanges.emailNotfPrefs ? null :
           r.div({ className: 'form-group' },
             r.label({}, "Get emails: "),  // I18N
             Button({ className: 's_UP_Ab_EmPfB', onClick: (event: MouseEvent) => {
@@ -1026,6 +1042,7 @@ const AccountTab = createFactory<any, any>({
 
   componentDidMount: function() {
     const user: UserInclDetails = this.props.user;
+    // Show error instead, if !staff || !user.email address  ?
     this.loadEmailsLogins(user.id);
   },
 
@@ -1131,7 +1148,8 @@ const AccountTab = createFactory<any, any>({
   render: function() {
     const me: Myself = this.props.store.me;
     const user: UserInclDetails = this.props.user;
-    const isMe = me.id === user.id;
+    const isSelf = me.id === user.id;
+    const isSelfOrAdmin = isSelf || me.isAdmin;
 
     if (!this.state.emailAddresses)
       return r.p({}, t.Loading);
@@ -1157,7 +1175,9 @@ const AccountTab = createFactory<any, any>({
           _.each(loginMethods, (method: UserAccountLoginMethod) => {
             if (method.idpEmailAddr === addr.emailAddress) {
               isLoginMethod = true;
-              status += t.upp.ForLoginWithDot(method.provider);
+              // Provider name not incl, if !isSelf or admin, e.g. if is moderator.
+              status += method.provider ?
+                          t.upp.ForLoginWithDot(method.provider) : `For login. `; // I18N
             }
           });
 
@@ -1171,8 +1191,9 @@ const AccountTab = createFactory<any, any>({
           return r.li({ className: 's_UP_EmLg_EmL_It',  key: addr.emailAddress },
             r.div({ className: 's_UP_EmLg_EmL_It_Em' + testClasses }, addr.emailAddress),
             r.div({}, status),
-            r.div({},
+            !isSelfOrAdmin ? null : r.div({},
               isVerified ? null : (
+                  // I18N, for "verif email sent"
                   this.state.verifEmailsSent[addr.emailAddress] ? "Verification email sent. " :
                 Button({ onClick: () => this.resendEmailAddrVerifEmail(addr.emailAddress),
                     className: 'e_SendVerifEmB' }, t.upp.SendVerifEmail)),
@@ -1186,7 +1207,7 @@ const AccountTab = createFactory<any, any>({
 
     // Don't show the Add button again after one email added. Then it's harder to see
     // the "check your inbox" message.
-    const showAddEmailInputButton = this.state.doneAddingEmail ? null : (
+    const showAddEmailInputButton = this.state.doneAddingEmail || !isSelfOrAdmin ? null : (
         emailAddrs.length >= MaxEmailsPerUser
           ? r.span({}, t.upp.MaxEmailsInfo(MaxEmailsPerUser))
           : (this.state.showAddEmailInput || this.state.isAddingEmail
@@ -1223,11 +1244,14 @@ const AccountTab = createFactory<any, any>({
 
           return r.li({ className: 's_UP_EmLg_LgL_It',
                       key: `${method.provider}:${method.idpUserId}` },
+
             r.span({ className: 's_UP_EmLg_LgL_It_How' }, method.provider),
-            t.upp.commaAs,
+            method.provider ? t.upp.commaAs : null,
+
             r.span({ className: 's_UP_EmLg_LgL_It_Un' }, method.idpUsername),
             comma,
             r.span({ className: 's_UP_EmLg_LgL_It_Em' }, method.idpEmailAddr),
+
             maybeIdpUserId,
             maybeIdpAuthUrl)
             // r.div({}, Button({}, "Remove")))  — fix later
@@ -1237,10 +1261,17 @@ const AccountTab = createFactory<any, any>({
       r.h3({}, t.upp.YourContent),
 
       Button({ onClick: this.downloadMyContent }, t.upp.DownloadPosts),
-      r.p({ className: 'help-block' }, t.upp.DownloadPostsHelp),
+      r.p({ className: 'help-block' },
+        isSelf ? t.upp.DownloadPostsHelp
+            : `Creates a JSON file with topics and comments by ${pat_name(user)}.` // I18N
+              // Private stuff is filtered out here: [downl_own_may_see]
+              + (!isSelfOrAdmin ? ` Private posts are not included.` : '')
+        ),
 
-      Button({ onClick: this.downloadPersonalData }, t.upp.DownloadPersData),
-      r.p({ className: 'help-block' }, t.upp.DownloadPersDataHelp));
+      !isSelfOrAdmin ? null : rFr({},
+      Button({ onClick: this.downloadPersonalData },
+          t.upp.DownloadPersData),
+      r.p({ className: 'help-block' }, t.upp.DownloadPersDataHelp)));
 
     // Later:
     //const deactivateButton = user.deletedAt ? null : (

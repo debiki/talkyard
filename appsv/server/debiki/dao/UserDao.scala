@@ -2179,7 +2179,8 @@ trait UserDao {
           case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
       val groupBef: Group = memberInclDetails.asGroupOr(IfBadAbortReq)
       val groupAft = groupBef.copy(perms = perms)
-      tx.updateMemberInclDetails(groupAft)
+      val validGroup = groupAft.checkValid(IfBadAbortReq)  //  [validate_group]
+      tx.updateGroup(validGroup)
       staleStuff.addPatIds(Set(patId))
     }
     memCache.remove(allGroupsKey) ; CLEAN_UP // use staleStuff instead, new fn needed?
@@ -2500,7 +2501,9 @@ trait UserDao {
 
     writeTx { (tx, staleStuff) =>
       val me = tx.loadTheUser(byWho.id)
-      throwForbiddenIf(me.id != userId && !me.isStaff,
+      throwForbiddenIf(me.id != userId && !me.isAdmin,
+                  // was: isStaff  but isAdmin safer, for now? There can be a [power_mod]
+                  // trust level later which can do such things?
           errorCode + "-ISOTR", s"May not $mayNotWhat for others")
 
       // [pps] load MemberInclDetails instead, and hand to the caller? (user or group incl details)

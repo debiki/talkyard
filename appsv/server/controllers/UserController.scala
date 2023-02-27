@@ -155,10 +155,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   //
   private def loadPatJsonAnyDetailsById(userId: UserId, includeStats: Bo,
         request: DebikiRequest[_]): (JsObject, JsValue, Pat) = {
+    import request.dao
+
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.exists(_.id == userId)
     val isStaffOrSelf = callerIsStaff || callerIsUserHerself
+    val reqrPerms: EffPatPerms =
+          dao.deriveEffPatPerms(request.authzContext.groupIdsEveryoneLast)
+
     request.dao.readOnlyTransaction { tx =>
       val stats = includeStats ? tx.loadUserStats(userId) | None
       val (pptJson, pat) =
@@ -168,10 +173,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           val json = memberOrGroup match {
             case m: UserInclDetails =>
               JsUserInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
-                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
+                    callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
+                    reqrPerms = Some(reqrPerms))
             case g: Group =>
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
-                callerIsStaff = callerIsStaff)
+                    callerIsStaff = callerIsStaff, reqrPerms = Some(reqrPerms))
           }
           (json, memberOrGroup)
         }
@@ -180,12 +186,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           val json = pat match {
             case anon: Anonym => JsPat(anon, TagsAndBadges.None)
             case guest: Guest => jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
-                callerIsAdmin = callerIsAdmin)
+                callerIsAdmin = callerIsAdmin, reqrPerms = Some(reqrPerms))
           }
           (json, pat.asInstanceOf[ParticipantInclDetails])
         }
       dieIf(pat.id != userId, "TyE36WKDJ03")
-      (pptJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), pat.noDetails)
+      (pptJson,
+          stats.map(JsUserStats(_, isStaffOrSelf, Some(reqrPerms))).getOrElse(JsNull),
+          pat.noDetails)
     }
   }
 
@@ -194,8 +202,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   private def loadMemberJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
         includeStats: Boolean, request: DebikiRequest[_])
         : (JsObject, JsValue, Participant) = {
+    import request.{dao}
+
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
+    val reqrPerms: EffPatPerms =
+          dao.deriveEffPatPerms(request.authzContext.groupIdsEveryoneLast)
 
     // For now, unless admin, don't allow emails, so cannot brut-force test email addresses.
     if (emailOrUsername.contains("@") && !callerIsAdmin)
@@ -239,12 +251,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           val callerIsUserHerself = request.user.exists(_.id == user.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
           val userJson = JsUserInclDetails(
-            user, Map.empty, groups, callerIsAdmin = callerIsAdmin,
-            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
-          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), user.noDetails)
+                user, Map.empty, groups, callerIsAdmin = callerIsAdmin,
+                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
+                reqrPerms = Some(reqrPerms))
+          (userJson,
+              stats.map(JsUserStats(_, isStaffOrSelf, Some(reqrPerms))).getOrElse(JsNull),
+              user.noDetails)
         case group: GroupVb =>
           val groupJson = jsonForGroupInclDetails(
-            group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
+                group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff,
+                reqrPerms = Some(reqrPerms))
           (groupJson, JsNull, group)
       }
     }
@@ -252,7 +268,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
 
   private def jsonForGroupInclDetails(group: Group, callerIsAdmin: Bo,
-        callerIsStaff: Bo = false): JsObject = {
+        callerIsStaff: Bo = false, reqrPerms: Opt[EffPatPerms] = None): JsObject = {
     var json = Json.obj(   // hmm a bit dupl code [B28JG4]  also in JsGroup
       "id" -> group.id,
       "isGroup" -> JsTrue,
@@ -270,17 +286,28 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
+
       json += "uiPrefs" -> group.uiPrefs.getOrElse(JsEmptyObj)
+
       val perms = group.perms
-      json += "maxUploadBytes" -> JsNumberOrNull(perms.maxUploadBytes)
-      json += "allowedUplExts" -> JsStringOrNull(perms.allowedUplExts)
+      var permsJo = Json.obj(
+            "maxUploadBytes" -> JsNumberOrNull(perms.maxUploadBytes),
+            "allowedUplExts" -> JsStringOrNull(perms.allowedUplExts))
+      // Revealing which user accounts can see others' email addresses, might make
+      // such accounts targets for hackers. So, only show to staff, for now.
+      if (callerIsStaff) {  // already tested above, again here, oh well
+        perms.canSeeOthersEmailAdrs.foreach(v =>
+              permsJo += "canSeeOthersEmailAdrs" -> JsBoolean(v))
+      }
+      json += "perms" -> permsJo
     }
     json
   }
 
 
   private def jsonForGuest(user: Guest, usersById: Map[UserId, Participant],
-                           callerIsStaff: Boolean, callerIsAdmin: Boolean): JsObject = {
+          callerIsStaff: Boolean, callerIsAdmin: Bo,
+          reqrPerms: Opt[EffPatPerms] = None): JsObject = {
     val safeEmail = callerIsAdmin ? user.email | hideEmailLocalPart(user.email)
     var userJson = Json.obj(
       "id" -> user.id,
@@ -290,8 +317,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       "location" -> JsStringOrNull(user.country))
       // += ipSuspendedTill
       // += browserIdCookieSuspendedTill
-    if (callerIsStaff) {
-      userJson += "email" -> JsString(safeEmail)
+    if (callerIsStaff || reqrPerms.exists(_.canSeeOthersEmailAdrs)) {
+      userJson += "email" -> JsString(safeEmail) ; RENAME // to emailAdr?
       // += ipSuspendedAt, ById, ByUsername, Reason
       // += browserIdCookieSuspendedAt, ById, ByUsername, Reason
     }
@@ -389,7 +416,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
   private def _listPostsImpl2(query: PostQuery, dao: SiteDao): mvc.Result = {
     val LoadPostsResult(
-          postsOneMaySee, pageStuffById) = dao.loadPostsMaySeeByQuery(query)
+          postsOneMaySee, pageStuffById) =
+              // This excludes any stuff the requester may not see. [downl_own_may_see]
+              dao.loadPostsMaySeeByQuery(query)
 
     val posts = postsOneMaySee
 
@@ -469,7 +498,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
 
       val anyStats: Option[UserStats] = tx.loadUserStats(userId)
-      val statsJson = anyStats.map(JsUserStats(_, isStaffOrSelf = true)) getOrElse JsNull
+      val statsJson = anyStats.map(JsUserStats(_, isStaffOrSelf = true, reqrPerms = None)
+            ) getOrElse JsNull
 
       val otherEmailAddresses =
         tx.loadUserEmailAddresses(userId).filterNot(_.emailAddress == member.primaryEmailAddress)
@@ -571,8 +601,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     import request.{dao, theRequester => requester}
     // Could refactor and break out functions. Later some day maybe.
 
-    throwForbiddenIf(requester.id != userId && !requester.isAdmin,
+    val perms: EffPatPerms =
+          dao.deriveEffPatPerms(request.authzContext.groupIdsEveryoneLast)
+
+    throwForbiddenIf(requester.id != userId && !perms.canSeeOthersEmailAdrs,
       "EdE5JKWTDY2", "You may not see someone elses email addresses")
+
+    val isSelfOrAdmin = requester.id == userId || requester.isAdmin
 
     val (memberInclDetails, emails, identities) = dao.readOnlyTransaction { tx =>
       (tx.loadTheUserInclDetails(userId),
@@ -607,31 +642,45 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         case x =>
           (classNameOf(x), None, None, None, None)
       }
-      Json.obj(  // Typescript: UserAccountLoginMethod
+
+      // No need to show these details for moderators? — If they may see email adrs, though,
+      // then, it's included above (if not, that code won't run at all). [granular_perms]
+      // Typescript: UserAccountLoginMethod
+      var methodJo: JsObject = if (!isSelfOrAdmin) JsEmptyObj else Json.obj(
         // COULD instead use: JsIdentity  ?
         "loginType" -> classNameOf(identity),
         "provider" -> idpName,
         "idpAuthUrl" -> idpAuthUrl,
         "idpUsername" -> idpUsername,
-        "idpUserId" -> idpUserId,
-        "idpEmailAddr" -> JsStringOrNull(emailAddr))
+        "idpUserId" -> idpUserId)
+
+      methodJo += "idpEmailAddr" -> JsStringOrNull(emailAddr)
+      methodJo
     })
 
     if (memberInclDetails.passwordHash.isDefined) {
-      loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
+      // Non-admins need not know? [granular_perms]
+      // Typescript: UserAccountLoginMethod
+      var methodJo =  if (!isSelfOrAdmin) JsEmptyObj else Json.obj(
         "loginType" -> "LocalPwd",
         "provider" -> "Password",
-        "idpUsername" -> memberInclDetails.username,
-        "idpEmailAddr" -> memberInclDetails.primaryEmailAddress)
+        "idpUsername" -> memberInclDetails.username)
+
+      methodJo += "idpEmailAddr" -> JsString(memberInclDetails.primaryEmailAddress)
+      loginMethodsJson :+= methodJo
     }
 
     if (memberInclDetails.ssoId.isDefined) {
       // Tests: sso-login-member  TyT5HNATS20P.TyTE2ESSOLGIMS
-      loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
+      // Non-admins need not know? [granular_perms]
+      // Typescript: UserAccountLoginMethod
+      var methodJo =  if (!isSelfOrAdmin) JsEmptyObj else Json.obj(
         "loginType" -> "TySsoApi",
         "provider" -> "Talkyard Single Sign-On API",
-        "idpEmailAddr" -> memberInclDetails.primaryEmailAddress,
         "idpUserId" -> JsStringOrNull(memberInclDetails.ssoId))
+
+      methodJo += "idpEmailAddr" -> JsString(memberInclDetails.primaryEmailAddress)
+      loginMethodsJson :+= methodJo
     }
 
     OkSafeJson(Json.obj(  // UserAccountResponse

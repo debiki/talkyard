@@ -66,6 +66,7 @@ alter table perms_on_pages3
     add column  can_suspend_pats_c     i64_gz_d,  -- instead of bouncer
 
     add column  can_assign_pats_c      bool,
+    add column  can_assign_self_c      bool,
     add column  can_see_assigned_c     can_see_assigned_d;
 
 
@@ -150,6 +151,7 @@ create index drafts_i_postasid on drafts3 (site_id, post_as_id_c)
 
 
 alter table users3
+    add column can_see_others_email_adrs_c  bool,
     add column true_id_c                 member_id_d,
     add column pseudonym_status_c        pseudonym_status_d,
     add column anonym_status_c           anonym_status_d,
@@ -310,6 +312,7 @@ alter table users3 add constraint pats_c_anon_nulls check (
         why_may_not_mention_msg_me_html_c is null and
         may_see_my_account_email_adrs_tr_lv_c is null and
         may_see_my_contact_email_adrs_tr_lv_c is null and
+        can_see_others_email_adrs_c is null and
         may_assign_me_tr_lv_c is null and
         may_see_my_assignments_tr_lv_c is null and
         email_threading_c is null and

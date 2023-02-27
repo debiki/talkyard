@@ -520,7 +520,7 @@ const BlockGuestDialog = createComponent({
 
 
 function AnyUserEmail(user: { email?: string }, me: Myself) {
-  return !me.isAdmin || !user.email ? null : (
+  return !user.email ? null : (
       r.div({ className: 's_UD_Em' },
         t.EmailC || (t.cud.EmailC + ' '),
         // Don't use an <a href="mailto:..."> — it's better to encourage people

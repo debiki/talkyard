@@ -23,7 +23,8 @@ import com.debiki.core.Prelude._
 
 case class EffPatPerms(
   maxUploadSizeBytes: i32,
-  allowedUploadExtensions: Set[St])
+  allowedUploadExtensions: Set[St],
+  canSeeOthersEmailAdrs: Bo)
 
 
 
@@ -34,6 +35,7 @@ case class EffPatPerms(
 case class PatPerms (
   maxUploadBytes: Opt[i32],
   allowedUplExts: Opt[St],
+  canSeeOthersEmailAdrs: Opt[Bo],
 )(usingPatPermsCreate: Bo) {
 
   // Maybe cache?
@@ -48,7 +50,8 @@ object PatPerms {  REFACTOR // add MessAborter  to "all" case classes  instead? 
 
   def create(mab: MessAborter,
         maxUploadBytes: Opt[i32] = None,
-        allowedUplExts: Opt[St] = None): PatPerms = {
+        allowedUplExts: Opt[St] = None,
+        canSeeOthersEmailAdrs: Opt[Bo] = None): PatPerms = {
 
     allowedUplExts foreach { exts =>
       val max = 1500
@@ -64,6 +67,7 @@ object PatPerms {  REFACTOR // add MessAborter  to "all" case classes  instead? 
 
     PatPerms(maxUploadBytes = maxUploadBytes,
           allowedUplExts = allowedUplExts.noneIfBlank,
+          canSeeOthersEmailAdrs = canSeeOthersEmailAdrs,
           )(usingPatPermsCreate = true)
   }
 }

@@ -601,6 +601,7 @@ interface Session {
 interface GroupPerms {
   maxUploadBytes?: Nr;
   allowedUplExts?: St;
+  canSeeOthersEmailAdrs?: Bo;
 }
 
 
@@ -1591,9 +1592,10 @@ interface MemberInclDetails extends Member {
 
 
 type GroupInclDetails = GroupVb;
-interface GroupVb extends MemberInclDetails, Group, GroupPerms {
+interface GroupVb extends MemberInclDetails, Group {
   isGroup: true;
   //"createdAtEpoch" -> JsWhen(group.createdAt),
+  perms: GroupPerms;
 }
 
 type UserInclDetails = PatVb; // old name, remove
@@ -1647,6 +1649,7 @@ interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use Pat
 
 // A participant, Very VerBose: all fields, badges, stats and groups.
 interface PatVvb extends UserInclDetailsWithStats {
+  perms: GroupPerms;
   groupIdsMaySee: UserId[];
 }
 type UserDetailsStatsGroups = PatVvb; // old name

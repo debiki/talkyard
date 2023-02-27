@@ -38,7 +38,8 @@ class SessionController @Inject()(cc: ControllerComponents, edContext: TyContext
     import req.{dao, theRequester => reqer}
     throwForbiddenIfMayNot("view", dao, reqer, patId)
     val activeSessions = dao.listPatsSessions(patId)
-    val json = Json.obj("sessions" -> JsArray(activeSessions.map(s => JsSession(s))))
+    val json = Json.obj("sessions" -> JsArray(activeSessions.map(s =>
+          JsSession(s, inclPart1 = reqer.isAdmin))))
     OkApiJson(json)
   }
 
@@ -72,8 +73,8 @@ class SessionController @Inject()(cc: ControllerComponents, edContext: TyContext
           forPatId, thoseStartedAt = startTimesMs, allButNot)
 
     val json = Json.obj(
-        "terminatedSessions" -> JsArray(terminatedSessions.map(s => JsSession(s))))
-
+        "terminatedSessions" -> JsArray(terminatedSessions.map(s =>
+            JsSession(s, inclPart1 = reqer.isAdmin))))
     OkApiJson(json)
   }
 
@@ -82,6 +83,7 @@ class SessionController @Inject()(cc: ControllerComponents, edContext: TyContext
     throwForbiddenIf(reqer.id != patId && !reqer.isStaff, "TyE0YOURSESS",
           s"Cannot $doWhat other people's sessions")
     val pat = dao.getTheParticipant(patId)
+    // (Keep, although tested !isAdmin above.)
     throwForbiddenIf(pat.isAdmin && !reqer.isAdmin, "TyEADMINSESS_",
           s"Cannot $doWhat an admin's sessions")
   }

@@ -1636,10 +1636,28 @@ case class Group( // [exp] missing: createdAt, add to MemberInclDetails & Partic
 
   def isGroup = true
 
-  // Or maybe true for mod & admin groups? Currently doesn't matter.
-  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo = false
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Bo =
+    false
+    // isAdmin || isModerator || false || HMM_SKIP_THIS_FOR_NOW
+    // Doesn't completely work — trust level groups don't *grant* any trust level
+    // instead, if one has a trust level, then one gets added to that group.
+    // Or that's a philosofical thought?
+    // grantsTrustLevel.exists(_.isAtLeast(trustLevel))
 
-  override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
+  override def effectiveTrustLevel: TrustLevel = {
+    /*
+    HMM_SKIP_THIS_FOR_NOW
+
+    if (isAdmin || isModerator)
+      return TrustLevel.CoreMember
+
+    if (id < Group.EveryoneId || Group.CoreMembersId < id) {
+      val nr = id - Group.EveryoneId.toInt
+      return TrustLevel.fromInt(nr)
+    } */
+
+    grantsTrustLevel getOrElse TrustLevel.NewMember
+  }
 
   def usernameLowercase: String = theUsername.toLowerCase
 
@@ -1662,6 +1680,15 @@ case class Group( // [exp] missing: createdAt, add to MemberInclDetails & Partic
       summaryEmailIntervalMins = preferences.summaryEmailIntervalMins,
       summaryEmailIfActive = preferences.summaryEmailIfActive)
 
+
+  def checkValid(mab: MessAborter): ValidGroup = {
+    mab.abortIf(perms.canSeeOthersEmailAdrs.is(true) &&
+          !isAdmin && !isModerator && id != Group.CoreMembersId,
+          // !this.isStaffOrMinTrustNotThreat(TrustLevel.CoreMember)
+          "TyEPATCONFEML", "Only >= core members may be configured to see others' emails")
+    // Later, return a Scala_3 opaque type: ValidGroup?
+    ValidGroup(this)
+  }
 }
 
 
