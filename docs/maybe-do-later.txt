@@ -118,6 +118,9 @@ with "negative" permissions — e.g. a group that may Not something.
 Then, everyone in that group, would be forbidden from doing that something,
 regardless of how they inherited permissions from other groups.
 
+[granular_perms]
+E.g. may-see-others'-sessions. Currently only amdins may, but sometimes, good if mods could too?
+
 [tags]
 Nice props / tags in Gerrit: https://chromium-review.googlesource.com/c/v8/v8/+/2537690
 
@@ -172,6 +175,13 @@ The opposite: Easy to find pats, e.g.:
 Ty joins a new forum. Then, although a New Member, hen can up hens tech level and get
 access to features the software otherwise would have thought were too complicated.
 Store in pats_t.tech_level_c.
+
+[new_trust_levels]
+[mods_are_core_membs]
+Let trust level of mods & admins be CoreMember — or maybe add higher trust levels?
+Can start at 21 = lightweight mod, 22 = mod, 23 = admin, 24 = owner?
+
+[power_mod]
 
 [inherit_group_priv_prefs]
 One should inherit privacy and noise settings from one's closest trust level group,

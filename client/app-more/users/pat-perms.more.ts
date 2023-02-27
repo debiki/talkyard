@@ -33,7 +33,7 @@ interface PatPermsProps {
 
 
 interface DiagState {
-  groupNow: GroupVb;
+  permsNow: GroupPerms;
   savingStatus?: St;
   maxUplBytesErr?: St;
 }
@@ -43,57 +43,85 @@ export const PatPerms = React.createFactory<PatPermsProps>(function(props) {
   //displayName: 'PatPerms',
 
   const groupBef: GroupVb = props.user; // weird name, could fix
+  if (!groupBef.perms)
+    return r.p({}, `May not access this group's permission settings. [TyE0SEEGRPPRMS]`);
+
   const store: Store = props.store;
   const me = store.me;
+  const isModsOrCoreMembsGroup =
+          groupBef.id === Groups.ModeratorsId ||
+          groupBef.id === Groups.CoreMembersId;
+  const isAdminsGroup =
+          groupBef.id === Groups.AdminsId;
 
-  const [state, setState] = React.useState<DiagState>({ groupNow: groupBef });
-  const groupNow = state.groupNow;
+  const [state, setState] = React.useState<DiagState>({ permsNow: groupBef.perms });
+
+  const permsNow = state.permsNow;
 
   // Break out hook? [my_cur_id]
   const myId = React.useRef(me.id);
   React.useEffect(() => {
     myId.current = me.id;
-    // Clear changes if one logs out? Hmm maybe redirect to other profile tab?
-    setState({ groupNow: groupBef });
+    // Clear changes if one logs out? (Might still be allowed to see the group.)
+    setState({ permsNow: groupBef.perms }); // satisfies DiagState);
     return () => myId.current = null;
   }, [me.id]);
 
   function savePerms(event) {
     event.preventDefault();
-    const g = state.groupNow;
-    const perms: GroupPerms = {
-      allowedUplExts: g.allowedUplExts,
-      maxUploadBytes: g.maxUploadBytes,
-    };
-    setState({ ...state, savingStatus: 'Saving ...' });
-    Server.savePatPerms(g.id, perms, (r: { patNoStatsNoGroupIds: PatVb }) => {
+    setState({ ...state, savingStatus: 'Saving ...' }); // satisfies DiagState);
+    Server.savePatPerms(groupBef.id, permsNow, (r: { patNoStatsNoGroupIds: PatVb }) => {
       if (myId.current !== me.id) return;
-      setState({ ...state, savingStatus: 'Saved' });
+      setState({ ...state, savingStatus: 'Saved' }); // satisfies DiagState);
       props.updatePat(r.patNoStatsNoGroupIds);
     });
   }
 
+  const grantOrView = me.isAdmin ? "grant" : "view";
+  const toOrOf = me.isAdmin ? "to" : "of";
   return r.div({ className: 's_PP_PrmsTb' },
       r.h3({}, "Group Permissions"),   // 0I18N, this is for staff only
       r.p({},
-        "Here you can grant permissions to members of this group. " +
+        `Here you can ${grantOrView} permissions ${toOrOf} members of this group. ` +
         "Permissions are additive: if any group you're in " +
         "lets you do something, then you can do it."),
       groupBef.id !== Groups.EveryoneId ? null : r.p({},
         r.b({}, "Note! "), "This group grants persmissions to everyone, " +
         "including strangers, e.g. anonymous blog commenters."
         ),
-      groupBef.id !== Groups.AllMembersId ? null : r.p({},
+      groupBef.id !== Groups.AllMembersId || !me.isAdmin ? null : r.p({},
         r.b({}, "Note! "),
         "Permissions you grant here, are granted to all members. " +
         "(But not guests / anonymous blog commenters."
         ),
 
       r.form({ role: 'form', onSubmit: savePerms },
+        !isModsOrCoreMembsGroup && !isAdminsGroup ? null :
+        Input({ type: 'checkbox', label: "Can see everyone's email addresses",
+            className: 'c_PP_PrmsTb_SeeEmls  e_SeeEmls',
+            // UX COULD show ticked but disabled, if inherited from ancestor group?
+            // And, a link to that group, so can jump there to edit?
+            checked: isAdminsGroup || permsNow.canSeeOthersEmailAdrs,
+            disabled: !me.isAdmin || !isModsOrCoreMembsGroup,
+            onChange: (event: CheckboxEvent) => {
+              const canSeeOthersEmailAdrs = event.target.checked;
+              setState({
+                    permsNow: { ...permsNow, canSeeOthersEmailAdrs }, savingStatus: '' });
+                    // satisfies DiagState);
+            },
+            help:
+                isAdminsGroup ? `Admins can always see others' email addresses.` : (
+                `Lets ${groupBef.id === Groups.CoreMembersId ? `core members and ` : ''
+                        } moderators see everyone's email addresses.`)
+                        // if mods, and core members ticked, could show
+                        // + sth like:  "(Inherited from the Core Members group)"  ?
+             }),
+
         Input({ label: "Max upload size, MiB:",
             className: 's_PP_PrmsTb_UplMiB',
-            defaultValue: !_.isNumber(groupNow.maxUploadBytes) ? 0 :
-                  (groupNow.maxUploadBytes * 1.0 / Sizes.Mebibyte).toFixed(2),
+            defaultValue: !_.isNumber(permsNow.maxUploadBytes) ? 0 :
+                  (permsNow.maxUploadBytes * 1.0 / Sizes.Mebibyte).toFixed(2),
+            disabled: !me.isAdmin,
             onChange: (event) => {
               const value = event.target.value;
               const maxUploadMiB = parseFloat(value);
@@ -102,7 +130,7 @@ export const PatPerms = React.createFactory<PatPermsProps>(function(props) {
                 return;
               }
               const maxUploadBytes = Math.floor(maxUploadMiB * Sizes.Mebibyte);
-              setState({ groupNow: { ...groupNow, maxUploadBytes }, savingStatus: '' });
+              setState({ permsNow: { ...permsNow, maxUploadBytes }, savingStatus: '' });
             } }),
         !state.maxUplBytesErr ? null :
           r.p({ style: { color: '#d00' } }, state.maxUplBytesErr),
@@ -118,10 +146,11 @@ export const PatPerms = React.createFactory<PatPermsProps>(function(props) {
             help: rFr({}, "Space separated. Don't include dots, e.g. do this: ",
                 r.kbd({}, 'jpg'), ", but not: ", r.kbd({}, '.jpg'),
                 "."),
-            value: groupNow.allowedUplExts || '',
+            value: permsNow.allowedUplExts || '',
+            disabled: !me.isAdmin,
             onChange: (event) => {
               const allowedUplExts = event.target.value;
-              setState({ groupNow: { ...groupNow, allowedUplExts }, savingStatus: ''});
+              setState({ permsNow: { ...permsNow, allowedUplExts }, savingStatus: ''});
             } }),
 
         InputTypeSubmit({ className: 'e_SvPerms', style: { marginTop: '11px' },

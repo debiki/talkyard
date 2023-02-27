@@ -82,10 +82,10 @@ export const UserInvites = createFactory({
     const user: UserInclDetails = this.props.user;
 
     if (isGuest(me))
-      return r.p({}, "You are logged in as a guest. They may not see invites.");
+      return r.p({}, "You are logged in as a guest. They may not see invites."); // I18N
 
     if (!isMember(me))
-      return r.p({}, "You are not logged in.");
+      return r.p({}, "You are not logged in."); // I18N [not_logged_in_err_msg]
 
     if (this.state.errorMessage)
       return r.p({}, this.state.errorMessage);

@@ -343,6 +343,12 @@ profile page, user:
   list login methods:
           - create-site-github-oauth-uppercase-email.test.ts  TyT4AR8GFAH
 
+  see email addresses:
+    can configure can-see-emails, but only for >= core members,
+    can see email, in about box and on proifle page:
+            - TESTS_MISSING
+    can navigate to email addrs tab, iff can see pat's emails:
+            - TESTS_MISSING  TyTSEEMLLNS005
   add email address, send verification email:
           - user-profile-change-email.test.ts  TyT305MHPJ25
   add gmail addr:

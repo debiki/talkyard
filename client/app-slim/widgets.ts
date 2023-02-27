@@ -98,9 +98,14 @@ export function RedirAppend({ path, append }) {
 }
 
 // Use an icon with on-hover instead?
+// Was: "Only *admins*", but now also mods and core members can see others'
+// email addresses, *if* this has been configured, by an admin.
+// UX WOULD send permission info to here, and show "Only admins" or
+// "Only admins and moderators" etc, as appropriate. But is it that important,
+// let's wait.
 export const OnlyAdminsSee =
     r.span({ className: 's_OnlAdmTxt' },
-      " (only admins can see)");
+      " (only staff can see)");  // or "admins" or "core-members and moderators", hmm.  I18N
 
 
 // UX: Click on space? If 'btn'?  [sch_b_space]

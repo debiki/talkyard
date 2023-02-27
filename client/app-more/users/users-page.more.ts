@@ -212,7 +212,9 @@ const UserPageComponent = createReactClass(<any> {
     const userGone = user_isGone(user);
     const pathToUser = pathTo(user);
 
-    const showPrivateStuff = imStaff || (!userGone && me.isAuthenticated && me.id === user.id);
+    // TESTS_MISSING  TyTSEEMLLNS005
+    const showAdminPriv = me.isAdmin || (!userGone && me.isAuthenticated && me.id === user.id);
+    const showStaffPriv = showAdminPriv || imStaff;
     const linkStart = pathToUser + '/';
 
     const membersNavItem = !user.isGroup ? null :
@@ -221,19 +223,19 @@ const UserPageComponent = createReactClass(<any> {
     const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);
 
-    const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
+    const notificationsNavItem = !showStaffPriv || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, t.Notifications);
 
-    const draftsEtcNavItem = !showPrivateStuff || user.isGroup ? null :
+    const draftsEtcNavItem = !showAdminPriv || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'drafts-etc', className: 'e_UP_DrftsB' }, t.upp.DraftsEtc);
 
-    const tasksNavItem = !showPrivateStuff || user.isGroup ? null :
+    const tasksNavItem = !showStaffPriv || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'tasks', className: 'e_UP_TsksB' }, "Tasks"); // I18N
 
-    const preferencesNavItem = !showPrivateStuff ? null :
+    const preferencesNavItem = !showStaffPriv && !user.email ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);
 
-    const invitesNavItem = !showPrivateStuff || !store_maySendInvites(store, user).value ? null :
+    const invitesNavItem = !showStaffPriv || !store_maySendInvites(store, user).value ? null :
       LiNavLink({ to: linkStart + 'invites', className: 'e_InvTabB' }, t.upp.Invites);
 
     const patPermsNavItem = !user.isGroup || !imStaff ? null :

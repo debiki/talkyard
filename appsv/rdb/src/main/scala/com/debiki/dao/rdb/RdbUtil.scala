@@ -216,6 +216,7 @@ object RdbUtil {
       why_may_not_mention_msg_me_html_c,
       max_upload_bytes_c,
       allowed_upload_extensions_c,
+      can_see_others_email_adrs_c,
       deactivated_at,
       deleted_at
       """
@@ -258,6 +259,7 @@ object RdbUtil {
       |u.why_may_not_mention_msg_me_html_c,
       |u.max_upload_bytes_c,${""          /* would excl  */}
       |u.allowed_upload_extensions_c,${"" /* would excl  */}
+      |u.can_see_others_email_adrs_c,${"" /* would excl */}
       |u.is_owner u_is_owner,
       |u.is_admin u_is_admin,
       |u.is_moderator u_is_moderator,
@@ -331,7 +333,8 @@ object RdbUtil {
     else if (isGroup) {
       val perms = PatPerms.create(IfBadDie,
             maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
-            allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
+            allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"),
+            canSeeOthersEmailAdrs = getOptBool(rs, "can_see_others_email_adrs_c"))
       Group(
         id = userId,
         extId = anyExtId,
@@ -377,7 +380,8 @@ object RdbUtil {
   def getGroup(rs: js.ResultSet): Group = {
     val perms = PatPerms.create(IfBadDie,
           maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
-          allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
+          allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"),
+          canSeeOthersEmailAdrs = getOptBool(rs, "can_see_others_email_adrs_c"))
     Group(
       id = rs.getInt("user_id"),
       extId = getOptString(rs, "ext_id"),
@@ -468,7 +472,8 @@ object RdbUtil {
   val CompleteUserSelectListItemsWithUserId: St =
     s"user_id, $CompleteUserSelectListItemsNoUserId, " +
     "max_upload_bytes_c, " +
-    "allowed_upload_extensions_c"
+    "allowed_upload_extensions_c, " +
+    "can_see_others_email_adrs_c"
 
 
   def getParticipantInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet): ParticipantInclDetails = {

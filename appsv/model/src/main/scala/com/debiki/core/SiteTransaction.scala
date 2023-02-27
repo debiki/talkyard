@@ -654,7 +654,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def insertGroup(group: Group): Unit
   def deleteGroup(groupId: UserId): Unit
-  def updateGroup(group: Group): Unit
+  def updateGroup(group: Group): U = updateGroup(ValidGroup(group)) // just for now
+  def updateGroup(validGroup: ValidGroup): U
   def loadAllGroupsAsSeq(): Vector[Group]
   def loadAllGroupsAsMap(): Map[UserId, Group] = loadAllGroupsAsSeq().map(g => g.id -> g).toMap
 
