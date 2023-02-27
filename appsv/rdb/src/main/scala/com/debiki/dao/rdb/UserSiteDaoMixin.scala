@@ -326,6 +326,10 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
 
   def insertGroup(group: Group) {
+    dieIf(group.perms.canSeeOthersEmailAdrs.is(true) &&
+            !group.isStaffOrMinTrustNotThreat(TrustLevel.CoreMember),
+          "TyEPATCONF3563", "Only >= core members may be configured to see others' emails")
+
     val sql = """
           insert into users3(
             site_id,
@@ -343,8 +347,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
             may_dir_msg_me_tr_lv_c,
             max_upload_bytes_c,
             allowed_upload_extensions_c,
+            can_see_others_email_adrs_c,
             is_group)
-          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true) """
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true) """
 
     val values = List(
           siteId.asAnyRef,
@@ -361,7 +366,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
           group.privPrefs.mayMentionMeTrLv.map(_.toInt).orNullInt,
           group.privPrefs.maySendMeDmsTrLv.map(_.toInt).orNullInt,
           group.perms.maxUploadBytes.orNullInt,
-          group.perms.allowedUplExts.orNullVarchar)
+          group.perms.allowedUplExts.orNullVarchar,
+          group.perms.canSeeOthersEmailAdrs.orNullBo,
+          )
 
     runUpdateExactlyOneRow(sql, values)
   }
@@ -386,7 +393,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def updateGroup(group: Group) {
+  def updateGroup(validGroup: ValidGroup) {
+    val group = validGroup.get
+
     val statement = """
       update users3 set
         updated_at = now_utc(),
@@ -401,7 +410,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         may_mention_me_tr_lv_c = ?,
         may_dir_msg_me_tr_lv_c = ?,
         max_upload_bytes_c = ?,
-        allowed_upload_extensions_c = ?
+        allowed_upload_extensions_c = ?,
+        can_see_others_email_adrs_c = ?
       where site_id = ?
         and user_id = ?
       """
@@ -419,6 +429,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
           group.privPrefs.maySendMeDmsTrLv.map(_.toInt).orNullInt,
           group.perms.maxUploadBytes.orNullInt,
           group.perms.allowedUplExts.orNullVarchar,
+          group.perms.canSeeOthersEmailAdrs.orNullBo,
           siteId.asAnyRef,
           group.id.asAnyRef)
 

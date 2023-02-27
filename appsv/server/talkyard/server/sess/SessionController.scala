@@ -38,7 +38,8 @@ class SessionController @Inject()(cc: ControllerComponents, edContext: TyContext
     import req.{dao, theRequester => reqer}
     throwForbiddenIfMayNot("view", dao, reqer, patId)
     val activeSessions = dao.listPatsSessions(patId)
-    val json = Json.obj("sessions" -> JsArray(activeSessions.map(s => JsSession(s))))
+    val json = Json.obj("sessions" -> JsArray(activeSessions.map(s =>
+          JsSession(s, inclPart1 = reqer.isAdmin))))
     OkApiJson(json)
   }
 
@@ -72,8 +73,9 @@ class SessionController @Inject()(cc: ControllerComponents, edContext: TyContext
           forPatId, thoseStartedAt = startTimesMs, allButNot)
 
     val json = Json.obj(
-        "terminatedSessions" -> JsArray(terminatedSessions.map(s => JsSession(s))))
-
+        "terminatedSessions" -> JsArray(terminatedSessions.map(s =>
+            // Now it's ok to incl part 1 (these sessions no longer work).
+            JsSession(s, inclPart1 = true))))
     OkApiJson(json)
   }
 

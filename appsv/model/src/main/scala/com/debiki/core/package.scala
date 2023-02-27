@@ -212,6 +212,7 @@ package object core {
   // Later, these will be different?
   type GroupBr = Group
   type GroupVb = Group
+  case class ValidGroup(get: Group)  // Scala_3 opaque type
 
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId

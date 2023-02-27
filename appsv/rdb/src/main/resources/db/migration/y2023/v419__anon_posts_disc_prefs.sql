@@ -142,6 +142,7 @@ create index drafts_i_postasid on drafts3 (site_id, post_as_id_c)
 
 
 alter table users3
+    add column can_see_others_email_adrs_c  bool,
     add column true_id_c                 member_id_d,
     add column pseudonym_status_c        pseudonym_status_d,
     add column anonym_status_c           anonym_status_d,
@@ -262,6 +263,8 @@ alter table users3 add constraint pats_c_anon_no_email check (
 -- These:  deactivated_at, deleted_at
 -- also aren't included. Can make sense to delete an anon account?
 --
+-- Create sth similar, for pseudonyms, later?
+--
 alter table users3 add constraint pats_c_anon_nulls check (
     anonym_status_c is null
     or (guest_browser_id is null and
@@ -310,6 +313,7 @@ alter table users3 add constraint pats_c_anon_nulls check (
         why_may_not_mention_msg_me_html_c is null and
         may_see_my_account_email_adrs_tr_lv_c is null and
         may_see_my_contact_email_adrs_tr_lv_c is null and
+        can_see_others_email_adrs_c is null and
         may_assign_me_tr_lv_c is null and
         may_see_my_assignments_tr_lv_c is null and
         email_threading_c is null and
@@ -340,11 +344,21 @@ alter table users3 drop constraint pps_c_guest_not_nulls;
 alter table users3 add constraint pats_c_guest_non_nulls check (
     -- Member, special or anonym?
     (user_id > -10 or anonym_status_c is not null)
-    -- Else, is a guest (or the Unknown user) and then, add back the constr
-    -- deleted above:  (guest email is '-' if absent, so, never null)
+    -- Else, is a guest and then, add back the constr deleted above:
+    -- (guest email is '-' if absent, so, never null)
     or (created_at is not null and
         full_name is not null and
         guest_email_addr is not null));
+
+-- There're are many check-sth-is-null, for guests. Is it simpler with just one, big?
+-- Maybe combine other smaller constraints into this one, later?
+alter table users3 add constraint pats_c_guest_nulls check (
+    -- Member, special or anonym?
+    (user_id > -10 or anonym_status_c is not null)
+    -- Else: Guest.
+    or (
+        can_see_others_email_adrs_c is null
+    ));
 
 alter table users3 drop constraint pps_c_guest_w_no_browserid_has_extid;
 alter table users3 add constraint pats_c_guest_w_no_browserid_has_extid check (

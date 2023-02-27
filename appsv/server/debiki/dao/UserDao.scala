@@ -2177,11 +2177,13 @@ trait UserDao {
 
 
   def savePatPerms(patId: PatId, perms: PatPerms, byWho: Who): U = {
-    _editMemberThrowUnlessSelfStaff(patId, byWho, "TyE3ASHW6703", "edit pat perms") {
+    _editMemberThrowUnlessSelfStaff(patId, byWho, "TyE3ASHW6703", "edit pat perms",
+                                      mustBeAdmin = true) {
           case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
       val groupBef: Group = memberInclDetails.asGroupOr(IfBadAbortReq)
       val groupAft = groupBef.copy(perms = perms)
-      tx.updateMemberInclDetails(groupAft)
+      val validGroup = groupAft.checkValid(IfBadAbortReq)
+      tx.updateGroup(validGroup)
       staleStuff.addPatIds(Set(patId))
     }
     memCache.remove(allGroupsKey) ; CLEAN_UP // use staleStuff instead, new fn needed?
@@ -2489,7 +2491,7 @@ trait UserDao {
     * @param block — EditMemberCtx(tx, staleStuff, member-to-edit, reqer) => side effects...  .
     */
   private def _editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: St,
-        mayNotWhat: St)(block: EditMemberCtx => U): MemberVb = {
+        mayNotWhat: St, mustBeAdmin: Bo = false)(block: EditMemberCtx => U): MemberVb = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
 
@@ -2502,9 +2504,12 @@ trait UserDao {
 
     writeTx { (tx, staleStuff) =>
       val me = tx.loadTheUser(byWho.id)
+      throwForbiddenIf(mustBeAdmin && !me.isAdmin, "TyE0ADM0536",
+            s"Only admins may $mayNotWhat")
+      // Split mods into "moderator" and "[power_mod]erator" trust levels — only
+      // the latter will be able to do this:  (so current mods = power mods)
       throwForbiddenIf(me.id != userId && !me.isStaff,
           errorCode + "-ISOTR", s"May not $mayNotWhat for others")
-
       // [pps] load MemberInclDetails instead, and hand to the caller? (user or group incl details)
       // Would be more usable; sometimes loaded anyway [7FKFA20]
       val member = tx.loadTheMemberInclDetails(userId)

@@ -23,7 +23,8 @@ import com.debiki.core.Prelude._
 
 case class EffPatPerms(
   maxUploadSizeBytes: i32,
-  allowedUploadExtensions: Set[St])
+  allowedUploadExtensions: Set[St],
+  canSeeOthersEmailAdrs: Bo)
 
 
 
@@ -34,12 +35,17 @@ case class EffPatPerms(
 case class PatPerms (
   maxUploadBytes: Opt[i32],
   allowedUplExts: Opt[St],
-)(usingPatPermsCreate: Bo) {
+  canSeeOthersEmailAdrs: Opt[Bo],
+)(mab: MessAborter) {
 
   // Maybe cache?
   def allowedUplExtensionsAsSet: Set[St] =
     allowedUplExts.map(_.split(" ").flatMap(_.trimNoneIfEmpty).toSet[St])
           .getOrElse(Set.empty)
+
+  // [may_not_perms]
+  mab.abortIf(canSeeOthersEmailAdrs is false, o"""Negative permissions not implemented,
+        canSeeOthersEmailAdrs = Some(false) not yet supported [TyENEGPERMS052]""")
 }
 
 
@@ -48,7 +54,8 @@ object PatPerms {  REFACTOR // add MessAborter  to "all" case classes  instead? 
 
   def create(mab: MessAborter,
         maxUploadBytes: Opt[i32] = None,
-        allowedUplExts: Opt[St] = None): PatPerms = {
+        allowedUplExts: Opt[St] = None,
+        canSeeOthersEmailAdrs: Opt[Bo] = None): PatPerms = {
 
     allowedUplExts foreach { exts =>
       val max = 1500
@@ -64,7 +71,8 @@ object PatPerms {  REFACTOR // add MessAborter  to "all" case classes  instead? 
 
     PatPerms(maxUploadBytes = maxUploadBytes,
           allowedUplExts = allowedUplExts.noneIfBlank,
-          )(usingPatPermsCreate = true)
+          canSeeOthersEmailAdrs = canSeeOthersEmailAdrs,
+          )(mab)
   }
 }
 
