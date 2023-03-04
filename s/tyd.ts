@@ -250,11 +250,17 @@ if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
   // might decide to stop and restart just to pick up any soon newly built bundles?
   // (Also, log messages from make and the app server get mixed up with each other.)
   // Maybe  --no-bin-links?  [x_plat_offl_builds]
+
+  // This always downloads and compiles Nodejs packages, why? Also if done seconds ago.
+  // Didn't use to do that! What has changed? Oh well, the Makefile target
+  // 'debug_asset_bundles' is enough (the line just after), so just skip this:
+  /*
   tyu.spawnInForeground(`docker-compose ${nolimConf} run --rm nodejs yarn install ${yarnOfflineSt}`);
+  */
   let exitCode: ExitCode = tyu.spawnInForeground('make debug_asset_bundles');
-  if (exitCode >= 1) {
+  if (exitCode === null || exitCode >= 1) {
     logError(`Error building asset bundles, Make exit code: ${exitCode}`)
-    process.exit(exitCode);
+    process.exit(exitCode || 1);
   }
 
   // Run `up -d` in foreground, so we won't start the `logs -f` process too soon
