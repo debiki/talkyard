@@ -68,7 +68,7 @@
     "lodash": "^4.17.21",
     "lodash-cli": "^4.17.5",
     "merge2": "^1.3.0",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.6",
     "omelette": "^0.4.15-1",
     "request": "^2.88.2",
     "stylus": "^0.54.8",
