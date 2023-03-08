@@ -31,7 +31,7 @@
     "glob": "^7.1.7",
     "keymaster": "^1.6.2",
     "markdown-it": "^12.3.2",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "react": "^16.13.1",
     "react-bootstrap": "^0.32.3",
     "react-dom": "^16.13.1",
