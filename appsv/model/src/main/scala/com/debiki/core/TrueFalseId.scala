@@ -20,10 +20,9 @@ package com.debiki.core
 import com.debiki.core.Prelude._
 
 
-sealed trait TrueId { // FalseId {
+sealed trait TrueId {
   def curId: PatId
   def anyTrueId: Opt[MembId] = None
-  //def oldFalseId: Opt[PatId] = None
 
   require(curId != 0, "curId is 0 [TyE8SKFWW5]")
   require(anyTrueId.forall(_ > LowestTalkToMemberId),
@@ -38,21 +37,19 @@ sealed trait TrueId { // FalseId {
   final def trueId: PatId = anyTrueId getOrElse curId
   final def isGuestOrAnon: Bo = curId <= MaxGuestOrAnonId
 
+  /* Guests cannot have true ids, only anonyms can. */
   final def isGuest: Bo = curId <= MaxGuestOrAnonId && anyTrueId.isEmpty
 
   // If an anon is made unrecoverably-anon, then, its true id could be set
-  // to -3 = Unknown? Then, we'd still know it's an anon (not a guest).
+  // to -3 = UnknownUserId? Then, we'd still know it's an anon (not a guest).
   final def isAnon: Bo = curId <= MaxGuestOrAnonId && anyTrueId.isDefined
 
+  /** Pseudonyms are "real" accounts: their names can be edited, there can be a bio,
+    * etc, and thus they have ids > 0 (unlike guests and anons, < 0).  */
   final def isPseudonym: Bo = LowestTalkToMemberId <= curId && anyTrueId.isDefined
+ }
 
-  /** Assert that the id is indeed for a member (but not a guest or anon). */
-  final def curIdCheckMember__not_in_use__remove: MembId = {  // IfBadAbortReq, default IfBadDie?
-    dieIf(curId < Pat.LowestNormalMemberId, "TyE0MEMBID", s"Not a member id: $this")
-    dieIf(anyTrueId.isDefined, "TyEPSEUDON", s"Pseudonyms not yet supported: $this")
-    curId
-  }
-
+CONT_HERE
   /** Assert that the id is a guest id. */
   final def curIdCheckGuest__not_in_use__remove: PatId = {
     dieIf(curId > MaxGuestOrAnonId || anyTrueId.isDefined, "TyE0GUESTID",
@@ -105,10 +102,9 @@ sealed trait TrueId { // FalseId {
 }
 
 
-object TrueId {  // ...FalseId {
-  def apply(curId: PatId, anyTrueId: Opt[MembId] = None) //, oldFalseId: Opt[PatId] = None)
-        : TrueId = // FalseId =
-    TrueIdImpl(curId, anyTrueId = anyTrueId) //, oldFalseId = oldFalseId)
+object TrueId {
+  def apply(curId: PatId, anyTrueId: Opt[MembId] = None): TrueId =
+    TrueIdImpl(curId, anyTrueId = anyTrueId)
 
   def of___not_needed_delete(pat: Pat): TrueId = pat match {
     case a: Anonym =>
@@ -127,37 +123,12 @@ object TrueId {  // ...FalseId {
 private case class TrueIdImpl (
   curId: PatId,
   override val anyTrueId: Opt[MembId] = None,
-  // override val oldFalseId: Opt[PatId] = None,
 ) extends TrueId {
-
-  /*
-  require(curId > MaxGuestOrAnonId || oldFalseId.isEmpty,
-        o"""Anons or guests (ids < $MaxGuestOrAnonId) cannot have their own anons
-        or pseudonyms, but oldFalseId is: $oldFalseId rather than None, and curId
-        is: $curId which is < $MaxGuestOrAnonId  [TyEANONANON]""")
-  require(oldFalseId.forall(id => id <= MaxGuestOrAnonId || LowestTalkToMemberId <= id),
-        s"Bad oldFalseId: $oldFalseId $andCurIdIs [TyE3MWKJR05]")
-  require(anyTrueId.isEmpty || oldFalseId.isEmpty,
-        s"Got both anyTrueId: $anyTrueId and oldFalseId: ${oldFalseId
-        } $andCurIdIs [TyE7RSKSEWJ35]")
-        */
 
   private def andCurIdIs: St = s" (and curId: $curId)"
 }
 
 
-/*
-/** Audit log, review tasks and spam check tasks never see any old-false-id. */
-trait TrueId extends TrueFalseId {
-}
-
-
-object TrueId {
-  def apply(curId: PatId, override val anyTrueId: Opt[MembId] = None): TrueId = {
-    new TrueId(val curId = curId, val anyTrueid = anyTrueId)
-  }
-
-} */
 
 /** For doing things where one may not use an anonym or pseudonym. */
 case class TrueIdOnly(curId: PatId) extends TrueId {

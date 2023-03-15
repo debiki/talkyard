@@ -28,6 +28,7 @@ import Prelude._
   *
   * (This corresponds to edges in a graph database, from nodes of type Pat.)
   */
+//  RENAME  remove  _later
 sealed abstract class PatRelType_later(val IntVal: i32) extends PostActionType {
   def toInt: i32 = IntVal
 }
@@ -113,14 +114,13 @@ object PatRelType_later {
     *      for custom plugins [review_plugin]
     */
   case object AssignedTo extends PatRelType_later(11)
-  //  AssignedTo_later
 
   /** If a pat wants to get notified about posts from another pat.  Hmm but
     * shouldn't this be in  notf_prefs_t?  So can follow someone *in a specific cat* only,
     * and choose how often to get notified, other notf prefs things.
     * Or should be in  pat_pat_rels_t?
     */
-  // object FollowerOf extends PatRelType_later(-1)
+  case object FollowerOf_later extends PatRelType_later(-1)
 
   /** If pat has been added as author of a post.  (Value could maybe say if is
     * primary author, or secondary author?)
@@ -128,11 +128,11 @@ object PatRelType_later {
     * The person who posted a post, is the author, by default.  [post_authors]
     * But others can be made authors instead, by adding this AuthorOf relationship.
     */
-  case object AuthorOf_later extends PatRelType_later(-1)  // maybe 2?
+  case object AuthorOf_later extends PatRelType_later(-1)  // maybe IntVal 2?
 
   /** If pat has been added as owner of a post. The owners of a post,
     * can edit it, change the authors, make it  private (but not make a private
-    * post public), add/remove owners, etc.
+    * post public), add/remove owners, etc — as if it was their post (it is).
     *
     *  Changing the owner, can be good if 1) someone starts working on an article,
     *  and leaves for vacation, and another person is to finish the article,
@@ -141,7 +141,8 @@ object PatRelType_later {
     *  the mods can make the Moderators group the owner of the post —
     *  thereafter the original author cannot edit it, un/delete it or anything.
     */
-  case object OwnerOf_later extends PatRelType_later(-1)  // maybe 1?
+  case object OwnerOf_later extends PatRelType_later(-1)  // maybe IntVal 1?
+
 
   def fromInt(value: i32): Opt[PatRelType_later] = Some(value match {
     case AssignedTo.IntVal => AssignedTo

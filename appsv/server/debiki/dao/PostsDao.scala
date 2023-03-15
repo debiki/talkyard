@@ -372,6 +372,7 @@ trait PostsDao {
     val interactedNotfPrefs = tx.loadNotfPrefsAboutPagesInteractedWith(authorAndGroupIds)
     ... derive prefs, looking at own and groups ...
     val oldPostsByAuthor = page.parts.postByAuthorId(author.id)
+          where:  postByAuthorId(authorId)  was:  allPosts.filter(_.createdById == authorId)
     if (oldPostsByAuthor.isEmpty) {
       savePageNotfPrefIfAuZ(PageNotfPref(
             peopleId = authorId,

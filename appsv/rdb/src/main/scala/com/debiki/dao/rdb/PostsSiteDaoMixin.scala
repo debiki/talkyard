@@ -1006,32 +1006,6 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  /*
-  def loadPatPostRels[T <: PatRelType_later](
-          patId: PatId,relType: T, inclClosedPosts: Bo, inclDeletedPosts: Bo,
-          orderBy: OrderBy, limit: i32): ImmSeq[PatNodeRel[T]] = {
-    // Simpler than to upd  dormant_status_c ?
-    val query = s"""
-          select  pa.*
-          from  post_actions3 pa  inner join  posts3 po
-              on   pa.site_id = po.site_id
-              and  pa.to_post_id_c = po.unique_post_id
-          where  pa.site_id = ?
-            and  pa.from_pat_id_c = ?
-            and  pa.rel_type_c = ?
-            and  pa.dormant_status_c is null
-            ${ inclClosedPosts  ? "and  po.closed_status = 0 "  | "" }
-            ${ inclDeletedPosts ? "and  po.deleted_status = 0 " | "" }
-          order by
-              pa.created_at desc
-          """
-    val values = List(siteId.asAnyRef, patId.asAnyRef, relType.toInt.asAnyRef)
-    runQueryFindMany(query, values, rs => {
-      readPost(rs)
-    })
-  } */
-
-
   // Later: Make generic: [T <: PatRelType_later] and return a PatNodeRel[T]
   private def loadActionsOnPageImpl(pageId: Option[PageId], userId: Option[UserId],
         relTypes: ImmSeq[PostActionType], limit: Opt[i32], onlyOpenPosts: Bo = false)
@@ -1062,6 +1036,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     } getOrElse ""
 
     COULD // always incl deleted_status = 0? Hmm.
+    COULD_OPTIMIZE // if "", includes deleted posts, are filtered out later?
     val innerJoinOpenPosts: St = if (!onlyOpenPosts) "" else s"""
           inner join  posts3 po
              on  po.site_id = pa.site_id

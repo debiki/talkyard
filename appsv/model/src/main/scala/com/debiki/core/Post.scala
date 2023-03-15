@@ -305,8 +305,8 @@ object DraftType {
   *   moves the post to a page one may not access — then, good to know on which page it was
   *   located, originally, when starting typing the draft (so one knows what topic it concerns).
   * @param postNr — Which post, on pageId, we're replying to.
-  * @param postId — 1) If editing an already existing post. Or 2) which post we're
-  *   replying to, might then be different from page id + post nr, if got moved to other
+  * @param postId — 1) An already existing post we'r editing. Or 2) The post we're
+  *   replying to — might be different from page id + post nr, if got moved to other
   *   page. (Then where does the draft appear? I forgot. Oh well.)
   */
 case class DraftLocator(
@@ -491,6 +491,11 @@ case class Post(   // [exp] ok use
   require(!currentRevLastEditedAt.exists(_.getTime < currentRevStaredAt.getTime), "DwE7KEF3")
   require(currentRevisionById == createdById || currentRevisionNr > FirstRevisionNr, "DwE0G9W2")
 
+  require(ownerIds.forall(_ >= Participant.LowestTalkToMemberId), "TyE206AKSE7")
+  require(authorIds.forall(_ >= Participant.LowestTalkToMemberId), "TyE206AKSE8")
+  // But maybe allow assignee ids < 0: Can sometimes make sense to assign a post
+  // to an anonymous user (e.g. in a workplace, where people are anonymous for a
+  // short while in a new discussion, to improve decision making).
   require(assigneeIds.forall(_ >= Participant.LowestTalkToMemberId), "TyE206AKSE6")
 
 

@@ -445,7 +445,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
             showHidden = true,
             // Really need to specify this again?
-            includeUnapproved = query.reqrIsStaffOrSubject,
+            includeUnapproved = query.reqrIsStaffOrObject,
             tagsAndBadges)
 
       pageStuffById.get(post.pageId) map { pageStuff =>

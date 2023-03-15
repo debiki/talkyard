@@ -237,11 +237,6 @@ abstract class PageParts {
   def theBody: Post = thePostByNr(BodyNr)
   def theTitle: Post = thePostByNr(TitleNr)
 
-  /*
-  def postByAuthorId(authorId: UserId): Seq[Post] = {
-    allPosts.filter(_.createdById == authorId)
-  } */
-
   /** Finds all of postNrs. If any single one (or more) is missing, returns Error. */
   def getPostsAllOrError(postNrs: Set[PostNr]): immutable.Seq[Post] Or One[PostNr] = {
     Good(postNrs.toVector map { nr =>

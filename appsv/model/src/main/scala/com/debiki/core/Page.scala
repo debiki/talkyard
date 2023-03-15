@@ -1146,7 +1146,7 @@ sealed trait PostQuery {
   def orderBy: OrderBy
 
   /** If this query is by someone about henself. Or if is by a mod or admin. */
-  def reqrIsStaffOrSubject: Bo = reqr.isStaff
+  def reqrIsStaffOrObject: Bo = reqr.isStaff
 }
 
 
@@ -1174,7 +1174,7 @@ object PostQuery {
     orderBy: OrderBy,
   ) extends PostQuery {
 
-    override def reqrIsStaffOrSubject: Bo = reqr.isStaff || reqr.id == relatedPatId
+    override def reqrIsStaffOrObject: Bo = reqr.isStaff || reqr.id == relatedPatId
   }
 
   // Later, replace w PostsRelatedToPat and relType AuthorOf.
@@ -1188,7 +1188,7 @@ object PostQuery {
     orderBy: OrderBy,
   ) extends PostQuery {
 
-    override def reqrIsStaffOrSubject: Bo = reqr.isStaff || reqr.id == authorId
+    override def reqrIsStaffOrObject: Bo = reqr.isStaff || reqr.id == authorId
   }
 
 }

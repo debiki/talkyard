@@ -1,0 +1,276 @@
+Next:           98b0447b1 Two features: Anon comments, Assigned-To
+CR done up to:  c7f04d195 Add an e2e test step and comment.
+
+Testst needed:
+
+      Anons for drafts, UNTSETED.
+
+git difftool -d  c7f04d195 98b0447b1  # Add an e2e test step and comment.  .. Two features: Anon comments, Assigned-To
+
+
+ appsv/model/src/main/scala/com/debiki/core/AuditLogEntry.scala                      |   7 +-
+ appsv/model/src/main/scala/com/debiki/core/Category.scala                           |  14 ++--
+ appsv/model/src/main/scala/com/debiki/core/Page.scala                               |  87 ++++++++++++++++++++--
+ appsv/model/src/main/scala/com/debiki/core/PageParts.scala                          |   3 +-
+ appsv/model/src/main/scala/com/debiki/core/Post.scala                               |  28 ++++++-
+ appsv/model/src/main/scala/com/debiki/core/PostAction.scala                         |  76 ++++++++++++++++---
+ appsv/model/src/main/scala/com/debiki/core/ReviewTask.scala                         |   6 +-
+ appsv/model/src/main/scala/com/debiki/core/SiteTransaction.scala                    |  17 +++--
+ appsv/model/src/main/scala/com/debiki/core/TrueFalseId.scala                        | 165 +++++++++++++++++++++++++++++++++++++++++
+ appsv/model/src/main/scala/com/debiki/core/links.scala                              |   2 +-
+ appsv/model/src/main/scala/com/debiki/core/notifications.scala                      |   9 +++
+ appsv/model/src/main/scala/com/debiki/core/package.scala                            | 192 +++++++++++++++++++++++++++++++++++++++---------
+ appsv/model/src/main/scala/com/debiki/core/user.scala                               |  32 +++++++-
+ appsv/rdb/src/main/resources/db/migration/db-refactor.txt                           |  27 -------
+ appsv/rdb/src/main/resources/db/migration/db-wip.sql                                | 226 +++++++++++++++++++++------------------------------------
+ appsv/rdb/src/main/resources/db/migration/{r__comments.sql => wait_r__comments.sql} | 136 ++++++++++++++++++++++++++--------
+ appsv/rdb/src/main/resources/db/migration/y2023/v419__anon_posts_disc_prefs.sql     | 366 +++++++++++++++++++++++++++++++++++++++++++++++--------------------------------------------
+ appsv/rdb/src/main/resources/db/migration/y2999/wip_sect_disc_props_views_stats.sql |  46 +++++++++++-
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/AuditLogSiteDaoMixin.scala              |  23 ++++--
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/CategoriesSiteDaoMixin.scala            | 104 ++++++++++++++++++--------
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/DraftsSiteDaoMixin.scala                |  26 ++++++-
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/LinksSiteTxMixin.scala                  |   4 +-
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/PageUsersSiteDaoMixin.scala             |   2 +-
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/PagesSiteDaoMixin.scala                 |   2 +-
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/PostsSiteDaoMixin.scala                 | 563 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------------------------------
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/Rdb.scala                               |  36 ++++++++-
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/RdbSiteTransaction.scala                |  14 +++-
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/RdbUtil.scala                           |  53 ++++++++------
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/ReviewTasksSiteDaoMixin.scala           |  12 +--
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/SpamCheckQueueDaoMixin.scala            |  10 +--
+ appsv/rdb/src/main/scala/com/debiki/dao/rdb/UserSiteDaoMixin.scala                  |   4 +-
+ appsv/server/controllers/CloseCollapseController.scala                              |   3 +-
+ appsv/server/controllers/CreateSiteController.scala                                 |   2 +-
+ appsv/server/controllers/DraftsController.scala                                     |  17 +++++
+ appsv/server/controllers/EditController.scala                                       |  10 +--
+ appsv/server/controllers/ForumController.scala                                      |  32 +++++++-
+ appsv/server/controllers/InviteController.scala                                     |   2 +-
+ appsv/server/controllers/LoginAsGuestController.scala                               |   2 +-
+ appsv/server/controllers/LoginWithOpenAuthController.scala                          |   2 +-
+ appsv/server/controllers/LoginWithPasswordController.scala                          |   2 +-
+ appsv/server/controllers/PageController.scala                                       |  42 ++++++++---
+ appsv/server/controllers/PageTitleSettingsController.scala                          |  15 +++-
+ appsv/server/controllers/ReplyController.scala                                      |   2 +-
+ appsv/server/controllers/SpecialContentController.scala                             |   2 +-
+ appsv/server/controllers/UploadsController.scala                                    |  10 +--
+ appsv/server/controllers/UserController.scala                                       |  89 +++++++++++++++++++----
+ appsv/server/debiki/JsonUtils.scala                                                 |  22 ++++++
+ appsv/server/debiki/RateLimits.scala                                                |   9 ++-
+ appsv/server/debiki/ReactJson.scala                                                 |  54 +++++++++++---
+ appsv/server/debiki/dao/CategoriesDao.scala                                         |  24 +++++-
+ appsv/server/debiki/dao/FeedsDao.scala                                              |  15 ++--
+ appsv/server/debiki/dao/ForumDao.scala                                              |  28 ++++++-
+ appsv/server/debiki/dao/MessagesDao.scala                                           |  36 ++++++---
+ appsv/server/debiki/dao/PageStuffDao.scala                                          |  27 ++++++-
+ appsv/server/debiki/dao/PagesDao.scala                                              |  94 +++++++++++++-----------
+ appsv/server/debiki/dao/PostsDao.scala                                              | 355 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--------------------------
+ appsv/server/debiki/dao/RenderedPageHtmlDao.scala                                   |   6 +-
+ appsv/server/debiki/dao/ReviewsDao.scala                                            |  23 +++---
+ appsv/server/debiki/dao/SettingsDao.scala                                           |   2 +-
+ appsv/server/debiki/dao/SpecialContentDao.scala                                     |  53 +++++++++-----
+ appsv/server/debiki/dao/SystemDao.scala                                             |   5 +-
+ appsv/server/debiki/dao/TagsDao.scala                                               |   1 +
+ appsv/server/debiki/dao/UploadsDao.scala                                            |  19 ++++-
+ appsv/server/debiki/dao/UserDao.scala                                               |  25 ++++---
+ appsv/server/debiki/settings.scala                                                  |   2 +-
+ appsv/server/talkyard/server/JsX.scala                                              |   9 +++
+ appsv/server/talkyard/server/api/ListController.scala                               |  10 +--
+ appsv/server/talkyard/server/api/PostsListFoundJson.scala                           |   1 +
+ appsv/server/talkyard/server/api/ThingsFoundJson.scala                              |   2 +
+ appsv/server/talkyard/server/authz/AuthzSiteDaoMixin.scala                          |   3 +
+ appsv/server/talkyard/server/events/EventsParSer.scala                              |   3 +-
+ appsv/server/talkyard/server/http/DebikiRequest.scala                               |  11 ++-
+ appsv/server/talkyard/server/notf/NotificationGenerator.scala                       |  91 +++++++++++++++++++----
+ appsv/server/talkyard/server/parser/package.scala                                   |  22 ++++--
+ appsv/server/talkyard/server/pop/PagePopularityCalculator.scala                     |   2 +
+ appsv/server/talkyard/server/sitepatch/SitePatch.scala                              |   2 +-
+ appsv/server/talkyard/server/sitepatch/SitePatchMaker.scala                         |   4 +-
+ appsv/server/talkyard/server/sitepatch/SitePatchParser.scala                        |   8 ++
+ appsv/server/talkyard/server/sitepatch/SitePatcher.scala                            |  18 +++--
+ appsv/server/talkyard/server/spam/SpamCheckActor.scala                              |   2 +-
+ appsv/server/talkyard/server/spam/SpamChecker.scala                                 |   6 +-
+ client/app-editor/editor/editor.editor.ts                                           |  77 ++++++++++++++++----
+ client/app-editor/editor/editor.styl                                                |   2 +-
+ client/app-more/forum/create-category-dialog.more.ts                                |  11 +++
+ client/app-more/more-bundle-already-loaded.d.ts                                     |   9 ++-
+ client/app-more/page-dialogs/ChangePageModal.more.ts                                |  28 ++++++-
+ client/app-more/page-dialogs/__dialog-template__.ts                                 |   4 +
+ client/app-more/page-dialogs/add-remove-people-dialogs.more.ts                      |  62 +++++++++++++---
+ client/app-more/page-dialogs/anons-allowed-btn.more.ts                              | 121 +++++++++++++++++++++++++++++++
+ client/app-more/page-dialogs/anons-allowed-diag.more.ts                             | 161 ++++++++++++++++++++++++++++++++++++++++
+ client/app-more/page-dialogs/choose-author-owner.more.ts                            | 120 ++++++++++++++++++++++--------
+ client/app-more/page-dialogs/disc-layout-dialog.more.ts                             |   7 +-
+ client/app-more/users/group-members.more.ts                                         |   7 +-
+ client/app-more/users/user-activity.more.ts                                         |  66 ++++++++++-------
+ client/app-more/users/user-drafts-etc.more.ts                                       |  62 ++++++++++------
+ client/app-more/users/user-notifications.more.ts                                    |   3 +-
+ client/app-more/users/user-tasks.more.ts                                            |  68 +++++++++++++++++
+ client/app-more/users/users-page.more.ts                                            |  18 ++---
+ client/app-slim/ReactActions.ts                                                     |   2 +-
+ client/app-slim/ReactStore.ts                                                       |  20 ++++-
+ client/app-slim/Server.ts                                                           |  27 +++++--
+ client/app-slim/avatar/avatar.ts                                                    |   6 +-
+ client/app-slim/forum/forum.styl                                                    |   8 ++
+ client/app-slim/forum/forum.ts                                                      |  24 +++++-
+ client/app-slim/links.ts                                                            |   3 +
+ client/app-slim/model.ts                                                            | 151 +++++++++++++++++++++++++++++++-------
+ client/app-slim/more-bundle-not-yet-loaded.ts                                       |   5 +-
+ client/app-slim/oop-methods.ts                                                      | 165 ++++++++++++++++++++++++++++++++++-------
+ client/app-slim/page-methods.ts                                                     |   1 +
+ client/app-slim/page/discussion.ts                                                  |  20 ++++-
+ client/app-slim/page/post-actions.ts                                                |   6 +-
+ client/app-slim/page/posts.styl                                                     |  20 ++++-
+ client/app-slim/sidebar/sidebar.ts                                                  |   7 +-
+ client/app-slim/slim-bundle.d.ts                                                    |  12 ++-
+ client/app-slim/store-getters.ts                                                    |  33 +++++++--
+ client/app-slim/util/ExplainingDropdown.styl                                        |   4 +
+ client/app-slim/utils/react-utils.ts                                                |  21 ++++--
+ client/app-slim/widgets.ts                                                          |  12 ++-
+ client/app-slim/widgets/widget-open-buttons.ts                                      |   2 +
+ client/types-and-const-enums.ts                                                     |  28 ++++++-
+ conf/routes                                                                         |   5 +-
+ decisions.adoc                                                                      |   8 ++
+ docs/abbreviations.txt                                                              |  12 ++-
+ docs/everything-is-a-node.txt                                                       | 762 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ docs/maybe-do-later.txt                                                             |  28 +++++++
+ docs/maybe-refactor.txt                                                             |   5 ++
+ docs/tyworld.adoc                                                                   |  10 ++-
+ old/db-skip.sql                                                                     | 314 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ tests/app/debiki/dao/AnonymAppSpec.scala                                            |   2 +-
+ tests/app/debiki/dao/DaoAppSuite.scala                                              |  11 ++-
+ tests/app/debiki/dao/DeletePageAppSpec.scala                                        |  27 ++++---
+ tests/app/debiki/dao/DraftsDaoAppSpec.scala                                         |  38 ++++++++++
+ tests/app/debiki/dao/MovePostsAppSpec.scala                                         |  50 ++++++++-----
+ tests/app/debiki/dao/PageNotfPrefTxSpec.scala                                       |   4 +
+ tests/app/debiki/dao/UploadsDaoSpec.scala                                           |  50 ++++++-------
+ tests/app/talkyard/server/links/LinksAppSpec.scala                                  |  19 ++---
+ tests/app/talkyard/server/summaryemails/SummaryEmailsAppSpec.scala                  |   4 +
+ tests/e2e-wdio7/specs/embcom.expimpjson.import-tests-impl.ts                        |   4 +-
+ 138 files changed, 4976 insertions(+), 1298 deletions(-)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Old:
+       eml adr    ba27796c5 (HEAD -> t/may-mods-see-adrs, origin/t/may-mods-see-adrs) s view em adrs:  fix bugs.
+   so  yarn deps  c8a7dd94f o  Avoid unnecessary `yarn install`.
+       eml adr    736a28d28 s, see em adr.
+       eml adr    94eaeb9c7 s,  mods can opt see email adrs.
+       eml adr    391e16c2a s, compil err.
+       eml adr    9bb6590bc (t/assigned-to) May mods see emails, wip.
+
+       asgn       b2bbd3227 (origin/t/assigned-to) Assigned-To, ctd, done. (Right?) But no e2e test, and CR missing.
+       asgn qry3  b8c952e3f (t/anon-posts-5) Implement Assigned-To, almost
+       anon tst   cef7f5d63 (origin/t/anon-posts-5) Fix Scala tests compl errs, after anon true ids
+   o   e2e        80f2d2b97 Add an e2e test step and comment.
+       anon       f83df8ffa Bug fix: SQL $groupBy__siteId_postId.
+   so  yarn deps  2967c1660 Upd more Nodejs deps.
+   o   yarn deps  4eeba68ae Upgr Nodejs deps incl Typescript to 4.9.
+       anon       ca706524c Anon comts bug fixes
+       anon       48bd949a8 Anon drafts fixes.
+   o   e2e        c3d3f860b o. Upd Chromedriver, Chrome 110 now.
+   fe  anon       d6b61a724 Anon avatar, for drafts. Save anon for drafts, but UNTESTED.
+   mig anon act   f97580d69 Make anon conf vals work: comtsStartAnon. And newAnonStatus a bit
+       anon       378be9c34 Activate anon posts migr again.
+       anon       8ec4026b3 Rethink AnonStatus a bit.
+       anon       5ba031700 Repl SpamCheckTask.who w reqrId, move BrowserIdData to RequestStuff
+       anon       0609faf14 s w ?. Send post author to Notf.Gen.
+       rm         912c76a65 Add old doing-undoing-true-id.txt help file, rm later.
+       anon       bf1418dd4 Anon not found via dao, use tx or param, wip.
+       anon       f5e0f8c9a Fix TrueId compil errs, now starts.
+       asgn qry2  a92bd178b Start joining posts3 w post_actions3. Review anon SQL a bit more
+       asgn       699d0f523 s, ren show_pat_id_c as_pat_id_c.
+       anon asgn  6d51115d9 s, thoughts, anon & priv comts, assigned, nodes_t.
+       asgn       1c9b1c0ad Everything is a conts_t node thoughts.
+       rm/move    aa1d25c5f decisions-wip.adoc
+       anon sql   3b4e91cc1 Anon thoughts.
+       anon       2ca3669c4 Anon thoughts. comt_hidden_mins_c ?
+       cry        eddd57b48 Bad Nodejs crypto.
+       dkr        72c9c4408 Bad Docker! No, bad clone3. Downgr app img OS.
+       asgn qry1  1f3340001 Start experimenting with pat_rels_t.rel_type_c = AuthorOf for anons?
+
+                  8f2c54883 Anons code review. Use pat_rels_t?
+                  25f3157e7 Move wip cookie db migr to y2999.
+                  3cb3312ab Upd anon posts db migr nummer.
+                  e85aec6b5 ANON_UNIMPL comments related to notificitions, & broken e2e test.
+                  c364b5836 Fix bug: Author might be a guest or anon, not a user.
+                  7c33e09da Fix anon-posts compil err after merge, and wrong col name.
+                  17b62e08b Bump anon SQL file version.
+                  f1d067145 Review anon SQL.
+                  88d72f390 Implement anonymous posts, sort of done, some tables missing true_pat_id_c.
+                  04256ae9b Remove '?' after guest & anon names.
+                  287ee725c (origin/master, origin/main, origin/HEAD, master, main) Fix Makefile wrong-relchans/tyse-v0-dev and bump-version bug
+
+
+***
+
+pick 1f3340001 Start experimenting with pat_rels_t.rel_type_c = AuthorOf for anons?
+
+pick 72c9c4408 Bad Docker! No, bad clone3. Downgr app img OS.
+s 1308e7a89 o.  Switch app img to Ubuntu 20, doesn't use clone3.
+
+pick eddd57b48 Bad Nodejs crypto.
+
+pick c3d3f860b o. Upd Chromedriver, Chrome 110 now.
+s 4eeba68ae Upgr Nodejs deps incl Typescript to 4.9.
+s 2967c1660 Upd more Nodejs deps.
+pick c8a7dd94f o  Avoid unnecessary `yarn install`.
+
+pick 2ca3669c4 Anon thoughts. comt_hidden_mins_c ?
+s 3b4e91cc1 Anon thoughts.
+
+d aa1d25c5f decisions-wip.adoc
+
+s 1c9b1c0ad Everything is a conts_t node thoughts.
+s 6d51115d9 s, thoughts, anon & priv comts, assigned, nodes_t.
+s 699d0f523 s, ren show_pat_id_c as_pat_id_c.
+s a92bd178b Start joining posts3 w post_actions3. Review anon SQL a bit more
+s f5e0f8c9a Fix TrueId compil errs, now starts.
+s bf1418dd4 Anon not found via dao, use tx or param, wip.
+
+d 912c76a65 Add old doing-undoing-true-id.txt help file, rm later.
+
+s 0609faf14 s w ?. Send post author to Notf.Gen.
+s 5ba031700 Repl SpamCheckTask.who w reqrId, move BrowserIdData to RequestStuff
+s 8ec4026b3 Rethink AnonStatus a bit.
+s 378be9c34 Activate anon posts migr again.
+s f97580d69 Make anon conf vals work: comtsStartAnon. And newAnonStatus a bit
+s d6b61a724 Anon avatar, for drafts. Save anon for drafts, but UNTESTED.
+
+#pick c3d3f860b o. Upd Chromedriver, Chrome 110 now.
+
+s 48bd949a8 Anon drafts fixes.
+s ca706524c Anon comts bug fixes
+
+#pick 4eeba68ae Upgr Nodejs deps incl Typescript to 4.9.
+#pick 2967c1660 Upd more Nodejs deps.
+
+s f83df8ffa Bug fix: SQL $groupBy__siteId_postId.
+#pick 80f2d2b97 Add an e2e test step and comment.
+s cef7f5d63 Fix Scala tests compl errs, after anon true ids
+s b8c952e3f Implement Assigned-To, almost
+s b2bbd3227 Assigned-To, ctd, done. (Right?) But no e2e test, and CR missing.
+
+pick 80f2d2b97 Add an e2e test step and comment.
+
+pick 9bb6590bc May mods see emails, wip.
+s 391e16c2a s, compil err.
+s 94eaeb9c7 s,  mods can opt see email adrs.
+s 736a28d28 s, see em adr.
+#pick c8a7dd94f o  Avoid unnecessary `yarn install`.
+s ba27796c5 s view em adrs:  fix bugs.
+
+# Rebase 8f2c54883..1308e7a89 onto 8f2c54883 (36 commands)
+
