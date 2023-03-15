@@ -229,7 +229,7 @@ object PostStatusAction {
 
 
 // RENAME to  PatNodeRel
-// Stored in  post_actions3, will rename to pat_rels_t, no to  pat_post_rels_t?
+// Stored in  post_actions3, will rename to  pat_node_rels_t?
 sealed abstract class PostAction {
   RENAME // to toNodeId
   def uniqueId: PostId

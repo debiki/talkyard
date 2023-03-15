@@ -194,7 +194,7 @@ package object core {
   type SiteId = Int
   val NoSiteId = 0
 
-  type SiteVersion = i32 // Int
+  type SiteVersion = i32
 
   type LangCode = St  // [Scala_3] opaque type
 
@@ -217,7 +217,7 @@ package object core {
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
   type GuestId = PatId
-  type AnonId = PatId
+  type AnonId = PatId     // Scala_3 opaque type, must be <= max-anon-id
   type MemberId = PatId   ; RENAME // to MembId
   type MembId = PatId     // but hard to read: '...bI..', two lines next to each other. Instead:
   type MemId = PatId      // ... is this better?  NO, REMOVE.
@@ -553,8 +553,11 @@ package object core {
     //se object Never extends NeverAlways(1)
     case object NeverButCanContinue extends NeverAlways(2)
     case object Allowed extends NeverAlways(3)
+    /** The setting is shown, and if one leaves it as is, it'll be disabled / off. */
     //se object AllowedMustChoose extends NeverAlways(4)
+    /** The setting is shown, and one needs to click & choose: disabled, or enabled. */
     //se object MustChoose extends NeverAlways(5)
+    /** The setting is shown, and if one leaves it as is, it'll be enabled / on. */
     //se object RecommendedMustChoose extends NeverAlways(6)
     case object Recommended extends NeverAlways(7)
     case object AlwaysButCanContinue extends NeverAlways(8)
@@ -826,16 +829,10 @@ package object core {
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
+    // REFACTOR // this can now be a TrueId memb fn?
     def isGuest: Bo = !isAnon && Participant.isGuestId(id)
     def isSystem: Boolean = id == SystemUserId
-    /*
-    def isGuest: Bo = !isAnon && isGuestOrAnon ; REFACTOR // this can now be a TrueId memb fn?
-    */
     def isGuestOrAnon: Bo = trueId.isGuestOrAnon
-    /*
-    def isSystem: Bo = id == SystemUserId
-    def isBuiltInUser: Bo = id == SystemUserId
-    */
 
     dieIf(isAnon != trueId.anyTrueId.isDefined, "TyE40MADEW35",
           s"isAnon: $isAnon but trueId: ${trueId.trueId}")
@@ -863,12 +860,13 @@ package object core {
   }*/
 
 
-  /** A bitfield. Currently only None, 5 (made anon by oneself, can deanon oneself)
-    * and 5 + 32 (deanonymized by oneself) = 37 are supported:
+
+  /** A bitfield. Currently only None, 65535 = IsAnonOnlySelfCanDeanon
+    * and 2097151 = IsAnonCanAutoDeanon are supported:
     *
     * None, SQL null, 0: it not anon.
     *
-    * Default value:  i32 w 22 lowest bits set:  2^22 - 1 = 65535, upper 10 bits are 0.
+    * Default value:  i32 w 21 lowest bits set: 2^21 - 1 = 2097151, upper 11 bits are 0.
     * Then, with some unused bits being 0, others 1, one can choose if a new flag
     * is going to be by default 0 (off) or 1 (on), by picking a reseved bit that's
     * already 0 or 1.
@@ -878,7 +876,7 @@ package object core {
     *
     *   -----00-  =   0: don't store true id info in the db
     *   -----01-  =   2: can keep true id info briefly, to review and spam check, then delete
-    *   -----10-  =   4: can keep in db for a while, but delete after a time (a conf val)
+    *   -----10-  =   4: can keep in db for a while, but delete after some time (a conf val)
     *   -----11-  =   6: can keep in db permanently (the default)
     *
     *   ----1---  =   8: DBA can (could) see who you are (by running SQL queries)
@@ -890,17 +888,20 @@ package object core {
     *   1-------  =  128: reserved
     *
     * Bits 9-16:
-    *   -----111  =   256, 512, 1024: reserved
-    *   00000---  =     0: cannot be deanonymized (not even by DBAs, info not stored)
-    *   ----1---  =  2048: can be deanonymize by DBAs
-    *   ---1----  =  4096: may deanonymize oneself
-    *   --1-----  =  8192: may be deanonymized by admins
-    *   -1------  = 16384: may be deanonymized by others with deanon permission in the category?
-    *   1-------  = 32768: may get deanonymized automatically (by trigger, e.g. date)
+    *   11111111  =   reserved
     *
-    * Bits 17-24 and 25-32:
-    *   0000000000000000  reserved
-    *     could be e.g.:
+    * Bits 17-21:
+    *   00000  =     0: cannot be deanonymized (not even by DBAs, info not stored)
+    *   ----1  =  2048: can be deanonymize by DBAs
+    *   ---1-  =  4096: may deanonymize oneself
+    *   --1--  =  8192: may be deanonymized by admins
+    *   -1---  = 16384: may be deanonymized by others with deanon permission in the category?
+    *   1----  = 32768: may get deanonymized automatically (by trigger, e.g. date)
+    *
+    * Bits  22-32:
+    *   00000000000  reserved
+    *
+    * Reserved bits could later say if e.g.:
     *       - May any of the anon's posts be moved to other pages? By default, no.
     *       - May the anon comment on other pages or anywhere in a category? (But then,
     *         couldn't anon_on_page_id_st_c just be set to null instead, meaning anywhere.
@@ -910,7 +911,6 @@ package object core {
     *         MyAnA, and then one relpies as MyAn*B* to that other person?
     *         Or, one then needs to reply as MyAnA? Or needs to use the same anon
     *         on the whole page?
-    *
     */
   sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
     def toInt: i32 = IntVal
@@ -919,14 +919,15 @@ package object core {
   object AnonStatus {
     /** Cannot save in the database (that'd mean an anonymous user that wasn't anonymous)
       * — just means that pat intentionally wants to use hens real account.
-      * (And then that real user would get saved as post author, instead, not 0 anywhere.)
+      * (And then that real user would get saved as post author, instead — but IntVal 0 doesn't
+      * get saved in the db, instead, is null (in the db).)
       */
     case object NotAnon extends AnonStatus(0, isAnon = false)
 
-    case object IsAnonOnlySelfCanDeanon extends AnonStatus(8191)
+    case object IsAnonOnlySelfCanDeanon extends AnonStatus(65535)
 
-    /** For now, all 16 lower bits set. See the AnonStatus descr above. Sync w Typescript. */
-    case object IsAnonCanAutoDeanon extends AnonStatus(65535)
+    /** For now, all 21 lower bits set. See the AnonStatus descr above. Sync w Typescript. */
+    case object IsAnonCanAutoDeanon extends AnonStatus(2097151)
 
     def fromOptInt(value: Opt[i32]): Opt[AnonStatus] = value flatMap fromInt
 
@@ -961,7 +962,7 @@ package object core {
 
 
   /**
-    * @param patOrPseudonym — the id of the requester, can be a pseudonym. But not an anonym.
+    * @param user, (RENAME to patOrPseudonym?) — the id of the requester, can be a pseudonym. But not an anonym.
     * @param trustLevel — if patOrPseudonym is a pseudonym, then this is the pseudonym's
     *   trust level, which can be different from the true member's trust level?
     *   (See tyworld.adoc, [pseudonyms_trust].)

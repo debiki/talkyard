@@ -21,9 +21,13 @@ git difftool -d  c7f04d195 98b0447b1  # Add an e2e test step and comment.  .. Tw
  appsv/model/src/main/scala/com/debiki/core/notifications.scala                      |   9 +++
  appsv/model/src/main/scala/com/debiki/core/package.scala                            | 192 +++++++++++++++++++++++++++++++++++++++---------
  appsv/model/src/main/scala/com/debiki/core/user.scala                               |  32 +++++++-
+CR done
+
  appsv/rdb/src/main/resources/db/migration/db-refactor.txt                           |  27 -------
  appsv/rdb/src/main/resources/db/migration/db-wip.sql                                | 226 +++++++++++++++++++++------------------------------------
  appsv/rdb/src/main/resources/db/migration/{r__comments.sql => wait_r__comments.sql} | 136 ++++++++++++++++++++++++++--------
+CR done
+
  appsv/rdb/src/main/resources/db/migration/y2023/v419__anon_posts_disc_prefs.sql     | 366 +++++++++++++++++++++++++++++++++++++++++++++++--------------------------------------------
  appsv/rdb/src/main/resources/db/migration/y2999/wip_sect_disc_props_views_stats.sql |  46 +++++++++++-
  appsv/rdb/src/main/scala/com/debiki/dao/rdb/AuditLogSiteDaoMixin.scala              |  23 ++++--

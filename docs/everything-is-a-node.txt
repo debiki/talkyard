@@ -147,7 +147,7 @@ perms_on_pages3  ——> perms_on_nodes_t (& perms_on_pats_t)
 
 NEXT: Add these fields to perms_on_pages3  (to be renamed to perms_on_cons_t):
 
-  - is_owner_c bool:  May add managers and granters/revokers,
+  - is_owner_c bool:  DONE, added  — May add managers and granters/revokers,
                      and edit the node and ... what about child nodes
                      of the same type?
        (but is-author stored in:  pat_node_rels_t.rel_type = AuthorOf)
@@ -161,12 +161,12 @@ NEXT: Add these fields to perms_on_pages3  (to be renamed to perms_on_cons_t):
         but  nodes_t (posts3) .private_status_c  says if a comment tree is private.
         Hmm, need to look at all ancestor comments, pages and cats. (that's fine)
 
-  - can_assign_c
+  - can_assign_c   DONE, added
        (but is-assigned stored in:  pat_node_rels_t.rel_type = AssignedTo)
 
-  - can_see_assigned_c  
+  - can_see_assigned_c   DONE, added
 
-  - can_alter_c  — may open/close, change doing status?
+  - can_alter_c  DONE, added  — may open/close, change doing status?
                      (but not change owner, author, private-status, delete).
 
   - can_manage_c bool:  May grant & revoke others' perms, on a content node

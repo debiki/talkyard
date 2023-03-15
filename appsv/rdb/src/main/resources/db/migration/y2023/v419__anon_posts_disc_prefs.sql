@@ -1,7 +1,7 @@
 -- In this migration: Anonymous posts, per page; discussion preferences;
 -- and some new datatype domains.
 
-
+CR_CONT_HERE
 
 -- New domains
 -------------------------------------------------
@@ -14,16 +14,16 @@ alter  domain never_always_d add
 -- See AnonStatus in the Scala code.
 create domain anonym_status_d i32_d;
 alter  domain anonym_status_d add
-   constraint anonym_status_d_c_in_8191_65535 check (value in (8191, 65535));
+   constraint anonym_status_d_c_in_65535_2097151 check (value in (65535, 2097151));
 
--- For now, always null. Will drop that constr, and add other constraints later.
+-- For now, always null. Will drop the null constr, and add other constraints later.
 create domain pseudonym_status_d i32_d;
 alter  domain pseudonym_status_d add
    constraint pseudonym_status_d_c_null check (value is null);
 
 -- Says if the poster is still author and owner. And if others have been
--- added as authors or owners, or assigned to do this post — then, they'd
--- be looked up in pat_post_rels_t.
+-- added as authors or owners, or assigned to this post — then, they'd
+-- be looked up in pat_node_rels_t.
 create domain creator_status_d i16_gz_lt1024_d;
 
 -- If not null, the page or post and all descendants, are private.
@@ -34,7 +34,7 @@ alter  domain private_status_d add
 
 create domain can_see_private_d i16_d;
 alter  domain can_see_private_d add
-   constraint can_see_private_d_c_null_123 check (
+   constraint can_see_private_d_c_null_1_to_5 check (
             (value is null) or (value between 1 and 5));
 
 create domain can_see_assigned_d i16_d;

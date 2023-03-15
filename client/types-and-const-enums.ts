@@ -312,8 +312,8 @@ const enum PostVoteType {
 /// See, and sync with, AnonStatus in Scala.
 const enum AnonStatus {
   NotAnon = 0,
-  IsAnonOnlySelfCanDeanon = 8191,
-  IsAnonCanAutoDeanon = 65535,
+  IsAnonOnlySelfCanDeanon = 65535,
+  IsAnonCanAutoDeanon = 2097151,
 }
 
 

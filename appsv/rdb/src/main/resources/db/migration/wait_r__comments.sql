@@ -1,3 +1,6 @@
+-- Rename file back, activate again
+
+
 -- Please sort tables alphabetically.
 -- And columns in what seems like a "good to know first" order,
 -- maybe primary key first?

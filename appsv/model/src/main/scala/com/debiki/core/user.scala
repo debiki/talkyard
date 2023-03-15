@@ -658,7 +658,7 @@ case object Participant {
 sealed trait Pat {
 
   def id: PatId
-  def trueId2: TrueId = TrueId(id)  ; RENAME // to  trueId.
+  def trueId2: TrueId = TrueId(id)  ; RENAME // to  trueId  remove '2'.
 
   def extId: Opt[ExtId]
   def email: EmailAdr  // COULD rename to emailAddr and change to Opt[EmailAdr] (instead of "")

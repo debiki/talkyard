@@ -91,12 +91,9 @@ object NotificationType {
   // + TopicDone
   // + TopicClosed
 
-  // case object PostOwnerAdded extends NotificationType(451)
-  // case object PostOwnerRemoved extends NotificationType(452)
-  // case object PostAuthorAdded extends NotificationType(461)
-  // case object PostAuthorRemoved extends NotificationType(462)
-  // case object PostAssigneeAdded extends NotificationType(471)  — or Changed?
-  // case object PostAssigneeRemoved extends NotificationType(472)
+  // case object PostOwnersChanged extends NotificationType(401 or 451)
+  // case object PostAuthorsChanged extends NotificationType(..2 ?)
+  // case object PostAssigneesChanged extends NotificationType(..3 ?)
 
   case object OneLikeVote extends NotificationType(501)
   // What about WrongVote, OffTopic, Unwanted?
@@ -119,8 +116,7 @@ object NotificationType {
     case Message.IntValue => Message
     case NewPost.IntValue => NewPost
     case PostTagged.IntValue => PostTagged
-    //case PostAssigneeAdded.IntValue => PostAssigneeAdded
-    //case PostAssigneeRemoved.IntValue => PostAssigneeRemoved
+    //case PostAssigneesChanged.IntVal => PostAssigneesChanged
     case OneLikeVote.IntValue => OneLikeVote
     case _ => return None
   })

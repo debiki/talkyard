@@ -227,7 +227,7 @@ create index patrels_i_reltype on post_actions3 (site_id, rel_type_c, sub_type_c
 
 -- For post rels:
 
-create table post_post_rels_t (  -- not?:  post_rels_t
+create table post_post_rels_t (  -- or:  node_node_rels_t?, see below
   site_id_c,
   from_post_id_c,
 
@@ -968,11 +968,6 @@ alter  domain content_set_type_d add
   -- 7 = tag(s) only, 11 = cat(s) only, 14 = page(s), 17 = replies?
 
 
-create domain allow_recmd_always_d i16_d;
-alter  domain allow_recmd_always_d add
-   constraint allow_recmd_always_d_c_in check (value in (2, 3, 4));
-
-
 -- Content settings/preferences
 -------------------------------------------------
 
@@ -1021,8 +1016,8 @@ create table cont_prefs_t(
 
   -- base_folder__unimpl_c            folder_path_d,
   -- show_page_ids__unimpl_c          i16_gz_d,
-  -- ops_start_wiki__unimpl_c         allow_recmd_always_d,
-  -- cmts_start_wiki__unimpl_c        allow_recmd_always_d,
+  -- ops_start_wiki__unimpl_c         never_always_d,
+  -- cmts_start_wiki__unimpl_c        never_always_d,
   -- show_op_author__unimpl_c         i16_gz_d,
   -- allow_cmts__unimpl_c             i16_gz_d, -- yes / no-but-may-reply-to-old / no-but-keep-old / no-and-hide-old  ?
 

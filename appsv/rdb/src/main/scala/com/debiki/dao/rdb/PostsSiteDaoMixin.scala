@@ -51,7 +51,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
                     filter (where pa.rel_type_c is not null)
                     pat_post_rels_array
         from $postsTable po
-        $someJoin post_actions3 pa   -- pat_post_rels_t [AuthorOf]
+        $someJoin post_actions3 pa   -- pat_node_rels_t [AuthorOf]
             on  pa.site_id = po.site_id
             and pa.to_post_id_c = po.unique_post_id  """
 
@@ -133,7 +133,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
     val queryBuilder = new StringBuilder(1024, s"""
        $select__posts_po__leftJoin__patPostRels_pa  -- select * from posts3
-       where po.site_id = ? and (""")  // + pat_post_rels_t [AuthorOf]
+       where po.site_id = ? and (""")  // + pat_node_rels_t [AuthorOf]
     var first = true
     for (postId <- postIds) {
       if (first) first = false
@@ -163,7 +163,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
     val queryBuilder = new StringBuilder(1024,
           s""" -- loadPostsByNrs
-          $select__posts_po__leftJoin__patPostRels_pa   --  + pat_post_rels_t [AuthorOf]
+          $select__posts_po__leftJoin__patPostRels_pa   --  + pat_node_rels_t [AuthorOf]
           where po.site_id = ? and (""")
     var nr = 0
     for (pagePostNr: PagePostNr <- pagePostNrs.toSet) {
@@ -205,7 +205,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
     val query = i""" -- loadPostsBySomeId
       $select__posts_po__leftJoin__patPostRels_pa
-      -- select * from posts3   -- + pat_post_rels_t [AuthorOf]
+      -- select * from posts3   -- + pat_node_rels_t [AuthorOf]
       where po.site_id = ? and po.$fieldName in (${makeInListFor(someIds)})
       $groupBy__siteId_postId
       """
@@ -243,7 +243,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   private def loadUnapprovedPostsImpl(pageId: PageId, by: Option[UserId], limit: Int)
         : immutable.Seq[Post] = {
     var query = s""" -- loadUnapprovedPostsImpl
-      -- select * from posts3  -- + pat_post_rels_t [AuthorOf]
+      -- select * from posts3  -- + pat_node_rels_t [AuthorOf]
       $select__posts_po__leftJoin__patPostRels_pa
       where po.site_id = ?
         and po.page_id = ?
@@ -270,7 +270,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post] = {
     val query = s"""
-      -- select * from posts3  -- + pat_post_rels_t [AuthorOf]
+      -- select * from posts3  -- + pat_node_rels_t [AuthorOf]
       $select__posts_po__leftJoin__patPostRels_pa
       where po.site_id = ?
         and po.page_id = ?
@@ -303,7 +303,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     } getOrElse ""
 
     val query = i"""
-      -- select * from posts3  -- + pat_post_rels_t [AuthorOf]
+      -- select * from posts3  -- + pat_node_rels_t [AuthorOf]
       $select__posts_po__leftJoin__patPostRels_pa
       where po.site_id = ? and po.created_by_id = ? $andSkipTitles
           $andSkipChat $andOnCertainPage $andOnlyUnapproved
@@ -381,10 +381,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           }
 
     val sqlQuery = s"""
-          -- select * from posts3  -- + pat_post_rels_t [AuthorOf]
+          -- select * from posts3  -- + pat_node_rels_t [AuthorOf]
           $select__posts_po__someJoin__patPostRels_pa
           where po.site_id = ?
-              $andAuthorEq -- !  + pat_post_rels_t [AuthorOf]  needs new sub query?
+              $andAuthorEq -- !  + pat_node_rels_t [AuthorOf]  needs new sub query?
               $andNotTitle
               $andSomeVersionApproved
               $andPageNotUnlisted_unimpl
@@ -406,19 +406,19 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 /*  Ooops,   cannot order by an  [.array_agg] column.  sqlQuery above is:
 
-          -- select * from posts3  -- + pat_post_rels_t [AuthorOf]
+          -- select * from posts3  -- + pat_node_rels_t [AuthorOf]
 
         select po.*,
                array_agg(array[pa.rel_type_c, pa.from_pat_id_c])
                     filter (where pa.rel_type_c is not null)
-                    pat_post_rels_array
+                    pat_node_rels_array
         from posts3 po
-        inner join post_actions3 pa   -- pat_post_rels_t [AuthorOf]
+        inner join post_actions3 pa   -- pat_node_rels_t [AuthorOf]
             on  pa.site_id = po.site_id
             and pa.to_post_id_c = po.unique_post_id
             and pa.rel_type_c in (  -1, -1, 11)
           where po.site_id = ?
-               -- !  + pat_post_rels_t [AuthorOf]  needs new sub query?
+               -- !  + pat_node_rels_t [AuthorOf]  needs new sub query?
               and po.post_nr <> 0
 
 [[ Hmm but this ignores other assignees. That's annoying? ]]
@@ -435,7 +435,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post] = {
     dieIf(orderBy != OrderBy.MostRecentFirst, "TyE60RKTJF4", "Unimpl")
     val query = s"""
-      -- select po.* from posts3 po   -- + pat_post_rels_t [AuthorOf]
+      -- select po.* from posts3 po   -- + pat_node_rels_t [AuthorOf]
       $select__posts_po__leftJoin__patPostRels_pa  -- OOOPS bad join order? Force
       inner join pages3 pg using (site_id, page_id)  -- this inner join first?
       where pg.site_id = ?
@@ -467,7 +467,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         select
           row_number() over (partition by page_id order by num_like_votes desc) as rownum,
           p.*
-        from posts3 p  --  + pat_post_rels_t [AuthorOf] todo ?
+        from posts3 p  --  + pat_node_rels_t [AuthorOf] todo ?
         where p.site_id = ?
           and p.page_id in (${makeInListFor(pageIds)})
           and p.post_nr >= ${exclOrigPost ? PageParts.FirstReplyNr | PageParts.BodyNr}
@@ -496,7 +496,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       return Map.empty
 
     val query = s"""
-      -- select * from posts3 p   -- + pat_post_rels_t [AuthorOf]
+      -- select * from posts3 p   -- + pat_node_rels_t [AuthorOf]
       $select__posts_po__leftJoin__patPostRels_pa
         where po.site_id = ?
           and po.page_id in (${makeInListFor(pageIds)})
@@ -544,7 +544,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   private def loadPostsToReviewImpl(whereTests: String): ArrayBuffer[Post] = {
     val query = s"""
-          -- select * from posts3  //  + pat_post_rels_t [AuthorOf]
+          -- select * from posts3  //  + pat_node_rels_t [AuthorOf]
           $select__posts_po__leftJoin__patPostRels_pa
           where po.site_id = ? and $whereTests
           $groupBy__siteId_postId
@@ -934,7 +934,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
     val query = s"""
       select unique_post_id, created_by_id
-      from posts3    -- + pat_post_rels_t [AuthorOf]  todo
+      from posts3    -- + pat_node_rels_t [AuthorOf]  todo
       -- select__posts_po__leftJoin__patPostRels_pa
       where site_id = ?
         and unique_post_id in(${makeInListFor(postIds)}) """
