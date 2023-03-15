@@ -11,6 +11,7 @@ import settings = require('../utils/settings');
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
+// Crypto problem? See:  ./embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
 import * as Paseto from 'paseto.js';
 
 
