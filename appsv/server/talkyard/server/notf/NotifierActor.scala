@@ -20,6 +20,7 @@ package talkyard.server.notf
 import akka.actor._
 import com.debiki.core.Prelude._
 import com.debiki.core._
+import debiki.MaxLimits
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import talkyard.server.notf.NotifierActor._
 import scala.collection.{immutable, mutable}
@@ -261,10 +262,12 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
       siteDao.updateNotificationSkipEmail(notfsToSkip)
 
       // Send email, or remember why we didn't and don't try again.
+      // (Currently trySendToSingleUser() sometimes updates the db to
+      // skip an email, hmm.  .let_the_caller)
       val anyProblem = trySendToSingleUser(userId, anyUser, notfsToSend, siteDao)
 
       anyProblem foreach { problem =>
-        System.err.println(s"s$siteId: Skipping email to user $userId, problem: $problem")
+        logger.warn(s"s$siteId: Skipping email to user $userId, problem: $problem")
         siteDao.updateNotificationSkipEmail(notfsToSend)
       }
     }
@@ -314,7 +317,13 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     COULD // group by page id, and send one email for all notfs about post on one page?
     val notfsToSendNow = notfsSorted.take(MaxNotificationsPerEmail)
     for (notf <- notfsToSendNow) {
-      constructAndSendEmail(siteDao, site, user, Seq(notf))
+      try constructAndSendEmail(siteDao, site, user, Seq(notf))
+      catch {
+        case ex: java.sql.SQLException =>
+          logger.warn(s"s${site.id} SQL error when saving email about notf: $notf")
+          REFACTOR // Better .let_the_caller do this? But then return what, here?
+          siteDao.updateNotificationSkipEmail(Seq(notf))
+      }
     }
 
     None
@@ -453,6 +462,8 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     if (subject.isEmpty)
       subject = s"[$siteName] New notifications"   // I18N
 
+    subject = subject.take(MaxLimits.MaXEmailSubjectLength_200)
+
     val email = Email.createGenId(EmailType.Notification, createdAt = globals.now(),
           sendTo = user.email, toUserId = Some(user.id),
           aboutWhat = aboutWhat, subject = subject, bodyHtml = "?",
@@ -488,7 +499,10 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
         </p>
       </div>.toString
 
-    Some(email.copy(bodyHtmlText = htmlContent))
+    Some(email.copy(
+          // It's "impossible" to exceed the max length — 20 000 chars —
+          // since we include just an excerpt of one post at a time (theaded emails).
+          bodyHtmlText = htmlContent.take(MaxLimits.MaXEmailBodyLength_20k)))
   }
 
 }
