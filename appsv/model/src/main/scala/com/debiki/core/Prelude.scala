@@ -575,8 +575,8 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
   def castToInt32(value: i64, mab: MessAborter): i32 = {
-    if (value >= Int.MaxValue) mab.abort("TyECASTP64T32", s"Cannot cast $value to i32")
-    if (value <= Int.MinValue) mab.abort("TyECASTM64T32", s"Cannot cast $value to i32")
+    if (value > Int.MaxValue) mab.abort("TyECASTP64T32", s"Cannot cast $value to i32")
+    if (value < Int.MinValue) mab.abort("TyECASTM64T32", s"Cannot cast $value to i32")
     value.toInt
   }
 
