@@ -34,6 +34,7 @@ import org.slf4j.Marker
 import play.api.libs.json._
 import play.{api => p}
 import play.api.mvc.{Action, ControllerComponents, Result}
+import play.api.http.{Status => p_Status, ContentTypes => p_ContentTypes}
 import redis.RedisClient
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -74,8 +75,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
   }
 
 
-  // Could allow only if a Ops team password header? is included? For now, superadmins only.
-  def showMetrics: Action[Unit] = SuperAdminGetAction { _ =>
+  def showMetrics: Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromCache) { req =>
+    throwForbiddenIfBadMetricsKey(req)
     val osMXBean = ManagementFactory.getOperatingSystemMXBean
     val systemLoad = osMXBean.getSystemLoadAverage
     val runtime = Runtime.getRuntime
@@ -111,8 +112,50 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
   }
 
 
-  SECURITY; COULD // make this accessible only for superadmins + if ok forbidden-password specified.
-  def showBuildInfo: Action[Unit] = GetAction { _ =>
+  /** If any error logged recently (the last okMinsAfterErr minutes), returns
+    * status 500 Internal Error, otherwise 200 OK.
+    * External monitoring systems can then notify any operations people about the error.
+    */
+  def showNumErrorsLogged(okMinsAfterErr: Opt[Int], apiKey: Opt[St]): Action[Unit] =
+          GetActionRateLimited(RateLimits.ReadsFromCache) { req =>
+    throwForbiddenIfBadMetricsKey(apiKey)
+    val okAftMins = okMinsAfterErr getOrElse 60
+
+    // Dupl code [now_mins].
+    val nowMillis = System.currentTimeMillis()
+    val nowMins_i64 = nowMillis / MillisPerMinute
+    val nowMins = castToInt32(nowMins_i64, IfBadDie)
+
+    val numErrs = talkyard.server.numErrors
+    val numWarns = talkyard.server.numWarnings
+    val lastErrAtMin: Opt[i32] = numErrs.lastAtUnixMinute()
+    val lastErrMinsAgo: Opt[i32] = lastErrAtMin.map(nowMins - _)
+
+    val result = Json.obj(
+          "errors" -> Json.obj(
+            "lastMinsAgo" -> JsInt32OrNull(lastErrMinsAgo),
+            "lastAtUnixMinute" -> numErrs.lastAtUnixMinute(),
+            "numSinceStart" -> numErrs.numSinceStart()),
+          "warnings" -> Json.obj(
+            "lastMinsAgo" -> JsInt32OrNull(numWarns.lastAtUnixMinute.map(nowMins - _)),
+            "lastAtUnixMinute" -> numWarns.lastAtUnixMinute(),
+            "numSinceStart" -> numWarns.numSinceStart()))
+
+    val statusCode =
+          if (lastErrMinsAgo.forall(_ >= okAftMins)) p_Status.OK
+          else p_Status.INTERNAL_SERVER_ERROR
+
+    Status(statusCode)(result.toString) as p_ContentTypes.JSON
+  }
+
+
+
+
+  def showBuildInfo(apiKey: Opt[String]): Action[Unit] = GetAction { _ =>
+    throwForbiddenIfBadMetricsKey(apiKeyInReq,
+          // This had better be available by default, otherwise it'd be hopeless
+          // to help out with troubleshooting people's self hosted installations.
+          okIfNoKeyInConf = true)
     import generatedcode.BuildInfo
     val infoTextBuilder = StringBuilder.newBuilder
       .append("Build info:")
@@ -136,6 +179,18 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
           .append("\nServer feature flags: ").append(globals.config.featureFlags)
           .append("\n")
     Ok(respBuilder.toString) as TEXT
+  }
+
+
+  def throwForbiddenIfBadMetricsKey(apiKeyInReq, okIfNoKeyInConf: Bo = false): U = {
+    globals.metricsApiKey match {
+      case Some(keyInConf) =>
+        throwForbiddenIf(apiKeyInReq isNot keyInConf, "TyECOUNTRAPIKEY",
+              "Bad counters API key, should be the same as: talkyard.metricsApiKey")
+      case None =>
+        throwForbiddenIf(!okIfNoKeyInConf && globals.isProdLive, "TyE0METRAPICONF",
+              "No talkyard.metricsApiKey specified in conf/play-framework.cons")
+    }
   }
 
 
@@ -560,6 +615,17 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
         }
         |""")
       }
+  }
+
+
+  def logError: Action[Unit] = AdminGetAction { _ =>
+    throwForbiddenIf(globals.isProdLive, "TyE0LOGERR", o"""
+          Look serious, sound serious and say "Seriously".
+          And make a serious gesture.
+          Then I will log an error *although* I'm in God mode no I mean Prod mode.""")
+    val msg = "Test_error_log_msg"
+    logger.error(msg)
+    Ok(s"I just logged this error: $msg") as TEXT
   }
 
 

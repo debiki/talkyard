@@ -327,6 +327,8 @@ GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 POST /-/add-admin-notice        controllers.DebugTestController.addAdminNotice
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
 GET  /-/num-e2e-test-emails-sent controllers.DebugTestController.numE2eTestEmailSent(siteId: Int)
+GET  /-/num-errors-logged       controllers.DebugTestController.showNumErrorsLogged(okMinsAfterErr: Option[Int], apiKey: Option[String])
+GET  /-/log-test-error          controllers.DebugTestController.logError()
 GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessages()
 GET  /-/page-top-score          controllers.DebugTestController.showPagePopularityStats(pageId)
 GET  /-/ws-state                controllers.DebugTestController.showPubSubSubscribers(siteId: Option[Int])

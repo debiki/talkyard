@@ -112,6 +112,10 @@ class E2eTestCounters {
 
 class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name = appCtx
                 // But then rename TyContext  to ... what?
+                // Maybe rename Globals to AppState, and apparentl y remove:
+                //    private class State, not needed any more now when Globals is
+                // not a global, but a class instance.
+                // Could use at other places: [use_state]
   private val appLoaderContext: p.ApplicationLoader.Context,
   val executionContext: scala.concurrent.ExecutionContext,  // RENAME to execCtx, started, see below
   val wsClient: WSClient,
@@ -275,6 +279,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     */
 
   val e2eTestPassword: Option[String] = getStringNoneIfBlank("talkyard.e2eTestPassword")
+  val metricsApiKey: Option[String] = getStringNoneIfBlank("talkyard.metricsApiKey")
 
   /** Lets people do some forbidden things, like creating a site with a too short
     * local hostname.
