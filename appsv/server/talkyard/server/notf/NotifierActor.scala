@@ -20,6 +20,7 @@ package talkyard.server.notf
 import akka.actor._
 import com.debiki.core.Prelude._
 import com.debiki.core._
+import debiki.MaxLimits
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import talkyard.server.notf.NotifierActor._
 import scala.collection.{immutable, mutable}
@@ -261,32 +262,31 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
       siteDao.updateNotificationSkipEmail(notfsToSkip)
 
       // Send email, or remember why we didn't and don't try again.
-      val anyProblem = trySendToSingleUser(userId, anyUser, notfsToSend, siteDao)
-
-      anyProblem foreach { problem =>
-        System.err.println(s"s$siteId: Skipping email to user $userId, problem: $problem")
-        siteDao.updateNotificationSkipEmail(notfsToSend)
-      }
+      trySendToSingleUser(userId, anyUser, notfsToSend, siteDao)
     }
   }
 
 
   /** Tries to send an email with one or many notifications to a single user.
-    * Returns any issue that prevented the email from being sent.
+    * If error, logs a message and updates the notification, sets email status to
+    * NotfEmailStatus.Skipped.
     */
   private def trySendToSingleUser(userId: UserId, anyUser: Option[Participant],
-        notfs: Seq[Notification], siteDao: SiteDao): Option[String] = {
+        notfs: Seq[Notification], siteDao: SiteDao): U = {
+    val siteId = siteDao.siteId
 
     // This can happen if snoozing.
     if (notfs.isEmpty)
-      return None
+      return
 
-    def logWarning(message: String): Unit =
-      logger.warn(s"Skipping email to user id `$userId', site `${siteDao.siteId}': $message")
+    def skipBecause(msg: St): U = {
+      logger.warn(s"s$siteId: Skipping email to user id $userId: $msg")
+      siteDao.updateNotificationSkipEmail(notfsToSend)
+    }
 
     val user = anyUser getOrElse {
-      logWarning("user not found")
-      return Some("User not found")
+      skipBecause("user not found")
+      return
     }
 
     // If email notification preferences haven't been specified, assume the user
@@ -295,15 +295,17 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     if (user.emailNotfPrefs != EmailNotfPrefs.Receive &&
         user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways &&
         user.emailNotfPrefs != EmailNotfPrefs.Unspecified) {
-      return Some("User declines emails")
+      // Or maybe just debug log level, here? — A harmless race can trigger this?
+      skipBecause("User declines emails")
+      return
     }
 
     if (user.email.isEmpty) {
-      return Some("User has no email address")
+      skipBecause("User has no email address")
+      return
     }
 
     val site = siteDao.theSite()
-    val siteId = site.id
 
     // Should have been sorted already. [older_notfs_emails]
     val notfsSorted = notfs.sortBy(_.id)
@@ -314,7 +316,12 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     COULD // group by page id, and send one email for all notfs about post on one page?
     val notfsToSendNow = notfsSorted.take(MaxNotificationsPerEmail)
     for (notf <- notfsToSendNow) {
-      constructAndSendEmail(siteDao, site, user, Seq(notf))
+      try constructAndSendEmail(siteDao, site, user, Seq(notf))
+      catch {
+        case ex: java.sql.SQLException =>
+          logger.error(s"s${site.id} SQL error when saving email about notf: $notf")
+          siteDao.updateNotificationSkipEmail(Seq(notf))
+      }
     }
 
     None
@@ -453,6 +460,8 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     if (subject.isEmpty)
       subject = s"[$siteName] New notifications"   // I18N
 
+    subject = subject.take(MaxLimits.MaXEmailSubjectLength_200)
+
     val email = Email.createGenId(EmailType.Notification, createdAt = globals.now(),
           sendTo = user.email, toUserId = Some(user.id),
           aboutWhat = aboutWhat, subject = subject, bodyHtml = "?",
@@ -488,7 +497,10 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
         </p>
       </div>.toString
 
-    Some(email.copy(bodyHtmlText = htmlContent))
+    Some(email.copy(
+          // It's "impossible" to exceed the max length — 20 000 chars —
+          // since we include just an excerpt of one post at a time (theaded emails).
+          bodyHtmlText = htmlContent.take(MaxLimits.MaXEmailBodyLength_20k)))
   }
 
 }
