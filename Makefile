@@ -151,6 +151,8 @@ git_modules := \
 
 git-subm-init-upd: $(git_modules)
 
+# Ooops if you try to add a new node_modules commit, then this easily resets it
+# and you'll need to try again.  [make_downgrades_node_mods]
 $(git_modules): $@
 	git submodule update --init
 
