@@ -266,9 +266,11 @@ export const Editor = createFactory<any, EditorState>({
         currentPage: discFrameStore.currentPage,
         currentPageId: discFrameStore.currentPageId,
         currentCategories: discFrameStore.currentCategories,
+        curCatsById: {}, // updated below (actually not needed? feels better, oh well)
         usersByIdBrief: discFrameStore.usersByIdBrief || {},
         pagesById: {},  // updated below
       });
+      storeClone.curCatsById = groupByKeepOne(storeClone.currentCategories, c => c.id);
     }
     catch (ex) {
       // Don't think this can happen, but let's wait and see for a while?

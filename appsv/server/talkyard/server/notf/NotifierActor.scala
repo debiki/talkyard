@@ -281,7 +281,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
     def skipBecause(msg: St): U = {
       logger.warn(s"s$siteId: Skipping email to user id $userId: $msg")
-      siteDao.updateNotificationSkipEmail(notfsToSend)
+      siteDao.updateNotificationSkipEmail(notfs)
     }
 
     val user = anyUser getOrElse {
@@ -323,8 +323,6 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
           siteDao.updateNotificationSkipEmail(Seq(notf))
       }
     }
-
-    None
   }
 
 
