@@ -46,9 +46,19 @@ object MaxLimits {
   // There are many other limits but they're hardcoded here and there ...
   // COULD move them all to here. A nice first step, to later on making it
   // possible to bump the restrictions, per site.
+
+  /** Db constr:  dw1_emlot_sentto__c_len.  But users3.primary_email_addr is max 100 anyway */
+  val MaxEmailSendToAdrLen_200_unused: i32 = 200 - 2
+
+  /** Max 200 chars, db constr:  dw1_emlot_subject__c_len. */
+  val MaXEmailSubjectLength_200: i32 = 200 - 2
+
+  /** Max 20 000, db constr:  emailsout_c_bodyhtml_len. */
+  val MaXEmailBodyLength_20k: i32 = 20000 - 2
 }
 
 
+// RENAME to DynMaxLimits ?
 case class MaxLimits(
   maxCategories: i32,
   maxTagTypes: i32,

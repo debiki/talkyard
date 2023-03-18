@@ -112,6 +112,10 @@ class E2eTestCounters {
 
 class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name = appCtx
                 // But then rename TyContext  to ... what?
+                // Maybe rename Globals to AppState, and apparently remove:
+                //    private class State   — not needed any more now when Globals is
+                // not a global, but a class instance.
+                // Could use at other places: [use_state]
   private val appLoaderContext: p.ApplicationLoader.Context,
   val executionContext: scala.concurrent.ExecutionContext,  // RENAME to execCtx, started, see below
   val wsClient: WSClient,
@@ -273,8 +277,11 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     * in order to create many e2e test sites — also in prod mode, for smoke tests.
     * The e2e test sites will have ids like {{{test__...}}} so that they can be deleted safely.
     */
+  val e2eTestPassword: Opt[St] = getStringNoneIfBlank("talkyard.e2eTestPassword")
 
-  val e2eTestPassword: Option[String] = getStringNoneIfBlank("talkyard.e2eTestPassword")
+  /** For accessing server error log message counters and performance numbers etc.
+    */
+  val metricsApiKey: Opt[St] = getStringNoneIfBlank("talkyard.metricsApiKey")
 
   /** Lets people do some forbidden things, like creating a site with a too short
     * local hostname.

@@ -305,8 +305,9 @@ POST  /-/v0/upsert-patch         talkyard.server.sitepatch.SitePatchController.u
 GET  /-/view-time               controllers.DebugTestController.viewTime
 POST /-/play-time               controllers.DebugTestController.playTime
 POST /-/log-browser-errors      controllers.DebugTestController.logBrowserErrors
-GET  /-/metrics                 controllers.DebugTestController.showMetrics
-GET  /-/build-info              controllers.DebugTestController.showBuildInfo
+GET  /-/metrics                 controllers.DebugTestController.showMetrics(metrApiKey: Option[String])
+GET  /-/num-errors-logged       controllers.DebugTestController.showNumErrorsLogged(okMinsAfterErr: Option[Int], metrApiKey: Option[String])
+GET  /-/build-info              controllers.DebugTestController.showBuildInfo(metrApiKey: Option[String])
 GET  /-/feature-flags           controllers.DebugTestController.showFlags
 GET  /-/test-counters           controllers.DebugTestController.getE2eTestCounters
 GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction
@@ -326,6 +327,7 @@ GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 POST /-/add-admin-notice        controllers.DebugTestController.addAdminNotice
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
 GET  /-/num-e2e-test-emails-sent controllers.DebugTestController.numE2eTestEmailSent(siteId: Int)
+GET  /-/log-test-error          controllers.DebugTestController.logTestError(metrApiKey: Option[String])
 GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessages()
 GET  /-/page-top-score          controllers.DebugTestController.showPagePopularityStats(pageId)
 GET  /-/ws-state                controllers.DebugTestController.showPubSubSubscribers(siteId: Option[Int])

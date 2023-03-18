@@ -1,0 +1,53 @@
+Next test:  s/wdio --only embcom.sso.token-in-cookie.2br --prod --skip-build --deleteOldSite --localHostname=e2e-test-e1-o0-s1 --dummy-wdio-test 2023-01-05T00:54:15+01:00-3jrrlt2g93
+
+
+NODE_TLS_REJECT_UNAUTHORIZED=0  node_modules/.bin/wdio  wdio.conf.js  --only embcom.sso.token-in-cookie.2br --prod --skip-build --deleteOldSite --localHostname=e2e-test-e1-o0-s1 --dummy-wdio-test 2023-01-05T00:54:15+01:00-3jrrlt2g93
+
+I'll start 2 chrome browsers.
+
+Execution of 1 spec files started at 2023-01-04T23:54:27.572Z
+
+(node:314176) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[0-0] I'll start 2 chrome browsers.
+[0-0] 2023-01-04T23:54:43.565Z WARN @wdio/mocha-framework: Unable to load spec files quite likely because they rely on `browser` object that is not fully initialised.
+`browser` object has only `capabilities` and some flags like `isMobile`.
+Helper files that use other `browser` commands have to be moved to `before` hook.
+Spec file(s): /home/user/styd/ty2/tests/e2e/specs/embcom.sso.token-in-cookie.2br.test.ts
+Error: Error: /home/user/styd/ty2/tests/e2e/node_modules/paseto.js/build/Release/extcrypto_addon.node: undefined symbol: _ZN2v812api_internal12ToLocalEmptyEv
+    at Object.Module._extensions..node (internal/modules/cjs/loader.js:1144:18)
+    at Module.load (internal/modules/cjs/loader.js:950:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:790:12)
+    at Module.require (internal/modules/cjs/loader.js:974:19)
+    at require (internal/modules/cjs/helpers.js:101:18)
+    at Object.<anonymous> (/home/user/styd/ty2/tests/e2e/node_modules/paseto.js/extcrypto/index.js:1:28)
+    at Module._compile (internal/modules/cjs/loader.js:1085:14)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1114:10)
+    at Module.load (internal/modules/cjs/loader.js:950:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:790:12)
+[0-0] RUNNING in MultiRemote - /specs/embcom.sso.token-in-cookie.2br.test.ts
+[0-0] 2023-01-04T23:54:45.559Z ERROR @wdio/runner: Error: Unable to load spec files quite likely because they rely on `browser` object that is not fully initialised.
+`browser` object has only `capabilities` and some flags like `isMobile`.
+Helper files that use other `browser` commands have to be moved to `before` hook.
+Spec file(s): /home/user/styd/ty2/tests/e2e/specs/embcom.sso.token-in-cookie.2br.test.ts
+Error: Error: /home/user/styd/ty2/tests/e2e/node_modules/paseto.js/build/Release/extcrypto_addon.node: undefined symbol: _ZN2v812api_internal12ToLocalEmptyEv
+    at Object.Module._extensions..node (internal/modules/cjs/loader.js:1144:18)
+    at Module.load (internal/modules/cjs/loader.js:950:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:790:12)
+    at Module.require (internal/modules/cjs/loader.js:974:19)
+    at require (internal/modules/cjs/helpers.js:101:18)
+    at Object.<anonymous> (/home/user/styd/ty2/tests/e2e/node_modules/paseto.js/extcrypto/index.js:1:28)
+    at Module._compile (internal/modules/cjs/loader.js:1085:14)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1114:10)
+    at Module.load (internal/modules/cjs/loader.js:950:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:790:12)
+    at MochaAdapter._loadFiles (/home/user/styd/ty2/tests/e2e/node_modules/@wdio/mocha-framework/build/index.js:66:35)
+    at processTicksAndRejections (internal/process/task_queues.js:95:5)
+    at MochaAdapter.init (/home/user/styd/ty2/tests/e2e/node_modules/@wdio/mocha-framework/build/index.js:42:9)
+    at Object.adapterFactory.init (/home/user/styd/ty2/tests/e2e/node_modules/@wdio/mocha-framework/build/index.js:262:22)
+    at Runner.run (/home/user/styd/ty2/tests/e2e/node_modules/@wdio/runner/build/index.js:47:26)
+[0-0]  Error:  Unable to load spec files quite likely because they rely on `browser` object that is not fully initialised.
+`browser` object has only `capabilities` and some flags like `isMobile`.
+Helper files that use other `browser` commands have to be moved to `before` hook.
+Spec file(s): /home/user/styd/ty2/tests/e2e/specs/embcom.sso.token-in-cookie.2br.test.ts
+

@@ -13,15 +13,18 @@ old_nr=$(  \
 
 # Remove any leading 0 or Bash thinks 08 is base 8  (not base 10).
 # No quotes needed in [[ =~ ]].
-if [[ $old_nr =~ ^0[0-9]$ ]]; then
-  old_nr="$(echo "$old_nr" | sed 's/^0//')"
+if [[ $old_nr =~ ^0+[1-9][0-9]*$ ]]; then
+  old_nr="$(echo "$old_nr" | sed -r 's/^0+//')"
 fi
 
 next_nr=`printf '%d' $(($old_nr + 1))`
 
-# Pad N to 0N, since the in-year release nr should always be 2 digits, e.g. 07 not 7.
-# No quotes needed in [[ =~ ]].
+# Pad N and 0N to 00N, since the in-year release nr should always be three digits,
+# e.g. 007 not 7. No quotes needed in [[ =~ ]].
 if [[ $next_nr =~ ^.$ ]]; then
+  next_nr="00$next_nr"
+fi
+if [[ $next_nr =~ ^..$ ]]; then
   next_nr="0$next_nr"
 fi
 

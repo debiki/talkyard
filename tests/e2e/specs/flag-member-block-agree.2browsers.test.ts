@@ -392,6 +392,27 @@ describe("flag-member-block-agree.2browsers.test.ts  TyTE2EFLGMEMBLK", () => {
     mallorysBrowser.pageTitle.assertPageHidden();
   });
 
+  it("Mallory goes to the hummingbirds page ...", () => {
+    mallorysBrowser.go(topics.hummingbirdMajasReplyUrl);
+  });
+  it("... posts another reply", () => {
+    mallorysBrowser.complex.replyToPostNr(c.FirstReplyNr,
+          `That means they do remember the words?`)
+  });
+  it("... it gets pending approval", () => {
+    mallorysBrowser.topic.assertPostNeedsApprovalBodyVisible(c.FirstReplyNr + 1);
+  });
+
+  /* Takes too long, this e2e test is too long already. Skip. Will need to
+     be in some other separate test.  Or is already I think?  Hmm which.
+  it("... he keeps posting more and more", () => {
+    for (let i = 2; i <= 10; ++i) {
+      mallorysBrowser.complex.replyToPostNr(c.FirstReplyNr,
+            `They remember ${i} words in the song` +
+                    ((i % 4) === 0 ? ` they never forget` : ''));
+    }
+  });  */
+
   it(".. TESTS_MISSING until he has too many posts pending review — then, he gets blocked", () => {
   });
 

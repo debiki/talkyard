@@ -14,9 +14,9 @@
     "@wdio/spec-reporter": "^7.20.3",
     "@wdio/types": "^7.20.3",
     "axios": "^0.26.1",
-    "chromedriver": "^108.0.0",
+    "chromedriver": "^111.0.0",
     "paseto.js": "^0.1.7",
-    "ts-node": "^10.2.1",
+    "ts-node": "^10.9.1",
     "wdio-chromedriver-service": "^7.3.2"
   }
 }

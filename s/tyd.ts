@@ -161,6 +161,30 @@ if (mainCmd === 'nodejs') {
 
 
 if (mainCmd === 'yarn') {
+  logMessage(`
+Note:  \`yarn\` and \`yarn install\` apparently overwrites the whole node_modules/
+— the Git repo there (Git submodule), will disappear.  [yarn_deletes_mods_dir]
+But you can do this, afterwards:  (if appropriate.  Watch out for typos!)
+
+   mv node_modules  node_modules2      # remember Yarn's changes
+   make git-subm-init-upd              # bring back the node_modules/ Git submodule
+   mv node_modules/.git node_modules2/ # move the submodule repo to ...2/
+   mv node_modules2 node_modules       # rename back
+
+
+Actually, don't use. Run Yarn from Nix-shell instead:
+
+   $ nix-shell  # you have done already
+   $ yarn       # uses Yarn from Nix
+
+I don't know. Seems first  yarn from Nix, otherwise  minimist  isn't found.
+then  yarn  from inside Docker  starts anyway when trying to do anything.
+
+Aha, the problem might have been that I didn't commit the new submodule
+revision to the main repo — then, the Makefile target  git-subm-init-upd
+would reset node_modules/  to a previous version (before having ran yarn),
+and then ran yarn again to get the new dependencies.  [make_downgrades_node_mods]
+`);
   // Maybe  --no-bin-links?  [x_plat_offl_builds]
   tyu.spawnInForeground('docker-compose run --rm nodejs yarn ' + subCmdsAndOpts.join(' '));
   process.exit(0);
@@ -250,11 +274,17 @@ if (mainCmd === 'u' || mainCmd === 'up' || mainCmd === 'up0lim') {
   // might decide to stop and restart just to pick up any soon newly built bundles?
   // (Also, log messages from make and the app server get mixed up with each other.)
   // Maybe  --no-bin-links?  [x_plat_offl_builds]
+
+  // This always downloads and compiles Nodejs packages, why? Also if done seconds ago.
+  // Didn't use to do that! What has changed? Oh well, the Makefile target
+  // 'debug_asset_bundles' is enough (the line just after), so just skip this:
+  /*
   tyu.spawnInForeground(`docker-compose ${nolimConf} run --rm nodejs yarn install ${yarnOfflineSt}`);
+  */
   let exitCode: ExitCode = tyu.spawnInForeground('make debug_asset_bundles');
-  if (exitCode >= 1) {
+  if (exitCode === null || exitCode >= 1) {
     logError(`Error building asset bundles, Make exit code: ${exitCode}`)
-    process.exit(exitCode);
+    process.exit(exitCode || 1);
   }
 
   // Run `up -d` in foreground, so we won't start the `logs -f` process too soon

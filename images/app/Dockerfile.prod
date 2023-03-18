@@ -1,5 +1,5 @@
-# See: https://hub.docker.com/_/eclipse-temurin
-FROM  eclipse-temurin:11.0.17_8-jdk-jammy
+# See: https://hub.docker.com/_/eclipse-temurin, and ./Dockerfile.dev .
+FROM  eclipse-temurin:11.0.18_10-jdk-focal
 
 # There's no longer any JRE-only image.
 # COULD use Dockerfile.dev as build vm, and do away with the
