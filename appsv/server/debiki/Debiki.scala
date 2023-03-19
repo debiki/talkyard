@@ -17,6 +17,7 @@
 
 package debiki
 
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.zaxxer.hikari.{HikariDataSource, HikariConfig}
 import play.{api => p}
@@ -55,7 +56,16 @@ object Debiki {
     val port = configStr("talkyard.postgresql.port").toInt
 
     val readOrWrite = readOnly ? "read only" | "read-write"
-    logger.info(s"Connecting to database: $server:$port/$database as user $user, $readOrWrite")
+
+    val connectionTimeoutMs =
+          conf.getOptional[Int]("talkyard.postgresql.connectionTimeoutMs") getOrElse 7500
+
+    val socketTimeoutSeconds =
+          conf.getOptional[Int]("talkyard.postgresql.socketTimeoutSecs") getOrElse 35
+
+    logger.info(o"""Connecting to database: $server:$port/$database as user $user, $readOrWrite,
+         connection timeout: $connectionTimeoutMs ms,
+         socket timeout: $socketTimeoutSeconds s""")
 
     // Weird now with Hikari I can no longer call setReadOnly or setTransactionIsolation. [5JKF2]
     val config = new HikariConfig()
@@ -66,23 +76,27 @@ object Debiki {
     config.addDataSourceProperty("portNumber", port)
     config.addDataSourceProperty("databaseName", database)
 
-    val WaitForConnectionMillis = 3000
-
     // Using too-many-connections temp hack  [7YKG25P]
     if (readOnly) {
+      // If these many connections are in use already (the max), calls to
+      // getConnection() block and time out after $connectionTimeoutMs millis.
       config.setMaximumPoolSize(20)
+      // Hikari keeps these many active + idle connections (in total) in the connection pool.
       config.setMinimumIdle(20)
     }
+    else {
+      // But what are the defaults? Looking in the source, it's -1, maybe means unlimited?
+    }
     config.setAutoCommit(false)
-    config.setConnectionTimeout(WaitForConnectionMillis)
+    config.setConnectionTimeout(connectionTimeoutMs)
     // The validation timeout must be less than the connection timeout.
-    config.setValidationTimeout(WaitForConnectionMillis - 1000)
+    config.setValidationTimeout(connectionTimeoutMs - 1000)
     config.setIsolateInternalQueries(true)
 
     // Set these to a little bit more than Hikari's connection timeout, so by default
     // Hikari will complain rather than the driver (Hikari works better I guess).
     // "How long to wait for establishment of a database connection", in seconds.
-    config.addDataSourceProperty("loginTimeout", WaitForConnectionMillis / 1000 + 2) // seconds
+    config.addDataSourceProperty("loginTimeout", connectionTimeoutMs / 1000 + 2) // seconds
 
     // "The timeout value used for socket connect operations"
     // "If connecting ... takes longer than this value, the connection is broken." Seconds.
@@ -92,7 +106,7 @@ object Debiki {
     // "can be used as both a brute force global query timeout and a method of detecting
     // network problems". Seconds.
     //
-    // If too small (5 seconds is too small), the initial migration might fail, like so:
+    // If too small, the initial migration might fail, like so:
     //    org.postgresql.util.PSQLException: An I/O error occurred while sending to the backend.
     //        ...
     //        at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
@@ -101,8 +115,11 @@ object Debiki {
     //    Caused by: java.net.SocketTimeoutException: Read timed out
     //        ...
     // and this is hard to troubleshoot, because might happen only on computers with a little bit
-    // slower hardware.
-    config.addDataSourceProperty("socketTimeout", 15) // seconds
+    // slower hardware. 5 seconds is too small, and for some infrequent bigger migrations,
+    // even 15 is too small.
+    //
+    config.addDataSourceProperty("socketTimeout", socketTimeoutSeconds)
+
 
     config.setReadOnly(readOnly)
     config.setTransactionIsolation("TRANSACTION_SERIALIZABLE")
@@ -140,6 +157,10 @@ object Debiki {
     // Better size: https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing
     // connections = ((core_count * 2) + effective_spindle_count)
     // — let's assume 8 cores and a few disks --> say 20 connections.
+    //
+    CLEAN_UP; REMOVE // This is *after* setting to 20 above already, and having
+    // connected to the database — this has no effect. So remove, later, but
+    // test a bit first.  (Move the above comment to setMaximumPoolSize(..) above.)
     config.setMaximumPoolSize(100) // did I fix the bug everywhere? then change to 20
 
     dataSource
