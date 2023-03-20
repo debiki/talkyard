@@ -61,6 +61,8 @@ private case class TrueIdImpl(curId: PatId, anyTrueId: Opt[MembId] = None) exten
 
 
 /** For doing things where one may not use an anonym or pseudonym. */
-case class TrueIdOnly(curId: PatId) extends TrueId
+case class TrueIdOnly(curId: PatId) extends TrueId {
+  def anyTrueId: Opt[MembId] = None
+}
 
 
