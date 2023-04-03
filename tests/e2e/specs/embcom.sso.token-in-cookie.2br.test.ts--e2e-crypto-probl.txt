@@ -1,3 +1,45 @@
+E2e tests for blog commets SSO are broken. Need to switch to another PASETO token lib.
+
+This js lib doesn't use the below-mentioned now-removed fn, and supports Paseto v3:
+
+  https://github.com/panva/paseto   — so switch to this instead.
+
+About v3 and v4:  https://paragonie.com/blog/2021/08/paseto-is-even-more-secure-alternative-jose-standards-jwt-etc
+
+  >  [Use] Version 3 (if you need NIST-approved algorithms)
+
+  [Or if the libs you can use don't support v4]
+
+
+
+Paseto.js doesn't work with newer Nodejs versions [paseto_broken], because
+this Nodejs function:
+     _ZN2v812api_internal12ToLocalEmptyEv  has been removed:
+
+  https://stackoverflow.com/questions/64970728/undefined-symbol-when-loading-node-addon-after-updating-node-js-from-v8-to-v12
+
+  >  ...
+  >  Error: /home/user1/addon.node: undefined symbol:
+  >    _ZNK2v88Function11NewInstanceEiPNS_5LocalINS_5ValueEEE
+  >  ...
+  >  I've found out that this undefined symbol
+  >  _ZNK2v88Function11NewInstanceEiPNS_5LocalINS_5ValueEEE was previously defined
+  >  in the node binary itself (in node v8 before update to node v12).
+
+  >  v8::Function::NewInstance(int, v8::Local<v8::Value>*) was removed in Node.js v10.
+  >  The replacement [...]
+  >  https://v8docs.nodesource.com/node-10.15/d5/d54/classv8_1_1_function.html#aac8391b7c084a5b487954990fdc9acf4
+
+
+Here's where it's being referenced (indirectly, via extcrypto):
+https://github.com/sjudson/paseto.js/blob/master/binding.gyp
+
+    "target_name": "extcrypto_addon",
+    "sources": [ "./extcrypto/extcrypto.cc" ],
+
+
+---
+
 Next test:  s/wdio --only embcom.sso.token-in-cookie.2br --prod --skip-build --deleteOldSite --localHostname=e2e-test-e1-o0-s1 --dummy-wdio-test 2023-01-05T00:54:15+01:00-3jrrlt2g93
 
 

@@ -243,7 +243,11 @@ function runE2eTests(): U | ExitCode | 'TestsCancelled' {
 
 
 
-  const skipAlways = ['!UNIMPL', '!-impl.', '!imp-exp-imp-exp-site'];
+  const skipAlways = ['!UNIMPL', '!-impl.', '!imp-exp-imp-exp-site',
+          // Temporarily broken: [paseto_broken]
+          '!embcom.sso.token-direct-w-logout-url.2br',
+          '!embcom.sso.token-in-cookie.2br',
+          ];
   const skipEmbAndAlways = ['!embcom', '!embedded-', '!embforum.', ...skipAlways]
   const skip2And3Browsers = ['!.2br', '!.3br', '!.4br'];  // and skip 4 as well
 
