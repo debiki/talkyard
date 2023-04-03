@@ -22,6 +22,8 @@ let forumTitle = "Link Previews Forum";
 
 interface LinkPreviewProvider2 extends LinkPreviewProvider {
   name: St;
+  skipBecause?: St;
+
   inSandboxedIframe?: Bo;
   inDoubleIframe?: Bo;
 
@@ -80,6 +82,13 @@ let providersToTest: ProvidersMap = {
   },  */
 
   reddit: {
+    // There's a "Cannot connect" or "Connection refused" error or sth like that,
+    // apparently because of Ty's iframe — the preview works if not wrapping
+    // the Reddit iframe in Ty's iframe. But not wrapping, is risky? In case Reddit's
+    // iframe is configured to allow scripts in the iframe, to reach outside the iframe?
+    // And if Reddit gets hacked, their scripts or iframes get compromized.
+
+    skipBecause: `Reddit's iframe in Ty's iframe has stopped working`,
     name: "Reddit",
     inSandboxedIframe: true,
     // Reddit sometimes wraps their embeds in their own sandboxed iframe — Ty does too;
@@ -138,7 +147,7 @@ let providersToTest: ProvidersMap = {
     // "You shall not pass."
     linkInReply: 'https://www.youtube.com/watch?v=S7znI_Kpzbs',
   }
-}
+};
 
 
 if (settings.only3rdParty) {
@@ -177,6 +186,11 @@ describe("'All other' link previews  TyT550RMHJ25", () => {
   function addTestsForOneProvider(provider: LinkPreviewProvider2) {
     const previewOkSelector = utils.makePreviewOkSelector(provider);
     const previewBrokenSelector = utils.makePreviewBrokenSelector(provider);
+
+    if (provider.skipBecause) {
+      console.warn(`Skipping ${provider.name} previews, because: ${provider.skipBecause}.`);
+      return;
+    }
 
     it(`\n\n*** Testing ${provider.name} ***\n\n` +
           `Owen goes to the topic list page`, async () => {
