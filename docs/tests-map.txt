@@ -346,7 +346,7 @@ profile page, user:
   see email addresses:
     can configure can-see-emails, but only for >= core members,
     can see email, in about box and on proifle page:
-            - TESTS_MISSING
+            - TESTS_MISSING  TyTSEEEMLADRS01
     can navigate to email addrs tab, iff can see pat's emails:
             - TESTS_MISSING  TyTSEEMLLNS005
   add email address, send verification email:

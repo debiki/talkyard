@@ -526,7 +526,7 @@ function AnyUserEmail(user: { email?: string }, me: Myself) {
         // Don't use an <a href="mailto:..."> — it's better to encourage people
         // to use the built-in messaging system? And also annoying when some
         // email program starts, if clicking the email just to copy it.
-        r.samp({}, user.email),
+        r.samp({ className: 'e_EmAdr' }, user.email),
         OnlyAdminsSee));
 }
 

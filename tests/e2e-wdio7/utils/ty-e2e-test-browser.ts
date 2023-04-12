@@ -2481,6 +2481,12 @@ export class TyE2eTestBrowser {
     }
 
 
+    async getVisibleTextOrNull(selector: St): Pr<St | N> {
+      if (!await this.isDisplayed(selector)) return null;
+      return await (await this.$(selector)).getText();
+    }
+
+
     async waitAndGetListTexts(selector: St): Pr<St[]> {
       return await this.__waitAndGetThingsInList(selector, async (e) => await e.getText());
     }
@@ -3133,6 +3139,12 @@ export class TyE2eTestBrowser {
       clickBack: async () => {
         await this.repeatUntilAtNewUrl(async () => {
           await this.waitAndClick('.s_Tb_Ln-Bck');
+        });
+      },
+
+      clickBackToGroups: async () => {
+        await this.repeatUntilAtNewUrl(async () => {
+          await this.waitAndClick('.s_Tb_Ln-Grps');
         });
       },
 
@@ -5166,6 +5178,16 @@ export class TyE2eTestBrowser {
       getUsername: async (): Pr<St> => {
         await this.aboutUserDialog.waitForLoaded();
         return await this.waitAndGetVisibleText('.s_UD_Un');
+      },
+
+      getEmailAdrOrNull: async (): Pr<St | N> => {
+        await this.aboutUserDialog.waitForLoaded();
+        return await this.getVisibleTextOrNull('.s_UD_Em .e_EmAdr');
+      },
+
+      getGroupNames: async (): Pr<St[]> => {
+        await this.aboutUserDialog.waitForLoaded();
+        return await this.waitAndGetListTexts('.s_UP_Ab_Stats_Stat_Groups_Group');
       },
 
       getBadgeTitles: async (howManyBadges: Nr): Pr<St[]> => {
@@ -7361,6 +7383,10 @@ export class TyE2eTestBrowser {
         switchToPreferences: async () => {
           await this.userProfilePage.clickGoToPreferences();
         },
+        switchToPermissions: async () => {
+          await this.waitAndClick('.e_PermsTabB');
+          await this.userProfilePage.permissions.waitUntilLoaded();
+        },
       },
 
       isInvitesTabVisible: async (): Pr<Bo> => {
@@ -7980,6 +8006,30 @@ export class TyE2eTestBrowser {
             await this.waitForNewUrl();
           }
         }
+      },
+
+      permissions: {
+          goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+            await this.userProfilePage._goHere(username, ps, '/permissions');
+            await this.userProfilePage.permissions.waitUntilLoaded();
+          },
+
+          waitUntilLoaded: async () => {
+            await this.waitForExist('.s_PP_PrmsTb .e_SvPerms');
+          },
+
+          canGrantMaySeeEmailAdrs: async (): Pr<Bo> => {
+            return await this.isDisplayed('.e_SeeEmls');
+          },
+
+          setMaySeeEmailAdrs: async (maySee: Bo) => {
+            await this.setCheckbox('.e_SeeEmls input', maySee);
+          },
+
+          save: async () => {
+            await this.waitAndClick('.e_SvPerms');
+          },
+
       }
     };
 

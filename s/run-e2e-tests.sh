@@ -515,6 +515,8 @@ function runAllE2eTests {
   # Moderation   (4862065)
   # ------------
 
+  $r s/wdio-7 --only may-see-email-adrs.2br.d --cd -i $args
+
 
   # API
   # ------------
