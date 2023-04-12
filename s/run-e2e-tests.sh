@@ -511,9 +511,14 @@ function runAllE2eTests {
 
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 
+  $r s/wdio-7 --only assign-to-basic.2br.d --cd -i $args
+  $r s/wdio-7 --only assign-can-see.2br.d --cd -i $args
+
 
   # Moderation   (4862065)
   # ------------
+
+  $r s/wdio-7 --only may-see-email-adrs.2br.d --cd -i $args
 
 
   # API

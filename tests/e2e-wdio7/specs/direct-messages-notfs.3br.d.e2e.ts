@@ -325,7 +325,7 @@ describe(`direct-messages-notfs.3br.d  TyT602RKDL42`, () => {
 
   it("not via profile page", async () => {
     await maria.userProfilePage.openNotfsFor(maria.username, idAddress.origin);
-    await maria.userProfilePage.notfs.assertMayNotSeeNotfs();
+    await maria.userProfilePage.waitForBadRoute();
   });
 
   it("not when searching", async () => {

@@ -6884,11 +6884,6 @@ export class TyE2eTestBrowser {
           this.repeatUntilAtNewUrl(() => {
             this.waitForThenClickText('.esNotf_page', text);
           });
-        },
-
-        assertMayNotSeeNotfs: () => {
-          this.waitForVisible('.e_UP_Notfs_Err');
-          this.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
         }
       },
 

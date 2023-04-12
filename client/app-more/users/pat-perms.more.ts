@@ -44,7 +44,8 @@ export const PatPerms = React.createFactory<PatPermsProps>(function(props) {
 
   const groupBef: GroupVb = props.user; // weird name, could fix
   if (!groupBef.perms)
-    return r.p({}, `May not access this group's permission settings. [TyE0SEEGRPPRMS]`);
+    return r.p({ className: 'e_May0' },
+        `May not access this group's permission settings. [TyE0SEEGRPPRMS]`);
 
   const store: Store = props.store;
   const me = store.me;
@@ -104,7 +105,8 @@ export const PatPerms = React.createFactory<PatPermsProps>(function(props) {
             checked: isAdminsGroup || permsNow.canSeeOthersEmailAdrs,
             disabled: !me.isAdmin || !isModsOrCoreMembsGroup,
             onChange: (event: CheckboxEvent) => {
-              const canSeeOthersEmailAdrs = event.target.checked;
+              // Don't set to false — negative perms not implemented. [may_not_perms]
+              const canSeeOthersEmailAdrs = event.target.checked || undefined;
               setState({
                     permsNow: { ...permsNow, canSeeOthersEmailAdrs }, savingStatus: '' });
                     // satisfies DiagState);
@@ -153,6 +155,7 @@ export const PatPerms = React.createFactory<PatPermsProps>(function(props) {
               setState({ permsNow: { ...permsNow, allowedUplExts }, savingStatus: ''});
             } }),
 
+        !me.isAdmin ? null :
         InputTypeSubmit({ className: 'e_SvPerms', style: { marginTop: '11px' },
               value: "Save", disabled: !!state.maxUplBytesErr }),  // 0I18N
         r.span({}, ' ', state.savingStatus)));

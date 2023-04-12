@@ -2557,7 +2557,7 @@ trait PostsDao {
         val (result, debugCode) =
               maySeePost(postBef, Some(patToAdd), maySeeUnlistedPages = true)(tx)
         TESTS_MISSING // Trigger this 403 Forbidden.  TyTASGN0SEEPG
-        throwForbiddenIf(!result.may, "TyERELPAT0SEEPOST", o"""User ${
+        throwForbiddenIf(!result.may, "TyERELPAT0SEEPOST_", o"""User ${
               patToAdd.atUsernameOrFullName} cannot access that post, therefore you
               cannot connect him/her to it.""")
       }
@@ -3216,6 +3216,9 @@ trait PostsDao {
       else {
         query match {
           case q: PostQuery.PostsRelatedToPat[_] =>  // [load_posts_by_rels]
+            // Tests incl:
+            //    - assign-to-basic.2br.d  TyTASSIGN01
+
             COULD_OPTIMIZE // Load distinct post ids. Instead of relationships
             // — pointless to transfer them over the network, and there can be
             // many, per pat and post (is possible, if sub_type_c is different. So might

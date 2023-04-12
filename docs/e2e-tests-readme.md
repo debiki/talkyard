@@ -162,6 +162,26 @@ On Linux, do this: (other platforms? no idea)
     s/run-e2e-tests.sh --all  #  -3 --secretsPath /your/path/to/e2e-secrets.json
 
 
+### Flappy tests `[flappy_tests]`
+
+When running e2e tests, there're many things happening in parallel
+(browser threads, the browser layout engine and redraws, HTTP requests,
+server request processing, server background threads, Webdriver.io threads,
+Webdriver.io HTTP requests), and there can be race conditions that
+make tests fail, but fail only infrequently so it's hard to reproduce and fix.
+It's pretty pointless to try to elliminate all such races; instead, we retry
+any failed test a few times. Only if a test fails somehwat often,
+its flappiness becomes a problem.
+
+But there's one source of flappy tests that can be elliminated. Namely fetching
+things from the databse, in undefined order. `[flappy_order]` Typically PostgreSQL
+gives us the stuff we're querying for, in always the same order — except for
+sometimes, and then a test that compares e.g. actual assignees, with expected
+assignees, could fail.  (Or it would have to be written to work with any order.)
+Therefore, it's good to include `order by` in, hmm, all? or at least most
+database queries that return many things (even if we're loading all the things).
+
+
 ### Typescript
 
 The tests are written in Typescript. When you run `docker-compose start` (see above), a Docker container

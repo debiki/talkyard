@@ -1526,6 +1526,13 @@ export class TyE2eTestBrowser {
     }
 
 
+    async assertNotExists(selector: St) {
+      if (await this.isExisting(selector)) {
+        tyAssert.fail(`This elem exists, but shouldn't:  ${selector} `);
+      }
+    }
+
+
     async isDisplayedInViewport(selector: St): Pr<Bo> {
       // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
       const elem: WElm = await this.$(selector);
@@ -2481,6 +2488,12 @@ export class TyE2eTestBrowser {
     }
 
 
+    async getVisibleTextOrNull(selector: St): Pr<St | N> {
+      if (!await this.isDisplayed(selector)) return null;
+      return await (await this.$(selector)).getText();
+    }
+
+
     async waitAndGetListTexts(selector: St): Pr<St[]> {
       return await this.__waitAndGetThingsInList(selector, async (e) => await e.getText());
     }
@@ -3133,6 +3146,12 @@ export class TyE2eTestBrowser {
       clickBack: async () => {
         await this.repeatUntilAtNewUrl(async () => {
           await this.waitAndClick('.s_Tb_Ln-Bck');
+        });
+      },
+
+      clickBackToGroups: async () => {
+        await this.repeatUntilAtNewUrl(async () => {
+          await this.waitAndClick('.s_Tb_Ln-Grps');
         });
       },
 
@@ -5168,6 +5187,16 @@ export class TyE2eTestBrowser {
         return await this.waitAndGetVisibleText('.s_UD_Un');
       },
 
+      getEmailAdrOrNull: async (): Pr<St | N> => {
+        await this.aboutUserDialog.waitForLoaded();
+        return await this.getVisibleTextOrNull('.s_UD_Em .e_EmAdr');
+      },
+
+      getGroupNames: async (): Pr<St[]> => {
+        await this.aboutUserDialog.waitForLoaded();
+        return await this.waitAndGetListTexts('.s_UP_Ab_Stats_Stat_Groups_Group');
+      },
+
       getBadgeTitles: async (howManyBadges: Nr): Pr<St[]> => {
         // scope more precisely! or might get post tags [precise_tag_sels]
         return this.widgets.tagList.getTagTitles('.s_UD', howManyBadges);
@@ -5214,18 +5243,38 @@ export class TyE2eTestBrowser {
 
 
     addUsersToPageDialog = {
+      __placeholderSel: '#e2eAddUsD .Select-placeholder',
+      __inputSel: '#e2eAddUsD .Select-input > input',
+      __placeholderOrInputSel: () =>
+            this.addUsersToPageDialog.__placeholderSel + ', ' +
+            this.addUsersToPageDialog.__inputSel,
+
+      waitUntilLoaded: async () => {
+        await this.waitForDisplayed('#e2eAddUsD');
+      },
+
+      clear: async () => {
+        await this.waitAndClick('#e2eAddUsD .Select-clear');
+        // A bit fragile: (becomes useless if class 'has-value' renamed)
+        await this.waitForDisplayed('#e2eAddUsD .Select--multi:not(.has-value)');
+        // Better: The placeholder is shown only if the input is empty.
+        await this.waitForDisplayed('#e2eAddUsD .Select-placeholder');
+      },
+
       focusNameInputField: async () => {
-        await this.waitAndClick('#e2eAddUsD .Select-placeholder');
+        // (If the list is empty, we nee to click the placeholder. Otherwise, there's no
+        // placeholder, and we need to click the <input>. So, using selector `...Or...`.)
+        await this.waitAndClick(this.addUsersToPageDialog.__placeholderOrInputSel());
       },
 
       startTypingNewName: async (chars: St) => {
         // Dupl code. [.react_select]
-        await this.waitAndSetValue('#e2eAddUsD .Select-input > input', chars,
+        await this.waitAndSetValue(this.addUsersToPageDialog.__inputSel, chars,
             { okayOccluders: '.Select-placeholder', checkAndRetry: true });
       },
 
       appendChars: async (chars: St) => {
-        await (await this.$('#e2eAddUsD .Select-input > input')).addValue(chars);
+        await (await this.$(this.addUsersToPageDialog.__inputSel)).addValue(chars);
       },
 
       hitEnterToSelectUser: async () => {
@@ -6254,12 +6303,12 @@ export class TyE2eTestBrowser {
       },
 
       getTopicAuthorUsernameInclAt: async (): Pr<St> => {
-        return await this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By_U');
+        return await this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By .esP_By_U');
       },
 
       getPostAuthorUsernameInclAt: async (postNr: PostNr): Pr<St> => {
         const sel = this.topic.postHeaderSelector(postNr);
-        return await this.waitAndGetVisibleText(sel + ' .esP_By_U');
+        return await this.waitAndGetVisibleText(sel + ' .esP_By .esP_By_U');
       },
 
       getPostAuthorUsername: async (postNr: PostNr): Pr<St> => {
@@ -6279,6 +6328,13 @@ export class TyE2eTestBrowser {
         else {
           return await this.widgets.tagList.getTagTitles(sel, howManyBadges);
         }
+      },
+
+      getAssigneesUsernamesNoAt: async (postNr: PostNr): Pr<St[]> => {
+        // Bit dupl code.  [.list_assignees]
+        const sel = this.topic.postHeaderSelector(postNr);
+        const atUsernames: St[] = await this.waitAndGetListTexts(sel + ' .c_AsgsL .esP_By_U');
+        return atUsernames.map((atUn) => atUn.substring(1)); // drops '@' in '@username'
       },
 
       clickFirstMentionOf: async (username: St) => {
@@ -6633,6 +6689,8 @@ export class TyE2eTestBrowser {
         }
       },
 
+      changePageBtnSel: '.dw-a-change',
+
       openChangePageDialog: async () => {
         await this.waitAndClick('.dw-a-change');
         await this.topic.waitUntilChangePageDialogOpen();
@@ -6721,6 +6779,12 @@ export class TyE2eTestBrowser {
         await this.topic.openChangePageDialog();
         await this.waitAndClick('.e_PgSt-' + newStatus);
         await this.topic.waitUntilChangePageDialogGone();
+      },
+
+      openAssignToDiag: async () => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick('.e_AsgB');
+        await this.addUsersToPageDialog.waitUntilLoaded();
       },
 
       _closeButtonSelector: '.s_ChPgD .e_ClosePgB',
@@ -7243,6 +7307,21 @@ export class TyE2eTestBrowser {
     userProfilePage = {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
+      waitForBadRoute: async () => {
+        await this.waitForDisplayed('.c_BadRoute');
+      },
+
+      waitForBadRouteGone: async () => {
+        await this.waitForGone('.c_BadRoute');
+      },
+
+      assertOkRoute: async () => {
+        if (await this.isExisting('.c_BadRoute')) {
+          tyAssert.fail(`Bad route (but should be an ok route), ` +
+                          `elem present:  .c_BadRoute  [TyEE2EBADROUTE]`);
+        }
+      },
+
       waitUntilUsernameVisible: async () => {
         await this.waitForVisible('.esUP_Un');
       },
@@ -7355,11 +7434,20 @@ export class TyE2eTestBrowser {
           }
         },
 
+        switchToTasks: async (ps: { wait: Bo }) => {
+          dieIf(ps.wait !== false, `unimpl: wait !== false`);
+          await this.waitAndClick('.e_UP_TsksB');
+        },
+
         isPreferencesTabDisplayed: async (): Pr<Bo> => {
           return await this.isDisplayed('#e2eUP_PrefsB');
         },
         switchToPreferences: async () => {
           await this.userProfilePage.clickGoToPreferences();
+        },
+        switchToPermissions: async () => {
+          await this.waitAndClick('.e_PermsTabB');
+          await this.userProfilePage.permissions.waitUntilLoaded();
         },
       },
 
@@ -7492,6 +7580,8 @@ export class TyE2eTestBrowser {
           },
         },
 
+        // REFACTOR: Break out `PostList` page object, because there're lists of posts at
+        // different places: activity, tasks, the contextbar?  [post_list_e2e_obj]
         posts: {
           postSelector: '.s_UP_Act_Ps_P .dw-p-bd',
 
@@ -7504,7 +7594,7 @@ export class TyE2eTestBrowser {
           },
 
           waitForNoPosts: async () => {
-            await this.waitForVisible('.e_NoPosts');
+            await this.waitForExist('.e_NoPosts');
           },
 
           assertExactly: async (num: Nr) => {
@@ -7519,6 +7609,15 @@ export class TyE2eTestBrowser {
                     within: '.s_UP_Act_Ps_P' });
           },
 
+          getAssigneeUsernamesNoAt: async (ps: { forPageId: PageId, postNr?: PostNr }): Pr<St[]> => {
+            // E.g.:   .s_UP_Act_Ps_P:has(a[href="/-buyMilkPageId#post-1"]) .dw-p-hd ...
+            // Bit dupl code.  [.list_assignees]
+            const sel = `.s_UP_Act_Ps_P:has(a[href="/-${ps.forPageId
+                            }#post-${ps.postNr || c.BodyNr}"]) .dw-p-hd .c_AsgsL .esP_By_U`;
+            const atUsernames: St[] = await this.waitAndGetListTexts(sel);
+            return atUsernames.map((atUn) => atUn.substring(1)); // drops '@' in '@username'
+          },
+
           navToPost: async (ps: { anyOnPageId?: St, justClickFirst?: Bo } = {}) => {
             dieIf(!!ps.anyOnPageId === !!ps.justClickFirst, 'TyE06WEJPF3');
             const urlPath = ps.anyOnPageId && `/-${ps.anyOnPageId}`;
@@ -7531,8 +7630,11 @@ export class TyE2eTestBrowser {
           },
 
           // Do this separately, because can take rather long (suprisingly?).
-          waitForPostTextsVisible: async () => {
-            await this.waitForVisible(this.userProfilePage.activity.posts.postSelector);
+          // Later, add post id / URL param, so can [match_specific_post].
+          waitForPostTextsVisible: async (match?: RegExp) => {
+            const sel = this.userProfilePage.activity.posts.postSelector;
+            if (match) await this.waitForTextVisibleAssertMatches(sel, match);
+            else await this.waitForVisible(sel);
           },
 
           assertPostTextVisible: async (postText: St) => {
@@ -7633,11 +7735,6 @@ export class TyE2eTestBrowser {
             await this.waitForThenClickText('.esNotf_page', text);
           });
         },
-
-        assertMayNotSeeNotfs: async () => {
-          await this.waitForVisible('.e_UP_Notfs_Err');
-          await this.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
-        }
       },
 
       draftsEtc: {
@@ -7671,6 +7768,20 @@ export class TyE2eTestBrowser {
           await this.repeatUntilAtNewUrl(async () => {
             await this.waitAndClickNth('.s_Dfs_Df', index);
           });
+        },
+      },
+
+      tasks: {
+        goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+          await this.userProfilePage._goHere(username, ps, '/tasks');
+        },
+
+        waitUntilLoaded: async () => {
+          await this.waitForExist('.e_UP_TskL');
+        },
+
+        setIncludeClosed: async (inclClosed: Bo) => {
+          await this.setCheckbox('.e_InclCloTsks input', inclClosed);
         },
       },
 
@@ -7742,6 +7853,10 @@ export class TyE2eTestBrowser {
 
         setFullName: async (fullName: St) => {
           await this.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
+        },
+
+        getPrimaryEmailAdr: async (): Pr<St> => {
+          return await this.waitAndGetVisibleText('.e_PrimEmAdr');
         },
 
         startChangingUsername: async () => {
@@ -7980,6 +8095,38 @@ export class TyE2eTestBrowser {
             await this.waitForNewUrl();
           }
         }
+      },
+
+      permissions: {
+          goHere: async (username: St, ps: { isGroup?: true, origin?: St,
+                  wait?: false } = {}) => {
+            await this.userProfilePage._goHere(username, ps, '/permissions');
+            if (ps.wait !== false) await this.userProfilePage.permissions.waitUntilLoaded();
+          },
+
+          waitUntilLoaded: async (ps: { withSaveBtn?: Bo } = {}) => {
+            dieIf(ps.withSaveBtn === false, `unimpl: withSaveBtn false`);
+            const saveBtnSel = ps.withSaveBtn ? ' .e_SvPerms' : '';
+            await this.waitForDisplayed('.s_PP_PrmsTb' + saveBtnSel);
+          },
+
+          canGrantMaySeeEmailAdrs: async (ps: { butIsDisabled?: true } = {}): Pr<Bo> => {
+            const butDisabled = ps.butIsDisabled ? ' input:disabled' : '';
+            return await this.isDisplayed('.e_SeeEmls' + butDisabled);
+          },
+
+          setMaySeeEmailAdrs: async (maySee: Bo) => {
+            await this.setCheckbox('.e_SeeEmls input', maySee);
+          },
+
+          // and?:
+          //  [canSeeAllowedUploadSizeInput]
+          //  [canSeeAllowedUploadExtensionsInput]
+
+          save: async () => {
+            await this.waitAndClick('.e_SvPerms');
+          },
+
       }
     };
 

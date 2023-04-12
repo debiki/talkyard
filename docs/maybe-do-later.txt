@@ -112,7 +112,7 @@ Also make this work for the root cat? So one can get an overview of permission
 settings for *all* base cats and sub cats in the whole forum — a cat permissions
 table-tree, somehow. [incl_root_cat]
 
-[may_not_perms]
+[may_not_perms] (negative_perms, neg_perms)
 Currently permissions are additive. Maybe, though, in some cases it'd be good
 with "negative" permissions — e.g. a group that may Not something.
 Then, everyone in that group, would be forbidden from doing that something,

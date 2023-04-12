@@ -449,7 +449,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         and po.hidden_at is null
         and po.approved_at is not null
       $groupBy__siteId_postId
-      order by po.created_at desc limit $limit
+      order by  po.created_at desc, po.unique_post_id desc  limit $limit
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {
       readPost(rs)
@@ -852,9 +852,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       case None =>
          (Vec.empty, Vec.empty, Vec.empty)
       case Some(vecOfPatRelVecs: Vec[Vec[Int]]) =>
-        val ownerIds = MutArrBuf[Int]()  // why won't PatId work, it's just type = i32 = Int
-        val authorIds = MutArrBuf[Int]()
-        val assignedToIds = MutArrBuf[Int]()
+        val ownerIds = MutHashSet[Int]()  // why won't PatId work, it's just type = i32 = Int
+        val authorIds = MutHashSet[Int]()
+        val assignedToIds = MutHashSet[Int]()
         for (patRelVec: Vec[Int] <- vecOfPatRelVecs) {
           dieIf(patRelVec.size != 2, "TyE50MTEAKR2", s"Pat rel vec len: ${patRelVec.size}")
           val relTypeInt = patRelVec(0)
@@ -862,11 +862,11 @@ trait PostsSiteDaoMixin extends SiteTransaction {
           // Or, hmm, move to object PatNodeRelType?
           relTypeInt match {
             case PatNodeRelType.OwnerOf_later.IntVal =>
-              ownerIds.append(patId)
+              ownerIds.add(patId)
             case PatNodeRelType.AuthorOf_later.IntVal =>
-              authorIds.append(patId)
+              authorIds.add(patId)
             case PatNodeRelType.AssignedTo.IntVal =>
-              assignedToIds.append(patId)
+              assignedToIds.add(patId)
             case x =>
               // We load only those in: $and__pa_relType__in__aut_own_asg.
               die("TyE7MWJC21", s"Unexpected pat-to-node rel_type_c: $x")
@@ -972,9 +972,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId] = {
     TESTS_MISSING
     val query = """
-      select from_pat_id_c
+      select distinct from_pat_id_c
       from post_actions3
       where site_id = ? and to_post_id_c = ? and rel_type_c = ?
+      order by from_pat_id_c
       """
     val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, voteType.toInt.asAnyRef)
     runQueryFindMany(query, values, rs => {
@@ -1021,12 +1022,14 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         values.append(id)
         s"and pa.page_id = ?"
     }
+
     val andCreatedBy = userId match {
       case None => ""
       case Some(id) =>
         values.append(id.asAnyRef)
         "and pa.from_pat_id_c = ?"
     }
+
     val andRelTypeIn = {
       if (relTypes.isEmpty) ""
       else {
@@ -1034,9 +1037,18 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         s"and pa.rel_type_c in (${makeInListFor(relTypes)})"
       }
     }
-    val orderByAndLimit = limit map { lim: i32 =>
-      s"order by  pa.created_at desc  limit $lim"
-    } getOrElse ""
+
+    val orderByAndLimit = {
+      // Order by primary key, just to avoid [flappy_tests].
+      var ordAndLim = "pa.to_post_id_c, pa.rel_type_c, pa.from_pat_id_c, pa.sub_type_c"
+      // But if we want the N last pat-post-rels, then, we currently want the most recent
+      // ones. So order by time, desc. (But keep the pk order too, to avoid different item
+      // order in case of identical timestamps — which could make e2e tests sometimes fail.)
+      limit foreach { lim =>
+        ordAndLim = s"pa.created_at desc, $ordAndLim  limit $lim"
+      }
+      s"order by  $ordAndLim"
+    }
 
     COULD // always incl deleted_status = 0, unless a specific pageId is specified? Hmm.
     COULD_OPTIMIZE // if "", includes deleted posts, are filtered out later?
@@ -1059,6 +1071,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
                   pa.page_id,
                   pa.post_nr,
                   pa.rel_type_c,
+                  pa.sub_type_c,
                   pa.created_at,
                   pa.from_pat_id_c
           from  post_actions3 pa  $innerJoinOpenPosts
@@ -1085,9 +1098,12 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction] = {
     val query = """
-      select to_post_id_c, rel_type_c, created_at, from_pat_id_c
-      from post_actions3
-      where site_id = ? and page_id = ? and post_nr = ?
+      select distinct  to_post_id_c, rel_type_c, created_at, from_pat_id_c
+      from  post_actions3
+      where  site_id = ?
+        and  page_id = ?
+        and  post_nr = ?
+      order by  to_post_id_c, rel_type_c, from_pat_id_c  -- to avoid [flappy_tests]
       """
     val values = List[AnyRef](siteId.asAnyRef, pageId, postNr.asAnyRef)
     runQueryFindMany(query, values, rs => {
@@ -1123,7 +1139,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       queryBuilder.append("(page_id = ? and post_nr = ?)")
       values.append(pagePostNr.pageId, pagePostNr.postNr.asAnyRef)
     }
-    val query = queryBuilder.append(")").toString
+    val query = queryBuilder.append(
+          // Avoid [flappy_tests]:
+          ")  order by  to_post_id_c, rel_type_c, from_pat_id_c"
+          ).toString
     runQueryFindMany(query, values.toList, rs => {
       val postAction = PostFlag(
         uniqueId = rs.getInt("to_post_id_c"),

@@ -34,6 +34,13 @@ const ModalFooter = rb.ModalFooter;
 let addPeopleDialog;
 
 
+interface SelectListLabelValue {
+  label: St;
+  value: PatId;
+  disabled?: true;
+}
+
+
 /// Specify either:
 ///   ps.curPats — If specified, those pats are shown in the list, and can
 ///       then be removed.
@@ -86,7 +93,20 @@ const AddPeopleDialog = createComponent({
         // is now gone.
         return;
       }
-      const options = makeLabelValues(users, this.state.alreadyAddedIds);
+
+      // If `initialPats`, then React-Select will automatically hide those pats
+      // from the options list (since they've been added already), so it works
+      // fine for us to leave `alreadyAddedIds` empty — and we have to, because
+      // there's no way to tell React-Select to update the options list,
+      // when adding/removing a pat. (With the (a bit old) version of
+      // React-Select we're using.)
+      // However if it's only possible to add *more* pats, then, we don't shown any
+      // initially in the selected-items list, and React-Select would show them
+      // in the options list (although already added) — then, we need to disable
+      // any pats already added.
+      const alreadyAddedIds = this.state.initialPats ? [] : this.state.alreadyAddedIds;
+
+      const options = makeLabelValues(users, alreadyAddedIds);
       callback(null, { options });
     });
   },
@@ -96,15 +116,19 @@ const AddPeopleDialog = createComponent({
         isOpen: false, alreadyAddedIds: null, selectedLabelValues: null, onChanges: null });
   },
 
-  onSelectChange: function(labelsAndValues: any) {
+  onSelectChange: function(labelsAndValuesOrNull: SelectListLabelValue[] | N) {
     // labelsAndValues is null if the clear-all [x] button pressed
-    this.setState({ selectedLabelValues: labelsAndValues || [] });
+    const selectedLabelValues = labelsAndValuesOrNull || [];
+    // React-Select will remove any newly selected items from the options list;
+    // no need for us to update `state.alreadyAddedIds`.
+    this.setState({ selectedLabelValues });
   },
 
   save: function() {
-    const userIds: PatId[] = this.state.selectedLabelValues.map(entry => entry.value);
+    const state = this.state;
+    const userIds: PatId[] = state.selectedLabelValues.map(entry => entry.value);
 
-    const initialPats: Pat[] | U = this.state.initialPats;
+    const initialPats: Pat[] | U = state.initialPats;
     const initialPatIds: PatId[] | U = initialPats && initialPats.map(p => p.id);
 
     // If we showed old pats in the list, don't add them again.
