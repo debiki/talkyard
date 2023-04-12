@@ -96,7 +96,7 @@ describe(`may-see-email-adrs.2br.d.  TyTSEEEMLADRS01`, () => {
   it(`Modya logs in`, async () => {
     await modya_brB.complex.loginWithPasswordViaTopbar(modya);
   });
-  it(`Modya cannot see Mihael's complete email addr`, async () => {
+  it(`Modya cannot see Michael's complete email addr`, async () => {
     await modya_brB.pageTitle.openAboutAuthorDialog();
     // Wait until groups listed ...
     assert.deepEq(await modya_brB.aboutUserDialog.getGroupNames(), ["Basic Members"]);
@@ -104,6 +104,8 @@ describe(`may-see-email-adrs.2br.d.  TyTSEEEMLADRS01`, () => {
     // This'll be like:  '...@example.com' because mods can always see the email domain.
     assert.eq(await modya_brB.aboutUserDialog.getEmailAdrOrNull(),
           michael.emailAddress.replace(/.*@/, '...@'));  // atm
+  });
+  it(`... and sees no link to Michael's preferences tab`, async () => {
   });
 
   it(`Owen grants mods the permission to view everyone's email addrs`, async () => {
@@ -115,9 +117,18 @@ describe(`may-see-email-adrs.2br.d.  TyTSEEEMLADRS01`, () => {
     await modya_brB.pageTitle.openAboutAuthorDialog();
     assert.deepEq(await modya_brB.aboutUserDialog.getGroupNames(), ["Basic Members"]);
     assert.eq(await modya_brB.aboutUserDialog.getEmailAdrOrNull(), michael.emailAddress);
+await modya_brB.d();
+    await modya_brB.aboutUserDialog.clickViewProfile();
+    await modya_brB.userProfilePage.tabs.switchToPreferences();
+    // ???
+await modya_brB.d();
+    await modya_brB.userProfilePage.preferences.tabs.switchToAccount();
+await modya_brB.d();
+    const adrs = await modya_brB.userProfilePage.preferences.emailsLogins.getAllEmailAddresses();
+    assert.deepEq(adrs, [michael.emailAddress]);
     // +  /-/users/michael/preferences/about
     // +  /-/users/michael/preferences/account
-    await modya_brB.aboutUserDialog.close();
+    await modya_brB.topbar.clickBack();
   });
 
 

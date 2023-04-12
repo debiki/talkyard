@@ -7770,6 +7770,11 @@ export class TyE2eTestBrowser {
           await this.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
         },
 
+        getPrimaryEmailAdr: async (): Pr<St> => {
+await this.d();
+          return await this.waitAndGetVisibleText('.HMMM_WHAT');
+        },
+
         startChangingUsername: async () => {
           await this.waitAndClick('.s_UP_Prefs_ChangeUNB');
           await this.stupidDialog.close();
