@@ -333,6 +333,8 @@ object JsX {   RENAME // to JsonPaSe
     val maySeeEmailAdrs = reqrPerms.exists(_.canSeeOthersEmailAdrs)
 
     if (reqrIsStaffOrSelf || maySeeEmailAdrs) {
+      // May see local part is tested here:
+      //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTHIDELOCALEMLPART
       val safeEmail =
         if (callerIsAdmin || callerIsUserHerself || maySeeEmailAdrs) user.primaryEmailAddress
         else hideEmailLocalPart(user.primaryEmailAddress)
@@ -451,8 +453,10 @@ object JsX {   RENAME // to JsonPaSe
       "numLikesGiven" -> stats.numLikesGiven,
       "numLikesReceived" -> stats.numLikesReceived,
       "numSolutionsProvided" -> stats.numSolutionsProvided,
-      "tourTipsSeen" -> JsArray(tourTipsIds.map(JsString)))
+      )
+
     if (isStaffOrSelf) {
+      result += "tourTipsSeen" -> JsArray(tourTipsIds.map(JsString))
       // Be careful with revealing this — in a small forum, could reveal who
       // an anonym is (if you reply, and immediately lastEmailedAt changes,
       // for a person you suspected was the anonym — indicating that hen got

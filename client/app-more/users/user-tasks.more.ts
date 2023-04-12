@@ -43,7 +43,7 @@ export const UserTasks = React.createFactory<PatPanelProps>(function(props: PatP
 
   // REFACTOR, break out fn, dupl code. [post_list_dupl_html]
   return rFr({},
-      Input({ type: 'checkbox', className: 'e_OnlyOpnTsks',
+      Input({ type: 'checkbox', className: 'e_InclCloTsks',
         label: `Include closed tasks (e.g. because they got done)`,
         checked: !state.onlyOpen, onChange: (event: CheckboxEvent) => {
           setState({ onlyOpen: !event.target.checked });
