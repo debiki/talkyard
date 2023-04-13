@@ -7771,8 +7771,7 @@ export class TyE2eTestBrowser {
         },
 
         getPrimaryEmailAdr: async (): Pr<St> => {
-await this.d();
-          return await this.waitAndGetVisibleText('.HMMM_WHAT');
+          return await this.waitAndGetVisibleText('.e_PrimEmAdr');
         },
 
         startChangingUsername: async () => {

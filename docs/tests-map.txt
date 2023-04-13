@@ -322,6 +322,14 @@ navigation:
   from page to one's active sessions list:
             - d.sessions-logout-elsewhere.4br  TyTESESLGOSELF
 
+about user dialog,
+about pat box:
+  see groups:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTSEEPATSGROUPS
+  see email addr:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTABOUTBOXEML
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTHIDELOCALEMLPART
+
 profile page, user:
   upload photo:  (8PK2)
   edit full name:
@@ -343,12 +351,16 @@ profile page, user:
   list login methods:
           - create-site-github-oauth-uppercase-email.test.ts  TyT4AR8GFAH
 
+  configure who can see email addrs:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTCANCONFSEEML
   see email addresses:
-    can configure can-see-emails, but only for >= core members,
-    can see email, in about box and on proifle page:
-            - TESTS_MISSING  TyTSEEEMLADRS01
+    can/not see email addr
+      in about box,
+      on profile page,
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01
     can navigate to email addrs tab, iff can see pat's emails:
-            - TESTS_MISSING  TyTSEEMLLNS005
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACSPREFS01
+
   add email address, send verification email:
           - user-profile-change-email.test.ts  TyT305MHPJ25
   add gmail addr:

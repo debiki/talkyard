@@ -1613,7 +1613,7 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName?: string;
-  email: string;
+  email: string; // RENAME to emailAdr  [email_2_emailAdr]
   emailVerifiedAtMs?: WhenMs;
   emailNotfPrefs: EmailNotfPrefs,
   // mailingListMode: undefined | true;  // default false  — later

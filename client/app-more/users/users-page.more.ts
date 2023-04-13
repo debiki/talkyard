@@ -198,10 +198,12 @@ const UserPageComponent = createReactClass(<any> {
   },
 
   render: function() {
-    const store: Store = this.state.store;
+    const props = this.props;
+    const state = this.state;
+    const store: Store = state.store;
     const me: Myself = store.me;
-    const user: UserDetailsStatsGroups = this.state.user;  // ParticipantAnyDetails = better class?
-    const usernameOrId = this.props.match.params.usernameOrId;
+    const user: UserDetailsStatsGroups = state.user;  // ParticipantAnyDetails = better class?
+    const usernameOrId = props.match.params.usernameOrId;
 
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
     // sub comoponents, which could result in duplicated load-data requests.  (5GKWS20)
@@ -212,7 +214,6 @@ const UserPageComponent = createReactClass(<any> {
     const userGone = user_isGone(user);
     const pathToUser = pathTo(user);
 
-    // TESTS_MISSING  TyTSEEMLLNS005
     const showAdminPriv = me.isAdmin || (!userGone && me.isAuthenticated && me.id === user.id);
     const showStaffPriv = showAdminPriv || imStaff;
     const linkStart = pathToUser + '/';
@@ -232,12 +233,16 @@ const UserPageComponent = createReactClass(<any> {
     const tasksNavItem = !showStaffPriv || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'tasks', className: 'e_UP_TsksB' }, "Tasks"); // I18N
 
+    // If included or not, tested here:
+    //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACSPREFS01
     const preferencesNavItem = !showStaffPriv && !user.email ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);
 
     const invitesNavItem = !showStaffPriv || !store_maySendInvites(store, user).value ? null :
       LiNavLink({ to: linkStart + 'invites', className: 'e_InvTabB' }, t.upp.Invites);
 
+    // Tests:
+    //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACCESSPERMS04
     const patPermsNavItem = !user.isGroup || !imStaff ? null :
         LiNavLink({ to: linkStart + 'permissions', className: 'e_PermsTabB' },
           "Permissions"); // I18N
@@ -246,8 +251,8 @@ const UserPageComponent = createReactClass(<any> {
       store: store,
       me: me, // CLEAN_UP try to remove, incl already in `store`
       user: user,
-      groupsMaySee: this.state.groupsMaySee,
-      stats: this.state.stats,
+      groupsMaySee: state.groupsMaySee,
+      stats: state.stats,
       reloadUser: this.loadUserAnyDetails,
     };
 
@@ -259,26 +264,43 @@ const UserPageComponent = createReactClass(<any> {
         const hash = this.props.location.hash;
         return Redirect({ to: pathToUser + '/activity/posts' + hash });
       }}),
+
+      !membersNavItem ? null :
       Route({ path: u + 'members', render: (ps) => GroupMembers({ ...childProps, ...ps }) }),
+
+      !activityNavItem ? null :
       Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
+
+      !notificationsNavItem ? null :
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
+
+      !draftsEtcNavItem ? null :
       Route({ path: u + 'drafts-etc', render: () => UserDrafts(childProps) }),
+
+      !tasksNavItem ? null :
       Route({ path: u + 'tasks', render: (ps) => UserTasks({ ...childProps, ...ps }) }),
 
+      !preferencesNavItem ? null :
       Route({ path: u + 'preferences', render: (ps) => {
         return UserPreferences({ ...childProps, updatePat: this.updatePat, ...ps });
       } }),
 
+      !invitesNavItem ? null :
       Route({ path: u + 'invites', render: () => {
         return UserInvites(childProps);
       } }),
 
+      !patPermsNavItem ? null :
       Route({ path: u + 'permissions', render: (ps) => {
-        // @ifdef DEBUG
-        dieIf(!user.isGroup, `TyE052MW5: Not a group: ${JSON.stringify(user)}`)
-        // @endif
         return PatPerms({ user: user as GroupVb, store, updatePat: this.updatePat });
-      } }));
+      } }),
+
+      Route({ path: u + '*', render: () => {
+        return r.p({ className: 'c_BadRoute' },
+              `You're at: `, r.samp({}, props.location.pathname),  // I18N
+              ` — nothing here to see.`);
+      } }),
+      );
 
     return (
       r.div({ className: 'container esUP' },

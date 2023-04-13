@@ -436,7 +436,7 @@ const AboutMember = createComponent({
           r.div({ className: 'form-group' },
             r.label({}, t.EmailAddress),
             r.div({},
-              r.samp({}, user.email),
+              r.samp({ className: 'e_PrimEmAdr' }, user.email),
               NavLink({ to: this.props.emailsLoginsPath,
                   className: 'btn s_UP_Prefs_ChangeEmailB' },
                 isSelfOrAdmin ? t.ChangeDots : t.MoreDots)),
