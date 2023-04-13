@@ -155,6 +155,7 @@ export const PatPerms = React.createFactory<PatPermsProps>(function(props) {
               setState({ permsNow: { ...permsNow, allowedUplExts }, savingStatus: ''});
             } }),
 
+        !me.isAdmin ? null :
         InputTypeSubmit({ className: 'e_SvPerms', style: { marginTop: '11px' },
               value: "Save", disabled: !!state.maxUplBytesErr }),  // 0I18N
         r.span({}, ' ', state.savingStatus)));

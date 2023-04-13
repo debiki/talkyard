@@ -8013,22 +8013,29 @@ export class TyE2eTestBrowser {
       },
 
       permissions: {
-          goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+          goHere: async (username: St, ps: { isGroup?: true, origin?: St,
+                  wait?: false } = {}) => {
             await this.userProfilePage._goHere(username, ps, '/permissions');
-            await this.userProfilePage.permissions.waitUntilLoaded();
+            if (ps.wait !== false) await this.userProfilePage.permissions.waitUntilLoaded();
           },
 
-          waitUntilLoaded: async () => {
-            await this.waitForExist('.s_PP_PrmsTb .e_SvPerms');
+          waitUntilLoaded: async (ps: { withSaveBtn?: Bo } = {}) => {
+            const saveBtnSel = ps.withSaveBtn ? ' .e_SvPerms' : '';
+            await this.waitForDisplayed('.s_PP_PrmsTb' + saveBtnSel);
           },
 
-          canGrantMaySeeEmailAdrs: async (): Pr<Bo> => {
-            return await this.isDisplayed('.e_SeeEmls');
+          canGrantMaySeeEmailAdrs: async (ps: { butIsDisabled?: true } = {}): Pr<Bo> => {
+            const butDisabled = ps.butIsDisabled ? ' input:disabled' : '';
+            return await this.isDisplayed('.e_SeeEmls' + butDisabled);
           },
 
           setMaySeeEmailAdrs: async (maySee: Bo) => {
             await this.setCheckbox('.e_SeeEmls input', maySee);
           },
+
+          // and?:
+          //  [canSeeAllowedUploadSizeInput]
+          //  [canSeeAllowedUploadExtensionsInput]
 
           save: async () => {
             await this.waitAndClick('.e_SvPerms');

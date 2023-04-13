@@ -86,25 +86,36 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
   });
 
 
-  // ----- Moderators also cannot
+  // ----- Moderators can access but not edit
 
   it(`Moderator Modya logs in`, async () => {
     await modya_brB.complex.loginWithPasswordViaTopbar(modya);
   });
-  it(`... also cannot access the perms tab (although is mod)  TyT0ACCESSPERMS04`, async () => {
-    await stranger_brB.waitForDisplayed('.c_BadRoute');
-    assert.not(await stranger_brB.isDisplayed('.s_PP_PrmsTb'));
+  it(`... can access the perms tab (since is mod)  TyT0ACCESSPERMS04`, async () => {
+    await modya_brB.userProfilePage.permissions.waitUntilLoaded();
+    assert.not(await modya_brB.isExisting('.c_BadRoute'));
+  });
+  it(`... but all settings are disabled  TyTCANCONFSEEML`, async () => {
+    assert.that(await modya_brB.userProfilePage.permissions.canGrantMaySeeEmailAdrs({
+          butIsDisabled: true }));
+    // CLEAN_UP break out fn?
+    //  [canSeeAllowedUploadSizeInput]
+    //  [canSeeAllowedUploadExtensionsInput]
+    await modya_brB.waitForDisplayed('.s_PP_PrmsTb_UplMiB input:disabled');
+    await modya_brB.waitForDisplayed('.s_PP_PrmsTb_UplExts textarea:disabled');
   });
 
 
-  // ----- Admins can
+  // ----- Admins can access & edit
 
   it(`Owen logs in`, async () => {
+    await owen_brA.userProfilePage.permissions.goHere('moderators', {
+            origin: site.origin, wait: false });
     await owen_brA.complex.loginWithPasswordViaTopbar(owen);
   });
   it(`... now he sees the permission tab  TyT0ACCESSPERMS04`, async () => {
     await owen_brA.waitForGone('.c_BadRoute');
-    await owen_brA.userProfilePage.permissions.waitUntilLoaded();
+    await owen_brA.userProfilePage.permissions.waitUntilLoaded({ withSaveBtn: true });
   });
   it(`... and can configure may-see-email-addrs  TyTCANCONFSEEML`, async () => {
     assert.that(await owen_brA.userProfilePage.permissions.canGrantMaySeeEmailAdrs());
