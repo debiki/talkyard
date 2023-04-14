@@ -81,7 +81,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     await stranger_brB.userProfilePage.openPermissionsFor('moderators');
   });
   it(`... hen may not access that tab  TyT0ACCESSPERMS04`, async () => {
-    await stranger_brB.waitForDisplayed('.c_BadRoute');
+    await stranger_brB.userProfilePage.waitForBadRoute();
     assert.not(await stranger_brB.isDisplayed('.s_PP_PrmsTb'));
   });
 
@@ -92,8 +92,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     await modya_brB.complex.loginWithPasswordViaTopbar(modya);
   });
   it(`... can access the perms tab (since is mod)  TyT0ACCESSPERMS04`, async () => {
-    await modya_brB.userProfilePage.permissions.waitUntilLoaded();
-    assert.not(await modya_brB.isExisting('.c_BadRoute'));
+    await modya_brB.userProfilePage.assertOkRoute();
   });
   it(`... but all settings are disabled  TyTCANCONFSEEML`, async () => {
     assert.that(await modya_brB.userProfilePage.permissions.canGrantMaySeeEmailAdrs({
@@ -114,7 +113,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     await owen_brA.complex.loginWithPasswordViaTopbar(owen);
   });
   it(`... now he sees the permission tab  TyT0ACCESSPERMS04`, async () => {
-    await owen_brA.waitForGone('.c_BadRoute');
+    await owen_brA.userProfilePage.waitForBadRouteGone();
     await owen_brA.userProfilePage.permissions.waitUntilLoaded({ withSaveBtn: true });
   });
   it(`... and can configure may-see-email-addrs  TyTCANCONFSEEML`, async () => {
@@ -245,7 +244,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
         // If going there anyway, there should be an error.
         // One is /-/users/michael/preferences/about:
         await ps().br.userProfilePage.preferences.goHere('michael');
-        await ps().br.waitForDisplayed('.c_BadRoute');
+        await ps().br.userProfilePage.waitForBadRoute();
       }
       else {
         await ps().br.userProfilePage.tabs.switchToPreferences();
@@ -275,7 +274,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     });
     it(`... ${canOrNot} see Michaels email addr`, async () => {
       if (expectedAdr() === null) {
-        await ps().br.waitForDisplayed('.c_BadRoute');
+        await ps().br.userProfilePage.waitForBadRoute();
       }
       else {
         const adrs: St[] =

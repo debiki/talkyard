@@ -60,7 +60,7 @@ export const UserNotifications = createFactory({
     const me: Myself = this.props.store.me;
     if (me.id !== userId && !isStaff(me)) {
       this.setState({
-        error: "May not list an other user's notifications. [EdE7WK2L_]",
+        error: "May not list an other user's notifications. [EdE7WK2L]",
         notfs: null,
       });
       return;

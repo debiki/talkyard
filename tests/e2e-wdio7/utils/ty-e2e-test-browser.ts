@@ -7265,6 +7265,18 @@ export class TyE2eTestBrowser {
     userProfilePage = {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
+      waitForBadRoute: async () => {
+        await this.waitForDisplayed('.c_BadRoute');
+      },
+
+      waitForBadRouteGone: async () => {
+        await this.waitForGone('.c_BadRoute');
+      },
+
+      assertOkRoute: async () => {
+        tyAssert.not(await this.isExisting('.c_BadRoute'));
+      },
+
       waitUntilUsernameVisible: async () => {
         await this.waitForVisible('.esUP_Un');
       },
@@ -7659,11 +7671,6 @@ export class TyE2eTestBrowser {
             await this.waitForThenClickText('.esNotf_page', text);
           });
         },
-
-        assertMayNotSeeNotfs: async () => {
-          await this.waitForVisible('.e_UP_Notfs_Err');
-          await this.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
-        }
       },
 
       draftsEtc: {
