@@ -1526,6 +1526,13 @@ export class TyE2eTestBrowser {
     }
 
 
+    async assertNotExists(selector: St) {
+      if (await this.isDisplayed(selector)) {
+        tyAssert.fail(`This elem exists,but shouldn't:  ${selector} `);
+      }
+    }
+
+
     async isDisplayedInViewport(selector: St): Pr<Bo> {
       // Sometimes the elem methods below are missing, weird.  [MISSINGFNS]
       const elem: WElm = await this.$(selector);
@@ -5236,18 +5243,37 @@ export class TyE2eTestBrowser {
 
 
     addUsersToPageDialog = {
+      __placeholderSel: '#e2eAddUsD .Select-placeholder',
+      __inputSel: '#e2eAddUsD .Select-input > input',
+      __placeholderOrInputSel: () =>
+            this.addUsersToPageDialog.__placeholderSel + ', ' +
+            this.addUsersToPageDialog.__inputSel,
+
+      waitUntilLoaded: async () => {
+        await this.waitForDisplayed('#e2eAddUsD');
+      },
+
+      clear: async () => {
+        await this.waitAndClick('#e2eAddUsD .Select-clear');
+        // A bit fragile: (becomes useless if class 'has-value' renamed)
+        await this.waitForDisplayed('#e2eAddUsD .Select--multi:not(.has-value)');
+        // Better: The placeholder is shown only if the input is empty.
+        await this.waitForDisplayed('#e2eAddUsD .Select-placeholder');
+      },
+
       focusNameInputField: async () => {
-        await this.waitAndClick('#e2eAddUsD .Select-placeholder');
+        // was:  .Select-placeholder  — does it work to click the input directly instead?
+        await this.waitAndClick(this.addUsersToPageDialog.__placeholderOrInputSel());
       },
 
       startTypingNewName: async (chars: St) => {
         // Dupl code. [.react_select]
-        await this.waitAndSetValue('#e2eAddUsD .Select-input > input', chars,
+        await this.waitAndSetValue(this.addUsersToPageDialog.__inputSel, chars,
             { okayOccluders: '.Select-placeholder', checkAndRetry: true });
       },
 
       appendChars: async (chars: St) => {
-        await (await this.$('#e2eAddUsD .Select-input > input')).addValue(chars);
+        await (await this.$(this.addUsersToPageDialog.__inputSel)).addValue(chars);
       },
 
       hitEnterToSelectUser: async () => {
@@ -6276,12 +6302,12 @@ export class TyE2eTestBrowser {
       },
 
       getTopicAuthorUsernameInclAt: async (): Pr<St> => {
-        return await this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By_U');
+        return await this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By .esP_By_U');
       },
 
       getPostAuthorUsernameInclAt: async (postNr: PostNr): Pr<St> => {
         const sel = this.topic.postHeaderSelector(postNr);
-        return await this.waitAndGetVisibleText(sel + ' .esP_By_U');
+        return await this.waitAndGetVisibleText(sel + ' .esP_By .esP_By_U');
       },
 
       getPostAuthorUsername: async (postNr: PostNr): Pr<St> => {
@@ -6301,6 +6327,13 @@ export class TyE2eTestBrowser {
         else {
           return await this.widgets.tagList.getTagTitles(sel, howManyBadges);
         }
+      },
+
+      getAssigneesUsernamesNoAt: async (postNr: PostNr): Pr<St[]> => {
+        // Bit dupl code.  [.list_assignees]
+        const sel = this.topic.postHeaderSelector(postNr);
+        const atUsernames: St[] = await this.waitAndGetListTexts(sel + ' .n_Asgs_L .esP_By_U');
+        return atUsernames.map((atUn) => atUn.substring(1)); // drops '@' in '@username'
       },
 
       clickFirstMentionOf: async (username: St) => {
@@ -6655,6 +6688,8 @@ export class TyE2eTestBrowser {
         }
       },
 
+      changePageBtnSel: '.dw-a-change',
+
       openChangePageDialog: async () => {
         await this.waitAndClick('.dw-a-change');
         await this.topic.waitUntilChangePageDialogOpen();
@@ -6743,6 +6778,12 @@ export class TyE2eTestBrowser {
         await this.topic.openChangePageDialog();
         await this.waitAndClick('.e_PgSt-' + newStatus);
         await this.topic.waitUntilChangePageDialogGone();
+      },
+
+      openAssignToDiag: async () => {
+        await this.topic.openChangePageDialog();
+        await this.waitAndClick('.e_AsgB');
+        await this.addUsersToPageDialog.waitUntilLoaded();
       },
 
       _closeButtonSelector: '.s_ChPgD .e_ClosePgB',
@@ -7389,6 +7430,10 @@ export class TyE2eTestBrowser {
           }
         },
 
+        switchToTasks: async () => {
+          await this.waitAndClick('.e_UP_TsksB');
+        },
+
         isPreferencesTabDisplayed: async (): Pr<Bo> => {
           return await this.isDisplayed('#e2eUP_PrefsB');
         },
@@ -7542,7 +7587,7 @@ export class TyE2eTestBrowser {
           },
 
           waitForNoPosts: async () => {
-            await this.waitForVisible('.e_NoPosts');
+            await this.waitForExist('.e_NoPosts');
           },
 
           assertExactly: async (num: Nr) => {
@@ -7555,6 +7600,15 @@ export class TyE2eTestBrowser {
                     forPostNr: ps.forPostNr,
                     howManyTags: ps.howManyTags,
                     within: '.s_UP_Act_Ps_P' });
+          },
+
+          getAssigneeUsernamesNoAt: async (ps: { forPageId: PageId, postNr?: PostNr }): Pr<St[]> => {
+            // E.g.:   .s_UP_Act_Ps_P:has(a[href="/-buyMilkPageId#post-1"]) .dw-p-hd .n_Asgs_L
+            // Bit dupl code.  [.list_assignees]
+            const sel = `.s_UP_Act_Ps_P:has(a[href="/-${ps.forPageId
+                            }#post-${ps.postNr || c.BodyNr}"]) .dw-p-hd .n_Asgs_L .esP_By_U`;
+            const atUsernames: St[] = await this.waitAndGetListTexts(sel);
+            return atUsernames.map((atUn) => atUn.substring(1)); // drops '@' in '@username'
           },
 
           navToPost: async (ps: { anyOnPageId?: St, justClickFirst?: Bo } = {}) => {
@@ -7704,6 +7758,20 @@ export class TyE2eTestBrowser {
           await this.repeatUntilAtNewUrl(async () => {
             await this.waitAndClickNth('.s_Dfs_Df', index);
           });
+        },
+      },
+
+      tasks: {
+        goHere: async (username: St, ps: { isGroup?: true, origin?: St } = {}) => {
+          await this.userProfilePage._goHere(username, ps, '/tasks');
+        },
+
+        waitUntilLoaded: async () => {
+          await this.waitForExist('.e_UP_TskL');
+        },
+
+        setIncludeClosed: async (onlyOpen: Bo) => {
+          await this.setCheckbox('.e_OnlyOpnTsks input', onlyOpen);
         },
       },
 

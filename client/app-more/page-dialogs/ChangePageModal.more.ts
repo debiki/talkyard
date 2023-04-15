@@ -177,13 +177,15 @@ const ChangePageDialog = createComponent({
           // So don't:  `!alreadyDoneOrAnswered ||`
           // (Later, will use the permission system: can_assign_pats_c, can_assign_self_c.)
           isOwnOrTrusted;
-      assignBtn = !canAssign ? null : rFr({},
+      assignBtn = !canAssign ? null : rFr({},  // could add class:  n_Asgs  but not needed
           r.div({ className: 's_ExplDrp_Ttl' }, "Assigned to: "),   // I18N
           r.div({ className: 's_ExplDrp_ActIt' },
-            !origPost.assigneeIds ? r.span({ className: 'esP_By' }, `(None)`) :  // I18N
-                  origPost.assigneeIds.map(patId =>
-                    UserName({ patId, store, avoidFullName: true, key: patId })),
-            Button({ onClick: () => {
+            !origPost.assigneeIds
+                ? r.span({ className: 'esP_By e_Asg20' }, `(None)`)  // I18N
+                : r.ul({ className: 'n_Asgs_L' }, origPost.assigneeIds.map(patId =>
+                    r.li({},
+                      UserName({ patId, store, avoidFullName: true, key: patId })))),
+            Button({ className: 'e_AsgB', onClick: () => {
                 openAddPeopleDialog({
                       curPats: origPost.assigneeIds?.map(id => store.usersByIdBrief[id]),
                       onChanges: (res: PatsToAddRemove) => {

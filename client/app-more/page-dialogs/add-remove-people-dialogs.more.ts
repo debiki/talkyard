@@ -34,6 +34,13 @@ const ModalFooter = rb.ModalFooter;
 let addPeopleDialog;
 
 
+interface SelectListLabelValue {
+  label: St;
+  value: PatId; // or: St | Nr;
+  disabled?: true;
+}
+
+
 /// Specify either:
 ///   ps.curPats — If specified, those pats are shown in the list, and can
 ///       then be removed.
@@ -86,7 +93,7 @@ const AddPeopleDialog = createComponent({
         // is now gone.
         return;
       }
-      const options = makeLabelValues(users, this.state.alreadyAddedIds);
+      const options = makeLabelValues(users, this.state.initialPats ? [] : this.state.alreadyAddedIds);
       callback(null, { options });
     });
   },
@@ -96,15 +103,28 @@ const AddPeopleDialog = createComponent({
         isOpen: false, alreadyAddedIds: null, selectedLabelValues: null, onChanges: null });
   },
 
-  onSelectChange: function(labelsAndValues: any) {
+  onSelectChange: function(labelsAndValuesOrNull: SelectListLabelValue[] | N) {
     // labelsAndValues is null if the clear-all [x] button pressed
-    this.setState({ selectedLabelValues: labelsAndValues || [] });
+    const selectedLabelValues = labelsAndValuesOrNull || [];
+    const newState: Partial<any> = { selectedLabelValues };
+
+    /*
+    // If we can remove pats, then, might need to update the already-added-ids so
+    // they can be added back (don't stay disabled although no longer added).
+    if (this.state.initialPats) {
+      newState.alreadyAddedIds = selectedLabelValues.map(labVal => labVal.value);
+    }
+    */
+
+    this.setState(newState);  // ! Need to upd rb.ReactSelectAsync's option list too,
+    // but how? makeLabelValues(
   },
 
   save: function() {
-    const userIds: PatId[] = this.state.selectedLabelValues.map(entry => entry.value);
+    const state = this.state;
+    const userIds: PatId[] = state.selectedLabelValues.map(entry => entry.value);
 
-    const initialPats: Pat[] | U = this.state.initialPats;
+    const initialPats: Pat[] | U = state.initialPats;
     const initialPatIds: PatId[] | U = initialPats && initialPats.map(p => p.id);
 
     // If we showed old pats in the list, don't add them again.

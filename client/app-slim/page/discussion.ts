@@ -1674,11 +1674,12 @@ export const PostHeader = createComponent({
       return r.p({}, '(Post missing [DwE7IKW2])');
 
     const assignees = (capitalizeClass: St = '') => !post.assigneeIds ? null :
-        r.span({ className: 'n_Asgd2'},
+        r.span({ className: 'n_Asgd2' },
           r.span({ className: 'n_Asgd2_Ttl' + capitalizeClass }, "assigned to "),  // I18N
-          // UX COULD use a <ul><li>?
-          post.assigneeIds.map(patId =>
-            UserName({ patId, store, avoidFullName: true, key: patId })));
+          r.ul({ className: 'n_Asgs_L' },
+            post.assigneeIds.map(patId =>
+              r.li({ key: patId },
+                UserName({ patId, store, avoidFullName: true })))));
 
     if (isWikiPost(post)) {
       const anyAssigneesCaps = assignees(' n_1stCap');
