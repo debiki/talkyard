@@ -1527,8 +1527,8 @@ export class TyE2eTestBrowser {
 
 
     async assertNotExists(selector: St) {
-      if (await this.isDisplayed(selector)) {
-        tyAssert.fail(`This elem exists,but shouldn't:  ${selector} `);
+      if (await this.isExisting(selector)) {
+        tyAssert.fail(`This elem exists, but shouldn't:  ${selector} `);
       }
     }
 
@@ -5262,7 +5262,8 @@ export class TyE2eTestBrowser {
       },
 
       focusNameInputField: async () => {
-        // was:  .Select-placeholder  — does it work to click the input directly instead?
+        // (If the list is empty, we nee to click the placeholder. Otherwise, there's no
+        // placeholder, and we need to click the <input>. So, using selector `...Or...`.)
         await this.waitAndClick(this.addUsersToPageDialog.__placeholderOrInputSel());
       },
 
@@ -6332,7 +6333,7 @@ export class TyE2eTestBrowser {
       getAssigneesUsernamesNoAt: async (postNr: PostNr): Pr<St[]> => {
         // Bit dupl code.  [.list_assignees]
         const sel = this.topic.postHeaderSelector(postNr);
-        const atUsernames: St[] = await this.waitAndGetListTexts(sel + ' .n_Asgs_L .esP_By_U');
+        const atUsernames: St[] = await this.waitAndGetListTexts(sel + ' .c_AsgsL .esP_By_U');
         return atUsernames.map((atUn) => atUn.substring(1)); // drops '@' in '@username'
       },
 
@@ -7315,7 +7316,10 @@ export class TyE2eTestBrowser {
       },
 
       assertOkRoute: async () => {
-        tyAssert.not(await this.isExisting('.c_BadRoute'));
+        if (await this.isExisting('.c_BadRoute')) {
+          tyAssert.fail(`Bad route (but should be an ok route), ` +
+                          `elem present:  .c_BadRoute  [TyEE2EBADROUTE]`);
+        }
       },
 
       waitUntilUsernameVisible: async () => {
@@ -7430,7 +7434,8 @@ export class TyE2eTestBrowser {
           }
         },
 
-        switchToTasks: async () => {
+        switchToTasks: async (ps: { wait: Bo }) => {
+          tyAssert.not(ps.wait); // unimplemented
           await this.waitAndClick('.e_UP_TsksB');
         },
 
@@ -7603,10 +7608,10 @@ export class TyE2eTestBrowser {
           },
 
           getAssigneeUsernamesNoAt: async (ps: { forPageId: PageId, postNr?: PostNr }): Pr<St[]> => {
-            // E.g.:   .s_UP_Act_Ps_P:has(a[href="/-buyMilkPageId#post-1"]) .dw-p-hd .n_Asgs_L
+            // E.g.:   .s_UP_Act_Ps_P:has(a[href="/-buyMilkPageId#post-1"]) .dw-p-hd ...
             // Bit dupl code.  [.list_assignees]
             const sel = `.s_UP_Act_Ps_P:has(a[href="/-${ps.forPageId
-                            }#post-${ps.postNr || c.BodyNr}"]) .dw-p-hd .n_Asgs_L .esP_By_U`;
+                            }#post-${ps.postNr || c.BodyNr}"]) .dw-p-hd .c_AsgsL .esP_By_U`;
             const atUsernames: St[] = await this.waitAndGetListTexts(sel);
             return atUsernames.map((atUn) => atUn.substring(1)); // drops '@' in '@username'
           },
@@ -7770,8 +7775,8 @@ export class TyE2eTestBrowser {
           await this.waitForExist('.e_UP_TskL');
         },
 
-        setIncludeClosed: async (onlyOpen: Bo) => {
-          await this.setCheckbox('.e_OnlyOpnTsks input', onlyOpen);
+        setIncludeClosed: async (inclClosed: Bo) => {
+          await this.setCheckbox('.e_InclCloTsks input', inclClosed);
         },
       },
 
@@ -8095,6 +8100,7 @@ export class TyE2eTestBrowser {
           },
 
           waitUntilLoaded: async (ps: { withSaveBtn?: Bo } = {}) => {
+            dieIf(ps.withSaveBtn === false, `unimpl: withSaveBtn false`);
             const saveBtnSel = ps.withSaveBtn ? ' .e_SvPerms' : '';
             await this.waitForDisplayed('.s_PP_PrmsTb' + saveBtnSel);
           },

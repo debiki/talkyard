@@ -105,7 +105,7 @@ export const PatPerms = React.createFactory<PatPermsProps>(function(props) {
             checked: isAdminsGroup || permsNow.canSeeOthersEmailAdrs,
             disabled: !me.isAdmin || !isModsOrCoreMembsGroup,
             onChange: (event: CheckboxEvent) => {
-              // But does setState work w undef?
+              // Don't set to false — negative perms not implemented. [may_not_perms]
               const canSeeOthersEmailAdrs = event.target.checked || undefined;
               setState({
                     permsNow: { ...permsNow, canSeeOthersEmailAdrs }, savingStatus: '' });

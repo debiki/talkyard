@@ -140,7 +140,7 @@ describe(`assign-to-basic.2br.d.e2e.ts  TyTASSIGN01`, () => {
 
   it(`Memah looks at her task list`, async () => {
     await memah_brB.topbar.clickGoToProfile();
-    await memah_brB.userProfilePage.tabs.switchToTasks();
+    await memah_brB.userProfilePage.tabs.switchToTasks({ wait: false });
   });
   it(`... the topic is listed there`, async () => {
     await memah_brB.userProfilePage.activity.posts.waitForPostTextsVisible();
@@ -217,7 +217,7 @@ describe(`assign-to-basic.2br.d.e2e.ts  TyTASSIGN01`, () => {
 
   it(`Maria looks at her task list`, async () => {
     await maria_brB.topbar.clickGoToProfile();
-    await maria_brB.userProfilePage.tabs.switchToTasks();
+    await maria_brB.userProfilePage.tabs.switchToTasks({ wait: false });
   });
   it(`... the topic is listed, there`, async () => {
     await maria_brB.userProfilePage.activity.posts.waitForPostTextsVisible();

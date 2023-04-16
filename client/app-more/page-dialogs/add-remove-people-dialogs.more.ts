@@ -36,7 +36,7 @@ let addPeopleDialog;
 
 interface SelectListLabelValue {
   label: St;
-  value: PatId; // or: St | Nr;
+  value: PatId;
   disabled?: true;
 }
 
@@ -93,7 +93,18 @@ const AddPeopleDialog = createComponent({
         // is now gone.
         return;
       }
-      const options = makeLabelValues(users, this.state.initialPats ? [] : this.state.alreadyAddedIds);
+
+      // If 1/2 `initialPats`, then React-Select will hide those pats from the
+      // options list (since they've been added already), so it works
+      // fine to then leave `alreadyAddedIds` empty — and we have to, because
+      // there's with the (a bit old) version of React-Select we're using, no way
+      // to update the options list, when adding/removing a pat.
+      // However if 2/2 it's only possible to add more pats, and none are shown
+      // initially in the selected-items list, then we need to disable those
+      // already added.
+      const alreadyAddedIds = this.state.initialPats ? [] : this.state.alreadyAddedIds;
+
+      const options = makeLabelValues(users, alreadyAddedIds);
       callback(null, { options });
     });
   },
@@ -106,18 +117,9 @@ const AddPeopleDialog = createComponent({
   onSelectChange: function(labelsAndValuesOrNull: SelectListLabelValue[] | N) {
     // labelsAndValues is null if the clear-all [x] button pressed
     const selectedLabelValues = labelsAndValuesOrNull || [];
-    const newState: Partial<any> = { selectedLabelValues };
-
-    /*
-    // If we can remove pats, then, might need to update the already-added-ids so
-    // they can be added back (don't stay disabled although no longer added).
-    if (this.state.initialPats) {
-      newState.alreadyAddedIds = selectedLabelValues.map(labVal => labVal.value);
-    }
-    */
-
-    this.setState(newState);  // ! Need to upd rb.ReactSelectAsync's option list too,
-    // but how? makeLabelValues(
+    // React-Select will remove any newly selected items from the options list,
+    // no need to update `state.alreadyAddedIds`.
+    this.setState({ selectedLabelValues });
   },
 
   save: function() {

@@ -1676,7 +1676,7 @@ export const PostHeader = createComponent({
     const assignees = (capitalizeClass: St = '') => !post.assigneeIds ? null :
         r.span({ className: 'n_Asgd2' },
           r.span({ className: 'n_Asgd2_Ttl' + capitalizeClass }, "assigned to "),  // I18N
-          r.ul({ className: 'n_Asgs_L' },
+          r.ul({ className: 'c_AsgsL' },
             post.assigneeIds.map(patId =>
               r.li({ key: patId },
                 UserName({ patId, store, avoidFullName: true })))));
