@@ -387,6 +387,10 @@ profile page, a group:
           - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
+  see permission settings:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACCESSPERMS04
+    disabled, unless admin:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTCANCONFSEEML
 
 groups:
   list members:

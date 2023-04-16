@@ -70,28 +70,28 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     await stranger_brB.go2(michaelsTopicUrl);
   });
 
-  addCanSeeEmailAdrTestSteps(`The stranger`, `can't`, function() { return {
+  addSeeEmailAdrTestSteps(`The stranger`, `can't`, function() { return {
           br: stranger_brB, expectedAdr: () => null }});
 
 
-  // ----- Strangers can't access group permission tabs
+  // ----- Strangers can't access permission tabs
 
-  it(`A stranger goes to the moderators' permissions page, ... `, async () => {
-    await stranger_brB.adminArea.goToUsersEnabled(site.origin);
-    await stranger_brB.userProfilePage.openPermissionsFor('moderators');
+  it(`The stranger tries to view the moderators' permission settings, ... `, async () => {
+    await stranger_brB.userProfilePage.openPermissionsFor('moderators', site.origin);
   });
-  it(`... hen may not access that tab  TyT0ACCESSPERMS04`, async () => {
+  it(`... but sees nothing  TyT0ACCESSPERMS04`, async () => {
     await stranger_brB.userProfilePage.waitForBadRoute();
     assert.not(await stranger_brB.isDisplayed('.s_PP_PrmsTb'));
   });
 
 
-  // ----- Moderators can access but not edit
+  // ----- Moderators can access, but not edit
 
   it(`Moderator Modya logs in`, async () => {
     await modya_brB.complex.loginWithPasswordViaTopbar(modya);
   });
-  it(`... can access the perms tab (since is mod)  TyT0ACCESSPERMS04`, async () => {
+  it(`... can access the perms tab (since is moderator)  TyT0ACCESSPERMS04`, async () => {
+    await modya_brB.userProfilePage.waitForBadRouteGone();
     await modya_brB.userProfilePage.assertOkRoute();
   });
   it(`... but all settings are disabled  TyTCANCONFSEEML`, async () => {
@@ -112,12 +112,13 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
             origin: site.origin, wait: false });
     await owen_brA.complex.loginWithPasswordViaTopbar(owen);
   });
-  it(`... now he sees the permission tab  TyT0ACCESSPERMS04`, async () => {
-    await owen_brA.userProfilePage.waitForBadRouteGone();
+  it(`... he's admin, can see the permissions tab  TyT0ACCESSPERMS04`, async () => {
     await owen_brA.userProfilePage.permissions.waitUntilLoaded({ withSaveBtn: true });
+    await owen_brA.userProfilePage.assertOkRoute();
   });
   it(`... and can configure may-see-email-addrs  TyTCANCONFSEEML`, async () => {
-    assert.that(await owen_brA.userProfilePage.permissions.canGrantMaySeeEmailAdrs());
+    assert.that(await owen_brA.userProfilePage.permissions.canGrantMaySeeEmailAdrs(), 
+            `!canGrantMaySeeEmailAdrs`);
   });
 
 
@@ -129,7 +130,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     await modya_brB.go2(michaelsTopicUrl);
   });
 
-  addCanSeeEmailAdrTestSteps(`Modya`, 'can', function() { return {
+  addSeeEmailAdrTestSteps(`Modya`, 'can', function() { return {
           br: modya_brB, expectedAdr: () => michael.emailAddress, localPartIsDots: true }});
 
 
@@ -144,7 +145,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     await modya_brB.refresh2();
   });
 
-  addCanSeeEmailAdrTestSteps(`Modya`, `can now`, function() { return {
+  addSeeEmailAdrTestSteps(`Modya`, `can now`, function() { return {
           br: modya_brB, expectedAdr: () => michael.emailAddress }});
 
 
@@ -155,7 +156,8 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     await corax_brB.complex.loginWithPasswordViaTopbar(corax);
   });
 
-  addCanSeeEmailAdrTestSteps(`Corax`, `cannot `, function() { return {
+  // By default, core members can't see others' email addrs.
+  addSeeEmailAdrTestSteps(`Corax`, `cannot `, function() { return {
           br: corax_brB, expectedAdr: () => null }});
 
   it(`Owen navigates to the Core Members' permissions tab  TyT0ACCESSPERMS04`, async () => {
@@ -172,7 +174,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     await corax_brB.refresh2();
   });
 
-  addCanSeeEmailAdrTestSteps(`Corax`, `can now `, function() { return {
+  addSeeEmailAdrTestSteps(`Corax`, `can now `, function() { return {
           br: corax_brB, expectedAdr: () => michael.emailAddress }});
 
 
@@ -181,9 +183,10 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
   it(`Corax leaves, Regina logs in`, async () => {
     await corax_brB.topbar.clickLogout();
     await regina_brB.complex.loginWithPasswordViaTopbar(regina);
+await regina_brB.d();  // .TEEEEST
   });
 
-  addCanSeeEmailAdrTestSteps(`Regina isn't a core member, `, `cannot `, function() { return {
+  addSeeEmailAdrTestSteps(`Regina isn't a core member, `, `cannot `, function() { return {
           br: regina_brB, expectedAdr: () => null }});
 
   it(`Owen navigates to the Regular Members group, permissions tab`, async () => {
@@ -193,14 +196,15 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
   });
   it(`... he can *not* grant the see-email-adrs permission —   TyTCANCONFSEEML
             only Core Members and Moderators can be granted that permission`, async () => {
-    assert.not(await owen_brA.userProfilePage.permissions.canGrantMaySeeEmailAdrs());
+    assert.not(await owen_brA.userProfilePage.permissions.canGrantMaySeeEmailAdrs(),
+            `Can grant see-email-addrs to non-core members`);
   });
 
 
   // ----- /End.
 
 
-  function addCanSeeEmailAdrTestSteps(who: St, canOrNot: St,
+  function addSeeEmailAdrTestSteps(who: St, canOrNot: St,
           ps: () => { br: TyE2eTestBrowser, expectedAdr: () => St | N, localPartIsDots?: true }) {
 
     const expectedAdr = () => {
@@ -214,6 +218,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
     const butNotTheLocalPart = ps().localPartIsDots ?
             ` — but not the local part, it's been replaced by '...'` : '';
 
+    // But isn't Regina in the Regular Members group?  // .TEEEEST
     it(`${who} sees that Michaels is in the Basic Members group  TyTSEEPATSGROUPS`, async () => {
       await ps().br.pageTitle.openAboutAuthorDialog();
       assert.deepEq(await ps().br.aboutUserDialog.getGroupNames(), ["Basic Members"]);
@@ -223,30 +228,38 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
             butNotTheLocalPart, async () => {
       assert.eq(await ps().br.aboutUserDialog.getEmailAdrOrNull(), expectedAdr());
       if (expectedAdr() === null) {
+        // Make sure there won't be any email addr, by waiting for this .e_0Em class.
+        // Otherwise maybe maybe the browser just wasn't done rendering,
+        // or a HTTP response hadn't arrived, or sth like that.
         await ps().br.waitForExist('.s_UD .e_0Em');
       }
     });
 
-    // One's email address is shown on one's profile page, at two places, as well.
-    // The first is /-/users/michael/preferences/about:
+    // One's email address is shown on one's profile page, at two places, as well
+    // (in addition to in the about-user box, tested above).
+    // The first is /-/users/michael/preferences/about:   [.two_places]
     it(`... goes to Michael's profile page`, async () => {
       await ps().br.aboutUserDialog.clickViewProfile();
     });
 
     it(`... ${canOrNot} see Michael's preferences tab link  TyT0ACSPREFS01`, async () => {
-      // Then there's nothing this user can see in the preferences tab, and the switch-
-      // -to-tab nav should be gone.
+      // Ttt, and wait until loaded:
+      assert.eq(await ps().br.userProfilePage.waitAndGetUsername(), 'michael');
+
+      // If can't see, there's nothing this user can see in the preferences tab, and
+      // the switch-to-tab nav should be gone.
       assert.eq(await ps().br.userProfilePage.tabs.isPreferencesTabDisplayed(),
               expectedAdr() !== null);
     });
     it(`... ${canOrNot} see Michael's email addr in that tab`, async () => {
       if (expectedAdr() === null) {
-        // If going there anyway, there should be an error.
-        // One is /-/users/michael/preferences/about:
+        // If going there anyway (manually editing the browser URL), there should be an error.
         await ps().br.userProfilePage.preferences.goHere('michael');
         await ps().br.userProfilePage.waitForBadRoute();
       }
       else {
+        // If we may see the email addr, we can click the Preferences tab
+        // (rather than editing the browser URL).
         await ps().br.userProfilePage.tabs.switchToPreferences();
         const primaryAdr = await ps().br.userProfilePage.preferences.getPrimaryEmailAdr();
         assert.eq(primaryAdr, expectedAdr());
@@ -255,15 +268,16 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
 
     // TESTS_MISSING: Verify local part replaced by '...' (like so: '...@ex.co')
     // also on the accounts sub tab. Not that interesting though, so can wait — currently
-    // that tab throws a may-not-see-email-addr exception if one may not. UX fix.
+    // that tab throws a may-not-see-email-addr exception if one may not. Minor UX BUG, fix.
     if (butNotTheLocalPart) {
       it(`... UNIMPL when cannot see local part:  goes to Michael's account tab`, async () => {
+        // Instead, for now:
         await ps().br.topbar.clickBack();
       });
       return;
     }
 
-    // The second is /-/users/michael/preferences/account:
+    // ... The second is /-/users/michael/preferences/account:  [.two_places]
     it(`... ${canOrNot} goes to Michael's account tab`, async () => {
       if (expectedAdr() === null) {
         await ps().br.userProfilePage.preferences.emailsLogins.goHere('michael');

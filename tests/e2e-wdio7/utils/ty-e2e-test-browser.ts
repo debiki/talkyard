@@ -7580,6 +7580,8 @@ export class TyE2eTestBrowser {
           },
         },
 
+        // REFACTOR: Break out `PostList` page object, because there're lists of posts at
+        // different places: activity, tasks, the contextbar?  [post_list_e2e_obj]
         posts: {
           postSelector: '.s_UP_Act_Ps_P .dw-p-bd',
 
@@ -7628,8 +7630,10 @@ export class TyE2eTestBrowser {
           },
 
           // Do this separately, because can take rather long (suprisingly?).
-          waitForPostTextsVisible: async () => {
-            await this.waitForVisible(this.userProfilePage.activity.posts.postSelector);
+          waitForPostTextsVisible: async (match?: RegExp) => {
+            const sel = this.userProfilePage.activity.posts.postSelector;
+            if (match) await this.waitForTextVisibleAssertMatches(sel, match);
+            else await this.waitForVisible(sel);
           },
 
           assertPostTextVisible: async (postText: St) => {
