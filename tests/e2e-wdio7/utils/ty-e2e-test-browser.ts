@@ -7435,7 +7435,7 @@ export class TyE2eTestBrowser {
         },
 
         switchToTasks: async (ps: { wait: Bo }) => {
-          tyAssert.not(ps.wait); // unimplemented
+          dieIf(ps.wait !== false, `unimpl: wait !== false`);
           await this.waitAndClick('.e_UP_TsksB');
         },
 
