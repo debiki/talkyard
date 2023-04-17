@@ -367,6 +367,8 @@ profile page, user:
 
   rename guest:
           - TESTS_MISSING
+  see (parts of) task list:
+            - assign-to-basic.2br.d  TyTASSIGN01.TyTASGNPERMS01
   delete pat:
     delete guest:
     delete user:
@@ -389,7 +391,7 @@ profile page, a group:
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
   see permission settings:
             - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACCESSPERMS04
-    disabled, unless admin:
+    settings disabled, unless is admin:
             - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTCANCONFSEEML
 
 groups:
@@ -447,6 +449,8 @@ security:
             - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   categories: see (1QRY7)
+  see other's tasks:
+            - assign-to-basic.2br.d  TyTASSIGN01.TyTASGNPERMS01
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -1385,11 +1389,22 @@ draft: [7WKABZP2]
 
 tasks,
 assign posts:
-  TESTS_MISSING:
-            - Can see all assignees, also in per pat task list?
-            - Try assigning sbd who cannot see that page or post.  TyTASGN0SEEPG
-            - ... and many more
+            - assign-to-basic.2br.d  TyTASSIGN01
+  notifications:
+            - TESTS_MISSING  TyTASGN0SEEPG
+  can't assigning sbd who can't see the page:
+            - TESTS_MISSING  TyTASGN0SEEPG
+  tasks one may not see, are excluded when viewing a task list:
 
+  // TESTS_MISSING: If an assignee can't see the task hen is assigned to, then,
+  //                if that task gets completed (by sbd else), then, the assgnee
+  //                does *not* get any notification email about that
+  // TESTS_MISSING: Try to assign sbd to a page they may not see
+  // TESTS_MISSING: When viewing sbd else's task list, tasks one may not see,
+  //                should be excluded
+  // TESTS_MISSING: If one has created, or is subscribed to a page, but one may not
+  //                see who is assigned (if any), then, one won't get notfications
+  //                that show who's assigned.
 
 superadmin -
   ... lots of stuff ...
@@ -1432,7 +1447,7 @@ notifications:
             - notfs-like-votes.2browsers.test.ts  TyTE2E703KDH
   about tasks,
   about assigned:
-            - TESTS_MISSING
+            - assign-to-basic.2br.d  TESTS_MISSING  TyTASSIGN01
   via email:  (5ABKR024)
   mute topic:
   mute category:

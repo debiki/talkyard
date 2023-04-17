@@ -166,7 +166,7 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
 
   // ----- Strangers can't see one's tasks
 
-  it(`A stranger cannot see Memah's task list`, async () => {
+  it(`A stranger cannot see Memah's task list  TyTASGNPERMS01`, async () => {
     await stranger_brB.userProfilePage.waitForBadRoute();
   });
 
@@ -207,7 +207,7 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
   });
   it(`... sees Maria and Michael now listed as assignees`, async () => {
     assert.deepEq(await owen_brA.topic.getAssigneesUsernamesNoAt(c.BodyNr),
-            [maria.username, michael.username]);   // SORT ORDER? else, flaky test !
+            [maria.username, michael.username]);   // SORT ORDER? else, flaky test !?
   });
 
 

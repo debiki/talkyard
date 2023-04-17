@@ -66,7 +66,7 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
 
   // ----- Strangers can't see others' email addrs
 
-  it(`A stranger arrives`, async () => {
+  it(`A stranger goes to Michael's page`, async () => {
     await stranger_brB.go2(michaelsTopicUrl);
   });
 
@@ -183,7 +183,6 @@ describe(`may-see-email-adrs.2br.d  TyTSEEEMLADRS01`, () => {
   it(`Corax leaves, Regina logs in`, async () => {
     await corax_brB.topbar.clickLogout();
     await regina_brB.complex.loginWithPasswordViaTopbar(regina);
-await regina_brB.d();  // .TEEEEST
   });
 
   addSeeEmailAdrTestSteps(`Regina isn't a core member, `, `cannot `, function() { return {
@@ -218,7 +217,8 @@ await regina_brB.d();  // .TEEEEST
     const butNotTheLocalPart = ps().localPartIsDots ?
             ` — but not the local part, it's been replaced by '...'` : '';
 
-    // But isn't Regina in the Regular Members group?  // .TEEEEST
+    // ((We're looking at *Michael*'s groups, which is Basic Members always, regardless
+    // of who the currently logged in user is.))
     it(`${who} sees that Michaels is in the Basic Members group  TyTSEEPATSGROUPS`, async () => {
       await ps().br.pageTitle.openAboutAuthorDialog();
       assert.deepEq(await ps().br.aboutUserDialog.getGroupNames(), ["Basic Members"]);

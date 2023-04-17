@@ -361,6 +361,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         // branch maybe then no longer needed).
         listPostsImpl(authorId, all = false, req)
       case Some(relTypeInt) =>
+
+        // Tests:
+        //    - assign-to-basic.2br.d  TyTASSIGN01
+
         RENAME // authorId param to: relToPatId, later.
         val relToPatId = authorId
         val relType = PatNodeRelType.fromInt(relTypeInt).getOrThrowBadRequest(
@@ -370,7 +374,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         val reqrIsStaffOrSelf = reqrIsStaff || req.requester.exists(_.id == relToPatId)
 
         val onlyOpen = which is 678321  // for now
-
         val query = PostQuery.PostsRelatedToPat(
               reqrInf = req.reqrInf,
               relatedPatId = relToPatId,

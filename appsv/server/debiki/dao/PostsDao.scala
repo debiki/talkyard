@@ -3203,6 +3203,9 @@ trait PostsDao {
       else {
         query match {
           case q: PostQuery.PostsRelatedToPat[_] =>  // [load_posts_by_rels]
+            // Tests incl:
+            //    - assign-to-basic.2br.d  TyTASSIGN01
+
             COULD_OPTIMIZE // Load distinct post ids. Instead of relationships
             // — pointless to transfer them over the network, and there can be
             // many, per pat and post (is possible, if sub_type_c is different. So might
