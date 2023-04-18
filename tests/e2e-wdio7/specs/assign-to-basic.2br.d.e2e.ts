@@ -207,7 +207,7 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
   });
   it(`... sees Maria and Michael now listed as assignees`, async () => {
     assert.deepEq(await owen_brA.topic.getAssigneesUsernamesNoAt(c.BodyNr),
-            [maria.username, michael.username]);   // SORT ORDER? else, flaky test !?
+            [maria.username, michael.username]);
   });
 
 
