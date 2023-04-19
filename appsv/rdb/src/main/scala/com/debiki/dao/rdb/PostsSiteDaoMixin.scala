@@ -1034,11 +1034,11 @@ trait PostsSiteDaoMixin extends SiteTransaction {
     }
 
     val orderByAndLimit = {
-      // Order by primary key, just to avoid flappy e2e tests.
+      // Order by primary key, just to avoid [flappy_tests].
       var ordAndLim = "pa.to_post_id_c, pa.rel_type_c, pa.from_pat_id_c, pa.sub_type_c"
       // But if we want the N last pat-post-rels, then, we currently want the most recent
       // ones. So order by time, desc. (But keep the pk order too, to avoid
-      // flappy tests (different order) in case of identical timestamps.)
+      // [flappy_tests] (different order) in case of identical timestamps.)
       limit foreach { lim =>
         ordAndLim = s"pa.created_at desc, $ordAndLim  limit $lim"
       }
@@ -1098,7 +1098,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       where  site_id = ?
         and  page_id = ?
         and  post_nr = ?
-      order by  rel_type_c, from_pat_id_c, sub_type_c  -- to avoid flappy tests
+      order by  to_post_id_c, rel_type_c, from_pat_id_c, sub_type_c  -- to avoid [flappy_tests]
       """
     val values = List[AnyRef](siteId.asAnyRef, pageId, postNr.asAnyRef)
     runQueryFindMany(query, values, rs => {
@@ -1135,7 +1135,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       values.append(pagePostNr.pageId, pagePostNr.postNr.asAnyRef)
     }
     val query = queryBuilder.append(
-          // Avoid flappy e2e tests:
+          // Avoid [flappy_tests]:
           ")  order by  to_post_id_c, rel_type_c, from_pat_id_c"
           ).toString
     runQueryFindMany(query, values.toList, rs => {
