@@ -1400,7 +1400,7 @@ assign posts:
   notifications:
             - TESTS_MISSING  TyTASGN0SEEPG
   not notified about tasks one can't see:
-      Expl: if sbd has subscribed  a task, or
+      Expl: if sbd has subscribed to a task page, or
       if an assignee can't see hens task (maybe the task got moved to a private cat),
       then, if that task gets completed (by sbd else),
       they do *not* get any notification email about that.

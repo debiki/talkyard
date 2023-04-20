@@ -173,7 +173,7 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
 
   // ----- Core members can see others' tasks
 
-  // Trusted members can too, tested further below.
+  // .Trusted_can_see too, tested further below.
 
   it(`Corax looks at Alice's task list`, async () => {
     await corax_brB.userProfilePage.tasks.goHere(alice.username);
@@ -309,7 +309,7 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
   });
   */
 
-  // ----- Tasks become visible, if moved to publ cat.  &  Trusted can see tasks
+  // ----- Tasks become visible, if moved to publ cat.  &  .Trusted_can_see tasks
 
   it(`Owen moves the private task to a public category`, async () => {
     assert.eq(await owen_brA.urlPath(), privatePagePath);
