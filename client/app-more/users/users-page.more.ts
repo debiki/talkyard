@@ -214,8 +214,9 @@ const UserPageComponent = createReactClass(<any> {
     const userGone = user_isGone(user);
     const pathToUser = pathTo(user);
 
-    const showAdminPriv = me.isAdmin || (!userGone && me.isAuthenticated && me.id === user.id);
-    const showStaffPriv = showAdminPriv || imStaff;
+    const showSelfAdmins = me.isAdmin || (!userGone && me.isAuthenticated && me.id === user.id);
+    const showSelfMods = showSelfAdmins || imStaff;
+    const showSelfTrusted = showSelfMods || user_trustLevel(me) >= TrustLevel.Trusted;
     const linkStart = pathToUser + '/';
 
     const membersNavItem = !user.isGroup ? null :
@@ -224,21 +225,21 @@ const UserPageComponent = createReactClass(<any> {
     const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);
 
-    const notificationsNavItem = !showStaffPriv || user.isGroup ? null :
+    const notificationsNavItem = !showSelfMods || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, t.Notifications);
 
-    const draftsEtcNavItem = !showAdminPriv || user.isGroup ? null :
+    const draftsEtcNavItem = !showSelfAdmins || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'drafts-etc', className: 'e_UP_DrftsB' }, t.upp.DraftsEtc);
 
-    const tasksNavItem = !showStaffPriv || user.isGroup ? null :
+    const tasksNavItem = !showSelfTrusted || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'tasks', className: 'e_UP_TsksB' }, "Tasks"); // I18N
 
     // If included or not, tested here:
     //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACSPREFS01
-    const preferencesNavItem = !showStaffPriv && !user.email ? null :
+    const preferencesNavItem = !showSelfMods && !user.email ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);
 
-    const invitesNavItem = !showStaffPriv || !store_maySendInvites(store, user).value ? null :
+    const invitesNavItem = !showSelfMods || !store_maySendInvites(store, user).value ? null :
       LiNavLink({ to: linkStart + 'invites', className: 'e_InvTabB' }, t.upp.Invites);
 
     // Tests:
