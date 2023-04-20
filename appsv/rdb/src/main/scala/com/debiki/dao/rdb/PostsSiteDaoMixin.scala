@@ -1098,7 +1098,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       where  site_id = ?
         and  page_id = ?
         and  post_nr = ?
-      order by  to_post_id_c, rel_type_c, from_pat_id_c, sub_type_c  -- to avoid [flappy_tests]
+      order by  to_post_id_c, rel_type_c, from_pat_id_c  -- to avoid [flappy_tests]
       """
     val values = List[AnyRef](siteId.asAnyRef, pageId, postNr.asAnyRef)
     runQueryFindMany(query, values, rs => {
