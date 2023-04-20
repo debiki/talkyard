@@ -270,11 +270,11 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await mons_brA.complex.loginWithPasswordViaTopbar(mons);
   });
   it(`Mons too sees the more-milk topic is listed as a task`, async () => {
-    await owen_brA.userProfilePage.activity.posts.waitForPostTextsVisible(/buy more milk/);
-    await owen_brA.userProfilePage.activity.posts.assertExactly(1);
+    await mons_brA.userProfilePage.activity.posts.waitForPostTextsVisible(/buy more milk/);
+    await mons_brA.userProfilePage.activity.posts.assertExactly(1);
   });
   it(`... assigned to Maria and Michael`, async () => {
-    assert.deepEq(await owen_brA.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+    assert.deepEq(await mons_brA.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
             forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
   });
 

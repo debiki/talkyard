@@ -2557,7 +2557,7 @@ trait PostsDao {
         val (result, debugCode) =
               maySeePost(postBef, Some(patToAdd), maySeeUnlistedPages = true)(tx)
         TESTS_MISSING // Trigger this 403 Forbidden.  TyTASGN0SEEPG
-        throwForbiddenIf(!result.may, "TyERELPAT0SEEPOST", o"""User ${
+        throwForbiddenIf(!result.may, "TyERELPAT0SEEPOST_", o"""User ${
               patToAdd.atUsernameOrFullName} cannot access that post, therefore you
               cannot connect him/her to it.""")
       }

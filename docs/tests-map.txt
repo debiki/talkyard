@@ -451,7 +451,8 @@ security:
   categories: see (1QRY7)
   see other's tasks:
             - assign-to-basic.2br.d  TyTASSIGN01.TyTASGNPERMS01
-  task list won't show tasks (pages) one can't see:
+  task list won't show tasks (pages) one can't see,
+  can't assign a task to sbd who can't see it:
             - assign-can-see.2br.d  TyTASSIGNCANSEE
 
 deleted users:  [.del_susp_usr]
@@ -1398,9 +1399,11 @@ assign posts:
             - assign-can-see.2br.d  TyTASSIGNCANSEE
   notifications:
             - TESTS_MISSING  TyTASGN0SEEPG
-  if an assignee can't see the task hen is assigned to, then,
-      if that task gets completed (by sbd else), then, the assgnee
-      does *not* get any notification email about that:
+  not notified about tasks one can't see:
+      Expl: if sbd has subscribed  a task, or
+      if an assignee can't see hens task (maybe the task got moved to a private cat),
+      then, if that task gets completed (by sbd else),
+      they do *not* get any notification email about that.
             - TESTS_MISSING
   if one has created, or is subscribed to a page, but one may not
       see who is assigned (if any), then, one won't get notfications

@@ -165,12 +165,13 @@ On Linux, do this: (other platforms? no idea)
 ### Flappy tests `[flappy_tests]`
 
 When running e2e tests, there're many things happening in parallel
-(browser threads, HTTP requests, server request processing,
-server background threads, Webdriver.io threads, Webdriver.io HTTP requests),
-and sometimes there's some race condition that makes a test fail,
-but only sometimes.  It's pretty pointless to try to elliminate all
-such races, and instead we retry any failed test a few times. Only if a test
-fails somehwat often, its flappiness becomes a problem.
+(browser threads, the browser layout engine and redraws, HTTP requests,
+server request processing, server background threads, Webdriver.io threads,
+Webdriver.io HTTP requests), and there can be race conditions that
+make tests fail, but fail only infrequently so it's hard to reproduce and fix.
+It's pretty pointless to try to elliminate all such races; instead, we retry
+any failed test a few times. Only if a test fails somehwat often,
+its flappiness becomes a problem.
 
 But there's one source of flappy tests that can be elliminated. Namely fetching
 things from the databse, in undefined order. `[flappy_order]` Typically PostgreSQL

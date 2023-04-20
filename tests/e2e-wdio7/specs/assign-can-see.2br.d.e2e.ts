@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 import assert from '../utils/ty-assert';
 import server from '../utils/server';
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/ty-e2e-test-browser';
+import { TyE2eTestBrowser } from '../utils/ty-e2e-test-browser';
 import c from '../test-constants';
 
 let brA: TyE2eTestBrowser;
@@ -152,7 +152,10 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
   });
 
 
-  // ----- Core members can see others' tasks
+  // ----- ttt: Corax sees his task
+
+  // Verify that Corax sees the task he's been assigned — so, when later he can't
+  // see it, we know that he could, before (that there's no bug making it never show).
 
   it(`Corax reloads his task list`, async () => {
     await corax_brB.refresh2();
@@ -166,6 +169,11 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
     assert.deepEq(await corax_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
             forPageId: 'coraxPubThenPrivPageId' }), [corax.username]);
   });
+
+
+  // ----- Core members can see others' tasks
+
+  // Trusted members can too, tested further below.
 
   it(`Corax looks at Alice's task list`, async () => {
     await corax_brB.userProfilePage.tasks.goHere(alice.username);
@@ -186,7 +194,7 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
     assert.eq(await owen_brA.urlPath(), alicesPubPrivPagePath);
     await owen_brA.topic.movePageToOtherCategory(forum.categories.staffCat.name);
   });
-  it(`... and moves Corax' task to there, too  (Corax won't see it, althoug his)`, async () => {
+  it(`... and moves Corax' task too  (Corax won't see it, althoug it's his)`, async () => {
     await owen_brA.go2(coraxPubPrivPagePath);
     await owen_brA.topic.movePageToOtherCategory(forum.categories.staffCat.name);
   });
@@ -204,14 +212,14 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
   it(`Corax goes to his own task list`, async () => {
     await corax_brB.userProfilePage.tasks.goHere(corax.username);
   });
-  it(`... it's empty too — his own task, got moved to a category he can't see`, async () => {
+  it(`... it's empty too — his own task got moved to a category he can't see`, async () => {
     await corax_brB.userProfilePage.activity.posts.waitForNoPosts();
   });
 
 
   // ----- Can't assign someone who can't see the task
 
-  it(`Owen goes to the already private page`, async () => {
+  it(`Owen goes to the already staff-only page`, async () => {
     await owen_brA.go2(site.origin + privatePagePath);
   });
   it(`... opens the Assign-To dialog`, async () => {
@@ -223,14 +231,14 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
   it(`... submits`, async () => {
     await owen_brA.addUsersToPageDialog.submit();
   });
-  it(`... there's an error — Corax cannot see this page (so cannot assign him)`, async () => {
+  it(`... there's an error — Corax cannot see this page. So cannot assign him`, async () => {
     await owen_brA.serverErrorDialog.waitAndAssertTextMatches(
-            /@Corax cannot access .+TyERELPAT0SEEPOST/);
+            /@Corax cannot access .+TyERELPAT0SEEPOST_/);
     await owen_brA.serverErrorDialog.close();
   });
 
   it(`Owen assigns Alice instead, and Mons — they're staff, can see the page`, async () => {
-    // The Change dialog is already open, so only need to click the assignees button.
+    // The Change dialog is already open, so only need to click the assign button.
     await owen_brA.waitAndClick('.e_AsgB');
     await owen_brA.addUsersToPageDialog.addOneUser(alice.username);
     await owen_brA.addUsersToPageDialog.addOneUser(mons.username);
@@ -287,8 +295,7 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
     await mons_brB.topbar.clickLogout();
     await trillian_brB.complex.loginWithPasswordViaTopbar(trillian);
   });
-  it(`... but she can't see the tasks in Alices' task list — they're in the Staff-Only cat`,
-          async () => {
+  it(`... she can't see any of Alices' tasks — they're in the Staff-Only cat`, async () => {
     await trillian_brB.userProfilePage.activity.posts.waitForNoPosts();
   });
 
@@ -302,10 +309,10 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
   });
   */
 
-  // ----- Tasks become visible, if moved to publ cat
+  // ----- Tasks become visible, if moved to publ cat.  &  Trusted can see tasks
 
   it(`Owen moves the private task to a public category`, async () => {
-    await owen_brA.go2(privatePagePath);
+    assert.eq(await owen_brA.urlPath(), privatePagePath);
     await owen_brA.topic.movePageToOtherCategory(forum.categories.catA.name);
   });
 
@@ -315,7 +322,7 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
     await trillian_brB.userProfilePage.activity.posts.assertExactly(1);
   });
 
-  // Maybe good to test moving sth, and moving it back.
+  // Maybe good to test moving sth to private cat, and moving it back to a publ cat:
   it(`Owen moves Alice's other task back to the publ cat, too`, async () => {
     await owen_brA.go2(alicesPubPrivPagePath);
     await owen_brA.topic.movePageToOtherCategory(forum.categories.catA.name);
@@ -325,7 +332,7 @@ describe(`assign-can-see.2br.d  TyTASSIGNCANSEE`, () => {
     await trillian_brB.refresh2();
     await trillian_brB.userProfilePage.activity.posts.waitForPostTextsVisible(/Starts_Private/);
 
-    // TESTS_MISSING: This won't work, finds just the first post with the wrong text.
+    // TESTS_MISSING: This won't work, finds the text in the first post instead (and fails).
     // Need to [match_specific_post]?
     // await trillian_brB.userProfilePage.activity.posts.waitForPostTextsVisible(/Alices_task/);
 

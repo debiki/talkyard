@@ -1037,8 +1037,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       // Order by primary key, just to avoid [flappy_tests].
       var ordAndLim = "pa.to_post_id_c, pa.rel_type_c, pa.from_pat_id_c, pa.sub_type_c"
       // But if we want the N last pat-post-rels, then, we currently want the most recent
-      // ones. So order by time, desc. (But keep the pk order too, to avoid
-      // [flappy_tests] (different order) in case of identical timestamps.)
+      // ones. So order by time, desc. (But keep the pk order too, to avoid different item
+      // order in case of identical timestamps — which could make e2e tests sometimes fail.)
       limit foreach { lim =>
         ordAndLim = s"pa.created_at desc, $ordAndLim  limit $lim"
       }
