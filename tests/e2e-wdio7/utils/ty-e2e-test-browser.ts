@@ -7630,6 +7630,7 @@ export class TyE2eTestBrowser {
           },
 
           // Do this separately, because can take rather long (suprisingly?).
+          // Later, add post id / URL param, so can [match_specific_post].
           waitForPostTextsVisible: async (match?: RegExp) => {
             const sel = this.userProfilePage.activity.posts.postSelector;
             if (match) await this.waitForTextVisibleAssertMatches(sel, match);

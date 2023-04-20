@@ -14,8 +14,6 @@ let owen: Member;
 let owen_brA: TyE2eTestBrowser;
 let mons: Member;
 let mons_brA: TyE2eTestBrowser;
-let trillian: Member;
-let trillian_brA: TyE2eTestBrowser;
 let maja: Member;
 let maria: Member;
 let maria_brB: TyE2eTestBrowser;
@@ -38,7 +36,7 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Assign-To E2E Test",
-      members: ['owen', 'mons', 'trillian', 'maja', 'maria', 'memah', 'michael']
+      members: ['owen', 'mons', 'maja', 'maria', 'memah', 'michael']
     });
 
     builder.addPage({
@@ -86,8 +84,6 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     owen_brA = brA;
     mons = forum.members.mons;
     mons_brA = brA;
-    trillian = forum.members.trillian;
-    trillian_brA = brA;
 
     maja = forum.members.maja;
     maria = forum.members.maria;
@@ -264,17 +260,27 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
   });
 
 
-  // ----- Moderators can also see everyone's task lists?
+  // ----- Moderators can also see others' task lists
 
-  // TESTS_MISSING
-
-
-  // ----- Moderators can assign
+  // And core members & trusted members can too — that's tested in:
+  // assign-can-see.2br.d  TyTASSIGNCANSEE
 
   it(`Owen leaves, moderator Mons arrives`, async () => {
     await owen_brA.topbar.clickLogout();
     await mons_brA.complex.loginWithPasswordViaTopbar(mons);
   });
+  it(`Mons too sees the more-milk topic is listed as a task`, async () => {
+    await owen_brA.userProfilePage.activity.posts.waitForPostTextsVisible(/buy more milk/);
+    await owen_brA.userProfilePage.activity.posts.assertExactly(1);
+  });
+  it(`... assigned to Maria and Michael`, async () => {
+    assert.deepEq(await owen_brA.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+            forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
+  });
+
+
+  // ----- Moderators can assign
+
   it(`Mons likes cream. He goes to the buy-cream topic`, async () => {
     await mons_brA.go2(buyCreamPagePath);
   });

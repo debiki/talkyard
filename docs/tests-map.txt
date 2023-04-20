@@ -423,10 +423,10 @@ groups:
 security:
   access denied,
   not found page, 404:
-          - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
-          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
+            - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   api get topics in restr cat:
-          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
   api list restriceted category:
             - api-list-query-for-topics-popular-first.test.ts  TyT603AKSL25.TyT502RKDJ46
   api search restricted categories and private topics:
@@ -451,6 +451,8 @@ security:
   categories: see (1QRY7)
   see other's tasks:
             - assign-to-basic.2br.d  TyTASSIGN01.TyTASGNPERMS01
+  task list won't show tasks (pages) one can't see:
+            - assign-can-see.2br.d  TyTASSIGNCANSEE
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -1389,22 +1391,22 @@ draft: [7WKABZP2]
 
 tasks,
 assign posts:
+  basic functionality:
             - assign-to-basic.2br.d  TyTASSIGN01
+  can't assigning sbd who can't see the page,
+  tasks in cats one can't see, are excluded if viewing sbd's task list:
+            - assign-can-see.2br.d  TyTASSIGNCANSEE
   notifications:
             - TESTS_MISSING  TyTASGN0SEEPG
-  can't assigning sbd who can't see the page:
-            - TESTS_MISSING  TyTASGN0SEEPG
-  tasks one may not see, are excluded when viewing a task list:
+  if an assignee can't see the task hen is assigned to, then,
+      if that task gets completed (by sbd else), then, the assgnee
+      does *not* get any notification email about that:
+            - TESTS_MISSING
+  if one has created, or is subscribed to a page, but one may not
+      see who is assigned (if any), then, one won't get notfications
+      that show who's assigned:
+            - TESTS_MISSING
 
-  // TESTS_MISSING: If an assignee can't see the task hen is assigned to, then,
-  //                if that task gets completed (by sbd else), then, the assgnee
-  //                does *not* get any notification email about that
-  // TESTS_MISSING: Try to assign sbd to a page they may not see
-  // TESTS_MISSING: When viewing sbd else's task list, tasks one may not see,
-  //                should be excluded
-  // TESTS_MISSING: If one has created, or is subscribed to a page, but one may not
-  //                see who is assigned (if any), then, one won't get notfications
-  //                that show who's assigned.
 
 superadmin -
   ... lots of stuff ...
