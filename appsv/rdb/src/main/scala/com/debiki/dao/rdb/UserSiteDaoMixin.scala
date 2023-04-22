@@ -326,6 +326,10 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
 
   def insertGroup(group: Group) {
+    dieIf(group.perms.canSeeOthersEmailAdrs.is(true) &&
+            !group.isStaffOrMinTrustNotThreat(TrustLevel.CoreMember),
+          "TyEPATCONF3563", "Only >= core members may be configured to see others' emails")
+
     val sql = """
           insert into users3(
             site_id,
@@ -343,8 +347,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
             may_dir_msg_me_tr_lv_c,
             max_upload_bytes_c,
             allowed_upload_extensions_c,
+            can_see_others_email_adrs_c,
             is_group)
-          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true) """
+          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true) """
 
     val values = List(
           siteId.asAnyRef,
@@ -361,7 +366,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
           group.privPrefs.mayMentionMeTrLv.map(_.toInt).orNullInt,
           group.privPrefs.maySendMeDmsTrLv.map(_.toInt).orNullInt,
           group.perms.maxUploadBytes.orNullInt,
-          group.perms.allowedUplExts.orNullVarchar)
+          group.perms.allowedUplExts.orNullVarchar,
+          group.perms.canSeeOthersEmailAdrs.orNullBo,
+          )
 
     runUpdateExactlyOneRow(sql, values)
   }
@@ -386,7 +393,9 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
-  def updateGroup(group: Group) {
+  def updateGroup(validGroup: ValidGroup) {
+    val group = validGroup.get
+
     val statement = """
       update users3 set
         updated_at = now_utc(),
@@ -401,7 +410,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
         may_mention_me_tr_lv_c = ?,
         may_dir_msg_me_tr_lv_c = ?,
         max_upload_bytes_c = ?,
-        allowed_upload_extensions_c = ?
+        allowed_upload_extensions_c = ?,
+        can_see_others_email_adrs_c = ?
       where site_id = ?
         and user_id = ?
       """
@@ -419,6 +429,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
           group.privPrefs.maySendMeDmsTrLv.map(_.toInt).orNullInt,
           group.perms.maxUploadBytes.orNullInt,
           group.perms.allowedUplExts.orNullVarchar,
+          group.perms.canSeeOthersEmailAdrs.orNullBo,
           siteId.asAnyRef,
           group.id.asAnyRef)
 
@@ -433,7 +444,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
   def loadGroupIdsMemberIdFirst(ppt: Participant): Vector[UserId] = {
     val builtInGroups = ppt match {
-      case _: Guest | UnknownParticipant => return Vector(Group.EveryoneId)
+      case _: Guest | _: Anonym | UnknownParticipant => return Vector(Group.EveryoneId)
       case u: User => getBuiltInGroupIdsForUser(u)
       case u: UserInclDetails => getBuiltInGroupIdsForUser(u)
       case _: UserBase => die("TyE26MP431", "Should see User or UserInclDetails before UserBase")
@@ -587,6 +598,25 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
   }
 
 
+  def insertAnonym(anon: Anonym) {
+    val stmt = s"""
+          insert into users3(
+            site_id,
+            user_id,
+            created_at,
+            true_id_c,
+            anonym_status_c,
+            anon_on_page_id_st_c)
+          values (?, ?, ?, ?, ?, ?)
+          """
+    val values = List(
+          siteId.asAnyRef, anon.id.asAnyRef,
+          anon.createdAt.asTimestamp, anon.anonForPatId.asAnyRef,
+          anon.anonStatus.toInt.asAnyRef, anon.anonOnPageId)
+    runUpdateSingleRow(stmt, values)
+  }
+
+
   def insertMember(user: UserInclDetails) {
     try {
       runUpdate("""
@@ -680,6 +710,8 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
       """
     runQueryFindOneOrNone(query, values.toList, rs => {
       val user = getParticipant(rs)
+      // Use  pat.toMemberOrThrow instead of these dieIf?
+      dieIf(user.isAnon, "TyE2AKB7F2")
       dieIf(user.isGuest, "TyE2AKB7F3")
       user.asInstanceOf[Member]
     })
@@ -739,7 +771,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
     unimplIf(!usersOnly, "Must be usersOnly [TyE7AMT05MRKT]")
     val sql = s"""
           select distinct $UserSelectListItemsNoGuests
-          from posts3 p inner join users3 u
+          from posts3 p inner join users3 u  -- + pat_node_rels_t [AuthorOf]
             on p.site_id = u.site_id
             and p.created_by_id = u.user_id
             and not u.is_group
@@ -1062,7 +1094,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
 
       val user = getMemberInclDetails(rs) match {
         case m: UserInclDetails => m
-        case g: Group => throw GotAGroupException(g.id)
+        case g: Group => throw GotAGroupException(g.id, wantedWhat = "a user")
       }
 
       (user, anyStats)
@@ -1204,7 +1236,7 @@ trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSit
           u.USERNAME,
           u.may_mention_me_tr_lv_c,
           u.why_may_not_mention_msg_me_html_c
-      from posts3 p inner join users3 u
+      from posts3 p inner join users3 u    -- + pat_node_rels_t [AuthorOf]
          on p.SITE_ID = u.SITE_ID
         and p.CREATED_BY_ID = u.USER_ID
         and u.USERNAME is not null

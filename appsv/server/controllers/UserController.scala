@@ -30,6 +30,7 @@ import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
+import scala.collection.{mutable => mut}
 import debiki.RateLimits.TrackReadingActivity
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.authz.Authz
@@ -154,10 +155,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   //
   private def loadPatJsonAnyDetailsById(userId: UserId, includeStats: Bo,
         request: DebikiRequest[_]): (JsObject, JsValue, Pat) = {
+    import request.dao
+
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.exists(_.id == userId)
     val isStaffOrSelf = callerIsStaff || callerIsUserHerself
+    val reqrPerms: EffPatPerms =
+          dao.deriveEffPatPerms(request.authzContext.groupIdsEveryoneLast)
+
     request.dao.readOnlyTransaction { tx =>
       val stats = includeStats ? tx.loadUserStats(userId) | None
       val (pptJson, pat) =
@@ -167,21 +173,27 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           val json = memberOrGroup match {
             case m: UserInclDetails =>
               JsUserInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
-                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
+                    callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
+                    reqrPerms = Some(reqrPerms))
             case g: Group =>
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
-                callerIsStaff = callerIsStaff)
+                    callerIsStaff = callerIsStaff, reqrPerms = Some(reqrPerms))
           }
           (json, memberOrGroup)
         }
         else {
-          val guest = tx.loadTheGuest(userId)
-          val json = jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
-            callerIsAdmin = callerIsAdmin)
-          (json, guest)
+          val pat = tx.loadTheParticipant(userId)
+          val json = pat match {
+            case anon: Anonym => JsPat(anon, TagsAndBadges.None)
+            case guest: Guest => jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
+                callerIsAdmin = callerIsAdmin, reqrPerms = Some(reqrPerms))
+          }
+          (json, pat.asInstanceOf[ParticipantInclDetails])
         }
       dieIf(pat.id != userId, "TyE36WKDJ03")
-      (pptJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), pat.noDetails)
+      (pptJson,
+          stats.map(JsUserStats(_, isStaffOrSelf, Some(reqrPerms))).getOrElse(JsNull),
+          pat.noDetails)
     }
   }
 
@@ -190,8 +202,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   private def loadMemberJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
         includeStats: Boolean, request: DebikiRequest[_])
         : (JsObject, JsValue, Participant) = {
+    import request.{dao}
+
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
+    val reqrPerms: EffPatPerms =
+          dao.deriveEffPatPerms(request.authzContext.groupIdsEveryoneLast)
 
     // For now, unless admin, don't allow emails, so cannot brut-force test email addresses.
     if (emailOrUsername.contains("@") && !callerIsAdmin)
@@ -235,20 +251,27 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           val callerIsUserHerself = request.user.exists(_.id == user.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
           val userJson = JsUserInclDetails(
-            user, Map.empty, groups, callerIsAdmin = callerIsAdmin,
-            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
-          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), user.noDetails)
+                user, Map.empty, groups, callerIsAdmin = callerIsAdmin,
+                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
+                reqrPerms = Some(reqrPerms))
+          (userJson,
+              stats.map(JsUserStats(_, isStaffOrSelf, Some(reqrPerms))).getOrElse(JsNull),
+              user.noDetails)
         case group: GroupVb =>
           val groupJson = jsonForGroupInclDetails(
-            group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
+                group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff,
+                reqrPerms = Some(reqrPerms))
           (groupJson, JsNull, group)
       }
     }
   }
 
 
+  /** [Dupl_perms] Nowadays, could be enough with reqrPerms — and remove
+    * callerIsAdmin/Staff?
+    */
   private def jsonForGroupInclDetails(group: Group, callerIsAdmin: Bo,
-        callerIsStaff: Bo = false): JsObject = {
+        callerIsStaff: Bo = false, reqrPerms: Opt[EffPatPerms] = None): JsObject = {
     var json = Json.obj(   // hmm a bit dupl code [B28JG4]  also in JsGroup
       "id" -> group.id,
       "isGroup" -> JsTrue,
@@ -266,17 +289,32 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
+
       json += "uiPrefs" -> group.uiPrefs.getOrElse(JsEmptyObj)
+
       val perms = group.perms
-      json += "maxUploadBytes" -> JsNumberOrNull(perms.maxUploadBytes)
-      json += "allowedUplExts" -> JsStringOrNull(perms.allowedUplExts)
+      var permsJo = Json.obj(
+            "maxUploadBytes" -> JsNumberOrNull(perms.maxUploadBytes),
+            "allowedUplExts" -> JsStringOrNull(perms.allowedUplExts))
+      // Revealing which user accounts can see others' email addresses, might make
+      // such accounts targets for hackers. So, only show to staff, for now.
+      // [can_see_who_can_see_email_adrs]
+      if (callerIsStaff) {  // already tested above, again here, oh well
+        perms.canSeeOthersEmailAdrs.foreach(v =>
+              permsJo += "canSeeOthersEmailAdrs" -> JsBoolean(v))
+      }
+      json += "perms" -> permsJo
     }
     json
   }
 
 
+  /** [Dupl_perms] Nowadays, could be enough with reqrPerms — and remove
+    * callerIsAdmin/Staff?
+    */
   private def jsonForGuest(user: Guest, usersById: Map[UserId, Participant],
-                           callerIsStaff: Boolean, callerIsAdmin: Boolean): JsObject = {
+          callerIsStaff: Boolean, callerIsAdmin: Bo,
+          reqrPerms: Opt[EffPatPerms] = None): JsObject = {
     val safeEmail = callerIsAdmin ? user.email | hideEmailLocalPart(user.email)
     var userJson = Json.obj(
       "id" -> user.id,
@@ -286,8 +324,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       "location" -> JsStringOrNull(user.country))
       // += ipSuspendedTill
       // += browserIdCookieSuspendedTill
-    if (callerIsStaff) {
-      userJson += "email" -> JsString(safeEmail)
+    if (callerIsStaff || reqrPerms.exists(_.canSeeOthersEmailAdrs)) {
+      userJson += "email" -> JsString(safeEmail) ; RENAME // to emailAdr?
       // += ipSuspendedAt, ById, ByUsername, Reason
       // += browserIdCookieSuspendedAt, ById, ByUsername, Reason
     }
@@ -305,8 +343,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     throwForbiddenIfActivityPrivate(userId, requester, dao)
 
+    // Later, include, if reqr is the author henself. [list_anon_posts]
+    val inclAnonPosts = false
+
     val topicsInclForbidden = dao.loadPagesByUser(
-      userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
+      userId, isStaffOrSelf = isStaffOrSelf, inclAnonPosts = inclAnonPosts, limit = 200)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
       dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf).maySee
     }
@@ -314,19 +355,57 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
   }
 
 
-  def listPostsByUser(authorId: UserId): Action[Unit] = GetAction { request: GetRequest =>
-    listPostsImpl(authorId, all = false, request)
+  def listPostsByUser(authorId: UserId, relType: Opt[Int], which: Opt[Int]): Action[U] =
+          GetActionRateLimited() { req: GetRequest =>
+    relType match {
+      case None =>
+        // Later, will use PostQuery here too, just like below (and this match-case
+        // branch maybe then no longer needed).
+        listPostsImpl(authorId, all = false, req)
+      case Some(relTypeInt) =>
+
+        // Tests:
+        //    - assign-to-basic.2br.d  TyTASSIGN01
+
+        RENAME // authorId param to: relToPatId, later.
+        val relToPatId = authorId
+        val relType = PatNodeRelType.fromInt(relTypeInt).getOrThrowBadRequest(
+              "TyE502SMJ", "Only Assigned-To has been implemented")
+
+        val reqrIsStaff = req.requester.exists(_.isStaff)
+        val reqrIsStaffOrSelf = reqrIsStaff || req.requester.exists(_.id == relToPatId)
+
+        val onlyOpen = which is 678321  // for now
+        val query = PostQuery.PostsRelatedToPat(
+              reqrInf = req.reqrInf,
+              relatedPatId = relToPatId,
+              relType = relType,
+              onlyOpen = onlyOpen,
+              // Later, incl anon posts, if is PatNodeRelType.AssignedTo? [list_anon_posts]
+              inclAnonPosts = false,
+              inclTitles = false,
+              inclUnapproved = reqrIsStaffOrSelf,
+              inclUnlistedPagePosts =
+                    // Not listing pat's assignments, would be confusing? [.incl_unl]
+                    relType == PatNodeRelType.AssignedTo || reqrIsStaffOrSelf,
+              limit = 100,
+              orderBy = OrderBy.MostRecentFirst)
+
+        _listPostsImpl2(query, req.dao)
+    }
   }
 
 
   private def listPostsImpl(authorId: UserId, all: Boolean, request: GetRequest): mvc.Result = {
+    import request.dao
     import request.{dao, requester}
-
-    request.context
 
     val requesterIsStaff = requester.exists(_.isStaff)
     val requesterIsStaffOrAuthor = requesterIsStaff || requester.exists(_.id == authorId)
+
+     /*/ Later: Throw if the reqr may not see `authorId`. [private_pats]
     val author = dao.getParticipant(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
+     */
 
     throwForbiddenIfActivityPrivate(authorId, requester, dao)
 
@@ -334,31 +413,61 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // And if !all, and > 100 posts, add a load-more button.
     val limit = all ? 9999 | 100
 
-    val LoadPostsResult(postsOneMaySee, pageStuffById) =
-          dao.loadPostsMaySeeByQuery(
-                requester, OrderBy.MostRecentFirst, limit = limit,
+    _listPostsImpl2(
+          PostQuery.PostsByAuthor(
+                reqrInf = request.reqrInf,
+                orderBy = OrderBy.MostRecentFirst,
+                limit = limit,
+                // Later, include, if reqr is the author henself. [list_anon_posts]
+                inclAnonPosts = false,
                 // One probably wants to see one's own not-yet-approved posts.
-                inclUnapprovedPosts = requesterIsStaffOrAuthor,
-                inclTitles = false, onlyEmbComments = false,
+                inclUnapproved = requesterIsStaffOrAuthor,
+                inclTitles = false,
+                // Can this cause confusion? But unlisted posts aren't supposed
+                // to be listed. Also see [.incl_unl] above.
                 inclUnlistedPagePosts = requesterIsStaffOrAuthor,
-                writtenById = Some(authorId))
+                authorId = authorId), dao)
+  }
+
+
+  private def _listPostsImpl2(query: PostQuery, dao: SiteDao): mvc.Result = {
+    val LoadPostsResult(postsOneMaySee, pageStuffById) =
+          // This excludes any stuff the requester may not see. [downl_own_may_see]
+          dao.loadPostsMaySeeByQuery(query)
 
     val posts = postsOneMaySee
-    COULD_OPTIMIZE // cache tags per post?
+
+    val patIds = mut.Set[PatId]()
+    posts.foreach(_.addVisiblePatIdsTo(patIds))
+
+    // Bit dupl code. [pats_by_id_json]
+    val patsById: Map[PatId, Pat] = dao.getParticipantsAsMap(patIds)
+
+
+    COULD_OPTIMIZE // cache tags per post? And badges per pat?
+    // What about [assignees_badges]? Currently not shown.
     val tagsAndBadges: TagsAndBadges = dao.readTx(_.loadPostTagsAndAuthorBadges(posts.map(_.id)))
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
+
+    val patsJsArr = JsArray(patsById.values.toSeq map { pat =>
+      JsPat(pat, tagsAndBadges,
+            toShowForPatId = Some(query.reqr.id))  // Maybe use Opt[Pat] instead, hmm
+    })
 
     val postsJson = posts flatMap { post =>
       val pageStuff = pageStuffById.get(post.pageId) getOrDie "EdE2KW07E"
       val pageMeta = pageStuff.pageMeta
       var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
-            showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tagsAndBadges)
+            showHidden = true,
+            // Really need to specify this again?
+            includeUnapproved = query.reqrIsStaffOrObject,
+            tagsAndBadges)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)
         postJson += "pageTitle" -> JsString(pageStuff.title)
         postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
-        if (requesterIsStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
+        if (query.reqr.isStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
           postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
           postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
         }
@@ -366,9 +475,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
     }
 
-    OkSafeJson(Json.obj(
-      "author" -> JsUser(author),
+    OkSafeJson(Json.obj(  // Typescript: LoadPostsResponse
       "posts" -> JsArray(postsJson),
+      "patsBrief" -> patsJsArr,
       "tagTypes" -> JsArray(tagTypes map JsTagType)))
   }
 
@@ -404,7 +513,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
       }
 
       val anyStats: Option[UserStats] = tx.loadUserStats(userId)
-      val statsJson = anyStats.map(JsUserStats(_, isStaffOrSelf = true)) getOrElse JsNull
+      val statsJson = anyStats.map(JsUserStats(_, isStaffOrSelf = true, reqrPerms = None)
+            ) getOrElse JsNull
 
       val otherEmailAddresses =
         tx.loadUserEmailAddresses(userId).filterNot(_.emailAddress == member.primaryEmailAddress)
@@ -487,6 +597,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     if (requester.exists(r => r.isStaff || r.id == userId))
       return true
 
+    COULD_OPTIMIZE // Use cache
     val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)
     memberInclDetails.privPrefs.seeActivityMinTrustLevel match {
       case None => true
@@ -505,8 +616,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     import request.{dao, theRequester => requester}
     // Could refactor and break out functions. Later some day maybe.
 
-    throwForbiddenIf(requester.id != userId && !requester.isAdmin,
+    val perms: EffPatPerms =
+          dao.deriveEffPatPerms(request.authzContext.groupIdsEveryoneLast)
+
+    throwForbiddenIf(requester.id != userId && !perms.canSeeOthersEmailAdrs,
       "EdE5JKWTDY2", "You may not see someone elses email addresses")
+
+    val isSelfOrAdmin = requester.id == userId || requester.isAdmin
 
     val (memberInclDetails, emails, identities) = dao.readOnlyTransaction { tx =>
       (tx.loadTheUserInclDetails(userId),
@@ -541,36 +657,50 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         case x =>
           (classNameOf(x), None, None, None, None)
       }
-      Json.obj(  // Typescript: UserAccountLoginMethod
-        // COULD instead use: JsIdentity  ?
-        "loginType" -> classNameOf(identity),
-        "provider" -> idpName,
-        "idpAuthUrl" -> idpAuthUrl,
-        "idpUsername" -> idpUsername,
-        "idpUserId" -> idpUserId,
-        "idpEmailAddr" -> JsStringOrNull(emailAddr))
+
+      // No need to show these details for moderators?  [granular_perms] ...
+      // Typescript: UserAccountLoginMethod
+      var methodJo = if (!isSelfOrAdmin) JsEmptyObj else Json.obj(
+            // COULD instead use: JsIdentity  ?
+            "loginType" -> classNameOf(identity),
+            "provider" -> idpName,
+            "idpAuthUrl" -> idpAuthUrl,
+            "idpUsername" -> idpUsername,
+            "idpUserId" -> idpUserId)
+
+      // ... but they do have permission to see email addresses:
+      methodJo += "idpEmailAddr" -> JsStringOrNull(emailAddr)
+      methodJo
     })
 
     if (memberInclDetails.passwordHash.isDefined) {
-      loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
-        "loginType" -> "LocalPwd",
-        "provider" -> "Password",
-        "idpUsername" -> memberInclDetails.username,
-        "idpEmailAddr" -> memberInclDetails.primaryEmailAddress)
+      // Non-admins need not know? [granular_perms]
+      // Typescript: UserAccountLoginMethod
+      var methodJo = if (!isSelfOrAdmin) JsEmptyObj else Json.obj(
+            "loginType" -> "LocalPwd",
+            "provider" -> "Password",
+            "idpUsername" -> memberInclDetails.username)
+
+      methodJo += "idpEmailAddr" -> JsString(memberInclDetails.primaryEmailAddress)
+      loginMethodsJson :+= methodJo
     }
 
     if (memberInclDetails.ssoId.isDefined) {
       // Tests: sso-login-member  TyT5HNATS20P.TyTE2ESSOLGIMS
-      loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
-        "loginType" -> "TySsoApi",
-        "provider" -> "Talkyard Single Sign-On API",
-        "idpEmailAddr" -> memberInclDetails.primaryEmailAddress,
-        "idpUserId" -> JsStringOrNull(memberInclDetails.ssoId))
+      // Non-admins need not know? [granular_perms]
+      // Typescript: UserAccountLoginMethod
+      var methodJo = if (!isSelfOrAdmin) JsEmptyObj else Json.obj(
+            "loginType" -> "TySsoApi",
+            "provider" -> "Talkyard Single Sign-On API",
+            "idpUserId" -> JsStringOrNull(memberInclDetails.ssoId))
+
+      methodJo += "idpEmailAddr" -> JsString(memberInclDetails.primaryEmailAddress)
+      loginMethodsJson :+= methodJo
     }
 
     OkSafeJson(Json.obj(  // UserAccountResponse
-      "emailAddresses" -> emailsJson,
-      "loginMethods" -> loginMethodsJson))
+        "emailAddresses" -> emailsJson,
+        "loginMethods" -> loginMethodsJson))
   }
 
 
@@ -1038,8 +1168,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     val res: MeAndStuff =
       if (pageRequest.user.isDefined) {
         val renderedPage = request.dao.renderWholePageHtmlMaybeUseMemCache(pageRequest)
-        dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
-          "EdE4ZBXKG")
+        dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds,
+              renderedPage.anonsByRealId).getOrDie("EdE4ZBXKG")
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()
@@ -1112,6 +1242,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
     import request.{siteId, dao, theRequester => requester}
     import talkyard.server.{WhenFormat, OptWhenFormat}
 
+    throwForbiddenIf(requester.isAnon, "TyE8LUHE1", "Not tracking anonyms' reading progress")
     throwForbiddenIf(requester.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
     throwForbiddenIf(requester.isGroup, "EdE5QFVB5", "Not tracking groups' reading progress")
 
@@ -1544,7 +1675,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         maxBytes = 1000) { request =>
     import request.{body, dao, siteId}
     val patId = parseI32(body, "patId")
-    val perms: PatPerms = JsX.parsePatPerms(body, siteId)
+    val perms: PatPerms = JsX.parsePatPerms(body, siteId)(IfBadAbortReq)
     dao.savePatPerms(patId, perms, request.who)
 
     // Try to reuse: [load_pat_stats_grps]

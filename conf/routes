@@ -116,7 +116,7 @@ GET   /-/groups/                controllers.UserController.viewUserPage(whatever
 GET   /-/groups/*whatever       controllers.UserController.viewUserPage(whatever)
 GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageIds)
 GET   /-/list-topics-by-user    controllers.UserController.listTopicsByUser(userId: Int)
-GET   /-/list-posts             controllers.UserController.listPostsByUser(authorId: Int)
+GET   /-/list-posts             controllers.UserController.listPostsByUser(authorId: Int, relType: Option[Int], which: Option[Int])
 GET   /-/download-my-content    controllers.UserController.downloadUsersContent(authorId: Int)
 GET   /-/download-personal-data controllers.UserController.downloadPersonalData(userId: Int)
 POST  /-/track-reading          controllers.UserController.trackReadingProgress
@@ -213,6 +213,7 @@ POST  /-/remove-users-from-page controllers.PageController.removeUsersFromPage
 POST  /-/join-page              controllers.PageController.joinPage
 POST  /-/leave-page             controllers.PageController.leavePage
 POST  /-/config-watchbar        controllers.PageController.configWatchbar
+POST  /-/change-pat-node-rels   controllers.PageController.changePatNodeRels
 
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
@@ -230,9 +231,9 @@ POST  /-/submit-custom-form-as-new-topic  controllers.CustomFormController.handl
 POST  /-/submit-usability-testing-form    talkyard.server.plugins.utx.UsabilityTestingExchangeController.handleUsabilityTestingForm
 GET   /-/utx-pick-a-task        talkyard.server.plugins.utx.UsabilityTestingExchangeController.pickTask(categorySlug)
 
+# Merge with CloseCollapseController into PostController?
 POST  /-/vote                   controllers.VoteController.handleVotes
 GET   /-/load-voters            controllers.VoteController.loadVoters(postId: Int, voteType: Int)
-
 POST  /-/flag                   controllers.FlagController.flagPost
 
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole: Int, categoryId: Option[Int], toUserId: Option[Int], pageId: Option[String], postNr: Option[Int])

@@ -501,15 +501,24 @@ This has worked out fine — e.g. can toggle settings on both a user and group l
 
 Change-rename tables `post_actions3` to `pat_rels_t` and create a new `post_rels_t`
 table ("rel" for relationship, graph db terminology: nodes and relationships).
-See `[graph_database]` in <./docs/tyworld.adoc>.
+See `[graph_database]` in <./docs/tyworld.adoc>,
+and, edit, 2023: `[add_nodes_t]` and <./docs/everything-is-a-node.txt>.
+
+Edit: Not `pat_rels_t`, instead: `pat_node_rels_t`?
+And rename `group_participants3` to `pat_pat_rels_t`
+— relationships between pats and other pats.
+E.g. member of group. Or follows, or friends, or ... what more? `PseudonymOf`?
+And add `PatPatRelType` with value e.g. `MemberOf`, or `ManagerOf` etc,
+of relevance for groups. And `SubscribedTo`, if one wants to know about
+new posts by someone or by anyone in a group. — But most of this will
+be in `pat_node_rels_t` so can be per category (e.g. following someone but
+only in a specific category).
 
 Using these links tables will make it possible for e.g. a single flag to flag
 many things, e.g. all astroturfing accounts the flagger thinks belong to the same
 real world person. Or a post can be PostRelType.AssignedTo more than one person.
 Or a private comments sub thread can be made visible to more than one other group
 or person.  Or having two people listed as co-authors of an article.
-[Edit] Private comments and post owner(s) and many-authors will be implemented
-differently: Post.* fields pointing by id to a person/group/list-of-people. [/Edit]
 — Instead of, as in most other software, always just one of whatever it is.
 
 
@@ -518,7 +527,7 @@ differently: Post.* fields pointing by id to a person/group/list-of-people. [/Ed
 Use Debian as Docker base image, instead of Alpine. Debian is more widely
 used, that's good for security, e.g. Debian at Google: gLinux, and libc means
 no exotic musl-not-libc bug risk.  And most official images are based on
-Debian — we'd be downloading a Debian base image anyway.  [alp_2_deb]
+Debian — we'd be downloading a Debian base image anyway.  [alp_2_deb]
 
 
 === Kubernetes, Skaffold, Minikube
@@ -559,3 +568,6 @@ the "official" operators language — see the Rust K8s Operators links above.
 == Year 2023
 
 
+=== Anonyms and Pseudonyms
+
+See tyworld.adoc: 

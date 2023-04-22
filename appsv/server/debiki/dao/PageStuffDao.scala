@@ -24,6 +24,19 @@ import debiki._
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 
+case class PatPostRelStuff[T <: PatNodeRelType](
+  fromPatId: PatId, // or skip?
+  toPost: Post,
+  relType: PatNodeRel[T],
+  //pageTitle: St,
+  //pageMeta: St,
+  //patsById: Map[PatId, Pat]
+) {
+  //def fromPat: Pat = patsById.getOrDie(patId, "TyEPAPOREL0PAT",
+  //      s"Pat missing: patsById($fromPatId)")
+  def pageId = toPost.pageId
+}
+
 
 /** Page stuff, e.g. title, body excerpt (for pinned topics), user ids.
   */
@@ -39,7 +52,9 @@ case class PageStuff(
   bodyImageUrls: immutable.Seq[String],
   pageTags: ImmSeq[Tag], // but not page author tags (badges)
   popularRepliesImageUrls: immutable.Seq[String],
+  //authorIds: Vec[...]  — later
   authorUserId: UserId,  // RENAME to just authorId
+  assigneeIds: Vec[MembId],
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId]) extends PageTitleRole {
 
@@ -56,10 +71,13 @@ case class PageStuff(
 
   def categoryId: Option[CategoryId] = pageMeta.categoryId
 
-  def userIds: immutable.Seq[UserId] = {
-    var ids = frequentPosterIds.toVector :+ authorUserId
-    if (lastReplyerId.isDefined) ids :+= lastReplyerId.get
-    ids
+  def addVisiblePatIdsTo(set: MutSet[PatId]): U = {
+    // Later, don't include [private_pats], once impl.
+    set.add(authorUserId)   // or +=
+    //ids ++= authorIds later, if many
+    frequentPosterIds.foreach(set.add)   // or ++= ?
+    lastReplyerId.foreach(set.add)
+    assigneeIds.foreach(set.add)
   }
 }
 
@@ -147,7 +165,7 @@ trait PageStuffDao {
     })
 
     val popularRepliesByPageId: Map[PageId, immutable.Seq[Post]] =
-      tx.loadPopularPostsByPage(pageIds, limitPerPage = 10, exclOrigPost = true)
+      tx.loadPopularPostsByPageExclAggs(pageIds, limitPerPage = 10, exclOrigPost = true)
 
     val tagsByPageId = tx.loadTagsForPages(pageIds)
 
@@ -185,6 +203,7 @@ trait PageStuffDao {
         pageTags = tagsByPageId.getOrElse(pageId, Nil),
         popularRepliesImageUrls = popularImageUrls,
         authorUserId = pageMeta.authorId,
+        assigneeIds = anyBody.map(_.assigneeIds).getOrElse(Vec.empty),
         lastReplyerId = pageMeta.lastApprovedReplyById,
         frequentPosterIds = pageMeta.frequentPosterIds)
 

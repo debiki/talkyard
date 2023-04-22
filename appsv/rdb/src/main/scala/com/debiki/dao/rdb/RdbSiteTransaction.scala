@@ -606,6 +606,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.layout.toInt.asAnyRef,
       newMeta.comtOrder.map(_.toInt).orNullInt,
       newMeta.comtNesting.orNullInt,
+      newMeta.comtsStartHidden.map(_.toInt).orNullInt,
+      newMeta.comtsStartAnon.map(_.toInt).orNullInt,
+      newMeta.newAnonStatus.map(_.toInt).orNullInt,
       newMeta.forumSearchBox.orNullInt,
       newMeta.forumMainView.orNullInt,
       newMeta.forumCatsTopics.orNullInt,
@@ -662,6 +665,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         layout = ?,
         comt_order_c = ?,
         comt_nesting_c = ?,
+        comts_start_hidden_c = ?,
+        comts_start_anon_c = ?,
+        new_anon_status_c = ?,
         forum_search_box_c = ?,
         forum_main_view_c = ?,
         forum_cats_topics_c = ?,
@@ -1415,6 +1421,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         layout,
         comt_order_c,
         comt_nesting_c,
+        comts_start_hidden_c,
+        comts_start_anon_c,
+        new_anon_status_c,
         forum_search_box_c,
         forum_main_view_c,
         forum_cats_topics_c,
@@ -1455,7 +1464,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?)"""
 
     // Dulp code, see the update query [5RKS025].
     val values = List(
@@ -1481,6 +1490,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       pageMeta.layout.toInt.asAnyRef,
       pageMeta.comtOrder.map(_.toInt).orNullInt,
       pageMeta.comtNesting.orNullInt,
+      pageMeta.comtsStartHidden.map(_.toInt).orNullInt,
+      pageMeta.comtsStartAnon.map(_.toInt).orNullInt,
+      pageMeta.newAnonStatus.map(_.toInt).orNullInt,
       pageMeta.forumSearchBox.orNullInt,
       pageMeta.forumMainView.orNullInt,
       pageMeta.forumCatsTopics.orNullInt,

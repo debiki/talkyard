@@ -190,7 +190,7 @@ case class CatsCanSee(
   */
 case class CategoryToSave(
   sectionPageId: PageId,
-  parentId: CategoryId,   // RENAME to parentCategoryId ?
+  parentId: CategoryId, // RENAME to parentCategoryId ?
   name: String,
   slug: String,
   position: Int,
@@ -199,6 +199,13 @@ case class CategoryToSave(
   defaultSortOrder: Opt[PageOrderOffset],
   comtOrder: Opt[PostSortOrder],
   comtNesting: Opt[ComtNesting_later],
+  // ---- These should be in  pat_node_multi_rels_t  instead (currently named perms_on_pages3)
+  // Maybe comtOrder, comtNesting above too?
+  comtsStartHidden: Opt[NeverAlways],
+  comtsStartAnon: Opt[NeverAlways],
+  opStartsAnon: Opt[NeverAlways],
+  newAnonStatus: Opt[AnonStatus],
+  // ---------------------------------
   doVoteStyle: Opt[DoVoteStyle],
   doVoteInTopicList: Opt[Bo],
   shallBeDefaultCategory: Boolean,
@@ -254,6 +261,10 @@ case class CategoryToSave(
     defaultSortOrder = defaultSortOrder,
     comtOrder = comtOrder,
     comtNesting = comtNesting,
+    comtsStartHidden = comtsStartHidden,
+    comtsStartAnon = comtsStartAnon,
+    opStartsAnon = opStartsAnon,
+    newAnonStatus = newAnonStatus,
     doVoteStyle = doVoteStyle,
     doVoteInTopicList = doVoteInTopicList,
     unlistCategory = unlistCategory,
@@ -277,6 +288,10 @@ object CategoryToSave {
           defaultSortOrder = cat.defaultSortOrder,
           comtOrder = cat.comtOrder,
           comtNesting = cat.comtNesting,
+          comtsStartHidden = cat.comtsStartHidden,
+          comtsStartAnon = cat.comtsStartAnon,
+          opStartsAnon = cat.opStartsAnon,
+          newAnonStatus = cat.newAnonStatus,
           doVoteStyle = cat.doVoteStyle,
           doVoteInTopicList = cat.doVoteInTopicList,
           shallBeDefaultCategory = makeDefault,
@@ -820,6 +835,10 @@ trait CategoriesDao {
             defaultSortOrder = editsToDo.defaultSortOrder,
             comtOrder = editsToDo.comtOrder,
             comtNesting = editsToDo.comtNesting,
+            comtsStartHidden = editsToDo.comtsStartHidden,
+            comtsStartAnon = editsToDo.comtsStartAnon,
+            opStartsAnon = editsToDo.opStartsAnon,
+            newAnonStatus = editsToDo.newAnonStatus,
             doVoteStyle = editsToDo.doVoteStyle,
             doVoteInTopicList = editsToDo.doVoteInTopicList,
             unlistCategory = editsToDo.unlistCategory,
@@ -1048,6 +1067,16 @@ trait CategoriesDao {
   def deleteUndelCategoryImpl(categoryId: CategoryId, delete: Boolean, who: Who)(
         tx: SiteTx): Unit = {
 
+    // What if one *is* admin, but has currently activated a non-admin pseudonym?
+    // Then this error message ("Not admin") might be confusing.  [pseudonyms_later]
+    // And if letting the pseudonym proceed, just because we know hen is actually
+    // an admin — then, to others, it would look as if the category got deleted
+    // by a non-admin, which could look like a security bug?  And/or could give away
+    // the true identity of the pseudonym.
+    // So, if is admin but non-admin pseudonym, should show a message like:
+    // "Not admin: The pseudonym you're using currently, is not and admin, and thus
+    // doesn't have permission to do this. Switch back to your main account instead
+    // (which is an admin), and try again."
     throwForbiddenIf(!tx.isAdmin(who.id), "EdEGEF239S", "Not admin")
 
     val categoryBefore = tx.loadCategory(categoryId) getOrElse throwNotFound(

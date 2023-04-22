@@ -1850,7 +1850,8 @@ export function loadVoters(postId: PostId, voteType: PostVoteType,
 
 
 export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
-      deleteDraftNr: DraftNr, onOK: () => Vo, sendToWhichFrame?: MainWin) {
+      deleteDraftNr: DraftNr, doAsAnon: WhichAnon | U, onOK: () => Vo,
+      sendToWhichFrame?: MainWin) {
   postJson('/-/edit', {
     data: {
       pageId: editorsPageId ||
@@ -1859,6 +1860,7 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
       postNr: postNr,
       text: text,
       deleteDraftNr,
+      doAsAnon,
     },
     success: (editedPost) => {
       // This hides the editor and places back the orig post [6027TKWAPJ5]
@@ -1871,7 +1873,7 @@ export function saveEdits(editorsPageId: PageId, postNr: PostNr, text: St,
 }
 
 
-// RENAME to alterPage.
+// RENAME to [alterPage].
 // Alter = change in character or composition, typically in a small but significant way.
 // Modify = make partial or minor changes.
 // But "change" can mean replace. So "alter" is more clear.
@@ -1927,7 +1929,7 @@ export function unpinPage(success: () => void) {
 
 
 export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
-      anyPostType: number, deleteDraftNr: DraftNr | undefined,
+      anyPostType: number, deleteDraftNr: DraftNr | undefined, doAsAnon: WhichAnon | U,
       success: (storePatch: StorePatch) => void) {
   postJson('/-/reply', {
     data: {
@@ -1943,6 +1945,7 @@ export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string
       postType: anyPostType || PostType.Normal,
       text: text,
       deleteDraftNr,
+      doAsAnon,
     },
     success
   });
@@ -2102,9 +2105,14 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
 
 
 // SMALLER_BUNDLE, a tiny bit smaller: Use getAndPatchStore() instead.  [.get_n_patch]
-export function loadPostsByAuthor(authorId: UserId, onOk: (resp) => Vo) {
-  get(`/-/list-posts?authorId=${authorId}`, function (resp) {
-    ReactActions.patchTheStore({ tagTypes: resp.tagTypes });
+export function loadPostsByAuthor(authorId: UserId, showWhat: 'Tasks' | U,
+          onlyOpen: Bo, onOk: (resp) => Vo) {
+  const showWhatParam = showWhat ? `&relType=${PatPostRelType.AssignedTo}` : '';
+  const onlyOpenParam = onlyOpen ? '&which=678321' : '';  // for now.
+  // RENAME 'authorId' to 'relToPatId'?
+  const url = `/-/list-posts?authorId=${authorId}${showWhatParam}${onlyOpenParam}`
+  get(url, function (resp: LoadPostsResponse) {
+    ReactActions.patchTheStore({ tagTypes: resp.tagTypes, usersBrief: resp.patsBrief });
     onOk(resp);
   });
 }
@@ -2116,6 +2124,17 @@ export function makeDownloadMyContentUrl(authorId: UserId) {
 
 export function makeDownloadPersonalDataUrl(authorId: UserId) {
   return `/-/download-personal-data?userId=${authorId}`;
+}
+
+
+// SMALLER_BUNDLE, a tiny bit smaller: Use postAndPatchStore() instead.  [.get_n_patch]
+export function changeAssignees(ps: { addPatIds: PatId[], removePatIds: PatId[],
+          postId: PostId }, onOk: () => Vo) {
+  postJsonSuccess('/-/change-pat-node-rels', (storePatch: StorePatch) => {
+    ReactActions.patchTheStore(storePatch);
+    onOk();
+  }, { ...ps, relType: PatPostRelType.AssignedTo });
+
 }
 
 

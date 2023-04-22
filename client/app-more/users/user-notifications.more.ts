@@ -43,7 +43,8 @@ export const UserNotifications = createFactory({
 
   // SHOULD Switch to componentDidUpdate instead, see  users-page.more.ts  for how.
   UNSAFE_componentWillReceiveProps: function(nextProps: any) {
-    // Dupl code, also in view drafts. [7WUBKZ0]
+    // Dupl code, also in view drafts. [7WUBKZ0]  The drafts code is better —
+    // more type safe.
     const me: Myself = this.props.store.me;
     const user: UserInclDetails = this.props.user;
     const nextLoggedInUser: Myself = nextProps.store.me;
@@ -59,7 +60,7 @@ export const UserNotifications = createFactory({
     const me: Myself = this.props.store.me;
     if (me.id !== userId && !isStaff(me)) {
       this.setState({
-        error: "May not list an other user's notifications. [EdE7WK2L_]",
+        error: "May not list an other user's notifications. [EdE7WK2L]",
         notfs: null,
       });
       return;

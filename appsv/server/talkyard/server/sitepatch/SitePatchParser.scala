@@ -1140,6 +1140,9 @@ case class SitePatchParser(context: TyContext) {
         layout = layout,
         comtOrder = PostSortOrder.fromOptVal(parseOptInt32(jsObj, "comtOrder")),
         comtNesting = None, // ...later
+        comtsStartHidden = NeverAlways.fromOptInt(parseOptInt32(jsObj, "comtsStartHidden")),
+        comtsStartAnon = NeverAlways.fromOptInt(parseOptInt32(jsObj, "comtsStartAnon")),
+        newAnonStatus = AnonStatus.fromOptInt(parseOptInt32(jsObj, "newAnonStatus")),
         forumSearchBox = parseOptInt32(jsObj, "forumSearchBox"),
         forumMainView = parseOptInt32(jsObj, "forumMainView"),
         forumCatsTopics = parseOptInt32(jsObj, "forumCatsTopics"),
@@ -1402,11 +1405,17 @@ case class SitePatchParser(context: TyContext) {
         return Bad(s"Bad DraftLocator json: ${ex.getMessage} [TyE603KUTDGJ]")
       }
 
+      UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps?
+      val doAsAnon: Opt[WhichAnon] = parser.parseWhichAnonJson(jsObj) getOrIfBad { prob =>
+        return Bad(s"Bad anon params: $prob [TyEANONPARDFT]")
+      }
+
       Draft(
         byUserId = readInt(jsObj, "byUserId",
           // For now, because currently not always incl when upserting from editor.
           // Gets filled in by the server anyway [602KDGRE20]
           default = Some(NoUserId)),
+        doAsAnon = doAsAnon,
         draftNr = draftNr,
         forWhat = draftLocator,
         createdAt =

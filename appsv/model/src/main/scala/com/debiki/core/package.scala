@@ -194,7 +194,7 @@ package object core {
   type SiteId = Int
   val NoSiteId = 0
 
-  type SiteVersion = Int
+  type SiteVersion = i32
 
   type LangCode = St  // [Scala_3] opaque type
 
@@ -212,10 +212,12 @@ package object core {
   // Later, these will be different?
   type GroupBr = Group
   type GroupVb = Group
+  case class ValidGroup(get: Group)  // Scala_3 opaque type
 
   type PatId = Int
   type ParticipantId = Int  ; RENAME // to PatId
   type GuestId = PatId
+  type AnonId = PatId     // Scala_3 opaque type, must be <= max-anon-id
   type MemberId = PatId   ; RENAME // to MembId
   type MembId = PatId     // but hard to read: '...bI..', two lines next to each other. Instead:
   type MemId = PatId      // ... is this better?  NO, REMOVE.
@@ -542,6 +544,38 @@ package object core {
     case object No extends MayLink_unused
   }
 
+
+  /** Sync w Typescript [NeverAlways].
+    * Sync w db, the  never_always_d  PostgreSQL custom domain.
+    */
+  sealed abstract class NeverAlways(val IntVal: i32) { def toInt: i32 = IntVal }
+  object NeverAlways {
+    //se object Never extends NeverAlways(1)
+    case object NeverButCanContinue extends NeverAlways(2)
+    case object Allowed extends NeverAlways(3)
+    /** The setting is shown, and if one leaves it as is, it'll be disabled / off. */
+    //se object AllowedMustChoose extends NeverAlways(4)
+    /** The setting is shown, and one needs to click & choose: disabled, or enabled. */
+    //se object MustChoose extends NeverAlways(5)
+    /** The setting is shown, and if one leaves it as is, it'll be enabled / on. */
+    //se object RecommendedMustChoose extends NeverAlways(6)
+    case object Recommended extends NeverAlways(7)
+    case object AlwaysButCanContinue extends NeverAlways(8)
+    //se object Always extends NeverAlways(9)
+
+    def fromOptInt(value: Opt[i32]): Opt[NeverAlways] =
+      value flatMap fromInt32
+
+    def fromInt32(value: i32): Opt[NeverAlways] = Some(value match {
+      case NeverButCanContinue.IntVal => NeverButCanContinue
+      case Allowed.IntVal => Allowed
+      case Recommended.IntVal => Recommended
+      case AlwaysButCanContinue.IntVal => AlwaysButCanContinue
+      case _ => return None
+    })
+  }
+
+
   type Hopefully[R] = R Or Problem
 
   sealed abstract class AnyProblem {
@@ -769,26 +803,199 @@ package object core {
   }
 
 
-  type ReqrId = Who // RENAME to ReqrIds? (with an ...s)
+  type StorePatch = JsObject  // [Scala_3] opaque type. Or maybe a struct of its own?
+
+  type ReqrId = Who // RENAME to ReqrIds? (with an ...s),  [edit] NO, instead, to ReqrInf. [/edit]
                     // ... because is more than one id (user id, ip, bowser id cookie, etc)
+
+  case class ReqrInf( // better
+    reqr: Pat,
+    browserIdData: BrowserIdData,
+  ) {
+    def toWho: Who = Who(reqr.trueId2, browserIdData, reqr.isAnon)
+  }
+
 
   type BrowserIdSt = St  // [Scala_3] opaque type
 
   RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
   // I find "who" being confusing as to whom it refers to.
-  case class Who(id: UserId, browserIdData: BrowserIdData) {
+  // [edit] No, rename to ReqrInf instead?!  (Requester information)
+  // But not to ReqInf, because it's not info about the *request*, but about
+  // the *requester* (the person). E.g. url path and query param names, should *not*
+  // be exposed to internal parts of Ty (would increase the coupling, in a bad way).
+  // So, not ReqInf, but ReqrInf.  [/edit]
+  // Is isAnon always false, hmmm?
+  case class Who(trueId: TrueId, browserIdData: BrowserIdData, isAnon: Bo = false) {
+    def id: PatId = trueId.curId
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
-    def isGuest: Boolean = Participant.isGuestId(id)
+    REFACTOR; CLEAN_UP; DO_AFTER // 2023-04-20
+    // His can now be a TrueId memb fn? Just verify this is ok:
+    dieIf(isAnon != trueId.isAnon, "TyE603MSKJ46")
+    def isGuest: Bo = !isAnon && Participant.isGuestId(id)
     def isSystem: Boolean = id == SystemUserId
+    def isGuestOrAnon: Bo = trueId.isGuestOrAnon
+
+    dieIf(isAnon != trueId.anyTrueId.isDefined, "TyE40MADEW35",
+          s"isAnon: $isAnon but trueId: ${trueId.trueId}")
   }
 
   object Who {
-    val System = Who(SystemUserId, BrowserIdData.System)
+    def apply(patId: PatId, browserIdData: BrowserIdData): Who =
+      Who(TrueId(patId), browserIdData)
+
+    val System = Who(TrueId(SystemUserId), BrowserIdData.System)
   }
 
-  case class UserAndLevels(user: Participant, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
+
+  /*
+  sealed abstract class AnonLevel(val IntVal: i32) { def toInt: i32 = IntVal }
+  object AnonLevel {
+    case object NotAnon extends AnonLevel(10)
+    case object AnonymPerPage extends AnonLevel(50)
+
+    def fromInt(value: i32): Opt[AnonLevel] = Some(value match {
+      case NotAnon.IntVal => NotAnon
+      case AnonymPerPage.IntVal => AnonymPerPage
+      case _ => return None
+    })
+  }*/
+
+
+
+  /** A bitfield. Currently only None, 65535 = IsAnonOnlySelfCanDeanon
+    * and 2097151 = IsAnonCanAutoDeanon are supported.
+    *
+    * None, SQL null, 0 means:  is *not* anon.
+    *
+    * Default value, if *is* anon,  is an i32 with 21 lowest bits set:
+    *    2^21 - 1 = 2097151,  upper 11 bits zero (0).   But why?  Because with some
+    * unused bits (see below) being 0, others 1, one can choose if a future new flag bit
+    * is going to be by default 0 (off) or 1 (on), by picking a reseved bit that's
+    * already 0 (bits 22-32, see below) or 1 (bits 8-16, see below). Without having to
+    * update any database rows.
+    *
+    * Why is this a bitfield? — Because creating 32 db columns is boring (not that many,
+    * but still), and wastes bandwidth if sending as a json obj (instead of an i32)
+    * over the network.
+    *
+    * Bit 1:
+    *   -------1  =   1: is anonymous
+    *
+    *   Bits 2-3: Store true id?
+    *   -----00-  =  0: don't remember true id info at all
+    *   -----01-  =  2: can keep true id in-memory briefly, to review and spam check, then delete
+    *   -----10-  =  4: can keep in db for a while, but delete after some time (a conf val)
+    *   -----11-  =  6: can keep in db permanently (the default)
+    *
+    *   Bits 4:  1,  reserverd
+    *
+    *   Bits 5-7: Who may see the true id?
+    *   -000----  =  A DBA cannot and could not see the true id of this anon (wasn't stored)
+    *   -001----  =  A DBA can (could) see the true id, by running SQL queries
+    *   -010----  =  you cay (could) see your own anons
+    *   -011----  =  admins can see the true ids of anons
+    *   -100----  =  ?
+    *   -101----  =  ?
+    *   -110----  =  ?
+    *   -111----  =  others with see-anon permissions in the category,
+    *           can see true ids (typically mods, so they can know who
+    *           a problematic anon is, without having to de-anonymize the account).
+    *
+    * Bits 8, 9-16:
+    *   111111111  =  reserved  (and only bits 1-16 set = 65535).
+    *
+    *  Bits 17-19:  Who may deanonymize?
+    *   --000  =  cannot be deanonymized (not even by DBAs, info not stored)
+    *   --001  =  can be deanonymize by DBAs
+    *   --010  =  may deanonymize oneself (and DBAs can too)
+    *   --011  =  may be deanonymized by admins (and oneself and DBAs)
+    *   --100  =  may be deanonymized by admins and mods?
+    *   --101  =  ?
+    *   --110  =  may be deanonymized by others with deanon permission in the category?
+    *   --111  =  may get deanonymized automatically (by trigger, e.g. date)
+    *
+    *  Bits 20, 21: Reserved, and 1 (set) if IsAnonCanAutoDeanon,
+    *                             0 (unset) if IsAnonOnlySelfCanDeanon. Hmm.
+    *
+    * Bits  22-32:
+    *   00000000000  reserved   (and only bits 1-21 set = 2097151.)
+    *
+    * Reserved bits could later say if e.g.:
+    *       - May any of the anon's posts be moved to other pages? By default, no.
+    *       - May the anon comment on other pages or anywhere in a category? (But then,
+    *         couldn't anon_on_page_id_st_c just be set to null instead, meaning anywhere.
+    *         Or after [add_nodes_t] to a cateory, meaning, anywhere therein?)
+    *       - May one switch to another anonym, in the same sub thread?
+    *         Let's say, reply as anon MyAnA to the orig post, then, sbd repiles to
+    *         MyAnA, and then one relpies as MyAn*B* to that other person?
+    *         Or, one then needs to reply as MyAnA? Or needs to use the same anon
+    *         on the whole page?
+    */
+  sealed abstract class AnonStatus(val IntVal: i32, val isAnon: Bo = true) {
+    def toInt: i32 = IntVal
+  }
+
+  object AnonStatus {
+    /** Cannot save in the database (that'd mean an anonymous user that wasn't anonymous)
+      * — just means that pat intentionally wants to use hens real account.
+      * (And then that real user would get saved as post author, instead — but IntVal 0 doesn't
+      * get saved in the db, instead, is null (in the db).)
+      */
+    case object NotAnon extends AnonStatus(0, isAnon = false)
+
+    case object IsAnonOnlySelfCanDeanon extends AnonStatus(65535)
+
+    /** For now, all 21 lower bits set. See the AnonStatus descr above. Sync w Typescript. */
+    case object IsAnonCanAutoDeanon extends AnonStatus(2097151)
+
+    def fromOptInt(value: Opt[i32]): Opt[AnonStatus] = value flatMap fromInt
+
+    def fromInt(value: i32): Opt[AnonStatus] = Some(value match {
+      case NotAnon.IntVal => return None
+      case IsAnonOnlySelfCanDeanon.IntVal => IsAnonOnlySelfCanDeanon
+      case IsAnonCanAutoDeanon.IntVal => IsAnonCanAutoDeanon
+      case _ =>
+        // warnDevDie() — later?
+        return None
+    })
+  }
+
+
+  sealed abstract class WhichAnon() {
+    require(anySameAnonId.isDefined != anyNewAnonStatus.isDefined, "TyE6G0FM2TF3")
+
+    // Either ...
+    def anyNewAnonStatus: Opt[AnonStatus] = None
+    // ... or.
+    def anySameAnonId: Opt[AnonId] = None
+  }
+
+  object WhichAnon {
+    case class NewAnon(anonStatus: AnonStatus) extends WhichAnon {
+      require(anonStatus != AnonStatus.NotAnon, "WhichAnon is NotAnon [TyE2MC06Y8G]")
+      override def anyNewAnonStatus: Opt[AnonStatus] = Some(anonStatus)
+    }
+
+    case class SameAsBefore(sameAnonId: PatId) extends WhichAnon {
+      override def anySameAnonId: Opt[AnonId] = Some(sameAnonId)
+    }
+  }
+
+
+  /**
+    * @param user, (RENAME to patOrPseudonym?) — the id of the requester, can be a pseudonym. But not an anonym.
+    * @param trustLevel — if patOrPseudonym is a pseudonym, then this is the pseudonym's
+    *   trust level, which can be different from the true member's trust level?
+    *   (See tyworld.adoc, [pseudonyms_trust].)
+    */
+  case class UserAndLevels(
+    user: Pat,
+    trustLevel: TrustLevel,
+    threatLevel: ThreatLevel,
+  ) {
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
     def nameHashId: String = user.nameHashId
@@ -876,8 +1083,9 @@ package object core {
   def FirstSiteId: SiteId = Site.FirstSiteId
   val NoUserId = 0
   def SystemUserId: UserId = Participant.SystemUserId
-  def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy",
-    userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
+  def SystemSpamStuff = SpamRelReqStuff(
+        BrowserIdData.System, userAgent = None, referer = None, uri = "/dummy",
+        userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
   def SystemUserFullName: String = Participant.SystemUserFullName
   def SystemUserUsername: String = Participant.SystemUserUsername
   def SysbotUserId: UserId = Participant.SysbotUserId
@@ -887,6 +1095,7 @@ package object core {
   def UnknownUserName: String = Participant.UnknownUserName
   def UnknownUserBrowserId: String = Participant.UnknownUserBrowserId
   def MaxGuestId: UserId = Participant.MaxGuestId
+  def MaxGuestOrAnonId: PatId = Participant.MaxGuestOrAnonId
   def MaxCustomGuestId: UserId = Participant.MaxCustomGuestId
   def LowestNonGuestId: UserId = Participant.LowestNonGuestId
   def LowestTalkToMemberId: UserId = Participant.LowestTalkToMemberId
@@ -1229,6 +1438,7 @@ package object core {
     * reports to include all original data. [AKISMET].
     */
   case class SpamRelReqStuff(
+    browserIdData: BrowserIdData,
     userAgent: Option[String],
     referer: Option[String],
     uri: String,
@@ -1242,6 +1452,18 @@ package object core {
     require(!userUrl.exists(_.trim.isEmpty), "TyE430MKQ26")
   }
 
+  /**
+    *
+    * @param postId
+    * @param postNr
+    * @param postRevNr
+    * @param pageId — the page where the post was posted, even if the post is moved
+    *   elsewhere later.
+    * @param pageType
+    * @param pageAvailableAt
+    * @param htmlToSpamCheck
+    * @param language
+    */
   case class PostToSpamCheck(
     postId: PostId,
     postNr: PostNr,
@@ -1268,17 +1490,19 @@ package object core {
     * and before it gets reviewed — Akismet wants misclassification
     * reports to include all original data. [AKISMET]
     *
-    * @postedToPageId — good to remember, if the post gets moved to a different page, later.
-    * @pagePublishedAt — if the page got unpublished and re published, good to remember
+    * @param postToSpamCheck
+    * @param reqrId — the pat who posted or edited the post to check. If posting anonymously,
+    *   then this is the anonym, not the real user. See: [anons_and_mods].
+    * @param pagePublishedAt — if the page got unpublished and re published, good to remember
     *   the publication date, as it was, when the maybe-spam-post was posted.
-    * @resultsAt — when all spam check services have replied, and we're saving their results.
-    * @resultsJson — there's a field and a results object, for each spam check service we queried.
+    * @param resultsAt — when all spam check services have replied, and we're saving their results.
+    * @param resultsJson — there's a field and a results object, for each spam check service we queried.
     *   The field name is the domain name for the spam check service (e.g. akismet.com).
     *   Alternatively, could construct new database tables for this, but json = simpler,
     *   and seems rather uninteresting to reference the results via foreign keys or anything.
-    * @resultsText — human readable spam check results description.
-    * @humanSaysIsSpam — updated once staff has reviewed.
-    * @misclassificationsReportedAt — if the spam check service thought something was spam
+    * @param resultsText — human readable spam check results description.
+    * @param humanSaysIsSpam — updated once staff has reviewed.
+    * @param misclassificationsReportedAt — if the spam check service thought something was spam
     *   when it wasn't, or vice versa, this is the time when this misclassification was
     *   reported to the spam check service, so it can learn and improve.
     */
@@ -1286,7 +1510,7 @@ package object core {
     createdAt: When,
     siteId: SiteId,
     postToSpamCheck: Option[PostToSpamCheck],
-    who: Who,
+    reqrId: PatId,
     requestStuff: SpamRelReqStuff,
     resultsAt: Option[When] = None,
     resultsJson: Option[JsObject] = None,
@@ -1305,7 +1529,7 @@ package object core {
     require((resultsAt.isDefined && humanSaysIsSpam.isDefined) ||
       misclassificationsReportedAt.isEmpty, "TyE4RBK6RS55")
 
-    def key: SpamCheckTask.Key =
+    def taskKey: SpamCheckTask.Key =
       postToSpamCheck match {
         case None => Right(siteUserId)
         case Some(p) => Left((siteId, p.postId, p.postRevNr))
@@ -1316,13 +1540,13 @@ package object core {
         p.copy(htmlToSpamCheck = p.htmlToSpamCheck.take(600))
       }
 
-    def siteUserId = SiteUserId(siteId, who.id)
+    def siteUserId: SiteUserId = SiteUserId(siteId, reqrId)
 
     def sitePostIdRevOrUser: String = s"s$siteId, " + (postToSpamCheck match {
       case Some(thePostToSpamCheck) =>
         s"post ${thePostToSpamCheck.postId} rev nr ${thePostToSpamCheck.postRevNr}"
       case None =>
-        s"user ${who.id} request stuff $requestStuff"
+        s"user ${reqrId} request stuff $requestStuff"
     })
 
     def isMisclassified: Option[Boolean] =
@@ -1730,6 +1954,9 @@ package object core {
   def FASTER_E2E_TESTS = () // An opportunity to speed up the e2e tests (maybe just marginally)
   def FLAKY = ()          // If an e2e test has races, can fail (ought to fix ... well ... later)
 
+  def UNIMPL = ()
+  def ANON_UNIMPL = ()
+
   // Maybe split into [defense] and [weakness]?
   // [defense] code tags are good — means security issues that have been dealt with.
   // [weakness] means an issues not yet handled, might lead to a 'vulnerability'
@@ -1787,6 +2014,7 @@ package object core {
   def REMOVE = ()
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.
+  def USE_StaleStuff_INSTEAD = ()
   def DEPRECATED = ()     // Consider removing some time later
   def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions
   def UNPOLITE = ()       // Vuln that lets a user be unpolite to someone else

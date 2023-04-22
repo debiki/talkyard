@@ -51,8 +51,11 @@ sealed trait AuthzCtx {
     if (requester.exists(_.isGroup)) {
       die("TyEs024HRS25", "Trying to authz as a group")  // [imp-groups]
     }
+    else if (requester.exists(_.isAnon)) {
+      die("TyEs024HRS28", "Trying to authz as an anonym")
+    }
     else if (groupIdsUserIdFirst.length >= 2) {
-      dieIf(requester.map(_.id) isNot groupIdsUserIdFirst(0), "TyE2AKBR05")
+      dieIf(requester.map(_.id) isNot groupIdsUserIdFirst.head, "TyE2AKBR05")
       groupIdsUserIdFirst.tail
     }
     else {
@@ -178,17 +181,20 @@ object Authz {
 
     var maxUpl: Opt[i32] = Some(0)
     val uplExts = MutHashSet[St]()
+    var canSeeOthersEmailAdrs = false
     for (group <- groupsAnyOrder) {
       val perms = group.perms
       maxUpl = maxOfAnyInt32(maxUpl, perms.maxUploadBytes)
       uplExts ++= perms.allowedUplExtensionsAsSet
+      canSeeOthersEmailAdrs ||= perms.canSeeOthersEmailAdrs.is(true) || group.isAdmin
     }
 
     maxUpl = minOfAnyInt32(maxUpl, Some(permsOnSite.maxUploadSizeBytes))
 
     EffPatPerms(
           maxUploadSizeBytes = maxUpl.get,
-          allowedUploadExtensions = uplExts.toSet)
+          allowedUploadExtensions = uplExts.toSet,
+          canSeeOthersEmailAdrs = canSeeOthersEmailAdrs)
   }
 
 
@@ -390,10 +396,19 @@ object Authz {
   }
 
 
+  /* Maybe later:
+  def mayAlterPost((    [alterPage]
+        ...
+        ): MayMaybe = {
+  }
+  */
+
+
   def mayEditPost(
     userAndLevels: UserAndLevels,
     groupIds: immutable.Seq[GroupId],
     post: Post,
+    otherAuthor: Opt[Pat],
     pageMeta: PageMeta,
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
@@ -411,7 +426,11 @@ object Authz {
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0ED0SEE-${mayWhat.debugCode}")
 
-    val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
+    val isOwnPost = user.id == post.createdById || otherAuthor.exists({ // [8UAB3WG2]
+      case anon: Anonym => anon.anonForPatId == user.id
+      case _ => false
+    })
+
     if (isOwnPost) {
       // Fine, may edit.
       // But shouldn't:  isOwnPost && mayWhat[.mayEditOwn] ?  (2020-07-17)

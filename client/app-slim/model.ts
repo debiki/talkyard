@@ -275,6 +275,7 @@ interface DraftDeletor {
 
 interface Draft {
   byUserId: UserId;
+  doAsAnon?: U | WhichAnon;  // not yet impl [doAsAnon_draft]
   draftNr: DraftNr;
   forWhat: DraftLocator;
   createdAt: WhenMs;
@@ -298,6 +299,7 @@ interface ShowEditsPreviewParams extends EditorIframeHeight {
   anyPostType?: PostType;
   replyToNr?: PostNr;
   editingPostNr?: PostNr;
+  doAsAnon?: WhichAnon;
   highlightPreview?: boolean; // default: true
 }
 
@@ -367,7 +369,17 @@ interface Post {
   parentNr?: PostNr; // undefined, for chat messages and sometimes embedded comments [CHATPRNT]
   multireplyPostNrs: PostNr[];
   postType?: PostType;
+  // Would be set to  pats_t.autohr_id_c, rather than  created_by_id_c?
+  // Then, maybe "just works" for anonyms?
+  // But the post creator or owner — if the requester is any of those or staff,
+  // that field can be included too?
   authorId: UserId;
+  // --- Only included when loading, not saving, a post: -----
+  ownerIds?: PatId[];
+  authorIds?: PatId[];
+  assigneeIds?: PatId[];
+  // ---------------------------------------------------------
+
   createdAtMs: WhenMs;
   approvedAtMs?: WhenMs;
   lastApprovedEditAtMs?: WhenMs;
@@ -458,6 +470,8 @@ interface MyPageData {
   internalBacklinks?: Topic[];
   unapprovedPosts: { [id: number]: Post };
   unapprovedPostAuthors: Participant[];
+  knownAnons?: KnownAnonym[];
+  patsBehindAnons?: Pat[];
   postNrsAutoReadLongAgo: number[];
   postNrsAutoReadNow: number[];
 
@@ -587,6 +601,7 @@ interface Session {
 interface GroupPerms {
   maxUploadBytes?: Nr;
   allowedUplExts?: St;
+  canSeeOthersEmailAdrs?: true;
 }
 
 
@@ -836,6 +851,8 @@ interface Topic {
   authorId: UserId;
   lastReplyerId?: UserId;
   frequentPosterIds: UserId[];
+  /// Not empty, undefined instead.
+  assigneeIds?: PatId[];
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;
@@ -958,6 +975,14 @@ interface AutoPage {
   pagePath: {};
 }
 
+
+interface PageDiscPropsSource extends DiscPropsSource {
+  pageId?: PageId;
+  categoryId?: number;
+  pageRole: PageRole;
+}
+
+
 // A page with real user written content, e.g. a discussion, chat, info page or homepage.
 // (Should Page instead extend PageMeta? There's lots of dupl fields!
 // Or should Page have a PageMeta field (delegation)? Let's wait.)
@@ -967,7 +992,7 @@ interface Page
     // So we can see from where a setting comes — is it from some ancestor category
     // or group? Or the whole forum? Otherwise, hard to troubleshoot unexpected
     // effective settings.
-    extends TopicInterfaceSettings, DiscPropsSource {
+    extends TopicInterfaceSettings, PageDiscPropsSource {
   dbgSrc: string;
   pageId: PageId;
   pageVersion: PageVersion;
@@ -984,6 +1009,7 @@ interface Page
                             // no, let's have Page and Cat extend DiscLayout
                             // instead, I mean extend DiscPropsSource, — done, see above.
       // Or rather, split into different objs and fields [disc_props_view_stats] [PAGETYPESETTNG]
+      // No, instead, everything wil be in  nodes_t ?
   forumSearchBox?: ShowSearchBox;
   forumMainView?: Nr;
   forumCatsTopics?: Nr;
@@ -1263,14 +1289,41 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings, SettingsDisc
 }
 
 
+
 // Move some things from above to DiscLayout?
 //
 // Currently configured for all categories, and(optionally) per category and page.
 // Maybe later: disc_layout_t.
 // RENAME to DiscLayoutSource?
-interface DiscPropsSource {
-  comtOrder?: PostSortOrder;
-  comtNesting?: NestingDepth;
+type DiscPropsSource = Partial<DiscPropsBase>;
+
+
+// Says what thing (e.g. the current page, or the parent category) the comtOrder
+// layout setting is from, so the edit-layout dialog can tell the admin
+// from where the comment order is getting inherited, in case the admin would want
+// to go there and change it.  And makes it simpler for the Ty devs to troubleshoot
+// any inheritance bugs.
+type DiscPropsComesFrom = PropsFromRefs<DiscPropsBase>;
+
+/// So we won't need to repeat all field names in DiscPropsDerived.
+type PropsFromRefs<Type> = {
+  [Property in keyof Type]: Ref | Cat;
+};
+
+
+// RENAME to DiscLayoutDerived?  There's an interface Layout_not_in_use too (below) merging all layouts.
+interface DiscPropsDerived extends DiscPropsBase {
+  from: DiscPropsComesFrom;
+}
+
+
+interface DiscPropsBase {
+  comtOrder: PostSortOrder;
+  comtNesting: NestingDepth;   // not yet in use [max_nesting]
+  comtsStartHidden: NeverAlways;
+  comtsStartAnon: NeverAlways;
+  opStartsAnon: NeverAlways;
+  newAnonStatus: AnonStatus;
 
   // Later: [sum_squash_lims]
   // summarizeLimit;
@@ -1278,22 +1331,18 @@ interface DiscPropsSource {
   // horizontalLayout;  // move to here
 }
 
-// RENAME to DiscLayoutDerived?  There's an interface Layout_not_in_use too (below) merging all layouts.
-interface DiscPropsDerived {
-  comtOrder: PostSortOrder;
-  // Says what thing (e.g. the current page, or the parent category) the comtOrder
-  // layout setting is from, so the edit-layout dialog can tell the admin
-  // from where the comment order is getting inherited, in case the admin would want
-  // to go there and change it.  And makes it simpler for the Ty devs to troubleshoot
-  // any inheritance bugs.
-  comtOrderFrom: Ref;
-  comtNesting: NestingDepth;   // not yet in use [max_nesting]
-  comtNestingFrom: Ref;        //
+
+interface NodePropsDerivedAndDefault {
+  layoutSource: DiscPropsSource;
+  parentsLayout: DiscPropsDerived;
+  actualLayout: DiscPropsDerived; 
 }
 
+
 // And extends TopicListLayout, KnowledgeBaseLayout etc, all layouts.
-interface Layout_not_in_use extends DiscPropsDerived {
+interface Layout_not_in_use extends DiscPropsBase {
 }
+
 
 
 interface SettingsDiscPropsOldNames {
@@ -1412,6 +1461,11 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
   isAdmin?: boolean;
   isModerator?: boolean;
 
+  isAnon?: Bo;
+  anonForId?: PatId;
+  anonStatus?: AnonStatus;
+  anonOnPageId?: PageId;
+
   isGuest?: boolean;  // = !isAuthenticated
   isAuthenticated?: Bo;  // = !isGuest, if is a user (but absent, if is a group)
 
@@ -1426,16 +1480,68 @@ interface Pat extends PatNameAvatar {   // Guest or Member, and Member = group o
 type PpsById = { [ppId: number]: Participant };  // RENAME to PatsById
 
 
-interface Guest extends Participant {
+interface Anonym extends GuestOrAnon {
+  isAnon: true;
+  isGuest?: false;  // = !isAuthenticated — no!  BUG RISK ensure ~isGuest isn't relied on
+                                         // anywhere, to "know" it's a user / group
+}
+
+
+interface KnownAnonym extends Anonym {
+  isAnon: true;
+  anonForId: PatId;
+  anonStatus: AnonStatus;
+  anonOnPageId: PageId;
+}
+
+
+// For choosing an anonym. Maybe rename to ChooseAnon? Or ChoosenAnon / SelectedAnon?
+interface WhichAnon {
+  sameAnonId?: PatId;  // Either this ...
+  anonStatus?: AnonStatus; // and this,
+  newAnonStatus?: AnonStatus; // ... or this.
+}
+
+interface SameAnon extends WhichAnon {
+  sameAnonId: PatId;
+  anonStatus: AnonStatus.IsAnonOnlySelfCanDeanon | AnonStatus.IsAnonCanAutoDeanon;
+  newAnonStatus?: U;
+}
+
+interface NewAnon extends WhichAnon {
+  sameAnonId?: U;
+  newAnonStatus: AnonStatus.IsAnonOnlySelfCanDeanon | AnonStatus.IsAnonCanAutoDeanon;
+}
+interface NotAnon extends WhichAnon {
+  sameAnonId?: U;
+  newAnonStatus?: U;
+  anonStatus: AnonStatus.NotAnon;
+}
+
+interface MyPatsOnPage {
+  // Each item can be an anonym or pseudonym of pat, or pat henself. No duplicates.
+  byThreadLatest: Pat[];
+  byId: { [patId: number] : Pat }
+}
+
+
+interface Guest extends GuestOrAnon {
   fullName: string;
   username?: undefined;
   email: string;
   isEmailUnknown?: boolean;
   isGuest: true;
+  isAnon?: false;
+}
+
+
+interface GuestOrAnon extends Pat {
   isAdmin?: false;
   isModerator?: false;
+  isAuthenticated?: false;
   avatarTinyHashPath?: undefined;
   avatarSmallHashPath?: undefined;
+  pubTags?: [];
 }
 
 
@@ -1479,6 +1585,7 @@ interface GroupStats {
 type ParticipantAnyDetails = MemberInclDetails | GuestDetailed;
 
 
+/// RENAME to MembVb?
 interface MemberInclDetails extends Member {
   avatarMediumHashPath?: string;
   // Only if requester is staff:
@@ -1490,9 +1597,10 @@ interface MemberInclDetails extends Member {
 
 
 type GroupInclDetails = GroupVb;
-interface GroupVb extends MemberInclDetails, Group, GroupPerms {
+interface GroupVb extends MemberInclDetails, Group {
   isGroup: true;
   //"createdAtEpoch" -> JsWhen(group.createdAt),
+  perms: GroupPerms;
 }
 
 type UserInclDetails = PatVb; // old name, remove
@@ -1500,11 +1608,12 @@ type UserInclDetails = PatVb; // old name, remove
 // ("Thin" and "Fat"? Maybe "PatFatStaff" isn't the best interface name
 // "PatVbStaff" better?)
 /// A Participant including verbose details, for the pat profile pages.
+// RENAME to UserVb? Isn't this alaways a user — not a group or guest.
 interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName?: string;
-  email: string;
+  email: string; // RENAME to emailAdr  [email_2_emailAdr]
   emailVerifiedAtMs?: WhenMs;
   emailNotfPrefs: EmailNotfPrefs,
   // mailingListMode: undefined | true;  // default false  — later
@@ -1538,13 +1647,14 @@ interface PatVb extends MemberInclDetails, BioWebsiteLocation {
   deletedAt?: number;
 }
 
-interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb?
+interface UserInclDetailsWithStats extends PatVb {   // REMOVE, instead, use PatVvb? no UserVvb?
   // Mabye some old accounts lack stats?
   anyUserStats?: UserStats;
 }
 
 // A participant, Very VerBose: all fields, badges, stats and groups.
 interface PatVvb extends UserInclDetailsWithStats {
+  perms: GroupPerms;
   groupIdsMaySee: UserId[];
 }
 type UserDetailsStatsGroups = PatVvb; // old name
@@ -2137,6 +2247,31 @@ interface ShowNewPageParams {
 }
 
 
+interface PatPanelProps {
+  me: Me;
+  store: Store;
+  user: UserDetailsStatsGroups;
+}
+
+
+interface PatStatsPanelProps extends PatPanelProps {
+  stats?: UserStats; // for the Summary page
+}
+
+
+interface PatPostsPanelProps extends PatPanelProps {
+  showWhat?: 'Posts' | 'Tasks';  // Posts is the default
+  /// If true, tasks that's been done or closed, are excluded.
+  onlyOpen?: Bo;
+}
+
+
+interface PatTopPanelProps extends PatStatsPanelProps {
+  groupsMaySee: Group[];
+  reloadUser: () => Vo;
+}
+
+
 /// Authentication dialog
 interface AuthnDlgIf {
   openToLogIn: (loginReason: LoginReason,
@@ -2145,6 +2280,20 @@ interface AuthnDlgIf {
         callback?: () => Vo, preventClose?: Bo) => Vo;
   getDoAfter: () => [() => U | U, St | U];
   close: () => Vo;
+}
+
+
+/// A dropdown for choosing which anonym to use (e.g. if posting anonymous comments).
+/// DlgPs = dialog parameters, hmm.
+///
+interface ChooseAnonDlgPs {
+  atRect: Rect;
+  open?: Bo;
+  pat?: Pat;
+  me: Me,
+  curAnon?: WhichAnon;
+  discProps: DiscPropsDerived;
+  saveFn: (_: WhichAnon) => Vo ;
 }
 
 
@@ -2249,6 +2398,22 @@ interface DiscLayoutDiagState {
   forCat?: Bo;       // these just change the
   forEveryone?: Bo;  // .. dialog title
   onSelect: (newLayout: DiscPropsSource) => Vo ;
+}
+
+
+interface AnonsAllowedDropdownBtnProps {
+  page?: Page;  // either...
+  cat?: Cat;    // ...or.
+  store: Store;
+  allowed: NeverAlways;
+  onSelect: (newLayout: DiscPropsSource) => Vo;
+}
+
+
+/// For showing a list of people, and adding and removing.
+interface PatsToAddRemove {
+  addPatIds?: PatId[];
+  removePatIds?: PatId[];
 }
 
 
@@ -2573,6 +2738,14 @@ type LoadPageIdsUrlsResponse = PageIdsUrls[];
 
 type TagTypesById = { [tagTypeId: number]: TagType };
 
+
+interface LoadPostsResponse {
+  posts: Post[];
+  patsBrief: Pat[];
+  tagTypes: TagType[];
+}
+
+
 interface LoadTopicsResponse {
   topics: Topic[];
   storePatch: TagTypesStorePatch & PatsStorePatch;
@@ -2659,6 +2832,7 @@ interface LoadDraftAndTextResponse {
   currentRevisionNr: number;
   draft?: Draft;
 }
+
 
 interface ListDraftsResponse {
   drafts: Draft[];

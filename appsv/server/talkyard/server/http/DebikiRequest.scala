@@ -99,7 +99,6 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def reqer: Opt[Pat] = user  // shorter, nicer. "Req" = request, + "er" = "requester"
                         RENAME // to  anyReqer?
   def requesterOrUnknown: Participant = user getOrElse UnknownParticipant
-  def requesterIdOrUnknown: UserId = user.map(_.id) getOrElse UnknownUserId
   def theRequester: Participant = theUser
   def theReqer: Pat = theUser  // shorter, better
 
@@ -111,11 +110,17 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   lazy val siteSettings: EffectiveSettings = dao.getWholeSiteSettings()
 
+  @deprecated("use reqrInf instead")
+  def reqrIds: ReqrId = who  // better to end w 's'? Since incl many ids: pat id, session id.
+  @deprecated("use reqrInf instead")
   def reqrId: ReqrId = who
-  @deprecated("use reqrId: ReqrId instead", "now")
-  def who = Who(theUserId, theBrowserIdData)
+  @deprecated("use reqrId: ReqrId instead. No, use reqrInf", "now")
+  def who = Who(theUser.trueId2, theBrowserIdData)
 
-  def whoOrUnknown: Who = Who(requesterIdOrUnknown, theBrowserIdData)
+  def whoOrUnknown: Who = Who(requesterOrUnknown.trueId2, theBrowserIdData)
+
+  // Better than Who — the latter just discards requesterOrUnknown, why?
+  def reqrInf: ReqrInf = ReqrInf(requesterOrUnknown, theBrowserIdData)
 
   def authzCtxWithReqer: AuthzCtxWithReqer = dao.getAuthzCtxWithReqer(theRequester)
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
@@ -128,6 +133,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   // Hmm will need this also for WebSocket? [WSSPAM] Remember this, from
   // the initial HTTP upgrade request?
   def spamRelatedStuff = SpamRelReqStuff(
+    browserIdData = theBrowserIdData,
     userAgent = headers.get("User-Agent"),
     referer = request.headers.get("referer"),
     uri = uri,
@@ -142,6 +148,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def theUserId: UserId = theUser.id
   def theRequesterId: UserId = theUser.id
   def theReqerId: PatId = theRequesterId // shorter, nice
+  def theReqerTrueId: TrueId = theUser.trueId2
 
   def userAndLevels: AnyUserAndThreatLevel = {
     val threatLevel = user match {
@@ -165,6 +172,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def theMember: User = theUser match {
     case m: User => m
+    case _: Anonym => throwForbidden("TyE5YKJ36", "Not a user, but an anonym")
     case _: Guest => throwForbidden("EsE5YKJ37", "Not authenticated")
     case _: Group => throwForbidden("TyE5YKJ38", "Not a user, but a group")
     case UnknownParticipant => throwForbidden("TyE5YKJ39", "Unknown participant")
@@ -172,7 +180,6 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def anyRoleId: Option[UserId] = user.flatMap(_.anyMemberId)
   def theRoleId: UserId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
-
   def isGuest: Boolean = user.exists(_.isGuest)
   def isStaff: Boolean = user.exists(_.isStaff)
 

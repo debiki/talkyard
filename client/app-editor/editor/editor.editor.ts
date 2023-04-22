@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../editor-prelude.editor.ts" />
+/// <reference path="./oop.editor.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.editor {
@@ -133,6 +134,10 @@ interface EditorState {
   visible: boolean;
   replyToPostNrs: PostNr[];
   anyPostType?: PostType;
+  doAsAnon?: WhichAnon;
+  myAnonsHere?: MyPatsOnPage;
+  discProps?: DiscPropsDerived;
+  authorId?: PatId; // remove?
   editorsCategories?: Category[];
   editorsPageId?: PageId;
   editingPostNr?: PostNr;
@@ -956,16 +961,42 @@ export const Editor = createFactory<any, EditorState>({
       eds.lazyCreatePageInCatId = inFrame.eds.lazyCreatePageInCatId;
     }
 
+    const editorsPageId = discStore.currentPageId || eds.embeddedPageId;
+
+    // Annoying! Try to get rid of eds.embeddedPageId? So can remove discStore2.
+    const discStore2: DiscStore = { ...discStore, currentPageId: editorsPageId };
+
+    const discProps: DiscPropsDerived = page_deriveLayout(
+            discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
+
+    const myAnonsHere: MyPatsOnPage = disc_findAnonsToReuse(discStore2, {
+            forWho: discStore.me, startAtPostNr: postNrs[0] });
+    const lastAnon: KnownAnonym | U =
+            myAnonsHere.byThreadLatest.find(p => p.isAnon) as KnownAnonym | U;
+
+    // Continue replying using the same anon as last time in the same thread.
+    // If none, then, depending on the page / cat settings, use a new anonym,
+    // or use your real account [.use_which_anon].
+    const doAsAnon: WhichAnon | U = lastAnon
+        ? { sameAnonId: lastAnon.id, anonStatus: lastAnon.anonStatus } as SameAnon
+        : (discProps.comtsStartAnon >= NeverAlways.Recommended
+            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
+            : undefined);
+
     const newState: Partial<EditorState> = {
       inFrame,
       inFrameStore,
       anyPostType: postType,
       editorsCategories: discStore.currentCategories,
-      editorsPageId: discStore.currentPageId || eds.embeddedPageId,
+      editorsPageId,
       // [editorsNewLazyPageRole] = PageRole.EmbeddedComments if eds.isInEmbeddedEditor?
       replyToPostNrs: postNrs,
       text: state.text || makeDefaultReplyText(discStore, postNrs),
+      myAnonsHere,
+      doAsAnon,
+      discProps,
     };
+
     this.showEditor(newState);
 
     if (!postNrs.length) {
@@ -1039,6 +1070,23 @@ export const Editor = createFactory<any, EditorState>({
       // gets a new postNr. Then do what? Show a "this post was moved to: ..." dialog?
       dieIf(postNr !== response.postNr, 'TyE23GPKG4');
 
+      const editorsDiscStore: DiscStore = { ...discStore, currentPageId: response.pageId };
+      const discProps: DiscPropsDerived = page_deriveLayout(
+              discStore.currentPage, discStore, LayoutFor.PageNoTweaks);
+
+      const myAnonsHere = disc_findAnonsToReuse(editorsDiscStore, {
+              forWho: discStore.me, startAtPostNr: postNr });
+      const lastAnon: KnownAnonym | U =
+            myAnonsHere.byThreadLatest.find(p => p.isAnon) as KnownAnonym | U;
+
+      // See [.use_which_anon] above.
+      const doAsAnon: WhichAnon | U = draft && draft.doAsAnon || (
+          lastAnon
+            ? { sameAnonId: lastAnon.id, anonStatus: lastAnon.anonStatus } as SameAnon
+            : (discProps.comtsStartAnon >= NeverAlways.Recommended
+                ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
+                : undefined));
+
       const newState: Partial<EditorState> = {
         anyPostType: null,
         editorsCategories: discStore.currentCategories, // [many_embcom_iframes]
@@ -1050,6 +1098,9 @@ export const Editor = createFactory<any, EditorState>({
         onDone: onDone,
         draftStatus: DraftStatus.NothingHappened,
         draft,
+        myAnonsHere,
+        doAsAnon,
+        discProps,
       };
 
       this.showEditor(newState);
@@ -1090,6 +1141,20 @@ export const Editor = createFactory<any, EditorState>({
 
     const text = state.text || '';
 
+    const futurePage: PageDiscPropsSource = {
+      categoryId,
+      pageRole: newPageRole,
+    };
+
+    const discProps: DiscPropsDerived = page_deriveLayout(
+            futurePage, store, LayoutFor.PageNoTweaks);
+
+    // Also see [.use_which_anon] above.
+    const doAsAnon: WhichAnon | U =
+        discProps.comtsStartAnon >= NeverAlways.Recommended
+            ? { newAnonStatus: discProps.newAnonStatus } as NewAnon
+            : undefined;
+
     const newState: Partial<EditorState> = {
       anyPostType: null,
       editorsCategories: store.currentCategories,
@@ -1100,6 +1165,8 @@ export const Editor = createFactory<any, EditorState>({
       text: text,
       showSimilarTopics: true,
       searchResults: null,
+      // Skip: myAnonsHere — cannot yet be any anons; page not yet created.
+      doAsAnon,
     };
 
     this.showEditor(newState);
@@ -1237,7 +1304,7 @@ export const Editor = createFactory<any, EditorState>({
         pageRole?: PageRole, inFrameStore?: DiscStore) {
 
     const setDraftAndGuidelines = (anyDraft?, anyGuidelines?) => {
-      let draft = anyDraft ||
+      let draft: Draft | U = anyDraft ||
             // BUG harmleess: Use BrowserStorage.forEachDraft(page-id) instead?
             // So same algorithm for finding drafts to show in-page, as to load
             // in the editor.  [find_br_drafts]
@@ -1300,6 +1367,10 @@ export const Editor = createFactory<any, EditorState>({
         // and maybe are annoying?
         guidelines: eds.isInIframe ? undefined : anyGuidelines,
       };
+      if (draft && draft.doAsAnon) {
+        // TESTS_MISSING  TyTANONDFLOAD
+        newState.doAsAnon = draft.doAsAnon;
+      }
       this.setState(newState, () => {
         this.focusInputFields();
         this.scrollToPreview = true;
@@ -1500,6 +1571,7 @@ export const Editor = createFactory<any, EditorState>({
           scrollToPreview,
           safeHtml,
           editorsPageId: state.editorsPageId,
+          doAsAnon: state.doAsAnon,
         };
         const postNrs: PostNr[] = state.replyToPostNrs;
         if (postNrs.length === 1) {
@@ -1799,7 +1871,12 @@ export const Editor = createFactory<any, EditorState>({
     }
 
     const me: Myself = this.getDiscStore().me;
-    const draftToSave: Draft = { ...draftOldOrEmpty, text, title };
+    const draftToSave: Draft = {
+      ...draftOldOrEmpty,
+      doAsAnon: state.doAsAnon,
+      text,
+      title,
+    };
 
     // If this is an embedded comments discussion, and the discussion page hasn't
     // yet been created, there's no page id to use as draft locator key. Then,
@@ -1901,7 +1978,7 @@ export const Editor = createFactory<any, EditorState>({
     this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
     const state: EditorState = this.state;
     Server.saveEdits(state.editorsPageId, state.editingPostNr, state.text,
-          this.anyDraftNr(), () => {
+          this.anyDraftNr(), state.doAsAnon, () => {
       // BUG (harmless) poor UX: [JMPBCK] If we're no longer on the same page as
       // the post we were editing (e.g. because keeping the editor open and
       // navigating away) then, one won't see the edits appear. Probably should
@@ -1917,7 +1994,7 @@ export const Editor = createFactory<any, EditorState>({
     this.throwIfBadTitleOrText(null, t.e.PleaseWriteSth);
     const state: EditorState = this.state;
     ReactActions.saveReply(state.editorsPageId, state.replyToPostNrs, state.text,
-          state.anyPostType, state.draft, () => {
+          state.anyPostType, state.draft, state.doAsAnon, () => {
       // BUG (harmless) poor UX: See [JMPBCK] aboe.
       // Also, if we've navigaated away, seems any draft won't get deleted.
       this.callOnDoneCallback(true);
@@ -1935,6 +2012,7 @@ export const Editor = createFactory<any, EditorState>({
       pageTitle: state.title,
       pageBody: state.text,
       deleteDraftNr: this.anyDraftNr(),
+      doAsAnon: state.doAsAnon,
     };
     // [DRAFTS_BUG] This doesn't delete the draft? (if any)
     Server.createPage(data, (newPageId: string) => {
@@ -1947,6 +2025,7 @@ export const Editor = createFactory<any, EditorState>({
 
   postChatMessage: function() {
     const state: EditorState = this.state;
+    // ANON_UNIMPL: send state.doAsAnon,
     ReactActions.insertChatMessage(state.text, state.draft, () => {
       this.callOnDoneCallback(true);
       this.clearAndCloseFineIfGone();
@@ -2474,6 +2553,40 @@ export const Editor = createFactory<any, EditorState>({
           ':');
     }
 
+    // ----- Anon comments
+
+    // By default, anon posts are disabled, and the "post as ..." dropdown left out.
+
+    let maybeAnonymously: RElm | U;
+    if (!me.isAuthenticated) {
+      // Only logged in users can post anonymously. (At least for now.)
+    }
+    else if (state.discProps?.comtsStartAnon >= NeverAlways.Allowed ||
+          // If pat 1) is already talking, using an anonym, or 2) has started composing
+          // a draft, as anon, but then an admin changed the settings, so cannot
+          // be anon any more.  Then it's nevertheless ok to continue, anonymously.
+          // (That's what "continue" in NeverAlways.NeverButCanContinue means.)
+          // ANON_UNIMPL, UNPOLITE, SHOULD add some server side check, so no one toggles
+          // this in the browser only, and the server accepts?  [derive_node_props_on_server]
+          // But pretty harmless.
+          state.doAsAnon) {
+      maybeAnonymously =
+          Button({ className: 'c_AnonB', ref: 'anonB', onClick: () => {
+            const atRect = reactGetRefRect(this.refs.anonB);
+            anon.openAnonDropdown({ atRect, open: true, curAnon: state.doAsAnon, me,
+                discProps: state.discProps,
+                saveFn: (doAsAnon: WhichAnon) => {
+                  const newState: Partial<EditorState> = { doAsAnon };
+                  this.setState(newState);
+                  // The avatar we're showing, might need to change.
+                  // (WOULD_OPTIMIZE: Only do if in-page preview, otherwise one's
+                  // avatar & name isn't shown anyway.)
+                  this.updatePreviewSoon();
+                } });
+          } },
+          anon.whichAnon_titleShort(state.doAsAnon, { me }),
+          ' ', r.span({ className: 'caret' }));
+    }
 
     // ----- Save button
 
@@ -2720,6 +2833,7 @@ export const Editor = createFactory<any, EditorState>({
                 r.div({ className: 's_E_DoingRow' },
                   state.placeLeft ? topbar.OpenWatchbarButton() : null,
                   r.span({ className: 's_E_DoingWhat' }, doingWhatInfo),
+                  maybeAnonymously,
                   showGuidelinesBtn,
                   scrollToPreviewBtn,
                   draftStatusText),

@@ -98,9 +98,14 @@ export function RedirAppend({ path, append }) {
 }
 
 // Use an icon with on-hover instead?
+// Was: "Only *admins*", but now also mods and core members can see others'
+// email addresses, *if* this has been configured, by an admin.
+// UX WOULD send permission info to here, and show "Only admins" or
+// "Only admins and moderators" etc, as appropriate. But is it that important,
+// let's wait.
 export const OnlyAdminsSee =
     r.span({ className: 's_OnlAdmTxt' },
-      " (only admins can see)");
+      " (only staff can see)");  // or "admins" or "core-members and moderators", hmm.  I18N
 
 
 // UX: Click on space? If 'btn'?  [sch_b_space]
@@ -273,12 +278,13 @@ export function UserNameLink(props: {
 
 
 export function UserName(props: {
-    user: BriefUser, store?: Store, settings?: SettingsVisibleClientSide,
-    makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo }) {
+    user?: Pat, patId?: PatId, // either or
+    store?: Store, settings?: SettingsVisibleClientSide,
+    makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo, key?: St | Nr }) {
 
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
   const settings: SettingsVisibleClientSide = props.settings || props.store.settings;
-  const user: BriefUser = props.user;
+  const user: Pat = props.user || props.store.usersByIdBrief[props.patId];
   const showHow: ShowAuthorHow = settings.showAuthorHow;
 
   // (All StackExchange demo sites use ShowAuthorHow.FullNameThenUsername, so
@@ -289,10 +295,34 @@ export function UserName(props: {
 
   const guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
 
-  let namePartOne;
-  let namePartTwo;
+  let namePartOne: St | RElm | U;
+  let namePartTwo: St | RElm | U;
 
-  if (showHow === ShowAuthorHow.UsernameOnly) {
+  if (user.isAnon) {
+    // There's already "By" before, and "anonym" isn't a name, so use lowercase.
+    namePartOne = r.span({className: 'esP_By_F esP_By_F-G' }, t.Anonym);
+    if (props.store && user.anonForId) {  // maybe always take a DiscStore as fn props?
+      const store = props.store;
+      if (store.me.id === user.anonForId) {
+        // For now: ...
+        namePartTwo = rFr({}, " ", r.span({ className: 'c_P_By_AnonYou' }, "you"));  // I18N
+      }
+      else {
+        // ... Later: show "you" if it's oneself. But otherwise, set `user = the-real-user`
+        // and generate namePartOne & namePartTwo as usual, as if wasn't anon?
+        // And prefix with "anonym, namely: ..." and let "anonym" link to
+        // the anonym's profile page. — This is only for admins, who can, if they want,
+        // see who the anonyms are — can be needed to stop bad behavior.
+        const anyRealAuthor = store.usersByIdBrief[user.anonForId];
+        if (anyRealAuthor) {
+          // ...
+          // user = anyRealAuthor?  + do the if{} below as usual (remove the 'else') ?
+          // ...
+        }
+      }
+    }
+  }
+  else if (showHow === ShowAuthorHow.UsernameOnly) {
     // CLEAN_UP rename these CSS classes from ...By_F to By_1 and By_2 for part 1 (bold font)
     // and 2 (normal font) instead?
     // But for now, use By_F for the *username* just because it's bold, and By_U for the full name,
@@ -336,6 +366,9 @@ export function UserName(props: {
   const newProps: any = {
     className: 'dw-p-by esP_By' + (isUnknown ? ' s_P_By-Unk' : ''),
   };
+  if (isVal(props.key)) {
+    newProps.key = props.key;
+  }
 
   // Talkyard demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
   // '__sx_[subdomain]_[user-id]' where [subdomain] is a StackExchange subdomain, and

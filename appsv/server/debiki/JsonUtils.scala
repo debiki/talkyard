@@ -143,6 +143,32 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
             "TyE2YMP73T", s"'$fieldName' is not an object, but a ${classNameOf(bad)}")
     }
 
+  def parseInt32Array(json: JsValue, fieldName: St): Vec[i32] = {
+    parseOptInt32Array(json, fieldName) getOrElse {
+      throwBadJson("TyEJSINTARRMISNG", s"Integer array $fieldName is missing")
+    }
+  }
+
+  def parseOptInt32Array(json: JsValue, fieldName: St): Opt[Vec[i32]] = {
+    parseOptJsArray(json, fieldName) map { arr: IndexedSeq[JsValue] =>
+      var ix = 0
+      def errPrefix = s"Array '$fieldName', item $ix:"
+      arr.map({
+        case JsNumber(num: BigDecimal) =>
+          ix += 1
+          try num.toIntExact catch {
+            case ex: java.lang.ArithmeticException =>
+              ix -= 1
+              throwBadJson("TyEJSINTARRNUM",
+                    s"$errPrefix Not a 32 bit integer: $num, exception: $ex")
+          }
+        case bad =>
+          throwBadJson("TyEJSINTARRELMTYP",
+                s"$errPrefix Not a number, but a: ${classNameOf(bad)}")
+      }).toVector
+    }
+  }
+
   def parseJsArray(json: JsValue, fieldName: St, optional: Bo = false): Seq[JsValue] =
     readJsArray(json, fieldName, optional).value
 
@@ -306,6 +332,16 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     val voteTypeSt = parseSt(json, fieldName)
     PostVoteType.apiV0_fromStr(voteTypeSt) getOrElse {
       throwBadJson("TyEJSNPOVOTY", s"$fieldName: Unsupported vote type: '$voteTypeSt'")
+    }
+  }
+
+
+  def parsePatPostRelType(jo: JsObject, fieldName: St): PatNodeRelType = {
+    val relTypeInt = parseInt32(jo, fieldName)
+    throwUnimplIf(relTypeInt != PatNodeRelType.AssignedTo.IntVal,
+          "Only AssignedTo has been implemented [TyEUNIMPLRELTYP]")
+    PatNodeRelType.fromInt(relTypeInt) getOrElse {
+      throwBadJson("TyEPATPOSTRELTYP", s"$fieldName: Bad pat post rel type: '$relTypeInt'")
     }
   }
 

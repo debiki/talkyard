@@ -1,5 +1,39 @@
 
---==== Circles and User Lists =================================================
+-- Bit manipulation in Postgres, e.g.:
+--   select (12::bit(31) & (1::bit(31) << 3))::integer  ——>  8::int4
+-- Also:
+--   https://medium.com/developer-rants/bitwise-magic-in-postgresql-1a05284e4017
+
+
+--=============================================================================
+--  Misc new domains?
+--=============================================================================
+
+-- *_u: For unused columns, just sketching the future:
+create domain i16_u smallint;
+create domain i32_u smallint;
+create domain i64_u smallint;
+alter  domain i16_u add constraint i16_u_c_null check (value is null);
+alter  domain i32_u add constraint i32_u_c_null check (value is null);
+alter  domain i64_u add constraint i64_u_c_null check (value is null);
+
+create domain text_nonempty_ste90_trimmed_d text_nonempty_ste90_d;
+alter domain  text_nonempty_ste90_trimmed_d add
+   constraint text_nonempty_ste90_trimmed_d_c_trimmed check (is_trimmed(value));
+
+create domain folder_path_d text_nonempty_ste90_d;
+alter  domain folder_path_d add
+   constraint folder_path_d_c_chars check (value ~ '^/([a-z0-9][a-z0-9_-]*/)+$');
+
+-- See if others are active / here, currently?  Can it ever make sense to
+-- let that be per category or page (chat)?
+create domain can_see_whos_here_d i16_d;
+alter  domain can_see_whos_here_d add
+   constraint can_see_whos_here_d_c_null check (value is null);
+
+--=============================================================================
+--  Circles
+--=============================================================================
 
 -- User lists, so can assign many to something. Or have more than one author,
 -- or owner. And for private comment sub threads — who can see them.
@@ -7,70 +41,28 @@
 -- in the permission system (they're just lists). But currently only guest
 -- (and anons, soon) ids have ids < 0.
 
--- New types of pats — flavors of groups: pat lists, and circles. Here:
-
-create domain how_private_d      i16_gz_lt128_d;
-alter table users3 add column how_private_c  how_private_d; -- or  can_add_more_c ?
-comment on column  users3.how_private_c  is $_$
-If non-null, this should be a list (is_pat_list_c true), and the how_private_c
-value says if it's ok to add more people to this list, and if someone added,
-can see already existing private comments in private sub threads by pats
-in this list:
-1) May add more people to the private page (make it less private)
-and they get to see the alreday existing comments, or
-2) Can add more people to a private page, but they don't get to see any
-already existing comments; only new comments (posted after hen got added).
-(Maybe a  perms_on_pats_t.cannot_see_post_nrs_below_c, or how else remember this?)
-Or 3) If adding more people, a new private page gets created, with the
-original people and the ones added.
-$_$;
-
-
-alter table users3 add column is_pat_list_c  bool;
-comment on column  users3.is_pat_list_c  is $_$
-If non-null, this pats_t row is not a real group, but a help construction
-that lists users or groups, and wherever this list-of-pats appear, the pats
-are to be listed. For example, if  posts_t.author_id_c  is a list,
-and Alice and Bob are in the list, then Alice's and Bob's usernames are shown
-instead of the lists username (it has none), e.g.:
-"By Alice and Bob on 2022-03-04: ....", if authors_id_c points to
-that list with Alice and Bob. But if authors_id_c is a non-list group,
-e.g. Support Team, then the text would read "By Support Team", instead
-of listing all members.
-$_$;
+-- New type of pat: Flavor of groups, pat circles:
 
 alter table users3 add column is_circle_c    bool;
+
 comment on column  users3.is_circle_c  is $_$
 Circles are bottom-up constructed groups — anyone in a community can create
 a circle, and let others join. Maybe they'll be able to @mention the
 circle, and they can create private discussions for their circle only?
 $_$; --'
 
-alter table users3 add constraint  pats_c_patlist_is_group check (
-    (is_pat_list_c is not true) or (is_group is true));
-
 alter table users3 add constraint  pats_c_circle_is_group check (
     (is_circle_c is not true) or (is_group is true));
 
-alter table users3 add constraint  pats_c_not_patlist_circle check (
-    (is_pat_list_c is not true) or (is_circle_c is not true));
-
-alter table users3 add constraint  pats_c_private_is_patlist check (
-    (how_private_c is null) or (is_pat_list_c is true));
-
--- Lists don't have any username, so need to drop this constraint, was:
---    check (user_id < 0 or created_at is not null and username is not null)
--- OR let lists have ids < 0, is that better?
-alter table users3 drop constraint people_member_c_nn;
-alter table users3 add constraint pats_c_members_have_username check (
-    (user_id < 0) or is_pat_list_c or (username is not null));
 
 -- Recreate this. WHy might guests (< 0) have no created_at? Don't remember.
 alter table users3 add constraint pats_c_members_have_username check (
     (user_id < 0) or (created_at is not null));
 
 
---==== Custom types ===========================================================
+--=============================================================================
+--  Custom types
+--=============================================================================
 
 -- Types and values for plugins, in the future.
 
@@ -182,13 +174,14 @@ create unique index types_u_anypat_basetype_subtype_urlslug on types_t (
 -- For pat rels:
 
 
-alter table post_actions3 rename to pat_rels_t;  -- upd triggers too!
+-- upd triggers too!
+alter table post_actions3 rename to pat_node_rels_t; -- not: pat_rels_t;
 
 alter table post_actions3 drop column action_id; -- ?. Already noted below in "delete: ...".
-alter table post_actions3 rename column created_at to at_c:  -- or "added_at_c" or drop it?
+alter table post_actions3 rename to created_at to added_at_c;
 -- Audit log, instead:
 alter table post_actions3 drop column updated_at;
-alter table post_actions3 drop column deleted_at;
+alter table post_actions3 drop column deleted_at;  -- delete the row instead?
 alter table post_actions3 drop column deleted_by_id;
 
 -- Maybe not — instead reuse  rel_type_c and sub_type_c, if > 1000 they're custom types?
@@ -197,6 +190,7 @@ alter table post_actions3 add    column  cust_sub_type_c   cust_type_d;
 
 -- Yes:
 alter table post_actions3 add    column  cust_json_c       jsonb_ste100_000_d;
+alter table post_actions3 add    column  cust_i64_c        i64_d; -- ?
 
 --------------- But so many foregin keys, 3 --------------
 -- fk ix: patrels_i_custreltype
@@ -238,7 +232,7 @@ create index patrels_i_reltype on post_actions3 (site_id, rel_type_c, sub_type_c
 
 -- For post rels:
 
-create table post_rels_t (
+create table post_post_rels_t (  -- or:  node_node_rels_t?, see below
   site_id_c,
   from_post_id_c,
 
@@ -247,8 +241,8 @@ create table post_rels_t (
 
   dormant_status_c,
 
-  thing_type_c   thing_type_d, -- these are custom types that references types_t
-  sub_type_c     sub_type_d,   -- iff ids > 1000. Otherwise built-in, not fks.
+  thing_type_c   thing_type_d, -- can be a custom type that references types_t
+  sub_type_c     sub_type_d,   -- then, thing type id > 10 000? Otherwise built-in, no fk?
 
   cust_i32_c     i32_d,
   cust_json_c    jsonb_ste100_000_d,
@@ -265,16 +259,18 @@ alter table posts3 add column  cust_json_c  jsonb_ste100_000_d;
 -- Add ix and fks [pg_15]
 
 
---== / Custom types ===========================================================
+--=============================================================================
+-- / Custom types
+--=============================================================================
 
 
---======================================================================
---  post_rels_t
---======================================================================
+--=============================================================================
+--  post_rels_t  or  node_node_rels_t  ?
+--=============================================================================
 
 ------------------------------------------------------------------------
-comment on table  post_rels_t  is $_$
-Store simple relationships from posts to whatever, e.g. AnswerTo, FlagOf.
+comment on table  node_node_rels_t  is $_$   -- not:  post_rels_t
+Relationships from one post to another post, e.g. AnswerTo, FlagOf.
 $_$;
 ------------------------------------------------------------------------
 
@@ -283,26 +279,14 @@ $_$;
 
 -- Later:
 -- alter table pages3 add column closed_status_c closed_status_d;
--- — what would that be? The same as the OrigPost's closed_status_c?
+-- — by default, the same as the orig post's status.
 
 -- Replace all pages_t.answered_by_id_c, published_by_id_c,
 --     postponed_by_id_c, planned_by_id_c, started_by_id_c,
 --     paused_by_id_c, done_by_id_c, closed_by_id_c, locked_by_id_c,
 --     frozen_by_id_c, unwanted_by_id_c, hidden_by_id_c, deleted_by_id_c
--- with:  private_status_c
---                 [edit] No, using private_pats_id_c instead. And the following might be
---                 a user list/group setting instead: [/edit]
---            null or 0 = not private,
---            1 = yes, can make public,
---            2 = yes, can*not* make public, but can add more who can see it,
---            3 = yes but cannot add more pats who can see it (only indirectly via groups?)
---        assigned_status_c  — maybe should be a bool?
---            over complicated:
---                1 = assigned to one
---                2 = assigned to many
---                3 = assigned to one or many, but they're all absent (e.g. resigned & quit) ?
---        doing_status_c
---                planned / started / paused / done
+-- with:
+--        answered_status_c (added already)
 --        review_status_c
 --                needs review / sbd assigned / review started / done looks bad / looks good
 --        publish_status_c  or publish_at_c  ?
@@ -311,7 +295,6 @@ $_$;
 --                   1 = not yet published
 --                   2 = scheduled
 --                   3 = published
---        closed_status_c,
 --        unwanted_status_c
 --        hidden_status_c,
 --        deleted_status_c ?   And details (who did what, when) in post_pats_t?
@@ -323,77 +306,11 @@ $_$;
 --  — move some / most-of ?  this db-wip stuff to there instead?
 --
 
+-- Sidebar menu:
+--
 -- Maybe there should be another page setting: pinInWatchbar? (as opposed to topic list)
--- Or should that be a separate table. Maybe the same as a bookmarks table? Bookmarks
+-- Or should that be stored in a sidebar menu data structure?  [bookmarks] [MenuTree]
 -- can also form a tree structure, just like future pages and cats in the watchbar.
-
--- Don't!?
-create table trees_t (  --  NO, instead, use posts_t for bookmarks?
-                        --  A page and comments is already a tree structure,
-                        --  with all we need!? almost precisely what we neeed
-      --
-      -- Such an odd, & good!?, idea.
-      -- Posts & bookmarks, the same table?
-      -- Just like persons and groups, same table? (Which worked out great.)
-      --
-      -- A new page & post type:  PageType.Linkbar / Bookmarks?
-      -- And type Linkbar, for Everyone, appears in the linkbar,
-      -- and post_t.visible_only_to_id can hide some links.
-      --
-      -- And  posts_t.doing_status_c then automatically works
-      -- for bookmarks too! And one can create a bookmark,
-      -- and transfer it to someone else's personal bookmarks page,
-      -- maybe continue seeing it, via visible_only_to_c?
-      -- and have it linked from one's own bookmarks page?
-
-
-  -- Pk: (these 4 cols)
-  site_id_c,
-  for_pat_id_c,   -- Everyone + TreeType.Linkbar => appears in the linkbar (watchbar)
-  tree_type_c,    -- TreeType.Linkbar or Bookmarks
-  node_id_c,
-
-  parent_id_c,    -- Null unless nested? FK to:
-                  --    (site_id_c, for_pat_id_c, tree_type_c, node_id_c).
-  created_by_id_c, -- An admin might give a bookmark "task" to sbd else?
-  owner_id_c,     -- Who may edit this tree, if different from for_pat_id_c.
-  visible_to_id_c, --- gah gets complicated
-
-  node_title_c,   -- To override title of page or category or tag below.
-  node_descr_c,   -- Optional personal comment about an assignment?
-  node_order_c,
-  -- A node can be collapsed by default.
-  -- And a pat can collapse or hide a default node: (site_id, pat_id, node_id, hide = true)
-  node_collapsed_c,
-  node_hidden_c
-
-  -- At most one of these:
-  node_page_id_c,  -- shows assignees, doing status
-  node_post_id_c,  --       —""—
-  node_cat_id_c,
-  node_tag_id_c,
-  node_pat_id_c,
-  node_url_c,
-
-  -- To insert another tree node into one's own bookmarks?
-  -- (It cannot link back, because parent_id_c must be to the same tree.)
-  other_tree_for_pat_id_c,
-  other_tree_type_c,
-  other_tree_node_id_c,
-
-  -- Optional:
-  children_order_c,
-  children_what_c,  -- e.g. top 3 pages in cat, if this is a cat
-
-  created_at_c,   -- If sorting children by date
-  archived_c,      -- then not loaded by default
-  reminder_at_c,
-  reminder_interval_c,
-  my_doing_status_c, -- if someone wants hens own task related to a post,
-                     -- not visible to others (assuming TreeType is Bookmarks).
-);
-
-
 -- maybe pointless? Can instead always be a tree_t.reminder_at_c?
 -- create table reminders_t (
 --   site_id_c,
@@ -406,21 +323,13 @@ create table trees_t (  --  NO, instead, use posts_t for bookmarks?
 
 
 
---   pages_t.pin_in_linkbar_order_c 
-
-alter table perms_on_pages_t add columns:
-  can_see_assigned_groups_c     bool,
-  can_see_assigned_persons_c    bool,
-  can_assign_self_c             bool,
-  can_assign_others_c           bool,
-
-
 -- Split settings3 and pages3 into:
 --   pages_t,
 --   sect_props_t, sect_views_t, sect_stats_t,
 --   disc_props_t, disc_views_t, disc_stats_t,
 -- see: y2999/wip_sect_disc_props_views_stats.sql
 
+-- Later, drop: category_id, page_id.
 
 -- Tags:
 create domain show_tag_how_d as i16_d;
@@ -447,6 +356,8 @@ alter domain show_tag_how_d add constraint show_tag_how_d_c_vals_in check (
 
 -- what's this:  logo_url_or_html
 
+-- No, this should be a per category setting instead. — Fine, will automatically be,
+-- once  nodes_t  is in use.
 alter table settings3 add column media_in_posts int;
 alter table settings3 add constraint settings_c_mediainposts check (
     media_in_posts between 0 and 100);
@@ -478,19 +389,23 @@ rename table alt_page_ids3 to discussion_keys;
 -- or an url path:   /....
 
 
--- Discussion id / page id  domain?:
-create domain page_id_st_d text_oneline_57_d;
-alter domain page_id_st_d add constraint url_slug_d_c_regex check (
-    value ~ '^[[:alnum:]_-]*$');
-comment on domain page_id_st_d is
-    'Currently, page ids are strings — later, those will become aliases, '
-    'and there''l be numeric ids instead?';
 ---------------
 
--- RENAME pages3 to  page_meta_t?
--- RENAME  default_category_id  to def_sub_cat_id, no, def_descendant_cat_id
+-- RENAME posts3 to  nodes_t
+-- MERGE categories3, pages3 into nodes_t (formerly posts3).
+--        And, parts of settings3 into nodes_t too, namely all settings
+--        that can vary from category to category (& page).
+--    RENAME  default_category_id  to  def_descendant_cat_id_c
+-- RENAME pages3 to  node_stats_t  and make it useful for all of cat, page, posts stats.
+-- RENAME page_users3 into node_pat_stats_t, ... no, pat_page_visits_t (see below)?
+--    MOVE column  joined_by_id  to:  perms_on_nodes_t
+--    MOVE column  incl_in_summary_email_at_mins  to new table:  pat_node_prefs_t ?
+-- REMOVE column  post_read_stats3.ip,  store in audit_log_t instead on login/if-changes, or elsewhere.
 -- RENAME  users3.last_reply_at/by_id  to  last_appr_repl_at/by_id
 
+-- RENAME settings3.many_sections  —> enable_sub_sites_c?
+--           DROP:  category_id,  page_id  — will be only in  nodes_t  instead.
+-- RENAME users3 -> pats_t
 -- change users3.email_notfs to int, remove _toFlag [7KABKF2]
 
 alter table settings3 drop column embedded_comments_category_id;
@@ -1041,3 +956,161 @@ alter table posts3 add constraint posts_c_draft_where_eq_pagetype_null check (
 -- & no cat or pat,  if is edits.
 -- & ... ?
 
+
+
+--======================================================================
+--======================================================================
+--======================================================================
+--  cont_prefs_t
+--======================================================================
+--======================================================================
+
+
+create domain content_set_type_d int;
+alter  domain content_set_type_d add
+   constraint content_set_type_c_in_11 check (value in (11));
+  -- 1 = whole site, 4 = mixed (opt cat + opt tags + opt page ids),
+  -- 7 = tag(s) only, 11 = cat(s) only, 14 = page(s), 17 = replies?
+
+
+-- Content settings/preferences
+-------------------------------------------------
+
+-- For categories and tags. Can sometimes be overridden by groups or individual users.
+
+
+-- create table cont_prefs_mixed_t(
+--   site_id_c                        site_id_d,    -- pk
+--   for_pat_id_c                     member_id_d,  -- pk
+--   cont_prefs_pat_id_c
+--   cont_prefs_nr_c
+--   cat_id_c
+--   tagtype_id_c
+--   page_id_c
+
+-- Scala +=
+delete from cont_prefs_t  ;
+delete from cont_prefs_t where site_id_c = ?  ;
+
+-- Wait with this. Instead, add categories3 (cats_t) cols for now,
+-- see:  ./y2023/v419__anon_posts_disc_prefs.sql
+--
+create table cont_prefs_t(
+  site_id_c                        site_id_d, -- pk
+  pat_id_c                         member_id_d,  -- pk
+  prefs_nr_c                       i16_gz_d,  -- pk
+
+  content_set_type_c               content_set_type_d not null,
+
+-- ren to  anon_ops_c
+  ops_start_anon_c                 never_alowd_recd_always_d,
+-- ren to  anon_comts_c
+  cmts_start_anon_c                never_alowd_recd_always_d,
+  -- posts_stay_anon__unimpl_c        never_alowd_recd_always_d,
+  -- min_anon_mins__unimpl_c          i32_gz_d,
+  -- deanon_pages_aft_mins__unimpl_c  i32_gz_d,
+  -- deanon_posts_aft_mins__unimpl_c  i32_gz_d,
+
+  -- sect_page_id__unimpl_c           page_id_st_d,
+  -- sect_page_id_int__unimpl_c       page_id_d__later,
+
+  -- pin_in_linksbar__unimpl_c        show_in_linksbar_d,
+  -- pin_in_linksbar_order__unimpl_c  i32_gz_d,
+  -- pin_in_cat_order__unimpl_c       i32_gz_d,
+  -- pin_in_globally__unimpl_c        i32_gz_d,
+
+  -- base_folder__unimpl_c            folder_path_d,
+  -- show_page_ids__unimpl_c          i16_gz_d,
+  -- ops_start_wiki__unimpl_c         never_always_d,
+  -- cmts_start_wiki__unimpl_c        never_always_d,
+  -- show_op_author__unimpl_c         i16_gz_d,
+  -- allow_cmts__unimpl_c             i16_gz_d, -- yes / no-but-may-reply-to-old / no-but-keep-old / no-and-hide-old  ?
+
+  constraint contprefs_p_prefsid primary key (site_id_c, pat_id_c, prefs_nr_c),
+
+  -- fk ix: pk
+  constraint contprefs_r_pats foreign key (site_id_c, pat_id_c)
+      references users3 (site_id, user_id) deferrable,
+
+  --  -- For specific users, id must be < 0 — so that there can be a > 0 constraint,
+  --  -- in cats_t and tagtypes_t, for the default prefs, to catch bugs (don't want the
+  --  -- default prefs to accidentally reference a specific user's/group's prefs).
+  --  constraint contprefs_c_id_gtz_iff_everyone check ((memb_id_c is null) = (prefs_id_c > 0)),
+
+  -- Guests and anon users cannot configure discussion preferences — only groups
+  -- and real users can.
+  constraint contprefs_c_for_users_and_groups check (pat_id_c >= 10)
+
+  -- -- Should use  memb_id_c = null, not 10, for everyone's prefs, otherwise
+  -- -- I think foreign keys won't work (Postgres wouldn't know the rows were unique?).
+  -- constraint contprefs_c_null_not_everyone check (memb_id_c <> 10)
+);
+
+
+-- Default prefs, for Everyone, id 10, per category.
+alter table categories3 add column cont_prefs_nr_c  i32_gz_d;
+alter table categories3 add column cont_pat_id_10_c i32_gz_d default 10;
+alter table categories3 add constraint cont_patid10_c_eq10 check (cont_pat_id_10_c = 10);
+
+-- fk ix: cats_i_patid10_contprefsid
+-- unique ix: 
+alter table categories3 add constraint cats_contprefsid_r_contprefs
+    foreign key (site_id, cont_pat_id_10_c, cont_prefs_nr_c)
+    references cont_prefs_t (site_id_c, pat_id_c, prefs_nr_c) deferrable;
+
+create index cats_i_patid10_contprefsid on categories3 (site_id, cont_pat_id_10_c, cont_prefs_nr_c);
+
+
+
+--======================================================================
+--  cont_prefs_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  cont_prefs_t  is $_$
+
+Settings and preferences that make sense for all of categories, tags
+and specific pages. Usually they're default, for everyone in the forum;
+then, memb_id_c is 10 (Everyone) and prefs_id_c is > 0.
+
+But some preferences can be overridden by user groups or individual users
+themselves — then, prefs_id_c is < 0 and memb_id_c is the user/group id.
+Let's say you want to always post anonymously in a specific
+category. Then, you can (not impl though) set ops_start_anon_c and cmts_start_anon_c
+to true, for yourself only, in that category. And thereafter you cannot
+forget to be anonyomus, there. Whilst others are unaffected.
+Or maybe you're the teacher, and don't care about being anonymous in one
+specific category — whilst the default (for all students) is to be anonymous. 
+
+Maybe later, there'll be a table cont_mixed_prefs_t for specifying
+content preferences for many categories, optionally combined with tags,
+in one single row. But currently there's one cont_prefs_t per category,
+maybe "soon" per tag too.
+
+Wikis: cont_prefs_t lets you implement wikis by making a forum
+category a wiki category: set ops_start_wiki_c to true, and set
+base_folder_c to e.g. '/wiki/' and show_page_ids_c to false.
+Alternatively, you can create a *tag* named 'wiki', and configure the
+same settings for that tag (instaed of a category).
+Then wiki pages can be placed in the categories where it makes the most sense
+whilst still being part of a wiki — just tag them with the wiki tag.
+So, a wiki via a category, or a tag. What makes sense, is community
+specific I suppose.
+
+Docs: In a documentation / articles category, you might want to set
+show_op_author_c = false and allow_cmts_c = false,
+and maybe base_folder_c = '/docs/'.
+Or you can use a 'docs' tag, and have docs in different categories,
+whilst still appearing below the '/docs/' URL path'
+$_$;  -- '
+
+-- comment on column  cont_prefs_t.anon_by_def_c  is $_$
+-- 
+-- If posts in this category, are anonymous, by default.
+-- $_$;
+-- ---------------------------------------------------------------------
+-- comment on column  cont_prefs_t.def_anon_level_c  is $_$
+-- 
+-- Default anonymity level, in this category.
+-- $_$; -- '
+------------------------------------------------------------------------

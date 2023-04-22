@@ -39,7 +39,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
         user_id,
         joined_by_id,
         kicked_by_id,
-        notf_level,   -- will remove, use page_notf_prefs3 instead [036KRMP4]
+        notf_level,   -- will remove, use page_notf_prefs_t instead [036KRMP4]
         notf_reason,  --
         incl_in_summary_email_at_mins,
         num_seconds_reading,
@@ -63,7 +63,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
       pp.userId.asAnyRef,
       pp.addedById.orNullInt,
       pp.removedById.orNullInt,
-      NullInt,  // will remove, use page_notf_prefs3 instead [036KRMP4]
+      NullInt,  // will remove, use page_notf_prefs_t instead [036KRMP4]
       NullInt,  //
       pp.inclInSummaryEmailAtMins.asAnyRef,
       // Similar code: insert list items. [04RKJUMS2]
@@ -163,7 +163,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
           select distinct page_id
           from posts3
           where site_id = ?
-            and created_by_id in (${ makeInListFor(patIds) })
+            and created_by_id in (${ makeInListFor(patIds) })   -- + pat_node_rels_t [AuthorOf] !
             and approved_at is not null
             and deleted_status = 0
             and hidden_at is null

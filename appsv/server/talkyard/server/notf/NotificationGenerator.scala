@@ -17,6 +17,7 @@
 
 package talkyard.server.notf
 
+import com.debiki.core
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki._
@@ -24,6 +25,7 @@ import debiki.Globals.isDevOrTest
 import debiki.EdHttp.throwForbiddenIf
 import talkyard.server.notf.NotificationGenerator._
 import talkyard.server.rendr.NashornParams
+
 import scala.collection.{immutable, mutable}
 import scala.util.matching.Regex
 
@@ -76,9 +78,12 @@ case class NotificationGenerator(
   // a mod task notf), so the post appears in hens notification list, in case
   // hen wants to find it again some time later (since it was a reply to hen).
   //
+  RENAME // to skipPatIds or patIdsDone? Because also for aoviding notifying
+  // one's own anons.
   private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
 
   private var nextNotfId: Option[NotificationId] = None
+  // Might be an anon.  ANON_UNIMPL. Make sure won't get notf to henself.
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
@@ -90,13 +95,27 @@ case class NotificationGenerator(
       toCreate = notfsToCreate.toVector,
       toDelete = notfsToDelete.toVector)
 
-
-  def generateForNewPost(page: Page, newPost: Post, sourceAndHtml: Option[SourceAndHtml],
-        anyNewModTask: Option[ModTask], doingModTasks: Seq[ModTask] = Nil,
-        skipMentions: Boolean = false): Notifications = {
+  /**
+    * @param page
+    * @param newPost
+    * @param sourceAndHtml
+    * @param anyNewModTask
+    * @param doingModTasks
+    * @param skipMentions
+    * @param postAuthor — If this is a new anonym's first post, the db tx inserting the anonym,
+    *    is still ongoing — then, it's good to get the author.
+    * @return
+    */
+  def generateForNewPost(page: Page, newPost: Post, sourceAndHtml: Opt[SourceAndHtml],
+        anyNewModTask: Opt[ModTask], doingModTasks: Seq[ModTask] = Nil,
+        skipMentions: Bo = false,
+        postAuthor: Opt[Pat] = None): Notifications = {
 
     require(page.id == newPost.pageId, "TyE74KEW9")
     require(anyNewModTask.isEmpty || doingModTasks.isEmpty, "TyE056KWH5")
+    require(postAuthor.forall(_.id == newPost.createdById),
+          o"""s$siteId: Wrong postAuthor id: ${postAuthor.map(_.id)}, but
+          newPost.createdById is ${newPost.createdById}) [TyEAUTID69256]""")
 
     if (newPost.isTitle)
       return generatedNotifications  // [no_title_notfs]
@@ -107,6 +126,14 @@ case class NotificationGenerator(
         dieIf(Globals.isDevOrTest, "TyE305KTUDP3", "Got a TitleSourceAndHtml")
         return generatedNotifications
     })
+
+    anyAuthor = postAuthor orElse Some(tx.loadTheParticipant(newPost.createdById))
+
+    if (core.isDevOrTest) postAuthor foreach { postAuthorArg =>
+      val postAuthorInDb = tx.loadTheParticipant(newPost.createdById)
+      dieIf(postAuthorArg != postAuthorInDb, "TyEAUTHORARGTX", o"""
+           postAuthorArg: $postAuthorArg  !=  postAuthorInDb: $postAuthorInDb""")
+    }
 
     // A new embedded discussions page shouldn't generate a notification, [new_emb_pg_notf]
     // because those pages are lazy auto created – and uninteresting event.
@@ -127,6 +154,7 @@ case class NotificationGenerator(
         genOneNotfMaybe(
               NotificationType.NewPostReviewTask,
               to = staffUser,
+              from = anyAuthor,
               about = newPost,
               isAboutModTask = true)
       }
@@ -148,8 +176,6 @@ case class NotificationGenerator(
           newPost.id, NotificationType.NewPostReviewTask)
     avoidDuplEmailToUserIds ++= oldNotfsToStaff.map(_.toUserId)
 
-    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
-
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
         s"approvedSource: ${newPost.approvedSource}, textAndHtml.text: ${textAndHtml.text} [TyE3WASC2]")
@@ -166,7 +192,9 @@ case class NotificationGenerator(
           : Unit = {
       for {
         replyingToPost <- ancestorsCloseFirst
+        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         if replyingToPost.createdById != newPost.createdById // not replying to oneself
+        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         if approverId != replyingToPost.createdById // the approver has already read newPost
         replyingToUser <- tx.loadParticipant(replyingToPost.createdById)
       } {
@@ -174,7 +202,8 @@ case class NotificationGenerator(
         // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
         // do about that.)
         _makeAboutPostNotfs(
-              notfType, about = newPost, inCategoryId = page.categoryId, replyingToUser)
+              notfType, about = newPost, inCategoryId = page.categoryId, replyingToUser,
+              sentFrom = anyAuthor)
       }
     }
 
@@ -198,7 +227,8 @@ case class NotificationGenerator(
             anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(  // [nashorn_in_tx] [save_post_lns_mentions]
                 newPost.approvedSource getOrDie "DwE82FK4", site, nashorn)
 
-      var mentionedMembers: Set[MemberVb] = tx.loadMembersVbByUsername(mentionedUsernames).toSet
+      var mentionedMembers: Set[MemberVb] =
+            tx.loadMembersVbByUsername(mentionedUsernames).toSet
 
       // Can create more mention aliases, like @new-members (= trust levels new & basic only),
       // and @guests and @here-now and @everyone (= all members)
@@ -225,6 +255,7 @@ case class NotificationGenerator(
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
         // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
+        // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         if userOrGroup.id != newPost.createdById  // poster mentions henself?
         if !notfCreatedAlreadyTo(userOrGroup.id)
         // Authz checks that we won't notify people outside a private chat
@@ -356,7 +387,7 @@ case class NotificationGenerator(
     //
     val pageRepliersPrefsOnPage: Set[PageNotfPrefAndWhy] = {  // [interact_notf_pref]
       if (page.meta.pageType.isChat) {
-        // Chats tend to be chatty? Maybe better let the pages_pat_replied_to
+        // Chats tend to be chatty? Maybe better let the pages_pat_replied_to_c
         // setting skip chats. And not impossible it'd be bad for performance
         // to notify / email hundreds of people in a chat "all the time"?
         Set.empty
@@ -465,15 +496,34 @@ case class NotificationGenerator(
   /** Direct messages are sent to all toUserIds, but not to any user mentioned in the
     * message.
     */
-  def generateForMessage(sender: Participant, pageBody: Post, toUserIds: Set[UserId])
+  def generateForMessage(sender: Pat, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
+
+    warnDevDieIf(sender.id != pageBody.createdById, "TyESENDR0AUTR", o"""Priv msg sender
+          != pageBody author: sender.trueId2: ${sender.trueId2},
+          pageBody.createdById: ${pageBody.createdById}""")
+
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
+    ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
     anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
-    tx.loadParticipants(toUserIds.filter(_ != sender.id)) foreach { user =>
-      _makeAboutPostNotfs(
-          // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
-          // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
-          NotificationType.Message, about = pageBody, inCategoryId = None, sendTo = user)
+    val patIdsToLoad = toUserIds.filter(id =>
+          // Normally enough.
+          id != sender.id &&
+          // But if is an anonym, compare true id too.  ANON_UNIMPL, review elsewhere this file
+          id != sender.trueId2.trueId)
+    val patsToMaybeNotify = tx.loadParticipants(patIdsToLoad)
+    patsToMaybeNotify foreach { user =>
+      if (user.trueId2.trueId == sender.trueId2.trueId) {
+        // `user` is sender's own anonym.  Don't notify the sender — hen is
+        // apparently replying to a comment by hens own anonym, or sth like that.
+      }
+      else {
+        _makeAboutPostNotfs(
+            // But what if is 2 ppl chat — then would want to incl 1st message instead? Because
+            // the first (the Orig Post) is just an auto gen "this is a chat" or sth text.
+            NotificationType.Message, about = pageBody, inCategoryId = None, sendTo = user,
+                    sentFrom = Some(sender))
+      }
     }
     generatedNotifications
   }
@@ -488,7 +538,15 @@ case class NotificationGenerator(
         minNotfLevel: NotfLevel = NotfLevel.Hushed): Unit = {
 
     // legacy variable names CLEAN_UP but not now
-    val toUserMaybeGroup = sendTo
+    val toUserMaybeGroup = sendTo match {
+      case a: Anonym =>
+        // Race, ok: The anon might just have been altered somehow, but doesn't matter
+        // if e.g. hens preferences are 0.01 seconds out of date. (Since we're notifying
+        // `a`, hen already exists, so we cannot not find `a`. (Until maybe [hard_deletes])
+        dao.getTheParticipant(a.anonForPatId)
+      case o => o
+    }
+
     val newPost = about
 
     if (sentToUserIds.contains(toUserMaybeGroup.id))
@@ -559,13 +617,16 @@ case class NotificationGenerator(
         genOneNotfMaybe(
               notfType,
               to = toGroup,
+              from = sentFrom,
               about = newPost)
 
         // Find ids of group members to notify, and excl the sender henself:  (5ABKRW2)
 
+        ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
         var groupMembers = tx.loadGroupMembers(groupId).filter(_.id != newPost.createdById)
 
-        dieIf(groupMembers.exists(_.isGuest), "TyE7ABK402")
+        // Only users and groups can be gruop members.
+        dieIf(groupMembers.exists(_.isGuestOrAnon), "TyE7ABK402")
 
         // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
         // because they're members of the AllMembers group. But later, if [sub_groups] supported,
@@ -663,6 +724,10 @@ case class NotificationGenerator(
       maySee.may
     }
 
+    // Later, [private_pats]: Load privacy settings for `sentFrom` (incl for hens
+    // groups), so we'll know if hens name should be included in the notification
+    // texts or not. — Do elsewhere in this file too, not just here.
+
     // Individual users' preferences override group preferences, on the same
     // specificity level (prefs per page,  or per category,  or whole site).
     for {
@@ -757,12 +822,14 @@ case class NotificationGenerator(
         return ()
       }
 
+      ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
       if (member.id == newPost.createdById)
         return ()
 
       UX; COULD // NotificationType.NewPage instead? Especially if: isEmbDiscFirstReply.
       genOneNotfMaybe(
             NotificationType.NewPost,
+            from = Some(sentFrom),
             to = member,
             about = newPost,
             generatedWhy = notfPref.why)
@@ -808,6 +875,7 @@ case class NotificationGenerator(
         return Notifications.None  // or: return generatedNotifications? the same?
     }
 
+    // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
     anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
@@ -926,6 +994,7 @@ case class NotificationGenerator(
     anyAuthor = Some(tx.loadTheParticipant(post.createdById))
     for {
       user <- usersToNotify
+      // ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
       if user.id != post.createdById
     } {
       // This is about the new (from the notf recipient's point of view) post,
@@ -940,6 +1009,9 @@ case class NotificationGenerator(
   }
 
 
+  /**
+    * @param from — From who. Default is ${about.createdById}.
+    */
   private def genOneNotfMaybe(
         notfType: NotfType,
         to: Pat,
@@ -953,10 +1025,18 @@ case class NotificationGenerator(
 
     val aboutPost = about
     val toPat = to
-    val fromPatId = from.map(_.id) getOrElse aboutPost.createdById
+    val fromPat: Pat = from getOrElse tx.loadTheParticipant(aboutPost.createdById)
+    val fromPatTrueId: TrueId = fromPat.trueId2
 
-    dieIf(toPat.id == fromPatId, "TyE4S602MRD5",
+    dieIf(toPat.id == fromPat.id, "TyE4S602MRD5",
           s"s$siteId: Notf to self, id: ${toPat.id}, about post id ${aboutPost.id}")
+
+    // If the notification is to or from an anon, the anon(s) might be the sender's
+    // own anonym(s). Then, don't generate any notf.
+    if (toPat.trueId2.trueId == fromPatTrueId.trueId) {
+      avoidDuplEmailToUserIds += toPat.id
+      return ()
+    }
 
     // One cannot talk with deactivated or deleted pats, or System or Sysbot.
     // (But one can mention e.g. @admins or @core_members — built-in pats.)
@@ -987,8 +1067,12 @@ case class NotificationGenerator(
     notfsToCreate += Notification.NewPost(
           notfType,
           id = newNotfId,
-          toUserId = toPat.id,
-          byUserId = fromPatId,
+          // Need to send notf to one's true account, not to any anonym. So use trueId.
+          // But if is pseudonym, then, send to the pseudonym? [pseudonyms_later]
+          toUserId = toPat.trueId2.trueId,
+          // Do *not* use trueId here though, because then any anonymous sender,
+          // would get revealed.  TESTS_MISSING  ANON_UNIMPL  TyTNOTFFROMANON
+          byUserId = fromPat.id,
           createdAt = aboutPost.createdAt,
           uniquePostId = aboutPost.id,
           smtpMsgIdPrefix = aboutPost.smtpMsgIdPrefix.map(_ + s".${toPat.id}.$newNotfId"),

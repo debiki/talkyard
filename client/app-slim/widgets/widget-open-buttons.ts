@@ -31,58 +31,26 @@ const r = ReactDOMFactories;
 export const DiscLayoutDropdownBtn = React.createFactory<DiscLayoutDropdownBtnProps>(
         function(props: DiscLayoutDropdownBtnProps) {
 
-  // The dialog is either for a specific page, or a category (and all pages therein).
-  dieIf(!!props.cat == !!props.page, 'TyE604MWJJ34');
+  const derived: NodePropsDerivedAndDefault = node_deriveLayout(props);
 
-  let layoutSource: DiscPropsSource;
-  if (props.cat) {
-    layoutSource = discProps_pluckFrom(props.cat);
-  }
-  else {
-    layoutSource = discProps_pluckFrom(props.page);
-    // Apply any current page temp layout tweaks (disappear on page reload).
-    if (props.layoutFor === LayoutFor.PageWithTweaks && props.store.curPageTweaks) {
-      const tempLayoutTweaks = discProps_pluckFrom(props.store.curPageTweaks);
-      layoutSource = { ...layoutSource, ...tempLayoutTweaks };
-    }
-  }
-
-  // If we're A) altering the page layout, e.g. the comments sort order,
-  // but not saving server side, then:  layoutFor === PageWithTweaks,
-  // and the default layout is the page *without* tweaks,
-  // that is:  PageNoTweaks = PageWithTweaks + 1.
-  //
-  // And if we're B) saving server side, then:  layoutFor === PageNoTweaks,
-  // and the defaults would be the parent category's layout props
-  // that is,  LayoutFor.Ancestors = PageNoTweaks + 1.
-  //
-  // So, the "parent" layout is +1:
-  //
-  const layoutForParent = props.layoutFor + 1;
-
-  const actualLayout: DiscPropsDerived = props.page
-          ? page_deriveLayout(props.page, props.store, props.layoutFor)
-          : cat_deriveLayout(props.cat, props.store, props.layoutFor);
-  const parentsLayout: DiscPropsDerived = props.page
-          ? page_deriveLayout(props.page, props.store, layoutForParent)
-          : cat_deriveLayout(props.cat, props.store, layoutForParent);
-
+  // Bit dupl code. [node_props_btn]
   return (
       Button({ className: 'e_DscLayB', onClick: (event) => {
           const atRect = cloneEventTargetRect(event);
           morebundle.openDiscLayoutDiag({
               atRect,
               // This is what's being edited.
-              layout: layoutSource,
+              layout: derived.layoutSource,
               // This is the defaults, e.g. parent category settings, will get used
               // if layoutSource settings cleared (gets set to Inherit).
-              default: parentsLayout,
+              default: derived.parentsLayout,
               // These forSth just affect the dialog title.
               forCat: !!props.cat,
               forEveryone: props.forEveryone,
               onSelect: props.onSelect });
         }},
-        comtOrder_title(actualLayout.comtOrder), ' ', r.span({ className: 'caret' })));
+        comtOrder_title(derived.actualLayout.comtOrder),
+            ' ', r.span({ className: 'caret' })));
 });
 
 

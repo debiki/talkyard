@@ -67,7 +67,8 @@ trait PostsDao {
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, deleteDraftNr: Option[DraftNr],
-        byWho: Who, spamRelReqStuff: SpamRelReqStuff)
+        byWho: Who, spamRelReqStuff: SpamRelReqStuff,
+        anonHow: Opt[WhichAnon] = None)
         : InsertPostResult = {
 
     val authorId = byWho.id
@@ -91,15 +92,17 @@ trait PostsDao {
     val (newPost, author, notifications, anyReviewTask) = writeTx { (tx, staleStuff) =>
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
       insertReplyImpl(textAndHtml, pageId, replyToPostNrs, postType,
-            byWho, spamRelReqStuff, now, authorId, tx, staleStuff)
+            byWho, spamRelReqStuff, now, authorId, tx, staleStuff, anonHow)
     }
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatchForPost(newPost, author, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(
+          newPost, showHidden = true, reqerId = byWho.id)
 
     // (If reply not approved, this'll send mod task notfs to staff [306DRTL3])
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
+          // This can be an anonym's id — fine. (Right?)
           byId = author.id)
 
     InsertPostResult(storePatchJson, newPost, anyReviewTask)
@@ -108,22 +111,53 @@ trait PostsDao {
 
   def insertReplyImpl(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff,
-        now: When, authorId: UserId, tx: SiteTx, staleStuff: StaleStuff,
+        now: When,
+        // Rename authorId to what? realAuthorId?  or rename  author  to  authorMaybeAnon?
+        authorId: UserId,
+        tx: SiteTx, staleStuff: StaleStuff,
+        doAsAnon: Opt[WhichAnon] = None,
         skipNotfsAndAuditLog: Boolean = false)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
 
-    val authorAndLevels = loadUserAndLevels(byWho, tx)
+    val realAuthorAndLevels = loadUserAndLevels(byWho, tx)
     val page = newPageDao(pageId, tx)
     val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad  { missingPostNr =>
       throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
     }
 
-    val author = authorAndLevels.user
-    val authorAndGroupIds = tx.loadGroupIdsMemberIdFirst(author)
+    // Might be a [pseudonyms_later] though, if ever implemented.
+    val realAuthor = realAuthorAndLevels.user
+    val realAuthorAndGroupIds = tx.loadGroupIdsMemberIdFirst(realAuthor)
 
-    dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, authorAndGroupIds,
+    // Dupl code. [get_anon]
+    // Hmm, rename to  otherAuthor,  and None by default.  And set  createdById
+    // to the real account, always,  and  author_id_c  to any anonym's id.   [mk_new_anon]
+    val authorMaybeAnon: Pat =
+          if (doAsAnon.isEmpty) {
+            realAuthor
+          }
+          else doAsAnon.get match {
+            case WhichAnon.SameAsBefore(anonId) =>
+              tx.loadTheParticipant(anonId).asAnonOrThrow
+            case WhichAnon.NewAnon(anonStatus) =>
+              // Dupl code. [mk_new_anon]
+              val anonymId = tx.nextGuestId
+              val anonym = Anonym(
+                    id = anonymId,
+                    createdAt = tx.now,
+                    anonStatus = anonStatus,
+                    anonForPatId = realAuthor.id,
+                    anonOnPageId = pageId)
+              // We'll insert the anonym before the page exists, but there's a
+              // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
+              tx.deferConstraints()
+              tx.insertAnonym(anonym)
+              anonym
+          }
+
+    dieOrThrowNoUnless(Authz.mayPostReply(realAuthorAndLevels, realAuthorAndGroupIds,
       postType, page.meta, replyToPosts, tx.loadAnyPrivateGroupTalkMembers(page.meta),
       tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
       tx.loadPermsOnPages()), "EdEMAY0RE")
@@ -137,7 +171,7 @@ trait PostsDao {
     val uniqueId = tx.nextPostId()
     val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
     val commonAncestorNr = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
-    val anyParent =
+    val anyParent: Opt[Post] =
       if (commonAncestorNr == PageParts.NoNr) {
         // Flat chat comments might not reply to anyone in particular.
         // On embedded comments pages, there's no Original Post, so top level comments
@@ -167,12 +201,12 @@ trait PostsDao {
     // then in a corrupt import file the posts on a page might form cycles. [ck_po_ckl])
 
     val (reviewReasons: Seq[ReviewReason], shallApprove) =
-      throwOrFindNewPostReviewReasons(page.meta, authorAndLevels, tx)
+          throwOrFindNewPostReviewReasons(page.meta, realAuthorAndLevels, tx)
 
     val approverId =
-      if (author.isStaff) {
+      if (realAuthor.isStaff) {
         dieIf(!shallApprove, "EsE5903")
-        Some(author.id)
+        Some(realAuthor.id)
       }
       else if (shallApprove) Some(SystemUserId)
       else None
@@ -185,7 +219,7 @@ trait PostsDao {
       multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
       postType = postType,
       createdAt = now.toJavaDate,
-      createdById = authorId,
+      createdById = authorMaybeAnon.id,
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
       approvedById = approverId)
@@ -195,7 +229,7 @@ trait PostsDao {
     val newFrequentPosterIds: Seq[UserId] =
       if (shallApprove)
         PageParts.findFrequentPosters(page.parts.allPosts, // skip newPost, since we ignore ...
-          ignoreIds = Set(page.meta.authorId, authorId))   // ... the author here anyway [3296KGP]
+          ignoreIds = Set(page.meta.authorId, authorMaybeAnon.id))   // ... the author here anyway [3296KGP]
       else
         page.meta.frequentPosterIds
 
@@ -203,7 +237,7 @@ trait PostsDao {
     val newMeta = oldMeta.copy(
       bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
       lastApprovedReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastApprovedReplyAt,
-      lastApprovedReplyById = shallApprove ? Option(authorId) | oldMeta.lastApprovedReplyById,
+      lastApprovedReplyById = shallApprove ? Option(authorMaybeAnon.id) | oldMeta.lastApprovedReplyById,
       frequentPosterIds = newFrequentPosterIds,
       numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
       numRepliesTotal = page.parts.numRepliesTotal + 1,
@@ -220,11 +254,16 @@ trait PostsDao {
       dieIf(uploadRefs != uplRefs2, "TyE503SKH5", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
+    val anyParentOrigAuthor: Opt[Pat] = anyParent.map(parentPost =>
+                                          tx.loadTheParticipant(parentPost.createdById))
+
     lazy val auditLogEntry = AuditLogEntry(
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewReply,
-      doerId = authorId,
+      doerTrueId = authorMaybeAnon.trueId2,
+      // And add:
+      // doer_false_id = ...
       doneAt = now.toJavaDate,
       browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
@@ -236,7 +275,7 @@ trait PostsDao {
       targetPageId = anyParent.map(_.pageId),
       targetUniquePostId = anyParent.map(_.id),
       targetPostNr = anyParent.map(_.nr),
-      targetUserId = anyParent.map(_.createdById))
+      targetPatTrueId = anyParentOrigAuthor.map(_.trueId2))
 
     val anyReviewTask = if (reviewReasons.isEmpty) None
     else Some(ReviewTask(
@@ -245,13 +284,13 @@ trait PostsDao {
       createdById = SystemUserId,
       createdAt = now.toJavaDate,
       createdAtRevNr = Some(newPost.currentRevisionNr),
-      maybeBadUserId = authorId,
+      maybeBadUserId = authorMaybeAnon.id,
       postId = Some(newPost.id),
       postNr = Some(newPost.nr)))
 
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
-      else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
+      else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None
       else Some(
         SpamCheckTask(
           createdAt = globals.now(),
@@ -265,11 +304,11 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
             htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
-          who = byWho,
+          reqrId = authorMaybeAnon.id,
           requestStuff = spamRelReqStuff))
 
     val stats = UserStats(
-      authorId,
+      authorMaybeAnon.id,
       lastSeenAt = now,
       lastPostedAt = Some(now),
       firstDiscourseReplyAt = Some(now),
@@ -291,10 +330,10 @@ trait PostsDao {
       updatePagePopularity(pagePartsInclNewPost, tx)
 
       staleStuff.addPageId(pageId)
-      saveDeleteLinks(newPost, textAndHtml, authorId, tx, staleStuff)
+      saveDeleteLinks(newPost, textAndHtml, authorMaybeAnon.trueId2, tx, staleStuff)
     }
     uploadRefs foreach { uploadRef =>
-      tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
+      tx.insertUploadedFileReference(newPost.id, uploadRef, addedById = authorMaybeAnon.id)
     }
     if (!skipNotfsAndAuditLog) {
       insertAuditLogEntry(auditLogEntry, tx)
@@ -307,14 +346,19 @@ trait PostsDao {
     // on the Moderation page too.
     // Test:  modn-from-disc-page-review-after  TyTE2E603RKG4
     replyToPosts foreach { replyToPost =>
-      maybeReviewAcceptPostByInteracting(replyToPost, moderator = author,
+      RENAME // moderator to maybeMod ?
+      // Use authorMaybeAnon, so won't accidentally reveal one's true id,
+      // by approving exactly at the same time as replying. (Then, if is anon,
+      // the replied-to post won't get approved by replying.)
+      maybeReviewAcceptPostByInteracting(replyToPost, moderator = authorMaybeAnon,
             ReviewDecision.InteractReply)(tx, staleStuff)
     }
 
     val notifications =
       if (skipNotfsAndAuditLog) Notifications.None
       else notfGenerator(tx).generateForNewPost(
-            page, newPost, Some(textAndHtml), anyNewModTask = anyReviewTask)
+            page, newPost, Some(textAndHtml), postAuthor = Some(authorMaybeAnon),
+            anyNewModTask = anyReviewTask)
     tx.saveDeleteNotifications(notifications)
 
     // Could save the poster's topics-replied-to notf pref as  [interact_notf_pref]
@@ -327,7 +371,8 @@ trait PostsDao {
     val ownPageNotfPrefs = tx.loadNotfPrefsForMemberAboutPage(pageId, authorAndGroupIds)
     val interactedNotfPrefs = tx.loadNotfPrefsAboutPagesInteractedWith(authorAndGroupIds)
     ... derive prefs, looking at own and groups ...
-    val oldPostsByAuthor = page.parts.postByAuthorId(authorId)
+    val oldPostsByAuthor = page.parts.postByAuthorId(author.id)
+          where:  postByAuthorId(authorId)  was:  allPosts.filter(_.createdById == authorId)
     if (oldPostsByAuthor.isEmpty) {
       savePageNotfPrefIfAuZ(PageNotfPref(
             peopleId = authorId,
@@ -335,7 +380,7 @@ trait PostsDao {
             pageId = Some(pageId)), byWho = Who.System)
     } */
 
-    (newPost, author, notifications, anyReviewTask)
+    (newPost, authorMaybeAnon, notifications, anyReviewTask)
   }
 
 
@@ -354,6 +399,10 @@ trait PostsDao {
         : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
       return (Nil, true)
+
+    // When posting anonymously, one's real account (not the anon account) is used
+    // to find out if one's anon posts need to get reviewed.
+    dieIf(author.user.isAnon, "TyE7MW40GM")
 
     // Don't review direct messages — then all staff would see them. Instead, only non-threat
     // users with level >= Basic may post private messages to non-staff people.
@@ -628,7 +677,8 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = jsonMaker.makeStorePatchForPost(post, author, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatchForPost(
+          post, showHidden = true, reqerId = byWho.id)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
@@ -643,9 +693,13 @@ trait PostsDao {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE592MWP2")
 
+    // Chat messages currently cannot be anonymous. [anon_chats]
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
-    val authorId = who.id
     val authorAndLevels = loadUserAndLevels(who, tx)
+    val author: Pat = authorAndLevels.user
+
+    // This'd be a bug? [anon_chats]
+    throwForbiddenIf(author.isAnon, "TyE5982sKTYNJ4", "Anons cannot post chat messages")
 
     val settings = loadWholeSiteSettings(tx)
 
@@ -653,9 +707,6 @@ trait PostsDao {
     val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
     if (!page.pageType.isChat)
       throwForbidden("EsE6JU04", s"Page '${page.id}' is not a chat page")
-
-    // This is better than some database foreign key error.
-    tx.loadParticipant(authorId) getOrElse throwNotFound("EsE2YG8", "Bad user")
 
     val newPost = Post.create(
       uniqueId = uniqueId,
@@ -665,7 +716,7 @@ trait PostsDao {
       multireplyPostNrs = Set.empty,
       postType = PostType.ChatMessage,
       createdAt = tx.now.toJavaDate,
-      createdById = authorId,
+      createdById = author.id,
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
       // Chat messages are currently auto approved. [7YKU24]
@@ -674,7 +725,7 @@ trait PostsDao {
     // COULD find the most recent posters in the last 100 messages only, because is chat.
     val newFrequentPosterIds: Seq[UserId] =
       PageParts.findFrequentPosters(page.parts.allPosts,  // skip newPost since we ignore ...
-        ignoreIds = Set(page.meta.authorId, authorId))    // ...the author here anyway [3296KGP]
+        ignoreIds = Set(page.meta.authorId, author.id))    // ...the author here anyway [3296KGP]
 
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(
@@ -685,7 +736,7 @@ trait PostsDao {
       numPostsTotal = oldMeta.numPostsTotal + 1,
       //numOrigPostRepliesVisible <— leave as is — chat messages aren't orig post replies.
       lastApprovedReplyAt = Some(tx.now.toJavaDate),
-      lastApprovedReplyById = Some(authorId),
+      lastApprovedReplyById = Some(author.id),
       frequentPosterIds = newFrequentPosterIds,
       version = oldMeta.version + 1)
 
@@ -713,7 +764,7 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
             htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
-          who = who,
+          reqrId = author.id,
           requestStuff = spamRelReqStuff))
 
     val anyModTask =
@@ -724,7 +775,7 @@ trait PostsDao {
                 createdById = SystemUserId,
                 createdAt = tx.now.toJavaDate,
                 createdAtRevNr = Some(newPost.currentRevisionNr),
-                maybeBadUserId = authorId,
+                maybeBadUserId = author.id,
                 postId = Some(newPost.id),
                 postNr = Some(newPost.nr)))
 
@@ -732,7 +783,7 @@ trait PostsDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewChatMessage,
-      doerId = authorId,
+      doerTrueId = author.trueId2,
       doneAt = tx.now.toJavaDate,
       browserIdData = who.browserIdData,
       pageId = Some(page.id),
@@ -740,13 +791,14 @@ trait PostsDao {
       postNr = Some(newPost.nr),
       // The chat is flat, one doesn't choose anyone to reply to — but it'd be nice
       // to know if someone was *mentioned*?  [events_mentions]
+      // Later: [threaded_chat]?
       targetPageId = None,  // or se to page.id?
       targetUniquePostId = None,
       targetPostNr = None,
-      targetUserId = None)
+      targetPatTrueId = None)
 
     val userStats = UserStats(
-      authorId,
+      author.id,
       lastSeenAt = tx.now,
       lastPostedAt = Some(tx.now),
       firstChatMessageAt = Some(tx.now),
@@ -758,11 +810,12 @@ trait PostsDao {
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
     updatePagePopularity(page.parts, tx)
     uploadRefs foreach { uploadRef =>
-      tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
+      AUDIT_LOG // uploaded files? (And elsewhere too then)
+      tx.insertUploadedFileReference(newPost.id, uploadRef, addedById = author.id)
     }
 
     staleStuff.addPageId(page.id)
-    saveDeleteLinks(newPost, textAndHtml, authorId, tx, staleStuff)
+    saveDeleteLinks(newPost, textAndHtml, author.trueId2, tx, staleStuff)
 
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     anyModTask.foreach(tx.upsertReviewTask)
@@ -774,7 +827,8 @@ trait PostsDao {
 
     // If anyModTask: TyTIT50267MT
     val notfs = notfGenerator(tx).generateForNewPost(
-          page, newPost, sourceAndHtml = Some(textAndHtml), anyNewModTask = anyModTask)
+          page, newPost, postAuthor = Some(author), sourceAndHtml = Some(textAndHtml),
+          anyNewModTask = anyModTask)
     tx.saveDeleteNotifications(notfs)
 
     (newPost, notfs)
@@ -791,14 +845,17 @@ trait PostsDao {
         : (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
-    val authorId = byWho.id
     val authorAndLevels = loadUserAndLevels(byWho, tx)
+    val author = authorAndLevels.user
+
+    // This'd be a bug? [anon_chats]
+    throwForbiddenIf(author.isAnon, "TyE5982sKTYNJ5", "Anons cannot post chat messages")
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE8FPZE2P")
     require(lastPost.tyype == PostType.ChatMessage, o"""Post id ${lastPost.id}
           is not a chat message, it is: ${lastPost.tyype} [TyE6YUW28]""")
 
-    require(lastPost.currentRevisionById == authorId, "EsE5JKU0")
+    require(lastPost.currentRevisionById == author.id, "EsE5JKU0")
     require(lastPost.currentRevSourcePatch.isEmpty, "EsE7YGKU2")
     require(lastPost.currentRevisionNr == FirstRevisionNr, "EsE2FWY2")
     require(lastPost.isCurrentVersionApproved, "EsE4GK7Y2")
@@ -833,7 +890,7 @@ trait PostsDao {
       // Leave approvedById = SystemUserId and approvedRevisionNr = FirstRevisionNr unchanged.
       currentRevLastEditedAt = Some(tx.now.toJavaDate),
       lastApprovedEditAt = Some(tx.now.toJavaDate),
-      lastApprovedEditById = Some(authorId))
+      lastApprovedEditById = Some(author.id))
 
     // For now, don't generate any ModTask here.  [03RMDl6J]
     // (But we do, when starting a new chat message.)
@@ -854,23 +911,23 @@ trait PostsDao {
             pageAvailableAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
             htmlToSpamCheck = combinedTextAndHtml.safeHtml,
             language = settings.languageCode)),
-          who = byWho,
+          reqrId = author.id,
           requestStuff = spamRelReqStuff))
 
     tx.updatePost(editedPost)
     tx.indexPostsSoon(editedPost)
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, textAndHtml,
-          isAppending = true, isEditing = false, authorId, tx)
+          isAppending = true, isEditing = false, author.trueId2, tx)
 
     staleStuff.addPageId(editedPost.pageId)
-    saveDeleteLinks(editedPost, combinedTextAndHtml, authorId, tx, staleStuff)
+    saveDeleteLinks(editedPost, combinedTextAndHtml, author.trueId2, tx, staleStuff)
 
     val oldMeta = tx.loadThePageMeta(lastPost.pageId)
     val newMeta = oldMeta.copy(version = oldMeta.version + 1)
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
 
-    // COULD create audit log entry that shows that this ip appended to the chat message.
+    AUDIT_LOG // that this ip appended to the chat message.
 
     val notfs = notfGenerator(tx).generateForEdits(lastPost, editedPost, Some(combinedTextAndHtml))
     tx.saveDeleteNotifications(notfs)
@@ -888,8 +945,9 @@ trait PostsDao {
   /** Edits the post, if authorized to edit it.
     */
   def editPostIfAuth(pageId: PageId, postNr: PostNr, deleteDraftNr: Option[DraftNr],
-        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: SourceAndHtml): Unit = {
-    val editorId = who.id
+        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: SourceAndHtml,
+        doAsAnon: Opt[WhichAnon] = None): U = {
+    val realEditorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
 
@@ -903,8 +961,8 @@ trait PostsDao {
     }
 
     val anyEditedCategory = writeTx { (tx, staleStuff) =>
-      val editorAndLevels = loadUserAndLevels(who, tx)
-      val editor = editorAndLevels.user
+      val realEditorAndLevels = loadUserAndLevels(who, tx)
+      val realEditor = realEditorAndLevels.user
       val page = newPageDao(pageId, tx)
       val settings = loadWholeSiteSettings(tx)
 
@@ -916,11 +974,41 @@ trait PostsDao {
       if (postToEdit.currentSource == newTextAndHtml.text)
         return
 
+      val anyOtherAuthor =
+            if (postToEdit.createdById == realEditor.id) None
+            else Some(tx.loadTheParticipant(postToEdit.createdById))
+
+      // Dupl code. [get_anon]
+      val editorMaybeAnon =
+            if (doAsAnon.isEmpty) {
+              realEditor
+            }
+            else doAsAnon.get match {
+              case WhichAnon.SameAsBefore(anonId) =>
+                tx.loadTheParticipant(anonId).asAnonOrThrow
+              case WhichAnon.NewAnon(anonStatus) =>
+                // Dupl code. [mk_new_anon]
+                val anonymId = tx.nextGuestId
+                val anonym = Anonym(
+                      id = anonymId,
+                      createdAt = tx.now,
+                      anonStatus = anonStatus,
+                      anonForPatId = realEditor.id,
+                      anonOnPageId = pageId)
+                // We'll insert the anonym before the page exists, but there's a
+                // foreign key: pats_t.anon_on_page_id_st_c, so defer constraints:
+                tx.deferConstraints()
+                tx.insertAnonym(anonym)
+                anonym
+            }
+
       dieOrThrowNoUnless(Authz.mayEditPost(
-        editorAndLevels, tx.loadGroupIdsMemberIdFirst(editor),
-        postToEdit, page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
-        inCategoriesRootLast = tx.loadCategoryPathRootLast(page.meta.categoryId, inclSelfFirst = true),
-        tooManyPermissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
+            realEditorAndLevels, tx.loadGroupIdsMemberIdFirst(realEditor),
+            postToEdit, otherAuthor = anyOtherAuthor,
+            page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
+            inCategoriesRootLast = tx.loadCategoryPathRootLast(
+                  page.meta.categoryId, inclSelfFirst = true),
+            tooManyPermissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
 
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
       // so won't create too many revs quickly because 2 edits.
@@ -953,7 +1041,7 @@ trait PostsDao {
           // Auto approve chat messages. Always SystemUserId for chat.
           Some(SystemUserId)  // [7YKU24]
         }
-        else if (editor.isStaff) {
+        else if (realEditor.isStaff) {
           if (!postToEdit.isSomeVersionApproved) {
             // Staff won't approve a not yet approved post, just by editing it.
             // Instead, they need to click a button to explicitly approve it  [in_pg_apr]
@@ -966,14 +1054,14 @@ trait PostsDao {
           else {
             // Older revision already approved and post already published.
             // Then, continue approving it.
-            Some(editor.id)
+            Some(realEditor.id)
           }
         }
         else {
           // Let people continue editing a post that has been approved already — unless
           // they're a moderate threat. A bit further below (7ALGJ2), we'll create
           // a review task (also for mild threat edits).
-          if (editorAndLevels.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt) {
+          if ( realEditorAndLevels.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt) {
             None  // [TyT7UQKBA2]
           }
           else if (postToEdit.isCurrentVersionApproved) {
@@ -999,7 +1087,7 @@ trait PostsDao {
           (true,
           None,
           Some(tx.now.toJavaDate),
-          Some(editorId),
+          Some(editorMaybeAnon.id),
           Some(newTextAndHtml.text),
           Some(newTextAndHtml.safeHtml),
           Some(tx.now.toJavaDate))
@@ -1022,7 +1110,7 @@ trait PostsDao {
       }
 
       val isNinjaEdit = {
-        val sameAuthor = postToEdit.currentRevisionById == editorId
+        val sameAuthor = postToEdit.currentRevisionById == editorMaybeAnon.id
         val ninjaHardEndMs = postToEdit.currentRevStaredAt.getTime + HardMaxNinjaEditWindowMs
         val isInHardWindow = tx.now.millis < ninjaHardEndMs
         // If the current version has been approved, and one does an unapproved edit — then, shouldn't
@@ -1053,7 +1141,7 @@ trait PostsDao {
       var editedPost = postToEdit.copy(
         currentRevStaredAt = newStartedAt,
         currentRevLastEditedAt = Some(tx.now.toJavaDate),
-        currentRevisionById = editorId,
+        currentRevisionById = editorMaybeAnon.id,
         currentRevSourcePatch = newCurrentSourcePatch,
         currentRevisionNr = newRevisionNr,
         previousRevisionNr = newPrevRevNr,
@@ -1065,7 +1153,7 @@ trait PostsDao {
         approvedById = anyNewApprovedById orElse postToEdit.approvedById,
         approvedRevisionNr = newApprovedRevNr)
 
-      if (editorId != editedPost.createdById) {
+      if (editorMaybeAnon.id != editedPost.createdById) {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
@@ -1098,7 +1186,7 @@ trait PostsDao {
           AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =    // (7ALGJ2)
-        if (editor.isStaffOrTrustedNotThreat) {
+        if (realEditor.isStaffOrTrustedNotThreat) {
           // This means staff has had a look at the post, even edited it — so resolve
           // mod tasks about this posts. So staff won't be asked to review this post,
           // on the Moderation page.
@@ -1112,14 +1200,14 @@ trait PostsDao {
                   tx.loadTheOrigPost(postToEdit.pageId)
                 }
 
-          maybeReviewAcceptPostByInteracting(postWithModTasks, moderator = editor,
+          maybeReviewAcceptPostByInteracting(postWithModTasks, moderator = realEditor,
                 ReviewDecision.InteractEdit)(tx, staleStuff)
 
           // Don't review late edits by trusted members — trusting them is
           // the point with the >= TrustedMember trust levels. TyTLADEETD01
           None
         }
-        else if (postRecentlyCreated && !editorAndLevels.threatLevel.isThreat) {
+        else if (postRecentlyCreated && ! realEditorAndLevels.threatLevel.isThreat) {
           // Need not review a recently created post: it's new and the edits likely
           // happened before other people read it, so they'll notice any weird things
           // later when they read it, and can flag it. This is not totally safe,
@@ -1146,7 +1234,7 @@ trait PostsDao {
             // their old posts and change to spam links, undetected.
             reviewReasons :+= ReviewReason.LateEdit
           }
-          if (editorAndLevels.threatLevel.isThreat) {
+          if (realEditorAndLevels.threatLevel.isThreat) {
             reviewReasons :+= ReviewReason.Edit
             reviewReasons :+= ReviewReason.IsByThreatUser
           }
@@ -1157,7 +1245,7 @@ trait PostsDao {
 
       val anySpamCheckTask =
         if (!globals.spamChecker.spamChecksEnabled) None
-        else if (!SpamChecker.shallCheckSpamFor(editor)) None
+        else if (!SpamChecker.shallCheckSpamFor(realEditor)) None
         else Some(
           // This can get same prim key as earlier spam check task, if is ninja edit. [SPMCHKED]
           // Solution: Give each spam check task its own id field.
@@ -1173,27 +1261,27 @@ trait PostsDao {
               pageAvailableAt = When.fromDate(page.meta.publishedAt getOrElse page.meta.createdAt),
               htmlToSpamCheck = newTextAndHtml.safeHtml,
               language = settings.languageCode)),
-            who = who,
+            reqrId = editorMaybeAnon.id,
             requestStuff = spamRelReqStuff))
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.EditPost,
-        doerId = editorId,
+        doerTrueId = editorMaybeAnon.trueId2,
         doneAt = tx.now.toJavaDate,
         browserIdData = who.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postToEdit.id),
         postNr = Some(postNr),
-        targetUserId = Some(postToEdit.createdById))
+        targetPatTrueId = anyOtherAuthor.map(_.trueId2))
 
       tx.updatePost(editedPost)
       tx.indexPostsSoon(editedPost)
       anySpamCheckTask.foreach(tx.insertSpamCheckTask)
       newRevision.foreach(tx.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, newTextAndHtml,
-            isAppending = false, isEditing = true, editorId, tx)
+            isAppending = false, isEditing = true, editorMaybeAnon.trueId2, tx)
 
       insertAuditLogEntry(auditLogEntry, tx)
 
@@ -1216,14 +1304,14 @@ trait PostsDao {
 
       if (editedPost.isCurrentVersionApproved) {
         staleStuff.addPageId(editedPost.pageId)
-        saveDeleteLinks(editedPost, newTextAndHtml, editorId, tx, staleStuff)
+        saveDeleteLinks(editedPost, newTextAndHtml, editorMaybeAnon.trueId2, tx, staleStuff)
         TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
         val notfs = notfGenerator(tx).generateForEdits(
               postToEdit, editedPost, Some(newTextAndHtml))
         tx.saveDeleteNotifications(notfs)
       }
 
-      deleteDraftNr.foreach(nr => tx.deleteDraft(editorId, nr))
+      deleteDraftNr.foreach(nr => tx.deleteDraft(realEditorId, nr))
 
       val oldMeta = page.meta
       var newMeta = oldMeta.copy(version = oldMeta.version + 1)
@@ -1272,7 +1360,7 @@ trait PostsDao {
     *
     * staleStuff must include post.pageId already.
     */
-  def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerId: PatId,
+  def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerTrueId: TrueId,
           tx: SiteTx, staleStuff: StaleStuff, skipBugWarn: Bo = false): U = {
     // Some e2e tests: backlinks-basic.2browsers.test.ts  TyTINTLNS54824
 
@@ -1299,11 +1387,11 @@ trait PostsDao {
       return
     }
 
-    COULD // remove param writerId? It's in the post already, right?:
+    // Could remove param writerTrueId, but maybe nice with this bug check:
     // (Or use  post.currentRevisionById — no, a new lastApprovedRevisionById ?)
-    if (post.lastApprovedEditById.getOrElse(post.createdById) != writerId) {
-      bugWarn("TyE63WKDJ356", s"s$siteId: post last writer id != writerId = ${
-            writerId}:  $post")
+    if (post.lastApprovedEditById.getOrElse(post.createdById) != writerTrueId.curId) {
+      bugWarn("TyE63WKDJ356", s"s$siteId: post last writer id != writerId, ${
+            writerTrueId}:  $post")
       return
     }
 
@@ -1329,7 +1417,7 @@ trait PostsDao {
         Link(fromPostId = post.id,
               linkUrl = linkUrl,
               addedAt = approvedAt,
-              addedById = writerId,
+              addedById = writerTrueId.curId,
               isExternal = false,
               toPageId = Some(path.pageId))
       }
@@ -1360,12 +1448,14 @@ trait PostsDao {
               (pageIdsLinkedAfter -- pageIdsLinkedBefore)
       staleStuff.addPageIds(stalePageIds, pageModified = false, backlinksStale = true)
     }
+
+    AUDIT_LOG // new links? Or is that unnecessarily verbose, if are internal links.
   }
 
 
   private def saveDeleteUploadRefs(postToEdit: Post, editedPost: Post,
         sourceAndHtml: SourceAndHtml, isAppending: Boolean, isEditing: Boolean,
-        editorId: UserId, tx: SiteTransaction): Unit = {
+        editorTrueId: TrueId, tx: SiteTransaction): Unit = {
     // Use findUploadRefsInPost (not ...InText) so we'll find refs both in the hereafter
     // 1) approved version of the post, and 2) the current possibly unapproved version.
     // Because if any of the approved or the current version links to an uploaded file,
@@ -1378,13 +1468,14 @@ trait PostsDao {
     }
 
     if (isEditing && editedPost.isCurrentVersionApproved &&
-          editedPost.lastApprovedEditById.isNot(editorId)) {
-      bugWarn("TyE205AKT3", s"s$siteId: editedPost last editor id != editorId = ${
-            editorId}:  $editedPost")
+          editedPost.lastApprovedEditById.isNot(editorTrueId.curId)) {
+      bugWarn("TyE205AKT3", o"""s$siteId: editedPost last editor != editorTrueId.curId,
+            editorTrueId: $editorTrueId,  editedPost: $editedPost""")
       // Don't return, didn't before (2020-07).
     }
     // Or use  post.currentRevisionById?:
-    dieIf(Globals.isDevOrTest && editedPost.currentRevisionById != editorId, "TyE3056KTD")
+    dieIf(Globals.isDevOrTest && editedPost.currentRevisionById != editorTrueId.curId,
+          "TyE3056KTD")
 
     val oldUploadRefs = tx.loadUploadedFileReferences(postToEdit.id)
 
@@ -1460,7 +1551,8 @@ trait PostsDao {
     val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
 
     uploadRefsAdded foreach { hashPathSuffix =>
-      tx.insertUploadedFileReference(postToEdit.id, hashPathSuffix, editorId)
+      tx.insertUploadedFileReference(
+            postToEdit.id, hashPathSuffix, addedById = editorTrueId.curId)
     }
 
     uploadRefsRemoved foreach { hashPathSuffix =>
@@ -1470,6 +1562,8 @@ trait PostsDao {
             ${postToEdit.id} [TyE7UJRH03M]""")
       }
     }
+
+    AUDIT_LOG // refs added, removed? So can see in the audit log who linked to a bad file?
   }
 
 
@@ -1554,6 +1648,10 @@ trait PostsDao {
     // to jsonMaker.makeStorePatchForPostIds().
     // This branch-sideways code was for 2D mind maps, which are disabled nowadays,
     // so this fn isn't currently in use.
+    //
+    // Later: Security: Mods might not be allowed to see everything, some pages
+    // might be admin-only. Some perms checks missing here, right.
+    //
     throwUntested("TyEBRANCHSIDEW")
 
     val post /* patch*/ = readWriteTransaction { tx =>
@@ -1561,18 +1659,22 @@ trait PostsDao {
         throwNotFound("EsE5KJ8W2", s"Post not found: $postId")
       })._2
       val postAfter = postBefore.copy(branchSideways = branchSideways)
+      val otherOrigAuthor: Opt[Pat] =
+            if (me.id == postBefore.createdById) None
+            else Some(
+                  tx.loadTheParticipant(postBefore.createdById))
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.ChangePostSettings,
-        doerId = me.id,
+        doerTrueId = me.trueId,
         doneAt = tx.now.toJavaDate,
         browserIdData = me.browserIdData,
         pageId = Some(postBefore.pageId),
         uniquePostId = Some(postBefore.id),
         postNr = Some(postBefore.nr),
-        targetUserId = Some(postBefore.createdById))
+        targetPatTrueId = otherOrigAuthor.map(_.trueId2))
 
       val oldMeta = tx.loadThePageMeta(postAfter.pageId)
       val newMeta = oldMeta.copy(version = oldMeta.version + 1)
@@ -1596,12 +1698,11 @@ trait PostsDao {
   }
 
 
-  def changePostType(pageId: PageId, postNr: PostNr, newType: PostType,
-        changerId: UserId, browserIdData: BrowserIdData): Unit = {
+  def changePostType(pageId: PageId, postNr: PostNr, newType: PostType, reqr: ReqrId): U = {
     writeTx { (tx, staleStuff) =>
       val page = newPageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)
-      val Seq(author, changer) = tx.loadTheParticipants(postBefore.createdById, changerId)
+      val Seq(postOrigAuthor, changer) = tx.loadTheParticipants(postBefore.createdById, reqr.id)
       throwIfMayNotSeePage(page, Some(changer))(tx)
 
       val postAfter = postBefore.copy(tyype = newType)
@@ -1619,6 +1720,7 @@ trait PostsDao {
       var anyModDecision: Option[ModDecision] = None
 
       // Test if the changer is allowed to change the post type in this way.
+      REFACTOR // Move this to new fn Authz.mayAlterPost(..., Alter.PostType)  ? [alterPage]
       if (changer.isStaffOrCoreMember) {
         (postBefore.tyype, postAfter.tyype) match {
           case (before, after) if before == PostType.Normal && after.isWiki =>
@@ -1638,12 +1740,16 @@ trait PostsDao {
         // Hmm, there could be a new permission: May wikify own posts, [new_perms][wiki_perms]
         // and May-wikify-others'-posts?
         if (postBefore.isWiki && postAfter.tyype == PostType.Normal) {
-          if (changer.id != author.id)
-            throwForbidden("DwE5KGPF2", o"""You are not the author and not staff,
-                so you cannot remove the Wiki status of this post""")
+          val isOwn =  changer.id == postOrigAuthor.id || (
+                getTheParticipant(postOrigAuthor.id) match {
+                  case anon: Anonym => anon.anonForPatId == changer.id
+                  case _ => false
+                })
+          throwForbiddenIf(!isOwn, "TyE0OWN6MR", o"""You are not the author and not
+                staff, so you cannot change the Wiki status of this post""")
         }
         else {
-            throwForbidden("DwE4KXB2", s"""Cannot change post type from
+            throwForbidden("DwE4KXB2", o"""Cannot change post type from
                 ${postBefore.tyype} to ${postAfter.tyype}""")
         }
       }
@@ -1652,13 +1758,14 @@ trait PostsDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.ChangePostSettings,
-        doerId = changerId,
+        doerTrueId = reqr.trueId,
         doneAt = tx.now.toJavaDate,
-        browserIdData = browserIdData,
+        browserIdData = reqr.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postBefore.id),
         postNr = Some(postNr),
-        targetUserId = Some(postBefore.createdById))
+        // If same as doer, maybe then leave out here?  [audit_log_tgt_self]
+        targetPatTrueId = Some(postOrigAuthor.trueId2))
 
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(version = oldMeta.version + 1)
@@ -1689,12 +1796,10 @@ trait PostsDao {
   }
 
 
-  def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId,
-        browserIdData: BrowserIdData)
+  def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, reqr: ReqrId)
         : ChangePostStatusResult = {
     val result = writeTx { (tx, staleStuff) =>
-      changePostStatusImpl(postNr, pageId = pageId, action, userId = userId,
-            browserIdData = Some(browserIdData), tx, staleStuff)
+      changePostStatusImpl(postNr, pageId = pageId, action, reqr, tx, staleStuff)
     }
     refreshPageInMemCache(pageId)
     result
@@ -1709,8 +1814,7 @@ trait PostsDao {
     * and UI buttons? [deld_post_mod_tasks]
     */
   def changePostStatusImpl(postNr: PostNr, pageId: PageId, action: PostStatusAction,
-        userId: UserId, browserIdData: Opt[BrowserIdData],
-        tx: SiteTransaction, staleStuff: StaleStuff)
+         reqr: ReqrId, tx: SiteTx, staleStuff: StaleStuff)
         : ChangePostStatusResult =  {
     import com.debiki.core.{PostStatusAction => PSA}
     import context.security.throwIndistinguishableNotFound
@@ -1719,17 +1823,27 @@ trait PostsDao {
     if (!page.exists)
       throwIndistinguishableNotFound("TyE05KSRDM3")
 
+    val userId: UserId = reqr.id
     val user = tx.loadParticipant(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
 
     SECURITY; COULD // check if may see post, not just the page?  [priv_comts] [staff_can_see]
+    // If doing that, then: TESTS_MISSING — namely deleting an anon post on may not see.
     throwIfMayNotSeePage(page, Some(user))(tx)
 
     val postBefore = page.parts.thePostByNr(postNr)
     lazy val postAuthor = tx.loadTheParticipant(postBefore.createdById)
+    ANON_UNIMPL // Cannot do this as an anonym, although looks as if one can change
+    // one's own anon posts (using one's real account).
+    // Need:  doAsAnon: Opt[WhichAnon.SameAsBefore]  [anon_pages]
 
     // Authorization.
     if (!user.isStaff) {
-      if (postBefore.createdById != userId)
+      val isOwn =  postBefore.createdById == userId || (postAuthor match {
+        case anon: Anonym => anon.anonForPatId == userId
+        case _ => false
+      })
+
+      if (!isOwn)
         throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
 
       if (!action.isInstanceOf[PSA.DeletePost] && action != PSA.CollapsePost)
@@ -1885,11 +1999,13 @@ trait PostsDao {
               siteId = siteId,
               id = AuditLogEntry.UnassignedId,
               didWhat = AuditLogEntryType.PageUnanswered,
-              doerId = userId,
+              doerTrueId = user.trueId2,
               doneAt = tx.now.toJavaDate,
-              browserIdData = browserIdData getOrElse BrowserIdData.Missing,
+              browserIdData = reqr.browserIdData,
               pageId = Some(pageId),
               uniquePostId = Some(answerPostId))
+        AUDIT_LOG // targetPatTrueId = Some(the author of the answer),  and, another row
+        // about the question: it got unanswered. And target pat = the question asker?
 
         tx.insertAuditLogEntry(auditLogEntry)
 
@@ -1927,6 +2043,7 @@ trait PostsDao {
     if (postsDeleted.exists(_.id == postBefore.id)) {
       dieIf(!action.isInstanceOf[PostStatusAction.DeletePost] &&
           action != PostStatusAction.DeleteTree, "TyE205MKSD")
+      // + true_pat_id_c?
       updateSpamCheckTaskBecausePostDeleted(postBefore, postAuthor, deleter = user, tx)
     }
 
@@ -1977,6 +2094,7 @@ trait PostsDao {
     }
 
     val approver = tx.loadTheParticipant(approverId)
+    val author = tx.loadTheParticipant(postBefore.createdById)
 
     // For now. Later, let core members approve posts too.
     if (!approver.isStaff)
@@ -2033,7 +2151,7 @@ trait PostsDao {
 
 
     staleStuff.addPageId(pageId, memCacheOnly = true) // page version bumped below
-    saveDeleteLinks(postAfter, sourceAndHtml, postAfter.createdById, tx, staleStuff)
+    saveDeleteLinks(postAfter, sourceAndHtml, author.trueId2, tx, staleStuff)
 
 
     // ------ The page
@@ -2086,6 +2204,7 @@ trait PostsDao {
       }
       else if (isApprovingNewPost) {
         notfGenerator(tx).generateForNewPost(page, postAfter, Some(sourceAndHtml),
+              postAuthor = Some(author),
               anyNewModTask = None, doingModTasks = doingModTasks)
       }
       else {
@@ -2155,13 +2274,14 @@ trait PostsDao {
       tx.updatePost(postAfter)
       tx.indexPostsSoon(postAfter)
 
-      saveDeleteLinks(postAfter, sourceAndHtml, post.createdById, tx, staleStuff)
+      val author = tx.loadTheParticipant(post.createdById)
+      saveDeleteLinks(postAfter, sourceAndHtml, author.trueId2, tx, staleStuff)
 
       // ------ Notifications
 
       if (!post.isTitle) {
         val notfs = notfGenerator(tx).generateForNewPost(page, postAfter,
-              Some(sourceAndHtml),
+              Some(sourceAndHtml), postAuthor = Some(author),
               anyNewModTask = None,
               // But approver might get notfd about post! [notfs_bug]
               // However this whole cascade-approval idea should be deleted.
@@ -2202,22 +2322,19 @@ trait PostsDao {
   }
 
 
-  def deletePost(pageId: PageId, postNr: PostNr, deletedById: UserId,
-        browserIdData: BrowserIdData): Unit = {
+  def deletePost(pageId: PageId, postNr: PostNr, deletedBy: ReqrId): U = {
     writeTx { (tx, staleStuff) =>
-      deletePostImpl(pageId, postNr = postNr, deletedById = deletedById,
-            browserIdData, tx, staleStuff)
+      deletePostImpl(pageId, postNr = postNr, deletedBy, tx, staleStuff)
     }
     refreshPageInMemCache(pageId)  ; REMOVE // auto do via [staleStuff]
   }
 
 
-  def deletePostImpl(pageId: PageId, postNr: PostNr, deletedById: UserId,
-        browserIdData: BrowserIdData,
+  def deletePostImpl(pageId: PageId, postNr: PostNr, deletedBy: ReqrId,
         tx: SiteTx, staleStuff: StaleStuff): ChangePostStatusResult = {
     val result = changePostStatusImpl(pageId = pageId, postNr = postNr,
-          action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
-          browserIdData = Some(browserIdData), tx = tx, staleStuff = staleStuff)
+          action = PostStatusAction.DeletePost(clearFlags = false), reqr = deletedBy,
+          tx = tx, staleStuff = staleStuff)
 
     BUG; SHOULD // delete notfs or mark deleted?  [notfs_bug]  [nice_notfs]
     // But don't delete any mod tasks — good if staff reviews, if a new member
@@ -2300,6 +2417,8 @@ trait PostsDao {
       if (voteType == PostVoteType.Unwanted && !voter.isStaffOrCoreMember)  // [4DKWV9J2]
         throwForbidden("DwE5JUK0", "Only staff and core members may Unwanted-vote")
 
+      ANON_UNIMPL // Don't let people upvote their own anonymous/pseudonymous posts.
+
       if (voteType == PostVoteType.Like) {
         if (post.createdById == voterId)
           throwForbidden("DwE84QM0", "Cannot like own post")
@@ -2373,8 +2492,154 @@ trait PostsDao {
   }
 
 
+  def addRemovePatNodeRelsIfAuZ(addPatIds: Set[PatId], removePatIds: Set[PatId],
+        postId: PostId, relType: PatNodeRelType, generateMetaComt: Bo,
+        notifyPats: Bo, reqrInf: Who, mab: MessAborter): StorePatch = {
+    import context.security.throwIndistinguishableNotFound
+
+    val metaComt = writeTx { (tx, staleStuff) =>
+      val postBef = tx.loadPost(postId) getOrElse {
+        // mab.abortIf( ... , MessType.NotFound, ... )  ?
+        throwIndistinguishableNotFound(s"TyEASGN0POST")
+      }
+
+      // ----- Check permissions
+
+      // Currently only AssignedTo has been implemented — and only for the orig post.
+      // Later, it'll be possible to [assign_comments] too.
+      throwForbiddenIf(!postBef.isOrigPost, "TyEASG0OP", o"""Can only assign the orig post,
+            but you tried to assign post nr ${postBef.nr}.""")
+
+      val reqr: Pat = tx.loadTheParticipant(reqrInf.id)
+
+      // Access check 1/3.
+      // Later:  throwIfMayNotChangePostRels(postBef, relType, reqr)(tx)
+      // For now:
+      throwIfMayNotSeePost(postBef, Some(reqr))(tx)
+      dieIf(relType != PatNodeRelType.AssignedTo, "TyE6X0WMSHUW5")
+      throwForbiddenIf(!reqr.isStaffOrTrustedNotThreat,
+            "TyECAN0ASGN", s"You cannot assign people (min trust level is TrustedMember).")
+
+      // Only works for type AssignedTo (since we look at assigneeIds).
+      dieIf(relType != PatNodeRelType.AssignedTo, "TyE6X0WMSHUW6") // again, yes
+      val idsToAdd = addPatIds -- postBef.assigneeIds
+      val idsToRemove = removePatIds intersect postBef.assigneeIds.toSet
+      if (idsToAdd.isEmpty && idsToRemove.isEmpty)
+        return JsObject.empty
+
+      // mab.abortIf( ... , MessType.Forbidden, ... )
+      val numAfter = postBef.assigneeIds.size + idsToAdd.size - idsToRemove.size
+      // What should other limits be? (for OwnerOf and AuthorOf)
+      dieIf(relType != PatNodeRelType.AssignedTo, "TyE603MRG5") // 3rd time, yes
+      throwForbiddenIf(numAfter > MaxLimits.MaxAssigneesPerPost,
+            "TyEASGNMAX", s"Cannot assign more than ${MaxLimits.MaxAssigneesPerPost
+              } people to a post — would have assigned $numAfter people.")
+
+      // Check 2/3: For now, don't allow assigning anons. And never guests. Or System.
+      // (But unassigning is ok, although theoretically there cannot be any to remove.)
+      val anyBadIdToAdd = idsToAdd.find(_ < Pat.LowestTalkToMemberId)
+      throwForbiddenIf(anyBadIdToAdd.nonEmpty,
+            "TyEASGID392", s"Bad assignee id: $anyBadIdToAdd, is < ${Pat.LowestTalkToMemberId}")
+
+      // Currently, if some pats aren't found, then we just ignore them here. Hmm.
+      val patsByIdMaybeSomeNotFound = tx.loadParticipantsAsMap(idsToAdd ++ idsToRemove)
+      val patsToAdd = idsToAdd.flatMap(patsByIdMaybeSomeNotFound.get)
+      //  patsToRemove = idsToRemove.flatMap(patsById.get)
+
+      // Access check 3/3:  May the pats getting connected to the post, see it?
+      // This check makes it possible for someone who can assign others, to find out
+      // if another member can access a certain page. That's similar to having the upcoming
+      // perms_on_pages3.can_see_who_can_see_c  permission?
+      // Maybe if one *doesn't* have that permission, one can only assign people who are
+      // already part of the current discussion (on the current page), *or* if the page
+      // is public (so everyone can see it)?
+      for (patToAdd <- patsToAdd) {
+        val (result, debugCode) =
+              maySeePost(postBef, Some(patToAdd), maySeeUnlistedPages = true)(tx)
+        TESTS_MISSING // Trigger this 403 Forbidden.  TyTASGN0SEEPG
+        throwForbiddenIf(!result.may, "TyERELPAT0SEEPOST_", o"""User ${
+              patToAdd.atUsernameOrFullName} cannot access that post, therefore you
+              cannot connect him/her to it.""")
+      }
+
+      // ----- Upd assignees
+
+      tx.deletePatNodeRels(fromPatIds = idsToRemove, toPostId = postId,
+            relTypes = Set(relType))
+
+      for (patToAdd <- patsToAdd) {
+        WOULD_OPTIMIZE // Could batch insert.
+        tx.insertPostAction(PatNodeRel(
+              toNodeId = postBef.id,
+              fromPatId = patToAdd.id,
+              pageId = postBef.pageId,
+              postNr = postBef.nr,
+              addedAt = tx.now,
+              relType = relType))
+      }
+
+      // ----- Generate a meta comment
+
+      UX; SHOULD // gen meta comt about post un/assigned.
+      // Skip, for now. Need to fix:
+      // 1) Use HTML source but verify cannot be xss'ed. Or, no, instead: In slim-bundle
+      // or more-bundle, incl code that shows:
+      //    "sbd assigned this to sbd-2 and sbd-3".  But should Ty remember a list of ids?
+      // — then, need another table, so foreign keys will work. Or a list of usernames?
+      // But then, incorrect if names changed. And,
+      // 2) Use new NotificationType.PostAssigneesAdded/Removed ... or Changed?
+      // 3) Generate i18n emails for those notifications (or, can wait).
+      // 4) What if some assignees, or the assignor, are [private_pats]?
+      val metaComt: Opt[Post] =  None  /* if (!generateMetaComt) None else Some {
+        val assignedUsernames: St = patsToAdd.map(_.atUsernameOrFullName).mkString(", ")
+        val assignedSbd = if (assignedUsernames.isEmpty) ""
+                          else s" assigned $assignedUsernames"
+
+        val unassignedUsernames: St = patsToRemove.map(_.atUsernameOrFullName).mkString(", ")
+        val unassignedSbd = if (unassignedUsernames.isEmpty) ""
+                            else s" unassigned <b> $unassignedUsernames </b>"
+
+        val and = if (assignedSbd.isEmpty || unassignedSbd.isEmpty) ""
+                  else ", and"
+
+        addMetaMessage(reqr,  NO: message = assignedSbd + and + unassignedSbd,
+              pageId = postBef.pageId, tx,  NO:  notifyMentioned = true,
+              Instead:  NotificationType.PostAssigneesChanged ?)
+      } */
+
+      // ----- Notify assignees
+
+      if (notifyPats) {
+        UX; SHOULD // notify pats who got assigned / unassigned.
+        // Can derive the NotificationType, from the  e.g. PatNodeRelType.AssignedTo —>
+        // NotificationType.PostAssigneesChanged?
+      }
+
+      AUDIT_LOG
+
+      // ----- Refresh cache
+
+      REFACTOR // somehow let this update any topic list page too — see [2F5HZM7].  For now,
+      // calling uncacheForums() manually below  (after '}').  [make_salestuff_uncache_forums]
+      staleStuff.addPageId(postBef.pageId)
+
+      metaComt
+    }
+
+    uncacheForums(siteId)
+
+    // ----- Generate response
+
+    val storePatchJo: JsObject = jsonMaker.makeStorePatchForPostIds(
+          metaComt.map(_.id).toSet + postId,
+          showHidden = true, inclUnapproved = true, maySquash = false, dao = this)
+
+    storePatchJo
+  }
+
+
   RENAME // all ... IfAuth to IfAuZ (if authorized)
-  def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: UserId,
+  def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: TrueId,
         browserIdData: BrowserIdData): (Post, JsObject) = {
 
     if (newParent.postNr == PageParts.TitleNr)
@@ -2383,13 +2648,17 @@ trait PostsDao {
     val now = globals.now()
 
     val postAfter = writeTx { (tx, staleStuff) =>
-      val mover = tx.loadTheUser(moverId)
+      UX; SHOULD // let people move their own posts. Also, think about anons,
+      // so an anon can move their own post, but only elsewhere *on the same page*.
+      val mover = tx.loadTheUser(moverId.curId)
       if (!mover.isStaff)
         throwForbidden("EsE6YKG2_", "Only staff may move posts")
 
       val postToMove = tx.loadThePost(whichPost.postId)
       if (postToMove.nr == PageParts.TitleNr || postToMove.nr == PageParts.BodyNr)
         throwForbidden("EsE7YKG25_", "Cannot move page title or body")
+
+      val postAuthor = tx.loadTheUser(postToMove.createdById)
 
       val newParentPost = tx.loadPost(newParent) getOrElse throwForbidden(
         "EsE7YKG42_", "New parent post not found")
@@ -2435,12 +2704,23 @@ trait PostsDao {
         // Note that moving the post to one of its ancestors (instead of descendants),
         // cannot create a cycle.
       }
+      else {
+        // If moving anonymous posts, it's higher risk that someone accidentally
+        // reveals who hen is, e.g. by making all posts by an anonym of hens,
+        // public, supposedly on a single page — but having forgotten / not-knowing-that
+        // others will be able to see / might-deduce-that hen also wrote [the post that got
+        // moved to another page].
+        // So, for now, disallow this. (Could allow, if the author deanonymizes the post.)
+        ANON_UNIMPL; TESTS_MISSING // Verify this not allowed.  TyTMOVANONCOMT
+        throwForbiddenIf(postAuthor.isAnon, "TyE4MW2LR5",
+              "Cannot move an anonymous post to another page")
+      }
 
       val moveTreeAuditEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.MovePost,
-        doerId = moverId,
+        doerTrueId = moverId,
         doneAt = now.toJavaDate,
         browserIdData = browserIdData,
         pageId = Some(postToMove.pageId),
@@ -2491,7 +2771,7 @@ trait PostsDao {
               siteId = siteId,
               id = AuditLogEntry.UnassignedId,
               didWhat = AuditLogEntryType.MovePost,
-              doerId = moverId,
+              doerTrueId = moverId,
               doneAt = now.toJavaDate,
               browserIdData = browserIdData,
               pageId = Some(descendant.pageId),
@@ -2545,7 +2825,7 @@ trait PostsDao {
 
       // Would be good to [save_post_lns_mentions], so wouldn't need to recompute here.
       val notfs = notfGenerator(tx).generateForNewPost(
-            toPage, postAfter, sourceAndHtml = None,
+            toPage, postAfter, sourceAndHtml = None, postAuthor = Some(postAuthor),
             anyNewModTask = None, skipMentions = true)
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 
@@ -2708,9 +2988,23 @@ trait PostsDao {
       // (The whole page gets hidden by hidePostsOnPage() below, if all posts get hidden.)
       val postsToMaybeHide =
         if (user.isMember) {
-          tx.loadPostsByQuery(limit = numThings, OrderBy.MostRecentFirst,
-                byUserId = Some(userId), includeTitlePosts = false,
-                inclUnapprovedPosts = true, inclUnlistedPagePosts_unimpl = true)
+          tx.loadPostsByQuery(
+              PostQuery.PostsByAuthor(
+                reqrInf = ReqrInf(Participant.SystemUserBr, BrowserIdData.System),
+                authorId = userId,
+                // Don't hide the person's anonymous posts? Because if doing that,
+                // it'd be possible to guess that hen wrote them?  [list_anon_posts]
+                // It's more important that people get to stay anon, if they expect to
+                // stay anon. And if new users often post spam etc as anons, then,
+                // it's better to solve that by requiring users to have been members
+                // for a while, before they can post anonymously (?).
+                inclAnonPosts = false,
+                inclTitles = false,
+                inclUnapproved = true,
+                inclUnlistedPagePosts = true,
+                limit = numThings,
+                orderBy = OrderBy.MostRecentFirst,
+                ))
                 .filter(!_.isBodyHidden)
         }
         else {
@@ -2894,39 +3188,56 @@ trait PostsDao {
     }
 
 
-  def loadPostsMaySeeByQuery(
-          requester: Option[Participant], orderBy: OrderBy, limit: Int,
-          inclTitles: Boolean, onlyEmbComments: Boolean, inclUnapprovedPosts: Boolean,
-          inclUnlistedPagePosts: Boolean,
-          writtenById: Option[UserId]): LoadPostsResult = {
+  def loadPostsMaySeeByQuery(query: PostQuery): LoadPostsResult = {
 
-    unimplementedIf(orderBy != OrderBy.MostRecentFirst,
+    unimplementedIf(query.orderBy != OrderBy.MostRecentFirst,
           "Only most recent first supported [TyE403RKTJ]")
 
     val postsInclForbidden: ImmSeq[Post] = readTx { tx =>
-      if (onlyEmbComments) {
-        dieIf(inclTitles, "TyE503RKDP5", "Emb cmts have no titles")
-        dieIf(inclUnapprovedPosts, "TyE503KUTRT", "Emb cmts + unapproved")
-        dieIf(writtenById.isDefined, "TyE703RKT3M", "Emb cmts + writtenBy unimpl")
+      if (query.onlyEmbComments) {
+        dieIf(query.inclTitles, "TyE503RKDP5", "Emb cmts have no titles")
+        dieIf(query.inclUnapproved, "TyE503KUTRT", "Emb cmts + unapproved")
+
+        // Remove !query.inclAnonPosts below, if accepting != AllPosts here:
+        // (But this if branch will probably disappear completely, instead, later.)
+        dieIf(!query.isInstanceOf[PostQuery.AllPosts],
+              "TyE703RKT3M", s"Emb comts query must be of type PostQuery.AllPosts but is type ${
+                  classNameOf(query)}")
+        // Currently we want anon posts. The author stays anon. [list_anon_posts]
+        unimplIf(!query.inclAnonPosts, "TyEANONUINMP03")
+
         // Embedded discussions are typically unlisted, so strangers
         // cannot super easily list all discussions over at the Talkyard site
         // (but via the Atom feed, it's ok to list the most recent comments).
-        dieIf(!inclUnlistedPagePosts, "TyE520ATJ3", "Emb cmts + *no* unlisted")
+        dieIf(!query.inclUnlistedPagePosts, "TyE520ATJ3", "Emb cmts + *no* unlisted")
 
-        tx.loadEmbeddedCommentsApprovedNotDeleted(limit = limit, orderBy)
+        tx.loadEmbeddedCommentsApprovedNotDeleted(limit = query.limit, query.orderBy)
       }
       else {
-        tx.loadPostsByQuery(
-              limit = limit, orderBy, byUserId = writtenById,
-              includeTitlePosts = inclTitles, inclUnapprovedPosts = inclUnapprovedPosts,
-              // inclUnlistedPagePosts_unimpl here has no effect, not implemented,
-              // but there's a filter below in the for { ... }.
-              inclUnlistedPagePosts_unimpl = inclUnlistedPagePosts)
+        query match {
+          case q: PostQuery.PostsRelatedToPat[_] =>  // [load_posts_by_rels]
+            // Tests incl:
+            //    - assign-to-basic.2br.d  TyTASSIGN01
+
+            COULD_OPTIMIZE // Load distinct post ids. Instead of relationships
+            // — pointless to transfer them over the network, and there can be
+            // many, per pat and post (is possible, if sub_type_c is different. So might
+            // also get fewer posts, than `limit`, harmless BUG).
+            val rels: ImmSeq[PatNodeRel[_]] = tx.loadPatPostRels(
+                  forPatId = q.relatedPatId, relType = q.relType,
+                  onlyOpenPosts = q.onlyOpen, limit = q.limit)
+            val postIds = rels.map(_.toNodeId)
+            tx.loadPostsByIdKeepOrder(postIds.distinct)
+          case _ =>
+            tx.loadPostsByQuery(query)
+        }
       }
     }
 
     filterMaySeeAddPages(
-          requester, postsInclForbidden, inclUnlistedPagePosts = inclUnlistedPagePosts)
+          Some(query.reqr),
+          postsInclForbidden,
+          inclUnlistedPagePosts = query.inclUnlistedPagePosts)
   }
 
 

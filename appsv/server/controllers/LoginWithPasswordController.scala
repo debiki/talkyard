@@ -200,7 +200,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       createdAt = globals.now(),
       siteId = request.siteId,
       postToSpamCheck = None,
-      who = request.whoOrUnknown,
+      reqrId = request.requesterOrUnknown.id,
       requestStuff = request.spamRelatedStuff.copy(
         userName = Some((username + " " + fullName.getOrElse("")).trim),
         userEmail = Some(emailAddress),

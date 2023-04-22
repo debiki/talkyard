@@ -107,21 +107,27 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadTheOrigPost(pageId: PageId): Post =
     loadOrigPost(pageId).getOrDie("TyE204RKT1J", s"s$siteId: OP missing, page $pageId")
 
+  /** Useful for chats — then, we want to show the chat description, which is
+    * in the orig post. And the most recent chat messsages, to show.  */
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId): Vec[Post]
   def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
+  /** The result is shorter, if some posts weren't found. */
+  def loadPostsByIdKeepOrder(postIds: Iterable[PostId]): ImmSeq[Post]
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]     ; RENAME; QUICK // to loadPostsByIds
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
 
-  def loadAllPosts(): immutable.Seq[Post]
+  def loadAllPostsForExport(): immutable.Seq[Post]
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
   def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
 
   /** Loads the most Like voted posts, per page.
+    * Does *not* load assignee or additional author ids (that's why the name is "...ExclAggs").
+    * Would be nice with type safety for that. [Scala_3]?
     * (Excluding posts with Unwanted votes or pending flags, and collapsed/hidden/deleted posts.)
     */
-  def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int, exclOrigPost: Boolean)
+  def loadPopularPostsByPageExclAggs(pageIds: Iterable[PageId], limitPerPage: Int, exclOrigPost: Boolean)
         : Map[PageId, immutable.Seq[Post]]
 
   def loadApprovedOrigPostAndRepliesByPage(pageIds: Iterable[PageId]): Map[PageId, immutable.Seq[Post]]
@@ -132,9 +138,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   // Also, these params:  includeDeleted,  includeHidden.
   //    includeChatMessages: Boolean,  onlyUnapproved: Boolean,
   //    onPageId: Option[PageId]
-  def loadPostsByQuery(limit: Int, orderBy: OrderBy, byUserId: Option[UserId],
-        includeTitlePosts: Boolean, inclUnapprovedPosts: Boolean,
-        inclUnlistedPagePosts_unimpl: Boolean): immutable.Seq[Post]
+  def loadPostsByQuery(query: PostQuery): immutable.Seq[Post]
 
   def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 
@@ -214,8 +218,13 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction]
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
-  def loadAllPostActions(): immutable.Seq[PostAction]
-  def insertPostAction(postAction: PostAction): Unit
+  def loadPatPostRels[T <: PatNodeRelType](forPatId: PatId, relType: T, onlyOpenPosts: Bo,
+                                           limit: i32): ImmSeq[PatNodeRel[T]]
+  def loadAllPostActionsForExport(): immutable.Seq[PostAction]
+
+  def insertPostAction(postAction: PostAction): U
+  def deletePatNodeRels(fromPatIds: Set[PatId], toPostId: PostId,
+        relTypes: Set[PatNodeRelType]): i32
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
   /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02]
@@ -446,8 +455,11 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
   def deleteAllUsersIdentities(userId: UserId): Unit
 
+  RENAME // to nextGuestOrAnonId?
   def nextGuestId: UserId
   def insertGuest(guest: Guest): Unit   // should be: GuestDetailed
+
+  def insertAnonym(anonym: Anonym): U
 
   def nextMemberId: UserId
   def insertMember(user: UserInclDetails): Unit
@@ -471,7 +483,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
       case user: UserInclDetails => user
       case group: Group =>
         REFACTOR // instead:  Member.asUserOr(ThrowBadReq)
-        throw GotAGroupException(group.id)
+        throw GotAGroupException(group.id, wantedWhat = "a user")
     }
 
   def loadGroup(groupId: UserId): Option[Group] =
@@ -529,6 +541,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadAllUsernameUsages(): Seq[UsernameUsage]
   def isUsernameInUse(username: String): Boolean = loadUsernameUsages(username).nonEmpty
 
+  COULD // add fn: loadPatVb(patId): Opt[PatVb] ?
   def loadParticipant(userId: UserId): Option[Participant]
   def loadTheParticipant(userId: UserId): Participant =
     loadParticipant(userId).getOrElse(throw UserNotFoundException(userId))
@@ -538,12 +551,12 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def loadGuest(userId: UserId): Option[Guest] = {
     dieIf(userId > Participant.MaxGuestId, "EsE8FY032")
-    loadParticipant(userId).map(_.asInstanceOf[Guest])
+    loadParticipant(userId).map(_.asGuestOrThrow)
   }
 
   def loadTheGuest(userId: UserId): Guest = {
     dieIf(userId > Participant.MaxGuestId, "EsE6YKWU2", userId)
-    loadTheParticipant(userId).asInstanceOf[Guest]
+    loadGuest(userId).getOrElse(throw UserNotFoundException(userId))
   }
   def loadUser(userId: UserId): Option[User] = {
     dieIf(userId <= Participant.MaxGuestId, "EsE2A8ERB3", userId)
@@ -616,7 +629,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadUsersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[UserInclDetails] =
     loadMembersVbById(userIds) map {
       case user: UserInclDetails => user
-      case group: Group => throw GotAGroupException(group.id)
+      case group: Group => throw GotAGroupException(group.id, wantedWhat = "a user")
     }
 
   def loadMembersVbByRef(refs: Iterable[PatRef]): ImmSeq[MemberVb]
@@ -641,7 +654,8 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
   def insertGroup(group: Group): Unit
   def deleteGroup(groupId: UserId): Unit
-  def updateGroup(group: Group): Unit
+  def updateGroup(group: Group): U = updateGroup(ValidGroup(group)) // just for now
+  def updateGroup(validGroup: ValidGroup): U
   def loadAllGroupsAsSeq(): Vector[Group]
   def loadAllGroupsAsMap(): Map[UserId, Group] = loadAllGroupsAsSeq().map(g => g.id -> g).toMap
 
@@ -785,14 +799,21 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
 
 
 /** Include stack trace, so can find bugs. (So don't use QuickMessageException). */
-case class GotAGroupException(groupId: UserId) extends Exception(
-  s"Got a group when trying to load member $groupId [EdE2SBA4J7]")
+case class GotAGroupException(patId: PatId, wantedWhat: St) extends Exception(
+  s"Got a group when trying to load pat $patId, wanted $wantedWhat [EdE2SBA4J7]")
 
 case class GotANotGroupException(groupId: UserId) extends Exception(
   s"Got a not-group when trying to load group $groupId [EdE4GW1WA9]")
 
-case class GotAGuestException(groupId: UserId, errCode: St = "") extends Exception(
-  s"Got a guest when trying to load member $groupId [TyEGOTGST${dashErr(errCode)}]")
+case class GotAGuestException(patId: PatId, wantedWhat: St, errCode: St = "") extends Exception(
+  s"Got a guest when trying to load pat $patId, wanted $wantedWhat [TyEGOTGST${
+      dashErr(errCode)}]")
+  
+case class GotAUserEx(patId: PatId, wantedWhat: St) extends Exception(
+  s"Got a user when trying to load pat id $patId, wanted $wantedWhat [TyEGOTAUSER]")
+
+case class GotAnAnonEx(anonymId: PatId, wantedWhat: St) extends Exception(
+  s"Got an anonym when trying to load pat $anonymId, wanted $wantedWhat [TyEGOTANANON]")
 
 // COULD incl errCode
 case object GotUnknownUserException extends Exception

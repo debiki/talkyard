@@ -206,12 +206,12 @@ prod_asset_bundle_files:=\
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.min.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/zxcvbn.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/es_CL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/es_CL/i18n.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/translations/de_DE/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/lv_LV/i18n.js.gz \
@@ -224,6 +224,10 @@ prod_asset_bundle_files:=\
   images/web/assets/$(TALKYARD_VERSION)/translations/ru_RU/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/uk_UA/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/uk_UA/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/zh_CN/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/zh_CN/i18n.min.js.gz \
   images/app/assets/server-bundle.min.js \
   images/app/assets/translations/en_US/i18n.min.js \
   images/app/assets/translations/es_CL/i18n.min.js \

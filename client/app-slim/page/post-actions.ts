@@ -230,8 +230,8 @@ export const PostActions = createComponent({
   },
 
   render: function() {
-    const post: Post = this.props.post;
     const store: Store = this.props.store;
+    const post: Post = this.props.post;
     const page: Page = store.currentPage;
     const isThisPageDeleted = !!page.pageDeletedAtMs;  // ignore deleted categories
     const canBeSolved = page_canBeSolved(page);
@@ -239,7 +239,7 @@ export const PostActions = createComponent({
 
     const me: Myself = store.me;
     const myPageData: MyPageData = me.myCurrentPageData;
-    const isOwnPost = me.id === post.authorId;
+    const isOwnPost = pat_isAuthorOf(me, post, store.usersByIdBrief);
     const isOwnPage = store_thisIsMyPage(store);
     const isPageBody = post.nr === BodyNr;
     const votes = myPageData.votes[post.nr] || [];
@@ -798,7 +798,7 @@ const MoreDropdownModal = createComponent({
     const isPageDeleted = page.pageDeletedAtMs;
 
     const moreLinks = [];
-    const isOwnPost = post.authorId === me.id;
+    const isOwnPost = pat_isAuthorOf(me, post, store.usersByIdBrief);
     const isMindMap = page.pageRole === PageRole.MindMap;
 
     // ----- Report

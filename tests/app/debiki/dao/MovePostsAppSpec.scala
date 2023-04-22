@@ -52,12 +52,12 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       info("non-staff may not move the post")
       intercept[ResultException] {
         dao.movePostIfAuth(
-          postToMove.pagePostId, secondParent.pagePostNr, theMember.id, browserIdData)
+              postToMove.pagePostId, secondParent.pagePostNr, theMember.trueId2, browserIdData)
       }.getMessage must include("EsE6YKG2_")
 
       info("staff may move it")
       val postAfter = dao.movePostIfAuth(
-        postToMove.pagePostId, secondParent.pagePostNr, theModerator.id, browserIdData)._1
+            postToMove.pagePostId, secondParent.pagePostNr, theModerator.trueId2, browserIdData)._1
       postAfter.parentNr mustBe Some(secondParent.nr)
       val reloadedPost = dao.readOnlyTransaction(_.loadThePost(postToMove.id))
       reloadedPost.parentNr mustBe Some(secondParent.nr)
@@ -80,33 +80,36 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       info("refuses to move orig post title")
       intercept[ResultException] {
         dao.movePostIfAuth(
-          PagePostId(thePageId, titleId), secondReply.pagePostNr, theModerator.id, browserIdData)
+              PagePostId(thePageId, titleId), secondReply.pagePostNr,
+              theModerator.trueId2, browserIdData)
       }.getMessage must include("EsE7YKG25_")
 
       info("refuses to move orig post body")
       intercept[ResultException] {
         dao.movePostIfAuth(
-          PagePostId(thePageId, bodyId), secondReply.pagePostNr, theModerator.id, browserIdData)
+              PagePostId(thePageId, bodyId), secondReply.pagePostNr,
+              theModerator.trueId2, browserIdData)
       }.getMessage must include("EsE7YKG25_")
 
       info("refuses to place reply below title")
       intercept[ResultException] {
         dao.movePostIfAuth(
-          PagePostId(thePageId, secondReply.id), PagePostNr(thePageId, TitleNr),
-          theModerator.id, browserIdData)
+              PagePostId(thePageId, secondReply.id), PagePostNr(thePageId, TitleNr),
+              theModerator.trueId2, browserIdData)
       }.getMessage must include("EsE4YKJ8_")
 
       info("won't try to move a post that doesn't exist")
       intercept[PostNotFoundByIdException] {
         dao.movePostIfAuth(
-          PagePostId(thePageId, 9999), secondReply.pagePostNr, theModerator.id, browserIdData)
+              PagePostId(thePageId, 9999), secondReply.pagePostNr,
+              theModerator.trueId2, browserIdData)
       }
 
       info("refuses to place reply below non-existing post")
       intercept[ResultException] {
         dao.movePostIfAuth(
-          PagePostId(thePageId, secondReply.id), PagePostNr(thePageId, 9999),
-          theModerator.id, browserIdData)
+              PagePostId(thePageId, secondReply.id), PagePostNr(thePageId, 9999),
+              theModerator.trueId2, browserIdData)
       }.getMessage must include("EsE7YKG42_")
     }
 
@@ -121,31 +124,37 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       info("won't create A —> A")
       intercept[ResultException] {
-        dao.movePostIfAuth(postA.pagePostId, postA.pagePostNr, theModerator.id, browserIdData)
+        dao.movePostIfAuth(postA.pagePostId, postA.pagePostNr,
+              theModerator.trueId2, browserIdData)
       }.getMessage must include("TyE7SRJ2MG_")
 
       info("won't create A —> B —> A")
       intercept[ResultException] {
-        dao.movePostIfAuth(postA.pagePostId, postB.pagePostNr, theModerator.id, browserIdData)
+        dao.movePostIfAuth(postA.pagePostId, postB.pagePostNr,
+              theModerator.trueId2, browserIdData)
       }.getMessage must include("EsE7KCCL_")
 
       info("won't create A —> B –> C —> A")
       intercept[ResultException] {
-        dao.movePostIfAuth(postA.pagePostId, postC.pagePostNr, theModerator.id, browserIdData)
+        dao.movePostIfAuth(postA.pagePostId, postC.pagePostNr,
+              theModerator.trueId2, browserIdData)
       }.getMessage must include("EsE7KCCL_")
 
       info("agrees to move D from C to C2, fine")
-      dao.movePostIfAuth(postD.pagePostId, postC2.pagePostNr, theModerator.id, browserIdData)
+      dao.movePostIfAuth(postD.pagePostId, postC2.pagePostNr,
+            theModerator.trueId2, browserIdData)
       val reloadedD = dao.readOnlyTransaction(_.loadThePost(postD.id))
       reloadedD.parentNr mustBe Some(postC2.nr)
 
       info("won't create C2 —> D —> C2")
       intercept[ResultException] {
-        dao.movePostIfAuth(postC2.pagePostId, postD.pagePostNr, theModerator.id, browserIdData)
+        dao.movePostIfAuth(postC2.pagePostId, postD.pagePostNr,
+              theModerator.trueId2, browserIdData)
       }.getMessage must include("EsE7KCCL_")
 
       info("but agrees to move C from to D, fine")
-      dao.movePostIfAuth(postC.pagePostId, postD.pagePostNr, theModerator.id, browserIdData)
+      dao.movePostIfAuth(postC.pagePostId, postD.pagePostNr,
+            theModerator.trueId2, browserIdData)
       val reloadedC = dao.readOnlyTransaction(_.loadThePost(postC.id))
       reloadedC.parentNr mustBe Some(postD.nr)
     }
@@ -160,7 +169,8 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       val postX = reply(theModerator.id, thePageId, "X")(dao)
       val postY = reply(theModerator.id, thePageId, "Y", parentNr = Some(postX.nr))(dao)
 
-      dao.movePostIfAuth(postA.pagePostId, postY.pagePostNr, theModerator.id, browserIdData)
+      dao.movePostIfAuth(
+            postA.pagePostId, postY.pagePostNr, theModerator.trueId2, browserIdData)
 
       dao.readOnlyTransaction { transaction =>
         val pageParts = dao.newPageDao(thePageId, transaction).parts
@@ -190,8 +200,8 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       val toPageMetaBefore = dao.readOnlyTransaction(_.loadThePageMeta(pageTwoId))
 
       info("move it")
-      val postAfter = dao.movePostIfAuth(post.pagePostId, postOnPageTwo.pagePostNr,
-        theModerator.id, browserIdData)._1
+      val postAfter = dao.movePostIfAuth(
+            post.pagePostId, postOnPageTwo.pagePostNr, theModerator.trueId2, browserIdData)._1
 
       postAfter.pageId mustBe pageTwoId
       postAfter.parentNr mustBe Some(postOnPageTwo.nr)
@@ -252,7 +262,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       info("can move the tree")
       val postAfterMove = dao.movePostIfAuth(postA.pagePostId, postOnPageTwo.pagePostNr,
-        theModerator.id, browserIdData)._1
+            theModerator.trueId2, browserIdData)._1
       postAfterMove.pageId mustBe pageTwoId
       postAfterMove.parentNr mustBe Some(postOnPageTwo.nr)
 
@@ -327,7 +337,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       info("move a post")
       val postAfter = dao.movePostIfAuth(postToMove.pagePostId, postOnPageTwo.pagePostNr,
-        theModerator.id, browserIdData)._1
+            theModerator.trueId2, browserIdData)._1
       postAfter.pageId mustBe pageTwoId
       postAfter.parentNr mustBe Some(postOnPageTwo.nr)
 

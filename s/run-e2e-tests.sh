@@ -511,9 +511,14 @@ function runAllE2eTests {
 
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 
+  $r s/wdio-7 --only assign-to-basic.2br.d --cd -i $args
+  $r s/wdio-7 --only assign-can-see.2br.d --cd -i $args
+
 
   # Moderation   (4862065)
   # ------------
+
+  $r s/wdio-7 --only may-see-email-adrs.2br.d --cd -i $args
 
 
   # API
@@ -664,7 +669,7 @@ function runAllE2eTests {
   $r s/wdio       --only embcom.comment-counts.2br.cors $args
 
   # Single Sign-On, embedded comments:
-  # Crypto problem! SHOULD fix, TESTS_MISSING, See:
+  # Crypto problem! SHOULD fix, TESTS_MISSING [paseto_broken], See:
   #   ../tests/e2e/specs/embcom.sso.token-in-cookie.2br.test.ts--e2e-crypto-probl.txt
   #$r s/wdio       --only embcom.sso.token-direct-w-logout-url.2br $args
   #$r s/wdio       --only embcom.sso.token-in-cookie.2br $args

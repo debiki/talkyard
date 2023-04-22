@@ -189,6 +189,7 @@ declare namespace debiki2 {
   var createClassAndFactory: any; // don't use — I'm renaming to createFactory
   function createFactory<P, S = any>(compSpec: React.ComponentSpec<P, S>): React.Factory<any>;
 
+  // (Move to obj_* elsewhere in this file?)
   function arr_replaceMany<Item>(arr: Item[],
         newerItems: Item[], isSame: ArrItemIsSameFn<Item>): Item[];
 
@@ -353,6 +354,8 @@ declare namespace debiki2 {
   function prettyNum(num: number, digits?: Nr): number;
   function isBlank(x: string): boolean;
 
+  function obj_isDeepEqIgnUndef(a: Object, b: Object): Bo;
+
   function whenMsToIsoDate(whenMs: WhenMs): string;
 
   function seemsSelfHosted(): boolean;
@@ -420,6 +423,7 @@ declare namespace debiki2 {
   function store_canDeletePage(store: Store): boolean;
   function store_canUndeletePage(store: Store): boolean;
   function store_canPinPage(store: Store): boolean;
+
   function siteStatusToString(siteStatus: SiteStatus);
   var cloneRect;
   var cloneEventTargetRect;
@@ -469,6 +473,11 @@ declare namespace debiki2 {
   function page_canBeSolved(page: Page | Topic): Bo;
   function page_canChangeCategory(page: Page): boolean;
   function page_mostRecentPostNr(page: Page): number;
+
+  function node_deriveLayout(props: DiscLayoutDropdownBtnProps): NodePropsDerivedAndDefault;
+  function discProps_pluckFrom(source: DiscPropsSource): DiscPropsSource;
+  function page_deriveLayout(page: PageDiscPropsSource, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
+  function cat_deriveLayout(cat: Cat, store: DiscStore, layoutFor: LayoutFor): DiscPropsDerived;
 
   function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself): boolean;
   function settings_showFilterButton(settings: SettingsVisibleClientSide, me: Myself): boolean;
@@ -546,8 +555,10 @@ declare namespace debiki2 {
       user: Pat, store: Store, onClick?: Ay, avoidFullName?: Bo });
 
   function UserName(props: {
-      user: Pat, store?: Store, settings?: SettingsVisibleClientSide,
-      makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo });
+      user?: Pat, patId?: PatId, // either or
+      store?: Store, settings?: SettingsVisibleClientSide,
+      makeLink?: Bo, onClick?: Ay, avoidFullName?: Bo,
+      key?: St | Nr });
 
   function TagListLive(ps: TagListLiveProps): RElm | U;
   function TagList(ps: TagListProps): RElm | U;

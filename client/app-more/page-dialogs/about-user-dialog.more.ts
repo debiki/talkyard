@@ -93,6 +93,7 @@ const AboutPatDialog = createComponent({
       ...newState,
     };
     this.setState(newState2);
+    // Needs [loadTheGuestOrAnon] server side.  ANON_UNIMPL
     this.loadPat(idOrUsername);
   },
 
@@ -168,6 +169,9 @@ const AboutPatDialog = createComponent({
 
       if (!user) {
         content = r.p({}, t.Loading);
+      }
+      else if (user.isAnon) {
+        content = AboutAnon({ anon: user as Anonym });
       }
       else if (isGuest(user)) {
         content = AboutGuest(childProps);
@@ -283,6 +287,8 @@ const AboutUser = createComponent({
     const extraInfoNewline =
         props.extraInfo ? r.div({ className: 's_UD_ExtrInf' }, props.extraInfo) : null;
 
+    // See goup list tests:
+    //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTSEEPATSGROUPS
     const groupList = userDetailed && GroupList(
         userDetailed, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group',  // COULD rename css class
         // `false`: Use r.a() not a Link() because we're not inside a React Router.
@@ -306,13 +312,29 @@ const AboutUser = createComponent({
           isGoneInfo,
           pubTags),
         r.div({ className: 's_UD_BelwAv' },  // "below avatar"
-          userDetailed && AnyUserEmail(userDetailed, me),
+          userDetailed && AnyUserEmail(userDetailed),
           r.div({ className: 's_UP_Gs' },
             t.GroupsC, groupList))
         ));
   }
 });
 
+
+
+interface AboutAnonymProps {
+  anon: Anonym;
+}
+
+
+const AboutAnon = React.createFactory<AboutAnonymProps>(function(props) {
+  const anon: Anonym = props.anon;
+  return (
+    r.div({ className: 'clearfix' },
+      r.div({ className: 'dw-about-user-actions' },
+        LinkButton({ href: linkToUserProfilePage(anon) }, t.aud.ViewComments)),
+      r.p({},
+        t.Anonym)));
+});
 
 
 
@@ -414,7 +436,7 @@ const AboutGuest = createComponent({
         r.p({},
           t.NameC + ' ' + guest.fullName, r.br(),
           t.aud.ThisIsGuest,
-          AnyUserEmail(guest, me)),
+          AnyUserEmail(guest)),
         anyCannotBeContactedMessage,
         blockedInfo));
   }
@@ -499,14 +521,16 @@ const BlockGuestDialog = createComponent({
 
 
 
-function AnyUserEmail(user: { email?: string }, me: Myself) {
-  return !me.isAdmin || !user.email ? null : (
+function AnyUserEmail(user: { email?: St }) {
+  // Email included or not test:
+  //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTABOUTBOXEML
+  return !user.email ? r.span({ className: 'e_0Em' }) : (
       r.div({ className: 's_UD_Em' },
         t.EmailC || (t.cud.EmailC + ' '),
         // Don't use an <a href="mailto:..."> — it's better to encourage people
         // to use the built-in messaging system? And also annoying when some
         // email program starts, if clicking the email just to copy it.
-        r.samp({}, user.email),
+        r.samp({ className: 'e_EmAdr' }, user.email),  // rename, [email_2_emailAdr]
         OnlyAdminsSee));
 }
 

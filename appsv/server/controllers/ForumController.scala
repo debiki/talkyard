@@ -26,7 +26,7 @@ import debiki.JsonUtils.parseOptInt32
 import talkyard.server.http._
 import play.api.libs.json._
 import play.api.mvc._
-import scala.collection.{immutable, mutable}
+import scala.collection.{immutable, mutable => mut}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.{TyContext, TyController}
 import javax.inject.Inject
@@ -123,6 +123,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     import request.{dao, body, requester}
     val categoryJson = (body \ "category").as[JsObject]
+    val catJo = categoryJson ; RENAME // to catJo
     val permissionsJson = (body \ "permissions").as[JsArray]
 
     val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
@@ -138,8 +139,14 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
     // For now, do-it-votes just on or off:  [do_it_on_off]
     val doItVotesPopFirst = (categoryJson \ "doItVotesPopFirst").asOpt[Bo] getOrElse false
 
+    // Dupl code, will remove after [add_nodes_t].
     val anyComtOrder = PostSortOrder.fromOptVal(parseOptInt32(categoryJson, "comtOrder"))
     val anyComtNesting = None // later: parseOptInt32("comtNesting").map(x => x.map(_.toShort)) ?
+
+    val comtsStartHidden = NeverAlways.fromOptInt(parseOptInt32(catJo, "comtsStartHidden"))
+    val comtsStartAnon = NeverAlways.fromOptInt(parseOptInt32(catJo, "comtsStartAnon"))
+    val opStartsAnon = NeverAlways.fromOptInt(parseOptInt32(catJo, "opStartsAnon"))
+    val newAnonStatus = AnonStatus.fromOptInt(parseOptInt32(catJo, "newAnonStatus"))
 
     val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
     val categoryId = (categoryJson \ "id").as[Int]
@@ -164,6 +171,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
                   offset = None, TopTopicsPeriod.Year)),
       comtOrder = anyComtOrder,
       comtNesting = anyComtNesting,
+      comtsStartHidden = comtsStartHidden,
+      comtsStartAnon = comtsStartAnon,
+      opStartsAnon = opStartsAnon,
+      newAnonStatus = newAnonStatus,
       doVoteStyle =
             if (!doItVotesPopFirst) None
             else Some(DoVoteStyle.Likes),
@@ -390,13 +401,16 @@ object ForumController {
   }
 
 
-  // Vaguely similar code: ThingsFoundJson.makePagesFoundResponseImpl()  [406RKD2JB]
+  // Vaguely similar code: ThingsFoundJson._makePagesFoundResponseImpl()  [406RKD2JB]
   //
   def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
     val pageStuffList: Iterable[PageStuff] = pageStuffById.values
 
-    val users = dao.getUsersAsSeq(pageStuffList.flatMap(_.userIds).toSet)
+    // [incl_assignees]
+    val patIdsNeeded = mut.Set[PatId]()
+    pageStuffList.foreach(_.addVisiblePatIdsTo(patIdsNeeded))
+    val users = dao.getUsersAsSeq(patIdsNeeded)
 
     // In the topic list, we show only post tags (not author badges),
     // so we don't need any pat tags (user badges).
@@ -439,7 +453,9 @@ object ForumController {
     // Try to remove 'page' or topicStuff.pageMeta? Don't need both.
     dieIf(Globals.isDevOrTest && page != topicStuff.pageMeta, "TyE305DRJ24")
 
-    Json.obj(
+    COULD_OPTIMIZE; SAVE_BANDWIDTH // Exclude all zero (0) fields? E.g. 0 like votes.
+    // And use an ArrayBuffer, pass to a JsObject.
+    var result = Json.obj(
       "pageId" -> page.pageId,
       "pageRole" -> page.pageType.toInt,
       // If a person may know a certain unapproved topic exists, it's ok to show
@@ -480,6 +496,14 @@ object ForumController {
       "hiddenAtMs" -> JsWhenMsOrNull(page.hiddenAt),
       "deletedAtMs" -> JsDateMsOrNull(page.deletedAt))
       // Could incl deletedById but only if requester is staff?
+
+    // Later: Also check permissions, once these features implemented:
+    // - Don't incl any [private_pats] reqr may not see.
+    // - Don't incl any, if cannot see assignees. [can_see_assigned]
+    if (topicStuff.assigneeIds.nonEmpty)
+      result += "assigneeIds" -> JsArray(topicStuff.assigneeIds.map(JsNumber(_)))
+
+    result
   }
 
 }

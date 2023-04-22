@@ -79,7 +79,8 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
       AllMembersId, "all_members", Some("All Members"), createdAt = now, // , grantsTrustLevel = Some(TrustLevel.NewMember))
       perms = PatPerms.create(IfBadDie,
             maxUploadBytes = Some(1 * Mebibyte),
-            allowedUplExts = Some("jpeg jpg png gif")))
+            allowedUplExts = Some("jpeg jpg png gif"),
+            canSeeOthersEmailAdrs = None))
 
     val Basic = Group(
       BasicMembersId, "basic_members", Some("Basic Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.BasicMember))

@@ -403,7 +403,7 @@ case class SimpleSitePatch(
       pageExtId: Option[ExtId],
       pageType: PageType,
       pageSlug: String,
-      authorId: UserId,
+      authorId: PatId,
       pageMemberRefs: Seq[ParsedRef],
       categoryId: Option[CategoryId],
       titleHtmlUnsafe: String,
@@ -531,6 +531,7 @@ case class SimpleSitePatch(
         val pp: Participant = dao.getParticipantByParsedRef(ref) getOrElse {
           return Bad(s"No member matching ref $ref, for page extId '$pageExtId' [TyE40QMSJV3]")
         }
+        throwForbiddenIf(pp.isAnon, "TyE502QK4J2", "Cannot add anonyms to page")
         throwForbiddenIf(pp.isGuest, "TyE502QK4JV", "Cannot add guests to page")
         throwForbiddenIf(pp.isBuiltIn, "TyE7WKCT24GT", "Cannot add built-in users to page")
         // For now at least:

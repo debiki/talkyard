@@ -216,6 +216,7 @@ object RdbUtil {
       why_may_not_mention_msg_me_html_c,
       max_upload_bytes_c,
       allowed_upload_extensions_c,
+      can_see_others_email_adrs_c,
       deactivated_at,
       deleted_at
       """
@@ -233,6 +234,9 @@ object RdbUtil {
       |u.APPROVED_AT u_approved_at,
       |u.APPROVED_BY_ID u_approved_by_id,
       |u.SUSPENDED_TILL u_suspended_till,
+      |u.anonym_status_c u_anonym_status_c,
+      |u.true_id_c u_true_id_c,
+      |u.anon_on_page_id_st_c u_anon_on_page_id_st_c,
       |u.trust_level u_trust_level,
       |u.locked_trust_level u_locked_trust_level,
       |u.threat_level u_threat_level,
@@ -255,6 +259,7 @@ object RdbUtil {
       |u.why_may_not_mention_msg_me_html_c,
       |u.max_upload_bytes_c,${""          /* would excl  */}
       |u.allowed_upload_extensions_c,${"" /* would excl  */}
+      |u.can_see_others_email_adrs_c,${"" /* would excl */}
       |u.is_owner u_is_owner,
       |u.is_admin u_is_admin,
       |u.is_moderator u_is_moderator,
@@ -280,6 +285,9 @@ object RdbUtil {
     val userId = rs.getInt("u_id")
     val anyExtId = getOptString(rs, "u_ext_id")
     val isGroup = rs.getBoolean("u_is_group")
+    val anonStatus: Opt[AnonStatus] = getOptInt32(rs, "u_anonym_status_c")
+          .flatMap(AnonStatus.fromInt)
+
     def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
       if (isGuestId(userId))
@@ -287,16 +295,28 @@ object RdbUtil {
       else
         _toEmailNotfs(rs.getString("u_email_notfs"))
     }
+
     val lockedThreatLevel = getOptInt(rs, "u_locked_threat_level").flatMap(ThreatLevel.fromInt)
     def theUsername = rs.getString("u_username")
     val name = Option(rs.getString("u_full_name"))
     def tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path")
     def smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path")
     val anyTrustLevel = TrustLevel.fromInt(rs.getInt("u_trust_level"))
+
       // Use dn2e not n2e. ((So works if joined w/ DW1_IDS_SIMPLE, which
       // uses '-' instead of null to indicate absence of email address etc.
       // See usage of this function in RdbSystemTransaction.loadUsers(). ))
-    if (isGuestId(userId))
+
+    if (anonStatus.isDefined) {
+      Anonym(
+          id = userId,
+          createdAt = createdAt,
+          anonForPatId = getInt32(rs, "u_true_id_c"),
+          anonStatus = anonStatus.get,
+          anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"),
+      )
+    }
+    else if (isGuestId(userId)) {
       Guest(
         id = userId,
         extId = anyExtId,
@@ -309,10 +329,12 @@ object RdbUtil {
         website = getOptString(rs, "u_website"),
         country = dn2e(rs.getString("u_country")).trimNoneIfEmpty,
         lockedThreatLevel = lockedThreatLevel)
+    }
     else if (isGroup) {
       val perms = PatPerms.create(IfBadDie,
             maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
-            allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
+            allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"),
+            canSeeOthersEmailAdrs = getOptBool(rs, "can_see_others_email_adrs_c"))
       Group(
         id = userId,
         extId = anyExtId,
@@ -358,7 +380,8 @@ object RdbUtil {
   def getGroup(rs: js.ResultSet): Group = {
     val perms = PatPerms.create(IfBadDie,
           maxUploadBytes = getOptInt(rs, "max_upload_bytes_c"),
-          allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"))
+          allowedUplExts = getOptString(rs, "allowed_upload_extensions_c"),
+          canSeeOthersEmailAdrs = getOptBool(rs, "can_see_others_email_adrs_c"))
     Group(
       id = rs.getInt("user_id"),
       extId = getOptString(rs, "ext_id"),
@@ -395,6 +418,9 @@ object RdbUtil {
     |is_owner,
     |is_admin,
     |is_moderator,
+    |anonym_status_c,
+    |true_id_c,
+    |anon_on_page_id_st_c,
     |deactivated_at,
     |deleted_at,
     |username,
@@ -446,12 +472,13 @@ object RdbUtil {
   val CompleteUserSelectListItemsWithUserId: St =
     s"user_id, $CompleteUserSelectListItemsNoUserId, " +
     "max_upload_bytes_c, " +
-    "allowed_upload_extensions_c"
+    "allowed_upload_extensions_c, " +
+    "can_see_others_email_adrs_c"
 
 
   def getParticipantInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet): ParticipantInclDetails = {
     val participantId = rs.getInt("user_id")
-    if (participantId <= MaxGuestId) {
+    if (participantId <= MaxGuestOrAnonId) {
       getGuestInclDetails_wrongGuestEmailNotfPerf(rs, participantId)
     }
     else {
@@ -463,7 +490,7 @@ object RdbUtil {
   def getUserInclDetails(rs: js.ResultSet): UserInclDetails = {
     getMemberInclDetails(rs) match {
       case m: UserInclDetails => m
-      case g: Group => throw GotAGroupException(g.id)
+      case g: Group => throw GotAGroupException(g.id, wantedWhat = "a user")
     }
   }
 
@@ -479,11 +506,21 @@ object RdbUtil {
 
 
   /** Currently there's no GuestInclDetails, just a Guest and it includes everything. */
-  private def getGuestInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet, theGuestId: UserId): Guest = {
+  private def getGuestInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet, patId: PatId): GuestOrAnon = {
     // A bit dupl code. (703KWH4)
     val name = Option(rs.getString("full_name"))
+    val anonStatus = getOptInt32(rs, "anonym_status_c") flatMap AnonStatus.fromInt
+    if (anonStatus.isDefined) {
+      return Anonym(
+          id = patId,
+          createdAt = getWhen(rs, "created_at"),
+          anonForPatId = getInt32(rs, "u_true_id_c"),
+          anonStatus = anonStatus.get,
+          anonOnPageId = getString(rs, "u_anon_on_page_id_st_c"))
+    }
+
     Guest(
-      id = theGuestId,
+      id = patId,
       extId = getOptString(rs, "ext_id"),
       createdAt = getWhen(rs, "created_at"),
       guestName = dn2e(name.orNull),
@@ -635,30 +672,29 @@ object RdbUtil {
     val anyIsMisclassified = getOptBool(rs, "is_misclassified")
 
     val result = SpamCheckTask(
-      siteId = rs.getInt("site_id"),
-      createdAt = getWhen(rs, "created_at"),
-      postToSpamCheck = anyPostToCheck,
-      who = Who(
-        id = rs.getInt("author_id"),
-        BrowserIdData(
-          ip = rs.getString("req_ip"),
-          idCookie = getOptString(rs, "browser_id_cookie"),
-          fingerprint = rs.getInt("browser_fingerprint"))),
-      requestStuff = SpamRelReqStuff(
-        userAgent = getOptString(rs, "req_user_agent"),
-        referer = getOptString(rs, "req_referer"),
-        uri = rs.getString("req_uri"),
-        userName = getOptString(rs, "author_name"),
-        userEmail = getOptString(rs, "author_email_addr"),
-        userUrl = getOptString(rs, "author_url"),
-        userTrustLevel = getOptInt(rs, "author_trust_level").flatMap(TrustLevel.fromInt)),
-      resultsAt = getOptWhen(rs, "results_at"),
-      resultsJson = getOptJsObject(rs, "results_json"),
-      resultsText = getOptString(rs, "results_text"),
-      numIsSpamResults = getOptInt(rs, "num_is_spam_results"),
-      numNotSpamResults = getOptInt(rs, "num_not_spam_results"),
-      humanSaysIsSpam = getOptBool(rs, "human_says_is_spam"),
-      misclassificationsReportedAt = getOptWhen(rs, "misclassifications_reported_at"))
+          siteId = rs.getInt("site_id"),
+          createdAt = getWhen(rs, "created_at"),
+          postToSpamCheck = anyPostToCheck,
+          reqrId = getInt(rs, "author_id_c"),
+          requestStuff = SpamRelReqStuff(
+              BrowserIdData(
+                  ip = rs.getString("req_ip"),
+                  idCookie = getOptString(rs, "browser_id_cookie"),
+                  fingerprint = rs.getInt("browser_fingerprint")),
+              userAgent = getOptString(rs, "req_user_agent"),
+              referer = getOptString(rs, "req_referer"),
+              uri = rs.getString("req_uri"),
+              userName = getOptString(rs, "author_name"),
+              userEmail = getOptString(rs, "author_email_addr"),
+              userUrl = getOptString(rs, "author_url"),
+              userTrustLevel = getOptInt(rs, "author_trust_level").flatMap(TrustLevel.fromInt)),
+          resultsAt = getOptWhen(rs, "results_at"),
+          resultsJson = getOptJsObject(rs, "results_json"),
+          resultsText = getOptString(rs, "results_text"),
+          numIsSpamResults = getOptInt(rs, "num_is_spam_results"),
+          numNotSpamResults = getOptInt(rs, "num_not_spam_results"),
+          humanSaysIsSpam = getOptBool(rs, "human_says_is_spam"),
+          misclassificationsReportedAt = getOptWhen(rs, "misclassifications_reported_at"))
 
     dieIf(result.isMisclassified != anyIsMisclassified, "TyE068TDGW2")
     result
@@ -754,6 +790,9 @@ object RdbUtil {
       |g.frequent_poster_3_id,
       |g.layout,
       |g.comt_order_c,
+      |g.comts_start_hidden_c,
+      |g.comts_start_anon_c,
+      |g.new_anon_status_c,
       |g.comt_nesting_c,
       |g.forum_search_box_c,
       |g.forum_main_view_c,
@@ -831,6 +870,9 @@ object RdbUtil {
       layout = PageLayout.fromInt(resultSet.getInt("layout")) getOrElse PageLayout.Default,
       comtOrder = PostSortOrder.fromOptVal(getOptInt32(resultSet, "comt_order_c")),
       comtNesting = None, // later
+      comtsStartHidden = NeverAlways.fromOptInt(getOptInt32(resultSet, "comts_start_hidden_c")),
+      comtsStartAnon = NeverAlways.fromOptInt(getOptInt32(resultSet, "comts_start_anon_c")),
+      newAnonStatus = AnonStatus.fromOptInt(getOptInt32(resultSet, "new_anon_status_c")),
       forumSearchBox = getOptInt32(resultSet, "forum_search_box_c"),
       forumMainView = getOptInt32(resultSet, "forum_main_view_c"),
       forumCatsTopics = getOptInt32(resultSet, "forum_cats_topics_c"),

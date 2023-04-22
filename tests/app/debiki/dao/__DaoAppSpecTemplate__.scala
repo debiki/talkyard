@@ -31,30 +31,47 @@ class __DaoAppSpecTemplate__ extends DaoAppSuite(
   val site1 = new TestSiteAndDao(1, this)
   val site2 = new TestSiteAndDao(2, this)
 
+  var createForumOneResult: CreateForumResult = _
+  var createForumTwoResult: CreateForumResult = _
 
-  lazy val forumOneId: PageId = createForumOneResult.pagePath.pageId
-  lazy val catA: Cat = createCatAResult.category
+  var forumOneId: PageId = _
+  var forumTwoId: PageId = _
 
-  lazy val forumTwoId: PageId = createForumTwoResult.pagePath.pageId
+  var createCatAResult: CreateCategoryResult = _
+  var catA: Cat = _
 
-  lazy val createForumOneResult: CreateForumResult = site1.dao.createForum(
-        title = "Forum One", folder = "/forum1/", isForEmbCmts = false,
-        Who(SystemUserId, browserIdData)).get
-
-  lazy val createForumTwoResult: CreateForumResult = site1.dao.createForum(
-        title = "Forum Two", folder = "/forum2/", isForEmbCmts = false,
-        Who(SystemUserId, browserIdData)).get
-
-  lazy val createCatAResult: CreateCategoryResult = createCategory(
-        slug = "cat-a",
-        forumPageId = createForumOneResult.pagePath.pageId,
-        parentCategoryId = createForumOneResult.rootCategoryId,
-        authorId = SystemUserId,
-        browserIdData,
-        site1.dao)
-
+  var ownerS1: Participant = _
+  var userOneS1: Participant = _
+  var userTwoS1: Participant = _
 
   "Something can do it" - {
+
+    "Prepare" in {
+      createForumOneResult = site1.dao.createForum(
+            title = "Forum One", folder = "/forum1/", isForEmbCmts = false,
+            Who(SystemUserId, browserIdData)).get
+
+      createForumTwoResult = site1.dao.createForum(
+            title = "Forum Two", folder = "/forum2/", isForEmbCmts = false,
+            Who(SystemUserId, browserIdData)).get
+
+      forumOneId = createForumOneResult.pagePath.pageId
+      forumTwoId = createForumTwoResult.pagePath.pageId
+
+      createCatAResult = createCategory(
+            slug = "cat-a",
+            forumPageId = createForumOneResult.pagePath.pageId,
+            parentCategoryId = createForumOneResult.rootCategoryId,
+            authorId = SystemUserId,
+            browserIdData,
+            site1.dao)
+
+      catA = createCatAResult.category
+
+      ownerS1 = createPasswordOwner("6mwe2tr0", site1.dao)
+      userOneS1 = createPasswordUser("ff6622zz", site1.dao, trustLevel = TrustLevel.BasicMember)
+      userTwoS1 = createPasswordUser("mm33ww77", site1.dao, trustLevel = TrustLevel.BasicMember)
+    }
 
     /*
     "Create test sites and things, try to fail fast" in {

@@ -163,13 +163,41 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  def JsKnownAnonym(anon: Anonym): JsObject = {  // ts: KnownAnonym
+    // Bit hacky: Pretend we're showing this anonym for the person behind the anonym.
+    // Later, maybe incl a boolean flag instead?
+    JsPat(anon, TagsAndBadges.None, toShowForPatId = Some(anon.anonForPatId))
+  }
+
+
+  /*  rm
+  def JsAnon(anon: Anonym, inclRealId: Bo = false): JsObject = {  // ts: Anonym
+    var json = Json.obj(
+          "id" -> JsNumber(anon.id),
+          "isAnon" -> JsTrue,
+          "isEmailUnknown" -> JsTrue,  // or skip?
+          )
+    if (inclRealId) {
+      json += "anonForId" -> JsNumber(anon.anonForPatId)
+      //json += "anonOnPageId" -> JsString(anon.anonOnPageId),
+      json += "anonStatus" -> JsNumber(anon.anonStatus.toInt)
+    }
+    if (anon.isGone) {
+      json += "isGone" -> JsTrue
+    }
+    json
+  } */
+
+
   def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
     user.map(JsUser(_)).getOrElse(JsNull)
 
 
-  def JsPat(pat: Pat, tagAndBadges: TagsAndBadges): JsObject = {  // Typescript: Pat
-    JsUser(pat, tagAndBadges.badges.getOrElse(pat.id, Nil))
+  def JsPat(pat: Pat, tagAndBadges: TagsAndBadges,  // Typescript: Pat
+        toShowForPatId: Opt[PatId] = None): JsObject = {
+    JsUser(pat, tagAndBadges.badges.getOrElse(pat.id, Nil), toShowForPatId = toShowForPatId)
   }
+
 
   /// As little info about someone as possible — just name and tiny avatar. Currently
   /// used for showing in the forum topic list.
@@ -185,18 +213,40 @@ object JsX {   RENAME // to JsonPaSe
     json
   }
 
-  def JsUser(user: Pat, tags: Seq[Tag] = Nil): JsObject = {  //RENAME to JsPat, ts: Pat
+  /** If 'user' is an anonym or pseudonym, then, hens true id is *not* included, unless
+    * toShowForPatId is hens true id  (or, later, if toShowForPatId has permission to
+    * see anonyms ANON_UNIMPL).  That is, if the person requesting to see a page,
+    * is the the same the ano/pseudony, then, the ano/pseudonym's true id is included
+    * so that that person can see hens own anonym(s).
+    */
+  def JsUser(user: Pat, tags: Seq[Tag] = Nil, toShowForPatId: Opt[PatId] = None): JsObject = {  //RENAME to JsPat, ts: Pat
     var json = JsPatNameAvatar(user)
     user.smallAvatar foreach { uploadRef =>
       json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
     }
 
-    if (user.isGuest) {
+    if (user.isAnon) {
+      json += "isAnon" -> JsTrue
+      // If this anonym is user `toShowForPatId`s own anonym, include details — so
+      // that user can see it's hens own anonym.
+      toShowForPatId foreach { showForPatId: PatId =>
+        user match {
+          case anon: Anonym =>
+            if (anon.anonForPatId == showForPatId) {
+              json += "anonForId" -> JsNumber(anon.anonForPatId)
+              //on += "anonOnPageId" -> JsString(anon.anonOnPageId),
+              json += "anonStatus" -> JsNumber(anon.anonStatus.toInt)
+            }
+          case x => die(s"An isAnon pat isn't an Anonym, it's an: ${classNameOf(x)}")
+        }
+      }
+    }
+    else if (user.isGuest) {
       json += "isGuest" -> JsTrue
     }
     else {
       require(user.isAuthenticated, "EdE8GPY4")
-      json += "isAuthenticated" -> JsTrue  // COULD remove this, client side, use !isGuest instead
+      json += "isAuthenticated" -> JsTrue  // COULD_OPTIMIZE remove this, client side, use !isGuest instead
     }
 
     if (user.email.isEmpty) {
@@ -237,10 +287,14 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  /** [Dupl_perms] Nowadays, could be enough with reqrPerms — and remove
+    * callerIsAdmin/Staff?
+    */
   def JsUserInclDetails(user: UserInclDetails,
         usersById: Map[UserId, User], // CLEAN_UP remove, send back a user map instead
         groups: immutable.Seq[Group],
         callerIsAdmin: Bo, callerIsStaff: Bo = false, callerIsUserHerself: Bo = false,
+        reqrPerms: Opt[EffPatPerms] = None,
         anyStats: Option[UserStats] = None, inclPasswordHash: Bo = false)
       : JsObject = {
     def callerIsStaff_ = callerIsAdmin || callerIsStaff
@@ -275,32 +329,47 @@ object JsX {   RENAME // to JsonPaSe
     userJson = userJson.addAnyInt32("maySendMeDmsTrLv", user.privPrefs.maySendMeDmsTrLv)
     userJson = userJson.addAnyInt32("mayMentionMeTrLv", user.privPrefs.mayMentionMeTrLv)
 
-    if (callerIsStaff_ || callerIsUserHerself) {
-      val anyReviewer = user.reviewedById.flatMap(usersById.get)
+    val reqrIsStaffOrSelf = callerIsStaff_ || callerIsUserHerself
+    val maySeeEmailAdrs = reqrPerms.exists(_.canSeeOthersEmailAdrs)
+
+    if (reqrIsStaffOrSelf || maySeeEmailAdrs) {
+      // May see local part is tested here:
+      //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTHIDELOCALEMLPART
       val safeEmail =
-        if (callerIsAdmin || callerIsUserHerself) user.primaryEmailAddress
+        if (callerIsAdmin || callerIsUserHerself || maySeeEmailAdrs) user.primaryEmailAddress
         else hideEmailLocalPart(user.primaryEmailAddress)
 
       userJson += "email" -> JsString(safeEmail)   // REMOVE
-      userJson += "emailAddress" -> JsString(safeEmail)
-      userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)  // RENAME emailAddr...
+      userJson += "emailAddress" -> JsString(safeEmail)  // RENAME to emailAdr
+      userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)  // RENAME to emailAdr...
       userJson += "emailVerifiedAt" -> JsDateMsOrNull(user.emailVerifiedAt)
-      userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
-      if (inclPasswordHash)
-        userJson += "passwordHash" -> JsStringOrNull(user.passwordHash)
       userJson += "emailNotfPrefs" -> JsNumber(user.emailNotfPrefs.toInt)
+    }
+
+    if (reqrIsStaffOrSelf) {
+      // Don't incl these though, even if the reqr may see pats email adr.
+      // These are partly about the group(s), not just pat, and it's possible that
+      // the reqr shouldn't know anything about these groups?
       userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
       if (groups.nonEmpty) userJson += "summaryEmailIntervalMins" ->
         JsNumberOrNull(user.effectiveSummaryEmailIntervalMins(groups))
       userJson += "summaryEmailIfActiveOwn" -> JsBooleanOrNull(user.summaryEmailIfActive)
       if (groups.nonEmpty) userJson += "summaryEmailIfActive" ->
         JsBooleanOrNull(user.effectiveSummaryEmailIfActive(groups))
+
+      userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
+      if (inclPasswordHash)
+        userJson += "passwordHash" -> JsStringOrNull(user.passwordHash)
+
       userJson += "uiPrefs" -> user.uiPrefs.getOrElse(JsEmptyObj)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
       userJson += "approvedAtMs" -> JsDateMsOrNull(user.reviewedAt)
       userJson += "approvedAt" -> JsDateMsOrNull(user.reviewedAt)
       userJson += "approvedById" -> JsNumberOrNull(user.reviewedById)
+
+      val anyReviewer = user.reviewedById.flatMap(usersById.get)
       userJson += "approvedByName" -> JsStringOrNull(anyReviewer.flatMap(_.fullName))
+
       userJson += "approvedByUsername" -> JsStringOrNull(anyReviewer.flatMap(_.username))
       userJson += "suspendedAtEpoch" -> DateEpochOrNull(user.suspendedAt)
       userJson += "suspendedAtMs" -> DateEpochOrNull(user.suspendedAt)
@@ -317,7 +386,7 @@ object JsX {   RENAME // to JsonPaSe
       userJson += "lockedThreatLevel" -> JsNumberOrNull(user.lockedThreatLevel.map(_.toInt))
 
       anyStats foreach { stats =>
-        userJson += "anyUserStats" -> JsUserStats(stats, isStaffOrSelf = true)
+        userJson += "anyUserStats" -> JsUserStats(stats, isStaffOrSelf = true, reqrPerms)
       }
     }
 
@@ -339,7 +408,7 @@ object JsX {   RENAME // to JsonPaSe
 
 
   /// ts: Session
-  def JsSession(sess: TySessionInDbMaybeBad, inclPart1: Bo = true): JsObject = {
+  def JsSession(sess: TySessionInDbMaybeBad, inclPart1: Bo): JsObject = {
     // Don't include the actual session id. (That is, exclude parts 2 – 5. *Could* maybe
     // theoretically include them, since they're hashes, but bad idea, and not needed.)
     var json = Json.obj(
@@ -356,7 +425,10 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
-  def JsUserStats(stats: UserStats, isStaffOrSelf: Boolean): JsObject = {
+  /** [Dupl_perms] Nowadays, could be enough with reqrPerms — and remove
+    * callerIsAdmin/Staff?
+    */
+  def JsUserStats(stats: UserStats, isStaffOrSelf: Bo, reqrPerms: Opt[EffPatPerms]): JsObject = {
     val tourTipsIds: immutable.Seq[String] = stats.tourTipsSeen getOrElse Nil
     var result = Json.obj(
       "userId" -> stats.userId,
@@ -381,8 +453,14 @@ object JsX {   RENAME // to JsonPaSe
       "numLikesGiven" -> stats.numLikesGiven,
       "numLikesReceived" -> stats.numLikesReceived,
       "numSolutionsProvided" -> stats.numSolutionsProvided,
-      "tourTipsSeen" -> JsArray(tourTipsIds.map(JsString)))
+      )
+
     if (isStaffOrSelf) {
+      result += "tourTipsSeen" -> JsArray(tourTipsIds.map(JsString))
+      // Be careful with revealing this — in a small forum, could reveal who
+      // an anonym is (if you reply, and immediately lastEmailedAt changes,
+      // for a person you suspected was the anonym — indicating that hen got
+      // a reply notification). [deanon_risk]
       result += "lastEmailedAt" -> JsWhenMsOrNull(stats.lastEmailedAt)
       result += "lastSummaryEmailAt" -> JsWhenMsOrNull(stats.lastSummaryEmailAt)
       result += "nextSummaryEmailAt" -> JsWhenMsOrNull(stats.nextSummaryEmailAt)
@@ -467,7 +545,9 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
-  def JsGroupInclDetails(group: Group, inclEmail: Boolean): JsObject = {
+  // If ever using for sth else than exporting dump files, then,
+  // sometimes exclude  canSeeOthersEmailAdrs  below.  [can_see_who_can_see_email_adrs]
+  def JsGroupInclDetailsForExport(group: Group): JsObject = {
     var json = JsGroup(group)
     json += "extId" -> JsStringOrNull(group.extId)
     json += "createdAt" -> JsWhenMs(group.createdAt)
@@ -481,19 +561,24 @@ object JsX {   RENAME // to JsonPaSe
     val perms = group.perms
     json += "maxUploadBytes" -> JsNumberOrNull(perms.maxUploadBytes)
     json += "allowedUplExts" -> JsStringOrNull(perms.allowedUplExts)
+
+    perms.canSeeOthersEmailAdrs.foreach(v =>
+          json += "canSeeOthersEmailAdrs" -> JsBoolean(v))
+
     json
   }
 
 
 
-  def parsePatPerms(jsVal: JsValue, siteId: SiteId): PatPerms = {
+  def parsePatPerms(jsVal: JsValue, siteId: SiteId)(mab: MessAborter): PatPerms = {
     val jsob = asJsObject(jsVal, "pat perms")
     val anyMaxUplBytes = parseOptI32(jsob, "maxUploadBytes")
     val anyExts = parseOptSt(jsob, "allowedUplExts")
-    // IfBadAbortReq should be a param. Have a look at all parse fns? [mess_aborter]
-    PatPerms.create(IfBadAbortReq,
+    PatPerms.create(mab,
           maxUploadBytes = anyMaxUplBytes,
-          allowedUplExts = anyExts)
+          allowedUplExts = anyExts,
+          canSeeOthersEmailAdrs = parseOptBo(jsob, "canSeeOthersEmailAdrs"),
+          )
   }
 
 
@@ -562,6 +647,9 @@ object JsX {   RENAME // to JsonPaSe
       "frequentPosterIds" -> pageMeta.frequentPosterIds,
       "layout" -> pageMeta.layout.toInt,
       "comtOrder" -> JsNum32OrNull(pageMeta.comtOrder.map(_.toInt)),
+      "comtsStartHidden" -> JsNum32OrNull(pageMeta.comtsStartHidden.map(_.toInt)),
+      "comtsStartAnon" -> JsNum32OrNull(pageMeta.comtsStartAnon.map(_.toInt)),
+      "newAnonStatus" -> JsNum32OrNull(pageMeta.newAnonStatus.map(_.toInt)),
       //"comtNesting" -> pageMeta.comtNesting,
       "forumSearchBox" -> JsNum32OrNull(pageMeta.forumSearchBox),
       "forumMainView" -> JsNum32OrNull(pageMeta.forumMainView),
@@ -601,6 +689,7 @@ object JsX {   RENAME // to JsonPaSe
   }
 
 
+  RENAME // add suffix:  JsPostVb_butNoPatRels  ?
   def JsPostInclDetails(post: Post): JsObject = {
     COULD_OPTIMIZE // Skip null / false fields, so less json.
     // E.g. excl currRevSourcePatch, instead of 'currRevSourcePatch: null'.

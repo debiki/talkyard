@@ -72,9 +72,9 @@ case class SitePatchMaker(context: TyContext) {
 
       val drafts = tx.loadAllDrafts()
 
-      val posts = tx.loadAllPosts().sortBy(_.id)
+      val posts = tx.loadAllPostsForExport().sortBy(_.id)
 
-      val postActions: immutable.Seq[PostAction] = tx.loadAllPostActions()
+      val postActions: immutable.Seq[PostAction] = tx.loadAllPostActionsForExport()
 
       // val links = later
 
@@ -160,7 +160,7 @@ object SitePatchMaker {
       val groups: Seq[Group] =
         anyDump.map(_.groups) getOrElse tx.loadAllGroupsAsSeq()
       fields("groups") = JsArray(
-        groups.map(JsGroupInclDetails(_, inclEmail = true)))
+        groups.map(JsGroupInclDetailsForExport(_)))
 
       val groupPps: Seq[GroupParticipant] =
         anyDump.map(_.groupPps) getOrElse tx.loadGroupParticipantsAllCustomGroups()
@@ -173,7 +173,7 @@ object SitePatchMaker {
           _, groups = Nil, usersById = Map.empty, callerIsAdmin = true, inclPasswordHash = true)))
 
       val pptStats: Seq[UserStats] = anyDump.map(_.pptStats) getOrElse tx.loadAllUserStats()
-      fields("ppStats") = JsArray(pptStats.map(JsUserStats(_, isStaffOrSelf = true)))
+      fields("ppStats") = JsArray(pptStats.map(JsUserStats(_, isStaffOrSelf = true, reqrPerms = None)))
 
       val pptVisitStats: Seq[UserVisitStats] =
         anyDump.map(_.pptVisitStats) getOrElse tx.loadAllUserVisitStats()
@@ -269,7 +269,7 @@ object SitePatchMaker {
       val drafts: Seq[Draft] = anyDump.map(_.drafts) getOrElse tx.loadAllDrafts()
       fields("drafts") = JsArray(drafts map JsDraft)
 
-      val posts: Seq[Post] = anyDump.map(_.posts) getOrElse tx.loadAllPosts()
+      val posts: Seq[Post] = anyDump.map(_.posts) getOrElse tx.loadAllPostsForExport()
       fields("posts") = JsArray(
         posts.map((post: Post) => {
           var json = JsPostInclDetails(post)
@@ -285,7 +285,7 @@ object SitePatchMaker {
         }))
 
       val postsActions: Seq[PostAction] =
-        anyDump.map(_.postActions) getOrElse tx.loadAllPostActions()
+        anyDump.map(_.postActions) getOrElse tx.loadAllPostActionsForExport()
       fields("postActions") = JsArray(postsActions map JsPostAction)
 
       val links: ImmSeq[Link] = anyDump.map(_.links) getOrElse tx.loadAllLinks()

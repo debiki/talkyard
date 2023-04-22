@@ -143,6 +143,7 @@ describe("upload-images-and-files  TyT50E6KTDU7", () => {
 
 
   it("... saves", () => {
+    // [wdio_6_to_7]  Use instead:  await owen_brA.userProfilePage.permissions.save();
     owen_brA.waitAndClick('.e_SvPerms');
   });
 

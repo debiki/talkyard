@@ -208,6 +208,26 @@ const enum No {
   TagId = 0,
 }
 
+
+/// Sync w Scala class [NeverAlways] and the PostgreSQL custom domain 'never_always_d'.
+///
+const enum NeverAlways {
+  /// Inherit from parent category or site settings or built-in default.
+  /// (Not saved in the database, instead, field set to null.)
+  Inherit = 0,
+
+  //Never = 1,
+  NeverButCanContinue = 2,
+  Allowed = 3,
+  //AllowedMustChoose = 4,
+  //MustChoose = 5,
+  //RecommendedMustChoose = 6,
+  Recommended = 7,
+  AlwaysButCanContinue = 8,
+  //Always = 9,
+}
+
+
 const enum ReviewDecision {
   // 1nnn = Accept.
   Accept = 1001,
@@ -280,11 +300,24 @@ const enum PostType {   // sync with test code [26BKA01]
 }
 
 
+const enum PatPostRelType {
+  AssignedTo = 11,
+}
+
+
 const enum PostVoteType {
   Like = 41,
   Disagree = 42,
   Bury = 43,
   Unwanted = 44,
+}
+
+
+/// See, and sync with, AnonStatus in Scala.
+const enum AnonStatus {
+  NotAnon = 0,
+  IsAnonOnlySelfCanDeanon = 65535,
+  IsAnonCanAutoDeanon = 2097151,
 }
 
 
@@ -583,6 +616,7 @@ const enum BlockedReason {  // [auto_block]
 
 
 const enum Pats {
+  FutureAnonId = -4,
   MaxGuestId = -2,
   NoPatId = 0,
   MinNotSysMemberId = 10,
@@ -679,5 +713,9 @@ const enum WinDims {
   MinEditorLeftWidth = 1000,
 }
 
+/// Data structures and algorithms help constants.
+const enum StructsAndAlgs {
+  TooLongPath = 250,
+}
 
 // vim: et ts=2 sw=2 tw=0 fo=r list

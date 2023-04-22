@@ -253,6 +253,21 @@ impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24
           - impersonate-restricted-areas.test.ts  TyT6502PKSNR57
 
+anonymous comments,
+anons:
+  partly impl:
+            - tests/app/debiki/dao/AnonymAppSpec.scala
+  TESTS_MISSING:
+            - Anons for drafts, UNTSETED.
+            - Load anon drafts, restore as anon. TyTANONDFLOAD
+            - Cannot move anon post to other page.  TyTMOVANONCOMT
+            - Notfs from anons, don't include real user name  TyTNOTFFROMANON
+            - UNTESTED; TESTS_MISSING // exp imp anons?  True ids are incl in json dumps?
+            - Different anon statuses: Comts start anon / NeverAlways.AlwaysButCanContinue / etc
+            - Edit & update the draft.  TyTEDUPDDFT04
+            - Save anon draft, reuse an anon.  TyTDFTREUSEANON.
+            - ... and more
+
 different users -
   login, logout, switch user:  almost all tests
 
@@ -307,6 +322,14 @@ navigation:
   from page to one's active sessions list:
             - d.sessions-logout-elsewhere.4br  TyTESESLGOSELF
 
+about user dialog,
+about pat box:
+  see groups:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTSEEPATSGROUPS
+  see email addr:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTABOUTBOXEML
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTHIDELOCALEMLPART
+
 profile page, user:
   upload photo:  (8PK2)
   edit full name:
@@ -328,12 +351,24 @@ profile page, user:
   list login methods:
           - create-site-github-oauth-uppercase-email.test.ts  TyT4AR8GFAH
 
+  configure who can see email addrs:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTCANCONFSEEML
+  see email addresses:
+    can/not see email addr
+      in about box,
+      on profile page,
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01
+    can navigate to email addrs tab, iff can see pat's emails:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACSPREFS01
+
   add email address, send verification email:
           - user-profile-change-email.test.ts  TyT305MHPJ25
   add gmail addr:
 
   rename guest:
           - TESTS_MISSING
+  see (parts of) task list:
+            - assign-to-basic.2br.d  TyTASSIGN01.TyTASGNPERMS01
   delete pat:
     delete guest:
     delete user:
@@ -354,6 +389,10 @@ profile page, a group:
           - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
+  see permission settings:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACCESSPERMS04
+    settings disabled, unless is admin:
+            - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyTCANCONFSEEML
 
 groups:
   list members:
@@ -384,10 +423,10 @@ groups:
 security:
   access denied,
   not found page, 404:
-          - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
-          - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
+            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
+            - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
   api get topics in restr cat:
-          - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
+            - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
   api list restriceted category:
             - api-list-query-for-topics-popular-first.test.ts  TyT603AKSL25.TyT502RKDJ46
   api search restricted categories and private topics:
@@ -410,6 +449,11 @@ security:
             - embcom.comment-counts.2br.cors.test.ts   TyTE2ECOMCOUNTS
             - embcom.manyframes.comment-counts.2br.cors  TyTE2EMNYFRCOMCNTS
   categories: see (1QRY7)
+  see other's tasks:
+            - assign-to-basic.2br.d  TyTASSIGN01.TyTASGNPERMS01
+  task list won't show tasks (pages) one can't see,
+  can't assign a task to sbd who can't see it:
+            - assign-can-see.2br.d  TyTASSIGNCANSEE
 
 deleted users:  [.del_susp_usr]
             - SEC_TEST_MISSING
@@ -1312,6 +1356,8 @@ draft: [7WKABZP2]
   works also if not logged in:
             - forum-drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
             - embcom.drafts-previews-not-logged-in.2br  TyT2ZBKPW048
+  anonymous drafts: 
+            - TESTS_MISSING
 
   draft previews, resume and delete: [.dft_pvs]
     - some TESTS_MISSING if [many_ifr_my_page_data]
@@ -1329,6 +1375,8 @@ draft: [7WKABZP2]
     - go to drafts page w editor open, try open other draft:
     - edit post, save draft, submit edits from other page — draft not deleted?
     - –""– but for new reply
+    - anonymous author preview: 
+            - TESTS_MISSING
 
   # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
   # EditController.edit
@@ -1340,6 +1388,28 @@ draft: [7WKABZP2]
   # MessagesDao.startGroupTalk
   # PagesDao.createPage
   # PostsDao.insertReply, insertChatMessage, editPostIfAuth
+
+
+tasks,
+assign posts:
+  basic functionality:
+            - assign-to-basic.2br.d  TyTASSIGN01
+  can't assigning sbd who can't see the page,
+  tasks in cats one can't see, are excluded if viewing sbd's task list:
+            - assign-can-see.2br.d  TyTASSIGNCANSEE
+  notifications:
+            - TESTS_MISSING  TyTASGN0SEEPG
+  not notified about tasks one can't see:
+      Expl: if sbd has subscribed to a task page, or
+      if an assignee can't see hens task (maybe the task got moved to a private cat),
+      then, if that task gets completed (by sbd else),
+      they do *not* get any notification email about that.
+            - TESTS_MISSING
+  if one has created, or is subscribed to a page, but one may not
+      see who is assigned (if any), then, one won't get notfications
+      that show who's assigned:
+            - TESTS_MISSING
+
 
 superadmin -
   ... lots of stuff ...
@@ -1380,6 +1450,9 @@ notifications:
             - private-chat.3br.d  TyT2ABKR045
   about like votes:
             - notfs-like-votes.2browsers.test.ts  TyTE2E703KDH
+  about tasks,
+  about assigned:
+            - assign-to-basic.2br.d  TESTS_MISSING  TyTASSIGN01
   via email:  (5ABKR024)
   mute topic:
   mute category:
@@ -1484,6 +1557,9 @@ email notifications:  (5ABKR024)
             - ... more, which?
   like votes:
             - notfs-like-votes.2browsers.test.ts  TyTE2E703KDH
+  tasks,
+  assigned:
+            - TESTS_MISSING
   unsubscribe:
             -  (7ABKR023)
   cannot reply via email to email notifications:

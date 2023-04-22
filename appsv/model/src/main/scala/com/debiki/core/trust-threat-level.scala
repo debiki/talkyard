@@ -53,7 +53,7 @@ sealed abstract class TrustLevel(val IntVal: Int) extends HasInt32 {
 object TrustLevel {
   case object Stranger extends TrustLevel(0)   ; REFACTOR // bump all 1, so won't start at 0
                                       // 0 is easily buggy-mistaken for undefined, in Javascript.
-  //se object [StrangerWithSecret] — if someone doesn't yet have a real account, but via a secret link
+  //se object [StrangerWithSecret] — if someone doesn't yet have a real account, but via a secret link  [new_trust_levels]
   //      has been invited to look at an otherwise private discussion?
   //      Or has been invited to a private community, and then can view "public" topics, there.
   //      Should id be < 0? And if creating a real account, gets a > 0 id?
@@ -73,7 +73,7 @@ object TrustLevel {
   //                or GoodMembers,  not Trusted-*.)
   case object CoreMember extends TrustLevel(6)
 
-  // + Mod,
+  // + Mod, [mods_are_core_membs][new_trust_levels]
   // + ModOfMods (can resolve disagreements between mods)
   // + Admin,
   // (AdminOfAdmins — the site owner is *by default* AdminOfAdmins? Other admins cannot depose hen)

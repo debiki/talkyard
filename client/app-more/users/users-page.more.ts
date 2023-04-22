@@ -22,6 +22,7 @@
 /// <reference path="user-drafts-etc.more.ts" />
 /// <reference path="user-preferences.more.ts" />
 /// <reference path="user-activity.more.ts" />
+/// <reference path="user-tasks.more.ts" />
 /// <reference path="groups-page.more.ts" />
 
 //------------------------------------------------------------------------------
@@ -197,10 +198,12 @@ const UserPageComponent = createReactClass(<any> {
   },
 
   render: function() {
-    const store: Store = this.state.store;
+    const props = this.props;
+    const state = this.state;
+    const store: Store = state.store;
     const me: Myself = store.me;
-    const user: UserDetailsStatsGroups = this.state.user;  // ParticipantAnyDetails = better class?
-    const usernameOrId = this.props.match.params.usernameOrId;
+    const user: UserDetailsStatsGroups = state.user;  // ParticipantAnyDetails = better class?
+    const usernameOrId = props.match.params.usernameOrId;
 
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
     // sub comoponents, which could result in duplicated load-data requests.  (5GKWS20)
@@ -211,7 +214,9 @@ const UserPageComponent = createReactClass(<any> {
     const userGone = user_isGone(user);
     const pathToUser = pathTo(user);
 
-    const showPrivateStuff = imStaff || (!userGone && me.isAuthenticated && me.id === user.id);
+    const showSelfAdmins = me.isAdmin || (!userGone && me.isAuthenticated && me.id === user.id);
+    const showSelfMods = showSelfAdmins || imStaff;
+    const showSelfTrusted = showSelfMods || user_trustLevel(me) >= TrustLevel.Trusted;
     const linkStart = pathToUser + '/';
 
     const membersNavItem = !user.isGroup ? null :
@@ -220,28 +225,35 @@ const UserPageComponent = createReactClass(<any> {
     const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);
 
-    const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
+    const notificationsNavItem = !showSelfMods || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, t.Notifications);
 
-    const draftsEtcNavItem = !showPrivateStuff || user.isGroup ? null :
+    const draftsEtcNavItem = !showSelfAdmins || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'drafts-etc', className: 'e_UP_DrftsB' }, t.upp.DraftsEtc);
 
-    const preferencesNavItem = !showPrivateStuff ? null :
+    const tasksNavItem = !showSelfTrusted || user.isGroup ? null :
+      LiNavLink({ to: linkStart + 'tasks', className: 'e_UP_TsksB' }, "Tasks"); // I18N
+
+    // If included or not, tested here:
+    //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACSPREFS01
+    const preferencesNavItem = !showSelfMods && !user.email ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);
 
-    const invitesNavItem = !showPrivateStuff || !store_maySendInvites(store, user).value ? null :
+    const invitesNavItem = !showSelfMods || !store_maySendInvites(store, user).value ? null :
       LiNavLink({ to: linkStart + 'invites', className: 'e_InvTabB' }, t.upp.Invites);
 
+    // Tests:
+    //      - may-see-email-adrs.2br.d  TyTSEEEMLADRS01.TyT0ACCESSPERMS04
     const patPermsNavItem = !user.isGroup || !imStaff ? null :
         LiNavLink({ to: linkStart + 'permissions', className: 'e_PermsTabB' },
           "Permissions"); // I18N
 
-    const childProps: PatTopPanelProps = {
+    const childProps: PatTopPanelProps & PatStatsPanelProps = {
       store: store,
       me: me, // CLEAN_UP try to remove, incl already in `store`
       user: user,
-      groupsMaySee: this.state.groupsMaySee,
-      stats: this.state.stats,
+      groupsMaySee: state.groupsMaySee,
+      stats: state.stats,
       reloadUser: this.loadUserAnyDetails,
     };
 
@@ -253,25 +265,43 @@ const UserPageComponent = createReactClass(<any> {
         const hash = this.props.location.hash;
         return Redirect({ to: pathToUser + '/activity/posts' + hash });
       }}),
+
+      !membersNavItem ? null :
       Route({ path: u + 'members', render: (ps) => GroupMembers({ ...childProps, ...ps }) }),
+
+      !activityNavItem ? null :
       Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
+
+      !notificationsNavItem ? null :
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
+
+      !draftsEtcNavItem ? null :
       Route({ path: u + 'drafts-etc', render: () => UserDrafts(childProps) }),
 
+      !tasksNavItem ? null :
+      Route({ path: u + 'tasks', render: (ps) => UserTasks({ ...childProps, ...ps }) }),
+
+      !preferencesNavItem ? null :
       Route({ path: u + 'preferences', render: (ps) => {
         return UserPreferences({ ...childProps, updatePat: this.updatePat, ...ps });
       } }),
 
+      !invitesNavItem ? null :
       Route({ path: u + 'invites', render: () => {
         return UserInvites(childProps);
       } }),
 
+      !patPermsNavItem ? null :
       Route({ path: u + 'permissions', render: (ps) => {
-        // @ifdef DEBUG
-        dieIf(!user.isGroup, `TyE052MW5: Not a group: ${JSON.stringify(user)}`)
-        // @endif
         return PatPerms({ user: user as GroupVb, store, updatePat: this.updatePat });
-      } }));
+      } }),
+
+      Route({ path: u + '*', render: () => {
+        return r.p({ className: 'c_BadRoute' },
+              `You're at: `, r.samp({}, props.location.pathname),  // I18N
+              ` — nothing here to see.`);
+      } }),
+      );
 
     return (
       r.div({ className: 'container esUP' },
@@ -281,6 +311,7 @@ const UserPageComponent = createReactClass(<any> {
           activityNavItem,
           notificationsNavItem,
           draftsEtcNavItem,
+          tasksNavItem,
           invitesNavItem,
           preferencesNavItem,
           patPermsNavItem),
@@ -288,16 +319,6 @@ const UserPageComponent = createReactClass(<any> {
   }
 });
 
-
-
-interface PatTopPanelProps {
-  me: Me;
-  store: Store;
-  user: UserDetailsStatsGroups;
-  stats: UserStats | U;
-  groupsMaySee: Group[];
-  reloadUser: () => Vo;
-}
 
 
 interface PatTopPanelState {
@@ -428,16 +449,20 @@ const PatTopPanel = createComponent({
       isAGroup = t.upp.isGroup;
     }
 
-    let isWhatInfo = null;
-    if (isGuest(user)) {
+    let isWhatInfo: St | N = null;
+    if (user.isAnon) {
+      isWhatInfo = t.Anonym || "Anonym";
+    }
+    else if (isGuest(user)) {
       isWhatInfo = t.upp.isGuest;
     }
-    if (user.isModerator) {
+    else if (user.isModerator) {
       isWhatInfo = t.upp.isMod;
     }
-    if (user.isAdmin) {
+    else if (user.isAdmin) {
       isWhatInfo = t.upp.isAdmin;
     }
+
     if (isWhatInfo) {
       isWhatInfo = r.span({ className: 'dw-is-what' }, isWhatInfo);
     }

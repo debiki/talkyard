@@ -56,7 +56,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
       // Delete all pages.
       dao.deletePagesIfAuth(Seq(discussionId, forumId, htmlPageId),
-        admin.id, browserIdData, undelete = false)
+            Who(admin.trueId2, browserIdData), undelete = false)
 
       // Verify marked as deleted.
       dao.getPageMeta(discussionId).get.deletedAt mustBe defined
@@ -66,7 +66,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
       // Undelete, verify no longer marked as deleted.
       dao.deletePagesIfAuth(Seq(discussionId, forumId, htmlPageId),
-        admin.id, browserIdData, undelete = true)
+            Who(admin.trueId2, browserIdData), undelete = true)
       dao.getPageMeta(discussionId).get.deletedAt mustBe None
       dao.getPageMeta(forumId).get.deletedAt mustBe None
       dao.getPageMeta(htmlPageId).get.deletedAt mustBe None
@@ -79,7 +79,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       for (pageId <- Seq(discussionId, htmlPageId, otherPageId)) {
         intercept[ResultException] {
           dao.deletePagesIfAuth(
-                Seq(pageId), moderator.id, browserIdData, undelete = false)
+                Seq(pageId), Who(moderator.trueId2, browserIdData), undelete = false)
           dao.getPageMeta(discussionId).get.deletedAt mustBe defined
         }.getMessage must include("TyEM0SEEPG_")
       }
@@ -89,7 +89,8 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
     "non-staff also may not delete pages they cannot see" in {
       intercept[ResultException] {
-        dao.deletePagesIfAuth(Seq(discussionId), user.id, browserIdData, undelete = false)
+        dao.deletePagesIfAuth(
+              Seq(discussionId), Who(user.trueId2, browserIdData), undelete = false)
       }.getMessage must include("TyEM0SEEPG_")
     }
 
@@ -112,34 +113,34 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     "now mods can delete discussions — they may now see them" - {
       "delete page" in {
         dao.deletePagesIfAuth(
-              Seq(discussionId), moderator.id, browserIdData, undelete = false)
+              Seq(discussionId), Who(moderator.trueId2, browserIdData), undelete = false)
         dao.getPageMeta(discussionId).get.deletedAt mustBe defined
       }
 
       "undelete page" in {
         dao.deletePagesIfAuth(
-              Seq(discussionId), moderator.id, browserIdData, undelete = true)
+              Seq(discussionId), Who(moderator.trueId2, browserIdData), undelete = true)
         dao.getPageMeta(discussionId).get.deletedAt mustBe None
       }
 
       "still cannot delete the *other* page, it's still not in the forum" in {
         intercept[ResultException] {
           dao.deletePagesIfAuth(
-                Seq(otherPageId), moderator.id, browserIdData, undelete = false)
+                Seq(otherPageId), Who(moderator.trueId2, browserIdData), undelete = false)
         }.getMessage must include("TyEM0SEEPG_")
       }
 
       "cannot delete forum" in {
         intercept[ResultException] {
           dao.deletePagesIfAuth(
-                Seq(forumId), moderator.id, browserIdData, undelete = false)
+                Seq(forumId), Who(moderator.trueId2, browserIdData), undelete = false)
         }.getMessage must include("EsE5GKF23_")
       }
 
       "cannot delete custom html page" in {
         intercept[ResultException] {
           dao.deletePagesIfAuth(
-                Seq(htmlPageId), moderator.id, browserIdData, undelete = false)
+                Seq(htmlPageId), Who(moderator.trueId2, browserIdData), undelete = false)
         }.getMessage must include("EsE5GKF23_")
       }
     }
@@ -147,13 +148,14 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     "do nothing if page doesn't exist" in {
       val admin = createPasswordOwner(s"dltr_adm2", dao)
       val badPageId = "zzwwffpp"
-      dao.deletePagesIfAuth(Seq(badPageId), admin.id, browserIdData, undelete = false)
+      dao.deletePagesIfAuth(Seq(badPageId), Who(admin.trueId2, browserIdData), undelete = false)
       dao.getPageMeta(badPageId) mustBe None
     }
 
     "non-staff users still cannot see the pages — they're in the staff cat" in {
       intercept[ResultException] {
-        dao.deletePagesIfAuth(Seq(discussionId), user.id, browserIdData, undelete = false)
+        dao.deletePagesIfAuth(
+              Seq(discussionId), Who(user.trueId2, browserIdData), undelete = false)
       }.getMessage must include("TyEM0SEEPG_")
     }
 
@@ -163,7 +165,8 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
     "non-staff can now see it — but still may not delete it" in {
       intercept[ResultException] {
-        dao.deletePagesIfAuth(Seq(discussionId), user.id, browserIdData, undelete = false)
+        dao.deletePagesIfAuth(
+              Seq(discussionId), Who(user.trueId2, browserIdData), undelete = false)
       }.getMessage must include("TyEDELOTRSPG_")
     }
 

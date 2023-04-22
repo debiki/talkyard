@@ -205,6 +205,7 @@ trait UserDao {
       val byMember = tx.loadTheUser(byWho.id)
       val memberBefore = tx.loadTheUserInclDetails(memberId)
 
+      // (Later: Better err msg if is in fact staff. [pseudonyms_later])
       throwForbiddenIf(!byMember.isStaff,
             "TyENSTFF5026", "Only staff can do this")
 
@@ -247,12 +248,12 @@ trait UserDao {
           // Noop.
       }
 
-      SHOULD /* val auditLogEntry = AuditLogEntry(
+      AUDIT_LOG /* val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.   ... what? new AuditLogEntryType enums, or one single EditUser enum,
                                               with an int val = the EditMemberAction int val ?
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = now.toJavaDate,
         browserIdData = byWho.browserIdData,
         browserLocation = None)*/
@@ -549,8 +550,10 @@ trait UserDao {
   }
 
 
+  /** Loads the true user, which might be a pseudonym (but never an anonym).
+    */
   def loadUserAndLevels(who: Who, tx: SiteTransaction): UserAndLevels = {
-    val user = tx.loadTheParticipant(who.id)
+    val user: Pat = tx.loadTheParticipant(who.id)
     val trustLevel = user.effectiveTrustLevel
     val threatLevel = user match {
       case member: User => member.effectiveThreatLevel
@@ -564,6 +567,10 @@ trait UserDao {
         ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY2511"
       case group: Group =>
         ThreatLevel.HopefullySafe // for now
+      case _ : Anonym =>
+        // Should never do things directly as an anonym, only via one's real account.
+        // Higher up the stack, we should have replied Forbidden already.
+        die("TyE206MRAKG", s"Got an anon: $who")
     }
     UserAndLevels(user, trustLevel, threatLevel)
   }
@@ -713,7 +720,7 @@ trait UserDao {
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.CreateUser,
-      doerId = member.id,
+      doerTrueId = member.trueId2,
       doneAt = now.toJavaDate,
       browserIdData = browserIdData,
       browserLocation = None)
@@ -906,11 +913,12 @@ trait UserDao {
 
 
   def getUser(userId: UserId): Option[User] = {
-    require(userId >= Participant.LowestMemberId, "EsE4GKX24")
+    dieIf(userId < Participant.LowestMemberId, "TyE2LOWUID", s"Too low user id: $userId < ${
+          Participant.LowestMemberId}")
     getParticipant(userId).map(_ match {
       case user: User => user
-      case _: Group => throw GotAGroupException(userId)
-      case _: Guest => die("TyE2AKBP067")
+      case _: Group => throw GotAGroupException(userId, wantedWhat = "a user")
+      case _ => die("TyE2AKBP067")
     })
   }
 
@@ -1009,6 +1017,7 @@ trait UserDao {
   }
 
 
+  RENAME // to getPatBySessionId
   /**
     * Loads a user from the database.
     * Verifies that the loaded id match the id encoded in the session identifier,
@@ -1183,9 +1192,13 @@ trait UserDao {
         // [ck_grp_ckl]
         throwForbidden("TyEGRINGR", s"Cannot add groups to groups. Is a group: ${group.nameParaId}")
       }
-      newMembers.find(_.isGuest) foreach { guest =>
-        throwForbidden("TyEGSTINGR", s"Cannot add guests to groups. Is a guest: ${guest.nameParaId}")
+
+      newMembers.find(_.isGuestOrAnon) foreach { guest =>
+        throwForbidden("TyEGSTINGR", s"Cannot add guests or anons to groups; this pat: ${
+              guest.nameParaId} is a ${guest.accountType}.")
       }
+
+      // & !system or sysbot
 
       val maxLimits = getMaxLimits(UseTx(tx))
 
@@ -1260,7 +1273,7 @@ trait UserDao {
 
   def getOnesGroupIds(ppt: Participant): Vector[UserId] = {
     ppt match {
-      case _: Guest | UnknownParticipant => Vector(Group.EveryoneId)
+      case _: Guest | _: Anonym | UnknownParticipant => Vector(Group.EveryoneId)
       case _: Member =>
         memCache.lookup[Vector[UserId]](
           onesGroupIdsKey(ppt.id),
@@ -1274,8 +1287,9 @@ trait UserDao {
 
 
   def joinOrLeavePageIfAuth(pageId: PageId, join: Bo, who: Who): Opt[BareWatchbar] = {
-    if (Participant.isGuestId(who.id))
-      throwForbidden("EsE3GBS5", "Guest users cannot join/leave pages")
+    // (Later, maybe optionally allow anons (conf val). [anon_priv_msgs])
+    if (who.isGuestOrAnon)
+      throwForbidden("EsE3GBS5", "Guest and anonymous users cannot join/leave pages")
 
     val joinOrLeave = if (join) Join else Leave
 
@@ -1377,8 +1391,9 @@ trait UserDao {
           joinOrLeave: JoinOrLeave, byWho: Who, anyTx: Opt[(SiteTx, StaleStuff)])  // REFACTOR use TxCtx
           : JoinLeavePageDbResult = {
 
-    if (byWho.isGuest)
-      throwForbidden("EsE2GK7S", "Guests cannot add/remove people to pages")
+    // (Later, maybe allow anons (conf val). [anon_priv_msgs])
+    if (byWho.isGuestOrAnon)
+      throwForbidden("EsE2GK7S", "Guests and anons cannot add/remove people to pages")
 
     if (userIds.size > 50)
       throwForbidden("EsE5DKTW02", "Cannot add/remove more than 50 people at a time")
@@ -2162,11 +2177,13 @@ trait UserDao {
 
 
   def savePatPerms(patId: PatId, perms: PatPerms, byWho: Who): U = {
-    _editMemberThrowUnlessSelfStaff(patId, byWho, "TyE3ASHW6703", "edit pat perms") {
+    _editMemberThrowUnlessSelfStaff(patId, byWho, "TyE3ASHW6703", "edit pat perms",
+                                      mustBeAdmin = true) {
           case EditMemberCtx(tx, staleStuff, memberInclDetails, _) =>
       val groupBef: Group = memberInclDetails.asGroupOr(IfBadAbortReq)
       val groupAft = groupBef.copy(perms = perms)
-      tx.updateMemberInclDetails(groupAft)
+      val validGroup = groupAft.checkValid(IfBadAbortReq)
+      tx.updateGroup(validGroup)
       staleStuff.addPatIds(Set(patId))
     }
     memCache.remove(allGroupsKey) ; CLEAN_UP // use staleStuff instead, new fn needed?
@@ -2367,10 +2384,10 @@ trait UserDao {
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.DeleteUser,
-        doerId = byWho.id,
+        doerTrueId = byWho.trueId,
         doneAt = tx.now.toJavaDate,
         browserIdData = byWho.browserIdData,
-        targetUserId = Some(userId))
+        targetPatTrueId = Some(memberBefore.trueId2))
 
       // Right now, members must have email addresses. Later, don't require this, and
       // skip inserting any dummy email here. [no-email]
@@ -2474,7 +2491,7 @@ trait UserDao {
     * @param block — EditMemberCtx(tx, staleStuff, member-to-edit, reqer) => side effects...  .
     */
   private def _editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: St,
-        mayNotWhat: St)(block: EditMemberCtx => U): MemberVb = {
+        mayNotWhat: St, mustBeAdmin: Bo = false)(block: EditMemberCtx => U): MemberVb = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
 
@@ -2487,9 +2504,12 @@ trait UserDao {
 
     writeTx { (tx, staleStuff) =>
       val me = tx.loadTheUser(byWho.id)
+      throwForbiddenIf(mustBeAdmin && !me.isAdmin, "TyE0ADM0536",
+            s"Only admins may $mayNotWhat")
+      // Split mods into "moderator" and "[power_mod]erator" trust levels — only
+      // the latter will be able to do this:  (so current mods = power mods)
       throwForbiddenIf(me.id != userId && !me.isStaff,
           errorCode + "-ISOTR", s"May not $mayNotWhat for others")
-
       // [pps] load MemberInclDetails instead, and hand to the caller? (user or group incl details)
       // Would be more usable; sometimes loaded anyway [7FKFA20]
       val member = tx.loadTheMemberInclDetails(userId)

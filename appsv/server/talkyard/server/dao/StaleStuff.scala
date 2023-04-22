@@ -145,6 +145,10 @@ class StaleStuff {
     stalePages.filter(p => p.pageModified).map(_.pageId).toSet
 
   /**
+    * Currently doesn't uncache any topic list page where this page is shown. You might
+    * need to call:  RenderedPageHtmlDao.uncacheForums()  [make_salestuff_uncache_forums]
+    * if somehting visible in a topic list page, changes.
+    *
     * @param memCacheOnly If page_meta_t.version_c (pages3.version) got bumped,
     *   that's enough — then it's different from page_html_t.version_c already
     *   and the database "knows" the cached html is out-of-date.

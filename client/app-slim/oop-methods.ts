@@ -680,6 +680,8 @@ export function member_isBuiltIn(member: Member): Bo {
 
 // Dupl code [disp_name]
 export function pat_name(pat: Me | Pat): St {
+  // Or prioritize username? Did, in the annon posts branch:
+  // if (pat.username) return '@' + pat.username;
   return pat.fullName || (pat.username ? '@' + pat.username : "_no_name_");
 }
 
@@ -759,6 +761,7 @@ export function pat_mayEditTags(me: Me, ps: { forPost?: Post, forPat?: Pat,
 //----------------------------------
 
 
+/// CLEAN_UP, try to remove.
 /// Needed (only?) because SettingsVisibleClientSide uses old legacy
 /// field names: `discPostSortOrder` and `discPostNesting`, will rename.
 /// And uses different field names for embedded comments pages,
@@ -771,8 +774,9 @@ export function discProps_pluckFrom(source: DiscPropsSource): DiscPropsSource {
   // @endif
   // Don't set any field to undefined. [unintened_undefined_bug]
   const result: DiscPropsSource = {};
-  if (source.comtOrder) result.comtOrder = source.comtOrder;
-  if (source.comtNesting) result.comtNesting = source.comtNesting;
+  for (const prop of DiscPropNames) {
+    if (source[prop]) result[prop] = source[prop];
+  }
   return result;
 }
 
@@ -788,6 +792,17 @@ export function discProps_pluckFromSettings(settings: SettingsVisibleClientSide,
   // Don't set any field to undefined. [unintened_undefined_bug]
   const result: DiscPropsSource = {};
 
+  // Some settings have the same names as the cat props. They will get moved
+  // to the root category instead? Or to  pat_node_multi_rels_t?  [add_nodes_t].
+  // But for now: (those with different names, won't be found in this loop —
+  // they're handled below instead)
+  for (const prop of DiscPropNames) {
+    if (settings[prop]) result[prop] = settings[prop];
+  }
+
+  // Other setings have different names than the corresponding cat props.
+  // They should get renamed (to the same names) and moved to the root cat
+  // or to  pat_node_multi_rels_t.  But for now, we have to:  [per_page_type_props]
   const comtOrder = pageType === PageRole.EmbeddedComments ?
           settings.embComSortOrder : settings.discPostSortOrder;
 
@@ -800,19 +815,6 @@ export function discProps_pluckFromSettings(settings: SettingsVisibleClientSide,
   return result;
 }
 
-
-/// Merges other into self; mutates self (_inPl = in-place).
-///
-export function discProps_addMissing_inPl(self: DiscPropsSource, other: DiscPropsSource) {
-  // Same as: DiscPropsMerged.addMissing() in Scala.  [disc_props_js_scala]
-  // Don't set any field to undefined. [unintened_undefined_bug]
-  if (!self.comtOrder && other.comtOrder) {
-    self.comtOrder = other.comtOrder;
-  }
-  if (!self.comtNesting && other.comtNesting) {
-    self.comtNesting = other.comtNesting;
-  }
-}
 
 export function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself) {
   // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
@@ -1047,7 +1049,7 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   const isMindMap = page.pageRole === PageRole.MindMap;
   const isWiki = post_isWiki(post);
   const isOwnPage = store_thisIsMyPage(store);
-  const isOwnPost = post.authorId === me.id;
+  const isOwnPost = pat_isAuthorOf(me, post, store.usersByIdBrief);
   let isOwn = isEditPage ? isOwnPage :
       isOwnPost ||
         // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
@@ -1201,7 +1203,7 @@ export function store_ancestorCatsCurLast(store: Store, catId: CatId): Cat[] {
 /// things: the parent cat, grandparent, root cat, and, lastly,
 /// whole site settings.
 ///
-export function store_ancestorCatsCurFirst(store: Store, catId: CatId): Cat[] {
+export function store_ancestorCatsCurFirst(store: DiscStore, catId: CatId): Cat[] {
   const ancestors = [];
   const cats: Cat[] = store.currentCategories;
   let nextCatId = catId;
@@ -1280,9 +1282,14 @@ export function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft)
 
 export function store_makeNewPostPreviewPatch(store: Store, page: Page,
       parentPostNr: PostNr | undefined, safePreviewHtml: string,
-      newPostType?: PostType): StorePatch {
+      newPostType?: PostType, doAsAnon?: WhichAnon): StorePatch {
+  // If this is an anon post, and one's first on this page, then, the anonym
+  // who will be used in place of oneself, hasn't yet been created.
+  // Then use the magic built-in id Pats.FutureAnonId which will
+  // make an anonym with '?' as sequence number appear.
+  const authorId = doAsAnon ? doAsAnon.sameAnonId || Pats.FutureAnonId : store.me.id;
   const previewPost = store_makePreviewPost({
-      authorId: store.me.id, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
+      authorId, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
   return page_makePostPatch(page, previewPost);
 }
 
@@ -1678,18 +1685,77 @@ export function layout_sortOrderForChildsOf(layout: DiscPropsDerived, post: { nr
 //----------------------------------
 
 
+// Sync w interface DiscPropsSource and ...?  in Scala.
+// Also: [derive_node_props_on_server], later.
+const DiscPropDefaults: DiscPropsBase = {
+  comtOrder: PostSortOrder.OldestFirst,
+  comtNesting: -1,
+  comtsStartHidden: NeverAlways.NeverButCanContinue,
+  comtsStartAnon: NeverAlways.NeverButCanContinue,
+  opStartsAnon: NeverAlways.NeverButCanContinue,
+  // For now. Later: OnlySelfCanDeanon.
+  newAnonStatus: AnonStatus.IsAnonCanAutoDeanon,
+};
+
+const DiscPropNames = Object.keys(DiscPropDefaults);
+
+
+export function node_deriveLayout(props: DiscLayoutDropdownBtnProps)
+        : NodePropsDerivedAndDefault {
+
+  // This is either for a specific page, or a category (and all pages therein).
+  dieIf(!!props.cat == !!props.page, 'TyE604MWJJ34');
+
+  let layoutSource: DiscPropsSource;
+  if (props.cat) {
+    layoutSource = discProps_pluckFrom(props.cat);
+  }
+  else {
+    layoutSource = discProps_pluckFrom(props.page);
+    // Apply any current page temp layout tweaks (disappear on page reload).
+    if (props.layoutFor === LayoutFor.PageWithTweaks && props.store.curPageTweaks) {
+      const tempLayoutTweaks = discProps_pluckFrom(props.store.curPageTweaks);
+      layoutSource = { ...layoutSource, ...tempLayoutTweaks };
+    }
+  }
+
+  // If we're A) altering the page layout, e.g. the comments sort order,
+  // but not saving server side, then:  layoutFor === PageWithTweaks,
+  // and the default layout is the page *without* tweaks,
+  // that is:  PageNoTweaks = PageWithTweaks + 1.
+  //
+  // And if we're B) saving server side, then:  layoutFor === PageNoTweaks,
+  // and the defaults would be the parent category's layout props
+  // that is,  LayoutFor.Ancestors = PageNoTweaks + 1.
+  //
+  // So, the "parent" layout is +1:
+  //
+  const layoutForParent = props.layoutFor + 1;
+
+  const actualLayout: DiscPropsDerived = props.page
+          ? page_deriveLayout(props.page, props.store, props.layoutFor)
+          : cat_deriveLayout(props.cat, props.store, props.layoutFor);
+  const parentsLayout: DiscPropsDerived = props.page
+          ? page_deriveLayout(props.page, props.store, layoutForParent)
+          : cat_deriveLayout(props.cat, props.store, layoutForParent);
+
+  return { layoutSource, parentsLayout, actualLayout };
+}
+
+
 /// Discussion properties. For each unspecified page property, e.g. sort order,
 /// looks at the ancestor categories, to find out what value to use.
 /// And if unspecified everywhere, uses the global site settings.
 ///
-/// RENAME to page_deriveLayout ?
-export function page_deriveLayout(page: Page, store: Store, layoutFor: LayoutFor)
+/// RENAME to page_deriveLayout ?  no to page_deriveDiscProps?
+export function page_deriveLayout(page: Page, store: DiscStore, layoutFor: LayoutFor)
       : DiscPropsDerived {   // RENAME to DiscLayoutDerived?
   return deriveLayoutImpl(page, null, store, layoutFor);
 }
 
 
-export function cat_deriveLayout(cat: Cat, store: Store, layoutFor: LayoutFor)
+/// RENAME to  cat_deriveDiscProps?
+export function cat_deriveLayout(cat: Cat, store: DiscStore, layoutFor: LayoutFor)
       : DiscPropsDerived {
   return deriveLayoutImpl(null, cat, store, layoutFor);
 }
@@ -1703,8 +1769,8 @@ export function cat_deriveLayout(cat: Cat, store: Store, layoutFor: LayoutFor)
 /// page or cat itself, override parent cat props and site settings.
 /// If unspecified everywhere, Ty's built-in defaults gets used.
 ///
-function deriveLayoutImpl(page: Page, cat: Cat, store: Store, layoutFor: LayoutFor)
-      : DiscPropsDerived {
+function deriveLayoutImpl(page: PageDiscPropsSource, cat: Cat, store: DiscStore,
+      layoutFor: LayoutFor): DiscPropsDerived {
 
   // ----- The page/cat itself
 
@@ -1713,11 +1779,18 @@ function deriveLayoutImpl(page: Page, cat: Cat, store: Store, layoutFor: LayoutF
 
   const selfRef = () => page ? `pageid:${page.pageId}` : `catid:${cat.id}`;
 
+  // Some time later, can use  ts-transformer-keys
+  // instead of the repetitive code below?
+
   // These says from where each effective setting is.  For example, if comtOrder
   // is set directly on a page, then, the comment order is from the page,
   // and comtOrderFrom becomes 'pageid:that-page's-id`.
-  let comtOrderFrom   = discProps.comtOrder && selfRef();
-  let comtNestingFrom = discProps.comtNesting && selfRef();
+  let propsFrom: Partial<DiscPropsComesFrom> = {};
+
+  for (const prop of DiscPropNames) {
+    if (discProps[prop]) propsFrom[prop] = selfRef();
+  }
+
 
   // ----- Ancestor cats
 
@@ -1730,59 +1803,68 @@ function deriveLayoutImpl(page: Page, cat: Cat, store: Store, layoutFor: LayoutF
   const ancCats: Cat[] = store_ancestorCatsCurFirst(store, ancCatId);
 
   for (const cat of ancCats) {
-    discProps_addMissing_inPl(discProps, cat);
-    const catRef = () => `catid:${cat.id}`;
-    if (!comtOrderFrom && discProps.comtOrder) comtOrderFrom = catRef();
-    if (!comtNestingFrom && discProps.comtNesting) comtNestingFrom = catRef();
+    // Same as: DiscPropsMerged.addMissing() in Scala.  [disc_props_js_scala]
+    // Don't set any field to undefined. [unintened_undefined_bug]
+    for (const prop of DiscPropNames) {
+      if (!discProps[prop] && cat[prop]) {
+        discProps[prop] = cat[prop];
+        propsFrom[prop] = cat;
+      }
+    }
   }
 
   // ----- Site settings
 
   const anyPageType: PageType | U = page?.pageRole;
   const isEmbedded = anyPageType === PageRole.EmbeddedComments;
-  const embSuffix = isEmbedded ? 'Emb' : '';
 
   // BUG, harmless: This'll be wrong, if configuring sort order for embedded comments
-  // in a category — because then we don't have anyPageType, and the sort order for
-  // non-embedded discussions will be shown.  Harmless corner case. [per_page_type_props]
-  const settingsDiscProps: DiscPropsSource =
-          discProps_pluckFromSettings(store.settings, anyPageType);
+  // in a category — because then we don't have `anyPageType` (edit: what?), and
+  // the sort order for non-embedded discussions will be shown. Harmless corner
+  // case.  See: [per_page_type_props]  (incl just below).
+  const settings: SettingsVisibleClientSide | U = (store as Store).settings || undefined;
+  const settingsDiscProps: DiscPropsSource = !settings ? {} :
+          discProps_pluckFromSettings(settings, anyPageType);
   discProps = { ...settingsDiscProps, ...discProps };
 
-  // sstg = setting, see docs/abbreviations.txt.
-  if (!comtOrderFrom && discProps.comtOrder) comtOrderFrom = 'sstg:comtOrder' + embSuffix;
-  if (!comtNestingFrom && discProps.comtNesting) comtNestingFrom = 'sstg:comtNesting';
+  // (sstg = setting, see docs/abbreviations.txt.)
+  for (const prop of DiscPropNames) {
+    if (!propsFrom[prop] && discProps[prop]) propsFrom[prop] = `sstg:${prop}`;
+  }
 
   // ----- Hardcoded defaults
 
-  // For blog comments, the default is best first, otherwise, oldest first.
-
-  if (!discProps.comtOrder) {
-    discProps.comtOrder = isEmbedded ? PostSortOrder.BestFirst : PostSortOrder.OldestFirst;
-    comtOrderFrom = `BuiltIn` + embSuffix;
+  // Backw comp hack, until [per_page_type_props]:  For blog comments, the default
+  // is BestFirst, otherwise (see DiscPropDefaults) OldestFirst.
+  const BuiltIn = `BuiltIn`;
+  if (!discProps.comtOrder && isEmbedded) {
+    discProps.comtOrder = PostSortOrder.BestFirst;
+    propsFrom.comtOrder = BuiltIn + `Emb`;
   }
 
-  if (!discProps.comtNesting) {
-    discProps.comtNesting = -1;
-    comtNestingFrom = `BuiltIn`;
+  // Apply defaults.
+  discProps = { ...DiscPropDefaults, ...discProps };
+
+  for (const prop of DiscPropNames) {
+    if (!propsFrom[prop] && discProps[prop]) propsFrom[prop] = BuiltIn;
   }
 
   // ----- Temp tweaks
 
   const anyTweaks = layoutFor === LayoutFor.PageWithTweaks
                     && page && page.pageId === store.currentPageId ?
-          store.curPageTweaks : undefined;
+          (store as Store).curPageTweaks : undefined;
 
   if (anyTweaks) {
     discProps = { ...discProps, ...anyTweaks };
-    if (anyTweaks.comtOrder) comtOrderFrom = `CurPageTweaks`;
-    if (anyTweaks.comtNesting) comtNestingFrom = `CurPageTweaks`;
+    for (const prop of DiscPropNames) {
+      if (anyTweaks[prop]) propsFrom[prop] = `CurPageTweaks`;
+    }
   }
 
   const result = {
     ...discProps,
-    comtOrderFrom,
-    comtNestingFrom,
+    from: propsFrom,
   };
 
   return result as DiscPropsDerived;

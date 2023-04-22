@@ -109,7 +109,8 @@ case class PageToJsonResult(
   version: CachedPageVersion,
   pageTitleUnsafe: Option[String],
   customHeadTags: FindHeadTagsResult,
-  unapprovedPostAuthorIds: Set[UserId])
+  unapprovedPostAuthorIds: Set[UserId],
+  anonsByRealId: Map[PatId, Seq[Anonym]])
 
 case class FindHeadTagsResult(
   includesTitleTag: Boolean,
@@ -333,7 +334,11 @@ class JsonMaker(dao: SiteDao) {
 
     val userIdsToLoad = mut.Set[UserId]()
     userIdsToLoad ++= pageMemberIds
-    userIdsToLoad ++= relevantPosts.map(_.createdById)  // or relevantApprovedPosts? [iz01]
+    for (post <- relevantPosts) {  // or relevantApprovedPosts? [iz01]
+      // Later: Don't incl any private members. [private_pats]
+      post.addVisiblePatIdsTo(userIdsToLoad)
+    }
+
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
@@ -368,6 +373,7 @@ class JsonMaker(dao: SiteDao) {
           val pageQuery = activePagesPerCatQuery
           COULD_OPTIMIZE // Remember cats, so can skip lookup below?  [2_many_cat_queries]
           val catsWithTopics = makeForumPageCatsAndTopicsJson(catsCanSee, pageQuery)
+          // Topic assignees not needed here? How it works elsewhere: [incl_assignees]
           catsWithTopics.catsAndTopicsJson
         }
     }) getOrElse JsArray()
@@ -392,9 +398,11 @@ class JsonMaker(dao: SiteDao) {
                   limit = ForumController.NumTopicsToList)
         RACE // got an 1 version old page stuff. So, now looking up by id *and version*,
         // instead.
-        val topics = topicsCanSee.pages
+        val topics: Vec[PagePathAndMeta] = topicsCanSee.pages
         val pageStuffById = dao.getPageStuffsByIdVersion(topics.map(_.idAndVersion))
-        topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
+
+        pageStuffById.values.foreach(_.addVisiblePatIdsTo(userIdsToLoad))
+
         for (stuff <- pageStuffById.values; tag <- stuff.pageTags) {
           tagTypeIdsToLoad.add(tag.tagTypeId)
         }
@@ -408,10 +416,17 @@ class JsonMaker(dao: SiteDao) {
       posts.find(_.id == postId).map(_.nr)
     }
 
+    // Bit dupl code. [pats_by_id_json]
     val usersById = transaction.loadParticipantsAsMap(userIdsToLoad)
     val usersByIdJson = JsObject(usersById map { idAndUser =>
-      idAndUser._1.toString -> JsPat(idAndUser._2, tagsAndBadges)
+      idAndUser._1.toString -> JsPat(idAndUser._2, tagsAndBadges,
+            // Let anonyms stay anonymous; don't show their true ids on public pages:
+            // (So specify no user here, meaning, a stranger, no permissions.)
+            toShowForPatId = None)
     })
+
+    val anons: Seq[Anonym] = usersById.values.collect({ case a: Anonym => a }).toSeq
+    val anonsByRealId = anons.groupBy(_.anonForPatId)
 
     // These don't change often, can use the cache.
     val tagTypes = dao.getTagTypes(tagTypeIdsToLoad.toSet)
@@ -439,6 +454,9 @@ class JsonMaker(dao: SiteDao) {
       "pageLayout" -> JsNumber(page.meta.layout.toInt),
       "comtOrder" -> JsNum32OrNull(page.meta.comtOrder.map(_.toInt)),
       //"comtNesting" -> later
+      "comtsStartHidden" -> JsNum32OrNull(page.meta.comtsStartHidden.map(_.toInt)),
+      "comtsStartAnon" -> JsNum32OrNull(page.meta.comtsStartAnon.map(_.toInt)),
+      "newAnonStatus" -> JsNum32OrNull(page.meta.newAnonStatus.map(_.toInt)),
       "forumSearchBox" -> JsNum32OrNull(page.meta.forumSearchBox),
       "forumMainView" -> JsNum32OrNull(page.meta.forumMainView),
       "forumCatsTopics" -> JsNum32OrNull(page.meta.forumCatsTopics),
@@ -522,10 +540,12 @@ class JsonMaker(dao: SiteDao) {
       renderParams = renderParams,
       storeJsonHash = hashSha1Base64UrlSafe(reactStoreJsonString))
 
+    COULD_OPTIMIZE // cache unapproved posts too?
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
-    PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags, unapprovedPostAuthorIds)
+    PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags,
+          unapprovedPostAuthorIds, anonsByRealId = anonsByRealId)
   }
 
 
@@ -824,8 +844,10 @@ class JsonMaker(dao: SiteDao) {
 
   RENAME // this function (i.e. userDataJson) so it won't come as a
   // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
-  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
+  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId],
+        anonsByRealId: Map[PatId, Seq[Anonym]])
         : Opt[MeAndStuff] = Some {
+
     require(pageRequest.dao == dao, "TyE4GKVRY3")
     val requester = pageRequest.user getOrElse {
       return None
@@ -866,7 +888,7 @@ class JsonMaker(dao: SiteDao) {
     dao.readOnlyTransaction { tx =>
       requestersJsonImpl(pageRequest.sid, requester, pageRequest.pageId, watchbarWithTitles,
             restrTopicsCatsLinks, permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds, myGroupsEveryoneLast, site, tx)
+            unapprovedPostAuthorIds, anonsByRealId, myGroupsEveryoneLast, site, tx)
     }
   }
 
@@ -890,7 +912,9 @@ class JsonMaker(dao: SiteDao) {
       requestersJsonImpl(request.sid, requester, anyPageId = None, watchbarWithTitles,
             RestrTopicsCatsLinks(JsArray(), Nil, Nil, Nil, Set.empty),
             permissions, permsOnSiteTooMany,
-            unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, site, tx)
+            unapprovedPostAuthorIds = Set.empty,
+            anonsByRealId = Map.empty,
+            myGroupsEveryoneLast, site, tx)
     }
   }
 
@@ -899,7 +923,7 @@ class JsonMaker(dao: SiteDao) {
         sid: SidStatus, requester: Participant, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrTopicsCatsLinks: RestrTopicsCatsLinks,
         permissions: Seq[PermsOnPages], permsOnSiteTooMany: PermsOnSite,
-        unapprovedPostAuthorIds: Set[UserId],
+        unapprovedPostAuthorIds: Set[UserId], anonsByRealId: Map[PatId, Seq[Anonym]],
         myGroupsEveryoneLast: Seq[Group], site: Opt[Site], tx: SiteTransaction)
         : MeAndStuff = {
 
@@ -990,6 +1014,10 @@ class JsonMaker(dao: SiteDao) {
     val anyReadingProgress = anyPageId.flatMap(tx.loadReadProgress(requester.id, _))
     val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
 
+    // later:  if (requester.isAdmin *and* wants to see who the anonyms are) ... hmm ..
+    val ownAnons: Seq[Anonym] =
+          anonsByRealId.getOrElse(requester.id, Nil)
+
     val ownDataByPageId = anyPageId match {
       case None => Json.obj()
       case Some(pageId) =>
@@ -1005,6 +1033,9 @@ class JsonMaker(dao: SiteDao) {
             // later: "flags" -> JsArray(...) [7KW20WY1]
             "unapprovedPosts" -> unapprovedPosts,
             "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
+            "knownAnons" -> JsArray(ownAnons map JsKnownAnonym),
+            // later: JsArray(real-anon-authors.map(a => JsUser(a))), if is staff.
+            "patsBehindAnons" -> JsArray(),
             "postNrsAutoReadLongAgo" -> JsArray(Nil),      // should remove
             "postNrsAutoReadNow" -> JsArray(Nil),
             "marksByPostId" -> JsObject(Nil)))
@@ -1151,11 +1182,12 @@ class JsonMaker(dao: SiteDao) {
                   limit = ForumController.NumTopicsToList, inSubTree = Some(categoryId))
         COULD_OPTIMIZE // reuse pageStuff in catsWithTopics.pageStuffById. [2_many_cat_queries]
         val pageStuffById = dao.getPageStuffById(topicsInBaseCat.pageIds)
+
         (catsWithTopics.catsAndTopicsJson, topicsInBaseCat, pageStuffById, Nil)
       }
 
     val userIds = mut.Set[UserId]()
-    pagesCanSee.pages.foreach(_.meta.addUserIdsTo(userIds))
+    pageStuffById.values.foreach(_.addVisiblePatIdsTo(userIds))
     val users = dao.getUsersAsSeq(userIds)
 
     val tagTypeIdsNeeded = mut.Set[TagTypeId]()
@@ -1379,37 +1411,39 @@ class JsonMaker(dao: SiteDao) {
 
 
   def makeStorePatchForPostIds(postIds: Set[PostId], showHidden: Bo,
-        inclUnapproved: Bo, maySquash: Bo, dao: SiteDao): JsObject = {
+        inclUnapproved: Bo, maySquash: Bo, dao: SiteDao, reqerId: Opt[PatId] = None,
+        ): JsObject = {
     dieIf(Globals.isDevOrTest && dao != this.dao, "TyE602MWJL43") ; CLEAN_UP // remove dao param?
     dao.readTx { tx =>
       // This might render CommonMark, in a tx — slightly bad. [nashorn_in_tx]
       makeStorePatchForPostIds(postIds, showHidden = showHidden,
-            inclUnapproved = inclUnapproved, maySquash = maySquash, tx)
+            inclUnapproved = inclUnapproved, maySquash = maySquash, tx, reqerId = reqerId)
     }
   }
 
 
   private def makeStorePatchForPostIds(postIds: Set[PostId],
           showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
-          transaction: SiteTx): JsObject = {
+          transaction: SiteTx, reqerId: Opt[PatId]): JsObject = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsAndBadges = transaction.loadPostTagsAndAuthorBadges(postIds)
     val tagTypes = dao.getTagTypes(tagsAndBadges.tagTypeIds)
     val pageIds = posts.map(_.pageId).toSet
     val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
-    val authorIds = posts.map(_.createdById).toSet
-    val authors = transaction.loadParticipants(authorIds)
+    val patIds = MutHashSet[PatId]()
+    posts.foreach(_.addVisiblePatIdsTo(patIds))
+    val pats = transaction.loadParticipants(patIds)
     makeStorePatch3(pageIdVersions, posts,
           showHidden = showHidden, inclUnapproved = inclUnapproved,
           maySquash = maySquash, tagsAndBadges, tagTypes,
-          authors, appVersion = dao.globals.applicationVersion)(transaction)
+          pats, reqerId = reqerId, appVersion = dao.globals.applicationVersion)(transaction)
   }
 
 
-  def makeStorePatchForPost(post: Post, author: Pat, showHidden: Bo): JsObject = {
+  def makeStorePatchForPost(post: Post, showHidden: Bo, reqerId: PatId): JsObject = {
     makeStorePatchForPostIds(
           postIds = Set(post.id), showHidden = showHidden, inclUnapproved = true,
-          maySquash = false, dao)
+          maySquash = false, dao, reqerId = Some(reqerId))
   }
 
 
@@ -1424,9 +1458,9 @@ class JsonMaker(dao: SiteDao) {
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
           showHidden: Bo, inclUnapproved: Bo, maySquash: Bo,
           tagsAndBadges: TagsAndBadges, tagTypes: Seq[TagType],
-          users: Iterable[Pat], appVersion: St)(
+          pats: Iterable[Pat], reqerId: Opt[PatId] = None, appVersion: St)(
           tx: SiteTx): JsObject = {
-    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
+    require(posts.isEmpty || pats.nonEmpty, "Posts but no authors [EsE4YK7W2]")
 
     val pageVersionsByPageIdJson =
           JsObject(pageIdVersions.toSeq.map(p => p.pageId -> JsNumber(p.version)))
@@ -1451,7 +1485,7 @@ class JsonMaker(dao: SiteDao) {
     Json.obj(
       "appVersion" -> appVersion,
       "pageVersionsByPageId" -> pageVersionsByPageIdJson,
-      "usersBrief" -> users.map(JsPat(_, tagsAndBadges)),
+      "usersBrief" -> pats.map(JsPat(_, tagsAndBadges, toShowForPatId = reqerId)),
       "tagTypes" -> tagTypes.map(JsTagType),
       "postsByPageId" -> postsByPageIdJson)
   }
@@ -1931,6 +1965,7 @@ object JsonMaker {
   def makeCategoryJson(categoryStuff: CategoryStuff, rootCategory: Cat,
         topicsInTreeJson: Opt[Seq[JsObject]], includeDetails: Bo = false): JsObject = {
     val category = categoryStuff.category
+    COULD_OPTIMIZE; SAVE_BANDWIDTH // Exclude all zero (0)
     var json = Json.obj(
       "id" -> category.id,
       "parentId" -> JsNumberOrNull(category.parentId),
@@ -1943,6 +1978,10 @@ object JsonMaker {
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "comtOrder" -> JsNum32OrNull(category.comtOrder.map(_.toInt)),
       "comtNesting" -> JsNum32OrNull(category.comtNesting),
+      "comtsStartHidden" -> JsNum32OrNull(category.comtsStartHidden.map(_.toInt)),
+      "comtsStartAnon" -> JsNum32OrNull(category.comtsStartAnon.map(_.toInt)),
+      "opStartsAnon" -> JsNum32OrNull(category.opStartsAnon.map(_.toInt)),
+      "newAnonStatus" -> JsNum32OrNull(category.newAnonStatus.map(_.toInt)),
       // For now, this cannot be configured in any more detail. [do_it_on_off]
       "doItVotesPopFirst" -> JsBoolOrNull(category.doVoteStyle.map(_ => true)),
       "unlistCategory" -> JsBoolean(category.unlistCategory),
@@ -2056,6 +2095,8 @@ object JsonMaker {
 
     val postTags: Seq[Tag] = tagsAndBadges.tags(post.id)
 
+    COULD_OPTIMIZE; SAVE_BANDWIDTH // Exclude all zero (0) fields? E.g. 0 like votes.
+    // And use an ArrayBuffer instead of a Vector.
     var fields = Vector(
       "uniqueId" -> JsNumber(post.id),
       "nr" -> JsNumber(post.nr),
@@ -2104,6 +2145,15 @@ object JsonMaker {
 
     // For now. So can edit the title without extra loading the title post's source. [5S02MR4]
     if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(unsafeSource)
+
+    // Later: Don't incl any private members. [private_pats]
+    if (post.authorIds.nonEmpty)
+      fields :+= "authorIds" -> JsArray(post.authorIds.map(JsNumber(_)))
+
+    // Also check permissions — may one see who's assigned? [can_see_assigned]
+    // And if one may see these people at all. [private_pats]
+    if (post.assigneeIds.nonEmpty)
+      fields :+= "assigneeIds" -> JsArray(post.assigneeIds.map(JsNumber(_)))
 
     JsObject(fields)
   }

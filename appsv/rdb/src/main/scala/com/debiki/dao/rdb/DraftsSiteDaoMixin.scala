@@ -65,9 +65,11 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
         post_id,
         post_type,
         to_user_id,
+        post_as_id_c,
+        new_anon_status_c,
         title,
         text)
-      values (?, ?, ?, ?, ?, null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      values (?, ?, ?, ?, ?, null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       on conflict (site_id, by_user_id, draft_nr)
       do update set
         -- Use the new version, it should be more recent. [5ABRQP0]
@@ -87,6 +89,8 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
         post_id = excluded.post_id,
         post_type = excluded.post_type,
         to_user_id = excluded.to_user_id,
+        post_as_id_c = excluded.post_as_id_c,
+        new_anon_status_c = excluded.new_anon_status_c,
         title = excluded.title,
         text = excluded.text
       """
@@ -107,6 +111,8 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       locator.postId.orNullInt,
       draft.postType.map(_.toInt).orNullInt,
       locator.toUserId.orNullInt,
+      draft.doAsAnon.flatMap(_.anySameAnonId.map(_.toInt)).orNullInt,
+      draft.doAsAnon.flatMap(_.anyNewAnonStatus.map(_.toInt)).orNullInt,
       draft.title,
       draft.text))
   }
@@ -209,6 +215,7 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
 
     Draft(
       byUserId = getInt(rs, "by_user_id"),
+      doAsAnon = parseWhichAnon(rs),
       draftNr = getInt(rs, "draft_nr"),
       forWhat = draftLocator,
       createdAt = getWhen(rs, "created_at"),
@@ -220,4 +227,23 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       text = getString(rs, "text"))
   }
 
+
+  /** Sync w talkyard.server.parser.parseWhichAnonJson().
+    */
+  def parseWhichAnon(rs: js.ResultSet): Opt[WhichAnon] = {
+    val sameAnonId = getOptInt(rs, "post_as_id_c")
+    // PostgreSQL custom domain  anonym_status_d  has verified that the value is valid.
+    val newAnonStatus = AnonStatus.fromOptInt(getOptInt(rs, "new_anon_status_c"))
+    dieIf(sameAnonId.isDefined && newAnonStatus.isDefined, "TyE6023RAKJ5",
+            "Both  post_as_id_c  and  new_anon_status_c  non-null")
+    if (sameAnonId.isDefined) {
+      Some(WhichAnon.SameAsBefore(sameAnonId.get))
+    }
+    else if (newAnonStatus.isDefined) {
+      Some(WhichAnon.NewAnon(newAnonStatus.get))
+    }
+    else {
+      None
+    }
+  }
 }

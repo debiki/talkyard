@@ -290,7 +290,7 @@ object Rdb {
     value
   }
 
-  def getOptInt(rs: js.ResultSet, column: String): Option[Int] =
+  def getOptInt(rs: js.ResultSet, column: String): Option[i32] =
     getOptInt32(rs, column)
 
   def getOptInt16(rs: js.ResultSet, column: St): Opt[i16] =
@@ -415,6 +415,43 @@ object Rdb {
     val javaArray = sqlArray.getArray.asInstanceOf[Array[Integer]]
     Some(javaArray.to[Vec].map(_.toInt))
   }
+
+  /** Make sure no array contains any null — just because I then don't know what'll
+    * happen. Will a SQL null integer in an array, become a Java null Integer, or 0,
+    * or what?
+    *
+    * You can excl null, by using:  `array_agg(...) filter (where some_agg_col is not nuLL)`
+    * — then, instead the whole field will be null (rather than an array that contains
+    * null).  There's also:  array_remove(..., null).
+    */
+  def getOptArrayOfArrayOfInt32(rs: js.ResultSet, column: St): Opt[Vec[Vec[i32]]] = {
+    val sqlArray: js.Array = rs.getArray(column)
+    if (sqlArray eq null) return None
+
+    // System.out.println(s"classNameOf(sqlArray.getArray): ${classNameOf(sqlArray.getArray)}")
+    // Oddly enough returns a java.lang.Object not a Java array.
+    val javaArrayAsObj: Object = sqlArray.getArray
+    val javaArrayAsArr: Array[_] = javaArrayAsObj.asInstanceOf[Array[_]]
+    /*
+    for (item <- javaArrayAsArr) {
+      System.out.println(s"classNameOf(item): ${classNameOf(item)}")
+    } */
+    WOULD_OPTIMIZE // Can skip to[Vec], do that at the end instead? And skip toInt, or?
+    val vecOfJavaArrays = javaArrayAsArr.to[Vec]
+    val vecOfVec = vecOfJavaArrays.map(_.asInstanceOf[Array[_]].to[Vec].map(_.asInstanceOf[Int]))
+    Some(vecOfVec)
+  }
+
+  /*  Untested? Or?
+  def getOptArrayOfStringsStrings(rs: js.ResultSet, column: St): Opt[ImmSeq[ImmSeq[St]]] = {
+    val sqlArray: js.Array = rs.getArray(column)
+    if (sqlArray eq null) return None
+    val javaArrayOfArrays = sqlArray.getArray.asInstanceOf[Array[Array[St]]]
+    val seqOfJavaArrays = javaArrayOfArrays.to[Vec]
+    val seqOfSeq = seqOfJavaArrays.map(_.to[Vec])
+    Some(seqOfSeq)
+  } */
+
 
   def getOptTrustLevel(rs: js.ResultSet, column: St): Opt[TrustLevel] = {
     val asInt = rs.getInt(column)

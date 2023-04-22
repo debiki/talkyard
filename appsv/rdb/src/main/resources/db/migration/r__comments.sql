@@ -8,6 +8,20 @@
 --@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 ------------------------------------------------------------------------
+comment on domain  can_see_who_d  is $_$
+Says if a pat can see other pats related to something, e.g. see who
+is assigned to a task, or see which others also can see a private
+page.  See: can_see_assigned_c and  can_see_who_can_see_c.
+$_$;
+
+------------------------------------------------------------------------
+comment on domain  creator_status_d  is $_$
+Says if the poster is still author and owner. And if others have been
+added as authors or owners, or assigned to this post — then, they'd
+be looked up in pat_node_*_rels_t.
+$_$;  -- '
+
+------------------------------------------------------------------------
 comment on domain  dormant_status_d  is $_$
 If not null, shows why a relationship (from a post or pat to something)
 should be ignored. Then, indexes can exclude these relationships, e.g.
@@ -27,6 +41,71 @@ PatRelType.AssignedTo or VotedOn, from a pat to a post.
 Is a thing_type_d.
 $_$;
 
+--  ------------------------------------------------------------------------
+--  comment on domain page_id_st_d is $_$
+--  
+--  Currently, page ids are strings — later, those will become aliases,
+--  and there'll be numeric ids instead?
+--  $_$;  -- '
+
+--  ------------------------------------------------------------------------
+--  pat_type_d  REMOVE
+--  comment on domain pat_type_d is $_$
+--
+--  Participant types:   — if null (the default), then, < 0 => Guest, > 0 => User?
+--     and incl extra flag fields if different somehow, e.g. isBot,
+--     isExtHelp, isSupRead, isSupAdm etc?
+--
+--  Maybe rename to specType?
+--
+--  ==== Anon, per page
+--  %% -3 = Unknown pat
+--  ==== Guests (semi anon blog commenters)
+--  %% 1 = Guest or anonymous/unknown stranger.
+--  ==== Not a real account, cannot add to groups etc:
+--  %% 2 = Anonyn, with real_user_id identifying the real user.
+--  ==== Cannot add to groups. Has all permisssions or gets in other ways:
+--  1 = System user
+--  2 = System bot ?
+--  ==== Cannot log in, is just a pseudonym. But can add to groups etc:
+--  21  = Anon
+--  ====
+--  <=  49 cannot have permissions?
+--  51 = Group. Created by admins, top down. Can have security permissions
+--      and config settings that get inherited by those in the group.
+--  (? 52 = Circle, or bottom-up group. Created by ordinary members.
+--      E.g. a study circle, or teacher circle. Doesn't have inheritable
+--      settings? Nor permissions. Not impl.)
+--  ==== Cannot config UI prefs — doesn't use any UI:
+--  61 = Only bot, e.g. CI system? — cannot log in; can *only* do things via AIP.
+--       A human + custom client should use type 9 User instead.
+--  71  = Pen name. Not impl.
+--  ====
+--  %% 31 = User (a human, maybe a bot, sometimes cannot know. Maybe an extrenal Matrix
+--      user who got an account auto generated).
+--  ====
+--  ? 101 = External management account: superbot, superadmin, superstaff (mod)
+--  ? 111 = External help account — if site admins ask for help, and want to give access
+--       only to some parts of their site? (e.g. dev/design help)
+--  ====
+--  ? 127 = temporary just one-request user, via API secret, mustn't store in db
+--  
+--  No!: Participant types:
+--  1 = Unknown stranger or user.  — skip
+--  2 = Anonymous stranger or user (no name).  — skip
+--  3 = Guest.
+--  4 = Pen name. Not impl.
+--  7 = Built-in account, e.g. system, sysbot, superadmin.
+--  8 = External management account: superbot, superadmin, superstaff?
+--  9 = User (a human, maybe a bot, sometimes cannot no).
+--  (10 = Bot, can only do things via AIP? But could be a human + a custom client?)
+--  91 = Group. Created by admins, top down. Can have security permissions
+--      and config settings that get inherited by those in the group.
+--  (? 92 = Circle, or bottom-up group. Created by ordinary members.
+--      E.g. a study circle, or teacher circle. Doesn't have inheritable
+--      settings? Nor permissions. Not impl.)
+--  $_$;
+
 ------------------------------------------------------------------------
 comment on domain  post_nr_d  is $_$
 On each page, the Orig Post is nr 1, the first reply is nr 2, and so on.
@@ -38,6 +117,12 @@ comment on domain  post_rel_type_d  is $_$
 Says what a relationship from a post to somehting means, e.g.
 PostRelType.AnswerTo (other post) / FlagOf (posts or pats) / DuplicateOf (other post).
 Is a thing_type_d.
+$_$;
+
+------------------------------------------------------------------------
+comment on domain  private_status_d  is $_$
+If not null, the page or post and all descendants, are private.
+The value will show if more private pats can bee added, but for now, always 1.
 $_$;
 
 ------------------------------------------------------------------------
@@ -68,17 +153,20 @@ they'd try to use the same table row).
 $_$; -- '
 
 ------------------------------------------------------------------------
-comment on domain trust_level_or_staff_d is $_$
+comment on domain  trust_level_or_staff_d  is $_$
 
 Trust levels from Stranger = 0 to Core Member = 6, plus dummy trust levels
 for staff, i.e. mods = 7 and admins = 8.
 $_$;
+
+------------------------------------------------------------------------
 
 
 
 --@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 --  Tables
 --@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 
 
 --======================================================================
@@ -102,6 +190,17 @@ To be renamed to  pat_rels_t.  Later, will store AssignedTo,
 votes, and who knows what more. Currently stores
 votes and flags, but later, flags will be kept in posts_t instead,
 linked to the flagged things via the upcoming table post_rels_t.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  post_actions3.added_by_id_c  is $_$
+If one pat assigns another to a task.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  post_actions3.as_pat_id_c  is $_$
+Done as another user, e.g. for anonymous votes, points to the anonym
+to show instead of oneself.
 $_$;
 
 
@@ -128,6 +227,35 @@ start a new private message page and link to the comments page.
 RENAME to perms_on_pages_t.
 $_$;  -- '
 
+------------------------------------------------------------------------
+comment on column  perms_on_pages3.can_see_others_priv_c  is $_$
+If one may see a category, or a private message (a page),
+or a private comments thread on a not-private page.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  perms_on_pages3.can_see_who_can_see_c  is $_$
+If pat can see which other pats can see a page or comment tree.
+null means inherit, and:
+   1 = Cannot see if anyone else can see it.
+   2 = See if anyone else can see it, but not who.
+   3 = See the primary group(s) of those who can see it, e.g. Support Staff.
+   4 = See precisely which individuals can see it, e.g. know which
+       others are part of a private discussion — which
+      can be important to know, depending on what one has in mind to say,
+      and is the default.
+$_$;
+
+------------------------------------------------------------------------
+comment on column  perms_on_pages3.can_see_assigned_c  is $_$
+null means inherit, and:
+   1 = Can not see if a task is assigned to anyone.
+   2 = See if assigned or not (but not to whom).
+   3 = See which group(s) assigned to, e.g. Support Staff, but not
+       to which person(s) in the group.
+   4 = See precisely which individuals are assigned.
+$_$;
+
 
 --======================================================================
 --  posts_t
@@ -135,9 +263,10 @@ $_$;  -- '
 
 ------------------------------------------------------------------------
 comment on table  posts3  is $_$
-To be renamed to  posts_t.  Stores the actuall discussions:
+To be renamed to  posts_t.  No, to nodes_t.  Stores the actuall discussions:
 the Original Post, a title post, reply/comment posts, meta posts,
 chat messages, any private comments.
+Later, categories and pages will be here too. [all_in_nodes_t]
 
 Later, other things too: Flags. Flags are nicely represented as posts of
 type PostType.Flag on pages of type PageType.Flag, visible to oneself and mods
@@ -153,41 +282,57 @@ And bookmarks. Later.
 $_$;  -- '
 
 ------------------------------------------------------------------------
-comment on column  posts3.authors_id_c  is $_$
-The person who posted a post, is shown as author by default.  [post_authors]
-But this can be changed, by specifying a member or a list of members
-if there's more than one author.
+comment on column  posts3.created_by_id  is $_$
+If created by an anonym or pseudonym, is the id of that anonym or pseudonym.
+And to find the true author, one looks up that anon/pseudonym in pats_t,
+and looks at the true_id_c column.
 $_$; -- '
 
-------------------------------------------------------------------------
-comment on column  posts3.owners_id_c  is $_$
-The person who posted a post, is the owner of the post — *unless*  [post_owners]
-owners_id_c is set to someone else. Can be set to a member or a list of
-members. The owners of a post, may edit it, change the authors, make it
-private (but not make a private post public), add/remove owners, etc.
 
-Changing the owner, can be good if 1) someone starts working on an article,
-and leaves for vacation, and another person is to finish the article,
-publish it etc.  Or if 2) mods have deleted a post, and want to prevent
-the original author from un-deleting it or editing it any further. Then,
-the mods can make the Moderators group the owner of the post —
-thereafter the original author cannot edit it, un/delete it or anything.
-$_$;
 
 ------------------------------------------------------------------------
-comment on column  posts3.private_pats_id_c  is $_$
-If non-null, the post is private. Then, all descendants (the whole sub thread
-or page if the Orig Post is private) should be too, otherwise it's a bug.
-private_pats_id_c points to a pat or a list of pats (pats_t.is_pat_list_c = true).
-Comments in private sub threads have nr:s < 0, so there's a quick way for Ty
+comment on column  posts3.private_status_c  is $_$
+If non-null, the post is private, and all descendants (the whole
+comments tree or page if it's the orig post) are private too.
+
+In  perms_on_pages3.{may_post_comment, may_see}  we see who may
+reply to (or only see) the private tree.
+
+The private_status_c value says if it's ok to add more people to this private
+tree, and if someone added, can see already existing private comments
+(otherwise they can see new, only).
+These things can only be changed in the more-private direction,
+once the private tree has been created.  Maybe values could be:
+
+0 or null: Not private.
+1: Can add more private members, and make it public. The default.
+   All other values below, won't be implemented the nearest ... years?:
+2: Can add more people to the private tree, that is, make it less private, sort of.
+   And they get to see the alreday existing comments.
+3: Can add more people to a private tree, but they don't get to see any
+   already existing comments; they can see only comments posted after they
+   (the new people) got added. Will use  perms_on_posts3.can_see_priv_aft_c
+   to remember when?
+4: If adding more people to a private page, instead, a new private page
+   gets created, with the original people plus the ones now added.
+   (And you can keep adding people, until a comment has been posted on this
+   new page — thereafter, adding more, cerates yet another page.)
+   Then new people won't see that there was an earlier discussion,
+   with fewer participants.
+5: Cannot add more private pats (except for by adding to a group who can see).
+6: Cannot add more private pats, not even by adding sbd to a group.
+   (How's that going to get implemented? And does it ever make sense)
+
+Comments in private comment trees have nr:s < 0, so there's a quick way for Ty
 to skip them when loading comments to show by default on a page, *and*
 so there won't be any gaps in the not-private comment nr sequence (> 0).
-Comments on private *pages* though, have positive nrs — because anyone who can
+Comments on private *pages* though, can have nrs > 0? Because anyone who can
 see the private page, can see those comments, so we want to load all of them.
-It's not allowed to start new private sub threads inside private threads
+
+It's not allowed to start new private sub trees inside private trees
 or on private pages, because then the permission system would become
-unnecessarily complicated. ('New' here means that a different set of
-pats could see those private sub threads.)
+unnecessarily complicated? ('New' here means that a different group of
+people could see those private-tree-in-tree.)
 $_$;  -- '
 
 ------------------------------------------------------------------------
@@ -204,9 +349,8 @@ comment on column  identities3.idp_user_id_c  is $_$
 
 For OIDC, this is the 'sub', Subject Identifier.
 $_$;
-
-
 ------------------------------------------------------------------------
+
 
 
 --======================================================================
@@ -385,7 +529,7 @@ oEmbed was 9 215 bytes, and included an inline <svg> image, and
 'background-color: #F4F4F4' repeated at 8 places, and the Instagram post text
 repeated twice. Better allow at least 2x more than that.
 There's an appserver max length check too [oEmb_json_len].
-$_$;
+$_$;  -- '
 
 
 ------------------------------------------------------------------------
@@ -396,7 +540,7 @@ E.g. TCP RST or timeout. 0 means the same in a browser typically, e.g. request.a
 
 However, currently (maybe always?) failed fetches are instead cached temporarily
 only, in Redis, so cannot DoS attack the disk storage.  [ln_pv_fetch_errs]
-$_$;
+$_$; -- '
 
 
 ------------------------------------------------------------------------
@@ -404,6 +548,47 @@ comment on column  link_previews_t.content_json_c  is $_$
 
 Null if the request failed, got no response json. E.g. an error status code,
 or a request timeout or TCP RST?   [ln_pv_fetch_errs]
+$_$;
+
+
+
+-- --======================================================================
+-- --  posts3
+-- --======================================================================
+-- 
+-- ------------------------------------------------------------------------
+-- RM:  comment on column  posts3.anon_level_c  is $_$
+-- 
+-- If this post was done anonymously, by a member (not a guest), and how
+-- much it is anonymized.
+-- $_$;
+-- ------------------------------------------------------------------------
+-- RM:  comment on column  posts3.anonym_nr_c  is $_$
+-- 
+-- Others can see that one's anonymous posts with the same virtual anon
+-- account incarnation, were made by the same anonymous person (but of course
+-- not who hen is).
+-- $_$; -- '
+-- ------------------------------------------------------------------------
+
+
+-- ------------------------------------------------------------------------
+comment on column  posts3.answered_status_c  is $_$
+
+1: Waiting for solutions. 2: There's some solutions, still waiting for more.
+3: There's a solution, no more needed (and then page typically closed).
+$_$; -- '
+
+-- ------------------------------------------------------------------------
+comment on column  posts3.closed_status  is $_$
+
+1: Closed, 2: Locked, 3: Frozen.
+$_$;
+
+-- ------------------------------------------------------------------------
+comment on column  posts3.doing_status_c  is $_$
+
+1: Planned, 2: Started, 3: Paused, 4: Done.
 $_$;
 
 

@@ -757,7 +757,7 @@ const RootPostAndComments = createComponent({
       const child: Post = postsByNr[childNr];
       if (!child)
         return; // deleted
-      const isProgrPost =
+      const isProgrPost =  // break out:  [comt_isForTimeline]  ?
           child.postType === PostType.BottomComment || child.postType === PostType.MetaMessage;
       if (isProgrPost !== inProgrSect) {
         return;
@@ -1532,7 +1532,7 @@ export const Post = createComponent({
     let replyReceivers;
     if (!this.props.abbreviate && !isFlat && (
           this.props.index > 0 || post.multireplyPostNrs.length)) {
-      replyReceivers = ReplyReceivers({ store: store, post: post });
+      replyReceivers = ReplyReceivers({ store, post });
     }
 
     const mark = me.marksByPostId[post.nr];
@@ -1623,6 +1623,7 @@ const ReplyReceivers = createComponent({
     const elem = this.props.comma ? 'span' : 'div';
     return (
       r[elem]({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
+        // This'll look like:  "In reply to @memah:"  followed by the reply, below.
         this.props.comma ? t.d.repliesTo : t.d.InReplyTo, receivers, ':'));
   }
 });
@@ -1668,19 +1669,34 @@ export const PostHeader = createComponent({
     const me: Myself = store.me;
     const post: Post = this.props.post;
     const abbreviate = this.props.abbreviate;
+
     if (!post)
       return r.p({}, '(Post missing [DwE7IKW2])');
 
+    const assignees = (capitalizeClass: St = '') => !post.assigneeIds ? null :
+        r.span({ className: 'n_Asgd2' },
+          r.span({ className: 'n_Asgd2_Ttl' + capitalizeClass }, "assigned to "),  // I18N
+          r.ul({ className: 'c_AsgsL' },
+            post.assigneeIds.map(patId =>
+              r.li({ key: patId },
+                UserName({ patId, store, avoidFullName: true })))));
+
     if (isWikiPost(post)) {
+      const anyAssigneesCaps = assignees(' n_1stCap');
       if (abbreviate) {
-        return r.div({ className: 'dw-p-hd' }, t.Wiki);
+        return r.div({ className: 'dw-p-hd' }, t.Wiki,
+              // How does this look? Currently always null — cannot yet [assign_comments].
+              anyAssigneesCaps);
       }
       if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.nr === BodyNr) {
-        return null;
+        return anyAssigneesCaps;
       }
       // Show a collapse button for this wiki post, but no author name because this is
       // a wiki post contributed to by everyone.
-      return r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick });
+      return rFr({},
+            r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick }),
+              // How does this look? Currently null — cannot [assign_comments].
+            anyAssigneesCaps);
     }
 
     const linkFn = abbreviate ? 'span' : 'a';
@@ -1788,6 +1804,7 @@ export const PostHeader = createComponent({
                 timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass)),
             editInfo),
           inReplyTo,
+          assignees(),
           toggleCollapsedButton,
           bookmark,
           unreadMark,

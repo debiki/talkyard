@@ -67,8 +67,7 @@ class CloseCollapseController @Inject()(cc: ControllerComponents, edContext: TyC
     val pageId = (apiReq.body \ "pageId").as[PageId]
     val postNr = (apiReq.body \ "postNr").as[PostNr]
 
-    dao.changePostStatus(postNr, pageId = pageId, action, userId = apiReq.theUserId,
-          apiReq.theBrowserIdData)
+    dao.changePostStatus(postNr, pageId = pageId, action, apiReq.reqrIds)
 
     OkSafeJson(dao.jsonMaker.postToJson2(postNr, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
       includeUnapproved = true))
