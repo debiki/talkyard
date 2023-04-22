@@ -2544,7 +2544,9 @@ const LanguageSettings = createFactory({
       // Don't mention this is en-US, people might then want -GB too and -AU (for the UK and Australia)?
       value: 'en_US', label: "English"
     }, {
-      value: 'es_CL', label: "Spanish (Chile)"
+      value: 'zh_CN', label: "Chinese (PRC)"
+    }, {
+      value: 'nl_NL', label: "Dutch"
     }, {
       value: 'de_DE', label: "German"
     }, {
@@ -2552,13 +2554,13 @@ const LanguageSettings = createFactory({
     }, {
       value: 'lv_LV', label: "Latvian"
     }, {
-      value: 'nl_NL', label: "Dutch"
-    }, {
       value: 'pl_PL', label: "Polish"
     }, {
       value: 'pt_BR', label: "Portuguese (Brazilian)"
     }, {
       value: 'ru_RU', label: "Russian"
+    }, {
+      value: 'es_CL', label: "Spanish (Chile)"
     }, {
       value: 'sv_SE', label: "Swedish"
     }, {
