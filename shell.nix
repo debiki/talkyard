@@ -17,7 +17,7 @@ with (import <nixpkgs> {});
 mkShell {
   buildInputs = [
     ripgrep
-    nodejs-14_x
+    nodejs-18_x
     deno
     yarn
     gnumake
