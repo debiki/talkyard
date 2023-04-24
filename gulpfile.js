@@ -478,9 +478,12 @@ gulp.task('compileTranslations', () => {
   const stream = gulp.src(['translations/**/*.ts'])
       .pipe(plumber())
       .pipe(typeScript({
+        //target: "ES5",
         declarationFiles: true,
         lib: ['es5', 'es2015', 'dom'],
         types: ['core-js']
+        //sourceMap: true,
+        //inlineSources: true,
       }));
   return stream.js
       .pipe(updateAtimeAndMtime())

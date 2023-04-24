@@ -5,6 +5,7 @@ import TyWdioReporter from './wdio-progress-reporter';
 import settings from './utils/settings';
 import server from './utils/server';
 import * as lad from './utils/log-and-die';
+import type { Options } from '@wdio/types';
 
 
 server.initOrExit(settings);

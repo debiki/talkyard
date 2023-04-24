@@ -14,6 +14,22 @@
 #   https://github.com/nodejs/docker-node/blob/master/10/buster-slim/
 FROM node:14.15.1-buster-slim
 
+# Doesn't work:
+#FROM node:18.16.0-buster-slim
+# Gulp fails to compile the translations:
+#   [03:51:12] Plumber found unhandled error:
+#    Error: You must provide the URL of lib/mappings.wasm by calling SourceMapConsumer.initialize({ 'lib/mappings.wasm': ... }) before using SourceMapConsumer
+#   [03:51:12] 'compileTranslations' errored after 6.58 s
+#   [03:51:12] Error: You must provide the URL of lib/mappings.wasm by calling SourceMapConsumer.initialize({ 'lib/mappings.wasm': ... }) before using SourceMapConsumer
+#       at readWasm (/opt/talkyard/server/node_modules/gulp-typescript/node_modules/source-map/lib/read-wasm.js:8:13)
+#       at wasm (/opt/talkyard/server/node_modules/gulp-typescript/node_modules/source-map/lib/wasm.js:25:16)
+#       at /opt/talkyard/server/node_modules/gulp-typescript/node_modules/source-map/lib/source-map-consumer.js:264:14
+#       at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#   ERROR: 1
+# However other bundles seem to not cause any problems, try e.g.:
+#   s/tyd gulp compileSwTypescript  # no errors
+
+
 
 # The Node.js Dockerfile creates a user 'node' with id 1000.
 # However, most people on Linux have id 1000 already, so 'node' = 1000

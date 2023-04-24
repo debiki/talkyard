@@ -5,18 +5,18 @@
   "author": "Kaj Magnus Lindberg",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
-    "@wdio/cli": "^7.20.5",
-    "@wdio/devtools-service": "^7.20.5",
-    "@wdio/firefox-profile-service": "^7.20.3",
-    "@wdio/local-runner": "^7.20.5",
-    "@wdio/mocha-framework": "^7.20.3",
-    "@wdio/reporter": "^7.20.3",
-    "@wdio/spec-reporter": "^7.20.3",
-    "@wdio/types": "^7.20.3",
+    "@wdio/cli": "^8.8.6",
+    "@wdio/devtools-service": "^8.8.6",
+    "@wdio/firefox-profile-service": "^8.8.6",
+    "@wdio/local-runner": "^8.8.6",
+    "@wdio/mocha-framework": "^8.8.6",
+    "@wdio/reporter": "^8.8.6",
+    "@wdio/spec-reporter": "^8.8.6",
+    "@wdio/types": "^8.8.6",
     "axios": "^0.26.1",
     "chromedriver": "^112.0.0",
     "paseto.js": "^0.1.7",
     "ts-node": "^10.9.1",
-    "wdio-chromedriver-service": "^7.3.2"
+    "wdio-chromedriver-service": "^8.1.1"
   }
 }
