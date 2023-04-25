@@ -1050,7 +1050,8 @@ case class SitePatcher(globals: debiki.Globals) {
           val doer: Pat = tx.loadTheParticipant(post.createdById)
 
           // (These notfs are inserted into the db, furhter below.)
-          notfGenerator.generateForNewPost(page, post, postAuthor = Some(doer),
+          notfGenerator.generateForNewPost(  // page dao incls new api post
+                page, post, postAuthor = Some(doer),
                 sourceAndHtml = None, anyNewModTask = None)
 
           // ----- Webhooks

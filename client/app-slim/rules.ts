@@ -147,12 +147,16 @@ export function isTalkToMeNotification(notf: Notification): Bo {
   return notf.type === NotificationType.DirectReply ||
           notf.type === NotificationType.Mention ||
           notf.type === NotificationType.Message ||
+          notf.type === NotificationType.Assigned ||
+          notf.type === NotificationType.Unassigned ||
+            // But not: NotificationType.AssigneesChanged — that's about others.
           notf.type === NotificationType.OneLikeVote;  // for now  [like_notf_ico]
 }
 
 export function isTalkToOthersNotification(notf: Notification): Bo {
   return notf.type === NotificationType.NewPost ||
-          notf.type === NotificationType.IndirectReply;
+          notf.type === NotificationType.IndirectReply ||
+          notf.type === NotificationType.AssigneesChanged;
 }
 
 

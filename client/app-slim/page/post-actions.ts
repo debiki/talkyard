@@ -244,6 +244,9 @@ export const PostActions = createComponent({
     const isPageBody = post.nr === BodyNr;
     const votes = myPageData.votes[post.nr] || [];
     const isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
+    // Later, will use the upcoming [alterPage] permission instead.
+    const isCoreOrOwnPage = isStaffOrOwnPage ||
+                                user_isTrustMinNotThreat(me, TrustLevel.CoreMember);
     const isEmbeddedOrigPost = isPageBody && store.isEmbedded;
 
     const isDeleted = post_isDeleted(post);
@@ -275,7 +278,7 @@ export const PostActions = createComponent({
       // Show no accept-as-answer button.
       // (But if is edits preview? Then it's ok click Accept, whilst editing.)
     }
-    else if (isStaffOrOwnPage && canBeSolved && !page.pageAnsweredAtMs &&
+    else if (isCoreOrOwnPage && canBeSolved && !page.pageAnsweredAtMs &&
         !page.pageClosedAtMs && !isPageBody && post.isApproved) {
       const icon = page_getUnsolvedIcon(page);
       acceptAnswerButton = r.a({ className: `dw-a dw-a-solve ${icon}`,
@@ -283,15 +286,15 @@ export const PostActions = createComponent({
     }
     else if (canBeSolved && post.uniqueId === page.pageAnswerPostUniqueId) {
       // (Do this even if !post.isApproved.)
-      const solutionTooltip = isStaffOrOwnPage
+      const solutionTooltip = isCoreOrOwnPage
           ? t.pa.ClickUnaccept
           : t.pa.PostAccepted;
-      const elemType = isStaffOrOwnPage ? 'a' : 'span';
-      const unsolveClass = isStaffOrOwnPage ? ' dw-a-unsolve' : '';
+      const elemType = isCoreOrOwnPage ? 'a' : 'span';
+      const unsolveClass = isCoreOrOwnPage ? ' dw-a-unsolve' : '';
       const solvedIcon = page_getSolvedIcon(page);
       const className = `dw-a dw-a-solved ${solvedIcon} ${unsolveClass}`;
       acceptAnswerButton = r[elemType]({ className,
-          onClick: isStaffOrOwnPage ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
+          onClick: isCoreOrOwnPage ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
         t.Solution);
     }
 
@@ -310,7 +313,7 @@ export const PostActions = createComponent({
               onClick: isEditorOpenAlready ? undefined : this.onReplyClick },
             makeReplyBtnTitle(store, post));
 
-    const changeButton = !isStaffOrOwnPage || !isPageBody || isEditingThisPost ? null :
+    const changeButton = !isCoreOrOwnPage || !isPageBody || isEditingThisPost ? null :
           r.a({ className: 'dw-a dw-a-change',
               onClick: event => {
                 const rect = cloneEventTargetRect(event);

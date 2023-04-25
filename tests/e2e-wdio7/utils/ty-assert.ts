@@ -29,6 +29,11 @@ const tyAssert = {
     assert.fail(wholeMessage);
   },
 
+  /// Ignores order.
+  sameElems: function<T>(actual: Ay[], expected: T[], message?: St) {
+    assert.deepStrictEqual<Set<T>>(new Set(actual), new Set(expected), message);
+  },
+
   deepEq: function<T>(actual: unknown, expected: T, message?: St) {
     assert.deepStrictEqual<T>(actual, expected, message);
   },

@@ -28,12 +28,14 @@ const r = ReactDOMFactories;
 export const Notification = createComponent({
   render: function() {
     const notf: Notification = this.props.notification;
-    const byUser = notf.byUser;
-    const byName = byUser.username || byUser.fullName;
+    const byUser: Pat = notf.byUser;
+    const byName: St = byUser.username || byUser.fullName;
     let textContent = '';
     let iconClass = '';
     let toMeClass = ' esNotf-toMe';
+    let assignedYou = '';
     const seenClass = notf.seen ? ' esNotf-seen' : '';
+
     switch (notf.type) {
       case NotificationType.DirectReply:
         iconClass = 'icon-reply';
@@ -57,22 +59,41 @@ export const Notification = createComponent({
         iconClass = 'icon-tag';
         toMeClass = '';
         break;
+      case NotificationType.AssigneesChanged:
+        toMeClass += ' s_Nf-2Me-Indr';
+        assignedYou = " changed assignees"; // I18N
+        // fall through
+      case NotificationType.Unassigned:
+        // These look similar: "assign" "unassign", when glancing quickly in the UI.
+        // Could make "un" bold, but looks odd. "un-" looks ok and is simpler to
+        // read (and translate?) so let's use that. Doesn't happen often anyway.
+        assignedYou ||= " un-assigned you"; // I18N
+        // fall through
+      case NotificationType.Assigned:
+        assignedYou ||= " assigned you"; // I18N
+        // UX COULD show dashed, solid, checked depending on task status
+        // (planned, doing, done). But then the server needs to incl
+        // more info about each notf: DoingStatus, ClosedStatus.  [same_title_everywhere]
+        iconClass = 'icon-check-empty'; // or 'ion-check-dashed'
+        break;
       case NotificationType.OneLikeVote:
         iconClass = 'icon-heart';
         break;
       default:
-        die("Unknown notification type [EsE4GUF2]")
+        die(`Unknown notification type: ${notf.type} [TyENOTFTYP]`)
     }
-    let when;
+
+    let when: RElm | U;
     let verboseClass = '';
     if (this.props.verbose) {
       when = r.span({}, " — " + moment(notf.createdAtMs).fromNow());
       verboseClass = ' esNotf-vrbs';
     }
+
     return (
       r.span({ className: ' esNotf' + verboseClass + toMeClass + seenClass },
         r.span({ className: iconClass }, textContent),
-        r.span({ className: 'esNotf_by' }, byName), ": ",
+        r.span({ className: 'esNotf_by' }, byName), assignedYou + ": ",
         r.span({ className: 'esNotf_page' }, notf.pageTitle),
         when));
   }

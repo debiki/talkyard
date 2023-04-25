@@ -344,6 +344,11 @@ const enum NotificationType {
   NewPost = 305,
   // NewPage =      // Add  — no? knows, since nr === BodyNr
   PostTagged = 406,
+
+  AssigneesChanged = 451,
+  Assigned = 453,
+  Unassigned = 454,
+
   OneLikeVote = 501,
 }
 

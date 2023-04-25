@@ -79,7 +79,7 @@ const ChangePageDialog = createComponent({
     const me: Myself = store.me;
     const isOwnPage = store_thisIsMyPage(store);  // [.store_or_state_pg]
     const isOwnOrStaff = isOwnPage || isStaff(me);
-    const isOwnOrTrusted = isOwnOrStaff || user_isTrustMinNotThreat(me, TrustLevel.Trusted);
+    const isOwnOrCore = isOwnOrStaff || user_isTrustMinNotThreat(me, TrustLevel.CoreMember);
 
     let anyViewAnswerButton;
     let changeStatusTitle;
@@ -121,13 +121,20 @@ const ChangePageDialog = createComponent({
       // Ideas and Problems can be solved [tpc_typ_solv], and then
       // pat cannot change their doing status, unless un-selecting
       // the solution post.
-      const canChangeDoingStatus = isOwnOrStaff &&
+      // Later, the [alterPage] permission will determine if pat can do this.
+      const canChangeDoingStatus = isOwnOrCore &&
           page_canBeDone(page) && !page_isClosedUnfinished(page) &&
           !debiki2.page_isSolved(page);
+
+      // Better not let Core Members do this right now — later, do allow, but
+      // only if moving the page, will *not* let *more* people see it?  [core_move_page]
+      // (Otherwise, they'd need to ask a moderator?)
       const canChangeCategory = isOwnOrStaff && settings.showCategories !== false &&
           store.currentCategories.length;
-      const canChangePageType = isOwnOrStaff && page_mayChangeRole(page.pageRole) &&
+
+      const canChangePageType = isOwnOrCore && page_mayChangeRole(page.pageRole) &&
           settings_selectTopicType(settings, me);
+
       const alreadyDoneOrAnswered =
           page.doingStatus === PageDoingStatus.Done || page.pageAnswerPostUniqueId;
 
@@ -176,7 +183,7 @@ const ChangePageDialog = createComponent({
           // Also if it's been colsed already? — To show who was previously assigned?
           // So don't:  `!alreadyDoneOrAnswered ||`
           // (Later, will use the permission system: can_assign_pats_c, can_assign_self_c.)
-          isOwnOrTrusted;
+          isOwnOrCore;
       assignBtn = !canAssign ? null : rFr({},
           r.div({ className: 's_ExplDrp_Ttl' }, "Assigned to: "),   // I18N
           r.div({ className: 's_ExplDrp_ActIt' },
@@ -231,7 +238,7 @@ const ChangePageDialog = createComponent({
       else if (!page_canToggleClosed(page)) {
         // Cannot close or reopen this type of page.
       }
-      else if (!isOwnOrStaff) {
+      else if (!isOwnOrCore) {
         // May not close other people's pages.
       }
       else if (page.pageClosedAtMs) {

@@ -181,6 +181,10 @@ Store in pats_t.tech_level_c.
 Let trust level of mods & admins be CoreMember — or maybe add higher trust levels?
 Can start at 21 = lightweight mod, 22 = mod, 23 = admin, 24 = owner?
 
+[alterPage]
+[core_move_page]
+Should there be a move-page-perm, not just alter-page?
+
 [power_mod]
 
 [inherit_group_priv_prefs]

@@ -668,7 +668,7 @@ interface Notification {
   type: NotificationType;
   createdAtMs: number;
   seen: boolean;
-  byUser?: Participant;
+  byUser: Pat;
   pageId?: string;
   pageTitle?: string;
   postNr?: number;

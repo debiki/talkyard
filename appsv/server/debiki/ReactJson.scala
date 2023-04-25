@@ -1815,12 +1815,12 @@ object JsonMaker {
         userIds.append(notf.byUserId)
         import NotificationType._
         if (notf.seenAt.isEmpty) notf.tyype match {
-          case DirectReply | Mention | Message | OneLikeVote =>
+          case DirectReply | Mention | Message | Assigned | Unassigned | OneLikeVote =>
             UX // Later, give Like votes their own happy looking color? [like_notf_ico]
             // And if there're no direct replies / messages / mentions, then,
             // show that color instead of the more urgent direct-reply-blue?
             numTalkToMe += 1
-          case NewPost | IndirectReply =>
+          case NewPost | IndirectReply | AssigneesChanged =>
             numTalkToOthers += 1
           case PostTagged =>
             numOther += 1
@@ -1861,7 +1861,7 @@ object JsonMaker {
           "pageId" -> post.pageId,
           "pageTitle" -> JsStringOrNull(title),
           "postNr" -> post.nr,
-          "byUser" -> JsUserOrNull(usersById.get(notf.byUserId)),
+          "byUser" -> JsUser(usersById.getOrElse(notf.byUserId, UnknownParticipant)),
           "seen" -> notf.seenAt.nonEmpty)
     })
   }

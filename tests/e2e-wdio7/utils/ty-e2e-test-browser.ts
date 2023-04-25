@@ -6337,6 +6337,13 @@ export class TyE2eTestBrowser {
         return atUsernames.map((atUn) => atUn.substring(1)); // drops '@' in '@username'
       },
 
+      waitForAssigneesUsernamesNoAt: async (postNr: PostNr, expectedUsernames: St[]) => {
+        await utils.tryUntilTrue("assignees appear", 'ExpBackoff', async () => {
+          const usernames: St[] = await this.topic.getAssigneesUsernamesNoAt(postNr);
+          return _.isEqual(new Set(usernames), new Set(expectedUsernames));
+        });
+      },
+
       clickFirstMentionOf: async (username: St) => {
         // This:  this.waitAndClick(`a.esMention=@${username}`);
         // fails:

@@ -294,7 +294,8 @@ object Authz {
         pageMembers: Set[UserId],
         catsRootLast: immutable.Seq[Cat],
         tooManyPermissions: immutable.Seq[PermsOnPages],
-        maySeeUnlisted: Bo = true): MayMaybe = {
+        changesOnlyTypeOrStatus: Bo,
+        maySeeUnlisted: Bo): MayMaybe = {
 
     val mayWhat = checkPermsOnPages(
           Some(pat), groupIds, Some(pageMeta), Some(pageMembers),
@@ -304,7 +305,13 @@ object Authz {
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"TyEM0SEE2-${mayWhat.debugCode}")
 
-    if (pageMeta.authorId == pat.id) {
+    // For now, Core Members can change page type and doing status, if they
+    // can see the page (which we checked just above).  Later, this will be
+    // the [alterPage] permission.
+    if (changesOnlyTypeOrStatus && pat.isStaffOrCoreMember) {
+      // Fine (skip the checks below).
+    }
+    else if (pageMeta.authorId == pat.id) {
       // Do this check in mayEditPost() too?  [.mayEditOwn]
       if (!mayWhat.mayEditOwn)
         return NoMayNot(s"TyEM0EDOWN-${mayWhat.debugCode}", "")
@@ -753,6 +760,8 @@ object Authz {
   */
 case class MayWhat(
   mayEditPage: Bo = false,
+  // mayAlterPage — later. [alterPage]
+  // mayMovePage?
   mayEditComment: Bo = false,
   mayEditWiki: Bo = false,
   mayEditOwn: Bo = false,

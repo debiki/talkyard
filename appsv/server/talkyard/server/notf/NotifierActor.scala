@@ -357,7 +357,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
     val (siteName, origin) = dao.theSiteNameAndOrigin()
 
-    val notfRenderResult = NotfHtmlRenderer(dao, anyOrigin).render(notfs)
+    val notfRenderResult = NotfHtmlRenderer(dao, anyOrigin).renderNotfs(notfs)
     if (notfRenderResult.html.isEmpty)
       return None
 

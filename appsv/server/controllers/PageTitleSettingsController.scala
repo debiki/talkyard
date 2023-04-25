@@ -106,6 +106,16 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val oldMeta = request.dao.getPageMeta(pageId) getOrElse throwNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
+    // Core members may change the page type (e.g. from Discussion to Idea), and
+    // doing status, of pages they can see. Later, there will instead be
+    // can-alter-page permissions.  [alterPage]
+    val changesOnlyTypeOrStatus =
+          // If we got the page id (required, always present) and exactly one more field, ...
+          pageJo.value.size == 2 &&
+          // ... and it is the page type or doing status, then, pat is trying to change,
+          // well, only the type or doing status.  Nothing else.
+          (anyNewDoingStatus.isDefined || anyNewRole.isDefined)
+
     // AuthZ check 1/3:
     // Could skip authz check 2/3 below: [.dbl_auz] ?
     val oldCatsRootLast = dao.getAncestorCategoriesRootLast(oldMeta.categoryId)
@@ -117,6 +127,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           pageMembers = dao.getAnyPrivateGroupTalkMembers(oldMeta),
           catsRootLast = oldCatsRootLast,
           tooManyPermissions = dao.getPermsOnPages(oldCatsRootLast),
+          changesOnlyTypeOrStatus = changesOnlyTypeOrStatus,
           maySeeUnlisted = true), "TyE0EDPGPRPS1")
 
     val pageTypeAfter = anyNewRole getOrElse oldMeta.pageType
@@ -147,7 +158,8 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           !request.theUser.isStaff && anyComtNesting.isSomethingButNot(oldMeta.comtNesting),
           "TyEXCMTNST", "You may not change the comment nesting max depth")
 
-    if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
+    if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId &&
+          !(changesOnlyTypeOrStatus && request.theUser.isStaffOrCoreMember))
       throwForbidden("TyECHOTRPGS", "You may not change other people's pages")
 
     if (!request.theUser.isAdmin) {
@@ -254,6 +266,9 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
           version = oldMeta.version + 1)
 
     // AuthZ check 3/3: May pat access any new category?
+    // Later: If a Core Member wants to move a page to another category,  [core_move_page]
+    // allow that, but only if no *additional* people then gets to see the page.
+    // (But if fewer, that's ok.) — There'll also be [alterPage] maybe move page permissions.
     if (newMeta.categoryId != oldMeta.categoryId) {
       val newCatsRootLast = dao.getAncestorCategoriesRootLast(newMeta.categoryId)
       throwNoUnless(Authz.mayEditPage(
@@ -263,6 +278,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
             pageMembers = dao.getAnyPrivateGroupTalkMembers(newMeta),
             catsRootLast = newCatsRootLast,
             tooManyPermissions = dao.getPermsOnPages(newCatsRootLast),
+            changesOnlyTypeOrStatus = changesOnlyTypeOrStatus,
             maySeeUnlisted = true), "TyE0EDPGPRPS2")
     }
 

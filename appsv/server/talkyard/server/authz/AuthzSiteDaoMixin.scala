@@ -179,6 +179,9 @@ trait AuthzSiteDaoMixin {
   private def maySeePageImpl(pageMeta: PageMeta, user: Opt[Pat],
           anyTx: Opt[SiteTx], maySeeUnlisted: Bo = true): SeePageResult = {
 
+    // If `user` is a stranger or suspended, hen may still see the page
+    // — if it's public. So don't block user `None` here.  [susp_see_pub]
+
     if (user.exists(_.isAdmin))
       return PageCtx(anyCats(pageMeta, anyTx))
 

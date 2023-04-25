@@ -437,7 +437,7 @@ trait PagesDao {
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
 
     if (!skipNotfsAndAuditLog) {
-      val notifications = notfGenerator(tx).generateForNewPost(
+      val notifications = notfGenerator(tx).generateForNewPost(  // dao incls new page body
             newPageDao(pagePath.pageId, tx), bodyPost,
             Some(body), anyNewModTask = anyReviewTask,
             postAuthor = Some(authorMaybeAnon))
@@ -847,8 +847,8 @@ trait PagesDao {
     SHOULD // send back json so the satus message gets shown, without reloading the page. [2PKRRSZ0]
 
     if (notifyMentioned) {
-      // For now. Later, somehow use  NotificationType.PostAssigneesChanged.
-      notfGenerator(tx).generateForNewPost(
+      // For now. Later, somehow use  NotfType.AssigneesChanged (if assignees changed).
+      notfGenerator(tx).generateForNewPost(  // page dao excls new meta post
             page, metaMessage, sourceAndHtml = None,
             postAuthor = None, // Some(doer) — but `doer` might be from another tx?
             anyNewModTask = None)
