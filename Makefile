@@ -229,11 +229,17 @@ prod_asset_bundle_files:=\
   images/web/assets/$(TALKYARD_VERSION)/translations/zh_CN/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/zh_CN/i18n.min.js.gz \
   images/app/assets/server-bundle.min.js \
+  images/app/assets/translations/de_DE/i18n.min.js \
   images/app/assets/translations/en_US/i18n.min.js \
   images/app/assets/translations/es_CL/i18n.min.js \
-  images/app/assets/translations/de_DE/i18n.min.js \
   images/app/assets/translations/he_IL/i18n.min.js \
-  images/app/assets/translations/pl_PL/i18n.min.js
+  images/app/assets/translations/lv_LV/i18n.min.js \
+  images/app/assets/translations/pl_PL/i18n.min.js \
+  images/app/assets/translations/pt_BR/i18n.min.js \
+  images/app/assets/translations/ru_RU/i18n.min.js \
+  images/app/assets/translations/sv_SE/i18n.min.js \
+  images/app/assets/translations/uk_UA/i18n.min.js \
+  images/app/assets/translations/zh_CN/i18n.min.js
 
 # Sync this task name w e2e test [MKBUNDLS].
 prod_asset_bundles: debug_asset_bundles $(prod_asset_bundle_files)
