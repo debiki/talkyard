@@ -1328,6 +1328,11 @@ moderators:
   can send and view invites:
     - invites-by-mod-try-signup-after  TyT4FGJA20M
 
+core members:
+  can alter others' pages:
+    Doing status, accept answers, change page type, open/close:
+            - Various tests   TyTCORECAN
+
 draft: [7WKABZP2]
   # Incls: save, load, list, navigate to, deleted when submitting post.
   beacon when suddenly closing page:
