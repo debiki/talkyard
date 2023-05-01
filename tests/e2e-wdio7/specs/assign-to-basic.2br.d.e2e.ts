@@ -446,7 +446,7 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
               forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
   });
 
-  it(`Corax says "Cream is better", and closes the milk topic`, async () => {
+  it(`Corax says "Cream is better", and closes the milk topic  TyTCORECAN`, async () => {
     await corax_brA.go2(buyMilkPagePath);
     await corax_brA.topic.closeTopic();
   });

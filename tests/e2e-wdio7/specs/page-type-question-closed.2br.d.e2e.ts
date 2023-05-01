@@ -11,20 +11,22 @@ let browser: TyE2eTestBrowser;
 declare let browserA: any;
 declare let browserB: any;
 
-let everyonesBrowsers;
+let corax;
+let corax_brA: TyE2eTestBrowser;
 let maria;
 let mariasBrowser: TyE2eTestBrowser;
 let michael;
 let michaelsBrowser: TyE2eTestBrowser;
 let owen;
 let owensBrowser: TyE2eTestBrowser;
-let strangersBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
 
 let mariasTopicUrl: string;
 
+const catAnserNr = c.FirstReplyNr;
+const otterAnserNr = c.SecondReplyNr;
 const closeEventPostNr = 4;
 const reopenEventPostNr = 7;
 
@@ -32,11 +34,12 @@ const reopenEventPostNr = 7;
 describe("Page type question", () => {
 
   it("Initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowserA, 'brA');
-    mariasBrowser = new TyE2eTestBrowser(browserA);
-    strangersBrowser = new TyE2eTestBrowser(browserB);
-    michaelsBrowser = strangersBrowser;
-    owensBrowser = strangersBrowser;
+    const brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');
+    michaelsBrowser = brA;
+    owensBrowser = brA;
+    corax_brA = brA;
+    mariasBrowser = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+    corax = make.memberCorax();
     maria = make.memberMaria();
     michael = make.memberMichael();
     owen = make.memberOwenOwner();
@@ -44,6 +47,7 @@ describe("Page type question", () => {
 
   it("Import a site", async () => {
     const site: SiteData = make.forumOwnedByOwen('ptqst', { title: "Page type Question test" });
+    site.members.push(corax);
     site.members.push(maria);
     site.members.push(michael);
     idAddress = await server.importSiteData(site);
@@ -78,14 +82,14 @@ describe("Page type question", () => {
   });
 
   it("... attempts to select an answer, but cannot (not his question)", async () => {
-    await michaelsBrowser.topic.refreshUntilPostNrAppears(c.FirstReplyNr + 1);
-    await michaelsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);  // can remove
+    await michaelsBrowser.topic.refreshUntilPostNrAppears(otterAnserNr);
+    await michaelsBrowser.topic.waitForPostNrVisible(catAnserNr);  // can remove
     assert.not(await michaelsBrowser.topic.canSelectAnswer());  // (2PR5PH)
   });
 
   it("Maria selects one answer", async () => {
     await mariasBrowser.refresh2();
-    await mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    await mariasBrowser.topic.waitForPostNrVisible(catAnserNr);
     assert.ok(await mariasBrowser.topic.canSelectAnswer()); // (2PR5PH)
     await mariasBrowser.topic.selectPostNrAsAnswer(2);   // a cat
   });
@@ -115,14 +119,15 @@ describe("Page type question", () => {
   });
 
   it("... and unselects the answer", async () => {
-    await owensBrowser.topic.unselectPostNrAsAnswer(3);
+    await owensBrowser.topic.unselectPostNrAsAnswer(otterAnserNr);
   });
 
   it("... and closes the topic", async () => {
-    await owensBrowser.topic.closeTopic();   // generates an event post, nr 4 = closeEventPostNr
+    assert.not(await owensBrowser.topic.isPostNrVisible(closeEventPostNr)); // ttt
+    await owensBrowser.topic.closeTopic();  // generates post nr 4 = closeEventPostNr
   });
 
-  it("Maria wants to select Otter as the accepted answer again, but now she cannot", async () => {
+  it("Maria wants to select Otter as answer again, but she cannot (page closed)", async () => {
     await mariasBrowser.topic.refreshUntilPostNrAppears(closeEventPostNr, { isMetaPost: true });
     await mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     assert.not(await mariasBrowser.topic.canSelectAnswer());  // (2PR5PH)
@@ -137,16 +142,20 @@ describe("Page type question", () => {
   });
 
   it("Owen reopens the topic", async () => {
-    await owensBrowser.topic.reopenTopic();   // generates an event post, nr 7 = reopenEventPostNr
+    assert.not(await owensBrowser.topic.isPostNrVisible(reopenEventPostNr)); // ttt
+    await owensBrowser.topic.reopenTopic();  // generates post nr 7 = reopenEventPostNr
   });
 
-  it("Now Maria can select Otter", async () => {
+  it("Now Maria can select Otter — but oh no! She accidentally selects Cat", async () => {
     await mariasBrowser.refresh2();
-    await mariasBrowser.topic.selectPostNrAsAnswer(3);
+    await mariasBrowser.topic.selectPostNrAsAnswer(catAnserNr);
   });
 
   it("... Currently needs to refres for all posts to appear", async () => {
     await mariasBrowser.topic.refreshUntilPostNrAppears(7, { isMetaPost: true });
+    // There's no post nr 8 (accepting & unaccepting answers, don't currently
+    // generate meta posts).
+    assert.not(await owensBrowser.topic.isPostNrVisible(8)); // ttt
   });
 
   it("Everything is in the correct order", async () => {
@@ -160,15 +169,33 @@ describe("Page type question", () => {
     assert.eq(reopenEventPostNr, 7);
     await mariasBrowser.topic.assertMetaPostTextMatches(7, "reopened");
 
-    await mariasBrowser.topic.assertPostOrderIs([  //  CROK  CODE REVIEW DONE OK
+    await mariasBrowser.topic.assertPostOrderIs([
         c.TitleNr,
         c.BodyNr,
         2,   // cat
         3,   // otter
-        5,   // the "Good idea" reply
+        5,   //  `——— the "Good idea" reply
         4,   // the topic-closed event
         6,   // the "Thanks everyone" comment
         7]); // the topic-reopened event
+  });
+
+  it("Owen leaves, Corax arrives", async () => {
+    await owensBrowser.topbar.clickLogout();
+    await corax_brA.complex.loginWithPasswordViaTopbar(corax);
+  });
+
+  it("... and unselects the answer. Corax can, he's a Core Member  TyTCORECAN", async () => {
+    await corax_brA.topic.unselectPostNrAsAnswer(catAnserNr);
+  });
+
+  it("... selects Otter, very helpfully. All is fine again", async () => {
+    await corax_brA.topic.selectPostNrAsAnswer(otterAnserNr);
+  });
+
+  it("Maria reloads, sees Otter is selected", async () => {
+    await mariasBrowser.refresh2();
+    await mariasBrowser.topic.waitUntilPostNrIsAnswer(otterAnserNr);
   });
 
 });

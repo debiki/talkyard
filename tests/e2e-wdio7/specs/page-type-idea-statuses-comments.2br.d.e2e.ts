@@ -16,6 +16,8 @@ let michael;
 let michaelsBrowser: TyE2eTestBrowser;
 let owen;
 let owensBrowser: TyE2eTestBrowser;
+let corax: Member;
+let corax_brB: TyE2eTestBrowser;
 let strangersBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
@@ -38,15 +40,20 @@ describe("Page statuses and bottom comments", () => {
     mariasBrowser = brA;
     michaelsBrowser = brA;
     owensBrowser = brA;
+
+    corax_brB = new TyE2eTestBrowser(wdioBrowserB, 'brB');
+
     maria = make.memberMaria();
     michael = make.memberMichael();
     owen = make.memberOwenOwner();
+    corax = make.memberCorax();
   });
 
   it("Import a site", async () => {
-    const site: SiteData = make.forumOwnedByOwen('pgstbc', { title: "Emb Cmts Disc Id Test" });
+    const site: SiteData = make.forumOwnedByOwen('pgstbc', { title: "Page Type Idea Test" });
     site.members.push(maria);
     site.members.push(michael);
+    site.members.push(corax);
     idAddress = await server.importSiteData(site);
     siteId = idAddress.id;
   });
@@ -160,10 +167,14 @@ describe("Page statuses and bottom comments", () => {
         10]); // bottom comment
   });
 
-  it("Michael may not change page status, not his page", async () => {
-    assert.ok(await mariasBrowser.pageTitle.canBumpPageStatus());
+  it("Maria leaves, Michael arrives", async () => {
+    assert.ok(await mariasBrowser.pageTitle.canBumpPageStatus());  // ttt
     await mariasBrowser.topbar.clickLogout();
     await michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
+  });
+
+  it("Michael may not change page status, not his page", async () => {
+    // Bit dupl [cant_change_doing_status_e2e]
     assert.not(await michaelsBrowser.pageTitle.canBumpPageStatus());
     await michaelsBrowser.waitAndClick('.dw-p-ttl .icon-check-dashed');
     // Nothing happens
@@ -187,6 +198,24 @@ describe("Page statuses and bottom comments", () => {
 
   it("... he quick-jumped from Planned to Done, skipping status Started, so fast", async () => {
     await owensBrowser.waitForVisible('.dw-p-ttl .icon-check.dw-clickable');
+  });
+
+  it("Corax arrives", async () => {
+    await corax_brB.go2(await owensBrowser.getUrl());
+    await corax_brB.complex.loginWithPasswordViaTopbar(corax);
+  });
+
+  it("Core members too can change the Doing status of others ideas  TyTCORECAN", async () => {
+    assert.ok(await corax_brB.pageTitle.canBumpPageStatus());
+    await corax_brB.waitAndClick('.dw-p-ttl .icon-check.dw-clickable');
+    await corax_brB.topic.waitUntilChangePageDialogOpen();
+    assert.ok(await corax_brB.topic.isChangePageDialogOpen());  // tests the test (396326)
+    await corax_brB.topic.closeChangePageDialog();
+  });
+
+  it("... Corax does: Sets status to Started", async () => {
+    await corax_brB.topic.setDoingStatus('Started');
+    await corax_brB.waitForDisplayed('.dw-p-ttl .icon-check-empty.dw-clickable');
   });
 
 });
