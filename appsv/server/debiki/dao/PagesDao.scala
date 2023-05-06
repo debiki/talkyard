@@ -351,8 +351,11 @@ trait PagesDao {
         postId = Some(bodyPost.id),
         postNr = Some(bodyPost.nr)))
 
+    // [dupl_spam_check_code]
     val anySpamCheckTask =
       if (spamRelReqStuff.isEmpty || !globals.spamChecker.spamChecksEnabled) None
+      else if (settings.userMustBeAuthenticated) None
+      else if (!canStrangersSeePagesInCat_useTxMostly(anyCategoryId, tx)) None
       else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None
       else {
         // The uri is now sth like /-/create-page. Change to the path to the page

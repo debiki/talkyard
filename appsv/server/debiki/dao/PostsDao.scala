@@ -288,8 +288,11 @@ trait PostsDao {
       postId = Some(newPost.id),
       postNr = Some(newPost.nr)))
 
+    // [dupl_spam_check_code]
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (settings.userMustBeAuthenticated) None
+      else if (!canStrangersSeePagesInCat_useTxMostly(newMeta.categoryId, tx)) None
       else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None
       else Some(
         SpamCheckTask(
@@ -749,8 +752,11 @@ trait PostsDao {
       dieIf(uploadRefs != uplRefs2, "TyE38RDHD4", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
+    // [dupl_spam_check_code]
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (settings.userMustBeAuthenticated) None
+      else if (!canStrangersSeePagesInCat_useTxMostly(newMeta.categoryId, tx)) None
       else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
       else Some(
         SpamCheckTask(
@@ -896,8 +902,11 @@ trait PostsDao {
     // For now, don't generate any ModTask here.  [03RMDl6J]
     // (But we do, when starting a new chat message.)
 
+    // [dupl_spam_check_code]
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (settings.userMustBeAuthenticated) None
+      else if (!canStrangersSeePagesInCat_useTxMostly(pageMeta.categoryId, tx)) None
       else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
       else Some(
         SpamCheckTask(
@@ -1245,8 +1254,11 @@ trait PostsDao {
             createOrAmendOldReviewTask(SystemUserId, editedPost, reviewReasons, tx))
         }
 
+      // [dupl_spam_check_code]
       val anySpamCheckTask =
         if (!globals.spamChecker.spamChecksEnabled) None
+        else if (settings.userMustBeAuthenticated) None
+        else if (!canStrangersSeePagesInCat_useTxMostly(page.meta.categoryId, tx)) None
         else if (!SpamChecker.shallCheckSpamFor(realEditor)) None
         else Some(
           // This can get same prim key as earlier spam check task, if is ninja edit. [SPMCHKED]

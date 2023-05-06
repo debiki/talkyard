@@ -253,6 +253,16 @@ object Authz {
   }
 
 
+  /* Wasn't needed?
+  def maySeePage(pageMeta: PageMeta, authzCtx: ForumAuthzContext, pageMembers: Set[UserId],
+          catsRootLast: immutable.Seq[Category], maySeeUnlisted: Bo,
+          ): MayWhat = {
+    checkPermsOnPages(authzCtx.requester, authzCtx.groupIdsUserIdFirst,
+          Some(pageMeta), pageMembers = Some(pageMembers), catsRootLast = catsRootLast,
+          authzCtx.tooManyPermissions, maySeeUnlisted = false)
+  } */
+
+
   COULD_OPTIMIZE // Check many pages in the same cat at once?  [authz_chk_mny_pgs]
   // That is, pageMeta —> pageMetas: Seq[PageMeta]. But they must all be in
   // the same cat (or no cat).

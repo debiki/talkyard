@@ -121,9 +121,25 @@ trait AuthzSiteDaoMixin {
         maySeeUnlisted = maySeeUnlisted)
   }
 
+  // Hmm should there be a SiteTxDao and a SiteCacheDao? And the TxDao doesn't
+  // have any access to the mem cache? (Just to avoid accidentally using it)
+  //
+  def canStrangersSeePagesInCat_useTxMostly(anyCatId: Opt[CatId], tx: SiteTx): Bo = {
+    val everyoneCanSee = anyCatId match {
+      case None =>
+        // Publicly visible pages are always in some category.
+        false
+      case Some(catId) =>
+        val cats = getAncestorCategoriesRootLast(catId, inclSelfFirst = true, anyTx = Some(tx))
+        val result = Authz.maySeeCategory(getForumPublicAuthzContext(), catsRootLast = cats)
+        result.maySee is true
+    }
+    everyoneCanSee
+  }
+
 
   /** Note: If may *probably* see the page. Returns true also for /-/user/... although perhaps
-    * in the future in some cases strangers may not see all users.
+    * in the future in some cases strangers may not see all users. [private_pats]
     */
   def mayStrangerProbablySeeUrlPathUseCache(urlPath: String): Boolean = {
     // Tests:  sso-login-required-w-logout-url.2browsers  TyTE2ESSOLGOURL.TyTE2ELGOURL
