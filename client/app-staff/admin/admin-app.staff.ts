@@ -2726,9 +2726,11 @@ const AdvancedSettings = createFactory({
           r.pre({}, redirectingHostnames.join('\n'))));
 
     const googleAnalyticsId =
-        Setting2(props, { type: 'text', label: "Google Universal Analytics tracking ID",
-          help: r.span({}, "Any Google Universal Analytics tracking ID, e.g. ",
-            r.samp({}, "UA-12345678-9"), ", see http://google.com/analytics."),
+        Setting2(props, { type: 'text', label: "Google Analytics 4 Tag ID",
+          help: r.span({}, "A tag ID, e.g. ", r.samp({}, "G-123ABC456D"),
+            " — see http://google.com/analytics. " +
+            "Or an old Universal Analytics ID. (If the ID starts with 'UA-', " +
+            "Google Universal Analytics gets used instead of Analytics 4.)"),
           getter: (s: Settings) => s.googleUniversalAnalyticsTrackingId,
           update: (newSettings: Settings, target) => {
             newSettings.googleUniversalAnalyticsTrackingId = target.value;
