@@ -73,7 +73,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }
 
 
-  def render(notfs: Seq[Notification]): RenderNotfsResult = {
+  def renderNotfs(notfs: Seq[Notification]): RenderNotfsResult = {
     require(notfs.nonEmpty, "DwE7KYG3")
     siteDao.readTx { tx =>
       val postIds: Seq[PostId] = notfs flatMap {
@@ -104,24 +104,29 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
               val pageTitle = anyPageStuff.flatMap(_.titleMaybeUnapproved).getOrElse(
                     "No title [TyE2S7YKF2]")
 
-              if (notf.tyype == NotificationType.NewPostReviewTask) {
+              if (notf.tyype == NotfType.NewPostReviewTask) {
                 newModTasks = true
               }
-              else if (notf.tyype == NotificationType.Message) {
+              else if (notf.tyype == NotfType.Message) {
                 newMessagesToYou = true
               }
-              else if (notf.tyype == NotificationType.DirectReply
-                    || notf.tyype == NotificationType.Mention) {
+              else if (notf.tyype == NotfType.DirectReply
+                    || notf.tyype == NotfType.Mention) {
                 newRepliesOrMentions = true
               }
-              else if (notf.tyype == NotificationType.OneLikeVote) {
+              else if (notf.tyype == NotfType.OneLikeVote) {
                 newLikeVotes = true
               }
-              else if (notf.tyype == NotificationType.NewPost
-                    || notf.tyype == NotificationType.IndirectReply
-                    || notf.tyype == NotificationType.PostTagged) {
+              else if (notf.tyype == NotfType.NewPost
+                    || notf.tyype == NotfType.IndirectReply
+                    || notf.tyype == NotfType.PostTagged) {
                 if (post.isOrigPost) newTopics = true
                 else newPosts = true
+              }
+              else if (notf.tyype == NotfType.Assigned
+                    || notf.tyype == NotfType.Unassigned
+                    || notf.tyype == NotfType.AssigneesChanged) {
+                // Noop.
               }
 
               renderNewPostNotf(newPostNotf, post, pageTitle, maxNotificationLength, tx)
@@ -162,7 +167,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       val doc = org.jsoup.Jsoup.parse(htmlText)
       doc.body().text()
     }) getOrElse {
-      if (notf.notfType == NotificationType.NewPostReviewTask) {
+      if (notf.notfType == NotfType.NewPostReviewTask) {
         post.currentSource
       }
       else {
@@ -217,25 +222,25 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       cssE2eTestClass,
     ) = notf.notfType match {
 
-      case NotificationType.Message =>
+      case NotfType.Message =>
         showReplyButton = true
         ("You have been sent a personal message", ",", "from", "e_NfEm_DirMsg")
-      case NotificationType.Mention =>
+      case NotfType.Mention =>
         showReplyButton = true
         ("You have been mentioned", ",", "in a post written by", "e_NfEm_Mentn")
-      case NotificationType.DirectReply =>
+      case NotfType.DirectReply =>
         showReplyButton = true
         ("You have a reply", ",", "written by", "e_NfEm_Re")
-      case NotificationType.IndirectReply =>
+      case NotfType.IndirectReply =>
         showReplyButton = true
         ("A new reply in a thread by you", ",", "written by", "e_NfEm_IndRe")
-      case NotificationType.NewPost =>
+      case NotfType.NewPost =>
         showReplyButton = true
         if (post.nr == PageParts.BodyNr)
           ("A new topic has been started", ",", "by", "e_NfEm_NwPg")
         else
           ("A new comment has been posted", ",", "by", "e_NfEm_NwPo")
-      case NotificationType.OneLikeVote =>
+      case NotfType.OneLikeVote =>
         return {
           if (post.nr == PageParts.BodyNr)
             <p class="e_NfEm_PgLikeVt"
@@ -246,7 +251,34 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
               ><i>{byUserName}</i> likes <a href={url}>your reply</a
                 >, on page "<i>{pageTitle}</i>".</p>
         }
-      case NotificationType.PostTagged =>
+      case NotfType.Assigned | NotfType.Unassigned =>
+        val (assigned: St, to: St, e2eClass: St) =
+              if (notf.notfType == NotfType.Assigned) ("assigned", "to", "e_NfEm_Asgd")
+              else ("un-assigned", "from", "e_NfEm_0Asgd")
+        val aCommentOn =
+              if (post.nr == PageParts.BodyNr) ""
+              else " a comment on"
+        return <p class={e2eClass}
+                >You've been {assigned} by <i>{byUserName}</i> {to}{aCommentOn} page <a
+                href={url}>"<i>{pageTitle}</i>"</a>.</p>
+      case NotfType.AssigneesChanged =>
+        UX; SHOULD // list their usernames, if pat may see. [private_pats]
+        val (names: St, have: St, assigned: St, to: St) = {
+          val assignees: Seq[Pat] = tx.loadParticipants(post.assigneeIds)
+          val haveHas = if (assignees.length <= 1) "has" else "have"
+          if (assignees.isEmpty) ("Everyone", haveHas, "unassigned", "from")
+          else (assignees.map(_.usernameOrGuestName)
+                  // UX COULD use ", ... , ... and" instead of only "and",  I18N
+                  // but almost never are >= 3 people assigned together?
+                  .mkString(" and "), haveHas, "assigned", "to")
+        }
+        val aCommentOn =
+              if (post.nr == PageParts.BodyNr) ""
+              else " a comment on"
+        return <p class="e_NfEm_AsgsX"
+                >{names} {have} been {assigned} by <i>{byUserName}</i
+                > {to}{aCommentOn} page <a href={url}>"<i>{pageTitle}</i>"</a>.</p>
+      case NotfType.PostTagged =>
         // Skip <blockquote>?
         if (post.nr == PageParts.BodyNr)
           ("A topic has been tagged with a tag you're watching", ".",
@@ -254,7 +286,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
         else
           ("A comment has been tagged with a tag you're watching", ".",
             "The comment was written by", "e_NfEm_PoTgd")
-      case NotificationType.NewPostReviewTask =>
+      case NotfType.NewPostReviewTask =>
         val itIsShownOrHidden =
           if (post.isSomeVersionApproved)
             "It's been preliminarily approved, and is visible to others"

@@ -21,6 +21,9 @@
 <html class="@tpi.debikiHtmlTagClasses">
 <head>
 @tpi.jsonDataMustBeFirst()
+@if(useGoogleAnalytics) {
+@Html(tpi.anyGoogleAnalytics4Script)
+}
 
 @if(noindex) {
 <meta name="robots" content="noindex">

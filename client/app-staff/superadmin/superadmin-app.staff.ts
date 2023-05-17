@@ -71,7 +71,9 @@ const DashboardPanel = createFactory({
   getInitialState: function() {
     return {
       numRows: 50,
-      filter: '',
+      filterText: '',
+      filterRdbUsagePct: 0,
+      filterFsUsagePct: 0,
     };
   },
 
@@ -84,12 +86,14 @@ const DashboardPanel = createFactory({
 
     let filteredSites: SASite[] = [];
 
-    const filterText: St = this.state.filter;
+    const filterText: St = this.state.filterText;
     if (filterText && filterText.length >= 2) {
       _.each(stuff.sites, (site: SASite) => {
-        let show =
+        let show: BoZ =
               _.some(site.hostnames, h => h.indexOf(filterText) >= 0) ||
-              site.featureFlags.toLowerCase().indexOf(filterText) >= 0;
+              site.featureFlags.toLowerCase().indexOf(filterText) >= 0 ||
+              site.superStaffNotes &&
+                  site.superStaffNotes.toLowerCase().indexOf(filterText) >= 0;
         show = show || _.some(site.staffUsers, (m: PatVb) =>
             m.email?.toLowerCase().indexOf(filterText) >= 0 ||
             m.username?.toLowerCase().indexOf(filterText) >= 0 ||
@@ -101,6 +105,32 @@ const DashboardPanel = createFactory({
     }
     else {
       filteredSites = stuff.sites;
+    }
+
+    const filterRdbUsagePct: Nr = this.state.filterRdbUsagePct;
+    if (filterRdbUsagePct) {
+      const copy = [...filteredSites];
+      filteredSites = [];
+      _.each(copy, (site: SASite) => {
+        let show = site.stats.dbStorageUsedBytes >=
+                      site.stats.dbStorageLimitBytes * filterRdbUsagePct / 100;
+        if (show) {
+          filteredSites.push(site);
+        }
+      });
+    }
+
+    const filterFsUsagePct: Nr = this.state.filterFsUsagePct;
+    if (filterFsUsagePct) {
+      const copy = [...filteredSites];
+      filteredSites = [];
+      _.each(copy, (site: SASite) => {
+        let show = site.stats.fileStorageUsedBytes >=
+                      site.stats.fileStorageLimitBytes * filterFsUsagePct / 100;
+        if (show) {
+          filteredSites.push(site);
+        }
+      });
     }
 
     const someSites =  _.take(filteredSites, numRows);
@@ -118,22 +148,41 @@ const DashboardPanel = createFactory({
     const howMany =
         r.p({}, `There are ${stuff.sites.length} sites in total, incl both real and test.`);
 
-    const filter =
-        r.div({ className: 's_SA_Filter' },
-          r.div({}, "Filter hostnames, staff names, emails, feature flags: (at least 2 chars)"),
+    const filters = rFr({},
+        r.div({ className: 's_SA_Filter s_SA_Filter-Txt' },
+          r.div({}, "Filter hostnames, staff names, emails, feature flags, notes: (at least 2 chars)"),
           r.input({
             tabIndex: 1,
-            value: this.state.filter,
+            value: this.state.filterText,
             onChange: (event) => this.setState({
-              filter: event.target.value.toLowerCase(),
+              filterText: event.target.value.toLowerCase(),
             }),
-          }));
+          })),
+        r.div({  className: 'c_SA_QuotaFilters' },
+          r.div({ className: 's_SA_Filter' },
+            r.div({}, "Min rdb usage %:"),
+            r.input({
+              tabIndex: 1,
+              value: this.state.filterRdbUsagePct,
+              onChange: (event) => this.setState({
+                filterRdbUsagePct: event.target.value,
+              }),
+            })),
+          r.div({ className: 's_SA_Filter' },
+            r.div({}, "Min fs usage %:"),
+            r.input({
+              tabIndex: 1,
+              value: this.state.filterFsUsagePct,
+              onChange: (event) => this.setState({
+                filterFsUsagePct: event.target.value,
+              }),
+            }))));
 
     return (
       r.div({},
         r.h2({}, "All sites"),
         howMany,
-        filter,
+        filters,
         r.table({ className: 'table' },
           r.thead({},
             r.tr({},

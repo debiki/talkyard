@@ -189,7 +189,7 @@ class SpamChecker(
 
   private val stopForumSpamEnabled: Boolean =
     spamChecksEnabled &&
-      playConf.getOptional[Boolean]("talkyard.stopforumspam.enabled").getOrElse(true)
+      playConf.getOptional[Boolean]("talkyard.stopforumspam.enabled").getOrElse(false)
 
   private val akismetEnabled: Boolean =
     spamChecksEnabled && anyAkismetKey.nonEmpty

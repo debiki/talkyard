@@ -6337,6 +6337,13 @@ export class TyE2eTestBrowser {
         return atUsernames.map((atUn) => atUn.substring(1)); // drops '@' in '@username'
       },
 
+      waitForAssigneesUsernamesNoAt: async (postNr: PostNr, expectedUsernames: St[]) => {
+        await utils.tryUntilTrue("assignees appear", 'ExpBackoff', async () => {
+          const usernames: St[] = await this.topic.getAssigneesUsernamesNoAt(postNr);
+          return _.isEqual(new Set(usernames), new Set(expectedUsernames));
+        });
+      },
+
       clickFirstMentionOf: async (username: St) => {
         // This:  this.waitAndClick(`a.esMention=@${username}`);
         // fails:
@@ -6352,7 +6359,7 @@ export class TyE2eTestBrowser {
 
       clickReplyToOrigPost: async (whichButton?: 'DiscussionSection') => {
         const selector = whichButton === 'DiscussionSection' ?
-            '.s_OpReB-Dsc' : '.dw-ar-p + .esPA .dw-a-reply';
+            '.s_OpReB-Dsc' : '.dw-ar-t > .esPA .dw-a-reply';
         await this.topic.clickPostActionButton(selector);
       },
 
@@ -6643,6 +6650,10 @@ export class TyE2eTestBrowser {
         assert.ok(!await this.isVisible(this.topic._makeUnsolveSelector(postNr)));
         await this.topic.clickPostActionButton(this.topic._makeSolveSelector(postNr));
         await this.waitForVisible(this.topic._makeUnsolveSelector(postNr));
+      },
+
+      waitUntilPostNrIsAnswer: async (postNr: PostNr) => {
+        await this.waitForDisplayed(`#post-${postNr} + .esPA .c_Solved`);
       },
 
       unselectPostNrAsAnswer: async (postNr: PostNr) => {

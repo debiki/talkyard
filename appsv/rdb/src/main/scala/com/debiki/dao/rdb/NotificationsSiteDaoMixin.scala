@@ -102,7 +102,9 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
           where SITE_ID = ?
             and NOTF_TYPE in (
               ${Mention.toInt}, ${DirectReply.toInt}, ${IndirectReply.toInt}, ${
-                  NewPost.toInt}, ${PostTagged.toInt}, ${OneLikeVote.toInt})
+                  NewPost.toInt}, ${PostTagged.toInt}, ${
+                  Assigned.toInt}, ${Unassigned.toInt}, ${
+                  AssigneesChanged.toInt}, ${OneLikeVote.toInt})
             and about_post_id_c = ?"""
         val values = List(siteId.asAnyRef, postToDelete.uniquePostId.asAnyRef)
         (sql, values)

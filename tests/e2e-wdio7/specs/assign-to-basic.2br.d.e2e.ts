@@ -14,9 +14,12 @@ let owen: Member;
 let owen_brA: TyE2eTestBrowser;
 let mons: Member;
 let mons_brA: TyE2eTestBrowser;
+let corax: MemberFound;
+let corax_brA: TyE2eTestBrowser;
 let maja: Member;
 let maria: Member;
 let maria_brB: TyE2eTestBrowser;
+let mei: Member;
 let memah: Member;
 let memah_brB: TyE2eTestBrowser;
 let michael: Member;
@@ -25,8 +28,9 @@ let stranger_brB: TyE2eTestBrowser;
 let site: IdAddress;
 let forum: TwoCatsTestForum;
 
-let buyCreamPagePath = '/buy-cream';
-let buyMilkPagePath = '/buy-milk';
+const buyCreamPagePath = '/buy-cream';
+const buyMilkPagePath = '/buy-milk';
+const buyMilkPageUrlRegex = /https?:\/\/e2e-test-[^/]+\/-buyMilkPageId#post-1/;
 
 
 
@@ -36,7 +40,7 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     const builder = buildSite();
     forum = builder.addTwoCatsForum({
       title: "Assign-To E2E Test",
-      members: ['owen', 'mons', 'maja', 'maria', 'memah', 'michael']
+      members: ['owen', 'mons', 'corax', 'maja', 'maria', 'mei', 'memah', 'michael']
     });
 
     builder.addPage({
@@ -84,10 +88,13 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     owen_brA = brA;
     mons = forum.members.mons;
     mons_brA = brA;
+    corax = forum.members.corax;
+    corax_brA = brA;
 
     maja = forum.members.maja;
     maria = forum.members.maria;
     maria_brB = brB;
+    mei = forum.members.mei;
     memah = forum.members.memah;
     memah_brB = brB;
     michael = forum.members.michael;
@@ -127,15 +134,28 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await owen_brA.addUsersToPageDialog.submit();
   });
   it(`... sees Memah now listed as assignee`, async () => {
-    assert.deepEq(await owen_brA.topic.getAssigneesUsernamesNoAt(c.BodyNr), [memah.username]);
+    await owen_brA.topic.waitForAssigneesUsernamesNoAt(c.BodyNr, [memah.username]);
   });
 
 
   // ----- Assignees get notified, & others
 
-  it(`Memah gets a notification   UNIMPL  TESTS_MISSING`, async () => {
+  let numEmailsTotal = 2;
+
+  it(`Memah gets a notification email (since she got assigned)`, async () => {
+    // Incl space ' ' before "assigned", so we know it's not "unassigned".
+    await server.waitUntilLastEmailMatches(site.id,
+          memah.emailAddress, ['You', ' assigned by ', owen.username, 'Buy milk also',
+          buyMilkPageUrlRegex ]);
   });
-  it(`Maja also — it's her page, she wants to know   UNIMPL  TESTS_MISSING`, async () => {
+  it(`Maja also — it's her page, she wants to know`, async () => {
+    await server.waitUntilLastEmailMatches(site.id,
+          maja.emailAddress, [memah.username, ' assigned by ', owen.username, 'Buy milk also',
+          buyMilkPageUrlRegex]);
+  });
+  it(`No one else gets any email`, async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(site.id);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
@@ -186,8 +206,7 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await maria_brB.go2(buyMilkPagePath);
   });
   it(`... sees it's assigned to Memah`, async () => {
-    assert.deepEq(await maria_brB.topic.getAssigneesUsernamesNoAt(c.BodyNr),
-            [memah.username]); // fok
+    await maria_brB.topic.waitForAssigneesUsernamesNoAt(c.BodyNr, [memah.username]);
   });
 
   it(`Owen opens the assignees dialog again ...`, async () => {
@@ -200,30 +219,44 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await owen_brA.addUsersToPageDialog.addOneUser(maria.username);
     await owen_brA.addUsersToPageDialog.addOneUser(michael.username);
     await owen_brA.addUsersToPageDialog.submit();
+    numEmailsTotal += 4; // Memah removed, Maria & Michael added, Maja author.
   });
   it(`... sees Maria and Michael now listed as assignees`, async () => {
-    assert.deepEq(await owen_brA.topic.getAssigneesUsernamesNoAt(c.BodyNr),
-            [maria.username, michael.username]);
+    await owen_brA.topic.waitForAssigneesUsernamesNoAt(c.BodyNr, [maria.username, michael.username]);
   });
 
 
   // ----- Notifications about changes
 
-  it(`Memah gets a notification about no longer being assigned   UNIMPL TESTS_MISSING`, async () => {
+  it(`Memah gets a notification email about no longer being assigned`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, memah.emailAddress,
+            ['You', 'un-assigned by ', owen.username, ' from ',
+            'Buy milk', buyMilkPageUrlRegex]);
   });
-  it(`Maria gets a notification about having been assigned   UNIMPL TESTS_MISSING`, async () => {
+  it(`Maria gets a notification about having been assigned`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, maria.emailAddress,
+            ['You', ' assigned by ', owen.username, ' to ', 'Buy milk', buyMilkPageUrlRegex]);
   });
-  it(`Michael too   UNIMPL TESTS_MISSING`, async () => {
+  it(`Michael too`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, michael.emailAddress,
+            ['You', ' assigned by ', owen.username, ' to ', 'Buy milk', buyMilkPageUrlRegex]);
   });
-  it(`Maja also — it's her page   UNIMPL TESTS_MISSING`, async () => {
+  it(`Maja also — it's her page`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, maja.emailAddress,
+            [maria.username, michael.username,
+                    ' assigned by ', owen.username, ' to ', 'Buy milk', buyMilkPageUrlRegex]);
+  });
+
+  it(`No one else gets any email`, async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(site.id);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   it(`Maria reloads the page again ...`, async () => {
     await maria_brB.refresh2();
   });
   it(`... sees it's assigned to her and Michael`, async () => {
-    assert.deepEq(await maria_brB.topic.getAssigneesUsernamesNoAt(c.BodyNr),
-            [maria.username, michael.username]);   // SORT ORDER? else, flaky test
+    await maria_brB.topic.waitForAssigneesUsernamesNoAt(c.BodyNr, [maria.username, michael.username]);
   });
 
 
@@ -240,8 +273,8 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await maria_brB.userProfilePage.activity.posts.assertExactly(1);
   });
   it(`... assigned to her (Maria) and Michael`, async () => {
-    assert.deepEq(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
-            forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);  // fok
+    assert.sameElems(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+            forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
   });
 
 
@@ -255,8 +288,8 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await owen_brA.userProfilePage.activity.posts.assertExactly(1);
   });
   it(`... assigned to Maria and Michael`, async () => {
-    assert.deepEq(await owen_brA.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
-            forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);  // fok
+    assert.sameElems(await owen_brA.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+            forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
   });
 
 
@@ -274,7 +307,7 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await mons_brA.userProfilePage.activity.posts.assertExactly(1);
   });
   it(`... assigned to Maria and Michael`, async () => {
-    assert.deepEq(await mons_brA.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+    assert.sameElems(await mons_brA.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
             forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
   });
 
@@ -285,10 +318,38 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await mons_brA.go2(buyCreamPagePath);
   });
 
-  it(`... assigns the buy-cream topic to Maria`, async () => {
+  it(`... assigns the buy-cream topic to himself  TyTASGSELF`, async () => {
+    await mons_brA.topic.openAssignToDiag();
+    await mons_brA.addUsersToPageDialog.addOneUser(mons.username);
+    await mons_brA.addUsersToPageDialog.submit();
+    numEmailsTotal += 1; // Maja (page author) not Mons (assigned himself)
+  });
+
+  it(`... sees himself listed as assignee`, async () => {
+    await mons_brA.topic.waitForAssigneesUsernamesNoAt(c.BodyNr, [mons.username]);
+  });
+
+
+  // ----- No notfs about assigning oneself  TyTASGSELF
+
+  it(`Maja gets notified — it's her page — about Mons assigning himself`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, maja.emailAddress,
+            [mons.username, ' assigned by ', mons.username, 'Buy cream', 'buyCreamPageId']);
+  });
+
+  it(`But Mons got no notf — one isn't notified about assigning oneself`, async () => {
+    // (Race — maybe another email was sent just after this. Fine, we
+    // check numEmailsTotal again below.)
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(site.id);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  });
+
+
+  it(`Mons assigns the buy-cream topic to Maria too`, async () => {
     await mons_brA.topic.openAssignToDiag();
     await mons_brA.addUsersToPageDialog.addOneUser(maria.username);
     await mons_brA.addUsersToPageDialog.submit();
+    numEmailsTotal += 2; // Maja (page author) and Maria (assigned)
   });
 
   it(`... Maria reloads, sees two tasks in her task list`, async () => {
@@ -296,28 +357,57 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await maria_brB.userProfilePage.activity.posts.waitForPostTextsVisible(/buy cream/);
     await maria_brB.userProfilePage.activity.posts.assertExactly(2);
   });
-  it(`... namely buy-cream, assigned to her`, async () => {
-    assert.deepEq(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
-            forPageId: 'buyCreamPageId' }), [maria.username]);
+  it(`... namely buy-cream, assigned to her and Mons`, async () => {
+    assert.sameElems(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+            forPageId: 'buyCreamPageId' }), [maria.username, mons.username]);
   });
   it(`... and buy-milk, assigned to her and Michael`, async () => {
-    assert.deepEq(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+    assert.sameElems(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
             forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
   });
 
 
+  // ----- (More notfs tests)
 
-  it(`Mons marks the buy-cream task (i.e. the page) as Done`, async () => {
-    await mons_brA.topic.setDoingStatus('Done');
+  it(`Maria gets a notf email`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, maria.emailAddress,
+            ['You', ' assigned by ', mons.username, 'Buy cream', 'buyCreamPageId']);
+  });
+  it(`Maja also — it's her page`, async () => {
+    await server.waitUntilLastEmailMatches(site.id, maja.emailAddress,
+            [maria.username, ' assigned by ', mons.username, 'Buy cream', 'buyCreamPageId']);
+  });
+
+  it(`But Mons got no notf — one isn't notified if one assigned oneself`, async () => {
+    const { num, addrsByTimeAsc } = await server.getEmailsSentToAddrs(site.id);
+    assert.eq(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  });
+
+
+  // ----- Core Members can assign & mark Done
+
+  it(`Mons leaves, Corax arrives`, async () => {
+    await mons_brA.topbar.clickLogout();
+    await corax_brA.complex.loginWithPasswordViaTopbar(corax);
+  });
+
+  it(`Corax, a Core Member, assigns the buy-cream topic to Mei too  TyTCORECAN`, async () => {
+    await corax_brA.topic.openAssignToDiag();
+    await corax_brA.addUsersToPageDialog.addOneUser(mei.username);
+    await corax_brA.addUsersToPageDialog.submit();
+    // It's good to be three, when buying cream.
+  });
+
+  it(`Corax marks the buy-cream task (i.e. the page) as Done  TyTCORECAN`, async () => {
+    await corax_brA.topic.setDoingStatus('Done');
   });
 
   it(`Assignees can change Doing status: Maria changes back to Doing  UNIMPL TESTS_MISSING`, async () => {
-    // And says "I'm not done yet"?
+    // And says "I think we should get some more".
   });
 
-  it(`Maria buys cream. Unimplemented`, async () => {
-    // How do this? I websearched for Milk-as-a-Service, but found no
-    // free and open source price plan
+  it(`Maria buys even more cream. Unimplemented`, async () => {
+    // How do this? Any Milk-as-a-Service?
   });
 
   it(`... Maria changes to Done  UNIMPL TESTS_MISSING`, async () => {
@@ -335,15 +425,15 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
 
   it(`... it appears again, with her as assignee`, async () => {
     await maria_brB.userProfilePage.activity.posts.assertExactly(2);
-    assert.deepEq(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
-            forPageId: 'buyCreamPageId' }), [maria.username]);
+    assert.sameElems(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+            forPageId: 'buyCreamPageId' }), [maria.username, mei.username, mons.username]);
   });
   it(`... it's status is Done (and done topics, are implicitly closed)  UNIMPL  TESTS_MISSING`, async () => {
     // Should break out show-title code, reuse in profile page posts  [same_title_everywhere]
     // so titles shown as done/closed/etc,  before can add this test?
   });
   it(`The other task — buy milk — is there too`, async () => {
-    assert.deepEq(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+    assert.sameElems(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
             forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
   });
 
@@ -352,13 +442,13 @@ describe(`assign-to-basic.2br.d  TyTASSIGN01`, () => {
     await maria_brB.userProfilePage.activity.posts.assertExactly(1);
   });
   it(`... the buy-milk task is still listed`, async () => {
-    assert.deepEq(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
-            forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
+    assert.sameElems(await maria_brB.userProfilePage.activity.posts.getAssigneeUsernamesNoAt({
+              forPageId: 'buyMilkPageId' }), [maria.username, michael.username]);
   });
 
-  it(`Mons says "Cream is better", and closes the milk topic`, async () => {
-    await mons_brA.go2(buyMilkPagePath);
-    await mons_brA.topic.closeTopic();
+  it(`Corax says "Cream is better", and closes the milk topic  TyTCORECAN`, async () => {
+    await corax_brA.go2(buyMilkPagePath);
+    await corax_brA.topic.closeTopic();
   });
 
   it(`Maria reloads her task list page`, async () => {

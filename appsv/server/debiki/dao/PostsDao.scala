@@ -288,8 +288,11 @@ trait PostsDao {
       postId = Some(newPost.id),
       postNr = Some(newPost.nr)))
 
+    // [dupl_spam_check_code]
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (settings.userMustBeAuthenticated) None
+      else if (!canStrangersSeePagesInCat_useTxMostly(newMeta.categoryId, tx)) None
       else if (!SpamChecker.shallCheckSpamFor(realAuthorAndLevels)) None
       else Some(
         SpamCheckTask(
@@ -356,7 +359,8 @@ trait PostsDao {
 
     val notifications =
       if (skipNotfsAndAuditLog) Notifications.None
-      else notfGenerator(tx).generateForNewPost(
+      else notfGenerator(tx).generateForNewPost( // page dao excls new reply, ...
+                 // ... that's ok, as of now. (See: [notf_new_post_dao])
             page, newPost, Some(textAndHtml), postAuthor = Some(authorMaybeAnon),
             anyNewModTask = anyReviewTask)
     tx.saveDeleteNotifications(notifications)
@@ -748,8 +752,11 @@ trait PostsDao {
       dieIf(uploadRefs != uplRefs2, "TyE38RDHD4", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
     }
 
+    // [dupl_spam_check_code]
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (settings.userMustBeAuthenticated) None
+      else if (!canStrangersSeePagesInCat_useTxMostly(newMeta.categoryId, tx)) None
       else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
       else Some(
         SpamCheckTask(
@@ -826,7 +833,7 @@ trait PostsDao {
     // & publish [pubsub]
 
     // If anyModTask: TyTIT50267MT
-    val notfs = notfGenerator(tx).generateForNewPost(
+    val notfs = notfGenerator(tx).generateForNewPost( // page dao excls new chat msg
           page, newPost, postAuthor = Some(author), sourceAndHtml = Some(textAndHtml),
           anyNewModTask = anyModTask)
     tx.saveDeleteNotifications(notfs)
@@ -895,8 +902,11 @@ trait PostsDao {
     // For now, don't generate any ModTask here.  [03RMDl6J]
     // (But we do, when starting a new chat message.)
 
+    // [dupl_spam_check_code]
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (settings.userMustBeAuthenticated) None
+      else if (!canStrangersSeePagesInCat_useTxMostly(pageMeta.categoryId, tx)) None
       else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
       else Some(
         SpamCheckTask(
@@ -929,7 +939,8 @@ trait PostsDao {
 
     AUDIT_LOG // that this ip appended to the chat message.
 
-    val notfs = notfGenerator(tx).generateForEdits(lastPost, editedPost, Some(combinedTextAndHtml))
+    val notfs = notfGenerator(tx).generateForEdits(
+          lastPost, editedPost = editedPost, Some(combinedTextAndHtml))
     tx.saveDeleteNotifications(notfs)
 
     (editedPost, notfs)
@@ -1243,8 +1254,11 @@ trait PostsDao {
             createOrAmendOldReviewTask(SystemUserId, editedPost, reviewReasons, tx))
         }
 
+      // [dupl_spam_check_code]
       val anySpamCheckTask =
         if (!globals.spamChecker.spamChecksEnabled) None
+        else if (settings.userMustBeAuthenticated) None
+        else if (!canStrangersSeePagesInCat_useTxMostly(page.meta.categoryId, tx)) None
         else if (!SpamChecker.shallCheckSpamFor(realEditor)) None
         else Some(
           // This can get same prim key as earlier spam check task, if is ninja edit. [SPMCHKED]
@@ -1307,7 +1321,7 @@ trait PostsDao {
         saveDeleteLinks(editedPost, newTextAndHtml, editorMaybeAnon.trueId2, tx, staleStuff)
         TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
         val notfs = notfGenerator(tx).generateForEdits(
-              postToEdit, editedPost, Some(newTextAndHtml))
+              postToEdit, editedPost = editedPost, Some(newTextAndHtml))
         tx.saveDeleteNotifications(notfs)
       }
 
@@ -2203,12 +2217,14 @@ trait PostsDao {
         Notifications.None
       }
       else if (isApprovingNewPost) {
-        notfGenerator(tx).generateForNewPost(page, postAfter, Some(sourceAndHtml),
+        notfGenerator(tx).generateForNewPost( // page dao incls old unappr, bef apprvd
+              page, postAfter, Some(sourceAndHtml),
               postAuthor = Some(author),
               anyNewModTask = None, doingModTasks = doingModTasks)
       }
       else {
-        notfGenerator(tx).generateForEdits(postBefore, postAfter, Some(sourceAndHtml))
+        notfGenerator(tx).generateForEdits(
+              postBefore, editedPost = postAfter, Some(sourceAndHtml))
       }
     tx.saveDeleteNotifications(notifications)
 
@@ -2280,8 +2296,9 @@ trait PostsDao {
       // ------ Notifications
 
       if (!post.isTitle) {
-        val notfs = notfGenerator(tx).generateForNewPost(page, postAfter,
-              Some(sourceAndHtml), postAuthor = Some(author),
+        val notfs = notfGenerator(tx)
+                .generateForNewPost( // page dao incls postAfter. Want to rm this fn anyway
+              page, postAfter, Some(sourceAndHtml), postAuthor = Some(author),
               anyNewModTask = None,
               // But approver might get notfd about post! [notfs_bug]
               // However this whole cascade-approval idea should be deleted.
@@ -2544,7 +2561,7 @@ trait PostsDao {
       // Currently, if some pats aren't found, then we just ignore them here. Hmm.
       val patsByIdMaybeSomeNotFound = tx.loadParticipantsAsMap(idsToAdd ++ idsToRemove)
       val patsToAdd = idsToAdd.flatMap(patsByIdMaybeSomeNotFound.get)
-      //  patsToRemove = idsToRemove.flatMap(patsById.get)
+      val patsToRemove = idsToRemove.flatMap(patsByIdMaybeSomeNotFound.get)
 
       // Access check 3/3:  May the pats getting connected to the post, see it?
       // This check makes it possible for someone who can assign others, to find out
@@ -2556,7 +2573,8 @@ trait PostsDao {
       for (patToAdd <- patsToAdd) {
         val (result, debugCode) =
               maySeePost(postBef, Some(patToAdd), maySeeUnlistedPages = true)(tx)
-        TESTS_MISSING // Trigger this 403 Forbidden.  TyTASGN0SEEPG
+        // Tests:
+        //    - assign-can-see.2br.d  TyTASSIGNCANSEE.TyERELPAT0SEEPOST_
         throwForbiddenIf(!result.may, "TyERELPAT0SEEPOST_", o"""User ${
               patToAdd.atUsernameOrFullName} cannot access that post, therefore you
               cannot connect him/her to it.""")
@@ -2604,15 +2622,21 @@ trait PostsDao {
 
         addMetaMessage(reqr,  NO: message = assignedSbd + and + unassignedSbd,
               pageId = postBef.pageId, tx,  NO:  notifyMentioned = true,
-              Instead:  NotificationType.PostAssigneesChanged ?)
+              Instead:  NotificationType.AssigneesChanged ?)
       } */
 
       // ----- Notify assignees
 
       if (notifyPats) {
-        UX; SHOULD // notify pats who got assigned / unassigned.
-        // Can derive the NotificationType, from the  e.g. PatNodeRelType.AssignedTo —>
-        // NotificationType.PostAssigneesChanged?
+        // Later: Derive the NotificationType, from the  e.g. PatNodeRelType.AssignedTo —>
+        // NotfType.Assigned?  For now, always about assignees:
+        dieIf(relType != PatNodeRelType.AssignedTo, "TyE6X0WMSHUW8")
+
+        val notfs = notfGenerator(tx).generateForAssignees(
+              assigneesAdded = patsToAdd, assigneesRemoved = patsToRemove,
+              postBef = postBef, changedBy = reqr)
+
+        tx.saveDeleteNotifications(notfs)
       }
 
       AUDIT_LOG
@@ -2824,7 +2848,7 @@ trait PostsDao {
             Set(fromPage.id, toPage.id), memCacheOnly = true)
 
       // Would be good to [save_post_lns_mentions], so wouldn't need to recompute here.
-      val notfs = notfGenerator(tx).generateForNewPost(
+      val notfs = notfGenerator(tx).generateForNewPost( // toPage dao excls moved post
             toPage, postAfter, sourceAndHtml = None, postAuthor = Some(postAuthor),
             anyNewModTask = None, skipMentions = true)
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors

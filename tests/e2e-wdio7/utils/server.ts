@@ -512,18 +512,20 @@ async function waitUntilLastEmailIsActSumAndMatches(siteId: SiteId, emailAddress
 }
 
 
-async function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
-        textOrTextsToMatch: string | string[], opts?: { isActivitySummary?: Bo } | any)
+async function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: St,
+        textOrTextsToMatch: (St | RegExp) | (St | RegExp)[],
+        opts?: { isActivitySummary?: Bo } | any)
         : Pr<EmailMatchResult> {
-  let textsToMatch: string[] =
-      _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
+  let textsToMatch: (St | RegExp)[] =
+      !_.isArray(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   if (opts?.isActivitySummary) {
     textsToMatch = [...textsToMatch, 'e_ActSumEm'];
   }
   dieIf(!textsToMatch?.map, `No texts to match; textsToMatch is: ${j2s(textsToMatch)}`);
   const startMs = Date.now();
   let hasDebugLoggedLastEmail = false;
-  const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
+  const regexs = textsToMatch.map(text =>
+          _.isRegExp(text) ? text : new RegExp(utils.regexEscapeSlashes(text)));
   let misses: string[];
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const email: EmailSubjectBody | U =

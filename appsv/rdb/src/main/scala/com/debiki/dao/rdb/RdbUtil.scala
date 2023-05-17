@@ -721,10 +721,11 @@ object RdbUtil {
     val notfType = NotificationType.fromInt(notfTypeInt).getOrDie(
       "EsE6GMUK2", s"Bad notf type: $notfTypeInt")
 
+    // Later, there will be notifications about pats too, not just posts.
+    // (Then there'll be another `case` branch here.)
     import NotificationType._
     notfType match {
-      case NewPostReviewTask | DirectReply | IndirectReply | Mention | Message |
-           NewPost | PostTagged | OneLikeVote =>
+      case _ =>
         Notification.NewPost(
           id = notfId,
           notfType = notfType,

@@ -86,14 +86,22 @@ object NotificationType {
   // 400-499 Something interesting happened with an already existing topic or post.
   case object PostTagged extends NotificationType(406)
   // + PostEdited
-  // + TopicProgress
-  // + QuestionAnswered
-  // + TopicDone
-  // + TopicClosed
+  // + TopicProgress  ——————.—— or just  DoingStautsChanged?
+  // + QuestionAnswered    /
+  // + TopicDone   ———————/
+  // + TopicClosed  —————'
 
-  // case object PostOwnersChanged extends NotificationType(401 or 451)
-  // case object PostAuthorsChanged extends NotificationType(..2 ?)
-  // case object PostAssigneesChanged extends NotificationType(..3 ?)
+  // case object OwnersChanged extends NotificationType(401 or 431)
+  // case object OwnersChangedInclYou extends NotificationType(432)
+  // case object AuthorsChanged extends NotificationType(441)
+  // case object AuthorsChangedInclYou extends NotificationType(442)
+
+  case object AssigneesChanged extends NotificationType(451)
+  // This:
+  // case object AssigneesChangedInclYou extends NotificationType(452)
+  // Or:?
+  case object Assigned extends NotificationType(453)
+  case object Unassigned extends NotificationType(454)
 
   case object OneLikeVote extends NotificationType(501)
   // What about WrongVote, OffTopic, Unwanted?
@@ -116,7 +124,9 @@ object NotificationType {
     case Message.IntValue => Message
     case NewPost.IntValue => NewPost
     case PostTagged.IntValue => PostTagged
-    //case PostAssigneesChanged.IntVal => PostAssigneesChanged
+    case AssigneesChanged.IntValue => AssigneesChanged
+    case Assigned.IntValue => Assigned
+    case Unassigned.IntValue => Unassigned
     case OneLikeVote.IntValue => OneLikeVote
     case _ => return None
   })

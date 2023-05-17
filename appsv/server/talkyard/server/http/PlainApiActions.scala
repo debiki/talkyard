@@ -528,7 +528,7 @@ class PlainApiActions(
       val anyUser =
             if (!isSuspended) anyUserMaybeSuspended
             else {
-              // If suspended, one can still see publicly visible things.
+              // If suspended, one can still see publicly visible things. [susp_see_pub]
               None
             }
 

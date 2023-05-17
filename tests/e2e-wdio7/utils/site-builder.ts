@@ -237,6 +237,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
           corax: _.includes(members, 'corax') ? make.memberCorax() : undefined,
           regina: _.includes(members, 'regina') ? make.memberRegina() : undefined,
           trillian: _.includes(members, 'trillian') ? make.memberTrillian() : undefined,
+          mei: _.includes(members, 'mei') ? make.memberMei() : undefined,
           memah: _.includes(members, 'memah') ? make.memberMemah() : undefined,
           maria: _.includes(members, 'maria') ? make.memberMaria() : undefined,
           maja: _.includes(members, 'maja') ? make.memberMaja() : undefined,
@@ -256,6 +257,7 @@ export function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: bo
       if (forum.members.corax) site.members.push(forum.members.corax);
       if (forum.members.regina) site.members.push(forum.members.regina);
       if (forum.members.trillian) site.members.push(forum.members.trillian);
+      if (forum.members.mei) site.members.push(forum.members.mei);
       if (forum.members.memah) site.members.push(forum.members.memah);
       if (forum.members.maria) site.members.push(forum.members.maria);
       if (forum.members.maja) site.members.push(forum.members.maja);

@@ -383,9 +383,11 @@ export const Title = createComponent({
     if (!titlePost)
       return null;
 
-    const me: Myself = store.me;
+    const me: Me = store.me;
     const isMyPage = store_thisIsMyPage(store);
-    const isStaffOrMyPage: boolean = isStaff(me) || isMyPage;
+    const isStaffOrMyPage: Bo = isStaff(me) || isMyPage;
+    const isCoreOrMyPage: Bo =
+            isStaffOrMyPage || user_isTrustMinNotThreat(me, TrustLevel.CoreMember);
 
     const deletedOrUnapprovedInfo = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' },
@@ -515,7 +517,7 @@ export const Title = createComponent({
         default:
       }
 
-      const titleIcon = !page.pageAnsweredAtMs && !isStaffOrMyPage
+      const titleIcon = !page.pageAnsweredAtMs && !isCoreOrMyPage
           ? r.span({ className: iconClass, title: iconTooltip })
           : r.a({ className: 'dw-clickable ' + iconClass, title: iconTooltip,
               onClick: event => {

@@ -1328,6 +1328,11 @@ moderators:
   can send and view invites:
     - invites-by-mod-try-signup-after  TyT4FGJA20M
 
+core members:
+  can alter others' pages:
+    Doing status, accept answers, change page type, open/close:
+            - Various tests   TyTCORECAN
+
 draft: [7WKABZP2]
   # Incls: save, load, list, navigate to, deleted when submitting post.
   beacon when suddenly closing page:
@@ -1392,23 +1397,25 @@ draft: [7WKABZP2]
 
 tasks,
 assign posts:
-  basic functionality:
+  basic functionality,
+  notifications about assigned:
             - assign-to-basic.2br.d  TyTASSIGN01
-  can't assigning sbd who can't see the page,
+  assigning oneself:
+            - assign-to-basic.2br.d  TyTASSIGN01.TyTASGSELF
+  can't assigning sbd who can't see the page:
+            - assign-can-see.2br.d  TyTASSIGNCANSEE.TyERELPAT0SEEPOST_
   tasks in cats one can't see, are excluded if viewing sbd's task list:
             - assign-can-see.2br.d  TyTASSIGNCANSEE
-  notifications:
-            - TESTS_MISSING  TyTASGN0SEEPG
   not notified about tasks one can't see:
-      Expl: if sbd has subscribed to a task page, or
-      if an assignee can't see hens task (maybe the task got moved to a private cat),
-      then, if that task gets completed (by sbd else),
-      they do *not* get any notification email about that.
-            - TESTS_MISSING
+      Expl: if sbd X has subscribed to a task page and Y is assigned to the page,
+      but the task got moved to a private cat so none of them can see it any more,
+      then, when the task gets completed (by sbd else),
+      X and Y do *not* get any notification email about that (since they can't see the task)
+            - assign-can-see.2br.d  TyTASSIGNCANSEE
   if one has created, or is subscribed to a page, but one may not
       see who is assigned (if any), then, one won't get notfications
       that show who's assigned:
-            - TESTS_MISSING
+            - assign-can-see.2br.d  TyTASSIGNCANSEE
 
 
 superadmin -
@@ -1454,6 +1461,9 @@ notifications:
   about assigned:
             - assign-to-basic.2br.d  TESTS_MISSING  TyTASSIGN01
   via email:  (5ABKR024)
+  mute all:
+    notfs about assigned:
+            - assign-can-see.2br.d  TyTASSIGNCANSEE.TyTMUTEASGNOTFS
   mute topic:
   mute category:
   watching-all for new topic:

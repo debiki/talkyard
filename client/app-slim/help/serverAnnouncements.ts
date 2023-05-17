@@ -55,23 +55,21 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   // @endif
 
 
-  // ----- Notice: New sessions, everyone will get logged out
+  // ----- Notice: An exampe
 
-  const betterSessionsNotice: RElm = isE2eTest ? null :
+  /* An example, when adding some other notice in the future:
+  const sampleNotice: RElm = isE2eTest ? null :
       help.HelpMessageBox({ message: {
-          // SAn = Server Announcement, NSid = new session ids
-          id: 'SAn_NSid', version: 1, isNice: true,
+          // SAn = Server Announcement, BlB = Blah Blah
+          id: 'SAn_BlB', version: 1, isNice: true,
           content: rFr({},
             r.p({},
-              r.b({}, `Everyone will get logged out, `),
-              "and will need to log in again. Some time soon, maybe next week. " +
-              "This is because we're improving login session management in Talkyard, " +
-              "and as part of that, old sessions will stop working."),
-            r.p({}, `We're telling you just so you won't get surprised, when ` +
-              `suddenly you'll find yourself automatically logged out. — ` +
-              `Or if some of your users get confused and ask you why they got logged out.`),
+              r.b({}, `Blah blah, `),
+              "blah blah. Bla bla blah. Blah. Bla bla, bla blah."),
+            r.p({}, `Blah bla bla blah. — Bla bla, bla? Bla, blah: Blah.`),
             ThisShownToAdminsOnly()),
       } });
+      */
 
 
   // ----- Notice: Blog comments URL
@@ -142,21 +140,23 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
 
   // ----- New version announcements
 
-  // Always show, also if is e2e test.
-  const newTyVersionAnn: RElm =
+  // Always show if is e2e test. Otherwise only if there's a not-too-old
+  // external announcement (e.g. a blog post) to link to.
+  const newTyVersionAnn: RElm = !isE2eTest ? null :  // there isn't any up-to-date ann.
       help.HelpMessageBox({ message: {
           // SAn = Server Announcement, TyV = Talkyard new Version announcement nr X.
-          id: 'SAn_TyV2', version: 2, isNice: true,
+          id: 'SAn_TyV3', version: 1, isNice: true,
           content: rFr({},
             r.p({},
               r.b({ className: 'e_LstTyV'}, `New Talkyard version: ${TalkyardVersion}, `),
               "read more here: ",
               ExtVerbLink(
-                  'https://www.talkyard.io/-596/talkyard-v0202123')),
+                  'https://www.talkyard.io/blog/YYYY-MM-DD/...')),  // ?
             ThisShownToAdminsOnly()),
       } });
 
-  const prevTyVersionAnn: RElm | U = isE2eTest ? null :
+  // Too old.
+  const prevTyVersionAnn: RElm | U = null; /* isE2eTest ? null :
       help.HelpMessageBox({ message: {
           id: 'SAn_TyV1', version: 1, // old announcement, skip isNice
           content: rFr({},
@@ -166,8 +166,11 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
               ExtVerbLink(
                   'https://www.talkyard.io/-589/talkyard-v0202122')),
             ThisShownToAdminsOnly()),
-      } });
+      } }); */
 
+  // Previous announcements:
+  //   https://www.talkyard.io/-596/talkyard-v0202123
+  //   https://www.talkyard.io/-589/talkyard-v0202122
 
   // ----- Other announcements
 
@@ -194,7 +197,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   return (
     r.div({ className: 'c_SrvAnns' },
       rFr({}, adminNotices),
-      betterSessionsNotice,
+      // sampleNotice,
       certBugAnn,
       newTyVersionAnn,
       prevTyVersionAnn,

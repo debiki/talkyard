@@ -96,7 +96,9 @@ case class NotificationGenerator(
       toDelete = notfsToDelete.toVector)
 
   /**
-    * @param page
+    * @param page — ANNOYING, BUG risk: Should this PageDao include newPost, or not?
+    *   Currently sometimes does, sometimes doesn't — different callers do it
+    *   differently. [notf_new_post_dao]
     * @param newPost
     * @param sourceAndHtml
     * @param anyNewModTask
@@ -151,7 +153,7 @@ case class NotificationGenerator(
 
       val staffUsers: Seq[User] = tx.loadStaffUsers()
       for (staffUser <- staffUsers) {
-        genOneNotfMaybe(
+        _genOneNotfMaybe(
               NotificationType.NewPostReviewTask,
               to = staffUser,
               from = anyAuthor,
@@ -279,26 +281,28 @@ case class NotificationGenerator(
 
     // People watching this topic or category
     _genWatchingSomethingNotfs(
-          page, about = newPost, pageMemberIds, sentFrom = author)
+          NotfType.NewPost, page.meta, about = newPost, pageMemberIds, sentFrom = author)
 
     generatedNotifications
   }
 
 
-  private def _genWatchingSomethingNotfs(page: Page, about: Post,
-          pageMemberIds: Set[UserId], sentFrom: Pat): U = {
+  // COULD_OPTIMIZE: Use just a PageMeta, .no_PageDao.
+  private def _genWatchingSomethingNotfs(notfType: NotfType, pageMeta: PageMeta,
+          about: Post, pageMemberIds: Set[UserId], sentFrom: Pat): U = {
 
     val newPost = about
 
     val isEmbDiscFirstReply =
-          page.pageType == PageType.EmbeddedComments &&
-          newPost.isOrigPostReply && newPost.isSomeVersionApproved && (
-            // Currently not decided if `page` should includes newPost or not.
-            // So let's try both: 1) If `newPost` not incl in `page`:
-            page.meta.numRepliesVisible == 0 ||
-            // Or 2) if it *is*:
-            (page.meta.numRepliesVisible == 1 &&
-                page.parts.lastVisibleReply.exists(p => p.id == newPost.id)))
+          notfType.isAboutNewApprovedPost &&
+          pageMeta.pageType == PageType.EmbeddedComments &&
+          newPost.isOrigPostReply && newPost.isVisible &&
+          // Currently, pageMeta doesn't take `newPost` into account.  [notf_new_post_dao]
+          // So, if num visible is 0, `newPost` is the first visible reply
+          // (and pageMeta will soon be updated in the database).
+          // (There might be other earlier replies but if so, they haven't yet been
+          // approved or sth like that.)
+          pageMeta.numRepliesVisible == 0  // then `newPost` is the first
 
     val minNotfLevel =
       if (isEmbDiscFirstReply) {
@@ -354,7 +358,7 @@ case class NotificationGenerator(
     // ----- Page subscribers
 
     val notfPrefsOnPage = addWhy(
-          tx.loadPageNotfPrefsOnPage(page.id),
+          tx.loadPageNotfPrefsOnPage(pageMeta.pageId),
           why = "You have subscribed to this topic")
 
     // ----- Page members
@@ -363,7 +367,7 @@ case class NotificationGenerator(
     // — unless they've configured another notf pref.
     // (This wouldn't be needed if [page_pps_t] instead.)
     val privTopicPrefsOnPage: Set[PageNotfPrefAndWhy] =
-      if (!page.meta.pageType.isPrivateGroupTalk) Set.empty
+      if (!pageMeta.pageType.isPrivateGroupTalk) Set.empty
       else pageMemberIds flatMap { id: UserId =>
         if (notfPrefsOnPage.exists(_.peopleId == id)) None  // [On2]
         else Some(PageNotfPrefAndWhy(
@@ -371,7 +375,7 @@ case class NotificationGenerator(
                 PageNotfPref(
                       peopleId = id,
                       NotfLevel.WatchingAll,
-                      pageId = Some(page.id))))
+                      pageId = Some(pageMeta.pageId))))
       }
 
     // ----- Page repliers
@@ -386,7 +390,7 @@ case class NotificationGenerator(
     // then add a PageNotfPref so this poster gets notified.
     //
     val pageRepliersPrefsOnPage: Set[PageNotfPrefAndWhy] = {  // [interact_notf_pref]
-      if (page.meta.pageType.isChat) {
+      if (pageMeta.pageType.isChat) {
         // Chats tend to be chatty? Maybe better let the pages_pat_replied_to_c
         // setting skip chats. And not impossible it'd be bad for performance
         // to notify / email hundreds of people in a chat "all the time"?
@@ -425,7 +429,7 @@ case class NotificationGenerator(
                           PageNotfPref(
                               peopleId = replier.id,
                               notfLevel = notfPref.notfLevel,
-                              pageId = Some(page.id))))
+                              pageId = Some(pageMeta.pageId))))
           }
         }
       }.toSet
@@ -438,8 +442,8 @@ case class NotificationGenerator(
 
     val wantSilencePatIds = MutHashSet[PatId]()
 
-    makeNewPostSubscrNotfFor(
-          allPrefsOnPage, newPost, isEmbDiscFirstReply, minNotfLevel,
+    _makePostSubscrNotfFor(
+          allPrefsOnPage, notfType, newPost, isEmbDiscFirstReply, minNotfLevel,
           memberIdsHandled, wantSilencePatIds,
           sentFrom = sentFrom)
 
@@ -447,18 +451,18 @@ case class NotificationGenerator(
     // — only page members and people (like moderators) who explicitly follow
     // this page, get notified. — So, forum admins won't get notified about
     // new private group chats for example (unless they get added).
-    if (page.meta.pageType.isPrivateGroupTalk)
+    if (pageMeta.pageType.isPrivateGroupTalk)
       return ()
 
     // ----- Ancestor categories [subcats]
 
-    val ancCats = tx.loadCategoryPathRootLast(page.categoryId, inclSelfFirst = true)
+    val ancCats = tx.loadCategoryPathRootLast(pageMeta.categoryId, inclSelfFirst = true)
     for (ancCat <- ancCats ; if !ancCat.isRoot) {
       val notfPrefsOnCategory: Seq[PageNotfPref] = tx.loadPageNotfPrefsOnCategory(ancCat.id)
-      makeNewPostSubscrNotfFor(
+      _makePostSubscrNotfFor(
             addWhy(notfPrefsOnCategory,
                   s"You're subscribed to category '${ancCat.name}'"),
-            newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled,
+            notfType, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled,
             wantSilencePatIds,
             sentFrom = sentFrom)
     }
@@ -466,9 +470,9 @@ case class NotificationGenerator(
     // ----- Tags
 
     // notPrefsOnTags = ... (later)
-    //makeNewPostSubscrNotfFor(
+    //_makePostSubscrNotfFor(
     //     addWhy(notPrefsOnTags, "why"),
-    //     NotificationType.PostTagged, newPost, isEmbCommFirstReply,
+    //     NotfType.PostTagged — no? just notfType insead?, newPost, isEmbCommFirstReply,
     //     // Categories are more specific than tags, so if a category is muted,
     //     // then, still don't gen any notfs because of subscribed to any tag.
     //     wantSilencePatIds, ...)
@@ -476,9 +480,9 @@ case class NotificationGenerator(
     // ----- Whole site
 
     val notfPrefsOnSite = tx.loadPageNotfPrefsOnSite()
-    makeNewPostSubscrNotfFor(
+    _makePostSubscrNotfFor(
           addWhy(notfPrefsOnSite, "You've subscribed to the whole site"),
-          newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled,
+          notfType, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled,
           wantSilencePatIds,
           sentFrom = sentFrom)
   }
@@ -536,6 +540,10 @@ case class NotificationGenerator(
         sendTo: Participant,
         sentFrom: Option[Participant] = None, // default is post author
         minNotfLevel: NotfLevel = NotfLevel.Hushed): Unit = {
+
+    // Don't gen notfs e.g. if sbd assigns a task to themself.
+    if (sentFrom.map(_.id) is sendTo.id)
+      return
 
     // legacy variable names CLEAN_UP but not now
     val toUserMaybeGroup = sendTo match {
@@ -614,7 +622,7 @@ case class NotificationGenerator(
         }
 
         // Generate a notf to the group, so will appear in its user profile.
-        genOneNotfMaybe(
+        _genOneNotfMaybe(
               notfType,
               to = toGroup,
               from = sentFrom,
@@ -692,7 +700,7 @@ case class NotificationGenerator(
       val skipBecauseHushed = (usersMoreSpecificLevel is NotfLevel.Hushed) &&
               notfType == NotificationType.IndirectReply
       if (!skipBecauseMuted && !skipBecauseHushed) {
-        genOneNotfMaybe(
+        _genOneNotfMaybe(
               notfType,
               to = toPat,
               from = sentFrom,
@@ -706,8 +714,8 @@ case class NotificationGenerator(
     * subscribed to 1) a *page*. Or those who have subscribed to pages in 2) a *category*.
     * Or to 3) pages tagged with some certain tag(s). Or 4) *the whole site*.
     */
-  private def makeNewPostSubscrNotfFor(
-        notfPrefs: Seq[PageNotfPrefAndWhy], newPost: Post,
+  private def _makePostSubscrNotfFor(
+        notfPrefs: Seq[PageNotfPrefAndWhy], notfType: NotfType, aboutPost: Post,
         isEmbDiscFirstReply: Bo, minNotfLevel: NotfLevel,
         memberIdsHandled: MutSet[PatId], wantSilencePatIds: MutSet[PatId],
         sentFrom: Pat): U = {
@@ -717,10 +725,10 @@ case class NotificationGenerator(
     val wantSilenceHereafterPatIds = mutable.HashSet[MemberId]()
 
     // Sync w [2069RSK25].  Test: [2069RSK25-B]
-    val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF2"
+    val pageMeta = tx.loadPageMeta(aboutPost.pageId) getOrDie "TyE05WKSJF2"
     def maySeePost(ppt: Participant): Bo = {
       val (maySee, whyNot) = dao.maySeePost(
-          newPost, Some(ppt), maySeeUnlistedPages = true)(tx)
+          aboutPost, Some(ppt), maySeeUnlistedPages = true)(tx)
       maySee.may
     }
 
@@ -822,16 +830,16 @@ case class NotificationGenerator(
         return ()
       }
 
-      ANON_UNIMPL // excl real author id — newPost.createdById might be an anon.
-      if (member.id == newPost.createdById)
+      ANON_UNIMPL // excl real author id — aboutPost.createdById might be an anon.
+      if (member.id == aboutPost.createdById)
         return ()
 
       UX; COULD // NotificationType.NewPage instead? Especially if: isEmbDiscFirstReply.
-      genOneNotfMaybe(
-            NotificationType.NewPost,
+      _genOneNotfMaybe(
+            notfType,
             from = Some(sentFrom),
             to = member,
-            about = newPost,
+            about = aboutPost,
             generatedWhy = notfPref.why)
     }
 
@@ -842,8 +850,9 @@ case class NotificationGenerator(
 
   /** Creates and deletes mentions, if '@username's are added/removed by this edit.
     */
-  def generateForEdits(oldPost: Post, newPost: Post, anyNewSourceAndHtml: Option[SourceAndHtml])
+  def generateForEdits(oldPost: Post, editedPost: Post, anyNewSourceAndHtml: Opt[SourceAndHtml])
         : Notifications = {
+    val newPost = editedPost ; RENAME
 
     BUG; SHOULD; REFACTOR // [5BKR03] Load users already mentioned — from the database, not
     // the old post text. Someone might have changed hens username, so looking at the old post text,
@@ -1009,10 +1018,50 @@ case class NotificationGenerator(
   }
 
 
+  def generateForAssignees(
+          assigneesAdded: Iterable[Pat], assigneesRemoved: Iterable[Pat], postBef: Post,
+          changedBy: Pat): Notifications = {
+
+    val pageMeta = tx.loadThePageMeta(postBef.pageId)
+    val postAuthor = tx.loadTheParticipant(postBef.createdById) // [post_authors]
+    val anyCatId = pageMeta.categoryId
+
+    for (pat <- assigneesAdded) {
+      _makeAboutPostNotfs(
+            NotfType.Assigned, about = postBef, inCategoryId = anyCatId,
+            sendTo = pat, sentFrom = Some(changedBy))
+    }
+
+    for (pat <- assigneesRemoved) {
+      _makeAboutPostNotfs(
+            NotfType.Unassigned, about = postBef, inCategoryId = anyCatId,
+            sendTo = pat, sentFrom = Some(changedBy))
+    }
+
+    // Notify the post author.  (_makeAboutPostNotfs() won't send dupl notfs,
+    // and won't notify people who can (no longer) see the page.)
+    _makeAboutPostNotfs(
+          NotfType.AssigneesChanged, about = postBef, inCategoryId = anyCatId,
+          sendTo = postAuthor, sentFrom = Some(changedBy))
+
+    // Does it make sense to notify the previous assignees, about more assignees
+    // now having been added or removed? Let's wait, not important — not often
+    // more than one person is assigned.  [notf_assignees_about_another]
+
+    // Notify page/category subscribers and page members.
+    val pageMemberIds: Set[PatId] = tx.loadMessageMembers(postBef.pageId)
+    _genWatchingSomethingNotfs(
+          NotfType.AssigneesChanged, pageMeta, about = postBef,
+          pageMemberIds = pageMemberIds, sentFrom = changedBy)
+
+    generatedNotifications
+  }
+
+
   /**
     * @param from — From who. Default is ${about.createdById}.
     */
-  private def genOneNotfMaybe(
+  private def _genOneNotfMaybe(
         notfType: NotfType,
         to: Pat,
         from: Opt[Pat] = None,

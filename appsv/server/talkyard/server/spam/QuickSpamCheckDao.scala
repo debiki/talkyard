@@ -33,6 +33,9 @@ trait QuickSpamCheckDao {
   def quickCheckIfSpamThenThrow(who: Who, textAndHtml: TextAndHtml,
         spamRelReqStuff: SpamRelReqStuff): Unit = {
 
+    if (!globals.spamChecker.spamChecksEnabled)
+      return
+
     val user = getParticipant(who.id) getOrElse {
       throwForbidden("EdE5FK7X2", s"Unknown user: $siteId:${who.id}")
     }

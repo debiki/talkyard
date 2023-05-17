@@ -278,10 +278,23 @@ class SiteTpi protected (
   def companyShortName: String = debikiRequest.siteSettings.orgShortName
 
 
+
+  def anyGoogleAnalytics4Script: St = {
+    val tagId = debikiRequest.siteSettings.googleUniversalAnalyticsTrackingId
+    // Google Analytics 4 tag ids always start with "G-", but old univ analy with "UA-"?
+    // So ignore "UA-".
+    DO_AFTER // 2023-07-01: Remove the "UA-" test, because after that date, Google
+    // won't collect any more Univ Anal data anyway (only Analytics 4 works, thereafter).
+    if (tagId.isEmpty || tagId.startsWith("UA-")) ""
+    else views.html.scripts.googleAnalytics4(tagId).body
+  }
+
   def anyGoogleUniversalAnalyticsScript: String = {
     val trackingId = debikiRequest.siteSettings.googleUniversalAnalyticsTrackingId
-    if (trackingId.nonEmpty) views.html.googleAnalytics(trackingId).body
-    else ""
+    // Google Analytics 4 tag ids always start with "G-"? But old univ analy with "UA-"?
+    // This is for UA, so ignore any "G-".
+    if (trackingId.isEmpty || trackingId.startsWith("G-")) ""
+    else views.html.googleAnalytics(trackingId).body
   }
 
   def isRtlLanguage: Boolean = {

@@ -2120,7 +2120,11 @@ function watchbar_handleNotification(watchbar: Watchbar, notf: Notification) {
   }
   if (notf.type === NotificationType.DirectReply
         || notf.type === NotificationType.IndirectReply
-        || notf.type === NotificationType.Mention) {
+        || notf.type === NotificationType.Mention
+        || notf.type === NotificationType.Assigned
+        || notf.type === NotificationType.Unassigned
+        // But skip OneLikeVote, not that interesting, right.
+        ) {
     // Fix later. Like so?
     // If topic not in watchbar, add it to the appropriate section (chat, messages, or recent).
     // Then bump the notfsToMe or notfsToMany count, for the WatchbarTopic,
@@ -2128,7 +2132,8 @@ function watchbar_handleNotification(watchbar: Watchbar, notf: Notification) {
     // Or do this elsewhere? [4YK2E5] Probably better to do here? because here we'll get notfs
     // also about pages not currently listed in the watchbar.
   }
-  if (notf.type === NotificationType.PostTagged) {
+  if (notf.type === NotificationType.PostTagged
+        || notf.type === NotificationType.AssigneesChanged) {
     // Skip? A notification should be enough, needn't appear in the watcbar _too_?
     // *Or* add it to a new Events or Watching section?
   }
