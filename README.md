@@ -45,7 +45,7 @@ Or use Talkyard for customer support, or for schools and students helping each o
 
 How does Talkyard compare with
 StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus?
-— <a href="https://www.talkyard.io/compared-with">Find out here.</a>
+— <a href="https://business.talkyard.io/compare/">Find out here</a> (<small>oops, link now fixed. Was browken</small>)
 
 
 Using Talkyard
