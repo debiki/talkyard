@@ -19,8 +19,8 @@ Compile / dependencyOverrides ++= {
       "com.google.j2objc" % "j2objc-annotations" % "1.3",
       "com.lambdaworks" % "scrypt" % "1.4.0",
       "com.sun.mail" % "javax.mail" % "1.5.6",
-      "com.typesafe.play" % "play-functional_2.12" % "2.9.3",
-      "com.typesafe.play" % "play-json_2.12" % "2.9.3",
+      "com.typesafe.play" % "play-functional_2.12" % "2.9.4",
+      "com.typesafe.play" % "play-json_2.12" % "2.9.4",
       "commons-beanutils" % "commons-beanutils" % "1.9.4",
       "commons-codec" % "commons-codec" % "1.15",
       "commons-collections" % "commons-collections" % "3.2.2",
@@ -31,14 +31,14 @@ Compile / dependencyOverrides ++= {
       "javax.activation" % "activation" % "1.1",
       "nu.validator.htmlparser" % "htmlparser" % "1.4",
       "org.apache.commons" % "commons-email" % "1.5",
-      "org.apache.tika" % "tika-core" % "2.6.0",
+      "org.apache.tika" % "tika-core" % "2.8.0",
       "org.checkerframework" % "checker-qual" % "3.12.0",
       "org.flywaydb" % "flyway-core" % "5.0.7",
       "org.owasp.encoder" % "encoder" % "1.2.3",
-      "org.postgresql" % "postgresql" % "42.4.2",
-      "org.scalactic" % "scalactic_2.12" % "3.2.14",
-      "org.slf4j" % "slf4j-api" % "2.0.3"
+      "org.postgresql" % "postgresql" % "42.5.4",
+      "org.scalactic" % "scalactic_2.12" % "3.2.16",
+      "org.slf4j" % "slf4j-api" % "2.0.7"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH cd2996bd71e22ca7abedb8fafa6282c133d37a91
+// LIBRARY_DEPENDENCIES_HASH de61e3cf1ce54f7a9e15584e98c87633c9b285b9
