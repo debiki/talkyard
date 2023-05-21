@@ -58,7 +58,7 @@ object RenderPreviewResult {
 
 
 class RenderPreviewParams(
-  val siteId: SiteId,
+  val site: SiteIdHostnames,
   val fromPageId: PageId,
   val unsafeUri: j_URI,
   val inline: Bo,
@@ -67,6 +67,7 @@ class RenderPreviewParams(
   val loadPreviewFromDb: St => Opt[LinkPreview],
   val savePreviewInDb: LinkPreview => U) {
 
+  def siteId: SiteId = site.id
   def unsafeUrl: St = unsafeUri.toString
 }
 
@@ -131,7 +132,7 @@ object LinkPreviewRenderer {
     *
     * And adds 'noopener' if target is _blank.
     */
-  def tweakLinks(htmlSt: St, toHttps: Bo, uploadsUrlCdnPrefix: Opt[St],
+  def tweakLinks(htmlSt: St, toHttps: Bo, uploadsUrlUgcPrefix: Opt[St],
           followLinksSkipNoopener: Bo = false,
           siteId_unused: SiteId, sitePubId_unused: PubSiteId): St = {
     // Tests: LinkPreviewRendererSpec
@@ -146,7 +147,7 @@ object LinkPreviewRenderer {
       if (toHttps && tweakedUrl.startsWith("http:")) {
         tweakedUrl = "https" + tweakedUrl.drop("http".length)
       }
-      tweakedUrl = uploadsUrlCdnPrefix match {
+      tweakedUrl = uploadsUrlUgcPrefix match {
         case None => tweakedUrl
         case Some(prefix) =>
           uplLinkRegex.replaceAllIn(tweakedUrl, s"$prefix$$1")
@@ -306,6 +307,10 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
           }
       }
 
+      val uploadsUrlUgcPrefix =
+            globals.anyUgcOrCdnOriginFor(urlAndFns.site)
+                .map(_ + talkyard.server.UploadsUrlBasePath)
+
       // Don't link to insecure HTTP resources from safe HTTPS pages,  [no_insec_emb]
       // e.g. don't link to <img src="http://...">. Change to https instead — even if
       // the image/whatever then breaks; security is more important, plus, browsers
@@ -315,7 +320,9 @@ abstract class LinkPreviewRenderEngine(globals: Globals) extends TyLogging {  CL
       val safeHtmlOkLinks = LinkPreviewRenderer.tweakLinks(
             safeHtmlMaybeBadLinks,
             toHttps = globals.secure,
-            uploadsUrlCdnPrefix = globals.config.cdn.uploadsUrlPrefix,
+            // What about embedded comments — if there's no CDN, then, shouldn't we
+            // incl the site origin, so the links won't be relative the blog? UI BUG?
+            uploadsUrlUgcPrefix = uploadsUrlUgcPrefix,
             followLinksSkipNoopener = followLinksSkipNoopener,
             siteId_unused = urlAndFns.siteId,
             sitePubId_unused = "") // later
@@ -415,7 +422,7 @@ abstract class InstantLinkPrevwRendrEng(globals: Globals)
   */
 class LinkPreviewRenderer(
   val globals: Globals,
-  val siteId: SiteId,
+  val site: SiteIdHostnames,
   val mayHttpFetch: Boolean,
   val requesterId: UserId) extends TyLogging {
 
@@ -426,14 +433,14 @@ class LinkPreviewRenderer(
 
   COULD_OPTIMIZE // These are, or can be made thread safe — no need to recreate all the time.
   private val engines = Seq[LinkPreviewRenderEngine](
-    new InternalLinkPrevwRendrEng(globals, siteId),
+    new InternalLinkPrevwRendrEng(globals, site),
     new ImagePrevwRendrEng(globals),
     new VideoPrevwRendrEng(globals),
     new GiphyPrevwRendrEng(globals),
     new YouTubePrevwRendrEng(globals),
     new TelegramPrevwRendrEng(globals),
-    new TikTokPrevwRendrEng(globals, siteId, mayHttpFetch),
-    new TwitterPrevwRendrEng(globals, siteId, mayHttpFetch),
+    new TikTokPrevwRendrEng(globals, site.id, mayHttpFetch),
+    new TwitterPrevwRendrEng(globals, site.id, mayHttpFetch),
 
     // After 2020-10-24, Facebook requires an API access key to link to Facebook
     // via OEmbed. Short of time, will need to disable Facebook   [fb_insta_dis]
@@ -441,11 +448,11 @@ class LinkPreviewRenderer(
     // See https://developers.facebook.com/docs/plugins/oembed
     // and https://developers.facebook.com/docs/instagram/oembed
     /*
-    new FacebookPostPrevwRendrEng(globals, siteId, mayHttpFetch),
-    new FacebookVideoPrevwRendrEng(globals, siteId, mayHttpFetch),
-    new InstagramPrevwRendrEng(globals, siteId, mayHttpFetch),
+    new FacebookPostPrevwRendrEng(globals, site.id, mayHttpFetch),
+    new FacebookVideoPrevwRendrEng(globals, site.id, mayHttpFetch),
+    new InstagramPrevwRendrEng(globals, site.id, mayHttpFetch),
     */
-    new RedditPrevwRendrEng(globals, siteId, mayHttpFetch),
+    new RedditPrevwRendrEng(globals, site.id, mayHttpFetch),
     )
 
   def fetchRenderSanitize(uri: j_URI, inline: Bo)
@@ -456,7 +463,7 @@ class LinkPreviewRenderer(
     def loadPreviewFromDatabase(downloadUrl: String): Option[LinkPreview] = {
       // Don't create a write tx — could cause deadlocks, because unfortunately
       // we might be inside a tx already: [nashorn_in_tx] (will fix later)
-      val siteDao = globals.siteDao(siteId)
+      val siteDao = globals.siteDao(site.id)
       siteDao.readTx { tx =>
         tx.loadLinkPreviewByUrl(linkUrl = url, downloadUrl = downloadUrl)
       }
@@ -465,7 +472,7 @@ class LinkPreviewRenderer(
     for (engine <- engines) {
       if (engine.handles(uri, inline = inline)) {
         val args = new RenderPreviewParams(
-              siteId = siteId,
+              site = site,
               fromPageId = NoPageId, // later  [ln_pv_az]
               unsafeUri = uri,
               inline = inline,
@@ -484,7 +491,7 @@ class LinkPreviewRenderer(
   private def savePreviewInDatabase(linkPreview: LinkPreview): Unit = {
     dieIf(!mayHttpFetch, "TyE305KSHW2",
           s"Trying to save link preview, when may not fetch: ${linkPreview.linkUrl}")
-    val siteDao = globals.siteDao(siteId)
+    val siteDao = globals.siteDao(site.id)
     siteDao.writeTx { (tx, _) =>
       COULD // refresh pages that include this link preview, add to [staleStuff].
       tx.upsertLinkPreview(linkPreview)

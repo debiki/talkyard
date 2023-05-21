@@ -116,14 +116,17 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         and param_comt_order_c = ?
         and param_comt_nesting_c = ?
         and param_width_layout_c = ?
+        and param_theme_id_c_u = 2
         and param_is_embedded_c = ?
-        and param_origin_c = ?
-        and param_cdn_origin_c = ?
+        and param_origin_or_empty_c = ?
+        and param_cdn_origin_or_empty_c = ?
+        and param_ugc_origin_or_empty_c = ?
       """
     val values = List(siteId.asAnyRef, pageId.asAnyRef,
           params.comtOrder.toInt.asAnyRef, params.comtNesting.asAnyRef,
           params.widthLayout.toInt.asAnyRef,
-          params.isEmbedded.asAnyRef, params.embeddedOriginOrEmpty, params.cdnOriginOrEmpty)
+          params.isEmbedded.asAnyRef, params.embeddedOriginOrEmpty,
+          params.cdnOriginOrEmpty, params.ugcOriginOrEmpty)
     runQueryFindOneOrNone(query, values, rs => {
       val cachedHtml = rs.getString("cached_html_c")
       val cachedVersion = getCachedPageVersion(rs, Some(params))
@@ -144,9 +147,11 @@ trait PagesSiteDaoMixin extends SiteTransaction {
               param_comt_order_c,
               param_comt_nesting_c,
               param_width_layout_c,
+              param_theme_id_c_u,
               param_is_embedded_c,
-              param_origin_c,
-              param_cdn_origin_c,
+              param_origin_or_empty_c,
+              param_cdn_origin_or_empty_c,
+              param_ugc_origin_or_empty_c,
               cached_site_version_c,
               cached_page_version_c,
               cached_app_version_c,
@@ -154,16 +159,18 @@ trait PagesSiteDaoMixin extends SiteTransaction {
               updated_at_c,
               cached_store_json_c,
               cached_html_c)
-          values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now_utc(), ?::jsonb, ?)
+          values (?, ?, ?, ?, ?, 2, ?, ?, ?, ?, ?, ?, ?, ?, now_utc(), ?::jsonb, ?)
           on conflict (
               site_id_c,
               page_id_c,
               param_comt_order_c,
               param_comt_nesting_c,
               param_width_layout_c,
+              param_theme_id_c_u,
               param_is_embedded_c,
-              param_origin_c,
-              param_cdn_origin_c)
+              param_origin_or_empty_c,
+              param_cdn_origin_or_empty_c,
+              param_ugc_origin_or_empty_c)
           do update set
               cached_site_version_c = excluded.cached_site_version_c,
               cached_page_version_c = excluded.cached_page_version_c,
@@ -179,7 +186,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
       siteId.asAnyRef, pageId,
       params.comtOrder.toInt.asAnyRef, params.comtNesting.asAnyRef,
       params.widthLayout.toInt.asAnyRef, params.isEmbedded.asAnyRef,
-      params.embeddedOriginOrEmpty, params.cdnOriginOrEmpty,
+      params.embeddedOriginOrEmpty, params.cdnOriginOrEmpty, params.ugcOriginOrEmpty,
       version.siteVersion.asAnyRef, version.pageVersion.asAnyRef, version.appVersion,
       version.storeJsonHash, reactStorejsonString, html))
   }
@@ -194,22 +201,32 @@ trait PagesSiteDaoMixin extends SiteTransaction {
               param_comt_order_c = ? and
               param_comt_nesting_c = ? and
               param_width_layout_c = ? and
+              param_theme_id_c_u = 2 and
               param_is_embedded_c = ? and
-              param_origin_c = ? and
-              param_cdn_origin_c = ? and
-              -- Include these too, so we won't delete, if a fresh cache entry has
-              -- just been added (a race).  [rerndr_stale_q]
+              param_origin_or_empty_c = ? and
+
+              -- We didn't look at the CDN params when loading pages to rerender. So,
+              -- ignore them now too — delete all old versions [regardless_of_cdn] address.
+              -- Ignore:  param_cdn_origin_or_empty_c
+              --    and:  param_ugc_origin_or_empty_c
+
+              -- Compare with cached_* too, so we won't delete, if a fresh cache entry has
+              -- just been added (a race):  [rerndr_stale_q]
+              --
               cached_site_version_c = ? and
-              cached_page_version_c = ? and
+              -- We know that version.pageVersion is out-of-date, [stale_version_check]
+              -- and if there happens to be many old stale rows (can that happen?)
+              -- why not delete all of them? (so use `<=`)
+              cached_page_version_c <= ? and
               cached_app_version_c = ? and
               cached_store_json_hash_c = ?  """
 
     val ps = version.renderParams
-    runUpdateSingleRow(statement, List(
+    runUpdate(statement, List(
           siteId.asAnyRef, pageId,
           ps.comtOrder.toInt.asAnyRef, ps.comtNesting.asAnyRef,
           ps.widthLayout.toInt.asAnyRef, ps.isEmbedded.asAnyRef,
-          ps.embeddedOriginOrEmpty, ps.cdnOriginOrEmpty,
+          ps.embeddedOriginOrEmpty,
           version.siteVersion.asAnyRef, version.pageVersion.asAnyRef, version.appVersion,
           version.storeJsonHash))
   }

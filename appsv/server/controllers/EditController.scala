@@ -286,8 +286,9 @@ class EditController @Inject()(cc: ControllerComponents, edContext: TyContext)
 
     CHECK_AUTHN_STRENGTH
 
+    val siteInclHostnames: SiteIdHostnames = request.dao.theSite()
     val renderer = new LinkPreviewRenderer(
-          globals, siteId = siteId, mayHttpFetch = true,
+          globals, site = siteInclHostnames, mayHttpFetch = true,
           requesterId = requesterOrUnknown.id)
 
     val response = renderer.fetchRenderSanitize(uri, inline = inline).transform(

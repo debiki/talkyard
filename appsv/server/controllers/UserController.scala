@@ -557,6 +557,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
           die("TyE26UKVW4")
       })
 
+      val anyPicUrl = member.mediumAvatar.map(request.ugcOrCdnOrSiteOrigin + _.url)
+
       Json.obj(
         "fullName" -> JsStringOrNull(member.fullName),
         "username" -> JsString(member.username),
@@ -567,7 +569,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: TyContext)
         "websiteUrl" -> JsStringOrNull(member.website),
         "location" -> JsStringOrNull(member.country),
         // Incl in Uploads links archieve instead?
-        "avatarImageUrl" -> JsStringOrNull(member.mediumAvatar.map(request.cdnOrSiteOrigin + _.url)),
+        "avatarImageUrl" -> JsStringOrNull(anyPicUrl),
         "trustLevel" -> JsString(member.effectiveTrustLevel.toString),
         "identities" -> identitiesJson,
         "statistics" -> statsJson,

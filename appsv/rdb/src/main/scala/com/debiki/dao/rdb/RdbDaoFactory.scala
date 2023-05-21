@@ -27,7 +27,6 @@ class RdbDaoFactory(
   val db: Rdb,
   val migrations: ScalaBasedDatabaseMigrations,
   val getCurrentTime: () => When,
-  val cdnOrigin: Option[String],
   val isTest: Boolean = false) extends DbDaoFactory {
 
 

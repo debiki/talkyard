@@ -404,7 +404,7 @@ class SiteDao(
   def theSiteIdsOrigins(): SiteIdOrigins = {
     val site = theSite()
     val (_, siteOrigin) = theSiteNameAndOriginImpl(site)
-    val uploadsOrigin = globals.anyCdnOrigin.getOrElse(siteOrigin)
+    val uploadsOrigin = globals.anyUgcOrCdnOriginFor(site) getOrElse siteOrigin
     SiteIdOrigins(
       siteId = site.id,
       pubId = site.pubId,

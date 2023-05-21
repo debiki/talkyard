@@ -202,9 +202,9 @@ object Rdb {
   }
 
   def getOptString(rs: js.ResultSet, column: String): Option[String] =
-    getOptionalStringNotEmpty(rs, column)
+    getOptStringEmptyAsNone(rs, column)
 
-  def getOptionalStringNotEmpty(rs: js.ResultSet, column: String): Option[String] = {
+  def getOptStringEmptyAsNone(rs: js.ResultSet, column: String): Option[String] = {
     val value = Option(rs.getString(column))
     if (value.contains("")) None else value
   }

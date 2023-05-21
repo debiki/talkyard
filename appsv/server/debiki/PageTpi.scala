@@ -198,9 +198,12 @@ class SiteTpi protected (
 
           "testNowMs" -> JsLongOrNull(anyTestNowMs),   // or undef
           "minMaxJs" -> minMaxJs,
-          "debugOrigin" -> s"$httpsColonOrEmpty//$serverAddress", // [INLTAGORIG]
+          "debugOrigin" -> s"$httpsColonOrEmpty//$siteAdr", // [INLTAGORIG]
           "cdnOriginOrEmpty" -> JsString(cdnOrigin.getOrElse("")),
+          // RENAME to cdnOrSiteOrigin ?
           "cdnOrServerOrigin" -> cdnOrServerOrigin, // for admin page embedded comments code
+          // UGC origin not needed, there's uploadsUrlPrefix instead.
+          // So kip:  "ugcOrCdnOrSiteOrigin" -> ugcOrCdnOrSiteOrigin
           "pubSiteIdOrigin" -> pubSiteIdOrigin,
           "isInLoginWindow" -> isInLoginWindow, // @isInLoginWindowBoolStr,
           "isInLoginPopup" -> isInLoginPopup,  // @isInLoginPopupBoolStr,
@@ -266,8 +269,8 @@ class SiteTpi protected (
     */
   def httpsColonOrEmpty: String = if (globals.secure) "https:" else ""
 
-  def hostname: String = debikiRequest.host
 
+  /** For templates. */
   def companyDomain: String = {
     debikiRequest.canonicalHostname.getOrElse(
       globals.siteByIdHostnamePort(debikiRequest.siteId))
@@ -279,6 +282,7 @@ class SiteTpi protected (
 
 
 
+  /** For templates. */
   def anyGoogleAnalytics4Script: St = {
     val tagId = debikiRequest.siteSettings.googleUniversalAnalyticsTrackingId
     // Google Analytics 4 tag ids always start with "G-", but old univ analy with "UA-"?
@@ -289,6 +293,7 @@ class SiteTpi protected (
     else views.html.scripts.googleAnalytics4(tagId).body
   }
 
+  /** For templates. */
   def anyGoogleUniversalAnalyticsScript: String = {
     val trackingId = debikiRequest.siteSettings.googleUniversalAnalyticsTrackingId
     // Google Analytics 4 tag ids always start with "G-"? But old univ analy with "UA-"?
@@ -297,17 +302,20 @@ class SiteTpi protected (
     else views.html.googleAnalytics(trackingId).body
   }
 
-  def isRtlLanguage: Boolean = {
+  private def isRtlLanguage: Boolean = {
     // For now, just inline this knowledge here. Refactor-move elsewhere later. [5JUKQR2]
     // The admin area is English only — so, no RTL, there.
     siteSettings.languageCode == "he_IL" && !isAdminArea
   }
 
+  /** For templates. */
   def dotRtl: String = if (isRtlLanguage) ".rtl" else ""
 
+  /** For templates. */
   def minMaxCss: String = PageTpi.minMaxCss
   def minMaxJs: String = PageTpi.minMaxJs
 
+  /** For templates. */
   def anySiteCustomStylesBundle(bundleName: String): xml.NodeSeq = {
 
     val (nameNoSuffix, suffix) = bundleName match {
@@ -325,7 +333,7 @@ class SiteTpi protected (
       }
       val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
       <link rel="stylesheet" href={
-        cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(pubSiteId, fileName).url
+        assetsUgcOrCdnOrSiteOrigin + routes.SiteAssetBundlesController.customAsset(pubSiteId, fileName).url
       }/>
     }
     catch {
@@ -342,58 +350,69 @@ class SiteTpi protected (
     }
   }
 
+  /** For templates. */
   def anySiteCustomScriptBundle(): xml.NodeSeq = {
     val version = debikiRequest.dao.getAssetBundleVersion("scripts", "js") getOrElse {
       return <span></span>
     }
     val fileName = assetBundleFileName("scripts", version, "js")
     <script src={
-      cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(pubSiteId, fileName).url
+      assetsUgcOrCdnOrSiteOrigin + routes.SiteAssetBundlesController.customAsset(pubSiteId, fileName).url
     }></script>
   }
 
   /** The initial data in the React-Flux model, a.k.a. store. */
-  def reactStoreSafeJsonString: String =
+  protected def reactStoreSafeJsonString: String =
     json getOrElse {
       debikiRequest.dao.jsonMaker.makeSpecialPageJson(
             debikiRequest, inclCatsTagsSects_unimpl = inclCatsTagsSects_unimpl).toString()
     }
 
 
+  /** For templates. */
   def assetUrl(fileName: String): String = assetUrlPrefix + fileName
 
-  def assetUrlPrefix: String =
+  private def assetUrlPrefix: String =
     s"$cdnOrServerOrigin/-/assets/${globals.talkyardVersion}/"   // sync with Nginx [NGXSTC]
 
 
+  /** For templates. */
   def mediaUrl(fileName: String): String = mediaUrlPrefix + fileName
 
   // (No automatic asset versioning here — instead, do manually: append a digit,
   // like 2, 3, 4..., to the sub folders in module ty-media, if modifying
   // images etc there, to change the URL. Only needed every few years? anyway.)
-  def mediaUrlPrefix: String =
+  private def mediaUrlPrefix: String =
     s"$cdnOrServerOrigin/-/media/"   // sync with Nginx [NGXSTC]
 
+  /** For templates */
   def fontUrl(fileName: St): St =
     s"$cdnOrServerOrigin/-/fonts/$fileName"   // sync w Nginx [NGXSTC]
 
-  def uploadsUrlPrefix: St =
-    cdnOrServerOrigin + talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
+  // Or construct client side instead, given UGC & CDN & pub site id?
+  private def uploadsUrlPrefix: St =
+    ugcOrCdnOrSiteOrigin + talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
 
-  def pubSiteIdOrigin: St =
+  private def pubSiteIdOrigin: St =
     globals.siteByPubIdOrigin(pubSiteId)
 
   /** Even if there's no CDN, we use the full server address so works also in
     * embedded comments iframes.
     */
-  def cdnOrServerOrigin: St =
-    globals.cdnOrSiteOrigin(serverAddress)
+  private def cdnOrServerOrigin: St =
+    globals.cdnOrSiteOrigin(siteAdr)
 
-  def cdnOrigin: Opt[St] =
+  /** Likewise for UGC (user generated content), see cdnOrServerOrigin. */
+  private def ugcOrCdnOrSiteOrigin: St =
+    globals.ugcOrCdnOrSiteOriginFor(site, siteAdr = siteAdr)
+
+  private def assetsUgcOrCdnOrSiteOrigin: St =
+    globals.ugcOrCdnOrSiteOriginFor(site, siteAdr = siteAdr, forAssetsByAdmins = true)
+
+  private def cdnOrigin: Opt[St] =
     globals.anyCdnOrigin
 
-  RENAME // to siteAdr
-  def serverAddress: String = debikiRequest.request.host
+  private def siteAdr: St = debikiRequest.request.host
 
 }
 

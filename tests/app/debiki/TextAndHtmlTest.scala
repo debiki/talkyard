@@ -233,6 +233,8 @@ class TextAndHtmlTest extends AnyFreeSpec with must.Matchers {
       val pubId = "123abc"
       val canonicalHostnameStr = Some(dummyHostname)
       val allHostnames: Seq[String] = canonicalHostnameStr.toSeq
+      val status = SiteStatus.Active
+      val featureFlags = ""
     }
 
     val maker: TextAndHtmlMaker = new TextAndHtmlMaker(site, nashorn = null)

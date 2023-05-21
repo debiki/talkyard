@@ -322,25 +322,30 @@ trait RenderedPageHtmlDao {
     // But what'll happen with  comtNesting!  Combinatorial explosion.  Hmm!
     // Maybe it'll be ok if allowing a fixed nr, say 1 (flat), 2 (SO, FB), 3 (hmm) and inf?
     //
+    val anyUgcOrigin = globals.anyUgcOriginFor(theSite())
     for (comtOrder <- PostSortOrder.All) {
-      removeOneSortOrder(origin, sitePageId, comtOrder)
+      removeOneSortOrder(
+            origin = origin, anyUgcOrigin = anyUgcOrigin, sitePageId, comtOrder)
     }
   }
 
 
-  private def removeOneSortOrder(origin: String, sitePageId: SitePageId, comtOrder: PostSortOrder): U = {
+  private def removeOneSortOrder(origin: St, anyUgcOrigin: Opt[St], sitePageId: SitePageId,
+          comtOrder: PostSortOrder): U = {
     // A bit dupl code. [2FKBJAL3]
     var renderParams = PageRenderParams(
-      comtOrder,
-      // comtNesting,  — later
-      widthLayout = WidthLayout.Tiny,
-      isEmbedded = false,
-      origin = origin,
-      // Changing cdn origin requires restart, then mem cache disappears. So ok reuse anyCdnOrigin here.
-      anyCdnOrigin = globals.anyCdnOrigin,
-      // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
-      anyPageRoot = None,
-      anyPageQuery = None)
+          comtOrder,
+          // comtNesting,  — later
+          widthLayout = WidthLayout.Tiny,
+          isEmbedded = false,
+          origin = origin,
+          // Changing cdn origin requires restart. Then the mem cache disappears.
+          // So, ok to assume the CDN and UGC origins haven't changed here.
+          anyCdnOrigin = globals.anyCdnOrigin,
+          anyUgcOrigin = anyUgcOrigin,
+          // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
+          anyPageRoot = None,
+          anyPageQuery = None)
 
     memCache.remove(renderedPageKey(sitePageId, renderParams))
 

@@ -173,6 +173,7 @@ class JsonMaker(dao: SiteDao) {
       "isEmbedded" -> false,
       "embeddedOriginOrEmpty" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
+      // anyUgcOrigin — not yet needed; the site is empty.
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id),  // LATER remove in Prod mode [5UKFBQW2]
@@ -506,6 +507,7 @@ class JsonMaker(dao: SiteDao) {
       // the Talkyard server origin in the links. [REMOTEORIGIN] [60MRKDJ56]
       "embeddedOriginOrEmpty" -> renderParams.embeddedOriginOrEmpty,
       "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
+      "anyUgcOrigin" -> JsStringOrNull(globals.anyUgcOriginFor(site)),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
@@ -570,6 +572,7 @@ class JsonMaker(dao: SiteDao) {
       "isEmbedded" -> false,  // what ??? Yes, if in emb editor iframe
       "embeddedOriginOrEmpty" -> "",  // what ??? but not in use, instead: [60MRKDJ56]
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
+      "anyUgcOrigin" -> JsStringOrNull(globals.anyUgcOriginFor(site)),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]

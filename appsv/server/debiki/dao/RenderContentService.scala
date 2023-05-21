@@ -239,6 +239,7 @@ class RenderContentActor(
       origin = dao.theSiteOrigin(),
       // Changing cdn origin requires restart, then mem cache disappears. So ok reuse anyCdnOrigin here.
       anyCdnOrigin = globals.anyCdnOrigin,
+      anyUgcOrigin = globals.anyUgcOriginFor(dao.theSite()),
       // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
       anyPageRoot = None,
       anyPageQuery = None)
@@ -264,16 +265,14 @@ class RenderContentActor(
     // primary keys, rather than updating the old stale row. So we delete any such
     // old stale row instead.
     //
+    // We didn't look at the CDN, when finding stale rows to rerender.
+    // Therefore, here we need to delete matching stale rows [regardless_of_cdn] address,
+    // even if we've updated some of the stale rows above (via `renderIfNeeded()`).
+    //
     staleCachedVersion foreach { staleVer =>
-      if (staleVer.renderParams == tinyParams || staleVer.renderParams == mediumParams) {
-        // Then we've overwritten the stale cache entry already (via renderIfNeeded() above).
-      }
-      else {
-        // The stale cache entry that made us rerender, is is still there — let's delete.
-        dao.writeTx { (tx, _) =>
-          tx.deleteCachedPageContentHtml(sitePageId.pageId, staleCachedVersion.get)
-          // (Mem cache updated below.)
-        }
+      dao.writeTx { (tx, _) =>
+        tx.deleteCachedPageContentHtml(sitePageId.pageId, staleVer)
+        // (Mem cache updated below.)
       }
     }
 

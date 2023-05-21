@@ -273,10 +273,12 @@ export function linkToAboutPage(): string {
 
 
 export function linkToUpload(origins: Origins, uploadsPath: string): string {
-  // If there's a CDN, always access uploaded pics via the CDN. Or,
-  // if we're in an embedded comments discussion, access the pics via the Talkyard
-  // server's origin = the remote origin. Otherwise, no origin needed (empty string).
-  const origin = origins.anyCdnOrigin || origins.embeddedOriginOrEmpty;
+  // If 1) there's a UGC CDN, always access uploaded pics via that. Or if 2) we're
+  // in an embedded comments discussion, access the pics via the Talkyard server's
+  // origin = the remote origin, otherwise the pic urls would resolve relative to
+  // the *blog*'s address, but the blog doesn't host the pics (they'd be 404 Not Found).
+  // Otherwise 3) no origin needed (empty string).
+  const origin = origins.anyUgcOrigin || origins.anyCdnOrigin || origins.embeddedOriginOrEmpty;
   const uploadsUrlBasePath = '/-/u/';
   return origin + uploadsUrlBasePath + origins.pubSiteId + '/' + uploadsPath;
 }

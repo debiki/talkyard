@@ -69,7 +69,6 @@ class Nashorn(
   @volatile private var firstCreateEngineError: Option[Throwable] = None
 
   private def secure = globals.secure
-  private def cdnOrigin: Option[String] = globals.anyCdnOrigin
   private def isTestSoDisableScripts = globals.isTestDisableScripts
 
 
@@ -180,10 +179,7 @@ class Nashorn(
     val timeBefore = System.currentTimeMillis()
 
     val htmlOrError = engine.invokeFunction(
-          "renderReactServerSide", reactStoreJsonString,
-          // CLEAN_UP REMOVE  cdnOrigin not needd here any more?
-          // Instead: theStore.anyCdnOrigin
-          cdnOrigin.getOrElse("")).asInstanceOf[String]
+          "renderReactServerSide", reactStoreJsonString).asInstanceOf[String]
     if (htmlOrError.startsWith(ErrorRenderingReact)) {
       logger.error(s"Error rendering page with React server side [DwE5KGW2]")
       return Bad(htmlOrError)
@@ -230,16 +226,16 @@ class Nashorn(
     // embeddedOriginOrEmpty for mentions too?
 
     val uploadsUrlPrefix =
-      cdnOrigin.getOrElse(
-        renderParams.embeddedOriginOrEmpty) +
-           talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
+          globals.anyUgcOrCdnOriginFor(renderParams.siteIdHostnames).getOrElse(
+              renderParams.embeddedOriginOrEmpty) +
+                  talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
 
     // This link preview renderer fetches previews from the database,
     // link_previews_t, but makes no external requests — cannot do that from inside
     // a Nashorn script.
     val prevwRenderer = new LinkPreviewRendererForNashorn(
           new LinkPreviewRenderer(
-              globals, siteId = siteId,
+              globals, site = renderParams.siteIdHostnames,
               // Cannot do external requests from inside Nashorn.
               mayHttpFetch = false,
               // The requester doesn't matter — won't fetch external data.
@@ -433,7 +429,7 @@ class Nashorn(
         |  callback();
         |}
         |
-        |function renderReactServerSide(reactStoreJsonString, cdnOriginOrEmpty) {
+        |function renderReactServerSide(reactStoreJsonString) {
         |  var exceptionAsString;
         |  try {
         |    theStore = JSON.parse(reactStoreJsonString);

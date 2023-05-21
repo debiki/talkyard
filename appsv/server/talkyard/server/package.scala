@@ -196,6 +196,12 @@ package object server {
   val Whatever = "*"
 
   val UploadsUrlBasePath = "/-/u/"
+  val CustomAssetsUrlBasePath = "/-/site/"
+
+  {
+    val uploadsUrlPath: St = controllers.routes.UploadsController.servePublicFile("").url
+    assert(uploadsUrlPath == UploadsUrlBasePath, "TyEBADUPLPATH9564")
+  }
 
 
   /** @param html Html for the whole page.

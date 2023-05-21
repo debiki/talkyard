@@ -1136,9 +1136,10 @@ interface PageIdsUrls {
 
 
 interface Origins {
-  embeddedOriginOrEmpty: string;
-  anyCdnOrigin?: string;
-  pubSiteId: string;
+  embeddedOriginOrEmpty: St;
+  anyCdnOrigin?: St;
+  anyUgcOrigin?: St;
+  pubSiteId: St;
 }
 
 
@@ -2555,6 +2556,7 @@ interface SuperAdminStuff {
 
 interface SASite {
   id: SiteId;
+  pubId: PubSiteId;
   status: SiteStatus;
   name: St;
   hostnames: St[];

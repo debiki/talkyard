@@ -198,8 +198,8 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     host == "localhost" || host.startsWith("localhost:") ||
       host.contains(".localhost:") || host.endsWith(".localhost"))
 
-  def cdnOrSiteOrigin: String =
-    globals.anyCdnOrigin.getOrElse(globals.schemeColonSlashSlash + host)
+  def ugcOrCdnOrSiteOrigin: St =
+    globals.ugcOrCdnOrSiteOriginFor(site, siteAdr = host)
 
   def scheme: String = if (globals.secure) "https" else "http"
 

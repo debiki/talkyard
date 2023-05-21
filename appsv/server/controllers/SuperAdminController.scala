@@ -120,7 +120,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: TyCont
 
 
   private def siteToJson(site: SiteInclDetails, staff: Seq[UserInclDetails]) = {
-    Json.obj(
+    Json.obj(  // ts: SASite
       "id" -> site.id,
       "pubId" -> site.pubId,
       "status" -> site.status.toInt,
