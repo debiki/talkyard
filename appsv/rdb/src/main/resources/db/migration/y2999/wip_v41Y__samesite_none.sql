@@ -17,3 +17,8 @@ create sessions_i_to_forget_more on sessions_t (least(deleted_at_c, expired_at_c
   where forgotten_c = 1;
 
 create sessions_i_ended_at on sessions_t (least(deleted_at_c, expired_at_c));
+
+
+
+alter table settings3 add column  email_subj_prefix_c  text_nonempty_ste90_trimmed_d;
+alter table settings3 add column  email_regards_html_c text_nonempty_ste120_trimmed_d;

@@ -424,7 +424,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
                   = anyPageStuff match {
             case None => (None, Nil)
             case Some(page) =>
-              subject = s"[$siteName] ${page.title}"
+              subject = s"[$siteName] ${page.title}"  // email_subj_prefix_c
               val post = anyPost getOrDie "TyE603MRSKD64"
 
               val earlierEmailsSamePage: ImmSeq[EmailOut] = dao.loadEmailsToPatAboutThread(
@@ -456,7 +456,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
     }
 
     if (subject.isEmpty)
-      subject = s"[$siteName] New notifications"   // I18N
+      subject = s"[$siteName] New notifications"   // I18N  // email_subj_prefix_c
 
     subject = subject.take(MaxLimits.MaXEmailSubjectLength_200)
 
@@ -483,7 +483,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
         {notfRenderResult.html}
         <p>
           Kind regards,<br/>
-          { makeBoringLink(siteName, url = origin) }
+          { makeBoringLink(siteName, url = origin)  /* email_regards_html_c */ }
         </p>
         <p style='font-size: 92%; opacity: 0.67; margin-top: 2em;'>
           { makeUnderlinedLink("Unsubscribe", url = unsubscriptionUrl) }<br/>
