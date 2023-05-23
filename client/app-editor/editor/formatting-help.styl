@@ -1,0 +1,61 @@
+
+
+.c_FmtHlpD
+  max-width: 730px !important;
+  @media (min-width: 830px)
+    .modal-body
+      padding: 20px 37px 30px;
+  h1
+    font-size: 27px;
+    margin: 0px 0 14px;
+    + p
+      margin-bottom: 1.1em;
+  table
+    width: 100%
+    margin-bottom: 1.5ex; // so "This is called CommonMark" won't be too close
+  $paddingLeft = 7px;
+  th
+    padding-bottom: 5px;
+    border-bottom: 2px solid hsl(0 0% 68%)
+    // Place the 2nd "..." in "Try this ...   ..." at the end, just before "to get this":
+    &:first-child h3
+      display: flex;
+      justify-content: space-between;
+  th:last-child
+    padding-left: $paddingLeft;
+  tr
+    border-bottom: 2px solid hsl(0 0% 88%)
+  td
+    vertical-align: top;
+    line-height: 14px;
+    &:first-child
+      padding: 10px 5px 3px 0;
+      font-family: monospace;
+      .n_NoteThe
+        font-family: 'Open Sans', sans-serif;
+        font-size: 14px;
+        color: hsl(0deg 0% 33%);
+        b
+          font-size: 115%;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    &:last-child
+      padding: 6px 0 7px $paddingLeft;
+      @media (max-width: 650px)
+        border-left: 1px solid #eee;
+  h2
+    margin: 5px 0 4px;
+  h3
+    margin: 3px 0 2px;
+  li
+    margin-bottom: 0.2em;
+  .n_Link
+    // Avoid very long rows, by making uninteresting https://... sample links shorter.
+    letter-spacing: -1px;
+  // Nested lists example
+  ol ul
+    margin-top: 0.2em;
+  pre, p
+    &:last-child
+      margin-bottom: 0.3em;

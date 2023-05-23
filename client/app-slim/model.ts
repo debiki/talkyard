@@ -723,6 +723,7 @@ interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   // If the user clicks the primary button. Not called, if hen clicks a secondary
   // button or closes the dialog e.g. by clicking outside.
   onPrimaryClick?: () => void;
+  showCloseButton?: Bo;
   preventClose?: boolean;
   closeOnClickOutside?: boolean; // default true
   // Specify this to get a fn that closes the dialog.

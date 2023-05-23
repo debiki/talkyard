@@ -17,6 +17,7 @@
 
 /// <reference path="../editor-prelude.editor.ts" />
 /// <reference path="./oop.editor.ts" />
+/// <reference path="./formatting-help.editor.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.editor {
@@ -2684,7 +2685,12 @@ export const Editor = createFactory<any, EditorState>({
         r.button({ onClick: this.markupAsCode, title: t.e.PreBtnTooltip,
           className: 'esEdtr_txtBtn' }, r.span({ className: 'icon-code' })),
         r.button({ onClick: this.addHeading, title: t.e.HeadingBtnTooltip,
-            className: 'esEdtr_txtBtn' }, 'H'));
+            className: 'esEdtr_txtBtn' }, 'H'),
+        r.button({  // title: t.e.FmtHelpTooltip, // I18N
+            className: 'esEdtr_txtBtn n_FmtHlp',
+            onClick: () => util.openDefaultStupidDialog(formattingHelp()) },
+          'Help ...'), // I18N
+        );
 
     // React-textarea-autocomplete docs:
     //   https://github.com/webscopeio/react-textarea-autocomplete
@@ -3031,6 +3037,7 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
   return !draftStatusText ? null :
        r.span({ className: 's_DfSts e_DfSts-' + props.draftStatus + draftErrorClass }, draftStatusText);
 }
+
 
 
 //------------------------------------------------------------------------------

@@ -96,7 +96,11 @@ export const StupidDialog = createComponent({
     const stuff: StupidDialogStuff = this.state.stuff || {};
     const preventClose = stuff.preventClose;
     const makeCloseFn = (whichButton) => () => this.close(whichButton);
+    const anyCloseButton = !stuff.showCloseButton ? null :
+            r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: makeCloseFn(0) });
+
     const body = ModalBody({ className: 'clearfix' },
+      anyCloseButton,
       r.div({ style: { marginBottom: '2em' }}, stuff.body),
       r.div({ style: { float: 'right' }},
         preventClose ? null :
