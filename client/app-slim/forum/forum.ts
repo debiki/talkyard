@@ -1199,7 +1199,8 @@ export const TopicsList = createComponent({
               makeTopPeriodListItem(TopTopicsPeriod.Week),
               makeTopPeriodListItem(TopTopicsPeriod.Month),
               makeTopPeriodListItem(TopTopicsPeriod.Quarter),
-              makeTopPeriodListItem(TopTopicsPeriod.Year))));
+              makeTopPeriodListItem(TopTopicsPeriod.Year),
+              makeTopPeriodListItem(TopTopicsPeriod.Triennial))));
     }
 
     const forumPage: Page = store_curPage(store);

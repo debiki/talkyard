@@ -263,6 +263,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         monthScore = rs.getFloat("month_score"),
         quarterScore = rs.getFloat("quarter_score"),
         yearScore = rs.getFloat("year_score"),
+        triennialScore = rs.getFloat("triennial_score_c"),
         allScore = rs.getFloat("all_score"))
   }
 
@@ -280,8 +281,9 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         month_score,
         quarter_score,
         year_score,
+        triennial_score_c,
         all_score)
-      values (?, ?, now_utc(), now_utc(), ?, ?, ?, ?, ?, ?, ?)
+      values (?, ?, now_utc(), now_utc(), ?, ?, ?, ?, ?, ?, ?, ?)
       on conflict (site_id, page_id, score_alg_c) do update set
         updated_at = excluded.updated_at,
         day_score = excluded.day_score,
@@ -289,6 +291,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         month_score = excluded.month_score,
         quarter_score = excluded.quarter_score,
         year_score = excluded.year_score,
+        triennial_score_c = excluded.triennial_score_c,
         all_score = excluded.all_score
       """
 
@@ -296,7 +299,8 @@ trait PagesSiteDaoMixin extends SiteTransaction {
       siteId.asAnyRef, scores.pageId, scores.scoreAlgorithm.asAnyRef,
       scores.dayScore.asAnyRef, scores.weekScore.asAnyRef,
       scores.monthScore.asAnyRef, scores.quarterScore.asAnyRef,
-      scores.yearScore.asAnyRef, scores.allScore.asAnyRef)
+      scores.yearScore.asAnyRef, scores.triennialScore.asAnyRef,
+      scores.allScore.asAnyRef)
 
     runUpdateSingleRow(statement, values)
   }

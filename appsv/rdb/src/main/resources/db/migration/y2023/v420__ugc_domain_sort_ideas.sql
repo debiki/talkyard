@@ -39,7 +39,18 @@ alter table page_popularity_scores3
     -- Add alg id to primary key.
     drop constraint pagepopscores_site_page_p,
     add  constraint pagepopscores_p_pageid_algid
-            primary key (site_id, page_id, score_alg_c);
+            primary key (site_id, page_id, score_alg_c),
+
+    add column triennial_score_c double precision;
+
+update page_popularity_scores3 set
+    triennial_score_c = all_score;
+
+alter table page_popularity_scores3
+    alter column triennial_score_c set not null;
+
+alter domain trending_period_d drop constraint trending_period_d_c_lte6;
+alter domain trending_period_d add  constraint trending_period_d_c_lte7 check (value <= 7);
 
 create index pagepopscores_i_algid_dayscore on page_popularity_scores3 (
     site_id, score_alg_c, day_score);
@@ -51,5 +62,7 @@ create index pagepopscores_i_algid_quarterscore on page_popularity_scores3 (
     site_id, score_alg_c, quarter_score);
 create index pagepopscores_i_algid_yearscore on page_popularity_scores3 (
     site_id, score_alg_c, year_score);
+create index pagepopscores_i_algid_triennialscore on page_popularity_scores3 (
+    site_id, score_alg_c, triennial_score_c);
 create index pagepopscores_i_algid_allscore on page_popularity_scores3 (
     site_id, score_alg_c, all_score);

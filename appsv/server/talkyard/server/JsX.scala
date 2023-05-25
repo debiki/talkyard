@@ -1071,6 +1071,7 @@ object JsX {   RENAME // to JsonPaSe
       "monthScore" -> scores.monthScore,
       "quarterScore" -> scores.quarterScore,
       "yearScore" -> scores.yearScore,
+      "triennialScore" -> scores.triennialScore,
       "allScore" -> scores.allScore)
   }
 

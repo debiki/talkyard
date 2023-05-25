@@ -433,7 +433,8 @@ const enum TopTopicsPeriod {
   Month = 3,
   Quarter = 4,
   Year = 5,
-  All = 6,
+  Triennial = 6,
+  All = 7,
 
   Default = Year,  // Sync w Scala
 }

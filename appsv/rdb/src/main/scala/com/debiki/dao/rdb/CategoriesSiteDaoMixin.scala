@@ -126,6 +126,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       case TopTopicsPeriod.Month => "month_score"
       case TopTopicsPeriod.Quarter => "quarter_score"
       case TopTopicsPeriod.Year => "year_score"
+      case TopTopicsPeriod.Triennial => "triennial_score_c"
       case TopTopicsPeriod.All => "all_score"
     }
 

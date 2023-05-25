@@ -71,6 +71,7 @@ object PagePopularityCalculator {
               monthScore = calcPopScore(stats.sinceLastMonth),
               quarterScore = calcPopScore(stats.sinceLastQuarter),
               yearScore = calcPopScore(stats.sinceLastYear),
+              triennialScore = calcPopScore(stats.sinceLast3Years),
               allScore = calcPopScore(stats.sinceGenesis))
       case OpLikeVotes =>
         PagePopularityScores(
@@ -82,6 +83,7 @@ object PagePopularityCalculator {
               monthScore = stats.sinceLastMonth.numOpLikesTotal,
               quarterScore = stats.sinceLastQuarter.numOpLikesTotal,
               yearScore = stats.sinceLastYear.numOpLikesTotal,
+              triennialScore = stats.sinceLast3Years.numOpLikesTotal,
               allScore = stats.sinceGenesis.numOpLikesTotal)
       case _ =>
         die(s"Bad score alg: $scoreAlg [TyESCOREALG462]")
@@ -164,7 +166,8 @@ object PagePopularityCalculator {
     val popWeekly = calcOnePopStats(now.minusDays(8), now, pageParts, actions, visitsByUserId)
     val popMonthly = calcOnePopStats(now.minusDays(32), now, pageParts, actions, visitsByUserId)
     val popQuarterly = calcOnePopStats(now.minusDays(100), now, pageParts, actions, visitsByUserId)
-    val popYearly = calcOnePopStats(now.minusDays(367), now, pageParts, actions, visitsByUserId)
+    val popYearly = calcOnePopStats(now.minusDays(365 + 2), now, pageParts, actions, visitsByUserId)
+    val pop3Years = calcOnePopStats(now.minusDays(365 * 3 + 2), now, pageParts, actions, visitsByUserId)
     val popSinceGenesis = calcOnePopStats(When.Genesis, now, pageParts, actions, visitsByUserId)
     /*
     val popDaily = popularityInThePast(36 * OneHourInMillis)
@@ -175,13 +178,14 @@ object PagePopularityCalculator {
     */
 
     PagePopStatsNowAndThen(
-      pageId = pageParts.pageId,
-      sinceYesterday = popDaily,
-      sinceLastWeek = popWeekly,
-      sinceLastMonth = popMonthly,
-      sinceLastQuarter = popQuarterly,
-      sinceLastYear = popYearly,
-      sinceGenesis = popSinceGenesis)
+          pageId = pageParts.pageId,
+          sinceYesterday = popDaily,
+          sinceLastWeek = popWeekly,
+          sinceLastMonth = popMonthly,
+          sinceLastQuarter = popQuarterly,
+          sinceLastYear = popYearly,
+          sinceLast3Years = pop3Years,
+          sinceGenesis = popSinceGenesis)
   }
 
 

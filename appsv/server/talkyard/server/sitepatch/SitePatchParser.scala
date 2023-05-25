@@ -937,6 +937,7 @@ case class SitePatchParser(context: TyContext) {
     }
 
     try {
+      val allScore = readFloat(jsObj, "allScore")
       Good(PagePopularityScores(
         pageId = pageId,
         updatedAt = readWhen(jsObj, "updatedAt"),
@@ -946,7 +947,11 @@ case class SitePatchParser(context: TyContext) {
         monthScore = readFloat(jsObj, "monthScore"),
         quarterScore = readFloat(jsObj, "quarterScore"),
         yearScore = readFloat(jsObj, "yearScore"),
-        allScore = readFloat(jsObj, "allScore")))
+        triennialScore =
+              // Newly added (June 2023), let's fallback to allScore for a while.
+              // DO_AFTER 2025-07-01: Remove fallback.
+              parseOptFloat32(jsObj, "triennialScore").getOrElse(allScore),
+        allScore = allScore))
     }
     catch {
       case ex: IllegalArgumentException =>
