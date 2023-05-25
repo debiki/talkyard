@@ -139,6 +139,16 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
     val pageFilterAnd = makePageFilterTestsAnd(pageQuery)
 
+    // Currently there's no / not-much data, from algorithms other than 1.
+    // Let's fallback to the old all-votes alg 1 — by loading both alg
+    // 2 and 1, and sorting alg 2 rows before alg 1 rows.
+    val scoreAlgs: St = if (scoreOrder.scoreAlg == 1) "1" else "1, 2"
+
+    COULD_OPTIMIZE
+    // Add column: dormant_status_c  to table  page_popularity_scores3
+    // and incl in index, so can skip deleted or not-yet-approved or unlisted
+    // pages? — Not important right now though.
+
     val sql = s""" -- loadPagesInCategoriesByScore
         select
           t.parent_folder,
@@ -156,20 +166,41 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
              t.canonical = 'C'
         where
           pps.site_id = ? and
-          g.category_id in (${ makeInListFor(categoryIds) }) and   -- BUG cannot have g. and t. in 'where' part? only pps. ?
+          pps.score_alg_c in ($scoreAlgs) and
+          g.category_id in (${ makeInListFor(categoryIds) }) and
           $offsetTestAnd
           $pageFilterAnd
           -- exclude category descr topics [4AKBR02]
           g.page_role not in (${PageType.Forum.toInt}, ${PageType.AboutCategory.toInt})
           $andNotDeleted
-        order by pps.$periodScore desc, g.bumped_at desc
+        order by
+            -- Score alg needed only until there're entries for all algorithms — but
+            -- currently, often there's a row only for algorithm id 1, which we
+            -- can thus use as fallback. 1 is the lowest id, so sorting by
+            -- alg id desc, gives any data from the alg we do want to use, precedence.
+            -- (We might get back two rows for some pages — the then redundant
+            -- row for alg id 1 is excluded by Scala code [.excl_def_score_alg].)
+            -- (Probably some way to do this via SQL but Scala is simpler.)
+            pps.score_alg_c desc,
+            pps.$periodScore desc,
+            g.bumped_at desc
         limit $limit"""
 
-    runQueryFindMany(sql, values.toList, rs => {
+    // Currently some pages return two rows — an additional row, with the falback sort order
+    // & score. Let's exclude the duplicates here, for simplicity.  [.excl_def_score_alg]
+    // We want the first row only, if there're two.
+    val results = ArrayBuffer[PagePathAndMeta]()
+    val idsAdded = MutHashSet[PageId]()
+
+    runQueryAndForEachRow(sql, values.toList, rs => {
       val pagePath = _PagePath(rs, siteId)
-      val pageMeta = _PageMeta(rs, pagePath.pageId.get)
-      PagePathAndMeta(pagePath, pageMeta)
+      if (!idsAdded.contains(pagePath.pageId.get)) {
+        idsAdded.add(pagePath.pageId.get)
+        val pageMeta = _PageMeta(rs, pagePath.pageId.get)
+        results append PagePathAndMeta(pagePath, pageMeta)
+      }
     })
+    results.toVector
   }
 
 

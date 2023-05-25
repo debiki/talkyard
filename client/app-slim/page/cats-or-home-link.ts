@@ -60,6 +60,7 @@ export function CatsOrHomeLink(page: Page, store: Store, forTopbar?: Bo): RElm |
                 r.li({ key, className: 's_Tb_Pg_Cs_C' + deletedClass },
                   // RENAME esTopbar_ancestors_link to just s_AncCs_Ln?
                   Link({ className: catIcon + 'esTopbar_ancestors_link btn',
+                      // The path is from here, server side: [anc_cat_path].
                       to: ancestor.path },
                   ancestor.title)));
           }));

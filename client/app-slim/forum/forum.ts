@@ -109,7 +109,7 @@ export const ForumComponent = createReactClass(<any> {
       topicsInStoreMightBeOld: false,
       useNarrowLayout,
       useWideLayout,
-      topPeriod: TopTopicsPeriod.Month,
+      topPeriod: TopTopicsPeriod.Default,
     }
   },
 
@@ -1021,19 +1021,24 @@ const LoadAndListTopics = createFactory({
       lastScore = lastTopic.popularityScore;  // always absent, currently [7IKA2V]
     }
 
-    const orderOffset: OrderOffset = { sortOrder: -1 };
+    const orderOffset: OrderOffset = { sortOrder: TopicSortOrder.BumpTime };
     if (props.sortOrderRoute === RoutePathTop) {
       orderOffset.sortOrder = TopicSortOrder.ScoreAndBumpTime;
       orderOffset.olderThan = lastBumpedAt;
       orderOffset.score = lastScore;
+      orderOffset.scoreAlg = ScoreAlg.ByAllVotes;
       orderOffset.period = props.topPeriod;
+      const cat: Cat | U = props.activeCategory;
+      if (cat && cat.doItVotesPopFirst) {
+        orderOffset.scoreAlg = ScoreAlg.ByDoItVotes;
+      }
     }
     else if (props.sortOrderRoute === RoutePathNew) {
       orderOffset.sortOrder = TopicSortOrder.CreatedAt;
       orderOffset.olderThan = lastCreatedAt;
     }
     else {
-      orderOffset.sortOrder = TopicSortOrder.BumpTime;
+      // orderOffset.sortOrder — bump time, already.
       orderOffset.olderThan = lastBumpedAt;
     }
     return orderOffset;
@@ -1130,6 +1135,7 @@ export const TopicsList = createComponent({
           store, topic,
           activeCatId: activeCategory?.id, orderOffset,
           key: topic.pageId, sortOrderRoute: props.sortOrderRoute,
+          explSetSortOrder: props.explSetSortOrder,
           doItVotesPopFirst, inTable: useTable, useNarrowLayout: props.useNarrowLayout,
           forumPath: props.forumPath, history: props.history };
       return TopicRow(topicRowProps);
@@ -1437,6 +1443,7 @@ interface TopicRowProps {
   topic: Topic;
   activeCatId?: CatId;
   sortOrderRoute: St;
+  explSetSortOrder?: St;
   forumPath: St;
   orderOffset: OrderOffset;
   doItVotesPopFirst: Bo;
@@ -1514,7 +1521,10 @@ const TopicRow = createComponent({
 
   makeCategoryLink: function(category: Category, skipQuery?: boolean) {
     const props: TopicRowProps = this.props;
-    const sortOrderPath = props.sortOrderRoute;
+    const sortOrderPath = props.explSetSortOrder ? props.sortOrderRoute : (
+            category.doItVotesPopFirst ? RoutePathTop
+                                       : props.sortOrderRoute); // Or maybe RoutePathLatest?
+
     // this.props.queryParams — later: could convert to query string, unless skipQuery === true
     return props.forumPath + sortOrderPath + '/' + category.slug;
   },

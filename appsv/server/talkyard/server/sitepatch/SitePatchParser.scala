@@ -1342,7 +1342,9 @@ case class SitePatchParser(context: TyContext) {
         defaultSortOrder =
               if (!doItVotesPopFirst) None
               else Some(PageOrderOffset.ByScoreAndBumpTime(
-                    offset = None, TopTopicsPeriod.Year)),
+                    // Later: Make configurable. [conf_do_it_cats]
+                    offset = None, TopTopicsPeriod.Default,
+                    scoreAlg = pop.PagePopularityCalculator.OpLikeVotes)),
         doVoteStyle =
               if (!doItVotesPopFirst) None
               else Some(DoVoteStyle.Likes),

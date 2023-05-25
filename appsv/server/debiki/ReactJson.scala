@@ -1667,17 +1667,25 @@ object JsonMaker {
     */
   private def makeForumOrCategoryJson(forumPath: PagePath, category: Category): JsObject = {
     val forumPathSlash = forumPath.value.endsWith("/") ? forumPath.value | forumPath.value + "/"
+    val latestOrTop = category.doItVotesEnabled ? "top" | "latest"  // [anc_cat_path]
     val (name, path) =
       if (category.isRoot)
-        ("Home", s"${forumPathSlash}latest")   // [i18n]
+        ("Home", s"$forumPathSlash$latestOrTop")   // I18N
       else
-        (category.name, s"${forumPathSlash}latest/${category.slug}")
-    var result = Json.obj(
-      "categoryId" -> category.id,
-      "title" -> name,
-      "path" -> path,
-      "unlistCategory" -> category.unlistCategory,
-      "unlistTopics" -> category.unlistTopics)
+        (category.name, s"$forumPathSlash$latestOrTop/${category.slug}")
+    var result = Json.obj( // ts: Ancestor
+          "categoryId" -> category.id,
+          "title" -> name,
+          "path" -> path)
+    if (category.doItVotesEnabled) {
+      result += "doItVotesPopFirst" -> JsTrue
+    }
+    if (category.unlistCategory) {
+      result += "unlistCategory" -> JsTrue
+    }
+    if (category.unlistTopics) {
+      result += "unlistTopics" -> JsTrue
+    }
     if (category.isDeleted) {
       result += "isDeleted" -> JsTrue
     }

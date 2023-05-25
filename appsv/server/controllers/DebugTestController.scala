@@ -518,24 +518,31 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: TyConte
 
 
 
-  def showPagePopularityStats(pageId: PageId): Action[Unit] = AdminGetAction { request =>
+  def showPagePopularityStats(pageId: PageId, scoreAlg: Opt[i32]): Action[Unit] = AdminGetAction { request =>
     import request.dao
+    val scoreAlg_ =
+          if (scoreAlg is PagePopularityCalculator.OpLikeVotes)
+            PagePopularityCalculator.OpLikeVotes
+          else
+            PagePopularityCalculator.CurrentScoreAlg
+
     val (scoreInDb, scoreNow, statsNow) = dao.readOnlyTransaction { tx =>
-      val scoreInDb = tx.loadPagePopularityScore(pageId)
+      val scoreInDb = tx.loadPagePopularityScore(pageId, scoreAlg = scoreAlg_)
       val pageParts = PagePartsDao(pageId, dao.loadWholeSiteSettings(tx), tx)
       val actions = tx.loadActionsOnPage(pageParts.pageId)
       val visits = tx.loadPageVisitTrusts(pageParts.pageId)
       val statsNow = PagePopularityCalculator.calcPopStatsNowAndThen(
         globals.now(), pageParts, actions, visits)
-      val scoreNow = PagePopularityCalculator.calcPopularityScores(statsNow)
+      val scoreNow = PagePopularityCalculator.calcPopularityScores(statsNow, scoreAlg = scoreAlg_)
       (scoreInDb, scoreNow, statsNow)
     }
+
     Ok(i"""
-      |Score in db
+      |Score in db, for alg $scoreAlg_
       |==================================
       |${scoreInDb.map(_.toPrettyString) getOrElse "Absent"}
       |
-      |Score now
+      |Score now, for alg $scoreAlg_
       |==================================
       |${scoreNow.toPrettyString}
       |

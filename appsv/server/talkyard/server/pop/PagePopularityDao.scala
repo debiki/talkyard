@@ -39,8 +39,10 @@ object PagePopularityDao {
     val visits = tx.loadPageVisitTrusts(pageParts.pageId)
     val popStats = PagePopularityCalculator.calcPopStatsNowAndThen(
       tx.now, pageParts, actions, visits)
-    val popScore = PagePopularityCalculator.calcPopularityScores(popStats)
-    tx.upsertPagePopularityScore(popScore)
+    for (alg <- PagePopularityCalculator.AllAlgs) {
+      val popScore = PagePopularityCalculator.calcPopularityScores(popStats, scoreAlg = alg)
+      tx.upsertPagePopularityScore(popScore)
+    }
   }
 
 }

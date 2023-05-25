@@ -852,6 +852,9 @@ alter domain key_pem_d add constraint key_pem_d_c_maxlen check (
 
 
 -- ?
+alter table page_popularity_scores3 add column  dormant_status_c  dormant_status_d;
+
+-- ?
 alter table page_popularity_scores3 add column two_weeks_score f64_d;
 alter table page_popularity_scores3 add column two_days_score f64_d;
 -- + custom time, maybe two arrays:  AlgorithmParams[], score[], last_calculated_at[] ?

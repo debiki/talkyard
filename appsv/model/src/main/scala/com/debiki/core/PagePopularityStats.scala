@@ -75,6 +75,8 @@ object TopTopicsPeriod {
   case object Year extends TopTopicsPeriod(5)
   case object All extends TopTopicsPeriod(6)
 
+  val Default = Year  // Sync w Typescript
+
   def fromOptInt(value: Opt[i32]): Option[TopTopicsPeriod] =
     fromInt(value getOrElse { return None })
 
@@ -166,6 +168,13 @@ case class PagePopularityStats(
   numUnwantedTotal: Int,
   numUnwantedByTrusted: Int,
   numUnwantedByCore: Int,
+  // Later. For now, using Like votes instead. [do_it_votes]
+  numOpDoItTotal: i32 = 0,
+  numOpDoItByTrusted: i32 = 0,
+  numOpDoItByCore: i32 = 0,
+  numOpDoNotTotal: i32 = 0,
+  numOpDoNotByTrusted: i32 = 0,
+  numOpDoNotByCore: i32 = 0,
   numOpLikesTotal: Int,
   numOpLikesByTrusted: Int,
   numOpLikesByCore: Int,
@@ -201,6 +210,12 @@ case class PagePopularityStats(
   require(numUnwantedTotal >= numUnwantedByTrusted, "EdE5KY11")
   require(numUnwantedByTrusted >= numUnwantedByCore, "EdE5KY12")
   require(numUnwantedByCore >= 0, "EdE5KY13")
+  require(numOpDoItTotal >= 0, "TyEPOPVOTECNT61")
+  require(numOpDoItByTrusted >= 0, "TyEPOPVOTECNT62")
+  require(numOpDoItByCore >= 0, "TyEPOPVOTECNT63")
+  require(numOpDoNotTotal >= 0, "TyEPOPVOTECNT65")
+  require(numOpDoNotByTrusted >= 0, "TyEPOPVOTECNT66")
+  require(numOpDoNotByCore >= 0, "TyEPOPVOTECNT67")
   require(numOpLikesTotal >= numOpLikesByTrusted, "EdE5KY14")
   require(numOpLikesByTrusted >= numOpLikesByCore, "EdE5KY15")
   require(numOpLikesByCore >= 0, "EdE5KY16")

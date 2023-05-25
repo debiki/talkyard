@@ -28,6 +28,8 @@ object PagePopularityCalculator {
   // Currently there's just one; it has no name.
   // If adding more, rename json field: readInt(jsObj, "algorithmVersion") to "scoreAlg"?
   val CurrentScoreAlg: PageScoreAlg = 1
+  val OpLikeVotes: PageScoreAlg = 2
+  val AllAlgs = Seq(CurrentScoreAlg, OpLikeVotes)
 
 
   /** How do votes affect the score:
@@ -56,17 +58,34 @@ object PagePopularityCalculator {
     * @param stats
     * @return
     */
-  def calcPopularityScores(stats: PagePopStatsNowAndThen): PagePopularityScores = {
-    PagePopularityScores(
-      pageId = stats.pageId,
-      updatedAt = stats.sinceYesterday.to,
-      scoreAlgorithm = CurrentScoreAlg,
-      dayScore = calcPopScore(stats.sinceYesterday),
-      weekScore = calcPopScore(stats.sinceLastWeek),
-      monthScore = calcPopScore(stats.sinceLastMonth),
-      quarterScore = calcPopScore(stats.sinceLastQuarter),
-      yearScore = calcPopScore(stats.sinceLastYear),
-      allScore = calcPopScore(stats.sinceGenesis))
+  def calcPopularityScores(stats: PagePopStatsNowAndThen, scoreAlg: PageScoreAlg)
+          : PagePopularityScores = {
+    scoreAlg match {
+      case CurrentScoreAlg =>
+        PagePopularityScores(
+              pageId = stats.pageId,
+              updatedAt = stats.sinceYesterday.to,
+              scoreAlgorithm = scoreAlg,
+              dayScore = calcPopScore(stats.sinceYesterday),
+              weekScore = calcPopScore(stats.sinceLastWeek),
+              monthScore = calcPopScore(stats.sinceLastMonth),
+              quarterScore = calcPopScore(stats.sinceLastQuarter),
+              yearScore = calcPopScore(stats.sinceLastYear),
+              allScore = calcPopScore(stats.sinceGenesis))
+      case OpLikeVotes =>
+        PagePopularityScores(
+              pageId = stats.pageId,
+              updatedAt = stats.sinceYesterday.to,
+              scoreAlgorithm = scoreAlg,
+              dayScore = stats.sinceYesterday.numOpLikesTotal,
+              weekScore = stats.sinceLastWeek.numOpLikesTotal,
+              monthScore = stats.sinceLastMonth.numOpLikesTotal,
+              quarterScore = stats.sinceLastQuarter.numOpLikesTotal,
+              yearScore = stats.sinceLastYear.numOpLikesTotal,
+              allScore = stats.sinceGenesis.numOpLikesTotal)
+      case _ =>
+        die(s"Bad score alg: $scoreAlg [TyESCOREALG462]")
+    }
   }
 
 

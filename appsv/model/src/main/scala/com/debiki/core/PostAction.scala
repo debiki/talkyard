@@ -161,7 +161,7 @@ sealed abstract class PostActionType { def toInt: Int }
 sealed abstract class PostVoteType(val IntVal: Int) extends PostActionType { def toInt: Int = IntVal }
 object PostVoteType {
 
-  // Page votes? (These votes are cast on posts, although they are for pages
+  // Page votes? [do_it_votes] (These votes are cast on posts, although they are for pages
   // — so won't be lost if merging two pages, and splitting them again.)
   //case object DoIt extends PostVoteType(31)
   //case object DoNot extends PostVoteType(32)

@@ -179,7 +179,7 @@ package object core {
   type PageVersion = Int  // [Scala_3] opaque type ... And so many more here!
   val NoVersion: PageVersion = 0
 
-  type PageScoreAlg = i32  // for now
+  type PageScoreAlg = i32  // for now  [Scala_3] opaque type
 
   type CategoryId = Int   // too long!
   type CatId = CategoryId // better

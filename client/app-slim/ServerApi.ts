@@ -42,6 +42,9 @@ export function makeForumTopicsQueryParams(orderOffset: OrderOffset): string {
     if (_.isNumber(orderOffset.score)) {
       params += '&maxScore=' + orderOffset.score;
     }
+    if (_.isNumber(orderOffset.scoreAlg)) {
+      params += '&scoreAlg=' + orderOffset.scoreAlg;
+    }
   }
 
   if (orderOffset.olderThan) {

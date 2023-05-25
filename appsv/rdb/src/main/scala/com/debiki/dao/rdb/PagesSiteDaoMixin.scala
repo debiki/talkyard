@@ -241,13 +241,15 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadPagePopularityScore(pageId: PageId): Option[PagePopularityScores] = {
+  def loadPagePopularityScore(pageId: PageId, scoreAlg: PageScoreAlg): Opt[PagePopularityScores] = {
     val sql = s"""
       select * from page_popularity_scores3
       where site_id = ?
         and page_id = ?
+        and score_alg_c = ?
       """
-    runQueryFindOneOrNone(sql, List(siteId.asAnyRef, pageId), parsePagePopularityScore)
+    val values = List(siteId.asAnyRef, pageId, scoreAlg.asAnyRef)
+    runQueryFindOneOrNone(sql, values, parsePagePopularityScore)
   }
 
 
@@ -280,9 +282,8 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         year_score,
         all_score)
       values (?, ?, now_utc(), now_utc(), ?, ?, ?, ?, ?, ?, ?)
-      on conflict (site_id, page_id) do update set
+      on conflict (site_id, page_id, score_alg_c) do update set
         updated_at = excluded.updated_at,
-        score_alg_c = excluded.score_alg_c,
         day_score = excluded.day_score,
         week_score = excluded.week_score,
         month_score = excluded.month_score,

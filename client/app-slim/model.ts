@@ -892,6 +892,7 @@ interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter
 
   // For sort-by-top-score offset & period:
   score?: number;
+  scoreAlg?: ScoreAlg;
   period?: TopTopicsPeriod;
 
   // Most liked first offset:
@@ -1387,10 +1388,12 @@ interface PagePath {
 
 interface Ancestor {  // server side: [6FK02QFV]
   categoryId: number;
+  doItVotesPopFirst?: Bo;
   title: string;
   path: string;
-  unlistCategory?: boolean;
-  isDeleted?: boolean;
+  unlistCategory?: Bo;
+  unlistTopics?: Bo;
+  isDeleted?: Bo;
 }
 
 

@@ -26,6 +26,7 @@ import debiki.dao.{SiteDao, SystemDao}
 import debiki.EdHttp._
 import talkyard.server.TyContext
 import talkyard.server.authz.{AuthzCtxWithReqer, ForumAuthzContext, AuthzCtxOnAllWithReqer}
+import talkyard.server.pop
 import talkyard.server.security.{BrowserId, SidOk, SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc._
@@ -288,11 +289,22 @@ object ListPagesQueryParser {
       case "ByCreatedAt" =>
         PageOrderOffset.ByCreatedAt(anyDateOffset)
       case "ByScore" =>
+        // Bit dupl code [list_by_score_q].
+        // val isByDoIt = sortOrderStr == "ByDoItVotes"
         val scoreStr = params.getFirst("maxScore")
+        val scoreAlgSt = params.getFirst("scoreAlg")
         val periodStr = params.getFirst("period")
-        val period = periodStr.flatMap(TopTopicsPeriod.fromIntString) getOrElse TopTopicsPeriod.Month
+        val period = periodStr.flatMap(TopTopicsPeriod.fromIntString
+                                          ) getOrElse TopTopicsPeriod.Default
         val score = scoreStr.map(_.toFloatOrThrow("EdE28FKSD3", "Score is not a number"))
-        PageOrderOffset.ByScoreAndBumpTime(offset = score, period)
+        val scoreAlg = scoreAlgSt.map(_.toIntOrThrow("TyE28FK45J", "scoreAcore is not an int")
+                                      ) getOrElse pop.PagePopularityCalculator.CurrentScoreAlg
+        throwForbiddenIf(scoreAlg != (1: PageScoreAlg) && scoreAlg != 2,  // for now
+              "TyESCOREALG83", "Bad score alg: $scoreAlg")
+
+        PageOrderOffset.ByScoreAndBumpTime(
+              offset = score, period, scoreAlg = scoreAlg)
+
       case "ByLikes" =>
         def anyNumOffset = params.getInt("num") // CLEAN_UP rename 'num' to 'maxLikes'
         (anyNumOffset, anyDateOffset) match {

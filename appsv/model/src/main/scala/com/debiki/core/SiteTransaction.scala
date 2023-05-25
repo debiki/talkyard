@@ -204,7 +204,7 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadPageVisitTrusts(pageId: PageId): Map[UserId, VisitTrust]
 
   def loadAllPagePopularityScores(): Seq[PagePopularityScores]
-  def loadPagePopularityScore(pageId: PageId): Option[PagePopularityScores]
+  def loadPagePopularityScore(pageId: PageId, scoreAlg: PageScoreAlg): Opt[PagePopularityScores]
   def upsertPagePopularityScore(scores: PagePopularityScores): Unit
 
   def loadLastPostRevision(postId: PostId): Option[PostRevision]

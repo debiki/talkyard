@@ -171,6 +171,8 @@ case class Category( // [exp] ok use   too long name! use Cat instead
   def isDeleted: Boolean = deletedAt.isDefined
 
   def idName: St = s"""$id "$name""""
+
+  def doItVotesEnabled: Bo = doVoteStyle isSomethingButNot DoVoteStyle.Disabled
 }
 
 
