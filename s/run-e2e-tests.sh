@@ -475,11 +475,11 @@ function runAllE2eTests {
   $r s/wdio --only flag-member-block-agree.2browsers $args
   $r s/wdio --only flag-guest-block-agree.2browsers $args
 
-  $r s/wdio-7 --only page-type-discussion-progress.1br.d $args
-  $r s/wdio-7 --only page-type-idea-statuses-comments.2br.d $args
-  $r s/wdio-7 --only page-type-problem-statuses.2br.d $args
-  $r s/wdio-7 --only page-type-question-closed.2br.d $args
-  $r s/wdio-7 --only page-type-info-page.1br.d $args
+  $r s/wdio-7 --only page-type-discussion-progress.1br.d --cd -i $args
+  $r s/wdio-7 --only page-type-idea-statuses-comments.2br.d --cd -i $args
+  $r s/wdio-7 --only page-type-problem-statuses.2br.d --cd -i $args
+  $r s/wdio-7 --only page-type-question-closed.2br.d --cd -i $args
+  $r s/wdio-7 --only page-type-info-page.1br.d --cd -i $args
 
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args

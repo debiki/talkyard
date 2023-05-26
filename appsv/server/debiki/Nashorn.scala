@@ -706,7 +706,9 @@ object Nashorn {
 
 
   /** The page-type-question e2e test, run it like so:
-    * s/wdio target/e2e/wdio.2chrome.conf.js --only page-type-question-closed.2browsers --da
+    *
+    *   s/wdio-7 --only page-type-question-closed.2br.d --cd --da
+    *
     * and then open the source, and copy the json inside the #thePageJson script elem.
     *
     * COULD [update_warmup_json]

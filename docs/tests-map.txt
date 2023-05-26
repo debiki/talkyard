@@ -673,24 +673,31 @@ topics -
           - promote-demote-by-staff-join-leave-chats.2br.test.ts  TyTE2E5H3GFRVK
     in category:
             - move-posts-pin-delete.2br.d  TyTMOPOPINDEL.TyTPININCAT
-  close -
-    close:  page-type-question-closed.2browsers.test.ts
-    can leave bottom comment afterwards:  page-type-question-closed.2browsers.test.ts
-    can reply afterwards:  page-type-question-closed.2browsers.test.ts
-  problems -
-  questions -
-    answer own:  page-type-question-closed.2browsers.test.ts
-    cannot answer others:  page-type-question-closed.2browsers.test.ts
+  close:
+    close,
+    can leave bottom comment afterwards,
+    can reply afterwards:
+            - page-type-question-closed.2br.d  TyTPATYQUESTCLOSD
+  discussions:
+            - page-type-discussion-progress.1br.d  TyTPATYDISC
+  ideas,
+  doing status (planned/started/done):
+            - page-type-idea-statuses-comments.2br.d  TyTPATYIDEA
+  problems:
+  solved status (planned/started/fixed):
+            - page-type-problem-statuses.2br.d  TyT602AKK73
+  questions:
+    answer own:
+            - page-type-question-closed.2br.d  TyTPATYQUESTCLOSD
+    cannot answer others:
+            - page-type-question-closed.2br.d  TyTPATYQUESTCLOSD
     click-scroll to answer:
-    clear answer:  page-type-question-closed.2browsers.test.ts
+    clear answer:
+            - page-type-question-closed.2br.d  TyTPATYQUESTCLOSD
     delete the answer post, question becomes unsolved: [2JPKBW0]
     move answer post to other page —> question unsolved: BUG?
     staff accepts answer:
           - modn-from-disc-page-review-after.2browsers.test.ts  TyTE2E603RKG4.TyTE2E50ARMS
-  implement idea:
-    cycle planned/done/pending:
-  to-do:
-    cycle done/pending:
   info pages:
           - page-type-info-page.1br.d  TyTE2E503MKTR3
   report:
