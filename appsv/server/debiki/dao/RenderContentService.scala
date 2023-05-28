@@ -67,7 +67,7 @@ class RenderContentActor(
 
   var numBackgroundRenderErrorsInARow = 0
 
-  override def tryReceive(message: Any, paused: Bo): U = if (!paused) message match {
+  override def tryReceiveUnlessJobsPaused(message: Any): U = message match {
     case PauseThreeSeconds =>
       // Would be better with just [one-db-writer], then woudn't need this.
       pauseUntilNanos = Some(System.nanoTime() + 3L * 1000L * 1000L * 1000L)
