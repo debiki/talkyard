@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import scala.collection.immutable
 import ForumDao._
 import debiki.{Globals, SafeStaticSourceAndHtml, TextAndHtml, TitleSourceAndHtml}
+import talkyard.server.pop
 import talkyard.server.dao._
 
 
@@ -396,7 +397,9 @@ trait ForumDao {
           description = "Here you can suggest and discuss ideas.",
           newTopicTypes = immutable.Seq(PageType.Idea),
           defaultSortOrder = Some(PageOrderOffset.ByScoreAndBumpTime(
-              offset = None, period = TopTopicsPeriod.Year)),
+                scoreAlg = pop.PagePopularityCalculator.OpLikeVotes,
+                offset = None,
+                period = TopTopicsPeriod.Default)),
           comtOrder = None,
           comtNesting = None,
           comtsStartHidden = None,

@@ -723,6 +723,7 @@ interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   // If the user clicks the primary button. Not called, if hen clicks a secondary
   // button or closes the dialog e.g. by clicking outside.
   onPrimaryClick?: () => void;
+  showCloseButton?: Bo;
   preventClose?: boolean;
   closeOnClickOutside?: boolean; // default true
   // Specify this to get a fn that closes the dialog.
@@ -891,6 +892,7 @@ interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter
 
   // For sort-by-top-score offset & period:
   score?: number;
+  scoreAlg?: ScoreAlg;
   period?: TopTopicsPeriod;
 
   // Most liked first offset:
@@ -1136,9 +1138,10 @@ interface PageIdsUrls {
 
 
 interface Origins {
-  embeddedOriginOrEmpty: string;
-  anyCdnOrigin?: string;
-  pubSiteId: string;
+  embeddedOriginOrEmpty: St;
+  anyCdnOrigin?: St;
+  anyUgcOrigin?: St;
+  pubSiteId: St;
 }
 
 
@@ -1385,10 +1388,12 @@ interface PagePath {
 
 interface Ancestor {  // server side: [6FK02QFV]
   categoryId: number;
+  doItVotesPopFirst?: Bo;
   title: string;
   path: string;
-  unlistCategory?: boolean;
-  isDeleted?: boolean;
+  unlistCategory?: Bo;
+  unlistTopics?: Bo;
+  isDeleted?: Bo;
 }
 
 
@@ -2555,6 +2560,7 @@ interface SuperAdminStuff {
 
 interface SASite {
   id: SiteId;
+  pubId: PubSiteId;
   status: SiteStatus;
   name: St;
   hostnames: St[];

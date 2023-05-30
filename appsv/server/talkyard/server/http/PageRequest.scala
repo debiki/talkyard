@@ -136,6 +136,7 @@ class PageRequest[A](
           isEmbedded = embeddingUrl.nonEmpty,
           origin = origin,
           anyCdnOrigin = dao.globals.anyCdnOrigin,
+          anyUgcOrigin = dao.globals.anyUgcOriginFor(site),
           anyPageRoot = pageRoot,
           anyPageQuery = parsePageQuery())
   }

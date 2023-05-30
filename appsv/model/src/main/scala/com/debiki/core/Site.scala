@@ -220,7 +220,7 @@ case class SiteIdOrigins(
   siteId: SiteId, pubId: PubSiteId, siteOrigin: String, uploadsOrigin: String)
 
 
-trait SiteIdHostnames {
+trait SiteIdHostnames extends SiteTrait {
   def id: SiteId
   def pubId: PubSiteId
   def canonicalHostnameStr: Option[String]

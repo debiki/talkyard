@@ -723,18 +723,22 @@ export class TyE2eTestBrowser {
       },
 
       waitAndGetMyself: (): TestMyself => {
-        return this.waitUntil(() => {
-          return this.#br.execute(function() {
+        let result: TestMyself;
+        this.waitUntil(() => {
+          const meOrFalse = this.#br.execute(function() {
             try {
-              return window['debiki2'].ReactStore.getMe();
+              return window['debiki2'].ReactStore.getMe() as TestMyself;
             }
             catch {
               return false;
             }
           });
+          if (meOrFalse) result = meOrFalse;
+          return !!meOrFalse;
         }, {
           message: `Waiting for theStore.me  TyT6503MES63Z`
-        }) as TestMyself;
+        });
+        return result;
       },
     }
 

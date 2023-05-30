@@ -508,6 +508,11 @@ object ViewPageController {
             globals.anyCdnOrigin foreach { cdnOrigin =>
               okOrigins += cdnOrigin
             }
+            // Only let side admins add custom scripts.
+            globals.anyUgcOriginFor(request.site, forAssetsByAdmins = true) foreach { origin =>
+              assert(origin contains "://a-", "TyE02RAMJL4")
+              okOrigins += " " + origin
+            }
             s"script-src 'self' $okOrigins; "
           }
 

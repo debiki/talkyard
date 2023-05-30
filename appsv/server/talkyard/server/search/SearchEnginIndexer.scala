@@ -156,7 +156,7 @@ class IndexingActor(
   val indexCreator = new IndexCreator()
   val postsRecentlyIndexed = new java.util.concurrent.ConcurrentLinkedQueue[SiteIdAndPost]
 
-  def tryReceive(message: Any, paused: Bo): U = if (!paused) message match {
+  def tryReceiveUnlessJobsPaused(message: Any): U = message match {
     case IndexStuff =>
       // BUG race condition. Could instead: 1) find out in which languages indexes are missing.
       // 2) insert into the index queue entries for stuff in those languages. 3) create indexes.

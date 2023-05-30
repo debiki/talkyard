@@ -106,6 +106,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ty
               isEmbedded = true,
               origin = request.origin,
               anyCdnOrigin = globals.anyCdnOrigin,
+              anyUgcOrigin = globals.anyUgcOriginFor(request.site),
               anyPageRoot = None,
               anyPageQuery = None)
 

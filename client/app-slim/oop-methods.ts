@@ -2091,6 +2091,7 @@ export function topPeriod_toString(period: TopTopicsPeriod): string {
     case TopTopicsPeriod.Month: return t.PastMonth;
     case TopTopicsPeriod.Quarter: return t.PastQuarter;
     case TopTopicsPeriod.Year: return t.PastYear;
+    case TopTopicsPeriod.Triennial: return "Past three years"; // t.Past3Years  I18N
     case TopTopicsPeriod.All: return t.AllTime;
     default: return '' + period;
   }

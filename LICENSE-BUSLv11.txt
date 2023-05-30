@@ -2,7 +2,7 @@ License text copyright © 2017 MariaDB Corporation Ab, All Rights Reserved. "Bus
 
 Terms
 
-Change Date: 2026-01-01
+Change Date: 2028-01-01
 Change License: GNU General Public License v2.0 or later
 Additional Use Grant: You can use the Licensed Work, that is, Talkyard, in production for up to 4 months (123 days) after the day when your organization first installed Talkyard. (Installed — not when you upgraded to some later version.)
 

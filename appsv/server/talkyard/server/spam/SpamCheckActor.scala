@@ -75,7 +75,7 @@ class SpamCheckActor(
 
   private val execCtx: ExecutionContext = globals.executionContext
 
-  def tryReceive(message: Any, paused: Bo): U = if (!paused) message match {
+  def tryReceiveUnlessJobsPaused(message: Any): U = message match {
     case CheckForSpam =>
       checkMorePostsForSpam()
     case ClearCheckingSpamNowCache(siteIds) =>

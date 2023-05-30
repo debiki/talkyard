@@ -31,6 +31,45 @@ create domain can_see_whos_here_d i16_d;
 alter  domain can_see_whos_here_d add
    constraint can_see_whos_here_d_c_null check (value is null);
 
+
+-- CDN and UGC per site domain?
+create domain  scheme_domain_d text;
+alter  domain  scheme_domain_d add
+    constraint scheme_domain_d_minlen check (length(value) >= 4);
+    constraint scheme_domain_d_maxlen check (length(value) <= 120);
+    constraint scheme_domain_d_regex check (value ~ '^((https?:)\/\/)([a-z]\.)+[a-z]\.?$');
+-- And:
+alter table sites3 add column ugc_domain_c scheme_domain_d;
+alter table sites3 add column smtp_conf_json_c jsonb_ste4000_d;  -- done, already
+-- If shorter, it's invalid, right.
+alter table sites3 add constraint sites_c_smtpconf_min_len check (
+    length(smtp_conf_json_c) > 50);
+
+
+
+--=============================================================================
+--  Upload refs
+--=============================================================================
+
+-- Also from drafts and users (their avatars).
+
+alter table upload_refs3 rename column post_id to from_post_id_c;
+
+alter table upload_refs3
+    drop constraint dw2_uploadrefs__p,
+    add column from_draft_nr_c i32_lt2e9_gt1000_d,
+    add column from_pat_id_c   i32_d,
+    add constraint uploadrefs_c_from_draft_or_post_or_avatar check (
+        num_nonnulls(from_post_id_c, from_draft_nr_c, from_pat_id_c) = 1);
+
+create unique index uploadrefs_u_postid_ref on upload_refs3 (
+    site_id, post_id, base_url, hash_path) where post_id is not null;
+
+create unique index uploadrefs_u_draftnr_ref on upload_refs3 (
+    site_id, draft_nr_c, base_url, hash_path) where draft_nr_c is not null;
+
+
+
 --=============================================================================
 --  Circles
 --=============================================================================
@@ -811,6 +850,9 @@ alter domain key_pem_d add constraint key_pem_d_c_maxlen check (
 -- Min len? Maybe domain text_ne_d for non-empty?
 
 
+
+-- ?
+alter table page_popularity_scores3 add column  dormant_status_c  dormant_status_d;
 
 -- ?
 alter table page_popularity_scores3 add column two_weeks_score f64_d;

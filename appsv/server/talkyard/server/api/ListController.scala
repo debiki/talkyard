@@ -30,6 +30,7 @@ import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents, Result}
 import talkyard.server.parser.JsonConf
+import talkyard.server.pop
 import debiki.JsonUtils._
 
 
@@ -118,9 +119,17 @@ class ListController @Inject()(cc: ControllerComponents, edContext: TyContext)
       //  PageOrderOffset.ByLikesAndBumpTime(offset = None)
       //case "ByTotLikesDesc" =>
       //  PageOrderOffset.ByLikesAndBumpTime(offset = None)
+      //case "ByDoItVotesDesc" =>  [do_it_votes]  ?
+      //  Will be a bit dupl code?  [list_by_score_q].
+      //
       case "PopularFirst" | _ =>  // internal name: "ByScoreDescThenBumpedAtDesc" ?
         // Score and bump time, if nothing else specified. [TyT025WKRGJ]
-        PageOrderOffset.ByScoreAndBumpTime(offset = None, TopTopicsPeriod.Week)
+        PageOrderOffset.ByScoreAndBumpTime(offset = None,
+              // Was week, let's not change right now. (External API.)
+              TopTopicsPeriod.Week, // Or: TopTopicsPeriod.Default?
+              // But if in a Do-It votes category, UX SHOULD: [do_it_votes]
+              // scoreAlg = pop.PagePopularityCalculator.OpLikeVotes
+              scoreAlg = pop.PagePopularityCalculator.CurrentScoreAlg)
     }
 
     val limitMax100: Opt[i32] = parseOptI32(listQueryJson, "limit", min = Some(1), max = Some(100))

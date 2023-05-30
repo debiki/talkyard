@@ -911,7 +911,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       closedById = getOptInt(rs, "CLOSED_BY_ID"),
       bodyHiddenAt = getOptionalDate(rs, "HIDDEN_AT"),
       bodyHiddenById = getOptInt(rs, "HIDDEN_BY_ID"),
-      bodyHiddenReason = getOptionalStringNotEmpty(rs, "hidden_reason"),
+      bodyHiddenReason = getOptStringEmptyAsNone(rs, "hidden_reason"),
       deletedStatus = new DeletedStatus(rs.getInt("DELETED_STATUS")),
       deletedAt = getOptionalDate(rs, "DELETED_AT"),
       deletedById = getOptionalInt(rs, "DELETED_BY_ID"),

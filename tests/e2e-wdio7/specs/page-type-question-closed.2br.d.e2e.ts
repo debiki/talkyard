@@ -31,7 +31,7 @@ const closeEventPostNr = 4;
 const reopenEventPostNr = 7;
 
 
-describe("Page type question", () => {
+describe(`page-type-question-closed.2br.d  TyTPATYQUESTCLOSD`, () => {
 
   it("Initialize people", () => {
     const brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');

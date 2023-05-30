@@ -46,7 +46,7 @@ import scala.util.matching.Regex
 import talkyard.server.TyContext
 import talkyard.server.http.GetRequest
 import talkyard.server.jobs.Janitor
-import play.api.http.{HeaderNames => p_HeaderNames}
+import play.api.http.{HeaderNames => p_Headers}
 import play.api.mvc.RequestHeader
 import talkyard.server.TyLogging
 
@@ -68,6 +68,8 @@ object Globals extends TyLogging {
 
   val LoginOriginConfValName = "talkyard.loginOrigin"
   val CdnOriginConfValName = "talkyard.cdn.origin"
+  val UgcOriginConfValName = "talkyard.ugc.origin"
+  val UgcBaseDomainConfValName = "talkyard.ugc.baseDomain"
   val LocalhostUploadsDirConfValName = "talkyard.uploads.localhostDir"
   val DefaultLocalhostUploadsDir = "/opt/talkyard/uploads/"
 
@@ -563,23 +565,69 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     * won't make us use http instead of https — that could break embedded comments when testing
     * locally and embedding page = http://localhost/... .
     */
-  val anyCdnOrigin: Option[String] =
-    config.cdn.origin.map(origin => {
+  val anyCdnOrigin: Option[String] = _checkOrigin(config.cdn.origin, CdnOriginConfValName)
+
+  val anyUgcOrigin: Option[String] = _checkOrigin(config.ugc.origin, UgcOriginConfValName)
+
+  private def _checkOrigin(anyOrigin: Opt[St], confValName: St): Opt[St] =
+    anyOrigin.map(origin => {
       if (origin.startsWith("https:")) origin
       else if (secure && origin.startsWith("//")) "https:" + origin
       else if (!secure) origin
       else if (origin.startsWith("http:")) {
-        die("EdEINSECCDNORIG", o"""The server is configured to use https, but in the config file,
-            $CdnOriginConfValName is http://... (not https)""")
+        die("TyEINSECORIG", o"""The server is configured to use https, but in the config file,
+            $confValName is http://... (not https)""")
       }
       else {
-        die("EdEBADCDNORIG", o"""In the config file, $CdnOriginConfValName is not http(s)
+        die("EdEBADCDNORIG", o"""In the config file, $confValName is not http(s)
             but something else weird.""")
       }
     })
 
   def cdnOrSiteOrigin(siteHost: St): St =
     anyCdnOrigin.getOrElse(schemeColonSlashSlash + siteHost)
+
+  private val anyUgcBaseDomain: Opt[St] = getStringNoneIfBlank(UgcBaseDomainConfValName)
+
+
+  def ugcOrCdnOrSiteOriginFor(site: SiteTrait, siteAdr: St, forAssetsByAdmins: Bo = false): St = {
+    anyUgcOrCdnOriginFor(site, forAssetsByAdmins = forAssetsByAdmins
+                          ) getOrElse s"$schemeColonSlashSlash$siteAdr"
+  }
+
+  def anyUgcOrCdnOriginFor(site: SiteTrait, forAssetsByAdmins: Bo = false): Opt[St] = {
+    anyUgcOriginFor(site, forAssetsByAdmins = forAssetsByAdmins) orElse anyCdnOrigin
+  }
+
+  def anyUgcOriginFor(site: SiteTrait, forAssetsByAdmins: Bo = false): Opt[St] = {
+    val anyUgcSubdomainOrigin =
+          if (!site.isFeatureEnabled("ffUgcSubdomains", config.featureFlags)) None
+          else anyUgcBaseDomain.map(baseDomain => {
+            // (Could optionally include the scheme in the base domain config,
+            // e.g. "https://ugc.example.com" — can in some cases make it simpler to
+            // test on localhost using http, but reading from a real UGC domain using
+            // https.)
+            val aOrU = if (forAssetsByAdmins) AssetsUgcHostnamePrefix else UgcHostnamePrefix
+            // If preview: "p-" but let's wait.
+            schemeColonSlashSlash + aOrU + site.pubId + "." + baseDomain
+          })
+    anyUgcSubdomainOrigin orElse {
+      // Since no UGC CDN is specified, this should be a single or few forums server, ...
+      if (forAssetsByAdmins) {
+        // ... and it makes sense to serve [any scripts and styles added by admins] from
+        // any CDN or the server directly — then, it's simpler to understand how
+        // the config values work?  (there'd be a CDN and a UGC CDN (complicated enough?)
+        // but no third CDN for admin assets)  (admins aren't supposed to try to mess up
+        // their own self hosted server) ...
+        None
+      }
+      else {
+        // ... whilst other user contents should be served from any UGC CDN.
+        anyUgcOrigin
+      }
+    }
+  }
+
 
   val scheme: String = if (secure) "https" else "http"
   def schemeColonSlashSlash: String = scheme + "://"
@@ -704,6 +752,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.
+    * Is like "site-123.example.com" — then the site id is 123.
+    * Or if the id is long, like "site-aabbcc112233.ex.com" then we'll lookup by publ id aabb...33.
     */
   val siteByIdHostnameRegex: Regex = {
     // The hostname must be directly below the base domain, otherwise
@@ -713,7 +763,17 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomainNoPort$$""".r
   }
 
+  /** User-generated content (UGC) can (if configured) be accessed via an UGC CDN.
+    * Then, the CDN subdomains are like "u-aabbcc112233" or "a-..."  for user-generated
+    * content, and admins' custom site assets (site specific scripts & styles).
+    */
+  val anySiteByUgcPrefixAndIdHostnameRegex: Opt[Regex] = anyUgcBaseDomain map { ugcBaseDomain =>
+    s"""^([au]-)(.*)\\.$ugcBaseDomain$$""".r
+  }
+
   def SiteByIdHostnamePrefix = "site-"
+  def UgcHostnamePrefix = "u-"        // also in the regex just above
+  def AssetsUgcHostnamePrefix = "a-"  //
 
   def siteByPubIdOrigin(pubId: PubSiteId): String =
     s"$scheme://${siteByPubIdHostnamePort(pubId)}"
@@ -740,6 +800,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     * By id: If a HTTP request specifies a hostname like "site-<id>.<baseDomain>",
     * for example:  site-123.example.com,
     * then the site is looked up directly by id.
+    * Or if it's via a CDN: "u-<id>.cdn.example.com" for user-generated content,
+    * or "a-<id>..." for scripts and styles added by admins.
     */
   def lookupSiteOrThrow(request: RequestHeader): SiteBrief = {
     // Nginx sends the host name in the Host header — not in the request line.
@@ -748,10 +810,24 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     // https://tools.ietf.org/html/rfc3986#page-27
     // — Nginx instead sends just  '/url/path' and the host in the Host header.)
     // Later:
-    //val hostInHeader = request.headers.get(p_HeaderNames.HOST).getOrElse("") //  [ngx_host_hdr]
+    //val hostInHeader = request.headers.get(p_Headers.HOST).getOrElse("") //  [ngx_host_hdr]
     // For now: (doesn't matter — this'll use the Host header anyway)
-    val hostInHeader = request.host
-    lookupSiteOrThrow(host = hostInHeader, request.uri)
+
+    val forwHost =
+          if (config.featureFlags.contains("ffIgnoreXForwardedHost")) None
+          else {
+            val anyForwardedProto = request.headers.get(p_Headers.X_FORWARDED_PROTO)
+            val anyForwardedHost = request.headers.get(p_Headers.X_FORWARDED_HOST)
+            // Very odd if a request to the CDN didn't use https.
+            throwForbiddenIf(anyForwardedHost.isDefined && secure &&
+                  anyForwardedProto.isSomethingButNot("https"),
+                  "TyEFORWPROTO", s"${p_Headers.X_FORWARDED_PROTO} is ${anyForwardedProto
+                      } but should be https. ${p_Headers.X_FORWARDED_HOST}: $anyForwardedHost")
+            anyForwardedHost
+          }
+    val targetHost = forwHost getOrElse request.host
+
+    lookupSiteOrThrow(host = targetHost, request.uri)
   }
 
 
@@ -795,8 +871,36 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
     if (defaultSiteHostname is hostname)
       return defaultSiteIdAndHostname
 
+    // If the hostname is  "u-<site-pub-id>" or "a-...",  then it's a CDN subdomain for
+    // user-generated contents (UGC).
+
+    anySiteByUgcPrefixAndIdHostnameRegex foreach { SiteIdUgcRegex => hostname match {
+      case SiteIdUgcRegex(prefix: St, pubId: PubSiteId) =>
+        throwForbiddenIf(pubId.length < Site.MinPubSiteIdLength,
+              "TyEUGC0SITEID", s"Not a pub site id: '$pubId', too short")
+
+        // Extra security checks, just to avoid anyone doing sth unexpected via a CDN.
+        def path = pathAndQuery.takeWhile(_ != '?')
+        val isAssets = prefix == AssetsUgcHostnamePrefix
+        import talkyard.{server => srv}
+        // Site custom assets URL paths should start with: /-/site/.
+        throwForbiddenIf(isAssets && !pathAndQuery.startsWith(srv.CustomAssetsUrlBasePath),
+              "TyEUGCAPATH", s"Bad a- UGC path: $path")
+        // Uploaded files paths should be:  /-/u/
+        throwForbiddenIf(!isAssets && !pathAndQuery.startsWith(srv.UploadsUrlBasePath)
+              // Or a legacy old path:
+              && !pathAndQuery.startsWith("/-/uploads/"),
+              "TyEUGCUPATH", s"Bad u- UGC path: $path")
+        val site = systemDao.getSiteByPubId(pubId) getOrElse {
+          throwNotFound("TyEUGC0SITE", s"No site with pub id $pubId")
+        }
+        return site.brief
+      case _ =>
+    }}
+
     // If the hostname is like "site-123.example.com" then we'll just lookup site id 123.
     // Or if the id is long, like "site-aabbcc112233.ex.com" then we'll lookup by publ id aabb...33.
+
     val SiteByIdRegex = siteByIdHostnameRegex // uppercase, otherwise Scala won't "de-structure".
     hostname match {
       case SiteByIdRegex(siteIdString: String) =>
@@ -936,7 +1040,7 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
         val dbDaoFactory = new RdbDaoFactory(
-          rdb, ScalaBasedMigrations, getCurrentTime = now, cdnOrigin = anyCdnOrigin, isOrWasTest)
+              rdb, ScalaBasedMigrations, getCurrentTime = now, isTest = isOrWasTest)
 
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
@@ -1311,10 +1415,6 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   val dnsCnameTargetHost: Option[String] =
     conf.getOptional[String](Config.DnsCnameTargetHostConfValName).noneIfBlank
 
-  CLEAN_UP; REMOVE // this + the routes file entry [2KGLCQ4], use UploadsUrlBasePath instead only.
-  val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
-  require(uploadsUrlPath == talkyard.server.UploadsUrlBasePath, "TyE2UKDU0")
-
   val maxGroupMentionNotfs: Int =
     conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 25
 
@@ -1382,12 +1482,22 @@ class Config(conf: play.api.Configuration) extends TyLogging {
             .getOrElse(3 * Mebibyte64)  // or 25 MiB? Nginx: TY_NGX_LIMIT_REQ_BODY_SIZE=25m
   }
 
+  /** This CDN is for assets (js, css, built-in images) only. */
   object cdn {
     /** No trailing slash. */
     val origin: Option[String] =
       conf.getOptional[String](CdnOriginConfValName).map(_.dropRightWhile(_ == '/')).noneIfBlank
+  }
 
-    def uploadsUrlPrefix: Option[String] = origin.map(_ + uploadsUrlPath)
+  /** This is for user-generated content (but not built-in scripts and styles). */
+  object ugc {
+    /** No trailing slash. */
+    val origin: Option[String] =
+      conf.getOptional[String](UgcOriginConfValName).map(_.dropRightWhile(_ == '/')).noneIfBlank
+
+    /** No trailing slash. */
+    val baseDomain: Opt[St] =
+      conf.getOptional[St](UgcBaseDomainConfValName).map(_.dropRightWhile(_ == '/')).noneIfBlank
   }
 
   object createSite {

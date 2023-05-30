@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao._
 import talkyard.server.authz.AuthzCtxOnForum
+import talkyard.server.pop
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 import SummaryEmailsDao._
@@ -98,7 +99,8 @@ trait SummaryEmailsDao {
           if (millisSinceLast > OneWeekInMillis) TopTopicsPeriod.Month
           else if (millisSinceLast > OneDayInMillis) TopTopicsPeriod.Week
           else TopTopicsPeriod.Day
-        val pageQuery = PageQuery(PageOrderOffset.ByScoreAndBumpTime(offset = None, period),
+        val pageQuery = PageQuery(PageOrderOffset.ByScoreAndBumpTime(
+              offset = None, period, scoreAlg = pop.PagePopularityCalculator.CurrentScoreAlg),
           PageFilter(PageFilterType.ForActivitySummaryEmail, includeDeleted = false),
           // About-category pages can be interesting? E.g. new category created & everyone clicks Like.
           includeAboutCategoryPages = settings.showCategories)

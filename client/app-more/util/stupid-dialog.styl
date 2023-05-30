@@ -3,6 +3,16 @@
   width: calc(100% - 100px);
   max-width: 1550px;
 
+  // Fill whole screen, on small screens.
+  @media (max-width: 700px)
+    width: auto;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    // bottom — don't set to 0 — would that cause problems if it needs
+    // to be taller? (with an y srollbar)
+
 .esStupidDlg-Small
   max-width: 480px;
 

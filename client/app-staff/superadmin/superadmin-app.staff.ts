@@ -405,7 +405,7 @@ const SiteTableRow = createComponent({
     return (
       r.tr({},
         r.td({},
-          r.a({ href: '//site-' + site.id + '.' + stuff.baseDomain }, site.id)),
+          r.a({ href: '//site-' + site.pubId + '.' + stuff.baseDomain }, site.id)),
         r.td({},
           siteStatusToString(site.status),
           hideButton,

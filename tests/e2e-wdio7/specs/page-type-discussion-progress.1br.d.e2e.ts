@@ -27,7 +27,7 @@ const bottomCommentOneText = 'bottomCommentOneText';
 const bottomCommentTwoText = 'bottomCommentTwoText';
 
 
-describe("Page type discussion, and progress comments", () => {
+describe("page-type-discussion-progress.1br.d  TyTPATYDISC", () => {
 
   it("Initialize people", async () => {
     everyonesBrowsers = new TyE2eTestBrowser(wdioBrowserA, 'brA');

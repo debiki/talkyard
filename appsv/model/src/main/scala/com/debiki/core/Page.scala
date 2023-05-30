@@ -1241,10 +1241,10 @@ object PageOrderOffset {
   case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset(41)
 
   // Maybe should incl score algorithm id?
-  case class ByScoreAndBumpTime(offset: Opt[f32], period: TopTopicsPeriod)
+  case class ByScoreAndBumpTime(offset: Opt[f32], period: TopTopicsPeriod, scoreAlg: PageScoreAlg)
     extends PageOrderOffset(ByScoreAndBumpTimeIntVal) {
-    // For now, just hardcode PagePopularityCalculator.CurrentScoreAlg1 here.
-    def scoreAlg: PageScoreAlg = 1
+    // For now: (PagePopularityCalculator not accessible here. Maybe move alg ids to pkg core?)
+    require(scoreAlg == 1 || scoreAlg == 2, "TyE602MRSJ")
   }
 
   // ByNumRepliesAndBumpTime  33
@@ -1264,8 +1264,8 @@ object PageOrderOffset {
       case ByScoreAndBumpTimeIntVal =>
         val period = TopTopicsPeriod.fromOptInt(scorePeriodInt) getOrElse { return None }
         val alg = scoreAlgInt getOrElse { return None }
-        dieIf(alg != (1: PageScoreAlg), "TyE03MSJ62") // for now
-        ByScoreAndBumpTime(offset = None, period = period)
+        dieIf(alg != (1: PageScoreAlg) && alg != 2, "TyE03MSJ62") // for now
+        ByScoreAndBumpTime(offset = None, period = period, scoreAlg = alg)
       case _ =>
         return None
     }

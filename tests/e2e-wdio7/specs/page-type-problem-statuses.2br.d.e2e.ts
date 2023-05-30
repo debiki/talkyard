@@ -33,7 +33,7 @@ const bottomCommentTwoText = 'bottomCommentTwoText';
 const okaySolutionPostNr = 6;
 const optimalSolutionPostNr = 7;
 
-describe("Page statuses and bottom comments  TyT602AKK73", () => {
+describe("page-type-problem-statuses.2br.d  TyT602AKK73", () => {
 
   it("Initialize people", async () => {
     everyonesBrowsers = new TyE2eTestBrowser(wdioBrowserA, 'brA');

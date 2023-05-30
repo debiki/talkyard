@@ -32,7 +32,7 @@ const bottomCommentOneText = 'bottomCommentOneText';
 const bottomCommentTwoText = 'bottomCommentTwoText';
 
 
-describe("Page statuses and bottom comments", () => {
+describe("page-type-idea-statuses-comments.2br.d  TyTPATYIDEA", () => {
 
   it("Initialize people", async () => {
     brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');

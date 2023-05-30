@@ -81,6 +81,8 @@ class DaoAppSuite(
     val pubId = "testsiteid"
     val canonicalHostnameStr = Some("forum.example.com")
     val allHostnames: Seq[String] = canonicalHostnameStr.toSeq
+    val status = SiteStatus.Active
+    val featureFlags = ""
   }
 
   lazy val textAndHtmlMaker = new TextAndHtmlMaker(dummyNoSite, context.nashorn)

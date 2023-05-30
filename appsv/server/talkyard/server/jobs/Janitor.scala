@@ -94,7 +94,11 @@ abstract class BackgroundJobsActor(actorName: St) extends Actor {
   override def receive: Receive = {
     case message =>
       def errorPrefix: St = s"Error in actor $actorName when handling ${classNameOf(message)}"
-      try tryReceive(message, globals.jobsArePaused)
+      try {
+        if (globals.isInitialized && !globals.jobsArePaused) {
+          tryReceiveUnlessJobsPaused(message)
+        }
+      }
       catch {
         case ex: java.sql.SQLException =>
           if (DatabaseUtils.isConnectionClosed(ex)) {
@@ -113,15 +117,14 @@ abstract class BackgroundJobsActor(actorName: St) extends Actor {
       }
   }
 
-  def tryReceive(message: Any, paused: Bo): U
+  def tryReceiveUnlessJobsPaused(message: Any): U
 }
 
 
 
 class JanitorActor(val globals: Globals) extends BackgroundJobsActor("JanitorActor") {
 
-  def tryReceive(message: Any, paused: Bo): U = {
-    if (paused) return ()
+  def tryReceiveUnlessJobsPaused(message: Any): U = {
     message match {
       case DeleteOldStuff =>
         findAndDeleteOldStuff()

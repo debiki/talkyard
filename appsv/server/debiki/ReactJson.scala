@@ -173,6 +173,7 @@ class JsonMaker(dao: SiteDao) {
       "isEmbedded" -> false,
       "embeddedOriginOrEmpty" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
+      // anyUgcOrigin — not yet needed; the site is empty.
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id),  // LATER remove in Prod mode [5UKFBQW2]
@@ -506,6 +507,7 @@ class JsonMaker(dao: SiteDao) {
       // the Talkyard server origin in the links. [REMOTEORIGIN] [60MRKDJ56]
       "embeddedOriginOrEmpty" -> renderParams.embeddedOriginOrEmpty,
       "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
+      "anyUgcOrigin" -> JsStringOrNull(globals.anyUgcOriginFor(site)),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
@@ -570,6 +572,7 @@ class JsonMaker(dao: SiteDao) {
       "isEmbedded" -> false,  // what ??? Yes, if in emb editor iframe
       "embeddedOriginOrEmpty" -> "",  // what ??? but not in use, instead: [60MRKDJ56]
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
+      "anyUgcOrigin" -> JsStringOrNull(globals.anyUgcOriginFor(site)),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
@@ -1664,17 +1667,25 @@ object JsonMaker {
     */
   private def makeForumOrCategoryJson(forumPath: PagePath, category: Category): JsObject = {
     val forumPathSlash = forumPath.value.endsWith("/") ? forumPath.value | forumPath.value + "/"
+    val latestOrTop = category.doItVotesEnabled ? "top" | "latest"  // [anc_cat_path]
     val (name, path) =
       if (category.isRoot)
-        ("Home", s"${forumPathSlash}latest")   // [i18n]
+        ("Home", s"$forumPathSlash$latestOrTop")   // I18N
       else
-        (category.name, s"${forumPathSlash}latest/${category.slug}")
-    var result = Json.obj(
-      "categoryId" -> category.id,
-      "title" -> name,
-      "path" -> path,
-      "unlistCategory" -> category.unlistCategory,
-      "unlistTopics" -> category.unlistTopics)
+        (category.name, s"$forumPathSlash$latestOrTop/${category.slug}")
+    var result = Json.obj( // ts: Ancestor
+          "categoryId" -> category.id,
+          "title" -> name,
+          "path" -> path)
+    if (category.doItVotesEnabled) {
+      result += "doItVotesPopFirst" -> JsTrue
+    }
+    if (category.unlistCategory) {
+      result += "unlistCategory" -> JsTrue
+    }
+    if (category.unlistTopics) {
+      result += "unlistTopics" -> JsTrue
+    }
     if (category.isDeleted) {
       result += "isDeleted" -> JsTrue
     }

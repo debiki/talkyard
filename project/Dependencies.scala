@@ -20,7 +20,7 @@ object ProjectDirectory {
 object Dependencies {
 
   object Play {
-    val json = "com.typesafe.play" %% "play-json" % "2.9.3"
+    val json = "com.typesafe.play" %% "play-json" % "2.9.4"
   }
 
   object Libs {
@@ -39,7 +39,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.4.2"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.5.4"
 
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
@@ -62,11 +62,11 @@ object Dependencies {
 
     // Does v1.25 recognize .woff and .woff2 file extensions? Then can remove
     // extra checks in module ty-core. [5AKR20]
-    val apacheTika = "org.apache.tika" % "tika-core" % "2.6.0"
+    val apacheTika = "org.apache.tika" % "tika-core" % "2.8.0"
 
-    val jsoup = "org.jsoup" % "jsoup" % "1.15.3"
+    val jsoup = "org.jsoup" % "jsoup" % "1.16.1"
 
-    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.14.0"
+    val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.1"
 
     // ScribeJava, an OAuth lib, also works for OIDC (OpenID Connect).
     // ScribeJava is listed by Microsoft as compatible with Azure,
@@ -96,20 +96,20 @@ object Dependencies {
     app_1      | SLF4J: Ignoring binding found at [jar:file:/home/owner/.cache/coursier/v1/https/repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.2.11/logback-classic-1.2.11.jar!/org/slf4j/impl/StaticLoggerBinder.class]
     app_1      | SLF4J: See http://www.slf4j.org/codes.html#ignoredBindings for an explanation.
     */
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.4"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.6"
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
     // 1.3.x is for Java EE, 1.4.x is for Jakarta (which I don't think we use), otherwise identical.
-    val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.4"
+    val logbackCore = "ch.qos.logback" % "logback-core" % "1.3.6"
 
     // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.2"
+    val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
     //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
 
 
     // ----- Metrics, tracing
 
-    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.12"
+    val metricsCore = "io.dropwizard.metrics" % "metrics-core" % "4.2.18"
 
     // Deprecated. SHOULD migrate to OpenTelemetry, they say, https://opentelemetry.io/.
     // 1.8.1 exists now.
@@ -138,7 +138,7 @@ object Dependencies {
     //
     // Let's use Java-JWT. It's well-known and its readme has a simple decoding example.
     // Repo: https://github.com/auth0/java-jwt
-    val auth0JavaJwt = "com.auth0" % "java-jwt" % "3.19.3"
+    val auth0JavaJwt = "com.auth0" % "java-jwt" % "4.4.0"
 
 
     // ----- PASETO tokens
@@ -169,8 +169,8 @@ object Dependencies {
 
     // ----- Test
 
-    val scalactic = "org.scalactic" %% "scalactic" % "3.2.14"
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.14" % "test"
+    val scalactic = "org.scalactic" %% "scalactic" % "3.2.16"
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.16" % "test"
     val scalaTestPlusPlay = "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
     // Don't use, migrate to ScalaTest instead, some day.

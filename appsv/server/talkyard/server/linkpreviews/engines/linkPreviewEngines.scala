@@ -239,7 +239,7 @@ class InstagramPrevwRendrEng(globals: Globals, siteId: SiteId, mayHttpFetch: Boo
 
 // Talkayrd internal links, i.e. to other pages within the same site.
 
-class InternalLinkPrevwRendrEng(globals: Globals, siteId: SiteId)
+class InternalLinkPrevwRendrEng(globals: Globals, site: SiteIdHostnames)
   extends InstantLinkPrevwRendrEng(globals) {
 
   def providerLnPvCssClassName: String = "s_LnPv-Int"
@@ -262,10 +262,6 @@ class InternalLinkPrevwRendrEng(globals: Globals, siteId: SiteId)
     // If no hostname, then it's a local link (right?).
     if (domainOrAddress eq null)
       return true
-
-    val site = globals.siteDao(siteId).getSite() getOrElse {
-      return false // weird
-    }
 
     site.allHostnames.contains(domainOrAddress)  // [find_int_links]
   }
@@ -296,7 +292,7 @@ class InternalLinkPrevwRendrEng(globals: Globals, siteId: SiteId)
     var maySeePost = false
     var mayNotSeeDbgCode = ""
 
-    val dao = globals.siteDao(siteId)
+    val dao = globals.siteDao(site.id)
     dao.getPostPathForUrlPath(path = unsafeUrlPath, hash = unsafeHashFrag) match {
       case None =>
         () // Leave postFound = false.

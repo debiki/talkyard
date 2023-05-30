@@ -26,7 +26,7 @@ const infoPageEditedBody = 'infoPageEditedBody';
 const infoPageEd2Body = 'infoPageEd2Body';
 
 
-describe("page-type-info-page.test.ts  TyTE2E503MKTR3", () => {
+describe("page-type-info-page.1br.d  TyTE2E503MKTR3", () => {
 
   it("Initialize people", () => {
     const brA = new TyE2eTestBrowser(wdioBrowserA, 'brA');

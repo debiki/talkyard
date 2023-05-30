@@ -28,6 +28,8 @@ object PagePopularityCalculator {
   // Currently there's just one; it has no name.
   // If adding more, rename json field: readInt(jsObj, "algorithmVersion") to "scoreAlg"?
   val CurrentScoreAlg: PageScoreAlg = 1
+  val OpLikeVotes: PageScoreAlg = 2
+  val AllAlgs = Seq(CurrentScoreAlg, OpLikeVotes)
 
 
   /** How do votes affect the score:
@@ -56,17 +58,36 @@ object PagePopularityCalculator {
     * @param stats
     * @return
     */
-  def calcPopularityScores(stats: PagePopStatsNowAndThen): PagePopularityScores = {
-    PagePopularityScores(
-      pageId = stats.pageId,
-      updatedAt = stats.sinceYesterday.to,
-      scoreAlgorithm = CurrentScoreAlg,
-      dayScore = calcPopScore(stats.sinceYesterday),
-      weekScore = calcPopScore(stats.sinceLastWeek),
-      monthScore = calcPopScore(stats.sinceLastMonth),
-      quarterScore = calcPopScore(stats.sinceLastQuarter),
-      yearScore = calcPopScore(stats.sinceLastYear),
-      allScore = calcPopScore(stats.sinceGenesis))
+  def calcPopularityScores(stats: PagePopStatsNowAndThen, scoreAlg: PageScoreAlg)
+          : PagePopularityScores = {
+    scoreAlg match {
+      case CurrentScoreAlg =>
+        PagePopularityScores(
+              pageId = stats.pageId,
+              updatedAt = stats.sinceYesterday.to,
+              scoreAlgorithm = scoreAlg,
+              dayScore = calcPopScore(stats.sinceYesterday),
+              weekScore = calcPopScore(stats.sinceLastWeek),
+              monthScore = calcPopScore(stats.sinceLastMonth),
+              quarterScore = calcPopScore(stats.sinceLastQuarter),
+              yearScore = calcPopScore(stats.sinceLastYear),
+              triennialScore = calcPopScore(stats.sinceLast3Years),
+              allScore = calcPopScore(stats.sinceGenesis))
+      case OpLikeVotes =>
+        PagePopularityScores(
+              pageId = stats.pageId,
+              updatedAt = stats.sinceYesterday.to,
+              scoreAlgorithm = scoreAlg,
+              dayScore = stats.sinceYesterday.numOpLikesTotal,
+              weekScore = stats.sinceLastWeek.numOpLikesTotal,
+              monthScore = stats.sinceLastMonth.numOpLikesTotal,
+              quarterScore = stats.sinceLastQuarter.numOpLikesTotal,
+              yearScore = stats.sinceLastYear.numOpLikesTotal,
+              triennialScore = stats.sinceLast3Years.numOpLikesTotal,
+              allScore = stats.sinceGenesis.numOpLikesTotal)
+      case _ =>
+        die(s"Bad score alg: $scoreAlg [TyESCOREALG462]")
+    }
   }
 
 
@@ -145,7 +166,8 @@ object PagePopularityCalculator {
     val popWeekly = calcOnePopStats(now.minusDays(8), now, pageParts, actions, visitsByUserId)
     val popMonthly = calcOnePopStats(now.minusDays(32), now, pageParts, actions, visitsByUserId)
     val popQuarterly = calcOnePopStats(now.minusDays(100), now, pageParts, actions, visitsByUserId)
-    val popYearly = calcOnePopStats(now.minusDays(367), now, pageParts, actions, visitsByUserId)
+    val popYearly = calcOnePopStats(now.minusDays(365 + 2), now, pageParts, actions, visitsByUserId)
+    val pop3Years = calcOnePopStats(now.minusDays(365 * 3 + 2), now, pageParts, actions, visitsByUserId)
     val popSinceGenesis = calcOnePopStats(When.Genesis, now, pageParts, actions, visitsByUserId)
     /*
     val popDaily = popularityInThePast(36 * OneHourInMillis)
@@ -156,13 +178,14 @@ object PagePopularityCalculator {
     */
 
     PagePopStatsNowAndThen(
-      pageId = pageParts.pageId,
-      sinceYesterday = popDaily,
-      sinceLastWeek = popWeekly,
-      sinceLastMonth = popMonthly,
-      sinceLastQuarter = popQuarterly,
-      sinceLastYear = popYearly,
-      sinceGenesis = popSinceGenesis)
+          pageId = pageParts.pageId,
+          sinceYesterday = popDaily,
+          sinceLastWeek = popWeekly,
+          sinceLastMonth = popMonthly,
+          sinceLastQuarter = popQuarterly,
+          sinceLastYear = popYearly,
+          sinceLast3Years = pop3Years,
+          sinceGenesis = popSinceGenesis)
   }
 
 

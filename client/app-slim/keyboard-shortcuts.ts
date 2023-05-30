@@ -633,7 +633,7 @@ function onKeyDown(event: KeyboardEvent) {
     if (otherKeyAlreadyDown) {
       resetAndCloseDialog();
     }
-    if (uiPrefs == UiPrefsKeyboardShortcuts.OnButNoDoubleShift) {
+    if (uiPrefs.kbd == UiPrefsKeyboardShortcuts.OnButNoDoubleShift) {
       skipNextShiftUp = true;
     }
     return;

@@ -422,13 +422,21 @@ const enum TopicSortOrder {
 }
 
 
+const enum ScoreAlg {
+  ByAllVotes = 1,
+  ByDoItVotes = 2, // hmm but is named "OpLikeVotes" server side, what's best?
+}
+
 const enum TopTopicsPeriod {
   Day = 1,
   Week = 2,
   Month = 3,
   Quarter = 4,
   Year = 5,
-  All = 6
+  Triennial = 6,
+  All = 7,
+
+  Default = Year,  // Sync w Scala
 }
 
 

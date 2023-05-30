@@ -1017,8 +1017,9 @@ object RdbUtil {
           // comtNesting =  param_comt_nesting_c  — later
           widthLayout = WidthLayout.fromInt(rs.getInt("param_width_layout_c")),
           isEmbedded = rs.getBoolean("param_is_embedded_c"),
-          origin = rs.getString("param_origin_c"),
-          anyCdnOrigin = getOptString(rs, "param_cdn_origin_c"),
+          origin = rs.getString("param_origin_or_empty_c"),
+          anyCdnOrigin = getOptStringEmptyAsNone(rs, "param_cdn_origin_or_empty_c"),
+          anyUgcOrigin = getOptStringEmptyAsNone(rs, "param_ugc_origin_or_empty_c"),
           // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
           anyPageRoot = None,
           anyPageQuery = None)

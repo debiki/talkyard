@@ -28,7 +28,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import scala.collection.{immutable, mutable => mut}
 import scala.collection.mutable.ArrayBuffer
-import talkyard.server.{TyContext, TyController}
+import talkyard.server.{TyContext, TyController, pop}
 import javax.inject.Inject
 import ForumController._
 import talkyard.server.JsX._
@@ -168,7 +168,9 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: TyContext)
       defaultSortOrder =
             if (!doItVotesPopFirst) None
             else Some(PageOrderOffset.ByScoreAndBumpTime(
-                  offset = None, TopTopicsPeriod.Year)),
+                  // Later: Make configurable. [conf_do_it_cats]
+                  offset = None, TopTopicsPeriod.Default,
+                  scoreAlg = pop.PagePopularityCalculator.OpLikeVotes)),
       comtOrder = anyComtOrder,
       comtNesting = anyComtNesting,
       comtsStartHidden = comtsStartHidden,

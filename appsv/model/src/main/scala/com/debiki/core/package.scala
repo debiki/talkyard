@@ -179,7 +179,7 @@ package object core {
   type PageVersion = Int  // [Scala_3] opaque type ... And so many more here!
   val NoVersion: PageVersion = 0
 
-  type PageScoreAlg = i32  // for now
+  type PageScoreAlg = i32  // for now  [Scala_3] opaque type
 
   type CategoryId = Int   // too long!
   type CatId = CategoryId // better
@@ -1156,8 +1156,9 @@ package object core {
     * so good to cache those per origin.
     * Also if accessing via https://site-NNNN.basedomain.com (what? which links?)
     *
-    * @param anyCdnOrigin — Uploads and images should use the cdn origin. Should rerender cached
-    * html if the cdn origin changes.
+    * @param anyCdnOrigin — Talkyard's scripts and styles can use a separate CDN origin.
+    * @param anyUgcOrigin — Uploads and images should use a UGC origin. Should rerender cached
+    * html if the UGC origin changes.
     * @param anyPageRoot — if rendering only parts of a page
     * @param anyPageQuery — if rendering a topic list page, which topics to include (useful if
     * Javascript diabled, and one wants to list topics on topic list page 2, 3, 4 ...)
@@ -1169,6 +1170,7 @@ package object core {
     isEmbedded: Bo,
     origin: St,
     anyCdnOrigin: Opt[St],
+    anyUgcOrigin: Opt[St],
     anyPageRoot: Opt[PostNr],
     anyPageQuery: Opt[PageQuery]) {
 
@@ -1176,6 +1178,7 @@ package object core {
     def thePageRoot: PostNr = anyPageRoot getOrElse BodyNr
     def embeddedOriginOrEmpty: St = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
     def cdnOriginOrEmpty: St = anyCdnOrigin getOrElse ""
+    def ugcOriginOrEmpty: St = anyUgcOrigin getOrElse ""
   }
 
   case class RenderParamsAndFreshHash(
@@ -1217,9 +1220,12 @@ package object core {
 
   val WrongCachedPageVersion: CachedPageVersion =
     CachedPageVersion(
-          siteVersion = -1, pageVersion = -1, appVersion = "wrong",
-          PageRenderParams(PostSortOrder.OldestFirst, WidthLayout.Tiny,
-                isEmbedded = false, "https://example.com", None, None, None),
+          siteVersion = -1,
+          pageVersion = -1,
+          appVersion = "wrong",
+          renderParams = PageRenderParams(
+                PostSortOrder.OldestFirst, WidthLayout.Tiny,
+                isEmbedded = false, "https://example.com", None, None, None, None),
           storeJsonHash = "wrong")
 
 

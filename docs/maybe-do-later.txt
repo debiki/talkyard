@@ -41,6 +41,13 @@ post A is-answer-to post Q (could be many answers), multireplies, here.
 table  post_rels_t  to link to flagged posts or user accounts.
 Why? See <./tyworld.adoc>, the Flag Pages and Posts section.
 
+[do_it_votes]
+Optionally, use separate Do-It and Do-Not votes, to show if one wants
+to implement an idea or not — in addition to Like votes. Sometimes,
+a feature request / idea might be well researched & make sense,
+and it's good to Like it, although for reasons the poster couldn't
+have known about, Do-Not vote.
+
 [pat_rels_t]  Rename & change post_actions3  to  pat_rels_t, and store
 votes and AssignedTo there.
 

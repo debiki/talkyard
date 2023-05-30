@@ -669,10 +669,12 @@ class RdbSystemTransaction(
         and p.page_id = ?
         and h.param_comt_order_c = ?
         and h.param_comt_nesting_c = ?
-        and h.param_is_embedded_c = ?
         and h.param_width_layout_c = ?
-        and h.param_origin_c = ?
-        and h.param_cdn_origin_c = ?
+        and h.param_theme_id_c_u = 2
+        and h.param_is_embedded_c = ?
+        and h.param_origin_or_empty_c = ?
+        and h.param_cdn_origin_or_empty_c = ?
+        and h.param_ugc_origin_or_empty_c = ?
       """
 
     val values = List(
@@ -681,10 +683,12 @@ class RdbSystemTransaction(
           sitePageId.pageId.asAnyRef,
           renderParams.comtOrder.toInt.asAnyRef,
           renderParams.comtNesting.asAnyRef,
-          renderParams.isEmbedded.asAnyRef,
           renderParams.widthLayout.toInt.asAnyRef,
+          renderParams.isEmbedded.asAnyRef,
           renderParams.embeddedOriginOrEmpty,
-          renderParams.cdnOriginOrEmpty)
+          renderParams.cdnOriginOrEmpty,
+          renderParams.ugcOriginOrEmpty,
+          )
 
     runQueryFindOneOrNone(query, values, rs => {
       val currentSitePageVersion = SitePageVersion(
@@ -707,9 +711,16 @@ class RdbSystemTransaction(
     // e.g. add a pages-to-rerender queue table. Or just indexes somehow.
 
     // First find pages for which there is on cached content html.
-    // But not very new pages (more recent than a few minutes) because those pages
-    // will likely be rendered by a GET request handling thread any time soon, when
-    // they're requested, the first time. See debiki.dao.RenderedPageHtmlDao [5KWC58].
+    // But not 1) very new pages (more recent than a few minutes [.wait_a_minute]) because
+    // those pages will likely be rendered by a GET request handling thread
+    // any time soon, when they're requested, the first time.
+    // See debiki.dao.RenderedPageHtmlDao [5KWC58].
+    // And not 2) old pages, say, more than a month — if they haven't
+    // been rendered at all during that long, they're abandoned, in one way or
+    // another? E.g. a new site, an auto generated page, that was never visited?
+    // (Or if page_html_cache_t was cleared for whatever reason, then, it's
+    // not necessary to background-rerender all older pages? Typically the more recent
+    // pages get most visits. And older ones can be rerendered on demand.)
     val pagesNotCached = mutable.Set[PageIdToRerender]()
     val neverRenderedQuery = s""" -- SLOW_QUERY: 4 ms @ Ty.io [rerndr_qry]
       select p.site_id, p.page_id, p.version current_version
@@ -722,7 +733,8 @@ class RdbSystemTransaction(
           inner join page_paths3 pp
               on p.site_id = pp.site_id and p.page_id = pp.page_id and pp.canonical = 'C'
       where h.page_id_c is null -- page not in cache
-      and p.created_at < now_utc() - interval '2' minute
+        and p.created_at between (now_utc() - interval '1' month)
+                             and (now_utc() - interval '2' minute) -- [.wait_a_minute]
       and p.page_role != ${PageType.SpecialContent.toInt}
       limit $limit
       """
@@ -752,34 +764,54 @@ class RdbSystemTransaction(
           h.param_comt_order_c,
           h.param_comt_nesting_c,
           h.param_width_layout_c,
+          h.param_theme_id_c_u,
           h.param_is_embedded_c,
-          h.param_origin_c,
-          h.param_cdn_origin_c,
+          h.param_origin_or_empty_c,
+          h.param_cdn_origin_or_empty_c,
+          h.param_ugc_origin_or_empty_c,
           h.cached_site_version_c,
           h.cached_page_version_c,
           h.cached_app_version_c,
-          h.cached_store_json_hash_c
+          h.cached_store_json_hash_c,
+          h.updated_at_c
           -- cached_store_json_c   -- Not needed — we're looking up not to use, but
           -- cached_html_c         -- to delete this page_html_cache_t row.
         from pages3 p inner join page_html_cache_t h
             on p.site_id = h.site_id_c
             and p.page_id = h.page_id_c
             -- Is the cached html stale?
-            and p.version > h.cached_page_version_c
+            and p.version > h.cached_page_version_c  -- [stale_version_check]
         -- Don't rerender embedded comments pages. It's a bit tricky to lookup their origin,
         -- which needs to be included [EMBCMTSORIG]. And it's ok if it takes a second extra to
         -- load an embedded comments page because it gets rendered on demand: the user will start
         -- with looking at the blog post/article, won't care about the comments until later, right.
-        -- Do need to match the cdn origin though.
         where p.page_role <> ${PageType.EmbeddedComments.toInt}
+          and h.param_theme_id_c_u = 2
           and h.param_is_embedded_c = false
           and h.param_width_layout_c in (${WidthLayout.Tiny.toInt}, ${WidthLayout.Medium.toInt})
+          and p.created_at < (now_utc() - interval '2' minute) -- [.wait_a_minute]
           -- The server's origin needs to be specified only for embedded pages. [REMOTEORIGIN]
-          and h.param_origin_c = ''
-          and h.param_cdn_origin_c = ?
+          and h.param_origin_or_empty_c = ''
+          -- Skip rows with the wrong CDN or UGC origin (maybe the CDN or UGC was
+          -- recently changed). Later, we delete stale rows [regardless_of_cdn].
+          -- Ignore:  h.param_cdn_origin_or_empty_c
+          --    and:  h.param_ugc_origin_or_empty_c
         limit $limit
         """
-      runQuery(outOfDateQuery, List(daoFactory.cdnOrigin.getOrElse("")), rs => {
+        /* Don't, random() might want to scan the whole table:
+        // (see e.g.: https://stackoverflow.com/questions/8674718/best-way-to-select-random-rows-postgresql )
+        -- Rerender recently accessed pages first (but not very recently
+        -- see [.wait_a_minute] above).
+        -- Hmm could this cause starvation? If a few pages get changed all the
+        -- time, and always rerendered first?
+        -- order by h.updated_at_c desc limit $limit
+        order by random() limit ${limit * 2}) subquery_name
+        -- But picking the first $limit of $limit*2 random rows, should avoid that problem.
+        -- However, what's the exec plan for random()? Ooops, it is (can be) a full table scan?
+        order by updated_at_c desc limit $limit
+        */
+
+      runQuery(outOfDateQuery, Nil, rs => {
         while (rs.next()) {
           pagesStale += getPageIdToRerender(rs, hasCachedVersion = true)
         }

@@ -769,9 +769,10 @@ export class TyE2eTestBrowser {
         return me;
       },
 
-      waitAndGetMyself: async (): Pr<TestMyself> => {
-        return await this.waitUntil(async () => {
-          return await this.#br.execute(function() {
+      waitAndGetMyself: async (): Pr<TestMyself | false> => {
+        let result: TestMyself;
+        await this.waitUntil(async () => {
+          const meOrFalse = await this.#br.execute(function() {
             try {
               return window['debiki2'].ReactStore.getMe();
             }
@@ -779,9 +780,12 @@ export class TyE2eTestBrowser {
               return false;
             }
           });
+          if (meOrFalse) result = meOrFalse;
+          return !!meOrFalse;
         }, {
           message: `Waiting for theStore.me  TyT6503MES63Z`
-        }) as TestMyself;
+        });
+        return result;
       },
     }
 

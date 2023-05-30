@@ -90,8 +90,8 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
   val globals: debiki.Globals = systemDao.globals
 
 
-  def tryReceive(message: Any, paused: Bo): U = if (!paused) message match {
-    case whatever: String if globals.isInitialized =>
+  def tryReceiveUnlessJobsPaused(message: Any): U = message match {
+    case whatever: St =>
         whatever match {
           case "SendNotfs" =>
             loadAndSendNotifications()
