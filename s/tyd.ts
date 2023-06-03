@@ -1,5 +1,13 @@
 import * as _  from 'lodash';
-import * as minimist from 'minimist';
+
+// Stopped working, with v 1.2.8, but worked fine with 1.2.6:
+//   import * as minimist from 'minimist';
+// This:  `minimist(process.argv.slice(2))`
+// causes an error:  "TypeError: minimist is not a function".
+// This works w 1.2.8 though:
+const minimist = require('minimist');
+// import types * as minimist from 'minimist';  ??
+
 import { die, dieIf, logMessage, logMessageIf, logDebug, logError, logErrorIf, logUnusual
             } from '../tests/e2e-wdio7/utils/log-and-die';
 import { argv } from 'process';
