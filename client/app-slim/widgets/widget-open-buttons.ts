@@ -28,6 +28,15 @@ const r = ReactDOMFactories;
 
 
 
+export function openAssignToDiag(post: Post, store: Store, onOk?: () => Vo) {
+  const curPats = post.assigneeIds?.map(id => store.usersByIdBrief[id]);
+  morebundle.openAddPeopleDialog({ curPats, onChanges: (res: PatsToAddRemove) => {
+    Server.changeAssignees({ ...res, postId: post.uniqueId }, onOk);
+  }})
+}
+
+
+
 export const DiscLayoutDropdownBtn = React.createFactory<DiscLayoutDropdownBtnProps>(
         function(props: DiscLayoutDropdownBtnProps) {
 

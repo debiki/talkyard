@@ -193,11 +193,8 @@ const ChangePageDialog = createComponent({
                     r.li({ key: patId },
                       UserName({ patId, store, avoidFullName: true })))),
             Button({ className: 'e_AsgB', onClick: () => {
-                openAddPeopleDialog({
-                      curPats: origPost.assigneeIds?.map(id => store.usersByIdBrief[id]),
-                      onChanges: (res: PatsToAddRemove) => {
-                  Server.changeAssignees({ ...res, postId: origPost.uniqueId }, this.close);
-                }}) }}, t.ChangeDots),
+                  widgets.openAssignToDiag(origPost, store, this.close);
+                }}, t.ChangeDots),
               ));
 
       changeCategoryListItem = !canChangeCategory ? null : rFragment({},

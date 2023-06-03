@@ -156,6 +156,7 @@ function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
   const curPageId: PageId | U = store.currentPageId;
   const curPageType: PageRole | U = curPage && curPage.pageRole;
   const curPageAuthorId: PatId | U = curPage && curPage.postsByNr[BodyNr]?.authorId;
+  const origPost: Post | U = curPage && curPage.postsByNr[BodyNr];
   const isDisc = page_isDiscussion(curPageType);
   const isForum = curPageType === PageRole.Forum;
 
@@ -164,6 +165,9 @@ function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
   const isStaff: Bo = pat_isStaff(me);
   const isMember: Bo = pat_isMember(me);
   const isPageAuthorOrStaff = isStaff || curPageAuthorId === me.id;
+  const isTrustedOrCore = isStaff || user_trustLevel(me) >= TrustLevel.Trusted;
+  const isOpAssigned = origPost && !_.isEmpty(origPost.assigneeIds);
+  const isOpAssignedToMe: Bo = origPost && _.includes(origPost.assigneeIds, me.id);
 
   // Later:  mayChangePage = ... calculate permissions, look at PostActions,
   // show Edit button or not, for example.
@@ -178,6 +182,14 @@ function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
   const curNotfLevel: PageNotfLevel | Z =
           curEffNotfPref && notfPref_level(curEffNotfPref);
   const curNotfLevelTitle: St | Z = curEffNotfPref && notfPref_title(curEffNotfPref)
+
+  function toggleMeAssigned(): Vo {
+    const addPatIds = isOpAssignedToMe ? [] : [me.id];
+    const removePatIds = isOpAssignedToMe ? [me.id] : [];
+    Server.changeAssignees({ addPatIds, removePatIds, postId: origPost.uniqueId },
+          sayWhatHappened(isOpAssignedToMe ?
+                `You are no longer assigned` : `Now assigned to you`));
+  }
 
   function changeNotfLevel(newLevel: PageNotfLevel): () => Vo {
     return function() {
@@ -210,6 +222,22 @@ function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
 
 
       // ----- In a topic
+
+      isTrustedOrCore && origPost &&
+      ['at', `Assign to:`
+          ] as ShortcInfoItem,
+
+      isTrustedOrCore && origPost &&
+      ['ato',
+          descr('a',"ssign ", 't',"o ", 'o', "thers"),
+          () => widgets.openAssignToDiag(origPost, store)],
+
+      // (Don't add any *un*assign ShortcInfoItem — there's just one item (unassign me).)
+      isTrustedOrCore && origPost &&
+      [isOpAssignedToMe ? 'uam' : 'atm',
+          isOpAssignedToMe ? descr('u',"n", 'a',"ssign ",           'm', "e")
+                           : descr(         'a',"ssign ", 't',"o ", 'm', "e"),
+          toggleMeAssigned],
 
       isPageAuthorOrStaff &&
       ['c',
@@ -396,6 +424,12 @@ function sayWhatHappened(whatHappened: St | RElm): () => Vo {
   return function() {
     morebundle.openDefaultStupidDialog({
       closeButtonTitle: t.Okay,
+      // It's just a brief What-happened confirmation message, nice if
+      // it's easy to read at a glance, so, bigger font:
+      biggerFont: true,
+      // And a smaller dialog, so one sees the Ok button without having to
+      // move the eyes:  (not much text in the dialog)
+      small: true,
       body: whatHappened,
     });
   }

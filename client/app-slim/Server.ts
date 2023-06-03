@@ -2128,11 +2128,11 @@ export function makeDownloadPersonalDataUrl(authorId: UserId) {
 
 
 // SMALLER_BUNDLE, a tiny bit smaller: Use postAndPatchStore() instead.  [.get_n_patch]
-export function changeAssignees(ps: { addPatIds: PatId[], removePatIds: PatId[],
-          postId: PostId }, onOk: () => Vo) {
+export function changeAssignees(ps: { addPatIds?: PatId[], removePatIds?: PatId[],
+          postId: PostId }, onOk?: () => Vo) {
   postJsonSuccess('/-/change-pat-node-rels', (storePatch: StorePatch) => {
     ReactActions.patchTheStore(storePatch);
-    onOk();
+    onOk && onOk();
   }, { ...ps, relType: PatPostRelType.AssignedTo });
 
 }
