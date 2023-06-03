@@ -128,7 +128,7 @@ settings.waitforTimeout = args.noTimeout || args.nt || args.dant ||
       // Wait longer, in case many tests running at the same time,
       // on a slow core i5 laptop.
       settings.parallel && settings.parallel >= 2 ?
-          42 : 27) * 1000);
+          80 : 60) * 1000);
 
 settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';
