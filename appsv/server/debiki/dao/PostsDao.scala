@@ -2534,7 +2534,7 @@ trait PostsDao {
       // For now:
       throwIfMayNotSeePost(postBef, Some(reqr))(tx)
       dieIf(relType != PatNodeRelType.AssignedTo, "TyE6X0WMSHUW5")
-      throwForbiddenIf(!reqr.isStaffOrTrustedNotThreat,
+      throwForbiddenIf(!reqr.isStaffOrTrustedNotThreat,  // [who_can_assign]
             "TyECAN0ASGN", s"You cannot assign people (min trust level is TrustedMember).")
 
       // Only works for type AssignedTo (since we look at assigneeIds).
