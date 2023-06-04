@@ -830,6 +830,11 @@ case class NotificationGenerator(
         return ()
       }
 
+      // If the person who is changing assignees, is watching the category (or a page or
+      // whole site), then don't notify han about the changes (han already knows).
+      if (notfType.isAboutAssignees && sentFrom.trueId2.trueId == member.trueId2.trueId)
+        return ()
+
       ANON_UNIMPL // excl real author id — aboutPost.createdById might be an anon.
       if (member.id == aboutPost.createdById)
         return ()

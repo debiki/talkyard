@@ -44,6 +44,7 @@ sealed abstract class NotificationType(
 
   def toInt: Int = IntValue
   def isAboutReviewTask = false
+  def isAboutAssignees = false
 }
 
 // Could:  enum / 1000 = notification type, enum % 1000 = how many got notified?
@@ -96,12 +97,18 @@ object NotificationType {
   // case object AuthorsChanged extends NotificationType(441)
   // case object AuthorsChangedInclYou extends NotificationType(442)
 
-  case object AssigneesChanged extends NotificationType(451)
+  case object AssigneesChanged extends NotificationType(451) {
+    override def isAboutAssignees = true
+  }
   // This:
   // case object AssigneesChangedInclYou extends NotificationType(452)
   // Or:?
-  case object Assigned extends NotificationType(453)
-  case object Unassigned extends NotificationType(454)
+  case object Assigned extends NotificationType(453) {
+    override def isAboutAssignees = true
+  }
+  case object Unassigned extends NotificationType(454) {
+    override def isAboutAssignees = true
+  }
 
   case object OneLikeVote extends NotificationType(501)
   // What about WrongVote, OffTopic, Unwanted?

@@ -717,6 +717,7 @@ interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   large?: Bo;
   small?: boolean;
   tiny?: boolean;
+  biggerFont?: Bo,
   // number = 1 if primary / okay button clicked, 2 if secondary button clicked, and
   // 0 if no button clicked, that is, if dialog closed by clicking x or outside.
   onCloseOk?: (number: number) => void;

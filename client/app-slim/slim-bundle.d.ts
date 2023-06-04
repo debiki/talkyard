@@ -529,6 +529,7 @@ declare namespace debiki2 {
   }
 
   namespace widgets {
+    function openAssignToDiag(post: Post, store: Store, onOk?: () => Vo);
     function DiscLayoutDropdownBtn(props: DiscLayoutDropdownBtnProps);
     function comtOrder_title(comtOrder: PostSortOrder): St;
     //function comtOrder_descr — is in the more-bundle

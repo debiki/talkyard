@@ -1407,6 +1407,7 @@ assign posts:
   basic functionality,
   notifications about assigned:
             - assign-to-basic.2br.d  TyTASSIGN01
+            - assign-to-notfs.2br.d  TyTASSIGN02
   assigning oneself:
             - assign-to-basic.2br.d  TyTASSIGN01.TyTASGSELF
   can't assigning sbd who can't see the page:
