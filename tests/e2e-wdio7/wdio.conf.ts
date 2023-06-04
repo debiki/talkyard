@@ -54,6 +54,79 @@ interface BrowserNameAndOpts {
   'sauce:options'?: any;
 }
 
+// Something is wrong with this obj, if upgrading to Typescript 5. But v4 works fine.
+/* The error:
+ ty$ time  s/wdio-7 --only assign-to-basic.2br.d --cd -i 
+
+NODE_TLS_REJECT_UNAUTHORIZED=0  node_modules/.bin/wdio  wdio.conf.ts  --only assign-to-basic.2br.d --cd -i
+
+I'll start 2 invisible chrome browsers.
+
+Execution of 1 workers started at 2023-06-04T03:40:01.078Z
+
+[0-0] I'll start 2 invisible chrome browsers.
+[0-0] 2023-06-04T03:40:06.794Z WARN @wdio/mocha-framework: Unable to load spec files quite likely because they rely on `browser` object that is not fully initialised.
+[0-0] `browser` object has only `capabilities` and some flags like `isMobile`.
+[0-0] Helper files that use other `browser` commands have to be moved to `before` hook.
+[0-0] Spec file(s): /home/user/styd/ty2/tests/e2e-wdio7/specs/assign-to-basic.2br.d.e2e.ts
+[0-0] Error: Error: Debug Failure. Output generation failed
+[0-0]     at transpileModule (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/ts-transpile-module.ts:173:48)
+[0-0]     at /home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1359:18
+[0-0]     at Object.compile (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1458:13)
+[0-0]     at Module.m._compile (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1617:30)
+[0-0]     at Module._extensions..js (internal/modules/cjs/loader.js:1143:10)
+[0-0]     at Object.require.extensions.<computed> [as .ts] (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1621:12)
+[0-0]     at Module.load (internal/modules/cjs/loader.js:979:32)
+[0-0]     at Function.Module._load (internal/modules/cjs/loader.js:819:12)
+[0-0]     at Module.require (internal/modules/cjs/loader.js:1003:19)
+[0-0]     at require (internal/modules/cjs/helpers.js:107:18)
+[0-0] RUNNING in MultiRemote - /specs/assign-to-basic.2br.d.e2e.ts
+[0-0] 2023-06-04T03:40:07.372Z ERROR @wdio/runner: Error: Unable to load spec files quite likely because they rely on `browser` object that is not fully initialised.
+[0-0] `browser` object has only `capabilities` and some flags like `isMobile`.
+[0-0] Helper files that use other `browser` commands have to be moved to `before` hook.
+[0-0] Spec file(s): /home/user/styd/ty2/tests/e2e-wdio7/specs/assign-to-basic.2br.d.e2e.ts
+[0-0] Error: Error: Debug Failure. Output generation failed
+[0-0]     at transpileModule (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/ts-transpile-module.ts:173:48)
+[0-0]     at /home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1359:18
+[0-0]     at Object.compile (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1458:13)
+[0-0]     at Module.m._compile (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1617:30)
+[0-0]     at Module._extensions..js (internal/modules/cjs/loader.js:1143:10)
+[0-0]     at Object.require.extensions.<computed> [as .ts] (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1621:12)
+[0-0]     at Module.load (internal/modules/cjs/loader.js:979:32)
+[0-0]     at Function.Module._load (internal/modules/cjs/loader.js:819:12)
+[0-0]     at Module.require (internal/modules/cjs/loader.js:1003:19)
+[0-0]     at require (internal/modules/cjs/helpers.js:107:18)
+[0-0]     at MochaAdapter._loadFiles (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/@wdio/mocha-framework/build/index.js:86:35)
+[0-0]     at processTicksAndRejections (internal/process/task_queues.js:95:5)
+[0-0]     at async MochaAdapter.init (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/@wdio/mocha-framework/build/index.js:55:9)
+[0-0]     at async Object.adapterFactory.init (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/@wdio/mocha-framework/build/index.js:318:22)
+[0-0]     at async Runner.run (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/@wdio/runner/build/index.js:83:27)
+[0-0]  Error:  Unable to load spec files quite likely because they rely on `browser` object that is not fully initialised.
+`browser` object has only `capabilities` and some flags like `isMobile`.
+Helper files that use other `browser` commands have to be moved to `before` hook.
+Spec file(s): /home/user/styd/ty2/tests/e2e-wdio7/specs/assign-to-basic.2br.d.e2e.ts
+Error: Error: Debug Failure. Output generation failed
+    at transpileModule (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/ts-transpile-module.ts:173:48)
+    at /home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1359:18
+    at Object.compile (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1458:13)
+    at Module.m._compile (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1617:30)
+    at Module._extensions..js (internal/modules/cjs/loader.js:1143:10)
+    at Object.require.extensions.<computed> [as .ts] (/home/user/styd/ty2/tests/e2e-wdio7/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (internal/modules/cjs/loader.js:979:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:819:12)
+    at Module.require (internal/modules/cjs/loader.js:1003:19)
+    at require (internal/modules/cjs/helpers.js:107:18)
+[0-0] FAILED in MultiRemote - /specs/assign-to-basic.2br.d.e2e.ts
+
+Spec Files:	 0 passed, 1 failed, 1 total (100% completed) in 00:00:06 
+
+
+Error. Webdriverio 7 E2E test failed, exit code: 1
+
+Was started like so:
+    NODE_TLS_REJECT_UNAUTHORIZED=0  node_modules/.bin/wdio  wdio.conf.ts  --only assign-to-basic.2br.d --cd -i
+
+*/
 let browserNameAndOpts: BrowserNameAndOpts = {
   browserName: settings.browserName,
 };
