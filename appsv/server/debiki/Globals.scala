@@ -1430,6 +1430,12 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   val createSiteApiSecret: Opt[St] =
     conf.getOptional[St]("talkyard.createSiteApiSecret").noneIfBlank
 
+  // FOR NOW
+  object forms {
+    val notifyAboutFormsEmailAdr: Opt[St] =
+          conf.getOptional[St]("talkyard.notifyAboutFormsEmailAddr").noneIfBlank
+  }
+
   object uploads {
     TESTS_MISSING // test that these conf vals work properly, by running UploadsDaoSpec twice,
     // once with default values, once with 2 x higher values (people typically want to increase,

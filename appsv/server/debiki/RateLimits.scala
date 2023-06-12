@@ -101,6 +101,10 @@ case class MaxLimits(
 
 
 // CLEAN
+
+/**
+  * @param maxPerDayNewUser — If unlimited, maxPerDay is used instead.
+  */
 abstract class RateLimits {  CLEAN_UP // change to case class, and all concrete limits to vals instead of objects [rate_lims_case_cl]
   def key: St
   def what: St
@@ -735,6 +739,16 @@ object RateLimits {
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
     override def isReadLimits: Opt[Bo] = Some(true)
+  }
+
+
+  object SubmitExternalForm_unused extends RateLimits {
+    val key = "ExFm"
+    val what = "submitted too many forms"
+    def maxPerFifteenSeconds = 3
+    def maxPerFifteenMinutes = 10
+    def maxPerDay = 30
+    def maxPerDayNewUser: i32 = Unlimited
   }
 }
 
