@@ -440,6 +440,10 @@ object ViewPageController {
       "stuffForMe" -> JsObjOrNull(anyMeAndRestrStuff.map(_.stuffForMe.toJson(dao))),
       )
 
+    request.context.globals.maintWorkUntilSecs foreach { secs =>
+      volatileJson += "maintWorkUntilSecs" -> JsNumber(secs)
+    }
+
     // (If the requester is logged in so we could load a real 'me' here,
     // then, somehow the browser sent the server the session id, so no need to
     // include it in the response — the browser knows already.

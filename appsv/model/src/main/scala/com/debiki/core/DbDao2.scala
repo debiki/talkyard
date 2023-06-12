@@ -18,6 +18,10 @@
 package com.debiki.core
 
 
+case class SystemSettings(
+  maintenanceUntilUnixSecs: Opt[i64])
+
+
 /** A database data access object (DAO). It gives you serializable transactions,
   * either read only, or read-write, and either for a single site, or for the whole
   * system (no particular site).

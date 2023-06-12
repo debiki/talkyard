@@ -5216,7 +5216,7 @@ export class TyE2eTestBrowser {
       clickSendMessage: async () => {
         await this.aboutUserDialog.waitForLoaded();
         await this.rememberCurrentUrl();
-        await this.waitAndClick('#e2eUD_MessageB');
+        await this.waitAndClick('.c_UD_MsgB');
         await this.waitForNewUrl();
         /*  DO_AFTER having tested this in FF with Wdio 6.0: Remove this:
         // Wait until new-message title can be edited.

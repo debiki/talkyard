@@ -108,6 +108,7 @@ type AuditLogEntryId = number;
 type TagLabel = string;
 type ApiSecretNr = number;
 type WhenMs = number;   // Unix time: milliseconds since 1970, needs 8 bytes
+type WhenSecs = number; // Unix time: seconds since 1970, needs 8 bytes too
 type WhenMins = number; // Unix time: minutes since 1970, needs just 4 bytes
 type ExtId = string;
 type ExtImpId = ExtId; // RENAME to ExtId

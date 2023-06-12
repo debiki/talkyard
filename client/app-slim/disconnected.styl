@@ -5,16 +5,68 @@
 .s_NoInetM  // [NOINETMSG]
   display: none;
   margin: 5px 5px 0;
-  padding: 5px 10px 4px;
-  font-weight: bold;
+  padding: 4px 10px 5px 12px;
+  font-size: 14.5px;
   color: $errorColor;
   background: $errorBackground;
   border: 1px solid $errorColor;
+  @media (min-width: 1000px)
+    // Why won't these margins work, unless .esTopbar_custom uses  display: flex?
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px 22px 13px
+    font-size: 15.5px;
 
-.s_MaintWorkM,
+.s_MaintWorkM button
+  margin: 2px 3px 0 0;
+  padding: 1px 7px 3px;
+  border: none;
+  color: white;
+  background: hsl(207 100% 47%);
+  box-shadow: 3px 2px 3px rgba(0, 0, 0, 0.35);
+  font-weight: bold;
+
+html.n_MaintWork .s_MaintWorkM,
 html.s_NoInet .s_NoInetM
   display: inline-block;
+
+.s_Tb-Fxd .s_MaintWorkM
+  // Otherwise the page title will be 0px to the right. [maint_msg_in_middle]
+  margin-right: 17px;
+
+// Or maybe use this always? — Let's wait.
+html.n_MaintWork .esTopbar_custom
+  display: flex;
+  flex: 1;
+
+html.n_MaintWork .s_TbW-Stc
+  margin-bottom: 20px;
+
 
 // For now, until has made WebSocket reconnect work, see: tryReonnectWebSocket() [WSRECONN].
 .s_NoInetM
   display: none !important; // [NOINETMSG]
+
+
+// Disable most buttons that would make the server write to the database, if clicked,
+// since everything is read-only, and clicking would just make the server reply No.
+html.n_MaintWork
+  .dw-a-tools,
+  .esF_BB_NewTpcB,
+  .dw-p-as,
+  .s_APAs,
+  .s_F_Ts_Cat_Edt,
+  .esWB_CreateB,
+  .c_UD_MsgB,
+  .s_UP_SendMsgB,
+  // Can't change one's notification level (would write to the database).
+  .dw-notf-level,
+  // The edit-page-title button.
+  .dw-a-edit,
+  // The edit-forum-intro button.
+  .esForumIntro_edit,
+  // It's ok to click View Answer, but not any other Change Page dialog button.
+  .s_ChPgD button:not(.e_VwAnsB)
+    opacity: 0.4 !important;
+    pointer-events: none;
+    cursor: not-allowed;

@@ -76,6 +76,10 @@ object Janitor {
           isOrWasTest ? 2.seconds | 23.seconds,
           isOrWasTest ? delayIfTest | WebhookIntervalSecs.seconds, actorRef, SendWebhooks)
 
+    globals.actorSystem.scheduler.scheduleWithFixedDelay(
+          1.seconds,
+          isOrWasTest ? delayIfTest | 10.seconds, actorRef, RefreshSystemSettings)
+
     actorRef
   }
 
@@ -83,6 +87,7 @@ object Janitor {
   object PurgeOldDeletedSites
   object ExecuteReviewTasks
   object SendWebhooks
+  object RefreshSystemSettings
 }
 
 
@@ -135,6 +140,8 @@ class JanitorActor(val globals: Globals) extends BackgroundJobsActor("JanitorAct
         executePendingReviewTasks()
       case SendWebhooks =>
         sendWebhooks()
+      case RefreshSystemSettings =>
+        refreshSystemSettings()
     }
   }
 
@@ -158,6 +165,12 @@ class JanitorActor(val globals: Globals) extends BackgroundJobsActor("JanitorAct
   private def sendWebhooks(): U = {
     val dao = globals.systemDao
     dao.sendWebhookRequests()
+  }
+
+
+  private def refreshSystemSettings(): U = {
+    val dao = globals.systemDao
+    dao.refreshSystemSettings()
   }
 
 }

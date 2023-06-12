@@ -798,6 +798,14 @@ class SystemDao(
   }
 
 
+  def refreshSystemSettings(): U = {
+    val sysSettings = readTx { tx =>
+      tx.loadSystemSettings()
+    }
+    globals.updateSystemSettings(sysSettings)
+  }
+
+
   // ----- Testing
 
   def emptyDatabase(): Unit = {

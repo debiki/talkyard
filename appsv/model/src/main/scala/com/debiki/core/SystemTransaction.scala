@@ -122,6 +122,10 @@ trait SystemTransaction {  RENAME // to SysTx, started already
 
   def loadPendingWebhooks(): Map[SiteId, ImmSeq[Webhook]]
 
+  // ----- System
+
+  def loadSystemSettings(): SystemSettings
+
   // ----- Testing
 
   /** Deletes all data from the database. For example, for a RDBMS,

@@ -233,6 +233,8 @@ Txt = text
 Tx  = text (tx = transaction is only server side)
 Typ = type
 U   = user
+UD  = about user dialog
+UP  = about user page
 Un  = username
 Upl = upload
 Vb  = verbose, instead of Fat (and Thin) data?. Also Br = brief, Tn = tiny
@@ -353,7 +355,7 @@ s_UD            = About user dialog
 s_UD_ExtrInf    = Extra info about the user, e.g. s/he is a Frequent Poster in a topic, or topic starter.
 
 s_PP  --yes--   = Profile page, or Participant's page
-s_UP  --no--    = A user's public profile page  RENAME to  s_PP = profile page or pat's page, since groups and gusets too, not just users.
+s_UP  --no--    = A user's public profile page  RENAME to  s_PP = profile page or pat's page, since groups and gusets too, not just users.  Or DON't rename? 'U' is maybe simpler to remember what it is for? 'P' could be interpreted as Post?
 s_UP_Ab         = The about part (the top of the profile page)
 s_UP_EmLg       = Emails and logins
 esUP_Un         = Username  COULD rename t s_UP_Ab_UN

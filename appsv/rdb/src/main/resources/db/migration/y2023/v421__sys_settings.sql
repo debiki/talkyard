@@ -8,3 +8,9 @@ alter table emails_out3
     drop constraint emailsout_type__c_betw;
 
 
+create table system_settings_t (
+  maintenance_until_unix_secs_c i64_gz_d
+);
+
+
+insert into system_settings_t (maintenance_until_unix_secs_c) values (null);

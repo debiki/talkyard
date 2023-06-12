@@ -260,8 +260,8 @@ const AboutUser = createComponent({
 
     const sendMessageButton =
             !userDetailed || !store_maySendDirectMessageTo(store, userDetailed) ? null :
-        PrimaryLinkButton({ href: linkToSendMessage(user.id), id: 'e2eUD_MessageB', afterClick,
-            target: '_blank' },
+        PrimaryLinkButton({ href: linkToSendMessage(user.id), className: 'c_UD_MsgB',
+              afterClick, target: '_blank' },
           t.SendMsg);
 
     // If in the admin area, typically wants to view the user in the admin area.
