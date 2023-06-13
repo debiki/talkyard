@@ -2391,12 +2391,14 @@ export const Editor = createFactory<any, EditorState>({
     let categoriesDropdown;
     if (state.newForumTopicCategoryId || isPrivateGroup) {
       const titleErrorClass = state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
+      let titlePlaceholder = page_isChat(state.newPageRole) && t.c.TypeTitle ?
+                                t.c.TypeTitle : t.e.TitlePlaceholder;
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: (e: HElm) => this.titleElm = e,
               tabIndex: 1, onChange: this.onTitleEdited,
               value: state.title, disabled: !anyDraftLoaded,
-              placeholder: t.e.TitlePlaceholder,
+              placeholder: titlePlaceholder,
               onKeyPress: this.onKeyPressOrKeyDown,
               onKeyDown: this.onKeyPressOrKeyDown,
             });
@@ -2598,6 +2600,8 @@ export const Editor = createFactory<any, EditorState>({
 
     let saveButtonTitle = t.Save;
     let cancelButtonTitle = t.Cancel;  // UX should be entitled  t.SaveDraft  instead?  I18N
+    let textareaPlaceholder = t.e.TypeHerePlaceholder;
+
     if (_.isNumber(editingPostNr)) {
       saveButtonTitle = makeSaveTitle(t.e.Save, t.e.edits);
     }
@@ -2637,6 +2641,8 @@ export const Editor = createFactory<any, EditorState>({
         case PageRole.OpenChat:
         case PageRole.PrivateChat:
           saveButtonTitle = makeSaveTitle(t.e.Create, t.e.chat);
+          textareaPlaceholder = t.c.TypePurpose ||
+                "Type here — tell others what this chat is about, its purpose.";  // I18N
           break;
         case PageRole.Question: saveButtonTitle = makeSaveTitle(t.e.Post, t.e.question); break;
         case PageRole.Problem: saveButtonTitle = makeSaveTitle(t.e.Submit, t.e.problem); break;
@@ -2729,7 +2735,7 @@ export const Editor = createFactory<any, EditorState>({
             onKeyPress: this.onKeyPressOrKeyDown,  // ? maybe bind to textarea instead?
             onKeyDown: this.onKeyPressOrKeyDown,   // ?
             tabIndex: 1,
-            placeholder: t.e.TypeHerePlaceholder,
+            placeholder: textareaPlaceholder ,
             loadingComponent: () => r.span({}, t.Loading),
 
             // Currently the server says Forbidden unless one is logged in, when listing usernames.
