@@ -12,5 +12,6 @@
     "**/.bloop": true,
     "**/.metals": true,
     "**/.ammonite": true
-  }
+  },
+  "deno.enable": true
 }

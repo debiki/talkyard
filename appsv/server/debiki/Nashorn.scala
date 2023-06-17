@@ -27,6 +27,7 @@ import scala.concurrent.Future
 import Nashorn._
 import jdk.nashorn.api.scripting.ScriptObjectMirror
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
+import talkyard.{server => tys}
 import talkyard.server.TyLogging
 import talkyard.server.rendr.NashornParams
 import scala.collection.mutable.ArrayBuffer
@@ -168,9 +169,101 @@ class Nashorn(
   def renderPage(reactStoreJsonString: String): String Or ErrorMessage = {
     if (isTestSoDisableScripts)
       return Good("Scripts disabled [EsM6YKW2]")
+
+    val flags = globals.config.featureFlags
+    val denoBroken = false // later
+    if (!denoBroken && flags.contains("ffUseDeno")) {
+      if (flags.contains("ffNoDenoForOldSites")) {
+        val isOldSite = true // need a new param?  [.needs_site]
+        if (isOldSite) {
+          // Don't use Deno after all
+        }
+        else {
+          return renderPageUsingDeno(reactStoreJsonString)
+        }
+      }
+    }
+
     withJavascriptEngine(engine => {
       renderPageImpl(engine, reactStoreJsonString)
     })
+  }
+
+
+  private def renderPageUsingDeno(reactStoreJsonString: St): St Or ErrMsg = {
+
+    // Experiment with Deno instead, since Nashorn is gone in JDK 17+.  [no_nashorn]
+    import play.api.libs.ws._
+    import scala.concurrent.duration._
+
+    val wsClient: WSClient = globals.wsClient
+    val request: WSRequest =
+          wsClient.url("http://127.0.0.1:8087/renderReactServerSide")
+          .withRequestTimeout(5.seconds)
+          // .withConnectionTimeout(2.seconds)  // configured in Play's conf files?
+
+    val reactStoreJson = play.api.libs.json.Json.parse(reactStoreJsonString)  // for now
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
+    val futurePageJsonOrErr = request.post(reactStoreJson).map({ response: WSResponse =>
+      // Now we're in a different thread.
+      try {
+        val respStatus = response.status
+        val respBody = response.body
+        val respHeaders =
+                if (response.headers.isEmpty) None
+                else Some(tys.http.headersToJsonMultiMap(response.headers))
+
+        if (200 <= response.status && response.status <= 299) {
+          logger.debug(s"OK status ${response.status} from rendersv")
+          Good(respBody)
+        }
+        else {
+          logger.debug(s"Bad status ${response.status} from rendersv [TyERENDSV_RSP_STATUS")
+          Bad(s"${response.status} ${response.statusText}")
+        }
+      }
+      catch {
+        case ex: Exception =>
+          // This'd be a bug in Talkyard? We won't retry the webhook.
+          logger.warn(s"Error handling rendersv response [TyERENDSV_RSP_HANDLR]", ex)
+          Bad(ex.getMessage)
+      }
+    })(globals.execCtx)
+      .recover({
+        case ex: Exception =>
+          val failedHow = ex match {
+            case _: scala.concurrent.TimeoutException => SendFailedHow.RequestTimedOut
+            // Unsure precisely which of these are thrown:  (annoying! Would have
+            // been better if Play's API returned an Ok Or ErrorEnum-plus-message?)
+            case _: io.netty.channel.ConnectTimeoutException => SendFailedHow.CouldntConnect
+            case _: java.net.ConnectException => SendFailedHow.CouldntConnect
+            case _ => SendFailedHow.OtherException
+          }
+          // site id? [.needs_site]
+          logger.info(s"Error sending rendersv request: ${ex.getMessage} [TyERENDSV_REQ]")
+          Bad(ex.getMessage)
+      })(globals.execCtx)
+
+    // For now, do this synchronically — otherwise, would need to rewrite lots of code.
+    // (This'll be fast enough — after all, was mostly ok fast before when using Nashorn,
+    // although Nashorn was pretty slow. Deno + a localhost network roundtrip should be
+    // even faster? (If not, there's the ffUseDeno feature flage.))
+    import scala.concurrent.duration._
+    import scala.concurrent.Await
+    val pageJsonOrErr = try Await.result(futurePageJsonOrErr,
+          // We timeout the request after 5 sec (see above), so 10 here should be ok.
+          10.seconds) catch {
+      case ex: IllegalArgumentException =>
+        throw ex // bug, don't try to handle
+      case ex: Exception =>
+        // This should be a InterruptedException or  concurrent.TimeoutException.)
+        // denoBroken = true
+        // log error
+        return Bad(ex.getMessage)
+    }
+
+    pageJsonOrErr
   }
 
 

@@ -1,5 +1,42 @@
+
+# ----- Download Deno ----------------------------------------------------
+
+# For now, we're running Deno in the app container, together with the app server
+# (Play Framework),   because  there's no way to easily add a new container for
+# running Deno, to Talkyard open source installations. — But there will be, in
+# tech stack v1. Then, we'll run Deno in its own container instead.  [ty_v1]
+# (We use Deno for rendering pages, since Nashorn has been removed from
+# JDK 17+ [no_nashorn].)
+
+# Downloading Deno (below) is based on:
+#    https://github.com/denoland/deno_docker/blob/main/bin.dockerfile
+
+# 1.34.3 is latest, as of 2023-06-19.
+ARG DENO_VERSION=1.34.3
+
+## Just reuse whatever image we use for the app server (below) so no need
+## to download a different image?
+# FROM buildpack-deps:20.04-curl AS deno_download — no, different.
+FROM  eclipse-temurin:11.0.18_10-jdk-focal AS deno_download
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+  && apt-get update \
+  && apt-get install -y unzip \
+  && rm -rf /var/lib/apt/lists/*
+
+ARG DENO_VERSION
+RUN curl -fsSL https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip \
+    --output deno.zip \
+  && unzip deno.zip \
+  && rm deno.zip \
+  && chmod 755 deno
+
+
+# ----- App server -------------------------------------------------------
+
+
 # Scala supports Java 8, 11 and 17. Ty uses Debian 11 and Java 11, currently.
-# Cannot upgrade to Java 17, because Nashorn has been removed.
+# Cannot upgrade to Java 17, because Nashorn has been removed. [no_nashorn]
 
 # This is Ubuntu though. Could create a Debian 11 slim JRE, see: [slim_jre].
 FROM  eclipse-temurin:11.0.18_10-jdk-focal
@@ -35,6 +72,12 @@ FROM  eclipse-temurin:11.0.18_10-jdk-focal
 #     sudo apt-get update
 #     sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 #
+
+
+ARG DENO_VERSION
+ENV DENO_VERSION=${DENO_VERSION}
+
+COPY --from=deno_download /deno /usr/local/bin/deno
 
 
 RUN \
