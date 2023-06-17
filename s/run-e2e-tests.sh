@@ -288,12 +288,12 @@ function runAllE2eTests {
   #   s/wdio --only manual.2browsers --dt --da --reuse --localHostname e2e-test-something
 
   $r s/wdio --only all-links $args   # RENAME to test-import  ?
-  $r s/wdio --only create-site-password-run-admin-intro-tours $args
-  $r s/wdio --only create-site-gmail-and-email-notf.1br.extidp $args
-  $r s/wdio --only create-site-facebook.1br.extidp $args
-  $r s/wdio --only create-site-github-uppercase-email.1br.extidp $args
-  $r s/wdio --only create-site-linkedin.1br.extidp $args
-  $r s/wdio --only create-site-admin-guide.2browsers $args
+  $r s/wdio-7 --only create-site-password-run-admin-intro-tours.1br.d --cd -i $args
+  $r s/wdio-7 --only create-site-gmail-and-email-notf.1br.d.extidp --cd -i $args
+  $r s/wdio-7 --only create-site-facebook.1br.d.extidp --cd -i $args
+  $r s/wdio-7 --only create-site-github-uppercase-email.1br.d.extidp --cd -i $args
+  $r s/wdio-7 --only create-site-linkedin.1br.d.extidp --cd -i $args
+  $r s/wdio-7 --only create-site-admin-guide.2br.d --cd -i $args
   $r s/wdio --only gmail-fb-join-login.extidp.1br $args
 
   # Needs HTTPS (dummy localhost cert is ok).
@@ -323,8 +323,7 @@ function runAllE2eTests {
   $r s/wdio-7 --only comment-sort-order-inherited.d.2br --cd -i $args
   $r s/wdio-7 --only dir.summarize-squash-siblings.2br --cd -i $args
 
-  # RENAME to internal-inline-link-previews-and-backlinks.2br?
-  $r s/wdio --only links-internal.2browsers $args
+  $r s/wdio-7 --only backlinks-basic.2br.d --cd -i $args
 
   $r s/wdio-7 --only link-previews-internal-may-see.2br.d --cd -i $args
   $r s/wdio-7 --only link-previews-internal-not-see-cat.2br.d --cd -i $args

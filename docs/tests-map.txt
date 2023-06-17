@@ -101,17 +101,19 @@ authn:
           - create-site-github-oauth-uppercase-email  TyT5AKR2Z95
   to long username generated from email gets truncated to 20 chars = MaxUsernameLength
           - create-site-github-oauth-uppercase-email  TyT5AKR2Z95  [6AKBR20Q]
-  providers -
+  providers:
     google:
-          - create-site-all-logins.test.ts  TyT5KBWAZ2
-          - gmail-fb-join-login.extidp.1br.test.ts  TyTE2EGMFBJOINLGI
+            - create-site-gmail-and-email-notf.1br.d.extidp  TyT7KKTEHS24
+            - create-site-all-logins.test.ts  TyT5KBWAZ2
+            - gmail-fb-join-login.extidp.1br.test.ts  TyTE2EGMFBJOINLGI
     facebook:
-          - create-site-all-logins.test.ts  TyT5KBWAZ2
-          - gmail-fb-join-login.extidp.1br.test.ts  TyTE2EGMFBJOINLGI
+            - create-site-facebook.1br.d.extidp  TyT8KA9AW3
+            - create-site-all-logins.test.ts  TyT5KBWAZ2
+            - gmail-fb-join-login.extidp.1br.test.ts  TyTE2EGMFBJOINLGI
     github:
-          - create-site-github-oauth-uppercase-email  TyT5AKR2Z95
+            - create-site-github-uppercase-email.1br.d.extidp  TyT5AKR2Z95
     linkedin:
-          - create-site-linkedin.test.ts  T8KA9AW3
+            - create-site-linkedin.1br.d.extidp  TyT402KDTT5Z
     twitter:
   openauth security:
           - generate fake login request: TESTS_MISSING
@@ -589,11 +591,11 @@ categories:
     gets marked as deleted for staff:
     hidden for non-staff:
     topics hidden unless staff:
-          - links-internal.2browsers.test.ts  TyTINTLNS54824.TyTDELCATTPC054
+          - backlinks-basic.2br.d  TyTINTLNS54824.TyTDELCATTPC054
     topics not found when searching:
     can undelete:
     backlinks from topics inside disappear:
-          - links-internal.2browsers.test.ts  TyTINTLNS54824.TyTDELCATBLNS
+          - backlinks-basic.2br.d  TyTINTLNS54824.TyTDELCATBLNS
   permissions:   (1QRY7)
             - category-perms.2br.d  TyTE2ECATPREMS01
             - cats-perf-many.2br.d  TyTECATPREFMNY.TyTPRIVCATS
@@ -828,7 +830,7 @@ link previews:
 backlinks,
 internal links:  # (687295)
   blockquote:
-          - links-internal.2browsers.test.ts  TyTINTLNS54824
+          - backlinks-basic.2br.d  TyTINTLNS54824
           - link-previews-internal-may-see.2br  TyTE2ELNPVIN7252.TyT606SRTR3
           - link-previews-internal-not-see-cat.2br TyTE2ELNPVIN4837.TyT60T6SRTR3
   inline, just title:

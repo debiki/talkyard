@@ -4062,13 +4062,25 @@ export class TyE2eTestBrowser {
         }
 
         const emailInputSelector = 'input[type="email"]';
-        const emailNext = '#identifierNext';
+        // This if not headless:
+        const emailNext = '#identifierNext button';
+        // This if headless: (why does Google then show this instead? [.headless_different])
+        const submitEmailInpSel = 'input[type="submit"]';
+
         const passwordInputSelector = 'input[type="password"]';
-        const passwordNext = '#passwordNext';
+        // This if not headless:
+        const passwordNext = '#passwordNext button';
+        // This if headless: (why different? [.headless_different])
+        // There's also an input[type=submit] for trying to reset one's password,
+        // but it's not in the same <form>.
+        const submitPwdInpSel = 'form:has(input[type="password"]) input[type="submit"]';
+
+        const submitApproveAccessSel = '#submit_approve_access';
 
         // We'll get logged in immediately via Gmail, if we're already logged in to
         // one (and only one) Gmail account in the current this.#br. Wait for either
         // the Gmail login widgets to load, or for us to be back in Talkyard again.
+        let tries = 0;
         while (true) {
           if (ps.isInFullScreenLogin) {
             // Dupl code [insta_login]
@@ -4088,49 +4100,113 @@ export class TyE2eTestBrowser {
               return;
           }
           else if (await this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            // We're back in Talkyard.
+            // We're back in Talkyard.  [.gmail_already_logged_in]
             await this.switchBackToFirstTabOrWindow();
             return;
           }
+
           try {
-            if (await this.isExisting(emailInputSelector)) {
+            if (await this.isDisplayed(emailInputSelector)) {
               // That's a Gmail login widget. Continue with Gmail login.
               break;
+            }
+            if (await this.isDisplayed('#choose-account-0')) {
+              // We're already logged in (or was, before, in this browser)
+              // and Gmail now asks if we want to continue as the same user.
+              logMessage(`Gmail asks if choose & continue in account 0. Yes, click it ...`);
+              await this.waitAndClick('#choose-account-0');
+              // Now, if we're in a login popup, 1)  it will close, if we were
+              // indeed already logged in. Then, we'll notice in the next loop lap,
+              // and break & return — see [.gmail_already_logged_in] just above.
+              // But 2)  if the session has expired, the popup would stay open?
+              // And Gmail owuld ask for a password? Then, we'll continue below,
+              // but won't work, because we shouldn't try to type
+              // any email addr? [.type_gmail_adr]
+              await this.#br.pause(PollMs);
+            }
+            if (await this.isDisplayed(submitApproveAccessSel)) {
+              logMessage(`Gmail asks if Talkyard may access the Gmail account. Click Allow ...`);
+              await this.waitAndClick(submitApproveAccessSel);
             }
           }
           catch (dummy) {
             logMessage(`didn't find ${emailInputSelector}, ` +
                 "tab closed? already logged in? [EdM5PKWT0B]");
           }
+
+          tries += 1;
+          if (tries === 20) {
+            // Something is amiss. Let's print the HTML, so can have a look?
+            // — Useful, if running in headless mode.
+            const html = await this.#br.$('body').getHTML();
+            logWarning(`Can't figure out if we got logged in directly via Google.`);
+            logMessage(`The current html <body>:\n\n${html
+                  }\n — you can copy-paste that into a new .html file, which you
+                  then open in a browser, and try to find out what's going on.`);
+          }
+
           await this.#br.pause(PollMs);
         }
 
         await this.#br.pause(250);
-        logMessage(`typing Gmail email: ${data.email}...`);
+        logMessage(`typing Gmail email: ${data.email}...`);  // [.type_gmail_adr]
         await this.waitAndSetValue(emailInputSelector, data.email, { checkAndRetry: true });
 
+        // If real browser (not headless).
         await this.waitForMaybeDisplayed(emailNext, { timeoutMs: 1000 });
         if (await this.isExisting(emailNext)) {
           logMessage(`clicking ${emailNext}...`);
           await this.waitAndClick(emailNext);
         }
+        else {
+          logMessage(`No ${emailNext}.`);
+        }
+
+        // If headless browser. COULD_OPTIMIZE_TESTS: Wait for, at the same time.
+        await this.waitForMaybeDisplayed(submitEmailInpSel, { timeoutMs: 1000 });
+        if (await this.isExisting(submitEmailInpSel)) {
+          logMessage(`clicking ${submitEmailInpSel}...`);
+          await this.waitAndClick(submitEmailInpSel);
+        }
+        else logMessage(`No ${submitEmailInpSel}.`);
 
         await this.#br.pause(250);
         logMessage("typing Gmail password...");
         await this.waitAndSetValue(passwordInputSelector, data.password, { checkAndRetry: true });
 
+        // If in a visible browser, then  passwordNext  appears, but if 
+        // a headles sbrowser, instead  submitPasswordInputSel  appears.
+        // To debug what's happening:
+        //
+        // const bodyHtml = await this.#br.$('body').getHTML();
+        // logMessage(`Current <body> html: ${bodyHtml}`);
+        //
         await this.waitForMaybeDisplayed(passwordNext, { timeoutMs: 1000 });
         if (await this.isExisting(passwordNext)) {
           logMessage(`clicking ${passwordNext}...`);
           await this.waitAndClick(passwordNext);
         }
+        else {
+          logMessage(`There's no ${passwordNext} to click.`);
+        }
 
-        /*
-        this.waitAndClick('#signIn');
-        this.waitForEnabled('#submit_approve_access');
-        this.waitAndClick('#submit_approve_access'); */
+        // COULD_OPTIMIZE_TESTS: Wait for, at the same time.
+        if (await this.waitForMaybeDisplayed(submitPwdInpSel, { timeoutMs: 1000 })) {
+          logMessage(`Clicking ${submitPwdInpSel} ...`);
+          await this.waitAndClick(submitPwdInpSel);
+        }
+        else {
+          logMessage(`There's no ${submitPwdInpSel} to click.`);
+        }
 
-        // If you need to verify you're a human:
+        // Gmail sometimes asks:
+        // Talkyard Dev Test wants to access your Google Account [...]
+        // This will allow Talkyard Dev Test to: [...]
+        // If so, click Approve Access.
+        if (await this.waitForMaybeDisplayed(submitApproveAccessSel, { timeoutMs: 1000 })) {
+          await this.waitAndClick(submitApproveAccessSel);
+        }
+        // Or click Approve manually: (if not headless)
         // this.#br.deb ug();
 
         if (!isInPopupAlready && (!ps || !ps.stayInPopup)) {

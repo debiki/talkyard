@@ -1376,7 +1376,7 @@ trait PostsDao {
     */
   def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerTrueId: TrueId,
           tx: SiteTx, staleStuff: StaleStuff, skipBugWarn: Bo = false): U = {
-    // Some e2e tests: backlinks-basic.2browsers.test.ts  TyTINTLNS54824
+    // Some e2e tests: backlinks-basic.2br.d  TyTINTLNS54824
 
     // Let's always add the page id to staleStuff before, just so that
     // here we can check that that wasn't forgotten.
