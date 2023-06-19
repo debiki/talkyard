@@ -896,6 +896,9 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val isAssets = prefix == AssetsUgcHostnamePrefix
         import talkyard.{server => srv}
         // Site custom assets URL paths should start with: /-/site/.
+        // But they are handled by SiteAssetBundlesController.customAsset(pubSiteId, fileName)
+        // — maybe add / move this check, to there instead? But allow same site access for now,
+        // and via CDN. [cust_assets_origin_check]
         throwForbiddenIf(isAssets && !pathAndQuery.startsWith(srv.CustomAssetsUrlBasePath),
               "TyEUGCAPATH", s"Bad a- UGC path: $path")
         // Uploaded files paths should be:  /-/u/
