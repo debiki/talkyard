@@ -3,8 +3,6 @@
 // load React components from `window['component-name']`.
 var global = window = this;
 
-$DummyConsoleLogFunctions
-
 var eds = {
   secure: $secure
 };
