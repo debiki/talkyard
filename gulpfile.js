@@ -768,17 +768,23 @@ gulp.task('concatRendersvDenoScript', gulp.series(
           'client/server/before-server-bundle.deno.js',
           `${serverDestTranslations}/**/*.min.js`,
           `${serverDest}/server-bundle.js`,
-          'client/server/after-server-bundle.deno.js',
-          'client/server/renderServer.deno.ts'])
+          'client/server/after-server-bundle.deno.js'])
       .pipe(plumber())
       .pipe(gDebug({ title: `gulp-debug: concating Deno server code:` }))
-      .pipe(concat('rendersv-test.deno.ts'))
+      .pipe(concat('rendersv.deno.ts'))
       // In Deno, `this` is by default undefined. But in Nashorn, it was the same
       // as `globalThis`, so let's bind `this` to `globalThis`:
-      .pipe(insert.prepend(`function bindThisToGlobal() {\n\n`))
+      .pipe(insert.prepend(
+        `import { serve } from "https://deno.land/std@0.167.0/http/server.ts";\n` +
+        `\n` +
+        `function bindThisToGlobal() {\n\n`))
       .pipe(insert.append('\n\n' +
               '}  // end bindThisToGlobal\n' +
-              'bindThisToGlobal.apply(globalThis, []);\n'))
+              'bindThisToGlobal.apply(globalThis, []);\n' +
+              '\n\n' +
+              'console.log(`Starting Deno render server ...`);\n' +
+              'serve(serverReqHandler, { port: 8087 });  // [deno_ports]\n'
+              ))
       .pipe(updateAtimeAndMtime())
       .pipe(gulp.dest('images/rendersv/'));
 }));

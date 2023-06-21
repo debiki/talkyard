@@ -3,10 +3,7 @@
 // load React components from `window['component-name']`.
 var global = window = this;
 
-$DummyConsoleLogFunctions
-
 var eds = {
-  secure: $secure
 };
 // CLEAN_UP remove debiki.v0 & .internal [4KSWPY]
 var debiki = {
