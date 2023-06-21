@@ -1055,6 +1055,14 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
           newState.systemDao.emptyDatabase()
         }
 
+        // Will use Deno instead of Nashorn, since the latter is gone in JDK 17+.  [no_nashorn]
+        logger.info("Starting Deno page renderer server? [TyMSTARTDENO]")
+        if (config.featureFlags.contains("ffUseDeno")) {
+          val process: Process = new ProcessBuilder(
+                "/usr/local/bin/deno", "run", "--inspect=0.0.0.0:9087",
+                    "/opt/talkyard/app/images/rendersv/rendersv.min.deno.ts").start()
+        }
+
         _state = Good(newState)
         logger.info("Done creating state [EsMSTATEOK]")
       }

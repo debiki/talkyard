@@ -760,6 +760,31 @@ gulp.task('testProdMinify', gulp.series(
 
 
 
+gulp.task('concatRendersvDenoScript', gulp.series(
+        'compileServerTypescriptConcatJavascript',
+        'minifyTranslations',
+        () => {
+  return gulp.src([
+          'client/server/before-server-bundle.deno.js',
+          `${serverDestTranslations}/**/*.min.js`,
+          `${serverDest}/server-bundle.js`,
+          'client/server/after-server-bundle.deno.js',
+          'client/server/renderServer.deno.ts'])
+      .pipe(plumber())
+      .pipe(gDebug({ title: `gulp-debug: concating Deno server code:` }))
+      .pipe(concat('rendersv-test.deno.ts'))
+      // In Deno, `this` is by default undefined. But in Nashorn, it was the same
+      // as `globalThis`, so let's bind `this` to `globalThis`:
+      .pipe(insert.prepend(`function bindThisToGlobal() {\n\n`))
+      .pipe(insert.append('\n\n' +
+              '}  // end bindThisToGlobal\n' +
+              'bindThisToGlobal.apply(globalThis, []);\n'))
+      .pipe(updateAtimeAndMtime())
+      .pipe(gulp.dest('images/rendersv/'));
+}));
+
+
+
 gulp.task('compile-stylus', () => {
   const stylusOptsLeftToRight = {
     linenos: true,
