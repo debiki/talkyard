@@ -68,7 +68,7 @@ var md;
 try {
   // Dupl code browser side: [9G03MSRMW2].
   md = markdownit({ html: true, linkify: true, breaks: true });
-  md.use(debiki.internal.MentionsMarkdownItPlugin());
+  md.use(debiki.internal.MentionsMarkdownItPlugin);
   md.use(debiki.internal.LinkPreviewMarkdownItPlugin);
   ed.editor.CdnLinkifyer.replaceLinks(md);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2023 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -12,66 +12,40 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 
+// Cannot match '.@(...)' because markdown-it seems to consume all letters,
+// it considers them unimportant and won't feed them to the below parse()
+// function. It sends only '@...' to parse, not any [a-z] before the '@'.
+// So skip the char before the '@', and fetch and check it inside parse()
+// instead.
+// [.-] are allowed inside the username only (not as first or last chars). [UNPUNCT] [UNAMECHARS]
+// None of [_.-] allowed as last char.  Currently min length is 3, but later
+// there'll be a site config value that lets one change to 2? So allow 2 here.
+const mentionsRegex = /^@[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9]/;   // [4LKBG782]
+const whitespaceRegex = /\s/;
+const pluginId = 'MentionsMarkdownItPlugin';
 
-const nodejsUtilInherits = function(constructor, superConstructor) {
-  constructor.super_ = superConstructor;
-  constructor.prototype = Object.create(superConstructor.prototype, {
-    constructor: {
-      value: constructor,
-      enumerable: false,
-      writable: true,
-      configurable: true
-    }
-  });
+
+function MentionsMarkdownItPlugin(md, options) {
+  md.inline.ruler.push(pluginId, parseAnyMentions);
+  md.renderer.rules[pluginId] = renderAnyMentions;
 };
 
 
-nodejsUtilInherits(MentionsMarkdownItPlugin, Function);
-
-
-
-function MentionsMarkdownItPlugin() {
-  const plugin: any = function(md, options) {
-    plugin.options = options;
-    plugin.init(md);
-  };
-  plugin.__proto__ = MentionsMarkdownItPlugin.prototype;
-  // Cannot match '.@(...)' because markdown-it seems to consume all letters,
-  // it considers them unimportant and won't feed them to the below parse()
-  // function. It sends only '@...' to parse, not any [a-z] before the '@'.
-  // So skip the char before the '@', and fetch and check it inside parse()
-  // instead.
-  // [.-] are allowed inside the username only (not as first or last chars). [UNPUNCT] [UNAMECHARS]
-  // None of [_.-] allowed as last char.  Currently min length is 3, but later
-  // there'll be a site config value that lets one change to 2? So allow 2 here.
-  plugin.mentionsRegex = /^@[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9]/;   // [4LKBG782]
-  plugin.whitespaceRegex = /\s/;
-  plugin.id = 'MentionsMarkdownItPlugin';
-  return plugin;
-}
-
-
-MentionsMarkdownItPlugin.prototype.init = function(md) {
-  md.inline.ruler.push(this.id, this.parse.bind(this));
-  md.renderer.rules[this.id] = this.render.bind(this);
-};
-
-
-MentionsMarkdownItPlugin.prototype.parse = function(state, silent) {
-  var nextChars = state.src.slice(state.pos);
-  var match = nextChars.match(this.mentionsRegex);
+function parseAnyMentions(state, silent) {
+  const nextChars = state.src.slice(state.pos);
+  const match = nextChars.match(mentionsRegex);
   if (!match)
     return false;
 
   // Ensure there's whitespace before the '@'. Otherwise we might be inside a word
   // — could be an email address, but it's not a mention.
   if (state.pos > 0) {
-    var prevChar = state.src[state.pos - 1];
-    if (!this.whitespaceRegex.test(prevChar))
+    const prevChar = state.src[state.pos - 1];
+    if (!whitespaceRegex.test(prevChar))
       return false;
   }
 
@@ -82,7 +56,7 @@ MentionsMarkdownItPlugin.prototype.parse = function(state, silent) {
   if (silent)
     return true;
 
-  var token = state.push('MentionsMarkdownItPlugin', '');
+  const token = state.push(pluginId, '');
   token.level = state.level;
   token.username = nextChars.slice(1, match[0].length);
 
@@ -90,10 +64,10 @@ MentionsMarkdownItPlugin.prototype.parse = function(state, silent) {
 };
 
 
-MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
+function renderAnyMentions(tokens, id, options, env) {
   // The username is [a-zA-Z_0-9] so we don't need to escape it. And besides we sanitize
   // everything later on anyway.
-  var username = tokens[id].username;
+  const username = tokens[id].username;
 
   // Make @mentions found available server side.
   if (debiki.mentionsServerHelp) {
