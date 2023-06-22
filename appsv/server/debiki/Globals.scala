@@ -1059,8 +1059,12 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         logger.info("Starting Deno page renderer server? [TyMSTARTDENO]")
         if (config.featureFlags.contains("ffUseDeno")) {
           val process: Process = new ProcessBuilder(
-                "/usr/local/bin/deno", "run", "--inspect=0.0.0.0:9087",
-                    "/opt/talkyard/app/images/rendersv/rendersv.min.deno.ts").start()
+                "/usr/local/bin/deno",
+                    "run",
+                    // Deno handles requests on 8087, and 9087 is for debugging. [deno_ports]
+                    "--allow-net=\"0.0.0.0:8087,0.0.0.0:9087\"",
+                    "--inspect=0.0.0.0:9087",
+                    "/opt/talkyard/app/images/rendersv/rendersv.deno.ts").start()
         }
 
         _state = Good(newState)

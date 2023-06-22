@@ -198,7 +198,7 @@ class Nashorn(
 
     val wsClient: WSClient = globals.wsClient
     val request: WSRequest =
-          wsClient.url("http://127.0.0.1:8087/renderReactServerSide")
+          wsClient.url("http://127.0.0.1:8087/renderReactServerSide")  // [deno_ports]
           .withRequestTimeout(5.seconds)
           // .withConnectionTimeout(2.seconds)  // configured in Play's conf files?
 

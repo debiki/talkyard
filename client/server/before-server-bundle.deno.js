@@ -4,7 +4,6 @@
 var global = window = this;
 
 var eds = {
-  secure: $secure
 };
 // CLEAN_UP remove debiki.v0 & .internal [4KSWPY]
 var debiki = {

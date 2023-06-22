@@ -17,8 +17,6 @@
 
 /// <reference path="../types-and-const-enums.ts" />
 
-import { serve } from "https://deno.land/std@0.167.0/http/server.ts";
-
 
 function renderReactServerSide(reactStoreJsonString) {
   var exceptionAsString;
@@ -151,7 +149,7 @@ function exceptionToString(exception) {
 }
 
 
-async function serverReqHandler(req: Request): Pr<Response> {
+globalThis.serverReqHandler = async (req: Request): Pr<Response> => {
   console.log("Method:", req.method);
 
   const url = new URL(req.url);
@@ -171,7 +169,7 @@ async function serverReqHandler(req: Request): Pr<Response> {
 
   if (url.pathname === '/renderAndSanitizeCommonMark') {
     console.log(`I will:  renderAndSanitizeCommonMark`);
-    respBody = globalThis.renderAndSanitizeCommonMark(reqBody, false, false, null, '/uploads_url_prefx/');
+    respBody = renderAndSanitizeCommonMark(reqBody, false, false, null, '/uploads_url_prefx/');
     // It works!
     /*
     curl http://localhost:8087/renderAndSanitizeCommonMark -d  '**boldify** _italics_   
@@ -184,7 +182,7 @@ async function serverReqHandler(req: Request): Pr<Response> {
   }
   else if (url.pathname === '/sanitizeHtmlServerSide') {
     console.log(`I will:  sanitizeHtmlServerSide`);
-    respBody = globalThis.sanitizeHtmlServerSide(reqBody, false);
+    respBody = sanitizeHtmlServerSide(reqBody, false);
 
     // It works!
     //    curl http://localhost:8087/sanitizeHtmlServerSide -d '<div>I am in a div. JSON: {"aa": 11, "bb": 22}</div> <b>bold?</bold> Param like:  http://ex.co/aa/bb?qq=vv;q2=v2,q3=v3'
@@ -192,7 +190,7 @@ async function serverReqHandler(req: Request): Pr<Response> {
   }
   else if (url.pathname === '/renderReactServerSide') {
     console.log(`I will:  renderReactServerSide`);
-    respBody = globalThis.renderReactServerSide(reqBody);
+    respBody = renderReactServerSide(reqBody);
   }
   else if (url.pathname === '/denoExit') {
     console.log(`I will:  Deno.exit`);
@@ -206,6 +204,3 @@ async function serverReqHandler(req: Request): Pr<Response> {
 }
 
 
-console.log(`Starting Deno render server ...`);
-
-serve(serverReqHandler, { port: 8087 });
