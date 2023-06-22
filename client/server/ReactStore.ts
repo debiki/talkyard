@@ -6,7 +6,11 @@
 //------------------------------------------------------------------------------
 
 export function win_getSessWinStore(): SessWinStore {
-  return (<any> window).theStore;  // [ONESTORE]
+  return (
+        // Nashorn (legacy).
+        (<any> window).theStore ||
+        // Deno (in the future).
+        debiki2.ReactStore.allData());   // [ONESTORE]
 }
 
 export function makeNoPageData() { die('K42B01'); }

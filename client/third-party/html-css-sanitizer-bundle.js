@@ -3832,7 +3832,8 @@ var html = (function(html4) {
     'AMP': '&',
     'quot': '"',
     'apos': '\'',
-    'nbsp': '\240'
+    // Don't use just \240 — Deno doesn't like. But \0o240 is fine.
+    'nbsp': '\0o240'
   };
 
   // Patterns for types of entity/character reference names.
