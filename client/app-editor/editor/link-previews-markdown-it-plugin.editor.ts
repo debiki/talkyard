@@ -17,6 +17,9 @@
 
 // Later: [[wiki style]] links and later #[tags]?  Check out TiddlyWiki?  [wiki_links]
 
+//------------------------------------------------------------------------------
+   (function() {
+//------------------------------------------------------------------------------
 
 // Relevant docs:
 // - How Markdown-it works
@@ -275,5 +278,9 @@ function renderLinkPreviewBlock(tokens: BlockLinkPreviewToken[], index: Nr,
   return previewHtml;
 }
 
+
+//------------------------------------------------------------------------------
+   })();
+//------------------------------------------------------------------------------
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
