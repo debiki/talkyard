@@ -207,6 +207,24 @@ services:
       PEER_PASSWORD: 'public2'
       CREATE_TEST_USER: 'yes'
 
+  # Don't include before [ty_v1], because current self-hosted Talkyard open source
+  # installations won't automatically add new containers (won't work until tech stack v1).
+  # rendersv:
+  #   build:
+  #     context: images/rendersv/
+  #     dockerfile: Dockerfile.dev
+  #   image: ${DOCKER_REPOSITORY}/talkyard-rendersv-dev
+  #   tty: true  # colored logs
+  #   volumes:
+  #     - images/rendersv/:/opt/talkyard/rendersv/
+  #   networks:
+  #     internal_net:
+  #       ipv4_address: ${INTERNAL_NET_RENDERSV_IP}
+  #   ports:
+  #     # Let's expose these, for debugging and troubleshooting.
+  #     - '8070:8070' # Deno listens on this port.
+  #     - '9229:9229' # Deno debugger port
+
   # An extra database, so you can experiment with Postgres replication and failover.
   # You don't need to start it.
   #rdb2:
