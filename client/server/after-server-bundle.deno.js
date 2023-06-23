@@ -60,7 +60,7 @@ function renderReactServerSide(reactStoreJsonString) {
     t = 'TyEBADACCESSLANG';
     theStore = 'TyEBADACCESSSTORE';
   }
-  return '$ErrorRenderingReact\n\n' + exceptionAsString;
+  return { errMsg: '$ErrorRenderingReact\n\n' + exceptionAsString };  // TODO
 }
 
 
@@ -79,45 +79,54 @@ catch (e) {
 
 // Returns [html, mentions] if ok, else a string with an error message
 // and exception stack trace.
-function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
-       instantLinkPreviewRenderer, uploadsUrlPrefixCommonmark) {
+function renderAndSanitizeCommonMark(ps: {
+      commonmarkSource: St,
+      allowClassIdDataAttrs: Bo,
+      followLinks: Bo,
+      instantLinkPreviewRenderer: null,
+      uploadsUrlPrefixCommonmark: St }): Response {
   var exceptionAsString;
   try {
     theStore = null; // Fail fast. Don't use here, might not have been inited.
-    eds.uploadsUrlPrefixCommonmark = uploadsUrlPrefixCommonmark;  // [7AKBQ2]
-    debiki.internal.serverSideLinkPreviewRenderer = instantLinkPreviewRenderer;
+    eds.uploadsUrlPrefixCommonmark = ps.uploadsUrlPrefixCommonmark;  // [7AKBQ2]
+    debiki.internal.serverSideLinkPreviewRenderer = ps.instantLinkPreviewRenderer;
     debiki.mentionsServerHelp = [];
-    var unsafeHtml = md.render(source);
+    var unsafeHtml = md.render(ps.commonmarkSource);
     var mentionsThisTime = debiki.mentionsServerHelp;
     delete debiki.mentionsServerHelp;
-    var allowClassAndIdAttr = allowClassIdDataAttrs;
-    var allowDataAttr = allowClassIdDataAttrs;
-    var html = googleCajaSanitizeHtml(
-          unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
+    var allowClassAndIdAttr = ps.allowClassIdDataAttrs;
+    var allowDataAttr = ps.allowClassIdDataAttrs;
+    var safeHtml = googleCajaSanitizeHtml(
+          unsafeHtml, allowClassAndIdAttr, allowDataAttr, ps.followLinks);
     // Fail fast — simplify detection of reusing without reinitialzing:
     eds.uploadsUrlPrefixCommonmark = 'TyE4GKFWB0';
     debiki.internal.serverSideLinkPreviewRenderer = 'TyE56JKW20';
-    return [html, mentionsThisTime];
+    return new Response({ safeHtml, mentions: mentionsThisTime });  // stringify ?
   }
   catch (e) {
     console.error("Error in renderAndSanitizeCommonMark: [TyERNDRCM02A]");
     printStackTrace(e);
     exceptionAsString = exceptionToString(e);
+    const errMsg = "Error in renderAndSanitizeCommonMark: [TyERNDRCM02B]\n\n" +
+                        exceptionAsString;
+    return new Response(errMsg, { status: 500 });
   }
-  return "Error in renderAndSanitizeCommonMark: [TyERNDRCM02B]\n\n" + exceptionAsString;
 }
 
 // (Don't name this function 'sanitizeHtml' because it'd then get overwritten by
 // a function with that same name from a certain sanitize-html npm module.)
-function sanitizeHtmlServerSide(source, followLinks) {
+function sanitizeHtmlServerSide(source, followLinks): Response {
   try {
     // This function calls both Google Caja and the sanitize-html npm module. CLEAN_UP RENAME.
-    return googleCajaSanitizeHtml(source, false, false, followLinks);
+    const safeHtml = googleCajaSanitizeHtml(source, false, false, followLinks);
+    return new Response(safeHtml);
   }
   catch (e) {
     printStackTrace(e);
+    exceptionAsString = exceptionToString(e);
+    return new Response("Error sanitizing HTML in render server [TyE5GBCU6]\n\n" +
+            exceptionAsString, { status: 500 });
   }
-  return "Error sanitizing HTML on server [DwE5GBCU6]";
 }
 
 // If line and column numbers aren't defined, the exception might be a Nashorn bug.
@@ -165,11 +174,12 @@ globalThis.serverReqHandler = async (req: Request): Pr<Response> => {
   const reqBody = await req.text();
   console.log("Body:", reqBody);
 
-  let respBody: St;
+  let response: Response;
 
   if (url.pathname === '/renderAndSanitizeCommonMark') {
     console.log(`I will:  renderAndSanitizeCommonMark`);
-    respBody = renderAndSanitizeCommonMark(reqBody, false, false, null, '/uploads_url_prefx/');
+    response = renderAndSanitizeCommonMark(reqBody);
+            // renderAndSanitizeCommonMark(reqBody, false, false, null, '/uploads_url_prefx/');
     // It works!
     /*
     curl http://localhost:8087/renderAndSanitizeCommonMark -d  '**boldify** _italics_   
@@ -182,7 +192,7 @@ globalThis.serverReqHandler = async (req: Request): Pr<Response> => {
   }
   else if (url.pathname === '/sanitizeHtmlServerSide') {
     console.log(`I will:  sanitizeHtmlServerSide`);
-    respBody = sanitizeHtmlServerSide(reqBody, false);
+    response = sanitizeHtmlServerSide(reqBody, false);
 
     // It works!
     //    curl http://localhost:8087/sanitizeHtmlServerSide -d '<div>I am in a div. JSON: {"aa": 11, "bb": 22}</div> <b>bold?</bold> Param like:  http://ex.co/aa/bb?qq=vv;q2=v2,q3=v3'
@@ -190,7 +200,11 @@ globalThis.serverReqHandler = async (req: Request): Pr<Response> => {
   }
   else if (url.pathname === '/renderReactServerSide') {
     console.log(`I will:  renderReactServerSide`);
-    respBody = renderReactServerSide(reqBody);
+    response = renderReactServerSide(reqBody);
+  }
+  else if (url.pathname === '/slugifyTitle') {
+    console.log(`I will:  slugifyTitle`);
+    response = window.debikiSlugify(reqBody);
   }
   else if (url.pathname === '/denoExit') {
     console.log(`I will:  Deno.exit`);
@@ -198,9 +212,10 @@ globalThis.serverReqHandler = async (req: Request): Pr<Response> => {
   }
   else {
     console.log(`I won't:  ${url.pathname}`);
+    response = Response(`Bad url path: ${url.pathname}`, { status: 400 })
   }
 
-  return new Response(respBody);
+  return response;
 }
 
 

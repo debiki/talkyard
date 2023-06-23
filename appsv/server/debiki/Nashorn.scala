@@ -31,6 +31,9 @@ import talkyard.{server => tys}
 import talkyard.server.TyLogging
 import talkyard.server.rendr.NashornParams
 import scala.collection.mutable.ArrayBuffer
+import debiki.EdHttp.throwInternalError
+import JsonUtils._
+import play.api.libs.json._
 
 
 
@@ -170,18 +173,8 @@ class Nashorn(
     if (isTestSoDisableScripts)
       return Good("Scripts disabled [EsM6YKW2]")
 
-    val flags = globals.config.featureFlags
-    val denoBroken = false // later
-    if (!denoBroken && flags.contains("ffUseDeno")) {
-      if (flags.contains("ffNoDenoForOldSites")) {
-        val isOldSite = true // need a new param?  [.needs_site]
-        if (isOldSite) {
-          // Don't use Deno after all
-        }
-        else {
-          return renderPageUsingDeno(reactStoreJsonString)
-        }
-      }
+    maybeInvokeDenoStr("renderReactServerSide", reactStoreJsonString) foreach { result =>
+      return result
     }
 
     withJavascriptEngine(engine => {
@@ -190,7 +183,30 @@ class Nashorn(
   }
 
 
-  private def renderPageUsingDeno(reactStoreJsonString: St): St Or ErrMsg = {
+  private def maybeInvokeDeno(functionName: St, json: JsObject): Opt[St Or ErrMsg] = {
+    maybeInvokeDenoStr(functionName = functionName, jsonStr = json.toString)
+  }
+
+
+  private def maybeInvokeDenoStr(functionName: St, jsonStr: St): Opt[St Or ErrMsg] = {
+
+    val flags = globals.config.featureFlags
+    val denoBroken = false // later
+    var useDeno = false
+    if (!denoBroken && flags.contains("ffUseDeno")) {
+      if (flags.contains("ffNoDenoForOldSites")) {
+        val isOldSite = true // need a new param?  [.needs_site]
+        if (isOldSite) {
+          // Don't use Deno after all
+        }
+        else {
+          useDeno = true
+        }
+      }
+    }
+
+    if (!useDeno)
+      return None
 
     // Experiment with Deno instead, since Nashorn is gone in JDK 17+.  [no_nashorn]
     import play.api.libs.ws._
@@ -198,11 +214,11 @@ class Nashorn(
 
     val wsClient: WSClient = globals.wsClient
     val request: WSRequest =
-          wsClient.url("http://127.0.0.1:8087/renderReactServerSide")  // [deno_ports]
-          .withRequestTimeout(5.seconds)
+          wsClient.url(s"http://127.0.0.1:8087/$functionName")  // [deno_ports]
+          .withRequestTimeout(8.seconds)
           // .withConnectionTimeout(2.seconds)  // configured in Play's conf files?
 
-    val reactStoreJson = play.api.libs.json.Json.parse(reactStoreJsonString)  // for now
+    val reactStoreJson = Json.parse(jsonStr)  // for now
     import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 
     val futurePageJsonOrErr = request.post(reactStoreJson).map({ response: WSResponse =>
@@ -210,28 +226,27 @@ class Nashorn(
       try {
         val respStatus = response.status
         val respBody = response.body
-        val respHeaders =
-                if (response.headers.isEmpty) None
-                else Some(tys.http.headersToJsonMultiMap(response.headers))
 
         if (200 <= response.status && response.status <= 299) {
           logger.debug(s"OK status ${response.status} from rendersv")
           Good(respBody)
         }
         else {
-          logger.debug(s"Bad status ${response.status} from rendersv [TyERENDSV_RSP_STATUS")
+          logger.error(s"Bad status ${response.status} from rendersv [TyERENDSV_RSP_STATUS")
           Bad(s"${response.status} ${response.statusText}")
         }
       }
       catch {
         case ex: Exception =>
-          // This'd be a bug in Talkyard? We won't retry the webhook.
-          logger.warn(s"Error handling rendersv response [TyERENDSV_RSP_HANDLR]", ex)
+          // denoBroken = true  ?
+          // This'd be a bug in Talkyard?
+          logger.error(s"Error handling rendersv response [TyERENDSV_RSP_HANDLR]", ex)
           Bad(ex.getMessage)
       }
     })(globals.execCtx)
       .recover({
         case ex: Exception =>
+          /*
           val failedHow = ex match {
             case _: scala.concurrent.TimeoutException => SendFailedHow.RequestTimedOut
             // Unsure precisely which of these are thrown:  (annoying! Would have
@@ -239,31 +254,33 @@ class Nashorn(
             case _: io.netty.channel.ConnectTimeoutException => SendFailedHow.CouldntConnect
             case _: java.net.ConnectException => SendFailedHow.CouldntConnect
             case _ => SendFailedHow.OtherException
-          }
+          } */
+          // denoBroken = true  ?
           // site id? [.needs_site]
-          logger.info(s"Error sending rendersv request: ${ex.getMessage} [TyERENDSV_REQ]")
+          logger.error(s"Error sending rendersv request: ${ex.getMessage} [TyERENDSV_REQ]")
           Bad(ex.getMessage)
       })(globals.execCtx)
 
     // For now, do this synchronically — otherwise, would need to rewrite lots of code.
     // (This'll be fast enough — after all, was mostly ok fast before when using Nashorn,
     // although Nashorn was pretty slow. Deno + a localhost network roundtrip should be
-    // even faster? (If not, there's the ffUseDeno feature flage.))
+    // faster?  If not, there's the  ffUseDeno  feature flage.)
     import scala.concurrent.duration._
     import scala.concurrent.Await
     val pageJsonOrErr = try Await.result(futurePageJsonOrErr,
-          // We timeout the request after 5 sec (see above), so 10 here should be ok.
-          10.seconds) catch {
+          // We timeout the request after 8 sec (see above), so 15 here should be ok.
+          15.seconds) catch {
       case ex: IllegalArgumentException =>
-        throw ex // bug, don't try to handle
+         // Bug, don't try to handle.
+        throw ex
       case ex: Exception =>
         // This should be a InterruptedException or  concurrent.TimeoutException.)
-        // denoBroken = true
-        // log error
-        return Bad(ex.getMessage)
+        // denoBroken = true  ?
+        logger.error(s"Error waiting for rendersv response: ${ex.getMessage} [TyERENDSV_REQ_WAIT]")
+        return Some(Bad(ex.getMessage))
     }
 
-    pageJsonOrErr
+    Some(pageJsonOrErr)
   }
 
 
@@ -322,6 +339,29 @@ class Nashorn(
           globals.anyUgcOrCdnOriginFor(renderParams.siteIdHostnames).getOrElse(
               renderParams.embeddedOriginOrEmpty) +
                   talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
+
+    maybeInvokeDeno("renderAndSanitizeCommonMark", Json.obj(
+          "commonmarkSource" -> commonMarkSource,
+          "allowClassIdDataAttrs" -> JsTrue,
+          "followLinks" -> renderParams.followLinks,
+          "instantLinkPreviewRenderer" -> JsNull, // TODO
+          "uploadsUrlPrefixCommonmark" -> uploadsUrlPrefix,
+    )) foreach {
+      case Bad(errMsg) =>
+        throwInternalError(
+          "TyERENDSV_RCM01", "Error requesting render server to render CommonMark", errMsg)
+      case Good(respStr) =>
+        val respJo = Json.parse(respStr)
+        /*
+        parseOptSt(jsOb, "errMsg") foreach { errMsg =>
+          throwInternalError(
+                "TyERENDSV_RCM02", "Error response from render server, when rendering CommonMark", errMsg)
+        } */
+        val safeHtml: St = parseSt(respJo, "safeHtml")
+        val mentions: Set[St] = parseJsArray(respJo, "mentions").map(asString(_, "mentions item")).to[Set]
+        val result = RenderCommonmarkResult(safeHtml, mentions)
+        return result
+    }
 
     // This link preview renderer fetches previews from the database,
     // link_previews_t, but makes no external requests — cannot do that from inside
@@ -387,6 +427,7 @@ class Nashorn(
   }
 
 
+  @deprecated("Use TextAndHtml.sanitizeTitleText() instead?")
   def sanitizeHtml(text: String, followLinks: Boolean): String = {
     sanitizeHtmlReuseEngine(text, followLinks, None)
   }
@@ -419,6 +460,15 @@ class Nashorn(
   def slugifyTitle(title: String): String = {
     if (isTestSoDisableScripts)
       return "scripts-disabled-EsM28WXP45"
+
+    maybeInvokeDenoStr("slugifyTitle", title) foreach {
+      case Bad(errMsg) =>
+        throwInternalError(
+          "TyERENDSV_SLUGFY", "Error requesting render server to slugify title", errMsg)
+      case Good(title) =>
+        return title
+    }
+
     withJavascriptEngine(engine => {
       val slug = engine.invokeFunction("debikiSlugify", title)
       slug.asInstanceOf[String]
