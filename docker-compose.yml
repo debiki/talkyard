@@ -83,6 +83,7 @@ services:
       # To bind to lower ports. Maybe listen on 8080 instead, and map port 80:8080?
       - NET_BIND_SERVICE
 
+  # Rename to  ty-appsv [ty_v1].
   app:
     build:
       context: images/app/
@@ -112,6 +113,8 @@ services:
       - '9000:9000' # Play's HTTP listen port.
       - '9999:9999' # Java debugger port
       - '3333:3333' # JMX
+      - '8087:8087' # Deno listens on this port.
+      - '9087:9087' # Deno debugger port.
     depends_on:
       - cache
       - rdb
