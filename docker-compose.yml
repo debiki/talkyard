@@ -83,6 +83,7 @@ services:
       # To bind to lower ports. Maybe listen on 8080 instead, and map port 80:8080?
       - NET_BIND_SERVICE
 
+  # Rename to  ty-appsv [ty_v1].
   app:
     build:
       context: images/app/
@@ -112,6 +113,8 @@ services:
       - '9000:9000' # Play's HTTP listen port.
       - '9999:9999' # Java debugger port
       - '3333:3333' # JMX
+      - '8087:8087' # Deno listens on this port.
+      - '9087:9087' # Deno debugger port.
     depends_on:
       - cache
       - rdb
@@ -206,6 +209,24 @@ services:
       PEER_PORT: '5432'
       PEER_PASSWORD: 'public2'
       CREATE_TEST_USER: 'yes'
+
+  # Don't include before [ty_v1], because current self-hosted Talkyard open source
+  # installations won't automatically add new containers (won't work until tech stack v1).
+  # rendersv:
+  #   build:
+  #     context: images/rendersv/
+  #     dockerfile: Dockerfile.dev
+  #   image: ${DOCKER_REPOSITORY}/talkyard-rendersv-dev
+  #   tty: true  # colored logs
+  #   volumes:
+  #     - images/rendersv/:/opt/talkyard/rendersv/
+  #   networks:
+  #     internal_net:
+  #       ipv4_address: ${INTERNAL_NET_RENDERSV_IP}
+  #   ports:
+  #     # Let's expose these, for debugging and troubleshooting.
+  #     - '8070:8070' # Deno listens on this port.
+  #     - '9229:9229' # Deno debugger port
 
   # An extra database, so you can experiment with Postgres replication and failover.
   # You don't need to start it.
