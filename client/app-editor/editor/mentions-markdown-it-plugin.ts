@@ -15,6 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+//------------------------------------------------------------------------------
+   (function() {
+//------------------------------------------------------------------------------
+
 
 // Cannot match '.@(...)' because markdown-it seems to consume all letters,
 // it considers them unimportant and won't feed them to the below parse()
@@ -83,5 +87,9 @@ function renderAnyMentions(tokens, id, options, env) {
 
 debiki.internal.MentionsMarkdownItPlugin = MentionsMarkdownItPlugin;
 
+
+//------------------------------------------------------------------------------
+   })();
+//------------------------------------------------------------------------------
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
