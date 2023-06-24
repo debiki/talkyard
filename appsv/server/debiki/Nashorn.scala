@@ -193,14 +193,13 @@ class Nashorn(
     val flags = globals.config.featureFlags
     val denoBroken = false // later
     var useDeno = false
-    if (!denoBroken && flags.contains("ffUseDeno")) {
+    if (flags.contains("ffUseDeno") && !denoBroken) {
+      useDeno = true
       if (flags.contains("ffNoDenoForOldSites")) {
         val isOldSite = true // need a new param?  [.needs_site]
         if (isOldSite) {
           // Don't use Deno after all
-        }
-        else {
-          useDeno = true
+          useDeno = false
         }
       }
     }
@@ -461,7 +460,7 @@ class Nashorn(
     if (isTestSoDisableScripts)
       return "scripts-disabled-EsM28WXP45"
 
-    maybeInvokeDenoStr("slugifyTitle", title) foreach {
+    maybeInvokeDeno("slugifyTitle", Json.obj("title" -> title)) foreach {
       case Bad(errMsg) =>
         throwInternalError(
           "TyERENDSV_SLUGFY", "Error requesting render server to slugify title", errMsg)

@@ -18,10 +18,10 @@
 /// <reference path="../types-and-const-enums.ts" />
 
 
-function renderReactServerSide(reactStoreJsonString) {
+function renderReactServerSide(reactStore) {
   var exceptionAsString;
   try {
-    theStore = JSON.parse(reactStoreJsonString);
+    theStore = reactStore;
     theStore.currentPage = theStore.pagesById[theStore.currentPageId];
 
     // Fill in no-page-data to avoid null errors. Dupl code. [4FBR20]
@@ -47,12 +47,14 @@ function renderReactServerSide(reactStoreJsonString) {
     // The React store should be used instead, when running React.
     eds.uploadsUrlPrefixCommonmark = 'TyEFORCOMMONMARK';  // [7AKBQ2]
 
-    var html = debiki2.renderPageServerSideToString();
-    return html;
+    var pageHtml = debiki2.renderPageServerSideToString();
+    return new Response(pageHtml);
   }
   catch (e) {
     printStackTrace(e);
     exceptionAsString = exceptionToString(e);
+    const errMsg = '$ErrorRenderingReact\n\n' + exceptionAsString;  // TODO
+    return new Response(errMsg, { status: 500 });
   }
   finally {
     // Reset things to error codes, to fail fast, if attempts to access these,
@@ -60,7 +62,6 @@ function renderReactServerSide(reactStoreJsonString) {
     t = 'TyEBADACCESSLANG';
     theStore = 'TyEBADACCESSSTORE';
   }
-  return { errMsg: '$ErrorRenderingReact\n\n' + exceptionAsString };  // TODO
 }
 
 
@@ -101,7 +102,7 @@ function renderAndSanitizeCommonMark(ps: {
     // Fail fast — simplify detection of reusing without reinitialzing:
     eds.uploadsUrlPrefixCommonmark = 'TyE4GKFWB0';
     debiki.internal.serverSideLinkPreviewRenderer = 'TyE56JKW20';
-    return new Response({ safeHtml, mentions: mentionsThisTime });  // stringify ?
+    return Response.json({ safeHtml, mentions: mentionsThisTime });  // stringify ?
   }
   catch (e) {
     console.error("Error in renderAndSanitizeCommonMark: [TyERNDRCM02A]");
@@ -115,10 +116,10 @@ function renderAndSanitizeCommonMark(ps: {
 
 // (Don't name this function 'sanitizeHtml' because it'd then get overwritten by
 // a function with that same name from a certain sanitize-html npm module.)
-function sanitizeHtmlServerSide(source, followLinks): Response {
+function sanitizeHtmlServerSide(ps: { source: St, followLinks?: Bo }): Response {
   try {
     // This function calls both Google Caja and the sanitize-html npm module. CLEAN_UP RENAME.
-    const safeHtml = googleCajaSanitizeHtml(source, false, false, followLinks);
+    const safeHtml = googleCajaSanitizeHtml(ps.source, false, false, ps.followLinks);
     return new Response(safeHtml);
   }
   catch (e) {
@@ -159,26 +160,38 @@ function exceptionToString(exception) {
 
 
 globalThis.serverReqHandler = async (req: Request): Pr<Response> => {
-  console.log("Method:", req.method);
+  console.debug("Method:", req.method);
 
   const url = new URL(req.url);
-  console.log("Path:", url.pathname);
-  console.log("Query parameters:", url.searchParams);
+  console.debug("Path:", url.pathname);
+  console.debug("Query parameters:", url.searchParams);
 
-  console.log("Headers:", req.headers);
+  console.debug("Headers:", req.headers);
 
   if (!req.body) {
-    return new Response("No request body");
+    return new Response("No request body [TyERENDSV_0BDY]", 400);
   }
 
   const reqBody = await req.text();
-  console.log("Body:", reqBody);
+  console.debug("Body:", reqBody);
+
+  let reqJson;
+  try {
+    reqJson = JSON.parse(reqBody);
+  }
+  catch (ex) {
+    printStackTrace(e);
+    exceptionAsString = exceptionToString(e);
+    const errMsg = `Invalid JSON sent to: ${url.pathname} [TyERENDSV_JSN]\n\n` +
+            exceptionAsString;
+    return new Response(errMsg, 400);
+  }
 
   let response: Response;
 
   if (url.pathname === '/renderAndSanitizeCommonMark') {
-    console.log(`I will:  renderAndSanitizeCommonMark`);
-    response = renderAndSanitizeCommonMark(reqBody);
+    console.debug(`I will:  renderAndSanitizeCommonMark`);
+    response = renderAndSanitizeCommonMark(reqJson);
             // renderAndSanitizeCommonMark(reqBody, false, false, null, '/uploads_url_prefx/');
     // It works!
     /*
@@ -191,28 +204,29 @@ globalThis.serverReqHandler = async (req: Request): Pr<Response> => {
     '   */
   }
   else if (url.pathname === '/sanitizeHtmlServerSide') {
-    console.log(`I will:  sanitizeHtmlServerSide`);
-    response = sanitizeHtmlServerSide(reqBody, false);
+    console.debug(`I will:  sanitizeHtmlServerSide`);
+    response = sanitizeHtmlServerSide(reqJson);
 
     // It works!
     //    curl http://localhost:8087/sanitizeHtmlServerSide -d '<div>I am in a div. JSON: {"aa": 11, "bb": 22}</div> <b>bold?</bold> Param like:  http://ex.co/aa/bb?qq=vv;q2=v2,q3=v3'
     //
   }
   else if (url.pathname === '/renderReactServerSide') {
-    console.log(`I will:  renderReactServerSide`);
-    response = renderReactServerSide(reqBody);
+    console.debug(`I will:  renderReactServerSide`);
+    response = renderReactServerSide(reqJson);
   }
   else if (url.pathname === '/slugifyTitle') {
-    console.log(`I will:  slugifyTitle`);
-    response = window.debikiSlugify(reqBody);
+    console.debug(`I will:  slugifyTitle`);
+    const titleSlug = window.debikiSlugify(reqJson.title);
+    response = new Response(titleSlug);
   }
   else if (url.pathname === '/denoExit') {
-    console.log(`I will:  Deno.exit`);
+    console.debug(`I will:  Deno.exit`);
     Deno.exit();
   }
   else {
-    console.log(`I won't:  ${url.pathname}`);
-    response = Response(`Bad url path: ${url.pathname}`, { status: 400 })
+    console.error(`I won't:  ${url.pathname}`);
+    response = new Response(`Bad url path: ${url.pathname}`, { status: 400 })
   }
 
   return response;
