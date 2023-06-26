@@ -268,7 +268,7 @@ function renderLinkPreviewBlock(tokens: BlockLinkPreviewToken[], index: Nr,
       debiki.missingLinkPreviewsServerHelp.push({
             url: token.link, type: 'block', randPreviewId });
       // We'll replace this with the link preview, once it's been generated.
-      previewHtml = randPreviewId + '\n';
+      previewHtml = randPreviewId;
     }
   }
   else if (serverRenderer) {
