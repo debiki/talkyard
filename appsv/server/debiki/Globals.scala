@@ -1012,6 +1012,8 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   }
 
 
+  var denoProcess: Opt[Process] = None
+
   private def tryCreateStateUntilKilled(): Unit = {
     logger.info("Creating state.... [EdMCREATESTATE]")
     _state = Bad(None)
@@ -1058,13 +1060,13 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         // Will use Deno instead of Nashorn, since the latter is gone in JDK 17+.  [no_nashorn]
         logger.info("Starting Deno page renderer server? [TyMSTARTDENO]")
         if (config.featureFlags.contains("ffUseDeno")) {
-          val process: Process = new ProcessBuilder(
+          denoProcess = Some(new ProcessBuilder(
                 "/usr/local/bin/deno",
                     "run",
                     // Deno handles requests on 8087, and 9087 is for debugging. [deno_ports]
-                    "--allow-net=\"0.0.0.0:8087,0.0.0.0:9087\"",
+                    "--allow-net=0.0.0.0:8087,0.0.0.0:9087",
                     "--inspect=0.0.0.0:9087",
-                    "/opt/talkyard/app/images/rendersv/rendersv.deno.ts").start()
+                    "/opt/talkyard/app/images/rendersv/rendersv.deno.ts").inheritIO().start())
         }
 
         _state = Good(newState)
