@@ -84,25 +84,34 @@ function renderAndSanitizeCommonMark(ps: {
       commonmarkSource: St,
       allowClassIdDataAttrs: Bo,
       followLinks: Bo,
-      instantLinkPreviewRenderer: null,
+      linkPreviewsByTypeUrl: { [typeUrl: St]: St },
       uploadsUrlPrefixCommonmark: St }): Response {
   var exceptionAsString;
   try {
     theStore = null; // Fail fast. Don't use here, might not have been inited.
     eds.uploadsUrlPrefixCommonmark = ps.uploadsUrlPrefixCommonmark;  // [7AKBQ2]
-    debiki.internal.serverSideLinkPreviewRenderer = ps.instantLinkPreviewRenderer;
+    debiki.internal.linkPreviewsByTypeUrl = ps.linkPreviewsByTypeUrl;
     debiki.mentionsServerHelp = [];
+    debiki.missingLinkPreviewsServerHelp = [];
+
     var unsafeHtml = md.render(ps.commonmarkSource);
-    var mentionsThisTime = debiki.mentionsServerHelp;
+
+    var mentions = debiki.mentionsServerHelp;
+    var missingLinkPreviews = debiki.missingLinkPreviewsServerHelp;
     delete debiki.mentionsServerHelp;
+    delete debiki.missingLinkPreviewsServerHelp;
+
     var allowClassAndIdAttr = ps.allowClassIdDataAttrs;
     var allowDataAttr = ps.allowClassIdDataAttrs;
     var safeHtml = googleCajaSanitizeHtml(
           unsafeHtml, allowClassAndIdAttr, allowDataAttr, ps.followLinks);
+
     // Fail fast — simplify detection of reusing without reinitialzing:
     eds.uploadsUrlPrefixCommonmark = 'TyE4GKFWB0';
-    debiki.internal.serverSideLinkPreviewRenderer = 'TyE56JKW20';
-    return Response.json({ safeHtml, mentions: mentionsThisTime });  // stringify ?
+    debiki.internal.linkPreviewsByTypeUrl = 'TyE56JKW38';
+    console.debug(`Found mentions: ${JSON.stringify(mentions)
+          }, missing link previews: ${JSON.stringify(missingLinkPreviews)} `)
+    return Response.json({ safeHtml, mentions, missingLinkPreviews });
   }
   catch (e) {
     console.error("Error in renderAndSanitizeCommonMark: [TyERNDRCM02A]");

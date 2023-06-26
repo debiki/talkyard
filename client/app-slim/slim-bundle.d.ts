@@ -16,7 +16,8 @@ declare const debiki: {
     util: Ay,
   },
   internal: Ay,
-  mentionsServerHelp: Ay,
+  mentionsServerHelp?: St[],
+  missingLinkPreviewsServerHelp?: { url: St, type: 'inline' | 'block', randPreviewId: St }[],
 };
 
 declare const talkyard: {

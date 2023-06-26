@@ -100,8 +100,33 @@ function renderLinkOpen(tokens: Token[], idx: Nr, options, env, self): St {
 
   if (isAutoLink && linkUrl && textToken?.type === 'text' &&
         linkCloseToken?.type === 'link_close') {
+
+    // For Deno.
+    const linkPreviewsByTypeUrl = debiki.internal.linkPreviewsByTypeUrl;
+    // For Nashorn. Legacy.
     const serverRenderer = debiki.internal.serverSideLinkPreviewRenderer;
-    if (serverRenderer) {
+
+    let result: InlineLinkPreview;
+
+    if (linkPreviewsByTypeUrl) {
+      // For Deno.
+      result = linkPreviewsByTypeUrl['inline:' + linkUrl];
+      if (!result) {
+        const randPreviewId = 'LnPvId_Inl_' + debiki2.randomNumSt();  // [js_rand_val]
+        debiki.missingLinkPreviewsServerHelp.push({
+              url: linkUrl, type: 'inline', randPreviewId });
+        // We'll fill in later.
+        result = {
+          // Replaced (in Scala code) with the page title, or just the url itself
+          // if we don't know the title.
+          safeTitleCont: randPreviewId + '_Ttl',
+          // So we can add a for-debugging CSS class that shows what happened and why.
+          classAtr: randPreviewId + '_Cls',
+        };
+      }
+    }
+    else if (serverRenderer) {
+      // For Nashorn.
       // We're server side. In case the string is a Nashorn ConsString,
       // which won't work now when calling back out to Scala/Java code
       // — change to a Java string:
@@ -110,7 +135,11 @@ function renderLinkOpen(tokens: Token[], idx: Nr, options, env, self): St {
               linkJavaSt);
       // There were annoying runtime errors when trying to invoke a Scala
       // class instance method, so let's just use JSON instead (for now at least).
-      const result: InlineLinkPreview = JSON.parse(resultJsonSt);
+      result = JSON.parse(resultJsonSt);
+    }
+
+    if (result) {
+      // For Deno and Nashorn.
       if (result.safeTitleCont) {
         textToken.content = result.safeTitleCont;
       }
@@ -126,6 +155,7 @@ function renderLinkOpen(tokens: Token[], idx: Nr, options, env, self): St {
       }
     }
     else {
+      // For the browser.
       const randomClass = 'c_LnPv-' + Math.random().toString(36).slice(2);  // [js_rand_val]
       const loadingClasses = `icon icon-loading ${randomClass}`;
       if (classAtrIx >= 0) {
@@ -223,9 +253,26 @@ function tryParseLink(state, startLineIndex, endLineIndex, whatIsThis) {
 function renderLinkPreviewBlock(tokens: BlockLinkPreviewToken[], index: Nr,
         options, env, renderer_unused) {
   var token = tokens[index];
-  var previewHtml;
+  let previewHtml: St;
+
+  // For Deno.
+  const linkPreviewsByTypeUrl = debiki.internal.linkPreviewsByTypeUrl;
+  // For Nashorn. Legacy.
   var serverRenderer = debiki.internal.serverSideLinkPreviewRenderer;
-  if (serverRenderer) {
+
+  if (linkPreviewsByTypeUrl) {
+    // For Deno.
+    previewHtml = linkPreviewsByTypeUrl['block:' + token.link];
+    if (!previewHtml) {
+      const randPreviewId = 'LnPvId_Blk_' + debiki2.randomNumSt();
+      debiki.missingLinkPreviewsServerHelp.push({
+            url: token.link, type: 'block', randPreviewId });
+      // We'll replace this with the link preview, once it's been generated.
+      previewHtml = randPreviewId + '\n';
+    }
+  }
+  else if (serverRenderer) {
+    // For Nashorn.
     // We're server side. In case the string is a Nashorn ConsString,
     // which won't work now when calling back out to Scala/Java code:
     const linkJavaSt = String(token.link);
@@ -233,6 +280,7 @@ function renderLinkPreviewBlock(tokens: BlockLinkPreviewToken[], index: Nr,
           linkJavaSt);
   }
   else {
+    // For the browser.
     var randomClass = 'c_LnPv-' + Math.random().toString(36).slice(2);  // [js_rand_val]
     debiki2.Server.fetchLinkPreview(token.link, false /*inline*/,
             function(preview: LinkPreviewResp | Nl) {
@@ -275,6 +323,7 @@ function renderLinkPreviewBlock(tokens: BlockLinkPreviewToken[], index: Nr,
     previewHtml =
           `<p class="${randomClass}"><a class="icon icon-loading">${safeLink}</a></p>`;
   }
+
   return previewHtml;
 }
 

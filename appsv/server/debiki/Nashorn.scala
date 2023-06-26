@@ -31,13 +31,15 @@ import talkyard.{server => tys}
 import talkyard.server.TyLogging
 import talkyard.server.rendr.NashornParams
 import scala.collection.mutable.ArrayBuffer
-import debiki.EdHttp.throwInternalError
+import debiki.EdHttp.{throwInternalError, logAndThrowInternalError}
 import JsonUtils._
 import play.api.libs.json._
 
 
 
-case class RenderCommonmarkResult(safeHtml: String, mentions: Set[String])
+case class RenderCommonmarkResult(
+  safeHtml: St,
+  mentions: Set[St])
 
 
 /**
@@ -339,29 +341,6 @@ class Nashorn(
               renderParams.embeddedOriginOrEmpty) +
                   talkyard.server.UploadsUrlBasePath + pubSiteId + '/'
 
-    maybeInvokeDeno("renderAndSanitizeCommonMark", Json.obj(
-          "commonmarkSource" -> commonMarkSource,
-          "allowClassIdDataAttrs" -> JsTrue,
-          "followLinks" -> renderParams.followLinks,
-          "instantLinkPreviewRenderer" -> JsNull, // TODO
-          "uploadsUrlPrefixCommonmark" -> uploadsUrlPrefix,
-    )) foreach {
-      case Bad(errMsg) =>
-        throwInternalError(
-          "TyERENDSV_RCM01", "Error requesting render server to render CommonMark", errMsg)
-      case Good(respStr) =>
-        val respJo = Json.parse(respStr)
-        /*
-        parseOptSt(jsOb, "errMsg") foreach { errMsg =>
-          throwInternalError(
-                "TyERENDSV_RCM02", "Error response from render server, when rendering CommonMark", errMsg)
-        } */
-        val safeHtml: St = parseSt(respJo, "safeHtml")
-        val mentions: Set[St] = parseJsArray(respJo, "mentions").map(asString(_, "mentions item")).to[Set]
-        val result = RenderCommonmarkResult(safeHtml, mentions)
-        return result
-    }
-
     // This link preview renderer fetches previews from the database,
     // link_previews_t, but makes no external requests — cannot do that from inside
     // a Nashorn script.
@@ -372,6 +351,74 @@ class Nashorn(
               mayHttpFetch = false,
               // The requester doesn't matter — won't fetch external data.
               requesterId = SystemUserId))
+
+    maybeInvokeDeno("renderAndSanitizeCommonMark", Json.obj(
+          "commonmarkSource" -> commonMarkSource,
+          "allowClassIdDataAttrs" -> JsTrue,
+          "followLinks" -> renderParams.followLinks,
+          "linkPreviewsByTypeUrl" -> JsObject(Nil),
+          "uploadsUrlPrefixCommonmark" -> uploadsUrlPrefix,
+    )) foreach {
+      case Bad(errMsg) =>
+        logAndThrowInternalError("TyERENDSV_RCM01",
+              s"Error requesting render server to render CommonMark: $errMsg")(logger)
+      case Good(respStr) =>
+        val respJo = Json.parse(respStr)
+        var safeHtmlNoPreviews: St = parseSt(respJo, "safeHtml")
+        val mentions: Set[St] = parseJsArray(respJo, "mentions")
+              .map(asString(_, "mentions item")).to[Set]
+        val missingLinkPreviews: Seq[JsObject] = parseJsArray(respJo, "missingLinkPreviews")
+              .map(asJsObject(_, "missingLinkPreviews item"))
+
+        if (missingLinkPreviews.nonEmpty) {
+          // Fetch previews.
+          // val previewsByTypeUrl = JsObject(missingLinkPreviews map { linkJo: JsObject =>
+          missingLinkPreviews foreach { linkJo: JsObject =>
+            val url: St = parseSt(linkJo, "url")
+            val tyype = parseSt(linkJo, "type")
+            val randId = parseSt(linkJo, "randPreviewId")
+            val preview: St = tyype match {
+              case "inline" =>
+                prevwRenderer.renderAndSanitizeInlineLinkPreview(
+                      unsafeUrl = url, preGendPlaceholder = Some(randId))
+              case "block" =>
+                prevwRenderer.renderAndSanitizeBlockLinkPreview(
+                      unsafeUrl = url, preGendPlaceholder = Some(randId))
+              case _ =>
+                logAndThrowInternalError("TyELNPVTPE058",
+                      s"Bad link preview type: $tyype")(logger)
+            }
+          }
+          /*
+            s"$tyype:$url" -> JsString(preview)
+          })
+          // Render again, now with previews available.  — No, replace placeholders instead.  ?
+          // This actually fills in only inline previews — whilst block link
+          // previews get replaced by placeholders [block_ln_pvw_placeholder] so
+          // the sanitizer won't remove them. Then, replacePlaceholders() below
+          // inserts the actual previews.
+          maybeInvokeDeno("renderAndSanitizeCommonMark", Json.obj(
+                "commonmarkSource" -> commonMarkSource,
+                "allowClassIdDataAttrs" -> JsTrue,
+                "followLinks" -> renderParams.followLinks,
+                "linkPreviewsByTypeUrl" -> previewsByTypeUrl,
+                "uploadsUrlPrefixCommonmark" -> uploadsUrlPrefix,
+          )) foreach {
+            case Bad(errMsg) =>
+              logAndThrowInternalError("TyERENDSV_RCM_PV",
+                    s"Error in rendersv when rendering CommonMark with previews: $errMsg"
+                    )(logger)
+            case Good(respStr) =>
+              val respJo = Json.parse(respStr)
+              safeHtmlNoPreviews = parseSt(respJo, "safeHtml")
+          } */
+        }
+
+        val safeHtmlWithLinkPreviews = prevwRenderer.replacePlaceholders(safeHtmlNoPreviews)
+        val result = RenderCommonmarkResult(safeHtmlWithLinkPreviews, mentions = mentions)
+        logger.debug(s"Rendered CommonMark with Deno result: $result")
+        return result
+    }
 
     val (safeHtmlNoPreviews, mentions) = withJavascriptEngine(engine => {
       val resultObj: Object = engine.invokeFunction("renderAndSanitizeCommonMark",

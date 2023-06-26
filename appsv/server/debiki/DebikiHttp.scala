@@ -263,9 +263,11 @@ object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
   def throwConflict(errCode: String, message: String) =
     throw ResultException(R.Conflict(s"409 Conflict\n$message [$errCode]"))
 
-  def logAndThrowInternalError(errCode: String, message: String = "")
+  def logAndThrowInternalError(errCode: String, message: String = "", thr: Throwable = null)
         (implicit logger: play.api.Logger): Nothing = {
-    logger.error("Internal error: "+ message +" ["+ errCode +"]")
+    // (Or would passing null work?)
+    if (thr ne null) logger.error("Internal error: "+ message +" ["+ errCode +"]", thr)
+    else logger.error("Internal error: "+ message +" ["+ errCode +"]")
     throwInternalError(errCode, message)
   }
 
