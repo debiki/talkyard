@@ -179,7 +179,7 @@ ${danger ? `
     nodeAssert.strictEqual(
             removeBlankLines(sanitizedHtml),
             removeBlankLines(
-                '<div class="dw-p-bd-blk">' + safeStr + '\n</div>',
+                '<div class="dw-p-bd-blk">' + safeStr + '</div>',
                 'AndWrapInParas'));
   });
 
