@@ -549,21 +549,37 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
     *
     * Returns a json string.
     */
-  def renderAndSanitizeInlineLinkPreview(unsafeUrl: St): St = {
+  def renderAndSanitizeInlineLinkPreview(
+          unsafeUrl: St, preGendPlaceholder: Opt[St] = None): St = {
     import play.api.libs.json.{Json, JsString}
 
     // Allow hash frag, so can #post-123 link to specific posts. [int_ln_hash]
     val unsafeUri = Validation.parseUri(unsafeUrl, allowQuery = true, allowHash = true)
           .getOrIfBad { _ =>
       return Json.obj("errCode" -> JsString("TyELNPVURL")).toString
-    }
+    } /// oops!
+
+    lazy val safeUrlInTag = org.owasp.encoder.Encode.forHtmlContent(unsafeUrl)
 
     val result = linkPreviewRenderer.fetchRenderSanitizeInstantly(
           unsafeUri, inline = true) match {
       case RenderPreviewResult.NoPreview(errCode) =>
         // Fine.
-        PreviewResult(safeHtml = "", errCode = errCode.noneIfEmpty)
-      case donePreview: RenderPreviewResult.Done =>
+        val res = PreviewResult(safeHtml = "", errCode = errCode.noneIfEmpty,
+              safeTitleCont = Some(safeUrlInTag))
+        preGendPlaceholder foreach { plh =>
+          donePreviews.append(
+                RenderPreviewResult.Done(res, plh))
+        }
+        res
+      case donePreview0: RenderPreviewResult.Done =>
+        // For Deno:
+        val donePreview = preGendPlaceholder match {
+          case Some(plh) => donePreview0.copy(placeholder = plh)
+          case None => donePreview0
+        }
+        donePreviews.append(donePreview)
+        // For the browser, and Nashorn:
         donePreview.result
       case _: RenderPreviewResult.Loading =>
         PreviewResult(safeHtml = "", errCode = Some("TyELNPV0CACH1"))
@@ -580,7 +596,10 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
   }
 
 
-  def renderAndSanitizeBlockLinkPreview(unsafeUrl: St): St = {
+  def renderAndSanitizeBlockLinkPreview(unsafeUrl: St,
+          // New, for Deno. HACK. Will later always be specified?
+          // When Nashorn gone.
+          preGendPlaceholder: Opt[St] = None): St = {
     lazy val safeUrlInAtr = org.owasp.encoder.Encode.forHtmlAttribute(unsafeUrl)
     lazy val safeUrlInTag = org.owasp.encoder.Encode.forHtmlContent(unsafeUrl)
 
@@ -615,12 +634,23 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
         require(cssClass == safeEncodeForHtml(cssClass), "TyE52RAMDJ72")
         // This: s"...\"$var\"" results in a weird "value $ is not a member of String"
         // compilation error. So `+` instead.
-        noPreviewHtmlSt(" class=\"" + cssClass + "\"")
-      case donePreview: RenderPreviewResult.Done =>
+        val safeHtml = noPreviewHtmlSt(" class=\"" + cssClass + "\"")
+        preGendPlaceholder foreach { plh =>
+          donePreviews.append(
+                RenderPreviewResult.Done(PreviewResult(safeHtml = safeHtml), plh))
+        }
+        safeHtml
+      case donePreview0: RenderPreviewResult.Done =>
+        // Later, this will always (?) be the case, with Deno. But not Nashorn.
+        val donePreview = preGendPlaceholder match {
+          case Some(plh) => donePreview0.copy(placeholder = plh)
+          case None => donePreview0
+        }
+
         donePreviews.append(donePreview)
         // Return a placeholder because `donePreview.html` might be an iframe which would
         // be removed by the sanitizer. So replace the placeholder with the html later, when
-        // the sanitizer has been run.
+        // the sanitizer has been run.  [block_ln_pvw_placeholder]
         donePreview.placeholder
       case pendingPreview: RenderPreviewResult.Loading =>
         // We cannot http fetch from external servers from here. That should have been
@@ -634,8 +664,24 @@ class LinkPreviewRendererForNashorn(val linkPreviewRenderer: LinkPreviewRenderer
   def replacePlaceholders(html: String): String = {
     var htmlWithBoxes = html
     for (donePreview <- donePreviews) {
+      val isInline = donePreview.placeholder startsWith "LnPvId_Inl_"
+      // The title placeholder ends with "_Ttl", the class attr with "_Cls".
+      val titleSuffix = if (isInline) "_Ttl" else ""
       htmlWithBoxes = htmlWithBoxes.replace(
-            donePreview.placeholder, donePreview.result.safeHtml)
+            donePreview.placeholder + titleSuffix,
+            // Replace link title inside an <a>, or replace a whole
+            // line with an <aside>....<a href=...>...:
+            if (isInline)
+              donePreview.result.safeTitleCont.getOrElse("TyELNPV_0TTL")
+            else
+              donePreview.result.safeHtml)
+      if (isInline) {
+        // Then also add a html class showing what happened. (If it's a block
+        // link preiew, then that class is included inside the block already.)
+        htmlWithBoxes = htmlWithBoxes.replace(
+              donePreview.placeholder + "_Cls",
+              donePreview.result.errCode.map("c_LnPvNone-" + _).getOrElse("c_LnPv-Inl"))
+      }
     }
     htmlWithBoxes
   }
