@@ -506,3 +506,49 @@ describe("internal links, backlinks   TyTINTLNS54824", () => {
 
 });
 
+// HMMM BROKEN
+//
+/*
+ *
+
+[0-0] Memah logs in
+[0-0] Go: http://e2e-test-cid-0-0-now-6297.localhost  & disable rate limits
+[0-0] TyE2eApi: loginWithPasswordViaTopbar
+[0-0] Memah posts a topic A that links to Michael's and Maria's pages
+[0-0] ... inline link previews appear
+[0-0] Owen goes to Memah's new topic
+[0-0] Go: http://e2e-test-cid-0-0-now-6297.localhost/-2/topicatitle  & disable rate limits
+[0-0] TyE2eApi: loginWithPasswordViaTopbar
+[0-0] No backlinks to this page
+[0-0] Owen follows the link to Michael's page
+[0-0] There's a backlink
+[0-0] ... from Memah's page
+[0-0] ... with Memah's page's title
+[0-0] Owen clicks the backlink
+[0-0] ... gets to Memah's page again
+[0-0] Owen now follows the link to Maria's page
+[0-0] n = 2 !== 1, won't scroll into view before trying to click, maybe will miss:  #post-1 a [05YKTDTH4]
+[0-0] 502 ms elapsed: Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title""" ...
+[0-0] 845 ms elapsed: Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title""" ...
+[0-0] Timed out, that's fine:  Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title"""
+1697 ms elapsed: Waiting for  #post-1 a  to be clickable ...
+[0-0] 708 ms elapsed: Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title""" ...
+[0-0] Timed out, that's fine:  Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title"""
+[0-0] 3188 ms elapsed: Waiting for  #post-1 a  to be clickable ...
+[0-0] 701 ms elapsed: Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title""" ...
+[0-0] Timed out, that's fine:  Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title"""
+4697 ms elapsed: Waiting for  #post-1 a  to be clickable ...
+[0-0] 696 ms elapsed: Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title""" ...
+[0-0] 1039 ms elapsed: Waiting for elem [ #post-1 a ] to not be occluded, okayOccluders: [ undefined ],
+problem: Occluded by: .c_LnPv-Inl, occluder's text content: """By Maria in CategoryA title""" ...
+
+
+*/
