@@ -63,6 +63,8 @@ images/web/assets/
 !images/web/assets/.gitkeep
 images/web/fonts/
 !images/web/fonts/.gitkeep
+images/rendersv/rendersv.deno.ts
+!images/rendersv/.gitkeep
 
 
 # When running Chrome browser tests, ChromeDriver generates this file and it
