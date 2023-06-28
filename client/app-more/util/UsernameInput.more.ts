@@ -83,7 +83,6 @@ export const UsernameInput = createClassAndFactory({
           this.setState({ username: value });
           this.props.onChangeValueOk(value, ok);
         },
-        onBlur: this.props.onBlur,
         defaultValue,
         help: this.props.isForGroup
           ?  r.span({},

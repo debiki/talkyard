@@ -53,7 +53,6 @@ export var EmailInput = createClassAndFactory({
         notMessageThree: t.inp.NoBadChrs, // "No weird characters please"
         error: this.props.error,
         onChange: this.props.onChangeValueOk, disabled: this.props.disabled,
-        onBlur: this.props.onBlur,
         defaultValue }));
   }
 });
