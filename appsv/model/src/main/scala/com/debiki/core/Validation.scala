@@ -41,6 +41,7 @@ object Validation {  // rename // to Check, so:  Check.ifBadEmail( ...)  — loo
 
   // CLEAN_UP don't return the name — looks as if it's maybe getting changed
   def checkName(name: Option[String]): Option[String] Or ErrorMessage = {
+    // Dupl code. [full_name_checks]
     if (name.map(_.trim) != name)
       return Bad("Name starts or ends with blanks")
 
@@ -72,6 +73,7 @@ object Validation {  // rename // to Check, so:  Check.ifBadEmail( ...)  — loo
   def isObviouslyBadEmail(email: String): Bo =
     checkEmail(email).isBad
 
+  // Dupl code. [email_adrs_checks]
   // @deprecated // use ifBadEmail() instead — then cannot forget to check any return val
   // No, return a ParsedEmail type instead, and use that type everywhere a seemingly
   // OK email is needed.

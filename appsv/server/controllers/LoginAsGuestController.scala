@@ -60,10 +60,13 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: TyCo
     throwForbiddenIf(!settings.isGuestLoginAllowed,
           "TyE4K5FW2", "Guest login disabled; you cannot login as guest here")
 
-    throwForbiddenIf(Participant nameIsWeird name, "TyE82CW19", "Weird name. Please use no weird characters")
+    throwForbiddenIf(Participant nameIsWeird name,
+          "TyE82CW19", "Unsupported name: Unexpected characters")
     throwForbiddenIf(name.isEmpty, "TyE872Y90", "Please fill in your name")
-    throwForbiddenIf(email.nonEmpty && Participant.emailIsWeird(email),
-      "TyE04HK83", "Weird email. Please use a real email address")
+
+    if (email.nonEmpty) anyEmailAddressError(email) foreach { err =>
+      throwForbidden("TyE04HK83", err)
+    }
     throwForbiddenIf(!settings.isEmailAddressAllowed(email),
       "TyEBADEMLDMN_-GST", "You cannot sign up using that email address")
 

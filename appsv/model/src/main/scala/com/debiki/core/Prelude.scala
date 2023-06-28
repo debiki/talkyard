@@ -125,6 +125,18 @@ object Prelude {   CLEAN_UP; RENAME // to BugDie and re-export the interesting
   }
 
 
+  def getRootCause(thr: Throwable): Throwable = {
+    var rootCause = thr
+    // This limit should be enough: (stringifyExceptionAndCauses() above is overkill?)
+    var loopLimit = 99
+    while ((rootCause.getCause ne null) && loopLimit > 0) {
+      rootCause = rootCause.getCause
+      loopLimit -= 1
+    }
+    rootCause
+  }
+
+
   /** Converts from a perhaps-{@code null} reference to an {@code Option}.
    */
   def ?[A <: AnyRef](x: A): Option[A] = if (x eq null) None else Some(x)

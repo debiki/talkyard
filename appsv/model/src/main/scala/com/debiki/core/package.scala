@@ -1831,7 +1831,12 @@ package object core {
   def isBlank(char: Char): Boolean = char <= ' '
 
 
-  /** Tests if is valid non local address, and that Apache Commons Email accepts it. */
+  /** Tests if is valid non local address, and that Apache Commons Email accepts it.
+    *
+    * The returned error message does *not* need to be prefixed with "Invalid email address: ".
+    *
+    * Dupl code. [email_adrs_checks]
+    */
   def anyEmailAddressError(address: String): Option[ErrorMessage] = {
     // Try to construct an email first, because results in a somewhat friendly error message,
     // rather than just a true/false from EmailValidator.isValid().
@@ -1842,16 +1847,23 @@ package object core {
     }
     catch {
       case ex: Exception =>
-        return Some(ex.getMessage)
+        val exNameAndMsg = ex.getMessage
+        // This drops "java.package.ExceptionName: ". (If using `getRootCause(ex).getMessage`,
+        // the message is less detailed.)
+        val message =
+              if (!exNameAndMsg.contains(':')) exNameAndMsg
+              else exNameAndMsg.dropWhile(_ != ':').drop(2)
+        return Some(s"Invalid email address: $message")
     }
 
+    // (Move deprecated [email_adrs_checks] to here, to get a better err msg?)
     val seemsValid = EmailValidator.getInstance(/* allowLocal = */ false).isValid(address)
     if (!seemsValid)
-      return Some("EmailValidator says the email address is not valid")
+      return Some("Invalid email address")
 
     // The database doesn't allow uppercase (e.g.: `select email_seems_ok('A@ex.co');`).
     if (address.toLowerCase != address)
-      return Some("Email address contains uppercase characters")
+      return Some("Invalid (unsupported) email address — it contains uppercase characters")
 
     None
   }
