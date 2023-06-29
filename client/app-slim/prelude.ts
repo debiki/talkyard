@@ -85,6 +85,13 @@ function isSelfHosted(): Bo {
   return eds.siteId === 1;
 }
 
+function isAutoTestSite(): Bo {
+  // A bit hacky: e2e test site hostnames contain '-test-', but test sites real people
+  // create to try out Talkyard, instead start with 'test--' [5UKF03]
+  return location.hostname.indexOf('-test-') >= 0 ||
+            eds.embeddingUrl && eds.embeddingUrl.indexOf('-test-') >= 0;
+}
+
 
 // Use this function to call getBoundingClientRect() and other stuff just before the next repaint,
 // to avoid forced refresh of the layout.

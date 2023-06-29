@@ -138,6 +138,7 @@ declare namespace ed {
 
 declare function isServerSide(): Bo;
 declare function isSelfHosted(): Bo;
+declare function isAutoTestSite(): Bo;
 
 
 // In other files:
