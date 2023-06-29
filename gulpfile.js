@@ -673,19 +673,6 @@ gulp.task('bundleZxcvbn', () => {
 });
 
 
-gulp.task('compileConcatAllScripts', gulp.series(  // speed up w gulp.parallel? (GLPPPRL)
-  'compileServerTypescriptConcatJavascript',
-  'compileSwTypescript-concatScripts',
-  'compileHeadTypescript-concatScripts',
-  'compileSlimTypescript-concatScripts',
-  'compileMoreTypescript-concatScripts',
-  // _2dTypescriptProject: disabled
-  'compileStaffTypescript-concatScripts',
-  'compileEditorTypescript-concatScripts',
-  'compileBlogCommentsTypescript-concatScripts',
-  'bundleZxcvbn'));
-
-
 gulp.task('enable-prod-stuff', (done) => {
   // This script isn't just a minified script — it contains lots of optimizations.
   // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
@@ -788,6 +775,20 @@ gulp.task('concatRendersvDenoScript', gulp.series(
       .pipe(updateAtimeAndMtime())
       .pipe(gulp.dest('images/rendersv/'));
 }));
+
+
+
+gulp.task('compileConcatAllScripts', gulp.series(  // speed up w gulp.parallel? (GLPPPRL)
+  'concatRendersvDenoScript',
+  'compileSwTypescript-concatScripts',
+  'compileHeadTypescript-concatScripts',
+  'compileSlimTypescript-concatScripts',
+  'compileMoreTypescript-concatScripts',
+  // _2dTypescriptProject: disabled
+  'compileStaffTypescript-concatScripts',
+  'compileEditorTypescript-concatScripts',
+  'compileBlogCommentsTypescript-concatScripts',
+  'bundleZxcvbn'));
 
 
 
@@ -959,7 +960,7 @@ gulp.task('default', gulp.series(
 gulp.task('watch', gulp.series((done) => {
   gulp.watch(
       ['client/server/**/*.js', 'client/server/**/*.ts', ...serverJavascriptSrc],
-      gulp.series('compileServerTypescriptConcatJavascript'))
+      gulp.series('concatRendersvDenoScript'))
     .on('change', logChangeFn('Server typescript'));
 
   gulp.watch(
