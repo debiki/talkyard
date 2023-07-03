@@ -24,6 +24,24 @@ import PageParts._
 import org.scalactic.{Bad, Good, One, Or}
 
 
+case class InterestingPosters(
+  origPostAuthorId: Opt[PatId], // Might have been deleted
+  lastReplyWhen: Opt[When], // REN to  lastApproved...  ?
+  lastReplyById: Opt[PatId],
+  frequentPosterIds: Seq[PatId]) {
+
+  require(lastReplyWhen.isDefined == lastReplyById.isDefined, "TyE40WJKH21")
+  require(origPostAuthorId isNot NoUserId, "TyE40WJKH22")
+  require(lastReplyById isNot NoUserId, "TyE40WJKH23")
+  require(!frequentPosterIds.contains(NoUserId), "TyE40WJKH24")
+
+  // If there are no replies, then there are no frequent posters. [poster_stats]
+  require(lastReplyById.isDefined || frequentPosterIds.isEmpty, "TyE40WJKH24")
+
+  def lastReplyAt: Opt[java.util.Date] = lastReplyWhen.map(_.toJavaDate)
+}
+
+
 object PageParts {
 
   val MaxPrivateNr: i32 = -1001
@@ -58,24 +76,86 @@ object PageParts {
   }
 
 
-  /** Finds the 0 to 3 most frequent posters.
+  /** Finds the 3 most frequent posters.
     * Would: If two users have both posted X posts, then, among them, pick the most recent poster?
     */
-  def findFrequentPosters(posts: Seq[Post], ignoreIds: Set[UserId]): Seq[UserId] = {
+  def findFrequentPosters(posts: Seq[Post], butWithUpdatedPosts: Seq[Post]): Seq[UserId] = {
+    findInterestingPosters(posts = posts, butWithUpdatedPosts).frequentPosterIds
+  }
+
+
+  def findInterestingPosters(posts: Seq[Post], butWithUpdatedPosts: Seq[Post])
+          : InterestingPosters = {
+    // Tests: [prom_pats_tests]
+
+    val postsWithChanges = postAndChanges(posts, updatedPosts = butWithUpdatedPosts)
+
+    assert(NoUserId == 0)
+    var origPostAuthorId = 0
+    var lastReplyById = 0
+    // The last approved comment, and last posted comment, need not be the same.
+    // Currently, for simplicity, we use only the last *created* comment,
+    // to show the last replyer.
+    var lastReplyCreatedWhen: When = When.Genesis
+
+    for (post <- postsWithChanges) {
+      if (post.isOrigPost) origPostAuthorId = post.createdById
+      else if (post.isReply && post.isVisible) {
+        if (post.createdWhen isAfter lastReplyCreatedWhen) {
+          lastReplyById = post.createdById
+          lastReplyCreatedWhen = post.createdWhen
+          // Later, might sometimes want:  post.approvedWhen.get // [first_last_apr_at]
+        }
+      }
+    }
+
     val numPostsByUserId = mutable.HashMap[UserId, Int]().withDefaultValue(0)
+
     for {
-      post <- posts
+      post <- postsWithChanges
       if post.isReply && post.isVisible  // (96502764)
-      if !ignoreIds.contains(post.createdById)  // [3296KGP]
+      // Ignore the page creator and the last replyer, because they have their own first-&-last
+      // entries in the Users column in the forum topic list. [7UKPF26], and a test [206K94QTD]
+      if post.createdById != origPostAuthorId && post.createdById != lastReplyById
     } {
       val numPosts = numPostsByUserId(post.createdById)
       numPostsByUserId(post.createdById) = numPosts + 1
     }
+
     val userIdsAndNumPostsSortedDesc =
-      numPostsByUserId.toSeq.sortBy(userIdAndNumPosts => userIdAndNumPosts._2)
-    userIdsAndNumPostsSortedDesc.take(3).map(_._1)
+          numPostsByUserId.toSeq.sortBy(userIdAndNumPosts => -userIdAndNumPosts._2)
+    val frequentPosterIdsDesc: Seq[PatId] =
+          userIdsAndNumPostsSortedDesc.take(3).map(_._1)
+
+    InterestingPosters(
+          origPostAuthorId = if (origPostAuthorId == 0) None else Some(origPostAuthorId),
+          lastReplyWhen = if (lastReplyById == 0) None else Some(lastReplyCreatedWhen),
+          lastReplyById = if (lastReplyById == 0) None else Some(lastReplyById),
+          frequentPosterIds = frequentPosterIdsDesc)
   }
 
+
+  private def postAndChanges(posts: Seq[Post], updatedPosts: Seq[Post]): Seq[Post] = {
+    if (updatedPosts.isEmpty)
+      return posts
+
+    // The bool says if we've seen the updated-post in `posts` — if not, it's new.
+    val changeMap = mutable.HashMap(updatedPosts.map(p => p.id -> (p, false)): _*)
+    val oldAndUpdatedPosts = posts map { post =>
+      changeMap.get(post.id) map { case (updatedPost, _) =>
+        // Remember we've seen the updated post.
+        changeMap.update(post.id, (updatedPost, true))
+        // Use it instead of the old.
+        updatedPost
+      } getOrElse post
+    }
+
+    // Add any new posts (the ones we didn't mark as seen above).
+    val newPosts = changeMap.values.filter(postAndSeen => !postAndSeen._2).map(_._1)
+
+    // Order is undefined? Still, appending makes more sense?
+    oldAndUpdatedPosts ++ newPosts
+  }
 }
 
 
@@ -279,10 +359,8 @@ abstract class PageParts {
 
 
   def frequentPosterIds: Seq[UserId] = {
-    // Ignore the page creator and the last replyer, because they have their own first-&-last
-    // entries in the Users column in the forum topic list. [7UKPF26], and a test [206K94QTD]
-    PageParts.findFrequentPosters(this.allPosts,
-      ignoreIds = body.map(_.createdById).toSet ++ lastVisibleReply.map(_.createdById).toSet)
+    PageParts.findFrequentPosters(
+          this.allPosts, butWithUpdatedPosts = Nil)
   }
 
 
