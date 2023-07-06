@@ -141,6 +141,10 @@ describe(`some-e2e-test  TyTE2E1234ABC`, () => {
     mallory_brB = brB;
     stranger_brB = brB;
 
+    // Changing trust & threat levels:
+    maria.trustLevel = c.TestTrustLevel.Basic;
+    maria.threatLevel = c.TestThreatLevel.HopefullySafe;
+
     assert.refEq(builder.getSite(), forum.siteData);
   });
 

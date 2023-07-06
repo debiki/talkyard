@@ -4922,8 +4922,15 @@ export class TyE2eTestBrowser {
         await this.waitForDisplayed('.e2eF_T', ps);
       },
 
-      waitForTopicVisible: async (title: St) => {
-        await this.waitUntilAnyTextMatches(this.forumTopicList.titleSelector, title);
+      waitForTopicVisible: async (title: St, ps: { andHidden?: Bo } = {}) => {
+        if (ps.andHidden) {
+          await this.waitUntilAnyTextMatches(
+                      this.forumTopicList.hiddenTopicTitleSelector, title);
+        }
+        else {
+          await this.waitUntilAnyTextMatches(this.forumTopicList.titleSelector, title);
+          await this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+        }
       },
 
       clickLoadMore: async (opts: WaitAndClickPs = {}): Pr<ClickResult> => {
@@ -4999,9 +5006,14 @@ export class TyE2eTestBrowser {
         }
       },
 
-      assertTopicVisible: async (title: St) => {
-        await this.assertAnyTextMatches(this.forumTopicList.titleSelector, title);
-        await this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+      assertTopicVisible: async (title: St, ps: { andHidden?: Bo } = {}) => {
+        if (ps.andHidden) {
+          await this.assertAnyTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+        }
+        else {
+          await this.assertAnyTextMatches(this.forumTopicList.titleSelector, title);
+          await this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+        }
       },
 
       assertTopicNrVisible: async (nr: Nr, title: St) => {
@@ -5014,7 +5026,7 @@ export class TyE2eTestBrowser {
       },
 
       assertTopicVisibleAsHidden: async (title: St) => {
-        await this.assertAnyTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
+        await this.forumTopicList.assertTopicVisible(title, { andHidden: true });
       },
 
       getTopicTags: async (ps: { topicUrlPath: St, howManyTags: Nr }): Pr<St[]> => {
@@ -5029,6 +5041,32 @@ export class TyE2eTestBrowser {
         else {
           return await this.widgets.tagList.getTagTitles(tagListSel, ps.howManyTags);
         }
+      },
+
+      getTopicProminentUsernames: async (ps: {
+              topicUrlPath: St, howMany: Nr }): Pr<St[]> => {
+        const tableTopicRowSel =
+                `.esF_TsT tbody tr:has([href="${ps.topicUrlPath}"])`
+        const listTopicItemSel =
+                `.c_F_TsL_T:has([href="${ps.topicUrlPath}"])`
+        const tableAvatarsSel = `${tableTopicRowSel}  .s_F_Ts_T_Avs .esAvtr`;
+        const listAvatarsSel = `${listTopicItemSel}  .c_F_TsL_T_Users .esAvtr`;
+        const tableOrListAvatarSel = tableAvatarsSel + ',' + listAvatarsSel;
+        return await utils.tryManyTimes(`Getting prominent topic usernames in: ${
+                tableOrListAvatarSel}`, 3, async (): Pr<St[]> => {
+          const usernames: St[] = [];
+          const els = await this.$$(tableOrListAvatarSel);
+          for (const el of els) {
+            const url: St = await el.getAttribute('href');
+            const username = url.replace(/.*\//, '');
+            usernames.push(username);
+          }
+          if (usernames.length !== ps.howMany)
+            throw Error(`Waiting for ${ps.howMany} prominent users for topic ${ps.topicUrlPath
+                    }, currently: ${j2s(usernames)}`);
+
+          return usernames;
+        });
       },
     }
 

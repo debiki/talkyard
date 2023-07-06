@@ -514,6 +514,9 @@ function runAllE2eTests {
   $r s/wdio-7 --only assign-to-notfs.2br.d --cd -i $args
   $r s/wdio-7 --only assign-can-see.2br.d --cd -i $args
 
+  $r s/wdio-7 --only topic-prominent-pats-basic.2br.d --cd -i $args
+  $r s/wdio-7 --only topic-prominent-pats-reply-approve.2br.d --cd -i $args
+
 
   # Moderation   (4862065)
   # ------------
