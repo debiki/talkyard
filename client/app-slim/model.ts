@@ -938,6 +938,7 @@ interface WatchbarTopics {
 /// When loading new page html, this is included, as json, in a <script> tag in the page html.
 ///
 interface VolatileDataFromServer {
+  maintWorkUntilSecs?: WhenSecs;
   usersOnline: Pat[];
   numStrangersOnline: Nr;
   me?: Me;
@@ -2983,6 +2984,7 @@ interface ServerVars {
 
   newPasswordData?: NewPasswordData;
 
+  // CLEAN_UP, REMOVE, instead, use: VolatileDataFromServer.maintWorkUntilSecs.
   // Is non-zero, if the server is read-only, because of maintenance work. The value
   // is the Unix second when the maintenance work is believed to be done, or 1 if unspecified.
   mainWorkUntilSecs?: number;

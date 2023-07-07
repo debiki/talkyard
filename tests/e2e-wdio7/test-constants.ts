@@ -61,6 +61,15 @@ const TestTrustLevel = {
   CoreMember: <TrustLevel> 6,
 };
 
+const TestThreatLevel = {
+  SuperSafe: 1 as ThreatLevel,
+  SeemsSafe: 2 as ThreatLevel,
+  HopefullySafe: 3 as ThreatLevel,
+  MildThreat: 4 as ThreatLevel,
+  ModerateThreat: 5 as ThreatLevel,
+  SevereThreat: 6 as ThreatLevel,
+}
+
 const TestDraftStatus = {  // sync with real code [5ABXG20]
   NothingHappened: 1,
   EditsUndone: 2,
@@ -139,6 +148,7 @@ export default {
   TestPostSortOrder,
   TestVoteType,
   TestTrustLevel,
+  TestThreatLevel,
   TestDraftStatus,
   MaxUsernameLength: 20,  // sync with Scala [6AKBR20Q]
   TitleNr: 0,

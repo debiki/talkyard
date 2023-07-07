@@ -166,6 +166,12 @@ class SiteTpi protected (
   def talkyardStyles: xml.Unparsed =
     xml.Unparsed(views.html.debikiStyles(this).body)
 
+  def anyGlobalAdminScript: xml.NodeSeq =
+    if (globals.loadGlobalAdminScript)
+      <script async="async" src={cdnOrServerOrigin + "/-/globalAdminScript.js"}></script>
+    else
+      xml.Unparsed("")
+
   CLEAN_UP // isAdminApp not needed? already has isAdminArea.
   def jsonDataMustBeFirst(
         isCreateSitePage: Bo = false,

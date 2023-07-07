@@ -91,4 +91,63 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: TyCont
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
   }
 
+
+  def handleExternalForm_unused: Action[Either[MaxSizeExceeded, Map[String, Seq[String]]]] =
+        PostFormAction_unused(
+            RateLimits.SubmitExternalForm_unused, maxBytes = MaxPostSize,
+            allowAnyone = true, skipXsrfCheck = true) { req =>
+    import edContext.globals
+    import req.dao
+    val notifyEmailAdr: St = globals.config.forms.notifyAboutFormsEmailAdr getOrElse {
+      throwForbidden("TyE0FORMCONFGD", o"""This site hasn't been configured to save
+            custom forms — conf val missing:  talkyard.notifyAboutFormsEmailAddr""")
+    }
+
+    val fromIpAdr = req.ip
+    val formAsText = req.body.toString
+    val formAsHtml = debiki.TextAndHtml.sanitizeAllowLinksAndBlocks(unsafeHtml = formAsText)
+
+    val formNotfEmail = Email.createGenId(
+          EmailType.FormFilledIn,
+          createdAt = globals.now(),
+          sendTo = notifyEmailAdr,
+          toUserId = None, // maybe could lookup if happens to match formNotfEmail
+          sendFrom = None,
+          aboutWhat = None, //  Opt[EmailAbout],
+          subject = "Form filled in",
+          bodyHtml = formAsHtml,
+          smtpMsgId = None,  // hash(salt + ip) + seq nr?
+          inReplyToSmtpMsgId = None,
+          referencesSmtpMsgIds = Nil)
+
+    dao.saveUnsentEmail(formNotfEmail)
+    globals.sendEmail(formNotfEmail, siteId = dao.siteId)
+    // I18N, maybe should be a React/Typescript page instead.
+    Utils.OkHtml(<div>
+        <script>
+        function goBackOrClose() {{
+          if (history.length >= 2) history.back()
+          else window.close();
+        }}
+        </script>
+        <h2>Saved</h2>
+        <p>We'll try to remember. Thanks</p>
+        <p>
+          <button onclick="goBackOrClose()">Okay</button>
+        </p>
+      </div>)
+  }
+
+  def sayCantUseMethodGetHere_unused: Action[U] = GetActionAllowAnyoneRateLimited(
+        RateLimits.NoRateLimits) { request =>
+    Utils.OkHtml(
+          <div>
+          <h3>Nothing here to do</h3>
+          <p>
+          <button onclick="history.back()">Go back</button>
+          &nbsp; &nbsp;
+          <button onclick="window.close()">Close</button>
+          </p>
+          </div>)
+  }
 }

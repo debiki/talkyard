@@ -186,7 +186,16 @@ object PageMeta {
   * @param updatedAt
   * @param publishedAt
   * @param bumpedAt
-  * @param lastApprovedReplyAt
+  * @param lastApprovedReplyAt When then [most recent comment that
+  *     has gotten approved] got approved. Including those approved automatically,
+  *     e.g. because posted by a moderator.
+  *     Maybe RENAME to:  lastTreeVisibleAt,  because if the mods reply to a
+  *     not-yet-approved comment, then, once it gets approved, the mods' replies
+  *     will appear too — a whole tree of comments. And then, maybe it's
+  *     more clear that the interesting thing that appeared, isn't just
+  *     the newly approved comment, but the replies too — the whole tree.
+  *     And then, maybe "(comment) tree"  instead of just "comment" makes
+  *     it simpler to remember / understand this?
   * @param lastApprovedReplyById Set to None if there's no reply.
   * @param categoryId
   * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
@@ -337,7 +346,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   require(updatedAt.getTime >= createdAt.getTime, s"[TyEOLDUPDAT] $wp")
   require(publishedAt.forall(_.getTime >= createdAt.getTime), s"[TyEOLDPUBAT] $wp")
   require(bumpedAt.forall(_.getTime >= createdAt.getTime), s"[TyEOLDBUMPAT] $wp")
-  // If there are no replies, then there are no frequent posters.
+
+  // If there are no replies, then there are no frequent posters. [poster_stats]
   require(lastApprovedReplyById.isDefined || frequentPosterIds.isEmpty, s"[TyE306HMSJ24] $wp")
   require(frequentPosterIds.length <= 3, s"[DwE6UMW3] $wp") // for now — change if needed
 
@@ -402,6 +412,13 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 
   def isChatPinnedGlobally: Boolean =
     pageType == PageType.OpenChat && pinWhere.contains(PinPageWhere.Globally)
+
+  def interestingPosters: InterestingPosters =
+    InterestingPosters(
+          origPostAuthorId = Some(authorId),
+          lastReplyWhen = lastApprovedReplyAt.map(When.fromDate),
+          lastReplyById = lastApprovedReplyById,
+          frequentPosterIds = frequentPosterIds)
 
   def status: PageStatus =   // RENAME to publishedStatus
     if (publishedAt.isDefined) PageStatus.Published

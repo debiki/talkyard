@@ -591,8 +591,10 @@ case class Post(   // [exp] ok use
   def pagePostNr = PagePostNr(pageId, nr)
   def hasAnId: Boolean = nr >= PageParts.LowestPostNr
 
+  def approvedWhen = approvedAt.map(When.fromDate)
   def lastApprovedAt: Option[When] =
     lastApprovedEditAt.map(When.fromDate) orElse {
+      BUG // Shouldn't this be approvedAt instead of createdWhen? [first_last_apr_at]
       if (isSomeVersionApproved) Some(createdWhen)
       else None
     }

@@ -185,6 +185,9 @@ case class PagePartsDao(
     _allPosts
   }
 
+
+  def updatePostInMem_unimpl(posts: Iterable[Post]): PagePartsDao = this // impl later?
+
   def siteId: SiteId = transaction.siteId
 
   private def throwPageNotFound() =

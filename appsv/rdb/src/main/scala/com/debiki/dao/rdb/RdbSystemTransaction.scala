@@ -1092,6 +1092,17 @@ class RdbSystemTransaction(
   }
 
 
+  def loadSystemSettings(): SystemSettings = {
+    // There's always exactly one row.
+    val query = """ -- loadSystemSettings
+          select * from system_settings_t """
+    runQueryFindExactlyOne(query, List(), rs => {
+      SystemSettings(
+            maintenanceUntilUnixSecs = getOptI64(rs, "maintenance_until_unix_secs_c"))
+    })
+  }
+
+
   /** Finds all evolution scripts below src/main/resources/db/migration and applies them.
     */
   def applyEvolutions() {

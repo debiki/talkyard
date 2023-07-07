@@ -422,6 +422,7 @@ case object Participant {
    * and we should handle anything they accept?
    */
   def nameIsWeird(name: String): Boolean = {
+    // Dupl code. [full_name_checks]
     // Could check for weird Unicode whitespace too, but that will
     // probably be implicitly solved, when handling spam? ASCII,
     // however, could mess up the internals of something, because
@@ -441,7 +442,12 @@ case object Participant {
   /**
    * Checks for weird ASCII chars in an email,
    * and that it matches """.+@.+\..+""".
-   */
+   *
+   * But + should be allowed!
+   *
+   * Anyway, no longer needed. But maybe reuse parts of this,
+   * to generate more friendly invalid-email-addr messages?  [email_adrs_checks]
+   *  /
   def emailIsWeird(email: String): Boolean = {
     // Differences from nameIsOk(): allow "@_", disallows "'".
     for (c <- email if c < 0x80) {
@@ -456,7 +462,7 @@ case object Participant {
     }
     if (email matches """.+@.+\..+""") return false
     true
-  }
+  } */
 
 
   def isOkayGuestBrowserdId(anyValue: Option[String]): Boolean = anyValue match {

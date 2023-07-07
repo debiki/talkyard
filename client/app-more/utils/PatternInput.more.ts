@@ -31,7 +31,6 @@ export const PatternInput = createClassAndFactory({
       value = value.toLowerCase();
     }
     return {
-      showErrors: (this.props || <any> {}).showErrors,
       value,
     };
   },
@@ -57,6 +56,11 @@ export const PatternInput = createClassAndFactory({
     if (onChangeValuOk) {
       onChangeValuOk(valueMaybeTrimmed, !anyError);
     }
+
+    // If pat stops typing for a while, it's nice to, once hen looks at the
+    // input again, show any errors, since hen might a bit have forgotten what
+    // hen was doing?
+    this.showErrorsSoon();
   },
 
   componentDidUpdate: function() {
@@ -81,11 +85,11 @@ export const PatternInput = createClassAndFactory({
     this.showErrorsTimeoutHandle = setTimeout(() => {
       if (this.isGone) return;
       this.showErrors();
-    }, 3000);
+    }, 15*1000);
   },
 
   showErrors: function() {
-    this.setState({ showErrors: true });
+    this.setState({ showOnBlurErrs: true });
   },
 
   findAnyError: function(value: string) {
@@ -96,30 +100,19 @@ export const PatternInput = createClassAndFactory({
     if (this.props.required === false && _.isEmpty(value))
       return null;
 
-    const lengthError = this.checkLength(value);
-    if (this.props.testLengthFirst && lengthError)
-      return lengthError;
+    // ---- Check directly
 
-    if (this.props.regex && !this.props.regex.test(value))
-      return this.props.message;
+    // Always check the Not regular exprs — they typically check for disallowed
+    // characters (e.g. typos) and then one would want to hit Backspace directly.
 
     if (this.props.notRegex && this.props.notRegex.test(value))
       return this.props.notMessage;
 
-    if (this.props.regexTwo && !this.props.regexTwo.test(value))
-      return this.props.messageTwo;
-
     if (this.props.notRegexTwo && this.props.notRegexTwo.test(value))
       return this.props.notMessageTwo;
 
-    if (this.props.regexThree && !this.props.regexThree.test(value))
-      return this.props.messageThree;
-
     if (this.props.notRegexThree && this.props.notRegexThree.test(value))
       return this.props.notMessageThree;
-
-    if (this.props.regexFour && !this.props.regexFour.test(value))
-      return this.props.messageFour;
 
     if (this.props.notRegexFour && this.props.notRegexFour.test(value))
       return this.props.notMessageFour;
@@ -127,9 +120,32 @@ export const PatternInput = createClassAndFactory({
     if (this.props.notRegexFive && this.props.notRegexFive.test(value))
       return this.props.notMessageFive;
 
+    // Don't show the other errors, until pat tabs away from this input,
+    // or becomes inactive for a while — see showErrorsSoon().
+    if (!this.state.showOnBlurErrs)
+      return null;
+
+    // ---- Check when done typing
+
+    // It's annoying if "Too short ..." or "Not a valid address" appears
+    // when one has started typing a few characters.
+
+    if (this.props.regex && !this.props.regex.test(value))
+      return this.props.message;
+
+    if (this.props.regexTwo && !this.props.regexTwo.test(value))
+      return this.props.messageTwo;
+
+    if (this.props.regexThree && !this.props.regexThree.test(value))
+      return this.props.messageThree;
+
+    if (this.props.regexFour && !this.props.regexFour.test(value))
+      return this.props.messageFour;
+
     if (this.props.lastRegex && !this.props.lastRegex.test(value))
       return this.props.lastMessage;
 
+    const lengthError = this.checkLength(value);
     if (lengthError)
       return lengthError;
 
@@ -147,12 +163,10 @@ export const PatternInput = createClassAndFactory({
   },
 
   render: function() {
-    let anyError;
-    if (this.state.showErrors || this.props.error) {
-      anyError = this.findAnyError(this.props.trim ? this.state.value.trim() : this.state.value);
-      if (anyError) {
-        anyError = r.div({ className: 's_PatInp_Err' }, anyError);
-      }
+    let anyError = this.findAnyError(
+            this.props.trim ? this.state.value.trim() : this.state.value);
+    if (anyError) {
+      anyError = r.div({ className: 's_PatInp_Err' }, anyError);
     }
     return (
       r.div({ style: this.props.style },
@@ -165,7 +179,7 @@ export const PatternInput = createClassAndFactory({
             this.showErrors();
             if (this.props.onBlur) this.props.onBlur();
           },
-          disabled: this.props.disabled, value: this.state.value, onFocus: this.showErrorsSoon,
+          disabled: this.props.disabled, value: this.state.value,
           help: this.props.help }),
         anyError));
   }

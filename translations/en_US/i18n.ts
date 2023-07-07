@@ -695,6 +695,8 @@ var t_en_US: TalkyardTranslations = t = {
     JoinThisChat: "Join this chat",
     PostMessage: "Post message",
     AdvancedEditor: "Advanced editor",
+    TypeTitle: "Type a title — what's this chat about, in a few words?",
+    TypePurpose: "Type a purpose — can be longer than the title, more descriptive.",
     TypeHere: "Type here. You can use Markdown and HTML.",
   },
 
@@ -1175,8 +1177,8 @@ var t_en_US: TalkyardTranslations = t = {
     AskQuestion: "Ask a question",
     ReportProblem: "Report a problem",
     SuggestIdea: "Suggest an idea",
-    NewChat: "New chat channel title and purpose",
-    NewPrivChat: "New private chat title and purpose",
+    NewChat: "Chat title and purpose",  // MISSING, changed from "New chat channel ..." to just "Chat".
+    NewPrivChat: "Private chat title and purpose",  // MISSING, changed from "New private chat" to just "Private chat".
     AppendComment: "Append a comment at the bottom of the page:",
 
     ReplyTo: "Reply to ",

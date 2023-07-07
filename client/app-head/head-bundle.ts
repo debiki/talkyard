@@ -126,6 +126,10 @@ var _pageId = _store.currentPageId;
 var _cp = _store.pagesById[_pageId];
 _store.currentPage = _cp; // Is set to {} in the embedded editor [2BK4P3R]
 
+if (_volatileData.maintWorkUntilSecs) {
+  _doc.className += ' n_MaintWork';
+}
+
 if (eds.isInEmbeddedEditor) {
   // This avoids null errors when editor accesses the current page. [2BK4P3R]
   _store.currentPage = {} as Page;

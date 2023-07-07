@@ -621,6 +621,7 @@ export function checkNewPostFields(post, ps: {
 
 export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>,
           ps: { afterErr?: () => Pr<Vo> } = {}): Pr<R> {
+  let delayMs = 250;
   let res: any;
   for (let retryCount = 1; retryCount <= maxNumTimes; ++retryCount) {
     try {
@@ -629,7 +630,7 @@ export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>,
     }
     catch (ex) {
       if (retryCount < maxNumTimes) {
-        logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${ex.toString()}`);
+        logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because: ${ex.toString()}`);
         if (ps.afterErr) {
           await ps.afterErr();
         }
@@ -639,6 +640,10 @@ export async function tryManyTimes<R>(what, maxNumTimes, fn: () => Pr<R>,
         throw ex;
       }
     }
+
+    await oneWdioBrowser.pause(delayMs);
+    delayMs = delayMs * 1.3
+    delayMs = Math.min(2500, delayMs);
   }
 
   dieIf(res === false, `Don't use tryManyTimes() with a fn that returns false —
@@ -675,6 +680,9 @@ export async function tryUntilTrue<R>(what: St, maxNumTimes: Nr | 'ExpBackoff',
         await oneWdioBrowser.pause(delayMs);
         delayMs = delayMs * 1.3
         delayMs = Math.min(2500, delayMs);
+      }
+      else {
+        await oneWdioBrowser.pause(delayMs);
       }
     }
 }

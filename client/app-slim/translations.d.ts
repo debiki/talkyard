@@ -597,6 +597,8 @@ interface TalkyardTranslations {
     JoinThisChat: string;
     PostMessage: string;
     AdvancedEditor: string;
+    TypeTitle?: string;  // MISSING
+    TypePurpose?: string;    // MISSING
     TypeHere: string;
   }
 

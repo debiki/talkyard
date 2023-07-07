@@ -271,12 +271,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
 
   private def databaseGoneError(request: Request[_], throwable: Throwable, startingUp: Boolean) = {
     val url = request.method + " //" + request.host + request.uri
-    var rootCause = throwable
-    var loopLimit = 99
-    while ((rootCause.getCause ne null) && loopLimit > 0) {
-      rootCause = rootCause.getCause
-      loopLimit -= 1
-    }
+    val rootCause = getRootCause(throwable)
 
     // Seems role-missing never happens, nowadays — instead, Postgres says:
     // "password authentication failed" also if the user doesn't exist.

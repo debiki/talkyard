@@ -372,11 +372,23 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
 
   def spamChecker: SpamChecker = state.spamChecker
 
+  @volatile
+  private var sysSettings: Opt[SystemSettings] = None
+
+  def updateSystemSettings(newSettings: SystemSettings): U = {
+    sysSettings = Some(newSettings)
+  }
+
   /** Is non-zero iff server maintenance is going on, so that the server is read-only.
     * Should be set to the Unix second when one thinks the maintenance will be done,
     * or to 1 if one isn't sure. A change requires a Play app server restart to get picked up.
     */
-  val maintWorkUntilSecs: Option[Long] = conf.getOptional[Long]("talkyard.maintenanceUntilUnixSeconds")
+  def maintWorkUntilSecs: Opt[i64] = {
+    sysSettings.flatMap(_.maintenanceUntilUnixSecs) orElse maintWorkUntilSecsInConfFile
+  }
+
+  private val maintWorkUntilSecsInConfFile: Option[Long] =
+    conf.getOptional[Long]("talkyard.maintenanceUntilUnixSeconds")
 
   /* Add configurable support email address?  [CONFADDRS]
   val supportEmailAddress: Option[String] =
@@ -884,6 +896,9 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         val isAssets = prefix == AssetsUgcHostnamePrefix
         import talkyard.{server => srv}
         // Site custom assets URL paths should start with: /-/site/.
+        // But they are handled by SiteAssetBundlesController.customAsset(pubSiteId, fileName)
+        // — maybe add / move this check, to there instead? But allow same site access for now,
+        // and via CDN. [cust_assets_origin_check]
         throwForbiddenIf(isAssets && !pathAndQuery.startsWith(srv.CustomAssetsUrlBasePath),
               "TyEUGCAPATH", s"Bad a- UGC path: $path")
         // Uploaded files paths should be:  /-/u/
@@ -1429,6 +1444,12 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   // FOR NOW
   val createSiteApiSecret: Opt[St] =
     conf.getOptional[St]("talkyard.createSiteApiSecret").noneIfBlank
+
+  // FOR NOW
+  object forms {
+    val notifyAboutFormsEmailAdr: Opt[St] =
+          conf.getOptional[St]("talkyard.notifyAboutFormsEmailAddr").noneIfBlank
+  }
 
   object uploads {
     TESTS_MISSING // test that these conf vals work properly, by running UploadsDaoSpec twice,

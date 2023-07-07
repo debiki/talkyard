@@ -226,6 +226,9 @@ POST  /-/delete-drafts-text     controllers.DraftsController.deleteDraftsBeacon
 
 POST  /-/submit-custom-form-as-json-reply controllers.CustomFormController.handleJsonReply
 POST  /-/submit-custom-form-as-new-topic  controllers.CustomFormController.handleNewTopic
+# Not yet:
+# POST  /-/save-custom-form       controllers.CustomFormController.handleExternalForm
+# GET   /-/save-custom-form       controllers.CustomFormController.sayCantUseMethodGetHere
 
 # UsabilityTestingExchangeController = [plugin]
 POST  /-/submit-usability-testing-form    talkyard.server.plugins.utx.UsabilityTestingExchangeController.handleUsabilityTestingForm

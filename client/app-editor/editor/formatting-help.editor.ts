@@ -129,7 +129,7 @@ export const formattingHelp: () => StupidDialogStuff = () => {
     r.p({},
       "You can read more about CommonMark at ",
       r.a({ href: 'https://commonmark.org/help/', target: '_blank' },
-          "commonmark.org ", r.span({ className: 'icon-link-ext' })), '.)'));
+          "commonmark.org ", r.span({ className: 'icon-link-ext' })), '.'));
 
   return { body, large: true, dialogClassName: 'c_FmtHlpD', showCloseButton: true };
 }

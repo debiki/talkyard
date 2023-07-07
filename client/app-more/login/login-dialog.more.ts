@@ -17,8 +17,6 @@
 
 /// <reference path="../more-prelude.more.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
-/// <reference path="../util/FullNameInput.more.ts" />
-/// <reference path="../util/EmailInput.more.ts" />
 /// <reference path="create-user-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
@@ -30,10 +28,6 @@ const r = ReactDOMFactories;
 const Modal = rb.Modal;
 const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;
-const ModalHeader = rb.ModalHeader;
-const ModalTitle = rb.ModalTitle;
-const FullNameInput = util.FullNameInput;
-const EmailInput = util.EmailInput;
 
 
 let loginDialog;

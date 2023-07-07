@@ -272,8 +272,17 @@ object EmailType {
 
   case object NewMemberToApprove extends EmailType(51)
   case object YourAccountApproved extends EmailType(52)
+  case object NewMemberJoined extends EmailType(55)
+
+  //case object MaybePromote extends EmailType(63)
+  //case object MemberPromoted extends EmailType(65)
 
   case object YouCannotReply extends EmailType(91)
+
+  case object FormFilledIn extends EmailType(411)
+
+  // 501-999 could be available for plugins? — There's also an EmailOutSubType [1, 999]
+  // for each plugin to use.
 
   def fromInt(value: Int): Option[EmailType] = Some(value match {
     case Notification.IntVal      => Notification
@@ -287,6 +296,11 @@ object EmailType {
     case LinkAccounts.IntVal      => LinkAccounts
     case SiteCreatedSuperAdminNotf.IntVal => SiteCreatedSuperAdminNotf
     case HelpExchangeReminder.IntVal => HelpExchangeReminder
+    case NewMemberToApprove.IntVal => NewMemberToApprove
+    case YourAccountApproved.IntVal => YourAccountApproved
+    case NewMemberJoined.IntVal => NewMemberJoined
+    case YouCannotReply.IntVal => YouCannotReply
+    case FormFilledIn.IntVal => FormFilledIn
     case _ =>
       return None
   })

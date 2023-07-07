@@ -1478,14 +1478,6 @@ export const Editor = createFactory<any, EditorState>({
     this._handleEditsImpl(title, state.text);
   },
 
-  isTitleOk: function() {
-    // For now
-    const state: EditorState = this.state;
-    const title = state.title ? state.title.trim() : null;
-    if (!title) return false;
-    return true;
-  },
-
   onTextEdited: function(event) {
     const text = event.target.value;
     const state: EditorState = this.state;
@@ -1501,9 +1493,13 @@ export const Editor = createFactory<any, EditorState>({
         ? DraftStatus.EditsUndone
         : DraftStatus.ShouldSave;
 
-    const titleChanged = state.title !== title;
+    const newState: Partial<EditorState> = { title, text, draftStatus };
 
-    this.setState({ title, text, draftStatus }, () => {
+    const titleChanged = state.title !== title;
+    if (titleChanged) newState.showTitleErrors = false;
+    else newState.showTextErrors = false; // maybe a mistake in some edge case, oh well
+
+    this.setState(newState, () => {
       if (draftStatus === DraftStatus.ShouldSave) {
         this.saveDraftSoon();
       }
@@ -1523,14 +1519,6 @@ export const Editor = createFactory<any, EditorState>({
     if (event_isEscape(event)) {
       this.saveDraftClearAndClose();
     }
-  },
-
-  isTextOk: function() {
-    // For now
-    const state: EditorState = this.state;
-    const text = state.text ? state.text.trim() : null;
-    if (!text) return false;
-    return true;
   },
 
   updatePreviewNow: function() {
@@ -1976,51 +1964,54 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   saveEdits: function() {
-    this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
-    const state: EditorState = this.state;
-    Server.saveEdits(state.editorsPageId, state.editingPostNr, state.text,
-          this.anyDraftNr(), state.doAsAnon, () => {
-      // BUG (harmless) poor UX: [JMPBCK] If we're no longer on the same page as
-      // the post we were editing (e.g. because keeping the editor open and
-      // navigating away) then, one won't see the edits appear. Probably should
-      // navigate back to the post that got edited? First show a popup:
-      //   "Go back and view the now edited post? It's on another page;
-      //   you have navigated away frome it, to here""
-      this.callOnDoneCallback(true);
-      this.clearAndCloseFineIfGone(); // [6027TKWAPJ5]
-    }, state.inFrame);
+    this.ifNewPostLooksOk(null, t.e.PleaseDontDeleteAll, () => {
+      const state: EditorState = this.state;
+      Server.saveEdits(state.editorsPageId, state.editingPostNr, state.text,
+            this.anyDraftNr(), state.doAsAnon, () => {
+        // BUG (harmless) poor UX: [JMPBCK] If we're no longer on the same page as
+        // the post we were editing (e.g. because keeping the editor open and
+        // navigating away) then, one won't see the edits appear. Probably should
+        // navigate back to the post that got edited? First show a popup:
+        //   "Go back and view the now edited post? It's on another page;
+        //   you have navigated away frome it, to here""
+        this.callOnDoneCallback(true);
+        this.clearAndCloseFineIfGone(); // [6027TKWAPJ5]
+      }, state.inFrame);
+    });
   },
 
   saveNewPost: function() {
-    this.throwIfBadTitleOrText(null, t.e.PleaseWriteSth);
-    const state: EditorState = this.state;
-    ReactActions.saveReply(state.editorsPageId, state.replyToPostNrs, state.text,
-          state.anyPostType, state.draft, state.doAsAnon, () => {
-      // BUG (harmless) poor UX: See [JMPBCK] aboe.
-      // Also, if we've navigaated away, seems any draft won't get deleted.
-      this.callOnDoneCallback(true);
-      this.clearAndCloseFineIfGone();
-    }, state.inFrame);
+    this.ifNewPostLooksOk(null, t.e.PleaseWriteSth, () => {
+      const state: EditorState = this.state;
+      ReactActions.saveReply(state.editorsPageId, state.replyToPostNrs, state.text,
+            state.anyPostType, state.draft, state.doAsAnon, () => {
+        // BUG (harmless) poor UX: See [JMPBCK] aboe.
+        // Also, if we've navigaated away, seems any draft won't get deleted.
+        this.callOnDoneCallback(true);
+        this.clearAndCloseFineIfGone();
+      }, state.inFrame);
+    });
   },
 
   saveNewForumPage: function() {
     const state: EditorState = this.state;
-    this.throwIfBadTitleOrText(t.e.PleaseWriteTitle, t.e.PleaseWriteSth);
-    const data = {
-      categoryId: state.newForumTopicCategoryId,
-      pageRole: state.newPageRole,
-      pageStatus: 'Published',
-      pageTitle: state.title,
-      pageBody: state.text,
-      deleteDraftNr: this.anyDraftNr(),
-      doAsAnon: state.doAsAnon,
-    };
-    // [DRAFTS_BUG] This doesn't delete the draft? (if any)
-    Server.createPage(data, (newPageId: string) => {
-      // Could, but not needed, since assign() below:
-      //   this.callOnDoneCallback(true);
-      this.clearAndCloseFineIfGone();
-      window.location.assign('/-' + newPageId);
+      this.ifNewPostLooksOk(t.e.PleaseWriteTitle, t.e.PleaseWriteSth, () => {
+      const data = {
+        categoryId: state.newForumTopicCategoryId,
+        pageRole: state.newPageRole,
+        pageStatus: 'Published',
+        pageTitle: state.title,
+        pageBody: state.text,
+        deleteDraftNr: this.anyDraftNr(),
+        doAsAnon: state.doAsAnon,
+      };
+      // [DRAFTS_BUG] This doesn't delete the draft? (if any)
+      Server.createPage(data, (newPageId: string) => {
+        // Could, but not needed, since assign() below:
+        //   this.callOnDoneCallback(true);
+        this.clearAndCloseFineIfGone();
+        window.location.assign('/-' + newPageId);
+      });
     });
   },
 
@@ -2034,15 +2025,16 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   startPrivateGroupTalk: function() {
-    this.throwIfBadTitleOrText(t.e.PleaseWriteMsgTitle, t.e.PleaseWriteMsg);
-    const state: EditorState = this.state;
-    // [DRAFTS_BUG] I think this *does* delete any draft?  this.anyDraftNr() below
-    Server.startPrivateGroupTalk(state.title, state.text, state.newPageRole,
-        state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
-      // Could, but not needed, since assign() below:
-      //   this.callOnDoneCallback(true);
-      this.clearAndCloseFineIfGone();
-      window.location.assign('/-' + pageId);
+    this.ifNewPostLooksOk(t.e.PleaseWriteMsgTitle, t.e.PleaseWriteMsg, () => {
+      const state: EditorState = this.state;
+      // [DRAFTS_BUG] I think this *does* delete any draft?  this.anyDraftNr() below
+      Server.startPrivateGroupTalk(state.title, state.text, state.newPageRole,
+          state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
+        // Could, but not needed, since assign() below:
+        //   this.callOnDoneCallback(true);
+        this.clearAndCloseFineIfGone();
+        window.location.assign('/-' + pageId);
+      });
     });
   },
 
@@ -2052,7 +2044,7 @@ export const Editor = createFactory<any, EditorState>({
     if (draft) return draft.draftNr;
   },
 
-  throwIfBadTitleOrText: function(titleErrorMessage, textErrorMessage) {
+  ifNewPostLooksOk: function(titleErrorMessage, textErrorMessage, ifOkFn: () => Vo) {
     const state: EditorState = this.state;
     let errors = '';
     if (titleErrorMessage && isBlank(state.title)) {
@@ -2066,8 +2058,67 @@ export const Editor = createFactory<any, EditorState>({
     }
     if (errors) {
       util.openDefaultStupidDialog({ body: errors });
-      throw 'Bad title or text. Not saving this to the server. [EsM7KCW]';
+      return;
     }
+
+    // Haven't updated the tests — many would fail, if "That's a short ..." dialogs pop up.
+    const isAutoTest = isAutoTestSite();
+
+    const titleLen = state.title.trim().length;
+    const textLen = state.text.trim().length;
+    const longTitle = !isAutoTest && titleErrorMessage && titleLen > 130;
+    const shortTitle = !isAutoTest && titleErrorMessage && titleLen < (
+            // Chats often have short titles, e.g. "dev" or "support" or "ux" 2 letters :- )
+            page_isChat(state.newPageRole) ? 2 : 15);
+    // Orig posts generally need a bit more details than comments (replies).
+    const shortOrigPost = !isAutoTest && textErrorMessage && state.newPageRole && textLen < 90;
+    const shortComment = !isAutoTest && textErrorMessage && !state.newPageRole && textLen < 30;
+    const moreMargin = (text: St) => r.span({ className: 'n_MoreMargin' }, text)
+    const problemText =   // I18N
+        // Show title errors first — the title input field is above  [.title_errs_1st].
+        // the page body textarea.
+        longTitle ?
+            r.p({}, `That's a long title. Fewer people read titles that long.`) : (
+        shortTitle ?
+            r.p({}, `That's a short title. Descriptive titles tend to get better responses.`) : (
+        shortOrigPost ?
+            r.p({}, `Your post is pretty short. Any more details you can add?`) : (
+        shortComment ? r.div({ className: 'c_2Short-Cmt'},
+            r.p({}, `That's a short comment. Any more details you can add to the discussion?`),
+            r.p({},
+              `Instead of comments like `,
+              moreMargin(`"Me too" `), `or `, moreMargin(`"+1", `),
+              `click the `,
+              moreMargin(rFr({}, r.b({}, `Like `), r.span({ className: 'icon-heart' }))),
+              ` button on the comment you're replying to.`)) :
+        null)));
+
+    if (problemText) {
+      // Paint a red error outline around the too short text or title, so simpler
+      // to see what the dialog refers to (although will be dimmed behind the
+      // dialog's overlay, until it's closed).
+      const showTitleErrors = shortTitle || longTitle;
+      this.setState({
+        // Title errors shown first.  [.title_errs_1st].
+        showTitleErrors,
+        showTextErrors: (shortOrigPost || shortComment) && !showTitleErrors,
+      });
+
+      util.openDefaultStupidDialog({
+        body: problemText,
+        primaryButtonTitle: "Okay (continue editing)",  // I18N
+        secondaryButonTitle: "Post anyway",             // I18N
+        onCloseOk: (bttonNr: Nr) => {
+          if (bttonNr === 2) {
+            // Pat clicked 2 "Post anyway", so submit.
+            ifOkFn();
+          }
+        },
+      });
+      return;
+    }
+
+    ifOkFn();
   },
 
 
@@ -2390,13 +2441,15 @@ export const Editor = createFactory<any, EditorState>({
     let pageRoleDropdown;
     let categoriesDropdown;
     if (state.newForumTopicCategoryId || isPrivateGroup) {
-      const titleErrorClass = state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
+      const titleErrorClass = state.showTitleErrors ? ' esError' : '';
+      let titlePlaceholder = page_isChat(state.newPageRole) && t.c.TypeTitle ?
+                                t.c.TypeTitle : t.e.TitlePlaceholder;
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: (e: HElm) => this.titleElm = e,
               tabIndex: 1, onChange: this.onTitleEdited,
               value: state.title, disabled: !anyDraftLoaded,
-              placeholder: t.e.TitlePlaceholder,
+              placeholder: titlePlaceholder,
               onKeyPress: this.onKeyPressOrKeyDown,
               onKeyDown: this.onKeyPressOrKeyDown,
             });
@@ -2598,6 +2651,8 @@ export const Editor = createFactory<any, EditorState>({
 
     let saveButtonTitle = t.Save;
     let cancelButtonTitle = t.Cancel;  // UX should be entitled  t.SaveDraft  instead?  I18N
+    let textareaPlaceholder = t.e.TypeHerePlaceholder;
+
     if (_.isNumber(editingPostNr)) {
       saveButtonTitle = makeSaveTitle(t.e.Save, t.e.edits);
     }
@@ -2637,6 +2692,8 @@ export const Editor = createFactory<any, EditorState>({
         case PageRole.OpenChat:
         case PageRole.PrivateChat:
           saveButtonTitle = makeSaveTitle(t.e.Create, t.e.chat);
+          textareaPlaceholder = t.c.TypePurpose ||
+                "Type here — tell others what this chat is about, its purpose.";  // I18N
           break;
         case PageRole.Question: saveButtonTitle = makeSaveTitle(t.e.Post, t.e.question); break;
         case PageRole.Problem: saveButtonTitle = makeSaveTitle(t.e.Submit, t.e.problem); break;
@@ -2695,7 +2752,7 @@ export const Editor = createFactory<any, EditorState>({
     // React-textarea-autocomplete docs:
     //   https://github.com/webscopeio/react-textarea-autocomplete
 
-    const textErrorClass = state.showTextErrors && !this.isTextOk() ? ' esError' : '';
+    const textErrorClass = state.showTextErrors ? ' esError' : '';
     const textarea =
         !anyDraftLoaded ? r.pre({ className: 'e_LdDft' }, t.e.LoadingDraftDots) :
           ReactTextareaAutocomplete({
@@ -2729,7 +2786,7 @@ export const Editor = createFactory<any, EditorState>({
             onKeyPress: this.onKeyPressOrKeyDown,  // ? maybe bind to textarea instead?
             onKeyDown: this.onKeyPressOrKeyDown,   // ?
             tabIndex: 1,
-            placeholder: t.e.TypeHerePlaceholder,
+            placeholder: textareaPlaceholder ,
             loadingComponent: () => r.span({}, t.Loading),
 
             // Currently the server says Forbidden unless one is logged in, when listing usernames.

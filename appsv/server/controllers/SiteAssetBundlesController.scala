@@ -22,7 +22,7 @@ import debiki.EdHttp._
 import talkyard.server.{TyContext, TyController}
 import talkyard.server.http._
 import javax.inject.Inject
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Request => p_Request}
 import scala.util.matching.Regex
 import SiteAssetBundlesController._
 
@@ -39,6 +39,7 @@ class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: 
   extends TyController(cc, edContext) {
 
   import context.globals
+  import context.safeActions.ExceptionAction
 
   /**
    * Serves asset bundles.
@@ -52,11 +53,15 @@ class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: 
   // ?? not in use ?? I changed to 'customAsset' and added a site id param?
   CLEAN_UP; REMOVE // ?
   def at(file: String) = GetAction { request =>
-    customAssetImpl(siteId = request.siteId, fileName = file, request)
+    customAssetImpl(siteId = request.siteId, fileName = file, request.underlying)
   }
 
 
-  def customAsset(pubSiteId: PubSiteId, fileName: String): Action[Unit] = GetAction { request =>
+  def customAsset(pubSiteId: PubSiteId, fileName: St) = ExceptionAction {
+          request: p_Request[_] =>
+    COULD // verify that the host is the same site, or an admin assets UGC (sub)domain,
+    // or CDN?  But not the wrong site, or u-... instead of a-...  [cust_assets_origin_check].
+    // But for now, just look at the pub site id param in the url path.
     val siteId = globals.systemDao.getSiteIdByPubId(pubSiteId) getOrElse {
       throwNotFound("TyE2PKH8", s"No site with publ id $pubSiteId")
     }
@@ -64,7 +69,7 @@ class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: 
   }
 
 
-  private def customAssetImpl(siteId: SiteId, fileName: String, request: DebikiRequest[_]) = {
+  private def customAssetImpl(siteId: SiteId, fileName: String, request: p_Request[_]) = {
     val dao = globals.siteDao(siteId)
     // `fileName` is like: bundle-name.<version>.css.
     fileName match {

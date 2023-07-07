@@ -80,6 +80,7 @@ const ChangePageDialog = createComponent({
     const isOwnPage = store_thisIsMyPage(store);  // [.store_or_state_pg]
     const isOwnOrStaff = isOwnPage || isStaff(me);
     const isOwnOrCore = isOwnOrStaff || user_isTrustMinNotThreat(me, TrustLevel.CoreMember);
+    const isStaffOrTrusted = isStaff(me) || user_isTrustMinNotThreat(me, TrustLevel.Trusted);
 
     let anyViewAnswerButton;
     let changeStatusTitle;
@@ -178,17 +179,17 @@ const ChangePageDialog = createComponent({
             text: page.pageRole === PageRole.Problem ? t.d.TooltipProblFixed : t.d.TooltipDone,
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Done }) });
 
-      // If it can be closed, it can also be assigned?
+      // If it can be closed, it can also be assigned?  [who_can_assign]
+      // (Also if it's been closed already — so can change assignee to show
+      // who was assigned / did it, without having to reopen and close again.)
       const canAssign = page_canToggleClosed(page) &&
-          // Also if it's been colsed already? — To show who was previously assigned?
-          // So don't:  `!alreadyDoneOrAnswered ||`
           // (Later, will use the permission system: can_assign_pats_c, can_assign_self_c.)
-          isOwnOrCore;
+          isStaffOrTrusted;
       assignBtn = !canAssign ? null : rFr({},
           r.div({ className: 's_ExplDrp_Ttl' }, "Assigned to: "),   // I18N
           r.div({ className: 's_ExplDrp_ActIt' },
             !origPost.assigneeIds
-                ? r.span({ className: 'esP_By e_Asg20' }, `(None)`)  // I18N
+                ? r.span({ className: 'c_Asg20' }, `(None)`) // I18N
                 : r.ul({ className: 'c_AsgsL' }, origPost.assigneeIds.map(patId =>
                     r.li({ key: patId },
                       UserName({ patId, store, avoidFullName: true })))),

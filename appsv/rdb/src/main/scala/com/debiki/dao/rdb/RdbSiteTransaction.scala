@@ -1016,8 +1016,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     val statement = s"""
           insert into emails_out3(
               SITE_ID,
-              ID,
-              TYPE,
+              email_id_c,
+              out_type_c,
               SENT_TO,
               TO_USER_ID,
               sent_from_c,
@@ -1070,7 +1070,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
             secret_status_c = ?,
             num_replies_back_c = ?,
             can_login_again = ?
-        where SITE_ID = ? and ID = ?
+        where SITE_ID = ? and email_id_c = ?
         """, vals)
   }
 
@@ -1078,7 +1078,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   def loadEmailByIdOnly(emailId: St): Option[Email] = {
     val query = s"""
       select * from emails_out3
-      where SITE_ID = ? and ID = ?
+      where SITE_ID = ? and email_id_c = ?
       """
     runQueryFindOneOrNone(query, List(siteId.asAnyRef, emailId), rs => {
       val e = getEmail(rs)
@@ -1094,7 +1094,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   def loadEmailBySecretOrId(secretOrId: St): Opt[Email] = {
     val query = s"""
           select * from emails_out3
-          where site_id = ? and (id = ? or secret_value_c = ?)
+          where site_id = ? and (email_id_c = ? or secret_value_c = ?)
           """
     val values = List(siteId.asAnyRef, secretOrId, secretOrId)
     runQueryFindOneOrNone(query, values, rs => {
@@ -1114,7 +1114,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       select * from emails_out3
       where site_id = ?
         and sent_on > ?
-        and type = ?
+        and out_type_c = ?
         and to_user_id in (${makeInListFor(userIds)})
       """
     val values =
@@ -1151,8 +1151,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   private def getEmail(rs: ResultSet): Email = {
-    val emailId = rs.getString("id")
-    val emailTypeInt = rs.getInt("type")
+    val emailId = rs.getString("email_id_c")
+    val emailTypeInt = rs.getInt("out_type_c")
     val emailType = EmailType.fromInt(emailTypeInt) getOrElse throwBadDatabaseData(
       "EdE840FSIE", s"Bad email type: $emailTypeInt, email id: $siteId:$emailId")
     Email(

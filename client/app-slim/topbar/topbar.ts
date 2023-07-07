@@ -616,10 +616,15 @@ export const TopBar = createComponent({
 
     const extraMarginClass = extraMargin ? ' esTopbar-extraMargin' : '';
 
-    const anyMaintWorkMessage = !eds.mainWorkUntilSecs || isServerSide() ? null :
-        r.div({ className: 's_MaintWorkM' },
+    const maintWorkNow = (
+            eds.mainWorkUntilSecs || // backw compat, CLEAN_UP remove
+            eds.volatileDataFromServer &&
+                eds.volatileDataFromServer.maintWorkUntilSecs);
+    const anyMaintWorkMessage = !maintWorkNow || isServerSide() ? null :
+        r.div({ className: 's_MaintWorkM' }, r.span({ className: 'n_SysMsg_Txt'},
           r.b({}, "Under maintenance"),
-          ", everything is read-only." ); /* + (
+          ", read-only. ",
+          r.button({ onClick: () => location.reload() }, "Click here"), " to retry")); /* + (
             eds.mainWorkUntilSecs === 1 ? '' : (
               " Time left: " +
               Math.max(0, Math.ceil((eds.mainWorkUntilSecs * 1000 - Date.now()) / 3600/1000)) + " hours")));
@@ -631,9 +636,13 @@ export const TopBar = createComponent({
         r.div({ className: 'esTopbar_custom' },
           customTitle,
           // UX REFACTOR break out to its own widget, incl a retry-timeout countdown?
+          // And place in the middle, *after* CatsAndTitle? [maint_msg_in_middle]
+          // ----------------------
           r.div({ className: 's_NoInetM' }, t.ni.NoInet), //  [NOINETMSG]
           // "Will retry in X seconds"  I18N  seconds for live notfs retry, not reading progr
+          // No, it's better if instead the server sends a msg when maint work done?
           anyMaintWorkMessage,
+          // ----------------------
           backToGroups,
           backToSiteButton),
         // Incl also if custNavRow2 defined — otherwise React's hydration won't work.

@@ -227,11 +227,11 @@ trait PostsDao {
     val shallBumpPage = shallApprove  // (7BMZW24)
     val numNewOpRepliesVisible = (shallApprove && newPost.isOrigPostReply) ? 1 | 0
     val newFrequentPosterIds: Seq[UserId] =
-      if (shallApprove)
-        PageParts.findFrequentPosters(page.parts.allPosts, // skip newPost, since we ignore ...
-          ignoreIds = Set(page.meta.authorId, authorMaybeAnon.id))   // ... the author here anyway [3296KGP]
-      else
-        page.meta.frequentPosterIds
+          if (shallApprove)
+            PageParts.findFrequentPosters(
+                  page.parts.allPosts, butWithUpdatedPosts = Seq(newPost))
+          else
+            page.meta.frequentPosterIds
 
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(
@@ -728,8 +728,8 @@ trait PostsDao {
 
     // COULD find the most recent posters in the last 100 messages only, because is chat.
     val newFrequentPosterIds: Seq[UserId] =
-      PageParts.findFrequentPosters(page.parts.allPosts,  // skip newPost since we ignore ...
-        ignoreIds = Set(page.meta.authorId, author.id))    // ...the author here anyway [3296KGP]
+          PageParts.findFrequentPosters(
+                page.parts.allPosts, butWithUpdatedPosts = Seq(newPost))
 
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(
@@ -815,7 +815,11 @@ trait PostsDao {
     tx.insertPost(newPost)
     tx.indexPostsSoon(newPost)
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+
+    BUG // page.parts is from *before* the new chat msg got added?  [stale_stats]
+    // Do sth like in:  findInterestingPosters(posts, **butWithUpdatedPosts**) ?
     updatePagePopularity(page.parts, tx)
+
     uploadRefs foreach { uploadRef =>
       AUDIT_LOG // uploaded files? (And elsewhere too then)
       tx.insertUploadedFileReference(newPost.id, uploadRef, addedById = author.id)
@@ -1376,7 +1380,7 @@ trait PostsDao {
     */
   def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerTrueId: TrueId,
           tx: SiteTx, staleStuff: StaleStuff, skipBugWarn: Bo = false): U = {
-    // Some e2e tests: backlinks-basic.2browsers.test.ts  TyTINTLNS54824
+    // Some e2e tests: backlinks-basic.2br.d  TyTINTLNS54824
 
     // Let's always add the page id to staleStuff before, just so that
     // here we can check that that wasn't forgotten.
@@ -1833,8 +1837,8 @@ trait PostsDao {
     import com.debiki.core.{PostStatusAction => PSA}
     import context.security.throwIndistinguishableNotFound
 
-    val page = newPageDao(pageId, tx)
-    if (!page.exists)
+    val pageBef = newPageDao(pageId, tx)
+    if (!pageBef.exists)
       throwIndistinguishableNotFound("TyE05KSRDM3")
 
     val userId: UserId = reqr.id
@@ -1842,9 +1846,9 @@ trait PostsDao {
 
     SECURITY; COULD // check if may see post, not just the page?  [priv_comts] [staff_can_see]
     // If doing that, then: TESTS_MISSING — namely deleting an anon post on may not see.
-    throwIfMayNotSeePage(page, Some(user))(tx)
+    throwIfMayNotSeePage(pageBef, Some(user))(tx)
 
-    val postBefore = page.parts.thePostByNr(postNr)
+    val postBefore = pageBef.parts.thePostByNr(postNr)
     lazy val postAuthor = tx.loadTheParticipant(postBefore.createdById)
     ANON_UNIMPL // Cannot do this as an anonym, although looks as if one can change
     // one's own anon posts (using one's real account).
@@ -1937,6 +1941,8 @@ trait PostsDao {
     val postsUndeleted = ArrayBuffer[Post]()
 
     tx.updatePost(postAfter)
+    val allUpdatedPosts = MutArrBuf(postAfter)
+
     if (postBefore.isDeleted != postAfter.isDeleted) {
       tx.indexPostsSoon(postAfter)
       if (postAfter.isDeleted) {
@@ -1951,7 +1957,8 @@ trait PostsDao {
 
     // Update any indirectly affected posts, e.g. subsequent comments in the same
     // thread that are being deleted recursively.
-    if (action.affectsSuccessors) for (successor: Post <- page.parts.descendantsOf(postNr)) {
+    val postsToReindex = MutArrBuf[Post]()
+    if (action.affectsSuccessors) for (successor: Post <- pageBef.parts.descendantsOf(postNr)) {
       val anyUpdatedSuccessor: Option[Post] = action match {
         case PSA.CloseTree =>
           if (successor.closedStatus.areAncestorsClosed) None
@@ -1970,16 +1977,17 @@ trait PostsDao {
           die("TyE2KBIF5", "Unexpected PostAction: " + x)
       }
 
-      var postsToReindex = Vector[Post]()
       anyUpdatedSuccessor foreach { updatedSuccessor =>
         rememberBacklinksUpdCounts(postBefore = successor, postAfter = updatedSuccessor)
         tx.updatePost(updatedSuccessor)
+        allUpdatedPosts.append(updatedSuccessor)
         if (successor.isDeleted != updatedSuccessor.isDeleted) {
-          postsToReindex :+= updatedSuccessor
+          postsToReindex.append(updatedSuccessor)
         }
       }
-      tx.indexPostsSoon(postsToReindex: _*)
     }
+
+    tx.indexPostsSoon(postsToReindex: _*)
 
     // ----- Update related things
 
@@ -1998,7 +2006,7 @@ trait PostsDao {
             linkedPageIds, pageModified = false, backlinksStale = true)
     }
 
-    val oldMeta = page.meta
+    val oldMeta = pageBef.meta
     var newMeta = oldMeta.copy(version = oldMeta.version + 1)
     var markSectionPageStale = false
     var answerGotDeleted = false
@@ -2065,22 +2073,36 @@ trait PostsDao {
 
     // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
     val isChatWithWrongReplyCount =
-      page.pageType.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
+          pageBef.pageType.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
     val numVisibleRepliesChanged = numVisibleRepliesGone > 0 || numVisibleRepliesBack > 0
 
     if (numVisibleRepliesChanged && !isChatWithWrongReplyCount) {
+      UX; BUG // Harmless: If deleting the latest reply, we do update PageMeta.lastApprovedReplyById,
+      // but maybe some more fields should be updated too?  [stale_stats]
+      val interestingPosters = PageParts.findInterestingPosters(
+            pageBef.parts.allPosts, butWithUpdatedPosts = allUpdatedPosts.toSeq)
       newMeta = newMeta.copy(
-        numRepliesVisible =
-            oldMeta.numRepliesVisible + numVisibleRepliesBack - numVisibleRepliesGone,
-        numOrigPostRepliesVisible =
-          // For now: use max() because the db field was just added so some counts are off.
-          math.max(0, oldMeta.numOrigPostRepliesVisible +
-              numOrigPostVisibleRepliesBack - numOrigPostVisibleRepliesGone))
+            frequentPosterIds = interestingPosters.frequentPosterIds,
+            lastApprovedReplyAt = interestingPosters.lastReplyAt,
+            lastApprovedReplyById = interestingPosters.lastReplyById,
+            numRepliesVisible =
+                oldMeta.numRepliesVisible + numVisibleRepliesBack - numVisibleRepliesGone,
+            numOrigPostRepliesVisible =
+              // For now: use max() because the db field was just added so some counts are off.
+              math.max(0, oldMeta.numOrigPostRepliesVisible +
+                  numOrigPostVisibleRepliesBack - numOrigPostVisibleRepliesGone))
       markSectionPageStale = true
-      updatePagePopularity(page.parts, tx)
+
+      COULD_OPTIMIZE // Don't reload all posts — instead, update pageBef.parts in-place?
+      val partsAfter_unimpl = pageBef.parts.updatePostInMem_unimpl(allUpdatedPosts) // later?
+      // Also see:  butWithUpdatedPosts = ...  just above, and [stale_stats].
+      // But for now:
+      val pageAft = newPageDao(pageId, tx)
+
+      updatePagePopularity(pageAft.parts, tx)
     }
 
-    staleStuff.addPageId(page.id, memCacheOnly = true)  // page version bumped above
+    staleStuff.addPageId(pageBef.id, memCacheOnly = true)  // page version bumped above
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
 
     // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
@@ -2190,20 +2212,35 @@ trait PostsDao {
     // or if the original post was edited.
     var makesSectionPageHtmlStale = false
     if (isApprovingNewPost || isApprovingPageBody) {
-      val (numNewReplies, numNewOrigPostReplies, newLastApprovedReplyAt, newLastApprovedReplyById) =
-        if (isApprovingNewPost && postAfter.isReply)
-          (1, postAfter.isOrigPostReply ? 1 | 0,
-            Some(tx.now.toJavaDate), Some(postAfter.createdById))
-        else
-          (0, 0, pageMeta.lastApprovedReplyAt, pageMeta.lastApprovedReplyById)
+      val (numNewReplies, numNewOpReplies) =
+            if (isApprovingNewPost && postAfter.isReply)
+              (1, postAfter.isOrigPostReply ? 1 | 0)
+            else
+              (0, 0)
+
+      // Update the frequent replyers list, if this is a reply that's becoming visible
+      // to everyone, after having been hidden waiting for approval.
+      val interestingPosters =
+            if (numNewReplies >= 1)
+              PageParts.findInterestingPosters(
+                    page.parts.allPosts, butWithUpdatedPosts = Seq(postAfter))
+            else
+              page.meta.interestingPosters
 
       newMeta = newMeta.copy(
-        numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
-        numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
-        lastApprovedReplyAt = newLastApprovedReplyAt,
-        lastApprovedReplyById = newLastApprovedReplyById,
-        hiddenAt = newHiddenAt,
-        bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate))
+            frequentPosterIds = interestingPosters.frequentPosterIds,
+            numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
+            numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOpReplies,
+            // The most recent reply might not be the post we're approving: the mods might
+            // have posted a reply to the reply being approved, when it was still hidden
+            // & unapproved. Then, the mods' reply won't appear until now, when this reply
+            // gets approved, becomes visible.
+            // There might be minor BUGs related to that.  [wrong_latest_reply] [stale_stats]
+            // E.g. autoApprovePendingEarlyPosts() doesn't think about that.
+            lastApprovedReplyAt = interestingPosters.lastReplyAt,
+            lastApprovedReplyById = interestingPosters.lastReplyById,
+            hiddenAt = newHiddenAt,
+            bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate))
       makesSectionPageHtmlStale = true
     }
     tx.updatePageMeta(newMeta, oldMeta = pageMeta, makesSectionPageHtmlStale)
@@ -2247,6 +2284,8 @@ trait PostsDao {
 
     var numNewVisibleReplies = 0
     var numNewVisibleOpReplies = 0
+    val allUpdatedPosts = MutArrBuf[Post]()
+
 
     staleStuff.addPageId(pageId, memCacheOnly = true)  // page version bumped below
 
@@ -2289,6 +2328,7 @@ trait PostsDao {
 
       tx.updatePost(postAfter)
       tx.indexPostsSoon(postAfter)
+      allUpdatedPosts.append(postAfter)
 
       val author = tx.loadTheParticipant(post.createdById)
       saveDeleteLinks(postAfter, sourceAndHtml, author.trueId2, tx, staleStuff)
@@ -2325,9 +2365,19 @@ trait PostsDao {
         (Some(tx.now.toJavaDate), lastApprovedReply.map(_.createdById))
       }
 
+    val newFrequentPosterIds: Seq[UserId] =
+          if (numNewVisibleReplies >= 1)
+            PageParts.findFrequentPosters(
+                  page.parts.allPosts, butWithUpdatedPosts = allUpdatedPosts.toSeq)
+          else
+            page.meta.frequentPosterIds
+
     val newMeta = pageMeta.copy(
+      frequentPosterIds = newFrequentPosterIds,
       numRepliesVisible = pageMeta.numRepliesVisible + numNewVisibleReplies,
       numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewVisibleOpReplies,
+      // If the mods have replied to some of the replies now getting approved,  [wrong_latest_reply]
+      // then, the mods' replies are in fact the most recent ones? Harmless BUG.
       lastApprovedReplyAt = newLastApprovedReplyAt orElse pageMeta.lastApprovedReplyAt,
       lastApprovedReplyById = newLastApprovedReplyById orElse pageMeta.lastApprovedReplyById,
       bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate),
@@ -2534,7 +2584,7 @@ trait PostsDao {
       // For now:
       throwIfMayNotSeePost(postBef, Some(reqr))(tx)
       dieIf(relType != PatNodeRelType.AssignedTo, "TyE6X0WMSHUW5")
-      throwForbiddenIf(!reqr.isStaffOrTrustedNotThreat,
+      throwForbiddenIf(!reqr.isStaffOrTrustedNotThreat,  // [who_can_assign]
             "TyECAN0ASGN", s"You cannot assign people (min trust level is TrustedMember).")
 
       // Only works for type AssignedTo (since we look at assigneeIds).
@@ -3103,10 +3153,23 @@ trait PostsDao {
       tx.updatePost(postAfter)
     }
 
+    lazy val page = newPageDao(pageId, tx)
+
+    val interestingPosters =
+          if (postsToHide.isEmpty) page.meta.interestingPosters
+          else
+            PageParts.findInterestingPosters(
+                  page.parts.allPosts,
+                  // `page` is from after updatePost(), so no need to:
+                  butWithUpdatedPosts = Nil)
+
     var pageMetaAfter = pageMetaBefore.copy(
-      numRepliesVisible = pageMetaBefore.numRepliesVisible - numRepliesHidden,
-      numOrigPostRepliesVisible =
-          pageMetaBefore.numOrigPostRepliesVisible - numOrigPostRepliesHidden)
+          frequentPosterIds = interestingPosters.frequentPosterIds,
+          lastApprovedReplyAt = interestingPosters.lastReplyAt,
+          lastApprovedReplyById = interestingPosters.lastReplyById,
+          numRepliesVisible = pageMetaBefore.numRepliesVisible - numRepliesHidden,
+          numOrigPostRepliesVisible =
+              pageMetaBefore.numOrigPostRepliesVisible - numOrigPostRepliesHidden)
 
     // If none of the posts were visible (e.g. because deleted already), we don't need
     // to update the page meta.

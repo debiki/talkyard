@@ -20,6 +20,9 @@ when exceeded 50%, so can review and bump. And warnings if exceeds 75%, 90%.
 [first_last_apr_at]
 Fix sort order bug: Add Post.firstApprovedAt.
 
+[stale_stats]
+Popularity calcs sometimes ignore the very latest comment / chat msg?
+
 [timeline_comts] Maybe. Rename "progress posts" to "timeline comments"?
 
 [ty_themes]

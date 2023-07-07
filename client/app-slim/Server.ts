@@ -494,12 +494,10 @@ export function loadJs(src: string, onOk?: () => void, onError?: () => void): an
 let globalStaffScriptLoaded = false;
 
 export function maybeLoadGlobalStaffScript() {
-  // A bit hacky: e2e test site hostnames contain '-test-', and test sites people
-  // create to try out the admin features, instead starts with 'test--' [5UKF03].
   // We don't want any global feedback widget scripts or whatever, to load for e2e tests
-  // (because the tests would break, if they clicked those widgets) — so don't load any
-  // script, for '-test-' hostnames (but do load, for 'test--' hostnames).
-  if (location.hostname.indexOf('-test-') >= 0) return;
+  // (because the tests would break, if they clicked those widgets).
+  // (But do load, for test sites created by real people to try out Talkyard.)
+  if (isAutoTestSite()) return;  // [load_global_js]
   if (!globalStaffScriptLoaded && eds.loadGlobalStaffScript) {
     loadJs(eds.cdnOrServerOrigin + '/-/globalStaffScript.js');
     globalStaffScriptLoaded = true;
@@ -510,7 +508,7 @@ export function maybeLoadGlobalStaffScript() {
 let globalAdminScriptLoaded = false;
 
 export function maybeLoadGlobalAdminScript() {
-  if (location.hostname.indexOf('-test-') >= 0) return;  // [5UKF03]
+  if (isAutoTestSite()) return;  // [load_global_js]
   if (!globalAdminScriptLoaded && eds.loadGlobalAdminScript) {
     loadJs(eds.cdnOrServerOrigin + '/-/globalAdminScript.js');
     globalAdminScriptLoaded = true;

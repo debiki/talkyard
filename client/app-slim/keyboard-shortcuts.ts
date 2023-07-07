@@ -159,15 +159,19 @@ function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
   const origPost: Post | U = curPage && curPage.postsByNr[BodyNr];
   const isDisc = page_isDiscussion(curPageType);
   const isForum = curPageType === PageRole.Forum;
+  const isOwnPage = store_thisIsMyPage(store);
 
   const me: Me = store.me;
   const isAdmin: Bo = me.isAdmin;
   const isStaff: Bo = pat_isStaff(me);
   const isMember: Bo = pat_isMember(me);
   const isPageAuthorOrStaff = isStaff || curPageAuthorId === me.id;
-  const isTrustedOrCore = isStaff || user_trustLevel(me) >= TrustLevel.Trusted;
-  const isOpAssigned = origPost && !_.isEmpty(origPost.assigneeIds);
+  const isStaffOrTrusted = isStaff || user_trustLevel(me) >= TrustLevel.Trusted;
   const isOpAssignedToMe: Bo = origPost && _.includes(origPost.assigneeIds, me.id);
+
+  // Later, look at permissions:  can_assign_pats_c, can_assign_self_c  [who_can_assign]
+  const canAssignOrigPost =
+          page_canToggleClosed(curPage) && isStaffOrTrusted && origPost;
 
   // Later:  mayChangePage = ... calculate permissions, look at PostActions,
   // show Edit button or not, for example.
@@ -223,17 +227,17 @@ function makeMyShortcuts(store: Store, keysTyped: St): ShortcFnInfoZ[] {
 
       // ----- In a topic
 
-      isTrustedOrCore && origPost &&
+      canAssignOrigPost &&
       ['at', `Assign to:`
           ] as ShortcInfoItem,
 
-      isTrustedOrCore && origPost &&
+      canAssignOrigPost &&
       ['ato',
           descr('a',"ssign ", 't',"o ", 'o', "thers"),
           () => widgets.openAssignToDiag(origPost, store)],
 
       // (Don't add any *un*assign ShortcInfoItem — there's just one item (unassign me).)
-      isTrustedOrCore && origPost &&
+      canAssignOrigPost &&
       [isOpAssignedToMe ? 'uam' : 'atm',
           isOpAssignedToMe ? descr('u',"n", 'a',"ssign ",           'm', "e")
                            : descr(         'a',"ssign ", 't',"o ", 'm', "e"),
