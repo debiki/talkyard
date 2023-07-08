@@ -39,7 +39,7 @@ object Dependencies {
     // supports listener-notify.
     // https://stackoverflow.com/questions/21632243/
     //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
-    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.5.4"
+    val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.6.0"
 
     // Database migrations.
     val flywaydb = "org.flywaydb" % "flyway-core" % "5.0.7"   // scala-steward:off
