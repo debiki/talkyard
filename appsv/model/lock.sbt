@@ -14,7 +14,7 @@ Compile / dependencyOverrides ++= {
       "com.google.code.findbugs" % "jsr305" % "3.0.2",
       "com.google.errorprone" % "error_prone_annotations" % "2.11.0",
       "com.google.guava" % "failureaccess" % "1.0.1",
-      "com.google.guava" % "guava" % "31.1-jre",
+      "com.google.guava" % "guava" % "32.1.1-jre",
       "com.google.guava" % "listenablefuture" % "9999.0-empty-to-avoid-conflict-with-guava",
       "com.google.j2objc" % "j2objc-annotations" % "1.3",
       "com.lambdaworks" % "scrypt" % "1.4.0",

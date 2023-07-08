@@ -53,7 +53,7 @@ object Dependencies {
     val elasticsearchClientTransport = "org.elasticsearch.client" % "transport" % "6.8.23"
 
     // Play Framework 2.8.9 uses 31.0.1-jre
-    val guava = "com.google.guava" % "guava" % "31.1-jre"
+    val guava = "com.google.guava" % "guava" % "32.1.1-jre"
 
     val rediscala = "com.github.etaty" %% "rediscala" % "1.9.0"
 
