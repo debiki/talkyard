@@ -17,8 +17,9 @@
  */
 
 
-// Try to migrate to Webpack v5.
-// (Continue using Gulp for some things, or maybe Makefile tasks instead somehow?)
+// Try to migrate to Webpack v5. No! Don't.
+// Continue using Gulp a bit, and Deno for transpiling, & Makefile for deciding
+// what to build?  [make_0_gulp]
 //
 // First, maybe good to convert all JS to Typescript?
 // https://www.typescriptlang.org/docs/handbook/migrating-from-javascript.html
@@ -747,10 +748,9 @@ gulp.task('testProdMinify', gulp.series(
 
 
 
-gulp.task('concatRendersvDenoScript', gulp.series(
-        'compileServerTypescriptConcatJavascript',
-        'minifyTranslations',
-        () => {
+// Depends on:  compileServerTypescriptConcatJavascript
+//        and:  minifyTranslations
+gulp.task('concatRendersvDenoScript_only', () => {
   return gulp.src([
           'client/server/before-server-bundle.deno.js',
           `${serverDestTranslations}/**/*.min.js`,
@@ -774,10 +774,19 @@ gulp.task('concatRendersvDenoScript', gulp.series(
               ))
       .pipe(updateAtimeAndMtime())
       .pipe(gulp.dest('images/rendersv/'));
-}));
+});
 
 
 
+// Not in use — using the Makefile instead. [make_0_gulp]
+gulp.task('concatRendersvDenoScript', gulp.series(
+        'compileServerTypescriptConcatJavascript',
+        'minifyTranslations',
+        'concatRendersvDenoScript_only'));
+
+
+
+// Not in use (right?) — nowadays, using the Makefile instead. [make_0_gulp]
 gulp.task('compileConcatAllScripts', gulp.series(  // speed up w gulp.parallel? (GLPPPRL)
   'concatRendersvDenoScript',
   'compileSwTypescript-concatScripts',
@@ -950,6 +959,7 @@ gulp.task('updateVersionGenBundles', gulp.series(
 ));
 
 
+// Not in use (right?) — nowadays, using the Makefile instead. [make_0_gulp]
 gulp.task('default', gulp.series(
   'compileConcatAllScripts',
   'compile-stylus',

@@ -1,4 +1,7 @@
 # GNU Make tips:
+#
+# SEE THE  print_help  GOAL about how to DEBUG a MISBEHAVING Makefile.
+#
 # Variables:
 #   $@  The file name of the target of the rule
 
@@ -77,6 +80,7 @@ watch-what:
   up \
   down \
   dead \
+	transl_dev_bundles \
   prod_asset_bundles \
   prod_asset_bundle_files \
   debug_asset_bundles \
@@ -252,6 +256,7 @@ $(prod_asset_bundle_files): $@
 # Except for the server bundle — it loads non-gz scripts.
 debug_asset_bundles_files: \
   images/app/assets/server-bundle.js \
+  images/rendersv/rendersv.deno.ts \
   images/web/assets/talkyard-comments.js.gz \
   images/web/assets/talkyard-service-worker.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
@@ -262,6 +267,13 @@ debug_asset_bundles_files: \
   images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz
 
+
+images/rendersv/rendersv.deno.ts: \
+       ${transl_dev_web_bundle_files} \
+       images/app/assets/server-bundle.js \
+       $(shell find client/server/  -type f  -name '*.deno.*s')
+	@echo "\nRegenerating: $@ ..."
+	$(d_c_nodejs_gulp) concatRendersvDenoScript_only
 
 
 # Most files in client/app-slim are softlinked from client/server/*,
@@ -280,7 +292,7 @@ debug_asset_bundles_files: \
 #
 images/app/assets/server-bundle.js: \
        $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
-       $(shell find client/server/   -type f  \(  -name '*.ts'  -o  -name '*.js'  \)) \
+       $(shell find client/server/   -type f  \(  -name '*.ts'  -o  -name '*.js'  \) ! -name '*.deno.ts') \
        client/types-and-const-enums.ts \
        modules/sanitize-html/dist/sanitize-html.min.js \
        client/third-party/html-css-sanitizer-bundle.js \
@@ -431,7 +443,7 @@ transl_dev_app_bundle_files := \
 # E.g. images/web/assets/v0.2020.25/translations/en_US/i18n.js
 transl_dev_web_bundle_files := \
   ${shell find translations/ -name '*.ts'  \
-              | sed -nr 's;(.*)\.ts;images/web/assets/$(TALKYARD_VERSION)/\1.js;p' }
+              | sed -nr 's;(.*)\.ts;images/web/assets/$(TALKYARD_VERSION)/\1.min.js;p' }
 
 $(transl_dev_app_bundle_files) $(transl_dev_web_bundle_files): \
         ${shell find translations/ -name '*.ts' }
