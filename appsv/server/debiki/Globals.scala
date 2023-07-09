@@ -1075,13 +1075,19 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         // Will use Deno instead of Nashorn, since the latter is gone in JDK 17+.  [no_nashorn]
         logger.info("Starting Deno page renderer server? [TyMSTARTDENO]")
         if (config.featureFlags.contains("ffUseDeno")) {
+          val rendersvDir = "/opt/talkyard/app/images/rendersv"
           denoProcess = Some(new ProcessBuilder(
                 "/usr/local/bin/deno",
                     "run",
+                    // We don't give Deno any Internet access, and have vendored dependencies.
+                    "--no-remote",
+                    s"--import-map=$rendersvDir/vendor/import_map.json",
                     // Deno handles requests on 8087, and 9087 is for debugging. [deno_ports]
                     "--allow-net=0.0.0.0:8087,0.0.0.0:9087",
                     "--inspect=0.0.0.0:9087",
-                    "/opt/talkyard/app/images/rendersv/rendersv.deno.ts").inheritIO().start())
+                    s"$rendersvDir/rendersv.deno.ts")
+                .inheritIO()
+                .start())
         }
 
         _state = Good(newState)
