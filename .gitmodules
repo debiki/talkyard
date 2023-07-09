@@ -104,10 +104,11 @@
 # — and each branch is checked out as a separate submodule, where it's needed,
 # e.g. OpenResty at images/web/openresty, so accessible to the
 # images/web/Dockerfile.
-# But why not different submodules, instead of branches? Because creating
-# different submodules is boring, right. And having "too many" submodule repos
-# to maintain, is also boring (e.g. if relocating all repos, then many to move).
-# Creating a new branch is quicker – and long term tiny time saver (?).
+#
+# But why not different repos, one for each vendor, instead of one repo with one
+# branch per vendor? — Because creating many repos is boring, is it not?  And
+# having many repos to maintain, is also boring (e.g. if relocating all repos,
+# then, many to move).  And, creating a new branch is quicker.
 #
 # To fetch only the current branch from the remote repo, do this:
 #
@@ -118,6 +119,19 @@
 #
 # To add a submodule but only a branch, do e.g.:
 #
+#   # If creating the repo for the first time, do sth like:
+#   pushd .
+#   cd images/rendersv/vendor
+#   git init ... add ... commit
+#   git branch -m ty-images-rendersv-vendor
+#   git remote add origin https://github.com/debiki/ty-vendors.git
+#   git push origin ty-images-rendersv-vendor
+#   popd
+#   git submodule add -b ty-images-rendersv-vendor \
+#       https://github.com/debiki/ty-vendors.git \
+#       images/rendersv/vendor
+#
+#   # If the repo already exists:
 #   git submodule add -b ty-openresty \
 #       https://github.com/debiki/ty-vendors.git \
 #       images/web/openresty
@@ -135,6 +149,12 @@
 	path = node_modules
 	url = https://github.com/debiki/ty-vendors.git
 	branch = ty-node_modules
+
+# Dependencies needed by Deno, for server side rendering.
+[submodule "images/rendersv/vendor"]
+	path = images/rendersv/vendor
+	url = https://github.com/debiki/ty-vendors.git
+	branch = ty-images-rendersv-vendor
 
 # App server: Scala, JARs.
 [submodule "vendors/jars"]
