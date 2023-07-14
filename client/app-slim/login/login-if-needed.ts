@@ -108,8 +108,14 @@ export function loginIfNeeded(loginReason: LoginReason, returnToUrl: St, onOk?: 
       Server.loadMoreScriptsBundle(() => {
         // People with an account, are typically logged in already, and won't get to here often.
         // Instead, most people here, are new users, so show the signup dialog.
+        // But when creating a new site, one logs in as admin (NeedToBeAdmin) if one
+        // clicked the link (verified one's admin email), but then tries to log in in
+        // another browser.
         // (Why won't this result in a compil err? (5BKRF020))
-        debiki2.login.getLoginDialog().openToSignUp(
+        const diag = debiki2.login.getLoginDialog();
+        const logInOrSignUp = loginReason === LoginReason.NeedToBeAdmin ?
+                  diag.openToLogIn : diag.openToSignUp;
+        logInOrSignUp(
               loginReason, returnToUrl, onOk || function() {});
       });
     });
