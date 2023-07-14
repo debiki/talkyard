@@ -223,11 +223,19 @@ const LocalHostnameInput = createClassAndFactory({
       value = this.state.value;
     }
 
+    // Somebody didn't understand "No dots please", a recording shows / indicates.
+    // Maybe non-native speakers sometimes don't know what a 'dot' is?
+    // Hence, this explanation:
+    const useDashInstead = () =>
+      r.span({ className: 'n_Instead' },
+              "Use dashes (-) instead: ",
+              r.samp({}, value.replace(/[\. ]+/g, '-')));
+
     if (/\./.test(value))
-      return "No dots please";
+      return rFr({}, "No dots please. ", useDashInstead());
 
     if (/\s/.test(value))
-      return "No spaces please";
+      return rFr({}, "No spaces please. ", useDashInstead());
 
     if (/^[0-9].*/.test(value))
       return "Don't start with a digit";
@@ -253,7 +261,7 @@ const LocalHostnameInput = createClassAndFactory({
     if (this.state.showErrors) {
       anyError = this.findAnyError();
       if (anyError) {
-        anyError = r.b({ style: { color: 'red' }}, anyError);
+        anyError = r.span({ className: 'n_Err' }, anyError);
       }
     }
     // Check the router state, not location pathname, later after having upgr to react-router-
