@@ -10,11 +10,17 @@ import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import scala.concurrent.{ExecutionContext, Future}
+import generatedcode.BuildInfo
 
+private object LogVals {
+  val talkyardVersion = s"${BuildInfo.dockerTag} Git rev ${BuildInfo.gitRevision}"
+  def systemNowIsoNoT() = Prelude.toIso8601NoT(System.currentTimeMillis())
+}
 
 class TyAppLoader extends ApplicationLoader {
 
   private val logger = TyLogger("TyAppLoader")
+  import LogVals._
 
   def load(context: ApplicationLoader.Context): Application = {
     LoggerConfigurator(context.environment.classLoader).foreach {
@@ -24,7 +30,7 @@ class TyAppLoader extends ApplicationLoader {
     val isProd = context.environment.mode == play.api.Mode.Prod
     Globals.setIsProdForever(isProd)
 
-    logger.info("Starting... [TyMHELLO]")
+    logger.info(s"Starting Talkyard $talkyardVersion at ${systemNowIsoNoT()} ... [TyMHELLO]")
     val app = new TyAppComponents(context).application
     logger.info("Started. [TyMSTARTED]")
     app
@@ -72,7 +78,8 @@ class TyAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   applicationLifecycle.addStopHook { () =>
     Future.successful {
-      logger.info("Shutting down... [EsMBYESOON]")
+      import LogVals._
+      logger.info(s"Shutting down Talkyard $talkyardVersion at ${systemNowIsoNoT()} ... [EsMBYESOON]")
       tracer.close()
       globals.stopStuff()
       logger.info("Done shutting down. [EsMBYE]")
