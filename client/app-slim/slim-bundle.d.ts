@@ -100,6 +100,7 @@ declare const UsersRoot: string;
 declare const GroupsRoot: string;
 declare const SearchRootPath: string;
 declare const AdminRoot: string;
+declare const AdminUsersRoot: St;
 
 
 declare const RoutePathLatest: string;

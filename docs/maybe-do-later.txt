@@ -670,6 +670,16 @@ Maybe let  0@username generate a link, but no (zero) notification? or ...
                       Ty would auto add the 2nd '@' even if one typed just 1, if it's a group?
 
 
+[settings_templates]
+Select one of a few pre-defined use cases (ways of using Talkyard), and have
+a bunch of settings automatically tweaked, for that use case.
+  - Organization internal
+  - Public support
+  - Teachers & students
+  - Community
+  - Blog comments
+
+
 [power_admin]
 Various fancy admin features, disabled by default.
 

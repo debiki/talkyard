@@ -119,6 +119,7 @@ const UsersRoot = '/-/users/';
 const GroupsRoot = '/-/groups/';
 const SearchRootPath = '/-/search';
 const AdminRoot = '/-/admin/';
+const AdminUsersRoot = '/-/admin/users/';
 
 
 // MOVE to const enum ForumRoutePaths in types-and-const-enums.ts?

@@ -247,7 +247,7 @@ const LocalHostnameInput = createClassAndFactory({
       return "Don't end with a dash (-)";
 
     if (value.length < 6 && !anyForbiddenPassword())
-      return "Type at least six characters";
+      return "Too short. Type at least six characters";
 
     if (value.length < 2)
       return 'Too short'; // a server side regex requires >= 2 chars
