@@ -25,6 +25,7 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/avatar.ts" />
+/// <reference path="../help/serverAnnouncements.ts" />
 /// <reference path="../login/login-if-needed.ts" />
 /// <reference path="../page/cats-or-home-link.ts" />
 /// <reference path="../Server.ts" />
@@ -612,23 +613,16 @@ export const TopBar = createComponent({
           }}));
 
 
+    // ------- Under Maintenance message
+
+    // There's [another_maint_msg] in a server announcement box at the top of the pages,
+    // where more details can be shown. This topbar maint work message becomes visible
+    // only if you scroll down, and it should be brief, to fit in the topbar.
+    const anyMaintWorkMessage = debiki2.help.anyMaintMsg({ brief: true });
+
     // ------- The result
 
     const extraMarginClass = extraMargin ? ' esTopbar-extraMargin' : '';
-
-    const maintWorkNow = (
-            eds.mainWorkUntilSecs || // backw compat, CLEAN_UP remove
-            eds.volatileDataFromServer &&
-                eds.volatileDataFromServer.maintWorkUntilSecs);
-    const anyMaintWorkMessage = !maintWorkNow || isServerSide() ? null :
-        r.div({ className: 's_MaintWorkM' }, r.span({ className: 'n_SysMsg_Txt'},
-          r.b({}, "Under maintenance"),
-          ", read-only. ",
-          r.button({ onClick: () => location.reload() }, "Click here"), " to retry")); /* + (
-            eds.mainWorkUntilSecs === 1 ? '' : (
-              " Time left: " +
-              Math.max(0, Math.ceil((eds.mainWorkUntilSecs * 1000 - Date.now()) / 3600/1000)) + " hours")));
-              */
 
     const topbarRow1 =
       r.div({ className: 'esTopbar' + extraMarginClass },  // REMOVE esTopbar divs

@@ -53,8 +53,14 @@ class SystemDao(
   RENAME
   private def readOnlyTransaction[R](fn: SysTx => R): R =
     readTx(fn)
-  private def readTx[R](fn: SysTx => R): R =
+
+  def readTx[R](fn: SysTx => R): R =
     dbDao2.readOnlySystemTransaction(fn)
+
+
+  def writeTxLockNoSites[R](fn: SysTx => R): R = {
+    dbDao2.readWriteSystemTransaction(fn, allSitesWriteLocked = false)
+  }
 
 
   // [Scala_3] Opaque type: SysTx —> SysTxWriteAllSites

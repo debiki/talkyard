@@ -936,10 +936,19 @@ interface WatchbarTopics {
 }
 
 
+
+interface MaintWork {
+  // Is non-zero, if the server is read-only, because of maintenance work. The value
+  // is the Unix second when the maintenance work is believed to be done, or 1 if unspecified.
+  untilSecs: WhenSecs;
+  msgLineHtmlSafe?: St;
+  msgParaHtmlSafe?: St;
+}
+
 /// When loading new page html, this is included, as json, in a <script> tag in the page html.
 ///
 interface VolatileDataFromServer {
-  maintWorkUntilSecs?: WhenSecs;
+  maintWork?: MaintWork;
   usersOnline: Pat[];
   numStrangersOnline: Nr;
   me?: Me;
@@ -2984,11 +2993,6 @@ interface ServerVars {
   baseDomain?: string;
 
   newPasswordData?: NewPasswordData;
-
-  // CLEAN_UP, REMOVE, instead, use: VolatileDataFromServer.maintWorkUntilSecs.
-  // Is non-zero, if the server is read-only, because of maintenance work. The value
-  // is the Unix second when the maintenance work is believed to be done, or 1 if unspecified.
-  mainWorkUntilSecs?: number;
 }
 
 

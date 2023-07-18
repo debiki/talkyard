@@ -40,7 +40,6 @@ const r = ReactDOMFactories;
 ///
 export function getServerAnnouncements(store: Store): RElm | Nl {
   const me: Myself = store.me;
-  if (!me.isAdmin) return null;
 
   // ----- E2E tests: Show a single dummy announcement
 
@@ -76,7 +75,8 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
 
   // Depends on features enabled / in use at this particular site).
 
-  const adminNotices: RElm[] = (me.adminNotices || []).map((notice: Notice) => {
+  const adminNotices: RElm[] = !me.isAdmin ? [] :
+            (me.adminNotices || []).map((notice: Notice) => {
     let text: St | RElm = 'TyE02MREG56';
     switch (notice.id) {
       case Notices.TwitterLoginConfigured:
@@ -142,7 +142,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
 
   // Always show if is e2e test. Otherwise only if there's a not-too-old
   // external announcement (e.g. a blog post) to link to.
-  const newTyVersionAnn: RElm = !isE2eTest ? null :  // there isn't any up-to-date ann.
+  const newTyVersionAnn: RElm = !isE2eTest || !me.isAdmin ? null : // there's no up-to-date ann.
       help.HelpMessageBox({ message: {
           // SAn = Server Announcement, TyV = Talkyard new Version announcement nr X.
           id: 'SAn_TyV3', version: 1, isNice: true,
@@ -156,7 +156,7 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
       } });
 
   // Too old.
-  const prevTyVersionAnn: RElm | U = null; /* isE2eTest ? null :
+  const prevTyVersionAnn: RElm | U = null; /* isE2eTest || !me.isAdmin ? null :
       help.HelpMessageBox({ message: {
           id: 'SAn_TyV1', version: 1, // old announcement, skip isNice
           content: rFr({},
@@ -179,7 +179,8 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   // "Code review: Auto https ...", Mars 20, 2021, in talkyard-prod-one.
   const autoLuaCertFromMs = 1616112000 * 1000 // 2021-03-19 00:00:00Z
   const maybeCertBug =
-      isSelfHosted() && me.siteCreatedAtMs && autoLuaCertFromMs < me.siteCreatedAtMs;
+      isSelfHosted() && me.isAdmin && me.siteCreatedAtMs &&
+      autoLuaCertFromMs < me.siteCreatedAtMs;
   const certBugAnn: RElm | Nl = !maybeCertBug || isE2eTest ? null :
       help.HelpMessageBox({ message: {
           // SAn = Server Announcement, RnCt = Renew HTTPS Certificate tips nr 1.
@@ -196,6 +197,9 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
 
   return (
     r.div({ className: 'c_SrvAnns' },
+      // There's [another_maint_msg] in the topbar, visible if you've scrolled down
+      // (then, the maint message added here, might have scrolled out of view).
+      anyMaintMsg(),
       rFr({}, adminNotices),
       // sampleNotice,
       certBugAnn,
@@ -210,6 +214,43 @@ function ThisShownToAdminsOnly() {
   return r.p({ className: 'c_TBx_WhoSee'}, "(This shown to admins only)");
 }
 
+
+/// This is for everyone. There's one brief maint message  in the topbar,
+/// visible if you've scrolled down. And one possibly longer, in an
+/// info box at the top of all (?) pages.  Hmm I think I forgot the
+/// search engine results page?
+///
+export function anyMaintMsg(ps: { brief?: true } = {}): RElm | N {
+  const maintWork: MaintWork | U = Server.anyMaintWork();
+  // Don't cache any maint message in the server side html cache.
+  if (!maintWork || isServerSide())
+    return null;
+
+  return (
+      r.div({ className: 'c_MaintWorkM' }, r.div({ className: 'n_SysMsg_Txt'},
+        // The html below has been sanitized server side. [sanit_maint_msg]
+        ps.brief
+          ? (maintWork.msgLineHtmlSafe
+              ? r.div({ dangerouslySetInnerHTML: { __html: maintWork.msgLineHtmlSafe }})
+              : rFr({},
+                  r.b({}, "Under maintenance"), ", read-only."))  // I18N
+          : (maintWork.msgParaHtmlSafe
+              ? r.div({ dangerouslySetInnerHTML: { __html: maintWork.msgParaHtmlSafe }})
+              : rFr({},
+                  r.h1({}, "Under Maintenance"),  // I18N
+                  r.p({},
+                      "Usually we're done in 5–15 minutes. " +
+                      "Until then, you can access the forum in read-only mode.")))
+          )));
+
+        /*
+          maintWork.untilSecs === 1 ? '' : (
+            ` Time left: ${
+            Math.max(0, Math.ceil((maintWork.untilSecs * 1000 - Date.now()) / 3600/1000))
+            } hours`)));
+            r.button({ onClick: () => location.reload() }, "Click here"), " to retry"
+            */
+}
 
 //------------------------------------------------------------------------------
    }

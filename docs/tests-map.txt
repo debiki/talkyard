@@ -93,6 +93,8 @@ authn:
             - embcom.create-site-via-api.2br  TyTE2ECREAEMBSITAPI
     resets, but types wrong email:
             - dir.create-site-via-api.2br  TyTE2ECREASITAPI.TyTERSTWRONGEML
+    email chars, '+' is ok, test for both guests and real users:
+            - TESTS_MISSING
   forgot password -
     reset it:
           - password-login-reset.2browsers.test.ts  TyT5KAES20W
@@ -1767,6 +1769,14 @@ export and restore:  (impexp)
     - Edit built-in user's or group's name, remembered accross restore.
     - guestEmailPrefs, not yet incl in export
     - Include category ext id in imported dump. Also speeds up test. TyT60FKTEXK53
+
+
+maintenance mode:
+  start via API,
+  change message:
+            - plan-maintenance.2br.d  TyTPLANMAINT01
+  Ty becomes read-only:
+            - TESTS_MISSING (add to the above?)
 
 
 limits,

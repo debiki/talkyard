@@ -363,6 +363,7 @@ GET   /-/superadmin/*clientRoute controllers.SuperAdminController.superAdminApp(
 GET   /-/sa/list-sites           controllers.SuperAdminController.listSites
 POST  /-/sa/update-sites         controllers.SuperAdminController.updateSites
 POST  /-/sa/schedule-purge-sites controllers.SuperAdminController.schedulePurgeSites
+POST  /-/v0/plan-maintenance     controllers.SuperAdminController.apiV0_planMaintenance
 
 
 

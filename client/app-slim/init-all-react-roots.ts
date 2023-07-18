@@ -211,7 +211,7 @@ const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBT
 
   render: function() {
     if (!this.state)
-      return r.p({}, "Loading...");
+      return r.h1({}, t.Loading + ' ...');
 
     return Switch({},
       Route({ path: UsersRoot, component: users.UsersHomeComponent }),

@@ -166,13 +166,24 @@ class PlainApiActions(
       // Throw if the server is under maintenance, and the request tries to do anything
       // but reading, e.g. saving a reply. That is, throw for all POST request. Except for
       // logout or login, so people can login and read (OpenAuth login is GET only).
-      def logoutPath: String = controllers.routes.LoginController.logout(None).url
-      def loginPasswordPath: String = controllers.routes.LoginWithPasswordController.login.url
-      if (globals.maintWorkUntilSecs.isDefined && request.method == "POST"
+      import controllers.routes
+      def logoutPath: St = routes.LoginController.logout(None).url
+      def loginPasswordPath: St = routes.LoginWithPasswordController.login.url
+      def planMaintenancePath: St = routes.SuperAdminController.apiV0_planMaintenance.url
+      if (globals.anyMaintWork.isDefined && request.method == "POST"
           && request.path != logoutPath
-          && request.path != loginPasswordPath) {
+          && request.path != loginPasswordPath
+          && request.path != planMaintenancePath) {
         throwServiceUnavailable("TyMMAINTWORK", o"""The server is under maintenance:
               You cannot do anything, except for reading.""")
+
+        /* You can clear any maint work:
+
+        /usr/local/bin/docker-compose exec rdb psql talkyard talkyard  \
+                -c "update system_settings_t set maintenance_until_unix_secs_c = null;"
+
+        // (Maybe you're running auto tests, or debugging, and the server got stuck in
+        // maintenance mode, e.g. if the  plan-maintenance.2br.d.e2e.ts  test crashed.)   */
       }
 
       // ----- Cross-Origin (CORS) request?
@@ -280,7 +291,7 @@ class PlainApiActions(
       val secretKey = colonPassword.drop(1)
 
       // Could make username configurable in Play Fmw config, and on the API secrets
-      HACK // 1/2: Hardcoding the email webhooks endpoint below (dupl path).
+      HACK // 1/3: Hardcoding the email webhooks endpoint below (dupl path).
       if (username == "emailwebhooks") {
         throwForbiddenIf(globals.config.emailWebhooksApiSecret.isNot(secretKey),
               "TyE60MREH35", "Wrong handle-email API secret")
@@ -292,7 +303,7 @@ class PlainApiActions(
               SidOk(TySession.ApiSecretPart12, 0, Some(SysbotUserId)),
               XsrfOk("_email_webhook_"), None, block)
       }
-      HACK // 2/2: Hardcoding the create site API endpoint (dupl path).
+      HACK // 2/3: Hardcoding the create site API endpoint (dupl path).
       if (username == "createsite") {
         throwForbiddenIf(globals.config.createSiteApiSecret.isNot(secretKey),
               "TyE70MREH36", "Wrong create site API secret")
@@ -305,6 +316,20 @@ class PlainApiActions(
               Some(TySession.singleApiCallSession(asPatId = SysbotUserId)),
               SidOk(TySession.ApiSecretPart12, 0, Some(SysbotUserId)),
               XsrfOk("_create_site_"), None, block)
+      }
+      HACK // 3/3: System maintenance API secret.
+      if (username == "sysmaint") {
+        throwForbiddenIf(globals.config.systemMaintenanceApiSecret.isNot(secretKey),
+              "TyESYSMAINTSECR", "Wrong system maintenance API secret")
+        val correctPath = "/-/v0/plan-maintenance"
+        throwForbiddenIf(request.path != correctPath, "TyE406MSE37", s"Wrong URL path, is: ${
+              request.path}, should be: $correctPath")
+
+        val sysbot = dao.getTheUser(SysbotUserId)
+        return runBlockIfAuthOk(request, site, dao, Some(sysbot),
+              Some(TySession.singleApiCallSession(asPatId = SysbotUserId)),
+              SidOk(TySession.ApiSecretPart12, 0, Some(SysbotUserId)),
+              XsrfOk("_sys_maint_"), None, block)
       }
 
       DO_AFTER // 2021-08-01 enable this always. Test in dev-test first, for now.

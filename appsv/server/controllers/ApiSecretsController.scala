@@ -78,3 +78,26 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: TyCont
   }
 
 }
+
+// ADD_TO_DOCS:  Show a user friendly message, if an API secret is missing, e.g.
+// if there should be one in the config file: [api_secr_type]
+/*
+val maintenanceApiSecret = context.globals.conf.getOptional[St]("talkyard.maintenanceApiSecret")
+  .getOrThrowForbidden("TyE0MAINTSECRETCONF", i"""
+      |No maintenance API secret configured.
+      |
+      |Add this to /opt/talkyard/conf/play-framework.conf:
+      |
+      |    talkyard.maintenanceApiSecret="long_random_maintenance_API_secret"
+      |
+      |and restart the Talkyard app server:
+      |
+      |    sudo -i
+      |    cd /opt/talkyard/
+      |    docker-compose restart app
+      |
+      |Then, include in this API request:
+      |
+      |Auth: ...
+      |""")
+*/

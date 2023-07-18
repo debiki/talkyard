@@ -122,6 +122,17 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     int64To32ThrowIfOutOfRange(int64, what, min = min, max = max)
   }
 
+  def parseOptNull(json: JsValue, fieldName: St): Opt[JsNull.type] = {
+    val r2 = (json \ fieldName)
+    r2 match {
+      case jsDef: JsDefined =>
+        val value = jsDef.value
+        if (value == JsNull) Some(JsNull)
+        else None
+      case _ => None
+    }
+  }
+
   def parseJsObject(json: JsValue, fieldName: St): JsObject =
     readJsObject(json, fieldName)
 
@@ -235,6 +246,14 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
     readOptString(json, fieldName, maxLen = maxLen) getOrElse throwMissing(
           "EsE7JTB3", fieldName)
 
+
+  def parseOptStOrNullSomeNone(json: JsValue, fieldName: St): Opt[Opt[St]] = {
+    // Dupl code. [parse_null_some_none]
+    if (parseOptNull(json, fieldName).isDefined)
+      return Some(None)
+
+    parseOptSt(json, fieldName = fieldName).map(s => Some(s))
+  }
 
   /** If noneIfLongerThan or throwIfLongerThan is >= 0, and the value is longer than that,
     * returns None or throws a BadJsonException, respectively.
@@ -513,6 +532,15 @@ object JsonUtils {   MOVE // to talkyard.server.parser.JsonParSer
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.
         throwBadJson("EsE3GUK7", s"'$fieldName' is not an integer: " + errors.toString())
     }
+
+
+  def parseOptInt64OrNullSomeNone(json: JsValue, fieldName: St): Opt[Opt[i64]] = {
+    // Dupl code. [parse_null_some_none]
+    if (parseOptNull(json, fieldName).isDefined)
+      return Some(None)
+
+    parseOptInt64(json, fieldName = fieldName).map(Some(_))
+  }
 
 
   def parseBo(json: JsValue, fieldName: St, default: Opt[Bo] = None): Bo =

@@ -204,6 +204,9 @@ object TextAndHtml {
     * and when importing. Then, no need to CommonMark-render any
     * imported contents — that'd be done already. However, quickly sanitizing
     * the  already-sanitized-html  via Jsoup is ok fast and still good to do?
+    *
+    * [Scala_3] Opaque type: Use as input HtmlUnsafe, and HtmlSafe as output?
+    * (Both would wrap a string.)  Everywhere in this file?
     */
   def sanitizeRelaxed(unsafeHtml: String,
         amendWhitelistFn: Safelist => Safelist = x => x): String = {

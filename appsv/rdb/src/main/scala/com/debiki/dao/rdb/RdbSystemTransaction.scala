@@ -1098,8 +1098,24 @@ class RdbSystemTransaction(
           select * from system_settings_t """
     runQueryFindExactlyOne(query, List(), rs => {
       SystemSettings(
-            maintenanceUntilUnixSecs = getOptI64(rs, "maintenance_until_unix_secs_c"))
+            maintenanceUntilUnixSecs = getOptI64(rs, "maintenance_until_unix_secs_c"),
+            maintWordsHtmlUnsafe = getOptString(rs, "maint_words_html_unsafe_c"),
+            maintMessageHtmlUnsafe = getOptString(rs, "maint_msg_html_unsafe_c"))
     })
+  }
+
+
+  def updateSystemSettings(settings: SystemSettings): U = {
+    val stmt = """ -- updateSystemSettings
+          update system_settings_t set
+            maintenance_until_unix_secs_c = ?,
+            maint_words_html_unsafe_c = ?,
+            maint_msg_html_unsafe_c = ? """
+    val values = List(
+          settings.maintenanceUntilUnixSecs.orNullInt64,
+          settings.maintWordsHtmlUnsafe.trimOrNullVarchar,
+          settings.maintMessageHtmlUnsafe.trimOrNullVarchar)
+    runUpdateSingleRow(stmt, values)
   }
 
 

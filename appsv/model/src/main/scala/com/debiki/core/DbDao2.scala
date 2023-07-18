@@ -18,8 +18,26 @@
 package com.debiki.core
 
 
+/**
+  *
+  * @param maintenanceUntilUnixSecs Non-zero means server maintenance is ongoing,
+  * and that the server rejects requests that write to the database, e.g. new comments.
+  * Should be set to the Unix second when one thinks the maintenance will be done,
+  * or to 1 if one isn't sure.
+  * @param maintWordsHtmlUnsafe Shown in the topbar (in the browser), if scrolled down.
+  * Sanitize before using.
+  * @param maintMessageHtmlUnsafe Shown in a box at the top, but not visible if
+  * scrolled down. Sanitize before using.
+  */
 case class SystemSettings(
-  maintenanceUntilUnixSecs: Opt[i64])
+  maintenanceUntilUnixSecs: Opt[i64],
+  maintWordsHtmlUnsafe: Opt[St],
+  maintMessageHtmlUnsafe: Opt[St])
+
+case class MaintWork(
+  untilUnixSecs: i64,
+  maintWordsHtmlSafe: Opt[St],
+  maintMessageHtmlSafe: Opt[St])
 
 
 /** A database data access object (DAO). It gives you serializable transactions,

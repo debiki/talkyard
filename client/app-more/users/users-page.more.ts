@@ -37,7 +37,11 @@ export const UsersHomeComponent = createReactClass(<any> {
   displayName: 'UsersHomeComponent',
 
   render: function() {
-    return (
+    return rFr({},
+        // COULD show server announcements, but then need to load `store` here,
+        // and then maybe should pass it to the children? Let's think about later.
+        r.div({ className: 'c_SrvAnns' },
+          debiki2.help.anyMaintMsg()),
         Switch({},
           // Users
           Route({ path: UsersRoot, component: BadUrlComponent, exact: true }),
