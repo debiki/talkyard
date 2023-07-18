@@ -966,8 +966,7 @@ function SessionInfo(session: Session, endSessionFn: (ps: { session: Session }) 
     else deletedAt = null;
   }
 
-  const isCurrent = me.mySidPart1 !== session.part1 ? '' :
-          " — this session, here";
+  const isCurrent = !session.isCurrent ? '' : " — this session, here";
 
   let terminateBtn: RElm | U;
   let activeOrEndedClass = 'c_SessL_Sess-Ended';
@@ -985,7 +984,7 @@ function SessionInfo(session: Session, endSessionFn: (ps: { session: Session }) 
     // Skip logout button for the current session. It's better if one stays logged
     // in and can see that the relevant sessions got terminated properly. And
     // thereafter click Log Out in one's username menu. (Or?)
-    terminateBtn = me.mySidPart1 === session.part1 ? null :
+    terminateBtn = isCurrent ? null :
           Button({ className: 'c_SessL_Sess_EndB',
               onClick: () => endSessionFn({ session }) }, "Log out");  // I18N
   }

@@ -593,6 +593,7 @@ interface Session {
   version: Nr,
   startHeaders: { [name: St]: St };
   part1: St;
+  isCurrent?: true;
   deletedAt?: WhenMs;
   expiredAt?: WhenMs;
 }

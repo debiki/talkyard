@@ -408,7 +408,7 @@ object JsX {   RENAME // to JsonPaSe
 
 
   /// ts: Session
-  def JsSession(sess: TySessionInDbMaybeBad, inclPart1: Bo): JsObject = {
+  def JsSession(sess: TySessionInDbMaybeBad, inclPart1: Bo, isCurrent: Bo = false): JsObject = {
     // Don't include the actual session id. (That is, exclude parts 2 – 5. *Could* maybe
     // theoretically include them, since they're hashes, but bad idea, and not needed.)
     var json = Json.obj(
@@ -420,6 +420,9 @@ object JsX {   RENAME // to JsonPaSe
           "startHeaders" -> sess.startHeaders)
     if (inclPart1) {
       json += "part1" -> JsString(sess.part1CompId)
+    }
+    if (isCurrent) {
+      json += "isCurrent" -> JsTrue
     }
     json
   }
