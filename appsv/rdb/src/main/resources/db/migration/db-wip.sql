@@ -100,7 +100,7 @@ alter table users3 add constraint pats_c_members_have_username check (
 
 
 --=============================================================================
---  Custom types
+--  Custom_types   Alt_5 below is best?
 --=============================================================================
 
 -- Types and values for plugins, in the future.
@@ -111,7 +111,7 @@ create domain cust_type_d  i32_lt2e9_gt1000_d;
 alter table tagtypes_t rename to types_t; -- and let  types_t.id_c  be of type  cust_type_d?
 
 
------ Thing types and Sub types / Enums
+----- Thing types and Sub types / Enums ... See Alt_5 below: Kinds, types and sub types
 
 -- Custom tag types, pat and post relationship types, is nice. Enumerations seem
 -- common, supported by all (?) programming languages, and turns up often in Ty —
@@ -136,6 +136,14 @@ alter table tagtypes_t rename to types_t; -- and let  types_t.id_c  be of type  
 
 
 -- Alt 1: ------
+-- Update 2023-07:  Not good?  Stores built-in types in  types_t,  and custom types
+-- on other rows also in types_t,  foreign-key link to the built-in types.
+-- But it's misleading to keep built-in types in any table? Because that gives the
+-- impression that they can be edited (by updating the table). But that's not
+-- possible — the built-in types cannot be changed. (E.g. participants of type
+-- User or Group, or content nodes of type Page and Comment — mostly doesn't make
+-- sense to change or delete those types.)
+
 -- To reuse a built-in thing type,
 alter table types_t add column thing_type_c  thing_type_d;
 -- fk ix: types_i_thingtypeid_id
@@ -149,6 +157,9 @@ alter table types_t add column thing_type_built_in_id_c   i32_gz_d;
 -- But is the above the right way to do it? — Alternatively, change the primary key:
 
 -- Alt 2: ------
+-- Update 2023-07:  Also not good? Because also stores built-in types in
+-- in types_t although can't be modified?
+-- (Old comment below)
 -- Seems better! [alwys_sub_type]. But then, what's then name of the thing type?
 -- How verify that there's always a row with sub_id_c = 0 with the thing type name?
 -- Maybe if missing, could just be "Type 1234" and some admin problem message.
@@ -167,13 +178,18 @@ alter table types_t add constraint types_p_id_subid primary key (
 -- Problematic, in that if a type gets used as a tag, and then an admin changes
 -- the flag so the type becomes something completely different?
 
--- Alt 4: ------
--- Have exactly one built-in thing type, for each type in types_t,
--- e.g. a custom type is of thing type Vote, or thing type ContentTag or AssignedTo.
--- So, in e.g.  pat_rels_t,  rel_type_c  would be a built-in type e.g. VotedOn,
+-- Alt_4: ------
+-- Specify one built-in thing type or relationship type, for each type in types_t,
+-- e.g. a custom type is of built-in thing type Vote or ContentTag or AssignedTo.
+-- So, in e.g.  pat_node_rels_t,  rel_type_c  would be a built-in type e.g. VotedOn,
 -- no foreign key.
--- whilst  sub_type_c  would usually be built-in, e.g.  VoteType.Like,
--- and sometimes a custom type, let's say thing type Vote and:
+--
+-- The built-in type tells Talkyard where the custom type instance should appear
+-- — e.g. as a vote, or in the assignees list somehow, or as a flag etc.
+--
+-- Nodes and relationships can have a   sub_type_c  too, and it would usually
+-- be built-in too, e.g.  VoteType.Like,
+-- but sometimes a custom type, let's say thing type Vote and:
 --     sub type  VoteType.LooksGoodToMe
 --       with id > 1000 (because it's a custom sub type)
 --       and foreign-key referencing  types_t.
@@ -181,13 +197,76 @@ alter table types_t add constraint types_p_id_subid primary key (
 -- e.g.  CanUseHow.AsVote or AsContentTag, and this'd be part of the primary key
 -- in types_t? Hmm, no, thing type and sub type sounds simpler?
 --
-alter table types_t add column  thing_type_c  thing_type_d  not null  default Content-tags-type;
+alter table types_t add column  thing_type_c  thing_type_d  not null  default ThingType.ContentTag;
 alter table types_t rename column  id_c  to  sub_type_c  sub_type_d  not null;
--- **Maybe this (alt 4) is simplest?  Then won't ever need to think about what
--- happens with existing usages of a type, if changing how the type can be used
--- — because a thing type would be part of the primary key, so couldn't
+-- **Maybe this (alt 4) is simplest? (No, Alt_5 instead) Then won't ever need to think
+-- about what happens with existing usages of a type, if changing how the type can
+-- be used — because a thing type would be part of the primary key, so couldn't
 -- change where a type can be used. Instead, one would create a new type.
+--
+alter table types_t add constraint types_p_thingtype_subtype primary key (
+    site_id_c, thing_type_c, sub_type_c);
 
+-- Alt_5: ------
+
+-- Kinds, types and subtypes:
+-- What kind of thing is that? It's a node     ——> kind_id_c  = Kind.Node
+--                          it's a participant     kind_id_c  = Kind.Pat
+-- What type of node? It's a page.             ——> type_id_c  = NodeType.Page
+--                  or ... a comment.                         = NodeType.Comment
+--                     ... a flag, etc.                       = NodeType.Flag
+-- What type of page? It's an Idea page.    ——> sub_type_id_c = PageType.Idea
+--                     ... a Question.                        = PageType.Question
+--          ... flag? It's a Spam flag.     ——> sub_type_id_c = FlagType.Spam
+--                       ... Toxic flag.                      = FlagType.Toxic
+-- What type of participant? A user.           ——> type_id_c  = PatType.User
+--                           A group.                         = PatType.Group*
+--                          An anonym, etc.                   = PatType.Anon*
+--                                    (* Currently  Pat.isGroup instead of PatType though)
+
+-- What kind of thing is that? A person-node-relationship  ——> kind_id_c = Kind.PatNodeRel
+-- What type of relationship?  A voted-on relationship   ——> type_id_c = PatNodeRelType.VotedOn
+-- What type of vote?  A Like vote.                   ——> sub_type_id_c = VoteType.Like
+
+-- What kind of thing something is, determines in what table it gets saved.
+-- E.g.  Kind.Node —>  saved in  nodes_t         (currently named posts3).
+--       Kind.PatNodeRel —>  in  pat_node_rels_t  (currently post_actions3).
+--       Kind.Pat        —>  in  pats_t          (currently users3).
+--
+-- What type of thing it is (more specific than kind), determines how it's used,
+-- where it's shown,
+-- for example, nodes:
+--     NodeType.Category appears in the category list.
+--     NodeType.Page    are listed in their parent category.
+--     NodeType.Comment are listed on the page where they got posted.
+--     NodeType.Flag    shown to moderators.
+--
+-- and pat-node-relationships:
+--     PatNodeRelType.VotedOn: a vote icon and count appears below the post (eg 3 Likes).
+--     PatNodeRelType.AssignedTo: the assignee appears in the Assiged To list above the post.
+--
+-- and the sub type suggests how to handle the thing? Eg:
+--     PageType.Question — needs an answer
+--     PageType.Idea   — discuss and maybe do
+--     FlagType.Spam  — delete & ban
+--     FlagType.Rude  — delete / rewrite, talk w the person about the guidelines
+--
+-- Only custom types are stored in types_t, and type & subtype ids should be > 1000
+-- so as not to collide with built-in type ids. (Like in Alt_4)
+--
+alter table tagtypes_t rename to types_t;
+alter table types_t
+       rename column  id_c  to    type_id_c,
+       add column  kind_id_c      kind_d  not null
+                                      -- all currently existing types are for tags.
+                                      default  Kind.Tag,
+       add column  sub_type_id_c  sub_type_d  not null
+                                      -- 0 means it's not a sub type (tags aren't sub types).
+                                      default  0,
+
+       drop constraint tagtypes_p_id,
+       add constraint types_p_kind_type_subtype primary key (
+              site_id_c, kind_id_c, type_id_c, sub_type_id_c);
 ----------------
 
 
