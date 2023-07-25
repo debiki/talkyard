@@ -440,8 +440,11 @@ object ViewPageController {
       "stuffForMe" -> JsObjOrNull(anyMeAndRestrStuff.map(_.stuffForMe.toJson(dao))),
       )
 
-    request.context.globals.maintWorkUntilSecs foreach { secs =>
-      volatileJson += "maintWorkUntilSecs" -> JsNumber(secs)
+    request.context.globals.anyMaintWork foreach { work: MaintWork =>
+      var jOb = Json.obj("untilSecs" -> work.untilUnixSecs)
+      work.maintWordsHtmlSafe.foreach(m => jOb += "msgLineHtmlSafe" -> JsString(m))
+      work.maintMessageHtmlSafe.foreach(m => jOb += "msgParaHtmlSafe" -> JsString(m))
+      volatileJson += "maintWork" -> jOb
     }
 
     // (If the requester is logged in so we could load a real 'me' here,

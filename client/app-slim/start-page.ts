@@ -258,7 +258,9 @@ function renderPageInBrowser() {
 
   const timeBefore = performance.now();
 
-  debiki2.startMainReactRoot(reactRenderMethod);
+  const doNext = debiki2.startMainReactRoot(reactRenderMethod);
+  if (doNext === 'SkipTheRest')
+    return;
 
   const timeAfterPageContent = performance.now();
 

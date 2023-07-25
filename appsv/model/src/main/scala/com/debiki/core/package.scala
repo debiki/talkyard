@@ -1811,17 +1811,23 @@ package object core {
     */
   case class ApiSecret(
     nr: ApiSecretNr,
-    userId: Option[UserId],
+    userId: Opt[UserId],
     createdAt: When,
-    deletedAt: Option[When],
-    isDeleted: Boolean,
-    secretKey: String) {
+    deletedAt: Opt[When],
+    isDeleted: Bo,
+    secretKey: St,
+    // Later:
+    // capabilities: Seq[ApiSecretCapability]  ?
+    ) {
 
     require(!isDeleted || deletedAt.isDefined, "TyE4ABKR01")
     require(deletedAt.isEmpty || createdAt.millis <= deletedAt.get.millis, "TyE4ABKR02")
     require(userId.forall(id => id == SysbotUserId || id >= LowestTalkToMemberId), "TyE5ABKR02")
   }
 
+  // Later:  enum ApiSecretCapability {    [api_secr_type]
+  //   PostPages, PostComments, PlanMaintenance, ...
+  // }
 
 
   def ifThenSome[A](condition: Boolean, value: A): Option[A] =

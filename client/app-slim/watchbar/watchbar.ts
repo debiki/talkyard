@@ -172,6 +172,9 @@ const RecentTopicsAndNotfs = createComponent({
 
     return (
         r.div({ className: 'esWB_Ts' },
+          // UX, COULD: minor problem: This title looks clickable, at least when the list
+          // is empty (happens for new members). Someone tried to click it a few times.
+          // [looks_clickable]
           r.h3({ style: { wordSpacing: '2px' }}, t.wb.RecentlyViewed),
           r.ul({},
             topicElems)));

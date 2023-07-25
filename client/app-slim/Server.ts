@@ -2411,7 +2411,7 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
       postsRead: Post[], anyOnDone?: () => void) {
-  if (eds.mainWorkUntilSecs)
+  if (anyMaintWork())
     return;
 
   const pageId = getPageId();
@@ -2496,6 +2496,13 @@ const postPendingErrorsThrottled = _.throttle(function() {
 
 // Will this work? Doesn't seem to work. Why not? Oh well.
 window.addEventListener('unload', postPendingErrorsThrottled.flush);
+
+
+export function anyMaintWork(): MaintWork | U {
+  const volD: VolatileDataFromServer | U = eds.volatileDataFromServer;
+  const maintWork: MaintWork | U = volD && volD.maintWork;
+  return maintWork;
+}
 
 
 //------------------------------------------------------------------------------

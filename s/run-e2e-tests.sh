@@ -557,6 +557,9 @@ function runAllE2eTests {
   $r s/wdio-7 --only webhooks-enable-disable.2br --cd -i $args
   $r s/wdio-7 --only webhooks-for-api-upserts.2br --cd -i $args
 
+  $r s/wdio-7 --only plan-maintenance.2br.d --cd -i $args
+
+
   # wip:
   # settings-allow-local-signup
   # settings-allow-signup

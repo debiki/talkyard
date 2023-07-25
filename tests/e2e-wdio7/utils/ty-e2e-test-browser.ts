@@ -2300,6 +2300,7 @@ export class TyE2eTestBrowser {
     }
 
 
+    // DEPRECATED? Use  waitUntilAnyTextMatches  instead?
     async waitUntilTextMatches(selector: St, regex: St | RegExp,
             opts: { timeoutMs?: Nr, invert?: Bo } = {}) {
       await this.waitAndGetElemWithText(selector, regex, opts);
@@ -2526,7 +2527,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitUntilNthTextMatches(selector, n: Nr, toMatch: St | RegExp): Pr<St> {
+    async waitUntilNthTextMatches(selector, n: Nr, toMatch: St | RegExp,
+          waitPs: WaitPs = {}): Pr<St> {
       let textNow: StV;
       const regex = getRegExpOrDie(toMatch);
       await this.waitUntil(async () => {
@@ -2535,6 +2537,7 @@ export class TyE2eTestBrowser {
       }, {
         message: () => `Waiting for text in: ${selector} nr: ${n
                 } to match: ${regex}, text is now: "${textNow}"`,
+        ...waitPs,
       })
       return textNow as St;
     }
@@ -2557,7 +2560,8 @@ export class TyE2eTestBrowser {
     }
 
 
-    async waitUntilAnyTextMatches(selector: string, stringOrRegex: string | RegExp) {
+    async waitUntilAnyTextMatches(selector: string, stringOrRegex: string | RegExp,
+          waitPs: WaitPs = {}) {
       const regex = getRegExpOrDie(stringOrRegex);
       let num;
       await this.waitUntil(async () => {
@@ -2568,7 +2572,8 @@ export class TyE2eTestBrowser {
             return true;
         }
       }, {
-        message: `Waiting for any  ${selector}  (there are ${num}, now) to match:  ${regex}`
+        message: `Waiting for any  ${selector}  (there are ${num}, now) to match:  ${regex}`,
+        ...waitPs,
       })
     }
 
@@ -3887,8 +3892,10 @@ export class TyE2eTestBrowser {
 
       tryLogin: async (username: St, password: St) => {
         await this.loginDialog.switchToLoginIfIsSignup();
+        logBoring(`Logging in as  ${username},  pwd: ${password}`)
         await this.loginDialog.fillInUsername(username);
         await this.loginDialog.fillInPassword(password);
+        logBoring(`Submitting credentials ...`)
         await this.loginDialog.clickSubmit();
       },
 

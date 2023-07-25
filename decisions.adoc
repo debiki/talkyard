@@ -570,4 +570,9 @@ the "official" operators language — see the Rust K8s Operators links above.
 
 === Anonyms and Pseudonyms
 
-See tyworld.adoc: 
+See tyworld.adoc: Anonyms and Pseudonyms.
+
+
+=== Kinds, types, sub types
+
+See tyworld.adoc: Custom_types.

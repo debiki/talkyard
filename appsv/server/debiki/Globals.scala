@@ -373,21 +373,29 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
   def spamChecker: SpamChecker = state.spamChecker
 
   @volatile
-  private var sysSettings: Opt[SystemSettings] = None
+  private var _sysSettings: SystemSettings = _
 
   def updateSystemSettings(newSettings: SystemSettings): U = {
-    sysSettings = Some(newSettings)
+    _sysSettings = newSettings
+    val maintWorkSecs = newSettings.maintenanceUntilUnixSecs orElse _maintWorkUntilSecsInConfFile
+    _maintWork = maintWorkSecs map { untilSecs =>
+      MaintWork(
+            untilUnixSecs = untilSecs,
+            // The browser side code knows this has been sanitized. [sanit_maint_msg]
+            maintWordsHtmlSafe =
+                newSettings.maintWordsHtmlUnsafe.map(TextAndHtml.sanitizeRelaxed(_)),
+            maintMessageHtmlSafe =
+                newSettings.maintMessageHtmlUnsafe.map(TextAndHtml.sanitizeRelaxed(_)))
+    }
   }
 
-  /** Is non-zero iff server maintenance is going on, so that the server is read-only.
-    * Should be set to the Unix second when one thinks the maintenance will be done,
-    * or to 1 if one isn't sure. A change requires a Play app server restart to get picked up.
-    */
-  def maintWorkUntilSecs: Opt[i64] = {
-    sysSettings.flatMap(_.maintenanceUntilUnixSecs) orElse maintWorkUntilSecsInConfFile
-  }
+  @volatile
+  private var _maintWork: Opt[MaintWork] = None
 
-  private val maintWorkUntilSecsInConfFile: Option[Long] =
+  def anyMaintWork: Opt[MaintWork] = _maintWork
+
+  // Maybe remove this? And use the API only? (see apiV0_planMaintenance())
+  private val _maintWorkUntilSecsInConfFile: Option[Long] =
     conf.getOptional[Long]("talkyard.maintenanceUntilUnixSeconds")
 
   /* Add configurable support email address?  [CONFADDRS]
@@ -1060,7 +1068,12 @@ class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name =
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
         logger.info("Running database migrations... [EsM200MIGRDB]")
-        new SystemDao(dbDaoFactory, cache, this).applyEvolutions()
+        val sysDao = new SystemDao(dbDaoFactory, cache, this)
+
+        sysDao.applyEvolutions()
+
+        val sysSettings = sysDao.readTx(_.loadSystemSettings)
+        updateSystemSettings(sysSettings)
 
         logger.info("Done migrating database. Connecting to other services... [EsM200CONNOTR]")
         val newState = new State(dbDaoFactory, cache)
@@ -1444,6 +1457,10 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   // FOR NOW
   val createSiteApiSecret: Opt[St] =
     conf.getOptional[St]("talkyard.createSiteApiSecret").noneIfBlank
+
+  // FOR NOW
+  val systemMaintenanceApiSecret: Opt[St] =
+    conf.getOptional[St]("talkyard.maintenanceApiSecret").noneIfBlank
 
   // FOR NOW
   object forms {

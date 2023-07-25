@@ -100,6 +100,7 @@ declare const UsersRoot: string;
 declare const GroupsRoot: string;
 declare const SearchRootPath: string;
 declare const AdminRoot: string;
+declare const AdminUsersRoot: St;
 
 
 declare const RoutePathLatest: string;
@@ -234,6 +235,7 @@ declare namespace debiki2 {
     var HelpMessageBox;
     function isHelpMessageClosedAnyVersion(store: Store, messageId: string): boolean;
     function getServerAnnouncements(store: Store): RElm;
+    function anyMaintMsg(): RElm | N;
   }
 
   namespace topbar {

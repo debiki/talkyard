@@ -593,6 +593,45 @@ $_$;
 
 
 --======================================================================
+--  tags_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  tags_t  is $_$
+Stores tags and user badges. The tag / badge titles, colors etc are
+in types_t (currently named tagtypes_t)
+
+Tags can have values, e.g. 'Version: 1.23.4', 'Event-Location: Some-Where',
+'Event-Date: Aug 22 20:00 to Aug 23 03:00', 'Published-Year: 1990'.
+$_$;
+------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------
+comment on column  tags_t.val_type_c  is $_$
+
+1 (one) means it's a "simple" value, meaning, it's just what's stored:
+if val_i32_c is not null, the value is an integer, if val_f64_c is
+not null, it's a decimal value and so on.
+
+Later there might be more complex values, e.g. val_f64_c might be
+used to instead store a date (Unix time), or val_f64_c and val_i32_c
+to store the start and duration (seconds) of an event.
+
+The url in val_url_c can be combined with any other value, and makes
+it a link?  However, disabled for now.
+
+Or if the type is html, then val_str_c would be interpreted as
+unsanitized unsafe html. But if type is simple, then it's plain text.
+
+Later, could allow jsonb together with other vals too? Could display
+a '{}' after any numeric or text value, to indicate that there's json.
+
+For now, urls and jsonb aren't allowed — only numbers and plain text.
+$_$; -- '
+
+
+--======================================================================
 --  types_t   (currently named tagtypes_t)
 --======================================================================
 

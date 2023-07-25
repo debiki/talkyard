@@ -7,6 +7,10 @@ export function getServerAnnouncements(store: Store): RElm | Nl {
   return null;
 }
 
+export function anyMaintMsg(ps: { brief?: true } = {}): RElm | N {
+  return null;
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

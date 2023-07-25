@@ -7,6 +7,11 @@
 
 In Talkyard, pages and replies are "posts":
 
+**Update 2023:** Pages, comments, categories, flags `[flags_as_posts]`
+will eventually all be in a single nodes_t table.
+Turns out they share almost everything, and keeping
+them in separate tables results in duplicated fields & code. **/Update**
+
 Forum Post = new forum discussion page, a.k.a. thread, or Original Post.
 Forum Reply = A reply to a forum post.
 
@@ -433,6 +438,44 @@ which cannot be said about any graph database?
 And Postgres can `[cluster_tables]`, which makes it possible to fetch
 all edges by fetching fewer table blocks from disk (by clustering
 on edge start or endpoint as appropriate).
+
+
+
+== Custom types and values
+
+Custom types, e.g. tag types, user badge types, are stored in types_t
+(currently named tagtypes_t). For example, a tag has a tag type that
+says how the tag should be displayed: title, color, descr,
+if the tag can have values and then of what type.
+
+A type has a kind id, type id and sub type id.  Once a type has been
+created, these never changes. (Is primary key.)
+
+The "kind" says what kind of thing the type is for: nodes (in nodes_t,
+currently named posts3), or participants (pats_t, currently users3),
+or tags or badges (both stored in tags_t), pat-node relationships,
+e.g. Voted-On (a post) or Assigned-To, node-node relationships,
+e.g. Depends-On. (And what more?)
+
+Some types have sub types. E.g. nodes of type Page or Flag can
+have sub types: PageType.Idea, Question, etc, and FlagType.Inapt, Spam etc.
+
+Other types don't currently need sub types, e.g. tags and badges.
+
+So, a type is:  { kindId, typeId, subTypeId, ... name, descr etc ... }.
+
+Built-in types, though, aren't stored in types_t. (E.g. PageType,
+FlagType.)  Currently only tags & badges use types_t (there are no built-in
+tag or badge types).
+
+To do?: See `[Custom_types] [Alt_5]`
+in ../appsv/rdb/src/main/resources/db/migration/db-wip.sql
+
+
+=== Tags with values
+
+Tags can have values, e.g. "Version: v1.23.4" or "Event-Location: Paris"
+or "Published-Year: 1999". This is not that much implemented though.
 
 
 
